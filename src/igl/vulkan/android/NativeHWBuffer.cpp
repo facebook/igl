@@ -52,10 +52,6 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
   }
   AHardwareBuffer_Desc hwbDesc;
   AHardwareBuffer_describe(hwBuffer, &hwbDesc);
-  TextureDesc desc;
-  desc.width = hwbDesc.width;
-  desc.height = hwbDesc.height;
-  desc.usage = ::igl::android::getIglBufferUsage(hwbDesc.usage);
 
   auto& ctx = device_.getVulkanContext();
   auto device = device_.getVulkanContext().getVkDevice();
@@ -101,8 +97,6 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
       .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
   };
 
-  desc.format = igl::vulkan::vkFormatToTextureFormat(ahb_format_props.format);
-
   VkImage vk_image;
 
   VkImageCreateInfo vk_image_info = {.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -111,7 +105,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
                                      .imageType = VK_IMAGE_TYPE_2D,
                                      .format = ahb_format_props.format,
                                      .extent =
-                                         VkExtent3D{(uint32_t)desc.width, (uint32_t)desc.height, 1},
+                                         VkExtent3D{(uint32_t)hwbDesc.width, (uint32_t)hwbDesc.height, 1},
                                      .mipLevels = 1,
                                      .arrayLayers = 1,
                                      .samples = VK_SAMPLE_COUNT_1_BIT,
@@ -258,7 +252,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
     return Result(Result::Code::RuntimeError, "Failed to create vulkan texture");
   }
 
-  desc_ = std::move(desc);
+  desc_ = textureDesc_;
   texture_ = std::move(vkTexture);
 
   return Result{Result::Code::Ok};

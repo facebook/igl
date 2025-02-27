@@ -241,13 +241,13 @@ Result INativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
     return allocationResult;
   }
 
+  textureDesc_ = desc;
   Result result = createTextureInternal(buffer);
   if (!result.isOk()) {
     IGL_LOG_ERROR("HW internal failed");
     AHardwareBuffer_release(buffer);
   } else {
     hwBuffer_ = buffer;
-    textureDesc_ = desc;
   }
 
   return result;
