@@ -188,7 +188,7 @@ Result NativeHWTextureBuffer::uploadInternal(TextureType /*type*/,
     return Result{};
   }
 
-  IGL_DEBUG_ABORT("Cannot upload buffer for HW texture for Native Hardware Buffer Textuees.");
+  IGL_DEBUG_ABORT("Cannot upload buffer for HW texture for Native Hardware Buffer Textures.");
   return Result{Result::Code::Unsupported, "NativeHWTextureBuffer upload not supported"};
 }
 
