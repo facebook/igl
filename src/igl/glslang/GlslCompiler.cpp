@@ -15,7 +15,7 @@
 
 namespace igl::glslang {
 namespace {
-[[nodiscard]] glslang_stage_t getGLSLangShaderStage(igl::ShaderStage stage) noexcept {
+[[nodiscard]] glslang_stage_t getGLSLangShaderStage(ShaderStage stage) noexcept {
   switch (stage) {
   case igl::ShaderStage::Vertex:
     return GLSLANG_STAGE_VERTEX;
@@ -73,10 +73,10 @@ void initializeCompiler() noexcept {
   glslang_initialize_process();
 }
 
-igl::Result compileShader(igl::ShaderStage stage,
-                          const char* code,
-                          std::vector<uint32_t>& outSPIRV,
-                          const glslang_resource_t* glslLangResource) noexcept {
+Result compileShader(ShaderStage stage,
+                     const char* code,
+                     std::vector<uint32_t>& outSPIRV,
+                     const glslang_resource_t* glslLangResource) noexcept {
   IGL_PROFILER_FUNCTION();
 
   glslang_input_t input{};

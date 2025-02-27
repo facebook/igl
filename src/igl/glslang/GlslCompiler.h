@@ -19,10 +19,10 @@ namespace igl::glslang {
 void initializeCompiler() noexcept;
 
 /// Compiles the given shader code into SPIR-V.
-[[nodiscard]] igl::Result compileShader(igl::ShaderStage stage,
-                                        const char* code,
-                                        std::vector<uint32_t>& outSPIRV,
-                                        const glslang_resource_t* glslLangResource) noexcept;
+[[nodiscard]] Result compileShader(ShaderStage stage,
+                                   const char* code,
+                                   std::vector<uint32_t>& outSPIRV,
+                                   const glslang_resource_t* glslLangResource) noexcept;
 
 void finalizeCompiler() noexcept;
 
