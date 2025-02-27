@@ -51,7 +51,7 @@ InputDispatcher& Platform::getInputDispatcher() noexcept {
 
 std::shared_ptr<ITexture> Platform::loadTexture(const char* filename,
                                                 bool calculateMipmapLevels,
-                                                igl::TextureFormat format,
+                                                TextureFormat format,
                                                 igl::TextureDesc::TextureUsageBits usage) {
   auto imageData = getImageLoader().loadImageData(filename);
 
@@ -60,10 +60,10 @@ std::shared_ptr<ITexture> Platform::loadTexture(const char* filename,
 
 std::shared_ptr<ITexture> Platform::loadTexture(const ImageData& imageData,
                                                 bool calculateMipmapLevels,
-                                                igl::TextureFormat format,
+                                                TextureFormat format,
                                                 igl::TextureDesc::TextureUsageBits usage,
                                                 const char* debugName) {
-  igl::TextureDesc texDesc =
+  TextureDesc texDesc =
       igl::TextureDesc::new2D(format, imageData.desc.width, imageData.desc.height, usage);
   texDesc.numMipLevels =
       calculateMipmapLevels ? igl::TextureDesc::calcNumMipLevels(texDesc.width, texDesc.height) : 1;

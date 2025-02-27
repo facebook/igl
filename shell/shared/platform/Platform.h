@@ -24,8 +24,8 @@ class Platform {
  public:
   Platform() noexcept;
   virtual ~Platform();
-  virtual igl::IDevice& getDevice() noexcept = 0;
-  [[nodiscard]] virtual std::shared_ptr<igl::IDevice> getDevicePtr() const noexcept = 0;
+  virtual IDevice& getDevice() noexcept = 0;
+  [[nodiscard]] virtual std::shared_ptr<IDevice> getDevicePtr() const noexcept = 0;
   virtual ImageLoader& getImageLoader() noexcept = 0;
   [[nodiscard]] virtual const ImageWriter& getImageWriter() const noexcept = 0;
   [[nodiscard]] virtual FileLoader& getFileLoader() const noexcept = 0;
@@ -36,13 +36,13 @@ class Platform {
   std::shared_ptr<ITexture> loadTexture(
       const char* filename,
       bool calculateMipmapLevels = true,
-      igl::TextureFormat format = igl::TextureFormat::RGBA_SRGB,
+      TextureFormat format = igl::TextureFormat::RGBA_SRGB,
       igl::TextureDesc::TextureUsageBits usage = igl::TextureDesc::TextureUsageBits::Sampled);
 
   std::shared_ptr<ITexture> loadTexture(
       const ImageData& imageData,
       bool calculateMipmapLevels = true,
-      igl::TextureFormat format = igl::TextureFormat::RGBA_SRGB,
+      TextureFormat format = igl::TextureFormat::RGBA_SRGB,
       igl::TextureDesc::TextureUsageBits usage = igl::TextureDesc::TextureUsageBits::Sampled,
       const char* debugName = "");
   // 'argc' and 'argv' are the exact arguments received in 'main()'.

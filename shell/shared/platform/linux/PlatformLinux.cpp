@@ -13,17 +13,17 @@
 
 namespace igl::shell {
 
-PlatformLinux::PlatformLinux(std::shared_ptr<igl::IDevice> device) : device_(std::move(device)) {
-  fileLoader_ = std::make_unique<igl::shell::FileLoaderLinux>();
-  imageLoader_ = std::make_unique<igl::shell::ImageLoader>(*fileLoader_);
-  imageWriter_ = std::make_unique<igl::shell::ImageWriterLinux>();
+PlatformLinux::PlatformLinux(std::shared_ptr<IDevice> device) : device_(std::move(device)) {
+  fileLoader_ = std::make_unique<FileLoaderLinux>();
+  imageLoader_ = std::make_unique<ImageLoader>(*fileLoader_);
+  imageWriter_ = std::make_unique<ImageWriterLinux>();
 }
 
-igl::IDevice& PlatformLinux::getDevice() noexcept {
+IDevice& PlatformLinux::getDevice() noexcept {
   return *device_;
 }
 
-std::shared_ptr<igl::IDevice> PlatformLinux::getDevicePtr() const noexcept {
+std::shared_ptr<IDevice> PlatformLinux::getDevicePtr() const noexcept {
   return device_;
 }
 
