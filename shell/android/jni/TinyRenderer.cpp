@@ -186,7 +186,7 @@ void TinyRenderer::render(float displayScale) {
 
   // draw
   Result result;
-  igl::SurfaceTextures surfaceTextures;
+  SurfaceTextures surfaceTextures;
 
   switch (backendVersion_.flavor) {
 #if IGL_BACKEND_OPENGL
