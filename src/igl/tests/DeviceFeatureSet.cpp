@@ -126,6 +126,9 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
                             deviceFeatures.isSupported("GL_EXT_texture_sRGB"));
     EXPECT_EQ(iglDev_->hasFeature(DeviceFeatures::SRGB), supportsSRGB);
 
+    const bool hasEGLsRGBSupport = context.eglSupportssRGB();
+    EXPECT_EQ(iglDev_->hasFeature(DeviceFeatures::SRGBSwapchain), hasEGLsRGBSupport);
+
     const bool supportsSRGBWriteControl =
         usesOpenGLES ? deviceFeatures.isSupported("GL_EXT_sRGB_write_control")
                      : glVersion >= igl::opengl::GLVersion::v3_0 ||
@@ -174,6 +177,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ReadWriteFramebuffer));
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::TextureNotPot));
     EXPECT_EQ(iglDev_->hasFeature(DeviceFeatures::SRGB), true);
+    EXPECT_EQ(iglDev_->hasFeature(DeviceFeatures::SRGBSwapchain), true);
     EXPECT_EQ(iglDev_->hasFeature(DeviceFeatures::SRGBWriteControl), false);
 
     if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {

@@ -621,6 +621,8 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     return false;
   case DeviceFeatures::SRGB:
     return true;
+  case DeviceFeatures::SRGBSwapchain:
+    return true;
   // on Metal and Vulkan, the framebuffer pixel format dictates sRGB control.
   case DeviceFeatures::SRGBWriteControl:
     return false;
