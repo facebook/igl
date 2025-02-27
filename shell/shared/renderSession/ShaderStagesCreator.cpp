@@ -10,7 +10,7 @@
 namespace igl::shell {
 
 namespace {
-const char* getEntryPointName(igl::ShaderStage stage, igl::BackendType backendType) {
+const char* getEntryPointName(ShaderStage stage, BackendType backendType) {
   switch (backendType) {
   case igl::BackendType::Metal:
     switch (stage) {
@@ -28,16 +28,16 @@ const char* getEntryPointName(igl::ShaderStage stage, igl::BackendType backendTy
   }
 }
 
-igl::ShaderModuleInfo getShaderModuleInfo(igl::ShaderStage stage, igl::BackendType backendType) {
+ShaderModuleInfo getShaderModuleInfo(ShaderStage stage, BackendType backendType) {
   return {stage, getEntryPointName(stage, backendType)};
 }
 } // namespace
 
-std::unique_ptr<igl::IShaderStages> createRenderPipelineStages(
+std::unique_ptr<IShaderStages> createRenderPipelineStages(
     const igl::IDevice& device,
     const IShaderProvider& vertShaderProvider,
     const IShaderProvider& fragShaderProvider) {
-  igl::Result result;
+  Result result;
   auto backend = device.getBackendType();
   if (backend == igl::BackendType::Vulkan) {
     auto vertWords = vertShaderProvider.getShaderBinary(device);
@@ -76,10 +76,10 @@ std::unique_ptr<igl::IShaderStages> createRenderPipelineStages(
   }
 }
 
-std::unique_ptr<igl::IShaderStages> createComputePipelineStages(
+std::unique_ptr<IShaderStages> createComputePipelineStages(
     const igl::IDevice& device,
     const IShaderProvider& compShaderProvider) {
-  igl::Result result;
+  Result result;
   auto backend = device.getBackendType();
   if (backend == igl::BackendType::Vulkan) {
     auto compWords = compShaderProvider.getShaderBinary(device);

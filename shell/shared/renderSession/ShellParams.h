@@ -28,7 +28,7 @@ struct ShellParams {
   glm::ivec2 nativeSurfaceDimensions = glm::ivec2(2048, 1536);
   float viewportScale = 1.f;
   bool shouldPresent = true;
-  std::optional<igl::Color> clearColorValue = {};
+  std::optional<Color> clearColorValue = {};
   std::array<HandMesh, 2> handMeshes = {};
   std::array<HandTracking, 2> handTracking = {};
 };

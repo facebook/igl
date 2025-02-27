@@ -14,7 +14,7 @@ namespace igl::shell {
 class RenderSession;
 class Platform;
 
-using RenderSessionLoader = std::function<std::unique_ptr<igl::shell::RenderSession>(
-    std::shared_ptr<igl::shell::Platform>)>;
+using RenderSessionLoader =
+    std::function<std::unique_ptr<RenderSession>(std::shared_ptr<Platform>)>;
 
 } // namespace igl::shell

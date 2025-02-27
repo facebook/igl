@@ -25,10 +25,10 @@ struct QuadLayerInfo {
   LayerBlendMode blendMode = LayerBlendMode::Opaque;
   uint32_t imageWidth = 1024;
   uint32_t imageHeight = 1024;
-  igl::BlendFactor customSrcRGBBlendFactor = igl::BlendFactor::One;
-  igl::BlendFactor customSrcAlphaBlendFactor = igl::BlendFactor::One;
-  igl::BlendFactor customDstRGBBlendFactor = igl::BlendFactor::Zero;
-  igl::BlendFactor customDstAlphaBlendFactor = igl::BlendFactor::Zero;
+  BlendFactor customSrcRGBBlendFactor = igl::BlendFactor::One;
+  BlendFactor customSrcAlphaBlendFactor = igl::BlendFactor::One;
+  BlendFactor customDstRGBBlendFactor = igl::BlendFactor::Zero;
+  BlendFactor customDstAlphaBlendFactor = igl::BlendFactor::Zero;
 };
 
 struct QuadLayerParams {

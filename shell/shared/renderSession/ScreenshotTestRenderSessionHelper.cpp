@@ -21,7 +21,7 @@ void SaveFrameBufferToPng(const char* absoluteFilename,
   const int bytesPerPixel = 4;
   const auto rangeDesc =
       TextureRangeDesc::new2D(0, 0, frameBuffersize.width, frameBuffersize.height);
-  igl::shell::ImageData imageData;
+  ImageData imageData;
   imageData.desc.format = drawableSurface->getFormat();
   imageData.desc.width = frameBuffersize.width;
   imageData.desc.height = frameBuffersize.height;

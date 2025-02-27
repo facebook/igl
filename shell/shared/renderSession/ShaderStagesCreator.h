@@ -13,12 +13,12 @@
 #include <shell/shared/renderSession/ShaderProvider.h>
 
 namespace igl::shell {
-std::unique_ptr<igl::IShaderStages> createRenderPipelineStages(
+std::unique_ptr<IShaderStages> createRenderPipelineStages(
     const igl::IDevice& device,
     const IShaderProvider& vertShaderProvider,
     const IShaderProvider& fragShaderProvider);
 
-std::unique_ptr<igl::IShaderStages> createComputePipelineStages(
+std::unique_ptr<IShaderStages> createComputePipelineStages(
     const igl::IDevice& device,
     const IShaderProvider& compShaderProvider);
 } // namespace igl::shell
