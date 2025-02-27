@@ -21,7 +21,7 @@ class TQMultiRenderPassSession : public RenderSession {
   explicit TQMultiRenderPassSession(std::shared_ptr<Platform> platform) :
     RenderSession(std::move(platform)) {}
   void initialize() noexcept override;
-  void update(igl::SurfaceTextures surfaceTextures) noexcept override;
+  void update(SurfaceTextures surfaceTextures) noexcept override;
 
  private:
   std::shared_ptr<IDevice> device_;
@@ -33,7 +33,7 @@ class TQMultiRenderPassSession : public RenderSession {
   std::shared_ptr<ISamplerState> samplerState_;
 
   FragmentFormat fragmentParameters_{};
-  std::vector<igl::UniformDesc> fragmentUniformDescriptors_;
+  std::vector<UniformDesc> fragmentUniformDescriptors_;
 
   std::shared_ptr<IBuffer> fragmentParamBuffer_;
   std::shared_ptr<IBuffer> vb0_;

@@ -154,7 +154,7 @@ std::string getVulkanFragmentShaderSource() {
 
 // @fb-only
 
-std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
+std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
     IGL_DEBUG_ASSERT_NOT_REACHED();
@@ -243,7 +243,7 @@ void ColorSession::initialize() noexcept {
   } else if (colorTestModes_ == ColorTestModes::eOrangeClear) {
     tex0_ = getPlatform().loadTexture(igl::shell::ImageLoader::white());
     setPreferredClearColor(
-        igl::Color{kLinearOrangeColor.x, kLinearOrangeColor.y, kLinearOrangeColor.z, 1.0f});
+        Color{kLinearOrangeColor.x, kLinearOrangeColor.y, kLinearOrangeColor.z, 1.0f});
   }
 
   shaderStages_ = getShaderStagesForBackend(device);
@@ -278,10 +278,10 @@ void ColorSession::initialize() noexcept {
   IGL_DEBUG_ASSERT(fragmentParamBuffer_ != nullptr);
 }
 
-void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
-  igl::Result ret;
+void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
+  Result ret;
   if (framebuffer_ == nullptr) {
-    igl::FramebufferDesc framebufferDesc;
+    FramebufferDesc framebufferDesc;
     framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
     framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
     framebufferDesc.mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
@@ -352,7 +352,7 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   fragmentParamBuffer_->upload(&fragmentParameters_, {sizeof(fragmentParameters_)});
 
   // Submit commands
-  const std::shared_ptr<igl::IRenderCommandEncoder> commands =
+  const std::shared_ptr<IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_DEBUG_ASSERT(commands != nullptr);
   if (commands) {

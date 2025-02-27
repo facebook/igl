@@ -105,7 +105,7 @@ static std::string getOpenGLFragmentShaderSource() {
                 })";
 }
 
-static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
+static std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
     IGL_DEBUG_ASSERT_NOT_REACHED();
@@ -141,12 +141,12 @@ static void render(std::shared_ptr<ICommandBuffer>& buffer,
                    std::shared_ptr<ISamplerState>& samplerState,
                    std::shared_ptr<IBuffer>& ib,
                    size_t textureUnit_,
-                   igl::BackendType& backend,
+                   BackendType& backend,
                    std::shared_ptr<IBuffer>& fragmentParamBuffer,
-                   std::vector<igl::UniformDesc>& fragmentUniformDescriptors,
+                   std::vector<UniformDesc>& fragmentUniformDescriptors,
                    FragmentFormat fragmentParameters) {
   // Submit commands
-  const std::shared_ptr<igl::IRenderCommandEncoder> commands =
+  const std::shared_ptr<IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass, framebuffer);
 
   commands->bindRenderPipelineState(pipelineState);
@@ -230,8 +230,8 @@ void TQMultiRenderPassSession::initialize() noexcept {
   fragmentParamBuffer_ = device.createBuffer(fpDesc, nullptr);
 }
 
-void TQMultiRenderPassSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
-  igl::Result ret;
+void TQMultiRenderPassSession::update(SurfaceTextures surfaceTextures) noexcept {
+  Result ret;
   if (framebuffer0_ == nullptr) {
     const auto dimensions = surfaceTextures.color->getDimensions();
     const igl::TextureDesc desc1 =
@@ -242,13 +242,13 @@ void TQMultiRenderPassSession::update(igl::SurfaceTextures surfaceTextures) noex
                                     igl::TextureDesc::TextureUsageBits::Attachment);
     tex1_ = getPlatform().getDevice().createTexture(desc1, nullptr);
 
-    igl::FramebufferDesc framebufferDesc;
+    FramebufferDesc framebufferDesc;
     framebufferDesc.colorAttachments[0].texture = tex1_;
 
-    igl::TextureDesc desc = igl::TextureDesc::new2D(igl::TextureFormat::Z_UNorm24,
-                                                    dimensions.width,
-                                                    dimensions.height,
-                                                    igl::TextureDesc::TextureUsageBits::Attachment);
+    TextureDesc desc = igl::TextureDesc::new2D(igl::TextureFormat::Z_UNorm24,
+                                               dimensions.width,
+                                               dimensions.height,
+                                               igl::TextureDesc::TextureUsageBits::Attachment);
     desc.storage = igl::ResourceStorage::Private;
     framebufferDesc.depthAttachment.texture = getPlatform().getDevice().createTexture(desc, &ret);
 
@@ -258,7 +258,7 @@ void TQMultiRenderPassSession::update(igl::SurfaceTextures surfaceTextures) noex
   }
 
   if (framebuffer1_ == nullptr) {
-    igl::FramebufferDesc framebufferDesc;
+    FramebufferDesc framebufferDesc;
     framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
     framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
 
@@ -309,7 +309,7 @@ void TQMultiRenderPassSession::update(igl::SurfaceTextures surfaceTextures) noex
     fragmentUniformDescriptors_.back().offset = offsetof(FragmentFormat, color);
   }
 
-  igl::BackendType backendType = getPlatform().getDevice().getBackendType();
+  BackendType backendType = getPlatform().getDevice().getBackendType();
 
   // Draw render pass 0
   render(buffer,

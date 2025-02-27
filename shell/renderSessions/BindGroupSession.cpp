@@ -239,12 +239,12 @@ void BindGroupSession::createSamplerAndTextures(const igl::IDevice& device) {
 
   {
     auto imageData = getPlatform().getImageLoader().loadImageData("igl.png");
-    igl::TextureDesc desc = igl::TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
-                                                    imageData.desc.width,
-                                                    imageData.desc.height,
-                                                    igl::TextureDesc::TextureUsageBits::Sampled |
-                                                        TextureDesc::TextureUsageBits::Storage,
-                                                    "igl.png");
+    TextureDesc desc = igl::TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
+                                               imageData.desc.width,
+                                               imageData.desc.height,
+                                               igl::TextureDesc::TextureUsageBits::Sampled |
+                                                   TextureDesc::TextureUsageBits::Storage,
+                                               "igl.png");
     desc.numMipLevels =
         igl::TextureDesc::calcNumMipLevels(imageData.desc.width, imageData.desc.height);
     tex0 = device.createTexture(desc, nullptr);
@@ -255,11 +255,11 @@ void BindGroupSession::createSamplerAndTextures(const igl::IDevice& device) {
   {
     const uint32_t texWidth = 256;
     const uint32_t texHeight = 256;
-    igl::TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::BGRA_UNorm8,
-                                               texWidth,
-                                               texHeight,
-                                               TextureDesc::TextureUsageBits::Sampled,
-                                               "XOR pattern");
+    TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::BGRA_UNorm8,
+                                          texWidth,
+                                          texHeight,
+                                          TextureDesc::TextureUsageBits::Sampled,
+                                          "XOR pattern");
     desc.numMipLevels = igl::TextureDesc::calcNumMipLevels(texWidth, texHeight);
     tex1 = getPlatform().getDevice().createTexture(desc, nullptr);
     std::vector<uint32_t> pixels(static_cast<size_t>(texWidth * texHeight));
@@ -333,7 +333,7 @@ void BindGroupSession::initialize() noexcept {
   renderPass_.depthAttachment.clearDepth = 1.0;
 }
 
-void BindGroupSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
+void BindGroupSession::update(SurfaceTextures surfaceTextures) noexcept {
   auto& device = getPlatform().getDevice();
 
   const float deltaSeconds = getDeltaSeconds();
@@ -349,7 +349,7 @@ void BindGroupSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
       glm::rotate(glm::mat4(1.0f), -0.2f, glm::vec3(1.0f, 0.0f, 0.0f)) *
       glm::rotate(glm::mat4(1.0f), glm::radians(angle_), glm::vec3(0.0f, 1.0f, 0.0f));
 
-  igl::Result ret;
+  Result ret;
   if (framebuffer_ == nullptr) {
     framebufferDesc_.colorAttachments[0].texture = surfaceTextures.color;
     framebufferDesc_.depthAttachment.texture = surfaceTextures.depth;
@@ -379,14 +379,14 @@ void BindGroupSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
-  const std::shared_ptr<igl::IRenderCommandEncoder> commands =
+  const std::shared_ptr<IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
   // Bind Vertex Uniform Data
   iglu::ManagedUniformBufferInfo info;
   info.index = 1;
   info.length = sizeof(VertexFormat);
-  info.uniforms = std::vector<igl::UniformDesc>{igl::UniformDesc{
+  info.uniforms = std::vector<UniformDesc>{UniformDesc{
       "mvpMatrix", -1, igl::UniformType::Mat4x4, 1, offsetof(VertexFormat, mvpMatrix), 0}};
 
   const std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer =

@@ -90,7 +90,7 @@ std::string getVulkanFragmentShaderSource() {
                 )";
 }
 
-std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
+std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   // @fb-only
   case igl::BackendType::Invalid:
@@ -156,30 +156,28 @@ void YUVColorSession::initialize() noexcept {
 
   // Samplers & Textures
 
-  auto createYUVDemo = [this](igl::IDevice& device,
-                              const char* demoName,
-                              igl::TextureFormat yuvFormat,
-                              const char* fileName) {
-    const uint32_t width = 1920;
-    const uint32_t height = 1080;
+  auto createYUVDemo =
+      [this](IDevice& device, const char* demoName, TextureFormat yuvFormat, const char* fileName) {
+        const uint32_t width = 1920;
+        const uint32_t height = 1080;
 
-    auto sampler =
-        device.createSamplerState(SamplerStateDesc::newYUV(yuvFormat, "YUVSampler"), nullptr);
-    IGL_DEBUG_ASSERT(sampler != nullptr);
+        auto sampler =
+            device.createSamplerState(SamplerStateDesc::newYUV(yuvFormat, "YUVSampler"), nullptr);
+        IGL_DEBUG_ASSERT(sampler != nullptr);
 
-    auto& fileLoader = getPlatform().getFileLoader();
-    const auto fileData = fileLoader.loadBinaryData(fileName);
-    IGL_DEBUG_ASSERT(fileData.data && fileData.length, "Cannot load texture file");
+        auto& fileLoader = getPlatform().getFileLoader();
+        const auto fileData = fileLoader.loadBinaryData(fileName);
+        IGL_DEBUG_ASSERT(fileData.data && fileData.length, "Cannot load texture file");
 
-    const igl::TextureDesc textureDesc = igl::TextureDesc::new2D(
-        yuvFormat, width, height, TextureDesc::TextureUsageBits::Sampled, "YUV texture");
-    IGL_DEBUG_ASSERT(width * height + width * height / 2 == fileData.length);
-    auto texture = device.createTexture(textureDesc, nullptr);
-    IGL_DEBUG_ASSERT(texture);
-    texture->upload(TextureRangeDesc{0, 0, 0, width, height}, fileData.data.get());
+        const igl::TextureDesc textureDesc = igl::TextureDesc::new2D(
+            yuvFormat, width, height, TextureDesc::TextureUsageBits::Sampled, "YUV texture");
+        IGL_DEBUG_ASSERT(width * height + width * height / 2 == fileData.length);
+        auto texture = device.createTexture(textureDesc, nullptr);
+        IGL_DEBUG_ASSERT(texture);
+        texture->upload(TextureRangeDesc{0, 0, 0, width, height}, fileData.data.get());
 
-    this->yuvFormatDemos_.push_back(YUVFormatDemo{demoName, sampler, texture, nullptr});
-  };
+        this->yuvFormatDemos_.push_back(YUVFormatDemo{demoName, sampler, texture, nullptr});
+      };
 
   createYUVDemo(device, "YUV 420p", igl::TextureFormat::YUV_420p, "output_frame_900.420p.yuv");
   createYUVDemo(device, "YUV NV12", igl::TextureFormat::YUV_NV12, "output_frame_900.nv12.yuv");
@@ -200,8 +198,8 @@ void YUVColorSession::initialize() noexcept {
   renderPass_.depthAttachment.clearDepth = 1.0;
 }
 
-void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
-  igl::Result ret;
+void YUVColorSession::update(SurfaceTextures surfaceTextures) noexcept {
+  Result ret;
   framebufferDesc_.colorAttachments[0].texture = surfaceTextures.color;
   if (framebuffer_ == nullptr) {
     IGL_DEBUG_ASSERT(ret.isOk());
@@ -243,7 +241,7 @@ void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   framebuffer_->updateDrawable(drawableSurface);
 
   // Submit commands
-  const std::shared_ptr<igl::IRenderCommandEncoder> commands =
+  const std::shared_ptr<IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_DEBUG_ASSERT(commands != nullptr);
   if (commands) {

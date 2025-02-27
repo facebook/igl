@@ -30,11 +30,11 @@ void BasicFramebufferSession::initialize() noexcept {
   renderPass_.colorAttachments[0].clearColor = getPreferredClearColor();
 }
 
-void BasicFramebufferSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
-  igl::Result ret;
+void BasicFramebufferSession::update(SurfaceTextures surfaceTextures) noexcept {
+  Result ret;
   // Create/update framebuffer
   if (framebuffer_ == nullptr) {
-    igl::FramebufferDesc framebufferDesc;
+    FramebufferDesc framebufferDesc;
     framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
     framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
     IGL_DEBUG_ASSERT(ret.isOk());

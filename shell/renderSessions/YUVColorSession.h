@@ -23,7 +23,7 @@ class YUVColorSession : public RenderSession {
   // clang-tidy off
   void initialize() noexcept override;
   // clang-tidy on
-  void update(igl::SurfaceTextures surfaceTextures) noexcept override;
+  void update(SurfaceTextures surfaceTextures) noexcept override;
 
   void nextFormatDemo();
 
@@ -35,7 +35,7 @@ class YUVColorSession : public RenderSession {
   std::shared_ptr<IBuffer> ib0_;
   std::shared_ptr<ITexture> depthTexture_;
   RenderPassDesc renderPass_;
-  igl::FramebufferDesc framebufferDesc_;
+  FramebufferDesc framebufferDesc_;
   std::unique_ptr<iglu::imgui::Session> imguiSession_;
 
   struct YUVFormatDemo {
@@ -48,7 +48,7 @@ class YUVColorSession : public RenderSession {
   std::vector<YUVFormatDemo> yuvFormatDemos_;
   size_t currentDemo_ = 0;
 
-  struct Listener : public igl::shell::IMouseListener, igl::shell::IKeyListener {
+  struct Listener : public IMouseListener, IKeyListener {
     explicit Listener(YUVColorSession& session) : session(session) {}
     bool process(const MouseButtonEvent& event) override;
     bool process(const MouseMotionEvent& event) override;

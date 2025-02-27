@@ -21,7 +21,7 @@ class TinyMeshBindGroupSession : public RenderSession {
  public:
   explicit TinyMeshBindGroupSession(std::shared_ptr<Platform> platform);
   void initialize() noexcept override;
-  void update(igl::SurfaceTextures surfaceTextures) noexcept override;
+  void update(SurfaceTextures surfaceTextures) noexcept override;
   std::shared_ptr<ITexture> getVulkanNativeDepth();
   void createRenderPipeline();
 
@@ -37,15 +37,15 @@ class TinyMeshBindGroupSession : public RenderSession {
   std::shared_ptr<IVertexInputState> vertexInput0_;
   std::shared_ptr<IDepthStencilState> depthStencilState_;
   std::shared_ptr<ITexture> texture0_, texture1_;
-  std::shared_ptr<igl::ISamplerState> sampler_;
-  igl::Holder<igl::BindGroupTextureHandle> bindGroupTextures_;
-  igl::Holder<igl::BindGroupTextureHandle> bindGroupNoTexture1_;
-  std::vector<igl::Holder<igl::BindGroupBufferHandle>> bindGroupBuffers_;
+  std::shared_ptr<ISamplerState> sampler_;
+  Holder<BindGroupTextureHandle> bindGroupTextures_;
+  Holder<BindGroupTextureHandle> bindGroupNoTexture1_;
+  std::vector<Holder<BindGroupBufferHandle>> bindGroupBuffers_;
   uint32_t frameIndex_{0};
 
   std::unique_ptr<iglu::imgui::Session> imguiSession_;
 
-  struct Listener : public igl::shell::IKeyListener {
+  struct Listener : public IKeyListener {
     explicit Listener(TinyMeshBindGroupSession& session) : session(session) {}
     bool process(const CharEvent& event) override;
     TinyMeshBindGroupSession& session;
@@ -53,7 +53,7 @@ class TinyMeshBindGroupSession : public RenderSession {
 
   std::shared_ptr<Listener> listener_;
 
-  igl::FPSCounter fps_;
+  FPSCounter fps_;
   double currentTime_ = 0;
 };
 

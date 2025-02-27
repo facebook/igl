@@ -20,12 +20,12 @@ class BasicFramebufferSession : public RenderSession {
   explicit BasicFramebufferSession(std::shared_ptr<Platform> platform) :
     RenderSession(std::move(platform)) {}
   void initialize() noexcept override;
-  void update(igl::SurfaceTextures surfaceTextures) noexcept override;
+  void update(SurfaceTextures surfaceTextures) noexcept override;
 
  private:
-  std::shared_ptr<igl::IFramebuffer> framebuffer_;
-  std::shared_ptr<igl::ICommandQueue> commandQueue_;
-  igl::RenderPassDesc renderPass_;
+  std::shared_ptr<IFramebuffer> framebuffer_;
+  std::shared_ptr<ICommandQueue> commandQueue_;
+  RenderPassDesc renderPass_;
 };
 
 } // namespace igl::shell

@@ -32,7 +32,7 @@ class GPUStressSession : public RenderSession {
   explicit GPUStressSession(std::shared_ptr<Platform> platform) :
     RenderSession(std::move(platform)), fps_(false) {}
   void initialize() noexcept override;
-  void update(igl::SurfaceTextures surfaceTextures) noexcept override;
+  void update(SurfaceTextures surfaceTextures) noexcept override;
   void setNumLayers(size_t numLayers);
 
   void setNumThreads(int numThreads);
@@ -94,12 +94,12 @@ class GPUStressSession : public RenderSession {
   void setProjectionMatrix(float aspectRatio);
 
   void drawCubes(const igl::SurfaceTextures& surfaceTextures,
-                 std::shared_ptr<igl::IRenderCommandEncoder> commands);
+                 std::shared_ptr<IRenderCommandEncoder> commands);
   void initState(const igl::SurfaceTextures& surfaceTextures);
   void createCubes();
   void initSystemSettings();
 
-  igl::FPSCounter fps_;
+  FPSCounter fps_;
   std::atomic<bool> forceReset_{false};
 };
 

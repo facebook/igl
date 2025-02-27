@@ -24,7 +24,7 @@ class TQSession : public RenderSession {
  public:
   explicit TQSession(std::shared_ptr<Platform> platform) : RenderSession(std::move(platform)) {}
   void initialize() noexcept override;
-  void update(igl::SurfaceTextures surfaceTextures) noexcept override;
+  void update(SurfaceTextures surfaceTextures) noexcept override;
 
   void setUVScale(float uvScale) noexcept {
     uvScale_ = uvScale;

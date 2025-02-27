@@ -27,7 +27,7 @@ class ColorSession : public RenderSession {
   // clang-tidy off
   void initialize() noexcept override;
   // clang-tidy on
-  void update(igl::SurfaceTextures surfaceTextures) noexcept override;
+  void update(SurfaceTextures surfaceTextures) noexcept override;
 
   enum class ColorTestModes {
     eMacbethTexture,

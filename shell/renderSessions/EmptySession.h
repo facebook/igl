@@ -18,7 +18,7 @@ class EmptySession : public RenderSession {
  public:
   explicit EmptySession(std::shared_ptr<Platform> platform) : RenderSession(std::move(platform)) {}
   void initialize() noexcept override;
-  void update(igl::SurfaceTextures surfaceTextures) noexcept override;
+  void update(SurfaceTextures surfaceTextures) noexcept override;
 
  private:
 };

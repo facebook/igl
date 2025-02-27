@@ -15,6 +15,6 @@ void EmptySession::initialize() noexcept {
   getPlatform().getDevice();
 }
 
-void EmptySession::update(igl::SurfaceTextures surfaceTextures) noexcept {}
+void EmptySession::update(SurfaceTextures surfaceTextures) noexcept {}
 
 } // namespace igl::shell

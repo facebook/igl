@@ -43,7 +43,7 @@ static VertexPosUvw vertexData0[] = {
 static uint16_t indexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
                                5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7};
 
-static std::string getProlog(igl::IDevice& device) {
+static std::string getProlog(IDevice& device) {
 #if IGL_BACKEND_OPENGL
   const auto shaderVersion = device.getShaderVersion();
   if (shaderVersion.majorVersion >= 3 || shaderVersion.minorVersion >= 30) {
@@ -100,7 +100,7 @@ static std::string getMetalShaderSource() {
         )";
 }
 
-static std::string getOpenGLFragmentShaderSource(igl::IDevice& device) {
+static std::string getOpenGLFragmentShaderSource(IDevice& device) {
   return getProlog(device) + std::string(R"(
                       precision highp float; precision highp sampler3D;
                       in vec3 uvw;
@@ -111,7 +111,7 @@ static std::string getOpenGLFragmentShaderSource(igl::IDevice& device) {
                       })");
 }
 
-static std::string getOpenGLVertexShaderSource(igl::IDevice& device) {
+static std::string getOpenGLVertexShaderSource(IDevice& device) {
   return getProlog(device) + R"(
                       precision highp float;
                       uniform mat4 mvpMatrix;
@@ -158,7 +158,7 @@ static const char* getVulkanVertexShaderSource() {
                       })";
 }
 
-static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
+static std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
     IGL_DEBUG_ASSERT_NOT_REACHED();
@@ -259,11 +259,11 @@ void Textured3DCubeSession::createSamplerAndTextures(const igl::IDevice& device)
     }
   }
 
-  igl::TextureDesc texDesc = igl::TextureDesc::new3D(igl::TextureFormat::RGBA_UNorm8,
-                                                     width,
-                                                     height,
-                                                     depth,
-                                                     igl::TextureDesc::TextureUsageBits::Sampled);
+  TextureDesc texDesc = igl::TextureDesc::new3D(igl::TextureFormat::RGBA_UNorm8,
+                                                width,
+                                                height,
+                                                depth,
+                                                igl::TextureDesc::TextureUsageBits::Sampled);
   texDesc.debugName = "shell/renderSessions/Textured3DCubeSession.cpp:tex0_";
   tex0_ = getPlatform().getDevice().createTexture(texDesc, nullptr);
   const auto range = igl::TextureRangeDesc::new3D(0, 0, 0, width, height, depth);
@@ -339,7 +339,7 @@ void Textured3DCubeSession::setVertexParams(float aspectRatio) {
   vertexParameters_.scaleZ = scaleZ;
 }
 
-void Textured3DCubeSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
+void Textured3DCubeSession::update(SurfaceTextures surfaceTextures) noexcept {
   auto& device = getPlatform().getDevice();
   if (!isDeviceCompatible(device)) {
     return;
@@ -348,9 +348,9 @@ void Textured3DCubeSession::update(igl::SurfaceTextures surfaceTextures) noexcep
   // cube animation
   setVertexParams(surfaceTextures.color->getAspectRatio());
 
-  igl::Result ret;
+  Result ret;
   if (framebuffer_ == nullptr) {
-    igl::FramebufferDesc framebufferDesc;
+    FramebufferDesc framebufferDesc;
     framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
     framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
 
@@ -383,7 +383,7 @@ void Textured3DCubeSession::update(igl::SurfaceTextures surfaceTextures) noexcep
   const CommandBufferDesc cbDesc;
   auto buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
 
-  const std::shared_ptr<igl::IRenderCommandEncoder> commands =
+  const std::shared_ptr<IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
   commands->bindVertexBuffer(0, *vb0_);
@@ -392,22 +392,22 @@ void Textured3DCubeSession::update(igl::SurfaceTextures surfaceTextures) noexcep
   iglu::ManagedUniformBufferInfo info;
   info.index = 1;
   info.length = sizeof(VertexFormat);
-  info.uniforms = std::vector<igl::UniformDesc>{igl::UniformDesc{
-                                                    "mvpMatrix",
-                                                    -1,
-                                                    igl::UniformType::Mat4x4,
-                                                    1,
-                                                    offsetof(VertexFormat, mvpMatrix),
-                                                    0,
-                                                },
-                                                igl::UniformDesc{
-                                                    "scaleZ",
-                                                    -1,
-                                                    igl::UniformType::Float,
-                                                    1,
-                                                    offsetof(VertexFormat, scaleZ),
-                                                    0,
-                                                }};
+  info.uniforms = std::vector<UniformDesc>{UniformDesc{
+                                               "mvpMatrix",
+                                               -1,
+                                               igl::UniformType::Mat4x4,
+                                               1,
+                                               offsetof(VertexFormat, mvpMatrix),
+                                               0,
+                                           },
+                                           UniformDesc{
+                                               "scaleZ",
+                                               -1,
+                                               igl::UniformType::Float,
+                                               1,
+                                               offsetof(VertexFormat, scaleZ),
+                                               0,
+                                           }};
 
   const std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer =
       std::make_shared<iglu::ManagedUniformBuffer>(device, info);

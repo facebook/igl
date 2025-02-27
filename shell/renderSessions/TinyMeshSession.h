@@ -21,7 +21,7 @@ class TinyMeshSession : public RenderSession {
  public:
   explicit TinyMeshSession(std::shared_ptr<Platform> platform);
   void initialize() noexcept override;
-  void update(igl::SurfaceTextures surfaceTextures) noexcept override;
+  void update(SurfaceTextures surfaceTextures) noexcept override;
   std::shared_ptr<ITexture> getVulkanNativeDepth();
 
  private:
@@ -41,7 +41,7 @@ class TinyMeshSession : public RenderSession {
 
   std::unique_ptr<iglu::imgui::Session> imguiSession_;
 
-  struct Listener : public igl::shell::IKeyListener {
+  struct Listener : public IKeyListener {
     explicit Listener(TinyMeshSession& session) : session(session) {}
     bool process(const KeyEvent& event) override {
       return false;
@@ -52,7 +52,7 @@ class TinyMeshSession : public RenderSession {
 
   std::shared_ptr<Listener> listener_;
 
-  igl::FPSCounter fps_;
+  FPSCounter fps_;
   double currentTime_ = 0;
 };
 

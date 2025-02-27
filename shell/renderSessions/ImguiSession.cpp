@@ -26,12 +26,12 @@ void ImguiSession::initialize() noexcept {
   }
 }
 
-void ImguiSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
+void ImguiSession::update(SurfaceTextures surfaceTextures) noexcept {
   const igl::DeviceScope deviceScope(getPlatform().getDevice());
 
-  auto cmdBuffer = _commandQueue->createCommandBuffer(igl::CommandBufferDesc(), nullptr);
+  auto cmdBuffer = _commandQueue->createCommandBuffer(CommandBufferDesc(), nullptr);
 
-  igl::FramebufferDesc framebufferDesc;
+  FramebufferDesc framebufferDesc;
   framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
   if (_outputFramebuffer) {
     _outputFramebuffer->updateDrawable(surfaceTextures.color);
@@ -39,7 +39,7 @@ void ImguiSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     _outputFramebuffer = getPlatform().getDevice().createFramebuffer(framebufferDesc, nullptr);
   }
 
-  igl::RenderPassDesc renderPassDesc;
+  RenderPassDesc renderPassDesc;
   renderPassDesc.colorAttachments.resize(1);
   renderPassDesc.colorAttachments[0].loadAction = igl::LoadAction::Clear;
   renderPassDesc.colorAttachments[0].storeAction = igl::StoreAction::Store;
