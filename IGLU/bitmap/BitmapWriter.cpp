@@ -41,7 +41,7 @@ struct BufferOffsets {
   size_t b;
 };
 
-BufferOffsets getBufferOffsets(igl::TextureFormat format) {
+BufferOffsets getBufferOffsets(TextureFormat format) {
   switch (format) {
   case igl::TextureFormat::RGBA_UNorm8:
   case igl::TextureFormat::RGBX_UNorm8:
@@ -62,7 +62,7 @@ BufferOffsets getBufferOffsets(igl::TextureFormat format) {
 
 } // namespace
 
-bool isSupportedBitmapTextureFormat(igl::TextureFormat format) {
+bool isSupportedBitmapTextureFormat(TextureFormat format) {
   switch (format) {
   case igl::TextureFormat::RGBA_UNorm8:
   case igl::TextureFormat::RGBX_UNorm8:
@@ -77,8 +77,8 @@ bool isSupportedBitmapTextureFormat(igl::TextureFormat format) {
 }
 
 void writeBitmap(std::ostream& stream,
-                 std::shared_ptr<igl::ITexture> texture,
-                 igl::IDevice& device,
+                 std::shared_ptr<ITexture> texture,
+                 IDevice& device,
                  bool flipY) {
   IGL_DEBUG_ASSERT(texture);
   IGL_DEBUG_ASSERT(texture->getType() == igl::TextureType::TwoD);
@@ -89,7 +89,7 @@ void writeBitmap(std::ostream& stream,
           device.getBackendType(), texture, device);
 
   const igl::CommandQueueDesc desc{};
-  igl::Result result;
+  Result result;
   const auto commandQueue = device.createCommandQueue(desc, &result);
   if (!IGL_DEBUG_VERIFY(result.isOk()) || !IGL_DEBUG_VERIFY(commandQueue)) {
     return;

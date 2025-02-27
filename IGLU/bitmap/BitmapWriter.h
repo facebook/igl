@@ -13,12 +13,12 @@
 namespace igl::iglu {
 
 // Check if a texture format is supported by the bitmap writer
-bool isSupportedBitmapTextureFormat(igl::TextureFormat format);
+bool isSupportedBitmapTextureFormat(TextureFormat format);
 
 // Write the contents of a texture to a bitmap file
 void writeBitmap(std::ostream& stream,
-                 std::shared_ptr<igl::ITexture> texture,
-                 igl::IDevice& device,
+                 std::shared_ptr<ITexture> texture,
+                 IDevice& device,
                  bool flipY = false);
 
 void writeBitmap(std::ostream& stream, const uint8_t* imageData, uint32_t width, uint32_t height);
