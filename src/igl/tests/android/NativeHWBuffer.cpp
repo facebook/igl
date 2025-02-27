@@ -38,7 +38,7 @@ class NativeHWBufferTest : public ::testing::Test {
 
 class NativeHWTextureBufferTest : public igl::android::INativeHWTextureBuffer {
  protected:
-  Result createTextureInternal(const TextureDesc& desc, AHardwareBuffer* buffer) override {
+  Result createTextureInternal(AHardwareBuffer* buffer) override {
     return Result();
   }
 };
