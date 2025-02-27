@@ -77,7 +77,7 @@ NetServiceExtensionApple::~NetServiceExtensionApple() {
   netServiceBrowserDelegate_ = nil;
 }
 
-bool NetServiceExtensionApple::initialize(igl::shell::Platform& /*platform*/) noexcept {
+bool NetServiceExtensionApple::initialize(Platform& /*platform*/) noexcept {
   if (!netServiceBrowser_) {
     netServiceBrowser_ = [[NSNetServiceBrowser alloc] init];
     netServiceBrowserDelegate_ =

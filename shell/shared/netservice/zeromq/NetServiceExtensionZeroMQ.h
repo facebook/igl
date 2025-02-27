@@ -17,7 +17,7 @@ class NetServiceExtensionZeroMQ final : public NetServiceExtension {
   NetServiceExtensionZeroMQ() = default;
   ~NetServiceExtensionZeroMQ() override = default;
 
-  bool initialize(igl::shell::Platform& platform) noexcept override;
+  bool initialize(Platform& platform) noexcept override;
 
   [[nodiscard]] std::unique_ptr<NetService> create(std::string_view domain,
                                                    std::string_view type,

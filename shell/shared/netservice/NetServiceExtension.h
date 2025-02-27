@@ -14,7 +14,7 @@
 
 namespace igl::shell::netservice {
 
-class NetServiceExtension : public igl::shell::Extension {
+class NetServiceExtension : public Extension {
  public:
   static const char* Name() noexcept;
 
