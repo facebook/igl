@@ -19,10 +19,9 @@
 #define COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m 0x7FA30C04
 #endif
 
+#include <android/hardware_buffer.h>
 #include <igl/Texture.h>
 #include <igl/TextureFormat.h>
-
-struct AHardwareBuffer;
 
 namespace igl::android {
 
@@ -47,7 +46,12 @@ class INativeHWTextureBuffer {
     size_t stride = 0;
   };
 
-  virtual ~INativeHWTextureBuffer();
+  virtual ~INativeHWTextureBuffer() {
+    if (hwBuffer_ != nullptr) {
+      AHardwareBuffer_release(hwBuffer_);
+      hwBuffer_ = nullptr;
+    }
+  }
 
   Result createWithHWBuffer(AHardwareBuffer* buffer);
 

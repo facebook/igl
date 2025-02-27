@@ -9,8 +9,6 @@
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
-#include <android/hardware_buffer.h>
-
 namespace igl::android {
 
 uint32_t getNativeHWFormat(TextureFormat iglFormat) {
@@ -177,12 +175,6 @@ INativeHWTextureBuffer::LockGuard::LockGuard(INativeHWTextureBuffer::LockGuard&&
   g.hwBufferOwner_ = nullptr;
 }
 
-INativeHWTextureBuffer::~INativeHWTextureBuffer() {
-  if (hwBuffer_ != nullptr) {
-    AHardwareBuffer_release(hwBuffer_);
-    hwBuffer_ = nullptr;
-  }
-}
 Result INativeHWTextureBuffer::createWithHWBuffer(AHardwareBuffer* buffer) {
   if (hwBuffer_) {
     return Result{Result::Code::InvalidOperation, "Hardware buffer already provided"};
