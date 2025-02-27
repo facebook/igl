@@ -79,9 +79,8 @@ ImageLoader::ImageLoader(FileLoader& fileLoader) :
   fileLoader_(fileLoader),
   factory_(std::make_unique<iglu::textureloader::TextureLoaderFactory>(createLoaderFactories())) {}
 
-ImageData ImageLoader::defaultLoadImageData(
-    const std::string& imageName,
-    std::optional<igl::TextureFormat> preferredFormat) noexcept {
+ImageData ImageLoader::defaultLoadImageData(const std::string& imageName,
+                                            std::optional<TextureFormat> preferredFormat) noexcept {
   const std::string fullName = fileLoader().fullPath(imageName);
 
   return loadImageDataFromFile(fullName, preferredFormat);
@@ -89,7 +88,7 @@ ImageData ImageLoader::defaultLoadImageData(
 
 ImageData ImageLoader::loadImageDataFromFile(
     const std::string& fileName,
-    std::optional<igl::TextureFormat> preferredFormat) noexcept {
+    std::optional<TextureFormat> preferredFormat) noexcept {
   auto [data, length] = fileLoader_.loadBinaryData(fileName);
   if (IGL_DEBUG_VERIFY(data && length > 0)) {
     return loadImageDataFromMemory(data.get(), length, preferredFormat);
@@ -101,7 +100,7 @@ ImageData ImageLoader::loadImageDataFromFile(
 ImageData ImageLoader::loadImageDataFromMemory(
     const uint8_t* data,
     uint32_t length,
-    std::optional<igl::TextureFormat> preferredFormat) noexcept {
+    std::optional<TextureFormat> preferredFormat) noexcept {
   if (IGL_DEBUG_VERIFY_NOT(data == nullptr)) {
     return {};
   }
