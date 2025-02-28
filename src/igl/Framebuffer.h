@@ -14,8 +14,6 @@
 
 namespace igl {
 
-class ICommandQueue;
-
 enum class FramebufferMode {
   Mono, // Default mode
   Stereo, // Single pass stereo rendering. In this mode, IGL assumes there are two layers for each
