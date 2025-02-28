@@ -15,10 +15,8 @@
 
 namespace igl {
 
-class IBuffer;
 class IComputePipelineState;
 class ISamplerState;
-class ITexture;
 
 /**
  * @brief Object for encoding commands in a compute pass
