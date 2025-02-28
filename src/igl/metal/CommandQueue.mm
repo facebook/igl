@@ -25,7 +25,7 @@ constexpr uint32_t kIGLMetalEndCommandBufferToCapture =
 
 namespace igl::metal {
 
-CommandQueue::CommandQueue(igl::metal::Device& device,
+CommandQueue::CommandQueue(Device& device,
                            id<MTLCommandQueue> value,
                            const std::shared_ptr<BufferSynchronizationManager>& syncManager,
                            DeviceStatistics& deviceStatistics) noexcept :
