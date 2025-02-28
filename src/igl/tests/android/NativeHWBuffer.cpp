@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/Config.h>
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 #include <android/hardware_buffer.h>
