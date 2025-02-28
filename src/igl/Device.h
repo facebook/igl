@@ -20,7 +20,6 @@ namespace igl {
 struct BindGroupBufferDesc;
 struct BindGroupTextureDesc;
 struct BufferDesc;
-struct CommandQueueDesc;
 struct ComputePipelineDesc;
 struct DepthStencilStateDesc;
 struct FramebufferDesc;
@@ -29,21 +28,17 @@ struct SamplerStateDesc;
 struct ShaderLibraryDesc;
 struct ShaderModuleDesc;
 struct ShaderStagesDesc;
-struct TextureDesc;
 struct VertexInputStateDesc;
 class IBuffer;
-class ICommandQueue;
 class ICommandBuffer;
 class IComputePipelineState;
 class IDepthStencilState;
-class IDevice;
 class IFramebuffer;
 class IRenderPipelineState;
 class ISamplerState;
 class IShaderLibrary;
 class IShaderModule;
 class IShaderStages;
-class ITexture;
 class IVertexInputState;
 
 /**
@@ -92,9 +87,9 @@ class IDevice : public ICapabilities {
       const BindGroupBufferDesc& desc,
       Result* IGL_NULLABLE outResult = nullptr) = 0;
 
-  virtual void destroy(igl::BindGroupTextureHandle handle) = 0;
-  virtual void destroy(igl::BindGroupBufferHandle handle) = 0;
-  virtual void destroy(igl::SamplerHandle handle) = 0;
+  virtual void destroy(BindGroupTextureHandle handle) = 0;
+  virtual void destroy(BindGroupBufferHandle handle) = 0;
+  virtual void destroy(SamplerHandle handle) = 0;
 
   /**
    * @brief Creates a command queue.
