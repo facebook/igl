@@ -386,8 +386,7 @@ TEST_F(NativeHWBufferTextureTestOpenGL3, SharedMemoryTexture) {
       *iglDev_, *cmdQueue_, texture, pixels_.data(), "HWBufferTextureOpenGL3");
 }
 
-// @fb-only
-using NativeHWBufferTextureTestVulkan = NativeHWBufferTextureTest<{igl::BackendType::Vulkan}>;
+using NativeHWBufferTextureTestVulkan = NativeHWBufferTextureTest<igl::BackendType::Vulkan>;
 
 TEST_F(NativeHWBufferTextureTestVulkan, SharedMemoryTexture) {
   Result outResult;
@@ -401,7 +400,6 @@ TEST_F(NativeHWBufferTextureTestVulkan, SharedMemoryTexture) {
   util::validateUploadedTexture(
       *iglDev_, *cmdQueue_, texture, pixels_.data(), "HWBufferTextureVulkan");
 }
-// @fb-only
 
 } // namespace igl::tests
 
