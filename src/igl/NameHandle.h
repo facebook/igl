@@ -240,20 +240,19 @@ namespace std {
 template<>
 struct hash<igl::NameHandle> {
   size_t operator()(const igl::NameHandle& key) const {
-    return std::hash<uint32_t>()(key.getCrc32());
+    return hash<uint32_t>()(key.getCrc32());
   }
 };
 
 template<>
-struct hash<std::pair<igl::NameHandle, igl::NameHandle>> {
+struct hash<pair<igl::NameHandle, igl::NameHandle>> {
   size_t operator()(const std::pair<igl::NameHandle, igl::NameHandle>& key) const {
-    return std::hash<uint32_t>()(key.first.getCrc32()) ^
-           std::hash<uint32_t>()(key.second.getCrc32());
+    return hash<uint32_t>()(key.first.getCrc32()) ^ hash<uint32_t>()(key.second.getCrc32());
   }
 };
 
 template<>
-struct hash<std::vector<igl::NameHandle>> {
+struct hash<vector<igl::NameHandle>> {
   size_t operator()(const std::vector<igl::NameHandle>& key) const;
 };
 
