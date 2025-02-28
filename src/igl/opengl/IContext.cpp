@@ -1160,6 +1160,25 @@ void IContext::compressedTexSubImage3D(GLenum target,
   GLCHECK_ERRORS();
 }
 
+void IContext::copyBufferSubData(GLenum readtarget,
+                                 GLenum writetarget,
+                                 GLintptr readoffset,
+                                 GLintptr writeoffset,
+                                 GLsizeiptr size) {
+#if IGL_PLATFORM_APPLE || IGL_PLATFORM_ANDROID
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+#else
+  GLCALL(CopyBufferSubData)(readtarget, writetarget, readoffset, writeoffset, size);
+  APILOG("glCopyBufferSubData(%s, %s, %d, %d, %u)\n",
+         GL_ENUM_TO_STRING(readtarget),
+         GL_ENUM_TO_STRING(writetarget),
+         readoffset,
+         writeoffset,
+         size);
+  GLCHECK_ERRORS();
+#endif // IGL_PLATFORM_APPLE
+}
+
 void IContext::copyTexSubImage2D(GLenum target,
                                  GLint level,
                                  GLint xoffset,
