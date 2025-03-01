@@ -93,6 +93,7 @@ class VulkanExtensions final {
 
  public:
   bool has8BitIndices = false;
+  bool hasTimelineSemaphore = false;
 
  private:
   static constexpr size_t kNumberOfExtensionTypes = 2;

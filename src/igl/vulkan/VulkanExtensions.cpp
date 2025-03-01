@@ -183,6 +183,8 @@ void VulkanExtensions::enableCommonDeviceExtensions(const VulkanContextConfig& c
 #if defined(VK_EXT_index_type_uint8)
   has8BitIndices = enable(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, ExtensionType::Device);
 #endif
+
+  hasTimelineSemaphore = enable(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, ExtensionType::Device);
 }
 
 bool VulkanExtensions::enabled(const char* extensionName) const {
