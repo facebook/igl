@@ -587,6 +587,8 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     return false;
   case DeviceFeatures::Compute:
     return true;
+  case DeviceFeatures::CopyBuffer:
+    return true;
   case DeviceFeatures::ExplicitBinding:
     return true;
   case DeviceFeatures::ExplicitBindingExt:

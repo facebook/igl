@@ -26,6 +26,7 @@ namespace igl {
  * BufferNoCopy               Supports creating buffers that use previously allocated memory
  * BufferRing                 Supports creating ring buffers with memory for each swapchain image
  * Compute                    Supports compute
+ * CopyBuffer                 Supports ICommandBuffer::copyBuffer()
  * DepthCompare               Supports setting depth compare function
  * DepthShaderRead            Supports reading depth texture from a shader
  * DrawFirstIndexFirstVertex  Supports firstIndex/firstVertex parameters in IRenderCommandEncoder::drawIndexed()
@@ -74,6 +75,7 @@ enum class DeviceFeatures {
   BufferNoCopy,
   BufferRing,
   Compute,
+  CopyBuffer,
   DepthCompare,
   DepthShaderRead,
   DrawFirstIndexFirstVertex,
