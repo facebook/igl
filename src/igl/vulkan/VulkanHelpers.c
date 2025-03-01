@@ -1429,12 +1429,13 @@ VkBufferImageCopy ivkGetBufferImageCopy3D(uint32_t bufferOffset,
 }
 
 VkImageCopy ivkGetImageCopy2D(VkOffset2D srcDstOffset,
-                              VkImageSubresourceLayers srcDstImageSubresource,
+                              VkImageSubresourceLayers srcImageSubresource,
+                              VkImageSubresourceLayers dstImageSubresource,
                               const VkExtent2D imageRegion) {
   const VkImageCopy copy = {
-      .srcSubresource = srcDstImageSubresource,
+      .srcSubresource = srcImageSubresource,
       .srcOffset = {.x = srcDstOffset.x, .y = srcDstOffset.y, .z = 0},
-      .dstSubresource = srcDstImageSubresource,
+      .dstSubresource = dstImageSubresource,
       .dstOffset = {.x = srcDstOffset.x, .y = srcDstOffset.y, .z = 0},
       .extent = {.width = imageRegion.width, .height = imageRegion.height, .depth = 1u},
   };

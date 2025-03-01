@@ -398,7 +398,8 @@ VkPipelineShaderStageCreateInfo ivkGetPipelineShaderStageCreateInfo(VkShaderStag
                                                                     const char* entryPoint);
 
 VkImageCopy ivkGetImageCopy2D(VkOffset2D srcDstOffset,
-                              VkImageSubresourceLayers srcDstImageSubresource,
+                              VkImageSubresourceLayers srcImageSubresource,
+                              VkImageSubresourceLayers dstImageSubresource,
                               VkExtent2D imageRegion);
 
 VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset,

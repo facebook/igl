@@ -1160,7 +1160,7 @@ TEST_P(GetImageCopy2DTest, GetImageCopy2D) {
       aspectMask, mipLevel, baseArrayLayer, layerCount};
 
   const VkImageCopy imageCopy =
-      ivkGetImageCopy2D(srcDstOffset, srcDstImageSubresource, imageRegion);
+      ivkGetImageCopy2D(srcDstOffset, srcDstImageSubresource, srcDstImageSubresource, imageRegion);
 
   EXPECT_EQ(imageCopy.srcSubresource.aspectMask, aspectMask);
   EXPECT_EQ(imageCopy.srcSubresource.mipLevel, mipLevel);

@@ -176,6 +176,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   const VkImageCopy copy =
       ivkGetImageCopy2D(VkOffset2D{static_cast<int32_t>(range.x), static_cast<int32_t>(range.y)},
                         VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+                        VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
                         VkExtent2D{range.width, range.height});
 
   ctx.vf_.vkCmdCopyImage(cmdBuf,
