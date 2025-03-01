@@ -7,6 +7,7 @@
 
 #include <igl/opengl/CommandBuffer.h>
 
+#include <igl/opengl/Buffer.h>
 #include <igl/opengl/ComputeCommandEncoder.h>
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/IContext.h>
@@ -65,7 +66,21 @@ void CommandBuffer::copyBuffer(IBuffer& src,
                                uint64_t srcOffset,
                                uint64_t dstOffset,
                                uint64_t size) {
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  IContext& ctx = getContext();
+
+  if (!ctx.deviceFeatures().hasFeature(igl::DeviceFeatures::CopyBuffer)) {
+    IGL_LOG_ERROR_ONCE("CommandBuffer::copyBuffer() not supported in this context!\n");
+    return;
+  }
+
+  auto& srcBuffer = static_cast<ArrayBuffer&>(src);
+  auto& dstBuffer = static_cast<ArrayBuffer&>(dst);
+
+  ctx.bindBuffer(GL_COPY_READ_BUFFER, srcBuffer.getId());
+  ctx.bindBuffer(GL_COPY_WRITE_BUFFER, dstBuffer.getId());
+  ctx.copyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, srcOffset, dstOffset, size);
+  ctx.bindBuffer(GL_COPY_READ_BUFFER, 0);
+  ctx.bindBuffer(GL_COPY_WRITE_BUFFER, 0);
 }
 
 IContext& CommandBuffer::getContext() const {
