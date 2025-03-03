@@ -211,9 +211,8 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   return iglObject;
 }
 
-std::shared_ptr<igl::IVertexInputState> Device::createVertexInputState(
-    const VertexInputStateDesc& desc,
-    Result* outResult) const {
+std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexInputStateDesc& desc,
+                                                                  Result* outResult) const {
   // Avoid buffer overrun in numAttributes.
   if (desc.numAttributes > IGL_VERTEX_ATTRIBUTES_MAX) {
     Result::setResult(outResult,
@@ -307,7 +306,7 @@ std::shared_ptr<igl::IVertexInputState> Device::createVertexInputState(
   return iglObject;
 }
 
-std::shared_ptr<igl::IDepthStencilState> Device::createDepthStencilState(
+std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
     const DepthStencilStateDesc& desc,
     Result* outResult) const {
   MTLDepthStencilDescriptor* metalDesc = [MTLDepthStencilDescriptor new];
@@ -324,7 +323,7 @@ std::shared_ptr<igl::IDepthStencilState> Device::createDepthStencilState(
   return iglObject;
 }
 
-std::shared_ptr<igl::IComputePipelineState> Device::createComputePipeline(
+std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     const ComputePipelineDesc& desc,
     Result* outResult) const {
   NSError* error = nil;
@@ -361,9 +360,8 @@ std::shared_ptr<igl::IComputePipelineState> Device::createComputePipeline(
   return computePipelineState;
 }
 
-std::shared_ptr<igl::IRenderPipelineState> Device::createRenderPipeline(
-    const RenderPipelineDesc& desc,
-    Result* outResult) const {
+std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderPipelineDesc& desc,
+                                                                   Result* outResult) const {
   // TODO
   //  Size drawableSize = IGLNativeDrawableSize(layer_);
   //  graphicsDesc.viewportState.viewportCount = 1;
@@ -517,7 +515,7 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
           outResult, Result::Code::RuntimeError, "Could not find function in library");
       return nullptr;
     }
-    modules.emplace_back(std::make_shared<metal::ShaderModule>(info, metalFunction));
+    modules.emplace_back(std::make_shared<ShaderModule>(info, metalFunction));
 
     if (auto resourceTracker = getResourceTracker(); resourceTracker && !modules.empty()) {
       modules.back()->initResourceTracker(resourceTracker, desc.debugName);
@@ -697,7 +695,7 @@ MTLResourceOptions Device::toMTLResourceStorageMode(ResourceStorage storage) {
   }
 }
 
-Holder<igl::BindGroupTextureHandle> Device::createBindGroup(
+Holder<BindGroupTextureHandle> Device::createBindGroup(
     const BindGroupTextureDesc& desc,
     const IRenderPipelineState* IGL_NULLABLE /*compatiblePipeline*/,
     Result* IGL_NULLABLE outResult) {
@@ -714,8 +712,8 @@ Holder<igl::BindGroupTextureHandle> Device::createBindGroup(
   return {this, handle};
 }
 
-Holder<igl::BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc& desc,
-                                                           Result* IGL_NULLABLE outResult) {
+Holder<BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc& desc,
+                                                      Result* IGL_NULLABLE outResult) {
   IGL_DEBUG_ASSERT(!desc.debugName.empty(), "Each bind group should have a debug name");
 
   BindGroupBufferDesc description(desc);
@@ -729,7 +727,7 @@ Holder<igl::BindGroupBufferHandle> Device::createBindGroup(const BindGroupBuffer
   return {this, handle};
 }
 
-void Device::destroy(igl::BindGroupTextureHandle handle) {
+void Device::destroy(BindGroupTextureHandle handle) {
   if (handle.empty()) {
     return;
   }
@@ -737,7 +735,7 @@ void Device::destroy(igl::BindGroupTextureHandle handle) {
   bindGroupTexturesPool_.destroy(handle);
 }
 
-void Device::destroy(igl::BindGroupBufferHandle handle) {
+void Device::destroy(BindGroupBufferHandle handle) {
   if (handle.empty()) {
     return;
   }
@@ -745,7 +743,7 @@ void Device::destroy(igl::BindGroupBufferHandle handle) {
   bindGroupBuffersPool_.destroy(handle);
 }
 
-void Device::destroy(igl::SamplerHandle handle) {
+void Device::destroy(SamplerHandle handle) {
   (void)handle;
   // IGL/Metal is not using sampler handles
 }

@@ -53,13 +53,13 @@ igl::UniformType metalDataTypeToIGLUniformType(MTLDataType type) {
 namespace igl::metal {
 RenderPipelineReflection::RenderPipelineReflection(MTLRenderPipelineReflection* refl) {
   if (refl != nullptr) {
-    for (MTLArgument* arg in refl.vertexArguments) {
+    for (MTLArgument* arg = nullptr in refl.vertexArguments) {
       if (arg.active) {
         createArgDesc(arg, ShaderStage::Vertex);
       }
     }
 
-    for (MTLArgument* arg in refl.fragmentArguments) {
+    for (MTLArgument* arg = nullptr in refl.fragmentArguments) {
       if (arg.active) {
         createArgDesc(arg, ShaderStage::Fragment);
       }
@@ -73,14 +73,14 @@ bool RenderPipelineReflection::createArgDesc(MTLArgument* arg, ShaderStage sh) {
   size_t loc = 0;
 
   if (arg.type == MTLArgumentTypeBuffer) {
-    igl::BufferArgDesc bufferDesc;
+    BufferArgDesc bufferDesc;
     bufferDesc.name = igl::genNameHandle(arg.name.UTF8String);
     bufferDesc.bufferAlignment = arg.bufferAlignment;
     bufferDesc.bufferDataSize = arg.bufferDataSize;
     bufferDesc.bufferIndex = static_cast<int>(arg.index);
     bufferDesc.shaderStage = sh;
     if (arg.bufferDataType == MTLDataTypeStruct) {
-      for (MTLStructMember* uniform in arg.bufferStructType.members) {
+      for (MTLStructMember* uniform = nullptr in arg.bufferStructType.members) {
         MTLDataType elementType = uniform.dataType;
         if (elementType == MTLDataTypeArray) {
           elementType = uniform.arrayType.elementType;
@@ -104,7 +104,7 @@ bool RenderPipelineReflection::createArgDesc(MTLArgument* arg, ShaderStage sh) {
 
     loc = bufferArguments_.size() - 1;
   } else if (arg.type == MTLArgumentTypeTexture) {
-    igl::TextureArgDesc textureDesc;
+    TextureArgDesc textureDesc;
     textureDesc.name = arg.name.UTF8String;
     textureDesc.type = igl::metal::Texture::convertType(arg.textureType);
     textureDesc.textureIndex = static_cast<int>(arg.index);
@@ -113,7 +113,7 @@ bool RenderPipelineReflection::createArgDesc(MTLArgument* arg, ShaderStage sh) {
 
     loc = textureArguments_.size() - 1;
   } else if (arg.type == MTLArgumentTypeSampler) {
-    igl::SamplerArgDesc samplerDesc;
+    SamplerArgDesc samplerDesc;
     samplerDesc.name = arg.name.UTF8String;
     samplerDesc.samplerIndex = static_cast<int>(arg.index);
     samplerDesc.shaderStage = sh;
@@ -156,15 +156,15 @@ RenderPipelineReflection::getDictionary(ShaderStage sh) const {
   return (sh == ShaderStage::Vertex) ? vertexArgDictionary_ : fragmentArgDictionary_;
 }
 
-const std::vector<igl::BufferArgDesc>& RenderPipelineReflection::allUniformBuffers() const {
+const std::vector<BufferArgDesc>& RenderPipelineReflection::allUniformBuffers() const {
   return bufferArguments_;
 }
 
-const std::vector<igl::SamplerArgDesc>& RenderPipelineReflection::allSamplers() const {
+const std::vector<SamplerArgDesc>& RenderPipelineReflection::allSamplers() const {
   return samplerArguments_;
 }
 
-const std::vector<igl::TextureArgDesc>& RenderPipelineReflection::allTextures() const {
+const std::vector<TextureArgDesc>& RenderPipelineReflection::allTextures() const {
   return textureArguments_;
 }
 

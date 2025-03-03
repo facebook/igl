@@ -146,8 +146,7 @@ std::unique_ptr<IDevice> HWDevice::createWithSystemDefaultDevice(Result* outResu
   return createWithMTLDevice(MTLCreateSystemDefaultDevice(), outResult);
 }
 
-std::unique_ptr<metal::Device> HWDevice::createWithMTLDevice(id<MTLDevice> device,
-                                                             Result* outResult) {
+std::unique_ptr<Device> HWDevice::createWithMTLDevice(id<MTLDevice> device, Result* outResult) {
   if (!device) {
     Result::setResult(outResult, Result::Code::Unsupported, "Metal is not supported!");
     return nullptr;
