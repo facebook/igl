@@ -204,7 +204,7 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index,
 
   (void)format;
 
-  igl::vulkan::Texture* tex = static_cast<Texture*>(texture);
+  auto* tex = static_cast<Texture*>(texture);
   const VulkanImage* vkImage = tex ? &tex->getVulkanTexture().image_ : nullptr;
 
   IGL_DEBUG_ASSERT(vkImage);
