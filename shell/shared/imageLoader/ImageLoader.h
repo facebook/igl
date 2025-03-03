@@ -35,7 +35,7 @@ class ImageLoader {
   static ImageData checkerboard() noexcept;
   static ImageData white() noexcept;
 
-  [[nodiscard]] ImageData loadImageDataFromFile(
+  [[nodiscard]] virtual ImageData loadImageDataFromFile(
       const std::string& fileName,
       std::optional<TextureFormat> preferredFormat = {}) noexcept;
   [[nodiscard]] ImageData loadImageDataFromMemory(
