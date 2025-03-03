@@ -23,7 +23,7 @@ class TestShellBase {
 
   virtual ~TestShellBase() = default;
 
-  void SetUp(ScreenSize screenSize = {1, 1});
+  void SetUp(ScreenSize screenSize = {1, 1}, bool needsRGBSwapchainSupport = false);
 
   void TearDown() {};
 

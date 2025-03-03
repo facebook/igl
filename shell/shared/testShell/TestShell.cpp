@@ -58,7 +58,7 @@ void ensureCommandLineArgsInitialized() {
 
 } // namespace
 
-void TestShellBase::SetUp(ScreenSize screenSize) {
+void TestShellBase::SetUp(ScreenSize screenSize, bool needsRGBSwapchainSupport) {
   ensureCommandLineArgsInitialized();
 
   // Create igl device for requested backend
@@ -88,10 +88,14 @@ void TestShellBase::SetUp(ScreenSize screenSize) {
   }
   // Create an offscreen texture to render to
   igl::Result ret;
+  auto hasNativeSwapchainSupport = platform_->getDevice().hasFeature(DeviceFeatures::SRGBSwapchain);
+  auto colorFormat = platform_->getDevice().getBackendType() == igl::BackendType::Metal
+                         ? igl::TextureFormat::BGRA_SRGB
+                         : igl::TextureFormat::RGBA_SRGB;
+  colorFormat = needsRGBSwapchainSupport && !hasNativeSwapchainSupport ? sRGBToUNorm(colorFormat)
+                                                                       : colorFormat;
   igl::TextureDesc texDesc = igl::TextureDesc::new2D(
-      platform_->getDevice().getBackendType() == igl::BackendType::Metal
-          ? igl::TextureFormat::BGRA_SRGB
-          : igl::TextureFormat::RGBA_SRGB,
+      colorFormat,
       screenSize.width,
       screenSize.height,
       igl::TextureDesc::TextureUsageBits::Sampled | igl::TextureDesc::TextureUsageBits::Attachment);
