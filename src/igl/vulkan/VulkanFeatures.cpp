@@ -200,6 +200,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   VkPhysicalDeviceShaderDrawParametersFeatures_.pNext = nullptr;
   VkPhysicalDeviceMultiviewFeatures_.pNext = nullptr;
   VkPhysicalDeviceIndexTypeUint8Features_.pNext = nullptr;
+  VkPhysicalDeviceSynchronization2Features_.pNext = nullptr;
 
 #if defined(VK_VERSION_1_2)
   VkPhysicalDeviceShaderFloat16Int8Features_.pNext = nullptr;
@@ -234,6 +235,10 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceIndexTypeUint8Features_);
   }
 #endif
+
+  if (hasExtension(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
+    ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceSynchronization2Features_);
+  }
 }
 
 VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept {
