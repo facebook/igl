@@ -148,9 +148,20 @@ class TexturesRGBBaseTest : public ::testing::Test {
         IGL_NAMEHANDLE(data::shader::simpleSampler);
     renderPipelineDesc_.cullMode = igl::CullMode::Disabled;
 
+// The sRGB hardware extension should decode and re-encode to exactly the same color values
+// which is what this test is trying to test.
+// It turns out that not everyone gets it 100% right.
+// the platforms below, on OpenGL result with some colors
+// have a + or - 1 to the original value which is most probably due to the
+// the level of precision used to perform the arithmetic.
+// The kTolerance is used to not only make this test not fail but also to document
+// which platform gets it right and which platform gets it slightly wrong.
+// Panther is external codename for Quest3s and Eureka is external codename for Quest3
+#if IGL_PLATFORM_LINUX_SWIFTSHADER || defined(PANTHER_PLATFORM) || defined(EUREKA_PLATFORM)
     if (iglDev_->getBackendType() == BackendType::OpenGL) {
-      kTolerance = 1; // OpenGL is not accurate enough.
+      kTolerance = 1; // Swiftshader and quest 3(s) opengl is not accurate enough.
     }
+#endif
   }
 
   void TearDown() override {}
