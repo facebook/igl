@@ -173,6 +173,7 @@ TEST_F(ComputeCommandEncoderTest, bindImageTexture) {
 
   auto computeCommandEncoder = cmdBuffer->createComputeCommandEncoder();
   computeCommandEncoder->bindImageTexture(0, nullptr, TextureFormat::Invalid);
+  computeCommandEncoder->endEncoding();
   cmdQueue_->submit(*cmdBuffer);
   cmdBuffer->waitUntilCompleted();
 }
