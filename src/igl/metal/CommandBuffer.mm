@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <Metal/Metal.h>
+#include <igl/metal/Buffer.h>
 #include <igl/metal/ComputeCommandEncoder.h>
 #include <igl/metal/RenderCommandEncoder.h>
 #include <igl/metal/Texture.h>
@@ -56,7 +57,16 @@ void CommandBuffer::copyBuffer(IBuffer& src,
                                uint64_t srcOffset,
                                uint64_t dstOffset,
                                uint64_t size) {
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  auto srcBuffer = static_cast<Buffer&>(src).get();
+  auto dstBuffer = static_cast<Buffer&>(dst).get();
+
+  auto blitCommandEncoder = [value_ blitCommandEncoder];
+  [blitCommandEncoder copyFromBuffer:srcBuffer
+                        sourceOffset:srcOffset
+                            toBuffer:dstBuffer
+                   destinationOffset:dstOffset
+                                size:size];
+  [blitCommandEncoder endEncoding];
 }
 
 void CommandBuffer::waitUntilScheduled() {
