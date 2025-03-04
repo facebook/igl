@@ -97,24 +97,30 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
       .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
   };
 
+  auto desc = TextureDesc::newNativeHWBufferImage(
+      igl::vulkan::vkFormatToTextureFormat(ahb_format_props.format),
+      igl::android::getIglBufferUsage(hwbDesc.usage),
+      hwbDesc.width,
+      hwbDesc.height);
+
   VkImage vk_image;
 
-  VkImageCreateInfo vk_image_info = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-      .pNext = &external_memory_image_info,
-      .flags = create_flags,
-      .imageType = VK_IMAGE_TYPE_2D,
-      .format = ahb_format_props.format,
-      .extent = VkExtent3D{(uint32_t)hwbDesc.width, (uint32_t)hwbDesc.height, 1},
-      .mipLevels = 1,
-      .arrayLayers = 1,
-      .samples = VK_SAMPLE_COUNT_1_BIT,
-      .tiling = VK_IMAGE_TILING_OPTIMAL,
-      .usage = usage_flags,
-      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-      .queueFamilyIndexCount = 0,
-      .pQueueFamilyIndices = nullptr,
-      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED};
+  VkImageCreateInfo vk_image_info = {.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                                     .pNext = &external_memory_image_info,
+                                     .flags = create_flags,
+                                     .imageType = VK_IMAGE_TYPE_2D,
+                                     .format = ahb_format_props.format,
+                                     .extent =
+                                         VkExtent3D{(uint32_t)desc.width, (uint32_t)desc.height, 1},
+                                     .mipLevels = 1,
+                                     .arrayLayers = 1,
+                                     .samples = VK_SAMPLE_COUNT_1_BIT,
+                                     .tiling = VK_IMAGE_TILING_OPTIMAL,
+                                     .usage = usage_flags,
+                                     .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+                                     .queueFamilyIndexCount = 0,
+                                     .pQueueFamilyIndices = nullptr,
+                                     .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED};
   // Create Vk Image.
   VK_ASSERT(ctx.vf_.vkCreateImage(device, &vk_image_info, nullptr, &vk_image));
 
@@ -252,7 +258,8 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
     return Result(Result::Code::RuntimeError, "Failed to create vulkan texture");
   }
 
-  desc_ = textureDesc_;
+  desc_ = desc; // Field within the Texture class
+  textureDesc_ = desc; // Field within the NativeHWTextureBuffer class
   texture_ = std::move(vkTexture);
 
   return Result{Result::Code::Ok};
