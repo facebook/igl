@@ -25,6 +25,12 @@ class VulkanSemaphore final {
                            VkDevice device,
                            bool exportable = false,
                            const char* debugName = nullptr);
+  /// Create a timeline semaphore
+  explicit VulkanSemaphore(const VulkanFunctionTable& vf,
+                           VkDevice device,
+                           uint64_t initialValue,
+                           bool exportable = false,
+                           const char* debugName = nullptr);
   ~VulkanSemaphore();
 
   VulkanSemaphore(VulkanSemaphore&& other) noexcept;

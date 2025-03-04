@@ -32,6 +32,34 @@ VulkanSemaphore::VulkanSemaphore(const VulkanFunctionTable& vf,
       vf_, device_, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)vkSemaphore_, debugName));
 }
 
+VulkanSemaphore::VulkanSemaphore(const VulkanFunctionTable& vf,
+                                 VkDevice device,
+                                 uint64_t initialValue,
+                                 bool exportable,
+                                 const char* debugName) :
+  vf_(&vf), device_(device) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  const VkExportSemaphoreCreateInfo exportInfo = {
+      .sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO,
+      .handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT,
+  };
+  const VkSemaphoreTypeCreateInfo semaphoreTypeCreateInfo = {
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+      .pNext = exportable ? &exportInfo : nullptr,
+      .semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
+      .initialValue = initialValue,
+  };
+  const VkSemaphoreCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+      .pNext = &semaphoreTypeCreateInfo,
+      .flags = 0,
+  };
+  VK_ASSERT(vf_->vkCreateSemaphore(device, &ci, nullptr, &vkSemaphore_));
+  VK_ASSERT(ivkSetDebugObjectName(
+      vf_, device_, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)vkSemaphore_, debugName));
+}
+
 VulkanSemaphore ::~VulkanSemaphore() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
