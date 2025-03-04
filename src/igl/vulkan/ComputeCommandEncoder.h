@@ -83,6 +83,7 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
   ResourcesBinder binder_;
 
   std::vector<const igl::vulkan::VulkanImage*> restoreLayout_;
+  std::vector<VkImageAspectFlags> restoreLayoutAspectFlags_;
 
   const igl::vulkan::ComputePipelineState* cps_ = nullptr;
 };

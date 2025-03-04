@@ -43,7 +43,8 @@ void ComputeCommandEncoder::endEncoding() {
 
   isEncoding_ = false;
 
-  for (const auto* img : restoreLayout_) {
+  for (size_t i = 0; i < restoreLayout_.size(); ++i) {
+    const VulkanImage* img = restoreLayout_[i];
     if (img->isSampledImage()) {
       // only sampled images can be transitioned to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
       img->transitionLayout(cmdBuffer_,
@@ -51,7 +52,7 @@ void ComputeCommandEncoder::endEncoding() {
                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
                                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                            VkImageSubresourceRange{img->getImageAspectFlags(),
+                            VkImageSubresourceRange{restoreLayoutAspectFlags_[i],
                                                     0,
                                                     VK_REMAINING_MIP_LEVELS,
                                                     0,
@@ -191,6 +192,7 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
   }
 
   restoreLayout_.push_back(vkImage);
+  restoreLayoutAspectFlags_.push_back(vkTex.imageView_.getVkImageAspectFlags());
 
   binder_.bindTexture(index, static_cast<Texture*>(texture));
 }
@@ -217,6 +219,8 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index,
   igl::vulkan::transitionToGeneral(cmdBuffer_, texture);
 
   restoreLayout_.push_back(vkImage);
+  restoreLayoutAspectFlags_.push_back(
+      tex ? tex->getVulkanTexture().imageView_.getVkImageAspectFlags() : VK_IMAGE_ASPECT_NONE);
 
   binder_.bindStorageImage(index, tex);
 }
