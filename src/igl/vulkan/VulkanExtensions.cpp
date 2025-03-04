@@ -185,6 +185,7 @@ void VulkanExtensions::enableCommonDeviceExtensions(const VulkanContextConfig& c
 #endif
 
   hasTimelineSemaphore = enable(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, ExtensionType::Device);
+  hasSynchronization2 = enable(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, ExtensionType::Device);
 }
 
 bool VulkanExtensions::enabled(const char* extensionName) const {
