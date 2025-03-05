@@ -79,6 +79,7 @@ void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
   VkPhysicalDeviceSamplerYcbcrConversionFeatures_.samplerYcbcrConversion = VK_TRUE;
   VkPhysicalDeviceShaderDrawParametersFeatures_.shaderDrawParameters =
       config_.enableShaderDrawParameters ? VK_TRUE : VK_FALSE;
+  VkPhysicalDeviceSynchronization2Features_.synchronization2 = VK_TRUE;
 }
 
 igl::Result VulkanFeatures::checkSelectedFeatures(
@@ -275,6 +276,9 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
 #if defined(VK_VERSION_1_2)
   VkPhysicalDeviceShaderFloat16Int8Features_ = other.VkPhysicalDeviceShaderFloat16Int8Features_;
 #endif
+
+  VkPhysicalDeviceIndexTypeUint8Features_ = other.VkPhysicalDeviceIndexTypeUint8Features_;
+  VkPhysicalDeviceSynchronization2Features_ = other.VkPhysicalDeviceSynchronization2Features_;
 
   extensions_ = other.extensions_;
 
