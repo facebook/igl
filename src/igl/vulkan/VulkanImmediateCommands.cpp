@@ -16,6 +16,7 @@ VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
                                                  VkDevice device,
                                                  uint32_t queueFamilyIndex,
                                                  bool exportableFences,
+                                                 bool useTimelineSemaphoreAndSynchronization2,
                                                  const char* debugName) :
   vf_(vf),
   device_(device),
@@ -25,7 +26,8 @@ VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
                    VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
                queueFamilyIndex,
                debugName),
-  debugName_(debugName) {
+  debugName_(debugName),
+  useTimelineSemaphoreAndSynchronization2_(useTimelineSemaphoreAndSynchronization2) {
   IGL_PROFILER_FUNCTION();
 
   vf_.vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue_);
@@ -218,6 +220,11 @@ bool VulkanImmediateCommands::isReady(const SubmitHandle handle) const {
 VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
     const CommandBufferWrapper& wrapper) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
+
+  if (useTimelineSemaphoreAndSynchronization2_) {
+    // TODO: implement
+  }
+
   IGL_DEBUG_ASSERT(wrapper.isEncoding_);
   VK_ASSERT(vf_.vkEndCommandBuffer(wrapper.cmdBuf_));
 
@@ -227,11 +234,11 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
   // @lint-ignore CLANGTIDY
   VkSemaphore waitSemaphores[] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
   uint32_t numWaitSemaphores = 0;
-  if (waitSemaphore_) {
-    waitSemaphores[numWaitSemaphores++] = waitSemaphore_;
+  if (waitSemaphore_.semaphore) {
+    waitSemaphores[numWaitSemaphores++] = waitSemaphore_.semaphore;
   }
-  if (lastSubmitSemaphore_) {
-    waitSemaphores[numWaitSemaphores++] = lastSubmitSemaphore_;
+  if (lastSubmitSemaphore_.semaphore) {
+    waitSemaphores[numWaitSemaphores++] = lastSubmitSemaphore_.semaphore;
   }
 
   const VkSubmitInfo si = ivkGetSubmitInfo(&wrapper.cmdBuf_,
@@ -248,9 +255,9 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
   VK_ASSERT(vf_.vkQueueSubmit(queue_, 1u, &si, vkFence));
   IGL_PROFILER_ZONE_END();
 
-  lastSubmitSemaphore_ = wrapper.semaphore_.vkSemaphore_;
+  lastSubmitSemaphore_.semaphore = wrapper.semaphore_.vkSemaphore_;
   lastSubmitHandle_ = wrapper.handle_;
-  waitSemaphore_ = VK_NULL_HANDLE;
+  waitSemaphore_.semaphore = VK_NULL_HANDLE;
 
   // reset
   const_cast<CommandBufferWrapper&>(wrapper).isEncoding_ = false;
@@ -267,13 +274,13 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
 }
 
 void VulkanImmediateCommands::waitSemaphore(VkSemaphore semaphore) {
-  IGL_DEBUG_ASSERT(waitSemaphore_ == VK_NULL_HANDLE);
+  IGL_DEBUG_ASSERT(waitSemaphore_.semaphore == VK_NULL_HANDLE);
 
-  waitSemaphore_ = semaphore;
+  waitSemaphore_.semaphore = semaphore;
 }
 
 VkSemaphore VulkanImmediateCommands::acquireLastSubmitSemaphore() {
-  return std::exchange(lastSubmitSemaphore_, VK_NULL_HANDLE);
+  return std::exchange(lastSubmitSemaphore_.semaphore, VK_NULL_HANDLE);
 }
 
 VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::getLastSubmitHandle() const {

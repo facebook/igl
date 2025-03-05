@@ -36,6 +36,7 @@ class VulkanImmediateCommands final {
                           VkDevice device,
                           uint32_t queueFamilyIndex,
                           bool exportableFences,
+                          bool useTimelineSemaphoreAndSynchronization2,
                           const char* debugName);
   ~VulkanImmediateCommands();
   VulkanImmediateCommands(const VulkanImmediateCommands&) = delete;
@@ -180,15 +181,24 @@ class VulkanImmediateCommands final {
   SubmitHandle nextSubmitHandle_ = SubmitHandle();
 
   /// @brief The semaphore submitted with the last command buffer. Updated on `submit()`
-  VkSemaphore lastSubmitSemaphore_ = VK_NULL_HANDLE;
+  VkSemaphoreSubmitInfo lastSubmitSemaphore_ = {
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+      .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+  };
 
   /// @brief A semaphore to be associated with the next command buffer to be submitted. Can be used
   /// with command buffers that present swapchain images.
-  VkSemaphore waitSemaphore_ = VK_NULL_HANDLE;
+  VkSemaphoreSubmitInfo waitSemaphore_ = {
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+      .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+  };
+
   uint32_t numAvailableCommandBuffers_ = kMaxCommandBuffers;
 
   // @brief The submission counter. Incremented on `submit()`
   uint32_t submitCounter_ = 1;
+
+  bool useTimelineSemaphoreAndSynchronization2_ = false;
 };
 
 } // namespace igl::vulkan

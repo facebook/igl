@@ -819,12 +819,13 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
       IGL_FORMAT("Device: VulkanContext::device_ {}",
                  debugName ? debugName : "igl/vulkan/VulkanContext.cpp")
           .c_str());
-  immediate_ =
-      std::make_unique<igl::vulkan::VulkanImmediateCommands>(vf_,
-                                                             device,
-                                                             deviceQueues_.graphicsQueueFamilyIndex,
-                                                             config_.exportableFences,
-                                                             "VulkanContext::immediate_");
+  immediate_ = std::make_unique<VulkanImmediateCommands>(vf_,
+                                                         device,
+                                                         deviceQueues_.graphicsQueueFamilyIndex,
+                                                         config_.exportableFences,
+                                                         extensions_.hasTimelineSemaphore &&
+                                                             extensions_.hasSynchronization2,
+                                                         "VulkanContext::immediate_");
   IGL_DEBUG_ASSERT(config_.maxResourceCount > 0,
                    "Max resource count needs to be greater than zero");
   syncSubmitHandles_.resize(config_.maxResourceCount);
