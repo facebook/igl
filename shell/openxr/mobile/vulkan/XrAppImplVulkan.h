@@ -20,11 +20,10 @@ class XrAppImplVulkan : public impl::XrAppImpl {
   [[nodiscard]] std::vector<const char*> getXrRequiredExtensions() const override;
   [[nodiscard]] std::vector<const char*> getXrOptionalExtensions() const override;
 
-  [[nodiscard]] std::unique_ptr<igl::IDevice> initIGL(XrInstance instance,
-                                                      XrSystemId systemId) override;
+  [[nodiscard]] std::unique_ptr<IDevice> initIGL(XrInstance instance, XrSystemId systemId) override;
   [[nodiscard]] XrSession initXrSession(XrInstance instance,
                                         XrSystemId systemId,
-                                        igl::IDevice& device,
+                                        IDevice& device,
                                         const RenderSessionConfig& sessionConfig) override;
   [[nodiscard]] std::unique_ptr<impl::XrSwapchainProviderImpl> createSwapchainProviderImpl()
       const override;

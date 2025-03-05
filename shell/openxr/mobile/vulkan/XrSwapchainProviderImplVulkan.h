@@ -15,7 +15,7 @@
 namespace igl::shell::openxr::mobile {
 class XrSwapchainProviderImplVulkan final : public impl::XrSwapchainProviderImpl {
  public:
-  explicit XrSwapchainProviderImplVulkan(igl::TextureFormat preferredColorFormat);
+  explicit XrSwapchainProviderImplVulkan(TextureFormat preferredColorFormat);
 
   // NOLINTNEXTLINE(bugprone-exception-escape)
   [[nodiscard]] std::vector<int64_t> preferredColorFormats() const noexcept final {
@@ -26,14 +26,14 @@ class XrSwapchainProviderImplVulkan final : public impl::XrSwapchainProviderImpl
     return {VK_FORMAT_D16_UNORM, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT};
   }
 
-  void enumerateImages(igl::IDevice& device,
+  void enumerateImages(IDevice& device,
                        XrSwapchain colorSwapchain,
                        XrSwapchain depthSwapchain,
                        const impl::SwapchainImageInfo& swapchainImageInfo,
                        uint8_t numViews) noexcept final;
 
-  [[nodiscard]] igl::SurfaceTextures getSurfaceTextures(
-      igl::IDevice& device,
+  [[nodiscard]] SurfaceTextures getSurfaceTextures(
+      IDevice& device,
       XrSwapchain colorSwapchain,
       XrSwapchain depthSwapchain,
       const impl::SwapchainImageInfo& swapchainImageInfo,
