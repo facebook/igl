@@ -123,11 +123,7 @@ struct Collection {
   }
 
  private:
-  // #ifdef WINDOWS_COPY_CTR_WORKAROUND
   std::unordered_map<igl::NameHandle, std::shared_ptr<Descriptor>> descriptors_;
-  // #else
-  //   std::unordered_map<igl::NameHandle, std::unique_ptr<Descriptor>> descriptors_;
-  // #endif
   std::vector<igl::NameHandle> names_;
 };
 
