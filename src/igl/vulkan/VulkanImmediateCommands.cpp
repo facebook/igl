@@ -221,39 +221,76 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
     const CommandBufferWrapper& wrapper) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
 
-  if (useTimelineSemaphoreAndSynchronization2_) {
-    // TODO: implement
-  }
-
   IGL_DEBUG_ASSERT(wrapper.isEncoding_);
   VK_ASSERT(vf_.vkEndCommandBuffer(wrapper.cmdBuf_));
 
-  // @lint-ignore CLANGTIDY
-  const VkPipelineStageFlags waitStageMasks[] = {VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                                 VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
-  // @lint-ignore CLANGTIDY
-  VkSemaphore waitSemaphores[] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
-  uint32_t numWaitSemaphores = 0;
-  if (waitSemaphore_.semaphore) {
-    waitSemaphores[numWaitSemaphores++] = waitSemaphore_.semaphore;
-  }
-  if (lastSubmitSemaphore_.semaphore) {
-    waitSemaphores[numWaitSemaphores++] = lastSubmitSemaphore_.semaphore;
-  }
+  if (useTimelineSemaphoreAndSynchronization2_) {
+    // @lint-ignore CLANGTIDY
+    VkSemaphoreSubmitInfo waitSemaphores[] = {{}, {}};
+    uint32_t numWaitSemaphores = 0;
+    if (waitSemaphore_.semaphore) {
+      waitSemaphores[numWaitSemaphores++] = waitSemaphore_;
+    }
+    if (lastSubmitSemaphore_.semaphore) {
+      waitSemaphores[numWaitSemaphores++] = lastSubmitSemaphore_;
+    }
+    // @lint-ignore CLANGTIDY
+    const VkSemaphoreSubmitInfo signalSemaphores[] = {
+        VkSemaphoreSubmitInfo{
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+            .semaphore = wrapper.semaphore_.getVkSemaphore(),
+            .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        },
+    };
 
-  const VkSubmitInfo si = ivkGetSubmitInfo(&wrapper.cmdBuf_,
-                                           numWaitSemaphores,
-                                           waitSemaphores,
-                                           waitStageMasks,
-                                           &wrapper.semaphore_.vkSemaphore_);
-  // @lint-ignore CLANGTIDY
-  const VkFence vkFence = wrapper.fence_.vkFence_;
-  IGL_PROFILER_ZONE("vkQueueSubmit()", IGL_PROFILER_COLOR_SUBMIT);
+    const VkCommandBufferSubmitInfo bufferSI = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+        .commandBuffer = wrapper.cmdBuf_,
+    };
+    const VkSubmitInfo2 si = {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+        .waitSemaphoreInfoCount = numWaitSemaphores,
+        .pWaitSemaphoreInfos = waitSemaphores,
+        .commandBufferInfoCount = 1u,
+        .pCommandBufferInfos = &bufferSI,
+        .signalSemaphoreInfoCount = 1u,
+        .pSignalSemaphoreInfos = signalSemaphores,
+    };
+
+    IGL_PROFILER_ZONE("vkQueueSubmit2KHR()", IGL_PROFILER_COLOR_SUBMIT);
 #if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkQueueSubmit()\n\n", wrapper.cmdBuf_);
+    IGL_LOG_INFO("%p vkQueueSubmit2KHR()\n\n", wrapper.cmdBuf_);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-  VK_ASSERT(vf_.vkQueueSubmit(queue_, 1u, &si, vkFence));
-  IGL_PROFILER_ZONE_END();
+    VK_ASSERT(vf_.vkQueueSubmit2KHR(queue_, 1u, &si, wrapper.fence_.vkFence_));
+    IGL_PROFILER_ZONE_END();
+  } else {
+    // @lint-ignore CLANGTIDY
+    const VkPipelineStageFlags waitStageMasks[] = {VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                                   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
+    // @lint-ignore CLANGTIDY
+    VkSemaphore waitSemaphores[] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
+    uint32_t numWaitSemaphores = 0;
+    if (waitSemaphore_.semaphore) {
+      waitSemaphores[numWaitSemaphores++] = waitSemaphore_.semaphore;
+    }
+    if (lastSubmitSemaphore_.semaphore) {
+      waitSemaphores[numWaitSemaphores++] = lastSubmitSemaphore_.semaphore;
+    }
+
+    const VkSubmitInfo si = ivkGetSubmitInfo(&wrapper.cmdBuf_,
+                                             numWaitSemaphores,
+                                             waitSemaphores,
+                                             waitStageMasks,
+                                             &wrapper.semaphore_.vkSemaphore_);
+    // @lint-ignore CLANGTIDY
+    const VkFence vkFence = wrapper.fence_.vkFence_;
+    IGL_PROFILER_ZONE("vkQueueSubmit()", IGL_PROFILER_COLOR_SUBMIT);
+#if IGL_VULKAN_PRINT_COMMANDS
+    IGL_LOG_INFO("%p vkQueueSubmit()\n\n", wrapper.cmdBuf_);
+#endif // IGL_VULKAN_PRINT_COMMANDS
+    VK_ASSERT(vf_.vkQueueSubmit(queue_, 1u, &si, vkFence));
+    IGL_PROFILER_ZONE_END();
+  }
 
   lastSubmitSemaphore_.semaphore = wrapper.semaphore_.vkSemaphore_;
   lastSubmitHandle_ = wrapper.handle_;
