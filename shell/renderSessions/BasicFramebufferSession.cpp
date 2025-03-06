@@ -9,9 +9,7 @@
 
 #include "BasicFramebufferSession.h"
 
-#if !defined(IGL_PLATFORM_UWP)
 #include <igl/Common.h>
-#endif
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/ShellParams.h>
 

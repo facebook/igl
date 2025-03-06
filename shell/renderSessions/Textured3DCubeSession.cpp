@@ -12,15 +12,10 @@
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/RenderCommandEncoder.h>
-#include <shell/shared/renderSession/ShellParams.h>
-#if defined(IGL_PLATFORM_UWP)
-#include "Textured3DCubeSession.h"
-#define M_PI 3.14159265358979323846
-#else
 #include <shell/renderSessions/Textured3DCubeSession.h>
+#include <shell/shared/renderSession/ShellParams.h>
 
 #include <cstddef>
-#endif
 
 namespace igl::shell {
 
