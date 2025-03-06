@@ -7,7 +7,7 @@
 
 // @fb-only
 
-#include "BasicFramebufferSession.h"
+#include <shell/renderSessions/BasicFramebufferSession.h>
 
 #include <igl/Common.h>
 #include <shell/shared/platform/Platform.h>

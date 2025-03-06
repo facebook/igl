@@ -7,7 +7,7 @@
 
 // @fb-only
 
-#include "DrawInstancedSession.h"
+#include <shell/renderSessions/DrawInstancedSession.h>
 
 #include <igl/opengl/Device.h>
 #include <igl/opengl/RenderCommandEncoder.h>

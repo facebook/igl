@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include "IntentListener.h"
-#include "KeyListener.h"
-#include "MouseListener.h"
-#include "RayListener.h"
-#include "TouchListener.h"
+#include <shell/shared/input/IntentListener.h>
+#include <shell/shared/input/KeyListener.h>
+#include <shell/shared/input/MouseListener.h>
+#include <shell/shared/input/RayListener.h>
+#include <shell/shared/input/TouchListener.h>
 
 #include <memory>
 #include <mutex>

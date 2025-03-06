@@ -7,9 +7,9 @@
 
 // @fb-only
 
-#include "InputDispatcher.h"
-#include "MouseListener.h"
-#include "TouchListener.h"
+#include <shell/shared/input/InputDispatcher.h>
+#include <shell/shared/input/MouseListener.h>
+#include <shell/shared/input/TouchListener.h>
 
 namespace igl::shell {
 

@@ -7,7 +7,7 @@
 
 // @fb-only
 
-#include "TinyMeshSession.h"
+#include <shell/renderSessions/TinyMeshSession.h>
 
 #include <cmath>
 #include <cstddef>

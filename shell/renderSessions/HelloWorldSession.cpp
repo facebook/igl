@@ -7,7 +7,8 @@
 
 // @fb-only
 
-#include "HelloWorldSession.h"
+#include <shell/renderSessions/HelloWorldSession.h>
+
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/GLIncludes.h>

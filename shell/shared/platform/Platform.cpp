@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "Platform.h"
+#include <shell/shared/platform/Platform.h>
 
 #include <shell/shared/extension/Extension.h>
 #include <shell/shared/extension/ExtensionLoader.h>

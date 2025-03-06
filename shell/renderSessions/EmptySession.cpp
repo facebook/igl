@@ -7,7 +7,7 @@
 
 // @fb-only
 
-#include "EmptySession.h"
+#include <shell/renderSessions/EmptySession.h>
 
 namespace igl::shell {
 

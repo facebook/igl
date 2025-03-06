@@ -7,7 +7,8 @@
 
 // @fb-only
 
-#include "GPUStressSession.h"
+#include <shell/renderSessions/GPUStressSession.h>
+
 #include <IGLU/imgui/Session.h>
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 #include <cmath>
