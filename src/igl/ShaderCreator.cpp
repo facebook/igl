@@ -18,7 +18,7 @@ std::unique_ptr<IShaderStages> fromLibraryDesc(const IDevice& device,
 
 std::shared_ptr<IShaderModule> ShaderModuleCreator::fromStringInput(const IDevice& device,
                                                                     const char* IGL_NONNULL source,
-                                                                    igl::ShaderModuleInfo info,
+                                                                    ShaderModuleInfo info,
                                                                     std::string debugName,
                                                                     Result* IGL_NULLABLE
                                                                         outResult) {
@@ -40,7 +40,7 @@ std::shared_ptr<IShaderModule> ShaderModuleCreator::fromStringInput(const IDevic
 std::shared_ptr<IShaderModule> ShaderModuleCreator::fromBinaryInput(const IDevice& device,
                                                                     const void* IGL_NONNULL data,
                                                                     size_t dataLength,
-                                                                    igl::ShaderModuleInfo info,
+                                                                    ShaderModuleInfo info,
                                                                     std::string debugName,
                                                                     Result* IGL_NULLABLE
                                                                         outResult) {
@@ -114,7 +114,7 @@ std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromBinaryInput(
 std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromStringInput(
     const IDevice& device,
     const char* IGL_NONNULL librarySource,
-    std::vector<igl::ShaderModuleInfo> moduleInfo,
+    std::vector<ShaderModuleInfo> moduleInfo,
     std::string libraryDebugName,
     Result* IGL_NULLABLE outResult) {
   Result localResult;
@@ -132,7 +132,7 @@ std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromBinaryInput(
     const IDevice& device,
     const void* IGL_NONNULL libraryData,
     size_t libraryDataLength,
-    std::vector<igl::ShaderModuleInfo> moduleInfo,
+    std::vector<ShaderModuleInfo> moduleInfo,
     std::string libraryDebugName,
     Result* IGL_NULLABLE outResult) {
   Result localResult;

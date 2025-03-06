@@ -997,9 +997,9 @@ class ITexture : public ITrackedResource<ITexture> {
  */
 struct SurfaceTextures {
   /** @brief The surface's color texture. */
-  std::shared_ptr<igl::ITexture> color;
+  std::shared_ptr<ITexture> color;
   /** @brief The surface's depth texture. */
-  std::shared_ptr<igl::ITexture> depth;
+  std::shared_ptr<ITexture> depth;
 };
 
 } // namespace igl

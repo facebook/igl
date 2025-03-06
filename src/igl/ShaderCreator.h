@@ -31,7 +31,7 @@ class ShaderModuleCreator {
    */
   static std::shared_ptr<IShaderModule> fromStringInput(const IDevice& device,
                                                         const char* IGL_NONNULL source,
-                                                        igl::ShaderModuleInfo info,
+                                                        ShaderModuleInfo info,
                                                         std::string debugName,
                                                         Result* IGL_NULLABLE outResult);
 
@@ -47,7 +47,7 @@ class ShaderModuleCreator {
   static std::shared_ptr<IShaderModule> fromBinaryInput(const IDevice& device,
                                                         const void* IGL_NONNULL data,
                                                         size_t dataLength,
-                                                        igl::ShaderModuleInfo info,
+                                                        ShaderModuleInfo info,
                                                         std::string debugName,
                                                         Result* IGL_NULLABLE outResult);
 };
@@ -99,12 +99,11 @@ class ShaderLibraryCreator {
    * @param libraryDebugName Optional debug name for the library.
    * @param outResult Optional param to receive success or error information.
    */
-  static std::unique_ptr<IShaderLibrary> fromStringInput(
-      const IDevice& device,
-      const char* IGL_NONNULL librarySource,
-      std::vector<igl::ShaderModuleInfo> moduleInfo,
-      std::string libraryDebugName,
-      Result* IGL_NULLABLE outResult);
+  static std::unique_ptr<IShaderLibrary> fromStringInput(const IDevice& device,
+                                                         const char* IGL_NONNULL librarySource,
+                                                         std::vector<ShaderModuleInfo> moduleInfo,
+                                                         std::string libraryDebugName,
+                                                         Result* IGL_NULLABLE outResult);
 
   /**
    * @brief Constructs an IShaderLibrary with shaders from binary data.
@@ -115,13 +114,12 @@ class ShaderLibraryCreator {
    * @param libraryDebugName Optional debug name for the library.
    * @param outResult Optional param to receive success or error information.
    */
-  static std::unique_ptr<IShaderLibrary> fromBinaryInput(
-      const IDevice& device,
-      const void* IGL_NONNULL libraryData,
-      size_t libraryDataLength,
-      std::vector<igl::ShaderModuleInfo> moduleInfo,
-      std::string libraryDebugName,
-      Result* IGL_NULLABLE outResult);
+  static std::unique_ptr<IShaderLibrary> fromBinaryInput(const IDevice& device,
+                                                         const void* IGL_NONNULL libraryData,
+                                                         size_t libraryDataLength,
+                                                         std::vector<ShaderModuleInfo> moduleInfo,
+                                                         std::string libraryDebugName,
+                                                         Result* IGL_NULLABLE outResult);
 };
 
 /**

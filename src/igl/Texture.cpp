@@ -501,7 +501,7 @@ size_t TextureFormatProperties::getSubRangeByteOffset(const TextureRangeDesc& ra
 }
 
 TextureRangeDesc TextureDesc::asRange() const noexcept {
-  igl::TextureRangeDesc range;
+  TextureRangeDesc range;
   range.width = width;
   range.height = height;
   range.depth = depth;

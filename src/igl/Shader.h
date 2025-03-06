@@ -128,7 +128,7 @@ struct ShaderModuleDesc {
    * @param debugName Debug name for the shader module.
    */
   static ShaderModuleDesc fromStringInput(const char* IGL_NONNULL source,
-                                          igl::ShaderModuleInfo info,
+                                          ShaderModuleInfo info,
                                           std::string debugName);
 
   /**
@@ -140,7 +140,7 @@ struct ShaderModuleDesc {
    */
   static ShaderModuleDesc fromBinaryInput(const void* IGL_NONNULL data,
                                           size_t dataLength,
-                                          igl::ShaderModuleInfo info,
+                                          ShaderModuleInfo info,
                                           std::string debugName);
 
   bool operator==(const ShaderModuleDesc& other) const;
@@ -166,7 +166,7 @@ struct ShaderLibraryDesc {
    * @param libraryDebugName Debug name for the library.
    */
   static ShaderLibraryDesc fromStringInput(const char* IGL_NONNULL librarySource,
-                                           std::vector<igl::ShaderModuleInfo> moduleInfo,
+                                           std::vector<ShaderModuleInfo> moduleInfo,
                                            std::string libraryDebugName);
   /**
    * @brief Constructs a ShaderLibraryDesc for a shaders from binary data.
@@ -177,7 +177,7 @@ struct ShaderLibraryDesc {
    */
   static ShaderLibraryDesc fromBinaryInput(const void* IGL_NONNULL libraryData,
                                            size_t libraryDataLength,
-                                           std::vector<igl::ShaderModuleInfo> moduleInfo,
+                                           std::vector<ShaderModuleInfo> moduleInfo,
                                            std::string libraryDebugName);
 
   bool operator==(const ShaderLibraryDesc& other) const;
