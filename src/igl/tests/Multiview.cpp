@@ -35,8 +35,8 @@ class MultiviewTest : public ::testing::Test {
   MultiviewTest() = default;
   ~MultiviewTest() override = default;
 
-  std::shared_ptr<iglu::ManagedUniformBuffer> createVertexUniformBuffer(igl::IDevice& device,
-                                                                        igl::Result* /*result*/) {
+  std::shared_ptr<iglu::ManagedUniformBuffer> createVertexUniformBuffer(IDevice& device,
+                                                                        Result* /*result*/) {
     std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer = nullptr;
 
     const iglu::ManagedUniformBufferInfo ubInfo = {
@@ -67,7 +67,7 @@ class MultiviewTest : public ::testing::Test {
   void SetUp() override {
     setDebugBreakEnabled(false);
 
-    const std::vector<igl::DeviceFeatures> requestedFeatures{igl::DeviceFeatures::Multiview};
+    const std::vector<DeviceFeatures> requestedFeatures{igl::DeviceFeatures::Multiview};
 
     util::createDeviceAndQueue(iglDev_, cmdQueue_);
     ASSERT_NE(iglDev_, nullptr);

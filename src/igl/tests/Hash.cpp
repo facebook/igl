@@ -106,9 +106,9 @@ TEST_F(HashTest, GraphicsPipeline2) {
   // 64 is the size without unitSamplerMaps, colorAttachments, and debugName as those fields may
   // vary between compilers and machines
   const size_t expectedSize = 64 + 2 * sizeof(std::unordered_map<size_t, std::string>) +
-                              sizeof(std::unordered_map<size_t, igl::NameHandle>) +
+                              sizeof(std::unordered_map<size_t, NameHandle>) +
                               sizeof(std::vector<RenderPipelineDesc::TargetDesc::ColorAttachment>) +
-                              sizeof(igl::NameHandle) +
+                              sizeof(NameHandle) +
                               sizeof(std::shared_ptr<ISamplerState>) * IGL_TEXTURE_SAMPLERS_MAX;
 
   ASSERT_EQ(expectedSize, sizeof(RenderPipelineDesc));

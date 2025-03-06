@@ -223,7 +223,7 @@ TEST_F(FramebufferTest, Clear) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
-  std::shared_ptr<igl::IDepthStencilState> depthStencilState;
+  std::shared_ptr<IDepthStencilState> depthStencilState;
   DepthStencilStateDesc desc;
   desc.isDepthWriteEnabled = true;
 

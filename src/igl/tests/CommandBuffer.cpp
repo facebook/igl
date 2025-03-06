@@ -26,7 +26,7 @@ class CommandBufferTest : public ::testing::Test {
     setDebugBreakEnabled(false);
 
     util::createDeviceAndQueue(iglDev_, cmdQueue_);
-    igl::Result result;
+    Result result;
     cmdBuf_ = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &result);
     ASSERT_EQ(result.code, Result::Code::Ok);
     ASSERT_TRUE(cmdBuf_ != nullptr);

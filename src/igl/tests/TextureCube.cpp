@@ -43,15 +43,15 @@ class TextureCubeTest : public ::testing::Test {
   TextureCubeTest() = default;
   ~TextureCubeTest() override = default;
 
-  std::shared_ptr<iglu::ManagedUniformBuffer> createVertexUniformBuffer(igl::IDevice& device,
-                                                                        igl::Result* /*result*/) {
+  std::shared_ptr<iglu::ManagedUniformBuffer> createVertexUniformBuffer(IDevice& device,
+                                                                        Result* /*result*/) {
     std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer = nullptr;
 
     const iglu::ManagedUniformBufferInfo info = {
         .index = 1,
         .length = sizeof(VertexUniforms),
         .uniforms = {
-            igl::UniformDesc{
+            UniformDesc{
                 .name = "view",
                 .type = igl::UniformType::Float4,
                 .offset = offsetof(VertexUniforms, viewDirection),
