@@ -241,6 +241,7 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
             .semaphore = wrapper.semaphore_.getVkSemaphore(),
             .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
         },
+        signalSemaphore_,
     };
 
     const VkCommandBufferSubmitInfo bufferSI = {
@@ -253,7 +254,7 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
         .pWaitSemaphoreInfos = waitSemaphores,
         .commandBufferInfoCount = 1u,
         .pCommandBufferInfos = &bufferSI,
-        .signalSemaphoreInfoCount = 1u,
+        .signalSemaphoreInfoCount = signalSemaphore_.semaphore ? 2u : 1u,
         .pSignalSemaphoreInfos = signalSemaphores,
     };
 
@@ -295,6 +296,7 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
   lastSubmitSemaphore_.semaphore = wrapper.semaphore_.vkSemaphore_;
   lastSubmitHandle_ = wrapper.handle_;
   waitSemaphore_.semaphore = VK_NULL_HANDLE;
+  signalSemaphore_.semaphore = VK_NULL_HANDLE;
 
   // reset
   const_cast<CommandBufferWrapper&>(wrapper).isEncoding_ = false;
@@ -314,6 +316,12 @@ void VulkanImmediateCommands::waitSemaphore(VkSemaphore semaphore) {
   IGL_DEBUG_ASSERT(waitSemaphore_.semaphore == VK_NULL_HANDLE);
 
   waitSemaphore_.semaphore = semaphore;
+}
+
+void VulkanImmediateCommands::signalSemaphore(VkSemaphore semaphore, uint64_t signalValue) {
+  IGL_DEBUG_ASSERT(signalSemaphore_.semaphore == VK_NULL_HANDLE);
+  signalSemaphore_.semaphore = semaphore;
+  signalSemaphore_.value = signalValue;
 }
 
 VkSemaphore VulkanImmediateCommands::acquireLastSubmitSemaphore() {

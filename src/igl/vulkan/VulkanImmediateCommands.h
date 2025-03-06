@@ -128,6 +128,8 @@ class VulkanImmediateCommands final {
 
   /// @brief Stores the semaphore as the current wait semaphore (`waitSemaphore_`)
   void waitSemaphore(VkSemaphore semaphore);
+  /// @brief Inject one timeline semaphore to be signalled (`signalSemaphore_`)
+  void signalSemaphore(VkSemaphore semaphore, uint64_t signalValue);
 
   /// @brief Returns the last semaphore (`lastSubmitSemaphore_`) and reset the member variable to
   /// `VK_NULL_HANDLE`
@@ -189,6 +191,11 @@ class VulkanImmediateCommands final {
   /// @brief A semaphore to be associated with the next command buffer to be submitted. Can be used
   /// with command buffers that present swapchain images.
   VkSemaphoreSubmitInfo waitSemaphore_ = {
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+      .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+  };
+  // an extra "signal" timeline semaphore
+  VkSemaphoreSubmitInfo signalSemaphore_ = {
       .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
       .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
   };
