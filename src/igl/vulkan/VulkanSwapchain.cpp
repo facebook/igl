@@ -309,8 +309,6 @@ Result VulkanSwapchain::acquireNextImage() {
     VK_ASSERT_RETURN(acquireResult);
   }
 
-  // increase the frame number every time we acquire a new swapchain image
-  frameNumber_++;
   return Result();
 }
 
@@ -331,6 +329,7 @@ Result VulkanSwapchain::present(VkSemaphore waitSemaphore) {
 
   // Ready to call acquireNextImage() on the next getCurrentVulkanTexture();
   getNextImage_ = true;
+  frameNumber_++;
 
   IGL_PROFILER_FRAME(nullptr);
 

@@ -114,7 +114,7 @@ class VulkanSwapchain final {
   // semaphores and fences), the index of the semaphore and fence used to synchronize the current
   // swapchain image is different than the `currentImageIndex_`
   uint32_t currentSemaphoreIndex_ = 0;
-  uint64_t frameNumber_ = 0;
+  uint64_t frameNumber_ = 0; // increasing continuously without bound
   bool getNextImage_ = true;
   VkSwapchainKHR swapchain_{};
   std::unique_ptr<std::shared_ptr<VulkanTexture>[]> swapchainTextures_;
