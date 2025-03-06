@@ -82,6 +82,7 @@ size_t VulkanTextureAccessor::copyBytes(unsigned char* ptr, size_t length) {
       igl::TextureFormatProperties::fromTextureFormat(texture_->getFormat()),
       vkImageFormat_,
       vkImageLayout_,
+      VK_IMAGE_ASPECT_COLOR_BIT,
       ptr,
       bytesPerRow_,
       false);

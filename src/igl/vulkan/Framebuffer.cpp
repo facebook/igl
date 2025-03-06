@@ -102,6 +102,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
                                      vkTex.getProperties(),
                                      VK_FORMAT_R8G8B8A8_UNORM,
                                      vkTex.getVulkanTexture().image_.imageLayout_,
+                                     vkTex.getVulkanTexture().image_.getImageAspectFlags(),
                                      pixelBytes,
                                      static_cast<uint32_t>(bytesPerRow),
                                      true); // Flip the image vertically

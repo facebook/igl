@@ -556,6 +556,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                                          TextureFormatProperties properties,
                                          VkFormat /*format*/,
                                          VkImageLayout layout,
+                                         VkImageAspectFlags /*aspectFlags*/,
                                          void* data,
                                          uint32_t bytesPerRow,
                                          bool flipImageVertical) {
