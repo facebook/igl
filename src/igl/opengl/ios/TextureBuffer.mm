@@ -132,7 +132,7 @@ Result TextureBuffer::createWithSize(size_t width, size_t height) {
     // The behavior of CVOpenGLESTextureCacheCreateTextureFromImage() changed
     // in iOS 13 simulator, and it fails for unknown reasons when BGRA only.
     // So we have to create and upload the texture ourselves.
-    GLuint textureID;
+    GLuint textureID = 0;
     getContext().genTextures(1, &textureID);
     getContext().bindTexture(GL_TEXTURE_2D, textureID);
 
