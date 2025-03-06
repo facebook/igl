@@ -164,11 +164,11 @@ TEST_F(TextureMTLTest, ToMTLTextureType) {
   }
 }
 
-static std::shared_ptr<igl::ITexture> createCVPixelBufferTextureWithSize(
-    igl::TextureFormat format,
+static std::shared_ptr<ITexture> createCVPixelBufferTextureWithSize(
+    TextureFormat format,
     const size_t width,
     const size_t height,
-    const std::shared_ptr<igl::IDevice>& device,
+    const std::shared_ptr<IDevice>& device,
     Result& outResult) {
   const igl::BackendType backend = device->getBackendType();
   CVPixelBufferRef pixelBuffer = nullptr;
@@ -191,7 +191,7 @@ static std::shared_ptr<igl::ITexture> createCVPixelBufferTextureWithSize(
   }
 
   auto* platformDevice = device->getPlatformDevice<igl::metal::PlatformDevice>();
-  std::shared_ptr<igl::ITexture> texture =
+  std::shared_ptr<ITexture> texture =
       platformDevice->createTextureFromNativePixelBuffer(pixelBuffer, format, 0, &outResult);
   if (!outResult.isOk()) {
     return nullptr;

@@ -88,7 +88,7 @@ void populateMinimalValidFile(std::vector<uint8_t>& buffer,
 }
 
 std::optional<iglu::textureloader::DataReader> getReader(const std::vector<uint8_t>& buffer) {
-  igl::Result ret;
+  Result ret;
   auto maybeReader = iglu::textureloader::DataReader::tryCreate(
       buffer.data(), static_cast<uint32_t>(buffer.size()), &ret);
 

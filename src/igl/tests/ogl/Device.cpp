@@ -18,13 +18,13 @@
 namespace igl::tests {
 
 /// Helper to create just any render pipeline in a valid way
-std::shared_ptr<IRenderPipelineState> createRenderPipeline(
-    const std::shared_ptr<igl::IDevice>& device,
+static std::shared_ptr<IRenderPipelineState> createRenderPipeline(
+    const std::shared_ptr<IDevice>& device,
     Result* result);
 
 /// Just creates any shader
-std::shared_ptr<IShaderModule> createShaderModule(const std::shared_ptr<igl::IDevice>& device,
-                                                  Result* result);
+static std::shared_ptr<IShaderModule> createShaderModule(const std::shared_ptr<IDevice>& device,
+                                                         Result* result);
 
 class DeviceOGLTest : public ::testing::Test {
  public:
@@ -274,9 +274,8 @@ TEST_F(DeviceOGLTest, DeletionTest) {
   { const DeviceScope scope3(*iglDev_); }
 }
 
-std::shared_ptr<IRenderPipelineState> createRenderPipeline(
-    const std::shared_ptr<igl::IDevice>& device,
-    Result* outResult) {
+std::shared_ptr<IRenderPipelineState> createRenderPipeline(const std::shared_ptr<IDevice>& device,
+                                                           Result* outResult) {
   Result ret;
 
   RenderPipelineDesc renderPipelineDesc;
@@ -322,7 +321,7 @@ std::shared_ptr<IRenderPipelineState> createRenderPipeline(
   return renderPipelineState;
 }
 
-std::shared_ptr<IShaderModule> createShaderModule(const std::shared_ptr<igl::IDevice>& device,
+std::shared_ptr<IShaderModule> createShaderModule(const std::shared_ptr<IDevice>& device,
                                                   Result* outResult) {
   Result ret;
   auto vertShader = ShaderModuleCreator::fromStringInput(

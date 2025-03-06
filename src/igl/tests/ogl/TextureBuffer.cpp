@@ -64,7 +64,7 @@ class TextureBufferOGLTest : public ::testing::Test {
   // Member variables
  public:
   opengl::IContext* context_{};
-  std::shared_ptr<::igl::IDevice> device_;
+  std::shared_ptr<IDevice> device_;
 };
 
 //

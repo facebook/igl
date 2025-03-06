@@ -32,12 +32,12 @@ class SamplerStateOGLTest : public ::testing::Test {
     igl::setDebugBreakEnabled(false);
 
     device_ = util::createTestDevice();
-    context_ = &static_cast<opengl::Device&>(*device_.get()).getContext();
+    context_ = &static_cast<opengl::Device&>(*device_).getContext();
 
     ASSERT_TRUE(context_ != nullptr);
   }
 
-  std::shared_ptr<::igl::IDevice> device_;
+  std::shared_ptr<IDevice> device_;
   opengl::IContext* context_{};
 };
 

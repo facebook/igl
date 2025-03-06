@@ -31,7 +31,7 @@ class DepthStencilStateMTLTest : public ::testing::Test {
 //
 TEST_F(DepthStencilStateMTLTest, StencilOpConversionToMTL) {
   struct StencilOpConversion {
-    igl::StencilOperation igl = StencilOperation::Keep;
+    StencilOperation igl = StencilOperation::Keep;
     MTLStencilOperation mtl = MTLStencilOperationKeep;
   };
   const MTLStencilOperation MTLStencilOperation =
@@ -62,7 +62,7 @@ TEST_F(DepthStencilStateMTLTest, StencilOpConversionToMTL) {
 //
 TEST_F(DepthStencilStateMTLTest, CompareFunctionToMTL) {
   struct CompareFuncConversion {
-    igl::CompareFunction igl = igl::CompareFunction::Never;
+    CompareFunction igl = igl::CompareFunction::Never;
     MTLCompareFunction mtl = MTLCompareFunctionNever;
   };
 

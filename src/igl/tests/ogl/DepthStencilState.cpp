@@ -174,7 +174,7 @@ TEST_F(DepthStencilStateTest, Passthrough) {
 //
 TEST_F(DepthStencilStateTest, CompareFunctionToOGL) {
   struct CompareFuncConversion {
-    igl::CompareFunction igl = igl::CompareFunction::Never;
+    CompareFunction igl = igl::CompareFunction::Never;
     GLenum ogl = GL_NEVER;
   };
 
@@ -202,7 +202,7 @@ TEST_F(DepthStencilStateTest, CompareFunctionToOGL) {
 //
 TEST_F(DepthStencilStateTest, StencilOperationToOGL) {
   struct StencilOpConversion {
-    igl::StencilOperation igl = igl::StencilOperation::Keep;
+    StencilOperation igl = igl::StencilOperation::Keep;
     GLenum ogl = GL_KEEP;
   };
 

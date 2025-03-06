@@ -38,9 +38,6 @@ class UniformCollectionTest : public ::testing::Test {
 
 // ----------------------------------------------------------------------------
 
-template<typename T>
-class debug_t;
-
 //
 // Value Test
 //

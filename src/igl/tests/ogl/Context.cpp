@@ -42,7 +42,7 @@ class ContextOGLTest : public ::testing::Test {
 
  public:
   opengl::IContext* context_{};
-  std::shared_ptr<::igl::IDevice> device_;
+  std::shared_ptr<IDevice> device_;
 };
 
 /// Test basic functionality for binding GL_FRAMEBUFFER.
@@ -317,7 +317,7 @@ TEST_F(ContextOGLTest, BasicSharedContexts) {
   GTEST_SKIP() << "Context sharing not implemented in opengl::wgl";
 #endif
   // Setup is three contexts, (1) and (2) part of the same sharegroup and (3) not.
-  igl::Result result;
+  Result result;
   auto sharedContext = context_->createShareContext(&result);
   ASSERT_TRUE(result.isOk());
 
