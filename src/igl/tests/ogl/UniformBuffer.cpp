@@ -549,9 +549,9 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
     simd::int3 testiVec3{};
     simd::int4 testiVec4{};
 
-    simd::float2x2 testMat2;
-    simd::float3x3 testMat3;
-    simd::float4x4 testMat4;
+    simd::float2x2 testMat2{};
+    simd::float3x3 testMat3{};
+    simd::float4x4 testMat4{};
     simd::float4 backgroundColor{};
 
     simd::float1 unsetFloat{};
@@ -743,7 +743,7 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
-  std::shared_ptr<igl::IRenderCommandEncoder> cmds =
+  std::shared_ptr<IRenderCommandEncoder> cmds =
       cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
   cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
   cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
@@ -892,9 +892,9 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
     std::array<simd::int3, 3> testiVec3{};
     std::array<Int4UnpackedData, 3> testiVec4{};
 
-    std::array<simd::float2x2, 3> testMat2;
-    std::array<simd::float3x3, 3> testMat3;
-    std::array<simd::float4x4, 3> testMat4;
+    std::array<simd::float2x2, 3> testMat2{};
+    std::array<simd::float3x3, 3> testMat3{};
+    std::array<simd::float4x4, 3> testMat4{};
     simd::float4 backgroundColor{};
 
     std::array<simd::float1, 3> unsetFloat{};
@@ -1146,7 +1146,7 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
-  std::shared_ptr<igl::IRenderCommandEncoder> cmds =
+  std::shared_ptr<IRenderCommandEncoder> cmds =
       cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
   cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
   cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);

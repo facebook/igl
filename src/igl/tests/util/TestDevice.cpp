@@ -19,7 +19,7 @@ namespace igl::tests::util {
 // flag in the BUCK file. For OpenGL ES, the GLES version is determined by the
 // IGL_UNIT_TESTS_GLES_VERSION compiler flag.
 //
-std::shared_ptr<::igl::IDevice> createTestDevice() {
+std::shared_ptr<IDevice> createTestDevice() {
   const std::string backend(IGL_BACKEND_TYPE);
 
   if (backend == "ogl") {

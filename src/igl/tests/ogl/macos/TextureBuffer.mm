@@ -18,14 +18,14 @@ class TextureBufferMacTest : public util::TextureFormatTestBase {
   TextureBufferMacTest() = default;
   ~TextureBufferMacTest() override = default;
 
-  std::shared_ptr<igl::ITexture> createCVPixelBufferTextureWithSize(OSType pixelFormat,
-                                                                    size_t width,
-                                                                    size_t height,
-                                                                    TextureDesc::TextureUsage usage,
-                                                                    Result& outResult);
+  std::shared_ptr<ITexture> createCVPixelBufferTextureWithSize(OSType pixelFormat,
+                                                               size_t width,
+                                                               size_t height,
+                                                               TextureDesc::TextureUsage usage,
+                                                               Result& outResult);
 };
 
-std::shared_ptr<igl::ITexture> TextureBufferMacTest::createCVPixelBufferTextureWithSize(
+std::shared_ptr<ITexture> TextureBufferMacTest::createCVPixelBufferTextureWithSize(
     OSType pixelFormat,
     const size_t width,
     const size_t height,
@@ -54,7 +54,7 @@ std::shared_ptr<igl::ITexture> TextureBufferMacTest::createCVPixelBufferTextureW
   auto* platformDevice = iglDev_->getPlatformDevice<igl::opengl::macos::PlatformDevice>();
   auto& context = static_cast<igl::opengl::macos::Context&>(platformDevice->getContext());
   auto* textureCache = context.createTextureCache();
-  std::shared_ptr<igl::ITexture> texture = platformDevice->createTextureFromNativePixelBuffer(
+  std::shared_ptr<ITexture> texture = platformDevice->createTextureFromNativePixelBuffer(
       pixelBuffer, textureCache, usage, &outResult);
   if (!outResult.isOk()) {
     return nullptr;
