@@ -282,7 +282,7 @@ void Framebuffer::validateAttachments() {
       IGL_DEBUG_ASSERT(height_ == attachmentHeight);
     }
 
-    IGL_DEBUG_ASSERT(tex.getVkFormat() != VK_FORMAT_UNDEFINED,
+    IGL_DEBUG_ASSERT(tex.getVkFormat() != VK_FORMAT_UNDEFINED || tex.getVkExtendedFormat() != 0,
                      "Invalid texture format: %d",
                      static_cast<int>(tex.getVkFormat()));
   };

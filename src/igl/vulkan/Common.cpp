@@ -431,7 +431,8 @@ void transitionToColorAttachment(VkCommandBuffer cmdBuf, ITexture* colorTex) {
     IGL_LOG_ERROR("Color attachments cannot have depth/stencil formats");
     return;
   }
-  IGL_DEBUG_ASSERT(img.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
+  IGL_DEBUG_ASSERT(img.imageFormat_ != VK_FORMAT_UNDEFINED || vkTex.getVkExtendedFormat() != 0,
+                   "Invalid color attachment format");
   if (!IGL_DEBUG_VERIFY((img.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0)) {
     IGL_DEBUG_ABORT("Did you forget to specify TextureUsageBit::Attachment usage bit?");
     IGL_LOG_ERROR("Did you forget to specify TextureUsageBit::Attachment usage bit?");
