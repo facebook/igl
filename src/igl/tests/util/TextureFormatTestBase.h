@@ -8,10 +8,11 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
+#include <igl/CommandQueue.h>
 #include <igl/NameHandle.h>
-#include <string>
-#include <vector>
+#include <igl/RenderPass.h>
+#include <igl/RenderPipelineState.h>
+#include <igl/Texture.h>
 
 namespace igl::tests::util {
 

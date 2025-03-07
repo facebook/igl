@@ -7,10 +7,7 @@
 
 #include "TestErrorGuard.h"
 
-#include <cstdarg>
-#include <cstdio>
 #include <gtest/gtest.h>
-#include <string>
 
 igl::tests::util::TestErrorGuard::TestErrorGuard() {
 #if IGL_SOFT_ERROR_ENABLED

@@ -17,9 +17,14 @@
 #include "util/Common.h"
 
 #include <igl/Buffer.h>
+#include <igl/CommandBuffer.h>
 #include <igl/DepthStencilState.h>
 #include <igl/NameHandle.h>
+#include <igl/RenderCommandEncoder.h>
+#include <igl/RenderPass.h>
 #include <igl/RenderPipelineState.h>
+#include <igl/SamplerState.h>
+#include <igl/VertexInputState.h>
 
 #define OFFSCREEN_RT_WIDTH 4
 #define OFFSCREEN_RT_HEIGHT 4

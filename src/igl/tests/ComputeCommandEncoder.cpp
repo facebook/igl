@@ -5,11 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <functional>
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
+#include <igl/CommandBuffer.h>
+#include <igl/ComputeCommandEncoder.h>
+#include <igl/ComputePipelineState.h>
+#include <igl/Shader.h>
+#include <igl/ShaderCreator.h>
 #include <memory>
-#include <utility>
 #include <vector>
 
 #include "data/ShaderData.h"

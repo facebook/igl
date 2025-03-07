@@ -8,9 +8,9 @@
 #pragma once
 
 #include <glm/glm.hpp>
-
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
+#include <igl/CommandBuffer.h>
+#include <igl/Common.h>
 
 #if IGL_PLATFORM_IOS || IGL_PLATFORM_MACOSX
 #include "simd/simd.h"

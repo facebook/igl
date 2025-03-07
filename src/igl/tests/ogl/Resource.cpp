@@ -6,8 +6,10 @@
  */
 
 #include "../data/ShaderData.h"
-#include "../data/VertexIndexData.h"
 #include "../util/Common.h"
+
+#include <igl/RenderPipelineState.h>
+#include <igl/VertexInputState.h>
 
 namespace igl::tests {
 

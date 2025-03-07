@@ -6,8 +6,9 @@
  */
 
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
-#include <string>
+#include <igl/CommandBuffer.h>
+#include <igl/CommandQueue.h>
+#include <igl/HWDevice.h>
 
 namespace igl::tests {
 

@@ -8,6 +8,8 @@
 #include "util/Common.h"
 #include "util/TestDevice.h"
 
+#include <igl/Buffer.h>
+#include <igl/Uniform.h>
 #include <string>
 
 namespace igl::tests {

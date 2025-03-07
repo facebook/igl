@@ -6,7 +6,6 @@
  */
 
 #include "data/ShaderData.h"
-#include "data/TextureData.h"
 #include "data/VertexIndexData.h"
 #include "util/Common.h"
 #include "util/TestDevice.h"
@@ -16,6 +15,11 @@
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/PlatformDevice.h>
 #endif // #IGL_BACKEND_OPENGL
+#include <igl/CommandBuffer.h>
+#include <igl/RenderPass.h>
+#include <igl/RenderPipelineState.h>
+#include <igl/SamplerState.h>
+#include <igl/VertexInputState.h>
 #include <string>
 
 namespace igl::tests {

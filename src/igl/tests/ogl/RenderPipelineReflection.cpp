@@ -9,6 +9,7 @@
 #include "../util/Common.h"
 
 #include <gtest/gtest.h>
+#include <igl/VertexInputState.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/RenderPipelineReflection.h>
 

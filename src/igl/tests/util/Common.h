@@ -7,8 +7,9 @@
 
 #pragma once
 
+#include <igl/Device.h>
+
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/IContext.h>
 #endif // IGL_BACKEND_OPENGL

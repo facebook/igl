@@ -7,6 +7,9 @@
 
 #include "util/Common.h"
 
+#include <igl/DepthStencilState.h>
+#include <igl/RenderPipelineState.h>
+
 namespace igl::tests {
 
 //

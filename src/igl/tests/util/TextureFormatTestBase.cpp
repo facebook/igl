@@ -7,10 +7,13 @@
 
 #include "TextureFormatTestBase.h"
 #include "../data/ShaderData.h"
-#include "../data/TextureData.h"
 #include "../data/VertexIndexData.h"
 #include "Common.h"
-#include "TestDevice.h"
+
+#include <igl/CommandBuffer.h>
+#include <igl/Framebuffer.h>
+#include <igl/SamplerState.h>
+#include <igl/VertexInputState.h>
 
 namespace igl::tests::util {
 

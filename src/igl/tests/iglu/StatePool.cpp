@@ -11,7 +11,9 @@
 
 #include <IGLU/state_pool/RenderPipelineStatePool.h>
 #include <gtest/gtest.h>
+#include <igl/CommandBuffer.h>
 #include <igl/NameHandle.h>
+#include <igl/VertexInputState.h>
 #include <string>
 
 namespace igl::tests {

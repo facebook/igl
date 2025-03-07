@@ -9,6 +9,8 @@
 #include "util/Common.h"
 
 #include <gtest/gtest.h>
+#include <igl/Shader.h>
+#include <igl/ShaderCreator.h>
 
 namespace igl::tests {
 

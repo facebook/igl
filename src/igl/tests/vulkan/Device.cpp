@@ -6,10 +6,10 @@
  */
 
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 
 #include "../util/TestDevice.h"
 
+#include <igl/CommandBuffer.h>
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>

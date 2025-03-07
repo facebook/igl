@@ -9,7 +9,6 @@
 
 #include <cmath>
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 #include <igl/opengl/CommandQueue.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/TextureBufferBase.h>

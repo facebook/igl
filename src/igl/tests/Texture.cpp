@@ -6,6 +6,10 @@
  */
 
 #include "Texture.h"
+
+#include "data/TextureData.h"
+#include "util/TextureValidationHelpers.h"
+
 #include <igl/Common.h>
 
 namespace igl::tests {

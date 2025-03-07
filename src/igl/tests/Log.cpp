@@ -6,7 +6,7 @@
  */
 
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
+#include <igl/Common.h>
 #include <random>
 #include <string>
 #include <thread>

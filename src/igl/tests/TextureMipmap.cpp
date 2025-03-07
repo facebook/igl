@@ -5,9 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <cstddef>
-
 #include "Texture.h"
+
+#include "util/TextureValidationHelpers.h"
+
+#include <cstddef>
+#include <igl/CommandBuffer.h>
 
 namespace igl::tests {
 
