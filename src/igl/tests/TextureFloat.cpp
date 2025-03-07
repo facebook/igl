@@ -23,7 +23,7 @@
 #include <string>
 
 namespace igl::tests {
-#if IGL_OPENGL_ES && IGL_BACKEND_OPENGL
+#if IGL_BACKEND_OPENGL && IGL_OPENGL_ES
 static const bool kUsesOpenGLES = opengl::DeviceFeatureSet::usesOpenGLES();
 #else
 // no OpenGLES was linked

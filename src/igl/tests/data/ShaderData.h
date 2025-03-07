@@ -38,7 +38,7 @@ const size_t simpleComputeOutputIndex = 1;
 //-----------------------------------------------------------------------------
 // OGL Shaders
 //-----------------------------------------------------------------------------
-#if IGL_OPENGL_ES
+#if IGL_BACKEND_OPENGL && IGL_OPENGL_ES
 #define PROLOG precision mediump float;
 #else
 #define PROLOG

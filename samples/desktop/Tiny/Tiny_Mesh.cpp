@@ -41,6 +41,14 @@
 
 #define TINY_TEST_USE_DEPTH_BUFFER 1
 
+#define USE_OPENGL_BACKEND 0
+
+#if IGL_BACKEND_OPENGL && !IGL_BACKEND_VULKAN
+// no IGL/Vulkan was compiled in, switch to IGL/OpenGL
+#undef USE_OPENGL_BACKEND
+#define USE_OPENGL_BACKEND 1
+#endif
+
 constexpr uint32_t kNumCubes = 16;
 
 #if IGL_WITH_IGLU
