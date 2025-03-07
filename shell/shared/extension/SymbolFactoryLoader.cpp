@@ -12,14 +12,20 @@
 // clang-format off
 // Default behavior if project doesn't override
 #if !defined(IGL_DL_UNIX) && !defined(IGL_DL_DLL)
-  #if (defined(IGL_PLATFORM_APPLE) && IGL_PLATFORM_APPLE)
+  #if IGL_PLATFORM_APPLE
     #define IGL_DL_UNIX 1
-  #elif (defined(IGL_PLATFORM_ANDROID) && IGL_PLATFORM_ANDROID)
+  #elif IGL_PLATFORM_ANDROID
     #define IGL_DL_UNIX 1
-  #elif (defined(IGL_PLATFORM_WINDOWS) && IGL_PLATFORM_WINDOWS)
+  #elif IGL_PLATFORM_WINDOWS
     #define IGL_DL_DLL 1
   #endif
 #endif // !defined(IGL_DL_UNIX) || !defined(IGL_DL_DLL)
+#if !defined(IGL_DL_UNIX)
+#define IGL_DL_UNIX 0
+#endif
+#if !defined(IGL_DL_DLL)
+#define IGL_DL_DLL 0
+#endif
 // clang-format on
 
 #if IGL_DL_UNIX
