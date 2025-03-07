@@ -80,6 +80,7 @@ void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
   VkPhysicalDeviceShaderDrawParametersFeatures_.shaderDrawParameters =
       config_.enableShaderDrawParameters ? VK_TRUE : VK_FALSE;
   VkPhysicalDeviceSynchronization2Features_.synchronization2 = VK_TRUE;
+  VkPhysicalDeviceTimelineSemaphoreFeatures_.timelineSemaphore = VK_TRUE;
 }
 
 igl::Result VulkanFeatures::checkSelectedFeatures(
@@ -202,6 +203,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   VkPhysicalDeviceMultiviewFeatures_.pNext = nullptr;
   VkPhysicalDeviceIndexTypeUint8Features_.pNext = nullptr;
   VkPhysicalDeviceSynchronization2Features_.pNext = nullptr;
+  VkPhysicalDeviceTimelineSemaphoreFeatures_.pNext = nullptr;
 
 #if defined(VK_VERSION_1_2)
   VkPhysicalDeviceShaderFloat16Int8Features_.pNext = nullptr;
@@ -239,6 +241,9 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
 
   if (hasExtension(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceSynchronization2Features_);
+  }
+  if (hasExtension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) {
+    ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceTimelineSemaphoreFeatures_);
   }
 }
 
@@ -279,6 +284,7 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
 
   VkPhysicalDeviceIndexTypeUint8Features_ = other.VkPhysicalDeviceIndexTypeUint8Features_;
   VkPhysicalDeviceSynchronization2Features_ = other.VkPhysicalDeviceSynchronization2Features_;
+  VkPhysicalDeviceTimelineSemaphoreFeatures_ = other.VkPhysicalDeviceTimelineSemaphoreFeatures_;
 
   extensions_ = other.extensions_;
 

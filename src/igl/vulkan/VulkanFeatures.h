@@ -101,6 +101,10 @@ class VulkanFeatures final {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR,
       .synchronization2 = VK_TRUE,
   };
+  VkPhysicalDeviceTimelineSemaphoreFeaturesKHR VkPhysicalDeviceTimelineSemaphoreFeatures_ = {
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR,
+      .timelineSemaphore = VK_TRUE,
+  };
 
   // Assignment operator. We need to reassemble the feature chain because of the
   // pNext pointers
