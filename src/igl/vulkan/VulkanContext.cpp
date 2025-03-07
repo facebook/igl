@@ -912,12 +912,16 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
         textures_.create(std::make_shared<VulkanTexture>(std::move(image), std::move(imageView)));
     IGL_DEBUG_ASSERT(textures_.numObjects() == 1);
     const uint32_t pixel = 0xFF000000;
+
+    const VkImageAspectFlags imageAspectFlags =
+        (*textures_.get(pimpl_->dummyTexture_))->image_.getImageAspectFlags();
     stagingDevice_->imageData(
         (*textures_.get(pimpl_->dummyTexture_))->image_,
         TextureType::TwoD,
         TextureRangeDesc::new2D(0, 0, 1, 1),
         TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8),
         0,
+        imageAspectFlags,
         &pixel);
   }
 

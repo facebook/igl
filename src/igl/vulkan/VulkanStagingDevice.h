@@ -62,6 +62,7 @@ class VulkanStagingDevice final {
                  const TextureRangeDesc& range,
                  const TextureFormatProperties& properties,
                  uint32_t bytesPerRow,
+                 VkImageAspectFlags aspectFlags,
                  const void* data);
 
   /** @brief Downloads the texture data from the VulkanImage object on the device to the location

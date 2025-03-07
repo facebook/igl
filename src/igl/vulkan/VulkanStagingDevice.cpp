@@ -285,6 +285,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
                                     const TextureRangeDesc& range,
                                     const TextureFormatProperties& properties,
                                     uint32_t bytesPerRow,
+                                    VkImageAspectFlags /*aspectFlags*/,
                                     const void* data) {
   IGL_PROFILER_FUNCTION();
 
