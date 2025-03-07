@@ -497,6 +497,7 @@ VulkanContext::~VulkanContext() {
   waitDeferredTasks();
 
   immediate_.reset(nullptr);
+  timelineSemaphore_.reset(nullptr);
 
   if (device_) {
     if (pimpl_->dpBindless_ != VK_NULL_HANDLE) {
@@ -1143,6 +1144,11 @@ igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
   }
 
   swapchain_ = std::make_unique<igl::vulkan::VulkanSwapchain>(*this, width, height);
+
+  if (extensions_.hasTimelineSemaphore && extensions_.hasSynchronization2) {
+    timelineSemaphore_ = std::make_unique<VulkanSemaphore>(
+        vf_, getVkDevice(), 0, false, "Semaphore: VulkanContext::timelineSemaphore_");
+  }
 
   return swapchain_ ? Result() : Result(Result::Code::RuntimeError, "Failed to create Swapchain");
 }

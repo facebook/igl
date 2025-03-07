@@ -312,13 +312,14 @@ class VulkanContext final {
  public:
   const VulkanFunctionTable& vf_;
   DeviceQueues deviceQueues_;
-  std::unique_ptr<igl::vulkan::VulkanDevice> device_;
-  std::unique_ptr<igl::vulkan::VulkanSwapchain> swapchain_;
-  std::unique_ptr<igl::vulkan::VulkanImmediateCommands> immediate_;
-  std::unique_ptr<igl::vulkan::VulkanStagingDevice> stagingDevice_;
+  std::unique_ptr<VulkanDevice> device_;
+  std::unique_ptr<VulkanSwapchain> swapchain_;
+  std::unique_ptr<VulkanSemaphore> timelineSemaphore_;
+  std::unique_ptr<VulkanImmediateCommands> immediate_;
+  std::unique_ptr<VulkanStagingDevice> stagingDevice_;
 
-  std::unique_ptr<igl::vulkan::VulkanBuffer> dummyUniformBuffer_;
-  std::unique_ptr<igl::vulkan::VulkanBuffer> dummyStorageBuffer_;
+  std::unique_ptr<VulkanBuffer> dummyUniformBuffer_;
+  std::unique_ptr<VulkanBuffer> dummyStorageBuffer_;
   // don't use staging on devices with device-local host-visible memory
   bool useStagingForBuffers_ = true;
 
