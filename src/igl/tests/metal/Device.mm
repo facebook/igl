@@ -10,7 +10,6 @@
 #include "../util/TestDevice.h"
 
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 
 namespace igl::tests {
 
