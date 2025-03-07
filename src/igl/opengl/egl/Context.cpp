@@ -12,6 +12,7 @@
 #include <EGL/egl.h>
 #include <igl/opengl/HWDevice.h>
 
+#include <array>
 #include <cassert>
 #include <igl/Macros.h>
 #include <igl/opengl/Errors.h>
@@ -78,31 +79,24 @@ EGLDisplay getDefaultEGLDisplay() {
 }
 
 // typical high-quality attrib list
-EGLint attribs[] = {
-    // 32 bit color
-    EGL_RED_SIZE,
-    8,
-    EGL_GREEN_SIZE,
-    8,
-    EGL_BLUE_SIZE,
-    8,
-    EGL_ALPHA_SIZE,
-    8,
-    // 16-bit depth
-    EGL_DEPTH_SIZE,
-    16,
-    EGL_SURFACE_TYPE,
-    EGL_PBUFFER_BIT,
-    // want opengl-es 2.x conformant CONTEXT
-    EGL_RENDERABLE_TYPE,
-    EGL_OPENGL_ES2_BIT,
-    EGL_NONE // Terminator
-};
-EGLint contextAttribs[] = {
-    EGL_CONTEXT_CLIENT_VERSION,
-    2,
-    EGL_NONE // Terminator
-};
+constexpr std::array attribs{EGLint{EGL_RED_SIZE},
+                             EGLint{8},
+                             EGLint{EGL_GREEN_SIZE},
+                             EGLint{8},
+                             EGLint{EGL_BLUE_SIZE},
+                             EGLint{8},
+                             EGLint{EGL_ALPHA_SIZE},
+                             EGLint{8},
+                             EGLint{EGL_DEPTH_SIZE},
+                             EGLint{16},
+                             EGLint{EGL_SURFACE_TYPE},
+                             EGLint{EGL_PBUFFER_BIT},
+                             EGLint{EGL_RENDERABLE_TYPE},
+                             EGLint{EGL_OPENGL_ES2_BIT},
+                             EGLint{EGL_NONE}};
+constexpr std::array contextAttribs{EGLint{EGL_CONTEXT_CLIENT_VERSION},
+                                    EGLint{2},
+                                    EGLint{EGL_NONE}};
 
 std::pair<EGLDisplay, EGLContext> newEGLContext(EGLDisplay display,
                                                 EGLContext shareContext,
@@ -119,12 +113,12 @@ std::pair<EGLDisplay, EGLContext> newEGLContext(EGLDisplay display,
   }
 
   EGLint numConfigs = 0;
-  if (!eglChooseConfig(display, attribs, config, 1, &numConfigs)) {
+  if (!eglChooseConfig(display, attribs.data(), config, 1, &numConfigs)) {
     CHECK_EGL_ERRORS();
   }
 
-  auto res =
-      std::make_pair(display, eglCreateContext(display, *config, shareContext, contextAttribs));
+  auto res = std::make_pair(
+      display, eglCreateContext(display, *config, shareContext, contextAttribs.data()));
   CHECK_EGL_ERRORS();
   return res;
 }
@@ -132,7 +126,7 @@ std::pair<EGLDisplay, EGLContext> newEGLContext(EGLDisplay display,
 EGLConfig chooseConfig(EGLDisplay display) {
   EGLConfig config{nullptr};
   EGLint numConfigs{0};
-  const EGLBoolean status = eglChooseConfig(display, attribs, &config, 1, &numConfigs);
+  const EGLBoolean status = eglChooseConfig(display, attribs.data(), &config, 1, &numConfigs);
   CHECK_EGL_ERRORS();
   if (!status) {
     IGL_DEBUG_ASSERT(status == EGL_TRUE, "eglChooseConfig failed");
@@ -215,14 +209,13 @@ Context::Context(RenderingAPI api,
   IContext::registerContext((void*)context_, this);
   if (!window) {
     if (offscreen) {
-      EGLint pbufferAttribs[] = {
-          EGL_WIDTH,
-          dimensions.first,
-          EGL_HEIGHT,
-          dimensions.second,
-          EGL_NONE, // Terminator. I'll be back!
-      };
-      readSurface_ = drawSurface_ = eglCreatePbufferSurface(display_, config, pbufferAttribs);
+      std::array pbufferAttribs{EGLint{EGL_WIDTH},
+                                EGLint{dimensions.first},
+                                EGLint{EGL_HEIGHT},
+                                EGLint{dimensions.second},
+                                EGLint{EGL_NONE}};
+      readSurface_ = drawSurface_ =
+          eglCreatePbufferSurface(display_, config, pbufferAttribs.data());
       surfacesOwned_ = true;
       CHECK_EGL_ERRORS();
     } else {
