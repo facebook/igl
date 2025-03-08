@@ -61,7 +61,17 @@ SubmitHandle CommandQueue::endCommandBuffer(VulkanContext& ctx,
   // Submit to the graphics queue.
   const bool shouldPresent = ctx.hasSwapchain() && cmdBuffer->isFromSwapchain() && present;
   if (shouldPresent) {
-    ctx.immediate_->waitSemaphore(ctx.swapchain_->getSemaphore());
+    if (ctx.timelineSemaphore_) {
+      // if we are presenting a swapchain image, signal our timeline semaphore
+      const uint64_t signalValue =
+          ctx.swapchain_->getFrameNumber() + ctx.swapchain_->getNumSwapchainImages();
+      // we wait for this value next time we want to acquire this swapchain image
+      ctx.swapchain_->timelineWaitValues_[ctx.swapchain_->getCurrentImageIndex()] = signalValue;
+      ctx.immediate_->signalSemaphore(ctx.timelineSemaphore_->getVkSemaphore(), signalValue);
+    } else {
+      // this can be removed once we switch to timeline semaphores
+      ctx.immediate_->waitSemaphore(ctx.swapchain_->getSemaphore());
+    }
   }
 
   cmdBuffer->lastSubmitHandle_ = ctx.immediate_->submit(cmdBuffer->wrapper_);

@@ -95,12 +95,14 @@ class VulkanSwapchain final {
  private:
   void lazyAllocateDepthBuffer() const;
 
- private:
+ public:
   std::vector<VulkanSemaphore> acquireSemaphores_;
   // Used to check whether the acquire semaphore can be used for acquiring
   // Based on
   // https://github.com/corporateshark/lightweightvk/blob/36597fae5c79ad6b310e4ed8c00e8acfa38b5aca/lvk/vulkan/VulkanClasses.h#L146
-  std::vector<VulkanFence> acquireFences_;
+  std::vector<VulkanFence> acquireFences_; // this can be removed once we switch to timeline
+                                           // semaphores
+  std::vector<uint64_t> timelineWaitValues_;
 
  private:
   const VulkanContext& ctx_;
