@@ -8,6 +8,7 @@
 // @MARK:COVERAGE_EXCLUDE_FILE
 
 #include "ParametricVertexData.h"
+#include <array>
 
 namespace iglu::vertexdata {
 
@@ -46,18 +47,20 @@ std::shared_ptr<VertexData> create(igl::IDevice& device,
   // |    |
   // |    |
   // 1 -- 3
-  const VertexPosUv vertexData[] = {
-      {{posMin[0], posMax[1], 0.0}, {uvMin[0], uvMax[1]}},
-      {{posMin[0], posMin[1], 0.0}, {uvMin[0], uvMin[1]}},
-      {{posMax[0], posMax[1], 0.0}, {uvMax[0], uvMax[1]}},
-      {{posMax[0], posMin[1], 0.0}, {uvMax[0], uvMin[1]}},
+  const std::array vertexData{
+      VertexPosUv{{posMin[0], posMax[1], 0.0}, {uvMin[0], uvMax[1]}},
+      VertexPosUv{{posMin[0], posMin[1], 0.0}, {uvMin[0], uvMin[1]}},
+      VertexPosUv{{posMax[0], posMax[1], 0.0}, {uvMax[0], uvMax[1]}},
+      VertexPosUv{{posMax[0], posMin[1], 0.0}, {uvMax[0], uvMin[1]}},
   };
-  const uint16_t indexData[] = {0, 1, 2, 3};
+  const std::array indexData{uint16_t{0}, uint16_t{1}, uint16_t{2}, uint16_t{3}};
 
-  const igl::BufferDesc vbDesc(
-      igl::BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData));
-  const igl::BufferDesc ibDesc(
-      igl::BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
+  const igl::BufferDesc vbDesc(igl::BufferDesc::BufferTypeBits::Vertex,
+                               vertexData.data(),
+                               sizeof(VertexPosUv) * vertexData.size());
+  const igl::BufferDesc ibDesc(igl::BufferDesc::BufferTypeBits::Index,
+                               indexData.data(),
+                               sizeof(uint16_t) * indexData.size());
 
   const igl::VertexInputStateDesc inputDesc = inputStateDesc();
   const std::shared_ptr<igl::IVertexInputState> vertexInput =
