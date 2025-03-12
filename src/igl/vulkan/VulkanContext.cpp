@@ -706,7 +706,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   }
   // ... and check whether they are available in the physical device (they should be)
   {
-    const auto featureCheckResult = features_.checkSelectedFeatures(availableFeatures);
+    auto featureCheckResult = features_.checkSelectedFeatures(availableFeatures);
     if (!featureCheckResult.isOk()) {
       return featureCheckResult;
     }
