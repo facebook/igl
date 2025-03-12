@@ -39,6 +39,11 @@ class CommandBuffer final : public igl::ICommandBuffer {
                   uint64_t srcOffset,
                   uint64_t dstOffset,
                   uint64_t size) final;
+  void copyTextureToBuffer(igl::ITexture& src,
+                           igl::IBuffer& dst,
+                           uint64_t dstOffset,
+                           uint32_t level,
+                           uint32_t layer) final;
 
  private:
   [[maybe_unused]] bool shouldAssert_;

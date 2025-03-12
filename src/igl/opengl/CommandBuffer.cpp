@@ -83,6 +83,19 @@ void CommandBuffer::copyBuffer(IBuffer& src,
   ctx.bindBuffer(GL_COPY_WRITE_BUFFER, 0);
 }
 
+void CommandBuffer::copyTextureToBuffer(ITexture& src,
+                                        IBuffer& dst,
+                                        uint64_t dstOffset,
+                                        uint32_t level,
+                                        uint32_t layer) {
+  (void)src;
+  (void)dst;
+  (void)dstOffset;
+  (void)level;
+  (void)layer;
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+}
+
 IContext& CommandBuffer::getContext() const {
   return *context_;
 }

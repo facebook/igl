@@ -42,6 +42,12 @@ class CommandBuffer final : public ICommandBuffer,
                   uint64_t dstOffset,
                   uint64_t size) override;
 
+  void copyTextureToBuffer(ITexture& src,
+                           IBuffer& dst,
+                           uint64_t dstOffset,
+                           uint32_t level,
+                           uint32_t layer) override;
+
   IContext& getContext() const;
 
  private:

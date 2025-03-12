@@ -69,6 +69,22 @@ void CommandBuffer::copyBuffer(IBuffer& src,
   [blitCommandEncoder endEncoding];
 }
 
+void CommandBuffer::copyTextureToBuffer(ITexture& src,
+                                        IBuffer& dst,
+                                        uint64_t dstOffset,
+                                        uint32_t level,
+                                        uint32_t layer) {
+  (void)src;
+  (void)dst;
+  (void)dstOffset;
+  (void)level;
+  (void)layer;
+
+  // TODO:
+  // https://developer.apple.com/documentation/metal/mtlblitcommandencoder#Copying-Texture-Data-to-a-Buffer
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+}
+
 void CommandBuffer::waitUntilScheduled() {
   [value_ waitUntilScheduled];
 }

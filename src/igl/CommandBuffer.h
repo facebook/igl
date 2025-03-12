@@ -124,6 +124,14 @@ class ICommandBuffer {
                           uint64_t srcOffset,
                           uint64_t dstOffset,
                           uint64_t size) = 0;
+  /**
+   * @brief Copy texture data into a buffer.
+   */
+  virtual void copyTextureToBuffer(ITexture& src,
+                                   IBuffer& dst,
+                                   uint64_t dstOffset,
+                                   uint32_t level = 0,
+                                   uint32_t layer = 0) = 0;
 
   /**
    * @returns the number of draw operations tracked by this CommandBuffer. This is tracked manually

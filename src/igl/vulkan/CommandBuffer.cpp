@@ -180,6 +180,19 @@ void CommandBuffer::copyBuffer(IBuffer& src,
                    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 }
 
+void CommandBuffer::copyTextureToBuffer(ITexture& src,
+                                        IBuffer& dst,
+                                        uint64_t dstOffset,
+                                        uint32_t level,
+                                        uint32_t layer) {
+  (void)src;
+  (void)dst;
+  (void)dstOffset;
+  (void)level;
+  (void)layer;
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+}
+
 void CommandBuffer::waitUntilCompleted() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
 

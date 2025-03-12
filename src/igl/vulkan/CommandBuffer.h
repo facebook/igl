@@ -63,6 +63,11 @@ class CommandBuffer final : public ICommandBuffer,
                   uint64_t srcOffset,
                   uint64_t dstOffset,
                   uint64_t size) override;
+  void copyTextureToBuffer(ITexture& src,
+                           IBuffer& dst,
+                           uint64_t dstOffset,
+                           uint32_t level,
+                           uint32_t layer) override;
 
   /// @brief Waits until the command bufer has been executed by the device.
   void waitUntilCompleted() override;
