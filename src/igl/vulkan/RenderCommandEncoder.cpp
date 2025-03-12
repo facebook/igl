@@ -9,6 +9,7 @@
 
 #include <algorithm>
 
+#include <igl/IGLSafeC.h>
 #include <igl/RenderPass.h>
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandBuffer.h>
@@ -22,8 +23,6 @@
 #include <igl/vulkan/VulkanRenderPassBuilder.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/util/SpvReflection.h>
-
-#include <igl/IGLSafeC.h>
 
 namespace {
 

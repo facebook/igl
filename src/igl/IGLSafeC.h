@@ -8,7 +8,7 @@
 #pragma once
 
 #if !defined(IGL_CMAKE_BUILD)
-#include <secure_lib/secure_string.h>
+#include <secure_lib/secure_string.h> // IWYU pragma: export
 #else
 
 #include <stdlib.h>
