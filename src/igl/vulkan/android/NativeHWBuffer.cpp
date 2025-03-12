@@ -221,7 +221,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
 
   if (ahb_format_props.format == VK_FORMAT_UNDEFINED && external_format.externalFormat) {
     viewInfo.pNext = &conversionInfo;
-    VkSamplerYcbcrConversionCreateInfo createInfo = {
+    vulkanImage.samplerYcbcrConversionCreateInfo_ = {
         .sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
         .pNext = &external_format,
         .format = ahb_format_props.format,
@@ -236,8 +236,10 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
         .chromaFilter = VK_FILTER_LINEAR,
         .forceExplicitReconstruction = VK_FALSE};
 
-    ctx.vf_.vkCreateSamplerYcbcrConversion(
-        device, &createInfo, nullptr, &conversionInfo.conversion);
+    ctx.vf_.vkCreateSamplerYcbcrConversion(device,
+                                           &vulkanImage.samplerYcbcrConversionCreateInfo_,
+                                           nullptr,
+                                           &conversionInfo.conversion);
     IGL_LOG_INFO("created sampler ycbcr conversion at %x with %d %d %d and %d",
                  conversionInfo.conversion,
                  ahb_format_props.suggestedYcbcrModel,

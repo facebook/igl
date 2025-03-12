@@ -1276,7 +1276,7 @@ VulkanImage& VulkanImage::operator=(VulkanImage&& other) noexcept {
   tiling_ = other.tiling_;
   isCoherentMemory_ = other.isCoherentMemory_;
   extendedFormat_ = other.extendedFormat_;
-
+  samplerYcbcrConversionCreateInfo_ = other.samplerYcbcrConversionCreateInfo_;
   for (size_t i = 0; i != IGL_ARRAY_NUM_ELEMENTS(vkMemory_); i++) {
     vkMemory_[i] = other.vkMemory_[i];
   }
