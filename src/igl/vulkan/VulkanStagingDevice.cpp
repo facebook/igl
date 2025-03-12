@@ -285,7 +285,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
                                     const TextureRangeDesc& range,
                                     const TextureFormatProperties& properties,
                                     uint32_t bytesPerRow,
-                                    VkImageAspectFlags /*aspectFlags*/,
+                                    VkImageAspectFlags aspectFlags,
                                     const void* data) {
   IGL_PROFILER_FUNCTION();
 
@@ -429,9 +429,8 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
   // vkCmdCopyBufferToImage() can have only one single bit set for image aspect flags (IGL has no
   // way to distinguish between Depth and Stencil for combined depth/stencil image formats)
   const VkImageAspectFlags aspectMask =
-      image.isDepthFormat_
-          ? VK_IMAGE_ASPECT_DEPTH_BIT
-          : (image.isStencilFormat_ ? VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT);
+      image.isDepthFormat_ ? VK_IMAGE_ASPECT_DEPTH_BIT
+                           : (image.isStencilFormat_ ? VK_IMAGE_ASPECT_STENCIL_BIT : aspectFlags);
 
   ivkCmdBeginDebugUtilsLabel(&ctx_.vf_,
                              wrapper.cmdBuf_,
@@ -472,7 +471,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
 
   // image memory barriers should have combined image aspect flags (depth/stencil)
   const VkImageSubresourceRange subresourceRange = {
-      image.getImageAspectFlags(),
+      aspectFlags,
       static_cast<uint32_t>(0u),
       static_cast<uint32_t>(VK_REMAINING_MIP_LEVELS),
       initialLayer,
@@ -557,7 +556,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                                          TextureFormatProperties properties,
                                          VkFormat /*format*/,
                                          VkImageLayout layout,
-                                         VkImageAspectFlags /*aspectFlags*/,
+                                         VkImageAspectFlags aspectFlags,
                                          void* data,
                                          uint32_t bytesPerRow,
                                          bool flipImageVertical) {
@@ -596,7 +595,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                         VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // wait for any previous operation
                         VK_PIPELINE_STAGE_TRANSFER_BIT, // dstStageMask
-                        VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, level, 1, layer, 1});
+                        VkImageSubresourceRange{aspectFlags, level, 1, layer, 1});
 
   auto& stagingBuffer = stagingBuffers_[memoryChunk.stagingBufferIndex];
 
@@ -606,7 +605,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
       mustRepack ? 0
                  : bytesPerRow / static_cast<uint32_t>(properties.bytesPerBlock), // bufferRowLength
       imageRegion,
-      VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, level, layer, 1});
+      VkImageSubresourceLayers{aspectFlags, level, layer, 1});
   ctx_.vf_.vkCmdCopyImageToBuffer(wrapper1.cmdBuf_,
                                   srcImage,
                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -650,7 +649,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                         layout,
                         VK_PIPELINE_STAGE_TRANSFER_BIT, // srcStageMask
                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // dstStageMask
-                        VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, level, 1, layer, 1});
+                        VkImageSubresourceRange{aspectFlags, level, 1, layer, 1});
 
   // the data should be available as we get out of this function
   immediate_->wait(immediate_->submit(wrapper2), ctx_.config_.fenceTimeoutNanoseconds);

@@ -272,7 +272,7 @@ Result Texture::uploadInternal(TextureType /*type*/,
 
   const VulkanContext& ctx = device_.getVulkanContext();
 
-  const VkImageAspectFlags imageAspectFlags = texture_->image_.getImageAspectFlags();
+  const VkImageAspectFlags imageAspectFlags = texture_->imageView_.getVkImageAspectFlags();
   ctx.stagingDevice_->imageData(
       vulkanImage, desc_.type, range, getProperties(), bytesPerRow, imageAspectFlags, data);
 

@@ -915,7 +915,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     const uint32_t pixel = 0xFF000000;
 
     const VkImageAspectFlags imageAspectFlags =
-        (*textures_.get(pimpl_->dummyTexture_))->image_.getImageAspectFlags();
+        (*textures_.get(pimpl_->dummyTexture_))->imageView_.getVkImageAspectFlags();
     stagingDevice_->imageData(
         (*textures_.get(pimpl_->dummyTexture_))->image_,
         TextureType::TwoD,
