@@ -232,7 +232,7 @@ inline bool operator!=(const Viewport& lhs, const Viewport& rhs) {
   return !operator==(lhs, rhs);
 }
 
-const Viewport kInvalidViewport = {-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f};
+constexpr Viewport kInvalidViewport = {-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f};
 
 ///--------------------------------------
 /// MARK: - Enum utilities
