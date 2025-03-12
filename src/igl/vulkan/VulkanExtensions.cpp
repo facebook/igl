@@ -132,9 +132,7 @@ void VulkanExtensions::enableCommonInstanceExtensions(const VulkanContextConfig&
 }
 
 void VulkanExtensions::enableCommonDeviceExtensions(const VulkanContextConfig& config) {
-#if defined(VK_KHR_shader_float16_int8) && VK_KHR_shader_float16_int8
   enable(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME, ExtensionType::Device);
-#endif
 #if IGL_PLATFORM_ANDROID
   enable(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME, ExtensionType::Device);
   enable(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, ExtensionType::Device);
@@ -149,10 +147,7 @@ void VulkanExtensions::enableCommonDeviceExtensions(const VulkanContextConfig& c
 #if IGL_PLATFORM_ANDROID
   }
 #endif
-#if defined(VK_KHR_driver_properties)
   enable(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME, ExtensionType::Device);
-#endif // VK_KHR_driver_properties
-#if defined(VK_KHR_shader_non_semantic_info)
 #if !IGL_PLATFORM_ANDROID || !IGL_DEBUG
   // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are
   // enabled for DEBUG builds. https://issuetracker.google.com/issues/209835779?pli=1 Hence,
@@ -160,7 +155,6 @@ void VulkanExtensions::enableCommonDeviceExtensions(const VulkanContextConfig& c
   // crashing.
   enable(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, ExtensionType::Device);
 #endif // !IGL_PLATFORM_ANDROID || !IGL_DEBUG
-#endif // VK_KHR_shader_non_semantic_info
   enable(VK_KHR_SWAPCHAIN_EXTENSION_NAME, ExtensionType::Device);
 
 #if IGL_PLATFORM_MACOSX
@@ -176,13 +170,11 @@ void VulkanExtensions::enableCommonDeviceExtensions(const VulkanContextConfig& c
   enable(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME, ExtensionType::Device);
 #endif // IGL_PLATFORM_LINUX
 
-#if defined(IGL_WITH_TRACY_GPU) && defined(VK_EXT_calibrated_timestamps)
+#if defined(IGL_WITH_TRACY_GPU)
   enable(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, ExtensionType::Device);
-#endif
+#endif // IGL_WITH_TRACY_GPU
 
-#if defined(VK_EXT_index_type_uint8)
   has8BitIndices = enable(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, ExtensionType::Device);
-#endif
 
   hasTimelineSemaphore = enable(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, ExtensionType::Device);
   hasSynchronization2 = enable(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, ExtensionType::Device);
