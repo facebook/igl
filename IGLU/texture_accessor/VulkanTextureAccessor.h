@@ -38,6 +38,7 @@ class VulkanTextureAccessor : public ITextureAccessor {
   VkImage vkImage_ = VK_NULL_HANDLE;
   VkFormat vkImageFormat_ = VK_FORMAT_UNDEFINED;
   VkImageLayout vkImageLayout_ = VK_IMAGE_LAYOUT_UNDEFINED;
+  VkImageAspectFlags vkImageAspectFlags_ = 0;
   uint32_t textureWidth_ = 0;
   uint32_t textureHeight_ = 0;
   size_t bytesPerRow_ = 0;

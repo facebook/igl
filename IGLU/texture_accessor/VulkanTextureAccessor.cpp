@@ -37,6 +37,7 @@ void VulkanTextureAccessor::assignTexture(std::shared_ptr<igl::ITexture> texture
   const igl::vulkan::VulkanImage& vkImage = vkTexture->getVulkanTexture().image_;
   vkImage_ = vkImage.getVkImage();
   ctx_ = vkImage.ctx_;
+  vkImageAspectFlags_ = vkTexture->getVulkanTexture().imageView_.getVkImageAspectFlags();
   const auto textureFormatProperties =
       igl::TextureFormatProperties::fromTextureFormat(texture->getFormat());
   numBytesRequired_ =
