@@ -9,7 +9,6 @@
 #include "../data/TextureData.h"
 #include "../data/VertexIndexData.h"
 #include "../util/Common.h"
-#include "../util/TestDevice.h"
 
 #include <array>
 #include <gtest/gtest.h>

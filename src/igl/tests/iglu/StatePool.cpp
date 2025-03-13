@@ -7,7 +7,6 @@
 
 #include "../data/ShaderData.h"
 #include "../util/Common.h"
-#include "../util/TestDevice.h"
 
 #include <IGLU/state_pool/RenderPipelineStatePool.h>
 #include <gtest/gtest.h>

@@ -7,7 +7,6 @@
 
 #include "../data/TextureData.h"
 #include "../util/Common.h"
-#include "../util/TestDevice.h"
 #include <IGLU/texture_accessor/ITextureAccessor.h>
 #include <IGLU/texture_accessor/TextureAccessorFactory.h>
 #include <gtest/gtest.h>

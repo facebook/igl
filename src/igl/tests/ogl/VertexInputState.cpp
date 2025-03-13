@@ -6,7 +6,6 @@
  */
 
 #include "../util/Common.h"
-#include "../util/TestDevice.h"
 
 #include <igl/VertexInputState.h>
 

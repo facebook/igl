@@ -8,7 +8,6 @@
 #include <igl/metal/DeviceFeatureSet.h>
 
 #include "../util/Common.h"
-#include "../util/TestDevice.h"
 
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
