@@ -8,7 +8,6 @@
 #include "data/ShaderData.h"
 #include "data/TextureData.h"
 #include "util/Common.h"
-#include "util/TestDevice.h"
 
 #include <cstddef>
 #include <gtest/gtest.h>

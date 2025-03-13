@@ -6,7 +6,6 @@
  */
 
 #include "util/Common.h"
-#include "util/TestDevice.h"
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/PlatformDevice.h>

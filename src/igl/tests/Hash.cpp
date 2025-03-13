@@ -7,7 +7,6 @@
 
 #include "data/ShaderData.h"
 #include "util/Common.h"
-#include "util/TestDevice.h"
 
 #include <igl/CommandBuffer.h>
 #include <igl/DepthStencilState.h>

@@ -10,7 +10,6 @@
 #include "data/VertexIndexData.h"
 #include "util/Color.h"
 #include "util/Common.h"
-#include "util/TestDevice.h"
 
 #include <gtest/gtest.h>
 #include <igl/CommandBuffer.h>

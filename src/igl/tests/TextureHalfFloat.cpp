@@ -17,7 +17,6 @@
 #include "util/Color.h"
 #include "util/Common.h"
 #include "util/Half.h"
-#include "util/TestDevice.h"
 #include "util/TextureValidationHelpers.h"
 
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>

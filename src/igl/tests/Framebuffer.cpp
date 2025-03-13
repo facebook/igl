@@ -8,7 +8,6 @@
 #include "data/ShaderData.h"
 #include "data/VertexIndexData.h"
 #include "util/Common.h"
-#include "util/TestDevice.h"
 
 #include <gtest/gtest.h>
 #if IGL_BACKEND_OPENGL

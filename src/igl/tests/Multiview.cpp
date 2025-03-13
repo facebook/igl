@@ -8,7 +8,6 @@
 #include "data/ShaderData.h"
 #include "data/VertexIndexData.h"
 #include "util/Common.h"
-#include "util/TestDevice.h"
 
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 #include <glm/glm.hpp>
