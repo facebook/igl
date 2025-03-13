@@ -1201,8 +1201,8 @@ void ivkBufferBarrier(const struct VulkanFunctionTable* vt,
                       VkPipelineStageFlags dstStageMask) {
   VkBufferMemoryBarrier barrier = {
       .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
-      .srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-      .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+      .srcAccessMask = 0,
+      .dstAccessMask = 0,
       .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
       .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
       .buffer = buffer,
@@ -1216,6 +1216,9 @@ void ivkBufferBarrier(const struct VulkanFunctionTable* vt,
   if (srcStageMask & VK_PIPELINE_STAGE_TRANSFER_BIT) {
     barrier.srcAccessMask |= VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
   }
+  if (srcStageMask & VK_PIPELINE_STAGE_VERTEX_SHADER_BIT) {
+    barrier.srcAccessMask |= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+  }
 
   if (dstStageMask & VK_PIPELINE_STAGE_TRANSFER_BIT) {
     barrier.dstAccessMask |= VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1226,6 +1229,10 @@ void ivkBufferBarrier(const struct VulkanFunctionTable* vt,
   if (dstStageMask & VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT) {
     barrier.dstAccessMask |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
   }
+  if (dstStageMask & VK_PIPELINE_STAGE_VERTEX_SHADER_BIT) {
+    barrier.dstAccessMask |= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+  }
+
   if (usageFlags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) {
     barrier.dstAccessMask |= VK_ACCESS_INDEX_READ_BIT;
   }
