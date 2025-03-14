@@ -193,6 +193,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
   for (uint32_t i = 0; i < numSwapchainImages_; i++) {
     auto image = VulkanImage(
         ctx_, device_, swapchainImages[i], IGL_FORMAT("Image: swapchain #{}", i).c_str());
+    image.extent_ = {width, height, 1};
     // set usage flags for retrieved images
     image.usageFlags_ = usageFlags;
     image.imageFormat_ = surfaceFormat_.format;
