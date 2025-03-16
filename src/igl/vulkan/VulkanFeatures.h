@@ -65,7 +65,7 @@ class VulkanFeatures final {
   /// @brief Checks the features enabled in this class against the ones passed
   /// in as a parameter in 'availableFeatures'. If a requested feature is not present, the class
   /// logs the message and returns a failure
-  [[nodiscard]] igl::Result checkSelectedFeatures(
+  [[nodiscard]] Result checkSelectedFeatures(
       const VulkanFeatures& availableFeatures) const noexcept;
 
   // Vulkan 1.1
