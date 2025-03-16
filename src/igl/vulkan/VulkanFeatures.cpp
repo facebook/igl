@@ -11,7 +11,7 @@
 namespace igl::vulkan {
 
 VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noexcept :
-  config_(std::move(config)), version_(version) {
+  config_(config), version_(version) {
   assembleFeatureChain(config_);
 }
 
@@ -83,7 +83,7 @@ void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
   VkPhysicalDeviceTimelineSemaphoreFeatures_.timelineSemaphore = VK_TRUE;
 }
 
-igl::Result VulkanFeatures::checkSelectedFeatures(
+Result VulkanFeatures::checkSelectedFeatures(
     const VulkanFeatures& availableFeatures) const noexcept {
   IGL_DEBUG_ASSERT(availableFeatures.version_ == version_,
                    "The API versions don't match between the requested features and the ones that "
@@ -188,7 +188,7 @@ igl::Result VulkanFeatures::checkSelectedFeatures(
   }
 
   // Return the value 'Ok'
-  return igl::Result{};
+  return Result{};
 }
 
 void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noexcept {
