@@ -18,8 +18,7 @@
 
 namespace igl::vulkan {
 
-Texture::Texture(igl::vulkan::Device& device, TextureFormat format) :
-  ITexture(format), device_(device) {}
+Texture::Texture(Device& device, TextureFormat format) : ITexture(format), device_(device) {}
 
 Result Texture::create(const TextureDesc& desc) {
   desc_ = desc;
@@ -333,7 +332,7 @@ void Texture::generateMipmap(ICommandQueue& /* unused */,
 void Texture::generateMipmap(ICommandBuffer& cmdBuffer, const TextureRangeDesc* range) const {
   IGL_DEBUG_ASSERT(texture_);
 
-  auto& vkCmdBuffer = static_cast<vulkan::CommandBuffer&>(cmdBuffer);
+  auto& vkCmdBuffer = static_cast<CommandBuffer&>(cmdBuffer);
   texture_->image_.generateMipmap(vkCmdBuffer.getVkCommandBuffer(),
                                   range ? *range : desc_.asRange());
 }
