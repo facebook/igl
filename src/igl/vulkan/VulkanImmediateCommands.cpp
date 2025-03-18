@@ -149,6 +149,10 @@ VkResult VulkanImmediateCommands::wait(const SubmitHandle handle, uint64_t timeo
   const VkResult fenceResult = vf_.vkWaitForFences(
       device_, 1, &buffers_[handle.bufferIndex_].fence_.vkFence_, VK_TRUE, timeoutNanoseconds);
 
+  if (fenceResult == VK_TIMEOUT) {
+    return VK_TIMEOUT;
+  }
+
   if (fenceResult != VK_SUCCESS) {
     IGL_LOG_ERROR_ONCE(
         "VulkanImmediateCommands::wait - Waiting for command buffer fence failed with error %i",
