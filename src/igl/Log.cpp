@@ -7,7 +7,6 @@
 
 #define IGL_COMMON_SKIP_CHECK
 
-#include <array>
 #include <cstdarg>
 #include <cstdio>
 #include <igl/Core.h>
@@ -50,14 +49,15 @@ IGL_API int IGLLogOnce(IGLLogLevel logLevel, const char* IGL_RESTRICT format, ..
   va_copy(apCopy, ap); // make a copy for later passing to IGLLogV()
 
   constexpr size_t bufferLength = 256;
-  std::array<char, bufferLength> buffer{};
+  // @fb-only
+  char buffer[bufferLength]; // uninitialized
   FOLLY_PUSH_WARNING
   FOLLY_GNU_DISABLE_WARNING("-Wformat-nonliteral")
-  int result = vsnprintf(buffer.data(), bufferLength, format, ap);
+  int result = vsnprintf(buffer, bufferLength, format, ap);
   FOLLY_POP_WARNING
   va_end(ap);
 
-  const std::string msg(buffer.data());
+  const std::string msg(buffer);
   {
     const std::lock_guard<std::mutex> guard(s_loggedMessagesMutex);
     if (s_loggedMessages.count(msg) == 0) {
