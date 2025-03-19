@@ -348,13 +348,21 @@ Result VulkanSwapchain::acquireNextImage() {
 Result VulkanSwapchain::present(VkSemaphore waitSemaphore) {
   IGL_PROFILER_FUNCTION();
 
-  IGL_PROFILER_ZONE("vkQueuePresent()", IGL_PROFILER_COLOR_PRESENT);
-  const auto presentResult =
-      ivkQueuePresent(&ctx_.vf_, graphicsQueue_, waitSemaphore, swapchain_, currentImageIndex_);
+  IGL_PROFILER_ZONE("vkQueuePresentKHR()", IGL_PROFILER_COLOR_PRESENT);
+  const VkPresentInfoKHR pi = {
+      .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+      .waitSemaphoreCount = 1u,
+      .pWaitSemaphores = &waitSemaphore,
+      .swapchainCount = 1u,
+      .pSwapchains = &swapchain_,
+      .pImageIndices = &currentImageIndex_,
+  };
+  const VkResult presentResult = ctx_.vf_.vkQueuePresentKHR(graphicsQueue_, &pi);
+
   if (presentResult == VK_SUBOPTIMAL_KHR) {
     IGL_LOG_INFO_ONCE(
-        "vkQueuePresent returned VK_SUBOPTIMAL_KHR. The Vulkan swapchain is no longer compatible "
-        "with the surface");
+        "vkQueuePresentKHR() returned VK_SUBOPTIMAL_KHR. The Vulkan swapchain is no longer "
+        "compatible with the surface");
   } else {
     VK_ASSERT_RETURN(presentResult);
   }

@@ -1285,22 +1285,6 @@ void ivkCmdBlitImage(const struct VulkanFunctionTable* vt,
   vt->vkCmdBlitImage(buffer, srcImage, srcImageLayout, dstImage, dstImageLayout, 1, &blit, filter);
 }
 
-VkResult ivkQueuePresent(const struct VulkanFunctionTable* vt,
-                         VkQueue graphicsQueue,
-                         VkSemaphore waitSemaphore,
-                         VkSwapchainKHR swapchain,
-                         uint32_t currentSwapchainImageIndex) {
-  const VkPresentInfoKHR pi = {
-      .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-      .waitSemaphoreCount = 1,
-      .pWaitSemaphores = &waitSemaphore,
-      .swapchainCount = 1,
-      .pSwapchains = &swapchain,
-      .pImageIndices = &currentSwapchainImageIndex,
-  };
-  return vt->vkQueuePresentKHR(graphicsQueue, &pi);
-}
-
 VkResult ivkSetDebugObjectName(const struct VulkanFunctionTable* vt,
                                VkDevice device,
                                VkObjectType type,
