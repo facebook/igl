@@ -108,7 +108,7 @@ std::unique_ptr<IBuffer> Device::createBufferNoCopy(const BufferDesc& desc,
                                                     Result* outResult) const {
   const MTLStorageMode storage = toMTLStorageMode(desc.storage);
 
-  typedef void (^Deallocator)(void* pointer, NSUInteger length);
+  using Deallocator = void (^)(void*, NSUInteger);
   const Deallocator deallocator = nil;
   const MTLResourceOptions options = MTLResourceOptionCPUCacheModeDefault | storage;
   id<MTLBuffer> metalObject = [device_ newBufferWithBytesNoCopy:const_cast<void*>(desc.data)
