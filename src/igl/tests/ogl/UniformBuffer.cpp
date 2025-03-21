@@ -19,7 +19,6 @@
 #include <igl/SamplerState.h>
 #include <igl/Shader.h>
 #include <igl/VertexInputState.h>
-#include <igl/opengl/PlatformDevice.h>
 #include <string>
 
 // to not use extra curly braces in initializer lists

@@ -55,7 +55,7 @@ TEST(CommonTest, GetResultFromVkResultTest) {
 
 // setResultFrom ***********************************************************************
 TEST(CommonTest, SetResultFromTest) {
-  igl::Result result;
+  Result result;
   igl::vulkan::setResultFrom(&result, VK_SUCCESS);
   EXPECT_TRUE(result.isOk());
 
@@ -196,7 +196,7 @@ class CommonWithDeviceTest : public ::testing::Test {
 
 // transitionToGeneral ********************************************************
 TEST_F(CommonWithDeviceTest, TransitionToGeneralTest) {
-  igl::Result result;
+  Result result;
 
   const CommandQueueDesc queueDesc{};
   auto commandQueue = device_->createCommandQueue(queueDesc, &result);
