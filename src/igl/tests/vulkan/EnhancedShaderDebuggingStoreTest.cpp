@@ -178,7 +178,7 @@ class EnhancedShaderDebuggingStoreTest : public ::testing::Test {
  public:
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
-  vulkan::Device* device_;
+  vulkan::Device* device_{};
   RenderPipelineDesc renderPipelineDesc_;
   CommandBufferDesc cbDesc_ = {};
   RenderPassDesc renderPass_;
@@ -259,7 +259,7 @@ TEST_F(EnhancedShaderDebuggingStoreTest, Pipeline) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
-  std::shared_ptr<igl::IDepthStencilState> depthStencilState;
+  std::shared_ptr<IDepthStencilState> depthStencilState;
   DepthStencilStateDesc desc;
   desc.isDepthWriteEnabled = true;
 
@@ -306,7 +306,7 @@ TEST_F(EnhancedShaderDebuggingStoreTest, InstallBufferBarrier) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
-  std::shared_ptr<igl::IDepthStencilState> depthStencilState;
+  std::shared_ptr<IDepthStencilState> depthStencilState;
   DepthStencilStateDesc desc;
   desc.isDepthWriteEnabled = true;
 
