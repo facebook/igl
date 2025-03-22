@@ -189,8 +189,8 @@ struct RenderPipelineDesc {
    * GL Only: Mapping of Texture Unit <-> Sampler Name
    * Texture unit should be < IGL_TEXTURE_SAMPLERS_MAX
    */
-  std::unordered_map<size_t, igl::NameHandle> vertexUnitSamplerMap;
-  std::unordered_map<size_t, igl::NameHandle> fragmentUnitSamplerMap;
+  std::unordered_map<size_t, NameHandle> vertexUnitSamplerMap;
+  std::unordered_map<size_t, NameHandle> fragmentUnitSamplerMap;
 
   /*
    * GL Only:
@@ -199,8 +199,7 @@ struct RenderPipelineDesc {
    * Uniform Block Binding Point should be < IGL_UNIFORM_BLOCKS_BINDING_MAX.
    * This should only be populated if explicit binding is not supported or used.
    */
-  std::unordered_map<size_t, std::vector<std::pair<igl::NameHandle, igl::NameHandle>>>
-      uniformBlockBindingMap;
+  std::unordered_map<size_t, std::vector<std::pair<NameHandle, NameHandle>>> uniformBlockBindingMap;
 
   uint32_t sampleCount = 1u; // MSAA
 
@@ -211,7 +210,7 @@ struct RenderPipelineDesc {
   // @fb-only
   std::shared_ptr<ISamplerState> immutableSamplers[IGL_TEXTURE_SAMPLERS_MAX] = {};
 
-  igl::NameHandle debugName;
+  NameHandle debugName;
 
   bool operator==(const RenderPipelineDesc& other) const;
   bool operator!=(const RenderPipelineDesc& other) const;

@@ -25,13 +25,13 @@ struct BufferArgDesc {
    * @brief A structure that describes a member of a buffer argument.
    */
   struct BufferMemberDesc {
-    igl::NameHandle name; ///< The name of the member
-    igl::UniformType type = igl::UniformType::Invalid; ///< The type of the member
+    NameHandle name; ///< The name of the member
+    UniformType type = igl::UniformType::Invalid; ///< The type of the member
     size_t offset = 0; ///< The offset from the beginning of the structure
     size_t arrayLength = 1; ///< The number of elements if the member is an array
   };
 
-  igl::NameHandle name; ///< The name of the buffer argument
+  NameHandle name; ///< The name of the buffer argument
   size_t bufferAlignment = 0; ///< The required byte alignment in memory
   size_t bufferDataSize = 0; ///< The size of the buffer argument in bytes
   int bufferIndex = -1; ///< The index of the buffer argument
@@ -48,7 +48,7 @@ struct BufferArgDesc {
  */
 struct TextureArgDesc {
   std::string name; ///< The name of the texture argument
-  igl::TextureType type; ///< The type of the texture argument
+  TextureType type; ///< The type of the texture argument
   int textureIndex = -1; ///< The index in argument table
   ShaderStage shaderStage =
       ShaderStage::Fragment; ///< The shader stage that the texture argument belongs to.
