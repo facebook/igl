@@ -38,6 +38,7 @@
 #include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <stb/stb_image.h>
+#include <stb/stb_image_write.h>
 
 #define TINY_TEST_USE_DEPTH_BUFFER 1
 
@@ -112,6 +113,8 @@ GLFWwindow* window_ = nullptr;
 int width_ = 0;
 int height_ = 0;
 igl::FPSCounter fps_;
+bool saveScreenshot_ = false;
+igl::SubmitHandle screenshotSubmitHandle_ = {};
 
 constexpr uint32_t kNumBufferedFrames = 3;
 
@@ -122,6 +125,7 @@ FramebufferDesc framebufferDesc_;
 std::shared_ptr<IFramebuffer> framebuffer_;
 std::shared_ptr<IRenderPipelineState> renderPipelineState_Mesh_;
 std::shared_ptr<IBuffer> vb0_, ib0_; // buffers for vertices and indices
+std::shared_ptr<IBuffer> screenCopy_;
 std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerObject_;
 std::shared_ptr<IVertexInputState> vertexInput0_;
 std::shared_ptr<IDepthStencilState> depthStencilState_;
@@ -209,6 +213,9 @@ static bool initWindow(GLFWwindow** outWindow) {
     if (key == GLFW_KEY_T && action == GLFW_PRESS) {
       texture1_.reset();
     }
+    if (key == GLFW_KEY_C && action == GLFW_PRESS) {
+      saveScreenshot_ = true;
+    }
   });
 
   // @lint-ignore CLANGTIDY
@@ -292,6 +299,14 @@ static void initIGL() {
                                           0,
                                           "Buffer: index"),
                                nullptr);
+  screenCopy_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Storage,
+                                                 nullptr,
+                                                 width_ * height_ * sizeof(uint32_t),
+                                                 ResourceStorage::Shared,
+                                                 0,
+                                                 "Buffer: screen copy"),
+                                      nullptr);
+
   // create an Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
     ubPerFrame_.push_back(device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
@@ -563,10 +578,26 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   imguiSession_->endFrame(*device_.get(), *commands);
 #endif // IGL_WITH_IGLU
   commands->endEncoding();
-
+  if (saveScreenshot_) {
+    buffer->copyTextureToBuffer(*nativeDrawable, *screenCopy_, 0);
+  }
   buffer->present(nativeDrawable);
 
-  commandQueue_->submit(*buffer);
+  auto submitHandle = commandQueue_->submit(*buffer);
+
+  if (igl::vulkan::PlatformDevice* pd = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
+      saveScreenshot_) {
+    saveScreenshot_ = false;
+    // store the submit handle from which we want to capture a screenshot
+    screenshotSubmitHandle_ = submitHandle;
+  } else if (screenshotSubmitHandle_ && // we poll the submit handle every frame until it's ready
+             pd->waitOnSubmitHandle(screenshotSubmitHandle_, 0)) {
+    void* data = screenCopy_->map(BufferRange(screenCopy_->getSizeInBytes()), nullptr);
+    stbi_write_bmp("screenshot.bmp", width_, height_, 4, data);
+    screenCopy_->unmap();
+    screenshotSubmitHandle_ = {};
+    IGL_LOG_INFO("Screenshot saved.\n");
+  }
 }
 
 int main(int argc, char* argv[]) {
@@ -601,6 +632,7 @@ int main(int argc, char* argv[]) {
   // destroy all the Vulkan stuff before closing the window
   vb0_ = nullptr;
   ib0_ = nullptr;
+  screenCopy_ = nullptr;
   ubPerFrame_.clear();
   ubPerObject_.clear();
   renderPipelineState_Mesh_ = nullptr;
