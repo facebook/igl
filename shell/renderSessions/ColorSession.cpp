@@ -9,7 +9,6 @@
 
 #include <cstring>
 
-#include <IGLU/simdtypes/SimdTypes.h>
 #include <glm/gtc/color_space.hpp>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
@@ -23,10 +22,6 @@
 namespace igl::shell {
 
 namespace {
-const glm::vec3 kLinearOrangeColor = glm::convertSRGBToLinear(glm::dvec3{1.0, 0.5, 0.0});
-const iglu::simdtypes::float3 kGPULinearOrangeColor = {static_cast<float>(kLinearOrangeColor.x),
-                                                       static_cast<float>(kLinearOrangeColor.y),
-                                                       static_cast<float>(kLinearOrangeColor.z)};
 
 struct VertexPosUv {
   iglu::simdtypes::float3 position;
@@ -203,9 +198,12 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
 }
 } // namespace
 
-// clang-tidy off
 void ColorSession::initialize() noexcept {
-  // clang-tidy on
+  static const glm::vec3 kLinearOrangeColor = glm::convertSRGBToLinear(glm::dvec3{1.0, 0.5, 0.0});
+  const iglu::simdtypes::float3 kGPULinearOrangeColor = {static_cast<float>(kLinearOrangeColor.x),
+                                                         static_cast<float>(kLinearOrangeColor.y),
+                                                         static_cast<float>(kLinearOrangeColor.z)};
+
   auto& device = getPlatform().getDevice();
 
   // Vertex & Index buffer
