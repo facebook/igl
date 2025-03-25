@@ -41,6 +41,7 @@
 #include <stb/stb_image_write.h>
 
 #define TINY_TEST_USE_DEPTH_BUFFER 1
+#define TINY_TEST_USE_ASYNC_SCREENSHOTS 1
 
 #define USE_OPENGL_BACKEND 0
 
@@ -588,6 +589,16 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   if (igl::vulkan::PlatformDevice* pd = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
       saveScreenshot_) {
     saveScreenshot_ = false;
+#if TINY_TEST_USE_ASYNC_SCREENSHOTS
+    pd->deferredTask(std::packaged_task<void()>([]() {
+                       void* data =
+                           screenCopy_->map(BufferRange(screenCopy_->getSizeInBytes()), nullptr);
+                       stbi_write_bmp("screenshot.bmp", width_, height_, 4, data);
+                       screenCopy_->unmap();
+                       IGL_LOG_INFO("Screenshot saved.\n");
+                     }),
+                     submitHandle);
+#else
     // store the submit handle from which we want to capture a screenshot
     screenshotSubmitHandle_ = submitHandle;
   } else if (screenshotSubmitHandle_ && // we poll the submit handle every frame until it's ready
@@ -597,6 +608,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
     screenCopy_->unmap();
     screenshotSubmitHandle_ = {};
     IGL_LOG_INFO("Screenshot saved.\n");
+#endif // TINY_TEST_USE_ASYNC_SCREENSHOTS
   }
 }
 
