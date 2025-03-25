@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <future>
+
 #include <igl/PlatformDevice.h>
 #include <igl/Texture.h>
 #include <igl/vulkan/Common.h>
@@ -57,6 +59,9 @@ class PlatformDevice : public IPlatformDevice {
   /// @return 'true' when ready or 'false' on time out (can be ignored)
   // NOLINTNEXTLINE(modernize-use-nodiscard)
   bool waitOnSubmitHandle(SubmitHandle handle, uint64_t timeoutNanoseconds = UINT64_MAX) const;
+
+  /// Invoke a task when a SubmitHandle is ready
+  void deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) const;
 
   /// Android only for now - Creates the file descriptor for the underlying VkFence
   /// @param handle The handle to the GPU Fence

@@ -187,6 +187,16 @@ bool PlatformDevice::waitOnSubmitHandle(SubmitHandle handle, uint64_t timeoutNan
                                  timeoutNanoseconds) != VK_TIMEOUT;
 }
 
+void PlatformDevice::deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) const {
+  if (!handle) {
+    IGL_LOG_ERROR("Invalid submit handle passed to PlatformDevice::deferredTask()");
+    return;
+  }
+
+  device_.getVulkanContext().deferredTask(std::move(task),
+                                          VulkanImmediateCommands::SubmitHandle(handle));
+}
+
 #if defined(IGL_PLATFORM_ANDROID) && defined(VK_KHR_external_fence_fd)
 int PlatformDevice::getFenceFdFromSubmitHandle(SubmitHandle handle) const {
   if (handle == 0) {
