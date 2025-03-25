@@ -12,19 +12,9 @@
 
 namespace igl {
 
-void IDevice::beginScope() {
-  ++scopeDepth_;
-}
-
-void IDevice::endScope() {
-  --scopeDepth_;
-}
-
 bool IDevice::defaultVerifyScope() {
   return scopeDepth_ > 0;
 }
-
-void IDevice::updateSurface(void* nativeWindowType) {}
 
 TextureDesc IDevice::sanitize(const TextureDesc& desc) const {
   TextureDesc sanitized = desc;
