@@ -46,7 +46,8 @@ namespace {
 constexpr uint32_t kMsaaSamples = 4u; // this is the max number possible
 constexpr float kScaleFill = 1.f;
 
-const float half = .5f;
+constexpr float half = .5f;
+
 } // namespace
 
 GPUStressSession::GPUStressSession(std::shared_ptr<Platform> platform) :
