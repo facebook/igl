@@ -75,7 +75,8 @@ TEST_F(DeviceVulkanTest, PlatformDevice) {
   auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
   auto submitHandle = cmdQueue->submit(*cmdBuf);
 
-  auto* fence1 = vulkanPlatformDevice.getVkFenceFromSubmitHandle(submitHandle);
+  // NOLINTNEXTLINE(readability-qualified-auto)
+  auto fence1 = vulkanPlatformDevice.getVkFenceFromSubmitHandle(submitHandle);
   ASSERT_NE(fence1, VK_NULL_HANDLE);
 
   vulkanPlatformDevice.waitOnSubmitHandle(submitHandle);
