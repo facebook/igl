@@ -76,8 +76,8 @@ class GPUStressSession : public RenderSession {
     glm::vec4 base_color;
   };
 
-  std::string getLightingCalc() const;
-  std::string getVulkanFragmentShaderSource() const;
+  [[nodiscard]] std::string getLightingCalc() const;
+  [[nodiscard]] std::string getVulkanFragmentShaderSource() const;
   std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) const noexcept;
   void addNormalsToCube();
 

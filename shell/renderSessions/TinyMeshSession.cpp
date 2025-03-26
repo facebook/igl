@@ -25,7 +25,6 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/PlatformDevice.h>
-#include <igl/vulkan/VulkanContext.h>
 #endif // IGL_BACKEND_VULKAN
 
 #if defined(IGL_CMAKE_BUILD)
