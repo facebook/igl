@@ -18,7 +18,6 @@
 
 namespace igl::vulkan {
 
-class VulkanContext;
 class VulkanShaderModule;
 
 /// @brief Implements the igl::IDevice interface for Vulkan
