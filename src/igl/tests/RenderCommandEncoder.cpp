@@ -680,6 +680,77 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStrip) {
   });
 }
 
+TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStripCopyTextureToBuffer) {
+  if (iglDev_->getBackendType() != igl::BackendType::Vulkan) {
+    GTEST_SKIP() << "Not implemented for non-Vulkan backends";
+    return;
+  }
+
+  initializeBuffers(
+      // clang-format off
+      {
+        -1.0f,  1.0f, 0.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f, 1.0f,
+         1.0f,  1.0f, 0.0f, 1.0f,
+         1.0f, -1.0f, 0.0f, 1.0f,
+      },
+      {
+        0.0, 1.0,
+        0.0, 0.0,
+        1.0, 1.0,
+        1.0, 0.0,
+      } // clang-format on
+  );
+
+  Result ret;
+
+  std ::shared_ptr<IBuffer> screenCopy =
+      iglDev_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Storage,
+                                       nullptr,
+                                       OFFSCREEN_RT_WIDTH * OFFSCREEN_RT_HEIGHT * sizeof(uint32_t),
+                                       ResourceStorage::Shared,
+                                       0,
+                                       "Buffer: screen copy"),
+                            &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  auto cmdBuffer = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_TRUE(cmdBuffer != nullptr);
+
+  auto encoder = cmdBuffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+
+  encoder->bindTexture(textureUnit_, texture_.get());
+  encoder->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
+
+  encoder->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+  encoder->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+
+  encoder->bindDepthStencilState(depthStencilState_);
+
+  encoder->bindViewport(
+      {0.0f, 0.0f, (float)OFFSCREEN_RT_WIDTH, (float)OFFSCREEN_RT_HEIGHT, 0.0f, +1.0f});
+  encoder->bindScissorRect({0, 0, (uint32_t)OFFSCREEN_RT_WIDTH, (uint32_t)OFFSCREEN_RT_HEIGHT});
+
+  encoder->insertDebugEventLabel("Rendering a triangle strip...");
+  encoder->bindRenderPipelineState(renderPipelineState_TriangleStrip_);
+  encoder->draw(4);
+
+  encoder->endEncoding();
+
+  cmdBuffer->copyTextureToBuffer(*framebuffer_->getColorAttachment(0), *screenCopy, 0);
+
+  cmdQueue_->submit(*cmdBuffer);
+  cmdBuffer->waitUntilCompleted();
+
+  const uint32_t* data = static_cast<const uint32_t*>(
+      screenCopy->map(BufferRange(screenCopy->getSizeInBytes()), nullptr));
+  for (size_t i = 0; i != OFFSCREEN_RT_HEIGHT * OFFSCREEN_RT_HEIGHT; i++) {
+    ASSERT_EQ(data[i], data::texture::TEX_RGBA_GRAY_4x4[0]);
+  }
+  screenCopy->unmap();
+}
+
 TEST_F(RenderCommandEncoderTest, shouldNotDraw) {
   initializeBuffers(
       // clang-format off
