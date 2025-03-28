@@ -20,7 +20,7 @@ using namespace igl;
 namespace igl::shell {
 namespace {
 class VulkanShell final : public GlfwShell {
-  igl::SurfaceTextures createSurfaceTextures() noexcept final;
+  SurfaceTextures createSurfaceTextures() noexcept final;
   std::shared_ptr<Platform> createPlatform() noexcept final;
 
   void willCreateWindow() noexcept final;
@@ -48,11 +48,11 @@ std::shared_ptr<Platform> VulkanShell::createPlatform() noexcept {
   );
 
   // Prioritize discrete GPUs. If not found, use any that is available.
-  std::vector<HWDeviceDesc> devices = vulkan::HWDevice::queryDevices(
-      *ctx.get(), HWDeviceQueryDesc(HWDeviceType::DiscreteGpu), nullptr);
+  std::vector<HWDeviceDesc> devices =
+      vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::DiscreteGpu), nullptr);
   if (devices.empty()) {
-    devices = vulkan::HWDevice::queryDevices(
-        *ctx.get(), HWDeviceQueryDesc(HWDeviceType::Unknown), nullptr);
+    devices =
+        vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::Unknown), nullptr);
   }
   IGL_DEBUG_ASSERT(devices.size() > 0, "Could not find Vulkan device with requested capabilities");
 
@@ -61,10 +61,10 @@ std::shared_ptr<Platform> VulkanShell::createPlatform() noexcept {
                                                (uint32_t)shellParams().viewportSize.x,
                                                (uint32_t)shellParams().viewportSize.y);
 
-  return std::make_shared<igl::shell::PlatformWin>(std::move(vulkanDevice));
+  return std::make_shared<PlatformWin>(std::move(vulkanDevice));
 }
 
-igl::SurfaceTextures VulkanShell::createSurfaceTextures() noexcept {
+SurfaceTextures VulkanShell::createSurfaceTextures() noexcept {
   IGL_PROFILER_FUNCTION();
   auto& device = platform().getDevice();
   const auto& vkPlatformDevice = device.getPlatformDevice<igl::vulkan::PlatformDevice>();
@@ -78,7 +78,7 @@ igl::SurfaceTextures VulkanShell::createSurfaceTextures() noexcept {
       shellParams().viewportSize.x, shellParams().viewportSize.y, &ret);
   IGL_DEBUG_ASSERT(ret.isOk());
 
-  return igl::SurfaceTextures{std::move(color), std::move(depth)};
+  return SurfaceTextures{std::move(color), std::move(depth)};
 }
 } // namespace
 
