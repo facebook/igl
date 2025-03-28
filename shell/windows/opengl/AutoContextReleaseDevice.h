@@ -44,7 +44,7 @@ struct GLXDevice final : public igl::opengl::Device {
   explicit GLXDevice(std::unique_ptr<igl::opengl::glx::Context> context) :
     Device(std::move(context)), platformDevice_(*this) {}
 
-  const igl::opengl::PlatformDevice& getPlatformDevice() const noexcept override {
+  [[nodiscard]] const igl::opengl::PlatformDevice& getPlatformDevice() const noexcept override {
     return platformDevice_;
   }
 
