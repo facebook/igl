@@ -266,6 +266,8 @@ Context::Context(EGLDisplay display,
   config_(config) {
   IContext::registerContext((void*)context_, this);
   initialize();
+  sharegroup_ = std::make_shared<std::vector<EGLContext>>();
+  sharegroup_->emplace_back(context_);
 }
 
 void Context::updateSurface(NativeWindowType window) {
