@@ -7,6 +7,7 @@
 
 // @fb-only
 
+#include <math.h>
 #include <shell/windows/common/GlfwShell.h>
 
 #include <shell/shared/input/InputDispatcher.h>
@@ -20,12 +21,14 @@ void glfwErrorHandler(int error, const char* description) {
   IGL_LOG_ERROR("GLFW Error: %s\n", description);
 }
 
-igl::shell::MouseButton getIGLMouseButton(int button) {
-  if (button == GLFW_MOUSE_BUTTON_LEFT)
+MouseButton getIGLMouseButton(int button) {
+  if (button == GLFW_MOUSE_BUTTON_LEFT) {
     return igl::shell::MouseButton::Left;
+  }
 
-  if (button == GLFW_MOUSE_BUTTON_RIGHT)
+  if (button == GLFW_MOUSE_BUTTON_RIGHT) {
     return igl::shell::MouseButton::Right;
+  }
 
   return igl::shell::MouseButton::Middle;
 }
@@ -119,23 +122,23 @@ bool GlfwShell::createWindow() noexcept {
   glfwSetCursorPosCallback(windowHandle, [](GLFWwindow* window, double xpos, double ypos) {
     auto* shell = static_cast<GlfwShell*>(glfwGetWindowUserPointer(window));
     shell->platform_->getInputDispatcher().queueEvent(
-        igl::shell::MouseMotionEvent((float)xpos, (float)ypos, 0, 0));
+        MouseMotionEvent((float)xpos, (float)ypos, 0, 0));
   });
 
   glfwSetScrollCallback(windowHandle, [](GLFWwindow* window, double xoffset, double yoffset) {
     auto* shell = static_cast<GlfwShell*>(glfwGetWindowUserPointer(window));
     shell->platform_->getInputDispatcher().queueEvent(
-        igl::shell::MouseWheelEvent((float)xoffset, (float)yoffset));
+        MouseWheelEvent((float)xoffset, (float)yoffset));
   });
 
   glfwSetMouseButtonCallback(
       windowHandle, [](GLFWwindow* window, int button, int action, int mods) {
         auto* shell = static_cast<GlfwShell*>(glfwGetWindowUserPointer(window));
-        igl::shell::MouseButton iglButton = getIGLMouseButton(button);
-        double xpos, ypos;
+        MouseButton iglButton = getIGLMouseButton(button);
+        double xpos = NAN, ypos = NAN;
         glfwGetCursorPos(window, &xpos, &ypos);
-        shell->platform_->getInputDispatcher().queueEvent(igl::shell::MouseButtonEvent(
-            iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
+        shell->platform_->getInputDispatcher().queueEvent(
+            MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
       });
 
   glfwSetKeyCallback(windowHandle, [](GLFWwindow* window, int key, int, int action, int mods) {
@@ -160,7 +163,7 @@ bool GlfwShell::createWindow() noexcept {
       modifiers |= igl::shell::KeyEventModifierNumLock;
     }
     shell->platform_->getInputDispatcher().queueEvent(
-        igl::shell::KeyEvent(action == GLFW_PRESS, key, modifiers));
+        KeyEvent(action == GLFW_PRESS, key, modifiers));
     shell->platform_->getInputDispatcher().queueEvent(key <= 256 ? CharEvent{static_cast<char>(key)}
                                                                  : CharEvent{});
   });
@@ -174,13 +177,13 @@ bool GlfwShell::createWindow() noexcept {
 
   didCreateWindow();
 
-  return windowHandle;
+  return windowHandle != nullptr;
 }
 
 bool GlfwShell::initialize(int argc,
                            char* argv[],
                            RenderSessionWindowConfig suggestedWindowConfig,
-                           RenderSessionConfig suggestedSessionConfig) noexcept {
+                           const RenderSessionConfig& suggestedSessionConfig) noexcept {
   igl::shell::Platform::initializeCommandLineArgs(argc, argv);
 
   auto factory = igl::shell::createDefaultRenderSessionFactory();
