@@ -294,7 +294,6 @@ class IDevice : public ICapabilities {
   /**
    * @brief This is only used by EGL-based clients, e.g. Android, to set the default framebuffer to
    * render to. For all other clients, this is a no-op.
-   * @param nativeWindowType Pointer to the native window to be rendered to.
    */
   virtual void updateSurface(void* IGL_NONNULL /*nativeWindowType*/) {}
 
