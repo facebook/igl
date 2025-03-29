@@ -7,7 +7,7 @@
 
 // @fb-only
 
-#include <math.h>
+#include <cmath>
 #include <shell/windows/common/GlfwShell.h>
 
 #include <shell/shared/input/InputDispatcher.h>
