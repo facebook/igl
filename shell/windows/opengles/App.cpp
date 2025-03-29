@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
       .swapchainColorTextureFormat = TextureFormat::RGBA_UNorm8,
   };
 
-  if (!shell.initialize(argc, argv, suggestedWindowConfig, std::move(suggestedConfig))) {
+  if (!shell.initialize(argc, argv, suggestedWindowConfig, suggestedConfig)) {
     shell.teardown();
     return -1;
   }
