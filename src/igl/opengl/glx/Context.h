@@ -16,9 +16,7 @@
 #include <memory>
 
 namespace igl {
-class ITexture;
-namespace opengl {
-namespace glx {
+namespace opengl::glx {
 
 typedef XID GLXDrawable;
 typedef struct __GLXcontext* GLXContext;
@@ -26,10 +24,10 @@ struct GLXSharedModule;
 
 class Context : public IContext {
  public:
-  Context(std::shared_ptr<GLXSharedModule> module,
-          bool offscreen = false,
-          uint32_t width = 0,
-          uint32_t height = 0);
+  explicit Context(std::shared_ptr<GLXSharedModule> module,
+                   bool offscreen = false,
+                   uint32_t width = 0,
+                   uint32_t height = 0);
   Context(std::shared_ptr<GLXSharedModule> module,
           Display* display,
           GLXDrawable windowHandle,
@@ -57,6 +55,5 @@ class Context : public IContext {
   GLXContext contextHandle_ = nullptr;
 };
 
-} // namespace glx
-} // namespace opengl
+} // namespace opengl::glx
 } // namespace igl
