@@ -13,6 +13,6 @@ shutil.copyfile(os.path.join(base_dir, "patches", "Compress.cpp"), os.path.join(
 file = Path(os.path.join(lib_dir, "CMakeLists.txt"))
 file.write_text(file.read_text()
   .replace('-Wextra', '-Wextra -Wno-unused-function -Wno-unused-variable')
-  .replace('VERSION 2.8', 'VERSION 3.0')
+  .replace('VERSION 2.8', 'VERSION 3.16')
   .replace("test.cpp", "Compress.cpp")
   .replace("add_executable", "add_library"))
