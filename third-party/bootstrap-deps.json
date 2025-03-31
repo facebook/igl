@@ -28,7 +28,7 @@
     "source": {
         "type": "git",
         "url": "https://github.com/tinyobjloader/tinyobjloader.git",
-        "revision": "0fc802cf468d23b9d205890b76b268f61b948e6d"
+        "revision": "3bb554cf74428d7db13418b4aca1b9752a1d2be8"
     }
 },
 {
@@ -45,7 +45,11 @@
         "type": "archive",
         "url": "https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0.zip",
         "sha1": "f1d3f046e44a4cb62d09547cf8f053d5b16b516f"
-    }
+    },
+     "postprocess": {
+        "type": "script",
+        "file": "glew.py"
+     }
 },
 {
     "name": "stb",
