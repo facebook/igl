@@ -725,15 +725,7 @@ TEST_F(TextureCubeTest, GetRange) {
   ASSERT_TRUE(rangesAreEqual(getCubeFaceRangeNum(16, 16, format, 5, 1, 1, 1),
                              range.atFace(1).atMipLevel(1)));
 
-  // All mip levels
-  if (iglDev_->getBackendType() != BackendType::Vulkan) {
-    // @fb-only
-    // Disable this check for Vulkan to unblock CI:
-    //    Tracer caught signal 11: addr=0x5320 pc=0xe7e4ea sp=0x7fa27e400d40
-    //    ==22780==LeakSanitizer has encountered a fatal error.
-    //    exit_code:"Process terminated by the signal: 1"
-    ASSERT_TRUE(rangesAreEqual(getFullMipRange(16, 16, format, 5), range.withNumMipLevels(5)));
-  }
+  ASSERT_TRUE(rangesAreEqual(getFullMipRange(16, 16, format, 5), range.withNumMipLevels(5)));
 }
 
 } // namespace igl::tests
