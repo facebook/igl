@@ -10,9 +10,7 @@
 #include <igl/opengl/glx/Context.h>
 #include <igl/opengl/glx/Device.h>
 
-namespace igl {
-namespace opengl {
-namespace glx {
+namespace igl::opengl::glx {
 
 std::unique_ptr<IContext> HWDevice::createContext(RenderingAPI /* api */,
                                                   EGLNativeWindowType /* nativeWindow */,
@@ -44,6 +42,4 @@ std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<ICon
   }
 }
 
-} // namespace glx
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::glx

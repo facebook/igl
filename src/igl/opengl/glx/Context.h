@@ -15,8 +15,7 @@
 #include <cstdint>
 #include <memory>
 
-namespace igl {
-namespace opengl::glx {
+namespace igl::opengl::glx {
 
 typedef XID GLXDrawable;
 typedef struct __GLXcontext* GLXContext;
@@ -55,5 +54,4 @@ class Context : public IContext {
   GLXContext contextHandle_ = nullptr;
 };
 
-} // namespace opengl::glx
-} // namespace igl
+} // namespace igl::opengl::glx
