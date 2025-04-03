@@ -235,10 +235,7 @@ TEST_F(ComputeCommandEncoderTest, canUseOutputBufferFromOnePassAsInputToNext) {
 }
 
 TEST_F(ComputeCommandEncoderTest, copyBuffer) {
-  if (!iglDev_->hasFeature(DeviceFeatures::Compute)) {
-    return;
-  }
-  if (iglDev_->getBackendType() != igl::BackendType::Vulkan) {
+  if (!iglDev_->hasFeature(DeviceFeatures::CopyBuffer)) {
     return;
   }
 
