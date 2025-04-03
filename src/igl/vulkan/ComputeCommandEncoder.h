@@ -57,6 +57,8 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
   /// is not a storage texture, this function will assert.
   void bindImageTexture(uint32_t index, ITexture* texture, TextureFormat format) override;
 
+  void bindSamplerState(uint32_t index, ISamplerState* samplerState) override;
+
   /// @brief Binds a buffer. If the buffer is not a storage buffer, this function is a no-op
   void bindBuffer(uint32_t index, IBuffer* buffer, size_t offset, size_t bufferSize) override;
 

@@ -94,6 +94,13 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index,
   this->bindTexture(index, texture);
 }
 
+void ComputeCommandEncoder::bindSamplerState(uint32_t index, ISamplerState* samplerState) {
+  (void)index;
+  (void)samplerState;
+
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+}
+
 void ComputeCommandEncoder::bindBuffer(uint32_t index,
                                        IBuffer* buffer,
                                        size_t offset,
