@@ -7,7 +7,6 @@
 
 #include "VulkanSwapchain.h"
 
-#include <igl/vulkan/ColorSpace.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>

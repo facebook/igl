@@ -6,7 +6,7 @@
  */
 
 #include <gtest/gtest.h>
-#include <igl/vulkan/ColorSpace.h>
+#include <igl/vulkan/Common.h>
 
 namespace igl::vulkan::tests {
 TEST(ColorSpaceTest, colorSpaceToVkColorSpace) {
