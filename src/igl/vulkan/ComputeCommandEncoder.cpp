@@ -9,6 +9,7 @@
 
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/ComputePipelineState.h>
+#include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
@@ -226,10 +227,13 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index,
 }
 
 void ComputeCommandEncoder::bindSamplerState(uint32_t index, ISamplerState* samplerState) {
-  (void)index;
-  (void)samplerState;
+  IGL_PROFILER_FUNCTION();
 
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED(); // TODO
+#if IGL_VULKAN_PRINT_COMMANDS
+  IGL_LOG_INFO("%p  bindSamplerState(%u)\n", cmdBuffer_, index);
+#endif // IGL_VULKAN_PRINT_COMMANDS
+
+  binder_.bindSamplerState(index, static_cast<SamplerState*>(samplerState));
 }
 
 void ComputeCommandEncoder::bindBuffer(uint32_t index,
