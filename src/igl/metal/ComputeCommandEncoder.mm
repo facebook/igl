@@ -95,10 +95,12 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index,
 }
 
 void ComputeCommandEncoder::bindSamplerState(uint32_t index, ISamplerState* samplerState) {
-  (void)index;
-  (void)samplerState;
+  IGL_DEBUG_ASSERT(encoder_);
 
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  if (samplerState) {
+    auto& iglSampler = static_cast<SamplerState&>(*samplerState);
+    [encoder_ setSamplerState:iglSampler.get() atIndex:index];
+  }
 }
 
 void ComputeCommandEncoder::bindBuffer(uint32_t index,
