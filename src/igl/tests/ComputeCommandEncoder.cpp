@@ -234,6 +234,21 @@ TEST_F(ComputeCommandEncoderTest, canUseOutputBufferFromOnePassAsInputToNext) {
   bufferOut2_->unmap();
 }
 
+TEST_F(ComputeCommandEncoderTest, bindSamplerState) {
+  if (!iglDev_->hasFeature(DeviceFeatures::Compute)) {
+    return;
+  }
+
+  auto cmdBuffer = cmdQueue_->createCommandBuffer({}, nullptr);
+  ASSERT_TRUE(cmdBuffer != nullptr);
+
+  auto computeCommandEncoder = cmdBuffer->createComputeCommandEncoder();
+  computeCommandEncoder->bindSamplerState(0, nullptr);
+  computeCommandEncoder->endEncoding();
+  cmdQueue_->submit(*cmdBuffer);
+  cmdBuffer->waitUntilCompleted();
+}
+
 TEST_F(ComputeCommandEncoderTest, copyBuffer) {
   if (!iglDev_->hasFeature(DeviceFeatures::CopyBuffer)) {
     return;
