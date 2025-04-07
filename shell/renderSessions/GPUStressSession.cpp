@@ -41,65 +41,49 @@ static uint32_t arc4random_() {
 
 namespace igl::shell {
 
-struct VertexPosUvw {
-  glm::vec3 position;
-  glm::vec4 uvw;
-  glm::vec4 base_color;
-};
-
 namespace {
 
-std::atomic<int> kCubeCount = 1; // number of cubes in the vertex buffer
-// number of times to draw the vertex buffer (triangles = 12 * kDrawCount *
-// kCubeCount)
-std::atomic<int> kDrawCount = 50;
-// turn this on and set kDrawCount to 1.  Cube count will be the number of
-// layers you'll see
-std::atomic<bool> kTestOverdraw = false;
+constexpr uint32_t kMsaaSamples = 4u; // this is the max number possible
+constexpr float kScaleFill = 1.f;
 
-std::atomic<bool> kEnableBlending = false; // turn this on to see the effects of alpha blending
-// make this number little to make all the cubes tiny on screen so fill isn't a
-// problem
-std::atomic<bool> kUseMSAA = true;
-const uint32_t kMsaaSamples = 4u; // this is the max number possible
-const float kScaleFill = 1.f;
-// each light will add about 45 ish instructions to your pixel shader (tested
-// using powerVR compiler so grain of salt)arc lint --engine LintCPP
-std::atomic<int> kLightCount = 5;
-// number of times to do a lof of math that does not calculate pi
-std::atomic<int> kGoSlowOnCpu = 10000; // max10000000;
-// cpu threads - these are really necessary to get our CPU usage up  to 100%
-// (otherwise the framerate just throttles)
-std::atomic<int> kThreadCount = 1;
-std::atomic<bool> kThrashMemory = true;
-std::atomic<size_t> kMemorySize = 64; // in MB
-std::atomic<unsigned long> kMemoryReads = 10000; // max 1000000;
-std::atomic<unsigned long> kMemoryWrites = 10000; // 100000;
-std::vector<int> threadIds = {-1, -1, -1, -1, -1, -1, -1, -1};
-std::atomic<int> kDropFrameX = 0;
-std::atomic<int> kDropFrameCount = 2;
-std::atomic<bool> kRotateCubes = true;
+constexpr float half = .5f;
 
-const float half = .5f;
+} // namespace
 
-// single cube - 8 verts and 36 indicies
-const std::vector<VertexPosUvw> vertexData0 = {
-    {{-half, half, -half}, {0.0, 1.0, 0.0, 1.0}, {1.0, 1.0, 1.0, 1.0}},
-    {{half, half, -half}, {1.0, 1.0, 1.0, 1.0}, {1.0, 1.0, 1.0, 1.0}},
-    {{-half, -half, -half}, {0.0, 0.0, 0.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
-    {{half, -half, -half}, {1.0, 0.0, 1.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
-    {{half, half, half}, {1.0, 1.0, 1.0, 1.0}, {1.0, 1.0, 1.0, 1.0}},
-    {{-half, half, half}, {0.0, 1.0, 0.0, 1.0}, {1.0, 1.0, 1.0, 1.0}},
-    {{half, -half, half}, {1.0, 0.0, 1.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
-    {{-half, -half, half}, {0.0, 0.0, 0.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
-};
+GPUStressSession::GPUStressSession(std::shared_ptr<Platform> platform) :
+  RenderSession(std::move(platform)),
+  fps_(false),
+  vertexData0_{
+      VertexPosUvw{.position = {-half, half, -half},
+                   .uvw = {0.0, 1.0, 0.0, 1.0},
+                   .base_color = {1.0, 1.0, 1.0, 1.0}},
+      VertexPosUvw{.position = {half, half, -half},
+                   .uvw = {1.0, 1.0, 1.0, 1.0},
+                   .base_color = {1.0, 1.0, 1.0, 1.0}},
+      VertexPosUvw{.position = {-half, -half, -half},
+                   .uvw = {0.0, 0.0, 0.0, 0.0},
+                   .base_color = {1.0, 1.0, 1.0, 1.0}},
+      VertexPosUvw{.position = {half, -half, -half},
+                   .uvw = {1.0, 0.0, 1.0, 0.0},
+                   .base_color = {1.0, 1.0, 1.0, 1.0}},
+      VertexPosUvw{.position = {half, half, half},
+                   .uvw = {1.0, 1.0, 1.0, 1.0},
+                   .base_color = {1.0, 1.0, 1.0, 1.0}},
+      VertexPosUvw{.position = {-half, half, half},
+                   .uvw = {0.0, 1.0, 0.0, 1.0},
+                   .base_color = {1.0, 1.0, 1.0, 1.0}},
+      VertexPosUvw{.position = {half, -half, half},
+                   .uvw = {1.0, 0.0, 1.0, 0.0},
+                   .base_color = {1.0, 1.0, 1.0, 1.0}},
+      VertexPosUvw{.position = {-half, -half, half},
+                   .uvw = {0.0, 0.0, 0.0, 0.0},
+                   .base_color = {1.0, 1.0, 1.0, 1.0}},
+  },
+  indexData0_{0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
+              5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7},
+  indexData_{indexData0_.begin(), indexData0_.end()} {};
 
-std::vector<VertexPosUvw> vertexData;
-const std::vector<uint16_t> indexData0 = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
-                                          5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7};
-
-std::vector<uint16_t> indexData = indexData0;
-
+namespace {
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 std::string getLightingFunc(const char* matrixProj, const char* matrixMod) {
   const std::string var1 = matrixProj;
@@ -123,12 +107,14 @@ std::string getLightingFunc(const char* matrixProj, const char* matrixMod) {
 
   return func;
 }
-std::string getLightingCalc() {
+} // namespace
+
+std::string GPUStressSession::getLightingCalc() const {
   std::string params = "\nvec4 lightFactor = color;\n";
-  if (kLightCount) {
+  if (lightCount_) {
     params = "\nvec4 lightFactor = vec4(0.2, 0.2, 0.2, 1.0);\n";
   }
-  for (int i = 0; i < kLightCount; ++i) {
+  for (int i = 0; i < lightCount_; ++i) {
     char tmp[256];
     snprintf(tmp,
              sizeof(tmp),
@@ -158,8 +144,9 @@ std::string getLightingCalc() {
   return params;
 }
 
-std::string getVulkanVertexShaderSource(bool bMultiView) {
-  return std::string(bMultiView ? "\n#define MULTIVIEW 1\n" : "") + R"(
+namespace {
+std::string getVulkanVertexShaderSource(bool multiView) {
+  return std::string(multiView ? "\n#define MULTIVIEW 1\n" : "") + R"(
 #ifdef MULTIVIEW
 #extension GL_EXT_multiview : enable
 #endif
@@ -190,8 +177,9 @@ void main() {
     screen_pos = gl_Position.xyz/gl_Position.w;
 })";
 }
+} // namespace
 
-std::string getVulkanFragmentShaderSource() {
+std::string GPUStressSession::getVulkanFragmentShaderSource() const {
   return R"(
 layout(location = 0) out vec4 fColor;
 layout(location = 0) in vec4 color;
@@ -214,8 +202,9 @@ layout(push_constant) uniform PushConstants {
 })";
 }
 
-std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) noexcept {
-  const bool bMultiView = device.hasFeature(DeviceFeatures::Multiview);
+std::unique_ptr<IShaderStages> GPUStressSession::getShaderStagesForBackend(
+    IDevice& device) const noexcept {
+  const bool multiView = device.hasFeature(DeviceFeatures::Multiview);
   switch (device.getBackendType()) {
   // @fb-only
     // @fb-only
@@ -223,7 +212,7 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) noexce
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,
-        getVulkanVertexShaderSource(bMultiView).c_str(),
+        getVulkanVertexShaderSource(multiView).c_str(),
         "main",
         "",
         getVulkanFragmentShaderSource().c_str(),
@@ -236,37 +225,37 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) noexce
   }
 }
 
-void addNormalsToCube() {
-  if (!kLightCount) {
+void GPUStressSession::addNormalsToCube() {
+  if (!lightCount_) {
     return;
   }
 
-  const size_t faceCount = indexData.size() / 6;
+  const size_t faceCount = indexData_.size() / 6;
   bool normalSet[36] = {false};
   for (size_t j = 0; j < faceCount; j++) {
     const size_t offset = j * 6;
-    auto vec1 = vertexData0.at(indexData[offset + 1]).position -
-                vertexData0.at(indexData[offset + 2]).position;
-    auto vec2 = vertexData0.at(indexData[offset + 1]).position -
-                vertexData0.at(indexData.at(offset + 0)).position;
+    auto vec1 = vertexData0_.at(indexData_[offset + 1]).position -
+                vertexData0_.at(indexData_[offset + 2]).position;
+    auto vec2 = vertexData0_.at(indexData_[offset + 1]).position -
+                vertexData0_.at(indexData_.at(offset + 0)).position;
     auto normal = glm::normalize(glm::cross(vec1, vec2));
     std::vector<int> indexremap;
     indexremap.resize(24, -1);
 
     for (size_t i = offset; i < offset + 6; i++) {
-      const size_t oldIndex = indexData[i];
+      const size_t oldIndex = indexData_[i];
       if (indexremap.at(oldIndex) != -1) {
-        indexData.at(i) = indexremap[oldIndex];
+        indexData_.at(i) = indexremap[oldIndex];
       } else if (!normalSet[oldIndex]) {
-        vertexData.at(oldIndex).base_color = glm::vec4(normal, 1.0);
+        vertexData_.at(oldIndex).base_color = glm::vec4(normal, 1.0);
         normalSet[oldIndex] = true;
         indexremap.at(oldIndex) = oldIndex;
       } else {
-        auto vertex = vertexData0.at(oldIndex);
+        auto vertex = vertexData0_.at(oldIndex);
         vertex.base_color = glm::vec4(normal, 1.0);
-        vertexData.push_back(vertex);
-        const size_t nextIndex = (vertexData.size() - 1);
-        indexData.at(i) = nextIndex;
+        vertexData_.push_back(vertex);
+        const size_t nextIndex = (vertexData_.size() - 1);
+        indexData_.at(i) = nextIndex;
         normalSet[nextIndex] = true;
         indexremap.at(oldIndex) = nextIndex;
       }
@@ -274,6 +263,7 @@ void addNormalsToCube() {
   }
 }
 
+namespace {
 bool isDeviceCompatible(IDevice& device) noexcept {
   const auto backendtype = device.getBackendType();
   if (backendtype == BackendType::OpenGL) {
@@ -322,22 +312,22 @@ double calcPi(int numberOfDivisions, int core) {
   }
   return pi * 4.0;
 }
+} // namespace
 
-double pi = 0.f;
-void thrashCPU() noexcept {
+void GPUStressSession::thrashCPU() noexcept {
   static std::vector<std::future<double>> futures;
   static unsigned int threadSpawnId = 0;
-  if (kGoSlowOnCpu) {
+  if (goSlowOnCpu_) {
     // don't fall off the array
-    while (threadIds.size() < kThreadCount) {
-      threadIds.push_back(-1);
+    while (threadIds_.size() < threadCount_) {
+      threadIds_.push_back(-1);
     }
-    if (!kThreadCount) {
-      pi = calcPi(kGoSlowOnCpu, -1);
+    if (!threadCount_) {
+      pi_ = calcPi(goSlowOnCpu_, -1);
     }
-    while (futures.size() < kThreadCount) {
-      auto future = std::async(std::launch::async, [] {
-        return calcPi(kGoSlowOnCpu, threadIds[threadSpawnId % kThreadCount]);
+    while (futures.size() < threadCount_) {
+      auto future = std::async(std::launch::async, [this] {
+        return calcPi(goSlowOnCpu_, threadIds_[threadSpawnId % threadCount_]);
       });
 
       futures.push_back(std::move(future));
@@ -351,19 +341,19 @@ void thrashCPU() noexcept {
       auto status = future.wait_for(std::chrono::milliseconds(0));
 
       if (status == std::future_status::ready) {
-        pi += future.get();
+        pi_ += future.get();
         futures.erase(futures.begin() + i);
       }
     }
   }
 }
 
-float doReadWrite(std::vector<std::vector<std::vector<float>>>& memBlock,
-                  // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-                  int numBlocks,
-                  int numRows,
-                  int numCols,
-                  int threadId) {
+float GPUStressSession::doReadWrite(std::vector<std::vector<std::vector<float>>>& memBlock_,
+                                    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+                                    int numBlocks,
+                                    int numRows,
+                                    int numCols,
+                                    int threadId) {
   if (threadId != -1) {
     setCurrentThreadAffinityMask(1 << threadId);
   }
@@ -372,32 +362,31 @@ float doReadWrite(std::vector<std::vector<std::vector<float>>>& memBlock,
   std::uniform_int_distribution<> randRows(0, numRows - 1);
   std::uniform_int_distribution<> randCols(0, numCols - 1);
   float sum = 0.f;
-  for (int i = 0; i < kMemoryWrites; i++) {
+  for (int i = 0; i < memoryWrites_; i++) {
     const int block = randBlocks(gen);
     const int row = randRows(gen);
     const int col = randCols(gen);
-    memBlock[block].at(row)[col] = arc4random_();
+    memBlock_[block].at(row)[col] = arc4random_();
   }
 
-  for (int i = 0; i < kMemoryReads; i++) {
+  for (int i = 0; i < memoryReads_; i++) {
     const int block = randBlocks(gen);
     const int row = randRows(gen);
     const int col = randCols(gen);
-    sum += i % 1 ? -1.f : 1.f * memBlock.at(block)[row][col];
+    sum += i % 1 ? -1.f : 1.f * memBlock_.at(block)[row][col];
   }
 
   return sum;
 }
 
-std::vector<std::vector<std::vector<float>>> memBlock;
-void allocateMemory() {
-  if (kThrashMemory) {
-    const static size_t blocks = kMemorySize;
+void GPUStressSession::allocateMemory() {
+  if (thrashMemory_) {
+    const static size_t blocks = memorySize_;
     const static size_t rows = 1024;
     const static size_t cols = 1024;
-    if (memBlock.empty()) {
-      memBlock.resize((blocks));
-      for (auto& block : memBlock) {
+    if (memBlock_.empty()) {
+      memBlock_.resize((blocks));
+      for (auto& block : memBlock_) {
         block.resize(rows);
         for (auto& row : block) {
           row.resize(cols, 0);
@@ -411,24 +400,25 @@ void allocateMemory() {
 }
 
 std::atomic<float> memoryVal;
-void thrashMemory() noexcept {
-  if (!kThrashMemory) {
+void GPUStressSession::thrashMemory() noexcept {
+  if (!thrashMemory_) {
     return;
   }
 
-  const static size_t blocks = kMemorySize;
+  const static size_t blocks = memorySize_;
   const static size_t rows = 1024;
   const static size_t cols = 1024;
 
-  if (!kThreadCount) {
-    memoryVal.store(doReadWrite(memBlock, blocks, rows, cols, -1));
+  if (!threadCount_) {
+    memoryVal.store(doReadWrite(memBlock_, blocks, rows, cols, -1));
   } else {
     static std::vector<std::future<float>> futures;
     static int memoryThreadId = 0;
 
-    while (futures.size() < kThreadCount) {
-      auto future = std::async(std::launch::async, [] {
-        return doReadWrite(memBlock, blocks, rows, cols, threadIds[memoryThreadId % kThreadCount]);
+    while (futures.size() < threadCount_) {
+      auto future = std::async(std::launch::async, [this] {
+        return doReadWrite(
+            memBlock_, blocks, rows, cols, threadIds_[memoryThreadId % threadCount_]);
       });
 
       futures.push_back(std::move(future));
@@ -450,16 +440,16 @@ void thrashMemory() noexcept {
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-void getOffset(int counter, float& x, float& y, float& z) {
-  if (kTestOverdraw) {
+void GPUStressSession::getOffset(int counter, float& x, float& y, float& z) {
+  if (testOverdraw_) {
     x = 0.f;
     y = 0.f;
-    z = counter % 2 ? -half / static_cast<float>(kCubeCount)
-                    : half / static_cast<float>(kCubeCount);
+    z = counter % 2 ? -half / static_cast<float>(cubeCount_)
+                    : half / static_cast<float>(cubeCount_);
     z *= counter / 2.f;
     return;
   }
-  const float grid = std::ceil(std::pow(kCubeCount, 1.0f / 3.0f));
+  const float grid = std::ceil(std::pow(cubeCount_, 1.0f / 3.0f));
   const int igrid = (int)grid;
   // const float fgrid = static_cast<float>(igrid);
   x = static_cast<float>((counter % igrid) - grid / 2);
@@ -467,7 +457,11 @@ void getOffset(int counter, float& x, float& y, float& z) {
   y = (static_cast<float>((counter % (igrid * igrid)) / igrid) - grid / 2.f);
 }
 
-glm::vec3 animateCube(int counter, float x, float y, float scale, int frameCount) {
+glm::vec3 GPUStressSession::animateCube(int counter,
+                                        float x,
+                                        float y,
+                                        float scale,
+                                        int frameCount) {
   struct animationInfo {
     glm::vec3 velocity;
     glm::vec3 lastPos;
@@ -482,10 +476,10 @@ glm::vec3 animateCube(int counter, float x, float y, float scale, int frameCount
   }
 
   float velocityScale = 1.f;
-  if (kDropFrameX && (frameCount % kDropFrameX) < kDropFrameCount) {
+  if (dropFrameX_ && (frameCount % dropFrameX_) < dropFrameCount_) {
     velocityScale = 0.f;
-  } else if (kDropFrameX && (frameCount % kDropFrameX) == kDropFrameCount) {
-    velocityScale = 1.f + (float)kDropFrameCount;
+  } else if (dropFrameX_ && (frameCount % dropFrameX_) == dropFrameCount_) {
+    velocityScale = 1.f + (float)dropFrameCount_;
   }
   const glm::vec3 pos =
       animations[counter].lastPos + animations[counter].velocity * velocityScale * scale * .005f;
@@ -509,8 +503,6 @@ glm::vec3 animateCube(int counter, float x, float y, float scale, int frameCount
   return pos;
 }
 
-} // namespace
-
 void GPUStressSession::createSamplerAndTextures(const igl::IDevice& device) {
   // Sampler & Texture
   SamplerStateDesc samplerDesc;
@@ -528,15 +520,15 @@ void GPUStressSession::createSamplerAndTextures(const igl::IDevice& device) {
 void GPUStressSession::createCubes() {
   // only reset once - on mac we hit this path multiple times for different
   // devices
-  vertexData = vertexData0;
-  indexData = indexData0;
+  vertexData_ = vertexData0_;
+  indexData_ = indexData0_;
 
   addNormalsToCube(); // setup for lighting if appropriate
 
-  const float grid = std::ceil(std::pow(kCubeCount, 1.0f / 3.0f));
+  const float grid = std::ceil(std::pow(cubeCount_, 1.0f / 3.0f));
 
-  const int vertexCount = vertexData.size();
-  const int indexCount = indexData.size();
+  const int vertexCount = vertexData_.size();
+  const int indexCount = indexData_.size();
 
   std::mt19937 gen(0);
   std::uniform_real_distribution<> dis(0, 1.f);
@@ -546,7 +538,7 @@ void GPUStressSession::createCubes() {
   glm::vec2 offset = glm::vec2(0.f, 0.f);
 
   // Vertex buffer, Index buffer and Vertex Input
-  for (int i = 1; i < kCubeCount; i++) {
+  for (int i = 1; i < cubeCount_; i++) {
     float x = NAN, y = NAN, z = NAN;
     getOffset(i, x, y, z);
     glm::vec4 color(1.0, 1.0, 1.0, 1.f);
@@ -555,17 +547,17 @@ void GPUStressSession::createCubes() {
     color[2] = (dis(gen));
 
     for (int j = 0; j < vertexCount; j++) {
-      VertexPosUvw newPoint = vertexData.at(j);
+      VertexPosUvw newPoint = vertexData_.at(j);
       newPoint.position += (glm::vec3(x, y, z));
       newPoint.uvw *= glm::vec4(uvScale, uvScale, 1.f, 1.f);
       newPoint.uvw += glm::vec4(offset.x, offset.y, 0.f, 0.f);
-      if (!kLightCount) {
+      if (!lightCount_) {
         newPoint.base_color = color;
       }
-      vertexData.push_back(newPoint);
+      vertexData_.push_back(newPoint);
     }
     for (int j = 0; j < indexCount; j++) {
-      indexData.push_back(static_cast<uint16_t>(indexData.at(j) + i * (vertexCount)));
+      indexData_.push_back(static_cast<uint16_t>(indexData_.at(j) + i * (vertexCount)));
     }
 
     offset.x += 1.f / grid;
@@ -575,9 +567,9 @@ void GPUStressSession::createCubes() {
     }
   }
 
-  if (!kTestOverdraw) // we want to fill up the screen here
+  if (!testOverdraw_) // we want to fill up the screen here
   {
-    for (auto& i : vertexData) {
+    for (auto& i : vertexData_) {
       i.position.x *= scale;
       i.position.y *= scale;
       i.position.z *= scale;
@@ -586,11 +578,11 @@ void GPUStressSession::createCubes() {
 
   auto& device = getPlatform().getDevice();
   const BufferDesc vb0Desc = BufferDesc(BufferDesc::BufferTypeBits::Vertex,
-                                        vertexData.data(),
-                                        sizeof(VertexPosUvw) * vertexData.size());
+                                        vertexData_.data(),
+                                        sizeof(VertexPosUvw) * vertexData_.size());
   vb0_ = device.createBuffer(vb0Desc, nullptr);
   const BufferDesc ibDesc = BufferDesc(
-      BufferDesc::BufferTypeBits::Index, indexData.data(), sizeof(uint16_t) * indexData.size());
+      BufferDesc::BufferTypeBits::Index, indexData_.data(), sizeof(uint16_t) * indexData_.size());
   ib0_ = device.createBuffer(ibDesc, nullptr);
 
   VertexInputStateDesc inputDesc;
@@ -624,8 +616,8 @@ void GPUStressSession::initialize() noexcept {
   samp0_ = nullptr;
   samp1_ = nullptr;
   framebuffer_ = nullptr;
-  vertexData.resize(0); // recalc verts
-  indexData.resize(36); // keep the first 36 indices
+  vertexData_.resize(0); // recalc verts
+  indexData_.resize(36); // keep the first 36 indices
 
   //  this is sets the size of our 'app window' so we can shrink the number of
   //  changed pixels we send to the delphi.
@@ -662,7 +654,7 @@ void GPUStressSession::initialize() noexcept {
   renderPass_.depthAttachment.loadAction = LoadAction::Clear;
   renderPass_.depthAttachment.clearDepth = 1.0;
 
-  if (kUseMSAA) {
+  if (useMSAA_) {
     renderPass_.colorAttachments[0].storeAction = igl::StoreAction::MsaaResolve;
   }
 
@@ -676,7 +668,7 @@ void GPUStressSession::setProjectionMatrix(float aspectRatio) {
   // perspective projection
   constexpr float fov = 45.0f * (M_PI / 180.0f);
   glm::mat4 projectionMat = glm::perspectiveLH(fov, aspectRatio, .1f, 2.1f);
-  if (kTestOverdraw || !kRotateCubes) {
+  if (testOverdraw_ || !rotateCubes_) {
     projectionMat =
         glm::orthoLH_ZO(-half, half, -half / aspectRatio, half / aspectRatio, .1f, 2.1f);
   }
@@ -689,9 +681,9 @@ void GPUStressSession::setModelViewMatrix(float angle,
                                           float offsetX,
                                           float offsetY,
                                           float offsetZ) {
-  float divisor = std::ceil(std::sqrt(static_cast<float>(kDrawCount))) / (half * kScaleFill);
+  float divisor = std::ceil(std::sqrt(static_cast<float>(drawCount_))) / (half * kScaleFill);
 
-  if (kTestOverdraw) {
+  if (testOverdraw_) {
     divisor = 1.f;
     offsetX = 0.f;
     offsetY = 0.f;
@@ -720,7 +712,7 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
     framebufferDesc.mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
                                                                      : FramebufferMode::Mono;
 
-    if (kUseMSAA) {
+    if (useMSAA_) {
       const auto dimensions = surfaceTextures.color->getDimensions();
 
       const TextureDesc fbTexDesc = {
@@ -762,7 +754,7 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
     IGL_DEBUG_ASSERT(framebuffer_ != nullptr);
   }
 
-  if (kUseMSAA) {
+  if (useMSAA_) {
     framebuffer_->updateResolveAttachment(surfaceTextures.color);
   } else {
     framebuffer_->updateDrawable(surfaceTextures.color);
@@ -778,13 +770,13 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
     graphicsDesc.targetDesc.colorAttachments.resize(1);
     graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
         framebuffer_->getColorAttachment(0)->getProperties().format;
-    graphicsDesc.sampleCount = kUseMSAA ? kMsaaSamples : 1;
+    graphicsDesc.sampleCount = useMSAA_ ? kMsaaSamples : 1;
     graphicsDesc.targetDesc.depthAttachmentFormat =
         framebuffer_->getDepthAttachment()->getProperties().format;
     graphicsDesc.fragmentUnitSamplerMap[textureUnit] = IGL_NAMEHANDLE("inputImage");
     graphicsDesc.cullMode = igl::CullMode::Back;
     graphicsDesc.frontFaceWinding = igl::WindingMode::Clockwise;
-    graphicsDesc.targetDesc.colorAttachments[0].blendEnabled = kEnableBlending;
+    graphicsDesc.targetDesc.colorAttachments[0].blendEnabled = enableBlending_;
     graphicsDesc.targetDesc.colorAttachments[0].rgbBlendOp = BlendOp::Add;
     graphicsDesc.targetDesc.colorAttachments[0].alphaBlendOp = BlendOp::Add;
     graphicsDesc.targetDesc.colorAttachments[0].srcRGBBlendFactor = BlendFactor::SrcAlpha;
@@ -816,9 +808,9 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
   // cube animation
   constexpr uint32_t textureUnit = 0;
   constexpr uint32_t textureUnit1 = 1;
-  const int grid = static_cast<int>(std::ceil(std::sqrt(static_cast<float>(kDrawCount))));
+  const int grid = static_cast<int>(std::ceil(std::sqrt(static_cast<float>(drawCount_))));
   const float divisor = .5 / static_cast<float>(grid);
-  const float scale = 1.f / std::ceil(std::pow(kCubeCount, 1.0f / 3.0f));
+  const float scale = 1.f / std::ceil(std::pow(cubeCount_, 1.0f / 3.0f));
 
   int counter = 0;
   setProjectionMatrix(surfaceTextures.color->getAspectRatio());
@@ -828,22 +820,22 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
   std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer = nullptr;
   for (int i = -grid / 2; i < grid / 2 + grid % 2; i++) {
     for (int j = -grid / 2; j < grid / 2 + grid % 2; j++) {
-      if (counter >= kDrawCount) {
+      if (counter >= drawCount_) {
         break;
       }
       counter++;
       float x = static_cast<float>(j) * divisor;
       float y = static_cast<float>(i) * divisor;
-      if (kDropFrameX) {
+      if (dropFrameX_) {
         auto offset = animateCube(counter, x, y, scale, frameCount);
         x = offset.x;
         y = offset.y;
       }
 
-      setModelViewMatrix((kTestOverdraw || !kRotateCubes) ? 0.f : angle, scaleZ, x, y, 0.f);
+      setModelViewMatrix((testOverdraw_ || !rotateCubes_) ? 0.f : angle, scaleZ, x, y, 0.f);
 
       // note that we are deliberately binding redundant state - the goal here
-      // is to tax the driver.  The giant vertex buffer (kCubeCount) will stress
+      // is to tax the driver.  The giant vertex buffer (cubeCount_) will stress
       // just the gpu
       commands->bindVertexBuffer(0, *vb0_);
       commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_.get());
@@ -885,7 +877,7 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
         vertUniformBuffer->bind(device, *pipelineState_, *commands);
       }
 
-      commands->drawIndexed(indexData.size());
+      commands->drawIndexed(indexData_.size());
     }
   }
 }
@@ -896,7 +888,7 @@ void GPUStressSession::update(SurfaceTextures surfaceTextures) noexcept {
     return;
   }
   if (forceReset_) {
-    memBlock.resize(0);
+    memBlock_.resize(0);
     forceReset_ = false;
     initialize();
   }
@@ -940,7 +932,7 @@ void GPUStressSession::update(SurfaceTextures surfaceTextures) noexcept {
     ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f),
                        "FPS: (%f)   PI: (%lf)  Memory (%f)",
                        fps_.getAverageFPS(),
-                       pi,
+                       pi_,
                        memoryVal.load());
     ImGui::End();
     imguiSession_->endFrame(getPlatform().getDevice(), *commands);
@@ -949,7 +941,7 @@ void GPUStressSession::update(SurfaceTextures surfaceTextures) noexcept {
   commands->endEncoding();
 
   if (shellParams().shouldPresent) {
-    buffer->present(kUseMSAA ? framebuffer_->getResolveColorAttachment(0)
+    buffer->present(useMSAA_ ? framebuffer_->getResolveColorAttachment(0)
                              : framebuffer_->getColorAttachment(0));
   }
 
@@ -957,127 +949,127 @@ void GPUStressSession::update(SurfaceTextures surfaceTextures) noexcept {
 }
 
 void GPUStressSession::setNumThreads(int numThreads) {
-  kThreadCount = numThreads;
+  threadCount_ = numThreads;
 }
 
 void GPUStressSession::setThrashMemory(bool thrashMemory) {
-  kThrashMemory = thrashMemory;
+  thrashMemory_ = thrashMemory;
 }
 void GPUStressSession::setMemorySize(size_t memorySize) {
-  if (memorySize != kMemorySize) {
-    kMemorySize = memorySize;
+  if (memorySize != memorySize_) {
+    memorySize_ = memorySize;
     forceReset_ = true;
   }
 }
 void GPUStressSession::setMemoryReads(size_t memoryReads) {
-  kMemoryReads = memoryReads;
+  memoryReads_ = memoryReads;
 }
 void GPUStressSession::setMemoryWrites(size_t memoryWrites) {
-  kMemoryWrites = memoryWrites;
+  memoryWrites_ = memoryWrites;
 }
 void GPUStressSession::setGoSlowOnCpu(int goSlowOnCpu) {
-  kGoSlowOnCpu = goSlowOnCpu;
+  goSlowOnCpu_ = goSlowOnCpu;
 }
 void GPUStressSession::setCubeCount(int count) {
-  if (kCubeCount != count) {
+  if (cubeCount_ != count) {
     forceReset_ = true;
-    kCubeCount = count;
+    cubeCount_ = count;
   }
 }
 void GPUStressSession::setDrawCount(int count) {
-  kDrawCount = count;
+  drawCount_ = count;
 }
 void GPUStressSession::setTestOverdraw(bool testOverdraw) {
-  if (testOverdraw != kTestOverdraw) {
-    kTestOverdraw = testOverdraw;
+  if (testOverdraw != testOverdraw_) {
+    testOverdraw_ = testOverdraw;
     forceReset_ = true;
   }
 }
 void GPUStressSession::setEnableBlending(bool enableBlending) {
-  if (enableBlending != kEnableBlending) {
-    kEnableBlending = enableBlending;
+  if (enableBlending != enableBlending_) {
+    enableBlending_ = enableBlending;
     forceReset_ = true;
   }
 }
 void GPUStressSession::setUseMSAA(bool useMSAA) {
-  if (kUseMSAA != useMSAA) {
-    kUseMSAA = useMSAA;
+  if (useMSAA_ != useMSAA) {
+    useMSAA_ = useMSAA;
     forceReset_ = true;
   }
 }
 void GPUStressSession::setLightCount(int lightCount) {
-  if (kLightCount != lightCount) {
-    kLightCount = lightCount;
+  if (lightCount_ != lightCount) {
+    lightCount_ = lightCount;
     forceReset_ = true;
   }
 }
 
 void GPUStressSession::setThreadCore(int thread, int core) {
-  threadIds[thread % kThreadCount] = core;
+  threadIds_[thread % threadCount_] = core;
 }
 
 int GPUStressSession::getNumThreads() const {
-  return kThreadCount;
+  return threadCount_;
 }
 bool GPUStressSession::getThrashMemory() const {
-  return kThrashMemory;
+  return thrashMemory_;
 }
 size_t GPUStressSession::getMemorySize() const {
-  return kMemorySize;
+  return memorySize_;
 }
 size_t GPUStressSession::getMemoryReads() const {
-  return kMemoryReads;
+  return memoryReads_;
 }
 size_t GPUStressSession::getMemoryWrites() const {
-  return kMemoryWrites;
+  return memoryWrites_;
 }
 bool GPUStressSession::getGoSlowOnCpu() const {
-  return kGoSlowOnCpu != 0;
+  return goSlowOnCpu_ != 0;
 }
 int GPUStressSession::getCubeCount() const {
-  return kCubeCount;
+  return cubeCount_;
 }
 int GPUStressSession::getDrawCount() const {
-  return kDrawCount;
+  return drawCount_;
 }
 bool GPUStressSession::getTestOverdraw() const {
-  return kTestOverdraw;
+  return testOverdraw_;
 }
 bool GPUStressSession::getEnableBlending() const {
-  return kEnableBlending;
+  return enableBlending_;
 }
 bool GPUStressSession::getUseMSAA() const {
-  return kUseMSAA;
+  return useMSAA_;
 }
 int GPUStressSession::getLightCount() const {
-  return kLightCount;
+  return lightCount_;
 }
 std::vector<int> GPUStressSession::getThreadsCores() const {
-  return threadIds;
+  return threadIds_;
 }
 
 void GPUStressSession::setDropFrameInterval(int numberOfFramesBetweenDrops) {
-  kDropFrameX = numberOfFramesBetweenDrops;
+  dropFrameX_ = numberOfFramesBetweenDrops;
 }
 
 int GPUStressSession::getDropFrameInterval() const {
-  return kDropFrameX;
+  return dropFrameX_;
 }
 
 void GPUStressSession::setDropFrameCount(int numberOfFramesToDrop) {
-  kDropFrameCount = numberOfFramesToDrop;
+  dropFrameCount_ = numberOfFramesToDrop;
 }
 
 int GPUStressSession::getDropFrameCount() const {
-  return kDropFrameCount;
+  return dropFrameCount_;
 }
 
 void GPUStressSession::setRotateCubes(bool bRotate) {
-  kRotateCubes = bRotate;
+  rotateCubes_ = bRotate;
 }
 
 bool GPUStressSession::getRotateCubes() const {
-  return kRotateCubes;
+  return rotateCubes_;
 }
 
 std::string GPUStressSession::getCurrentUsageString() const {
@@ -1088,15 +1080,15 @@ std::string GPUStressSession::getCurrentUsageString() const {
            "cubes: %d, draws: %d, lights: %d, threads: %d,  cpu load: %d, memory reads: %lu , "
            "memory writes: %lu, "
            "msaa %s , blending %s, framerate: %.2f,",
-           kCubeCount.load(),
-           kDrawCount.load(),
-           kLightCount.load(),
-           kThreadCount.load(),
-           kGoSlowOnCpu.load(),
-           kMemoryReads.load() * (kThrashMemory ? 1 : 0),
-           kMemoryWrites.load() * (kThrashMemory ? 1 : 0),
-           kUseMSAA ? "on" : "off",
-           kEnableBlending ? "on" : "off ",
+           cubeCount_.load(),
+           drawCount_.load(),
+           lightCount_.load(),
+           threadCount_.load(),
+           goSlowOnCpu_.load(),
+           memoryReads_.load() * (thrashMemory_ ? 1 : 0),
+           memoryWrites_.load() * (thrashMemory_ ? 1 : 0),
+           useMSAA_ ? "on" : "off",
+           enableBlending_ ? "on" : "off ",
            fps_.getAverageFPS());
 
   return output;

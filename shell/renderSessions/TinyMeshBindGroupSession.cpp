@@ -25,7 +25,6 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/PlatformDevice.h>
-#include <igl/vulkan/VulkanContext.h>
 #endif // IGL_BACKEND_VULKAN
 
 #include <filesystem>
@@ -50,6 +49,14 @@
 #endif // __cpp_lib_format
 #endif // !defined(IGL_FORMAT)
 
+namespace igl::shell {
+
+using namespace igl;
+using glm::mat4;
+using glm::vec2;
+using glm::vec3;
+using glm::vec4;
+
 namespace {
 
 const uint32_t kDynamicBufferMask = 0b10;
@@ -66,22 +73,10 @@ const uint32_t kDynamicBufferMask = 0b10;
   return s;
 }
 
-} // namespace
-
-namespace igl::shell {
-
-using namespace igl;
-using glm::mat4;
-using glm::vec2;
-using glm::vec3;
-using glm::vec4;
-
 constexpr uint32_t kNumBufferedFrames = 3;
 
-namespace {
 int width_ = 0;
 int height_ = 0;
-} // namespace
 
 constexpr uint32_t kNumCubes = 256;
 
@@ -103,7 +98,7 @@ struct UniformsPerObject {
 const float half = 1.0f;
 
 // UV-mapped cube with indices: 24 vertices, 36 indices
-static VertexPosUvw vertexData0[] = {
+const VertexPosUvw vertexData0[] = {
     // top
     {{-half, -half, +half}, {0.0, 0.0, 1.0}, {0, 0}}, // 0
     {{+half, -half, +half}, {1.0, 0.0, 1.0}, {1, 0}}, // 1
@@ -136,18 +131,15 @@ static VertexPosUvw vertexData0[] = {
     {{-half, +half, +half}, {0.0, 1.0, 1.0}, {1, 1}}, // 23
 };
 
-static uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
-                               8,  9,  10, 10, 11, 8,  12, 13, 14, 14, 15, 12,
-                               16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
+uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,  8,  9,  10, 10, 11, 8,
+                        12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
 
-namespace {
 UniformsPerFrame perFrame;
 UniformsPerObject perObject[kNumCubes];
 vec3 axis_[kNumCubes];
-} // namespace
 
 #if IGL_BACKEND_METAL
-static std::string getMetalShaderSource() {
+[[nodiscard]] std::string getMetalShaderSource() {
   return R"(
           #include <metal_stdlib>
           #include <simd/simd.h>
@@ -186,7 +178,7 @@ static std::string getMetalShaderSource() {
 }
 #endif // IGL_BACKEND_METAL
 
-static const char* getVulkanVertexShaderSource() {
+[[nodiscard]] const char* getVulkanVertexShaderSource() {
   return R"(
 layout (location=0) in vec3 pos;
 layout (location=1) in vec3 col;
@@ -224,7 +216,7 @@ void main() {
 )";
 }
 
-static const char* getVulkanFragmentShaderSource() {
+[[nodiscard]] const char* getVulkanFragmentShaderSource() {
   return R"(
 layout (location=0) in vec3 color;
 layout (location=1) in vec2 uv;
@@ -246,7 +238,7 @@ void main() {
 )";
 }
 
-static std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
+[[nodiscard]] std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
     IGL_DEBUG_ASSERT_NOT_REACHED();
@@ -302,6 +294,8 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device)
     return nullptr;
   }
 }
+
+} // namespace
 
 TinyMeshBindGroupSession::TinyMeshBindGroupSession(std::shared_ptr<Platform> platform) :
   RenderSession(std::move(platform)) {

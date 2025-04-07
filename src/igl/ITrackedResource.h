@@ -13,8 +13,6 @@
 
 namespace igl {
 
-class IResourceTracker;
-
 /**
  * @brief ITrackedResource enables resources to be tracked by IResourceTracker
  * Resources that want to be tracked should derive from ITrackedResource and ensure

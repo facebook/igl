@@ -196,6 +196,8 @@ VkSampleCountFlagBits getVulkanSampleCountFlags(size_t numSamples);
 VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(ColorSpace colorSpace, bool isBGR);
 uint32_t getVkLayer(TextureType type, uint32_t face, uint32_t layer);
 TextureRangeDesc atVkLayer(TextureType type, const TextureRangeDesc& range, uint32_t vkLayer);
+VkColorSpaceKHR colorSpaceToVkColorSpace(ColorSpace colorSpace);
+ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace);
 
 /// @brief Transition from the current layout to VK_IMAGE_LAYOUT_GENERAL
 void transitionToGeneral(VkCommandBuffer cmdBuf, ITexture* texture);

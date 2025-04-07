@@ -74,7 +74,7 @@ static const uint32_t kNumColorAttachments = 1;
 #define IGL_FORMAT fmt::format
 #endif // __cpp_lib_format
 
-std::string codeVS = R"(
+static std::string codeVS = R"(
 #version 460
 layout (location=0) out vec3 color;
 const vec2 pos[3] = vec2[3](
@@ -106,7 +106,7 @@ void main() {
 };
 )";
 #else
-const char* codeFS = R"(
+const static char* codeFS = R"(
 #version 460
 layout (location=0) in vec3 color;
 layout (location=0) out vec4 out_FragColor;
@@ -118,15 +118,15 @@ void main() {
 
 using namespace igl;
 
-GLFWwindow* window_ = nullptr;
-int width_ = 0;
-int height_ = 0;
+static GLFWwindow* window_ = nullptr;
+static int width_ = 0;
+static int height_ = 0;
 
-std::unique_ptr<IDevice> device_;
-std::shared_ptr<ICommandQueue> commandQueue_;
-RenderPassDesc renderPass_;
-std::shared_ptr<IFramebuffer> framebuffer_;
-std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
+static std::unique_ptr<IDevice> device_;
+static std::shared_ptr<ICommandQueue> commandQueue_;
+static RenderPassDesc renderPass_;
+static std::shared_ptr<IFramebuffer> framebuffer_;
+static std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
 
 static bool initWindow(GLFWwindow** outWindow) {
   if (!glfwInit()) {

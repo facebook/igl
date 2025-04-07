@@ -11,9 +11,7 @@
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/glx/Context.h>
 
-namespace igl {
-namespace opengl {
-namespace glx {
+namespace igl::opengl::glx {
 
 Device::Device(std::unique_ptr<IContext> context) :
   opengl::Device(std::move(context)), platformDevice_(*this) {}
@@ -24,6 +22,4 @@ const PlatformDevice& Device::getPlatformDevice() const noexcept {
 
 Device::~Device() = default;
 
-} // namespace glx
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::glx

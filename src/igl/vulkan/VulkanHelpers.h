@@ -452,12 +452,6 @@ void ivkCmdBlitImage(const struct VulkanFunctionTable* vt,
                      VkImageSubresourceLayers dstSubresourceRange,
                      VkFilter filter);
 
-VkResult ivkQueuePresent(const struct VulkanFunctionTable* vt,
-                         VkQueue graphicsQueue,
-                         VkSemaphore waitSemaphore,
-                         VkSwapchainKHR swapchain,
-                         uint32_t currentSwapchainImageIndex);
-
 /// @brief Adds a name for the Vulkan object with handle equals to `handle` and type equals to
 /// `type`. This function is a no-op if `VK_EXT_DEBUG_UTILS_SUPPORTED` is not defined
 VkResult ivkSetDebugObjectName(const struct VulkanFunctionTable* vt,

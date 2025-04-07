@@ -61,6 +61,7 @@ class IComputeCommandEncoder : public ICommandEncoder {
    */
   virtual void bindTexture(uint32_t index, ITexture* texture) = 0;
   virtual void bindImageTexture(uint32_t index, ITexture* texture, TextureFormat format) = 0;
+  virtual void bindSamplerState(uint32_t index, ISamplerState* samplerState) = 0;
   /**
    * @brief Sets a buffer for the compute function
    *

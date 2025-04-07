@@ -266,6 +266,8 @@ Context::Context(EGLDisplay display,
   config_(config) {
   IContext::registerContext((void*)context_, this);
   initialize();
+  sharegroup_ = std::make_shared<std::vector<EGLContext>>();
+  sharegroup_->emplace_back(context_);
 }
 
 void Context::updateSurface(NativeWindowType window) {
@@ -422,22 +424,22 @@ EGLConfig Context::getConfig() const {
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 EGLImageKHR Context::createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) const {
   EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(hwb);
-  EGLint attribs[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE, EGL_NONE, EGL_NONE};
+  EGLint hwBufferAttribs[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE, EGL_NONE, EGL_NONE};
 
   EGLDisplay display = this->getDisplay();
   // eglCreateImageKHR will add a ref to the AHardwareBuffer
-  EGLImageKHR eglImage =
-      eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_ANDROID, clientBuffer, attribs);
+  EGLImageKHR eglImage = eglCreateImageKHR(
+      display, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_ANDROID, clientBuffer, hwBufferAttribs);
   IGL_LOG_DEBUG("eglCreateImageKHR(%p, %x, %x, %p, {%d, %d, %d, %d, %d})\n",
                 display,
                 EGL_NO_CONTEXT,
                 EGL_NATIVE_BUFFER_ANDROID,
                 clientBuffer,
-                attribs[0],
-                attribs[1],
-                attribs[2],
-                attribs[3],
-                attribs[4]);
+                hwBufferAttribs[0],
+                hwBufferAttribs[1],
+                hwBufferAttribs[2],
+                hwBufferAttribs[3],
+                hwBufferAttribs[4]);
 
   this->checkForErrors(__FUNCTION__, __LINE__);
 

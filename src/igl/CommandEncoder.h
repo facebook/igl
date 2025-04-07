@@ -56,8 +56,8 @@ struct BindGroupBufferDesc {
 
 class ICommandEncoder {
  public:
-  explicit ICommandEncoder(const std::shared_ptr<ICommandBuffer>& commandBuffer) :
-    commandBuffer_(commandBuffer) {}
+  explicit ICommandEncoder(std::shared_ptr<ICommandBuffer> commandBuffer) :
+    commandBuffer_(std::move(commandBuffer)) {}
 
   virtual ~ICommandEncoder() = default;
 

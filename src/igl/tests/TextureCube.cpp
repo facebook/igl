@@ -725,7 +725,6 @@ TEST_F(TextureCubeTest, GetRange) {
   ASSERT_TRUE(rangesAreEqual(getCubeFaceRangeNum(16, 16, format, 5, 1, 1, 1),
                              range.atFace(1).atMipLevel(1)));
 
-  // All mip levels
   ASSERT_TRUE(rangesAreEqual(getFullMipRange(16, 16, format, 5), range.withNumMipLevels(5)));
 }
 

@@ -19,13 +19,15 @@
 
 namespace igl::shell {
 
+namespace {
+
 struct VertexPosUvw {
   glm::vec3 position;
   glm::vec3 uvw;
 };
 
 const float half = 1.0f;
-static VertexPosUvw vertexData0[] = {
+VertexPosUvw vertexData0[] = {
     {{-half, half, -half}, {0.0, 1.0, 0.0}},
     {{half, half, -half}, {1.0, 1.0, 0.0}},
     {{-half, -half, -half}, {0.0, 0.0, 0.0}},
@@ -35,10 +37,10 @@ static VertexPosUvw vertexData0[] = {
     {{half, -half, half}, {1.0, 0.0, 1.0}},
     {{-half, -half, half}, {0.0, 0.0, 1.0}},
 };
-static uint16_t indexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
-                               5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7};
+uint16_t indexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
+                        5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7};
 
-static std::string getProlog(IDevice& device) {
+std::string getProlog(IDevice& device) {
 #if IGL_BACKEND_OPENGL
   const auto shaderVersion = device.getShaderVersion();
   if (shaderVersion.majorVersion >= 3 || shaderVersion.minorVersion >= 30) {
@@ -50,7 +52,7 @@ static std::string getProlog(IDevice& device) {
   return "";
 }
 
-static std::string getMetalShaderSource() {
+std::string getMetalShaderSource() {
   return R"(
           #include <metal_stdlib>
           #include <simd/simd.h>
@@ -95,7 +97,7 @@ static std::string getMetalShaderSource() {
         )";
 }
 
-static std::string getOpenGLFragmentShaderSource(IDevice& device) {
+std::string getOpenGLFragmentShaderSource(IDevice& device) {
   return getProlog(device) + std::string(R"(
                       precision highp float; precision highp sampler3D;
                       in vec3 uvw;
@@ -106,7 +108,7 @@ static std::string getOpenGLFragmentShaderSource(IDevice& device) {
                       })");
 }
 
-static std::string getOpenGLVertexShaderSource(IDevice& device) {
+std::string getOpenGLVertexShaderSource(IDevice& device) {
   return getProlog(device) + R"(
                       precision highp float;
                       uniform mat4 mvpMatrix;
@@ -121,7 +123,7 @@ static std::string getOpenGLVertexShaderSource(IDevice& device) {
                       })";
 }
 
-static const char* getVulkanFragmentShaderSource() {
+const char* getVulkanFragmentShaderSource() {
   return R"(
                       precision highp float;
                       layout(location = 0) in vec3 uvw;
@@ -134,7 +136,7 @@ static const char* getVulkanFragmentShaderSource() {
                       })";
 }
 
-static const char* getVulkanVertexShaderSource() {
+const char* getVulkanVertexShaderSource() {
   return R"(
                       precision highp float;
 
@@ -153,7 +155,7 @@ static const char* getVulkanVertexShaderSource() {
                       })";
 }
 
-static std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
+std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
     IGL_DEBUG_ASSERT_NOT_REACHED();
@@ -188,9 +190,11 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device)
   IGL_UNREACHABLE_RETURN(nullptr)
 }
 
-static bool isDeviceCompatible(IDevice& device) noexcept {
+bool isDeviceCompatible(IDevice& device) noexcept {
   return device.hasFeature(DeviceFeatures::Texture3D);
 }
+
+} // namespace
 
 void Textured3DCubeSession::createSamplerAndTextures(const igl::IDevice& device) {
   // Sampler & Texture

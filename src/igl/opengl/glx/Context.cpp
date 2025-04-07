@@ -25,9 +25,7 @@ namespace {
 
 } // namespace
 
-namespace igl {
-namespace opengl {
-namespace glx {
+namespace igl::opengl::glx {
 
 #define GLX_CONTEXT_MAJOR_VERSION_ARB 0x2091
 #define GLX_CONTEXT_MINOR_VERSION_ARB 0x2092
@@ -274,6 +272,4 @@ std::shared_ptr<GLXSharedModule> Context::getSharedModule() const {
   return module_;
 }
 
-} // namespace glx
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::glx

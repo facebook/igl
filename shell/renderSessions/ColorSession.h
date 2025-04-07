@@ -24,9 +24,7 @@ class ColorSession : public RenderSession {
 
  public:
   explicit ColorSession(std::shared_ptr<Platform> platform) : RenderSession(std::move(platform)) {}
-  // clang-tidy off
   void initialize() noexcept override;
-  // clang-tidy on
   void update(SurfaceTextures surfaceTextures) noexcept override;
 
   enum class ColorTestModes {
@@ -52,9 +50,7 @@ class ColorSession : public RenderSession {
   std::shared_ptr<ITexture> depthTexture_;
   std::shared_ptr<ITexture> tex0_;
   RenderPassDesc renderPass_;
-  // clang-tidy off
   FragmentFormat fragmentParameters_{};
-  // clang-tidy on
   std::vector<UniformDesc> fragmentUniformDescriptors_;
   std::vector<UniformDesc> vertexUniformDescriptors_;
 };

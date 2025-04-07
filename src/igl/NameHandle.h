@@ -48,9 +48,10 @@ consteval uint32_t iglCrc32ConstExpr(const char* data) {
 template<int N>
 constexpr uint32_t iglCrc32ImplConstExprImpl(const char* p, uint32_t crc) {
   constexpr uint32_t crc_table[256] = {iglCrc256(0)};
-  if (*p) {
+  while (*p) {
     const uint8_t v = (uint8_t)*p;
-    return iglCrc32ImplConstExprImpl<N>(p + 1, (crc >> 8) ^ crc_table[(crc & 0xFF) ^ v]);
+    crc = (crc >> 8) ^ crc_table[(crc & 0xFF) ^ v];
+    ++p;
   }
   return crc;
 }

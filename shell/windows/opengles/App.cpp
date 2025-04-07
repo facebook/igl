@@ -22,13 +22,12 @@
 #include <shell/windows/common/GlfwShell.h>
 
 #include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
 
 using namespace igl;
 namespace igl::shell {
 namespace {
 class OpenGlEsShell final : public GlfwShell {
-  igl::SurfaceTextures createSurfaceTextures() noexcept final;
+  SurfaceTextures createSurfaceTextures() noexcept final;
   std::shared_ptr<Platform> createPlatform() noexcept final;
 
   void willCreateWindow() noexcept final;
@@ -44,7 +43,7 @@ class EGLDevice final : public ::igl::opengl::Device {
     {}
   }
 
-  const igl::opengl::PlatformDevice& getPlatformDevice() const noexcept override {
+  [[nodiscard]] const igl::opengl::PlatformDevice& getPlatformDevice() const noexcept override {
     return platformDevice_;
   }
 
@@ -70,7 +69,7 @@ void OpenGlEsShell::didCreateWindow() noexcept {
   IGL_LOG_INFO("WindowAttrib: 0x%x\n", result);
 }
 
-igl::SurfaceTextures OpenGlEsShell::createSurfaceTextures() noexcept {
+SurfaceTextures OpenGlEsShell::createSurfaceTextures() noexcept {
 #if IGL_ANGLE
   auto& device = platform().getDevice();
   if (IGL_DEBUG_VERIFY(device.getBackendType() == igl::BackendType::OpenGL)) {
@@ -84,7 +83,7 @@ igl::SurfaceTextures OpenGlEsShell::createSurfaceTextures() noexcept {
     }
   }
 #endif // IGL_ANGLE
-  return igl::SurfaceTextures{};
+  return SurfaceTextures{};
 }
 
 std::shared_ptr<Platform> OpenGlEsShell::createPlatform() noexcept {
@@ -130,7 +129,7 @@ int main(int argc, char* argv[]) {
       .swapchainColorTextureFormat = TextureFormat::RGBA_UNorm8,
   };
 
-  if (!shell.initialize(argc, argv, suggestedWindowConfig, std::move(suggestedConfig))) {
+  if (!shell.initialize(argc, argv, suggestedWindowConfig, suggestedConfig)) {
     shell.teardown();
     return -1;
   }

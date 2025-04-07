@@ -13,12 +13,11 @@
 
 #include <cstdint>
 
-namespace igl {
-namespace opengl {
-
+namespace igl::opengl {
 class ViewTextureTarget;
+}
 
-namespace glx {
+namespace igl::opengl::glx {
 
 class Device;
 class Context;
@@ -48,6 +47,4 @@ class PlatformDevice : public opengl::PlatformDevice {
   std::shared_ptr<ViewTextureTarget> depthTexture_;
 };
 
-} // namespace glx
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::glx

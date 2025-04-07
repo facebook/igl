@@ -258,7 +258,7 @@ bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
 bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
   switch (feature) {
   case DeviceFeatures::CopyBuffer:
-    return hasDesktopOrESVersion(*this, GLVersion::v3_1, GLVersion::v3_0_ES);
+    return false;
 
   case DeviceFeatures::MultiSample:
     return hasDesktopVersion(*this, GLVersion::v3_0) ||

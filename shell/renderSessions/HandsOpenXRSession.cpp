@@ -25,6 +25,8 @@
 
 namespace igl::shell {
 
+namespace {
+
 struct Vertex {
   glm::vec3 position;
   glm::vec3 normal;
@@ -32,9 +34,7 @@ struct Vertex {
   glm::vec4 joint;
 };
 
-namespace {
-
-const char* getVulkanFragmentShaderSource() {
+[[nodiscard]] const char* getVulkanFragmentShaderSource() {
   return R"(#version 450
             precision highp float;
             layout(location = 0) in vec3 worldNormal;
@@ -45,7 +45,7 @@ const char* getVulkanFragmentShaderSource() {
             })";
 }
 
-std::string getVertexShaderProlog(bool stereoRendering) {
+[[nodiscard]] std::string getVertexShaderProlog(bool stereoRendering) {
   return stereoRendering ? R"(#version 450
     #extension GL_OVR_multiview2 : require
     layout(num_views = 2) in;
@@ -60,7 +60,7 @@ std::string getVertexShaderProlog(bool stereoRendering) {
   )";
 }
 
-std::string getVulkanVertexShaderSource(bool stereoRendering) {
+[[nodiscard]] std::string getVulkanVertexShaderSource(bool stereoRendering) {
   return getVertexShaderProlog(stereoRendering) + R"(
             layout(location = 0) in vec3 position;
             layout(location = 1) in vec3 normal;

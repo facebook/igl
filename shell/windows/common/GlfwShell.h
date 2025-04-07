@@ -48,21 +48,21 @@ class GlfwShell {
   bool initialize(int argc,
                   char* argv[],
                   RenderSessionWindowConfig suggestedWindowConfig,
-                  RenderSessionConfig suggestedSessionConfig) noexcept;
+                  const RenderSessionConfig& suggestedSessionConfig) noexcept;
   void run() noexcept;
   void teardown() noexcept;
 
  protected:
   ShellParams& shellParams() noexcept;
-  const ShellParams& shellParams() const noexcept;
+  [[nodiscard]] const ShellParams& shellParams() const noexcept;
   GLFWwindow& window() noexcept;
-  const GLFWwindow& window() const noexcept;
+  [[nodiscard]] const GLFWwindow& window() const noexcept;
   Platform& platform() noexcept;
-  const Platform& platform() const noexcept;
-  const RenderSessionWindowConfig& windowConfig() const noexcept;
-  const RenderSessionConfig& sessionConfig() const noexcept;
+  [[nodiscard]] const Platform& platform() const noexcept;
+  [[nodiscard]] const RenderSessionWindowConfig& windowConfig() const noexcept;
+  [[nodiscard]] const RenderSessionConfig& sessionConfig() const noexcept;
 
-  virtual igl::SurfaceTextures createSurfaceTextures() noexcept = 0;
+  virtual SurfaceTextures createSurfaceTextures() noexcept = 0;
   virtual std::shared_ptr<Platform> createPlatform() noexcept = 0;
 
   virtual void willCreateWindow() noexcept {}

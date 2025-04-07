@@ -23,15 +23,15 @@
 
 namespace igl::shell {
 
+namespace {
+
 struct VertexPosUvw {
   glm::vec3 position;
   glm::vec3 uvw;
 };
 
-namespace {
-
 const float half = 1.0f;
-VertexPosUvw vertexData0[] = {
+const VertexPosUvw vertexData0[] = {
     {{-half, half, -half}, {0.0, 1.0, 0.0}},
     {{half, half, -half}, {1.0, 1.0, 0.0}},
     {{-half, -half, -half}, {0.0, 0.0, 0.0}},
@@ -41,10 +41,10 @@ VertexPosUvw vertexData0[] = {
     {{half, -half, half}, {1.0, 0.0, 1.0}},
     {{-half, -half, half}, {0.0, 0.0, 1.0}},
 };
-uint16_t indexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
-                        5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7};
+constexpr uint16_t indexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
+                                  5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7};
 
-const char* getVulkanFragmentShaderSource() {
+[[nodiscard]] const char* getVulkanFragmentShaderSource() {
   return R"(#version 450
             precision highp float;
             precision highp sampler2D;
@@ -59,7 +59,7 @@ const char* getVulkanFragmentShaderSource() {
             })";
 }
 
-std::string getVertexShaderProlog(bool stereoRendering) {
+[[nodiscard]] std::string getVertexShaderProlog(bool stereoRendering) {
   return stereoRendering ? R"(#version 450
     #extension GL_OVR_multiview2 : require
     layout(num_views = 2) in;
@@ -74,7 +74,7 @@ std::string getVertexShaderProlog(bool stereoRendering) {
   )";
 }
 
-std::string getVulkanVertexShaderSource(bool stereoRendering) {
+[[nodiscard]] std::string getVulkanVertexShaderSource(bool stereoRendering) {
   return getVertexShaderProlog(stereoRendering) + R"(
             layout (set = 1, binding = 1, std140) uniform PerFrame {
               mat4 modelMatrix;

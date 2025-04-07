@@ -294,9 +294,8 @@ class IDevice : public ICapabilities {
   /**
    * @brief This is only used by EGL-based clients, e.g. Android, to set the default framebuffer to
    * render to. For all other clients, this is a no-op.
-   * @param nativeWindowType Pointer to the native window to be rendered to.
    */
-  virtual void updateSurface(void* IGL_NONNULL nativeWindowType);
+  virtual void updateSurface(void* IGL_NONNULL /*nativeWindowType*/) {}
 
   /**
    * @brief Creates a shader stages object.
@@ -386,8 +385,12 @@ class IDevice : public ICapabilities {
   } // NOTE: for now, this is implemented only in IGL/Vulkan and IGL/OpenGL
 
  protected:
-  virtual void beginScope();
-  virtual void endScope();
+  virtual void beginScope() {
+    ++scopeDepth_;
+  }
+  virtual void endScope() {
+    --scopeDepth_;
+  }
   [[nodiscard]] TextureDesc sanitize(const TextureDesc& desc) const;
   IDevice() = default;
 
