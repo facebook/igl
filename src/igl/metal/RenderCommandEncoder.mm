@@ -387,7 +387,7 @@ void RenderCommandEncoder::draw(size_t vertexCount,
     if (baseInstance) {
       IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     } else {
-      if (instanceCount) {
+      if (instanceCount > 1) {
         [encoder_ drawPrimitives:metalPrimitive_
                      vertexStart:firstVertex
                      vertexCount:vertexCount
@@ -431,7 +431,7 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
     if (baseInstance) {
       IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     } else {
-      if (instanceCount) {
+      if (instanceCount > 1) {
         [encoder_ drawIndexedPrimitives:metalPrimitive_
                              indexCount:indexCount
                               indexType:indexType_
