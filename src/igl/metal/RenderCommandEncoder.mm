@@ -384,7 +384,9 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                 baseInstance:baseInstance];
 #if IGL_PLATFORM_IOS
   } else {
-    if (!baseInstance) {
+    if (baseInstance) {
+      IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+    } else {
       if (instanceCount) {
         [encoder_ drawPrimitives:metalPrimitive_
                      vertexStart:firstVertex
@@ -393,8 +395,6 @@ void RenderCommandEncoder::draw(size_t vertexCount,
       } else {
         [encoder_ drawPrimitives:metalPrimitive_ vertexStart:firstVertex vertexCount:vertexCount];
       }
-    } else {
-      IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     }
   }
 #endif // IGL_PLATFORM_IOS
@@ -428,7 +428,9 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
                        baseInstance:baseInstance];
 #if IGL_PLATFORM_IOS
   } else {
-    if (!baseInstance) {
+    if (baseInstance) {
+      IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+    } else {
       if (instanceCount) {
         [encoder_ drawIndexedPrimitives:metalPrimitive_
                              indexCount:indexCount
@@ -443,8 +445,6 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
                             indexBuffer:indexBuffer_
                       indexBufferOffset:indexBufferOffset_ + indexOffsetBytes];
       }
-    } else {
-      IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     }
   }
 #endif // IGL_PLATFORM_IOS
