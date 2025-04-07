@@ -385,12 +385,16 @@ void RenderCommandEncoder::draw(size_t vertexCount,
 #if IGL_PLATFORM_IOS
   } else {
     if (!baseInstance) {
-      [encoder_ drawPrimitives:metalPrimitive_
-                   vertexStart:firstVertex
-                   vertexCount:vertexCount
-                 instanceCount:instanceCount];
+      if (instanceCount) {
+        [encoder_ drawPrimitives:metalPrimitive_
+                     vertexStart:firstVertex
+                     vertexCount:vertexCount
+                   instanceCount:instanceCount];
+      } else {
+        [encoder_ drawPrimitives:metalPrimitive_ vertexStart:firstVertex vertexCount:vertexCount];
+      }
     } else {
-      IGL_DEBUG_ASSERT_NOT_REACHED();
+      IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     }
   }
 #endif // IGL_PLATFORM_IOS
@@ -425,14 +429,22 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
 #if IGL_PLATFORM_IOS
   } else {
     if (!baseInstance) {
-      [encoder_ drawIndexedPrimitives:metalPrimitive_
-                           indexCount:indexCount
-                            indexType:indexType_
-                          indexBuffer:indexBuffer_
-                    indexBufferOffset:indexBufferOffset_ + indexOffsetBytes
-                        instanceCount:instanceCount];
+      if (instanceCount) {
+        [encoder_ drawIndexedPrimitives:metalPrimitive_
+                             indexCount:indexCount
+                              indexType:indexType_
+                            indexBuffer:indexBuffer_
+                      indexBufferOffset:indexBufferOffset_ + indexOffsetBytes
+                          instanceCount:instanceCount];
+      } else {
+        [encoder_ drawIndexedPrimitives:metalPrimitive_
+                             indexCount:indexCount
+                              indexType:indexType_
+                            indexBuffer:indexBuffer_
+                      indexBufferOffset:indexBufferOffset_ + indexOffsetBytes];
+      }
     } else {
-      IGL_DEBUG_ASSERT_NOT_REACHED();
+      IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     }
   }
 #endif // IGL_PLATFORM_IOS
