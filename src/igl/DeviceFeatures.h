@@ -31,6 +31,7 @@ namespace igl {
  * DepthShaderRead            Supports reading depth texture from a shader
  * DrawFirstIndexFirstVertex  Supports firstIndex/firstVertex parameters in IRenderCommandEncoder::drawIndexed()
  * DrawIndexedIndirect        Supports IRenderCommandEncoder::drawIndexedIndirect
+ * DrawInstanced              Supports IRenderCommandEncoder::draw:instanceCount
  * ExplicitBinding,           Supports uniforms block explicit binding in shaders
  * ExplicitBindingExt,        Supports uniforms block explicit binding in shaders via an extension
  * ExternalMemoryObjects,     Supports accessing external memory objects, including by POSIX file descriptor
@@ -80,6 +81,7 @@ enum class DeviceFeatures {
   DepthShaderRead,
   DrawFirstIndexFirstVertex,
   DrawIndexedIndirect,
+  DrawInstanced,
   ExplicitBinding,
   ExplicitBindingExt,
   ExternalMemoryObjects,
