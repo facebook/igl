@@ -399,6 +399,18 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
                              const char* IGL_NULLABLE* IGL_NULLABLE extraInstanceExtensions,
                              void* IGL_NULLABLE display) :
   tableImpl_(std::make_unique<VulkanFunctionTable>()),
+  vkPhysicalDeviceDescriptorIndexingProperties_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES_EXT,
+      .pNext = nullptr,
+  }),
+  vkPhysicalDeviceDriverProperties_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES_KHR,
+      .pNext = &vkPhysicalDeviceDescriptorIndexingProperties_,
+  }),
+  vkPhysicalDeviceProperties2_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+      .pNext = &vkPhysicalDeviceDriverProperties_,
+  }),
   features_(VK_API_VERSION_1_1, config),
   vf_(*tableImpl_),
   config_(std::move(config)) {

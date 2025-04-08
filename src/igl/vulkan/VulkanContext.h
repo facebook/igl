@@ -285,27 +285,16 @@ class VulkanContext final {
   VkDebugUtilsMessengerEXT vkDebugUtilsMessenger_ = VK_NULL_HANDLE;
   VkSurfaceKHR vkSurface_ = VK_NULL_HANDLE;
   VkPhysicalDevice IGL_NULLABLE vkPhysicalDevice_ = VK_NULL_HANDLE;
-  VkPhysicalDeviceDescriptorIndexingPropertiesEXT vkPhysicalDeviceDescriptorIndexingProperties_ = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES_EXT,
-      .pNext = nullptr,
-  };
-
+  VkPhysicalDeviceDescriptorIndexingPropertiesEXT vkPhysicalDeviceDescriptorIndexingProperties_{};
   // Provided by VK_KHR_driver_properties
-  VkPhysicalDeviceDriverPropertiesKHR vkPhysicalDeviceDriverProperties_ = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES_KHR,
-      .pNext = &vkPhysicalDeviceDescriptorIndexingProperties_,
-  };
+  VkPhysicalDeviceDriverPropertiesKHR vkPhysicalDeviceDriverProperties_{};
+  // Provided by VK_VERSION_1_1
+  VkPhysicalDeviceProperties2 vkPhysicalDeviceProperties2_{};
 
   std::vector<VkFormat> deviceDepthFormats_;
   std::vector<VkSurfaceFormatKHR> deviceSurfaceFormats_;
   VkSurfaceCapabilitiesKHR deviceSurfaceCaps_{};
   std::vector<VkPresentModeKHR> devicePresentModes_;
-
-  // Provided by VK_VERSION_1_1
-  VkPhysicalDeviceProperties2 vkPhysicalDeviceProperties2_ = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
-      .pNext = &vkPhysicalDeviceDriverProperties_,
-  };
 
   VulkanFeatures features_;
 
