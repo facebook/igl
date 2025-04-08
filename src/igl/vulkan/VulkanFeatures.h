@@ -69,42 +69,27 @@ class VulkanFeatures final {
       const VulkanFeatures& availableFeatures) const noexcept;
 
   // Vulkan 1.1
-  VkPhysicalDeviceFeatures2 VkPhysicalDeviceFeatures2_ = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
-  VkPhysicalDeviceSamplerYcbcrConversionFeatures VkPhysicalDeviceSamplerYcbcrConversionFeatures_ = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES};
-  VkPhysicalDeviceShaderDrawParametersFeatures VkPhysicalDeviceShaderDrawParametersFeatures_ = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES};
-  VkPhysicalDeviceMultiviewFeatures VkPhysicalDeviceMultiviewFeatures_ = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES};
+  VkPhysicalDeviceFeatures2 VkPhysicalDeviceFeatures2_{};
+  VkPhysicalDeviceSamplerYcbcrConversionFeatures VkPhysicalDeviceSamplerYcbcrConversionFeatures_{};
+  VkPhysicalDeviceShaderDrawParametersFeatures VkPhysicalDeviceShaderDrawParametersFeatures_{};
+  VkPhysicalDeviceMultiviewFeatures VkPhysicalDeviceMultiviewFeatures_{};
 #if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
-  VkPhysicalDeviceBufferDeviceAddressFeaturesKHR VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_ = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR};
+  VkPhysicalDeviceBufferDeviceAddressFeaturesKHR VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_{};
 #endif
 #if defined(VK_EXT_descriptor_indexing) && VK_EXT_descriptor_indexing
-  VkPhysicalDeviceDescriptorIndexingFeaturesEXT VkPhysicalDeviceDescriptorIndexingFeaturesEXT_ = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT};
+  VkPhysicalDeviceDescriptorIndexingFeaturesEXT VkPhysicalDeviceDescriptorIndexingFeaturesEXT_{};
 #endif
-  VkPhysicalDevice16BitStorageFeatures VkPhysicalDevice16BitStorageFeatures_ = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES};
+  VkPhysicalDevice16BitStorageFeatures VkPhysicalDevice16BitStorageFeatures_{};
 
   // Vulkan 1.2
 #if defined(VK_VERSION_1_2)
-  VkPhysicalDeviceShaderFloat16Int8Features VkPhysicalDeviceShaderFloat16Int8Features_ = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR};
+  VkPhysicalDeviceShaderFloat16Int8Features VkPhysicalDeviceShaderFloat16Int8Features_{};
 #endif
 #if defined(VK_EXT_index_type_uint8) && VK_EXT_index_type_uint8
-  VkPhysicalDeviceIndexTypeUint8FeaturesEXT VkPhysicalDeviceIndexTypeUint8Features_ = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT};
+  VkPhysicalDeviceIndexTypeUint8FeaturesEXT VkPhysicalDeviceIndexTypeUint8Features_{};
 #endif
-  VkPhysicalDeviceSynchronization2FeaturesKHR VkPhysicalDeviceSynchronization2Features_ = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR,
-      .synchronization2 = VK_TRUE,
-  };
-  VkPhysicalDeviceTimelineSemaphoreFeaturesKHR VkPhysicalDeviceTimelineSemaphoreFeatures_ = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR,
-      .timelineSemaphore = VK_TRUE,
-  };
+  VkPhysicalDeviceSynchronization2FeaturesKHR VkPhysicalDeviceSynchronization2Features_{};
+  VkPhysicalDeviceTimelineSemaphoreFeaturesKHR VkPhysicalDeviceTimelineSemaphoreFeatures_{};
 
   // Assignment operator. We need to reassemble the feature chain because of the
   // pNext pointers
@@ -112,7 +97,7 @@ class VulkanFeatures final {
 
  public:
   // A copy of the config used by the VulkanContext
-  VulkanContextConfig config_;
+  VulkanContextConfig config_{};
 
   // Stores the API version
   uint32_t version_ = 0;

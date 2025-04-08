@@ -11,7 +11,104 @@
 namespace igl::vulkan {
 
 VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noexcept :
-  config_(config), version_(version) {
+  // Vulkan 1.1
+  VkPhysicalDeviceFeatures2_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+      .pNext = nullptr,
+      .features = {},
+  }),
+  VkPhysicalDeviceSamplerYcbcrConversionFeatures_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES,
+      .pNext = nullptr,
+      .samplerYcbcrConversion = VK_FALSE,
+  }),
+  VkPhysicalDeviceShaderDrawParametersFeatures_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
+      .pNext = nullptr,
+      .shaderDrawParameters = VK_FALSE,
+  }),
+  VkPhysicalDeviceMultiviewFeatures_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
+      .pNext = nullptr,
+      .multiview = VK_FALSE,
+      .multiviewGeometryShader = VK_FALSE,
+      .multiviewTessellationShader = VK_FALSE,
+  }),
+#if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
+
+  VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
+      .pNext = nullptr,
+      .bufferDeviceAddress = VK_FALSE,
+      .bufferDeviceAddressCaptureReplay = VK_FALSE,
+      .bufferDeviceAddressMultiDevice = VK_FALSE,
+  }),
+#endif
+#if defined(VK_EXT_descriptor_indexing) && VK_EXT_descriptor_indexing
+
+  VkPhysicalDeviceDescriptorIndexingFeaturesEXT_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
+      .pNext = nullptr,
+      .shaderInputAttachmentArrayDynamicIndexing = VK_FALSE,
+      .shaderUniformTexelBufferArrayDynamicIndexing = VK_FALSE,
+      .shaderStorageTexelBufferArrayDynamicIndexing = VK_FALSE,
+      .shaderUniformBufferArrayNonUniformIndexing = VK_FALSE,
+      .shaderSampledImageArrayNonUniformIndexing = VK_FALSE,
+      .shaderStorageBufferArrayNonUniformIndexing = VK_FALSE,
+      .shaderStorageImageArrayNonUniformIndexing = VK_FALSE,
+      .shaderInputAttachmentArrayNonUniformIndexing = VK_FALSE,
+      .shaderUniformTexelBufferArrayNonUniformIndexing = VK_FALSE,
+      .shaderStorageTexelBufferArrayNonUniformIndexing = VK_FALSE,
+      .descriptorBindingUniformBufferUpdateAfterBind = VK_FALSE,
+      .descriptorBindingSampledImageUpdateAfterBind = VK_FALSE,
+      .descriptorBindingStorageImageUpdateAfterBind = VK_FALSE,
+      .descriptorBindingStorageBufferUpdateAfterBind = VK_FALSE,
+      .descriptorBindingUniformTexelBufferUpdateAfterBind = VK_FALSE,
+      .descriptorBindingStorageTexelBufferUpdateAfterBind = VK_FALSE,
+      .descriptorBindingUpdateUnusedWhilePending = VK_FALSE,
+      .descriptorBindingPartiallyBound = VK_FALSE,
+      .descriptorBindingVariableDescriptorCount = VK_FALSE,
+      .runtimeDescriptorArray = VK_FALSE,
+  }),
+#endif
+  VkPhysicalDevice16BitStorageFeatures_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,
+      .pNext = nullptr,
+      .storageBuffer16BitAccess = VK_FALSE,
+      .uniformAndStorageBuffer16BitAccess = VK_FALSE,
+      .storagePushConstant16 = VK_FALSE,
+      .storageInputOutput16 = VK_FALSE,
+  }),
+// Vulkan 1.2
+#if defined(VK_VERSION_1_2)
+  VkPhysicalDeviceShaderFloat16Int8Features_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR,
+      .pNext = nullptr,
+      .shaderFloat16 = VK_FALSE,
+      .shaderInt8 = VK_FALSE,
+  }),
+#endif
+#if defined(VK_EXT_index_type_uint8) && VK_EXT_index_type_uint8
+  VkPhysicalDeviceIndexTypeUint8Features_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT,
+      .pNext = nullptr,
+      .indexTypeUint8 = VK_FALSE,
+  }),
+#endif
+  VkPhysicalDeviceSynchronization2Features_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR,
+      .pNext = nullptr,
+      .synchronization2 = VK_TRUE,
+  }),
+  VkPhysicalDeviceTimelineSemaphoreFeatures_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR,
+      .pNext = nullptr,
+      .timelineSemaphore = VK_TRUE,
+  }),
+  config_(config),
+  version_(version) {
+
+  // All the above get assembled into a feature chain
   assembleFeatureChain(config_);
 }
 
