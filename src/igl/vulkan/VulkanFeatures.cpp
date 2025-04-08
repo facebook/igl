@@ -330,12 +330,9 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   VkPhysicalDevice16BitStorageFeatures_.pNext = nullptr;
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDevice16BitStorageFeatures_);
 
-#if defined(VK_EXT_index_type_uint8) && VK_EXT_index_type_uint8
   if (hasExtension(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceIndexTypeUint8Features_);
   }
-#endif
-
   if (hasExtension(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceSynchronization2Features_);
   }

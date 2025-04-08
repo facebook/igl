@@ -85,9 +85,7 @@ class VulkanFeatures final {
 #if defined(VK_VERSION_1_2)
   VkPhysicalDeviceShaderFloat16Int8Features VkPhysicalDeviceShaderFloat16Int8Features_{};
 #endif
-#if defined(VK_EXT_index_type_uint8) && VK_EXT_index_type_uint8
   VkPhysicalDeviceIndexTypeUint8FeaturesEXT VkPhysicalDeviceIndexTypeUint8Features_{};
-#endif
   VkPhysicalDeviceSynchronization2FeaturesKHR VkPhysicalDeviceSynchronization2Features_{};
   VkPhysicalDeviceTimelineSemaphoreFeaturesKHR VkPhysicalDeviceTimelineSemaphoreFeatures_{};
 
