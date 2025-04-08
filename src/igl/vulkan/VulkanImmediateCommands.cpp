@@ -27,6 +27,27 @@ VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
                queueFamilyIndex,
                debugName),
   debugName_(debugName),
+  lastSubmitSemaphore_({
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+      .semaphore = VK_NULL_HANDLE,
+      .value = 0ull,
+      .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+      .deviceIndex = 0ul,
+  }),
+  waitSemaphore_({
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+      .semaphore = VK_NULL_HANDLE,
+      .value = 0ull,
+      .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+      .deviceIndex = 0ul,
+  }),
+  signalSemaphore_({
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+      .semaphore = VK_NULL_HANDLE,
+      .value = 0ull,
+      .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+      .deviceIndex = 0ul,
+  }),
   useTimelineSemaphoreAndSynchronization2_(useTimelineSemaphoreAndSynchronization2) {
   IGL_PROFILER_FUNCTION();
 

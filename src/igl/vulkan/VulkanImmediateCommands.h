@@ -183,22 +183,12 @@ class VulkanImmediateCommands final {
   SubmitHandle nextSubmitHandle_ = SubmitHandle();
 
   /// @brief The semaphore submitted with the last command buffer. Updated on `submit()`
-  VkSemaphoreSubmitInfo lastSubmitSemaphore_ = {
-      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-      .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-  };
-
+  VkSemaphoreSubmitInfo lastSubmitSemaphore_{};
   /// @brief A semaphore to be associated with the next command buffer to be submitted. Can be used
   /// with command buffers that present swapchain images.
-  VkSemaphoreSubmitInfo waitSemaphore_ = {
-      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-      .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-  };
+  VkSemaphoreSubmitInfo waitSemaphore_{};
   // an extra "signal" timeline semaphore
-  VkSemaphoreSubmitInfo signalSemaphore_ = {
-      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-      .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-  };
+  VkSemaphoreSubmitInfo signalSemaphore_{};
 
   uint32_t numAvailableCommandBuffers_ = kMaxCommandBuffers;
 
