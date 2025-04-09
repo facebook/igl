@@ -301,20 +301,15 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   VkPhysicalDeviceIndexTypeUint8Features_.pNext = nullptr;
   VkPhysicalDeviceSynchronization2Features_.pNext = nullptr;
   VkPhysicalDeviceTimelineSemaphoreFeatures_.pNext = nullptr;
-
-#if defined(VK_VERSION_1_2)
   VkPhysicalDeviceShaderFloat16Int8Features_.pNext = nullptr;
-#endif // VK_VERSION_1_2
 
   // Add the required and optional features to the VkPhysicalDeviceFetaures2_
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceSamplerYcbcrConversionFeatures_);
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceShaderDrawParametersFeatures_);
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceMultiviewFeatures_);
-#if defined(VK_VERSION_1_2)
   if (version_ >= VK_API_VERSION_1_2) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceShaderFloat16Int8Features_);
   }
-#endif // VK_VERSION_1_2
 #if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
   VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.pNext = nullptr;
   if (config.enableBufferDeviceAddress) {
@@ -372,10 +367,7 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   VkPhysicalDevice16BitStorageFeatures_ = other.VkPhysicalDevice16BitStorageFeatures_;
 
   // Vulkan 1.2
-#if defined(VK_VERSION_1_2)
   VkPhysicalDeviceShaderFloat16Int8Features_ = other.VkPhysicalDeviceShaderFloat16Int8Features_;
-#endif
-
   VkPhysicalDeviceIndexTypeUint8Features_ = other.VkPhysicalDeviceIndexTypeUint8Features_;
   VkPhysicalDeviceSynchronization2Features_ = other.VkPhysicalDeviceSynchronization2Features_;
   VkPhysicalDeviceTimelineSemaphoreFeatures_ = other.VkPhysicalDeviceTimelineSemaphoreFeatures_;
