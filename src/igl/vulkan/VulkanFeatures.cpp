@@ -150,7 +150,6 @@ void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
   features.fillModeNonSolid = VK_TRUE;
 #endif
 
-#if defined(VK_EXT_descriptor_indexing) && VK_EXT_descriptor_indexing
   if (config_.enableDescriptorIndexing) {
     auto& descriptorIndexingFeatures = VkPhysicalDeviceDescriptorIndexingFeaturesEXT_;
     descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
@@ -162,7 +161,6 @@ void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
     descriptorIndexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
     descriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
   }
-#endif
 
   VkPhysicalDevice16BitStorageFeatures_.storageBuffer16BitAccess =
       config_.enableStorageBuffer16BitAccess ? VK_TRUE : VK_FALSE;
@@ -316,12 +314,10 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_);
   }
 #endif
-#if defined(VK_EXT_descriptor_indexing) && VK_EXT_descriptor_indexing
   VkPhysicalDeviceDescriptorIndexingFeaturesEXT_.pNext = nullptr;
   if (config.enableDescriptorIndexing) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceDescriptorIndexingFeaturesEXT_);
   }
-#endif
   VkPhysicalDevice16BitStorageFeatures_.pNext = nullptr;
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDevice16BitStorageFeatures_);
 
@@ -360,10 +356,8 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_ =
       other.VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_;
 #endif
-#if defined(VK_EXT_descriptor_indexing) && VK_EXT_descriptor_indexing
   VkPhysicalDeviceDescriptorIndexingFeaturesEXT_ =
       other.VkPhysicalDeviceDescriptorIndexingFeaturesEXT_;
-#endif
   VkPhysicalDevice16BitStorageFeatures_ = other.VkPhysicalDevice16BitStorageFeatures_;
 
   // Vulkan 1.2

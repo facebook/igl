@@ -76,9 +76,7 @@ class VulkanFeatures final {
 #if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
   VkPhysicalDeviceBufferDeviceAddressFeaturesKHR VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_{};
 #endif
-#if defined(VK_EXT_descriptor_indexing) && VK_EXT_descriptor_indexing
   VkPhysicalDeviceDescriptorIndexingFeaturesEXT VkPhysicalDeviceDescriptorIndexingFeaturesEXT_{};
-#endif
   VkPhysicalDevice16BitStorageFeatures VkPhysicalDevice16BitStorageFeatures_{};
 
   // Vulkan 1.2
