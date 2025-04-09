@@ -393,7 +393,7 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                      vertexCount:vertexCount
                    instanceCount:instanceCount];
       } else {
-        IGL_DEBUG_ASSERT(!instanceCount);
+        IGL_DEBUG_ASSERT(instanceCount == 1);
         [encoder_ drawPrimitives:metalPrimitive_ vertexStart:firstVertex vertexCount:vertexCount];
       }
     }
@@ -440,7 +440,7 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
                       indexBufferOffset:indexBufferOffset_ + indexOffsetBytes
                           instanceCount:instanceCount];
       } else {
-        IGL_DEBUG_ASSERT(!instanceCount);
+        IGL_DEBUG_ASSERT(instanceCount == 1);
         [encoder_ drawIndexedPrimitives:metalPrimitive_
                              indexCount:indexCount
                               indexType:indexType_
