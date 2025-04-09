@@ -30,15 +30,15 @@ class PlatformDevice : public opengl::PlatformDevice {
   ~PlatformDevice() override = default;
 
   /// Returns a texture representing the GLX Surface associated with this device's context.
-  std::shared_ptr<ITexture> createTextureFromNativeDrawable(uint32_t width,
-                                                            uint32_t height,
-                                                            Result* outResult);
-  std::shared_ptr<ITexture> createTextureFromNativeDepth(uint32_t width,
-                                                         uint32_t height,
-                                                         Result* outResult);
+  [[nodiscard]] std::shared_ptr<ITexture> createTextureFromNativeDrawable(uint32_t width,
+                                                                          uint32_t height,
+                                                                          Result* outResult);
+  [[nodiscard]] std::shared_ptr<ITexture> createTextureFromNativeDepth(uint32_t width,
+                                                                       uint32_t height,
+                                                                       Result* outResult);
 
  protected:
-  bool isType(PlatformDeviceType t) const noexcept override;
+  [[nodiscard]] bool isType(PlatformDeviceType t) const noexcept override;
 
  private:
   uint32_t width_ = 0;

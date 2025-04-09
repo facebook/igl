@@ -17,7 +17,7 @@ class Device final : public igl::opengl::Device {
   explicit Device(std::unique_ptr<IContext> context);
   ~Device() override;
 
-  const PlatformDevice& getPlatformDevice() const noexcept override;
+  [[nodiscard]] const PlatformDevice& getPlatformDevice() const noexcept override;
 
  protected:
   PlatformDevice platformDevice_;

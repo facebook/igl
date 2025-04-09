@@ -51,12 +51,12 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
   [[nodiscard]] int getIndexByName(const std::string& name, ShaderStage stage) const override;
 
   [[nodiscard]] int getUniformBlockBindingPoint(const NameHandle& uniformBlockName) const;
-  std::shared_ptr<IRenderPipelineReflection> renderPipelineReflection() override;
+  [[nodiscard]] std::shared_ptr<IRenderPipelineReflection> renderPipelineReflection() override;
   void setRenderPipelineReflection(
       const IRenderPipelineReflection& renderPipelineReflection) override;
 
-  static GLenum convertBlendOp(BlendOp value);
-  static GLenum convertBlendFactor(BlendFactor value);
+  [[nodiscard]] static GLenum convertBlendOp(BlendOp value);
+  [[nodiscard]] static GLenum convertBlendFactor(BlendFactor value);
   [[nodiscard]] CullMode getCullMode() const {
     return desc_.cullMode;
   }
@@ -67,7 +67,7 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
     return desc_.polygonFillMode;
   }
 
-  const ShaderStages* getShaderStages() const {
+  [[nodiscard]] const ShaderStages* getShaderStages() const {
     return static_cast<ShaderStages*>(desc_.shaderStages.get());
   }
 

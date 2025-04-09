@@ -221,19 +221,21 @@ class IRenderPipelineState {
   explicit IRenderPipelineState(RenderPipelineDesc desc) : desc_(std::move(desc)) {}
   virtual ~IRenderPipelineState() = default;
 
-  virtual std::shared_ptr<IRenderPipelineReflection> renderPipelineReflection() = 0;
+  [[nodiscard]] virtual std::shared_ptr<IRenderPipelineReflection> renderPipelineReflection() = 0;
   virtual void setRenderPipelineReflection(
       const IRenderPipelineReflection& renderPipelineReflection) = 0;
 
-  virtual int getIndexByName(const NameHandle& /* name */, ShaderStage /* stage */) const {
+  [[nodiscard]] virtual int getIndexByName(const NameHandle& /* name */,
+                                           ShaderStage /* stage */) const {
     return -1;
   }
 
-  virtual int getIndexByName(const std::string& /* name */, ShaderStage /* stage */) const {
+  [[nodiscard]] virtual int getIndexByName(const std::string& /* name */,
+                                           ShaderStage /* stage */) const {
     return -1;
   }
 
-  const RenderPipelineDesc& getRenderPipelineDesc() const {
+  [[nodiscard]] const RenderPipelineDesc& getRenderPipelineDesc() const {
     return desc_;
   }
 
