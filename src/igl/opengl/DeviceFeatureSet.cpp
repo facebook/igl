@@ -431,6 +431,10 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
     return hasDesktopOrESVersionOrExtension(
         *this, GLVersion::v4_0, GLVersion::v3_1_ES, "GL_ARB_draw_indirect");
 
+  case DeviceFeatures::DrawInstanced:
+    return hasDesktopOrESVersionOrExtension(
+        *this, GLVersion::v3_1, GLVersion::v3_0_ES, "GL_ARB_draw_indirect");
+
   case DeviceFeatures::ValidationLayersEnabled:
     return false;
 
