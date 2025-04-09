@@ -318,7 +318,14 @@ void TQSession::update(SurfaceTextures surfaceTextures) noexcept {
         commands->bindUniform(uniformDesc, &fragmentParameters_);
       }
     } else if (getPlatform().getDevice().hasFeature(DeviceFeatures::UniformBlocks)) {
-      commands->bindBuffer(0, fragmentParamBuffer_.get());
+      // @fb-only
+        // @fb-only
+                            // @fb-only
+                            // @fb-only
+                            // @fb-only
+      // @fb-only
+        commands->bindBuffer(0, fragmentParamBuffer_.get());
+      // @fb-only
     } else {
       IGL_DEBUG_ASSERT_NOT_REACHED();
     }
