@@ -73,9 +73,8 @@ class VulkanFeatures final {
   VkPhysicalDeviceSamplerYcbcrConversionFeatures VkPhysicalDeviceSamplerYcbcrConversionFeatures_{};
   VkPhysicalDeviceShaderDrawParametersFeatures VkPhysicalDeviceShaderDrawParametersFeatures_{};
   VkPhysicalDeviceMultiviewFeatures VkPhysicalDeviceMultiviewFeatures_{};
-#if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
+
   VkPhysicalDeviceBufferDeviceAddressFeaturesKHR VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_{};
-#endif
   VkPhysicalDeviceDescriptorIndexingFeaturesEXT VkPhysicalDeviceDescriptorIndexingFeaturesEXT_{};
   VkPhysicalDevice16BitStorageFeatures VkPhysicalDevice16BitStorageFeatures_{};
 
@@ -85,8 +84,7 @@ class VulkanFeatures final {
   VkPhysicalDeviceSynchronization2FeaturesKHR VkPhysicalDeviceSynchronization2Features_{};
   VkPhysicalDeviceTimelineSemaphoreFeaturesKHR VkPhysicalDeviceTimelineSemaphoreFeatures_{};
 
-  // Assignment operator. We need to reassemble the feature chain because of the
-  // pNext pointers
+  // We need to reassemble the feature chain because of the pNext pointers
   VulkanFeatures& operator=(const VulkanFeatures& other) noexcept;
 
  public:

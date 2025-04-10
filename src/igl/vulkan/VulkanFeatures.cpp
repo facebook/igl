@@ -165,11 +165,9 @@ void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
   VkPhysicalDevice16BitStorageFeatures_.storageBuffer16BitAccess =
       config_.enableStorageBuffer16BitAccess ? VK_TRUE : VK_FALSE;
 
-#if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
   if (config_.enableBufferDeviceAddress) {
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress = VK_TRUE;
   }
-#endif
   VkPhysicalDeviceMultiviewFeatures_.multiview = VK_TRUE;
   VkPhysicalDeviceSamplerYcbcrConversionFeatures_.samplerYcbcrConversion = VK_TRUE;
   VkPhysicalDeviceShaderDrawParametersFeatures_.shaderDrawParameters =
@@ -242,13 +240,11 @@ Result VulkanFeatures::checkSelectedFeatures(
   ENABLE_FEATURE_1_1_EXT(VkPhysicalDevice16BitStorageFeatures_,
                          availableFeatures.VkPhysicalDevice16BitStorageFeatures_,
                          storageBuffer16BitAccess)
-#if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
   if (config_.enableBufferDeviceAddress) {
     ENABLE_FEATURE_1_1_EXT(VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_,
                            availableFeatures.VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_,
                            bufferDeviceAddress)
   }
-#endif
   ENABLE_FEATURE_1_1_EXT(VkPhysicalDeviceMultiviewFeatures_,
                          availableFeatures.VkPhysicalDeviceMultiviewFeatures_,
                          multiview)
@@ -308,12 +304,10 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   if (version_ >= VK_API_VERSION_1_2) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceShaderFloat16Int8Features_);
   }
-#if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
   VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.pNext = nullptr;
   if (config.enableBufferDeviceAddress) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_);
   }
-#endif
   VkPhysicalDeviceDescriptorIndexingFeaturesEXT_.pNext = nullptr;
   if (config.enableDescriptorIndexing) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceDescriptorIndexingFeaturesEXT_);
@@ -352,10 +346,8 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   VkPhysicalDeviceShaderDrawParametersFeatures_ =
       other.VkPhysicalDeviceShaderDrawParametersFeatures_;
   VkPhysicalDeviceMultiviewFeatures_ = other.VkPhysicalDeviceMultiviewFeatures_;
-#if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
   VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_ =
       other.VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_;
-#endif
   VkPhysicalDeviceDescriptorIndexingFeaturesEXT_ =
       other.VkPhysicalDeviceDescriptorIndexingFeaturesEXT_;
   VkPhysicalDevice16BitStorageFeatures_ = other.VkPhysicalDevice16BitStorageFeatures_;
