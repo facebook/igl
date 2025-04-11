@@ -235,6 +235,12 @@
 ///--------------------------------------
 /// MARK: - Debug
 
+#if !defined(IGL_CMAKE_BUILD) && !defined(IGL_DEBUG)
+
+// @fb-only
+
+#endif // !defined(IGL_CMAKE_BUILD) && !defined(IGL_DEBUG)
+
 // clang-format off
 #if !defined(IGL_DEBUG) // allow build systems to define it
 #if defined(IGL_BUILD_MODE_OPT)
