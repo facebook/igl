@@ -36,6 +36,7 @@ namespace igl::tests::util::device {
 bool isBackendTypeSupported(BackendType backendType) {
   switch (backendType) {
   case ::igl::BackendType::Invalid:
+  case ::igl::BackendType::Custom:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return false;
   case ::igl::BackendType::Metal:

@@ -52,6 +52,8 @@ Color IDevice::backendDebugColor() const noexcept {
     return {0.f, 1.f, 1.f, 1.f};
   // @fb-only
     // @fb-only
+  case BackendType::Custom:
+    return {0.f, 0.f, 1.f, 1.f};
   }
   IGL_UNREACHABLE_RETURN(Color(0.f, 0.f, 0.f, 0.f))
 }

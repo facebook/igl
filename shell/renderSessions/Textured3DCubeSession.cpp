@@ -170,6 +170,9 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
                                                            "",
                                                            nullptr);
     return nullptr;
+  case igl::BackendType::Custom:
+    IGL_DEBUG_ABORT("IGLSamples not set up for Custom");
+    return nullptr;
   // @fb-only
     // @fb-only
     // @fb-only

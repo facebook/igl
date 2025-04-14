@@ -340,6 +340,7 @@ class IDevice : public ICapabilities {
    *  - Metal: Magenta
    *  - Vulkan: Cyan
    // @fb-only
+   *  - Custom: Blue
    */
   [[nodiscard]] Color backendDebugColor() const noexcept;
 

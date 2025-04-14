@@ -29,6 +29,8 @@ std::string BackendTypeToString(BackendType backendType) {
     return "Vulkan";
   // @fb-only
     // @fb-only
+  case BackendType::Custom:
+    return "Custom";
   }
   IGL_UNREACHABLE_RETURN(std::string())
 }

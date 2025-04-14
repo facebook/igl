@@ -148,6 +148,9 @@ static std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevic
   // @fb-only
     // @fb-only
     // @fb-only
+  case igl::BackendType::Custom:
+    IGL_DEBUG_ABORT("IGLSamples not set up for Custom");
+    return nullptr;
   case igl::BackendType::Metal: {
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, metalShaderStr(), "vertex_main", "fragment_main", "", &result);

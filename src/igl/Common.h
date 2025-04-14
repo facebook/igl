@@ -138,6 +138,7 @@ enum class BackendType {
   Metal,
   Vulkan,
   // @fb-only
+  Custom,
 };
 
 enum class BackendFlavor : uint8_t {

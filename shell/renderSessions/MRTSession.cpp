@@ -251,6 +251,9 @@ static std::unique_ptr<IShaderStages> createShaderStagesForBackend(const IDevice
         "main",
         "",
         nullptr);
+  case igl::BackendType::Custom:
+    IGL_DEBUG_ABORT("No Custom shader available");
+    return nullptr;
   // @fb-only
     // @fb-only
     // @fb-only
