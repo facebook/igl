@@ -12,11 +12,11 @@
 #include <EGL/egl.h>
 #include <android/log.h>
 #include <igl/ShaderCreator.h>
-#include <igl/opengl/egl/HWDevice.h>
-#include <igl/opengl/egl/PlatformDevice.h>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
+#include <igl/opengl/egl/HWDevice.h>
+#include <igl/opengl/egl/PlatformDevice.h>
 
 #define IGL_SAMPLE_LOG_INFO(...) \
   __android_log_print(ANDROID_LOG_INFO, "libsampleOpenGLJni", __VA_ARGS__)

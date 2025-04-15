@@ -134,6 +134,13 @@ find_package(Python3 COMPONENTS Interpreter)
 
 message(STATUS "IGL_ROOT_DIR = " ${IGL_ROOT_DIR})
 
+// @fb-only
+// @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+// @fb-only
+
 # Enables multithreaded compilation and a conformant preprocessor on visual studio
 if(MSVC)
   SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} /MP")
