@@ -10,11 +10,11 @@
 
 #if IGL_BACKEND_OPENGL
 
-#include "igl/Texture.h"
-#include "igl/opengl/Device.h"
-#include "igl/opengl/Framebuffer.h"
-#include "igl/opengl/IContext.h"
-#include "igl/opengl/Texture.h"
+#include <igl/Texture.h>
+#include <igl/opengl/Device.h>
+#include <igl/opengl/Framebuffer.h>
+#include <igl/opengl/IContext.h>
+#include <igl/opengl/Texture.h>
 
 #if defined(IGL_CMAKE_BUILD)
 #include <igl/IGLSafeC.h>
