@@ -23,7 +23,7 @@
 namespace {
 uint32_t ivkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memProps,
                                const uint32_t typeBits,
-                               const VkMemoryPropertyFlags requiredProperties) {
+                               VkMemoryPropertyFlags requiredProperties) {
   // Search memory types to find the index with the requested properties.
   for (uint32_t type = 0; type < memProps.memoryTypeCount; type++) {
     if ((typeBits & (1 << type)) != 0) {
@@ -31,6 +31,19 @@ uint32_t ivkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memProps,
       const VkFlags propertyFlags = memProps.memoryTypes[type].propertyFlags;
       if ((propertyFlags & requiredProperties) == requiredProperties) {
         return type;
+      }
+    }
+  }
+  if (requiredProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+    // there's no DEVICE_LOCAL memory heap here - look again
+    requiredProperties &= ~VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    for (uint32_t type = 0; type < memProps.memoryTypeCount; type++) {
+      if ((typeBits & (1 << type)) != 0) {
+        // Test if this memory type has the required properties.
+        const VkFlags propertyFlags = memProps.memoryTypes[type].propertyFlags;
+        if ((propertyFlags & requiredProperties) == requiredProperties) {
+          return type;
+        }
       }
     }
   }
