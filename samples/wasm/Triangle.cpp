@@ -16,9 +16,9 @@
 #include <GLFW/glfw3.h>
 
 #include <igl/IGL.h>
+#include <samples/wasm/Common.h>
 #include <igl/opengl/webgl/Context.h>
 #include <igl/opengl/webgl/Device.h>
-#include <samples/wasm/Common.h>
 
 constexpr const char* codeVS = R"(#version 300 es
 
