@@ -25,9 +25,9 @@
 #import <igl/metal/macos/Device.h>
 #endif
 #if IGL_BACKEND_OPENGL
-#import <igl/opengl/macos/Context.h>
-#import <igl/opengl/macos/Device.h>
-#import <igl/opengl/macos/HWDevice.h>
+#include <igl/opengl/macos/Context.h>
+#include <igl/opengl/macos/Device.h>
+#include <igl/opengl/macos/HWDevice.h>
 #endif
 #include <shell/shared/platform/mac/PlatformMac.h>
 #include <shell/shared/renderSession/AppParams.h>
