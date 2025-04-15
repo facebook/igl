@@ -16,10 +16,10 @@
 #import <igl/DebugMacros.h>
 #import <igl/IGL.h>
 #import <igl/metal/HWDevice.h>
-#import <igl/opengl/ios/Context.h>
-#import <igl/opengl/ios/Device.h>
-#import <igl/opengl/ios/HWDevice.h>
 #import <iglu/kit/Renderable.hpp>
+#include <igl/opengl/ios/Context.h>
+#include <igl/opengl/ios/Device.h>
+#include <igl/opengl/ios/HWDevice.h>
 
 @implementation IGLSnapshotTestCase {
   std::shared_ptr<igl::IDevice> _device;

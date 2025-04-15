@@ -25,9 +25,9 @@
 #endif
 
 #if IGL_BACKEND_OPENGL
-#import <igl/opengl/ios/Context.h>
-#import <igl/opengl/ios/Device.h>
-#import <igl/opengl/ios/HWDevice.h>
+#include <igl/opengl/ios/Context.h>
+#include <igl/opengl/ios/Device.h>
+#include <igl/opengl/ios/HWDevice.h>
 #endif
 
 // @fb-only

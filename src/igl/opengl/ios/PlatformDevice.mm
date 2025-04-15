@@ -21,10 +21,10 @@
 #include <igl/Common.h>
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/TextureTarget.h>
+#import <objc/runtime.h>
 #include <igl/opengl/ios/Context.h>
 #include <igl/opengl/ios/Device.h>
 #include <igl/opengl/ios/TextureBuffer.h>
-#import <objc/runtime.h>
 
 static void* kAssociatedRenderBufferHolderKey = &kAssociatedRenderBufferHolderKey;
 

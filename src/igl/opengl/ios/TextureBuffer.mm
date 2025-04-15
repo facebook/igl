@@ -16,7 +16,7 @@ namespace {
 TextureFormat convertToTextureFormat(const DeviceFeatureSet& deviceFeatures,
                                      OSType pixelFormat,
                                      size_t planeIndex) {
-  // NOLINTBEGIN(bugprone-easily-swappable-parameters)
+  // NOLINTEND(bugprone-easily-swappable-parameters)
   switch (pixelFormat) {
   case kCVPixelFormatType_32BGRA:
     return TextureFormat::BGRA_UNorm8;
