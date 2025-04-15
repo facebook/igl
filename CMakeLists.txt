@@ -134,12 +134,12 @@ find_package(Python3 COMPONENTS Interpreter)
 
 message(STATUS "IGL_ROOT_DIR = " ${IGL_ROOT_DIR})
 
-// @fb-only
-// @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-// @fb-only
+# Enable local "in-tree" builds
+if(${CMAKE_CURRENT_SOURCE_DIR} MATCHES "^.*fbsource.*")
+  get_filename_component(REPO_ROOT_DIR "../../../.." ABSOLUTE)
+  message(STATUS "REPO_ROOT_DIR = " ${REPO_ROOT_DIR})
+  include_directories(${REPO_ROOT_DIR})
+endif()
 
 # Enables multithreaded compilation and a conformant preprocessor on visual studio
 if(MSVC)
