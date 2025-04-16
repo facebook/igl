@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <vector>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanFence.h>
 #include <igl/vulkan/VulkanFramebuffer.h>
@@ -14,7 +15,6 @@
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanTexture.h>
-#include <vector>
 
 namespace igl::vulkan {
 

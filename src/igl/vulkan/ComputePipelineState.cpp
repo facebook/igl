@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <utility>
 #include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/ShaderModule.h>
@@ -12,7 +13,6 @@
 #include <igl/vulkan/VulkanDescriptorSetLayout.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
-#include <utility>
 
 namespace igl::vulkan {
 

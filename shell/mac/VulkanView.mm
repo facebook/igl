@@ -15,9 +15,9 @@
 #import <Foundation/Foundation.h>
 
 #if IGL_BACKEND_VULKAN
-#import <igl/vulkan/Device.h>
-#import <igl/vulkan/VulkanContext.h>
-#import <igl/vulkan/VulkanSwapchain.h>
+#include <igl/vulkan/Device.h>
+#include <igl/vulkan/VulkanContext.h>
+#include <igl/vulkan/VulkanSwapchain.h>
 #endif
 
 @interface VulkanView () {

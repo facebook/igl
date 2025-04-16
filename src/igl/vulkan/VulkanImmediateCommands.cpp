@@ -7,8 +7,8 @@
 
 #include "VulkanImmediateCommands.h"
 
-#include <igl/vulkan/Common.h>
 #include <utility>
+#include <igl/vulkan/Common.h>
 
 namespace igl::vulkan {
 

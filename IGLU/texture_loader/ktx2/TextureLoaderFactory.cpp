@@ -8,9 +8,9 @@
 #include <IGLU/texture_loader/ktx2/TextureLoaderFactory.h>
 
 #include <IGLU/texture_loader/ktx2/Header.h>
-#include <igl/vulkan/util/TextureFormat.h>
 #include <ktx.h>
 #include <numeric>
+#include <igl/vulkan/util/TextureFormat.h>
 
 namespace iglu::textureloader::ktx2 {
 namespace {

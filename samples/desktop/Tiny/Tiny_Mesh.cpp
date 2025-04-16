@@ -32,13 +32,13 @@
 #include <igl/FPSCounter.h>
 #include <igl/IGL.h>
 #include <igl/ShaderCreator.h>
+#include <stb/stb_image.h>
+#include <stb/stb_image_write.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <stb/stb_image.h>
-#include <stb/stb_image_write.h>
 
 #define TINY_TEST_USE_DEPTH_BUFFER 1
 #define TINY_TEST_USE_ASYNC_SCREENSHOTS 1

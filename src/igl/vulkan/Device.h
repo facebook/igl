@@ -10,11 +10,11 @@
 #include <igl/Buffer.h>
 #include <igl/Device.h>
 #include <igl/Shader.h>
+#include <memory>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanSemaphore.h>
-#include <memory>
 
 namespace igl::vulkan {
 

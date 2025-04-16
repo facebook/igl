@@ -7,11 +7,11 @@
 
 #include <cstddef>
 #include <gtest/gtest.h>
+#include <memory>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanSwapchain.h>
-#include <memory>
 
 #include <igl/tests/util/device/vulkan/TestDevice.h>
 

@@ -10,9 +10,9 @@
 #include <IGLU/texture_loader/ktx2/Header.h>
 #include <IGLU/texture_loader/ktx2/TextureLoaderFactory.h>
 #include <cstring>
-#include <igl/vulkan/util/TextureFormat.h>
 #include <numeric>
 #include <vector>
+#include <igl/vulkan/util/TextureFormat.h>
 
 namespace igl::tests::ktx2 {
 

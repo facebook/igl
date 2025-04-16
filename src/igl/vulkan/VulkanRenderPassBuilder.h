@@ -9,8 +9,8 @@
 
 #include <igl/vulkan/Common.h>
 
-#include <igl/vulkan/VulkanHelpers.h>
 #include <vector>
+#include <igl/vulkan/VulkanHelpers.h>
 
 bool operator==(const VkAttachmentDescription& a, const VkAttachmentDescription& b);
 bool operator==(const VkAttachmentReference& a, const VkAttachmentReference& b);

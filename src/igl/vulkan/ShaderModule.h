@@ -8,8 +8,8 @@
 #pragma once
 
 #include <igl/Shader.h>
-#include <igl/vulkan/Common.h>
 #include <vector>
+#include <igl/vulkan/Common.h>
 
 namespace igl::vulkan {
 

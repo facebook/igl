@@ -39,9 +39,9 @@
 // @fb-only
 // @fb-only
 #if IGL_BACKEND_VULKAN
-#import <igl/vulkan/Device.h>
-#import <igl/vulkan/HWDevice.h>
-#import <igl/vulkan/VulkanContext.h>
+#include <igl/vulkan/Device.h>
+#include <igl/vulkan/HWDevice.h>
+#include <igl/vulkan/VulkanContext.h>
 #endif
 #import <cmath>
 #import <simd/simd.h>

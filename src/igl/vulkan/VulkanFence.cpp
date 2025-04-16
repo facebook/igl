@@ -7,8 +7,8 @@
 
 #include "VulkanFence.h"
 
-#include <igl/vulkan/Common.h>
 #include <utility> // std::swap
+#include <igl/vulkan/Common.h>
 
 namespace igl::vulkan {
 

@@ -12,9 +12,9 @@
 
 #include <igl/android/NativeHWBuffer.h>
 #include <igl/opengl/Device.h>
+#include <igl/opengl/egl/PlatformDevice.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/PlatformDevice.h>
-#include <igl/opengl/egl/PlatformDevice.h>
 
 #include "../data/ShaderData.h"
 #include "../data/TextureData.h"

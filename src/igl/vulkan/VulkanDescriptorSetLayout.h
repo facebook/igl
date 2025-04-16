@@ -7,9 +7,9 @@
 
 #pragma once
 
+#include <memory>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanHelpers.h>
-#include <memory>
 
 namespace igl::vulkan {
 

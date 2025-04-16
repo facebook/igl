@@ -8,8 +8,8 @@
 #pragma once
 
 #include <igl/RenderPipelineReflection.h>
-#include <igl/vulkan/ShaderModule.h>
 #include <unordered_map>
+#include <igl/vulkan/ShaderModule.h>
 
 namespace igl::vulkan {
 
