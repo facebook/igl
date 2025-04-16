@@ -7,9 +7,9 @@
 
 #include <igl/metal/macos/Framebuffer.h>
 
+#include <vector>
 #include <igl/metal/CommandQueue.h>
 #include <igl/metal/Texture.h>
-#include <vector>
 
 namespace igl::metal::macos {
 

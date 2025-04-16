@@ -8,6 +8,8 @@
 #include <igl/metal/Device.h>
 
 #import <Foundation/Foundation.h>
+#include <sstream>
+#include <unordered_set>
 #include <igl/metal/Buffer.h>
 #include <igl/metal/BufferSynchronizationManager.h>
 #include <igl/metal/CommandQueue.h>
@@ -21,8 +23,6 @@
 #include <igl/metal/Shader.h>
 #include <igl/metal/Texture.h>
 #include <igl/metal/VertexInputState.h>
-#include <sstream>
-#include <unordered_set>
 
 namespace igl::metal {
 

@@ -20,7 +20,7 @@
 
 #if IGL_BACKEND_METAL
 #import <Metal/Metal.h>
-#import <igl/metal/HWDevice.h>
+#include <igl/metal/HWDevice.h>
 #include <igl/metal/Texture.h>
 #endif
 

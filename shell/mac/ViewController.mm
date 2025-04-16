@@ -19,10 +19,10 @@
 #import <igl/IGL.h>
 #import <shell/shared/input/InputDispatcher.h>
 #if IGL_BACKEND_METAL
-#import <igl/metal/ColorSpace.h>
-#import <igl/metal/HWDevice.h>
-#import <igl/metal/Texture.h>
-#import <igl/metal/macos/Device.h>
+#include <igl/metal/ColorSpace.h>
+#include <igl/metal/HWDevice.h>
+#include <igl/metal/Texture.h>
+#include <igl/metal/macos/Device.h>
 #endif
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/macos/Context.h>

@@ -7,8 +7,8 @@
 
 #include <igl/metal/Texture.h>
 
-#include <igl/metal/CommandBuffer.h>
 #include <vector>
+#include <igl/metal/CommandBuffer.h>
 
 namespace {
 

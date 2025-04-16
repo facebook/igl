@@ -7,11 +7,11 @@
 
 #include <igl/metal/Framebuffer.h>
 
+#include <utility>
+#include <vector>
 #include <igl/metal/CommandQueue.h>
 #include <igl/metal/Device.h>
 #include <igl/metal/Texture.h>
-#include <utility>
-#include <vector>
 
 namespace igl::metal {
 
