@@ -9,7 +9,7 @@
 
 #include <jni.h>
 
-#include <igl/samples/android/opengl/TinyRenderer.h>
+#include "TinyRenderer.h"
 #include <memory>
 
 namespace igl_samples::android {

@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/tests/util/device/TestDevice.h>
 #include <memory>
 #include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/platform/android/PlatformAndroid.h>
@@ -15,6 +14,7 @@
 #include <shell/shared/platform/win/PlatformWin.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <shell/shared/testShell/TestShell.h>
+#include <igl/tests/util/device/TestDevice.h>
 
 namespace igl::shell {
 

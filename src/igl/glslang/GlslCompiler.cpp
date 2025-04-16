@@ -6,12 +6,11 @@
  */
 
 #include <igl/glslang/GlslCompiler.h>
-#include <igl/glslang/GlslangHelpers.h>
-
-#include <igl/Macros.h>
 
 #include <cstdint>
+#include <igl/Macros.h>
 #include <string>
+#include <igl/glslang/GlslangHelpers.h>
 
 namespace igl::glslang {
 namespace {

@@ -7,7 +7,7 @@
 
 // @fb-only
 
-#include <igl/samples/android/opengl/TinyRenderer.h>
+#include "TinyRenderer.h"
 
 #include <EGL/egl.h>
 #include <android/log.h>
