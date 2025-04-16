@@ -10,10 +10,10 @@
 #include <cstring> // for memcpy()
 #include <igl/Common.h>
 #include <igl/IGLSafeC.h>
+#include <memory>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/RenderPipelineState.h>
-#include <memory>
 
 namespace igl::opengl {
 namespace {

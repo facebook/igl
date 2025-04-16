@@ -14,8 +14,8 @@
 #include <igl/RenderPass.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/VertexInputState.h>
-#include <igl/opengl/DepthStencilState.h>
 #include <string>
+#include <igl/opengl/DepthStencilState.h>
 
 namespace igl::tests {
 

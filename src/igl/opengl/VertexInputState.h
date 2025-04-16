@@ -8,10 +8,10 @@
 #pragma once
 
 #include <igl/VertexInputState.h>
-#include <igl/opengl/GLIncludes.h>
-#include <igl/opengl/IContext.h>
 #include <unordered_map>
 #include <vector>
+#include <igl/opengl/GLIncludes.h>
+#include <igl/opengl/IContext.h>
 
 namespace igl {
 class ICommandBuffer;

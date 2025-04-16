@@ -29,12 +29,12 @@
 #include "AutoContextReleaseDevice.h"
 #include <igl/Core.h>
 #include <igl/IGL.h>
-#include <igl/opengl/Device.h>
-#include <igl/opengl/Version.h>
-#include <igl/opengl/ViewTextureTarget.h>
 #include <memory>
 #include <shell/shared/platform/win/PlatformWin.h>
 #include <shell/windows/common/GlfwShell.h>
+#include <igl/opengl/Device.h>
+#include <igl/opengl/Version.h>
+#include <igl/opengl/ViewTextureTarget.h>
 
 using namespace igl;
 namespace igl::shell {

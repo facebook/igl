@@ -8,10 +8,10 @@
 #include "../util/TestDevice.h"
 
 #include <gtest/gtest.h>
+#include <string>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/TextureBuffer.h>
 #include <igl/opengl/TextureTarget.h>
-#include <string>
 
 namespace igl::tests {
 

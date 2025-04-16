@@ -16,9 +16,9 @@
 #include <igl/SamplerState.h>
 #include <igl/ShaderCreator.h>
 #include <igl/VertexInputState.h>
-#include <igl/opengl/Device.h>
 #include <shell/renderSessions/MRTSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <igl/opengl/Device.h>
 
 namespace igl::shell {
 struct VertexPosUv {

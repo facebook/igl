@@ -9,9 +9,9 @@
 
 #include <shell/renderSessions/DrawInstancedSession.h>
 
+#include <shell/shared/renderSession/ShellParams.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/RenderCommandEncoder.h>
-#include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl::shell {
 

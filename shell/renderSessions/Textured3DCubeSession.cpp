@@ -10,10 +10,10 @@
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
-#include <igl/opengl/Device.h>
-#include <igl/opengl/RenderCommandEncoder.h>
 #include <shell/renderSessions/Textured3DCubeSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <igl/opengl/Device.h>
+#include <igl/opengl/RenderCommandEncoder.h>
 
 #include <cstddef>
 

@@ -10,12 +10,12 @@
 #include <IGLU/simdtypes/SimdTypes.h>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
-#include <igl/opengl/GLIncludes.h>
 #include <shell/renderSessions/YUVColorSession.h>
 #include <shell/shared/fileLoader/FileLoader.h>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <igl/opengl/GLIncludes.h>
 
 namespace igl::shell {
 

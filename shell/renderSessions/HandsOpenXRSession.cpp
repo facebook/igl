@@ -17,11 +17,11 @@
 #include <glm/gtx/quaternion.hpp>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
-#include <igl/opengl/Device.h>
-#include <igl/opengl/RenderCommandEncoder.h>
 #include <shell/renderSessions/HandsOpenXRSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <vector>
+#include <igl/opengl/Device.h>
+#include <igl/opengl/RenderCommandEncoder.h>
 
 namespace igl::shell {
 

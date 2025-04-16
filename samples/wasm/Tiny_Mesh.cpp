@@ -14,9 +14,9 @@
 #include <igl/FPSCounter.h>
 #include <igl/IGL.h>
 #include <igl/ShaderCreator.h>
+#include <samples/wasm/Common.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/TextureBufferExternal.h>
-#include <samples/wasm/Common.h>
 #include <igl/opengl/webgl/Context.h>
 #include <igl/opengl/webgl/Device.h>
 #include <igl/opengl/webgl/PlatformDevice.h>

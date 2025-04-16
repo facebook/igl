@@ -8,8 +8,8 @@
 #include <igl/opengl/TextureBuffer.h>
 
 #include <array>
-#include <igl/opengl/Errors.h>
 #include <utility>
+#include <igl/opengl/Errors.h>
 
 namespace igl::opengl {
 

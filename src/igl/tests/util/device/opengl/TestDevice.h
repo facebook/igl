@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <igl/opengl/IContext.h>
 #include <memory>
 #include <string>
+#include <igl/opengl/IContext.h>
 
 namespace igl {
 class IDevice;

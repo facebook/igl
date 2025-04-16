@@ -22,12 +22,12 @@
 #include <glm/fwd.hpp>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
-#include <igl/opengl/GLIncludes.h>
 #include <memory>
 #include <random>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <igl/opengl/GLIncludes.h>
 
 static uint32_t arc4random_() {
   return static_cast<uint32_t>(rand()) * (0xffffffff / RAND_MAX);

@@ -11,8 +11,8 @@
 
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
-#include <igl/opengl/GLIncludes.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <igl/opengl/GLIncludes.h>
 
 namespace igl::shell {
 

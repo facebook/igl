@@ -10,8 +10,8 @@
 #include <IGLU/texture_loader/ktx1/Header.h>
 #include <IGLU/texture_loader/ktx1/TextureLoaderFactory.h>
 #include <cstring>
-#include <igl/opengl/util/TextureFormat.h>
 #include <vector>
+#include <igl/opengl/util/TextureFormat.h>
 
 namespace igl::tests::ktx1 {
 

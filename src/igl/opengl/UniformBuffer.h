@@ -8,10 +8,10 @@
 #pragma once
 
 #include <igl/Uniform.h>
-#include <igl/opengl/Buffer.h>
-#include <igl/opengl/IContext.h>
 #include <unordered_map>
 #include <vector>
+#include <igl/opengl/Buffer.h>
+#include <igl/opengl/IContext.h>
 
 namespace igl {
 class ICommandBuffer;

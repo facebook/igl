@@ -19,9 +19,9 @@
 #include <cstdio>
 #include <cstring>
 #include <igl/Common.h>
+#import <objc/runtime.h>
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/TextureTarget.h>
-#import <objc/runtime.h>
 #include <igl/opengl/ios/Context.h>
 #include <igl/opengl/ios/Device.h>
 #include <igl/opengl/ios/TextureBuffer.h>

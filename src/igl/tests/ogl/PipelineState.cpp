@@ -12,8 +12,8 @@
 #include <igl/CommandBuffer.h>
 #include <igl/RenderPass.h>
 #include <igl/VertexInputState.h>
-#include <igl/opengl/RenderPipelineState.h>
 #include <utility>
+#include <igl/opengl/RenderPipelineState.h>
 
 namespace igl::tests {
 

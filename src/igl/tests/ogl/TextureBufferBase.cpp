@@ -9,10 +9,10 @@
 
 #include <cmath>
 #include <gtest/gtest.h>
+#include <string>
 #include <igl/opengl/CommandQueue.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/TextureBufferBase.h>
-#include <string>
 
 namespace igl::tests {
 

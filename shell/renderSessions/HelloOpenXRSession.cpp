@@ -16,10 +16,10 @@
 #include <glm/detail/qualifier.hpp>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
-#include <igl/opengl/Device.h>
-#include <igl/opengl/RenderCommandEncoder.h>
 #include <shell/renderSessions/HelloOpenXRSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <igl/opengl/Device.h>
+#include <igl/opengl/RenderCommandEncoder.h>
 
 namespace igl::shell {
 

@@ -9,9 +9,9 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/Errors.h>
-#include <string>
 
 #if IGL_SHADER_DUMP
 #include <filesystem>
