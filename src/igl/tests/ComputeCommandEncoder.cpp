@@ -5,7 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include "data/ShaderData.h"
+#include "util/Common.h"
+
 #include <gtest/gtest.h>
+#include <igl/Buffer.h>
 #include <igl/CommandBuffer.h>
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/ComputePipelineState.h>
@@ -13,10 +17,6 @@
 #include <igl/ShaderCreator.h>
 #include <memory>
 #include <vector>
-
-#include "data/ShaderData.h"
-#include "igl/Buffer.h"
-#include "util/Common.h"
 
 namespace igl::tests {
 
