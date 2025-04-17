@@ -19,7 +19,7 @@
 
 #if IGL_BACKEND_METAL
 #import <Metal/Metal.h>
-#import <xplat/graphics/igl/public/src/igl/metal/HWDevice.h>
+#import <igl/metal/HWDevice.h>
 #endif
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/ios/Context.h>
