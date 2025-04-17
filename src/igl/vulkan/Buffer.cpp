@@ -13,8 +13,8 @@
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 
-#include <igl/IGLSafeC.h>
 #include <memory>
+#include <igl/IGLSafeC.h>
 
 namespace igl::vulkan {
 

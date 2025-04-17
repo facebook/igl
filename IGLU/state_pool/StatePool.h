@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include <igl/Common.h>
 #include <list>
 #include <memory>
 #include <unordered_map>
 #include <utility>
+#include <igl/Common.h>
 
 namespace igl {
 class IDevice;

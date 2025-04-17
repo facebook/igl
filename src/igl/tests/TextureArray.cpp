@@ -15,8 +15,8 @@
 #include <array>
 #include <cstring>
 #include <gtest/gtest.h>
-#include <igl/NameHandle.h>
 #include <string>
+#include <igl/NameHandle.h>
 
 namespace igl::tests {
 

@@ -7,9 +7,9 @@
 
 #import <Cocoa/Cocoa.h>
 #import <MetalKit/MetalKit.h>
+#import <shell/shared/renderSession/IRenderSessionFactory.h>
 #import <igl/Common.h>
 #import <igl/DeviceFeatures.h>
-#import <shell/shared/renderSession/IRenderSessionFactory.h>
 
 NS_ASSUME_NONNULL_BEGIN
 @interface ViewController : NSViewController <MTKViewDelegate>

@@ -8,8 +8,8 @@
 #include <igl/glslang/GlslCompiler.h>
 
 #include <cstdint>
-#include <igl/Macros.h>
 #include <string>
+#include <igl/Macros.h>
 #include <igl/glslang/GlslangHelpers.h>
 
 namespace igl::glslang {

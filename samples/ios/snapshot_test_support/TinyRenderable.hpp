@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <igl/Common.h>
 #include <iglu/kit/Renderable.hpp>
+#include <igl/Common.h>
 
 namespace igl {
 class IRenderPipelineState;

@@ -7,9 +7,9 @@
 
 #pragma once
 
+#include <vector>
 #include <igl/Common.h>
 #include <igl/NameHandle.h>
-#include <vector>
 
 namespace igl {
 class IRenderCommandEncoder;

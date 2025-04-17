@@ -18,8 +18,8 @@
 
 #include <cstdio>
 #include <cstring>
-#include <igl/Common.h>
 #import <objc/runtime.h>
+#include <igl/Common.h>
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/TextureTarget.h>
 #include <igl/opengl/ios/Context.h>

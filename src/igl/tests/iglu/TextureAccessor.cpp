@@ -10,8 +10,8 @@
 #include <IGLU/texture_accessor/ITextureAccessor.h>
 #include <IGLU/texture_accessor/TextureAccessorFactory.h>
 #include <gtest/gtest.h>
-#include <igl/Common.h>
 #include <string>
+#include <igl/Common.h>
 
 #define OFFSCREEN_TEX_HEIGHT 2
 #define OFFSCREEN_TEX_WIDTH 2

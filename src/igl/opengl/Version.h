@@ -8,9 +8,9 @@
 #pragma once
 
 #include <cstdint>
-#include <igl/DeviceFeatures.h>
 #include <string>
 #include <utility>
+#include <igl/DeviceFeatures.h>
 
 namespace igl::opengl {
 

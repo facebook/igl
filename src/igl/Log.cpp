@@ -9,10 +9,10 @@
 
 #include <cstdarg>
 #include <cstdio>
-#include <igl/Core.h>
 #include <mutex>
 #include <string>
 #include <unordered_set>
+#include <igl/Core.h>
 
 #if IGL_PLATFORM_ANDROID
 #include <igl/android/LogDefault.h>

@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <igl/IGL.h>
 #include <vector>
+#include <igl/IGL.h>
 
 namespace iglu {
 struct ManagedUniformBufferInfo {

@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <igl/Common.h>
 #include <optional>
+#include <igl/Common.h>
 
 namespace igl {
 class IDevice;

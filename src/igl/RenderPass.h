@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <igl/Common.h>
 #include <vector>
+#include <igl/Common.h>
 
 namespace igl {
 

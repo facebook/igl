@@ -15,9 +15,9 @@
 #import "VulkanView.h"
 // @fb-only
 
+#import <shell/shared/input/InputDispatcher.h>
 #import <igl/Common.h>
 #import <igl/IGL.h>
-#import <shell/shared/input/InputDispatcher.h>
 #if IGL_BACKEND_METAL
 #include <igl/metal/ColorSpace.h>
 #include <igl/metal/HWDevice.h>

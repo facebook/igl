@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <igl/Device.h>
 #include <memory>
+#include <igl/Device.h>
 
 namespace igl::shell {
 

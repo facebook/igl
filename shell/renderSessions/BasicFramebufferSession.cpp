@@ -9,9 +9,9 @@
 
 #include <shell/renderSessions/BasicFramebufferSession.h>
 
-#include <igl/Common.h>
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <igl/Common.h>
 
 namespace igl::shell {
 

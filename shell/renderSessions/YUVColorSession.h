@@ -11,9 +11,9 @@
 
 #include <IGLU/imgui/Session.h>
 #include <IGLU/simdtypes/SimdTypes.h>
-#include <igl/IGL.h>
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
+#include <igl/IGL.h>
 
 namespace igl::shell {
 

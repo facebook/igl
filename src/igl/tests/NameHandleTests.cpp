@@ -7,8 +7,8 @@
 
 #include <gtest/gtest.h>
 
-#include <igl/NameHandle.h>
 #include <set>
+#include <igl/NameHandle.h>
 
 namespace igl::tests {
 namespace {

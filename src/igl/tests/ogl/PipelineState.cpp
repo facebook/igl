@@ -9,10 +9,10 @@
 #include "../util/Common.h"
 
 #include <gtest/gtest.h>
+#include <utility>
 #include <igl/CommandBuffer.h>
 #include <igl/RenderPass.h>
 #include <igl/VertexInputState.h>
-#include <utility>
 #include <igl/opengl/RenderPipelineState.h>
 
 namespace igl::tests {

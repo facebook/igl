@@ -10,10 +10,10 @@
 #pragma once
 
 #include <IGLU/imgui/Session.h>
-#include <igl/CommandQueue.h>
-#include <igl/Framebuffer.h>
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
+#include <igl/CommandQueue.h>
+#include <igl/Framebuffer.h>
 
 namespace igl::shell {
 

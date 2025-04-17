@@ -11,10 +11,10 @@
 
 #include <EGL/egl.h>
 #include <android/log.h>
-#include <igl/ShaderCreator.h>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
+#include <igl/ShaderCreator.h>
 #include <igl/opengl/egl/HWDevice.h>
 #include <igl/opengl/egl/PlatformDevice.h>
 

@@ -9,8 +9,8 @@
 
 #include <cmath>
 #include <cstddef>
-#include <igl/IGLSafeC.h>
 #include <utility>
+#include <igl/IGLSafeC.h>
 
 size_t std::hash<igl::TextureFormat>::operator()(const igl::TextureFormat& key) const {
   return std::hash<size_t>()(static_cast<size_t>(key));

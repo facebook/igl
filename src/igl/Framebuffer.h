@@ -7,10 +7,10 @@
 
 #pragma once
 
+#include <vector>
 #include <igl/Common.h>
 #include <igl/ITrackedResource.h>
 #include <igl/Texture.h>
-#include <vector>
 
 namespace igl {
 

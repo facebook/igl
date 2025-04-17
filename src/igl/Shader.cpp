@@ -8,8 +8,8 @@
 #include <igl/Shader.h>
 
 #include <cstring>
-#include <igl/Common.h>
 #include <type_traits>
+#include <igl/Common.h>
 
 namespace {
 

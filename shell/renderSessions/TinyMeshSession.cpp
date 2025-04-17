@@ -14,8 +14,8 @@
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
-#include <igl/FPSCounter.h>
 #include <shell/shared/platform/DisplayContext.h>
+#include <igl/FPSCounter.h>
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/Device.h>
 #include <igl/opengl/RenderCommandEncoder.h>

@@ -12,6 +12,7 @@
 
 #include <array>
 #include <gtest/gtest.h>
+#include <string>
 #include <igl/CommandBuffer.h>
 #include <igl/NameHandle.h>
 #include <igl/RenderPass.h>
@@ -19,7 +20,6 @@
 #include <igl/SamplerState.h>
 #include <igl/Shader.h>
 #include <igl/VertexInputState.h>
-#include <string>
 
 // to not use extra curly braces in initializer lists
 // This is needed to get tests working on Android

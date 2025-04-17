@@ -12,13 +12,13 @@
 #include "util/Common.h"
 
 #include <gtest/gtest.h>
+#include <string>
 #include <igl/CommandBuffer.h>
 #include <igl/NameHandle.h>
 #include <igl/RenderPass.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/SamplerState.h>
 #include <igl/VertexInputState.h>
-#include <string>
 
 namespace igl::tests {
 

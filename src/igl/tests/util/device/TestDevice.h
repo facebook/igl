@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <igl/Common.h>
 #include <memory>
 #include <string>
+#include <igl/Common.h>
 
 #if (IGL_PLATFORM_IOS || IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST) && IGL_BACKEND_METAL
 #define IGL_METAL_SUPPORTED 1

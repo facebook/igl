@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <igl/Config.h>
 #include <memory>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
+#include <igl/Config.h>
 
 namespace igl::shell {
 

@@ -9,9 +9,9 @@
 
 #pragma once
 
-#include <igl/IGL.h>
 #include <memory>
 #include <string>
+#include <igl/IGL.h>
 
 namespace iglu::material {
 

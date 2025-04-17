@@ -10,10 +10,10 @@
 #pragma once
 
 #include <IGLU/simple_renderer/Drawable.h>
-#include <igl/IGL.h>
 #include <memory>
 #include <string>
 #include <vector>
+#include <igl/IGL.h>
 
 namespace iglu::renderpass {
 

@@ -14,8 +14,8 @@
 #import "RenderSessionFactoryAdapterInternal.hpp"
 #import <QuartzCore/CADisplayLink.h>
 #import <UIKit/UIKit.h>
-#import <igl/IGL.h>
 #import <shell/shared/input/InputDispatcher.h>
+#import <igl/IGL.h>
 
 #if IGL_BACKEND_METAL
 #import <Metal/Metal.h>

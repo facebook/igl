@@ -25,9 +25,9 @@
 #include <glm/gtc/color_space.hpp>
 #include <glm/gtc/packing.hpp>
 #include <gtest/gtest.h>
+#include <string>
 #include <igl/Macros.h>
 #include <igl/NameHandle.h>
-#include <string>
 
 namespace igl::tests {
 #if IGL_BACKEND_OPENGL && IGL_OPENGL_ES

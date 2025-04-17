@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include <igl/DeviceFeatures.h>
-#include <igl/Texture.h>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <igl/DeviceFeatures.h>
+#include <igl/Texture.h>
 #include <igl/opengl/Version.h>
 
 namespace igl::opengl {

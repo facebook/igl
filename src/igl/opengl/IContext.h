@@ -7,15 +7,15 @@
 
 #pragma once
 
-#include <igl/CommandEncoder.h>
-#include <igl/Common.h>
-#include <igl/DeviceFeatures.h>
-#include <igl/PlatformDevice.h>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <igl/CommandEncoder.h>
+#include <igl/Common.h>
+#include <igl/DeviceFeatures.h>
+#include <igl/PlatformDevice.h>
 #include <igl/opengl/ComputeCommandAdapter.h>
 #include <igl/opengl/DeviceFeatureSet.h>
 #include <igl/opengl/GLFunc.h>

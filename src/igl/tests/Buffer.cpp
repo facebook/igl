@@ -7,9 +7,9 @@
 
 #include "util/Common.h"
 
+#include <string>
 #include <igl/Buffer.h>
 #include <igl/Uniform.h>
-#include <string>
 
 namespace igl::tests {
 

@@ -48,8 +48,8 @@ void setDebugBreakEnabled(bool enabled) {
 #define IGL_DEBUGGER_SIGTRAP 1
 #include <csignal>
 #elif IGL_PLATFORM_WINDOWS
-#include <igl/Log.h>
 #include <windows.h>
+#include <igl/Log.h>
 #endif
 
 void _IGLDebugBreak() {

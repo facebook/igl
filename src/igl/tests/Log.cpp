@@ -6,10 +6,10 @@
  */
 
 #include <gtest/gtest.h>
-#include <igl/Common.h>
 #include <random>
 #include <string>
 #include <thread>
+#include <igl/Common.h>
 
 namespace igl::tests {
 

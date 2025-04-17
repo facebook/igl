@@ -7,10 +7,10 @@
 
 #pragma once
 
+#include <shell/shared/renderSession/ShaderProvider.h>
 #include <igl/Device.h>
 #include <igl/Shader.h>
 #include <igl/ShaderCreator.h>
-#include <shell/shared/renderSession/ShaderProvider.h>
 
 namespace igl::shell {
 std::unique_ptr<IShaderStages> createRenderPipelineStages(

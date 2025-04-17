@@ -7,13 +7,13 @@
 
 #pragma once
 
+#include <utility>
+#include <vector>
 #include <igl/Common.h>
 #include <igl/DeviceFeatures.h>
 #include <igl/IResourceTracker.h>
 #include <igl/PlatformDevice.h>
 #include <igl/Texture.h>
-#include <utility>
-#include <vector>
 
 namespace igl {
 

@@ -9,10 +9,10 @@
 
 #include <shell/renderSessions/ImguiSession.h>
 
-#include <igl/CommandBuffer.h>
-#include <igl/RenderPass.h>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <igl/CommandBuffer.h>
+#include <igl/RenderPass.h>
 
 namespace igl::shell {
 

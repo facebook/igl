@@ -9,9 +9,9 @@
 
 #pragma once
 
-#include <igl/IGL.h>
 #include <memory>
 #include <vector>
+#include <igl/IGL.h>
 
 namespace iglu::vertexdata {
 

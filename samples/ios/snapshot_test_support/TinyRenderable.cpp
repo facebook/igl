@@ -8,11 +8,11 @@
 #include "TinyRenderable.hpp"
 
 #include <cstring>
+#include <memory>
+#import <simd/simd.h>
 #import <igl/IGL.h>
 #import <igl/NameHandle.h>
 #import <igl/ShaderCreator.h>
-#include <memory>
-#import <simd/simd.h>
 
 namespace {
 

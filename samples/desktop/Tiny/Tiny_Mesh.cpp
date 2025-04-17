@@ -29,11 +29,11 @@
 #include <GLFW/glfw3native.h>
 #include <glm/ext.hpp>
 #include <glm/gtc/random.hpp>
+#include <stb/stb_image.h>
+#include <stb/stb_image_write.h>
 #include <igl/FPSCounter.h>
 #include <igl/IGL.h>
 #include <igl/ShaderCreator.h>
-#include <stb/stb_image.h>
-#include <stb/stb_image_write.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>

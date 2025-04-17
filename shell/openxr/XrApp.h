@@ -11,8 +11,6 @@
 
 #include <array>
 #include <glm/glm.hpp>
-#include <igl/IGL.h>
-#include <igl/Macros.h>
 #include <shell/openxr/XrComposition.h>
 #include <shell/openxr/XrPlatform.h>
 #include <shell/openxr/XrRefreshRate.h>
@@ -22,6 +20,8 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <igl/IGL.h>
+#include <igl/Macros.h>
 
 struct android_app;
 struct AAssetManager;

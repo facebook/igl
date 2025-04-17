@@ -8,10 +8,10 @@
 #pragma once
 
 #include <Metal/Metal.h>
-#include <igl/RenderPipelineReflection.h>
-#include <igl/Shader.h>
 #include <map>
 #include <vector>
+#include <igl/RenderPipelineReflection.h>
+#include <igl/Shader.h>
 
 // Suppress warnings about use of MTLArgumentType
 #pragma GCC diagnostic push

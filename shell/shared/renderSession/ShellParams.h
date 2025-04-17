@@ -11,12 +11,12 @@
 #include <optional>
 #include <vector>
 
-#include <igl/ColorSpace.h>
-#include <igl/Common.h>
-#include <igl/TextureFormat.h>
 #include <shell/shared/renderSession/Hands.h>
 #include <shell/shared/renderSession/RenderMode.h>
 #include <shell/shared/renderSession/ViewParams.h>
+#include <igl/ColorSpace.h>
+#include <igl/Common.h>
+#include <igl/TextureFormat.h>
 
 namespace igl::shell {
 struct ShellParams {

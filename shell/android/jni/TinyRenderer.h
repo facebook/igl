@@ -11,12 +11,12 @@
 #include <android/asset_manager_jni.h>
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
-#include <igl/IGL.h>
 #include <memory>
 #include <shell/shared/platform/android/PlatformAndroid.h>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <igl/IGL.h>
 
 namespace igl::samples {
 

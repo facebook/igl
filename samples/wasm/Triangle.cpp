@@ -15,8 +15,8 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-#include <igl/IGL.h>
 #include <samples/wasm/Common.h>
+#include <igl/IGL.h>
 #include <igl/opengl/webgl/Context.h>
 #include <igl/opengl/webgl/Device.h>
 

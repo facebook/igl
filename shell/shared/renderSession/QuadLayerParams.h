@@ -8,8 +8,8 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <igl/RenderPipelineState.h>
 #include <vector>
+#include <igl/RenderPipelineState.h>
 
 namespace igl::shell {
 

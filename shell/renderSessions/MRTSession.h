@@ -9,9 +9,9 @@
 
 #pragma once
 
-#include <igl/RenderPass.h>
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
+#include <igl/RenderPass.h>
 
 namespace igl::shell {
 

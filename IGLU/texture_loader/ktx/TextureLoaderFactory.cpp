@@ -7,9 +7,9 @@
 
 #include <IGLU/texture_loader/ktx/TextureLoaderFactory.h>
 
-#include <igl/IGLSafeC.h>
 #include <ktx.h>
 #include <numeric>
+#include <igl/IGLSafeC.h>
 
 namespace iglu::textureloader::ktx {
 namespace {

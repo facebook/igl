@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include <igl/Device.h>
 #include <memory>
 #include <shell/openxr/XrPlatform.h>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
 #include <vector>
+#include <igl/Device.h>
 
 namespace igl::shell::openxr::impl {
 class XrSwapchainProviderImpl;

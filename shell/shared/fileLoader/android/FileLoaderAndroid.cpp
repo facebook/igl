@@ -9,8 +9,8 @@
 
 #include <android/asset_manager.h>
 #include <filesystem>
-#include <igl/IGL.h>
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
+#include <igl/IGL.h>
 
 namespace igl::shell {
 

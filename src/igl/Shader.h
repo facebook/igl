@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include <igl/Common.h>
-#include <igl/ITrackedResource.h>
 #include <utility>
 #include <vector>
+#include <igl/Common.h>
+#include <igl/ITrackedResource.h>
 
 namespace igl {
 

@@ -12,8 +12,8 @@
 #include "ShaderProgram.h"
 #include "ShaderUniforms.h"
 
-#include <igl/IGL.h>
 #include <string>
+#include <igl/IGL.h>
 
 namespace iglu::material {
 

@@ -9,11 +9,11 @@
 
 #include <IGLU/texture_loader/IData.h>
 #include <IGLU/texture_loader/TextureLoaderFactory.h>
-#include <igl/IGL.h>
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
+#include <igl/IGL.h>
 
 namespace igl::shell {
 

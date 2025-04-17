@@ -9,11 +9,11 @@
 
 #include <IGLU/uniform/Trait.h>
 #include <glm/glm.hpp>
+#include <memory>
 #include <igl/Buffer.h>
 #include <igl/Common.h>
 #include <igl/Shader.h>
 #include <igl/Uniform.h>
-#include <memory>
 
 namespace iglu::uniform {
 

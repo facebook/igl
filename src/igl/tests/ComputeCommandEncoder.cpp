@@ -9,14 +9,14 @@
 #include "util/Common.h"
 
 #include <gtest/gtest.h>
+#include <memory>
+#include <vector>
 #include <igl/Buffer.h>
 #include <igl/CommandBuffer.h>
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/ComputePipelineState.h>
 #include <igl/Shader.h>
 #include <igl/ShaderCreator.h>
-#include <memory>
-#include <vector>
 
 namespace igl::tests {
 

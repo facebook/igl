@@ -8,11 +8,11 @@
 #pragma once
 
 #include <cstdlib>
+#include <unordered_map>
 #include <igl/ComputePipelineState.h>
 #include <igl/NameHandle.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/Shader.h>
-#include <unordered_map>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
 

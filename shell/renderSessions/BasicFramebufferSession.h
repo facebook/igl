@@ -9,9 +9,9 @@
 
 #pragma once
 
-#include <igl/IGL.h>
 #include <memory>
 #include <shell/shared/renderSession/RenderSession.h>
+#include <igl/IGL.h>
 
 namespace igl::shell {
 

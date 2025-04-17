@@ -13,14 +13,14 @@
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>
-#include <igl/Color.h>
-#include <igl/Core.h>
 #include <limits>
 #include <memory>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <igl/Color.h>
+#include <igl/Core.h>
 
 namespace igl {
 

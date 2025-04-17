@@ -7,9 +7,9 @@
 
 #include <shell/shared/extension/ExtensionLoader.h>
 
-#include <igl/Core.h>
 #include <shell/shared/extension/Extension.h>
 #include <shell/shared/extension/SymbolFactoryLoader.h>
+#include <igl/Core.h>
 
 namespace igl::shell {
 

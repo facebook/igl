@@ -8,14 +8,14 @@
 #pragma once
 
 #include <IGLU/simdtypes/SimdTypes.h>
-#include <igl/Common.h>
-#include <igl/IGL.h>
-#include <igl/NameHandle.h>
-#include <igl/Shader.h>
 #include <memory>
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <igl/Common.h>
+#include <igl/IGL.h>
+#include <igl/NameHandle.h>
+#include <igl/Shader.h>
 
 namespace iglu::material {
 

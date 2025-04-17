@@ -20,13 +20,13 @@
 #include <glm/detail/qualifier.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/fwd.hpp>
-#include <igl/NameHandle.h>
-#include <igl/ShaderCreator.h>
 #include <memory>
 #include <random>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <igl/NameHandle.h>
+#include <igl/ShaderCreator.h>
 #include <igl/opengl/GLIncludes.h>
 
 static uint32_t arc4random_() {

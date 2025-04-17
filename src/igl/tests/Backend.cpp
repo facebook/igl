@@ -11,6 +11,7 @@
 #include "util/Common.h"
 
 #include <gtest/gtest.h>
+#include <memory>
 #include <igl/CommandBuffer.h>
 #include <igl/NameHandle.h>
 #include <igl/RenderPass.h>
@@ -18,7 +19,6 @@
 #include <igl/SamplerState.h>
 #include <igl/Shader.h>
 #include <igl/VertexInputState.h>
-#include <memory>
 
 namespace igl::tests {
 

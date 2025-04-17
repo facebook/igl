@@ -13,8 +13,8 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <igl/IGL.h>
 #include <shell/shared/platform/Platform.h>
+#include <igl/IGL.h>
 
 namespace igl::shell {
 

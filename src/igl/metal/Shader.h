@@ -8,9 +8,9 @@
 #pragma once
 
 #include <Metal/Metal.h>
-#include <igl/Shader.h>
 #include <string>
 #include <vector>
+#include <igl/Shader.h>
 
 namespace igl::metal {
 

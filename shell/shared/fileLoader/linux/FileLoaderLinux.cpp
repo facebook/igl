@@ -9,9 +9,9 @@
 
 #include <filesystem>
 #include <fstream>
-#include <igl/Common.h>
 #include <iterator>
 #include <string>
+#include <igl/Common.h>
 // @fb-only
 // @fb-only
 // @fb-only

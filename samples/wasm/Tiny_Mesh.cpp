@@ -11,10 +11,10 @@
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
+#include <samples/wasm/Common.h>
 #include <igl/FPSCounter.h>
 #include <igl/IGL.h>
 #include <igl/ShaderCreator.h>
-#include <samples/wasm/Common.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/TextureBufferExternal.h>
 #include <igl/opengl/webgl/Context.h>

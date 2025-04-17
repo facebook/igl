@@ -7,8 +7,8 @@
 
 #include <shell/shared/renderSession/RenderSessionRegistry.hpp>
 
-#include <igl/Common.h>
 #include <unordered_map>
+#include <igl/Common.h>
 
 namespace igl::shell {
 

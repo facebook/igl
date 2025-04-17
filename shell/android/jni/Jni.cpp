@@ -10,11 +10,11 @@
 #include "TinyRenderer.h"
 #include <android/asset_manager_jni.h>
 #include <android/native_window_jni.h>
-#include <igl/Common.h>
-#include <igl/TextureFormat.h>
 #include <memory>
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
+#include <igl/Common.h>
+#include <igl/TextureFormat.h>
 
 namespace igl::samples {
 

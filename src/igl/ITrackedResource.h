@@ -7,9 +7,9 @@
 
 #pragma once
 
+#include <memory>
 #include <igl/Common.h>
 #include <igl/IResourceTracker.h>
-#include <memory>
 
 namespace igl {
 

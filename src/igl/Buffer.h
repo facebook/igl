@@ -8,10 +8,10 @@
 #pragma once
 
 #include <array>
-#include <igl/Common.h>
-#include <igl/ITrackedResource.h>
 #include <string>
 #include <vector>
+#include <igl/Common.h>
+#include <igl/ITrackedResource.h>
 
 namespace igl {
 

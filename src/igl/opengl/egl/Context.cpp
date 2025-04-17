@@ -14,8 +14,8 @@
 
 #include <array>
 #include <cassert>
-#include <igl/Macros.h>
 #include <tuple>
+#include <igl/Macros.h>
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/Texture.h>
 

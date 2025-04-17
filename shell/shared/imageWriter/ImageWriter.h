@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <igl/IGL.h>
 #include <memory>
 #include <string>
+#include <igl/IGL.h>
 
 #include <shell/shared/imageLoader/ImageLoader.h>
 

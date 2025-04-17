@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include <igl/IGL.h>
 #include <memory>
+#include <igl/IGL.h>
 
 namespace igl_samples::android {
 

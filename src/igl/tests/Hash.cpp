@@ -8,13 +8,13 @@
 #include "data/ShaderData.h"
 #include "util/Common.h"
 
+#include <string>
 #include <igl/CommandBuffer.h>
 #include <igl/DepthStencilState.h>
 #include <igl/NameHandle.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/Shader.h>
 #include <igl/VertexInputState.h>
-#include <string>
 
 namespace igl::tests {
 
