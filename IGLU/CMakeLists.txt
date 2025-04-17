@@ -61,7 +61,7 @@ target_include_directories(IGLUtexture_accessor PUBLIC "${IGL_ROOT_DIR}/third-pa
 
 if(UNIX)
   if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(IGLUimgui PUBLIC "-Wno-volatile")
+    target_compile_options(IGLUimgui PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-Wno-volatile>)
   endif()
 endif()
 

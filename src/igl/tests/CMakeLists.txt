@@ -114,6 +114,6 @@ endif()
 
 if(UNIX)
   if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(IGLTests PUBLIC "-Wno-volatile")
+    target_compile_options(IGLTests PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-Wno-volatile>)
   endif()
 endif()

@@ -47,6 +47,13 @@ if(NOT APPLE)
   set(IGL_WITH_METAL OFF)
 endif()
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  # disable for all targets due to warnings in third-party code
+  add_definitions(-Wno-nullability-completeness)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-volatile>)
+endif()
+
 if(ANDROID)
   if(IGL_WITH_OPENGL)
     set(IGL_WITH_OPENGLES ON)
@@ -54,12 +61,9 @@ if(ANDROID)
   set(IGL_WITH_OPENGL OFF)
   set(IGL_WITH_VULKAN ON)
   set(IGL_WITH_WEBGL OFF)
-  # disable for all targets due to warnings in third-party code
-  add_definitions(-Wno-nullability-completeness)
-  add_definitions(-Wno-deprecated-volatile)
 elseif(UNIX)
   # disable for all targets due to warnings in third-party code
-  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-volatile>)
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-deprecated-volatile>)
   add_definitions(-Wno-attributes)
 endif()
 
