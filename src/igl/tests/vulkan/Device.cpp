@@ -11,11 +11,13 @@
 
 #include <igl/CommandBuffer.h>
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
+#include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/Texture.h>
+#include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanFeatures.h>
 #include <igl/vulkan/VulkanTexture.h>
@@ -407,6 +409,57 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
   }
 
   ASSERT_NE(texture->getTextureId(), 0u);
+}
+
+TEST_F(DeviceVulkanTest, UniformBlockRingBufferTest) {
+  Result ret;
+
+  // Create uniform buffer with ring buffer hint
+  const size_t bufferSize = 256;
+  BufferDesc bufferDesc;
+  bufferDesc.type = BufferDesc::BufferTypeBits::Uniform;
+  bufferDesc.length = bufferSize;
+  bufferDesc.storage = ResourceStorage::Shared;
+  bufferDesc.hint =
+      BufferDesc::BufferAPIHintBits::Ring | BufferDesc::BufferAPIHintBits::UniformBlock;
+
+  auto buffer = iglDev_->createBuffer(bufferDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(buffer, nullptr);
+
+  // Upload and verify data
+  std::vector<uint32_t> testData(bufferSize / sizeof(uint32_t));
+  for (unsigned int& i : testData) {
+    i = rand();
+  }
+
+  ret = buffer->upload(testData.data(), BufferRange(bufferSize, 0));
+  ASSERT_TRUE(ret.isOk());
+
+  // Create and submit multiple command buffers
+  CommandQueueDesc queueDesc{};
+  auto cmdQueue = iglDev_->createCommandQueue(queueDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  std::vector<VkBuffer> bufferHandles;
+  // By default the VulkanContextConfig.maxResourceCount is 3, so we should create at most 3 unique
+  // VkBuffers
+  for (int i = 0; i < 4; i++) {
+    auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+    ASSERT_TRUE(ret.isOk());
+
+    auto* vulkanBuffer = static_cast<vulkan::Buffer*>(buffer.get());
+    bufferHandles.push_back(vulkanBuffer->currentVulkanBuffer()->getVkBuffer());
+
+    cmdQueue->submit(*cmdBuf);
+  }
+
+  // Verify different buffer handles were used for the first 3
+  for (size_t i = 1; i < 3; i++) {
+    ASSERT_NE(bufferHandles[i], bufferHandles[i - 1]);
+  }
+  // First and last handles should be the same
+  ASSERT_EQ(bufferHandles[3], bufferHandles[0]);
 }
 #endif
 
