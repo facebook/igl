@@ -41,7 +41,10 @@ class VulkanSemaphore final {
 
   [[nodiscard]] VkSemaphore getVkSemaphore() const noexcept;
 
+  // Exportable semaphores are not used right now, so exclude from coverage
+  // @MARK:COVERAGE_EXCLUDE_START
   [[nodiscard]] int getFileDescriptor() const noexcept;
+  // @MARK:COVERAGE_EXCLUDE_END
 
  public:
   const VulkanFunctionTable* vf_{};

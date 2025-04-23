@@ -88,6 +88,8 @@ VkSemaphore VulkanSemaphore::getVkSemaphore() const noexcept {
   return vkSemaphore_;
 }
 
+// Exportable semaphores are not used right now, so exclude from coverage
+// @MARK:COVERAGE_EXCLUDE_START
 int VulkanSemaphore::getFileDescriptor() const noexcept {
   // This is intentionally c++17 compatible and not c++20 style
   // because there are libraries that rely on this code
@@ -104,5 +106,6 @@ int VulkanSemaphore::getFileDescriptor() const noexcept {
   }
   return -1;
 }
+// @MARK:COVERAGE_EXCLUDE_END
 
 } // namespace igl::vulkan
