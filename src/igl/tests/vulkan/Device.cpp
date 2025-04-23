@@ -448,8 +448,10 @@ TEST_F(DeviceVulkanTest, UniformBlockRingBufferTest) {
     auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
     ASSERT_TRUE(ret.isOk());
 
-    auto* vulkanBuffer = static_cast<vulkan::Buffer*>(buffer.get());
-    bufferHandles.push_back(vulkanBuffer->currentVulkanBuffer()->getVkBuffer());
+    auto* vulkanBufferCast = static_cast<vulkan::Buffer*>(buffer.get());
+    const auto& vulkanBuffer = vulkanBufferCast->currentVulkanBuffer();
+    bufferHandles.push_back(vulkanBuffer->getVkBuffer());
+    ASSERT_EQ(vulkanBuffer->getSize(), bufferSize);
 
     cmdQueue->submit(*cmdBuf);
   }
