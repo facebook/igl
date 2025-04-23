@@ -269,7 +269,7 @@ void RenderCommandAdapter::drawArraysInstanced(GLenum mode,
                                                GLsizei count,
                                                GLsizei instancecount) {
   willDraw();
-  if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DrawArraysInstanced)) {
+  if (getContext().deviceFeatures().hasFeature(DeviceFeatures::DrawInstanced)) {
     getContext().drawArraysInstanced(toMockWireframeMode(mode), first, count, instancecount);
   } else {
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
@@ -292,7 +292,7 @@ void RenderCommandAdapter::drawElementsInstanced(GLenum mode,
                                                  const GLvoid* indexOffset,
                                                  GLsizei instancecount) {
   willDraw();
-  if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DrawElementsInstanced)) {
+  if (getContext().deviceFeatures().hasFeature(DeviceFeatures::DrawInstanced)) {
     getContext().drawElementsInstanced(
         toMockWireframeMode(mode), indexCount, indexType, indexOffset, instancecount);
   } else {
