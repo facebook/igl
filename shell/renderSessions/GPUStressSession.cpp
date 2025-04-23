@@ -27,7 +27,6 @@
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
-#include <igl/opengl/GLIncludes.h>
 
 static uint32_t arc4random_() {
   return static_cast<uint32_t>(rand()) * (0xffffffff / RAND_MAX);
