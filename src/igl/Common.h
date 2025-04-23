@@ -174,7 +174,15 @@ struct Rect {
   }
 };
 
-using ScissorRect = Rect<uint32_t>;
+struct ScissorRect {
+  uint32_t x = 0;
+  uint32_t y = 0;
+  uint32_t width = 0;
+  uint32_t height = 0;
+  [[nodiscard]] bool isNull() const {
+    return !width && !height;
+  }
+};
 
 ///--------------------------------------
 /// MARK: - Size
