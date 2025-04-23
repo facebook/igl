@@ -41,9 +41,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
       ciAlloc.flags =
           VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
-    }
 
-    if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
       // Check if coherent buffer is available.
       VK_ASSERT(ctx_.vf_.vkCreateBuffer(device_, &ci, nullptr, &vkBuffer_));
       VkMemoryRequirements requirements = {};
