@@ -153,26 +153,7 @@ enum class BackendFlavor : uint8_t {
 std::string BackendTypeToString(BackendType backendType);
 
 ///--------------------------------------
-/// MARK: - Rect<T>
-
-/// Use value-initialization (i.e. braces) to 0-initialize: `Rect<float> myRect{};`
-template<typename T>
-struct Rect {
- private:
-  static constexpr T kNullValue = std::numeric_limits<T>::has_infinity
-                                      ? std::numeric_limits<T>::infinity()
-                                      : std::numeric_limits<T>::max();
-
- public:
-  T x = kNullValue;
-  T y = kNullValue;
-  T width{}; // zero-initialize
-  T height{}; // zero-initialize
-
-  [[nodiscard]] bool isNull() const {
-    return kNullValue == x && kNullValue == y;
-  }
-};
+/// MARK: - ScissorRect
 
 struct ScissorRect {
   uint32_t x = 0;
