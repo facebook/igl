@@ -94,6 +94,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   setName(debugName);
   VK_ASSERT(ivkSetDebugObjectName(
       &ctx_->vf_, device_, VK_OBJECT_TYPE_IMAGE, (uint64_t)vkImage_, debugName));
+  ctx_->vf_.vkGetPhysicalDeviceFormatProperties(physicalDevice_, imageFormat_, &formatProperties_);
 }
 VulkanImage::VulkanImage(const VulkanContext& ctx,
                          VkDevice device,
@@ -369,6 +370,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
   VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_[0]));
   VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_[0], 0));
+
+  ctx_->vf_.vkGetPhysicalDeviceFormatProperties(physicalDevice_, imageFormat_, &formatProperties_);
 }
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
@@ -501,6 +504,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_[0]));
   VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_[0], 0));
 // @fb-only
+
+  ctx_->vf_.vkGetPhysicalDeviceFormatProperties(physicalDevice_, imageFormat_, &formatProperties_);
 }
 
 #if IGL_PLATFORM_WINDOWS
@@ -593,6 +598,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
   VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_[0]));
   VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_[0], 0));
+
+  ctx_->vf_.vkGetPhysicalDeviceFormatProperties(physicalDevice_, imageFormat_, &formatProperties_);
 }
 #endif // IGL_PLATFORM_WINDOWS
 
