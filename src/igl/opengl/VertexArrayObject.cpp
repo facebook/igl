@@ -28,6 +28,10 @@ void VertexArrayObject::unbind() const {
   getContext().bindVertexArray(0);
 }
 
+bool VertexArrayObject::isValid() const {
+  return vertexAttriuteObject_ != 0;
+}
+
 VertexArrayObject::~VertexArrayObject() {
   getContext().deleteVertexArrays(1, &vertexAttriuteObject_);
 }

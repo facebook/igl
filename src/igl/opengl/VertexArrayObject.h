@@ -25,6 +25,7 @@ class VertexArrayObject final : public WithContext {
   Result create();
   void bind() const;
   void unbind() const;
+  [[nodiscard]] bool isValid() const;
 
  private:
   GLuint vertexAttriuteObject_ = ~0;
