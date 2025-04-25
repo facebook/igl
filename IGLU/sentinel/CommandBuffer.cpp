@@ -14,7 +14,8 @@
 
 namespace iglu::sentinel {
 
-CommandBuffer::CommandBuffer(bool shouldAssert) : shouldAssert_(shouldAssert) {}
+CommandBuffer::CommandBuffer(bool shouldAssert) :
+  igl::ICommandBuffer({.debugName = "SentinelCommandBuffer"}), shouldAssert_(shouldAssert) {}
 
 std::unique_ptr<igl::IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder(
     const igl::RenderPassDesc& /*renderPass*/,

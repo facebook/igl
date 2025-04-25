@@ -19,7 +19,7 @@ void CommandQueue::setInitialContext(const std::shared_ptr<IContext>& context) {
   context_ = context;
 }
 
-std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandBufferDesc& /*desc*/,
+std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandBufferDesc& desc,
                                                                   Result* outResult) {
   //  IGL_DEBUG_ASSERT(
   //      activeCommandBuffers_ == 0,
@@ -29,7 +29,7 @@ std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandB
     return nullptr;
   }
 
-  auto commandBuffer = std::make_shared<CommandBuffer>(context_);
+  auto commandBuffer = std::make_shared<CommandBuffer>(context_, desc);
   activeCommandBuffers_++;
   Result::setOk(outResult);
 

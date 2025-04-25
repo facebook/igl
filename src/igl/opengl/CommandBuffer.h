@@ -15,7 +15,7 @@ class IContext;
 class CommandBuffer final : public ICommandBuffer,
                             public std::enable_shared_from_this<CommandBuffer> {
  public:
-  explicit CommandBuffer(std::shared_ptr<IContext> context);
+  explicit CommandBuffer(std::shared_ptr<IContext> context, CommandBufferDesc desc);
   ~CommandBuffer() override;
 
   std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(

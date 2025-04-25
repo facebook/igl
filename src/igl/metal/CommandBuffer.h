@@ -17,7 +17,7 @@ class Device;
 class CommandBuffer final : public ICommandBuffer,
                             public std::enable_shared_from_this<CommandBuffer> {
  public:
-  CommandBuffer(Device& device, id<MTLCommandBuffer> value);
+  CommandBuffer(Device& device, id<MTLCommandBuffer> value, CommandBufferDesc desc);
   ~CommandBuffer() override = default;
 
   std::unique_ptr<IComputeCommandEncoder> createComputeCommandEncoder() override;

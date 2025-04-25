@@ -96,7 +96,6 @@ class CommandBuffer final : public ICommandBuffer,
 
   VulkanContext& ctx_;
   const VulkanImmediateCommands::CommandBufferWrapper& wrapper_;
-  CommandBufferDesc desc_;
   // was present() called with a swapchain image?
   mutable bool isFromSwapchain_ = false;
 

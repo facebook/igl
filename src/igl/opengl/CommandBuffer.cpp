@@ -15,7 +15,8 @@
 
 namespace igl::opengl {
 
-CommandBuffer::CommandBuffer(std::shared_ptr<IContext> context) : context_(std::move(context)) {}
+CommandBuffer::CommandBuffer(std::shared_ptr<IContext> context, CommandBufferDesc desc) :
+  ICommandBuffer(std::move(desc)), context_(std::move(context)) {}
 
 CommandBuffer::~CommandBuffer() = default;
 

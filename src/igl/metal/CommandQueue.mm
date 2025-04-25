@@ -43,7 +43,7 @@ std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandB
                                                                   Result* outResult) {
   id<MTLCommandBuffer> metalObject = [value_ commandBuffer];
   metalObject.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
-  auto resource = std::make_shared<CommandBuffer>(device_, metalObject);
+  auto resource = std::make_shared<CommandBuffer>(device_, metalObject, desc);
   Result::setOk(outResult);
   return resource;
 }

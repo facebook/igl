@@ -21,7 +21,7 @@
 namespace igl::vulkan {
 
 CommandBuffer::CommandBuffer(VulkanContext& ctx, CommandBufferDesc desc) :
-  ctx_(ctx), wrapper_(ctx_.immediate_->acquire()), desc_(std::move(desc)) {
+  ICommandBuffer(std::move(desc)), ctx_(ctx), wrapper_(ctx_.immediate_->acquire()) {
   IGL_DEBUG_ASSERT(wrapper_.cmdBuf_ != VK_NULL_HANDLE);
 }
 

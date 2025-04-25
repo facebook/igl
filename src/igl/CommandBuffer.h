@@ -51,6 +51,7 @@ struct CommandBufferStatistics {
  */
 class ICommandBuffer {
  public:
+  explicit ICommandBuffer(CommandBufferDesc desc) : desc_(std::move(desc)) {}
   virtual ~ICommandBuffer() = default;
 
   /**
@@ -150,6 +151,7 @@ class ICommandBuffer {
 
  private:
   CommandBufferStatistics statistics_;
+  CommandBufferDesc desc_;
 };
 
 } // namespace igl
