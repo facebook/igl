@@ -30,6 +30,8 @@ class StbImageData : public IData {
   [[nodiscard]] const uint8_t* IGL_NONNULL data() const noexcept final;
   [[nodiscard]] uint32_t length() const noexcept final;
 
+  [[nodiscard]] ExtractedData extractData() noexcept final;
+
  private:
   std::unique_ptr<uint8_t, StbImageDeleter> data_;
   uint32_t length_;
@@ -45,6 +47,14 @@ StbImageData::StbImageData(uint8_t* data, uint32_t length) :
 
 [[nodiscard]] uint32_t StbImageData::length() const noexcept {
   return length_;
+}
+
+IData::ExtractedData StbImageData::extractData() noexcept {
+  return {
+      .data = data_.release(),
+      .length = length_,
+      .deleter = &stbi_image_free,
+  };
 }
 
 class TextureLoader : public ITextureLoader {

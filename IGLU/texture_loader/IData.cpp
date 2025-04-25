@@ -18,6 +18,8 @@ class ByteData final : public IData {
   [[nodiscard]] const uint8_t* IGL_NONNULL data() const noexcept final;
   [[nodiscard]] uint32_t length() const noexcept final;
 
+  [[nodiscard]] ExtractedData extractData() noexcept final;
+
  private:
   std::unique_ptr<uint8_t[]> data_;
   uint32_t length_ = 0;
@@ -35,6 +37,13 @@ uint32_t ByteData::length() const noexcept {
   return length_;
 }
 
+IData::ExtractedData ByteData::extractData() noexcept {
+  return {
+      .data = data_.release(),
+      .length = length_,
+      .deleter = [](void* d) { delete[] reinterpret_cast<uint8_t*>(d); },
+  };
+}
 } // namespace
 
 std::unique_ptr<IData> IData::tryCreate(std::unique_ptr<uint8_t[]> data,
