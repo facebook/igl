@@ -78,16 +78,7 @@ void ShaderStages::createRenderProgram(Result* result) {
   GLint status = 0;
   getContext().getProgramiv(programID, GL_LINK_STATUS, &status);
   if (status == GL_FALSE) {
-    // Get the size of log
-    GLsizei logSize = 0;
-    getContext().getProgramiv(programID, GL_INFO_LOG_LENGTH, &logSize);
-
-    // Pre-allocate vector for storage
-    std::vector<GLchar> log(logSize);
-    getContext().getProgramInfoLog(programID, logSize, nullptr, log.data());
-
-    // Create actual string from it
-    const std::string errorLog(log.begin(), log.end());
+    const std::string errorLog = getProgramInfoLog(programID);
     IGL_LOG_ERROR("failed to link shaders:\n%s\n", errorLog.c_str());
 
     getContext().deleteProgram(programID);
