@@ -43,12 +43,9 @@ class CommandQueue;
 class ComputeCommandEncoder;
 class RenderCommandEncoder;
 class VulkanBuffer;
-class VulkanDevice;
 class VulkanDescriptorSetLayout;
 class VulkanImage;
 class VulkanImageView;
-class VulkanPipelineLayout;
-class VulkanSemaphore;
 class VulkanSwapchain;
 class VulkanTexture;
 
@@ -58,7 +55,6 @@ struct BindingsStorageImages;
 struct VulkanContextImpl;
 struct VulkanImageCreateInfo;
 struct VulkanImageViewCreateInfo;
-struct VulkanSampler;
 
 /*
  * Descriptor sets:
@@ -94,14 +90,14 @@ class VulkanContext final {
                 void* IGL_NULLABLE display = nullptr);
   ~VulkanContext();
 
-  igl::Result queryDevices(const HWDeviceQueryDesc& desc, std::vector<HWDeviceDesc>& outDevices);
-  igl::Result initContext(const HWDeviceDesc& desc,
-                          size_t numExtraDeviceExtensions = 0,
-                          const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions = nullptr,
-                          const VulkanFeatures* IGL_NULLABLE requestedFeatures = nullptr,
-                          const char* IGL_NULLABLE debugName = nullptr);
+  Result queryDevices(const HWDeviceQueryDesc& desc, std::vector<HWDeviceDesc>& outDevices);
+  Result initContext(const HWDeviceDesc& desc,
+                     size_t numExtraDeviceExtensions = 0,
+                     const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions = nullptr,
+                     const VulkanFeatures* IGL_NULLABLE requestedFeatures = nullptr,
+                     const char* IGL_NULLABLE debugName = nullptr);
 
-  igl::Result initSwapchain(uint32_t width, uint32_t height);
+  Result initSwapchain(uint32_t width, uint32_t height);
   VkExtent2D getSwapchainExtent() const;
 
   VulkanImage createImage(VkImageType imageType,
@@ -114,7 +110,7 @@ class VulkanContext final {
                           VkMemoryPropertyFlags memFlags,
                           VkImageCreateFlags flags,
                           VkSampleCountFlagBits samples,
-                          igl::Result* IGL_NULLABLE outResult,
+                          Result* IGL_NULLABLE outResult,
                           const char* IGL_NULLABLE debugName = nullptr) const;
 
 // @fb-only
@@ -146,12 +142,12 @@ class VulkanContext final {
       VkImageUsageFlags usageFlags,
       VkImageCreateFlags flags,
       VkSampleCountFlagBits samples,
-      igl::Result* IGL_NULLABLE outResult,
+      Result* IGL_NULLABLE outResult,
       const char* IGL_NULLABLE debugName = nullptr) const;
   std::unique_ptr<VulkanBuffer> createBuffer(VkDeviceSize bufferSize,
                                              VkBufferUsageFlags usageFlags,
                                              VkMemoryPropertyFlags memFlags,
-                                             igl::Result* IGL_NULLABLE outResult,
+                                             Result* IGL_NULLABLE outResult,
                                              const char* IGL_NULLABLE debugName = nullptr) const;
   std::shared_ptr<VulkanTexture> createTexture(VulkanImage&& image,
                                                VulkanImageView&& imageView,
@@ -164,7 +160,7 @@ class VulkanContext final {
 
   SamplerHandle createSampler(const VkSamplerCreateInfo& ci,
                               VkFormat yuvVkFormat,
-                              igl::Result* IGL_NULLABLE outResult,
+                              Result* IGL_NULLABLE outResult,
                               const char* IGL_NULLABLE debugName = nullptr) const;
 
   void createSurface(void* IGL_NULLABLE window, void* IGL_NULLABLE display);
@@ -189,7 +185,7 @@ class VulkanContext final {
     return vkPhysicalDeviceProperties2_.properties;
   }
 
-  VkFormat getClosestDepthStencilFormat(igl::TextureFormat desiredFormat) const;
+  VkFormat getClosestDepthStencilFormat(TextureFormat desiredFormat) const;
 
   struct RenderPassHandle {
     VkRenderPass pass = VK_NULL_HANDLE;
@@ -255,28 +251,28 @@ class VulkanContext final {
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
   void growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t newMaxSamplers);
-  igl::BindGroupTextureHandle createBindGroup(const BindGroupTextureDesc& desc,
-                                              const IRenderPipelineState* IGL_NULLABLE
-                                                  compatiblePipeline,
-                                              Result* IGL_NULLABLE outResult);
-  igl::BindGroupBufferHandle createBindGroup(const BindGroupBufferDesc& desc,
-                                             Result* IGL_NULLABLE outResult);
-  void destroy(igl::BindGroupTextureHandle handle);
-  void destroy(igl::BindGroupBufferHandle handle);
-  void destroy(igl::SamplerHandle handle);
-  void destroy(igl::TextureHandle handle);
-  VkDescriptorSet getBindGroupDescriptorSet(igl::BindGroupTextureHandle handle) const;
-  VkDescriptorSet getBindGroupDescriptorSet(igl::BindGroupBufferHandle handle) const;
-  uint32_t getBindGroupUsageMask(igl::BindGroupTextureHandle handle) const;
-  uint32_t getBindGroupUsageMask(igl::BindGroupBufferHandle handle) const;
+  BindGroupTextureHandle createBindGroup(const BindGroupTextureDesc& desc,
+                                         const IRenderPipelineState* IGL_NULLABLE
+                                             compatiblePipeline,
+                                         Result* IGL_NULLABLE outResult);
+  BindGroupBufferHandle createBindGroup(const BindGroupBufferDesc& desc,
+                                        Result* IGL_NULLABLE outResult);
+  void destroy(BindGroupTextureHandle handle);
+  void destroy(BindGroupBufferHandle handle);
+  void destroy(SamplerHandle handle);
+  void destroy(TextureHandle handle);
+  VkDescriptorSet getBindGroupDescriptorSet(BindGroupTextureHandle handle) const;
+  VkDescriptorSet getBindGroupDescriptorSet(BindGroupBufferHandle handle) const;
+  uint32_t getBindGroupUsageMask(BindGroupTextureHandle handle) const;
+  uint32_t getBindGroupUsageMask(BindGroupBufferHandle handle) const;
 
  private:
-  friend class igl::vulkan::Device;
-  friend class igl::vulkan::VulkanStagingDevice;
-  friend class igl::vulkan::VulkanSwapchain;
-  friend class igl::vulkan::CommandQueue;
-  friend class igl::vulkan::ComputeCommandEncoder;
-  friend class igl::vulkan::RenderCommandEncoder;
+  friend class Device;
+  friend class VulkanStagingDevice;
+  friend class VulkanSwapchain;
+  friend class CommandQueue;
+  friend class ComputeCommandEncoder;
+  friend class RenderCommandEncoder;
 
   // should be kept on the heap, otherwise global Vulkan functions can cause arbitrary crashes.
   std::unique_ptr<VulkanFunctionTable> tableImpl_;
