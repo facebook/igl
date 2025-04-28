@@ -309,7 +309,7 @@ class IShaderStages : public ITrackedResource<IShaderStages> {
    */
   [[nodiscard]] bool isValid() const noexcept;
 
- private:
+ protected:
   ShaderStagesDesc desc_;
 };
 } // namespace igl
