@@ -30,7 +30,6 @@ class Context : public IContext {
   Context(std::shared_ptr<GLXSharedModule> module,
           Display* display,
           GLXDrawable windowHandle,
-
           GLXContext contextHandle);
   ~Context() override;
 

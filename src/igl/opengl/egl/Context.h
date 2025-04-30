@@ -34,9 +34,9 @@ class Context final : public IContext {
 
   /// Create a new context for default display. This constructor makes the assumption that the EGL
   /// surfaces to be associated with this context are already present and set to current.
-  Context(RenderingAPI api, EGLNativeWindowType window);
+  Context(EGLNativeWindowType window);
   /// Create a new offscreen context.
-  Context(RenderingAPI api, size_t width, size_t height);
+  Context(size_t width, size_t height);
   /// Create a new context applicable for a specific display/context/read surface/draw surface.
   /// @param ownsContext If true, this means that constructed Context owns the EGL context that is
   /// passed in and it will destroy the EGL context in its destructor. If false, it's the caller's
@@ -104,8 +104,7 @@ class Context final : public IContext {
   std::optional<bool> eglSupportssRGB_;
 
  private:
-  Context(RenderingAPI api,
-          EGLContext shareContext,
+  Context(EGLContext shareContext,
           std::shared_ptr<std::vector<EGLContext>> sharegroup,
           bool offscreen,
           EGLNativeWindowType window,
@@ -115,7 +114,6 @@ class Context final : public IContext {
   bool surfacesOwned_ = false;
   FOLLY_PUSH_WARNING
   FOLLY_GNU_DISABLE_WARNING("-Wzero-as-null-pointer-constant")
-  RenderingAPI api_ = RenderingAPI::GLES2;
   EGLDisplay display_ = EGL_NO_DISPLAY;
   EGLContext context_ = EGL_NO_CONTEXT;
   EGLSurface surface_ = EGL_NO_SURFACE;

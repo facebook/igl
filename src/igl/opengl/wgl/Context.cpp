@@ -26,11 +26,9 @@
 #include "tracy/TracyOpenGL.hpp"
 #endif
 
-namespace igl {
-namespace opengl {
-namespace wgl {
+namespace igl::opengl::wgl {
 
-Context::Context(RenderingAPI api) : contextOwned_(true) {
+Context::Context() : contextOwned_(true) {
   // This ctor path will own the wgl render context. Therefore creation to the window, DC & render
   // context must be done and in sequence. Creating a dummy window is necessary to get the device
   // context. We let wgl choose the appropriate pixel format for us to retrieve the valid render
@@ -211,6 +209,4 @@ std::unique_ptr<IContext> Context::createShareContext(Result* outResult) {
   return nullptr;
 }
 
-} // namespace wgl
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::wgl

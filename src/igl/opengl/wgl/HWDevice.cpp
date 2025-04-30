@@ -14,19 +14,19 @@ namespace igl {
 namespace opengl {
 namespace wgl {
 
-std::unique_ptr<IContext> HWDevice::createContext(RenderingAPI api,
+std::unique_ptr<IContext> HWDevice::createContext(RenderingAPI /*api*/,
                                                   EGLNativeWindowType nativeWindow,
                                                   Result* outResult) const {
   Result::setOk(outResult);
-  return std::make_unique<Context>(api);
+  return std::make_unique<Context>();
 }
 
-std::unique_ptr<IContext> HWDevice::createOffscreenContext(RenderingAPI api,
+std::unique_ptr<IContext> HWDevice::createOffscreenContext(RenderingAPI /*api*/,
                                                            size_t width,
                                                            size_t height,
                                                            Result* outResult) const {
   Result::setOk(outResult);
-  return std::make_unique<Context>(api);
+  return std::make_unique<Context>();
 }
 
 std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<IContext> context,

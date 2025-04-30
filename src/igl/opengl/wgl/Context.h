@@ -22,7 +22,7 @@ namespace wgl {
 class Context : public IContext {
  public:
   /// Create a new context for current device context.
-  Context(RenderingAPI api);
+  Context();
   /// Create a new context from a given device and render contexts.
   Context(HDC deviceContext, HGLRC renderContext);
   /// Create a new context with existing HGLRC and share contexts the share context's

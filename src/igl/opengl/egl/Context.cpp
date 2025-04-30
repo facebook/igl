@@ -168,27 +168,24 @@ EGLConfig chooseConfig(EGLDisplay display) {
   return context;
 }
 
-Context::Context(RenderingAPI api, EGLNativeWindowType window) :
-  Context(api, EGL_NO_CONTEXT, nullptr, false, window, {0, 0}) {}
+Context::Context(EGLNativeWindowType window) :
+  Context(EGL_NO_CONTEXT, nullptr, false, window, {0, 0}) {}
 
-Context::Context(RenderingAPI api, size_t width, size_t height) :
-  Context(api,
-          EGL_NO_CONTEXT,
+Context::Context(size_t width, size_t height) :
+  Context(EGL_NO_CONTEXT,
           nullptr,
           true,
           IGL_EGL_NULL_WINDOW,
           {static_cast<EGLint>(width), static_cast<EGLint>(height)}) {}
 
 Context::Context(const Context& sharedContext) :
-  Context(sharedContext.api_,
-          sharedContext.context_,
+  Context(sharedContext.context_,
           sharedContext.sharegroup_,
           true,
           IGL_EGL_NULL_WINDOW,
           sharedContext.getDrawSurfaceDimensions(nullptr)) {}
 
-Context::Context(RenderingAPI api,
-                 EGLContext shareContext,
+Context::Context(EGLContext shareContext,
                  std::shared_ptr<std::vector<EGLContext>> sharegroup,
                  bool offscreen,
                  EGLNativeWindowType window,
@@ -203,7 +200,6 @@ Context::Context(RenderingAPI api,
   IGL_DEBUG_ASSERT(contextDisplay.second != EGL_NO_CONTEXT, "newEGLContext failed");
 
   contextOwned_ = true;
-  api_ = api;
   display_ = contextDisplay.first;
   context_ = contextDisplay.second;
   IContext::registerContext((void*)context_, this);
