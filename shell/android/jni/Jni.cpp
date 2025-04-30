@@ -256,7 +256,7 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
                                                                   jobject java_asset_manager,
                                                                   jobject surface) {
   const auto backendVersion = toBackendVersion(env, jbackendVersion);
-  const auto swapchainColorTextureFormat = static_cast<igl::TextureFormat>(jtextureFormat);
+  const auto swapchainColorTextureFormat = static_cast<TextureFormat>(jtextureFormat);
   const auto rendererIndex = findRendererIndex(backendVersion);
 
   if (backendVersion && !rendererIndex) {
@@ -278,13 +278,13 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
   activeBackendVersion = backendVersion;
 }
 
+// NOLINTNEXTLINE(misc-use-internal-linkage)
 JNIEXPORT jboolean JNICALL
 Java_com_facebook_igl_shell_SampleLib_isBackendVersionSupported(JNIEnv* env,
                                                                 jobject /*obj*/,
                                                                 jobject jbackendVersion) {
-  const auto backendVersion = toBackendVersion(env, jbackendVersion);
+  [[maybe_unused]] const auto backendVersion = toBackendVersion(env, jbackendVersion);
   IGL_LOG_INFO("isBackendVersionSupported: %s\n", toString(backendVersion).c_str());
-  (void)backendVersion;
 #if IGL_BACKEND_OPENGL
   if (backendVersion && backendVersion->flavor == BackendFlavor::OpenGL_ES) {
     return JNI_TRUE;
