@@ -204,13 +204,14 @@ int PlatformDevice::getFenceFdFromSubmitHandle(SubmitHandle handle) const {
     return -1;
   }
 
-  VkFence vkFence = getVkFenceFromSubmitHandle(handle);
+  const VkFence vkFence = getVkFenceFromSubmitHandle(handle);
   IGL_DEBUG_ASSERT(vkFence != VK_NULL_HANDLE);
 
-  VkFenceGetFdInfoKHR getFdInfo = {};
-  getFdInfo.sType = VK_STRUCTURE_TYPE_FENCE_GET_FD_INFO_KHR;
-  getFdInfo.fence = vkFence;
-  getFdInfo.handleType = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT;
+  const VkFenceGetFdInfoKHR getFdInfo = {
+      .sType = VK_STRUCTURE_TYPE_FENCE_GET_FD_INFO_KHR,
+      .fence = vkFence,
+      .handleType = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT,
+  };
 
   int fenceFd = -1;
   const auto& ctx = device_.getVulkanContext();
