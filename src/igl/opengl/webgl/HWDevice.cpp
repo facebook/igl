@@ -13,6 +13,10 @@
 
 namespace igl::opengl::webgl {
 
+std::unique_ptr<IContext> HWDevice::createContext(Result* outResult) const {
+  return createContext(RenderingAPI::GLES3, nullptr, outResult);
+}
+
 std::unique_ptr<IContext> HWDevice::createContext(RenderingAPI api,
                                                   EGLNativeWindowType /*nativeWindow*/,
                                                   Result* outResult) const {

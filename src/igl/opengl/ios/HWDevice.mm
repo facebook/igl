@@ -14,11 +14,14 @@ namespace igl::opengl::ios {
 ///--------------------------------------
 /// MARK: - opengl::HWDevice
 
+std::unique_ptr<IContext> HWDevice::createContext(Result* outResult) const {
+  return std::make_unique<Context>(RenderingAPI::GLES3, outResult);
+}
+
 std::unique_ptr<IContext> HWDevice::createContext(RenderingAPI api,
                                                   EGLNativeWindowType /*nativeWindow*/,
                                                   Result* outResult) const {
-  Result::setOk(outResult);
-  return std::make_unique<Context>(api);
+  return std::make_unique<Context>(api, outResult);
 }
 
 std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<IContext> context,

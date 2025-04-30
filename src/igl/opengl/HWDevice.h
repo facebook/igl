@@ -36,6 +36,8 @@ class HWDevice {
 
   virtual ~HWDevice() = default;
 
+  virtual std::unique_ptr<IContext> createContext(Result* outResult) const = 0;
+
   virtual std::unique_ptr<IContext> createContext(opengl::RenderingAPI api,
                                                   EGLNativeWindowType nativeWindow,
                                                   Result* outResult) const = 0;

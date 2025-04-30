@@ -11,7 +11,7 @@
 
 namespace igl::opengl::empty {
 
-Context::Context(RenderingAPI /*api*/) {
+Context::Context() {
   igl::Result result;
   // Initialize through base class.
   initialize(&result);

@@ -13,11 +13,20 @@
 
 namespace igl::opengl::egl {
 
+std::unique_ptr<IContext> HWDevice::createContext(Result* outResult) const {
+  Result::setOk(outResult);
+  return std::make_unique<Context>(IGL_EGL_NULL_WINDOW);
+}
+
+std::unique_ptr<IContext> HWDevice::createContext(EGLNativeWindowType nativeWindow,
+                                                  Result* outResult) const {
+  return std::make_unique<Context>(nativeWindow);
+}
+
 std::unique_ptr<IContext> HWDevice::createContext(RenderingAPI /*api*/,
                                                   EGLNativeWindowType nativeWindow,
                                                   Result* outResult) const {
-  Result::setOk(outResult);
-  return std::make_unique<Context>(nativeWindow);
+  return createContext(nativeWindow, outResult);
 }
 
 std::unique_ptr<IContext> HWDevice::createOffscreenContext(size_t width,

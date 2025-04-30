@@ -12,11 +12,15 @@
 
 namespace igl::opengl::glx {
 
+std::unique_ptr<IContext> HWDevice::createContext(Result* outResult) const {
+  Result::setOk(outResult);
+  return std::make_unique<Context>(nullptr /* module */);
+}
+
 std::unique_ptr<IContext> HWDevice::createContext(RenderingAPI /* api */,
                                                   EGLNativeWindowType /* nativeWindow */,
                                                   Result* outResult) const {
-  Result::setOk(outResult);
-  return std::make_unique<Context>(nullptr /* module */);
+  return createContext(outResult);
 }
 
 std::unique_ptr<IContext> HWDevice::createOffscreenContext(size_t width,

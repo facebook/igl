@@ -16,6 +16,9 @@ class HWDevice final : public ::igl::opengl::HWDevice {
   ///--------------------------------------
   /// MARK: - opengl::HWDevice
 
+  std::unique_ptr<IContext> createContext(Result* outResult) const override;
+  std::unique_ptr<IContext> createContext(EGLNativeWindowType nativeWindow,
+                                          Result* outResult) const;
   std::unique_ptr<IContext> createContext(RenderingAPI api,
                                           EGLNativeWindowType nativeWindow,
                                           Result* outResult) const override;

@@ -13,7 +13,7 @@ namespace igl::opengl::empty {
 
 class Context final : public IContext {
  public:
-  explicit Context(RenderingAPI /*api*/);
+  Context();
   void setCurrent() override;
   void clearCurrentContext() const override;
   bool isCurrentContext() const override;
