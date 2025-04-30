@@ -144,7 +144,6 @@ struct RenderPipelineDesc {
       BlendFactor srcAlphaBlendFactor = BlendFactor::One;
       BlendFactor dstRGBBlendFactor = BlendFactor::Zero;
       BlendFactor dstAlphaBlendFactor = BlendFactor::Zero;
-      ColorAttachment() = default;
       bool operator==(const ColorAttachment& other) const;
       bool operator!=(const ColorAttachment& other) const;
     };
