@@ -150,18 +150,20 @@ class RenderCommandEncoderTest : public ::testing::Test {
     ASSERT_TRUE(samp_ != nullptr);
 
     // Initialize Render Pipeline Descriptor, but leave the creation
-    // to the individual tests in case further customization is required
-    RenderPipelineDesc renderPipelineDesc_;
-    renderPipelineDesc_.vertexInputState = vertexInputState_;
-    renderPipelineDesc_.shaderStages = shaderStages_;
-    renderPipelineDesc_.targetDesc.colorAttachments.resize(1);
-    renderPipelineDesc_.targetDesc.colorAttachments[0].textureFormat =
-        offscreenTexture_->getFormat();
-    renderPipelineDesc_.targetDesc.depthAttachmentFormat = depthStencilTexture_->getFormat();
-    renderPipelineDesc_.targetDesc.stencilAttachmentFormat = depthStencilTexture_->getFormat();
-    renderPipelineDesc_.fragmentUnitSamplerMap[textureUnit_] =
-        IGL_NAMEHANDLE(data::shader::simpleSampler);
-    renderPipelineDesc_.cullMode = igl::CullMode::Disabled;
+    // to the individual tests in case further customization is required.
+    // It cannot be `const` here as we mutate the desc later.
+    RenderPipelineDesc renderPipelineDesc_ = {
+        .vertexInputState = vertexInputState_,
+        .shaderStages = shaderStages_,
+        .targetDesc =
+            {
+                .colorAttachments = {{.textureFormat = offscreenTexture_->getFormat()}},
+                .depthAttachmentFormat = depthStencilTexture_->getFormat(),
+                .stencilAttachmentFormat = depthStencilTexture_->getFormat(),
+            },
+        .cullMode = igl::CullMode::Disabled,
+        .fragmentUnitSamplerMap = {{textureUnit_, IGL_NAMEHANDLE(data::shader::simpleSampler)}},
+    };
 
     texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
                                  OFFSCREEN_TEX_WIDTH,
@@ -370,7 +372,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
   const std::string backend_ = IGL_BACKEND_TYPE;
 
   size_t textureUnit_ = 0;
-};
+}; // namespace igl::tests
 
 TEST_F(RenderCommandEncoderTest, shouldDrawAPoint) {
   initializeBuffers(
