@@ -37,10 +37,9 @@ std::shared_ptr<::igl::opengl::Device> createDevice(igl::opengl::RenderingAPI re
   return hwDevice.createWithContext(std::move(context), nullptr);
 }
 template<typename THWDevice>
-std::shared_ptr<::igl::opengl::Device> createOffscreenDevice(
-    igl::opengl::RenderingAPI renderingAPI) {
+std::shared_ptr<::igl::opengl::Device> createOffscreenDevice() {
   THWDevice hwDevice;
-  auto context = hwDevice.createOffscreenContext(renderingAPI, 640, 380, nullptr);
+  auto context = hwDevice.createOffscreenContext(640, 380, nullptr);
   return hwDevice.createWithContext(std::move(context), nullptr);
 }
 } // namespace
@@ -64,21 +63,21 @@ igl::opengl::RenderingAPI getOpenGLRenderingAPI(const std::string& backendApi) {
 //
 std::shared_ptr<IDevice> createTestDevice(const std::string& backendApi) {
   std::shared_ptr<IDevice> iglDev = nullptr;
-  auto renderingAPI = getOpenGLRenderingAPI(backendApi);
+  [[maybe_unused]] const auto renderingAPI = getOpenGLRenderingAPI(backendApi);
 
 #if IGL_PLATFORM_IOS
   iglDev = createDevice<::igl::opengl::ios::HWDevice>(renderingAPI);
 #elif IGL_PLATFORM_MACOSX
   iglDev = createDevice<::igl::opengl::macos::HWDevice>(renderingAPI);
 #elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX_USE_EGL
-  iglDev = createOffscreenDevice<::igl::opengl::egl::HWDevice>(renderingAPI);
+  iglDev = createOffscreenDevice<::igl::opengl::egl::HWDevice>();
 #elif IGL_PLATFORM_LINUX
-  iglDev = createOffscreenDevice<::igl::opengl::glx::HWDevice>(renderingAPI);
+  iglDev = createOffscreenDevice<::igl::opengl::glx::HWDevice>();
 #elif IGL_PLATFORM_WINDOWS
 #if defined(FORCE_USE_ANGLE)
-  iglDev = createOffscreenDevice<::igl::opengl::egl::HWDevice>(renderingAPI);
+  iglDev = createOffscreenDevice<::igl::opengl::egl::HWDevice>();
 #else
-  iglDev = createOffscreenDevice<::igl::opengl::wgl::HWDevice>(renderingAPI);
+  iglDev = createOffscreenDevice<::igl::opengl::wgl::HWDevice>();
 #endif // FORCE_USE_ANGLE
 #else
 

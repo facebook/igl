@@ -20,8 +20,7 @@ std::unique_ptr<IContext> HWDevice::createContext(RenderingAPI /*api*/,
   return std::make_unique<Context>(nativeWindow);
 }
 
-std::unique_ptr<IContext> HWDevice::createOffscreenContext(RenderingAPI /*api*/,
-                                                           size_t width,
+std::unique_ptr<IContext> HWDevice::createOffscreenContext(size_t width,
                                                            size_t height,
                                                            Result* outResult) const {
   Result::setOk(outResult);

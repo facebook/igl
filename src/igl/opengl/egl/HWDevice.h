@@ -23,8 +23,7 @@ class HWDevice final : public ::igl::opengl::HWDevice {
   /**
    * @brief Creates an offscreen context suitable for unit testing.
    */
-  std::unique_ptr<IContext> createOffscreenContext(RenderingAPI api,
-                                                   size_t width,
+  std::unique_ptr<IContext> createOffscreenContext(size_t width,
                                                    size_t height,
                                                    Result* outResult) const;
   std::unique_ptr<opengl::Device> createWithContext(std::unique_ptr<IContext> context,

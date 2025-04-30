@@ -9,9 +9,7 @@
 
 #include <igl/opengl/HWDevice.h>
 
-namespace igl {
-namespace opengl {
-namespace wgl {
+namespace igl::opengl::wgl {
 
 class HWDevice final : public ::igl::opengl::HWDevice {
  public:
@@ -22,14 +20,11 @@ class HWDevice final : public ::igl::opengl::HWDevice {
                                           EGLNativeWindowType nativeWindow,
                                           Result* outResult) const override;
 
-  std::unique_ptr<IContext> createOffscreenContext(RenderingAPI api,
-                                                   size_t width,
+  std::unique_ptr<IContext> createOffscreenContext(size_t width,
                                                    size_t height,
                                                    Result* outResult) const;
   std::unique_ptr<opengl::Device> createWithContext(std::unique_ptr<IContext> context,
                                                     Result* outResult) const override;
 };
 
-} // namespace wgl
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::wgl
