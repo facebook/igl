@@ -863,4 +863,67 @@ TEST_F(RenderCommandEncoderTest, DepthBiasShouldDrawAPoint) {
   verifyFrameBuffer(expectedPixels);
 }
 
+TEST_F(RenderCommandEncoderTest, drawUsingBindPushConstants) {
+  if (iglDev_->getBackendType() != igl::BackendType::Vulkan) {
+    GTEST_SKIP() << "Push constants are only supported in Vulkan";
+    return;
+  }
+
+  initializeBuffers(
+      // clang-format off
+      { quarterPixel, quarterPixel, 0.0f, 1.0f },
+      { 0.5, 0.5 } // clang-format on
+  );
+
+  // Create new shader stages with push constant shaders
+  std::unique_ptr<IShaderStages> pushConstantStages;
+  igl::tests::util::createShaderStages(iglDev_,
+                                       data::shader::VULKAN_PUSH_CONSTANT_VERT_SHADER,
+                                       igl::tests::data::shader::shaderFunc,
+                                       data::shader::VULKAN_PUSH_CONSTANT_FRAG_SHADER,
+                                       igl::tests::data::shader::shaderFunc,
+                                       pushConstantStages);
+  ASSERT_TRUE(pushConstantStages);
+  shaderStages_ = std::move(pushConstantStages);
+
+  // Create pipeline with push constant shaders
+  const RenderPipelineDesc pipelineDesc = {
+      .topology = PrimitiveType::Point,
+      .vertexInputState = vertexInputState_,
+      .shaderStages = shaderStages_,
+      .targetDesc = {.colorAttachments = {{.textureFormat = offscreenTexture_->getFormat()}},
+                     .depthAttachmentFormat = depthStencilTexture_->getFormat(),
+                     .stencilAttachmentFormat = depthStencilTexture_->getFormat()},
+      .cullMode = igl::CullMode::Disabled,
+      .fragmentUnitSamplerMap = {{textureUnit_, IGL_NAMEHANDLE(data::shader::simpleSampler)}},
+  };
+
+  Result ret;
+  auto pipelineWithPushConstants = iglDev_->createRenderPipeline(pipelineDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  // Color multiplied by 1.5
+  const float pushData[] = {1.5f, 1.5f, 1.5f, 1.5f};
+
+  encodeAndSubmit([&](const std::unique_ptr<IRenderCommandEncoder>& encoder) {
+    encoder->bindRenderPipelineState(pipelineWithPushConstants);
+    encoder->bindPushConstants(pushData, sizeof(pushData), 0);
+    encoder->draw(1);
+  });
+
+  // Expect 0x888888FF (0x888888 * 1.5) in the center of the screen
+  const uint32_t expectedColor = 0xCCCCCCFF;
+
+  // clang-format off
+  std::vector<uint32_t> const expectedPixels {
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+    backgroundColorHex, backgroundColorHex, expectedColor,      backgroundColorHex,
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+  };
+  // clang-format on
+
+  verifyFrameBuffer(expectedPixels);
+}
+
 } // namespace igl::tests
