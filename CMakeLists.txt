@@ -79,9 +79,16 @@ if(EMSCRIPTEN)
   set(IGL_WITH_SHELL OFF) # shell doesn't supported yet
 endif()
 
-include(cmake/helpers.cmake)
-
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+function(igl_set_folder target folder_name)
+  set_property(TARGET ${target} PROPERTY FOLDER ${folder_name})
+endfunction()
+
+function(igl_set_cxxstd target cpp_version)
+  set_property(TARGET ${target} PROPERTY CXX_STANDARD ${cpp_version})
+  set_property(TARGET ${target} PROPERTY CXX_STANDARD_REQUIRED ON)
+endfunction()
 
 # cmake-format: off
 message(STATUS "IGL_WITH_SAMPLES  = ${IGL_WITH_SAMPLES}")
