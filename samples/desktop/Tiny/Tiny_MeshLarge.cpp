@@ -61,7 +61,7 @@
 #define VK_FORMAT_BC7_UNORM_BLOCK 145
 #endif // USE_OPENGL_BACKEND
 
-#if defined(__cpp_lib_format)
+#if defined(__cpp_lib_format) && !IGL_PLATFORM_APPLE
 #include <format>
 #define IGL_FORMAT std::format
 #else

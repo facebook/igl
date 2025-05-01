@@ -66,7 +66,7 @@ static const uint32_t kNumColorAttachments = 4;
 static const uint32_t kNumColorAttachments = 1;
 #endif
 
-#if defined(__cpp_lib_format)
+#if defined(__cpp_lib_format) && !IGL_PLATFORM_APPLE
 #include <format>
 #define IGL_FORMAT std::format
 #else
