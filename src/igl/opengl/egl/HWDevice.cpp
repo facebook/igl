@@ -46,4 +46,13 @@ std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<ICon
   return std::make_unique<opengl::egl::Device>(std::move(context));
 }
 
+std::unique_ptr<IDevice> HWDevice::create(EGLNativeWindowType nativeWindow,
+                                          Result* outResult) const {
+  auto context = createContext(nativeWindow, outResult);
+  if (context == nullptr) {
+    return nullptr;
+  }
+  return createWithContext(std::move(context), outResult);
+}
+
 } // namespace igl::opengl::egl

@@ -47,10 +47,12 @@ class HWDevice {
 
   std::vector<HWDeviceDesc> queryDevices(const HWDeviceQueryDesc& desc, Result* outResult);
 
-  std::unique_ptr<IDevice> create(const HWDeviceDesc& desc,
-                                  igl::opengl::RenderingAPI api,
-                                  EGLNativeWindowType nativeWindowType,
-                                  Result* outResult = nullptr);
+  std::unique_ptr<Device> create(Result* outResult = nullptr) const;
+
+  std::unique_ptr<Device> create(const HWDeviceDesc& desc,
+                                 igl::opengl::RenderingAPI api,
+                                 EGLNativeWindowType nativeWindowType,
+                                 Result* outResult = nullptr);
 };
 
 } // namespace igl::opengl

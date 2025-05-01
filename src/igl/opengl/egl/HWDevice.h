@@ -12,6 +12,8 @@
 namespace igl::opengl::egl {
 
 class HWDevice final : public ::igl::opengl::HWDevice {
+  using Super = ::igl::opengl::HWDevice;
+
  public:
   ///--------------------------------------
   /// MARK: - opengl::HWDevice
@@ -31,6 +33,10 @@ class HWDevice final : public ::igl::opengl::HWDevice {
                                                    Result* outResult) const;
   std::unique_ptr<opengl::Device> createWithContext(std::unique_ptr<IContext> context,
                                                     Result* outResult) const override;
+
+  using Super::create;
+  std::unique_ptr<IDevice> create(EGLNativeWindowType nativeWindow,
+                                  Result* outResult = nullptr) const;
 };
 
 } // namespace igl::opengl::egl

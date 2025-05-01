@@ -22,10 +22,18 @@ std::vector<HWDeviceDesc> HWDevice::queryDevices(const HWDeviceQueryDesc& /*desc
   return devices;
 }
 
-std::unique_ptr<IDevice> HWDevice::create(const HWDeviceDesc& /*desc*/,
-                                          RenderingAPI api,
-                                          EGLNativeWindowType nativeWindow,
-                                          Result* outResult) {
+std::unique_ptr<Device> HWDevice::create(Result* outResult) const {
+  auto context = createContext(outResult);
+  if (context == nullptr) {
+    return nullptr;
+  }
+  return createWithContext(std::move(context), outResult);
+}
+
+std::unique_ptr<Device> HWDevice::create(const HWDeviceDesc& /*desc*/,
+                                         RenderingAPI api,
+                                         EGLNativeWindowType nativeWindow,
+                                         Result* outResult) {
   auto context = createContext(api, nativeWindow, outResult);
   if (!context) {
     Result::setResult(outResult, Result::Code::RuntimeError, "context is null");
