@@ -71,10 +71,7 @@ std::unique_ptr<IDevice> XrAppImplGLES::initIGL(XrInstance instance, XrSystemId 
 #endif // IGL_WGL
 
   Result result;
-  const igl::HWDeviceQueryDesc queryDesc(HWDeviceType::Unknown);
-  auto hwDevices = hwDevice.queryDevices(queryDesc, &result);
-  IGL_DEBUG_ASSERT(result.isOk());
-  return hwDevice.create(hwDevices[0], kRenderingApi, nullptr, &result);
+  return hwDevice.create(kRenderingApi, &result);
 }
 
 XrSession XrAppImplGLES::initXrSession(XrInstance instance,

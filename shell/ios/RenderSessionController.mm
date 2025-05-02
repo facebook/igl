@@ -82,10 +82,9 @@
   }
   case igl::BackendFlavor::OpenGL_ES: {
 #if IGL_BACKEND_OPENGL
-    auto hwDevices = igl::opengl::ios::HWDevice().queryDevices(queryDesc, nullptr);
     const auto renderingApi = backendVersion_.majorVersion == 2 ? igl::opengl::RenderingAPI::GLES2
                                                                 : igl::opengl::RenderingAPI::GLES3;
-    device = igl::opengl::ios::HWDevice().create(hwDevices[0], renderingApi, nullptr);
+    device = igl::opengl::ios::HWDevice().create(renderingApi, nullptr);
 #endif
     break;
   }

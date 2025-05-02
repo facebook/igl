@@ -72,30 +72,22 @@ class HWDeviceOGLTest : public ::testing::Test {
   std::shared_ptr<opengl::HWDevice> iglHWDev_;
 };
 
-/// This test ensures devices are returned correctly when being queried
-TEST_F(HWDeviceOGLTest, QueryDevicesSanityTest) {
-  const HWDeviceQueryDesc queryDesc(HWDeviceType::DiscreteGpu);
-  Result result;
-
-  const std::vector<HWDeviceDesc> devices = iglHWDev_->queryDevices(queryDesc, &result);
-
-  // Currently HWDevice always returns ok when being queried
-  ASSERT_TRUE(result.isOk());
-}
-
 /// This test ensures a device can be created when calling create()
 TEST_F(HWDeviceOGLTest, DeviceCreationSanityTest) {
-  const uintptr_t guid = 0;
-  const HWDeviceType type = HWDeviceType::Unknown;
-  const HWDeviceDesc deviceDesc(guid, type);
+  {
+    Result result;
+    const std::unique_ptr<IDevice> device = iglHWDev_->create({}, &result);
 
-  auto renderingAPI = util::device::opengl::getOpenGLRenderingAPI();
-  Result result;
-  const std::unique_ptr<IDevice> device =
-      iglHWDev_->create(deviceDesc, renderingAPI, IGL_EGL_NULL_WINDOW, &result);
+    // Ensure the result of the device creation is ok
+    ASSERT_TRUE(result.isOk());
+  }
+  {
+    Result result;
+    const std::unique_ptr<IDevice> device = iglHWDev_->create(&result);
 
-  // Ensure the result of the device creation is ok
-  ASSERT_TRUE(result.isOk());
+    // Ensure the result of the device creation is ok
+    ASSERT_TRUE(result.isOk());
+  }
 }
 
 } // namespace igl::tests

@@ -45,8 +45,7 @@
     _device = hwDevice.create(hwDevices[0], nullptr);
   } else if (_backendType == igl::BackendType::OpenGL) {
     igl::opengl::ios::HWDevice hwDevice;
-    auto hwDevices = hwDevice.queryDevices(queryDesc, nullptr);
-    _device = hwDevice.create(hwDevices[0], igl::opengl::RenderingAPI::GLES3, nullptr);
+    _device = hwDevice.create(nullptr);
   }
 
   igl::Result result;

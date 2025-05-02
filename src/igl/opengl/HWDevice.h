@@ -45,14 +45,9 @@ class HWDevice {
   virtual std::unique_ptr<Device> createWithContext(std::unique_ptr<IContext> context,
                                                     Result* outResult) const = 0;
 
-  std::vector<HWDeviceDesc> queryDevices(const HWDeviceQueryDesc& desc, Result* outResult);
-
   std::unique_ptr<Device> create(Result* outResult = nullptr) const;
 
-  std::unique_ptr<Device> create(const HWDeviceDesc& desc,
-                                 igl::opengl::RenderingAPI api,
-                                 EGLNativeWindowType nativeWindowType,
-                                 Result* outResult = nullptr);
+  std::unique_ptr<Device> create(igl::opengl::RenderingAPI api, Result* outResult = nullptr);
 };
 
 } // namespace igl::opengl
