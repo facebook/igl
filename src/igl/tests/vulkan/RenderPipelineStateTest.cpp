@@ -26,13 +26,12 @@ namespace igl::tests {
 //
 // Unit tests for RenderPipelineState.cpp
 //
-class RenderPipelineStateTest
-  : public ::testing::TestWithParam<std::tuple<igl::PolygonFillMode,
-                                               igl::CullMode,
-                                               igl::WindingMode,
-                                               igl::VertexAttributeFormat,
-                                               igl::BlendOp,
-                                               igl::BlendFactor>> {
+class RenderPipelineStateTest : public ::testing::TestWithParam<std::tuple<PolygonFillMode,
+                                                                           CullMode,
+                                                                           WindingMode,
+                                                                           VertexAttributeFormat,
+                                                                           BlendOp,
+                                                                           BlendFactor>> {
   void SetUp() override {
     // Turn off debug break so unit tests can run
     igl::setDebugBreakEnabled(false);
@@ -58,9 +57,9 @@ TEST_P(RenderPipelineStateTest, PolygonFillModeToVkPolygonModeTest) {
   const auto blendOp = std::get<4>(GetParam());
   const auto blendFactor = std::get<5>(GetParam());
 
-  igl::Result result;
+  Result result;
 
-  igl::VertexInputStateDesc inputDesc;
+  VertexInputStateDesc inputDesc;
   inputDesc.numAttributes = 1;
   inputDesc.attributes[0].format = vertexFormat;
   const auto inputState = device_->createVertexInputState(inputDesc, &result);
@@ -82,7 +81,7 @@ TEST_P(RenderPipelineStateTest, PolygonFillModeToVkPolygonModeTest) {
                 }
             )";
 
-  igl::RenderPipelineDesc pipelineDesc;
+  RenderPipelineDesc pipelineDesc;
   pipelineDesc.polygonFillMode = polygonFillMode;
   pipelineDesc.cullMode = cullMode;
   pipelineDesc.frontFaceWinding = windingMode;

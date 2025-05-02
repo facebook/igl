@@ -138,14 +138,14 @@ TEST_F(RenderPipelineReflectionTest, VerifyBuffers) {
 TEST_F(RenderPipelineReflectionTest, VerifyTextures) {
   auto textures = pipeRef_->allTextures();
   ASSERT_EQ(textures.size(), 1);
-  auto theOneTexture = textures.front();
+  const auto& theOneTexture = textures.front();
   ASSERT_EQ(theOneTexture.name, "inputImage");
 }
 
 TEST_F(RenderPipelineReflectionTest, VerifySamplers) {
   auto samplers = pipeRef_->allSamplers();
   ASSERT_EQ(samplers.size(), 1);
-  auto theOneSampler = samplers.front();
+  const auto& theOneSampler = samplers.front();
   ASSERT_EQ(theOneSampler.name, "inputImage");
 }
 
