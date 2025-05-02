@@ -278,7 +278,7 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
   activeBackendVersion = backendVersion;
 }
 
-// NOLINTNEXTLINE(misc-use-internal-linkage)
+// NOLINTBEGIN(misc-use-internal-linkage)
 JNIEXPORT jboolean JNICALL
 Java_com_facebook_igl_shell_SampleLib_isBackendVersionSupported(JNIEnv* env,
                                                                 jobject /*obj*/,
@@ -297,6 +297,7 @@ Java_com_facebook_igl_shell_SampleLib_isBackendVersionSupported(JNIEnv* env,
 #endif
   return JNI_FALSE;
 }
+// NOLINTEND(misc-use-internal-linkage)
 
 JNIEXPORT void JNICALL
 Java_com_facebook_igl_shell_SampleLib_setActiveBackendVersion(JNIEnv* env,
