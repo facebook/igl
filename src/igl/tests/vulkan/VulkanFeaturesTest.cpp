@@ -8,7 +8,6 @@
 #include <gtest/gtest.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanFeatures.h>
-#include <igl/vulkan/VulkanFunctionTable.h>
 
 namespace igl::tests {
 
