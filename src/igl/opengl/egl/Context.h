@@ -34,7 +34,7 @@ class Context final : public IContext {
 
   /// Create a new context for default display. This constructor makes the assumption that the EGL
   /// surfaces to be associated with this context are already present and set to current.
-  Context(EGLNativeWindowType window);
+  explicit Context(EGLNativeWindowType window);
   /// Create a new offscreen context.
   Context(size_t width, size_t height);
   /// Create a new context applicable for a specific display/context/read surface/draw surface.
