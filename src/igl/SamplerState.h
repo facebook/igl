@@ -120,7 +120,7 @@ struct SamplerStateDesc {
    */
   std::string debugName;
 
-  igl::TextureFormat yuvFormat = igl::TextureFormat::Invalid;
+  TextureFormat yuvFormat = igl::TextureFormat::Invalid;
 
   /**
    * @brief Creates a new SamplerStateDesc instance set up for linearly interpolating within mipmap
@@ -157,7 +157,7 @@ struct SamplerStateDesc {
   /**
    * @brief Creates a new SamplerStateDesc instance set up for YUV conversion
    */
-  static SamplerStateDesc newYUV(igl::TextureFormat yuvFormat, const char* debugName) {
+  static SamplerStateDesc newYUV(TextureFormat yuvFormat, const char* debugName) {
     SamplerStateDesc desc;
     desc.minFilter = desc.magFilter = SamplerMinMagFilter::Linear;
     desc.mipFilter = SamplerMipFilter::Disabled;
