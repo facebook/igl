@@ -438,6 +438,56 @@ struct TextureFormatProperties {
                                              uint32_t bytesPerRow = 0) const noexcept;
 };
 
+enum ImageAspectBits : uint32_t {
+  ImageAspectBits_Invalid = 0xffffffff,
+  ImageAspectBits_None = 0,
+  ImageAspectBits_Color = 0x1,
+  ImageAspectBits_Depth = 0x2,
+  ImageAspectBits_Stencil = 0x4,
+  ImageAspectBits_Plane_0 = 0x10,
+  ImageAspectBits_Plane_1 = 0x20,
+  ImageAspectBits_Plane_2 = 0x40,
+};
+
+using ImageAspectFlags = uint32_t;
+
+enum Swizzle : uint8_t {
+  Swizzle_Default = 0,
+  Swizzle_0,
+  Swizzle_1,
+  Swizzle_R,
+  Swizzle_G,
+  Swizzle_B,
+  Swizzle_A,
+};
+
+struct ComponentMapping {
+  Swizzle r = Swizzle_Default;
+  Swizzle g = Swizzle_Default;
+  Swizzle b = Swizzle_Default;
+  Swizzle a = Swizzle_Default;
+  [[nodiscard]] bool identity() const {
+    return r == Swizzle_Default && g == Swizzle_Default && b == Swizzle_Default &&
+           a == Swizzle_Default;
+  }
+};
+
+/**
+ * @brief Descriptor for texture view creation methods
+ */
+struct TextureViewDesc {
+  TextureType type = TextureType::Invalid; // use Invalid to keep the original texture type
+  // mutate the original texture format, subject to the underlying graphics API limitations
+  TextureFormat format = TextureFormat::Invalid; // use Invalid to keep the original format
+  ImageAspectFlags aspect = ImageAspectBits_Invalid; // use Invalid to keep the original aspect
+  uint32_t layer = 0;
+  uint32_t numLayers = 1;
+  uint32_t mipLevel = 0;
+  uint32_t numMipLevels = 1;
+  // swizzle RGBA components in a custom way
+  ComponentMapping swizzle = {};
+};
+
 /**
  * @brief Descriptor for internal texture creation methods used in IGL
  *
