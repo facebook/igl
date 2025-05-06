@@ -33,7 +33,7 @@ class DataReader {
   template<typename T>
   [[nodiscard]] const T* IGL_NULLABLE tryAs(igl::Result* IGL_NULLABLE outResult) const noexcept {
     static_assert(sizeof(T) <= std::numeric_limits<uint32_t>::max());
-    if (!ensureLength(static_cast<uint32_t>(sizeof(T)), outResult)) {
+    if (!ensureLength(static_cast<uint32_t>(sizeof(T)), 0, outResult)) {
       return nullptr;
     }
 
@@ -51,7 +51,7 @@ class DataReader {
   [[nodiscard]] const T* IGL_NULLABLE tryAsAt(uint32_t offset,
                                               igl::Result* IGL_NULLABLE outResult) const noexcept {
     static_assert(sizeof(T) <= std::numeric_limits<uint32_t>::max());
-    if (!ensureLength(offset + static_cast<uint32_t>(sizeof(T)), outResult)) {
+    if (!ensureLength(static_cast<uint32_t>(sizeof(T)), offset, outResult)) {
       return nullptr;
     }
 
@@ -68,7 +68,7 @@ class DataReader {
   template<typename T>
   [[nodiscard]] bool tryRead(T& outValue, igl::Result* IGL_NULLABLE outResult) const noexcept {
     static_assert(sizeof(T) <= std::numeric_limits<uint32_t>::max());
-    if (!ensureLength(static_cast<uint32_t>(sizeof(T)), outResult)) {
+    if (!ensureLength(static_cast<uint32_t>(sizeof(T)), 0, outResult)) {
       return false;
     }
     outValue = read<T>();
@@ -86,7 +86,7 @@ class DataReader {
                                T& outValue,
                                igl::Result* IGL_NULLABLE outResult) const noexcept {
     static_assert(sizeof(T) <= std::numeric_limits<uint32_t>::max());
-    if (!ensureLength(offset + static_cast<uint32_t>(sizeof(T)), outResult)) {
+    if (!ensureLength(static_cast<uint32_t>(sizeof(T)), offset, outResult)) {
       return false;
     }
     outValue = readAt<T>(offset);
@@ -117,6 +117,7 @@ class DataReader {
  private:
   DataReader(const uint8_t* IGL_NONNULL data, uint32_t length) noexcept;
   [[nodiscard]] bool ensureLength(uint32_t requestedLength,
+                                  uint32_t offset,
                                   igl::Result* IGL_NULLABLE outResult) const noexcept;
 
   // Prevent heap allocation

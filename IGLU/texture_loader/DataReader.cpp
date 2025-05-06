@@ -33,7 +33,7 @@ uint32_t DataReader::length() const noexcept {
 
 const uint8_t* IGL_NULLABLE DataReader::tryAt(uint32_t offset,
                                               igl::Result* IGL_NULLABLE outResult) const noexcept {
-  if (!ensureLength(offset, outResult)) {
+  if (!ensureLength(0, offset, outResult)) {
     return nullptr;
   }
   return at(offset);
@@ -45,7 +45,7 @@ const uint8_t* IGL_NONNULL DataReader::at(uint32_t offset) const noexcept {
 }
 
 bool DataReader::tryAdvance(uint32_t bytesToAdvance, igl::Result* IGL_NULLABLE outResult) noexcept {
-  if (!ensureLength(bytesToAdvance, outResult)) {
+  if (!ensureLength(bytesToAdvance, 0, outResult)) {
     return false;
   }
   advance(bytesToAdvance);
@@ -53,8 +53,9 @@ bool DataReader::tryAdvance(uint32_t bytesToAdvance, igl::Result* IGL_NULLABLE o
 }
 
 bool DataReader::ensureLength(uint32_t requestedLength,
+                              uint32_t offset,
                               igl::Result* IGL_NULLABLE outResult) const noexcept {
-  if (length_ < requestedLength) {
+  if (offset > length_ || requestedLength > length_ - offset) {
     igl::Result::setResult(
         outResult, igl::Result::Code::InvalidOperation, "data length is too small.");
     return false;
