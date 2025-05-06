@@ -51,7 +51,7 @@ struct CommandBufferStatistics {
  */
 class ICommandBuffer {
  public:
-  explicit ICommandBuffer(CommandBufferDesc desc) : desc_(std::move(desc)) {}
+  explicit ICommandBuffer(CommandBufferDesc iDesc) : desc(std::move(iDesc)) {}
   virtual ~ICommandBuffer() = default;
 
   /**
@@ -149,9 +149,10 @@ class ICommandBuffer {
     statistics_.currentDrawCount++;
   }
 
+  const CommandBufferDesc desc;
+
  private:
   CommandBufferStatistics statistics_;
-  CommandBufferDesc desc_;
 };
 
 } // namespace igl
