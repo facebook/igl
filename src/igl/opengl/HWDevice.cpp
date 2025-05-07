@@ -19,7 +19,7 @@ std::unique_ptr<Device> HWDevice::create(Result* outResult) const {
   return createWithContext(std::move(context), outResult);
 }
 
-std::unique_ptr<Device> HWDevice::create(igl::opengl::RenderingAPI api, Result* outResult) {
+std::unique_ptr<Device> HWDevice::create(RenderingAPI api, Result* outResult) {
   auto context = createContext(api, IGL_EGL_NULL_WINDOW, outResult);
   if (!context) {
     Result::setResult(outResult, Result::Code::RuntimeError, "context is null");
