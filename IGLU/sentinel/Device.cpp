@@ -85,6 +85,14 @@ std::shared_ptr<igl::ITexture> Device::createTexture(const igl::TextureDesc& /*d
   return nullptr;
 }
 
+std::shared_ptr<igl::ITexture> Device::createTextureView(
+    std::shared_ptr<igl::ITexture> texture,
+    const igl::TextureViewDesc& desc,
+    igl::Result* IGL_NULLABLE /*outResult*/) const noexcept {
+  IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
+  return nullptr;
+}
+
 std::shared_ptr<igl::IVertexInputState> Device::createVertexInputState(
     const igl::VertexInputStateDesc& /*desc*/,
     igl::Result* IGL_NULLABLE /*outResult*/) const {

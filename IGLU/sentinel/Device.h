@@ -57,6 +57,10 @@ class Device final : public igl::IDevice {
   [[nodiscard]] std::shared_ptr<igl::ITexture> createTexture(const igl::TextureDesc& desc,
                                                              igl::Result* IGL_NULLABLE
                                                                  outResult) const noexcept final;
+  [[nodiscard]] std::shared_ptr<igl::ITexture> createTextureView(
+      std::shared_ptr<igl::ITexture> texture,
+      const igl::TextureViewDesc& desc,
+      igl::Result* IGL_NULLABLE outResult) const noexcept final;
   [[nodiscard]] std::shared_ptr<igl::IVertexInputState> createVertexInputState(
       const igl::VertexInputStateDesc& desc,
       igl::Result* IGL_NULLABLE outResult) const final;

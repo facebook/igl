@@ -150,6 +150,19 @@ class IDevice : public ICapabilities {
                                                       outResult) const noexcept = 0;
 
   /**
+   * @brief Creates a texture view resource.
+   * @see igl::TextureViewDesc
+   * @param desc Description for the desired resource.
+   * @param outResult Pointer to where the result (success, failure, etc) is written. Can be null if
+   * no reporting is desired.
+   * @return Shared pointer to the created texture.
+   */
+  virtual std::shared_ptr<ITexture> createTextureView(std::shared_ptr<ITexture> texture,
+                                                      const TextureViewDesc& desc,
+                                                      Result* IGL_NULLABLE
+                                                          outResult) const noexcept = 0;
+
+  /**
    * @brief Creates a vertex input state.
    * @see igl::VertexInputStateDesc
    * @param desc Description for the desired resource.

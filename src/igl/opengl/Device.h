@@ -57,6 +57,10 @@ class Device : public IDevice {
                                                     Result* IGL_NULLABLE outResult) const override;
   std::shared_ptr<ITexture> createTexture(const TextureDesc& desc,
                                           Result* IGL_NULLABLE outResult) const noexcept override;
+  std::shared_ptr<ITexture> createTextureView(std::shared_ptr<ITexture> texture,
+                                              const TextureViewDesc& desc,
+                                              Result* IGL_NULLABLE
+                                                  outResult) const noexcept override;
 
   std::shared_ptr<IVertexInputState> createVertexInputState(const VertexInputStateDesc& desc,
                                                             Result* IGL_NULLABLE

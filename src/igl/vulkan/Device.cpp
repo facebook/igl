@@ -182,6 +182,19 @@ std::shared_ptr<ITexture> Device::createTextureInternal(const TextureDesc& desc,
   return res.isOk() ? texture : nullptr;
 }
 
+std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> texture,
+                                                    const TextureViewDesc& desc,
+                                                    Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+
+  Result::setResult(
+      outResult, Result::Code::Unimplemented, "Texture views are not (yet) implemented");
+
+  return nullptr;
+}
+
 std::shared_ptr<IVertexInputState> Device::createVertexInputStateInternal(
     const VertexInputStateDesc& desc,
     Result* IGL_NULLABLE outResult) const {

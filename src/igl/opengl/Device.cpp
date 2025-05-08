@@ -213,6 +213,17 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   return texture;
 }
 
+std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> texture,
+                                                    const TextureViewDesc& desc,
+                                                    Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+
+  Result::setResult(
+      outResult, Result::Code::Unimplemented, "Texture views are not (yet) implemented");
+
+  return nullptr;
+}
+
 std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexInputStateDesc& desc,
                                                                   Result* outResult) const {
   return createSharedResource<VertexInputState>(desc, outResult);
