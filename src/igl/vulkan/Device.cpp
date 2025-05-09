@@ -656,6 +656,8 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
     return ctx_->extensions_.has8BitIndices;
   case DeviceFeatures::ValidationLayersEnabled:
     return ctx_->areValidationLayersEnabled();
+  case DeviceFeatures::TextureViews:
+    return false;
   }
 
   IGL_DEBUG_ABORT("DeviceFeatures value not handled: %d", (int)feature);

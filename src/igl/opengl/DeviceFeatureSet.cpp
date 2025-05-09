@@ -377,6 +377,9 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
     return hasDesktopOrESExtension(*this, "GL_EXT_memory_object") &&
            hasDesktopOrESExtension(*this, "GL_EXT_memory_object_fd");
 
+  case DeviceFeatures::TextureViews:
+    return false;
+
   case DeviceFeatures::PushConstants:
     return false;
 
