@@ -486,6 +486,8 @@ struct TextureViewDesc {
   uint32_t numMipLevels = 1;
   // swizzle RGBA components in a custom way
   ComponentMapping swizzle = {};
+
+  std::string debugName;
 };
 
 /**
