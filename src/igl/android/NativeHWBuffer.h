@@ -7,6 +7,9 @@
 
 #pragma once
 
+// @fb-only
+// @fb-only
+
 #include <igl/Core.h>
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)

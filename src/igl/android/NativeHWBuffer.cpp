@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+// @fb-only
+
 #include "NativeHWBuffer.h"
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
