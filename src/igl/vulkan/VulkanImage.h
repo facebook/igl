@@ -212,7 +212,7 @@ class VulkanImage final {
 
   ~VulkanImage();
 
-  VulkanImage(const VulkanImage&) = delete;
+  VulkanImage(const VulkanImage&) = default;
   VulkanImage& operator=(const VulkanImage&) = delete;
 
   VulkanImage(VulkanImage&& other) noexcept {
