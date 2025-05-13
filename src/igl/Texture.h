@@ -476,7 +476,7 @@ struct ComponentMapping {
  * @brief Descriptor for texture view creation methods
  */
 struct TextureViewDesc {
-  TextureType type = TextureType::Invalid; // use Invalid to keep the original texture type
+  TextureType type = TextureType::TwoD;
   // mutate the original texture format, subject to the underlying graphics API limitations
   TextureFormat format = TextureFormat::Invalid; // use Invalid to keep the original format
   ImageAspectFlags aspect = ImageAspectBits_Invalid; // use Invalid to keep the original aspect
