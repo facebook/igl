@@ -18,7 +18,9 @@
 
 namespace igl::vulkan {
 
-Texture::Texture(Device& device, TextureFormat format) : ITexture(format), device_(device) {}
+Texture::Texture(Device& device, TextureFormat format) : ITexture(format), device_(device) {
+  IGL_DEBUG_ASSERT(format != TextureFormat::Invalid);
+}
 
 Result Texture::create(const TextureDesc& desc) {
   desc_ = desc;
