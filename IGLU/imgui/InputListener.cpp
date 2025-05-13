@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @MARK:COVERAGE_EXCLUDE_FILE
+// @fb-only
 
 #include "InputListener.h"
 #include "KeyCodeTranslator.h"
