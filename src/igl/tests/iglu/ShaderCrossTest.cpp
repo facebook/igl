@@ -36,4 +36,15 @@ TEST_F(ShaderCrossTest, Construction) {
   const iglu::ShaderCross shaderCross(*iglDev_);
 }
 
+TEST_F(ShaderCrossTest, EntryPointName) {
+  const iglu::ShaderCross shaderCross(*iglDev_);
+  if (iglDev_->getBackendType() == igl::BackendType::Metal) {
+    EXPECT_EQ(shaderCross.entryPointName(igl::ShaderStage::Vertex), "main0");
+  } else if (iglDev_->getBackendType() == igl::BackendType::OpenGL) {
+    EXPECT_EQ(shaderCross.entryPointName(igl::ShaderStage::Vertex), "main");
+  } else {
+    EXPECT_EQ(shaderCross.entryPointName(igl::ShaderStage::Vertex), "");
+  }
+}
+
 } // namespace igl::tests
