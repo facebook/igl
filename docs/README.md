@@ -16,9 +16,12 @@ This is the documentation source for [IGL](https://www.github.com/facebook/igl)
 
 ## Building the documentation
 
-The documentation template is based on [Sphinx](https://www.sphinx-doc.org/) and [Furo](https://github.com/pradyunsg/furo) and requires [Python](https://www.python.org/) and [virtualenv](https://virtualenv.pypa.io/en/latest/).
+The documentation template is based on [Sphinx](https://www.sphinx-doc.org/) and [Furo](https://github.com/pradyunsg/furo)
+and requires [Python](https://www.python.org/) and [virtualenv](https://virtualenv.pypa.io/en/latest/).
 
-The process described below works on the Mac. Building the documentation on Windows may require significant more work to adjust the version of the packages listed in the [requirements.txt](https://github.com/facebook/igl/blob/main/doc/requirements.txt) file. The process of building the documentation on Linux has not been tested.
+The process described below works on the Mac. Building the documentation on Windows may require significant more work to adjust the version
+of the packages listed in the [requirements.txt](https://github.com/facebook/igl/blob/main/doc/requirements.txt) file.
+The process of building the documentation on Linux has not been tested.
 
 1. Set up a Python virtual environment using `virtualenv` and activate it:
 ```shell-script
