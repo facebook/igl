@@ -128,7 +128,6 @@ struct VertexInputBinding {
   VertexSampleFunction sampleFunction = VertexSampleFunction::PerVertex;
   size_t sampleRate = 1;
 
-  VertexInputBinding() = default;
   bool operator==(const VertexInputBinding& other) const;
   bool operator!=(const VertexInputBinding& other) const;
 };
