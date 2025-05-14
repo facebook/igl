@@ -436,12 +436,12 @@ void TinyMeshBindGroupSession::createRenderPipeline() {
   {
     const uint32_t texWidth = 256;
     const uint32_t texHeight = 256;
-    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::BGRA_SRGB,
-                                                texWidth,
-                                                texHeight,
-                                                TextureDesc::TextureUsageBits::Sampled,
-                                                "XOR pattern");
-    texture0_ = device_->createTexture(desc, nullptr);
+    const TextureDesc desc2D = TextureDesc::new2D(igl::TextureFormat::BGRA_SRGB,
+                                                  texWidth,
+                                                  texHeight,
+                                                  TextureDesc::TextureUsageBits::Sampled,
+                                                  "XOR pattern");
+    texture0_ = device_->createTexture(desc2D, nullptr);
     std::vector<uint32_t> pixels(texWidth * texHeight);
     for (uint32_t y = 0; y != texHeight; y++) {
       for (uint32_t x = 0; x != texWidth; x++) {
@@ -474,21 +474,21 @@ void TinyMeshBindGroupSession::createRenderPipeline() {
         4);
     IGL_DEBUG_ASSERT(pixels,
                      "Cannot load textures. Run `deploy_content.py` before running this app.");
-    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::BGRA_SRGB,
-                                                texWidth,
-                                                texHeight,
-                                                TextureDesc::TextureUsageBits::Sampled,
-                                                "wood_polished_01_diff.png");
-    texture1_ = device_->createTexture(desc, nullptr);
+    const TextureDesc desc2D = TextureDesc::new2D(igl::TextureFormat::BGRA_SRGB,
+                                                  texWidth,
+                                                  texHeight,
+                                                  TextureDesc::TextureUsageBits::Sampled,
+                                                  "wood_polished_01_diff.png");
+    texture1_ = device_->createTexture(desc2D, nullptr);
     texture1_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels);
     stbi_image_free(pixels);
   }
   {
-    SamplerStateDesc desc = igl::SamplerStateDesc::newLinear();
-    desc.addressModeU = igl::SamplerAddressMode::Repeat;
-    desc.addressModeV = igl::SamplerAddressMode::Repeat;
-    desc.debugName = "Sampler: linear";
-    sampler_ = device_->createSamplerState(desc, nullptr);
+    SamplerStateDesc samplerDesc = igl::SamplerStateDesc::newLinear();
+    samplerDesc.addressModeU = igl::SamplerAddressMode::Repeat;
+    samplerDesc.addressModeV = igl::SamplerAddressMode::Repeat;
+    samplerDesc.debugName = "Sampler: linear";
+    sampler_ = device_->createSamplerState(samplerDesc, nullptr);
   }
 
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
