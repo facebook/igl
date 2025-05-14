@@ -347,7 +347,7 @@ void GPUStressSession::thrashCPU() noexcept {
   }
 }
 
-float GPUStressSession::doReadWrite(std::vector<std::vector<std::vector<float>>>& memBlock_,
+float GPUStressSession::doReadWrite(std::vector<std::vector<std::vector<float>>>& memBlock,
                                     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
                                     int numBlocks,
                                     int numRows,
@@ -365,14 +365,14 @@ float GPUStressSession::doReadWrite(std::vector<std::vector<std::vector<float>>>
     const int block = randBlocks(gen);
     const int row = randRows(gen);
     const int col = randCols(gen);
-    memBlock_[block].at(row)[col] = arc4random_();
+    memBlock[block].at(row)[col] = arc4random_();
   }
 
   for (int i = 0; i < memoryReads_; i++) {
     const int block = randBlocks(gen);
     const int row = randRows(gen);
     const int col = randCols(gen);
-    sum += i % 1 ? -1.f : 1.f * memBlock_.at(block)[row][col];
+    sum += i % 1 ? -1.f : 1.f * memBlock.at(block)[row][col];
   }
 
   return sum;
