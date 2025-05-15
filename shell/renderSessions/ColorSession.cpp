@@ -218,10 +218,10 @@ void ColorSession::initialize() noexcept {
 
   VertexInputStateDesc inputDesc;
   inputDesc.numAttributes = 2;
-  inputDesc.attributes[0] = VertexAttribute(
-      1, VertexAttributeFormat::Float3, offsetof(VertexPosUv, position), "position", 0);
+  inputDesc.attributes[0] = VertexAttribute{
+      1, VertexAttributeFormat::Float3, offsetof(VertexPosUv, position), "position", 0};
   inputDesc.attributes[1] =
-      VertexAttribute(1, VertexAttributeFormat::Float2, offsetof(VertexPosUv, uv), "uv_in", 1);
+      VertexAttribute{1, VertexAttributeFormat::Float2, offsetof(VertexPosUv, uv), "uv_in", 1};
   inputDesc.numInputBindings = 1;
   inputDesc.inputBindings[1].stride = sizeof(VertexPosUv);
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);

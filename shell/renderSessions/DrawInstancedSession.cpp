@@ -205,7 +205,7 @@ void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
   if (!renderPipelineState_Triangle_) {
     VertexInputStateDesc inputDesc;
     inputDesc.numAttributes = 1;
-    inputDesc.attributes[0] = VertexAttribute(1, VertexAttributeFormat::Float2, 0, "offset", 0);
+    inputDesc.attributes[0] = VertexAttribute{1, VertexAttributeFormat::Float2, 0, "offset", 0};
     inputDesc.numInputBindings = 1;
     inputDesc.inputBindings[1].stride = sizeof(float) * 2;
     inputDesc.inputBindings[1].sampleFunction = igl::VertexSampleFunction::Instance;

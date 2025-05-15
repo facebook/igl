@@ -21,16 +21,21 @@ namespace Quad {
 igl::VertexInputStateDesc inputStateDesc() {
   igl::VertexInputStateDesc inputDesc;
   inputDesc.numAttributes = 2;
-  inputDesc.attributes[0] = igl::VertexAttribute(0,
-                                                 igl::VertexAttributeFormat::Float3,
-                                                 offsetof(VertexPosUv, position),
-                                                 s_attrPosition.first,
-                                                 s_attrPosition.second);
-  inputDesc.attributes[1] = igl::VertexAttribute(0,
-                                                 igl::VertexAttributeFormat::Float2,
-                                                 offsetof(VertexPosUv, uv),
-                                                 s_attrUV.first,
-                                                 s_attrUV.second);
+  inputDesc.attributes[0] =
+      {
+          .bufferIndex = 0,
+          .format = igl::VertexAttributeFormat::Float3,
+          .offset = offsetof(VertexPosUv, position),
+          .name = s_attrPosition.first,
+          .location = s_attrPosition.second,
+      },
+  inputDesc.attributes[1] = {
+      .bufferIndex = 0,
+      .format = igl::VertexAttributeFormat::Float2,
+      .offset = offsetof(VertexPosUv, uv),
+      .name = s_attrUV.first,
+      .location = s_attrUV.second,
+  };
   inputDesc.numInputBindings = 1;
   inputDesc.inputBindings[0].stride = sizeof(VertexPosUv);
   return inputDesc;

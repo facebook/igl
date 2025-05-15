@@ -249,12 +249,27 @@ Session::Renderer::Renderer(igl::IDevice& device) {
   {
     igl::VertexInputStateDesc inputDesc;
     inputDesc.numAttributes = 3;
-    inputDesc.attributes[0] = igl::VertexAttribute(
-        0, igl::VertexAttributeFormat::Float2, offsetof(ImDrawVert, pos), "position", 0);
-    inputDesc.attributes[1] = igl::VertexAttribute(
-        0, igl::VertexAttributeFormat::Float2, offsetof(ImDrawVert, uv), "texCoords", 1);
-    inputDesc.attributes[2] = igl::VertexAttribute(
-        0, igl::VertexAttributeFormat::UByte4Norm, offsetof(ImDrawVert, col), "color", 2);
+    inputDesc.attributes[0] = igl::VertexAttribute{
+        .bufferIndex = 0,
+        .format = igl::VertexAttributeFormat::Float2,
+        .offset = offsetof(ImDrawVert, pos),
+        .name = "position",
+        .location = 0,
+    };
+    inputDesc.attributes[1] = igl::VertexAttribute{
+        .bufferIndex = 0,
+        .format = igl::VertexAttributeFormat::Float2,
+        .offset = offsetof(ImDrawVert, uv),
+        .name = "texCoords",
+        .location = 1,
+    };
+    inputDesc.attributes[2] = igl::VertexAttribute{
+        .bufferIndex = 0,
+        .format = igl::VertexAttributeFormat::UByte4Norm,
+        .offset = offsetof(ImDrawVert, col),
+        .name = "color",
+        .location = 2,
+    };
     inputDesc.numInputBindings = 1;
     inputDesc.inputBindings[0].stride = sizeof(ImDrawVert);
     _vertexInputState = device.createVertexInputState(inputDesc, nullptr);
