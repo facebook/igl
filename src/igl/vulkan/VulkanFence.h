@@ -46,6 +46,8 @@ class VulkanFence final {
    */
   bool signal(VkQueue queue);
 
+  [[nodiscard]] bool exportable() const noexcept;
+
  public:
   const VulkanFunctionTable* vf_{};
   VkDevice device_ = VK_NULL_HANDLE;

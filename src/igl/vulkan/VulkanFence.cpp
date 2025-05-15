@@ -82,4 +82,8 @@ bool VulkanFence::signal(VkQueue queue) {
   return result == VK_SUCCESS;
 }
 
+bool VulkanFence::exportable() const noexcept {
+  return exportable_;
+}
+
 } // namespace igl::vulkan
