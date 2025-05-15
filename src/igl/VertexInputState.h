@@ -133,7 +133,6 @@ struct VertexInputStateDesc {
   static size_t sizeForVertexAttributeFormat(VertexAttributeFormat format);
 
   bool operator==(const VertexInputStateDesc& other) const;
-  bool operator!=(const VertexInputStateDesc& other) const;
 };
 
 /**

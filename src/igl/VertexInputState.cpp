@@ -154,10 +154,6 @@ bool VertexAttribute::operator==(const VertexAttribute& other) const {
          other.format == format && other.offset == offset;
 }
 
-bool VertexInputStateDesc::operator!=(const VertexInputStateDesc& other) const {
-  return !(*this == other);
-}
-
 bool VertexInputStateDesc::operator==(const VertexInputStateDesc& other) const {
   if (other.numAttributes != numAttributes || other.numInputBindings != numInputBindings) {
     return false;
