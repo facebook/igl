@@ -1853,6 +1853,44 @@ void VulkanContext::waitDeferredTasks() {
   deferredTasks_.clear();
 }
 
+VkFence VulkanContext::getVkFenceFromSubmitHandle(igl::SubmitHandle handle) const noexcept {
+  if (handle == 0) {
+    IGL_LOG_ERROR("Invalid submit handle passed to getVkFenceFromSubmitHandle");
+    return VK_NULL_HANDLE;
+  }
+
+  VkFence vkFence =
+      immediate_->getVkFenceFromSubmitHandle(VulkanImmediateCommands::SubmitHandle(handle));
+
+  return vkFence;
+}
+
+int VulkanContext::getFenceFdFromSubmitHandle(igl::SubmitHandle handle) const noexcept {
+  int fenceFd = -1;
+#if defined(IGL_PLATFORM_ANDROID) && defined(VK_KHR_external_fence_fd)
+  if (handle == 0) {
+    IGL_LOG_ERROR("Invalid submit handle passed to getFenceFDFromSubmitHandle");
+    return -1;
+  }
+
+  const VkFence vkFence = getVkFenceFromSubmitHandle(handle);
+  IGL_DEBUG_ASSERT(vkFence != VK_NULL_HANDLE);
+
+  const VkFenceGetFdInfoKHR getFdInfo = {
+      .sType = VK_STRUCTURE_TYPE_FENCE_GET_FD_INFO_KHR,
+      .fence = vkFence,
+      .handleType = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT,
+  };
+
+  VkDevice vkDevice = device_->getVkDevice();
+  const VkResult result = vf_.vkGetFenceFdKHR(vkDevice, &getFdInfo, &fenceFd);
+  if (result != VK_SUCCESS) {
+    IGL_LOG_ERROR("Unable to get fence fd from submit handle: %lu", handle);
+  }
+#endif // defined(IGL_PLATFORM_ANDROID)
+  return fenceFd;
+}
+
 VkDescriptorSetLayout VulkanContext::getBindlessVkDescriptorSetLayout() const {
   return config_.enableDescriptorIndexing ? pimpl_->dslBindless_->getVkDescriptorSetLayout()
                                           : VK_NULL_HANDLE;
