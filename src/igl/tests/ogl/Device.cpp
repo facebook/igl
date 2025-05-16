@@ -64,18 +64,22 @@ TEST_F(DeviceOGLTest, EndScope) {
 
   context_->setUnbindPolicy(opengl::UnbindPolicy::EndScope);
 
+  std::array<GLuint, 2> buffers{};
+
   // Create a DeviceScope in a new scope to trigger iglDev_->beginScope and iglDev_->endScope when
   // the scope exits and the DeviceScope is destroyed
   {
     const DeviceScope deviceScope(*iglDev_);
     ASSERT_TRUE(iglDev_->verifyScope());
 
+    context_->genBuffers(2, buffers.data());
+
     // Artificially set values that will be restored when endScope is called
     context_->colorMask(0u, 0u, 0u, 0u);
     context_->blendFunc(GL_SRC_COLOR, GL_DST_COLOR);
 
-    context_->bindBuffer(GL_ARRAY_BUFFER, 1);
-    context_->bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 1);
+    context_->bindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+    context_->bindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
 
     context_->pixelStorei(GL_PACK_ALIGNMENT, 1);
     context_->pixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -93,10 +97,10 @@ TEST_F(DeviceOGLTest, EndScope) {
     ASSERT_EQ(value, GL_DST_COLOR);
 
     context_->getIntegerv(GL_ARRAY_BUFFER_BINDING, &value);
-    ASSERT_EQ(value, 1);
+    ASSERT_EQ(value, buffers[0]);
 
     context_->getIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &value);
-    ASSERT_EQ(value, 1);
+    ASSERT_EQ(value, buffers[1]);
 
     context_->getIntegerv(GL_PACK_ALIGNMENT, &value);
     ASSERT_EQ(value, 1);
@@ -131,6 +135,8 @@ TEST_F(DeviceOGLTest, EndScope) {
 
   context_->getIntegerv(GL_UNPACK_ALIGNMENT, &value);
   ASSERT_EQ(value, 4);
+
+  context_->deleteBuffers(2, buffers.data());
 
   // Check that gl version and shader version works
   auto glVersion = context_->deviceFeatures().getGLVersion();
