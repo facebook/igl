@@ -188,7 +188,7 @@ class NativeHWBufferTextureTest : public ::testing::Test {
 
     // Create Device
     if (TBackendType == igl::BackendType::OpenGL) {
-      iglDev_ = util::device::createTestDevice(igl::BackendType::OpenGL, "3.0");
+      iglDev_ = util::device::createTestDevice(igl::BackendType::OpenGL);
     } else if (TBackendType == igl::BackendType::Vulkan) {
       iglDev_ = util::device::createTestDevice(igl::BackendType::Vulkan);
     } else {
