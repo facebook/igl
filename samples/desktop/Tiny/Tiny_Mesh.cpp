@@ -415,17 +415,21 @@ static void initIGL() {
   CommandQueueDesc desc{};
   commandQueue_ = device_->createCommandQueue(desc, nullptr);
 
-  renderPass_.colorAttachments.push_back(igl::RenderPassDesc::ColorAttachmentDesc{});
-  renderPass_.colorAttachments.back().loadAction = LoadAction::Clear;
-  renderPass_.colorAttachments.back().storeAction = StoreAction::Store;
-  renderPass_.colorAttachments.back().clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
+  renderPass_.colorAttachments.push_back({
+      .loadAction = LoadAction::Clear,
+      .storeAction = StoreAction::Store,
+      .clearColor = {1.0f, 0.0f, 0.0f, 1.0f},
+  });
 #if TINY_TEST_USE_DEPTH_BUFFER
-  renderPass_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPass_.depthAttachment.storeAction =
-      StoreAction::Store; // save it so we can display it via ImGui
-  renderPass_.depthAttachment.clearDepth = 1.0;
+  renderPass_.depthAttachment = {
+      .loadAction = LoadAction::Clear,
+      .storeAction = StoreAction::Store, // save it so we can display it via ImGui
+      .clearDepth = 1.0,
+  };
 #else
-  renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
+  renderPass_.depthAttachment = {
+      .loadAction = LoadAction::DontCare,
+  };
 #endif // TINY_TEST_USE_DEPTH_BUFFER
 
   // initialize random rotation axes for all cubes

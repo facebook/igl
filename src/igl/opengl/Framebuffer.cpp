@@ -71,7 +71,7 @@ Result checkFramebufferStatus(IContext& context, bool read) {
   return Result(code, message);
 }
 
-Texture::AttachmentParams toAttachmentParams(const RenderPassDesc::BaseAttachmentDesc& attachment,
+Texture::AttachmentParams toAttachmentParams(const RenderPassDesc::AttachmentDesc& attachment,
                                              FramebufferMode mode) {
   Texture::AttachmentParams params{};
   params.face = attachment.face;

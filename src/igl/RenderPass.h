@@ -52,50 +52,31 @@ struct RenderPassDesc {
    * @brief BaseAttachmentDesc sets default load action, store action, cube face , mip level, and
    * array layer for the attachments of a RenderPassDesc
    */
-  struct BaseAttachmentDesc {
-    LoadAction loadAction = LoadAction::Clear; // default load action for depth and stencil
-    StoreAction storeAction = StoreAction::DontCare; // default store action for depth and stencil
+  struct AttachmentDesc {
+    LoadAction loadAction = LoadAction::DontCare; // default load action for color
+    StoreAction storeAction = StoreAction::Store; // default store action for color
     uint8_t face = 0; // Cube texture face
     uint8_t mipLevel = 0; // Texture mip level
     uint8_t layer = 0; // Texture array layer
-  };
-
-  /**
-   * @brief ColorAttachmentDesc stores to black by default on a RenderPassDesc but can be set to
-   * perform other operations
-   */
-  struct ColorAttachmentDesc : BaseAttachmentDesc {
-    // NOTE: Color has different defaults
-    ColorAttachmentDesc() : BaseAttachmentDesc{LoadAction::DontCare, StoreAction::Store} {}
     Color clearColor = {0.0f, 0.0f, 0.0f, 0.0f};
-  };
-
-  /**
-   * @brief DepthAttachmentDesc uses provided MSAA value by default and clears depth.
-   */
-  struct DepthAttachmentDesc : BaseAttachmentDesc {
     float clearDepth = 1.0f;
-  };
-
-  /**
-   * @brief StencilAttachmentDesc sets stencil to 0 by default.
-   */
-  struct StencilAttachmentDesc : BaseAttachmentDesc {
     uint32_t clearStencil = 0;
   };
 
   /**
    * @brief colorAttachments properties which is empty by default.
    */
-  std::vector<ColorAttachmentDesc> colorAttachments;
+  std::vector<AttachmentDesc> colorAttachments;
   /**
    * @brief depthAttachment property which is clear to 1 and use provided MSAA by default
    */
-  DepthAttachmentDesc depthAttachment;
+  AttachmentDesc depthAttachment = {.loadAction = LoadAction::Clear,
+                                    .storeAction = StoreAction::DontCare};
   /**
    * @brief stencilAttachment property which is clear to 0 by default
    */
-  StencilAttachmentDesc stencilAttachment;
+  AttachmentDesc stencilAttachment = {.loadAction = LoadAction::Clear,
+                                      .storeAction = StoreAction::DontCare};
 };
 
 } // namespace igl

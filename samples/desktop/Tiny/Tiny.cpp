@@ -244,10 +244,11 @@ static void initIGL() {
     if (i & 0x1) {
       continue;
     }
-    renderPass_.colorAttachments[i] = igl::RenderPassDesc::ColorAttachmentDesc{};
-    renderPass_.colorAttachments[i].loadAction = LoadAction::Clear;
-    renderPass_.colorAttachments[i].storeAction = StoreAction::Store;
-    renderPass_.colorAttachments[i].clearColor = {1.0f, 1.0f, 1.0f, 1.0f};
+    renderPass_.colorAttachments[i] = {
+        .loadAction = LoadAction::Clear,
+        .storeAction = StoreAction::Store,
+        .clearColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    };
   }
   renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
 }

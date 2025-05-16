@@ -175,13 +175,12 @@ void DrawInstancedSession::initialize() noexcept {
   // Command queue: backed by different types of GPU HW queues
   commandQueue_ = getPlatform().getDevice().createCommandQueue({}, nullptr);
 
-  renderPass_.colorAttachments.resize(1);
-
-  renderPass_.colorAttachments[0] = igl::RenderPassDesc::ColorAttachmentDesc{};
-  renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass_.colorAttachments[0].clearColor = getPreferredClearColor();
-  renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
+  renderPass_.colorAttachments = {{
+      .loadAction = LoadAction::Clear,
+      .storeAction = StoreAction::Store,
+      .clearColor = getPreferredClearColor(),
+  }};
+  renderPass_.depthAttachment = {.loadAction = LoadAction::DontCare};
 
   // Create Index Buffer
   const int16_t indexes[6] = {0, 1, 2, 3, 4, 5};

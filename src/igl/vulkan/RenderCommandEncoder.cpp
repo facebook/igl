@@ -171,8 +171,8 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   }
 
   // Process depth attachment
-  const RenderPassDesc::DepthAttachmentDesc descDepth = renderPass.depthAttachment;
-  const RenderPassDesc::StencilAttachmentDesc descStencil = renderPass.stencilAttachment;
+  const RenderPassDesc::AttachmentDesc descDepth = renderPass.depthAttachment;
+  const RenderPassDesc::AttachmentDesc descStencil = renderPass.stencilAttachment;
   hasDepthAttachment_ = false;
 
   if (framebuffer->getDepthAttachment()) {
