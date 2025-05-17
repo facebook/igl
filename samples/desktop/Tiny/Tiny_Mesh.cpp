@@ -10,12 +10,12 @@
 #include <GLFW/glfw3.h>
 #include <cassert>
 #if !defined(_USE_MATH_DEFINES)
-#define _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES // NOLINT(bugprone-reserved-identifier)
 #endif // _USE_MATH_DEFINES
 #include <cmath>
 #include <cstddef>
+#include <cstdio>
 #include <filesystem>
-#include <stdio.h>
 #ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_EXPOSE_NATIVE_WGL
@@ -56,10 +56,16 @@ constexpr uint32_t kNumCubes = 16;
 #if IGL_WITH_IGLU
 #include <IGLU/imgui/Session.h>
 
+namespace {
+
 std::unique_ptr<iglu::imgui::Session> imguiSession_;
 
 igl::shell::InputDispatcher inputDispatcher_;
+
+} // namespace
 #endif // IGL_WITH_IGLU
+
+namespace {
 
 const char* codeVS = R"(
 layout (location=0) in vec3 pos;
@@ -115,7 +121,7 @@ int width_ = 0;
 int height_ = 0;
 igl::FPSCounter fps_;
 bool saveScreenshot_ = false;
-igl::SubmitHandle screenshotSubmitHandle_ = {};
+[[maybe_unused]] igl::SubmitHandle screenshotSubmitHandle_ = {};
 
 constexpr uint32_t kNumBufferedFrames = 3;
 
@@ -150,7 +156,7 @@ struct UniformsPerObject {
 const float half = 1.0f;
 
 // UV-mapped cube with indices: 24 vertices, 36 indices
-static VertexPosUvw vertexData0[] = {
+const VertexPosUvw vertexData0[] = {
     // top
     {{-half, -half, +half}, {0.0, 0.0, 1.0}, {0, 0}}, // 0
     {{+half, -half, +half}, {1.0, 0.0, 1.0}, {1, 0}}, // 1
@@ -183,16 +189,17 @@ static VertexPosUvw vertexData0[] = {
     {{-half, +half, +half}, {0.0, 1.0, 1.0}, {1, 1}}, // 23
 };
 
-static uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
-                               8,  9,  10, 10, 11, 8,  12, 13, 14, 14, 15, 12,
-                               16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
+const uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
+                              8,  9,  10, 10, 11, 8,  12, 13, 14, 14, 15, 12,
+                              16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
 
 UniformsPerFrame perFrame;
 UniformsPerObject perObject[kNumCubes];
 
-static bool initWindow(GLFWwindow** outWindow) {
-  if (!glfwInit())
+bool initWindow(GLFWwindow** outWindow) {
+  if (!glfwInit()) {
     return false;
+  }
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
@@ -257,7 +264,7 @@ static bool initWindow(GLFWwindow** outWindow) {
   return true;
 }
 
-static void initIGL() {
+void initIGL() {
   // create a device
   {
     const igl::vulkan::VulkanContextConfig cfg = {
@@ -274,11 +281,11 @@ static void initIGL() {
 #error Unsupported OS
 #endif
 
-    std::vector<HWDeviceDesc> devices = vulkan::HWDevice::queryDevices(
-        *ctx.get(), HWDeviceQueryDesc(HWDeviceType::DiscreteGpu), nullptr);
+    std::vector<HWDeviceDesc> devices =
+        vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::DiscreteGpu), nullptr);
     if (devices.empty()) {
       devices = vulkan::HWDevice::queryDevices(
-          *ctx.get(), HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
+          *ctx, HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
     }
     device_ =
         vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
@@ -433,12 +440,12 @@ static void initIGL() {
 #endif // TINY_TEST_USE_DEPTH_BUFFER
 
   // initialize random rotation axes for all cubes
-  for (uint32_t i = 0; i != kNumCubes; i++) {
-    axis_[i] = glm::sphericalRand(1.0f);
+  for (auto& axi : axis_) {
+    axi = glm::sphericalRand(1.0f);
   }
 }
 
-static void createRenderPipeline() {
+void createRenderPipeline() {
   if (renderPipelineState_Mesh_) {
     return;
   }
@@ -468,7 +475,7 @@ static void createRenderPipeline() {
   renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
 }
 
-static std::shared_ptr<ITexture> getVulkanNativeDrawable() {
+std::shared_ptr<ITexture> getVulkanNativeDrawable() {
   const auto& vkPlatformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
 
   IGL_DEBUG_ASSERT(vkPlatformDevice != nullptr);
@@ -480,7 +487,7 @@ static std::shared_ptr<ITexture> getVulkanNativeDrawable() {
   return drawable;
 }
 
-static std::shared_ptr<ITexture> getVulkanNativeDepth() {
+std::shared_ptr<ITexture> getVulkanNativeDepth() {
   const auto& vkPlatformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
 
   IGL_DEBUG_ASSERT(vkPlatformDevice != nullptr);
@@ -493,7 +500,7 @@ static std::shared_ptr<ITexture> getVulkanNativeDepth() {
   return drawable;
 }
 
-static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
+void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   framebufferDesc_.colorAttachments[0].texture = nativeDrawable;
 
 #if TINY_TEST_USE_DEPTH_BUFFER
@@ -504,7 +511,7 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   IGL_DEBUG_ASSERT(framebuffer_);
 }
 
-static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {
+void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {
   IGL_PROFILER_FUNCTION();
 
   if (!nativeDrawable) {
@@ -580,7 +587,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   commands->popDebugGroupLabel();
 #if IGL_WITH_IGLU
   imguiSession_->drawFPS(fps_.getAverageFPS());
-  imguiSession_->endFrame(*device_.get(), *commands);
+  imguiSession_->endFrame(*device_, *commands);
 #endif // IGL_WITH_IGLU
   commands->endEncoding();
   if (saveScreenshot_) {
@@ -590,8 +597,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
 
   auto submitHandle = commandQueue_->submit(*buffer);
 
-  if (igl::vulkan::PlatformDevice* pd = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
-      saveScreenshot_) {
+  if (auto* pd = device_->getPlatformDevice<igl::vulkan::PlatformDevice>(); saveScreenshot_) {
     saveScreenshot_ = false;
 #if TINY_TEST_USE_ASYNC_SCREENSHOTS
     pd->deferredTask(std::packaged_task<void()>([]() {
@@ -616,6 +622,8 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   }
 }
 
+} // namespace
+
 int main(int argc, char* argv[]) {
   initWindow(&window_);
   initIGL();
@@ -624,7 +632,7 @@ int main(int argc, char* argv[]) {
   createRenderPipeline();
 
 #if IGL_WITH_IGLU
-  imguiSession_ = std::make_unique<iglu::imgui::Session>(*device_.get(), inputDispatcher_);
+  imguiSession_ = std::make_unique<iglu::imgui::Session>(*device_, inputDispatcher_);
 #endif // IGL_WITH_IGLU
 
   double prevTime = glfwGetTime();
