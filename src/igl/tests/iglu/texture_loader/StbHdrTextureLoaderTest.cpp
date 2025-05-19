@@ -33,6 +33,7 @@ class StbHdrTextureLoaderTest : public ::testing::Test {
 
   void TearDown() override {}
 
+ protected:
   iglu::textureloader::stb::hdr::TextureLoaderFactory factory_;
 };
 

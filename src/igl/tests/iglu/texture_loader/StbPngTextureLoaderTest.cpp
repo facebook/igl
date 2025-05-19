@@ -80,6 +80,7 @@ class StbPngTextureLoaderTest : public ::testing::Test {
 
   void TearDown() override {}
 
+ protected:
   iglu::textureloader::stb::png::TextureLoaderFactory factory_;
 };
 

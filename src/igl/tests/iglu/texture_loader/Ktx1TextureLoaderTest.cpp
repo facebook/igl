@@ -106,6 +106,7 @@ class Ktx1TextureLoaderTest : public ::testing::Test {
 
   void TearDown() override {}
 
+ protected:
   iglu::textureloader::ktx1::TextureLoaderFactory factory_;
 };
 

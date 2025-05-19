@@ -14,7 +14,7 @@
 
 namespace {
 // Dumped from a bmp file that was manually validated as being a checkerboard pattern
-const uint8_t sExpectedData[] = {
+const uint8_t kExpectedData[] = {
     0x42, 0x4d, 0x66, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x36, 0x00, 0x00, 0x00, 0x28,
     0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x18, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -24,7 +24,7 @@ const uint8_t sExpectedData[] = {
     0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00};
 } // namespace
 
-namespace igl::tests::BitmapWriter {
+namespace igl::tests::bitmap_writer {
 
 class BitmapWriterTest : public ::testing::Test {
  public:
@@ -35,8 +35,8 @@ class BitmapWriterTest : public ::testing::Test {
 
     Result result;
     texDesc_ = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                  sTexWidth,
-                                  sTexWidth,
+                                  kTexWidth,
+                                  kTexWidth,
                                   TextureDesc::TextureUsageBits::Sampled |
                                       TextureDesc::TextureUsageBits::Attachment);
     texture_ = device_->createTexture(texDesc_, &result);
@@ -44,9 +44,9 @@ class BitmapWriterTest : public ::testing::Test {
 
     // Initialize a red checkerboard pattern
     std::vector<uint8_t> data;
-    data.reserve(sTexWidth * sTexWidth * 4);
-    for (int i = 0; i < sTexWidth; i++) {
-      for (int j = 0; j < sTexWidth; j++) {
+    data.reserve(kTexWidth * kTexWidth * 4);
+    for (int i = 0; i < kTexWidth; i++) {
+      for (int j = 0; j < kTexWidth; j++) {
         if (i % 2 != j % 2) {
           data.push_back(255);
         } else {
@@ -59,16 +59,17 @@ class BitmapWriterTest : public ::testing::Test {
     }
 
     // Initialize texture data
-    const auto range = igl::TextureRangeDesc::new2D(0, 0, sTexWidth, sTexWidth);
+    const auto range = igl::TextureRangeDesc::new2D(0, 0, kTexWidth, kTexWidth);
     texture_->upload(range, data.data());
   }
 
   void TearDown() override {}
 
+ protected:
   std::shared_ptr<IDevice> device_;
   std::shared_ptr<ITexture> texture_;
   TextureDesc texDesc_;
-  constexpr static size_t sTexWidth = 4;
+  constexpr static size_t kTexWidth = 4;
 };
 
 TEST_F(BitmapWriterTest, WriteFile) {
@@ -77,8 +78,8 @@ TEST_F(BitmapWriterTest, WriteFile) {
   std::string s = ss.str();
   const uint8_t* fileData = reinterpret_cast<const uint8_t*>(s.c_str());
   ASSERT_NE(fileData, nullptr);
-  ASSERT_EQ(s.size(), sizeof(sExpectedData));
-  ASSERT_EQ(memcmp(fileData, sExpectedData, sizeof(sExpectedData)), 0);
+  ASSERT_EQ(s.size(), sizeof(kExpectedData));
+  ASSERT_EQ(memcmp(fileData, kExpectedData, sizeof(kExpectedData)), 0);
 }
 
-} // namespace igl::tests::BitmapWriter
+} // namespace igl::tests::bitmap_writer

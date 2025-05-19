@@ -83,11 +83,11 @@ uint32_t getTotalDataSize(uint32_t vkFormat,
 void putDfd(std::vector<uint8_t>& buffer, uint32_t vkFormat, uint32_t numMipLevels) {
   const uint32_t dfdMetadataffset = kHeaderSize + numMipLevels * kMipmapMetadataSize;
 
-  constexpr uint32_t VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG = 1000054000u;
-  constexpr uint32_t VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK = 147u;
+  constexpr uint32_t vkFormatPvrtC12BppUnormBlockImg = 1000054000u;
+  constexpr uint32_t vkFormatEtC2R8G8B8UnormBlock = 147u;
 
-  ASSERT_TRUE(vkFormat == VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG ||
-              vkFormat == VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK);
+  ASSERT_TRUE(vkFormat == vkFormatPvrtC12BppUnormBlockImg ||
+              vkFormat == vkFormatEtC2R8G8B8UnormBlock);
 
   const auto format =
       igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(vkFormat));
@@ -101,7 +101,7 @@ void putDfd(std::vector<uint8_t>& buffer, uint32_t vkFormat, uint32_t numMipLeve
   const uint8_t transferFunction =
       properties.isSRGB() ? 1 /*KHR_DF_TRANSFER_SRGB*/ : 2 /*KHR_DF_TRANSFER_LINEAR*/;
   const uint8_t colorPrimaries = 1 /*KHR_DF_PRIMARIES_BT709*/;
-  const uint8_t colorModel = vkFormat == VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG
+  const uint8_t colorModel = vkFormat == vkFormatPvrtC12BppUnormBlockImg
                                  ? 164 /*KHR_DF_MODEL_PVRTC*/
                                  : 160 /*KHR_DF_MODEL_ETC1*/;
   const uint8_t texelBlockDimension3 = 0;
@@ -236,6 +236,7 @@ class Ktx2TextureLoaderTest : public ::testing::Test {
 
   void TearDown() override {}
 
+ protected:
   iglu::textureloader::ktx2::TextureLoaderFactory factory_;
 };
 

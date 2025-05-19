@@ -127,6 +127,7 @@ class StbJpegTextureLoaderTest : public ::testing::Test {
 
   void TearDown() override {}
 
+ protected:
   iglu::textureloader::stb::jpeg::TextureLoaderFactory factory_;
 };
 
