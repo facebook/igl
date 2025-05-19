@@ -52,7 +52,7 @@ class TextureBufferBaseOGLTest : public ::testing::Test {
   void TearDown() override {}
 
   // Member variables
- public:
+ protected:
   opengl::IContext* context_{};
   std::shared_ptr<IDevice> device_;
 };
@@ -67,7 +67,7 @@ class TextureBufferBaseMock : public igl::opengl::TextureBufferBase {
 
   // Used by TextureBufferBase::attachAsColor()
   [[nodiscard]] uint32_t getSamples() const override {
-    return num_samples;
+    return numSamples;
   }
 
   // NOLINTBEGIN(bugprone-easily-swappable-parameters)
@@ -84,7 +84,7 @@ class TextureBufferBaseMock : public igl::opengl::TextureBufferBase {
     type = formatGL.type;
     return result;
   }
-  uint32_t num_samples = 1;
+  uint32_t numSamples = 1;
 };
 
 //
@@ -93,19 +93,19 @@ class TextureBufferBaseMock : public igl::opengl::TextureBufferBase {
 // This tests TextureBufferBase::getType(),
 //
 TEST_F(TextureBufferBaseOGLTest, TextureGetType) {
-  std::unique_ptr<TextureBufferBaseMock> textureBufferBase_;
-  textureBufferBase_ = std::make_unique<TextureBufferBaseMock>(*context_);
-  textureBufferBase_->setUsage(TextureDesc::TextureUsageBits::Sampled);
+  std::unique_ptr<TextureBufferBaseMock> textureBufferBase;
+  textureBufferBase = std::make_unique<TextureBufferBaseMock>(*context_);
+  textureBufferBase->setUsage(TextureDesc::TextureUsageBits::Sampled);
 
-  textureBufferBase_->setTextureBufferProperties(0, GL_TEXTURE_CUBE_MAP);
-  ASSERT_EQ(TextureType::Cube, textureBufferBase_->getType());
+  textureBufferBase->setTextureBufferProperties(0, GL_TEXTURE_CUBE_MAP);
+  ASSERT_EQ(TextureType::Cube, textureBufferBase->getType());
 
-  textureBufferBase_->setTextureBufferProperties(0, GL_TEXTURE_2D);
-  ASSERT_EQ(TextureType::TwoD, textureBufferBase_->getType());
+  textureBufferBase->setTextureBufferProperties(0, GL_TEXTURE_2D);
+  ASSERT_EQ(TextureType::TwoD, textureBufferBase->getType());
 
   // Unsupported Type
-  textureBufferBase_->setTextureBufferProperties(0, GL_TEXTURE_BINDING_RECTANGLE);
-  ASSERT_EQ(TextureType::Invalid, textureBufferBase_->getType());
+  textureBufferBase->setTextureBufferProperties(0, GL_TEXTURE_BINDING_RECTANGLE);
+  ASSERT_EQ(TextureType::Invalid, textureBufferBase->getType());
 }
 
 //
@@ -115,21 +115,21 @@ TEST_F(TextureBufferBaseOGLTest, TextureGetType) {
 //                               unbind(),
 //
 TEST_F(TextureBufferBaseOGLTest, TextureBindAndUnbind) {
-  std::unique_ptr<TextureBufferBaseMock> textureBufferBase_;
-  textureBufferBase_ = std::make_unique<TextureBufferBaseMock>(*context_);
-  textureBufferBase_->setUsage(TextureDesc::TextureUsageBits::Sampled);
+  std::unique_ptr<TextureBufferBaseMock> textureBufferBase;
+  textureBufferBase = std::make_unique<TextureBufferBaseMock>(*context_);
+  textureBufferBase->setUsage(TextureDesc::TextureUsageBits::Sampled);
 
   GLuint textureID = 0;
   context_->genTextures(1, &textureID);
-  textureBufferBase_->setTextureBufferProperties(textureID, GL_TEXTURE_2D);
+  textureBufferBase->setTextureBufferProperties(textureID, GL_TEXTURE_2D);
 
   GLint value = 0;
-  textureBufferBase_->bind();
+  textureBufferBase->bind();
   // Get binding and check it is non-zero
   context_->getIntegerv(GL_TEXTURE_BINDING_2D, &value);
   ASSERT_EQ(value, textureID);
 
-  textureBufferBase_->unbind();
+  textureBufferBase->unbind();
   // Get binding and check it is zero
   context_->getIntegerv(GL_TEXTURE_BINDING_2D, &value);
   ASSERT_EQ(value, GL_ZERO);
@@ -145,9 +145,9 @@ TEST_F(TextureBufferBaseOGLTest, TextureBindAndUnbind) {
 //                               attachAsStencil(),
 //
 TEST_F(TextureBufferBaseOGLTest, TextureAttach) {
-  std::unique_ptr<TextureBufferBaseMock> textureBufferBase_;
-  textureBufferBase_ = std::make_unique<TextureBufferBaseMock>(*context_);
-  textureBufferBase_->setUsage(TextureDesc::TextureUsageBits::Sampled);
+  std::unique_ptr<TextureBufferBaseMock> textureBufferBase;
+  textureBufferBase = std::make_unique<TextureBufferBaseMock>(*context_);
+  textureBufferBase->setUsage(TextureDesc::TextureUsageBits::Sampled);
 
   GLuint textureID = 0;
   context_->genTextures(1, &textureID);
@@ -158,23 +158,23 @@ TEST_F(TextureBufferBaseOGLTest, TextureAttach) {
 
   GLint type = -1234;
   // === No target texture, nothing happens ===
-  textureBufferBase_->attachAsColor(0, opengl::Texture::AttachmentParams{});
+  textureBufferBase->attachAsColor(0, opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
   ASSERT_EQ(type, GL_NONE);
-  textureBufferBase_->attachAsDepth(opengl::Texture::AttachmentParams{});
+  textureBufferBase->attachAsDepth(opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
   ASSERT_EQ(type, GL_NONE);
-  textureBufferBase_->attachAsStencil(opengl::Texture::AttachmentParams{});
+  textureBufferBase->attachAsStencil(opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
   ASSERT_EQ(type, GL_NONE);
 
   // === With target texture ===
-  textureBufferBase_->setTextureBufferProperties(textureID, GL_TEXTURE_2D);
-  textureBufferBase_->bind();
-  textureBufferBase_->attachAsColor(0, opengl::Texture::AttachmentParams{});
+  textureBufferBase->setTextureBufferProperties(textureID, GL_TEXTURE_2D);
+  textureBufferBase->bind();
+  textureBufferBase->attachAsColor(0, opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
   ASSERT_EQ(0, context_->getError());
@@ -183,20 +183,20 @@ TEST_F(TextureBufferBaseOGLTest, TextureAttach) {
   // Multiple Render Targets
   if (context_->deviceFeatures().hasFeature(DeviceFeatures::MultipleRenderTargets)) {
     const GLuint colorAttachment1 = GL_COLOR_ATTACHMENT1;
-    textureBufferBase_->attachAsColor(1, opengl::Texture::AttachmentParams{});
+    textureBufferBase->attachAsColor(1, opengl::Texture::AttachmentParams{});
     context_->getFramebufferAttachmentParameteriv(
         GL_FRAMEBUFFER, colorAttachment1, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
     ASSERT_EQ(type, GL_TEXTURE);
     ASSERT_EQ(0, context_->getError());
   }
 
-  textureBufferBase_->attachAsDepth(opengl::Texture::AttachmentParams{});
+  textureBufferBase->attachAsDepth(opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
   ASSERT_EQ(0, context_->getError());
   ASSERT_EQ(type, GL_TEXTURE);
 
-  textureBufferBase_->attachAsStencil(opengl::Texture::AttachmentParams{});
+  textureBufferBase->attachAsStencil(opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
   ASSERT_EQ(type, GL_TEXTURE);
@@ -205,12 +205,12 @@ TEST_F(TextureBufferBaseOGLTest, TextureAttach) {
   GLint internalFormat = 0;
   GLenum format = 0;
   GLenum textureType = 0;
-  textureBufferBase_->setTextureBufferProperties(textureID, GL_TEXTURE_2D);
-  ASSERT_TRUE(textureBufferBase_->getFormatDetails(TextureFormat::RGBA_UNorm8,
-                                                   TextureDesc::TextureUsageBits::Sampled,
-                                                   internalFormat,
-                                                   format,
-                                                   textureType));
+  textureBufferBase->setTextureBufferProperties(textureID, GL_TEXTURE_2D);
+  ASSERT_TRUE(textureBufferBase->getFormatDetails(TextureFormat::RGBA_UNorm8,
+                                                  TextureDesc::TextureUsageBits::Sampled,
+                                                  internalFormat,
+                                                  format,
+                                                  textureType));
 
   context_->texImage2D(GL_TEXTURE_2D,
                        0,
@@ -222,8 +222,8 @@ TEST_F(TextureBufferBaseOGLTest, TextureAttach) {
                        textureType,
                        nullptr);
 
-  textureBufferBase_->num_samples = 123;
-  textureBufferBase_->attachAsColor(0, opengl::Texture::AttachmentParams{});
+  textureBufferBase->numSamples = 123;
+  textureBufferBase->attachAsColor(0, opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
   ASSERT_EQ(0, context_->getError());
@@ -239,16 +239,16 @@ TEST_F(TextureBufferBaseOGLTest, TextureAttach) {
 //                               getNumMipLevels(),
 //
 TEST_F(TextureBufferBaseOGLTest, TextureMipmapGen) {
-  std::unique_ptr<TextureBufferBaseMock> textureBufferBase_, textureBufferBase2_;
-  textureBufferBase_ = std::make_unique<TextureBufferBaseMock>(*context_);
-  textureBufferBase_->setUsage(TextureDesc::TextureUsageBits::Sampled);
-  textureBufferBase2_ = std::make_unique<TextureBufferBaseMock>(*context_);
-  textureBufferBase2_->setUsage(TextureDesc::TextureUsageBits::Sampled);
+  std::unique_ptr<TextureBufferBaseMock> textureBufferBase, textureBufferBase2;
+  textureBufferBase = std::make_unique<TextureBufferBaseMock>(*context_);
+  textureBufferBase->setUsage(TextureDesc::TextureUsageBits::Sampled);
+  textureBufferBase2 = std::make_unique<TextureBufferBaseMock>(*context_);
+  textureBufferBase2->setUsage(TextureDesc::TextureUsageBits::Sampled);
 
   GLuint textureIDs[2];
   context_->genTextures(2, textureIDs);
-  textureBufferBase_->setTextureBufferProperties(textureIDs[0], GL_TEXTURE_2D);
-  textureBufferBase2_->setTextureBufferProperties(textureIDs[1], GL_TEXTURE_2D);
+  textureBufferBase->setTextureBufferProperties(textureIDs[0], GL_TEXTURE_2D);
+  textureBufferBase2->setTextureBufferProperties(textureIDs[1], GL_TEXTURE_2D);
 
   // Generate mipmap and correct query of initial count
   TextureDesc texDesc16 = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
@@ -266,23 +266,23 @@ TEST_F(TextureBufferBaseOGLTest, TextureMipmapGen) {
   int targetlevel = std::floor(log2(maxDim)) + 1;
 
   texDesc16.numMipLevels = targetlevel;
-  Result ret = textureBufferBase_->create(texDesc16, false);
+  Result ret = textureBufferBase->create(texDesc16, false);
   ASSERT_EQ(ret.code, Result::Code::Ok);
 
   igl::opengl::CommandQueue queue;
-  textureBufferBase_->generateMipmap(queue);
-  ASSERT_EQ(textureBufferBase_->getNumMipLevels(), targetlevel);
+  textureBufferBase->generateMipmap(queue);
+  ASSERT_EQ(textureBufferBase->getNumMipLevels(), targetlevel);
 
   // 1023x1023
   maxDim = std::max<size_t>(texDesc1023.width, texDesc1023.height);
   targetlevel = std::floor(log2(maxDim)) + 1;
 
   texDesc1023.numMipLevels = targetlevel;
-  ret = textureBufferBase2_->create(texDesc1023, false);
+  ret = textureBufferBase2->create(texDesc1023, false);
   ASSERT_EQ(ret.code, Result::Code::Ok);
 
-  textureBufferBase2_->generateMipmap(queue);
-  ASSERT_EQ(textureBufferBase2_->getNumMipLevels(), targetlevel);
+  textureBufferBase2->generateMipmap(queue);
+  ASSERT_EQ(textureBufferBase2->getNumMipLevels(), targetlevel);
 }
 
 } // namespace igl::tests

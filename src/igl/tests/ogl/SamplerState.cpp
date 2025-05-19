@@ -36,6 +36,7 @@ class SamplerStateOGLTest : public ::testing::Test {
     ASSERT_TRUE(context_ != nullptr);
   }
 
+ protected:
   std::shared_ptr<IDevice> device_;
   opengl::IContext* context_{};
 };

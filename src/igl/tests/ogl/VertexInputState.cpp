@@ -33,7 +33,7 @@ class VertexInputStateOGLTest : public ::testing::Test {
   void TearDown() override {}
 
   // Member variables
- public:
+ protected:
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
 };
@@ -48,10 +48,10 @@ TEST_F(VertexInputStateOGLTest, DefaultCreate) {
   Result ret;
   std::shared_ptr<IVertexInputState> vertexInputState;
 
-  VertexInputStateDesc inputDesc_;
-  inputDesc_.numAttributes = 0;
+  VertexInputStateDesc inputDesc;
+  inputDesc.numAttributes = 0;
 
-  vertexInputState = iglDev_->createVertexInputState(inputDesc_, &ret);
+  vertexInputState = iglDev_->createVertexInputState(inputDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(vertexInputState != nullptr);
 }
@@ -67,32 +67,32 @@ TEST_F(VertexInputStateOGLTest, TwoAttribOneBinding) {
   Result ret;
   std::shared_ptr<IVertexInputState> vertexInputState;
 
-  const char Unused1[] = "Unused1";
-  const size_t Unused1Index = 2;
-  const char Unused2[] = "Unused2";
-  const size_t Unused2Index = 3;
+  const char unused1[] = "Unused1";
+  const size_t unused1Index = 2;
+  const char unused2[] = "Unused2";
+  const size_t unused2Index = 3;
 
-  VertexInputStateDesc inputDesc_;
-  inputDesc_.attributes[0].format = VertexAttributeFormat::Float4;
-  inputDesc_.attributes[0].offset = 0;
-  inputDesc_.attributes[0].location = 0;
-  inputDesc_.attributes[0].bufferIndex = Unused1Index;
-  inputDesc_.attributes[0].name = Unused1;
-  inputDesc_.inputBindings[0].stride = sizeof(float) * 4;
+  VertexInputStateDesc inputDesc;
+  inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
+  inputDesc.attributes[0].offset = 0;
+  inputDesc.attributes[0].location = 0;
+  inputDesc.attributes[0].bufferIndex = unused1Index;
+  inputDesc.attributes[0].name = unused1;
+  inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
-  inputDesc_.attributes[1].format = VertexAttributeFormat::Float2;
-  inputDesc_.attributes[1].offset = 0;
-  inputDesc_.attributes[1].location = 1;
-  inputDesc_.attributes[1].bufferIndex = Unused2Index;
-  inputDesc_.attributes[1].name = Unused2;
-  inputDesc_.inputBindings[1].stride = sizeof(float) * 2;
+  inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
+  inputDesc.attributes[1].offset = 0;
+  inputDesc.attributes[1].location = 1;
+  inputDesc.attributes[1].bufferIndex = unused2Index;
+  inputDesc.attributes[1].name = unused2;
+  inputDesc.inputBindings[1].stride = sizeof(float) * 2;
 
   // numAttributes has to equal to bindings when using more than 1 buffer
   // the following are just for covering codes
-  inputDesc_.numAttributes = 2;
-  inputDesc_.numInputBindings = 1;
+  inputDesc.numAttributes = 2;
+  inputDesc.numInputBindings = 1;
 
-  vertexInputState = iglDev_->createVertexInputState(inputDesc_, &ret);
+  vertexInputState = iglDev_->createVertexInputState(inputDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::ArgumentInvalid);
   ASSERT_TRUE(vertexInputState == nullptr);
 }
@@ -108,37 +108,37 @@ TEST_F(VertexInputStateOGLTest, TwoAttribTwoBinding) {
   Result ret;
   std::shared_ptr<IVertexInputState> vertexInputState;
 
-  const char Unused1[] = "Unused1";
-  const size_t Unused1Index = 2;
-  const char Unused2[] = "Unused2";
-  const size_t Unused2Index = 3;
+  const char unused1[] = "Unused1";
+  const size_t unused1Index = 2;
+  const char unused2[] = "Unused2";
+  const size_t unused2Index = 3;
 
-  VertexInputStateDesc inputDesc_;
-  inputDesc_.attributes[0].format = VertexAttributeFormat::Float4;
-  inputDesc_.attributes[0].offset = 0;
-  inputDesc_.attributes[0].location = 0;
-  inputDesc_.attributes[0].bufferIndex = Unused1Index;
-  inputDesc_.attributes[0].name = Unused1;
-  inputDesc_.inputBindings[0].stride = sizeof(float) * 4;
+  VertexInputStateDesc inputDesc;
+  inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
+  inputDesc.attributes[0].offset = 0;
+  inputDesc.attributes[0].location = 0;
+  inputDesc.attributes[0].bufferIndex = unused1Index;
+  inputDesc.attributes[0].name = unused1;
+  inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
-  inputDesc_.attributes[1].format = VertexAttributeFormat::Float2;
-  inputDesc_.attributes[1].offset = 0;
-  inputDesc_.attributes[1].location = 1;
-  inputDesc_.attributes[1].bufferIndex = Unused2Index;
-  inputDesc_.attributes[1].name = Unused2;
-  inputDesc_.inputBindings[1].stride = sizeof(float) * 2;
+  inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
+  inputDesc.attributes[1].offset = 0;
+  inputDesc.attributes[1].location = 1;
+  inputDesc.attributes[1].bufferIndex = unused2Index;
+  inputDesc.attributes[1].name = unused2;
+  inputDesc.inputBindings[1].stride = sizeof(float) * 2;
 
   // numAttributes has to equal to bindings when using more than 1 buffer
-  inputDesc_.numAttributes = inputDesc_.numInputBindings = 2;
+  inputDesc.numAttributes = inputDesc.numInputBindings = 2;
 
-  vertexInputState = iglDev_->createVertexInputState(inputDesc_, &ret);
+  vertexInputState = iglDev_->createVertexInputState(inputDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(vertexInputState != nullptr);
 }
 
 // Test creating attributes with every data format
 TEST_F(VertexInputStateOGLTest, AllFormats0) {
-  const char SomeName[] = "Name";
+  const char someName[] = "Name";
 
   constexpr size_t sizes[] = {
       // float1 float2 etc
@@ -209,64 +209,64 @@ TEST_F(VertexInputStateOGLTest, AllFormats0) {
   // the next 24, and the last format on its own
   {
     // First 24 formats
-    VertexInputStateDesc inputDesc_;
+    VertexInputStateDesc inputDesc;
     for (int i = 0; i < IGL_VERTEX_ATTRIBUTES_MAX; i++) {
-      inputDesc_.attributes[i].format = static_cast<VertexAttributeFormat>(i);
-      inputDesc_.attributes[i].offset = 0;
-      inputDesc_.attributes[i].location = 0;
-      inputDesc_.attributes[i].bufferIndex = i;
-      inputDesc_.attributes[i].name = SomeName;
-      inputDesc_.inputBindings[i].stride = sizes[i];
+      inputDesc.attributes[i].format = static_cast<VertexAttributeFormat>(i);
+      inputDesc.attributes[i].offset = 0;
+      inputDesc.attributes[i].location = 0;
+      inputDesc.attributes[i].bufferIndex = i;
+      inputDesc.attributes[i].name = someName;
+      inputDesc.inputBindings[i].stride = sizes[i];
     }
 
     // numAttributes has to equal to bindings when using more than 1 buffer
-    inputDesc_.numAttributes = inputDesc_.numInputBindings = IGL_VERTEX_ATTRIBUTES_MAX;
+    inputDesc.numAttributes = inputDesc.numInputBindings = IGL_VERTEX_ATTRIBUTES_MAX;
 
     Result ret;
     std::shared_ptr<IVertexInputState> vertexInputState;
-    vertexInputState = iglDev_->createVertexInputState(inputDesc_, &ret);
+    vertexInputState = iglDev_->createVertexInputState(inputDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(vertexInputState != nullptr);
   }
   {
     // Next 24 formats
-    VertexInputStateDesc inputDesc_;
+    VertexInputStateDesc inputDesc;
     for (int i = 0; i < IGL_VERTEX_ATTRIBUTES_MAX; i++) {
-      inputDesc_.attributes[i].format =
+      inputDesc.attributes[i].format =
           static_cast<VertexAttributeFormat>(i + IGL_VERTEX_ATTRIBUTES_MAX);
-      inputDesc_.attributes[i].offset = 0;
-      inputDesc_.attributes[i].location = 0;
-      inputDesc_.attributes[i].bufferIndex = i;
-      inputDesc_.attributes[i].name = SomeName;
-      inputDesc_.inputBindings[i].stride = sizes[i + IGL_VERTEX_ATTRIBUTES_MAX];
+      inputDesc.attributes[i].offset = 0;
+      inputDesc.attributes[i].location = 0;
+      inputDesc.attributes[i].bufferIndex = i;
+      inputDesc.attributes[i].name = someName;
+      inputDesc.inputBindings[i].stride = sizes[i + IGL_VERTEX_ATTRIBUTES_MAX];
     }
 
     // numAttributes has to equal to bindings when using more than 1 buffer
-    inputDesc_.numAttributes = inputDesc_.numInputBindings = IGL_VERTEX_ATTRIBUTES_MAX;
+    inputDesc.numAttributes = inputDesc.numInputBindings = IGL_VERTEX_ATTRIBUTES_MAX;
 
     Result ret;
     std::shared_ptr<IVertexInputState> vertexInputState;
-    vertexInputState = iglDev_->createVertexInputState(inputDesc_, &ret);
+    vertexInputState = iglDev_->createVertexInputState(inputDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(vertexInputState != nullptr);
   }
   {
     // Last format
-    VertexInputStateDesc inputDesc_;
-    inputDesc_.attributes[0].format = VertexAttributeFormat::Int_2_10_10_10_REV;
-    inputDesc_.attributes[0].offset = 0;
-    inputDesc_.attributes[0].location = 0;
-    inputDesc_.attributes[0].bufferIndex = 0;
-    inputDesc_.attributes[0].name = SomeName;
-    inputDesc_.inputBindings[0].stride =
+    VertexInputStateDesc inputDesc;
+    inputDesc.attributes[0].format = VertexAttributeFormat::Int_2_10_10_10_REV;
+    inputDesc.attributes[0].offset = 0;
+    inputDesc.attributes[0].location = 0;
+    inputDesc.attributes[0].bufferIndex = 0;
+    inputDesc.attributes[0].name = someName;
+    inputDesc.inputBindings[0].stride =
         sizes[static_cast<size_t>(VertexAttributeFormat::Int_2_10_10_10_REV)];
 
     // numAttributes has to equal to bindings when using more than 1 buffer
-    inputDesc_.numAttributes = inputDesc_.numInputBindings = 1;
+    inputDesc.numAttributes = inputDesc.numInputBindings = 1;
 
     Result ret;
     std::shared_ptr<IVertexInputState> vertexInputState;
-    vertexInputState = iglDev_->createVertexInputState(inputDesc_, &ret);
+    vertexInputState = iglDev_->createVertexInputState(inputDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(vertexInputState != nullptr);
   }

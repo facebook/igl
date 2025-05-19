@@ -37,7 +37,7 @@ class ViewTextureTargetOGLTest : public ::testing::Test {
   void TearDown() override {}
 
   // Member variables
- public:
+ protected:
   opengl::IContext* context_{};
   std::shared_ptr<IDevice> device_;
 };

@@ -114,7 +114,7 @@ class PipelineStateOGLTest : public ::testing::Test {
   void TearDown() override {}
 
   // Member variables
- public:
+ protected:
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
   std::shared_ptr<ICommandBuffer> cmdBuf_;
@@ -182,8 +182,8 @@ TEST_F(PipelineStateOGLTest, ConvertOps) {
       std::make_pair(BlendOp::Max, GL_MAX),
   };
 
-  for (const auto& io_pair : inputAndExpectedBlendOp) {
-    ASSERT_EQ(igl::opengl::RenderPipelineState::convertBlendOp(io_pair.first), io_pair.second);
+  for (const auto& ioPair : inputAndExpectedBlendOp) {
+    ASSERT_EQ(igl::opengl::RenderPipelineState::convertBlendOp(ioPair.first), ioPair.second);
   }
 
   //----------------
@@ -212,8 +212,8 @@ TEST_F(PipelineStateOGLTest, ConvertOps) {
       std::make_pair(BlendFactor::OneMinusSrc1Alpha, GL_ONE),
   };
 
-  for (const auto& io_pair : inputAndExpectedBlendFactor) {
-    ASSERT_EQ(igl::opengl::RenderPipelineState::convertBlendFactor(io_pair.first), io_pair.second);
+  for (const auto& ioPair : inputAndExpectedBlendFactor) {
+    ASSERT_EQ(igl::opengl::RenderPipelineState::convertBlendFactor(ioPair.first), ioPair.second);
   }
 }
 

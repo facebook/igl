@@ -52,7 +52,7 @@ class TextureOGLTest : public ::testing::Test {
   void TearDown() override {}
 
   // Member variables
- public:
+ protected:
   opengl::IContext* context_{};
   std::shared_ptr<IDevice> device_;
 };
@@ -64,8 +64,8 @@ class TextureOGLTest : public ::testing::Test {
 // to the base class igl::opengl::Texture.
 //
 TEST_F(TextureOGLTest, TextureCreation) {
-  std::unique_ptr<igl::opengl::TextureTarget> textureTarget_;
-  std::unique_ptr<igl::opengl::TextureBuffer> textureBuffer_;
+  std::unique_ptr<igl::opengl::TextureTarget> textureTarget;
+  std::unique_ptr<igl::opengl::TextureBuffer> textureBuffer;
   Result ret;
   TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
                                            OFFSCREEN_TEX_WIDTH,
@@ -73,8 +73,8 @@ TEST_F(TextureOGLTest, TextureCreation) {
                                            TextureDesc::TextureUsageBits::Storage);
 
   { // Storage not supported by OGL Texture via TextureTarget API
-    textureTarget_ = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
-    ret = textureTarget_->create(texDesc, false);
+    textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
+    ret = textureTarget->create(texDesc, false);
     ASSERT_EQ(ret.code, Result::Code::Unsupported);
     Result::setOk(&ret);
   }
@@ -94,28 +94,28 @@ TEST_F(TextureOGLTest, TextureCreation) {
   texDesc.usage = TextureDesc::TextureUsageBits::Sampled;
 
   // Sampled and hasStorageAlready not supported in OGL Texture
-  textureBuffer_ = std::make_unique<igl::opengl::TextureBuffer>(*context_, texDesc.format);
-  ret = textureBuffer_->create(texDesc, true);
+  textureBuffer = std::make_unique<igl::opengl::TextureBuffer>(*context_, texDesc.format);
+  ret = textureBuffer->create(texDesc, true);
   ASSERT_EQ(ret.code, Result::Code::Unsupported);
 
   // Correct usage of TextureBuffer::create
-  textureBuffer_ = std::make_unique<igl::opengl::TextureBuffer>(*context_, texDesc.format);
-  ret = textureBuffer_->create(texDesc, false);
+  textureBuffer = std::make_unique<igl::opengl::TextureBuffer>(*context_, texDesc.format);
+  ret = textureBuffer->create(texDesc, false);
   ASSERT_EQ(ret.code, Result::Code::Ok);
 
   // Cannot create the texture again after it has already been created
-  ret = textureBuffer_->create(texDesc, false);
+  ret = textureBuffer->create(texDesc, false);
   ASSERT_EQ(ret.code, Result::Code::InvalidOperation);
 
   texDesc.usage = TextureDesc::TextureUsageBits::Attachment;
 
   // Correct usage of TextureTarget::create
-  textureTarget_ = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
-  ret = textureTarget_->create(texDesc, false);
+  textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
+  ret = textureTarget->create(texDesc, false);
   ASSERT_EQ(ret.code, Result::Code::Ok);
 
   // Cannot create the texture again after it has already been created
-  ret = textureTarget_->create(texDesc, false);
+  ret = textureTarget->create(texDesc, false);
   ASSERT_EQ(ret.code, Result::Code::InvalidOperation);
 }
 

@@ -40,7 +40,7 @@ class ContextOGLTest : public ::testing::Test {
 
   void TearDown() override {}
 
- public:
+ protected:
   opengl::IContext* context_{};
   std::shared_ptr<IDevice> device_;
 };

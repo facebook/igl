@@ -40,9 +40,9 @@ class HWDeviceOGLTest : public ::testing::Test {
     // Turn off debug break so unit tests can run
     setDebugBreakEnabled(false);
 
-    iglHWDev_ = createHWTestDevice();
+    iglHwDev_ = createHWTestDevice();
 
-    ASSERT_TRUE(iglHWDev_ != nullptr);
+    ASSERT_TRUE(iglHwDev_ != nullptr);
   }
 
   void TearDown() override {}
@@ -68,22 +68,22 @@ class HWDeviceOGLTest : public ::testing::Test {
   }
 
   // Member variables
- public:
-  std::shared_ptr<opengl::HWDevice> iglHWDev_;
+ protected:
+  std::shared_ptr<opengl::HWDevice> iglHwDev_;
 };
 
 /// This test ensures a device can be created when calling create()
 TEST_F(HWDeviceOGLTest, DeviceCreationSanityTest) {
   {
     Result result;
-    const std::unique_ptr<IDevice> device = iglHWDev_->create({}, &result);
+    const std::unique_ptr<IDevice> device = iglHwDev_->create({}, &result);
 
     // Ensure the result of the device creation is ok
     ASSERT_TRUE(result.isOk());
   }
   {
     Result result;
-    const std::unique_ptr<IDevice> device = iglHWDev_->create(&result);
+    const std::unique_ptr<IDevice> device = iglHwDev_->create(&result);
 
     // Ensure the result of the device creation is ok
     ASSERT_TRUE(result.isOk());

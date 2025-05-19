@@ -50,7 +50,7 @@ class DeviceOGLTest : public ::testing::Test {
   void TearDown() override {}
 
   // Member variables
- public:
+ protected:
   opengl::IContext* context_{};
   std::shared_ptr<IDevice> iglDev_;
 };
