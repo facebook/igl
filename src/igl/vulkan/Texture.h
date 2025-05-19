@@ -92,6 +92,7 @@ class Texture : public ITexture {
   /// @brief Creates the resource on the device given the properties in `desc`. This function should
   /// only be called by the `Device` class, from its `vulkan::Device::createTexture()`
   virtual Result create(const TextureDesc& desc);
+  virtual Result createView(const Texture& baseTexture, const TextureViewDesc& desc);
 };
 
 } // namespace igl::vulkan

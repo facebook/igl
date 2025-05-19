@@ -249,6 +249,115 @@ Result Texture::create(const TextureDesc& desc) {
   return Result();
 }
 
+Result Texture::createView(const Texture& baseTexture, const TextureViewDesc& desc) {
+  if (!IGL_DEBUG_VERIFY(baseTexture.texture_)) {
+    return Result(Result::Code::InvalidOperation, "Cannot create a view from an empty texture");
+  }
+
+  const VulkanTexture& vulkanTexture = *baseTexture.texture_;
+
+  desc_ = baseTexture.desc_;
+  desc_.numLayers = desc.numLayers;
+  desc_.numMipLevels = desc.numMipLevels;
+
+  const igl::TextureType type = desc_.type;
+  if (!IGL_DEBUG_VERIFY(type == TextureType::TwoD || type == TextureType::TwoDArray ||
+                        type == TextureType::Cube || type == TextureType::ThreeD)) {
+    IGL_DEBUG_ABORT("Only 2D, 2D array, 3D and cubemap base textures are supported");
+    return Result(Result::Code::Unimplemented);
+  }
+  if (!IGL_DEBUG_VERIFY(desc.type == TextureType::TwoD || desc.type == TextureType::ThreeD)) {
+    IGL_DEBUG_ABORT("Only 2D and 3D texture views are supported");
+    return Result(Result::Code::Unimplemented);
+  }
+
+  if (!desc.swizzle.identity()) {
+    IGL_DEBUG_ABORT("Only identity swizzle is supported (for now)");
+  }
+
+  if (!desc_.numMipLevels) {
+    IGL_DEBUG_ABORT("The number of mip levels specified must be greater than 0");
+    desc_.numMipLevels = 1;
+  }
+
+  const std::string debugNameImageView =
+      !desc_.debugName.empty() ? IGL_FORMAT("Image View: {}", desc.debugName.c_str()) : "";
+
+  // make a non-owning copy
+  VulkanImage image(vulkanTexture.image_);
+  image.isExternallyManaged_ = true;
+
+  auto aspectToVkAspectFlags = [](VkImageAspectFlags baseAspectFlags,
+                                  ImageAspectFlags flags) -> VkImageAspectFlags {
+    if (flags == ImageAspectBits_Invalid) {
+      // use the original flags from the base texture
+      return baseAspectFlags;
+    }
+    if (flags == ImageAspectBits_None) {
+      IGL_SOFT_ERROR(
+          "Image aspect None is not supported in this Vulkan version (requires Vulkan 1.3)");
+      return VK_IMAGE_ASPECT_NONE;
+    }
+    VkImageAspectFlags aspect = 0;
+    if (flags & ImageAspectBits_Color) {
+      aspect |= VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+    if (flags & ImageAspectBits_Depth) {
+      aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+    if (flags & ImageAspectBits_Stencil) {
+      aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+    if (flags & ImageAspectBits_Plane_0) {
+      aspect |= VK_IMAGE_ASPECT_PLANE_0_BIT;
+    }
+    if (flags & ImageAspectBits_Plane_1) {
+      aspect |= VK_IMAGE_ASPECT_PLANE_1_BIT;
+    }
+    if (flags & ImageAspectBits_Plane_2) {
+      aspect |= VK_IMAGE_ASPECT_PLANE_2_BIT;
+    }
+    return aspect;
+  };
+
+  auto textureTypeToVkImageViewType = [](TextureType type) -> VkImageViewType {
+    switch (type) {
+    case TextureType::TwoD:
+      return VK_IMAGE_VIEW_TYPE_2D;
+    case TextureType::ThreeD:
+      return VK_IMAGE_VIEW_TYPE_3D;
+    case TextureType::Cube:
+      return VK_IMAGE_VIEW_TYPE_CUBE;
+    case TextureType::TwoDArray:
+      return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    default:
+      IGL_DEBUG_ASSERT_NOT_REACHED();
+      return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+    }
+  };
+
+  VulkanImageView imageView = image.createImageView(
+      textureTypeToVkImageViewType(desc.type),
+      desc.format == TextureFormat::Invalid ? image.imageFormat_
+                                            : textureFormatToVkFormat(desc.format),
+      aspectToVkAspectFlags(vulkanTexture.imageView_.aspectMask_, desc.aspect),
+      desc.mipLevel,
+      desc.numMipLevels,
+      desc.layer,
+      desc.numLayers,
+      debugNameImageView.c_str());
+
+  if (!IGL_DEBUG_VERIFY(imageView.valid())) {
+    return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
+  }
+
+  const VulkanContext& ctx = device_.getVulkanContext();
+
+  texture_ = ctx.createTexture(std::move(image), std::move(imageView), desc.debugName.c_str());
+
+  return Result();
+}
+
 bool Texture::needsRepacking(const TextureRangeDesc& /*range*/, size_t bytesPerRow) const {
   // Vulkan textures MUST be aligned to a multiple of the texel size or, for compressed textures,
   // the texel block size.

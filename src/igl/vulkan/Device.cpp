@@ -187,12 +187,25 @@ std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> te
                                                     Result* IGL_NULLABLE outResult) const noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
-  Result::setResult(
-      outResult, Result::Code::Unimplemented, "Texture views are not (yet) implemented");
+  if (!IGL_DEBUG_VERIFY(texture)) {
+    Result::setResult(outResult,
+                      Result(Result::Code::ArgumentInvalid, "A base texture should be specified"));
+    return {};
+  }
 
-  return nullptr;
+  auto newTexture = std::make_shared<Texture>(const_cast<Device&>(*this), desc.format);
+
+  const Result res = newTexture->createView(static_cast<Texture&>(*texture), desc);
+
+  if (hasResourceTracker()) {
+    newTexture->initResourceTracker(getResourceTracker(), desc.debugName);
+  }
+
+  Result::setResult(outResult, res);
+
+  return res.isOk() ? newTexture : nullptr;
 }
 
 std::shared_ptr<IVertexInputState> Device::createVertexInputStateInternal(
