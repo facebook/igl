@@ -51,6 +51,7 @@
 
 namespace {
 
+[[maybe_unused]] const char* kValidationLayerName = "VK_LAYER_KHRONOS_validation";
 const char* kGfxReconstructLayerName = "VK_LAYER_LUNARG_gfxreconstruct";
 
 /*
@@ -575,6 +576,12 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
   auto instanceExtensions = extensions_.allEnabled(VulkanExtensions::ExtensionType::Instance);
 
   std::vector<const char*> layers;
+  // @fb-only
+#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
+  if (config_.enableValidation) {
+    layers.emplace_back(kValidationLayerName);
+  }
+#endif
   if (config_.enableGfxReconstruct) {
     layers.emplace_back(kGfxReconstructLayerName);
   }

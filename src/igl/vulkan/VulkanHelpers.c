@@ -16,8 +16,6 @@
 
 #include <assert.h>
 
-static const char* kDefaultValidationLayers[] = {"VK_LAYER_KHRONOS_validation"};
-
 const char* ivkGetVulkanResultString(VkResult result) {
 #define RESULT_CASE(res) \
   case res:              \
@@ -144,33 +142,20 @@ VkResult ivkCreateInstance(const struct VulkanFunctionTable* vt,
       .apiVersion = apiVersion,
   };
 
-  uint32_t layerCount = 0;
-  const char** layerNames = NULL;
-  if (numLayers == 0) {
-#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
-    layerCount = enableValidation ? IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0;
-    layerNames = enableValidation ? kDefaultValidationLayers : NULL;
-#endif
-  } else {
-    layerCount = numLayers;
-    layerNames = layers;
-  }
-
   const VkInstanceCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 #if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
       .pNext = enableValidation ? &features : NULL,
 #endif
       .pApplicationInfo = &appInfo,
-      .enabledLayerCount = layerCount,
-      .ppEnabledLayerNames = layerNames,
+      .enabledLayerCount = (uint32_t)numLayers,
+      .ppEnabledLayerNames = layers,
       .enabledExtensionCount = (uint32_t)numExtensions,
       .ppEnabledExtensionNames = extensions,
 #if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST
       .flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
 #endif
   };
-  (void)kDefaultValidationLayers; // maybe unused
 
   return vt->vkCreateInstance(&ci, NULL, outInstance);
 }
