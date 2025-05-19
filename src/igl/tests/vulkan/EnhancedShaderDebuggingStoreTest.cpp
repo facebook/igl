@@ -24,8 +24,8 @@
 #if IGL_DEBUG
 
 // Use a 1x1 Framebuffer for this test
-constexpr size_t OFFSCREEN_RT_WIDTH = 1;
-constexpr size_t OFFSCREEN_RT_HEIGHT = 1;
+constexpr size_t kOffscreenRtWidth = 1;
+constexpr size_t kOffscreenRtHeight = 1;
 
 namespace igl::tests {
 using namespace igl::vulkan;
@@ -48,16 +48,16 @@ class EnhancedShaderDebuggingStoreTest : public ::testing::Test {
 
     // Create an offscreen texture to render to
     const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                                   OFFSCREEN_RT_WIDTH,
-                                                   OFFSCREEN_RT_HEIGHT,
+                                                   kOffscreenRtWidth,
+                                                   kOffscreenRtHeight,
                                                    TextureDesc::TextureUsageBits::Sampled |
                                                        TextureDesc::TextureUsageBits::Attachment);
 
     auto depthFormat = TextureFormat::S8_UInt_Z24_UNorm;
 
     TextureDesc depthTexDesc = TextureDesc::new2D(depthFormat,
-                                                  OFFSCREEN_RT_WIDTH,
-                                                  OFFSCREEN_RT_HEIGHT,
+                                                  kOffscreenRtWidth,
+                                                  kOffscreenRtHeight,
                                                   TextureDesc::TextureUsageBits::Sampled |
                                                       TextureDesc::TextureUsageBits::Attachment);
     depthTexDesc.storage = ResourceStorage::Private;
@@ -175,7 +175,7 @@ class EnhancedShaderDebuggingStoreTest : public ::testing::Test {
   void TearDown() override {}
 
   // Member variables
- public:
+ protected:
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
   vulkan::Device* device_{};
@@ -274,8 +274,8 @@ TEST_F(EnhancedShaderDebuggingStoreTest, Pipeline) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(depthStencilState != nullptr);
 
-  CommandBufferDesc cbDesc_ = {};
-  std::shared_ptr<ICommandBuffer> cmdBuf = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
+  CommandBufferDesc cbDesc = {};
+  std::shared_ptr<ICommandBuffer> cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(cmdBuf != nullptr);
 
@@ -321,8 +321,8 @@ TEST_F(EnhancedShaderDebuggingStoreTest, InstallBufferBarrier) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(depthStencilState != nullptr);
 
-  CommandBufferDesc cbDesc_ = {};
-  std::shared_ptr<ICommandBuffer> cmdBuf = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
+  CommandBufferDesc cbDesc = {};
+  std::shared_ptr<ICommandBuffer> cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(cmdBuf != nullptr);
 

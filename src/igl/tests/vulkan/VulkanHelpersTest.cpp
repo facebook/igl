@@ -592,9 +592,9 @@ INSTANTIATE_TEST_SUITE_P(
 
 // ivkGetPipelineVertexInputStateCreateInfo_Empty ***********************************************
 
-class PipelineVertexInpusStateCreateInfoTest_Empty : public ::testing::Test {};
+class PipelineVertexInpusStateCreateInfoTestEmpty : public ::testing::Test {};
 
-TEST_F(PipelineVertexInpusStateCreateInfoTest_Empty, GetPipelineVertexInputStateCreateInfo_Empty) {
+TEST_F(PipelineVertexInpusStateCreateInfoTestEmpty, GetPipelineVertexInputStateCreateInfo_Empty) {
   const VkPipelineVertexInputStateCreateInfo pipelineVertexInputCreateInfo =
       ivkGetPipelineVertexInputStateCreateInfo_Empty();
 
@@ -707,9 +707,9 @@ INSTANTIATE_TEST_SUITE_P(
 
 // ivkGetPipelineMultisampleStateCreateInfo_Empty ***********************************************
 
-class GetPipelineMultisampleStateCreateInfo_Empty : public ::testing::Test {};
+class GetPipelineMultisampleStateCreateInfoEmpty : public ::testing::Test {};
 
-TEST_F(GetPipelineMultisampleStateCreateInfo_Empty, GetPipelineMultisampleStateCreateInfo_Empty) {
+TEST_F(GetPipelineMultisampleStateCreateInfoEmpty, GetPipelineMultisampleStateCreateInfo_Empty) {
   const VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo =
       ivkGetPipelineMultisampleStateCreateInfo_Empty();
 
@@ -726,9 +726,9 @@ TEST_F(GetPipelineMultisampleStateCreateInfo_Empty, GetPipelineMultisampleStateC
 
 // ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests *******************************
 
-class GetPipelineDepthStencilStateCreateInfo_NoDepthStencilTestsTest : public ::testing::Test {};
+class GetPipelineDepthStencilStateCreateInfoNoDepthStencilTestsTest : public ::testing::Test {};
 
-TEST_F(GetPipelineDepthStencilStateCreateInfo_NoDepthStencilTestsTest,
+TEST_F(GetPipelineDepthStencilStateCreateInfoNoDepthStencilTestsTest,
        GetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests) {
   const VkPipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo =
       ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests();
@@ -764,9 +764,9 @@ TEST_F(GetPipelineDepthStencilStateCreateInfo_NoDepthStencilTestsTest,
 
 // ivkGetPipelineColorBlendAttachmentState_NoBlending *******************************************
 
-class GetPipelineColorBlendAttachmentState_NoBlendingTest : public ::testing::Test {};
+class GetPipelineColorBlendAttachmentStateNoBlendingTest : public ::testing::Test {};
 
-TEST_F(GetPipelineColorBlendAttachmentState_NoBlendingTest,
+TEST_F(GetPipelineColorBlendAttachmentStateNoBlendingTest,
        GetPipelineColorBlendAttachmentState_NoBlending) {
   const VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState =
       ivkGetPipelineColorBlendAttachmentState_NoBlending();
@@ -913,10 +913,10 @@ INSTANTIATE_TEST_SUITE_P(
     });
 
 // ivkGetWriteDescriptorSet_ImageInfo *******************************
-class GetWriteDescriptorSet_ImageInfoTest
+class GetWriteDescriptorSetImageInfoTest
   : public ::testing::TestWithParam<std::tuple<uint32_t, VkDescriptorType, uint32_t>> {};
 
-TEST_P(GetWriteDescriptorSet_ImageInfoTest, GetWriteDescriptorSet_ImageInfo) {
+TEST_P(GetWriteDescriptorSetImageInfoTest, GetWriteDescriptorSet_ImageInfo) {
   constexpr VkDescriptorSet descSet = VK_NULL_HANDLE;
   const uint32_t dstBinding = std::get<0>(GetParam());
   const VkDescriptorType descType = std::get<1>(GetParam());
@@ -943,12 +943,12 @@ TEST_P(GetWriteDescriptorSet_ImageInfoTest, GetWriteDescriptorSet_ImageInfo) {
 
 INSTANTIATE_TEST_SUITE_P(
     AllCombinations,
-    GetWriteDescriptorSet_ImageInfoTest,
+    GetWriteDescriptorSetImageInfoTest,
     ::testing::Combine(::testing::Values(0, 1),
                        ::testing::Values(VK_DESCRIPTOR_TYPE_SAMPLER,
                                          VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE),
                        ::testing::Values(1, 2)),
-    [](const testing::TestParamInfo<GetWriteDescriptorSet_ImageInfoTest::ParamType>& info) {
+    [](const testing::TestParamInfo<GetWriteDescriptorSetImageInfoTest::ParamType>& info) {
       const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
                                std::to_string(std::get<1>(info.param)) + "_" +
                                std::to_string(std::get<2>(info.param));
@@ -956,10 +956,10 @@ INSTANTIATE_TEST_SUITE_P(
     });
 
 // ivkGetWriteDescriptorSet_BufferInfo *******************************
-class GetWriteDescriptorSet_BufferInfoTest
+class GetWriteDescriptorSetBufferInfoTest
   : public ::testing::TestWithParam<std::tuple<uint32_t, VkDescriptorType, uint32_t>> {};
 
-TEST_P(GetWriteDescriptorSet_BufferInfoTest, GetWriteDescriptorSet_BufferInfo) {
+TEST_P(GetWriteDescriptorSetBufferInfoTest, GetWriteDescriptorSet_BufferInfo) {
   constexpr VkDescriptorSet descSet = VK_NULL_HANDLE;
   const uint32_t dstBinding = std::get<0>(GetParam());
   const VkDescriptorType descType = std::get<1>(GetParam());
@@ -986,12 +986,12 @@ TEST_P(GetWriteDescriptorSet_BufferInfoTest, GetWriteDescriptorSet_BufferInfo) {
 
 INSTANTIATE_TEST_SUITE_P(
     AllCombinations,
-    GetWriteDescriptorSet_BufferInfoTest,
+    GetWriteDescriptorSetBufferInfoTest,
     ::testing::Combine(::testing::Values(0, 1),
                        ::testing::Values(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER),
                        ::testing::Values(1, 2)),
-    [](const testing::TestParamInfo<GetWriteDescriptorSet_BufferInfoTest::ParamType>& info) {
+    [](const testing::TestParamInfo<GetWriteDescriptorSetBufferInfoTest::ParamType>& info) {
       const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
                                std::to_string(std::get<1>(info.param)) + "_" +
                                std::to_string(std::get<2>(info.param));

@@ -42,7 +42,7 @@ class DeviceVulkanTest : public ::testing::Test {
   void TearDown() override {}
 
   // Member variables
- public:
+ protected:
   std::shared_ptr<IDevice> iglDev_;
 };
 
