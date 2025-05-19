@@ -110,6 +110,8 @@ VkResult ivkCreateInstance(const struct VulkanFunctionTable* vt,
                            uint32_t enableSynchronizationValidation,
                            size_t numExtensions,
                            const char** extensions,
+                           size_t numLayers,
+                           const char** layers,
                            VkInstance* outInstance) {
   // Validation Features not available on most Android devices
 #if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
@@ -142,16 +144,26 @@ VkResult ivkCreateInstance(const struct VulkanFunctionTable* vt,
       .apiVersion = apiVersion,
   };
 
+  uint32_t layerCount = 0;
+  const char** layerNames = NULL;
+  if (numLayers == 0) {
+#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
+    layerCount = enableValidation ? IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0;
+    layerNames = enableValidation ? kDefaultValidationLayers : NULL;
+#endif
+  } else {
+    layerCount = numLayers;
+    layerNames = layers;
+  }
+
   const VkInstanceCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 #if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
       .pNext = enableValidation ? &features : NULL,
 #endif
       .pApplicationInfo = &appInfo,
-#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
-      .enabledLayerCount = enableValidation ? IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0,
-      .ppEnabledLayerNames = enableValidation ? kDefaultValidationLayers : NULL,
-#endif
+      .enabledLayerCount = layerCount,
+      .ppEnabledLayerNames = layerNames,
       .enabledExtensionCount = (uint32_t)numExtensions,
       .ppEnabledExtensionNames = extensions,
 #if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST

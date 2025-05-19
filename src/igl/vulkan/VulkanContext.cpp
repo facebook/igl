@@ -581,6 +581,8 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
                          static_cast<uint32_t>(config_.enableSynchronizationValidation),
                          instanceExtensions.size(),
                          instanceExtensions.data(),
+                         0,
+                         nullptr,
                          &vkInstance_));
 
   IGL_DEBUG_ASSERT(creationErrorCode != VK_ERROR_LAYER_NOT_PRESENT,

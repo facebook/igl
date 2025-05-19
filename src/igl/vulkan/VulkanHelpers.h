@@ -52,6 +52,8 @@ VkResult ivkCreateInstance(const struct VulkanFunctionTable* vt,
                            uint32_t enableSynchronizationValidation,
                            size_t numExtensions,
                            const char** extensions,
+                           size_t numLayers,
+                           const char** layers,
                            VkInstance* outInstance);
 
 /// @brief Creates a Debug Utils Messenger if the VK_EXT_debug_utils extension is available and the
