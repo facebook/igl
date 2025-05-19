@@ -54,8 +54,8 @@ class TexturesRGBBaseTest : public ::testing::Test {
 
     // Create an offscreen texture to render to
     const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_SRGB,
-                                                   offscreenTexWidth,
-                                                   offscreenTexHeight,
+                                                   offscreenTexWidth_,
+                                                   offscreenTexHeight_,
                                                    TextureDesc::TextureUsageBits::Sampled |
                                                        TextureDesc::TextureUsageBits::Attachment);
 
@@ -163,7 +163,7 @@ class TexturesRGBBaseTest : public ::testing::Test {
 // Panther is external codename for Quest3s and Eureka is external codename for Quest3
 #if IGL_PLATFORM_LINUX_SWIFTSHADER || defined(PANTHER_PLATFORM) || defined(EUREKA_PLATFORM)
     if (iglDev_->getBackendType() == BackendType::OpenGL) {
-      kTolerance = 1; // Swiftshader and quest 3(s) opengl is not accurate enough.
+      kTolerance_ = 1; // Swiftshader and quest 3(s) opengl is not accurate enough.
     }
 #endif
   }
@@ -171,7 +171,7 @@ class TexturesRGBBaseTest : public ::testing::Test {
   void TearDown() override {}
 
   // Member variables
- public:
+ protected:
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
   std::shared_ptr<ICommandBuffer> cmdBuf_;
@@ -199,10 +199,10 @@ class TexturesRGBBaseTest : public ::testing::Test {
   // size texture, then you will have to either create a new offscreenTexture_
   // and the framebuffer object in your test, so know exactly what the end result
   // would be after sampling
-  size_t offscreenTexWidth = 2;
-  size_t offscreenTexHeight = 2;
+  size_t offscreenTexWidth_ = 2;
+  size_t offscreenTexHeight_ = 2;
 
-  uint8_t kTolerance = 0; // some platforms aren't perfect and need some tolerance
+  uint8_t kTolerance_ = 0; // some platforms aren't perfect and need some tolerance
 };
 
 class TexturesRGBSmallTest : public TexturesRGBBaseTest {
@@ -213,8 +213,8 @@ class TexturesRGBSmallTest : public TexturesRGBBaseTest {
 
 class TexturesRGBBigTest : public TexturesRGBBaseTest {
   void SetUp() override {
-    offscreenTexWidth = 4096;
-    offscreenTexHeight = 4096;
+    offscreenTexWidth_ = 4096;
+    offscreenTexHeight_ = 4096;
     TexturesRGBBaseTest::SetUp();
   }
 };
@@ -226,15 +226,15 @@ class TexturesRGBBigTest : public TexturesRGBBaseTest {
 TEST_F(TexturesRGBSmallTest, TextureisSRGB) {
   Result ret;
   const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_SRGB,
-                                                 offscreenTexWidth,
-                                                 offscreenTexHeight,
+                                                 offscreenTexWidth_,
+                                                 offscreenTexHeight_,
                                                  TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_TRUE(inputTexture_->getProperties().isSRGB());
 
   const TextureDesc texDesc2 = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                                  offscreenTexWidth,
-                                                  offscreenTexHeight,
+                                                  offscreenTexWidth_,
+                                                  offscreenTexHeight_,
                                                   TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_FALSE(!inputTexture_->getProperties().isSRGB());
@@ -254,14 +254,14 @@ TEST_F(TexturesRGBSmallTest, Passthrough) {
   // Create input texture and upload data
   //-------------------------------------
   const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_SRGB,
-                                                 offscreenTexWidth,
-                                                 offscreenTexHeight,
+                                                 offscreenTexWidth_,
+                                                 offscreenTexHeight_,
                                                  TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
 
-  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, offscreenTexWidth, offscreenTexHeight);
+  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, offscreenTexWidth_, offscreenTexHeight_);
 
   inputTexture_->upload(rangeDesc, data::texture::TEX_RGBA_2x2);
 
@@ -300,20 +300,20 @@ TEST_F(TexturesRGBSmallTest, Passthrough) {
   //----------------------
   // Read back framebuffer
   //----------------------
-  auto pixels = std::vector<uint32_t>(offscreenTexWidth * offscreenTexHeight);
+  auto pixels = std::vector<uint32_t>(offscreenTexWidth_ * offscreenTexHeight_);
 
   framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
 
   //--------------------------------
   // Verify against original texture
   //--------------------------------
-  for (size_t i = 0; i < offscreenTexWidth * offscreenTexHeight; i++) {
+  for (size_t i = 0; i < offscreenTexWidth_ * offscreenTexHeight_; i++) {
     const util::sRGBColor currentColor(pixels[i]);
     const util::sRGBColor testColor(data::texture::TEX_RGBA_2x2[i]);
-    ASSERT_LE(abs(currentColor.r - testColor.r), kTolerance);
-    ASSERT_LE(abs(currentColor.g - testColor.g), kTolerance);
-    ASSERT_LE(abs(currentColor.b - testColor.b), kTolerance);
-    ASSERT_LE(abs(currentColor.a - testColor.a), kTolerance);
+    ASSERT_LE(abs(currentColor.r - testColor.r), kTolerance_);
+    ASSERT_LE(abs(currentColor.g - testColor.g), kTolerance_);
+    ASSERT_LE(abs(currentColor.b - testColor.b), kTolerance_);
+    ASSERT_LE(abs(currentColor.a - testColor.a), kTolerance_);
   }
 }
 
@@ -325,18 +325,18 @@ TEST_F(TexturesRGBBigTest, Passthrough) {
   // Create input texture and upload data
   //-------------------------------------
   const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_SRGB,
-                                                 offscreenTexWidth,
-                                                 offscreenTexHeight,
+                                                 offscreenTexWidth_,
+                                                 offscreenTexHeight_,
                                                  TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
 
-  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, offscreenTexWidth, offscreenTexHeight);
+  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, offscreenTexWidth_, offscreenTexHeight_);
 
   const size_t kAllColorsCount = 256ul * 256ul * 256ul;
-  ASSERT_TRUE(kAllColorsCount == offscreenTexWidth * offscreenTexHeight);
-  std::vector<uint32_t> allColorsBuffer(offscreenTexWidth * offscreenTexHeight);
+  ASSERT_TRUE(kAllColorsCount == offscreenTexWidth_ * offscreenTexHeight_);
+  std::vector<uint32_t> allColorsBuffer(offscreenTexWidth_ * offscreenTexHeight_);
   size_t index = 0;
   for (size_t r = 0; r < 256ul; ++r) {
     for (size_t g = 0; g < 256ul; ++g) {
@@ -384,20 +384,20 @@ TEST_F(TexturesRGBBigTest, Passthrough) {
   //----------------------
   // Read back framebuffer
   //----------------------
-  auto pixels = std::vector<uint32_t>(offscreenTexWidth * offscreenTexHeight);
+  auto pixels = std::vector<uint32_t>(offscreenTexWidth_ * offscreenTexHeight_);
 
   framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
 
   //--------------------------------
   // Verify against original texture
   //--------------------------------
-  for (size_t i = 0; i < offscreenTexWidth * offscreenTexHeight; i++) {
+  for (size_t i = 0; i < offscreenTexWidth_ * offscreenTexHeight_; i++) {
     const util::sRGBColor currentColor(pixels[i]);
     const util::sRGBColor testColor(allColorsBuffer[i]);
-    ASSERT_LE(abs(currentColor.r - testColor.r), kTolerance);
-    ASSERT_LE(abs(currentColor.g - testColor.g), kTolerance);
-    ASSERT_LE(abs(currentColor.b - testColor.b), kTolerance);
-    ASSERT_LE(abs(currentColor.a - testColor.a), kTolerance);
+    ASSERT_LE(abs(currentColor.r - testColor.r), kTolerance_);
+    ASSERT_LE(abs(currentColor.g - testColor.g), kTolerance_);
+    ASSERT_LE(abs(currentColor.b - testColor.b), kTolerance_);
+    ASSERT_LE(abs(currentColor.a - testColor.a), kTolerance_);
   }
 }
 

@@ -24,8 +24,8 @@
 namespace igl::tests {
 
 // Use a 1x1 Framebuffer for this test
-constexpr size_t OFFSCREEN_RT_WIDTH = 1;
-constexpr size_t OFFSCREEN_RT_HEIGHT = 1;
+constexpr size_t kOffscreenRtWidth = 1;
+constexpr size_t kOffscreenRtHeight = 1;
 
 //
 // FramebufferTest
@@ -59,8 +59,8 @@ class FramebufferTest : public ::testing::Test {
 
     // Create an offscreen texture to render to
     const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                                   OFFSCREEN_RT_WIDTH,
-                                                   OFFSCREEN_RT_HEIGHT,
+                                                   kOffscreenRtWidth,
+                                                   kOffscreenRtHeight,
                                                    TextureDesc::TextureUsageBits::Sampled |
                                                        TextureDesc::TextureUsageBits::Attachment);
 
@@ -71,8 +71,8 @@ class FramebufferTest : public ::testing::Test {
     }
 
     TextureDesc depthTexDesc = TextureDesc::new2D(depthFormat,
-                                                  OFFSCREEN_RT_WIDTH,
-                                                  OFFSCREEN_RT_HEIGHT,
+                                                  kOffscreenRtWidth,
+                                                  kOffscreenRtHeight,
                                                   TextureDesc::TextureUsageBits::Sampled |
                                                       TextureDesc::TextureUsageBits::Attachment);
     depthTexDesc.storage = ResourceStorage::Private;
@@ -192,7 +192,7 @@ class FramebufferTest : public ::testing::Test {
   void TearDown() override {}
 
   // Member variables
- public:
+ protected:
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
   std::shared_ptr<ICommandBuffer> cmdBuf_;
@@ -230,7 +230,7 @@ TEST_F(FramebufferTest, Clear) {
   DepthStencilStateDesc desc;
   desc.isDepthWriteEnabled = true;
 
-  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_RT_WIDTH, OFFSCREEN_RT_HEIGHT);
+  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenRtWidth, kOffscreenRtHeight);
 
   //----------------
   // Create Pipeline
@@ -265,9 +265,9 @@ TEST_F(FramebufferTest, Clear) {
   //----------------------
   // Read back framebuffer
   //----------------------
-  auto pixels = std::vector<uint32_t>(OFFSCREEN_RT_WIDTH * OFFSCREEN_RT_WIDTH);
-  auto pixels_depth = std::vector<float>(OFFSCREEN_RT_WIDTH * OFFSCREEN_RT_WIDTH);
-  auto pixels_stencil = std::vector<uint8_t>(OFFSCREEN_RT_WIDTH * OFFSCREEN_RT_WIDTH);
+  auto pixels = std::vector<uint32_t>(kOffscreenRtWidth * kOffscreenRtWidth);
+  auto pixelsDepth = std::vector<float>(kOffscreenRtWidth * kOffscreenRtWidth);
+  auto pixelsStencil = std::vector<uint8_t>(kOffscreenRtWidth * kOffscreenRtWidth);
 
   framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
   ASSERT_EQ(pixels[0], 0x80808080);
@@ -276,13 +276,13 @@ TEST_F(FramebufferTest, Clear) {
   // TODO: copyBytesDepthAttachment is not functioning property under Metal/Vulkan
   // due to unimplemented blitting
   // Refer to igl/metal/Framebuffer.mm
-  framebuffer_->copyBytesDepthAttachment(*cmdQueue_, pixels_depth.data(), rangeDesc);
+  framebuffer_->copyBytesDepthAttachment(*cmdQueue_, pixelsDepth.data(), rangeDesc);
   // ASSERT_EQ(pixels_depth[0], 0x80808080);
 
   // TODO: copyBytesStencilAttachment is not functioning property under Metal/Vulkan
   // due to unimplemented blitting
   // Refer to igl/metal/Framebuffer.mm
-  framebuffer_->copyBytesStencilAttachment(*cmdQueue_, pixels_stencil.data(), rangeDesc);
+  framebuffer_->copyBytesStencilAttachment(*cmdQueue_, pixelsStencil.data(), rangeDesc);
   // ASSERT_EQ(pixels_stencil[0], 0x80808080);
 #endif
 
@@ -320,7 +320,7 @@ TEST_F(FramebufferTest, Clear) {
   //----------------------
   // Read back framebuffer
   //----------------------
-  pixels = std::vector<uint32_t>(OFFSCREEN_RT_WIDTH * OFFSCREEN_RT_WIDTH);
+  pixels = std::vector<uint32_t>(kOffscreenRtWidth * kOffscreenRtWidth);
 
   framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
   ASSERT_EQ(pixels[0], 0);
@@ -329,13 +329,13 @@ TEST_F(FramebufferTest, Clear) {
   // TODO: copyBytesDepthAttachment is not functioning property under Metal/Vulkan
   // due to unimplemented blitting
   // Refer to igl/metal/Framebuffer.mm
-  framebuffer_->copyBytesDepthAttachment(*cmdQueue_, pixels_depth.data(), rangeDesc);
+  framebuffer_->copyBytesDepthAttachment(*cmdQueue_, pixelsDepth.data(), rangeDesc);
   // ASSERT_EQ(pixels_depth[0], 0);
 
   // TODO: copyBytesStencilAttachment is not functioning property under Metal/Vulkan
   // due to unimplemented blitting
   // Refer to igl/metal/Framebuffer.mm
-  framebuffer_->copyBytesStencilAttachment(*cmdQueue_, pixels_stencil.data(), rangeDesc);
+  framebuffer_->copyBytesStencilAttachment(*cmdQueue_, pixelsStencil.data(), rangeDesc);
   // ASSERT_EQ(pixels_stencil[0], 0);
 #endif
 
@@ -359,7 +359,7 @@ TEST_F(FramebufferTest, Clear) {
   //----------------------
   // Read back framebuffer
   //----------------------
-  pixels = std::vector<uint32_t>(OFFSCREEN_RT_WIDTH * OFFSCREEN_RT_WIDTH);
+  pixels = std::vector<uint32_t>(kOffscreenRtWidth * kOffscreenRtWidth);
 
   framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
   ASSERT_EQ(pixels[0], 0x80808080);
@@ -401,8 +401,8 @@ TEST_F(FramebufferTest, blitFramebufferColor) {
     // Create an offscreen texture to render to
     //-----------------------------------------
     const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                                   OFFSCREEN_RT_WIDTH,
-                                                   OFFSCREEN_RT_HEIGHT,
+                                                   kOffscreenRtWidth,
+                                                   kOffscreenRtHeight,
                                                    TextureDesc::TextureUsageBits::Sampled |
                                                        TextureDesc::TextureUsageBits::Attachment);
 
@@ -424,7 +424,7 @@ TEST_F(FramebufferTest, blitFramebufferColor) {
     //---------------------------------
     // Clear FB to {0.5, 0.5, 0.5, 0.5}
     //---------------------------------
-    const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_RT_WIDTH, OFFSCREEN_RT_HEIGHT);
+    const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenRtWidth, kOffscreenRtHeight);
 
     cmdBuf_ = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -442,7 +442,7 @@ TEST_F(FramebufferTest, blitFramebufferColor) {
     //----------------------
     // Read back framebuffer
     //----------------------
-    auto pixels = std::vector<uint32_t>(OFFSCREEN_RT_WIDTH * OFFSCREEN_RT_WIDTH);
+    auto pixels = std::vector<uint32_t>(kOffscreenRtWidth * kOffscreenRtWidth);
 
     framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
     ASSERT_EQ(pixels[0], 0x80808080);
@@ -466,7 +466,7 @@ TEST_F(FramebufferTest, blitFramebufferColor) {
     //-----------------------
     // Read back framebuffer2
     //-----------------------
-    auto pixels2 = std::vector<uint32_t>(OFFSCREEN_RT_WIDTH * OFFSCREEN_RT_WIDTH);
+    auto pixels2 = std::vector<uint32_t>(kOffscreenRtWidth * kOffscreenRtWidth);
 
     framebuffer2->copyBytesColorAttachment(*cmdQueue_, 0, pixels2.data(), rangeDesc);
     ASSERT_EQ(pixels2[0], 0);
@@ -479,13 +479,13 @@ TEST_F(FramebufferTest, blitFramebufferColor) {
       platformDevice->blitFramebuffer(framebuffer_,
                                       0,
                                       0,
-                                      OFFSCREEN_RT_WIDTH,
-                                      OFFSCREEN_RT_WIDTH,
+                                      kOffscreenRtWidth,
+                                      kOffscreenRtWidth,
                                       framebuffer2,
                                       0,
                                       0,
-                                      OFFSCREEN_RT_WIDTH,
-                                      OFFSCREEN_RT_WIDTH,
+                                      kOffscreenRtWidth,
+                                      kOffscreenRtWidth,
                                       GL_COLOR_BUFFER_BIT,
                                       &ret);
       ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -561,8 +561,8 @@ TEST_F(FramebufferTest, DrawableBindCount) {
 
   // Create another texture
   const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                                 OFFSCREEN_RT_WIDTH,
-                                                 OFFSCREEN_RT_HEIGHT,
+                                                 kOffscreenRtWidth,
+                                                 kOffscreenRtHeight,
                                                  TextureDesc::TextureUsageBits::Sampled |
                                                      TextureDesc::TextureUsageBits::Attachment);
 

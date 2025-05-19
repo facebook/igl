@@ -34,9 +34,9 @@
 
 namespace igl::tests {
 
-const auto quarterPixel = (float)(0.5 / OFFSCREEN_RT_WIDTH);
-const float backgroundColor = 0.501f;
-const uint32_t backgroundColorHex = 0x80808080;
+const auto kQuarterPixel = (float)(0.5 / OFFSCREEN_RT_WIDTH);
+const float kBackgroundColor = 0.501f;
+const uint32_t kBackgroundColorHex = 0x80808080;
 
 /**
  * @brief RenderCommandEncoderTest is a test fixture for all the tests in this file.
@@ -104,7 +104,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
     renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
     renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
     renderPass_.colorAttachments[0].clearColor = {
-        backgroundColor, backgroundColor, backgroundColor, backgroundColor};
+        kBackgroundColor, kBackgroundColor, kBackgroundColor, kBackgroundColor};
 
     renderPass_.depthAttachment.loadAction = LoadAction::Clear;
     renderPass_.depthAttachment.storeAction = StoreAction::Store;
@@ -152,7 +152,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
     // Initialize Render Pipeline Descriptor, but leave the creation
     // to the individual tests in case further customization is required.
     // It cannot be `const` here as we mutate the desc later.
-    RenderPipelineDesc renderPipelineDesc_ = {
+    RenderPipelineDesc renderPipelineDesc = {
         .vertexInputState = vertexInputState_,
         .shaderStages = shaderStages_,
         .targetDesc =
@@ -175,26 +175,26 @@ class RenderCommandEncoderTest : public ::testing::Test {
     const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
     texture_->upload(rangeDesc, data::texture::TEX_RGBA_GRAY_4x4);
 
-    auto createPipeline = [&renderPipelineDesc_, &ret, this](
+    auto createPipeline = [&renderPipelineDesc, &ret, this](
                               PrimitiveType topology) -> std::shared_ptr<IRenderPipelineState> {
-      renderPipelineDesc_.topology = topology;
-      return iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
+      renderPipelineDesc.topology = topology;
+      return iglDev_->createRenderPipeline(renderPipelineDesc, &ret);
     };
-    renderPipelineState_Point_ = createPipeline(PrimitiveType::Point);
+    renderPipelineStatePoint_ = createPipeline(PrimitiveType::Point);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
-    ASSERT_TRUE(renderPipelineState_Point_ != nullptr);
-    renderPipelineState_Line_ = createPipeline(PrimitiveType::Line);
+    ASSERT_TRUE(renderPipelineStatePoint_ != nullptr);
+    renderPipelineStateLine_ = createPipeline(PrimitiveType::Line);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
-    ASSERT_TRUE(renderPipelineState_Line_ != nullptr);
-    renderPipelineState_LineStrip_ = createPipeline(PrimitiveType::LineStrip);
+    ASSERT_TRUE(renderPipelineStateLine_ != nullptr);
+    renderPipelineStateLineStrip_ = createPipeline(PrimitiveType::LineStrip);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
-    ASSERT_TRUE(renderPipelineState_LineStrip_ != nullptr);
-    renderPipelineState_Triangle_ = createPipeline(PrimitiveType::Triangle);
+    ASSERT_TRUE(renderPipelineStateLineStrip_ != nullptr);
+    renderPipelineStateTriangle_ = createPipeline(PrimitiveType::Triangle);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
-    ASSERT_TRUE(renderPipelineState_Triangle_ != nullptr);
-    renderPipelineState_TriangleStrip_ = createPipeline(PrimitiveType::TriangleStrip);
+    ASSERT_TRUE(renderPipelineStateTriangle_ != nullptr);
+    renderPipelineStateTriangleStrip_ = createPipeline(PrimitiveType::TriangleStrip);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
-    ASSERT_TRUE(renderPipelineState_TriangleStrip_ != nullptr);
+    ASSERT_TRUE(renderPipelineStateTriangleStrip_ != nullptr);
 
     depthStencilState_ = iglDev_->createDepthStencilState({}, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -342,7 +342,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
 
   void TearDown() override {}
 
- public:
+ protected:
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
 
@@ -361,11 +361,11 @@ class RenderCommandEncoderTest : public ::testing::Test {
 
   std::shared_ptr<ITexture> texture_;
 
-  std::shared_ptr<IRenderPipelineState> renderPipelineState_Point_;
-  std::shared_ptr<IRenderPipelineState> renderPipelineState_Line_;
-  std::shared_ptr<IRenderPipelineState> renderPipelineState_LineStrip_;
-  std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
-  std::shared_ptr<IRenderPipelineState> renderPipelineState_TriangleStrip_;
+  std::shared_ptr<IRenderPipelineState> renderPipelineStatePoint_;
+  std::shared_ptr<IRenderPipelineState> renderPipelineStateLine_;
+  std::shared_ptr<IRenderPipelineState> renderPipelineStateLineStrip_;
+  std::shared_ptr<IRenderPipelineState> renderPipelineStateTriangle_;
+  std::shared_ptr<IRenderPipelineState> renderPipelineStateTriangleStrip_;
   std::shared_ptr<IDepthStencilState> depthStencilState_;
   Holder<BindGroupTextureHandle> bindGroupTexture_;
 
@@ -377,22 +377,22 @@ class RenderCommandEncoderTest : public ::testing::Test {
 TEST_F(RenderCommandEncoderTest, shouldDrawAPoint) {
   initializeBuffers(
       // clang-format off
-      { quarterPixel, quarterPixel, 0.0f, 1.0f },
+      { kQuarterPixel, kQuarterPixel, 0.0f, 1.0f },
       { 0.5, 0.5 } // clang-format on
   );
 
   encodeAndSubmit([this](const std::unique_ptr<IRenderCommandEncoder>& encoder) {
-    encoder->bindRenderPipelineState(renderPipelineState_Point_);
+    encoder->bindRenderPipelineState(renderPipelineStatePoint_);
     encoder->draw(1);
   });
 
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
-    backgroundColorHex, backgroundColorHex, grayColor,          backgroundColorHex,
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, grayColor,          kBackgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
   };
   // clang-format on
 
@@ -402,13 +402,13 @@ TEST_F(RenderCommandEncoderTest, shouldDrawAPoint) {
 TEST_F(RenderCommandEncoderTest, shouldDrawAPointNewBindTexture) {
   initializeBuffers(
       // clang-format off
-      { quarterPixel, quarterPixel, 0.0f, 1.0f },
+      { kQuarterPixel, kQuarterPixel, 0.0f, 1.0f },
       { 0.5, 0.5 } // clang-format on
   );
 
   encodeAndSubmit(
       [this](const std::unique_ptr<IRenderCommandEncoder>& encoder) {
-        encoder->bindRenderPipelineState(renderPipelineState_Point_);
+        encoder->bindRenderPipelineState(renderPipelineStatePoint_);
         encoder->draw(1);
       },
       false,
@@ -417,10 +417,10 @@ TEST_F(RenderCommandEncoderTest, shouldDrawAPointNewBindTexture) {
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
-    backgroundColorHex, backgroundColorHex, grayColor,          backgroundColorHex,
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, grayColor,          kBackgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
   };
   // clang-format on
 
@@ -431,8 +431,8 @@ TEST_F(RenderCommandEncoderTest, shouldDrawALine) {
   initializeBuffers(
       // clang-format off
       {
-        -1.0f - quarterPixel, -1.0f + quarterPixel, 0.0f, 1.0f,
-         1.0f + quarterPixel, -1.0f + quarterPixel, 0.0f, 1.0f,
+        -1.0f - kQuarterPixel, -1.0f + kQuarterPixel, 0.0f, 1.0f,
+         1.0f + kQuarterPixel, -1.0f + kQuarterPixel, 0.0f, 1.0f,
       },
       {
         0.0f, 0.0f,
@@ -441,16 +441,16 @@ TEST_F(RenderCommandEncoderTest, shouldDrawALine) {
   );
 
   encodeAndSubmit([this](const std::unique_ptr<IRenderCommandEncoder>& encoder) {
-    encoder->bindRenderPipelineState(renderPipelineState_Line_);
+    encoder->bindRenderPipelineState(renderPipelineStateLine_);
     encoder->draw(2);
   });
 
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
     grayColor,          grayColor,          grayColor,          grayColor,
   };
   // clang-format on
@@ -462,10 +462,10 @@ TEST_F(RenderCommandEncoderTest, shouldDrawLineStrip) {
   initializeBuffers(
       // clang-format off
       {
-        -1.0f - quarterPixel, -1.0f + quarterPixel, 0.0f, 1.0f,
-         1.0f + quarterPixel, -1.0f + quarterPixel, 0.0f, 1.0f,
-         1.0f - quarterPixel, -1.0f - quarterPixel, 0.0f, 1.0f,
-         1.0f - quarterPixel,  1.0f + quarterPixel, 0.0f, 1.0f,
+        -1.0f - kQuarterPixel, -1.0f + kQuarterPixel, 0.0f, 1.0f,
+         1.0f + kQuarterPixel, -1.0f + kQuarterPixel, 0.0f, 1.0f,
+         1.0f - kQuarterPixel, -1.0f - kQuarterPixel, 0.0f, 1.0f,
+         1.0f - kQuarterPixel,  1.0f + kQuarterPixel, 0.0f, 1.0f,
       },
       {
         0.0f, 0.0f,
@@ -476,16 +476,16 @@ TEST_F(RenderCommandEncoderTest, shouldDrawLineStrip) {
   );
 
   encodeAndSubmit([this](const std::unique_ptr<IRenderCommandEncoder>& encoder) {
-    encoder->bindRenderPipelineState(renderPipelineState_LineStrip_);
+    encoder->bindRenderPipelineState(renderPipelineStateLineStrip_);
     encoder->draw(4);
   });
 
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
     grayColor,          grayColor,          grayColor,          grayColor,
   };
   // clang-format on
@@ -501,9 +501,9 @@ TEST_F(RenderCommandEncoderTest, drawIndexedFirstIndex) {
   initializeBuffers(
       // clang-format off
       {
-        -1.0f - quarterPixel, -1.0f,                0.0f, 1.0f,
+        -1.0f - kQuarterPixel, -1.0f,                0.0f, 1.0f,
          1.0f,                -1.0f,                0.0f, 1.0f,
-         1.0f,                 1.0f + quarterPixel, 0.0f, 1.0f,
+         1.0f,                 1.0f + kQuarterPixel, 0.0f, 1.0f,
       },
       {
         0.0f, 0.0f,
@@ -518,16 +518,16 @@ TEST_F(RenderCommandEncoderTest, drawIndexedFirstIndex) {
   ASSERT_TRUE(ib_ != nullptr);
 
   encodeAndSubmit([this](const std::unique_ptr<IRenderCommandEncoder>& encoder) {
-    encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
+    encoder->bindRenderPipelineState(renderPipelineStateTriangle_);
     encoder->drawIndexed(3, 1, 3); // skip the first 3 dummy indices
   });
 
   const auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
   // clang-format off
   const std::vector<uint32_t> expectedPixels {
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
-    backgroundColorHex, backgroundColorHex, grayColor,          grayColor,
-    backgroundColorHex, grayColor,          grayColor,          grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, grayColor,          grayColor,
+    kBackgroundColorHex, grayColor,          grayColor,          grayColor,
     grayColor,          grayColor,          grayColor,          grayColor,
   };
   // clang-format on
@@ -543,9 +543,9 @@ TEST_F(RenderCommandEncoderTest, drawIndexed8Bit) {
   initializeBuffers(
       // clang-format off
       {
-        -1.0f - quarterPixel, -1.0f,                0.0f, 1.0f,
+        -1.0f - kQuarterPixel, -1.0f,                0.0f, 1.0f,
          1.0f,                -1.0f,                0.0f, 1.0f,
-         1.0f,                 1.0f + quarterPixel, 0.0f, 1.0f,
+         1.0f,                 1.0f + kQuarterPixel, 0.0f, 1.0f,
       },
       {
         0.0f, 0.0f,
@@ -558,7 +558,7 @@ TEST_F(RenderCommandEncoderTest, drawIndexed8Bit) {
   ASSERT_TRUE(ib_ != nullptr);
 
   encodeAndSubmit([this](const std::unique_ptr<IRenderCommandEncoder>& encoder) {
-    encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
+    encoder->bindRenderPipelineState(renderPipelineStateTriangle_);
     encoder->bindIndexBuffer(*ib_, IndexFormat::UInt8);
     encoder->drawIndexed(3);
   });
@@ -566,9 +566,9 @@ TEST_F(RenderCommandEncoderTest, drawIndexed8Bit) {
   const auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
   // clang-format off
   const std::vector<uint32_t> expectedPixels {
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
-    backgroundColorHex, backgroundColorHex, grayColor,          grayColor,
-    backgroundColorHex, grayColor,          grayColor,          grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, grayColor,          grayColor,
+    kBackgroundColorHex, grayColor,          grayColor,          grayColor,
     grayColor,          grayColor,          grayColor,          grayColor,
   };
   // clang-format on
@@ -584,9 +584,9 @@ TEST_F(RenderCommandEncoderTest, drawInstanced) {
   initializeBuffers(
       // clang-format off
       {
-        -1.0f - quarterPixel, -1.0f,                0.0f, 1.0f,
+        -1.0f - kQuarterPixel, -1.0f,                0.0f, 1.0f,
          1.0f,                -1.0f,                0.0f, 1.0f,
-         1.0f,                 1.0f + quarterPixel, 0.0f, 1.0f,
+         1.0f,                 1.0f + kQuarterPixel, 0.0f, 1.0f,
       },
       {
         0.0f, 0.0f,
@@ -601,7 +601,7 @@ TEST_F(RenderCommandEncoderTest, drawInstanced) {
   ASSERT_TRUE(ib_ != nullptr);
 
   encodeAndSubmit([this](const std::unique_ptr<IRenderCommandEncoder>& encoder) {
-    encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
+    encoder->bindRenderPipelineState(renderPipelineStateTriangle_);
     // draw 2 indentical instances, one on top of another; this will trigger drawElementsInstanced()
     // in OpenGL
     encoder->drawIndexed(3, 2);
@@ -610,9 +610,9 @@ TEST_F(RenderCommandEncoderTest, drawInstanced) {
   const auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
   // clang-format off
   const std::vector<uint32_t> expectedPixels {
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
-    backgroundColorHex, backgroundColorHex, grayColor,          grayColor,
-    backgroundColorHex, grayColor,          grayColor,          grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, grayColor,          grayColor,
+    kBackgroundColorHex, grayColor,          grayColor,          grayColor,
     grayColor,          grayColor,          grayColor,          grayColor,
   };
   // clang-format on
@@ -624,9 +624,9 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangle) {
   initializeBuffers(
       // clang-format off
       {
-        -1.0f - quarterPixel, -1.0f,                0.0f, 1.0f,
+        -1.0f - kQuarterPixel, -1.0f,                0.0f, 1.0f,
          1.0f,                -1.0f,                0.0f, 1.0f,
-         1.0f,                 1.0f + quarterPixel, 0.0f, 1.0f,
+         1.0f,                 1.0f + kQuarterPixel, 0.0f, 1.0f,
       },
       {
         0.0f, 0.0f,
@@ -636,16 +636,16 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangle) {
   );
 
   encodeAndSubmit([this](const std::unique_ptr<IRenderCommandEncoder>& encoder) {
-    encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
+    encoder->bindRenderPipelineState(renderPipelineStateTriangle_);
     encoder->draw(3);
   });
 
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
-    backgroundColorHex, backgroundColorHex, grayColor,          grayColor,
-    backgroundColorHex, grayColor,          grayColor,          grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, grayColor,          grayColor,
+    kBackgroundColorHex, grayColor,          grayColor,          grayColor,
     grayColor,          grayColor,          grayColor,          grayColor,
   };
 
@@ -671,7 +671,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStrip) {
 
   encodeAndSubmit([this](const std::unique_ptr<IRenderCommandEncoder>& encoder) {
     encoder->insertDebugEventLabel("Rendering a triangle strip...");
-    encoder->bindRenderPipelineState(renderPipelineState_TriangleStrip_);
+    encoder->bindRenderPipelineState(renderPipelineStateTriangleStrip_);
     encoder->draw(4);
   });
 
@@ -735,7 +735,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStripCopyTextureToBuffer) {
   encoder->bindScissorRect({0, 0, (uint32_t)OFFSCREEN_RT_WIDTH, (uint32_t)OFFSCREEN_RT_HEIGHT});
 
   encoder->insertDebugEventLabel("Rendering a triangle strip...");
-  encoder->bindRenderPipelineState(renderPipelineState_TriangleStrip_);
+  encoder->bindRenderPipelineState(renderPipelineStateTriangleStrip_);
   encoder->draw(4);
 
   encoder->endEncoding();
@@ -775,21 +775,21 @@ TEST_F(RenderCommandEncoderTest, shouldNotDraw) {
   );
 
   encodeAndSubmit([this](const std::unique_ptr<IRenderCommandEncoder>& encoder) {
-    encoder->bindRenderPipelineState(renderPipelineState_Point_);
+    encoder->bindRenderPipelineState(renderPipelineStatePoint_);
     encoder->draw(0);
-    encoder->bindRenderPipelineState(renderPipelineState_Line_);
+    encoder->bindRenderPipelineState(renderPipelineStateLine_);
     encoder->draw(0);
-    encoder->bindRenderPipelineState(renderPipelineState_LineStrip_);
+    encoder->bindRenderPipelineState(renderPipelineStateLineStrip_);
     encoder->draw(0);
-    encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
+    encoder->bindRenderPipelineState(renderPipelineStateTriangle_);
     encoder->draw(0);
-    encoder->bindRenderPipelineState(renderPipelineState_TriangleStrip_);
+    encoder->bindRenderPipelineState(renderPipelineStateTriangleStrip_);
     encoder->draw(0);
   });
 
   verifyFrameBuffer([](const std::vector<uint32_t>& pixels) {
     for (const auto& pixel : pixels) {
-      ASSERT_EQ(pixel, backgroundColorHex);
+      ASSERT_EQ(pixel, kBackgroundColorHex);
     }
   });
 }
@@ -806,9 +806,9 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangleBindGroup) {
   initializeBuffers(
       // clang-format off
       {
-        -1.0f - quarterPixel, -1.0f,                0.0f, 1.0f,
+        -1.0f - kQuarterPixel, -1.0f,                0.0f, 1.0f,
          1.0f,                -1.0f,                0.0f, 1.0f,
-         1.0f,                 1.0f + quarterPixel, 0.0f, 1.0f,
+         1.0f,                 1.0f + kQuarterPixel, 0.0f, 1.0f,
       },
       {
         0.0f, 0.0f,
@@ -820,7 +820,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangleBindGroup) {
   encodeAndSubmit(
       [this](const std::unique_ptr<IRenderCommandEncoder>& encoder) {
         encoder->insertDebugEventLabel("Rendering a triangle...");
-        encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
+        encoder->bindRenderPipelineState(renderPipelineStateTriangle_);
         encoder->draw(3);
       },
       true);
@@ -828,9 +828,9 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangleBindGroup) {
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
-    backgroundColorHex, backgroundColorHex, grayColor,          grayColor,
-    backgroundColorHex, grayColor,          grayColor,          grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, grayColor,          grayColor,
+    kBackgroundColorHex, grayColor,          grayColor,          grayColor,
     grayColor,          grayColor,          grayColor,          grayColor,
   };
 
@@ -840,12 +840,12 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangleBindGroup) {
 TEST_F(RenderCommandEncoderTest, DepthBiasShouldDrawAPoint) {
   initializeBuffers(
       // clang-format off
-      { quarterPixel, quarterPixel, 0.0f, 1.0f },
+      { kQuarterPixel, kQuarterPixel, 0.0f, 1.0f },
       { 0.5, 0.5 } // clang-format on
   );
 
   encodeAndSubmit([this](const std::unique_ptr<IRenderCommandEncoder>& encoder) {
-    encoder->bindRenderPipelineState(renderPipelineState_Point_);
+    encoder->bindRenderPipelineState(renderPipelineStatePoint_);
     encoder->setDepthBias(0, 0, 0);
     encoder->draw(1);
   });
@@ -853,10 +853,10 @@ TEST_F(RenderCommandEncoderTest, DepthBiasShouldDrawAPoint) {
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
-    backgroundColorHex, backgroundColorHex, grayColor,          backgroundColorHex,
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, grayColor,          kBackgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
   };
   // clang-format on
 
@@ -871,7 +871,7 @@ TEST_F(RenderCommandEncoderTest, drawUsingBindPushConstants) {
 
   initializeBuffers(
       // clang-format off
-      { quarterPixel, quarterPixel, 0.0f, 1.0f },
+      { kQuarterPixel, kQuarterPixel, 0.0f, 1.0f },
       { 0.5, 0.5 } // clang-format on
   );
 
@@ -916,10 +916,10 @@ TEST_F(RenderCommandEncoderTest, drawUsingBindPushConstants) {
 
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
-    backgroundColorHex, backgroundColorHex, expectedColor,      backgroundColorHex,
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
-    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, expectedColor,      kBackgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
   };
   // clang-format on
 

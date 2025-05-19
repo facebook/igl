@@ -30,17 +30,17 @@ class BufferTest : public ::testing::Test {
 
     util::createDeviceAndQueue(iglDev_, cmdQueue_);
 
-    mapBufferTestsSupported = iglDev_->hasFeature(DeviceFeatures::MapBufferRange);
+    mapBufferTestsSupported_ = iglDev_->hasFeature(DeviceFeatures::MapBufferRange);
   }
 
   void TearDown() override {}
 
   // Member variables
- public:
+ protected:
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
 
-  bool mapBufferTestsSupported = false;
+  bool mapBufferTestsSupported_ = false;
 };
 
 //
@@ -149,7 +149,7 @@ TEST_F(BufferTest, mapIndexBuffer) {
   auto range = BufferRange(sizeof(indexData), 0);
   auto* data = buffer->map(range, &ret);
 
-  if (!mapBufferTestsSupported) {
+  if (!mapBufferTestsSupported_) {
     ASSERT_EQ(ret.code, Result::Code::InvalidOperation);
     return;
   }
@@ -189,7 +189,7 @@ TEST_F(BufferTest, mapBufferRangeIndexBuffer) {
   auto newRange = BufferRange(sizeBytes, offsetBytes);
   auto* data = buffer->map(newRange, &ret);
 
-  if (!mapBufferTestsSupported) {
+  if (!mapBufferTestsSupported_) {
     ASSERT_EQ(ret.code, Result::Code::InvalidOperation);
     return;
   }

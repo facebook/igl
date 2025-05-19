@@ -34,14 +34,14 @@ class ResourceTest : public ::testing::Test {
   void TearDown() override {}
 
   // Member variables
- public:
+ protected:
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
 
   struct FragmentFormat {
     simd::float3 color;
   };
-  FragmentFormat fragmentParameters{};
+  FragmentFormat fragmentParameters_{};
 };
 
 //
@@ -147,11 +147,11 @@ TEST_F(ResourceTest, IndexBuffer) {
 TEST_F(ResourceTest, UniformBuffer) {
   Result ret;
 
-  fragmentParameters.color = {1.0f, 1.0f, 1.0f};
+  fragmentParameters_.color = {1.0f, 1.0f, 1.0f};
   BufferDesc bufferDesc;
   bufferDesc.type = BufferDesc::BufferTypeBits::Uniform;
-  bufferDesc.data = &fragmentParameters;
-  bufferDesc.length = sizeof(fragmentParameters);
+  bufferDesc.data = &fragmentParameters_;
+  bufferDesc.length = sizeof(fragmentParameters_);
 
   const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 

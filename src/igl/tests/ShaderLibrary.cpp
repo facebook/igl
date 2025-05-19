@@ -33,7 +33,7 @@ class ShaderLibraryTest : public ::testing::Test {
 
   void TearDown() override {}
 
- public:
+ protected:
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
 };

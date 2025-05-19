@@ -26,8 +26,8 @@ namespace igl::tests {
 // size texture, then you will have to either create a new offscreenTexture_
 // and the framebuffer object in your test, so know exactly what the end result
 // would be after sampling
-constexpr size_t OFFSCREEN_TEX_WIDTH = 2;
-constexpr size_t OFFSCREEN_TEX_HEIGHT = 2;
+constexpr size_t kOffscreenTexWidth = 2;
+constexpr size_t kOffscreenTexHeight = 2;
 
 //
 // BackendTest
@@ -61,8 +61,8 @@ class BackendTest : public ::testing::Test {
 
     // Create an offscreen texture to render to
     const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                                   OFFSCREEN_TEX_WIDTH,
-                                                   OFFSCREEN_TEX_HEIGHT,
+                                                   kOffscreenTexWidth,
+                                                   kOffscreenTexHeight,
                                                    TextureDesc::TextureUsageBits::Sampled |
                                                        TextureDesc::TextureUsageBits::Attachment);
 
@@ -163,7 +163,7 @@ class BackendTest : public ::testing::Test {
   void TearDown() override {}
 
   // Member variables
- public:
+ protected:
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
   std::shared_ptr<ICommandBuffer> cmdBuf_;
@@ -209,14 +209,14 @@ TEST_F(BackendTest, DISABLED_CoordinateSystem) {
   // Create input texture and upload data
   //-------------------------------------
   const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                                 OFFSCREEN_TEX_WIDTH,
-                                                 OFFSCREEN_TEX_HEIGHT,
+                                                 kOffscreenTexWidth,
+                                                 kOffscreenTexHeight,
                                                  TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
 
-  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
+  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
 
   inputTexture_->upload(rangeDesc, data::texture::TEX_RGBA_2x2);
 
@@ -281,14 +281,14 @@ TEST_F(BackendTest, DISABLED_CoordinateSystem) {
   //----------------------
   // Read back framebuffer
   //----------------------
-  auto pixels = std::vector<uint32_t>(OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT);
+  auto pixels = std::vector<uint32_t>(kOffscreenTexWidth * kOffscreenTexHeight);
 
   framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
 
   //--------------------------------
   // Verify against original texture
   //--------------------------------
-  for (size_t i = 0; i < OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT; i++) {
+  for (size_t i = 0; i < kOffscreenTexWidth * kOffscreenTexHeight; i++) {
     ASSERT_EQ(pixels[i], data::texture::TEX_RGBA_2x2[i]);
   }
 }

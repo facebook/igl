@@ -33,7 +33,7 @@ class ShaderModuleTest : public ::testing::Test {
 
   void TearDown() override {}
 
- public:
+ protected:
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
   const std::string backend_ = IGL_BACKEND_TYPE;

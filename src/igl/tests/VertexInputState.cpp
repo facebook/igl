@@ -30,7 +30,7 @@ class VertexInputStateTest : public ::testing::Test {
   void TearDown() override {}
 
   // Member variables
- public:
+ protected:
   const std::string backend_ = IGL_BACKEND_TYPE;
 };
 
