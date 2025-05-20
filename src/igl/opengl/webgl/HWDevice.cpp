@@ -18,20 +18,6 @@ std::unique_ptr<IContext> HWDevice::createContext(Result* outResult) const {
   return std::make_unique<Context>();
 }
 
-std::unique_ptr<IContext> HWDevice::createContext(RenderingAPI api,
-                                                  EGLNativeWindowType nativeWindow,
-                                                  Result* outResult) const {
-  return api == RenderingAPI::GLES2
-             ? createContext(
-                   {.flavor = BackendFlavor::OpenGL_ES, .majorVersion = 2, .minorVersion = 0},
-                   nativeWindow,
-                   outResult)
-             : createContext(
-                   {.flavor = BackendFlavor::OpenGL_ES, .majorVersion = 3, .minorVersion = 0},
-                   nativeWindow,
-                   outResult);
-}
-
 std::unique_ptr<IContext> HWDevice::createContext(BackendVersion backendVersion,
                                                   EGLNativeWindowType /*nativeWindow*/,
                                                   Result* outResult) const {

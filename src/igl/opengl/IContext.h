@@ -27,10 +27,6 @@
 
 namespace igl::opengl {
 
-// We might extend this to other enums presenting API versions on desktops, etc.
-// For the time being, we only need to differentiate gles2 and gles3
-enum class RenderingAPI { GLES2, GLES3, GL };
-
 ///
 /// Represents an pure abstract class that encapsulates in it an OpenGL context.
 /// Individual types that implement this class are the ones that provide implementation

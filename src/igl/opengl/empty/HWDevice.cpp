@@ -17,13 +17,6 @@ std::unique_ptr<IContext> HWDevice::createContext(Result* outResult) const {
   return std::make_unique<Context>();
 }
 
-std::unique_ptr<IContext> HWDevice::createContext(RenderingAPI /*api*/,
-                                                  EGLNativeWindowType /*nativeWindow*/,
-                                                  Result* outResult) const {
-  Result::setOk(outResult);
-  return std::make_unique<Context>();
-}
-
 std::unique_ptr<IContext> HWDevice::createContext(BackendVersion /*backendVersion*/,
                                                   EGLNativeWindowType /*nativeWindow*/,
                                                   Result* outResult) const {

@@ -38,9 +38,6 @@ class HWDevice {
 
   virtual std::unique_ptr<IContext> createContext(Result* outResult) const = 0;
 
-  virtual std::unique_ptr<IContext> createContext(opengl::RenderingAPI api,
-                                                  EGLNativeWindowType nativeWindow,
-                                                  Result* outResult) const = 0;
   virtual std::unique_ptr<IContext> createContext(BackendVersion backendVersion,
                                                   EGLNativeWindowType nativeWindow,
                                                   Result* outResult) const = 0;
@@ -50,7 +47,6 @@ class HWDevice {
 
   std::unique_ptr<Device> create(Result* outResult = nullptr) const;
 
-  std::unique_ptr<Device> create(igl::opengl::RenderingAPI api, Result* outResult = nullptr);
   std::unique_ptr<Device> create(BackendVersion backendVersion, Result* outResult = nullptr);
 };
 

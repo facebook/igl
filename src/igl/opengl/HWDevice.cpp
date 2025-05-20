@@ -19,16 +19,6 @@ std::unique_ptr<Device> HWDevice::create(Result* outResult) const {
   return createWithContext(std::move(context), outResult);
 }
 
-std::unique_ptr<Device> HWDevice::create(RenderingAPI api, Result* outResult) {
-  auto context = createContext(api, IGL_EGL_NULL_WINDOW, outResult);
-  if (!context) {
-    Result::setResult(outResult, Result::Code::RuntimeError, "context is null");
-    return nullptr;
-  }
-
-  return createWithContext(std::move(context), outResult);
-}
-
 std::unique_ptr<Device> HWDevice::create(BackendVersion backendVersion, Result* outResult) {
   auto context = createContext(backendVersion, IGL_EGL_NULL_WINDOW, outResult);
   if (!context) {
