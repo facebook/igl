@@ -58,7 +58,6 @@ std::unique_ptr<IDevice> XrAppImplGLES::initIGL(XrInstance instance, XrSystemId 
   XR_CHECK(pfnGetOpenGLGraphicsRequirementsKHR(instance, systemId, &graphicsRequirements_));
 
   auto hwDevice = opengl::wgl::HWDevice();
-  constexpr igl::opengl::RenderingAPI kRenderingApi = igl::opengl::RenderingAPI::GL;
 #else
   PFN_xrGetOpenGLESGraphicsRequirementsKHR pfnGetOpenGLESGraphicsRequirementsKHR = nullptr;
   XR_CHECK(xrGetInstanceProcAddr(instance,
@@ -67,11 +66,10 @@ std::unique_ptr<IDevice> XrAppImplGLES::initIGL(XrInstance instance, XrSystemId 
   XR_CHECK(pfnGetOpenGLESGraphicsRequirementsKHR(instance, systemId, &graphicsRequirements_));
 
   auto hwDevice = opengl::egl::HWDevice();
-  constexpr igl::opengl::RenderingAPI kRenderingApi = igl::opengl::RenderingAPI::GLES3;
 #endif // IGL_WGL
 
   Result result;
-  return hwDevice.create(kRenderingApi, &result);
+  return hwDevice.create(&result);
 }
 
 XrSession XrAppImplGLES::initXrSession(XrInstance instance,

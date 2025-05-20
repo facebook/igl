@@ -83,9 +83,7 @@ void TinyRenderer::init(AAssetManager* mgr,
   case igl::BackendFlavor::OpenGL_ES: {
     auto hwDevice = opengl::egl::HWDevice();
     // Decide which backend api to use, default as GLES3
-    auto backendType = (backendVersion_.majorVersion == 3) ? igl::opengl::RenderingAPI::GLES3
-                                                           : igl::opengl::RenderingAPI::GLES2;
-    d = hwDevice.create(backendType, &result);
+    d = hwDevice.create(backendVersion_, &result);
     shellParams_.shouldPresent = false;
 
     if (swapchainColorTextureFormat == TextureFormat::Invalid) {

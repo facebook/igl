@@ -111,8 +111,7 @@ static bool initWindow(GLFWwindow** outWindow) {
 static void initIGL() {
   // create a device
   {
-    auto ctx =
-        std::make_unique<igl::opengl::webgl::Context>(igl::opengl::RenderingAPI::GLES3, "#canvas");
+    auto ctx = std::make_unique<igl::opengl::webgl::Context>("#canvas");
     device_ = std::make_unique<igl::opengl::webgl::Device>(std::move(ctx));
 
     IGL_DEBUG_ASSERT(device_);
