@@ -122,7 +122,7 @@ class TextureArrayTest : public ::testing::Test {
     std::unique_ptr<IShaderStages> stages;
     if (iglDev_->getBackendType() == BackendType::OpenGL) {
 #if IGL_BACKEND_OPENGL
-      if (opengl::DeviceFeatureSet::usesOpenGLES()) {
+      if (iglDev_->getBackendVersion().flavor == BackendFlavor::OpenGL_ES) {
         util::createShaderStages(iglDev_,
                                  igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER_TEXARRAY_ES3,
                                  igl::tests::data::shader::shaderFunc,

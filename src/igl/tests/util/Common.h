@@ -10,9 +10,6 @@
 #include <igl/Device.h>
 
 #include <gtest/gtest.h>
-#if IGL_BACKEND_OPENGL
-#include <igl/opengl/IContext.h>
-#endif // IGL_BACKEND_OPENGL
 
 #if IGL_PLATFORM_IOS || IGL_PLATFORM_MACOSX
 #include "simd/simd.h"
@@ -24,10 +21,6 @@ namespace igl::tests::util {
 const std::string BACKEND_OGL("ogl");
 const std::string BACKEND_MTL("metal");
 const std::string BACKEND_VUL("vulkan");
-
-#if IGL_BACKEND_OPENGL
-igl::opengl::RenderingAPI getOpenGLRenderingAPI();
-#endif // IGL_BACKEND_OPENGL
 
 // Creates an IGL device and a command queue
 void createDeviceAndQueue(std::shared_ptr<IDevice>& dev, std::shared_ptr<ICommandQueue>& cq);

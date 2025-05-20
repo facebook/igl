@@ -150,11 +150,9 @@ TEST_F(RenderPipelineReflectionTest, VerifySamplers) {
 }
 
 TEST_F(RenderPipelineReflectionTest, UniformBlocks) {
-  auto* context = &static_cast<opengl::Device&>(*iglDev_).getContext();
-  bool useBlocks = context->deviceFeatures().hasFeature(DeviceFeatures::UniformBlocks);
-  const bool isGles3 =
-      (opengl::DeviceFeatureSet::usesOpenGLES() &&
-       context->deviceFeatures().getGLVersion() >= igl::opengl::GLVersion::v3_0_ES);
+  bool useBlocks = iglDev_->hasFeature(DeviceFeatures::UniformBlocks);
+  const bool isGles3 = iglDev_->getBackendVersion().flavor == igl::BackendFlavor::OpenGL_ES &&
+                       iglDev_->getBackendVersion().majorVersion >= 3;
 
 #if defined(IGL_PLATFORM_LINUX) && IGL_PLATFORM_LINUX
   useBlocks = !isGles3;

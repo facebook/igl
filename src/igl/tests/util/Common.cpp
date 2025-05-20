@@ -11,9 +11,6 @@
 #include "TestDevice.h"
 #include <gtest/gtest.h>
 #include <igl/ShaderCreator.h>
-#if IGL_BACKEND_OPENGL
-#include <igl/opengl/Device.h>
-#endif // IGL_BACKEND_OPENGL
 
 namespace igl::tests::util {
 
@@ -65,17 +62,12 @@ void createShaderStages(const std::shared_ptr<IDevice>& dev,
 void createSimpleShaderStages(const std::shared_ptr<IDevice>& dev,
                               std::unique_ptr<IShaderStages>& stages,
                               TextureFormat outputFormat) {
-  const auto backend = dev->getBackendType();
+  const auto backendVersion = dev->getBackendVersion();
 
-  if (backend == igl::BackendType::OpenGL) {
-#if IGL_BACKEND_OPENGL
-    auto* context = &static_cast<opengl::Device&>(*dev).getContext();
-    const bool isGles3 =
-        (opengl::DeviceFeatureSet::usesOpenGLES() &&
-         context->deviceFeatures().getGLVersion() >= igl::opengl::GLVersion::v3_0_ES);
-#else
-    bool isGles3 = false;
-#endif // IGL_BACKEND_OPENGL
+  if (backendVersion.flavor == igl::BackendFlavor::OpenGL ||
+      backendVersion.flavor == igl::BackendFlavor::OpenGL_ES) {
+    const bool isGles3 = backendVersion.flavor == igl::BackendFlavor::OpenGL_ES &&
+                         backendVersion.majorVersion >= 3;
     const auto* vertexShader = isGles3 ? igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER_ES3
                                        : igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER;
     const auto* fragmentShader = isGles3 ? igl::tests::data::shader::OGL_SIMPLE_FRAG_SHADER_ES3
@@ -87,7 +79,7 @@ void createSimpleShaderStages(const std::shared_ptr<IDevice>& dev,
                        fragmentShader,
                        igl::tests::data::shader::shaderFunc,
                        stages);
-  } else if (backend == igl::BackendType::Metal) {
+  } else if (backendVersion.flavor == igl::BackendFlavor::Metal) {
     const char* shader = igl::tests::data::shader::MTL_SIMPLE_SHADER;
     if (outputFormat == TextureFormat::RG_UInt16) {
       shader = igl::tests::data::shader::MTL_SIMPLE_SHADER_USHORT2;
@@ -124,7 +116,7 @@ void createSimpleShaderStages(const std::shared_ptr<IDevice>& dev,
                        igl::tests::data::shader::simpleVertFunc,
                        igl::tests::data::shader::simpleFragFunc,
                        stages);
-  } else if (backend == igl::BackendType::Vulkan) {
+  } else if (backendVersion.flavor == igl::BackendFlavor::Vulkan) {
     // Output format-specific shaders needed for MoltenVK
     const char* fragShader = igl::tests::data::shader::VULKAN_SIMPLE_FRAG_SHADER;
     if (outputFormat == TextureFormat::RG_UInt16) {

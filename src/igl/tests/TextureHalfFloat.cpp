@@ -30,13 +30,6 @@
 #include <igl/NameHandle.h>
 
 namespace igl::tests {
-#if IGL_BACKEND_OPENGL && IGL_OPENGL_ES
-static const bool kUsesOpenGLES = opengl::DeviceFeatureSet::usesOpenGLES();
-#else
-// no OpenGLES was linked
-static const bool kUsesOpenGLES = false;
-#endif
-
 // Picking this just to match the texture we will use. If you use a different
 // size texture, then you will have to either create a new offscreenTexture_
 // and the framebuffer object in your test, so know exactly what the end result
@@ -420,7 +413,8 @@ TEST_F(TextureHalfFloatTest, Upload_RGBA16) {
 
 TEST_F(TextureHalfFloatTest, Upload_RGB16) {
   if (iglDev_->getBackendType() == BackendType::Vulkan ||
-      iglDev_->getBackendType() == BackendType::Metal || kUsesOpenGLES) {
+      iglDev_->getBackendType() == BackendType::Metal ||
+      iglDev_->getBackendVersion().flavor == BackendFlavor::OpenGL_ES) {
     GTEST_SKIP() << "Skip due to lack of support for RGB";
   }
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RGB_F16, kTextureDataRGBHalf.data());
@@ -455,7 +449,7 @@ TEST_F(TextureHalfFloatTest, Passthrough_SampleRGB16) {
 #if IGL_PLATFORM_MACOSX
       iglDev_->getBackendType() == BackendType::OpenGL ||
 #endif
-      kUsesOpenGLES) {
+      iglDev_->getBackendVersion().flavor == BackendFlavor::OpenGL_ES) {
     GTEST_SKIP() << "Skip due to lack of support for RGB";
   }
   runPassthroughFormat(igl::TextureFormat::RGB_F16, kTextureDataRGBHalf.data());

@@ -22,12 +22,6 @@
 #include <igl/NameHandle.h>
 
 namespace igl::tests {
-#if IGL_BACKEND_OPENGL && IGL_OPENGL_ES
-static const bool kUsesOpenGLES = opengl::DeviceFeatureSet::usesOpenGLES();
-#else
-// no OpenGLES was linked
-static const bool kUsesOpenGLES = false;
-#endif
 
 // Picking this just to match the texture we will use. If you use a different
 // size texture, then you will have to either create a new offscreenTexture_
@@ -190,7 +184,7 @@ class TextureFloatTest : public ::testing::Test {
 
 // Those tests just crash on macos but run fine on android opengles
 #if IGL_PLATFORM_MACOSX || IGL_PLATFORM_IOS_SIMULATOR
-    if (iglDev_->getBackendType() == BackendType::OpenGL || kUsesOpenGLES) {
+    if (iglDev_->getBackendType() == BackendType::OpenGL) {
       GTEST_SKIP() << "Skip due to lack of support for OpenGL on Macos";
     }
 #endif
@@ -416,7 +410,8 @@ TEST_F(TextureFloatTest, Upload_RGBA32) {
 
 TEST_F(TextureFloatTest, Upload_RGB32) {
   if (iglDev_->getBackendType() == BackendType::Vulkan ||
-      iglDev_->getBackendType() == BackendType::Metal || kUsesOpenGLES) {
+      iglDev_->getBackendType() == BackendType::Metal ||
+      iglDev_->getBackendVersion().flavor == BackendFlavor::OpenGL_ES) {
     GTEST_SKIP() << "Skip due to lack of support for RGB";
   }
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RGB_F32, kTextureDataRGB.data());
@@ -445,7 +440,8 @@ TEST_F(TextureFloatTest, Passthrough_SampleRGB32) {
   GTEST_SKIP() << "Skipping due to known issue on Windows without angle";
 #endif
   if (iglDev_->getBackendType() == BackendType::Vulkan ||
-      iglDev_->getBackendType() == BackendType::Metal || kUsesOpenGLES) {
+      iglDev_->getBackendType() == BackendType::Metal ||
+      iglDev_->getBackendVersion().flavor == BackendFlavor::OpenGL_ES) {
     GTEST_SKIP() << "Skip due to lack of support for RGB";
   }
   runPassthroughFormat(igl::TextureFormat::RGB_F32, kTextureDataRGB.data());
