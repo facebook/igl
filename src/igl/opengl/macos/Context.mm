@@ -14,10 +14,14 @@
 namespace igl::opengl::macos {
 
 namespace {
-NSOpenGLContext* createOpenGLContext(igl::opengl::RenderingAPI api) {
+NSOpenGLContext* createOpenGLContext(BackendVersion backendVersion) {
+  IGL_DEBUG_ASSERT(backendVersion.flavor == BackendFlavor::OpenGL);
+  IGL_DEBUG_ASSERT((backendVersion.majorVersion == 3 && backendVersion.minorVersion == 2) ||
+                   (backendVersion.majorVersion == 4 && backendVersion.minorVersion == 1));
   auto format = Context::preferredPixelFormat();
+  IGL_DEBUG_ASSERT(backendVersion.flavor == BackendFlavor::OpenGL);
 
-  if (api == igl::opengl::RenderingAPI::GLES3) {
+  if (backendVersion.majorVersion == 3 && backendVersion.minorVersion == 2) {
     static NSOpenGLPixelFormatAttribute attributes[] = {
         NSOpenGLPFADoubleBuffer,
         NSOpenGLPFAAllowOfflineRenderers,
@@ -40,7 +44,7 @@ NSOpenGLContext* createOpenGLContext(igl::opengl::RenderingAPI api) {
     if (pixelFormat) {
       format = pixelFormat;
     }
-  } else if (api == igl::opengl::RenderingAPI::GL) {
+  } else if (backendVersion.majorVersion == 4 && backendVersion.minorVersion == 1) {
     // Copied from preferredPixelFormat, with NSOpenGLProfileVersion4_1Core added
     static NSOpenGLPixelFormatAttribute attributes[] = {
         NSOpenGLPFADoubleBuffer,
@@ -76,8 +80,8 @@ std::unique_ptr<IContext> Context::createShareContext(Result* outResult) {
   return createShareContext(*this, outResult);
 }
 
-std::unique_ptr<Context> Context::createContext(igl::opengl::RenderingAPI api, Result* outResult) {
-  return createContext(createOpenGLContext(api), {}, outResult);
+std::unique_ptr<Context> Context::createContext(BackendVersion backendVersion, Result* outResult) {
+  return createContext(createOpenGLContext(backendVersion), {}, outResult);
 }
 
 std::unique_ptr<Context> Context::createContext(NSOpenGLContext* context, Result* outResult) {

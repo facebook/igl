@@ -22,6 +22,10 @@ class HWDevice final : public ::igl::opengl::HWDevice {
                                           EGLNativeWindowType nativeWindow,
                                           Result* outResult) const override;
 
+  std::unique_ptr<IContext> createContext(BackendVersion backendVersion,
+                                          EGLNativeWindowType nativeWindow,
+                                          Result* outResult) const override;
+
   std::unique_ptr<IContext> createOffscreenContext(size_t width,
                                                    size_t height,
                                                    Result* outResult) const;

@@ -29,4 +29,14 @@ std::unique_ptr<Device> HWDevice::create(RenderingAPI api, Result* outResult) {
   return createWithContext(std::move(context), outResult);
 }
 
+std::unique_ptr<Device> HWDevice::create(BackendVersion backendVersion, Result* outResult) {
+  auto context = createContext(backendVersion, IGL_EGL_NULL_WINDOW, outResult);
+  if (!context) {
+    Result::setResult(outResult, Result::Code::RuntimeError, "context is null");
+    return nullptr;
+  }
+
+  return createWithContext(std::move(context), outResult);
+}
+
 } // namespace igl::opengl

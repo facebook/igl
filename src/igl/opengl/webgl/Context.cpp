@@ -12,10 +12,16 @@
 
 namespace igl::opengl::webgl {
 
-Context::Context(RenderingAPI api, const char* canvasName) : canvasName_(canvasName) {
+Context::Context(const char* canvasName) :
+  Context({.flavor = BackendFlavor::OpenGL_ES, .majorVersion = 3, .minorVersion = 0}, canvasName) {}
+
+Context::Context(BackendVersion backendVersion, const char* canvasName) : canvasName_(canvasName) {
+  IGL_DEBUG_ASSERT(backendVersion.flavor == BackendFlavor::OpenGL_ES);
+  IGL_DEBUG_ASSERT(backendVersion.majorVersion == 3 || backendVersion.majorVersion == 2);
+  IGL_DEBUG_ASSERT(backendVersion.minorVersion == 0);
   EmscriptenWebGLContextAttributes attrs;
   emscripten_webgl_init_context_attributes(&attrs);
-  attrs.majorVersion = api == RenderingAPI::GLES3 ? 2 : 1;
+  attrs.majorVersion = backendversion.majorVersion - 1;
   attrs.minorVersion = 0;
   attrs.premultipliedAlpha = false;
   attrs.alpha = false;

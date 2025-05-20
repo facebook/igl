@@ -23,6 +23,13 @@ std::unique_ptr<IContext> HWDevice::createContext(RenderingAPI /* api */,
   return createContext(outResult);
 }
 
+std::unique_ptr<IContext> HWDevice::createContext([[maybe_unused]] BackendVersion backendVersion,
+                                                  EGLNativeWindowType /* nativeWindow */,
+                                                  Result* outResult) const {
+  IGL_DEBUG_ASSERT(backendVersion.flavor == BackendFlavor::OpenGL);
+  return createContext(outResult);
+}
+
 std::unique_ptr<IContext> HWDevice::createOffscreenContext(size_t width,
                                                            size_t height,
                                                            Result* outResult) const {

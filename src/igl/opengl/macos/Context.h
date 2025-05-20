@@ -24,7 +24,7 @@ class Context final : public IContext {
   std::unique_ptr<IContext> createShareContext(Result* outResult) override;
 
   /// Create a new context with new NSOpenGLContext.
-  static std::unique_ptr<Context> createContext(igl::opengl::RenderingAPI api, Result* outResult);
+  static std::unique_ptr<Context> createContext(BackendVersion backendVersion, Result* outResult);
   /// Create a new context with existing NSOpenGLContext.
   static std::unique_ptr<Context> createContext(NSOpenGLContext* context, Result* outResult);
   /// Creates a shared context, with matching format based on an existing context.

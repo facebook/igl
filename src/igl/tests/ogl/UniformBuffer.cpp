@@ -41,7 +41,7 @@ constexpr size_t kOffscreenTexHeight = 4;
 // clang-format off
 #if !defined(OGL_UNIFORM_BUFFER_FRAG_COMMON)
 #define OGL_UNIFORM_BUFFER_FRAG_COMMON \
-               PROLOG \
+               LEGACY_VERSION PROLOG \
                const float expectedFloat = 0.1; \
                const vec2 expectedVec2 = vec2(0.2, 0.2); \
                const vec3 expectedVec3 = vec3(0.3, 0.3, 0.3); \

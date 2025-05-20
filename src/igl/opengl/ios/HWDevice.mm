@@ -15,13 +15,29 @@ namespace igl::opengl::ios {
 /// MARK: - opengl::HWDevice
 
 std::unique_ptr<IContext> HWDevice::createContext(Result* outResult) const {
-  return std::make_unique<Context>(RenderingAPI::GLES3, outResult);
+  return std::make_unique<Context>(
+      BackendVersion{.flavor = BackendFlavor::OpenGL_ES, .majorVersion = 3, .minorVersion = 0},
+      outResult);
 }
 
 std::unique_ptr<IContext> HWDevice::createContext(RenderingAPI api,
                                                   EGLNativeWindowType /*nativeWindow*/,
                                                   Result* outResult) const {
-  return std::make_unique<Context>(api, outResult);
+  return api == RenderingAPI::GLES2
+             ? std::make_unique<Context>(BackendVersion{.flavor = BackendFlavor::OpenGL_ES,
+                                                        .majorVersion = 2,
+                                                        .minorVersion = 0},
+                                         outResult)
+             : std::make_unique<Context>(BackendVersion{.flavor = BackendFlavor::OpenGL_ES,
+                                                        .majorVersion = 3,
+                                                        .minorVersion = 0},
+                                         outResult);
+}
+
+std::unique_ptr<IContext> HWDevice::createContext(BackendVersion backendVersion,
+                                                  EGLNativeWindowType /*nativeWindow*/,
+                                                  Result* outResult) const {
+  return std::make_unique<Context>(backendVersion, outResult);
 }
 
 std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<IContext> context,

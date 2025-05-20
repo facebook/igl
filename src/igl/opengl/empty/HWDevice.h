@@ -20,6 +20,9 @@ class HWDevice final : public ::igl::opengl::HWDevice {
   std::unique_ptr<IContext> createContext(RenderingAPI api,
                                           EGLNativeWindowType nativeWindow,
                                           Result* outResult) const override;
+  std::unique_ptr<IContext> createContext(BackendVersion backendVersion,
+                                          EGLNativeWindowType nativeWindow,
+                                          Result* outResult) const override;
 
   std::unique_ptr<opengl::Device> createWithContext(std::unique_ptr<IContext> context,
                                                     Result* outResult) const override;

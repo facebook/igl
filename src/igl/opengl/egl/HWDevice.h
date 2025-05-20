@@ -24,6 +24,9 @@ class HWDevice final : public ::igl::opengl::HWDevice {
   std::unique_ptr<IContext> createContext(RenderingAPI api,
                                           EGLNativeWindowType nativeWindow,
                                           Result* outResult) const override;
+  std::unique_ptr<IContext> createContext(BackendVersion backendVersion,
+                                          EGLNativeWindowType nativeWindow,
+                                          Result* outResult) const override;
 
   /**
    * @brief Creates an offscreen context suitable for unit testing.

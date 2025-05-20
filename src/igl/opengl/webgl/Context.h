@@ -23,7 +23,8 @@ namespace opengl::webgl {
 
 class Context final : public ::igl::opengl::IContext {
  public:
-  Context(RenderingAPI api, const char* canvasName = "#canvas");
+  explicit Context(const char* canvasName = "#canvas");
+  explicit Context(BackendVersion backendVersion, const char* canvasName = "#canvas");
   Context(EmscriptenWebGLContextAttributes& attributes,
           const char* canvasName = "#canvas",
           int width = -1,

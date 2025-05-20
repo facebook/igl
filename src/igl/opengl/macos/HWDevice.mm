@@ -16,13 +16,26 @@ namespace igl::opengl::macos {
 /// MARK: - opengl::HWDevice
 
 std::unique_ptr<IContext> HWDevice::createContext(Result* outResult) const {
-  return Context::createContext(::igl::opengl::RenderingAPI::GL, outResult);
+  return Context::createContext(
+      {.flavor = BackendFlavor::OpenGL, .majorVersion = 4, .minorVersion = 1}, outResult);
 }
 
 std::unique_ptr<IContext> HWDevice::createContext(::igl::opengl::RenderingAPI api,
                                                   EGLNativeWindowType /*nativeWindow*/,
                                                   Result* outResult) const {
-  return Context::createContext(api, outResult);
+  return api == ::igl::opengl::RenderingAPI::GLES3
+             ? Context::createContext(
+                   {.flavor = BackendFlavor::OpenGL, .majorVersion = 3, .minorVersion = 2},
+                   outResult)
+             : Context::createContext(
+                   {.flavor = BackendFlavor::OpenGL, .majorVersion = 4, .minorVersion = 1},
+                   outResult);
+}
+
+std::unique_ptr<IContext> HWDevice::createContext(BackendVersion backendVersion,
+                                                  EGLNativeWindowType /*nativeWindow*/,
+                                                  Result* outResult) const {
+  return Context::createContext(backendVersion, outResult);
 }
 
 std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<IContext> context,

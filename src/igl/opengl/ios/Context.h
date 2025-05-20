@@ -17,10 +17,10 @@ namespace igl::opengl::ios {
 class Context final : public IContext {
  public:
   /// Create a new context with new EAGLContext.
-  Context(opengl::RenderingAPI api);
-  Context(opengl::RenderingAPI api, Result* result);
+  explicit Context(BackendVersion backendVersion);
+  Context(BackendVersion backendVersion, Result* result);
   /// Create a new context with existing EAGLContext.
-  Context(EAGLContext* context);
+  explicit Context(EAGLContext* context);
   Context(EAGLContext* context, Result* result);
   ~Context() override;
 
