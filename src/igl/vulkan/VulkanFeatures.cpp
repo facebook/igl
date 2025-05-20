@@ -108,6 +108,9 @@ VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noe
   config_(config),
   version_(version) {
 
+  extensions_.resize(kNumberOfExtensionTypes);
+  enabledExtensions_.resize(kNumberOfExtensionTypes);
+
   // All the above get assembled into a feature chain
   assembleFeatureChain(config_);
 }
@@ -120,15 +123,15 @@ void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
   uint32_t numExtensions = 0;
   context.vf_.vkEnumerateDeviceExtensionProperties(
       physicalDevice, nullptr, &numExtensions, nullptr);
-  extensions_.resize(numExtensions);
+  extensionProps_.resize(numExtensions);
   context.vf_.vkEnumerateDeviceExtensionProperties(
-      physicalDevice, nullptr, &numExtensions, extensions_.data());
+      physicalDevice, nullptr, &numExtensions, extensionProps_.data());
   assembleFeatureChain(context.config_);
   context.vf_.vkGetPhysicalDeviceFeatures2(physicalDevice, &VkPhysicalDeviceFeatures2_);
 }
 
 bool VulkanFeatures::hasExtension(const char* ext) const {
-  for (const VkExtensionProperties& props : extensions_) {
+  for (const VkExtensionProperties& props : extensionProps_) {
     if (strcmp(ext, props.extensionName) == 0) {
       return true;
     }
@@ -359,10 +362,187 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   VkPhysicalDeviceTimelineSemaphoreFeatures_ = other.VkPhysicalDeviceTimelineSemaphoreFeatures_;
 
   extensions_ = other.extensions_;
+  enabledExtensions_ = other.enabledExtensions_;
+  extensionProps_ = other.extensionProps_;
 
   assembleFeatureChain(config_);
 
   return *this;
+}
+
+void VulkanFeatures::enumerate(const VulkanFunctionTable& vf) {
+  uint32_t count = 0;
+  VK_ASSERT(vf.vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
+
+  std::vector<VkExtensionProperties> allExtensions(count);
+
+  VK_ASSERT(vf.vkEnumerateInstanceExtensionProperties(nullptr, &count, allExtensions.data()));
+
+  constexpr size_t vectorIndex = (size_t)ExtensionType::Instance;
+  std::transform(allExtensions.cbegin(),
+                 allExtensions.cend(),
+                 std::back_inserter(extensions_[vectorIndex]),
+                 [](const VkExtensionProperties& extensionProperties) {
+                   return extensionProperties.extensionName;
+                 });
+}
+
+void VulkanFeatures::enumerate(const VulkanFunctionTable& vf, VkPhysicalDevice device) {
+  uint32_t count = 0;
+  VK_ASSERT(vf.vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr));
+
+  std::vector<VkExtensionProperties> allExtensions(count);
+
+  VK_ASSERT(vf.vkEnumerateDeviceExtensionProperties(device, nullptr, &count, allExtensions.data()));
+
+  constexpr size_t vectorIndex = (size_t)ExtensionType::Device;
+  std::transform(allExtensions.cbegin(),
+                 allExtensions.cend(),
+                 std::back_inserter(extensions_[vectorIndex]),
+                 [](const VkExtensionProperties& extensionProperties) {
+                   return extensionProperties.extensionName;
+                 });
+}
+
+const std::vector<std::string>& VulkanFeatures::allAvailableExtensions(
+    ExtensionType extensionType) const {
+  const size_t vectorIndex = (size_t)extensionType;
+  return extensions_[vectorIndex];
+}
+
+bool VulkanFeatures::available(const char* extensionName, ExtensionType extensionType) const {
+  const size_t vectorIndex = (size_t)extensionType;
+  const std::string extensionNameStr(extensionName);
+  auto result = std::find_if(
+      extensions_[vectorIndex].begin(),
+      extensions_[vectorIndex].end(),
+      [&extensionNameStr](const std::string& extension) { return extension == extensionNameStr; });
+
+  return result != extensions_[vectorIndex].end();
+}
+
+bool VulkanFeatures::enable(const char* extensionName, ExtensionType extensionType) {
+  const size_t vectorIndex = (size_t)extensionType;
+  if (available(extensionName, extensionType)) {
+    enabledExtensions_[vectorIndex].insert(extensionName);
+    return true;
+  }
+  return false;
+}
+
+void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& config) {
+  enable(VK_KHR_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
+  enable(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, ExtensionType::Instance);
+#if defined(VK_EXT_debug_utils)
+  enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, ExtensionType::Instance);
+#endif
+#if IGL_PLATFORM_WINDOWS
+  enable(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
+#elif IGL_PLATFORM_ANDROID
+  enable("VK_KHR_android_surface", ExtensionType::Instance);
+#elif IGL_PLATFORM_LINUX
+  enable("VK_KHR_xlib_surface", ExtensionType::Instance);
+#elif IGL_PLATFORM_MACOSX
+  enable(VK_EXT_METAL_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
+#endif
+
+#if IGL_PLATFORM_MACOSX
+  // https://vulkan.lunarg.com/doc/sdk/1.3.216.0/mac/getting_started.html
+  if (!enable(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, ExtensionType::Instance)) {
+    IGL_LOG_ERROR("VK_KHR_portability_enumeration extension not supported\n");
+  }
+#endif
+
+#if !IGL_PLATFORM_ANDROID
+  if (config.enableValidation) {
+    enable(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, ExtensionType::Instance);
+  }
+#endif
+  if (config.headless) {
+#if defined(VK_EXT_headless_surface)
+    const bool enabledExtension =
+        enable(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
+#else
+    const bool enabledExtension = false;
+#endif // VK_EXT_headless_surface
+    if (!enabledExtension) {
+      IGL_LOG_ERROR("VK_EXT_headless_surface extension not supported");
+    }
+  }
+  if (config.swapChainColorSpace != igl::ColorSpace::SRGB_NONLINEAR) {
+#if defined(VK_EXT_swapchain_colorspace)
+    const bool enabledExtension =
+        enable(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME, ExtensionType::Instance);
+#else
+    const bool enabledExtension = false;
+#endif
+    if (!enabledExtension) {
+      IGL_LOG_ERROR("VK_EXT_swapchain_colorspace extension not supported\n");
+    }
+  }
+}
+
+void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& config) {
+  enable(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME, ExtensionType::Device);
+#if IGL_PLATFORM_ANDROID
+  enable(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME, ExtensionType::Device);
+  enable(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, ExtensionType::Device);
+  enable(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME, ExtensionType::Device);
+  enable(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME, ExtensionType::Device);
+  if (config.enableDescriptorIndexing) {
+#endif
+    // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are
+    // enabled for DEBUG builds. https://issuetracker.google.com/issues/209835779?pli=1 Hence,
+    // allow developers to not enable certain extensions on Android which are not present.
+    enable(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, ExtensionType::Device);
+#if IGL_PLATFORM_ANDROID
+  }
+#endif
+  enable(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME, ExtensionType::Device);
+#if !IGL_PLATFORM_ANDROID || !IGL_DEBUG
+  // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are
+  // enabled for DEBUG builds. https://issuetracker.google.com/issues/209835779?pli=1 Hence,
+  // don't enable some extensions on Android which are not present and no way to check without
+  // crashing.
+  enable(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, ExtensionType::Device);
+#endif // !IGL_PLATFORM_ANDROID || !IGL_DEBUG
+  enable(VK_KHR_SWAPCHAIN_EXTENSION_NAME, ExtensionType::Device);
+
+#if IGL_PLATFORM_MACOSX
+  std::ignore = IGL_DEBUG_VERIFY(enable("VK_KHR_portability_subset", ExtensionType::Device));
+#endif
+
+#if IGL_PLATFORM_WINDOWS
+  enable(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME, ExtensionType::Device);
+#endif // IGL_PLATFORM_WINDOWS
+
+#if IGL_PLATFORM_LINUX
+  enable(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, ExtensionType::Device);
+  enable(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME, ExtensionType::Device);
+#endif // IGL_PLATFORM_LINUX
+
+#if defined(IGL_WITH_TRACY_GPU)
+  enable(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, ExtensionType::Device);
+#endif // IGL_WITH_TRACY_GPU
+
+  has8BitIndices = enable(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, ExtensionType::Device);
+
+  hasTimelineSemaphore = enable(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, ExtensionType::Device);
+  hasSynchronization2 = enable(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, ExtensionType::Device);
+}
+
+bool VulkanFeatures::enabled(const char* extensionName) const {
+  return (enabledExtensions_[(size_t)ExtensionType::Instance].count(extensionName) > 0) ||
+         (enabledExtensions_[(size_t)ExtensionType::Device].count(extensionName) > 0);
+}
+
+std::vector<const char*> VulkanFeatures::allEnabled(ExtensionType extensionType) const {
+  const size_t vectorIndex = (size_t)extensionType;
+  std::vector<const char*> returnList;
+  for (const auto& extension : enabledExtensions_[vectorIndex]) {
+    returnList.emplace_back(extension.c_str());
+  }
+  return returnList;
 }
 
 } // namespace igl::vulkan

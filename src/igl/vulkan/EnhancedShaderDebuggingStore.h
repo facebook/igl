@@ -28,7 +28,7 @@ namespace vulkan {
 class CommandQueue;
 class Device;
 class VulkanContext;
-class VulkanExtensions;
+class VulkanFeatures;
 
 /**
  * @brief Encapsulates and stores the resources needed to enable enhanced shader debugging
@@ -83,7 +83,7 @@ class EnhancedShaderDebuggingStore {
    * @param[in] extensions the extensions available for the device.
    */
   static std::string recordLineShaderCode(bool includeFunctionBody,
-                                          const VulkanExtensions& extensions);
+                                          const VulkanFeatures& extensions);
 
   /** @brief Returns the vertex buffer used to store the lines' vertices */
   std::shared_ptr<IBuffer> vertexBuffer() const;

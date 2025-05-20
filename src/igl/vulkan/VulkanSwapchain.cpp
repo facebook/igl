@@ -140,7 +140,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
       "create your igl::IDevice");
 
 #if defined(VK_KHR_surface)
-  if (ctx.extensions_.enabled(VK_KHR_SURFACE_EXTENSION_NAME)) {
+  if (ctx.features_.enabled(VK_KHR_SURFACE_EXTENSION_NAME)) {
     VkBool32 queueFamilySupportsPresentation = VK_FALSE;
     VK_ASSERT(
         ctx_.vf_.vkGetPhysicalDeviceSurfaceSupportKHR(ctx.getVkPhysicalDevice(),

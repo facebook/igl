@@ -16,7 +16,6 @@
 #include <igl/HWDevice.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanDevice.h>
-#include <igl/vulkan/VulkanExtensions.h>
 #include <igl/vulkan/VulkanFeatures.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
@@ -341,7 +340,6 @@ class VulkanContext final {
           renderPassesHash_;
   mutable std::vector<VkRenderPass> renderPasses_;
 
-  VulkanExtensions extensions_;
   VulkanContextConfig config_;
 
   // Enhanced shader debug: line drawing

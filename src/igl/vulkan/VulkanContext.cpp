@@ -37,7 +37,7 @@
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDescriptorSetLayout.h>
 #include <igl/vulkan/VulkanDevice.h>
-#include <igl/vulkan/VulkanExtensions.h>
+#include <igl/vulkan/VulkanFeatures.h>
 #include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
 #include <igl/vulkan/VulkanSwapchain.h>
@@ -567,13 +567,13 @@ VulkanContext::~VulkanContext() {
 void VulkanContext::createInstance(const size_t numExtraExtensions,
                                    const char* IGL_NULLABLE* IGL_NULLABLE extraExtensions) {
   // Enumerate all instance extensions
-  extensions_.enumerate(vf_);
-  extensions_.enableCommonInstanceExtensions(config_);
+  features_.enumerate(vf_);
+  features_.enableCommonInstanceExtensions(config_);
   for (size_t index = 0; index < numExtraExtensions; ++index) {
-    extensions_.enable(extraExtensions[index], VulkanExtensions::ExtensionType::Instance);
+    features_.enable(extraExtensions[index], VulkanFeatures::ExtensionType::Instance);
   }
 
-  auto instanceExtensions = extensions_.allEnabled(VulkanExtensions::ExtensionType::Instance);
+  auto instanceExtensions = features_.allEnabled(VulkanFeatures::ExtensionType::Instance);
 
   std::vector<const char*> layers;
   // @fb-only
@@ -608,12 +608,12 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
   // Do not remove for backward compatibility with projects using global functions.
   volkLoadInstance(vkInstance_);
 #endif
-  const bool enableExtDebugUtils = extensions_.enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
-                                                      VulkanExtensions::ExtensionType::Instance);
+  const bool enableExtDebugUtils =
+      features_.enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VulkanFeatures::ExtensionType::Instance);
   vulkan::functions::loadInstanceFunctions(*tableImpl_, vkInstance_, enableExtDebugUtils);
 
 #if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WINDOWS
-  if (extensions_.enabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
+  if (features_.enabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
     VK_ASSERT(ivkCreateDebugUtilsMessenger(
         &vf_, vkInstance_, &vulkanDebugCallback, this, &vkDebugUtilsMessenger_));
   }
@@ -624,7 +624,7 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
     // log available instance extensions
     IGL_LOG_INFO("Vulkan instance extensions:\n");
     for (const auto& extension :
-         extensions_.allAvailableExtensions(VulkanExtensions::ExtensionType::Instance)) {
+         features_.allAvailableExtensions(VulkanFeatures::ExtensionType::Instance)) {
       IGL_LOG_INFO("  %s\n", extension.c_str());
     }
   }
@@ -758,27 +758,27 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                  vkPhysicalDeviceDriverProperties_.driverInfo);
   }
 
-  extensions_.enumerate(vf_, vkPhysicalDevice_);
+  features_.enumerate(vf_, vkPhysicalDevice_);
 
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
   if (config_.enableExtraLogs) {
     IGL_LOG_INFO("Vulkan physical device extensions:\n");
     // log available physical device extensions
     for (const auto& extension :
-         extensions_.allAvailableExtensions(VulkanExtensions::ExtensionType::Device)) {
+         features_.allAvailableExtensions(VulkanFeatures::ExtensionType::Device)) {
       IGL_LOG_INFO("  %s\n", extension.c_str());
     }
   }
 #endif
 
-  extensions_.enableCommonDeviceExtensions(config_);
+  features_.enableCommonDeviceExtensions(config_);
   // Enable extra device extensions
   for (size_t i = 0; i < numExtraDeviceExtensions; i++) {
-    extensions_.enable(extraDeviceExtensions[i], VulkanExtensions::ExtensionType::Device);
+    features_.enable(extraDeviceExtensions[i], VulkanFeatures::ExtensionType::Device);
   }
   if (config_.enableBufferDeviceAddress) {
-    if (!extensions_.enable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-                            VulkanExtensions::ExtensionType::Device)) {
+    if (!features_.enable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+                          VulkanFeatures::ExtensionType::Device)) {
       return Result(Result::Code::Unsupported,
                     VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME " is not supported");
     }
@@ -786,7 +786,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   // @fb-only
     // @fb-only
-                       // @fb-only
+                     // @fb-only
   // @fb-only
 
   VulkanQueuePool queuePool(vf_, vkPhysicalDevice_);
@@ -819,8 +819,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                       vkPhysicalDevice_,
                       qcis.size(),
                       qcis.data(),
-                      extensions_.allEnabled(VulkanExtensions::ExtensionType::Device).size(),
-                      extensions_.allEnabled(VulkanExtensions::ExtensionType::Device).data(),
+                      features_.allEnabled(VulkanFeatures::ExtensionType::Device).size(),
+                      features_.allEnabled(VulkanFeatures::ExtensionType::Device).data(),
                       &features_.VkPhysicalDeviceFeatures2_,
                       &device));
 #if defined(IGL_CMAKE_BUILD)
@@ -853,8 +853,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                                          device,
                                                          deviceQueues_.graphicsQueueFamilyIndex,
                                                          config_.exportableFences,
-                                                         extensions_.hasTimelineSemaphore &&
-                                                             extensions_.hasSynchronization2,
+                                                         features_.hasTimelineSemaphore &&
+                                                             features_.hasSynchronization2,
                                                          "VulkanContext::immediate_");
   IGL_DEBUG_ASSERT(config_.maxResourceCount > 0,
                    "Max resource count needs to be greater than zero");
@@ -1173,7 +1173,7 @@ igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
 
   swapchain_ = std::make_unique<igl::vulkan::VulkanSwapchain>(*this, width, height);
 
-  if (extensions_.hasTimelineSemaphore && extensions_.hasSynchronization2) {
+  if (features_.hasTimelineSemaphore && features_.hasSynchronization2) {
     timelineSemaphore_ = std::make_unique<VulkanSemaphore>(
         vf_, getVkDevice(), 0, false, "Semaphore: VulkanContext::timelineSemaphore_");
   }

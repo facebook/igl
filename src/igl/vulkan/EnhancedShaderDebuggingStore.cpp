@@ -38,7 +38,7 @@ void EnhancedShaderDebuggingStore::initialize(Device* device) {
 }
 
 std::string EnhancedShaderDebuggingStore::recordLineShaderCode(bool includeFunctionBody,
-                                                               const VulkanExtensions& extensions) {
+                                                               const VulkanFeatures& extensions) {
   if (!includeFunctionBody) {
     return R"(void drawLine(vec3 v0, vec3 v1, vec4 color0, vec4 color1, mat4 transform) {})";
   }

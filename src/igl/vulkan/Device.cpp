@@ -408,15 +408,15 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
                                       : "";
 
     // GL_EXT_debug_printf extension
-    if (ctx_->extensions_.enabled(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
+    if (ctx_->features_.enabled(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
       extraExtensions += "#extension GL_EXT_debug_printf : enable\n";
     }
 
     const std::string enhancedShaderDebuggingCode =
         EnhancedShaderDebuggingStore::recordLineShaderCode(
-            ctx_->enhancedShaderDebuggingStore_ != nullptr, ctx_->extensions_);
+            ctx_->enhancedShaderDebuggingStore_ != nullptr, ctx_->features_);
 
-    if (ctx_->features().VkPhysicalDeviceShaderFloat16Int8Features_.shaderFloat16 == VK_TRUE) {
+    if (ctx_->features_.VkPhysicalDeviceShaderFloat16Int8Features_.shaderFloat16 == VK_TRUE) {
       extraExtensions += "#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require\n";
     }
 
@@ -670,7 +670,7 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
   case DeviceFeatures::DrawInstanced:
     return true;
   case DeviceFeatures::Indices8Bit:
-    return ctx_->extensions_.has8BitIndices;
+    return ctx_->features_.has8BitIndices;
   case DeviceFeatures::ValidationLayersEnabled:
     return ctx_->areValidationLayersEnabled();
   case DeviceFeatures::TextureViews:
