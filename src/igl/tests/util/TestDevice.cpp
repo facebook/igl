@@ -24,11 +24,15 @@ std::shared_ptr<IDevice> createTestDevice() {
 
   if (backend == "ogl") {
 #ifdef IGL_UNIT_TESTS_GLES_VERSION
-    std::string backendApi(IGL_UNIT_TESTS_GLES_VERSION);
+    return tests::util::device::createTestDevice(::igl::BackendType::OpenGL,
+                                                 {.requestedOpenGLBackendVersion = BackendVersion{
+                                                      .flavor = BackendFlavor::OpenGL_ES,
+                                                      .majorVersion = IGL_UNIT_TESTS_GLES_VERSION,
+                                                      .minorVersion = 0,
+                                                  }});
 #else
-    const std::string backendApi("2.0");
+    return tests::util::device::createTestDevice(::igl::BackendType::OpenGL);
 #endif
-    return device::createTestDevice(::igl::BackendType::OpenGL, backendApi);
   } else if (backend == "metal") {
     return device::createTestDevice(::igl::BackendType::Metal);
   } else if (backend == "vulkan") {

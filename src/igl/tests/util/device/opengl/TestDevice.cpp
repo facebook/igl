@@ -31,12 +31,6 @@ namespace igl::tests::util::device::opengl {
 
 namespace {
 template<typename THWDevice>
-std::shared_ptr<::igl::opengl::Device> createDevice(igl::opengl::RenderingAPI renderingAPI) {
-  THWDevice hwDevice;
-  auto context = hwDevice.createContext(renderingAPI, IGL_EGL_NULL_WINDOW, nullptr);
-  return hwDevice.createWithContext(std::move(context), nullptr);
-}
-template<typename THWDevice>
 std::shared_ptr<::igl::opengl::Device> createOffscreenDevice() {
   THWDevice hwDevice;
   auto context = hwDevice.createOffscreenContext(640, 380, nullptr);
@@ -44,31 +38,21 @@ std::shared_ptr<::igl::opengl::Device> createOffscreenDevice() {
 }
 } // namespace
 
-igl::opengl::RenderingAPI getOpenGLRenderingAPI(const std::string& backendApi) {
-  auto renderingAPI = backendApi == "2.0" ? ::igl::opengl::RenderingAPI::GLES2
-                                          : ::igl::opengl::RenderingAPI::GLES3;
-
-#if IGL_PLATFORM_ANDROID && !defined(GL_ES_VERSION_3_0)
-  renderingAPI = ::igl::opengl::RenderingAPI::GLES2;
-#endif
-
-  return renderingAPI;
-}
-
 //
 // createTestDevice
 //
 // Used by clients to get an IGL device. The backend is determined by
 // the IGL_BACKEND_TYPE compiler flag in the BUCK file
 //
-std::shared_ptr<IDevice> createTestDevice(const std::string& backendApi) {
+std::shared_ptr<IDevice> createTestDevice(std::optional<BackendVersion> requestedVersion) {
   std::shared_ptr<IDevice> iglDev = nullptr;
-  [[maybe_unused]] const auto renderingAPI = getOpenGLRenderingAPI(backendApi);
 
 #if IGL_PLATFORM_IOS
-  iglDev = createDevice<::igl::opengl::ios::HWDevice>(renderingAPI);
+  iglDev = requestedVersion ? ::igl::opengl::ios::HWDevice().create(*requestedVersion)
+                            : ::igl::opengl::ios::HWDevice().create();
 #elif IGL_PLATFORM_MACOSX
-  iglDev = createDevice<::igl::opengl::macos::HWDevice>(renderingAPI);
+  iglDev = requestedVersion ? ::igl::opengl::macos::HWDevice().create(*requestedVersion)
+                            : ::igl::opengl::macos::HWDevice().create();
 #elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX_USE_EGL
   iglDev = createOffscreenDevice<::igl::opengl::egl::HWDevice>();
 #elif IGL_PLATFORM_LINUX

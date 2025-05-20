@@ -8,8 +8,10 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <igl/Common.h>
+#include <igl/DeviceFeatures.h>
 
 #if (IGL_PLATFORM_IOS || IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST) && IGL_BACKEND_METAL
 #define IGL_METAL_SUPPORTED 1
@@ -32,7 +34,14 @@
 
 namespace igl {
 class IDevice;
-namespace tests::util::device {
+} // namespace igl
+
+namespace igl::tests::util::device {
+
+struct TestDeviceConfig {
+  std::optional<BackendVersion> requestedOpenGLBackendVersion{};
+  bool enableVulkanValidationLayers = true;
+};
 
 /**
  Returns whether or not the specified backend type is supported for test devices.
@@ -46,8 +55,6 @@ bool isBackendTypeSupported(BackendType backendType);
  GLES3 context.
  */
 std::shared_ptr<IDevice> createTestDevice(BackendType backendType,
-                                          const std::string& backendApi = "",
-                                          bool enableValidation = true);
+                                          const TestDeviceConfig& config = {});
 
-} // namespace tests::util::device
-} // namespace igl
+} // namespace igl::tests::util::device
