@@ -195,9 +195,13 @@ std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> te
     return {};
   }
 
-  auto newTexture = std::make_shared<Texture>(const_cast<Device&>(*this), desc.format);
+  const Texture& baseTexture = static_cast<Texture&>(*texture);
 
-  const Result res = newTexture->createView(static_cast<Texture&>(*texture), desc);
+  auto newTexture = std::make_shared<Texture>(
+      const_cast<Device&>(*this),
+      desc.format == TextureFormat::Invalid ? baseTexture.getFormat() : desc.format);
+
+  const Result res = newTexture->createView(baseTexture, desc);
 
   if (hasResourceTracker()) {
     newTexture->initResourceTracker(getResourceTracker(), desc.debugName);
