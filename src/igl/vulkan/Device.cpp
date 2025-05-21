@@ -674,7 +674,7 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
   case DeviceFeatures::ValidationLayersEnabled:
     return ctx_->areValidationLayersEnabled();
   case DeviceFeatures::TextureViews:
-    return false;
+    return true;
   }
 
   IGL_DEBUG_ABORT("DeviceFeatures value not handled: %d", (int)feature);
