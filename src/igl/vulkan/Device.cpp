@@ -34,6 +34,20 @@
 
 namespace {
 
+#if IGL_SHADER_DUMP && IGL_DEBUG
+std::string sanitizeFileName(const std::string& fileName) {
+  std::string result;
+  for (const char c : fileName) {
+    if (std::isalnum(c) || c == '.' || c == '_' || c == '-') {
+      result += c;
+    } else {
+      result += '_';
+    }
+  }
+  return result;
+}
+#endif // IGL_SHADER_DUMP && IGL_DEBUG
+
 bool supportsFormat(const VulkanFunctionTable& vf,
                     VkPhysicalDevice physicalDevice,
                     VkFormat format) {
@@ -336,8 +350,8 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* IGL_N
   for (int i = 0; i < (length / sizeof(uint32_t)); i++) {
     hash ^= std::hash<uint32_t>()(words[i]);
   }
-  std::string filename =
-      IGL_FORMAT("{}{}{}.spv", IGL_SHADER_DUMP_PATH, debugName, std::to_string(hash));
+  const std::string filename = IGL_FORMAT(
+      "{}{}{}.spv", IGL_SHADER_DUMP_PATH, sanitizeFileName(debugName), std::to_string(hash));
   IGL_LOG_INFO("Dumping shader to: %s", filename.c_str());
   if (!std::filesystem::exists(filename)) {
     std::ofstream spirvFile;
