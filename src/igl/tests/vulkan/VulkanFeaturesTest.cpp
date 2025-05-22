@@ -37,9 +37,7 @@ TEST_F(VulkanFeaturesTest, Construct_Version_1_2) {
   const igl::vulkan::VulkanFeatures features(VK_API_VERSION_1_2, config);
 
   // We can only really test this is the SDK is at least version 1_2
-#if defined(VK_VERSION_1_2)
   EXPECT_NE(features.VkPhysicalDeviceShaderFloat16Int8Features_.pNext, nullptr);
-#endif
 }
 
 // Copying ***************************************************************************
