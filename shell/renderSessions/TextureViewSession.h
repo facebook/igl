@@ -18,10 +18,6 @@
 #include <igl/FPSCounter.h>
 #include <igl/RenderPass.h>
 
-namespace iglu {
-class ManagedUniformBuffer;
-} // namespace iglu
-
 namespace igl::shell {
 
 class TextureViewSession : public RenderSession {
@@ -37,7 +33,6 @@ class TextureViewSession : public RenderSession {
   std::shared_ptr<IVertexInputState> vertexInput0_;
   std::shared_ptr<IShaderStages> shaderStages_;
   std::shared_ptr<IBuffer> vb_, ib_;
-  std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer_;
   std::shared_ptr<IFramebuffer> framebuffer_;
   std::shared_ptr<ISamplerState> sampler_;
   std::shared_ptr<ITexture> texture_;

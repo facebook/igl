@@ -7,7 +7,6 @@
 
 // @MARK:COVERAGE_EXCLUDE_FILE
 
-#include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 #include <cstddef>
 #include <shell/renderSessions/TextureViewSession.h>
 #include <shell/shared/imageLoader/ImageLoader.h>
@@ -71,10 +70,6 @@ std::string getMetalShaderSource() {
     #include <simd/simd.h>
     using namespace metal;
 
-    struct VertexUniformBlock {
-      float4x4 mvpMatrix;
-    };
-
     struct VertexIn {
       float3 position [[attribute(0)]];
       float2 uv [[attribute(1)]];
@@ -86,9 +81,9 @@ std::string getMetalShaderSource() {
     };
 
     vertex VertexOut vertexShader(VertexIn in [[stage_in]],
-        constant VertexUniformBlock &vUniform[[buffer(1)]]) {
+        constant float4x4 mvpMatrix [[function_constant(0)]]) {
       VertexOut out;
-      out.position = vUniform.mvpMatrix * float4(in.position, 1.0);
+      out.position = mvpMatrix * float4(in.position, 1.0);
       out.uv = in.uv;
       return out;
     }
@@ -120,7 +115,7 @@ const char* getVulkanVertexShaderSource() {
   return R"(
     precision highp float;
 
-    layout (set = 1, binding = 1, std140) uniform PerFrame {
+    layout (push_constant) uniform PerFrame {
       mat4 mvpMatrix;
     } perFrame;
 
@@ -182,21 +177,6 @@ void TextureViewSession::initialize() noexcept {
     IGL_SOFT_ERROR("Texture views are not supported");
     std::terminate();
   }
-
-  vertUniformBuffer_ =
-      std::make_shared<iglu::ManagedUniformBuffer>(device,
-                                                   iglu::ManagedUniformBufferInfo{
-                                                       .index = 1,
-                                                       .length = sizeof(glm::mat4),
-                                                       .uniforms =
-                                                           std::vector<UniformDesc>{
-                                                               UniformDesc{
-                                                                   .name = "mvpMatrix",
-                                                                   .type = igl::UniformType::Mat4x4,
-                                                               },
-                                                           },
-                                                   });
-  IGL_DEBUG_ASSERT(vertUniformBuffer_->result.isOk());
 
   vb_ = device.createBuffer(
       BufferDesc(BufferDesc::BufferTypeBits::Vertex, kVertexData, sizeof(kVertexData)), nullptr);
@@ -357,11 +337,16 @@ void TextureViewSession::update(SurfaceTextures surfaceTextures) noexcept {
   const std::shared_ptr<IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass, framebuffer_);
 
-  *static_cast<glm::mat4*>(vertUniformBuffer_->getData()) = mvpMatrix;
-  vertUniformBuffer_->bind(device, *pipelineState_, *commands);
   commands->bindTexture(0, texture_.get());
   commands->bindSamplerState(0, BindTarget::kFragment, sampler_.get());
   commands->bindRenderPipelineState(pipelineState_);
+  if (device.getBackendType() == BackendType::Vulkan) {
+    commands->bindPushConstants(&mvpMatrix, sizeof(mvpMatrix));
+  } else if (device.getBackendType() == BackendType::Metal) {
+    commands->bindBytes(0, BindTarget::kVertex, &mvpMatrix, sizeof(mvpMatrix));
+  } else {
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  }
   commands->bindVertexBuffer(0, *vb_);
   commands->bindIndexBuffer(*ib_, IndexFormat::UInt16);
   commands->drawIndexed(36);
