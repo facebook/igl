@@ -65,4 +65,109 @@ TEST_F(VersionOGLTest, GetGLVersionEnum) {
   EXPECT_EQ(opengl::getGLVersion("2.0", true), opengl::GLVersion::v2_0);
 #endif
 }
+
+TEST_F(VersionOGLTest, GetShaderVersion) {
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v2_0_ES);
+    EXPECT_EQ(version.family, ShaderFamily::GlslEs);
+    EXPECT_EQ(version.majorVersion, 1);
+    EXPECT_EQ(version.minorVersion, 0);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v3_0_ES);
+    EXPECT_EQ(version.family, ShaderFamily::GlslEs);
+    EXPECT_EQ(version.majorVersion, 3);
+    EXPECT_EQ(version.minorVersion, 0);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v3_1_ES);
+    EXPECT_EQ(version.family, ShaderFamily::GlslEs);
+    EXPECT_EQ(version.majorVersion, 3);
+    EXPECT_EQ(version.minorVersion, 10);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v3_2_ES);
+    EXPECT_EQ(version.family, ShaderFamily::GlslEs);
+    EXPECT_EQ(version.majorVersion, 3);
+    EXPECT_EQ(version.minorVersion, 20);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v2_0);
+    EXPECT_EQ(version.family, ShaderFamily::Glsl);
+    EXPECT_EQ(version.majorVersion, 1);
+    EXPECT_EQ(version.minorVersion, 10);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v2_1);
+    EXPECT_EQ(version.family, ShaderFamily::Glsl);
+    EXPECT_EQ(version.majorVersion, 1);
+    EXPECT_EQ(version.minorVersion, 20);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v3_0);
+    EXPECT_EQ(version.family, ShaderFamily::Glsl);
+    EXPECT_EQ(version.majorVersion, 1);
+    EXPECT_EQ(version.minorVersion, 30);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v3_1);
+    EXPECT_EQ(version.family, ShaderFamily::Glsl);
+    EXPECT_EQ(version.majorVersion, 1);
+    EXPECT_EQ(version.minorVersion, 40);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v3_2);
+    EXPECT_EQ(version.family, ShaderFamily::Glsl);
+    EXPECT_EQ(version.majorVersion, 1);
+    EXPECT_EQ(version.minorVersion, 50);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v3_3);
+    EXPECT_EQ(version.family, ShaderFamily::Glsl);
+    EXPECT_EQ(version.majorVersion, 3);
+    EXPECT_EQ(version.minorVersion, 30);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v4_0);
+    EXPECT_EQ(version.family, ShaderFamily::Glsl);
+    EXPECT_EQ(version.majorVersion, 4);
+    EXPECT_EQ(version.minorVersion, 0);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v4_1);
+    EXPECT_EQ(version.family, ShaderFamily::Glsl);
+    EXPECT_EQ(version.majorVersion, 4);
+    EXPECT_EQ(version.minorVersion, 10);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v4_2);
+    EXPECT_EQ(version.family, ShaderFamily::Glsl);
+    EXPECT_EQ(version.majorVersion, 4);
+    EXPECT_EQ(version.minorVersion, 20);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v4_3);
+    EXPECT_EQ(version.family, ShaderFamily::Glsl);
+    EXPECT_EQ(version.majorVersion, 4);
+    EXPECT_EQ(version.minorVersion, 30);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v4_4);
+    EXPECT_EQ(version.family, ShaderFamily::Glsl);
+    EXPECT_EQ(version.majorVersion, 4);
+    EXPECT_EQ(version.minorVersion, 40);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v4_5);
+    EXPECT_EQ(version.family, ShaderFamily::Glsl);
+    EXPECT_EQ(version.majorVersion, 4);
+    EXPECT_EQ(version.minorVersion, 50);
+  }
+  {
+    const auto version = opengl::getShaderVersion(opengl::GLVersion::v4_6);
+    EXPECT_EQ(version.family, ShaderFamily::Glsl);
+    EXPECT_EQ(version.majorVersion, 4);
+    EXPECT_EQ(version.minorVersion, 60);
+  }
+}
 } // namespace igl::tests
