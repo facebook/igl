@@ -68,4 +68,26 @@ TEST_F(BaseTextureLoaderTest, CheckCapabilities) {
   ASSERT_FALSE(loader.canUseExternalMemory());
   ASSERT_FALSE(loader.shouldGenerateMipmaps());
 }
+
+TEST_F(BaseTextureLoaderTest, CreateTexture) {
+  Result result;
+  auto dataReader = iglu::textureloader::DataReader::tryCreate(
+      reinterpret_cast<const uint8_t*>(data::texture::TEX_RGBA_2x2),
+      sizeof(data::texture::TEX_RGBA_2x2),
+      &result);
+  ASSERT_TRUE(result.isOk());
+  ASSERT_TRUE(dataReader.has_value());
+
+  TestTextureLoader loader(*dataReader, TextureDesc::TextureUsageBits::Sampled);
+  loader.descriptorRef().type = TextureType::TwoD;
+  loader.descriptorRef().format = TextureFormat::RGBA_UNorm8;
+  EXPECT_TRUE(loader.create(*iglDev_, &result) != nullptr);
+  EXPECT_TRUE(result.isOk());
+
+  EXPECT_TRUE(loader.create(*iglDev_, TextureFormat::RGBA_UNorm8, &result) != nullptr);
+  EXPECT_TRUE(result.isOk());
+
+  EXPECT_TRUE(loader.create(*iglDev_, TextureDesc::TextureUsageBits::Sampled, &result) != nullptr);
+  EXPECT_TRUE(result.isOk());
+}
 } // namespace igl::tests
