@@ -68,7 +68,7 @@ TEST_F(VulkanFeaturesTest, EnableDefaultFeatures_Vk_1_1) {
   const igl::vulkan::VulkanContextConfig config;
 
   igl::vulkan::VulkanFeatures features(VK_API_VERSION_1_1, config);
-  features.enableDefaultFeatures1_1();
+  features.enableDefaultFeatures();
 
   EXPECT_EQ(features.version_, VK_API_VERSION_1_1);
   EXPECT_FALSE(features.VkPhysicalDeviceShaderFloat16Int8Features_.shaderFloat16);

@@ -121,7 +121,7 @@ bool VulkanFeatures::hasExtension(const char* ext) const {
   return false;
 }
 
-void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
+void VulkanFeatures::enableDefaultFeatures() noexcept {
   auto& features = VkPhysicalDeviceFeatures2_.features;
   features.dualSrcBlend = config_.enableDualSrcBlend ? VK_TRUE : VK_FALSE;
   features.shaderInt16 = config_.enableShaderInt16 ? VK_TRUE : VK_FALSE;

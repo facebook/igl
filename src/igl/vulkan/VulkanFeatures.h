@@ -76,7 +76,7 @@ class VulkanFeatures final {
   ///
   /// VULKAN 1.2:
   /// VkPhysicalDeviceShaderFloat16Int8Features.shaderFloat16
-  void enableDefaultFeatures1_1() noexcept;
+  void enableDefaultFeatures() noexcept;
 
   /// @brief Checks the features enabled in this class against the ones passed
   /// in as a parameter in 'availableFeatures'. If a requested feature is not present, the class
