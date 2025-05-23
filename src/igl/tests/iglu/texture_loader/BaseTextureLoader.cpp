@@ -90,4 +90,28 @@ TEST_F(BaseTextureLoaderTest, CreateTexture) {
   EXPECT_TRUE(loader.create(*iglDev_, TextureDesc::TextureUsageBits::Sampled, &result) != nullptr);
   EXPECT_TRUE(result.isOk());
 }
+
+TEST_F(BaseTextureLoaderTest, UploadTexture) {
+  Result result;
+  auto dataReader = iglu::textureloader::DataReader::tryCreate(
+      reinterpret_cast<const uint8_t*>(data::texture::TEX_RGBA_2x2),
+      sizeof(data::texture::TEX_RGBA_2x2),
+      &result);
+  ASSERT_TRUE(result.isOk());
+  ASSERT_TRUE(dataReader.has_value());
+
+  TestTextureLoader loader(*dataReader, TextureDesc::TextureUsageBits::Sampled);
+  loader.descriptorRef().type = TextureType::TwoD;
+  loader.descriptorRef().format = TextureFormat::RGBA_UNorm8;
+  auto texture = loader.create(*iglDev_, &result);
+  ASSERT_TRUE(texture != nullptr);
+  ASSERT_TRUE(result.isOk());
+
+  loader.upload(*texture, &result);
+  ASSERT_TRUE(result.isOk());
+
+  uint8_t data = 0;
+  loader.loadToExternalMemory(&data, 0, &result);
+  ASSERT_FALSE(result.isOk());
+}
 } // namespace igl::tests
