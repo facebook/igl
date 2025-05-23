@@ -121,7 +121,6 @@ namespace igl::vulkan {
 #define kColorGenerateMipmaps igl::Color(1.f, 0.75f, 0.f)
 #define kColorUploadImage igl::Color(1.f, 0.2f, 0.78f)
 #define kColorDebugLines igl::Color(0.f, 1.f, 1.f)
-#define kColorCommandBufferSubmissionWithFence igl::Color(0.878f, 0.69f, 1.0f) // Mauve
 
 // The VulkanContextConfig provides a way to override some of the the default behaviors of the
 // VulkanContext
@@ -175,16 +174,15 @@ struct VulkanContextConfig {
 };
 
 /**
- * @brief Encapsulates a handle to a VkSampler. The struct also stores the sampler id, which is
- * used for bindless rendering (see the ResourcesBinder and VulkanContext classes for more
- * information)
+ * @brief Encapsulates a handle to a VkSampler. The struct also stores the sampler id, which is used
+ * for bindless rendering (see the ResourcesBinder and VulkanContext classes for more information)
  */
 struct VulkanSampler final {
   VkSampler vkSampler = VK_NULL_HANDLE;
   /**
-   * @brief The index into VulkanContext::samplers_. This index is intended to be used with
-   * bindless rendering. Its value is set by the context when the resource is created and added to
-   * the vector of samplers maintained by the VulkanContext.
+   * @brief The index into VulkanContext::samplers_. This index is intended to be used with bindless
+   * rendering. Its value is set by the context when the resource is created and added to the vector
+   * of samplers maintained by the VulkanContext.
    */
   uint32_t samplerId = 0;
 };
@@ -222,9 +220,9 @@ void transitionToDepthStencilAttachment(VkCommandBuffer cmdBuf, ITexture* depthS
 /// @brief Transition from the current layout to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 void transitionToShaderReadOnly(VkCommandBuffer cmdBuf, ITexture* texture);
 
-/// @brief Overrides the layout stored in the `texture` with the one in `layout`. This function
-/// does not perform a transition, it only updates the texture's member variable that stores its
-/// current layout
+/// @brief Overrides the layout stored in the `texture` with the one in `layout`. This function does
+/// not perform a transition, it only updates the texture's member variable that stores its current
+/// layout
 void overrideImageLayout(ITexture* texture, VkImageLayout layout);
 
 /// @brief Ensures that all shader bindings are bound by checking the SPIR-V reflection. If the
