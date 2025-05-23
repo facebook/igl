@@ -35,6 +35,7 @@ class Context final : public IContext {
   /// Create a new context for default display. This constructor makes the assumption that the EGL
   /// surfaces to be associated with this context are already present and set to current.
   explicit Context(EGLNativeWindowType window);
+  explicit Context(BackendVersion backendVersion, EGLNativeWindowType window);
   /// Create a new offscreen context.
   Context(size_t width, size_t height);
   /// Create a new context applicable for a specific display/context/read surface/draw surface.
@@ -104,7 +105,8 @@ class Context final : public IContext {
   std::optional<bool> eglSupportssRGB_;
 
  private:
-  Context(EGLContext shareContext,
+  Context(BackendVersion backendVersion,
+          EGLContext shareContext,
           std::shared_ptr<std::vector<EGLContext>> sharegroup,
           bool offscreen,
           EGLNativeWindowType window,
@@ -125,6 +127,12 @@ class Context final : public IContext {
   // Since EGLContext does not expose a Share Group, this must be set manually via the
   // constructor and should be a list of all the contexts in the group including this context_
   std::shared_ptr<std::vector<EGLContext>> sharegroup_;
+
+  static constexpr BackendVersion kDefaultEGLBackendVersion = {
+      .flavor = BackendFlavor::OpenGL_ES,
+      .majorVersion = 2,
+  };
+  BackendVersion backendVersion_ = kDefaultEGLBackendVersion;
 };
 
 } // namespace igl::opengl::egl

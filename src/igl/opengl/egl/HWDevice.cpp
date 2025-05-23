@@ -23,11 +23,10 @@ std::unique_ptr<IContext> HWDevice::createContext(EGLNativeWindowType nativeWind
   return std::make_unique<Context>(nativeWindow);
 }
 
-std::unique_ptr<IContext> HWDevice::createContext([[maybe_unused]] BackendVersion backendVersion,
+std::unique_ptr<IContext> HWDevice::createContext(BackendVersion backendVersion,
                                                   EGLNativeWindowType nativeWindow,
                                                   Result* outResult) const {
-  IGL_DEBUG_ASSERT(backendVersion.flavor == BackendFlavor::OpenGL_ES);
-  return createContext(nativeWindow, outResult);
+  return std::make_unique<Context>(backendVersion, nativeWindow);
 }
 
 std::unique_ptr<IContext> HWDevice::createOffscreenContext(size_t width,

@@ -21,6 +21,10 @@
 
 #define CHECK_EGL_ERRORS() error_checking::checkForEGLErrors(__FILE__, __FUNCTION__, __LINE__)
 
+#ifndef EGL_OPENGL_ES3_BIT
+#define EGL_OPENGL_ES3_BIT 0x00000040
+#endif
+
 namespace error_checking {
 
 #define CASE_ERROR_CODE_IMPL(egl_error_code) \
@@ -79,28 +83,49 @@ EGLDisplay getDefaultEGLDisplay() {
 }
 
 // typical high-quality attrib list
-constexpr std::array attribs{EGLint{EGL_RED_SIZE},
-                             EGLint{8},
-                             EGLint{EGL_GREEN_SIZE},
-                             EGLint{8},
-                             EGLint{EGL_BLUE_SIZE},
-                             EGLint{8},
-                             EGLint{EGL_ALPHA_SIZE},
-                             EGLint{8},
-                             EGLint{EGL_DEPTH_SIZE},
-                             EGLint{16},
-                             EGLint{EGL_SURFACE_TYPE},
-                             EGLint{EGL_PBUFFER_BIT},
-                             EGLint{EGL_RENDERABLE_TYPE},
-                             EGLint{EGL_OPENGL_ES2_BIT},
-                             EGLint{EGL_NONE}};
-constexpr std::array contextAttribs{EGLint{EGL_CONTEXT_CLIENT_VERSION},
-                                    EGLint{2},
-                                    EGLint{EGL_NONE}};
+constexpr std::array attribsOpenGLES2{EGLint{EGL_RED_SIZE},
+                                      EGLint{8},
+                                      EGLint{EGL_GREEN_SIZE},
+                                      EGLint{8},
+                                      EGLint{EGL_BLUE_SIZE},
+                                      EGLint{8},
+                                      EGLint{EGL_ALPHA_SIZE},
+                                      EGLint{8},
+                                      EGLint{EGL_DEPTH_SIZE},
+                                      EGLint{16},
+                                      EGLint{EGL_SURFACE_TYPE},
+                                      EGLint{EGL_PBUFFER_BIT},
+                                      EGLint{EGL_RENDERABLE_TYPE},
+                                      EGLint{EGL_OPENGL_ES2_BIT},
+                                      EGLint{EGL_NONE}};
+constexpr std::array contextAttribsOpenGLES2{EGLint{EGL_CONTEXT_CLIENT_VERSION},
+                                             EGLint{2},
+                                             EGLint{EGL_NONE}};
 
-std::pair<EGLDisplay, EGLContext> newEGLContext(EGLDisplay display,
+constexpr std::array attribsOpenGLES3{EGLint{EGL_RED_SIZE},
+                                      EGLint{8},
+                                      EGLint{EGL_GREEN_SIZE},
+                                      EGLint{8},
+                                      EGLint{EGL_BLUE_SIZE},
+                                      EGLint{8},
+                                      EGLint{EGL_ALPHA_SIZE},
+                                      EGLint{8},
+                                      EGLint{EGL_DEPTH_SIZE},
+                                      EGLint{16},
+                                      EGLint{EGL_SURFACE_TYPE},
+                                      EGLint{EGL_PBUFFER_BIT},
+                                      EGLint{EGL_RENDERABLE_TYPE},
+                                      EGLint{EGL_OPENGL_ES3_BIT},
+                                      EGLint{EGL_NONE}};
+constexpr std::array contextAttribsOpenGLES3{EGLint{EGL_CONTEXT_CLIENT_VERSION},
+                                             EGLint{3},
+                                             EGLint{EGL_NONE}};
+
+std::pair<EGLDisplay, EGLContext> newEGLContext(uint8_t contextMajorVersion,
+                                                EGLDisplay display,
                                                 EGLContext shareContext,
                                                 EGLConfig* config) {
+  IGL_DEBUG_ASSERT(contextMajorVersion == 2 || contextMajorVersion == 3);
   if (display == EGL_NO_DISPLAY || !eglInitialize(display, nullptr, nullptr)) {
     CHECK_EGL_ERRORS();
     // TODO: Handle error
@@ -113,6 +138,9 @@ std::pair<EGLDisplay, EGLContext> newEGLContext(EGLDisplay display,
   }
 
   EGLint numConfigs = 0;
+  const auto& attribs = contextMajorVersion == 2 ? attribsOpenGLES2 : attribsOpenGLES3;
+  const auto& contextAttribs = contextMajorVersion == 2 ? contextAttribsOpenGLES2
+                                                        : contextAttribsOpenGLES3;
   if (!eglChooseConfig(display, attribs.data(), config, 1, &numConfigs)) {
     CHECK_EGL_ERRORS();
   }
@@ -123,7 +151,9 @@ std::pair<EGLDisplay, EGLContext> newEGLContext(EGLDisplay display,
   return res;
 }
 
-EGLConfig chooseConfig(EGLDisplay display) {
+EGLConfig chooseConfig(uint8_t contextMajorVersion, EGLDisplay display) {
+  IGL_DEBUG_ASSERT(contextMajorVersion == 2 || contextMajorVersion == 3);
+  const auto& attribs = contextMajorVersion == 2 ? attribsOpenGLES2 : attribsOpenGLES3;
   EGLConfig config{nullptr};
   EGLint numConfigs{0};
   const EGLBoolean status = eglChooseConfig(display, attribs.data(), &config, 1, &numConfigs);
@@ -169,34 +199,43 @@ EGLConfig chooseConfig(EGLDisplay display) {
 }
 
 Context::Context(EGLNativeWindowType window) :
-  Context(EGL_NO_CONTEXT, nullptr, false, window, {0, 0}) {}
+  Context(kDefaultEGLBackendVersion, EGL_NO_CONTEXT, nullptr, false, window, {0, 0}) {}
+
+Context::Context(BackendVersion backendVersion, EGLNativeWindowType window) :
+  Context(backendVersion, EGL_NO_CONTEXT, nullptr, false, window, {0, 0}) {}
 
 Context::Context(size_t width, size_t height) :
-  Context(EGL_NO_CONTEXT,
+  Context(kDefaultEGLBackendVersion,
+          EGL_NO_CONTEXT,
           nullptr,
           true,
           IGL_EGL_NULL_WINDOW,
           {static_cast<EGLint>(width), static_cast<EGLint>(height)}) {}
 
 Context::Context(const Context& sharedContext) :
-  Context(sharedContext.context_,
+  Context(sharedContext.backendVersion_,
+          sharedContext.context_,
           sharedContext.sharegroup_,
           true,
           IGL_EGL_NULL_WINDOW,
           sharedContext.getDrawSurfaceDimensions(nullptr)) {}
 
-Context::Context(EGLContext shareContext,
+Context::Context(BackendVersion backendVersion,
+                 EGLContext shareContext,
                  std::shared_ptr<std::vector<EGLContext>> sharegroup,
                  bool offscreen,
                  EGLNativeWindowType window,
-                 std::pair<EGLint, EGLint> dimensions) {
+                 std::pair<EGLint, EGLint> dimensions) :
+  backendVersion_(backendVersion) {
+  IGL_DEBUG_ASSERT(backendVersion.flavor == BackendFlavor::OpenGL_ES);
   IGL_DEBUG_ASSERT(
       (shareContext == EGL_NO_CONTEXT && sharegroup == nullptr) ||
           (shareContext != EGL_NO_CONTEXT && sharegroup != nullptr &&
            std::find(sharegroup->begin(), sharegroup->end(), shareContext) != sharegroup->end()),
       "shareContext and sharegroup values must be consistent");
   EGLConfig config{nullptr};
-  auto contextDisplay = newEGLContext(getDefaultEGLDisplay(), shareContext, &config);
+  auto contextDisplay =
+      newEGLContext(backendVersion.majorVersion, getDefaultEGLDisplay(), shareContext, &config);
   IGL_DEBUG_ASSERT(contextDisplay.second != EGL_NO_CONTEXT, "newEGLContext failed");
 
   contextOwned_ = true;
@@ -259,7 +298,8 @@ Context::Context(EGLDisplay display,
   context_(context),
   readSurface_(readSurface),
   drawSurface_(drawSurface),
-  config_(config) {
+  config_(config),
+  backendVersion_(kDefaultEGLBackendVersion) {
   IContext::registerContext((void*)context_, this);
   initialize();
   sharegroup_ = std::make_shared<std::vector<EGLContext>>();
@@ -267,7 +307,8 @@ Context::Context(EGLDisplay display,
 }
 
 void Context::updateSurface(NativeWindowType window) {
-  surface_ = eglCreateWindowSurface(display_, chooseConfig(display_), window, nullptr);
+  surface_ = eglCreateWindowSurface(
+      display_, chooseConfig(backendVersion_.majorVersion, display_), window, nullptr);
   CHECK_EGL_ERRORS();
   readSurface_ = surface_;
   drawSurface_ = surface_;
@@ -376,7 +417,8 @@ void Context::updateSurfaces(EGLSurface readSurface, EGLSurface drawSurface) {
 }
 
 EGLSurface Context::createSurface(NativeWindowType window) {
-  auto* surface = eglCreateWindowSurface(display_, chooseConfig(display_), window, nullptr);
+  auto* surface = eglCreateWindowSurface(
+      display_, chooseConfig(backendVersion_.majorVersion, display_), window, nullptr);
   CHECK_EGL_ERRORS();
   return surface;
 }
