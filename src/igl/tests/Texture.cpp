@@ -639,6 +639,113 @@ TEST_F(TextureTest, Resize) {
 }
 
 //
+// Similar to "Texture Resize Test" but uses a texture view
+//
+TEST_F(TextureTest, ResizeTextureView) {
+  if (!iglDev_->hasFeature(DeviceFeatures::TextureViews)) {
+    GTEST_SKIP() << "Texture views not supported. Skipping.";
+  }
+
+  Result ret;
+  std::shared_ptr<IRenderPipelineState> pipelineState;
+
+  constexpr uint32_t kInputTexWidth = 10u;
+  constexpr uint32_t kInputTexHeight = 40u;
+  constexpr uint32_t kOutputTexWidth = 5u;
+  constexpr uint32_t kOutputTexHeight = 5u;
+  constexpr size_t kTextureSize =
+      static_cast<size_t>(kInputTexWidth) * static_cast<size_t>(kInputTexHeight);
+
+  //-------------------------------------
+  // Create input texture and upload data
+  //-------------------------------------
+  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                           kInputTexWidth,
+                                           kInputTexHeight,
+                                           TextureDesc::TextureUsageBits::Sampled);
+  inputTexture_ = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(inputTexture_ != nullptr);
+
+  auto rangeDesc = TextureRangeDesc::new2D(0, 0, kInputTexWidth, kInputTexHeight);
+
+  // Allocate input texture and set color to 0x80808080
+  std::vector<uint32_t> inputTexData(kTextureSize, 0x80808080);
+  inputTexture_->upload(rangeDesc, inputTexData.data());
+
+  //------------------------------------------------------------------------
+  // Create a different sized output texture, and attach it to a framebuffer
+  //------------------------------------------------------------------------
+  texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                               kOutputTexWidth,
+                               kOutputTexHeight,
+                               TextureDesc::TextureUsageBits::Sampled |
+                                   TextureDesc::TextureUsageBits::Attachment);
+
+  auto baseTex = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(baseTex != nullptr);
+
+  auto outputTex = iglDev_->createTextureView(baseTex,
+                                              {
+                                                  .layer = 0,
+                                                  .numLayers = 1,
+                                                  .mipLevel = 0,
+                                                  .numMipLevels = 1,
+                                                  .debugName = "outputTex",
+                                              },
+                                              &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(outputTex != nullptr);
+
+  // Create framebuffer using the output texture
+  FramebufferDesc framebufferDesc;
+
+  framebufferDesc.colorAttachments[0].texture = outputTex;
+  auto fb = iglDev_->createFramebuffer(framebufferDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(fb != nullptr);
+
+  //----------------
+  // Create Pipeline
+  //----------------
+  pipelineState = iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(pipelineState != nullptr);
+
+  //-------
+  // Render
+  //-------
+  cmdBuf_ = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(cmdBuf_ != nullptr);
+
+  auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, fb);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+
+  cmds->bindRenderPipelineState(pipelineState);
+
+  cmds->bindTexture(textureUnit_, BindTarget::kFragment, inputTexture_.get());
+  cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
+
+  cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
+  cmds->drawIndexed(6);
+
+  cmds->endEncoding();
+
+  cmdQueue_->submit(*cmdBuf_);
+
+  cmdBuf_->waitUntilCompleted();
+
+  //----------------
+  // Validate output
+  //----------------
+  util::validateFramebufferTexture(
+      *iglDev_, *cmdQueue_, *fb, data::texture::TEX_RGBA_GRAY_5x5, "Resize");
+}
+
+//
 // Texture Validate Range 2D
 //
 // This test validates some of the logic in validateRange for 2D textures.
