@@ -45,7 +45,7 @@ class TextureFormatTestBase : public ::testing::Test {
   void testUsage(std::shared_ptr<ITexture> texture,
                  TextureDesc::TextureUsage usage,
                  const char* usageName); // Member variables
- public:
+ protected:
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
   std::shared_ptr<ITexture> sampledTexture_;
