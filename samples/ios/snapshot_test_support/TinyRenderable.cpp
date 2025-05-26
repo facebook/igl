@@ -148,7 +148,7 @@ const size_t kTextureUnit = 0;
 namespace iglu::kit {
 
 const nlohmann::json& TinyRenderable::getProperties() const {
-  static const nlohmann::json j;
+  static const nlohmann::json kJ;
   //  = {
   //    "name", "tiny",
   //    {"backends", {
@@ -157,7 +157,7 @@ const nlohmann::json& TinyRenderable::getProperties() const {
   //    {"snapshot-test", true},
   //  };
 
-  return j;
+  return kJ;
 }
 
 void TinyRenderable::initialize(igl::IDevice& device, const igl::IFramebuffer& framebuffer) {
