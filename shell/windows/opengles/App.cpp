@@ -39,15 +39,15 @@ class OpenGlEsShell final : public GlfwShell {
 class EGLDevice final : public ::igl::opengl::Device {
  public:
   explicit EGLDevice(std::unique_ptr<::igl::opengl::IContext> context) :
-    Device(std::move(context)), platformDevice_(*this) {
+    Device(std::move(context)), platformDevice(*this) {
     {}
   }
 
   [[nodiscard]] const igl::opengl::PlatformDevice& getPlatformDevice() const noexcept override {
-    return platformDevice_;
+    return platformDevice;
   }
 
-  ::igl::opengl::PlatformDevice platformDevice_;
+  ::igl::opengl::PlatformDevice platformDevice;
 };
 
 void OpenGlEsShell::willCreateWindow() noexcept {
