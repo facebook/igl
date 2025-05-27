@@ -33,10 +33,10 @@ XrRefreshRate::~XrRefreshRate() noexcept = default;
 
 bool XrRefreshRate::initialize(const Params& params) noexcept {
   queryCurrentRefreshRate();
-  if (params.refreshRateMode_ == RefreshRateMode::UseMaxRefreshRate) {
+  if (params.refreshRateMode == RefreshRateMode::kUseMaxRefreshRate) {
     setMaxRefreshRate();
-  } else if (params.refreshRateMode_ == RefreshRateMode::UseSpecificRefreshRate) {
-    setRefreshRate(params.desiredSpecificRefreshRate_);
+  } else if (params.refreshRateMode == RefreshRateMode::kUseSpecificRefreshRate) {
+    setRefreshRate(params.desiredSpecificRefreshRate);
   } else {
     // Do nothing. Use default refresh rate.
   }

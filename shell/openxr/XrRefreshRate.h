@@ -17,13 +17,13 @@ namespace igl::shell::openxr {
 class XrRefreshRate final {
  public:
   enum RefreshRateMode : uint8_t {
-    UseDefault = 0,
-    UseMaxRefreshRate,
-    UseSpecificRefreshRate,
+    kUseDefault = 0,
+    kUseMaxRefreshRate,
+    kUseSpecificRefreshRate,
   };
   struct Params {
-    RefreshRateMode refreshRateMode_ = RefreshRateMode::UseDefault;
-    float desiredSpecificRefreshRate_ = 90.0f;
+    RefreshRateMode refreshRateMode = RefreshRateMode::kUseDefault;
+    float desiredSpecificRefreshRate = 90.0f;
   };
 
   XrRefreshRate(XrInstance instance, XrSession session) noexcept;
