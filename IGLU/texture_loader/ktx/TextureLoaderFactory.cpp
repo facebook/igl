@@ -118,8 +118,8 @@ void TextureLoader::loadToExternalMemoryInternal(uint8_t* IGL_NONNULL data,
     // will overflow `size_t` and hence act additive to destination_size.
     //
     // To avoid this, we properly compute the available_size and then check that.
-    const size_t available_size = offset > length ? 0 : length - offset;
-    if (mipLevelLength > available_size) {
+    const size_t availableSize = offset > length ? 0 : length - offset;
+    if (mipLevelLength > availableSize) {
       igl::Result::setResult(
           outResult, igl::Result::Code::InvalidOperation, "data length is too small.");
       return;
