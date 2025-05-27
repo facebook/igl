@@ -44,7 +44,7 @@ class LRUStatePool : public IStatePool<TDescriptor, TStateObject> {
   void setCacheSize(uint32_t maxCacheSize) {
     maxCacheSize_ = maxCacheSize;
     while (stateList_.size() >= maxCacheSize_) {
-      deleteLastUsed_();
+      deleteLastUsed();
     }
   }
 
@@ -64,7 +64,7 @@ class LRUStatePool : public IStatePool<TDescriptor, TStateObject> {
       // Cache miss
       if (stateList_.size() >= maxCacheSize_) {
         // If the cache is full delete the last used
-        deleteLastUsed_();
+        deleteLastUsed();
       }
 
       // Add new element to start of queue
@@ -88,7 +88,7 @@ class LRUStatePool : public IStatePool<TDescriptor, TStateObject> {
                                                           const TDescriptor& desc,
                                                           igl::Result* outResult) = 0;
 
-  void deleteLastUsed_() {
+  void deleteLastUsed() {
     auto last = stateList_.back();
     stateList_.pop_back();
     stateMap_.erase(last.first);
