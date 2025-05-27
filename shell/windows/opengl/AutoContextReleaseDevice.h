@@ -42,10 +42,10 @@ struct WGLDevice final : public igl::opengl::Device {
 #elif IGL_PLATFORM_LINUX
 struct GLXDevice final : public igl::opengl::Device {
   explicit GLXDevice(std::unique_ptr<igl::opengl::glx::Context> context) :
-    Device(std::move(context)), platformDevice_(*this) {}
+    Device(std::move(context)), platformDevice(*this) {}
 
   [[nodiscard]] const igl::opengl::PlatformDevice& getPlatformDevice() const noexcept override {
-    return platformDevice_;
+    return platformDevice;
   }
 
   void endScope() override {
@@ -55,7 +55,7 @@ struct GLXDevice final : public igl::opengl::Device {
     }
   }
 
-  igl::opengl::PlatformDevice platformDevice_;
+  igl::opengl::PlatformDevice platformDevice;
 };
 #endif
 } // namespace igl::shell::util
