@@ -27,15 +27,15 @@ using namespace igl;
 
 namespace {
 
-std::unique_ptr<IDevice> device_;
-std::shared_ptr<ICommandQueue> commandQueue_;
-std::shared_ptr<IFramebuffer> framebuffer_;
-RenderPassDesc renderPass_;
-std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
+std::unique_ptr<IDevice> device;
+std::shared_ptr<ICommandQueue> commandQueue;
+std::shared_ptr<IFramebuffer> framebuffer;
+RenderPassDesc renderPass;
+std::shared_ptr<IRenderPipelineState> renderPipelineStateTriangle;
 
-ANativeWindow* window_;
-uint32_t width_, height_;
-bool initialized_;
+ANativeWindow* window;
+uint32_t width, height;
+bool initialized;
 
 const char* codeVS = R"(
 #version 460
@@ -68,70 +68,69 @@ void main() {
 void initWindow(ANativeWindow* window) {
   // Get the Window first
   ANativeWindow_acquire(window);
-  window_ = window;
-  if (window_ == nullptr) {
+  window = window;
+  if (window == nullptr) {
     IGL_SAMPLE_LOG_ERROR("ANativeWindow is null");
     return;
   }
 
-  width_ = ANativeWindow_getWidth(window_);
-  height_ = ANativeWindow_getHeight(window_);
-  IGL_SAMPLE_LOG_INFO("window size: [%d, %d]", width_, height_);
+  width = ANativeWindow_getWidth(window);
+  height = ANativeWindow_getHeight(window);
+  IGL_SAMPLE_LOG_INFO("window size: [%d, %d]", width, height);
 }
 
 void initIGL() {
   // create a device
   const igl::vulkan::VulkanContextConfig ctxConfig;
-  auto ctx = vulkan::HWDevice::createContext(ctxConfig, window_);
+  auto ctx = vulkan::HWDevice::createContext(ctxConfig, window);
   std::vector<HWDeviceDesc> devices =
       vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
-  device_ =
-      vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
-  IGL_DEBUG_ASSERT(device_);
+  device = vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width, (uint32_t)height);
+  IGL_DEBUG_ASSERT(device);
 
   // Command queue: backed by different types of GPU HW queues
   CommandQueueDesc desc{};
-  commandQueue_ = device_->createCommandQueue(desc, nullptr);
+  commandQueue = device->createCommandQueue(desc, nullptr);
 
-  renderPass_.colorAttachments.emplace_back();
-  renderPass_.colorAttachments.back().loadAction = LoadAction::Clear;
-  renderPass_.colorAttachments.back().storeAction = StoreAction::Store;
-  renderPass_.colorAttachments.back().clearColor = {0.4f, 0.0f, 0.0f, 1.0f};
-  renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
+  renderPass.colorAttachments.emplace_back();
+  renderPass.colorAttachments.back().loadAction = LoadAction::Clear;
+  renderPass.colorAttachments.back().storeAction = StoreAction::Store;
+  renderPass.colorAttachments.back().clearColor = {0.4f, 0.0f, 0.0f, 1.0f};
+  renderPass.depthAttachment.loadAction = LoadAction::DontCare;
 }
 
 void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   FramebufferDesc framebufferDesc;
   framebufferDesc.colorAttachments[0].texture = nativeDrawable;
-  framebuffer_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_DEBUG_ASSERT(framebuffer_);
+  framebuffer = device->createFramebuffer(framebufferDesc, nullptr);
+  IGL_DEBUG_ASSERT(framebuffer);
 }
 
 void createRenderPipeline() {
-  if (renderPipelineState_Triangle_) {
+  if (renderPipelineStateTriangle) {
     return;
   }
 
-  IGL_DEBUG_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer);
 
   RenderPipelineDesc desc;
 
   desc.targetDesc.colorAttachments.resize(1);
   desc.targetDesc.colorAttachments[0].textureFormat =
-      framebuffer_->getColorAttachment(0)->getProperties().format;
+      framebuffer->getColorAttachment(0)->getProperties().format;
 
-  if (framebuffer_->getDepthAttachment()) {
+  if (framebuffer->getDepthAttachment()) {
     desc.targetDesc.depthAttachmentFormat =
-        framebuffer_->getDepthAttachment()->getProperties().format;
+        framebuffer->getDepthAttachment()->getProperties().format;
   }
 
   desc.shaderStages = ShaderStagesCreator::fromModuleStringInput(
-      *device_, codeVS, "main", "", codeFS, "main", "", nullptr);
-  renderPipelineState_Triangle_ = device_->createRenderPipeline(desc, nullptr);
+      *device, codeVS, "main", "", codeFS, "main", "", nullptr);
+  renderPipelineStateTriangle = device->createRenderPipeline(desc, nullptr);
 }
 
 std::shared_ptr<ITexture> getVulkanNativeDrawable() {
-  const auto& vkPlatformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
+  const auto& vkPlatformDevice = device->getPlatformDevice<igl::vulkan::PlatformDevice>();
 
   IGL_DEBUG_ASSERT(vkPlatformDevice != nullptr);
 
@@ -143,24 +142,24 @@ std::shared_ptr<ITexture> getVulkanNativeDrawable() {
 }
 
 void render() {
-  if (!initialized_) {
+  if (!initialized) {
     return;
   }
 
   auto nativeDrawable = getVulkanNativeDrawable();
-  framebuffer_->updateDrawable(nativeDrawable);
+  framebuffer->updateDrawable(nativeDrawable);
 
   // Command buffers (1-N per thread): create, submit and forget
   CommandBufferDesc cbDesc;
-  std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  std::shared_ptr<ICommandBuffer> buffer = commandQueue->createCommandBuffer(cbDesc, nullptr);
 
-  const igl::Viewport viewport = {0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f};
-  const igl::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
+  const igl::Viewport viewport = {0.0f, 0.0f, (float)width, (float)height, 0.0f, +1.0f};
+  const igl::ScissorRect scissor = {0, 0, (uint32_t)width, (uint32_t)height};
 
   // This will clear the framebuffer
-  auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+  auto commands = buffer->createRenderCommandEncoder(renderPass, framebuffer);
 
-  commands->bindRenderPipelineState(renderPipelineState_Triangle_);
+  commands->bindRenderPipelineState(renderPipelineStateTriangle);
   commands->bindViewport(viewport);
   commands->bindScissorRect(scissor);
 
@@ -172,11 +171,11 @@ void render() {
 
   buffer->present(nativeDrawable);
 
-  commandQueue_->submit(*buffer);
+  commandQueue->submit(*buffer);
 }
 
 void initialize(android_app* app) {
-  if (initialized_) {
+  if (initialized) {
     return;
   }
 
@@ -185,13 +184,13 @@ void initialize(android_app* app) {
 
   createFramebuffer(getVulkanNativeDrawable());
   createRenderPipeline();
-  initialized_ = true;
+  initialized = true;
 }
 } // namespace
 
 // Android NativeActivity functions
 extern "C" {
-void handle_cmd(struct android_app* app, int32_t cmd) {}
+void handleCmd(struct android_app* app, int32_t cmd) {}
 static void handleAppCmd(struct android_app* app, int32_t appCmd) {
   switch (appCmd) {
   case APP_CMD_SAVE_STATE:
@@ -209,10 +208,10 @@ static void handleAppCmd(struct android_app* app, int32_t appCmd) {
   case APP_CMD_DESTROY:
   case APP_CMD_STOP:
     // destroy all the Vulkan stuff before closing the window
-    renderPipelineState_Triangle_ = nullptr;
-    framebuffer_ = nullptr;
-    device_.reset(nullptr);
-    initialized_ = false;
+    renderPipelineStateTriangle = nullptr;
+    framebuffer = nullptr;
+    device.reset(nullptr);
+    initialized = false;
     break;
   }
 }
