@@ -9,9 +9,7 @@
 
 #include <memory>
 #include <optional>
-#include <string>
 #include <igl/DeviceFeatures.h>
-#include <igl/opengl/IContext.h>
 
 namespace igl {
 class IDevice;

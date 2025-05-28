@@ -67,7 +67,7 @@ std::shared_ptr<IDevice> createTestDevice(std::optional<BackendVersion> requeste
 
 #endif
 
-  return std::static_pointer_cast<IDevice>(iglDev);
+  return iglDev;
 }
 
 } // namespace igl::tests::util::device::opengl
