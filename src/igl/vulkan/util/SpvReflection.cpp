@@ -28,30 +28,30 @@ struct SpirvId {
 
 struct ImageDimensionality {
   enum : uint32_t {
-    Dim1d = 0,
-    Dim2d = 1,
-    Dim3d = 2,
-    DimCube = 3,
-    DimRect = 4,
-    Dim2dExternal = 666, // Doesn't exist in SPIR-V, but needed for Android.
-    Dim2dExternalYUV = 667, // Doesn't exist in SPIR-V, but needed for Android.
+    kDim1d = 0,
+    kDim2d = 1,
+    kDim3d = 2,
+    kDimCube = 3,
+    kDimRect = 4,
+    kDim2dExternal = 666, // Doesn't exist in SPIR-V, but needed for Android.
+    kDim2dExternalYuv = 667, // Doesn't exist in SPIR-V, but needed for Android.
   };
 };
 
 TextureType getIGLTextureType(uint32_t dim, bool isArrayed) {
   switch (dim) {
-  case ImageDimensionality::Dim2d:
+  case ImageDimensionality::kDim2d:
     return isArrayed ? TextureType::TwoDArray : TextureType::TwoD;
-  case ImageDimensionality::Dim3d:
+  case ImageDimensionality::kDim3d:
     return TextureType::ThreeD;
-  case ImageDimensionality::DimCube:
+  case ImageDimensionality::kDimCube:
     return TextureType::Cube;
-  case ImageDimensionality::Dim2dExternal:
-  case ImageDimensionality::Dim2dExternalYUV:
+  case ImageDimensionality::kDim2dExternal:
+  case ImageDimensionality::kDim2dExternalYuv:
     return TextureType::ExternalImage;
 
-  case ImageDimensionality::DimRect:
-  case ImageDimensionality::Dim1d:
+  case ImageDimensionality::kDimRect:
+  case ImageDimensionality::kDim1d:
   default:
     return TextureType::Invalid;
   }
