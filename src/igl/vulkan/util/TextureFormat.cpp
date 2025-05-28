@@ -12,7 +12,7 @@
 namespace igl::vulkan::util {
 
 // @fb-only
-
+// NOLINTBEGIN(readability-identifier-naming)
 // Vulkan Defines
 #define VK_FORMAT_UNDEFINED 0
 #define VK_FORMAT_R8_UNORM 9
@@ -94,6 +94,7 @@ namespace igl::vulkan::util {
 #define VK_FORMAT_S8_UINT 127
 #define VK_FORMAT_D32_SFLOAT_S8_UINT 130
 #define VK_FORMAT_D32_SFLOAT 126
+// NOLINTEND(readability-identifier-naming)
 
 TextureFormat vkTextureFormatToTextureFormat(int32_t vkFormat) {
   switch (vkFormat) {

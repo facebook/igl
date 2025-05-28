@@ -38,7 +38,7 @@ class BufferSynchronizationManagerMTLTest : public ::testing::Test {
 
   void TearDown() override {}
 
- public:
+ protected:
   std::shared_ptr<IDevice> device_;
   std::shared_ptr<ICommandQueue> commandQueue_;
   std::shared_ptr<metal::BufferSynchronizationManager> bufferSyncManager_;

@@ -28,7 +28,7 @@ class DeviceFeatureSetMTLTest : public ::testing::Test {
 
   void TearDown() override {}
 
- public:
+ protected:
   id<MTLDevice> mtlDevice_;
 };
 

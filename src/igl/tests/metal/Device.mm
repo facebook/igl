@@ -26,7 +26,7 @@ class DeviceMetalTest : public ::testing::Test {
   }
   void TearDown() override {}
 
- public:
+ protected:
   std::shared_ptr<IDevice> iglDev_;
 };
 

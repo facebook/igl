@@ -44,7 +44,7 @@ class TextureMTLTest : public ::testing::Test {
 
   void TearDown() override {}
 
- public:
+ protected:
   TextureDesc texDesc_;
   std::shared_ptr<ITexture> texture_;
   std::shared_ptr<IDevice> device_;

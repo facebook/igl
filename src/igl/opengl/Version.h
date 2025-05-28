@@ -14,6 +14,7 @@
 
 namespace igl::opengl {
 
+// NOLINTBEGIN(readability-identifier-naming)
 enum class GLVersion {
   NotAvailable,
   v1_1,
@@ -35,6 +36,7 @@ enum class GLVersion {
   v4_5,
   v4_6
 };
+// NOLINTEND(readability-identifier-naming)
 
 std::pair<uint32_t, uint32_t> parseVersionString(const char* version);
 GLVersion getGLVersion(const char* version, bool constrain = false);

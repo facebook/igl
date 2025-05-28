@@ -52,7 +52,7 @@ class TextureTargetOGLTest : public ::testing::Test {
   void TearDown() override {}
 
   // Member variables
- public:
+ protected:
   opengl::IContext* context{};
   std::shared_ptr<IDevice> device;
 };

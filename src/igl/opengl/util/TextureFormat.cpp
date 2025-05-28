@@ -10,7 +10,7 @@
 namespace igl::opengl::util {
 
 // @fb-only
-
+// NOLINTBEGIN(readability-identifier-naming)
 /// OpenGL Constants
 #define GL_ALPHA 0x1906
 #define GL_ALPHA8 0x803C
@@ -113,6 +113,7 @@ namespace igl::opengl::util {
 #define GL_UNSIGNED_SHORT_5_6_5 0x8363
 #define GL_UNSIGNED_SHORT_8_8_APPLE 0x85BA
 #define GL_UNSIGNED_SHORT_8_8_REV_APPLE 0x85BB
+// NOLINTEND(readability-identifier-naming)
 
 // NOLINTBEGIN(bugprone-easily-swappable-parameters)
 TextureFormat glTextureFormatToTextureFormat(int32_t glInternalFormat,

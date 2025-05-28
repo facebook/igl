@@ -23,7 +23,7 @@ class SamplerStateMTLTest : public ::testing::Test {
   }
   void TearDown() override {}
 
- public:
+ protected:
   std::shared_ptr<igl::metal::SamplerState> samplerState_;
 };
 
