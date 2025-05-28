@@ -566,6 +566,8 @@ VulkanContext::~VulkanContext() {
 
 void VulkanContext::createInstance(const size_t numExtraExtensions,
                                    const char* IGL_NULLABLE* IGL_NULLABLE extraExtensions) {
+  IGL_DEBUG_ASSERT(vkInstance_ == VK_NULL_HANDLE, "createInstance() is not reentrant");
+
   // Enumerate all instance extensions
   features_.enumerate(vf_);
   features_.enableCommonInstanceExtensions(config_);
@@ -586,23 +588,52 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
     layers.emplace_back(kGfxReconstructLayerName);
   }
 
-  vkInstance_ = VK_NULL_HANDLE;
-  const VkResult creationErrorCode =
-      (ivkCreateInstance(&vf_,
-                         VK_API_VERSION_1_1,
-                         static_cast<uint32_t>(config_.enableValidation),
-                         static_cast<uint32_t>(config_.enableGPUAssistedValidation),
-                         static_cast<uint32_t>(config_.enableSynchronizationValidation),
-                         instanceExtensions.size(),
-                         instanceExtensions.data(),
-                         static_cast<uint32_t>(layers.size()),
-                         !layers.empty() ? layers.data() : nullptr,
-                         &vkInstance_));
+  // Validation Features not available on most Android devices
+#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
+  std::vector<VkValidationFeatureEnableEXT> valFeatures;
+  if (config_.enableGPUAssistedValidation) {
+    valFeatures.push_back(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT);
+  }
+  if (config_.enableSynchronizationValidation) {
+    valFeatures.push_back(VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT);
+  }
+  const VkValidationFeaturesEXT features = {
+      .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
+      .enabledValidationFeatureCount = (uint32_t)valFeatures.size(),
+      .pEnabledValidationFeatures = valFeatures.empty() ? nullptr : valFeatures.data(),
+  };
+#endif // !IGL_PLATFORM_ANDROID
 
-  IGL_DEBUG_ASSERT(creationErrorCode != VK_ERROR_LAYER_NOT_PRESENT,
-                   "ivkCreateInstance() failed. Did you forget to install the Vulkan SDK?");
+  const VkApplicationInfo appInfo = {
+      .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+      .pApplicationName = "IGL/Vulkan",
+      .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+      .pEngineName = "IGL/Vulkan",
+      .engineVersion = VK_MAKE_VERSION(1, 0, 0),
+      .apiVersion = VK_API_VERSION_1_1,
+  };
 
-  VK_ASSERT(creationErrorCode);
+  const VkInstanceCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
+      .pNext = config_.enableValidation ? &features : nullptr,
+#endif
+#if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST
+      .flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
+#endif
+      .pApplicationInfo = &appInfo,
+      .enabledLayerCount = static_cast<uint32_t>(layers.size()),
+      .ppEnabledLayerNames = !layers.empty() ? layers.data() : nullptr,
+      .enabledExtensionCount = (uint32_t)instanceExtensions.size(),
+      .ppEnabledExtensionNames = instanceExtensions.data(),
+  };
+
+  const VkResult result = vf_.vkCreateInstance(&ci, nullptr, &vkInstance_);
+
+  IGL_DEBUG_ASSERT(result != VK_ERROR_LAYER_NOT_PRESENT,
+                   "vkCreateInstance() failed. Did you forget to install the Vulkan SDK?");
+
+  VK_ASSERT(result);
 
 #if defined(IGL_CMAKE_BUILD)
   // Do not remove for backward compatibility with projects using global functions.

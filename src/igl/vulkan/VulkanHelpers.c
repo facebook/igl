@@ -101,65 +101,6 @@ const char* ivkGetVulkanResultString(VkResult result) {
 #undef RESULT_CASE
 }
 
-VkResult ivkCreateInstance(const struct VulkanFunctionTable* vt,
-                           uint32_t apiVersion,
-                           uint32_t enableValidation,
-                           uint32_t enableGPUAssistedValidation,
-                           uint32_t enableSynchronizationValidation,
-                           size_t numExtensions,
-                           const char** extensions,
-                           size_t numLayers,
-                           const char** layers,
-                           VkInstance* outInstance) {
-  // Validation Features not available on most Android devices
-#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
-  VkValidationFeatureEnableEXT validationFeaturesEnabled[2];
-  int validationFeaturesCount = 0;
-  if (enableGPUAssistedValidation) {
-    validationFeaturesEnabled[validationFeaturesCount++] =
-        VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT;
-  }
-  if (enableSynchronizationValidation) {
-    validationFeaturesEnabled[validationFeaturesCount++] =
-        VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT;
-  }
-
-  const VkValidationFeaturesEXT features = {
-      .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
-      .pNext = NULL,
-      .enabledValidationFeatureCount = validationFeaturesCount,
-      .pEnabledValidationFeatures = validationFeaturesCount > 0 ? validationFeaturesEnabled : NULL,
-  };
-#endif // !IGL_PLATFORM_ANDROID
-
-  const VkApplicationInfo appInfo = {
-      .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-      .pNext = NULL,
-      .pApplicationName = "IGL/Vulkan",
-      .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
-      .pEngineName = "IGL/Vulkan",
-      .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-      .apiVersion = apiVersion,
-  };
-
-  const VkInstanceCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
-      .pNext = enableValidation ? &features : NULL,
-#endif
-      .pApplicationInfo = &appInfo,
-      .enabledLayerCount = (uint32_t)numLayers,
-      .ppEnabledLayerNames = layers,
-      .enabledExtensionCount = (uint32_t)numExtensions,
-      .ppEnabledExtensionNames = extensions,
-#if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST
-      .flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
-#endif
-  };
-
-  return vt->vkCreateInstance(&ci, NULL, outInstance);
-}
-
 VkResult ivkCreateCommandPool(const struct VulkanFunctionTable* vt,
                               VkDevice device,
                               VkCommandPoolCreateFlags flags,

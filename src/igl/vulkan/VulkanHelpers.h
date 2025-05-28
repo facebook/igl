@@ -41,21 +41,6 @@ void ivkAddNext(void* node, const void* next);
 
 const char* ivkGetVulkanResultString(VkResult result);
 
-/// @brief Creates a Vulkan instance with the given parameters. For platforms other than Android,
-/// this function will enable the GPU assisted validation and the synchronization validation layers.
-/// The application information is also set up to be "IGL/Vulkan" for application and engine names.
-/// Both the application and engine versions are set to 1.0.0
-VkResult ivkCreateInstance(const struct VulkanFunctionTable* vt,
-                           uint32_t apiVersion,
-                           uint32_t enableValidation,
-                           uint32_t enableGPUAssistedValidation,
-                           uint32_t enableSynchronizationValidation,
-                           size_t numExtensions,
-                           const char** extensions,
-                           size_t numLayers,
-                           const char** layers,
-                           VkInstance* outInstance);
-
 /// @brief Creates a Debug Utils Messenger if the VK_EXT_debug_utils extension is available and the
 /// platform is not Android or Mac Catalyst. Otherwise the function is defined as a no-op that
 /// always returns VK_SUCCESS
