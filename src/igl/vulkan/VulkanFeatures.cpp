@@ -72,13 +72,11 @@ VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noe
       .shaderFloat16 = VK_FALSE,
       .shaderInt8 = VK_FALSE,
   }),
-#if defined(VK_EXT_index_type_uint8) && VK_EXT_index_type_uint8
   VkPhysicalDeviceIndexTypeUint8Features_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT,
       .pNext = nullptr,
       .indexTypeUint8 = VK_FALSE,
   }),
-#endif
   VkPhysicalDeviceSynchronization2Features_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR,
       .synchronization2 = VK_TRUE,
@@ -89,7 +87,6 @@ VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noe
   }),
   config_(config),
   version_(version) {
-
   extensions_.resize(kNumberOfExtensionTypes);
   enabledExtensions_.resize(kNumberOfExtensionTypes);
 
@@ -194,7 +191,6 @@ Result VulkanFeatures::checkSelectedFeatures(
 
 #define ENABLE_FEATURE_1_1_EXT(requestedFeatureStruct, availableFeatureStruct, feature) \
   ENABLE_VULKAN_FEATURE(requestedFeatureStruct, availableFeatureStruct, feature, "1.1 EXT")
-#if defined(VK_EXT_descriptor_indexing) && VK_EXT_descriptor_indexing
   if (config_.enableDescriptorIndexing) {
     ENABLE_FEATURE_1_1_EXT(VkPhysicalDeviceDescriptorIndexingFeaturesEXT_,
                            availableFeatures.VkPhysicalDeviceDescriptorIndexingFeaturesEXT_,
@@ -221,7 +217,6 @@ Result VulkanFeatures::checkSelectedFeatures(
                            availableFeatures.VkPhysicalDeviceDescriptorIndexingFeaturesEXT_,
                            runtimeDescriptorArray)
   }
-#endif
   ENABLE_FEATURE_1_1_EXT(VkPhysicalDevice16BitStorageFeatures_,
                          availableFeatures.VkPhysicalDevice16BitStorageFeatures_,
                          storageBuffer16BitAccess)
@@ -241,14 +236,12 @@ Result VulkanFeatures::checkSelectedFeatures(
                          shaderDrawParameters)
 #undef ENABLE_FEATURE_1_1_EXT
 
-#if defined(VK_VERSION_1_2)
 #define ENABLE_FEATURE_1_2_EXT(requestedFeatureStruct, availableFeatureStruct, feature) \
   ENABLE_VULKAN_FEATURE(requestedFeatureStruct, availableFeatureStruct, feature, "1.2")
   ENABLE_FEATURE_1_2_EXT(VkPhysicalDeviceShaderFloat16Int8Features_,
                          availableFeatures.VkPhysicalDeviceShaderFloat16Int8Features_,
                          shaderFloat16)
 #undef ENABLE_FEATURE_1_2_EXT
-#endif // VK_VERSION_1_2
 
 #undef ENABLE_VULKAN_FEATURE
 
@@ -415,9 +408,7 @@ bool VulkanFeatures::enable(const char* extensionName, ExtensionType extensionTy
 void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& config) {
   enable(VK_KHR_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
   enable(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, ExtensionType::Instance);
-#if defined(VK_EXT_debug_utils)
   enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, ExtensionType::Instance);
-#endif
 #if IGL_PLATFORM_WINDOWS
   enable(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
 #elif IGL_PLATFORM_ANDROID
@@ -441,23 +432,15 @@ void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& c
   }
 #endif
   if (config.headless) {
-#if defined(VK_EXT_headless_surface)
     const bool enabledExtension =
         enable(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
-#else
-    const bool enabledExtension = false;
-#endif // VK_EXT_headless_surface
     if (!enabledExtension) {
       IGL_LOG_ERROR("VK_EXT_headless_surface extension not supported");
     }
   }
   if (config.swapChainColorSpace != igl::ColorSpace::SRGB_NONLINEAR) {
-#if defined(VK_EXT_swapchain_colorspace)
     const bool enabledExtension =
         enable(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME, ExtensionType::Instance);
-#else
-    const bool enabledExtension = false;
-#endif
     if (!enabledExtension) {
       IGL_LOG_ERROR("VK_EXT_swapchain_colorspace extension not supported\n");
     }
