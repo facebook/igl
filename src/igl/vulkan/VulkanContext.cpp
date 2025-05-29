@@ -844,16 +844,17 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   const auto qcis = queuePool.getQueueCreationInfos();
 
+  auto deviceExtensions = features_.allEnabled(VulkanFeatures::ExtensionType::Device);
+
   VkDevice device = nullptr;
-  VK_ASSERT_RETURN(
-      ivkCreateDevice(&vf_,
-                      vkPhysicalDevice_,
-                      qcis.size(),
-                      qcis.data(),
-                      features_.allEnabled(VulkanFeatures::ExtensionType::Device).size(),
-                      features_.allEnabled(VulkanFeatures::ExtensionType::Device).data(),
-                      &features_.VkPhysicalDeviceFeatures2_,
-                      &device));
+  VK_ASSERT_RETURN(ivkCreateDevice(&vf_,
+                                   vkPhysicalDevice_,
+                                   qcis.size(),
+                                   qcis.data(),
+                                   deviceExtensions.size(),
+                                   deviceExtensions.data(),
+                                   &features_.VkPhysicalDeviceFeatures2_,
+                                   &device));
 #if defined(IGL_CMAKE_BUILD)
   if (!config_.enableConcurrentVkDevicesSupport) {
     // Do not remove for backward compatibility with projects using global functions.
