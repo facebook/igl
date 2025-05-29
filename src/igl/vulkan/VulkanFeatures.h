@@ -163,9 +163,11 @@ class VulkanFeatures final {
   // Stores the API version
   uint32_t version_ = 0;
 
-  bool has8BitIndices = false;
-  bool hasTimelineSemaphore = false;
-  bool hasSynchronization2 = false;
+  // NOLINTBEGIN(readability-identifier-naming)
+  bool has_VK_EXT_index_type_uint8 = false;
+  bool has_VK_KHR_timeline_semaphore = false;
+  bool has_VK_KHR_synchronization2 = false;
+  // NOLINTEND(readability-identifier-naming)
 
  private:
   static constexpr size_t kNumberOfExtensionTypes = 2;

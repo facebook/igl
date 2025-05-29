@@ -885,8 +885,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                                          device,
                                                          deviceQueues_.graphicsQueueFamilyIndex,
                                                          config_.exportableFences,
-                                                         features_.hasTimelineSemaphore &&
-                                                             features_.hasSynchronization2,
+                                                         features_.has_VK_KHR_timeline_semaphore &&
+                                                             features_.has_VK_KHR_synchronization2,
                                                          "VulkanContext::immediate_");
   IGL_DEBUG_ASSERT(config_.maxResourceCount > 0,
                    "Max resource count needs to be greater than zero");
@@ -1204,7 +1204,7 @@ igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
 
   swapchain_ = std::make_unique<igl::vulkan::VulkanSwapchain>(*this, width, height);
 
-  if (features_.hasTimelineSemaphore && features_.hasSynchronization2) {
+  if (features_.has_VK_KHR_timeline_semaphore && features_.has_VK_KHR_synchronization2) {
     timelineSemaphore_ = std::make_unique<VulkanSemaphore>(
         vf_, getVkDevice(), 0, false, "Semaphore: VulkanContext::timelineSemaphore_");
   }

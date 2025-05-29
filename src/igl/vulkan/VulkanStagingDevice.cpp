@@ -36,7 +36,7 @@ VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
       ctx_.device_->getVkDevice(),
       ctx_.deviceQueues_.graphicsQueueFamilyIndex,
       ctx_.config_.exportableFences,
-      ctx_.features_.hasTimelineSemaphore && ctx_.features_.hasSynchronization2,
+      ctx_.features_.has_VK_KHR_timeline_semaphore && ctx_.features_.has_VK_KHR_synchronization2,
       "VulkanStagingDevice::immediate_");
   IGL_DEBUG_ASSERT(immediate_.get());
 }

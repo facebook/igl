@@ -684,7 +684,7 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
   case DeviceFeatures::DrawInstanced:
     return true;
   case DeviceFeatures::Indices8Bit:
-    return ctx_->features_.has8BitIndices;
+    return ctx_->features_.has_VK_EXT_index_type_uint8;
   case DeviceFeatures::ValidationLayersEnabled:
     return ctx_->areValidationLayersEnabled();
   case DeviceFeatures::TextureViews:

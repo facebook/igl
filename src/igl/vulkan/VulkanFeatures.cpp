@@ -490,10 +490,13 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
   enable(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, ExtensionType::Device);
 #endif // IGL_WITH_TRACY_GPU
 
-  has8BitIndices = enable(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, ExtensionType::Device);
+  has_VK_EXT_index_type_uint8 =
+      enable(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, ExtensionType::Device);
 
-  hasTimelineSemaphore = enable(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, ExtensionType::Device);
-  hasSynchronization2 = enable(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, ExtensionType::Device);
+  has_VK_KHR_timeline_semaphore =
+      enable(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, ExtensionType::Device);
+  has_VK_KHR_synchronization2 =
+      enable(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, ExtensionType::Device);
 }
 
 bool VulkanFeatures::enabled(const char* extensionName) const {

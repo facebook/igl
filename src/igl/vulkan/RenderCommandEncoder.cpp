@@ -498,7 +498,8 @@ void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
     return VK_INDEX_TYPE_UINT16;
   };
 
-  const VkIndexType type = indexFormatToVkIndexType(format, ctx_.features_.has8BitIndices);
+  const VkIndexType type =
+      indexFormatToVkIndexType(format, ctx_.features_.has_VK_EXT_index_type_uint8);
 
   ctx_.vf_.vkCmdBindIndexBuffer(cmdBuffer_, buf.getVkBuffer(), bufferOffset, type);
 }
