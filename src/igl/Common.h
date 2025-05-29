@@ -22,6 +22,8 @@
 #include <igl/Color.h>
 #include <igl/Core.h>
 
+#define IGL_ARRAY_NUM_ELEMENTS(x) (sizeof(x) / sizeof((x)[0]))
+
 namespace igl {
 
 // Callback to delete and/or release a pointer
