@@ -895,11 +895,10 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   // create Vulkan pipeline cache
   {
     const VkPipelineCacheCreateInfo ci = {
-        VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
-        nullptr,
-        VkPipelineCacheCreateFlags(0),
-        config_.pipelineCacheDataSize,
-        config_.pipelineCacheData,
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
+        .flags = VkPipelineCacheCreateFlags(0),
+        .initialDataSize = config_.pipelineCacheDataSize,
+        .pInitialData = config_.pipelineCacheData,
     };
     vf_.vkCreatePipelineCache(device, &ci, nullptr, &pipelineCache_);
   }
