@@ -21,7 +21,7 @@
 #endif
 
 // Returns a "handle" (i.e. ptr to ptr) to func
-static IGLLogHandlerFunc* GetHandle() {
+static IGLLogHandlerFunc* getHandle() {
 #if IGL_PLATFORM_ANDROID
   static IGLLogHandlerFunc sHandler = IGLAndroidLogDefaultHandler;
 #elif IGL_PLATFORM_WINDOWS
@@ -41,8 +41,8 @@ IGL_API int IGLLog(IGLLogLevel logLevel, const char* IGL_RESTRICT format, ...) {
 }
 
 IGL_API int IGLLogOnce(IGLLogLevel logLevel, const char* IGL_RESTRICT format, ...) {
-  static std::mutex s_loggedMessagesMutex;
-  static std::unordered_set<std::string> s_loggedMessages;
+  static std::mutex sLoggedMessagesMutex;
+  static std::unordered_set<std::string> sLoggedMessages;
 
   va_list ap, apCopy;
   va_start(ap, format);
@@ -59,10 +59,10 @@ IGL_API int IGLLogOnce(IGLLogLevel logLevel, const char* IGL_RESTRICT format, ..
 
   const std::string msg(buffer);
   {
-    const std::lock_guard<std::mutex> guard(s_loggedMessagesMutex);
-    if (s_loggedMessages.count(msg) == 0) {
+    const std::lock_guard<std::mutex> guard(sLoggedMessagesMutex);
+    if (sLoggedMessages.count(msg) == 0) {
       result = IGLLogV(logLevel, format, apCopy);
-      s_loggedMessages.insert(msg);
+      sLoggedMessages.insert(msg);
     }
   }
   va_end(apCopy);
@@ -71,7 +71,7 @@ IGL_API int IGLLogOnce(IGLLogLevel logLevel, const char* IGL_RESTRICT format, ..
 }
 
 IGL_API int IGLLogV(IGLLogLevel logLevel, const char* IGL_RESTRICT format, va_list ap) {
-  return (*GetHandle())(logLevel, format, ap);
+  return (*getHandle())(logLevel, format, ap);
 }
 
 IGL_API int IGLLogDefaultHandler(IGLLogLevel /*logLevel*/,
@@ -84,9 +84,9 @@ IGL_API int IGLLogDefaultHandler(IGLLogLevel /*logLevel*/,
 }
 
 IGL_API void IGLLogSetHandler(IGLLogHandlerFunc handler) {
-  *GetHandle() = handler;
+  *getHandle() = handler;
 }
 
 IGL_API IGLLogHandlerFunc IGLLogGetHandler() {
-  return *GetHandle();
+  return *getHandle();
 }
