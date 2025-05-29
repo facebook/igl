@@ -32,6 +32,6 @@ class NetServiceExtensionZeroMQ final : public NetServiceExtension {
   // id<NSNetServiceBrowserDelegate> netServiceBrowserDelegate_ = nil;
 };
 
-IGL_API IGLShellExtension* IGLShellExtension_NewIglShellNetService();
+IGL_API IGLShellExtension* iglShellExtensionNewIglShellNetService();
 
 } // namespace igl::shell::netservice
