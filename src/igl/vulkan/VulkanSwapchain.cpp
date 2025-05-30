@@ -105,7 +105,7 @@ VkImageUsageFlags chooseUsageFlags(const VulkanFunctionTable& vf,
   vf.vkGetPhysicalDeviceFormatProperties(pd, format, &props);
 
   const bool isTilingOptimalSupported =
-      (props.optimalTilingFeatures & VK_IMAGE_USAGE_STORAGE_BIT) > 0;
+      (props.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) > 0;
 
   if (isStorageSupported && isTilingOptimalSupported) {
     usageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
