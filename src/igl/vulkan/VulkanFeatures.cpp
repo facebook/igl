@@ -74,7 +74,6 @@ VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noe
   }),
   VkPhysicalDeviceIndexTypeUint8Features_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT,
-      .pNext = nullptr,
       .indexTypeUint8 = VK_FALSE,
   }),
   VkPhysicalDeviceSynchronization2Features_({
@@ -274,6 +273,9 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   VkPhysicalDeviceSynchronization2Features_.pNext = nullptr;
   VkPhysicalDeviceTimelineSemaphoreFeatures_.pNext = nullptr;
   VkPhysicalDeviceShaderFloat16Int8Features_.pNext = nullptr;
+  VkPhysicalDevice16BitStorageFeatures_.pNext = nullptr;
+  VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.pNext = nullptr;
+  VkPhysicalDeviceDescriptorIndexingFeaturesEXT_.pNext = nullptr;
 
   // Add the required and optional features to the VkPhysicalDeviceFetaures2_
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceSamplerYcbcrConversionFeatures_);
@@ -282,15 +284,12 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   if (version_ >= VK_API_VERSION_1_2) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceShaderFloat16Int8Features_);
   }
-  VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.pNext = nullptr;
   if (config.enableBufferDeviceAddress) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_);
   }
-  VkPhysicalDeviceDescriptorIndexingFeaturesEXT_.pNext = nullptr;
   if (config.enableDescriptorIndexing) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceDescriptorIndexingFeaturesEXT_);
   }
-  VkPhysicalDevice16BitStorageFeatures_.pNext = nullptr;
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDevice16BitStorageFeatures_);
 
   if (hasExtension(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)) {

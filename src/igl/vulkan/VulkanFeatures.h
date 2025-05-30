@@ -84,6 +84,8 @@ class VulkanFeatures final {
   [[nodiscard]] Result checkSelectedFeatures(
       const VulkanFeatures& availableFeatures) const noexcept;
 
+  // NOLINTBEGIN(readability-identifier-naming)
+
   // Vulkan 1.1
   VkPhysicalDeviceFeatures2 VkPhysicalDeviceFeatures2_{};
   VkPhysicalDeviceSamplerYcbcrConversionFeatures VkPhysicalDeviceSamplerYcbcrConversionFeatures_{};
@@ -99,6 +101,8 @@ class VulkanFeatures final {
   VkPhysicalDeviceIndexTypeUint8FeaturesEXT VkPhysicalDeviceIndexTypeUint8Features_{};
   VkPhysicalDeviceSynchronization2FeaturesKHR VkPhysicalDeviceSynchronization2Features_{};
   VkPhysicalDeviceTimelineSemaphoreFeaturesKHR VkPhysicalDeviceTimelineSemaphoreFeatures_{};
+
+  // NOLINTEND(readability-identifier-naming)
 
   // We need to reassemble the feature chain because of the pNext pointers
   VulkanFeatures& operator=(const VulkanFeatures& other) noexcept;
