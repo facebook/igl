@@ -14,11 +14,21 @@ VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noe
   // Vulkan 1.1
   VkPhysicalDeviceFeatures2_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-      .features = {},
+      .features =
+          {
+              .multiDrawIndirect = VK_TRUE,
+              .drawIndirectFirstInstance = VK_TRUE,
+              .depthBiasClamp = VK_TRUE,
+#ifdef IGL_PLATFORM_ANDROID
+              .fillModeNonSolid = VK_FALSE, // not well supported on Android
+#else
+              .fillModeNonSolid = VK_TRUE,
+#endif
+          },
   }),
   VkPhysicalDeviceSamplerYcbcrConversionFeatures_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES,
-      .samplerYcbcrConversion = VK_FALSE,
+      .samplerYcbcrConversion = VK_TRUE,
   }),
   VkPhysicalDeviceShaderDrawParametersFeatures_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
@@ -26,7 +36,7 @@ VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noe
   }),
   VkPhysicalDeviceMultiviewFeatures_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
-      .multiview = VK_FALSE,
+      .multiview = VK_TRUE,
       .multiviewGeometryShader = VK_FALSE,
       .multiviewTessellationShader = VK_FALSE,
   }),
@@ -121,15 +131,6 @@ void VulkanFeatures::enableDefaultFeatures() noexcept {
   auto& features = VkPhysicalDeviceFeatures2_.features;
   features.dualSrcBlend = config_.enableDualSrcBlend ? VK_TRUE : VK_FALSE;
   features.shaderInt16 = config_.enableShaderInt16 ? VK_TRUE : VK_FALSE;
-  features.multiDrawIndirect = VK_TRUE;
-  features.drawIndirectFirstInstance = VK_TRUE;
-  features.depthBiasClamp = VK_TRUE;
-#ifdef IGL_PLATFORM_ANDROID
-  // fillModeNonSolid is not well supported on Android, only enable by default when it's not android
-  features.fillModeNonSolid = VK_FALSE;
-#else
-  features.fillModeNonSolid = VK_TRUE;
-#endif
 
   if (config_.enableDescriptorIndexing) {
     auto& descriptorIndexingFeatures = VkPhysicalDeviceDescriptorIndexingFeaturesEXT_;
@@ -149,12 +150,8 @@ void VulkanFeatures::enableDefaultFeatures() noexcept {
   if (config_.enableBufferDeviceAddress) {
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress = VK_TRUE;
   }
-  VkPhysicalDeviceMultiviewFeatures_.multiview = VK_TRUE;
-  VkPhysicalDeviceSamplerYcbcrConversionFeatures_.samplerYcbcrConversion = VK_TRUE;
   VkPhysicalDeviceShaderDrawParametersFeatures_.shaderDrawParameters =
       config_.enableShaderDrawParameters ? VK_TRUE : VK_FALSE;
-  VkPhysicalDeviceSynchronization2Features_.synchronization2 = VK_TRUE;
-  VkPhysicalDeviceTimelineSemaphoreFeatures_.timelineSemaphore = VK_TRUE;
 }
 
 Result VulkanFeatures::checkSelectedFeatures(
