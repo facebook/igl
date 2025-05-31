@@ -103,7 +103,7 @@ TEST_F(VulkanFeaturesTest, EnableDefaultFeatures_Vk_1_1) {
 
 #if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
   ASSERT_FALSE(config.enableBufferDeviceAddress);
-  EXPECT_FALSE(features.VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress);
+  EXPECT_TRUE(features.VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress);
 #endif
   EXPECT_TRUE(features.VkPhysicalDeviceMultiviewFeatures_.multiview);
   EXPECT_TRUE(features.VkPhysicalDeviceSamplerYcbcrConversionFeatures_.samplerYcbcrConversion);

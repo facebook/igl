@@ -32,7 +32,7 @@ VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noe
   }),
   VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
-      .bufferDeviceAddress = VK_FALSE,
+      .bufferDeviceAddress = VK_TRUE,
       .bufferDeviceAddressCaptureReplay = VK_FALSE,
       .bufferDeviceAddressMultiDevice = VK_FALSE,
   }),
@@ -284,7 +284,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   if (version_ >= VK_API_VERSION_1_2) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceShaderFloat16Int8Features_);
   }
-  if (config.enableBufferDeviceAddress) {
+  if (hasExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_);
   }
   if (config.enableDescriptorIndexing) {
