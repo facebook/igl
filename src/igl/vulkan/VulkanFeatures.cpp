@@ -496,6 +496,9 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
       enable(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, ExtensionType::Device);
   has_VK_KHR_synchronization2 =
       enable(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, ExtensionType::Device);
+
+  has_VK_KHR_buffer_device_address =
+      enable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, ExtensionType::Device);
 }
 
 bool VulkanFeatures::enabled(const char* extensionName) const {

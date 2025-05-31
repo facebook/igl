@@ -171,6 +171,7 @@ class VulkanFeatures final {
   bool has_VK_EXT_index_type_uint8 = false;
   bool has_VK_KHR_timeline_semaphore = false;
   bool has_VK_KHR_synchronization2 = false;
+  bool has_VK_KHR_buffer_device_address = false;
   // NOLINTEND(readability-identifier-naming)
 
  private:
