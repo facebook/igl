@@ -18,7 +18,7 @@ class TestTextureLoader : public iglu::textureloader::ITextureLoader {
  public:
   TestTextureLoader(iglu::textureloader::DataReader reader,
                     TextureDesc::TextureUsage usage) noexcept :
-    iglu::textureloader::ITextureLoader(std::move(reader), usage) {}
+    iglu::textureloader::ITextureLoader(reader, usage) {}
 
   TextureDesc& descriptorRef() noexcept {
     return mutableDescriptor();

@@ -43,18 +43,18 @@ class TextureTargetOGLTest : public ::testing::Test {
     // Turn off debug breaks, only use in debug mode
     igl::setDebugBreakEnabled(false);
 
-    device = util::createTestDevice();
-    ASSERT_TRUE(device != nullptr);
-    context = &static_cast<opengl::Device&>(*device).getContext();
-    ASSERT_TRUE(context != nullptr);
+    device_ = util::createTestDevice();
+    ASSERT_TRUE(device_ != nullptr);
+    context_ = &static_cast<opengl::Device&>(*device_).getContext();
+    ASSERT_TRUE(context_ != nullptr);
   }
 
   void TearDown() override {}
 
   // Member variables
  protected:
-  opengl::IContext* context{};
-  std::shared_ptr<IDevice> device;
+  opengl::IContext* context_{};
+  std::shared_ptr<IDevice> device_;
 };
 
 //
@@ -64,7 +64,7 @@ class TextureTargetOGLTest : public ::testing::Test {
 //
 TEST_F(TextureTargetOGLTest, Specifications) {
   std::unique_ptr<igl::opengl::TextureTarget> textureTarget =
-      std::make_unique<igl::opengl::TextureTarget>(*context, TextureFormat::RGBA_UNorm8);
+      std::make_unique<igl::opengl::TextureTarget>(*context_, TextureFormat::RGBA_UNorm8);
   ASSERT_EQ(textureTarget->getType(), TextureType::TwoD);
   ASSERT_EQ(textureTarget->getUsage(), TextureDesc::TextureUsageBits::Attachment);
 }
@@ -86,27 +86,27 @@ TEST_F(TextureTargetOGLTest, TextureCreation) {
                                            TextureDesc::TextureUsageBits::Sampled);
 
   // kShaderRead not supported by TextureTarget
-  textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context, texDesc.format);
+  textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
   ret = textureTarget->create(texDesc, false);
   ASSERT_EQ(ret.code, Result::Code::Unsupported);
 
   texDesc.usage = TextureDesc::TextureUsageBits::Attachment;
 
   // TextureTarget only supports TwoD
-  textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context, texDesc.format);
+  textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
   texDesc.type = TextureType::ThreeD;
   ret = textureTarget->create(texDesc, false);
   ASSERT_EQ(ret.code, Result::Code::Unsupported);
 
   // TextureTarget only supports a single mip level
-  textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context, texDesc.format);
+  textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
   texDesc.type = TextureType::TwoD;
   texDesc.numMipLevels = 2;
   ret = textureTarget->create(texDesc, false);
   ASSERT_EQ(ret.code, Result::Code::Unsupported);
 
   // TextureTarget only supports a layer
-  textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context, texDesc.format);
+  textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
   texDesc.type = TextureType::TwoD;
   texDesc.numMipLevels = 1;
   texDesc.numLayers = 2;
@@ -115,7 +115,7 @@ TEST_F(TextureTargetOGLTest, TextureCreation) {
 
   // Unsupported texture format
   texDesc.format = TextureFormat::Invalid;
-  textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context, texDesc.format);
+  textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
   texDesc.numLayers = 1;
   ret = textureTarget->create(texDesc, false);
   ASSERT_EQ(ret.code, Result::Code::ArgumentInvalid);
@@ -123,7 +123,7 @@ TEST_F(TextureTargetOGLTest, TextureCreation) {
   // Correct usage of TextureTarget::create with > 1 samples
   texDesc.format = TextureFormat::RGBA_UNorm8;
   texDesc.numSamples = 2;
-  textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context, texDesc.format);
+  textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
   ret = textureTarget->create(texDesc, false);
   ASSERT_EQ(ret.code, Result::Code::Ok);
 }
@@ -147,9 +147,9 @@ TEST_F(TextureTargetOGLTest, TextureBindAndAttachAndDetach) {
                                                  TextureDesc::TextureUsageBits::Attachment);
 
   // Create 3 types of targets
-  auto colorTarget = std::make_unique<igl::opengl::TextureTarget>(*context, texDesc.format);
-  auto depthTarget = std::make_unique<igl::opengl::TextureTarget>(*context, texDesc.format);
-  auto stencilTarget = std::make_unique<igl::opengl::TextureTarget>(*context, texDesc.format);
+  auto colorTarget = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
+  auto depthTarget = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
+  auto stencilTarget = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
 
   // calling create() so that renderBufferID_ is set
   ret = colorTarget->create(texDesc, false);
@@ -165,8 +165,8 @@ TEST_F(TextureTargetOGLTest, TextureBindAndAttachAndDetach) {
   // depth and stencil, we have to create a new framebuffer before trying
   // to attach our renderbuffers
   GLuint tmpFb = 0;
-  context->genFramebuffers(1, &tmpFb);
-  context->bindFramebuffer(GL_FRAMEBUFFER, tmpFb);
+  context_->genFramebuffers(1, &tmpFb);
+  context_->bindFramebuffer(GL_FRAMEBUFFER, tmpFb);
 
   //--------------------------------------------------------------------------
   // Test Renderbuffer as Color
@@ -174,12 +174,12 @@ TEST_F(TextureTargetOGLTest, TextureBindAndAttachAndDetach) {
   GLint colorType = -1, colorRid = -1;
 
   colorTarget->attachAsColor(0, opengl::Texture::AttachmentParams{});
-  context->getFramebufferAttachmentParameteriv(
+  context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &colorType);
   // Check here that colorType is GL_RENDERBUFFER
   ASSERT_EQ(colorType, GL_RENDERBUFFER);
 
-  context->getFramebufferAttachmentParameteriv(
+  context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &colorRid);
   // Check here that colorRid is anything other than -1
   ASSERT_NE(colorRid, -1);
@@ -193,12 +193,12 @@ TEST_F(TextureTargetOGLTest, TextureBindAndAttachAndDetach) {
   GLint depthType = -1, depthRid = -1;
 
   depthTarget->attachAsDepth(opengl::Texture::AttachmentParams{});
-  context->getFramebufferAttachmentParameteriv(
+  context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &depthType);
   // Check here that depthType is GL_RENDERBUFFER
   ASSERT_EQ(depthType, GL_RENDERBUFFER);
 
-  context->getFramebufferAttachmentParameteriv(
+  context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &depthRid);
   // Check here that depthRid != -1 and depthRid != colorRid
   ASSERT_NE(depthRid, -1);
@@ -210,12 +210,12 @@ TEST_F(TextureTargetOGLTest, TextureBindAndAttachAndDetach) {
   GLint stencilType = -1, stencilRid = -1;
 
   stencilTarget->attachAsStencil(opengl::Texture::AttachmentParams{});
-  context->getFramebufferAttachmentParameteriv(
+  context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &stencilType);
   // Check here that stencilType is GL_RENDERBUFFER
   ASSERT_EQ(stencilType, GL_RENDERBUFFER);
 
-  context->getFramebufferAttachmentParameteriv(
+  context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &stencilRid);
   // Check here that stencilRid != -1 and stencilRid != colorRid and stencilRid != depthRid
   ASSERT_NE(stencilRid, -1);
@@ -229,32 +229,32 @@ TEST_F(TextureTargetOGLTest, TextureBindAndAttachAndDetach) {
 
   colorTarget->bind();
   // Get renderBuffer binding and check it is non-zero
-  context->getIntegerv(GL_RENDERBUFFER_BINDING, &value);
+  context_->getIntegerv(GL_RENDERBUFFER_BINDING, &value);
   ASSERT_NE(value, GL_ZERO);
 
   colorTarget->unbind();
   // Get renderBuffer binding and check it is zero
-  context->getIntegerv(GL_RENDERBUFFER_BINDING, &value);
+  context_->getIntegerv(GL_RENDERBUFFER_BINDING, &value);
   ASSERT_EQ(value, GL_ZERO);
 
   depthTarget->bind();
   // Get renderBuffer binding and check it is non-zero
-  context->getIntegerv(GL_RENDERBUFFER_BINDING, &value);
+  context_->getIntegerv(GL_RENDERBUFFER_BINDING, &value);
   ASSERT_NE(value, GL_ZERO);
 
   depthTarget->unbind();
   // Get renderBuffer binding and check it is zero
-  context->getIntegerv(GL_RENDERBUFFER_BINDING, &value);
+  context_->getIntegerv(GL_RENDERBUFFER_BINDING, &value);
   ASSERT_EQ(value, GL_ZERO);
 
   stencilTarget->bind();
   // Get renderBuffer binding and check it is non-zero
-  context->getIntegerv(GL_RENDERBUFFER_BINDING, &value);
+  context_->getIntegerv(GL_RENDERBUFFER_BINDING, &value);
   ASSERT_NE(value, GL_ZERO);
 
   stencilTarget->unbind();
   // Get renderBuffer binding and check it is zero
-  context->getIntegerv(GL_RENDERBUFFER_BINDING, &value);
+  context_->getIntegerv(GL_RENDERBUFFER_BINDING, &value);
   ASSERT_EQ(value, GL_ZERO);
 }
 
@@ -268,7 +268,7 @@ TEST_F(TextureTargetOGLTest, CreateWithDebugName) {
   texDesc.debugName = "test";
 
   // Create 3 types of targets
-  auto target = std::make_unique<igl::opengl::TextureTarget>(*context, texDesc.format);
+  auto target = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
 
   // calling create() so that renderBufferID_ is set
   ret = target->create(texDesc, false);
