@@ -81,7 +81,7 @@ void MetalTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
   lastRequestCommandBuffer = iglMtlCommandBuffer;
   status_ = RequestStatus::InProgress;
 
-  [metalCmdBuffer addCompletedHandler:^(id<MTLCommandBuffer> _cb) {
+  [metalCmdBuffer addCompletedHandler:^(id<MTLCommandBuffer> cb) {
     checked_memcpy_robust(latestBytesRead_.data(),
                           latestBytesRead_.size(),
                           metalReadBuffer.contents,
