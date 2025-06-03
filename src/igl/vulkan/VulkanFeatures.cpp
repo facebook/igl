@@ -94,6 +94,10 @@ VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noe
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR,
       .timelineSemaphore = VK_TRUE,
   }),
+  VkPhysicalDeviceFragmentDensityMapFeatures_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT,
+      .fragmentDensityMap = VK_TRUE,
+  }),
   config_(config),
   version_(version) {
   extensions_.resize(kNumberOfExtensionTypes);
@@ -274,6 +278,8 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.pNext = nullptr;
   VkPhysicalDeviceDescriptorIndexingFeaturesEXT_.pNext = nullptr;
 
+  VkPhysicalDeviceFragmentDensityMapFeatures_.pNext = nullptr;
+
   // Add the required and optional features to the VkPhysicalDeviceFetaures2_
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceSamplerYcbcrConversionFeatures_);
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceShaderDrawParametersFeatures_);
@@ -297,6 +303,9 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   }
   if (hasExtension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceTimelineSemaphoreFeatures_);
+  }
+  if (hasExtension(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
+    ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceFragmentDensityMapFeatures_);
   }
 }
 
@@ -331,6 +340,7 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   VkPhysicalDeviceIndexTypeUint8Features_ = other.VkPhysicalDeviceIndexTypeUint8Features_;
   VkPhysicalDeviceSynchronization2Features_ = other.VkPhysicalDeviceSynchronization2Features_;
   VkPhysicalDeviceTimelineSemaphoreFeatures_ = other.VkPhysicalDeviceTimelineSemaphoreFeatures_;
+  VkPhysicalDeviceFragmentDensityMapFeatures_ = other.VkPhysicalDeviceFragmentDensityMapFeatures_;
 
   extensions_ = other.extensions_;
   enabledExtensions_ = other.enabledExtensions_;
@@ -496,6 +506,9 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
 
   has_VK_KHR_buffer_device_address =
       enable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, ExtensionType::Device);
+
+  has_VK_EXT_fragment_density_map =
+      enable(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME, ExtensionType::Device);
 }
 
 bool VulkanFeatures::enabled(const char* extensionName) const {

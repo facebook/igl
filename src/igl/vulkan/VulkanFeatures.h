@@ -101,6 +101,7 @@ class VulkanFeatures final {
   VkPhysicalDeviceIndexTypeUint8FeaturesEXT VkPhysicalDeviceIndexTypeUint8Features_{};
   VkPhysicalDeviceSynchronization2FeaturesKHR VkPhysicalDeviceSynchronization2Features_{};
   VkPhysicalDeviceTimelineSemaphoreFeaturesKHR VkPhysicalDeviceTimelineSemaphoreFeatures_{};
+  VkPhysicalDeviceFragmentDensityMapFeaturesEXT VkPhysicalDeviceFragmentDensityMapFeatures_{};
 
   // NOLINTEND(readability-identifier-naming)
 
@@ -172,6 +173,7 @@ class VulkanFeatures final {
   bool has_VK_KHR_timeline_semaphore = false;
   bool has_VK_KHR_synchronization2 = false;
   bool has_VK_KHR_buffer_device_address = false;
+  bool has_VK_EXT_fragment_density_map = false;
   // NOLINTEND(readability-identifier-naming)
 
  private:
