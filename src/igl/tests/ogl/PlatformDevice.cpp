@@ -139,4 +139,36 @@ TEST_F(PlatformDeviceTest, GetEstimatedSizeInBytesExternal) {
   ASSERT_EQ(calcSize(128, 333, TextureFormat::RG_UNorm8), 85248); // 128 * 333 * 2
 }
 
+#if IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX_USE_EGL
+//
+// Test for createTextureFromNativeDrawable() available on some platforms
+//
+TEST_F(PlatformDeviceTest, CreateTextureFromNativeDrawable) {
+  auto* pd = iglDev_->getPlatformDevice<PLATFORM_DEVICE>();
+  ASSERT_NE(pd, nullptr);
+
+  Result result;
+  auto tex = pd->createTextureFromNativeDrawable(TextureFormat::RGBA_UNorm8, &result);
+  EXPECT_TRUE(result.isOk());
+  EXPECT_NE(tex, nullptr);
+
+  auto tex2 = pd->createTextureFromNativeDrawable(1, 1, TextureFormat::RGBA_UNorm8, &result);
+  EXPECT_TRUE(result.isOk());
+  EXPECT_NE(tex2, nullptr);
+}
+
+//
+// Test for createTextureFromNativeDepth() available on some platforms
+//
+TEST_F(PlatformDeviceTest, CreateTextureFromNativeDepth) {
+  auto* pd = iglDev_->getPlatformDevice<PLATFORM_DEVICE>();
+  ASSERT_NE(pd, nullptr);
+
+  Result result;
+  auto tex = pd->createTextureFromNativeDepth(TextureFormat::Z_UNorm24, &result);
+  EXPECT_TRUE(result.isOk());
+  EXPECT_NE(tex, nullptr);
+}
+#endif
+
 } // namespace igl::tests

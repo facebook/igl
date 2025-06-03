@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+// @fb-only
+
 #include <igl/opengl/TextureBuffer.h>
 #include <igl/opengl/ViewTextureTarget.h>
 #include <igl/opengl/wgl/Context.h>
