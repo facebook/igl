@@ -6,6 +6,7 @@
  */
 
 // @fb-only
+// NOLINTBEGIN(readability-identifier-naming)
 
 #include <igl/opengl/GLFunc.h>
 
@@ -2000,3 +2001,5 @@ void iglGenVertexArraysOES(GLsizei n, GLuint* vertexArrays) {
 }
 
 IGL_EXTERN_END
+
+// NOLINTEND(readability-identifier-naming)
