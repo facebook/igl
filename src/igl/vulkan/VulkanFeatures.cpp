@@ -313,7 +313,6 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
 
   const bool sameVersion = version_ == other.version_;
   const bool sameConfiguration =
-      config_.enableBufferDeviceAddress == other.config_.enableBufferDeviceAddress &&
       config_.enableDescriptorIndexing == other.config_.enableDescriptorIndexing;
   if (!sameVersion || !sameConfiguration) {
     return *this;

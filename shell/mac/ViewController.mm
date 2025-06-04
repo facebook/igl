@@ -300,7 +300,6 @@ using namespace igl;
     igl::vulkan::VulkanContextConfig vulkanContextConfig;
     vulkanContextConfig.terminateOnValidationError = true;
     vulkanContextConfig.enhancedShaderDebugging = false;
-    vulkanContextConfig.enableBufferDeviceAddress = true;
 
     vulkanContextConfig.swapChainColorSpace = config_.swapchainColorSpace;
     vulkanContextConfig.requestedSwapChainTextureFormat = config_.swapchainColorTextureFormat;

@@ -262,7 +262,6 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
   config.terminateOnValidationError = false;
 #endif
   config.enableExtraLogs = true;
-  config.enableBufferDeviceAddress = true;
 
   auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
 

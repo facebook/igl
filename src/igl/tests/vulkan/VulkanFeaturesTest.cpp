@@ -43,13 +43,10 @@ TEST_F(VulkanFeaturesTest, Construct_Version_1_2) {
 // Copying ***************************************************************************
 TEST_F(VulkanFeaturesTest, CopyNotPerformed) {
   const igl::vulkan::VulkanContextConfig configSrc;
-  EXPECT_FALSE(configSrc.enableBufferDeviceAddress);
   EXPECT_FALSE(configSrc.enableDescriptorIndexing);
 
   igl::vulkan::VulkanContextConfig configDst;
-  configDst.enableBufferDeviceAddress = true;
   configDst.enableDescriptorIndexing = true;
-  EXPECT_TRUE(configDst.enableBufferDeviceAddress);
   EXPECT_TRUE(configDst.enableDescriptorIndexing);
 
   const igl::vulkan::VulkanFeatures featuresSrc(VK_API_VERSION_1_1, configSrc);
@@ -59,7 +56,6 @@ TEST_F(VulkanFeaturesTest, CopyNotPerformed) {
 
   // Unchanged
   EXPECT_EQ(featuresDst.version_, VK_API_VERSION_1_2);
-  EXPECT_TRUE(configDst.enableBufferDeviceAddress);
   EXPECT_TRUE(configDst.enableDescriptorIndexing);
 }
 
@@ -86,7 +82,6 @@ TEST_F(VulkanFeaturesTest, EnableDefaultFeatures_Vk_1_1) {
   EXPECT_TRUE(features.VkPhysicalDeviceFeatures2_.features.fillModeNonSolid);
 #endif
 
-#if defined(VK_EXT_descriptor_indexing) && VK_EXT_descriptor_indexing
   auto& descriptorIndexingFeatures = features.VkPhysicalDeviceDescriptorIndexingFeaturesEXT_;
   ASSERT_FALSE(config.enableDescriptorIndexing);
   EXPECT_FALSE(descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing);
@@ -97,14 +92,10 @@ TEST_F(VulkanFeaturesTest, EnableDefaultFeatures_Vk_1_1) {
   EXPECT_FALSE(descriptorIndexingFeatures.descriptorBindingUpdateUnusedWhilePending);
   EXPECT_FALSE(descriptorIndexingFeatures.descriptorBindingPartiallyBound);
   EXPECT_FALSE(descriptorIndexingFeatures.runtimeDescriptorArray);
-#endif
 
   EXPECT_TRUE(features.VkPhysicalDevice16BitStorageFeatures_.storageBuffer16BitAccess);
 
-#if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
-  ASSERT_FALSE(config.enableBufferDeviceAddress);
   EXPECT_TRUE(features.VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress);
-#endif
   EXPECT_TRUE(features.VkPhysicalDeviceMultiviewFeatures_.multiview);
   EXPECT_TRUE(features.VkPhysicalDeviceSamplerYcbcrConversionFeatures_.samplerYcbcrConversion);
   EXPECT_TRUE(features.VkPhysicalDeviceShaderDrawParametersFeatures_.shaderDrawParameters);
