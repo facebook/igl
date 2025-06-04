@@ -434,7 +434,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       extraExtensions += "#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require\n";
     }
 
-    if (ctx_->config_.enableBufferDeviceAddress) {
+    if (ctx_->features_.has_VK_KHR_buffer_device_address) {
       extraExtensions += "#extension GL_EXT_buffer_reference : require\n";
       extraExtensions += "#extension GL_EXT_buffer_reference_uvec2 : require\n";
     }

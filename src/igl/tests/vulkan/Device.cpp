@@ -266,6 +266,8 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
 
   auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
 
+  ASSERT_NE(ctx, nullptr);
+
   Result ret;
 
   std::vector<HWDeviceDesc> devices =
@@ -274,36 +276,23 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
   ASSERT_TRUE(!devices.empty());
 
   if (ret.isOk()) {
-    igl::vulkan::VulkanFeatures features(VK_API_VERSION_1_1, config);
-    features.populateWithAvailablePhysicalDeviceFeatures(*ctx, (VkPhysicalDevice)devices[0].guid);
-
-    const VkPhysicalDeviceBufferDeviceAddressFeaturesKHR& bdaFeatures =
-        features.VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_;
-    if (!bdaFeatures.bufferDeviceAddress) {
+    if (!ctx->features().has_VK_KHR_buffer_device_address) {
       return;
     }
 
-    const std::vector<const char*> extraDeviceExtensions;
     iglDev = igl::vulkan::HWDevice::create(std::move(ctx),
                                            devices[0],
                                            0, // width
                                            0, // height,
                                            0,
                                            nullptr,
-                                           &features,
+                                           nullptr,
                                            "DeviceVulkanTest",
                                            &ret);
 
     if (!ret.isOk()) {
       iglDev = nullptr;
     }
-  }
-
-  const bool deviceSupportsBufferDeviceAddress =
-      ret.message.empty() ||
-      ret.message.find("VK_KHR_buffer_device_address is not supported") == std::string::npos;
-  if (!deviceSupportsBufferDeviceAddress) {
-    return;
   }
 
   EXPECT_TRUE(ret.isOk());

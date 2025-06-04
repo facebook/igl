@@ -82,7 +82,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
                                   device_,
                                   &requirements,
                                   memFlags,
-                                  ctx.config_.enableBufferDeviceAddress,
+                                  ctx.features().has_VK_KHR_buffer_device_address,
                                   &vkMemory_));
       VK_ASSERT(ctx_.vf_.vkBindBufferMemory(device_, vkBuffer_, vkMemory_, 0));
     }

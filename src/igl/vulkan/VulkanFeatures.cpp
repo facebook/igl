@@ -151,9 +151,6 @@ void VulkanFeatures::enableDefaultFeatures() noexcept {
   VkPhysicalDevice16BitStorageFeatures_.storageBuffer16BitAccess =
       config_.enableStorageBuffer16BitAccess ? VK_TRUE : VK_FALSE;
 
-  if (config_.enableBufferDeviceAddress) {
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress = VK_TRUE;
-  }
   VkPhysicalDeviceShaderDrawParametersFeatures_.shaderDrawParameters =
       config_.enableShaderDrawParameters ? VK_TRUE : VK_FALSE;
 }
@@ -220,7 +217,7 @@ Result VulkanFeatures::checkSelectedFeatures(
   ENABLE_FEATURE_1_1_EXT(VkPhysicalDevice16BitStorageFeatures_,
                          availableFeatures.VkPhysicalDevice16BitStorageFeatures_,
                          storageBuffer16BitAccess)
-  if (config_.enableBufferDeviceAddress) {
+  if (has_VK_KHR_buffer_device_address) {
     ENABLE_FEATURE_1_1_EXT(VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_,
                            availableFeatures.VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_,
                            bufferDeviceAddress)

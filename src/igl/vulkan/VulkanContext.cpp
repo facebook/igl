@@ -806,13 +806,6 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   for (size_t i = 0; i < numExtraDeviceExtensions; i++) {
     features_.enable(extraDeviceExtensions[i], VulkanFeatures::ExtensionType::Device);
   }
-  if (config_.enableBufferDeviceAddress) {
-    if (!features_.enable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-                          VulkanFeatures::ExtensionType::Device)) {
-      return Result(Result::Code::Unsupported,
-                    VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME " is not supported");
-    }
-  }
 
   // @fb-only
     // @fb-only
@@ -865,7 +858,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   // should use own copy of function table bound to a device.
   vulkan::functions::loadDeviceFunctions(*tableImpl_, device);
 
-  if (config_.enableBufferDeviceAddress && vf_.vkGetBufferDeviceAddressKHR == nullptr) {
+  if (features_.has_VK_KHR_buffer_device_address && vf_.vkGetBufferDeviceAddressKHR == nullptr) {
     return Result(Result::Code::InvalidOperation, "Cannot initialize VK_KHR_buffer_device_address");
   }
 
@@ -910,7 +903,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                               device_->getVkDevice(),
                               vkInstance_,
                               apiVersion > VK_API_VERSION_1_3 ? VK_API_VERSION_1_3 : apiVersion,
-                              config_.enableBufferDeviceAddress,
+                              features_.has_VK_KHR_buffer_device_address,
                               (VkDeviceSize)config_.vmaPreferredLargeHeapBlockSize,
                               &pimpl_->vma));
   }

@@ -36,8 +36,9 @@ Result Buffer::create(const BufferDesc& desc) {
           ? VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT
           : 0;
 
-  const VkBufferUsageFlags optionalBDA =
-      ctx.config_.enableBufferDeviceAddress ? VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR : 0;
+  const VkBufferUsageFlags optionalBDA = ctx.features().has_VK_KHR_buffer_device_address
+                                             ? VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR
+                                             : 0;
 
   if (desc_.type == 0) {
     return Result(Result::Code::InvalidOperation, "Invalid buffer type");
