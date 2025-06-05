@@ -121,7 +121,7 @@ void TinyRenderer::init(AAssetManager* mgr,
     // Android devices that do not support dualSrcBlend primarily use ARM, ImgTec, and Qualcomm
     // GPUs.
     // https://vulkan.gpuinfo.org/listdevicescoverage.php?feature=dualSrcBlend&platform=android&option=not
-    igl::vulkan::VulkanFeatures vulkanFeatures(VK_API_VERSION_1_1, config);
+    igl::vulkan::VulkanFeatures vulkanFeatures(config);
     vulkanFeatures.enableDefaultFeatures();
     vulkanFeatures.VkPhysicalDeviceFeatures2_.features.dualSrcBlend = VK_FALSE;
 
