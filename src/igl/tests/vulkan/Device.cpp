@@ -344,7 +344,7 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
   ASSERT_TRUE(!devices.empty());
 
   if (ret.isOk()) {
-    igl::vulkan::VulkanFeatures features(VK_API_VERSION_1_1, config);
+    igl::vulkan::VulkanFeatures features(config);
     features.populateWithAvailablePhysicalDeviceFeatures(*ctx, (VkPhysicalDevice)devices[0].guid);
 
     const VkPhysicalDeviceDescriptorIndexingFeaturesEXT& diFeatures =

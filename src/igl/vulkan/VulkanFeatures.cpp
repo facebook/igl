@@ -10,7 +10,7 @@
 
 namespace igl::vulkan {
 
-VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noexcept :
+VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
   // Vulkan 1.1
   VkPhysicalDeviceFeatures2_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
@@ -98,8 +98,7 @@ VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noe
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT,
       .fragmentDensityMap = VK_TRUE,
   }),
-  config_(config),
-  version_(version) {
+  config_(config) {
   extensions_.resize(kNumberOfExtensionTypes);
   enabledExtensions_.resize(kNumberOfExtensionTypes);
 
@@ -157,10 +156,6 @@ void VulkanFeatures::enableDefaultFeatures() noexcept {
 
 Result VulkanFeatures::checkSelectedFeatures(
     const VulkanFeatures& availableFeatures) const noexcept {
-  IGL_DEBUG_ASSERT(availableFeatures.version_ == version_,
-                   "The API versions don't match between the requested features and the ones that "
-                   "are available");
-
   // Stores missing features
   std::string missingFeatures;
 
@@ -281,7 +276,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceSamplerYcbcrConversionFeatures_);
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceShaderDrawParametersFeatures_);
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceMultiviewFeatures_);
-  if (version_ >= VK_API_VERSION_1_2) {
+  if (hasExtension(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceShaderFloat16Int8Features_);
   }
   if (hasExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
@@ -311,10 +306,9 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
     return *this;
   }
 
-  const bool sameVersion = version_ == other.version_;
   const bool sameConfiguration =
       config_.enableDescriptorIndexing == other.config_.enableDescriptorIndexing;
-  if (!sameVersion || !sameConfiguration) {
+  if (!sameConfiguration) {
     return *this;
   }
 

@@ -36,7 +36,7 @@ class VulkanFeatures final {
   /// size_t internally to help access the right list of enumerations
   enum class ExtensionType { Instance = 0, Device };
 
-  explicit VulkanFeatures(uint32_t version, VulkanContextConfig config) noexcept;
+  explicit VulkanFeatures(VulkanContextConfig config) noexcept;
 
   /// @brief Populates the VkPhysicalDeviceFeatures2 and its pNext chain for a Vulkan context
   void populateWithAvailablePhysicalDeviceFeatures(const VulkanContext& context,
@@ -164,9 +164,6 @@ class VulkanFeatures final {
  public:
   // A copy of the config used by the VulkanContext
   VulkanContextConfig config_{};
-
-  // Stores the API version
-  uint32_t version_ = 0;
 
   // NOLINTBEGIN(readability-identifier-naming)
   bool has_VK_EXT_index_type_uint8 = false;

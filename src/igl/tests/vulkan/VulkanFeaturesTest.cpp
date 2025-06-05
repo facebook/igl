@@ -23,21 +23,9 @@ class VulkanFeaturesTest : public ::testing::Test {};
 TEST_F(VulkanFeaturesTest, Construct_Version_1_1) {
   const igl::vulkan::VulkanContextConfig config;
 
-  const igl::vulkan::VulkanFeatures features(VK_API_VERSION_1_1, config);
+  const igl::vulkan::VulkanFeatures features(config);
 
-  // We can only really test this is the SDK is at least version 1_2
-#if defined(VK_VERSION_1_2)
   EXPECT_EQ(features.VkPhysicalDeviceShaderFloat16Int8Features_.pNext, nullptr);
-#endif
-}
-
-TEST_F(VulkanFeaturesTest, Construct_Version_1_2) {
-  const igl::vulkan::VulkanContextConfig config;
-
-  const igl::vulkan::VulkanFeatures features(VK_API_VERSION_1_2, config);
-
-  // We can only really test this is the SDK is at least version 1_2
-  EXPECT_NE(features.VkPhysicalDeviceShaderFloat16Int8Features_.pNext, nullptr);
 }
 
 // Copying ***************************************************************************
@@ -49,13 +37,12 @@ TEST_F(VulkanFeaturesTest, CopyNotPerformed) {
   configDst.enableDescriptorIndexing = true;
   EXPECT_TRUE(configDst.enableDescriptorIndexing);
 
-  const igl::vulkan::VulkanFeatures featuresSrc(VK_API_VERSION_1_1, configSrc);
-  igl::vulkan::VulkanFeatures featuresDst(VK_API_VERSION_1_2, configDst);
+  const igl::vulkan::VulkanFeatures featuresSrc(configSrc);
+  igl::vulkan::VulkanFeatures featuresDst(configDst);
 
   featuresDst = featuresSrc;
 
   // Unchanged
-  EXPECT_EQ(featuresDst.version_, VK_API_VERSION_1_2);
   EXPECT_TRUE(configDst.enableDescriptorIndexing);
 }
 
@@ -63,10 +50,9 @@ TEST_F(VulkanFeaturesTest, CopyNotPerformed) {
 TEST_F(VulkanFeaturesTest, EnableDefaultFeatures_Vk_1_1) {
   const igl::vulkan::VulkanContextConfig config;
 
-  igl::vulkan::VulkanFeatures features(VK_API_VERSION_1_1, config);
+  igl::vulkan::VulkanFeatures features(config);
   features.enableDefaultFeatures();
 
-  EXPECT_EQ(features.version_, VK_API_VERSION_1_1);
   EXPECT_FALSE(features.VkPhysicalDeviceShaderFloat16Int8Features_.shaderFloat16);
   EXPECT_FALSE(features.VkPhysicalDeviceShaderFloat16Int8Features_.shaderInt8);
 

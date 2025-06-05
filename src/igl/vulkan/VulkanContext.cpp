@@ -413,9 +413,9 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
       .pNext = &vkPhysicalDeviceDriverProperties_,
   }),
-  features_(VK_API_VERSION_1_1, config),
+  features_(config),
   vf_(*tableImpl_),
-  config_(std::move(config)) {
+  config_(config) {
   IGL_PROFILER_THREAD("MainThread");
 
   pimpl_ = std::make_unique<VulkanContextImpl>();
@@ -749,11 +749,11 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   useStagingForBuffers_ = !ivkIsHostVisibleSingleHeapMemory(&vf_, vkPhysicalDevice_);
 
   // Get the available physical device features
-  VulkanFeatures availableFeatures(features_.version_, config_);
+  VulkanFeatures availableFeatures(config_);
   availableFeatures.populateWithAvailablePhysicalDeviceFeatures(*this, vkPhysicalDevice_);
 
   // Use the requested features passed to the function (if any) or use the default features
-  if (requestedFeatures != nullptr) {
+  if (requestedFeatures) {
     features_ = *requestedFeatures;
   } else {
     features_.populateWithAvailablePhysicalDeviceFeatures(*this, vkPhysicalDevice_);
