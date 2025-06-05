@@ -85,41 +85,40 @@ class RenderPipelineStateMTLTest : public ::testing::Test {
     metalDesc.stencilAttachmentPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
 
     MTLRenderPipelineReflection* reflection = nil;
-    auto device_ = MTLCreateSystemDefaultDevice();
+    auto device = MTLCreateSystemDefaultDevice();
 
-    RenderPipelineDesc pipelineDesc_{};
-    pipelineDesc_.cullMode = CullMode::Back;
-    pipelineDesc_.frontFaceWinding = igl::WindingMode::CounterClockwise;
-    pipelineDesc_.polygonFillMode = PolygonFillMode::Fill;
+    RenderPipelineDesc pipelineDesc{};
+    pipelineDesc.cullMode = CullMode::Back;
+    pipelineDesc.frontFaceWinding = igl::WindingMode::CounterClockwise;
+    pipelineDesc.polygonFillMode = PolygonFillMode::Fill;
 
 // Suppress warnings about MTLPipelineOptionArgumentInfo being deprecated
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     // Create reflection for use later in binding, etc.
     id<MTLRenderPipelineState> metalObject =
-        [device_ newRenderPipelineStateWithDescriptor:metalDesc
-                                              options:MTLPipelineOptionArgumentInfo
-                                           reflection:&reflection
-                                                error:&error];
+        [device newRenderPipelineStateWithDescriptor:metalDesc
+                                             options:MTLPipelineOptionArgumentInfo
+                                          reflection:&reflection
+                                               error:&error];
 
-    pipeState_ =
-        std::make_shared<metal::RenderPipelineState>(metalObject, reflection, pipelineDesc_);
+    pipeState = std::make_shared<metal::RenderPipelineState>(metalObject, reflection, pipelineDesc);
 
     id<MTLRenderPipelineState> metalObjectWithoutRefl =
-        [device_ newRenderPipelineStateWithDescriptor:metalDesc
-                                              options:MTLPipelineOptionArgumentInfo
-                                           reflection:nullptr
-                                                error:&error];
+        [device newRenderPipelineStateWithDescriptor:metalDesc
+                                             options:MTLPipelineOptionArgumentInfo
+                                          reflection:nullptr
+                                               error:&error];
 #pragma GCC diagnostic pop
 
-    pipeStateWithNoRefl_ = std::make_shared<metal::RenderPipelineState>(
-        metalObjectWithoutRefl, nullptr, pipelineDesc_);
+    pipeStateWithNoRefl_ =
+        std::make_shared<metal::RenderPipelineState>(metalObjectWithoutRefl, nullptr, pipelineDesc);
 
-    ASSERT_NE(pipeState_, nullptr);
+    ASSERT_NE(pipeState, nullptr);
   }
   void TearDown() override {}
 
-  std::shared_ptr<metal::RenderPipelineState> pipeState_;
+  std::shared_ptr<metal::RenderPipelineState> pipeState;
 
  protected:
   std::shared_ptr<metal::RenderPipelineState> pipeStateWithNoRefl_;
@@ -133,12 +132,12 @@ class RenderPipelineStateMTLTest : public ::testing::Test {
 };
 
 TEST_F(RenderPipelineStateMTLTest, GetIndexByName) {
-  auto index = pipeState_->getIndexByName(data::shader::simpleUv, ShaderStage::Vertex);
+  auto index = pipeState->getIndexByName(data::shader::simpleUv, ShaderStage::Vertex);
   ASSERT_EQ(index, 1);
 }
 
 TEST_F(RenderPipelineStateMTLTest, GetNonexistentIndexByName) {
-  auto index = pipeState_->getIndexByName("", ShaderStage::Fragment);
+  auto index = pipeState->getIndexByName("", ShaderStage::Fragment);
   ASSERT_EQ(index, -1);
 }
 
@@ -149,12 +148,12 @@ TEST_F(RenderPipelineStateMTLTest, GetIndexByNameWithoutRefl) {
 
 TEST_F(RenderPipelineStateMTLTest, GetIndexByNameHandle) {
   auto index =
-      pipeState_->getIndexByName(igl::genNameHandle(data::shader::simpleUv), ShaderStage::Vertex);
+      pipeState->getIndexByName(igl::genNameHandle(data::shader::simpleUv), ShaderStage::Vertex);
   ASSERT_EQ(index, 1);
 }
 
 TEST_F(RenderPipelineStateMTLTest, GetNonexistentIndexByNameHandle) {
-  auto index = pipeState_->getIndexByName("", ShaderStage::Fragment);
+  auto index = pipeState->getIndexByName("", ShaderStage::Fragment);
   ASSERT_EQ(index, -1);
 }
 

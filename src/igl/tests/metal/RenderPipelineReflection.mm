@@ -87,16 +87,16 @@ class RenderPipelineReflectionMTLTest : public ::testing::Test {
     metalDesc.stencilAttachmentPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
 
     MTLRenderPipelineReflection* reflection = nil;
-    auto device_ = MTLCreateSystemDefaultDevice();
+    auto device = MTLCreateSystemDefaultDevice();
 
 // Suppress warnings about MTLPipelineOptionArgumentInfo being deprecated
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     // Create reflection for use later in binding, etc.
-    [device_ newRenderPipelineStateWithDescriptor:metalDesc
-                                          options:MTLPipelineOptionArgumentInfo
-                                       reflection:&reflection
-                                            error:&error];
+    [device newRenderPipelineStateWithDescriptor:metalDesc
+                                         options:MTLPipelineOptionArgumentInfo
+                                      reflection:&reflection
+                                           error:&error];
 #pragma GCC diagnostic pop
 
     pipeRef_ = std::make_shared<metal::RenderPipelineReflection>(reflection);
