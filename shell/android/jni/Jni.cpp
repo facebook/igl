@@ -173,7 +173,7 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
                                                                   jobject obj,
                                                                   jobject jbackendVersion,
                                                                   jint jswapchainColorTextureFormat,
-                                                                  jobject java_asset_manager,
+                                                                  jobject javaAssetManager,
                                                                   jobject surface);
 JNIEXPORT void JNICALL
 Java_com_facebook_igl_shell_SampleLib_setActiveBackendVersion(JNIEnv* env,
@@ -253,7 +253,7 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
                                                                   jobject /*obj*/,
                                                                   jobject jbackendVersion,
                                                                   jint jtextureFormat,
-                                                                  jobject java_asset_manager,
+                                                                  jobject javaAssetManager,
                                                                   jobject surface) {
   const auto backendVersion = toBackendVersion(env, jbackendVersion);
   const auto swapchainColorTextureFormat = static_cast<TextureFormat>(jtextureFormat);
@@ -261,7 +261,7 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
 
   if (backendVersion && !rendererIndex) {
     auto renderer = std::make_unique<TinyRenderer>();
-    renderer->init(AAssetManager_fromJava(env, java_asset_manager),
+    renderer->init(AAssetManager_fromJava(env, javaAssetManager),
                    surface ? ANativeWindow_fromSurface(env, surface) : nullptr,
                    *factory,
                    *backendVersion,
