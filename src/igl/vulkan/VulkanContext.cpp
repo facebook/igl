@@ -593,9 +593,6 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
   if (config_.enableGPUAssistedValidation) {
     valFeatures.push_back(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT);
   }
-  if (config_.enableSynchronizationValidation) {
-    valFeatures.push_back(VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT);
-  }
   const VkValidationFeaturesEXT features = {
       .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
       .enabledValidationFeatureCount = (uint32_t)valFeatures.size(),

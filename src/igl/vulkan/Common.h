@@ -134,7 +134,6 @@ struct VulkanContextConfig {
 
   bool enableValidation = true;
   bool enableGPUAssistedValidation = true;
-  bool enableSynchronizationValidation = false;
   bool enableExtraLogs = true;
   bool enableDescriptorIndexing = false;
   // @fb-only
