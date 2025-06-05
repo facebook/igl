@@ -12,18 +12,6 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-#if !defined(VK_QCOM_multiview_per_view_viewports)
-// this is copied from `vulkan_core.h`, just in case we compile using some old Vulkan headers
-// NOLINTBEGIN(modernize-use-using)
-#define VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME "VK_QCOM_multiview_per_view_viewports"
-typedef struct VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM {
-  VkStructureType sType;
-  void* pNext;
-  VkBool32 multiviewPerViewViewports;
-} VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM;
-// NOLINTEND(modernize-use-using)
-#endif // VK_QCOM_multiview_per_view_viewports
-
 namespace igl::vulkan {
 
 class VulkanContext;
@@ -114,8 +102,6 @@ class VulkanFeatures final {
   VkPhysicalDeviceSynchronization2FeaturesKHR VkPhysicalDeviceSynchronization2Features_{};
   VkPhysicalDeviceTimelineSemaphoreFeaturesKHR VkPhysicalDeviceTimelineSemaphoreFeatures_{};
   VkPhysicalDeviceFragmentDensityMapFeaturesEXT VkPhysicalDeviceFragmentDensityMapFeatures_{};
-  VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM
-      VkPhysicalDeviceMultiviewPerViewViewportsFeatures_{};
 
   // NOLINTEND(readability-identifier-naming)
 
@@ -188,7 +174,6 @@ class VulkanFeatures final {
   bool has_VK_KHR_synchronization2 = false;
   bool has_VK_KHR_buffer_device_address = false;
   bool has_VK_EXT_fragment_density_map = false;
-  bool has_VK_QCOM_multiview_per_view_viewports = false;
   // NOLINTEND(readability-identifier-naming)
 
  private:

@@ -98,12 +98,6 @@ VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noe
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT,
       .fragmentDensityMap = VK_TRUE,
   }),
-#if defined(VK_QCOM_multiview_per_view_viewports)
-  VkPhysicalDeviceMultiviewPerViewViewportsFeatures_({
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM,
-      .multiviewPerViewViewports = VK_TRUE,
-  }),
-#endif // VK_QCOM_multiview_per_view_viewports
   config_(config),
   version_(version) {
   extensions_.resize(kNumberOfExtensionTypes);
@@ -280,7 +274,6 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   VkPhysicalDevice16BitStorageFeatures_.pNext = nullptr;
   VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.pNext = nullptr;
   VkPhysicalDeviceDescriptorIndexingFeaturesEXT_.pNext = nullptr;
-  VkPhysicalDeviceMultiviewPerViewViewportsFeatures_.pNext = nullptr;
 
   VkPhysicalDeviceFragmentDensityMapFeatures_.pNext = nullptr;
 
@@ -310,9 +303,6 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   }
   if (hasExtension(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceFragmentDensityMapFeatures_);
-  }
-  if (hasExtension(VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME)) {
-    ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceMultiviewPerViewViewportsFeatures_);
   }
 }
 
@@ -347,8 +337,6 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   VkPhysicalDeviceSynchronization2Features_ = other.VkPhysicalDeviceSynchronization2Features_;
   VkPhysicalDeviceTimelineSemaphoreFeatures_ = other.VkPhysicalDeviceTimelineSemaphoreFeatures_;
   VkPhysicalDeviceFragmentDensityMapFeatures_ = other.VkPhysicalDeviceFragmentDensityMapFeatures_;
-  VkPhysicalDeviceMultiviewPerViewViewportsFeatures_ =
-      other.VkPhysicalDeviceMultiviewPerViewViewportsFeatures_;
 
   extensions_ = other.extensions_;
   enabledExtensions_ = other.enabledExtensions_;
@@ -517,9 +505,6 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
 
   has_VK_EXT_fragment_density_map =
       enable(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME, ExtensionType::Device);
-
-  has_VK_QCOM_multiview_per_view_viewports =
-      enable(VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME, ExtensionType::Device);
 }
 
 bool VulkanFeatures::enabled(const char* extensionName) const {
