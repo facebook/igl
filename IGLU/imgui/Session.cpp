@@ -168,6 +168,7 @@ static std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevic
   IGL_UNREACHABLE_RETURN(nullptr)
 }
 
+namespace {
 struct DrawableData {
   std::shared_ptr<iglu::vertexdata::VertexData> vertexData;
   std::shared_ptr<iglu::drawable::Drawable> drawable;
@@ -203,6 +204,7 @@ struct DrawableData {
     drawable = std::make_shared<iglu::drawable::Drawable>(vertexData, material);
   }
 };
+} // namespace
 
 class Session::Renderer {
  public:
