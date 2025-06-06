@@ -48,7 +48,7 @@ const char* getMetalShaderSource() {
             float3(0.0, 1.0, 0.0),
             float3(0.0, 0.0, 1.0)
           };
-        
+
          struct VertexIn{
             float2 offset [[attribute(0)]];
          };
@@ -141,8 +141,7 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
     auto glVersion =
         static_cast<igl::opengl::Device&>(device).getContext().deviceFeatures().getGLVersion();
     if (glVersion > igl::opengl::GLVersion::v2_1) {
-      auto usesOpenGLES =
-          static_cast<igl::opengl::Device&>(device).getContext().deviceFeatures().usesOpenGLES();
+      auto usesOpenGLES = igl::opengl::DeviceFeatureSet::usesOpenGLES();
       std::string codeVS(getVulkanVertexShaderSource());
       stringReplaceAll(codeVS, "gl_VertexIndex", "gl_VertexID");
       stringReplaceAll(codeVS, "460", usesOpenGLES ? "300 es" : "410");
