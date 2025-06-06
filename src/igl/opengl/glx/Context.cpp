@@ -146,12 +146,12 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
   static int visualAttribs[] = {None};
   int contextAttribs[] = {GLX_CONTEXT_MAJOR_VERSION_ARB, 4, GLX_CONTEXT_MINOR_VERSION_ARB, 6, None};
 
-  if (display_ = module_->XOpenDisplay(0); display_ != nullptr) {
+  if (display_ = module_->XOpenDisplay(nullptr); display_ != nullptr) {
     int fbcount = 0;
     if (GLXFBConfig* fbc = module_->glXChooseFBConfig(
             display_, DefaultScreen(display_), visualAttribs, &fbcount)) {
       if (contextHandle_ =
-              module_->glXCreateContextAttribsARB(display_, fbc[0], 0, True, contextAttribs);
+              module_->glXCreateContextAttribsARB(display_, fbc[0], nullptr, True, contextAttribs);
 
           contextHandle_ != nullptr) {
         IContext::registerContext((void*)contextHandle_, this);
