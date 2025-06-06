@@ -98,6 +98,10 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT,
       .fragmentDensityMap = VK_TRUE,
   }),
+  VkPhysicalDeviceMultiviewPerViewViewportsFeatures_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM,
+      .multiviewPerViewViewports = VK_TRUE,
+  }),
   config_(config) {
   extensions_.resize(kNumberOfExtensionTypes);
   enabledExtensions_.resize(kNumberOfExtensionTypes);
@@ -269,6 +273,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   VkPhysicalDevice16BitStorageFeatures_.pNext = nullptr;
   VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.pNext = nullptr;
   VkPhysicalDeviceDescriptorIndexingFeaturesEXT_.pNext = nullptr;
+  VkPhysicalDeviceMultiviewPerViewViewportsFeatures_.pNext = nullptr;
 
   VkPhysicalDeviceFragmentDensityMapFeatures_.pNext = nullptr;
 
@@ -331,6 +336,8 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   VkPhysicalDeviceSynchronization2Features_ = other.VkPhysicalDeviceSynchronization2Features_;
   VkPhysicalDeviceTimelineSemaphoreFeatures_ = other.VkPhysicalDeviceTimelineSemaphoreFeatures_;
   VkPhysicalDeviceFragmentDensityMapFeatures_ = other.VkPhysicalDeviceFragmentDensityMapFeatures_;
+  VkPhysicalDeviceMultiviewPerViewViewportsFeatures_ =
+      other.VkPhysicalDeviceMultiviewPerViewViewportsFeatures_;
 
   extensions_ = other.extensions_;
   enabledExtensions_ = other.enabledExtensions_;
