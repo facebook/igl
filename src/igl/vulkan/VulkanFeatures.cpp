@@ -304,6 +304,9 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   if (hasExtension(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceFragmentDensityMapFeatures_);
   }
+  if (hasExtension(VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME)) {
+    ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceMultiviewPerViewViewportsFeatures_);
+  }
 }
 
 VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept {
@@ -506,6 +509,9 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
 
   has_VK_EXT_fragment_density_map =
       enable(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME, ExtensionType::Device);
+
+  has_VK_QCOM_multiview_per_view_viewports =
+      enable(VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME, ExtensionType::Device);
 }
 
 bool VulkanFeatures::enabled(const char* extensionName) const {
