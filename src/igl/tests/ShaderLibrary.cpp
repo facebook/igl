@@ -54,6 +54,12 @@ TEST_F(ShaderLibraryTest, CreateFromSource) {
     IGL_DEBUG_ASSERT_NOT_REACHED();
   }
 
+  // Check if source is null before passing it to fromStringInput
+  if (source == nullptr) {
+    GTEST_SKIP() << "No shader source available for this backend.";
+    return;
+  }
+
   auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
       *iglDev_, source, {{ShaderStage::Vertex, "vertexShader"}}, "", &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -90,6 +96,13 @@ TEST_F(ShaderLibraryTest, CreateFromSourceMultipleModules) {
     GTEST_SKIP() << "Vulkan does not support multiple modules from the same source code.";
     return;
   }
+
+  // Check if source is null before passing it to fromStringInput
+  if (source == nullptr) {
+    GTEST_SKIP() << "No shader source available for this backend.";
+    return;
+  }
+
   auto shaderLibrary =
       ShaderLibraryCreator::fromStringInput(*iglDev_,
                                             source,
@@ -123,6 +136,12 @@ TEST_F(ShaderLibraryTest, CreateFromSourceNoResult) {
     source = data::shader::VULKAN_SIMPLE_VERT_SHADER;
   } else {
     IGL_DEBUG_ASSERT_NOT_REACHED();
+  }
+
+  // Check if source is null before passing it to fromStringInput
+  if (source == nullptr) {
+    GTEST_SKIP() << "No shader source available for this backend.";
+    return;
   }
 
   auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
