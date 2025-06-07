@@ -13,7 +13,7 @@
 
 namespace igl::shell {
 
-#if IGL_PLATFORM_LINUX
+#if IGL_PLATFORM_LINUX || IGL_PLATFORM_APPLE
 __attribute__((weak))
 #endif // IGL_PLATFORM_LINUX
 std::unique_ptr<IRenderSessionFactory>
