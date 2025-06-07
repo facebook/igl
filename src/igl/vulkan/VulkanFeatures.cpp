@@ -304,6 +304,13 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   if (hasExtension(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceFragmentDensityMapFeatures_);
   }
+  if (config_.enableMultiviewPerViewViewports) {
+    if (hasExtension(VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME)) {
+      ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceMultiviewPerViewViewportsFeatures_);
+    } else {
+      IGL_LOG_ERROR("VK_QCOM_multiview_per_view_viewports extension not supported");
+    }
+  }
 }
 
 VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept {
@@ -506,6 +513,13 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
 
   has_VK_EXT_fragment_density_map =
       enable(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME, ExtensionType::Device);
+
+  if (config_.enableMultiviewPerViewViewports) {
+    has_VK_QCOM_multiview_per_view_viewports =
+        enable(VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME, ExtensionType::Device);
+    IGL_SOFT_ASSERT(has_VK_QCOM_multiview_per_view_viewports,
+                    "VK_QCOM_multiview_per_view_viewports is not supported");
+  }
 }
 
 bool VulkanFeatures::enabled(const char* extensionName) const {
