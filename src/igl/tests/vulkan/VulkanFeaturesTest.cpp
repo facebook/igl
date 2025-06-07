@@ -70,14 +70,14 @@ TEST_F(VulkanFeaturesTest, EnableDefaultFeatures_Vk_1_1) {
 
   auto& descriptorIndexingFeatures = features.VkPhysicalDeviceDescriptorIndexingFeaturesEXT_;
   ASSERT_FALSE(config.enableDescriptorIndexing);
-  EXPECT_FALSE(descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing);
-  EXPECT_FALSE(descriptorIndexingFeatures.descriptorBindingUniformBufferUpdateAfterBind);
-  EXPECT_FALSE(descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind);
-  EXPECT_FALSE(descriptorIndexingFeatures.descriptorBindingStorageImageUpdateAfterBind);
-  EXPECT_FALSE(descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind);
-  EXPECT_FALSE(descriptorIndexingFeatures.descriptorBindingUpdateUnusedWhilePending);
-  EXPECT_FALSE(descriptorIndexingFeatures.descriptorBindingPartiallyBound);
-  EXPECT_FALSE(descriptorIndexingFeatures.runtimeDescriptorArray);
+  EXPECT_TRUE(descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing);
+  EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingUniformBufferUpdateAfterBind);
+  EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind);
+  EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingStorageImageUpdateAfterBind);
+  EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind);
+  EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingUpdateUnusedWhilePending);
+  EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingPartiallyBound);
+  EXPECT_TRUE(descriptorIndexingFeatures.runtimeDescriptorArray);
 
   EXPECT_TRUE(features.VkPhysicalDevice16BitStorageFeatures_.storageBuffer16BitAccess);
 

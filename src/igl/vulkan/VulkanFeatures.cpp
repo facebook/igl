@@ -52,22 +52,22 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .shaderUniformTexelBufferArrayDynamicIndexing = VK_FALSE,
       .shaderStorageTexelBufferArrayDynamicIndexing = VK_FALSE,
       .shaderUniformBufferArrayNonUniformIndexing = VK_FALSE,
-      .shaderSampledImageArrayNonUniformIndexing = VK_FALSE,
+      .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
       .shaderStorageBufferArrayNonUniformIndexing = VK_FALSE,
       .shaderStorageImageArrayNonUniformIndexing = VK_FALSE,
       .shaderInputAttachmentArrayNonUniformIndexing = VK_FALSE,
       .shaderUniformTexelBufferArrayNonUniformIndexing = VK_FALSE,
       .shaderStorageTexelBufferArrayNonUniformIndexing = VK_FALSE,
-      .descriptorBindingUniformBufferUpdateAfterBind = VK_FALSE,
-      .descriptorBindingSampledImageUpdateAfterBind = VK_FALSE,
-      .descriptorBindingStorageImageUpdateAfterBind = VK_FALSE,
-      .descriptorBindingStorageBufferUpdateAfterBind = VK_FALSE,
+      .descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE,
+      .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
+      .descriptorBindingStorageImageUpdateAfterBind = VK_TRUE,
+      .descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE,
       .descriptorBindingUniformTexelBufferUpdateAfterBind = VK_FALSE,
       .descriptorBindingStorageTexelBufferUpdateAfterBind = VK_FALSE,
-      .descriptorBindingUpdateUnusedWhilePending = VK_FALSE,
-      .descriptorBindingPartiallyBound = VK_FALSE,
+      .descriptorBindingUpdateUnusedWhilePending = VK_TRUE,
+      .descriptorBindingPartiallyBound = VK_TRUE,
       .descriptorBindingVariableDescriptorCount = VK_FALSE,
-      .runtimeDescriptorArray = VK_FALSE,
+      .runtimeDescriptorArray = VK_TRUE,
   }),
   VkPhysicalDevice16BitStorageFeatures_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,
@@ -138,18 +138,6 @@ void VulkanFeatures::enableDefaultFeatures() noexcept {
   auto& features = VkPhysicalDeviceFeatures2_.features;
   features.dualSrcBlend = config_.enableDualSrcBlend ? VK_TRUE : VK_FALSE;
   features.shaderInt16 = config_.enableShaderInt16 ? VK_TRUE : VK_FALSE;
-
-  if (config_.enableDescriptorIndexing) {
-    auto& descriptorIndexingFeatures = VkPhysicalDeviceDescriptorIndexingFeaturesEXT_;
-    descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingStorageImageUpdateAfterBind = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
-    descriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
-  }
 
   VkPhysicalDevice16BitStorageFeatures_.storageBuffer16BitAccess =
       config_.enableStorageBuffer16BitAccess ? VK_TRUE : VK_FALSE;
