@@ -11,18 +11,18 @@
 // ----------------------------------------------------------------------------
 
 namespace {
-IGLErrorHandlerFunc& GetDebugAbortListener() {
+IGLErrorHandlerFunc& getDebugAbortListener() {
   static IGLErrorHandlerFunc sListener = nullptr;
   return sListener;
 }
 } // namespace
 
 IGL_API void IGLSetDebugAbortListener(IGLErrorHandlerFunc listener) {
-  GetDebugAbortListener() = listener;
+  getDebugAbortListener() = listener;
 }
 
 IGL_API IGLErrorHandlerFunc IGLGetDebugAbortListener(void) {
-  return GetDebugAbortListener();
+  return getDebugAbortListener();
 }
 
 namespace igl {
@@ -73,16 +73,16 @@ void _IGLDebugBreak() {
 // ----------------------------------------------------------------------------
 
 namespace {
-IGLErrorHandlerFunc& GetSoftErrorHandler() {
+IGLErrorHandlerFunc& getSoftErrorHandler() {
   static IGLErrorHandlerFunc sHandler = nullptr;
   return sHandler;
 }
 } // namespace
 
 IGL_API void IGLSetSoftErrorHandler(IGLErrorHandlerFunc handler) {
-  GetSoftErrorHandler() = handler;
+  getSoftErrorHandler() = handler;
 }
 
 IGL_API IGLErrorHandlerFunc IGLGetSoftErrorHandler(void) {
-  return GetSoftErrorHandler();
+  return getSoftErrorHandler();
 }
