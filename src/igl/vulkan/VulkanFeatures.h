@@ -190,6 +190,7 @@ class VulkanFeatures final {
   bool has_VK_KHR_timeline_semaphore = false;
   bool has_VK_KHR_synchronization2 = false;
   bool has_VK_KHR_buffer_device_address = false;
+  bool has_VK_EXT_descriptor_indexing = false;
   bool has_VK_EXT_fragment_density_map = false;
   bool has_VK_QCOM_multiview_per_view_viewports = false;
   // NOLINTEND(readability-identifier-naming)

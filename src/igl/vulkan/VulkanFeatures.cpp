@@ -457,7 +457,8 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
     // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are
     // enabled for DEBUG builds. https://issuetracker.google.com/issues/209835779?pli=1 Hence,
     // allow developers to not enable certain extensions on Android which are not present.
-    enable(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, ExtensionType::Device);
+    has_VK_EXT_descriptor_indexing =
+        enable(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, ExtensionType::Device);
 #if IGL_PLATFORM_ANDROID
   }
 #endif
