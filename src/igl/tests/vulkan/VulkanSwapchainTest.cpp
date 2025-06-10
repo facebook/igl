@@ -5,21 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <cstddef>
-#include <gtest/gtest.h>
-#include <memory>
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/Device.h>
-#include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanSwapchain.h>
-
-#include <igl/tests/util/device/vulkan/TestDevice.h>
 
 #ifdef __ANDROID__
 #include <vulkan/vulkan_android.h>
 #endif
 
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
+#include <cstddef>
+#include <gtest/gtest.h>
+#include <memory>
+
+#include <igl/tests/util/device/vulkan/TestDevice.h>
+#include <igl/vulkan/Device.h>
+#include <igl/vulkan/VulkanContext.h>
+#include <igl/vulkan/VulkanSwapchain.h>
 
 namespace igl::tests {
 

@@ -8,7 +8,6 @@
 // @fb-only
 // @fb-only
 
-#include <igl/opengl/TextureBuffer.h>
 #include <igl/opengl/ViewTextureTarget.h>
 #include <igl/opengl/glx/Context.h>
 #include <igl/opengl/glx/Device.h>

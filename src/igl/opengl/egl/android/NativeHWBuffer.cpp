@@ -10,16 +10,9 @@
 
 #include "NativeHWBuffer.h"
 
-#include "../Context.h"
-
-#include <android/api-level.h>
-#include <android/hardware_buffer.h>
-#include <android/log.h>
-#include <igl/Macros.h>
-#include <igl/opengl/Errors.h>
-#include <igl/opengl/GLIncludes.h>
-
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
+
+#include "../Context.h"
 
 #if defined(IGL_API_LOG) && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
 #define APILOG_DEC_DRAW_COUNT() \
