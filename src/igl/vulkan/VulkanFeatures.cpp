@@ -98,6 +98,10 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT,
       .fragmentDensityMap = VK_TRUE,
   }),
+  VkPhysicalDeviceVulkanMemoryModelFeatures_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES_KHR,
+      .vulkanMemoryModel = VK_TRUE,
+  }),
   VkPhysicalDeviceMultiviewPerViewViewportsFeatures_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM,
       .multiviewPerViewViewports = VK_TRUE,
@@ -257,6 +261,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   VkPhysicalDeviceIndexTypeUint8Features_.pNext = nullptr;
   VkPhysicalDeviceSynchronization2Features_.pNext = nullptr;
   VkPhysicalDeviceTimelineSemaphoreFeatures_.pNext = nullptr;
+  VkPhysicalDeviceVulkanMemoryModelFeatures_.pNext = nullptr;
   VkPhysicalDeviceShaderFloat16Int8Features_.pNext = nullptr;
   VkPhysicalDevice16BitStorageFeatures_.pNext = nullptr;
   VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.pNext = nullptr;
@@ -274,6 +279,9 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   }
   if (hasExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_);
+  }
+  if (hasExtension(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME)) {
+    ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceVulkanMemoryModelFeatures_);
   }
   if (hasExtension(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceDescriptorIndexingFeaturesEXT_);
@@ -326,6 +334,7 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   VkPhysicalDevice16BitStorageFeatures_ = other.VkPhysicalDevice16BitStorageFeatures_;
 
   // Vulkan 1.2
+  VkPhysicalDeviceVulkanMemoryModelFeatures_ = other.VkPhysicalDeviceVulkanMemoryModelFeatures_;
   VkPhysicalDeviceShaderFloat16Int8Features_ = other.VkPhysicalDeviceShaderFloat16Int8Features_;
   VkPhysicalDeviceIndexTypeUint8Features_ = other.VkPhysicalDeviceIndexTypeUint8Features_;
   VkPhysicalDeviceSynchronization2Features_ = other.VkPhysicalDeviceSynchronization2Features_;
@@ -490,6 +499,9 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
 
   has_VK_KHR_buffer_device_address =
       enable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, ExtensionType::Device);
+
+  has_VK_KHR_vulkan_memory_model =
+      enable(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME, ExtensionType::Device);
 
   has_VK_EXT_descriptor_indexing =
       enable(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, ExtensionType::Device);
