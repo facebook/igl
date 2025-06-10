@@ -452,15 +452,6 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
   enable(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, ExtensionType::Device);
   enable(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME, ExtensionType::Device);
   enable(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME, ExtensionType::Device);
-  if (config.enableDescriptorIndexing) {
-#endif
-    // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are
-    // enabled for DEBUG builds. https://issuetracker.google.com/issues/209835779?pli=1 Hence,
-    // allow developers to not enable certain extensions on Android which are not present.
-    has_VK_EXT_descriptor_indexing =
-        enable(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, ExtensionType::Device);
-#if IGL_PLATFORM_ANDROID
-  }
 #endif
   enable(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME, ExtensionType::Device);
 #if !IGL_PLATFORM_ANDROID || !IGL_DEBUG
@@ -499,6 +490,9 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
 
   has_VK_KHR_buffer_device_address =
       enable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, ExtensionType::Device);
+
+  has_VK_EXT_descriptor_indexing =
+      enable(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, ExtensionType::Device);
 
   has_VK_EXT_fragment_density_map =
       enable(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME, ExtensionType::Device);
