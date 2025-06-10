@@ -624,6 +624,25 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
       .ppEnabledExtensionNames = instanceExtensions.data(),
   };
 
+  {
+    // Prints information about available instance layers
+    uint32_t count = 0;
+    vf_.vkEnumerateInstanceLayerProperties(&count, nullptr);
+    std::vector<VkLayerProperties> layerProperties(count);
+    vf_.vkEnumerateInstanceLayerProperties(&count, layerProperties.data());
+
+    IGL_LOG_INFO("Found %u Vulkan instance layers\n", count);
+    for ([[maybe_unused]] const auto& layer : layerProperties) {
+      IGL_LOG_INFO("\t%s - %u.%u.%u.%u, %u\n",
+                   layer.layerName,
+                   VK_API_VERSION_MAJOR(layer.specVersion),
+                   VK_API_VERSION_MINOR(layer.specVersion),
+                   VK_API_VERSION_VARIANT(layer.specVersion),
+                   VK_API_VERSION_PATCH(layer.specVersion),
+                   layer.implementationVersion);
+    }
+  }
+
   const VkResult result = vf_.vkCreateInstance(&ci, nullptr, &vkInstance_);
 
   IGL_DEBUG_ASSERT(result != VK_ERROR_LAYER_NOT_PRESENT,
