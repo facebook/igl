@@ -63,7 +63,7 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
   void bindBuffer(uint32_t index, IBuffer* buffer, size_t offset, size_t bufferSize) override;
 
   /// @brief Not implemented
-  void bindBytes(size_t index, const void* data, size_t length) override;
+  void bindBytes(uint32_t index, const void* data, size_t length) override;
 
   /// @brief Binds push constants pointed by `data` with `length` bytes starting at `offset`.
   /// `length` must be a multiple of 4.

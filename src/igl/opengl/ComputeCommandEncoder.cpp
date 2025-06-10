@@ -135,7 +135,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index,
   }
 }
 
-void ComputeCommandEncoder::bindBytes(size_t /*index*/, const void* /*data*/, size_t /*length*/) {
+void ComputeCommandEncoder::bindBytes(uint32_t /*index*/, const void* /*data*/, size_t /*length*/) {
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 }
 

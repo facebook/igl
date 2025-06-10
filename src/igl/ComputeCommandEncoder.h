@@ -83,7 +83,7 @@ class IComputeCommandEncoder : public ICommandEncoder {
    * @param data The memory address from which to copy the data.
    * @param length The number of bytes to copy.
    */
-  virtual void bindBytes(size_t index, const void* data, size_t length) = 0;
+  virtual void bindBytes(uint32_t index, const void* data, size_t length) = 0;
   /**
    * @brief Sets a block of data for the compute function.
    *
