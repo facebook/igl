@@ -263,7 +263,6 @@ bool Texture::toFormatDescGL(const IContext& ctx,
       IGL_LOG_INFO(
           "Texture format %s does not support SampledAttachment usage. Falling back to Sampled.\n",
           TextureFormatProperties::fromTextureFormat(textureFormat).name);
-      sampledOnly = true;
       sampledAttachment = false;
       attachmentOnly = false;
       attachment = false;
