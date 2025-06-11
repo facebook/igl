@@ -348,7 +348,7 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
     features.populateWithAvailablePhysicalDeviceFeatures(*ctx, (VkPhysicalDevice)devices[0].guid);
 
     const VkPhysicalDeviceDescriptorIndexingFeaturesEXT& diFeatures =
-        features.VkPhysicalDeviceDescriptorIndexingFeaturesEXT_;
+        features.vkPhysicalDeviceDescriptorIndexingFeatures_;
     if (!diFeatures.shaderSampledImageArrayNonUniformIndexing ||
         !diFeatures.descriptorBindingUniformBufferUpdateAfterBind ||
         !diFeatures.descriptorBindingSampledImageUpdateAfterBind ||

@@ -105,24 +105,24 @@ class VulkanFeatures final {
   // NOLINTBEGIN(readability-identifier-naming)
 
   // Vulkan 1.1
-  VkPhysicalDeviceFeatures2 VkPhysicalDeviceFeatures2_{};
-  VkPhysicalDeviceSamplerYcbcrConversionFeatures VkPhysicalDeviceSamplerYcbcrConversionFeatures_{};
-  VkPhysicalDeviceShaderDrawParametersFeatures VkPhysicalDeviceShaderDrawParametersFeatures_{};
-  VkPhysicalDeviceMultiviewFeatures VkPhysicalDeviceMultiviewFeatures_{};
+  VkPhysicalDeviceFeatures2 vkPhysicalDeviceFeatures2_{};
+  VkPhysicalDeviceSamplerYcbcrConversionFeatures vkPhysicalDeviceSamplerYcbcrConversionFeatures_{};
+  VkPhysicalDeviceShaderDrawParametersFeatures vkPhysicalDeviceShaderDrawParametersFeatures_{};
+  VkPhysicalDeviceMultiviewFeatures vkPhysicalDeviceMultiviewFeatures_{};
 
-  VkPhysicalDeviceBufferDeviceAddressFeaturesKHR VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_{};
-  VkPhysicalDeviceDescriptorIndexingFeaturesEXT VkPhysicalDeviceDescriptorIndexingFeaturesEXT_{};
-  VkPhysicalDevice16BitStorageFeatures VkPhysicalDevice16BitStorageFeatures_{};
+  VkPhysicalDeviceBufferDeviceAddressFeaturesKHR vkPhysicalDeviceBufferDeviceAddressFeatures_{};
+  VkPhysicalDeviceDescriptorIndexingFeaturesEXT vkPhysicalDeviceDescriptorIndexingFeatures_{};
+  VkPhysicalDevice16BitStorageFeatures vkPhysicalDevice16BitStorageFeatures_{};
 
   // Vulkan 1.2
-  VkPhysicalDeviceShaderFloat16Int8Features VkPhysicalDeviceShaderFloat16Int8Features_{};
-  VkPhysicalDeviceIndexTypeUint8FeaturesEXT VkPhysicalDeviceIndexTypeUint8Features_{};
-  VkPhysicalDeviceSynchronization2FeaturesKHR VkPhysicalDeviceSynchronization2Features_{};
-  VkPhysicalDeviceTimelineSemaphoreFeaturesKHR VkPhysicalDeviceTimelineSemaphoreFeatures_{};
-  VkPhysicalDeviceFragmentDensityMapFeaturesEXT VkPhysicalDeviceFragmentDensityMapFeatures_{};
-  VkPhysicalDeviceVulkanMemoryModelFeaturesKHR VkPhysicalDeviceVulkanMemoryModelFeatures_{};
+  VkPhysicalDeviceShaderFloat16Int8Features vkPhysicalDeviceShaderFloat16Int8Features_{};
+  VkPhysicalDeviceIndexTypeUint8FeaturesEXT vkPhysicalDeviceIndexTypeUint8Features_{};
+  VkPhysicalDeviceSynchronization2FeaturesKHR vkPhysicalDeviceSynchronization2Features_{};
+  VkPhysicalDeviceTimelineSemaphoreFeaturesKHR vkPhysicalDeviceTimelineSemaphoreFeatures_{};
+  VkPhysicalDeviceFragmentDensityMapFeaturesEXT vkPhysicalDeviceFragmentDensityMapFeatures_{};
+  VkPhysicalDeviceVulkanMemoryModelFeaturesKHR vkPhysicalDeviceVulkanMemoryModelFeatures_{};
   VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM
-      VkPhysicalDeviceMultiviewPerViewViewportsFeatures_{};
+      vkPhysicalDeviceMultiviewPerViewViewportsFeatures_{};
 
   // NOLINTEND(readability-identifier-naming)
 
