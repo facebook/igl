@@ -163,7 +163,7 @@ struct ScissorRect {
   uint32_t width = 0;
   uint32_t height = 0;
   [[nodiscard]] bool isNull() const {
-    return !width && !height;
+    return width == 0 && height == 0;
   }
 };
 
