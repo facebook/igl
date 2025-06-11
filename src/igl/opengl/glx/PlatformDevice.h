@@ -26,7 +26,7 @@ class PlatformDevice : public opengl::PlatformDevice {
  public:
   static constexpr igl::PlatformDeviceType Type = igl::PlatformDeviceType::OpenGLx;
 
-  PlatformDevice(Device& owner);
+  explicit PlatformDevice(Device& owner);
   ~PlatformDevice() override = default;
 
   /// Returns a texture representing the GLX Surface associated with this device's context.
