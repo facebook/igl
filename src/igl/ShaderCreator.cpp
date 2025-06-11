@@ -83,7 +83,7 @@ std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromStringInput(
       std::move(libraryDebugName));
 
   auto library = device.createShaderLibrary(libraryDesc, result);
-  return result->isOk() ? std::move(library) : nullptr;
+  return (result && result->isOk()) ? std::move(library) : nullptr;
 }
 
 std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromBinaryInput(
@@ -108,7 +108,7 @@ std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromBinaryInput(
       std::move(libraryDebugName));
 
   auto library = device.createShaderLibrary(libraryDesc, result);
-  return result->isOk() ? std::move(library) : nullptr;
+  return (result && result->isOk()) ? std::move(library) : nullptr;
 }
 
 std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromStringInput(
@@ -125,7 +125,7 @@ std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromStringInput(
       librarySource, std::move(moduleInfo), std::move(libraryDebugName));
 
   auto library = device.createShaderLibrary(libraryDesc, result);
-  return result->isOk() ? std::move(library) : nullptr;
+  return (result && result->isOk()) ? std::move(library) : nullptr;
 }
 
 std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromBinaryInput(
@@ -143,7 +143,7 @@ std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromBinaryInput(
       libraryData, libraryDataLength, std::move(moduleInfo), std::move(libraryDebugName));
 
   auto library = device.createShaderLibrary(libraryDesc, result);
-  return result->isOk() ? std::move(library) : nullptr;
+  return (result && result->isOk()) ? std::move(library) : nullptr;
 }
 
 std::unique_ptr<IShaderStages> ShaderStagesCreator::fromModuleStringInput(
@@ -175,9 +175,9 @@ std::unique_ptr<IShaderStages> ShaderStagesCreator::fromModuleStringInput(
                                              result);
   }
 
-  return result->isOk() ? device.createShaderStages(
-                              {std::move(vertexModule), std::move(fragmentModule)}, result)
-                        : nullptr;
+  return (result && result->isOk())
+             ? fromRenderModules(device, std::move(vertexModule), std::move(fragmentModule), result)
+             : nullptr;
 }
 
 std::unique_ptr<IShaderStages> ShaderStagesCreator::fromModuleBinaryInput(
@@ -213,9 +213,9 @@ std::unique_ptr<IShaderStages> ShaderStagesCreator::fromModuleBinaryInput(
                                              result);
   }
 
-  return result->isOk() ? device.createShaderStages(
-                              {std::move(vertexModule), std::move(fragmentModule)}, result)
-                        : nullptr;
+  return (result && result->isOk())
+             ? fromRenderModules(device, std::move(vertexModule), std::move(fragmentModule), result)
+             : nullptr;
 }
 
 std::unique_ptr<IShaderStages> ShaderStagesCreator::fromLibraryStringInput(
@@ -272,7 +272,8 @@ std::unique_ptr<IShaderStages> ShaderStagesCreator::fromModuleStringInput(
                                            {ShaderStage::Compute, std::move(computeEntryPoint)},
                                            std::move(computeDebugName),
                                            result);
-  return result->isOk() ? fromComputeModule(device, std::move(computeModule), result) : nullptr;
+  return (result && result->isOk()) ? fromComputeModule(device, std::move(computeModule), result)
+                                    : nullptr;
 }
 
 std::unique_ptr<IShaderStages> ShaderStagesCreator::fromModuleBinaryInput(
@@ -293,7 +294,8 @@ std::unique_ptr<IShaderStages> ShaderStagesCreator::fromModuleBinaryInput(
                                            {ShaderStage::Compute, std::move(computeEntryPoint)},
                                            std::move(computeDebugName),
                                            result);
-  return result->isOk() ? fromComputeModule(device, std::move(computeModule), result) : nullptr;
+  return (result && result->isOk()) ? fromComputeModule(device, std::move(computeModule), result)
+                                    : nullptr;
 }
 
 std::unique_ptr<IShaderStages> ShaderStagesCreator::fromRenderModules(
