@@ -392,6 +392,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   if (!pipelineLayout_) {
+    // NOLINTBEGIN(readability-identifier-naming)
     // @fb-only
     const VkDescriptorSetLayout DSLs[] = {
         dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
@@ -399,6 +400,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
         dslStorageImages_->getVkDescriptorSetLayout(),
         ctx.getBindlessVkDescriptorSetLayout(),
     };
+    // NOLINTEND(readability-identifier-naming)
 
     const VkPipelineLayoutCreateInfo ci = ivkGetPipelineLayoutCreateInfo(
         static_cast<uint32_t>(ctx.config_.enableDescriptorIndexing
