@@ -394,7 +394,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
   if (!pipelineLayout_) {
     // NOLINTBEGIN(readability-identifier-naming)
     // @fb-only
-    const VkDescriptorSetLayout dsls[] = {
+    const VkDescriptorSetLayout DSLs[] = {
         dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
         dslBuffers_->getVkDescriptorSetLayout(),
         dslStorageImages_->getVkDescriptorSetLayout(),
@@ -404,9 +404,9 @@ VkPipeline RenderPipelineState::getVkPipeline(
 
     const VkPipelineLayoutCreateInfo ci = ivkGetPipelineLayoutCreateInfo(
         static_cast<uint32_t>(ctx.config_.enableDescriptorIndexing
-                                  ? IGL_ARRAY_NUM_ELEMENTS(dsls)
-                                  : IGL_ARRAY_NUM_ELEMENTS(dsls) - 1u),
-        dsls,
+                                  ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
+                                  : IGL_ARRAY_NUM_ELEMENTS(DSLs) - 1u),
+        DSLs,
         info_.hasPushConstants ? &pushConstantRange_ : nullptr);
 
     VkDevice device = ctx.device_->getVkDevice();
