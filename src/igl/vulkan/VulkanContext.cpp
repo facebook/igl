@@ -863,6 +863,11 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                    deviceExtensions.data(),
                                    &features_.VkPhysicalDeviceFeatures2_,
                                    &device));
+
+  // Check that device is not null before proceeding
+  if (device == VK_NULL_HANDLE) {
+    return Result(Result::Code::InvalidOperation, "Failed to create Vulkan device");
+  }
 #if defined(IGL_CMAKE_BUILD)
   if (!config_.enableConcurrentVkDevicesSupport) {
     // Do not remove for backward compatibility with projects using global functions.
