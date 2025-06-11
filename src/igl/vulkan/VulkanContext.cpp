@@ -57,6 +57,7 @@ const char* kGfxReconstructLayerName = "VK_LAYER_LUNARG_gfxreconstruct";
  BINDLESS ONLY: these bindings should match GLSL declarations injected into shaders in
  Device::compileShaderModule(). Same with SparkSL.
  */
+// NOLINTBEGIN(readability-identifier-naming)
 const uint32_t kBinding_Texture2D = 0;
 const uint32_t kBinding_Texture2DArray = 1;
 const uint32_t kBinding_Texture3D = 2;
@@ -64,6 +65,7 @@ const uint32_t kBinding_TextureCube = 3;
 const uint32_t kBinding_Sampler = 4;
 const uint32_t kBinding_SamplerShadow = 5;
 const uint32_t kBinding_StorageImages = 6;
+// NOLINTEND(readability-identifier-naming)
 
 #if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WINDOWS
 VKAPI_ATTR VkBool32 VKAPI_CALL
@@ -351,10 +353,13 @@ struct VulkanContextImpl final {
   SamplerHandle dummySampler = {};
   TextureHandle dummyTexture = {};
 
+  // NOLINTBEGIN(readability-identifier-naming)
   igl::vulkan::DescriptorPoolsArena& getOrCreateArena_CombinedImageSamplers(
       const VulkanContext& ctx,
       VkDescriptorSetLayout dsl,
-      uint32_t numBindings) {
+      uint32_t numBindings)
+  // NOLINTEND(readability-identifier-naming)
+  {
     auto it = arenaCombinedImageSamplers.find(dsl);
     if (it != arenaCombinedImageSamplers.end()) {
       return *it->second;
@@ -367,9 +372,12 @@ struct VulkanContextImpl final {
                                                "arenaCombinedImageSamplers_");
     return *arenaCombinedImageSamplers[dsl].get();
   }
+  // NOLINTBEGIN(readability-identifier-naming)
   igl::vulkan::DescriptorPoolsArena& getOrCreateArena_StorageImages(const VulkanContext& ctx,
                                                                     VkDescriptorSetLayout dsl,
-                                                                    uint32_t numBindings) {
+                                                                    uint32_t numBindings)
+  // NOLINTEND(readability-identifier-naming)
+  {
     auto it = arenaStorageImages.find(dsl);
     if (it != arenaStorageImages.end()) {
       return *it->second;
@@ -378,9 +386,12 @@ struct VulkanContextImpl final {
         ctx, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, dsl, numBindings, "arenaStorageImages_");
     return *arenaStorageImages[dsl].get();
   }
+  // NOLINTBEGIN(readability-identifier-naming)
   igl::vulkan::DescriptorPoolsArena& getOrCreateArena_Buffers(const VulkanContext& ctx,
                                                               VkDescriptorSetLayout dsl,
-                                                              uint32_t numBindings) {
+                                                              uint32_t numBindings)
+  // NOLINTEND(readability-identifier-naming)
+  {
     auto it = arenaBuffers.find(dsl);
     if (it != arenaBuffers.end()) {
       return *it->second;
