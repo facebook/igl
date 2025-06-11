@@ -74,7 +74,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   // @fb-only
-  const VkDescriptorSetLayout DSLs[] = {
+  const VkDescriptorSetLayout dsls[] = {
       dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
       dslBuffers_->getVkDescriptorSetLayout(),
       dslStorageImages_->getVkDescriptorSetLayout(),
@@ -83,9 +83,9 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
 
   const VkPipelineLayoutCreateInfo ci =
       ivkGetPipelineLayoutCreateInfo(static_cast<uint32_t>(ctx.config_.enableDescriptorIndexing
-                                                               ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
-                                                               : IGL_ARRAY_NUM_ELEMENTS(DSLs) - 1u),
-                                     DSLs,
+                                                               ? IGL_ARRAY_NUM_ELEMENTS(dsls)
+                                                               : IGL_ARRAY_NUM_ELEMENTS(dsls) - 1u),
+                                     dsls,
                                      info_.hasPushConstants ? &pushConstantRange_ : nullptr);
 
   VkDevice device = ctx.device_->getVkDevice();
