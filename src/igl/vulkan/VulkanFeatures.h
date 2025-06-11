@@ -35,19 +35,17 @@ namespace igl::vulkan {
 class VulkanContext;
 
 /// @brief Creates and maintains a list of feature structures for checking feature availability and
-/// feature selection. This class provides a way to quickly enable the default - and required -
-/// features for Vulkan 1.1. For the list of the required features, see method
-/// enableDefaultFeatures1_1().
-/// This class also manages instance and device extensions in Vulkan by enumerating all extensions
-/// available for either object and storing the names of the available ones as std::strings. A call
-/// to either `enumerate()` or `enumerate(VkPhysicalDevice)` must be performed before the class can
-/// be used. After enumeration, this class allows users to enable an object's extension by name by
-/// first checking them against all available extensions of that type. Only available extensions are
-/// stored as enabled internally. The class also provides helper functions to return all available
-/// extensions of a type, checking whether an extension is available without modifying the internal
-/// storage of the object, checking if an extension has been enabled for an object and, finally, a
-/// method to return a list of all enabled extensions of a type as `const char *`, which is accepted
-/// by the Vulkan API
+/// feature selection. This class provides a way to quickly enable the default and required
+/// features. This class also manages instance and device extensions in Vulkan by enumerating all
+/// extensions available for either object and storing the names of the available ones as
+/// std::strings. A call to either `enumerate()` or `enumerate(VkPhysicalDevice)` must be performed
+/// before the class can be used. After enumeration, this class allows users to enable an object's
+/// extension by name by first checking them against all available extensions of that type. Only
+/// available extensions are stored as enabled internally. The class also provides helper functions
+/// to return all available extensions of a type, checking whether an extension is available without
+/// modifying the internal storage of the object, checking if an extension has been enabled for an
+/// object and, finally, a method to return a list of all enabled extensions of a type as `const
+/// char *`, which is accepted by the Vulkan API
 class VulkanFeatures final {
  public:
   /// @brief Helper enumeration to determine which extension is being used. It's converted to a
@@ -59,42 +57,6 @@ class VulkanFeatures final {
   /// @brief Populates the VkPhysicalDeviceFeatures2 and its pNext chain for a Vulkan context
   void populateWithAvailablePhysicalDeviceFeatures(const VulkanContext& context,
                                                    VkPhysicalDevice physicalDevice) noexcept;
-
-  /// @brief Enables the default features for Vulkan 1.1 required by IGL.
-  /// The default features are:
-  ///
-  /// VULKAN 1.1:
-  /// vkPhysicalDeviceFeatures2.features.dualSrcBlend
-  /// vkPhysicalDeviceFeatures2.features.multiDrawIndirect
-  /// vkPhysicalDeviceFeatures2.features.drawIndirectFirstInstance
-  /// vkPhysicalDeviceFeatures2.features.depthBiasClamp
-  /// vkPhysicalDeviceFeatures2.features.fillModeNonSolid
-  /// vkPhysicalDeviceFeatures2.features.shaderInt16
-  ///
-  /// VkPhysicalDevice16BitStorageFeatures.storageBuffer16BitAccess
-  ///
-  /// VkPhysicalDeviceMultiviewFeatures.multiview
-  ///
-  /// VkPhysicalDeviceSamplerYcbcrConversionFeatures.samplerYcbcrConversion
-  ///
-  /// VkPhysicalDeviceShaderDrawParametersFeatures.shaderDrawParameters
-  ///
-  /// If VulkanContextConfig::enableDescriptorIndex is enabled:
-  ///   VkPhysicalDeviceDescriptorIndexingFeaturesEXT.shaderSampledImageArrayNonUniformIndexing
-  ///   VkPhysicalDeviceDescriptorIndexingFeaturesEXT.descriptorBindingUniformBufferUpdateAfterBind
-  ///   VkPhysicalDeviceDescriptorIndexingFeaturesEXT.descriptorBindingSampledImageUpdateAfterBind
-  ///   VkPhysicalDeviceDescriptorIndexingFeaturesEXT.descriptorBindingStorageImageUpdateAfterBind
-  ///   VkPhysicalDeviceDescriptorIndexingFeaturesEXT.descriptorBindingStorageBufferUpdateAfterBind
-  ///   VkPhysicalDeviceDescriptorIndexingFeaturesEXT.descriptorBindingUpdateUnusedWhilePending
-  ///   VkPhysicalDeviceDescriptorIndexingFeaturesEXT.descriptorBindingPartiallyBound
-  ///   VkPhysicalDeviceDescriptorIndexingFeaturesEXT.runtimeDescriptorArray
-  ///
-  /// If VulkanContextConfig::enableBufferDeviceAddress is enabled:
-  ///   VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress
-  ///
-  /// VULKAN 1.2:
-  /// VkPhysicalDeviceShaderFloat16Int8Features.shaderFloat16
-  void enableDefaultFeatures() noexcept;
 
   /// @brief Checks the features enabled in this class against the ones passed
   /// in as a parameter in 'availableFeatures'. If a requested feature is not present, the class

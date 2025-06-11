@@ -16,6 +16,7 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
       .features =
           {
+              .dualSrcBlend = config.enableDualSrcBlend ? VK_TRUE : VK_FALSE,
               .multiDrawIndirect = VK_TRUE,
               .drawIndirectFirstInstance = VK_TRUE,
               .depthBiasClamp = VK_TRUE,
@@ -24,6 +25,7 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
 #else
               .fillModeNonSolid = VK_TRUE,
 #endif
+              .shaderInt16 = config.enableShaderInt16 ? VK_TRUE : VK_FALSE,
           },
   }),
   vkPhysicalDeviceSamplerYcbcrConversionFeatures_({
@@ -32,7 +34,7 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
   }),
   vkPhysicalDeviceShaderDrawParametersFeatures_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
-      .shaderDrawParameters = VK_FALSE,
+      .shaderDrawParameters = config.enableShaderDrawParameters ? VK_TRUE : VK_FALSE,
   }),
   vkPhysicalDeviceMultiviewFeatures_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
@@ -71,7 +73,7 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
   }),
   vkPhysicalDevice16BitStorageFeatures_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,
-      .storageBuffer16BitAccess = VK_FALSE,
+      .storageBuffer16BitAccess = config.enableStorageBuffer16BitAccess ? VK_TRUE : VK_FALSE,
       .uniformAndStorageBuffer16BitAccess = VK_FALSE,
       .storagePushConstant16 = VK_FALSE,
       .storageInputOutput16 = VK_FALSE,
@@ -136,18 +138,6 @@ bool VulkanFeatures::hasExtension(const char* ext) const {
     }
   }
   return false;
-}
-
-void VulkanFeatures::enableDefaultFeatures() noexcept {
-  auto& features = vkPhysicalDeviceFeatures2_.features;
-  features.dualSrcBlend = config_.enableDualSrcBlend ? VK_TRUE : VK_FALSE;
-  features.shaderInt16 = config_.enableShaderInt16 ? VK_TRUE : VK_FALSE;
-
-  vkPhysicalDevice16BitStorageFeatures_.storageBuffer16BitAccess =
-      config_.enableStorageBuffer16BitAccess ? VK_TRUE : VK_FALSE;
-
-  vkPhysicalDeviceShaderDrawParametersFeatures_.shaderDrawParameters =
-      config_.enableShaderDrawParameters ? VK_TRUE : VK_FALSE;
 }
 
 Result VulkanFeatures::checkSelectedFeatures(
