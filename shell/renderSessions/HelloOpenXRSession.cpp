@@ -30,19 +30,19 @@ struct VertexPosUvw {
   glm::vec3 uvw;
 };
 
-const float half = 1.0f;
-const VertexPosUvw vertexData0[] = {
-    {{-half, half, -half}, {0.0, 1.0, 0.0}},
-    {{half, half, -half}, {1.0, 1.0, 0.0}},
-    {{-half, -half, -half}, {0.0, 0.0, 0.0}},
-    {{half, -half, -half}, {1.0, 0.0, 0.0}},
-    {{half, half, half}, {1.0, 1.0, 1.0}},
-    {{-half, half, half}, {0.0, 1.0, 1.0}},
-    {{half, -half, half}, {1.0, 0.0, 1.0}},
-    {{-half, -half, half}, {0.0, 0.0, 1.0}},
+const float kHalf = 1.0f;
+const VertexPosUvw kVertexData0[] = {
+    {{-kHalf, kHalf, -kHalf}, {0.0, 1.0, 0.0}},
+    {{kHalf, kHalf, -kHalf}, {1.0, 1.0, 0.0}},
+    {{-kHalf, -kHalf, -kHalf}, {0.0, 0.0, 0.0}},
+    {{kHalf, -kHalf, -kHalf}, {1.0, 0.0, 0.0}},
+    {{kHalf, kHalf, kHalf}, {1.0, 1.0, 1.0}},
+    {{-kHalf, kHalf, kHalf}, {0.0, 1.0, 1.0}},
+    {{kHalf, -kHalf, kHalf}, {1.0, 0.0, 1.0}},
+    {{-kHalf, -kHalf, kHalf}, {0.0, 0.0, 1.0}},
 };
-constexpr uint16_t indexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
-                                  5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7};
+constexpr uint16_t kIndexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
+                                   5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7};
 
 [[nodiscard]] const char* getVulkanFragmentShaderSource() {
   return R"(#version 450
@@ -203,10 +203,10 @@ void HelloOpenXRSession::initialize() noexcept {
   }
   // Vertex buffer, Index buffer and Vertex Input
   const BufferDesc vb0Desc =
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData0, sizeof(vertexData0));
+      BufferDesc(BufferDesc::BufferTypeBits::Vertex, kVertexData0, sizeof(kVertexData0));
   vb0_ = device.createBuffer(vb0Desc, nullptr);
   const BufferDesc ibDesc =
-      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
+      BufferDesc(BufferDesc::BufferTypeBits::Index, kIndexData, sizeof(kIndexData));
   ib0_ = device.createBuffer(ibDesc, nullptr);
 
   VertexInputStateDesc inputDesc;
