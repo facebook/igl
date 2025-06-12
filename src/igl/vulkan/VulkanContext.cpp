@@ -1055,7 +1055,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                      &profilingCommandBuffer_));
 
 #if defined(VK_EXT_calibrated_timestamps)
-  if (extensions_.enabled(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)) {
+  if (features_.enabled(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)) {
     tracyCtx_ = TracyVkContextCalibrated(vkInstance_,
                                          getVkPhysicalDevice(),
                                          getVkDevice(),
