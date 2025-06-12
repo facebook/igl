@@ -295,56 +295,5 @@ TEST_F(EnhancedShaderDebuggingStoreTest, Pipeline) {
  */
 }
 
-TEST_F(EnhancedShaderDebuggingStoreTest, InstallBufferBarrier) {
-  GTEST_SKIP() << "Temporarily disabled (broken)";
-  /*
-    // Create an instance of the EnhancedShaderDebuggingStore
-    EnhancedShaderDebuggingStore store;
-    store.initialize(device_);
-
-    if (!device_->getVulkanContext()
-             .features()
-             .VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress) {
-      GTEST_SKIP() << "BufferDeviceAddress not supported";
-    }
-
-    Result ret;
-    std::shared_ptr<IRenderPipelineState> pipelineState;
-
-    std::shared_ptr<IDepthStencilState> depthStencilState;
-    DepthStencilStateDesc desc;
-    desc.isDepthWriteEnabled = true;
-
-    //----------------
-    // Create Pipeline
-    //----------------
-    pipelineState = iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
-    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
-    ASSERT_TRUE(pipelineState != nullptr);
-
-    depthStencilState = iglDev_->createDepthStencilState(desc, &ret);
-    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
-    ASSERT_TRUE(depthStencilState != nullptr);
-
-    CommandBufferDesc cbDesc = {};
-    std::shared_ptr<ICommandBuffer> cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &ret);
-    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
-    ASSERT_TRUE(cmdBuf != nullptr);
-
-    renderPass_.colorAttachments[0].clearColor = {0.501f, 0.501f, 0.501f, 0.501f};
-
-    renderPass_.depthAttachment.clearDepth = 0.501f;
-    renderPass_.stencilAttachment.clearStencil = 128;
-
-    auto cmds = cmdBuf->createRenderCommandEncoder(renderPass_, framebuffer_);
-    // Verify that the buffer barrier has been installed
-    store.installBufferBarrier(*cmdBuf);
-    EXPECT_NE(store.pipeline(*device_, framebuffer_), nullptr);
-
-    cmdQueue_->submit(*cmdBuf);
-
-    cmdBuf->waitUntilCompleted();
-  */
-}
 } // namespace igl::tests
 #endif
