@@ -25,45 +25,45 @@ struct VertexPosUvw {
   glm::vec2 uv;
 };
 
-const float half = 1.0f;
+const float kHalf = 1.0f;
 
 // UV-mapped cube with indices: 24 vertices, 36 indices
-const VertexPosUvw vertexData0[] = {
+const VertexPosUvw kVertexData0[] = {
     // top
-    {{-half, -half, +half}, {0.5, 0.5, 1.0}, {0, 0}}, // 0
-    {{+half, -half, +half}, {1.0, 0.0, 1.0}, {1, 0}}, // 1
-    {{+half, +half, +half}, {1.0, 1.0, 1.0}, {1, 1}}, // 2
-    {{-half, +half, +half}, {0.5, 1.0, 1.0}, {0, 1}}, // 3
+    {{-kHalf, -kHalf, +kHalf}, {0.5, 0.5, 1.0}, {0, 0}}, // 0
+    {{+kHalf, -kHalf, +kHalf}, {1.0, 0.0, 1.0}, {1, 0}}, // 1
+    {{+kHalf, +kHalf, +kHalf}, {1.0, 1.0, 1.0}, {1, 1}}, // 2
+    {{-kHalf, +kHalf, +kHalf}, {0.5, 1.0, 1.0}, {0, 1}}, // 3
     // bottom
-    {{-half, -half, -half}, {1.0, 1.0, 1.0}, {0, 0}}, // 4
-    {{-half, +half, -half}, {0.5, 1.0, 0.5}, {0, 1}}, // 5
-    {{+half, +half, -half}, {1.0, 1.0, 0.5}, {1, 1}}, // 6
-    {{+half, -half, -half}, {1.0, 0.5, 0.5}, {1, 0}}, // 7
+    {{-kHalf, -kHalf, -kHalf}, {1.0, 1.0, 1.0}, {0, 0}}, // 4
+    {{-kHalf, +kHalf, -kHalf}, {0.5, 1.0, 0.5}, {0, 1}}, // 5
+    {{+kHalf, +kHalf, -kHalf}, {1.0, 1.0, 0.5}, {1, 1}}, // 6
+    {{+kHalf, -kHalf, -kHalf}, {1.0, 0.5, 0.5}, {1, 0}}, // 7
     // left
-    {{+half, +half, -half}, {1.0, 1.0, 0.5}, {1, 0}}, // 8
-    {{-half, +half, -half}, {0.5, 1.0, 0.5}, {0, 0}}, // 9
-    {{-half, +half, +half}, {0.5, 1.0, 1.0}, {0, 1}}, // 10
-    {{+half, +half, +half}, {1.0, 1.0, 1.0}, {1, 1}}, // 11
+    {{+kHalf, +kHalf, -kHalf}, {1.0, 1.0, 0.5}, {1, 0}}, // 8
+    {{-kHalf, +kHalf, -kHalf}, {0.5, 1.0, 0.5}, {0, 0}}, // 9
+    {{-kHalf, +kHalf, +kHalf}, {0.5, 1.0, 1.0}, {0, 1}}, // 10
+    {{+kHalf, +kHalf, +kHalf}, {1.0, 1.0, 1.0}, {1, 1}}, // 11
     // right
-    {{-half, -half, -half}, {1.0, 1.0, 1.0}, {0, 0}}, // 12
-    {{+half, -half, -half}, {1.0, 0.5, 0.5}, {1, 0}}, // 13
-    {{+half, -half, +half}, {1.0, 0.5, 1.0}, {1, 1}}, // 14
-    {{-half, -half, +half}, {0.5, 0.5, 1.0}, {0, 1}}, // 15
+    {{-kHalf, -kHalf, -kHalf}, {1.0, 1.0, 1.0}, {0, 0}}, // 12
+    {{+kHalf, -kHalf, -kHalf}, {1.0, 0.5, 0.5}, {1, 0}}, // 13
+    {{+kHalf, -kHalf, +kHalf}, {1.0, 0.5, 1.0}, {1, 1}}, // 14
+    {{-kHalf, -kHalf, +kHalf}, {0.5, 0.5, 1.0}, {0, 1}}, // 15
     // front
-    {{+half, -half, -half}, {1.0, 0.5, 0.5}, {0, 0}}, // 16
-    {{+half, +half, -half}, {1.0, 1.0, 0.5}, {1, 0}}, // 17
-    {{+half, +half, +half}, {1.0, 1.0, 1.0}, {1, 1}}, // 18
-    {{+half, -half, +half}, {1.0, 0.5, 1.0}, {0, 1}}, // 19
+    {{+kHalf, -kHalf, -kHalf}, {1.0, 0.5, 0.5}, {0, 0}}, // 16
+    {{+kHalf, +kHalf, -kHalf}, {1.0, 1.0, 0.5}, {1, 0}}, // 17
+    {{+kHalf, +kHalf, +kHalf}, {1.0, 1.0, 1.0}, {1, 1}}, // 18
+    {{+kHalf, -kHalf, +kHalf}, {1.0, 0.5, 1.0}, {0, 1}}, // 19
     // back
-    {{-half, +half, -half}, {0.5, 1.0, 0.5}, {1, 0}}, // 20
-    {{-half, -half, -half}, {1.0, 1.0, 1.0}, {0, 0}}, // 21
-    {{-half, -half, +half}, {0.5, 0.5, 1.0}, {0, 1}}, // 22
-    {{-half, +half, +half}, {0.5, 1.0, 1.0}, {1, 1}}, // 23
+    {{-kHalf, +kHalf, -kHalf}, {0.5, 1.0, 0.5}, {1, 0}}, // 20
+    {{-kHalf, -kHalf, -kHalf}, {1.0, 1.0, 1.0}, {0, 0}}, // 21
+    {{-kHalf, -kHalf, +kHalf}, {0.5, 0.5, 1.0}, {0, 1}}, // 22
+    {{-kHalf, +kHalf, +kHalf}, {0.5, 1.0, 1.0}, {1, 1}}, // 23
 };
 
-const uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
-                              8,  9,  10, 10, 11, 8,  12, 13, 14, 14, 15, 12,
-                              16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
+const uint16_t kIndexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
+                               8,  9,  10, 10, 11, 8,  12, 13, 14, 14, 15, 12,
+                               16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
 
 std::string getProlog(igl::IDevice& device) {
 #if IGL_BACKEND_OPENGL
@@ -290,10 +290,10 @@ void BindGroupSession::initialize() noexcept {
 
   // Vertex buffer, Index buffer and Vertex Input
   const BufferDesc vb0Desc =
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData0, sizeof(vertexData0));
+      BufferDesc(BufferDesc::BufferTypeBits::Vertex, kVertexData0, sizeof(kVertexData0));
   vb0_ = device.createBuffer(vb0Desc, nullptr);
   const BufferDesc ibDesc =
-      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
+      BufferDesc(BufferDesc::BufferTypeBits::Index, kIndexData, sizeof(kIndexData));
   ib0_ = device.createBuffer(ibDesc, nullptr);
 
   VertexInputStateDesc inputDesc;
