@@ -617,35 +617,35 @@ void XrApp::handleXrEvents() {
       IGL_LOG_INFO("xrPollEvent: received XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED event\n");
       break;
     case XR_TYPE_EVENT_DATA_PERF_SETTINGS_EXT: {
-      const XrEventDataPerfSettingsEXT* perf_settings_event =
+      const XrEventDataPerfSettingsEXT* perfSettingsEvent =
           (XrEventDataPerfSettingsEXT*)(baseEventHeader);
-      (void)perf_settings_event; // suppress unused warning
+      (void)perfSettingsEvent; // suppress unused warning
       IGL_LOG_INFO(
           "xrPollEvent: received XR_TYPE_EVENT_DATA_PERF_SETTINGS_EXT event: type %d subdomain %d "
           ": level %d -> level %d\n",
-          perf_settings_event->type,
-          perf_settings_event->subDomain,
-          perf_settings_event->fromLevel,
-          perf_settings_event->toLevel);
+          perfSettingsEvent->type,
+          perfSettingsEvent->subDomain,
+          perfSettingsEvent->fromLevel,
+          perfSettingsEvent->toLevel);
     } break;
     case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING:
       IGL_LOG_INFO(
           "xrPollEvent: received XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING event\n");
       break;
     case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
-      const XrEventDataSessionStateChanged* session_state_changed_event =
+      const XrEventDataSessionStateChanged* sessionStateChangedEvent =
           (XrEventDataSessionStateChanged*)(baseEventHeader);
       IGL_LOG_INFO(
           "xrPollEvent: received XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: %d for session %p at "
           "time %lld\n",
-          session_state_changed_event->state,
-          (void*)session_state_changed_event->session,
-          session_state_changed_event->time);
+          sessionStateChangedEvent->state,
+          (void*)sessionStateChangedEvent->session,
+          sessionStateChangedEvent->time);
 
-      switch (session_state_changed_event->state) {
+      switch (sessionStateChangedEvent->state) {
       case XR_SESSION_STATE_READY:
       case XR_SESSION_STATE_STOPPING:
-        handleSessionStateChanges(session_state_changed_event->state);
+        handleSessionStateChanges(sessionStateChangedEvent->state);
         break;
       default:
         break;
