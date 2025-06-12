@@ -184,11 +184,11 @@ void DrawInstancedSession::initialize() noexcept {
   // Create Index Buffer
   const int16_t indexes[6] = {0, 1, 2, 3, 4, 5};
 
-  BufferDesc buffer_desc;
-  buffer_desc.type = BufferDesc::BufferTypeBits::Index;
-  buffer_desc.length = sizeof(indexes);
-  buffer_desc.data = &indexes;
-  index_buffer_ = getPlatform().getDevice().createBuffer(buffer_desc, nullptr);
+  BufferDesc bufferDesc;
+  bufferDesc.type = BufferDesc::BufferTypeBits::Index;
+  bufferDesc.length = sizeof(indexes);
+  bufferDesc.data = &indexes;
+  index_buffer_ = getPlatform().getDevice().createBuffer(bufferDesc, nullptr);
   IGL_DEBUG_ASSERT(index_buffer_);
 }
 
@@ -207,11 +207,11 @@ void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
     inputDesc.numInputBindings = 1;
     inputDesc.inputBindings[1].stride = sizeof(float) * 2;
     inputDesc.inputBindings[1].sampleFunction = igl::VertexSampleFunction::Instance;
-    auto vertexInput0_ = getPlatform().getDevice().createVertexInputState(inputDesc, nullptr);
-    IGL_DEBUG_ASSERT(vertexInput0_ != nullptr);
+    auto vertexInput0 = getPlatform().getDevice().createVertexInputState(inputDesc, nullptr);
+    IGL_DEBUG_ASSERT(vertexInput0 != nullptr);
 
     RenderPipelineDesc desc;
-    desc.vertexInputState = vertexInput0_;
+    desc.vertexInputState = vertexInput0;
 
     desc.targetDesc.colorAttachments.resize(1);
 
