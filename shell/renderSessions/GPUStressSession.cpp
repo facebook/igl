@@ -28,9 +28,11 @@
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
 
-static uint32_t arc4random_() {
+namespace {
+uint32_t customArc4random() {
   return static_cast<uint32_t>(rand()) * (0xffffffff / RAND_MAX);
 }
+} // namespace
 
 #if IGL_PLATFORM_ANDROID
 
@@ -45,7 +47,7 @@ namespace {
 constexpr uint32_t kMsaaSamples = 4u; // this is the max number possible
 constexpr float kScaleFill = 1.f;
 
-constexpr float half = .5f;
+constexpr float kHalf = .5f;
 
 } // namespace
 
@@ -53,28 +55,28 @@ GPUStressSession::GPUStressSession(std::shared_ptr<Platform> platform) :
   RenderSession(std::move(platform)),
   fps_(false),
   vertexData0_{
-      VertexPosUvw{.position = {-half, half, -half},
+      VertexPosUvw{.position = {-kHalf, kHalf, -kHalf},
                    .uvw = {0.0, 1.0, 0.0, 1.0},
                    .base_color = {1.0, 1.0, 1.0, 1.0}},
-      VertexPosUvw{.position = {half, half, -half},
+      VertexPosUvw{.position = {kHalf, kHalf, -kHalf},
                    .uvw = {1.0, 1.0, 1.0, 1.0},
                    .base_color = {1.0, 1.0, 1.0, 1.0}},
-      VertexPosUvw{.position = {-half, -half, -half},
+      VertexPosUvw{.position = {-kHalf, -kHalf, -kHalf},
                    .uvw = {0.0, 0.0, 0.0, 0.0},
                    .base_color = {1.0, 1.0, 1.0, 1.0}},
-      VertexPosUvw{.position = {half, -half, -half},
+      VertexPosUvw{.position = {kHalf, -kHalf, -kHalf},
                    .uvw = {1.0, 0.0, 1.0, 0.0},
                    .base_color = {1.0, 1.0, 1.0, 1.0}},
-      VertexPosUvw{.position = {half, half, half},
+      VertexPosUvw{.position = {kHalf, kHalf, kHalf},
                    .uvw = {1.0, 1.0, 1.0, 1.0},
                    .base_color = {1.0, 1.0, 1.0, 1.0}},
-      VertexPosUvw{.position = {-half, half, half},
+      VertexPosUvw{.position = {-kHalf, kHalf, kHalf},
                    .uvw = {0.0, 1.0, 0.0, 1.0},
                    .base_color = {1.0, 1.0, 1.0, 1.0}},
-      VertexPosUvw{.position = {half, -half, half},
+      VertexPosUvw{.position = {kHalf, -kHalf, kHalf},
                    .uvw = {1.0, 0.0, 1.0, 0.0},
                    .base_color = {1.0, 1.0, 1.0, 1.0}},
-      VertexPosUvw{.position = {-half, -half, half},
+      VertexPosUvw{.position = {-kHalf, -kHalf, kHalf},
                    .uvw = {0.0, 0.0, 0.0, 0.0},
                    .base_color = {1.0, 1.0, 1.0, 1.0}},
   },
@@ -119,17 +121,17 @@ std::string GPUStressSession::getLightingCalc() const {
              sizeof(tmp),
              "const vec3 lightColor%d = vec3(%f, %f, %f);\n",
              i,
-             i % 3 == 0 ? 1.0 : static_cast<float>(arc4random_() % 32) / 32.f,
-             i % 3 == 1 ? 1.0 : static_cast<float>(arc4random_() % 32) / 32.f,
-             i % 3 == 2 ? 1.0 : static_cast<float>(arc4random_() % 32) / 32.f);
+             i % 3 == 0 ? 1.0 : static_cast<float>(customArc4random() % 32) / 32.f,
+             i % 3 == 1 ? 1.0 : static_cast<float>(customArc4random() % 32) / 32.f,
+             i % 3 == 2 ? 1.0 : static_cast<float>(customArc4random() % 32) / 32.f);
     params += tmp;
     snprintf(tmp,
              sizeof(tmp),
              "const vec3 lightPos%d = vec3(%f, %f, %f);\n",
              i,
-             -1.f + static_cast<float>(arc4random_() % 32) / 16.f,
-             -1.f + static_cast<float>(arc4random_() % 32) / 16.f,
-             -1.f + static_cast<float>(arc4random_() % 32) / 16.f);
+             -1.f + static_cast<float>(customArc4random() % 32) / 16.f,
+             -1.f + static_cast<float>(customArc4random() % 32) / 16.f,
+             -1.f + static_cast<float>(customArc4random() % 32) / 16.f);
     params += tmp;
     snprintf(
         tmp,
@@ -365,7 +367,7 @@ float GPUStressSession::doReadWrite(std::vector<std::vector<std::vector<float>>>
     const int block = randBlocks(gen);
     const int row = randRows(gen);
     const int col = randCols(gen);
-    memBlock[block].at(row)[col] = arc4random_();
+    memBlock[block].at(row)[col] = customArc4random();
   }
 
   for (int i = 0; i < memoryReads_; i++) {
@@ -380,16 +382,16 @@ float GPUStressSession::doReadWrite(std::vector<std::vector<std::vector<float>>>
 
 void GPUStressSession::allocateMemory() {
   if (thrashMemory_) {
-    const static size_t blocks = memorySize_;
-    const static size_t rows = 1024;
-    const static size_t cols = 1024;
+    const static size_t kBlocks = memorySize_;
+    const static size_t kRows = 1024;
+    const static size_t kCols = 1024;
     if (memBlock_.empty()) {
-      memBlock_.resize((blocks));
+      memBlock_.resize((kBlocks));
       for (auto& block : memBlock_) {
-        block.resize(rows);
+        block.resize(kRows);
         for (auto& row : block) {
-          row.resize(cols, 0);
-          for (int i = 0; i < cols; i++) {
+          row.resize(kCols, 0);
+          for (int i = 0; i < kCols; i++) {
             row.at(i) = (i);
           }
         }
@@ -404,12 +406,12 @@ void GPUStressSession::thrashMemory() noexcept {
     return;
   }
 
-  const static size_t blocks = memorySize_;
-  const static size_t rows = 1024;
-  const static size_t cols = 1024;
+  const static size_t kBlocks = memorySize_;
+  const static size_t kRows = 1024;
+  const static size_t kCols = 1024;
 
   if (!threadCount_) {
-    memoryVal.store(doReadWrite(memBlock_, blocks, rows, cols, -1));
+    memoryVal.store(doReadWrite(memBlock_, kBlocks, kRows, kCols, -1));
   } else {
     static std::vector<std::future<float>> futures;
     static int memoryThreadId = 0;
@@ -417,7 +419,7 @@ void GPUStressSession::thrashMemory() noexcept {
     while (futures.size() < threadCount_) {
       auto future = std::async(std::launch::async, [this] {
         return doReadWrite(
-            memBlock_, blocks, rows, cols, threadIds_[memoryThreadId % threadCount_]);
+            memBlock_, kBlocks, kRows, kCols, threadIds_[memoryThreadId % threadCount_]);
       });
 
       futures.push_back(std::move(future));
@@ -443,8 +445,8 @@ void GPUStressSession::getOffset(int counter, float& x, float& y, float& z) {
   if (testOverdraw_) {
     x = 0.f;
     y = 0.f;
-    z = counter % 2 ? -half / static_cast<float>(cubeCount_)
-                    : half / static_cast<float>(cubeCount_);
+    z = counter % 2 ? -kHalf / static_cast<float>(cubeCount_)
+                    : kHalf / static_cast<float>(cubeCount_);
     z *= counter / 2.f;
     return;
   }
@@ -461,14 +463,14 @@ glm::vec3 GPUStressSession::animateCube(int counter,
                                         float y,
                                         float scale,
                                         int frameCount) {
-  struct animationInfo {
+  struct AnimationInfo {
     glm::vec3 velocity;
     glm::vec3 lastPos;
   };
 
-  static std::vector<animationInfo> animations;
+  static std::vector<AnimationInfo> animations;
   if (animations.size() < counter) {
-    animationInfo info;
+    AnimationInfo info;
     info.velocity = glm::vec3(1.f * (counter % 2 ? 1.0 : -1.0), 1.f - (float)(counter % 3), 0.f);
     info.lastPos = glm::vec3(x, y, 0);
     animations.push_back(info);
@@ -669,7 +671,7 @@ void GPUStressSession::setProjectionMatrix(float aspectRatio) {
   glm::mat4 projectionMat = glm::perspectiveLH(fov, aspectRatio, .1f, 2.1f);
   if (testOverdraw_ || !rotateCubes_) {
     projectionMat =
-        glm::orthoLH_ZO(-half, half, -half / aspectRatio, half / aspectRatio, .1f, 2.1f);
+        glm::orthoLH_ZO(-kHalf, kHalf, -kHalf / aspectRatio, kHalf / aspectRatio, .1f, 2.1f);
   }
   vertexParameters_.projectionMatrix = projectionMat;
 }
@@ -680,7 +682,7 @@ void GPUStressSession::setModelViewMatrix(float angle,
                                           float offsetX,
                                           float offsetY,
                                           float offsetZ) {
-  float divisor = std::ceil(std::sqrt(static_cast<float>(drawCount_))) / (half * kScaleFill);
+  float divisor = std::ceil(std::sqrt(static_cast<float>(drawCount_))) / (kHalf * kScaleFill);
 
   if (testOverdraw_) {
     divisor = 1.f;
