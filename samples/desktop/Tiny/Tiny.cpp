@@ -210,6 +210,8 @@ static void initIGL() {
 #else
     const igl::vulkan::VulkanContextConfig cfg{
         .terminateOnValidationError = true,
+        .enableValidation = false, // temporary
+        .headless = true, // temporary
     };
 #ifdef _WIN32
     auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));
