@@ -32,26 +32,26 @@ namespace igl::opengl::glx {
 #define GLX_PBUFFER_HEIGHT 0x8040
 #define GLX_PBUFFER_WIDTH 0x8041
 
-typedef XID GLXPbuffer;
-typedef struct __GLXFBConfig* GLXFBConfig;
-typedef void (*__GLXextproc)(void);
+using GLXPbuffer = XID;
+using GLXFBConfig = struct __GLXFBConfig*;
+using __GLXextproc = void (*)(void);
 
-typedef __GLXextproc (*PFNGLXGETPROCADDRESSPROC)(const GLubyte* procName);
+using PFNGLXGETPROCADDRESSPROC = __GLXextproc (*)(const GLubyte* procName);
 
-typedef Display* (*PFNXOPENDISPLAY)(const char*);
-typedef int (*PFNXCLOSEDISPLAY)(Display*);
+using PFNXOPENDISPLAY = Display* (*)(const char*);
+using PFNXCLOSEDISPLAY = int (*)(Display*);
 
-typedef int (*PFNXFREE)(void*);
-typedef GLXFBConfig* (*PFNGLXCHOOSEFBCONFIGPROC)(Display*, int, const int*, int*);
-typedef GLXContext (
-    *PFNGLXCREATECONTEXTATTRIBSARB)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
-typedef void (*PFNGLXDESTROYCONTEXT)(Display*, GLXContext);
-typedef GLXPbuffer (*PFNGLXCREATEPBUFFERPROC)(Display*, GLXFBConfig, const int*);
-typedef void (*PFNGLXDESTROYPBUFFER)(Display*, GLXPbuffer);
-typedef Bool (*PFNGLXMAKECURRENTPROC)(Display*, GLXDrawable, GLXContext);
-typedef void (*PFNGLXSWAPBUFFERSPROC)(Display*, GLXDrawable);
+using PFNXFREE = int (*)(void*);
+using PFNGLXCHOOSEFBCONFIGPROC = GLXFBConfig* (*)(Display*, int, const int*, int*);
+using PFNGLXCREATECONTEXTATTRIBSARB =
+    GLXContext (*)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+using PFNGLXDESTROYCONTEXT = void (*)(Display*, GLXContext);
+using PFNGLXCREATEPBUFFERPROC = GLXPbuffer (*)(Display*, GLXFBConfig, const int*);
+using PFNGLXDESTROYPBUFFER = void (*)(Display*, GLXPbuffer);
+using PFNGLXMAKECURRENTPROC = Bool (*)(Display*, GLXDrawable, GLXContext);
+using PFNGLXSWAPBUFFERSPROC = void (*)(Display*, GLXDrawable);
 
-typedef GLXContext (*PFNGLXGETCURRENTCONTEXTPROC)();
+using PFNGLXGETCURRENTCONTEXTPROC = GLXContext (*)();
 
 struct GLXSharedModule {
   GLXSharedModule() {
