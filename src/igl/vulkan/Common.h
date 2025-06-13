@@ -25,27 +25,10 @@
 #include <igl/ColorSpace.h>
 #include <igl/Common.h>
 #include <igl/DepthStencilState.h>
+#include <igl/Format.h>
 #include <igl/Texture.h>
 #include <igl/VertexInputState.h>
 #include <igl/vulkan/VulkanHelpers.h>
-
-// On iOS for Xcode 16.3, std::to_chars is not available. To avoid an error, we should not include
-// std::format, and switch to using fmt/format instead. This define is used in conjunction with
-// others below, as this is not the only reason not to include std::format.
-//
-// Note: the _LIBCPP_AVAILABILITY_HAS_TO_CHARS_FLOATING_POINT is defined in libc++'s <__config>
-// header, which is includes by all other headers. We include <cassert> and <utility> above
-#define IGL_INCLUDE_FORMAT (!IGL_PLATFORM_APPLE || _LIBCPP_AVAILABILITY_HAS_TO_CHARS_FLOATING_POINT)
-
-// libc++'s implementation of std::format has a large binary size impact
-// (https://github.com/llvm/llvm-project/issues/64180), so avoid it on Android.
-#if defined(__cpp_lib_format) && (!defined(__ANDROID__) && IGL_INCLUDE_FORMAT)
-#include <format>
-#define IGL_FORMAT std::format
-#else
-#include <fmt/core.h>
-#define IGL_FORMAT fmt::format
-#endif // __cpp_lib_format
 
 // Enable to use VulkanMemoryAllocator (VMA)
 #define IGL_VULKAN_USE_VMA 1
