@@ -17,8 +17,8 @@
 
 namespace igl::opengl::glx {
 
-typedef XID GLXDrawable;
-typedef struct __GLXcontext* GLXContext;
+using GLXDrawable = XID;
+using GLXContext = struct __GLXcontext*;
 struct GLXSharedModule;
 
 class Context : public IContext {
