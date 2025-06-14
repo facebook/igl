@@ -48,12 +48,12 @@ void ensureCommandLineArgsInitialized() {
   // Only do it once, otherwise it triggers an internal assert.
 
 #if IGL_PLATFORM_ANDROID
-  static bool s_initialized = true; // Android prohibids initialization of command line args
+  static bool sInitialized = true; // Android prohibits initialization of command line args
 #else
-  static bool s_initialized = false;
+  static bool sInitialized = false;
 #endif
-  if (!s_initialized) {
-    s_initialized = true;
+  if (!sInitialized) {
+    sInitialized = true;
     igl::shell::Platform::initializeCommandLineArgs(0, nullptr);
   }
 }
