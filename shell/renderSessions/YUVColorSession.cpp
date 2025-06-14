@@ -25,13 +25,13 @@ struct VertexPosUv {
 
 namespace {
 
-const VertexPosUv vertexData[] = {
+constexpr VertexPosUv kVertexData[] = {
     {{-1.f, 1.f, 0.0}, {0.0, 0.0}},
     {{1.f, 1.f, 0.0}, {1.0, 0.0}},
     {{-1.f, -1.f, 0.0}, {0.0, 1.0}},
     {{1.f, -1.f, 0.0}, {1.0, 1.0}},
 };
-const uint16_t indexData[] = {0, 1, 2, 1, 3, 2};
+constexpr uint16_t kIndexData[] = {0, 1, 2, 1, 3, 2};
 
 std::string getOpenGLVertexShaderSource() {
   return R"(
@@ -137,10 +137,10 @@ void YUVColorSession::initialize() noexcept {
 
   // Vertex & Index buffer
   vb0_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData)), nullptr);
+      BufferDesc(BufferDesc::BufferTypeBits::Vertex, kVertexData, sizeof(kVertexData)), nullptr);
   IGL_DEBUG_ASSERT(vb0_ != nullptr);
   ib0_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)), nullptr);
+      BufferDesc(BufferDesc::BufferTypeBits::Index, kIndexData, sizeof(kIndexData)), nullptr);
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
   VertexInputStateDesc inputDesc;
@@ -158,8 +158,8 @@ void YUVColorSession::initialize() noexcept {
 
   auto createYUVDemo =
       [this](IDevice& device, const char* demoName, TextureFormat yuvFormat, const char* fileName) {
-        const uint32_t width = 1920;
-        const uint32_t height = 1080;
+        constexpr uint32_t width = 1920;
+        constexpr uint32_t height = 1080;
 
         auto sampler =
             device.createSamplerState(SamplerStateDesc::newYUV(yuvFormat, "YUVSampler"), nullptr);
@@ -211,7 +211,7 @@ void YUVColorSession::update(SurfaceTextures surfaceTextures) noexcept {
     framebuffer_->updateDrawable(surfaceTextures.color);
   }
 
-  const size_t _textureUnit = 0;
+  constexpr size_t kTextureUnit = 0;
 
   YUVFormatDemo& demo = yuvFormatDemos_[currentDemo_];
 
@@ -224,10 +224,10 @@ void YUVColorSession::update(SurfaceTextures surfaceTextures) noexcept {
         framebuffer_->getColorAttachment(0)->getProperties().format;
     desc.targetDesc.depthAttachmentFormat =
         framebuffer_->getDepthAttachment()->getProperties().format;
-    desc.fragmentUnitSamplerMap[_textureUnit] = IGL_NAMEHANDLE("inputImage");
+    desc.fragmentUnitSamplerMap[kTextureUnit] = IGL_NAMEHANDLE("inputImage");
     desc.cullMode = igl::CullMode::Back;
     desc.frontFaceWinding = igl::WindingMode::Clockwise;
-    desc.immutableSamplers[_textureUnit] = demo.sampler; // Ycbcr sampler
+    desc.immutableSamplers[kTextureUnit] = demo.sampler; // Ycbcr sampler
 
     demo.pipelineState = getPlatform().getDevice().createRenderPipeline(desc, nullptr);
     IGL_DEBUG_ASSERT(demo.pipelineState != nullptr);
@@ -248,15 +248,15 @@ void YUVColorSession::update(SurfaceTextures surfaceTextures) noexcept {
     commands->bindVertexBuffer(0, *vb0_);
     commands->bindVertexBuffer(1, *vb0_);
     commands->bindRenderPipelineState(demo.pipelineState);
-    commands->bindTexture(_textureUnit, BindTarget::kFragment, demo.texture.get());
-    commands->bindSamplerState(_textureUnit, BindTarget::kFragment, demo.sampler.get());
+    commands->bindTexture(kTextureUnit, BindTarget::kFragment, demo.texture.get());
+    commands->bindSamplerState(kTextureUnit, BindTarget::kFragment, demo.sampler.get());
     commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
     commands->drawIndexed(6);
 
     // draw the YUV format name using ImGui
     {
       imguiSession_->beginFrame(framebufferDesc_, getPlatform().getDisplayContext().pixelsPerPoint);
-      const ImGuiWindowFlags flags =
+      constexpr ImGuiWindowFlags flags =
           ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
           ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
           ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove;
