@@ -71,6 +71,8 @@ inline const char* IGL_NONNULL colorSpaceToString(ColorSpace colorSpace) {
     IGL_ENUM_TO_STRING(ColorSpace, BT2020_NONLINEAR)
     IGL_ENUM_TO_STRING(ColorSpace, BT2100_HLG_NONLINEAR)
     IGL_ENUM_TO_STRING(ColorSpace, BT2100_PQ_NONLINEAR)
+  default:
+    break;
   }
 
   IGL_UNREACHABLE_RETURN("unknown color space")
