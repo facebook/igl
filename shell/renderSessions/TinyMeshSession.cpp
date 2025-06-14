@@ -61,8 +61,8 @@ namespace {
 
 constexpr uint32_t kNumBufferedFrames = 3;
 
-int width_ = 0;
-int height_ = 0;
+int width = 0;
+int height = 0;
 
 constexpr uint32_t kNumCubes = 256;
 
@@ -81,49 +81,49 @@ struct UniformsPerObject {
 };
 
 // from igl/shell/renderSessions/Textured3DCubeSession.cpp
-constexpr float half = 1.0f;
+constexpr float kHalf = 1.0f;
 
 // UV-mapped cube with indices: 24 vertices, 36 indices
-const VertexPosUvw vertexData0[] = {
+const VertexPosUvw kVertexData0[] = {
     // top
-    {{-half, -half, +half}, {0.0, 0.0, 1.0}, {0, 0}}, // 0
-    {{+half, -half, +half}, {1.0, 0.0, 1.0}, {1, 0}}, // 1
-    {{+half, +half, +half}, {1.0, 1.0, 1.0}, {1, 1}}, // 2
-    {{-half, +half, +half}, {0.0, 1.0, 1.0}, {0, 1}}, // 3
+    {{-kHalf, -kHalf, +kHalf}, {0.0, 0.0, 1.0}, {0, 0}}, // 0
+    {{+kHalf, -kHalf, +kHalf}, {1.0, 0.0, 1.0}, {1, 0}}, // 1
+    {{+kHalf, +kHalf, +kHalf}, {1.0, 1.0, 1.0}, {1, 1}}, // 2
+    {{-kHalf, +kHalf, +kHalf}, {0.0, 1.0, 1.0}, {0, 1}}, // 3
     // bottom
-    {{-half, -half, -half}, {1.0, 1.0, 1.0}, {0, 0}}, // 4
-    {{-half, +half, -half}, {0.0, 1.0, 0.0}, {0, 1}}, // 5
-    {{+half, +half, -half}, {1.0, 1.0, 0.0}, {1, 1}}, // 6
-    {{+half, -half, -half}, {1.0, 0.0, 0.0}, {1, 0}}, // 7
+    {{-kHalf, -kHalf, -kHalf}, {1.0, 1.0, 1.0}, {0, 0}}, // 4
+    {{-kHalf, +kHalf, -kHalf}, {0.0, 1.0, 0.0}, {0, 1}}, // 5
+    {{+kHalf, +kHalf, -kHalf}, {1.0, 1.0, 0.0}, {1, 1}}, // 6
+    {{+kHalf, -kHalf, -kHalf}, {1.0, 0.0, 0.0}, {1, 0}}, // 7
     // left
-    {{+half, +half, -half}, {1.0, 1.0, 0.0}, {1, 0}}, // 8
-    {{-half, +half, -half}, {0.0, 1.0, 0.0}, {0, 0}}, // 9
-    {{-half, +half, +half}, {0.0, 1.0, 1.0}, {0, 1}}, // 10
-    {{+half, +half, +half}, {1.0, 1.0, 1.0}, {1, 1}}, // 11
+    {{+kHalf, +kHalf, -kHalf}, {1.0, 1.0, 0.0}, {1, 0}}, // 8
+    {{-kHalf, +kHalf, -kHalf}, {0.0, 1.0, 0.0}, {0, 0}}, // 9
+    {{-kHalf, +kHalf, +kHalf}, {0.0, 1.0, 1.0}, {0, 1}}, // 10
+    {{+kHalf, +kHalf, +kHalf}, {1.0, 1.0, 1.0}, {1, 1}}, // 11
     // right
-    {{-half, -half, -half}, {1.0, 1.0, 1.0}, {0, 0}}, // 12
-    {{+half, -half, -half}, {1.0, 0.0, 0.0}, {1, 0}}, // 13
-    {{+half, -half, +half}, {1.0, 0.0, 1.0}, {1, 1}}, // 14
-    {{-half, -half, +half}, {0.0, 0.0, 1.0}, {0, 1}}, // 15
+    {{-kHalf, -kHalf, -kHalf}, {1.0, 1.0, 1.0}, {0, 0}}, // 12
+    {{+kHalf, -kHalf, -kHalf}, {1.0, 0.0, 0.0}, {1, 0}}, // 13
+    {{+kHalf, -kHalf, +kHalf}, {1.0, 0.0, 1.0}, {1, 1}}, // 14
+    {{-kHalf, -kHalf, +kHalf}, {0.0, 0.0, 1.0}, {0, 1}}, // 15
     // front
-    {{+half, -half, -half}, {1.0, 0.0, 0.0}, {0, 0}}, // 16
-    {{+half, +half, -half}, {1.0, 1.0, 0.0}, {1, 0}}, // 17
-    {{+half, +half, +half}, {1.0, 1.0, 1.0}, {1, 1}}, // 18
-    {{+half, -half, +half}, {1.0, 0.0, 1.0}, {0, 1}}, // 19
+    {{+kHalf, -kHalf, -kHalf}, {1.0, 0.0, 0.0}, {0, 0}}, // 16
+    {{+kHalf, +kHalf, -kHalf}, {1.0, 1.0, 0.0}, {1, 0}}, // 17
+    {{+kHalf, +kHalf, +kHalf}, {1.0, 1.0, 1.0}, {1, 1}}, // 18
+    {{+kHalf, -kHalf, +kHalf}, {1.0, 0.0, 1.0}, {0, 1}}, // 19
     // back
-    {{-half, +half, -half}, {0.0, 1.0, 0.0}, {1, 0}}, // 20
-    {{-half, -half, -half}, {1.0, 1.0, 1.0}, {0, 0}}, // 21
-    {{-half, -half, +half}, {0.0, 0.0, 1.0}, {0, 1}}, // 22
-    {{-half, +half, +half}, {0.0, 1.0, 1.0}, {1, 1}}, // 23
+    {{-kHalf, +kHalf, -kHalf}, {0.0, 1.0, 0.0}, {1, 0}}, // 20
+    {{-kHalf, -kHalf, -kHalf}, {1.0, 1.0, 1.0}, {0, 0}}, // 21
+    {{-kHalf, -kHalf, +kHalf}, {0.0, 0.0, 1.0}, {0, 1}}, // 22
+    {{-kHalf, +kHalf, +kHalf}, {0.0, 1.0, 1.0}, {1, 1}}, // 23
 };
 
-constexpr uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
-                                  8,  9,  10, 10, 11, 8,  12, 13, 14, 14, 15, 12,
-                                  16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
+constexpr uint16_t kIndexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
+                                   8,  9,  10, 10, 11, 8,  12, 13, 14, 14, 15, 12,
+                                   16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
 
 UniformsPerFrame perFrame;
 UniformsPerObject perObject[kNumCubes];
-glm::vec3 axis_[kNumCubes];
+glm::vec3 axis[kNumCubes];
 
 #if IGL_BACKEND_METAL
 [[nodiscard]] const char* getMetalShaderSource() {
@@ -297,15 +297,15 @@ void TinyMeshSession::initialize() noexcept {
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
   vb0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Vertex,
-                                          vertexData0,
-                                          sizeof(vertexData0),
+                                          kVertexData0,
+                                          sizeof(kVertexData0),
                                           ResourceStorage::Private,
                                           0,
                                           "Buffer: vertex"),
                                nullptr);
   ib0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Index,
-                                          indexData,
-                                          sizeof(indexData),
+                                          kIndexData,
+                                          sizeof(kIndexData),
                                           ResourceStorage::Private,
                                           0,
                                           "Buffer: index"),
@@ -434,7 +434,7 @@ void TinyMeshSession::initialize() noexcept {
 #endif // TINY_TEST_USE_DEPTH_BUFFER
 
   // initialize random rotation axes for all cubes
-  for (auto& axi : axis_) {
+  for (auto& axi : axis) {
     axi = glm::sphericalRand(1.0f);
   }
 }
@@ -448,7 +448,7 @@ std::shared_ptr<ITexture> TinyMeshSession::getVulkanNativeDepth() {
 
     Result ret;
     std::shared_ptr<ITexture> drawable =
-        vkPlatformDevice->createTextureFromNativeDepth(width_, height_, &ret);
+        vkPlatformDevice->createTextureFromNativeDepth(width, height, &ret);
 
     IGL_DEBUG_ASSERT(ret.isOk());
     return drawable;
@@ -460,8 +460,8 @@ std::shared_ptr<ITexture> TinyMeshSession::getVulkanNativeDepth() {
 }
 
 void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
-  width_ = surfaceTextures.color->getSize().width;
-  height_ = surfaceTextures.color->getSize().height;
+  width = surfaceTextures.color->getSize().width;
+  height = surfaceTextures.color->getSize().height;
 
   const float deltaSeconds = getDeltaSeconds();
 
@@ -506,11 +506,11 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
 
   // from igl/shell/renderSessions/Textured3DCubeSession.cpp
   const float fov = float(45.0f * (M_PI / 180.0f));
-  const float aspectRatio = (float)width_ / (float)height_;
+  const float aspectRatio = (float)width / (float)height;
   perFrame.proj = glm::perspectiveLH(fov, aspectRatio, 0.1f, 500.0f);
   // place a "camera" behind the cubes, the distance depends on the total number of cubes
   perFrame.view = glm::translate(glm::mat4(1.0f),
-                                 glm::vec3(0.0f, 0.0f, sqrtf(kNumCubes / 16.0f) * 20.0f * half));
+                                 glm::vec3(0.0f, 0.0f, sqrtf(kNumCubes / 16.0f) * 20.0f * kHalf));
   ubPerFrame_[frameIndex_]->upload(&perFrame, BufferRange(sizeof(perFrame)));
 
   // rotate cubes around random axes
@@ -522,7 +522,7 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
                   -1.5f * sqrt(kNumCubes) + 4.0f * std::floor(static_cast<float>(i) / cubesInLine),
                   0);
     perObject[i].model = glm::rotate(
-        glm::translate(glm::mat4(1.0f), offset), float(direction * currentTime_), axis_[i]);
+        glm::translate(glm::mat4(1.0f), offset), float(direction * currentTime_), axis[i]);
   }
 
   ubPerObject_[frameIndex_]->upload(&perObject, BufferRange(sizeof(perObject)));
@@ -530,8 +530,8 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
   // Command buffers (1-N per thread): create, submit and forget
   const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
-  const igl::Viewport viewport = {0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f};
-  const igl::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
+  const igl::Viewport viewport = {0.0f, 0.0f, (float)width, (float)height, 0.0f, +1.0f};
+  const igl::ScissorRect scissor = {0, 0, (uint32_t)width, (uint32_t)height};
 
   // This will clear the framebuffer
   auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
