@@ -15,12 +15,12 @@
 
 namespace {
 
-int g_argc = 0;
-char** g_argv = nullptr;
+int gArgc = 0;
+char** gArgv = nullptr;
 #if IGL_PLATFORM_ANDROID
-bool g_argsInitialized = true; // Android has no argc/argv to initialize with
+bool gArgsInitialized = true; // Android has no argc/argv to initialize with
 #else
-bool g_argsInitialized = false;
+bool gArgsInitialized = false;
 #endif
 
 } // namespace
@@ -78,21 +78,20 @@ std::shared_ptr<ITexture> Platform::loadTexture(const ImageData& imageData,
 }
 
 int Platform::argc() {
-  IGL_DEBUG_ASSERT(g_argsInitialized, "Accessing command line args before they are initialized.");
-  return g_argc;
+  IGL_DEBUG_ASSERT(gArgsInitialized, "Accessing command line args before they are initialized.");
+  return gArgc;
 }
 
 char** Platform::argv() {
-  IGL_DEBUG_ASSERT(g_argsInitialized, "Accessing command line args before they are initialized.");
-  return g_argv;
+  IGL_DEBUG_ASSERT(gArgsInitialized, "Accessing command line args before they are initialized.");
+  return gArgv;
 }
 
 void Platform::initializeCommandLineArgs(int argc, char** argv) {
-  IGL_DEBUG_ASSERT(!g_argsInitialized,
-                   "Must not initialize command line arguments more than once.");
-  g_argc = argc;
-  g_argv = argv;
-  g_argsInitialized = true;
+  IGL_DEBUG_ASSERT(!gArgsInitialized, "Must not initialize command line arguments more than once.");
+  gArgc = argc;
+  gArgv = argv;
+  gArgsInitialized = true;
 }
 
 } // namespace igl::shell
