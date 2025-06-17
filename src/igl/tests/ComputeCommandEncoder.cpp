@@ -258,13 +258,21 @@ TEST_F(ComputeCommandEncoderTest, copyBuffer) {
 
   std::vector<uint8_t> dataIn2 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 10};
 
-  auto bufferSrc = iglDev_->createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Storage, dataIn2.data(), dataIn2.size()), nullptr);
+  auto bufferSrc = iglDev_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Storage,
+                                                    dataIn2.data(),
+                                                    dataIn2.size(),
+                                                    ResourceStorage::Invalid,
+                                                    0,
+                                                    "bufferSrc"),
+                                         nullptr);
 
-  auto bufferDst = iglDev_->createBuffer(
-      BufferDesc(
-          BufferDesc::BufferTypeBits::Storage, nullptr, dataIn2.size(), ResourceStorage::Shared),
-      nullptr);
+  auto bufferDst = iglDev_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Storage,
+                                                    nullptr,
+                                                    dataIn2.size(),
+                                                    ResourceStorage::Shared,
+                                                    0,
+                                                    "bufferDst"),
+                                         nullptr);
 
   {
     auto cmdBuffer = cmdQueue_->createCommandBuffer({}, nullptr);
