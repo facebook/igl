@@ -120,31 +120,11 @@ class VulkanFeatures final {
   void enableCommonInstanceExtensions(const VulkanContextConfig& config);
   void enableCommonDeviceExtensions(const VulkanContextConfig& config);
 
-  /// @brief Enables the extension with name `extensionName` of the type `extensionType` if the
-  /// extension is available. If an instance or physical device deoesn't support the
-  /// extension, this method is a no-op
-  /// @param extensionName The name of the extension
-  /// @param extensionType The type of the extension
-  /// @return True if the extension is available, false otherwise
-  bool enable(const char* extensionName, ExtensionType extensionType);
-
-  /// @brief Returns true if an extension with name `extensionName` is enabled and false otherwise.
-  /// This method will check the extension against the list of enabled ones for the
-  /// instance and the physical device
-  /// @param extensionName The name of the extension
-  /// @return True if the extension has been enabled, false otherwise
-  bool enabled(const char* extensionName) const;
-
-  /// @brief Returns a vector of `const char *` of all enabled extensions for an instance or phyical
-  /// device. This method is particularly useful because Vulkan expects an
-  /// array of `const char *` with the names of the extensions to enable
-  /// @param extensionType The type of the extensions
-  /// @return A vector of `const char *` with all enabled extensions of type `extensionType`. The
-  /// return value must not outlive the instance of this class, as the pointers in the returned
-  /// vector point to the strings stored internally in this class
-  [[nodiscard]] std::vector<const char*> allEnabled(ExtensionType extensionType) const;
-
  public:
+  friend class Device;
+  friend class EnhancedShaderDebuggingStore;
+  friend class VulkanContext;
+
   // A copy of the config used by the VulkanContext
   VulkanContextConfig config_{};
 
@@ -175,6 +155,30 @@ class VulkanFeatures final {
   /// the existing/required feature structures and their pNext chain.
   void assembleFeatureChain(const VulkanContextConfig& config) noexcept;
   bool hasExtension(const char* ext) const;
+
+  /// @brief Enables the extension with name `extensionName` of the type `extensionType` if the
+  /// extension is available. If an instance or physical device deoesn't support the
+  /// extension, this method is a no-op
+  /// @param extensionName The name of the extension
+  /// @param extensionType The type of the extension
+  /// @return True if the extension is available, false otherwise
+  bool enable(const char* extensionName, ExtensionType extensionType);
+
+  /// @brief Returns true if an extension with name `extensionName` is enabled and false otherwise.
+  /// This method will check the extension against the list of enabled ones for the
+  /// instance and the physical device
+  /// @param extensionName The name of the extension
+  /// @return True if the extension has been enabled, false otherwise
+  [[nodiscard]] bool enabled(const char* extensionName) const;
+
+  /// @brief Returns a vector of `const char *` of all enabled extensions for an instance or phyical
+  /// device. This method is particularly useful because Vulkan expects an
+  /// array of `const char *` with the names of the extensions to enable
+  /// @param extensionType The type of the extensions
+  /// @return A vector of `const char *` with all enabled extensions of type `extensionType`. The
+  /// return value must not outlive the instance of this class, as the pointers in the returned
+  /// vector point to the strings stored internally in this class
+  [[nodiscard]] std::vector<const char*> allEnabled(ExtensionType extensionType) const;
 
   std::vector<VkExtensionProperties> extensionProps_;
 };
