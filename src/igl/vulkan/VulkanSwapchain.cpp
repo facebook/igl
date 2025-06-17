@@ -139,18 +139,14 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
       "create an offscreen rendering context? If so, set 'width' and 'height' to 0 when you "
       "create your igl::IDevice");
 
-#if defined(VK_KHR_surface)
-  if (ctx.features_.enabled(VK_KHR_SURFACE_EXTENSION_NAME)) {
-    VkBool32 queueFamilySupportsPresentation = VK_FALSE;
-    VK_ASSERT(
-        ctx_.vf_.vkGetPhysicalDeviceSurfaceSupportKHR(ctx.getVkPhysicalDevice(),
-                                                      ctx.deviceQueues_.graphicsQueueFamilyIndex,
-                                                      ctx.vkSurface_,
-                                                      &queueFamilySupportsPresentation));
-    IGL_DEBUG_ASSERT(queueFamilySupportsPresentation == VK_TRUE,
-                     "The queue family used with the swapchain does not support presentation");
-  }
-#endif
+  VkBool32 queueFamilySupportsPresentation = VK_FALSE;
+  VK_ASSERT(
+      ctx_.vf_.vkGetPhysicalDeviceSurfaceSupportKHR(ctx.getVkPhysicalDevice(),
+                                                    ctx.deviceQueues_.graphicsQueueFamilyIndex,
+                                                    ctx.vkSurface_,
+                                                    &queueFamilySupportsPresentation));
+  IGL_DEBUG_ASSERT(queueFamilySupportsPresentation == VK_TRUE,
+                   "The queue family used with the swapchain does not support presentation");
 
   const VkImageUsageFlags usageFlags = chooseUsageFlags(ctx.vf_,
                                                         ctx.getVkPhysicalDevice(),
