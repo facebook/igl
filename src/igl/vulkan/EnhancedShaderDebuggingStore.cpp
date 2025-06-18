@@ -45,7 +45,7 @@ std::string EnhancedShaderDebuggingStore::recordLineShaderCode(bool includeFunct
 
   std::string debugPrintfStatement;
 
-  if (extensions.enabled(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
+  if (extensions.has_VK_KHR_shader_non_semantic_info) {
     debugPrintfStatement = R"(debugPrintfEXT("Debug draw lines buffer size exceeded.");)";
   }
 

@@ -455,7 +455,8 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
   // enabled for DEBUG builds. https://issuetracker.google.com/issues/209835779?pli=1 Hence,
   // don't enable some extensions on Android which are not present and no way to check without
   // crashing.
-  enable(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, ExtensionType::Device);
+  has_VK_KHR_shader_non_semantic_info =
+      enable(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, ExtensionType::Device);
 #endif // !IGL_PLATFORM_ANDROID || !IGL_DEBUG
   enable(VK_KHR_SWAPCHAIN_EXTENSION_NAME, ExtensionType::Device);
 

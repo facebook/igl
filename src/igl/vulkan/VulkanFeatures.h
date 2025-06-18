@@ -122,7 +122,6 @@ class VulkanFeatures final {
 
  public:
   friend class Device;
-  friend class EnhancedShaderDebuggingStore;
   friend class VulkanContext;
 
   // A copy of the config used by the VulkanContext
@@ -130,9 +129,10 @@ class VulkanFeatures final {
 
   // NOLINTBEGIN(readability-identifier-naming)
   bool has_VK_EXT_index_type_uint8 = false;
-  bool has_VK_KHR_timeline_semaphore = false;
-  bool has_VK_KHR_synchronization2 = false;
   bool has_VK_KHR_buffer_device_address = false;
+  bool has_VK_KHR_shader_non_semantic_info = false;
+  bool has_VK_KHR_synchronization2 = false;
+  bool has_VK_KHR_timeline_semaphore = false;
   bool has_VK_KHR_vulkan_memory_model = false;
   bool has_VK_EXT_descriptor_indexing = false;
   bool has_VK_EXT_fragment_density_map = false;

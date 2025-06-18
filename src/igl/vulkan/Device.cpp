@@ -422,7 +422,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
                                       : "";
 
     // GL_EXT_debug_printf extension
-    if (ctx_->features_.enabled(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
+    if (ctx_->features_.has_VK_KHR_shader_non_semantic_info) {
       extraExtensions += "#extension GL_EXT_debug_printf : enable\n";
     }
 
