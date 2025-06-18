@@ -261,7 +261,7 @@ TEST_F(ComputeCommandEncoderTest, copyBuffer) {
   auto bufferSrc = iglDev_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Storage,
                                                     dataIn2.data(),
                                                     dataIn2.size(),
-                                                    ResourceStorage::Invalid,
+                                                    ResourceStorage::Private,
                                                     0,
                                                     "bufferSrc"),
                                          nullptr);
