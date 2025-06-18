@@ -479,6 +479,8 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
 
   has_VK_EXT_index_type_uint8 =
       enable(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, ExtensionType::Device);
+  has_VK_EXT_queue_family_foreign =
+      enable(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME, ExtensionType::Device);
 
   has_VK_KHR_timeline_semaphore =
       enable(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, ExtensionType::Device);

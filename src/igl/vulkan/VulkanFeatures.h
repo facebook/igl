@@ -129,6 +129,7 @@ class VulkanFeatures final {
 
   // NOLINTBEGIN(readability-identifier-naming)
   bool has_VK_EXT_index_type_uint8 = false;
+  bool has_VK_EXT_queue_family_foreign = false;
   bool has_VK_KHR_buffer_device_address = false;
   bool has_VK_KHR_shader_non_semantic_info = false;
   bool has_VK_KHR_synchronization2 = false;
