@@ -104,6 +104,7 @@ namespace igl::vulkan {
 #define kColorGenerateMipmaps igl::Color(1.f, 0.75f, 0.f)
 #define kColorUploadImage igl::Color(1.f, 0.2f, 0.78f)
 #define kColorDebugLines igl::Color(0.f, 1.f, 1.f)
+#define kColorCommandBufferSubmissionWithFence igl::Color(0.878f, 0.69f, 1.0f) // Mauve
 
 // The VulkanContextConfig provides a way to override some of the the default behaviors of the
 // VulkanContext
