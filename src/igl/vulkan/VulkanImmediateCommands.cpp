@@ -143,6 +143,7 @@ const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::ac
 
   current->cmdBuf_ = current->cmdBufAllocated_;
   current->isEncoding_ = true;
+  current->fd = -1;
 
   const VkCommandBufferBeginInfo bi = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -369,6 +370,16 @@ VkFence VulkanImmediateCommands::getVkFenceFromSubmitHandle(SubmitHandle handle)
   }
 
   return buffers_[handle.bufferIndex_].fence_.vkFence_;
+}
+
+void VulkanImmediateCommands::storeFDInSubmitHandle(SubmitHandle handle, int fd) noexcept {
+  IGL_DEBUG_ASSERT(handle.bufferIndex_ < buffers_.size());
+  buffers_[handle.bufferIndex_].fd = fd;
+}
+
+int VulkanImmediateCommands::cachedFDFromSubmitHandle(SubmitHandle handle) const noexcept {
+  IGL_DEBUG_ASSERT(handle.bufferIndex_ < buffers_.size());
+  return buffers_[handle.bufferIndex_].fd;
 }
 
 } // namespace igl::vulkan

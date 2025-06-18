@@ -109,6 +109,9 @@ class VulkanImmediateCommands final {
     /// execution.
     VulkanSemaphore semaphore_;
     bool isEncoding_ = false;
+    /// @brief The file descriptor for the underlying VkFence. It's only populated if an FD is set
+    /// explicitly using VulkanImmediateCommands::storeFDInSubmitHandle(). It's reset in `acquire()`
+    int fd = -1;
   };
 
   /// @brief Returns a `CommandBufferWrapper` object with the current command buffer (creates one if
@@ -159,6 +162,15 @@ class VulkanImmediateCommands final {
   /// @brief Returns the fence associated with the handle if the handle has not been recycled.
   /// Returns `VK_NULL_HANDLE` otherwise.
   VkFence getVkFenceFromSubmitHandle(SubmitHandle handle);
+
+  /// @brief Stores the file descriptor in the `CommandBufferWrapper` object associated with the
+  /// handle. Chceks for bounds, but does not check for validity.
+  void storeFDInSubmitHandle(SubmitHandle handle, int fd) noexcept;
+
+  /// @brief Returns the file descriptor associated with the handle and its underlying VkFence. If
+  /// the FD has not been explicitly set with `storeFDInSubmitHandle()`, it returns -1. This
+  /// function DOES NOT retrieve the FD from the Vulkan implementation
+  [[nodiscard]] int cachedFDFromSubmitHandle(SubmitHandle handle) const noexcept;
 
  private:
   /// @brief Resets all commands buffers and their associated fences that are valid, are not being

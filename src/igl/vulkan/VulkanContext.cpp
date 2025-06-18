@@ -1957,6 +1957,7 @@ int VulkanContext::getFenceFdFromSubmitHandle(igl::SubmitHandle handle) const no
   if (result != VK_SUCCESS) {
     IGL_LOG_ERROR("Unable to get fence fd from submit handle: %lu", handle);
   }
+  immediate_->storeFDInSubmitHandle(VulkanImmediateCommands::SubmitHandle(handle), fenceFd);
 #endif // defined(IGL_PLATFORM_ANDROID)
   return fenceFd;
 }
