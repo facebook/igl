@@ -130,6 +130,8 @@ class VulkanFeatures final {
   VulkanContextConfig config_{};
 
   // NOLINTBEGIN(readability-identifier-naming)
+  bool has_VK_EXT_descriptor_indexing = false;
+  bool has_VK_EXT_fragment_density_map = false;
   bool has_VK_EXT_index_type_uint8 = false;
   bool has_VK_EXT_queue_family_foreign = false;
   bool has_VK_KHR_buffer_device_address = false;
@@ -139,8 +141,6 @@ class VulkanFeatures final {
   bool has_VK_KHR_timeline_semaphore = false;
   bool has_VK_KHR_uniform_buffer_standard_layout = false;
   bool has_VK_KHR_vulkan_memory_model = false;
-  bool has_VK_EXT_descriptor_indexing = false;
-  bool has_VK_EXT_fragment_density_map = false;
   bool has_VK_QCOM_multiview_per_view_viewports = false;
   // NOLINTEND(readability-identifier-naming)
 
