@@ -83,6 +83,8 @@ class VulkanFeatures final {
   VkPhysicalDeviceTimelineSemaphoreFeaturesKHR vkPhysicalDeviceTimelineSemaphoreFeatures_{};
   VkPhysicalDeviceFragmentDensityMapFeaturesEXT vkPhysicalDeviceFragmentDensityMapFeatures_{};
   VkPhysicalDeviceVulkanMemoryModelFeaturesKHR vkPhysicalDeviceVulkanMemoryModelFeatures_{};
+  VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR
+      vkPhysicalDeviceUniformBufferStandardLayoutFeatures_{};
   VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM
       vkPhysicalDeviceMultiviewPerViewViewportsFeatures_{};
 
@@ -135,6 +137,7 @@ class VulkanFeatures final {
   bool has_VK_KHR_shader_non_semantic_info = false;
   bool has_VK_KHR_synchronization2 = false;
   bool has_VK_KHR_timeline_semaphore = false;
+  bool has_VK_KHR_uniform_buffer_standard_layout = false;
   bool has_VK_KHR_vulkan_memory_model = false;
   bool has_VK_EXT_descriptor_indexing = false;
   bool has_VK_EXT_fragment_density_map = false;

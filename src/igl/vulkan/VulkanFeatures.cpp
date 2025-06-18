@@ -104,6 +104,10 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES_KHR,
       .vulkanMemoryModel = VK_TRUE,
   }),
+  vkPhysicalDeviceUniformBufferStandardLayoutFeatures_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES_KHR,
+      .uniformBufferStandardLayout = VK_TRUE,
+  }),
   vkPhysicalDeviceMultiviewPerViewViewportsFeatures_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM,
       .multiviewPerViewViewports = VK_TRUE,
@@ -258,6 +262,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   vkPhysicalDeviceDescriptorIndexingFeatures_.pNext = nullptr;
   vkPhysicalDeviceMultiviewPerViewViewportsFeatures_.pNext = nullptr;
   vkPhysicalDeviceFragmentDensityMapFeatures_.pNext = nullptr;
+  vkPhysicalDeviceUniformBufferStandardLayoutFeatures_.pNext = nullptr;
 
   // Add the required and optional features to the VkPhysicalDeviceFetaures2_
   ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceSamplerYcbcrConversionFeatures_);
@@ -288,6 +293,9 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   }
   if (hasExtension(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
     ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceFragmentDensityMapFeatures_);
+  }
+  if (hasExtension(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)) {
+    ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceUniformBufferStandardLayoutFeatures_);
   }
   if (config_.enableMultiviewPerViewViewports) {
     if (hasExtension(VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME)) {
@@ -327,6 +335,8 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   vkPhysicalDeviceSynchronization2Features_ = other.vkPhysicalDeviceSynchronization2Features_;
   vkPhysicalDeviceTimelineSemaphoreFeatures_ = other.vkPhysicalDeviceTimelineSemaphoreFeatures_;
   vkPhysicalDeviceFragmentDensityMapFeatures_ = other.vkPhysicalDeviceFragmentDensityMapFeatures_;
+  vkPhysicalDeviceUniformBufferStandardLayoutFeatures_ =
+      other.vkPhysicalDeviceUniformBufferStandardLayoutFeatures_;
   vkPhysicalDeviceMultiviewPerViewViewportsFeatures_ =
       other.vkPhysicalDeviceMultiviewPerViewViewportsFeatures_;
 
@@ -484,6 +494,10 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
 
   has_VK_KHR_timeline_semaphore =
       enable(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, ExtensionType::Device);
+
+  has_VK_KHR_uniform_buffer_standard_layout =
+      enable(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME, ExtensionType::Device);
+
   has_VK_KHR_synchronization2 =
       enable(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, ExtensionType::Device);
 
