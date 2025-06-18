@@ -104,6 +104,12 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES_KHR,
       .vulkanMemoryModel = VK_TRUE,
   }),
+  vkPhysicalDevice8BitStorageFeatures_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES_KHR,
+      .storageBuffer8BitAccess = VK_TRUE,
+      .uniformAndStorageBuffer8BitAccess = VK_FALSE,
+      .storagePushConstant8 = VK_FALSE,
+  }),
   vkPhysicalDeviceUniformBufferStandardLayoutFeatures_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES_KHR,
       .uniformBufferStandardLayout = VK_TRUE,
@@ -262,6 +268,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   vkPhysicalDeviceDescriptorIndexingFeatures_.pNext = nullptr;
   vkPhysicalDeviceMultiviewPerViewViewportsFeatures_.pNext = nullptr;
   vkPhysicalDeviceFragmentDensityMapFeatures_.pNext = nullptr;
+  vkPhysicalDevice8BitStorageFeatures_.pNext = nullptr;
   vkPhysicalDeviceUniformBufferStandardLayoutFeatures_.pNext = nullptr;
 
   // Add the required and optional features to the VkPhysicalDeviceFetaures2_
@@ -293,6 +300,9 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   }
   if (hasExtension(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
     ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceFragmentDensityMapFeatures_);
+  }
+  if (hasExtension(VK_KHR_8BIT_STORAGE_EXTENSION_NAME)) {
+    ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDevice8BitStorageFeatures_);
   }
   if (hasExtension(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)) {
     ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceUniformBufferStandardLayoutFeatures_);
@@ -335,6 +345,7 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   vkPhysicalDeviceSynchronization2Features_ = other.vkPhysicalDeviceSynchronization2Features_;
   vkPhysicalDeviceTimelineSemaphoreFeatures_ = other.vkPhysicalDeviceTimelineSemaphoreFeatures_;
   vkPhysicalDeviceFragmentDensityMapFeatures_ = other.vkPhysicalDeviceFragmentDensityMapFeatures_;
+  vkPhysicalDevice8BitStorageFeatures_ = other.vkPhysicalDevice8BitStorageFeatures_;
   vkPhysicalDeviceUniformBufferStandardLayoutFeatures_ =
       other.vkPhysicalDeviceUniformBufferStandardLayoutFeatures_;
   vkPhysicalDeviceMultiviewPerViewViewportsFeatures_ =
