@@ -463,14 +463,16 @@ void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& c
 }
 
 void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& config) {
+  enable(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME, ExtensionType::Device);
   enable(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME, ExtensionType::Device);
+  enable(VK_KHR_SWAPCHAIN_EXTENSION_NAME, ExtensionType::Device);
+
 #if IGL_PLATFORM_ANDROID
   enable(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME, ExtensionType::Device);
   enable(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, ExtensionType::Device);
   enable(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME, ExtensionType::Device);
   enable(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME, ExtensionType::Device);
 #endif
-  enable(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME, ExtensionType::Device);
 #if !IGL_PLATFORM_ANDROID || !IGL_DEBUG
   // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are
   // enabled for DEBUG builds. https://issuetracker.google.com/issues/209835779?pli=1 Hence,
@@ -479,7 +481,6 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
   has_VK_KHR_shader_non_semantic_info =
       enable(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, ExtensionType::Device);
 #endif // !IGL_PLATFORM_ANDROID || !IGL_DEBUG
-  enable(VK_KHR_SWAPCHAIN_EXTENSION_NAME, ExtensionType::Device);
 
 #if IGL_PLATFORM_MACOSX
   std::ignore = IGL_DEBUG_VERIFY(enable("VK_KHR_portability_subset", ExtensionType::Device));
