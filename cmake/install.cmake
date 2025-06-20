@@ -94,38 +94,66 @@ function(igl_fix_target_includes target_name)
     endif()
 endfunction()
 
-# Function to check if a target has third-party dependencies that would cause export issues
-function(igl_has_third_party_deps target_name result_var)
+# Function to clean third-party dependencies from a target for export
+function(igl_clean_third_party_deps target_name)
     if(NOT TARGET ${target_name})
-        set(${result_var} FALSE PARENT_SCOPE)
         return()
     endif()
     
-    get_target_property(link_libs ${target_name} LINK_LIBRARIES)
-    if(link_libs)
-        foreach(lib ${link_libs})
-            # Check for known problematic third-party targets
-            if("${lib}" MATCHES "^(glslang|SPIRV|spirv-cross|glslang-default-resource-limits|IGLShellShared|ktx)$")
-                set(${result_var} TRUE PARENT_SCOPE)
-                return()
-            endif()
-        endforeach()
-    endif()
+    # List of third-party targets to remove
+    set(THIRD_PARTY_LIBS 
+        glslang SPIRV spirv-cross spirv-cross-core spirv-cross-glsl 
+        spirv-cross-msl spirv-cross-util spirv-cross-c glslang-default-resource-limits 
+        IGLShellShared ktx TracyClient OpenXR::openxr_loader fmt
+        glew glew_s GLEW::glew GLEW::glew_s
+    )
     
-    set(${result_var} FALSE PARENT_SCOPE)
+    # Clean all possible dependency properties
+    set(DEPENDENCY_PROPERTIES 
+        LINK_LIBRARIES 
+        INTERFACE_LINK_LIBRARIES 
+        IMPORTED_LINK_INTERFACE_LIBRARIES
+        LINK_INTERFACE_LIBRARIES
+    )
+    
+    foreach(prop ${DEPENDENCY_PROPERTIES})
+        get_target_property(current_libs ${target_name} ${prop})
+        if(current_libs AND NOT current_libs STREQUAL "current_libs-NOTFOUND")
+            set(clean_libs "")
+            foreach(lib ${current_libs})
+                set(should_remove FALSE)
+                
+                # Check if this is a third-party library to remove
+                foreach(third_party ${THIRD_PARTY_LIBS})
+                    if("${lib}" STREQUAL "${third_party}")
+                        set(should_remove TRUE)
+                        message(STATUS "    Removing ${prop} dependency: ${lib}")
+                        break()
+                    endif()
+                endforeach()
+                
+                # Keep IGL/IGLU targets and non-problematic dependencies
+                if(NOT should_remove)
+                    list(APPEND clean_libs ${lib})
+                endif()
+            endforeach()
+            
+            # Update the property
+            if(clean_libs)
+                set_target_properties(${target_name} PROPERTIES ${prop} "${clean_libs}")
+            else()
+                set_target_properties(${target_name} PROPERTIES ${prop} "")
+            endif()
+        endif()
+    endforeach()
+    
+
 endfunction()
 
 # Function to setup install for any target
 function(igl_setup_target_install target_name)
     if(NOT TARGET ${target_name})
         message(STATUS "  - Skipping ${target_name}: target not found")
-        return()
-    endif()
-    
-    # Check for third-party dependencies
-    igl_has_third_party_deps(${target_name} has_third_party)
-    if(has_third_party)
-        message(STATUS "  - Skipping ${target_name}: has third-party dependencies")
         return()
     endif()
     
@@ -136,6 +164,11 @@ function(igl_setup_target_install target_name)
         message(STATUS "  - Skipping ${target_name}: not a library")
         return()
     endif()
+    
+    message(STATUS "  - Configuring install for: ${target_name}")
+    
+    # Clean third-party dependencies for export
+    igl_clean_third_party_deps(${target_name})
     
     # Fix include directories before install
     igl_fix_target_includes(${target_name})
@@ -163,7 +196,7 @@ function(igl_setup_target_install target_name)
         endif()
     endif()
     
-    message(STATUS "  - Configured install for: ${target_name}")
+    message(STATUS "  - Successfully configured install for: ${target_name}")
 endfunction()
 
 # Function to install headers for a directory
@@ -183,20 +216,17 @@ function(igl_install_headers source_dir dest_dir)
     endif()
 endfunction()
 
-# Core IGL targets (only safe ones without third-party deps)
+# All IGL core targets
 set(IGL_CORE_TARGETS 
     IGLLibrary 
     IGLOpenGL 
     IGLMetal 
+    IGLVulkan
+    IGLGlslang
     IGLstb
 )
 
-# Add Vulkan if available
-if(TARGET IGLVulkan)
-    list(APPEND IGL_CORE_TARGETS IGLVulkan)
-endif()
-
-# IGLU targets (only safe ones without third-party deps)
+# IGLU targets that can be safely exported
 set(IGLU_TARGETS
     IGLUmanagedUniformBuffer
     IGLUsentinel
@@ -204,7 +234,15 @@ set(IGLU_TARGETS
     IGLUstate_pool
     IGLUuniform
     IGLUsimdtypes
+    IGLUtexture_accessor
+    IGLUimgui
 )
+
+# Note: Temporarily excluded problematic IGLU targets with complex dependencies:
+# - IGLUshaderCross (spirv-cross dependencies not exportable)
+# - IGLUtexture_loader (ktx dependency not exportable)
+
+# Note: Third-party dependencies will be cleaned automatically during export
 
 # Process all IGL and IGLU targets
 foreach(target IN LISTS IGL_CORE_TARGETS IGLU_TARGETS)

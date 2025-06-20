@@ -5,9 +5,33 @@
 
 # Include required CMake modules
 include(CMakeFindDependencyMacro)
+include(CMakePackageConfigHelpers)
 
-# Find required dependencies
-find_dependency(fmt)
+# Try to find optional dependencies (third-party libs were removed from exported targets)
+# These are only needed if user wants to use IGL features that depend on them
+
+# Try to find fmt (optional)
+find_package(fmt QUIET)
+if(fmt_FOUND)
+    message(STATUS "IGL: Found fmt library")
+else()
+    message(STATUS "IGL: fmt library not found - some features may not be available")
+endif()
+
+# Find required system dependencies before including targets
+# These dependencies are needed by the exported targets
+
+# Find OpenGL (required by IGLOpenGL backend)
+find_package(OpenGL QUIET)
+if(NOT OpenGL_FOUND)
+    message(STATUS "IGL: OpenGL not found - IGLOpenGL backend may not be available")
+endif()
+
+# Find Vulkan (required by IGLVulkan backend)
+find_package(Vulkan QUIET)
+if(NOT Vulkan_FOUND)
+    message(STATUS "IGL: Vulkan SDK not found - IGLVulkan backend may not be available")
+endif()
 
 # Include the targets file
 include("${CMAKE_CURRENT_LIST_DIR}/IGLTargets.cmake")
@@ -117,4 +141,17 @@ if(NOT IGL_FIND_QUIETLY)
     message(STATUS "Available components: ${IGL_AVAILABLE_COMPONENTS}")
 endif()
 
-check_required_components(IGL) 
+# Check if all required components were found
+if(IGL_FIND_COMPONENTS)
+    foreach(component ${IGL_FIND_COMPONENTS})
+        if(NOT ${component} IN_LIST IGL_AVAILABLE_COMPONENTS)
+            if(IGL_FIND_REQUIRED_${component})
+                set(IGL_FOUND FALSE)
+                set(IGL_NOT_FOUND_MESSAGE "Required component ${component} is not available")
+                return()
+            endif()
+        endif()
+    endforeach()
+endif()
+
+set(IGL_FOUND TRUE) 
