@@ -1,0 +1,120 @@
+# IGLConfig.cmake.in - CMake configuration file for IGL
+# This file allows users to find and use IGL with find_package(IGL)
+
+@PACKAGE_INIT@
+
+# Include required CMake modules
+include(CMakeFindDependencyMacro)
+
+# Find required dependencies
+find_dependency(fmt)
+
+# Include the targets file
+include("${CMAKE_CURRENT_LIST_DIR}/IGLTargets.cmake")
+
+# Define available components based on what was built
+set(IGL_AVAILABLE_COMPONENTS "")
+
+# Core library is always available
+list(APPEND IGL_AVAILABLE_COMPONENTS IGLLibrary)
+
+# Backend components (conditionally available)
+if(TARGET IGL::IGLOpenGL)
+    list(APPEND IGL_AVAILABLE_COMPONENTS IGLOpenGL)
+endif()
+
+if(TARGET IGL::IGLVulkan)
+    list(APPEND IGL_AVAILABLE_COMPONENTS IGLVulkan)
+endif()
+
+if(TARGET IGL::IGLMetal)
+    list(APPEND IGL_AVAILABLE_COMPONENTS IGLMetal)
+endif()
+
+if(TARGET IGL::IGLGlslang)
+    list(APPEND IGL_AVAILABLE_COMPONENTS IGLGlslang)
+endif()
+
+# IGLU components (if available)
+if(TARGET IGL::IGLUimgui)
+    list(APPEND IGL_AVAILABLE_COMPONENTS IGLUimgui)
+endif()
+
+if(TARGET IGL::IGLUmanagedUniformBuffer)
+    list(APPEND IGL_AVAILABLE_COMPONENTS IGLUmanagedUniformBuffer)
+endif()
+
+if(TARGET IGL::IGLUsentinel)
+    list(APPEND IGL_AVAILABLE_COMPONENTS IGLUsentinel)
+endif()
+
+if(TARGET IGL::IGLUshaderCross)
+    list(APPEND IGL_AVAILABLE_COMPONENTS IGLUshaderCross)
+endif()
+
+if(TARGET IGL::IGLUsimple_renderer)
+    list(APPEND IGL_AVAILABLE_COMPONENTS IGLUsimple_renderer)
+endif()
+
+if(TARGET IGL::IGLUstate_pool)
+    list(APPEND IGL_AVAILABLE_COMPONENTS IGLUstate_pool)
+endif()
+
+if(TARGET IGL::IGLUtexture_accessor)
+    list(APPEND IGL_AVAILABLE_COMPONENTS IGLUtexture_accessor)
+endif()
+
+if(TARGET IGL::IGLUtexture_loader)
+    list(APPEND IGL_AVAILABLE_COMPONENTS IGLUtexture_loader)
+endif()
+
+if(TARGET IGL::IGLUuniform)
+    list(APPEND IGL_AVAILABLE_COMPONENTS IGLUuniform)
+endif()
+
+if(TARGET IGL::IGLUsimdtypes)
+    list(APPEND IGL_AVAILABLE_COMPONENTS IGLUsimdtypes)
+endif()
+
+if(TARGET IGL::IGLstb)
+    list(APPEND IGL_AVAILABLE_COMPONENTS IGLstb)
+endif()
+
+# Check if requested components are available
+if(IGL_FIND_COMPONENTS)
+    foreach(component ${IGL_FIND_COMPONENTS})
+        if(NOT ${component} IN_LIST IGL_AVAILABLE_COMPONENTS)
+            set(IGL_FOUND FALSE)
+            set(IGL_NOT_FOUND_MESSAGE "Component ${component} is not available")
+            return()
+        endif()
+    endforeach()
+endif()
+
+# Set up interface targets for convenience
+if(NOT TARGET IGL::IGL)
+    # Create main interface target that includes core library
+    add_library(IGL::IGL INTERFACE IMPORTED)
+    target_link_libraries(IGL::IGL INTERFACE IGL::IGLLibrary)
+    
+    # Add backend libraries if available
+    if(TARGET IGL::IGLOpenGL)
+        target_link_libraries(IGL::IGL INTERFACE IGL::IGLOpenGL)
+    endif()
+    
+    if(TARGET IGL::IGLVulkan)
+        target_link_libraries(IGL::IGL INTERFACE IGL::IGLVulkan)
+    endif()
+    
+    if(TARGET IGL::IGLMetal)
+        target_link_libraries(IGL::IGL INTERFACE IGL::IGLMetal)
+    endif()
+endif()
+
+# Print information about found IGL
+if(NOT IGL_FIND_QUIETLY)
+    message(STATUS "Found IGL version ${IGL_VERSION}")
+    message(STATUS "Available components: ${IGL_AVAILABLE_COMPONENTS}")
+endif()
+
+check_required_components(IGL) 
