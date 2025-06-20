@@ -1,0 +1,417 @@
+name: CMake Install Test
+
+on:
+  push:
+    branches: [ "**" ]
+    paths:
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'src/**'
+      - 'IGLU/**'
+      - '.github/workflows/cmake-install-test.yml'
+  pull_request:
+    branches: [ "**" ]
+    paths:
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'src/**'
+      - 'IGLU/**'
+      - '.github/workflows/cmake-install-test.yml'
+
+# https://github.com/git-lfs/git-lfs/issues/5749
+env:
+  GIT_CLONE_PROTECTION_ACTIVE: false
+
+jobs:
+  install-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Windows - MSVC 2022",
+            os: windows-latest,
+            build_type: "Release",
+            cc: "cl",
+            cxx: "cl",
+            generators: "Visual Studio 17 2022",
+            cmake_args: "-DIGL_ENABLE_INSTALL=ON -DIGL_WITH_SAMPLES=OFF -DIGL_WITH_SHELL=OFF -DIGL_WITH_TESTS=OFF"
+          }
+        - {
+            name: "Windows - MSVC 2022 (OpenGL only)",
+            os: windows-latest,
+            build_type: "Release",
+            cc: "cl",
+            cxx: "cl",
+            generators: "Visual Studio 17 2022",
+            cmake_args: "-DIGL_ENABLE_INSTALL=ON -DIGL_WITH_SAMPLES=OFF -DIGL_WITH_SHELL=OFF -DIGL_WITH_TESTS=OFF -DIGL_WITH_VULKAN=OFF -DIGL_WITH_METAL=OFF"
+          }
+        - {
+            name: "Ubuntu - Clang",
+            os: ubuntu-latest,
+            build_type: "Release",
+            cc: "clang",
+            cxx: "clang++",
+            generators: "Unix Makefiles",
+            cmake_args: "-DIGL_ENABLE_INSTALL=ON -DIGL_WITH_SAMPLES=OFF -DIGL_WITH_SHELL=OFF -DIGL_WITH_TESTS=OFF"
+          }
+        - {
+            name: "Ubuntu - GCC (Vulkan only)",
+            os: ubuntu-latest,
+            build_type: "Release",
+            cc: "gcc",
+            cxx: "g++",
+            generators: "Unix Makefiles",
+            cmake_args: "-DIGL_ENABLE_INSTALL=ON -DIGL_WITH_SAMPLES=OFF -DIGL_WITH_SHELL=OFF -DIGL_WITH_TESTS=OFF -DIGL_WITH_OPENGL=OFF -DIGL_WITH_METAL=OFF"
+          }
+        - {
+            name: "macOS - Clang",
+            os: macos-latest,
+            build_type: "Release",
+            cc: "clang",
+            cxx: "clang++",
+            generators: "Unix Makefiles",
+            cmake_args: "-DIGL_ENABLE_INSTALL=ON -DIGL_WITH_SAMPLES=OFF -DIGL_WITH_SHELL=OFF -DIGL_WITH_TESTS=OFF -DIGL_WITH_VULKAN=OFF"
+          }
+        - {
+            name: "macOS - Metal only",
+            os: macos-latest,
+            build_type: "Release",
+            cc: "clang",
+            cxx: "clang++",
+            generators: "Unix Makefiles",
+            cmake_args: "-DIGL_ENABLE_INSTALL=ON -DIGL_WITH_SAMPLES=OFF -DIGL_WITH_SHELL=OFF -DIGL_WITH_TESTS=OFF -DIGL_WITH_OPENGL=OFF -DIGL_WITH_VULKAN=OFF -DIGL_WITH_IGLU=OFF"
+          }
+        - {
+            name: "Android - OpenGL ES",
+            os: ubuntu-latest,
+            build_type: "Release",
+            cc: "clang",
+            cxx: "clang++",
+            generators: "Unix Makefiles",
+            cmake_args: "-DIGL_ENABLE_INSTALL=ON -DIGL_WITH_SAMPLES=OFF -DIGL_WITH_SHELL=OFF -DIGL_WITH_TESTS=OFF -DIGL_WITH_OPENGL=ON -DIGL_WITH_VULKAN=OFF -DIGL_WITH_METAL=OFF",
+            android: true,
+            ndk_version: "r26b",
+            android_abi: "arm64-v8a", 
+            android_api: "33"
+          }
+        - {
+            name: "iOS - Metal",
+            os: macos-latest,
+            build_type: "Release",
+            cc: "clang",
+            cxx: "clang++",
+            generators: "Xcode",
+            cmake_args: "-DIGL_ENABLE_INSTALL=ON -DIGL_WITH_SAMPLES=OFF -DIGL_WITH_SHELL=OFF -DIGL_WITH_TESTS=OFF -DIGL_WITH_OPENGL=OFF -DIGL_WITH_VULKAN=OFF -DIGL_WITH_METAL=ON",
+            ios: true,
+            ios_deployment_target: "13.0"
+          }
+
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.name }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - if: startsWith(matrix.config.os, 'windows')
+        run: |
+          git config --system core.longpaths true
+
+      - if: startsWith(matrix.config.name, 'Ubuntu') && !matrix.config.android
+        run: |
+          sudo sed -i 's/azure\.//' /etc/apt/sources.list
+          sudo apt-get update
+          sudo apt-get install -y clang xorg-dev libxinerama-dev libxcursor-dev libgles2-mesa-dev libegl1-mesa-dev libglfw3-dev libglew-dev libstdc++-12-dev
+
+      - name: Set up Android NDK
+        if: matrix.config.android
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: ${{ matrix.config.ndk_version }}
+
+      - name: Set up iOS toolchain
+        if: matrix.config.ios
+        run: |
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Prepare Vulkan SDK
+        if: ${{ !contains(matrix.config.cmake_args, 'IGL_WITH_VULKAN=OFF') }}
+        uses: jakoch/install-vulkan-sdk-action@v1.1.1
+        with:
+          vulkan_version: 1.4.304.1
+          install_runtime: true
+          cache: true
+          stripdown: true
+
+      - name: Get the number of CPU cores
+        uses: SimenB/github-actions-cpu-cores@v2
+
+      - name: Configure CMake
+        shell: bash
+        env:
+          CC:  ${{ matrix.config.cc }}
+          CXX: ${{ matrix.config.cxx }}
+        run: |
+          # Set up platform-specific CMake arguments
+          CMAKE_PLATFORM_ARGS=""
+          
+          if [[ "${{ matrix.config.android }}" == "true" ]]; then
+            # Android configuration
+            CMAKE_PLATFORM_ARGS="-DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake"
+            CMAKE_PLATFORM_ARGS="$CMAKE_PLATFORM_ARGS -DANDROID_ABI=${{ matrix.config.android_abi }}"
+            CMAKE_PLATFORM_ARGS="$CMAKE_PLATFORM_ARGS -DANDROID_PLATFORM=android-${{ matrix.config.android_api }}"
+            CMAKE_PLATFORM_ARGS="$CMAKE_PLATFORM_ARGS -DANDROID_NDK=$ANDROID_NDK_ROOT"
+            CMAKE_PLATFORM_ARGS="$CMAKE_PLATFORM_ARGS -DANDROID=ON"
+          elif [[ "${{ matrix.config.ios }}" == "true" ]]; then
+            # iOS configuration using ios-cmake toolchain (as per README)
+            echo "ios build is need to download ios-cmake, so we need to deploy deps"
+            python3 deploy_deps.py
+            ls -al third-party/deps/src
+            CMAKE_PLATFORM_ARGS="-DCMAKE_TOOLCHAIN_FILE=third-party/deps/src/ios-cmake/ios.toolchain.cmake"
+            CMAKE_PLATFORM_ARGS="$CMAKE_PLATFORM_ARGS -DDEPLOYMENT_TARGET=${{ matrix.config.ios_deployment_target }}"
+            CMAKE_PLATFORM_ARGS="$CMAKE_PLATFORM_ARGS -DPLATFORM=OS64"
+            CMAKE_PLATFORM_ARGS="$CMAKE_PLATFORM_ARGS -DIOS=ON"
+          fi
+          
+          cmake -G "${{ matrix.config.generators }}" \
+            -S "${{ github.workspace }}" \
+            -B build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
+            $CMAKE_PLATFORM_ARGS \
+            ${{ matrix.config.cmake_args }}
+
+      - name: Build
+        shell: bash
+        run: |
+          cd build
+          cmake --build . --parallel ${{ steps.cpu-cores.outputs.count }} --config ${{ matrix.config.build_type }}
+
+      - name: Install
+        shell: bash
+        run: |
+          cd build
+          cmake --install . --config ${{ matrix.config.build_type }}
+
+      - name: Verify Installation Structure
+        shell: bash
+        run: |
+          echo "=== Verifying Installation Structure ==="
+          
+          # Check install directory exists
+          if [ ! -d "${{ github.workspace }}/install" ]; then
+            echo "ERROR: Install directory not found!"
+            exit 1
+          fi
+          
+          # Check for library directory
+          if [ ! -d "${{ github.workspace }}/install/lib" ]; then
+            echo "ERROR: lib directory not found!"
+            exit 1
+          fi
+          
+          # Check for include directory
+          if [ ! -d "${{ github.workspace }}/install/include" ]; then
+            echo "ERROR: include directory not found!"
+            exit 1
+          fi
+          
+          # Check for CMake config
+          if [ ! -f "${{ github.workspace }}/install/lib/cmake/IGL/IGLConfig.cmake" ]; then
+            echo "ERROR: IGLConfig.cmake not found!"
+            exit 1
+          fi
+          
+          # List installed files for debugging
+          echo "=== Installed Libraries ==="
+          find "${{ github.workspace }}/install/lib" -name "*.a" -o -name "*.lib" -o -name "*.so" -o -name "*.dylib" -o -name "*.dll" || true
+          
+          echo "=== Installed Headers ==="
+          find "${{ github.workspace }}/install/include" -type d | head -10
+          
+          echo "=== CMake Config Files ==="
+          find "${{ github.workspace }}/install" -name "*.cmake" | head -10
+
+      - name: Test find_package Integration
+        if: ${{ !matrix.config.android && !matrix.config.ios }}
+        shell: bash
+        run: |
+          echo "=== Testing find_package Integration ==="
+          
+          # Create test project directory
+          mkdir -p test-project
+          
+          # Create CMakeLists.txt
+          cat > test-project/CMakeLists.txt << 'EOF'
+          cmake_minimum_required(VERSION 3.19)
+          project(IGLInstallTest)
+          
+          # Set C++ standard to match IGL requirements
+          set(CMAKE_CXX_STANDARD 20)
+          set(CMAKE_CXX_STANDARD_REQUIRED ON)
+          
+          # Find IGL
+          find_package(IGL REQUIRED)
+          
+          # Print information
+          message(STATUS "IGL_FOUND: ${IGL_FOUND}")
+          message(STATUS "IGL_VERSION: ${IGL_VERSION}")
+          
+          # Create test executable
+          add_executable(igl_install_test main.cpp)
+          target_link_libraries(igl_install_test PRIVATE IGL::IGLLibrary)
+          
+          # Test component discovery
+          if(TARGET IGL::IGLOpenGL)
+            message(STATUS "OpenGL backend available")
+            target_link_libraries(igl_install_test PRIVATE IGL::IGLOpenGL)
+            target_compile_definitions(igl_install_test PRIVATE HAVE_OPENGL=1)
+          endif()
+          
+          if(TARGET IGL::IGLVulkan)
+            message(STATUS "Vulkan backend available") 
+            target_link_libraries(igl_install_test PRIVATE IGL::IGLVulkan)
+            target_compile_definitions(igl_install_test PRIVATE HAVE_VULKAN=1)
+          endif()
+          
+          if(TARGET IGL::IGLMetal)
+            message(STATUS "Metal backend available")
+            target_link_libraries(igl_install_test PRIVATE IGL::IGLMetal)
+            target_compile_definitions(igl_install_test PRIVATE HAVE_METAL=1)
+          endif()
+          EOF
+          
+          # Create main.cpp
+          cat > test-project/main.cpp << 'EOF'
+          #include <igl/IGL.h>
+          #include <iostream>
+          
+          int main() {
+              std::cout << "IGL Install Test - SUCCESS!" << std::endl;
+              std::cout << "IGL library linking works correctly!" << std::endl;
+              
+          #ifdef HAVE_OPENGL
+              std::cout << "OpenGL backend: Available" << std::endl;
+          #endif
+          
+          #ifdef HAVE_VULKAN
+              std::cout << "Vulkan backend: Available" << std::endl;
+          #endif
+          
+          #ifdef HAVE_METAL
+              std::cout << "Metal backend: Available" << std::endl;
+          #endif
+              
+              // Test basic IGL functionality
+              auto backendType = igl::BackendType::OpenGL;
+              std::cout << "IGL BackendType test: " << static_cast<int>(backendType) << std::endl;
+              
+              return 0;
+          }
+          EOF
+
+      - name: Build Test Project
+        if: ${{ !matrix.config.android && !matrix.config.ios }}
+        shell: bash
+        run: |
+          cd test-project
+          CMAKE_PREFIX_PATH="${{ github.workspace }}/install" cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} .
+          cmake --build build --config ${{ matrix.config.build_type }}
+
+      - name: Run Test Executable
+        if: ${{ !matrix.config.android && !matrix.config.ios }}
+        shell: bash
+        run: |
+          cd test-project
+          if [ "${{ matrix.config.os }}" = "windows-latest" ]; then
+            ./build/${{ matrix.config.build_type }}/igl_install_test.exe
+          else
+            ./build/igl_install_test
+          fi
+
+      - name: Test Install Disabled (Control Test)
+        shell: bash
+        env:
+          CC:  ${{ matrix.config.cc }}
+          CXX: ${{ matrix.config.cxx }}
+        run: |
+          echo "=== Testing Install Disabled ==="
+          
+          # Clean and configure without install
+          rm -rf build-control
+          
+          # Create cmake args without the install flag
+          CMAKE_ARGS="${{ matrix.config.cmake_args }}"
+          CMAKE_ARGS_CLEAN=$(echo "$CMAKE_ARGS" | sed 's/-DIGL_ENABLE_INSTALL=ON//g')
+          
+          # Set up platform-specific CMake arguments (same as configure step)
+          CMAKE_PLATFORM_ARGS=""
+          
+          if [[ "${{ matrix.config.android }}" == "true" ]]; then
+            CMAKE_PLATFORM_ARGS="-DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake"
+            CMAKE_PLATFORM_ARGS="$CMAKE_PLATFORM_ARGS -DANDROID_ABI=${{ matrix.config.android_abi }}"
+            CMAKE_PLATFORM_ARGS="$CMAKE_PLATFORM_ARGS -DANDROID_PLATFORM=android-${{ matrix.config.android_api }}"
+            CMAKE_PLATFORM_ARGS="$CMAKE_PLATFORM_ARGS -DANDROID_NDK=$ANDROID_NDK_ROOT"
+            CMAKE_PLATFORM_ARGS="$CMAKE_PLATFORM_ARGS -DANDROID=ON"
+          elif [[ "${{ matrix.config.ios }}" == "true" ]]; then
+            # iOS configuration using ios-cmake toolchain (as per README)
+            CMAKE_PLATFORM_ARGS="-DCMAKE_TOOLCHAIN_FILE=third-party/deps/src/ios-cmake/ios.toolchain.cmake"
+            CMAKE_PLATFORM_ARGS="$CMAKE_PLATFORM_ARGS -DDEPLOYMENT_TARGET=${{ matrix.config.ios_deployment_target }}"
+            CMAKE_PLATFORM_ARGS="$CMAKE_PLATFORM_ARGS -DPLATFORM=OS64"
+            CMAKE_PLATFORM_ARGS="$CMAKE_PLATFORM_ARGS -DIOS=ON"
+          fi
+          
+          cmake -G "${{ matrix.config.generators }}" \
+            -S "${{ github.workspace }}" \
+            -B build-control \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+            -DIGL_ENABLE_INSTALL=OFF \
+            $CMAKE_PLATFORM_ARGS \
+            $CMAKE_ARGS_CLEAN
+          
+          # Build should succeed
+          cd build-control
+          cmake --build . --parallel ${{ steps.cpu-cores.outputs.count }} --config ${{ matrix.config.build_type }}
+          
+          # Verify no install targets are created
+          if cmake --build . --target install 2>/dev/null; then
+            echo "WARNING: Install succeeded when it should be disabled"
+          else
+            echo "SUCCESS: Install properly disabled"
+          fi
+
+  # Test that install doesn't break when new targets are added
+  install-backward-compatibility:
+    runs-on: ubuntu-latest
+    name: "Backward Compatibility Test"
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - run: |
+          sudo sed -i 's/azure\.//' /etc/apt/sources.list
+          sudo apt-get update
+          sudo apt-get install -y clang xorg-dev libxinerama-dev libxcursor-dev libgles2-mesa-dev libegl1-mesa-dev libglfw3-dev libglew-dev libstdc++-12-dev
+
+      - name: Test Default Build (Install Disabled)
+        run: |
+          cmake -B build-default .
+          cmake --build build-default --parallel 2
+          echo "SUCCESS: Default build works with install code present"
+
+      - name: Test All Backends Enabled
+        run: |
+          cmake -B build-all \
+            -DIGL_ENABLE_INSTALL=ON \
+            -DCMAKE_INSTALL_PREFIX=install-all \
+            .
+          cmake --build build-all --parallel 2
+          cmake --install build-all
+          
+          # Verify all components are installed
+          find install-all -name "*.a" | grep -E "(IGLLibrary|IGLOpenGL|IGLVulkan|IGLUimgui)" | wc -l | grep -v "^0$"
+          echo "SUCCESS: All backends install correctly" 

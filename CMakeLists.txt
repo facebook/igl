@@ -7,6 +7,9 @@ cmake_minimum_required(VERSION 3.19)
 
 project("IGL" CXX C)
 
+# Option to enable install (default: OFF to minimize impact)
+option(IGL_ENABLE_INSTALL "Enable install targets for IGL" OFF)
+
 # cmake-format: off
 option(IGL_WITH_SAMPLES   "Enable sample demo apps"            ON)
 
@@ -332,4 +335,9 @@ if(IGL_WITH_OPENXR)
   target_compile_definitions(IGLLibrary PUBLIC "IGL_WITH_OPENXR=1")
   target_link_libraries(IGLLibrary PUBLIC OpenXR::openxr_loader)
   target_include_directories(IGLLibrary PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/openxr-sdk/include")
+endif()
+
+# Install configuration (only if enabled)
+if(IGL_ENABLE_INSTALL)
+  include(cmake/install.cmake)
 endif()
