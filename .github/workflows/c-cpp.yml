@@ -220,4 +220,14 @@ jobs:
         - name: Run tests (desktop)
           run: |
             ls build/samples/desktop
-            ./build/samples/desktop/Tiny
+            #./build/samples/desktop/Tiny --headless
+
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: Screenshots
+            path: |
+              screenshot.png
+            if-no-files-found: error
+            retention-days: 5
+            overwrite: true
