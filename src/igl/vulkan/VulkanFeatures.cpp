@@ -439,13 +439,13 @@ void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& c
   if (!enable(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, ExtensionType::Instance)) {
     IGL_LOG_ERROR("VK_KHR_portability_enumeration extension not supported\n");
   }
-#endif
+#endif // IGL_PLATFORM_MACOSX
 
 #if !IGL_PLATFORM_ANDROID
   if (config.enableValidation) {
     enable(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, ExtensionType::Instance);
   }
-#endif
+#endif // !IGL_PLATFORM_ANDROID
   if (config.headless) {
     const bool enabledExtension =
         enable(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
@@ -472,16 +472,16 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
   enable(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, ExtensionType::Device);
   enable(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME, ExtensionType::Device);
   enable(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME, ExtensionType::Device);
-#endif
+#endif // IGL_PLATFORM_ANDROID
 
 #if !IGL_DEBUG
   has_VK_KHR_shader_non_semantic_info =
       enable(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, ExtensionType::Device);
-#endif // !IGL_PLATFORM_ANDROID || !IGL_DEBUG
+#endif // !IGL_DEBUG
 
 #if IGL_PLATFORM_MACOSX
   std::ignore = IGL_DEBUG_VERIFY(enable("VK_KHR_portability_subset", ExtensionType::Device));
-#endif
+#endif // IGL_PLATFORM_MACOSX
 
 #if IGL_PLATFORM_WINDOWS
   enable(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME, ExtensionType::Device);
