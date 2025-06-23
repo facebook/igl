@@ -228,15 +228,19 @@ static void initIGL() {
       devices = vulkan::HWDevice::queryDevices(
           *ctx, HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
     }
+    if (devices.empty()) {
+      // LavaPipe etc
+      devices = vulkan::HWDevice::queryDevices(
+          *ctx, HWDeviceQueryDesc(HWDeviceType::SoftwareGpu), nullptr);
+    }
+
     device_ =
         vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
 #endif
     IGL_DEBUG_ASSERT(device_);
   }
 
-  // Command queue: backed by different types of GPU HW queues
-  const CommandQueueDesc desc{};
-  commandQueue_ = device_->createCommandQueue(desc, nullptr);
+  commandQueue_ = device_->createCommandQueue({}, nullptr);
 
   // first color attachment
   for (auto i = 0; i < kNumColorAttachments; ++i) {
