@@ -52,7 +52,12 @@ std::shared_ptr<Platform> VulkanShell::createPlatform() noexcept {
       vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::DiscreteGpu), nullptr);
   if (devices.empty()) {
     devices =
-        vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::Unknown), nullptr);
+        vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
+  }
+  if (devices.empty()) {
+    // Lavapipe etc
+    devices =
+        vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::SoftwareGpu), nullptr);
   }
   IGL_DEBUG_ASSERT(devices.size() > 0, "Could not find Vulkan device with requested capabilities");
 
