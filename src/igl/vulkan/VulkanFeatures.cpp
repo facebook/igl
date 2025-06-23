@@ -473,11 +473,8 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
   enable(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME, ExtensionType::Device);
   enable(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME, ExtensionType::Device);
 #endif
-#if !IGL_PLATFORM_ANDROID || !IGL_DEBUG
-  // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are
-  // enabled for DEBUG builds. https://issuetracker.google.com/issues/209835779?pli=1 Hence,
-  // don't enable some extensions on Android which are not present and no way to check without
-  // crashing.
+
+#if !IGL_DEBUG
   has_VK_KHR_shader_non_semantic_info =
       enable(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, ExtensionType::Device);
 #endif // !IGL_PLATFORM_ANDROID || !IGL_DEBUG
