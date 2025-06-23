@@ -129,9 +129,9 @@ jobs:
             sudo apt-get install -y clang xorg-dev libxinerama-dev libxcursor-dev libgles2-mesa-dev libegl1-mesa-dev libglfw3-dev libglew-dev libstdc++-12-dev
 
         - name: Prepare Vulkan SDK
-          uses: jakoch/install-vulkan-sdk-action@v1.1.1
+          uses: jakoch/install-vulkan-sdk-action@v1.2.5
           with:
-            vulkan_version: 1.4.304.1
+            vulkan_version: 1.4.309.0
             install_runtime: true
             cache: true
             stripdown: true
