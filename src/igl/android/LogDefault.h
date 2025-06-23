@@ -17,6 +17,7 @@
 
 extern "C" {
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 IGL_API int IGLAndroidLogDefaultHandler(IGLLogLevel logLevel,
                                         const char* IGL_RESTRICT format,
                                         va_list ap);
