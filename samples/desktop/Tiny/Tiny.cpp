@@ -119,8 +119,8 @@ void main() {
 using namespace igl;
 
 static GLFWwindow* window_ = nullptr;
-static int width_ = 0;
-static int height_ = 0;
+static int width_ = 1024;
+static int height_ = 768;
 
 static std::unique_ptr<IDevice> device_;
 static std::shared_ptr<ICommandQueue> commandQueue_;
@@ -128,9 +128,10 @@ static RenderPassDesc renderPass_;
 static std::shared_ptr<IFramebuffer> framebuffer_;
 static std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
 
-static bool initWindow(GLFWwindow** outWindow) {
+static void initIGL(GLFWwindow** outWindow) {
   if (!glfwInit()) {
-    return false;
+    printf("glfwInit() failed");
+    return;
   }
 
 #if USE_OPENGL_BACKEND
@@ -154,43 +155,36 @@ static bool initWindow(GLFWwindow** outWindow) {
 
   GLFWwindow* window = glfwCreateWindow(800, 600, title, nullptr, nullptr);
 
-  if (!window) {
-    glfwTerminate();
-    return false;
-  }
+  if (window) {
+    glfwSetErrorCallback([](int error, const char* description) {
+      printf("GLFW Error (%i): %s\n", error, description);
+    });
 
-  glfwSetErrorCallback([](int error, const char* description) {
-    printf("GLFW Error (%i): %s\n", error, description);
-  });
+    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int) {
+      if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+      }
+    });
 
-  glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-      glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-  });
-
-  // @lint-ignore CLANGTIDY
-  glfwSetWindowSizeCallback(window, [](GLFWwindow* /*window*/, int width, int height) {
-    printf("Window resized! width=%d, height=%d\n", width, height);
-    width_ = width;
-    height_ = height;
+    // @lint-ignore CLANGTIDY
+    glfwSetWindowSizeCallback(window, [](GLFWwindow* /*window*/, int width, int height) {
+      printf("Window resized! width=%d, height=%d\n", width, height);
+      width_ = width;
+      height_ = height;
 #if !USE_OPENGL_BACKEND
-    auto* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
-    auto& ctx = vulkanDevice->getVulkanContext();
-    ctx.initSwapchain(width_, height_);
+      auto* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
+      auto& ctx = vulkanDevice->getVulkanContext();
+      ctx.initSwapchain(width_, height_);
 #endif
-  });
+    });
 
-  glfwGetWindowSize(window, &width_, &height_);
+    glfwGetWindowSize(window, &width_, &height_);
+  }
 
   if (outWindow) {
     *outWindow = window;
   }
 
-  return true;
-}
-
-static void initIGL() {
   // create a device
   {
 #if USE_OPENGL_BACKEND
@@ -216,8 +210,11 @@ static void initIGL() {
 #elif __APPLE__
     auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetCocoaWindow(window_));
 #elif defined(__linux__)
-    auto ctx = vulkan::HWDevice::createContext(
-        cfg, (void*)glfwGetX11Window(window_), 0, nullptr, (void*)glfwGetX11Display());
+    auto ctx = vulkan::HWDevice::createContext(cfg,
+                                               window_ ? (void*)glfwGetX11Window(window_) : nullptr,
+                                               0,
+                                               nullptr,
+                                               (void*)glfwGetX11Display());
 #else
 #error Unsupported OS
 #endif
@@ -372,8 +369,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
 
 int main(int /*argc*/, char* /*argv*/[]) {
   renderPass_.colorAttachments.resize(kNumColorAttachments);
-  initWindow(&window_);
-  initIGL();
+  initIGL(&window_);
 
   createFramebuffer(getNativeDrawable());
   createRenderPipeline();
@@ -384,7 +380,7 @@ int main(int /*argc*/, char* /*argv*/[]) {
     if (window_) {
       glfwPollEvents();
     } else {
-      // we are running headless - just break after 1 frame
+      printf("We are running headless - breaking after 1 frame\n");
       break;
     }
   }
