@@ -21,6 +21,10 @@ namespace igl::vulkan {
 Buffer::Buffer(const igl::vulkan::Device& device) : device_(device) {}
 
 Result Buffer::create(const BufferDesc& desc) {
+  if (!IGL_DEBUG_VERIFY(desc.storage != igl::ResourceStorage::Invalid)) {
+    return Result(Result::Code::ArgumentInvalid, "Invalid storage");
+  }
+
   desc_ = desc;
 
   const VulkanContext& ctx = device_.getVulkanContext();
