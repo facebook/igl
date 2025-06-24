@@ -34,9 +34,9 @@ TEST_F(DepthStencilStateMTLTest, StencilOpConversionToMTL) {
     StencilOperation igl = StencilOperation::Keep;
     MTLStencilOperation mtl = MTLStencilOperationKeep;
   };
-  const MTLStencilOperation MTLStencilOperation =
+  const MTLStencilOperation mtlStencilOperation =
       metal::DepthStencilState::convertStencilOperation(StencilOperation::Keep);
-  ASSERT_EQ(MTLStencilOperation, MTLStencilOperationKeep);
+  ASSERT_EQ(mtlStencilOperation, MTLStencilOperationKeep);
 
   const std::vector<StencilOpConversion> conversions{
       StencilOpConversion{igl::StencilOperation::Keep, MTLStencilOperationKeep},
