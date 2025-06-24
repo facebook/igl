@@ -510,6 +510,8 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
   has_VK_KHR_synchronization2 =
       enable(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, ExtensionType::Device);
 
+  has_VK_KHR_8bit_storage = enable(VK_KHR_8BIT_STORAGE_EXTENSION_NAME, ExtensionType::Device);
+
   has_VK_KHR_buffer_device_address =
       enable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, ExtensionType::Device);
 
