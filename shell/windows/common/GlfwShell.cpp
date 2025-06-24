@@ -220,14 +220,20 @@ bool GlfwShell::initialize(int argc,
 }
 
 void GlfwShell::run() noexcept {
-  while (!glfwWindowShouldClose(window_.get()) && !session_->appParams().exitRequested) {
+  while ((!window_ || !glfwWindowShouldClose(window_.get())) &&
+         !session_->appParams().exitRequested) {
     willTick();
     auto surfaceTextures = createSurfaceTextures();
     IGL_DEBUG_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
 
     platform_->getInputDispatcher().processEvents();
     session_->update(std::move(surfaceTextures));
-    glfwPollEvents();
+    if (window_) {
+      glfwPollEvents();
+    } else {
+      IGL_LOG_INFO("\nWe are running headless - breaking after 1 frame\n");
+      break;
+    }
   }
 }
 
