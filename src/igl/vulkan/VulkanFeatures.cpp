@@ -12,7 +12,7 @@ namespace igl::vulkan {
 
 VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
   // Vulkan 1.1
-  vkPhysicalDeviceFeatures2_({
+  vkPhysicalDeviceFeatures2({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
       .features =
           {
@@ -28,27 +28,27 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
               .shaderInt16 = config.enableShaderInt16 ? VK_TRUE : VK_FALSE,
           },
   }),
-  vkPhysicalDeviceSamplerYcbcrConversionFeatures_({
+  featuresSamplerYcbcrConversion({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES,
       .samplerYcbcrConversion = VK_TRUE,
   }),
-  vkPhysicalDeviceShaderDrawParametersFeatures_({
+  featuresShaderDrawParameters({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
       .shaderDrawParameters = config.enableShaderDrawParameters ? VK_TRUE : VK_FALSE,
   }),
-  vkPhysicalDeviceMultiviewFeatures_({
+  featuresMultiview({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
       .multiview = VK_TRUE,
       .multiviewGeometryShader = VK_FALSE,
       .multiviewTessellationShader = VK_FALSE,
   }),
-  vkPhysicalDeviceBufferDeviceAddressFeatures_({
+  featuresBufferDeviceAddress({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
       .bufferDeviceAddress = VK_TRUE,
       .bufferDeviceAddressCaptureReplay = VK_FALSE,
       .bufferDeviceAddressMultiDevice = VK_FALSE,
   }),
-  vkPhysicalDeviceDescriptorIndexingFeatures_({
+  featuresDescriptorIndexing({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
       .shaderInputAttachmentArrayDynamicIndexing = VK_FALSE,
       .shaderUniformTexelBufferArrayDynamicIndexing = VK_FALSE,
@@ -71,7 +71,7 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .descriptorBindingVariableDescriptorCount = VK_FALSE,
       .runtimeDescriptorArray = VK_TRUE,
   }),
-  vkPhysicalDevice16BitStorageFeatures_({
+  features16BitStorage({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,
       .storageBuffer16BitAccess = config.enableStorageBuffer16BitAccess ? VK_TRUE : VK_FALSE,
       .uniformAndStorageBuffer16BitAccess = VK_FALSE,
@@ -79,42 +79,42 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .storageInputOutput16 = VK_FALSE,
   }),
   // Vulkan 1.2
-  vkPhysicalDeviceShaderFloat16Int8Features_({
+  featuresShaderFloat16Int8({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR,
       .shaderFloat16 = VK_FALSE,
       .shaderInt8 = VK_FALSE,
   }),
-  vkPhysicalDeviceIndexTypeUint8Features_({
+  featuresIndexTypeUint8({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT,
       .indexTypeUint8 = VK_FALSE,
   }),
-  vkPhysicalDeviceSynchronization2Features_({
+  featuresSynchronization2({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR,
       .synchronization2 = VK_TRUE,
   }),
-  vkPhysicalDeviceTimelineSemaphoreFeatures_({
+  featuresTimelineSemaphore({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR,
       .timelineSemaphore = VK_TRUE,
   }),
-  vkPhysicalDeviceFragmentDensityMapFeatures_({
+  featuresFragmentDensityMap({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT,
       .fragmentDensityMap = VK_TRUE,
   }),
-  vkPhysicalDeviceVulkanMemoryModelFeatures_({
+  featuresVulkanMemoryModel({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES_KHR,
       .vulkanMemoryModel = VK_TRUE,
   }),
-  vkPhysicalDevice8BitStorageFeatures_({
+  features8BitStorage({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES_KHR,
       .storageBuffer8BitAccess = VK_TRUE,
       .uniformAndStorageBuffer8BitAccess = VK_FALSE,
       .storagePushConstant8 = VK_FALSE,
   }),
-  vkPhysicalDeviceUniformBufferStandardLayoutFeatures_({
+  featuresUniformBufferStandardLayout({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES_KHR,
       .uniformBufferStandardLayout = VK_TRUE,
   }),
-  vkPhysicalDeviceMultiviewPerViewViewportsFeatures_({
+  featuresMultiviewPerViewViewports({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM,
       .multiviewPerViewViewports = VK_TRUE,
   }),
@@ -138,7 +138,7 @@ void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
   context.vf_.vkEnumerateDeviceExtensionProperties(
       physicalDevice, nullptr, &numExtensions, extensionProps_.data());
   assembleFeatureChain(context.config_);
-  context.vf_.vkGetPhysicalDeviceFeatures2(physicalDevice, &vkPhysicalDeviceFeatures2_);
+  context.vf_.vkGetPhysicalDeviceFeatures2(physicalDevice, &vkPhysicalDeviceFeatures2);
 }
 
 bool VulkanFeatures::hasExtension(const char* ext) const {
@@ -164,10 +164,10 @@ Result VulkanFeatures::checkSelectedFeatures(
     missingFeatures.append("\n   " version " " #requestedFeatureStruct "." #feature);           \
   }
 
-#define ENABLE_FEATURE_1_1(availableFeatureStruct, feature)                         \
-  ENABLE_VULKAN_FEATURE(vkPhysicalDeviceFeatures2_.features,                        \
-                        availableFeatureStruct.vkPhysicalDeviceFeatures2_.features, \
-                        feature,                                                    \
+#define ENABLE_FEATURE_1_1(availableFeatureStruct, feature)                        \
+  ENABLE_VULKAN_FEATURE(vkPhysicalDeviceFeatures2.features,                        \
+                        availableFeatureStruct.vkPhysicalDeviceFeatures2.features, \
+                        feature,                                                   \
                         "1.1")
   ENABLE_FEATURE_1_1(availableFeatures, dualSrcBlend)
   ENABLE_FEATURE_1_1(availableFeatures, shaderInt16)
@@ -180,55 +180,51 @@ Result VulkanFeatures::checkSelectedFeatures(
 #define ENABLE_FEATURE_1_1_EXT(requestedFeatureStruct, availableFeatureStruct, feature) \
   ENABLE_VULKAN_FEATURE(requestedFeatureStruct, availableFeatureStruct, feature, "1.1 EXT")
   if (config_.enableDescriptorIndexing) {
-    ENABLE_FEATURE_1_1_EXT(vkPhysicalDeviceDescriptorIndexingFeatures_,
-                           availableFeatures.vkPhysicalDeviceDescriptorIndexingFeatures_,
+    ENABLE_FEATURE_1_1_EXT(featuresDescriptorIndexing,
+                           availableFeatures.featuresDescriptorIndexing,
                            shaderSampledImageArrayNonUniformIndexing)
-    ENABLE_FEATURE_1_1_EXT(vkPhysicalDeviceDescriptorIndexingFeatures_,
-                           availableFeatures.vkPhysicalDeviceDescriptorIndexingFeatures_,
+    ENABLE_FEATURE_1_1_EXT(featuresDescriptorIndexing,
+                           availableFeatures.featuresDescriptorIndexing,
                            descriptorBindingUniformBufferUpdateAfterBind)
-    ENABLE_FEATURE_1_1_EXT(vkPhysicalDeviceDescriptorIndexingFeatures_,
-                           availableFeatures.vkPhysicalDeviceDescriptorIndexingFeatures_,
+    ENABLE_FEATURE_1_1_EXT(featuresDescriptorIndexing,
+                           availableFeatures.featuresDescriptorIndexing,
                            descriptorBindingSampledImageUpdateAfterBind)
-    ENABLE_FEATURE_1_1_EXT(vkPhysicalDeviceDescriptorIndexingFeatures_,
-                           availableFeatures.vkPhysicalDeviceDescriptorIndexingFeatures_,
+    ENABLE_FEATURE_1_1_EXT(featuresDescriptorIndexing,
+                           availableFeatures.featuresDescriptorIndexing,
                            descriptorBindingStorageImageUpdateAfterBind)
-    ENABLE_FEATURE_1_1_EXT(vkPhysicalDeviceDescriptorIndexingFeatures_,
-                           availableFeatures.vkPhysicalDeviceDescriptorIndexingFeatures_,
+    ENABLE_FEATURE_1_1_EXT(featuresDescriptorIndexing,
+                           availableFeatures.featuresDescriptorIndexing,
                            descriptorBindingStorageBufferUpdateAfterBind)
-    ENABLE_FEATURE_1_1_EXT(vkPhysicalDeviceDescriptorIndexingFeatures_,
-                           availableFeatures.vkPhysicalDeviceDescriptorIndexingFeatures_,
+    ENABLE_FEATURE_1_1_EXT(featuresDescriptorIndexing,
+                           availableFeatures.featuresDescriptorIndexing,
                            descriptorBindingUpdateUnusedWhilePending)
-    ENABLE_FEATURE_1_1_EXT(vkPhysicalDeviceDescriptorIndexingFeatures_,
-                           availableFeatures.vkPhysicalDeviceDescriptorIndexingFeatures_,
+    ENABLE_FEATURE_1_1_EXT(featuresDescriptorIndexing,
+                           availableFeatures.featuresDescriptorIndexing,
                            descriptorBindingPartiallyBound)
-    ENABLE_FEATURE_1_1_EXT(vkPhysicalDeviceDescriptorIndexingFeatures_,
-                           availableFeatures.vkPhysicalDeviceDescriptorIndexingFeatures_,
+    ENABLE_FEATURE_1_1_EXT(featuresDescriptorIndexing,
+                           availableFeatures.featuresDescriptorIndexing,
                            runtimeDescriptorArray)
   }
-  ENABLE_FEATURE_1_1_EXT(vkPhysicalDevice16BitStorageFeatures_,
-                         availableFeatures.vkPhysicalDevice16BitStorageFeatures_,
-                         storageBuffer16BitAccess)
+  ENABLE_FEATURE_1_1_EXT(
+      features16BitStorage, availableFeatures.features16BitStorage, storageBuffer16BitAccess)
   if (has_VK_KHR_buffer_device_address) {
-    ENABLE_FEATURE_1_1_EXT(vkPhysicalDeviceBufferDeviceAddressFeatures_,
-                           availableFeatures.vkPhysicalDeviceBufferDeviceAddressFeatures_,
+    ENABLE_FEATURE_1_1_EXT(featuresBufferDeviceAddress,
+                           availableFeatures.featuresBufferDeviceAddress,
                            bufferDeviceAddress)
   }
-  ENABLE_FEATURE_1_1_EXT(vkPhysicalDeviceMultiviewFeatures_,
-                         availableFeatures.vkPhysicalDeviceMultiviewFeatures_,
-                         multiview)
-  ENABLE_FEATURE_1_1_EXT(vkPhysicalDeviceSamplerYcbcrConversionFeatures_,
-                         availableFeatures.vkPhysicalDeviceSamplerYcbcrConversionFeatures_,
+  ENABLE_FEATURE_1_1_EXT(featuresMultiview, availableFeatures.featuresMultiview, multiview)
+  ENABLE_FEATURE_1_1_EXT(featuresSamplerYcbcrConversion,
+                         availableFeatures.featuresSamplerYcbcrConversion,
                          samplerYcbcrConversion)
-  ENABLE_FEATURE_1_1_EXT(vkPhysicalDeviceShaderDrawParametersFeatures_,
-                         availableFeatures.vkPhysicalDeviceShaderDrawParametersFeatures_,
+  ENABLE_FEATURE_1_1_EXT(featuresShaderDrawParameters,
+                         availableFeatures.featuresShaderDrawParameters,
                          shaderDrawParameters)
 #undef ENABLE_FEATURE_1_1_EXT
 
 #define ENABLE_FEATURE_1_2_EXT(requestedFeatureStruct, availableFeatureStruct, feature) \
   ENABLE_VULKAN_FEATURE(requestedFeatureStruct, availableFeatureStruct, feature, "1.2")
-  ENABLE_FEATURE_1_2_EXT(vkPhysicalDeviceShaderFloat16Int8Features_,
-                         availableFeatures.vkPhysicalDeviceShaderFloat16Int8Features_,
-                         shaderFloat16)
+  ENABLE_FEATURE_1_2_EXT(
+      featuresShaderFloat16Int8, availableFeatures.featuresShaderFloat16Int8, shaderFloat16)
 #undef ENABLE_FEATURE_1_2_EXT
 
 #undef ENABLE_VULKAN_FEATURE
@@ -254,62 +250,62 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   // Reset all pNext pointers. We might be copying the chain from another VulkanFeatures object,
   // so we need to reset the pNext pointers to avoid dangling pointers. Some of the extensions'
   // pointers are guarded by #ifdefs below
-  vkPhysicalDeviceFeatures2_.pNext = nullptr;
-  vkPhysicalDeviceSamplerYcbcrConversionFeatures_.pNext = nullptr;
-  vkPhysicalDeviceShaderDrawParametersFeatures_.pNext = nullptr;
-  vkPhysicalDeviceMultiviewFeatures_.pNext = nullptr;
-  vkPhysicalDeviceIndexTypeUint8Features_.pNext = nullptr;
-  vkPhysicalDeviceSynchronization2Features_.pNext = nullptr;
-  vkPhysicalDeviceTimelineSemaphoreFeatures_.pNext = nullptr;
-  vkPhysicalDeviceVulkanMemoryModelFeatures_.pNext = nullptr;
-  vkPhysicalDeviceShaderFloat16Int8Features_.pNext = nullptr;
-  vkPhysicalDevice16BitStorageFeatures_.pNext = nullptr;
-  vkPhysicalDeviceBufferDeviceAddressFeatures_.pNext = nullptr;
-  vkPhysicalDeviceDescriptorIndexingFeatures_.pNext = nullptr;
-  vkPhysicalDeviceMultiviewPerViewViewportsFeatures_.pNext = nullptr;
-  vkPhysicalDeviceFragmentDensityMapFeatures_.pNext = nullptr;
-  vkPhysicalDevice8BitStorageFeatures_.pNext = nullptr;
-  vkPhysicalDeviceUniformBufferStandardLayoutFeatures_.pNext = nullptr;
+  vkPhysicalDeviceFeatures2.pNext = nullptr;
+  featuresSamplerYcbcrConversion.pNext = nullptr;
+  featuresShaderDrawParameters.pNext = nullptr;
+  featuresMultiview.pNext = nullptr;
+  featuresIndexTypeUint8.pNext = nullptr;
+  featuresSynchronization2.pNext = nullptr;
+  featuresTimelineSemaphore.pNext = nullptr;
+  featuresVulkanMemoryModel.pNext = nullptr;
+  featuresShaderFloat16Int8.pNext = nullptr;
+  features16BitStorage.pNext = nullptr;
+  featuresBufferDeviceAddress.pNext = nullptr;
+  featuresDescriptorIndexing.pNext = nullptr;
+  featuresMultiviewPerViewViewports.pNext = nullptr;
+  featuresFragmentDensityMap.pNext = nullptr;
+  features8BitStorage.pNext = nullptr;
+  featuresUniformBufferStandardLayout.pNext = nullptr;
 
   // Add the required and optional features to the VkPhysicalDeviceFetaures2_
-  ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceSamplerYcbcrConversionFeatures_);
-  ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceShaderDrawParametersFeatures_);
-  ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceMultiviewFeatures_);
+  ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresSamplerYcbcrConversion);
+  ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresShaderDrawParameters);
+  ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresMultiview);
   if (hasExtension(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)) {
-    ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceShaderFloat16Int8Features_);
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresShaderFloat16Int8);
   }
   if (hasExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
-    ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceBufferDeviceAddressFeatures_);
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresBufferDeviceAddress);
   }
   if (hasExtension(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME)) {
-    ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceVulkanMemoryModelFeatures_);
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresVulkanMemoryModel);
   }
   if (hasExtension(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
-    ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceDescriptorIndexingFeatures_);
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresDescriptorIndexing);
   }
-  ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDevice16BitStorageFeatures_);
+  ivkAddNext(&vkPhysicalDeviceFeatures2, &features16BitStorage);
 
   if (hasExtension(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)) {
-    ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceIndexTypeUint8Features_);
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresIndexTypeUint8);
   }
   if (hasExtension(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
-    ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceSynchronization2Features_);
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresSynchronization2);
   }
   if (hasExtension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) {
-    ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceTimelineSemaphoreFeatures_);
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresTimelineSemaphore);
   }
   if (hasExtension(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
-    ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceFragmentDensityMapFeatures_);
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresFragmentDensityMap);
   }
   if (hasExtension(VK_KHR_8BIT_STORAGE_EXTENSION_NAME)) {
-    ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDevice8BitStorageFeatures_);
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &features8BitStorage);
   }
   if (hasExtension(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)) {
-    ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceUniformBufferStandardLayoutFeatures_);
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresUniformBufferStandardLayout);
   }
   if (config_.enableMultiviewPerViewViewports) {
     if (hasExtension(VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME)) {
-      ivkAddNext(&vkPhysicalDeviceFeatures2_, &vkPhysicalDeviceMultiviewPerViewViewportsFeatures_);
+      ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresMultiviewPerViewViewports);
     } else {
       IGL_LOG_ERROR("VK_QCOM_multiview_per_view_viewports extension not supported");
     }
@@ -327,29 +323,25 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
     return *this;
   }
 
-  vkPhysicalDeviceFeatures2_ = other.vkPhysicalDeviceFeatures2_;
+  vkPhysicalDeviceFeatures2 = other.vkPhysicalDeviceFeatures2;
 
-  vkPhysicalDeviceSamplerYcbcrConversionFeatures_ =
-      other.vkPhysicalDeviceSamplerYcbcrConversionFeatures_;
-  vkPhysicalDeviceShaderDrawParametersFeatures_ =
-      other.vkPhysicalDeviceShaderDrawParametersFeatures_;
-  vkPhysicalDeviceMultiviewFeatures_ = other.vkPhysicalDeviceMultiviewFeatures_;
-  vkPhysicalDeviceBufferDeviceAddressFeatures_ = other.vkPhysicalDeviceBufferDeviceAddressFeatures_;
-  vkPhysicalDeviceDescriptorIndexingFeatures_ = other.vkPhysicalDeviceDescriptorIndexingFeatures_;
-  vkPhysicalDevice16BitStorageFeatures_ = other.vkPhysicalDevice16BitStorageFeatures_;
+  featuresSamplerYcbcrConversion = other.featuresSamplerYcbcrConversion;
+  featuresShaderDrawParameters = other.featuresShaderDrawParameters;
+  featuresMultiview = other.featuresMultiview;
+  featuresBufferDeviceAddress = other.featuresBufferDeviceAddress;
+  featuresDescriptorIndexing = other.featuresDescriptorIndexing;
+  features16BitStorage = other.features16BitStorage;
 
   // Vulkan 1.2
-  vkPhysicalDeviceVulkanMemoryModelFeatures_ = other.vkPhysicalDeviceVulkanMemoryModelFeatures_;
-  vkPhysicalDeviceShaderFloat16Int8Features_ = other.vkPhysicalDeviceShaderFloat16Int8Features_;
-  vkPhysicalDeviceIndexTypeUint8Features_ = other.vkPhysicalDeviceIndexTypeUint8Features_;
-  vkPhysicalDeviceSynchronization2Features_ = other.vkPhysicalDeviceSynchronization2Features_;
-  vkPhysicalDeviceTimelineSemaphoreFeatures_ = other.vkPhysicalDeviceTimelineSemaphoreFeatures_;
-  vkPhysicalDeviceFragmentDensityMapFeatures_ = other.vkPhysicalDeviceFragmentDensityMapFeatures_;
-  vkPhysicalDevice8BitStorageFeatures_ = other.vkPhysicalDevice8BitStorageFeatures_;
-  vkPhysicalDeviceUniformBufferStandardLayoutFeatures_ =
-      other.vkPhysicalDeviceUniformBufferStandardLayoutFeatures_;
-  vkPhysicalDeviceMultiviewPerViewViewportsFeatures_ =
-      other.vkPhysicalDeviceMultiviewPerViewViewportsFeatures_;
+  featuresVulkanMemoryModel = other.featuresVulkanMemoryModel;
+  featuresShaderFloat16Int8 = other.featuresShaderFloat16Int8;
+  featuresIndexTypeUint8 = other.featuresIndexTypeUint8;
+  featuresSynchronization2 = other.featuresSynchronization2;
+  featuresTimelineSemaphore = other.featuresTimelineSemaphore;
+  featuresFragmentDensityMap = other.featuresFragmentDensityMap;
+  features8BitStorage = other.features8BitStorage;
+  featuresUniformBufferStandardLayout = other.featuresUniformBufferStandardLayout;
+  featuresMultiviewPerViewViewports = other.featuresMultiviewPerViewViewports;
 
   extensions_ = other.extensions_;
   enabledExtensions_ = other.enabledExtensions_;

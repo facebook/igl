@@ -871,7 +871,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                    qcis.data(),
                                    deviceExtensions.size(),
                                    deviceExtensions.data(),
-                                   &features_.vkPhysicalDeviceFeatures2_,
+                                   &features_.vkPhysicalDeviceFeatures2,
                                    &device));
 
   // Check that device is not null before proceeding
@@ -1978,8 +1978,7 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
     return it->second;
   }
 
-  if (!IGL_DEBUG_VERIFY(
-          features_.vkPhysicalDeviceSamplerYcbcrConversionFeatures_.samplerYcbcrConversion)) {
+  if (!IGL_DEBUG_VERIFY(features_.featuresSamplerYcbcrConversion.samplerYcbcrConversion)) {
     IGL_DEBUG_ABORT("Ycbcr samplers are not supported");
     return {};
   }

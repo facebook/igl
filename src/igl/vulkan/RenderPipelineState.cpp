@@ -421,7 +421,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
 
   const auto& deviceFeatures = ctx.features();
   const VkBool32 dualSrcBlendSupported =
-      deviceFeatures.vkPhysicalDeviceFeatures2_.features.dualSrcBlend;
+      deviceFeatures.vkPhysicalDeviceFeatures2.features.dualSrcBlend;
 
   // build a new Vulkan pipeline
   VkRenderPass renderPass = ctx.getRenderPass(dynamicState.renderPassIndex_).pass;

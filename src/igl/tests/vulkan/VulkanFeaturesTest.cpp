@@ -25,7 +25,7 @@ TEST_F(VulkanFeaturesTest, Construct) {
 
   const igl::vulkan::VulkanFeatures features(config);
 
-  EXPECT_EQ(features.vkPhysicalDeviceShaderFloat16Int8Features_.pNext, nullptr);
+  EXPECT_EQ(features.featuresShaderFloat16Int8.pNext, nullptr);
 }
 
 // Copying ***************************************************************************
@@ -52,38 +52,40 @@ TEST_F(VulkanFeaturesTest, EnableDefaultFeatures) {
 
   igl::vulkan::VulkanFeatures features(config);
 
-  EXPECT_FALSE(features.vkPhysicalDeviceShaderFloat16Int8Features_.shaderFloat16);
-  EXPECT_FALSE(features.vkPhysicalDeviceShaderFloat16Int8Features_.shaderInt8);
+  EXPECT_FALSE(features.featuresShaderFloat16Int8.shaderFloat16);
+  EXPECT_FALSE(features.featuresShaderFloat16Int8.shaderInt8);
 
-  EXPECT_TRUE(features.vkPhysicalDeviceFeatures2_.features.dualSrcBlend);
-  EXPECT_TRUE(features.vkPhysicalDeviceFeatures2_.features.shaderInt16);
-  EXPECT_TRUE(features.vkPhysicalDeviceFeatures2_.features.multiDrawIndirect);
-  EXPECT_TRUE(features.vkPhysicalDeviceFeatures2_.features.drawIndirectFirstInstance);
-  EXPECT_TRUE(features.vkPhysicalDeviceFeatures2_.features.depthBiasClamp);
+  EXPECT_TRUE(features.vkPhysicalDeviceFeatures2.features.dualSrcBlend);
+  EXPECT_TRUE(features.vkPhysicalDeviceFeatures2.features.shaderInt16);
+  EXPECT_TRUE(features.vkPhysicalDeviceFeatures2.features.multiDrawIndirect);
+  EXPECT_TRUE(features.vkPhysicalDeviceFeatures2.features.drawIndirectFirstInstance);
+  EXPECT_TRUE(features.vkPhysicalDeviceFeatures2.features.depthBiasClamp);
 #ifdef IGL_PLATFORM_ANDROID
-  // fillModeNonSolid is not well supported on Android, only enable by default when it's not android
-  EXPECT_FALSE(features.vkPhysicalDeviceFeatures2_.features.fillModeNonSolid);
+  // fillModeNonSolid is not well supported on Android, only enable by default when it's not Android
+  EXPECT_FALSE(features.vkPhysicalDeviceFeatures2.features.fillModeNonSolid);
 #else
-  EXPECT_TRUE(features.vkPhysicalDeviceFeatures2_.features.fillModeNonSolid);
+  EXPECT_TRUE(features.vkPhysicalDeviceFeatures2.features.fillModeNonSolid);
 #endif
 
-  auto& descriptorIndexingFeatures = features.vkPhysicalDeviceDescriptorIndexingFeatures_;
-  ASSERT_FALSE(config.enableDescriptorIndexing);
-  EXPECT_TRUE(descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing);
-  EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingUniformBufferUpdateAfterBind);
-  EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind);
-  EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingStorageImageUpdateAfterBind);
-  EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind);
-  EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingUpdateUnusedWhilePending);
-  EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingPartiallyBound);
-  EXPECT_TRUE(descriptorIndexingFeatures.runtimeDescriptorArray);
+  {
+    const auto& dif = features.featuresDescriptorIndexing;
+    ASSERT_FALSE(config.enableDescriptorIndexing);
+    EXPECT_TRUE(dif.shaderSampledImageArrayNonUniformIndexing);
+    EXPECT_TRUE(dif.descriptorBindingUniformBufferUpdateAfterBind);
+    EXPECT_TRUE(dif.descriptorBindingSampledImageUpdateAfterBind);
+    EXPECT_TRUE(dif.descriptorBindingStorageImageUpdateAfterBind);
+    EXPECT_TRUE(dif.descriptorBindingStorageBufferUpdateAfterBind);
+    EXPECT_TRUE(dif.descriptorBindingUpdateUnusedWhilePending);
+    EXPECT_TRUE(dif.descriptorBindingPartiallyBound);
+    EXPECT_TRUE(dif.runtimeDescriptorArray);
 
-  EXPECT_TRUE(features.vkPhysicalDevice16BitStorageFeatures_.storageBuffer16BitAccess);
+    EXPECT_TRUE(features.features16BitStorage.storageBuffer16BitAccess);
 
-  EXPECT_TRUE(features.vkPhysicalDeviceBufferDeviceAddressFeatures_.bufferDeviceAddress);
-  EXPECT_TRUE(features.vkPhysicalDeviceMultiviewFeatures_.multiview);
-  EXPECT_TRUE(features.vkPhysicalDeviceSamplerYcbcrConversionFeatures_.samplerYcbcrConversion);
-  EXPECT_TRUE(features.vkPhysicalDeviceShaderDrawParametersFeatures_.shaderDrawParameters);
+    EXPECT_TRUE(features.featuresBufferDeviceAddress.bufferDeviceAddress);
+    EXPECT_TRUE(features.featuresMultiview.multiview);
+    EXPECT_TRUE(features.featuresSamplerYcbcrConversion.samplerYcbcrConversion);
+    EXPECT_TRUE(features.featuresShaderDrawParameters.shaderDrawParameters);
+  }
 }
 
 } // namespace igl::tests

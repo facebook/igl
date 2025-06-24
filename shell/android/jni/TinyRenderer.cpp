@@ -122,7 +122,7 @@ void TinyRenderer::init(AAssetManager* mgr,
     // GPUs.
     // https://vulkan.gpuinfo.org/listdevicescoverage.php?feature=dualSrcBlend&platform=android&option=not
     igl::vulkan::VulkanFeatures vulkanFeatures(config);
-    vulkanFeatures.vkPhysicalDeviceFeatures2_.features.dualSrcBlend = VK_FALSE;
+    vulkanFeatures.vkPhysicalDeviceFeatures2.features.dualSrcBlend = VK_FALSE;
 
     d = vulkan::HWDevice::create(std::move(ctx),
                                  devices[0],

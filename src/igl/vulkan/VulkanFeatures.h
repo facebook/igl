@@ -64,32 +64,27 @@ class VulkanFeatures final {
   [[nodiscard]] Result checkSelectedFeatures(
       const VulkanFeatures& availableFeatures) const noexcept;
 
-  // NOLINTBEGIN(readability-identifier-naming)
+  VkPhysicalDeviceFeatures2 vkPhysicalDeviceFeatures2{};
 
   // Vulkan 1.1
-  VkPhysicalDeviceFeatures2 vkPhysicalDeviceFeatures2_{};
-  VkPhysicalDeviceSamplerYcbcrConversionFeatures vkPhysicalDeviceSamplerYcbcrConversionFeatures_{};
-  VkPhysicalDeviceShaderDrawParametersFeatures vkPhysicalDeviceShaderDrawParametersFeatures_{};
-  VkPhysicalDeviceMultiviewFeatures vkPhysicalDeviceMultiviewFeatures_{};
+  VkPhysicalDeviceSamplerYcbcrConversionFeatures featuresSamplerYcbcrConversion{};
+  VkPhysicalDeviceShaderDrawParametersFeatures featuresShaderDrawParameters{};
+  VkPhysicalDeviceMultiviewFeatures featuresMultiview{};
 
-  VkPhysicalDeviceBufferDeviceAddressFeaturesKHR vkPhysicalDeviceBufferDeviceAddressFeatures_{};
-  VkPhysicalDeviceDescriptorIndexingFeaturesEXT vkPhysicalDeviceDescriptorIndexingFeatures_{};
-  VkPhysicalDevice16BitStorageFeatures vkPhysicalDevice16BitStorageFeatures_{};
+  VkPhysicalDeviceBufferDeviceAddressFeaturesKHR featuresBufferDeviceAddress{};
+  VkPhysicalDeviceDescriptorIndexingFeaturesEXT featuresDescriptorIndexing{};
+  VkPhysicalDevice16BitStorageFeatures features16BitStorage{};
 
   // Vulkan 1.2
-  VkPhysicalDeviceShaderFloat16Int8Features vkPhysicalDeviceShaderFloat16Int8Features_{};
-  VkPhysicalDeviceIndexTypeUint8FeaturesEXT vkPhysicalDeviceIndexTypeUint8Features_{};
-  VkPhysicalDeviceSynchronization2FeaturesKHR vkPhysicalDeviceSynchronization2Features_{};
-  VkPhysicalDeviceTimelineSemaphoreFeaturesKHR vkPhysicalDeviceTimelineSemaphoreFeatures_{};
-  VkPhysicalDeviceFragmentDensityMapFeaturesEXT vkPhysicalDeviceFragmentDensityMapFeatures_{};
-  VkPhysicalDeviceVulkanMemoryModelFeaturesKHR vkPhysicalDeviceVulkanMemoryModelFeatures_{};
-  VkPhysicalDevice8BitStorageFeaturesKHR vkPhysicalDevice8BitStorageFeatures_{};
-  VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR
-      vkPhysicalDeviceUniformBufferStandardLayoutFeatures_{};
-  VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM
-      vkPhysicalDeviceMultiviewPerViewViewportsFeatures_{};
-
-  // NOLINTEND(readability-identifier-naming)
+  VkPhysicalDeviceShaderFloat16Int8Features featuresShaderFloat16Int8{};
+  VkPhysicalDeviceIndexTypeUint8FeaturesEXT featuresIndexTypeUint8{};
+  VkPhysicalDeviceSynchronization2FeaturesKHR featuresSynchronization2{};
+  VkPhysicalDeviceTimelineSemaphoreFeaturesKHR featuresTimelineSemaphore{};
+  VkPhysicalDeviceFragmentDensityMapFeaturesEXT featuresFragmentDensityMap{};
+  VkPhysicalDeviceVulkanMemoryModelFeaturesKHR featuresVulkanMemoryModel{};
+  VkPhysicalDevice8BitStorageFeaturesKHR features8BitStorage{};
+  VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR featuresUniformBufferStandardLayout{};
+  VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM featuresMultiviewPerViewViewports{};
 
   // We need to reassemble the feature chain because of the pNext pointers
   VulkanFeatures& operator=(const VulkanFeatures& other) noexcept;

@@ -347,15 +347,14 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
     igl::vulkan::VulkanFeatures features(config);
     features.populateWithAvailablePhysicalDeviceFeatures(*ctx, (VkPhysicalDevice)devices[0].guid);
 
-    const VkPhysicalDeviceDescriptorIndexingFeaturesEXT& diFeatures =
-        features.vkPhysicalDeviceDescriptorIndexingFeatures_;
-    if (!diFeatures.shaderSampledImageArrayNonUniformIndexing ||
-        !diFeatures.descriptorBindingUniformBufferUpdateAfterBind ||
-        !diFeatures.descriptorBindingSampledImageUpdateAfterBind ||
-        !diFeatures.descriptorBindingStorageImageUpdateAfterBind ||
-        !diFeatures.descriptorBindingStorageBufferUpdateAfterBind ||
-        !diFeatures.descriptorBindingUpdateUnusedWhilePending ||
-        !diFeatures.descriptorBindingPartiallyBound || !diFeatures.runtimeDescriptorArray) {
+    const VkPhysicalDeviceDescriptorIndexingFeaturesEXT& dif = features.featuresDescriptorIndexing;
+    if (!dif.shaderSampledImageArrayNonUniformIndexing ||
+        !dif.descriptorBindingUniformBufferUpdateAfterBind ||
+        !dif.descriptorBindingSampledImageUpdateAfterBind ||
+        !dif.descriptorBindingStorageImageUpdateAfterBind ||
+        !dif.descriptorBindingStorageBufferUpdateAfterBind ||
+        !dif.descriptorBindingUpdateUnusedWhilePending || !dif.descriptorBindingPartiallyBound ||
+        !dif.runtimeDescriptorArray) {
       return;
     }
 

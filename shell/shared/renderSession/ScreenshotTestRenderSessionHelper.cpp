@@ -47,7 +47,7 @@ void SaveFrameBufferToPng(const char* absoluteFilename,
 
   imageData.data = iglu::textureloader::IData::tryCreate(std::move(buffer), numPixels, nullptr);
 
-  IGLLog(IGLLogInfo, "Writing screenshot to: %s", absoluteFilename);
+  IGLLog(IGLLogInfo, "Writing screenshot to: '%s'\n", absoluteFilename);
   platform.getImageWriter().writeImage(absoluteFilename, imageData);
 }
 

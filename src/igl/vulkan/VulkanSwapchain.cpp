@@ -72,7 +72,7 @@ VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>
 
   IGL_LOG_INFO(
       "The system could not find a native swap chain format that matched our designed swapchain "
-      "format. Defaulting to first supported format.");
+      "format. Defaulting to first supported format.\n");
   // fall back to first supported device color format. On Quest 2 it'll be VK_FORMAT_R8G8B8A8_UNORM
   return formats[0];
 }
