@@ -379,9 +379,14 @@ int main(int /*argc*/, char* /*argv*/[]) {
   createRenderPipeline();
 
   // Main loop
-  while (!glfwWindowShouldClose(window_)) {
+  while (!window_ || !glfwWindowShouldClose(window_)) {
     render(getNativeDrawable());
-    glfwPollEvents();
+    if (window_) {
+      glfwPollEvents();
+    } else {
+      // we are running headless - just break after 1 frame
+      break;
+    }
   }
 
   // destroy all the Vulkan stuff before closing the window
