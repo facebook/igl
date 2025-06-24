@@ -446,10 +446,12 @@ void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& c
     enable(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, ExtensionType::Instance);
   }
 #endif // !IGL_PLATFORM_ANDROID
+
+  has_VK_EXT_headless_surface =
+      enable(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
+
   if (config.headless) {
-    const bool enabledExtension =
-        enable(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
-    if (!enabledExtension) {
+    if (!has_VK_EXT_headless_surface) {
       IGL_LOG_ERROR("VK_EXT_headless_surface extension not supported");
     }
   }

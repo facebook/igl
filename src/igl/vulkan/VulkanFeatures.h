@@ -133,6 +133,7 @@ class VulkanFeatures final {
   // NOLINTBEGIN(readability-identifier-naming)
   bool has_VK_EXT_descriptor_indexing = false;
   bool has_VK_EXT_fragment_density_map = false;
+  bool has_VK_EXT_headless_surface = false;
   bool has_VK_EXT_index_type_uint8 = false;
   bool has_VK_EXT_queue_family_foreign = false;
   bool has_VK_KHR_8bit_storage = false;
