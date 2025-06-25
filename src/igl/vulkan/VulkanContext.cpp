@@ -447,6 +447,8 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
   createInstance(numExtraInstanceExtensions, extraInstanceExtensions);
 
   if (config_.headless) {
+    IGL_DEBUG_ASSERT(features_.has_VK_EXT_headless_surface,
+                     "VK_EXT_headless_surface extension is not supported");
     createHeadlessSurface();
   } else if (window || display) {
     createSurface(window, display);
