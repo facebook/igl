@@ -843,11 +843,10 @@ void RenderCommandEncoder::ensureVertexBuffers() {
 
   IGL_DEBUG_ASSERT(desc.numInputBindings <= IGL_ARRAY_NUM_ELEMENTS(isVertexBufferBound_));
 
-  const size_t numBindings =
-      std::min(desc.numInputBindings, IGL_ARRAY_NUM_ELEMENTS(isVertexBufferBound_));
-
-  for (size_t i = 0; i != numBindings; i++) {
-    if (!isVertexBufferBound_[i]) {
+  for (size_t i = 0; i != desc.numAttributes; i++) {
+    [[maybe_unused]] const size_t index = desc.attributes[i].bufferIndex;
+    IGL_DEBUG_ASSERT(index < IGL_ARRAY_NUM_ELEMENTS(isVertexBufferBound_));
+    if (!isVertexBufferBound_[index]) {
       // TODO: fix client apps and uncomment
       // IGL_DEBUG_ABORT(
       //                "Did you forget to call bindBuffer() for one of your vertex input
