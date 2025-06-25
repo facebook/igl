@@ -55,8 +55,8 @@ class GlfwShell {
  protected:
   ShellParams& shellParams() noexcept;
   [[nodiscard]] const ShellParams& shellParams() const noexcept;
-  GLFWwindow& window() noexcept;
-  [[nodiscard]] const GLFWwindow& window() const noexcept;
+  GLFWwindow* window() noexcept;
+  [[nodiscard]] const GLFWwindow* window() const noexcept;
   Platform& platform() noexcept;
   [[nodiscard]] const Platform& platform() const noexcept;
   [[nodiscard]] const RenderSessionWindowConfig& windowConfig() const noexcept;

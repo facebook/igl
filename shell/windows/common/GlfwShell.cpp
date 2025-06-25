@@ -46,12 +46,12 @@ const ShellParams& GlfwShell::shellParams() const noexcept {
   return shellParams_;
 }
 
-GLFWwindow& GlfwShell::window() noexcept {
-  return *window_;
+GLFWwindow* GlfwShell::window() noexcept {
+  return window_.get();
 }
 
-const GLFWwindow& GlfwShell::window() const noexcept {
-  return *window_;
+const GLFWwindow* GlfwShell::window() const noexcept {
+  return window_.get();
 }
 
 Platform& GlfwShell::platform() noexcept {

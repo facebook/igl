@@ -59,9 +59,9 @@ void OpenGlEsShell::willCreateWindow() noexcept {
 }
 
 void OpenGlEsShell::didCreateWindow() noexcept {
-  [[maybe_unused]] int result = glfwGetWindowAttrib(&window(), GLFW_CLIENT_API);
+  [[maybe_unused]] int result = glfwGetWindowAttrib(window(), GLFW_CLIENT_API);
 
-  glfwMakeContextCurrent(&window());
+  glfwMakeContextCurrent(window());
   glfwSwapInterval(1);
 
   IGL_LOG_INFO("Renderer: %s\n", (const char*)glGetString(GL_RENDERER));
@@ -90,9 +90,9 @@ std::shared_ptr<Platform> OpenGlEsShell::createPlatform() noexcept {
 #if IGL_ANGLE
   auto glesDevice = std::make_unique</*EGLDevice*/ igl::opengl::egl::Device>(
       std::make_unique<::igl::opengl::egl::Context>(glfwGetEGLDisplay(),
-                                                    glfwGetEGLContext(&window()),
-                                                    glfwGetEGLSurface(&window()),
-                                                    glfwGetEGLSurface(&window())));
+                                                    glfwGetEGLContext(window()),
+                                                    glfwGetEGLSurface(window()),
+                                                    glfwGetEGLSurface(window())));
 
   return std::make_shared<igl::shell::PlatformWin>(std::move(glesDevice));
 #endif // IGL_ANGLE
@@ -100,7 +100,7 @@ std::shared_ptr<Platform> OpenGlEsShell::createPlatform() noexcept {
 }
 
 void OpenGlEsShell::willTick() noexcept {
-  glfwMakeContextCurrent(&window());
+  glfwMakeContextCurrent(window());
 }
 
 } // namespace

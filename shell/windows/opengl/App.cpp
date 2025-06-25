@@ -90,9 +90,9 @@ void OpenGlShell::willCreateWindow() noexcept {
 }
 
 void OpenGlShell::didCreateWindow() noexcept {
-  [[maybe_unused]] int result = glfwGetWindowAttrib(&window(), GLFW_CLIENT_API);
+  [[maybe_unused]] int result = glfwGetWindowAttrib(window(), GLFW_CLIENT_API);
 
-  glfwMakeContextCurrent(&window());
+  glfwMakeContextCurrent(window());
 
 #if defined(_WIN32)
   glewExperimental = GL_TRUE;
@@ -108,8 +108,8 @@ void OpenGlShell::didCreateWindow() noexcept {
 
 std::shared_ptr<Platform> OpenGlShell::createPlatform() noexcept {
 #if defined(_WIN32)
-  auto context = std::make_unique<igl::opengl::wgl::Context>(GetDC(glfwGetWin32Window(&window())),
-                                                             glfwGetWGLContext(&window()));
+  auto context = std::make_unique<igl::opengl::wgl::Context>(GetDC(glfwGetWin32Window(window())),
+                                                             glfwGetWGLContext(window()));
   auto glDevice = std::make_unique<shell::util::WGLDevice>(std::move(context));
 
   return std::make_shared<igl::shell::PlatformWin>(std::move(glDevice));
@@ -117,8 +117,8 @@ std::shared_ptr<Platform> OpenGlShell::createPlatform() noexcept {
   auto context = std::make_unique<igl::opengl::glx::Context>(
       nullptr,
       glfwGetX11Display(),
-      (igl::opengl::glx::GLXDrawable)glfwGetX11Window(&window()),
-      (igl::opengl::glx::GLXContext)glfwGetGLXContext(&window()));
+      (igl::opengl::glx::GLXDrawable)glfwGetX11Window(window()),
+      (igl::opengl::glx::GLXContext)glfwGetGLXContext(window()));
 
   auto glDevice = std::make_unique<igl::opengl::glx::Device>(std::move(context));
 

@@ -36,16 +36,17 @@ std::shared_ptr<Platform> VulkanShell::createPlatform() noexcept {
 #if defined(_MSC_VER) && !IGL_DEBUG
   cfg.enableValidation = false;
 #endif
-  auto ctx = vulkan::HWDevice::createContext(cfg,
+  auto ctx =
+      vulkan::HWDevice::createContext(cfg,
 #if defined(_WIN32)
-                                             (void*)glfwGetWin32Window(&window())
+                                      window() ? (void*)glfwGetWin32Window(window()) : nullptr
 #else
-                                             (void*)glfwGetX11Window(&window()),
-                                             0,
-                                             nullptr,
-                                             (void*)glfwGetX11Display()
+                                      window() ? (void*)glfwGetX11Window(window()) : nullptr,
+                                      0,
+                                      nullptr,
+                                      (void*)glfwGetX11Display()
 #endif
-  );
+      );
 
   // Prioritize discrete GPUs. If not found, use any that is available.
   std::vector<HWDeviceDesc> devices =
