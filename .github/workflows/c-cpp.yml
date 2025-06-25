@@ -160,3 +160,64 @@ jobs:
             emcmake cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }}
             cd build
             cmake --build . --parallel ${{ steps.cpu-cores.outputs.count }}
+
+  cmake-test-ubuntu:
+      strategy:
+        fail-fast: false
+        matrix:
+          config:
+          - {
+              name: "Ubuntu - Clang",
+              os: ubuntu-latest,
+              build_type: "Debug",
+              cc: "clang-16",
+              cxx: "clang++-16",
+              generators: "Unix Makefiles",
+            }
+      runs-on: ${{ matrix.config.os }}
+
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            submodules: recursive
+
+        - name: Install Ubuntu packages
+          shell: bash
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y gcc-13 clang-16 xorg-dev libxinerama-dev libxcursor-dev libgles2-mesa-dev libegl1-mesa-dev libglfw3-dev libglew-dev libstdc++-12-dev extra-cmake-modules libxkbcommon-x11-dev wayland-protocols ninja-build
+            sudo apt-get install -y mesa-vulkan-drivers libvulkan1 vulkan-tools vulkan-validationlayers
+            cmake --version
+            vulkaninfo
+
+        - name: Install Vulkan SDK
+          uses: jakoch/install-vulkan-sdk-action@v1.2.5
+          with:
+            vulkan_version: 1.4.309.0
+            install_runtime: true
+            cache: true
+            stripdown: true
+
+        - name: Get the number of CPU cores
+          uses: SimenB/github-actions-cpu-cores@v2
+
+        - name: Build
+          shell: bash
+          env:
+            CC:  ${{ matrix.config.cc }}
+            CXX: ${{ matrix.config.cxx }}
+          run: |
+            cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }} -DCMAKE_BUILD_TYPE=Debug
+            cd build
+            cmake --build . --target Tiny --parallel ${{ steps.cpu-cores.outputs.count }}
+            cmake --build . --target ColorSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
+
+        - name: Run tests (shell)
+          run: |
+            ls build/shell
+            ./build/shell/ColorSession_vulkan --headless
+
+        - name: Run tests (desktop)
+          run: |
+            ls build/samples/desktop
+            #./build/samples/desktop/Tiny --headless
