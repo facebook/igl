@@ -10,10 +10,12 @@
 #include <cmath>
 #include <shell/windows/common/GlfwShell.h>
 
+#include "shell/shared/renderSession/ScreenshotTestRenderSessionHelper.h"
 #include <shell/shared/input/InputDispatcher.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
+#include <igl/Framebuffer.h>
 
 namespace igl::shell {
 namespace {
@@ -226,12 +228,21 @@ void GlfwShell::run() noexcept {
     auto surfaceTextures = createSurfaceTextures();
     IGL_DEBUG_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
 
+    std::shared_ptr<ITexture> colorTexture = surfaceTextures.color;
+
     platform_->getInputDispatcher().processEvents();
     session_->update(std::move(surfaceTextures));
     if (window_) {
       glfwPollEvents();
     } else {
       IGL_LOG_INFO("\nWe are running headless - breaking after 1 frame\n");
+      const char* screenshotFileName = session_->shellParams().screenshotFileName;
+      if (screenshotFileName && *screenshotFileName) {
+        SaveFrameBufferToPng(screenshotFileName,
+                             platform_->getDevice().createFramebuffer(
+                                 {.colorAttachments = {{.texture = colorTexture}}}, nullptr),
+                             *platform_);
+      }
       break;
     }
   }

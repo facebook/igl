@@ -31,5 +31,6 @@ struct ShellParams {
   std::optional<Color> clearColorValue = {};
   std::array<HandMesh, 2> handMeshes = {};
   std::array<HandTracking, 2> handTracking = {};
+  const char* screenshotFileName = "screenshot.png";
 };
 } // namespace igl::shell
