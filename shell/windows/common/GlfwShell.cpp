@@ -73,15 +73,15 @@ const RenderSessionConfig& GlfwShell::sessionConfig() const noexcept {
 }
 
 bool GlfwShell::createWindow() noexcept {
+  if (shellParams_.isHeadless) {
+    return true;
+  }
+
   glfwSetErrorCallback(glfwErrorHandler);
 
   if (!glfwInit()) {
     IGL_LOG_ERROR("glfwInit failed");
     return false;
-  }
-
-  if (shellParams_.isHeadless) {
-    return true;
   }
 
   glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -269,7 +269,9 @@ void GlfwShell::teardown() noexcept {
   platform_.reset();
   window_.reset();
 
-  glfwTerminate();
+  if (!shellParams_.isHeadless) {
+    glfwTerminate();
+  }
 }
 
 } // namespace igl::shell
