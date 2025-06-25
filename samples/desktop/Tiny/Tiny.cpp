@@ -118,7 +118,6 @@ void main() {
 
 using namespace igl;
 
-static GLFWwindow* window_ = nullptr;
 static int width_ = 1024;
 static int height_ = 768;
 
@@ -128,10 +127,10 @@ static RenderPassDesc renderPass_;
 static std::shared_ptr<IFramebuffer> framebuffer_;
 static std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
 
-static void initIGL(GLFWwindow** outWindow) {
+static GLFWwindow* initIGL(bool isHeadless) {
   if (!glfwInit()) {
     printf("glfwInit() failed");
-    return;
+    return nullptr;
   }
 
 #if USE_OPENGL_BACKEND
@@ -153,7 +152,8 @@ static void initIGL(GLFWwindow** outWindow) {
   const char* title = "Vulkan Triangle";
 #endif
 
-  GLFWwindow* window = glfwCreateWindow(800, 600, title, nullptr, nullptr);
+  GLFWwindow* window = isHeadless ? nullptr
+                                  : glfwCreateWindow(width_, height_, title, nullptr, nullptr);
 
   if (window) {
     glfwSetErrorCallback([](int error, const char* description) {
@@ -181,37 +181,36 @@ static void initIGL(GLFWwindow** outWindow) {
     glfwGetWindowSize(window, &width_, &height_);
   }
 
-  if (outWindow) {
-    *outWindow = window;
-  }
-
   // create a device
   {
 #if USE_OPENGL_BACKEND
 #if IGL_PLATFORM_WINDOWS
-    auto ctx = std::make_unique<igl::opengl::wgl::Context>(GetDC(glfwGetWin32Window(window_)),
-                                                           glfwGetWGLContext(window_));
+    auto ctx = std::make_unique<igl::opengl::wgl::Context>(GetDC(glfwGetWin32Window(window)),
+                                                           glfwGetWGLContext(window));
     device_ = std::make_unique<igl::opengl::wgl::Device>(std::move(ctx));
 #elif IGL_PLATFORM_LINUX
     auto ctx = std::make_unique<igl::opengl::glx::Context>(
         nullptr,
         glfwGetX11Display(),
-        (igl::opengl::glx::GLXDrawable)glfwGetX11Window(window_),
-        (igl::opengl::glx::GLXContext)glfwGetGLXContext(window_));
+        (igl::opengl::glx::GLXDrawable)glfwGetX11Window(window),
+        (igl::opengl::glx::GLXContext)glfwGetGLXContext(window));
 
     device_ = std::make_unique<igl::opengl::glx::Device>(std::move(ctx));
 #endif
 #else
     const igl::vulkan::VulkanContextConfig cfg{
         .terminateOnValidationError = true,
+        .headless = isHeadless,
     };
 #ifdef _WIN32
-    auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));
+    auto ctx =
+        vulkan::HWDevice::createContext(cfg, window ? (void*)glfwGetWin32Window(window) : nullptr);
 #elif __APPLE__
-    auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetCocoaWindow(window_));
+    auto ctx =
+        vulkan::HWDevice::createContext(cfg, window ? (void*)glfwGetCocoaWindow(window) : nullptr);
 #elif defined(__linux__)
     auto ctx = vulkan::HWDevice::createContext(cfg,
-                                               window_ ? (void*)glfwGetX11Window(window_) : nullptr,
+                                               window ? (void*)glfwGetX11Window(window) : nullptr,
                                                0,
                                                nullptr,
                                                (void*)glfwGetX11Display());
@@ -239,6 +238,8 @@ static void initIGL(GLFWwindow** outWindow) {
 
   commandQueue_ = device_->createCommandQueue({}, nullptr);
 
+  renderPass_.colorAttachments.resize(kNumColorAttachments);
+
   // first color attachment
   for (auto i = 0; i < kNumColorAttachments; ++i) {
     // Generate sparse color attachments by skipping alternate slots
@@ -252,6 +253,8 @@ static void initIGL(GLFWwindow** outWindow) {
     };
   }
   renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
+
+  return window;
 }
 
 static void createRenderPipeline() {
@@ -367,17 +370,18 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
   commandQueue_->submit(*buffer);
 }
 
-int main(int /*argc*/, char* /*argv*/[]) {
-  renderPass_.colorAttachments.resize(kNumColorAttachments);
-  initIGL(&window_);
+int main(int argc, char* argv[]) {
+  const bool isHeadless = argc > 1 && !strcmp(argv[1], "--headless");
+
+  GLFWwindow* window = initIGL(isHeadless);
 
   createFramebuffer(getNativeDrawable());
   createRenderPipeline();
 
   // Main loop
-  while (!window_ || !glfwWindowShouldClose(window_)) {
+  while (!window || !glfwWindowShouldClose(window)) {
     render(getNativeDrawable());
-    if (window_) {
+    if (window) {
       glfwPollEvents();
     } else {
       printf("We are running headless - breaking after 1 frame\n");
@@ -390,7 +394,7 @@ int main(int /*argc*/, char* /*argv*/[]) {
   framebuffer_ = nullptr;
   device_.reset(nullptr);
 
-  glfwDestroyWindow(window_);
+  glfwDestroyWindow(window);
   glfwTerminate();
 
   return 0;
