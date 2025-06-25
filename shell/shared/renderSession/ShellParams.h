@@ -32,5 +32,6 @@ struct ShellParams {
   std::array<HandMesh, 2> handMeshes = {};
   std::array<HandTracking, 2> handTracking = {};
   const char* screenshotFileName = "screenshot.png";
+  bool isHeadless = false;
 };
 } // namespace igl::shell

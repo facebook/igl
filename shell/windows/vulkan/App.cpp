@@ -32,6 +32,7 @@ void VulkanShell::willCreateWindow() noexcept {
 
 std::shared_ptr<Platform> VulkanShell::createPlatform() noexcept {
   igl::vulkan::VulkanContextConfig cfg = igl::vulkan::VulkanContextConfig();
+  cfg.headless = shellParams().isHeadless;
   cfg.requestedSwapChainTextureFormat = sessionConfig().swapchainColorTextureFormat;
 #if defined(_MSC_VER) && !IGL_DEBUG
   cfg.enableValidation = false;

@@ -8,6 +8,8 @@
 // @fb-only
 
 #include <cmath>
+#include <string.h>
+
 #include <shell/windows/common/GlfwShell.h>
 
 #include "shell/shared/renderSession/ScreenshotTestRenderSessionHelper.h"
@@ -76,6 +78,10 @@ bool GlfwShell::createWindow() noexcept {
   if (!glfwInit()) {
     IGL_LOG_ERROR("glfwInit failed");
     return false;
+  }
+
+  if (shellParams_.isHeadless) {
+    return true;
   }
 
   glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -187,6 +193,12 @@ bool GlfwShell::initialize(int argc,
                            RenderSessionWindowConfig suggestedWindowConfig,
                            const RenderSessionConfig& suggestedSessionConfig) noexcept {
   igl::shell::Platform::initializeCommandLineArgs(argc, argv);
+
+  for (int i = 1; i < argc; i++) {
+    if (!strcmp(argv[i], "--headless")) {
+      shellParams_.isHeadless = true;
+    }
+  }
 
   auto factory = igl::shell::createDefaultRenderSessionFactory();
 
