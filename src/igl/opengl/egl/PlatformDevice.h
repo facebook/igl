@@ -80,8 +80,6 @@ class PlatformDevice : public opengl::PlatformDevice {
 
  private:
   std::shared_ptr<ViewTextureTarget> drawableTexture_;
-
-  std::pair<EGLint, EGLint> getSurfaceDimensions(const Context& context, Result* outResult);
 };
 
 } // namespace egl
