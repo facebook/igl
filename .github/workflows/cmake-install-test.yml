@@ -317,7 +317,7 @@ jobs:
         shell: bash
         run: |
           cd test-project
-          CMAKE_PREFIX_PATH="${{ github.workspace }}/install" cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} .
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install" .
           cmake --build build --config ${{ matrix.config.build_type }}
 
       - name: Run Test Executable
