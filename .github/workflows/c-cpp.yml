@@ -211,11 +211,13 @@ jobs:
             cd build
             cmake --build . --target Tiny --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target ColorSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
+            cmake --build . --target BindGroupSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
 
         - name: Run tests (shell)
           run: |
             ls build/shell
-            ./build/shell/ColorSession_vulkan --headless
+            ./build/shell/ColorSession_vulkan     --headless
+            ./build/shell/BindGroupSession_vulkan --headless
 
         - name: Run tests (desktop)
           run: |
