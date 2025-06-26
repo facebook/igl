@@ -40,10 +40,10 @@ find_package(Threads REQUIRED)
 # Find dependencies based on what targets are actually available
 
 # Find fmt (commonly used by IGL)
-find_dependency(fmt QUIET)
-if(NOT fmt_FOUND)
-    message(STATUS "IGL: fmt library not found - using built-in version")
-endif()
+# find_dependency(fmt QUIET)
+# if(NOT fmt_FOUND)
+#     message(STATUS "IGL: fmt library not found - using built-in version")
+# endif()
 
 # Include the targets file first (if it exists)
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/IGLTargets.cmake")
