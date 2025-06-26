@@ -216,8 +216,8 @@ jobs:
         - name: Run tests (shell)
           run: |
             ls build/shell
-            ./build/shell/ColorSession_vulkan     --headless
-            ./build/shell/BindGroupSession_vulkan --headless
+            ./build/shell/ColorSession_vulkan     --headless --screenshot-file ColorSession.png
+            ./build/shell/BindGroupSession_vulkan --headless --screenshot-file BindGroupSession.png
 
         - name: Run tests (desktop)
           run: |
@@ -229,7 +229,8 @@ jobs:
           with:
             name: Screenshots
             path: |
-              screenshot.png
+              ColorSession.png
+              BindGroupSession.png
             if-no-files-found: error
             retention-days: 5
             overwrite: true
