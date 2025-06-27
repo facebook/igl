@@ -212,12 +212,14 @@ jobs:
             cmake --build . --target Tiny --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target ColorSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target BindGroupSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
+            cmake --build . --target TextureViewSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
 
         - name: Run tests (shell)
           run: |
             ls build/shell
-            ./build/shell/ColorSession_vulkan     --headless --screenshot-file ColorSession.png
-            ./build/shell/BindGroupSession_vulkan --headless --screenshot-file BindGroupSession.png
+            ./build/shell/ColorSession_vulkan       --headless --screenshot-file ColorSession.png
+            ./build/shell/BindGroupSession_vulkan   --headless --screenshot-file BindGroupSession.png
+            ./build/shell/TextureViewSession_vulkan --headless --screenshot-file TextureViewSession.png
 
         - name: Run tests (desktop)
           run: |
@@ -231,6 +233,7 @@ jobs:
             path: |
               ColorSession.png
               BindGroupSession.png
+              TextureViewSession.png
             if-no-files-found: error
             retention-days: 5
             overwrite: true
