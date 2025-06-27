@@ -26,7 +26,9 @@ class CommandQueue final : public ICommandQueue {
  public:
   CommandQueue(Device& device, const CommandQueueDesc& desc);
 
-  ~CommandQueue() override = default;
+  ~CommandQueue() override {
+    IGL_DEBUG_ASSERT(numBuffersLeftToSubmit_ == 0);
+  }
 
   /// @brief Create a new command buffer. Sets the internal flag that tracks an active command
   /// buffer has been created.
@@ -56,9 +58,8 @@ class CommandQueue final : public ICommandQueue {
  private:
   Device& device_;
 
-  /// @brief Flag indicating whether or not there is an active command buffer. Currently only one
-  /// command buffer can be active at a time.
-  bool isInsideFrame_ = false;
+  /// @brief Counter indicating whether or not there is an active command buffer. C
+  int numBuffersLeftToSubmit_ = 0;
 };
 
 } // namespace igl::vulkan

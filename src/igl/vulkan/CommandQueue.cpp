@@ -29,10 +29,7 @@ std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandB
                                                                   Result* /*outResult*/) {
   IGL_PROFILER_FUNCTION();
 
-  // for now, we want only 1 command buffer
-  IGL_DEBUG_ASSERT(!isInsideFrame_);
-
-  isInsideFrame_ = true;
+  ++numBuffersLeftToSubmit_;
 
   return std::make_shared<CommandBuffer>(device_.getVulkanContext(), desc);
 }
@@ -47,7 +44,7 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& cmdBuffer, bool /* endOf
 
   incrementDrawCount(cmdBuffer.getCurrentDrawCount());
 
-  IGL_DEBUG_ASSERT(isInsideFrame_);
+  --numBuffersLeftToSubmit_;
 
   auto* vkCmdBuffer =
       const_cast<CommandBuffer*>(static_cast<const vulkan::CommandBuffer*>(&cmdBuffer));
@@ -114,8 +111,6 @@ SubmitHandle CommandQueue::endCommandBuffer(VulkanContext& ctx,
   ctx.syncMarkSubmitted(cmdBuffer->lastSubmitHandle_);
   ctx.processDeferredTasks();
   ctx.stagingDevice_->mergeRegionsAndFreeBuffers();
-
-  isInsideFrame_ = false;
 
   return cmdBuffer->lastSubmitHandle_.handle();
 }
