@@ -8,7 +8,7 @@
 // @fb-only
 
 #include <cmath>
-#include <string.h>
+#include <cstring>
 
 #include <shell/windows/common/GlfwShell.h>
 
