@@ -17,24 +17,26 @@ namespace igl::shell {
 
 void BasicFramebufferSession::initialize() noexcept {
   // Create commandQueue
-  const igl::CommandQueueDesc desc{};
-  commandQueue_ = getPlatform().getDevice().createCommandQueue(desc, nullptr);
+  commandQueue_ = getPlatform().getDevice().createCommandQueue({}, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 
   // Initialize render pass
-  renderPass_.colorAttachments.resize(1);
-  renderPass_.colorAttachments[0].loadAction = igl::LoadAction::Clear;
-  renderPass_.colorAttachments[0].storeAction = igl::StoreAction::Store;
-  renderPass_.colorAttachments[0].clearColor = getPreferredClearColor();
+  renderPass_.colorAttachments = {{
+      .loadAction = igl::LoadAction::Clear,
+      .storeAction = igl::StoreAction::Store,
+      .clearColor = getPreferredClearColor(),
+  }};
 }
 
 void BasicFramebufferSession::update(SurfaceTextures surfaceTextures) noexcept {
   Result ret;
   // Create/update framebuffer
   if (framebuffer_ == nullptr) {
-    FramebufferDesc framebufferDesc;
-    framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
-    framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
+    framebuffer_ = getPlatform().getDevice().createFramebuffer(
+        {
+            .colorAttachments = {{.texture = surfaceTextures.color}},
+        },
+        &ret);
     IGL_DEBUG_ASSERT(ret.isOk());
     IGL_DEBUG_ASSERT(framebuffer_ != nullptr);
   } else {
@@ -42,8 +44,7 @@ void BasicFramebufferSession::update(SurfaceTextures surfaceTextures) noexcept {
   }
 
   // Create/submit command buffer
-  const igl::CommandBufferDesc cbDesc;
-  auto buffer = commandQueue_->createCommandBuffer(cbDesc, &ret);
+  auto buffer = commandQueue_->createCommandBuffer({}, &ret);
   IGL_DEBUG_ASSERT(buffer != nullptr);
   IGL_DEBUG_ASSERT(ret.isOk());
   auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
