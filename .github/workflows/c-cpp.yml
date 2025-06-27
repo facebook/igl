@@ -220,6 +220,7 @@ jobs:
             cmake --build . --target MRTSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target Textured3DCubeSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target TextureViewSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
+            cmake --build . --target TinyMeshSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target TQSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target YUVColorSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
 
@@ -236,6 +237,7 @@ jobs:
             ./build/shell/MRTSession_vulkan              --headless --screenshot-file MRTSession.png
             ./build/shell/Textured3DCubeSession_vulkan   --headless --screenshot-file Textured3DCubeSession.png
             ./build/shell/TextureViewSession_vulkan      --headless --screenshot-file TextureViewSession.png
+            ./build/shell/TinyMeshSession_vulkan         --headless --screenshot-file TinyMeshSession.png
             ./build/shell/TQSession_vulkan               --headless --screenshot-file TQSession.png
             ./build/shell/YUVColorSession_vulkan         --headless --screenshot-file YUVColorSession.png
 
@@ -259,6 +261,7 @@ jobs:
               MRTSession.png
               Textured3DCubeSession.png
               TextureViewSession.png
+              TinyMeshSession.png
               TQSession.png
               YUVColorSession.png
             if-no-files-found: error
