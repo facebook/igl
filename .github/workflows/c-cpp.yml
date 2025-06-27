@@ -220,6 +220,7 @@ jobs:
             cmake --build . --target MRTSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target Textured3DCubeSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target TextureViewSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
+            cmake --build . --target TQSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
 
         - name: Run tests (shell)
           run: |
@@ -234,6 +235,7 @@ jobs:
             ./build/shell/MRTSession_vulkan              --headless --screenshot-file MRTSession.png
             ./build/shell/Textured3DCubeSession_vulkan   --headless --screenshot-file Textured3DCubeSession.png
             ./build/shell/TextureViewSession_vulkan      --headless --screenshot-file TextureViewSession.png
+            ./build/shell/TQSession_vulkan               --headless --screenshot-file TQSession.png
 
         - name: Run tests (desktop)
           run: |
@@ -255,6 +257,7 @@ jobs:
               MRTSession.png
               Textured3DCubeSession.png
               TextureViewSession.png
+              TQSession.png
             if-no-files-found: error
             retention-days: 5
             overwrite: true
