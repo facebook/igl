@@ -228,20 +228,20 @@ jobs:
         - name: Run tests (shell)
           run: |
             ls build/shell
-            ./build/shell/BasicFramebufferSession_vulkan  --headless --screenshot-file BasicFramebufferSession.png
-            ./build/shell/BindGroupSession_vulkan         --headless --screenshot-file BindGroupSession.png
-            ./build/shell/ColorSession_vulkan             --headless --screenshot-file ColorSession.png
-            ./build/shell/DrawInstancedSession_vulkan     --headless --screenshot-file DrawInstancedSession.png
-            ./build/shell/GPUStressSession_vulkan         --headless --screenshot-file GPUStressSession.png
-            ./build/shell/HelloWorldSession_vulkan        --headless --screenshot-file HelloWorldSession.png
-            ./build/shell/ImguiSession_vulkan             --headless --screenshot-file ImguiSession.png
-            ./build/shell/MRTSession_vulkan               --headless --screenshot-file MRTSession.png
-            ./build/shell/Textured3DCubeSession_vulkan    --headless --screenshot-file Textured3DCubeSession.png
-            ./build/shell/TextureViewSession_vulkan       --headless --screenshot-file TextureViewSession.png
-            ./build/shell/TinyMeshBindGroupSession_vulkan --headless --screenshot-file TinyMeshBindGroupSession.png
-            ./build/shell/TinyMeshSession_vulkan          --headless --screenshot-file TinyMeshSession.png
-            ./build/shell/TQSession_vulkan                --headless --screenshot-file TQSession.png
-            ./build/shell/YUVColorSession_vulkan          --headless --screenshot-file YUVColorSession.png
+            ./build/shell/BasicFramebufferSession_vulkan  --headless --viewport-size 1600x900 --screenshot-file BasicFramebufferSession.png
+            ./build/shell/BindGroupSession_vulkan         --headless --viewport-size 1600x900 --screenshot-file BindGroupSession.png
+            ./build/shell/ColorSession_vulkan             --headless --viewport-size 1600x900 --screenshot-file ColorSession.png
+            ./build/shell/DrawInstancedSession_vulkan     --headless --viewport-size 1600x900 --screenshot-file DrawInstancedSession.png
+            ./build/shell/GPUStressSession_vulkan         --headless --viewport-size 1600x900 --screenshot-file GPUStressSession.png
+            ./build/shell/HelloWorldSession_vulkan        --headless --viewport-size 1600x900 --screenshot-file HelloWorldSession.png
+            ./build/shell/ImguiSession_vulkan             --headless --viewport-size 1600x900 --screenshot-file ImguiSession.png
+            ./build/shell/MRTSession_vulkan               --headless --viewport-size 1600x900 --screenshot-file MRTSession.png
+            ./build/shell/Textured3DCubeSession_vulkan    --headless --viewport-size 1600x900 --screenshot-file Textured3DCubeSession.png
+            ./build/shell/TextureViewSession_vulkan       --headless --viewport-size 1600x900 --screenshot-file TextureViewSession.png
+            ./build/shell/TinyMeshBindGroupSession_vulkan --headless --viewport-size 1600x900 --screenshot-file TinyMeshBindGroupSession.png
+            ./build/shell/TinyMeshSession_vulkan          --headless --viewport-size 1600x900 --screenshot-file TinyMeshSession.png
+            ./build/shell/TQSession_vulkan                --headless --viewport-size 1600x900 --screenshot-file TQSession.png
+            ./build/shell/YUVColorSession_vulkan          --headless --viewport-size 1600x900 --screenshot-file YUVColorSession.png
 
         - name: Run tests (desktop)
           run: |
