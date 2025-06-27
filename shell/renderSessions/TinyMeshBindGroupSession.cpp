@@ -241,7 +241,7 @@ layout (binding = 1) uniform sampler2D uTex1;
 void main() {
   vec4 t0 = texture(uTex0, 2.0 * uv);
   vec4 t1 = texture(uTex1,  uv);
-  out_FragColor = vec4(color * (t0.rgb + t1.rgb), 1.0);
+  out_FragColor = vec4(2.0 * color * (t0.rgb * t1.rgb), 1.0);
 };
 )";
 }
@@ -456,7 +456,7 @@ void TinyMeshBindGroupSession::createRenderPipeline() {
     path dir = current_path();
     // find IGLU somewhere above our current directory
     // @fb-only
-    const char* contentFolder = "third-party/content/src/";
+    const char* contentFolder = "shell/resources/";
     // @fb-only
     while (dir != current_path().root_path() && !exists(dir / path(contentFolder))) {
       dir = dir.parent_path();
@@ -464,21 +464,18 @@ void TinyMeshBindGroupSession::createRenderPipeline() {
     int32_t texWidth = 0;
     int32_t texHeight = 0;
     int32_t channels = 0;
-    uint8_t* pixels = stbi_load(
-        (dir / path(contentFolder) / path("bistro/BuildingTextures/wood_polished_01_diff.png"))
-            .string()
-            .c_str(),
-        &texWidth,
-        &texHeight,
-        &channels,
-        4);
-    IGL_DEBUG_ASSERT(pixels,
-                     "Cannot load textures. Run `deploy_content.py` before running this app.");
-    const TextureDesc desc2D = TextureDesc::new2D(igl::TextureFormat::BGRA_SRGB,
+    uint8_t* pixels =
+        stbi_load((dir / path(contentFolder) / path("images/marble.png")).string().c_str(),
+                  &texWidth,
+                  &texHeight,
+                  &channels,
+                  4);
+    IGL_DEBUG_ASSERT(pixels, "Cannot load texture.");
+    const TextureDesc desc2D = TextureDesc::new2D(igl::TextureFormat::RGBA_SRGB,
                                                   texWidth,
                                                   texHeight,
                                                   TextureDesc::TextureUsageBits::Sampled,
-                                                  "wood_polished_01_diff.png");
+                                                  "marble.png");
     texture1_ = device_->createTexture(desc2D, nullptr);
     texture1_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels);
     stbi_image_free(pixels);
