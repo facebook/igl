@@ -215,6 +215,7 @@ jobs:
             cmake --build . --target ColorSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target DrawInstancedSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target GPUStressSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
+            cmake --build . --target HelloWorldSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target ImguiSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target MRTSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target Textured3DCubeSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
@@ -228,6 +229,7 @@ jobs:
             ./build/shell/ColorSession_vulkan            --headless --screenshot-file ColorSession.png
             ./build/shell/DrawInstancedSession_vulkan    --headless --screenshot-file DrawInstancedSession.png
             ./build/shell/GPUStressSession_vulkan        --headless --screenshot-file GPUStressSession.png
+            ./build/shell/HelloWorldSession_vulkan       --headless --screenshot-file HelloWorldSession.png
             ./build/shell/ImguiSession_vulkan            --headless --screenshot-file ImguiSession.png
             ./build/shell/MRTSession_vulkan              --headless --screenshot-file MRTSession.png
             ./build/shell/Textured3DCubeSession_vulkan   --headless --screenshot-file Textured3DCubeSession.png
@@ -248,6 +250,7 @@ jobs:
               ColorSession.png
               DrawInstancedSession.png
               GPUStressSession.png
+              HelloWorldSession.png
               ImguiSession.png
               MRTSession.png
               Textured3DCubeSession.png
