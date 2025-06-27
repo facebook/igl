@@ -213,6 +213,7 @@ jobs:
             cmake --build . --target BindGroupSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target ColorSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target DrawInstancedSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
+            cmake --build . --target GPUStressSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target ImguiSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target Textured3DCubeSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target TextureViewSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
@@ -223,6 +224,7 @@ jobs:
             ./build/shell/BindGroupSession_vulkan      --headless --screenshot-file BindGroupSession.png
             ./build/shell/ColorSession_vulkan          --headless --screenshot-file ColorSession.png
             ./build/shell/DrawInstancedSession_vulkan  --headless --screenshot-file DrawInstancedSession.png
+            ./build/shell/GPUStressSession_vulkan      --headless --screenshot-file GPUStressSession.png
             ./build/shell/ImguiSession_vulkan          --headless --screenshot-file ImguiSession.png
             ./build/shell/Textured3DCubeSession_vulkan --headless --screenshot-file Textured3DCubeSession.png
             ./build/shell/TextureViewSession_vulkan    --headless --screenshot-file TextureViewSession.png
@@ -240,6 +242,7 @@ jobs:
               BindGroupSession.png
               ColorSession.png
               DrawInstancedSession.png
+              GPUStressSession.png
               ImguiSession.png
               Textured3DCubeSession.png
               TextureViewSession.png
