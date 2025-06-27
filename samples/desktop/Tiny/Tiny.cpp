@@ -118,14 +118,14 @@ void main() {
 
 using namespace igl;
 
-static int width_ = 1024;
-static int height_ = 768;
+static int width = 1024;
+static int height = 768;
 
-static std::unique_ptr<IDevice> device_;
-static std::shared_ptr<ICommandQueue> commandQueue_;
-static RenderPassDesc renderPass_;
-static std::shared_ptr<IFramebuffer> framebuffer_;
-static std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
+static std::unique_ptr<IDevice> device;
+static std::shared_ptr<ICommandQueue> commandQueue;
+static RenderPassDesc renderPass;
+static std::shared_ptr<IFramebuffer> framebuffer;
+static std::shared_ptr<IRenderPipelineState> renderPipelineStateTriangle;
 
 static GLFWwindow* initIGL(bool isHeadless) {
   if (!glfwInit()) {
@@ -153,7 +153,7 @@ static GLFWwindow* initIGL(bool isHeadless) {
 #endif
 
   GLFWwindow* window = isHeadless ? nullptr
-                                  : glfwCreateWindow(width_, height_, title, nullptr, nullptr);
+                                  : glfwCreateWindow(width, height, title, nullptr, nullptr);
 
   if (window) {
     glfwSetErrorCallback([](int error, const char* description) {
@@ -169,16 +169,16 @@ static GLFWwindow* initIGL(bool isHeadless) {
     // @lint-ignore CLANGTIDY
     glfwSetWindowSizeCallback(window, [](GLFWwindow* /*window*/, int width, int height) {
       printf("Window resized! width=%d, height=%d\n", width, height);
-      width_ = width;
-      height_ = height;
+      width = width;
+      height = height;
 #if !USE_OPENGL_BACKEND
-      auto* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
+      auto* vulkanDevice = static_cast<vulkan::Device*>(device.get());
       auto& ctx = vulkanDevice->getVulkanContext();
-      ctx.initSwapchain(width_, height_);
+      ctx.initSwapchain(width, height);
 #endif
     });
 
-    glfwGetWindowSize(window, &width_, &height_);
+    glfwGetWindowSize(window, &width, &height);
   }
 
   // create a device
@@ -230,15 +230,15 @@ static GLFWwindow* initIGL(bool isHeadless) {
           *ctx, HWDeviceQueryDesc(HWDeviceType::SoftwareGpu), nullptr);
     }
 
-    device_ =
-        vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
+    device =
+        vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width, (uint32_t)height);
 #endif
-    IGL_DEBUG_ASSERT(device_);
+    IGL_DEBUG_ASSERT(device);
   }
 
-  commandQueue_ = device_->createCommandQueue({}, nullptr);
+  commandQueue = device->createCommandQueue({}, nullptr);
 
-  renderPass_.colorAttachments.resize(kNumColorAttachments);
+  renderPass.colorAttachments.resize(kNumColorAttachments);
 
   // first color attachment
   for (auto i = 0; i < kNumColorAttachments; ++i) {
@@ -246,23 +246,23 @@ static GLFWwindow* initIGL(bool isHeadless) {
     if (i & 0x1) {
       continue;
     }
-    renderPass_.colorAttachments[i] = {
+    renderPass.colorAttachments[i] = {
         .loadAction = LoadAction::Clear,
         .storeAction = StoreAction::Store,
         .clearColor = {1.0f, 1.0f, 1.0f, 1.0f},
     };
   }
-  renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
+  renderPass.depthAttachment.loadAction = LoadAction::DontCare;
 
   return window;
 }
 
 static void createRenderPipeline() {
-  if (renderPipelineState_Triangle_) {
+  if (renderPipelineStateTriangle) {
     return;
   }
 
-  IGL_DEBUG_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer);
 
   RenderPipelineDesc desc;
 
@@ -270,14 +270,14 @@ static void createRenderPipeline() {
 
   for (auto i = 0; i < kNumColorAttachments; ++i) {
     // @fb-only
-    if (framebuffer_->getColorAttachment(i)) {
+    if (framebuffer->getColorAttachment(i)) {
       desc.targetDesc.colorAttachments[i].textureFormat =
-          framebuffer_->getColorAttachment(i)->getFormat();
+          framebuffer->getColorAttachment(i)->getFormat();
     }
   }
 
-  if (framebuffer_->getDepthAttachment()) {
-    desc.targetDesc.depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat();
+  if (framebuffer->getDepthAttachment()) {
+    desc.targetDesc.depthAttachmentFormat = framebuffer->getDepthAttachment()->getFormat();
   }
 
 #if USE_OPENGL_BACKEND
@@ -285,9 +285,9 @@ static void createRenderPipeline() {
 #endif
 
   desc.shaderStages = ShaderStagesCreator::fromModuleStringInput(
-      *device_, codeVS.c_str(), "main", "", codeFS, "main", "", nullptr);
-  renderPipelineState_Triangle_ = device_->createRenderPipeline(desc, nullptr);
-  IGL_DEBUG_ASSERT(renderPipelineState_Triangle_);
+      *device, codeVS.c_str(), "main", "", codeFS, "main", "", nullptr);
+  renderPipelineStateTriangle = device->createRenderPipeline(desc, nullptr);
+  IGL_DEBUG_ASSERT(renderPipelineStateTriangle);
 }
 
 static std::shared_ptr<ITexture> getNativeDrawable() {
@@ -304,7 +304,7 @@ static std::shared_ptr<ITexture> getNativeDrawable() {
   drawable = platformDevice->createTextureFromNativeDrawable(width_, height_, &ret);
 #endif
 #else
-  const auto& platformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
+  const auto& platformDevice = device->getPlatformDevice<igl::vulkan::PlatformDevice>();
   IGL_DEBUG_ASSERT(platformDevice != nullptr);
   drawable = platformDevice->createTextureFromNativeDrawable(&ret);
 #endif
@@ -328,10 +328,10 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
         TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled,
         IGL_FORMAT("{}C{}", framebufferDesc.debugName.c_str(), i - 1).c_str());
 
-    framebufferDesc.colorAttachments[i].texture = device_->createTexture(desc, nullptr);
+    framebufferDesc.colorAttachments[i].texture = device->createTexture(desc, nullptr);
   }
-  framebuffer_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_DEBUG_ASSERT(framebuffer_);
+  framebuffer = device->createFramebuffer(framebufferDesc, nullptr);
+  IGL_DEBUG_ASSERT(framebuffer);
 }
 
 static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
@@ -339,25 +339,24 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
     return;
   }
 
-  const auto size = framebuffer_->getColorAttachment(0)->getSize();
-  if (size.width != width_ || size.height != height_) {
+  const auto size = framebuffer->getColorAttachment(0)->getSize();
+  if (size.width != width || size.height != height) {
     createFramebuffer(nativeDrawable);
   } else {
-    framebuffer_->updateDrawable(nativeDrawable);
+    framebuffer->updateDrawable(nativeDrawable);
   }
 
   // Command buffers (1-N per thread): create, submit and forget
   const CommandBufferDesc cbDesc;
-  const std::shared_ptr<ICommandBuffer> buffer =
-      commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  const std::shared_ptr<ICommandBuffer> buffer = commandQueue->createCommandBuffer(cbDesc, nullptr);
 
-  const igl::Viewport viewport = {0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f};
-  const igl::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
+  const igl::Viewport viewport = {0.0f, 0.0f, (float)width, (float)height, 0.0f, +1.0f};
+  const igl::ScissorRect scissor = {0, 0, (uint32_t)width, (uint32_t)height};
 
   // This will clear the framebuffer
-  auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+  auto commands = buffer->createRenderCommandEncoder(renderPass, framebuffer);
 
-  commands->bindRenderPipelineState(renderPipelineState_Triangle_);
+  commands->bindRenderPipelineState(renderPipelineStateTriangle);
   commands->bindViewport(viewport);
   commands->bindScissorRect(scissor);
   commands->pushDebugGroupLabel("Render Triangle", igl::Color(1, 0, 0));
@@ -367,11 +366,11 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
 
   buffer->present(nativeDrawable);
 
-  commandQueue_->submit(*buffer);
+  commandQueue->submit(*buffer);
 }
 
 int main(int argc, char* argv[]) {
-  const bool isHeadless = argc > 1 && !strcmp(argv[1], "--headless");
+  const bool isHeadless = argc > 1 && (strcmp(argv[1], "--headless") == 0);
 
   GLFWwindow* window = initIGL(isHeadless);
 
@@ -390,9 +389,9 @@ int main(int argc, char* argv[]) {
   }
 
   // destroy all the Vulkan stuff before closing the window
-  renderPipelineState_Triangle_ = nullptr;
-  framebuffer_ = nullptr;
-  device_.reset(nullptr);
+  renderPipelineStateTriangle = nullptr;
+  framebuffer = nullptr;
+  device.reset(nullptr);
 
   glfwDestroyWindow(window);
   glfwTerminate();
