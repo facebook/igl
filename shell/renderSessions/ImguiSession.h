@@ -24,9 +24,9 @@ class ImguiSession : public RenderSession {
   void update(SurfaceTextures surfaceTextures) noexcept override;
 
  private:
-  std::shared_ptr<ICommandQueue> _commandQueue;
-  std::shared_ptr<IFramebuffer> _outputFramebuffer;
-  std::unique_ptr<iglu::imgui::Session> _imguiSession;
+  std::shared_ptr<ICommandQueue> commandQueue_;
+  std::shared_ptr<IFramebuffer> outputFramebuffer_;
+  std::unique_ptr<iglu::imgui::Session> imguiSession_;
 };
 
 } // namespace igl::shell

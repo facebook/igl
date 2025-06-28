@@ -17,39 +17,40 @@
 namespace igl::shell {
 
 void ImguiSession::initialize() noexcept {
-  const igl::CommandQueueDesc desc{};
-  _commandQueue = getPlatform().getDevice().createCommandQueue(desc, nullptr);
+  commandQueue_ = getPlatform().getDevice().createCommandQueue({}, nullptr);
 
-  { // Create the ImGui session
-    _imguiSession = std::make_unique<iglu::imgui::Session>(getPlatform().getDevice(),
-                                                           getPlatform().getInputDispatcher());
-  }
+  // Create the ImGui session
+  imguiSession_ = std::make_unique<iglu::imgui::Session>(getPlatform().getDevice(),
+                                                         getPlatform().getInputDispatcher());
 }
 
 void ImguiSession::update(SurfaceTextures surfaceTextures) noexcept {
   const igl::DeviceScope deviceScope(getPlatform().getDevice());
 
-  auto cmdBuffer = _commandQueue->createCommandBuffer(CommandBufferDesc(), nullptr);
+  auto cmdBuffer = commandQueue_->createCommandBuffer({}, nullptr);
 
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
-  if (_outputFramebuffer) {
-    _outputFramebuffer->updateDrawable(surfaceTextures.color);
+  const FramebufferDesc framebufferDesc = {
+      .colorAttachments = {{.texture = surfaceTextures.color}},
+  };
+  if (outputFramebuffer_) {
+    outputFramebuffer_->updateDrawable(surfaceTextures.color);
   } else {
-    _outputFramebuffer = getPlatform().getDevice().createFramebuffer(framebufferDesc, nullptr);
+    outputFramebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, nullptr);
   }
 
-  RenderPassDesc renderPassDesc;
-  renderPassDesc.colorAttachments.resize(1);
-  renderPassDesc.colorAttachments[0].loadAction = igl::LoadAction::Clear;
-  renderPassDesc.colorAttachments[0].storeAction = igl::StoreAction::Store;
-  renderPassDesc.colorAttachments[0].clearColor = getPreferredClearColor();
-  auto encoder = cmdBuffer->createRenderCommandEncoder(renderPassDesc, _outputFramebuffer);
+  const RenderPassDesc renderPassDesc = {
+      .colorAttachments = {{
+          .loadAction = igl::LoadAction::Clear,
+          .storeAction = igl::StoreAction::Store,
+          .clearColor = getPreferredClearColor(),
+      }},
+  };
+  auto encoder = cmdBuffer->createRenderCommandEncoder(renderPassDesc, outputFramebuffer_);
 
   { // Draw using ImGui every frame
-    _imguiSession->beginFrame(framebufferDesc, getPlatform().getDisplayContext().pixelsPerPoint);
+    imguiSession_->beginFrame(framebufferDesc, getPlatform().getDisplayContext().pixelsPerPoint);
     ImGui::ShowDemoWindow();
-    _imguiSession->endFrame(getPlatform().getDevice(), *encoder);
+    imguiSession_->endFrame(getPlatform().getDevice(), *encoder);
   }
 
   encoder->endEncoding();
@@ -57,7 +58,7 @@ void ImguiSession::update(SurfaceTextures surfaceTextures) noexcept {
     cmdBuffer->present(surfaceTextures.color);
   }
 
-  _commandQueue->submit(*cmdBuffer);
+  commandQueue_->submit(*cmdBuffer);
 }
 
 } // namespace igl::shell
