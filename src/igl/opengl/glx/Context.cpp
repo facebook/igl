@@ -190,7 +190,7 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
                  Display* display,
                  GLXDrawable windowHandle,
                  GLXContext contextHandle) :
-  contextOwned_(false),
+
   module_(std::move(module)),
   display_(display),
   windowHandle_(windowHandle),
