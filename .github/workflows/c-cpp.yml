@@ -220,6 +220,7 @@ jobs:
             cmake --build . --target MRTSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target Textured3DCubeSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target TextureViewSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
+            cmake --build . --target TinyMeshBindGroupSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target TinyMeshSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target TQSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target YUVColorSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
@@ -227,19 +228,20 @@ jobs:
         - name: Run tests (shell)
           run: |
             ls build/shell
-            ./build/shell/BasicFramebufferSession_vulkan --headless --screenshot-file BasicFramebufferSession.png
-            ./build/shell/BindGroupSession_vulkan        --headless --screenshot-file BindGroupSession.png
-            ./build/shell/ColorSession_vulkan            --headless --screenshot-file ColorSession.png
-            ./build/shell/DrawInstancedSession_vulkan    --headless --screenshot-file DrawInstancedSession.png
-            ./build/shell/GPUStressSession_vulkan        --headless --screenshot-file GPUStressSession.png
-            ./build/shell/HelloWorldSession_vulkan       --headless --screenshot-file HelloWorldSession.png
-            ./build/shell/ImguiSession_vulkan            --headless --screenshot-file ImguiSession.png
-            ./build/shell/MRTSession_vulkan              --headless --screenshot-file MRTSession.png
-            ./build/shell/Textured3DCubeSession_vulkan   --headless --screenshot-file Textured3DCubeSession.png
-            ./build/shell/TextureViewSession_vulkan      --headless --screenshot-file TextureViewSession.png
-            ./build/shell/TinyMeshSession_vulkan         --headless --screenshot-file TinyMeshSession.png
-            ./build/shell/TQSession_vulkan               --headless --screenshot-file TQSession.png
-            ./build/shell/YUVColorSession_vulkan         --headless --screenshot-file YUVColorSession.png
+            ./build/shell/BasicFramebufferSession_vulkan  --headless --screenshot-file BasicFramebufferSession.png
+            ./build/shell/BindGroupSession_vulkan         --headless --screenshot-file BindGroupSession.png
+            ./build/shell/ColorSession_vulkan             --headless --screenshot-file ColorSession.png
+            ./build/shell/DrawInstancedSession_vulkan     --headless --screenshot-file DrawInstancedSession.png
+            ./build/shell/GPUStressSession_vulkan         --headless --screenshot-file GPUStressSession.png
+            ./build/shell/HelloWorldSession_vulkan        --headless --screenshot-file HelloWorldSession.png
+            ./build/shell/ImguiSession_vulkan             --headless --screenshot-file ImguiSession.png
+            ./build/shell/MRTSession_vulkan               --headless --screenshot-file MRTSession.png
+            ./build/shell/Textured3DCubeSession_vulkan    --headless --screenshot-file Textured3DCubeSession.png
+            ./build/shell/TextureViewSession_vulkan       --headless --screenshot-file TextureViewSession.png
+            ./build/shell/TinyMeshBindGroupSession_vulkan --headless --screenshot-file TinyMeshBindGroupSession.png
+            ./build/shell/TinyMeshSession_vulkan          --headless --screenshot-file TinyMeshSession.png
+            ./build/shell/TQSession_vulkan                --headless --screenshot-file TQSession.png
+            ./build/shell/YUVColorSession_vulkan          --headless --screenshot-file YUVColorSession.png
 
         - name: Run tests (desktop)
           run: |
@@ -261,6 +263,7 @@ jobs:
               MRTSession.png
               Textured3DCubeSession.png
               TextureViewSession.png
+              TinyMeshBindGroupSession.png
               TinyMeshSession.png
               TQSession.png
               YUVColorSession.png
