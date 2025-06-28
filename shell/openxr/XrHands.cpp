@@ -105,7 +105,7 @@ bool XrHands::initialize() noexcept {
       .handJointSet = XR_HAND_JOINT_SET_DEFAULT_EXT,
   };
 
-  XrResult result;
+  XrResult result(XR_SUCCESS);
   XR_CHECK(result = xrCreateHandTrackerEXT_(session_, &createInfo, &leftHandTracker_));
   if (result != XR_SUCCESS) {
     IGL_LOG_ERROR("xrCreateHandTrackerEXT (left hand) failed.\n");
@@ -127,7 +127,7 @@ void XrHands::updateMeshes(std::array<HandMesh, 2>& handMeshes) noexcept {
     return;
   }
 
-  XrResult result;
+  XrResult result(XR_SUCCESS);
   XrHandTrackerEXT trackers[] = {leftHandTracker_, rightHandTracker_};
   for (uint8_t i = 0; i < 2; ++i) {
     XrHandTrackingMeshFB mesh{XR_TYPE_HAND_TRACKING_MESH_FB};
@@ -194,7 +194,7 @@ void XrHands::updateMeshes(std::array<HandMesh, 2>& handMeshes) noexcept {
 
 void XrHands::updateTracking(XrSpace currentSpace,
                              std::array<HandTracking, 2>& handTracking) noexcept {
-  XrResult result;
+  XrResult result(XR_SUCCESS);
   XrHandTrackerEXT trackers[] = {leftHandTracker_, rightHandTracker_};
   for (uint8_t i = 0; i < 2; ++i) {
     XrHandJointLocationEXT jointLocations[XR_HAND_JOINT_COUNT_EXT];
