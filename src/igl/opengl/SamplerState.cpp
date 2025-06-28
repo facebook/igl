@@ -163,29 +163,26 @@ SamplerMinMagFilter SamplerState::convertGLMagFilter(GLint glMagFilter) {
 }
 
 SamplerMinMagFilter SamplerState::convertGLMinFilter(GLint glMinFilter) {
-  SamplerMinMagFilter minFilter;
-
   switch (glMinFilter) {
   case GL_NEAREST:
   case GL_NEAREST_MIPMAP_NEAREST:
   case GL_NEAREST_MIPMAP_LINEAR:
-    minFilter = SamplerMinMagFilter::Nearest;
+    return SamplerMinMagFilter::Nearest;
     break;
 
   case GL_LINEAR:
   case GL_LINEAR_MIPMAP_NEAREST:
   case GL_LINEAR_MIPMAP_LINEAR:
-    minFilter = SamplerMinMagFilter::Linear;
+    return SamplerMinMagFilter::Linear;
     break;
 
   default:
 #ifndef GTEST
     IGL_DEBUG_ASSERT_NOT_REACHED();
 #endif
-    minFilter = SamplerMinMagFilter::Nearest;
   }
 
-  return minFilter;
+  return SamplerMinMagFilter::Nearest;
 }
 
 SamplerMipFilter SamplerState::convertGLMipFilter(GLint glMinFilter) {
