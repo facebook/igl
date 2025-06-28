@@ -203,6 +203,19 @@ bool GlfwShell::initialize(int argc,
       } else {
         IGL_LOG_ERROR("Specify a file name for `--screenshot-file <filename>`\n");
       }
+    } else if (!strcmp(argv[i], "--viewport-size")) {
+      unsigned int w = 0;
+      unsigned int h = 0;
+      if ((i + 1 < argc) && sscanf(argv[++i], "%ux%u", &w, &h) == 2) {
+        if (w && h) {
+          shellParams_.viewportSize = glm::vec2(w, h);
+          suggestedWindowConfig.width = w;
+          suggestedWindowConfig.height = h;
+          suggestedWindowConfig.windowMode = WindowMode::Window;
+        }
+      } else {
+        IGL_LOG_ERROR("Specify viewport size for `--viewport-size <WxH>`\n");
+      }
     }
   }
 
