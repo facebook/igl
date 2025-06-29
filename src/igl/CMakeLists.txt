@@ -30,7 +30,12 @@ target_include_directories(IGLLibrary PUBLIC "${IGL_ROOT_DIR}/src")
 target_include_directories(IGLLibrary PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/glm")
 
 if(NOT EMSCRIPTEN)
-  target_link_libraries(IGLLibrary PUBLIC fmt)
+  # Only link fmt if it's available, use PRIVATE to avoid exporting the dependency
+  if(TARGET fmt::fmt)
+    target_link_libraries(IGLLibrary PRIVATE fmt::fmt)
+  elseif(TARGET fmt)
+    target_link_libraries(IGLLibrary PRIVATE fmt)
+  endif()
 endif()
 
 igl_set_cxxstd(IGLLibrary 20)
