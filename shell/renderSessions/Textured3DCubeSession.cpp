@@ -305,18 +305,19 @@ void Textured3DCubeSession::initialize() noexcept {
   shaderStages_ = getShaderStagesForBackend(device);
 
   // Command queue: backed by different types of GPU HW queues
-  const CommandQueueDesc desc{};
-  commandQueue_ = device.createCommandQueue(desc, nullptr);
+  commandQueue_ = device.createCommandQueue({}, nullptr);
 
   // Set up vertex uniform data
   vertexParameters_.scaleZ = 1.0f;
 
-  renderPass_.colorAttachments.resize(1);
-  renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass_.colorAttachments[0].clearColor = getPreferredClearColor();
-  renderPass_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPass_.depthAttachment.clearDepth = 1.0;
+  renderPass_ = {
+      .colorAttachments = {{
+          .loadAction = LoadAction::Clear,
+          .storeAction = StoreAction::Store,
+          .clearColor = getPreferredClearColor(),
+      }},
+      .depthAttachment = {.loadAction = LoadAction::Clear, .clearDepth = 1.0},
+  };
 }
 
 void Textured3DCubeSession::setVertexParams(float aspectRatio) {
@@ -382,8 +383,7 @@ void Textured3DCubeSession::update(SurfaceTextures surfaceTextures) noexcept {
   }
 
   // Command buffers (1-N per thread): create, submit and forget
-  const CommandBufferDesc cbDesc;
-  auto buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
   const std::shared_ptr<IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
