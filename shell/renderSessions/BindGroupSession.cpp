@@ -296,25 +296,26 @@ void BindGroupSession::initialize() noexcept {
       BufferDesc(BufferDesc::BufferTypeBits::Index, kIndexData, sizeof(kIndexData));
   ib0_ = device.createBuffer(ibDesc, nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 3;
-  inputDesc.attributes[0].format = VertexAttributeFormat::Float3;
-  inputDesc.attributes[0].offset = offsetof(VertexPosUvw, position);
-  inputDesc.attributes[0].bufferIndex = 0;
-  inputDesc.attributes[0].name = "position";
-  inputDesc.attributes[0].location = 0;
-  inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
-  inputDesc.attributes[1].offset = offsetof(VertexPosUvw, uv);
-  inputDesc.attributes[1].bufferIndex = 0;
-  inputDesc.attributes[1].name = "uv_in";
-  inputDesc.attributes[1].location = 1;
-  inputDesc.attributes[2].format = VertexAttributeFormat::Float3;
-  inputDesc.attributes[2].offset = offsetof(VertexPosUvw, color);
-  inputDesc.attributes[2].bufferIndex = 0;
-  inputDesc.attributes[2].name = "color_in";
-  inputDesc.attributes[2].location = 2;
-  inputDesc.numInputBindings = 1;
-  inputDesc.inputBindings[0].stride = sizeof(VertexPosUvw);
+  const VertexInputStateDesc inputDesc = {
+      .numAttributes = 3,
+      .attributes = {{.bufferIndex = 0,
+                      .format = VertexAttributeFormat::Float3,
+                      .offset = offsetof(VertexPosUvw, position),
+                      .name = "position",
+                      .location = 0},
+                     {.bufferIndex = 0,
+                      .format = VertexAttributeFormat::Float2,
+                      .offset = offsetof(VertexPosUvw, uv),
+                      .name = "uv_in",
+                      .location = 1},
+                     {.bufferIndex = 0,
+                      .format = VertexAttributeFormat::Float3,
+                      .offset = offsetof(VertexPosUvw, color),
+                      .name = "color_in",
+                      .location = 2}},
+      .numInputBindings = 1,
+      .inputBindings = {{.stride = sizeof(VertexPosUvw)}},
+  };
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
 
   createSamplerAndTextures(device);
