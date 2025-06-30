@@ -285,20 +285,25 @@ void Textured3DCubeSession::initialize() noexcept {
       BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
   ib0_ = device.createBuffer(ibDesc, nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 2;
-  inputDesc.attributes[0].format = VertexAttributeFormat::Float3;
-  inputDesc.attributes[0].offset = offsetof(VertexPosUvw, position);
-  inputDesc.attributes[0].bufferIndex = 0;
-  inputDesc.attributes[0].name = "position";
-  inputDesc.attributes[0].location = 0;
-  inputDesc.attributes[1].format = VertexAttributeFormat::Float3;
-  inputDesc.attributes[1].offset = offsetof(VertexPosUvw, uvw);
-  inputDesc.attributes[1].bufferIndex = 0;
-  inputDesc.attributes[1].name = "uvw_in";
-  inputDesc.attributes[1].location = 1;
-  inputDesc.numInputBindings = 1;
-  inputDesc.inputBindings[0].stride = sizeof(VertexPosUvw);
+  const VertexInputStateDesc inputDesc = {
+      .numAttributes = 2,
+      .attributes = {{
+                         .bufferIndex = 0,
+                         .format = VertexAttributeFormat::Float3,
+                         .offset = offsetof(VertexPosUvw, position),
+                         .name = "position",
+                         .location = 0,
+                     },
+                     {
+                         .bufferIndex = 0,
+                         .format = VertexAttributeFormat::Float3,
+                         .offset = offsetof(VertexPosUvw, uvw),
+                         .name = "uvw_in",
+                         .location = 1,
+                     }},
+      .numInputBindings = 1,
+      .inputBindings = {{.stride = sizeof(VertexPosUvw)}},
+  };
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
 
   createSamplerAndTextures(device);
