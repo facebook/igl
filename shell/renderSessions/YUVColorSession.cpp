@@ -212,24 +212,24 @@ void YUVColorSession::update(SurfaceTextures surfaceTextures) noexcept {
     framebuffer_->updateDrawable(surfaceTextures.color);
   }
 
-  constexpr size_t kTextureUnit = 0;
-
   YUVFormatDemo& demo = yuvFormatDemos_[currentDemo_];
 
   if (!demo.pipelineState) {
-    RenderPipelineDesc desc;
-    desc.vertexInputState = vertexInput0_;
-    desc.shaderStages = shaderStages_;
-    desc.targetDesc.colorAttachments.resize(1);
-    desc.targetDesc.colorAttachments[0].textureFormat =
-        framebuffer_->getColorAttachment(0)->getProperties().format;
-    desc.targetDesc.depthAttachmentFormat =
-        framebuffer_->getDepthAttachment()->getProperties().format;
-    desc.fragmentUnitSamplerMap[kTextureUnit] = IGL_NAMEHANDLE("inputImage");
-    desc.cullMode = igl::CullMode::Back;
-    desc.frontFaceWinding = igl::WindingMode::Clockwise;
-    desc.immutableSamplers[kTextureUnit] = demo.sampler; // Ycbcr sampler
-
+    const RenderPipelineDesc desc = {
+        .vertexInputState = vertexInput0_,
+        .shaderStages = shaderStages_,
+        .targetDesc =
+            {
+                .colorAttachments =
+                    {{.textureFormat =
+                          framebuffer_->getColorAttachment(0)->getProperties().format}},
+                .depthAttachmentFormat = framebuffer_->getDepthAttachment()->getProperties().format,
+            },
+        .cullMode = igl::CullMode::Back,
+        .frontFaceWinding = igl::WindingMode::Clockwise,
+        .fragmentUnitSamplerMap = {std::pair<size_t, NameHandle>(0, IGL_NAMEHANDLE("inputImage"))},
+        .immutableSamplers = {demo.sampler}, // Ycbcr sampler
+    };
     demo.pipelineState = getPlatform().getDevice().createRenderPipeline(desc, nullptr);
     IGL_DEBUG_ASSERT(demo.pipelineState != nullptr);
   }
@@ -249,8 +249,8 @@ void YUVColorSession::update(SurfaceTextures surfaceTextures) noexcept {
     commands->bindVertexBuffer(0, *vb0_);
     commands->bindVertexBuffer(1, *vb0_);
     commands->bindRenderPipelineState(demo.pipelineState);
-    commands->bindTexture(kTextureUnit, BindTarget::kFragment, demo.texture.get());
-    commands->bindSamplerState(kTextureUnit, BindTarget::kFragment, demo.sampler.get());
+    commands->bindTexture(0, BindTarget::kFragment, demo.texture.get());
+    commands->bindSamplerState(0, BindTarget::kFragment, demo.sampler.get());
     commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
     commands->drawIndexed(6);
 
