@@ -224,7 +224,7 @@ static GLFWwindow* initIGL(bool isHeadless) {
       devices = vulkan::HWDevice::queryDevices(
           *ctx, HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
     }
-    if (devices.empty()) {
+    if (devices.empty() || cfg.headless) {
       // LavaPipe etc
       devices = vulkan::HWDevice::queryDevices(
           *ctx, HWDeviceQueryDesc(HWDeviceType::SoftwareGpu), nullptr);
