@@ -57,7 +57,7 @@ bool XrPassthrough::initialize() noexcept {
       .flags = XR_PASSTHROUGH_IS_RUNNING_AT_CREATION_BIT_FB,
   };
 
-  XrResult result;
+  XrResult result(XR_SUCCESS);
   XR_CHECK(result = xrCreatePassthroughFB_(session_, &passthroughInfo, &passthrough_));
   if (result != XR_SUCCESS) {
     IGL_LOG_ERROR("xrCreatePassthroughFB failed.\n");
@@ -101,7 +101,7 @@ void XrPassthrough::setEnabled(bool enabled) noexcept {
   }
   enabled_ = enabled;
 
-  XrResult result;
+  XrResult result(XR_SUCCESS);
   if (enabled_) {
     XR_CHECK(result = xrPassthroughStartFB_(passthrough_));
     if (result != XR_SUCCESS) {
