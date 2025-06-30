@@ -32,6 +32,7 @@ struct ShellParams {
   std::array<HandMesh, 2> handMeshes = {};
   std::array<HandTracking, 2> handTracking = {};
   const char* screenshotFileName = "screenshot.png";
+  uint32_t screenshotNumber = 0; // frame number to save as a screenshot in headless more
   bool isHeadless = false;
 };
 } // namespace igl::shell

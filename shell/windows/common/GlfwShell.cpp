@@ -203,6 +203,12 @@ bool GlfwShell::initialize(int argc,
       } else {
         IGL_LOG_ERROR("Specify a file name for `--screenshot-file <filename>`\n");
       }
+    } else if (!strcmp(argv[i], "--screenshot-number")) {
+      if (i + 1 < argc) {
+        shellParams_.screenshotNumber = static_cast<uint32_t>(atoi(argv[++i]));
+      } else {
+        IGL_LOG_ERROR("Specify a frame number for `--screenshot-number <value>`\n");
+      }
     } else if (!strcmp(argv[i], "--viewport-size")) {
       unsigned int w = 0;
       unsigned int h = 0;
@@ -253,6 +259,7 @@ bool GlfwShell::initialize(int argc,
 }
 
 void GlfwShell::run() noexcept {
+  uint64_t frameNumber = 0;
   while ((!window_ || !glfwWindowShouldClose(window_.get())) &&
          !session_->appParams().exitRequested) {
     willTick();
@@ -266,16 +273,20 @@ void GlfwShell::run() noexcept {
     if (window_) {
       glfwPollEvents();
     } else {
-      IGL_LOG_INFO("\nWe are running headless - breaking after 1 frame\n");
-      const char* screenshotFileName = session_->shellParams().screenshotFileName;
-      if (screenshotFileName && *screenshotFileName) {
-        SaveFrameBufferToPng(screenshotFileName,
-                             platform_->getDevice().createFramebuffer(
-                                 {.colorAttachments = {{.texture = colorTexture}}}, nullptr),
-                             *platform_);
+      if (frameNumber == session_->shellParams().screenshotNumber) {
+        IGL_LOG_INFO("\nWe are running headless - breaking after %u frame\n",
+                     (uint32_t)frameNumber);
+        const char* screenshotFileName = session_->shellParams().screenshotFileName;
+        if (screenshotFileName && *screenshotFileName) {
+          SaveFrameBufferToPng(screenshotFileName,
+                               platform_->getDevice().createFramebuffer(
+                                   {.colorAttachments = {{.texture = colorTexture}}}, nullptr),
+                               *platform_);
+        }
+        break;
       }
-      break;
     }
+    frameNumber++;
   }
 }
 
