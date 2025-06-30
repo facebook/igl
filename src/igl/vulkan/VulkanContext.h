@@ -36,7 +36,6 @@ namespace util {
 struct SpvModuleInfo;
 } // namespace util
 
-class Device;
 class EnhancedShaderDebuggingStore;
 class CommandQueue;
 class ComputeCommandEncoder;
