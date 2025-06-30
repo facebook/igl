@@ -108,7 +108,7 @@ XrSession XrAppImplGLES::initXrSession(XrInstance instance,
       .systemId = systemId,
   };
 
-  XrResult xrResult;
+  XrResult xrResult(XR_SUCCESS);
   XrSession session = nullptr;
   XR_CHECK(xrResult = xrCreateSession(instance, &sessionCreateInfo, &session));
   if (xrResult != XR_SUCCESS) {
