@@ -79,7 +79,7 @@ class ICommandEncoder {
    * to pop the label off the stack.
    */
   virtual void pushDebugGroupLabel(const char* IGL_NONNULL label,
-                                   const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
+                                   const igl::Color& color = Color(1, 1, 1, 1)) const = 0;
 
   /**
    * Inserts a debug label into the captured frame data.
@@ -88,7 +88,7 @@ class ICommandEncoder {
    * call stack of the captured frame data.
    */
   virtual void insertDebugEventLabel(const char* IGL_NONNULL label,
-                                     const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
+                                     const igl::Color& color = Color(1, 1, 1, 1)) const = 0;
 
   /**
    * Pops a most recent debug label off a stack of debug string labels.

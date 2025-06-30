@@ -325,20 +325,20 @@ class Handle final {
 static_assert(sizeof(Handle<class Foo>) == sizeof(uint64_t));
 
 // specialized with dummy structs for type safety
-using BindGroupTextureHandle = igl::Handle<struct BindGroupTextureTag>;
-using BindGroupBufferHandle = igl::Handle<struct BindGroupBufferTag>;
-using TextureHandle = igl::Handle<struct TextureTag>;
-using SamplerHandle = igl::Handle<struct SamplerTag>;
-using DepthStencilStateHandle = igl::Handle<struct DepthStencilStateTag>;
+using BindGroupTextureHandle = Handle<struct BindGroupTextureTag>;
+using BindGroupBufferHandle = Handle<struct BindGroupBufferTag>;
+using TextureHandle = Handle<struct TextureTag>;
+using SamplerHandle = Handle<struct SamplerTag>;
+using DepthStencilStateHandle = Handle<struct DepthStencilStateTag>;
 
 class IDevice;
 
 // forward declarations to access incomplete type IDevice
-void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupTextureHandle handle);
-void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupBufferHandle handle);
-void destroy(igl::IDevice* IGL_NULLABLE device, igl::TextureHandle handle);
-void destroy(igl::IDevice* IGL_NULLABLE device, igl::SamplerHandle handle);
-void destroy(igl::IDevice* IGL_NULLABLE device, igl::DepthStencilStateHandle handle);
+void destroy(IDevice* IGL_NULLABLE device, BindGroupTextureHandle handle);
+void destroy(IDevice* IGL_NULLABLE device, BindGroupBufferHandle handle);
+void destroy(IDevice* IGL_NULLABLE device, TextureHandle handle);
+void destroy(IDevice* IGL_NULLABLE device, SamplerHandle handle);
+void destroy(IDevice* IGL_NULLABLE device, DepthStencilStateHandle handle);
 
 ///--------------------------------------
 /// MARK: - Holder
@@ -349,7 +349,7 @@ template<typename HandleType>
 class Holder final {
  public:
   Holder() noexcept = default;
-  Holder(igl::IDevice* IGL_NULLABLE device, HandleType handle) noexcept :
+  Holder(IDevice* IGL_NULLABLE device, HandleType handle) noexcept :
     device_(device), handle_(handle) {}
   ~Holder() {
     igl::destroy(device_, handle_);
@@ -404,7 +404,7 @@ class Holder final {
   }
 
  private:
-  igl::IDevice* IGL_NULLABLE device_ = nullptr;
+  IDevice* IGL_NULLABLE device_ = nullptr;
   HandleType handle_ = {};
 };
 
