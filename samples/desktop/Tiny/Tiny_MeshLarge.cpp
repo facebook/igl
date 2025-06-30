@@ -142,7 +142,7 @@ static_assert(IGL_WITH_IGLU != 0,
 namespace {
 
 constexpr uint32_t kMeshCacheVersion = 0xC0DE0009;
-constexpr int kNumSamplesMSAA = 8;
+int kNumSamplesMSAA = 8;
 #if USE_OPENGL_BACKEND
 constexpr bool kEnableCompression = false;
 #else
@@ -2582,6 +2582,9 @@ void processLoadedMaterials() {
 
 int main(int argc, char* argv[]) {
   const bool isHeadless = argc > 1 && (strcmp(argv[1], "--headless") == 0);
+  if (isHeadless) {
+    kNumSamplesMSAA = 1;
+  }
 
   // find the content folder
   {
