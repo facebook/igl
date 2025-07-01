@@ -222,7 +222,7 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
 }
 
 - (void)tearDownViewController {
-  if (self.tabViewController) {
+  if (self.tabViewController != nil) {
     for (NSInteger i = 0; i < [[self.tabViewController tabViewItems] count]; ++i) {
       NSTabViewItem* item = [self.tabViewController tabViewItems][i];
       ViewController* controller = (ViewController*)item.viewController;
