@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <map>
+#include <cstddef>
+#include <cstdint>
 #include <unordered_map>
-#include <igl/Common.h>
 #include <igl/NameHandle.h>
 #include <igl/RenderPipelineReflection.h>
 #include <igl/Shader.h>
