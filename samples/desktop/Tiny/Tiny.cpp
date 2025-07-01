@@ -26,6 +26,7 @@
 #include <cstdio>
 #include <regex>
 
+#include <stb/stb_image_write.h>
 #include <igl/IGL.h>
 
 #define USE_OPENGL_BACKEND 0
@@ -224,7 +225,7 @@ static GLFWwindow* initIGL(bool isHeadless) {
       devices = vulkan::HWDevice::queryDevices(
           *ctx, HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
     }
-    if (devices.empty()) {
+    if (devices.empty() || cfg.headless) {
       // LavaPipe etc
       devices = vulkan::HWDevice::queryDevices(
           *ctx, HWDeviceQueryDesc(HWDeviceType::SoftwareGpu), nullptr);
@@ -384,6 +385,31 @@ int main(int argc, char* argv[]) {
       glfwPollEvents();
     } else {
       printf("We are running headless - breaking after 1 frame\n");
+      std::shared_ptr<ITexture> texture = framebuffer->getColorAttachment(0);
+      const Dimensions dim = texture->getDimensions();
+      std::vector<uint8_t> pixelsRGBA(dim.width * dim.height * 4);
+      std::vector<uint8_t> pixelsRGB(dim.width * dim.height * 3);
+      framebuffer->copyBytesColorAttachment(*commandQueue,
+                                            0,
+                                            pixelsRGBA.data(),
+                                            TextureRangeDesc::new2D(0, 0, dim.width, dim.height));
+      if (texture->getFormat() == igl::TextureFormat::BGRA_UNorm8 ||
+          texture->getFormat() == igl::TextureFormat::BGRA_SRGB) {
+        // swap R-B
+        for (uint32_t i = 0; i < pixelsRGBA.size(); i += 4) {
+          std::swap(pixelsRGBA[i + 0], pixelsRGBA[i + 2]);
+        }
+      }
+      // convert to RGB
+      for (uint32_t i = 0; i < pixelsRGB.size() / 3; i++) {
+        pixelsRGB[3 * i + 0] = pixelsRGBA[4 * i + 0];
+        pixelsRGB[3 * i + 1] = pixelsRGBA[4 * i + 1];
+        pixelsRGB[3 * i + 2] = pixelsRGBA[4 * i + 2];
+      }
+      const char* fileName = "Tiny.png";
+      IGLLog(IGLLogInfo, "Writing screenshot to: '%s'\n", fileName);
+      stbi_flip_vertically_on_write(true);
+      stbi_write_png(fileName, (int)dim.width, (int)dim.height, 3, pixelsRGB.data(), 0);
       break;
     }
   }
