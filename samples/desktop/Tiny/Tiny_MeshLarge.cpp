@@ -994,6 +994,11 @@ void initIGL() {
         devices =
             vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(fallbackHardwareType), nullptr);
       }
+      if (devices.empty() || cfg.headless) {
+        // LavaPipe etc
+        devices = vulkan::HWDevice::queryDevices(
+            *ctx, HWDeviceQueryDesc(HWDeviceType::SoftwareGpu), nullptr);
+      }
       IGL_DEBUG_ASSERT(!devices.empty(), "GPU is not found");
       device_ =
           vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
