@@ -74,11 +74,11 @@ class Framebuffer : public WithContext, public IFramebuffer {
   [[nodiscard]] bool isSwapchainBound() const override;
 
  protected:
-  void attachAsColor(igl::ITexture& texture,
+  void attachAsColor(ITexture& texture,
                      uint32_t index,
                      const Texture::AttachmentParams& params) const;
-  void attachAsDepth(igl::ITexture& texture, const Texture::AttachmentParams& params) const;
-  void attachAsStencil(igl::ITexture& texture, const Texture::AttachmentParams& params) const;
+  void attachAsDepth(ITexture& texture, const Texture::AttachmentParams& params) const;
+  void attachAsStencil(ITexture& texture, const Texture::AttachmentParams& params) const;
   // NOLINTNEXTLINE(misc-non-private-member-variables-in-classes)
   GLuint frameBufferID_ = 0;
 
