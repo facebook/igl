@@ -28,6 +28,10 @@ class CommandQueue final : public ICommandQueue {
   IGL_INLINE id<MTLCommandQueue> get() const {
     return value_;
   }
+    
+  Device& getDevice() {
+    return device_;
+  }
 
  private:
   void startCapture(id<MTLCommandQueue> queue);

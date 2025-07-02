@@ -137,11 +137,51 @@ void Framebuffer::copyBytes(ICommandQueue& cmdQueue,
   if (bytesPerRow == 0) {
     bytesPerRow = iglTexture->getProperties().getBytesPerRow(range);
   }
-  if (IGL_DEBUG_VERIFY(canCopy(cmdQueue, mtlTexture->get(), range))) {
+  if (canCopy(cmdQueue, mtlTexture->get(), range)) {
     mtlTexture->getBytes(range, pixelBytes, bytesPerRow);
   } else {
-    // Use MTLBlitCommandEncoder to copy into a non-private storage texture that can be read from
-    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+    Result result;
+    TextureDesc desc{
+        .width = iglTexture->getDimensions().width,
+        .height = iglTexture->getDimensions().height,
+        .format = iglTexture->getProperties().format,
+        .type = iglTexture->getType(),
+        .storage = ResourceStorage::Shared,
+        .debugName = "stageTexture",
+    };
+
+    // 1,create a shared stage texture
+    auto& mtlCommandQueue = static_cast<CommandQueue&>(cmdQueue);
+    auto stageTexture = mtlCommandQueue.getDevice().createTexture(desc, &result);
+    IGL_DEBUG_ASSERT(stageTexture && result.isOk());
+
+    // 2,copy data from the private texture to the stage texture by MTLBlitCommandEncoder
+    id<MTLTexture> srcMtlTexture = static_cast<Texture&>(*iglTexture).get();
+    id<MTLTexture> dstMtlTexture = static_cast<Texture&>(*stageTexture).get();
+    if (IGL_DEBUG_VERIFY(srcMtlTexture && dstMtlTexture)) {
+      auto iglMtlCmdQueue = static_cast<CommandQueue&>(cmdQueue);
+
+      id<MTLCommandBuffer> cmdBuf = [iglMtlCmdQueue.get() commandBuffer];
+      id<MTLBlitCommandEncoder> blitEncoder = [cmdBuf blitCommandEncoder];
+
+      // NOLINTNEXTLINE(clang-analyzer-nullability.NullabilityBase)
+      [blitEncoder copyFromTexture:srcMtlTexture
+                       sourceSlice:range.layer
+                       sourceLevel:range.mipLevel
+                      sourceOrigin:MTLOriginMake(range.x, range.y, 0)
+                        sourceSize:MTLSizeMake(range.width, range.height, 1)
+                         toTexture:dstMtlTexture
+                  destinationSlice:range.layer
+                  destinationLevel:range.mipLevel
+                 destinationOrigin:MTLOriginMake(range.x, range.y, 0)];
+      [blitEncoder endEncoding];
+      [cmdBuf commit];
+      [cmdBuf waitUntilCompleted];
+    }
+
+    // 3,read data from the shared stage texture
+    auto mtlTexture = std::static_pointer_cast<Texture>(stageTexture);
+    mtlTexture->getBytes(range, pixelBytes, bytesPerRow);
   }
 }
 
