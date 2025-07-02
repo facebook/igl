@@ -787,9 +787,10 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   // Use the requested features passed to the function (if any) or use the default features
   if (requestedFeatures) {
     features_ = *requestedFeatures;
-  } else {
-    features_.populateWithAvailablePhysicalDeviceFeatures(*this, vkPhysicalDevice_);
   }
+
+  features_.populateWithAvailablePhysicalDeviceFeatures(*this, vkPhysicalDevice_);
+
   // ... and check whether they are available in the physical device (they should be)
   {
     auto featureCheckResult = features_.checkSelectedFeatures(availableFeatures);
