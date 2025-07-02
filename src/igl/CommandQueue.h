@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <memory>
 #include <igl/Common.h>
 
 namespace igl {

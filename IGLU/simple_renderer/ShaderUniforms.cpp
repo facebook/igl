@@ -21,6 +21,7 @@
 #endif
 
 #include <cstdlib>
+#include <limits>
 #include <memory>
 #include <string>
 

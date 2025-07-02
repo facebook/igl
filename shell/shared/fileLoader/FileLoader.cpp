@@ -8,6 +8,7 @@
 #include <shell/shared/fileLoader/FileLoader.h>
 
 #include <cstdio>
+#include <limits>
 #include <igl/Common.h>
 
 #if defined(IGL_CMAKE_BUILD)

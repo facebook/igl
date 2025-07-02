@@ -10,11 +10,8 @@
 #ifndef IGL_COMMON_H
 #define IGL_COMMON_H
 
-#include <cstdarg>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
-#include <memory>
 #include <string>
 #include <type_traits>
 #include <utility>

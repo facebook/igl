@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <limits>
 #include <optional>
 #include <igl/Common.h>
 
