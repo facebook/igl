@@ -20,9 +20,9 @@ include(CMakePackageConfigHelpers)
 # Try to find fmt (optional)
 find_package(fmt QUIET)
 if(fmt_FOUND)
-    message(STATUS "IGL: Found fmt library")
+  message(STATUS "IGL: Found fmt library")
 else()
-    message(STATUS "IGL: fmt library not found - some features may not be available")
+  message(STATUS "IGL: fmt library not found - some features may not be available")
 endif()
 
 # Find required system dependencies before including targets
@@ -47,45 +47,45 @@ find_package(Threads REQUIRED)
 
 # Include the targets file first (if it exists)
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/IGLTargets.cmake")
-    include("${CMAKE_CURRENT_LIST_DIR}/IGLTargets.cmake")
-    set(IGL_TARGETS_AVAILABLE TRUE)
+  include("${CMAKE_CURRENT_LIST_DIR}/IGLTargets.cmake")
+  set(IGL_TARGETS_AVAILABLE TRUE)
 else()
-    message(STATUS "IGL: No library targets available - header-only installation")
-    set(IGL_TARGETS_AVAILABLE FALSE)
+  message(STATUS "IGL: No library targets available - header-only installation")
+  set(IGL_TARGETS_AVAILABLE FALSE)
 endif()
 
 # Check which backends are available and find their dependencies (only if targets are available)
 if(IGL_TARGETS_AVAILABLE)
-    if(TARGET IGL::IGLOpenGL)
-        find_package(OpenGL QUIET)
-        if(NOT OpenGL_FOUND)
-            message(STATUS "IGL: OpenGL not found - IGLOpenGL backend may not work properly")
-        endif()
+  if(TARGET IGL::IGLOpenGL)
+    find_package(OpenGL QUIET)
+    if(NOT OpenGL_FOUND)
+      message(STATUS "IGL: OpenGL not found - IGLOpenGL backend may not work properly")
     endif()
+  endif()
 
-    if(TARGET IGL::IGLVulkan)
-        find_package(Vulkan QUIET)
-        if(NOT Vulkan_FOUND)
-            message(STATUS "IGL: Vulkan SDK not found - IGLVulkan backend may not work properly")
-        endif()
+  if(TARGET IGL::IGLVulkan)
+    find_package(Vulkan QUIET)
+    if(NOT Vulkan_FOUND)
+      message(STATUS "IGL: Vulkan SDK not found - IGLVulkan backend may not work properly")
     endif()
+  endif()
 endif()
 
 # Find optional dependencies only if explicitly requested
 if(IGL_FIND_COMPONENTS)
-    if("Shell" IN_LIST IGL_FIND_COMPONENTS OR "samples" IN_LIST IGL_FIND_COMPONENTS)
-        find_package(glfw3 QUIET)
-        if(NOT glfw3_FOUND)
-            message(STATUS "IGL: GLFW not found - shell and samples may not be available")
-        endif()
+  if("Shell" IN_LIST IGL_FIND_COMPONENTS OR "samples" IN_LIST IGL_FIND_COMPONENTS)
+    find_package(glfw3 QUIET)
+    if(NOT glfw3_FOUND)
+      message(STATUS "IGL: GLFW not found - shell and samples may not be available")
     endif()
-    
-    if("OpenXR" IN_LIST IGL_FIND_COMPONENTS)
-        find_package(OpenXR QUIET)
-        if(NOT OpenXR_FOUND)
-            message(STATUS "IGL: OpenXR SDK not found - VR/AR features not available")
-        endif()
+  endif()
+
+  if("OpenXR" IN_LIST IGL_FIND_COMPONENTS)
+    find_package(OpenXR QUIET)
+    if(NOT OpenXR_FOUND)
+      message(STATUS "IGL: OpenXR SDK not found - VR/AR features not available")
     endif()
+  endif()
 endif()
 
 # Dynamically discover available components by checking exported targets
@@ -94,25 +94,22 @@ set(IGL_AVAILABLE_COMPONENTS "")
 # Get all available IGL targets and extract component names
 get_property(available_targets DIRECTORY PROPERTY IMPORTED_TARGETS)
 if(NOT available_targets)
-    # Fallback: get targets from current directory
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E echo "Discovering available IGL targets..."
-        OUTPUT_QUIET
-    )
+  # Fallback: get targets from current directory
+  execute_process(COMMAND ${CMAKE_COMMAND} -E echo "Discovering available IGL targets..." OUTPUT_QUIET)
 endif()
 
 # Function to extract component name from target
 function(extract_component_name target_name result_var)
-    # Remove IGL:: namespace prefix
-    string(REPLACE "IGL::" "" component_name "${target_name}")
-    set(${result_var} "${component_name}" PARENT_SCOPE)
+  # Remove IGL:: namespace prefix
+  string(REPLACE "IGL::" "" component_name "${target_name}")
+  set(${result_var} "${component_name}" PARENT_SCOPE)
 endfunction()
 
 # Check for core and common targets
-set(IGL_EXPECTED_TARGETS 
+set(IGL_EXPECTED_TARGETS
     "IGL::IGLLibrary"
-    "IGL::IGLOpenGL" 
-    "IGL::IGLVulkan" 
+    "IGL::IGLOpenGL"
+    "IGL::IGLVulkan"
     "IGL::IGLMetal"
     "IGL::IGLGlslang"
     "IGL::IGLstb"
@@ -125,98 +122,91 @@ set(IGL_EXPECTED_TARGETS
     "IGL::IGLUtexture_accessor"
     "IGL::IGLUtexture_loader"
     "IGL::IGLUuniform"
-    "IGL::IGLUsimdtypes"
-)
+    "IGL::IGLUsimdtypes")
 
 # Only discover components if targets are available
 if(IGL_TARGETS_AVAILABLE)
-    foreach(expected_target ${IGL_EXPECTED_TARGETS})
-        if(TARGET ${expected_target})
-            extract_component_name(${expected_target} component_name)
-            list(APPEND IGL_AVAILABLE_COMPONENTS ${component_name})
-        endif()
-    endforeach()
+  foreach(expected_target ${IGL_EXPECTED_TARGETS})
+    if(TARGET ${expected_target})
+      extract_component_name(${expected_target} component_name)
+      list(APPEND IGL_AVAILABLE_COMPONENTS ${component_name})
+    endif()
+  endforeach()
 else()
-    # For header-only installation, mark as having core headers available
-    list(APPEND IGL_AVAILABLE_COMPONENTS "Headers")
+  # For header-only installation, mark as having core headers available
+  list(APPEND IGL_AVAILABLE_COMPONENTS "Headers")
 endif()
 
 # Check if requested components are available
 if(IGL_FIND_COMPONENTS)
-    foreach(component ${IGL_FIND_COMPONENTS})
-        if(NOT ${component} IN_LIST IGL_AVAILABLE_COMPONENTS)
-            set(IGL_FOUND FALSE)
-            set(IGL_NOT_FOUND_MESSAGE "Component ${component} is not available")
-            return()
-        endif()
-    endforeach()
+  foreach(component ${IGL_FIND_COMPONENTS})
+    if(NOT ${component} IN_LIST IGL_AVAILABLE_COMPONENTS)
+      set(IGL_FOUND FALSE)
+      set(IGL_NOT_FOUND_MESSAGE "Component ${component} is not available")
+      return()
+    endif()
+  endforeach()
 endif()
 
 # Set up interface targets for convenience (only if targets are available)
 if(IGL_TARGETS_AVAILABLE AND NOT TARGET IGL::IGL)
-    # Create main interface target that includes core library
-    add_library(IGL::IGL INTERFACE IMPORTED)
-    
-    # Always link core library if available
-    if(TARGET IGL::IGLLibrary)
-        target_link_libraries(IGL::IGL INTERFACE IGL::IGLLibrary)
+  # Create main interface target that includes core library
+  add_library(IGL::IGL INTERFACE IMPORTED)
+
+  # Always link core library if available
+  if(TARGET IGL::IGLLibrary)
+    target_link_libraries(IGL::IGL INTERFACE IGL::IGLLibrary)
+  endif()
+
+  # Dynamically add available backend libraries
+  set(IGL_BACKEND_TARGETS "IGL::IGLOpenGL" "IGL::IGLVulkan" "IGL::IGLMetal")
+  foreach(backend_target ${IGL_BACKEND_TARGETS})
+    if(TARGET ${backend_target})
+      target_link_libraries(IGL::IGL INTERFACE ${backend_target})
     endif()
-    
-    # Dynamically add available backend libraries
-    set(IGL_BACKEND_TARGETS "IGL::IGLOpenGL" "IGL::IGLVulkan" "IGL::IGLMetal")
-    foreach(backend_target ${IGL_BACKEND_TARGETS})
-        if(TARGET ${backend_target})
-            target_link_libraries(IGL::IGL INTERFACE ${backend_target})
-        endif()
-    endforeach()
-    
-    # Add commonly used IGLU components to the main target
-    set(IGL_COMMON_IGLU_TARGETS 
-        "IGL::IGLUsimdtypes" 
-        "IGL::IGLUsentinel"
-        "IGL::IGLstb"
-    )
-    foreach(iglu_target ${IGL_COMMON_IGLU_TARGETS})
-        if(TARGET ${iglu_target})
-            target_link_libraries(IGL::IGL INTERFACE ${iglu_target})
-        endif()
-    endforeach()
+  endforeach()
+
+  # Add commonly used IGLU components to the main target
+  set(IGL_COMMON_IGLU_TARGETS "IGL::IGLUsimdtypes" "IGL::IGLUsentinel" "IGL::IGLstb")
+  foreach(iglu_target ${IGL_COMMON_IGLU_TARGETS})
+    if(TARGET ${iglu_target})
+      target_link_libraries(IGL::IGL INTERFACE ${iglu_target})
+    endif()
+  endforeach()
 elseif(NOT IGL_TARGETS_AVAILABLE)
-    # For header-only installation, create a minimal interface target with just include directories
-    if(NOT TARGET IGL::IGL)
-        add_library(IGL::IGL INTERFACE IMPORTED)
-        set_target_properties(IGL::IGL PROPERTIES
-            INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_INSTALL_INCLUDEDIR}"
-        )
-        message(STATUS "IGL: Created header-only interface target IGL::IGL")
-    endif()
+  # For header-only installation, create a minimal interface target with just include directories
+  if(NOT TARGET IGL::IGL)
+    add_library(IGL::IGL INTERFACE IMPORTED)
+    set_target_properties(IGL::IGL PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_INSTALL_INCLUDEDIR}")
+    message(STATUS "IGL: Created header-only interface target IGL::IGL")
+  endif()
 endif()
 
 # Print information about found IGL
 if(NOT IGL_FIND_QUIETLY)
-    if(IGL_TARGETS_AVAILABLE)
-        message(STATUS "Found IGL with library targets")
-    else()
-        message(STATUS "Found IGL (headers only)")
-    endif()
-    message(STATUS "Available components: ${IGL_AVAILABLE_COMPONENTS}")
+  if(IGL_TARGETS_AVAILABLE)
+    message(STATUS "Found IGL with library targets")
+  else()
+    message(STATUS "Found IGL (headers only)")
+  endif()
+  message(STATUS "Available components: ${IGL_AVAILABLE_COMPONENTS}")
 endif()
 
 # Check if all required components were found
 if(IGL_FIND_COMPONENTS)
-    foreach(component ${IGL_FIND_COMPONENTS})
-        if(NOT ${component} IN_LIST IGL_AVAILABLE_COMPONENTS)
-            if(IGL_FIND_REQUIRED_${component})
-                set(IGL_FOUND FALSE)
-                if(NOT IGL_TARGETS_AVAILABLE)
-                    set(IGL_NOT_FOUND_MESSAGE "Required component ${component} is not available (header-only installation)")
-                else()
-                    set(IGL_NOT_FOUND_MESSAGE "Required component ${component} is not available")
-                endif()
-                return()
-            endif()
+  foreach(component ${IGL_FIND_COMPONENTS})
+    if(NOT ${component} IN_LIST IGL_AVAILABLE_COMPONENTS)
+      if(IGL_FIND_REQUIRED_${component})
+        set(IGL_FOUND FALSE)
+        if(NOT IGL_TARGETS_AVAILABLE)
+          set(IGL_NOT_FOUND_MESSAGE "Required component ${component} is not available (header-only installation)")
+        else()
+          set(IGL_NOT_FOUND_MESSAGE "Required component ${component} is not available")
         endif()
-    endforeach()
+        return()
+      endif()
+    endif()
+  endforeach()
 endif()
 
-set(IGL_FOUND TRUE) 
+set(IGL_FOUND TRUE)
