@@ -243,10 +243,7 @@
 
 // clang-format off
 #if !defined(IGL_DEBUG) // allow build systems to define it
-#if defined(IGL_BUILD_MODE_OPT)
-  // Forced opt build.
-  #define IGL_DEBUG 0
-#elif IGL_PLATFORM_ANDROID && !defined(FBANDROID_BUILD_MODE_OPT)
+#if IGL_PLATFORM_ANDROID && !defined(FBANDROID_BUILD_MODE_OPT)
   // On Android, buck defines NDEBUG for all builds so the test above doesn't work.
   // FBANDROID_BUILD_MODE_OPT is only defined in production builds and was created
   // with the exact purpose of allowing native code to differentiate build modes.
