@@ -274,3 +274,18 @@
   #endif
 #endif
 // clang-format on
+
+///--------------------------------------
+/// MARK: - Debug Asserts
+
+#if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
+#define IGL_DEBUG_ABORT_ENABLED 1
+#else
+#define IGL_DEBUG_ABORT_ENABLED 0
+#endif
+
+#if IGL_DEBUG
+#define IGL_DEBUG_BREAK_ENABLED 1
+#else
+#define IGL_DEBUG_BREAK_ENABLED 0
+#endif
