@@ -325,7 +325,7 @@ class VulkanImage final {
   int exportedFd_ = -1; // linux fd
   uint32_t extendedFormat_ = 0; // defined by VkAndroidHardwareBufferFormatPropertiesANDROID
   VkSamplerYcbcrConversionCreateInfo samplerYcbcrConversionCreateInfo_ = {};
-#if defined(IGL_DEBUG)
+#if IGL_DEBUG
   std::string name_;
 #endif
 

@@ -1257,7 +1257,7 @@ bool VulkanImage::isStencilFormat(VkFormat format) {
 }
 
 void VulkanImage::setName(const std::string& name) noexcept {
-#if defined(IGL_DEBUG)
+#if IGL_DEBUG
   name_ = name;
 #else
   (void)name;
@@ -1295,7 +1295,7 @@ VulkanImage& VulkanImage::operator=(VulkanImage&& other) noexcept {
   isExported_ = other.isExported_;
   exportedMemoryHandle_ = other.exportedMemoryHandle_;
   exportedFd_ = other.exportedFd_;
-#if defined(IGL_DEBUG)
+#if IGL_DEBUG
   name_ = std::move(other.name_);
 #endif
   tiling_ = other.tiling_;
