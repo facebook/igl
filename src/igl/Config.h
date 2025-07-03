@@ -264,6 +264,18 @@
 #endif
 // clang-format on
 
+///--------------------------------------
+/// MARK: - Logging
+
+#if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
+#define IGL_LOGGING_ENABLED 1
+#else
+#define IGL_LOGGING_ENABLED 0
+#endif
+
+///--------------------------------------
+/// MARK: - Soft Errors
+
 // clang-format off
 #if !defined(IGL_SOFT_ERROR_ENABLED)
   // Either we have IGL_DEBUG, or Windows/Linux/etc, since we don't have good detection mechanism there.
@@ -278,7 +290,7 @@
 ///--------------------------------------
 /// MARK: - Debug Asserts
 
-#if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
+#if IGL_LOGGING_ENABLED
 #define IGL_DEBUG_ABORT_ENABLED 1
 #else
 #define IGL_DEBUG_ABORT_ENABLED 0

@@ -81,7 +81,7 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
 
   igl::vulkan::VulkanContext* ctx = static_cast<igl::vulkan::VulkanContext*>(userData);
 
-#if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
+#if IGL_LOGGING_ENABLED
   std::array<char, 128> errorName = {};
   int object = 0;
   void* handle = nullptr;
@@ -562,14 +562,14 @@ VulkanContext::~VulkanContext() {
 
   glslang::finalizeCompiler();
 
-#if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
+#if IGL_LOGGING_ENABLED
   if (config_.enableExtraLogs) {
     IGL_LOG_INFO("Vulkan graphics pipelines created: %u\n",
                  VulkanPipelineBuilder::getNumPipelinesCreated());
     IGL_LOG_INFO("Vulkan compute pipelines created: %u\n",
                  VulkanComputePipelineBuilder::getNumPipelinesCreated());
   }
-#endif // IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
+#endif // IGL_LOGGING_ENABLED
 
 #if defined(IGL_CMAKE_BUILD)
   volkFinalize();
@@ -678,7 +678,7 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
   }
 #endif // if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WINDOWS
 
-#if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
+#if IGL_LOGGING_ENABLED
   if (config_.enableExtraLogs) {
     // log available instance extensions
     IGL_LOG_INFO("Vulkan instance extensions:\n");
@@ -818,7 +818,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   features_.enumerate(vf_, vkPhysicalDevice_);
 
-#if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
+#if IGL_LOGGING_ENABLED
   if (config_.enableExtraLogs) {
     IGL_LOG_INFO("Vulkan physical device extensions:\n");
     // log available physical device extensions

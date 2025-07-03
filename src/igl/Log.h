@@ -47,7 +47,7 @@ IGL_API IGLLogHandlerFunc IGLLogGetHandler(void);
 /// MARK: - Macros
 
 // Debug logging
-#if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
+#if IGL_LOGGING_ENABLED
 #define IGL_LOG_ERROR(format, ...)                             \
   IGLLog(IGLLogError, "[IGL] Error in (%s).\n", IGL_FUNCTION); \
   IGLLog(IGLLogError, (format), ##__VA_ARGS__)

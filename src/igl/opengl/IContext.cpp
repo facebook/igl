@@ -23,7 +23,7 @@
 // Uncomment to enable shader validation
 // #define IGL_VALIDATE_SHADERS
 
-#if IGL_API_LOG && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
+#if IGL_API_LOG && IGL_LOGGING_ENABLED
 #define APILOG_DEC_DRAW_COUNT() \
   if (apiLogDrawsLeft_) {       \
     apiLogDrawsLeft_--;         \
@@ -75,7 +75,7 @@ void logSource(const int count, const char** string, const int* length) {
 #define APILOG_DEC_DRAW_COUNT() static_cast<void>(0)
 #define APILOG(format, ...) static_cast<void>(0)
 #define APILOG_SOURCE(count, string, length) static_cast<void>(0)
-#endif // IGL_API_LOG && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
+#endif // IGL_API_LOG && IGL_LOGGING_ENABLED
 
 #define GLCALL(funcName)                                        \
   IGL_SOFT_ASSERT(isCurrentContext() || isCurrentSharegroup()); \
@@ -136,7 +136,7 @@ void logSource(const int count, const char** string, const int* length) {
   case res:              \
     return #res;
 
-#if IGL_API_LOG && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
+#if IGL_API_LOG && IGL_LOGGING_ENABLED
 // Enclose this function with the #ifdef to stop the compiler
 // from complaining that this function is unused (in the non debug/log path)
 namespace {
@@ -583,7 +583,7 @@ std::string GLenumToString(GLenum code) {
 #define GL_BOOL_TO_STRING(code) GLboolToString(code).c_str()
 
 } // namespace
-#endif // IGL_API_LOG && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
+#endif // IGL_API_LOG && IGL_LOGGING_ENABLED
 
 // Debug logging is not included in code coverage
 // @MARK:COVERAGE_EXCLUDE_START
@@ -3234,7 +3234,7 @@ void IContext::initialize(Result* result) {
     }
   }
 
-#if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
+#if IGL_LOGGING_ENABLED
   IGL_LOG_INFO("GL Context Initialized: %p\n", this);
   IGL_LOG_INFO("GL Version: %s\n", version);
   const char* vendor = (char*)getString(GL_VENDOR);

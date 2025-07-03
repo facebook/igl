@@ -15,7 +15,7 @@
 #include <igl/opengl/Config.h>
 #include <igl/opengl/egl/Context.h>
 
-#if IGL_API_LOG && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
+#if IGL_API_LOG && IGL_LOGGING_ENABLED
 #define APILOG_DEC_DRAW_COUNT() \
   if (apiLogDrawsLeft_) {       \
     apiLogDrawsLeft_--;         \
@@ -27,7 +27,7 @@
 #else
 #define APILOG_DEC_DRAW_COUNT() static_cast<void>(0)
 #define APILOG(format, ...) static_cast<void>(0)
-#endif // IGL_API_LOGs && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
+#endif // IGL_API_LOGs && IGL_LOGGING_ENABLED
 
 namespace igl::opengl::egl::android {
 
