@@ -12,7 +12,6 @@
 #include <OpenGLES/EAGL.h>
 #include <QuartzCore/CAEAGLLayer.h>
 #import <objc/runtime.h>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/Texture.h>
 
 namespace igl::opengl::ios {

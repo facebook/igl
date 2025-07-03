@@ -9,7 +9,6 @@
 
 #include <array>
 #include <utility>
-#include <igl/opengl/Errors.h>
 
 namespace igl::opengl {
 

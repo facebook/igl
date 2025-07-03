@@ -7,8 +7,6 @@
 
 #include <igl/opengl/TextureTarget.h>
 
-#include <igl/opengl/Errors.h>
-
 namespace igl::opengl {
 
 TextureTarget::~TextureTarget() {

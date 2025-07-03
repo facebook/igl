@@ -8,7 +8,6 @@
 #include <igl/opengl/wgl/Device.h>
 
 #include <igl/Common.h>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/wgl/Context.h>
 
 namespace igl {

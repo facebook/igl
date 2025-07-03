@@ -16,7 +16,6 @@
 #include <cassert>
 #include <tuple>
 #include <igl/Macros.h>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/Texture.h>
 
 #define CHECK_EGL_ERRORS() error_checking::checkForEGLErrors(__FILE__, __FUNCTION__, __LINE__)

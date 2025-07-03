@@ -11,7 +11,6 @@
 #include <cstdio>
 #include <cstring>
 #include <igl/Common.h>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/Texture.h>
 #include <igl/opengl/ViewTextureTarget.h>
 #include <igl/opengl/macos/Context.h>

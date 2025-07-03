@@ -7,8 +7,6 @@
 
 #include <igl/opengl/TextureBufferBase.h>
 
-#include <igl/opengl/Errors.h>
-
 namespace igl::opengl {
 
 TextureType TextureBufferBase::getType() const {

@@ -7,8 +7,6 @@
 
 #include <igl/opengl/empty/Device.h>
 
-#include <cstring>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/empty/Context.h>
 
 namespace igl::opengl::empty {

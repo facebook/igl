@@ -9,7 +9,6 @@
 
 #include <EGL/eglplatform.h>
 #include <cstring>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/egl/Context.h>
 
 namespace igl::opengl::egl {

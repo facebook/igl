@@ -5,9 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "DepthStencilState.h"
-
-#include <igl/opengl/Errors.h>
+#include <igl/opengl/DepthStencilState.h>
 
 namespace igl::opengl {
 

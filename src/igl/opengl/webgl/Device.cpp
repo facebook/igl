@@ -10,7 +10,6 @@
 #include <igl/opengl/webgl/Device.h>
 
 #include <igl/Common.h>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/webgl/Context.h>
 
 namespace igl::opengl::webgl {

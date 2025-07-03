@@ -9,7 +9,6 @@
 
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/ComputeCommandEncoder.h>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/RenderCommandEncoder.h>
 

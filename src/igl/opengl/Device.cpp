@@ -15,7 +15,6 @@
 #include <igl/opengl/ComputePipelineState.h>
 #include <igl/opengl/DepthStencilState.h>
 #include <igl/opengl/DeviceFeatureSet.h>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/Framebuffer.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/RenderPipelineState.h>

@@ -10,7 +10,6 @@
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/CommandBuffer.h>
 #include <igl/opengl/DepthStencilState.h>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/Framebuffer.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/RenderCommandAdapter.h>

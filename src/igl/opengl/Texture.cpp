@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <igl/opengl/CommandBuffer.h>
 #include <igl/opengl/Device.h>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/util/TextureFormat.h>
 
 namespace igl::opengl {

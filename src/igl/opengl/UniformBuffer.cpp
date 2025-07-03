@@ -12,7 +12,6 @@
 #include <igl/Common.h>
 #include <igl/IGLSafeC.h>
 #include <igl/opengl/Device.h>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/RenderPipelineState.h>
 
 namespace igl::opengl {

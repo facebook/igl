@@ -7,7 +7,6 @@
 
 #include <igl/opengl/glx/Device.h>
 
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/glx/Context.h>
 
 namespace igl::opengl::glx {
