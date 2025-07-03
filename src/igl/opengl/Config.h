@@ -32,3 +32,8 @@
 #else
 #define IGL_WGL 0
 #endif
+
+// Define IGL_API_LOG as 1 to enable OpenGL API logging
+#if !defined(IGL_API_LOG)
+#define IGL_API_LOG 0
+#endif

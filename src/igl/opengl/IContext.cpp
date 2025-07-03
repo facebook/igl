@@ -20,13 +20,10 @@
 #include "tracy/TracyOpenGL.hpp"
 #endif
 
-// Uncomment to enable GL API logging
-// #define IGL_API_LOG
-
 // Uncomment to enable shader validation
 // #define IGL_VALIDATE_SHADERS
 
-#if defined(IGL_API_LOG) && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
+#if IGL_API_LOG && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
 #define APILOG_DEC_DRAW_COUNT() \
   if (apiLogDrawsLeft_) {       \
     apiLogDrawsLeft_--;         \
@@ -78,7 +75,7 @@ void logSource(const int count, const char** string, const int* length) {
 #define APILOG_DEC_DRAW_COUNT() static_cast<void>(0)
 #define APILOG(format, ...) static_cast<void>(0)
 #define APILOG_SOURCE(count, string, length) static_cast<void>(0)
-#endif // defined(IGL_API_LOG) && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
+#endif // IGL_API_LOG && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
 
 #define GLCALL(funcName)                                        \
   IGL_SOFT_ASSERT(isCurrentContext() || isCurrentSharegroup()); \
@@ -139,7 +136,7 @@ void logSource(const int count, const char** string, const int* length) {
   case res:              \
     return #res;
 
-#if defined(IGL_API_LOG) && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
+#if IGL_API_LOG && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
 // Enclose this function with the #ifdef to stop the compiler
 // from complaining that this function is unused (in the non debug/log path)
 namespace {
@@ -586,14 +583,14 @@ std::string GLenumToString(GLenum code) {
 #define GL_BOOL_TO_STRING(code) GLboolToString(code).c_str()
 
 } // namespace
-#endif // defined(IGL_API_LOG) && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
+#endif // IGL_API_LOG && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
 
 // Debug logging is not included in code coverage
 // @MARK:COVERAGE_EXCLUDE_START
 
 namespace {
 
-#if IGL_DEBUG || defined(IGL_API_LOG)
+#if IGL_DEBUG || IGL_API_LOG
 const char* GLDebugSeverityToString(GLenum severity) {
   switch (severity) {
     RESULT_CASE(GL_DEBUG_SEVERITY_HIGH)
@@ -650,7 +647,7 @@ void logDebugMessage(GLenum source,
          static_cast<int>(message ? length : 0),
          message ? message : "");
 }
-#if defined(IGL_API_LOG)
+#if IGL_API_LOG
 void logOpenGlDebugMessage(GLenum source,
                            GLenum type,
                            GLuint id,
@@ -660,8 +657,8 @@ void logOpenGlDebugMessage(GLenum source,
                            const void* userParam) {
   logDebugMessage(source, type, id, severity, length, message);
 }
-#endif // defined(IGL_API_LOG)
-#endif // IGL_DEBUG || defined(IGL_API_LOG)
+#endif // IGL_API_LOG
+#endif // IGL_DEBUG || IGL_API_LOG
 } // namespace
 
 // @MARK:COVERAGE_EXCLUDE_END
@@ -3115,7 +3112,7 @@ Result IContext::getLastError() const {
 GLenum IContext::checkForErrors(IGL_MAYBE_UNUSED const char* callerName,
                                 IGL_MAYBE_UNUSED size_t lineNum) const {
   lastError_ = getError();
-#if IGL_DEBUG && !defined(IGL_API_LOG)
+#if IGL_DEBUG && !IGL_API_LOG
   static bool gettingMessageLog = false; // Used to avoid recursive entry
   if (lastError_ != GL_NO_ERROR && !gettingMessageLog &&
       deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessageCallback)) {
@@ -3140,7 +3137,7 @@ GLenum IContext::checkForErrors(IGL_MAYBE_UNUSED const char* callerName,
       }
     }
   }
-#endif //  IGL_DEBUG && !defined(IGL_API_LOG)
+#endif //  IGL_DEBUG && !IGL_API_LOG
 
   GL_ASSERT_ERROR(lastError_ == GL_NO_ERROR, callerName, lineNum, lastError_);
 
@@ -3263,14 +3260,14 @@ void IContext::initialize(Result* result) {
     enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
   }
 
-#if IGL_DEBUG || defined(IGL_API_LOG)
+#if IGL_DEBUG || IGL_API_LOG
   if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessageCallback)) {
     enable(GL_DEBUG_OUTPUT);
-#if defined(IGL_API_LOG)
+#if IGL_API_LOG
     debugMessageCallback(logOpenGlDebugMessage, nullptr);
-#endif // defined(IGL_API_LOG)
+#endif // IGL_API_LOG)
   }
-#endif // IGL_DEBUG || defined(IGL_API_LOG)
+#endif // IGL_DEBUG || IGL_API_LOG
 
 #if defined(IGL_WITH_TRACY_GPU)
   [[maybe_unused]] constexpr std::string_view kTracyContextName = "IGL OpenGL";
