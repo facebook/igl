@@ -474,7 +474,7 @@ VulkanContext::~VulkanContext() {
   dummyStorageBuffer_.reset();
   dummyUniformBuffer_.reset();
 
-#if IGL_DEBUG
+#if IGL_DEBUG_ABORT_ENABLED
   for (const auto& t : pimpl_->bindGroupTexturesPool.objects_) {
     if (t.obj_.dset != VK_NULL_HANDLE) {
       IGL_DEBUG_ABORT("Leaked texture bind group detected! %s", t.obj_.desc.debugName.c_str());
@@ -485,7 +485,7 @@ VulkanContext::~VulkanContext() {
       IGL_DEBUG_ABORT("Leaked buffer bind group detected! %s", t.obj_.desc.debugName.c_str());
     }
   }
-#endif // IGL_DEBUG
+#endif // IGL_DEBUG_ABORT_ENABLED
 
   // BindGroups can hold shared pointers to textures/samplers/buffers. Release them here.
   pimpl_->bindGroupTexturesPool.clear();
@@ -496,14 +496,14 @@ VulkanContext::~VulkanContext() {
 
   pruneTextures();
 
-#if IGL_DEBUG
+#if IGL_LOGGING_ENABLED
   if (textures_.numObjects()) {
     IGL_LOG_ERROR("Leaked %u textures\n", textures_.numObjects());
   }
   if (samplers_.numObjects()) {
     IGL_LOG_ERROR("Leaked %u samplers\n", samplers_.numObjects());
   }
-#endif // IGL_DEBUG
+#endif // IGL_LOGGING_ENABLED
   textures_.clear();
   samplers_.clear();
 

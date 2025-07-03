@@ -80,7 +80,7 @@ void PlatformDevice::blitFramebuffer(const std::shared_ptr<IFramebuffer>& src,
   auto& from = static_cast<Framebuffer&>(*src);
   auto& to = static_cast<Framebuffer&>(*dst);
 
-#if IGL_DEBUG
+#if IGL_DEBUG_ABORT_ENABLED
   // Guard against depth/stencil type mismatch:
   // GL_INVALID_OPERATION is generated if mask contains GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT
   // and the source and destination depth and stencil formats do not match.

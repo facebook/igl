@@ -258,9 +258,9 @@ class RenderCommandEncoderTest : public ::testing::Test {
         pixels.data(),
         TextureRangeDesc::new2D(0, 0, OFFSCREEN_RT_WIDTH, OFFSCREEN_RT_HEIGHT));
 
-#if IGL_DEBUG
+#if IGL_LOGGING_ENABLED
     debugLog(pixels);
-#endif // IGL_DEBUG
+#endif // IGL_LOGGING_ENABLED
 
     for (int i = 0; i < OFFSCREEN_RT_HEIGHT; i++) {
       for (int j = 0; j < OFFSCREEN_RT_WIDTH; j++) {
@@ -279,9 +279,9 @@ class RenderCommandEncoderTest : public ::testing::Test {
         pixels.data(),
         TextureRangeDesc::new2D(0, 0, OFFSCREEN_RT_WIDTH, OFFSCREEN_RT_HEIGHT));
 
-#if IGL_DEBUG
+#if IGL_LOGGING_ENABLED
     debugLog(pixels);
-#endif // IGL_DEBUG
+#endif // IGL_LOGGING_ENABLED
 
     func(pixels);
   }

@@ -109,7 +109,7 @@ void ResourcesBinder::bindTexture(uint32_t index, Texture* tex) {
 
   VulkanTexture* newTexture = tex ? &tex->getVulkanTexture() : nullptr;
 
-#if IGL_DEBUG
+#if IGL_DEBUG_ABORT_ENABLED
   if (newTexture) {
     const igl::vulkan::VulkanImage& img = newTexture->image_;
     IGL_DEBUG_ASSERT(img.samples_ == VK_SAMPLE_COUNT_1_BIT,
@@ -125,7 +125,7 @@ void ResourcesBinder::bindTexture(uint32_t index, Texture* tex) {
                        img.imageLayout_ == VK_IMAGE_LAYOUT_GENERAL);
     }
   }
-#endif // IGL_DEBUG
+#endif // IGL_DEBUG_ABORT_ENABLED
 
   // multisampled images cannot be directly accessed from shaders
   const bool isTextureAvailable =
@@ -160,7 +160,7 @@ void ResourcesBinder::bindStorageImage(uint32_t index, Texture* tex) {
 
   VulkanTexture* newTexture = tex ? &tex->getVulkanTexture() : nullptr;
 
-#if IGL_DEBUG
+#if IGL_DEBUG_ABORT_ENABLED
   if (newTexture) {
     const igl::vulkan::VulkanImage& img = newTexture->image_;
     IGL_DEBUG_ASSERT(img.samples_ == VK_SAMPLE_COUNT_1_BIT,
@@ -171,7 +171,7 @@ void ResourcesBinder::bindStorageImage(uint32_t index, Texture* tex) {
     // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     IGL_DEBUG_ASSERT(img.imageLayout_ == VK_IMAGE_LAYOUT_GENERAL);
   }
-#endif // IGL_DEBUG
+#endif // IGL_DEBUG_ABORT_ENABLED
 
   // multisampled images cannot be directly accessed from shaders
   const bool isTextureAvailable =

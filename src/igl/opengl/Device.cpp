@@ -165,7 +165,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   const auto sanitized = sanitize(desc);
 
   std::unique_ptr<Texture> texture;
-#if IGL_DEBUG
+#if IGL_DEBUG_ABORT_ENABLED
   if (sanitized.type == TextureType::TwoD || sanitized.type == TextureType::TwoDArray) {
     size_t textureSizeLimit = 0;
     getFeatureLimits(DeviceFeatureLimits::MaxTextureDimension1D2D, textureSizeLimit);

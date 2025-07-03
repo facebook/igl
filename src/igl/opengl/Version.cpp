@@ -194,7 +194,7 @@ GLVersion getGLVersion(const char* version, bool constrain) {
   if (constrain) {
     auto [constrainedMajorVersion, constrainedMinorVersion] =
         constrainVersion(majorVersion, minorVersion);
-#if IGL_DEBUG
+#if IGL_LOGGING_ENABLED
     if (constrainedMajorVersion != majorVersion || constrainedMinorVersion != minorVersion) {
 #if IGL_OPENGL_ES
       static constexpr std::string_view gl = "OpenGL ES";
@@ -215,7 +215,7 @@ GLVersion getGLVersion(const char* version, bool constrain) {
                    constrainedMajorVersion,
                    constrainedMinorVersion);
     }
-#endif // IGL_DEBUG
+#endif // IGL_LOGGING_ENABLED
     majorVersion = constrainedMajorVersion;
     minorVersion = constrainedMinorVersion;
   }

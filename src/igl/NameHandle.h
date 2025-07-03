@@ -81,7 +81,7 @@ uint32_t iglCrc32(const char* data, size_t length);
 ///--------------------------------------
 /// MARK: - NameHandle
 
-#if IGL_DEBUG
+#if IGL_DEBUG_ABORT_ENABLED
 #define CHECK_VALID_CRC(a) (void)checkIsValidCrcCompare(a)
 #else
 #define CHECK_VALID_CRC(a)
@@ -170,7 +170,7 @@ class NameHandle {
   }
 
  private:
-#if IGL_DEBUG
+#if IGL_DEBUG_ABORT_ENABLED
   [[nodiscard]] bool checkIsValidCrcCompare(const NameHandle& nh) const;
 #endif
   uint32_t crc32_ = 0;
