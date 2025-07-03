@@ -20,7 +20,6 @@ class ViewTextureTarget;
 namespace igl::opengl::glx {
 
 class Device;
-class Context;
 
 class PlatformDevice : public opengl::PlatformDevice {
  public:
