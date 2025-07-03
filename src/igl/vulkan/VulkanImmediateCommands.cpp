@@ -51,7 +51,7 @@ VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
   useTimelineSemaphoreAndSynchronization2_(useTimelineSemaphoreAndSynchronization2) {
   IGL_PROFILER_FUNCTION();
 
-  vf_.vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue_);
+  vf_.vkGetDeviceQueue(device_, queueFamilyIndex, 0, &queue_);
 
   buffers_.reserve(kMaxCommandBuffers);
 
@@ -63,7 +63,7 @@ VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
                     exportableFences,
                     IGL_FORMAT("Fence: commandBuffer #{}", i).c_str()),
         VulkanSemaphore(
-            vf_, device, false, IGL_FORMAT("Semaphore: {} ({})", debugName, i).c_str()));
+            vf_, device_, false, IGL_FORMAT("Semaphore: {} ({})", debugName, i).c_str()));
     VK_ASSERT(ivkAllocateCommandBuffer(
         &vf_, device_, commandPool_.getVkCommandPool(), &buffers_[i].cmdBufAllocated_));
     buffers_[i].handle_.bufferIndex_ = i;
