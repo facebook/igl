@@ -12,9 +12,9 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <igl/opengl/Config.h>
 #include <igl/opengl/GLFunc.h>
 #include <igl/opengl/GLIncludes.h>
-#include <igl/opengl/Macros.h>
 
 #if defined(IGL_WITH_TRACY_GPU)
 #include "tracy/TracyOpenGL.hpp"

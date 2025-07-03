@@ -10,7 +10,7 @@
 #include <cstddef> // For size_t/
 #include <igl/Macros.h>
 #if IGL_BACKEND_OPENGL
-#include <igl/opengl/Macros.h>
+#include <igl/opengl/Config.h>
 #endif // IGL_BACKEND_OPENGL
 
 namespace igl::tests::data::shader {

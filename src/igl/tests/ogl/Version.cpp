@@ -7,7 +7,7 @@
 
 #include "../util/Common.h"
 
-#include <igl/opengl/Macros.h>
+#include <igl/opengl/Config.h>
 #include <igl/opengl/Version.h>
 
 namespace igl::tests {

@@ -7,8 +7,8 @@
 
 #pragma once
 
+#include <igl/opengl/Config.h>
 #include <igl/opengl/GLIncludes.h>
-#include <igl/opengl/Macros.h>
 
 //
 // Note: The below summary explains why we need this.

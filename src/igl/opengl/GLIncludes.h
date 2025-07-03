@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <igl/opengl/Macros.h>
+#include <igl/opengl/Config.h>
 
 // clang-format off
 #if IGL_PLATFORM_IOS_SIMULATOR
