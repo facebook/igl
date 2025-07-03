@@ -141,7 +141,7 @@ void Framebuffer::copyBytes(ICommandQueue& cmdQueue,
     mtlTexture->getBytes(range, pixelBytes, bytesPerRow);
   } else {
     Result result;
-    TextureDesc desc{
+    const TextureDesc desc{
         .width = iglTexture->getDimensions().width,
         .height = iglTexture->getDimensions().height,
         .format = iglTexture->getProperties().format,
