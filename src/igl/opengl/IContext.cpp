@@ -9,8 +9,6 @@
 #include <igl/opengl/IContext.h>
 
 #include <cstring>
-#include <optional>
-#include <sstream>
 #include <string>
 #include <igl/opengl/Config.h>
 #include <igl/opengl/GLFunc.h>
@@ -23,14 +21,17 @@
 // Uncomment to enable shader validation
 // #define IGL_VALIDATE_SHADERS
 
-#if IGL_API_LOG && IGL_LOGGING_ENABLED
+#if IGL_API_LOG
+
+#include <sstream>
+
 #define APILOG_DEC_DRAW_COUNT() \
   if (apiLogDrawsLeft_) {       \
     apiLogDrawsLeft_--;         \
   }
-#define APILOG(format, ...)                 \
-  if (apiLogDrawsLeft_ || apiLogEnabled_) { \
-    IGL_LOG_DEBUG(format, ##__VA_ARGS__);   \
+#define APILOG(format, ...)                    \
+  if (apiLogDrawsLeft_ || apiLogEnabled_) {    \
+    IGLLog(IGLLogInfo, format, ##__VA_ARGS__); \
   }
 namespace {
 uint32_t logSourceChunk(uint32_t line, const char* string, size_t length) {
@@ -39,7 +40,7 @@ uint32_t logSourceChunk(uint32_t line, const char* string, size_t length) {
   while (length > 0) {
     if (*string == '\r' || *string == '\n') {
       if (printLen > 0) {
-        IGL_LOG_DEBUG("%3u: %.*s\n", line++, printLen, lineString);
+        IGLLog(IGLLogInfo, "%3u: %.*s\n", line++, printLen, lineString);
       }
       printLen = 0;
       lineString = string + 1;
@@ -50,7 +51,7 @@ uint32_t logSourceChunk(uint32_t line, const char* string, size_t length) {
     --length;
   }
   if (printLen > 0) {
-    IGL_LOG_DEBUG("%3u: %.*s\n", line++, printLen, lineString);
+    IGLLog(IGLLogInfo, "%3u: %.*s\n", line++, printLen, lineString);
   }
   return line;
 }
@@ -75,7 +76,7 @@ void logSource(const int count, const char** string, const int* length) {
 #define APILOG_DEC_DRAW_COUNT() static_cast<void>(0)
 #define APILOG(format, ...) static_cast<void>(0)
 #define APILOG_SOURCE(count, string, length) static_cast<void>(0)
-#endif // IGL_API_LOG && IGL_LOGGING_ENABLED
+#endif // IGL_API_LOG
 
 #define GLCALL(funcName)                                        \
   IGL_SOFT_ASSERT(isCurrentContext() || isCurrentSharegroup()); \
@@ -136,8 +137,8 @@ void logSource(const int count, const char** string, const int* length) {
   case res:              \
     return #res;
 
-#if IGL_API_LOG && IGL_LOGGING_ENABLED
-// Enclose this function with the #ifdef to stop the compiler
+#if IGL_API_LOG
+  // Enclose this function with the #ifdef to stop the compiler
 // from complaining that this function is unused (in the non debug/log path)
 namespace {
 std::string GLboolToString(GLboolean val) {
@@ -583,7 +584,7 @@ std::string GLenumToString(GLenum code) {
 #define GL_BOOL_TO_STRING(code) GLboolToString(code).c_str()
 
 } // namespace
-#endif // IGL_API_LOG && IGL_LOGGING_ENABLED
+#endif // IGL_API_LOG
 
 // Debug logging is not included in code coverage
 // @MARK:COVERAGE_EXCLUDE_START
@@ -3265,7 +3266,7 @@ void IContext::initialize(Result* result) {
     enable(GL_DEBUG_OUTPUT);
 #if IGL_API_LOG
     debugMessageCallback(logOpenGlDebugMessage, nullptr);
-#endif // IGL_API_LOG)
+#endif // IGL_API_LOG
   }
 #endif // IGL_DEBUG || IGL_API_LOG
 
