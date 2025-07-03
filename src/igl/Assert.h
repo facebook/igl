@@ -59,9 +59,9 @@
 #define IGL_ERROR_CATEGORY "IGL"
 
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
-#define IGL_VERIFY_ENABLED 1
+#define IGL_DEBUG_ABORT_ENABLED 1
 #else
-#define IGL_VERIFY_ENABLED 0
+#define IGL_DEBUG_ABORT_ENABLED 0
 #endif
 
 #if IGL_DEBUG
@@ -98,7 +98,7 @@ inline void _IGLDebugAbortV([[maybe_unused]] const char* category,
                             [[maybe_unused]] int line,
                             [[maybe_unused]] const char* format,
                             [[maybe_unused]] va_list ap) {
-#if IGL_VERIFY_ENABLED
+#if IGL_DEBUG_ABORT_ENABLED
   va_list apCopy;
   va_copy(apCopy, ap);
   auto listener = IGLGetDebugAbortListener();
@@ -111,7 +111,7 @@ inline void _IGLDebugAbortV([[maybe_unused]] const char* category,
   IGLLogV(IGLLogError, format, ap);
   IGLLog(IGLLogError, IGL_NEWLINE);
   _IGLDebugBreak();
-#endif // IGL_VERIFY_ENABLED
+#endif // IGL_DEBUG_ABORT_ENABLED
 }
 
 [[nodiscard]] inline bool _IGLDebugAbort(const char* category,
@@ -130,7 +130,7 @@ inline void _IGLDebugAbortV([[maybe_unused]] const char* category,
 }
 } // namespace igl
 
-#if IGL_VERIFY_ENABLED
+#if IGL_DEBUG_ABORT_ENABLED
 
 #define _IGL_DEBUG_ABORT_IMPL(cond, reason, format, ...) \
   (cond                                                  \
@@ -155,7 +155,7 @@ inline void _IGLDebugAbortV([[maybe_unused]] const char* category,
 #define _IGL_DEBUG_VERIFY(cond, format, ...) ::igl::_IGLEnsureNoDiscard(!!(cond))
 #define _IGL_DEBUG_VERIFY_NOT(cond, format, ...) ::igl::_IGLEnsureNoDiscard(!!(cond))
 
-#endif // IGL_VERIFY_ENABLED
+#endif // IGL_DEBUG_ABORT_ENABLED
 
 #define IGL_DEBUG_ABORT(format, ...) _IGL_DEBUG_ABORT((format), ##__VA_ARGS__)
 

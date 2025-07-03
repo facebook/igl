@@ -51,13 +51,13 @@
 // location of failure when the result is not VK_SUCCESS, along with a stringified version of the
 // result value. Asserts at the end of the code block. The check remains even in build modes other
 // than DEBUG
-#if IGL_VERIFY_ENABLED
-// When IGL_VERIFY_ENABLED is 1, VK_ASSERT may assert but will always log so use the existing
+#if IGL_DEBUG_ABORT_ENABLED
+// When IGL_DEBUG_ABORT_ENABLED is 1, VK_ASSERT may assert but will always log so use the existing
 // macro.
 #define VK_ASSERT_FORCE_LOG(func) VK_ASSERT(func)
 #else
-// When IGL_VERIFY_ENABLED is 0, VK_ASSERT will neither log nor assert so need a separate definition
-// that will explicitly log the result
+// When IGL_DEBUG_ABORT_ENABLED is 0, VK_ASSERT will neither log nor assert so need a separate
+// definition that will explicitly log the result
 #define VK_ASSERT_FORCE_LOG(func)                           \
   {                                                         \
     const VkResult vk_assert_result = func;                 \
@@ -70,7 +70,7 @@
              ivkGetVulkanResultString(vk_assert_result));   \
     }                                                       \
   }
-#endif // IGL_VERIFY_ENABLED
+#endif // IGL_DEBUG_ABORT_ENABLED
 
 // Macro that encapsulates a function call and check its return value against VK_SUCCESS. Prints
 // location of failure when the result is not VK_SUCCESS, along with a stringified version of the

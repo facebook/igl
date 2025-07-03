@@ -269,7 +269,7 @@ void RenderPipelineState::unbind() {
 // bufferOffset is an offset in bytes to the start of the vertex attributes in the buffer.
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t bufferOffset) {
-#if IGL_VERIFY_ENABLED
+#if IGL_DEBUG_ABORT_ENABLED
   static GLint sMaxNumVertexAttribs = 0;
   if (0 == sMaxNumVertexAttribs) {
     getContext().getIntegerv(GL_MAX_VERTEX_ATTRIBS, &sMaxNumVertexAttribs);
