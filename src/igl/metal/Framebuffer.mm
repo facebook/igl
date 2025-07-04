@@ -180,8 +180,8 @@ void Framebuffer::copyBytes(ICommandQueue& cmdQueue,
     }
 
     // 3,read data from the shared stage texture
-    auto mtlTexture = std::static_pointer_cast<Texture>(stageTexture);
-    mtlTexture->getBytes(range, pixelBytes, bytesPerRow);
+    auto& mtlStageTexture = static_cast<Texture&>(*stageTexture);
+    mtlStageTexture.getBytes(range, pixelBytes, bytesPerRow);
   }
 }
 
