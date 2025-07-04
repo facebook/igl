@@ -33,11 +33,11 @@ UniformAdapter::UniformAdapter(const IContext& context, PipelineType type) : pip
 }
 
 void UniformAdapter::shrinkUniformUsage() {
-  static constexpr uint32_t maxUniformBytes = 32 * 1024;
-  static constexpr uint32_t maxShrinkUniformCounter = 1000;
-  if (uniformData_.size() > maxUniformBytes && usedUniformDataBytes_ < uniformData_.size() / 2) {
+  static constexpr uint32_t kMaxUniformBytes = 32 * 1024;
+  static constexpr uint32_t kMaxShrinkUniformCounter = 1000;
+  if (uniformData_.size() > kMaxUniformBytes && usedUniformDataBytes_ < uniformData_.size() / 2) {
     shrinkUniformDataCounter_++;
-    if (shrinkUniformDataCounter_ > maxShrinkUniformCounter) {
+    if (shrinkUniformDataCounter_ > kMaxShrinkUniformCounter) {
       uniformData_.resize(uniformData_.size() / 2);
       shrinkUniformDataCounter_ = 0;
     }
