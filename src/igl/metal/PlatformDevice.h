@@ -28,7 +28,7 @@ class Framebuffer;
 
 class PlatformDevice final : public IPlatformDevice {
  public:
-  static constexpr igl::PlatformDeviceType Type = igl::PlatformDeviceType::Metal;
+  static constexpr igl::PlatformDeviceType kType = igl::PlatformDeviceType::Metal;
 
   PlatformDevice(Device& device);
   ~PlatformDevice() override;
@@ -109,7 +109,7 @@ class PlatformDevice final : public IPlatformDevice {
 
  protected:
   [[nodiscard]] bool isType(PlatformDeviceType t) const noexcept override {
-    return t == Type;
+    return t == kType;
   }
 
  private:

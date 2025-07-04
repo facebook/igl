@@ -239,7 +239,7 @@ class IDevice : public ICapabilities {
   template<typename T, typename = std::enable_if_t<std::is_base_of<IPlatformDevice, T>::value>>
   const T* IGL_NULLABLE getPlatformDevice() const noexcept {
     const IPlatformDevice& platformDevice = getPlatformDevice();
-    if (platformDevice.isType(T::Type)) {
+    if (platformDevice.isType(T::kType)) {
       return static_cast<const T*>(&platformDevice);
     }
     return nullptr;

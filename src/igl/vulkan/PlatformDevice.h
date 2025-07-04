@@ -24,7 +24,7 @@ class Device;
 /// @brief Implements the igl::IPlatformDevice interface
 class PlatformDevice : public IPlatformDevice {
  public:
-  static constexpr igl::PlatformDeviceType Type = igl::PlatformDeviceType::Vulkan;
+  static constexpr igl::PlatformDeviceType kType = igl::PlatformDeviceType::Vulkan;
 
   explicit PlatformDevice(Device& device);
   ~PlatformDevice() override = default;
@@ -78,7 +78,7 @@ class PlatformDevice : public IPlatformDevice {
 
  protected:
   [[nodiscard]] bool isType(PlatformDeviceType t) const noexcept override {
-    return t == Type;
+    return t == kType;
   }
 
  private:

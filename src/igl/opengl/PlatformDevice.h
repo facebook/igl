@@ -74,7 +74,7 @@ class TextureBufferExternal;
 ///
 class PlatformDevice : public IPlatformDevice {
  public:
-  static constexpr igl::PlatformDeviceType Type = igl::PlatformDeviceType::OpenGL;
+  static constexpr igl::PlatformDeviceType kType = igl::PlatformDeviceType::OpenGL;
 
   explicit PlatformDevice(Device& owner) : owner_(owner) {}
 
@@ -120,7 +120,7 @@ class PlatformDevice : public IPlatformDevice {
 
  protected:
   [[nodiscard]] bool isType(PlatformDeviceType t) const noexcept override {
-    return t == Type;
+    return t == kType;
   }
 
   Device& owner_;

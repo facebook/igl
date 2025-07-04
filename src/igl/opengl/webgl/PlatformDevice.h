@@ -28,7 +28,7 @@ class Context;
 
 class PlatformDevice : public opengl::PlatformDevice {
  public:
-  static constexpr igl::PlatformDeviceType Type = igl::PlatformDeviceType::OpenGLWebGL;
+  static constexpr igl::PlatformDeviceType kType = igl::PlatformDeviceType::OpenGLWebGL;
 
   PlatformDevice(Device& owner);
   ~PlatformDevice() override = default;

@@ -284,7 +284,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBuffer(
 }
 
 bool PlatformDevice::isType(PlatformDeviceType t) const noexcept {
-  return t == Type || opengl::PlatformDevice::isType(t);
+  return t == kType || opengl::PlatformDevice::isType(t);
 }
 
 CVOpenGLESTextureCacheRef PlatformDevice::getTextureCache() {

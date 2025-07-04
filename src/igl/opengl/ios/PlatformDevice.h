@@ -26,7 +26,7 @@ class Device;
 
 class PlatformDevice final : public opengl::PlatformDevice {
  public:
-  static constexpr igl::PlatformDeviceType Type = igl::PlatformDeviceType::OpenGLIOS;
+  static constexpr igl::PlatformDeviceType kType = igl::PlatformDeviceType::OpenGLIOS;
 
   PlatformDevice(Device& owner);
   ~PlatformDevice() override;

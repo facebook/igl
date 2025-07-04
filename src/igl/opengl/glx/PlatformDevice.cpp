@@ -96,7 +96,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t 
 }
 
 bool PlatformDevice::isType(PlatformDeviceType t) const noexcept {
-  return t == Type || opengl::PlatformDevice::isType(t);
+  return t == kType || opengl::PlatformDevice::isType(t);
 }
 
 } // namespace igl::opengl::glx
