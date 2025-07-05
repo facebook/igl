@@ -651,7 +651,6 @@ using glm::vec2;
 using glm::vec3;
 using glm::vec4;
 
-GLFWwindow* window_ = nullptr;
 int width_ = 0;
 int height_ = 0;
 igl::FPSCounter fps_;
@@ -810,9 +809,10 @@ std::string convertFileName(std::string fileName) {
   }
 }
 
-bool initWindow(GLFWwindow** outWindow) {
+static GLFWwindow* initIGL(bool isHeadless) {
   if (!glfwInit()) {
-    return false;
+    printf("glfwInit() failed");
+    return nullptr;
   }
 
 #if USE_OPENGL_BACKEND
@@ -841,111 +841,101 @@ bool initWindow(GLFWwindow** outWindow) {
 
   glfwGetMonitorWorkarea(monitor, &posX, &posY, &width, &height);
 
-  GLFWwindow* window = glfwCreateWindow(width, height, title, nullptr, nullptr);
+  GLFWwindow* window = isHeadless ? nullptr
+                                  : glfwCreateWindow(width, height, title, nullptr, nullptr);
 
-  if (!window) {
-    glfwTerminate();
-    return false;
-  }
+  if (window) {
+    glfwSetWindowPos(window, posX, posY);
 
-  glfwSetWindowPos(window, posX, posY);
+    glfwSetErrorCallback([](int error, const char* description) {
+      printf("GLFW Error (%i): %s\n", error, description);
+    });
 
-  glfwSetErrorCallback([](int error, const char* description) {
-    printf("GLFW Error (%i): %s\n", error, description);
-  });
-
-  glfwSetCursorPosCallback(window, [](auto* window, double x, double y) {
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    mousePos_ = vec2(x / width, 1.0f - y / height);
+    glfwSetCursorPosCallback(window, [](auto* window, double x, double y) {
+      int width, height;
+      glfwGetFramebufferSize(window, &width, &height);
+      mousePos_ = vec2(x / width, 1.0f - y / height);
 #if IGL_WITH_IGLU
-    inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
+      inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
 #endif // IGL_WITH_IGLU
-  });
+    });
 
-  glfwSetMouseButtonCallback(window, [](auto* window, int button, int action, int /*mods*/) {
+    glfwSetMouseButtonCallback(window, [](auto* window, int button, int action, int /*mods*/) {
 #if IGL_WITH_IGLU
-    if (!ImGui::GetIO().WantCaptureMouse) {
+      if (!ImGui::GetIO().WantCaptureMouse) {
 #endif // IGL_WITH_IGLU
-      if (button == GLFW_MOUSE_BUTTON_LEFT) {
-        mousePressed_ = (action == GLFW_PRESS);
+        if (button == GLFW_MOUSE_BUTTON_LEFT) {
+          mousePressed_ = (action == GLFW_PRESS);
+        }
+#if IGL_WITH_IGLU
+      } else {
+        // release the mouse
+        mousePressed_ = false;
       }
-#if IGL_WITH_IGLU
-    } else {
-      // release the mouse
-      mousePressed_ = false;
-    }
-    double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
-    using igl::shell::MouseButton;
-    const MouseButton iglButton =
-        (button == GLFW_MOUSE_BUTTON_LEFT)
-            ? MouseButton::Left
-            : (button == GLFW_MOUSE_BUTTON_RIGHT ? MouseButton::Right : MouseButton::Middle);
-    inputDispatcher_.queueEvent(
-        igl::shell::MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
+      double xpos, ypos;
+      glfwGetCursorPos(window, &xpos, &ypos);
+      using igl::shell::MouseButton;
+      const MouseButton iglButton =
+          (button == GLFW_MOUSE_BUTTON_LEFT)
+              ? MouseButton::Left
+              : (button == GLFW_MOUSE_BUTTON_RIGHT ? MouseButton::Right : MouseButton::Middle);
+      inputDispatcher_.queueEvent(
+          igl::shell::MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
 #endif // IGL_WITH_IGLU
-  });
+    });
 
-  glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int mods) {
-    const bool pressed = action != GLFW_RELEASE;
-    if (key == GLFW_KEY_ESCAPE && pressed) {
-      glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-    if (key == GLFW_KEY_N && pressed) {
-      perFrame_.bDrawNormals = (perFrame_.bDrawNormals + 1) % 2;
-    }
-    if (key == GLFW_KEY_C && pressed) {
-      enableComputePass_ = !enableComputePass_;
-    }
-    if (key == GLFW_KEY_T && pressed) {
-      enableWireframe_ = !enableWireframe_;
-    }
-    if (key == GLFW_KEY_ESCAPE && pressed) {
-      glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-    if (key == GLFW_KEY_W) {
-      positioner_.movement_.forward_ = pressed;
-    }
-    if (key == GLFW_KEY_S) {
-      positioner_.movement_.backward_ = pressed;
-    }
-    if (key == GLFW_KEY_A) {
-      positioner_.movement_.left_ = pressed;
-    }
-    if (key == GLFW_KEY_D) {
-      positioner_.movement_.right_ = pressed;
-    }
-    if (key == GLFW_KEY_1) {
-      positioner_.movement_.up_ = pressed;
-    }
-    if (key == GLFW_KEY_2) {
-      positioner_.movement_.down_ = pressed;
-    }
-    if (mods & GLFW_MOD_SHIFT) {
-      positioner_.movement_.fastSpeed_ = pressed;
-    }
-    if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
-      positioner_.movement_.fastSpeed_ = pressed;
-    }
-    if (key == GLFW_KEY_SPACE) {
-      positioner_.setUpVector(vec3(0.0f, 1.0f, 0.0f));
-    }
-    if (key == GLFW_KEY_L && pressed) {
-      perFrame_.bDebugLines = (perFrame_.bDebugLines + 1) % 2;
-    }
-  });
+    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int mods) {
+      const bool pressed = action != GLFW_RELEASE;
+      if (key == GLFW_KEY_ESCAPE && pressed) {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+      }
+      if (key == GLFW_KEY_N && pressed) {
+        perFrame_.bDrawNormals = (perFrame_.bDrawNormals + 1) % 2;
+      }
+      if (key == GLFW_KEY_C && pressed) {
+        enableComputePass_ = !enableComputePass_;
+      }
+      if (key == GLFW_KEY_T && pressed) {
+        enableWireframe_ = !enableWireframe_;
+      }
+      if (key == GLFW_KEY_ESCAPE && pressed) {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+      }
+      if (key == GLFW_KEY_W) {
+        positioner_.movement_.forward_ = pressed;
+      }
+      if (key == GLFW_KEY_S) {
+        positioner_.movement_.backward_ = pressed;
+      }
+      if (key == GLFW_KEY_A) {
+        positioner_.movement_.left_ = pressed;
+      }
+      if (key == GLFW_KEY_D) {
+        positioner_.movement_.right_ = pressed;
+      }
+      if (key == GLFW_KEY_1) {
+        positioner_.movement_.up_ = pressed;
+      }
+      if (key == GLFW_KEY_2) {
+        positioner_.movement_.down_ = pressed;
+      }
+      if (mods & GLFW_MOD_SHIFT) {
+        positioner_.movement_.fastSpeed_ = pressed;
+      }
+      if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
+        positioner_.movement_.fastSpeed_ = pressed;
+      }
+      if (key == GLFW_KEY_SPACE) {
+        positioner_.setUpVector(vec3(0.0f, 1.0f, 0.0f));
+      }
+      if (key == GLFW_KEY_L && pressed) {
+        perFrame_.bDebugLines = (perFrame_.bDebugLines + 1) % 2;
+      }
+    });
 
-  glfwGetWindowSize(window, &width_, &height_);
-
-  if (outWindow) {
-    *outWindow = window;
+    glfwGetWindowSize(window, &width_, &height_);
   }
 
-  return true;
-}
-
-void initIGL() {
   // create a device
   {
     {
@@ -970,16 +960,22 @@ void initIGL() {
           .enhancedShaderDebugging = false,
           .enableValidation = kEnableValidationLayers,
           .enableDescriptorIndexing = true,
+          .headless = isHeadless,
       };
 #ifdef _WIN32
-      auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));
+      auto ctx = vulkan::HWDevice::createContext(
+          cfg, window ? (void*)glfwGetWin32Window(window) : nullptr);
 
 #elif __APPLE__
-      auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetCocoaWindow(window_));
+      auto ctx = vulkan::HWDevice::createContext(
+          cfg, window ? (void*)glfwGetCocoaWindow(window) : nuullptr);
 
 #elif defined(__linux__)
-      auto ctx = vulkan::HWDevice::createContext(
-          cfg, (void*)glfwGetX11Window(window_), 0, nullptr, (void*)glfwGetX11Display());
+      auto ctx = vulkan::HWDevice::createContext(cfg,
+                                                 window ? (void*)glfwGetX11Window(window) : nullptr,
+                                                 0,
+                                                 nullptr,
+                                                 (void*)glfwGetX11Display());
 
 #else
 #error Unsupported OS
@@ -1164,6 +1160,8 @@ void initIGL() {
   renderPassShadow_.depthAttachment.loadAction = LoadAction::Clear;
   renderPassShadow_.depthAttachment.storeAction = StoreAction::Store;
   renderPassShadow_.depthAttachment.clearDepth = 1.0f;
+
+  return window;
 }
 
 namespace {
@@ -2583,7 +2581,8 @@ void processLoadedMaterials() {
 
 } // namespace
 
-int main(int /*argc*/, char* /*argv*/[]) {
+int main(int argc, char* argv[]) {
+  const bool isHeadless = argc > 1 && (strcmp(argv[1], "--headless") == 0);
   // find the content folder
   {
     using namespace std::filesystem;
@@ -2602,8 +2601,7 @@ int main(int /*argc*/, char* /*argv*/[]) {
     contentRootFolder = (dir / subdir).string();
   }
 
-  initWindow(&window_);
-  initIGL();
+  GLFWwindow* window = initIGL(isHeadless);
   initModel();
 
   if (kEnableCompression) {
@@ -2630,7 +2628,7 @@ int main(int /*argc*/, char* /*argv*/[]) {
   uint32_t frameIndex = 0;
 
   // Main loop
-  while (!glfwWindowShouldClose(window_)) {
+  while (!window || !glfwWindowShouldClose(window)) {
     {
       FramebufferDesc framebufferDesc;
       framebufferDesc.colorAttachments[0].texture = getNativeDrawable();
@@ -2677,7 +2675,12 @@ int main(int /*argc*/, char* /*argv*/[]) {
     inputDispatcher_.processEvents();
 #endif // IGL_WITH_IGLU
     render(getNativeDrawable(), frameIndex);
-    glfwPollEvents();
+    if (window) {
+      glfwPollEvents();
+    } else {
+      printf("We are running headless - breaking after 1 frame\n");
+      break;
+    }
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
   }
 
@@ -2714,7 +2717,7 @@ int main(int /*argc*/, char* /*argv*/[]) {
   fbOffscreen_ = nullptr;
   device_.reset(nullptr);
 
-  glfwDestroyWindow(window_);
+  glfwDestroyWindow(window);
   glfwTerminate();
 
   printf("Waiting for the loader thread to exit...\n");
