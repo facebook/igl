@@ -18,7 +18,7 @@
 namespace igl::opengl::glx {
 
 using GLXDrawable = XID;
-using GLXContext = struct __GLXcontext*;
+using GLXContext = struct __GLXcontext*; // NOLINT(bugprone-reserved-identifier)
 struct GLXSharedModule;
 
 class Context : public IContext {
