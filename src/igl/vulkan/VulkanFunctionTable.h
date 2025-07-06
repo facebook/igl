@@ -314,7 +314,7 @@ struct VulkanFunctionTable {
   PFN_vkGetAndroidHardwareBufferPropertiesANDROID vkGetAndroidHardwareBufferPropertiesANDROID;
   PFN_vkGetMemoryAndroidHardwareBufferANDROID vkGetMemoryAndroidHardwareBufferANDROID;
 #else
-  PFN_vkVoidFunction _ignore_alignment9[2];
+  PFN_vkVoidFunction ignoreAlignment9[2];
 #endif /* defined(VK_ANDROID_external_memory_android_hardware_buffer) */
 #if defined(VK_EXT_acquire_drm_display)
   PFN_vkAcquireDrmDisplayEXT vkAcquireDrmDisplayEXT;
@@ -326,7 +326,7 @@ struct VulkanFunctionTable {
   PFN_vkAcquireXlibDisplayEXT vkAcquireXlibDisplayEXT;
   PFN_vkGetRandROutputDisplayEXT vkGetRandROutputDisplayEXT;
 #else
-  PFN_vkVoidFunction _ignore_alignment11[2];
+  PFN_vkVoidFunction ignoreAlignment11[2];
 #endif /* defined(VK_EXT_acquire_xlib_display) */
 #if defined(VK_EXT_buffer_device_address)
   PFN_vkGetBufferDeviceAddressEXT vkGetBufferDeviceAddressEXT;
@@ -391,7 +391,7 @@ struct VulkanFunctionTable {
   PFN_vkGetPhysicalDeviceDirectFBPresentationSupportEXT
       vkGetPhysicalDeviceDirectFBPresentationSupportEXT;
 #else
-  PFN_vkVoidFunction _ignore_alignment20[2];
+  PFN_vkVoidFunction ignoreAlignment20[2];
 #endif /* defined(VK_EXT_directfb_surface) */
 #if defined(VK_EXT_discard_rectangles)
   PFN_vkCmdSetDiscardRectangleEXT vkCmdSetDiscardRectangleEXT;
@@ -446,7 +446,7 @@ struct VulkanFunctionTable {
   PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT vkGetPhysicalDeviceSurfacePresentModes2EXT;
   PFN_vkReleaseFullScreenExclusiveModeEXT vkReleaseFullScreenExclusiveModeEXT;
 #else
-  PFN_vkVoidFunction _ignore_alignment27[3];
+  PFN_vkVoidFunction ignoreAlignment27[3];
 #endif /* defined(VK_EXT_full_screen_exclusive) */
 #if defined(VK_EXT_hdr_metadata)
   PFN_vkSetHdrMetadataEXT vkSetHdrMetadataEXT;
@@ -476,7 +476,7 @@ struct VulkanFunctionTable {
 #if defined(VK_EXT_metal_surface)
   PFN_vkCreateMetalSurfaceEXT vkCreateMetalSurfaceEXT;
 #else
-  PFN_vkVoidFunction _ignore_alignment33;
+  PFN_vkVoidFunction ignoreAlignment33;
 #endif /* defined(VK_EXT_metal_surface) */
 #if defined(VK_EXT_multi_draw)
   PFN_vkCmdDrawMultiEXT vkCmdDrawMultiEXT;
@@ -538,29 +538,29 @@ struct VulkanFunctionTable {
   PFN_vkSetBufferCollectionBufferConstraintsFUCHSIA vkSetBufferCollectionBufferConstraintsFUCHSIA;
   PFN_vkSetBufferCollectionImageConstraintsFUCHSIA vkSetBufferCollectionImageConstraintsFUCHSIA;
 #else
-  PFN_vkVoidFunction _ignore_alignment42[5];
+  PFN_vkVoidFunction ignoreAlignment42[5];
 #endif /* defined(VK_FUCHSIA_buffer_collection) */
 #if defined(VK_FUCHSIA_external_memory)
   PFN_vkGetMemoryZirconHandleFUCHSIA vkGetMemoryZirconHandleFUCHSIA;
   PFN_vkGetMemoryZirconHandlePropertiesFUCHSIA vkGetMemoryZirconHandlePropertiesFUCHSIA;
 #else
-  PFN_vkVoidFunction _ignore_alignment43[2];
+  PFN_vkVoidFunction ignoreAlignment43[2];
 #endif /* defined(VK_FUCHSIA_external_memory) */
 #if defined(VK_FUCHSIA_external_semaphore)
   PFN_vkGetSemaphoreZirconHandleFUCHSIA vkGetSemaphoreZirconHandleFUCHSIA;
   PFN_vkImportSemaphoreZirconHandleFUCHSIA vkImportSemaphoreZirconHandleFUCHSIA;
 #else
-  PFN_vkVoidFunction _ignore_alignment44[2];
+  PFN_vkVoidFunction ignoreAlignment44[2];
 #endif /* defined(VK_FUCHSIA_external_semaphore) */
 #if defined(VK_FUCHSIA_imagepipe_surface)
   PFN_vkCreateImagePipeSurfaceFUCHSIA vkCreateImagePipeSurfaceFUCHSIA;
 #else
-  PFN_vkVoidFunction _ignore_alignment45;
+  PFN_vkVoidFunction ignoreAlignment45;
 #endif /* defined(VK_FUCHSIA_imagepipe_surface) */
 #if defined(VK_GGP_stream_descriptor_surface)
   PFN_vkCreateStreamDescriptorSurfaceGGP vkCreateStreamDescriptorSurfaceGGP;
 #else
-  PFN_vkVoidFunction _ignore_alignment46;
+  PFN_vkVoidFunction ignoreAlignment46;
 #endif /* defined(VK_GGP_stream_descriptor_surface) */
 #if defined(VK_GOOGLE_display_timing)
   PFN_vkGetPastPresentationTimingGOOGLE vkGetPastPresentationTimingGOOGLE;
@@ -617,7 +617,7 @@ struct VulkanFunctionTable {
 #if defined(VK_KHR_android_surface)
   PFN_vkCreateAndroidSurfaceKHR vkCreateAndroidSurfaceKHR;
 #else
-  PFN_vkVoidFunction _ignore_alignment52;
+  PFN_vkVoidFunction ignoreAlignment52;
 #endif /* defined(VK_KHR_android_surface) */
 #if defined(VK_KHR_bind_memory2)
   PFN_vkBindBufferMemory2KHR vkBindBufferMemory2KHR;
@@ -721,7 +721,7 @@ struct VulkanFunctionTable {
   PFN_vkGetFenceWin32HandleKHR vkGetFenceWin32HandleKHR;
   PFN_vkImportFenceWin32HandleKHR vkImportFenceWin32HandleKHR;
 #else
-  PFN_vkVoidFunction _ignore_alignment67[2];
+  PFN_vkVoidFunction ignoreAlignment67[2];
 #endif /* defined(VK_KHR_external_fence_win32) */
 #if defined(VK_KHR_external_memory_capabilities)
   PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR vkGetPhysicalDeviceExternalBufferPropertiesKHR;
@@ -738,7 +738,7 @@ struct VulkanFunctionTable {
   PFN_vkGetMemoryWin32HandleKHR vkGetMemoryWin32HandleKHR;
   PFN_vkGetMemoryWin32HandlePropertiesKHR vkGetMemoryWin32HandlePropertiesKHR;
 #else
-  PFN_vkVoidFunction _ignore_alignment70[2];
+  PFN_vkVoidFunction ignoreAlignment70[2];
 #endif /* defined(VK_KHR_external_memory_win32) */
 #if defined(VK_KHR_external_semaphore_capabilities)
   PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR
@@ -756,7 +756,7 @@ struct VulkanFunctionTable {
   PFN_vkGetSemaphoreWin32HandleKHR vkGetSemaphoreWin32HandleKHR;
   PFN_vkImportSemaphoreWin32HandleKHR vkImportSemaphoreWin32HandleKHR;
 #else
-  PFN_vkVoidFunction _ignore_alignment73[2];
+  PFN_vkVoidFunction ignoreAlignment73[2];
 #endif /* defined(VK_KHR_external_semaphore_win32) */
 #if defined(VK_KHR_fragment_shading_rate)
   PFN_vkCmdSetFragmentShadingRateKHR vkCmdSetFragmentShadingRateKHR;
@@ -913,12 +913,12 @@ struct VulkanFunctionTable {
 #if defined(VK_KHR_video_decode_queue)
   PFN_vkCmdDecodeVideoKHR vkCmdDecodeVideoKHR;
 #else
-  PFN_vkVoidFunction _ignore_alignment95;
+  PFN_vkVoidFunction ignoreAlignment95;
 #endif /* defined(VK_KHR_video_decode_queue) */
 #if defined(VK_KHR_video_encode_queue)
   PFN_vkCmdEncodeVideoKHR vkCmdEncodeVideoKHR;
 #else
-  PFN_vkVoidFunction _ignore_alignment96;
+  PFN_vkVoidFunction ignoreAlignment96;
 #endif /* defined(VK_KHR_video_encode_queue) */
 #if defined(VK_KHR_video_queue)
   PFN_vkBindVideoSessionMemoryKHR vkBindVideoSessionMemoryKHR;
@@ -934,47 +934,47 @@ struct VulkanFunctionTable {
   PFN_vkGetVideoSessionMemoryRequirementsKHR vkGetVideoSessionMemoryRequirementsKHR;
   PFN_vkUpdateVideoSessionParametersKHR vkUpdateVideoSessionParametersKHR;
 #else
-  PFN_vkVoidFunction _ignore_alignment97[12];
+  PFN_vkVoidFunction ignoreAlignment97[12];
 #endif /* defined(VK_KHR_video_queue) */
 #if defined(VK_KHR_wayland_surface)
   PFN_vkCreateWaylandSurfaceKHR vkCreateWaylandSurfaceKHR;
   PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR
       vkGetPhysicalDeviceWaylandPresentationSupportKHR;
 #else
-  PFN_vkVoidFunction _ignore_alignment98[2];
+  PFN_vkVoidFunction ignoreAlignment98[2];
 #endif /* defined(VK_KHR_wayland_surface) */
 #if defined(VK_KHR_win32_surface)
   PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR;
   PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR vkGetPhysicalDeviceWin32PresentationSupportKHR;
 #else
-  PFN_vkVoidFunction _ignore_alignment99[2];
+  PFN_vkVoidFunction ignoreAlignment99[2];
 #endif /* defined(VK_KHR_win32_surface) */
 #if defined(VK_KHR_xcb_surface)
   PFN_vkCreateXcbSurfaceKHR vkCreateXcbSurfaceKHR;
   PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR vkGetPhysicalDeviceXcbPresentationSupportKHR;
 #else
-  PFN_vkVoidFunction _ignore_alignment100[2];
+  PFN_vkVoidFunction ignoreAlignment100[2];
 #endif /* defined(VK_KHR_xcb_surface) */
 #if defined(VK_KHR_xlib_surface)
   PFN_vkCreateXlibSurfaceKHR vkCreateXlibSurfaceKHR;
   PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR vkGetPhysicalDeviceXlibPresentationSupportKHR;
 #else
-  PFN_vkVoidFunction _ignore_alignment101[2];
+  PFN_vkVoidFunction ignoreAlignment101[2];
 #endif /* defined(VK_KHR_xlib_surface) */
 #if defined(VK_MVK_ios_surface)
   PFN_vkCreateIOSSurfaceMVK vkCreateIOSSurfaceMVK;
 #else
-  PFN_vkVoidFunction _ignore_alignment102;
+  PFN_vkVoidFunction ignoreAlignment102;
 #endif /* defined(VK_MVK_ios_surface) */
 #if defined(VK_MVK_macos_surface)
   PFN_vkCreateMacOSSurfaceMVK vkCreateMacOSSurfaceMVK;
 #else
-  PFN_vkVoidFunction _ignore_alignment103;
+  PFN_vkVoidFunction ignoreAlignment103;
 #endif /* defined(VK_MVK_macos_surface) */
 #if defined(VK_NN_vi_surface)
   PFN_vkCreateViSurfaceNN vkCreateViSurfaceNN;
 #else
-  PFN_vkVoidFunction _ignore_alignment104;
+  PFN_vkVoidFunction ignoreAlignment104;
 #endif /* defined(VK_NN_vi_surface) */
 #if defined(VK_NVX_binary_import)
   PFN_vkCmdCuLaunchKernelNVX vkCmdCuLaunchKernelNVX;
@@ -1044,7 +1044,7 @@ struct VulkanFunctionTable {
 #if defined(VK_NV_external_memory_win32)
   PFN_vkGetMemoryWin32HandleNV vkGetMemoryWin32HandleNV;
 #else
-  PFN_vkVoidFunction _ignore_alignment115;
+  PFN_vkVoidFunction ignoreAlignment115;
 #endif /* defined(VK_NV_external_memory_win32) */
 #if defined(VK_NV_fragment_shading_rate_enums)
   PFN_vkCmdSetFragmentShadingRateEnumNV vkCmdSetFragmentShadingRateEnumNV;
@@ -1091,13 +1091,13 @@ struct VulkanFunctionTable {
   PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX
       vkGetPhysicalDeviceScreenPresentationSupportQNX;
 #else
-  PFN_vkVoidFunction _ignore_alignment121[2];
+  PFN_vkVoidFunction ignoreAlignment121[2];
 #endif /* defined(VK_QNX_screen_surface) */
 #if (defined(VK_EXT_full_screen_exclusive) && defined(VK_KHR_device_group)) || \
     (defined(VK_EXT_full_screen_exclusive) && defined(VK_VERSION_1_1))
   PFN_vkGetDeviceGroupSurfacePresentModes2EXT vkGetDeviceGroupSurfacePresentModes2EXT;
 #else
-  PFN_vkVoidFunction _ignore_alignment122;
+  PFN_vkVoidFunction ignoreAlignment122;
 #endif /* (defined(VK_EXT_full_screen_exclusive) && defined(VK_KHR_device_group)) || \
           (defined(VK_EXT_full_screen_exclusive) && defined(VK_VERSION_1_1)) */
 #if (defined(VK_KHR_descriptor_update_template) && defined(VK_KHR_push_descriptor)) || \
