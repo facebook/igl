@@ -142,7 +142,7 @@ static_assert(IGL_WITH_IGLU != 0,
 namespace {
 
 constexpr uint32_t kMeshCacheVersion = 0xC0DE0009;
-constexpr int kNumSamplesMSAA = 8;
+int kNumSamplesMSAA = 8;
 #if USE_OPENGL_BACKEND
 constexpr bool kEnableCompression = false;
 #else
@@ -651,8 +651,8 @@ using glm::vec2;
 using glm::vec3;
 using glm::vec4;
 
-int width_ = 0;
-int height_ = 0;
+int width_ = 1024;
+int height_ = 768;
 igl::FPSCounter fps_;
 
 constexpr uint32_t kNumBufferedFrames = 3;
@@ -2256,12 +2256,18 @@ void loadMaterial(size_t i) {
   }
 }
 
-void loadMaterials() {
+void loadMaterials(bool isHeadless) {
   stbi_set_flip_vertically_on_load(1);
+
+  textures_.resize(cachedMaterials_.size());
+
+  if (isHeadless) {
+    loaderPool_ = nullptr;
+    return;
+  }
 
   remainingMaterialsToLoad_ = (uint32_t)cachedMaterials_.size();
 
-  textures_.resize(cachedMaterials_.size());
   for (size_t i = 0; i != cachedMaterials_.size(); i++) {
     loaderPool_->silent_async([i]() { loadMaterial(i); });
   }
@@ -2583,6 +2589,10 @@ void processLoadedMaterials() {
 
 int main(int argc, char* argv[]) {
   const bool isHeadless = argc > 1 && (strcmp(argv[1], "--headless") == 0);
+  if (isHeadless) {
+    kNumSamplesMSAA = 1;
+  }
+
   // find the content folder
   {
     using namespace std::filesystem;
@@ -2610,7 +2620,7 @@ int main(int argc, char* argv[]) {
   }
 
   loadSkyboxTexture();
-  loadMaterials();
+  loadMaterials(isHeadless);
 
   createFramebuffer(getNativeDrawable());
   createShadowMap();
