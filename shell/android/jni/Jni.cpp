@@ -305,7 +305,7 @@ Java_com_facebook_igl_shell_SampleLib_setActiveBackendVersion(JNIEnv* env,
                                                               jobject jbackendVersion) {
   activeBackendVersion = toBackendVersion(env, jbackendVersion);
   IGL_LOG_INFO("setActiveBackendVersion: %s activeRenderIndex: %s\n",
-               toString(*activeBackendVersion).c_str(),
+               toString(activeBackendVersion).c_str(),
                toString(findRendererIndex(activeBackendVersion)).c_str());
 }
 
