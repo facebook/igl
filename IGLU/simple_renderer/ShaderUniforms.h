@@ -234,7 +234,7 @@ class ShaderUniforms final {
   igl::Result setSuballocationIndex(const igl::NameHandle& name, int index);
 
   inline bool containsUniform(const igl::NameHandle& uniformName) const {
-    return _allUniformsByName.count(uniformName) > 0;
+    return allUniformsByName_.count(uniformName) > 0;
   }
 
   bool containsUniform(const igl::NameHandle& blockTypeName,
@@ -292,11 +292,11 @@ class ShaderUniforms final {
 
   igl::IDevice& device_;
 
-  std::vector<std::shared_ptr<BufferAllocation>> _allocations;
+  std::vector<std::shared_ptr<BufferAllocation>> allocations_;
 
-  std::unordered_multimap<igl::NameHandle, std::shared_ptr<BufferDesc>> _bufferDescs;
+  std::unordered_multimap<igl::NameHandle, std::shared_ptr<BufferDesc>> bufferDescs_;
 
-  std::unordered_multimap<igl::NameHandle, UniformDesc> _allUniformsByName;
+  std::unordered_multimap<igl::NameHandle, UniformDesc> allUniformsByName_;
 
   MemoizedQualifiedMemberNameCalculator memoizedQualifiedMemberNameCalculator_;
 
@@ -310,9 +310,9 @@ class ShaderUniforms final {
     igl::ISamplerState* rawSampler = nullptr;
   };
 
-  std::vector<igl::TextureArgDesc> _textureDescs;
-  std::unordered_map<std::string, TextureSlot> _allTexturesByName;
-  std::unordered_map<std::string, SamplerSlot> _allSamplersByName;
+  std::vector<igl::TextureArgDesc> textureDescs_;
+  std::unordered_map<std::string, TextureSlot> allTexturesByName_;
+  std::unordered_map<std::string, SamplerSlot> allSamplersByName_;
 
   std::vector<std::pair<igl::NameHandle, igl::NameHandle>> getPossibleBufferAndMemberNames(
       const igl::NameHandle& blockTypeName,
