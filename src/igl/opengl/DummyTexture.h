@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#pragma once
+
 // @fb-only
 
 #include <igl/opengl/Texture.h>
