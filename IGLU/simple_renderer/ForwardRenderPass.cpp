@@ -15,24 +15,24 @@ namespace iglu::renderpass {
 
 ForwardRenderPass::ForwardRenderPass(igl::IDevice& device) {
   const igl::CommandQueueDesc desc{};
-  _commandQueue = device.createCommandQueue(desc, nullptr);
-  _backendType = device.getBackendType();
+  commandQueue_ = device.createCommandQueue(desc, nullptr);
+  backendType_ = device.getBackendType();
 }
 
 void ForwardRenderPass::begin(std::shared_ptr<igl::IFramebuffer> target,
                               const igl::RenderPassDesc* renderPassDescOverride) {
   IGL_DEBUG_ASSERT(!isActive(), "Drawing already in progress");
 
-  _framebuffer = std::move(target);
+  framebuffer_ = std::move(target);
 
-  _renderPipelineDesc.targetDesc.colorAttachments.resize(1);
-  _renderPipelineDesc.targetDesc.colorAttachments[0].textureFormat =
-      _framebuffer->getColorAttachment(0)->getFormat();
-  auto depthAttachment = _framebuffer->getDepthAttachment();
-  _renderPipelineDesc.targetDesc.depthAttachmentFormat =
+  renderPipelineDesc_.targetDesc.colorAttachments.resize(1);
+  renderPipelineDesc_.targetDesc.colorAttachments[0].textureFormat =
+      framebuffer_->getColorAttachment(0)->getFormat();
+  auto depthAttachment = framebuffer_->getDepthAttachment();
+  renderPipelineDesc_.targetDesc.depthAttachmentFormat =
       depthAttachment ? depthAttachment->getFormat() : igl::TextureFormat::Invalid;
-  auto stencilAttachment = _framebuffer->getStencilAttachment();
-  _renderPipelineDesc.targetDesc.stencilAttachmentFormat =
+  auto stencilAttachment = framebuffer_->getStencilAttachment();
+  renderPipelineDesc_.targetDesc.stencilAttachmentFormat =
       stencilAttachment ? stencilAttachment->getFormat() : igl::TextureFormat::Invalid;
 
   igl::RenderPassDesc defaultRenderPassDesc;
@@ -45,56 +45,56 @@ void ForwardRenderPass::begin(std::shared_ptr<igl::IFramebuffer> target,
                                                                 : &defaultRenderPassDesc;
 
   const igl::CommandBufferDesc cbDesc;
-  _commandBuffer = _commandQueue->createCommandBuffer(cbDesc, nullptr);
-  _commandEncoder =
-      _commandBuffer->createRenderCommandEncoder(*finalDesc, _framebuffer, {}, nullptr);
+  commandBuffer_ = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  commandEncoder_ =
+      commandBuffer_->createRenderCommandEncoder(*finalDesc, framebuffer_, {}, nullptr);
 }
 
 void ForwardRenderPass::draw(drawable::Drawable& drawable, igl::IDevice& device) const {
   IGL_DEBUG_ASSERT(isActive(), "Drawing not in progress");
-  drawable.draw(device, *_commandEncoder, _renderPipelineDesc);
+  drawable.draw(device, *commandEncoder_, renderPipelineDesc_);
 }
 
 void ForwardRenderPass::end(bool shouldPresent) {
   IGL_DEBUG_ASSERT(isActive(), "Drawing not in progress");
 
-  _commandEncoder->endEncoding();
+  commandEncoder_->endEncoding();
 
   if (shouldPresent) {
-    _commandBuffer->present(_framebuffer->getColorAttachment(0));
+    commandBuffer_->present(framebuffer_->getColorAttachment(0));
   }
 
-  _commandQueue->submit(*_commandBuffer);
+  commandQueue_->submit(*commandBuffer_);
 
-  _commandEncoder = nullptr;
-  _commandBuffer = nullptr;
-  _framebuffer = nullptr;
+  commandEncoder_ = nullptr;
+  commandBuffer_ = nullptr;
+  framebuffer_ = nullptr;
 }
 
 void ForwardRenderPass::bindViewport(const igl::Viewport& viewport, const igl::Size& surfaceSize) {
   IGL_DEBUG_ASSERT(isActive(), "Drawing not in progress");
-  if (_backendType == igl::BackendType::Metal) {
+  if (backendType_ == igl::BackendType::Metal) {
     // In Metal, framebuffer origin is top left but the argument assumes bottom left
     igl::Viewport flippedViewport = viewport;
     flippedViewport.y = surfaceSize.height - viewport.y - viewport.height;
-    _commandEncoder->bindViewport(flippedViewport);
+    commandEncoder_->bindViewport(flippedViewport);
   } else {
-    _commandEncoder->bindViewport(viewport);
+    commandEncoder_->bindViewport(viewport);
   }
 }
 
 bool ForwardRenderPass::isActive() const {
-  return _framebuffer != nullptr;
+  return framebuffer_ != nullptr;
 }
 
 igl::IFramebuffer& ForwardRenderPass::activeTarget() {
   IGL_DEBUG_ASSERT(isActive(), "No valid target when not active");
-  return *_framebuffer;
+  return *framebuffer_;
 }
 
 igl::IRenderCommandEncoder& ForwardRenderPass::activeCommandEncoder() {
   IGL_DEBUG_ASSERT(isActive(), "No valid command encoder when not active");
-  return *_commandEncoder;
+  return *commandEncoder_;
 }
 
 } // namespace iglu::renderpass

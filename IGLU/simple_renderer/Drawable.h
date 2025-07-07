@@ -36,11 +36,11 @@ class Drawable final {
   ~Drawable() = default;
 
  private:
-  std::shared_ptr<vertexdata::VertexData> _vertexData;
-  std::shared_ptr<material::Material> _material;
+  std::shared_ptr<vertexdata::VertexData> vertexData_;
+  std::shared_ptr<material::Material> material_;
 
-  std::shared_ptr<igl::IRenderPipelineState> _pipelineState;
-  size_t _lastPipelineDescHash = 0;
+  std::shared_ptr<igl::IRenderPipelineState> pipelineState_;
+  size_t lastPipelineDescHash_ = 0;
 };
 
 } // namespace iglu::drawable

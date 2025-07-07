@@ -15,7 +15,7 @@ namespace iglu::drawable {
 
 Drawable::Drawable(std::shared_ptr<vertexdata::VertexData> vertexData,
                    std::shared_ptr<material::Material> material) :
-  _vertexData(std::move(vertexData)), _material(std::move(material)) {}
+  vertexData_(std::move(vertexData)), material_(std::move(material)) {}
 
 void Drawable::draw(igl::IDevice& device,
                     igl::IRenderCommandEncoder& commandEncoder,
@@ -24,24 +24,24 @@ void Drawable::draw(igl::IDevice& device,
                     const void* pushConstantsData) {
   // Assumption: _vertexData and _material are immutable
   const size_t pipelineDescHash = std::hash<igl::RenderPipelineDesc>()(pipelineDesc);
-  if (!_pipelineState || pipelineDescHash != _lastPipelineDescHash) {
+  if (!pipelineState_ || pipelineDescHash != lastPipelineDescHash_) {
     igl::RenderPipelineDesc mutablePipelineDesc = pipelineDesc;
-    _vertexData->populatePipelineDescriptor(mutablePipelineDesc);
-    _material->populatePipelineDescriptor(mutablePipelineDesc);
+    vertexData_->populatePipelineDescriptor(mutablePipelineDesc);
+    material_->populatePipelineDescriptor(mutablePipelineDesc);
 
-    _pipelineState = device.createRenderPipeline(mutablePipelineDesc, nullptr);
-    _lastPipelineDescHash = pipelineDescHash;
+    pipelineState_ = device.createRenderPipeline(mutablePipelineDesc, nullptr);
+    lastPipelineDescHash_ = pipelineDescHash;
   }
 
-  commandEncoder.bindRenderPipelineState(_pipelineState);
+  commandEncoder.bindRenderPipelineState(pipelineState_);
 
-  _material->bind(device, *_pipelineState, commandEncoder);
+  material_->bind(device, *pipelineState_, commandEncoder);
 
   if (pushConstantsData && pushConstantsDataSize) {
     commandEncoder.bindPushConstants(pushConstantsData, pushConstantsDataSize);
   }
 
-  _vertexData->draw(commandEncoder);
+  vertexData_->draw(commandEncoder);
 }
 
 } // namespace iglu::drawable

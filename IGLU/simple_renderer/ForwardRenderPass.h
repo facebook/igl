@@ -51,14 +51,14 @@ class ForwardRenderPass final {
   ~ForwardRenderPass() = default;
 
  private:
-  igl::BackendType _backendType;
+  igl::BackendType backendType_;
 
-  std::shared_ptr<igl::ICommandQueue> _commandQueue;
-  std::shared_ptr<igl::IFramebuffer> _framebuffer;
-  igl::RenderPipelineDesc _renderPipelineDesc;
+  std::shared_ptr<igl::ICommandQueue> commandQueue_;
+  std::shared_ptr<igl::IFramebuffer> framebuffer_;
+  igl::RenderPipelineDesc renderPipelineDesc_;
 
-  std::shared_ptr<igl::ICommandBuffer> _commandBuffer;
-  std::unique_ptr<igl::IRenderCommandEncoder> _commandEncoder;
+  std::shared_ptr<igl::ICommandBuffer> commandBuffer_;
+  std::unique_ptr<igl::IRenderCommandEncoder> commandEncoder_;
 };
 
 } // namespace iglu::renderpass
