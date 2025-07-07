@@ -25,7 +25,7 @@ class TestShellBase {
 
   void SetUp(ScreenSize screenSize = {1, 1}, bool needsRGBSwapchainSupport = false);
 
-  void TearDown() {};
+  void TearDown() {}
 
   std::shared_ptr<Platform> platform_;
   std::shared_ptr<ITexture> offscreenTexture_;
