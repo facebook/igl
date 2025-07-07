@@ -13,8 +13,8 @@
 namespace iglu::vertexdata {
 
 // Assumption: <name, location> for OpenGL and Metal, respectively
-static const std::pair<const char*, int> s_attrPosition("a_position", 0);
-static const std::pair<const char*, int> s_attrUV("a_uv", 1);
+static const std::pair<const char*, int> kSAttrPosition("a_position", 0);
+static const std::pair<const char*, int> kSAttrUv("a_uv", 1);
 
 namespace Quad {
 
@@ -26,15 +26,15 @@ igl::VertexInputStateDesc inputStateDesc() {
           .bufferIndex = 0,
           .format = igl::VertexAttributeFormat::Float3,
           .offset = offsetof(VertexPosUv, position),
-          .name = s_attrPosition.first,
-          .location = s_attrPosition.second,
+          .name = kSAttrPosition.first,
+          .location = kSAttrPosition.second,
       },
   inputDesc.attributes[1] = {
       .bufferIndex = 0,
       .format = igl::VertexAttributeFormat::Float2,
       .offset = offsetof(VertexPosUv, uv),
-      .name = s_attrUV.first,
-      .location = s_attrUV.second,
+      .name = kSAttrUv.first,
+      .location = kSAttrUv.second,
   };
   inputDesc.numInputBindings = 1;
   inputDesc.inputBindings[0].stride = sizeof(VertexPosUv);
@@ -97,8 +97,8 @@ std::shared_ptr<VertexData> create(igl::IDevice& device,
                                    iglu::simdtypes::float2 posMax,
                                    iglu::simdtypes::float2 uvMin,
                                    iglu::simdtypes::float2 uvMax) {
-  iglu::simdtypes::float2 uvMin_adjusted = uvMin;
-  iglu::simdtypes::float2 uvMax_adjusted = uvMax;
+  iglu::simdtypes::float2 uvMinAdjusted = uvMin;
+  iglu::simdtypes::float2 uvMaxAdjusted = uvMax;
 
   // Here's how to think about the conventions that led to this workaround.
   //
@@ -136,11 +136,11 @@ std::shared_ptr<VertexData> create(igl::IDevice& device,
   // - http://hacksoflife.blogspot.com/2019/04/keeping-blue-side-up-coordinate.html
   //
   if (device.getBackendType() == igl::BackendType::Metal) {
-    uvMin_adjusted[1] = 1.0f - uvMin_adjusted[1];
-    uvMax_adjusted[1] = 1.0f - uvMax_adjusted[1];
+    uvMinAdjusted[1] = 1.0f - uvMinAdjusted[1];
+    uvMaxAdjusted[1] = 1.0f - uvMaxAdjusted[1];
   }
 
-  return Quad::create(device, posMin, posMax, uvMin_adjusted, uvMax_adjusted);
+  return Quad::create(device, posMin, posMax, uvMinAdjusted, uvMaxAdjusted);
 }
 
 } // namespace RenderToTextureQuad
