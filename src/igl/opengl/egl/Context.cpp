@@ -82,43 +82,51 @@ EGLDisplay getDefaultEGLDisplay() {
 }
 
 // typical high-quality attrib list
-constexpr std::array attribsOpenGLES2{EGLint{EGL_RED_SIZE},
-                                      EGLint{8},
-                                      EGLint{EGL_GREEN_SIZE},
-                                      EGLint{8},
-                                      EGLint{EGL_BLUE_SIZE},
-                                      EGLint{8},
-                                      EGLint{EGL_ALPHA_SIZE},
-                                      EGLint{8},
-                                      EGLint{EGL_DEPTH_SIZE},
-                                      EGLint{16},
-                                      EGLint{EGL_SURFACE_TYPE},
-                                      EGLint{EGL_PBUFFER_BIT},
-                                      EGLint{EGL_RENDERABLE_TYPE},
-                                      EGLint{EGL_OPENGL_ES2_BIT},
-                                      EGLint{EGL_NONE}};
-constexpr std::array contextAttribsOpenGLES2{EGLint{EGL_CONTEXT_CLIENT_VERSION},
-                                             EGLint{2},
-                                             EGLint{EGL_NONE}};
+constexpr std::array kAttribsEs2{
+    EGLint{EGL_RED_SIZE},
+    EGLint{8},
+    EGLint{EGL_GREEN_SIZE},
+    EGLint{8},
+    EGLint{EGL_BLUE_SIZE},
+    EGLint{8},
+    EGLint{EGL_ALPHA_SIZE},
+    EGLint{8},
+    EGLint{EGL_DEPTH_SIZE},
+    EGLint{16},
+    EGLint{EGL_SURFACE_TYPE},
+    EGLint{EGL_PBUFFER_BIT},
+    EGLint{EGL_RENDERABLE_TYPE},
+    EGLint{EGL_OPENGL_ES2_BIT},
+    EGLint{EGL_NONE},
+};
+constexpr std::array kContextAttribsEs2{
+    EGLint{EGL_CONTEXT_CLIENT_VERSION},
+    EGLint{2},
+    EGLint{EGL_NONE},
+};
 
-constexpr std::array attribsOpenGLES3{EGLint{EGL_RED_SIZE},
-                                      EGLint{8},
-                                      EGLint{EGL_GREEN_SIZE},
-                                      EGLint{8},
-                                      EGLint{EGL_BLUE_SIZE},
-                                      EGLint{8},
-                                      EGLint{EGL_ALPHA_SIZE},
-                                      EGLint{8},
-                                      EGLint{EGL_DEPTH_SIZE},
-                                      EGLint{16},
-                                      EGLint{EGL_SURFACE_TYPE},
-                                      EGLint{EGL_PBUFFER_BIT},
-                                      EGLint{EGL_RENDERABLE_TYPE},
-                                      EGLint{EGL_OPENGL_ES3_BIT},
-                                      EGLint{EGL_NONE}};
-constexpr std::array contextAttribsOpenGLES3{EGLint{EGL_CONTEXT_CLIENT_VERSION},
-                                             EGLint{3},
-                                             EGLint{EGL_NONE}};
+constexpr std::array kAttribsEs3{
+    EGLint{EGL_RED_SIZE},
+    EGLint{8},
+    EGLint{EGL_GREEN_SIZE},
+    EGLint{8},
+    EGLint{EGL_BLUE_SIZE},
+    EGLint{8},
+    EGLint{EGL_ALPHA_SIZE},
+    EGLint{8},
+    EGLint{EGL_DEPTH_SIZE},
+    EGLint{16},
+    EGLint{EGL_SURFACE_TYPE},
+    EGLint{EGL_PBUFFER_BIT},
+    EGLint{EGL_RENDERABLE_TYPE},
+    EGLint{EGL_OPENGL_ES3_BIT},
+    EGLint{EGL_NONE},
+};
+constexpr std::array kContextAttribsEs3{
+    EGLint{EGL_CONTEXT_CLIENT_VERSION},
+    EGLint{3},
+    EGLint{EGL_NONE},
+};
 
 std::pair<EGLDisplay, EGLContext> newEGLContext(uint8_t contextMajorVersion,
                                                 EGLDisplay display,
@@ -137,9 +145,8 @@ std::pair<EGLDisplay, EGLContext> newEGLContext(uint8_t contextMajorVersion,
   }
 
   EGLint numConfigs = 0;
-  const auto& attribs = contextMajorVersion == 2 ? attribsOpenGLES2 : attribsOpenGLES3;
-  const auto& contextAttribs = contextMajorVersion == 2 ? contextAttribsOpenGLES2
-                                                        : contextAttribsOpenGLES3;
+  const auto& attribs = contextMajorVersion == 2 ? kAttribsEs2 : kAttribsEs3;
+  const auto& contextAttribs = contextMajorVersion == 2 ? kContextAttribsEs2 : kContextAttribsEs3;
   if (!eglChooseConfig(display, attribs.data(), config, 1, &numConfigs)) {
     CHECK_EGL_ERRORS();
   }
@@ -152,7 +159,7 @@ std::pair<EGLDisplay, EGLContext> newEGLContext(uint8_t contextMajorVersion,
 
 EGLConfig chooseConfig(uint8_t contextMajorVersion, EGLDisplay display) {
   IGL_DEBUG_ASSERT(contextMajorVersion == 2 || contextMajorVersion == 3);
-  const auto& attribs = contextMajorVersion == 2 ? attribsOpenGLES2 : attribsOpenGLES3;
+  const auto& attribs = contextMajorVersion == 2 ? kAttribsEs2 : kAttribsEs3;
   EGLConfig config{nullptr};
   EGLint numConfigs{0};
   const EGLBoolean status = eglChooseConfig(display, attribs.data(), &config, 1, &numConfigs);
@@ -394,13 +401,13 @@ void Context::setPresentationTime(long long presentationTimeNs) {
   // This is a workaround that we cannot call the eglPresentationTimeANDROID directly from
   // <EGL/eglext.h> due to some EGL api bugs.
   // @fb-only
-  bool (*eglPresentationTimeANDROID_)(
+  bool (*eglPresentationTimeAndroid)(
       EGLDisplay dpy, EGLSurface sur, khronos_stime_nanoseconds_t time) = nullptr;
-  eglPresentationTimeANDROID_ =
+  eglPresentationTimeAndroid =
       reinterpret_cast<bool (*)(EGLDisplay, EGLSurface, khronos_stime_nanoseconds_t)>(
           eglGetProcAddress("eglPresentationTimeANDROID"));
   CHECK_EGL_ERRORS();
-  eglPresentationTimeANDROID_(display_, surface_, presentationTimeNs);
+  eglPresentationTimeAndroid(display_, surface_, presentationTimeNs);
   CHECK_EGL_ERRORS();
 }
 
