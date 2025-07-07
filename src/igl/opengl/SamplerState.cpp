@@ -168,13 +168,11 @@ SamplerMinMagFilter SamplerState::convertGLMinFilter(GLint glMinFilter) {
   case GL_NEAREST_MIPMAP_NEAREST:
   case GL_NEAREST_MIPMAP_LINEAR:
     return SamplerMinMagFilter::Nearest;
-    break;
 
   case GL_LINEAR:
   case GL_LINEAR_MIPMAP_NEAREST:
   case GL_LINEAR_MIPMAP_LINEAR:
     return SamplerMinMagFilter::Linear;
-    break;
 
   default:
 #ifndef GTEST

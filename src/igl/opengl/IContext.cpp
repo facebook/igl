@@ -678,7 +678,6 @@ const char* GLerrorToString(GLenum error) {
     RESULT_CASE(GL_OUT_OF_MEMORY)
   default:
     return "UNKNOWN GL ERROR";
-    break;
   }
 }
 

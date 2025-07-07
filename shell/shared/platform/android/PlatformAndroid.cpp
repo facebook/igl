@@ -98,7 +98,6 @@ void PlatformAndroid::updatePreRotationMatrix() {
     case VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR:
     default:
       return glm::mat4(1.0f);
-      break;
     }
     return glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 0.0f, 1.0f));
   }();
