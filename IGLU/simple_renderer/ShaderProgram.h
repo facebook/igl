@@ -43,8 +43,8 @@ class ShaderProgram final {
             std::shared_ptr<igl::IVertexInputState> vis,
             igl::Result* outResult);
 
-  std::shared_ptr<igl::IShaderStages> _shaderStages;
-  std::shared_ptr<igl::IRenderPipelineReflection> _reflection;
+  std::shared_ptr<igl::IShaderStages> shaderStages_;
+  std::shared_ptr<igl::IRenderPipelineReflection> reflection_;
 };
 
 } // namespace iglu::material

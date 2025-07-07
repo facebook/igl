@@ -31,7 +31,7 @@ ShaderProgram::ShaderProgram(igl::IDevice& device,
                              std::shared_ptr<igl::IVertexInputState> vis,
                              igl::Result* outResult) {
   igl::Result result;
-  _shaderStages = igl::ShaderStagesCreator::fromRenderModules(
+  shaderStages_ = igl::ShaderStagesCreator::fromRenderModules(
       device, std::move(vertexShader), std::move(fragmentShader), &result);
   CHECK_RESULT(result, outResult);
   init(device, std::move(vis), outResult);
@@ -41,7 +41,7 @@ ShaderProgram::ShaderProgram(igl::IDevice& device,
                              std::shared_ptr<igl::IShaderStages> shaderStages,
                              std::shared_ptr<igl::IVertexInputState> vis,
                              igl::Result* outResult) :
-  _shaderStages(std::move(shaderStages)) {
+  shaderStages_(std::move(shaderStages)) {
   init(device, std::move(vis), outResult);
 }
 
@@ -51,23 +51,23 @@ void ShaderProgram::init(igl::IDevice& device,
   igl::Result result;
 
   igl::RenderPipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = _shaderStages;
+  pipelineDesc.shaderStages = shaderStages_;
   pipelineDesc.vertexInputState = std::move(vis);
   pipelineDesc.targetDesc.colorAttachments.resize(1);
   pipelineDesc.targetDesc.colorAttachments[0].textureFormat = igl::TextureFormat::RGBA_UNorm8;
   auto pipelineState = device.createRenderPipeline(pipelineDesc, &result);
   CHECK_RESULT(result, outResult);
   // Note that the check above might early return!
-  _reflection = pipelineState->renderPipelineReflection();
+  reflection_ = pipelineState->renderPipelineReflection();
 }
 
 const igl::IRenderPipelineReflection& ShaderProgram::renderPipelineReflection() const {
-  return *_reflection;
+  return *reflection_;
 }
 
 void ShaderProgram::populatePipelineDescriptor(igl::RenderPipelineDesc& pipelineDesc) const {
-  pipelineDesc.shaderStages = _shaderStages;
-  for (const auto& entry : _reflection->allTextures()) {
+  pipelineDesc.shaderStages = shaderStages_;
+  for (const auto& entry : reflection_->allTextures()) {
     pipelineDesc.fragmentUnitSamplerMap[entry.textureIndex] = igl::genNameHandle(entry.name);
   }
 }
