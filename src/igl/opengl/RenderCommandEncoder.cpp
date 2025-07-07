@@ -138,8 +138,6 @@ void RenderCommandEncoder::endEncoding() {
     adapter_->endEncoding();
     getContext().getAdapterPool().push_back(std::move(adapter_));
 
-    framebuffer_->unbind();
-
     if (resolveFramebuffer_) {
       Result outResult;
       auto width = 0;
