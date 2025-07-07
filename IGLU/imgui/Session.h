@@ -38,11 +38,11 @@ class Session {
  private:
   class Renderer;
 
-  igl::shell::InputDispatcher& _inputDispatcher;
-  std::shared_ptr<InputListener> _inputListener;
-  ImGuiContext* _context;
-  std::unique_ptr<Renderer> _renderer;
-  bool _isInitialized = false;
+  igl::shell::InputDispatcher& inputDispatcher_;
+  std::shared_ptr<InputListener> inputListener_;
+  ImGuiContext* context_;
+  std::unique_ptr<Renderer> renderer_;
+  bool isInitialized_ = false;
 
   void makeCurrentContext() const;
 };
