@@ -1002,164 +1002,6 @@ static GLFWwindow* initIGL(bool isHeadless) {
       IGL_DEBUG_ASSERT(device_);
     }
   }
-// @fb-only
-  // @fb-only
-      // @fb-only
-// @fb-only
-
-  {
-    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
-                                                1,
-                                                1,
-                                                TextureDesc::TextureUsageBits::Sampled,
-                                                "dummy 1x1 (white)");
-    textureDummyWhite_ = device_->createTexture(desc, nullptr);
-    const uint32_t pixel = 0xFFFFFFFF;
-    textureDummyWhite_->upload(TextureRangeDesc::new2D(0, 0, 1, 1), &pixel);
-  }
-
-#if USE_OPENGL_BACKEND
-  {
-    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
-                                                1,
-                                                1,
-                                                TextureDesc::TextureUsageBits::Sampled,
-                                                "dummy 1x1 (black)");
-    textureDummyBlack_ = device_->createTexture(desc, nullptr);
-    const uint32_t pixel = 0xFF000000;
-    textureDummyBlack_->upload(TextureRangeDesc::new2D(0, 0, 1, 1), &pixel);
-  }
-
-  const auto bufType = BufferDesc::BufferTypeBits::Uniform;
-  const auto hint = BufferDesc::BufferAPIHintBits::UniformBlock;
-#else
-  const auto bufType = BufferDesc::BufferTypeBits::Uniform;
-  const auto hint = 0;
-#endif
-  // create an Uniform buffers to store uniforms for 2 objects
-  for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
-    ubPerFrame_.push_back(device_->createBuffer(BufferDesc(bufType,
-                                                           nullptr,
-                                                           sizeof(UniformsPerFrame),
-                                                           ResourceStorage::Shared,
-                                                           hint,
-                                                           "Buffer: uniforms (per frame)"),
-                                                nullptr));
-    ubPerFrameShadow_.push_back(
-        device_->createBuffer(BufferDesc(bufType,
-                                         nullptr,
-                                         sizeof(UniformsPerFrame),
-                                         ResourceStorage::Shared,
-                                         hint,
-                                         "Buffer: uniforms (per frame shadow)"),
-                              nullptr));
-    ubPerObject_.push_back(device_->createBuffer(BufferDesc(bufType,
-                                                            nullptr,
-                                                            sizeof(UniformsPerObject),
-                                                            ResourceStorage::Shared,
-                                                            hint,
-                                                            "Buffer: uniforms (per object)"),
-                                                 nullptr));
-  }
-
-  {
-    VertexInputStateDesc desc;
-    desc.numAttributes = 4;
-    desc.attributes[0].format = VertexAttributeFormat::Float3;
-    desc.attributes[0].offset = offsetof(VertexData, position);
-    desc.attributes[0].bufferIndex = 0;
-    desc.attributes[0].location = 0;
-    desc.attributes[0].name = "pos";
-    desc.attributes[1].format = VertexAttributeFormat::Int_2_10_10_10_REV;
-    desc.attributes[1].offset = offsetof(VertexData, normal);
-    desc.attributes[1].bufferIndex = 0;
-    desc.attributes[1].location = 1;
-    desc.attributes[1].name = "normal";
-    desc.attributes[2].format = VertexAttributeFormat::HalfFloat2;
-    desc.attributes[2].offset = offsetof(VertexData, uv);
-    desc.attributes[2].bufferIndex = 0;
-    desc.attributes[2].location = 2;
-    desc.attributes[2].name = "uv";
-    desc.attributes[3].format = VertexAttributeFormat::UInt1;
-    desc.attributes[3].offset = offsetof(VertexData, mtlIndex);
-    desc.attributes[3].bufferIndex = 0;
-    desc.attributes[3].location = 3;
-    desc.attributes[3].name = "mtlIndex";
-    desc.numInputBindings = 1;
-    desc.inputBindings[0].stride = sizeof(VertexData);
-    vertexInput0_ = device_->createVertexInputState(desc, nullptr);
-  }
-
-  {
-    VertexInputStateDesc desc;
-    desc.numAttributes = 1;
-    desc.attributes[0].format = VertexAttributeFormat::Float3;
-    desc.attributes[0].offset = offsetof(VertexData, position);
-    desc.attributes[0].bufferIndex = 0;
-    desc.attributes[0].location = 0;
-    desc.attributes[0].name = "pos";
-    desc.numInputBindings = 1;
-    desc.inputBindings[0].stride = sizeof(VertexData);
-    vertexInputShadows_ = device_->createVertexInputState(desc, nullptr);
-  }
-
-  {
-    DepthStencilStateDesc desc;
-    desc.isDepthWriteEnabled = true;
-    desc.compareFunction = igl::CompareFunction::Less;
-    depthStencilState_ = device_->createDepthStencilState(desc, nullptr);
-
-    desc.compareFunction = igl::CompareFunction::LessEqual;
-    depthStencilStateLEqual_ = device_->createDepthStencilState(desc, nullptr);
-  }
-
-  {
-    igl::SamplerStateDesc desc = igl::SamplerStateDesc::newLinear();
-    desc.addressModeU = igl::SamplerAddressMode::Repeat;
-    desc.addressModeV = igl::SamplerAddressMode::Repeat;
-    desc.mipFilter = igl::SamplerMipFilter::Linear;
-    desc.debugName = "Sampler: linear";
-    sampler_ = device_->createSamplerState(desc, nullptr);
-
-    desc.addressModeU = igl::SamplerAddressMode::Clamp;
-    desc.addressModeV = igl::SamplerAddressMode::Clamp;
-    desc.mipFilter = igl::SamplerMipFilter::Disabled;
-    desc.debugName = "Sampler: shadow";
-    desc.depthCompareEnabled = true;
-    desc.depthCompareFunction = igl::CompareFunction::LessEqual;
-    samplerShadow_ = device_->createSamplerState(desc, nullptr);
-  }
-
-  // Command queue: backed by different types of GPU HW queues
-  const CommandQueueDesc desc{};
-  commandQueue_ = device_->createCommandQueue(desc, nullptr);
-
-  renderPassOffscreen_.colorAttachments.emplace_back();
-  renderPassOffscreen_.colorAttachments.back().loadAction = LoadAction::Clear;
-  renderPassOffscreen_.colorAttachments.back().storeAction =
-      kNumSamplesMSAA > 1 ? StoreAction::MsaaResolve : StoreAction::Store;
-  renderPassOffscreen_.colorAttachments.back().clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
-  renderPassOffscreen_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPassOffscreen_.depthAttachment.storeAction = StoreAction::DontCare;
-  renderPassOffscreen_.depthAttachment.clearDepth = 1.0f;
-
-  renderPassMain_.colorAttachments.emplace_back();
-  renderPassMain_.colorAttachments.back().loadAction = LoadAction::Clear;
-  renderPassMain_.colorAttachments.back().storeAction = StoreAction::Store;
-  renderPassMain_.colorAttachments.back().clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
-  renderPassMain_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPassMain_.depthAttachment.storeAction = StoreAction::DontCare;
-  renderPassMain_.depthAttachment.clearDepth = 1.0f;
-
-#if USE_OPENGL_BACKEND
-  renderPassShadow_.colorAttachments.push_back(igl::RenderPassDesc::ColorAttachmentDesc{});
-  renderPassShadow_.colorAttachments.back().loadAction = LoadAction::Clear;
-  renderPassShadow_.colorAttachments.back().storeAction = StoreAction::Store;
-  renderPassShadow_.colorAttachments.back().clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
-#endif
-  renderPassShadow_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPassShadow_.depthAttachment.storeAction = StoreAction::Store;
-  renderPassShadow_.depthAttachment.clearDepth = 1.0f;
 
   return window;
 }
@@ -1387,6 +1229,171 @@ bool loadFromCache(const char* cacheFileName) {
 }
 
 void initModel() {
+// @fb-only
+  // @fb-only
+      // @fb-only
+// @fb-only
+
+  {
+    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
+                                                1,
+                                                1,
+                                                TextureDesc::TextureUsageBits::Sampled,
+                                                "dummy 1x1 (white)");
+    textureDummyWhite_ = device_->createTexture(desc, nullptr);
+    const uint32_t pixel = 0xFFFFFFFF;
+    textureDummyWhite_->upload(TextureRangeDesc::new2D(0, 0, 1, 1), &pixel);
+  }
+
+  {
+#if USE_OPENGL_BACKEND
+    {
+      const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
+                                                  1,
+                                                  1,
+                                                  TextureDesc::TextureUsageBits::Sampled,
+                                                  "dummy 1x1 (black)");
+      textureDummyBlack_ = device_->createTexture(desc, nullptr);
+      const uint32_t pixel = 0xFF000000;
+      textureDummyBlack_->upload(TextureRangeDesc::new2D(0, 0, 1, 1), &pixel);
+    }
+
+    const auto bufType = BufferDesc::BufferTypeBits::Uniform;
+    const auto hint = BufferDesc::BufferAPIHintBits::UniformBlock;
+#else
+    const auto bufType = BufferDesc::BufferTypeBits::Uniform;
+    const auto hint = 0;
+#endif
+    // create an Uniform buffers to store uniforms for 2 objects
+    for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
+      ubPerFrame_.push_back(device_->createBuffer(BufferDesc(bufType,
+                                                             nullptr,
+                                                             sizeof(UniformsPerFrame),
+                                                             ResourceStorage::Shared,
+                                                             hint,
+                                                             "Buffer: uniforms (per frame)"),
+                                                  nullptr));
+      ubPerFrameShadow_.push_back(
+          device_->createBuffer(BufferDesc(bufType,
+                                           nullptr,
+                                           sizeof(UniformsPerFrame),
+                                           ResourceStorage::Shared,
+                                           hint,
+                                           "Buffer: uniforms (per frame shadow)"),
+                                nullptr));
+      ubPerObject_.push_back(device_->createBuffer(BufferDesc(bufType,
+                                                              nullptr,
+                                                              sizeof(UniformsPerObject),
+                                                              ResourceStorage::Shared,
+                                                              hint,
+                                                              "Buffer: uniforms (per object)"),
+                                                   nullptr));
+    }
+  }
+
+  {
+    const VertexInputStateDesc desc = {
+        .numAttributes = 4,
+        .attributes =
+            {
+                {
+                    .format = VertexAttributeFormat::Float3,
+                    .offset = offsetof(VertexData, position),
+                    .name = "pos",
+                    .location = 0,
+                },
+                {
+                    .format = VertexAttributeFormat::Int_2_10_10_10_REV,
+                    .offset = offsetof(VertexData, normal),
+                    .name = "normal",
+                    .location = 1,
+                },
+                {
+                    .format = VertexAttributeFormat::HalfFloat2,
+                    .offset = offsetof(VertexData, uv),
+                    .name = "uv",
+                    .location = 2,
+                },
+                {
+                    .format = VertexAttributeFormat::UInt1,
+                    .offset = offsetof(VertexData, mtlIndex),
+                    .name = "mtlIndex",
+                    .location = 3,
+                },
+            },
+        .numInputBindings = 1,
+        .inputBindings = {{.stride = sizeof(VertexData)}},
+    };
+    vertexInput0_ = device_->createVertexInputState(desc, nullptr);
+  }
+
+  {
+    const VertexInputStateDesc desc = {
+        .numAttributes = 1,
+        .attributes = {{
+            .format = VertexAttributeFormat::Float3,
+            .offset = offsetof(VertexData, position),
+            .name = "pos",
+            .location = 0,
+        }},
+        .numInputBindings = 1,
+        .inputBindings = {{.stride = sizeof(VertexData)}},
+    };
+    vertexInputShadows_ = device_->createVertexInputState(desc, nullptr);
+  }
+
+  depthStencilState_ = device_->createDepthStencilState(
+      {.compareFunction = igl::CompareFunction::Less, .isDepthWriteEnabled = true}, nullptr);
+
+  depthStencilStateLEqual_ = device_->createDepthStencilState(
+      {.compareFunction = igl::CompareFunction::LessEqual, .isDepthWriteEnabled = true}, nullptr);
+
+  {
+    igl::SamplerStateDesc desc = igl::SamplerStateDesc::newLinear();
+    desc.addressModeU = igl::SamplerAddressMode::Repeat;
+    desc.addressModeV = igl::SamplerAddressMode::Repeat;
+    desc.mipFilter = igl::SamplerMipFilter::Linear;
+    desc.debugName = "Sampler: linear";
+    sampler_ = device_->createSamplerState(desc, nullptr);
+
+    desc.addressModeU = igl::SamplerAddressMode::Clamp;
+    desc.addressModeV = igl::SamplerAddressMode::Clamp;
+    desc.mipFilter = igl::SamplerMipFilter::Disabled;
+    desc.debugName = "Sampler: shadow";
+    desc.depthCompareEnabled = true;
+    desc.depthCompareFunction = igl::CompareFunction::LessEqual;
+    samplerShadow_ = device_->createSamplerState(desc, nullptr);
+  }
+
+  commandQueue_ = device_->createCommandQueue({}, nullptr);
+
+  renderPassOffscreen_.colorAttachments.emplace_back();
+  renderPassOffscreen_.colorAttachments.back().loadAction = LoadAction::Clear;
+  renderPassOffscreen_.colorAttachments.back().storeAction =
+      kNumSamplesMSAA > 1 ? StoreAction::MsaaResolve : StoreAction::Store;
+  renderPassOffscreen_.colorAttachments.back().clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+  renderPassOffscreen_.depthAttachment.loadAction = LoadAction::Clear;
+  renderPassOffscreen_.depthAttachment.storeAction = StoreAction::DontCare;
+  renderPassOffscreen_.depthAttachment.clearDepth = 1.0f;
+
+  renderPassMain_.colorAttachments.emplace_back();
+  renderPassMain_.colorAttachments.back().loadAction = LoadAction::Clear;
+  renderPassMain_.colorAttachments.back().storeAction = StoreAction::Store;
+  renderPassMain_.colorAttachments.back().clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+  renderPassMain_.depthAttachment.loadAction = LoadAction::Clear;
+  renderPassMain_.depthAttachment.storeAction = StoreAction::DontCare;
+  renderPassMain_.depthAttachment.clearDepth = 1.0f;
+
+#if USE_OPENGL_BACKEND
+  renderPassShadow_.colorAttachments.push_back(igl::RenderPassDesc::ColorAttachmentDesc{});
+  renderPassShadow_.colorAttachments.back().loadAction = LoadAction::Clear;
+  renderPassShadow_.colorAttachments.back().storeAction = StoreAction::Store;
+  renderPassShadow_.colorAttachments.back().clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+#endif
+  renderPassShadow_.depthAttachment.loadAction = LoadAction::Clear;
+  renderPassShadow_.depthAttachment.storeAction = StoreAction::Store;
+  renderPassShadow_.depthAttachment.clearDepth = 1.0f;
+
   const std::string cacheFileName = contentRootFolder + "cache.data";
 
   if (!loadFromCache(cacheFileName.c_str())) {
@@ -1404,35 +1411,38 @@ void initModel() {
   for (const auto& mtl : cachedMaterials_) {
     materials_.push_back(GPUMaterial{vec4(mtl.ambient, 1.0f), vec4(mtl.diffuse, 1.0f), id, id});
   }
-#if USE_OPENGL_BACKEND
-  const auto bufType = BufferDesc::BufferTypeBits::Uniform;
-  const auto hint = BufferDesc::BufferAPIHintBits::UniformBlock;
-#else
-  const auto bufType = BufferDesc::BufferTypeBits::Storage;
-  const auto hint = 0;
-#endif
-  sbMaterials_ = device_->createBuffer(BufferDesc(bufType,
-                                                  materials_.data(),
-                                                  sizeof(GPUMaterial) * materials_.size(),
-                                                  ResourceStorage::Private,
-                                                  hint,
-                                                  "Buffer: materials"),
-                                       nullptr);
 
-  vb0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Vertex,
-                                          vertexData_.data(),
-                                          sizeof(VertexData) * vertexData_.size(),
-                                          ResourceStorage::Private,
-                                          hint,
-                                          "Buffer: vertex"),
-                               nullptr);
-  ib0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Index,
-                                          indexData_.data(),
-                                          sizeof(uint32_t) * indexData_.size(),
-                                          ResourceStorage::Private,
-                                          hint,
-                                          "Buffer: index"),
-                               nullptr);
+  {
+#if USE_OPENGL_BACKEND
+    const auto bufType = BufferDesc::BufferTypeBits::Uniform;
+    const auto hint = BufferDesc::BufferAPIHintBits::UniformBlock;
+#else
+    const auto bufType = BufferDesc::BufferTypeBits::Storage;
+    const auto hint = 0;
+#endif
+    sbMaterials_ = device_->createBuffer(BufferDesc(bufType,
+                                                    materials_.data(),
+                                                    sizeof(GPUMaterial) * materials_.size(),
+                                                    ResourceStorage::Private,
+                                                    hint,
+                                                    "Buffer: materials"),
+                                         nullptr);
+
+    vb0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Vertex,
+                                            vertexData_.data(),
+                                            sizeof(VertexData) * vertexData_.size(),
+                                            ResourceStorage::Private,
+                                            hint,
+                                            "Buffer: vertex"),
+                                 nullptr);
+    ib0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Index,
+                                            indexData_.data(),
+                                            sizeof(uint32_t) * indexData_.size(),
+                                            ResourceStorage::Private,
+                                            hint,
+                                            "Buffer: index"),
+                                 nullptr);
+  }
 }
 
 void createComputePipeline() {
