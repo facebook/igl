@@ -30,7 +30,7 @@ std::shared_ptr<IShaderModule> ShaderModuleCreator::fromStringInput(const IDevic
       igl::ShaderModuleDesc::fromStringInput(source, std::move(info), std::move(debugName));
 
   auto sm = device.createShaderModule(desc, result);
-  if (!result->isOk()) {
+  if (result && !result->isOk()) {
     return nullptr;
   }
 
@@ -54,7 +54,7 @@ std::shared_ptr<IShaderModule> ShaderModuleCreator::fromBinaryInput(const IDevic
       data, dataLength, std::move(info), std::move(debugName));
 
   auto sm = device.createShaderModule(desc, result);
-  if (!result->isOk()) {
+  if (result && !result->isOk()) {
     return nullptr;
   }
 
@@ -326,7 +326,7 @@ std::unique_ptr<IShaderStages> fromLibraryDesc(const IDevice& device,
   IGL_DEBUG_ASSERT(libraryDesc.moduleInfo.size() == 2);
 
   auto library = device.createShaderLibrary(libraryDesc, result);
-  if (!result->isOk()) {
+  if (result && !result->isOk()) {
     return nullptr;
   }
 
