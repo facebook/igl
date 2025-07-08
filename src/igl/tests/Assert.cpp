@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 
 // Only include Assert.h and ensure it is configured to enable both soft errors and debug aborts
-#define IGL_DEBUG 1
+#define IGL_DEBUG_ABORT_ENABLED 1
 #define IGL_SOFT_ERROR_ENABLED 1
 #define IGL_COMMON_SKIP_CHECK 1
 #include <igl/Assert.h>
