@@ -142,7 +142,6 @@ static_assert(IGL_WITH_IGLU != 0,
 namespace {
 
 constexpr uint32_t kMeshCacheVersion = 0xC0DE0009;
-int kNumSamplesMSAA = 8;
 #if USE_OPENGL_BACKEND
 constexpr bool kEnableCompression = false;
 #else
@@ -1228,7 +1227,7 @@ bool loadFromCache(const char* cacheFileName) {
   return true;
 }
 
-void initModel() {
+void initModel(int numSamplesMSAA) {
 // @fb-only
   // @fb-only
       // @fb-only
@@ -1370,7 +1369,7 @@ void initModel() {
   renderPassOffscreen_.colorAttachments.emplace_back();
   renderPassOffscreen_.colorAttachments.back().loadAction = LoadAction::Clear;
   renderPassOffscreen_.colorAttachments.back().storeAction =
-      kNumSamplesMSAA > 1 ? StoreAction::MsaaResolve : StoreAction::Store;
+      numSamplesMSAA > 1 ? StoreAction::MsaaResolve : StoreAction::Store;
   renderPassOffscreen_.colorAttachments.back().clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
   renderPassOffscreen_.depthAttachment.loadAction = LoadAction::Clear;
   renderPassOffscreen_.depthAttachment.storeAction = StoreAction::DontCare;
@@ -1461,7 +1460,7 @@ void createComputePipeline() {
   computePipelineState_Grayscale_ = device_->createComputePipeline(desc, nullptr);
 }
 
-void createRenderPipelines() {
+void createRenderPipelines(int numSamplesMSAA) {
   if (renderPipelineState_Mesh_) {
     return;
   }
@@ -1554,7 +1553,7 @@ void createRenderPipelines() {
 #endif
     desc.cullMode = igl::CullMode::Back;
     desc.frontFaceWinding = igl::WindingMode::CounterClockwise;
-    desc.sampleCount = kNumSamplesMSAA;
+    desc.sampleCount = numSamplesMSAA;
     desc.debugName = IGL_NAMEHANDLE("Pipeline: mesh");
 #if USE_OPENGL_BACKEND
     desc.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE("texShadow");
@@ -1657,7 +1656,7 @@ void createRenderPipelines() {
   }
 }
 
-void createRenderPipelineSkybox() {
+void createRenderPipelineSkybox(int numSamplesMSAA) {
   if (renderPipelineState_Skybox_) {
     return;
   }
@@ -1736,7 +1735,7 @@ void createRenderPipelineSkybox() {
 #endif
   desc.cullMode = igl::CullMode::Front;
   desc.frontFaceWinding = igl::WindingMode::CounterClockwise;
-  desc.sampleCount = kNumSamplesMSAA;
+  desc.sampleCount = numSamplesMSAA;
   desc.debugName = IGL_NAMEHANDLE("Pipeline: skybox");
 #if USE_OPENGL_BACKEND
   desc.fragmentUnitSamplerMap[1] = IGL_NAMEHANDLE("texSkybox");
@@ -1820,7 +1819,7 @@ void createShadowMap() {
   IGL_DEBUG_ASSERT(fbShadowMap_);
 }
 
-void createOffscreenFramebuffer() {
+void createOffscreenFramebuffer(int numSamplesMSAA) {
   const uint32_t w = width_;
   const uint32_t h = height_;
   Result ret;
@@ -1831,9 +1830,9 @@ void createOffscreenFramebuffer() {
                                           TextureDesc::TextureUsageBits::Sampled,
                                       "Offscreen framebuffer (d)");
   descDepth.numMipLevels = TextureDesc::calcNumMipLevels(w, h);
-  if (kNumSamplesMSAA > 1) {
+  if (numSamplesMSAA > 1) {
     descDepth.usage = TextureDesc::TextureUsageBits::Attachment;
-    descDepth.numSamples = kNumSamplesMSAA;
+    descDepth.numSamples = numSamplesMSAA;
     descDepth.numMipLevels = 1;
     descDepth.storage = ResourceStorage::Memoryless;
   }
@@ -1849,9 +1848,9 @@ void createOffscreenFramebuffer() {
 
   auto descColor = TextureDesc::new2D(format, w, h, usage, "Offscreen framebuffer (c)");
   descColor.numMipLevels = TextureDesc::calcNumMipLevels(w, h);
-  if (kNumSamplesMSAA > 1) {
+  if (numSamplesMSAA > 1) {
     descColor.usage = TextureDesc::TextureUsageBits::Attachment;
-    descColor.numSamples = kNumSamplesMSAA;
+    descColor.numSamples = numSamplesMSAA;
     descColor.numMipLevels = 1;
     descColor.storage = ResourceStorage::Memoryless;
   }
@@ -1861,7 +1860,7 @@ void createOffscreenFramebuffer() {
   FramebufferDesc framebufferDesc;
   framebufferDesc.colorAttachments[0].texture = texColor;
   framebufferDesc.depthAttachment.texture = texDepth;
-  if (kNumSamplesMSAA > 1) {
+  if (numSamplesMSAA > 1) {
     auto descColorResolve =
         TextureDesc::new2D(format, w, h, usage, "Offscreen framebuffer (c - resolve)");
     descColorResolve.usage = usage;
@@ -1874,7 +1873,9 @@ void createOffscreenFramebuffer() {
   IGL_DEBUG_ASSERT(fbOffscreen_);
 }
 
-void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {
+void render(const std::shared_ptr<ITexture>& nativeDrawable,
+            uint32_t frameIndex,
+            int numSamplesMSAA) {
   IGL_PROFILER_FUNCTION();
 
   fbMain_->updateDrawable(nativeDrawable);
@@ -2082,8 +2083,8 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
     auto commands = buffer->createComputeCommandEncoder();
     commands->bindComputePipelineState(computePipelineState_Grayscale_);
-    ITexture* tex = kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0).get()
-                                        : fbOffscreen_->getColorAttachment(0).get();
+    ITexture* tex = numSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0).get()
+                                       : fbOffscreen_->getColorAttachment(0).get();
 #if !USE_OPENGL_BACKEND
     const uint32_t textureId = tex->getTextureId();
     commands->bindPushConstants(&textureId, sizeof(textureId));
@@ -2106,8 +2107,8 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     commands->pushDebugGroupLabel("Swapchain Output", igl::Color(1, 0, 0));
     commands->bindTexture(0,
                           igl::BindTarget::kFragment,
-                          kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0).get()
-                                              : fbOffscreen_->getColorAttachment(0).get());
+                          numSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0).get()
+                                             : fbOffscreen_->getColorAttachment(0).get());
     commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
     commands->draw(3);
     commands->popDebugGroupLabel();
@@ -2599,9 +2600,8 @@ void processLoadedMaterials() {
 
 int main(int argc, char* argv[]) {
   const bool isHeadless = argc > 1 && (strcmp(argv[1], "--headless") == 0);
-  if (isHeadless) {
-    kNumSamplesMSAA = 1;
-  }
+
+  const int kNumSamplesMSAA = isHeadless ? 1 : 8;
 
   // find the content folder
   {
@@ -2622,7 +2622,7 @@ int main(int argc, char* argv[]) {
   }
 
   GLFWwindow* window = initIGL(isHeadless);
-  initModel();
+  initModel(kNumSamplesMSAA);
 
   if (kEnableCompression) {
     printf(
@@ -2634,9 +2634,9 @@ int main(int argc, char* argv[]) {
 
   createFramebuffer(getNativeDrawable());
   createShadowMap();
-  createOffscreenFramebuffer();
-  createRenderPipelines();
-  createRenderPipelineSkybox();
+  createOffscreenFramebuffer(kNumSamplesMSAA);
+  createRenderPipelines(kNumSamplesMSAA);
+  createRenderPipelineSkybox(kNumSamplesMSAA);
   createComputePipeline();
 
 #if IGL_WITH_IGLU
@@ -2694,7 +2694,7 @@ int main(int argc, char* argv[]) {
 #if IGL_WITH_IGLU
     inputDispatcher_.processEvents();
 #endif // IGL_WITH_IGLU
-    render(getNativeDrawable(), frameIndex);
+    render(getNativeDrawable(), frameIndex, kNumSamplesMSAA);
     if (window) {
       glfwPollEvents();
     } else {
