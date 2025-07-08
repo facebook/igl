@@ -34,7 +34,7 @@ class MetalTextureAccessor : public ITextureAccessor {
   size_t textureBytesPerRow_ = 0;
   size_t textureBytesPerImage_ = 0;
   std::shared_ptr<igl::IBuffer> readBuffer_ = nullptr;
-  std::shared_ptr<igl::ICommandBuffer> lastRequestCommandBuffer = nullptr;
+  std::shared_ptr<igl::ICommandBuffer> lastRequestCommandBuffer_ = nullptr;
 };
 
 } // namespace iglu::textureaccessor
