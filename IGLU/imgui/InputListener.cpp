@@ -24,7 +24,7 @@
 namespace iglu::imgui {
 
 InputListener::InputListener(ImGuiContext* context) {
-  _context = context;
+  context_ = context;
 }
 
 bool InputListener::process(const igl::shell::MouseButtonEvent& event) {
@@ -63,7 +63,7 @@ bool InputListener::process(const igl::shell::TouchEvent& event) {
 }
 
 void InputListener::makeCurrentContext() const {
-  ImGui::SetCurrentContext(_context);
+  ImGui::SetCurrentContext(context_);
 }
 
 bool InputListener::process(const igl::shell::KeyEvent& event) {

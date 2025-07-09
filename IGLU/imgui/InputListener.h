@@ -34,7 +34,7 @@ class InputListener : public igl::shell::IMouseListener,
   bool process(const igl::shell::CharEvent& event) override;
 
  private:
-  ImGuiContext* _context;
+  ImGuiContext* context_;
 
   void makeCurrentContext() const;
 };
