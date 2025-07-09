@@ -496,7 +496,7 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
     desc.debugName = igl::genNameHandle("Pipeline: mesh");
     desc.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE("uTex0");
     desc.fragmentUnitSamplerMap[1] = IGL_NAMEHANDLE("uTex1");
-    renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
+    renderPipelineStateMesh_ = device_->createRenderPipeline(desc, nullptr);
   }
 
   framebuffer_->updateDrawable(surfaceTextures.color);
@@ -533,7 +533,7 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
   // This will clear the framebuffer
   auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
-  commands->bindRenderPipelineState(renderPipelineState_Mesh_);
+  commands->bindRenderPipelineState(renderPipelineStateMesh_);
   commands->bindViewport(viewport);
   commands->bindScissorRect(scissor);
   commands->pushDebugGroupLabel("Render Mesh", Color(1, 0, 0));

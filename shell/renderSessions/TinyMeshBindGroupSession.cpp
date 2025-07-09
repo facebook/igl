@@ -402,7 +402,7 @@ void TinyMeshBindGroupSession::initialize() noexcept {
 }
 
 void TinyMeshBindGroupSession::createRenderPipeline() {
-  if (renderPipelineState_Mesh_) {
+  if (renderPipelineStateMesh_) {
     return;
   }
 
@@ -431,7 +431,7 @@ void TinyMeshBindGroupSession::createRenderPipeline() {
   desc.debugName = igl::genNameHandle("Pipeline: mesh");
   desc.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE("uTex0");
   desc.fragmentUnitSamplerMap[1] = IGL_NAMEHANDLE("uTex1");
-  renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
+  renderPipelineStateMesh_ = device_->createRenderPipeline(desc, nullptr);
 
   {
     const uint32_t texWidth = 256;
@@ -509,7 +509,7 @@ void TinyMeshBindGroupSession::createRenderPipeline() {
           .debugName = "bindGroupNoTexture1_",
       },
       // as we don't provide all necessary textures, let IGL/Vulkan add dummies where necessary
-      renderPipelineState_Mesh_.get());
+      renderPipelineStateMesh_.get());
 }
 
 std::shared_ptr<ITexture> TinyMeshBindGroupSession::getVulkanNativeDepth() {
@@ -587,7 +587,7 @@ void TinyMeshBindGroupSession::update(SurfaceTextures surfaceTextures) noexcept 
   // This will clear the framebuffer
   auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
-  commands->bindRenderPipelineState(renderPipelineState_Mesh_);
+  commands->bindRenderPipelineState(renderPipelineStateMesh_);
   commands->bindViewport(viewport);
   commands->bindScissorRect(scissor);
   commands->pushDebugGroupLabel("Render Mesh", Color(1, 0, 0));

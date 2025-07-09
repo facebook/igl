@@ -31,7 +31,7 @@ class TinyMeshBindGroupSession : public RenderSession {
   RenderPassDesc renderPass_;
   FramebufferDesc framebufferDesc_;
   std::shared_ptr<IFramebuffer> framebuffer_;
-  std::shared_ptr<IRenderPipelineState> renderPipelineState_Mesh_;
+  std::shared_ptr<IRenderPipelineState> renderPipelineStateMesh_;
   std::shared_ptr<IBuffer> vb0_, ib0_; // buffers for vertices and indices
   std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerObject_;
   std::shared_ptr<IVertexInputState> vertexInput0_;
