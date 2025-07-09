@@ -31,7 +31,7 @@ class HelloWorldSession : public RenderSession {
   std::shared_ptr<IVertexInputState> vertexInput0_;
   std::shared_ptr<IFramebuffer> framebuffer_;
   std::shared_ptr<ITexture> depthTexture_;
-  std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
+  std::shared_ptr<IRenderPipelineState> renderPipelineStateTriangle_;
   std::shared_ptr<IBuffer> vb0_;
   std::shared_ptr<IBuffer> ib0_;
   std::vector<UniformDesc> vertexUniformDescriptors_;
