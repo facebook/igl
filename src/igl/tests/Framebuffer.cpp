@@ -272,10 +272,11 @@ TEST_F(FramebufferTest, Clear) {
   framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
   ASSERT_EQ(pixels[0], 0x80808080);
 
-#if IGL_BACKEND_OPENGL
-  // TODO: copyBytesDepthAttachment is not functioning property under Metal/Vulkan
-  // due to unimplemented blitting
-  // Refer to igl/metal/Framebuffer.mm
+#if !IGL_PLATFORM_IOS_SIMULATOR
+  // IOS Simulator has specific restrictions on depth/stencil formats. It has to
+  // be created with ".private" storage mode. This means we can't read it back
+  // and verify the contents.
+  // https://developer.apple.com/documentation/metal/developing_metal_apps_that_run_in_simulator
   framebuffer_->copyBytesDepthAttachment(*cmdQueue_, pixelsDepth.data(), rangeDesc);
   // ASSERT_EQ(pixels_depth[0], 0x80808080);
 
@@ -325,10 +326,11 @@ TEST_F(FramebufferTest, Clear) {
   framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
   ASSERT_EQ(pixels[0], 0);
 
-#if IGL_BACKEND_OPENGL
-  // TODO: copyBytesDepthAttachment is not functioning property under Metal/Vulkan
-  // due to unimplemented blitting
-  // Refer to igl/metal/Framebuffer.mm
+#if !IGL_PLATFORM_IOS_SIMULATOR
+  // IOS Simulator has specific restrictions on depth/stencil formats. It has to
+  // be created with ".private" storage mode. This means we can't read it back
+  // and verify the contents.
+  // https://developer.apple.com/documentation/metal/developing_metal_apps_that_run_in_simulator
   framebuffer_->copyBytesDepthAttachment(*cmdQueue_, pixelsDepth.data(), rangeDesc);
   // ASSERT_EQ(pixels_depth[0], 0);
 
