@@ -140,7 +140,7 @@
     "source": {
         "type": "git",
         "url": "https://github.com/google/googletest.git",
-        "revision": "v1.13.0"
+        "revision": "v1.14.0"
     }
 },
 {
