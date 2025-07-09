@@ -151,7 +151,7 @@ bool VulkanFeatures::hasExtension(const char* ext) const {
 }
 
 Result VulkanFeatures::checkSelectedFeatures(
-    const VulkanFeatures& availableFeatures) const noexcept {
+    const VulkanFeatures& availableFeatures) const noexcept { // NOLINT(bugprone-exception-escape)
   // Stores missing features
   std::string missingFeatures;
 
