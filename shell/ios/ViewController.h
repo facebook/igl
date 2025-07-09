@@ -8,7 +8,7 @@
 // @fb-only
 
 #import "RenderSessionFactoryProvider.h"
-#import <MetalKit/MetalKit.h>
+#import <MetalKit/MTKView.h>
 #import <UIKit/UIKit.h>
 #import <shell/shared/renderSession/RenderSessionConfig.h>
 
