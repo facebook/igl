@@ -81,13 +81,13 @@ class InputDispatcher {
     Data data;
   };
 
-  std::mutex _mutex;
-  std::vector<std::shared_ptr<IMouseListener>> _mouseListeners;
-  std::vector<std::shared_ptr<ITouchListener>> _touchListeners;
-  std::vector<std::shared_ptr<IKeyListener>> _keyListeners;
-  std::vector<std::shared_ptr<IRayListener>> _rayListeners;
-  std::vector<std::shared_ptr<IIntentListener>> _intentListeners;
-  std::queue<Event> _events;
+  std::mutex mutex_;
+  std::vector<std::shared_ptr<IMouseListener>> mouseListeners_;
+  std::vector<std::shared_ptr<ITouchListener>> touchListeners_;
+  std::vector<std::shared_ptr<IKeyListener>> keyListeners_;
+  std::vector<std::shared_ptr<IRayListener>> rayListeners_;
+  std::vector<std::shared_ptr<IIntentListener>> intentListeners_;
+  std::queue<Event> events_;
 };
 
 } // namespace igl::shell
