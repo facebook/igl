@@ -86,6 +86,7 @@ class Device : public IDevice {
   }
 
   // ICapabilities
+  [[nodiscard]] bool isAppleGpu() const;
   [[nodiscard]] bool hasFeature(DeviceFeatures feature) const override;
   [[nodiscard]] bool hasRequirement(DeviceRequirement requirement) const override;
   bool getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const override;

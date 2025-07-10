@@ -576,6 +576,20 @@ const PlatformDevice& Device::getPlatformDevice() const noexcept {
   return platformDevice_;
 }
 
+bool Device::isAppleGpu() const {
+#if IGL_PLATFORM_IOS
+  return true;
+#else
+  if (@available(macOS 10.15, *)) {
+    std::string gpuName = [device_.name UTF8String];
+    return gpuName.find("Apple") != std::string::npos;
+  } else {
+    // Apple Macs didn't exist yet.
+    return false;
+  }
+#endif
+}
+
 bool Device::hasFeature(DeviceFeatures feature) const {
   return deviceFeatureSet_.hasFeature(feature);
 }
