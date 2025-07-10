@@ -829,11 +829,11 @@ void XrApp::update() {
   endFrame(frameState);
 }
 
-bool XrApp::passthroughSupported() const noexcept {
+bool XrApp::passthroughSupported() const noexcept { // NOLINT(bugprone-exception-escape)
   return supportedOptionalXrExtensions_.count(XR_FB_PASSTHROUGH_EXTENSION_NAME) != 0;
 }
 
-bool XrApp::passthroughEnabled() const noexcept {
+bool XrApp::passthroughEnabled() const noexcept { // NOLINT(bugprone-exception-escape)
   if (!renderSession_ || !passthrough_) {
     return false;
   }
@@ -841,7 +841,7 @@ bool XrApp::passthroughEnabled() const noexcept {
   return appParams.passthroughGetter ? appParams.passthroughGetter() : useQuadLayerComposition_;
 }
 
-bool XrApp::handTrackingSupported() const noexcept {
+bool XrApp::handTrackingSupported() const noexcept { // NOLINT(bugprone-exception-escape)
 #if IGL_PLATFORM_ANDROID
   return supportedOptionalXrExtensions_.count(XR_EXT_HAND_TRACKING_EXTENSION_NAME) != 0 &&
          handTrackingSystemProps_.supportsHandTracking != 0u;
@@ -849,25 +849,26 @@ bool XrApp::handTrackingSupported() const noexcept {
   return false;
 }
 
-bool XrApp::handTrackingMeshSupported() const noexcept {
+bool XrApp::handTrackingMeshSupported() const noexcept { // NOLINT(bugprone-exception-escape)
 #if IGL_PLATFORM_ANDROID
   return supportedOptionalXrExtensions_.count(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME) != 0;
 #endif // IGL_PLATFORM_ANDROID
   return false;
 }
 
-bool XrApp::refreshRateExtensionSupported() const noexcept {
+bool XrApp::refreshRateExtensionSupported() const noexcept { // NOLINT(bugprone-exception-escape)
   return supportedOptionalXrExtensions_.count(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME) != 0;
 }
 
-bool XrApp::instanceCreateInfoAndroidSupported() const noexcept {
+bool XrApp::instanceCreateInfoAndroidSupported()
+    const noexcept { // NOLINT(bugprone-exception-escape)
 #if IGL_PLATFORM_ANDROID
   return supportedOptionalXrExtensions_.count(XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME) != 0;
 #endif // IGL_PLATFORM_ANDROID
   return false;
 }
 
-bool XrApp::alphaBlendCompositionSupported() const noexcept {
+bool XrApp::alphaBlendCompositionSupported() const noexcept { // NOLINT(bugprone-exception-escape)
 #ifdef XR_FB_composition_layer_alpha_blend
   return supportedOptionalXrExtensions_.count(XR_FB_COMPOSITION_LAYER_ALPHA_BLEND_EXTENSION_NAME) !=
          0;
