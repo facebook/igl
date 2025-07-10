@@ -1256,7 +1256,7 @@ bool VulkanImage::isStencilFormat(VkFormat format) {
          (format == VK_FORMAT_D24_UNORM_S8_UINT) || (format == VK_FORMAT_D32_SFLOAT_S8_UINT);
 }
 
-void VulkanImage::setName(const std::string& name) noexcept {
+void VulkanImage::setName(const std::string& name) noexcept { // NOLINT(bugprone-exception-escape)
 #if IGL_DEBUG
   name_ = name;
 #else
