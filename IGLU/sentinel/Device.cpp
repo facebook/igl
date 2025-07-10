@@ -51,7 +51,7 @@ igl::BackendVersion Device::getBackendVersion() const {
 
 std::shared_ptr<igl::ICommandQueue> Device::createCommandQueue(
     const igl::CommandQueueDesc& /*desc*/,
-    igl::Result* IGL_NULLABLE /*outResult*/) {
+    igl::Result* IGL_NULLABLE /*outResult*/) noexcept {
   IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
   return nullptr;
 }

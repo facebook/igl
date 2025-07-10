@@ -40,7 +40,7 @@ class Device final : public IDevice {
   // Command Queue
   [[nodiscard]] std::shared_ptr<ICommandQueue> createCommandQueue(const CommandQueueDesc& desc,
                                                                   Result* IGL_NULLABLE
-                                                                      outResult) override;
+                                                                      outResult) noexcept override;
   // Resources
   [[nodiscard]] std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
                                                       Result* IGL_NULLABLE
@@ -227,7 +227,7 @@ void inline Device::destroy(SamplerHandle handle) {
 
 [[nodiscard]] inline std::shared_ptr<ICommandQueue> Device::createCommandQueue(
     const CommandQueueDesc& desc,
-    Result* IGL_NULLABLE outResult) {
+    Result* IGL_NULLABLE outResult) noexcept {
   return createCommandQueueInternal(desc, outResult);
 }
 

@@ -40,7 +40,8 @@ class Device : public IDevice {
 
   // Command Queue
   std::shared_ptr<ICommandQueue> createCommandQueue(const CommandQueueDesc& desc,
-                                                    Result* IGL_NULLABLE outResult) override;
+                                                    Result* IGL_NULLABLE
+                                                        outResult) noexcept override;
 
   // Backend type query
   [[nodiscard]] BackendType getBackendType() const override {
@@ -86,7 +87,7 @@ class Device : public IDevice {
                                                     Result* IGL_NULLABLE outResult) const override;
 
   std::shared_ptr<IFramebuffer> createFramebuffer(const FramebufferDesc& desc,
-                                                  Result* IGL_NULLABLE outResult) override;
+                                                  Result* IGL_NULLABLE outResult) noexcept override;
 
   // debug markers useful in GPU captures
   void pushMarker(int len, const char* IGL_NULLABLE name);

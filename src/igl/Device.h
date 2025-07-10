@@ -100,7 +100,8 @@ class IDevice : public ICapabilities {
    * @return Shared pointer to the created queue.
    */
   virtual std::shared_ptr<ICommandQueue> createCommandQueue(const CommandQueueDesc& desc,
-                                                            Result* IGL_NULLABLE outResult) = 0;
+                                                            Result* IGL_NULLABLE
+                                                                outResult) noexcept = 0;
 
   /**
    * @brief Creates a buffer resource.

@@ -44,7 +44,7 @@ class Device final : public igl::IDevice {
 
   [[nodiscard]] std::shared_ptr<igl::ICommandQueue> createCommandQueue(
       const igl::CommandQueueDesc& desc,
-      igl::Result* IGL_NULLABLE outResult) final;
+      igl::Result* IGL_NULLABLE outResult) noexcept final;
   [[nodiscard]] std::unique_ptr<igl::IBuffer> createBuffer(const igl::BufferDesc& desc,
                                                            igl::Result* IGL_NULLABLE
                                                                outResult) const noexcept final;
