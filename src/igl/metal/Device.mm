@@ -83,8 +83,9 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   return resource;
 }
 
-std::unique_ptr<IBuffer> Device::createRingBuffer(const BufferDesc& desc,
-                                                  Result* outResult) const noexcept {
+std::unique_ptr<IBuffer> Device::createRingBuffer(
+    const BufferDesc& desc,
+    Result* outResult) const noexcept { // NOLINT(bugprone-exception-escape)
   const MTLStorageMode storage = toMTLStorageMode(desc.storage);
   const MTLResourceOptions options = MTLResourceOptionCPUCacheModeDefault | storage;
 
