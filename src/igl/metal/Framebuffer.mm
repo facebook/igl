@@ -140,19 +140,23 @@ void Framebuffer::copyBytes(ICommandQueue& cmdQueue,
   if (canCopy(cmdQueue, mtlTexture->get(), range)) {
     mtlTexture->getBytes(range, pixelBytes, bytesPerRow);
   } else {
+    auto& mtlCommandQueue = static_cast<CommandQueue&>(cmdQueue);
+    auto& mtlDevice = mtlCommandQueue.getDevice();
+
+    // Once Intel Mac support is EOL remove the isAppleGpu() check and also the
+    // sychronizeTexture call below.
     Result result;
     const TextureDesc desc{
         .width = iglTexture->getDimensions().width,
         .height = iglTexture->getDimensions().height,
         .format = iglTexture->getProperties().format,
         .type = iglTexture->getType(),
-        .storage = ResourceStorage::Shared,
+        .storage = mtlDevice.isAppleGpu() ? ResourceStorage::Shared : ResourceStorage::Managed,
         .debugName = "stageTexture",
     };
 
     // 1. Create a shared stage texture
-    auto& mtlCommandQueue = static_cast<CommandQueue&>(cmdQueue);
-    auto stageTexture = mtlCommandQueue.getDevice().createTexture(desc, &result);
+    auto stageTexture = mtlDevice.createTexture(desc, &result);
 
     if (!IGL_DEBUG_VERIFY(stageTexture && result.isOk())) {
       return;
@@ -177,6 +181,13 @@ void Framebuffer::copyBytes(ICommandQueue& cmdQueue,
                   destinationSlice:range.layer
                   destinationLevel:range.mipLevel
                  destinationOrigin:MTLOriginMake(range.x, range.y, 0)];
+
+#if IGL_PLATFORM_MACOSX
+      if (desc.storage == ResourceStorage::Managed) {
+        [blitEncoder synchronizeTexture:dstMtlTexture slice:range.layer level:range.mipLevel];
+      }
+#endif
+
       [blitEncoder endEncoding];
       [cmdBuf commit];
       [cmdBuf waitUntilCompleted];
