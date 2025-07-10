@@ -92,7 +92,7 @@
     "source": {
         "type": "git",
         "url": "https://github.com/taskflow/taskflow.git",
-        "revision": "v3.6.0"
+        "revision": "v3.10.0"
     }
 },
 {
