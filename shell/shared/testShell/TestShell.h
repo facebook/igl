@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <shell/shared/renderSession/RenderSession.h>
-#include <igl/IGL.h>
+#include <igl/Texture.h>
 
 namespace igl::shell {
 
