@@ -29,6 +29,10 @@ class CommandQueue final : public ICommandQueue {
     return value_;
   }
 
+  Device& getDevice() {
+    return device_;
+  }
+
  private:
   void startCapture(id<MTLCommandQueue> queue);
   void stopCapture();
