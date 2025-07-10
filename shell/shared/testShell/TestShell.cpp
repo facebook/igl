@@ -6,7 +6,6 @@
  */
 
 #include <memory>
-#include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/platform/android/PlatformAndroid.h>
 #include <shell/shared/platform/ios/PlatformIos.h>
 #include <shell/shared/platform/linux/PlatformLinux.h>
