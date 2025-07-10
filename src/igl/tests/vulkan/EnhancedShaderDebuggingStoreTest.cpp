@@ -221,9 +221,6 @@ TEST_F(EnhancedShaderDebuggingStoreTest, createFramebuffer) {
 
   auto renderPass = store.renderPassDesc(framebuffer_);
   ASSERT_TRUE(renderPass.colorAttachments.size() == 1);
-
-  store.pipeline(*device_, framebuffer_);
-  // ASSERT_TRUE(pipeline != nullptr);
 }
 
 TEST_F(EnhancedShaderDebuggingStoreTest, DepthStencilState) {
