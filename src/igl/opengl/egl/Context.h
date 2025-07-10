@@ -36,6 +36,7 @@ class Context final : public IContext {
   /// surfaces to be associated with this context are already present and set to current.
   explicit Context(EGLNativeWindowType window);
   explicit Context(BackendVersion backendVersion, EGLNativeWindowType window);
+  Context& operator=(Context& other) = delete;
   /// Create a new offscreen context.
   Context(size_t width, size_t height);
   /// Create a new context applicable for a specific display/context/read surface/draw surface.
