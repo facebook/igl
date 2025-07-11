@@ -12,7 +12,7 @@
 namespace igl::metal {
 
 metal::ShaderModule::ShaderModule(ShaderModuleInfo info, id<MTLFunction> value) :
-  IShaderModule(std::move(info)), value_(value) {}
+  IShaderModule(std::move(info)), value(value) {}
 
 metal::ShaderLibrary::ShaderLibrary(std::vector<std::shared_ptr<IShaderModule>> modules) :
   IShaderLibrary(std::move(modules)) {}
