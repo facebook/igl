@@ -1596,7 +1596,7 @@ SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
   VK_ASSERT(vf_.vkCreateSampler(device, &cInfo, nullptr, &sampler.vkSampler));
   VK_ASSERT(ivkSetDebugObjectName(
       &vf_, device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.vkSampler, debugName));
-  const SamplerHandle handle = samplers_.create(std::move(sampler));
+  const SamplerHandle handle = samplers_.create(static_cast<VulkanSampler&&>(sampler));
 
   samplers_.get(handle)->samplerId = handle.index();
 
