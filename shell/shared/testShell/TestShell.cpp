@@ -59,7 +59,7 @@ void ensureCommandLineArgsInitialized() {
 
 } // namespace
 
-void TestShellBase::SetUp(ScreenSize screenSize, bool needsRGBSwapchainSupport) {
+void TestShellBase::setUpInternal(ScreenSize screenSize, bool needsRGBSwapchainSupport) {
   ensureCommandLineArgsInitialized();
 
   // Create igl device for requested backend
