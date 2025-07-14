@@ -136,7 +136,7 @@ void XrSwapchainProviderImplVulkan::enumerateImages(
     XrSwapchain colorSwapchain,
     XrSwapchain depthSwapchain,
     const impl::SwapchainImageInfo& swapchainImageInfo,
-    uint8_t numViews) noexcept {
+    uint8_t numViews) noexcept { // NOLINT(bugprone-exception-escape)
   enumerateSwapchainImages(device,
                            colorSwapchain,
                            static_cast<VkFormat>(swapchainImageInfo.colorFormat),
