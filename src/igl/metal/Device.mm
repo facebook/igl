@@ -131,8 +131,9 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
   return platformDevice_.createSamplerState(desc, outResult);
 }
 
-std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
-                                                Result* outResult) const noexcept {
+std::shared_ptr<ITexture> Device::createTexture(
+    const TextureDesc& desc,
+    Result* outResult) const noexcept { // NOLINT(bugprone-exception-escape)
   const auto sanitized = sanitize(desc);
   if (desc.numLayers > 1 && desc.type != TextureType::TwoDArray) {
     Result::setResult(outResult,
