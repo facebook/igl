@@ -128,7 +128,7 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
 
 void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
     const VulkanContext& context,
-    VkPhysicalDevice physicalDevice) noexcept {
+    VkPhysicalDevice physicalDevice) noexcept { // NOLINT(bugprone-exception-escape)
   IGL_DEBUG_ASSERT(context.vf_.vkGetPhysicalDeviceFeatures2 != nullptr,
                    "Pointer to function vkGetPhysicalDeviceFeatures2() is nullptr");
   uint32_t numExtensions = 0;
