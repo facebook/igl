@@ -90,9 +90,7 @@ void TestShellBase::setUpInternal(ScreenSize screenSize, bool needsRGBSwapchainS
   // Create an offscreen texture to render to
   Result ret;
   auto hasNativeSwapchainSupport = platform_->getDevice().hasFeature(DeviceFeatures::SRGBSwapchain);
-  auto colorFormat = platform_->getDevice().getBackendType() == igl::BackendType::Metal
-                         ? igl::TextureFormat::BGRA_SRGB
-                         : igl::TextureFormat::RGBA_SRGB;
+  auto colorFormat = igl::TextureFormat::RGBA_SRGB;
   colorFormat = needsRGBSwapchainSupport && !hasNativeSwapchainSupport ? sRGBToUNorm(colorFormat)
                                                                        : colorFormat;
   TextureDesc texDesc = igl::TextureDesc::new2D(colorFormat,
