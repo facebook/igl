@@ -619,7 +619,7 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
       .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
       .pEngineName = "IGL/Vulkan",
       .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-      .apiVersion = VK_API_VERSION_1_1,
+      .apiVersion = VK_API_VERSION_1_2,
   };
 
   const VkInstanceCreateInfo ci = {
