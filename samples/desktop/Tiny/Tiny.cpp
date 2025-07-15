@@ -408,7 +408,7 @@ int main(int argc, char* argv[]) {
       }
       const char* fileName = "Tiny.png";
       IGLLog(IGLLogInfo, "Writing screenshot to: '%s'\n", fileName);
-      stbi_flip_vertically_on_write(true);
+      stbi_flip_vertically_on_write(1);
       stbi_write_png(fileName, (int)dim.width, (int)dim.height, 3, pixelsRGB.data(), 0);
       break;
     }
