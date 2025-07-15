@@ -1265,28 +1265,30 @@ void initModel(int numSamplesMSAA) {
 #endif
     // create an Uniform buffers to store uniforms for 2 objects
     for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
-      ubPerFrame_.push_back(device_->createBuffer(BufferDesc(bufType,
-                                                             nullptr,
-                                                             sizeof(UniformsPerFrame),
-                                                             ResourceStorage::Shared,
-                                                             hint,
-                                                             "Buffer: uniforms (per frame)"),
-                                                  nullptr));
-      ubPerFrameShadow_.push_back(
+      ubPerFrame_.push_back(
           device_->createBuffer(BufferDesc(bufType,
                                            nullptr,
                                            sizeof(UniformsPerFrame),
                                            ResourceStorage::Shared,
                                            hint,
-                                           "Buffer: uniforms (per frame shadow)"),
+                                           "Buffer: uniforms (per frame) " + std::to_string(i)),
                                 nullptr));
-      ubPerObject_.push_back(device_->createBuffer(BufferDesc(bufType,
-                                                              nullptr,
-                                                              sizeof(UniformsPerObject),
-                                                              ResourceStorage::Shared,
-                                                              hint,
-                                                              "Buffer: uniforms (per object)"),
-                                                   nullptr));
+      ubPerFrameShadow_.push_back(device_->createBuffer(
+          BufferDesc(bufType,
+                     nullptr,
+                     sizeof(UniformsPerFrame),
+                     ResourceStorage::Shared,
+                     hint,
+                     "Buffer: uniforms (per frame shadow) " + std::to_string(i)),
+          nullptr));
+      ubPerObject_.push_back(
+          device_->createBuffer(BufferDesc(bufType,
+                                           nullptr,
+                                           sizeof(UniformsPerObject),
+                                           ResourceStorage::Shared,
+                                           hint,
+                                           "Buffer: uniforms (per object)" + std::to_string(i)),
+                                nullptr));
     }
   }
 
