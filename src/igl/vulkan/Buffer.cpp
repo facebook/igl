@@ -78,7 +78,9 @@ Result Buffer::create(const BufferDesc& desc) {
   bufferPatches_ = std::make_unique<BufferRange[]>(bufferCount_);
   Result result;
   for (size_t bufferIndex = 0; bufferIndex < bufferCount_; ++bufferIndex) {
-    const std::string bufferName = desc_.debugName + " - sub-buffer " + std::to_string(bufferIndex);
+    const std::string subBufferName =
+        bufferCount_ > 1 ? " - sub-buffer " + std::to_string(bufferIndex) : "";
+    const std::string bufferName = desc_.debugName + subBufferName;
     buffers_[bufferIndex] =
         ctx.createBuffer(desc_.length, usageFlags, memFlags, &result, bufferName.c_str());
     IGL_DEBUG_ASSERT(result.isOk());
