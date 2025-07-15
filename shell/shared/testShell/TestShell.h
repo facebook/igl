@@ -24,7 +24,7 @@ class TestShellBase {
   virtual ~TestShellBase() = default;
 
  protected:
-  void setUpInternal(ScreenSize screenSize = {1, 1}, bool needsRGBSwapchainSupport = false);
+  void setUpInternal(ScreenSize screenSize = {1, 1}, bool prefersRGB = true);
   void tearDownInternal() {}
 
   std::shared_ptr<Platform> platform_;

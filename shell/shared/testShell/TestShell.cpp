@@ -59,7 +59,7 @@ void ensureCommandLineArgsInitialized() {
 
 } // namespace
 
-void TestShellBase::setUpInternal(ScreenSize screenSize, bool needsRGBSwapchainSupport) {
+void TestShellBase::setUpInternal(ScreenSize screenSize, bool prefersRGB) {
   ensureCommandLineArgsInitialized();
 
   // Create igl device for requested backend
@@ -89,10 +89,10 @@ void TestShellBase::setUpInternal(ScreenSize screenSize, bool needsRGBSwapchainS
   }
   // Create an offscreen texture to render to
   Result ret;
-  auto hasNativeSwapchainSupport = platform_->getDevice().hasFeature(DeviceFeatures::SRGBSwapchain);
-  auto colorFormat = igl::TextureFormat::RGBA_SRGB;
-  colorFormat = needsRGBSwapchainSupport && !hasNativeSwapchainSupport ? sRGBToUNorm(colorFormat)
-                                                                       : colorFormat;
+  auto hasNativesRGBSupport = platform_->getDevice().hasFeature(DeviceFeatures::SRGB);
+  auto colorFormat = prefersRGB && hasNativesRGBSupport ? igl::TextureFormat::RGBA_SRGB
+                                                        : igl::TextureFormat::RGBA_UNorm8;
+
   TextureDesc texDesc = igl::TextureDesc::new2D(colorFormat,
                                                 screenSize.width,
                                                 screenSize.height,
