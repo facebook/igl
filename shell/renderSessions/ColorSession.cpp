@@ -199,10 +199,14 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
 } // namespace
 
 void ColorSession::initialize() noexcept {
-  static const glm::vec3 kLinearOrangeColor = glm::convertSRGBToLinear(glm::dvec3{1.0, 0.5, 0.0});
-  const iglu::simdtypes::float3 kGPULinearOrangeColor = {static_cast<float>(kLinearOrangeColor.x),
-                                                         static_cast<float>(kLinearOrangeColor.y),
-                                                         static_cast<float>(kLinearOrangeColor.z)};
+  glm::dvec3 linearOrangeColor = glm::dvec3{1.0, 0.5, 0.0};
+  if (swapchainColorTextureformat_ == igl::TextureFormat::RGBA_SRGB &&
+      getPlatform().getDevice().hasFeature(DeviceFeatures::SRGB)) {
+    linearOrangeColor = glm::convertSRGBToLinear(linearOrangeColor);
+  }
+  glm::vec3 fLinearOrangeColor = glm::vec3(linearOrangeColor);
+  iglu::simdtypes::float3 gpuLinearOrangeColor = {
+      fLinearOrangeColor.x, fLinearOrangeColor.y, fLinearOrangeColor.z};
 
   auto& device = getPlatform().getDevice();
 
@@ -235,13 +239,13 @@ void ColorSession::initialize() noexcept {
   IGL_DEBUG_ASSERT(samp0_ != nullptr);
 
   if (colorTestModes_ == ColorTestModes::eMacbethTexture) {
-    tex0_ = getPlatform().loadTexture("macbeth.png");
+    tex0_ = getPlatform().loadTexture("macbeth.png", true, swapchainColorTextureformat_);
   } else if (colorTestModes_ == ColorTestModes::eOrangeTexture) {
-    tex0_ = getPlatform().loadTexture("orange.png");
+    tex0_ = getPlatform().loadTexture("orange.png", true, swapchainColorTextureformat_);
   } else if (colorTestModes_ == ColorTestModes::eOrangeClear) {
     tex0_ = getPlatform().loadTexture(igl::shell::ImageLoader::white());
     setPreferredClearColor(
-        Color{kLinearOrangeColor.x, kLinearOrangeColor.y, kLinearOrangeColor.z, 1.0f});
+        Color{fLinearOrangeColor.x, fLinearOrangeColor.y, fLinearOrangeColor.z, 1.0f});
   }
 
   shaderStages_ = getShaderStagesForBackend(device);
@@ -263,7 +267,7 @@ void ColorSession::initialize() noexcept {
   glm::mat4x4 mvp(1.0f);
   memcpy(&fragmentParameters_.mvp, &mvp, sizeof(mvp));
   fragmentParameters_.color = (colorTestModes_ == ColorTestModes::eOrangeClear)
-                                  ? kGPULinearOrangeColor
+                                  ? gpuLinearOrangeColor
                                   : iglu::simdtypes::float3{1.0f, 1.0f, 1.0f};
 
   BufferDesc fpDesc;

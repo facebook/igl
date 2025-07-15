@@ -36,6 +36,10 @@ class ColorSession : public RenderSession {
     colorTestModes_ = colorTestModes;
   }
 
+  void setSwapchainColorTextureformat(igl::TextureFormat swapchainColorTextureformat) {
+    swapchainColorTextureformat_ = swapchainColorTextureformat;
+  }
+
  private:
   ColorTestModes colorTestModes_ = ColorTestModes::eMacbethTexture;
 
@@ -53,6 +57,7 @@ class ColorSession : public RenderSession {
   FragmentFormat fragmentParameters_{};
   std::vector<UniformDesc> fragmentUniformDescriptors_;
   std::vector<UniformDesc> vertexUniformDescriptors_;
+  TextureFormat swapchainColorTextureformat_ = TextureFormat::RGBA_SRGB;
 };
 
 } // namespace igl::shell
