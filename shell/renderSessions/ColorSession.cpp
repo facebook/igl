@@ -74,6 +74,15 @@ uint32_t getVertexBufferIndex(const igl::IDevice& device) {
 // @fb-only
   return 1;
 }
+
+igl::ResourceStorage getIndexBufferResourceStorage(const igl::IDevice& device) {
+// @fb-only
+  // @fb-only
+    // @fb-only
+  // @fb-only
+// @fb-only
+  return igl::ResourceStorage::Invalid;
+}
 } // namespace
 
 std::string getVersion() {
@@ -249,8 +258,10 @@ void ColorSession::initialize() noexcept {
   const BufferDesc vbDesc = getVertexBufferDesc(device);
   vb0_ = device.createBuffer(vbDesc, nullptr);
   IGL_DEBUG_ASSERT(vb0_ != nullptr);
-  const BufferDesc ibDesc =
-      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
+  const BufferDesc ibDesc = BufferDesc(BufferDesc::BufferTypeBits::Index,
+                                       indexData,
+                                       sizeof(indexData),
+                                       getIndexBufferResourceStorage(device));
   ib0_ = device.createBuffer(ibDesc, nullptr);
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
