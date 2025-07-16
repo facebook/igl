@@ -12,6 +12,9 @@
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
+// @fb-only
+// @fb-only
+// @fb-only
 
 namespace igl::shell {
 namespace {
@@ -166,6 +169,43 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   }
   IGL_UNREACHABLE_RETURN(nullptr)
 }
+
+// @fb-only
+// @fb-only
+  // @fb-only
+          // @fb-only
+          // @fb-only
+          // @fb-only
+          // @fb-only
+          // @fb-only
+// @fb-only
+// @fb-only
+
+BufferDesc getVertexBufferDesc(const igl::IDevice& device, const VertexPosUv* vertexData) {
+// @fb-only
+  // @fb-only
+    // @fb-only
+                                    // @fb-only
+                                    // @fb-only
+                                    // @fb-only
+    // @fb-only
+        // @fb-only
+        // @fb-only
+        // @fb-only
+        // @fb-only
+  // @fb-only
+// @fb-only
+  return BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(VertexPosUv) * 4);
+}
+
+uint32_t getVertexBufferIndex(const igl::IDevice& device) {
+// @fb-only
+  // @fb-only
+    return 0;
+  // @fb-only
+// @fb-only
+  return 1;
+}
 } // namespace
 
 void TQSession::initialize() noexcept {
@@ -178,8 +218,7 @@ void TQSession::initialize() noexcept {
       {{-0.8f, -0.8f, 0.0}, {0.0, uvScale_}},
       {{0.8f, -0.8f, 0.0}, {uvScale_, uvScale_}},
   };
-  const BufferDesc vbDesc =
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData));
+  const BufferDesc vbDesc = getVertexBufferDesc(device, &vertexData[0]);
   vb0_ = device.createBuffer(vbDesc, nullptr);
   IGL_DEBUG_ASSERT(vb0_ != nullptr);
   const uint16_t indexData[] = {0, 1, 2, 1, 3, 2};
@@ -314,7 +353,7 @@ void TQSession::update(SurfaceTextures surfaceTextures) noexcept {
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_DEBUG_ASSERT(commands != nullptr);
   if (commands) {
-    commands->bindVertexBuffer(1, *vb0_);
+    commands->bindVertexBuffer(getVertexBufferIndex(getPlatform().getDevice()), *vb0_);
     commands->bindRenderPipelineState(pipelineState_);
     if (getPlatform().getDevice().hasFeature(DeviceFeatures::BindUniform)) {
       // Bind non block uniforms

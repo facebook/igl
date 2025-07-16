@@ -17,6 +17,9 @@
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
+// @fb-only
+// @fb-only
+// @fb-only
 
 namespace igl::shell {
 
@@ -32,14 +35,46 @@ VertexPosUv vertexData[] = {
     {{-1.f, -1.f, 0.0}, {0.0, 1.0}},
     {{1.f, -1.f, 0.0}, {1.0, 1.0}},
 };
-uint16_t indexData[] = {
-    0,
-    1,
-    2,
-    1,
-    3,
-    2,
-};
+uint16_t indexData[] = {0, 1, 2, 1, 3, 2};
+
+namespace {
+// @fb-only
+// @fb-only
+  // @fb-only
+          // @fb-only
+          // @fb-only
+          // @fb-only
+          // @fb-only
+          // @fb-only
+// @fb-only
+// @fb-only
+
+BufferDesc getVertexBufferDesc(const igl::IDevice& device) {
+// @fb-only
+  // @fb-only
+    // @fb-only
+                                    // @fb-only
+                                    // @fb-only
+                                    // @fb-only
+    // @fb-only
+        // @fb-only
+        // @fb-only
+        // @fb-only
+        // @fb-only
+  // @fb-only
+// @fb-only
+  return {BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData)};
+}
+
+uint32_t getVertexBufferIndex(const igl::IDevice& device) {
+// @fb-only
+  // @fb-only
+    return 0;
+  // @fb-only
+// @fb-only
+  return 1;
+}
+} // namespace
 
 std::string getVersion() {
   return "#version 100";
@@ -211,8 +246,7 @@ void ColorSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
   // Vertex & Index buffer
-  const BufferDesc vbDesc =
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData));
+  const BufferDesc vbDesc = getVertexBufferDesc(device);
   vb0_ = device.createBuffer(vbDesc, nullptr);
   IGL_DEBUG_ASSERT(vb0_ != nullptr);
   const BufferDesc ibDesc =
@@ -358,7 +392,7 @@ void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_DEBUG_ASSERT(commands != nullptr);
   if (commands) {
-    commands->bindVertexBuffer(1, *vb0_);
+    commands->bindVertexBuffer(getVertexBufferIndex(getPlatform().getDevice()), *vb0_);
     commands->bindRenderPipelineState(pipelineState_);
     if (getPlatform().getDevice().hasFeature(DeviceFeatures::BindUniform)) {
       // Bind non block uniforms
