@@ -175,7 +175,7 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
       setCurrent();
 
       // Initialize through base class.
-      igl::Result result;
+      Result result;
       initialize(&result);
       IGL_DEBUG_ASSERT(result.isOk(), result.message.c_str());
     } else {
@@ -205,7 +205,7 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
   setCurrent();
 
   // Initialize through base class.
-  igl::Result result;
+  Result result;
   initialize(&result);
   IGL_DEBUG_ASSERT(result.isOk(), result.message.c_str());
 }

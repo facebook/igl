@@ -12,7 +12,7 @@
 namespace igl::opengl::empty {
 
 Context::Context() {
-  igl::Result result;
+  Result result;
   // Initialize through base class.
   initialize(&result);
   IGL_DEBUG_ASSERT(result.isOk());
