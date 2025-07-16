@@ -62,8 +62,9 @@ id<MTLBuffer> createMetalBuffer(id<MTLDevice> device,
 }
 } // namespace
 
-std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
-                                              Result* outResult) const noexcept {
+std::unique_ptr<IBuffer> Device::createBuffer(
+    const BufferDesc& desc,
+    Result* outResult) const noexcept { // NOLINT(bugprone-exception-escape)
   if (desc.hint & BufferDesc::BufferAPIHintBits::Ring) {
     return createRingBuffer(desc, outResult);
   }
@@ -213,9 +214,10 @@ std::shared_ptr<ITexture> Device::createTexture(
   return iglObject;
 }
 
-std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> texture,
-                                                    const TextureViewDesc& desc,
-                                                    Result* IGL_NULLABLE outResult) const noexcept {
+std::shared_ptr<ITexture> Device::createTextureView(
+    std::shared_ptr<ITexture> texture,
+    const TextureViewDesc& desc,
+    Result* IGL_NULLABLE outResult) const noexcept { // NOLINT(bugprone-exception-escape)
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 
   Result::setResult(
