@@ -120,13 +120,12 @@ Result Texture::create(const TextureDesc& desc) {
 
   VkImageCreateFlags createFlags = 0;
   uint32_t arrayLayerCount = desc_.numLayers;
-  VkImageViewType imageViewType;
-  VkImageType imageType;
+  VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+  VkImageType imageType = VK_IMAGE_TYPE_2D;
   VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
   switch (desc_.type) {
   case TextureType::TwoD:
     imageViewType = VK_IMAGE_VIEW_TYPE_2D;
-    imageType = VK_IMAGE_TYPE_2D;
     samples = getVulkanSampleCountFlags(desc_.numSamples);
     break;
   case TextureType::ThreeD:
@@ -136,11 +135,9 @@ Result Texture::create(const TextureDesc& desc) {
   case TextureType::Cube:
     imageViewType = VK_IMAGE_VIEW_TYPE_CUBE;
     arrayLayerCount *= 6;
-    imageType = VK_IMAGE_TYPE_2D;
     createFlags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     break;
   case TextureType::TwoDArray:
-    imageType = VK_IMAGE_TYPE_2D;
     imageViewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     samples = getVulkanSampleCountFlags(desc_.numSamples);
     break;
