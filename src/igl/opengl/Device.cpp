@@ -128,8 +128,9 @@ std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc
 }
 
 // Resources
-std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
-                                              Result* outResult) const noexcept {
+std::unique_ptr<IBuffer> Device::createBuffer(
+    const BufferDesc& desc,
+    Result* outResult) const noexcept { // NOLINT(bugprone-exception-escape)
   std::unique_ptr<Buffer> resource = allocateBuffer(desc.type, desc.hint, getContext());
 
   if (resource) {
@@ -213,9 +214,10 @@ std::shared_ptr<ITexture> Device::createTexture(
   return texture;
 }
 
-std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> texture,
-                                                    const TextureViewDesc& desc,
-                                                    Result* IGL_NULLABLE outResult) const noexcept {
+std::shared_ptr<ITexture> Device::createTextureView(
+    std::shared_ptr<ITexture> texture,
+    const TextureViewDesc& desc,
+    Result* IGL_NULLABLE outResult) const noexcept { // NOLINT(bugprone-exception-escape)
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 
   Result::setResult(
