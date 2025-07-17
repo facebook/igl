@@ -192,8 +192,9 @@ void XrHands::updateMeshes(std::array<HandMesh, 2>& handMeshes) noexcept {
   }
 }
 
-void XrHands::updateTracking(XrSpace currentSpace,
-                             std::array<HandTracking, 2>& handTracking) noexcept {
+void XrHands::updateTracking(
+    XrSpace currentSpace,
+    std::array<HandTracking, 2>& handTracking) noexcept { // NOLINT(bugprone-exception-escape)
   XrResult result(XR_SUCCESS);
   XrHandTrackerEXT trackers[] = {leftHandTracker_, rightHandTracker_};
   for (uint8_t i = 0; i < 2; ++i) {
