@@ -188,8 +188,8 @@ void DrawInstancedSession::initialize() noexcept {
   bufferDesc.type = BufferDesc::BufferTypeBits::Index;
   bufferDesc.length = sizeof(indexes);
   bufferDesc.data = &indexes;
-  index_buffer_ = getPlatform().getDevice().createBuffer(bufferDesc, nullptr);
-  IGL_DEBUG_ASSERT(index_buffer_);
+  indexBuffer_ = getPlatform().getDevice().createBuffer(bufferDesc, nullptr);
+  IGL_DEBUG_ASSERT(indexBuffer_);
 }
 
 void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
@@ -200,7 +200,7 @@ void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
   framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, nullptr);
   IGL_DEBUG_ASSERT(framebuffer_);
 
-  if (!renderPipelineState_Triangle_) {
+  if (!renderPipelineStateTriangle_) {
     VertexInputStateDesc inputDesc;
     inputDesc.numAttributes = 1;
     inputDesc.attributes[0] = VertexAttribute{1, VertexAttributeFormat::Float2, 0, "offset", 0};
@@ -226,11 +226,11 @@ void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
     }
 
     desc.shaderStages = getShaderStagesForBackend(getPlatform().getDevice());
-    renderPipelineState_Triangle_ = getPlatform().getDevice().createRenderPipeline(desc, nullptr);
-    IGL_DEBUG_ASSERT(renderPipelineState_Triangle_);
+    renderPipelineStateTriangle_ = getPlatform().getDevice().createRenderPipeline(desc, nullptr);
+    IGL_DEBUG_ASSERT(renderPipelineStateTriangle_);
   }
 
-  if (!vertex_buffer_) {
+  if (!vertexBuffer_) {
     glm::vec2 translations[100];
     int index = 0;
     const float offset = 0.1f;
@@ -247,8 +247,8 @@ void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
     desc.type = BufferDesc::BufferTypeBits::Vertex;
     desc.length = sizeof(glm::vec2) * 100;
     desc.data = translations;
-    vertex_buffer_ = getPlatform().getDevice().createBuffer(desc, nullptr);
-    IGL_DEBUG_ASSERT(vertex_buffer_);
+    vertexBuffer_ = getPlatform().getDevice().createBuffer(desc, nullptr);
+    IGL_DEBUG_ASSERT(vertexBuffer_);
   }
 
   framebuffer_->updateDrawable(surfaceTextures.color);
@@ -263,12 +263,12 @@ void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
   // This will clear the framebuffer
   auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
-  commands->bindRenderPipelineState(renderPipelineState_Triangle_);
+  commands->bindRenderPipelineState(renderPipelineStateTriangle_);
   commands->bindViewport(viewport);
   commands->bindScissorRect(scissor);
   commands->pushDebugGroupLabel("Render Triangle", Color(1, 0, 0));
-  commands->bindVertexBuffer(1, *vertex_buffer_);
-  commands->bindIndexBuffer(*index_buffer_, IndexFormat::UInt16);
+  commands->bindVertexBuffer(1, *vertexBuffer_);
+  commands->bindIndexBuffer(*indexBuffer_, IndexFormat::UInt16);
   commands->drawIndexed(6, 100);
   commands->popDebugGroupLabel();
   commands->endEncoding();
