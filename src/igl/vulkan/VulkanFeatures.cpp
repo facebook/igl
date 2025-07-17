@@ -439,6 +439,9 @@ void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& c
   }
 #endif // !IGL_PLATFORM_ANDROID
 
+  has_VK_KHR_get_surface_capabilities2 =
+      enable(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME, ExtensionType::Instance);
+
   has_VK_EXT_headless_surface =
       enable(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
 
