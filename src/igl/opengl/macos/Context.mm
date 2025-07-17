@@ -95,7 +95,7 @@ std::unique_ptr<Context> Context::createShareContext(Context& existingContext, R
 
   IGL_DEBUG_ASSERT(existingContext.sharegroup_, "Sharegroup must exist");
 
-  igl::Result result;
+  Result result;
   auto context = std::unique_ptr<Context>(new Context(newGLContext, existingContext.sharegroup_));
   context->initialize(&result);
 
@@ -119,7 +119,7 @@ std::unique_ptr<Context> Context::createContext(
     return {};
   }
 
-  igl::Result result;
+  Result result;
   auto newContext = std::unique_ptr<Context>(new Context(context, std::move(shareContexts)));
   newContext->initialize(&result);
 
