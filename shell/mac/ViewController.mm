@@ -127,8 +127,8 @@ using namespace igl;
 // @fb-only
 
     // surface textures
-    surfaceTextures = igl::SurfaceTextures{[self createTextureFromNativeDrawable],
-                                           [self createTextureFromNativeDepth]};
+    surfaceTextures = igl::SurfaceTextures{.color = [self createTextureFromNativeDrawable],
+                                           .depth = [self createTextureFromNativeDepth]};
     IGL_DEBUG_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
     const auto& dims = surfaceTextures.color->getDimensions();
     shellParams_.nativeSurfaceDimensions = glm::ivec2{dims.width, dims.height};

@@ -103,9 +103,10 @@ std::optional<BackendVersion> toBackendVersion(JNIEnv* env, jobject jbackendVers
   auto* jmajorVersion = env->GetFieldID(jclass, "majorVersion", "B");
   auto* jminorVersion = env->GetFieldID(jclass, "minorVersion", "B");
 
-  return BackendVersion{toBackendFlavor(env, env->GetObjectField(jbackendVersion, jflavor)),
-                        static_cast<uint8_t>(env->GetByteField(jbackendVersion, jmajorVersion)),
-                        static_cast<uint8_t>(env->GetByteField(jbackendVersion, jminorVersion))};
+  return BackendVersion{
+      .flavor = toBackendFlavor(env, env->GetObjectField(jbackendVersion, jflavor)),
+      .majorVersion = static_cast<uint8_t>(env->GetByteField(jbackendVersion, jmajorVersion)),
+      .minorVersion = static_cast<uint8_t>(env->GetByteField(jbackendVersion, jminorVersion))};
 }
 
 jobject toJava(JNIEnv* env, BackendVersion backendVersion) {

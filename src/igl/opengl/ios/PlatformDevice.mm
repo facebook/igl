@@ -161,15 +161,15 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(
       bounds.origin.x, bounds.origin.y, bounds.size.width * scale, bounds.size.height * scale);
 
   TextureDesc desc = {
-      static_cast<uint32_t>(resolution.size.width),
-      static_cast<uint32_t>(resolution.size.height),
-      1,
-      1,
-      1,
-      TextureDesc::TextureUsageBits::Attachment,
-      1,
-      TextureType::TwoD,
-      depthTextureFormat,
+      .width = static_cast<uint32_t>(resolution.size.width),
+      .height = static_cast<uint32_t>(resolution.size.height),
+      .depth = 1,
+      .numLayers = 1,
+      .numSamples = 1,
+      .usage = TextureDesc::TextureUsageBits::Attachment,
+      .numMipLevels = 1,
+      .type = TextureType::TwoD,
+      .format = depthTextureFormat,
   };
   desc.storage = ResourceStorage::Private;
   return owner_.createTexture(desc, outResult);

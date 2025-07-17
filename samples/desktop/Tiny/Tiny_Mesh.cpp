@@ -158,35 +158,35 @@ const float half = 1.0f;
 // UV-mapped cube with indices: 24 vertices, 36 indices
 const VertexPosUvw vertexData0[] = {
     // top
-    {{-half, -half, +half}, {0.0, 0.0, 1.0}, {0, 0}}, // 0
-    {{+half, -half, +half}, {1.0, 0.0, 1.0}, {1, 0}}, // 1
-    {{+half, +half, +half}, {1.0, 1.0, 1.0}, {1, 1}}, // 2
-    {{-half, +half, +half}, {0.0, 1.0, 1.0}, {0, 1}}, // 3
+    {.position = {-half, -half, +half}, .color = {0.0, 0.0, 1.0}, .uv = {0, 0}}, // 0
+    {.position = {+half, -half, +half}, .color = {1.0, 0.0, 1.0}, .uv = {1, 0}}, // 1
+    {.position = {+half, +half, +half}, .color = {1.0, 1.0, 1.0}, .uv = {1, 1}}, // 2
+    {.position = {-half, +half, +half}, .color = {0.0, 1.0, 1.0}, .uv = {0, 1}}, // 3
     // bottom
-    {{-half, -half, -half}, {1.0, 1.0, 1.0}, {0, 0}}, // 4
-    {{-half, +half, -half}, {0.0, 1.0, 0.0}, {0, 1}}, // 5
-    {{+half, +half, -half}, {1.0, 1.0, 0.0}, {1, 1}}, // 6
-    {{+half, -half, -half}, {1.0, 0.0, 0.0}, {1, 0}}, // 7
+    {.position = {-half, -half, -half}, .color = {1.0, 1.0, 1.0}, .uv = {0, 0}}, // 4
+    {.position = {-half, +half, -half}, .color = {0.0, 1.0, 0.0}, .uv = {0, 1}}, // 5
+    {.position = {+half, +half, -half}, .color = {1.0, 1.0, 0.0}, .uv = {1, 1}}, // 6
+    {.position = {+half, -half, -half}, .color = {1.0, 0.0, 0.0}, .uv = {1, 0}}, // 7
     // left
-    {{+half, +half, -half}, {1.0, 1.0, 0.0}, {1, 0}}, // 8
-    {{-half, +half, -half}, {0.0, 1.0, 0.0}, {0, 0}}, // 9
-    {{-half, +half, +half}, {0.0, 1.0, 1.0}, {0, 1}}, // 10
-    {{+half, +half, +half}, {1.0, 1.0, 1.0}, {1, 1}}, // 11
+    {.position = {+half, +half, -half}, .color = {1.0, 1.0, 0.0}, .uv = {1, 0}}, // 8
+    {.position = {-half, +half, -half}, .color = {0.0, 1.0, 0.0}, .uv = {0, 0}}, // 9
+    {.position = {-half, +half, +half}, .color = {0.0, 1.0, 1.0}, .uv = {0, 1}}, // 10
+    {.position = {+half, +half, +half}, .color = {1.0, 1.0, 1.0}, .uv = {1, 1}}, // 11
     // right
-    {{-half, -half, -half}, {1.0, 1.0, 1.0}, {0, 0}}, // 12
-    {{+half, -half, -half}, {1.0, 0.0, 0.0}, {1, 0}}, // 13
-    {{+half, -half, +half}, {1.0, 0.0, 1.0}, {1, 1}}, // 14
-    {{-half, -half, +half}, {0.0, 0.0, 1.0}, {0, 1}}, // 15
+    {.position = {-half, -half, -half}, .color = {1.0, 1.0, 1.0}, .uv = {0, 0}}, // 12
+    {.position = {+half, -half, -half}, .color = {1.0, 0.0, 0.0}, .uv = {1, 0}}, // 13
+    {.position = {+half, -half, +half}, .color = {1.0, 0.0, 1.0}, .uv = {1, 1}}, // 14
+    {.position = {-half, -half, +half}, .color = {0.0, 0.0, 1.0}, .uv = {0, 1}}, // 15
     // front
-    {{+half, -half, -half}, {1.0, 0.0, 0.0}, {0, 0}}, // 16
-    {{+half, +half, -half}, {1.0, 1.0, 0.0}, {1, 0}}, // 17
-    {{+half, +half, +half}, {1.0, 1.0, 1.0}, {1, 1}}, // 18
-    {{+half, -half, +half}, {1.0, 0.0, 1.0}, {0, 1}}, // 19
+    {.position = {+half, -half, -half}, .color = {1.0, 0.0, 0.0}, .uv = {0, 0}}, // 16
+    {.position = {+half, +half, -half}, .color = {1.0, 1.0, 0.0}, .uv = {1, 0}}, // 17
+    {.position = {+half, +half, +half}, .color = {1.0, 1.0, 1.0}, .uv = {1, 1}}, // 18
+    {.position = {+half, -half, +half}, .color = {1.0, 0.0, 1.0}, .uv = {0, 1}}, // 19
     // back
-    {{-half, +half, -half}, {0.0, 1.0, 0.0}, {1, 0}}, // 20
-    {{-half, -half, -half}, {1.0, 1.0, 1.0}, {0, 0}}, // 21
-    {{-half, -half, +half}, {0.0, 0.0, 1.0}, {0, 1}}, // 22
-    {{-half, +half, +half}, {0.0, 1.0, 1.0}, {1, 1}}, // 23
+    {.position = {-half, +half, -half}, .color = {0.0, 1.0, 0.0}, .uv = {1, 0}}, // 20
+    {.position = {-half, -half, -half}, .color = {1.0, 1.0, 1.0}, .uv = {0, 0}}, // 21
+    {.position = {-half, -half, +half}, .color = {0.0, 0.0, 1.0}, .uv = {0, 1}}, // 22
+    {.position = {-half, +half, +half}, .color = {0.0, 1.0, 1.0}, .uv = {1, 1}}, // 23
 };
 
 const uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
@@ -561,8 +561,14 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
   CommandBufferDesc cbDesc;
   std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
 
-  const igl::Viewport viewport = {0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f};
-  const igl::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
+  const igl::Viewport viewport = {.x = 0.0f,
+                                  .y = 0.0f,
+                                  .width = (float)width_,
+                                  .height = (float)height_,
+                                  .minDepth = 0.0f,
+                                  .maxDepth = +1.0f};
+  const igl::ScissorRect scissor = {
+      .x = 0, .y = 0, .width = (uint32_t)width_, .height = (uint32_t)height_};
 
   // This will clear the framebuffer
   auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);

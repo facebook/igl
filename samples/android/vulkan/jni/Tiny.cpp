@@ -153,8 +153,14 @@ void render() {
   CommandBufferDesc cbDesc;
   std::shared_ptr<ICommandBuffer> buffer = commandQueue->createCommandBuffer(cbDesc, nullptr);
 
-  const igl::Viewport viewport = {0.0f, 0.0f, (float)width, (float)height, 0.0f, +1.0f};
-  const igl::ScissorRect scissor = {0, 0, (uint32_t)width, (uint32_t)height};
+  const igl::Viewport viewport = {.x = 0.0f,
+                                  .y = 0.0f,
+                                  .width = (float)width,
+                                  .height = (float)height,
+                                  .minDepth = 0.0f,
+                                  .maxDepth = +1.0f};
+  const igl::ScissorRect scissor = {
+      .x = 0, .y = 0, .width = (uint32_t)width, .height = (uint32_t)height};
 
   // This will clear the framebuffer
   auto commands = buffer->createRenderCommandEncoder(renderPass, framebuffer);

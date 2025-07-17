@@ -41,7 +41,7 @@ FileLoader::FileData FileLoaderAndroid::loadBinaryData(const std::string& fileNa
         }
         AAsset_close(asset);
 
-        return {std::move(data), static_cast<uint32_t>(length)};
+        return {.data = std::move(data), .length = static_cast<uint32_t>(length)};
       }
     }
     // Fallback to default behavior (i.e., loading w/ C++ functions) if asset manager is not set or

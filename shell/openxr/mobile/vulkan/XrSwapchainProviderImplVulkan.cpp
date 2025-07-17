@@ -185,6 +185,6 @@ SurfaceTextures XrSwapchainProviderImplVulkan::getSurfaceTextures(
                                         static_cast<VkFormat>(swapchainImageInfo.depthFormat),
                                         depthTextures_);
 
-  return {colorTexture, depthTexture};
+  return {.color = colorTexture, .depth = depthTexture};
 }
 } // namespace igl::shell::openxr::mobile

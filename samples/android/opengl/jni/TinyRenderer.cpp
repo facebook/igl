@@ -78,10 +78,10 @@ void TinyRenderer::init() {
       std::array<float, 2> uv;
     };
     static VertexPosUv vertexData[] = {
-        {{-0.8f, 0.8f, 0.0}, {0.0, 1.0}},
-        {{0.8f, 0.8f, 0.0}, {1.0, 1.0}},
-        {{-0.8f, -0.8f, 0.0}, {0.0, 0.0}},
-        {{0.8f, -0.8f, 0.0}, {1.0, 0.0}},
+        {.position = {-0.8f, 0.8f, 0.0}, .uv = {0.0, 1.0}},
+        {.position = {0.8f, 0.8f, 0.0}, .uv = {1.0, 1.0}},
+        {.position = {-0.8f, -0.8f, 0.0}, .uv = {0.0, 0.0}},
+        {.position = {0.8f, -0.8f, 0.0}, .uv = {1.0, 0.0}},
     };
     static uint16_t indexData[] = {
         0,

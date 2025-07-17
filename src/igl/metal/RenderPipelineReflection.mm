@@ -86,18 +86,18 @@ bool RenderPipelineReflection::createArgDesc(MTLArgument* arg, ShaderStage sh) {
           elementType = uniform.arrayType.elementType;
         }
         igl::BufferArgDesc::BufferMemberDesc iglMemberDesc{
-            igl::genNameHandle(uniform.name.UTF8String),
-            metalDataTypeToIGLUniformType(elementType),
-            (size_t)uniform.offset,
-            uniform.arrayType ? (size_t)uniform.arrayType.arrayLength : 1};
+            .name = igl::genNameHandle(uniform.name.UTF8String),
+            .type = metalDataTypeToIGLUniformType(elementType),
+            .offset = (size_t)uniform.offset,
+            .arrayLength = uniform.arrayType ? (size_t)uniform.arrayType.arrayLength : 1};
         bufferDesc.members.push_back(std::move(iglMemberDesc));
       }
     } else {
       igl::BufferArgDesc::BufferMemberDesc iglMemberDesc{
-          igl::genNameHandle(arg.name.UTF8String),
-          metalDataTypeToIGLUniformType(arg.bufferDataType),
-          0,
-          (size_t)arg.arrayLength};
+          .name = igl::genNameHandle(arg.name.UTF8String),
+          .type = metalDataTypeToIGLUniformType(arg.bufferDataType),
+          .offset = 0,
+          .arrayLength = (size_t)arg.arrayLength};
       bufferDesc.members.push_back(std::move(iglMemberDesc));
     }
     bufferArguments_.push_back(std::move(bufferDesc));

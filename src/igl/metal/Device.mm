@@ -666,7 +666,7 @@ ShaderVersion Device::getShaderVersion() const {
 
 BackendVersion Device::getBackendVersion() const {
   if (@available(macOS 13.0, iOS 16.0, *)) {
-    return {BackendFlavor::Metal, 3, 0};
+    return {.flavor = BackendFlavor::Metal, .majorVersion = 3, .minorVersion = 0};
   }
 #if TARGET_OS_OSX
 #if TARGET_CPU_ARM64
@@ -680,7 +680,7 @@ BackendVersion Device::getBackendVersion() const {
 #endif
 #endif
 
-  return {BackendFlavor::Metal, 1, 0};
+  return {.flavor = BackendFlavor::Metal, .majorVersion = 1, .minorVersion = 0};
 }
 
 size_t Device::getCurrentDrawCount() const {

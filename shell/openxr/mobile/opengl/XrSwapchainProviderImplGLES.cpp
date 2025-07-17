@@ -145,6 +145,6 @@ SurfaceTextures XrSwapchainProviderImplGLES::getSurfaceTextures(
                                         iglDepthFormat,
                                         depthTextures_);
 
-  return {colorTexture, depthTexture};
+  return {.color = colorTexture, .depth = depthTexture};
 }
 } // namespace igl::shell::openxr::mobile

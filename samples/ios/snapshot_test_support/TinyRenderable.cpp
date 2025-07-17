@@ -176,10 +176,10 @@ void TinyRenderable::initialize(igl::IDevice& device, const igl::IFramebuffer& f
 
   const float kMax = 20;
   const VertexPosUv kVertexData[] = {
-      {{-0.9f, 0.9f, 0.0}, {0.0, kMax}},
-      {{0.9f, 0.9f, 0.0}, {kMax, kMax}},
-      {{-0.9f, -0.9f, 0.0}, {0.0, 0.0}},
-      {{0.9f, -0.9f, 0.0}, {kMax, 0.0}},
+      {.position = {-0.9f, 0.9f, 0.0}, .uv = {0.0, kMax}},
+      {.position = {0.9f, 0.9f, 0.0}, .uv = {kMax, kMax}},
+      {.position = {-0.9f, -0.9f, 0.0}, .uv = {0.0, 0.0}},
+      {.position = {0.9f, -0.9f, 0.0}, .uv = {kMax, 0.0}},
   };
 
   const igl::BufferDesc vbDesc =
