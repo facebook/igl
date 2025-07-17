@@ -25,6 +25,8 @@ option(IGL_WITH_OPENXR    "Enable OpenXR"                     OFF)
 option(IGL_ENFORCE_LOGS   "Enable logs in Release builds"      ON)
 
 option(IGL_DEPLOY_DEPS    "Deploy dependencies via CMake"      ON)
+
+option(IGL_ENABLE_INSTALL "Enable install targets for IGL"    OFF)
 # cmake-format: on
 
 if(DEFINED ENV{VULKAN_SDK})
@@ -332,4 +334,8 @@ if(IGL_WITH_OPENXR)
   target_compile_definitions(IGLLibrary PUBLIC "IGL_WITH_OPENXR=1")
   target_link_libraries(IGLLibrary PUBLIC OpenXR::openxr_loader)
   target_include_directories(IGLLibrary PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/openxr-sdk/include")
+endif()
+
+if(IGL_ENABLE_INSTALL)
+  include(cmake/install.cmake)
 endif()
