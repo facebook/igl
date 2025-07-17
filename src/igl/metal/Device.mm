@@ -38,8 +38,9 @@ Device::Device(id<MTLDevice> device) :
 
 Device::~Device() = default;
 
-std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc& /*desc*/,
-                                                          Result* outResult) noexcept {
+std::shared_ptr<ICommandQueue> Device::createCommandQueue(
+    const CommandQueueDesc& /*desc*/,
+    Result* outResult) noexcept { // NOLINT(bugprone-exception-escape)
   id<MTLCommandQueue> metalObject = [device_ newCommandQueue];
   auto resource =
       std::make_shared<CommandQueue>(*this, metalObject, bufferSyncManager_, deviceStatistics_);
