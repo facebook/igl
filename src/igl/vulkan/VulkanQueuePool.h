@@ -15,14 +15,14 @@
 namespace igl::vulkan {
 
 struct VulkanQueueDescriptor {
-  constexpr static uint32_t INVALID = 0xFFFFFFFF;
+  constexpr static uint32_t kInvalid = 0xFFFFFFFF;
 
   VkQueueFlags queueFlags = 0;
-  uint32_t queueIndex = INVALID;
-  uint32_t familyIndex = INVALID;
+  uint32_t queueIndex = kInvalid;
+  uint32_t familyIndex = kInvalid;
 
   [[nodiscard]] bool isValid() const {
-    return queueIndex != INVALID && familyIndex != INVALID;
+    return queueIndex != kInvalid && familyIndex != kInvalid;
   }
 
   /* familyIndex and queueIndex are sufficient to uniquely identify a VulkanQueueDescriptor. */

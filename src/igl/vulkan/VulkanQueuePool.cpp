@@ -105,14 +105,14 @@ std::vector<VkDeviceQueueCreateInfo> VulkanQueuePool::getQueueCreationInfos() co
     queues[queue.familyIndex].push_back(queue);
   }
 
-  static const float queuePriority = 1.0f;
+  static const float kQueuePriority = 1.0f;
   std::vector<VkDeviceQueueCreateInfo> qcis;
   for (const auto& [family, descriptors] : queues) {
     VkDeviceQueueCreateInfo qci{};
     qci.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     qci.queueFamilyIndex = family;
     qci.queueCount = static_cast<uint32_t>(descriptors.size());
-    qci.pQueuePriorities = &queuePriority;
+    qci.pQueuePriorities = &kQueuePriority;
     qcis.push_back(qci);
   }
   return qcis;
