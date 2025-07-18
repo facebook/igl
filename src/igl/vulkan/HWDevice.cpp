@@ -14,12 +14,10 @@ namespace igl::vulkan {
 
 std::unique_ptr<VulkanContext> HWDevice::createContext(const VulkanContextConfig& config,
                                                        void* IGL_NULLABLE window,
-                                                       size_t numExtraInstanceExtensions,
-                                                       const char* IGL_NULLABLE* IGL_NULLABLE
-                                                           extraInstanceExtensions,
                                                        void* IGL_NULLABLE display) {
-  return std::make_unique<VulkanContext>(
-      config, window, numExtraInstanceExtensions, extraInstanceExtensions, display);
+  // @fb-only
+  // @lint-ignore CLANGTIDY
+  return std::make_unique<VulkanContext>(config, window, display);
 }
 
 std::vector<HWDeviceDesc> HWDevice::queryDevices(VulkanContext& ctx,

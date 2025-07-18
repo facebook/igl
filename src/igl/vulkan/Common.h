@@ -154,6 +154,9 @@ struct VulkanContextConfig {
 
   // Specifies a default fence timeout value.
   uint64_t fenceTimeoutNanoseconds = UINT64_MAX;
+
+  size_t numExtraInstanceExtensions = 0;
+  const char* IGL_NULLABLE* IGL_NULLABLE extraInstanceExtensions = nullptr;
 };
 
 /**

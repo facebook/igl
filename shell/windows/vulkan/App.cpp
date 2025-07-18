@@ -31,20 +31,19 @@ void VulkanShell::willCreateWindow() noexcept {
 }
 
 std::shared_ptr<Platform> VulkanShell::createPlatform() noexcept {
-  igl::vulkan::VulkanContextConfig cfg = igl::vulkan::VulkanContextConfig();
-  cfg.headless = shellParams().isHeadless;
-  cfg.requestedSwapChainTextureFormat = sessionConfig().swapchainColorTextureFormat;
+  igl::vulkan::VulkanContextConfig cfg = {
 #if defined(_MSC_VER) && !IGL_DEBUG
-  cfg.enableValidation = false;
+      .enableValidation = false,
 #endif
+      .requestedSwapChainTextureFormat = sessionConfig().swapchainColorTextureFormat,
+      .headless = shellParams().isHeadless,
+  };
   auto ctx =
       vulkan::HWDevice::createContext(cfg,
 #if defined(_WIN32)
                                       window() ? (void*)glfwGetWin32Window(window()) : nullptr
 #else
                                       window() ? (void*)glfwGetX11Window(window()) : nullptr,
-                                      0,
-                                      nullptr,
                                       (void*)glfwGetX11Display()
 #endif
       );

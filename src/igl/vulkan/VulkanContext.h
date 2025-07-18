@@ -83,8 +83,6 @@ class VulkanContext final {
  public:
   VulkanContext(VulkanContextConfig config,
                 void* IGL_NULLABLE window,
-                size_t numExtraInstanceExtensions,
-                const char* IGL_NULLABLE* IGL_NULLABLE extraInstanceExtensions,
                 void* IGL_NULLABLE display = nullptr);
   ~VulkanContext();
 

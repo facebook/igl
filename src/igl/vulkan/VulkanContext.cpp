@@ -408,8 +408,6 @@ struct VulkanContextImpl final {
 
 VulkanContext::VulkanContext(VulkanContextConfig config,
                              void* IGL_NULLABLE window,
-                             size_t numExtraInstanceExtensions,
-                             const char* IGL_NULLABLE* IGL_NULLABLE extraInstanceExtensions,
                              void* IGL_NULLABLE display) :
   tableImpl_(std::make_unique<VulkanFunctionTable>()),
   vkPhysicalDeviceDescriptorIndexingProperties_({
@@ -444,7 +442,8 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
 
   glslang::initializeCompiler();
 
-  createInstance(numExtraInstanceExtensions, extraInstanceExtensions);
+  // NOLINTNEXTLINE(readability-identifier-naming)
+  createInstance(config_.numExtraInstanceExtensions, config_.extraInstanceExtensions);
 
   if (config_.headless) {
     IGL_DEBUG_ASSERT(features_.has_VK_EXT_headless_surface,

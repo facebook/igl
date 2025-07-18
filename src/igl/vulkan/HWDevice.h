@@ -35,12 +35,9 @@ class HWDevice final {
    * @param display is a pointer to an Xlib Display connection to the X server. Used only when
    * `VK_USE_PLATFORM_XLIB_KHR` is defined.
    */
-  static std::unique_ptr<VulkanContext> createContext(
-      const VulkanContextConfig& config,
-      void* IGL_NULLABLE window,
-      size_t numExtraInstanceExtensions = 0,
-      const char* IGL_NULLABLE* IGL_NULLABLE extraInstanceExtensions = nullptr,
-      void* IGL_NULLABLE display = nullptr);
+  static std::unique_ptr<VulkanContext> createContext(const VulkanContextConfig& config,
+                                                      void* IGL_NULLABLE window,
+                                                      void* IGL_NULLABLE display = nullptr);
 
   static std::vector<HWDeviceDesc> queryDevices(VulkanContext& ctx,
                                                 const HWDeviceQueryDesc& desc,

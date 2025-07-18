@@ -84,10 +84,12 @@ std::unique_ptr<IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSystemI
 
   requiredVkDeviceExtensions_ = processExtensionsBuffer(requiredVkDeviceExtensionsBuffer_);
 
-  igl::vulkan::VulkanContextConfig cfg = igl::vulkan::VulkanContextConfig();
+  const igl::vulkan::VulkanContextConfig cfg = {
+      .numExtraInstanceExtensions = requiredVkInstanceExtensions_.size(),
+      .extraInstanceExtensions = requiredVkInstanceExtensions_.data(),
+  };
 
-  auto context = igl::vulkan::HWDevice::createContext(
-      cfg, nullptr, requiredVkInstanceExtensions_.size(), requiredVkInstanceExtensions_.data());
+  auto context = igl::vulkan::HWDevice::createContext(cfg, nullptr);
 
   PFN_xrGetVulkanGraphicsDeviceKHR pfnGetVulkanGraphicsDeviceKHR = nullptr;
   XR_CHECK(xrGetInstanceProcAddr(instance,

@@ -970,11 +970,8 @@ static GLFWwindow* initIGL(bool isHeadless) {
           cfg, window ? (void*)glfwGetCocoaWindow(window) : nuullptr);
 
 #elif defined(__linux__)
-      auto ctx = vulkan::HWDevice::createContext(cfg,
-                                                 window ? (void*)glfwGetX11Window(window) : nullptr,
-                                                 0,
-                                                 nullptr,
-                                                 (void*)glfwGetX11Display());
+      auto ctx = vulkan::HWDevice::createContext(
+          cfg, window ? (void*)glfwGetX11Window(window) : nullptr, (void*)glfwGetX11Display());
 
 #else
 #error Unsupported OS
