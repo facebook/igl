@@ -51,8 +51,7 @@ class ICommandBufferAllocator {
       ICommandBufferAllocator& deviceContext,
       igl::ICommandBuffer& commandBuffer,
       bool shouldFinalizeCommandBuffer) noexcept {
-    return ICommandBufferAllocator::CommandBufferScope(
-        deviceContext, commandBuffer, shouldFinalizeCommandBuffer);
+    return {deviceContext, commandBuffer, shouldFinalizeCommandBuffer};
   }
   [[nodiscard]] virtual CommandBufferScope commandBufferScope(
       CommandBufferScopeConfig config) noexcept = 0;
