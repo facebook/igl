@@ -73,10 +73,12 @@ struct AlignedElement<glm::mat3> {
 
   glm::mat3 value; // this is the "source of truth"
   mutable AlignedMat3 valueAligned; // padded element shadows value
-
+  // NOLINTNEXTLINE(clang-diagnostic-unused-member-function)
   AlignedElement() = default;
+  // NOLINTNEXTLINE(clang-diagnostic-unused-member-function)
   explicit AlignedElement(glm::mat3 v) : value(v) {}
 
+  // NOLINTNEXTLINE(clang-diagnostic-unused-member-function)
   void* data(Alignment alignment) noexcept {
     return const_cast<void*>(static_cast<const Self*>(this)->data(alignment));
   }
@@ -104,6 +106,7 @@ struct AlignedElementInVector : AlignedValue<U> {
 template<>
 struct AlignedElementInVector<glm::mat3> : PackedValue<typename Trait<glm::mat3>::Aligned> {
   using PackedValue<typename Trait<glm::mat3>::Aligned>::PackedValue;
+  // NOLINTNEXTLINE(clang-diagnostic-unused-member-function)
   AlignedElementInVector& operator=(const glm::mat3& src) noexcept {
     Trait<glm::mat3>::toAligned(this->value, src);
     return *this;
