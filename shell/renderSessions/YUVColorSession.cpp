@@ -49,7 +49,7 @@ std::string getOpenGLVertexShaderSource() {
 }
 
 std::string getOpenGLFragmentShaderSource() {
-  return std::string(R"(
+  return R"(
                 #version 300 es
                 #extension GL_EXT_YUV_target : require
                 precision highp float;
@@ -60,7 +60,7 @@ std::string getOpenGLFragmentShaderSource() {
 
                 void main() {
                   outColor = texture(inputImage, uv);
-                })");
+                })";
 }
 
 std::string getVulkanVertexShaderSource() {
