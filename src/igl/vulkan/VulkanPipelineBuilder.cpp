@@ -9,8 +9,8 @@
 
 namespace igl::vulkan {
 
-uint32_t VulkanPipelineBuilder::numPipelinesCreated_ = 0;
-uint32_t VulkanComputePipelineBuilder::numPipelinesCreated_ = 0;
+uint32_t VulkanPipelineBuilder::numPipelinesCreated = 0;
+uint32_t VulkanComputePipelineBuilder::numPipelinesCreated = 0;
 
 VulkanPipelineBuilder::VulkanPipelineBuilder() :
   vertexInputState_(ivkGetPipelineVertexInputStateCreateInfo_Empty()),
@@ -163,7 +163,7 @@ VkResult VulkanPipelineBuilder::build(const VulkanFunctionTable& vf,
     return result;
   }
 
-  numPipelinesCreated_++;
+  numPipelinesCreated++;
 
   // set debug name
   return ivkSetDebugObjectName(
@@ -189,7 +189,7 @@ VkResult VulkanComputePipelineBuilder::build(const VulkanFunctionTable& vf,
     return result;
   }
 
-  numPipelinesCreated_++;
+  numPipelinesCreated++;
 
   // set debug name
   return ivkSetDebugObjectName(
