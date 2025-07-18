@@ -442,8 +442,7 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
 
   glslang::initializeCompiler();
 
-  // NOLINTNEXTLINE(readability-identifier-naming)
-  createInstance(config_.numExtraInstanceExtensions, config_.extraInstanceExtensions);
+  createInstance();
 
   if (config_.headless) {
     IGL_DEBUG_ASSERT(features_.has_VK_EXT_headless_surface,
@@ -575,17 +574,18 @@ VulkanContext::~VulkanContext() {
 #endif
 }
 
-void VulkanContext::createInstance(const size_t numExtraExtensions,
-                                   const char* IGL_NULLABLE* IGL_NULLABLE extraExtensions) {
+void VulkanContext::createInstance() {
   IGL_DEBUG_ASSERT(vkInstance_ == VK_NULL_HANDLE, "createInstance() is not reentrant");
 
   // Enumerate all instance extensions
   features_.enumerate(vf_);
+  // NOLINTBEGIN(readability-identifier-naming)
   features_.enableCommonInstanceExtensions(config_);
-  for (size_t index = 0; index < numExtraExtensions; ++index) {
-    features_.enable(extraExtensions[index], VulkanFeatures::ExtensionType::Instance);
+  for (size_t index = 0; index < config_.numExtraInstanceExtensions; ++index) {
+    features_.enable(config_.extraInstanceExtensions[index],
+                     VulkanFeatures::ExtensionType::Instance);
   }
-
+  // NOLINTEND(readability-identifier-naming)
   auto instanceExtensions = features_.allEnabled(VulkanFeatures::ExtensionType::Instance);
 
   std::vector<const char*> layers;
