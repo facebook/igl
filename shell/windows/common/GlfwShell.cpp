@@ -95,7 +95,7 @@ bool GlfwShell::createWindow() noexcept {
   int width = windowConfig_.width;
   int height = windowConfig_.height;
 
-  GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+  GLFWmonitor* IGL_NULLABLE monitor = glfwGetPrimaryMonitor();
 
   if (windowConfig_.windowMode == WindowMode::Fullscreen) {
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
