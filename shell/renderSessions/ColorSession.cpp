@@ -109,9 +109,10 @@ std::string getMetalShaderSource() {
               } VertexOut;
 
               vertex VertexOut vertexShader(
-                  uint vid [[vertex_id]], constant VertexIn * vertices [[buffer(1)]]) {
+                  uint vid [[vertex_id]], constant VertexIn * vertices [[buffer(1)]],
+                  constant UniformBlock * ub [[buffer(0)]]) {
                 VertexOut out;
-                out.position = float4(vertices[vid].position, 1.0);
+                out.position = ub->mvp * float4(vertices[vid].position, 1.0);
                 out.uv = vertices[vid].uv;
                 return out;
               }
@@ -120,9 +121,9 @@ std::string getMetalShaderSource() {
                   VertexOut IN [[stage_in]],
                   texture2d<float> diffuseTex [[texture(0)]],
                   sampler linearSampler [[sampler(0)]],
-                  constant UniformBlock * color [[buffer(0)]]) {
+                  constant UniformBlock * ub [[buffer(0)]]) {
                 float4 tex = diffuseTex.sample(linearSampler, IN.uv);
-                return float4(color->color.r, color->color.g, color->color.b, 1.0) *
+                return float4(ub->color.r, ub->color.g, ub->color.b, 1.0) *
                       tex;
               }
     )";
@@ -134,11 +135,17 @@ std::string getOpenGLVertexShaderSource() {
                 attribute vec3 position;
                 attribute vec2 uv_in;
 
+                uniform vec3 color;
+                uniform mat4 mvp;
+                uniform sampler2D inputImage;
+
+                varying vec3 vColor;
                 varying vec2 uv;
 
                 void main() {
-                  gl_Position = vec4(position, 1.0);
+                  gl_Position = mvp * vec4(position, 1.0);
                   uv = uv_in; // position.xy * 0.5 + 0.5;
+                  vColor = color;
                 })";
 }
 
@@ -146,13 +153,14 @@ std::string getOpenGLFragmentShaderSource() {
   return getVersion() + std::string(R"(
                 precision highp float;
                 uniform vec3 color;
+                uniform mat4 mvp;
                 uniform sampler2D inputImage;
-
+                varying vec3 vColor;
                 varying vec2 uv;
 
                 void main() {
                   gl_FragColor =
-                      vec4(color, 1.0) * texture2D(inputImage, uv);
+                      vec4(vColor, 1.0) * texture2D(inputImage, uv);
                 })");
 }
 
@@ -367,9 +375,6 @@ void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
 
     pipelineState_ = getPlatform().getDevice().createRenderPipeline(graphicsDesc, nullptr);
     IGL_DEBUG_ASSERT(pipelineState_ != nullptr);
-
-    // Set up uniformdescriptors
-    fragmentUniformDescriptors_.emplace_back();
   }
 
   // Command Buffers
@@ -381,19 +386,32 @@ void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
   framebuffer_->updateDrawable(drawableSurface);
 
   // Uniform: "color"
-  if (!fragmentUniformDescriptors_.empty()) {
+  fragmentUniformDescriptors_.emplace_back();
+  // @fb-only
     // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
     // @fb-only
-      if (getPlatform().getDevice().hasFeature(DeviceFeatures::BindUniform)) {
-        fragmentUniformDescriptors_.back().location =
-            pipelineState_->getIndexByName("color", igl::ShaderStage::Fragment);
-      }
-    fragmentUniformDescriptors_.back().type = UniformType::Float3;
-    fragmentUniformDescriptors_.back().offset = offsetof(FragmentFormat, color);
-  }
+    // @fb-only
+  // @fb-only
+    if (getPlatform().getDevice().hasFeature(DeviceFeatures::BindUniform)) {
+      fragmentUniformDescriptors_.back().location =
+          pipelineState_->getIndexByName("color", igl::ShaderStage::Fragment);
+    }
+  fragmentUniformDescriptors_.back().type = UniformType::Float3;
+  fragmentUniformDescriptors_.back().offset = offsetof(FragmentFormat, color);
+
+  // Uniform: "mvp"
+  fragmentUniformDescriptors_.emplace_back();
+  // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+  // @fb-only
+    if (getPlatform().getDevice().hasFeature(DeviceFeatures::BindUniform)) {
+      fragmentUniformDescriptors_.back().location =
+          pipelineState_->getIndexByName("mvp", igl::ShaderStage::Fragment);
+    }
+  fragmentUniformDescriptors_.back().type = UniformType::Mat4x4;
+  fragmentUniformDescriptors_.back().offset = offsetof(FragmentFormat, mvp);
 
   const auto& mvp = getPlatform().getDisplayContext().preRotationMatrix;
   memcpy(&fragmentParameters_.mvp, &mvp, sizeof(mvp));
