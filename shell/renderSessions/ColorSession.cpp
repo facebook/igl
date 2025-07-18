@@ -75,7 +75,7 @@ uint32_t getVertexBufferIndex(const igl::IDevice& device) {
   return 1;
 }
 
-igl::ResourceStorage getIndexBufferResourceStorage(const igl::IDevice& device) {
+ResourceStorage getIndexBufferResourceStorage(const igl::IDevice& device) {
 // @fb-only
   // @fb-only
     // @fb-only

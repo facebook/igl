@@ -36,7 +36,7 @@ class ColorSession : public RenderSession {
     colorTestModes_ = colorTestModes;
   }
 
-  void setSwapchainColorTextureformat(igl::TextureFormat swapchainColorTextureformat) {
+  void setSwapchainColorTextureformat(TextureFormat swapchainColorTextureformat) {
     swapchainColorTextureformat_ = swapchainColorTextureformat;
   }
 
