@@ -28,9 +28,9 @@ class ColorSession : public RenderSession {
   void update(SurfaceTextures surfaceTextures) noexcept override;
 
   enum class ColorTestModes {
-    eMacbethTexture,
-    eOrangeTexture,
-    eOrangeClear,
+    MacbethTexture,
+    OrangeTexture,
+    OrangeClear,
   };
   void setTestMode(ColorTestModes colorTestModes) noexcept {
     colorTestModes_ = colorTestModes;
@@ -42,7 +42,7 @@ class ColorSession : public RenderSession {
 
  private:
   std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device);
-  ColorTestModes colorTestModes_ = ColorTestModes::eMacbethTexture;
+  ColorTestModes colorTestModes_ = ColorTestModes::MacbethTexture;
 
   std::shared_ptr<IRenderPipelineState> pipelineState_;
   std::shared_ptr<IVertexInputState> vertexInput0_;

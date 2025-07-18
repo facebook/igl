@@ -292,11 +292,11 @@ void ColorSession::initialize() noexcept {
   samp0_ = device.createSamplerState(samplerDesc, nullptr);
   IGL_DEBUG_ASSERT(samp0_ != nullptr);
 
-  if (colorTestModes_ == ColorTestModes::eMacbethTexture) {
+  if (colorTestModes_ == ColorTestModes::MacbethTexture) {
     tex0_ = getPlatform().loadTexture("macbeth.png", true, swapchainColorTextureformat_);
-  } else if (colorTestModes_ == ColorTestModes::eOrangeTexture) {
+  } else if (colorTestModes_ == ColorTestModes::OrangeTexture) {
     tex0_ = getPlatform().loadTexture("orange.png", true, swapchainColorTextureformat_);
-  } else if (colorTestModes_ == ColorTestModes::eOrangeClear) {
+  } else if (colorTestModes_ == ColorTestModes::OrangeClear) {
     tex0_ = getPlatform().loadTexture(igl::shell::ImageLoader::white());
     setPreferredClearColor(
         Color{fLinearOrangeColor.x, fLinearOrangeColor.y, fLinearOrangeColor.z, 1.0f});
@@ -320,7 +320,7 @@ void ColorSession::initialize() noexcept {
   // init uniforms
   glm::mat4x4 mvp(1.0f);
   memcpy(&fragmentParameters_.mvp, &mvp, sizeof(mvp));
-  fragmentParameters_.color = (colorTestModes_ == ColorTestModes::eOrangeClear)
+  fragmentParameters_.color = (colorTestModes_ == ColorTestModes::OrangeClear)
                                   ? gpuLinearOrangeColor
                                   : iglu::simdtypes::float3{1.0f, 1.0f, 1.0f};
 
