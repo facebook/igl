@@ -192,7 +192,9 @@ std::string getVulkanFragmentShaderSource() {
 
 // @fb-only
 
-std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
+} // namespace
+
+std::unique_ptr<IShaderStages> ColorSession::getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Custom:
@@ -240,7 +242,6 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   }
   IGL_UNREACHABLE_RETURN(nullptr)
 }
-} // namespace
 
 void ColorSession::initialize() noexcept {
   glm::dvec3 linearOrangeColor = glm::dvec3{1.0, 0.5, 0.0};

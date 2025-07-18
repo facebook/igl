@@ -41,6 +41,7 @@ class ColorSession : public RenderSession {
   }
 
  private:
+  std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device);
   ColorTestModes colorTestModes_ = ColorTestModes::eMacbethTexture;
 
   std::shared_ptr<IRenderPipelineState> pipelineState_;
