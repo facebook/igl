@@ -195,7 +195,7 @@ BufferDesc getVertexBufferDesc(const igl::IDevice& device, const VertexPosUv* ve
         // @fb-only
   // @fb-only
 // @fb-only
-  return BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(VertexPosUv) * 4);
+  return {BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(VertexPosUv) * 4};
 }
 
 uint32_t getVertexBufferIndex(const igl::IDevice& device) {
