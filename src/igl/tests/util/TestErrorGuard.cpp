@@ -12,7 +12,7 @@
 igl::tests::util::TestErrorGuard::TestErrorGuard() {
 #if IGL_SOFT_ERROR_ENABLED
   savedErrorHandler_ = IGLGetSoftErrorHandler();
-  IGLSetSoftErrorHandler(ReportErrorHandler);
+  IGLSetSoftErrorHandler(reportErrorHandler);
 #endif
 }
 
@@ -22,7 +22,7 @@ igl::tests::util::TestErrorGuard::~TestErrorGuard() {
 #endif
 }
 
-void igl::tests::util::TestErrorGuard::ReportErrorHandler(const char* category,
+void igl::tests::util::TestErrorGuard::reportErrorHandler(const char* category,
                                                           const char* /*reason*/,
                                                           const char* file,
                                                           const char* /*func*/,
