@@ -17,7 +17,7 @@ class DepthStencilState final : public IDepthStencilState {
 
  public:
   IGL_INLINE id<MTLDepthStencilState> get() const {
-    return value_;
+    return value;
   }
   DepthStencilState(id<MTLDepthStencilState> value);
   ~DepthStencilState() override = default;
@@ -25,7 +25,7 @@ class DepthStencilState final : public IDepthStencilState {
   static MTLStencilOperation convertStencilOperation(StencilOperation value);
   static MTLStencilDescriptor* convertStencilDescriptor(const StencilStateDesc& desc);
 
-  id<MTLDepthStencilState> value_;
+  id<MTLDepthStencilState> value;
 };
 
 } // namespace igl::metal

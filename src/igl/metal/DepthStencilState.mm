@@ -11,7 +11,7 @@
 
 namespace igl::metal {
 
-DepthStencilState::DepthStencilState(id<MTLDepthStencilState> value) : value_(value) {}
+DepthStencilState::DepthStencilState(id<MTLDepthStencilState> value) : value(value) {}
 
 MTLCompareFunction DepthStencilState::convertCompareFunction(CompareFunction value) {
   switch (value) {
