@@ -512,9 +512,6 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
   has_VK_KHR_buffer_device_address =
       enable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, ExtensionType::Device);
 
-  has_VK_KHR_create_renderpass2 =
-      enable(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME, ExtensionType::Device);
-
   has_VK_KHR_vulkan_memory_model =
       enable(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME, ExtensionType::Device);
 

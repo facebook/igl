@@ -133,7 +133,6 @@ class VulkanFeatures final {
   bool has_VK_EXT_queue_family_foreign = false;
   bool has_VK_KHR_8bit_storage = false; // promoted to Vulkan 1.2
   bool has_VK_KHR_buffer_device_address = false; // promoted to Vulkan 1.2
-  bool has_VK_KHR_create_renderpass2 = false; // promoted to Vulkan 1.2
   bool has_VK_KHR_get_surface_capabilities2 = false;
   bool has_VK_KHR_shader_non_semantic_info = false; // promoted to Vulkan 1.3
   bool has_VK_KHR_synchronization2 = false; // promoted to Vulkan 1.3
