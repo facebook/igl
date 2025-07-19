@@ -329,13 +329,13 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel,
     IGL_DEBUG_ASSERT(colorAttachment.texture);
 
     const auto& colorTexture = static_cast<Texture&>(*colorAttachment.texture);
-    attachments.attachments_.push_back(
+    attachments.attachments.push_back(
         colorTexture.getVkImageViewForFramebuffer(mipLevel, layer, desc_.mode));
     // handle color MSAA
     if (colorAttachment.resolveTexture) {
       IGL_DEBUG_ASSERT(mipLevel == 0);
       const auto& colorResolveTexture = static_cast<Texture&>(*colorAttachment.resolveTexture);
-      attachments.attachments_.push_back(
+      attachments.attachments.push_back(
           colorResolveTexture.getVkImageViewForFramebuffer(0, layer, desc_.mode));
     }
   }
@@ -343,7 +343,7 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel,
   {
     const auto* depthTexture = static_cast<Texture*>(desc_.depthAttachment.texture.get());
     if (depthTexture) {
-      attachments.attachments_.push_back(
+      attachments.attachments.push_back(
           depthTexture->getVkImageViewForFramebuffer(mipLevel, layer, desc_.mode));
     }
   }
@@ -352,7 +352,7 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel,
     const auto* depthResolveTexture =
         static_cast<Texture*>(desc_.depthAttachment.resolveTexture.get());
     if (depthResolveTexture) {
-      attachments.attachments_.push_back(
+      attachments.attachments.push_back(
           depthResolveTexture->getVkImageViewForFramebuffer(mipLevel, layer, desc_.mode));
     }
   }
@@ -374,8 +374,8 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel,
                                                 fbWidth,
                                                 fbHeight,
                                                 pass,
-                                                (uint32_t)attachments.attachments_.size(),
-                                                attachments.attachments_.data(),
+                                                (uint32_t)attachments.attachments.size(),
+                                                attachments.attachments.data(),
                                                 desc_.debugName.c_str());
 
   framebuffers_[attachments] = fb;
@@ -386,7 +386,7 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel,
 uint64_t Framebuffer::HashFunction::operator()(const Attachments& attachments) const {
   uint64_t hash = 0;
 
-  for (const auto& a : attachments.attachments_) {
+  for (const auto& a : attachments.attachments) {
     hash ^= std::hash<VkImageView>()(a);
   }
 
