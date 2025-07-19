@@ -32,7 +32,7 @@ class VertexArrayObject;
 class RenderCommandAdapter final : public WithContext {
  public:
   using StateBits = uint32_t;
-  enum class StateMask : StateBits { NONE = 0, PIPELINE = 1 << 1, DEPTH_STENCIL = 1 << 2 };
+  enum class StateMask : StateBits { NONE = 0, PIPELINE = 1 << 1, DepthStencil = 1 << 2 };
 
  private:
   struct BufferState {

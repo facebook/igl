@@ -87,14 +87,14 @@ void RenderCommandAdapter::setScissorRect(const ScissorRect& rect) {
 void RenderCommandAdapter::setDepthStencilState(
     const std::shared_ptr<IDepthStencilState>& newValue) {
   depthStencilState_ = newValue;
-  setDirty(StateMask::DEPTH_STENCIL);
+  setDirty(StateMask::DepthStencil);
 }
 
 void RenderCommandAdapter::setStencilReferenceValue(uint32_t value) {
   frontStencilReferenceValue_ = value;
   backStencilReferenceValue_ = value;
 
-  setDirty(StateMask::DEPTH_STENCIL);
+  setDirty(StateMask::DepthStencil);
 }
 
 void RenderCommandAdapter::setBlendColor(const Color& color) {
@@ -364,9 +364,9 @@ void RenderCommandAdapter::willDraw() {
   }
 
   auto* depthStencilState = static_cast<DepthStencilState*>(depthStencilState_.get());
-  if (depthStencilState && isDirty(StateMask::DEPTH_STENCIL)) {
+  if (depthStencilState && isDirty(StateMask::DepthStencil)) {
     depthStencilState->bind(frontStencilReferenceValue_, backStencilReferenceValue_);
-    clearDirty(StateMask::DEPTH_STENCIL);
+    clearDirty(StateMask::DepthStencil);
   }
 
   // We store 2 parallel vectors (one for uniforms and one for uniform blocks)
