@@ -592,7 +592,7 @@ std::string GLenumToString(GLenum code) {
 namespace {
 
 #if IGL_DEBUG || IGL_API_LOG
-const char* GLDebugSeverityToString(GLenum severity) {
+const char* glDebugSeverityToString(GLenum severity) {
   switch (severity) {
     RESULT_CASE(GL_DEBUG_SEVERITY_HIGH)
     RESULT_CASE(GL_DEBUG_SEVERITY_LOW)
@@ -603,7 +603,7 @@ const char* GLDebugSeverityToString(GLenum severity) {
   }
 }
 
-const char* GLDebugSourceToString(GLenum source) {
+const char* glDebugSourceToString(GLenum source) {
   switch (source) {
     RESULT_CASE(GL_DEBUG_SOURCE_API)
     RESULT_CASE(GL_DEBUG_SOURCE_APPLICATION)
@@ -616,7 +616,7 @@ const char* GLDebugSourceToString(GLenum source) {
   }
 }
 
-const char* GLDebugTypeToString(GLenum type) {
+const char* glDebugTypeToString(GLenum type) {
   switch (type) {
     RESULT_CASE(GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR)
     RESULT_CASE(GL_DEBUG_TYPE_ERROR)
@@ -641,10 +641,10 @@ void logDebugMessage(GLenum source,
                             : (severity == GL_DEBUG_SEVERITY_MEDIUM ? IGLLogWarning : IGLLogInfo);
   IGLLog(logLevel,
          "%s %s %u %s: %.*s\n",
-         GLDebugSourceToString(source),
-         GLDebugTypeToString(type),
+         glDebugSourceToString(source),
+         glDebugTypeToString(type),
          id,
-         GLDebugSeverityToString(severity),
+         glDebugSeverityToString(severity),
          static_cast<int>(message ? length : 0),
          message ? message : "");
 }
@@ -3049,8 +3049,8 @@ void IContext::makeTextureHandleNonResident(GLuint64 handle) {
   GLCHECK_ERRORS();
 }
 
-void IContext::dispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z) {
-  IGLCALL(DispatchCompute)(num_groups_x, num_groups_y, num_groups_z);
+void IContext::dispatchCompute(GLuint numGroupsX, GLuint numGroupsY, GLuint numGroupsZ) {
+  IGLCALL(DispatchCompute)(numGroupsX, numGroupsY, numGroupsZ);
   APILOG("glDispatchCompute(%u, %u, %u)\n", num_groups_x, num_groups_y, num_groups_z);
   GLCHECK_ERRORS();
 }
