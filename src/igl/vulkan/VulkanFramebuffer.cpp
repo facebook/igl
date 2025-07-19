@@ -18,7 +18,7 @@ VulkanFramebuffer::VulkanFramebuffer(const VulkanContext& ctx,
                                      size_t numAttachments,
                                      const VkImageView* attachments,
                                      const char* debugName) :
-  ctx_(ctx), device_(device) {
+  ctx(ctx), device(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   if (!IGL_DEBUG_VERIFY(renderPass != VK_NULL_HANDLE)) {
@@ -29,16 +29,16 @@ VulkanFramebuffer::VulkanFramebuffer(const VulkanContext& ctx,
   }
 
   VK_ASSERT(ivkCreateFramebuffer(
-      &ctx_.vf_, device_, width, height, renderPass, numAttachments, attachments, &vkFramebuffer_));
+      &ctx.vf_, device, width, height, renderPass, numAttachments, attachments, &vkFramebuffer));
   VK_ASSERT(ivkSetDebugObjectName(
-      &ctx_.vf_, device_, VK_OBJECT_TYPE_FRAMEBUFFER, (uint64_t)vkFramebuffer_, debugName));
+      &ctx.vf_, device, VK_OBJECT_TYPE_FRAMEBUFFER, (uint64_t)vkFramebuffer, debugName));
 }
 
 VulkanFramebuffer::~VulkanFramebuffer() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
-  ctx_.deferredTask(std::packaged_task<void()>(
-      [vf = &ctx_.vf_, device = device_, framebuffer = vkFramebuffer_]() {
+  ctx.deferredTask(
+      std::packaged_task<void()>([vf = &ctx.vf_, device = device, framebuffer = vkFramebuffer]() {
         vf->vkDestroyFramebuffer(device, framebuffer, nullptr);
       }));
 }

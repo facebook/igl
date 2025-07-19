@@ -35,13 +35,13 @@ class VulkanFramebuffer final {
   VulkanFramebuffer& operator=(const VulkanFramebuffer&) = delete;
 
   [[nodiscard]] VkFramebuffer getVkFramebuffer() const {
-    return vkFramebuffer_;
+    return vkFramebuffer;
   }
 
  public:
-  const VulkanContext& ctx_;
-  VkDevice device_ = VK_NULL_HANDLE;
-  VkFramebuffer vkFramebuffer_ = VK_NULL_HANDLE;
+  const VulkanContext& ctx;
+  VkDevice device = VK_NULL_HANDLE;
+  VkFramebuffer vkFramebuffer = VK_NULL_HANDLE;
 };
 
 } // namespace igl::vulkan
