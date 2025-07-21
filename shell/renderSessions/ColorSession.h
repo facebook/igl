@@ -31,6 +31,7 @@ class ColorSession : public RenderSession {
     MacbethTexture,
     OrangeTexture,
     OrangeClear,
+    Gradient,
   };
   void setTestMode(ColorTestModes colorTestModes) noexcept {
     colorTestModes_ = colorTestModes;

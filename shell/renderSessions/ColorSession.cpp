@@ -198,6 +198,18 @@ std::string getVulkanFragmentShaderSource() {
                 )";
 }
 
+std::string getVulkanFragmentShaderSourceGradient() {
+  return R"(
+                layout(location = 0) in vec2 uv;
+                layout(location = 1) in vec3 color;
+                layout(location = 0) out vec4 out_FragColor;
+
+                void main() {
+                  out_FragColor = vec4(vec3(uv.x), 1.0);
+                }
+                )";
+}
+
 // @fb-only
 
 } // namespace
@@ -216,14 +228,17 @@ std::unique_ptr<IShaderStages> ColorSession::getShaderStagesForBackend(IDevice& 
                         layout(num_views = 2) in;)" +
                      vertexSource;
     }
-    return igl::ShaderStagesCreator::fromModuleStringInput(device,
-                                                           vertexSource.c_str(),
-                                                           "main",
-                                                           "",
-                                                           getVulkanFragmentShaderSource().c_str(),
-                                                           "main",
-                                                           "",
-                                                           nullptr);
+    return igl::ShaderStagesCreator::fromModuleStringInput(
+        device,
+        vertexSource.c_str(),
+        "main",
+        "",
+        colorTestModes_ == ColorTestModes::Gradient
+            ? getVulkanFragmentShaderSourceGradient().c_str()
+            : getVulkanFragmentShaderSource().c_str(),
+        "main",
+        "",
+        nullptr);
   }
   // @fb-only
     // @fb-only
