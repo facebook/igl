@@ -536,7 +536,7 @@ void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
   }
 
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
-  commandQueue_->submit(*buffer);
+  commandQueue_->submit(*buffer, true);
   RenderSession::update(surfaceTextures);
 }
 
