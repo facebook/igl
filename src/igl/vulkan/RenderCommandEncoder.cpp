@@ -18,10 +18,11 @@
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/Texture.h>
-#include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
+#include <igl/vulkan/VulkanHelpers.h>
+#include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanRenderPassBuilder.h>
-#include <igl/vulkan/VulkanSwapchain.h>
+#include <igl/vulkan/VulkanTexture.h>
 #include <igl/vulkan/util/SpvReflection.h>
 
 namespace {
