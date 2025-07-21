@@ -7,10 +7,8 @@
 
 #include <igl/vulkan/CommandQueue.h>
 
-#include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/EnhancedShaderDebuggingStore.h>
-#include <igl/vulkan/RenderCommandEncoder.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 
