@@ -129,6 +129,43 @@ std::string getMetalShaderSource() {
     )";
 }
 
+std::string getMetalShaderSourceGradient() {
+  return R"(
+              using namespace metal;
+
+              typedef struct {
+                 float3 color;
+                 float4x4 mvp;
+               } UniformBlock;
+
+              typedef struct {
+                float3 position [[attribute(0)]];
+                float2 uv [[attribute(1)]];
+              } VertexIn;
+
+              typedef struct {
+                float4 position [[position]];
+                float2 uv;
+              } VertexOut;
+
+              vertex VertexOut vertexShader(
+                  uint vid [[vertex_id]], constant VertexIn * vertices [[buffer(1)]]) {
+                VertexOut out;
+                out.position = float4(vertices[vid].position, 1.0);
+                out.uv = vertices[vid].uv;
+                return out;
+              }
+
+              fragment float4 fragmentShader(
+                  VertexOut IN [[stage_in]],
+                  texture2d<float> diffuseTex [[texture(0)]],
+                  sampler linearSampler [[sampler(0)]],
+                  constant UniformBlock * color [[buffer(0)]]) {
+                return float4(IN.uv.x, IN.uv.x, IN.uv.x, 1.0);
+              }
+    )";
+}
+
 std::string getOpenGLVertexShaderSource() {
   return getVersion() + R"(
                 precision highp float;
@@ -267,7 +304,13 @@ std::unique_ptr<IShaderStages> ColorSession::getShaderStagesForBackend(IDevice& 
         // @fb-only
   case igl::BackendType::Metal:
     return igl::ShaderStagesCreator::fromLibraryStringInput(
-        device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
+        device,
+        colorTestModes_ == ColorTestModes::Gradient ? getMetalShaderSourceGradient().c_str()
+                                                    : getMetalShaderSource().c_str(),
+        "vertexShader",
+        "fragmentShader",
+        "",
+        nullptr);
   case igl::BackendType::OpenGL:
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,
