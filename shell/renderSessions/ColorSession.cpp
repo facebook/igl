@@ -299,6 +299,8 @@ std::unique_ptr<IShaderStages> ColorSession::getShaderStagesForBackend(IDevice& 
         // @fb-only
         // @fb-only
         // @fb-only
+            // @fb-only
+            // @fb-only
         // @fb-only
         // @fb-only
         // @fb-only
@@ -376,8 +378,9 @@ void ColorSession::initialize() noexcept {
     tex0_ = getPlatform().loadTexture(igl::shell::ImageLoader::white());
     setPreferredClearColor(
         Color{fLinearOrangeColor.x, fLinearOrangeColor.y, fLinearOrangeColor.z, 1.0f});
+  } else if (colorTestModes_ == ColorTestModes::Gradient) {
+    tex0_ = getPlatform().loadTexture(igl::shell::ImageLoader::white());
   }
-
   shaderStages_ = getShaderStagesForBackend(device);
   IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
 
@@ -517,9 +520,10 @@ void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
     } else {
       IGL_DEBUG_ASSERT_NOT_REACHED();
     }
+    // if (colorTestModes_ != ColorTestModes::eGradient) {
     commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_.get());
     commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_.get());
-
+    //}
     commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
     commands->drawIndexed(6);
 
