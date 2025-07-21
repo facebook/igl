@@ -164,6 +164,21 @@ std::string getOpenGLFragmentShaderSource() {
                 })");
 }
 
+std::string getOpenGLFragmentShaderSourceGradient() {
+  return getVersion() + R"(    
+                precision highp float;
+                uniform vec3 color;
+                uniform mat4 mvp;
+                uniform sampler2D inputImage;
+                varying vec3 vColor;
+                varying vec2 uv;
+                
+                void main() {
+                  gl_FragColor = vec4(vec3(uv.x), 1.0);
+                }
+                )";
+}
+
 std::string getVulkanVertexShaderSource() {
   return R"(precision highp float;
             layout(location = 0) in vec3 position;
@@ -254,14 +269,17 @@ std::unique_ptr<IShaderStages> ColorSession::getShaderStagesForBackend(IDevice& 
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
   case igl::BackendType::OpenGL:
-    return igl::ShaderStagesCreator::fromModuleStringInput(device,
-                                                           getOpenGLVertexShaderSource().c_str(),
-                                                           "main",
-                                                           "",
-                                                           getOpenGLFragmentShaderSource().c_str(),
-                                                           "main",
-                                                           "",
-                                                           nullptr);
+    return igl::ShaderStagesCreator::fromModuleStringInput(
+        device,
+        getOpenGLVertexShaderSource().c_str(),
+        "main",
+        "",
+        colorTestModes_ == ColorTestModes::Gradient
+            ? getOpenGLFragmentShaderSourceGradient().c_str()
+            : getOpenGLFragmentShaderSource().c_str(),
+        "main",
+        "",
+        nullptr);
   }
   IGL_UNREACHABLE_RETURN(nullptr)
 }
