@@ -432,7 +432,8 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
   if (IGL_DEBUG_VERIFY(adapter_ && indexType_)) {
     getCommandBuffer().incrementCurrentDrawCount();
     const auto mode = toGlPrimitive(adapter_->pipelineState().getRenderPipelineDesc().topology);
-    const auto* indirectBufferOffsetPtr = reinterpret_cast<uint8_t*>(indirectBufferOffset);
+    const auto* indirectBufferOffsetPtr =
+        reinterpret_cast<uint8_t*>(indirectBufferOffset); // NOLINT(performance-no-int-to-ptr)
     for (uint32_t i = 0; i != drawCount; i++) {
       adapter_->drawElementsIndirect(
           mode, indexType_, (Buffer&)indirectBuffer, indirectBufferOffsetPtr);
