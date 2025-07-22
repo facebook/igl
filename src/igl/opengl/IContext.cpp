@@ -3051,7 +3051,7 @@ void IContext::makeTextureHandleNonResident(GLuint64 handle) {
 
 void IContext::dispatchCompute(GLuint numGroupsX, GLuint numGroupsY, GLuint numGroupsZ) {
   IGLCALL(DispatchCompute)(numGroupsX, numGroupsY, numGroupsZ);
-  APILOG("glDispatchCompute(%u, %u, %u)\n", num_groups_x, num_groups_y, num_groups_z);
+  APILOG("glDispatchCompute(%u, %u, %u)\n", numGroupsX, numGroupsY, numGroupsZ);
   GLCHECK_ERRORS();
 }
 

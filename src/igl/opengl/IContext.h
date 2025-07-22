@@ -425,7 +425,7 @@ class IContext {
   void vertexAttribDivisor(GLuint index, GLuint divisor);
   void viewport(GLint x, GLint y, GLsizei width, GLsizei height);
 
-  void dispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z);
+  void dispatchCompute(GLuint numGroupsX, GLuint numGroupsY, GLuint numGroupsZ);
   void memoryBarrier(GLbitfield barriers);
   GLuint64 getTextureHandle(GLuint texture);
   void makeTextureHandleResident(GLuint64 handle);
