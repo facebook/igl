@@ -775,7 +775,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     return Result(Result::Code::Unsupported, "Vulkan is not supported");
   }
 
-  vkPhysicalDevice_ = (VkPhysicalDevice)desc.guid;
+  vkPhysicalDevice_ = (VkPhysicalDevice)desc.guid; // NOLINT(performance-no-int-to-ptr)
 
   useStagingForBuffers_ = !ivkIsHostVisibleSingleHeapMemory(&vf_, vkPhysicalDevice_);
 
