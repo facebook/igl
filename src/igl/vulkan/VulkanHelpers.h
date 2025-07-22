@@ -227,13 +227,6 @@ VkAttachmentDescription ivkGetAttachmentDescription(VkFormat format,
 
 VkAttachmentReference ivkGetAttachmentReference(uint32_t attachment, VkImageLayout layout);
 
-/// @brief Creates s VkSubpassDescription structure with its pipeline bind point equal to
-/// `VK_PIPELINE_BIND_POINT_GRAPHICS`
-VkSubpassDescription ivkGetSubpassDescription(uint32_t numColorAttachments,
-                                              const VkAttachmentReference* refsColor,
-                                              const VkAttachmentReference* refsColorResolve,
-                                              const VkAttachmentReference* refDepth);
-
 VkResult ivkAllocateDescriptorSet(const struct VulkanFunctionTable* vt,
                                   VkDevice device,
                                   VkDescriptorPool pool,

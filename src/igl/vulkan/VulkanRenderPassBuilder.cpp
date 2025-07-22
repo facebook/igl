@@ -31,11 +31,15 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
       "color attachment");
 
   const bool hasDepthStencilAttachment = refDepth_.layout != VK_IMAGE_LAYOUT_UNDEFINED;
-  const VkSubpassDescription subpass =
-      ivkGetSubpassDescription((uint32_t)refsColor_.size(),
-                               refsColor_.data(),
-                               refsColorResolve_.data(),
-                               hasDepthStencilAttachment ? &refDepth_ : nullptr);
+
+  const VkSubpassDescription subpass = {
+      .flags = 0,
+      .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+      .colorAttachmentCount = (uint32_t)refsColor_.size(),
+      .pColorAttachments = refsColor_.data(),
+      .pResolveAttachments = refsColorResolve_.data(),
+      .pDepthStencilAttachment = hasDepthStencilAttachment ? &refDepth_ : nullptr,
+  };
 
   const VkSubpassDependency dep = {
       .srcSubpass = 0,

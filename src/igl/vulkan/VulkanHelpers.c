@@ -579,21 +579,6 @@ VkAttachmentReference ivkGetAttachmentReference(uint32_t attachment, VkImageLayo
   return ref;
 }
 
-VkSubpassDescription ivkGetSubpassDescription(uint32_t numColorAttachments,
-                                              const VkAttachmentReference* refsColor,
-                                              const VkAttachmentReference* refsColorResolve,
-                                              const VkAttachmentReference* refDepth) {
-  const VkSubpassDescription desc = {
-      .flags = 0,
-      .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-      .colorAttachmentCount = numColorAttachments,
-      .pColorAttachments = refsColor,
-      .pResolveAttachments = refsColorResolve,
-      .pDepthStencilAttachment = refDepth,
-  };
-  return desc;
-}
-
 VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,
                                       VkDevice device,
                                       VkDescriptorSetLayoutCreateFlags flags,
