@@ -237,10 +237,6 @@ VkSubpassDescription ivkGetSubpassDescription(uint32_t numColorAttachments,
 /// @brief Creates a VkSubpassDependency structure with no dependencies between subpasses
 VkSubpassDependency ivkGetSubpassDependency(void);
 
-VkRenderPassMultiviewCreateInfo ivkGetRenderPassMultiviewCreateInfo(
-    const uint32_t* viewMask,
-    const uint32_t* correlationMask);
-
 VkResult ivkAllocateDescriptorSet(const struct VulkanFunctionTable* vt,
                                   VkDevice device,
                                   VkDescriptorPool pool,

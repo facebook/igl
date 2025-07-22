@@ -426,27 +426,6 @@ TEST_F(SubpassDependencyTest, GetAttachmentDescription) {
   EXPECT_EQ(subpassDependency.dstAccessMask, VK_ACCESS_SHADER_READ_BIT);
 }
 
-// ivkGetRenderPassMultiviewCreateInfo ***************************************************
-
-class RenderPassMultiviewCreateInfoTest : public ::testing::Test {};
-
-TEST_F(RenderPassMultiviewCreateInfoTest, GetRenderPassMultiviewCreateInfo) {
-  constexpr uint32_t viewMask = 0;
-  constexpr uint32_t correlationMask = 0;
-
-  const auto renderPassMultiviewCreateInfo =
-      ivkGetRenderPassMultiviewCreateInfo(&viewMask, &correlationMask);
-  EXPECT_EQ(renderPassMultiviewCreateInfo.sType,
-            VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO);
-  EXPECT_EQ(renderPassMultiviewCreateInfo.pNext, nullptr);
-  EXPECT_EQ(renderPassMultiviewCreateInfo.subpassCount, 1);
-  EXPECT_EQ(renderPassMultiviewCreateInfo.pViewMasks, &viewMask);
-  EXPECT_EQ(renderPassMultiviewCreateInfo.dependencyCount, 0);
-  EXPECT_EQ(renderPassMultiviewCreateInfo.pViewOffsets, nullptr);
-  EXPECT_EQ(renderPassMultiviewCreateInfo.correlationMaskCount, 1);
-  EXPECT_EQ(renderPassMultiviewCreateInfo.pCorrelationMasks, &correlationMask);
-}
-
 // ivkGetClearColorValue ***************************************************
 
 class ClearColorValueTest

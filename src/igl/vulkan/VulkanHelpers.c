@@ -606,20 +606,6 @@ VkSubpassDependency ivkGetSubpassDependency(void) {
   return dep;
 }
 
-VkRenderPassMultiviewCreateInfo ivkGetRenderPassMultiviewCreateInfo(
-    const uint32_t* viewMask,
-    const uint32_t* correlationMask) {
-  const VkRenderPassMultiviewCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO,
-      .subpassCount = 1,
-      .pViewMasks = viewMask,
-      .correlationMaskCount = 1,
-      .pCorrelationMasks = correlationMask,
-  };
-
-  return ci;
-}
-
 VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,
                                       VkDevice device,
                                       VkDescriptorSetLayoutCreateFlags flags,
