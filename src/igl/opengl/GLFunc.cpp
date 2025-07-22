@@ -533,13 +533,13 @@ void iglMakeTextureHandleNonResidentARB(GLuint64 handle) {
 #define CAN_CALL_glDispatchCompute 0
 #endif
 
-void iglDispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z) {
+void iglDispatchCompute(GLuint numGroupsX, GLuint numGroupsY, GLuint numGroupsZ) {
   GLEXTENSION_METHOD_BODY(CAN_CALL_glDispatchCompute,
                           glDispatchCompute,
                           PFNIGLDISPATCHCOMPUTEPROC,
-                          num_groups_x,
-                          num_groups_y,
-                          num_groups_z);
+                          numGroupsX,
+                          numGroupsY,
+                          numGroupsZ);
 }
 
 ///--------------------------------------
