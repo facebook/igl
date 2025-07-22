@@ -296,7 +296,8 @@ class Handle final {
     return gen_;
   }
   [[nodiscard]] void* IGL_NULLABLE indexAsVoid() const noexcept {
-    return reinterpret_cast<void*>(static_cast<ptrdiff_t>(index_));
+    return reinterpret_cast<void*>(
+        static_cast<ptrdiff_t>(index_)); // NOLINT(performance-no-int-to-ptr)
   }
   bool operator==(const Handle<ObjectType>& other) const noexcept {
     return index_ == other.index_ && gen_ == other.gen_;
