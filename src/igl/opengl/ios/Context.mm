@@ -47,7 +47,7 @@ void* getOrGenerateContextUniqueID(EAGLContext* context) {
   } else {
     contextId = key.integerValue;
   }
-  return (void*)contextId;
+  return (void*)contextId; // NOLINT(performance-no-int-to-ptr)
 }
 } // namespace
 
