@@ -177,15 +177,6 @@ uint32_t ivkFindMemoryType(const struct VulkanFunctionTable* vt,
                            uint32_t memoryTypeBits,
                            VkMemoryPropertyFlags flags);
 
-VkResult ivkCreateRenderPass(const struct VulkanFunctionTable* vt,
-                             VkDevice device,
-                             uint32_t numAttachments,
-                             const VkAttachmentDescription* attachments,
-                             const VkSubpassDescription* subpass,
-                             const VkSubpassDependency* dependency,
-                             const VkRenderPassMultiviewCreateInfo* renderPassMultiview,
-                             VkRenderPass* outRenderPass);
-
 VkResult ivkCreateGraphicsPipeline(const struct VulkanFunctionTable* vt,
                                    VkDevice device,
                                    VkPipelineCache pipelineCache,

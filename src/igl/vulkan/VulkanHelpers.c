@@ -537,27 +537,6 @@ VkAttachmentReference2 ivkGetAttachmentReferenceColor(uint32_t idx) {
   return ref;
 }
 
-VkResult ivkCreateRenderPass(const struct VulkanFunctionTable* vt,
-                             VkDevice device,
-                             uint32_t numAttachments,
-                             const VkAttachmentDescription* attachments,
-                             const VkSubpassDescription* subpass,
-                             const VkSubpassDependency* dependency,
-                             const VkRenderPassMultiviewCreateInfo* renderPassMultiview,
-                             VkRenderPass* outRenderPass) {
-  const VkRenderPassCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-      .pNext = renderPassMultiview,
-      .attachmentCount = numAttachments,
-      .pAttachments = attachments,
-      .subpassCount = 1,
-      .pSubpasses = subpass,
-      .dependencyCount = 1,
-      .pDependencies = dependency,
-  };
-  return vt->vkCreateRenderPass(device, &ci, NULL, outRenderPass);
-}
-
 VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding,
                                                               VkDescriptorType descriptorType,
                                                               uint32_t descriptorCount,

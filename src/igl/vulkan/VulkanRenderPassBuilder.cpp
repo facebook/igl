@@ -39,16 +39,20 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
   const VkSubpassDependency dep = ivkGetSubpassDependency();
   const bool hasViewMask = viewMask_ != 0;
 
-  const VkRenderPassMultiviewCreateInfo ci =
+  const VkRenderPassMultiviewCreateInfo renderPassMultiview =
       ivkGetRenderPassMultiviewCreateInfo(&viewMask_, &correlationMask_);
-  const VkResult result = ivkCreateRenderPass(&vf,
-                                              device,
-                                              (uint32_t)attachments_.size(),
-                                              attachments_.data(),
-                                              &subpass,
-                                              &dep,
-                                              hasViewMask ? &ci : nullptr,
-                                              outRenderPass);
+  const VkRenderPassCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+      .pNext = hasViewMask ? &renderPassMultiview : nullptr,
+      .attachmentCount = (uint32_t)attachments_.size(),
+      .pAttachments = attachments_.data(),
+      .subpassCount = 1,
+      .pSubpasses = &subpass,
+      .dependencyCount = 1,
+      .pDependencies = &dep,
+  };
+  const VkResult result = vf.vkCreateRenderPass(device, &ci, nullptr, outRenderPass);
+
   if (!IGL_DEBUG_VERIFY(result == VK_SUCCESS)) {
     return result;
   }
