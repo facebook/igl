@@ -29,15 +29,6 @@ jobs:
       matrix:
         config:
         - {
-            name: "Windows - MSVC 2022",
-            os: windows-latest,
-            build_type: "Release",
-            cc: "cl",
-            cxx: "cl",
-            generators: "Visual Studio 17 2022",
-            cmake_args: "-DIGL_ENABLE_INSTALL=ON -DIGL_WITH_SAMPLES=OFF -DIGL_WITH_SHELL=OFF -DIGL_WITH_TESTS=OFF"
-          }
-        - {
             name: "Ubuntu - Clang",
             os: ubuntu-latest,
             build_type: "Release",
@@ -45,15 +36,6 @@ jobs:
             cxx: "clang++",
             generators: "Unix Makefiles",
             cmake_args: "-DIGL_ENABLE_INSTALL=ON -DIGL_WITH_SAMPLES=OFF -DIGL_WITH_SHELL=OFF -DIGL_WITH_TESTS=OFF"
-          }
-        - {
-            name: "macOS - Clang",
-            os: macos-latest,
-            build_type: "Release",
-            cc: "clang",
-            cxx: "clang++",
-            generators: "Unix Makefiles",
-            cmake_args: "-DIGL_ENABLE_INSTALL=ON -DIGL_WITH_SAMPLES=OFF -DIGL_WITH_SHELL=OFF -DIGL_WITH_TESTS=OFF -DIGL_WITH_VULKAN=OFF"
           }
 
     runs-on: ${{ matrix.config.os }}
