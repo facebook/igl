@@ -70,7 +70,8 @@ std::shared_ptr<IDevice> createTestDevice(const igl::vulkan::VulkanContextConfig
     extraDeviceExtensions.emplace_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
 
     igl::vulkan::VulkanFeatures features(config);
-    features.populateWithAvailablePhysicalDeviceFeatures(*ctx, (VkPhysicalDevice)devices[0].guid);
+    features.populateWithAvailablePhysicalDeviceFeatures(
+        *ctx, (VkPhysicalDevice)devices[0].guid); // NOLINT(performance-no-int-to-ptr)
 
     iglDev = igl::vulkan::HWDevice::create(std::move(ctx),
                                            devices[0],
