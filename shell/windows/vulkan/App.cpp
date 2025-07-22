@@ -43,7 +43,8 @@ std::shared_ptr<Platform> VulkanShell::createPlatform() noexcept {
 #if defined(_WIN32)
                                       window() ? (void*)glfwGetWin32Window(window()) : nullptr
 #else
-                                      window() ? (void*)glfwGetX11Window(window()) : nullptr,
+                                      window() ? (void*)glfwGetX11Window(window())
+                                               : nullptr, // NOLINT(performance-no-int-to-ptr)
                                       (void*)glfwGetX11Display()
 #endif
       );
