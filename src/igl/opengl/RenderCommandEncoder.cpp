@@ -298,7 +298,7 @@ void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
                                            size_t bufferOffset) {
   if (IGL_DEBUG_VERIFY(adapter_)) {
     indexType_ = toGlType(format);
-    indexBufferOffset_ = reinterpret_cast<void*>(bufferOffset);
+    indexBufferOffset_ = reinterpret_cast<void*>(bufferOffset); // NOLINT(performance-no-int-to-ptr)
     adapter_->setIndexBuffer((Buffer&)buffer);
   }
 }
