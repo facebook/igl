@@ -234,9 +234,6 @@ VkSubpassDescription ivkGetSubpassDescription(uint32_t numColorAttachments,
                                               const VkAttachmentReference* refsColorResolve,
                                               const VkAttachmentReference* refDepth);
 
-/// @brief Creates a VkSubpassDependency structure with no dependencies between subpasses
-VkSubpassDependency ivkGetSubpassDependency(void);
-
 VkResult ivkAllocateDescriptorSet(const struct VulkanFunctionTable* vt,
                                   VkDevice device,
                                   VkDescriptorPool pool,

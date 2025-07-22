@@ -36,8 +36,15 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
                                refsColor_.data(),
                                refsColorResolve_.data(),
                                hasDepthStencilAttachment ? &refDepth_ : nullptr);
-  const VkSubpassDependency dep = ivkGetSubpassDependency();
-  const bool hasViewMask = viewMask_ != 0;
+
+  const VkSubpassDependency dep = {
+      .srcSubpass = 0,
+      .dstSubpass = VK_SUBPASS_EXTERNAL,
+      .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+      .dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+      .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+      .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+  };
 
   const VkRenderPassMultiviewCreateInfo renderPassMultiview = {
       .sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO,
@@ -49,7 +56,7 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
 
   const VkRenderPassCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-      .pNext = hasViewMask ? &renderPassMultiview : nullptr,
+      .pNext = viewMask_ ? &renderPassMultiview : nullptr,
       .attachmentCount = (uint32_t)attachments_.size(),
       .pAttachments = attachments_.data(),
       .subpassCount = 1,
