@@ -600,8 +600,8 @@ void XrApp::handleXrEvents() {
     auto* baseEventHeader = (XrEventDataBaseHeader*)(&eventDataBuffer);
     baseEventHeader->type = XR_TYPE_EVENT_DATA_BUFFER;
     baseEventHeader->next = nullptr;
-    XrResult res;
-    XR_CHECK(res = xrPollEvent(instance_, &eventDataBuffer));
+    const XrResult res = xrPollEvent(instance_, &eventDataBuffer);
+    XR_CHECK(res);
     if (res != XR_SUCCESS) {
       break;
     }
