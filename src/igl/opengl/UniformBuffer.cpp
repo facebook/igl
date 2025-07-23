@@ -198,7 +198,7 @@ void UniformBuffer::bindUniformArray(IContext& context,
   // NOLINTEND(bugprone-easily-swappable-parameters)
   const size_t packedSize = igl::sizeForUniformType(uniformType);
   size_t primitivesPerElement = 0;
-  UniformBaseType baseType;
+  UniformBaseType baseType = UniformBaseType::Invalid;
   if (packedSize == stride) {
     UniformBuffer::bindUniform(context, shaderLocation, uniformType, start, numElements);
   } else {
