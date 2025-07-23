@@ -133,25 +133,23 @@ void SamplerState::bind(ITexture* t) {
 
 // utility functions for converting from IGL sampler state enums to GL enums
 GLint SamplerState::convertMinMipFilter(SamplerMinMagFilter minFilter, SamplerMipFilter mipFilter) {
-  GLint glMinFilter = 0;
-
   switch (mipFilter) {
   case SamplerMipFilter::Disabled:
-    glMinFilter = (minFilter == SamplerMinMagFilter::Nearest) ? GL_NEAREST : GL_LINEAR;
+    return (minFilter == SamplerMinMagFilter::Nearest) ? GL_NEAREST : GL_LINEAR;
     break;
 
   case SamplerMipFilter::Nearest:
-    glMinFilter = (minFilter == SamplerMinMagFilter::Nearest) ? GL_NEAREST_MIPMAP_NEAREST
-                                                              : GL_LINEAR_MIPMAP_NEAREST;
+    return (minFilter == SamplerMinMagFilter::Nearest) ? GL_NEAREST_MIPMAP_NEAREST
+                                                       : GL_LINEAR_MIPMAP_NEAREST;
     break;
 
   case SamplerMipFilter::Linear:
-    glMinFilter = (minFilter == SamplerMinMagFilter::Nearest) ? GL_NEAREST_MIPMAP_LINEAR
-                                                              : GL_LINEAR_MIPMAP_LINEAR;
+    return (minFilter == SamplerMinMagFilter::Nearest) ? GL_NEAREST_MIPMAP_LINEAR
+                                                       : GL_LINEAR_MIPMAP_LINEAR;
     break;
   }
 
-  return glMinFilter;
+  return 0;
 }
 
 GLint SamplerState::convertMagFilter(SamplerMinMagFilter magFilter) {
@@ -184,74 +182,68 @@ SamplerMinMagFilter SamplerState::convertGLMinFilter(GLint glMinFilter) {
 }
 
 SamplerMipFilter SamplerState::convertGLMipFilter(GLint glMinFilter) {
-  SamplerMipFilter mipFilter;
-
   switch (glMinFilter) {
   case GL_NEAREST:
   case GL_LINEAR:
-    mipFilter = SamplerMipFilter::Disabled;
+    return SamplerMipFilter::Disabled;
     break;
 
   case GL_NEAREST_MIPMAP_NEAREST:
   case GL_LINEAR_MIPMAP_NEAREST:
-    mipFilter = SamplerMipFilter::Nearest;
+    return SamplerMipFilter::Nearest;
     break;
 
   case GL_NEAREST_MIPMAP_LINEAR:
   case GL_LINEAR_MIPMAP_LINEAR:
-    mipFilter = SamplerMipFilter::Linear;
+    return SamplerMipFilter::Linear;
     break;
 
   default:
     IGL_DEBUG_ASSERT_NOT_REACHED();
-    mipFilter = SamplerMipFilter::Disabled;
+    return SamplerMipFilter::Disabled;
   }
 
-  return mipFilter;
+  return SamplerMipFilter::Disabled;
 }
 
 GLint SamplerState::convertAddressMode(SamplerAddressMode addressMode) {
-  GLint glAddressMode = 0;
-
   switch (addressMode) {
   case SamplerAddressMode::Repeat:
-    glAddressMode = GL_REPEAT;
+    return GL_REPEAT;
     break;
 
   case SamplerAddressMode::Clamp:
-    glAddressMode = GL_CLAMP_TO_EDGE;
+    return GL_CLAMP_TO_EDGE;
     break;
 
   case SamplerAddressMode::MirrorRepeat:
-    glAddressMode = GL_MIRRORED_REPEAT;
+    return GL_MIRRORED_REPEAT;
     break;
   }
 
-  return glAddressMode;
+  return 0;
 }
 
 SamplerAddressMode SamplerState::convertGLAddressMode(GLint glAddressMode) {
-  SamplerAddressMode addressMode;
-
   switch (glAddressMode) {
   case GL_REPEAT:
-    addressMode = SamplerAddressMode::Repeat;
+    return SamplerAddressMode::Repeat;
     break;
 
   case GL_CLAMP_TO_EDGE:
-    addressMode = SamplerAddressMode::Clamp;
+    return SamplerAddressMode::Clamp;
     break;
 
   case GL_MIRRORED_REPEAT:
-    addressMode = SamplerAddressMode::MirrorRepeat;
+    return SamplerAddressMode::MirrorRepeat;
     break;
 
   default:
-    addressMode = SamplerAddressMode::Repeat;
+    return SamplerAddressMode::Repeat;
     break;
   }
 
-  return addressMode;
+  return SamplerAddressMode::Repeat;
 }
 
 bool SamplerState::isYUV() const noexcept {
