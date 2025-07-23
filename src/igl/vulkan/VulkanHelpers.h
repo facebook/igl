@@ -216,15 +216,6 @@ VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding,
                                                               uint32_t descriptorCount,
                                                               VkShaderStageFlags stageFlags);
 
-/// @brief Creates a VkAttachmentDescription structure with load and store operations for the
-/// stencil attachment as "Don't Care"
-VkAttachmentDescription ivkGetAttachmentDescription(VkFormat format,
-                                                    VkAttachmentLoadOp loadOp,
-                                                    VkAttachmentStoreOp storeOp,
-                                                    VkImageLayout initialLayout,
-                                                    VkImageLayout finalLayout,
-                                                    VkSampleCountFlagBits samples);
-
 VkResult ivkAllocateDescriptorSet(const struct VulkanFunctionTable* vt,
                                   VkDevice device,
                                   VkDescriptorPool pool,

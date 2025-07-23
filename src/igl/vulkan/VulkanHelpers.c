@@ -551,26 +551,6 @@ VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding,
   return bind;
 }
 
-VkAttachmentDescription ivkGetAttachmentDescription(VkFormat format,
-                                                    VkAttachmentLoadOp loadOp,
-                                                    VkAttachmentStoreOp storeOp,
-                                                    VkImageLayout initialLayout,
-                                                    VkImageLayout finalLayout,
-                                                    VkSampleCountFlagBits samples) {
-  const VkAttachmentDescription desc = {
-      .flags = 0,
-      .format = format,
-      .samples = samples,
-      .loadOp = loadOp,
-      .storeOp = storeOp,
-      .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-      .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-      .initialLayout = initialLayout,
-      .finalLayout = finalLayout,
-  };
-  return desc;
-}
-
 VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,
                                       VkDevice device,
                                       VkDescriptorSetLayoutCreateFlags flags,

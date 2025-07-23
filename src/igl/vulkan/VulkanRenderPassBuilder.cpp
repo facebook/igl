@@ -94,8 +94,18 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addColor(VkFormat format,
       .attachment = (uint32_t)attachments_.size(),
       .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
   });
-  attachments_.push_back(
-      ivkGetAttachmentDescription(format, loadOp, storeOp, initialLayout, finalLayout, samples));
+  attachments_.push_back(VkAttachmentDescription{
+      .flags = 0,
+      .format = format,
+      .samples = samples,
+      .loadOp = loadOp,
+      .storeOp = storeOp,
+      .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+      .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+      .initialLayout = initialLayout,
+      .finalLayout = finalLayout,
+  });
+
   return *this;
 }
 
@@ -109,8 +119,18 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addColorResolve(VkFormat forma
       .attachment = (uint32_t)attachments_.size(),
       .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
   });
-  attachments_.push_back(ivkGetAttachmentDescription(
-      format, loadOp, storeOp, initialLayout, finalLayout, VK_SAMPLE_COUNT_1_BIT));
+  attachments_.push_back(VkAttachmentDescription{
+      .flags = 0,
+      .format = format,
+      .samples = VK_SAMPLE_COUNT_1_BIT,
+      .loadOp = loadOp,
+      .storeOp = storeOp,
+      .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+      .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+      .initialLayout = initialLayout,
+      .finalLayout = finalLayout,
+  });
+
   return *this;
 }
 
@@ -136,11 +156,18 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthStencil(
       .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
   };
 
-  auto desc =
-      ivkGetAttachmentDescription(format, loadOp, storeOp, initialLayout, finalLayout, samples);
-  desc.stencilLoadOp = stencilLoadOp;
-  desc.stencilStoreOp = stencilStoreOp;
-  attachments_.push_back(desc);
+  attachments_.push_back(VkAttachmentDescription{
+      .flags = 0,
+      .format = format,
+      .samples = samples,
+      .loadOp = loadOp,
+      .storeOp = storeOp,
+      .stencilLoadOp = stencilLoadOp,
+      .stencilStoreOp = stencilStoreOp,
+      .initialLayout = initialLayout,
+      .finalLayout = finalLayout,
+  });
+
   return *this;
 }
 
@@ -160,11 +187,18 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthStencilResolve(
       .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
   };
 
-  auto desc = ivkGetAttachmentDescription(
-      format, loadOp, storeOp, initialLayout, finalLayout, VK_SAMPLE_COUNT_1_BIT);
-  desc.stencilLoadOp = stencilLoadOp;
-  desc.stencilStoreOp = stencilStoreOp;
-  attachments_.push_back(desc);
+  attachments_.push_back(VkAttachmentDescription{
+      .flags = 0,
+      .format = format,
+      .samples = VK_SAMPLE_COUNT_1_BIT,
+      .loadOp = loadOp,
+      .storeOp = storeOp,
+      .stencilLoadOp = stencilLoadOp,
+      .stencilStoreOp = stencilStoreOp,
+      .initialLayout = initialLayout,
+      .finalLayout = finalLayout,
+  });
+
   return *this;
 }
 
