@@ -571,14 +571,6 @@ VkAttachmentDescription ivkGetAttachmentDescription(VkFormat format,
   return desc;
 }
 
-VkAttachmentReference ivkGetAttachmentReference(uint32_t attachment, VkImageLayout layout) {
-  const VkAttachmentReference ref = {
-      .attachment = attachment,
-      .layout = layout,
-  };
-  return ref;
-}
-
 VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,
                                       VkDevice device,
                                       VkDescriptorSetLayoutCreateFlags flags,

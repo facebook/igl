@@ -90,8 +90,10 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addColor(VkFormat format,
     IGL_DEBUG_ASSERT(attachments_[refsColor_.back().attachment].samples == samples,
                      "All non-resolve attachments should have the sample number of samples");
   }
-  refsColor_.push_back(ivkGetAttachmentReference((uint32_t)attachments_.size(),
-                                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
+  refsColor_.push_back(VkAttachmentReference{
+      .attachment = (uint32_t)attachments_.size(),
+      .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+  });
   attachments_.push_back(
       ivkGetAttachmentDescription(format, loadOp, storeOp, initialLayout, finalLayout, samples));
   return *this;
@@ -103,8 +105,10 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addColorResolve(VkFormat forma
                                                                   VkImageLayout initialLayout,
                                                                   VkImageLayout finalLayout) {
   IGL_DEBUG_ASSERT(format != VK_FORMAT_UNDEFINED, "Invalid color resolve attachment format");
-  refsColorResolve_.push_back(ivkGetAttachmentReference((uint32_t)attachments_.size(),
-                                                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
+  refsColorResolve_.push_back(VkAttachmentReference{
+      .attachment = (uint32_t)attachments_.size(),
+      .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+  });
   attachments_.push_back(ivkGetAttachmentDescription(
       format, loadOp, storeOp, initialLayout, finalLayout, VK_SAMPLE_COUNT_1_BIT));
   return *this;
@@ -127,8 +131,10 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthStencil(
                      "All non-resolve attachments should have the sample number of samples "
                      "(including a depth attachment)");
   }
-  refDepth_ = ivkGetAttachmentReference((uint32_t)attachments_.size(),
-                                        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+  refDepth_ = VkAttachmentReference{
+      .attachment = (uint32_t)attachments_.size(),
+      .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+  };
 
   auto desc =
       ivkGetAttachmentDescription(format, loadOp, storeOp, initialLayout, finalLayout, samples);
@@ -149,8 +155,10 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthStencilResolve(
   IGL_DEBUG_ASSERT(refDepthResolve_.layout == VK_IMAGE_LAYOUT_UNDEFINED,
                    "Can have only 1 depth resolve attachment");
   IGL_DEBUG_ASSERT(format != VK_FORMAT_UNDEFINED, "Invalid depth resolve attachment format");
-  refDepthResolve_ = ivkGetAttachmentReference((uint32_t)attachments_.size(),
-                                               VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+  refDepthResolve_ = VkAttachmentReference{
+      .attachment = (uint32_t)attachments_.size(),
+      .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+  };
 
   auto desc = ivkGetAttachmentDescription(
       format, loadOp, storeOp, initialLayout, finalLayout, VK_SAMPLE_COUNT_1_BIT);

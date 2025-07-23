@@ -225,8 +225,6 @@ VkAttachmentDescription ivkGetAttachmentDescription(VkFormat format,
                                                     VkImageLayout finalLayout,
                                                     VkSampleCountFlagBits samples);
 
-VkAttachmentReference ivkGetAttachmentReference(uint32_t attachment, VkImageLayout layout);
-
 VkResult ivkAllocateDescriptorSet(const struct VulkanFunctionTable* vt,
                                   VkDevice device,
                                   VkDescriptorPool pool,
