@@ -11,19 +11,16 @@
 
 #include <cmath>
 #include <cstddef>
-#include <glm/ext.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
 #include <shell/shared/platform/DisplayContext.h>
 #include <igl/FPSCounter.h>
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/Device.h>
-#include <igl/opengl/RenderCommandEncoder.h>
 #endif // IGL_BACKEND_OPENGL
 #if IGL_BACKEND_VULKAN
-#include <igl/vulkan/Common.h>
-#include <igl/vulkan/Device.h>
-#include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/PlatformDevice.h>
 #endif // IGL_BACKEND_VULKAN
 
@@ -31,7 +28,8 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 #else
-#include <boost/filesystem.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 namespace fs = boost::filesystem;
 #endif
 
