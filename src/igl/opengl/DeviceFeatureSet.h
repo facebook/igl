@@ -56,7 +56,7 @@ enum class Extensions {
   TextureRgArb,               // GL_ARB_texture_rg is supported
   TextureRgExt,               // GL_EXT_texture_rg is supported
   TextureSrgb,                // GL_EXT_texture_sRGB is supported
-  TextureType2_10_10_10_Rev,  // GL_EXT_texture_type_2_10_10_10_REV is supporteds
+  TextureType2101010Rev,  // GL_EXT_texture_type_2_10_10_10_REV is supporteds
   VertexArrayObject,          // GL_OES_vertex_array_object is supported
   VertexAttribDivisor,        // GL_NV_instanced_arrays is supported
 };

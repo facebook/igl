@@ -245,7 +245,7 @@ bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
     return hasESExtension(*this, "GL_EXT_texture_rg");
   case Extensions::TextureSrgb:
     return hasDesktopExtension(*this, "GL_EXT_texture_sRGB");
-  case Extensions::TextureType2_10_10_10_Rev:
+  case Extensions::TextureType2101010Rev:
     return hasESExtension(*this, "GL_EXT_texture_type_2_10_10_10_REV");
   case Extensions::VertexArrayObject:
     return hasESExtension(*this, "GL_OES_vertex_array_object");
@@ -676,7 +676,7 @@ bool DeviceFeatureSet::isTextureFeatureSupported(TextureFeatures feature) const 
 
   case TextureFeatures::ColorTexImageRgb10A2:
     return hasTextureFeature(TextureFeatures::ColorRenderbufferRgb10A2) ||
-           hasExtension(Extensions::TextureType2_10_10_10_Rev);
+           hasExtension(Extensions::TextureType2101010Rev);
 
   case TextureFeatures::ColorTexImageRgba8:
     return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
@@ -726,7 +726,7 @@ bool DeviceFeatureSet::isTextureFeatureSupported(TextureFeatures feature) const 
   case TextureFeatures::ColorTexStorageRgb10A2:
     return hasDesktopOrESVersion(*this, GLVersion::v4_2, GLVersion::v3_0_ES) ||
            (hasExtension(Extensions::TexStorage) &&
-            hasExtension(Extensions::TextureType2_10_10_10_Rev));
+            hasExtension(Extensions::TextureType2101010Rev));
 
   case TextureFeatures::ColorTexStorageRgba8:
     return hasTextureFeature(TextureFeatures::ColorRenderbufferRgba8) &&
@@ -956,7 +956,7 @@ bool DeviceFeatureSet::hasInternalRequirement(InternalRequirement requirement) c
 
   case InternalRequirement::ColorTexImageRgb10A2Unsized:
     return !hasTextureFeature(TextureFeatures::ColorRenderbufferRgb10A2) &&
-           hasExtension(Extensions::TextureType2_10_10_10_Rev);
+           hasExtension(Extensions::TextureType2101010Rev);
 
   case InternalRequirement::ColorTexImageRgba4Unsized:
     return usesOpenGLES() && !hasESVersion(*this, GLVersion::v3_0_ES) &&
