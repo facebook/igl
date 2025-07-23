@@ -7,22 +7,22 @@
 
 #pragma once
 
-#include <igl/Buffer.h>
-#include <igl/CommandBuffer.h>
-#include <igl/CommandQueue.h>
-#include <igl/Common.h>
-#include <igl/ComputeCommandEncoder.h>
-#include <igl/ComputePipelineState.h>
-#include <igl/DepthStencilState.h>
-#include <igl/Device.h>
-#include <igl/Framebuffer.h>
-#include <igl/HWDevice.h>
-#include <igl/RenderCommandEncoder.h>
-#include <igl/RenderPass.h>
-#include <igl/RenderPipelineState.h>
-#include <igl/SamplerState.h>
-#include <igl/Shader.h>
-#include <igl/ShaderCreator.h>
-#include <igl/Texture.h>
-#include <igl/Uniform.h>
-#include <igl/VertexInputState.h>
+#include <igl/Buffer.h> // IWYU pragma: export
+#include <igl/CommandBuffer.h> // IWYU pragma: export
+#include <igl/CommandQueue.h> // IWYU pragma: export
+#include <igl/Common.h> // IWYU pragma: export
+#include <igl/ComputeCommandEncoder.h> // IWYU pragma: export
+#include <igl/ComputePipelineState.h> // IWYU pragma: export
+#include <igl/DepthStencilState.h> // IWYU pragma: export
+#include <igl/Device.h> // IWYU pragma: export
+#include <igl/Framebuffer.h> // IWYU pragma: export
+#include <igl/HWDevice.h> // IWYU pragma: export
+#include <igl/RenderCommandEncoder.h> // IWYU pragma: export
+#include <igl/RenderPass.h> // IWYU pragma: export
+#include <igl/RenderPipelineState.h> // IWYU pragma: export
+#include <igl/SamplerState.h> // IWYU pragma: export
+#include <igl/Shader.h> // IWYU pragma: export
+#include <igl/ShaderCreator.h> // IWYU pragma: export
+#include <igl/Texture.h> // IWYU pragma: export
+#include <igl/Uniform.h> // IWYU pragma: export
+#include <igl/VertexInputState.h> // IWYU pragma: export
