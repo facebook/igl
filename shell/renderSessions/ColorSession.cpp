@@ -161,7 +161,19 @@ std::string getMetalShaderSourceGradient() {
                   texture2d<float> diffuseTex [[texture(0)]],
                   sampler linearSampler [[sampler(0)]],
                   constant UniformBlock * color [[buffer(0)]]) {
-                return float4(IN.uv.x, IN.uv.x, IN.uv.x, 1.0);
+
+                  float numSteps = 20.0;
+                  float uvX;
+                  if (IN.uv.y<0.25) {
+                   uvX = IN.uv.x;
+                  } else if (IN.uv.y<0.5) {
+                    uvX = floor(IN.uv.x*numSteps+0.5)/numSteps;
+                  } else if (IN.uv.y<0.75) {
+                    uvX = 1.0-IN.uv.x;
+                  } else {
+                    uvX = floor((1.0-IN.uv.x)*numSteps+0.5)/numSteps;
+                  }
+                  return float4(uvX, uvX, uvX, 1.0); 
               }
     )";
 }
@@ -211,7 +223,18 @@ std::string getOpenGLFragmentShaderSourceGradient() {
                 varying vec2 uv;
                 
                 void main() {
-                  gl_FragColor = vec4(vec3(uv.x), 1.0);
+                  float numSteps = 20.0;
+                  float uvX;
+                  if (uv.y<0.25) {
+                    uvX = uv.x;
+                  } else if (uv.y<0.5) {
+                   uvX = floor(uv.x*numSteps+0.5)/numSteps;
+                  } else if (uv.y<0.75) {
+                   uvX = 1.0-uv.x;
+                  } else {
+                   uvX = floor((1.0-uv.x)*numSteps+0.5)/numSteps;
+                  } 
+                  gl_FragColor = vec4(vec3(uvX), 1.0);
                 }
                 )";
 }
@@ -257,7 +280,18 @@ std::string getVulkanFragmentShaderSourceGradient() {
                 layout(location = 0) out vec4 out_FragColor;
 
                 void main() {
-                  out_FragColor = vec4(vec3(uv.x), 1.0);
+                  float numSteps = 20.0;
+                  float uvX;
+                  if (uv.y<0.25) {
+                    uvX = uv.x;
+                  } else if (uv.y<0.5) {
+                   uvX = floor(uv.x*numSteps+0.5)/numSteps;
+                  } else if (uv.y<0.75) {
+                   uvX = 1.0-uv.x;
+                  } else {
+                   uvX = floor((1.0-uv.x)*numSteps+0.5)/numSteps;
+                  } 
+                  out_FragColor = vec4(vec3(uvX), 1.0);
                 }
                 )";
 }
