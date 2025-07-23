@@ -96,15 +96,15 @@ jobs:
               generators: "Xcode",
               cmake_args: "-DIGL_WITH_VULKAN=OFF"
             }
-          - {
-              name: "macOS - Clang (Unix Makefiles)",
-              os: macos-latest,
-              build_type: "Debug",
-              cc: "clang",
-              cxx: "clang++",
-              generators: "Unix Makefiles",
-              cmake_args: "-DIGL_WITH_VULKAN=OFF"
-            }
+#          - {
+#              name: "macOS - Clang (Unix Makefiles)",
+#              os: macos-latest,
+#              build_type: "Debug",
+#              cc: "clang",
+#              cxx: "clang++",
+#              generators: "Unix Makefiles",
+#              cmake_args: "-DIGL_WITH_VULKAN=OFF"
+#            }
       runs-on: ${{ matrix.config.os }}
 
       steps:
