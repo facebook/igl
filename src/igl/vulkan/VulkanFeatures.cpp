@@ -414,7 +414,6 @@ bool VulkanFeatures::enable(const char* extensionName, ExtensionType extensionTy
 
 void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& config) {
   enable(VK_KHR_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
-  enable(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, ExtensionType::Instance);
   enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, ExtensionType::Instance);
 #if IGL_PLATFORM_WINDOWS
   enable(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
