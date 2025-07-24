@@ -10,8 +10,8 @@
 #include <shell/renderSessions/DrawInstancedSession.h>
 
 #include <shell/shared/renderSession/ShellParams.h>
+#include <igl/RenderCommandEncoder.h>
 #include <igl/opengl/Device.h>
-#include <igl/opengl/RenderCommandEncoder.h>
 
 namespace igl::shell {
 
