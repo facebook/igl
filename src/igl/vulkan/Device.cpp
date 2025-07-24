@@ -90,9 +90,9 @@ std::shared_ptr<ICommandQueue> Device::createCommandQueueInternal(const CommandQ
   return resource;
 }
 
-std::unique_ptr<IBuffer> Device::createBufferInternal(const BufferDesc& desc,
-                                                      Result* IGL_NULLABLE
-                                                          outResult) const noexcept {
+std::unique_ptr<IBuffer> Device::createBufferInternal( // NOLINT(bugprone-exception-escape)
+    const BufferDesc& desc,
+    Result* IGL_NULLABLE outResult) const noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
@@ -174,9 +174,9 @@ std::shared_ptr<ISamplerState> Device::createSamplerStateInternal(const SamplerS
   return samplerState;
 }
 
-std::shared_ptr<ITexture> Device::createTextureInternal(
+std::shared_ptr<ITexture> Device::createTextureInternal( // NOLINT(bugprone-exception-escape)
     const TextureDesc& desc,
-    Result* IGL_NULLABLE outResult) const noexcept { // NOLINT(bugprone-exception-escape)
+    Result* IGL_NULLABLE outResult) const noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
@@ -196,10 +196,10 @@ std::shared_ptr<ITexture> Device::createTextureInternal(
   return res.isOk() ? texture : nullptr;
 }
 
-std::shared_ptr<ITexture> Device::createTextureView(
+std::shared_ptr<ITexture> Device::createTextureView( // NOLINT(bugprone-exception-escape)
     std::shared_ptr<ITexture> texture,
     const TextureViewDesc& desc,
-    Result* IGL_NULLABLE outResult) const noexcept { // NOLINT(bugprone-exception-escape)
+    Result* IGL_NULLABLE outResult) const noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
