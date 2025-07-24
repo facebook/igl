@@ -9,9 +9,9 @@
 
 #include <android/log.h>
 #include <android_native_app_glue.h>
+#include <igl/Device.h>
 #include <igl/IGL.h>
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/VulkanContext.h>
