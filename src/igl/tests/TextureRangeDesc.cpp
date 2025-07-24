@@ -5,9 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "data/ShaderData.h"
-#include "data/TextureData.h"
-#include "util/Common.h"
+#include <igl/Common.h>
+#include <igl/Texture.h>
 
 #include <cstddef>
 #include <gtest/gtest.h>
