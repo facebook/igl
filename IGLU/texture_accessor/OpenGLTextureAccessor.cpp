@@ -10,8 +10,9 @@
 
 #if IGL_BACKEND_OPENGL
 
+#include <igl/Device.h>
 #include <igl/Texture.h>
-#include <igl/opengl/Device.h>
+#include <igl/opengl/DeviceFeatureSet.h>
 #include <igl/opengl/Framebuffer.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/Texture.h>
