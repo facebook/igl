@@ -221,8 +221,8 @@ bool XrApp::createInstance() {
       .enabledExtensionNames = enabledExtensions_.data(),
   };
 
-  XrResult initResult;
-  XR_CHECK(initResult = xrCreateInstance(&instanceCreateInfo, &instance_));
+  const XrResult initResult = xrCreateInstance(&instanceCreateInfo, &instance_);
+  XR_CHECK(initResult);
   if (initResult != XR_SUCCESS) {
     IGL_LOG_ERROR("Failed to create XR instance: %d.\n", initResult);
     return false;
