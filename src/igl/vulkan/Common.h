@@ -183,6 +183,8 @@ TextureFormat vkFormatToTextureFormat(VkFormat format);
 VkFormat invertRedAndBlue(VkFormat format);
 bool isTextureFormatRGB(VkFormat format);
 bool isTextureFormatBGR(VkFormat format);
+bool hasDepth(VkFormat format);
+bool hasStencil(VkFormat format);
 uint32_t getNumImagePlanes(VkFormat format);
 VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(ResourceStorage resourceStorage);
 VkCompareOp compareFunctionToVkCompareOp(CompareFunction func);

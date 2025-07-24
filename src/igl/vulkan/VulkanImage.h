@@ -278,9 +278,6 @@ class VulkanImage final {
 
   VkImageAspectFlags getImageAspectFlags() const;
 
-  static bool isDepthFormat(VkFormat format);
-  static bool isStencilFormat(VkFormat format);
-
   bool isMappedPtrAccessible() const {
     return (mappedPtr_ != nullptr) && ((tiling_ & VK_IMAGE_TILING_LINEAR) != 0);
   }

@@ -87,8 +87,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   mipLevels_(mipLevels),
   arrayLayers_(arrayLayers),
   samples_(samples),
-  isDepthFormat_(isDepthFormat(imageFormat)),
-  isStencilFormat_(isStencilFormat(imageFormat)),
+  isDepthFormat_(hasDepth(imageFormat)), // NOLINT(readability-identifier-naming)
+  isStencilFormat_(hasStencil(imageFormat)), // NOLINT(readability-identifier-naming)
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
   isImported_(isImported) {
   setName(debugName);
@@ -138,8 +138,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   mipLevels_(mipLevels),
   arrayLayers_(arrayLayers),
   samples_(samples),
-  isDepthFormat_(isDepthFormat(format)),
-  isStencilFormat_(isStencilFormat(format)),
+  isDepthFormat_(hasDepth(format)), // NOLINT(readability-identifier-naming)
+  isStencilFormat_(hasStencil(format)), // NOLINT(readability-identifier-naming)
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
   isCubemap_((createFlags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) != 0),
   tiling_(tiling) {
@@ -297,8 +297,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   mipLevels_(mipLevels),
   arrayLayers_(arrayLayers),
   samples_(samples),
-  isDepthFormat_(isDepthFormat(format)),
-  isStencilFormat_(isStencilFormat(format)),
+  isDepthFormat_(hasDepth(format)),
+  isStencilFormat_(hasStencil(format)),
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
   isImported_(true),
   tiling_(tiling) {
@@ -399,8 +399,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   mipLevels_(mipLevels),
   arrayLayers_(arrayLayers),
   samples_(samples),
-  isDepthFormat_(isDepthFormat(format)),
-  isStencilFormat_(isStencilFormat(format)),
+  isDepthFormat_(hasDepth(format)), // NOLINT(readability-identifier-naming)
+  isStencilFormat_(hasStencil(format)), // NOLINT(readability-identifier-naming)
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
   isImported_(true),
   tiling_(tiling) {
@@ -532,8 +532,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   mipLevels_(mipLevels),
   arrayLayers_(arrayLayers),
   samples_(samples),
-  isDepthFormat_(isDepthFormat(format)),
-  isStencilFormat_(isStencilFormat(format)),
+  isDepthFormat_(hasDepth(format)),
+  isStencilFormat_(hasStencil(format)),
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
   isImported_(true),
   tiling_(tiling) {
@@ -706,8 +706,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   mipLevels_(mipLevels),
   arrayLayers_(arrayLayers),
   samples_(samples),
-  isDepthFormat_(isDepthFormat(format)),
-  isStencilFormat_(isStencilFormat(format)),
+  isDepthFormat_(hasDepth(format)), // NOLINT(readability-identifier-naming)
+  isStencilFormat_(hasStencil(format)), // NOLINT(readability-identifier-naming)
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
   isExported_(true),
   tiling_(tiling) {
@@ -1243,17 +1243,6 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
           imageAspectFlags, range.mipLevel, range.numMipLevels, 0, VK_REMAINING_ARRAY_LAYERS});
 
   imageLayout_ = originalImageLayout;
-}
-
-bool VulkanImage::isDepthFormat(VkFormat format) {
-  return (format == VK_FORMAT_D16_UNORM) || (format == VK_FORMAT_X8_D24_UNORM_PACK32) ||
-         (format == VK_FORMAT_D32_SFLOAT) || (format == VK_FORMAT_D16_UNORM_S8_UINT) ||
-         (format == VK_FORMAT_D24_UNORM_S8_UINT) || (format == VK_FORMAT_D32_SFLOAT_S8_UINT);
-}
-
-bool VulkanImage::isStencilFormat(VkFormat format) {
-  return (format == VK_FORMAT_S8_UINT) || (format == VK_FORMAT_D16_UNORM_S8_UINT) ||
-         (format == VK_FORMAT_D24_UNORM_S8_UINT) || (format == VK_FORMAT_D32_SFLOAT_S8_UINT);
 }
 
 void VulkanImage::setName(const std::string& name) noexcept { // NOLINT(bugprone-exception-escape)

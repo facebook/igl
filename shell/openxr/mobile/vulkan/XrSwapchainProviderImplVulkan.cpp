@@ -148,10 +148,10 @@ void XrSwapchainProviderImplVulkan::enumerateImages(
 
   auto vkDepthFormat = static_cast<VkFormat>(swapchainImageInfo.depthFormat);
   VkImageAspectFlags depthAspectFlags = 0;
-  if (vulkan::VulkanImage::isDepthFormat(vkDepthFormat)) {
+  if (igl::vulkan::hasDepth(vkDepthFormat)) {
     depthAspectFlags |= VK_IMAGE_ASPECT_DEPTH_BIT;
   }
-  if (vulkan::VulkanImage::isStencilFormat(vkDepthFormat)) {
+  if (igl::vulkan::hasStencil(vkDepthFormat)) {
     depthAspectFlags |= VK_IMAGE_ASPECT_STENCIL_BIT;
   }
   enumerateSwapchainImages(device,
