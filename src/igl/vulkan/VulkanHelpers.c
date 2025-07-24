@@ -301,7 +301,7 @@ VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
   return vt->vkCreateDevice(physicalDevice, &ci, NULL, outDevice);
 }
 
-#if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACCATALYST
+#if !IGL_PLATFORM_MACCATALYST
 #define VK_EXT_DEBUG_UTILS_SUPPORTED 1
 #else
 #define VK_EXT_DEBUG_UTILS_SUPPORTED 0
