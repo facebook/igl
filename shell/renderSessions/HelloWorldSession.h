@@ -24,7 +24,6 @@ class HelloWorldSession : public RenderSession {
   void update(SurfaceTextures surfaceTextures) noexcept override;
 
  private:
-  std::shared_ptr<ICommandQueue> commandQueue_;
   std::shared_ptr<IRenderPipelineState> pipelineState_;
   RenderPassDesc renderPass_;
   std::shared_ptr<IShaderStages> shaderStages_;

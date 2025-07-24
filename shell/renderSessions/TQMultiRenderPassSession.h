@@ -26,8 +26,6 @@ class TQMultiRenderPassSession : public RenderSession {
  private:
   std::shared_ptr<IDevice> device_;
 
-  std::shared_ptr<ICommandQueue> commandQueue_;
-
   std::shared_ptr<IShaderStages> shaderStages_;
   std::shared_ptr<IVertexInputState> vertexInputState_;
   std::shared_ptr<ISamplerState> samplerState_;

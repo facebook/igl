@@ -27,7 +27,6 @@ class TextureViewSession : public RenderSession {
   void update(SurfaceTextures surfaceTextures) noexcept override;
 
  private:
-  std::shared_ptr<ICommandQueue> commandQueue_;
   FramebufferDesc framebufferDesc_;
   std::shared_ptr<IRenderPipelineState> pipelineState_;
   std::shared_ptr<IVertexInputState> vertexInput0_;

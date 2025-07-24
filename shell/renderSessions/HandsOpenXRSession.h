@@ -35,7 +35,6 @@ class HandsOpenXRSession : public RenderSession {
   void update(SurfaceTextures surfaceTextures) noexcept override;
 
  private:
-  std::shared_ptr<ICommandQueue> commandQueue_;
   RenderPassDesc renderPass_;
   std::shared_ptr<IRenderPipelineState> pipelineState_;
   std::shared_ptr<IDepthStencilState> depthStencilState_;

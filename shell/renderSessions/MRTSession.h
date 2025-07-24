@@ -27,8 +27,6 @@ class MRTSession : public RenderSession {
   void createOrUpdateFramebufferMRT(const igl::SurfaceTextures& surfaceTextures);
 
  private:
-  std::shared_ptr<ICommandQueue> commandQueue_;
-
   // for the MRT pass
   RenderPassDesc renderPassMRT_;
   std::shared_ptr<IFramebuffer> framebufferMRT_;

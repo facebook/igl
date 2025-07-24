@@ -31,7 +31,6 @@ class TQSession : public RenderSession {
   }
 
  private:
-  std::shared_ptr<ICommandQueue> commandQueue_;
   std::shared_ptr<IRenderPipelineState> pipelineState_;
   std::shared_ptr<IVertexInputState> vertexInput0_;
   std::shared_ptr<ISamplerState> samp0_;

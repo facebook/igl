@@ -24,7 +24,6 @@ class ImguiSession : public RenderSession {
   void update(SurfaceTextures surfaceTextures) noexcept override;
 
  private:
-  std::shared_ptr<ICommandQueue> commandQueue_;
   std::shared_ptr<IFramebuffer> outputFramebuffer_;
   std::unique_ptr<iglu::imgui::Session> imguiSession_;
 };

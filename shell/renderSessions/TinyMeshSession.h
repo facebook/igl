@@ -26,7 +26,6 @@ class TinyMeshSession : public RenderSession {
 
  private:
   IDevice* device_{};
-  std::shared_ptr<ICommandQueue> commandQueue_;
   RenderPassDesc renderPass_;
   FramebufferDesc framebufferDesc_;
   std::shared_ptr<IFramebuffer> framebuffer_;

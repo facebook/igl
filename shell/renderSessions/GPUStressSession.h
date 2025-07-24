@@ -81,7 +81,6 @@ class GPUStressSession : public RenderSession {
   std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) const noexcept;
   void addNormalsToCube();
 
-  std::shared_ptr<ICommandQueue> commandQueue_;
   RenderPassDesc renderPass_;
   std::shared_ptr<IRenderPipelineState> pipelineState_;
   std::shared_ptr<IVertexInputState> vertexInput0_;

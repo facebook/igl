@@ -24,7 +24,6 @@ class BasicFramebufferSession : public RenderSession {
 
  private:
   std::shared_ptr<IFramebuffer> framebuffer_;
-  std::shared_ptr<ICommandQueue> commandQueue_;
   RenderPassDesc renderPass_;
 };
 
