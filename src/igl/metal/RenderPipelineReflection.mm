@@ -53,13 +53,15 @@ igl::UniformType metalDataTypeToIGLUniformType(MTLDataType type) {
 namespace igl::metal {
 RenderPipelineReflection::RenderPipelineReflection(MTLRenderPipelineReflection* refl) {
   if (refl != nullptr) {
-    for (MTLArgument* arg = nullptr in refl.vertexArguments) {
+    for (MTLArgument* arg =
+             nullptr in refl.vertexArguments) { // NOLINT(cppcoreguidelines-init-variables)
       if (arg.active) {
         createArgDesc(arg, ShaderStage::Vertex);
       }
     }
 
-    for (MTLArgument* arg = nullptr in refl.fragmentArguments) {
+    for (MTLArgument* arg =
+             nullptr in refl.fragmentArguments) { // NOLINT(cppcoreguidelines-init-variables)
       if (arg.active) {
         createArgDesc(arg, ShaderStage::Fragment);
       }
@@ -80,7 +82,8 @@ bool RenderPipelineReflection::createArgDesc(MTLArgument* arg, ShaderStage sh) {
     bufferDesc.bufferIndex = static_cast<int>(arg.index);
     bufferDesc.shaderStage = sh;
     if (arg.bufferDataType == MTLDataTypeStruct) {
-      for (MTLStructMember* uniform = nullptr in arg.bufferStructType.members) {
+      for (MTLStructMember* uniform = nullptr in arg.bufferStructType
+                                          .members) { // NOLINT(cppcoreguidelines-init-variables)
         MTLDataType elementType = uniform.dataType;
         if (elementType == MTLDataTypeArray) {
           elementType = uniform.arrayType.elementType;
