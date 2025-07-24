@@ -159,9 +159,10 @@ XrSession XrAppImplVulkan::initXrSession(XrInstance instance,
       .systemId = systemId,
   };
 
-  XrResult xrResult;
   XrSession session = nullptr;
-  XR_CHECK(xrResult = xrCreateSession(instance, &sessionCreateInfo, &session));
+  const XrResult xrResult = xrCreateSession(instance, &sessionCreateInfo, &session);
+
+  XR_CHECK(xrResult);
   if (xrResult != XR_SUCCESS) {
     IGL_LOG_ERROR("Failed to create XR session: %d\n", xrResult);
     return XR_NULL_HANDLE;
