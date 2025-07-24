@@ -18,10 +18,11 @@
 #include <shell/renderSessions/HandsOpenXRSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <vector>
+#include <igl/Device.h>
+#include <igl/DeviceFeatures.h>
 #include <igl/NameHandle.h>
 #include <igl/RenderCommandEncoder.h>
 #include <igl/ShaderCreator.h>
-#include <igl/opengl/Device.h>
 
 namespace igl::shell {
 
