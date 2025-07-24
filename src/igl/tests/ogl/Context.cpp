@@ -8,7 +8,9 @@
 #include "../util/TestDevice.h"
 
 #include <gtest/gtest.h>
-#include <igl/Macros.h>
+#include <igl/Common.h>
+#include <igl/DeviceFeatures.h>
+#include <igl/Texture.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
