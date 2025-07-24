@@ -15,7 +15,6 @@
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/Device.h>
-#include <igl/opengl/RenderCommandEncoder.h>
 
 namespace {
 
