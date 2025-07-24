@@ -9,10 +9,9 @@
 
 #include <cstring>
 #include <memory>
-#import <simd/simd.h>
+#import <simd/vector_types.h>
 #import <igl/IGL.h>
 #import <igl/NameHandle.h>
-#import <igl/ShaderCreator.h>
 
 namespace {
 
