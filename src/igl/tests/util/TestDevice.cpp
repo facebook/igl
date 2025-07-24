@@ -6,7 +6,7 @@
  */
 
 #include "TestDevice.h"
-#include "Common.h"
+#include <igl/Device.h>
 
 #include <igl/tests/util/device/TestDevice.h>
 
