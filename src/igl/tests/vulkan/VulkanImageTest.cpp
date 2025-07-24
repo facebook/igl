@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <gtest/gtest.h>
 #include <memory>
-#include <igl/vulkan/Common.h>
+#include <igl/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
