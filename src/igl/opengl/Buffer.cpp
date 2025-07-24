@@ -7,8 +7,8 @@
 
 #include <igl/opengl/Buffer.h>
 
-#include <igl/CommandBuffer.h>
-#include <igl/Device.h>
+#include <igl/Buffer.h>
+#include <igl/DeviceFeatures.h>
 
 namespace igl::opengl {
 
