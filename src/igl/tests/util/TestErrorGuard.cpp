@@ -30,7 +30,7 @@ void igl::tests::util::TestErrorGuard::reportErrorHandler(const char* category,
                                                           const char* format,
                                                           va_list ap) {
 #if IGL_SOFT_ERROR_ENABLED
-  va_list apCopy;
+  va_list apCopy; // NOLINT(cppcoreguidelines-init-variables)
   va_copy(apCopy, ap);
   const auto len = std::vsnprintf(nullptr, 0, format, apCopy);
   va_end(apCopy);
