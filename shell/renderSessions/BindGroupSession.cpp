@@ -14,9 +14,9 @@
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/NameHandle.h>
+#include <igl/RenderCommandEncoder.h>
 #include <igl/ShaderCreator.h>
-#include <igl/opengl/Device.h>
-#include <igl/opengl/RenderCommandEncoder.h>
+#include <igl/opengl/Version.h>
 
 namespace {
 struct VertexPosUvw {
