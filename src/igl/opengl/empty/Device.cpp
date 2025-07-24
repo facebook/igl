@@ -7,7 +7,7 @@
 
 #include <igl/opengl/empty/Device.h>
 
-#include <igl/opengl/empty/Context.h>
+#include <igl/opengl/IContext.h>
 
 namespace igl::opengl::empty {
 
