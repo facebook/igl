@@ -8,7 +8,6 @@
 #include <igl/vulkan/ShaderModule.h>
 
 #include <igl/Shader.h>
-#include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanShaderModule.h>
 
 namespace igl::vulkan {
