@@ -11,7 +11,7 @@
 #include <igl/Device.h>
 #include <igl/Uniform.h>
 #if IGL_BACKEND_OPENGL
-#include <igl/opengl/RenderCommandEncoder.h>
+// RenderPipelineState.h is included below for OpenGL-specific functionality
 #include <igl/opengl/RenderPipelineState.h>
 #endif
 #if defined(IGL_CMAKE_BUILD)
