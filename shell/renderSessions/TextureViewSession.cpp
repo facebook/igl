@@ -9,12 +9,14 @@
 
 #include <cstddef>
 #include <shell/renderSessions/TextureViewSession.h>
-#include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <igl/Device.h>
 #include <igl/NameHandle.h>
+#include <igl/RenderPipelineState.h>
+#include <igl/SamplerState.h>
 #include <igl/ShaderCreator.h>
-#include <igl/opengl/Device.h>
+#include <igl/VertexInputState.h>
 
 namespace {
 
