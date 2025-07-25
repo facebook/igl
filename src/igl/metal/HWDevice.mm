@@ -139,8 +139,9 @@ std::unique_ptr<IDevice> HWDevice::create(const HWDeviceDesc& desc, Result* outR
     return nullptr;
   }
 
-  return createWithMTLDevice((__bridge id<MTLDevice>)(void*)desc.guid,
-                             outResult); // NOLINT(performance-no-int-to-ptr)
+  return createWithMTLDevice(
+      (__bridge id<MTLDevice>)(void*)desc.guid, // NOLINT(performance-no-int-to-ptr)
+      outResult);
 }
 
 std::unique_ptr<IDevice> HWDevice::createWithSystemDefaultDevice(Result* outResult) {
