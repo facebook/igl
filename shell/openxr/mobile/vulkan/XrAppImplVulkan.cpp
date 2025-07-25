@@ -15,7 +15,7 @@
 #include <igl/vulkan/VulkanDevice.h>
 
 #include <shell/openxr/XrLog.h>
-#include <shell/openxr/XrSwapchainProvider.h>
+#include <shell/openxr/impl/XrSwapchainProviderImpl.h>
 #include <shell/openxr/mobile/vulkan/XrSwapchainProviderImplVulkan.h>
 
 namespace igl::shell::openxr::mobile {
