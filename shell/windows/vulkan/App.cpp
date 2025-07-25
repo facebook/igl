@@ -12,8 +12,9 @@
 #include <shell/windows/common/GlfwShell.h>
 #include <igl/Core.h>
 #include <igl/IGL.h>
-#include <igl/vulkan/Device.h>
+#include <igl/vulkan/Common.h>
 #include <igl/vulkan/HWDevice.h>
+#include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 
 using namespace igl;
