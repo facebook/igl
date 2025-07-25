@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/Common.h>
+#include <igl/Core.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/WithContext.h>
 
