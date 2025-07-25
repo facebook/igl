@@ -7,8 +7,6 @@
 
 #include <igl/opengl/glx/Device.h>
 
-#include <igl/opengl/glx/Context.h>
-
 namespace igl::opengl::glx {
 
 Device::Device(std::unique_ptr<IContext> context) :
