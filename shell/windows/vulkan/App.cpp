@@ -39,16 +39,16 @@ std::shared_ptr<Platform> VulkanShell::createPlatform() noexcept {
       .requestedSwapChainTextureFormat = sessionConfig().swapchainColorTextureFormat,
       .headless = shellParams().isHeadless,
   };
-  auto ctx =
-      vulkan::HWDevice::createContext(cfg,
+  auto ctx = vulkan::HWDevice::createContext(
+      cfg,
 #if defined(_WIN32)
-                                      window() ? (void*)glfwGetWin32Window(window()) : nullptr
+      window() ? (void*)glfwGetWin32Window(window()) : nullptr // NOLINT(performance-no-int-to-ptr)
 #else
-                                      window() ? (void*)glfwGetX11Window(window())
-                                               : nullptr, // NOLINT(performance-no-int-to-ptr)
-                                      (void*)glfwGetX11Display()
+      window() ? (void*)glfwGetX11Window(window()) // NOLINT(performance-no-int-to-ptr)
+               : nullptr,
+      (void*)glfwGetX11Display() // NOLINT(performance-no-int-to-ptr)
 #endif
-      );
+  );
 
   // Prioritize discrete GPUs. If not found, use any that is available.
   std::vector<HWDeviceDesc> devices =
