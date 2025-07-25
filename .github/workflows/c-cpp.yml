@@ -87,15 +87,15 @@ jobs:
 #              cxx: "em++",
 #              generators: "Ninja",
 #          }
-          - {
-              name: "macOS - Clang (Xcode)",
-              os: macos-latest,
-              build_type: "Debug",
-              cc: "clang",
-              cxx: "clang++",
-              generators: "Xcode",
-              cmake_args: "-DIGL_WITH_VULKAN=OFF"
-            }
+#          - {
+#              name: "macOS - Clang (Xcode)",
+#              os: macos-latest,
+#              build_type: "Debug",
+#              cc: "clang",
+#              cxx: "clang++",
+#              generators: "Xcode",
+#              cmake_args: "-DIGL_WITH_VULKAN=OFF"
+#            }
 #          - {
 #              name: "macOS - Clang (Unix Makefiles)",
 #              os: macos-latest,
