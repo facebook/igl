@@ -7,7 +7,6 @@
 
 #include <igl/opengl/SamplerState.h>
 
-#include <igl/CommandBuffer.h>
 #include <igl/Common.h>
 #include <igl/Texture.h>
 #include <igl/opengl/DepthStencilState.h>
