@@ -6,11 +6,12 @@
  */
 
 #include <gtest/gtest.h>
+#include <igl/Common.h>
+#include <igl/RenderPipelineState.h>
 #include <igl/ShaderCreator.h>
-#include <igl/vulkan/CommandBuffer.h>
+#include <igl/TextureFormat.h>
+#include <igl/VertexInputState.h>
 #include <igl/vulkan/Device.h>
-#include <igl/vulkan/RenderPipelineState.h>
-#include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
 
 #include <igl/tests/util/device/TestDevice.h>
