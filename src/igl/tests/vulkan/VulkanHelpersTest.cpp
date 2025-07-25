@@ -8,7 +8,7 @@
 #include <array>
 #include <gtest/gtest.h>
 #include <string>
-#include <igl/vulkan/Common.h>
+#include <igl/vulkan/VulkanHelpers.h>
 
 namespace igl::tests {
 
