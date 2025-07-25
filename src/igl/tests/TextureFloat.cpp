@@ -6,7 +6,6 @@
  */
 
 #include "data/ShaderData.h"
-#include "data/TextureData.h"
 #include "data/VertexIndexData.h"
 #include "util/Color.h"
 #include "util/Common.h"
@@ -16,7 +15,6 @@
 #include <array>
 #include <cstring>
 #include <glm/gtc/color_space.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <gtest/gtest.h>
 #include <string>
 #include <igl/NameHandle.h>
