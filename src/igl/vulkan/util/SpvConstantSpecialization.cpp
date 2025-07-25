@@ -10,7 +10,10 @@
 #include <spirv/unified1/spirv.h>
 
 #define IGL_COMMON_SKIP_CHECK
-#include <igl/Common.h>
+#include <cstddef>
+#include <cstdint>
+#include <vector>
+#include <igl/Assert.h>
 
 namespace igl::vulkan::util {
 namespace {
