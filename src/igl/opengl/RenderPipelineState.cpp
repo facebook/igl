@@ -306,7 +306,8 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
         attribute.componentType,
         attribute.normalized,
         attribute.stride,
-        reinterpret_cast<const char*>(attribute.bufferOffset) + bufferOffset);
+        reinterpret_cast<const char*>(attribute.bufferOffset) + // NOLINT(performance-no-int-to-ptr)
+            bufferOffset);
 
     if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::VertexAttribDivisor)) {
       if (attribute.sampleFunction == igl::VertexSampleFunction::PerVertex) {
