@@ -168,10 +168,10 @@ static GLFWwindow* initIGL(bool isHeadless) {
     });
 
     // @lint-ignore CLANGTIDY
-    glfwSetWindowSizeCallback(window, [](GLFWwindow* /*window*/, int width, int height) {
+    glfwSetWindowSizeCallback(window, [](GLFWwindow* /*window*/, int w, int h) {
+      width = w;
+      height = h;
       printf("Window resized! width=%d, height=%d\n", width, height);
-      width = width;
-      height = height;
 #if !USE_OPENGL_BACKEND
       auto* vulkanDevice = static_cast<vulkan::Device*>(device.get());
       auto& ctx = vulkanDevice->getVulkanContext();
