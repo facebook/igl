@@ -345,7 +345,9 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
 
   if (ret.isOk()) {
     igl::vulkan::VulkanFeatures features(config);
-    features.populateWithAvailablePhysicalDeviceFeatures(*ctx, (VkPhysicalDevice)devices[0].guid);
+    features.populateWithAvailablePhysicalDeviceFeatures(
+        *ctx,
+        (VkPhysicalDevice)devices[0].guid); // NOLINT(performance-no-int-to-ptr)
 
     const VkPhysicalDeviceDescriptorIndexingFeaturesEXT& dif = features.featuresDescriptorIndexing;
     if (!dif.shaderSampledImageArrayNonUniformIndexing ||
