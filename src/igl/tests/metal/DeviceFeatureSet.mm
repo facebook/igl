@@ -7,10 +7,10 @@
 
 #include <igl/metal/DeviceFeatureSet.h>
 
-#include "../util/Common.h"
+#include <igl/Assert.h>
 
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
+#include <igl/DeviceFeatures.h>
 
 namespace igl::tests {
 
