@@ -7,16 +7,16 @@
 
 #include <igl/opengl/RenderCommandEncoder.h>
 
+#include <igl/DepthStencilState.h>
+#include <igl/RenderPipelineState.h>
+#include <igl/SamplerState.h>
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/CommandBuffer.h>
-#include <igl/opengl/DepthStencilState.h>
 #include <igl/opengl/Framebuffer.h>
 #include <igl/opengl/IContext.h>
+#include <igl/opengl/PlatformDevice.h>
 #include <igl/opengl/RenderCommandAdapter.h>
-#include <igl/opengl/RenderPipelineState.h>
-#include <igl/opengl/SamplerState.h>
 #include <igl/opengl/UniformAdapter.h>
-#include <igl/opengl/VertexInputState.h>
 
 namespace igl::opengl {
 
