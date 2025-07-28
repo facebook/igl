@@ -7,7 +7,7 @@
 
 #include <igl/Uniform.h>
 
-#include <igl/Common.h>
+#include <igl/Core.h>
 
 namespace igl {
 
