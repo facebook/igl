@@ -7,7 +7,8 @@
 
 #include <igl/opengl/ios/PlatformDevice.h>
 
-#include <CoreVideo/CoreVideo.h>
+#include <CoreVideo/CVBuffer.h>
+#include <CoreVideo/CVOpenGLESTextureCache.h>
 
 #import <Foundation/Foundation.h>
 
