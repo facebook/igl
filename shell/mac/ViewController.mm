@@ -9,6 +9,14 @@
 
 #import "ViewController.h"
 
+#import <AppKit/NSApplication.h>
+#import <AppKit/NSEvent.h>
+#import <AppKit/NSOpenGL.h>
+#import <AppKit/NSOpenGLView.h>
+#import <AppKit/NSView.h>
+
+#include <shell/shared/platform/Platform.h>
+
 #import "GLView.h"
 #import "HeadlessView.h"
 #import "MetalView.h"
@@ -26,8 +34,8 @@
 #endif
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/macos/Context.h>
-#include <igl/opengl/macos/Device.h>
 #include <igl/opengl/macos/HWDevice.h>
+#include <igl/opengl/macos/PlatformDevice.h>
 #endif
 #include <shell/shared/platform/mac/PlatformMac.h>
 #include <shell/shared/renderSession/AppParams.h>
