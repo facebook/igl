@@ -8,7 +8,7 @@
 #include <IGLU/bitmap/BitmapWriter.h>
 
 #include <IGLU/texture_accessor/TextureAccessorFactory.h>
-#include <fstream>
+#include <ostream>
 #include <igl/Common.h>
 
 namespace igl::iglu {
