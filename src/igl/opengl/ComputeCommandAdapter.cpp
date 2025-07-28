@@ -12,7 +12,6 @@
 #include <igl/opengl/ComputePipelineState.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/Texture.h>
-#include <igl/opengl/VertexInputState.h>
 
 #define SET_DIRTY(dirtyMap, index) dirtyMap.set(index)
 #define CLEAR_DIRTY(dirtyMap, index) dirtyMap.reset(index)
