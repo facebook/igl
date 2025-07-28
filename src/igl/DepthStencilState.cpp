@@ -8,7 +8,7 @@
 #include <igl/DepthStencilState.h>
 
 #include <cstring>
-#include <unordered_map>
+#include <functional>
 
 using namespace igl;
 
