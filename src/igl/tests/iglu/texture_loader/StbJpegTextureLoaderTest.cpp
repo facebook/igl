@@ -9,8 +9,9 @@
 
 #include <IGLU/texture_loader/stb_jpeg/Header.h>
 #include <IGLU/texture_loader/stb_jpeg/TextureLoaderFactory.h>
+#include <array>
+#include <cstdint>
 #include <cstring>
-#include <numeric>
 #include <vector>
 
 namespace igl::tests::stb::jpeg {
