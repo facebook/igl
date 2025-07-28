@@ -13,10 +13,9 @@
 #include <igl/opengl/HWDevice.h>
 
 #include <array>
-#include <cassert>
 #include <tuple>
 #include <igl/Macros.h>
-#include <igl/opengl/Texture.h>
+#include <igl/Texture.h>
 
 #define CHECK_EGL_ERRORS() error_checking::checkForEGLErrors(__FILE__, __FUNCTION__, __LINE__)
 
