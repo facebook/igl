@@ -8,7 +8,6 @@
 // @fb-only
 
 #include <IGLU/simdtypes/SimdTypes.h>
-#include <cmath>
 #include <shell/renderSessions/TQMultiRenderPassSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/NameHandle.h>
