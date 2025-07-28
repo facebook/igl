@@ -9,7 +9,7 @@
 #include <random>
 #include <string>
 #include <thread>
-#include <igl/Common.h>
+#include <igl/Core.h>
 
 namespace igl::tests {
 
