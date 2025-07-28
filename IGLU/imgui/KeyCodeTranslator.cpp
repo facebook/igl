@@ -9,7 +9,7 @@
 
 #include "KeyCodeTranslator.h"
 
-#include <igl/Macros.h>
+#include <igl/Config.h>
 
 #if IGL_PLATFORM_APPLE
 namespace {
@@ -23,7 +23,7 @@ enum KeyModifiers {
   kVK_Control = 0x3B,
 };
 
-IGL_MAYBE_UNUSED ImGuiKey keyFromShellKeyEventApple(igl::shell::KeyEvent event) {
+[[maybe_unused]] ImGuiKey keyFromShellKeyEventApple(igl::shell::KeyEvent event) {
   KeyModifiers keyCode = (KeyModifiers)event.key;
 
   switch (keyCode) {
