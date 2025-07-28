@@ -13,7 +13,6 @@
 #include <android/hardware_buffer.h>
 #include <igl/opengl/egl/android/NativeHWBuffer.h>
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
-#include <sstream>
 #include <utility>
 
 namespace igl::opengl::egl {
