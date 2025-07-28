@@ -5,11 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "../data/ShaderData.h"
-#include "../util/Common.h"
 #include "UniformTests.h"
 
-#include <IGLU/uniform/Collection.h>
 #include <IGLU/uniform/Descriptor.h>
 #include <gtest/gtest.h>
 #include <string>
