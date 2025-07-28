@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "../../util/Common.h"
 #include "../../util/TextureFormatTestBase.h"
 #include <CoreVideo/CVPixelBuffer.h>
 #include <CoreVideo/CVPixelFormatDescription.h>
+#include <gtest/gtest.h>
+#include <igl/Device.h>
 #include <igl/opengl/ios/Context.h>
 #include <igl/opengl/ios/PlatformDevice.h>
 
