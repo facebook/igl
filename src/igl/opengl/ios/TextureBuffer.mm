@@ -5,7 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/Foundation.h>
+#import <CoreFoundation/CFBase.h>
+#import <CoreVideo/CVOpenGLESTextureCache.h>
+#import <CoreVideo/CVPixelBuffer.h>
+#import <MacTypes.h>
+#import <objc/objc.h>
 
 #include <igl/opengl/ios/TextureBuffer.h>
 
