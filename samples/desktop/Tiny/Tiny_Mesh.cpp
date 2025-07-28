@@ -8,7 +8,6 @@
 // @fb-only
 
 #include <GLFW/glfw3.h>
-#include <cassert>
 #if !defined(_USE_MATH_DEFINES)
 #define _USE_MATH_DEFINES // NOLINT(bugprone-reserved-identifier)
 #endif // _USE_MATH_DEFINES
@@ -33,7 +32,6 @@
 #include <stb/stb_image_write.h>
 #include <igl/FPSCounter.h>
 #include <igl/IGL.h>
-#include <igl/ShaderCreator.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
