@@ -19,7 +19,6 @@
 #include <glm/ext.hpp>
 #include <shell/shared/platform/DisplayContext.h>
 #include <igl/vulkan/Device.h>
-#include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 #endif
 
