@@ -9,7 +9,8 @@
 
 #include <shell/openxr/mobile/opengl/XrAppImplGLES.h>
 
-#include <igl/HWDevice.h>
+#include <igl/Common.h>
+#include <igl/TextureFormat.h>
 #include <igl/opengl/Device.h>
 #if IGL_WGL
 #include <igl/opengl/wgl/Context.h>
