@@ -10,7 +10,7 @@
 
 #include <igl/opengl/GLFunc.h>
 
-#include <igl/IGL.h>
+#include <igl/Core.h>
 
 #if IGL_EGL
 #include <EGL/egl.h>
