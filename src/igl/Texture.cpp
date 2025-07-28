@@ -7,8 +7,8 @@
 
 #include <igl/Texture.h>
 
-#include <cmath>
 #include <cstddef>
+#include <limits>
 #include <utility>
 #include <igl/IGLSafeC.h>
 
