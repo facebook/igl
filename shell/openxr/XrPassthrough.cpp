@@ -115,8 +115,8 @@ void XrPassthrough::setEnabled(bool enabled) noexcept {
   }
 }
 
-void XrPassthrough::injectLayer(std::vector<const XrCompositionLayerBaseHeader*>&
-                                    layers) noexcept { // NOLINT(bugprone-exception-escape)
+void XrPassthrough::injectLayer( // NOLINT(bugprone-exception-escape)
+    std::vector<const XrCompositionLayerBaseHeader*>& layers) noexcept {
   layers.push_back(reinterpret_cast<const XrCompositionLayerBaseHeader*>(&compositionLayer_));
 }
 
