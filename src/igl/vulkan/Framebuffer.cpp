@@ -8,11 +8,9 @@
 #include "Framebuffer.h"
 
 #include <igl/CommandBuffer.h>
-#include <igl/RenderPass.h>
+#include <igl/CommandQueue.h>
 #include <igl/vulkan/CommandBuffer.h>
-#include <igl/vulkan/CommandQueue.h>
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
