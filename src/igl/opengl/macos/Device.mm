@@ -9,7 +9,6 @@
 
 #include <AppKit/AppKit.h>
 #include <igl/opengl/IContext.h>
-#include <igl/opengl/Texture.h>
 
 namespace igl::opengl::macos {
 
