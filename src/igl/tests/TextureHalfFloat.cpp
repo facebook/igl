@@ -12,7 +12,6 @@
 #endif
 
 #include "data/ShaderData.h"
-#include "data/TextureData.h"
 #include "data/VertexIndexData.h"
 #include "util/Color.h"
 #include "util/Common.h"
