@@ -13,6 +13,7 @@
 #import "IglShellPlatformAdapterInternal.hpp"
 #import "IglSurfaceTexturesAdapterInternal.hpp"
 #import "RenderSessionController.h"
+#import "RenderSessionFactoryProvider.h"
 #import "View.h"
 
 #import <shell/shared/input/InputDispatcher.h>
@@ -20,14 +21,13 @@
 
 #if IGL_BACKEND_METAL
 #import <Metal/Metal.h>
-#include <igl/metal/HWDevice.h>
+#include <igl/metal/Device.h>
 #include <igl/metal/Texture.h>
 #endif
 
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/ios/Context.h>
-#include <igl/opengl/ios/Device.h>
-#include <igl/opengl/ios/HWDevice.h>
+#include <igl/opengl/ios/PlatformDevice.h>
 #endif
 
 // @fb-only
@@ -37,8 +37,10 @@
 // @fb-only
 
 #include <memory>
+#include <shell/shared/input/TouchListener.h>
+#include <shell/shared/platform/Platform.h>
 #include <shell/shared/platform/ios/PlatformIos.h>
-#include <shell/shared/renderSession/RenderSession.h>
+#include <shell/shared/renderSession/RenderSessionConfig.h>
 #include <igl/DeviceFeatures.h>
 
 // @fb-only
