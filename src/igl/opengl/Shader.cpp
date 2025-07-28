@@ -7,10 +7,11 @@
 
 #include <igl/opengl/Shader.h>
 
-#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
-#include <igl/opengl/Device.h>
+#include <igl/DeviceFeatures.h>
+#include <igl/opengl/DeviceFeatureSet.h>
 
 #if IGL_SHADER_DUMP
 #include <filesystem>
