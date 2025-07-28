@@ -8,7 +8,6 @@
 #include <igl/opengl/Device.h>
 #include <igl/opengl/Shader.h>
 
-#include <cstdio>
 #include <cstring>
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/CommandQueue.h>
@@ -94,8 +93,10 @@ std::unique_ptr<T> createUniqueResource(const Desc& desc,
 
 } // namespace
 
-Device::Device(std::unique_ptr<IContext> context) :
-  context_(std::move(context)), deviceFeatureSet_(getContext().deviceFeatures()) {}
+Device::Device(std::unique_ptr<IContext> context) : // NOLINT(bugprone-exception-escape)
+  context_(std::move(context)),
+  deviceFeatureSet_(getContext().deviceFeatures()),
+  cachedUnbindPolicy_() {}
 Device::~Device() = default;
 
 // debug markers useful in GPU captures
@@ -128,9 +129,9 @@ std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc
 }
 
 // Resources
-std::unique_ptr<IBuffer> Device::createBuffer(
+std::unique_ptr<IBuffer> Device::createBuffer( // NOLINT(bugprone-exception-escape)
     const BufferDesc& desc,
-    Result* outResult) const noexcept { // NOLINT(bugprone-exception-escape)
+    Result* outResult) const noexcept {
   std::unique_ptr<Buffer> resource = allocateBuffer(desc.type, desc.hint, getContext());
 
   if (resource) {
@@ -161,9 +162,9 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
   return resource;
 }
 
-std::shared_ptr<ITexture> Device::createTexture(
+std::shared_ptr<ITexture> Device::createTexture( // NOLINT(bugprone-exception-escape)
     const TextureDesc& desc,
-    Result* outResult) const noexcept { // NOLINT(bugprone-exception-escape)
+    Result* outResult) const noexcept {
   const auto sanitized = sanitize(desc);
 
   std::unique_ptr<Texture> texture;
@@ -214,10 +215,10 @@ std::shared_ptr<ITexture> Device::createTexture(
   return texture;
 }
 
-std::shared_ptr<ITexture> Device::createTextureView(
+std::shared_ptr<ITexture> Device::createTextureView( // NOLINT(bugprone-exception-escape)
     std::shared_ptr<ITexture> texture,
     const TextureViewDesc& desc,
-    Result* IGL_NULLABLE outResult) const noexcept { // NOLINT(bugprone-exception-escape)
+    Result* IGL_NULLABLE outResult) const noexcept {
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 
   Result::setResult(
