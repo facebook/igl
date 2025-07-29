@@ -14,7 +14,7 @@
 #include <igl/RenderPipelineState.h>
 #include <igl/SamplerState.h>
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
-#include <igl/vulkan/CommandBuffer.h>
+#include <igl/CommandBuffer.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/EnhancedShaderDebuggingStore.h>
 #include <igl/vulkan/VulkanContext.h>
