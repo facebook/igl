@@ -7,6 +7,8 @@
 
 #pragma once
 
+#define IGL_VULKAN_HAS_LEGACY_RENDERPASS 1
+
 #include <igl/vulkan/Common.h>
 
 #include <vector>
@@ -75,11 +77,20 @@ class VulkanRenderPassBuilder final {
                  const char* debugName = nullptr) const noexcept;
 
  private:
+#if IGL_VULKAN_HAS_LEGACY_RENDERPASS
+  // old code path for vkCreateRenderPass() - to be removed later
   std::vector<VkAttachmentDescription> attachments_;
   std::vector<VkAttachmentReference> refsColor_;
   std::vector<VkAttachmentReference> refsColorResolve_;
   VkAttachmentReference refDepth_ = {};
   VkAttachmentReference refDepthResolve_ = {};
+#endif // IGL_VULKAN_HAS_LEGACY_RENDERPASS
+  // new code path for vkCreateRenderPass2()
+  std::vector<VkAttachmentDescription2> attachments2_;
+  std::vector<VkAttachmentReference2> refsColor2_;
+  std::vector<VkAttachmentReference2> refsColorResolve2_;
+  VkAttachmentReference2 refDepth2_ = {};
+  VkAttachmentReference2 refDepthResolve2_ = {};
   uint32_t viewMask_ = 0;
   uint32_t correlationMask_ = 0;
 };
