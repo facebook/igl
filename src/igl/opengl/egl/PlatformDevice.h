@@ -69,9 +69,9 @@ class PlatformDevice : public opengl::PlatformDevice {
   /// change, in order to notify IGL of these changes.
   void updateSurfaces(EGLSurface readSurface, EGLSurface drawSurface, Result* outResult);
 
-  EGLSurface createSurface(NativeWindowType nativeWindow, Result* outResult);
+  EGLSurface IGL_NULLABLE createSurface(NativeWindowType nativeWindow, Result* outResult);
 
-  EGLSurface getReadSurface(Result* outResult);
+  EGLSurface IGL_NULLABLE getReadSurface(Result* outResult);
 
   void setPresentationTime(long long presentationTimeNs, Result* outResult);
 
