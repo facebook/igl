@@ -72,10 +72,8 @@ std::unique_ptr<IBuffer> Device::createBuffer( // NOLINT(bugprone-exception-esca
   if (desc.hint & BufferDesc::BufferAPIHintBits::NoCopy) {
     return createBufferNoCopy(desc, outResult);
   }
-  const MTLStorageMode storage = toMTLStorageMode(desc.storage);
-  // @lint-ignore CLANGTIDY clang-diagnostic-deprecated-anon-enum-enum-conversion
-  // bugprone-suspicious-enum-usage
-  const MTLResourceOptions options = MTLResourceOptionCPUCacheModeDefault | storage;
+  const MTLResourceOptions storage = toMTLResourceStorageMode(desc.storage);
+  const MTLResourceOptions options = MTLResourceCPUCacheModeDefaultCache | storage;
 
   id<MTLBuffer> metalObject = createMetalBuffer(device_, desc, options);
   std::unique_ptr<IBuffer> resource = std::make_unique<Buffer>(
@@ -90,10 +88,8 @@ std::unique_ptr<IBuffer> Device::createBuffer( // NOLINT(bugprone-exception-esca
 std::unique_ptr<IBuffer> Device::createRingBuffer( // NOLINT(bugprone-exception-escape)
     const BufferDesc& desc,
     Result* outResult) const noexcept {
-  const MTLStorageMode storage = toMTLStorageMode(desc.storage);
-  // @lint-ignore CLANGTIDY clang-diagnostic-deprecated-anon-enum-enum-conversion
-  // bugprone-suspicious-enum-usage
-  const MTLResourceOptions options = MTLResourceOptionCPUCacheModeDefault | storage;
+  const MTLResourceOptions storage = toMTLResourceStorageMode(desc.storage);
+  const MTLResourceOptions options = MTLResourceCPUCacheModeDefaultCache | storage;
 
   // Create a ring of buffers
   std::vector<id<MTLBuffer>> bufferRing;
@@ -113,13 +109,11 @@ std::unique_ptr<IBuffer> Device::createRingBuffer( // NOLINT(bugprone-exception-
 
 std::unique_ptr<IBuffer> Device::createBufferNoCopy(const BufferDesc& desc,
                                                     Result* outResult) const {
-  const MTLStorageMode storage = toMTLStorageMode(desc.storage);
+  const MTLResourceOptions storage = toMTLResourceStorageMode(desc.storage);
 
   using Deallocator = void (^)(void*, NSUInteger);
   const Deallocator deallocator = nil;
-  // @lint-ignore CLANGTIDY clang-diagnostic-deprecated-anon-enum-enum-conversion
-  // bugprone-suspicious-enum-usage
-  const MTLResourceOptions options = MTLResourceOptionCPUCacheModeDefault | storage;
+  const MTLResourceOptions options = MTLResourceCPUCacheModeDefaultCache | storage;
   id<MTLBuffer> metalObject = [device_ newBufferWithBytesNoCopy:const_cast<void*>(desc.data)
                                                          length:desc.length
                                                         options:options
