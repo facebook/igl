@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "util/Common.h"
+#include <gtest/gtest.h>
 #include <string>
 #include <igl/VertexInputState.h>
 
