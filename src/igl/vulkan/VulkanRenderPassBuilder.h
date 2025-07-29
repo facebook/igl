@@ -15,6 +15,9 @@
 bool operator==(const VkAttachmentDescription& a, const VkAttachmentDescription& b);
 bool operator==(const VkAttachmentReference& a, const VkAttachmentReference& b);
 
+bool operator==(const VkAttachmentDescription2& a, const VkAttachmentDescription2& b);
+bool operator==(const VkAttachmentReference2& a, const VkAttachmentReference2& b);
+
 namespace igl::vulkan {
 
 /// @brief A helper class to build VkRenderPass objects.
