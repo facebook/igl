@@ -9,8 +9,6 @@
 #include <IGLU/uniform/Encoder.h>
 #include <igl/IGL.h>
 
-#include <glm/gtx/string_cast.hpp>
-
 namespace iglu::uniform {
 
 // ----------------------------------------------------------------------------
