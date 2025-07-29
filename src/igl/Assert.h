@@ -69,6 +69,7 @@ using IGLErrorHandlerFunc = void (*)(const char* category,
 IGL_API void _IGLDebugBreak();
 
 IGL_API void IGLSetDebugAbortListener(IGLErrorHandlerFunc listener);
+// @fb-only
 IGL_API IGLErrorHandlerFunc IGLGetDebugAbortListener(void);
 
 namespace igl {
@@ -180,6 +181,7 @@ inline void _IGLDebugAbortV([[maybe_unused]] const char* category,
 /// MARK: - Custom
 
 IGL_API void IGLSetSoftErrorHandler(IGLErrorHandlerFunc handler);
+// @fb-only
 IGL_API IGLErrorHandlerFunc IGLGetSoftErrorHandler(void);
 IGL_API void IGLSoftError(const char* category,
                           const char* reason,
