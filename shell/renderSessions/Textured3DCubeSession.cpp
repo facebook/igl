@@ -12,8 +12,7 @@
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
-#include <igl/opengl/Device.h>
-#include <igl/opengl/RenderCommandEncoder.h>
+#include <igl/opengl/Version.h>
 
 #include <cstddef>
 
