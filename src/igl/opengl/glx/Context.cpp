@@ -9,7 +9,7 @@
 
 #include <igl/opengl/glx/Context.h>
 
-#include <igl/opengl/Texture.h>
+#include <igl/Texture.h>
 
 #include <X11/X.h>
 #include <dlfcn.h>
