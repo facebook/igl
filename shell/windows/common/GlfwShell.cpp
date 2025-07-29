@@ -113,7 +113,12 @@ bool GlfwShell::createWindow() noexcept {
   willCreateWindow();
 
   GLFWwindow* windowHandle =
-      glfwCreateWindow(width, height, sessionConfig_.displayName.c_str(), monitor, nullptr);
+      glfwCreateWindow(width,
+                       height,
+                       sessionConfig_.displayName.c_str(),
+                       // @fb-only
+                       monitor,
+                       nullptr);
   if (!windowHandle) {
     return false;
   }
