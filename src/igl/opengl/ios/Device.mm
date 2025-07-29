@@ -10,9 +10,6 @@
 #include <cstdio>
 #include <cstring>
 #include <igl/Common.h>
-#include <igl/opengl/Texture.h>
-#include <igl/opengl/VertexInputState.h>
-#include <igl/opengl/ios/Context.h>
 
 namespace igl::opengl::ios {
 
