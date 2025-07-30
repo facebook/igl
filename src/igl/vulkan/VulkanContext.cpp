@@ -614,9 +614,9 @@ void VulkanContext::createInstance() {
 
   const VkApplicationInfo appInfo = {
       .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-      .pApplicationName = "IGL/Vulkan",
+      .pApplicationName = config_.applicationName,
       .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
-      .pEngineName = "IGL/Vulkan",
+      .pEngineName = config_.engineName,
       .engineVersion = VK_MAKE_VERSION(1, 0, 0),
       .apiVersion = VK_API_VERSION_1_2,
   };

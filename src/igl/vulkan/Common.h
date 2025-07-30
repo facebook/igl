@@ -157,6 +157,9 @@ struct VulkanContextConfig {
 
   size_t numExtraInstanceExtensions = 0;
   const char* IGL_NULLABLE* IGL_NULLABLE extraInstanceExtensions = nullptr;
+
+  const char* engineName = "IGL/Vulkan";
+  const char* applicationName = "IGL/Vulkan";
 };
 
 /**
