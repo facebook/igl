@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <igl/opengl/Config.h>
+#include <igl/opengl/Config.h> // IWYU pragma: export
 
 // clang-format off
 #if IGL_PLATFORM_IOS_SIMULATOR
