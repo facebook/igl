@@ -10,25 +10,25 @@
 #ifndef IGL_VULKAN_COMMON_H
 #define IGL_VULKAN_COMMON_H
 
-#include <cassert>
-#include <utility>
+#include <cassert> // IWYU pragma: export
+#include <utility> // IWYU pragma: export
 
 // set to 1 to see very verbose debug console logs with Vulkan commands
 #define IGL_VULKAN_PRINT_COMMANDS 0
 
-#include <igl/Macros.h>
-#include <igl/vulkan/VulkanFunctionTable.h>
+#include <igl/Macros.h> // IWYU pragma: export
+#include <igl/vulkan/VulkanFunctionTable.h> // IWYU pragma: export
 #if IGL_PLATFORM_MACOSX
-#include <vulkan/vulkan_metal.h>
+#include <vulkan/vulkan_metal.h> // IWYU pragma: export
 #endif
 
-#include <igl/ColorSpace.h>
-#include <igl/Common.h>
-#include <igl/DepthStencilState.h>
-#include <igl/Format.h>
-#include <igl/Texture.h>
-#include <igl/VertexInputState.h>
-#include <igl/vulkan/VulkanHelpers.h>
+#include <igl/ColorSpace.h> // IWYU pragma: export
+#include <igl/Common.h> // IWYU pragma: export
+#include <igl/DepthStencilState.h> // IWYU pragma: export
+#include <igl/Format.h> // IWYU pragma: export
+#include <igl/Texture.h> // IWYU pragma: export
+#include <igl/VertexInputState.h> // IWYU pragma: export
+#include <igl/vulkan/VulkanHelpers.h> // IWYU pragma: export
 
 // Enable to use VulkanMemoryAllocator (VMA)
 #define IGL_VULKAN_USE_VMA 1
