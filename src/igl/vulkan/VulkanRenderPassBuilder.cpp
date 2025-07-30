@@ -9,15 +9,6 @@
 
 // this cannot be put into namespace
 #define CMP(field) (a.field == b.field)
-bool operator==(const VkAttachmentDescription& a, const VkAttachmentDescription& b) {
-  return CMP(flags) && CMP(format) && CMP(samples) && CMP(loadOp) && CMP(storeOp) &&
-         CMP(stencilLoadOp) && CMP(stencilStoreOp) && CMP(initialLayout) && CMP(finalLayout);
-}
-
-bool operator==(const VkAttachmentReference& a, const VkAttachmentReference& b) {
-  return a.attachment == b.attachment && a.layout == b.layout;
-}
-
 bool operator==(const VkAttachmentDescription2& a, const VkAttachmentDescription2& b) {
   return CMP(sType) && CMP(pNext) && CMP(flags) && CMP(format) && CMP(samples) && CMP(loadOp) &&
          CMP(storeOp) && CMP(stencilLoadOp) && CMP(stencilStoreOp) && CMP(initialLayout) &&
