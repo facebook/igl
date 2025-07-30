@@ -9,21 +9,21 @@
 
 #pragma once
 
-#include <igl/Macros.h>
+#include <igl/Macros.h> // IWYU pragma: export
 
 #if defined(USE_VULKAN_BACKEND) && IGL_BACKEND_VULKAN
-#include <igl/vulkan/Common.h>
+#include <igl/vulkan/Common.h> // IWYU pragma: export
 #endif // defined(USE_VULKAN_BACKEND) && IGL_BACKEND_VULKAN
 
 #if defined(USE_OPENGL_BACKEND) && IGL_BACKEND_OPENGL
-#include <igl/opengl/GLIncludes.h>
+#include <igl/opengl/GLIncludes.h> // IWYU pragma: export
 #endif // defined(USE_OPENGL_BACKEND) && IGL_BACKEND_OPENGL
 
 #if IGL_PLATFORM_ANDROID
-#include <android/native_window_jni.h>
-#include <jni.h>
+#include <android/native_window_jni.h> // IWYU pragma: export
+#include <jni.h> // IWYU pragma: export
 #if IGL_BACKEND_OPENGL
-#include <EGL/egl.h>
+#include <EGL/egl.h> // IWYU pragma: export
 #endif // IGL_BACKEND_OPENGL
 #endif // IGL_PLATFORM_ANDROID
 
@@ -31,9 +31,9 @@
 #if !defined(WIN32_LEAN_AND_MEAN)
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <unknwn.h>
-#include <windows.h>
+#include <unknwn.h> // IWYU pragma: export
+#include <windows.h> // IWYU pragma: export
 #endif // IGL_PLATFORM_WINDOWS
 
-#include <openxr/openxr.h>
-#include <openxr/openxr_platform.h>
+#include <openxr/openxr.h> // IWYU pragma: export
+#include <openxr/openxr_platform.h> // IWYU pragma: export
