@@ -11,16 +11,16 @@
 
 namespace iglu::command_buffer_allocator {
 ICommandBufferAllocator::CommandBufferScope::CommandBufferScope(
-    ICommandBufferAllocator& deviceContext,
+    ICommandBufferAllocator& allocator,
     igl::ICommandBuffer& commandBuffer,
     bool shouldFinalizeCommandBuffer) noexcept :
-  deviceContext_(deviceContext),
+  allocator_(allocator),
   commandBuffer_(commandBuffer),
   shouldFinalizeCommandBuffer_(shouldFinalizeCommandBuffer) {}
 
 ICommandBufferAllocator::CommandBufferScope::~CommandBufferScope() noexcept {
   if (shouldFinalizeCommandBuffer_) {
-    deviceContext_.finalizeCommandBuffer();
+    allocator_.finalizeCommandBuffer();
   }
 }
 

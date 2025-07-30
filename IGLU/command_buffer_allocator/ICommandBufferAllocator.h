@@ -37,21 +37,21 @@ class ICommandBufferAllocator {
 
    private:
     friend class ICommandBufferAllocator;
-    CommandBufferScope(ICommandBufferAllocator& deviceContext,
+    CommandBufferScope(ICommandBufferAllocator& allocator,
                        igl::ICommandBuffer& commandBuffer,
                        bool shouldFinalizeCommandBuffer) noexcept;
 
-    ICommandBufferAllocator& deviceContext_;
+    ICommandBufferAllocator& allocator_;
     igl::ICommandBuffer& commandBuffer_;
     bool shouldFinalizeCommandBuffer_ = false;
   };
   virtual void createCommandBuffer() noexcept = 0;
   [[nodiscard]] virtual CommandBufferScope commandBufferScope() noexcept = 0;
   [[nodiscard]] virtual CommandBufferScope commandBufferScope(
-      ICommandBufferAllocator& deviceContext,
+      ICommandBufferAllocator& allocator,
       igl::ICommandBuffer& commandBuffer,
       bool shouldFinalizeCommandBuffer) noexcept {
-    return {deviceContext, commandBuffer, shouldFinalizeCommandBuffer};
+    return {allocator, commandBuffer, shouldFinalizeCommandBuffer};
   }
   [[nodiscard]] virtual CommandBufferScope commandBufferScope(
       CommandBufferScopeConfig config) noexcept = 0;
