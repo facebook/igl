@@ -8,7 +8,6 @@
 #pragma once
 
 #include <utility>
-#include <vector>
 #include <igl/Common.h>
 #include <igl/DeviceFeatures.h>
 #include <igl/IResourceTracker.h>

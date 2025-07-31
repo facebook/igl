@@ -5,8 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "../util/Common.h"
-
+#include <gtest/gtest.h>
 #include <igl/opengl/Config.h>
 #include <igl/opengl/Version.h>
 
