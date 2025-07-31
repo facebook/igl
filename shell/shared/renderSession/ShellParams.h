@@ -34,5 +34,6 @@ struct ShellParams {
   const char* screenshotFileName = "screenshot.png";
   uint32_t screenshotNumber = 0; // frame number to save as a screenshot in headless more
   bool isHeadless = false;
+  bool enableVulkanValidationLayers = true;
 };
 } // namespace igl::shell
