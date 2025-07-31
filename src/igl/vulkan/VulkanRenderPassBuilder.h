@@ -12,7 +12,6 @@
 #include <igl/vulkan/Common.h>
 
 #include <vector>
-#include <igl/vulkan/VulkanHelpers.h>
 
 bool operator==(const VkAttachmentDescription2& a, const VkAttachmentDescription2& b);
 bool operator==(const VkAttachmentReference2& a, const VkAttachmentReference2& b);
