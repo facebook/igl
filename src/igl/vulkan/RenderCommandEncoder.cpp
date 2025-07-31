@@ -19,7 +19,6 @@
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanRenderPassBuilder.h>
 #include <igl/vulkan/VulkanTexture.h>
