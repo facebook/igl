@@ -13,6 +13,7 @@
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/Device.h>
 #include <igl/NameHandle.h>
+#include <igl/RenderPass.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/SamplerState.h>
 #include <igl/ShaderCreator.h>

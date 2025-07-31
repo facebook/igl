@@ -16,7 +16,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <shell/shared/platform/Platform.h>
 #include <igl/FPSCounter.h>
-#include <igl/RenderPass.h>
 
 namespace igl::shell {
 
