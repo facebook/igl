@@ -7,7 +7,6 @@
 
 #include <igl/DepthStencilState.h>
 
-#include <cstring>
 #include <functional>
 
 using namespace igl;
