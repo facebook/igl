@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Cocoa/Cocoa.h>
+#import <Cocoa/Cocoa.h> // IWYU pragma: keep
 #import <MetalKit/MetalKit.h>
 #import <shell/shared/renderSession/IRenderSessionFactory.h>
 #import <igl/Common.h>
