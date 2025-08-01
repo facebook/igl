@@ -9,8 +9,7 @@
 
 #pragma once
 
-#include <memory>
-#include <shell/shared/input/InputDispatcher.h>
+#include <shell/shared/input/InputDispatcher.h> // IWYU pragma: export
 #include <shell/shared/input/KeyListener.h>
 #include <shell/shared/input/MouseListener.h>
 
