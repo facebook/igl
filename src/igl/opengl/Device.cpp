@@ -383,6 +383,13 @@ Holder<BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc&
   return {this, handle};
 }
 
+std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) const noexcept {
+  if (outResult) {
+    *outResult = Result(Result::Code::Unsupported, "Timer is not supported on OpenGL");
+  }
+  return nullptr;
+}
+
 void Device::destroy(BindGroupTextureHandle handle) {
   if (handle.empty()) {
     return;

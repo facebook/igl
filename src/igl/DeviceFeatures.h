@@ -66,6 +66,7 @@ namespace igl {
  * TextureNotPot              Supports non power-of-two textures
  * TexturePartialMipChain     Supports mip chains that do not go all the way to 1x1
  * TextureViews               Supports IDevice::createTextureView()
+ * Timers                     Supports GPU timers
  * UniformBlocks,             Supports uniform blocks
  * Indices8Bit,               Supports uint8 vertex indices
  * ValidationLayersEnabled,   Validation layers are enabled
@@ -119,6 +120,7 @@ enum class DeviceFeatures {
   TextureNotPot,
   TexturePartialMipChain,
   TextureViews,
+  Timers,
   UniformBlocks,
   ValidationLayersEnabled,
 };

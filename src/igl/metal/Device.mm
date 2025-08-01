@@ -227,6 +227,13 @@ std::shared_ptr<ITexture> Device::createTextureView( // NOLINT(bugprone-exceptio
   return nullptr;
 }
 
+std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) const noexcept {
+  if (outResult) {
+    *outResult = Result(Result::Code::Unsupported, "Timer is not supported on Metal");
+  }
+  return nullptr;
+}
+
 std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexInputStateDesc& desc,
                                                                   Result* outResult) const {
   // Avoid buffer overrun in numAttributes.

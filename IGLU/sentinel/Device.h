@@ -76,6 +76,8 @@ class Device final : public igl::IDevice {
   [[nodiscard]] std::shared_ptr<igl::IFramebuffer> createFramebuffer(
       const igl::FramebufferDesc& desc,
       igl::Result* IGL_NULLABLE outResult) final;
+  [[nodiscard]] std::shared_ptr<igl::ITimer> createTimer(
+      igl::Result* IGL_NULLABLE outResult) const noexcept final;
   [[nodiscard]] const igl::IPlatformDevice& getPlatformDevice() const noexcept final;
   [[nodiscard]] bool verifyScope() final;
   [[nodiscard]] igl::BackendType getBackendType() const final;

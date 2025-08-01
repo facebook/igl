@@ -16,6 +16,7 @@ namespace igl {
 
 class IComputeCommandEncoder;
 class ISamplerState;
+class ITimer;
 struct RenderPassDesc;
 
 /**
@@ -23,6 +24,7 @@ struct RenderPassDesc;
  */
 struct CommandBufferDesc {
   std::string debugName;
+  std::shared_ptr<ITimer> timer;
 };
 
 /**
@@ -153,6 +155,8 @@ class ICommandBuffer {
 
  private:
   CommandBufferStatistics statistics_;
+
+  friend class CommandQueue;
 };
 
 } // namespace igl

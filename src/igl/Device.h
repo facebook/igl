@@ -38,6 +38,7 @@ class ISamplerState;
 class IShaderLibrary;
 class IShaderModule;
 class IShaderStages;
+class ITimer;
 class IVertexInputState;
 
 /**
@@ -161,6 +162,14 @@ class IDevice : public ICapabilities {
                                                       const TextureViewDesc& desc,
                                                       Result* IGL_NULLABLE
                                                           outResult) const noexcept = 0;
+
+  /**
+   * @brief Creates a timer for measuring the time taken by command buffers.
+   * @param outResult Pointer to where the result (success, failure, etc) is written. Can be null if
+   * no reporting is desired.
+   * @return Shared pointer to the created timer.
+   */
+  virtual std::shared_ptr<ITimer> createTimer(Result* IGL_NULLABLE outResult) const noexcept = 0;
 
   /**
    * @brief Creates a vertex input state.

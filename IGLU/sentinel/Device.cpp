@@ -182,6 +182,13 @@ igl::Holder<igl::BindGroupBufferHandle> Device::createBindGroup(
   return {};
 }
 
+std::shared_ptr<igl::ITimer> Device::createTimer(
+    igl::Result* IGL_NULLABLE /*outResult*/) const noexcept {
+  IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
+
+  return {};
+}
+
 void Device::destroy(igl::BindGroupTextureHandle /*handle*/) {
   IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
 }

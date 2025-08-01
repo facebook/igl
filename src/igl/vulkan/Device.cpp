@@ -689,6 +689,8 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
     return ctx_->areValidationLayersEnabled();
   case DeviceFeatures::TextureViews:
     return true;
+  case DeviceFeatures::Timers:
+    return false;
   }
 
   IGL_DEBUG_ABORT("DeviceFeatures value not handled: %d", (int)feature);
@@ -863,6 +865,13 @@ Holder<BindGroupBufferHandle> Device::createBindGroupInternal(const igl::BindGro
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   return {this, ctx_->createBindGroup(desc, outResult)};
+}
+
+std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) const noexcept {
+  if (outResult) {
+    *outResult = Result(Result::Code::Unsupported, "Timer is not supported on Vulkan");
+  }
+  return nullptr;
 }
 
 void Device::destroyInternal(BindGroupTextureHandle handle) {

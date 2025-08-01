@@ -443,6 +443,9 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
 
   case DeviceFeatures::Indices8Bit:
     return true;
+
+  case DeviceFeatures::Timers:
+    return false;
   }
 
   return false;

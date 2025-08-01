@@ -206,6 +206,8 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
     return false;
   case DeviceFeatures::TextureViews:
     return false;
+  case DeviceFeatures::Timers:
+    return false;
   }
   return false;
 }
