@@ -9,9 +9,9 @@
 
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
+#include <igl/DeviceFeatures.h>
 #include <igl/Macros.h>
 #include <igl/Texture.h>
-#include <igl/metal/CommandQueue.h>
 
 #if IGL_PLATFORM_APPLE
 NS_ASSUME_NONNULL_BEGIN

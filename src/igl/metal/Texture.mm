@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <igl/metal/CommandBuffer.h>
+#include <igl/metal/CommandQueue.h>
 
 namespace {
 
