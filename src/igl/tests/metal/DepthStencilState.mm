@@ -8,7 +8,6 @@
 #include <igl/metal/DepthStencilState.h>
 
 #include <gtest/gtest.h>
-#include <igl/Assert.h>
 
 namespace igl::tests {
 
