@@ -12,6 +12,7 @@
 #include <igl/metal/BufferSynchronizationManager.h>
 #include <igl/metal/CommandBuffer.h>
 #include <igl/metal/DeviceStatistics.h>
+#include <igl/metal/Timer.h>
 
 // @brief Number of command buffers to be automatically captured for GPU debugging. Zero (0)
 // means no command buffers will be recorded and the capture code is deactivated.
@@ -56,7 +57,17 @@ SubmitHandle CommandQueue::submit(const igl::ICommandBuffer& commandBuffer, bool
     bufferSyncManager_->markCommandBufferAsEndOfFrame(commandBuffer);
   }
 
-  [static_cast<const CommandBuffer&>(commandBuffer).get() commit];
+  const CommandBuffer& metalCommandBuffer = static_cast<const CommandBuffer&>(commandBuffer);
+  std::shared_ptr<igl::ITimer> timer = metalCommandBuffer.desc.timer;
+  if (timer) {
+    uint64_t startTime = clock_gettime_nsec_np(CLOCK_MONOTONIC);
+    [metalCommandBuffer.get() addCompletedHandler:^(id<MTLCommandBuffer> cb) {
+      static_cast<Timer&>(*timer).executionTime_ =
+          clock_gettime_nsec_np(CLOCK_MONOTONIC) - startTime;
+    }];
+  }
+
+  [metalCommandBuffer.get() commit];
 
   if (endOfFrame) {
     bufferSyncManager_->manageEndOfFrameSync();

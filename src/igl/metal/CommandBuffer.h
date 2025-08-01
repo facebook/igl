@@ -60,6 +60,8 @@ class CommandBuffer final : public ICommandBuffer,
  private:
   Device& device_;
   id<MTLCommandBuffer> value_;
+
+  friend class CommandQueue;
 };
 
 } // namespace igl::metal
