@@ -17,7 +17,7 @@
 #import "View.h"
 
 #import <shell/shared/input/InputDispatcher.h>
-#import <igl/IGL.h>
+#import <igl/IGL.h> // IWYU pragma: keep
 
 #if IGL_BACKEND_METAL
 #import <Metal/Metal.h>
