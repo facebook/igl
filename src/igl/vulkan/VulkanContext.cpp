@@ -906,6 +906,22 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
       IGL_FORMAT("Device: VulkanContext::device_ {}",
                  debugName ? debugName : "igl/vulkan/VulkanContext.cpp")
           .c_str());
+
+  VK_ASSERT(ivkSetDebugObjectName(
+      &vf_,
+      device_->getVkDevice(),
+      VK_OBJECT_TYPE_QUEUE,
+      (uint64_t)deviceQueues_.graphicsQueue,
+      IGL_FORMAT("Graphics queue: {}", debugName ? debugName : "igl/vulkan/VulkanContext.cpp")
+          .c_str()));
+  VK_ASSERT(ivkSetDebugObjectName(
+      &vf_,
+      device_->getVkDevice(),
+      VK_OBJECT_TYPE_QUEUE,
+      (uint64_t)deviceQueues_.computeQueue,
+      IGL_FORMAT("Compute queue: {}", debugName ? debugName : "igl/vulkan/VulkanContext.cpp")
+          .c_str()));
+
   immediate_ = std::make_unique<VulkanImmediateCommands>(vf_,
                                                          device,
                                                          deviceQueues_.graphicsQueueFamilyIndex,
