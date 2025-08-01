@@ -89,6 +89,7 @@ std::vector<HWDeviceDesc> HWDevice::queryDevices(IGL_MAYBE_UNUSED const HWDevice
   NSArray<id<MTLDevice>>* deviceList = MTLCopyAllDevices();
 
   // Loop through all devices and return matching ones
+  // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
   for (id<MTLDevice> device in deviceList) {
     // We don't need __bridge_retained here as iOS always provides the same ptr
     const uintptr_t deviceNative = (uintptr_t)(__bridge void*)device;
