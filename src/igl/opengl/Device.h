@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <cstdio>
-#include <cstring>
 #include <igl/Device.h>
 #include <igl/opengl/DeviceFeatureSet.h>
 #include <igl/opengl/GLIncludes.h>
