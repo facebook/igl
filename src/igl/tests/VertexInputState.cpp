@@ -6,7 +6,6 @@
  */
 
 #include <gtest/gtest.h>
-#include <string>
 #include <igl/VertexInputState.h>
 
 namespace igl::tests {
