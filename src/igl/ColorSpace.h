@@ -8,7 +8,7 @@
 #pragma once
 
 #include <cstdint>
-#include <igl/Common.h>
+#include <igl/Common.h> // IWYU pragma: keep
 #include <igl/Macros.h>
 
 namespace igl {
