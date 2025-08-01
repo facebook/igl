@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <igl/Common.h>
+#include <igl/Common.h> // IWYU pragma: keep
 
 namespace igl {
 
