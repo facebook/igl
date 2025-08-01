@@ -9,7 +9,7 @@
 
 #include <utility>
 #include <vector>
-#include <igl/Common.h>
+#include <igl/Common.h> // IWYU pragma: keep
 #include <igl/ITrackedResource.h>
 
 namespace igl {
