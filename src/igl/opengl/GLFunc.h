@@ -31,6 +31,7 @@ IGL_EXTERN_BEGIN
 // definitions use a PFNIGL prefix to ensure they don't collide with function pointer types
 // defined by other OpenGL loaders. These definitions also omit any extension-specific suffix (e.g.,
 // EXT) unless it is needed to disambiguate them.
+using PFNIGLBEGINQUERYPROC = void (*)(GLenum target, GLuint id);
 using PFNIGLBINDBUFFERBASEPROC = void (*)(GLenum target, GLuint index, GLuint buffer);
 using PFNIGLBINDBUFFERRANGEPROC =
     void (*)(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
@@ -94,6 +95,7 @@ using PFNIGLDEBUGMESSAGEINSERTPROC = void (*)(GLenum source,
                                               const GLchar* buf);
 using PFNIGLDELETEFRAMEBUFFERSPROC = void (*)(GLsizei n, const GLuint* framebuffers);
 using PFNIGLDELETEMEMORYOBJECTSPROC = void (*)(GLsizei n, const GLuint* memoryObjects);
+using PFNIGLDELETEQUERIESPROC = void (*)(GLsizei n, GLuint* ids);
 using PFNIGLDELETERENDERBUFFERSPROC = void (*)(GLsizei n, const GLuint* renderbuffers);
 using PFNIGLDELETESYNCPROC = void (*)(GLsync sync);
 using PFNIGLDELETEVERTEXARRAYSPROC = void (*)(GLsizei n, const GLuint* vertexArrays);
@@ -104,6 +106,7 @@ using PFNIGLDISPATCHCOMPUTEPROC = void (*)(GLuint numGroupsX, GLuint numGroupsY,
 using PFNIGLDRAWBUFFERSPROC = void (*)(GLsizei, const GLenum*);
 using PFNIGLDRAWELEMENTSINDIRECTPROC = void (*)(GLenum mode, GLenum type, const GLvoid* indirect);
 using PFNIGLDRAWARRAYSINDIRECTPROC = void (*)(GLenum mode, const GLvoid* indirect);
+using PFNIGLENDQUERYPROC = void (*)(GLenum target);
 using PFNIGLFENCESYNCPROC = GLsync (*)(GLenum condition, GLbitfield flags);
 using PFNIGLFRAMEBUFFERRENDERBUFFERPROC = void (*)(GLenum target,
                                                    GLenum attachment,
@@ -135,6 +138,7 @@ using PFNIGLFRAMEBUFFERTEXTUREMULTIVIEWPROC = void (*)(GLenum target,
 using PFNIGLGENERATEMIPMAPPROC = void (*)(GLenum target);
 using PFNIGLGENFRAMEBUFFERSPROC = void (*)(GLsizei n, GLuint* framebuffers);
 using PFNIGLGENRENDERBUFFERSPROC = void (*)(GLsizei n, GLuint* renderbuffers);
+using PFNIGLGENQUERIESPROC = void (*)(GLsizei n, GLuint* queries);
 using PFNIGLGENVERTEXARRAYSPROC = void (*)(GLsizei n, GLuint* vertexArrays);
 using PFNIGLGETACTIVEUNIFORMSIVPROC = void (*)(GLuint program,
                                                GLsizei uniformCount,
@@ -183,6 +187,8 @@ using PFNIGLGETPROGRAMRESOURCENAMEPROC = void (*)(GLuint program,
                                                   GLsizei bufSize,
                                                   GLsizei* length,
                                                   char* name);
+using PFNIGLGETQUERYOBJECTIVPROC = void (*)(GLuint id, GLenum pname, GLint* params);
+using PFNIGLGETQUERYOBJECTUI64VPROC = void (*)(GLuint id, GLenum pname, GLuint64* params);
 using PFNIGLGETRENDERBUFFERPARAMETERIVPROC = void (*)(GLenum target, GLenum pname, GLint* params);
 using PFNIGLGETSTRINGIPROC = const GLubyte* (*)(GLenum name, GLuint index);
 using PFNIGLGETSYNCIVPROC =
@@ -797,5 +803,15 @@ void iglTexSubImage3DOES(GLenum target,
 void iglBindVertexArrayOES(GLuint vao);
 void iglDeleteVertexArraysOES(GLsizei n, const GLuint* vertexArrays);
 void iglGenVertexArraysOES(GLsizei n, GLuint* vertexArrays);
+
+///--------------------------------------
+/// MARK: - GL_EXT_timer_query
+
+void iglGenQueries(GLsizei n, GLuint* queries);
+void iglBeginQuery(GLenum target, GLuint id);
+void iglEndQuery(GLenum target);
+void iglDeleteQueries(GLsizei n, GLuint* queries);
+void iglGetQueryObjectui64v(GLuint id, GLenum pname, GLuint64* params);
+void iglGetQueryObjectiv(GLuint id, GLenum pname, GLint* params);
 
 IGL_EXTERN_END

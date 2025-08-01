@@ -247,6 +247,8 @@ bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
     return hasDesktopExtension(*this, "GL_EXT_texture_sRGB");
   case Extensions::TextureType2101010Rev:
     return hasESExtension(*this, "GL_EXT_texture_type_2_10_10_10_REV");
+  case Extensions::TimerQuery:
+    return hasDesktopOrESExtension(*this, "GL_ARB_timer_query", "GL_EXT_timer_query");
   case Extensions::VertexArrayObject:
     return hasESExtension(*this, "GL_OES_vertex_array_object");
   case Extensions::VertexAttribDivisor:
@@ -445,7 +447,7 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
     return true;
 
   case DeviceFeatures::Timers:
-    return false;
+    return hasExtension(Extensions::TimerQuery);
   }
 
   return false;

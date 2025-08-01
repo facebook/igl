@@ -2000,6 +2000,59 @@ void iglGenVertexArraysOES(GLsizei n, GLuint* vertexArrays) {
                           vertexArrays);
 }
 
+///--------------------------------------
+/// MARK: - GL_EXT_timer_query
+
+#if defined(GL_EXT_timer_query)
+#define CAN_CALL_glBeginQuery OPENGL_OR_CAN_CALL
+#define CAN_CALL_glDeleteQueries OPENGL_OR_CAN_CALL
+#define CAN_CALL_glEndQuery OPENGL_OR_CAN_CALL
+#define CAN_CALL_glGenQueries OPENGL_OR_CAN_CALL
+#define CAN_CALL_glGetQueryObjectui64v OPENGL_OR_CAN_CALL
+#define CAN_CALL_glGetQueryObjectiv OPENGL_OR_CAN_CALL
+#else
+#define CAN_CALL_glBeginQuery 0
+#define CAN_CALL_glDeleteQueries 0
+#define CAN_CALL_glEndQuery 0
+#define CAN_CALL_glGenQueries 0
+#define CAN_CALL_glGetQueryObjectiv 0
+#define CAN_CALL_glGetQueryObjectui64v 0
+#endif
+
+void iglBeginQuery(GLenum target, GLuint id) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glBeginQuery, glBeginQuery, PFNIGLBEGINQUERYPROC, target, id);
+}
+
+void iglDeleteQueries(GLsizei n, GLuint* queries) {
+  GLEXTENSION_METHOD_BODY(
+      CAN_CALL_glDeleteQueries, glDeleteQueries, PFNIGLDELETEQUERIESPROC, n, queries);
+}
+
+void iglEndQuery(GLenum target) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glEndQuery, glEndQuery, PFNIGLENDQUERYPROC, target);
+}
+
+void iglGenQueries(GLsizei n, GLuint* queries) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glGenQueries, glGenQueries, PFNIGLGENQUERIESPROC, n, queries);
+}
+
+void iglGetQueryObjectiv(GLuint id, GLenum pname, GLint* params) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glGetQueryObjectui64v,
+                          glGetQueryObjectiv,
+                          PFNIGLGETQUERYOBJECTIVPROC,
+                          id,
+                          pname,
+                          params);
+}
+
+void iglGetQueryObjectui64v(GLuint id, GLenum pname, GLuint64* params) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glGetQueryObjectui64v,
+                          glGetQueryObjectui64v,
+                          PFNIGLGETQUERYOBJECTUI64VPROC,
+                          id,
+                          pname,
+                          params);
+}
 IGL_EXTERN_END
 
 // NOLINTEND(readability-identifier-naming)

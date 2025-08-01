@@ -14,6 +14,7 @@
 
 namespace igl {
 
+class CommandQueue;
 class IComputeCommandEncoder;
 class ISamplerState;
 class ITimer;
@@ -152,11 +153,12 @@ class ICommandBuffer {
   }
 
   const CommandBufferDesc desc;
+  const std::shared_ptr<ITimer> timer;
 
  private:
   CommandBufferStatistics statistics_;
 
-  friend class CommandQueue;
+  friend class ICommandQueue;
 };
 
 } // namespace igl

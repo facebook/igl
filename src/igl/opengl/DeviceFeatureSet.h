@@ -57,6 +57,7 @@ enum class Extensions {
   TextureRgExt,               // GL_EXT_texture_rg is supported
   TextureSrgb,                // GL_EXT_texture_sRGB is supported
   TextureType2101010Rev,  // GL_EXT_texture_type_2_10_10_10_REV is supporteds
+  TimerQuery,                 // GL_EXT_timer_query is supported
   VertexArrayObject,          // GL_OES_vertex_array_object is supported
   VertexAttribDivisor,        // GL_NV_instanced_arrays is supported
 };
