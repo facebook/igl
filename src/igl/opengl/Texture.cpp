@@ -8,7 +8,6 @@
 #include <igl/opengl/Texture.h>
 
 #include <algorithm>
-#include <igl/opengl/CommandBuffer.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/util/TextureFormat.h>
 
