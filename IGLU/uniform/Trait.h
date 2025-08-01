@@ -9,7 +9,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <igl/Buffer.h>
+#include <igl/Buffer.h> // IWYU pragma: keep
 #include <igl/Uniform.h>
 
 namespace iglu::uniform {
