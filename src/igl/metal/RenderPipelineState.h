@@ -8,7 +8,6 @@
 #pragma once
 
 #include <Metal/Metal.h>
-#include <igl/Common.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/metal/RenderPipelineReflection.h>
 
