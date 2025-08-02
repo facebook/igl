@@ -418,7 +418,7 @@ void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& c
 #if IGL_PLATFORM_WINDOWS
   enable(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
 #elif IGL_PLATFORM_ANDROID
-  enable("VK_KHR_android_surface", ExtensionType::Instance);
+  enable(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
 #elif IGL_PLATFORM_LINUX
   enable("VK_KHR_xlib_surface", ExtensionType::Instance);
 #elif IGL_PLATFORM_MACOSX
