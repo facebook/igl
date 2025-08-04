@@ -12,7 +12,7 @@
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
-#include <igl/opengl/Version.h>
+#include <igl/opengl/Version.h> // IWYU pragma: keep
 
 #include <cstddef>
 
