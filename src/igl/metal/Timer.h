@@ -13,7 +13,7 @@ namespace igl::metal {
 
 class Timer : public ITimer {
  public:
-  ~Timer() override {}
+  ~Timer() override = default;
 
   uint64_t getElapsedTimeNanos() const override {
     return executionTime_;
