@@ -14,7 +14,6 @@
 
 namespace igl {
 
-class CommandQueue;
 class IComputeCommandEncoder;
 class ISamplerState;
 class ITimer;
