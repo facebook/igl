@@ -9,8 +9,7 @@
 
 #include <igl/Timer.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 class Timer : public ITimer {
  public:
@@ -30,5 +29,4 @@ class Timer : public ITimer {
   friend class CommandQueue;
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

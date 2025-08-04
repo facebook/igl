@@ -7,8 +7,7 @@
 
 #include <igl/opengl/Timer.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 #ifndef GL_TIME_ELAPSED
 #define GL_TIME_ELAPSED 0x88BF
@@ -47,5 +46,4 @@ bool Timer::resultsAvailable() const {
   return available;
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

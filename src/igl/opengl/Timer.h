@@ -12,8 +12,7 @@
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/WithContext.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 class Timer : public WithContext, public ITimer {
  public:
@@ -30,5 +29,4 @@ class Timer : public WithContext, public ITimer {
   GLuint id_ = 0;
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl
