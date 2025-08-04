@@ -8,7 +8,7 @@
 #pragma once
 
 #include <vector>
-#include <igl/Common.h>
+#include <igl/Common.h> // IWYU pragma: keep
 
 namespace igl {
 
