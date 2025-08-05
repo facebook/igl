@@ -43,6 +43,7 @@ uint64_t Timer::getElapsedTimeNanos() const {
 bool Timer::resultsAvailable() const {
   GLint available = 0;
   iglGetQueryObjectiv(id_, GL_QUERY_RESULT_AVAILABLE, &available);
+  // NOLINTNEXTLINE(readability-implicit-bool-conversion)
   return available;
 }
 
