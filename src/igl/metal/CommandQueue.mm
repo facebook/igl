@@ -57,7 +57,7 @@ SubmitHandle CommandQueue::submit(const igl::ICommandBuffer& commandBuffer, bool
     bufferSyncManager_->markCommandBufferAsEndOfFrame(commandBuffer);
   }
 
-  const CommandBuffer& metalCommandBuffer = static_cast<const CommandBuffer&>(commandBuffer);
+  const auto& metalCommandBuffer = static_cast<const CommandBuffer&>(commandBuffer);
   std::shared_ptr<igl::ITimer> timer = metalCommandBuffer.desc.timer;
   if (timer) {
     uint64_t startTime = clock_gettime_nsec_np(CLOCK_MONOTONIC);
