@@ -18,7 +18,7 @@
 #include <igl/SamplerState.h>
 #include <igl/ShaderCreator.h>
 #include <igl/VertexInputState.h>
-#include <igl/opengl/Device.h>
+#include <igl/opengl/Device.h> // IWU pragma: keep
 
 namespace igl::shell {
 struct VertexPosUv {
