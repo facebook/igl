@@ -11,7 +11,7 @@
 
 #import "ViewController.h"
 
-#import <Foundation/Foundation.h>
+#import <Foundation/Foundation.h> // IWYU pragma: keep
 
 @interface HeadlessView () {
   CVDisplayLinkRef displayLink_; // display link for managing rendering thread
