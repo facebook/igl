@@ -21,9 +21,9 @@ class Timer : public WithContext, public ITimer {
 
   void end();
 
-  uint64_t getElapsedTimeNanos() const override;
+  [[nodiscard]] uint64_t getElapsedTimeNanos() const override;
 
-  virtual bool resultsAvailable() const override;
+  [[nodiscard]] virtual bool resultsAvailable() const override;
 
  private:
   GLuint id_ = 0;

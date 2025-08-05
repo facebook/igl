@@ -15,11 +15,11 @@ class Timer : public ITimer {
  public:
   ~Timer() override = default;
 
-  uint64_t getElapsedTimeNanos() const override {
+  [[nodiscard]] uint64_t getElapsedTimeNanos() const override {
     return executionTime_;
   }
 
-  virtual bool resultsAvailable() const override {
+  [[nodiscard]] virtual bool resultsAvailable() const override {
     return executionTime_ != 0;
   }
 
