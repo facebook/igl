@@ -695,6 +695,10 @@ size_t Device::getCurrentDrawCount() const {
   return deviceStatistics_.getDrawCount();
 }
 
+size_t Device::getGPUMemoryUsage() const {
+  return [device_ currentAllocatedSize];
+}
+
 MTLStorageMode Device::toMTLStorageMode(ResourceStorage storage) {
   switch (storage) {
   case ResourceStorage::Private:

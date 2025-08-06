@@ -302,6 +302,15 @@ class IDevice : public ICapabilities {
   [[nodiscard]] virtual size_t getCurrentDrawCount() const = 0;
 
   /**
+   * @brief Returns the number of bytes of GPU memory currently in use, or 0 if the device does not
+   * support memory tracking.
+   * @return Used GPU memory
+   */
+  [[nodiscard]] virtual size_t getGPUMemoryUsage() const {
+    return 0;
+  }
+
+  /**
    * @brief Creates a shader library with one or more shader modules.
    * @see igl::ShaderCompileDesc
    * @param desc The description for the shader library to be created.

@@ -101,6 +101,8 @@ class Device : public IDevice {
   // Device Statistics
   [[nodiscard]] size_t getCurrentDrawCount() const override;
 
+  [[nodiscard]] size_t getGPUMemoryUsage() const override;
+
   [[nodiscard]] BackendType getBackendType() const override {
     return BackendType::Metal;
   }
