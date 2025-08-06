@@ -19,7 +19,7 @@ class Timer : public ITimer {
     return executionTime_;
   }
 
-  [[nodiscard]] virtual bool resultsAvailable() const override {
+  [[nodiscard]] bool resultsAvailable() const override {
     return executionTime_ != 0;
   }
 
