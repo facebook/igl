@@ -11,6 +11,7 @@
 #error "Please, include <igl/Common.h> instead"
 #endif
 
+#include <igl/IGLFolly.h>
 #include <igl/Macros.h>
 
 ///--------------------------------------
@@ -58,19 +59,18 @@
 
 #define IGL_ERROR_CATEGORY "IGL"
 
-using IGLErrorHandlerFunc = void (*)(const char* category,
-                                     const char* reason,
-                                     const char* file,
-                                     const char* func,
+using IGLErrorHandlerFunc = void (*)(const char* IGL_NONNULL category,
+                                     const char* IGL_NONNULL reason,
+                                     const char* IGL_NONNULL file,
+                                     const char* IGL_NONNULL func,
                                      int line,
-                                     const char* format,
+                                     const char* IGL_NONNULL format,
                                      va_list ap);
 
 IGL_API void _IGLDebugBreak();
 
-IGL_API void IGLSetDebugAbortListener(IGLErrorHandlerFunc listener);
-// @fb-only
-IGL_API IGLErrorHandlerFunc IGLGetDebugAbortListener(void);
+IGL_API void IGLSetDebugAbortListener(IGLErrorHandlerFunc IGL_NULLABLE listener);
+IGL_API IGLErrorHandlerFunc IGL_NULLABLE IGLGetDebugAbortListener(void);
 
 namespace igl {
 bool isDebugBreakEnabled();
@@ -80,12 +80,12 @@ void setDebugBreakEnabled(bool enabled);
   return cond;
 }
 
-inline void _IGLDebugAbortV([[maybe_unused]] const char* category,
-                            [[maybe_unused]] const char* reason,
-                            [[maybe_unused]] const char* func,
-                            [[maybe_unused]] const char* file,
+inline void _IGLDebugAbortV([[maybe_unused]] const char* IGL_NONNULL category,
+                            [[maybe_unused]] const char* IGL_NONNULL reason,
+                            [[maybe_unused]] const char* IGL_NONNULL func,
+                            [[maybe_unused]] const char* IGL_NONNULL file,
                             [[maybe_unused]] int line,
-                            [[maybe_unused]] const char* format,
+                            [[maybe_unused]] const char* IGL_NONNULL format,
                             [[maybe_unused]] va_list ap) {
 #if IGL_DEBUG_ABORT_ENABLED
   va_list apCopy;
@@ -103,12 +103,12 @@ inline void _IGLDebugAbortV([[maybe_unused]] const char* category,
 #endif // IGL_DEBUG_ABORT_ENABLED
 }
 
-[[nodiscard]] inline bool _IGLDebugAbort(const char* category,
-                                         const char* reason,
-                                         const char* func,
-                                         const char* file,
+[[nodiscard]] inline bool _IGLDebugAbort(const char* IGL_NONNULL category,
+                                         const char* IGL_NONNULL reason,
+                                         const char* IGL_NONNULL func,
+                                         const char* IGL_NONNULL file,
                                          int line,
-                                         const char* format,
+                                         const char* IGL_NONNULL format,
                                          ...) {
   va_list ap;
   va_start(ap, format);
@@ -180,23 +180,23 @@ inline void _IGLDebugAbortV([[maybe_unused]] const char* category,
 ///--------------------------------------
 /// MARK: - Custom
 
-IGL_API void IGLSetSoftErrorHandler(IGLErrorHandlerFunc handler);
+IGL_API void IGLSetSoftErrorHandler(IGLErrorHandlerFunc IGL_NULLABLE handler);
 // @fb-only
-IGL_API IGLErrorHandlerFunc IGLGetSoftErrorHandler(void);
-IGL_API void IGLSoftError(const char* category,
-                          const char* reason,
-                          const char* file,
-                          const char* func,
+IGL_API IGLErrorHandlerFunc IGL_NULLABLE IGLGetSoftErrorHandler(void);
+IGL_API void IGLSoftError(const char* IGL_NONNULL category,
+                          const char* IGL_NONNULL reason,
+                          const char* IGL_NONNULL file,
+                          const char* IGL_NONNULL func,
                           int line,
-                          const char* format,
+                          const char* IGL_NONNULL format,
                           ...);
 namespace igl {
-[[nodiscard]] inline bool _IGLSoftError(const char* category,
-                                        const char* reason,
-                                        const char* func,
-                                        const char* file,
+[[nodiscard]] inline bool _IGLSoftError(const char* IGL_NONNULL category,
+                                        const char* IGL_NONNULL reason,
+                                        const char* IGL_NONNULL func,
+                                        const char* IGL_NONNULL file,
                                         int line,
-                                        const char* format,
+                                        const char* IGL_NONNULL format,
                                         ...) {
   va_list ap, apCopy;
   va_start(ap, format);
