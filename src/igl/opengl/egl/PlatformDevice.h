@@ -34,46 +34,49 @@ class PlatformDevice : public opengl::PlatformDevice {
 
   /// Returns a texture representing the EGL Surface associated with this device's context.
   std::shared_ptr<ITexture> createTextureFromNativeDrawable(TextureFormat colorTextureFormat,
-                                                            Result* outResult);
+                                                            Result* IGL_NULLABLE outResult);
 
   /// Returns a texture representing the EGL Surface associated with this device's context.
-  std::shared_ptr<ITexture> createTextureFromNativeDrawable(Result* outResult) {
+  std::shared_ptr<ITexture> createTextureFromNativeDrawable(Result* IGL_NULLABLE outResult) {
     return createTextureFromNativeDrawable(TextureFormat::RGBA_UNorm8, outResult);
   }
 
   std::shared_ptr<ITexture> createTextureFromNativeDrawable(int width,
                                                             int height,
                                                             TextureFormat colorTextureFormat,
-                                                            Result* outResult);
+                                                            Result* IGL_NULLABLE outResult);
 
   std::shared_ptr<ITexture> createTextureFromNativeDrawable(int width,
                                                             int height,
-                                                            Result* outResult) {
+                                                            Result* IGL_NULLABLE outResult) {
     return createTextureFromNativeDrawable(width, height, TextureFormat::RGBA_UNorm8, outResult);
   }
 
   /// Returns a texture representing the EGL depth texture associated with this device's context.
   std::shared_ptr<ITexture> createTextureFromNativeDepth(TextureFormat depthTextureFormat,
-                                                         Result* outResult);
+                                                         Result* IGL_NULLABLE outResult);
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
   /// returns a android::NativeHWTextureBuffer on platforms supporting it
   /// this texture allows CPU and GPU to both read/write memory
   std::shared_ptr<ITexture> createTextureWithSharedMemory(const TextureDesc& desc,
-                                                          Result* outResult) const;
-  std::shared_ptr<ITexture> createTextureWithSharedMemory(AHardwareBuffer* buffer,
-                                                          Result* outResult) const;
+                                                          Result* IGL_NULLABLE outResult) const;
+  std::shared_ptr<ITexture> createTextureWithSharedMemory(AHardwareBuffer* IGL_NONNULL buffer,
+                                                          Result* IGL_NULLABLE outResult) const;
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
   /// This function must be called every time the currently bound EGL read and/or draw surfaces
   /// change, in order to notify IGL of these changes.
-  void updateSurfaces(EGLSurface readSurface, EGLSurface drawSurface, Result* outResult);
+  void updateSurfaces(EGLSurface readSurface,
+                      EGLSurface drawSurface,
+                      Result* IGL_NULLABLE outResult);
 
-  EGLSurface IGL_NULLABLE createSurface(NativeWindowType nativeWindow, Result* outResult);
+  EGLSurface IGL_NULLABLE createSurface(NativeWindowType nativeWindow,
+                                        Result* IGL_NULLABLE outResult);
 
-  EGLSurface IGL_NULLABLE getReadSurface(Result* outResult);
+  EGLSurface IGL_NULLABLE getReadSurface(Result* IGL_NULLABLE outResult);
 
-  void setPresentationTime(long long presentationTimeNs, Result* outResult);
+  void setPresentationTime(long long presentationTimeNs, Result* IGL_NULLABLE outResult);
 
  protected:
   [[nodiscard]] bool isType(PlatformDeviceType t) const noexcept override;

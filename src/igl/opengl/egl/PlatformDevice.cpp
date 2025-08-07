@@ -21,7 +21,7 @@ PlatformDevice::PlatformDevice(Device& owner) : opengl::PlatformDevice(owner) {}
 
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
     TextureFormat colorTextureFormat,
-    Result* outResult) {
+    Result* IGL_NULLABLE outResult) {
   if (drawableTexture_) {
     return drawableTexture_;
   }
@@ -69,7 +69,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
     int width,
     int height,
     TextureFormat colorTextureFormat,
-    Result* outResult) {
+    Result* IGL_NULLABLE outResult) {
   if (drawableTexture_ && drawableTexture_->getWidth() == width &&
       drawableTexture_->getHeight() == height) {
     return drawableTexture_;
@@ -109,7 +109,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
 
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(
     TextureFormat depthTextureFormat,
-    Result* outResult) {
+    Result* IGL_NULLABLE outResult) {
   auto* context = static_cast<Context*>(getSharedContext().get());
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "No EGL context found!");
@@ -152,7 +152,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(
 /// returns a android::NativeHWTextureBuffer on platforms supporting it
 /// this texture allows CPU and GPU to both read/write memory
 std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const TextureDesc& desc,
-                                                                        Result* outResult) const {
+                                                                        Result* IGL_NULLABLE
+                                                                            outResult) const {
   auto context = static_cast<Context*>(getSharedContext().get());
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "No EGL context found!");
@@ -178,8 +179,9 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const Te
   return texture;
 }
 
-std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(AHardwareBuffer* buffer,
-                                                                        Result* outResult) const {
+std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(
+    AHardwareBuffer* IGL_NONNULL buffer,
+    Result* IGL_NULLABLE outResult) const {
   auto context = static_cast<Context*>(getSharedContext().get());
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "No EGL context found!");
@@ -209,7 +211,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(AHardwar
 
 void PlatformDevice::updateSurfaces(EGLSurface readSurface,
                                     EGLSurface drawSurface,
-                                    Result* outResult) {
+                                    Result* IGL_NULLABLE outResult) {
   auto* context = static_cast<Context*>(getSharedContext().get());
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "No EGL context found!");
@@ -224,7 +226,8 @@ void PlatformDevice::updateSurfaces(EGLSurface readSurface,
   }
 }
 
-EGLSurface PlatformDevice::createSurface(NativeWindowType nativeWindow, Result* outResult) {
+EGLSurface PlatformDevice::createSurface(NativeWindowType nativeWindow,
+                                         Result* IGL_NULLABLE outResult) {
   auto* context = static_cast<Context*>(getSharedContext().get());
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "No EGL context found!");
@@ -233,7 +236,7 @@ EGLSurface PlatformDevice::createSurface(NativeWindowType nativeWindow, Result* 
   return context->createSurface(nativeWindow);
 }
 
-EGLSurface PlatformDevice::getReadSurface(Result* outResult) {
+EGLSurface PlatformDevice::getReadSurface(Result* IGL_NULLABLE outResult) {
   auto* context = static_cast<Context*>(getSharedContext().get());
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "No EGL context found!");
@@ -242,7 +245,8 @@ EGLSurface PlatformDevice::getReadSurface(Result* outResult) {
   return context->getReadSurface();
 }
 
-void PlatformDevice::setPresentationTime(long long presentationTimeNs, Result* outResult) {
+void PlatformDevice::setPresentationTime(long long presentationTimeNs,
+                                         Result* IGL_NULLABLE outResult) {
   auto* context = static_cast<Context*>(getSharedContext().get());
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "No EGL context found!");
