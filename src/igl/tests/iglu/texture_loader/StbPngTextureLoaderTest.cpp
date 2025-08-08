@@ -10,7 +10,6 @@
 #include <IGLU/texture_loader/stb_png/Header.h>
 #include <IGLU/texture_loader/stb_png/TextureLoaderFactory.h>
 #include <cstring>
-#include <numeric>
 #include <vector>
 
 namespace igl::tests::stb::png {
