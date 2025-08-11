@@ -119,7 +119,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index,
 void ComputeCommandEncoder::bindBytes(uint32_t index, const void* data, size_t length) {
   IGL_DEBUG_ASSERT(encoder_);
   if (data) {
-    if (length > MAX_RECOMMENDED_BYTES) {
+    if (length > kMaxRecommendedBytes) {
       IGL_LOG_INFO(
           "It is recommended to use bindBuffer instead of bindBytes when binding > 4kb: %u",
           length);

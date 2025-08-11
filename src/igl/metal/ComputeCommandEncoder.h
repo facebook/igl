@@ -41,7 +41,7 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
  private:
   id<MTLComputeCommandEncoder> encoder_ = nil;
   // 4 KB - page aligned memory for metal managed resource
-  static constexpr uint32_t MAX_RECOMMENDED_BYTES = 4 * 1024;
+  static constexpr uint32_t kMaxRecommendedBytes = 4 * 1024;
 };
 
 } // namespace igl::metal
