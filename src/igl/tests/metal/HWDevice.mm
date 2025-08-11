@@ -7,8 +7,8 @@
 
 #include <igl/metal/HWDevice.h>
 
-#include "../util/Common.h"
 #include "../util/TestDevice.h"
+#include <igl/Assert.h>
 
 #include <gtest/gtest.h>
 #include <memory>
