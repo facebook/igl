@@ -35,8 +35,8 @@ class HWDevice final : public ::igl::opengl::HWDevice {
                                                     Result* outResult) const override;
 
   using Super::create;
-  std::unique_ptr<IDevice> create(EGLNativeWindowType nativeWindow,
-                                  Result* outResult = nullptr) const;
+  std::unique_ptr<opengl::Device> create(EGLNativeWindowType nativeWindow,
+                                         Result* outResult = nullptr) const;
 };
 
 } // namespace igl::opengl::egl
