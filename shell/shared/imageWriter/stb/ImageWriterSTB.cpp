@@ -18,13 +18,14 @@
 namespace igl::shell {
 
 void ImageWriterSTB::writeImage(const std::string& imageAbsolutePath,
-                                const ImageData& imageData) const noexcept {
+                                const ImageData& imageData,
+                                bool flipY) const noexcept {
   if (imageData.desc.width * 4 > std::numeric_limits<int>::max() ||
       imageData.desc.height > std::numeric_limits<int>::max()) {
     IGLLog(IGLLogError, "Failed saving the file: %s", imageAbsolutePath.c_str());
     return;
   }
-  stbi_flip_vertically_on_write(1);
+  stbi_flip_vertically_on_write(static_cast<int>(flipY));
   auto ret = stbi_write_png(imageAbsolutePath.c_str(),
                             static_cast<int>(imageData.desc.width),
                             static_cast<int>(imageData.desc.height),

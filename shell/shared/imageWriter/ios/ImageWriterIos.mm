@@ -13,7 +13,8 @@
 
 namespace igl::shell {
 void ImageWriterIos::writeImage(const std::string& /*imageAbsolutePath*/,
-                                const ImageData& /*imageData*/) const noexcept {
+                                const ImageData& /*imageData*/,
+                                bool /*flipY*/) const noexcept {
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 }
 } // namespace igl::shell

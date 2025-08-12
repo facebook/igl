@@ -20,7 +20,8 @@ class ImageWriter {
   ImageWriter() = default;
   virtual ~ImageWriter() = default;
   virtual void writeImage(const std::string& imageName,
-                          const ImageData& imageData) const noexcept = 0;
+                          const ImageData& imageData,
+                          bool flipY = true) const noexcept = 0;
 
  private:
 };
