@@ -1412,7 +1412,7 @@ void IContext::deleteTextures(GLsizei n, const GLuint* textures) {
       deletionQueues_.queueDeleteTextures(n, textures);
     } else {
       GLCALL(DeleteTextures)(n, textures);
-      APILOG("glDeleteTextures(%u, %p) = %u\n", n, p, textures == nullptr ? 0 : *textures);
+      APILOG("glDeleteTextures(%u, %p) = %u\n", n, textures, textures == nullptr ? 0 : *textures);
       GLCHECK_ERRORS();
     }
   }
