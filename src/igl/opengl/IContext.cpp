@@ -1290,7 +1290,7 @@ void IContext::deleteBuffers(GLsizei n, const GLuint* buffers) {
       deletionQueues_.queueDeleteBuffers(n, buffers);
     } else {
       GLCALL(DeleteBuffers)(n, buffers);
-      APILOG("glDeleteBuffers(%u, %p)\n", n, buffers);
+      APILOG("glDeleteBuffers(%u, %p) = %u\n", n, buffers, buffers == nullptr ? 0 : *buffers);
       GLCHECK_ERRORS();
     }
   }
@@ -1298,7 +1298,7 @@ void IContext::deleteBuffers(GLsizei n, const GLuint* buffers) {
 
 void IContext::deleteMemoryObjects(GLsizei n, const GLuint* objects) {
   IGLCALL(DeleteMemoryObjectsEXT)(n, objects);
-  APILOG("glDeleteMemoryObjectsEXT(%u, %p)\n", n, objects);
+  APILOG("glDeleteMemoryObjectsEXT(%u, %p) = %u\n", n, objects, objects == nullptr ? 0 : *objects);
   GLCHECK_ERRORS();
 }
 
@@ -1316,7 +1316,10 @@ void IContext::deleteFramebuffers(GLsizei n, const GLuint* framebuffers) {
       deletionQueues_.queueDeleteFramebuffers(n, framebuffers);
     } else {
       IGLCALL(DeleteFramebuffers)(n, framebuffers);
-      APILOG("glDeleteFramebuffers(%u, %p)\n", n, framebuffers);
+      APILOG("glDeleteFramebuffers(%u, %p) = %u\n",
+             n,
+             framebuffers,
+             framebuffers == nullptr ? 0 : *framebuffers);
       GLCHECK_ERRORS();
     }
   }
@@ -1340,7 +1343,10 @@ void IContext::deleteRenderbuffers(GLsizei n, const GLuint* renderbuffers) {
       deletionQueues_.queueDeleteRenderbuffers(n, renderbuffers);
     } else {
       IGLCALL(DeleteRenderbuffers)(n, renderbuffers);
-      APILOG("glDeleteRenderbuffers(%u, %p)\n", n, renderbuffers);
+      APILOG("glDeleteRenderbuffers(%u, %p) = u\n",
+             n,
+             renderbuffers,
+             renderbuffers == nullptr ? 0 : *renderbuffers);
       GLCHECK_ERRORS();
     }
   }
@@ -1362,7 +1368,10 @@ void IContext::deleteVertexArrays(GLsizei n, const GLuint* vertexArrays) {
       deletionQueues_.queueDeleteVertexArrays(n, vertexArrays);
     } else {
       GLCALL_PROC(deleteVertexArraysProc_, n, vertexArrays);
-      APILOG("glDeleteVertexArrays(%u, %p)\n", n, vertexArrays);
+      APILOG("glDeleteVertexArrays(%u, %p) = %u\n",
+             n,
+             vertexArrays,
+             vertexArrays == nullptr ? 0 : *vertexArrays);
       GLCHECK_ERRORS();
     }
   }
@@ -1403,7 +1412,10 @@ void IContext::deleteTextures(const std::vector<GLuint>& textures) {
       deletionQueues_.queueDeleteTextures(textures);
     } else {
       GLCALL(DeleteTextures)(static_cast<GLsizei>(textures.size()), textures.data());
-      APILOG("glDeleteTextures(%u, %p)\n", textures.size(), textures.data());
+      APILOG("glDeleteTextures(%u, %p) = %u\n",
+             textures.size(),
+             textures.data(),
+             textures.empty() ? 0 : textures[0]);
       GLCHECK_ERRORS();
     }
   }
