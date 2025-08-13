@@ -745,15 +745,22 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
   }
   // clear the buffers if we're not loading previous contents
   GLbitfield clearMask = 0;
-  const auto& colorAttachment0 = renderTarget_.colorAttachments[0];
+  for (size_t index = 0; index != IGL_COLOR_ATTACHMENTS_MAX; index++) {
+    const auto& colorAttachment = renderTarget_.colorAttachments[index];
 
-  if (colorAttachment0.texture != nullptr &&
-      renderPass_.colorAttachments[0].loadAction == LoadAction::Clear) {
-    clearMask |= GL_COLOR_BUFFER_BIT;
-    auto clearColor = renderPass_.colorAttachments[0].clearColor;
-    getContext().colorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    getContext().clearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
+    if (colorAttachment.texture != nullptr &&
+        renderPass_.colorAttachments[index].loadAction == LoadAction::Clear) {
+      auto clearColor = renderPass_.colorAttachments[index].clearColor;
+      getContext().colorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+      if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::ClearBufferfv)) {
+        getContext().clearBufferfv(GL_COLOR, (GLint)index, clearColor.toFloatPtr());
+      } else {
+        clearMask |= GL_COLOR_BUFFER_BIT;
+        getContext().clearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
+      }
+    }
   }
+
   if (renderTarget_.depthAttachment.texture != nullptr) {
     if (renderPass_.depthAttachment.loadAction == LoadAction::Clear) {
       clearMask |= GL_DEPTH_BUFFER_BIT;
