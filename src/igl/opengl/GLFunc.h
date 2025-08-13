@@ -56,6 +56,7 @@ using PFNIGLBLITFRAMEBUFFERPROC = void (*)(GLint srcX0,
                                            GLbitfield mask,
                                            GLenum filter);
 using PFNIGLCHECKFRAMEBUFFERSTATUSPROC = GLenum (*)(GLenum target);
+using PFNIGLCLEARBUFFERFVPROC = void (*)(GLenum buffer, GLint drawBuffer, const GLfloat* value);
 using PFNIGLCLEARDEPTHPROC = void (*)(GLdouble depth);
 using PFNIGLCLEARDEPTHFPROC = void (*)(GLfloat depth);
 using PFNIGLCOMPRESSEDTEXIMAGE3DPROC = void (*)(GLenum target,
@@ -299,6 +300,7 @@ using PFNPOLYGONOFFSETCLAMPPROC = void (*)(float factor, float units, float clam
 /// MARK: - OpenGL ES / OpenGL
 
 // NOTE: Public IGL signature of clearDepth altered to match clearDepthf.
+void iglClearBufferfv(GLenum buffer, GLint drawBuffer, const GLfloat* value);
 void iglClearDepth(GLfloat depth);
 void iglCompressedTexImage3D(GLenum target,
                              GLint level,

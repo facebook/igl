@@ -65,6 +65,7 @@ enum class Extensions {
 
 // clang-format off
 enum class InternalFeatures {
+  ClearBufferfv,             // glClearBufferfv is supported
   ClearDepthf,               // glClearDepthf is supported
   DebugLabel,                // Debug labels on objects are supported
   DebugMessage,              // Debug messages and group markers are supported
