@@ -26,12 +26,25 @@ void ImageWriterSTB::writeImage(const std::string& imageAbsolutePath,
     return;
   }
   stbi_flip_vertically_on_write(static_cast<int>(flipY));
-  auto ret = stbi_write_png(imageAbsolutePath.c_str(),
-                            static_cast<int>(imageData.desc.width),
-                            static_cast<int>(imageData.desc.height),
-                            4,
-                            imageData.data->data(),
-                            /*int stride_in_bytes*/ 4 * static_cast<int>(imageData.desc.width));
+
+  IGL_DEBUG_ASSERT(imageAbsolutePath.length() > 4);
+  auto ext = imageAbsolutePath.substr(imageAbsolutePath.length() - 4);
+  std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+  int ret = 0;
+  if (ext == ".png") {
+    ret = stbi_write_png(imageAbsolutePath.c_str(),
+                         static_cast<int>(imageData.desc.width),
+                         static_cast<int>(imageData.desc.height),
+                         4,
+                         imageData.data->data(),
+                         /*int stride_in_bytes*/ 4 * static_cast<int>(imageData.desc.width));
+  } else if (ext == ".bmp") {
+    ret = stbi_write_bmp(imageAbsolutePath.c_str(),
+                         static_cast<int>(imageData.desc.width),
+                         static_cast<int>(imageData.desc.height),
+                         4,
+                         imageData.data->data());
+  }
   if (!ret) {
     IGLLog(IGLLogError, "Failed saving the file: %s", imageAbsolutePath.c_str());
   }
