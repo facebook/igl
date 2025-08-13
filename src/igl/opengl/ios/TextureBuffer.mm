@@ -83,8 +83,9 @@ TextureBuffer::~TextureBuffer() {
 
 #if TARGET_OS_SIMULATOR
   if (getFormat() == TextureFormat::BGRA_UNorm8) {
+    GLuint textureId = getId();
     // We only have a manually generated textureID when it's on simulator and BGRA
-    getContext().deleteTextures({getId()});
+    getContext().deleteTextures(1, &textureId);
   }
 #endif
   setTextureBufferProperties(0, 0);

@@ -134,7 +134,7 @@ TEST_F(TextureBufferBaseOGLTest, TextureBindAndUnbind) {
   context_->getIntegerv(GL_TEXTURE_BINDING_2D, &value);
   ASSERT_EQ(value, GL_ZERO);
 
-  context_->deleteTextures({textureID});
+  context_->deleteTextures(1, &textureID);
 }
 
 //
@@ -229,7 +229,7 @@ TEST_F(TextureBufferBaseOGLTest, TextureAttach) {
   ASSERT_EQ(0, context_->getError());
   ASSERT_EQ(type, GL_TEXTURE);
 
-  context_->deleteTextures({textureID});
+  context_->deleteTextures(1, &textureID);
 }
 
 //

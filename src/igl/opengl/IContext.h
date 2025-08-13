@@ -167,7 +167,7 @@ class IContext {
   void deleteProgram(GLuint program);
   void deleteShader(GLuint shaderId);
   void deleteSync(GLsync sync);
-  void deleteTextures(const std::vector<GLuint>& textures);
+  void deleteTextures(GLsizei n, const GLuint* textures);
   void depthFunc(GLenum func);
   void depthMask(GLboolean flag);
   void depthRangef(GLfloat n, GLfloat f);
@@ -590,7 +590,7 @@ class IContext {
     void queueDeleteVertexArrays(GLsizei n, const GLuint* vertexArrays);
     void queueDeleteProgram(GLuint program);
     void queueDeleteShader(GLuint shaderId);
-    void queueDeleteTextures(const std::vector<GLuint>& textures);
+    void queueDeleteTextures(GLsizei n, const GLuint* textures);
 
    private:
     /// This is called by flushDeletionQueue to swap fooQueue w/ scratchFooQueue

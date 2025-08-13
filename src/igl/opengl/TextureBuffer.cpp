@@ -38,12 +38,12 @@ void swapTextureChannelsForFormat(IContext& context, GLuint target, TextureForma
 } // namespace
 
 TextureBuffer::~TextureBuffer() {
-  const GLuint textureID = getId();
-  if (textureID != 0) {
+  const GLuint textureId = getId();
+  if (textureId != 0) {
     if (textureHandle_ != 0) {
       getContext().makeTextureHandleNonResident(textureHandle_);
     }
-    getContext().deleteTextures({textureID});
+    getContext().deleteTextures(1, &textureId);
   }
 }
 

@@ -249,9 +249,7 @@ TEST_F(ContextOGLTest, CheckForErrorsInvalidOperation) {
 
   // Clean up
   context_->bindTexture(GL_TEXTURE_2D, textureMap);
-  std::vector<GLuint> textures;
-  textures.push_back(textureMap);
-  context_->deleteTextures(textures);
+  context_->deleteTextures(1, &textureMap);
 
   context_->bindFramebuffer(GL_FRAMEBUFFER, 0);
   context_->deleteFramebuffers(1, &framebufferId);
@@ -284,9 +282,7 @@ TEST_F(ContextOGLTest, CheckForErrorsInvalidValue) {
 
   // Clean up
   context_->bindTexture(GL_TEXTURE_2D, textureMap);
-  std::vector<GLuint> textures;
-  textures.push_back(textureMap);
-  context_->deleteTextures(textures);
+  context_->deleteTextures(1, &textureMap);
 
   context_->bindFramebuffer(GL_FRAMEBUFFER, 0);
   context_->deleteFramebuffers(1, &framebufferId);

@@ -37,10 +37,10 @@ struct AHardwareBufferContext {
 };
 
 NativeHWTextureBuffer::~NativeHWTextureBuffer() {
-  GLuint textureID = getId();
-  if (textureID != 0) {
+  GLuint textureId = getId();
+  if (textureId != 0) {
     if (getContext().isLikelyValidObject()) {
-      getContext().deleteTextures({textureID});
+      getContext().deleteTextures(1, &textureId);
     }
   }
 
@@ -116,7 +116,8 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* buffer) {
   getContext().bindTexture(getTarget(), getId());
 
   if (getContext().checkForErrors(__FUNCTION__, __LINE__) != GL_NO_ERROR) {
-    getContext().deleteTextures({getId()});
+    GLuint textureId = getId();
+    getContext().deleteTextures(1, &textureId);
     eglDestroyImageKHR(display, eglImage);
     return Result{Result::Code::RuntimeError, "NativeHWTextureBuffer GL error during bindTexture"};
   }
