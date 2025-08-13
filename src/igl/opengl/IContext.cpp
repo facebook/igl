@@ -10,7 +10,6 @@
 
 #include <cstring>
 #include <string>
-#include <igl/opengl/Config.h>
 #include <igl/opengl/GLFunc.h>
 #include <igl/opengl/GLIncludes.h>
 

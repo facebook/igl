@@ -17,6 +17,7 @@
 #include <igl/DeviceFeatures.h>
 #include <igl/PlatformDevice.h>
 #include <igl/opengl/ComputeCommandAdapter.h>
+#include <igl/opengl/Config.h>
 #include <igl/opengl/DeviceFeatureSet.h>
 #include <igl/opengl/GLFunc.h>
 #include <igl/opengl/GLIncludes.h>
@@ -539,7 +540,7 @@ class IContext {
 
   // API Logging
   unsigned int apiLogDrawsLeft_ = 0;
-  bool apiLogEnabled_ = false;
+  bool apiLogEnabled_ = IGL_API_LOG != 0;
 
   PFNIGLBINDIMAGETEXTUREPROC bindImageTexturerProc_ = nullptr;
   PFNIGLBINDVERTEXARRAYPROC bindVertexArrayProc_ = nullptr;
