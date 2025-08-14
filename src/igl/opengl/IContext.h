@@ -93,6 +93,7 @@ class IContext {
   void bufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid* data);
   virtual GLenum checkFramebufferStatus(GLenum target);
   void clear(GLbitfield mask);
+  void clearBufferfv(GLenum buffer, GLint drawBuffer, const GLfloat* value);
   void clearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
   void clearDepthf(GLfloat depth);
   void clearStencil(GLint s);

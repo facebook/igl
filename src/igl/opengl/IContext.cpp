@@ -179,6 +179,7 @@ std::string GLenumToString(GLenum code) {
     RESULT_CASE(GL_BUFFER_USAGE)
     RESULT_CASE(GL_BYTE)
     RESULT_CASE(GL_CLAMP_TO_EDGE)
+    RESULT_CASE(GL_COLOR)
     RESULT_CASE(GL_COLOR_ATTACHMENT0)
     RESULT_CASE(GL_COLOR_ATTACHMENT1)
     RESULT_CASE(GL_COMPARE_REF_TO_TEXTURE)
@@ -971,6 +972,17 @@ void IContext::clear(GLbitfield mask) {
          mask & GL_COLOR_BUFFER_BIT ? "GL_COLOR_BUFFER_BIT" : "",
          mask & GL_DEPTH_BUFFER_BIT ? "GL_DEPTH_BUFFER_BIT" : "",
          mask & GL_STENCIL_BUFFER_BIT ? "GL_STENCIL_BUFFER_BIT" : "");
+  GLCHECK_ERRORS();
+}
+
+void IContext::clearBufferfv(GLenum buffer, GLint drawBuffer, const GLfloat* value) {
+  if (!deviceFeatureSet_.hasInternalFeature(InternalFeatures::ClearBufferfv)) {
+    IGL_DEBUG_ASSERT(0, "No supported function for glClearBufferfv\n");
+    return;
+  }
+
+  iglClearBufferfv(buffer, drawBuffer, value);
+  APILOG("glClearBufferfv(%s, %d, %f)\n", GL_ENUM_TO_STRING(buffer), drawBuffer, *value);
   GLCHECK_ERRORS();
 }
 

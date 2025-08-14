@@ -455,6 +455,9 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
 
 bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) const {
   switch (feature) {
+  case InternalFeatures::ClearBufferfv:
+    return hasDesktopOrESVersion(*this, GLVersion::v3_0, GLVersion::v3_0_ES);
+
   case InternalFeatures::ClearDepthf:
     return hasDesktopOrESVersion(*this, GLVersion::v4_1, GLVersion::v2_0_ES);
 

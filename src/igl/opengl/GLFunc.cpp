@@ -168,8 +168,10 @@ IGL_EXTERN_BEGIN
 #define CAN_CALL_glUnmapBuffer 0
 #endif
 #if defined(GL_VERSION_3_0) || defined(GL_ES_VERSION_3_0)
+#define CAN_CALL_glClearBufferfv CAN_CALL
 #define CAN_CALL_glGetStringi CAN_CALL
 #else
+#define CAN_CALL_glClearBufferfv 0
 #define CAN_CALL_glGetStringi 0
 #endif
 #if defined(GL_VERSION_3_1) || defined(GL_ES_VERSION_3_0)
@@ -226,6 +228,11 @@ void iglDebugMessageInsert(GLenum source,
                           severity,
                           length,
                           buf);
+}
+
+void iglClearBufferfv(GLenum buffer, GLint drawBuffer, const GLfloat* value) {
+  GLEXTENSION_METHOD_BODY(
+      CAN_CALL_glClearBufferfv, glClearBufferfv, PFNIGLCLEARBUFFERFVPROC, buffer, drawBuffer, value)
 }
 
 void iglClearDepth(GLfloat depth) {
