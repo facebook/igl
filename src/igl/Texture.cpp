@@ -387,7 +387,7 @@ uint32_t TextureFormatProperties::getRows(TextureRangeDesc range) const noexcept
   if (range.numMipLevels == 1) {
     const uint32_t texHeight = std::max(range.height, 1u);
     uint32_t rows = texHeight;
-    if (isCompressed()) {
+    if (isCompressed() && !isVariableLength()) {
       rows =
           std::max((texHeight + blockHeight - 1) / blockHeight, static_cast<uint32_t>(minBlocksY));
     }
@@ -408,6 +408,10 @@ uint32_t TextureFormatProperties::getBytesPerRow(uint32_t texWidth) const noexce
 
 uint32_t TextureFormatProperties::getBytesPerRow(TextureRangeDesc range) const noexcept {
   const uint32_t texWidth = std::max(range.width, 1u);
+  // For variable length formats, bytesPerRow is always 0 and the caller will handle it as needed.
+  if (isVariableLength()) {
+    return 0;
+  }
   if (isCompressed()) {
     const uint32_t widthInBlocks =
         std::max((texWidth + blockWidth - 1) / blockWidth, static_cast<uint32_t>(minBlocksX));
@@ -431,6 +435,10 @@ size_t TextureFormatProperties::getBytesPerLayer(TextureRangeDesc range,
   const uint32_t texHeight = std::max(range.height, 1u);
   const uint32_t texDepth = std::max(range.depth, 1u);
   const size_t texFaces = std::max(range.numFaces, 1u);
+  // For variable length formats, bytesPerRow is always 0 and the caller will handle it as needed.
+  if (isVariableLength()) {
+    return 0;
+  }
   if (isCompressed()) {
     const uint32_t widthInBlocks =
         std::max((texWidth + blockWidth - 1) / blockWidth, static_cast<uint32_t>(minBlocksX));
