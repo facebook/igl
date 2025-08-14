@@ -44,8 +44,9 @@ std::shared_ptr<::igl::opengl::Device> createOffscreenDevice() {
 // Used by clients to get an IGL device. The backend is determined by
 // the IGL_BACKEND_TYPE compiler flag in the BUCK file
 //
-std::shared_ptr<IDevice> createTestDevice(std::optional<BackendVersion> requestedVersion) {
-  std::shared_ptr<IDevice> iglDev = nullptr;
+std::shared_ptr<igl::opengl::Device> createTestDevice(
+    std::optional<BackendVersion> requestedVersion) {
+  std::shared_ptr<igl::opengl::Device> iglDev = nullptr;
 
 #if IGL_PLATFORM_IOS
   iglDev = requestedVersion ? ::igl::opengl::ios::HWDevice().create(*requestedVersion)

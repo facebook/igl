@@ -8,15 +8,13 @@
 #pragma once
 
 #include <memory>
+#include <igl/metal/Device.h>
 
-namespace igl {
-class IDevice;
-namespace tests::util::device::metal {
+namespace igl::tests::util::device::metal {
 
 /**
  Create and return an igl::Device that is suitable for running tests against.
  */
-std::shared_ptr<IDevice> createTestDevice();
+std::shared_ptr<igl::metal::Device> createTestDevice();
 
-} // namespace tests::util::device::metal
-} // namespace igl
+} // namespace igl::tests::util::device::metal

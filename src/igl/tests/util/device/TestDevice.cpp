@@ -19,13 +19,13 @@
 // clang-format on
 // @fb-only
 #if IGL_METAL_SUPPORTED
-#include "metal/TestDevice.h"
+#include <igl/tests/util/device/MetalTestDevice.h>
 #endif
 #if IGL_OPENGL_SUPPORTED
-#include "opengl/TestDevice.h"
+#include <igl/tests/util/device/opengl/TestDevice.h>
 #endif
 #if IGL_VULKAN_SUPPORTED
-#include "vulkan/TestDevice.h"
+#include <igl/tests/util/device/vulkan/TestDevice.h>
 #endif
 // @fb-only
 // @fb-only
@@ -54,7 +54,7 @@ bool isBackendTypeSupported(BackendType backendType) {
 std::shared_ptr<IDevice> createTestDevice(BackendType backendType, const TestDeviceConfig& config) {
   if (backendType == ::igl::BackendType::Metal) {
 #if IGL_METAL_SUPPORTED
-    return metal::createTestDevice();
+    return createMetalTestDevice();
 #else
     return nullptr;
 #endif

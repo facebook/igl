@@ -30,16 +30,16 @@ std::vector<HWDeviceDesc> HWDevice::queryDevices(VulkanContext& ctx,
   return outDevices;
 }
 
-std::unique_ptr<IDevice> HWDevice::create(std::unique_ptr<VulkanContext> ctx,
-                                          const HWDeviceDesc& desc,
-                                          uint32_t width,
-                                          uint32_t height,
-                                          size_t numExtraDeviceExtensions,
-                                          const char* IGL_NULLABLE* IGL_NULLABLE
-                                              extraDeviceExtensions,
-                                          const igl::vulkan::VulkanFeatures* IGL_NULLABLE features,
-                                          const char* IGL_NULLABLE debugName,
-                                          Result* IGL_NULLABLE outResult) {
+std::unique_ptr<Device> HWDevice::create(std::unique_ptr<VulkanContext> ctx,
+                                         const HWDeviceDesc& desc,
+                                         uint32_t width,
+                                         uint32_t height,
+                                         size_t numExtraDeviceExtensions,
+                                         const char* IGL_NULLABLE* IGL_NULLABLE
+                                             extraDeviceExtensions,
+                                         const igl::vulkan::VulkanFeatures* IGL_NULLABLE features,
+                                         const char* IGL_NULLABLE debugName,
+                                         Result* IGL_NULLABLE outResult) {
   IGL_DEBUG_ASSERT(ctx);
 
   auto result =
