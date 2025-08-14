@@ -47,33 +47,9 @@
   #include <GL/glew.h> // IWYU pragma: export
 #endif
 #elif IGL_PLATFORM_ANDROID
-#if defined(SUPPORT_ES31_IGL_OPENGL_ANDROID)
   #include <GLES3/gl31.h> // IWYU pragma: export
   #include <GLES3/gl3ext.h> // IWYU pragma: export
   #include <GLES2/gl2ext.h> // GL_EXT_memory_object // IWYU pragma: export
-#elif IGL_ANGLE
-  #include <GLES3/gl31.h> // IWYU pragma: export
-  #include <GLES3/gl3ext.h> // IWYU pragma: export
-  #include <GLES2/gl2ext.h> // GL_EXT_memory_object // IWYU pragma: export
-#else
-  // We only support GLES3 on 64-bit Android.
-  #if defined(_M_ARM64) \
-      || defined(__AARCH64EL__) \
-      || defined(__AARCH64EB__) \
-      || defined(__aarch64__) \
-      || defined(_M_X64) \
-      || defined(_M_AMD64) \
-      || defined(__x86_64__) \
-      || defined(__AMD64__) \
-      || defined(__amd64__)
-    #include <GLES3/gl31.h> // IWYU pragma: export
-    #include <GLES3/gl3.h> // IWYU pragma: export
-    #include <GLES3/gl3ext.h> // IWYU pragma: export
-  #else
-    #include <GLES2/gl2.h> // IWYU pragma: export
-  #endif
-  #include <GLES2/gl2ext.h> // IWYU pragma: export
-#endif
 #elif IGL_PLATFORM_LINUX
   #if IGL_PLATFORM_LINUX_USE_EGL
     #include <GLES3/gl3.h> // IWYU pragma: export
