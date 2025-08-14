@@ -71,7 +71,8 @@ void TinyRenderer::init(AAssetManager* mgr,
                         ANativeWindow* nativeWindow,
                         shell::IRenderSessionFactory& factory,
                         BackendVersion backendVersion,
-                        TextureFormat swapchainColorTextureFormat) {
+                        TextureFormat swapchainColorTextureFormat,
+                        const std::vector<std::string>& args) {
   backendVersion_ = backendVersion;
   nativeWindow_ = nativeWindow;
   Result result;
@@ -154,6 +155,9 @@ void TinyRenderer::init(AAssetManager* mgr,
     const ContextGuard guard(platform_->getDevice()); // wrap 'session_' operations
 
     session_ = factory.createRenderSession(platform_);
+
+    shell::parseShellParams(args, shellParams_);
+
     session_->setShellParams(shellParams_);
     IGL_DEBUG_ASSERT(session_ != nullptr);
     session_->initialize();

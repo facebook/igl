@@ -9,6 +9,7 @@
 
 #include <array>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include <shell/shared/renderSession/Hands.h>
@@ -19,6 +20,14 @@
 #include <igl/TextureFormat.h>
 
 namespace igl::shell {
+
+struct BenchmarkRenderSessionParams {
+  size_t renderSessionTimeoutMs = 2000;
+  size_t numSessionsToRun = 10;
+  bool logReporter = false;
+  bool offscreenRenderingOnly = false;
+};
+
 struct ShellParams {
   std::vector<ViewParams> viewParams;
   RenderMode renderMode = RenderMode::Mono;
@@ -31,9 +40,14 @@ struct ShellParams {
   std::optional<Color> clearColorValue = {};
   std::array<HandMesh, 2> handMeshes = {};
   std::array<HandTracking, 2> handTracking = {};
-  const char* screenshotFileName = "screenshot.png";
-  uint32_t screenshotNumber = 0; // frame number to save as a screenshot in headless more
+  std::string screenshotFileName = "screenshot.png";
+  uint32_t screenshotNumber = ~0; // frame number to save as a screenshot in headless more
   bool isHeadless = false;
   bool enableVulkanValidationLayers = true;
+  std::optional<BenchmarkRenderSessionParams> benchmarkParams = {};
 };
+
+std::vector<std::string> convertArgvToParams(int argc, char** argv);
+
+void parseShellParams(const std::vector<std::string>& args, ShellParams& shellParams);
 } // namespace igl::shell

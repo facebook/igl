@@ -9,6 +9,7 @@
 
 package com.facebook.igl.shell;
 
+import android.content.Intent;
 import android.content.res.AssetManager;
 import android.view.Surface;
 
@@ -48,7 +49,8 @@ public class SampleLib {
       BackendVersion backendVersion,
       int swapchainColorTextureFormat,
       AssetManager assetManager,
-      Surface surface);
+      Surface surface,
+      Intent intent);
 
   public static native void setActiveBackendVersion(BackendVersion backendVersion);
 

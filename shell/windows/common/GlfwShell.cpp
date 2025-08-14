@@ -12,11 +12,12 @@
 
 #include <shell/windows/common/GlfwShell.h>
 
-#include "shell/shared/renderSession/ScreenshotTestRenderSessionHelper.h"
 #include <shell/shared/input/InputDispatcher.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
+#include <shell/shared/renderSession/ScreenshotTestRenderSessionHelper.h>
+#include <shell/shared/renderSession/ShellParams.h>
 #include <igl/Framebuffer.h>
 
 namespace igl::shell {
@@ -195,38 +196,14 @@ bool GlfwShell::initialize(int argc,
                            const RenderSessionConfig& suggestedSessionConfig) noexcept {
   igl::shell::Platform::initializeCommandLineArgs(argc, argv);
 
-  for (int i = 1; i < argc; i++) {
-    if (!strcmp(argv[i], "--headless")) {
-      shellParams_.isHeadless = true;
-    } else if (!strcmp(argv[i], "--disable-vulkan-validation-layers")) {
-      shellParams_.enableVulkanValidationLayers = false;
-    } else if (!strcmp(argv[i], "--screenshot-file")) {
-      if (i + 1 < argc) {
-        shellParams_.screenshotFileName = argv[++i];
-      } else {
-        IGL_LOG_ERROR("Specify a file name for `--screenshot-file <filename>`\n");
-      }
-    } else if (!strcmp(argv[i], "--screenshot-number")) {
-      if (i + 1 < argc) {
-        shellParams_.screenshotNumber = static_cast<uint32_t>(atoi(argv[++i]));
-      } else {
-        IGL_LOG_ERROR("Specify a frame number for `--screenshot-number <value>`\n");
-      }
-    } else if (!strcmp(argv[i], "--viewport-size")) {
-      unsigned int w = 0;
-      unsigned int h = 0;
-      if ((i + 1 < argc) && sscanf(argv[++i], "%ux%u", &w, &h) == 2) {
-        if (w && h) {
-          shellParams_.viewportSize = glm::vec2(w, h);
-          suggestedWindowConfig.width = w;
-          suggestedWindowConfig.height = h;
-          suggestedWindowConfig.windowMode = WindowMode::Window;
-        }
-      } else {
-        IGL_LOG_ERROR("Specify viewport size for `--viewport-size <WxH>`\n");
-      }
-    }
-  }
+  // Use the comprehensive parser
+  auto args = shell::convertArgvToParams(argc, argv);
+  shell::parseShellParams(args, shellParams_);
+
+  // Apply viewport size if specified
+  suggestedWindowConfig.width = static_cast<int>(shellParams_.viewportSize.x);
+  suggestedWindowConfig.height = static_cast<int>(shellParams_.viewportSize.y);
+  suggestedWindowConfig.windowMode = WindowMode::Window;
 
   auto factory = igl::shell::createDefaultRenderSessionFactory();
 
@@ -275,19 +252,17 @@ void GlfwShell::run() noexcept {
     session_->update(std::move(surfaceTextures));
     if (window_) {
       glfwPollEvents();
-    } else {
-      if (frameNumber == session_->shellParams().screenshotNumber) {
-        IGL_LOG_INFO("\nWe are running headless - breaking after %u frame\n",
-                     (uint32_t)frameNumber);
-        const char* screenshotFileName = session_->shellParams().screenshotFileName;
-        if (screenshotFileName && *screenshotFileName) {
-          SaveFrameBufferToPng(screenshotFileName,
-                               platform_->getDevice().createFramebuffer(
-                                   {.colorAttachments = {{.texture = colorTexture}}}, nullptr),
-                               *platform_);
-        }
-        break;
+    }
+    if (frameNumber == session_->shellParams().screenshotNumber) {
+      IGL_LOG_INFO("\nWe are running screenshot test - breaking after %u frame\n",
+                   (uint32_t)frameNumber);
+      if (!session_->shellParams().screenshotFileName.empty()) {
+        SaveFrameBufferToPng(session_->shellParams().screenshotFileName.c_str(),
+                             platform_->getDevice().createFramebuffer(
+                                 {.colorAttachments = {{.texture = colorTexture}}}, nullptr),
+                             *platform_);
       }
+      break;
     }
     frameNumber++;
   }

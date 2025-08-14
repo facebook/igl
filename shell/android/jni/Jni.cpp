@@ -175,7 +175,8 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
                                                                   jobject jbackendVersion,
                                                                   jint jswapchainColorTextureFormat,
                                                                   jobject javaAssetManager,
-                                                                  jobject surface);
+                                                                  jobject surface,
+                                                                  jobject intent);
 JNIEXPORT void JNICALL
 Java_com_facebook_igl_shell_SampleLib_setActiveBackendVersion(JNIEnv* env,
                                                               jobject obj,
@@ -250,23 +251,170 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
   return toJava(env, requestedConfigs);
 }
 
+// Helper function to extract all Intent extras as command-line style arguments
+[[maybe_unused]] static std::vector<std::string> extractIntentExtras(JNIEnv* env, jobject intent) {
+  std::vector<std::string> extras;
+  if (!intent) {
+    return extras;
+  }
+
+  // Get Intent class and getExtras method
+  jclass intentClass = env->GetObjectClass(intent);
+  jmethodID getExtrasMethod = env->GetMethodID(intentClass, "getExtras", "()Landroid/os/Bundle;");
+
+  if (!getExtrasMethod) {
+    IGL_LOG_ERROR("Failed to get getExtras method\n");
+    return extras;
+  }
+
+  // Get the Bundle containing extras
+  jobject bundle = env->CallObjectMethod(intent, getExtrasMethod);
+  if (!bundle) {
+    IGL_LOG_INFO("No extras found in Intent\n");
+    return extras;
+  }
+
+  // Get Bundle class and keySet method
+  jclass bundleClass = env->GetObjectClass(bundle);
+  jmethodID keySetMethod = env->GetMethodID(bundleClass, "keySet", "()Ljava/util/Set;");
+
+  if (!keySetMethod) {
+    IGL_LOG_ERROR("Failed to get keySet method\n");
+    env->DeleteLocalRef(bundle);
+    return extras;
+  }
+
+  // Get the Set of keys
+  jobject keySet = env->CallObjectMethod(bundle, keySetMethod);
+  if (!keySet) {
+    IGL_LOG_INFO("No keys found in Bundle\n");
+    env->DeleteLocalRef(bundle);
+    return extras;
+  }
+
+  // Get Set class and iterator method
+  jclass setClass = env->GetObjectClass(keySet);
+  jmethodID iteratorMethod = env->GetMethodID(setClass, "iterator", "()Ljava/util/Iterator;");
+
+  if (!iteratorMethod) {
+    IGL_LOG_ERROR("Failed to get iterator method\n");
+    env->DeleteLocalRef(keySet);
+    env->DeleteLocalRef(bundle);
+    return extras;
+  }
+
+  // Get the Iterator
+  jobject iterator = env->CallObjectMethod(keySet, iteratorMethod);
+  if (!iterator) {
+    IGL_LOG_ERROR("Failed to get iterator\n");
+    env->DeleteLocalRef(keySet);
+    env->DeleteLocalRef(bundle);
+    return extras;
+  }
+
+  // Get Iterator class methods
+  jclass iteratorClass = env->GetObjectClass(iterator);
+  jmethodID hasNextMethod = env->GetMethodID(iteratorClass, "hasNext", "()Z");
+  jmethodID nextMethod = env->GetMethodID(iteratorClass, "next", "()Ljava/lang/Object;");
+
+  if (!hasNextMethod || !nextMethod) {
+    IGL_LOG_ERROR("Failed to get iterator methods\n");
+    env->DeleteLocalRef(iterator);
+    env->DeleteLocalRef(keySet);
+    env->DeleteLocalRef(bundle);
+    return extras;
+  }
+
+  // Get Bundle.get method to retrieve values
+  jmethodID getMethod =
+      env->GetMethodID(bundleClass, "get", "(Ljava/lang/String;)Ljava/lang/Object;");
+  if (!getMethod) {
+    IGL_LOG_ERROR("Failed to get Bundle.get method\n");
+    env->DeleteLocalRef(iterator);
+    env->DeleteLocalRef(keySet);
+    env->DeleteLocalRef(bundle);
+    return extras;
+  }
+
+  // Iterate through all keys
+  while (env->CallBooleanMethod(iterator, hasNextMethod)) {
+    jobject keyObj = env->CallObjectMethod(iterator, nextMethod);
+    if (!keyObj) {
+      continue;
+    }
+
+    // Convert key to string
+    jstring keyStr = static_cast<jstring>(keyObj);
+    const char* keyChars = env->GetStringUTFChars(keyStr, nullptr);
+    std::string key(keyChars);
+    env->ReleaseStringUTFChars(keyStr, keyChars);
+
+    // Get the value for this key
+    jobject valueObj = env->CallObjectMethod(bundle, getMethod, keyStr);
+    std::string value;
+
+    if (valueObj) {
+      // Convert value to string (works for most common types)
+      jclass objectClass = env->GetObjectClass(valueObj);
+      jmethodID toStringMethod = env->GetMethodID(objectClass, "toString", "()Ljava/lang/String;");
+
+      if (toStringMethod) {
+        jstring valueStr = static_cast<jstring>(env->CallObjectMethod(valueObj, toStringMethod));
+        if (valueStr) {
+          const char* valueChars = env->GetStringUTFChars(valueStr, nullptr);
+          value = std::string(valueChars);
+          env->ReleaseStringUTFChars(valueStr, valueChars);
+          env->DeleteLocalRef(valueStr);
+        }
+      }
+      env->DeleteLocalRef(valueObj);
+    } else {
+      value = "null";
+    }
+
+    // Add the key as a command-line argument (with -- prefix)
+    extras.emplace_back(key);
+    // Add the value as a separate argument if it's not empty and not "null"
+    if (!value.empty() && value != "null") {
+      extras.emplace_back(value);
+    }
+    IGL_LOG_INFO("Intent extra: %s = %s\n", key.c_str(), value.c_str());
+
+    env->DeleteLocalRef(keyObj);
+  }
+
+  // Clean up local references
+  env->DeleteLocalRef(iterator);
+  env->DeleteLocalRef(keySet);
+  env->DeleteLocalRef(bundle);
+
+  return extras;
+}
+
 JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
                                                                   jobject /*obj*/,
                                                                   jobject jbackendVersion,
                                                                   jint jtextureFormat,
                                                                   jobject javaAssetManager,
-                                                                  jobject surface) {
+                                                                  jobject surface,
+                                                                  jobject intent) {
   const auto backendVersion = toBackendVersion(env, jbackendVersion);
   const auto swapchainColorTextureFormat = static_cast<TextureFormat>(jtextureFormat);
   const auto rendererIndex = findRendererIndex(backendVersion);
 
   if (backendVersion && !rendererIndex) {
     auto renderer = std::make_unique<TinyRenderer>();
+    auto cmdLine = extractIntentExtras(env, intent);
+    IGL_LOG_INFO("init: creating backend renderer cmd line: %d\n", cmdLine.size());
+    for (const auto& cmd : cmdLine) {
+      IGL_LOG_INFO("Param: %s\n", cmd.c_str());
+    }
     renderer->init(AAssetManager_fromJava(env, javaAssetManager),
                    surface ? ANativeWindow_fromSurface(env, surface) : nullptr,
                    *factory,
                    *backendVersion,
-                   swapchainColorTextureFormat);
+                   swapchainColorTextureFormat,
+                   cmdLine);
     renderers.emplace_back(std::move(renderer));
     IGL_LOG_INFO("init: creating backend renderer: %s\n", toString(backendVersion).c_str());
   } else if (rendererIndex && backendVersion && backendVersion->flavor == BackendFlavor::Vulkan) {

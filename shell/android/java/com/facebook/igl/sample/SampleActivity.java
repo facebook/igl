@@ -67,14 +67,18 @@ public class SampleActivity extends Activity implements View.OnClickListener {
       if (mConfigs[i].version.flavor == SampleLib.BackendFlavor.Vulkan) {
         backendView =
             new VulkanView(
-                getApplication(), mConfigs[i].version, mConfigs[i].swapchainColorTextureFormat);
+                getApplication(),
+                mConfigs[i].version,
+                mConfigs[i].swapchainColorTextureFormat,
+                getIntent());
       } else if (mConfigs[i].version.flavor == SampleLib.BackendFlavor.OpenGL_ES) {
         backendView =
             new SampleView(
                 getApplication(),
                 mConfigs[i].version,
                 mConfigs[i].swapchainColorTextureFormat,
-                mEnableStencilBuffer);
+                mEnableStencilBuffer,
+                getIntent());
         ((SampleView) backendView).onPause();
       }
 
