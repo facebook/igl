@@ -20,12 +20,12 @@ igl::vulkan::VulkanContextConfig getContextConfig(bool enableValidation = true);
 /**
  Create and return an igl::Device that is suitable for running tests against.
  */
-std::shared_ptr<igl::vulkan::Device> createTestDevice(
+std::unique_ptr<igl::vulkan::Device> createTestDevice(
     const igl::vulkan::VulkanContextConfig& config);
 
 /**
  Helper to create a Vulkan device with default configuration and optional validation.
  */
-std::shared_ptr<igl::vulkan::Device> createTestDevice(bool enableValidation = true);
+std::unique_ptr<igl::vulkan::Device> createTestDevice(bool enableValidation = true);
 
 } // namespace igl::tests::util::device::vulkan

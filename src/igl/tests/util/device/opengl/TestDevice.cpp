@@ -31,7 +31,7 @@ namespace igl::tests::util::device::opengl {
 
 namespace {
 template<typename THWDevice>
-std::shared_ptr<::igl::opengl::Device> createOffscreenDevice() {
+std::unique_ptr<::igl::opengl::Device> createOffscreenDevice() {
   THWDevice hwDevice;
   auto context = hwDevice.createOffscreenContext(640, 380, nullptr);
   return hwDevice.createWithContext(std::move(context), nullptr);
@@ -44,9 +44,9 @@ std::shared_ptr<::igl::opengl::Device> createOffscreenDevice() {
 // Used by clients to get an IGL device. The backend is determined by
 // the IGL_BACKEND_TYPE compiler flag in the BUCK file
 //
-std::shared_ptr<igl::opengl::Device> createTestDevice(
+std::unique_ptr<igl::opengl::Device> createTestDevice(
     std::optional<BackendVersion> requestedVersion) {
-  std::shared_ptr<igl::opengl::Device> iglDev = nullptr;
+  std::unique_ptr<igl::opengl::Device> iglDev = nullptr;
 
 #if IGL_PLATFORM_IOS
   iglDev = requestedVersion ? ::igl::opengl::ios::HWDevice().create(*requestedVersion)

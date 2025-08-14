@@ -21,6 +21,6 @@ namespace igl::tests::util::device {
  For OpenGL, a backendApi value of "2.0" will return a GLES2 context. All other values will return a
  GLES3 context.
  */
-std::shared_ptr<igl::IDevice> createMetalTestDevice();
+std::unique_ptr<igl::IDevice> createMetalTestDevice();
 
 } // namespace igl::tests::util::device

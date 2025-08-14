@@ -15,6 +15,6 @@ namespace igl::tests::util::device::metal {
 /**
  Create and return an igl::Device that is suitable for running tests against.
  */
-std::shared_ptr<igl::metal::Device> createTestDevice();
+std::unique_ptr<igl::metal::Device> createTestDevice();
 
 } // namespace igl::tests::util::device::metal

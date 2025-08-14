@@ -52,13 +52,13 @@ igl::vulkan::VulkanContextConfig getContextConfig(bool enableValidation) {
   return config;
 }
 
-std::shared_ptr<igl::vulkan::Device> createTestDevice(
+std::unique_ptr<igl::vulkan::Device> createTestDevice(
     const igl::vulkan::VulkanContextConfig& config) {
 #if IGL_PLATFORM_MACOSX
   ::igl::vulkan::setupMoltenVKEnvironment();
 #endif
 
-  std::shared_ptr<igl::vulkan::Device> iglDev = nullptr;
+  std::unique_ptr<igl::vulkan::Device> iglDev = nullptr;
   Result ret;
 
   auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
@@ -92,7 +92,7 @@ std::shared_ptr<igl::vulkan::Device> createTestDevice(
   return iglDev;
 }
 
-std::shared_ptr<igl::vulkan::Device> createTestDevice(bool enableValidation) {
+std::unique_ptr<igl::vulkan::Device> createTestDevice(bool enableValidation) {
   return createTestDevice(getContextConfig(enableValidation));
 }
 

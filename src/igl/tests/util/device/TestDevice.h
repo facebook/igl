@@ -9,8 +9,8 @@
 
 #include <memory>
 #include <optional>
-#include <string>
 #include <igl/Common.h>
+#include <igl/Device.h>
 #include <igl/DeviceFeatures.h>
 
 #if (IGL_PLATFORM_IOS || IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST) && IGL_BACKEND_METAL
@@ -32,10 +32,6 @@
 #define IGL_VULKAN_SUPPORTED 0
 #endif
 
-namespace igl {
-class IDevice;
-} // namespace igl
-
 namespace igl::tests::util::device {
 
 struct TestDeviceConfig {
@@ -54,7 +50,7 @@ bool isBackendTypeSupported(BackendType backendType);
  For OpenGL, a backendApi value of "2.0" will return a GLES2 context. All other values will return a
  GLES3 context.
  */
-std::shared_ptr<IDevice> createTestDevice(BackendType backendType,
+std::unique_ptr<IDevice> createTestDevice(BackendType backendType,
                                           const TestDeviceConfig& config = {});
 
 } // namespace igl::tests::util::device

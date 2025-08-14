@@ -51,7 +51,7 @@ bool isBackendTypeSupported(BackendType backendType) {
   IGL_UNREACHABLE_RETURN(false)
 }
 
-std::shared_ptr<IDevice> createTestDevice(BackendType backendType, const TestDeviceConfig& config) {
+std::unique_ptr<IDevice> createTestDevice(BackendType backendType, const TestDeviceConfig& config) {
   if (backendType == ::igl::BackendType::Metal) {
 #if IGL_METAL_SUPPORTED
     return createMetalTestDevice();
