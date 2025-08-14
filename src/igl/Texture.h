@@ -222,12 +222,14 @@ struct TextureRangeDesc {
  *  minBlocksY         - Minimum number of blocks in the Y direction for compressed textures
  *  minBlocksZ         - Minimum number of blocks in the Z direction for compressed textures
  *  flags              - Additional boolean flags for the format:
- *                        - Depth:      Depth texture format
- *                        - Stencil:    Stencil texture format
- *                        - Compressed: Compressed texture format
- *                        - sRGB:       sRGB texture format
- *                        - Integer:    Integer formats do not support sampling via
- *                                      float samplers `texture2D` (require `utexture2D`)
+ *                        - Depth:          Depth texture format
+ *                        - Stencil:        Stencil texture format
+ *                        - Compressed:     Compressed texture format
+ *                        - sRGB:           sRGB texture format
+ *                        - Integer:        Integer formats do not support sampling via
+ *                                          float samplers `texture2D` (require `utexture2D`)
+ *                        - HDR:            More than 8 bits per component
+ *                        - VariableLength: Variable length blocks
  */
 struct TextureFormatProperties {
   static TextureFormatProperties fromTextureFormat(TextureFormat format);
@@ -239,6 +241,7 @@ struct TextureFormatProperties {
     sRGB = 1 << 3,
     Integer = 1 << 4,
     HDR = 1 << 5, // Color format with more than 8 bits per component
+    VariableLength = 1 << 6, // Variable length blocks
   };
 
   const char* IGL_NONNULL name = "Invalid";
@@ -318,6 +321,10 @@ struct TextureFormatProperties {
    */
   [[nodiscard]] bool isDepthOrStencil() const noexcept {
     return (flags & Flags::Depth) != 0 || (flags & Flags::Stencil) != 0;
+  }
+
+  [[nodiscard]] bool isVariableLength() const noexcept {
+    return (flags & Flags::VariableLength) != 0;
   }
 
   /**

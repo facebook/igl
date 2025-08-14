@@ -723,6 +723,11 @@ MTLPixelFormat Texture::textureFormatToMTLPixelFormat(TextureFormat value) {
 
   case TextureFormat::YUV_NV12:
   case TextureFormat::YUV_420p:
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
     return MTLPixelFormatInvalid;
   }
 }

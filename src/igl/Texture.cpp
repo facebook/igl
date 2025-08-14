@@ -262,6 +262,7 @@ bool TextureRangeDesc::operator!=(const TextureRangeDesc& rhs) const noexcept {
 
 TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat format) {
   switch (format) {
+    // NOLINTBEGIN(readability-identifier-naming)
     INVALID(Invalid)
     COLOR(A_UNorm8, 1, 1, 0)
     COLOR(L_UNorm8, 1, 1, 0)
@@ -342,6 +343,29 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     COMPRESSED(R_EAC_SNorm, 1, 8, 4, 4, 1, 1, 1, 1, 0)
     COMPRESSED(RGBA_BC7_UNORM_4x4, 4, 16, 4, 4, 1, 1, 1, 1, 0)
     COMPRESSED(RGBA_BC7_SRGB_4x4, 4, 16, 4, 4, 1, 1, 1, 1, Flags::sRGB)
+    // @fb-only
+    // @fb-only
+               // @fb-only
+               // @fb-only
+               // @fb-only
+               // @fb-only
+               // @fb-only
+               // @fb-only
+               // @fb-only
+               // @fb-only
+               // @fb-only
+    // @fb-only
+    // @fb-only
+               // @fb-only
+               // @fb-only
+               // @fb-only
+               // @fb-only
+               // @fb-only
+               // @fb-only
+               // @fb-only
+               // @fb-only
+               // @fb-only
+    // @fb-only
     DEPTH(Z_UNorm16, 1, 2)
     DEPTH(Z_UNorm24, 1, 3)
     DEPTH(Z_UNorm32, 1, 4)
@@ -354,6 +378,7 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     STENCIL(S_UInt8, 1, 1)
     MULTIPLANAR(YUV_NV12, 3, 16, 2)
     MULTIPLANAR(YUV_420p, 3, 16, 3)
+    // NOLINTEND(readability-identifier-naming)
   }
   IGL_UNREACHABLE_RETURN(TextureFormatProperties{})
 }
