@@ -16,7 +16,7 @@ namespace igl::opengl {
 
 class Timer : public WithContext, public ITimer {
  public:
-  Timer(IContext& context);
+  explicit Timer(IContext& context);
   ~Timer() override;
 
   void end();
