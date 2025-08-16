@@ -587,10 +587,10 @@ void CustomFramebuffer::prepareResource(const std::string& debugName, Result* ou
     if (colorAttachment.texture != nullptr) {
       attachAsColor(*colorAttachment.texture, static_cast<uint32_t>(i), attachmentParams);
       drawBuffers.push_back(static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + i));
+    } else {
+      drawBuffers.push_back(GL_NONE);
     }
   }
-
-  std::sort(drawBuffers.begin(), drawBuffers.end());
 
   if (drawBuffers.size() > 1) {
     getContext().drawBuffers(static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
