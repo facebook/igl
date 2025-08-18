@@ -41,7 +41,7 @@ class IContext {
   virtual bool isCurrentSharegroup() const = 0;
   virtual void present(std::shared_ptr<ITexture> surface) const = 0;
 
-  virtual std::unique_ptr<IContext> createShareContext(Result* outResult) = 0;
+  virtual std::unique_ptr<IContext> createShareContext(Result* IGL_NULLABLE outResult) = 0;
 
   IContext();
   virtual ~IContext();
@@ -89,11 +89,14 @@ class IContext {
                        GLint dstY1,
                        GLbitfield mask,
                        GLenum filter);
-  void bufferData(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage);
-  void bufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid* data);
+  void bufferData(GLenum target, GLsizeiptr size, const GLvoid* IGL_NULLABLE data, GLenum usage);
+  void bufferSubData(GLenum target,
+                     GLintptr offset,
+                     GLsizeiptr size,
+                     const GLvoid* IGL_NULLABLE data);
   virtual GLenum checkFramebufferStatus(GLenum target);
   void clear(GLbitfield mask);
-  void clearBufferfv(GLenum buffer, GLint drawBuffer, const GLfloat* value);
+  void clearBufferfv(GLenum buffer, GLint drawBuffer, const GLfloat* IGL_NULLABLE value);
   void clearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
   void clearDepthf(GLfloat depth);
   void clearStencil(GLint s);
@@ -106,7 +109,7 @@ class IContext {
                             GLsizei height,
                             GLint border,
                             GLsizei imageSize,
-                            const GLvoid* data);
+                            const GLvoid* IGL_NULLABLE data);
   void compressedTexImage3D(GLenum target,
                             GLint level,
                             GLenum internalformat,
@@ -115,7 +118,7 @@ class IContext {
                             GLsizei depth,
                             GLint border,
                             GLsizei imageSize,
-                            const GLvoid* data);
+                            const GLvoid* IGL_NULLABLE data);
   void compressedTexSubImage2D(GLenum target,
                                GLint level,
                                GLint xoffset,
@@ -124,7 +127,7 @@ class IContext {
                                GLsizei height,
                                GLenum format,
                                GLsizei imageSize,
-                               const GLvoid* data);
+                               const GLvoid* IGL_NULLABLE data);
   void compressedTexSubImage3D(GLenum target,
                                GLint level,
                                GLint xoffset,
@@ -135,7 +138,7 @@ class IContext {
                                GLsizei depth,
                                GLenum format,
                                GLsizei imageSize,
-                               const GLvoid* data);
+                               const GLvoid* IGL_NULLABLE data);
   void copyBufferSubData(GLenum readtarget,
                          GLenum writetarget,
                          GLintptr readoffset,
@@ -149,26 +152,27 @@ class IContext {
                          GLint y,
                          GLsizei width,
                          GLsizei height);
-  void createMemoryObjects(GLsizei n, GLuint* objects);
+  void createMemoryObjects(GLsizei n, GLuint* IGL_NULLABLE objects);
   GLuint createProgram();
   GLuint createShader(GLenum shaderType);
   virtual void cullFace(GLint mode);
-  void debugMessageCallback(PFNIGLDEBUGPROC callback, const void* userParam);
+  void debugMessageCallback(PFNIGLDEBUGPROC IGL_NULLABLE callback,
+                            const void* IGL_NULLABLE userParam);
   void debugMessageInsert(GLenum source,
                           GLenum type,
                           GLuint id,
                           GLenum severity,
                           GLsizei length,
-                          const GLchar* buf);
-  void deleteBuffers(GLsizei n, const GLuint* buffers);
-  void deleteFramebuffers(GLsizei n, const GLuint* framebuffers);
-  void deleteMemoryObjects(GLsizei n, const GLuint* objects);
-  void deleteRenderbuffers(GLsizei n, const GLuint* renderbuffers);
-  void deleteVertexArrays(GLsizei n, const GLuint* vertexArrays);
+                          const GLchar* IGL_NULLABLE buf);
+  void deleteBuffers(GLsizei n, const GLuint* IGL_NULLABLE buffers);
+  void deleteFramebuffers(GLsizei n, const GLuint* IGL_NULLABLE framebuffers);
+  void deleteMemoryObjects(GLsizei n, const GLuint* IGL_NULLABLE objects);
+  void deleteRenderbuffers(GLsizei n, const GLuint* IGL_NULLABLE renderbuffers);
+  void deleteVertexArrays(GLsizei n, const GLuint* IGL_NULLABLE vertexArrays);
   void deleteProgram(GLuint program);
   void deleteShader(GLuint shaderId);
-  void deleteSync(GLsync sync);
-  void deleteTextures(GLsizei n, const GLuint* textures);
+  void deleteSync(GLsync IGL_NULLABLE sync);
+  void deleteTextures(GLsizei n, const GLuint* IGL_NULLABLE textures);
   void depthFunc(GLenum func);
   void depthMask(GLboolean flag);
   void depthRangef(GLfloat n, GLfloat f);
@@ -176,19 +180,19 @@ class IContext {
   virtual void disable(GLenum cap);
   void disableVertexAttribArray(GLuint index);
   void drawArrays(GLenum mode, GLint first, GLsizei count);
-  void drawArraysIndirect(GLenum mode, const GLvoid* indirect);
+  void drawArraysIndirect(GLenum mode, const GLvoid* IGL_NULLABLE indirect);
   void drawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount);
-  void drawBuffers(GLsizei n, GLenum* buffers);
-  void drawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices);
+  void drawBuffers(GLsizei n, GLenum* IGL_NULLABLE buffers);
+  void drawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* IGL_NULLABLE indices);
   void drawElementsInstanced(GLenum mode,
                              GLsizei count,
                              GLenum type,
-                             const GLvoid* indices,
+                             const GLvoid* IGL_NULLABLE indices,
                              GLsizei instancecount);
-  void drawElementsIndirect(GLenum mode, GLenum type, const GLvoid* indirect);
+  void drawElementsIndirect(GLenum mode, GLenum type, const GLvoid* IGL_NULLABLE indirect);
   virtual void enable(GLenum cap);
   void enableVertexAttribArray(GLuint index);
-  GLsync fenceSync(GLenum condition, GLbitfield flags);
+  GLsync IGL_NULLABLE fenceSync(GLenum condition, GLbitfield flags);
   void finish();
   void flush();
   void framebufferRenderbuffer(GLenum target,
@@ -214,93 +218,113 @@ class IContext {
   virtual void frontFace(GLenum mode);
   virtual void polygonFillMode(GLenum mode);
   void generateMipmap(GLenum target);
-  void genBuffers(GLsizei n, GLuint* buffers);
-  void genFramebuffers(GLsizei n, GLuint* framebuffers);
-  void genRenderbuffers(GLsizei n, GLuint* renderbuffers);
-  void genTextures(GLsizei n, GLuint* textures);
-  void genVertexArrays(GLsizei n, GLuint* vertexArrays);
+  void genBuffers(GLsizei n, GLuint* IGL_NULLABLE buffers);
+  void genFramebuffers(GLsizei n, GLuint* IGL_NULLABLE framebuffers);
+  void genRenderbuffers(GLsizei n, GLuint* IGL_NULLABLE renderbuffers);
+  void genTextures(GLsizei n, GLuint* IGL_NULLABLE textures);
+  void genVertexArrays(GLsizei n, GLuint* IGL_NULLABLE vertexArrays);
   void getActiveAttrib(GLuint program,
                        GLuint index,
                        GLsizei bufsize,
-                       GLsizei* length,
-                       GLint* size,
-                       GLenum* type,
-                       GLchar* name) const;
+                       GLsizei* IGL_NULLABLE length,
+                       GLint* IGL_NULLABLE size,
+                       GLenum* IGL_NULLABLE type,
+                       GLchar* IGL_NULLABLE name) const;
   void getActiveUniform(GLuint program,
                         GLuint index,
                         GLsizei bufsize,
-                        GLsizei* length,
-                        GLint* size,
-                        GLenum* type,
-                        GLchar* name) const;
+                        GLsizei* IGL_NULLABLE length,
+                        GLint* IGL_NULLABLE size,
+                        GLenum* IGL_NULLABLE type,
+                        GLchar* IGL_NULLABLE name) const;
 
   void getActiveUniformsiv(GLuint program,
                            GLsizei uniformCount,
-                           const GLuint* uniformIndices,
+                           const GLuint* IGL_NULLABLE uniformIndices,
                            GLenum pname,
-                           GLint* params) const;
-  void getActiveUniformBlockiv(GLuint program, GLuint index, GLenum pname, GLint* params) const;
+                           GLint* IGL_NULLABLE params) const;
+  void getActiveUniformBlockiv(GLuint program,
+                               GLuint index,
+                               GLenum pname,
+                               GLint* IGL_NULLABLE params) const;
   void getActiveUniformBlockName(GLuint program,
                                  GLuint index,
                                  GLsizei bufSize,
-                                 GLsizei* length,
-                                 GLchar* uniformBlockName) const;
-  GLint getAttribLocation(GLuint program, const GLchar* name) const;
-  void getBooleanv(GLenum pname, GLboolean* params) const;
-  void getBufferParameteriv(GLenum target, GLenum pname, GLint* params) const;
+                                 GLsizei* IGL_NULLABLE length,
+                                 GLchar* IGL_NULLABLE uniformBlockName) const;
+  GLint getAttribLocation(GLuint program, const GLchar* IGL_NULLABLE name) const;
+  void getBooleanv(GLenum pname, GLboolean* IGL_NULLABLE params) const;
+  void getBufferParameteriv(GLenum target, GLenum pname, GLint* IGL_NULLABLE params) const;
   GLuint getDebugMessageLog(GLuint count,
                             GLsizei bufSize,
-                            GLenum* sources,
-                            GLenum* types,
-                            GLuint* ids,
-                            GLenum* severities,
-                            GLsizei* lengths,
-                            GLchar* messageLog) const;
+                            GLenum* IGL_NULLABLE sources,
+                            GLenum* IGL_NULLABLE types,
+                            GLuint* IGL_NULLABLE ids,
+                            GLenum* IGL_NULLABLE severities,
+                            GLsizei* IGL_NULLABLE lengths,
+                            GLchar* IGL_NULLABLE messageLog) const;
   virtual GLenum getError() const;
   void getFramebufferAttachmentParameteriv(GLenum target,
                                            GLenum attachment,
                                            GLenum pname,
-                                           GLint* params) const;
-  void getIntegerv(GLenum pname, GLint* params) const;
-  void getProgramiv(GLuint program, GLenum pname, GLint* params) const;
+                                           GLint* IGL_NULLABLE params) const;
+  void getIntegerv(GLenum pname, GLint* IGL_NULLABLE params) const;
+  void getProgramiv(GLuint program, GLenum pname, GLint* IGL_NULLABLE params) const;
   void getProgramInterfaceiv(GLuint program,
                              GLenum programInterface,
                              GLenum pname,
-                             GLint* params) const;
-  void getProgramInfoLog(GLuint program, GLsizei bufsize, GLsizei* length, GLchar* infolog) const;
-  GLuint getProgramResourceIndex(GLuint program, GLenum programInterface, const GLchar* name) const;
+                             GLint* IGL_NULLABLE params) const;
+  void getProgramInfoLog(GLuint program,
+                         GLsizei bufsize,
+                         GLsizei* IGL_NULLABLE length,
+                         GLchar* IGL_NULLABLE infolog) const;
+  GLuint getProgramResourceIndex(GLuint program,
+                                 GLenum programInterface,
+                                 const GLchar* IGL_NULLABLE name) const;
   void getProgramResourceName(GLuint program,
                               GLenum programInterface,
                               GLuint index,
                               GLsizei bufSize,
-                              GLsizei* length,
-                              char* name) const;
-  void getShaderiv(GLuint shader, GLenum pname, GLint* params) const;
-  void getShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei* length, GLchar* infoLog) const;
-  virtual const GLubyte* getString(GLenum name) const;
-  virtual const GLubyte* getStringi(GLenum name, GLuint index) const;
-  void getSynciv(GLsync sync, GLenum pname, GLsizei bufSize, GLsizei* length, GLint* values) const;
-  void getUniformiv(GLuint program, GLint location, GLint* params) const;
-  GLint getUniformLocation(GLuint program, const GLchar* name) const;
+                              GLsizei* IGL_NULLABLE length,
+                              char* IGL_NULLABLE name) const;
+  void getShaderiv(GLuint shader, GLenum pname, GLint* IGL_NULLABLE params) const;
+  void getShaderInfoLog(GLuint shader,
+                        GLsizei maxLength,
+                        GLsizei* IGL_NULLABLE length,
+                        GLchar* IGL_NULLABLE infoLog) const;
+  virtual const GLubyte* IGL_NULLABLE getString(GLenum name) const;
+  virtual const GLubyte* IGL_NULLABLE getStringi(GLenum name, GLuint index) const;
+  void getSynciv(GLsync IGL_NULLABLE sync,
+                 GLenum pname,
+                 GLsizei bufSize,
+                 GLsizei* IGL_NULLABLE length,
+                 GLint* IGL_NULLABLE values) const;
+  void getUniformiv(GLuint program, GLint location, GLint* IGL_NULLABLE params) const;
+  GLint getUniformLocation(GLuint program, const GLchar* IGL_NULLABLE name) const;
   void importMemoryFd(GLuint memory, GLuint64 size, GLenum handleType, GLint fd);
-  void invalidateFramebuffer(GLenum target, GLsizei numAttachments, const GLenum* attachments);
+  void invalidateFramebuffer(GLenum target,
+                             GLsizei numAttachments,
+                             const GLenum* IGL_NULLABLE attachments);
   GLboolean isEnabled(GLenum cap);
   GLboolean isTexture(GLuint texture);
   void linkProgram(GLuint program);
-  void* mapBuffer(GLenum target, GLbitfield access);
-  void* mapBufferRange(GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access);
-  void objectLabel(GLenum identifier, GLuint name, GLsizei length, const char* label);
+  void* IGL_NULLABLE mapBuffer(GLenum target, GLbitfield access);
+  void* IGL_NULLABLE mapBufferRange(GLenum target,
+                                    GLintptr offset,
+                                    GLsizeiptr length,
+                                    GLbitfield access);
+  void objectLabel(GLenum identifier, GLuint name, GLsizei length, const char* IGL_NULLABLE label);
   void pixelStorei(GLenum pname, GLint param);
   void polygonOffsetClamp(GLfloat factor, GLfloat units, float clamp);
   void popDebugGroup();
-  void pushDebugGroup(GLenum source, GLuint id, GLsizei length, const GLchar* message);
+  void pushDebugGroup(GLenum source, GLuint id, GLsizei length, const GLchar* IGL_NULLABLE message);
   void readPixels(GLint x,
                   GLint y,
                   GLsizei width,
                   GLsizei height,
                   GLenum format,
                   GLenum type,
-                  GLvoid* pixels);
+                  GLvoid* IGL_NULLABLE pixels);
   void renderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
   void renderbufferStorageMultisample(GLenum target,
                                       GLsizei samples,
@@ -322,7 +346,10 @@ class IContext {
                                               GLsizei numViews);
   void scissor(GLint x, GLint y, GLsizei width, GLsizei height);
   virtual void setEnabled(bool shouldEnable, GLenum cap);
-  void shaderSource(GLuint shader, GLsizei count, const GLchar** string, const GLint* length);
+  void shaderSource(GLuint shader,
+                    GLsizei count,
+                    const GLchar* IGL_NULLABLE* IGL_NULLABLE string,
+                    const GLint* IGL_NULLABLE length);
   void stencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
   void stencilMask(GLuint mask);
   void stencilMaskSeparate(GLenum face, GLuint mask);
@@ -361,7 +388,7 @@ class IContext {
                   GLint border,
                   GLenum format,
                   GLenum type,
-                  const GLvoid* data);
+                  const GLvoid* IGL_NULLABLE data);
 
   void texImage3D(GLenum target,
                   GLint level,
@@ -372,7 +399,7 @@ class IContext {
                   GLint border,
                   GLenum format,
                   GLenum type,
-                  const GLvoid* data);
+                  const GLvoid* IGL_NULLABLE data);
 
   void texParameteri(GLenum target, GLenum pname, GLint param);
   void texSubImage2D(GLenum target,
@@ -383,7 +410,7 @@ class IContext {
                      GLsizei height,
                      GLenum format,
                      GLenum type,
-                     const GLvoid* pixels);
+                     const GLvoid* IGL_NULLABLE pixels);
   void texSubImage3D(GLenum target,
                      GLint level,
                      GLint xoffset,
@@ -394,27 +421,36 @@ class IContext {
                      GLsizei depth,
                      GLenum format,
                      GLenum type,
-                     const GLvoid* pixels);
+                     const GLvoid* IGL_NULLABLE pixels);
   void uniform1f(GLint location, GLfloat x);
-  void uniform1fv(GLint location, GLsizei count, const GLfloat* v);
+  void uniform1fv(GLint location, GLsizei count, const GLfloat* IGL_NULLABLE v);
   void uniform1i(GLint location, GLint x);
-  void uniform1iv(GLint location, GLsizei count, const GLint* v);
+  void uniform1iv(GLint location, GLsizei count, const GLint* IGL_NULLABLE v);
   void uniform2f(GLint location, GLfloat x, GLfloat y);
-  void uniform2fv(GLint location, GLsizei count, const GLfloat* v);
+  void uniform2fv(GLint location, GLsizei count, const GLfloat* IGL_NULLABLE v);
   void uniform2i(GLint location, GLint x, GLint y);
-  void uniform2iv(GLint location, GLsizei count, const GLint* v);
+  void uniform2iv(GLint location, GLsizei count, const GLint* IGL_NULLABLE v);
   void uniform3f(GLint location, GLfloat x, GLfloat y, GLfloat z);
-  void uniform3fv(GLint location, GLsizei count, const GLfloat* v);
+  void uniform3fv(GLint location, GLsizei count, const GLfloat* IGL_NULLABLE v);
   void uniform3i(GLint location, GLint x, GLint y, GLint z);
-  void uniform3iv(GLint location, GLsizei count, const GLint* v);
+  void uniform3iv(GLint location, GLsizei count, const GLint* IGL_NULLABLE v);
   void uniform4f(GLint location, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
-  void uniform4fv(GLint location, GLsizei count, const GLfloat* v);
+  void uniform4fv(GLint location, GLsizei count, const GLfloat* IGL_NULLABLE v);
   void uniform4i(GLint location, GLint x, GLint y, GLint z, GLint w);
-  void uniform4iv(GLint location, GLsizei count, const GLint* v);
+  void uniform4iv(GLint location, GLsizei count, const GLint* IGL_NULLABLE v);
   void uniformBlockBinding(GLuint pid, GLuint uniformBlockIndex, GLuint uniformBlockBinding);
-  void uniformMatrix2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
-  void uniformMatrix3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
-  void uniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
+  void uniformMatrix2fv(GLint location,
+                        GLsizei count,
+                        GLboolean transpose,
+                        const GLfloat* IGL_NULLABLE value);
+  void uniformMatrix3fv(GLint location,
+                        GLsizei count,
+                        GLboolean transpose,
+                        const GLfloat* IGL_NULLABLE value);
+  void uniformMatrix4fv(GLint location,
+                        GLsizei count,
+                        GLboolean transpose,
+                        const GLfloat* IGL_NULLABLE value);
   void unmapBuffer(GLenum target);
   void useProgram(GLuint program);
   void validateProgram(GLuint program);
@@ -423,7 +459,7 @@ class IContext {
                            GLenum type,
                            GLboolean normalized,
                            GLsizei stride,
-                           const GLvoid* ptr);
+                           const GLvoid* IGL_NULLABLE ptr);
   void vertexAttribDivisor(GLuint index, GLuint divisor);
   void viewport(GLint x, GLint y, GLsizei width, GLsizei height);
 
@@ -440,7 +476,8 @@ class IContext {
 
   // Utility functions
   [[nodiscard]] const DeviceFeatureSet& deviceFeatures() const;
-  /// Calls bindBuffer(target, 0) or enqueues to run when deletion queue is flushed
+  /// Calls bindBuffer(target, 0) or enqueues to run when deletion queue is
+  /// flushed
   void unbindBuffer(GLenum target);
 
   // Log the next N frames
@@ -459,9 +496,10 @@ class IContext {
   void resetCounters();
 
   /** Manual reference counting.
-   * In some cases, mostly for performance reasons, we hold unprotected references to the IContext.
-   * When doing so, use the functions below to signal such references so we can at least throw an
-   * error when those references become invalid.
+   * In some cases, mostly for performance reasons, we hold unprotected
+   * references to the IContext. When doing so, use the functions below to
+   * signal such references so we can at least throw an error when those
+   * references become invalid.
    */
   // @fb-only
   bool addRef();
@@ -469,14 +507,16 @@ class IContext {
 
   // @fb-only
   /**
-   * The goal here is to try to check whether 'this' is a valid object and not a zombie. Ideally,
-   * this should be handled elsewhere, but until we solve that more difficult problem we can at
-   * least provide reasonable error messages to users.
+   * The goal here is to try to check whether 'this' is a valid object and not
+   * a zombie. Ideally, this should be handled elsewhere, but until we solve
+   * that more difficult problem we can at least provide reasonable error
+   * messages to users.
    *
-   * The idea is to set a specific chunk of memory within the object to a known valid value
-   * in the constructor and clear it in the destructor. Invoking this method on a valid object
-   * always returns true, and invoking this method on a zombie pointer will simply check that
-   * memory offset from the base pointer and most likely return false, unless that memory happens
+   * The idea is to set a specific chunk of memory within the object to a
+   * known valid value in the constructor and clear it in the destructor.
+   * Invoking this method on a valid object always returns true, and invoking
+   * this method on a zombie pointer will simply check that memory offset from
+   * the base pointer and most likely return false, unless that memory happens
    * to match our not-so-secret pattern.
    */
   bool isLikelyValidObject() const {
@@ -492,19 +532,22 @@ class IContext {
 
   /** Sets unbind policy for *subsequent* scopes/render passes.
    *
-   * For example, only new instances of RenderCommandEncoder will honor the new unbind policy.
-   * Previous instances, on the other hand, use the policy that was in place when they were
-   * created. Similarly, the Device's unbind policy will not change until the next beginScope().
+   * For example, only new instances of RenderCommandEncoder will honor the
+   * new unbind policy. Previous instances, on the other hand, use the policy
+   * that was in place when they were created. Similarly, the Device's unbind
+   * policy will not change until the next beginScope().
    */
   void setUnbindPolicy(UnbindPolicy newValue);
 
   /** Enables or Disables calling getError() after GL call
-   * This check is enabled by defaults in debug mode, and this function can be used to turn it off.
-   * In release mode, the option is hard coded to false and this function has no effect.
+   * This check is enabled by defaults in debug mode, and this function can be
+   * used to turn it off. In release mode, the option is hard coded to false
+   * and this function has no effect.
    */
   void enableAutomaticErrorCheck(bool enable);
 
-  // Manages an adapter pool as recreating this every frame causes unwanted memory allocations.
+  // Manages an adapter pool as recreating this every frame causes unwanted
+  // memory allocations.
   // @fb-only
   // @fb-only
   auto& getAdapterPool() {
@@ -516,7 +559,7 @@ class IContext {
   }
 
   // Called to check if the last OGL call resulted in an error.
-  GLenum checkForErrors(const char* callerName, size_t lineNum) const;
+  GLenum checkForErrors(const char* IGL_NULLABLE callerName, size_t lineNum) const;
   Result getLastError() const;
 
  public:
@@ -524,11 +567,11 @@ class IContext {
   mutable Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
 
  protected:
-  static std::unordered_map<void*, IContext*>& getExistingContexts();
-  static void registerContext(void* glContext, IContext* context);
-  static void unregisterContext(void* glContext);
-  void initialize(Result* result = nullptr);
-  void willDestroy(void* glContext);
+  static std::unordered_map<void * IGL_NULLABLE, IContext*>& getExistingContexts();
+  static void registerContext(void* IGL_NULLABLE glContext, IContext* IGL_NULLABLE context);
+  static void unregisterContext(void* IGL_NULLABLE glContext);
+  void initialize(Result* IGL_NULLABLE result = nullptr);
+  void willDestroy(void* IGL_NULLABLE glContext);
 
  private:
   bool alwaysCheckError_ = false; // TRUE to check error after each OGL call
@@ -543,62 +586,66 @@ class IContext {
   unsigned int apiLogDrawsLeft_ = 0;
   bool apiLogEnabled_ = IGL_API_LOG != 0;
 
-  PFNIGLBINDIMAGETEXTUREPROC bindImageTexturerProc_ = nullptr;
-  PFNIGLBINDVERTEXARRAYPROC bindVertexArrayProc_ = nullptr;
-  PFNIGLBLITFRAMEBUFFERPROC blitFramebufferProc_ = nullptr;
-  PFNIGLCLEARDEPTHFPROC clearDepthfProc_ = nullptr;
-  PFNIGLCOMPRESSEDTEXIMAGE3DPROC compressedTexImage3DProc_ = nullptr;
-  PFNIGLCOMPRESSEDTEXSUBIMAGE3DPROC compressedTexSubImage3DProc_ = nullptr;
-  PFNIGLDEBUGMESSAGECALLBACKPROC debugMessageCallbackProc_ = nullptr;
-  PFNIGLDEBUGMESSAGEINSERTPROC debugMessageInsertProc_ = nullptr;
-  PFNIGLDELETESYNCPROC deleteSyncProc_ = nullptr;
-  PFNIGLDELETEVERTEXARRAYSPROC deleteVertexArraysProc_ = nullptr;
-  PFNIGLDRAWBUFFERSPROC drawBuffersProc_ = nullptr;
-  PFNIGLFENCESYNCPROC fenceSyncProc_ = nullptr;
-  PFNIGLFRAMEBUFFERTEXTURE2DMULTISAMPLEPROC framebufferTexture2DMultisampleProc_ = nullptr;
-  PFNIGLINVALIDATEFRAMEBUFFERPROC invalidateFramebufferProc_ = nullptr;
-  PFNIGLGENVERTEXARRAYSPROC genVertexArraysProc_ = nullptr;
-  mutable PFNIGLGETDEBUGMESSAGELOGPROC getDebugMessageLogProc_ = nullptr;
-  mutable PFNIGLGETSYNCIVPROC getSyncivProc_ = nullptr;
-  PFNIGLGETTEXTUREHANDLEPROC getTextureHandleProc_ = nullptr;
-  PFNIGLMAKETEXTUREHANDLERESIDENTPROC makeTextureHandleResidentProc_ = nullptr;
-  PFNIGLMAKETEXTUREHANDLENONRESIDENTPROC makeTextureHandleNonResidentProc_ = nullptr;
-  PFNIGLMAPBUFFERPROC mapBufferProc_ = nullptr;
-  PFNIGLMAPBUFFERRANGEPROC mapBufferRangeProc_ = nullptr;
-  PFNIGLMEMORYBARRIERPROC memoryBarrierProc_ = nullptr;
-  PFNIGLOBJECTLABELPROC objectLabelProc_ = nullptr;
-  PFNIGLPOPDEBUGGROUPPROC popDebugGroupProc_ = nullptr;
-  PFNIGLPUSHDEBUGGROUPPROC pushDebugGroupProc_ = nullptr;
-  PFNIGLRENDERBUFFERSTORAGEMULTISAMPLEPROC renderbufferStorageMultisampleProc_ = nullptr;
-  PFNIGLTEXIMAGE3DPROC texImage3DProc_ = nullptr;
-  PFNIGLTEXSTORAGE1DPROC texStorage1DProc_ = nullptr;
-  PFNIGLTEXSTORAGE2DPROC texStorage2DProc_ = nullptr;
-  PFNIGLTEXSTORAGE3DPROC texStorage3DProc_ = nullptr;
-  PFNIGLTEXSUBIMAGE3DPROC texSubImage3DProc_ = nullptr;
-  PFNIGLUNMAPBUFFERPROC unmapBufferProc_ = nullptr;
-  PFNIGLVERTEXATTRIBDIVISORPROC vertexAttribDivisorProc_ = nullptr;
+  PFNIGLBINDIMAGETEXTUREPROC IGL_NULLABLE bindImageTexturerProc_ = nullptr;
+  PFNIGLBINDVERTEXARRAYPROC IGL_NULLABLE bindVertexArrayProc_ = nullptr;
+  PFNIGLBLITFRAMEBUFFERPROC IGL_NULLABLE blitFramebufferProc_ = nullptr;
+  PFNIGLCLEARDEPTHFPROC IGL_NULLABLE clearDepthfProc_ = nullptr;
+  PFNIGLCOMPRESSEDTEXIMAGE3DPROC IGL_NULLABLE compressedTexImage3DProc_ = nullptr;
+  PFNIGLCOMPRESSEDTEXSUBIMAGE3DPROC IGL_NULLABLE compressedTexSubImage3DProc_ = nullptr;
+  PFNIGLDEBUGMESSAGECALLBACKPROC IGL_NULLABLE debugMessageCallbackProc_ = nullptr;
+  PFNIGLDEBUGMESSAGEINSERTPROC IGL_NULLABLE debugMessageInsertProc_ = nullptr;
+  PFNIGLDELETESYNCPROC IGL_NULLABLE deleteSyncProc_ = nullptr;
+  PFNIGLDELETEVERTEXARRAYSPROC IGL_NULLABLE deleteVertexArraysProc_ = nullptr;
+  PFNIGLDRAWBUFFERSPROC IGL_NULLABLE drawBuffersProc_ = nullptr;
+  PFNIGLFENCESYNCPROC IGL_NULLABLE fenceSyncProc_ = nullptr;
+  PFNIGLFRAMEBUFFERTEXTURE2DMULTISAMPLEPROC IGL_NULLABLE framebufferTexture2DMultisampleProc_ =
+      nullptr;
+  PFNIGLINVALIDATEFRAMEBUFFERPROC IGL_NULLABLE invalidateFramebufferProc_ = nullptr;
+  PFNIGLGENVERTEXARRAYSPROC IGL_NULLABLE genVertexArraysProc_ = nullptr;
+  mutable PFNIGLGETDEBUGMESSAGELOGPROC IGL_NULLABLE getDebugMessageLogProc_ = nullptr;
+  mutable PFNIGLGETSYNCIVPROC IGL_NULLABLE getSyncivProc_ = nullptr;
+  PFNIGLGETTEXTUREHANDLEPROC IGL_NULLABLE getTextureHandleProc_ = nullptr;
+  PFNIGLMAKETEXTUREHANDLERESIDENTPROC IGL_NULLABLE makeTextureHandleResidentProc_ = nullptr;
+  PFNIGLMAKETEXTUREHANDLENONRESIDENTPROC IGL_NULLABLE makeTextureHandleNonResidentProc_ = nullptr;
+  PFNIGLMAPBUFFERPROC IGL_NULLABLE mapBufferProc_ = nullptr;
+  PFNIGLMAPBUFFERRANGEPROC IGL_NULLABLE mapBufferRangeProc_ = nullptr;
+  PFNIGLMEMORYBARRIERPROC IGL_NULLABLE memoryBarrierProc_ = nullptr;
+  PFNIGLOBJECTLABELPROC IGL_NULLABLE objectLabelProc_ = nullptr;
+  PFNIGLPOPDEBUGGROUPPROC IGL_NULLABLE popDebugGroupProc_ = nullptr;
+  PFNIGLPUSHDEBUGGROUPPROC IGL_NULLABLE pushDebugGroupProc_ = nullptr;
+  PFNIGLRENDERBUFFERSTORAGEMULTISAMPLEPROC IGL_NULLABLE renderbufferStorageMultisampleProc_ =
+      nullptr;
+  PFNIGLTEXIMAGE3DPROC IGL_NULLABLE texImage3DProc_ = nullptr;
+  PFNIGLTEXSTORAGE1DPROC IGL_NULLABLE texStorage1DProc_ = nullptr;
+  PFNIGLTEXSTORAGE2DPROC IGL_NULLABLE texStorage2DProc_ = nullptr;
+  PFNIGLTEXSTORAGE3DPROC IGL_NULLABLE texStorage3DProc_ = nullptr;
+  PFNIGLTEXSUBIMAGE3DPROC IGL_NULLABLE texSubImage3DProc_ = nullptr;
+  PFNIGLUNMAPBUFFERPROC IGL_NULLABLE unmapBufferProc_ = nullptr;
+  PFNIGLVERTEXATTRIBDIVISORPROC IGL_NULLABLE vertexAttribDivisorProc_ = nullptr;
 
-  /// Responsible for holding onto operations queued for deletion when not in context.
-  /// All operations to non-scratch queues are suyncronized by one mutex
+  /// Responsible for holding onto operations queued for deletion when not in
+  /// context. All operations to non-scratch queues are suyncronized by one
+  /// mutex
   struct SynchronizedDeletionQueues {
    public:
     void flushDeletionQueue(IContext& context);
 
-    void queueDeleteBuffers(GLsizei n, const GLuint* buffers);
+    void queueDeleteBuffers(GLsizei n, const GLuint* IGL_NULLABLE buffers);
     void queueUnbindBuffer(GLenum target);
-    void queueDeleteFramebuffers(GLsizei n, const GLuint* framebuffers);
-    void queueDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers);
-    void queueDeleteVertexArrays(GLsizei n, const GLuint* vertexArrays);
+    void queueDeleteFramebuffers(GLsizei n, const GLuint* IGL_NULLABLE framebuffers);
+    void queueDeleteRenderbuffers(GLsizei n, const GLuint* IGL_NULLABLE renderbuffers);
+    void queueDeleteVertexArrays(GLsizei n, const GLuint* IGL_NULLABLE vertexArrays);
     void queueDeleteProgram(GLuint program);
     void queueDeleteShader(GLuint shaderId);
-    void queueDeleteTextures(GLsizei n, const GLuint* textures);
+    void queueDeleteTextures(GLsizei n, const GLuint* IGL_NULLABLE textures);
 
    private:
-    /// This is called by flushDeletionQueue to swap fooQueue w/ scratchFooQueue
+    /// This is called by flushDeletionQueue to swap fooQueue w/
+    /// scratchFooQueue
     void swapScratchDeletionQueues();
 
-    // These are swapped with the main queues then read to perform operations. They can be read from
-    // flushDeletionQueue w/o synchronization.
+    // These are swapped with the main queues then read to perform operations.
+    // They can be read from flushDeletionQueue w/o synchronization.
     std::vector<GLuint> scratchBuffersQueue_;
     std::unordered_set<GLenum> scratchUnbindBuffersQueue_;
     std::vector<GLuint> scratchFramebuffersQueue_;
@@ -613,7 +660,8 @@ class IContext {
 
     // Resources queued for deletion
     std::vector<GLuint> buffersQueue_;
-    // These are the targets for the buffers that we enqueued for deletion that we need to unbind
+    // These are the targets for the buffers that we enqueued for deletion
+    // that we need to unbind
     std::unordered_set<GLenum> unbindBuffersQueue_;
     std::vector<GLuint> framebuffersQueue_;
     std::vector<GLuint> renderbuffersQueue_;

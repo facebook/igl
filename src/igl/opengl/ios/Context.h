@@ -18,10 +18,10 @@ class Context final : public IContext {
  public:
   /// Create a new context with new EAGLContext.
   explicit Context(BackendVersion backendVersion);
-  Context(BackendVersion backendVersion, Result* result);
+  Context(BackendVersion backendVersion, Result* IGL_NULLABLE result);
   /// Create a new context with existing EAGLContext.
-  explicit Context(EAGLContext* context);
-  Context(EAGLContext* context, Result* result);
+  explicit Context(EAGLContext* IGL_NULLABLE context);
+  Context(EAGLContext* IGL_NULLABLE context, Result* IGL_NULLABLE result);
   ~Context() override;
 
   void setCurrent() override;
@@ -31,13 +31,13 @@ class Context final : public IContext {
   void present(std::shared_ptr<ITexture> surface) const override;
 
   /// Creates a shared context, matching format based on the current context.
-  std::unique_ptr<IContext> createShareContext(Result* outResult) override;
+  std::unique_ptr<IContext> createShareContext(Result* IGL_NULLABLE outResult) override;
 
-  CVOpenGLESTextureCacheRef getTextureCache();
+  CVOpenGLESTextureCacheRef IGL_NULLABLE getTextureCache();
 
  private:
-  EAGLContext* const context_;
-  CVOpenGLESTextureCacheRef textureCache_ = nullptr;
+  EAGLContext* IGL_NULLABLE const context_;
+  CVOpenGLESTextureCacheRef IGL_NULLABLE textureCache_ = nullptr;
 };
 
 } // namespace igl::opengl::ios

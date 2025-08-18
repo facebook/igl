@@ -724,12 +724,12 @@ IContext::~IContext() {
 }
 
 // Creates a global map to ensure multiple IContexts are not created for a single glContext
-std::unordered_map<void*, IContext*>& IContext::getExistingContexts() {
-  static auto& map = *(new std::unordered_map<void*, IContext*>());
+std::unordered_map<void * IGL_NULLABLE, IContext*>& IContext::getExistingContexts() {
+  static auto& map = *(new std::unordered_map<void * IGL_NULLABLE, IContext*>());
   return map;
 }
 
-void IContext::registerContext(void* glContext, IContext* context) {
+void IContext::registerContext(void* IGL_NULLABLE glContext, IContext* context) {
 #if IGL_DEBUG
   auto result = IContext::getExistingContexts().find(glContext);
   if (result != IContext::getExistingContexts().end()) {
@@ -748,7 +748,7 @@ void IContext::registerContext(void* glContext, IContext* context) {
 #endif
 }
 
-void IContext::willDestroy(void* glContext) {
+void IContext::willDestroy(void* IGL_NULLABLE glContext) {
   // Clear pool explicitly, since it might have reference back to IContext.
   getAdapterPool().clear();
   getComputeAdapterPool().clear();
@@ -758,7 +758,7 @@ void IContext::willDestroy(void* glContext) {
   }
 }
 
-void IContext::unregisterContext(void* glContext) {
+void IContext::unregisterContext(void* IGL_NULLABLE glContext) {
 #if IGL_DEBUG
   IContext::getExistingContexts().erase(glContext);
 #endif
@@ -941,7 +941,10 @@ void IContext::blitFramebuffer(GLint srcX0,
   GLCHECK_ERRORS();
 }
 
-void IContext::bufferData(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage) {
+void IContext::bufferData(GLenum target,
+                          GLsizeiptr size,
+                          const GLvoid* IGL_NULLABLE data,
+                          GLenum usage) {
   GLCALL(BufferData)(target, size, data, usage);
   APILOG("glBufferData(%s, %zu, %p, %s)\n",
          GL_ENUM_TO_STRING(target),
@@ -951,7 +954,10 @@ void IContext::bufferData(GLenum target, GLsizeiptr size, const GLvoid* data, GL
   GLCHECK_ERRORS();
 }
 
-void IContext::bufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid* data) {
+void IContext::bufferSubData(GLenum target,
+                             GLintptr offset,
+                             GLsizeiptr size,
+                             const GLvoid* IGL_NULLABLE data) {
   GLCALL(BufferSubData)(target, offset, size, data);
   APILOG("glBufferSubData(%s, %zu, %zu, %p)\n", GL_ENUM_TO_STRING(target), offset, size, data);
   GLCHECK_ERRORS();
@@ -1036,7 +1042,7 @@ void IContext::compressedTexImage2D(GLenum target,
                                     GLsizei height,
                                     GLint border,
                                     GLsizei imageSize,
-                                    const GLvoid* data) {
+                                    const GLvoid* IGL_NULLABLE data) {
   GLCALL(CompressedTexImage2D)
   (target, level, internalformat, width, height, border, imageSize, data);
   APILOG("glCompressedTexImage2D(%s, %d, %s, %u, %u, %d, %u, %p)\n",

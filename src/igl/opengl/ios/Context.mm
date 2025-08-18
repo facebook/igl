@@ -59,7 +59,7 @@ Context::Context(BackendVersion backendVersion) : context_(createEAGLContext(bac
   initialize();
 }
 
-Context::Context(BackendVersion backendVersion, Result* result) :
+Context::Context(BackendVersion backendVersion, Result* IGL_NULLABLE result) :
   context_(createEAGLContext(backendVersion, nil)) {
   if (context_ != nil) {
     IContext::registerContext(getOrGenerateContextUniqueID(context_), this);
@@ -70,14 +70,15 @@ Context::Context(BackendVersion backendVersion, Result* result) :
   initialize(result);
 }
 
-Context::Context(EAGLContext* context) : context_(context) {
+Context::Context(EAGLContext* IGL_NULLABLE context) : context_(context) {
   if (context_ != nil) {
     IContext::registerContext(getOrGenerateContextUniqueID(context_), this);
   }
   initialize();
 }
 
-Context::Context(EAGLContext* context, Result* result) : context_(context) {
+Context::Context(EAGLContext* IGL_NULLABLE context, Result* IGL_NULLABLE result) :
+  context_(context) {
   if (context_ != nil) {
     IContext::registerContext(getOrGenerateContextUniqueID(context_), this);
   } else {
