@@ -120,7 +120,7 @@ void RenderPipelineReflection::generateUniformDictionary(IContext& context, GLui
   const bool supportsGetActiveUniformsiv =
       glVersion == GLVersion::v3_0_ES || glVersion == GLVersion::v3_1_ES ||
       glVersion == GLVersion::v3_2_ES || glVersion >= GLVersion::v3_1;
-  if (supportsGetActiveUniformsiv) {
+  if (supportsGetActiveUniformsiv && count > 0) {
     std::vector<GLuint> indices(count);
     for (int i = 0; i < count; ++i) {
       indices[i] = static_cast<GLuint>(i);
