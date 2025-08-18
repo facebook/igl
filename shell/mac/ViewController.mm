@@ -364,7 +364,8 @@ using namespace igl;
   IGL_DEBUG_ASSERT(session_, "createDefaultRenderSession() must return a valid session");
   // Get initial native surface dimensions
   shellParams_.nativeSurfaceDimensions = glm::ivec2(2048, 1536);
-  auto args = shell::convertArgvToParams(shellPlatform_->argc(), shellPlatform_->argv());
+  auto args =
+      shell::convertArgvToParams(igl::shell::Platform::argc(), igl::shell::Platform::argv());
   shell::parseShellParams(args, shellParams_);
 
   session_->setShellParams(shellParams_);
