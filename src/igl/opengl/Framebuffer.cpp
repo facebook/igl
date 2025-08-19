@@ -582,17 +582,24 @@ void CustomFramebuffer::prepareResource(const std::string& debugName, Result* ou
 
   const auto attachmentParams = defaultWriteAttachmentParams(renderTarget_.mode);
   // attach the textures and render buffers to the frame buffer
+  bool hasBuffers = false;
   for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
     const auto& colorAttachment = renderTarget_.colorAttachments[i];
     if (colorAttachment.texture != nullptr) {
       attachAsColor(*colorAttachment.texture, static_cast<uint32_t>(i), attachmentParams);
       drawBuffers.push_back(static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + i));
+      if (i) {
+        // skip attachment 0
+        hasBuffers = true;
+      }
+    } else {
+      drawBuffers.push_back(GL_NONE);
     }
   }
 
-  std::sort(drawBuffers.begin(), drawBuffers.end());
-
-  if (drawBuffers.size() > 1) {
+  if (hasBuffers) {
+    // needs to be called when there's more than one color attachment or if there's a single color
+    // attachment at a non-zero index
     getContext().drawBuffers(static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
   }
 
