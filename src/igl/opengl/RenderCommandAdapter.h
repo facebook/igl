@@ -123,11 +123,6 @@ class RenderCommandAdapter final : public WithContext {
   void bindBufferWithShaderStorageBufferOverride(Buffer& buffer,
                                                  GLenum overrideTargetForShaderStorageBuffer);
 
-  static void unbindTexture(IContext& context, size_t textureUnit, TextureState& textureState);
-  static void unbindTextures(IContext& context,
-                             TextureStates& states,
-                             std::bitset<IGL_TEXTURE_SAMPLERS_MAX>& dirtyFlags);
-
   [[nodiscard]] bool isDirty(StateMask mask) const {
     return (dirtyStateBits_ & EnumToValue(mask)) != 0;
   }
@@ -157,7 +152,6 @@ class RenderCommandAdapter final : public WithContext {
   uint32_t frontStencilReferenceValue_ = 0xFF;
   uint32_t backStencilReferenceValue_ = 0xFF;
 
-  UnbindPolicy cachedUnbindPolicy_;
   bool useVAO_ = false;
 };
 } // namespace opengl

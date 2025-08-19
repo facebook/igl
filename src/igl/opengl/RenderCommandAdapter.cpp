@@ -29,8 +29,7 @@
 namespace igl::opengl {
 RenderCommandAdapter::RenderCommandAdapter(IContext& context) :
   WithContext(context),
-  uniformAdapter_(UniformAdapter(context, UniformAdapter::PipelineType::Render)),
-  cachedUnbindPolicy_(getContext().getUnbindPolicy()) {
+  uniformAdapter_(UniformAdapter(context, UniformAdapter::PipelineType::Render)) {
   useVAO_ = context.deviceFeatures().hasInternalFeature(InternalFeatures::VertexArrayObject);
   if (useVAO_) {
     activeVAO_ = std::make_shared<VertexArrayObject>(getContext());
@@ -51,8 +50,6 @@ std::unique_ptr<RenderCommandAdapter> RenderCommandAdapter::create(
 void RenderCommandAdapter::initialize(const RenderPassDesc& renderPass,
                                       const std::shared_ptr<IFramebuffer>& framebuffer,
                                       Result* outResult) {
-  cachedUnbindPolicy_ = getContext().getUnbindPolicy();
-
   if (!IGL_DEBUG_VERIFY(framebuffer)) {
     Result::setResult(outResult, Result::Code::ArgumentNull, "framebuffer is null");
     return;
@@ -440,24 +437,6 @@ void RenderCommandAdapter::willDraw() {
         IGL_DEBUG_ASSERT(result.isOk(), result.message.c_str());
       }
     }
-  }
-}
-
-void RenderCommandAdapter::unbindTexture(IContext& context,
-                                         size_t textureUnit,
-                                         TextureState& textureState) {
-  if (auto* texture = static_cast<Texture*>(textureState.first)) {
-    context.activeTexture(static_cast<GLenum>(GL_TEXTURE0 + textureUnit));
-    texture->unbind();
-  }
-}
-
-void RenderCommandAdapter::unbindTextures(IContext& context,
-                                          TextureStates& states,
-                                          std::bitset<IGL_TEXTURE_SAMPLERS_MAX>& dirtyFlags) {
-  for (size_t index = 0; index < states.size(); index++) {
-    unbindTexture(context, index, states[index]);
-    SET_DIRTY(dirtyFlags, index);
   }
 }
 
