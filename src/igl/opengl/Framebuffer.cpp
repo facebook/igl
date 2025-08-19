@@ -579,10 +579,18 @@ void CustomFramebuffer::prepareResource(const std::string& debugName, Result* ou
   }
 
   std::vector<GLenum> drawBuffers;
+  size_t tailColorAttachmentIndex = 0;
+    
+  for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
+    const auto& colorAttachment = renderTarget_.colorAttachments[i];
+    if (colorAttachment.texture != nullptr) {
+      tailColorAttachmentIndex = i;
+    }
+  }
 
   const auto attachmentParams = defaultWriteAttachmentParams(renderTarget_.mode);
   // attach the textures and render buffers to the frame buffer
-  for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
+  for (size_t i = 0; i <= tailColorAttachmentIndex; i++) {
     const auto& colorAttachment = renderTarget_.colorAttachments[i];
     if (colorAttachment.texture != nullptr) {
       attachAsColor(*colorAttachment.texture, static_cast<uint32_t>(i), attachmentParams);
