@@ -239,7 +239,6 @@ void main() {
                                                            "main",
                                                            "",
                                                            nullptr);
-    return nullptr;
 #endif // IGL_BACKEND_VULKAN
 
 // @fb-only

@@ -168,7 +168,6 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
                                                            "main",
                                                            "",
                                                            nullptr);
-    return nullptr;
   case igl::BackendType::Custom:
     IGL_DEBUG_ABORT("IGLSamples not set up for Custom");
     return nullptr;
