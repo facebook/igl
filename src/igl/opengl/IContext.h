@@ -308,7 +308,7 @@ class IContext {
   GLboolean isEnabled(GLenum cap);
   GLboolean isTexture(GLuint texture);
   void linkProgram(GLuint program);
-  void* IGL_NULLABLE mapBuffer(GLenum target, GLbitfield access);
+  void* IGL_NULLABLE mapBuffer(GLenum target, GLenum access);
   void* IGL_NULLABLE mapBufferRange(GLenum target,
                                     GLintptr offset,
                                     GLsizeiptr length,

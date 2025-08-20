@@ -409,6 +409,7 @@ std::string GLenumToString(GLenum code) {
     RESULT_CASE(GL_R32F)
     RESULT_CASE(GL_READ_FRAMEBUFFER)
     RESULT_CASE(GL_READ_FRAMEBUFFER_BINDING)
+    RESULT_CASE(GL_READ_ONLY)
     RESULT_CASE(GL_READ_WRITE)
     RESULT_CASE(GL_RED)
     RESULT_CASE(GL_RED_INTEGER)
@@ -576,6 +577,7 @@ std::string GLenumToString(GLenum code) {
     RESULT_CASE(GL_VERTEX_ARRAY_BINDING)
     RESULT_CASE(GL_VERTEX_SHADER)
     RESULT_CASE(GL_VIEWPORT)
+    RESULT_CASE(GL_WRITE_ONLY)
   default:
     std::stringstream stream;
     stream << "0x" << std::hex << code;
@@ -583,8 +585,134 @@ std::string GLenumToString(GLenum code) {
   }
 }
 
+std::string clearBitsToString(GLbitfield bits) {
+  bool first = true;
+  std::stringstream ss;
+  if ((bits & GL_COLOR_BUFFER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_COLOR_BUFFER_BIT";
+    first = false;
+  }
+  if ((bits & GL_DEPTH_BUFFER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_DEPTH_BUFFER_BIT";
+    first = false;
+  }
+  if ((bits & GL_STENCIL_BUFFER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_STENCIL_BUFFER_BIT";
+    first = false;
+  }
+  return ss.str();
+}
+
+std::string mapBufferRangeBitsToString(GLbitfield bits) {
+  bool first = true;
+  std::stringstream ss;
+  if ((bits & GL_MAP_READ_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_MAP_READ_BIT";
+    first = false;
+  }
+  if ((bits & GL_MAP_WRITE_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_MAP_WRITE_BIT";
+    first = false;
+  }
+  if ((bits & GL_MAP_PERSISTENT_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_MAP_PERSISTENT_BIT";
+    first = false;
+  }
+  if ((bits & GL_MAP_COHERENT_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_MAP_COHERENT_BIT";
+    first = false;
+  }
+  if ((bits & GL_MAP_INVALIDATE_RANGE_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_MAP_INVALIDATE_RANGE_BIT";
+    first = false;
+  }
+  if ((bits & GL_MAP_INVALIDATE_BUFFER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_MAP_INVALIDATE_BUFFER_BIT";
+    first = false;
+  }
+  if ((bits & GL_MAP_FLUSH_EXPLICIT_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_MAP_FLUSH_EXPLICIT_BIT";
+    first = false;
+  }
+  if ((bits & GL_MAP_UNSYNCHRONIZED_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_MAP_UNSYNCHRONIZED_BIT";
+    first = false;
+  }
+  return ss.str();
+}
+
+std::string memoryBarrierBitsToString(GLbitfield bits) {
+  bool first = true;
+  std::stringstream ss;
+  if ((bits & GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT";
+    first = false;
+  }
+  if ((bits & GL_ELEMENT_ARRAY_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_ELEMENT_ARRAY_BARRIER_BIT";
+    first = false;
+  }
+  if ((bits & GL_UNIFORM_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_UNIFORM_BARRIER_BIT";
+    first = false;
+  }
+  if ((bits & GL_TEXTURE_FETCH_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_TEXTURE_FETCH_BARRIER_BIT";
+    first = false;
+  }
+  if ((bits & GL_SHADER_IMAGE_ACCESS_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_SHADER_IMAGE_ACCESS_BARRIER_BIT";
+    first = false;
+  }
+  if ((bits & GL_COMMAND_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_COMMAND_BARRIER_BIT";
+    first = false;
+  }
+  if ((bits & GL_PIXEL_BUFFER_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_PIXEL_BUFFER_BARRIER_BIT";
+    first = false;
+  }
+  if ((bits & GL_TEXTURE_UPDATE_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_TEXTURE_UPDATE_BARRIER_BIT";
+    first = false;
+  }
+  if ((bits & GL_BUFFER_UPDATE_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_BUFFER_UPDATE_BARRIER_BIT";
+    first = false;
+  }
+  if ((bits & GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT";
+    first = false;
+  }
+  if ((bits & GL_FRAMEBUFFER_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_FRAMEBUFFER_BARRIER_BIT";
+    first = false;
+  }
+  if ((bits & GL_TRANSFORM_FEEDBACK_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_TRANSFORM_FEEDBACK_BARRIER_BIT";
+    first = false;
+  }
+  if ((bits & GL_ATOMIC_COUNTER_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_ATOMIC_COUNTER_BARRIER_BIT";
+    first = false;
+  }
+  if ((bits & GL_SHADER_STORAGE_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_SHADER_STORAGE_BARRIER_BIT";
+    first = false;
+  }
+  if ((bits & GL_QUERY_BUFFER_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " | ") << "GL_QUERY_BUFFER_BARRIER_BIT";
+    first = false;
+  }
+
+  return ss.str();
+}
+
 #define GL_ENUM_TO_STRING(code) GLenumToString(code).c_str()
 #define GL_BOOL_TO_STRING(code) GLboolToString(code).c_str()
+#define GL_CLEAR_BITS_TO_STRING(bits) clearBitsToString(bits).c_str()
+#define GL_MAP_BUFFER_RANGE_BITS_TO_STRING(bits) mapBufferRangeBitsToString(bits).c_str()
+#define GL_MEMORY_BARRIER_BITS_TO_STRING(bits) memoryBarrierBitsToString(bits).c_str()
 
 } // namespace
 #endif // IGL_API_LOG
@@ -927,7 +1055,7 @@ void IContext::blitFramebuffer(GLint srcX0,
   }
   GLCALL_PROC(
       blitFramebufferProc_, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-  APILOG("glBlitFramebuffer(%d, %d, %d, %d, %d, %d, %d, %d, 0x%x, %s)\n",
+  APILOG("glBlitFramebuffer(%d, %d, %d, %d, %d, %d, %d, %d, 0x%x [%s], %s)\n",
          srcX0,
          srcY0,
          srcX1,
@@ -937,6 +1065,7 @@ void IContext::blitFramebuffer(GLint srcX0,
          dstX1,
          dstY1,
          mask,
+         GL_CLEAR_BITS_TO_STRING(mask),
          GL_ENUM_TO_STRING(filter));
   GLCHECK_ERRORS();
 }
@@ -974,10 +1103,7 @@ GLenum IContext::checkFramebufferStatus(GLenum target) {
 
 void IContext::clear(GLbitfield mask) {
   GLCALL(Clear)(mask);
-  APILOG("glClear(%s %s %s)\n",
-         mask & GL_COLOR_BUFFER_BIT ? "GL_COLOR_BUFFER_BIT" : "",
-         mask & GL_DEPTH_BUFFER_BIT ? "GL_DEPTH_BUFFER_BIT" : "",
-         mask & GL_STENCIL_BUFFER_BIT ? "GL_STENCIL_BUFFER_BIT" : "");
+  APILOG("glClear(0x%x [%s])\n", mask, GL_CLEAR_BITS_TO_STRING(mask));
   GLCHECK_ERRORS();
 }
 
@@ -2233,7 +2359,7 @@ void IContext::linkProgram(GLuint program) {
   // @fb-only
 }
 
-void* IContext::mapBuffer(GLenum target, GLbitfield access) {
+void* IContext::mapBuffer(GLenum target, GLenum access) {
   if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::MapBufferExtReq)) {
     if (deviceFeatureSet_.hasExtension(Extensions::MapBuffer)) {
       mapBufferProc_ = iglMapBufferOES;
@@ -2243,7 +2369,10 @@ void* IContext::mapBuffer(GLenum target, GLbitfield access) {
   }
   void* ret = nullptr;
   GLCALL_PROC_WITH_RETURN(ret, mapBufferProc_, nullptr, target, access);
-  APILOG("glMapBuffer(%s, %zu, %zu, 0x%x) = %p\n", GL_ENUM_TO_STRING(target), access, ret);
+  APILOG("glMapBuffer(%s, %zu, %zu, %s) = %p\n",
+         GL_ENUM_TO_STRING(target),
+         GL_ENUM_TO_STRING(access),
+         ret);
   GLCHECK_ERRORS();
   return ret;
 }
@@ -2264,11 +2393,12 @@ void* IContext::mapBufferRange(GLenum target,
   }
   void* ret = nullptr;
   GLCALL_PROC_WITH_RETURN(ret, mapBufferRangeProc_, nullptr, target, offset, length, access);
-  APILOG("glMapBufferRange(%s, %zu, %zu, 0x%x) = %p\n",
+  APILOG("glMapBufferRange(%s, %zu, %zu, 0x%x [%s]) = %p\n",
          GL_ENUM_TO_STRING(target),
          offset,
          length,
          access,
+         GL_MAP_BUFFER_RANGE_BITS_TO_STRING(access),
          ret);
   GLCHECK_ERRORS();
   return ret;
@@ -3096,7 +3226,7 @@ void IContext::memoryBarrier(GLbitfield barriers) {
     IGL_DEBUG_ASSERT(memoryBarrierProc_, "No supported function for glMemoryBarrier\n");
   }
   GLCALL_PROC(memoryBarrierProc_, barriers);
-  APILOG("glMemoryBarrier(0x%x)\n", barriers);
+  APILOG("glMemoryBarrier(0x%x [%s])\n", barriers, GL_MEMORY_BARRIER_BITS_TO_STRING(barriers));
   GLCHECK_ERRORS();
 }
 
