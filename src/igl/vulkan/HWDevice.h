@@ -14,10 +14,6 @@
 
 namespace igl::vulkan {
 
-class VulkanContext;
-struct VulkanContextConfig;
-class VulkanFeatures;
-
 /// @brief This class provides convenience functions to query, and create devices, as well as to
 /// create a VulkanContext object.
 class HWDevice final {
