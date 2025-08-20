@@ -14,6 +14,7 @@
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/RenderPipelineReflection.h>
 #include <igl/opengl/Shader.h>
+#include <igl/opengl/Texture.h>
 
 namespace igl::opengl {
 
@@ -39,7 +40,7 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
 
   void bind();
   void unbind();
-  Result bindTextureUnit(size_t unit, uint8_t bindTarget);
+  Result bindTextureUnit(size_t unit, uint8_t bindTarget, Texture& texture);
 
   void bindVertexAttributes(size_t bufferIndex, size_t offset);
   void unbindVertexAttributes();

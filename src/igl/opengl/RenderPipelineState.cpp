@@ -339,7 +339,9 @@ void RenderPipelineState::unbindPrevPipelineVertexAttributes() {
 // bind the unit to the location, then activate the unit.
 //
 // Prerequisite: The shader program has to be loaded
-Result RenderPipelineState::bindTextureUnit(const size_t unit, uint8_t bindTarget) {
+Result RenderPipelineState::bindTextureUnit(const size_t unit,
+                                            uint8_t bindTarget,
+                                            Texture& texture) {
   if (!desc_.shaderStages) {
     return Result{Result::Code::InvalidOperation, "No shader set\n"};
   }
@@ -364,8 +366,9 @@ Result RenderPipelineState::bindTextureUnit(const size_t unit, uint8_t bindTarge
     return Result{Result::Code::RuntimeError, "Unable to find sampler location\n"};
   }
 
-  getContext().uniform1i(samplerLocation, static_cast<GLint>(unit));
   getContext().activeTexture(static_cast<GLenum>(GL_TEXTURE0 + unit));
+  texture.bind();
+  getContext().uniform1i(samplerLocation, static_cast<GLint>(unit));
 
   return Result();
 }

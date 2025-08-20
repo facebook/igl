@@ -93,6 +93,11 @@ void ComputeCommandAdapter::willDispatch() {
     return;
   }
 
+  if (isDirty(StateMask::PIPELINE)) {
+    pipelineState->bind();
+    clearDirty(StateMask::PIPELINE);
+  }
+
   for (uint32_t bufferIndex = 0; bufferIndex < IGL_BUFFER_BINDINGS_MAX; ++bufferIndex) {
     if (!IS_DIRTY(buffersDirty_, bufferIndex)) {
       continue;
@@ -104,11 +109,6 @@ void ComputeCommandAdapter::willDispatch() {
       IGL_LOG_INFO_ONCE(ret.message.c_str());
       continue;
     }
-  }
-
-  if (isDirty(StateMask::PIPELINE)) {
-    pipelineState->bind();
-    clearDirty(StateMask::PIPELINE);
   }
 
   // Bind uniforms to be used for compute

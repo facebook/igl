@@ -394,14 +394,15 @@ void RenderCommandAdapter::willDraw() {
       }
       auto& textureState = vertexTextureStates_[index];
       if (auto* texture = static_cast<Texture*>(textureState.first)) {
-        ret = pipelineState->bindTextureUnit(index, igl::BindTarget::kVertex);
+        if (IGL_DEBUG_VERIFY_NOT(texture == nullptr)) {
+          continue;
+        }
+        ret = pipelineState->bindTextureUnit(index, igl::BindTarget::kVertex, *texture);
 
         if (!ret.isOk()) {
           IGL_LOG_INFO_ONCE(ret.message.c_str());
           continue;
         }
-
-        texture->bind();
 
         if (auto* samplerState = static_cast<SamplerState*>(textureState.second)) {
           samplerState->bind(texture);
@@ -415,13 +416,15 @@ void RenderCommandAdapter::willDraw() {
       }
       auto& textureState = fragmentTextureStates_[index];
       if (auto* texture = static_cast<Texture*>(textureState.first)) {
-        ret = pipelineState->bindTextureUnit(index, igl::BindTarget::kFragment);
+        if (IGL_DEBUG_VERIFY_NOT(texture == nullptr)) {
+          continue;
+        }
+        ret = pipelineState->bindTextureUnit(index, igl::BindTarget::kFragment, *texture);
 
         if (!ret.isOk()) {
           IGL_LOG_INFO_ONCE(ret.message.c_str());
           continue;
         }
-        texture->bind();
 
         if (auto* samplerState = static_cast<SamplerState*>(textureState.second)) {
           samplerState->bind(texture);
