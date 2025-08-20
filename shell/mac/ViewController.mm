@@ -324,7 +324,7 @@ using namespace igl;
         std::move(context), devices[0], 0, 0, 0, nullptr, nullptr, "IGL Shell", nullptr);
 
     shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(std::move(device));
-    [vulkanView prepareVulkan:shellPlatform_];
+    [vulkanView prepareVulkan:shellPlatform_.get()];
     break;
   }
 #endif

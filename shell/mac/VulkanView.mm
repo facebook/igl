@@ -22,7 +22,7 @@
 
 @interface VulkanView () {
   CVDisplayLinkRef displayLink_; // display link for managing rendering thread
-  std::shared_ptr<igl::shell::Platform> shellPlatform_;
+  igl::shell::Platform* shellPlatform_;
   IBOutlet NSViewController* viewController;
 }
 @end
@@ -31,9 +31,10 @@
 
 - (void)dealloc {
   CVDisplayLinkRelease(displayLink_);
+  shellPlatform_ = nullptr;
 }
 
-- (void)prepareVulkan:(std::shared_ptr<igl::shell::Platform>)platform {
+- (void)prepareVulkan:(igl::shell::Platform*)platform {
   NSApplication* app = [NSApplication sharedApplication];
   NSWindow* window = [app windows][0];
   NSTabViewController* tabController = (NSTabViewController*)window.contentViewController;
@@ -104,11 +105,13 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
   }
 
 #if IGL_BACKEND_VULKAN
-  auto& device = static_cast<igl::vulkan::Device&>(shellPlatform_->getDevice());
-  const igl::vulkan::VulkanContext& vulkanContext = device.getVulkanContext();
-  auto extents = vulkanContext.getSwapchainExtent();
-  if (imageRect.size.width != extents.width || imageRect.size.height != extents.height) {
-    device.getVulkanContext().initSwapchain(imageRect.size.width, imageRect.size.height);
+  if (shellPlatform_ != nullptr) {
+    auto& device = static_cast<igl::vulkan::Device&>(shellPlatform_->getDevice());
+    const igl::vulkan::VulkanContext& vulkanContext = device.getVulkanContext();
+    auto extents = vulkanContext.getSwapchainExtent();
+    if (imageRect.size.width != extents.width || imageRect.size.height != extents.height) {
+      device.getVulkanContext().initSwapchain(imageRect.size.width, imageRect.size.height);
+    }
   }
 #endif // IGL_BACKEND_VULKAN
 }
