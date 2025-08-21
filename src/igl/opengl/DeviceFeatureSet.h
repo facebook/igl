@@ -70,11 +70,13 @@ enum class InternalFeatures {
   DebugLabel,                // Debug labels on objects are supported
   DebugMessage,              // Debug messages and group markers are supported
   DebugMessageCallback,      // Debug message callbacks are supported
+  DrawArraysIndirect,        // glDrawArraysIndirect is supported
   FramebufferBlit,           // BlitFramebuffer is supported
   FramebufferObject,         // Framebuffer objects are supported
   GetStringi,                // GetStringi is supported
   InvalidateFramebuffer,     // glInvalidateFramebuffer is supported
   MapBuffer,                 // glMapBuffer is supported
+  PackRowLength,             // GL_PACK_ROW_LENGTH is supported with glPixelStorei
   PixelBufferObject,         // PBOs are available
   PolygonFillMode,           // glPolygonFillMode is supported
   ProgramInterfaceQuery,     // Querying info about shader program interfaces is supported
@@ -87,8 +89,6 @@ enum class InternalFeatures {
   UnpackRowLength,           // GL_UNPACK_ROW_LENGTH is supported with glPixelStorei
   VertexArrayObject,         // VAOS are available
   VertexAttribDivisor,       // glVertexAttribDivisor is supported
-  DrawArraysIndirect,        // glDrawArraysIndirect is supported
-  PackRowLength,             // GL_PACK_ROW_LENGTH is supported with glPixelStorei
 };
 // clang-format on
 
@@ -154,7 +154,7 @@ enum class TextureFeatures {
   TextureCompressionTexStorage, // TexStorage can be used to initialize compressed textures
   TextureInteger,               // Integer textures are supported
   TextureTypeUInt8888Rev,       // GL_UNSIGNED_INT_8_8_8_8_REV is supported
-  };
+};
 // clang-format on
 
 enum class InternalRequirement {
