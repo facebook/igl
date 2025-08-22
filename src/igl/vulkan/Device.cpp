@@ -386,8 +386,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* IGL_N
                                     debugName.c_str()));
   }
 
-  // @fb-only
-  // @lint-ignore CLANGTIDY
+  IGL_DEBUG_ASSERT(vkShaderModule != VK_NULL_HANDLE);
   return std::make_shared<VulkanShaderModule>(
       ctx_->vf_,
       device,
@@ -489,6 +488,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
   if (!result.isOk()) {
     return nullptr;
   }
+  IGL_DEBUG_ASSERT(vkShaderModule != VK_NULL_HANDLE);
 
   if (!debugName.empty()) {
     // set debug name
@@ -499,8 +499,6 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
                                     debugName.c_str()));
   }
 
-  // @fb-only
-  // @lint-ignore CLANGTIDY
   return std::make_shared<VulkanShaderModule>(
       ctx_->vf_,
       device,
@@ -583,6 +581,7 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
   IGL_PROFILER_FUNCTION();
 
   VkPhysicalDevice physicalDevice = ctx_->vkPhysicalDevice_;
+  IGL_DEBUG_ASSERT(physicalDevice != VK_NULL_HANDLE);
   const VkPhysicalDeviceProperties& deviceProperties = ctx_->getVkPhysicalDeviceProperties();
 
   switch (feature) {
