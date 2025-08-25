@@ -714,6 +714,34 @@ std::string memoryBarrierBitsToString(GLbitfield bits) {
 #define GL_MAP_BUFFER_RANGE_BITS_TO_STRING(bits) mapBufferRangeBitsToString(bits).c_str()
 #define GL_MEMORY_BARRIER_BITS_TO_STRING(bits) memoryBarrierBitsToString(bits).c_str()
 
+bool isTextureUniform(GLenum type) {
+  switch (type) {
+  case GL_SAMPLER_2D:
+  case GL_SAMPLER_3D:
+  case GL_SAMPLER_CUBE:
+  case GL_SAMPLER_2D_SHADOW:
+  case GL_SAMPLER_2D_ARRAY:
+  case GL_SAMPLER_2D_ARRAY_SHADOW:
+  case GL_SAMPLER_2D_MULTISAMPLE:
+    return true;
+  default:
+    return false;
+  }
+}
+
+bool isTextureImageUniform(GLenum type) {
+  switch (type) {
+  case GL_IMAGE_2D:
+  case GL_IMAGE_3D:
+  case GL_IMAGE_CUBE:
+  case GL_IMAGE_2D_ARRAY:
+  case GL_IMAGE_2D_MULTISAMPLE:
+  case GL_IMAGE_2D_MULTISAMPLE_ARRAY:
+    return true;
+  default:
+    return false;
+  }
+}
 } // namespace
 #endif // IGL_API_LOG
 
@@ -851,6 +879,601 @@ IContext::~IContext() {
   zombieGuard_ = 0;
 }
 
+#if IGL_API_LOG
+void IContext::setBoundTexture(GLenum target, GLuint texture) {
+  switch (target) {
+  case GL_TEXTURE_2D:
+    boundTexture2D_ = texture;
+    break;
+  case GL_TEXTURE_3D:
+    boundTexture3D_ = texture;
+    break;
+  case GL_TEXTURE_CUBE_MAP:
+  case GL_TEXTURE_CUBE_MAP_POSITIVE_X:
+  case GL_TEXTURE_CUBE_MAP_POSITIVE_Y:
+  case GL_TEXTURE_CUBE_MAP_POSITIVE_Z:
+  case GL_TEXTURE_CUBE_MAP_NEGATIVE_X:
+  case GL_TEXTURE_CUBE_MAP_NEGATIVE_Y:
+  case GL_TEXTURE_CUBE_MAP_NEGATIVE_Z:
+    boundTextureCubeMap_ = texture;
+    break;
+  case GL_TEXTURE_2D_ARRAY:
+    boundTexture2DArray_ = texture;
+    break;
+  case GL_TEXTURE_EXTERNAL_OES:
+    boundTextureExternalOes_ = texture;
+    break;
+  default:
+    IGL_DEBUG_ABORT("Unsupported texture target: %s", GL_ENUM_TO_STRING(target));
+    break;
+  }
+}
+
+GLuint IContext::boundTexture(GLenum target) const {
+  switch (target) {
+  case GL_TEXTURE_2D:
+    return boundTexture2D_;
+  case GL_TEXTURE_3D:
+    return boundTexture3D_;
+  case GL_TEXTURE_CUBE_MAP:
+  case GL_TEXTURE_CUBE_MAP_POSITIVE_X:
+  case GL_TEXTURE_CUBE_MAP_POSITIVE_Y:
+  case GL_TEXTURE_CUBE_MAP_POSITIVE_Z:
+  case GL_TEXTURE_CUBE_MAP_NEGATIVE_X:
+  case GL_TEXTURE_CUBE_MAP_NEGATIVE_Y:
+  case GL_TEXTURE_CUBE_MAP_NEGATIVE_Z:
+    return boundTextureCubeMap_;
+  case GL_TEXTURE_2D_ARRAY:
+    return boundTexture2DArray_;
+  case GL_TEXTURE_EXTERNAL_OES:
+    return boundTextureExternalOes_;
+  default:
+    IGL_DEBUG_ABORT("Unsupported texture target: %s", GL_ENUM_TO_STRING(target));
+    return 0;
+    break;
+  }
+}
+
+void IContext::setBoundBuffer(GLenum target, GLuint buffer) {
+  switch (target) {
+  case GL_ARRAY_BUFFER:
+    boundArrayBuffer_ = buffer;
+    break;
+  case GL_DRAW_INDIRECT_BUFFER:
+    boundDrawIndirectBuffer_ = buffer;
+    break;
+  case GL_COPY_READ_BUFFER:
+    boundCopyReadBuffer_ = buffer;
+    break;
+  case GL_COPY_WRITE_BUFFER:
+    boundCopyWriteBuffer_ = buffer;
+    break;
+  case GL_ELEMENT_ARRAY_BUFFER:
+    boundElementArrayBuffer_ = buffer;
+    break;
+  case GL_PIXEL_PACK_BUFFER:
+    boundPixelPackBuffer_ = buffer;
+    break;
+  case GL_PIXEL_UNPACK_BUFFER:
+    boundPixelPackBuffer_ = buffer;
+    break;
+  case GL_SHADER_STORAGE_BUFFER:
+    boundShaderStorageBuffer_ = buffer;
+    break;
+  case GL_UNIFORM_BUFFER:
+    boundUniformBuffer_ = buffer;
+    break;
+  default:
+    IGL_DEBUG_ABORT("Unsupported buffer target: %s", GL_ENUM_TO_STRING(target));
+    break;
+  }
+}
+
+GLuint IContext::boundBuffer(GLenum target) const {
+  switch (target) {
+  case GL_ARRAY_BUFFER:
+    return boundArrayBuffer_;
+  case GL_DRAW_INDIRECT_BUFFER:
+    return boundDrawIndirectBuffer_;
+  case GL_COPY_READ_BUFFER:
+    return boundCopyReadBuffer_;
+  case GL_COPY_WRITE_BUFFER:
+    return boundCopyWriteBuffer_;
+  case GL_ELEMENT_ARRAY_BUFFER:
+    return boundElementArrayBuffer_;
+  case GL_PIXEL_PACK_BUFFER:
+    return boundPixelPackBuffer_;
+  case GL_PIXEL_UNPACK_BUFFER:
+    return boundPixelPackBuffer_;
+  case GL_SHADER_STORAGE_BUFFER:
+    return boundShaderStorageBuffer_;
+  case GL_UNIFORM_BUFFER:
+    return boundUniformBuffer_;
+  default:
+    IGL_DEBUG_ABORT("Unsupported buffer target: %s", GL_ENUM_TO_STRING(target));
+    return 0;
+    break;
+  }
+}
+
+void IContext::setBoundFramebuffer(GLenum target, GLuint framebuffer) {
+  switch (target) {
+  case GL_READ_FRAMEBUFFER:
+    boundReadFramebuffer_ = framebuffer;
+    break;
+  case GL_DRAW_FRAMEBUFFER:
+    boundWriteFramebuffer_ = framebuffer;
+    break;
+  case GL_FRAMEBUFFER:
+    boundReadFramebuffer_ = framebuffer;
+    boundWriteFramebuffer_ = framebuffer;
+    break;
+  default:
+    IGL_DEBUG_ABORT("Unsupported framebuffer target: %s", GL_ENUM_TO_STRING(target));
+    break;
+  }
+}
+
+GLuint IContext::boundFramebuffer(GLenum target) const {
+  switch (target) {
+  case GL_READ_FRAMEBUFFER:
+    return boundReadFramebuffer_;
+  case GL_DRAW_FRAMEBUFFER:
+  case GL_FRAMEBUFFER:
+    return boundWriteFramebuffer_;
+  default:
+    IGL_DEBUG_ABORT("Unsupported framebuffer target: %s", GL_ENUM_TO_STRING(target));
+    return 0;
+    break;
+  }
+}
+
+void IContext::setFramebufferAttachment(GLenum target,
+                                        GLenum attachment,
+                                        bool isRenderbuffer,
+                                        GLuint object) {
+  const auto framebuffer = boundFramebuffer(target);
+  auto& attachments = framebufferAttachments_[framebuffer];
+  if (attachment == GL_DEPTH_ATTACHMENT) {
+    attachments.depthAttachment = object;
+    attachments.depthIsRenderbuffer = isRenderbuffer;
+  } else if (attachment == GL_STENCIL_ATTACHMENT) {
+    attachments.stencilAttachment = object;
+    attachments.stencilIsRenderbuffer = isRenderbuffer;
+  } else if (attachment == GL_DEPTH_STENCIL_ATTACHMENT) {
+    attachments.stencilAttachment = object;
+    attachments.stencilIsRenderbuffer = isRenderbuffer;
+    attachments.depthAttachment = object;
+    attachments.depthIsRenderbuffer = isRenderbuffer;
+  } else if (attachment >= GL_COLOR_ATTACHMENT0 &&
+             (attachment - GL_COLOR_ATTACHMENT0) < attachments.colorAttachment.size()) {
+    attachments.colorAttachment[attachment - GL_COLOR_ATTACHMENT0] = object;
+    attachments.colorIsRenderbuffer.set(attachment - GL_COLOR_ATTACHMENT0, isRenderbuffer);
+  }
+}
+const char* IContext::framebufferAttachmentType(GLenum target, GLenum attachment) const {
+  bool isRenderbuffer = true;
+  const auto framebuffer = boundFramebuffer(target);
+  const auto it = framebufferAttachments_.find(framebuffer);
+  if (it == framebufferAttachments_.end()) {
+    return "unknown";
+  }
+  const auto& attachments = it->second;
+  if (attachment == GL_DEPTH_ATTACHMENT) {
+    isRenderbuffer = attachments.depthIsRenderbuffer;
+  } else if (attachment == GL_STENCIL_ATTACHMENT) {
+    isRenderbuffer = attachments.stencilIsRenderbuffer;
+  } else if (attachment == GL_DEPTH_STENCIL_ATTACHMENT) {
+    IGL_DEBUG_ASSERT(attachments.depthIsRenderbuffer == attachments.stencilIsRenderbuffer);
+    if (attachments.depthIsRenderbuffer != attachments.stencilIsRenderbuffer) {
+      return "unknown";
+    }
+    isRenderbuffer = attachments.depthIsRenderbuffer;
+  } else if (attachment >= GL_COLOR_ATTACHMENT0 &&
+             (attachment - GL_COLOR_ATTACHMENT0) < attachments.colorAttachment.size()) {
+    isRenderbuffer = attachments.colorIsRenderbuffer.test(attachment - GL_COLOR_ATTACHMENT0);
+  } else {
+    return "unknown";
+  }
+  if (isRenderbuffer) {
+    return "renderbuffer";
+  } else {
+    return "texture";
+  }
+}
+
+const char* IContext::framebufferAttachmentType(GLenum target,
+                                                GLenum buffer,
+                                                GLint drawbuffer) const {
+  if (buffer == GL_COLOR) {
+    return framebufferAttachmentType(target, GL_COLOR_ATTACHMENT0 + drawbuffer);
+  } else if (buffer == GL_DEPTH) {
+    IGL_DEBUG_ASSERT(drawbuffer == 0);
+    return framebufferAttachmentType(target, GL_DEPTH_ATTACHMENT);
+  } else if (buffer == GL_STENCIL) {
+    IGL_DEBUG_ASSERT(drawbuffer == 0);
+    return framebufferAttachmentType(target, GL_STENCIL_ATTACHMENT);
+  } else if (buffer == GL_DEPTH_STENCIL) {
+    IGL_DEBUG_ASSERT(drawbuffer == 0);
+    return framebufferAttachmentType(target, GL_DEPTH_STENCIL_ATTACHMENT);
+  }
+
+  return "unknown";
+}
+
+GLuint IContext::framebufferAttachment(GLenum target, GLenum attachment) const {
+  const auto framebuffer = boundFramebuffer(target);
+  const auto it = framebufferAttachments_.find(framebuffer);
+  if (it == framebufferAttachments_.end()) {
+    return 0;
+  }
+  const auto& attachments = it->second;
+  if (attachment == GL_DEPTH_ATTACHMENT) {
+    return attachments.depthAttachment;
+  } else if (attachment == GL_STENCIL_ATTACHMENT) {
+    return attachments.stencilAttachment;
+  } else if (attachment == GL_DEPTH_STENCIL_ATTACHMENT) {
+    IGL_DEBUG_ASSERT(attachments.depthAttachment == attachments.stencilAttachment);
+    if (attachments.depthAttachment != attachments.stencilAttachment) {
+      return -1;
+    } else {
+      return attachments.depthAttachment;
+    }
+  } else if (attachment >= GL_COLOR_ATTACHMENT0 &&
+             (attachment - GL_COLOR_ATTACHMENT0) < attachments.colorAttachment.size()) {
+    return attachments.colorAttachment[attachment - GL_COLOR_ATTACHMENT0];
+  } else {
+    return 0;
+  }
+}
+
+GLuint IContext::framebufferAttachment(GLenum target, GLenum buffer, GLint drawbuffer) const {
+  if (buffer == GL_COLOR) {
+    return framebufferAttachment(target, GL_COLOR_ATTACHMENT0 + drawbuffer);
+  } else if (buffer == GL_DEPTH) {
+    IGL_DEBUG_ASSERT(drawbuffer == 0);
+    return framebufferAttachment(target, GL_DEPTH_ATTACHMENT);
+  } else if (buffer == GL_STENCIL) {
+    IGL_DEBUG_ASSERT(drawbuffer == 0);
+    return framebufferAttachment(target, GL_STENCIL_ATTACHMENT);
+  } else if (buffer == GL_DEPTH_STENCIL) {
+    IGL_DEBUG_ASSERT(drawbuffer == 0);
+    return framebufferAttachment(target, GL_DEPTH_STENCIL_ATTACHMENT);
+  }
+
+  return -1;
+}
+
+const char* IContext::framebufferReadBufferType(GLenum target) const {
+  const auto framebuffer = boundFramebuffer(target);
+  const auto it = framebufferAttachments_.find(framebuffer);
+  if (it == framebufferAttachments_.end()) {
+    return "unknown";
+  }
+  return framebufferAttachmentType(target, GL_COLOR_ATTACHMENT0 + it->second.readBufferIndex);
+}
+
+GLuint IContext::framebufferReadBuffer(GLenum target) const {
+  const auto framebuffer = boundFramebuffer(target);
+  const auto it = framebufferAttachments_.find(framebuffer);
+  if (it == framebufferAttachments_.end()) {
+    return 0;
+  }
+  return framebufferAttachment(target, GL_COLOR_ATTACHMENT0 + it->second.readBufferIndex);
+}
+
+std::string IContext::affectedFramebufferAttachments(GLenum target, GLbitfield mask) const {
+  std::stringstream ss;
+  const auto framebuffer = boundFramebuffer(target);
+  const auto it = framebufferAttachments_.find(framebuffer);
+  if (it == framebufferAttachments_.end()) {
+    return ss.str();
+  }
+  const auto& attachments = it->second;
+  bool first = true;
+  if ((mask & GL_COLOR_BUFFER_BIT) != 0) {
+    for (uint32_t i = 0; i < attachments.colorAttachment.size(); ++i) {
+      if (attachments.colorAttachment[i] != 0) {
+        ss << (first ? "" : " ") << "color " << i << " ("
+           << (attachments.colorIsRenderbuffer.test(i) ? "renderbuffer" : "texture") << ": "
+           << attachments.colorAttachment[i] << ")";
+        first = false;
+      }
+    }
+  }
+  if ((mask & GL_DEPTH_BUFFER_BIT) != 0 && attachments.depthAttachment != 0) {
+    ss << (first ? "" : " ") << "depth ("
+       << (attachments.depthIsRenderbuffer ? "renderbuffer" : "texture") << ": "
+       << attachments.depthAttachment << ")";
+    first = false;
+  }
+  if ((mask & GL_STENCIL_BUFFER_BIT) != 0 && attachments.stencilAttachment != 0) {
+    ss << (first ? "" : " ") << "stencil ("
+       << (attachments.depthIsRenderbuffer ? "renderbuffer" : "texture") << ": "
+       << attachments.depthAttachment << ")";
+  }
+  return ss.str();
+}
+std::string IContext::boundFramebufferAttachments(GLenum target) const {
+  return affectedFramebufferAttachments(
+      target, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+}
+
+std::string IContext::boundDrawBuffers() const {
+  std::stringstream ss;
+  bool first = true;
+  for (uint32_t i = 0; i < enabledAttributes_.size(); ++i) {
+    if (enabledAttributes_.test(i)) {
+      ss << (first ? "" : " ") << "attribute " << i << " (buffer: " << boundAttributes_[i] << ")";
+      first = false;
+    }
+  }
+  return ss.str();
+}
+
+std::string IContext::boundImageTextures() const {
+  std::stringstream ss;
+  bool first = true;
+  for (uint32_t i = 0; i < boundImageTextures_.size(); ++i) {
+    if (boundImageTextures_[i] != 0) {
+      ss << (first ? "" : " ") << "image " << i << " (texture: " << boundImageTextures_[i] << ")";
+      first = false;
+    }
+  }
+  return ss.str();
+}
+
+std::string IContext::boundDrawTextures() const {
+  std::stringstream ss;
+  bool first = true;
+  for (uint32_t i = 0; i < boundDrawTextures_.size(); ++i) {
+    if (boundDrawTextures_[i] != 0) {
+      ss << (first ? "" : " ") << "draw " << i << " (texture: " << boundDrawTextures_[i] << ")";
+      first = false;
+    }
+  }
+  return ss.str();
+}
+
+std::string IContext::identifierLabel(GLuint identifier, GLuint name) const {
+  std::stringstream ss;
+  switch (identifier) {
+  case GL_BUFFER:
+    ss << "(buffer: " << name << ")";
+    break;
+  case GL_FRAMEBUFFER:
+    ss << "(framebuffer: " << name << ")";
+    break;
+  case GL_PROGRAM:
+    ss << "(program: " << name << ")";
+    break;
+  case GL_RENDERBUFFER:
+    ss << "(renderbuffer: " << name << ")";
+    break;
+  case GL_TEXTURE:
+    ss << "(texture: " << name << ")";
+    break;
+  default:
+    break;
+  }
+  return ss.str();
+}
+
+std::string IContext::affectedMemoryBarrierObjects(GLbitfield bits) const {
+  constexpr const GLbitfield kProgramBits =
+      GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_ELEMENT_ARRAY_BARRIER_BIT | GL_UNIFORM_BARRIER_BIT |
+      GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_COMMAND_BARRIER_BIT |
+      GL_PIXEL_BUFFER_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT |
+      GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT | GL_FRAMEBUFFER_BARRIER_BIT |
+      GL_TRANSFORM_FEEDBACK_BARRIER_BIT | GL_QUERY_BUFFER_BARRIER_BIT;
+  constexpr const GLbitfield kTextureBits =
+      GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT |
+      GL_TEXTURE_UPDATE_BARRIER_BIT | GL_FRAMEBUFFER_BARRIER_BIT;
+  bool first = true;
+  std::stringstream ss;
+  if ((bits & kProgramBits) != 0) {
+    ss << (first ? "" : " ") << "(program: " << boundProgram_ << ")";
+    first = false;
+  }
+  if ((bits & GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " ") << boundDrawBuffers();
+    first = false;
+  }
+  if ((bits & GL_ELEMENT_ARRAY_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " ") << "element (buffer: " << boundElementArrayBuffer_ << ")";
+    first = false;
+  }
+  if ((bits & kTextureBits) != 0) {
+    ss << (first ? "" : " ");
+    if (lastCommandWasCompute_) {
+      ss << boundImageTextures();
+    } else {
+      ss << boundDrawTextures() << " " << boundFramebufferAttachments(GL_DRAW_FRAMEBUFFER) << " "
+         << boundFramebufferAttachments(GL_READ_FRAMEBUFFER);
+    }
+    first = false;
+  }
+  if ((bits & GL_PIXEL_BUFFER_BARRIER_BIT) != 0 &&
+      (boundPixelPackBuffer_ != 0 || boundPixelUnpackBuffer_ != 0)) {
+    ss << (first ? "" : " ");
+    if (boundPixelUnpackBuffer_ != 0) {
+      ss << "unpack (buffer: " << boundPixelUnpackBuffer_ << ")";
+    }
+    if (boundPixelPackBuffer_ != 0) {
+      ss << (boundPixelUnpackBuffer_ == 0 ? "" : " ") << "pack (buffer: " << boundPixelPackBuffer_
+         << ")";
+    }
+    first = false;
+  }
+  if ((bits & GL_UNIFORM_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " ") << boundBuffersByIndex(/* ssbos */ false, /* ubos */ true);
+    first = false;
+  }
+  if ((bits & GL_SHADER_STORAGE_BARRIER_BIT) != 0) {
+    ss << (first ? "" : " ") << boundBuffersByIndex(/* ssbos */ true, /* ubos */ false);
+    first = false;
+  }
+
+  return ss.str();
+}
+
+void IContext::addProgramUniform(GLuint program,
+                                 GLsizei* length,
+                                 GLenum* type,
+                                 GLchar* name) const {
+  std::string nameStr(std::string_view(name, length == nullptr ? strlen(name) : *length));
+  auto& programUniforms = programUniforms_[program];
+  auto uniformIt = programUniforms.find(nameStr);
+  if (uniformIt == programUniforms.end()) {
+    uniformIt = programUniforms.emplace(std::move(nameStr), ProgramUniform{}).first;
+    if (uniformIt == programUniforms.end()) {
+      return;
+    }
+  }
+  auto& uniform = uniformIt->second;
+  uniform.type = (type == nullptr ? GL_NONE : *type);
+  uniform.isTexture = isTextureUniform(uniform.type);
+  uniform.isImage = isTextureImageUniform(uniform.type);
+}
+
+void IContext::setProgramUniformLocation(GLuint program, const GLchar* name, GLint location) const {
+  if (location < 0) {
+    return;
+  }
+  std::string nameStr(name);
+  auto& programUniforms = programUniforms_[program];
+  auto uniformIt = programUniforms.find(nameStr);
+  if (uniformIt == programUniforms.end()) {
+    return;
+  }
+
+  auto& programUniformsByLocation = programUniformsByLocation_[program];
+  programUniformsByLocation[location] = std::move(nameStr);
+}
+
+void IContext::setProgramResourceIndex(GLuint program,
+                                       GLenum programInterface,
+                                       const GLchar* name,
+                                       GLuint index) const {
+  if (programInterface == GL_SHADER_STORAGE_BLOCK) {
+    programSsbosByIndex_[program][index] = name;
+  }
+}
+
+std::string IContext::boundUniformTexture(GLuint program, GLint location, GLint unit) const {
+  const auto programUniformsIt = programUniforms_.find(program);
+  if (programUniformsIt == programUniforms_.end()) {
+    return {};
+  }
+  const auto& programUniforms = programUniformsIt->second;
+  const auto programUniformsByLocationIt = programUniformsByLocation_.find(program);
+  if (programUniformsByLocationIt == programUniformsByLocation_.end()) {
+    return {};
+  }
+  const auto& programUniformsByLocation = programUniformsByLocationIt->second;
+
+  const auto uniformByLocationIt = programUniformsByLocation.find(location);
+  if (uniformByLocationIt == programUniformsByLocation.end()) {
+    return {};
+  }
+  const auto uniformIt = programUniforms.find(uniformByLocationIt->second);
+  if (uniformIt == programUniforms.end()) {
+    return {};
+  }
+  if (uniformIt->second.isTexture && unit >= 0 && unit < boundDrawTextures_.size()) {
+    std::stringstream ss;
+    ss << "(texture: " << boundDrawTextures_[unit] << ")";
+    return ss.str();
+  }
+  if (uniformIt->second.isImage && unit >= 0 && unit < boundImageTextures_.size()) {
+    std::stringstream ss;
+    ss << "(texture: " << boundImageTextures_[unit] << ")";
+    return ss.str();
+  }
+
+  return {};
+}
+
+std::string IContext::boundBufferName(GLuint program, GLenum target, GLuint index) const {
+  if (target == GL_SHADER_STORAGE_BUFFER) {
+    const auto programSsbosByIndexIt = programSsbosByIndex_.find(program);
+    if (programSsbosByIndexIt == programSsbosByIndex_.end()) {
+      return {};
+    }
+    const auto it = programSsbosByIndexIt->second.find(index);
+    if (it == programSsbosByIndexIt->second.end()) {
+      return {};
+    }
+    std::stringstream ss;
+    ss << "(uniform: " << it->second << ")";
+    return ss.str();
+  }
+  if (target == GL_UNIFORM_BUFFER) {
+    const auto programUbosByLocationIt = programUbosByLocation_.find(program);
+    if (programUbosByLocationIt == programUbosByLocation_.end()) {
+      return {};
+    }
+    const auto it = programUbosByLocationIt->second.find(index);
+    if (it == programUbosByLocationIt->second.end()) {
+      return {};
+    }
+    std::stringstream ss;
+    ss << "(uniform: " << it->second << ")";
+    return ss.str();
+  }
+  return {};
+}
+
+void IContext::setBoundBufferByIndex(GLenum target, GLuint index, GLuint buffer) {
+  if (target == GL_SHADER_STORAGE_BUFFER) {
+    if (index < boundSsbos_.size()) {
+      boundSsbos_[index] = buffer;
+    }
+  } else if (target == GL_UNIFORM_BUFFER) {
+    if (index < boundUbos_.size()) {
+      boundUbos_[index] = buffer;
+    }
+  }
+}
+
+GLuint IContext::boundBufferByIndex(GLenum target, GLuint index) const {
+  if (target == GL_SHADER_STORAGE_BUFFER) {
+    if (index < boundSsbos_.size()) {
+      return boundSsbos_[index];
+    }
+  } else if (target == GL_UNIFORM_BUFFER) {
+    if (index < boundUbos_.size()) {
+      return boundUbos_[index];
+    }
+  }
+
+  return 0;
+}
+
+std::string IContext::boundBuffersByIndex(bool ssbos, bool ubos) const {
+  bool first = true;
+  std::stringstream ss;
+  if (ubos) {
+    for (uint32_t i = 0; i < boundUbos_.size(); ++i) {
+      if (boundUbos_[i] != 0) {
+        ss << (first ? "" : " ") << "ubo " << i << " (buffer: " << boundUbos_[i] << ")";
+        first = false;
+      }
+    }
+  }
+  if (ssbos) {
+    for (uint32_t i = 0; i < boundSsbos_.size(); ++i) {
+      if (boundSsbos_[i] != 0) {
+        ss << (first ? "" : " ") << "ssbo " << i << " (buffer: " << boundSsbos_[i] << ")";
+        first = false;
+      }
+    }
+  }
+
+  return ss.str();
+}
+#endif // IGL_API_LOG
+
 // Creates a global map to ensure multiple IContexts are not created for a single glContext
 std::unordered_map<void * IGL_NULLABLE, IContext*>& IContext::getExistingContexts() {
   static auto& map = *(new std::unordered_map<void * IGL_NULLABLE, IContext*>());
@@ -864,7 +1487,8 @@ void IContext::registerContext(void* IGL_NULLABLE glContext, IContext* context) 
     const char* errorMessage =
         "Your application creates multiple IContext wrappers for the same underlying context "
         "object, which can result in problems if those contexts are used simultaneously across "
-        "different threads. It's recommended to preserve a one-to-one relationship between native "
+        "different threads. It's recommended to preserve a one-to-one relationship between "
+        "native "
         "and IGL contexts. Ignore this warning at your own risk.";
 #if IGL_PLATFORM_ANDROID
     IGL_LOG_ERROR(errorMessage);
@@ -901,6 +1525,9 @@ bool IContext::shouldQueueAPI() const {
 }
 
 void IContext::activeTexture(GLenum texture) {
+#if IGL_API_LOG
+  activeTextureUnit_ = texture - GL_TEXTURE0;
+#endif
   GLCALL(ActiveTexture)(texture);
   APILOG("glActiveTexture(%s)\n", GL_ENUM_TO_STRING(texture));
   GLCHECK_ERRORS();
@@ -908,19 +1535,37 @@ void IContext::activeTexture(GLenum texture) {
 
 void IContext::attachShader(GLuint program, GLuint shader) {
   GLCALL(AttachShader)(program, shader);
-  APILOG("glAttachShader(%u, %u)\n", program, shader);
+  APILOG("glAttachShader(%u, %u) (program: %u)\n", program, shader, program);
   GLCHECK_ERRORS();
 }
 
 void IContext::bindBuffer(GLenum target, GLuint buffer) {
+#if IGL_API_LOG
+  GLuint unboundBuffer = boundBuffer(target);
+  setBoundBuffer(target, buffer);
+#endif // IGL_API_LOG
   GLCALL(BindBuffer)(target, buffer);
-  APILOG("glBindBuffer(%s, %u)\n", GL_ENUM_TO_STRING(target), buffer);
+  APILOG("glBindBuffer(%s, %u) unbound (buffer: %u) bound (buffer: %u)\n",
+         GL_ENUM_TO_STRING(target),
+         buffer,
+         unboundBuffer,
+         buffer);
   GLCHECK_ERRORS();
 }
 
 void IContext::bindBufferBase(GLenum target, GLuint index, GLuint buffer) {
+#if IGL_API_LOG
+  GLuint unboundBuffer = boundBufferByIndex(target, index);
+  setBoundBufferByIndex(target, index, buffer);
+#endif
   IGLCALL(BindBufferBase)(target, index, buffer);
-  APILOG("glBindBufferBase(%s, %u, %u)\n", GL_ENUM_TO_STRING(target), index, buffer);
+  APILOG("glBindBufferBase(%s, %u, %u) unbound (buffer: %u) bound (buffer: %u) %s\n",
+         GL_ENUM_TO_STRING(target),
+         index,
+         buffer,
+         unboundBuffer,
+         buffer,
+         boundBufferName(boundProgram_, target, index).c_str());
   GLCHECK_ERRORS();
 }
 
@@ -929,26 +1574,64 @@ void IContext::bindBufferRange(GLenum target,
                                GLuint buffer,
                                GLintptr offset,
                                GLsizeiptr size) {
+#if IGL_API_LOG
+  GLuint unboundBuffer = boundBufferByIndex(target, index);
+  setBoundBufferByIndex(target, index, buffer);
+#endif
   IGLCALL(BindBufferRange)(target, index, buffer, offset, size);
-  APILOG("glBindBufferRange(%s, %u, %u)\n", GL_ENUM_TO_STRING(target), index, buffer);
+  APILOG("glBindBufferRange(%s, %u, %u) unbound (buffer: %u) bound (buffer: %u) %s\n",
+         GL_ENUM_TO_STRING(target),
+         index,
+         buffer,
+         unboundBuffer,
+         buffer,
+         boundBufferName(boundProgram_, target, index).c_str());
   GLCHECK_ERRORS();
 }
 
 void IContext::bindFramebuffer(GLenum target, GLuint framebuffer) {
+#if IGL_API_LOG
+  GLuint unboundFramebuffer = boundFramebuffer(target);
+  setBoundFramebuffer(target, framebuffer);
+#endif
   IGLCALL(BindFramebuffer)(target, framebuffer);
-  APILOG("glBindFramebuffer(%s, %u)\n", GL_ENUM_TO_STRING(target), framebuffer);
+  APILOG("glBindFramebuffer(%s, %u) unbound (framebuffer: %u) bound (framebuffer: %u)\n",
+         GL_ENUM_TO_STRING(target),
+         framebuffer,
+         unboundFramebuffer,
+         framebuffer);
   GLCHECK_ERRORS();
 }
 
 void IContext::bindRenderbuffer(GLenum target, GLuint renderbuffer) {
+#if IGL_API_LOG
+  GLuint unboundRenderbuffer = boundRenderbuffer_;
+  boundRenderbuffer_ = renderbuffer;
+#endif
   IGLCALL(BindRenderbuffer)(target, renderbuffer);
-  APILOG("glBindRenderbuffer(%s, %u)\n", GL_ENUM_TO_STRING(target), renderbuffer);
+  APILOG("glBindRenderbuffer(%s, %u) unbound (renderbuffer: %u) bound (renderbuffer: %u)\n",
+         GL_ENUM_TO_STRING(target),
+         renderbuffer,
+         unboundRenderbuffer,
+         renderbuffer);
   GLCHECK_ERRORS();
 }
 
 void IContext::bindTexture(GLenum target, GLuint texture) {
+#if IGL_API_LOG
+  GLuint unboundTexture = boundTexture(target);
+  setBoundTexture(target, texture);
+  if (activeTextureUnit_ < boundDrawTextures_.size()) {
+    boundDrawTextures_[activeTextureUnit_] = texture;
+  }
+#endif
   GLCALL(BindTexture)(target, texture);
-  APILOG("glBindTexture(%s, %u)\n", GL_ENUM_TO_STRING(target), texture);
+  APILOG("glBindTexture(%s, %u) (unit: %u) unbound (texture: %u) bound (texture: %u)\n",
+         GL_ENUM_TO_STRING(target),
+         activeTextureUnit_,
+         texture,
+         unboundTexture,
+         texture);
   GLCHECK_ERRORS();
 }
 
@@ -959,6 +1642,13 @@ void IContext::bindImageTexture(GLuint unit,
                                 GLint layer,
                                 GLenum access,
                                 GLenum format) {
+#if IGL_API_LOG
+  GLuint unboundTexture = 0;
+  if (unit < boundImageTextures_.size()) {
+    unboundTexture = boundImageTextures_[unit];
+    boundImageTextures_[unit] = texture;
+  }
+#endif
   if (bindImageTexturerProc_ == nullptr) {
     if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::ShaderImageLoadStoreExtReq)) {
       if (deviceFeatureSet_.hasExtension(Extensions::ShaderImageLoadStore)) {
@@ -970,18 +1660,27 @@ void IContext::bindImageTexture(GLuint unit,
     IGL_DEBUG_ASSERT(bindImageTexturerProc_, "No supported function for glBindImageTexture\n");
   }
   GLCALL_PROC(bindImageTexturerProc_, unit, texture, level, layered, layer, access, format);
-  APILOG("glBindImageTexture(%u, %u, %i, %s, %i %s %s)\n",
-         unit,
-         texture,
-         level,
-         GL_BOOL_TO_STRING(layered),
-         layer,
-         GL_ENUM_TO_STRING(access),
-         GL_ENUM_TO_STRING(format));
+  APILOG(
+      "glBindImageTexture(%u, %u, %i, %s, %i %s %s) unbound (texture: %u) bound (texture: %u) "
+      "(uniform: %s)\n",
+      unit,
+      texture,
+      level,
+      GL_BOOL_TO_STRING(layered),
+      layer,
+      GL_ENUM_TO_STRING(access),
+      GL_ENUM_TO_STRING(format),
+      unboundTexture,
+      texture,
+      programUniformsByLocation_[boundProgram_][unit].c_str());
   GLCHECK_ERRORS();
 }
 
 void IContext::bindVertexArray(GLuint vao) {
+#if IGL_API_LOG
+  GLuint unboundVao = boundVao_;
+  boundVao_ = vao;
+#endif
   if (bindVertexArrayProc_ == nullptr) {
     if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::VertexArrayObjectExtReq)) {
       if (deviceFeatureSet_.hasExtension(Extensions::VertexArrayObject)) {
@@ -993,7 +1692,7 @@ void IContext::bindVertexArray(GLuint vao) {
     IGL_DEBUG_ASSERT(bindVertexArrayProc_, "No supported function for glBindVertexArray\n");
   }
   GLCALL_PROC(bindVertexArrayProc_, vao);
-  APILOG("glBindVertexArray(%u)\n", vao);
+  APILOG("glBindVertexArray(%u) unbound (VAO: %u) bound (VAO: %u)\n", vao, unboundVao, vao);
   GLCHECK_ERRORS();
 }
 
@@ -1055,18 +1754,22 @@ void IContext::blitFramebuffer(GLint srcX0,
   }
   GLCALL_PROC(
       blitFramebufferProc_, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-  APILOG("glBlitFramebuffer(%d, %d, %d, %d, %d, %d, %d, %d, 0x%x [%s], %s)\n",
-         srcX0,
-         srcY0,
-         srcX1,
-         srcY1,
-         dstX0,
-         dstY0,
-         dstX1,
-         dstY1,
-         mask,
-         GL_CLEAR_BITS_TO_STRING(mask),
-         GL_ENUM_TO_STRING(filter));
+  APILOG(
+      "glBlitFramebuffer(%d, %d, %d, %d, %d, %d, %d, %d, 0x%x [%s], %s) read (framebuffer: %u) "
+      "write (framebuffer: %u)\n",
+      srcX0,
+      srcY0,
+      srcX1,
+      srcY1,
+      dstX0,
+      dstY0,
+      dstX1,
+      dstY1,
+      mask,
+      GL_CLEAR_BITS_TO_STRING(mask),
+      GL_ENUM_TO_STRING(filter),
+      boundFramebuffer(GL_READ_FRAMEBUFFER),
+      boundFramebuffer(GL_DRAW_FRAMEBUFFER));
   GLCHECK_ERRORS();
 }
 
@@ -1075,11 +1778,12 @@ void IContext::bufferData(GLenum target,
                           const GLvoid* IGL_NULLABLE data,
                           GLenum usage) {
   GLCALL(BufferData)(target, size, data, usage);
-  APILOG("glBufferData(%s, %zu, %p, %s)\n",
+  APILOG("glBufferData(%s, %zu, %p, %s) (buffer: %u)\n",
          GL_ENUM_TO_STRING(target),
          size,
          data,
-         GL_ENUM_TO_STRING(usage));
+         GL_ENUM_TO_STRING(usage),
+         boundBuffer(target));
   GLCHECK_ERRORS();
 }
 
@@ -1088,7 +1792,12 @@ void IContext::bufferSubData(GLenum target,
                              GLsizeiptr size,
                              const GLvoid* IGL_NULLABLE data) {
   GLCALL(BufferSubData)(target, offset, size, data);
-  APILOG("glBufferSubData(%s, %zu, %zu, %p)\n", GL_ENUM_TO_STRING(target), offset, size, data);
+  APILOG("glBufferSubData(%s, %zu, %zu, %p) (buffer: %u)\n",
+         GL_ENUM_TO_STRING(target),
+         offset,
+         size,
+         data,
+         boundBuffer(target));
   GLCHECK_ERRORS();
 }
 
@@ -1096,14 +1805,21 @@ GLenum IContext::checkFramebufferStatus(GLenum target) {
   GLenum ret = 0;
 
   IGLCALL_WITH_RETURN(ret, CheckFramebufferStatus)(target);
-  APILOG("glCheckFramebufferStatus(%s) = %s\n", GL_ENUM_TO_STRING(target), GL_ENUM_TO_STRING(ret));
+  APILOG("glCheckFramebufferStatus(%s) = %s (framebuffer: %u)\n",
+         GL_ENUM_TO_STRING(target),
+         GL_ENUM_TO_STRING(ret),
+         boundFramebuffer(target));
   GLCHECK_ERRORS();
   return ret;
 }
 
 void IContext::clear(GLbitfield mask) {
   GLCALL(Clear)(mask);
-  APILOG("glClear(0x%x [%s])\n", mask, GL_CLEAR_BITS_TO_STRING(mask));
+  APILOG("glClear(0x%x [%s]) (framebuffer: %u) %s\n",
+         mask,
+         GL_CLEAR_BITS_TO_STRING(mask),
+         boundFramebuffer(GL_DRAW_FRAMEBUFFER),
+         affectedFramebufferAttachments(GL_DRAW_FRAMEBUFFER, mask).c_str());
   GLCHECK_ERRORS();
 }
 
@@ -1114,7 +1830,13 @@ void IContext::clearBufferfv(GLenum buffer, GLint drawBuffer, const GLfloat* val
   }
 
   iglClearBufferfv(buffer, drawBuffer, value);
-  APILOG("glClearBufferfv(%s, %d, %f)\n", GL_ENUM_TO_STRING(buffer), drawBuffer, *value);
+  APILOG("glClearBufferfv(%s, %d, %f) (framebuffer: %u) (%s: %u)\n",
+         GL_ENUM_TO_STRING(buffer),
+         drawBuffer,
+         *value,
+         boundFramebuffer(GL_DRAW_FRAMEBUFFER),
+         framebufferAttachmentType(GL_DRAW_FRAMEBUFFER, buffer, drawBuffer),
+         framebufferAttachment(GL_DRAW_FRAMEBUFFER, buffer, drawBuffer));
   GLCHECK_ERRORS();
 }
 
@@ -1147,11 +1869,12 @@ void IContext::clearStencil(GLint s) {
 
 void IContext::colorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) {
   GLCALL(ColorMask)(red, green, blue, alpha);
-  APILOG("glColorMask(%s, %s, %s, %s)\n",
+  APILOG("glColorMask(%s, %s, %s, %s) (framebuffer: %u)\n",
          GL_BOOL_TO_STRING(red),
          GL_BOOL_TO_STRING(green),
          GL_BOOL_TO_STRING(blue),
-         GL_BOOL_TO_STRING(alpha));
+         GL_BOOL_TO_STRING(alpha),
+         boundFramebuffer(GL_DRAW_FRAMEBUFFER));
   GLCHECK_ERRORS();
 }
 
@@ -1171,7 +1894,7 @@ void IContext::compressedTexImage2D(GLenum target,
                                     const GLvoid* IGL_NULLABLE data) {
   GLCALL(CompressedTexImage2D)
   (target, level, internalformat, width, height, border, imageSize, data);
-  APILOG("glCompressedTexImage2D(%s, %d, %s, %u, %u, %d, %u, %p)\n",
+  APILOG("glCompressedTexImage2D(%s, %d, %s, %u, %u, %d, %u, %p) (texture: %u)\n",
          GL_ENUM_TO_STRING(target),
          level,
          GL_ENUM_TO_STRING(internalformat),
@@ -1179,7 +1902,8 @@ void IContext::compressedTexImage2D(GLenum target,
          height,
          border,
          imageSize,
-         data);
+         data,
+         boundTexture(target));
   GLCHECK_ERRORS();
 }
 
@@ -1215,7 +1939,7 @@ void IContext::compressedTexImage3D(GLenum target,
               border,
               imageSize,
               data);
-  APILOG("glCompressedTexImage3D(%s, %d, %s, %u, %u, %u, %d, %u, %p)\n",
+  APILOG("glCompressedTexImage3D(%s, %d, %s, %u, %u, %u, %d, %u, %p) (texture: %u)\n",
          GL_ENUM_TO_STRING(target),
          level,
          GL_ENUM_TO_STRING(internalformat),
@@ -1224,7 +1948,8 @@ void IContext::compressedTexImage3D(GLenum target,
          depth,
          border,
          imageSize,
-         data);
+         data,
+         boundTexture(target));
   GLCHECK_ERRORS();
 }
 
@@ -1239,7 +1964,7 @@ void IContext::compressedTexSubImage2D(GLenum target,
                                        const GLvoid* data) {
   GLCALL(CompressedTexSubImage2D)
   (target, level, xoffset, yoffset, width, height, format, imageSize, data);
-  APILOG("glCompressedTexSubImage2D(%s, %d, %d, %d, %u, %u, %s, %u, %p)\n",
+  APILOG("glCompressedTexSubImage2D(%s, %d, %d, %d, %u, %u, %s, %u, %p) (texture: %u)\n",
          GL_ENUM_TO_STRING(target),
          level,
          xoffset,
@@ -1248,7 +1973,8 @@ void IContext::compressedTexSubImage2D(GLenum target,
          height,
          GL_ENUM_TO_STRING(format),
          imageSize,
-         data);
+         data,
+         boundTexture(target));
   GLCHECK_ERRORS();
 }
 
@@ -1288,7 +2014,7 @@ void IContext::compressedTexSubImage3D(GLenum target,
               format,
               imageSize,
               data);
-  APILOG("glCompressedTexSubImage3D(%s, %d, %d, %d, %d, %u, %u, %u, %s, %u, %p)\n",
+  APILOG("glCompressedTexSubImage3D(%s, %d, %d, %d, %d, %u, %u, %u, %s, %u, %p) (texture: %u)\n",
          GL_ENUM_TO_STRING(target),
          level,
          xoffset,
@@ -1299,7 +2025,8 @@ void IContext::compressedTexSubImage3D(GLenum target,
          depth,
          GL_ENUM_TO_STRING(format),
          imageSize,
-         data);
+         data,
+         boundTexture(target));
   GLCHECK_ERRORS();
 }
 
@@ -1312,12 +2039,14 @@ void IContext::copyBufferSubData(GLenum readtarget,
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 #else
   GLCALL(CopyBufferSubData)(readtarget, writetarget, readoffset, writeoffset, size);
-  APILOG("glCopyBufferSubData(%s, %s, %d, %d, %u)\n",
+  APILOG("glCopyBufferSubData(%s, %s, %d, %d, %u) read (buffer: %u) write (buffer: %u)\n",
          GL_ENUM_TO_STRING(readtarget),
          GL_ENUM_TO_STRING(writetarget),
          readoffset,
          writeoffset,
-         size);
+         size,
+         boundBuffer(readTarget),
+         boundBuffer(writeTarget));
   GLCHECK_ERRORS();
 #endif // IGL_PLATFORM_APPLE
 }
@@ -1331,7 +2060,7 @@ void IContext::copyTexSubImage2D(GLenum target,
                                  GLsizei width,
                                  GLsizei height) {
   GLCALL(CopyTexSubImage2D)(target, level, xoffset, yoffset, x, y, width, height);
-  APILOG("glCopyTexSubImage2D(%s, %d, %d, %d, %d, %d, %u, %u)\n",
+  APILOG("glCopyTexSubImage2D(%s, %d, %d, %d, %d, %d, %u, %u) read (%s: %u) write (texture: %u)\n",
          GL_ENUM_TO_STRING(target),
          level,
          xoffset,
@@ -1339,13 +2068,18 @@ void IContext::copyTexSubImage2D(GLenum target,
          x,
          y,
          width,
-         height);
+         height,
+         framebufferReadBufferType(GL_READ_FRAMEBUFFER),
+         framebufferReadBuffer(GL_READ_FRAMEBUFFER));
   GLCHECK_ERRORS();
 }
 
 void IContext::createMemoryObjects(GLsizei n, GLuint* objects) {
   IGLCALL(CreateMemoryObjectsEXT)(n, objects);
-  APILOG("glCreateMemoryObjectsEXT(%u, %p)\n", n, objects);
+  APILOG("glCreateMemoryObjectsEXT(%u, %p) (memory object: %u)\n",
+         n,
+         objects,
+         objects == nullptr ? 0 : *objects);
   GLCHECK_ERRORS();
 }
 
@@ -1353,9 +2087,16 @@ GLuint IContext::createProgram() {
   GLuint ret = 0;
 
   GLCALL_WITH_RETURN(ret, CreateProgram)();
-  APILOG("glCreateProgram() = %u\n", ret);
+  APILOG("glCreateProgram() (program: %u)\n", ret);
   GLCHECK_ERRORS();
 
+#if IGL_API_LOG
+  programUniforms_[ret] = {};
+  programUniformsByLocation_[ret] = {};
+  programSsbosByIndex_[ret] = {};
+  programUbosByIndex_[ret] = {};
+  programUbosByLocation_[ret] = {};
+#endif
   return ret;
 }
 
@@ -1434,7 +2175,8 @@ void IContext::deleteBuffers(GLsizei n, const GLuint* buffers) {
       deletionQueues_.queueDeleteBuffers(n, buffers);
     } else {
       GLCALL(DeleteBuffers)(n, buffers);
-      APILOG("glDeleteBuffers(%u, %p) = %u\n", n, buffers, buffers == nullptr ? 0 : *buffers);
+      APILOG(
+          "glDeleteBuffers(%u, %p) (buffer: %u)\n", n, buffers, buffers == nullptr ? 0 : *buffers);
       GLCHECK_ERRORS();
     }
   }
@@ -1442,7 +2184,10 @@ void IContext::deleteBuffers(GLsizei n, const GLuint* buffers) {
 
 void IContext::deleteMemoryObjects(GLsizei n, const GLuint* objects) {
   IGLCALL(DeleteMemoryObjectsEXT)(n, objects);
-  APILOG("glDeleteMemoryObjectsEXT(%u, %p) = %u\n", n, objects, objects == nullptr ? 0 : *objects);
+  APILOG("glDeleteMemoryObjectsEXT(%u, %p) (memory object: %u)\n",
+         n,
+         objects,
+         objects == nullptr ? 0 : *objects);
   GLCHECK_ERRORS();
 }
 
@@ -1460,7 +2205,7 @@ void IContext::deleteFramebuffers(GLsizei n, const GLuint* framebuffers) {
       deletionQueues_.queueDeleteFramebuffers(n, framebuffers);
     } else {
       IGLCALL(DeleteFramebuffers)(n, framebuffers);
-      APILOG("glDeleteFramebuffers(%u, %p) = %u\n",
+      APILOG("glDeleteFramebuffers(%u, %p) (framebuffer: %u)\n",
              n,
              framebuffers,
              framebuffers == nullptr ? 0 : *framebuffers);
@@ -1475,7 +2220,7 @@ void IContext::deleteProgram(GLuint program) {
       deletionQueues_.queueDeleteProgram(program);
     } else {
       GLCALL(DeleteProgram)(program);
-      APILOG("glDeleteProgram(%u)\n", program);
+      APILOG("glDeleteProgram(%u) (program: %u)\n", program, program);
       GLCHECK_ERRORS();
     }
   }
@@ -1487,7 +2232,7 @@ void IContext::deleteRenderbuffers(GLsizei n, const GLuint* renderbuffers) {
       deletionQueues_.queueDeleteRenderbuffers(n, renderbuffers);
     } else {
       IGLCALL(DeleteRenderbuffers)(n, renderbuffers);
-      APILOG("glDeleteRenderbuffers(%u, %p) = u\n",
+      APILOG("glDeleteRenderbuffers(%u, %p) (renderbuffer: %u)\n",
              n,
              renderbuffers,
              renderbuffers == nullptr ? 0 : *renderbuffers);
@@ -1512,7 +2257,7 @@ void IContext::deleteVertexArrays(GLsizei n, const GLuint* vertexArrays) {
       deletionQueues_.queueDeleteVertexArrays(n, vertexArrays);
     } else {
       GLCALL_PROC(deleteVertexArraysProc_, n, vertexArrays);
-      APILOG("glDeleteVertexArrays(%u, %p) = %u\n",
+      APILOG("glDeleteVertexArrays(%u, %p) (VAO: %u)\n",
              n,
              vertexArrays,
              vertexArrays == nullptr ? 0 : *vertexArrays);
@@ -1546,7 +2291,7 @@ void IContext::deleteSync(GLsync sync) {
   }
 
   GLCALL_PROC(deleteSyncProc_, sync);
-  APILOG("glDeleteSync(%p)\n", sync);
+  APILOG("glDeleteSync(%p) (sync: %p)\n", sync, sync);
   GLCHECK_ERRORS();
 }
 
@@ -1556,7 +2301,10 @@ void IContext::deleteTextures(GLsizei n, const GLuint* textures) {
       deletionQueues_.queueDeleteTextures(n, textures);
     } else {
       GLCALL(DeleteTextures)(n, textures);
-      APILOG("glDeleteTextures(%u, %p) = %u\n", n, textures, textures == nullptr ? 0 : *textures);
+      APILOG("glDeleteTextures(%u, %p) (texture: %u)\n",
+             n,
+             textures,
+             textures == nullptr ? 0 : *textures);
       GLCHECK_ERRORS();
     }
   }
@@ -1582,7 +2330,7 @@ void IContext::depthRangef(GLfloat n, GLfloat f) {
 
 void IContext::detachShader(GLuint program, GLuint shader) {
   GLCALL(DetachShader)(program, shader);
-  APILOG("glDetachShader(%u, %u)\n", program, shader);
+  APILOG("glDetachShader(%u, %u) (program: %u)\n", program, shader, program);
   GLCHECK_ERRORS();
 }
 
@@ -1593,44 +2341,92 @@ void IContext::disable(GLenum cap) {
 }
 
 void IContext::disableVertexAttribArray(GLuint index) {
+#if IGL_API_LOG
+  if (index < enabledAttributes_.size()) {
+    enabledAttributes_.reset(index);
+  }
+#endif
   GLCALL(DisableVertexAttribArray)(index);
-  APILOG("glDisableVertexAttribArray(%u)\n", index);
+  APILOG("glDisableVertexAttribArray(%u) (VAO: %u) (buffer: %u\n",
+         index,
+         boundVao_,
+         index < boundAttributes_.size() ? boundAttributes_[index] : 0);
   GLCHECK_ERRORS();
 }
 
 void IContext::drawArrays(GLenum mode, GLint first, GLsizei count) {
+#if IGL_API_LOG
+  lastCommandWasCompute_ = false;
+#endif
   drawCallCount_++;
 
   IGL_PROFILER_ZONE_GPU_OGL("drawArrays()");
 
   GLCALL(DrawArrays)(mode, first, count);
-  APILOG("glDrawArrays(%s, %d, %u)\n", GL_ENUM_TO_STRING(mode), first, count);
+  APILOG("glDrawArrays(%s, %d, %u) (program: %u) (VAO: %u) (framebuffer: %u) %s %s %s %s\n",
+         GL_ENUM_TO_STRING(mode),
+         first,
+         count,
+         boundProgram_,
+         boundVao_,
+         boundFramebuffer(GL_DRAW_FRAMEBUFFER),
+         boundDrawBuffers().c_str(),
+         boundDrawTextures().c_str(),
+         boundFramebufferAttachments(GL_DRAW_FRAMEBUFFER).c_str(),
+         boundBuffersByIndex().c_str());
   GLCHECK_ERRORS();
   APILOG_DEC_DRAW_COUNT();
 }
 
 void IContext::drawArraysIndirect(GLenum mode, const GLvoid* indirect) {
+#if IGL_API_LOG
+  lastCommandWasCompute_ = false;
+#endif
   drawCallCount_++;
 
   IGL_PROFILER_ZONE_GPU_COLOR_OGL("drawArraysIndirect()", IGL_PROFILER_COLOR_DRAW);
 
   IGLCALL(DrawArraysIndirect)(mode, indirect);
-  APILOG("glDrawArraysIndirect(%s, %p)\n", GL_ENUM_TO_STRING(mode), indirect);
+  APILOG(
+      "glDrawArraysIndirect(%s, %p) (program: %u) (VAO: %u) (framebuffer: %u) indirect (buffer: "
+      "%u) %s %s %s %s\n",
+      GL_ENUM_TO_STRING(mode),
+      indirect,
+      boundProgram_,
+      boundVao_,
+      boundFramebuffer(GL_DRAW_FRAMEBUFFER),
+      boundBuffer(GL_DRAW_INDIRECT_BUFFER),
+      boundDrawBuffers().c_str(),
+      boundDrawTextures().c_str(),
+      boundFramebufferAttachments(GL_DRAW_FRAMEBUFFER).c_str(),
+      boundBuffersByIndex().c_str());
   GLCHECK_ERRORS();
   APILOG_DEC_DRAW_COUNT();
 }
 
 void IContext::drawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount) {
+#if IGL_API_LOG
+  lastCommandWasCompute_ = false;
+#endif
   drawCallCount_++;
 
   IGL_PROFILER_ZONE_GPU_OGL("drawArraysInstanced()");
 
   IGLCALL(DrawArraysInstanced)(mode, first, count, instancecount);
-  APILOG("glDrawArraysInstanced(%s, %d, %u, %u)\n",
-         GL_ENUM_TO_STRING(mode),
-         first,
-         count,
-         instancecount);
+  APILOG(
+      "glDrawArraysInstanced(%s, %d, %u, %u) (program: %u) (VAO: %u) (framebuffer: %u) %s %s %s "
+      "%s\n",
+      GL_ENUM_TO_STRING(mode),
+      first,
+      count,
+      instancecount,
+      boundProgram_,
+      boundVao_,
+      boundFramebuffer(GL_DRAW_FRAMEBUFFER),
+      boundDrawBuffers().c_str(),
+      boundDrawTextures().c_str(),
+      boundFramebufferAttachments(GL_DRAW_FRAMEBUFFER).c_str(),
+      boundBuffersByIndex().c_str());
   GLCHECK_ERRORS();
   APILOG_DEC_DRAW_COUNT();
 }
@@ -1656,17 +2452,30 @@ void IContext::drawBuffers(GLsizei n, GLenum* buffers) {
 }
 
 void IContext::drawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices) {
+#if IGL_API_LOG
+  lastCommandWasCompute_ = false;
+#endif
   drawCallCount_++;
 
   IGL_PROFILER_ZONE_GPU_COLOR_OGL("drawElements()", IGL_PROFILER_COLOR_DRAW);
 
   GLCALL(DrawElements)(mode, count, type, indices);
 
-  APILOG("glDrawElements(%s, %u, %s, %p)\n",
-         GL_ENUM_TO_STRING(mode),
-         count,
-         GL_ENUM_TO_STRING(type),
-         indices);
+  APILOG(
+      "glDrawElements(%s, %u, %s, %p) (program: %u) (VAO: %u) (framebuffer: %u) element (buffer: "
+      "%u) %s %s %s %s\n",
+      GL_ENUM_TO_STRING(mode),
+      count,
+      GL_ENUM_TO_STRING(type),
+      indices,
+      boundProgram_,
+      boundVao_,
+      boundFramebuffer(GL_DRAW_FRAMEBUFFER),
+      boundBuffer(GL_ELEMENT_ARRAY_BUFFER),
+      boundDrawBuffers().c_str(),
+      boundDrawTextures().c_str(),
+      boundFramebufferAttachments(GL_DRAW_FRAMEBUFFER).c_str(),
+      boundBuffersByIndex().c_str());
   GLCHECK_ERRORS();
   APILOG_DEC_DRAW_COUNT();
 }
@@ -1676,32 +2485,59 @@ void IContext::drawElementsInstanced(GLenum mode,
                                      GLenum type,
                                      const GLvoid* indices,
                                      GLsizei instancecount) {
+#if IGL_API_LOG
+  lastCommandWasCompute_ = false;
+#endif
   drawCallCount_++;
 
   IGL_PROFILER_ZONE_GPU_COLOR_OGL("drawElementsInstanced()", IGL_PROFILER_COLOR_DRAW);
 
   IGLCALL(DrawElementsInstanced)(mode, count, type, indices, instancecount);
 
-  APILOG("glDrawElementsInstanced(%s, %u, %s, %p, %u)\n",
-         GL_ENUM_TO_STRING(mode),
-         count,
-         GL_ENUM_TO_STRING(type),
-         indices,
-         instancecount);
+  APILOG(
+      "glDrawElementsInstanced(%s, %u, %s, %p, %u) (program: %u) (VAO: %u) (framebuffer: %u) "
+      "element (buffer: %u) %s %s %s %s\n",
+      GL_ENUM_TO_STRING(mode),
+      count,
+      GL_ENUM_TO_STRING(type),
+      indices,
+      instancecount,
+      boundProgram_,
+      boundVao_,
+      boundFramebuffer(GL_DRAW_FRAMEBUFFER),
+      boundBuffer(GL_ELEMENT_ARRAY_BUFFER),
+      boundDrawBuffers().c_str(),
+      boundDrawTextures().c_str(),
+      boundFramebufferAttachments(GL_DRAW_FRAMEBUFFER).c_str(),
+      boundBuffersByIndex().c_str());
   GLCHECK_ERRORS();
   APILOG_DEC_DRAW_COUNT();
 }
 
 void IContext::drawElementsIndirect(GLenum mode, GLenum type, const GLvoid* indirect) {
+#if IGL_API_LOG
+  lastCommandWasCompute_ = false;
+#endif
   drawCallCount_++;
 
   IGL_PROFILER_ZONE_GPU_COLOR_OGL("drawElementsIndirect()", IGL_PROFILER_COLOR_DRAW);
 
   IGLCALL(DrawElementsIndirect)(mode, type, indirect);
-  APILOG("glDrawElementsIndirect(%s, %s, %p)\n",
-         GL_ENUM_TO_STRING(mode),
-         GL_ENUM_TO_STRING(type),
-         indirect);
+  APILOG(
+      "glDrawElementsIndirect(%s, %s, %p) (program: %u) (VAO: %u) (framebuffer: %u) indirect "
+      "(buffer: %u) element (buffer: %u) %s %s %s %s\n",
+      GL_ENUM_TO_STRING(mode),
+      GL_ENUM_TO_STRING(type),
+      indirect,
+      boundProgram_,
+      boundVao_,
+      boundFramebuffer(GL_DRAW_FRAMEBUFFER),
+      boundBuffer(GL_DRAW_INDIRECT_BUFFER),
+      boundBuffer(GL_ELEMENT_ARRAY_BUFFER),
+      boundDrawBuffers().c_str(),
+      boundDrawTextures().c_str(),
+      boundFramebufferAttachments(GL_DRAW_FRAMEBUFFER).c_str(),
+      boundBuffersByIndex().c_str());
   GLCHECK_ERRORS();
   APILOG_DEC_DRAW_COUNT();
 }
@@ -1713,8 +2549,16 @@ void IContext::enable(GLenum cap) {
 }
 
 void IContext::enableVertexAttribArray(GLuint index) {
+#if IGL_API_LOG
+  if (index < enabledAttributes_.size()) {
+    enabledAttributes_.set(index);
+  }
+#endif
   GLCALL(EnableVertexAttribArray)(index);
-  APILOG("glEnableVertexAttribArray(%u)\n", index);
+  APILOG("glEnableVertexAttribArray(%u) (VAO: %u) (buffer: %u)\n",
+         index,
+         boundVao_,
+         index < boundAttributes_.size() ? boundAttributes_[index] : 0);
   GLCHECK_ERRORS();
 }
 
@@ -1733,7 +2577,7 @@ GLsync IContext::fenceSync(GLenum condition, GLbitfield flags) {
   GLsync sync = nullptr;
 
   GLCALL_PROC_WITH_RETURN(sync, fenceSyncProc_, GL_ZERO, condition, flags);
-  APILOG("glFenceSync(%s, %u)\n", GL_ENUM_TO_STRING(condition), flags);
+  APILOG("glFenceSync(%s, %u) (sync: %p)\n", GL_ENUM_TO_STRING(condition), flags, sync);
   GLCHECK_ERRORS();
 
   return sync;
@@ -1755,12 +2599,22 @@ void IContext::framebufferRenderbuffer(GLenum target,
                                        GLenum attachment,
                                        GLenum renderbuffertarget,
                                        GLuint renderbuffer) {
+#if IGL_API_LOG
+  const char* unboundAttachmentType = framebufferAttachmentType(target, attachment);
+  GLuint unboundAttachment = framebufferAttachment(target, attachment);
+  setFramebufferAttachment(target, attachment, true, renderbuffer);
+#endif
   IGLCALL(FramebufferRenderbuffer)(target, attachment, renderbuffertarget, renderbuffer);
-  APILOG("glFramebufferRenderbuffer(%s, %s, %s, %u)\n",
-         GL_ENUM_TO_STRING(target),
-         GL_ENUM_TO_STRING(attachment),
-         GL_ENUM_TO_STRING(renderbuffertarget),
-         renderbuffer);
+  APILOG(
+      "glFramebufferRenderbuffer(%s, %s, %s, %u) (framebuffer: %u) unbound (%s: %u) bound "
+      "(renderbuffer: %u)\n",
+      GL_ENUM_TO_STRING(target),
+      GL_ENUM_TO_STRING(attachment),
+      GL_ENUM_TO_STRING(renderbuffertarget),
+      boundFramebuffer(target),
+      unboundAttachmentType,
+      unboundAttachment,
+      renderbuffer);
   GLCHECK_ERRORS();
 }
 
@@ -1769,13 +2623,24 @@ void IContext::framebufferTexture2D(GLenum target,
                                     GLenum textarget,
                                     GLuint texture,
                                     GLint level) {
+#if IGL_API_LOG
+  const char* unboundAttachmentType = framebufferAttachmentType(target, attachment);
+  GLuint unboundAttachment = framebufferAttachment(target, attachment);
+  setFramebufferAttachment(target, attachment, false, texture);
+#endif
   IGLCALL(FramebufferTexture2D)(target, attachment, textarget, texture, level);
-  APILOG("glFramebufferTexture2D(%s, %s, %s, %u, %d)\n",
-         GL_ENUM_TO_STRING(target),
-         GL_ENUM_TO_STRING(attachment),
-         GL_ENUM_TO_STRING(textarget),
-         texture,
-         level);
+  APILOG(
+      "glFramebufferTexture2D(%s, %s, %s, %u, %d) (framebuffer: %u) unbound (%s: %u) bound "
+      "(texture: %u)\n",
+      GL_ENUM_TO_STRING(target),
+      GL_ENUM_TO_STRING(attachment),
+      GL_ENUM_TO_STRING(textarget),
+      texture,
+      level,
+      boundFramebuffer(target),
+      unboundAttachmentType,
+      unboundAttachment,
+      texture);
   GLCHECK_ERRORS();
 }
 
@@ -1785,6 +2650,11 @@ void IContext::framebufferTexture2DMultisample(GLenum target,
                                                GLuint texture,
                                                GLint level,
                                                GLsizei samples) {
+#if IGL_API_LOG
+  const char* unboundAttachmentType = framebufferAttachmentType(target, attachment);
+  GLuint unboundAttachment = framebufferAttachment(target, attachment);
+  setFramebufferAttachment(target, attachment, false, texture);
+#endif
   if (framebufferTexture2DMultisampleProc_ == nullptr) {
     // Use runtime checks to determine which of several potential methods are supported by the
     // context.
@@ -1812,13 +2682,19 @@ void IContext::framebufferTexture2DMultisample(GLenum target,
 
   GLCALL_PROC(
       framebufferTexture2DMultisampleProc_, target, attachment, textarget, texture, level, samples);
-  APILOG("glFramebufferTexture2DMultisample(%s, %s, %s, %u, %d, %u)\n",
-         GL_ENUM_TO_STRING(target),
-         GL_ENUM_TO_STRING(attachment),
-         GL_ENUM_TO_STRING(textarget),
-         texture,
-         level,
-         samples);
+  APILOG(
+      "glFramebufferTexture2DMultisample(%s, %s, %s, %u, %d, %u) (framebuffer: %u) unbound (%s: "
+      "%u) bound (texture: %u)\n",
+      GL_ENUM_TO_STRING(target),
+      GL_ENUM_TO_STRING(attachment),
+      GL_ENUM_TO_STRING(textarget),
+      texture,
+      level,
+      samples,
+      boundFramebuffer(target),
+      unboundAttachmentType,
+      unboundAttachment,
+      texture);
 
   // Certain drivers (I am looking at you Adreno) misbehave according to spec,
   // where GL_DRAW_FRAMEBUFFER is perfectly valid framebuffer target, but it only recognizes
@@ -1841,13 +2717,24 @@ void IContext::framebufferTextureLayer(GLenum target,
                                        GLuint texture,
                                        GLint level,
                                        GLint layer) {
+#if IGL_API_LOG
+  const char* unboundAttachmentType = framebufferAttachmentType(target, attachment);
+  GLuint unboundAttachment = framebufferAttachment(target, attachment);
+  setFramebufferAttachment(target, attachment, false, texture);
+#endif
   IGLCALL(FramebufferTextureLayer)(target, attachment, texture, level, layer);
-  APILOG("glFramebufferTextureLayer(%s, %s, %u, %d, %d)\n",
-         GL_ENUM_TO_STRING(target),
-         GL_ENUM_TO_STRING(attachment),
-         texture,
-         level,
-         layer);
+  APILOG(
+      "glFramebufferTextureLayer(%s, %s, %u, %d, %d) (framebuffer: %u) unbound (%s: %u) bound "
+      "(texture: %u)\n",
+      GL_ENUM_TO_STRING(target),
+      GL_ENUM_TO_STRING(attachment),
+      texture,
+      level,
+      layer,
+      boundFramebuffer(target),
+      unboundAttachmentType,
+      unboundAttachment,
+      texture);
   GLCHECK_ERRORS();
 }
 
@@ -1869,28 +2756,33 @@ void IContext::polygonFillMode(IGL_MAYBE_UNUSED GLenum mode) {
 
 void IContext::generateMipmap(GLenum target) {
   IGLCALL(GenerateMipmap)(target);
-  APILOG("glGenerateMipmap(%s)\n", GL_ENUM_TO_STRING(target));
+  APILOG("glGenerateMipmap(%s) (texture: %u)\n", GL_ENUM_TO_STRING(target), boundTexture(target));
   GLCHECK_ERRORS();
 }
 
 void IContext::genBuffers(GLsizei n, GLuint* buffers) {
   GLCALL(GenBuffers)(n, buffers);
-  APILOG("glGenBuffers(%u, %p) = %u\n", n, buffers, buffers == nullptr ? 0 : *buffers);
+  APILOG("glGenBuffers(%u, %p) (buffer: %u)\n", n, buffers, buffers == nullptr ? 0 : *buffers);
   GLCHECK_ERRORS();
 }
 
 void IContext::genFramebuffers(GLsizei n, GLuint* framebuffers) {
   IGLCALL(GenFramebuffers)(n, framebuffers);
-  APILOG("glGenFramebuffers(%u, %p) = %u\n",
+  APILOG("glGenFramebuffers(%u, %p) (framebuffer: %u)\n",
          n,
          framebuffers,
          framebuffers == nullptr ? 0 : *framebuffers);
   GLCHECK_ERRORS();
+#if IGL_API_LOG
+  for (GLsizei i = 0; i < n; ++i) {
+    framebufferAttachments_[framebuffers[i]] = {};
+  }
+#endif
 }
 
 void IContext::genRenderbuffers(GLsizei n, GLuint* renderbuffers) {
   IGLCALL(GenRenderbuffers)(n, renderbuffers);
-  APILOG("glGenRenderbuffers(%u, %p) = %u\n",
+  APILOG("glGenRenderbuffers(%u, %p) (renderbuffer: %u)\n",
          n,
          renderbuffers,
          renderbuffers == nullptr ? 0 : *renderbuffers);
@@ -1899,7 +2791,7 @@ void IContext::genRenderbuffers(GLsizei n, GLuint* renderbuffers) {
 
 void IContext::genTextures(GLsizei n, GLuint* textures) {
   GLCALL(GenTextures)(n, textures);
-  APILOG("glGenTextures(%u, %p) = %u\n", n, textures, textures == nullptr ? 0 : *textures);
+  APILOG("glGenTextures(%u, %p) (texture: %u)\n", n, textures, textures == nullptr ? 0 : *textures);
   GLCHECK_ERRORS();
 }
 
@@ -1915,7 +2807,7 @@ void IContext::genVertexArrays(GLsizei n, GLuint* vertexArrays) {
     IGL_DEBUG_ASSERT(genVertexArraysProc_, "No supported function for glGenVertexArrays\n");
   }
   GLCALL_PROC(genVertexArraysProc_, n, vertexArrays);
-  APILOG("glGenVertexArrays(%u, %p) = %u\n",
+  APILOG("glGenVertexArrays(%u, %p) (VAO: %u)\n",
          n,
          vertexArrays,
          vertexArrays == nullptr ? 0 : *vertexArrays);
@@ -1930,7 +2822,7 @@ void IContext::getActiveAttrib(GLuint program,
                                GLenum* type,
                                GLchar* name) const {
   GLCALL(GetActiveAttrib)(program, index, bufsize, length, size, type, name);
-  APILOG("glGetActiveAttrib(%u, %u, %u, %p, %p, %p, %p) = (%d, %s, %.*s)\n",
+  APILOG("glGetActiveAttrib(%u, %u, %u, %p, %p, %p, %p) = (%d, %s, %.*s) (program: %u)\n",
          program,
          index,
          bufsize,
@@ -1943,7 +2835,8 @@ void IContext::getActiveAttrib(GLuint program,
          static_cast<int>(length == nullptr
                               ? (name == nullptr ? 0 : static_cast<int>(std::strlen(name)))
                               : *length),
-         name == nullptr ? "" : name);
+         name == nullptr ? "" : name,
+         program);
   GLCHECK_ERRORS();
 }
 
@@ -1955,7 +2848,7 @@ void IContext::getActiveUniform(GLuint program,
                                 GLenum* type,
                                 GLchar* name) const {
   GLCALL(GetActiveUniform)(program, index, bufsize, length, size, type, name);
-  APILOG("glGetActiveUniform(%u, %u, %u, %p, %p, %p, %p) = (%d, %s, %.*s)\n",
+  APILOG("glGetActiveUniform(%u, %u, %u, %p, %p, %p, %p) = (%d, %s, %.*s) (program: %u)\n",
          program,
          index,
          bufsize,
@@ -1968,8 +2861,12 @@ void IContext::getActiveUniform(GLuint program,
          static_cast<int>(length == nullptr
                               ? (name == nullptr ? 0 : static_cast<int>(std::strlen(name)))
                               : *length),
-         name == nullptr ? "" : name);
+         name == nullptr ? "" : name,
+         program);
   GLCHECK_ERRORS();
+#if IGL_API_LOG
+  addProgramUniform(program, length, type, name);
+#endif
 }
 
 void IContext::getActiveUniformsiv(GLuint program,
@@ -1978,12 +2875,13 @@ void IContext::getActiveUniformsiv(GLuint program,
                                    GLenum pname,
                                    GLint* params) const {
   IGLCALL(GetActiveUniformsiv)(program, uniformCount, uniformIndices, pname, params);
-  APILOG("glGetActiveUniformsiv(%u, %u, %p, %s, %p)\n",
+  APILOG("glGetActiveUniformsiv(%u, %u, %p, %s, %p) (program: %u)\n",
          program,
          uniformCount,
          uniformIndices,
          GL_ENUM_TO_STRING(pname),
-         params);
+         params,
+         program);
   GLCHECK_ERRORS();
 }
 
@@ -1992,13 +2890,20 @@ void IContext::getActiveUniformBlockiv(GLuint program,
                                        GLenum pname,
                                        GLint* params) const {
   IGLCALL(GetActiveUniformBlockiv)(program, index, pname, params);
-  APILOG("glGetActiveUniformBlockiv(%u, %u, %s, %p) = %d\n",
+  APILOG("glGetActiveUniformBlockiv(%u, %u, %s, %p) = %d (program: %u)\n",
          program,
          index,
          GL_ENUM_TO_STRING(pname),
          params,
-         params == nullptr ? 0 : *params);
+         params == nullptr ? 0 : *params,
+         program);
   GLCHECK_ERRORS();
+#if IGL_API_LOG
+  if (pname == GL_UNIFORM_BLOCK_BINDING) {
+    programUbosByLocation_[program][params == nullptr ? 0 : *params] =
+        programUbosByIndex_[program][index];
+  }
+#endif
 }
 
 void IContext::getActiveUniformBlockName(GLuint program,
@@ -2008,7 +2913,7 @@ void IContext::getActiveUniformBlockName(GLuint program,
                                          GLchar* uniformBlockName) const {
   IGLCALL(GetActiveUniformBlockName)(program, index, bufSize, length, uniformBlockName);
   APILOG(
-      "glGetActiveUniformBlockName(%u, %u, %u, %p, %p) = %.*s\n",
+      "glGetActiveUniformBlockName(%u, %u, %u, %p, %p) = %.*s (program: %u)\n",
       program,
       index,
       bufSize,
@@ -2018,15 +2923,19 @@ void IContext::getActiveUniformBlockName(GLuint program,
           length == nullptr
               ? (uniformBlockName == nullptr ? 0 : static_cast<int>(std::strlen(uniformBlockName)))
               : *length),
-      uniformBlockName == nullptr ? "" : uniformBlockName);
+      uniformBlockName == nullptr ? "" : uniformBlockName,
+      program);
   GLCHECK_ERRORS();
+#if IGL_API_LOG
+  programUbosByIndex_[program][index] = (uniformBlockName == nullptr) ? "" : uniformBlockName;
+#endif
 }
 
 GLint IContext::getAttribLocation(GLuint program, const GLchar* name) const {
   GLint ret = 0;
 
   GLCALL_WITH_RETURN(ret, GetAttribLocation)(program, name);
-  APILOG("glGetAttribLocation(%u, %s) = %d\n", program, name, ret);
+  APILOG("glGetAttribLocation(%u, %s) = %d (program: %u)\n", program, name, ret, program);
   GLCHECK_ERRORS();
 
   return ret;
@@ -2043,11 +2952,12 @@ void IContext::getBooleanv(GLenum pname, GLboolean* params) const {
 
 void IContext::getBufferParameteriv(GLenum target, GLenum pname, GLint* params) const {
   GLCALL(GetBufferParameteriv)(target, pname, params);
-  APILOG("glGetBufferParameteriv(%s, %s, %p) = %d\n",
+  APILOG("glGetBufferParameteriv(%s, %s, %p) = %d (buffer: %u)\n",
          GL_ENUM_TO_STRING(target),
          GL_ENUM_TO_STRING(pname),
          params,
-         params == nullptr ? 0 : *params);
+         params == nullptr ? 0 : *params,
+         boundBuffer(target));
   GLCHECK_ERRORS();
 }
 
@@ -2105,12 +3015,15 @@ void IContext::getFramebufferAttachmentParameteriv(GLenum target,
                                                    GLenum pname,
                                                    GLint* params) const {
   IGLCALL(GetFramebufferAttachmentParameteriv)(target, attachment, pname, params);
-  APILOG("glGetFramebufferAttachmentParameteriv(%s, %s, %s, %p) = %d\n",
+  APILOG("glGetFramebufferAttachmentParameteriv(%s, %s, %s, %p) = %d (framebuffer: %u) (%s: %u)\n",
          GL_ENUM_TO_STRING(target),
          GL_ENUM_TO_STRING(attachment),
          GL_ENUM_TO_STRING(pname),
          params,
-         params == nullptr ? 0 : *params);
+         params == nullptr ? 0 : *params,
+         boundFramebuffer(target),
+         framebufferAttachmentType(target, attachment),
+         framebufferAttachment(target, attachment));
   GLCHECK_ERRORS();
 }
 
@@ -2125,11 +3038,12 @@ void IContext::getIntegerv(GLenum pname, GLint* params) const {
 
 void IContext::getProgramiv(GLuint program, GLenum pname, GLint* params) const {
   GLCALL(GetProgramiv)(program, pname, params);
-  APILOG("glGetProgramiv(%u, %s, %p) = %d\n",
+  APILOG("glGetProgramiv(%u, %s, %p) = %d (program: %u)\n",
          program,
          GL_ENUM_TO_STRING(pname),
          params,
-         params == nullptr ? 0 : *params);
+         params == nullptr ? 0 : *params,
+         program);
   GLCHECK_ERRORS();
 }
 
@@ -2138,12 +3052,13 @@ void IContext::getProgramInterfaceiv(GLuint program,
                                      GLenum pname,
                                      GLint* params) const {
   IGLCALL(GetProgramInterfaceiv)(program, programInterface, pname, params);
-  APILOG("glGetProgramInterfaceiv(%u, %s, %s, %p) = %d\n",
+  APILOG("glGetProgramInterfaceiv(%u, %s, %s, %p) = %d (program: %u)\n",
          program,
          GL_ENUM_TO_STRING(programInterface),
          GL_ENUM_TO_STRING(pname),
          params,
-         params == nullptr ? 0 : *params);
+         params == nullptr ? 0 : *params,
+         program);
   GLCHECK_ERRORS();
 }
 
@@ -2152,7 +3067,7 @@ void IContext::getProgramInfoLog(GLuint program,
                                  GLsizei* length,
                                  GLchar* infolog) const {
   GLCALL(GetProgramInfoLog)(program, bufsize, length, infolog);
-  APILOG("glGetProgramInfoLog(%u, %u, %p, %p) = %.*s\n",
+  APILOG("glGetProgramInfoLog(%u, %u, %p, %p) = %.*s (progam: %u)\n",
          program,
          bufsize,
          length,
@@ -2160,7 +3075,8 @@ void IContext::getProgramInfoLog(GLuint program,
          static_cast<int>(length == nullptr
                               ? (infolog == nullptr ? 0 : static_cast<int>(std::strlen(infolog)))
                               : *length),
-         infolog == nullptr ? "" : infolog);
+         infolog == nullptr ? "" : infolog,
+         program);
   GLCHECK_ERRORS();
 }
 
@@ -2170,12 +3086,17 @@ GLuint IContext::getProgramResourceIndex(GLuint program,
   GLuint ret = 0;
 
   IGLCALL_WITH_RETURN(ret, GetProgramResourceIndex)(program, programInterface, name);
-  APILOG("glGetProgramResourceIndex(%u, %s, %s) = %u\n",
+  APILOG("glGetProgramResourceIndex(%u, %s, %s) = %u (program: %u)\n",
          program,
          GL_ENUM_TO_STRING(programInterface),
          name,
-         ret);
+         ret,
+         program);
   GLCHECK_ERRORS();
+
+#if IGL_API_LOG
+  setProgramResourceIndex(program, programInterface, name, ret);
+#endif
 
   return ret;
 }
@@ -2187,7 +3108,7 @@ void IContext::getProgramResourceName(GLuint program,
                                       GLsizei* length,
                                       char* name) const {
   IGLCALL(GetProgramResourceName)(program, programInterface, index, bufSize, length, name);
-  APILOG("glGetProgramResourceName(%u, %s, %u, %u, %p, %p) = %.*s\n",
+  APILOG("glGetProgramResourceName(%u, %s, %u, %u, %p, %p) = %.*s (program: %u)\n",
          program,
          GL_ENUM_TO_STRING(programInterface),
          index,
@@ -2197,7 +3118,8 @@ void IContext::getProgramResourceName(GLuint program,
          static_cast<int>(length == nullptr
                               ? (name == nullptr ? 0 : static_cast<int>(std::strlen(name)))
                               : *length),
-         name == nullptr ? "" : name);
+         name == nullptr ? "" : name,
+         program);
   GLCHECK_ERRORS();
 }
 
@@ -2267,23 +3189,25 @@ void IContext::getSynciv(GLsync sync,
     IGL_DEBUG_ASSERT(getSyncivProc_, "No supported function for glGetSynciv\n");
   }
   GLCALL_PROC(getSyncivProc_, sync, pname, bufSize, length, values);
-  APILOG("glGetSynciv(%p, %s, %u, %p, %p) = %d\n",
+  APILOG("glGetSynciv(%p, %s, %u, %p, %p) = %d (sync: %p)\n",
          sync,
          GL_ENUM_TO_STRING(pname),
          bufSize,
          length,
          values,
-         values == nullptr ? 0 : *values);
+         values == nullptr ? 0 : *values,
+         sync);
   GLCHECK_ERRORS();
 }
 
 void IContext::getUniformiv(GLuint program, GLint location, GLint* params) const {
   GLCALL(GetUniformiv)(program, location, params);
-  APILOG("glGetUniformiv(%u, %d, %p) = %d\n",
+  APILOG("glGetUniformiv(%u, %d, %p) = %d (program: %u)\n",
          program,
          location,
          params,
-         params == nullptr ? 0 : *params);
+         params == nullptr ? 0 : *params,
+         program);
   GLCHECK_ERRORS();
 }
 
@@ -2291,8 +3215,12 @@ GLint IContext::getUniformLocation(GLuint program, const GLchar* name) const {
   GLint ret = 0;
 
   GLCALL_WITH_RETURN(ret, GetUniformLocation)(program, name);
-  APILOG("glGetUniformLocation(%u, %s) = %d\n", program, name, ret);
+  APILOG("glGetUniformLocation(%u, %s) = %d (program: %u)\n", program, name, ret, program);
   GLCHECK_ERRORS();
+
+#if IGL_API_LOG
+  setProgramUniformLocation(program, name, ret);
+#endif
 
   return ret;
 }
@@ -2320,10 +3248,11 @@ void IContext::invalidateFramebuffer(IGL_MAYBE_UNUSED GLenum target,
                      "No supported function for glInvalidateFramebuffer\n");
   }
   GLCALL_PROC(invalidateFramebufferProc_, target, numAttachments, attachments);
-  APILOG("glInvalidateFramebuffer(%s, %u, %p)\n",
+  APILOG("glInvalidateFramebuffer(%s, %u, %p) (framebuffer: %u)\n",
          GL_ENUM_TO_STRING(target),
          numAttachments,
-         attachments);
+         attachments,
+         boundFramebuffer(target));
   GLCHECK_ERRORS();
 }
 
@@ -2349,7 +3278,7 @@ GLboolean IContext::isTexture(GLuint texture) {
 
 void IContext::linkProgram(GLuint program) {
   GLCALL(LinkProgram)(program);
-  APILOG("glLinkProgram(%u)\n", program);
+  APILOG("glLinkProgram(%u) (program: %u)\n", program, program);
 
   // NOTE: Explicitly *not* checking for errors
   // If there is an error, we want the client code to get error message and report
@@ -2369,10 +3298,11 @@ void* IContext::mapBuffer(GLenum target, GLenum access) {
   }
   void* ret = nullptr;
   GLCALL_PROC_WITH_RETURN(ret, mapBufferProc_, nullptr, target, access);
-  APILOG("glMapBuffer(%s, %zu, %zu, %s) = %p\n",
+  APILOG("glMapBuffer(%s, %zu, %zu, %s) = %p (buffer: %u)\n",
          GL_ENUM_TO_STRING(target),
          GL_ENUM_TO_STRING(access),
-         ret);
+         ret,
+         boundBuffer(target));
   GLCHECK_ERRORS();
   return ret;
 }
@@ -2393,13 +3323,14 @@ void* IContext::mapBufferRange(GLenum target,
   }
   void* ret = nullptr;
   GLCALL_PROC_WITH_RETURN(ret, mapBufferRangeProc_, nullptr, target, offset, length, access);
-  APILOG("glMapBufferRange(%s, %zu, %zu, 0x%x [%s]) = %p\n",
+  APILOG("glMapBufferRange(%s, %zu, %zu, 0x%x [%s]) = %p (buffer: %u)\n",
          GL_ENUM_TO_STRING(target),
          offset,
          length,
          access,
          GL_MAP_BUFFER_RANGE_BITS_TO_STRING(access),
-         ret);
+         ret,
+         boundBuffer(target));
   GLCHECK_ERRORS();
   return ret;
 }
@@ -2418,7 +3349,12 @@ void IContext::objectLabel(GLenum identifier, GLuint name, GLsizei length, const
     IGL_DEBUG_ASSERT(objectLabelProc_, "No supported function for glObjectLabel\n");
   }
   GLCALL_PROC(objectLabelProc_, identifier, name, length, label);
-  APILOG("glObjectLabel(%s, %u, %u, %s)\n", GL_ENUM_TO_STRING(identifier), name, length, label);
+  APILOG("glObjectLabel(%s, %u, %u, %s) %s\n",
+         GL_ENUM_TO_STRING(identifier),
+         name,
+         length,
+         label,
+         identifierLabel(identifier, name).c_str());
   GLCHECK_ERRORS();
 }
 
@@ -2512,14 +3448,17 @@ void IContext::readPixels(GLint x,
                           GLenum type,
                           GLvoid* pixels) {
   GLCALL(ReadPixels)(x, y, width, height, format, type, pixels);
-  APILOG("glReadPixels(%d, %u, %u, %d, %s, %s, %p)\n",
+  APILOG("glReadPixels(%d, %u, %u, %d, %s, %s, %p) (buffer: %u) (%s: %u)\n",
          x,
          y,
          width,
          height,
          GL_ENUM_TO_STRING(format),
          GL_ENUM_TO_STRING(type),
-         pixels);
+         pixels,
+         boundBuffer(GL_PIXEL_PACK_BUFFER),
+         framebufferReadBufferType(GL_READ_FRAMEBUFFER),
+         framebufferReadBuffer(GL_READ_FRAMEBUFFER));
   GLCHECK_ERRORS();
 }
 
@@ -2528,11 +3467,12 @@ void IContext::renderbufferStorage(GLenum target,
                                    GLsizei width,
                                    GLsizei height) {
   IGLCALL(RenderbufferStorage)(target, internalformat, width, height);
-  APILOG("glRenderbufferStorage(%s, %s, %u, %u)\n",
+  APILOG("glRenderbufferStorage(%s, %s, %u, %u) (renderbuffer: %u)\n",
          GL_ENUM_TO_STRING(target),
          GL_ENUM_TO_STRING(internalformat),
          width,
-         height);
+         height,
+         boundRenderbuffer_);
   GLCHECK_ERRORS();
 }
 
@@ -2560,12 +3500,13 @@ void IContext::renderbufferStorageMultisample(GLenum target,
   }
 
   GLCALL_PROC(renderbufferStorageMultisampleProc_, target, samples, internalformat, width, height);
-  APILOG("glRenderbufferStorageMultisampleProc(%s, %u, %s, %u, %u)\n",
+  APILOG("glRenderbufferStorageMultisampleProc(%s, %u, %s, %u, %u) (renderbuffer: %u)\n",
          GL_ENUM_TO_STRING(target),
          samples,
          GL_ENUM_TO_STRING(internalformat),
          width,
-         height);
+         height,
+         boundRenderbuffer_);
   GLCHECK_ERRORS();
 }
 
@@ -2575,15 +3516,26 @@ void IContext::framebufferTextureMultiview(GLenum target,
                                            GLint level,
                                            GLint baseViewIndex,
                                            GLsizei numViews) {
+#if IGL_API_LOG
+  const char* unboundAttachmentType = framebufferAttachmentType(target, attachment);
+  GLuint unboundAttachment = framebufferAttachment(target, attachment);
+  setFramebufferAttachment(target, attachment, false, texture);
+#endif
   IGLCALL(FramebufferTextureMultiviewOVR)
   (target, attachment, texture, level, baseViewIndex, numViews);
-  APILOG("glFramebufferTextureMultiviewOVR(%s, %s, %u, %d, %d, %u)\n",
-         GL_ENUM_TO_STRING(target),
-         GL_ENUM_TO_STRING(attachment),
-         texture,
-         level,
-         baseViewIndex,
-         numViews);
+  APILOG(
+      "glFramebufferTextureMultiviewOVR(%s, %s, %u, %d, %d, %u) (framebuffer: %u) unbound (%s: %u) "
+      "bound (texture: %u)\n",
+      GL_ENUM_TO_STRING(target),
+      GL_ENUM_TO_STRING(attachment),
+      texture,
+      level,
+      baseViewIndex,
+      numViews,
+      boundFramebuffer(target),
+      unboundAttachmentType,
+      unboundAttachment,
+      texture);
   GLCHECK_ERRORS();
 }
 
@@ -2594,16 +3546,27 @@ void IContext::framebufferTextureMultisampleMultiview(GLenum target,
                                                       GLsizei samples,
                                                       GLint baseViewIndex,
                                                       GLsizei numViews) {
+#if IGL_API_LOG
+  const char* unboundAttachmentType = framebufferAttachmentType(target, attachment);
+  GLuint unboundAttachment = framebufferAttachment(target, attachment);
+  setFramebufferAttachment(target, attachment, false, texture);
+#endif
   IGLCALL(FramebufferTextureMultisampleMultiviewOVR)
   (target, attachment, texture, level, samples, baseViewIndex, numViews);
-  APILOG("glFramebufferTextureMultisampleMultiview(%s, %s, %u, %d, %u, %d, %u)\n",
-         GL_ENUM_TO_STRING(target),
-         GL_ENUM_TO_STRING(attachment),
-         texture,
-         level,
-         samples,
-         baseViewIndex,
-         numViews);
+  APILOG(
+      "glFramebufferTextureMultisampleMultiview(%s, %s, %u, %d, %u, %d, %u) (framebuffer: %u) "
+      "unbound (%s: %u) bound (texture: %u)\n",
+      GL_ENUM_TO_STRING(target),
+      GL_ENUM_TO_STRING(attachment),
+      texture,
+      level,
+      samples,
+      baseViewIndex,
+      numViews,
+      boundFramebuffer(target),
+      unboundAttachmentType,
+      unboundAttachment,
+      texture);
   GLCHECK_ERRORS();
 }
 
@@ -2676,7 +3639,7 @@ void IContext::texImage2D(GLenum target,
                           GLenum type,
                           const GLvoid* data) {
   GLCALL(TexImage2D)(target, level, internalformat, width, height, border, format, type, data);
-  APILOG("glTexImage2D(%s, %d, %s, %u, %u, %d, %s, %s, 0x%x)\n",
+  APILOG("glTexImage2D(%s, %d, %s, %u, %u, %d, %s, %s, 0x%x) (texture: %u)\n",
          GL_ENUM_TO_STRING(target),
          level,
          GL_ENUM_TO_STRING(internalformat),
@@ -2685,7 +3648,8 @@ void IContext::texImage2D(GLenum target,
          border,
          GL_ENUM_TO_STRING(format),
          GL_ENUM_TO_STRING(type),
-         data);
+         data,
+         boundTexture(target));
   GLCHECK_ERRORS();
 }
 
@@ -2706,12 +3670,13 @@ void IContext::texStorage2D(GLenum target,
   }
 
   GLCALL_PROC(texStorage2DProc_, target, levels, internalformat, width, height);
-  APILOG("glTexStorage2D(%s, %u, %s, %u, %u)\n",
+  APILOG("glTexStorage2D(%s, %u, %s, %u, %u) (texture: %u)\n",
          GL_ENUM_TO_STRING(target),
          levels,
          GL_ENUM_TO_STRING(internalformat),
          width,
-         height);
+         height,
+         boundTexture(target));
   GLCHECK_ERRORS();
 }
 
@@ -2732,13 +3697,14 @@ void IContext::texStorage3D(GLenum target,
     IGL_DEBUG_ASSERT(texStorage3DProc_, "No supported function for glTexStorage3D\n");
   }
   GLCALL_PROC(texStorage3DProc_, target, levels, internalformat, width, height, depth);
-  APILOG("glTexStorage3D(%s, %u, %s, %u, %u, %u)\n",
+  APILOG("glTexStorage3D(%s, %u, %s, %u, %u, %u) (texture: %u)\n",
          GL_ENUM_TO_STRING(target),
          levels,
          GL_ENUM_TO_STRING(internalformat),
          width,
          height,
-         depth);
+         depth,
+         boundTexture(target));
   GLCHECK_ERRORS();
 }
 
@@ -2750,14 +3716,15 @@ void IContext::texStorageMem2D(GLenum target,
                                GLuint memory,
                                GLuint64 offset) {
   IGLCALL(TexStorageMem2DEXT)(target, levels, internalFormat, width, height, memory, offset);
-  APILOG("glTexStorageMem2DEXT(%s, %u, %s, %u, %u, %u, %lu)\n",
+  APILOG("glTexStorageMem2DEXT(%s, %u, %s, %u, %u, %u, %lu) (texture: %u)\n",
          GL_ENUM_TO_STRING(target),
          levels,
          GL_ENUM_TO_STRING(internalFormat),
          width,
          height,
          memory,
-         offset);
+         offset,
+         boundTexture(target));
   GLCHECK_ERRORS();
 }
 
@@ -2769,8 +3736,9 @@ void IContext::texStorageMem3D(GLenum target,
                                GLsizei depth,
                                GLuint memory,
                                GLuint64 offset) {
-  IGLCALL(TexStorageMem3DEXT)(target, levels, internalFormat, width, height, depth, memory, offset);
-  APILOG("glTexStorageMem3DEXT(%s, %u, %s, %u, %u, %u, %u, %lu)\n",
+  IGLCALL(TexStorageMem3DEXT)
+  (target, levels, internalFormat, width, height, depth, memory, offset);
+  APILOG("glTexStorageMem3DEXT(%s, %u, %s, %u, %u, %u, %u, %lu) (texture: %u)\n",
          GL_ENUM_TO_STRING(target),
          levels,
          GL_ENUM_TO_STRING(internalFormat),
@@ -2778,7 +3746,8 @@ void IContext::texStorageMem3D(GLenum target,
          height,
          depth,
          memory,
-         offset);
+         offset,
+         boundTexture(target));
   GLCHECK_ERRORS();
 }
 
@@ -2816,7 +3785,7 @@ void IContext::texImage3D(GLenum target,
               format,
               type,
               data);
-  APILOG("glTexImage3D(%s, %d, %s, %u, %u, %u, %d, %s, %s, 0x%x)\n",
+  APILOG("glTexImage3D(%s, %d, %s, %u, %u, %u, %d, %s, %s, 0x%x) (texture: %u)\n",
          GL_ENUM_TO_STRING(target),
          level,
          GL_ENUM_TO_STRING(internalformat),
@@ -2826,17 +3795,19 @@ void IContext::texImage3D(GLenum target,
          border,
          GL_ENUM_TO_STRING(format),
          GL_ENUM_TO_STRING(type),
-         data);
+         data,
+         boundTexture(target));
   GLCHECK_ERRORS();
 }
 
 void IContext::texParameteri(GLenum target, GLenum pname, GLint param) {
   // GLCALL(TexParameteri, target, pname, param);
   GLCALL(TexParameteri)(target, pname, param);
-  APILOG("glTexParameteri(%s, %s, %s)\n",
+  APILOG("glTexParameteri(%s, %s, %s) (texture: %u)\n",
          GL_ENUM_TO_STRING(target),
          GL_ENUM_TO_STRING(pname),
-         GL_ENUM_TO_STRING(param));
+         GL_ENUM_TO_STRING(param),
+         boundTexture(target));
   GLCHECK_ERRORS();
 }
 
@@ -2850,7 +3821,7 @@ void IContext::texSubImage2D(GLenum target,
                              GLenum type,
                              const GLvoid* pixels) {
   GLCALL(TexSubImage2D)(target, level, xoffset, yoffset, width, height, format, type, pixels);
-  APILOG("glTexSubImage2D(%s, %d, %d, %d, %u, %u, %s, %s, %p)\n",
+  APILOG("glTexSubImage2D(%s, %d, %d, %d, %u, %u, %s, %s, %p) (texture: %u)\n",
          GL_ENUM_TO_STRING(target),
          level,
          xoffset,
@@ -2859,7 +3830,8 @@ void IContext::texSubImage2D(GLenum target,
          height,
          GL_ENUM_TO_STRING(format),
          GL_ENUM_TO_STRING(type),
-         pixels);
+         pixels,
+         boundTexture(target));
   GLCHECK_ERRORS();
 }
 
@@ -2899,7 +3871,7 @@ void IContext::texSubImage3D(GLenum target,
               format,
               type,
               pixels);
-  APILOG("glTexSubImage3D(%s, %d, %d, %d, %d, %u, %u, %u, %s, %s, %p)\n",
+  APILOG("glTexSubImage3D(%s, %d, %d, %d, %d, %u, %u, %u, %s, %s, %p) (texture: %u)\n",
          GL_ENUM_TO_STRING(target),
          level,
          xoffset,
@@ -2910,147 +3882,221 @@ void IContext::texSubImage3D(GLenum target,
          depth,
          GL_ENUM_TO_STRING(format),
          GL_ENUM_TO_STRING(type),
-         pixels);
+         pixels,
+         boundTexture(target));
   GLCHECK_ERRORS();
 }
 
 void IContext::uniform1f(GLint location, GLfloat x) {
   GLCALL(Uniform1f)(location, x);
-  APILOG("glUniform1f(%d, %f)\n", location, x);
+  APILOG("glUniform1f(%d, %f) (program: %u) (uniform: %s)\n",
+         location,
+         x,
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
   GLCHECK_ERRORS();
 }
 
 void IContext::uniform1fv(GLint location, GLsizei count, const GLfloat* v) {
   GLCALL(Uniform1fv)(location, count, v);
-  APILOG("glUniform1fv(%d, %u, %p [%f])\n", location, count, v, v == nullptr ? 0.f : *v);
+  APILOG("glUniform1fv(%d, %u, %p [%f]) (program: %u) (uniform: %s)\n",
+         location,
+         count,
+         v,
+         v == nullptr ? 0.f : *v,
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
   GLCHECK_ERRORS();
 }
 
 void IContext::uniform1i(GLint location, GLint x) {
   GLCALL(Uniform1i)(location, x);
-  APILOG("glUniform1i(%d, %d)\n", location, x);
+  APILOG("glUniform1i(%d, %d) (program: %u) (uniform: %s) %s\n",
+         location,
+         x,
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str(),
+         boundUniformTexture(boundProgram_, location, x).c_str());
   GLCHECK_ERRORS();
 }
 
 void IContext::uniform1iv(GLint location, GLsizei count, const GLint* v) {
   GLCALL(Uniform1iv)(location, count, v);
-  APILOG("glUniform1iv(%d, %u, %p [%d])\n", location, count, v, v == nullptr ? 0 : *v);
+  APILOG("glUniform1iv(%d, %u, %p [%d]) (program: %u) (uniform: %s)\n",
+         location,
+         count,
+         v,
+         v == nullptr ? 0 : *v,
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
   GLCHECK_ERRORS();
 }
 
 void IContext::uniform2f(GLint location, GLfloat x, GLfloat y) {
   GLCALL(Uniform2f)(location, x, y);
-  APILOG("glUniform2f(%d, %f, %f)\n", location, x, y);
+  APILOG("glUniform2f(%d, %f, %f) (program: %u) (uniform: %s)\n",
+         location,
+         x,
+         y,
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
   GLCHECK_ERRORS();
 }
 
 void IContext::uniform2fv(GLint location, GLsizei count, const GLfloat* v) {
   GLCALL(Uniform2fv)(location, count, v);
-  APILOG("glUniform2fv(%d, %u, %p [%f %f])\n",
-         location,
-         count,
-         v,
-         v == nullptr ? 0.f : v[0],
-         v == nullptr ? 0.f : v[1]);
-  GLCHECK_ERRORS();
-}
-
-void IContext::uniform2i(GLint location, GLint x, GLint y) {
-  GLCALL(Uniform2i)(location, x, y);
-  APILOG("glUniform2i(%d, %d, %d)\n", location, x, y);
-  GLCHECK_ERRORS();
-}
-
-void IContext::uniform2iv(GLint location, GLsizei count, const GLint* v) {
-  GLCALL(Uniform2iv)(location, count, v);
-  APILOG("glUniform2iv(%d, %u, %p [%d %d])\n",
-         location,
-         count,
-         v,
-         v == nullptr ? 0 : v[0],
-         v == nullptr ? 0 : v[1]);
-  GLCHECK_ERRORS();
-}
-
-void IContext::uniform3f(GLint location, GLfloat x, GLfloat y, GLfloat z) {
-  GLCALL(Uniform3f)(location, x, y, z);
-  APILOG("glUniform3f(%d, %f, %f, %f)\n", location, x, y, z);
-  GLCHECK_ERRORS();
-}
-
-void IContext::uniform3fv(GLint location, GLsizei count, const GLfloat* v) {
-  GLCALL(Uniform3fv)(location, count, v);
-  APILOG("glUniform3fv(%d, %u, %p [%f %f %f])\n",
+  APILOG("glUniform2fv(%d, %u, %p [%f %f]) (program: %u) (uniform: %s)\n",
          location,
          count,
          v,
          v == nullptr ? 0.f : v[0],
          v == nullptr ? 0.f : v[1],
-         v == nullptr ? 0.f : v[2]);
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
   GLCHECK_ERRORS();
 }
 
-void IContext::uniform3i(GLint location, GLint x, GLint y, GLint z) {
-  GLCALL(Uniform3i)(location, x, y, z);
-  APILOG("glUniform3i(%d, %d, %d, %d)\n", location, x, y, z);
+void IContext::uniform2i(GLint location, GLint x, GLint y) {
+  GLCALL(Uniform2i)(location, x, y);
+  APILOG("glUniform2i(%d, %d, %d) (program: %u) (uniform: %s)\n",
+         location,
+         x,
+         y,
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
   GLCHECK_ERRORS();
 }
 
-void IContext::uniform3iv(GLint location, GLsizei count, const GLint* v) {
-  GLCALL(Uniform3iv)(location, count, v);
-  APILOG("glUniform3fv(%d, %u, %p [%d %d %d])\n",
+void IContext::uniform2iv(GLint location, GLsizei count, const GLint* v) {
+  GLCALL(Uniform2iv)(location, count, v);
+  APILOG("glUniform2iv(%d, %u, %p [%d %d]) (program: %u) (uniform: %s)\n",
          location,
          count,
          v,
          v == nullptr ? 0 : v[0],
          v == nullptr ? 0 : v[1],
-         v == nullptr ? 0 : v[2]);
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
   GLCHECK_ERRORS();
 }
 
-void IContext::uniform4f(GLint location, GLfloat x, GLfloat y, GLfloat z, GLfloat w) {
-  GLCALL(Uniform4f)(location, x, y, z, w);
-  APILOG("glUniform4f(%d, %f, %f, %f, %f)\n", location, x, y, z, w);
+void IContext::uniform3f(GLint location, GLfloat x, GLfloat y, GLfloat z) {
+  GLCALL(Uniform3f)(location, x, y, z);
+  APILOG("glUniform3f(%d, %f, %f, %f) (program: %u) (uniform: %s)\n",
+         location,
+         x,
+         y,
+         z,
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
   GLCHECK_ERRORS();
 }
 
-void IContext::uniform4fv(GLint location, GLsizei count, const GLfloat* v) {
-  GLCALL(Uniform4fv)(location, count, v);
-  APILOG("glUniform4fv(%d, %u, %p [%f %f %f %f])\n",
+void IContext::uniform3fv(GLint location, GLsizei count, const GLfloat* v) {
+  GLCALL(Uniform3fv)(location, count, v);
+  APILOG("glUniform3fv(%d, %u, %p [%f %f %f]) (program: %u) (uniform: %s)\n",
          location,
          count,
          v,
          v == nullptr ? 0.f : v[0],
          v == nullptr ? 0.f : v[1],
          v == nullptr ? 0.f : v[2],
-         v == nullptr ? 0.f : v[3]);
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
   GLCHECK_ERRORS();
 }
 
-void IContext::uniform4i(GLint location, GLint x, GLint y, GLint z, GLint w) {
-  GLCALL(Uniform4i)(location, x, y, z, w);
-  APILOG("glUniform4i(%d, %d, %d, %d, %d)\n", location, x, y, z, w);
+void IContext::uniform3i(GLint location, GLint x, GLint y, GLint z) {
+  GLCALL(Uniform3i)(location, x, y, z);
+  APILOG("glUniform3i(%d, %d, %d, %d) (program: %u) (uniform: %s)\n",
+         location,
+         x,
+         y,
+         z,
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
   GLCHECK_ERRORS();
 }
 
-void IContext::uniform4iv(GLint location, GLsizei count, const GLint* v) {
-  GLCALL(Uniform4iv)(location, count, v);
-  APILOG("glUniform4iv(%d, %u, %p [%d %d %d %d])\n",
+void IContext::uniform3iv(GLint location, GLsizei count, const GLint* v) {
+  GLCALL(Uniform3iv)(location, count, v);
+  APILOG("glUniform3fv(%d, %u, %p [%d %d %d]) (program: %u) (uniform: %s)\n",
          location,
          count,
          v,
          v == nullptr ? 0 : v[0],
          v == nullptr ? 0 : v[1],
          v == nullptr ? 0 : v[2],
-         v == nullptr ? 0 : v[3]);
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
   GLCHECK_ERRORS();
 }
 
-void IContext::uniformBlockBinding(GLuint pid,
+void IContext::uniform4f(GLint location, GLfloat x, GLfloat y, GLfloat z, GLfloat w) {
+  GLCALL(Uniform4f)(location, x, y, z, w);
+  APILOG("glUniform4f(%d, %f, %f, %f, %f) (program: %u) (uniform: %s)\n",
+         location,
+         x,
+         y,
+         z,
+         w,
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
+  GLCHECK_ERRORS();
+}
+
+void IContext::uniform4fv(GLint location, GLsizei count, const GLfloat* v) {
+  GLCALL(Uniform4fv)(location, count, v);
+  APILOG("glUniform4fv(%d, %u, %p [%f %f %f %f]) (program: %u) (uniform: %s)\n",
+         location,
+         count,
+         v,
+         v == nullptr ? 0.f : v[0],
+         v == nullptr ? 0.f : v[1],
+         v == nullptr ? 0.f : v[2],
+         v == nullptr ? 0.f : v[3],
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
+  GLCHECK_ERRORS();
+}
+
+void IContext::uniform4i(GLint location, GLint x, GLint y, GLint z, GLint w) {
+  GLCALL(Uniform4i)(location, x, y, z, w);
+  APILOG("glUniform4i(%d, %d, %d, %d, %d) (program: %u) (uniform: %s)\n",
+         location,
+         x,
+         y,
+         z,
+         w,
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
+  GLCHECK_ERRORS();
+}
+
+void IContext::uniform4iv(GLint location, GLsizei count, const GLint* v) {
+  GLCALL(Uniform4iv)(location, count, v);
+  APILOG("glUniform4iv(%d, %u, %p [%d %d %d %d]) (program: %u) (uniform: %s)\n",
+         location,
+         count,
+         v,
+         v == nullptr ? 0 : v[0],
+         v == nullptr ? 0 : v[1],
+         v == nullptr ? 0 : v[2],
+         v == nullptr ? 0 : v[3],
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
+  GLCHECK_ERRORS();
+}
+
+void IContext::uniformBlockBinding(GLuint program,
                                    GLuint uniformBlockIndex,
                                    GLuint uniformBlockBinding) {
-  IGLCALL(UniformBlockBinding)(pid, uniformBlockIndex, uniformBlockBinding);
-  APILOG("glUniformBlockBinding(%u, %u, %u)\n", pid, uniformBlockIndex, uniformBlockBinding);
+  IGLCALL(UniformBlockBinding)(program, uniformBlockIndex, uniformBlockBinding);
+  APILOG("glUniformBlockBinding(%u, %u, %u) (program: %u)\n",
+         program,
+         uniformBlockIndex,
+         uniformBlockBinding,
+         program);
   GLCHECK_ERRORS();
 }
 
@@ -3059,24 +4105,7 @@ void IContext::uniformMatrix2fv(GLint location,
                                 GLboolean transpose,
                                 const GLfloat* value) {
   GLCALL(UniformMatrix2fv)(location, count, transpose, value);
-  APILOG("glUniformMatrix2fv(%d, %u, %s, %p [[%f %f] [%f %f]])\n",
-         location,
-         count,
-         GL_BOOL_TO_STRING(transpose),
-         value,
-         value == nullptr ? 0.f : value[0],
-         value == nullptr ? 0.f : value[1],
-         value == nullptr ? 0.f : value[2],
-         value == nullptr ? 0.f : value[3]);
-  GLCHECK_ERRORS();
-}
-
-void IContext::uniformMatrix3fv(GLint location,
-                                GLsizei count,
-                                GLboolean transpose,
-                                const GLfloat* value) {
-  GLCALL(UniformMatrix3fv)(location, count, transpose, value);
-  APILOG("glUniformMatrix3fv(%d, %u, %s, %p [[%f %f %f] [%f %f %f] [%f %f %f]])\n",
+  APILOG("glUniformMatrix2fv(%d, %u, %s, %p [[%f %f] [%f %f]]) (program: %u) (uniform: %s)\n",
          location,
          count,
          GL_BOOL_TO_STRING(transpose),
@@ -3085,11 +4114,34 @@ void IContext::uniformMatrix3fv(GLint location,
          value == nullptr ? 0.f : value[1],
          value == nullptr ? 0.f : value[2],
          value == nullptr ? 0.f : value[3],
-         value == nullptr ? 0.f : value[4],
-         value == nullptr ? 0.f : value[5],
-         value == nullptr ? 0.f : value[6],
-         value == nullptr ? 0.f : value[7],
-         value == nullptr ? 0.f : value[8]);
+         boundProgram_,
+         programUniformsByLocation_[boundProgram_][location].c_str());
+  GLCHECK_ERRORS();
+}
+
+void IContext::uniformMatrix3fv(GLint location,
+                                GLsizei count,
+                                GLboolean transpose,
+                                const GLfloat* value) {
+  GLCALL(UniformMatrix3fv)(location, count, transpose, value);
+  APILOG(
+      "glUniformMatrix3fv(%d, %u, %s, %p [[%f %f %f] [%f %f %f] [%f %f %f]]) (program: %u) "
+      "(uniform: %s)\n",
+      location,
+      count,
+      GL_BOOL_TO_STRING(transpose),
+      value,
+      value == nullptr ? 0.f : value[0],
+      value == nullptr ? 0.f : value[1],
+      value == nullptr ? 0.f : value[2],
+      value == nullptr ? 0.f : value[3],
+      value == nullptr ? 0.f : value[4],
+      value == nullptr ? 0.f : value[5],
+      value == nullptr ? 0.f : value[6],
+      value == nullptr ? 0.f : value[7],
+      value == nullptr ? 0.f : value[8],
+      boundProgram_,
+      programUniformsByLocation_[boundProgram_][location].c_str());
   GLCHECK_ERRORS();
 }
 
@@ -3100,7 +4152,7 @@ void IContext::uniformMatrix4fv(GLint location,
   GLCALL(UniformMatrix4fv)(location, count, transpose, value);
   APILOG(
       "glUniformMatrix4fv(%d, %u, %s, %p [[%f %f %f %f] [%f %f %f %f] [%f %f %f %f] [%f %f %f "
-      "%f]])\n",
+      "%f]]) (program: %u) (uniform: %s)\n",
       location,
       count,
       GL_BOOL_TO_STRING(transpose),
@@ -3120,7 +4172,9 @@ void IContext::uniformMatrix4fv(GLint location,
       value == nullptr ? 0.f : value[12],
       value == nullptr ? 0.f : value[13],
       value == nullptr ? 0.f : value[14],
-      value == nullptr ? 0.f : value[15]);
+      value == nullptr ? 0.f : value[15],
+      boundProgram_,
+      programUniformsByLocation_[boundProgram_][location].c_str());
   GLCHECK_ERRORS();
 }
 
@@ -3137,19 +4191,26 @@ void IContext::unmapBuffer(GLenum target) {
     IGL_DEBUG_ASSERT(unmapBufferProc_, "No supported function for glUnmapBuffer\n");
   }
   GLCALL_PROC(unmapBufferProc_, target);
-  APILOG("glUnmapBuffer(%s)\n", GL_ENUM_TO_STRING(target));
+  APILOG("glUnmapBuffer(%s) (buffer: %u)\n", GL_ENUM_TO_STRING(target), boundBuffer(target));
   GLCHECK_ERRORS();
 }
 
 void IContext::useProgram(GLuint program) {
+#if IGL_API_LOG
+  GLuint unboundProgram = boundProgram_;
+  boundProgram_ = program;
+#endif
   GLCALL(UseProgram)(program);
-  APILOG("glUseProgram(%u)\n", program);
+  APILOG("glUseProgram(%u) unbound (program: %u) bound (program: %u)\n",
+         program,
+         unboundProgram,
+         program);
   GLCHECK_ERRORS();
 }
 
 void IContext::validateProgram(GLuint program) {
   GLCALL(ValidateProgram)(program);
-  APILOG("glValidateProgram(%u)\n", program);
+  APILOG("glValidateProgram(%u) (program:  %u)\n", program, program);
   GLCHECK_ERRORS();
 }
 
@@ -3171,7 +4232,7 @@ GLuint64 IContext::getTextureHandle(GLuint texture) {
 
   GLuint64 ret = 0;
   GLCALL_PROC_WITH_RETURN(ret, getTextureHandleProc_, GL_ZERO, texture);
-  APILOG("glGetTextureHandle(%u) = %llu\n", texture, ret);
+  APILOG("glGetTextureHandle(%u) = %llu (texture: %u)\n", texture, ret, texture);
   GLCHECK_ERRORS();
   return ret;
 }
@@ -3209,8 +4270,17 @@ void IContext::makeTextureHandleNonResident(GLuint64 handle) {
 }
 
 void IContext::dispatchCompute(GLuint numGroupsX, GLuint numGroupsY, GLuint numGroupsZ) {
+#if IGL_API_LOG
+  lastCommandWasCompute_ = true;
+#endif
   IGLCALL(DispatchCompute)(numGroupsX, numGroupsY, numGroupsZ);
-  APILOG("glDispatchCompute(%u, %u, %u)\n", numGroupsX, numGroupsY, numGroupsZ);
+  APILOG("glDispatchCompute(%u, %u, %u) (program: %u) %s %s\n",
+         numGroupsX,
+         numGroupsY,
+         numGroupsZ,
+         boundProgram_,
+         boundImageTextures().c_str(),
+         boundBuffersByIndex().c_str());
   GLCHECK_ERRORS();
 }
 
@@ -3226,24 +4296,36 @@ void IContext::memoryBarrier(GLbitfield barriers) {
     IGL_DEBUG_ASSERT(memoryBarrierProc_, "No supported function for glMemoryBarrier\n");
   }
   GLCALL_PROC(memoryBarrierProc_, barriers);
-  APILOG("glMemoryBarrier(0x%x [%s])\n", barriers, GL_MEMORY_BARRIER_BITS_TO_STRING(barriers));
+  APILOG("glMemoryBarrier(0x%x [%s]) %s\n",
+         barriers,
+         GL_MEMORY_BARRIER_BITS_TO_STRING(barriers),
+         affectedMemoryBarrierObjects(barriers).c_str());
   GLCHECK_ERRORS();
 }
 
-void IContext::vertexAttribPointer(GLuint indx,
+void IContext::vertexAttribPointer(GLuint index,
                                    GLint size,
                                    GLenum type,
                                    GLboolean normalized,
                                    GLsizei stride,
                                    const GLvoid* ptr) {
-  GLCALL(VertexAttribPointer)(indx, size, type, normalized, stride, ptr);
-  APILOG("glVertexAttribPointer(%u, %d, %s, %s, %u, %p)\n",
-         indx,
+#if IGL_API_LOG
+  GLuint unboundBuffer = 0;
+  if (index < boundAttributes_.size()) {
+    unboundBuffer = boundAttributes_[index];
+    boundAttributes_[index] = ptr == nullptr ? boundBuffer(GL_ARRAY_BUFFER) : 0;
+  }
+#endif
+  GLCALL(VertexAttribPointer)(index, size, type, normalized, stride, ptr);
+  APILOG("glVertexAttribPointer(%u, %d, %s, %s, %u, %p) unbound (buffer: %u) bound (buffer: %u)\n",
+         index,
          size,
          GL_ENUM_TO_STRING(type),
          GL_BOOL_TO_STRING(normalized),
          stride,
-         ptr);
+         ptr,
+         unboundBuffer,
+         ptr == nullptr ? boundBuffer(GL_ARRAY_BUFFER) : 0);
   GLCHECK_ERRORS();
 }
 
@@ -3260,7 +4342,10 @@ void IContext::vertexAttribDivisor(GLuint index, GLuint divisor) {
   }
 
   GLCALL_PROC(vertexAttribDivisorProc_, index, divisor);
-  APILOG("glVertexAttribDivisor(%u, %u)\n", index, divisor);
+  APILOG("glVertexAttribDivisor(%u, %u) (buffer: %u)\n",
+         index,
+         divisor,
+         index < boundAttributes_.size() ? boundAttributes_[index] : 0);
   GLCHECK_ERRORS();
 }
 

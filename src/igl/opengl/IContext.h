@@ -438,7 +438,7 @@ class IContext {
   void uniform4fv(GLint location, GLsizei count, const GLfloat* IGL_NULLABLE v);
   void uniform4i(GLint location, GLint x, GLint y, GLint z, GLint w);
   void uniform4iv(GLint location, GLsizei count, const GLint* IGL_NULLABLE v);
-  void uniformBlockBinding(GLuint pid, GLuint uniformBlockIndex, GLuint uniformBlockBinding);
+  void uniformBlockBinding(GLuint program, GLuint uniformBlockIndex, GLuint uniformBlockBinding);
   void uniformMatrix2fv(GLint location,
                         GLsizei count,
                         GLboolean transpose,
@@ -454,7 +454,7 @@ class IContext {
   void unmapBuffer(GLenum target);
   void useProgram(GLuint program);
   void validateProgram(GLuint program);
-  void vertexAttribPointer(GLuint indx,
+  void vertexAttribPointer(GLuint index,
                            GLint size,
                            GLenum type,
                            GLboolean normalized,
@@ -585,6 +585,98 @@ class IContext {
   // API Logging
   unsigned int apiLogDrawsLeft_ = 0;
   bool apiLogEnabled_ = IGL_API_LOG != 0;
+#if IGL_API_LOG
+  void setBoundTexture(GLenum target, GLuint texture);
+  GLuint boundTexture(GLenum target) const;
+  GLuint boundTexture2D_ = 0;
+  GLuint boundTexture3D_ = 0;
+  GLuint boundTextureCubeMap_ = 0;
+  GLuint boundTexture2DArray_ = 0;
+  GLuint boundTextureExternalOes_ = 0;
+
+  void setBoundBuffer(GLenum target, GLuint buffer);
+  GLuint boundBuffer(GLenum target) const;
+  GLuint boundArrayBuffer_ = 0;
+  GLuint boundCopyReadBuffer_ = 0;
+  GLuint boundCopyWriteBuffer_ = 0;
+  GLuint boundDrawIndirectBuffer_ = 0;
+  GLuint boundElementArrayBuffer_ = 0;
+  GLuint boundPixelPackBuffer_ = 0;
+  GLuint boundPixelUnpackBuffer_ = 0;
+  GLuint boundShaderStorageBuffer_ = 0;
+  GLuint boundUniformBuffer_ = 0;
+
+  GLuint boundVao_ = 0;
+  GLuint boundRenderbuffer_ = 0;
+
+  void setBoundFramebuffer(GLenum target, GLuint framebuffer);
+  GLuint boundFramebuffer(GLenum target) const;
+  void setFramebufferAttachment(GLenum target,
+                                GLenum attachment,
+                                bool isRenderbuffer,
+                                GLuint object);
+  const char* framebufferAttachmentType(GLenum target, GLenum attachment) const;
+  const char* framebufferAttachmentType(GLenum target, GLenum buffer, GLint drawbuffer) const;
+  GLuint framebufferAttachment(GLenum target, GLenum attachment) const;
+  GLuint framebufferAttachment(GLenum target, GLenum buffer, GLint drawbuffer) const;
+  const char* framebufferReadBufferType(GLenum target) const;
+  GLuint framebufferReadBuffer(GLenum target) const;
+  std::string affectedFramebufferAttachments(GLenum target, GLbitfield mask) const;
+  std::string boundFramebufferAttachments(GLenum target) const;
+  GLuint boundReadFramebuffer_ = 0;
+  GLuint boundWriteFramebuffer_ = 0;
+  struct FramebufferAttachment {
+    std::array<GLuint, 32> colorAttachment{};
+    std::bitset<32> colorIsRenderbuffer;
+    GLuint depthAttachment = 0;
+    bool depthIsRenderbuffer = false;
+    GLuint stencilAttachment = 0;
+    bool stencilIsRenderbuffer = false;
+    uint32_t readBufferIndex = 0;
+  };
+  std::unordered_map<GLuint, FramebufferAttachment> framebufferAttachments_;
+
+  std::string boundDrawBuffers() const;
+  std::bitset<32> enabledAttributes_;
+  std::array<GLuint, 32> boundAttributes_{};
+
+  std::string boundImageTextures() const;
+  std::string boundDrawTextures() const;
+  GLuint activeTextureUnit_ = 0;
+  std::array<GLuint, 32> boundDrawTextures_{};
+  std::array<GLuint, 32> boundImageTextures_{};
+
+  GLuint boundProgram_ = 0;
+  struct ProgramUniform {
+    GLenum type;
+    bool isTexture = false;
+    bool isImage = false;
+  };
+  mutable std::unordered_map<GLuint, std::unordered_map<std::string, ProgramUniform>>
+      programUniforms_;
+  mutable std::unordered_map<GLuint, std::unordered_map<GLint, std::string>>
+      programUniformsByLocation_;
+  mutable std::unordered_map<GLuint, std::unordered_map<GLuint, std::string>> programUbosByIndex_;
+  mutable std::unordered_map<GLuint, std::unordered_map<GLint, std::string>> programUbosByLocation_;
+  mutable std::unordered_map<GLuint, std::unordered_map<GLuint, std::string>> programSsbosByIndex_;
+  std::array<GLuint, 32> boundSsbos_{};
+  std::array<GLuint, 32> boundUbos_{};
+  void addProgramUniform(GLuint program, GLsizei* length, GLenum* type, GLchar* name) const;
+  void setProgramUniformLocation(GLuint program, const GLchar* name, GLint location) const;
+  void setProgramResourceIndex(GLuint program,
+                               GLenum programInterface,
+                               const GLchar* name,
+                               GLuint index) const;
+  std::string boundUniformTexture(GLuint program, GLint location, GLint unit) const;
+  std::string boundBufferName(GLuint program, GLenum target, GLuint index) const;
+  void setBoundBufferByIndex(GLenum target, GLuint index, GLuint buffer);
+  GLuint boundBufferByIndex(GLenum target, GLuint index) const;
+  std::string boundBuffersByIndex(bool ssbos = true, bool ubos = true) const;
+  bool lastCommandWasCompute_ = false;
+  std::string identifierLabel(GLuint identifier, GLuint name) const;
+
+  std::string affectedMemoryBarrierObjects(GLbitfield bits) const;
+#endif
 
   PFNIGLBINDIMAGETEXTUREPROC IGL_NULLABLE bindImageTexturerProc_ = nullptr;
   PFNIGLBINDVERTEXARRAYPROC IGL_NULLABLE bindVertexArrayProc_ = nullptr;
