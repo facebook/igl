@@ -75,8 +75,6 @@ struct DeviceQueues {
 
   VkQueue IGL_NULLABLE graphicsQueue = VK_NULL_HANDLE;
   VkQueue IGL_NULLABLE computeQueue = VK_NULL_HANDLE;
-
-  DeviceQueues() = default;
 };
 
 class VulkanContext final {
