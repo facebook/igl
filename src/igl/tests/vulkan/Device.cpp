@@ -244,64 +244,17 @@ TEST_F(DeviceVulkanTest, UpdateGlslangResource) {
             (int)props.limits.maxCombinedClipAndCullDistances);
 }
 
-GTEST_TEST(VulkanContext, BufferDeviceAddress) {
-  std::shared_ptr<IDevice> iglDev = nullptr;
+TEST_F(DeviceVulkanTest, BufferDeviceAddress) {
+  const igl::vulkan::VulkanContext& ctx =
+      static_cast<const igl::vulkan::Device*>(iglDev_.get())->getVulkanContext();
 
-  igl::vulkan::VulkanContextConfig config;
-#if IGL_PLATFORM_MACOSX
-  config.terminateOnValidationError = false;
-#elif IGL_DEBUG
-  config.enableValidation = true;
-  config.terminateOnValidationError = true;
-#else
-  config.enableValidation = true;
-  config.terminateOnValidationError = false;
-#endif
-#ifdef IGL_DISABLE_VALIDATION
-  config.enableValidation = false;
-  config.terminateOnValidationError = false;
-#endif
-  config.enableExtraLogs = true;
-
-  auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
-
-  ASSERT_NE(ctx, nullptr);
-
-  Result ret;
-
-  std::vector<HWDeviceDesc> devices =
-      igl::vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::Unknown), &ret);
-
-  ASSERT_TRUE(!devices.empty());
-
-  if (ret.isOk()) {
-    if (!ctx->features().has_VK_KHR_buffer_device_address) {
-      return;
-    }
-
-    iglDev = igl::vulkan::HWDevice::create(std::move(ctx),
-                                           devices[0],
-                                           0, // width
-                                           0, // height,
-                                           0,
-                                           nullptr,
-                                           nullptr,
-                                           "DeviceVulkanTest",
-                                           &ret);
-
-    if (!ret.isOk()) {
-      iglDev = nullptr;
-    }
-  }
-
-  EXPECT_TRUE(ret.isOk());
-  ASSERT_NE(iglDev, nullptr);
-
-  if (!iglDev) {
+  if (!ctx.features().has_VK_KHR_buffer_device_address) {
     return;
   }
 
-  auto buffer = iglDev->createBuffer(
+  Result ret;
+
+  auto buffer = iglDev_->createBuffer(
       BufferDesc(BufferDesc::BufferTypeBits::Uniform, nullptr, 256, ResourceStorage::Shared), &ret);
 
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
