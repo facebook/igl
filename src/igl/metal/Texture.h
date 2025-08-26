@@ -68,7 +68,8 @@ class Texture final : public ITexture {
   Result uploadInternal(TextureType type,
                         const TextureRangeDesc& range,
                         const void* IGL_NULLABLE data,
-                        size_t bytesPerRow) const final;
+                        size_t bytesPerRow,
+                        const uint32_t* IGL_NULLABLE mipLevelBytes) const final;
 
   void generateMipmap(id<MTLCommandBuffer> cmdBuffer) const;
 

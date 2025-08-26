@@ -36,7 +36,8 @@ class TextureBuffer final : public opengl::TextureBuffer {
   Result uploadInternal(TextureType type,
                         const TextureRangeDesc& range,
                         const void* data,
-                        size_t bytesPerRow) const final;
+                        size_t bytesPerRow,
+                        const uint32_t* IGL_NULLABLE mipLevelBytes) const final;
 
   CVOpenGLTextureRef cvTexture_ = nullptr;
   CVPixelBufferRef pixelBuffer_ = nullptr;

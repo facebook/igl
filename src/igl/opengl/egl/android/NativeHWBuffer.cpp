@@ -162,7 +162,8 @@ void NativeHWTextureBuffer::bindImage(size_t unit) {
 Result NativeHWTextureBuffer::uploadInternal(TextureType /*type*/,
                                              const TextureRangeDesc& range,
                                              const void* IGL_NULLABLE data,
-                                             size_t bytesPerRow) const {
+                                             size_t bytesPerRow,
+                                             const uint32_t* IGL_NULLABLE /*mipLevelBytes*/) const {
   // not optimal pass
 
   std::byte* dst = nullptr;

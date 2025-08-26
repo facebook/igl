@@ -729,7 +729,8 @@ const void* IGL_NULLABLE ITexture::getSubRangeStart(const void* IGL_NONNULL data
 
 Result ITexture::upload(const TextureRangeDesc& range,
                         const void* IGL_NULLABLE data,
-                        size_t bytesPerRow) const {
+                        size_t bytesPerRow,
+                        const uint32_t* IGL_NULLABLE mipLevelBytes) const {
   if (IGL_DEBUG_VERIFY_NOT(!supportsUpload())) {
     return Result{Result::Code::InvalidOperation, "Texture doesn't support upload"};
   }
@@ -777,7 +778,7 @@ Result ITexture::upload(const TextureRangeDesc& range,
     data = repackedData.get();
   }
 
-  return uploadInternal(type, range, data, bytesPerRow);
+  return uploadInternal(type, range, data, bytesPerRow, mipLevelBytes);
 }
 
 } // namespace igl

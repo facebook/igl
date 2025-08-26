@@ -801,11 +801,13 @@ class ITexture : public ITrackedResource<ITexture> {
    * providing data.
    * @param bytesPerRow Number of bytes per row. If 0, it will be autocalculated assuming no
    * padding.
+   * @param mipLevelBytes Number of bytes per mip level. If nullptr, it will be autocalculated
    * @return Result      A flag for the result of operation
    */
   Result upload(const TextureRangeDesc& range,
                 const void* IGL_NULLABLE data,
-                size_t bytesPerRow = 0) const;
+                size_t bytesPerRow = 0,
+                const uint32_t* IGL_NULLABLE mipLevelBytes = nullptr) const;
 
   // Texture Accessor Methods
   /**
@@ -1040,10 +1042,12 @@ class ITexture : public ITrackedResource<ITexture> {
     return false;
   }
 
-  [[nodiscard]] virtual Result uploadInternal(IGL_MAYBE_UNUSED TextureType type,
-                                              IGL_MAYBE_UNUSED const TextureRangeDesc& range,
-                                              IGL_MAYBE_UNUSED const void* IGL_NULLABLE data,
-                                              IGL_MAYBE_UNUSED size_t bytesPerRow = 0) const {
+  [[nodiscard]] virtual Result uploadInternal(
+      IGL_MAYBE_UNUSED TextureType type,
+      IGL_MAYBE_UNUSED const TextureRangeDesc& range,
+      IGL_MAYBE_UNUSED const void* IGL_NULLABLE data,
+      IGL_MAYBE_UNUSED size_t bytesPerRow = 0,
+      IGL_MAYBE_UNUSED const uint32_t* IGL_NULLABLE mipLevelBytes = nullptr) const {
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return Result{Result::Code::Unimplemented, "Upload not implemented."};
   }

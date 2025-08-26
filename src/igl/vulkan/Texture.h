@@ -77,7 +77,8 @@ class Texture : public ITexture {
   Result uploadInternal(TextureType type,
                         const TextureRangeDesc& range,
                         const void* data,
-                        size_t bytesPerRow) const final;
+                        size_t bytesPerRow,
+                        const uint32_t* IGL_NULLABLE mipLevelBytes) const final;
 
   void clearColorTexture(const igl::Color& rgba);
 

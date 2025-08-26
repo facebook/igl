@@ -48,7 +48,8 @@ class NativeHWTextureBuffer : public igl::android::INativeHWTextureBuffer,
   Result uploadInternal(TextureType type,
                         const TextureRangeDesc& range,
                         const void* IGL_NULLABLE data,
-                        size_t bytesPerRow) const final;
+                        size_t bytesPerRow,
+                        const uint32_t* IGL_NULLABLE mipLevelBytes) const final;
 
   std::shared_ptr<AHardwareBufferHelper> hwBufferHelper_ = nullptr;
 };

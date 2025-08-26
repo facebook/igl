@@ -63,7 +63,8 @@ bool Texture::needsRepacking(const TextureRangeDesc& range, size_t bytesPerRow) 
 Result Texture::uploadInternal(TextureType type,
                                const TextureRangeDesc& range,
                                const void* IGL_NULLABLE data,
-                               size_t bytesPerRow) const {
+                               size_t bytesPerRow,
+                               const uint32_t* IGL_NULLABLE /*mipLevelBytes*/) const {
   if (data == nullptr) {
     return Result(Result::Code::Ok);
   }

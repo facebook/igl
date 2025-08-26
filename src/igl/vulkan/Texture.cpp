@@ -364,7 +364,8 @@ bool Texture::needsRepacking(const TextureRangeDesc& /*range*/, size_t bytesPerR
 Result Texture::uploadInternal(TextureType /*type*/,
                                const TextureRangeDesc& range,
                                const void* data,
-                               size_t bytesPerRow) const {
+                               size_t bytesPerRow,
+                               const uint32_t* IGL_NULLABLE /*mipLevelBytes*/) const {
   if (!data) {
     return Result{};
   }

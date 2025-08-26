@@ -100,7 +100,8 @@ bool TextureBuffer::supportsUpload() const {
 Result TextureBuffer::uploadInternal(TextureType /*type*/,
                                      const TextureRangeDesc& /*range*/,
                                      const void* /*data*/,
-                                     size_t /*bytesPerRow*/) const {
+                                     size_t /*bytesPerRow*/,
+                                     const uint32_t* IGL_NULLABLE /*mipLevelBytes*/) const {
   return Result();
 }
 
