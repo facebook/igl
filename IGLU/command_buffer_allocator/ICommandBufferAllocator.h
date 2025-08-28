@@ -24,6 +24,7 @@ class ICommandBufferAllocator {
     std::shared_ptr<igl::ITexture> presentTexture = nullptr;
     bool waitUntilScheduled = false;
     bool waitUntilCompleted = false;
+    std::string debugName = "<unknown>";
   };
 
   struct CommandBufferScope {
@@ -45,7 +46,7 @@ class ICommandBufferAllocator {
     igl::ICommandBuffer& commandBuffer_;
     bool shouldFinalizeCommandBuffer_ = false;
   };
-  virtual void createCommandBuffer() noexcept = 0;
+  virtual void createCommandBuffer(const std::string& debugName) noexcept = 0;
   [[nodiscard]] virtual CommandBufferScope commandBufferScope() noexcept = 0;
   [[nodiscard]] virtual CommandBufferScope commandBufferScope(
       ICommandBufferAllocator& allocator,
