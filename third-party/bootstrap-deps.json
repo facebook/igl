@@ -108,7 +108,7 @@
     "source": {
         "type": "git",
         "url": "https://github.com/ocornut/imgui.git",
-        "revision": "v1.90.9"
+        "revision": "v1.91.2"
     }
 },
 {
