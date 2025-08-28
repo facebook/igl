@@ -8,7 +8,6 @@
 #include <igl/metal/ios/Framebuffer.h>
 
 #include <vector>
-#include <igl/metal/Texture.h>
 
 namespace igl::metal::ios {
 
