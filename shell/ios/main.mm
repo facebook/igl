@@ -7,9 +7,12 @@
 
 // @fb-only
 
-#import "AppDelegate.h"
+#import <UIKit/UIApplication.h>
+#import <UIKit/UIResponder.h>
 
 #import <shell/shared/platform/Platform.h>
+
+#import "AppDelegate.h"
 
 int main(int argc, char* argv[]) {
   igl::shell::Platform::initializeCommandLineArgs(argc, argv);
