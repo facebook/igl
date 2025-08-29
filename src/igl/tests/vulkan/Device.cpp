@@ -268,24 +268,29 @@ TEST_F(DeviceVulkanTest, BufferDeviceAddress) {
 }
 
 GTEST_TEST(VulkanContext, DescriptorIndexing) {
-  std::shared_ptr<IDevice> iglDev = nullptr;
-
-  igl::vulkan::VulkanContextConfig config;
+  const igl::vulkan::VulkanContextConfig config = {
 #if IGL_PLATFORM_MACOSX
-  config.terminateOnValidationError = false;
+      .terminateOnValidationError = false,
 #elif IGL_DEBUG
-  config.enableValidation = true;
-  config.terminateOnValidationError = true;
-#else
-  config.enableValidation = true;
-  config.terminateOnValidationError = false;
-#endif
+      .terminateOnValidationError = true,
 #ifdef IGL_DISABLE_VALIDATION
-  config.enableValidation = false;
-  config.terminateOnValidationError = false;
+      .enableValidation = false,
+#else
+      .enableValidation = true,
+#endif // IGL_DISABLE_VALIDATION
+#else
+      .terminateOnValidationError = false,
+#ifdef IGL_DISABLE_VALIDATION
+      .enableValidation = false,
+#else
+      .enableValidation = true,
+#endif // IGL_DISABLE_VALIDATION
 #endif
-  config.enableExtraLogs = true;
-  config.enableDescriptorIndexing = true;
+      .enableExtraLogs = true,
+      .enableDescriptorIndexing = true,
+  };
+
+  std::unique_ptr<igl::vulkan::Device> iglDev = nullptr;
 
   auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
 
@@ -313,7 +318,6 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
       return;
     }
 
-    const std::vector<const char*> extraDeviceExtensions;
     iglDev = igl::vulkan::HWDevice::create(std::move(ctx),
                                            devices[0],
                                            0, // width
@@ -323,7 +327,6 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
                                            &features,
                                            "VulkanContext Test",
                                            &ret);
-
     if (!ret.isOk()) {
       iglDev = nullptr;
     }
