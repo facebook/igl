@@ -12,7 +12,6 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
 
 #include <shell/openxr/XrLog.h>
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
@@ -147,7 +146,7 @@ XrSession XrAppImplVulkan::initXrSession(XrInstance instance,
       nullptr,
       vkDevice.getVulkanContext().getVkInstance(),
       vkDevice.getVulkanContext().getVkPhysicalDevice(),
-      vkDevice.getVulkanContext().device_->getVkDevice(),
+      vkDevice.getVulkanContext().getVkDevice(),
       vkDevice.getVulkanContext().deviceQueues_.graphicsQueueFamilyIndex,
       0,
   };

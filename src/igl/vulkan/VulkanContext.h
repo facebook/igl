@@ -15,7 +15,6 @@
 #include <igl/CommandEncoder.h>
 #include <igl/HWDevice.h>
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanFeatures.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
@@ -199,7 +198,7 @@ class VulkanContext final {
     return vkInstance_;
   }
   VkDevice IGL_NULLABLE getVkDevice() const {
-    return device_->getVkDevice();
+    return vkDevice_;
   }
   VkPhysicalDevice IGL_NULLABLE getVkPhysicalDevice() const {
     return vkPhysicalDevice_;
@@ -301,9 +300,10 @@ class VulkanContext final {
   VulkanFeatures features_;
 
  public:
+  // NOLINTBEGIN(readability-identifier-naming)
   const VulkanFunctionTable& vf_;
   DeviceQueues deviceQueues_;
-  std::unique_ptr<VulkanDevice> device_;
+  VkDevice vkDevice_ = VK_NULL_HANDLE;
   std::unique_ptr<VulkanSwapchain> swapchain_;
   std::unique_ptr<VulkanSemaphore> timelineSemaphore_;
   std::unique_ptr<VulkanImmediateCommands> immediate_;
@@ -342,6 +342,7 @@ class VulkanContext final {
 
   // Enhanced shader debug: line drawing
   std::unique_ptr<EnhancedShaderDebuggingStore> enhancedShaderDebuggingStore_;
+  // NOLINTEND(readability-identifier-naming)
 
   void updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
                               VkPipelineLayout layout,

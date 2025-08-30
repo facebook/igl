@@ -13,7 +13,6 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImageView.h>
 
@@ -49,7 +48,7 @@ void enumerateSwapchainImages(
   for (uint32_t i = 0; i < numImages; ++i) {
     auto image = igl::vulkan::VulkanImage(
         ctx,
-        ctx.device_->device_,
+        ctx.getVkDevice(),
         images[i].image,
         fmt::format("Image: swapchain {} #{}", isDepth ? "depth" : "color", i).c_str(),
         usageFlags,

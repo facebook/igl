@@ -35,7 +35,6 @@
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDescriptorSetLayout.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanFeatures.h>
 #include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
@@ -456,7 +455,7 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
 VulkanContext::~VulkanContext() {
   IGL_PROFILER_FUNCTION();
 
-  if (device_) {
+  if (vkDevice_) {
     waitIdle();
   }
 
@@ -508,10 +507,9 @@ VulkanContext::~VulkanContext() {
   // This will free an internal buffer that was allocated by VMA
   stagingDevice_.reset(nullptr);
 
-  VkDevice device = device_ ? device_->getVkDevice() : VK_NULL_HANDLE;
-  if (device_) {
+  if (vkDevice_) {
     for (auto r : renderPasses_) {
-      vf_.vkDestroyRenderPass(device, r, nullptr);
+      vf_.vkDestroyRenderPass(vkDevice_, r, nullptr);
     }
   }
 
@@ -524,19 +522,19 @@ VulkanContext::~VulkanContext() {
   immediate_.reset(nullptr);
   timelineSemaphore_.reset(nullptr);
 
-  if (device_) {
+  if (vkDevice_) {
     if (pimpl_->dpBindless != VK_NULL_HANDLE) {
-      vf_.vkDestroyDescriptorPool(device, pimpl_->dpBindless, nullptr);
+      vf_.vkDestroyDescriptorPool(vkDevice_, pimpl_->dpBindless, nullptr);
     }
     for (auto& p : ycbcrConversionInfos_) {
       if (p.second.conversion != VK_NULL_HANDLE) {
-        vf_.vkDestroySamplerYcbcrConversion(device, p.second.conversion, nullptr);
+        vf_.vkDestroySamplerYcbcrConversion(vkDevice_, p.second.conversion, nullptr);
       }
     }
     pimpl_->arenaCombinedImageSamplers.clear();
     pimpl_->arenaStorageImages.clear();
     pimpl_->arenaBuffers.clear();
-    vf_.vkDestroyPipelineCache(device, pipelineCache_, nullptr);
+    vf_.vkDestroyPipelineCache(vkDevice_, pipelineCache_, nullptr);
   }
 
   if (vkSurface_ != VK_NULL_HANDLE) {
@@ -548,7 +546,9 @@ VulkanContext::~VulkanContext() {
     vmaDestroyAllocator(pimpl_->vma);
   }
 
-  device_.reset(nullptr); // Device has to be destroyed prior to Instance
+  if (vkDevice_) {
+    vf_.vkDestroyDevice(vkDevice_, nullptr); // Device has to be destroyed prior to Instance
+  }
 #if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID
   if (vf_.vkDestroyDebugUtilsMessengerEXT != nullptr) {
     vf_.vkDestroyDebugUtilsMessengerEXT(vkInstance_, vkDebugUtilsMessenger_, nullptr);
@@ -770,6 +770,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                        const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions,
                                        const VulkanFeatures* IGL_NULLABLE requestedFeatures,
                                        const char* IGL_NULLABLE debugName) {
+  IGL_DEBUG_ASSERT(vkDevice_ == VK_NULL_HANDLE);
+
   if (desc.guid == 0UL) {
     IGL_LOG_ERROR("Invalid hardwareGuid(%lu)", desc.guid);
     return Result(Result::Code::Unsupported, "Vulkan is not supported");
@@ -900,23 +902,26 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   vf_.vkGetDeviceQueue(
       device, deviceQueues_.computeQueueFamilyIndex, 0, &deviceQueues_.computeQueue);
 
-  device_ = std::make_unique<igl::vulkan::VulkanDevice>(
-      vf_,
-      device,
-      IGL_FORMAT("Device: VulkanContext::device_ {}",
-                 debugName ? debugName : "igl/vulkan/VulkanContext.cpp")
-          .c_str());
+  vkDevice_ = device;
+
+  VK_ASSERT(ivkSetDebugObjectName(&vf_,
+                                  vkDevice_,
+                                  VK_OBJECT_TYPE_DEVICE,
+                                  (uint64_t)vkDevice_,
+                                  IGL_FORMAT("Device: VulkanContext::device_ {}",
+                                             debugName ? debugName : "igl/vulkan/VulkanContext.cpp")
+                                      .c_str()));
 
   VK_ASSERT(ivkSetDebugObjectName(
       &vf_,
-      device_->getVkDevice(),
+      vkDevice_,
       VK_OBJECT_TYPE_QUEUE,
       (uint64_t)deviceQueues_.graphicsQueue,
       IGL_FORMAT("Graphics queue: {}", debugName ? debugName : "igl/vulkan/VulkanContext.cpp")
           .c_str()));
   VK_ASSERT(ivkSetDebugObjectName(
       &vf_,
-      device_->getVkDevice(),
+      vkDevice_,
       VK_OBJECT_TYPE_QUEUE,
       (uint64_t)deviceQueues_.computeQueue,
       IGL_FORMAT("Compute queue: {}", debugName ? debugName : "igl/vulkan/VulkanContext.cpp")
@@ -949,7 +954,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     VK_ASSERT_RETURN(
         ivkVmaCreateAllocator(&vf_,
                               vkPhysicalDevice_,
-                              device_->getVkDevice(),
+                              vkDevice_,
                               vkInstance_,
                               apiVersion > VK_API_VERSION_1_3 ? VK_API_VERSION_1_3 : apiVersion,
                               features_.has_VK_KHR_buffer_device_address,
@@ -1061,16 +1066,14 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 #if defined(IGL_WITH_TRACY_GPU)
   profilingCommandPool_ = std::make_unique<VulkanCommandPool>(
       vf_,
-      device_->getVkDevice(),
+      vkDevice_,
       VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
       deviceQueues_.graphicsQueueFamilyIndex,
       "VulkanContext::profilingCommandPool_ (Tracy)");
 
   profilingCommandBuffer_ = VK_NULL_HANDLE;
-  VK_ASSERT(ivkAllocateCommandBuffer(&vf_,
-                                     device_->getVkDevice(),
-                                     profilingCommandPool_->getVkCommandPool(),
-                                     &profilingCommandBuffer_));
+  VK_ASSERT(ivkAllocateCommandBuffer(
+      &vf_, vkDevice_, profilingCommandPool_->getVkCommandPool(), &profilingCommandBuffer_));
 
 #if defined(VK_EXT_calibrated_timestamps)
   if (features_.enabled(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)) {
@@ -1229,13 +1232,13 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
 igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
   IGL_PROFILER_FUNCTION();
 
-  if (!device_ || !immediate_) {
+  if (!vkDevice_ || !immediate_) {
     IGL_LOG_ERROR("Call initContext() first");
     return Result(Result::Code::Unsupported, "Call initContext() first");
   }
 
   if (swapchain_) {
-    vf_.vkDeviceWaitIdle(device_->device_);
+    vf_.vkDeviceWaitIdle(vkDevice_);
     swapchain_ = nullptr; // Destroy old swapchain first
   }
 
@@ -1302,7 +1305,7 @@ std::unique_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSiz
 
   Result::setOk(outResult);
   return std::make_unique<VulkanBuffer>(
-      *this, device_->getVkDevice(), bufferSize, usageFlags, memFlags, debugName);
+      *this, vkDevice_, bufferSize, usageFlags, memFlags, debugName);
 }
 
 VulkanImage VulkanContext::createImage(VkImageType imageType,
@@ -1325,7 +1328,7 @@ VulkanImage VulkanContext::createImage(VkImageType imageType,
   }
 
   return {*this,
-          device_->getVkDevice(),
+          vkDevice_,
           extent,
           imageType,
           format,
@@ -1401,7 +1404,7 @@ std::unique_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
   return std::make_unique<VulkanImage>(*this,
                                        fileDescriptor,
                                        memoryAllocationSize,
-                                       device_->getVkDevice(),
+                                       vkDevice_,
                                        extent,
                                        imageType,
                                        format,
@@ -1546,7 +1549,7 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
 #endif // IGL_VULKAN_PRINT_COMMANDS
     VK_ASSERT(immediate_->wait(immediate_->getLastSubmitHandle()));
     vf_.vkUpdateDescriptorSets(
-        device_->getVkDevice(), static_cast<uint32_t>(write.size()), write.data(), 0, nullptr);
+        vkDevice_, static_cast<uint32_t>(write.size()), write.data(), 0, nullptr);
   }
 
   awaitingCreation_ = false;
@@ -1580,7 +1583,7 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTextureFromVkImage(
     VulkanImageCreateInfo imageCreateInfo,
     VulkanImageViewCreateInfo imageViewCreateInfo,
     const char* IGL_NULLABLE debugName) const {
-  auto iglImage = VulkanImage(*this, device_->getVkDevice(), vkImage, imageCreateInfo, debugName);
+  auto iglImage = VulkanImage(*this, vkDevice_, vkImage, imageCreateInfo, debugName);
   auto imageView = iglImage.createImageView(imageViewCreateInfo, debugName);
   return createTexture(std::move(iglImage), std::move(imageView), debugName);
 }
@@ -1700,7 +1703,7 @@ VulkanContext::RenderPassHandle VulkanContext::findRenderPass(
   }
 
   VkRenderPass pass = VK_NULL_HANDLE;
-  builder.build(vf_, device_->getVkDevice(), &pass);
+  builder.build(vf_, vkDevice_, &pass);
 
   const size_t index = renderPasses_.size();
 
@@ -1715,15 +1718,13 @@ VulkanContext::RenderPassHandle VulkanContext::findRenderPass(
 }
 
 std::vector<uint8_t> VulkanContext::getPipelineCacheData() const {
-  VkDevice device = device_->getVkDevice();
-
   size_t size = 0;
-  vf_.vkGetPipelineCacheData(device, pipelineCache_, &size, nullptr);
+  vf_.vkGetPipelineCacheData(vkDevice_, pipelineCache_, &size, nullptr);
 
   std::vector<uint8_t> data(size);
 
   if (size) {
-    vf_.vkGetPipelineCacheData(device, pipelineCache_, &size, data.data());
+    vf_.vkGetPipelineCacheData(vkDevice_, pipelineCache_, &size, data.data());
   }
 
   return data;
@@ -1786,7 +1787,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
 
   if (numWrites) {
     IGL_PROFILER_ZONE("vkUpdateDescriptorSets()", IGL_PROFILER_COLOR_UPDATE);
-    vf_.vkUpdateDescriptorSets(device_->getVkDevice(), numWrites, writes, 0, nullptr);
+    vf_.vkUpdateDescriptorSets(vkDevice_, numWrites, writes, 0, nullptr);
     IGL_PROFILER_ZONE_END();
 
 #if IGL_VULKAN_PRINT_COMMANDS
@@ -1842,7 +1843,7 @@ void VulkanContext::updateBindingsStorageImages(
 
   if (numWrites) {
     IGL_PROFILER_ZONE("vkUpdateDescriptorSets()", IGL_PROFILER_COLOR_UPDATE);
-    vf_.vkUpdateDescriptorSets(device_->getVkDevice(), numWrites, writes, 0, nullptr);
+    vf_.vkUpdateDescriptorSets(vkDevice_, numWrites, writes, 0, nullptr);
     IGL_PROFILER_ZONE_END();
 
 #if IGL_VULKAN_PRINT_COMMANDS
@@ -1888,7 +1889,7 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
 
   if (numWrites) {
     IGL_PROFILER_ZONE("vkUpdateDescriptorSets()", IGL_PROFILER_COLOR_UPDATE);
-    vf_.vkUpdateDescriptorSets(device_->getVkDevice(), numWrites, writes, 0, nullptr);
+    vf_.vkUpdateDescriptorSets(vkDevice_, numWrites, writes, 0, nullptr);
     IGL_PROFILER_ZONE_END();
 
 #if IGL_VULKAN_PRINT_COMMANDS
@@ -1970,8 +1971,7 @@ int VulkanContext::getFenceFdFromSubmitHandle(igl::SubmitHandle handle) const no
       .handleType = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT,
   };
 
-  VkDevice vkDevice = device_->getVkDevice();
-  const VkResult result = vf_.vkGetFenceFdKHR(vkDevice, &getFdInfo, &fenceFd);
+  const VkResult result = vf_.vkGetFenceFdKHR(vkDevice_, &getFdInfo, &fenceFd);
   if (result != VK_SUCCESS) {
     IGL_LOG_ERROR("Unable to get fence fd from submit handle: %lu", handle);
   }
@@ -2188,7 +2188,7 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
   }
 
   IGL_PROFILER_ZONE("vkUpdateDescriptorSets() - textures bind group", IGL_PROFILER_COLOR_UPDATE);
-  vf_.vkUpdateDescriptorSets(device_->getVkDevice(), numWrites, writes, 0, nullptr);
+  vf_.vkUpdateDescriptorSets(vkDevice_, numWrites, writes, 0, nullptr);
   IGL_PROFILER_ZONE_END();
 
   // once a descriptor set has been updated, destroy the DSL
@@ -2340,11 +2340,11 @@ igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferD
   }
 
   IGL_PROFILER_ZONE("vkUpdateDescriptorSets() - textures bind group", IGL_PROFILER_COLOR_UPDATE);
-  vf_.vkUpdateDescriptorSets(device_->getVkDevice(), numWrites, writes, 0, nullptr);
+  vf_.vkUpdateDescriptorSets(vkDevice_, numWrites, writes, 0, nullptr);
   IGL_PROFILER_ZONE_END();
 
   // once a descriptor set has been updated, destroy the DSL
-  vf_.vkDestroyDescriptorSetLayout(device, dsl, nullptr);
+  vf_.vkDestroyDescriptorSetLayout(vkDevice_, dsl, nullptr);
 
   Result::setOk(outResult);
 

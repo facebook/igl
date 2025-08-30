@@ -22,7 +22,6 @@
 #include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanBuffer.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanShaderModule.h>
 
 // Writes the shader code to disk for debugging. Used in `Device::createShaderModule()`
@@ -341,8 +340,6 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* IGL_N
 
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
-  VkDevice device = ctx_->device_->getVkDevice();
-
 #if IGL_SHADER_DUMP && IGL_DEBUG
   uint64_t hash = 0;
   IGL_DEBUG_ASSERT(length % sizeof(uint32_t) == 0);
@@ -369,7 +366,8 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* IGL_N
       .codeSize = length,
       .pCode = static_cast<const uint32_t*>(data),
   };
-  const VkResult result = ctx_->vf_.vkCreateShaderModule(device, &ci, nullptr, &vkShaderModule);
+  const VkResult result =
+      ctx_->vf_.vkCreateShaderModule(ctx_->getVkDevice(), &ci, nullptr, &vkShaderModule);
 
   setResultFrom(outResult, result);
 
@@ -380,7 +378,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* IGL_N
   if (!debugName.empty()) {
     // set debug name
     VK_ASSERT(ivkSetDebugObjectName(&ctx_->vf_,
-                                    device,
+                                    ctx_->getVkDevice(),
                                     VK_OBJECT_TYPE_SHADER_MODULE,
                                     (uint64_t)vkShaderModule,
                                     debugName.c_str()));
@@ -389,7 +387,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* IGL_N
   IGL_DEBUG_ASSERT(vkShaderModule != VK_NULL_HANDLE);
   return std::make_shared<VulkanShaderModule>(
       ctx_->vf_,
-      device,
+      ctx_->getVkDevice(),
       vkShaderModule,
       util::getReflectionData(reinterpret_cast<const uint32_t*>(data), length));
 }
@@ -403,7 +401,6 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
 
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
-  VkDevice device = ctx_->device_->getVkDevice();
   const VkShaderStageFlagBits vkStage = shaderStageToVkShaderStage(stage);
   IGL_DEBUG_ASSERT(vkStage != VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM);
   IGL_DEBUG_ASSERT(source);
@@ -481,7 +478,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       .codeSize = spirv.size() * sizeof(uint32_t),
       .pCode = spirv.data(),
   };
-  VK_ASSERT(ctx_->vf_.vkCreateShaderModule(device, &ci, nullptr, &vkShaderModule));
+  VK_ASSERT(ctx_->vf_.vkCreateShaderModule(ctx_->getVkDevice(), &ci, nullptr, &vkShaderModule));
 
   Result::setResult(outResult, result);
 
@@ -493,7 +490,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
   if (!debugName.empty()) {
     // set debug name
     VK_ASSERT(ivkSetDebugObjectName(&ctx_->vf_,
-                                    device,
+                                    ctx_->getVkDevice(),
                                     VK_OBJECT_TYPE_SHADER_MODULE,
                                     (uint64_t)vkShaderModule,
                                     debugName.c_str()));
@@ -501,7 +498,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
 
   return std::make_shared<VulkanShaderModule>(
       ctx_->vf_,
-      device,
+      ctx_->getVkDevice(),
       vkShaderModule,
       util::getReflectionData(spirv.data(), spirv.size() * sizeof(uint32_t)));
 }

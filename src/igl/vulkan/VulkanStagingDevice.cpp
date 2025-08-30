@@ -11,7 +11,6 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 
@@ -33,7 +32,7 @@ VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
 
   immediate_ = std::make_unique<VulkanImmediateCommands>(
       ctx_.vf_,
-      ctx_.device_->getVkDevice(),
+      ctx_.getVkDevice(),
       ctx_.deviceQueues_.graphicsQueueFamilyIndex,
       ctx_.config_.exportableFences,
       ctx_.features_.has_VK_KHR_timeline_semaphore && ctx_.features_.has_VK_KHR_synchronization2,
@@ -725,7 +724,7 @@ void VulkanStagingDevice::allocateStagingBuffer(VkDeviceSize minimumSize) {
   // Create a new staging buffer with the new size
   stagingBuffers_.emplace_back(std::make_unique<VulkanBuffer>(
       ctx_,
-      ctx_.device_->getVkDevice(),
+      ctx_.getVkDevice(),
       stagingBufferSize,
       VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,

@@ -11,7 +11,6 @@
 #include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDescriptorSetLayout.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
 
 namespace igl::vulkan {
@@ -32,9 +31,9 @@ ComputePipelineState ::~ComputePipelineState() {
   if (pipeline_ != VK_NULL_HANDLE) {
     const auto& ctx = device_.getVulkanContext();
     ctx.deferredTask(std::packaged_task<void()>(
-        [vf = &ctx.vf_,
-         device = device_.getVulkanContext().device_->getVkDevice(),
-         pipeline = pipeline_]() { vf->vkDestroyPipeline(device, pipeline, nullptr); }));
+        [vf = &ctx.vf_, device = device_.getVulkanContext().getVkDevice(), pipeline = pipeline_]() {
+          vf->vkDestroyPipeline(device, pipeline, nullptr);
+        }));
   }
   if (pipelineLayout_ != VK_NULL_HANDLE) {
     const auto& ctx = device_.getVulkanContext();
@@ -53,7 +52,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
     // existing textures increases
     if (lastBindlessVkDescriptorSetLayout_ != ctx.getBindlessVkDescriptorSetLayout()) {
       // there's a new descriptor set layout - drop the previous Vulkan pipeline
-      VkDevice device = ctx.device_->getVkDevice();
+      VkDevice device = ctx.getVkDevice();
       if (pipeline_ != VK_NULL_HANDLE) {
         ctx.deferredTask(std::packaged_task<void()>(
             [vf = &ctx.vf_, device, pipeline = pipeline_, layout = pipelineLayout_]() {
@@ -90,7 +89,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
                                      DSLs,
                                      info_.hasPushConstants ? &pushConstantRange_ : nullptr);
 
-  VkDevice device = ctx.device_->getVkDevice();
+  VkDevice device = ctx.getVkDevice();
   VK_ASSERT(ctx.vf_.vkCreatePipelineLayout(device, &ci, nullptr, &pipelineLayout_));
   VK_ASSERT(
       ivkSetDebugObjectName(&ctx.vf_,
@@ -107,7 +106,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
           igl::vulkan::ShaderModule::getVkShaderModule(shaderModule),
           shaderModule->info().entryPoint.c_str()))
       .build(ctx.vf_,
-             ctx.device_->getVkDevice(),
+             device,
              ctx.pipelineCache_,
              pipelineLayout_,
              &pipeline_,

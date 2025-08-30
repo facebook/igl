@@ -11,7 +11,6 @@
 #include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDescriptorSetLayout.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
 
 namespace {
@@ -335,7 +334,7 @@ RenderPipelineState::~RenderPipelineState() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
   const VulkanContext& ctx = device_.getVulkanContext();
-  VkDevice device = ctx.device_->getVkDevice();
+  VkDevice device = ctx.getVkDevice();
 
   for (const auto& p : pipelines_) {
     if (p.second != VK_NULL_HANDLE) {
@@ -362,7 +361,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
     // existing textures increases
     if (lastBindlessVkDescriptorSetLayout_ != ctx.getBindlessVkDescriptorSetLayout()) {
       // there's a new descriptor set layout - drop the previous Vulkan pipeline
-      VkDevice device = ctx.device_->getVkDevice();
+      VkDevice device = ctx.getVkDevice();
       for (const auto& p : pipelines_) {
         if (p.second != VK_NULL_HANDLE) {
           ctx.deferredTask(
@@ -409,7 +408,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
         DSLs,
         info_.hasPushConstants ? &pushConstantRange_ : nullptr);
 
-    VkDevice device = ctx.device_->getVkDevice();
+    VkDevice device = ctx.getVkDevice();
     VK_ASSERT(ctx.vf_.vkCreatePipelineLayout(device, &ci, nullptr, &pipelineLayout_));
     VK_ASSERT(
         ivkSetDebugObjectName(&ctx.vf_,
@@ -506,7 +505,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
           .vertexInputState(vertexInputStateCreateInfo_)
           .colorBlendAttachmentStates(colorBlendAttachmentStates)
           .build(ctx.vf_,
-                 ctx.device_->getVkDevice(),
+                 ctx.getVkDevice(),
                  ctx.pipelineCache_,
                  pipelineLayout_,
                  renderPass,

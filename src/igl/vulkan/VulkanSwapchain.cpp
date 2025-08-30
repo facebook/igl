@@ -9,7 +9,6 @@
 
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanSemaphore.h>
 #include <igl/vulkan/VulkanTexture.h>
 
@@ -118,11 +117,7 @@ VkImageUsageFlags chooseUsageFlags(const VulkanFunctionTable& vf,
 namespace igl::vulkan {
 
 VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height) :
-  ctx_(ctx),
-  device_(ctx.device_->getVkDevice()),
-  graphicsQueue_(ctx.deviceQueues_.graphicsQueue),
-  width_(width),
-  height_(height) {
+  ctx_(ctx), graphicsQueue_(ctx.deviceQueues_.graphicsQueue), width_(width), height_(height) {
   surfaceFormat_ = chooseSwapSurfaceFormat(ctx.deviceSurfaceFormats_,
                                            ctx.config_.requestedSwapChainTextureFormat,
                                            ctx.config_.swapChainColorSpace);
@@ -157,7 +152,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
     const uint32_t requestedSwapchainImageCount = chooseSwapImageCount(ctx.deviceSurfaceCaps_);
 
     VK_ASSERT(ivkCreateSwapchain(&ctx_.vf_,
-                                 device_,
+                                 ctx.getVkDevice(),
                                  ctx.vkSurface_,
                                  requestedSwapchainImageCount,
                                  surfaceFormat_,
@@ -169,11 +164,12 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
                                  height,
                                  &swapchain_));
   }
-  VK_ASSERT(ctx.vf_.vkGetSwapchainImagesKHR(device_, swapchain_, &numSwapchainImages_, nullptr));
+  VK_ASSERT(ctx.vf_.vkGetSwapchainImagesKHR(
+      ctx.getVkDevice(), swapchain_, &numSwapchainImages_, nullptr));
   std::vector<VkImage> swapchainImages(numSwapchainImages_);
   swapchainImages.resize(numSwapchainImages_);
   VK_ASSERT(ctx.vf_.vkGetSwapchainImagesKHR(
-      device_, swapchain_, &numSwapchainImages_, swapchainImages.data()));
+      ctx.getVkDevice(), swapchain_, &numSwapchainImages_, swapchainImages.data()));
 
   IGL_DEBUG_ASSERT(numSwapchainImages_ > 0);
 
@@ -185,8 +181,10 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
   // create images, image views and framebuffers
   swapchainTextures_ = std::make_unique<std::shared_ptr<VulkanTexture>[]>(numSwapchainImages_);
   for (uint32_t i = 0; i < numSwapchainImages_; i++) {
-    auto image = VulkanImage(
-        ctx_, device_, swapchainImages[i], IGL_FORMAT("Image: swapchain #{}", i).c_str());
+    auto image = VulkanImage(ctx_,
+                             ctx_.getVkDevice(),
+                             swapchainImages[i],
+                             IGL_FORMAT("Image: swapchain #{}", i).c_str());
     image.extent_ = {width, height, 1};
     // set usage flags for retrieved images
     image.usageFlags_ = usageFlags;
@@ -206,12 +204,14 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
   // create semaphores and fences for swapchain images
   for (uint32_t i = 0; i < numSwapchainImages_; ++i) {
     timelineWaitValues_.emplace_back(0);
-    acquireSemaphores_.emplace_back(
-        ctx_.vf_, device_, false, IGL_FORMAT("Semaphore: swapchain-acquire #{}", i).c_str());
+    acquireSemaphores_.emplace_back(ctx_.vf_,
+                                    ctx_.getVkDevice(),
+                                    false,
+                                    IGL_FORMAT("Semaphore: swapchain-acquire #{}", i).c_str());
     if (!ctx_.timelineSemaphore_) {
       // this can be removed once we switch to timeline semaphores
       acquireFences_.emplace_back(ctx_.vf_,
-                                  device_,
+                                  ctx_.getVkDevice(),
                                   VK_FENCE_CREATE_SIGNALED_BIT,
                                   false,
                                   IGL_FORMAT("Fence: swapchain-acquire #{}", i).c_str());
@@ -250,7 +250,7 @@ void VulkanSwapchain::lazyAllocateDepthBuffer() const {
 #endif
 
   auto depthImage = VulkanImage(ctx_,
-                                device_,
+                                ctx_.getVkDevice(),
                                 VkExtent3D{width_, height_, 1},
                                 VK_IMAGE_TYPE_2D,
                                 depthFormat,
@@ -277,7 +277,7 @@ VulkanSwapchain::~VulkanSwapchain() {
     // this can be removed once we switch to timeline semaphores
     fence.wait();
   }
-  ctx_.vf_.vkDestroySwapchainKHR(device_, swapchain_, nullptr);
+  ctx_.vf_.vkDestroySwapchainKHR(ctx_.getVkDevice(), swapchain_, nullptr);
 }
 
 Result VulkanSwapchain::acquireNextImage() {
@@ -292,12 +292,16 @@ Result VulkanSwapchain::acquireNextImage() {
         .pSemaphores = &ctx_.timelineSemaphore_->vkSemaphore_,
         .pValues = &timelineWaitValues_[currentImageIndex_],
     };
-    VK_ASSERT(ctx_.vf_.vkWaitSemaphoresKHR(device_, &waitInfo, UINT64_MAX));
+    VK_ASSERT(ctx_.vf_.vkWaitSemaphoresKHR(ctx_.getVkDevice(), &waitInfo, UINT64_MAX));
 
     VkSemaphore acquireSemaphore = acquireSemaphores_[currentImageIndex_].getVkSemaphore();
     // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
-    acquireResult = ctx_.vf_.vkAcquireNextImageKHR(
-        device_, swapchain_, UINT64_MAX, acquireSemaphore, VK_NULL_HANDLE, &currentImageIndex_);
+    acquireResult = ctx_.vf_.vkAcquireNextImageKHR(ctx_.getVkDevice(),
+                                                   swapchain_,
+                                                   UINT64_MAX,
+                                                   acquireSemaphore,
+                                                   VK_NULL_HANDLE,
+                                                   &currentImageIndex_);
 
     currentSemaphoreIndex_ =
         currentImageIndex_; // remove `currentSemaphoreIndex_` once we switch to timeline semaphores
@@ -320,7 +324,7 @@ Result VulkanSwapchain::acquireNextImage() {
 
     // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
     acquireResult =
-        ctx_.vf_.vkAcquireNextImageKHR(device_,
+        ctx_.vf_.vkAcquireNextImageKHR(ctx_.getVkDevice(),
                                        swapchain_,
                                        UINT64_MAX,
                                        acquireSemaphores_[currentImageIndex_].vkSemaphore_,

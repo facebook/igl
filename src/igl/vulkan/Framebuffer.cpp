@@ -14,7 +14,6 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanFramebuffer.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
@@ -368,7 +367,7 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel,
   const uint32_t fbHeight = std::max(height_ >> mipLevel, 1u);
 
   auto fb = std::make_shared<VulkanFramebuffer>(ctx,
-                                                ctx.device_->getVkDevice(),
+                                                ctx.getVkDevice(),
                                                 fbWidth,
                                                 fbHeight,
                                                 pass,
