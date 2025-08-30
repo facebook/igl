@@ -23,7 +23,6 @@
 #endif
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/ios/Context.h>
-#include <igl/opengl/ios/Device.h>
 #include <igl/opengl/ios/HWDevice.h>
 #endif
 // @fb-only
@@ -33,7 +32,6 @@
 // @fb-only
 #include <memory>
 #include <shell/shared/platform/ios/PlatformIos.h>
-#include <shell/shared/renderSession/IRenderSessionFactory.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
 
