@@ -137,7 +137,7 @@ Result ComputePipelineState::bindBuffer(const size_t unit, Buffer* buffer) {
   }
 
   Result result;
-  static_cast<ArrayBuffer&>(*buffer).bindBase(bufferLocation, &result);
+  static_cast<ArrayBuffer&>(*buffer).bindBase(unit, &result);
 
   return result;
 }
