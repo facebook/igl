@@ -575,6 +575,15 @@ VulkanContext::~VulkanContext() {
 #if defined(IGL_CMAKE_BUILD)
   volkFinalize();
 #endif
+
+#if IGL_VULKAN_VALIDATION_LAYER_ERROR_SUMMARY
+  if (!validationErrorsSummary_.empty()) {
+    IGL_LOG_INFO("Vulkan Validation Layer errors found: %u\n", validationErrorsSummary_.size());
+    for (const auto& error : validationErrorsSummary_) {
+      IGL_LOG_ERROR("\t%s: %u\n", error.first.c_str(), error.second);
+    }
+  }
+#endif
 }
 
 void VulkanContext::createInstance() {
