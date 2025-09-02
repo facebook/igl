@@ -105,6 +105,9 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
         typeName.data(),
         messageID,
         message);
+#if IGL_VULKAN_VALIDATION_LAYER_ERROR_SUMMARY
+    ctx.validationErrorsSummary_[errorName.data()]++;
+#endif
   } else {
     const bool isWarning = (msgSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0;
 

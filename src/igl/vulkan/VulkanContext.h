@@ -30,6 +30,8 @@ struct AHardwareBuffer;
 #include "tracy/TracyVulkan.hpp"
 #endif
 
+#define IGL_VULKAN_VALIDATION_LAYER_ERROR_SUMMARY 0
+
 namespace igl::vulkan {
 namespace util {
 struct SpvModuleInfo;
@@ -379,6 +381,10 @@ class VulkanContext final {
   // sync resources
   uint32_t syncCurrentIndex_ = 0u;
   std::vector<SubmitHandle> syncSubmitHandles_;
+
+#if IGL_VULKAN_VALIDATION_LAYER_ERROR_SUMMARY
+  std::unordered_map<std::string, uint32_t> validationErrorsSummary_;
+#endif
 };
 
 } // namespace igl::vulkan
