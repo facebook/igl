@@ -66,7 +66,7 @@ const uint32_t kBinding_SamplerShadow = 5;
 const uint32_t kBinding_StorageImages = 6;
 // NOLINTEND(readability-identifier-naming)
 
-#if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WINDOWS
+#if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_APPLE
 VKAPI_ATTR VkBool32 VKAPI_CALL
 vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
                     [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT msgType,
@@ -682,12 +682,12 @@ void VulkanContext::createInstance() {
       features_.enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VulkanFeatures::ExtensionType::Instance);
   vulkan::functions::loadInstanceFunctions(*tableImpl_, vkInstance_, enableExtDebugUtils);
 
-#if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WINDOWS
+#if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_APPLE
   if (features_.enabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
     VK_ASSERT(ivkCreateDebugUtilsMessenger(
         &vf_, vkInstance_, &vulkanDebugCallback, this, &vkDebugUtilsMessenger_));
   }
-#endif // if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WINDOWS
+#endif // if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_APPLE
 
 #if IGL_LOGGING_ENABLED
   if (config_.enableExtraLogs) {
