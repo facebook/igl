@@ -9,7 +9,6 @@
 
 #include <array>
 #include <string>
-#include <vector>
 #include <igl/Common.h>
 #include <igl/ITrackedResource.h>
 
