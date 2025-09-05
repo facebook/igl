@@ -281,6 +281,14 @@ class IContext {
   GLuint getProgramResourceIndex(GLuint program,
                                  GLenum programInterface,
                                  const GLchar* IGL_NULLABLE name) const;
+  void getProgramResourceiv(GLuint program,
+                            GLenum programInterface,
+                            GLuint index,
+                            GLsizei propCount,
+                            const GLenum* IGL_NULLABLE props,
+                            GLsizei bufSize,
+                            GLsizei* IGL_NULLABLE length,
+                            GLint* IGL_NULLABLE params);
   void getProgramResourceName(GLuint program,
                               GLenum programInterface,
                               GLuint index,
@@ -659,6 +667,8 @@ class IContext {
   mutable std::unordered_map<GLuint, std::unordered_map<GLuint, std::string>> programUbosByIndex_;
   mutable std::unordered_map<GLuint, std::unordered_map<GLint, std::string>> programUbosByLocation_;
   mutable std::unordered_map<GLuint, std::unordered_map<GLuint, std::string>> programSsbosByIndex_;
+  mutable std::unordered_map<GLuint, std::unordered_map<GLint, std::string>>
+      programSsbosByLocation_;
   std::array<GLuint, 32> boundSsbos_{};
   std::array<GLuint, 32> boundUbos_{};
   void addProgramUniform(GLuint program, GLsizei* length, GLenum* type, GLchar* name) const;

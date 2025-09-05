@@ -103,6 +103,9 @@
 #ifndef GL_BUFFER
 #define GL_BUFFER 0x82e0
 #endif
+#ifndef GL_BUFFER_BINDING
+#define GL_BUFFER_BINDING 0x9302
+#endif
 #ifndef GL_BUFFER_OBJECT_EXT
 #define GL_BUFFER_OBJECT_EXT 0x9151
 #endif

@@ -286,10 +286,14 @@ void RenderPipelineReflection::generateShaderStorageBufferObjectDictionary(ICont
       GLsizei length = 0;
       context.getProgramResourceName(
           pid, GL_SHADER_STORAGE_BLOCK, i, maxSSBONameLength, &length, cname.data());
-      const GLint location =
-          context.getProgramResourceIndex(pid, GL_SHADER_STORAGE_BLOCK, cname.data());
-
       auto name = std::string(cname.data(), cname.data() + length);
+      const GLuint index =
+          context.getProgramResourceIndex(pid, GL_SHADER_STORAGE_BLOCK, cname.data());
+      GLint location{-1};
+      const GLenum prop = GL_BUFFER_BINDING;
+      context.getProgramResourceiv(
+          pid, GL_SHADER_STORAGE_BLOCK, index, 1, &prop, 1, &length, &location);
+
       shaderStorageBufferObjectDictionary_.insert(
           std::make_pair(igl::genNameHandle(name), location));
     }

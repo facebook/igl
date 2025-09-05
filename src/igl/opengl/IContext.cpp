@@ -174,6 +174,7 @@ std::string GLenumToString(GLenum code) {
     RESULT_CASE(GL_BLEND_SRC_RGB)
     RESULT_CASE(GL_BLUE)
     RESULT_CASE(GL_BUFFER)
+    RESULT_CASE(GL_BUFFER_BINDING)
     RESULT_CASE(GL_BUFFER_OBJECT_EXT)
     RESULT_CASE(GL_BUFFER_SIZE)
     RESULT_CASE(GL_BUFFER_USAGE)
@@ -1396,16 +1397,16 @@ std::string IContext::boundUniformTexture(GLuint program, GLint location, GLint 
 
 std::string IContext::boundBufferName(GLuint program, GLenum target, GLuint index) const {
   if (target == GL_SHADER_STORAGE_BUFFER) {
-    const auto programSsbosByIndexIt = programSsbosByIndex_.find(program);
-    if (programSsbosByIndexIt == programSsbosByIndex_.end()) {
+    const auto programSsbosByLocationIt = programSsbosByLocation_.find(program);
+    if (programSsbosByLocationIt == programSsbosByLocation_.end()) {
       return {};
     }
-    const auto it = programSsbosByIndexIt->second.find(index);
-    if (it == programSsbosByIndexIt->second.end()) {
+    const auto it = programSsbosByLocationIt->second.find(index);
+    if (it == programSsbosByLocationIt->second.end()) {
       return {};
     }
     std::stringstream ss;
-    ss << "(uniform: " << it->second << ")";
+    ss << "(ssbo: " << it->second << ")";
     return ss.str();
   }
   if (target == GL_UNIFORM_BUFFER) {
@@ -1418,7 +1419,7 @@ std::string IContext::boundBufferName(GLuint program, GLenum target, GLuint inde
       return {};
     }
     std::stringstream ss;
-    ss << "(uniform: " << it->second << ")";
+    ss << "(ubo: " << it->second << ")";
     return ss.str();
   }
   return {};
@@ -2097,6 +2098,7 @@ GLuint IContext::createProgram() {
   programUniforms_[ret] = {};
   programUniformsByLocation_[ret] = {};
   programSsbosByIndex_[ret] = {};
+  programSsbosByLocation_[ret] = {};
   programUbosByIndex_[ret] = {};
   programUbosByLocation_[ret] = {};
 #endif
@@ -3121,6 +3123,41 @@ GLuint IContext::getProgramResourceIndex(GLuint program,
 #endif
 
   return ret;
+}
+
+void IContext::getProgramResourceiv(GLuint program,
+                                    GLenum programInterface,
+                                    GLuint index,
+                                    GLsizei propCount,
+                                    const GLenum* IGL_NULLABLE props,
+                                    GLsizei bufSize,
+                                    GLsizei* IGL_NULLABLE length,
+                                    GLint* IGL_NULLABLE params) {
+  IGLCALL(GetProgramResourceiv)
+  (program, programInterface, index, propCount, props, bufSize, length, params);
+  // NOTE: Must log after call due to return value
+  APILOG("glGetProgramResourceiv(%u, %s, %u, %u, %p [%s], %u, %p, %p) = (%u, %d) (program: %u)\n",
+         program,
+         GL_ENUM_TO_STRING(programInterface),
+         index,
+         propCount,
+         props,
+         GL_ENUM_TO_STRING(props == nullptr ? 0 : *props),
+         bufSize,
+         length,
+         params,
+         length == nullptr ? 0 : *length,
+         params == nullptr ? 0 : *params,
+         program);
+  GLCHECK_ERRORS();
+
+#if IGL_API_LOG
+  if (programInterface == GL_SHADER_STORAGE_BLOCK && propCount > 0 && props != nullptr &&
+      *props == GL_BUFFER_BINDING) {
+    programSsbosByLocation_[program][params == nullptr ? 0 : *params] =
+        programSsbosByIndex_[program][index];
+  }
+#endif
 }
 
 void IContext::getProgramResourceName(GLuint program,
