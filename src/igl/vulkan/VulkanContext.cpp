@@ -78,7 +78,7 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
 
   const bool isError = (msgSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0;
 
-  igl::vulkan::VulkanContext* ctx = static_cast<igl::vulkan::VulkanContext*>(userData);
+  auto* ctx = static_cast<igl::vulkan::VulkanContext*>(userData);
 
 #if IGL_LOGGING_ENABLED
   std::array<char, 128> errorName = {};
