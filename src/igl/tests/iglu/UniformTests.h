@@ -7,11 +7,10 @@
 
 #pragma once
 
-#include "../util/Common.h"
-
 #include <IGLU/uniform/Descriptor.h>
 #include <gtest/gtest.h>
 #include <string>
+#include <igl/Shader.h>
 
 namespace iglu::tests {
 
