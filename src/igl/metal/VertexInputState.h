@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <Metal/Metal.h>
+#import <Metal/MTLVertexDescriptor.h>
 #include <igl/VertexInputState.h>
 
 namespace igl::metal {
