@@ -692,11 +692,13 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
 
   bindBuffer();
 
+  int targetCount = 0;
   for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
     const auto& colorAttachment = renderTarget_.colorAttachments[i];
     if (!colorAttachment.texture) {
       continue;
     }
+    targetCount++;
 #if !IGL_OPENGL_ES
     // OpenGL ES doesn't need to call glEnable. All it needs is an sRGB framebuffer.
     if (getContext().deviceFeatures().hasFeature(DeviceFeatures::SRGB)) {
@@ -745,7 +747,8 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
   }
   // clear the buffers if we're not loading previous contents
   GLbitfield clearMask = 0;
-  if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::ClearBufferfv)) {
+  if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::ClearBufferfv) &&
+      targetCount > 1) {
     for (size_t index = 0; index != IGL_COLOR_ATTACHMENTS_MAX; index++) {
       const auto& colorAttachment = renderTarget_.colorAttachments[index];
 
