@@ -8,7 +8,9 @@
 // @fb-only
 // @fb-only
 
-#include <Cocoa/Cocoa.h>
+#import <AppKit/NSOpenGL.h>
+#import <AppKit/NSView.h> // IWYU pragma: keep
+#import <Foundation/NSGeometry.h>
 
 #include <CoreVideo/CVOpenGLTextureCache.h>
 #include <CoreVideo/CoreVideo.h>
