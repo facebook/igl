@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/platform/linux/PlatformLinux.h>
 
 #include <shell/shared/fileLoader/linux/FileLoaderLinux.h>
+#include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/imageWriter/linux/ImageWriterLinux.h>
 
 namespace igl::shell {
