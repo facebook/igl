@@ -43,10 +43,6 @@
 #include <shell/shared/renderSession/RenderSessionConfig.h>
 #include <igl/DeviceFeatures.h>
 
-// @fb-only
-// @fb-only
-// @fb-only
-
 @interface ViewController () <TouchDelegate, ViewSizeChangeDelegate, IglSurfaceTexturesProvider> {
   igl::shell::RenderSessionConfig config_;
   CALayer* layer_;
@@ -235,9 +231,6 @@
 
 - (void)viewWillAppear:(BOOL)animated {
   [super viewWillAppear:animated];
-// @fb-only
-  // @fb-only
-// @fb-only
   if (config_.backendVersion.flavor != igl::BackendFlavor::Metal) {
     IGL_DEBUG_ASSERT(renderSessionController_);
     [renderSessionController_ start];
@@ -246,9 +239,6 @@
 
 - (void)viewWillDisappear:(BOOL)animated {
   [super viewWillDisappear:animated];
-// @fb-only
-  // @fb-only
-// @fb-only
 
   if (config_.backendVersion.flavor != igl::BackendFlavor::Metal) {
     IGL_DEBUG_ASSERT(renderSessionController_);
