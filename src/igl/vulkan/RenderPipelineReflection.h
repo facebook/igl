@@ -9,7 +9,6 @@
 
 #include <unordered_map>
 #include <igl/RenderPipelineReflection.h>
-#include <igl/vulkan/ShaderModule.h>
 
 namespace igl::vulkan {
 
