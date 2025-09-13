@@ -10,6 +10,7 @@
 
 #include <gtest/gtest.h>
 #include <igl/Device.h>
+#include <igl/RenderPipelineState.h>
 #include <igl/VertexInputState.h>
 #include <igl/opengl/RenderPipelineReflection.h>
 
