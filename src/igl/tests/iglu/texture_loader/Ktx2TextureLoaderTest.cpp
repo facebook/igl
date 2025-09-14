@@ -81,7 +81,7 @@ uint32_t getTotalDataSize(uint32_t vkFormat,
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void putDfd(std::vector<uint8_t>& buffer, uint32_t vkFormat, uint32_t numMipLevels) {
-  const uint32_t dfdMetadataffset = kHeaderSize + numMipLevels * kMipmapMetadataSize;
+  const uint32_t dfdMetadataOffset = kHeaderSize + numMipLevels * kMipmapMetadataSize;
 
   // NOLINTNEXTLINE(readability-identifier-naming)
   constexpr uint32_t VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG = 1000054000u;
@@ -123,35 +123,35 @@ void putDfd(std::vector<uint8_t>& buffer, uint32_t vkFormat, uint32_t numMipLeve
   const uint32_t sampleLower = 0;
   const uint32_t sampleUpper = std::numeric_limits<uint32_t>::max();
 
-  put(buffer, kOffsetDfdByteOffset, dfdMetadataffset);
+  put(buffer, kOffsetDfdByteOffset, dfdMetadataOffset);
   put(buffer, kOffsetDfdByteLength, kDfdMetadataSize - 4);
 
-  put(buffer, dfdMetadataffset, kDfdMetadataSize - 4); // Total length
+  put(buffer, dfdMetadataOffset, kDfdMetadataSize - 4); // Total length
 
-  put(buffer, dfdMetadataffset + 4u, vendorId);
-  put(buffer, dfdMetadataffset + 6u, descriptorType);
-  put(buffer, dfdMetadataffset + 8u, version);
-  put(buffer, dfdMetadataffset + 10u, descriptorBlockSize);
-  put(buffer, dfdMetadataffset + 12u, colorModel);
-  put(buffer, dfdMetadataffset + 13u, colorPrimaries);
-  put(buffer, dfdMetadataffset + 14u, transferFunction);
-  put(buffer, dfdMetadataffset + 15u, flags);
-  put(buffer, dfdMetadataffset + 16u, texelBlockDimension0);
-  put(buffer, dfdMetadataffset + 17u, texelBlockDimension1);
-  put(buffer, dfdMetadataffset + 18u, texelBlockDimension2);
-  put(buffer, dfdMetadataffset + 19u, texelBlockDimension3);
-  put(buffer, dfdMetadataffset + 20u, bytesPlane3210);
-  put(buffer, dfdMetadataffset + 24u, bytesPlane7654);
+  put(buffer, dfdMetadataOffset + 4u, vendorId);
+  put(buffer, dfdMetadataOffset + 6u, descriptorType);
+  put(buffer, dfdMetadataOffset + 8u, version);
+  put(buffer, dfdMetadataOffset + 10u, descriptorBlockSize);
+  put(buffer, dfdMetadataOffset + 12u, colorModel);
+  put(buffer, dfdMetadataOffset + 13u, colorPrimaries);
+  put(buffer, dfdMetadataOffset + 14u, transferFunction);
+  put(buffer, dfdMetadataOffset + 15u, flags);
+  put(buffer, dfdMetadataOffset + 16u, texelBlockDimension0);
+  put(buffer, dfdMetadataOffset + 17u, texelBlockDimension1);
+  put(buffer, dfdMetadataOffset + 18u, texelBlockDimension2);
+  put(buffer, dfdMetadataOffset + 19u, texelBlockDimension3);
+  put(buffer, dfdMetadataOffset + 20u, bytesPlane3210);
+  put(buffer, dfdMetadataOffset + 24u, bytesPlane7654);
 
-  put(buffer, dfdMetadataffset + 28u, bitOffset);
-  put(buffer, dfdMetadataffset + 30u, bitLength);
-  put(buffer, dfdMetadataffset + 31u, channelFlags);
-  put(buffer, dfdMetadataffset + 32u, samplePosition0);
-  put(buffer, dfdMetadataffset + 33u, samplePosition1);
-  put(buffer, dfdMetadataffset + 34u, samplePosition2);
-  put(buffer, dfdMetadataffset + 35u, samplePosition3);
-  put(buffer, dfdMetadataffset + 36u, sampleLower);
-  put(buffer, dfdMetadataffset + 40u, sampleUpper);
+  put(buffer, dfdMetadataOffset + 28u, bitOffset);
+  put(buffer, dfdMetadataOffset + 30u, bitLength);
+  put(buffer, dfdMetadataOffset + 31u, channelFlags);
+  put(buffer, dfdMetadataOffset + 32u, samplePosition0);
+  put(buffer, dfdMetadataOffset + 33u, samplePosition1);
+  put(buffer, dfdMetadataOffset + 34u, samplePosition2);
+  put(buffer, dfdMetadataOffset + 35u, samplePosition3);
+  put(buffer, dfdMetadataOffset + 36u, sampleLower);
+  put(buffer, dfdMetadataOffset + 40u, sampleUpper);
 }
 
 void putMipLevel(std::vector<uint8_t>& buffer, uint32_t mipLevel, uint32_t imageSize) {
