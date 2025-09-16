@@ -8,7 +8,7 @@
 #pragma once
 
 #include <cstdarg>
-#include <igl/Common.h>
+#include <igl/Core.h>
 
 // At startup, install an Android-specific log handler, so logging shows up in `adb logcat`:
 // ```
