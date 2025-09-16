@@ -40,6 +40,11 @@ constexpr uint32_t kOffsetNumberOfMipmapLevels = 56u;
 constexpr uint32_t kOffsetBytesOfKeyValueData = 60u;
 constexpr uint32_t kOffsetImages = 64u;
 
+// NOLINTBEGIN(readability-identifier-naming)
+constexpr uint32_t GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG = 0x8C03;
+constexpr uint32_t GL_COMPRESSED_RGB8_ETC2 = 0x9274;
+// NOLINTEND(readability-identifier-naming)
+
 void putMipLevel(std::vector<uint8_t>& buffer, uint32_t mipLevel, uint32_t imageSize) {
   const auto* header = reinterpret_cast<const iglu::textureloader::ktx1::Header*>(buffer.data());
 
@@ -129,7 +134,7 @@ TEST_F(Ktx1TextureLoaderTest, MinimumValidHeader_Succeeds) {
   const uint32_t numMipLevels = 1u;
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 512u;
-  const uint32_t glFormat = 0x8C03; /* GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG */
+  const uint32_t glFormat = GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
   auto buffer = getBuffer(kHeaderSize + imageSize + 4u * numMipLevels /* for imageSize */);
   populateMinimalValidFile(
       buffer, glFormat, width, height, numMipLevels, bytesOfKeyValueData, imageSize);
@@ -147,7 +152,7 @@ TEST_F(Ktx1TextureLoaderTest, HeaderWithMipLevels_Succeeds) {
   const uint32_t height = 32u;
   const uint32_t numMipLevels = 5u;
   const uint32_t bytesOfKeyValueData = 0u;
-  const uint32_t glFormat = 0x8C03; /* GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG */
+  const uint32_t glFormat = GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
   const uint32_t imageSize = 512u; // For first mip level
   // size:  512 + 128 + 32 + 32 + 32 + 32 - 64x32, 32x16, 16x8, 8x4, 4x2, 2x1, 1x1
   auto buffer = getBuffer(kHeaderSize + 512u + 128u + 32u + 32u + 32u + 32u + 4u * numMipLevels);
@@ -174,7 +179,7 @@ TEST_F(Ktx1TextureLoaderTest, ValidHeaderWithExtraData_Succeeds) {
   const uint32_t numMipLevels = 1u;
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 512u;
-  const uint32_t glFormat = 0x8C03; /* GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG */
+  const uint32_t glFormat = GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
   auto buffer = getBuffer(kHeaderSize + imageSize + 1u + 4u * numMipLevels);
   populateMinimalValidFile(
       buffer, glFormat, width, height, numMipLevels, bytesOfKeyValueData, imageSize);
@@ -193,7 +198,7 @@ TEST_F(Ktx1TextureLoaderTest, InsufficientData_Fails) {
   const uint32_t numMipLevels = 1u;
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 512u;
-  const uint32_t glFormat = 0x8C03; /* GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG */
+  const uint32_t glFormat = GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
 
   auto buffer = getBuffer(kHeaderSize + imageSize + 4u * numMipLevels - 1u);
   populateMinimalValidFile(
@@ -212,7 +217,7 @@ TEST_F(Ktx1TextureLoaderTest, InsufficientDataWithMipLevels_Fails) {
   const uint32_t height = 32u;
   const uint32_t numMipLevels = 6u;
   const uint32_t bytesOfKeyValueData = 0u;
-  const uint32_t glFormat = 0x8C03; /* GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG */
+  const uint32_t glFormat = GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
   const uint32_t imageSize = 512; // For first mip level
   // size:  512 + 128 + 32 + 32 + 32 + 32 - 64x32, 32x16, 16x8, 8x4, 4x2, 2x1, 1x1
   auto buffer =
@@ -241,7 +246,7 @@ TEST_F(Ktx1TextureLoaderTest, ValidHeaderWithInvalidImageSize_Fails) {
   const uint32_t numMipLevels = 1u;
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 4096u;
-  const uint32_t glFormat = 0x9274; /* GL_COMPRESSED_RGB8_ETC2 */
+  const uint32_t glFormat = GL_COMPRESSED_RGB8_ETC2;
 
   auto buffer = getBuffer(kHeaderSize + imageSize + 4u * numMipLevels);
   populateMinimalValidFile(
@@ -261,7 +266,7 @@ TEST_F(Ktx1TextureLoaderTest, InvalidHeaderWithExcessiveImageSize_Fails) {
   const uint32_t numMipLevels = 1u;
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 4294967290u;
-  const uint32_t glFormat = 0x8C03; /* GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG */
+  const uint32_t glFormat = GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
 
   auto buffer = getBuffer(kHeaderSize + 4u * numMipLevels);
   populateMinimalValidFile(
@@ -281,7 +286,7 @@ TEST_F(Ktx1TextureLoaderTest, InvalidHeaderWithExcessiveMipLevels_Fails) {
   const uint32_t numMipLevels = 4294967290u;
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 512u;
-  const uint32_t glFormat = 0x8C03; /* GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG */
+  const uint32_t glFormat = GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
 
   auto buffer = getBuffer(kHeaderSize + imageSize);
   populateMinimalValidFile(
@@ -301,7 +306,7 @@ TEST_F(Ktx1TextureLoaderTest, InvalidHeaderWithExcessiveKeyValueData_Fails) {
   const uint32_t numMipLevels = 1u;
   const uint32_t bytesOfKeyValueData = 4294967290u;
   const uint32_t imageSize = 512u;
-  const uint32_t glFormat = 0x8C03; /* GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG */
+  const uint32_t glFormat = GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
 
   auto buffer = getBuffer(kHeaderSize + imageSize);
   populateMinimalValidFile(
