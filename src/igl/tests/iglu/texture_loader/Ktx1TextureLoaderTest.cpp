@@ -41,6 +41,7 @@ constexpr uint32_t kOffsetBytesOfKeyValueData = 60u;
 constexpr uint32_t kOffsetImages = 64u;
 
 // NOLINTBEGIN(readability-identifier-naming)
+constexpr uint32_t GL_RGBA8 = 0x8058;
 constexpr uint32_t GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG = 0x8C03;
 constexpr uint32_t GL_COMPRESSED_RGB8_ETC2 = 0x9274;
 // NOLINTEND(readability-identifier-naming)
@@ -320,4 +321,22 @@ TEST_F(Ktx1TextureLoaderTest, InvalidHeaderWithExcessiveKeyValueData_Fails) {
   EXPECT_FALSE(ret.isOk());
 }
 
+TEST_F(Ktx1TextureLoaderTest, MinimumValidHeader1x1Rgba8Succeeds) {
+  const uint32_t width = 1u;
+  const uint32_t height = 1u;
+  const uint32_t numMipLevels = 1u;
+  const uint32_t bytesOfKeyValueData = 0u;
+  const uint32_t imageSize = 4u;
+  const uint32_t glFormat = GL_RGBA8;
+  auto buffer = getBuffer(kHeaderSize + imageSize + 4u * numMipLevels /* for imageSize */);
+  populateMinimalValidFile(
+      buffer, glFormat, width, height, numMipLevels, bytesOfKeyValueData, imageSize);
+
+  Result ret;
+  auto reader = *iglu::textureloader::DataReader::tryCreate(
+      buffer.data(), static_cast<uint32_t>(buffer.size()), nullptr);
+  auto loader = factory_.tryCreate(reader, &ret);
+  EXPECT_NE(loader, nullptr);
+  EXPECT_TRUE(ret.isOk()) << ret.message;
+}
 } // namespace igl::tests::ktx1

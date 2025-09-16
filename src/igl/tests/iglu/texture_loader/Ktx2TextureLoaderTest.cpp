@@ -49,9 +49,11 @@ constexpr uint32_t kOffsetKvdByteOffset = 56u;
 constexpr uint32_t kOffsetKvdByteLength = 60u;
 
 constexpr uint32_t kMipmapMetadataSize = 24u;
-constexpr uint32_t kDfdMetadataSize = 48u;
+constexpr uint32_t kDfdCompressedMetadataSize = 48u;
+constexpr uint32_t kDfdUncompressedMetadataSize = 92u;
 
 // NOLINTBEGIN(readability-identifier-naming)
+constexpr uint32_t VK_FORMAT_R8G8B8A8_UNORM = 37u;
 constexpr uint32_t VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG = 1000054000u;
 constexpr uint32_t VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK = 147u;
 
@@ -62,12 +64,24 @@ constexpr uint8_t KHR_DF_TRANSFER_LINEAR = 2;
 
 constexpr uint8_t KHR_DF_PRIMARIES_BT709 = 1;
 
+constexpr uint8_t KHR_DF_MODEL_RGBSDA = 1;
 constexpr uint8_t KHR_DF_MODEL_ETC1 = 160;
 constexpr uint8_t KHR_DF_MODEL_PVRTC = 164;
+
+constexpr uint8_t KHR_DF_SAMPLE_DATATYPE_LINEAR = (1U << 4U);
+
+constexpr uint8_t KHR_DF_CHANNEL_RGBSDA_RED = 0u;
+constexpr uint8_t KHR_DF_CHANNEL_RGBSDA_GREEN = 1u;
+constexpr uint8_t KHR_DF_CHANNEL_RGBSDA_BLUE = 2u;
+constexpr uint8_t KHR_DF_CHANNEL_RGBSDA_ALPHA = 15u;
 // NOLINTEND(readability-identifier-naming)
 
-uint32_t getTotalHeaderSize(uint32_t numMipLevels, uint32_t bytesOfKeyValueData) {
-  return kHeaderSize + numMipLevels * kMipmapMetadataSize + bytesOfKeyValueData + kDfdMetadataSize;
+uint32_t getTotalHeaderSize(uint32_t vkFormat,
+                            uint32_t numMipLevels,
+                            uint32_t bytesOfKeyValueData) {
+  return kHeaderSize + numMipLevels * kMipmapMetadataSize + bytesOfKeyValueData +
+         (vkFormat == VK_FORMAT_R8G8B8A8_UNORM ? kDfdUncompressedMetadataSize
+                                               : kDfdCompressedMetadataSize);
 }
 
 uint32_t getTotalDataSize(uint32_t vkFormat,
@@ -99,7 +113,8 @@ void putDfd(std::vector<uint8_t>& buffer, uint32_t vkFormat, uint32_t numMipLeve
   const uint32_t dfdMetadataOffset = kHeaderSize + numMipLevels * kMipmapMetadataSize;
 
   ASSERT_TRUE(vkFormat == VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG ||
-              vkFormat == VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK);
+              vkFormat == VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK ||
+              vkFormat == VK_FORMAT_R8G8B8A8_UNORM);
 
   const auto format =
       igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(vkFormat));
@@ -107,35 +122,30 @@ void putDfd(std::vector<uint8_t>& buffer, uint32_t vkFormat, uint32_t numMipLeve
 
   const uint16_t descriptorType = 0;
   const uint16_t vendorId = 0;
-  const uint16_t descriptorBlockSize = 40;
+  const uint16_t descriptorBlockSize = vkFormat == VK_FORMAT_R8G8B8A8_UNORM ? 88 : 40;
   const uint16_t version = 2;
   const uint8_t flags = KHR_DF_FLAG_ALPHA_STRAIGHT;
   const uint8_t transferFunction = properties.isSRGB() ? KHR_DF_TRANSFER_SRGB
                                                        : KHR_DF_TRANSFER_LINEAR;
   const uint8_t colorPrimaries = KHR_DF_PRIMARIES_BT709;
-  const uint8_t colorModel = vkFormat == VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG ? KHR_DF_MODEL_PVRTC
-                                                                               : KHR_DF_MODEL_ETC1;
+  const uint8_t colorModel =
+      vkFormat == VK_FORMAT_R8G8B8A8_UNORM
+          ? KHR_DF_MODEL_RGBSDA
+          : (vkFormat == VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG ? KHR_DF_MODEL_PVRTC
+                                                               : KHR_DF_MODEL_ETC1);
   const uint8_t texelBlockDimension3 = 0;
   const uint8_t texelBlockDimension2 = properties.blockDepth - 1;
   const uint8_t texelBlockDimension1 = properties.blockHeight - 1;
   const uint8_t texelBlockDimension0 = properties.blockWidth - 1;
-  const uint32_t bytesPlane3210 = 8u;
+  const uint32_t bytesPlane3210 = vkFormat == VK_FORMAT_R8G8B8A8_UNORM ? 4u : 8u;
   const uint32_t bytesPlane7654 = 0;
 
-  const uint8_t channelFlags = 0;
-  const uint8_t bitLength = 63;
-  const uint16_t bitOffset = 0;
-  const uint8_t samplePosition3 = 0;
-  const uint8_t samplePosition2 = 0;
-  const uint8_t samplePosition1 = 0;
-  const uint8_t samplePosition0 = 0;
-  const uint32_t sampleLower = 0;
-  const uint32_t sampleUpper = std::numeric_limits<uint32_t>::max();
+  const uint32_t dfdMetadataSize = descriptorBlockSize + 4u;
 
   put(buffer, kOffsetDfdByteOffset, dfdMetadataOffset);
-  put(buffer, kOffsetDfdByteLength, kDfdMetadataSize - 4);
+  put(buffer, kOffsetDfdByteLength, dfdMetadataSize);
 
-  put(buffer, dfdMetadataOffset, kDfdMetadataSize - 4); // Total length
+  put(buffer, dfdMetadataOffset, dfdMetadataSize); // Total length
 
   put(buffer, dfdMetadataOffset + 4u, vendorId);
   put(buffer, dfdMetadataOffset + 6u, descriptorType);
@@ -152,18 +162,61 @@ void putDfd(std::vector<uint8_t>& buffer, uint32_t vkFormat, uint32_t numMipLeve
   put(buffer, dfdMetadataOffset + 20u, bytesPlane3210);
   put(buffer, dfdMetadataOffset + 24u, bytesPlane7654);
 
-  put(buffer, dfdMetadataOffset + 28u, bitOffset);
-  put(buffer, dfdMetadataOffset + 30u, bitLength);
-  put(buffer, dfdMetadataOffset + 31u, channelFlags);
-  put(buffer, dfdMetadataOffset + 32u, samplePosition0);
-  put(buffer, dfdMetadataOffset + 33u, samplePosition1);
-  put(buffer, dfdMetadataOffset + 34u, samplePosition2);
-  put(buffer, dfdMetadataOffset + 35u, samplePosition3);
-  put(buffer, dfdMetadataOffset + 36u, sampleLower);
-  put(buffer, dfdMetadataOffset + 40u, sampleUpper);
+  if (vkFormat == VK_FORMAT_R8G8B8A8_UNORM) {
+    constexpr std::array<uint8_t, 4> kChannelFlags = {
+        KHR_DF_CHANNEL_RGBSDA_RED,
+        KHR_DF_CHANNEL_RGBSDA_GREEN,
+        KHR_DF_CHANNEL_RGBSDA_BLUE,
+        KHR_DF_CHANNEL_RGBSDA_ALPHA | KHR_DF_SAMPLE_DATATYPE_LINEAR,
+    };
+    uint32_t offset = dfdMetadataOffset + 28u;
+    for (int i = 0; i < 4; ++i) {
+      const uint8_t channelFlags = kChannelFlags[i];
+      const uint8_t bitLength = 7;
+      const uint16_t bitOffset = 8 * i;
+      const uint8_t samplePosition3 = 0;
+      const uint8_t samplePosition2 = 0;
+      const uint8_t samplePosition1 = 0;
+      const uint8_t samplePosition0 = 0;
+      const uint32_t sampleLower = 0;
+      const uint32_t sampleUpper = std::numeric_limits<uint8_t>::max();
+      put(buffer, offset + 0u, bitOffset);
+      put(buffer, offset + 2u, bitLength);
+      put(buffer, offset + 3u, channelFlags);
+      put(buffer, offset + 4u, samplePosition0);
+      put(buffer, offset + 5u, samplePosition1);
+      put(buffer, offset + 6u, samplePosition2);
+      put(buffer, offset + 7u, samplePosition3);
+      put(buffer, offset + 8u, sampleLower);
+      put(buffer, offset + 12u, sampleUpper);
+      offset += 16u;
+    }
+  } else {
+    const uint8_t channelFlags = 0;
+    const uint8_t bitLength = 63;
+    const uint16_t bitOffset = 0;
+    const uint8_t samplePosition3 = 0;
+    const uint8_t samplePosition2 = 0;
+    const uint8_t samplePosition1 = 0;
+    const uint8_t samplePosition0 = 0;
+    const uint32_t sampleLower = 0;
+    const uint32_t sampleUpper = std::numeric_limits<uint32_t>::max();
+    put(buffer, dfdMetadataOffset + 28u, bitOffset);
+    put(buffer, dfdMetadataOffset + 30u, bitLength);
+    put(buffer, dfdMetadataOffset + 31u, channelFlags);
+    put(buffer, dfdMetadataOffset + 32u, samplePosition0);
+    put(buffer, dfdMetadataOffset + 33u, samplePosition1);
+    put(buffer, dfdMetadataOffset + 34u, samplePosition2);
+    put(buffer, dfdMetadataOffset + 35u, samplePosition3);
+    put(buffer, dfdMetadataOffset + 36u, sampleLower);
+    put(buffer, dfdMetadataOffset + 40u, sampleUpper);
+  }
 }
 
-void putMipLevel(std::vector<uint8_t>& buffer, uint32_t mipLevel, uint32_t imageSize) {
+void putMipLevel(std::vector<uint8_t>& buffer,
+                 uint32_t vkFormat,
+                 uint32_t mipLevel,
+                 uint32_t imageSize) {
   const auto* header = reinterpret_cast<const iglu::textureloader::ktx2::Header*>(buffer.data());
   const auto format =
       igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(header->vkFormat));
@@ -178,8 +231,10 @@ void putMipLevel(std::vector<uint8_t>& buffer, uint32_t mipLevel, uint32_t image
   const uint32_t mipLevelAlignment = std::lcm(static_cast<uint32_t>(properties.bytesPerBlock), 4u);
   const uint32_t mipmapMetadataLength = levelCount * kMipmapMetadataSize;
 
-  const uint32_t metadataLength = iglu::textureloader::ktx2::kHeaderLength + mipmapMetadataLength +
-                                  header->kvdByteLength + kDfdMetadataSize;
+  const uint32_t metadataLength =
+      iglu::textureloader::ktx2::kHeaderLength + mipmapMetadataLength + header->kvdByteLength +
+      (vkFormat == VK_FORMAT_R8G8B8A8_UNORM ? kDfdUncompressedMetadataSize
+                                            : kDfdCompressedMetadataSize);
 
   std::vector<uint32_t> mipmapOffsets(levelCount);
   uint32_t mipmapOffset = align(metadataLength, mipLevelAlignment);
@@ -232,7 +287,7 @@ void populateMinimalValidFile(std::vector<uint8_t>& buffer,
       bytesOfKeyValueData == 0 ? 0u : kHeaderSize + mipmapMetadataLength);
   put(buffer, kOffsetKvdByteLength, bytesOfKeyValueData);
 
-  putMipLevel(buffer, 0u, imageSize);
+  putMipLevel(buffer, vkFormat, 0u, imageSize);
 
   putDfd(buffer, vkFormat, forceDfdAfterMipLevel1 ? 1u : numMipLevels);
 }
@@ -257,7 +312,7 @@ TEST_F(Ktx2TextureLoaderTest, EmptyBuffer_Fails) {
   const uint32_t numMipLevels = 1u;
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t vkFormat = VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
-  const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
+  const uint32_t totalHeaderSize = getTotalHeaderSize(vkFormat, numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
 
   auto buffer = getBuffer(totalHeaderSize + totalDataSize);
@@ -277,7 +332,7 @@ TEST_F(Ktx2TextureLoaderTest, MinimumValidHeader_Succeeds) {
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 512u;
   const uint32_t vkFormat = VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
-  const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
+  const uint32_t totalHeaderSize = getTotalHeaderSize(vkFormat, numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
 
   auto buffer = getBuffer(totalHeaderSize + totalDataSize);
@@ -299,7 +354,7 @@ TEST_F(Ktx2TextureLoaderTest, HeaderWithMipLevels_Succeeds) {
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t vkFormat = VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
   const uint32_t imageSize = 512u; // For first mip level
-  const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
+  const uint32_t totalHeaderSize = getTotalHeaderSize(vkFormat, numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
 
   auto buffer = getBuffer(totalHeaderSize + totalDataSize);
@@ -307,10 +362,10 @@ TEST_F(Ktx2TextureLoaderTest, HeaderWithMipLevels_Succeeds) {
       buffer, vkFormat, width, height, numMipLevels, bytesOfKeyValueData, imageSize);
 
   // Fill the other mip levels
-  putMipLevel(buffer, 1u, 128u);
-  putMipLevel(buffer, 2u, 32u);
-  putMipLevel(buffer, 3u, 32u);
-  putMipLevel(buffer, 4u, 32u);
+  putMipLevel(buffer, vkFormat, 1u, 128u);
+  putMipLevel(buffer, vkFormat, 2u, 32u);
+  putMipLevel(buffer, vkFormat, 3u, 32u);
+  putMipLevel(buffer, vkFormat, 4u, 32u);
 
   Result ret;
   auto reader = *iglu::textureloader::DataReader::tryCreate(
@@ -327,7 +382,7 @@ TEST_F(Ktx2TextureLoaderTest, ValidHeaderWithExtraData_Succeeds) {
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 512u;
   const uint32_t vkFormat = VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
-  const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
+  const uint32_t totalHeaderSize = getTotalHeaderSize(vkFormat, numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
 
   auto buffer = getBuffer(totalHeaderSize + totalDataSize + 1u);
@@ -349,7 +404,7 @@ TEST_F(Ktx2TextureLoaderTest, InsufficientData_Fails) {
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 512u;
   const uint32_t vkFormat = VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
-  const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
+  const uint32_t totalHeaderSize = getTotalHeaderSize(vkFormat, numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
 
   auto buffer = getBuffer(totalHeaderSize + totalDataSize - 1u);
@@ -371,7 +426,7 @@ TEST_F(Ktx2TextureLoaderTest, InsufficientDataWithMipLevels_Fails) {
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t vkFormat = VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
   const uint32_t imageSize = 512; // For first mip level
-  const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
+  const uint32_t totalHeaderSize = getTotalHeaderSize(vkFormat, numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
 
   auto buffer = getBuffer(totalHeaderSize + totalDataSize - 1u);
@@ -379,11 +434,11 @@ TEST_F(Ktx2TextureLoaderTest, InsufficientDataWithMipLevels_Fails) {
       buffer, vkFormat, width, height, numMipLevels, bytesOfKeyValueData, imageSize);
 
   // Fill the other mip levels
-  putMipLevel(buffer, 1u, 128u);
-  putMipLevel(buffer, 2u, 32u);
-  putMipLevel(buffer, 3u, 32u);
-  putMipLevel(buffer, 4u, 32u);
-  putMipLevel(buffer, 5u, 32u);
+  putMipLevel(buffer, vkFormat, 1u, 128u);
+  putMipLevel(buffer, vkFormat, 2u, 32u);
+  putMipLevel(buffer, vkFormat, 3u, 32u);
+  putMipLevel(buffer, vkFormat, 4u, 32u);
+  putMipLevel(buffer, vkFormat, 5u, 32u);
 
   Result ret;
   auto reader = *iglu::textureloader::DataReader::tryCreate(
@@ -400,7 +455,7 @@ TEST_F(Ktx2TextureLoaderTest, ValidHeaderWithInvalidImageSize_Fails) {
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 4096u;
   const uint32_t vkFormat = VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK;
-  const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
+  const uint32_t totalHeaderSize = getTotalHeaderSize(vkFormat, numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
 
   auto buffer = getBuffer(totalHeaderSize + totalDataSize);
@@ -422,7 +477,7 @@ TEST_F(Ktx2TextureLoaderTest, InvalidHeaderWithExcessiveImageSize_Fails) {
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 4294967290u;
   const uint32_t vkFormat = VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
-  const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
+  const uint32_t totalHeaderSize = getTotalHeaderSize(vkFormat, numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
 
   auto buffer = getBuffer(totalHeaderSize + totalDataSize);
@@ -444,7 +499,7 @@ TEST_F(Ktx2TextureLoaderTest, InvalidHeaderWithExcessiveMipLevels_Fails) {
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 512u;
   const uint32_t vkFormat = VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
-  const uint32_t totalHeaderSize = getTotalHeaderSize(6u, bytesOfKeyValueData);
+  const uint32_t totalHeaderSize = getTotalHeaderSize(6u, bytesOfKeyValueData, vkFormat);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, 6u);
 
   auto buffer = getBuffer(totalHeaderSize + totalDataSize);
@@ -472,7 +527,7 @@ TEST_F(Ktx2TextureLoaderTest, InvalidHeaderWithExcessiveKeyValueData_Fails) {
   const uint32_t bytesOfKeyValueData = 4294967290u;
   const uint32_t imageSize = 512u;
   const uint32_t vkFormat = VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
-  const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
+  const uint32_t totalHeaderSize = getTotalHeaderSize(vkFormat, numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
 
   auto buffer = getBuffer(totalHeaderSize + totalDataSize);
@@ -485,6 +540,28 @@ TEST_F(Ktx2TextureLoaderTest, InvalidHeaderWithExcessiveKeyValueData_Fails) {
   auto loader = factory_.tryCreate(reader, &ret);
   EXPECT_EQ(loader, nullptr);
   EXPECT_FALSE(ret.isOk());
+}
+
+TEST_F(Ktx2TextureLoaderTest, MinimumValidHeader1x1Rgba8Succeeds) {
+  const uint32_t width = 1u;
+  const uint32_t height = 1u;
+  const uint32_t numMipLevels = 1u;
+  const uint32_t bytesOfKeyValueData = 0u;
+  const uint32_t imageSize = 4u;
+  const uint32_t vkFormat = VK_FORMAT_R8G8B8A8_UNORM;
+  const uint32_t totalHeaderSize = getTotalHeaderSize(vkFormat, numMipLevels, bytesOfKeyValueData);
+  const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
+
+  auto buffer = getBuffer(totalHeaderSize + totalDataSize);
+  populateMinimalValidFile(
+      buffer, vkFormat, width, height, numMipLevels, bytesOfKeyValueData, imageSize);
+
+  Result ret;
+  auto reader = *iglu::textureloader::DataReader::tryCreate(
+      buffer.data(), static_cast<uint32_t>(buffer.size()), nullptr);
+  auto loader = factory_.tryCreate(reader, &ret);
+  EXPECT_NE(loader, nullptr);
+  EXPECT_TRUE(ret.isOk()) << ret.message;
 }
 
 } // namespace igl::tests::ktx2
