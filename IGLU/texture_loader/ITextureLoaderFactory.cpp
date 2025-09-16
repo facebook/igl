@@ -27,7 +27,7 @@ bool ITextureLoaderFactory::canCreate(DataReader headerReader,
         outResult, igl::Result::Code::ArgumentInvalid, "Reader's data is nullptr.");
     return false;
   }
-  if (headerReader.length() < headerLength()) {
+  if (headerReader.length() < minHeaderLength()) {
     igl::Result::setResult(
         outResult, igl::Result::Code::ArgumentOutOfRange, "Not enough data for header.");
     return false;

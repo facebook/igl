@@ -20,7 +20,8 @@ class TextureLoaderFactory : public ITextureLoaderFactory {
   explicit TextureLoaderFactory(std::vector<std::unique_ptr<ITextureLoaderFactory>>&& factories);
   ~TextureLoaderFactory() override = default;
 
-  [[nodiscard]] uint32_t headerLength() const noexcept final;
+  [[nodiscard]] uint32_t minHeaderLength() const noexcept final;
+  [[nodiscard]] uint32_t maxHeaderLength() const noexcept final;
 
  protected:
   [[nodiscard]] bool canCreateInternal(DataReader headerReader,
@@ -33,7 +34,8 @@ class TextureLoaderFactory : public ITextureLoaderFactory {
 
  private:
   std::vector<std::unique_ptr<ITextureLoaderFactory>> factories_;
-  uint32_t headerLength_;
+  uint32_t minHeaderLength_;
+  uint32_t maxHeaderLength_;
 };
 
 } // namespace iglu::textureloader

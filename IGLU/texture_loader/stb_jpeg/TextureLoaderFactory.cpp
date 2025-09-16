@@ -11,7 +11,7 @@
 
 namespace iglu::textureloader::stb::jpeg {
 
-uint32_t TextureLoaderFactory::headerLength() const noexcept {
+uint32_t TextureLoaderFactory::minHeaderLength() const noexcept {
   return kHeaderLength;
 }
 

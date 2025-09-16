@@ -11,14 +11,25 @@ namespace iglu::textureloader {
 
 TextureLoaderFactory::TextureLoaderFactory(
     std::vector<std::unique_ptr<ITextureLoaderFactory>>&& factories) :
-  factories_(std::move(factories)), headerLength_(0) {
+  factories_(std::move(factories)), minHeaderLength_(0), maxHeaderLength_(0) {
+  bool first = true;
   for (const auto& factory : factories_) {
-    headerLength_ = std::max(headerLength_, factory->headerLength());
+    if (first) {
+      minHeaderLength_ = factory->minHeaderLength();
+    } else {
+      minHeaderLength_ = std::min(minHeaderLength_, factory->minHeaderLength());
+    }
+    maxHeaderLength_ = std::max(maxHeaderLength_, factory->maxHeaderLength());
+    first = false;
   }
 }
 
-uint32_t TextureLoaderFactory::headerLength() const noexcept {
-  return headerLength_;
+uint32_t TextureLoaderFactory::minHeaderLength() const noexcept {
+  return minHeaderLength_;
+}
+
+uint32_t TextureLoaderFactory::maxHeaderLength() const noexcept {
+  return maxHeaderLength_;
 }
 
 bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,

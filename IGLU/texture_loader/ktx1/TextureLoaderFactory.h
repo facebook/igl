@@ -20,7 +20,7 @@ class TextureLoaderFactory final : public ktx::TextureLoaderFactory {
  public:
   explicit TextureLoaderFactory() noexcept = default;
 
-  [[nodiscard]] uint32_t headerLength() const noexcept final;
+  [[nodiscard]] uint32_t minHeaderLength() const noexcept final;
 
  private:
   [[nodiscard]] bool canCreateInternal(DataReader headerReader,

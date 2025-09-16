@@ -13,7 +13,7 @@
 
 namespace iglu::textureloader::ktx1 {
 
-uint32_t TextureLoaderFactory::headerLength() const noexcept {
+uint32_t TextureLoaderFactory::minHeaderLength() const noexcept {
   return kHeaderLength;
 }
 

@@ -20,7 +20,7 @@ T align(T offset, T alignment) {
 }
 } // namespace
 
-uint32_t TextureLoaderFactory::headerLength() const noexcept {
+uint32_t TextureLoaderFactory::minHeaderLength() const noexcept {
   return kHeaderLength;
 }
 

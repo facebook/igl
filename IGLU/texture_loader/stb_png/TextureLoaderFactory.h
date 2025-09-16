@@ -19,7 +19,7 @@ class TextureLoaderFactory final : public image::TextureLoaderFactory {
  public:
   TextureLoaderFactory() noexcept = default;
 
-  [[nodiscard]] uint32_t headerLength() const noexcept final;
+  [[nodiscard]] uint32_t minHeaderLength() const noexcept final;
 
  private:
   [[nodiscard]] bool isIdentifierValid(DataReader headerReader) const noexcept final;
