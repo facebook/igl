@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <unordered_map>
 #include <igl/ComputePipelineState.h>
 #include <igl/NameHandle.h>
 #include <igl/opengl/GLIncludes.h>
