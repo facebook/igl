@@ -9,7 +9,6 @@
 
 #include <array>
 #include <cstdint>
-#include <igl/Texture.h>
 
 namespace iglu::textureloader::stb::jpeg {
 
