@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <igl/Common.h>
+#include <igl/Config.h>
+#include <igl/Texture.h>
 
 // clang-format off
 
