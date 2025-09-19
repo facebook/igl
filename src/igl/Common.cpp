@@ -35,41 +35,47 @@ std::string BackendTypeToString(BackendType backendType) {
   IGL_UNREACHABLE_RETURN(std::string())
 }
 
-void optimizedMemcpy(void* IGL_NULLABLE dst, const void* IGL_NULLABLE src, size_t size) {
-  // Add null check for both dst and src
-  IGL_DEBUG_ASSERT(dst != nullptr && src != nullptr, "dst and src must not be null");
-  if (!dst || !src) {
-    return;
-  }
+void optimizedMemcpy(void* dst, const void* src, size_t size) {
+    if (size == 0) {
+        return;
+    }
+    
+    // Use an assertion for a more robust check in debug builds.
+    IGL_DEBUG_ASSERT(dst != nullptr && src != nullptr, "dst and src must not be null");
+    
+    // Explicitly check for null pointers.
+    if (!dst || !src) {
+        return;
+    }
 
-  size_t optimizationCase = size;
+    // Pointers for byte-by-byte and word-by-word operations.
+    char* d_byte = static_cast<char*>(dst);
+    const char* s_byte = static_cast<const char*>(src);
 
-  // There are cases where this function is used on an array of bytes, For
-  // example, an IGL boolean array. In this case, dst or src only need to be
-  // byte aligned. The logic here checks to see if dst and src are
-  // multiples of 4. If not, then we will use the memcpy default case below
-  if ((ptrdiff_t)dst & 0x3 || (ptrdiff_t)src & 0x3) {
-    optimizationCase = 1;
-  }
+    // Copy leading unaligned bytes until destination is 8-byte aligned.
+    // The mask & 7 checks for alignment on an 8-byte boundary.
+    while (size > 0 && reinterpret_cast<uintptr_t>(d_byte) & 7) {
+        *d_byte++ = *s_byte++;
+        size--;
+    }
 
-  switch (optimizationCase) {
-  case 4:
-    *((uint32_t*)dst) = *((const uint32_t*)src);
-    break;
-  case 8:
-    *((uint64_t*)dst) = *((const uint64_t*)src);
-    break;
-  case 12:
-    *((uint64_t*)dst) = *((const uint64_t*)src);
-    *((uint32_t*)(dst) + 2) = *((const uint32_t*)(src) + 2);
-    break;
-  case 16:
-    *((uint64_t*)dst) = *((const uint64_t*)src);
-    *((uint64_t*)(dst) + 1) = *((const uint64_t*)(src) + 1);
-    break;
-  default:
-    memcpy(dst, src, size);
-  }
+    // Now, perform 8-byte copies for the main bulk of the data.
+    uint64_t* d_word = reinterpret_cast<uint64_t*>(d_byte);
+    const uint64_t* s_word = reinterpret_cast<const uint64_t*>(s_byte);
+    
+    while (size >= 8) {
+        *d_word++ = *s_word++;
+        size -= 8;
+    }
+
+    // Copy any remaining bytes.
+    d_byte = reinterpret_cast<char*>(d_word);
+    s_byte = reinterpret_cast<const char*>(s_word);
+    
+    while (size > 0) {
+        *d_byte++ = *s_byte++;
+        size--;
+    }
 }
 
 void destroy(IDevice* IGL_NULLABLE device, BindGroupTextureHandle handle) {
