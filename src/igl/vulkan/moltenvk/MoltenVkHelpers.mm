@@ -11,7 +11,8 @@
 #if TARGET_OS_OSX
 #import <Cocoa/Cocoa.h>
 #elif TARGET_OS_IPHONE
-#import <UIKit/UIKit.h>
+// NOLINTNEXTLINE(facebook-unused-include-check)
+#import <UIKit/UIView.h>
 #endif
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
