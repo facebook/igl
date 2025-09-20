@@ -25,11 +25,12 @@ namespace igl {
 #define iglCrc256(x) iglCrc64(x), iglCrc64(x + 64), iglCrc64(x + 128), iglCrc64(x + 192)
 
 #if defined(__cpp_consteval) && !defined(_MSC_VER) && !defined(__GNUC__)
+consteval uint32_t kCrcTable[256] = {iglCrc256(0)};
+
 consteval uint32_t iglCrc32ImplConstExpr(const char* p, uint32_t crc) {
-  consteval uint32_t crc_table[256] = {iglCrc256(0)};
   if (*p) {
     uint8_t v = (uint8_t)*p;
-    return iglCrc32ImplConstExpr(p + 1, (crc >> 8) ^ crc_table[(crc & 0xFF) ^ v]);
+    return iglCrc32ImplConstExpr(p + 1, (crc >> 8) ^ kCrcTable[(crc & 0xFF) ^ v]);
   }
   return crc;
 }
@@ -44,13 +45,12 @@ consteval uint32_t iglCrc32ConstExpr(const char* data) {
 }
 
 #elif defined(__cpp_constexpr) && !defined(_MSC_VER)
-
+constexpr uint32_t kCrcTable[256] = {iglCrc256(0)};
 template<int N>
 constexpr uint32_t iglCrc32ImplConstExprImpl(const char* p, uint32_t crc) {
-  constexpr uint32_t crc_table[256] = {iglCrc256(0)};
   while (*p) {
     const uint8_t v = (uint8_t)*p;
-    crc = (crc >> 8) ^ crc_table[(crc & 0xFF) ^ v];
+    crc = (crc >> 8) ^ kCrcTable[(crc & 0xFF) ^ v];
     ++p;
   }
   return crc;

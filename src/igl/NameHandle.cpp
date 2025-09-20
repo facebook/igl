@@ -12,12 +12,12 @@
 #include <string>
 
 #if !defined(__cpp_consteval) && !defined(__cpp_constexpr) || defined(_MSC_VER)
-constexpr unsigned long crc_table[256] = {iglCrc256(0)};
+constexpr unsigned long kCrcTable[256] = {iglCrc256(0)};
 namespace {
 uint32_t iglCrc32Impl(const char* p, uint32_t crc) {
   while (*p) {
     auto v = (uint8_t)*p++;
-    crc = (crc >> 8) ^ crc_table[(crc & 0xFF) ^ v];
+    crc = (crc >> 8) ^ kCrcTable[(crc & 0xFF) ^ v];
   }
   return crc;
 }
