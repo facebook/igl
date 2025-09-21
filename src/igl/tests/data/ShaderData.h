@@ -18,21 +18,21 @@ namespace igl::tests::data::shader {
 //-----------------------------------------------------------------------------
 // Defines names of inputs and functions for the shaders in this file
 //-----------------------------------------------------------------------------
-const char shaderFunc[] = "main"; // For OGL and VK
-const char simpleVertFunc[] = "vertexShader";
-const char simpleFragFunc[] = "fragmentShader";
-const char simplePos[] = "position_in";
-const size_t simplePosIndex = 0;
-const char simpleUv[] = "uv_in";
-const size_t simpleUvIndex = 1;
-const char simpleSampler[] = "inputImage";
-const char simpleCubeView[] = "view";
+constexpr char shaderFunc[] = "main"; // For OGL and VK
+constexpr char simpleVertFunc[] = "vertexShader";
+constexpr char simpleFragFunc[] = "fragmentShader";
+constexpr char simplePos[] = "position_in";
+constexpr size_t simplePosIndex = 0;
+constexpr char simpleUv[] = "uv_in";
+constexpr size_t simpleUvIndex = 1;
+constexpr char simpleSampler[] = "inputImage";
+constexpr char simpleCubeView[] = "view";
 
-const char simpleComputeFunc[] = "doubleKernel";
-const char simpleComputeInput[] = "floatsIn";
-const char simpleComputeOutput[] = "floatsOut";
-const size_t simpleComputeInputIndex = 0;
-const size_t simpleComputeOutputIndex = 1;
+constexpr char simpleComputeFunc[] = "doubleKernel";
+constexpr char simpleComputeInput[] = "floatsIn";
+constexpr char simpleComputeOutput[] = "floatsOut";
+constexpr size_t simpleComputeInputIndex = 0;
+constexpr size_t simpleComputeOutputIndex = 1;
 
 // clang-format off
 //-----------------------------------------------------------------------------
