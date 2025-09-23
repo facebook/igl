@@ -323,7 +323,6 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
   std::vector<VkBufferImageCopy> copyRegions;
   copyRegions.reserve(range.numMipLevels);
 
-  // @fb-only
   if (is420) {
     // this is a prototype support implemented for a couple of multiplanar image formats
     IGL_DEBUG_ASSERT(range.face == 0 && range.layer == 0 && range.mipLevel == 0);
