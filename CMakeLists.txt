@@ -93,7 +93,7 @@ function(igl_set_cxxstd target cpp_version)
 endfunction()
 
 # cmake-format: off
-message(STATUS "IGL_WITH_SAMPLES  = ${IGL_WITH_SAMPLES}")
+message(STATUS "IGL_WITH_SAMPLES   = ${IGL_WITH_SAMPLES}")
 
 message(STATUS "IGL_WITH_OPENGL    = ${IGL_WITH_OPENGL}")
 message(STATUS "IGL_WITH_OPENGLES  = ${IGL_WITH_OPENGLES}")
