@@ -291,7 +291,6 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
   const bool is420 = (image.imageFormat_ == VK_FORMAT_G8_B8R8_2PLANE_420_UNORM) ||
                      (image.imageFormat_ == VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
 
-  // @fb-only
   const uint32_t storageSize =
       is420 ? image.extent_.width * image.extent_.height * 3u / 2u
             : static_cast<uint32_t>(properties.getBytesPerRange(range, bytesPerRow));
