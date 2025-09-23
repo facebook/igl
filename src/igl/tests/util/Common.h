@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <igl/Device.h>
-
 #include <gtest/gtest.h>
+#include <string_view>
+#include <igl/Device.h>
 
 #if IGL_PLATFORM_IOS || IGL_PLATFORM_MACOSX
 #include "simd/simd.h"
@@ -18,24 +18,24 @@
 #endif
 namespace igl::tests::util {
 
-const std::string BACKEND_OGL("ogl");
-const std::string BACKEND_MTL("metal");
-const std::string BACKEND_VUL("vulkan");
+constexpr std::string_view kBackendOgl("ogl");
+constexpr std::string_view kBackendMtl("metal");
+constexpr std::string_view kBackendVul("vulkan");
 
 // Creates an IGL device and a command queue
 void createDeviceAndQueue(std::shared_ptr<IDevice>& dev, std::shared_ptr<ICommandQueue>& cq);
 
 void createShaderStages(const std::shared_ptr<IDevice>& dev,
-                        const char* vertexSource,
-                        const char* vertexEntryPoint,
-                        const char* fragmentSource,
-                        const char* fragmentEntryPoint,
+                        std::string_view vertexSource,
+                        std::string_view vertexEntryPoint,
+                        std::string_view fragmentSource,
+                        std::string_view fragmentEntryPoint,
                         std::unique_ptr<IShaderStages>& stages);
 
 void createShaderStages(const std::shared_ptr<IDevice>& dev,
-                        const char* librarySource,
-                        const char* vertexEntryPoint,
-                        const char* fragmentEntryPoint,
+                        std::string_view librarySource,
+                        std::string_view vertexEntryPoint,
+                        std::string_view fragmentEntryPoint,
                         std::unique_ptr<IShaderStages>& stages);
 
 void createSimpleShaderStages(const std::shared_ptr<IDevice>& dev,

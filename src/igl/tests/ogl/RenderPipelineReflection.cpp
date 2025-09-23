@@ -54,8 +54,8 @@ class RenderPipelineReflectionTest : public ::testing::Test {
 
     inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
     inputDesc.attributes[0].offset = 0;
-    inputDesc.attributes[0].bufferIndex = data::shader::simplePosIndex;
-    inputDesc.attributes[0].name = data::shader::simplePos;
+    inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
+    inputDesc.attributes[0].name = data::shader::kSimplePos;
     inputDesc.attributes[0].location = 0;
     inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
@@ -68,9 +68,9 @@ class RenderPipelineReflectionTest : public ::testing::Test {
 
     std::unique_ptr<IShaderStages> stages;
     util::createShaderStages(iglDev_,
-                             data::shader::OGL_SIMPLE_VERT_SHADER_CUBE,
+                             data::shader::kOglSimpleVertShaderCube,
                              "vertexShader",
-                             data::shader::OGL_SIMPLE_FRAG_SHADER_CUBE,
+                             data::shader::kOglSimpleFragShaderCube,
                              "fragmentShader",
                              stages);
     ASSERT_TRUE(stages != nullptr);
@@ -111,12 +111,12 @@ class RenderPipelineReflectionTest : public ::testing::Test {
 };
 
 TEST_F(RenderPipelineReflectionTest, GetIndexByName) {
-  auto index = pipeRef_->getIndexByName(igl::genNameHandle(data::shader::simpleCubeView));
+  auto index = pipeRef_->getIndexByName(IGL_NAMEHANDLE(data::shader::kSimpleCubeView));
   ASSERT_TRUE(index >= 0);
 }
 
 TEST_F(RenderPipelineReflectionTest, GetNonexistentIndexByName) {
-  auto index = pipeRef_->getIndexByName(igl::genNameHandle("ZYA"));
+  auto index = pipeRef_->getIndexByName(IGL_NAMEHANDLE("ZYA"));
   ASSERT_EQ(index, -1);
 }
 
@@ -132,7 +132,7 @@ TEST_F(RenderPipelineReflectionTest, VerifyBuffers) {
   for (const auto& buffer : buffers) {
     ASSERT_EQ(buffer.shaderStage,
               ShaderStage::Fragment); // all uniforms are set to Fragment stage in OpenGL
-    EXPECT_TRUE(buffer.name.toString() == data::shader::simpleCubeView);
+    EXPECT_TRUE(buffer.name.toString() == data::shader::kSimpleCubeView);
   }
 }
 
@@ -168,9 +168,9 @@ TEST_F(RenderPipelineReflectionTest, UniformBlocks) {
   }
   std::unique_ptr<IShaderStages> stages;
   util::createShaderStages(iglDev_,
-                           data::shader::OGL_SIMPLE_VERT_SHADER_UNIFORM_BLOCKS,
+                           data::shader::kOglSimpleVertShaderUniformBlocks,
                            "vertexShader",
-                           data::shader::OGL_SIMPLE_FRAG_SHADER_UNIFORM_BLOCKS,
+                           data::shader::kOglSimpleFragShaderUniformBlocks,
                            "fragmentShader",
                            stages);
   ASSERT_TRUE(stages != nullptr);
@@ -195,8 +195,8 @@ TEST_F(RenderPipelineReflectionTest, UniformBlocks) {
       pipelineState->renderPipelineReflection().get());
   ASSERT_TRUE(pipeRef != nullptr);
 
-  ASSERT_TRUE(pipeRef->getIndexByName(igl::genNameHandle("block_without_instance_name")) >= 0);
-  ASSERT_TRUE(pipeRef->getIndexByName(igl::genNameHandle("block_with_instance_name")) >= 0);
+  ASSERT_TRUE(pipeRef->getIndexByName(IGL_NAMEHANDLE("block_without_instance_name")) >= 0);
+  ASSERT_TRUE(pipeRef->getIndexByName(IGL_NAMEHANDLE("block_with_instance_name")) >= 0);
   ASSERT_EQ(pipeRef->allSamplers().size(), 1);
   ASSERT_EQ(pipeRef->allTextures().size(), 1);
 

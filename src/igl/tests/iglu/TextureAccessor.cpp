@@ -52,7 +52,7 @@ class TextureAccessorTest : public ::testing::Test {
     textureSizeInBytes_ = texture_->getProperties().getBytesPerRange(texture_->getFullRange());
     const auto range =
         igl::TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
-    texture_->upload(range, data::texture::TEX_RGBA_2x2);
+    texture_->upload(range, data::texture::kTexRgba2x2.data());
   }
 
   void TearDown() override {}
@@ -84,7 +84,7 @@ TEST_F(TextureAccessorTest, testRequestAndGetBytesSync) {
 
   // Update texture data
   const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
-  texture_->upload(rangeDesc, data::texture::TEX_RGBA_2x2);
+  texture_->upload(rangeDesc, data::texture::kTexRgba2x2.data());
 
   auto bytes = textureAccessor_->requestAndGetBytesSync(*cmdQueue_);
   // Verify requestStatus after
@@ -95,7 +95,7 @@ TEST_F(TextureAccessorTest, testRequestAndGetBytesSync) {
   // Verify data
   auto* pixels = reinterpret_cast<uint32_t*>(bytes.data());
   for (int i = 0; (i < textureSizeInBytes_ / 4); i++) {
-    ASSERT_EQ(pixels[i], data::texture::TEX_RGBA_2x2[i]);
+    ASSERT_EQ(pixels[i], data::texture::kTexRgba2x2[i]);
   }
 }
 
@@ -113,7 +113,7 @@ TEST_F(TextureAccessorTest, reuseTextureAccessor) {
   {
     // Update texture data
     const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
-    texture_->upload(rangeDesc, data::texture::TEX_RGBA_2x2);
+    texture_->upload(rangeDesc, data::texture::kTexRgba2x2.data());
 
     auto bytes = textureAccessor_->requestAndGetBytesSync(*cmdQueue_);
     // Verify requestStatus after
@@ -124,7 +124,7 @@ TEST_F(TextureAccessorTest, reuseTextureAccessor) {
     // Verify data
     auto* pixels = reinterpret_cast<uint32_t*>(bytes.data());
     for (int i = 0; (i < textureSizeInBytes_ / 4); i++) {
-      ASSERT_EQ(pixels[i], data::texture::TEX_RGBA_2x2[i]);
+      ASSERT_EQ(pixels[i], data::texture::kTexRgba2x2[i]);
     }
   }
 
@@ -132,7 +132,7 @@ TEST_F(TextureAccessorTest, reuseTextureAccessor) {
   {
     // Update texture data
     const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
-    texture_->upload(rangeDesc, data::texture::TEX_RGBA_GRAY_2x2);
+    texture_->upload(rangeDesc, data::texture::kTexRgbaGray2x2.data());
 
     auto bytes = textureAccessor_->requestAndGetBytesSync(*cmdQueue_);
     // Verify requestStatus after
@@ -143,7 +143,7 @@ TEST_F(TextureAccessorTest, reuseTextureAccessor) {
     // Verify data
     auto* pixels = reinterpret_cast<uint32_t*>(bytes.data());
     for (int i = 0; (i < textureSizeInBytes_ / 4); i++) {
-      ASSERT_EQ(pixels[i], data::texture::TEX_RGBA_GRAY_2x2[i]);
+      ASSERT_EQ(pixels[i], data::texture::kTexRgbaGray2x2[i]);
     }
   }
 }

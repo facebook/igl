@@ -7,26 +7,27 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint> // For uint16_t
 
 namespace igl::tests::data::vertex_index {
 // clang-format off
 
 // Using float 4 to alleviate packing issues
-static float QUAD_VERT[] =
-  {-1.0f,  1.0f, 0.0f, 1.0f,
-    1.0f,  1.0f, 0.0f, 1.0f,
-   -1.0f, -1.0f, 0.0f, 1.0f,
-    1.0f, -1.0f, 0.0f, 1.0f};
+constexpr std::array<float, 16> kQuadVert = {
+  -1.0f,  1.0f, 0.0f, 1.0f,
+   1.0f,  1.0f, 0.0f, 1.0f,
+  -1.0f, -1.0f, 0.0f, 1.0f,
+   1.0f, -1.0f, 0.0f, 1.0f};
 
-static float QUAD_UV[] = {
+constexpr std::array<float, 8> kQuadUv = {
     0.0, 1.0,
     1.0, 1.0,
     0.0, 0.0,
     1.0, 0.0,
 };
 
-static uint16_t QUAD_IND[] = {
+constexpr std::array<uint16_t, 6> kQuadInd = {
     0,
     1,
     2,

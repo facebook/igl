@@ -56,15 +56,15 @@ class StatePoolTest : public ::testing::Test {
     inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
     inputDesc.attributes[0].offset = 0;
     inputDesc.attributes[0].location = 0;
-    inputDesc.attributes[0].bufferIndex = data::shader::simplePosIndex;
-    inputDesc.attributes[0].name = data::shader::simplePos;
+    inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
+    inputDesc.attributes[0].name = data::shader::kSimplePos;
     inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
     inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
     inputDesc.attributes[1].offset = 0;
     inputDesc.attributes[1].location = 1;
-    inputDesc.attributes[1].bufferIndex = data::shader::simpleUvIndex;
-    inputDesc.attributes[1].name = data::shader::simpleUv;
+    inputDesc.attributes[1].bufferIndex = data::shader::kSimpleUvIndex;
+    inputDesc.attributes[1].name = data::shader::kSimpleUv;
     inputDesc.inputBindings[1].stride = sizeof(float) * 2;
 
     // numAttributes has to equal to bindings when using more than 1 buffer
@@ -80,21 +80,21 @@ class StatePoolTest : public ::testing::Test {
     renderPipelineDesc1_.shaderStages = shaderStages_;
     renderPipelineDesc1_.targetDesc.colorAttachments.resize(1);
     renderPipelineDesc1_.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
-    renderPipelineDesc1_.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE(data::shader::simpleSampler);
+    renderPipelineDesc1_.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE(data::shader::kSimpleSampler);
     renderPipelineDesc1_.cullMode = igl::CullMode::Disabled;
 
     renderPipelineDesc2_.vertexInputState = vertexInputState_;
     renderPipelineDesc2_.shaderStages = shaderStages_;
     renderPipelineDesc2_.targetDesc.colorAttachments.resize(1);
     renderPipelineDesc2_.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
-    renderPipelineDesc2_.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE(data::shader::simpleSampler);
+    renderPipelineDesc2_.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE(data::shader::kSimpleSampler);
     renderPipelineDesc2_.cullMode = igl::CullMode::Disabled;
 
     renderPipelineDesc3_.vertexInputState = vertexInputState_;
     renderPipelineDesc3_.shaderStages = shaderStages_;
     renderPipelineDesc3_.targetDesc.colorAttachments.resize(1);
     renderPipelineDesc3_.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
-    renderPipelineDesc3_.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE(data::shader::simpleSampler);
+    renderPipelineDesc3_.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE(data::shader::kSimpleSampler);
     renderPipelineDesc3_.cullMode = igl::CullMode::Disabled;
   }
 

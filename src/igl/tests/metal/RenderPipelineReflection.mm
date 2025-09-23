@@ -34,22 +34,23 @@ class RenderPipelineReflectionMTLTest : public ::testing::Test {
 
     auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
         *iglDev_,
-        data::shader::MTL_SIMPLE_SHADER,
+        data::shader::kMtlSimpleShader.data(),
         {
-            {ShaderStage::Vertex, data::shader::simpleVertFunc},
-            {ShaderStage::Fragment, data::shader::simpleFragFunc},
+            {ShaderStage::Vertex, std::string(data::shader::kSimpleVertFunc)},
+            {ShaderStage::Fragment, std::string(data::shader::kSimpleFragFunc)},
         },
         "",
         &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
     // Initialize vertex Shader
-    vertShader_ = shaderLibrary->getShaderModule(ShaderStage::Vertex, data::shader::simpleVertFunc);
+    vertShader_ = shaderLibrary->getShaderModule(ShaderStage::Vertex,
+                                                 std::string(data::shader::kSimpleVertFunc));
     ASSERT_TRUE(vertShader_ != nullptr);
 
     // Initialize Fragment Shader
-    fragShader_ =
-        shaderLibrary->getShaderModule(ShaderStage::Fragment, data::shader::simpleFragFunc);
+    fragShader_ = shaderLibrary->getShaderModule(ShaderStage::Fragment,
+                                                 std::string(data::shader::kSimpleFragFunc));
     ASSERT_TRUE(fragShader_ != nullptr);
 
     // Initialize input to vertex shader
@@ -57,15 +58,15 @@ class RenderPipelineReflectionMTLTest : public ::testing::Test {
 
     inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
     inputDesc.attributes[0].offset = 0;
-    inputDesc.attributes[0].bufferIndex = data::shader::simplePosIndex;
-    inputDesc.attributes[0].name = data::shader::simplePos;
+    inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
+    inputDesc.attributes[0].name = data::shader::kSimplePos;
     inputDesc.attributes[0].location = 0;
     inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
     inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
     inputDesc.attributes[1].offset = 0;
-    inputDesc.attributes[1].bufferIndex = data::shader::simpleUvIndex;
-    inputDesc.attributes[1].name = data::shader::simpleUv;
+    inputDesc.attributes[1].bufferIndex = data::shader::kSimpleUvIndex;
+    inputDesc.attributes[1].name = data::shader::kSimpleUv;
     inputDesc.attributes[1].location = 1;
     inputDesc.inputBindings[1].stride = sizeof(float) * 2;
 
@@ -117,7 +118,7 @@ class RenderPipelineReflectionMTLTest : public ::testing::Test {
 };
 
 TEST_F(RenderPipelineReflectionMTLTest, GetIndexByName) {
-  auto index = pipeRef_->getIndexByName(data::shader::simpleUv, ShaderStage::Vertex);
+  auto index = pipeRef_->getIndexByName(std::string(data::shader::kSimpleUv), ShaderStage::Vertex);
   ASSERT_EQ(index, 1);
 }
 
@@ -131,8 +132,8 @@ TEST_F(RenderPipelineReflectionMTLTest, VerifyBuffers) {
   ASSERT_EQ(buffers.size(), 2);
   for (const auto& buffer : buffers) {
     ASSERT_EQ(buffer.shaderStage, ShaderStage::Vertex);
-    EXPECT_TRUE(buffer.name.toString() == data::shader::simplePos ||
-                buffer.name.toString() == data::shader::simpleUv);
+    EXPECT_TRUE(buffer.name.toString() == data::shader::kSimplePos ||
+                buffer.name.toString() == data::shader::kSimpleUv);
   }
 }
 

@@ -47,9 +47,9 @@ TEST_F(ShaderLibraryTest, CreateFromSource) {
 
   const char* source = nullptr;
   if (iglDev_->getBackendType() == igl::BackendType::Metal) {
-    source = data::shader::MTL_SIMPLE_SHADER;
+    source = data::shader::kMtlSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
-    source = data::shader::VULKAN_SIMPLE_VERT_SHADER;
+    source = data::shader::kVulkanSimpleVertShader.data();
   } else {
     IGL_DEBUG_ASSERT_NOT_REACHED();
   }
@@ -91,7 +91,7 @@ TEST_F(ShaderLibraryTest, CreateFromSourceMultipleModules) {
 
   const char* source = nullptr;
   if (iglDev_->getBackendType() == igl::BackendType::Metal) {
-    source = data::shader::MTL_SIMPLE_SHADER;
+    source = data::shader::kMtlSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
     GTEST_SKIP() << "Vulkan does not support multiple modules from the same source code.";
     return;
@@ -131,9 +131,9 @@ TEST_F(ShaderLibraryTest, CreateFromSourceNoResult) {
 
   const char* source = nullptr;
   if (iglDev_->getBackendType() == igl::BackendType::Metal) {
-    source = data::shader::MTL_SIMPLE_SHADER;
+    source = data::shader::kMtlSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
-    source = data::shader::VULKAN_SIMPLE_VERT_SHADER;
+    source = data::shader::kVulkanSimpleVertShader.data();
   } else {
     IGL_DEBUG_ASSERT_NOT_REACHED();
   }

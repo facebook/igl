@@ -436,15 +436,15 @@ class UniformBufferTest : public ::testing::Test {
 
     inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
     inputDesc.attributes[0].offset = 0;
-    inputDesc.attributes[0].bufferIndex = data::shader::simplePosIndex;
-    inputDesc.attributes[0].name = data::shader::simplePos;
+    inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
+    inputDesc.attributes[0].name = data::shader::kSimplePos;
     inputDesc.attributes[0].location = 0;
     inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
     inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
     inputDesc.attributes[1].offset = 0;
-    inputDesc.attributes[1].bufferIndex = data::shader::simpleUvIndex;
-    inputDesc.attributes[1].name = data::shader::simpleUv;
+    inputDesc.attributes[1].bufferIndex = data::shader::kSimpleUvIndex;
+    inputDesc.attributes[1].name = data::shader::kSimpleUv;
     inputDesc.attributes[1].location = 1;
     inputDesc.inputBindings[1].stride = sizeof(float) * 2;
 
@@ -459,8 +459,8 @@ class UniformBufferTest : public ::testing::Test {
     BufferDesc bufDesc;
 
     bufDesc.type = BufferDesc::BufferTypeBits::Index;
-    bufDesc.data = data::vertex_index::QUAD_IND;
-    bufDesc.length = sizeof(data::vertex_index::QUAD_IND);
+    bufDesc.data = data::vertex_index::kQuadInd.data();
+    bufDesc.length = sizeof(data::vertex_index::kQuadInd);
 
     ib_ = iglDev_->createBuffer(bufDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -468,16 +468,16 @@ class UniformBufferTest : public ::testing::Test {
 
     // Initialize vertex and sampler buffers
     bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
-    bufDesc.data = data::vertex_index::QUAD_VERT;
-    bufDesc.length = sizeof(data::vertex_index::QUAD_VERT);
+    bufDesc.data = data::vertex_index::kQuadVert.data();
+    bufDesc.length = sizeof(data::vertex_index::kQuadVert);
 
     vb_ = iglDev_->createBuffer(bufDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(vb_ != nullptr);
 
     bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
-    bufDesc.data = data::vertex_index::QUAD_UV;
-    bufDesc.length = sizeof(data::vertex_index::QUAD_UV);
+    bufDesc.data = data::vertex_index::kQuadUv.data();
+    bufDesc.length = sizeof(data::vertex_index::kQuadUv);
 
     uv_ = iglDev_->createBuffer(bufDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -496,7 +496,7 @@ class UniformBufferTest : public ::testing::Test {
     renderPipelineDesc_.targetDesc.colorAttachments[0].textureFormat =
         offscreenTexture_->getFormat();
     renderPipelineDesc_.fragmentUnitSamplerMap[textureUnit_] =
-        IGL_NAMEHANDLE(data::shader::simpleSampler);
+        IGL_NAMEHANDLE(data::shader::kSimpleSampler);
     renderPipelineDesc_.cullMode = igl::CullMode::Disabled;
   }
 
@@ -566,7 +566,7 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
   //-------------------------------------
   // Upload the texture
   //-------------------------------------
-  inputTexture_->upload(rangeDesc, data::texture::TEX_RGBA_MISC1_4x4);
+  inputTexture_->upload(rangeDesc, data::texture::kTexRgbaMisc1_4x4.data());
 
   //----------------
   // Create Shaders
@@ -574,10 +574,10 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
   // Initialize shader stages
   std::unique_ptr<IShaderStages> stages;
   igl::tests::util::createShaderStages(iglDev_,
-                                       data::shader::OGL_SIMPLE_VERT_SHADER,
-                                       data::shader::simpleVertFunc,
+                                       data::shader::kOglSimpleVertShader,
+                                       data::shader::kSimpleVertFunc,
                                        kOglUniformBufferFragShader,
-                                       data::shader::simpleFragFunc,
+                                       data::shader::kSimpleFragFunc,
                                        stages);
   shaderStages_ = std::move(stages);
 
@@ -607,7 +607,7 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
   // "testFloat"
   fragmentUniformDescriptors.emplace_back();
   fragmentUniformDescriptors.back().location =
-      pipelineState->getIndexByName(igl::genNameHandle("testFloat"), igl::ShaderStage::Fragment);
+      pipelineState->getIndexByName(IGL_NAMEHANDLE("testFloat"), igl::ShaderStage::Fragment);
   fragmentUniformDescriptors.back().type = UniformType::Float;
   fragmentUniformDescriptors.back().offset = offsetof(FragmentParameters, testFloat);
   fragmentParameters.testFloat = {0.1f};
@@ -748,8 +748,8 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
 
   std::shared_ptr<IRenderCommandEncoder> cmds =
       cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+  cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -785,8 +785,8 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+  cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -814,7 +814,7 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
   //--------------------------------
   // If the uniform buffer is broken, the pixels would be 0xFF000000
   for (size_t i = 0; i < uniformTypesCount_; i++) {
-    ASSERT_EQ(pixels[i], data::texture::TEX_RGBA_MISC1_4x4[i]);
+    ASSERT_EQ(pixels[i], data::texture::kTexRgbaMisc1_4x4[i]);
   }
 
   // For the unset uniform buffers, make sure the test fails as expected
@@ -908,7 +908,7 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   //-------------------------------------
   // Upload the texture
   //-------------------------------------
-  inputTexture_->upload(rangeDesc, data::texture::TEX_RGBA_MISC1_4x4);
+  inputTexture_->upload(rangeDesc, data::texture::kTexRgbaMisc1_4x4.data());
 
   //----------------
   // Create Shaders
@@ -916,10 +916,10 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   // Initialize shader stages
   std::unique_ptr<IShaderStages> stages;
   igl::tests::util::createShaderStages(iglDev_,
-                                       data::shader::OGL_SIMPLE_VERT_SHADER,
-                                       data::shader::simpleVertFunc,
+                                       data::shader::kOglSimpleVertShader,
+                                       data::shader::kSimpleVertFunc,
                                        kOglUniformArrayFragShader,
-                                       data::shader::simpleFragFunc,
+                                       data::shader::kSimpleFragFunc,
                                        stages);
   shaderStages_ = std::move(stages);
 
@@ -1150,8 +1150,8 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
 
   std::shared_ptr<IRenderCommandEncoder> cmds =
       cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+  cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -1187,8 +1187,8 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+  cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -1216,7 +1216,7 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   //--------------------------------
   // If the uniform buffer is broken, the pixels would be 0xFF000000
   for (size_t i = 0; i < uniformTypesCount_; i++) {
-    ASSERT_EQ(pixels[i], data::texture::TEX_RGBA_MISC1_4x4[i]);
+    ASSERT_EQ(pixels[i], data::texture::kTexRgbaMisc1_4x4[i]);
   }
 
   // For the unset uniform buffers, make sure the test fails as expected

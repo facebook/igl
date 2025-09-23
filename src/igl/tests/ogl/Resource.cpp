@@ -41,15 +41,15 @@ class ResourceOGLTest : public ::testing::Test {
 
     inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
     inputDesc.attributes[0].offset = 0;
-    inputDesc.attributes[0].bufferIndex = data::shader::simplePosIndex;
-    inputDesc.attributes[0].name = data::shader::simplePos;
+    inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
+    inputDesc.attributes[0].name = data::shader::kSimplePos;
     inputDesc.attributes[0].location = 0;
     inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
     inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
     inputDesc.attributes[1].offset = 0;
-    inputDesc.attributes[1].bufferIndex = data::shader::simpleUvIndex;
-    inputDesc.attributes[1].name = data::shader::simpleUv;
+    inputDesc.attributes[1].bufferIndex = data::shader::kSimpleUvIndex;
+    inputDesc.attributes[1].name = data::shader::kSimpleUv;
     inputDesc.attributes[1].location = 1;
     inputDesc.inputBindings[1].stride = sizeof(float) * 2;
 

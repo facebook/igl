@@ -95,15 +95,15 @@ class BackendTest : public ::testing::Test {
 
     inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
     inputDesc.attributes[0].offset = 0;
-    inputDesc.attributes[0].bufferIndex = data::shader::simplePosIndex;
-    inputDesc.attributes[0].name = data::shader::simplePos;
+    inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
+    inputDesc.attributes[0].name = data::shader::kSimplePos;
     inputDesc.attributes[0].location = 0;
     inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
     inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
     inputDesc.attributes[1].offset = 0;
-    inputDesc.attributes[1].bufferIndex = data::shader::simpleUvIndex;
-    inputDesc.attributes[1].name = data::shader::simpleUv;
+    inputDesc.attributes[1].bufferIndex = data::shader::kSimpleUvIndex;
+    inputDesc.attributes[1].name = data::shader::kSimpleUv;
     inputDesc.attributes[1].location = 1;
     inputDesc.inputBindings[1].stride = sizeof(float) * 2;
 
@@ -118,8 +118,8 @@ class BackendTest : public ::testing::Test {
     BufferDesc bufDesc;
 
     bufDesc.type = BufferDesc::BufferTypeBits::Index;
-    bufDesc.data = data::vertex_index::QUAD_IND;
-    bufDesc.length = sizeof(data::vertex_index::QUAD_IND);
+    bufDesc.data = data::vertex_index::kQuadInd.data();
+    bufDesc.length = sizeof(data::vertex_index::kQuadInd);
 
     ib_ = iglDev_->createBuffer(bufDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -127,16 +127,16 @@ class BackendTest : public ::testing::Test {
 
     // Initialize vertex and sampler buffers
     bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
-    bufDesc.data = data::vertex_index::QUAD_VERT;
-    bufDesc.length = sizeof(data::vertex_index::QUAD_VERT);
+    bufDesc.data = data::vertex_index::kQuadVert.data();
+    bufDesc.length = sizeof(data::vertex_index::kQuadVert);
 
     vb_ = iglDev_->createBuffer(bufDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(vb_ != nullptr);
 
     bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
-    bufDesc.data = data::vertex_index::QUAD_UV;
-    bufDesc.length = sizeof(data::vertex_index::QUAD_UV);
+    bufDesc.data = data::vertex_index::kQuadUv.data();
+    bufDesc.length = sizeof(data::vertex_index::kQuadUv);
 
     uv_ = iglDev_->createBuffer(bufDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -156,7 +156,7 @@ class BackendTest : public ::testing::Test {
     renderPipelineDesc_.targetDesc.colorAttachments[0].textureFormat =
         offscreenTexture_->getFormat();
     renderPipelineDesc_.fragmentUnitSamplerMap[textureUnit_] =
-        IGL_NAMEHANDLE(data::shader::simpleSampler);
+        IGL_NAMEHANDLE(data::shader::kSimpleSampler);
     renderPipelineDesc_.cullMode = igl::CullMode::Disabled;
   }
 
@@ -218,7 +218,7 @@ TEST_F(BackendTest, DISABLED_CoordinateSystem) {
 
   const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
 
-  inputTexture_->upload(rangeDesc, data::texture::TEX_RGBA_2x2);
+  inputTexture_->upload(rangeDesc, data::texture::kTexRgba2x2.data());
 
   //----------------
   // Create Pipeline
@@ -248,7 +248,7 @@ TEST_F(BackendTest, DISABLED_CoordinateSystem) {
   BufferDesc bufDesc;
   bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
   bufDesc.data = zAdjustedQuad;
-  bufDesc.length = sizeof(data::vertex_index::QUAD_VERT);
+  bufDesc.length = sizeof(data::vertex_index::kQuadVert);
 
   const std::shared_ptr<IBuffer> zAdjustedVertexBuffer = iglDev_->createBuffer(bufDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -261,8 +261,8 @@ TEST_F(BackendTest, DISABLED_CoordinateSystem) {
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, *zAdjustedVertexBuffer);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+  cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *zAdjustedVertexBuffer);
+  cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -289,7 +289,7 @@ TEST_F(BackendTest, DISABLED_CoordinateSystem) {
   // Verify against original texture
   //--------------------------------
   for (size_t i = 0; i < kOffscreenTexWidth * kOffscreenTexHeight; i++) {
-    ASSERT_EQ(pixels[i], data::texture::TEX_RGBA_2x2[i]);
+    ASSERT_EQ(pixels[i], data::texture::kTexRgba2x2[i]);
   }
 }
 

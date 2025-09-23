@@ -10,6 +10,7 @@
 #include <array>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include <igl/Common.h>
@@ -75,6 +76,14 @@ constexpr uint32_t iglCrc32ConstExpr(const char* p) {
   return ~crc;
 }
 
+constexpr uint32_t iglCrc32ConstExpr(std::string_view sv) {
+  uint32_t crc = ~0u;
+  for (auto p : sv) {
+    uint8_t v = (uint8_t)p;
+    crc = (crc >> 8) ^ kCrcTable[(crc & 0xFF) ^ v];
+  }
+  return ~crc;
+}
 #endif
 
 /**
@@ -107,6 +116,8 @@ class NameHandle {
   NameHandle(NameHandle&& other) noexcept = default;
 
   NameHandle(std::string name, uint32_t crc32) : crc32_(crc32), name_(std::move(name)) {}
+  NameHandle(const char* name, uint32_t crc32) : crc32_(crc32), name_(name) {}
+  NameHandle(std::string_view name, uint32_t crc32) : crc32_(crc32), name_(name) {}
 
   /**
    * @brief Returns a null terminated character array version of the name

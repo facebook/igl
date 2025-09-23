@@ -31,13 +31,13 @@ TEST_F(TextureTest, Upload) {
 
   auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
 
-  inputTexture_->upload(rangeDesc, data::texture::TEX_RGBA_2x2);
+  inputTexture_->upload(rangeDesc, data::texture::kTexRgba2x2.data());
 
   //----------------
   // Validate data
   //----------------
   util::validateUploadedTexture(
-      *iglDev_, *cmdQueue_, inputTexture_, data::texture::TEX_RGBA_2x2, "Passthrough");
+      *iglDev_, *cmdQueue_, inputTexture_, data::texture::kTexRgba2x2.data(), "Passthrough");
 }
 
 //
@@ -63,7 +63,7 @@ TEST_F(TextureTest, Passthrough) {
 
   auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
 
-  inputTexture_->upload(rangeDesc, data::texture::TEX_RGBA_2x2);
+  inputTexture_->upload(rangeDesc, data::texture::kTexRgba2x2.data());
 
   //----------------
   // Create Pipeline
@@ -80,8 +80,8 @@ TEST_F(TextureTest, Passthrough) {
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+  cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -101,7 +101,7 @@ TEST_F(TextureTest, Passthrough) {
   // Validate output
   //----------------
   util::validateFramebufferTexture(
-      *iglDev_, *cmdQueue_, *framebuffer_, data::texture::TEX_RGBA_2x2, "Passthrough");
+      *iglDev_, *cmdQueue_, *framebuffer_, data::texture::kTexRgba2x2.data(), "Passthrough");
 }
 
 //
@@ -128,7 +128,7 @@ TEST_F(TextureTest, PassthroughSubTexture) {
 
   const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
 
-  inputTexture_->upload(rangeDesc, data::texture::TEX_RGBA_2x2);
+  inputTexture_->upload(rangeDesc, data::texture::kTexRgba2x2.data());
 
   // Upload right lower corner as a single-pixel sub-texture.
   auto singlePixelDesc =
@@ -152,8 +152,8 @@ TEST_F(TextureTest, PassthroughSubTexture) {
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+  cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -175,7 +175,7 @@ TEST_F(TextureTest, PassthroughSubTexture) {
   util::validateFramebufferTexture(*iglDev_,
                                    *cmdQueue_,
                                    *framebuffer_,
-                                   data::texture::TEX_RGBA_2x2_MODIFIED,
+                                   data::texture::kTexRgba2x2Modified.data(),
                                    "PassthroughSubTexture");
 }
 
@@ -224,8 +224,8 @@ TEST_F(TextureTest, FBCopy) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
   auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+  cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
   cmds->bindRenderPipelineState(pipelineState);
 
   // draw 0 indices here just to clear the FB
@@ -240,8 +240,11 @@ TEST_F(TextureTest, FBCopy) {
   //----------------------------------------------------------------------
   // Validate framebuffer texture
   //----------------------------------------------------------------------
-  util::validateFramebufferTexture(
-      *iglDev_, *cmdQueue_, *framebuffer_, data::texture::TEX_RGBA_GRAY_2x2, "After Initial Clear");
+  util::validateFramebufferTexture(*iglDev_,
+                                   *cmdQueue_,
+                                   *framebuffer_,
+                                   data::texture::kTexRgbaGray2x2.data(),
+                                   "After Initial Clear");
 
   //------------------------
   // Copy content to texture
@@ -257,8 +260,8 @@ TEST_F(TextureTest, FBCopy) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
   cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+  cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
   cmds->bindRenderPipelineState(pipelineState);
   cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
   cmds->drawIndexed(0);
@@ -271,8 +274,11 @@ TEST_F(TextureTest, FBCopy) {
   //-----------------------------------
   // Validate framebuffer texture again
   //-----------------------------------
-  util::validateFramebufferTexture(
-      *iglDev_, *cmdQueue_, *framebuffer_, data::texture::TEX_RGBA_CLEAR_2x2, "After Second Clear");
+  util::validateFramebufferTexture(*iglDev_,
+                                   *cmdQueue_,
+                                   *framebuffer_,
+                                   data::texture::kTexRgbaClear2x2.data(),
+                                   "After Second Clear");
 
   //---------------------------------------------
   // Copy dstTexture to FB so we can read it back
@@ -281,8 +287,8 @@ TEST_F(TextureTest, FBCopy) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
   cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+  cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -303,7 +309,7 @@ TEST_F(TextureTest, FBCopy) {
   // Read back framebuffer. Should be {0.5, 0.5, 0.5, 0.5}
   //------------------------------------------------------
   util::validateFramebufferTexture(
-      *iglDev_, *cmdQueue_, *framebuffer_, data::texture::TEX_RGBA_GRAY_2x2, "After Copy");
+      *iglDev_, *cmdQueue_, *framebuffer_, data::texture::kTexRgbaGray2x2.data(), "After Copy");
 }
 
 constexpr uint32_t kAlignedPixelsWidth = 3u;
@@ -518,8 +524,8 @@ TEST_F(TextureTest, UploadAlignment) {
     ASSERT_TRUE(cmdBuf_ != nullptr);
 
     auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, customFramebuffer);
-    cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-    cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+    cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+    cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
     cmds->bindRenderPipelineState(pipelineState);
 
@@ -614,8 +620,8 @@ TEST_F(TextureTest, Resize) {
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, fb);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+  cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -635,7 +641,7 @@ TEST_F(TextureTest, Resize) {
   // Validate output
   //----------------
   util::validateFramebufferTexture(
-      *iglDev_, *cmdQueue_, *fb, data::texture::TEX_RGBA_GRAY_5x5, "Resize");
+      *iglDev_, *cmdQueue_, *fb, data::texture::kTexRgbaGray5x5.data(), "Resize");
 }
 
 //
@@ -721,8 +727,8 @@ TEST_F(TextureTest, ResizeTextureView) {
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, fb);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+  cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -742,7 +748,7 @@ TEST_F(TextureTest, ResizeTextureView) {
   // Validate output
   //----------------
   util::validateFramebufferTexture(
-      *iglDev_, *cmdQueue_, *fb, data::texture::TEX_RGBA_GRAY_5x5, "Resize");
+      *iglDev_, *cmdQueue_, *fb, data::texture::kTexRgbaGray5x5.data(), "Resize");
 }
 
 //
