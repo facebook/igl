@@ -17,6 +17,8 @@ class TextureTarget final : public Texture {
 
  public:
   TextureTarget(IContext& context, TextureFormat format) : Super(context, format) {}
+  TextureTarget(IContext& context, TextureFormat format, bool canPresent) :
+    Super(context, format), canPresent_(canPresent) {}
   ~TextureTarget() override;
 
   // ITexture overrides
@@ -43,6 +45,8 @@ class TextureTarget final : public Texture {
   }
 
  private:
+  [[nodiscard]] bool canPresent() const noexcept override;
+
   void attach(GLenum attachment, const AttachmentParams& params, GLuint renderBufferId);
 
   /// @returns false if an unknown format is specified
@@ -51,6 +55,11 @@ class TextureTarget final : public Texture {
   Result createRenderBuffer(const TextureDesc& desc, bool hasStorageAlready);
 
   GLuint renderBufferID_ = 0;
+#if IGL_PLATFORM_IOS
+  bool canPresent_ = false;
+#else
+  bool canPresent_ = true;
+#endif
 };
 
 } // namespace igl::opengl

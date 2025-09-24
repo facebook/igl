@@ -53,6 +53,16 @@ bool Texture::isSwapchainTexture() const {
   return isImplicitStorage();
 }
 
+bool Texture::canPresent() const noexcept {
+#if IGL_PLATFORM_IOS
+  // On iOS, presentRenderbuffer is only supported for textures created with EAGLContext's
+  // renderbufferStorage method.
+  return false;
+#else
+  return true;
+#endif
+}
+
 Result Texture::create(const TextureDesc& desc, bool hasStorageAlready) {
   Result result;
   if (desc.numLayers > 1 && desc.type != TextureType::TwoDArray) {

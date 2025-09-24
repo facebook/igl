@@ -36,6 +36,7 @@ class Texture : public WithContext, public ITexture {
   [[nodiscard]] bool isRequiredGenerateMipmap() const override;
   [[nodiscard]] uint64_t getTextureId() const override;
   [[nodiscard]] bool isSwapchainTexture() const override;
+  [[nodiscard]] virtual bool canPresent() const noexcept;
 
   virtual Result create(const TextureDesc& desc, bool hasStorageAlready);
 

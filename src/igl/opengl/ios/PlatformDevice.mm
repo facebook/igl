@@ -117,7 +117,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
     desc.numSamples = 1;
     desc.usage = TextureDesc::TextureUsageBits::Attachment;
 
-    auto texture = std::make_shared<TextureTarget>(getContext(), desc.format);
+    auto texture =
+        std::make_shared<TextureTarget>(getContext(), desc.format, /* canPresent */ true);
     if (texture != nullptr) {
       const Result result = texture->create(desc, true);
 

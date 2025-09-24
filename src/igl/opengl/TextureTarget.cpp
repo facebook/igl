@@ -23,6 +23,10 @@ TextureDesc::TextureUsage TextureTarget::getUsage() const {
   return TextureDesc::TextureUsageBits::Attachment;
 }
 
+bool TextureTarget::canPresent() const noexcept {
+  return canPresent_;
+}
+
 // create a 2D texture given the specified dimensions and format
 Result TextureTarget::create(const TextureDesc& desc, bool hasStorageAlready) {
   Result result = Super::create(desc, hasStorageAlready);
