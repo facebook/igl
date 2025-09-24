@@ -676,6 +676,9 @@
 #ifndef GL_SAMPLER_2D_ARRAY
 #define GL_SAMPLER_2D_ARRAY 0x8dc1
 #endif
+#ifndef GL_SAMPLER_2D_MULTISAMPLE
+#define GL_SAMPLER_2D_MULTISAMPLE 0x9108
+#endif
 #ifndef GL_SAMPLER_3D
 #define GL_SAMPLER_3D 0x8B5F
 #endif
