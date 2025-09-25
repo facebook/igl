@@ -8,7 +8,6 @@
 #include <igl/metal/RenderPipelineState.h>
 
 #include "../data/ShaderData.h"
-#include "../data/VertexIndexData.h"
 #include "../util/Common.h"
 
 #include <gtest/gtest.h>
