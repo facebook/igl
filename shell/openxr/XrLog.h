@@ -9,7 +9,7 @@
 
 #include <openxr/openxr.h>
 
-#include <igl/Common.h>
+#include <igl/Config.h>
 
 namespace igl::shell::openxr {
 #if IGL_DEBUG

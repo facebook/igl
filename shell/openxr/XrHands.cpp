@@ -10,6 +10,7 @@
 #include <shell/openxr/XrHands.h>
 
 #include <shell/openxr/XrLog.h>
+#include <igl/Core.h>
 
 #include <chrono>
 #include <cstdint>

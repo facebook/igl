@@ -10,6 +10,7 @@
 #include <shell/openxr/XrRefreshRate.h>
 
 #include <shell/openxr/XrLog.h>
+#include <igl/Core.h>
 
 #include <algorithm>
 
