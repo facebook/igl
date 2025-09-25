@@ -158,6 +158,7 @@ class GPUStressSession : public RenderSession {
   std::atomic<int> dropFrameX_ = 0;
   std::atomic<int> dropFrameCount_ = 2;
   std::atomic<bool> rotateCubes_ = true;
+  std::atomic<float> memoryVal_ = 0.0f;
 
   double pi_ = 0.f;
   std::vector<std::vector<std::vector<float>>> memBlock_;

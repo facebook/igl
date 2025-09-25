@@ -400,7 +400,6 @@ void GPUStressSession::allocateMemory() {
   }
 }
 
-std::atomic<float> memoryVal;
 void GPUStressSession::thrashMemory() noexcept {
   if (!thrashMemory_) {
     return;
@@ -411,7 +410,7 @@ void GPUStressSession::thrashMemory() noexcept {
   const static size_t kCols = 1024;
 
   if (!threadCount_) {
-    memoryVal.store(doReadWrite(memBlock_, kBlocks, kRows, kCols, -1));
+    memoryVal_.store(doReadWrite(memBlock_, kBlocks, kRows, kCols, -1));
   } else {
     static std::vector<std::future<float>> futures;
     static int memoryThreadId = 0;
@@ -433,7 +432,7 @@ void GPUStressSession::thrashMemory() noexcept {
       auto status = future.wait_for(std::chrono::milliseconds(0));
 
       if (status == std::future_status::ready) {
-        memoryVal.store(future.get());
+        memoryVal_.store(future.get());
         futures.erase(futures.begin() + i);
       }
     }
@@ -934,7 +933,7 @@ void GPUStressSession::update(SurfaceTextures surfaceTextures) noexcept {
                        "FPS: (%f)   PI: (%lf)  Memory (%f)",
                        fps_.getAverageFPS(),
                        pi_,
-                       memoryVal.load());
+                       memoryVal_.load());
     ImGui::End();
     imguiSession_->endFrame(getPlatform().getDevice(), *commands);
   }
