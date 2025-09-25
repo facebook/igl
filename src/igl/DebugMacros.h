@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <igl/CommandBuffer.h>
+#include <igl/Color.h>
 
 // Debug macros that take in an igl CommandBuffer and set some debug labels to group the drawcalls
 #if IGL_DEBUG && !defined(IGL_DISABLE_DEBUG_BUFFER_LABEL)
