@@ -65,17 +65,17 @@ void main() {
 };
 )";
 
-void initWindow(ANativeWindow* window) {
+void initWindow(ANativeWindow* nativeWindow) {
   // Get the Window first
-  ANativeWindow_acquire(window);
-  window = window;
-  if (window == nullptr) {
+  ANativeWindow_acquire(nativeWindow);
+  window = nativeWindow;
+  if (nativeWindow == nullptr) {
     IGL_SAMPLE_LOG_ERROR("ANativeWindow is null");
     return;
   }
 
-  width = ANativeWindow_getWidth(window);
-  height = ANativeWindow_getHeight(window);
+  width = ANativeWindow_getWidth(nativeWindow);
+  height = ANativeWindow_getHeight(nativeWindow);
   IGL_SAMPLE_LOG_INFO("window size: [%d, %d]", width, height);
 }
 
