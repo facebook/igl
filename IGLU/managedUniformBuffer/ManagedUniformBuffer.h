@@ -31,6 +31,10 @@ class ManagedUniformBuffer {
   // if no uniform with given name exists, the function will return 0
   size_t getUniformDataSize(const char* name);
 
+  // return the type of the uniform
+  // return igl::UniformType::Invalid if name invalid
+  igl::UniformType getUniformType(const char* name) const;
+
   void bind(const igl::IDevice& device,
             const igl::IRenderPipelineState& pipelineState,
             igl::IRenderCommandEncoder& encoder);

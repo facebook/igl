@@ -249,6 +249,17 @@ size_t ManagedUniformBuffer::getUniformDataSize(const char* name) {
   return 0;
 }
 
+// return the type of the uniform
+// return igl::UniformType::Invalid if name invalid
+igl::UniformType ManagedUniformBuffer::getUniformType(const char* name) const {
+  auto index = findUniformByName(uniformInfo.uniforms, name);
+  if (index != -1) {
+    const auto& u = uniformInfo.uniforms.at(index);
+    return u.type;
+  }
+  return igl::UniformType::Invalid;
+}
+
 size_t ManagedUniformBuffer::getUniformDataSizeInternal(igl::UniformDesc& uniform) {
   const size_t uniformDataSize = uniform.elementStride != 0
                                      ? uniform.numElements * uniform.elementStride
