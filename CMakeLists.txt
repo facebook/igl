@@ -183,7 +183,6 @@ endif()
 
 if(IGL_WITH_TRACY)
   add_definitions("-DTRACY_ENABLE=1")
-  add_definitions("-DTRACY_VK_USE_SYMBOL_TABLE=1")
   add_subdirectory(third-party/deps/src/tracy)
   igl_set_folder(TracyClient "third-party")
 endif()
