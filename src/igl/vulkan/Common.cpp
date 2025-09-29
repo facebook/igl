@@ -704,7 +704,7 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
 #else
   void* lib = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
   if (!lib) {
-    IGL_LOG_DEBUG("dlopen failed: %s\n", dlerror());
+    IGL_LOG_INFO("Opening libvulkan.so.1 failed: %s. Loading libvulkan.so instead\n", dlerror());
     lib = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
   }
   if (!lib) {
