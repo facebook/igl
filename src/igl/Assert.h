@@ -26,8 +26,8 @@
 // ## IGL_DEBUG_ASSERT vs IGL_DEBUG_VERIFY/IGL_DEBUG_VERIFY_NOT
 //
 // Use IGL_DEBUG_ASSERT for debug-only assertions. On release builds, the expressions
-// expand to no-op's, so no perf penalty. IGL_DEBUG_ASSERT logs failed the  expression to
-// console. To customize, provide a format argment with printf semantics:
+// expand to no-op's, so no perf penalty. IGL_DEBUG_ASSERT logs the failed expression to
+// console. To customize, provide a format argument with printf semantics:
 //
 //   int i = 42;
 //   auto p = std::make_shared<int>(i);
