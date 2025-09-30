@@ -44,10 +44,14 @@ struct TestDeviceConfig {
  */
 bool isBackendTypeSupported(BackendType backendType);
 
-#if IGL_BACKEND_OPENGL
+#if IGL_OPENGL_SUPPORTED
 constexpr BackendType kDefaultBackendType = BackendType::OpenGL;
-#else
+#elif IGL_VULKAN_SUPPORTED
 constexpr BackendType kDefaultBackendType = BackendType::Vulkan;
+#elif IGL_METAL_SUPPORTED
+constexpr BackendType kDefaultBackendType = BackendType::Metal;
+#else
+constexpr BackendType kDefaultBackendType = BackendType::Invalid;
 #endif
 
 /**
