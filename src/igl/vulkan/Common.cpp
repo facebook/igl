@@ -691,13 +691,19 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
   return (PFN_vkGetInstanceProcAddr)GetProcAddress(lib, "vkGetInstanceProcAddr");
 #elif defined(__APPLE__)
   void* lib = dlopen("libvulkan.dylib", RTLD_NOW | RTLD_LOCAL);
+  IGL_LOG_INFO("Loading libvulkan.dylib\n");
   if (!lib) {
+    IGL_LOG_INFO("Opening libvulkan.dylib failed: %s. Loading libvulkan.1.dylib instead\n",
+                 dlerror());
     lib = dlopen("libvulkan.1.dylib", RTLD_NOW | RTLD_LOCAL);
   }
   if (!lib) {
+    IGL_LOG_INFO("Opening libvulkan.1.dylib failed: %s. Loading libMoltenVK.dylib instead\n",
+                 dlerror());
     lib = dlopen("libMoltenVK.dylib", RTLD_NOW | RTLD_LOCAL);
   }
   if (!lib) {
+    IGL_LOG_ERROR("Failed to open libMoltenVK.dylib: %s\n", dlerror());
     return nullptr;
   }
   return (PFN_vkGetInstanceProcAddr)dlsym(lib, "vkGetInstanceProcAddr");
