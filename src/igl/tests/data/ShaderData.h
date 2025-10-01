@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <array>
 #include <cstddef> // For size_t/
 #include <string_view>
 #include <igl/Macros.h>
