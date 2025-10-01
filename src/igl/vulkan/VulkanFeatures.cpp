@@ -307,7 +307,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
     if (hasExtension(VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME)) {
       ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresMultiviewPerViewViewports);
     } else {
-      IGL_LOG_ERROR("VK_QCOM_multiview_per_view_viewports extension not supported");
+      IGL_LOG_ERROR("VK_QCOM_multiview_per_view_viewports extension not supported\n");
     }
   }
 }
@@ -446,7 +446,7 @@ void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& c
 
   if (config.headless) {
     if (!has_VK_EXT_headless_surface) {
-      IGL_LOG_ERROR("VK_EXT_headless_surface extension not supported");
+      IGL_LOG_ERROR("VK_EXT_headless_surface extension not supported\n");
     }
   }
   if (config.swapChainColorSpace != igl::ColorSpace::SRGB_NONLINEAR) {
