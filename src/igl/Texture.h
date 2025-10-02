@@ -506,10 +506,13 @@ struct TextureViewDesc {
  *  numLayers          - Number of layers for array texture
  *  numSamples         - Number of samples for multisampling
  *  usage              - Bitwise flag for containing a mask of TextureUsageBits
- *  options            - Bitwise flag for containing other options
  *  numMipLevels       - Number of mipmaps to generate
+ *  type               - The type of texture (2D, 3D, Cube, etc.)
  *  format             - Internal texture format type
  *  storage            - Internal resource storage type
+ *  tiling             - Image layout for texture storage (Optimal or Linear)
+ *  exportability      - Whether the texture can be exported (NoExport or Exportable)
+ *  debugName          - Optional debug name for the texture
  */
 struct TextureDesc {
   /**
