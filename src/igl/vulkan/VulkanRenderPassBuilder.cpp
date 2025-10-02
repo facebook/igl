@@ -33,45 +33,6 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
 
   const bool hasDepthStencilAttachment = refDepth2_.layout != VK_IMAGE_LAYOUT_UNDEFINED;
 
-#if IGL_VULKAN_HAS_LEGACY_RENDERPASS
-  const VkSubpassDescription subpass = {
-      .flags = 0,
-      .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-      .colorAttachmentCount = (uint32_t)refsColor_.size(),
-      .pColorAttachments = refsColor_.data(),
-      .pResolveAttachments = refsColorResolve_.data(),
-      .pDepthStencilAttachment = hasDepthStencilAttachment ? &refDepth_ : nullptr,
-  };
-
-  const VkSubpassDependency dep = {
-      .srcSubpass = 0,
-      .dstSubpass = VK_SUBPASS_EXTERNAL,
-      .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-      .dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-      .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-      .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
-  };
-
-  const VkRenderPassMultiviewCreateInfo renderPassMultiview = {
-      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO,
-      .subpassCount = 1,
-      .pViewMasks = &viewMask_,
-      .correlationMaskCount = 1,
-      .pCorrelationMasks = &correlationMask_,
-  };
-
-  const VkRenderPassCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-      .pNext = viewMask_ ? &renderPassMultiview : nullptr,
-      .attachmentCount = (uint32_t)attachments_.size(),
-      .pAttachments = attachments_.data(),
-      .subpassCount = 1,
-      .pSubpasses = &subpass,
-      .dependencyCount = 1,
-      .pDependencies = &dep,
-  };
-#endif // IGL_VULKAN_HAS_LEGACY_RENDERPASS
-
   const VkSubpassDescription2 subpass2 = {
       .sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2,
       .flags = 0,
@@ -107,14 +68,7 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
       .correlatedViewMaskCount = viewMask_ ? 1u : 0u,
       .pCorrelatedViewMasks = viewMask_ ? &correlationMask_ : nullptr,
   };
-  const VkResult result =
-
-#if IGL_VULKAN_HAS_LEGACY_RENDERPASS
-      vf.vkCreateRenderPass2 ? vf.vkCreateRenderPass2(device, &ci2, nullptr, outRenderPass)
-                             : vf.vkCreateRenderPass(device, &ci, nullptr, outRenderPass);
-#else
-      vf.vkCreateRenderPass2(device, &ci2, nullptr, outRenderPass);
-#endif // IGL_VULKAN_HAS_LEGACY_RENDERPASS
+  const VkResult result = vf.vkCreateRenderPass2(device, &ci2, nullptr, outRenderPass);
 
   if (!IGL_DEBUG_VERIFY(result == VK_SUCCESS)) {
     return result;
@@ -137,23 +91,6 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addColor(VkFormat format,
                      "All non-resolve attachments should have the sample number of samples");
   }
 
-#if IGL_VULKAN_HAS_LEGACY_RENDERPASS
-  refsColor_.push_back(VkAttachmentReference{
-      .attachment = (uint32_t)attachments_.size(),
-      .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-  });
-  attachments_.push_back(VkAttachmentDescription{
-      .flags = 0,
-      .format = format,
-      .samples = samples,
-      .loadOp = loadOp,
-      .storeOp = storeOp,
-      .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-      .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-      .initialLayout = initialLayout,
-      .finalLayout = finalLayout,
-  });
-#endif // IGL_VULKAN_HAS_LEGACY_RENDERPASS
   refsColor2_.push_back(VkAttachmentReference2{
       .sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2,
       .attachment = (uint32_t)attachments2_.size(),
@@ -183,24 +120,6 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addColorResolve(VkFormat forma
                                                                   VkImageLayout initialLayout,
                                                                   VkImageLayout finalLayout) {
   IGL_DEBUG_ASSERT(format != VK_FORMAT_UNDEFINED, "Invalid color resolve attachment format");
-
-#if IGL_VULKAN_HAS_LEGACY_RENDERPASS
-  refsColorResolve_.push_back(VkAttachmentReference{
-      .attachment = (uint32_t)attachments_.size(),
-      .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-  });
-  attachments_.push_back(VkAttachmentDescription{
-      .flags = 0,
-      .format = format,
-      .samples = VK_SAMPLE_COUNT_1_BIT,
-      .loadOp = loadOp,
-      .storeOp = storeOp,
-      .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-      .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-      .initialLayout = initialLayout,
-      .finalLayout = finalLayout,
-  });
-#endif // IGL_VULKAN_HAS_LEGACY_RENDERPASS
 
   refsColorResolve2_.push_back(VkAttachmentReference2{
       .sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2,
@@ -243,25 +162,6 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthStencil(
                      "(including a depth attachment)");
   }
 
-#if IGL_VULKAN_HAS_LEGACY_RENDERPASS
-  refDepth_ = VkAttachmentReference{
-      .attachment = (uint32_t)attachments_.size(),
-      .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-  };
-
-  attachments_.push_back(VkAttachmentDescription{
-      .flags = 0,
-      .format = format,
-      .samples = samples,
-      .loadOp = loadOp,
-      .storeOp = storeOp,
-      .stencilLoadOp = stencilLoadOp,
-      .stencilStoreOp = stencilStoreOp,
-      .initialLayout = initialLayout,
-      .finalLayout = finalLayout,
-  });
-#endif // IGL_VULKAN_HAS_LEGACY_RENDERPASS
-
   refDepth2_ = VkAttachmentReference2{
       .sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2,
       .attachment = (uint32_t)attachments2_.size(),
@@ -297,24 +197,6 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthStencilResolve(
   IGL_DEBUG_ASSERT(refDepthResolve2_.layout == VK_IMAGE_LAYOUT_UNDEFINED,
                    "Can have only 1 depth resolve attachment");
   IGL_DEBUG_ASSERT(format != VK_FORMAT_UNDEFINED, "Invalid depth resolve attachment format");
-#if IGL_VULKAN_HAS_LEGACY_RENDERPASS
-  refDepthResolve_ = VkAttachmentReference{
-      .attachment = (uint32_t)attachments_.size(),
-      .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-  };
-
-  attachments_.push_back(VkAttachmentDescription{
-      .flags = 0,
-      .format = format,
-      .samples = VK_SAMPLE_COUNT_1_BIT,
-      .loadOp = loadOp,
-      .storeOp = storeOp,
-      .stencilLoadOp = stencilLoadOp,
-      .stencilStoreOp = stencilStoreOp,
-      .initialLayout = initialLayout,
-      .finalLayout = finalLayout,
-  });
-#endif // IGL_VULKAN_HAS_LEGACY_RENDERPASS
 
   refDepthResolve2_ = VkAttachmentReference2{
       .sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2,
