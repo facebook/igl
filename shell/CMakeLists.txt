@@ -34,6 +34,19 @@ target_link_libraries(IGLShellShared PUBLIC IGLUtexture_loader)
 target_link_libraries(IGLShellShared PUBLIC IGLUuniform)
 target_link_libraries(IGLShellShared PUBLIC IGLstb)
 
+# Engine library
+file(GLOB ENGINE_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+     engine/core/*.cpp engine/graphics/*.cpp engine/resources/*.cpp engine/*.cpp)
+file(GLOB ENGINE_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+     engine/core/*.h engine/graphics/*.h engine/resources/*.h engine/scene/*.h engine/physics/*.h engine/*.h)
+
+add_library(IGLEngine ${ENGINE_SRC_FILES} ${ENGINE_HEADER_FILES})
+target_include_directories(IGLEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(IGLEngine PUBLIC IGLShellShared)
+target_link_libraries(IGLEngine PUBLIC IGLLibrary)
+igl_set_folder(IGLEngine "IGL")
+igl_set_cxxstd(IGLEngine 20)
+
 igl_set_folder(IGLShellShared "IGL")
 igl_set_cxxstd(IGLShellShared 20)
 
@@ -57,6 +70,9 @@ endif()
 if(IGL_WITH_OPENXR)
   add_subdirectory(openxr)
 endif()
+
+# Rust C wrapper
+add_subdirectory(rust/igl-c-wrapper)
 
 macro(ADD_SHELL_SESSION target libs)
   set(shell_srcs apps/SessionApp.cpp renderSessions/${target}.cpp renderSessions/${target}.h)
@@ -92,11 +108,13 @@ if(IGL_WITH_SAMPLES)
   add_shell_session(MRTSession "")
   add_shell_session(Textured3DCubeSession "")
   add_shell_session(TextureViewSession "")
+  add_shell_session(ThreeCubesRenderSession "")
   add_shell_session(TinyMeshBindGroupSession "")
   add_shell_session(TinyMeshSession "")
   add_shell_session(TQMultiRenderPassSession "")
   add_shell_session(TQSession "")
   add_shell_session(YUVColorSession "")
+  add_shell_session(EngineTestSession "IGLEngine")
   if(IGL_WITH_OPENXR)
     if(ANDROID)
       add_shell_session(HelloOpenXRSession "")

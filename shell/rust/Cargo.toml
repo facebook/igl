@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "igl-sys",
+    "igl-rs",
+    "three-cubes",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
