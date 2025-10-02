@@ -270,9 +270,30 @@ impl ThreeCubesRenderSession {
         // Render each cube
         let aspect_ratio = color_texture.aspect_ratio();
 
-        for cube in &self.cubes {
+        static mut FRAME_COUNT: u32 = 0;
+        unsafe {
+            FRAME_COUNT += 1;
+        }
+
+        for (i, cube) in self.cubes.iter().enumerate() {
             // Create MVP matrix
             let mvp = self.create_mvp_matrix(cube, aspect_ratio);
+
+            unsafe {
+                if FRAME_COUNT == 1 && i == 0 {
+                    println!("[Rust MVP Matrix for cube 0, frame 1 (Column-Major)]:");
+                    println!("  Col0: [{:8.4} {:8.4} {:8.4} {:8.4}]", mvp.x_axis.x, mvp.x_axis.y, mvp.x_axis.z, mvp.x_axis.w);
+                    println!("  Col1: [{:8.4} {:8.4} {:8.4} {:8.4}]", mvp.y_axis.x, mvp.y_axis.y, mvp.y_axis.z, mvp.y_axis.w);
+                    println!("  Col2: [{:8.4} {:8.4} {:8.4} {:8.4}]", mvp.z_axis.x, mvp.z_axis.y, mvp.z_axis.z, mvp.z_axis.w);
+                    println!("  Col3: [{:8.4} {:8.4} {:8.4} {:8.4}]", mvp.w_axis.x, mvp.w_axis.y, mvp.w_axis.z, mvp.w_axis.w);
+                    println!("  aspectRatio={:.4}, cube.position=({}, {}, {})", aspect_ratio, cube.position.x, cube.position.y, cube.position.z);
+                    println!("[Rust MVP as rows (transposed view)]:");
+                    println!("  Row0: [{:8.4} {:8.4} {:8.4} {:8.4}]", mvp.x_axis.x, mvp.y_axis.x, mvp.z_axis.x, mvp.w_axis.x);
+                    println!("  Row1: [{:8.4} {:8.4} {:8.4} {:8.4}]", mvp.x_axis.y, mvp.y_axis.y, mvp.z_axis.y, mvp.w_axis.y);
+                    println!("  Row2: [{:8.4} {:8.4} {:8.4} {:8.4}]", mvp.x_axis.z, mvp.y_axis.z, mvp.z_axis.z, mvp.w_axis.z);
+                    println!("  Row3: [{:8.4} {:8.4} {:8.4} {:8.4}]", mvp.x_axis.w, mvp.y_axis.w, mvp.z_axis.w, mvp.w_axis.w);
+                }
+            }
 
             let uniforms = VertexUniforms { mvp_matrix: mvp };
 
@@ -283,6 +304,16 @@ impl ThreeCubesRenderSession {
                     mem::size_of::<VertexUniforms>(),
                 )
             };
+
+            unsafe {
+                if FRAME_COUNT == 1 && i == 0 {
+                    println!("[Rust Uniform bytes as floats]:");
+                    let floats = std::slice::from_raw_parts(uniform_bytes.as_ptr() as *const f32, 16);
+                    for j in (0..16).step_by(4) {
+                        println!("  [{:8.4} {:8.4} {:8.4} {:8.4}]", floats[j], floats[j+1], floats[j+2], floats[j+3]);
+                    }
+                }
+            }
 
             let uniform_buffer = device.create_buffer(BufferType::Uniform, uniform_bytes)?;
 

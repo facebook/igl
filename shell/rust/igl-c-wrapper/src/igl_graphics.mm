@@ -22,7 +22,8 @@ IGLDevice* igl_platform_get_device(void* platform) {
     if (!wrapper || !wrapper->platform) {
         return nullptr;
     }
-    return reinterpret_cast<IGLDevice*>(&wrapper->platform->getDevice());
+    // Return pointer to the IDevice - getDevice() returns a reference, so take its address
+    return reinterpret_cast<IGLDevice*>(const_cast<igl::IDevice*>(&wrapper->platform->getDevice()));
 }
 
 IGLBackendType igl_device_get_backend_type(IGLDevice* device) {
@@ -80,7 +81,16 @@ IGLBuffer* igl_device_create_buffer(IGLDevice* device,
                                      IGLBufferType type,
                                      const void* data,
                                      uint32_t size) {
+    printf("[C Wrapper] Creating buffer: type=%d, size=%u, data=%p, device=%p\n",
+           (int)type, size, data, device);
+
+    if (!device) {
+        printf("[C Wrapper] ERROR: device is null!\n");
+        return nullptr;
+    }
+
     auto* dev = reinterpret_cast<igl::IDevice*>(device);
+    printf("[C Wrapper] IDevice pointer: %p\n", dev);
 
     igl::BufferDesc::BufferTypeBits bufferType;
     switch (type) {
@@ -94,11 +104,20 @@ IGLBuffer* igl_device_create_buffer(IGLDevice* device,
             bufferType = igl::BufferDesc::BufferTypeBits::Uniform;
             break;
         default:
+            printf("[C Wrapper] ERROR: Invalid buffer type: %d\n", (int)type);
             return nullptr;
     }
 
+    printf("[C Wrapper] Creating buffer with desc...\n");
     igl::BufferDesc desc(bufferType, data, size);
     auto buffer = dev->createBuffer(desc, nullptr);
+
+    if (!buffer) {
+        printf("[C Wrapper] ERROR: createBuffer returned null!\n");
+        return nullptr;
+    }
+
+    printf("[C Wrapper] Buffer created successfully\n");
     return reinterpret_cast<IGLBuffer*>(new std::shared_ptr<igl::IBuffer>(std::move(buffer)));
 }
 
@@ -284,6 +303,7 @@ void igl_render_encoder_bind_vertex_buffer(IGLRenderCommandEncoder* encoder,
                                             IGLBuffer* buffer) {
     auto* enc = reinterpret_cast<std::shared_ptr<igl::IRenderCommandEncoder>*>(encoder);
     auto* buf = reinterpret_cast<std::shared_ptr<igl::IBuffer>*>(buffer);
+    printf("[C Wrapper RENDER] bindVertexBuffer(index=%u, buffer=%p)\n", index, buffer);
     (*enc)->bindVertexBuffer(index, **buf);
 }
 
@@ -297,6 +317,8 @@ void igl_render_encoder_bind_index_buffer(IGLRenderCommandEncoder* encoder,
         ? igl::IndexFormat::UInt16
         : igl::IndexFormat::UInt32;
 
+    printf("[C Wrapper RENDER] bindIndexBuffer(buffer=%p, format=%s)\n",
+           buffer, (format == IGL_INDEX_FORMAT_UINT16) ? "UInt16" : "UInt32");
     (*enc)->bindIndexBuffer(**buf, iglFormat);
 }
 
@@ -304,6 +326,7 @@ void igl_render_encoder_bind_pipeline(IGLRenderCommandEncoder* encoder,
                                        IGLRenderPipelineState* pipeline) {
     auto* enc = reinterpret_cast<std::shared_ptr<igl::IRenderCommandEncoder>*>(encoder);
     auto* pipe = reinterpret_cast<std::shared_ptr<igl::IRenderPipelineState>*>(pipeline);
+    printf("[C Wrapper RENDER] bindRenderPipelineState(pipeline=%p)\n", pipeline);
     (*enc)->bindRenderPipelineState(*pipe);
 }
 
@@ -312,11 +335,13 @@ void igl_render_encoder_bind_uniform_buffer(IGLRenderCommandEncoder* encoder,
                                              IGLBuffer* buffer) {
     auto* enc = reinterpret_cast<std::shared_ptr<igl::IRenderCommandEncoder>*>(encoder);
     auto* buf = reinterpret_cast<std::shared_ptr<igl::IBuffer>*>(buffer);
+    printf("[C Wrapper RENDER] bindBuffer(index=%u, uniformBuffer=%p)\n", index, buffer);
     (*enc)->bindBuffer(index, buf->get());
 }
 
 void igl_render_encoder_draw_indexed(IGLRenderCommandEncoder* encoder, uint32_t index_count) {
     auto* enc = reinterpret_cast<std::shared_ptr<igl::IRenderCommandEncoder>*>(encoder);
+    printf("[C Wrapper RENDER] drawIndexed(indexCount=%u)\n", index_count);
     (*enc)->drawIndexed(index_count);
 }
 
