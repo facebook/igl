@@ -687,6 +687,23 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
 #if defined(_WIN32)
   HMODULE lib = LoadLibraryA("vulkan-1.dll");
   if (!lib) {
+    DWORD dw = GetLastError();
+    LPVOID lpMsgBuf = nullptr;
+
+    if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+                          FORMAT_MESSAGE_IGNORE_INSERTS,
+                      NULL,
+                      dw,
+                      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                      (LPTSTR)&lpMsgBuf,
+                      0,
+                      NULL) != 0) {
+      IGL_LOG_ERROR("Failed to open vulkan-1.dll: %s\n", (LPCTSTR)lpMsgBuf);
+      LocalFree(lpMsgBuf);
+    } else {
+      IGL_LOG_ERROR("Failed to open vulkan-1.dll");
+    }
+
     return nullptr;
   }
   return (PFN_vkGetInstanceProcAddr)GetProcAddress(lib, "vkGetInstanceProcAddr");
