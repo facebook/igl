@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <igl/Common.h>
+#include <igl/Assert.h>
 
 #define IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert) \
   IGL_DEBUG_ASSERT(!(shouldAssert), "Sentinel implementation should NOT be reached")

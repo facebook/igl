@@ -8,7 +8,7 @@
 #pragma once
 
 #include <Metal/Metal.h>
-#include <string>
+#include <memory>
 #include <vector>
 #include <igl/Shader.h>
 

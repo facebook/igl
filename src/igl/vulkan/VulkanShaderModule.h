@@ -10,8 +10,7 @@
 #include <memory>
 #include <vector>
 
-#include <igl/vulkan/Common.h>
-#include <igl/vulkan/VulkanHelpers.h>
+#include <igl/vulkan/VulkanFunctionTable.h>
 #include <igl/vulkan/util/SpvReflection.h>
 
 namespace igl::vulkan {

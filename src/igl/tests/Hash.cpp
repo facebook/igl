@@ -176,8 +176,8 @@ TEST_F(HashTest, VertexInputState1) {
   descTwo.numInputBindings = 1;
   descTwo.attributes[0].format = VertexAttributeFormat::Float4;
   descTwo.attributes[0].offset = 0;
-  descTwo.attributes[0].bufferIndex = data::shader::simplePosIndex;
-  descTwo.attributes[0].name = data::shader::simplePos;
+  descTwo.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
+  descTwo.attributes[0].name = data::shader::kSimplePos;
   descTwo.attributes[0].location = 0;
   descTwo.inputBindings[0].stride = sizeof(float) * 4;
 
@@ -188,8 +188,8 @@ TEST_F(HashTest, VertexInputState1) {
   descOne.numInputBindings = 1;
   descOne.attributes[0].format = VertexAttributeFormat::Float4;
   descOne.attributes[0].offset = 0;
-  descOne.attributes[0].bufferIndex = data::shader::simplePosIndex;
-  descOne.attributes[0].name = data::shader::simplePos;
+  descOne.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
+  descOne.attributes[0].name = data::shader::kSimplePos;
   descOne.attributes[0].location = 0;
   descOne.inputBindings[0].stride = sizeof(float) * 4;
 

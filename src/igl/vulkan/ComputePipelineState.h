@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include <igl/Common.h>
+#include <memory>
 #include <igl/ComputePipelineState.h>
-#include <igl/vulkan/Common.h>
 #include <igl/vulkan/PipelineState.h>
+#include <igl/vulkan/VulkanFunctionTable.h>
 
 namespace igl::vulkan {
 

@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <Foundation/Foundation.h>
-
 #include <igl/metal/Shader.h>
 
 namespace igl::metal {

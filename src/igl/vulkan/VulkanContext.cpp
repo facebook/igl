@@ -465,7 +465,7 @@ VulkanContext::~VulkanContext() {
 #if defined(IGL_WITH_TRACY_GPU)
   if (tracyCtx_) {
     TracyVkDestroy(tracyCtx_);
-    profilingCommandPool_.reset(nullptr);
+    vf_.vkDestroyCommandPool(vkDevice_, profilingCommandPool_, nullptr);
   }
 #endif
 
@@ -929,15 +929,19 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
       vkDevice_,
       VK_OBJECT_TYPE_QUEUE,
       (uint64_t)deviceQueues_.graphicsQueue,
-      IGL_FORMAT("Graphics queue: {}", debugName ? debugName : "igl/vulkan/VulkanContext.cpp")
+      IGL_FORMAT("Graphics{} queue: {}",
+                 deviceQueues_.graphicsQueue == deviceQueues_.computeQueue ? "/compute" : "",
+                 debugName ? debugName : "igl/vulkan/VulkanContext.cpp")
           .c_str()));
-  VK_ASSERT(ivkSetDebugObjectName(
-      &vf_,
-      vkDevice_,
-      VK_OBJECT_TYPE_QUEUE,
-      (uint64_t)deviceQueues_.computeQueue,
-      IGL_FORMAT("Compute queue: {}", debugName ? debugName : "igl/vulkan/VulkanContext.cpp")
-          .c_str()));
+  if (deviceQueues_.graphicsQueue != deviceQueues_.computeQueue) {
+    VK_ASSERT(ivkSetDebugObjectName(
+        &vf_,
+        vkDevice_,
+        VK_OBJECT_TYPE_QUEUE,
+        (uint64_t)deviceQueues_.computeQueue,
+        IGL_FORMAT("Compute queue: {}", debugName ? debugName : "igl/vulkan/VulkanContext.cpp")
+            .c_str()));
+  }
 
   immediate_ = std::make_unique<VulkanImmediateCommands>(vf_,
                                                          device,
@@ -1076,16 +1080,22 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   querySurfaceCapabilities();
 
 #if defined(IGL_WITH_TRACY_GPU)
-  profilingCommandPool_ = std::make_unique<VulkanCommandPool>(
-      vf_,
-      vkDevice_,
-      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
-      deviceQueues_.graphicsQueueFamilyIndex,
-      "VulkanContext::profilingCommandPool_ (Tracy)");
+  VK_ASSERT(ivkCreateCommandPool(&vf_,
+                                 vkDevice_,
+                                 VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT |
+                                     VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
+                                 deviceQueues_.graphicsQueueFamilyIndex,
+                                 &profilingCommandPool_));
+
+  ivkSetDebugObjectName(&vf_,
+                        vkDevice_,
+                        VK_OBJECT_TYPE_COMMAND_POOL,
+                        (uint64_t)profilingCommandPool_,
+                        "VulkanContext::profilingCommandPool_ (Tracy)");
 
   profilingCommandBuffer_ = VK_NULL_HANDLE;
-  VK_ASSERT(ivkAllocateCommandBuffer(
-      &vf_, vkDevice_, profilingCommandPool_->getVkCommandPool(), &profilingCommandBuffer_));
+  VK_ASSERT(
+      ivkAllocateCommandBuffer(&vf_, vkDevice_, profilingCommandPool_, &profilingCommandBuffer_));
 
 #if defined(VK_EXT_calibrated_timestamps)
   if (features_.enabled(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)) {

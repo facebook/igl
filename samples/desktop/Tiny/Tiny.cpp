@@ -7,14 +7,19 @@
 
 // @fb-only
 
+#include <igl/Config.h>
+
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#ifdef _WIN32
+
+#if defined(_XLESS_GLFW_)
+// do nothing
+#elif IGL_PLATFORM_WINDOWS
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_EXPOSE_NATIVE_WGL
-#elif __APPLE__
+#elif IGL_PLATFORM_APPLE
 #define GLFW_EXPOSE_NATIVE_COCOA
-#elif defined(__linux__)
+#elif IGL_PLATFORM_LINUX
 #define GLFW_EXPOSE_NATIVE_X11
 #define GLFW_EXPOSE_NATIVE_GLX
 #else
@@ -206,10 +211,12 @@ static GLFWwindow* initIGL(bool isHeadless) {
 #ifdef _WIN32
     auto ctx =
         vulkan::HWDevice::createContext(cfg, window ? (void*)glfwGetWin32Window(window) : nullptr);
-#elif __APPLE__
+#elif IGL_PLATFORM_APPLE
     auto ctx =
         vulkan::HWDevice::createContext(cfg, window ? (void*)glfwGetCocoaWindow(window) : nullptr);
-#elif defined(__linux__)
+#elif defined(_XLESS_GLFW_)
+    auto ctx = vulkan::HWDevice::createContext(cfg, nullptr, nullptr);
+#elif IGL_PLATFORM_LINUX
     auto ctx = vulkan::HWDevice::createContext(
         cfg, window ? (void*)glfwGetX11Window(window) : nullptr, (void*)glfwGetX11Display());
 #else

@@ -104,8 +104,13 @@ Context::~Context() {
 }
 
 void Context::present(std::shared_ptr<ITexture> surface) const {
-  static_cast<Texture&>(*surface).bind();
-  [context_ presentRenderbuffer:GL_RENDERBUFFER];
+  auto* texture = static_cast<Texture*>(surface.get());
+  // Some automated tests assume they can call present on an offscreen texture.
+  // This is not supported on iOS, so we just ignore it.
+  if (IGL_DEBUG_VERIFY(texture) && texture->canPresent()) {
+    texture->bind();
+    [context_ presentRenderbuffer:GL_RENDERBUFFER];
+  }
 }
 
 void Context::setCurrent() {

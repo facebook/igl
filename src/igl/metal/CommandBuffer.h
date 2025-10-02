@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include <Metal/Metal.h>
 #include <igl/CommandBuffer.h>
+
+@protocol MTLCommandBuffer;
 
 namespace igl::metal {
 

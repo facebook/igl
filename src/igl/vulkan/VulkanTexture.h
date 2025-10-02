@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImageView.h>
 

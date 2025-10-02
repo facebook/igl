@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <glm/glm.hpp>
 #include <shell/openxr/XrComposition.h>
 #include <shell/shared/renderSession/QuadLayerParams.h>
 

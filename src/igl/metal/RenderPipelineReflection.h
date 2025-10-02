@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <Metal/Metal.h>
+#include <Metal/MTLArgument.h>
+#include <Metal/MTLRenderPipeline.h>
 #include <map>
 #include <vector>
 #include <igl/RenderPipelineReflection.h>

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <igl/Common.h>
+#include <igl/Core.h>
 #include <igl/opengl/Texture.h>
 
 namespace igl::opengl {

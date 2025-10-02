@@ -68,7 +68,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
                                                  TextureDesc::TextureUsageBits::Attachment);
 
     auto depthFormat = TextureFormat::S8_UInt_Z32_UNorm;
-    if (backend_ == util::BACKEND_VUL) {
+    if (backend_ == util::kBackendVul) {
       depthFormat = TextureFormat::S8_UInt_Z24_UNorm;
     }
 
@@ -124,15 +124,15 @@ class RenderCommandEncoderTest : public ::testing::Test {
 
     inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
     inputDesc.attributes[0].offset = 0;
-    inputDesc.attributes[0].bufferIndex = data::shader::simplePosIndex;
-    inputDesc.attributes[0].name = data::shader::simplePos;
+    inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
+    inputDesc.attributes[0].name = data::shader::kSimplePos;
     inputDesc.attributes[0].location = 0;
     inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
     inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
     inputDesc.attributes[1].offset = 0;
-    inputDesc.attributes[1].bufferIndex = data::shader::simpleUvIndex;
-    inputDesc.attributes[1].name = data::shader::simpleUv;
+    inputDesc.attributes[1].bufferIndex = data::shader::kSimpleUvIndex;
+    inputDesc.attributes[1].name = data::shader::kSimpleUv;
     inputDesc.attributes[1].location = 1;
     inputDesc.inputBindings[1].stride = sizeof(float) * 2;
 
@@ -162,7 +162,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
                 .stencilAttachmentFormat = depthStencilTexture_->getFormat(),
             },
         .cullMode = igl::CullMode::Disabled,
-        .fragmentUnitSamplerMap = {{textureUnit_, IGL_NAMEHANDLE(data::shader::simpleSampler)}},
+        .fragmentUnitSamplerMap = {{textureUnit_, IGL_NAMEHANDLE(data::shader::kSimpleSampler)}},
     };
 
     texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
@@ -173,7 +173,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(texture_ != nullptr);
     const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
-    texture_->upload(rangeDesc, data::texture::TEX_RGBA_GRAY_4x4);
+    texture_->upload(rangeDesc, data::texture::kTexRgbaGray4x4.data());
 
     auto createPipeline = [&renderPipelineDesc, &ret, this](
                               PrimitiveType topology) -> std::shared_ptr<IRenderPipelineState> {
@@ -225,8 +225,8 @@ class RenderCommandEncoderTest : public ::testing::Test {
       encoder->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
     }
 
-    encoder->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-    encoder->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+    encoder->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+    encoder->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
     encoder->bindDepthStencilState(depthStencilState_);
 
@@ -386,7 +386,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawAPoint) {
     encoder->draw(1);
   });
 
-  auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  auto grayColor = data::texture::kTexRgbaGray4x4[0];
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
     kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
@@ -414,7 +414,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawAPointNewBindTexture) {
       false,
       true);
 
-  auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  auto grayColor = data::texture::kTexRgbaGray4x4[0];
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
     kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
@@ -445,7 +445,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawALine) {
     encoder->draw(2);
   });
 
-  auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  auto grayColor = data::texture::kTexRgbaGray4x4[0];
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
     kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
@@ -480,7 +480,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawLineStrip) {
     encoder->draw(4);
   });
 
-  auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  auto grayColor = data::texture::kTexRgbaGray4x4[0];
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
     kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
@@ -522,7 +522,7 @@ TEST_F(RenderCommandEncoderTest, drawIndexedFirstIndex) {
     encoder->drawIndexed(3, 1, 3); // skip the first 3 dummy indices
   });
 
-  const auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  const auto grayColor = data::texture::kTexRgbaGray4x4[0];
   // clang-format off
   const std::vector<uint32_t> expectedPixels {
     kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
@@ -563,7 +563,7 @@ TEST_F(RenderCommandEncoderTest, drawIndexed8Bit) {
     encoder->drawIndexed(3);
   });
 
-  const auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  const auto grayColor = data::texture::kTexRgbaGray4x4[0];
   // clang-format off
   const std::vector<uint32_t> expectedPixels {
     kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
@@ -607,7 +607,7 @@ TEST_F(RenderCommandEncoderTest, drawInstanced) {
     encoder->drawIndexed(3, 2);
   });
 
-  const auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  const auto grayColor = data::texture::kTexRgbaGray4x4[0];
   // clang-format off
   const std::vector<uint32_t> expectedPixels {
     kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
@@ -640,7 +640,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangle) {
     encoder->draw(3);
   });
 
-  auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  auto grayColor = data::texture::kTexRgbaGray4x4[0];
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
     kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
@@ -677,7 +677,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStrip) {
 
   verifyFrameBuffer([](const std::vector<uint32_t>& pixels) {
     for (const auto& pixel : pixels) {
-      ASSERT_EQ(pixel, data::texture::TEX_RGBA_GRAY_4x4[0]);
+      ASSERT_EQ(pixel, data::texture::kTexRgbaGray4x4[0]);
     }
   });
 }
@@ -725,8 +725,8 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStripCopyTextureToBuffer) {
   encoder->bindTexture(textureUnit_, texture_.get());
   encoder->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
 
-  encoder->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-  encoder->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+  encoder->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+  encoder->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
   encoder->bindDepthStencilState(depthStencilState_);
 
@@ -748,7 +748,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStripCopyTextureToBuffer) {
   const uint32_t* data = static_cast<const uint32_t*>(
       screenCopy->map(BufferRange(screenCopy->getSizeInBytes()), nullptr));
   for (size_t i = 0; i != OFFSCREEN_RT_HEIGHT * OFFSCREEN_RT_HEIGHT; i++) {
-    ASSERT_EQ(data[i], data::texture::TEX_RGBA_GRAY_4x4[0]);
+    ASSERT_EQ(data[i], data::texture::kTexRgbaGray4x4[0]);
   }
   screenCopy->unmap();
 }
@@ -825,7 +825,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangleBindGroup) {
       },
       true);
 
-  auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  auto grayColor = data::texture::kTexRgbaGray4x4[0];
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
     kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
@@ -850,7 +850,7 @@ TEST_F(RenderCommandEncoderTest, DepthBiasShouldDrawAPoint) {
     encoder->draw(1);
   });
 
-  auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  auto grayColor = data::texture::kTexRgbaGray4x4[0];
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
     kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex,
@@ -878,10 +878,10 @@ TEST_F(RenderCommandEncoderTest, drawUsingBindPushConstants) {
   // Create new shader stages with push constant shaders
   std::unique_ptr<IShaderStages> pushConstantStages;
   igl::tests::util::createShaderStages(iglDev_,
-                                       data::shader::VULKAN_PUSH_CONSTANT_VERT_SHADER,
-                                       igl::tests::data::shader::shaderFunc,
-                                       data::shader::VULKAN_PUSH_CONSTANT_FRAG_SHADER,
-                                       igl::tests::data::shader::shaderFunc,
+                                       data::shader::kVulkanPushConstantVertShader,
+                                       igl::tests::data::shader::kShaderFunc,
+                                       data::shader::kVulkanPushConstantFragShader,
+                                       igl::tests::data::shader::kShaderFunc,
                                        pushConstantStages);
   ASSERT_TRUE(pushConstantStages);
   shaderStages_ = std::move(pushConstantStages);
@@ -895,7 +895,7 @@ TEST_F(RenderCommandEncoderTest, drawUsingBindPushConstants) {
                      .depthAttachmentFormat = depthStencilTexture_->getFormat(),
                      .stencilAttachmentFormat = depthStencilTexture_->getFormat()},
       .cullMode = igl::CullMode::Disabled,
-      .fragmentUnitSamplerMap = {{textureUnit_, IGL_NAMEHANDLE(data::shader::simpleSampler)}},
+      .fragmentUnitSamplerMap = {{textureUnit_, IGL_NAMEHANDLE(data::shader::kSimpleSampler)}},
   };
 
   Result ret;

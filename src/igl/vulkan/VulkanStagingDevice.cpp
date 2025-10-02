@@ -291,7 +291,6 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
   const bool is420 = (image.imageFormat_ == VK_FORMAT_G8_B8R8_2PLANE_420_UNORM) ||
                      (image.imageFormat_ == VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
 
-  // @fb-only
   const uint32_t storageSize =
       is420 ? image.extent_.width * image.extent_.height * 3u / 2u
             : static_cast<uint32_t>(properties.getBytesPerRange(range, bytesPerRow));
@@ -323,7 +322,6 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
   std::vector<VkBufferImageCopy> copyRegions;
   copyRegions.reserve(range.numMipLevels);
 
-  // @fb-only
   if (is420) {
     // this is a prototype support implemented for a couple of multiplanar image formats
     IGL_DEBUG_ASSERT(range.face == 0 && range.layer == 0 && range.mipLevel == 0);

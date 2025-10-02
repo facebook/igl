@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <Metal/Metal.h>
+#import <Metal/MTLRenderCommandEncoder.h>
+#import <Metal/MTLRenderPass.h>
 #include <igl/CommandBuffer.h>
 #include <igl/RenderCommandEncoder.h>
 #include <igl/RenderPass.h>

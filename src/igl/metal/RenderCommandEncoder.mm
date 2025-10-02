@@ -8,7 +8,10 @@
 #include <igl/metal/RenderCommandEncoder.h>
 
 #import <Foundation/Foundation.h>
-#import <Metal/Metal.h>
+#import <Metal/MTLBuffer.h>
+#import <Metal/MTLRenderCommandEncoder.h>
+#import <Metal/MTLRenderPass.h>
+#import <Metal/MTLTypes.h>
 #include <igl/RenderPass.h>
 #include <igl/metal/Buffer.h>
 #include <igl/metal/DepthStencilState.h>

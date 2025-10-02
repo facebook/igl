@@ -165,10 +165,11 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                                                      samples);
 
   if (IGL_VULKAN_USE_VMA && !isDisjoint) {
-    VmaAllocationCreateInfo ciAlloc = {};
-
-    ciAlloc.usage = memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT ? VMA_MEMORY_USAGE_CPU_TO_GPU
-                                                                   : VMA_MEMORY_USAGE_AUTO;
+    const VmaAllocationCreateInfo ciAlloc = {
+        .flags = 0,
+        .usage = memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT ? VMA_MEMORY_USAGE_CPU_TO_GPU
+                                                                : VMA_MEMORY_USAGE_AUTO,
+    };
 
     const VkResult result = vmaCreateImage(
         (VmaAllocator)ctx_->getVmaAllocator(), &ci, &ciAlloc, &vkImage_, &vmaAllocation_, nullptr);

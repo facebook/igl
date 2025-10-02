@@ -20,12 +20,6 @@ VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
                                                  const char* debugName) :
   vf_(vf),
   device_(device),
-  commandPool_(vf_,
-               device_,
-               VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT |
-                   VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
-               queueFamilyIndex,
-               debugName),
   debugName_(debugName),
   lastSubmitSemaphore_({
       .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
@@ -53,6 +47,19 @@ VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
 
   vf_.vkGetDeviceQueue(device_, queueFamilyIndex, 0, &queue_);
 
+  VK_ASSERT(ivkCreateCommandPool(&vf_,
+                                 device_,
+                                 VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT |
+                                     VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
+                                 queueFamilyIndex,
+                                 &commandPool_));
+
+  ivkSetDebugObjectName(&vf_,
+                        device,
+                        VK_OBJECT_TYPE_COMMAND_POOL,
+                        (uint64_t)commandPool_,
+                        IGL_FORMAT("Command Pool: {}", debugName).c_str());
+
   buffers_.reserve(kMaxCommandBuffers);
 
   for (uint32_t i = 0; i != kMaxCommandBuffers; i++) {
@@ -64,14 +71,15 @@ VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
                     IGL_FORMAT("Fence: commandBuffer #{}", i).c_str()),
         VulkanSemaphore(
             vf_, device_, false, IGL_FORMAT("Semaphore: {} ({})", debugName, i).c_str()));
-    VK_ASSERT(ivkAllocateCommandBuffer(
-        &vf_, device_, commandPool_.getVkCommandPool(), &buffers_[i].cmdBufAllocated_));
+    VK_ASSERT(ivkAllocateCommandBuffer(&vf_, device_, commandPool_, &buffers_[i].cmdBufAllocated_));
     buffers_[i].handle_.bufferIndex_ = i;
   }
 }
 
 VulkanImmediateCommands::~VulkanImmediateCommands() {
   waitAll();
+
+  vf_.vkDestroyCommandPool(device_, commandPool_, nullptr);
 }
 
 void VulkanImmediateCommands::purge() {

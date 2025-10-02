@@ -10,6 +10,7 @@
 #include <shell/openxr/XrPassthrough.h>
 
 #include <shell/openxr/XrLog.h>
+#include <igl/Core.h>
 
 namespace igl::shell::openxr {
 

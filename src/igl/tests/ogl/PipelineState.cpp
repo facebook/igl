@@ -82,15 +82,15 @@ class PipelineStateOGLTest : public ::testing::Test {
 
     inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
     inputDesc.attributes[0].offset = 0;
-    inputDesc.attributes[0].bufferIndex = data::shader::simplePosIndex;
-    inputDesc.attributes[0].name = data::shader::simplePos;
+    inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
+    inputDesc.attributes[0].name = data::shader::kSimplePos;
     inputDesc.attributes[0].location = 0;
     inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
     inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
     inputDesc.attributes[1].offset = 0;
-    inputDesc.attributes[1].bufferIndex = data::shader::simpleUvIndex;
-    inputDesc.attributes[1].name = data::shader::simpleUv;
+    inputDesc.attributes[1].bufferIndex = data::shader::kSimpleUvIndex;
+    inputDesc.attributes[1].name = data::shader::kSimpleUv;
     inputDesc.attributes[1].location = 1;
     inputDesc.inputBindings[1].stride = sizeof(float) * 2;
 
@@ -160,11 +160,11 @@ TEST_F(PipelineStateOGLTest, GetIndexByName) {
   ASSERT_TRUE(pipelineState != nullptr);
 
   // These should have a location because they are attributes in the simple shader
-  int idx = pipelineState->getIndexByName(igl::genNameHandle(data::shader::simpleUv),
+  int idx = pipelineState->getIndexByName(IGL_NAMEHANDLE(data::shader::kSimpleUv),
                                           igl::ShaderStage::Fragment);
   ASSERT_NE(idx, -1);
 
-  idx = pipelineState->getIndexByName(igl::genNameHandle(data::shader::simplePos),
+  idx = pipelineState->getIndexByName(IGL_NAMEHANDLE(data::shader::kSimplePos),
                                       igl::ShaderStage::Fragment);
   ASSERT_NE(idx, -1);
 }

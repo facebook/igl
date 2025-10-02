@@ -9,6 +9,8 @@
 
 #include <igl/metal/CommandBuffer.h>
 
+#import <Metal/Metal.h>
+
 namespace igl::metal {
 
 BufferSynchronizationManager::BufferSynchronizationManager(size_t maxInFlightBuffers) :

@@ -8,8 +8,9 @@
 #pragma once
 
 #include <Metal/Metal.h>
-#include <igl/Common.h>
+#include <memory>
 #include <igl/ComputePipelineState.h>
+#include <igl/Macros.h>
 
 namespace igl::metal {
 

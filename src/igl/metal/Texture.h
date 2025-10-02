@@ -7,7 +7,10 @@
 
 #pragma once
 
-#import <Metal/Metal.h>
+@protocol MTLCommandBuffer;
+@protocol MTLTexture;
+#import <Metal/MTLPixelFormat.h>
+#import <Metal/MTLTexture.h>
 #import <QuartzCore/CAMetalLayer.h>
 #include <igl/DeviceFeatures.h>
 #include <igl/Macros.h>

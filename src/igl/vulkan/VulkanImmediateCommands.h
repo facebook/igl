@@ -10,7 +10,6 @@
 #include <vector>
 
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/VulkanCommandPool.h>
 #include <igl/vulkan/VulkanFence.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanSemaphore.h>
@@ -186,7 +185,7 @@ class VulkanImmediateCommands final {
   const VulkanFunctionTable& vf_;
   VkDevice device_ = VK_NULL_HANDLE;
   VkQueue queue_ = VK_NULL_HANDLE;
-  VulkanCommandPool commandPool_;
+  VkCommandPool commandPool_ = VK_NULL_HANDLE;
   std::string debugName_;
   std::vector<CommandBufferWrapper> buffers_;
 

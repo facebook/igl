@@ -188,7 +188,7 @@
     "source": {
         "type": "git",
         "url": "https://github.com/KhronosGroup/SPIRV-Cross.git",
-        "revision": "vulkan-sdk-1.4.313.0"
+        "revision": "vulkan-sdk-1.4.321.0"
     }
 },
 {

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#import <Metal/Metal.h>
+#import <Foundation/NSError.h>
 #include <igl/IGL.h>
 
 namespace igl::metal {

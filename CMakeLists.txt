@@ -93,7 +93,7 @@ function(igl_set_cxxstd target cpp_version)
 endfunction()
 
 # cmake-format: off
-message(STATUS "IGL_WITH_SAMPLES  = ${IGL_WITH_SAMPLES}")
+message(STATUS "IGL_WITH_SAMPLES   = ${IGL_WITH_SAMPLES}")
 
 message(STATUS "IGL_WITH_OPENGL    = ${IGL_WITH_OPENGL}")
 message(STATUS "IGL_WITH_OPENGLES  = ${IGL_WITH_OPENGLES}")
@@ -183,6 +183,7 @@ endif()
 
 if(IGL_WITH_TRACY)
   add_definitions("-DTRACY_ENABLE=1")
+  add_definitions("-DTRACY_VK_USE_SYMBOL_TABLE=1")
   add_subdirectory(third-party/deps/src/tracy)
   igl_set_folder(TracyClient "third-party")
 endif()

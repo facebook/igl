@@ -9,6 +9,7 @@
 
 #include <cstring>
 #include <memory>
+#include <nlohmann/json.hpp>
 #import <simd/vector_types.h>
 #import <igl/IGL.h>
 #import <igl/NameHandle.h>

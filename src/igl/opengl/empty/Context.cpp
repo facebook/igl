@@ -7,7 +7,7 @@
 
 #include <igl/opengl/empty/Context.h>
 
-#include <igl/opengl/Texture.h>
+#include <igl/Texture.h>
 
 namespace igl::opengl::empty {
 

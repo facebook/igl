@@ -53,7 +53,7 @@ TEST_F(ShaderModuleTest, CompileShaderModuleReturnNull) {
   // Vulkan backend has hard coded asserts that we cannot get past.
   // Manually verified that it will assert if this test were to go
   // through, and therefore it's catching the failure.
-  if (backend_ == util::BACKEND_VUL) {
+  if (backend_ == util::kBackendVul) {
     return;
   }
 
@@ -76,12 +76,12 @@ TEST_F(ShaderModuleTest, CompileShaderModule) {
   Result ret;
 
   const char* source = nullptr;
-  if (backend_ == util::BACKEND_OGL) {
-    source = data::shader::OGL_SIMPLE_VERT_SHADER;
-  } else if (backend_ == util::BACKEND_MTL) {
-    source = data::shader::MTL_SIMPLE_SHADER;
-  } else if (backend_ == util::BACKEND_VUL) {
-    source = data::shader::VULKAN_SIMPLE_VERT_SHADER;
+  if (backend_ == util::kBackendOgl) {
+    source = data::shader::kOglSimpleVertShader.data();
+  } else if (backend_ == util::kBackendMtl) {
+    source = data::shader::kMtlSimpleShader.data();
+  } else if (backend_ == util::kBackendVul) {
+    source = data::shader::kVulkanSimpleVertShader.data();
   } else {
     ASSERT_TRUE(0);
   }
@@ -94,12 +94,12 @@ TEST_F(ShaderModuleTest, CompileShaderModule) {
 
 TEST_F(ShaderModuleTest, CompileShaderModuleNoResult) {
   const char* source = nullptr;
-  if (backend_ == util::BACKEND_OGL) {
-    source = data::shader::OGL_SIMPLE_VERT_SHADER;
-  } else if (backend_ == util::BACKEND_MTL) {
-    source = data::shader::MTL_SIMPLE_SHADER;
-  } else if (backend_ == util::BACKEND_VUL) {
-    source = data::shader::VULKAN_SIMPLE_VERT_SHADER;
+  if (backend_ == util::kBackendOgl) {
+    source = data::shader::kOglSimpleVertShader.data();
+  } else if (backend_ == util::kBackendMtl) {
+    source = data::shader::kMtlSimpleShader.data();
+  } else if (backend_ == util::kBackendVul) {
+    source = data::shader::kVulkanSimpleVertShader.data();
   } else {
     ASSERT_TRUE(0);
   }

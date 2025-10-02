@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <Metal/Metal.h>
+#include <Metal/MTLDepthStencil.h>
 #include <igl/DepthStencilState.h>
 
 namespace igl::metal {

@@ -44,13 +44,23 @@ struct TestDeviceConfig {
  */
 bool isBackendTypeSupported(BackendType backendType);
 
+#if IGL_OPENGL_SUPPORTED
+constexpr BackendType kDefaultBackendType = BackendType::OpenGL;
+#elif IGL_VULKAN_SUPPORTED
+constexpr BackendType kDefaultBackendType = BackendType::Vulkan;
+#elif IGL_METAL_SUPPORTED
+constexpr BackendType kDefaultBackendType = BackendType::Metal;
+#else
+constexpr BackendType kDefaultBackendType = BackendType::Invalid;
+#endif
+
 /**
  Create and return an igl::Device that is suitable for running tests against for the specified
  backend.
  For OpenGL, a backendApi value of "2.0" will return a GLES2 context. All other values will return a
  GLES3 context.
  */
-std::unique_ptr<IDevice> createTestDevice(BackendType backendType,
+std::unique_ptr<IDevice> createTestDevice(BackendType backendType = kDefaultBackendType,
                                           const TestDeviceConfig& config = {});
 
 } // namespace igl::tests::util::device

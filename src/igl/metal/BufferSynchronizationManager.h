@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <Metal/Metal.h>
+#include <dispatch/dispatch.h>
 #include <igl/Buffer.h>
 
 namespace igl::metal {

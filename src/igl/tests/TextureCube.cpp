@@ -110,23 +110,23 @@ class TextureCubeTest : public ::testing::Test {
     std::unique_ptr<IShaderStages> stages;
     if (iglDev_->getBackendType() == BackendType::OpenGL) {
       util::createShaderStages(iglDev_,
-                               igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER_CUBE,
-                               igl::tests::data::shader::shaderFunc,
-                               igl::tests::data::shader::OGL_SIMPLE_FRAG_SHADER_CUBE,
-                               igl::tests::data::shader::shaderFunc,
+                               igl::tests::data::shader::kOglSimpleVertShaderCube,
+                               igl::tests::data::shader::kShaderFunc,
+                               igl::tests::data::shader::kOglSimpleFragShaderCube,
+                               igl::tests::data::shader::kShaderFunc,
                                stages);
     } else if (iglDev_->getBackendType() == BackendType::Metal) {
       util::createShaderStages(iglDev_,
-                               igl::tests::data::shader::MTL_SIMPLE_SHADER_CUBE,
-                               igl::tests::data::shader::simpleVertFunc,
-                               igl::tests::data::shader::simpleFragFunc,
+                               igl::tests::data::shader::kMtlSimpleShaderCube,
+                               igl::tests::data::shader::kSimpleVertFunc,
+                               igl::tests::data::shader::kSimpleFragFunc,
                                stages);
     } else if (iglDev_->getBackendType() == BackendType::Vulkan) {
       util::createShaderStages(iglDev_,
-                               igl::tests::data::shader::VULKAN_SIMPLE_VERT_SHADER_CUBE,
-                               igl::tests::data::shader::shaderFunc,
-                               igl::tests::data::shader::VULKAN_SIMPLE_FRAG_SHADER_CUBE,
-                               igl::tests::data::shader::shaderFunc,
+                               igl::tests::data::shader::kVulkanSimpleVertShaderCube,
+                               igl::tests::data::shader::kShaderFunc,
+                               igl::tests::data::shader::kVulkanSimpleFragShaderCube,
+                               igl::tests::data::shader::kShaderFunc,
                                stages);
     } else {
       ASSERT_TRUE(false);
@@ -139,15 +139,15 @@ class TextureCubeTest : public ::testing::Test {
 
     inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
     inputDesc.attributes[0].offset = 0;
-    inputDesc.attributes[0].bufferIndex = data::shader::simplePosIndex;
-    inputDesc.attributes[0].name = data::shader::simplePos;
+    inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
+    inputDesc.attributes[0].name = data::shader::kSimplePos;
     inputDesc.attributes[0].location = 0;
     inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
     inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
     inputDesc.attributes[1].offset = 0;
-    inputDesc.attributes[1].bufferIndex = data::shader::simpleUvIndex;
-    inputDesc.attributes[1].name = data::shader::simpleUv;
+    inputDesc.attributes[1].bufferIndex = data::shader::kSimpleUvIndex;
+    inputDesc.attributes[1].name = data::shader::kSimpleUv;
     inputDesc.attributes[1].location = 1;
     inputDesc.inputBindings[1].stride = sizeof(float) * 2;
 
@@ -162,8 +162,8 @@ class TextureCubeTest : public ::testing::Test {
     BufferDesc bufDesc;
 
     bufDesc.type = BufferDesc::BufferTypeBits::Index;
-    bufDesc.data = data::vertex_index::QUAD_IND;
-    bufDesc.length = sizeof(data::vertex_index::QUAD_IND);
+    bufDesc.data = data::vertex_index::kQuadInd.data();
+    bufDesc.length = sizeof(data::vertex_index::kQuadInd);
 
     ib_ = iglDev_->createBuffer(bufDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -171,8 +171,8 @@ class TextureCubeTest : public ::testing::Test {
 
     // Initialize vertex and sampler buffers
     bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
-    bufDesc.data = data::vertex_index::QUAD_VERT;
-    bufDesc.length = sizeof(data::vertex_index::QUAD_VERT);
+    bufDesc.data = data::vertex_index::kQuadVert.data();
+    bufDesc.length = sizeof(data::vertex_index::kQuadVert);
 
     vb_ = iglDev_->createBuffer(bufDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -180,8 +180,8 @@ class TextureCubeTest : public ::testing::Test {
 
     // Initialize UV data and sampler buffer
     bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
-    bufDesc.data = data::vertex_index::QUAD_UV;
-    bufDesc.length = sizeof(data::vertex_index::QUAD_UV);
+    bufDesc.data = data::vertex_index::kQuadUv.data();
+    bufDesc.length = sizeof(data::vertex_index::kQuadUv);
 
     uv_ = iglDev_->createBuffer(bufDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -201,7 +201,7 @@ class TextureCubeTest : public ::testing::Test {
     renderPipelineDesc_.targetDesc.colorAttachments[0].textureFormat =
         offscreenTexture_->getFormat();
     renderPipelineDesc_.fragmentUnitSamplerMap[textureUnit_] =
-        IGL_NAMEHANDLE(data::shader::simpleSampler);
+        IGL_NAMEHANDLE(data::shader::kSimpleSampler);
     renderPipelineDesc_.cullMode = igl::CullMode::Disabled;
   }
 
@@ -454,8 +454,8 @@ TEST_F(TextureCubeTest, Passthrough_SampleFromCube) {
     ASSERT_TRUE(cmdBuf_ != nullptr);
 
     auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-    cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-    cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+    cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+    cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
     cmds->bindRenderPipelineState(pipelineState);
 
@@ -565,8 +565,8 @@ TEST_F(TextureCubeTest, Passthrough_RenderToCube) {
 
     renderPass_.colorAttachments[0].face = face;
     auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, customFramebuffer);
-    cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-    cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+    cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+    cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
     cmds->bindRenderPipelineState(pipelineState);
 

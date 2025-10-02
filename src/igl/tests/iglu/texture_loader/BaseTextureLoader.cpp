@@ -53,8 +53,8 @@ class BaseTextureLoaderTest : public ::testing::Test {
 TEST_F(BaseTextureLoaderTest, CheckCapabilities) {
   Result result;
   auto dataReader = iglu::textureloader::DataReader::tryCreate(
-      reinterpret_cast<const uint8_t*>(data::texture::TEX_RGBA_2x2),
-      sizeof(data::texture::TEX_RGBA_2x2),
+      reinterpret_cast<const uint8_t*>(data::texture::kTexRgba2x2.data()),
+      sizeof(data::texture::kTexRgba2x2),
       &result);
   ASSERT_TRUE(result.isOk());
   ASSERT_TRUE(dataReader.has_value());
@@ -72,8 +72,8 @@ TEST_F(BaseTextureLoaderTest, CheckCapabilities) {
 TEST_F(BaseTextureLoaderTest, CreateTexture) {
   Result result;
   auto dataReader = iglu::textureloader::DataReader::tryCreate(
-      reinterpret_cast<const uint8_t*>(data::texture::TEX_RGBA_2x2),
-      sizeof(data::texture::TEX_RGBA_2x2),
+      reinterpret_cast<const uint8_t*>(data::texture::kTexRgba2x2.data()),
+      sizeof(data::texture::kTexRgba2x2),
       &result);
   ASSERT_TRUE(result.isOk());
   ASSERT_TRUE(dataReader.has_value());
@@ -94,8 +94,8 @@ TEST_F(BaseTextureLoaderTest, CreateTexture) {
 TEST_F(BaseTextureLoaderTest, UploadTexture) {
   Result result;
   auto dataReader = iglu::textureloader::DataReader::tryCreate(
-      reinterpret_cast<const uint8_t*>(data::texture::TEX_RGBA_2x2),
-      sizeof(data::texture::TEX_RGBA_2x2),
+      reinterpret_cast<const uint8_t*>(data::texture::kTexRgba2x2.data()),
+      sizeof(data::texture::kTexRgba2x2),
       &result);
   ASSERT_TRUE(result.isOk());
   ASSERT_TRUE(dataReader.has_value());

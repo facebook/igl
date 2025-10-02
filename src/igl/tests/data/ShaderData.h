@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstddef> // For size_t/
+#include <string_view>
 #include <igl/Macros.h>
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/Config.h>
@@ -18,21 +19,21 @@ namespace igl::tests::data::shader {
 //-----------------------------------------------------------------------------
 // Defines names of inputs and functions for the shaders in this file
 //-----------------------------------------------------------------------------
-const char shaderFunc[] = "main"; // For OGL and VK
-const char simpleVertFunc[] = "vertexShader";
-const char simpleFragFunc[] = "fragmentShader";
-const char simplePos[] = "position_in";
-const size_t simplePosIndex = 0;
-const char simpleUv[] = "uv_in";
-const size_t simpleUvIndex = 1;
-const char simpleSampler[] = "inputImage";
-const char simpleCubeView[] = "view";
+constexpr std::string_view kShaderFunc = "main"; // For OGL and VK
+constexpr std::string_view kSimpleVertFunc = "vertexShader";
+constexpr std::string_view kSimpleFragFunc = "fragmentShader";
+constexpr std::string_view kSimplePos = "position_in";
+constexpr size_t kSimplePosIndex = 0;
+constexpr std::string_view kSimpleUv = "uv_in";
+constexpr size_t kSimpleUvIndex = 1;
+constexpr std::string_view kSimpleSampler = "inputImage";
+constexpr std::string_view kSimpleCubeView = "view";
 
-const char simpleComputeFunc[] = "doubleKernel";
-const char simpleComputeInput[] = "floatsIn";
-const char simpleComputeOutput[] = "floatsOut";
-const size_t simpleComputeInputIndex = 0;
-const size_t simpleComputeOutputIndex = 1;
+constexpr std::string_view kSimpleComputeFunc = "doubleKernel";
+constexpr std::string_view kSimpleComputeInput = "floatsIn";
+constexpr std::string_view kSimpleComputeOutput = "floatsOut";
+constexpr size_t kSimpleComputeInputIndex = 0;
+constexpr size_t kSimpleComputeOutputIndex = 1;
 
 // clang-format off
 //-----------------------------------------------------------------------------
@@ -60,7 +61,7 @@ const size_t simpleComputeOutputIndex = 1;
 #endif
 
 // Simple OGL Vertex shader
-const char OGL_SIMPLE_VERT_SHADER[] =
+constexpr std::string_view kOglSimpleVertShader =
     IGL_TO_STRING(LEGACY_VERSION attribute vec4 position_in; attribute vec2 uv_in; varying vec2 uv;
 
                void main() {
@@ -71,14 +72,14 @@ const char OGL_SIMPLE_VERT_SHADER[] =
                });
 
 // Simple OGL Fragment shader
-const char OGL_SIMPLE_FRAG_SHADER[] =
+constexpr std::string_view kOglSimpleFragShader =
     IGL_TO_STRING(LEGACY_VERSION PROLOG uniform sampler2D inputImage; varying vec2 uv;
 
                void main() {
                  gl_FragColor = texture2D(inputImage, uv);
                  });
 
-const char OGL_SIMPLE_VERT_SHADER_ES3[] =
+constexpr std::string_view kOglSimpleVertShaderEs3 =
     IGL_TO_STRING(VERSION(300 es)
     in vec4 position_in; in vec2 uv_in; out vec2 uv;
 
@@ -89,7 +90,7 @@ const char OGL_SIMPLE_VERT_SHADER_ES3[] =
                  uv = uv_in;
                });
 
-const char OGL_SIMPLE_FRAG_SHADER_ES3[] =
+constexpr std::string_view kOglSimpleFragShaderEs3 =
     IGL_TO_STRING(VERSION(300 es)
     PROLOG uniform sampler2D inputImage; in vec2 uv; out vec4 fragColor;
 
@@ -97,7 +98,7 @@ const char OGL_SIMPLE_FRAG_SHADER_ES3[] =
                  fragColor = texture(inputImage, uv);
                  });
 
-const char OGL_SIMPLE_VERT_SHADER_MULTIVIEW_ES3[] =
+constexpr std::string_view kOglSimpleVertShaderMultiviewEs3 =
     IGL_TO_STRING(VERSION(300 es)
     REQUIRE_EXTENSION(GL_OVR_multiview2)
     layout(num_views = 2) in;
@@ -112,7 +113,7 @@ const char OGL_SIMPLE_VERT_SHADER_MULTIVIEW_ES3[] =
       color = colors[gl_ViewID_OVR];
     });
 
-const char OGL_SIMPLE_FRAG_SHADER_MULTIVIEW_ES3[] =
+constexpr std::string_view kOglSimpleFragShaderMultiviewEs3 =
     IGL_TO_STRING(VERSION(300 es)
     PROLOG
     in vec4 color;
@@ -122,7 +123,7 @@ const char OGL_SIMPLE_FRAG_SHADER_MULTIVIEW_ES3[] =
       fragColor = color;
     });
 
-const char OGL_SIMPLE_VERT_SHADER_TEXARRAY[] =
+constexpr std::string_view kOglSimpleVertShaderTexArray =
 IGL_TO_STRING(VERSION(150)
     in vec4 position_in;
     in vec2 uv_in;
@@ -137,7 +138,7 @@ IGL_TO_STRING(VERSION(150)
       layer_out = uint(layer);
     });
 
-const char OGL_SIMPLE_FRAG_SHADER_TEXARRAY[] =
+constexpr std::string_view kOglSimpleFragShaderTexArray =
 IGL_TO_STRING(VERSION(150)
     PROLOG
     in vec2 uv;
@@ -150,7 +151,7 @@ IGL_TO_STRING(VERSION(150)
       fragColor = texture(inputImage, vec3(uv, layer_out));
     });
 
-const char OGL_SIMPLE_VERT_SHADER_TEXARRAY_EXT[] =
+constexpr std::string_view kOglSimpleVertShaderTexArrayExt =
 IGL_TO_STRING(VERSION(110)
     attribute vec4 position_in;
     attribute vec2 uv_in;
@@ -164,7 +165,7 @@ IGL_TO_STRING(VERSION(110)
       layer_out = float(layer);
     });
 
-const char OGL_SIMPLE_FRAG_SHADER_TEXARRAY_EXT[] =
+constexpr std::string_view kOglSimpleFragShaderTexArrayExt =
 IGL_TO_STRING(VERSION(110)
     REQUIRE_EXTENSION(GL_EXT_texture_array)
     PROLOG
@@ -177,7 +178,7 @@ IGL_TO_STRING(VERSION(110)
       gl_FragColor = texture2DArray(inputImage, vec3(uv, layer_out));
     });
 
-const char OGL_SIMPLE_VERT_SHADER_TEXARRAY_ES3[] =
+constexpr std::string_view kOglSimpleVertShaderTexArrayEs3 =
 IGL_TO_STRING(VERSION(300 es)
     in vec4 position_in;
     in vec2 uv_in;
@@ -192,7 +193,7 @@ IGL_TO_STRING(VERSION(300 es)
       layer_vs = uint(layer);
     });
 
-const char OGL_SIMPLE_FRAG_SHADER_TEXARRAY_ES3[] =
+constexpr std::string_view kOglSimpleFragShaderTexArrayEs3 =
 IGL_TO_STRING(VERSION(300 es)
     PROLOG
     in vec2 uv_vs;
@@ -206,7 +207,7 @@ IGL_TO_STRING(VERSION(300 es)
     });
 
 // Simple OGL Vertex shader for textureCube and texture3D
-const char OGL_SIMPLE_VERT_SHADER_CUBE[] =
+constexpr std::string_view kOglSimpleVertShaderCube =
     IGL_TO_STRING(LEGACY_VERSION attribute vec4 position_in; uniform vec4 view; varying vec3 uv;
 
                void main() {
@@ -215,13 +216,13 @@ const char OGL_SIMPLE_VERT_SHADER_CUBE[] =
                });
 
 // Simple OGL Fragment shader
-const char OGL_SIMPLE_FRAG_SHADER_CUBE[] =
+constexpr std::string_view kOglSimpleFragShaderCube =
     IGL_TO_STRING(LEGACY_VERSION PROLOG uniform samplerCube inputImage; varying vec3 uv;
 
                void main() { gl_FragColor = textureCube(inputImage, uv); });
 
 // Simple shader which multiplies each float value in the input buffer by 2 and writes the result to the output buffer
-const char OGL_SIMPLE_COMPUTE_SHADER[] =
+constexpr std::string_view kOglSimpleComputeShader =
   IGL_TO_STRING(VERSION(310 es)
         precision highp float;
 
@@ -239,7 +240,7 @@ const char OGL_SIMPLE_COMPUTE_SHADER[] =
             fOut[id] = fIn[id] * 2.0f;
         });
 
-const char OGL_SIMPLE_VERT_SHADER_UNIFORM_BLOCKS[] =
+constexpr std::string_view kOglSimpleVertShaderUniformBlocks =
       IGL_TO_STRING(VERSION(300 es)
       in vec4 position_in; out vec3 uv;
 
@@ -259,7 +260,7 @@ const char OGL_SIMPLE_VERT_SHADER_UNIFORM_BLOCKS[] =
         uv = matrices.view;
       });
 
-const char OGL_SIMPLE_FRAG_SHADER_UNIFORM_BLOCKS[] =
+constexpr std::string_view kOglSimpleFragShaderUniformBlocks =
     IGL_TO_STRING(VERSION(300 es)
       PROLOG uniform sampler2D inputImage; in vec3 uv; out vec4 fragColor;
 
@@ -303,21 +304,21 @@ const char OGL_SIMPLE_FRAG_SHADER_UNIFORM_BLOCKS[] =
         return ret;                                                             \
       });                                                                       \
 
-const char MTL_SIMPLE_SHADER_FLOAT[] = MTL_SIMPLE_SHADER_DEF(float, r);
-const char MTL_SIMPLE_SHADER_FLOAT2[] = MTL_SIMPLE_SHADER_DEF(float2, rg);
-const char MTL_SIMPLE_SHADER_FLOAT3[] = MTL_SIMPLE_SHADER_DEF(float3, rgb);
-const char MTL_SIMPLE_SHADER_FLOAT4[] = MTL_SIMPLE_SHADER_DEF(float4, rgba);
-const char MTL_SIMPLE_SHADER_USHORT[] = MTL_SIMPLE_SHADER_DEF(ushort, r);
-const char MTL_SIMPLE_SHADER_USHORT2[] = MTL_SIMPLE_SHADER_DEF(ushort2, rg);
-const char MTL_SIMPLE_SHADER_USHORT4[] = MTL_SIMPLE_SHADER_DEF(ushort4, rgba);
-const char MTL_SIMPLE_SHADER_UINT4[] = MTL_SIMPLE_SHADER_DEF(uint4, rgba);
-const char MTL_SIMPLE_SHADER_UINT[] = MTL_SIMPLE_SHADER_DEF(uint4, r);
-const char MTL_SIMPLE_SHADER[] = MTL_SIMPLE_SHADER_DEF(float4, rgba);
+constexpr std::string_view kMtlSimpleShaderFloat = MTL_SIMPLE_SHADER_DEF(float, r);
+constexpr std::string_view kMtlSimpleShaderFloat2 = MTL_SIMPLE_SHADER_DEF(float2, rg);
+constexpr std::string_view kMtlSimpleShaderFloat3 = MTL_SIMPLE_SHADER_DEF(float3, rgb);
+constexpr std::string_view kMtlSimpleShaderFloat4 = MTL_SIMPLE_SHADER_DEF(float4, rgba);
+constexpr std::string_view kMtlSimpleShaderUshort = MTL_SIMPLE_SHADER_DEF(ushort, r);
+constexpr std::string_view kMtlSimpleShaderUshort2 = MTL_SIMPLE_SHADER_DEF(ushort2, rg);
+constexpr std::string_view kMtlSimpleShaderUshort4 = MTL_SIMPLE_SHADER_DEF(ushort4, rgba);
+constexpr std::string_view kMtlSimpleShaderUint4 = MTL_SIMPLE_SHADER_DEF(uint4, rgba);
+constexpr std::string_view kMtlSimpleShaderUint = MTL_SIMPLE_SHADER_DEF(uint4, r);
+constexpr std::string_view kMtlSimpleShader = MTL_SIMPLE_SHADER_DEF(float4, rgba);
 
 // Simple Metal Shader for 1D Texture
 // The vertext function expects vertex and sampler positions to be bound to
 // separate buffers
-const char MTL_SIMPLE_SHADER_1DTEX[] =
+constexpr std::string_view kMtlSimpleShader1dtex =
     IGL_TO_STRING(using namespace metal;
 
                typedef struct { float3 color; } UniformBlock;
@@ -347,7 +348,7 @@ const char MTL_SIMPLE_SHADER_1DTEX[] =
 // Simple Metal Shader
 // The vertext function expects vertex and sampler positions to be bound to
 // separate buffers
-const char MTL_SIMPLE_SHADER_CUBE[] =
+constexpr std::string_view kMtlSimpleShaderCube =
     IGL_TO_STRING(using namespace metal;
 
                typedef struct {
@@ -379,7 +380,7 @@ const char MTL_SIMPLE_SHADER_CUBE[] =
                });
 
 // Simple shader which multiplies each float value in the input buffer by 2 and writes the result to the output buffer
-const char MTL_SIMPLE_COMPUTE_SHADER[] =
+constexpr std::string_view kMtlSimpleComputeShader =
   IGL_TO_STRING(using namespace metal;
 
       kernel void doubleKernel(
@@ -389,7 +390,7 @@ const char MTL_SIMPLE_COMPUTE_SHADER[] =
         floatsOut[gid.x] = floatsIn[gid.x] * 2.0;
       });
 
-const char MTL_SIMPLE_SHADER_TXT_1D_ARRAY[] =
+constexpr std::string_view kMtlSimpleShaderTxt1dArray =
     IGL_TO_STRING(using namespace metal;
 
                typedef struct {
@@ -422,7 +423,7 @@ const char MTL_SIMPLE_SHADER_TXT_1D_ARRAY[] =
                });
 
 
-const char MTL_SIMPLE_SHADER_TXT_2D_ARRAY[] =
+constexpr std::string_view kMtlSimpleShaderTxt2dArray =
     IGL_TO_STRING(using namespace metal;
 
                typedef struct {
@@ -459,7 +460,7 @@ const char MTL_SIMPLE_SHADER_TXT_2D_ARRAY[] =
 //-----------------------------------------------------------------------------
 
 // Simple Vulkan Vertex shader
-const char VULKAN_SIMPLE_VERT_SHADER[] =
+constexpr std::string_view kVulkanSimpleVertShader =
     IGL_TO_STRING(
       layout (location=0) in vec4 position_in;
       layout (location=1) in vec2 uv_in;
@@ -484,17 +485,17 @@ const char VULKAN_SIMPLE_VERT_SHADER[] =
         out_FragColor = returnType(tex.swizzle);            \
       });
 
-const char VULKAN_SIMPLE_FRAG_SHADER[] = VULKAN_SIMPLE_FRAG_SHADER_DEF(vec4, rgba);
+constexpr std::string_view kVulkanSimpleFragShader = VULKAN_SIMPLE_FRAG_SHADER_DEF(vec4, rgba);
 
-const char VULKAN_SIMPLE_FRAG_SHADER_FLOAT[] = VULKAN_SIMPLE_FRAG_SHADER_DEF(float, r);
-const char VULKAN_SIMPLE_FRAG_SHADER_FLOAT2[] = VULKAN_SIMPLE_FRAG_SHADER_DEF(vec2, rg);
-const char VULKAN_SIMPLE_FRAG_SHADER_FLOAT3[] = VULKAN_SIMPLE_FRAG_SHADER_DEF(vec3, rgb);
-const char VULKAN_SIMPLE_FRAG_SHADER_FLOAT4[] = VULKAN_SIMPLE_FRAG_SHADER_DEF(vec4, rgba);
-const char VULKAN_SIMPLE_FRAG_SHADER_UINT[] = VULKAN_SIMPLE_FRAG_SHADER_DEF(uint, r);
-const char VULKAN_SIMPLE_FRAG_SHADER_UINT2[] = VULKAN_SIMPLE_FRAG_SHADER_DEF(uvec2, rg);
-const char VULKAN_SIMPLE_FRAG_SHADER_UINT4[] = VULKAN_SIMPLE_FRAG_SHADER_DEF(uvec4, rgba);
+constexpr std::string_view kVulkanSimpleFragShaderFloat = VULKAN_SIMPLE_FRAG_SHADER_DEF(float, r);
+constexpr std::string_view kVulkanSimpleFragShaderFloat2 = VULKAN_SIMPLE_FRAG_SHADER_DEF(vec2, rg);
+constexpr std::string_view kVulkanSimpleFragShaderFloat3 = VULKAN_SIMPLE_FRAG_SHADER_DEF(vec3, rgb);
+constexpr std::string_view kVulkanSimpleFragShaderFloat4 = VULKAN_SIMPLE_FRAG_SHADER_DEF(vec4, rgba);
+constexpr std::string_view kVulkanSimpleFragShaderUint = VULKAN_SIMPLE_FRAG_SHADER_DEF(uint, r);
+constexpr std::string_view kVulkanSimpleFragShaderUint2 = VULKAN_SIMPLE_FRAG_SHADER_DEF(uvec2, rg);
+constexpr std::string_view kVulkanSimpleFragShaderUint4 = VULKAN_SIMPLE_FRAG_SHADER_DEF(uvec4, rgba);
 
-const char VULKAN_PUSH_CONSTANT_VERT_SHADER[] =
+constexpr std::string_view kVulkanPushConstantVertShader =
     IGL_TO_STRING(
       layout (location=0) in vec4 position_in;
       layout (location=1) in vec2 uv_in;
@@ -506,7 +507,7 @@ const char VULKAN_PUSH_CONSTANT_VERT_SHADER[] =
         uv = uv_in;
       });
 
-const char VULKAN_PUSH_CONSTANT_FRAG_SHADER[] =
+constexpr std::string_view kVulkanPushConstantFragShader =
     IGL_TO_STRING(
       layout (location=0) in vec2 uv;
       layout (location=0) out vec4 out_FragColor;
@@ -522,7 +523,7 @@ const char VULKAN_PUSH_CONSTANT_FRAG_SHADER[] =
         out_FragColor = tex * pushConstants.colorMultiplier;
       });
 
-const char VULKAN_SIMPLE_VERT_SHADER_TEX_2DARRAY[] =
+constexpr std::string_view kVulkanSimpleVertShaderTex2dArray =
 IGL_TO_STRING(
     layout(location = 0) in vec4 position_in;
     layout(location = 1) in vec2 uv_in;
@@ -543,7 +544,7 @@ IGL_TO_STRING(
       layer_out = perFrame.layer;
     });
 
-const char VULKAN_SIMPLE_FRAG_SHADER_TEX_1DARRAY[] =
+constexpr std::string_view kVulkanSimpleFragShaderTex1darray =
 IGL_TO_STRING(
     layout(location = 0) in vec2 uv;
     layout(location = 1) in flat uint layer;
@@ -555,7 +556,7 @@ IGL_TO_STRING(
         out_FragColor = texture(uTex, vec2(uv.x, layer));
     });
 
-const char VULKAN_SIMPLE_FRAG_SHADER_TEX_2DARRAY[] =
+constexpr std::string_view kVulkanSimpleFragShaderTex2dArray =
 IGL_TO_STRING(
     layout(location = 0) in vec2 uv;
     layout(location = 1) in flat uint layer;
@@ -567,7 +568,7 @@ IGL_TO_STRING(
       out_FragColor = texture(uTex, vec3(uv.xy, layer));
     });
 
-const char VULKAN_SIMPLE_VERT_SHADER_CUBE[] =
+constexpr std::string_view kVulkanSimpleVertShaderCube =
     IGL_TO_STRING(layout(location = 0) in vec4 position_in;
                   layout(location = 0) out vec3 view;
 
@@ -584,7 +585,7 @@ const char VULKAN_SIMPLE_VERT_SHADER_CUBE[] =
                  view = perFrame.view.xyz;
                });
 
-const char VULKAN_SIMPLE_FRAG_SHADER_CUBE[] =
+constexpr std::string_view kVulkanSimpleFragShaderCube =
     IGL_TO_STRING(
                layout(location = 0) in vec3 view;
                layout(location = 0) out vec4 out_FragColor;
@@ -596,7 +597,7 @@ const char VULKAN_SIMPLE_FRAG_SHADER_CUBE[] =
                });
 
 // Simple Vulkan Vertex shader for multiview
-const char VULKAN_SIMPLE_VERT_SHADER_MULTIVIEW[] =
+constexpr std::string_view kVulkanSimpleVertShaderMultiview =
     IGL_TO_STRING(\n
       REQUIRE_EXTENSION(GL_EXT_multiview)
       layout (location = 0) in vec4 position_in;
@@ -612,7 +613,7 @@ const char VULKAN_SIMPLE_VERT_SHADER_MULTIVIEW[] =
       });
 
 // Simple Vulkan Fragment shader for multiview
-const char VULKAN_SIMPLE_FRAG_SHADER_MULTIVIEW[] =
+constexpr std::string_view kVulkanSimpleFragShaderMultiview =
     IGL_TO_STRING(
       layout (location = 0) in vec4 color_in;
       layout (location = 0) out vec4 out_FragColor;
@@ -621,7 +622,7 @@ const char VULKAN_SIMPLE_FRAG_SHADER_MULTIVIEW[] =
         out_FragColor = color_in;
       });
 
-const char VULKAN_SIMPLE_COMPUTE_SHADER[] =
+constexpr std::string_view kVulkanSimpleComputeShader =
   IGL_TO_STRING(
         layout (local_size_x = 6, local_size_y = 1, local_size_z = 1) in;
         layout (std430, binding = 0, set = 1) readonly buffer floatsIn {

@@ -66,7 +66,7 @@ class FramebufferTest : public ::testing::Test {
 
     auto depthFormat = TextureFormat::S8_UInt_Z32_UNorm;
 
-    if (backend_ == util::BACKEND_VUL) {
+    if (backend_ == util::kBackendVul) {
       depthFormat = TextureFormat::S8_UInt_Z24_UNorm;
     }
 
@@ -122,15 +122,15 @@ class FramebufferTest : public ::testing::Test {
 
     inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
     inputDesc.attributes[0].offset = 0;
-    inputDesc.attributes[0].bufferIndex = data::shader::simplePosIndex;
-    inputDesc.attributes[0].name = data::shader::simplePos;
+    inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
+    inputDesc.attributes[0].name = data::shader::kSimplePos;
     inputDesc.attributes[0].location = 0;
     inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
     inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
     inputDesc.attributes[1].offset = 0;
-    inputDesc.attributes[1].bufferIndex = data::shader::simpleUvIndex;
-    inputDesc.attributes[1].name = data::shader::simpleUv;
+    inputDesc.attributes[1].bufferIndex = data::shader::kSimpleUvIndex;
+    inputDesc.attributes[1].name = data::shader::kSimpleUv;
     inputDesc.attributes[1].location = 1;
     inputDesc.inputBindings[1].stride = sizeof(float) * 2;
 
@@ -145,8 +145,8 @@ class FramebufferTest : public ::testing::Test {
     BufferDesc bufDesc;
 
     bufDesc.type = BufferDesc::BufferTypeBits::Index;
-    bufDesc.data = data::vertex_index::QUAD_IND;
-    bufDesc.length = sizeof(data::vertex_index::QUAD_IND);
+    bufDesc.data = data::vertex_index::kQuadInd.data();
+    bufDesc.length = sizeof(data::vertex_index::kQuadInd);
 
     ib_ = iglDev_->createBuffer(bufDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -154,16 +154,16 @@ class FramebufferTest : public ::testing::Test {
 
     // Initialize vertex and sampler buffers
     bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
-    bufDesc.data = data::vertex_index::QUAD_VERT;
-    bufDesc.length = sizeof(data::vertex_index::QUAD_VERT);
+    bufDesc.data = data::vertex_index::kQuadVert.data();
+    bufDesc.length = sizeof(data::vertex_index::kQuadVert);
 
     vb_ = iglDev_->createBuffer(bufDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(vb_ != nullptr);
 
     bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
-    bufDesc.data = data::vertex_index::QUAD_UV;
-    bufDesc.length = sizeof(data::vertex_index::QUAD_UV);
+    bufDesc.data = data::vertex_index::kQuadUv.data();
+    bufDesc.length = sizeof(data::vertex_index::kQuadUv);
 
     uv_ = iglDev_->createBuffer(bufDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -308,8 +308,8 @@ TEST_F(FramebufferTest, Clear) {
   cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
   cmds->bindRenderPipelineState(pipelineState);
   cmds->bindDepthStencilState(depthStencilState);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+  cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
   cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
   cmds->drawIndexed(0); // draw 0 indices
   cmds->endEncoding();
@@ -379,7 +379,7 @@ TEST_F(FramebufferTest, Clear) {
 TEST_F(FramebufferTest, blitFramebufferColor) {
   auto* platformDevice = iglDev_->getPlatformDevice<opengl::PlatformDevice>();
   if (platformDevice) {
-    ASSERT_TRUE(backend_ == util::BACKEND_OGL);
+    ASSERT_TRUE(backend_ == util::kBackendOgl);
 
     /* Bootcamper: Your Code here
      * At the high level here are the steps:
@@ -502,7 +502,7 @@ TEST_F(FramebufferTest, blitFramebufferColor) {
       ASSERT_EQ(pixels2[0], 0x80808080);
     }
   } else {
-    ASSERT_TRUE(backend_ != util::BACKEND_OGL);
+    ASSERT_TRUE(backend_ != util::kBackendOgl);
   }
 }
 #endif // IGL_BACKEND_OPENGL
