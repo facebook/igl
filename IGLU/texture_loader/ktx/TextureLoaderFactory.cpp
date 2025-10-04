@@ -147,7 +147,7 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
 
   ktxTexture* rawTexture = nullptr;
   auto error = ktxTexture_CreateFromMemory(
-      reader.data(), reader.length(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &rawTexture);
+      reader.data(), reader.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &rawTexture);
 
   if (error != KTX_SUCCESS || rawTexture == nullptr) {
     IGL_LOG_ERROR("Error loading KTX texture: %d %s\n", error, ktxErrorString(error));

@@ -10,25 +10,25 @@
 namespace iglu::textureloader {
 
 std::optional<DataReader> DataReader::tryCreate(const uint8_t* FOLLY_NONNULL data,
-                                                uint32_t length,
+                                                uint32_t size,
                                                 igl::Result* IGL_NULLABLE outResult) {
   if (data == nullptr) {
     igl::Result::setResult(outResult, igl::Result::Code::ArgumentInvalid, "data is nullptr.");
     return {};
   }
 
-  return DataReader(data, length);
+  return DataReader(data, size);
 }
 
-DataReader::DataReader(const uint8_t* FOLLY_NONNULL data, uint32_t length) noexcept :
-  data_(data), length_(length) {}
+DataReader::DataReader(const uint8_t* FOLLY_NONNULL data, uint32_t size) noexcept :
+  data_(data), size_(size) {}
 
 const uint8_t* DataReader::data() const noexcept {
   return data_;
 }
 
-uint32_t DataReader::length() const noexcept {
-  return length_;
+uint32_t DataReader::size() const noexcept {
+  return size_;
 }
 
 const uint8_t* IGL_NULLABLE DataReader::tryAt(uint32_t offset,
@@ -40,7 +40,7 @@ const uint8_t* IGL_NULLABLE DataReader::tryAt(uint32_t offset,
 }
 
 const uint8_t* IGL_NONNULL DataReader::at(uint32_t offset) const noexcept {
-  IGL_DEBUG_ASSERT(length_ >= offset);
+  IGL_DEBUG_ASSERT(size_ >= offset);
   return data_ + offset;
 }
 
@@ -55,9 +55,9 @@ bool DataReader::tryAdvance(uint32_t bytesToAdvance, igl::Result* IGL_NULLABLE o
 bool DataReader::ensureLength(uint32_t requestedLength,
                               uint32_t offset,
                               igl::Result* IGL_NULLABLE outResult) const noexcept {
-  if (offset > length_ || requestedLength > length_ - offset) {
+  if (offset > size_ || requestedLength > size_ - offset) {
     igl::Result::setResult(
-        outResult, igl::Result::Code::InvalidOperation, "data length is too small.");
+        outResult, igl::Result::Code::InvalidOperation, "data size is too small.");
     return false;
   }
 
@@ -65,10 +65,10 @@ bool DataReader::ensureLength(uint32_t requestedLength,
 }
 
 void DataReader::advance(uint32_t bytesToAdvance) noexcept {
-  IGL_DEBUG_ASSERT(length_ >= bytesToAdvance);
+  IGL_DEBUG_ASSERT(size_ >= bytesToAdvance);
 
   data_ += bytesToAdvance;
-  length_ -= bytesToAdvance;
+  size_ -= bytesToAdvance;
 }
 
 } // namespace iglu::textureloader

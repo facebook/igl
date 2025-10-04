@@ -49,28 +49,28 @@ constexpr uint32_t kNumBytes = kWidth * kHeight * 4u;
 class CheckerboardData : public iglu::textureloader::IData {
  public:
   [[nodiscard]] const uint8_t* IGL_NONNULL data() const noexcept final;
-  [[nodiscard]] uint32_t length() const noexcept final;
+  [[nodiscard]] uint32_t size() const noexcept final;
 };
 
 const uint8_t* IGL_NONNULL CheckerboardData::data() const noexcept {
   return reinterpret_cast<const uint8_t*>(kCheckerboard.data());
 }
 
-uint32_t CheckerboardData::length() const noexcept {
+uint32_t CheckerboardData::size() const noexcept {
   return kNumBytes;
 }
 
 class WhiteData : public iglu::textureloader::IData {
  public:
   [[nodiscard]] const uint8_t* IGL_NONNULL data() const noexcept final;
-  [[nodiscard]] uint32_t length() const noexcept final;
+  [[nodiscard]] uint32_t size() const noexcept final;
 };
 
 const uint8_t* IGL_NONNULL WhiteData::data() const noexcept {
   return reinterpret_cast<const uint8_t*>(kWhiteTexture.data());
 }
 
-uint32_t WhiteData::length() const noexcept {
+uint32_t WhiteData::size() const noexcept {
   return kNumBytes;
 }
 } // namespace

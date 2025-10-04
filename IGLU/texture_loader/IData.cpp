@@ -11,55 +11,55 @@ namespace iglu::textureloader {
 namespace {
 class ByteData final : public IData {
  public:
-  ByteData(std::unique_ptr<uint8_t[]> data, size_t length) noexcept;
+  ByteData(std::unique_ptr<uint8_t[]> data, size_t size) noexcept;
 
   ~ByteData() final = default;
 
   [[nodiscard]] const uint8_t* IGL_NONNULL data() const noexcept final;
-  [[nodiscard]] uint32_t length() const noexcept final;
+  [[nodiscard]] uint32_t size() const noexcept final;
 
   [[nodiscard]] ExtractedData extractData() noexcept final;
 
  private:
   std::unique_ptr<uint8_t[]> data_;
-  uint32_t length_ = 0;
+  uint32_t size_ = 0;
 };
 
-ByteData::ByteData(std::unique_ptr<uint8_t[]> data, size_t length) noexcept :
-  data_(std::move(data)), length_(length) {}
+ByteData::ByteData(std::unique_ptr<uint8_t[]> data, size_t size) noexcept :
+  data_(std::move(data)), size_(size) {}
 
 const uint8_t* IGL_NONNULL ByteData::data() const noexcept {
   IGL_DEBUG_ASSERT(data_ != nullptr);
   return data_.get();
 }
 
-uint32_t ByteData::length() const noexcept {
-  return length_;
+uint32_t ByteData::size() const noexcept {
+  return size_;
 }
 
 IData::ExtractedData ByteData::extractData() noexcept {
   return {
       .data = data_.release(),
-      .length = length_,
+      .size = size_,
       .deleter = [](void* d) { delete[] reinterpret_cast<uint8_t*>(d); },
   };
 }
 } // namespace
 
 std::unique_ptr<IData> IData::tryCreate(std::unique_ptr<uint8_t[]> data,
-                                        uint32_t length,
+                                        uint32_t size,
                                         igl::Result* IGL_NULLABLE outResult) {
   if (data == nullptr) {
     igl::Result::setResult(outResult, igl::Result::Code::ArgumentNull, "data is nullptr");
     return nullptr;
   }
 
-  if (length == 0u) {
-    igl::Result::setResult(outResult, igl::Result::Code::ArgumentInvalid, "length is 0");
+  if (size == 0u) {
+    igl::Result::setResult(outResult, igl::Result::Code::ArgumentInvalid, "size is 0");
     return nullptr;
   }
 
-  return std::make_unique<ByteData>(std::move(data), length);
+  return std::make_unique<ByteData>(std::move(data), size);
 }
 
 } // namespace iglu::textureloader

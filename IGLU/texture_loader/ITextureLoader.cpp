@@ -16,7 +16,7 @@ namespace iglu::textureloader {
 /// Interface for getting CPU access to GPU texture data
 ITextureLoader::ITextureLoader(DataReader reader, igl::TextureDesc::TextureUsage usage) noexcept :
   reader_(reader) {
-  IGL_DEBUG_ASSERT(reader.data() != nullptr && reader.length() > 0);
+  IGL_DEBUG_ASSERT(reader.data() != nullptr && reader.size() > 0);
   desc_.usage = usage;
 }
 
@@ -180,7 +180,7 @@ void ITextureLoader::defaultLoadToExternalMemory(uint8_t* IGL_NONNULL data,
                                                  uint32_t length,
                                                  igl::Result* IGL_NULLABLE
                                                      outResult) const noexcept {
-  if (reader_.length() != length) {
+  if (reader_.size() != length) {
     igl::Result::setResult(
         outResult, igl::Result::Code::ArgumentInvalid, "length doesn't match reader length.");
     return;
