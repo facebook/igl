@@ -66,7 +66,7 @@ const uint32_t kBinding_SamplerShadow = 5;
 const uint32_t kBinding_StorageImages = 6;
 // NOLINTEND(readability-identifier-naming)
 
-#if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_APPLE
+#if !IGL_PLATFORM_APPLE
 VKAPI_ATTR VkBool32 VKAPI_CALL
 vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
                     [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT msgType,
@@ -125,7 +125,7 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
 
   return VK_FALSE;
 }
-#endif // defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID
+#endif // !IGL_PLATFORM_ANDROID
 
 std::vector<VkFormat> getCompatibleDepthStencilFormats(igl::TextureFormat format) {
   switch (format) {
@@ -552,11 +552,11 @@ VulkanContext::~VulkanContext() {
   if (vkDevice_) {
     vf_.vkDestroyDevice(vkDevice_, nullptr); // Device has to be destroyed prior to Instance
   }
-#if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID
+#if !IGL_PLATFORM_ANDROID
   if (vf_.vkDestroyDebugUtilsMessengerEXT != nullptr) {
     vf_.vkDestroyDebugUtilsMessengerEXT(vkInstance_, vkDebugUtilsMessenger_, nullptr);
   }
-#endif // defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID
+#endif // !IGL_PLATFORM_ANDROID
   if (vf_.vkDestroyInstance != nullptr) {
     vf_.vkDestroyInstance(vkInstance_, nullptr);
   }
@@ -682,12 +682,12 @@ void VulkanContext::createInstance() {
       features_.enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VulkanFeatures::ExtensionType::Instance);
   vulkan::functions::loadInstanceFunctions(*tableImpl_, vkInstance_, enableExtDebugUtils);
 
-#if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_APPLE
+#if !IGL_PLATFORM_APPLE
   if (features_.enabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
     VK_ASSERT(ivkCreateDebugUtilsMessenger(
         &vf_, vkInstance_, &vulkanDebugCallback, this, &vkDebugUtilsMessenger_));
   }
-#endif // if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_APPLE
+#endif // !IGL_PLATFORM_APPLE
 
 #if IGL_LOGGING_ENABLED
   if (config_.enableExtraLogs) {
