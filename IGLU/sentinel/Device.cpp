@@ -148,6 +148,11 @@ size_t Device::getCurrentDrawCount() const {
   return 0;
 }
 
+size_t Device::getShaderCompilationCount() const {
+  IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
+  return 0;
+}
+
 std::unique_ptr<igl::IShaderLibrary> Device::createShaderLibrary(
     const igl::ShaderLibraryDesc& /*desc*/,
     igl::Result* IGL_NULLABLE

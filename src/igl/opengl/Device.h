@@ -113,6 +113,7 @@ class Device : public IDevice {
 
   // Device Statistics
   [[nodiscard]] size_t getCurrentDrawCount() const override;
+  [[nodiscard]] size_t getShaderCompilationCount() const override;
 
   bool verifyScope() override;
 

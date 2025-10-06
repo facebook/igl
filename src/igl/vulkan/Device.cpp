@@ -527,12 +527,18 @@ size_t Device::getCurrentDrawCountInternal() const {
   return ctx_->drawCallCount_;
 }
 
+size_t Device::getShaderCompilationCountInternal() const {
+  return ctx_->shaderCompilationCount_;
+}
+
 std::unique_ptr<IShaderLibrary> Device::createShaderLibraryInternal(const ShaderLibraryDesc& desc,
                                                                     Result* IGL_NULLABLE
                                                                         outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
+
+  ctx_->shaderCompilationCount_++;
 
   if (IGL_DEBUG_VERIFY_NOT(desc.moduleInfo.empty())) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid);

@@ -333,6 +333,7 @@ class VulkanContext final {
   mutable bool awaitingCreation_ = false;
 
   mutable size_t drawCallCount_ = 0;
+  mutable size_t shaderCompilationCount_ = 0;
 
   // stores an index into renderPasses_
   mutable std::
