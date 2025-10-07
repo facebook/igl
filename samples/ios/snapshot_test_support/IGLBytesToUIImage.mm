@@ -7,6 +7,16 @@
 
 #import "IGLBytesToUIImage.h"
 
+#import <CoreGraphics/CGColorSpace.h>
+#import <CoreGraphics/CGContext.h>
+#import <CoreGraphics/CGDataProvider.h>
+#import <CoreGraphics/CGGeometry.h>
+#import <CoreGraphics/CGImage.h>
+#import <Foundation/NSData.h>
+#import <Foundation/NSException.h>
+#import <UIKit/UIGraphics.h>
+#import <UIKit/UIImage.h>
+
 UIImage* IGLRGBABytesToUIImage(void* bytes, size_t width, size_t height) {
   auto data = [NSData dataWithBytes:bytes length:width * height * 4];
 
