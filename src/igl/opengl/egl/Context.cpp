@@ -30,9 +30,9 @@ namespace error_checking {
     errorStr = #egl_error_code;              \
     break;
 
-EGLint checkForEGLErrors(IGL_MAYBE_UNUSED const char* fileName,
-                         IGL_MAYBE_UNUSED const char* callerName,
-                         IGL_MAYBE_UNUSED size_t lineNum) {
+static EGLint checkForEGLErrors(IGL_MAYBE_UNUSED const char* fileName,
+                                IGL_MAYBE_UNUSED const char* callerName,
+                                IGL_MAYBE_UNUSED size_t lineNum) {
   const EGLint errorCode = eglGetError();
   if (errorCode != EGL_SUCCESS) {
     IGL_MAYBE_UNUSED const char* errorStr = nullptr;
