@@ -13,12 +13,13 @@
 #include <igl/opengl/PlatformDevice.h>
 #include <igl/opengl/Version.h>
 #if IGL_ANGLE
+#include <shell/shared/platform/win/PlatformWin.h>
 #include <igl/opengl/egl/Context.h>
 #include <igl/opengl/egl/Device.h>
 #include <igl/opengl/egl/PlatformDevice.h>
 #endif // IGL_ANGLE
 #include <memory>
-#include <shell/shared/platform/win/PlatformWin.h>
+#include <shell/shared/platform/Platform.h>
 #include <shell/windows/common/GlfwShell.h>
 
 #include <GLFW/glfw3.h>
