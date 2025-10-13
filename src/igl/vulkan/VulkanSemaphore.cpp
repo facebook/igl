@@ -15,7 +15,7 @@ VulkanSemaphore::VulkanSemaphore(const VulkanFunctionTable& vf,
                                  VkDevice device,
                                  bool exportable,
                                  const char* debugName) :
-  vf_(&vf), device_(device) {
+  vf_(&vf), device_(device), exportable_(exportable) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   const VkExportSemaphoreCreateInfo exportInfo = {
@@ -37,7 +37,7 @@ VulkanSemaphore::VulkanSemaphore(const VulkanFunctionTable& vf,
                                  uint64_t initialValue,
                                  bool exportable,
                                  const char* debugName) :
-  vf_(&vf), device_(device) {
+  vf_(&vf), device_(device), exportable_(exportable) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   const VkExportSemaphoreCreateInfo exportInfo = {
@@ -74,6 +74,7 @@ VulkanSemaphore::VulkanSemaphore(VulkanSemaphore&& other) noexcept {
   std::swap(vf_, other.vf_);
   std::swap(device_, other.device_);
   std::swap(vkSemaphore_, other.vkSemaphore_);
+  std::swap(exportable_, other.exportable_);
 }
 
 VulkanSemaphore& VulkanSemaphore::operator=(VulkanSemaphore&& other) noexcept {
@@ -81,6 +82,7 @@ VulkanSemaphore& VulkanSemaphore::operator=(VulkanSemaphore&& other) noexcept {
   std::swap(vf_, tmp.vf_);
   std::swap(device_, tmp.device_);
   std::swap(vkSemaphore_, tmp.vkSemaphore_);
+  std::swap(exportable_, other.exportable_);
   return *this;
 }
 
@@ -91,6 +93,9 @@ VkSemaphore VulkanSemaphore::getVkSemaphore() const noexcept {
 // Exportable semaphores are not used right now, so exclude from coverage
 // FIXME_DEPRECATED_COVERAGE_EXCLUDE_START
 int VulkanSemaphore::getFileDescriptor() const noexcept {
+  if (!exportable_) {
+    return -1;
+  }
   const VkSemaphoreGetFdInfoKHR fdInfo = {
       .sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR,
       .pNext = nullptr,
