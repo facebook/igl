@@ -91,16 +91,14 @@ VkSemaphore VulkanSemaphore::getVkSemaphore() const noexcept {
 // Exportable semaphores are not used right now, so exclude from coverage
 // FIXME_DEPRECATED_COVERAGE_EXCLUDE_START
 int VulkanSemaphore::getFileDescriptor() const noexcept {
-  // This is intentionally c++17 compatible and not c++20 style
-  // because there are libraries that rely on this code
-  // that are not yet moved forward to c++20
-  VkSemaphoreGetFdInfoKHR fdInfo;
-  fdInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR;
-  fdInfo.pNext = nullptr;
-  fdInfo.semaphore = vkSemaphore_;
-  fdInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+  const VkSemaphoreGetFdInfoKHR fdInfo = {
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR,
+      .pNext = nullptr,
+      .semaphore = vkSemaphore_,
+      .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT,
+  };
   int fd = -1;
-  auto ok = vf_->vkGetSemaphoreFdKHR(device_, &fdInfo, &fd);
+  const VkResult ok = vf_->vkGetSemaphoreFdKHR(device_, &fdInfo, &fd);
   if (ok == VK_SUCCESS) {
     return fd;
   }
