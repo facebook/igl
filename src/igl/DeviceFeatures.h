@@ -8,7 +8,7 @@
 #pragma once
 
 #include <cstdint>
-#include <igl/ColorSpace.h>
+#include <igl/ColorSpace.h> // IWYU pragma: export
 #include <igl/Macros.h>
 #include <igl/Texture.h>
 
