@@ -8,6 +8,8 @@
 #pragma once
 
 #include <memory>
+#include <string>
+
 #include <shell/shared/netservice/Stream.h>
 #include <igl/Core.h>
 
