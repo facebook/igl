@@ -545,21 +545,6 @@ TextureRangeDesc TextureDesc::asRange() const noexcept {
   return range;
 }
 
-uint32_t TextureDesc::calcNumMipLevels(uint32_t width, uint32_t height, uint32_t depth) {
-  if (!width || !height || !depth) {
-    return 0;
-  }
-
-  uint32_t levels = 1;
-
-  const size_t combinedValue = width | height | depth;
-  while (combinedValue >> levels) {
-    levels++;
-  }
-
-  return levels;
-}
-
 bool TextureDesc::operator==(const TextureDesc& rhs) const {
   return (type == rhs.type) && (format == rhs.format) && (width == rhs.width) &&
          (height == rhs.height) && (depth == rhs.depth) && (numLayers == rhs.numLayers) &&
