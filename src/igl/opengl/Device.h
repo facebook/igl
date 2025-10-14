@@ -9,7 +9,6 @@
 
 #include <igl/Device.h>
 #include <igl/opengl/DeviceFeatureSet.h>
-#include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/PlatformDevice.h>
 #include <igl/opengl/UnbindPolicy.h>
