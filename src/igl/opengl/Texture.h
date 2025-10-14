@@ -114,10 +114,10 @@ class Texture : public WithContext, public ITexture {
                              FormatDescGL& outFormatGL);
 
  protected:
-  IGL_INLINE GLsizei getWidth() const {
+  [[nodiscard]] IGL_INLINE GLsizei getWidth() const {
     return width_;
   }
-  IGL_INLINE GLsizei getHeight() const {
+  [[nodiscard]] IGL_INLINE GLsizei getHeight() const {
     return height_;
   }
   // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
