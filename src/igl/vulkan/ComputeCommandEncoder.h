@@ -31,6 +31,10 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
     IGL_DEBUG_ASSERT(!isEncoding_); // did you forget to call endEncoding()?
     endEncoding();
   }
+  ComputeCommandEncoder(const ComputeCommandEncoder&) = delete;
+  ComputeCommandEncoder& operator=(const ComputeCommandEncoder&) = delete;
+  ComputeCommandEncoder(ComputeCommandEncoder&&) = delete;
+  ComputeCommandEncoder& operator=(ComputeCommandEncoder&&) = delete;
 
   void bindComputePipelineState(
       const std::shared_ptr<IComputePipelineState>& pipelineState) override;
