@@ -19,6 +19,11 @@ class Timer : public WithContext, public ITimer {
   explicit Timer(IContext& context);
   ~Timer() override;
 
+  Timer(const Timer&) = delete;
+  Timer& operator=(const Timer&) = delete;
+  Timer(Timer&&) = delete;
+  Timer& operator=(Timer&&) = delete;
+
   void end();
 
   [[nodiscard]] uint64_t getElapsedTimeNanos() const override;
