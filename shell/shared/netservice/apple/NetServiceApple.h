@@ -22,6 +22,10 @@ class NetServiceApple final : public NetService {
   NetServiceApple(std::string_view domain, std::string_view type, std::string_view name);
   NetServiceApple(NSNetService* netService);
   ~NetServiceApple() final;
+  NetServiceApple(const NetServiceApple&) = delete;
+  NetServiceApple& operator=(const NetServiceApple&) = delete;
+  NetServiceApple(NetServiceApple&&) = delete;
+  NetServiceApple& operator=(NetServiceApple&&) = delete;
 
   void publish() noexcept final;
   [[nodiscard]] std::shared_ptr<InputStream> getInputStream() const noexcept final;
