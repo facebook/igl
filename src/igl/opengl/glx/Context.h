@@ -32,6 +32,10 @@ class Context : public IContext {
           GLXDrawable windowHandle,
           GLXContext contextHandle);
   ~Context() override;
+  Context(const Context&) = delete;
+  Context& operator=(const Context&) = delete;
+  Context(Context&&) = delete;
+  Context& operator=(Context&&) = delete;
 
   void setCurrent() override;
   void clearCurrentContext() const override;
