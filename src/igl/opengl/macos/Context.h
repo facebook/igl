@@ -39,6 +39,11 @@ class Context final : public IContext {
 
   ~Context() override;
 
+  Context(const Context&) = delete;
+  Context& operator=(const Context&) = delete;
+  Context(Context&&) = delete;
+  Context& operator=(Context&&) = delete;
+
   void setCurrent() override;
   void clearCurrentContext() const override;
   bool isCurrentContext() const override;
