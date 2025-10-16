@@ -104,6 +104,11 @@ std::string FileLoaderWin::fullPath(const std::string& fileName) const {
       // @fb-only
       // @fb-only
       // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
   };
 
   // find folders somewhere above our current directory
@@ -116,6 +121,7 @@ std::string FileLoaderWin::fullPath(const std::string& fileName) const {
 #if !defined(IGL_CMAKE_BUILD)
   // @lint-ignore CLANGTIDY
   const std::string resfolders[] = {
+      // @fb-only
       // @fb-only
       // @fb-only
       // @fb-only
