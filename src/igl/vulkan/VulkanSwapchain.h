@@ -25,6 +25,10 @@ class VulkanSwapchain final {
  public:
   VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height);
   ~VulkanSwapchain();
+  VulkanSwapchain(const VulkanSwapchain&) = delete;
+  VulkanSwapchain& operator=(const VulkanSwapchain&) = delete;
+  VulkanSwapchain(VulkanSwapchain&&) = delete;
+  VulkanSwapchain& operator=(VulkanSwapchain&&) = delete;
 
   Result acquireNextImage();
   Result present(VkSemaphore waitSemaphore);
