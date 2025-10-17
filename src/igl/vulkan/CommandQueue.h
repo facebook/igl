@@ -30,6 +30,11 @@ class CommandQueue final : public ICommandQueue {
     IGL_DEBUG_ASSERT(numBuffersLeftToSubmit_ == 0);
   }
 
+  CommandQueue(const CommandQueue&) = delete;
+  CommandQueue& operator=(const CommandQueue&) = delete;
+  CommandQueue(CommandQueue&&) = delete;
+  CommandQueue& operator=(CommandQueue&&) = delete;
+
   /// @brief Create a new command buffer. Sets the internal flag that tracks an active command
   /// buffer has been created.
   std::shared_ptr<ICommandBuffer> createCommandBuffer(const CommandBufferDesc& desc,
