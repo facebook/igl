@@ -85,8 +85,19 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
                                  const VkImageViewCreateInfo& createInfo,
                                  const char* debugName) :
   ctx_(&ctx), aspectMask_(createInfo.subresourceRange.aspectMask) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  VkImageViewCreateInfo ci(createInfo);
+
+  VkSamplerYcbcrConversionInfo info{};
+
+  if (!ci.pNext && igl::vulkan::getNumImagePlanes(ci.format) > 1) {
+    info = ctx.getOrCreateYcbcrConversionInfo(ci.format);
+    ci.pNext = &info;
+  }
+
   VkDevice device = ctx_->getVkDevice();
-  VK_ASSERT(ctx_->vf_.vkCreateImageView(device, &createInfo, nullptr, &vkImageView_));
+  VK_ASSERT(ctx_->vf_.vkCreateImageView(device, &ci, nullptr, &vkImageView_));
 
   VK_ASSERT(ivkSetDebugObjectName(
       &ctx_->vf_, device, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vkImageView_, debugName));
