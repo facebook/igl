@@ -28,18 +28,31 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
 
   VkDevice device = ctx_->getVkDevice();
 
-  VkImageViewCreateInfo ci = ivkGetImageViewCreateInfo(
-      image,
-      type,
-      format,
-      VkImageSubresourceRange{aspectMask, baseLevel, numLevels, baseLayer, numLayers});
+  const bool hasYcbcrConversion = igl::vulkan::getNumImagePlanes(format) > 1;
 
   VkSamplerYcbcrConversionInfo info{};
 
-  if (igl::vulkan::getNumImagePlanes(format) > 1) {
+  if (hasYcbcrConversion) {
     info = ctx.getOrCreateYcbcrConversionInfo(format);
-    ci.pNext = &info;
   }
+
+  const VkImageViewCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+      .pNext = hasYcbcrConversion ? &info : nullptr,
+      .flags = 0,
+      .image = image,
+      .viewType = type,
+      .format = format,
+      .components = {.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                     .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                     .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                     .a = VK_COMPONENT_SWIZZLE_IDENTITY},
+      .subresourceRange = VkImageSubresourceRange{.aspectMask = aspectMask,
+                                                  .baseMipLevel = baseLevel,
+                                                  .levelCount = numLevels,
+                                                  .baseArrayLayer = baseLayer,
+                                                  .layerCount = numLayers},
+  };
 
   VK_ASSERT(ctx_->vf_.vkCreateImageView(device, &ci, nullptr, &vkImageView_));
 
