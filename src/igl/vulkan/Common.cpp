@@ -654,6 +654,37 @@ void ensureShaderModule(IShaderModule* sm) {
   }
 }
 
+VkComponentMapping componentMappingToVkComponentMapping(const ComponentMapping& mapping) {
+  auto swizzleToVkSwizzle = [](Swizzle swizzle) -> VkComponentSwizzle {
+    switch (swizzle) {
+    case Swizzle_Default:
+      return VK_COMPONENT_SWIZZLE_IDENTITY;
+    case Swizzle_0:
+      return VK_COMPONENT_SWIZZLE_ZERO;
+    case Swizzle_1:
+      return VK_COMPONENT_SWIZZLE_ONE;
+    case Swizzle_R:
+      return VK_COMPONENT_SWIZZLE_R;
+    case Swizzle_G:
+      return VK_COMPONENT_SWIZZLE_G;
+    case Swizzle_B:
+      return VK_COMPONENT_SWIZZLE_B;
+    case Swizzle_A:
+      return VK_COMPONENT_SWIZZLE_A;
+    default:
+      IGL_DEBUG_ASSERT_NOT_REACHED();
+      return VK_COMPONENT_SWIZZLE_IDENTITY;
+    }
+  };
+
+  return VkComponentMapping{
+      .r = swizzleToVkSwizzle(mapping.r),
+      .g = swizzleToVkSwizzle(mapping.g),
+      .b = swizzleToVkSwizzle(mapping.b),
+      .a = swizzleToVkSwizzle(mapping.a),
+  };
+}
+
 uint32_t getNumImagePlanes(VkFormat format) {
   switch (format) {
   case VK_FORMAT_UNDEFINED:

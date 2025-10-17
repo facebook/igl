@@ -198,6 +198,7 @@ uint32_t getVkLayer(TextureType type, uint32_t face, uint32_t layer);
 TextureRangeDesc atVkLayer(TextureType type, const TextureRangeDesc& range, uint32_t vkLayer);
 VkColorSpaceKHR colorSpaceToVkColorSpace(ColorSpace colorSpace);
 ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace);
+VkComponentMapping componentMappingToVkComponentMapping(const ComponentMapping& mapping);
 
 /// @brief Transition from the current layout to VK_IMAGE_LAYOUT_GENERAL
 void transitionToGeneral(VkCommandBuffer cmdBuf, ITexture* texture);
