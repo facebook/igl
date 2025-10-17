@@ -115,13 +115,6 @@ VkResult ivkCreateSwapchain(const struct VulkanFunctionTable* vt,
                             uint32_t height,
                             VkSwapchainKHR* outSwapchain);
 
-/// @brief Returns VkImageViewCreateInfo with the R, G, B, and A components mapped to themselves
-/// (identity)
-VkImageViewCreateInfo ivkGetImageViewCreateInfo(VkImage image,
-                                                VkImageViewType type,
-                                                VkFormat imageFormat,
-                                                VkImageSubresourceRange range);
-
 VkResult ivkCreateFramebuffer(const struct VulkanFunctionTable* vt,
                               VkDevice device,
                               uint32_t width,

@@ -122,68 +122,6 @@ TEST_F(GetVulkanResultString, VulkanHelpersTest) {
                      "VK_OPERATION_NOT_DEFERRED_KHR") == 0); // VK_KHR_deferred_host_operations
 }
 
-// ivkGetImageViewCreateInfo *********************************************************************
-class GetImageViewCreateInfoTest : public ::testing::TestWithParam<std::tuple<VkImageViewType,
-                                                                              VkFormat,
-                                                                              VkImageAspectFlags,
-                                                                              uint32_t,
-                                                                              uint32_t,
-                                                                              uint32_t,
-                                                                              uint32_t>> {};
-
-TEST_P(GetImageViewCreateInfoTest, GetImageViewCreateInfo) {
-  const VkImage image = VK_NULL_HANDLE;
-  const VkImageViewType imageViewType = std::get<0>(GetParam());
-  const VkFormat format = std::get<1>(GetParam());
-  const VkImageAspectFlags aspectMask = std::get<2>(GetParam());
-  const uint32_t baseMipLevel = std::get<3>(GetParam());
-  const uint32_t levelCount = std::get<4>(GetParam());
-  const uint32_t baseArrayLayer = std::get<5>(GetParam());
-  const uint32_t layerCount = std::get<6>(GetParam());
-
-  const VkImageViewCreateInfo imageviewCreateInfo =
-      ivkGetImageViewCreateInfo(image,
-                                imageViewType,
-                                format,
-                                {aspectMask, baseMipLevel, levelCount, baseArrayLayer, layerCount});
-
-  EXPECT_EQ(imageviewCreateInfo.sType, VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO);
-  EXPECT_EQ(imageviewCreateInfo.pNext, nullptr);
-  EXPECT_EQ(imageviewCreateInfo.flags, 0);
-  EXPECT_EQ(imageviewCreateInfo.image, image);
-  EXPECT_EQ(imageviewCreateInfo.viewType, imageViewType);
-  EXPECT_EQ(imageviewCreateInfo.format, format);
-  EXPECT_EQ(imageviewCreateInfo.components.r, VK_COMPONENT_SWIZZLE_IDENTITY);
-  EXPECT_EQ(imageviewCreateInfo.components.g, VK_COMPONENT_SWIZZLE_IDENTITY);
-  EXPECT_EQ(imageviewCreateInfo.components.b, VK_COMPONENT_SWIZZLE_IDENTITY);
-  EXPECT_EQ(imageviewCreateInfo.components.a, VK_COMPONENT_SWIZZLE_IDENTITY);
-  EXPECT_EQ(imageviewCreateInfo.subresourceRange.aspectMask, aspectMask);
-  EXPECT_EQ(imageviewCreateInfo.subresourceRange.baseMipLevel, baseMipLevel);
-  EXPECT_EQ(imageviewCreateInfo.subresourceRange.levelCount, levelCount);
-  EXPECT_EQ(imageviewCreateInfo.subresourceRange.baseArrayLayer, baseArrayLayer);
-  EXPECT_EQ(imageviewCreateInfo.subresourceRange.layerCount, layerCount);
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    AllCombinations,
-    GetImageViewCreateInfoTest,
-    ::testing::Combine(::testing::Values(VK_IMAGE_VIEW_TYPE_1D, VK_IMAGE_VIEW_TYPE_2D),
-                       ::testing::Values(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_SRGB),
-                       ::testing::Values(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_ASPECT_DEPTH_BIT),
-                       ::testing::Values(0, 1),
-                       ::testing::Values(1, 2),
-                       ::testing::Values(0, 1),
-                       ::testing::Values(1, 2)),
-    [](const testing::TestParamInfo<GetImageViewCreateInfoTest::ParamType>& info) {
-      const std::string name =
-          std::to_string(std::get<0>(info.param)) + "_" + std::to_string(std::get<1>(info.param)) +
-          "_" + std::to_string(std::get<2>(info.param)) + "_" +
-          std::to_string(std::get<3>(info.param)) + "_" + std::to_string(std::get<4>(info.param)) +
-          "_" + std::to_string(std::get<5>(info.param)) + "_" +
-          std::to_string(std::get<6>(info.param));
-      return name;
-    });
-
 // ivkGetAttachmentDescriptionColor **************************************************************
 class AttachmentDescriptionColorTest
   : public ::testing::TestWithParam<
