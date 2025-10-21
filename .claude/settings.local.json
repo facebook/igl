@@ -25,7 +25,10 @@
       "Bash(./EmptySession_d3d12.exe --session EmptySession)",
       "Bash(git restore:*)",
       "Bash(find:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(where:*)",
+      "Read(//c/**)",
+      "Bash(dxc:*)"
     ],
     "deny": [],
     "ask": []

@@ -8,6 +8,11 @@
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/CommandQueue.h>
 #include <igl/d3d12/Buffer.h>
+#include <igl/d3d12/RenderPipelineState.h>
+#include <igl/d3d12/ShaderModule.h>
+#include <igl/VertexInputState.h>
+#include <cstring>
+#include <vector>
 
 namespace igl::d3d12 {
 
@@ -132,11 +137,11 @@ std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
   return nullptr;
 }
 
-std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc& /*desc*/,
+std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc& desc,
                                                           Result* IGL_NULLABLE
                                                               outResult) const {
-  Result::setResult(outResult, Result::Code::Unimplemented, "D3D12 ShaderStages not yet implemented");
-  return nullptr;
+  Result::setOk(outResult);
+  return std::make_unique<ShaderStages>(desc);
 }
 
 std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& /*desc*/,
@@ -180,10 +185,109 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 }
 
 std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
-    const RenderPipelineDesc& /*desc*/,
+    const RenderPipelineDesc& desc,
     Result* IGL_NULLABLE outResult) const {
-  Result::setResult(outResult, Result::Code::Unimplemented, "D3D12 RenderPipeline not yet implemented");
-  return nullptr;
+  auto* device = ctx_->getDevice();
+  if (!device) {
+    Result::setResult(outResult, Result::Code::InvalidOperation, "D3D12 device is null");
+    return nullptr;
+  }
+
+  if (!desc.shaderStages) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader stages are required");
+    return nullptr;
+  }
+
+  // Get shader modules
+  auto* vertexModule = static_cast<const ShaderModule*>(desc.shaderStages->getVertexModule().get());
+  auto* fragmentModule = static_cast<const ShaderModule*>(desc.shaderStages->getFragmentModule().get());
+
+  if (!vertexModule || !fragmentModule) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Vertex and fragment shaders required");
+    return nullptr;
+  }
+
+  // Create root signature (empty for now - Phase 3 Step 3.3)
+  D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
+  rootSigDesc.NumParameters = 0;
+  rootSigDesc.pParameters = nullptr;
+  rootSigDesc.NumStaticSamplers = 0;
+  rootSigDesc.pStaticSamplers = nullptr;
+  rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+  Microsoft::WRL::ComPtr<ID3DBlob> signature;
+  Microsoft::WRL::ComPtr<ID3DBlob> error;
+  HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+                                            signature.GetAddressOf(), error.GetAddressOf());
+  if (FAILED(hr)) {
+    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to serialize root signature");
+    return nullptr;
+  }
+
+  Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+  hr = device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
+                                    IID_PPV_ARGS(rootSignature.GetAddressOf()));
+  if (FAILED(hr)) {
+    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create root signature");
+    return nullptr;
+  }
+
+  // Create PSO
+  D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+  psoDesc.pRootSignature = rootSignature.Get();
+
+  // Shader bytecode
+  const auto& vsBytecode = vertexModule->getBytecode();
+  const auto& psBytecode = fragmentModule->getBytecode();
+  psoDesc.VS = {vsBytecode.data(), vsBytecode.size()};
+  psoDesc.PS = {psBytecode.data(), psBytecode.size()};
+
+  // Blend state
+  psoDesc.BlendState.AlphaToCoverageEnable = FALSE;
+  psoDesc.BlendState.IndependentBlendEnable = FALSE;
+  psoDesc.BlendState.RenderTarget[0].BlendEnable = FALSE;
+  psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+  // Rasterizer state
+  psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+  psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+  psoDesc.RasterizerState.FrontCounterClockwise = FALSE;
+  psoDesc.RasterizerState.DepthClipEnable = TRUE;
+
+  // Depth stencil state
+  psoDesc.DepthStencilState.DepthEnable = FALSE;
+  psoDesc.DepthStencilState.StencilEnable = FALSE;
+
+  // Render target format
+  psoDesc.NumRenderTargets = 1;
+  psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+  psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+
+  // Sample settings
+  psoDesc.SampleMask = UINT_MAX;
+  psoDesc.SampleDesc.Count = 1;
+  psoDesc.SampleDesc.Quality = 0;
+
+  // Primitive topology
+  psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+
+  // Input layout (Phase 3 Step 3.4)
+  std::vector<D3D12_INPUT_ELEMENT_DESC> inputElements;
+  if (desc.vertexInputState) {
+    // TODO: Convert IGL vertex input state to D3D12 input layout
+    // For now, use hardcoded layout for simple triangle
+  }
+  psoDesc.InputLayout = {inputElements.data(), static_cast<UINT>(inputElements.size())};
+
+  Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
+  hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
+  if (FAILED(hr)) {
+    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create pipeline state");
+    return nullptr;
+  }
+
+  Result::setOk(outResult);
+  return std::make_shared<RenderPipelineState>(desc, std::move(pipelineState), std::move(rootSignature));
 }
 
 // Shader library and modules
@@ -194,10 +298,26 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
   return nullptr;
 }
 
-std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& /*desc*/,
+std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
-  Result::setResult(outResult, Result::Code::Unimplemented, "D3D12 ShaderModule not yet implemented");
-  return nullptr;
+  if (!desc.input.isValid()) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Invalid shader input");
+    return nullptr;
+  }
+
+  // D3D12 requires binary shader input (DXIL bytecode)
+  if (desc.input.type != ShaderInputType::Binary) {
+    Result::setResult(outResult, Result::Code::Unsupported,
+                      "D3D12 requires binary shader input (DXIL). Use ShaderInputType::Binary");
+    return nullptr;
+  }
+
+  // Copy bytecode
+  std::vector<uint8_t> bytecode(desc.input.length);
+  std::memcpy(bytecode.data(), desc.input.data, desc.input.length);
+
+  Result::setOk(outResult);
+  return std::make_shared<ShaderModule>(desc.info, std::move(bytecode));
 }
 
 // Framebuffer

@@ -9,6 +9,13 @@
 
 namespace igl::d3d12 {
 
+RenderPipelineState::RenderPipelineState(const RenderPipelineDesc& desc,
+                                         Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState,
+                                         Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature)
+    : IRenderPipelineState(desc),
+      pipelineState_(std::move(pipelineState)),
+      rootSignature_(std::move(rootSignature)) {}
+
 std::shared_ptr<IRenderPipelineReflection> RenderPipelineState::renderPipelineReflection() {
   return nullptr;
 }
