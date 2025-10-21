@@ -15,13 +15,16 @@
 #include <igl/d3d12/DepthStencilState.h>
 #include <igl/d3d12/SamplerState.h>
 #include <igl/d3d12/Texture.h>
+#include <igl/d3d12/PlatformDevice.h>
 #include <igl/VertexInputState.h>
 #include <cstring>
 #include <vector>
 
 namespace igl::d3d12 {
 
-Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {}
+Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
+  platformDevice_ = std::make_unique<PlatformDevice>(*this);
+}
 
 // BindGroups
 Holder<BindGroupTextureHandle> Device::createBindGroup(
@@ -620,13 +623,7 @@ std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& d
 
 // Capabilities
 const IPlatformDevice& Device::getPlatformDevice() const noexcept {
-  // TODO: Implement proper D3D12 platform device
-  class D3D12PlatformDevice : public IPlatformDevice {
-  public:
-    bool isType(PlatformDeviceType /*t*/) const noexcept override { return false; }
-  };
-  static D3D12PlatformDevice platformDevice;
-  return platformDevice;
+  return *platformDevice_;
 }
 
 bool Device::hasFeature(DeviceFeatures /*feature*/) const {

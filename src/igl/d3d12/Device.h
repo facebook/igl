@@ -16,6 +16,8 @@
 
 namespace igl::d3d12 {
 
+class PlatformDevice;
+
 /// @brief Implements the igl::IDevice interface for DirectX 12
 class Device final : public IDevice {
  public:
@@ -121,6 +123,7 @@ class Device final : public IDevice {
 
  private:
   std::unique_ptr<D3D12Context> ctx_;
+  std::unique_ptr<PlatformDevice> platformDevice_;
   size_t drawCount_ = 0;
   size_t shaderCompilationCount_ = 0;
 };

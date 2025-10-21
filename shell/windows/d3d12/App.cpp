@@ -15,6 +15,7 @@
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/D3D12Context.h>
+#include <igl/d3d12/PlatformDevice.h>
 #include <igl/d3d12/Texture.h>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -64,61 +65,20 @@ SurfaceTextures D3D12Shell::createSurfaceTextures() noexcept {
     IGL_LOG_INFO("createSurfaceTextures() called #%d\n", ++callCount);
   }
 
-  auto& device = static_cast<d3d12::Device&>(platform().getDevice());
-  auto& ctx = device.getD3D12Context();
+  auto& device = platform().getDevice();
+  const auto& d3dPlatformDevice = device.getPlatformDevice<d3d12::PlatformDevice>();
 
-  // Get current back buffer from swapchain
-  uint32_t backBufferIndex = ctx.getCurrentBackBufferIndex();
-  ID3D12Resource* backBuffer = ctx.getCurrentBackBuffer();
+  IGL_DEBUG_ASSERT(d3dPlatformDevice != nullptr);
 
-  if (!backBuffer) {
-    IGL_LOG_ERROR("Failed to get back buffer from swapchain\n");
-    return SurfaceTextures{nullptr, nullptr};
-  }
+  Result ret;
+  auto color = d3dPlatformDevice->createTextureFromNativeDrawable(&ret);
+  IGL_DEBUG_ASSERT(ret.isOk());
 
-  // Create color texture from swapchain back buffer
-  TextureDesc colorDesc;
-  colorDesc.type = TextureType::TwoD;
-  colorDesc.format = TextureFormat::RGBA_SRGB;  // Matches swapchain format
-  colorDesc.width = shellParams().viewportSize.x;
-  colorDesc.height = shellParams().viewportSize.y;
-  colorDesc.depth = 1;
-  colorDesc.numLayers = 1;
-  colorDesc.numSamples = 1;
-  colorDesc.numMipLevels = 1;
-  colorDesc.usage = TextureDesc::TextureUsageBits::Attachment;
-  colorDesc.debugName = "Swapchain Back Buffer";
+  auto depth = d3dPlatformDevice->createTextureFromNativeDepth(
+      shellParams().viewportSize.x, shellParams().viewportSize.y, &ret);
+  IGL_DEBUG_ASSERT(ret.isOk());
 
-  auto color = d3d12::Texture::createFromResource(backBuffer, colorDesc.format, colorDesc,
-                                                   ctx.getDevice(), ctx.getCommandQueue());
-
-  if (!color) {
-    IGL_LOG_ERROR("Failed to create color texture from back buffer\n");
-    return SurfaceTextures{nullptr, nullptr};
-  }
-
-  // Create depth texture
-  TextureDesc depthDesc;
-  depthDesc.type = TextureType::TwoD;
-  depthDesc.format = TextureFormat::Z_UNorm32;  // 32-bit depth
-  depthDesc.width = shellParams().viewportSize.x;
-  depthDesc.height = shellParams().viewportSize.y;
-  depthDesc.depth = 1;
-  depthDesc.numLayers = 1;
-  depthDesc.numSamples = 1;
-  depthDesc.numMipLevels = 1;
-  depthDesc.usage = TextureDesc::TextureUsageBits::Attachment;
-  depthDesc.debugName = "Depth Buffer";
-
-  Result depthResult;
-  auto depth = device.createTexture(depthDesc, &depthResult);
-
-  if (!depthResult.isOk()) {
-    IGL_LOG_ERROR("Failed to create depth texture: %s\n", depthResult.message.c_str());
-    return SurfaceTextures{nullptr, nullptr};
-  }
-
-  return SurfaceTextures{std::move(color), std::move(depth)};
+  return SurfaceTextures{color, depth};
 }
 } // namespace
 
