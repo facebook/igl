@@ -300,14 +300,62 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   const auto& vsBytecode = vertexModule->getBytecode();
   const auto& psBytecode = fragmentModule->getBytecode();
 
-  // Create root signature - for now, use empty root signature
-  // TODO: Extract from shader bytecode or implement shader reflection for resource binding
+  // Create root signature with descriptor tables for textures and constant buffers
+  // Root signature layout:
+  // - Root parameter 0: CBV for uniform buffer b0 (UniformsPerFrame)
+  // - Root parameter 1: CBV for uniform buffer b1 (UniformsPerObject)
+  // - Root parameter 2: Descriptor table with 2 SRVs for textures t0-t1
+  // - Root parameter 3: Descriptor table with 2 Samplers for s0-s1
+
   Microsoft::WRL::ComPtr<ID3DBlob> signature;
   Microsoft::WRL::ComPtr<ID3DBlob> error;
 
+  // Descriptor range for SRVs (textures)
+  D3D12_DESCRIPTOR_RANGE srvRange = {};
+  srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+  srvRange.NumDescriptors = 2;  // t0 and t1
+  srvRange.BaseShaderRegister = 0;  // Starting at t0
+  srvRange.RegisterSpace = 0;
+  srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+  // Descriptor range for Samplers
+  D3D12_DESCRIPTOR_RANGE samplerRange = {};
+  samplerRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+  samplerRange.NumDescriptors = 2;  // s0 and s1
+  samplerRange.BaseShaderRegister = 0;  // Starting at s0
+  samplerRange.RegisterSpace = 0;
+  samplerRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+  // Root parameters
+  D3D12_ROOT_PARAMETER rootParams[4] = {};
+
+  // Parameter 0: Root CBV for b0 (UniformsPerFrame)
+  rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+  rootParams[0].Descriptor.ShaderRegister = 0;  // b0
+  rootParams[0].Descriptor.RegisterSpace = 0;
+  rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+  // Parameter 1: Root CBV for b1 (UniformsPerObject)
+  rootParams[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+  rootParams[1].Descriptor.ShaderRegister = 1;  // b1
+  rootParams[1].Descriptor.RegisterSpace = 0;
+  rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+  // Parameter 2: Descriptor table for SRVs (textures)
+  rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+  rootParams[2].DescriptorTable.NumDescriptorRanges = 1;
+  rootParams[2].DescriptorTable.pDescriptorRanges = &srvRange;
+  rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+  // Parameter 3: Descriptor table for Samplers
+  rootParams[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+  rootParams[3].DescriptorTable.NumDescriptorRanges = 1;
+  rootParams[3].DescriptorTable.pDescriptorRanges = &samplerRange;
+  rootParams[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
   D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
-  rootSigDesc.NumParameters = 0;
-  rootSigDesc.pParameters = nullptr;
+  rootSigDesc.NumParameters = 4;
+  rootSigDesc.pParameters = rootParams;
   rootSigDesc.NumStaticSamplers = 0;
   rootSigDesc.pStaticSamplers = nullptr;
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;

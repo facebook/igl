@@ -48,8 +48,9 @@ class Texture final : public ITexture {
   void generateMipmap(ICommandBuffer& cmdBuffer,
                       const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
 
-  // D3D12-specific accessor (not part of ITexture interface)
+  // D3D12-specific accessors (not part of ITexture interface)
   TextureFormat getFormat() const;
+  ID3D12Resource* getResource() const { return resource_.Get(); }
 
  protected:
   // Override the base class upload method

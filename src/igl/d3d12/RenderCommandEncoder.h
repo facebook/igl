@@ -74,6 +74,10 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
  private:
   CommandBuffer& commandBuffer_;
   ID3D12GraphicsCommandList* commandList_;
+
+  // Simple descriptor allocation (per-frame, reset on next frame)
+  UINT nextCbvSrvUavDescriptor_ = 0;
+  UINT nextSamplerDescriptor_ = 0;
 };
 
 } // namespace igl::d3d12
