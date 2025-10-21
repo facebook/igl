@@ -18,6 +18,10 @@ class NetServiceExtensionApple final : public NetServiceExtension {
  public:
   NetServiceExtensionApple() = default;
   ~NetServiceExtensionApple() final;
+  NetServiceExtensionApple(const NetServiceExtensionApple&) = delete;
+  NetServiceExtensionApple& operator=(const NetServiceExtensionApple&) = delete;
+  NetServiceExtensionApple(NetServiceExtensionApple&&) = delete;
+  NetServiceExtensionApple& operator=(NetServiceExtensionApple&&) = delete;
 
   bool initialize(igl::shell::Platform& platform) noexcept final;
 
