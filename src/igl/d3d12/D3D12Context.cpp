@@ -108,6 +108,12 @@ void D3D12Context::createDevice() {
   Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
   if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf())))) {
     debugController->EnableDebugLayer();
+
+    // Enable GPU-based validation for more detailed error messages
+    Microsoft::WRL::ComPtr<ID3D12Debug1> debugController1;
+    if (SUCCEEDED(debugController->QueryInterface(IID_PPV_ARGS(debugController1.GetAddressOf())))) {
+      debugController1->SetEnableGPUBasedValidation(TRUE);
+    }
   }
 #endif
 
@@ -140,6 +146,26 @@ void D3D12Context::createDevice() {
   if (FAILED(hr)) {
     throw std::runtime_error("Failed to create D3D12 device");
   }
+
+#ifdef _DEBUG
+  // Setup info queue to break on errors and warnings
+  Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
+  if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
+    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
+    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
+    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, FALSE); // Don't break on warnings
+
+    // Print all messages to console
+    D3D12_MESSAGE_SEVERITY severities[] = {
+      D3D12_MESSAGE_SEVERITY_INFO
+    };
+
+    D3D12_INFO_QUEUE_FILTER filter = {};
+    filter.DenyList.NumSeverities = 1;
+    filter.DenyList.pSeverityList = severities;
+    infoQueue->PushStorageFilter(&filter);
+  }
+#endif
 }
 
 void D3D12Context::createCommandQueue() {
