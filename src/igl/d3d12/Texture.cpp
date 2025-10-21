@@ -14,13 +14,16 @@ std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
                                                        const TextureDesc& desc,
                                                        ID3D12Device* device,
                                                        ID3D12CommandQueue* queue) {
+  if (!resource) {
+    IGL_LOG_ERROR("Texture::createFromResource - resource is NULL!\n");
+    return nullptr;
+  }
+
   auto texture = std::make_shared<Texture>(format);
 
   // Attach the resource to ComPtr (takes ownership, AddRefs)
-  if (resource) {
-    resource->AddRef();
-    texture->resource_.Attach(resource);
-  }
+  resource->AddRef();
+  texture->resource_.Attach(resource);
 
   texture->device_ = device;
   texture->queue_ = queue;
@@ -32,19 +35,28 @@ std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
   texture->samples_ = desc.numSamples;
   texture->usage_ = desc.usage;
 
+  IGL_LOG_INFO("Texture::createFromResource - SUCCESS: %dx%d format=%d\n",
+               desc.width, desc.height, (int)format);
+
   return texture;
 }
 
 Result Texture::upload(const TextureRangeDesc& range,
                       const void* data,
                       size_t bytesPerRow) const {
+  IGL_LOG_INFO("Texture::upload() - START: %dx%d\n", range.width, range.height);
+
   if (!device_ || !queue_ || !resource_.Get()) {
+    IGL_LOG_ERROR("Texture::upload() - FAILED: device, queue, or resource not available\n");
     return Result(Result::Code::RuntimeError, "Device, queue, or resource not available for upload");
   }
 
   if (!data) {
+    IGL_LOG_ERROR("Texture::upload() - FAILED: data is null\n");
     return Result(Result::Code::ArgumentInvalid, "Upload data is null");
   }
+
+  IGL_LOG_INFO("Texture::upload() - Proceeding with upload\n");
 
   // Calculate dimensions and data size
   const uint32_t width = range.width > 0 ? range.width : dimensions_.width;
@@ -173,20 +185,25 @@ Result Texture::upload(const TextureRangeDesc& range,
   queue_->ExecuteCommandLists(1, cmdLists);
 
   // Wait for upload to complete (synchronous for now)
+  IGL_LOG_INFO("Texture::upload() - Creating fence for GPU sync\n");
   Microsoft::WRL::ComPtr<ID3D12Fence> fence;
   hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf()));
   if (FAILED(hr)) {
+    IGL_LOG_ERROR("Texture::upload() - Failed to create fence\n");
     return Result(Result::Code::RuntimeError, "Failed to create fence for upload sync");
   }
 
   HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
   if (!fenceEvent) {
+    IGL_LOG_ERROR("Texture::upload() - Failed to create fence event\n");
     return Result(Result::Code::RuntimeError, "Failed to create fence event");
   }
 
+  IGL_LOG_INFO("Texture::upload() - Signaling fence and waiting...\n");
   queue_->Signal(fence.Get(), 1);
   fence->SetEventOnCompletion(1, fenceEvent);
   WaitForSingleObject(fenceEvent, INFINITE);
+  IGL_LOG_INFO("Texture::upload() - Fence signaled, upload complete!\n");
   CloseHandle(fenceEvent);
 
   return Result();

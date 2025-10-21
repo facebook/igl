@@ -291,9 +291,18 @@ uint32_t D3D12Context::getCurrentBackBufferIndex() const {
 ID3D12Resource* D3D12Context::getCurrentBackBuffer() const {
   uint32_t index = getCurrentBackBufferIndex();
   if (index >= kMaxFramesInFlight) {
+    IGL_LOG_ERROR("getCurrentBackBuffer(): index %u >= kMaxFramesInFlight %u\n", index, kMaxFramesInFlight);
     return nullptr;
   }
-  return renderTargets_[index].Get();
+
+  ID3D12Resource* resource = renderTargets_[index].Get();
+  static int logCount = 0;
+  if (logCount < 3) {
+    IGL_LOG_INFO("getCurrentBackBuffer(): index=%u, resource=%p\n", index, (void*)resource);
+    logCount++;
+  }
+
+  return resource;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3D12Context::getCurrentRTV() const {

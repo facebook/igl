@@ -194,6 +194,8 @@ bool GlfwShell::initialize(int argc,
                            char* argv[],
                            RenderSessionWindowConfig suggestedWindowConfig,
                            const RenderSessionConfig& suggestedSessionConfig) noexcept {
+  IGL_LOG_INFO("GlfwShell::initialize() - START\n");
+
   igl::shell::Platform::initializeCommandLineArgs(argc, argv);
 
   // Use the comprehensive parser
@@ -205,36 +207,50 @@ bool GlfwShell::initialize(int argc,
   suggestedWindowConfig.height = static_cast<int>(shellParams_.viewportSize.y);
   suggestedWindowConfig.windowMode = WindowMode::Window;
 
+  IGL_LOG_INFO("GlfwShell::initialize() - Creating factory\n");
   auto factory = igl::shell::createDefaultRenderSessionFactory();
 
   windowConfig_ =
       factory->requestedWindowConfig(igl::shell::ShellType::Windows, suggestedWindowConfig);
   const auto requestedConfigs =
       factory->requestedSessionConfigs(igl::shell::ShellType::Windows, {suggestedSessionConfig});
+
+  IGL_LOG_INFO("GlfwShell::initialize() - requestedConfigs.size()=%zu\n", requestedConfigs.size());
+
   if (IGL_DEBUG_VERIFY_NOT(requestedConfigs.size() != 1) ||
       IGL_DEBUG_VERIFY_NOT(suggestedSessionConfig.backendVersion.flavor !=
                            requestedConfigs[0].backendVersion.flavor)) {
+    IGL_LOG_ERROR("GlfwShell::initialize() - FAILED at requestedConfigs check\n");
     return false;
   }
 
   sessionConfig_ = requestedConfigs[0];
 
+  IGL_LOG_INFO("GlfwShell::initialize() - Creating window\n");
   if (!createWindow()) {
+    IGL_LOG_ERROR("GlfwShell::initialize() - FAILED at createWindow()\n");
     return false;
   }
 
+  IGL_LOG_INFO("GlfwShell::initialize() - Creating platform\n");
   platform_ = createPlatform();
   if (IGL_DEBUG_VERIFY_NOT(!platform_)) {
-    return false;
-  }
-  session_ = factory->createRenderSession(platform_);
-  if (IGL_DEBUG_VERIFY_NOT(!session_)) {
+    IGL_LOG_ERROR("GlfwShell::initialize() - FAILED at createPlatform()\n");
     return false;
   }
 
+  IGL_LOG_INFO("GlfwShell::initialize() - Creating session\n");
+  session_ = factory->createRenderSession(platform_);
+  if (IGL_DEBUG_VERIFY_NOT(!session_)) {
+    IGL_LOG_ERROR("GlfwShell::initialize() - FAILED at createRenderSession()\n");
+    return false;
+  }
+
+  IGL_LOG_INFO("GlfwShell::initialize() - Initializing session\n");
   session_->setShellParams(shellParams_);
   session_->initialize();
 
+  IGL_LOG_INFO("GlfwShell::initialize() - SUCCESS\n");
   return true;
 }
 

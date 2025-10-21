@@ -351,16 +351,22 @@ float4 main(PSInput input) : SV_TARGET {
 
 TinyMeshSession::TinyMeshSession(std::shared_ptr<Platform> platform) :
   RenderSession(std::move(platform)) {
+  IGL_LOG_INFO("TinyMeshSession::TinyMeshSession() - Constructor START\n");
   listener_ = std::make_shared<Listener>(*this);
   getPlatform().getInputDispatcher().addKeyListener(listener_);
+  IGL_LOG_INFO("TinyMeshSession::TinyMeshSession() - Creating ImGui session...\n");
   imguiSession_ = std::make_unique<iglu::imgui::Session>(getPlatform().getDevice(),
                                                          getPlatform().getInputDispatcher());
+  IGL_LOG_INFO("TinyMeshSession::TinyMeshSession() - Constructor COMPLETE\n");
 }
 
 void TinyMeshSession::initialize() noexcept {
+  IGL_LOG_INFO("TinyMeshSession::initialize() - START\n");
   device_ = &getPlatform().getDevice();
+  IGL_LOG_INFO("TinyMeshSession::initialize() - Got device\n");
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
+  IGL_LOG_INFO("TinyMeshSession::initialize() - Creating vertex buffer\n");
   vb0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Vertex,
                                           kVertexData0,
                                           sizeof(kVertexData0),
@@ -368,6 +374,7 @@ void TinyMeshSession::initialize() noexcept {
                                           0,
                                           "Buffer: vertex"),
                                nullptr);
+  IGL_LOG_INFO("TinyMeshSession::initialize() - Creating index buffer\n");
   ib0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Index,
                                           kIndexData,
                                           sizeof(kIndexData),
@@ -426,6 +433,7 @@ void TinyMeshSession::initialize() noexcept {
   }
 
   {
+    IGL_LOG_INFO("TinyMeshSession::initialize() - Creating XOR pattern texture\n");
     const uint32_t texWidth = 256;
     const uint32_t texHeight = 256;
     const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::BGRA_SRGB,
@@ -434,6 +442,7 @@ void TinyMeshSession::initialize() noexcept {
                                                 TextureDesc::TextureUsageBits::Sampled,
                                                 "XOR pattern");
     texture0_ = device_->createTexture(desc, nullptr);
+    IGL_LOG_INFO("TinyMeshSession::initialize() - Texture created, generating pixels\n");
     std::vector<uint32_t> pixels(
         static_cast<std::vector<unsigned int>::size_type>(texWidth * texHeight));
 
@@ -443,7 +452,9 @@ void TinyMeshSession::initialize() noexcept {
         pixels[y * texWidth + x] = 0xFF000000 + ((x ^ y) << 16) + ((x ^ y) << 8) + (x ^ y);
       }
     }
+    IGL_LOG_INFO("TinyMeshSession::initialize() - Uploading texture pixels (256x256)...\n");
     texture0_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels.data());
+    IGL_LOG_INFO("TinyMeshSession::initialize() - Texture upload complete\n");
   }
   {
     fs::path dir = fs::current_path();

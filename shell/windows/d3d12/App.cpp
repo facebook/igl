@@ -125,6 +125,8 @@ SurfaceTextures D3D12Shell::createSurfaceTextures() noexcept {
 } // namespace igl::shell
 
 int main(int argc, char* argv[]) {
+  IGL_LOG_INFO("=== TinyMeshSession D3D12 Starting ===\n");
+
   igl::shell::D3D12Shell shell;
 
   igl::shell::RenderSessionWindowConfig suggestedWindowConfig = {
@@ -138,13 +140,18 @@ int main(int argc, char* argv[]) {
       .swapchainColorTextureFormat = TextureFormat::RGBA_SRGB,
   };
 
+  IGL_LOG_INFO("main(): Calling shell.initialize()...\n");
   if (!shell.initialize(argc, argv, suggestedWindowConfig, suggestedConfig)) {
     IGL_LOG_ERROR("Failed to initialize shell\n");
     return 1;
   }
 
+  IGL_LOG_INFO("main(): Initialization successful, calling shell.run()...\n");
   shell.run();
+
+  IGL_LOG_INFO("main(): shell.run() completed, calling teardown()...\n");
   shell.teardown();
 
+  IGL_LOG_INFO("=== TinyMeshSession D3D12 Exiting ===\n");
   return 0;
 }
