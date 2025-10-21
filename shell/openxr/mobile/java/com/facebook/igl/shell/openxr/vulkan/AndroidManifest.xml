@@ -18,7 +18,7 @@
 
   <uses-sdk
       android:minSdkVersion="29"
-      android:targetSdkVersion="32" />
+      android:targetSdkVersion="33" />
 
     <queries>
         <provider android:authorities="org.khronos.openxr.runtime_broker;org.khronos.openxr.system_runtime_broker" />
