@@ -240,7 +240,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   }
 
   // Create IGL texture from D3D12 resource
-  auto texture = Texture::createFromResource(resource.Get(), desc.format, desc);
+  auto texture = Texture::createFromResource(resource.Get(), desc.format, desc, device, ctx_->getCommandQueue());
   Result::setOk(outResult);
   return texture;
 }

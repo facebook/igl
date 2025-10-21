@@ -21,7 +21,9 @@ class Texture final : public ITexture {
   // Factory method to create texture from existing D3D12 resource
   static std::shared_ptr<Texture> createFromResource(ID3D12Resource* resource,
                                                       TextureFormat format,
-                                                      const TextureDesc& desc);
+                                                      const TextureDesc& desc,
+                                                      ID3D12Device* device = nullptr,
+                                                      ID3D12CommandQueue* queue = nullptr);
 
   // D3D12-specific upload methods (not part of ITexture interface)
   Result upload(const TextureRangeDesc& range,
@@ -49,8 +51,18 @@ class Texture final : public ITexture {
   // D3D12-specific accessor (not part of ITexture interface)
   TextureFormat getFormat() const;
 
+ protected:
+  // Override the base class upload method
+  Result uploadInternal(TextureType type,
+                        const TextureRangeDesc& range,
+                        const void* data,
+                        size_t bytesPerRow = 0,
+                        const uint32_t* mipLevelBytes = nullptr) const override;
+
  private:
   Microsoft::WRL::ComPtr<ID3D12Resource> resource_;
+  ID3D12Device* device_ = nullptr; // Non-owning pointer
+  ID3D12CommandQueue* queue_ = nullptr; // Non-owning pointer
   TextureFormat format_;
   Dimensions dimensions_{0, 0, 0};
   TextureType type_ = TextureType::TwoD;
