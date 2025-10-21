@@ -17,6 +17,10 @@ class XrPassthrough final {
  public:
   XrPassthrough(XrInstance instance, XrSession session) noexcept;
   ~XrPassthrough() noexcept;
+  XrPassthrough(const XrPassthrough&) = delete;
+  XrPassthrough& operator=(const XrPassthrough&) = delete;
+  XrPassthrough(XrPassthrough&&) = delete;
+  XrPassthrough& operator=(XrPassthrough&&) = delete;
 
   [[nodiscard]] static const std::vector<const char*>& getExtensions() noexcept;
 
