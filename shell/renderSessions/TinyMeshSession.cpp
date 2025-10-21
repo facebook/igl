@@ -223,6 +223,62 @@ void main() {
 )";
 }
 
+#if IGL_BACKEND_D3D12
+[[nodiscard]] const char* getD3D12VertexShaderSource() {
+  return R"(
+cbuffer UniformsPerFrame : register(b0) {
+  float4x4 proj;
+  float4x4 view;
+};
+
+cbuffer UniformsPerObject : register(b1) {
+  float4x4 model;
+};
+
+struct VSInput {
+  float3 pos : POSITION;
+  float3 col : COLOR;
+  float2 st : TEXCOORD0;
+};
+
+struct PSInput {
+  float4 position : SV_POSITION;
+  float3 color : COLOR;
+  float2 uv : TEXCOORD0;
+};
+
+PSInput main(VSInput input) {
+  PSInput output;
+  output.position = mul(mul(mul(float4(input.pos, 1.0), model), view), proj);
+  output.color = input.col;
+  output.uv = input.st;
+  return output;
+}
+)";
+}
+
+[[nodiscard]] const char* getD3D12FragmentShaderSource() {
+  return R"(
+Texture2D uTex0 : register(t0);
+Texture2D uTex1 : register(t1);
+SamplerState sampler0 : register(s0);
+SamplerState sampler1 : register(s1);
+
+struct PSInput {
+  float4 position : SV_POSITION;
+  float3 color : COLOR;
+  float2 uv : TEXCOORD0;
+};
+
+float4 main(PSInput input) : SV_TARGET {
+  float4 t0 = uTex0.Sample(sampler0, 2.0 * input.uv);
+  float4 t1 = uTex1.Sample(sampler1, input.uv);
+  return float4(2.0 * input.color * (t0.rgb * t1.rgb), 1.0);
+}
+)";
+}
+#endif // IGL_BACKEND_D3D12
+
 [[nodiscard]] std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
@@ -240,6 +296,18 @@ void main() {
                                                            "",
                                                            nullptr);
 #endif // IGL_BACKEND_VULKAN
+
+#if IGL_BACKEND_D3D12
+  case igl::BackendType::D3D12:
+    return igl::ShaderStagesCreator::fromModuleStringInput(device,
+                                                           getD3D12VertexShaderSource(),
+                                                           "main",
+                                                           "",
+                                                           getD3D12FragmentShaderSource(),
+                                                           "main",
+                                                           "",
+                                                           nullptr);
+#endif // IGL_BACKEND_D3D12
 
 // @fb-only
   // @fb-only
