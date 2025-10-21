@@ -52,6 +52,10 @@ class ArrayBuffer : public Buffer {
               BufferDesc::BufferAPIHint requestedApiHints,
               BufferDesc::BufferType bufferType);
   ~ArrayBuffer() override;
+  ArrayBuffer(const ArrayBuffer&) = delete;
+  ArrayBuffer& operator=(const ArrayBuffer&) = delete;
+  ArrayBuffer(ArrayBuffer&&) = delete;
+  ArrayBuffer& operator=(ArrayBuffer&&) = delete;
 
   Result upload(const void* data, const BufferRange& range) override;
 
