@@ -244,7 +244,7 @@ void GlfwShell::run() noexcept {
          !session_->appParams().exitRequested) {
     willTick();
     auto surfaceTextures = createSurfaceTextures();
-    IGL_DEBUG_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
+    IGL_DEBUG_ASSERT(surfaceTextures.color != nullptr);  // Depth is optional for some sessions
 
     std::shared_ptr<ITexture> colorTexture = surfaceTextures.color;
 

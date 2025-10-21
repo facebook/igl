@@ -59,6 +59,9 @@ void RenderCommandEncoder::endEncoding() {
   barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 
   commandList_->ResourceBarrier(1, &barrier);
+
+  // Close the command buffer
+  commandBuffer_.end();
 }
 
 void RenderCommandEncoder::bindViewport(const Viewport& /*viewport*/) {}

@@ -63,6 +63,10 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
     const Dependencies& /*dependencies*/,
     Result* IGL_NULLABLE outResult) {
   Result::setOk(outResult);
+
+  // Begin command buffer if not already begun
+  begin();
+
   return std::make_unique<RenderCommandEncoder>(*this, renderPass);
 }
 
@@ -88,6 +92,22 @@ void CommandBuffer::pushDebugGroupLabel(const char* /*label*/,
 }
 
 void CommandBuffer::popDebugGroupLabel() const {
+  // Stub: Not yet implemented
+}
+
+void CommandBuffer::copyBuffer(IBuffer& /*source*/,
+                               IBuffer& /*destination*/,
+                               uint64_t /*sourceOffset*/,
+                               uint64_t /*destinationOffset*/,
+                               uint64_t /*size*/) {
+  // Stub: Not yet implemented
+}
+
+void CommandBuffer::copyTextureToBuffer(ITexture& /*source*/,
+                                       IBuffer& /*destination*/,
+                                       uint64_t /*destinationOffset*/,
+                                       uint32_t /*mipLevel*/,
+                                       uint32_t /*layer*/) {
   // Stub: Not yet implemented
 }
 

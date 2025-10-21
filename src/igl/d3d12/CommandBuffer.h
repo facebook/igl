@@ -37,6 +37,17 @@ class CommandBuffer final : public ICommandBuffer {
   void pushDebugGroupLabel(const char* label, const igl::Color& color) const override;
   void popDebugGroupLabel() const override;
 
+  void copyBuffer(IBuffer& source,
+                  IBuffer& destination,
+                  uint64_t sourceOffset,
+                  uint64_t destinationOffset,
+                  uint64_t size) override;
+  void copyTextureToBuffer(ITexture& source,
+                           IBuffer& destination,
+                           uint64_t destinationOffset,
+                           uint32_t mipLevel,
+                           uint32_t layer) override;
+
   void begin();
   void end();
 

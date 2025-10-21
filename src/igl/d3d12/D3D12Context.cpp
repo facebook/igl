@@ -183,11 +183,18 @@ void D3D12Context::createBackBuffers() {
 }
 
 uint32_t D3D12Context::getCurrentBackBufferIndex() const {
+  if (swapChain_.Get() == nullptr) {
+    return 0;
+  }
   return swapChain_->GetCurrentBackBufferIndex();
 }
 
 ID3D12Resource* D3D12Context::getCurrentBackBuffer() const {
-  return renderTargets_[getCurrentBackBufferIndex()].Get();
+  uint32_t index = getCurrentBackBufferIndex();
+  if (index >= kMaxFramesInFlight) {
+    return nullptr;
+  }
+  return renderTargets_[index].Get();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3D12Context::getCurrentRTV() const {

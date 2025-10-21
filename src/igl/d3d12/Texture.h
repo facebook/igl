@@ -18,6 +18,11 @@ class Texture final : public ITexture {
   explicit Texture(TextureFormat format) : ITexture(format), format_(format) {}
   ~Texture() override = default;
 
+  // Factory method to create texture from existing D3D12 resource
+  static std::shared_ptr<Texture> createFromResource(ID3D12Resource* resource,
+                                                      TextureFormat format,
+                                                      const TextureDesc& desc);
+
   // D3D12-specific upload methods (not part of ITexture interface)
   Result upload(const TextureRangeDesc& range,
                 const void* data,
@@ -35,6 +40,11 @@ class Texture final : public ITexture {
   uint32_t getNumMipLevels() const override;
   uint64_t getTextureId() const override;
   bool isRequiredGenerateMipmap() const override;
+
+  void generateMipmap(ICommandQueue& cmdQueue,
+                      const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
+  void generateMipmap(ICommandBuffer& cmdBuffer,
+                      const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
 
   // D3D12-specific accessor (not part of ITexture interface)
   TextureFormat getFormat() const;

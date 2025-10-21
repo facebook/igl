@@ -13,9 +13,11 @@
 
 namespace igl::d3d12 {
 
+class Device;
+
 class CommandQueue final : public ICommandQueue {
  public:
-  CommandQueue() = default;
+  explicit CommandQueue(Device& device);
   ~CommandQueue() override = default;
 
   std::shared_ptr<ICommandBuffer> createCommandBuffer(const CommandBufferDesc& desc,
@@ -23,7 +25,7 @@ class CommandQueue final : public ICommandQueue {
   SubmitHandle submit(const ICommandBuffer& commandBuffer, bool endOfFrame = false) override;
 
  private:
-  Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_;
+  Device& device_;
 };
 
 } // namespace igl::d3d12

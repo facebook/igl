@@ -6,6 +6,7 @@
  */
 
 #include <igl/d3d12/Device.h>
+#include <igl/d3d12/CommandQueue.h>
 
 namespace igl::d3d12 {
 
@@ -42,8 +43,8 @@ void Device::destroy(SamplerHandle /*handle*/) {
 std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc& /*desc*/,
                                                            Result* IGL_NULLABLE
                                                                outResult) noexcept {
-  Result::setResult(outResult, Result::Code::Unimplemented, "D3D12 CommandQueue not yet implemented");
-  return nullptr;
+  Result::setOk(outResult);
+  return std::make_shared<CommandQueue>(*this);
 }
 
 // Resources

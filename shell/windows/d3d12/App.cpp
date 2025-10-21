@@ -15,6 +15,7 @@
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/D3D12Context.h>
+#include <igl/d3d12/Texture.h>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
@@ -58,12 +59,39 @@ std::shared_ptr<Platform> D3D12Shell::createPlatform() noexcept {
 SurfaceTextures D3D12Shell::createSurfaceTextures() noexcept {
   IGL_PROFILER_FUNCTION();
 
-  // For D3D12, we'll need to create textures from the swapchain back buffers
-  // This is a simplified implementation - will need proper integration
+  auto& device = static_cast<d3d12::Device&>(platform().getDevice());
+  auto& ctx = device.getD3D12Context();
 
-  // For now, return empty surface textures
-  // TODO: Implement proper D3D12 swapchain texture wrapping
-  return SurfaceTextures{nullptr, nullptr};
+  // Get current back buffer from swapchain
+  uint32_t backBufferIndex = ctx.getCurrentBackBufferIndex();
+  ID3D12Resource* backBuffer = ctx.getCurrentBackBuffer();
+
+  if (!backBuffer) {
+    IGL_LOG_ERROR("Failed to get back buffer from swapchain\n");
+    return SurfaceTextures{nullptr, nullptr};
+  }
+
+  // Create color texture from swapchain back buffer
+  TextureDesc colorDesc;
+  colorDesc.type = TextureType::TwoD;
+  colorDesc.format = TextureFormat::RGBA_SRGB;  // Matches swapchain format
+  colorDesc.width = shellParams().viewportSize.x;
+  colorDesc.height = shellParams().viewportSize.y;
+  colorDesc.depth = 1;
+  colorDesc.numLayers = 1;
+  colorDesc.numSamples = 1;
+  colorDesc.numMipLevels = 1;
+  colorDesc.usage = TextureDesc::TextureUsageBits::Attachment;
+  colorDesc.debugName = "Swapchain Back Buffer";
+
+  auto color = d3d12::Texture::createFromResource(backBuffer, colorDesc.format, colorDesc);
+
+  // Create depth texture
+  // For Phase 2 (EmptySession), we can skip depth buffer or create a simple one
+  // Just return nullptr for depth for now - EmptySession doesn't need it
+  std::shared_ptr<ITexture> depth = nullptr;
+
+  return SurfaceTextures{std::move(color), std::move(depth)};
 }
 } // namespace
 
@@ -83,8 +111,13 @@ int main(int argc, char* argv[]) {
       .swapchainColorTextureFormat = TextureFormat::RGBA_SRGB,
   };
 
-  shell.initialize(argc, argv, suggestedWindowConfig, suggestedConfig);
+  if (!shell.initialize(argc, argv, suggestedWindowConfig, suggestedConfig)) {
+    IGL_LOG_ERROR("Failed to initialize shell\n");
+    return 1;
+  }
+
   shell.run();
+  shell.teardown();
 
   return 0;
 }

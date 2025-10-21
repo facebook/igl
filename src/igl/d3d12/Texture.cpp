@@ -9,6 +9,27 @@
 
 namespace igl::d3d12 {
 
+std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
+                                                       TextureFormat format,
+                                                       const TextureDesc& desc) {
+  auto texture = std::make_shared<Texture>(format);
+  texture->resource_ = resource;
+  texture->format_ = format;
+  texture->dimensions_ = Dimensions{desc.width, desc.height, desc.depth};
+  texture->type_ = desc.type;
+  texture->numLayers_ = desc.numLayers;
+  texture->numMipLevels_ = desc.numMipLevels;
+  texture->samples_ = desc.numSamples;
+  texture->usage_ = desc.usage;
+
+  // AddRef since we're storing a raw pointer from external source
+  if (resource) {
+    resource->AddRef();
+  }
+
+  return texture;
+}
+
 Result Texture::upload(const TextureRangeDesc& /*range*/,
                       const void* /*data*/,
                       size_t /*bytesPerRow*/) const {
@@ -56,6 +77,16 @@ TextureFormat Texture::getFormat() const {
 
 bool Texture::isRequiredGenerateMipmap() const {
   return false;
+}
+
+void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/,
+                             const TextureRangeDesc* /*range*/) const {
+  // TODO: Implement mipmap generation using compute shader or blit operations
+}
+
+void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/,
+                             const TextureRangeDesc* /*range*/) const {
+  // TODO: Implement mipmap generation using compute shader or blit operations
 }
 
 } // namespace igl::d3d12
