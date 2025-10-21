@@ -296,13 +296,54 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     return nullptr;
   }
 
-  // Create root signature (empty for now - Phase 3 Step 3.3)
-  // TODO: Implement proper root signature based on shader reflection
+  // Create root signature (Phase 3.5)
+  // Create a minimal root signature that supports ImGui shaders (cbuffer + texture + sampler)
+  // Simple shaders without resources will work fine with this (unused resources are OK)
+
+  // Root parameter 0: Root CBV for constant buffer at b0 (ImGui projection matrix)
+  // Root parameter 1: Descriptor table with SRV for t0 (ImGui texture)
+  D3D12_ROOT_PARAMETER rootParams[2] = {};
+
+  // Root parameter 0: Root CBV for constant buffer at b0
+  rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+  rootParams[0].Descriptor.ShaderRegister = 0; // b0
+  rootParams[0].Descriptor.RegisterSpace = 0;
+  rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
+  // Root parameter 1: Descriptor table for SRV at t0
+  D3D12_DESCRIPTOR_RANGE srvRange = {};
+  srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+  srvRange.NumDescriptors = 1;
+  srvRange.BaseShaderRegister = 0; // t0
+  srvRange.RegisterSpace = 0;
+  srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+  rootParams[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+  rootParams[1].DescriptorTable.NumDescriptorRanges = 1;
+  rootParams[1].DescriptorTable.pDescriptorRanges = &srvRange;
+  rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+  // Static sampler for s0
+  D3D12_STATIC_SAMPLER_DESC staticSampler = {};
+  staticSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+  staticSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+  staticSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+  staticSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+  staticSampler.MipLODBias = 0.0f;
+  staticSampler.MaxAnisotropy = 0;
+  staticSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+  staticSampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+  staticSampler.MinLOD = 0.0f;
+  staticSampler.MaxLOD = D3D12_FLOAT32_MAX;
+  staticSampler.ShaderRegister = 0; // s0
+  staticSampler.RegisterSpace = 0;
+  staticSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
   D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
-  rootSigDesc.NumParameters = 0;
-  rootSigDesc.pParameters = nullptr;
-  rootSigDesc.NumStaticSamplers = 0;
-  rootSigDesc.pStaticSamplers = nullptr;
+  rootSigDesc.NumParameters = 2;
+  rootSigDesc.pParameters = rootParams;
+  rootSigDesc.NumStaticSamplers = 1;
+  rootSigDesc.pStaticSamplers = &staticSampler;
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
   Microsoft::WRL::ComPtr<ID3DBlob> signature;
@@ -310,6 +351,10 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
                                             signature.GetAddressOf(), error.GetAddressOf());
   if (FAILED(hr)) {
+    if (error.Get()) {
+      const char* errorMsg = static_cast<const char*>(error->GetBufferPointer());
+      IGL_LOG_ERROR("Root signature serialization error: %s\n", errorMsg);
+    }
     Result::setResult(outResult, Result::Code::RuntimeError, "Failed to serialize root signature");
     return nullptr;
   }
@@ -449,10 +494,18 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
   hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
   if (FAILED(hr)) {
-    char errorMsg[256];
-    snprintf(errorMsg, sizeof(errorMsg), "Failed to create pipeline state. HRESULT: 0x%08X", static_cast<unsigned>(hr));
+    char errorMsg[512];
+    snprintf(errorMsg, sizeof(errorMsg),
+             "Failed to create pipeline state. HRESULT: 0x%08X\n"
+             "  VS size: %zu, PS size: %zu\n"
+             "  Input elements: %u\n"
+             "  RT format: %d\n",
+             static_cast<unsigned>(hr),
+             psoDesc.VS.BytecodeLength,
+             psoDesc.PS.BytecodeLength,
+             psoDesc.InputLayout.NumElements,
+             static_cast<int>(psoDesc.RTVFormats[0]));
     IGL_LOG_ERROR(errorMsg);
-    IGL_LOG_ERROR("\n");
     Result::setResult(outResult, Result::Code::RuntimeError, errorMsg);
     return nullptr;
   }
