@@ -53,4 +53,46 @@ bool Framebuffer::isSwapchainBound() const {
   return false;
 }
 
+void Framebuffer::copyBytesColorAttachment(ICommandQueue& /*cmdQueue*/,
+                                           size_t /*index*/,
+                                           void* /*pixelBytes*/,
+                                           const TextureRangeDesc& /*range*/,
+                                           size_t /*bytesPerRow*/) const {
+  // TODO: Implement for D3D12
+}
+
+void Framebuffer::copyBytesDepthAttachment(ICommandQueue& /*cmdQueue*/,
+                                           void* /*pixelBytes*/,
+                                           const TextureRangeDesc& /*range*/,
+                                           size_t /*bytesPerRow*/) const {
+  // TODO: Implement for D3D12
+}
+
+void Framebuffer::copyBytesStencilAttachment(ICommandQueue& /*cmdQueue*/,
+                                             void* /*pixelBytes*/,
+                                             const TextureRangeDesc& /*range*/,
+                                             size_t /*bytesPerRow*/) const {
+  // TODO: Implement for D3D12
+}
+
+void Framebuffer::copyTextureColorAttachment(ICommandQueue& /*cmdQueue*/,
+                                             size_t /*index*/,
+                                             std::shared_ptr<ITexture> /*destTexture*/,
+                                             const TextureRangeDesc& /*range*/) const {
+  // TODO: Implement for D3D12
+}
+
+void Framebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
+  desc_.colorAttachments[0].texture = std::move(texture);
+}
+
+void Framebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
+  desc_.colorAttachments[0].texture = std::move(surfaceTextures.color);
+  desc_.depthAttachment.texture = std::move(surfaceTextures.depth);
+}
+
+void Framebuffer::updateResolveAttachment(std::shared_ptr<ITexture> texture) {
+  desc_.colorAttachments[0].resolveTexture = std::move(texture);
+}
+
 } // namespace igl::d3d12

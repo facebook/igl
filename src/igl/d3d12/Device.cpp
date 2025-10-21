@@ -10,6 +10,7 @@
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/RenderPipelineState.h>
 #include <igl/d3d12/ShaderModule.h>
+#include <igl/d3d12/Framebuffer.h>
 #include <igl/VertexInputState.h>
 #include <cstring>
 #include <vector>
@@ -343,10 +344,10 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
 }
 
 // Framebuffer
-std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& /*desc*/,
+std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& desc,
                                                         Result* IGL_NULLABLE outResult) {
-  Result::setResult(outResult, Result::Code::Unimplemented, "D3D12 Framebuffer not yet implemented");
-  return nullptr;
+  Result::setOk(outResult);
+  return std::make_shared<Framebuffer>(desc);
 }
 
 // Capabilities

@@ -26,6 +26,27 @@ class Framebuffer final : public IFramebuffer {
   FramebufferMode getMode() const override;
   bool isSwapchainBound() const override;
 
+  void copyBytesColorAttachment(ICommandQueue& cmdQueue,
+                                 size_t index,
+                                 void* pixelBytes,
+                                 const TextureRangeDesc& range,
+                                 size_t bytesPerRow) const override;
+  void copyBytesDepthAttachment(ICommandQueue& cmdQueue,
+                                void* pixelBytes,
+                                const TextureRangeDesc& range,
+                                size_t bytesPerRow) const override;
+  void copyBytesStencilAttachment(ICommandQueue& cmdQueue,
+                                  void* pixelBytes,
+                                  const TextureRangeDesc& range,
+                                  size_t bytesPerRow) const override;
+  void copyTextureColorAttachment(ICommandQueue& cmdQueue,
+                                  size_t index,
+                                  std::shared_ptr<ITexture> destTexture,
+                                  const TextureRangeDesc& range) const override;
+  void updateDrawable(std::shared_ptr<ITexture> texture) override;
+  void updateDrawable(SurfaceTextures surfaceTextures) override;
+  void updateResolveAttachment(std::shared_ptr<ITexture> texture) override;
+
  private:
   FramebufferDesc desc_;
 };

@@ -7,9 +7,9 @@
 
 #include "HelloTriangleSession.h"
 
-// Embedded DXIL shader bytecode
-#include "triangle_vs_dxil.h"
-#include "triangle_ps_dxil.h"
+// Embedded shader bytecode (FXC compiled)
+#include "simple_vs_fxc.h"
+#include "simple_ps_fxc.h"
 
 namespace igl::shell {
 
@@ -46,8 +46,8 @@ void HelloTriangleSession::initialize() noexcept {
 
   // Create shader modules
   ShaderModuleDesc vsDesc = ShaderModuleDesc::fromBinaryInput(
-      _tmp_triangle_vs_dxil,
-      _tmp_triangle_vs_dxil_len,
+      simple_vs_fxc_cso,
+      simple_vs_fxc_cso_len,
       {ShaderStage::Vertex, "main"},
       "VertexShader");
 
@@ -58,8 +58,8 @@ void HelloTriangleSession::initialize() noexcept {
   }
 
   ShaderModuleDesc psDesc = ShaderModuleDesc::fromBinaryInput(
-      _tmp_triangle_ps_dxil,
-      _tmp_triangle_ps_dxil_len,
+      simple_ps_fxc_cso,
+      simple_ps_fxc_cso_len,
       {ShaderStage::Fragment, "main"},
       "PixelShader");
 
