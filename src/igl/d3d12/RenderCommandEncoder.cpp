@@ -120,7 +120,9 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
   D3D12_VERTEX_BUFFER_VIEW vbView = {};
   vbView.BufferLocation = d3dBuffer->gpuAddress(bufferOffset);
   vbView.SizeInBytes = static_cast<UINT>(d3dBuffer->getSizeInBytes() - bufferOffset);
-  vbView.StrideInBytes = 0; // TODO: Get stride from vertex input state
+  // TODO: Get stride from vertex input state
+  // For now, hardcode for simple triangle (float3 position + float4 color = 28 bytes)
+  vbView.StrideInBytes = 28;
 
   commandList_->IASetVertexBuffers(index, 1, &vbView);
 }

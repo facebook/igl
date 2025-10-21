@@ -252,11 +252,22 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
   psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
   psoDesc.RasterizerState.FrontCounterClockwise = FALSE;
+  psoDesc.RasterizerState.DepthBias = 0;
+  psoDesc.RasterizerState.DepthBiasClamp = 0.0f;
+  psoDesc.RasterizerState.SlopeScaledDepthBias = 0.0f;
   psoDesc.RasterizerState.DepthClipEnable = TRUE;
+  psoDesc.RasterizerState.MultisampleEnable = FALSE;
+  psoDesc.RasterizerState.AntialiasedLineEnable = FALSE;
+  psoDesc.RasterizerState.ForcedSampleCount = 0;
+  psoDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
   // Depth stencil state
   psoDesc.DepthStencilState.DepthEnable = FALSE;
+  psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+  psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
   psoDesc.DepthStencilState.StencilEnable = FALSE;
+  psoDesc.DepthStencilState.StencilReadMask = 0xFF;
+  psoDesc.DepthStencilState.StencilWriteMask = 0xFF;
 
   // Render target format
   psoDesc.NumRenderTargets = 1;
@@ -276,13 +287,24 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   if (desc.vertexInputState) {
     // TODO: Convert IGL vertex input state to D3D12 input layout
     // For now, use hardcoded layout for simple triangle
+  } else {
+    // Default simple triangle layout: position (float3) + color (float4)
+    inputElements.resize(2);
+    inputElements[0] = {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+                        D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0};
+    inputElements[1] = {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
+                        D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0};
   }
   psoDesc.InputLayout = {inputElements.data(), static_cast<UINT>(inputElements.size())};
 
   Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
   hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
   if (FAILED(hr)) {
-    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create pipeline state");
+    char errorMsg[256];
+    snprintf(errorMsg, sizeof(errorMsg), "Failed to create pipeline state. HRESULT: 0x%08X", static_cast<unsigned>(hr));
+    IGL_LOG_ERROR(errorMsg);
+    IGL_LOG_ERROR("\n");
+    Result::setResult(outResult, Result::Code::RuntimeError, errorMsg);
     return nullptr;
   }
 

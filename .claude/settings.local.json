@@ -28,7 +28,9 @@
       "Bash(timeout:*)",
       "Bash(where:*)",
       "Read(//c/**)",
-      "Bash(dxc:*)"
+      "Bash(dxc:*)",
+      "Bash(powershell:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []
