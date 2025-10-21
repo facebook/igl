@@ -147,6 +147,7 @@ enum class BackendFlavor : uint8_t {
   OpenGL_ES,
   Metal,
   Vulkan,
+  D3D12,
   // @fb-only
 };
 

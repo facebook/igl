@@ -105,6 +105,7 @@ class Device final : public IDevice {
   [[nodiscard]] TextureFormatCapabilities getTextureFormatCapabilities(
       TextureFormat format) const override;
   [[nodiscard]] ShaderVersion getShaderVersion() const override;
+  [[nodiscard]] BackendVersion getBackendVersion() const override;
 
   [[nodiscard]] BackendType getBackendType() const override;
 

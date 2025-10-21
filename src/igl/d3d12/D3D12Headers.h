@@ -68,6 +68,13 @@ namespace WRL {
     T** GetAddressOf() noexcept { return &ptr_; }
     T* operator->() const noexcept { return ptr_; }
 
+    void Reset() noexcept {
+      if (ptr_) {
+        ptr_->Release();
+        ptr_ = nullptr;
+      }
+    }
+
    private:
     T* ptr_;
   };

@@ -168,6 +168,10 @@ ShaderVersion Device::getShaderVersion() const {
   return ShaderVersion{ShaderFamily::Hlsl, 6, 0, 0};
 }
 
+BackendVersion Device::getBackendVersion() const {
+  return BackendVersion{BackendFlavor::D3D12, 12, 0};
+}
+
 BackendType Device::getBackendType() const {
   return BackendType::D3D12;
 }
