@@ -107,6 +107,10 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "ImGui.NET": {
+              "target": "Package",
+              "version": "[1.91.6.1, )"
+            },
             "Silk.NET.Maths": {
               "target": "Package",
               "version": "[2.21.0, )"

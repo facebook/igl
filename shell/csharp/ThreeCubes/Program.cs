@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using IGL.Bindings;
 using Silk.NET.Windowing;
@@ -10,14 +11,14 @@ class Program
 {
     static void Main(string[] args)
     {
-        Console.WriteLine("Three Rotating Cubes - IGL + C# Demo");
-        Console.WriteLine("=====================================");
-        Console.WriteLine("🎯 Render session implemented in C#! 🎯\n");
+        Console.WriteLine("Three Rotating Cubes - IGL + C# + ImGui Demo");
+        Console.WriteLine("============================================");
+        Console.WriteLine("🎯 Editor UI with ImGui overlay! 🎯\n");
 
         var options = WindowOptions.Default;
-        options.Title = "Three Rotating Cubes - IGL + C# (Native C# Renderer)";
-        options.Size = new Vector2D<int>(1024, 768);
-        options.Position = new Vector2D<int>(100, 100);  // Ensure visible position
+        options.Title = "Three Rotating Cubes - IGL + C# + ImGui Editor";
+        options.Size = new Vector2D<int>(1280, 800);
+        options.Position = new Vector2D<int>(100, 100);
         options.IsVisible = true;
         options.API = new GraphicsAPI(
             ContextAPI.None,  // We're using IGL/Metal directly
@@ -31,6 +32,8 @@ class Program
         Platform? platform = null;
         Device? device = null;
         ThreeCubesRenderSession? session = null;
+        ImGuiRenderer? imguiRenderer = null;
+        Stopwatch? frameTimer = null;
 
         window.Load += () =>
         {
@@ -55,7 +58,14 @@ class Program
                 // Create C# render session
                 Console.WriteLine("Creating Three Cubes render session...");
                 session = new ThreeCubesRenderSession(device);
-                Console.WriteLine("Render session created successfully!\n");
+                Console.WriteLine("Render session created successfully!");
+
+                // Create ImGui renderer
+                Console.WriteLine("Creating ImGui renderer...");
+                imguiRenderer = new ImGuiRenderer(device, window.Size.X, window.Size.Y);
+                Console.WriteLine("ImGui renderer created successfully!\n");
+
+                frameTimer = Stopwatch.StartNew();
 
                 Console.WriteLine("Starting render loop...");
                 Console.WriteLine("Close the window to exit\n");
@@ -67,18 +77,29 @@ class Program
             }
         };
 
+        double lastFrameTime = 0;
         window.Render += (delta) =>
         {
-            if (platform == null || device == null || session == null)
+            if (platform == null || device == null || session == null || imguiRenderer == null || frameTimer == null)
                 return;
 
             try
             {
+                // Calculate delta time
+                double currentTime = frameTimer.Elapsed.TotalSeconds;
+                double deltaTime = currentTime - lastFrameTime;
+                lastFrameTime = currentTime;
+
                 // Get textures for this frame
                 var (colorTexture, depthTexture) = platform.GetFrameTextures();
 
-                // Render using C# render session
+                // Render 3D scene first
                 session.Render(device, colorTexture, depthTexture);
+
+                // Start ImGui frame and render UI
+                imguiRenderer.NewFrame(deltaTime);
+                RenderUI(session);
+                imguiRenderer.Render(colorTexture, depthTexture);
 
                 // Present frame
                 platform.PresentFrame();
@@ -90,9 +111,15 @@ class Program
             }
         };
 
+        window.Resize += (size) =>
+        {
+            imguiRenderer?.UpdateWindowSize(size.X, size.Y);
+        };
+
         window.Closing += () =>
         {
             Console.WriteLine("\nWindow close requested, cleaning up...");
+            imguiRenderer?.Dispose();
             session?.Dispose();
             platform?.Dispose();
             Console.WriteLine("Cleanup complete");
@@ -101,6 +128,11 @@ class Program
         window.Run();
 
         Console.WriteLine("Application exited successfully");
+    }
+
+    static void RenderUI(ThreeCubesRenderSession session)
+    {
+        EditorUI.Render(session);
     }
 
     private static IntPtr GetNativeWindowHandle(IWindow window)

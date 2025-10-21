@@ -428,6 +428,51 @@ public class ThreeCubesRenderSession : IDisposable
         };
     }
 
+    // Public API for editor UI
+    public CubeData GetCube(int index)
+    {
+        if (index < 0 || index >= _cubes.Length)
+            throw new ArgumentOutOfRangeException(nameof(index));
+
+        var cube = _cubes[index];
+        return new CubeData
+        {
+            Position = cube.Position,
+            RotationAxis = cube.RotationAxis,
+            RotationSpeed = cube.RotationSpeed,
+            CurrentAngle = cube.CurrentAngle,
+            Color = cube.Color
+        };
+    }
+
+    public void SetCubePosition(int index, Vector3 position)
+    {
+        if (index < 0 || index >= _cubes.Length)
+            throw new ArgumentOutOfRangeException(nameof(index));
+        _cubes[index].Position = position;
+    }
+
+    public void SetCubeRotationAxis(int index, Vector3 axis)
+    {
+        if (index < 0 || index >= _cubes.Length)
+            throw new ArgumentOutOfRangeException(nameof(index));
+        _cubes[index].RotationAxis = Vector3.Normalize(axis);
+    }
+
+    public void SetCubeRotationSpeed(int index, float speed)
+    {
+        if (index < 0 || index >= _cubes.Length)
+            throw new ArgumentOutOfRangeException(nameof(index));
+        _cubes[index].RotationSpeed = speed;
+    }
+
+    public void SetCubeColor(int index, Vector3 color)
+    {
+        if (index < 0 || index >= _cubes.Length)
+            throw new ArgumentOutOfRangeException(nameof(index));
+        _cubes[index].Color = color;
+    }
+
     public void Dispose()
     {
         _pipelineState?.Dispose();
@@ -438,4 +483,14 @@ public class ThreeCubesRenderSession : IDisposable
         _vertexBuffer.Dispose();
         _commandQueue.Dispose();
     }
+}
+
+// Public data structure for cube properties (used by EditorUI)
+public struct CubeData
+{
+    public Vector3 Position;
+    public Vector3 RotationAxis;
+    public float RotationSpeed;
+    public float CurrentAngle;
+    public Vector3 Color;
 }

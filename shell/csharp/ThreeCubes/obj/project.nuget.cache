@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "HICDPoA1R9I=",
+  "dgSpecHash": "Xbttbpsb2s0=",
   "success": true,
   "projectFilePath": "/Users/alexeymedvedev/Desktop/sources/igl/shell/csharp/ThreeCubes/ThreeCubes.csproj",
   "expectedPackageFiles": [
+    "/Users/alexeymedvedev/.nuget/packages/imgui.net/1.91.6.1/imgui.net.1.91.6.1.nupkg.sha512",
     "/Users/alexeymedvedev/.nuget/packages/microsoft.csharp/4.7.0/microsoft.csharp.4.7.0.nupkg.sha512",
     "/Users/alexeymedvedev/.nuget/packages/microsoft.dotnet.platformabstractions/3.1.6/microsoft.dotnet.platformabstractions.3.1.6.nupkg.sha512",
     "/Users/alexeymedvedev/.nuget/packages/microsoft.extensions.dependencymodel/8.0.0/microsoft.extensions.dependencymodel.8.0.0.nupkg.sha512",
@@ -13,6 +14,7 @@
     "/Users/alexeymedvedev/.nuget/packages/silk.net.windowing/2.21.0/silk.net.windowing.2.21.0.nupkg.sha512",
     "/Users/alexeymedvedev/.nuget/packages/silk.net.windowing.common/2.21.0/silk.net.windowing.common.2.21.0.nupkg.sha512",
     "/Users/alexeymedvedev/.nuget/packages/silk.net.windowing.glfw/2.21.0/silk.net.windowing.glfw.2.21.0.nupkg.sha512",
+    "/Users/alexeymedvedev/.nuget/packages/system.buffers/4.5.1/system.buffers.4.5.1.nupkg.sha512",
     "/Users/alexeymedvedev/.nuget/packages/system.memory/4.5.5/system.memory.4.5.5.nupkg.sha512",
     "/Users/alexeymedvedev/.nuget/packages/system.numerics.vectors/4.5.0/system.numerics.vectors.4.5.0.nupkg.sha512",
     "/Users/alexeymedvedev/.nuget/packages/system.runtime.compilerservices.unsafe/6.0.0/system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512",
