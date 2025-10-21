@@ -32,13 +32,13 @@ target_include_directories(IGLD3D12 PUBLIC "${IGL_ROOT_DIR}/third-party/d3d12/in
 target_include_directories(IGLD3D12 PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/SPIRV-Cross")
 target_include_directories(IGLD3D12 PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/glslang")
 
-# Windows-specific definitions
-if(WIN32)
-  add_definitions("-DNOMINMAX")
-  add_definitions("-DWIN32_LEAN_AND_MEAN")
-endif()
+# Windows-specific definitions (removed - defined in D3D12Headers.h to avoid conflicts)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-  # Enable conformant preprocessor and multithreaded compilation
-  target_compile_options(IGLD3D12 PRIVATE "/Zc:preprocessor" "/MP")
+if(WIN32 AND MSVC)
+  # Enable multithreaded compilation
+  target_compile_options(IGLD3D12 PRIVATE "/MP")
+  # Disable NOMINMAX warning (already defined in D3D12Headers.h)
+  target_compile_options(IGLD3D12 PRIVATE "/wd4005")
+  # Note: /Zc:preprocessor (conformant preprocessor) causes issues with
+  # some d3dx12 headers and WRL, so we're using the traditional preprocessor
 endif()

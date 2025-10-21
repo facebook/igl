@@ -113,7 +113,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
 }
 
 // Shader library and modules
-std::shared_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& /*desc*/,
+std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& /*desc*/,
                                                             Result* IGL_NULLABLE
                                                                 outResult) const {
   Result::setResult(outResult, Result::Code::Unimplemented, "D3D12 ShaderLibrary not yet implemented");
@@ -134,8 +134,13 @@ std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& /
 }
 
 // Capabilities
-const PlatformDevice& Device::getPlatformDevice() const noexcept {
-  static PlatformDevice platformDevice;
+const IPlatformDevice& Device::getPlatformDevice() const noexcept {
+  // TODO: Implement proper D3D12 platform device
+  class D3D12PlatformDevice : public IPlatformDevice {
+  public:
+    bool isType(PlatformDeviceType /*t*/) const noexcept override { return false; }
+  };
+  static D3D12PlatformDevice platformDevice;
   return platformDevice;
 }
 
@@ -152,13 +157,13 @@ bool Device::getFeatureLimits(DeviceFeatureLimits /*featureLimits*/, size_t& res
   return false;
 }
 
-TextureFormatCapabilities Device::getTextureFormatCapabilities(TextureFormat /*format*/) const {
-  return TextureFormatCapabilities{};
+ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(TextureFormat /*format*/) const {
+  return ICapabilities::TextureFormatCapabilities{};
 }
 
 ShaderVersion Device::getShaderVersion() const {
   // HLSL Shader Model 6.0
-  return ShaderVersion(6, 0, 0);
+  return ShaderVersion{ShaderFamily::Hlsl, 6, 0, 0};
 }
 
 BackendType Device::getBackendType() const {
@@ -169,16 +174,8 @@ size_t Device::getCurrentDrawCount() const {
   return drawCount_;
 }
 
-void Device::resetCurrentDrawCount() {
-  drawCount_ = 0;
-}
-
 size_t Device::getShaderCompilationCount() const {
   return shaderCompilationCount_;
-}
-
-void Device::resetShaderCompilationCount() {
-  shaderCompilationCount_ = 0;
 }
 
 } // namespace igl::d3d12

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <igl/CommandBuffer.h>
+#include <igl/ComputeCommandEncoder.h>
 #include <igl/d3d12/Common.h>
 
 namespace igl::d3d12 {
@@ -19,19 +20,18 @@ class CommandBuffer final : public ICommandBuffer {
 
   std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
       const RenderPassDesc& renderPass,
-      std::shared_ptr<IFramebuffer> framebuffer,
+      const std::shared_ptr<IFramebuffer>& framebuffer,
       const Dependencies& dependencies,
       Result* IGL_NULLABLE outResult) override;
 
-  std::unique_ptr<IComputeCommandEncoder> createComputeCommandEncoder(
-      Result* IGL_NULLABLE outResult) override;
+  std::unique_ptr<IComputeCommandEncoder> createComputeCommandEncoder() override;
 
-  void present(std::shared_ptr<ITexture> surface) const override;
+  void present(const std::shared_ptr<ITexture>& surface) const override;
 
   void waitUntilScheduled() override;
   void waitUntilCompleted() override;
 
-  void pushDebugGroupLabel(const std::string& label, const igl::Color& color) const override;
+  void pushDebugGroupLabel(const char* label, const igl::Color& color) const override;
   void popDebugGroupLabel() const override;
 
  private:

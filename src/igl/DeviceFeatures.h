@@ -191,7 +191,7 @@ enum class DeviceFeatureLimits {
  * Metal         Metal API (macOS, iOS, etc.)
  * SpirV         Standard Portable Intermediate Representation open standard format
  */
-enum class ShaderFamily : uint8_t { Unknown, Glsl, GlslEs, Metal, SpirV };
+enum class ShaderFamily : uint8_t { Unknown, Glsl, GlslEs, Metal, SpirV, Hlsl };
 
 /**
  * @brief ShaderVersion provides information on the shader family type and version

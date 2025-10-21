@@ -17,7 +17,7 @@ class SamplerState final : public ISamplerState {
   explicit SamplerState(const D3D12_SAMPLER_DESC& desc) : desc_(desc) {}
   ~SamplerState() override = default;
 
-  bool isYUV() const override { return false; }
+  bool isYUV() const noexcept override { return false; }
 
  private:
   D3D12_SAMPLER_DESC desc_;

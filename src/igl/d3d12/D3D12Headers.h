@@ -11,8 +11,10 @@
 #define IGL_D3D12_D3D12HEADERS_H
 
 // Windows headers
+#ifndef NOMINMAX
 #define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
+#endif
+// Don't use WIN32_LEAN_AND_MEAN - it excludes wrl/client.h
 #include <windows.h>
 
 // DirectX 12 headers
@@ -23,10 +25,54 @@
 #include <dxcapi.h>
 
 // D3DX12 helper library (header-only)
-#include <d3dx12.h>
+// Disable buggy helper classes that have preprocessor issues or require newer SDK
+#define D3DX12_NO_STATE_OBJECT_HELPERS
+#define D3DX12_NO_CHECK_FEATURE_SUPPORT_CLASS
+
+// Manually include only the d3dx12 headers we need (excluding incompatible ones)
+#include <d3d12.h>
+#include <d3dx12_barriers.h>
+#include <d3dx12_core.h>
+#include <d3dx12_default.h>
+#include <d3dx12_pipeline_state_stream.h>
+#include <d3dx12_render_pass.h>
+// Excluded: d3dx12_resource_helpers.h (requires property_format_table.h which needs newer SDK)
+// Excluded: d3dx12_property_format_table.h (requires newer SDK)
+#include <d3dx12_root_signature.h>
 
 // ComPtr for COM object management
-#include <wrl/client.h>
+// NOTE: We cannot use <wrl/client.h> with the traditional MSVC preprocessor
+// because it causes namespace parsing errors. For Phase 1 stubs, we'll use
+// raw pointers and implement our own simple ComPtr wrapper later.
+namespace Microsoft {
+namespace WRL {
+  template<typename T>
+  class ComPtr {
+   public:
+    ComPtr() noexcept : ptr_(nullptr) {}
+    ComPtr(T* ptr) noexcept : ptr_(ptr) {}
+    ComPtr(const ComPtr&) = delete;
+    ComPtr& operator=(const ComPtr&) = delete;
+    ComPtr(ComPtr&& other) noexcept : ptr_(other.ptr_) { other.ptr_ = nullptr; }
+    ComPtr& operator=(ComPtr&& other) noexcept {
+      if (this != &other) {
+        if (ptr_) ptr_->Release();
+        ptr_ = other.ptr_;
+        other.ptr_ = nullptr;
+      }
+      return *this;
+    }
+    ~ComPtr() { if (ptr_) ptr_->Release(); }
+
+    T* Get() const noexcept { return ptr_; }
+    T** GetAddressOf() noexcept { return &ptr_; }
+    T* operator->() const noexcept { return ptr_; }
+
+   private:
+    T* ptr_;
+  };
+} // namespace WRL
+} // namespace Microsoft
 
 // Link required libraries
 #pragma comment(lib, "d3d12.lib")

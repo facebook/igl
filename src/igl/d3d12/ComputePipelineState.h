@@ -18,8 +18,6 @@ class ComputePipelineState final : public IComputePipelineState {
   ~ComputePipelineState() override = default;
 
   std::shared_ptr<IComputePipelineReflection> computePipelineReflection() override;
-  void setComputePipelineReflection(
-      const IComputePipelineReflection& computePipelineReflection) override;
 
  private:
   Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState_;

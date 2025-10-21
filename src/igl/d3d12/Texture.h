@@ -14,28 +14,30 @@ namespace igl::d3d12 {
 
 class Texture final : public ITexture {
  public:
-  Texture(TextureFormat format) : format_(format) {}
+  Texture() : ITexture(TextureFormat::Invalid), format_(TextureFormat::Invalid) {}
+  explicit Texture(TextureFormat format) : ITexture(format), format_(format) {}
   ~Texture() override = default;
 
+  // D3D12-specific upload methods (not part of ITexture interface)
   Result upload(const TextureRangeDesc& range,
                 const void* data,
-                size_t bytesPerRow = 0) const override;
+                size_t bytesPerRow = 0) const;
   Result uploadCube(const TextureRangeDesc& range,
                    TextureCubeFace face,
                    const void* data,
-                   size_t bytesPerRow = 0) const override;
+                   size_t bytesPerRow = 0) const;
 
   Dimensions getDimensions() const override;
-  size_t getNumLayers() const override;
+  uint32_t getNumLayers() const override;
   TextureType getType() const override;
   TextureDesc::TextureUsage getUsage() const override;
-  size_t getSamples() const override;
-  size_t getNumMipLevels() const override;
-  void generateMipmap(ICommandQueue& cmdQueue) const override;
-  void generateMipmap(ICommandBuffer& cmdBuffer) const override;
+  uint32_t getSamples() const override;
+  uint32_t getNumMipLevels() const override;
   uint64_t getTextureId() const override;
-  TextureFormat getFormat() const override;
   bool isRequiredGenerateMipmap() const override;
+
+  // D3D12-specific accessor (not part of ITexture interface)
+  TextureFormat getFormat() const;
 
  private:
   Microsoft::WRL::ComPtr<ID3D12Resource> resource_;

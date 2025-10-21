@@ -8,7 +8,20 @@
       "Bash(xargs:*)",
       "Bash(tree:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows Kits\\Installed Roots\" /v KitsRoot10)",
+      "Bash(dir \"C:\\Program Files (x86)\\Windows Kits\\10\\Include\")",
+      "Bash(findstr:*)",
+      "Bash(for file in d3dx12.h d3dx12_barriers.h d3dx12_core.h d3dx12_default.h d3dx12_pipeline_state_stream.h d3dx12_render_pass.h d3dx12_resource_helpers.h d3dx12_root_signature.h d3dx12_property_format_table.h d3dx12_state_object.h d3dx12_check_feature_support.h)",
+      "Bash(do echo \"Downloading $file...\")",
+      "Bash(done)",
+      "Bash(awk:*)",
+      "Bash(cl.exe:*)",
+      "Bash(cpp -P -std=c++20:*)",
+      "Bash(1)",
+      "Bash(tee:*)"
     ],
     "deny": [],
     "ask": []

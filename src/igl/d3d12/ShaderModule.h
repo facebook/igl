@@ -16,27 +16,19 @@ namespace igl::d3d12 {
 class ShaderModule final : public IShaderModule {
  public:
   ShaderModule(ShaderModuleInfo info, std::vector<uint8_t> bytecode)
-      : info_(std::move(info)), bytecode_(std::move(bytecode)) {}
+      : IShaderModule(info), bytecode_(std::move(bytecode)) {}
   ~ShaderModule() override = default;
-
-  ShaderModuleInfo shaderModuleInfo() const override { return info_; }
 
   const std::vector<uint8_t>& getBytecode() const { return bytecode_; }
 
  private:
-  ShaderModuleInfo info_;
   std::vector<uint8_t> bytecode_; // DXIL bytecode
 };
 
 class ShaderStages final : public IShaderStages {
  public:
-  ShaderStages(ShaderStagesDesc desc) : desc_(std::move(desc)) {}
+  ShaderStages(ShaderStagesDesc desc) : IShaderStages(desc) {}
   ~ShaderStages() override = default;
-
-  const ShaderStagesDesc& getShaderStagesDesc() const { return desc_; }
-
- private:
-  ShaderStagesDesc desc_;
 };
 
 } // namespace igl::d3d12

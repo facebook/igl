@@ -136,6 +136,7 @@ enum class BackendType {
   OpenGL,
   Metal,
   Vulkan,
+  D3D12,
   // @fb-only
   Custom,
 };

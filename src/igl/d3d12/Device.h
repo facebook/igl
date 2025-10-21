@@ -81,7 +81,7 @@ class Device final : public IDevice {
       Result* IGL_NULLABLE outResult) const override;
 
   // Shader library and modules
-  [[nodiscard]] std::shared_ptr<IShaderLibrary> createShaderLibrary(
+  [[nodiscard]] std::unique_ptr<IShaderLibrary> createShaderLibrary(
       const ShaderLibraryDesc& desc,
       Result* IGL_NULLABLE outResult) const override;
 
@@ -95,7 +95,7 @@ class Device final : public IDevice {
       Result* IGL_NULLABLE outResult) override;
 
   // Capabilities
-  [[nodiscard]] const PlatformDevice& getPlatformDevice() const noexcept override;
+  [[nodiscard]] const IPlatformDevice& getPlatformDevice() const noexcept override;
 
   [[nodiscard]] bool hasFeature(DeviceFeatures feature) const override;
   [[nodiscard]] bool hasRequirement(DeviceRequirement requirement) const override;
@@ -108,10 +108,7 @@ class Device final : public IDevice {
   [[nodiscard]] BackendType getBackendType() const override;
 
   [[nodiscard]] size_t getCurrentDrawCount() const override;
-  void resetCurrentDrawCount() override;
-
   [[nodiscard]] size_t getShaderCompilationCount() const override;
-  void resetShaderCompilationCount() override;
 
  private:
   Microsoft::WRL::ComPtr<ID3D12Device> device_;

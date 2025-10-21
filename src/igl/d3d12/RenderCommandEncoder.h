@@ -18,16 +18,11 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
 
   void endEncoding() override;
 
-  void pushDebugGroupLabel(const std::string& label, const igl::Color& color) const override;
-  void insertDebugEventLabel(const std::string& label, const igl::Color& color) const override;
-  void popDebugGroupLabel() const override;
-
   void bindViewport(const Viewport& viewport) override;
   void bindScissorRect(const ScissorRect& rect) override;
   void bindRenderPipelineState(const std::shared_ptr<IRenderPipelineState>& pipelineState) override;
   void bindDepthStencilState(const std::shared_ptr<IDepthStencilState>& depthStencilState) override;
 
-  void bindBuffer(uint32_t index, IBuffer* buffer, size_t bufferOffset = 0) override;
   void bindVertexBuffer(uint32_t index, IBuffer& buffer, size_t bufferOffset = 0) override;
   void bindIndexBuffer(IBuffer& buffer, IndexFormat format, size_t bufferOffset = 0) override;
 
@@ -37,8 +32,6 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   void bindTexture(size_t index, uint8_t target, ITexture* texture) override;
   void bindTexture(size_t index, ITexture* texture) override;
   void bindUniform(const UniformDesc& uniformDesc, const void* data) override;
-  void bindBindGroup(BindGroupTextureHandle handle) override;
-  void bindBindGroup(BindGroupBufferHandle handle, uint32_t dynamicOffset) override;
 
   void draw(size_t vertexCount,
             uint32_t instanceCount = 1,
@@ -49,7 +42,6 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
                    uint32_t firstIndex = 0,
                    int32_t vertexOffset = 0,
                    uint32_t baseInstance = 0) override;
-  void drawIndexedIndirect(IBuffer& indirectBuffer, size_t indirectBufferOffset) override;
   void multiDrawIndirect(IBuffer& indirectBuffer,
                         size_t indirectBufferOffset,
                         uint32_t drawCount,

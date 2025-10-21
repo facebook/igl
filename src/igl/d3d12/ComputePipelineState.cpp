@@ -9,11 +9,9 @@
 
 namespace igl::d3d12 {
 
-std::shared_ptr<IComputePipelineReflection> ComputePipelineState::computePipelineReflection() {
+std::shared_ptr<IComputePipelineState::IComputePipelineReflection>
+ComputePipelineState::computePipelineReflection() {
   return nullptr;
 }
-
-void ComputePipelineState::setComputePipelineReflection(
-    const IComputePipelineReflection& /*computePipelineReflection*/) {}
 
 } // namespace igl::d3d12

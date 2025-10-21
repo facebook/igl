@@ -26,8 +26,8 @@ Dimensions Texture::getDimensions() const {
   return dimensions_;
 }
 
-size_t Texture::getNumLayers() const {
-  return numLayers_;
+uint32_t Texture::getNumLayers() const {
+  return static_cast<uint32_t>(numLayers_);
 }
 
 TextureType Texture::getType() const {
@@ -38,17 +38,13 @@ TextureDesc::TextureUsage Texture::getUsage() const {
   return usage_;
 }
 
-size_t Texture::getSamples() const {
-  return samples_;
+uint32_t Texture::getSamples() const {
+  return static_cast<uint32_t>(samples_);
 }
 
-size_t Texture::getNumMipLevels() const {
-  return numMipLevels_;
+uint32_t Texture::getNumMipLevels() const {
+  return static_cast<uint32_t>(numMipLevels_);
 }
-
-void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/) const {}
-
-void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/) const {}
 
 uint64_t Texture::getTextureId() const {
   return reinterpret_cast<uint64_t>(resource_.Get());
