@@ -41,7 +41,7 @@ struct ShellParams {
   std::array<HandMesh, 2> handMeshes = {};
   std::array<HandTracking, 2> handTracking = {};
   std::string screenshotFileName = "screenshot.png";
-  uint32_t screenshotNumber = ~0; // frame number to save as a screenshot in headless more
+  uint32_t screenshotNumber = ~0u; // frame number to save as a screenshot in headless more
   bool isHeadless = false;
   bool enableVulkanValidationLayers = true;
   std::optional<BenchmarkRenderSessionParams> benchmarkParams = {};

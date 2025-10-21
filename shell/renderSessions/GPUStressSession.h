@@ -14,7 +14,6 @@
 #include <IGLU/imgui/Session.h>
 #include <atomic>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <shell/shared/platform/Platform.h>
 #include <igl/FPSCounter.h>
 #include <igl/IGL.h>

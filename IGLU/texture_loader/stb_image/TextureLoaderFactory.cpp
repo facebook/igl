@@ -25,34 +25,34 @@ struct StbImageDeleter {
 namespace {
 class StbImageData : public IData {
  public:
-  StbImageData(uint8_t* data, uint32_t length);
+  StbImageData(uint8_t* data, uint32_t size);
 
   [[nodiscard]] const uint8_t* IGL_NONNULL data() const noexcept final;
-  [[nodiscard]] uint32_t length() const noexcept final;
+  [[nodiscard]] uint32_t size() const noexcept final;
 
   [[nodiscard]] ExtractedData extractData() noexcept final;
 
  private:
   std::unique_ptr<uint8_t, StbImageDeleter> data_;
-  uint32_t length_;
+  uint32_t size_;
 };
 
-StbImageData::StbImageData(uint8_t* data, uint32_t length) :
-  data_(std::unique_ptr<uint8_t, StbImageDeleter>(data)), length_(length) {}
+StbImageData::StbImageData(uint8_t* data, uint32_t size) :
+  data_(std::unique_ptr<uint8_t, StbImageDeleter>(data)), size_(size) {}
 
 [[nodiscard]] const uint8_t* IGL_NONNULL StbImageData::data() const noexcept {
   IGL_DEBUG_ASSERT(data_ != nullptr);
   return data_.get();
 }
 
-[[nodiscard]] uint32_t StbImageData::length() const noexcept {
-  return length_;
+[[nodiscard]] uint32_t StbImageData::size() const noexcept {
+  return size_;
 }
 
 IData::ExtractedData StbImageData::extractData() noexcept {
   return {
       .data = data_.release(),
-      .length = length_,
+      .size = size_,
       .deleter = &stbi_image_free,
   };
 }
@@ -109,8 +109,8 @@ bool TextureLoader::shouldGenerateMipmaps() const noexcept {
 std::unique_ptr<IData> TextureLoader::loadInternal(
     igl::Result* IGL_NULLABLE outResult) const noexcept {
   const auto r = reader();
-  const int length = r.length() > std::numeric_limits<int>::max() ? std::numeric_limits<int>::max()
-                                                                  : static_cast<int>(r.length());
+  const int length = r.size() > std::numeric_limits<int>::max() ? std::numeric_limits<int>::max()
+                                                                : static_cast<int>(r.size());
 
   int x = 0, y = 0, comp = 0;
   void* data = nullptr;
@@ -146,9 +146,9 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     DataReader reader,
     igl::TextureFormat preferredFormat,
     igl::Result* IGL_NULLABLE outResult) const noexcept {
-  const int length = reader.length() > std::numeric_limits<int>::max()
+  const int length = reader.size() > std::numeric_limits<int>::max()
                          ? std::numeric_limits<int>::max()
-                         : static_cast<int>(reader.length());
+                         : static_cast<int>(reader.size());
 
   int x = 0, y = 0, comp = 0;
   if (stbi_info_from_memory(reader.data(), length, &x, &y, &comp) == 0) {

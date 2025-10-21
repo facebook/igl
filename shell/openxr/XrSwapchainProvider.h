@@ -28,6 +28,10 @@ class XrSwapchainProvider {
                       impl::SwapchainImageInfo swapchainImageInfo,
                       uint8_t numViews) noexcept;
   ~XrSwapchainProvider() noexcept;
+  XrSwapchainProvider(const XrSwapchainProvider&) = delete;
+  XrSwapchainProvider& operator=(const XrSwapchainProvider&) = delete;
+  XrSwapchainProvider(XrSwapchainProvider&&) = delete;
+  XrSwapchainProvider& operator=(XrSwapchainProvider&&) = delete;
 
   [[nodiscard]] bool initialize() noexcept;
 

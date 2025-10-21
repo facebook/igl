@@ -470,24 +470,6 @@ VkResult ivkCreateHeadlessSurface(const struct VulkanFunctionTable* vt,
   return vt->vkCreateHeadlessSurfaceEXT(instance, &ci, NULL, outSurface);
 }
 
-VkImageViewCreateInfo ivkGetImageViewCreateInfo(VkImage image,
-                                                VkImageViewType type,
-                                                VkFormat imageFormat,
-                                                VkImageSubresourceRange range) {
-  const VkImageViewCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-      .image = image,
-      .viewType = type,
-      .format = imageFormat,
-      .components = {.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-                     .g = VK_COMPONENT_SWIZZLE_IDENTITY,
-                     .b = VK_COMPONENT_SWIZZLE_IDENTITY,
-                     .a = VK_COMPONENT_SWIZZLE_IDENTITY},
-      .subresourceRange = range,
-  };
-  return ci;
-}
-
 VkResult ivkCreateFramebuffer(const struct VulkanFunctionTable* vt,
                               VkDevice device,
                               uint32_t width,
@@ -1263,20 +1245,6 @@ VkBufferImageCopy ivkGetBufferImageCopy3D(uint32_t bufferOffset,
       .imageSubresource = imageSubresource,
       .imageOffset = offset,
       .imageExtent = extent,
-  };
-  return copy;
-}
-
-VkImageCopy ivkGetImageCopy2D(VkOffset2D srcDstOffset,
-                              VkImageSubresourceLayers srcImageSubresource,
-                              VkImageSubresourceLayers dstImageSubresource,
-                              const VkExtent2D imageRegion) {
-  const VkImageCopy copy = {
-      .srcSubresource = srcImageSubresource,
-      .srcOffset = {.x = srcDstOffset.x, .y = srcDstOffset.y, .z = 0},
-      .dstSubresource = dstImageSubresource,
-      .dstOffset = {.x = srcDstOffset.x, .y = srcDstOffset.y, .z = 0},
-      .extent = {.width = imageRegion.width, .height = imageRegion.height, .depth = 1u},
   };
   return copy;
 }

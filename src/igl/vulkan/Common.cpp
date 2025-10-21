@@ -654,6 +654,37 @@ void ensureShaderModule(IShaderModule* sm) {
   }
 }
 
+VkComponentMapping componentMappingToVkComponentMapping(const ComponentMapping& mapping) {
+  auto swizzleToVkSwizzle = [](Swizzle swizzle) -> VkComponentSwizzle {
+    switch (swizzle) {
+    case Swizzle_Default:
+      return VK_COMPONENT_SWIZZLE_IDENTITY;
+    case Swizzle_0:
+      return VK_COMPONENT_SWIZZLE_ZERO;
+    case Swizzle_1:
+      return VK_COMPONENT_SWIZZLE_ONE;
+    case Swizzle_R:
+      return VK_COMPONENT_SWIZZLE_R;
+    case Swizzle_G:
+      return VK_COMPONENT_SWIZZLE_G;
+    case Swizzle_B:
+      return VK_COMPONENT_SWIZZLE_B;
+    case Swizzle_A:
+      return VK_COMPONENT_SWIZZLE_A;
+    default:
+      IGL_DEBUG_ASSERT_NOT_REACHED();
+      return VK_COMPONENT_SWIZZLE_IDENTITY;
+    }
+  };
+
+  return VkComponentMapping{
+      .r = swizzleToVkSwizzle(mapping.r),
+      .g = swizzleToVkSwizzle(mapping.g),
+      .b = swizzleToVkSwizzle(mapping.b),
+      .a = swizzleToVkSwizzle(mapping.a),
+  };
+}
+
 uint32_t getNumImagePlanes(VkFormat format) {
   switch (format) {
   case VK_FORMAT_UNDEFINED:
@@ -687,6 +718,23 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
 #if defined(_WIN32)
   HMODULE lib = LoadLibraryA("vulkan-1.dll");
   if (!lib) {
+    DWORD dw = GetLastError();
+    LPVOID lpMsgBuf = nullptr;
+
+    if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+                          FORMAT_MESSAGE_IGNORE_INSERTS,
+                      NULL,
+                      dw,
+                      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                      (LPTSTR)&lpMsgBuf,
+                      0,
+                      NULL) != 0) {
+      IGL_LOG_ERROR("Failed to open vulkan-1.dll: %s\n", (LPCTSTR)lpMsgBuf);
+      LocalFree(lpMsgBuf);
+    } else {
+      IGL_LOG_ERROR("Failed to open vulkan-1.dll");
+    }
+
     return nullptr;
   }
   return (PFN_vkGetInstanceProcAddr)GetProcAddress(lib, "vkGetInstanceProcAddr");

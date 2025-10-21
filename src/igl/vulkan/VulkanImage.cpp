@@ -891,21 +891,24 @@ VulkanImageView VulkanImage::createImageView(VkImageViewType type,
                                              uint32_t baseLayer,
                                              uint32_t numLayers,
                                              const char* debugName) const {
-  return {*ctx_,
-          vkImage_,
-          type,
-          format,
-          aspectMask,
-          baseLevel,
-          numLevels ? numLevels : mipLevels_,
-          baseLayer,
-          numLayers,
-          debugName};
+  const VulkanImageViewCreateInfo ci = {
+      .image = vkImage_,
+      .viewType = type,
+      .format = format,
+      .subresourceRange = VkImageSubresourceRange{.aspectMask = aspectMask,
+                                                  .baseMipLevel = baseLevel,
+                                                  .levelCount = numLevels,
+                                                  .baseArrayLayer = baseLayer,
+                                                  .layerCount = numLayers},
+  };
+
+  return VulkanImageView{*ctx_, ci, debugName};
 }
 
-VulkanImageView VulkanImage::createImageView(VulkanImageViewCreateInfo createInfo,
+VulkanImageView VulkanImage::createImageView(VulkanImageViewCreateInfo ci,
                                              const char* debugName) const {
-  return {*ctx_, device_, vkImage_, createInfo, debugName};
+  ci.image = vkImage_;
+  return VulkanImageView{*ctx_, ci, debugName};
 }
 
 void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,

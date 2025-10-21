@@ -1885,6 +1885,7 @@ void IContext::compileShader(GLuint shader) {
   APILOG("glCompileShader(%u)\n", shader);
   GLCALL(CompileShader)(shader);
   GLCHECK_ERRORS();
+  shaderCompilationCount_++;
 }
 
 void IContext::compressedTexImage2D(GLenum target,
@@ -4476,6 +4477,10 @@ unsigned int IContext::getCallCount() const {
 
 unsigned int IContext::getCurrentDrawCount() const {
   return drawCallCount_;
+}
+
+unsigned int IContext::getShaderCompilationCount() const {
+  return shaderCompilationCount_;
 }
 
 void IContext::resetCounters() {

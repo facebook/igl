@@ -84,6 +84,30 @@ TEST_F(DeviceVulkanTest, PlatformDevice) {
   vulkanPlatformDevice.waitOnSubmitHandle(submitHandle);
 }
 
+TEST_F(DeviceVulkanTest, Semaphores) {
+  auto& device = static_cast<igl::vulkan::Device&>(*iglDev_);
+  auto& ctx = device.getVulkanContext();
+
+  // binary semaphore
+  {
+    auto semaphore = std::make_unique<igl::vulkan::VulkanSemaphore>(
+        ctx.vf_, ctx.getVkDevice(), false, "semaphore");
+
+    ASSERT_NE(semaphore, nullptr);
+    ASSERT_NE(semaphore->getVkSemaphore(), VK_NULL_HANDLE);
+    ASSERT_EQ(semaphore->getFileDescriptor(), -1);
+  }
+  // timeline semaphore
+  {
+    auto semaphore = std::make_unique<igl::vulkan::VulkanSemaphore>(
+        ctx.vf_, ctx.getVkDevice(), 0, false, "timelineSemaphore");
+
+    ASSERT_NE(semaphore, nullptr);
+    ASSERT_NE(semaphore->getVkSemaphore(), VK_NULL_HANDLE);
+    ASSERT_EQ(semaphore->getFileDescriptor(), -1);
+  }
+}
+
 TEST_F(DeviceVulkanTest, PlatformDeviceSampler) {
   Result ret;
   TextureDesc textureDesc = TextureDesc::new2D(

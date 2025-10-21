@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include <IGLU/simdtypes/SimdTypes.h>
 #include <shell/renderSessions/TQSession.h>
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>

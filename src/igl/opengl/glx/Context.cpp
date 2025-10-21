@@ -95,6 +95,10 @@ struct GLXSharedModule {
       dlclose(module_);
     }
   }
+  GLXSharedModule(const GLXSharedModule&) = delete;
+  GLXSharedModule& operator=(const GLXSharedModule&) = delete;
+  GLXSharedModule(GLXSharedModule&&) = delete;
+  GLXSharedModule& operator=(GLXSharedModule&&) = delete;
 
   template<typename T>
   T loadFunction(const char* func) {

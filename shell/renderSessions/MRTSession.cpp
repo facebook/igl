@@ -7,7 +7,6 @@
 
 // @fb-only
 
-#include <cmath>
 #include <igl/NameHandle.h>
 
 #include <IGLU/simdtypes/SimdTypes.h>
@@ -18,7 +17,7 @@
 #include <igl/SamplerState.h>
 #include <igl/ShaderCreator.h>
 #include <igl/VertexInputState.h>
-#include <igl/opengl/Device.h> // IWU pragma: keep
+#include <igl/opengl/Config.h>
 
 namespace igl::shell {
 struct VertexPosUv {

@@ -21,11 +21,11 @@ namespace iglu::textureloader {
 class DataReader {
  public:
   static std::optional<DataReader> tryCreate(const uint8_t* IGL_NONNULL data,
-                                             uint32_t length,
+                                             uint32_t size,
                                              igl::Result* IGL_NULLABLE outResult);
 
   [[nodiscard]] const uint8_t* IGL_NONNULL data() const noexcept;
-  [[nodiscard]] uint32_t length() const noexcept;
+  [[nodiscard]] uint32_t size() const noexcept;
 
   [[nodiscard]] const uint8_t* IGL_NULLABLE
   tryAt(uint32_t offset, igl::Result* IGL_NULLABLE outResult) const noexcept;
@@ -44,7 +44,7 @@ class DataReader {
   template<typename T>
   [[nodiscard]] const T* IGL_NONNULL as() const noexcept {
     static_assert(sizeof(T) <= std::numeric_limits<uint32_t>::max());
-    IGL_DEBUG_ASSERT(length_ >= static_cast<uint32_t>(sizeof(T)));
+    IGL_DEBUG_ASSERT(size_ >= static_cast<uint32_t>(sizeof(T)));
     return reinterpret_cast<const T*>(data_);
   }
 
@@ -62,7 +62,7 @@ class DataReader {
   template<typename T>
   [[nodiscard]] const T* IGL_NONNULL asAt(uint32_t offset) const noexcept {
     static_assert(sizeof(T) <= std::numeric_limits<uint32_t>::max());
-    IGL_DEBUG_ASSERT(length_ >= offset + static_cast<uint32_t>(sizeof(T)));
+    IGL_DEBUG_ASSERT(size_ >= offset + static_cast<uint32_t>(sizeof(T)));
     return reinterpret_cast<const T*>(data_ + offset);
   }
 
@@ -116,7 +116,7 @@ class DataReader {
   void advance(uint32_t bytesToAdvance) noexcept;
 
  private:
-  DataReader(const uint8_t* IGL_NONNULL data, uint32_t length) noexcept;
+  DataReader(const uint8_t* IGL_NONNULL data, uint32_t size) noexcept;
   [[nodiscard]] bool ensureLength(uint32_t requestedLength,
                                   uint32_t offset,
                                   igl::Result* IGL_NULLABLE outResult) const noexcept;
@@ -126,7 +126,7 @@ class DataReader {
   static void* IGL_NONNULL operator new[](std::size_t);
 
   const uint8_t* FOLLY_NONNULL data_;
-  uint32_t length_;
+  uint32_t size_;
 };
 
 } // namespace iglu::textureloader

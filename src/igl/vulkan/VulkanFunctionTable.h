@@ -57,7 +57,7 @@ extern "C" {
  */
 struct VulkanFunctionTable {
   /* IGL_GENERATE_FUNCTION_TABLE */
-#if defined(VK_VERSION_1_0)
+  // VK_VERSION_1_0
   PFN_vkAllocateCommandBuffers vkAllocateCommandBuffers;
   PFN_vkAllocateDescriptorSets vkAllocateDescriptorSets;
   PFN_vkAllocateMemory vkAllocateMemory;
@@ -195,10 +195,7 @@ struct VulkanFunctionTable {
   PFN_vkUnmapMemory vkUnmapMemory;
   PFN_vkUpdateDescriptorSets vkUpdateDescriptorSets;
   PFN_vkWaitForFences vkWaitForFences;
-#else
-  PFN_vkVoidFunction __ignore_alignment1[137];
-#endif /* defined(VK_VERSION_1_0) */
-#if defined(VK_VERSION_1_1)
+  // VK_VERSION_1_1
   PFN_vkBindBufferMemory2 vkBindBufferMemory2;
   PFN_vkBindImageMemory2 vkBindImageMemory2;
   PFN_vkCmdDispatchBase vkCmdDispatchBase;
@@ -228,10 +225,7 @@ struct VulkanFunctionTable {
       vkGetPhysicalDeviceSparseImageFormatProperties2;
   PFN_vkTrimCommandPool vkTrimCommandPool;
   PFN_vkUpdateDescriptorSetWithTemplate vkUpdateDescriptorSetWithTemplate;
-#else
-  PFN_vkVoidFunction __ignore_alignment2[28];
-#endif /* defined(VK_VERSION_1_1) */
-#if defined(VK_VERSION_1_2)
+  // VK_VERSION_1_2
   PFN_vkCmdBeginRenderPass2 vkCmdBeginRenderPass2;
   PFN_vkCmdDrawIndexedIndirectCount vkCmdDrawIndexedIndirectCount;
   PFN_vkCmdDrawIndirectCount vkCmdDrawIndirectCount;
@@ -245,9 +239,6 @@ struct VulkanFunctionTable {
   PFN_vkResetQueryPool vkResetQueryPool;
   PFN_vkSignalSemaphore vkSignalSemaphore;
   PFN_vkWaitSemaphores vkWaitSemaphores;
-#else
-  PFN_vkVoidFunction __ignore_alignment3[13];
-#endif /* defined(VK_VERSION_1_2) */
 #if defined(VK_VERSION_1_3)
   PFN_vkCmdBeginRendering vkCmdBeginRendering;
   PFN_vkCmdBindVertexBuffers2 vkCmdBindVertexBuffers2;
