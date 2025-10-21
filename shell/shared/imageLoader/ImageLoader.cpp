@@ -7,11 +7,12 @@
 
 #include <shell/shared/imageLoader/ImageLoader.h>
 
+#include <IGLU/texture_loader/ktx1/TextureLoaderFactory.h>
+#include <IGLU/texture_loader/ktx2/TextureLoaderFactory.h>
 #include <IGLU/texture_loader/stb_hdr/TextureLoaderFactory.h>
 #include <IGLU/texture_loader/stb_jpeg/TextureLoaderFactory.h>
 #include <IGLU/texture_loader/stb_png/TextureLoaderFactory.h>
 #include <array>
-#include <cstdio>
 #include <shell/shared/fileLoader/FileLoader.h>
 
 namespace igl::shell {
@@ -22,6 +23,8 @@ std::vector<std::unique_ptr<iglu::textureloader::ITextureLoaderFactory>> createL
   factories.emplace_back(std::make_unique<iglu::textureloader::stb::hdr::TextureLoaderFactory>());
   factories.emplace_back(std::make_unique<iglu::textureloader::stb::jpeg::TextureLoaderFactory>());
   factories.emplace_back(std::make_unique<iglu::textureloader::stb::png::TextureLoaderFactory>());
+  factories.emplace_back(std::make_unique<iglu::textureloader::ktx2::TextureLoaderFactory>());
+  factories.emplace_back(std::make_unique<iglu::textureloader::ktx1::TextureLoaderFactory>());
 
   return factories;
 }
@@ -49,28 +52,28 @@ constexpr uint32_t kNumBytes = kWidth * kHeight * 4u;
 class CheckerboardData : public iglu::textureloader::IData {
  public:
   [[nodiscard]] const uint8_t* IGL_NONNULL data() const noexcept final;
-  [[nodiscard]] uint32_t length() const noexcept final;
+  [[nodiscard]] uint32_t size() const noexcept final;
 };
 
 const uint8_t* IGL_NONNULL CheckerboardData::data() const noexcept {
   return reinterpret_cast<const uint8_t*>(kCheckerboard.data());
 }
 
-uint32_t CheckerboardData::length() const noexcept {
+uint32_t CheckerboardData::size() const noexcept {
   return kNumBytes;
 }
 
 class WhiteData : public iglu::textureloader::IData {
  public:
   [[nodiscard]] const uint8_t* IGL_NONNULL data() const noexcept final;
-  [[nodiscard]] uint32_t length() const noexcept final;
+  [[nodiscard]] uint32_t size() const noexcept final;
 };
 
 const uint8_t* IGL_NONNULL WhiteData::data() const noexcept {
   return reinterpret_cast<const uint8_t*>(kWhiteTexture.data());
 }
 
-uint32_t WhiteData::length() const noexcept {
+uint32_t WhiteData::size() const noexcept {
   return kNumBytes;
 }
 } // namespace

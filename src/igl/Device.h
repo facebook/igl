@@ -302,6 +302,12 @@ class IDevice : public ICapabilities {
   [[nodiscard]] virtual size_t getCurrentDrawCount() const = 0;
 
   /**
+   * @brief Returns the number of shaders compiled using this device.
+   * @return The number of shaders compiled so far.
+   */
+  [[nodiscard]] virtual size_t getShaderCompilationCount() const = 0;
+
+  /**
    * @brief Returns the number of bytes of GPU memory currently in use, or 0 if the device does not
    * support memory tracking.
    * @return Used GPU memory

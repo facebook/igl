@@ -17,4 +17,12 @@ size_t DeviceStatistics::getDrawCount() const noexcept {
   return currentDrawCount_;
 }
 
+void DeviceStatistics::incrementShaderCompilationCount() noexcept {
+  shaderCompilationCount_++;
+}
+
+size_t DeviceStatistics::getShaderCompilationCount() const noexcept {
+  return shaderCompilationCount_;
+}
+
 } // namespace igl::metal

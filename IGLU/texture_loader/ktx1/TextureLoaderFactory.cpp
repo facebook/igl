@@ -24,7 +24,7 @@ bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
         outResult, igl::Result::Code::ArgumentInvalid, "Reader's data is nullptr.");
     return false;
   }
-  if (headerReader.length() < kHeaderLength) {
+  if (headerReader.size() < kHeaderLength) {
     igl::Result::setResult(
         outResult, igl::Result::Code::ArgumentOutOfRange, "Not enough data for header.");
     return false;
@@ -63,7 +63,7 @@ bool TextureLoaderFactory::validate(DataReader reader,
                                     const igl::TextureRangeDesc& range,
                                     igl::Result* IGL_NULLABLE outResult) const noexcept {
   const Header* header = reader.as<Header>();
-  const uint32_t length = reader.length();
+  const uint32_t length = reader.size();
 
   const auto format = igl::opengl::util::glTextureFormatToTextureFormat(
       header->glInternalFormat, header->glFormat, header->glType);

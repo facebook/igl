@@ -17,13 +17,16 @@ namespace igl::vulkan {
 class VulkanContext;
 
 struct VulkanImageViewCreateInfo {
-  VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D;
+  VkImage image = VK_NULL_HANDLE;
+  VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D;
   VkFormat format = VK_FORMAT_UNDEFINED;
-  VkImageAspectFlags aspectMask = 0;
-  uint32_t baseLevel = 0;
-  uint32_t numLevels = 1;
-  uint32_t baseLayer = 0;
-  uint32_t numLayers = 1;
+  VkImageSubresourceRange subresourceRange = {
+      .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+      .baseMipLevel = 0,
+      .levelCount = 1,
+      .baseArrayLayer = 0,
+      .layerCount = 1,
+  };
 };
 
 /**
@@ -34,34 +37,16 @@ class VulkanImageView final {
  public:
   explicit VulkanImageView() = default;
   /**
-   * @brief Creates the VulkanImageView object which stores a handle to a VkImageView.
+   * @brief Creates the VulkanImageView object which stores a handle to a newly created VkImageView.
    * The imageView is created from the device, image, and other parameters with a name that can be
    * used for debugging.
    */
   VulkanImageView(const VulkanContext& ctx,
-                  VkImage image,
-                  VkImageViewType type,
-                  VkFormat format,
-                  VkImageAspectFlags aspectMask,
-                  uint32_t baseLevel,
-                  uint32_t numLevels,
-                  uint32_t baseLayer,
-                  uint32_t numLayers,
-                  const char* debugName = nullptr);
-
-  /**
-   * @brief Creates the VulkanImageView object which stores a handle to a VkImageView.
-   * The imageView is created from the device, image, and other parameters with a name that can be
-   * used for debugging.
-   */
-  VulkanImageView(const VulkanContext& ctx,
-                  VkDevice device,
-                  VkImage image,
-                  const VulkanImageViewCreateInfo& createInfo,
+                  const VulkanImageViewCreateInfo& ci,
                   const char* debugName = nullptr);
 
   VulkanImageView(const VulkanContext& ctx,
-                  const VkImageViewCreateInfo& createInfo,
+                  const VkImageViewCreateInfo& ci,
                   const char* debugName = nullptr);
 
   ~VulkanImageView();

@@ -7,9 +7,10 @@
 
 // @fb-only
 
+#define GLFW_INCLUDE_NONE
+
 #include <igl/Config.h>
 
-#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 #if defined(_XLESS_GLFW_)

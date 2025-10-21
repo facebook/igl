@@ -82,6 +82,7 @@ class Device final : public igl::IDevice {
   [[nodiscard]] bool verifyScope() final;
   [[nodiscard]] igl::BackendType getBackendType() const final;
   [[nodiscard]] size_t getCurrentDrawCount() const final;
+  [[nodiscard]] size_t getShaderCompilationCount() const final;
   [[nodiscard]] std::unique_ptr<igl::IShaderLibrary> createShaderLibrary(
       const igl::ShaderLibraryDesc& desc,
       igl::Result* IGL_NULLABLE outResult) const final;

@@ -8,7 +8,7 @@
 #pragma once
 
 #include <shell/shared/netservice/NetServiceExtension.h>
-#include <igl/Common.h>
+#include <igl/Macros.h>
 
 namespace igl::shell::netservice {
 

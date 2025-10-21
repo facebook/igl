@@ -512,6 +512,7 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
 
     NSString* shaderSource = [NSString stringWithUTF8String:desc.input.source];
     metalLibrary = [device_ newLibraryWithSource:shaderSource options:compileOpts error:&error];
+    deviceStatistics_.incrementShaderCompilationCount();
   }
 
   if (!metalLibrary) {
@@ -693,6 +694,10 @@ BackendVersion Device::getBackendVersion() const {
 
 size_t Device::getCurrentDrawCount() const {
   return deviceStatistics_.getDrawCount();
+}
+
+size_t Device::getShaderCompilationCount() const {
+  return deviceStatistics_.getShaderCompilationCount();
 }
 
 size_t Device::getGPUMemoryUsage() const {

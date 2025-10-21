@@ -203,7 +203,7 @@ struct RenderPipelineDesc {
   uint32_t sampleCount = 1u; // MSAA
 
   // Vulkan only: specify if buffer binding locations correspond to Vulkan dynamic buffers
-  uint32_t isDynamicBufferMask = 0; // one bit per each buffer
+  uint32_t isDynamicBufferMask = 0; // one bit per each buffer binding slot
 
   // Vulkan only: immutable samplers per each binding slot (for example, Ycbcr conversion etc)
   // @fb-only

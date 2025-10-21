@@ -106,6 +106,7 @@ class Device final : public IDevice {
 
   [[nodiscard]] BackendType getBackendType() const override;
   [[nodiscard]] size_t getCurrentDrawCount() const override;
+  [[nodiscard]] size_t getShaderCompilationCount() const override;
 
   void setCurrentThread() override;
 
@@ -191,6 +192,7 @@ class Device final : public IDevice {
   [[nodiscard]] BackendVersion getBackendVersionInternal() const;
 
   [[nodiscard]] size_t getCurrentDrawCountInternal() const;
+  [[nodiscard]] size_t getShaderCompilationCountInternal() const;
 
   void setCurrentThreadInternal();
 
@@ -335,6 +337,10 @@ inline bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& 
 
 [[nodiscard]] inline size_t Device::getCurrentDrawCount() const {
   return getCurrentDrawCountInternal();
+}
+
+[[nodiscard]] inline size_t Device::getShaderCompilationCount() const {
+  return getShaderCompilationCountInternal();
 }
 
 inline void Device::setCurrentThread() {

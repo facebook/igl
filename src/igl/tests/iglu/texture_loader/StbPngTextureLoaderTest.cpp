@@ -163,6 +163,6 @@ TEST_F(StbPngTextureLoaderTest, PngData2x2_Succeeds) {
   auto data = loader->load(&ret);
   EXPECT_NE(data, nullptr);
   ASSERT_TRUE(ret.isOk()) << ret.message;
-  EXPECT_EQ(data->length(), 4u * 4u);
+  EXPECT_EQ(data->size(), 4u * 4u);
 }
 } // namespace igl::tests::stb::png

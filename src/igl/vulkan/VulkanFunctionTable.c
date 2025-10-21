@@ -28,17 +28,15 @@ int loadVulkanLoaderFunctions(struct VulkanFunctionTable* table, PFN_vkGetInstan
   if (!load) {
     return 0;
   }
-#if defined(VK_VERSION_1_0)
+  // VK_VERSION_1_0
   table->vkCreateInstance = (PFN_vkCreateInstance)load(NULL, "vkCreateInstance");
   table->vkEnumerateInstanceExtensionProperties = (PFN_vkEnumerateInstanceExtensionProperties)load(
       NULL, "vkEnumerateInstanceExtensionProperties");
   table->vkEnumerateInstanceLayerProperties =
       (PFN_vkEnumerateInstanceLayerProperties)load(NULL, "vkEnumerateInstanceLayerProperties");
-#endif /* defined(VK_VERSION_1_0) */
-#if defined(VK_VERSION_1_1)
+  // VK_VERSION_1_1
   table->vkEnumerateInstanceVersion =
       (PFN_vkEnumerateInstanceVersion)load(NULL, "vkEnumerateInstanceVersion");
-#endif /* defined(VK_VERSION_1_1) */
   /* IGL_GENERATE_LOAD_LOADER_TABLE */
   return 1;
 }
@@ -48,7 +46,7 @@ void loadVulkanInstanceFunctions(struct VulkanFunctionTable* table,
                                  PFN_vkGetInstanceProcAddr load,
                                  VkBool32 enableExtDebugUtils) {
   /* IGL_GENERATE_LOAD_INSTANCE_TABLE */
-#if defined(VK_VERSION_1_0)
+  // VK_VERSION_1_0
   table->vkCreateDevice = (PFN_vkCreateDevice)load(context, "vkCreateDevice");
   table->vkDestroyInstance = (PFN_vkDestroyInstance)load(context, "vkDestroyInstance");
   table->vkEnumerateDeviceExtensionProperties = (PFN_vkEnumerateDeviceExtensionProperties)load(
@@ -75,8 +73,7 @@ void loadVulkanInstanceFunctions(struct VulkanFunctionTable* table,
   table->vkGetPhysicalDeviceSparseImageFormatProperties =
       (PFN_vkGetPhysicalDeviceSparseImageFormatProperties)load(
           context, "vkGetPhysicalDeviceSparseImageFormatProperties");
-#endif /* defined(VK_VERSION_1_0) */
-#if defined(VK_VERSION_1_1)
+  // VK_VERSION_1_1
   table->vkEnumeratePhysicalDeviceGroups =
       (PFN_vkEnumeratePhysicalDeviceGroups)load(context, "vkEnumeratePhysicalDeviceGroups");
   table->vkGetPhysicalDeviceExternalBufferProperties =
@@ -105,7 +102,6 @@ void loadVulkanInstanceFunctions(struct VulkanFunctionTable* table,
   table->vkGetPhysicalDeviceSparseImageFormatProperties2 =
       (PFN_vkGetPhysicalDeviceSparseImageFormatProperties2)load(
           context, "vkGetPhysicalDeviceSparseImageFormatProperties2");
-#endif /* defined(VK_VERSION_1_1) */
 #if defined(VK_VERSION_1_3)
   table->vkGetPhysicalDeviceToolProperties =
       (PFN_vkGetPhysicalDeviceToolProperties)load(context, "vkGetPhysicalDeviceToolProperties");
@@ -397,8 +393,8 @@ void loadVulkanInstanceFunctions(struct VulkanFunctionTable* table,
 void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
                                VkDevice context,
                                PFN_vkGetDeviceProcAddr load) {
-/* IGL_GENERATE_LOAD_DEVICE_TABLE */
-#if defined(VK_VERSION_1_0)
+  /* IGL_GENERATE_LOAD_DEVICE_TABLE */
+  // VK_VERSION_1_0
   table->vkAllocateCommandBuffers =
       (PFN_vkAllocateCommandBuffers)load(context, "vkAllocateCommandBuffers");
   table->vkAllocateDescriptorSets =
@@ -551,8 +547,7 @@ void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
   table->vkUpdateDescriptorSets =
       (PFN_vkUpdateDescriptorSets)load(context, "vkUpdateDescriptorSets");
   table->vkWaitForFences = (PFN_vkWaitForFences)load(context, "vkWaitForFences");
-#endif /* defined(VK_VERSION_1_0) */
-#if defined(VK_VERSION_1_1)
+  // VK_VERSION_1_1
   table->vkBindBufferMemory2 = (PFN_vkBindBufferMemory2)load(context, "vkBindBufferMemory2");
   table->vkBindImageMemory2 = (PFN_vkBindImageMemory2)load(context, "vkBindImageMemory2");
   table->vkCmdDispatchBase = (PFN_vkCmdDispatchBase)load(context, "vkCmdDispatchBase");
@@ -579,8 +574,7 @@ void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
   table->vkTrimCommandPool = (PFN_vkTrimCommandPool)load(context, "vkTrimCommandPool");
   table->vkUpdateDescriptorSetWithTemplate =
       (PFN_vkUpdateDescriptorSetWithTemplate)load(context, "vkUpdateDescriptorSetWithTemplate");
-#endif /* defined(VK_VERSION_1_1) */
-#if defined(VK_VERSION_1_2)
+  // VK_VERSION_1_2
   table->vkCmdBeginRenderPass2 = (PFN_vkCmdBeginRenderPass2)load(context, "vkCmdBeginRenderPass2");
   table->vkCmdDrawIndexedIndirectCount =
       (PFN_vkCmdDrawIndexedIndirectCount)load(context, "vkCmdDrawIndexedIndirectCount");
@@ -600,7 +594,6 @@ void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
   table->vkResetQueryPool = (PFN_vkResetQueryPool)load(context, "vkResetQueryPool");
   table->vkSignalSemaphore = (PFN_vkSignalSemaphore)load(context, "vkSignalSemaphore");
   table->vkWaitSemaphores = (PFN_vkWaitSemaphores)load(context, "vkWaitSemaphores");
-#endif /* defined(VK_VERSION_1_2) */
 #if defined(VK_VERSION_1_3)
   table->vkCmdBeginRendering = (PFN_vkCmdBeginRendering)load(context, "vkCmdBeginRendering");
   table->vkCmdBindVertexBuffers2 =

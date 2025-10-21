@@ -482,6 +482,8 @@ class IContext {
 
   unsigned int getCurrentDrawCount() const;
 
+  unsigned int getShaderCompilationCount() const;
+
   // Utility functions
   [[nodiscard]] const DeviceFeatureSet& deviceFeatures() const;
   /// Calls bindBuffer(target, 0) or enqueues to run when deletion queue is
@@ -586,6 +588,7 @@ class IContext {
   mutable GLenum lastError_ = GL_NO_ERROR;
   mutable unsigned int callCounter_ = 0;
   unsigned int drawCallCount_ = 0;
+  unsigned int shaderCompilationCount_ = 0;
   int lockCount_ = 0; // used by DestructionGuard
   int refCount_ = 0; // used by addRef/releaseRef
   bool shouldValidateShaders_ = false;

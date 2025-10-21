@@ -38,6 +38,11 @@ class ShaderModule : public WithContext, public IShaderModule {
 
   ShaderModule(IContext& context, ShaderModuleInfo info);
 
+  ShaderModule(const ShaderModule&) = delete;
+  ShaderModule& operator=(const ShaderModule&) = delete;
+  ShaderModule(ShaderModule&&) = delete;
+  ShaderModule& operator=(ShaderModule&&) = delete;
+
  private:
   // Type of shader (vertex, fragment, compute)
   GLenum shaderType_ = 0;
@@ -55,6 +60,11 @@ class ShaderStages final : public IShaderStages, public WithContext {
  public:
   explicit ShaderStages(const ShaderStagesDesc& desc, IContext& context);
   ~ShaderStages() override;
+
+  ShaderStages(const ShaderStages&) = delete;
+  ShaderStages& operator=(const ShaderStages&) = delete;
+  ShaderStages(ShaderStages&&) = delete;
+  ShaderStages& operator=(ShaderStages&&) = delete;
 
   Result create(const ShaderStagesDesc& /*desc*/);
 

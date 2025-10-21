@@ -30,6 +30,10 @@ class Texture final : public ITexture {
   Texture(id<MTLTexture> texture, const ICapabilities& capabilities);
   Texture(id<CAMetalDrawable> drawable, const ICapabilities& capabilities);
   ~Texture() override;
+  Texture(const Texture&) = delete;
+  Texture& operator=(const Texture&) = delete;
+  Texture(Texture&&) = delete;
+  Texture& operator=(Texture&&) = delete;
 
   Result getBytes(const TextureRangeDesc& range, void* outData, size_t bytesPerRow = 0) const;
 

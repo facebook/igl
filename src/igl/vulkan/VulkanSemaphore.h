@@ -50,6 +50,7 @@ class VulkanSemaphore final {
   const VulkanFunctionTable* vf_{};
   VkDevice device_ = VK_NULL_HANDLE;
   VkSemaphore vkSemaphore_ = VK_NULL_HANDLE;
+  bool exportable_ = false;
 };
 
 } // namespace igl::vulkan

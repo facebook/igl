@@ -13,7 +13,6 @@
 
 #include <IGLU/imgui/Session.h>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <shell/shared/platform/Platform.h>
 #include <igl/FPSCounter.h>
 #include <igl/RenderPass.h>

@@ -171,11 +171,13 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
       VK_PIPELINE_STAGE_TRANSFER_BIT,
       VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
   // 3. Copy Image
-  const VkImageCopy copy =
-      ivkGetImageCopy2D(VkOffset2D{static_cast<int32_t>(range.x), static_cast<int32_t>(range.y)},
-                        VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-                        VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-                        VkExtent2D{range.width, range.height});
+  const VkImageCopy copy = {
+      .srcSubresource = VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+      .srcOffset = {.x = static_cast<int32_t>(range.x), .y = static_cast<int32_t>(range.y), .z = 0},
+      .dstSubresource = VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+      .dstOffset = {.x = static_cast<int32_t>(range.x), .y = static_cast<int32_t>(range.y), .z = 0},
+      .extent = {.width = range.width, .height = range.height, .depth = 1u},
+  };
 
   ctx.vf_.vkCmdCopyImage(cmdBuf,
                          srcVkTex.getVkImage(),

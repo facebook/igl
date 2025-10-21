@@ -101,6 +101,8 @@ class Device : public IDevice {
   // Device Statistics
   [[nodiscard]] size_t getCurrentDrawCount() const override;
 
+  [[nodiscard]] size_t getShaderCompilationCount() const override;
+
   [[nodiscard]] size_t getGPUMemoryUsage() const override;
 
   [[nodiscard]] BackendType getBackendType() const override {
@@ -130,7 +132,7 @@ class Device : public IDevice {
 
   DeviceFeatureSet deviceFeatureSet_;
   std::shared_ptr<BufferSynchronizationManager> bufferSyncManager_;
-  DeviceStatistics deviceStatistics_;
+  mutable DeviceStatistics deviceStatistics_;
 };
 
 } // namespace igl::metal

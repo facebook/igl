@@ -27,6 +27,10 @@ class TextureBuffer final : public opengl::TextureBuffer {
                 size_t planeIndex = 0,
                 TextureDesc::TextureUsage usage = TextureDesc::TextureUsageBits::Sampled);
   ~TextureBuffer() override;
+  TextureBuffer(const TextureBuffer&) = delete;
+  TextureBuffer& operator=(const TextureBuffer&) = delete;
+  TextureBuffer(TextureBuffer&&) = delete;
+  TextureBuffer& operator=(TextureBuffer&&) = delete;
 
   // Disable those creation methods
   Result create(const TextureDesc& desc, bool hasStorageAlready) override;

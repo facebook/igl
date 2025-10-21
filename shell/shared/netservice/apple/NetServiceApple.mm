@@ -9,7 +9,7 @@
 
 #include <shell/shared/netservice/apple/NetServiceApple.h>
 
-#include <igl/Common.h>
+#include <igl/Assert.h>
 
 // ----------------------------------------------------------------------------
 

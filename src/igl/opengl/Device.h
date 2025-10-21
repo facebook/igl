@@ -9,7 +9,6 @@
 
 #include <igl/Device.h>
 #include <igl/opengl/DeviceFeatureSet.h>
-#include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/PlatformDevice.h>
 #include <igl/opengl/UnbindPolicy.h>
@@ -113,6 +112,7 @@ class Device : public IDevice {
 
   // Device Statistics
   [[nodiscard]] size_t getCurrentDrawCount() const override;
+  [[nodiscard]] size_t getShaderCompilationCount() const override;
 
   bool verifyScope() override;
 

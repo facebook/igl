@@ -19,6 +19,10 @@ class XrHands final {
  public:
   XrHands(XrInstance instance, XrSession session, bool handMeshSupported) noexcept;
   ~XrHands() noexcept;
+  XrHands(const XrHands&) = delete;
+  XrHands& operator=(const XrHands&) = delete;
+  XrHands(XrHands&&) = delete;
+  XrHands& operator=(XrHands&&) = delete;
 
   [[nodiscard]] static const std::vector<const char*>& getExtensions() noexcept;
 

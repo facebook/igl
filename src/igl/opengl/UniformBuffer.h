@@ -23,6 +23,10 @@ class UniformBuffer final : public Buffer {
                 BufferDesc::BufferAPIHint requestedApiHints,
                 BufferDesc::BufferType bufferType);
   ~UniformBuffer() override;
+  UniformBuffer(const UniformBuffer&) = delete;
+  UniformBuffer& operator=(const UniformBuffer&) = delete;
+  UniformBuffer(UniformBuffer&&) = delete;
+  UniformBuffer& operator=(UniformBuffer&&) = delete;
 
   Result upload(const void* data, const BufferRange& range) override;
 

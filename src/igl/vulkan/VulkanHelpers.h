@@ -115,13 +115,6 @@ VkResult ivkCreateSwapchain(const struct VulkanFunctionTable* vt,
                             uint32_t height,
                             VkSwapchainKHR* outSwapchain);
 
-/// @brief Returns VkImageViewCreateInfo with the R, G, B, and A components mapped to themselves
-/// (identity)
-VkImageViewCreateInfo ivkGetImageViewCreateInfo(VkImage image,
-                                                VkImageViewType type,
-                                                VkFormat imageFormat,
-                                                VkImageSubresourceRange range);
-
 VkResult ivkCreateFramebuffer(const struct VulkanFunctionTable* vt,
                               VkDevice device,
                               uint32_t width,
@@ -347,11 +340,6 @@ VkRect2D ivkGetRect2D(int32_t x, int32_t y, uint32_t width, uint32_t height);
 VkPipelineShaderStageCreateInfo ivkGetPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,
                                                                     VkShaderModule shaderModule,
                                                                     const char* entryPoint);
-
-VkImageCopy ivkGetImageCopy2D(VkOffset2D srcDstOffset,
-                              VkImageSubresourceLayers srcImageSubresource,
-                              VkImageSubresourceLayers dstImageSubresource,
-                              VkExtent2D imageRegion);
 
 VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset,
                                           uint32_t bufferRowLength,

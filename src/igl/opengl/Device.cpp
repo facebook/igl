@@ -350,6 +350,10 @@ size_t Device::getCurrentDrawCount() const {
   return context_->getCurrentDrawCount();
 }
 
+size_t Device::getShaderCompilationCount() const {
+  return context_->getShaderCompilationCount();
+}
+
 Holder<BindGroupTextureHandle> Device::createBindGroup(
     const BindGroupTextureDesc& desc,
     const IRenderPipelineState* IGL_NULLABLE /*compatiblePipeline*/,

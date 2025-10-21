@@ -34,6 +34,8 @@ class SamplerState final : public ISamplerState {
 
   SamplerState(const SamplerState&) = delete;
   SamplerState& operator=(const SamplerState&) = delete;
+  SamplerState(SamplerState&&) = delete;
+  SamplerState& operator=(SamplerState&&) = delete;
 
   /**
    * @brief Returns the ID of the sampler. Its ID is the index of the sampler into the vector of

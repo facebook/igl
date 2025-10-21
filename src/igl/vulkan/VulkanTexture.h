@@ -19,6 +19,8 @@ class VulkanTexture final {
 
   VulkanTexture(const VulkanTexture&) = delete;
   VulkanTexture& operator=(const VulkanTexture&) = delete;
+  VulkanTexture(VulkanTexture&&) = default;
+  VulkanTexture& operator=(VulkanTexture&&) = default;
 
  public:
   VulkanImage image_;

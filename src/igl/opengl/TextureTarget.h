@@ -20,6 +20,10 @@ class TextureTarget final : public Texture {
   TextureTarget(IContext& context, TextureFormat format, bool canPresent) :
     Super(context, format), canPresent_(canPresent) {}
   ~TextureTarget() override;
+  TextureTarget(const TextureTarget&) = delete;
+  TextureTarget& operator=(const TextureTarget&) = delete;
+  TextureTarget(TextureTarget&&) = delete;
+  TextureTarget& operator=(TextureTarget&&) = delete;
 
   // ITexture overrides
   [[nodiscard]] TextureType getType() const override;
