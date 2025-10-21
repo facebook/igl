@@ -59,6 +59,11 @@ std::shared_ptr<Platform> D3D12Shell::createPlatform() noexcept {
 SurfaceTextures D3D12Shell::createSurfaceTextures() noexcept {
   IGL_PROFILER_FUNCTION();
 
+  static int callCount = 0;
+  if (callCount < 3) {
+    IGL_LOG_INFO("createSurfaceTextures() called #%d\n", ++callCount);
+  }
+
   auto& device = static_cast<d3d12::Device&>(platform().getDevice());
   auto& ctx = device.getD3D12Context();
 
@@ -86,6 +91,11 @@ SurfaceTextures D3D12Shell::createSurfaceTextures() noexcept {
 
   auto color = d3d12::Texture::createFromResource(backBuffer, colorDesc.format, colorDesc,
                                                    ctx.getDevice(), ctx.getCommandQueue());
+
+  if (!color) {
+    IGL_LOG_ERROR("Failed to create color texture from back buffer\n");
+    return SurfaceTextures{nullptr, nullptr};
+  }
 
   // Create depth texture
   TextureDesc depthDesc;

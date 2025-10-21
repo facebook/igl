@@ -522,6 +522,11 @@ std::shared_ptr<ITexture> TinyMeshSession::getVulkanNativeDepth() {
 }
 
 void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
+  static int updateCount = 0;
+  if (updateCount < 3) {
+    IGL_LOG_INFO("TinyMeshSession::update() called #%d\n", ++updateCount);
+  }
+
   width = surfaceTextures.color->getSize().width;
   height = surfaceTextures.color->getSize().height;
 
