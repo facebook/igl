@@ -13,6 +13,10 @@
 #include <IGLU/simple_renderer/Material.h>
 #include <igl/ShaderCreator.h>
 
+// D3D12 FXC precompiled shaders
+#include "imgui_vs_d3d12_fxc.h"
+#include "imgui_ps_d3d12_fxc.h"
+
 namespace iglu::imgui {
 
 /* internal renderer -- based on imgui_impl_metal.mm */
@@ -128,6 +132,49 @@ void main() {
 })";
 }
 
+static const char* getD3D12VertexShaderSource() {
+  return R"(
+cbuffer Uniforms : register(b0) {
+  float4x4 proj;
+};
+
+struct VSInput {
+  float2 position : POSITION;
+  float2 uv : TEXCOORD0;
+  float4 color : COLOR;
+};
+
+struct PSInput {
+  float4 position : SV_Position;
+  float4 color : COLOR;
+  float2 uv : TEXCOORD0;
+};
+
+PSInput main(VSInput input) {
+  PSInput output;
+  output.position = mul(proj, float4(input.position.xy, 0, 1));
+  output.color = input.color;
+  output.uv = input.uv;
+  return output;
+})";
+}
+
+static const char* getD3D12FragmentShaderSource() {
+  return R"(
+struct PSInput {
+  float4 position : SV_Position;
+  float4 color : COLOR;
+  float2 uv : TEXCOORD0;
+};
+
+Texture2D uTex : register(t0);
+SamplerState uSampler : register(s0);
+
+float4 main(PSInput input) : SV_Target {
+  return input.color * uTex.Sample(uSampler, input.uv);
+})";
+}
+
 static std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   igl::Result result;
   switch (device.getBackendType()) {
@@ -142,6 +189,20 @@ static std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevic
                                                            getVulkanFragmentShaderSource(),
                                                            "main",
                                                            "Shader Module: imgui::fragment",
+                                                           &result);
+    break;
+  }
+  case igl::BackendType::D3D12: {
+    // Use precompiled FXC shaders for D3D12
+    return igl::ShaderStagesCreator::fromModuleBinaryInput(device,
+                                                           _tmp_imgui_vs_fxc_cso,
+                                                           _tmp_imgui_vs_fxc_cso_len,
+                                                           "main",
+                                                           "Shader Module: imgui::vertex (D3D12)",
+                                                           _tmp_imgui_ps_fxc_cso,
+                                                           _tmp_imgui_ps_fxc_cso_len,
+                                                           "main",
+                                                           "Shader Module: imgui::fragment (D3D12)",
                                                            &result);
     break;
   }
