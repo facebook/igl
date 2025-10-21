@@ -198,6 +198,9 @@ ID3D12Resource* D3D12Context::getCurrentBackBuffer() const {
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3D12Context::getCurrentRTV() const {
+  if (rtvHeap_.Get() == nullptr) {
+    return {0};
+  }
   D3D12_CPU_DESCRIPTOR_HANDLE rtv = rtvHeap_->GetCPUDescriptorHandleForHeapStart();
   rtv.ptr += getCurrentBackBufferIndex() * rtvDescriptorSize_;
   return rtv;

@@ -20,6 +20,11 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
 
   // Transition render target to RENDER_TARGET state
   auto* backBuffer = context.getCurrentBackBuffer();
+  if (!backBuffer) {
+    IGL_LOG_ERROR("RenderCommandEncoder: No back buffer available\n");
+    return;
+  }
+
   D3D12_RESOURCE_BARRIER barrier = {};
   barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
   barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -49,6 +54,11 @@ void RenderCommandEncoder::endEncoding() {
   // Transition render target back to PRESENT state
   auto& context = commandBuffer_.getContext();
   auto* backBuffer = context.getCurrentBackBuffer();
+
+  if (!backBuffer) {
+    IGL_LOG_ERROR("RenderCommandEncoder::endEncoding: No back buffer available\n");
+    return;
+  }
 
   D3D12_RESOURCE_BARRIER barrier = {};
   barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
