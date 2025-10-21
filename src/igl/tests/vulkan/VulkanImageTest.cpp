@@ -52,6 +52,7 @@ class VulkanImageTest : public ::testing::Test {
 TEST_F(VulkanImageTest, CreateImageWithExportedMemory) {
   auto vulkanImage = igl::vulkan::VulkanImage::createWithExportMemory(
       *context_,
+      context_->getVkDevice(),
       VkExtent3D{.width = kWidth, .height = kHeight, .depth = 1},
       VK_IMAGE_TYPE_2D,
       kFormat,
@@ -77,6 +78,7 @@ TEST_F(VulkanImageTest, CreateImageWithExportedMemory) {
 TEST_F(VulkanImageTest, CreateImageWithImportedMemoryWin32) {
   auto exportedImage = igl::vulkan::VulkanImage::createWithExportMemory(
       *context_,
+      context_->getVkDevice(),
       VkExtent3D{.width = kWidth, .height = kHeight, .depth = 1},
       VK_IMAGE_TYPE_2D,
       kFormat,

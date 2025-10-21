@@ -42,6 +42,7 @@ class VulkanImage final {
    * the constructor will assign it to the `VkImage` object. No other Vulkan functions are called
    */
   VulkanImage(const VulkanContext& ctx,
+              VkDevice device,
               VkImage image,
               const char* debugName = nullptr,
               VkImageUsageFlags usageFlags = 0,
@@ -59,6 +60,7 @@ class VulkanImage final {
    * the constructor will assign it to the `VkImage` object. No other Vulkan functions are called
    */
   VulkanImage(const VulkanContext& ctx,
+              VkDevice device,
               VkImage image,
               const VulkanImageCreateInfo& createInfo,
               const char* debugName = nullptr);
@@ -75,6 +77,7 @@ class VulkanImage final {
    * it is memory mapped until the object's destruction.
    */
   VulkanImage(const VulkanContext& ctx,
+              VkDevice device,
               VkExtent3D extent,
               VkImageType type,
               VkFormat format,
@@ -194,6 +197,7 @@ class VulkanImage final {
    * On Linux/Android, the exported file descriptor will be stored in `exportedFd_`.
    */
   static VulkanImage createWithExportMemory(const VulkanContext& ctx,
+                                            VkDevice device,
                                             VkExtent3D extent,
                                             VkImageType type,
                                             VkFormat format,

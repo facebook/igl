@@ -63,6 +63,7 @@ constexpr auto kHandleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 namespace igl::vulkan {
 
 VulkanImage::VulkanImage(const VulkanContext& ctx,
+                         VkDevice device,
                          VkImage image,
                          const char* debugName,
                          VkImageUsageFlags usageFlags,
@@ -76,7 +77,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                          bool isImported) :
   ctx_(&ctx),
   physicalDevice_(ctx.getVkPhysicalDevice()),
-  device_(ctx.getVkDevice()),
+  device_(device),
   vkImage_(image),
   usageFlags_(usageFlags),
   isExternallyManaged_(isExternallyManaged),
@@ -96,10 +97,12 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   ctx_->vf_.vkGetPhysicalDeviceFormatProperties(physicalDevice_, imageFormat_, &formatProperties_);
 }
 VulkanImage::VulkanImage(const VulkanContext& ctx,
+                         VkDevice device,
                          VkImage image,
                          const VulkanImageCreateInfo& createInfo,
                          const char* debugName) :
   VulkanImage(ctx,
+              device,
               image,
               debugName,
               createInfo.usageFlags,
@@ -113,6 +116,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
               createInfo.isImported) {}
 
 VulkanImage::VulkanImage(const VulkanContext& ctx,
+                         VkDevice device,
                          VkExtent3D extent,
                          VkImageType type,
                          VkFormat format,
@@ -126,7 +130,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                          const char* debugName) :
   ctx_(&ctx),
   physicalDevice_(ctx.getVkPhysicalDevice()),
-  device_(ctx.getVkDevice()),
+  device_(device),
   usageFlags_(usageFlags),
   extent_(extent),
   type_(type),
@@ -178,7 +182,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
     }
 
     VkMemoryRequirements memRequirements;
-    ctx_->vf_.vkGetImageMemoryRequirements(device_, vkImage_, &memRequirements);
+    ctx_->vf_.vkGetImageMemoryRequirements(device, vkImage_, &memRequirements);
 
     // handle memory-mapped buffers
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
@@ -222,7 +226,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
           ivkGetImageMemoryRequirementsInfo2(numPlanes > 2 ? &planes[2] : nullptr, vkImage_),
       };
       for (uint32_t p = 0; p != numPlanes; p++) {
-        ctx_->vf_.vkGetImageMemoryRequirements2(device_, &imgRequirements[p], &memRequirements[p]);
+        ctx_->vf_.vkGetImageMemoryRequirements2(device, &imgRequirements[p], &memRequirements[p]);
         VK_ASSERT(ivkAllocateMemory2(&ctx_->vf_,
                                      physicalDevice_,
                                      device_,
@@ -602,6 +606,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
 VulkanImage VulkanImage::createWithExportMemory(const VulkanContext& ctx,
+                                                VkDevice device,
                                                 VkExtent3D extent,
                                                 VkImageType type,
                                                 VkFormat format,
@@ -663,7 +668,7 @@ VulkanImage VulkanImage::createWithExportMemory(const VulkanContext& ctx,
   compatibleHandleTypes = kHandleType;
 
   return {ctx,
-          ctx.getVkDevice(),
+          device,
           extent,
           type,
           format,

@@ -48,6 +48,7 @@ void enumerateSwapchainImages(
   for (uint32_t i = 0; i < numImages; ++i) {
     auto image = igl::vulkan::VulkanImage(
         ctx,
+        ctx.getVkDevice(),
         images[i].image,
         fmt::format("Image: swapchain {} #{}", isDepth ? "depth" : "color", i).c_str(),
         usageFlags,

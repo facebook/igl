@@ -186,6 +186,7 @@ Result Texture::create(const TextureDesc& desc) {
 
     image = igl::vulkan::VulkanImage::createWithExportMemory(
         ctx,
+        ctx.getVkDevice(),
         VkExtent3D{.width = (uint32_t)desc_.width,
                    .height = (uint32_t)desc_.height,
                    .depth = (uint32_t)desc_.depth},
