@@ -308,9 +308,68 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
 
   // Input layout (Phase 3 Step 3.4)
   std::vector<D3D12_INPUT_ELEMENT_DESC> inputElements;
+  std::vector<std::string> semanticNames; // Keep semantic name strings alive
+
   if (desc.vertexInputState) {
-    // TODO: Convert IGL vertex input state to D3D12 input layout
-    // For now, use hardcoded layout for simple triangle
+    // Convert IGL vertex input state to D3D12 input layout
+    auto* d3d12VertexInput = static_cast<const VertexInputState*>(desc.vertexInputState.get());
+    const auto& vertexDesc = d3d12VertexInput->getDesc();
+
+    for (size_t i = 0; i < vertexDesc.numAttributes; ++i) {
+      const auto& attr = vertexDesc.attributes[i];
+
+      // Store semantic name string to keep it alive
+      std::string semanticName = attr.name;
+      // Convert to D3D12 semantic convention: uppercase first letter, rest lowercase
+      if (!semanticName.empty()) {
+        semanticName[0] = static_cast<char>(toupper(semanticName[0]));
+        for (size_t j = 1; j < semanticName.size(); ++j) {
+          semanticName[j] = static_cast<char>(tolower(semanticName[j]));
+        }
+      }
+      semanticNames.push_back(semanticName);
+
+      D3D12_INPUT_ELEMENT_DESC element = {};
+      element.SemanticName = semanticNames.back().c_str();
+      element.SemanticIndex = 0;
+      element.AlignedByteOffset = static_cast<UINT>(attr.offset);
+      element.InputSlot = attr.bufferIndex;
+      element.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+      element.InstanceDataStepRate = 0;
+
+      // Convert IGL vertex format to DXGI format
+      switch (attr.format) {
+        case VertexAttributeFormat::Float1:
+          element.Format = DXGI_FORMAT_R32_FLOAT;
+          break;
+        case VertexAttributeFormat::Float2:
+          element.Format = DXGI_FORMAT_R32G32_FLOAT;
+          break;
+        case VertexAttributeFormat::Float3:
+          element.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+          break;
+        case VertexAttributeFormat::Float4:
+          element.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+          break;
+        case VertexAttributeFormat::Byte1:
+          element.Format = DXGI_FORMAT_R8_UINT;
+          break;
+        case VertexAttributeFormat::Byte2:
+          element.Format = DXGI_FORMAT_R8G8_UINT;
+          break;
+        case VertexAttributeFormat::Byte4:
+          element.Format = DXGI_FORMAT_R8G8B8A8_UINT;
+          break;
+        case VertexAttributeFormat::UByte4Norm:
+          element.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+          break;
+        default:
+          element.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; // fallback
+          break;
+      }
+
+      inputElements.push_back(element);
+    }
   } else {
     // Default simple triangle layout: position (float3) + color (float4)
     inputElements.resize(2);
