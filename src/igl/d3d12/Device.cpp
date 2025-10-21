@@ -546,16 +546,66 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
     return nullptr;
   }
 
-  // D3D12 requires binary shader input (DXIL bytecode)
-  if (desc.input.type != ShaderInputType::Binary) {
-    Result::setResult(outResult, Result::Code::Unsupported,
-                      "D3D12 requires binary shader input (DXIL). Use ShaderInputType::Binary");
+  std::vector<uint8_t> bytecode;
+
+  if (desc.input.type == ShaderInputType::Binary) {
+    // Binary input - copy bytecode directly
+    bytecode.resize(desc.input.length);
+    std::memcpy(bytecode.data(), desc.input.data, desc.input.length);
+  } else if (desc.input.type == ShaderInputType::String) {
+    // String input - compile HLSL at runtime using D3DCompile
+    Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob;
+    Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
+
+    // Determine shader target based on stage
+    const char* target = nullptr;
+    switch (desc.info.stage) {
+    case ShaderStage::Vertex:
+      target = "vs_5_0";
+      break;
+    case ShaderStage::Fragment:
+      target = "ps_5_0";
+      break;
+    case ShaderStage::Compute:
+      target = "cs_5_0";
+      break;
+    default:
+      Result::setResult(outResult, Result::Code::ArgumentInvalid, "Unsupported shader stage");
+      return nullptr;
+    }
+
+    // Compile HLSL source code
+    HRESULT hr = D3DCompile(
+        desc.input.data,              // Source code
+        desc.input.length,            // Source code length
+        desc.debugName.c_str(),       // Source name (for errors)
+        nullptr,                      // Defines
+        nullptr,                      // Include handler
+        desc.info.entryPoint.c_str(), // Entry point
+        target,                       // Target profile
+        D3DCOMPILE_ENABLE_STRICTNESS, // Compile flags
+        0,                            // Effect flags
+        shaderBlob.GetAddressOf(),
+        errorBlob.GetAddressOf()
+    );
+
+    if (FAILED(hr)) {
+      std::string errorMsg = "Shader compilation failed";
+      if (errorBlob.Get()) {
+        errorMsg += ": ";
+        errorMsg += static_cast<const char*>(errorBlob->GetBufferPointer());
+      }
+      Result::setResult(outResult, Result::Code::RuntimeError, errorMsg.c_str());
+      return nullptr;
+    }
+
+    // Copy compiled bytecode
+    bytecode.resize(shaderBlob->GetBufferSize());
+    std::memcpy(bytecode.data(), shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize());
+  } else {
+    Result::setResult(outResult, Result::Code::Unsupported, "Unsupported shader input type");
     return nullptr;
   }
-
-  // Copy bytecode
-  std::vector<uint8_t> bytecode(desc.input.length);
-  std::memcpy(bytecode.data(), desc.input.data, desc.input.length);
 
   Result::setOk(outResult);
   return std::make_shared<ShaderModule>(desc.info, std::move(bytecode));

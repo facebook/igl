@@ -258,6 +258,11 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
                                        uint32_t firstIndex,
                                        int32_t vertexOffset,
                                        uint32_t baseInstance) {
+  static int drawCallCount = 0;
+  if (drawCallCount < 3) {
+    IGL_LOG_INFO("DrawIndexed called: indexCount=%zu, instanceCount=%u\n", indexCount, instanceCount);
+    drawCallCount++;
+  }
   commandList_->DrawIndexedInstanced(static_cast<UINT>(indexCount),
                                      instanceCount,
                                      firstIndex,

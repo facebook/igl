@@ -23,6 +23,7 @@
 
 // DirectX Shader Compiler
 #include <dxcapi.h>
+#include <d3dcompiler.h>  // For D3DCompile (legacy HLSL compiler)
 
 // D3DX12 helper library (header-only)
 // Disable buggy helper classes that have preprocessor issues or require newer SDK
@@ -86,5 +87,6 @@ namespace WRL {
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "dxcompiler.lib")
+#pragma comment(lib, "d3dcompiler.lib")  // For D3DCompile (legacy HLSL compiler)
 
 #endif // IGL_D3D12_D3D12HEADERS_H
