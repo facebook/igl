@@ -8,12 +8,16 @@
 #pragma once
 
 #include <igl/RenderCommandEncoder.h>
+#include <igl/RenderPass.h>
 #include <igl/d3d12/Common.h>
 
 namespace igl::d3d12 {
 
+class CommandBuffer;
+
 class RenderCommandEncoder final : public IRenderCommandEncoder {
  public:
+  RenderCommandEncoder(CommandBuffer& commandBuffer, const RenderPassDesc& renderPass);
   ~RenderCommandEncoder() override = default;
 
   void endEncoding() override;
@@ -55,8 +59,21 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   void setBlendColor(const Color& color) override;
   void setDepthBias(float depthBias, float slopeScale, float clamp) override;
 
+  // ICommandEncoder interface
+  void pushDebugGroupLabel(const char* label, const Color& color) const override;
+  void insertDebugEventLabel(const char* label, const Color& color) const override;
+  void popDebugGroupLabel() const override;
+
+  // Additional IRenderCommandEncoder interface
+  void bindBuffer(uint32_t index, IBuffer* buffer, size_t offset, size_t bufferSize) override;
+  void bindBindGroup(BindGroupTextureHandle handle) override;
+  void bindBindGroup(BindGroupBufferHandle handle,
+                     uint32_t numDynamicOffsets,
+                     const uint32_t* dynamicOffsets) override;
+
  private:
-  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
+  CommandBuffer& commandBuffer_;
+  ID3D12GraphicsCommandList* commandList_;
 };
 
 } // namespace igl::d3d12

@@ -9,6 +9,8 @@
 
 namespace igl::d3d12 {
 
+Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {}
+
 // BindGroups
 Holder<BindGroupTextureHandle> Device::createBindGroup(
     const BindGroupTextureDesc& /*desc*/,

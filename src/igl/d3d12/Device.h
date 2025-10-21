@@ -12,13 +12,14 @@
 #include <igl/Device.h>
 #include <igl/Shader.h>
 #include <igl/d3d12/Common.h>
+#include <igl/d3d12/D3D12Context.h>
 
 namespace igl::d3d12 {
 
 /// @brief Implements the igl::IDevice interface for DirectX 12
 class Device final : public IDevice {
  public:
-  Device() = default;
+  explicit Device(std::unique_ptr<D3D12Context> ctx);
   ~Device() override = default;
 
   // BindGroups
@@ -110,8 +111,15 @@ class Device final : public IDevice {
   [[nodiscard]] size_t getCurrentDrawCount() const override;
   [[nodiscard]] size_t getShaderCompilationCount() const override;
 
+  D3D12Context& getD3D12Context() {
+    return *ctx_;
+  }
+  [[nodiscard]] const D3D12Context& getD3D12Context() const {
+    return *ctx_;
+  }
+
  private:
-  Microsoft::WRL::ComPtr<ID3D12Device> device_;
+  std::unique_ptr<D3D12Context> ctx_;
   size_t drawCount_ = 0;
   size_t shaderCompilationCount_ = 0;
 };

@@ -10,12 +10,15 @@
 #include <igl/CommandBuffer.h>
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/d3d12/Common.h>
+#include <igl/d3d12/D3D12Context.h>
 
 namespace igl::d3d12 {
 
+class Device;
+
 class CommandBuffer final : public ICommandBuffer {
  public:
-  explicit CommandBuffer(const CommandBufferDesc& desc) : ICommandBuffer(desc) {}
+  CommandBuffer(Device& device, const CommandBufferDesc& desc);
   ~CommandBuffer() override = default;
 
   std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
@@ -34,7 +37,15 @@ class CommandBuffer final : public ICommandBuffer {
   void pushDebugGroupLabel(const char* label, const igl::Color& color) const override;
   void popDebugGroupLabel() const override;
 
+  void begin();
+  void end();
+
+  ID3D12GraphicsCommandList* getCommandList() const { return commandList_.Get(); }
+  D3D12Context& getContext();
+  const D3D12Context& getContext() const;
+
  private:
+  Device& device_;
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator_;
 };

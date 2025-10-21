@@ -6,16 +6,64 @@
  */
 
 #include <igl/d3d12/CommandBuffer.h>
+#include <igl/d3d12/Device.h>
+#include <igl/d3d12/RenderCommandEncoder.h>
 
 namespace igl::d3d12 {
 
+CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc)
+    : ICommandBuffer(desc), device_(device) {
+  auto* d3dDevice = device_.getD3D12Context().getDevice();
+
+  // Create command allocator
+  HRESULT hr = d3dDevice->CreateCommandAllocator(
+      D3D12_COMMAND_LIST_TYPE_DIRECT,
+      IID_PPV_ARGS(commandAllocator_.GetAddressOf()));
+
+  if (FAILED(hr)) {
+    IGL_DEBUG_ABORT("Failed to create command allocator");
+  }
+
+  // Create command list
+  hr = d3dDevice->CreateCommandList(
+      0,
+      D3D12_COMMAND_LIST_TYPE_DIRECT,
+      commandAllocator_.Get(),
+      nullptr,
+      IID_PPV_ARGS(commandList_.GetAddressOf()));
+
+  if (FAILED(hr)) {
+    IGL_DEBUG_ABORT("Failed to create command list");
+  }
+
+  // Command lists are created in recording state, close it for now
+  commandList_->Close();
+}
+
+void CommandBuffer::begin() {
+  commandAllocator_->Reset();
+  commandList_->Reset(commandAllocator_.Get(), nullptr);
+}
+
+void CommandBuffer::end() {
+  commandList_->Close();
+}
+
+D3D12Context& CommandBuffer::getContext() {
+  return device_.getD3D12Context();
+}
+
+const D3D12Context& CommandBuffer::getContext() const {
+  return device_.getD3D12Context();
+}
+
 std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder(
-    const RenderPassDesc& /*renderPass*/,
+    const RenderPassDesc& renderPass,
     const std::shared_ptr<IFramebuffer>& /*framebuffer*/,
     const Dependencies& /*dependencies*/,
     Result* IGL_NULLABLE outResult) {
-  Result::setResult(outResult, Result::Code::Unimplemented, "D3D12 RenderCommandEncoder not yet implemented");
-  return nullptr;
+  Result::setOk(outResult);
+  return std::make_unique<RenderCommandEncoder>(*this, renderPass);
 }
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {
