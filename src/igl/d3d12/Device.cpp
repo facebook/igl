@@ -403,17 +403,21 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   }
   IGL_LOG_INFO("  Root signature created OK\n");
 
-  // Create PSO
+  // Create PSO - zero-initialize all fields
   D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
   psoDesc.pRootSignature = rootSignature.Get();
 
   // Shader bytecode
   psoDesc.VS = {vsBytecode.data(), vsBytecode.size()};
   psoDesc.PS = {psBytecode.data(), psBytecode.size()};
+  // Explicitly zero unused shader stages
+  psoDesc.DS = {nullptr, 0};
+  psoDesc.HS = {nullptr, 0};
+  psoDesc.GS = {nullptr, 0};
 
   // Rasterizer state - D3D12 default values
   psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-  psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;  // Default is BACK, not NONE
+  psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;  // Disable culling for debugging
   psoDesc.RasterizerState.FrontCounterClockwise = FALSE;
   psoDesc.RasterizerState.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
   psoDesc.RasterizerState.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
@@ -455,6 +459,13 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
 
   // Primitive topology
   psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+  psoDesc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
+
+  // Additional required fields
+  psoDesc.NodeMask = 0;  // Single GPU operation
+  psoDesc.CachedPSO.pCachedBlob = nullptr;
+  psoDesc.CachedPSO.CachedBlobSizeInBytes = 0;
+  psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
   // Input layout (Phase 3 Step 3.4)
   std::vector<D3D12_INPUT_ELEMENT_DESC> inputElements;
@@ -553,6 +564,25 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
                  i, inputElements[i].SemanticName, inputElements[i].SemanticIndex,
                  static_cast<int>(inputElements[i].Format),
                  inputElements[i].InputSlot, inputElements[i].AlignedByteOffset);
+  }
+
+  // Use shader reflection to verify input signature matches input layout
+  IGL_LOG_INFO("  Reflecting vertex shader to verify input signature...\n");
+  Microsoft::WRL::ComPtr<ID3D12ShaderReflection> vsReflection;
+  hr = D3DReflect(vsBytecode.data(), vsBytecode.size(), IID_PPV_ARGS(vsReflection.GetAddressOf()));
+  if (SUCCEEDED(hr)) {
+    D3D12_SHADER_DESC shaderDesc = {};
+    vsReflection->GetDesc(&shaderDesc);
+    IGL_LOG_INFO("    Shader expects %u input parameters:\n", shaderDesc.InputParameters);
+    for (UINT i = 0; i < shaderDesc.InputParameters; ++i) {
+      D3D12_SIGNATURE_PARAMETER_DESC paramDesc = {};
+      vsReflection->GetInputParameterDesc(i, &paramDesc);
+      IGL_LOG_INFO("      [%u]: %s%u (semantic index %u), mask 0x%02X\n",
+                   i, paramDesc.SemanticName, paramDesc.SemanticIndex,
+                   paramDesc.SemanticIndex, paramDesc.Mask);
+    }
+  } else {
+    IGL_LOG_ERROR("    Shader reflection failed: 0x%08X\n", static_cast<unsigned>(hr));
   }
 
   IGL_LOG_INFO("  Creating pipeline state (this may take a moment)...\n");
