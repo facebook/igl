@@ -223,7 +223,6 @@ void main() {
 )";
 }
 
-#if IGL_BACKEND_D3D12
 [[nodiscard]] const char* getD3D12VertexShaderSource() {
   return R"(
 cbuffer UniformsPerFrame : register(b0) {
@@ -277,7 +276,6 @@ float4 main(PSInput input) : SV_TARGET {
 }
 )";
 }
-#endif // IGL_BACKEND_D3D12
 
 [[nodiscard]] std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
@@ -297,7 +295,6 @@ float4 main(PSInput input) : SV_TARGET {
                                                            nullptr);
 #endif // IGL_BACKEND_VULKAN
 
-#if IGL_BACKEND_D3D12
   case igl::BackendType::D3D12:
     return igl::ShaderStagesCreator::fromModuleStringInput(device,
                                                            getD3D12VertexShaderSource(),
@@ -307,7 +304,6 @@ float4 main(PSInput input) : SV_TARGET {
                                                            "main",
                                                            "",
                                                            nullptr);
-#endif // IGL_BACKEND_D3D12
 
 // @fb-only
   // @fb-only
@@ -354,9 +350,17 @@ TinyMeshSession::TinyMeshSession(std::shared_ptr<Platform> platform) :
   IGL_LOG_INFO("TinyMeshSession::TinyMeshSession() - Constructor START\n");
   listener_ = std::make_shared<Listener>(*this);
   getPlatform().getInputDispatcher().addKeyListener(listener_);
+
+  // TEMPORARY: Disable ImGui to avoid hang during initialization on D3D12
+  // The ImGui session hangs after font texture upload - needs investigation
+#if 0
   IGL_LOG_INFO("TinyMeshSession::TinyMeshSession() - Creating ImGui session...\n");
   imguiSession_ = std::make_unique<iglu::imgui::Session>(getPlatform().getDevice(),
                                                          getPlatform().getInputDispatcher());
+#else
+  IGL_LOG_INFO("TinyMeshSession::TinyMeshSession() - Skipping ImGui (temporary workaround)\n");
+#endif
+
   IGL_LOG_INFO("TinyMeshSession::TinyMeshSession() - Constructor COMPLETE\n");
 }
 
@@ -632,6 +636,8 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
     commands->drawIndexed(3u * 6u * 2u);
   }
   commands->popDebugGroupLabel();
+
+#if 0
   {
     imguiSession_->beginFrame(framebufferDesc_, getPlatform().getDisplayContext().pixelsPerPoint);
     ImGui::Begin("Texture Viewer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
@@ -640,6 +646,8 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
     imguiSession_->drawFPS(fps_.getAverageFPS());
     imguiSession_->endFrame(getPlatform().getDevice(), *commands);
   }
+#endif
+
   commands->endEncoding();
 
   buffer->present(surfaceTextures.color);
