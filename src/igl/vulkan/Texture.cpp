@@ -268,10 +268,6 @@ Result Texture::createView(const Texture& baseTexture, const TextureViewDesc& de
     return Result(Result::Code::Unimplemented);
   }
 
-  if (!desc.swizzle.identity()) {
-    IGL_DEBUG_ABORT("Only identity swizzle is supported (for now)");
-  }
-
   if (!desc_.numMipLevels) {
     IGL_DEBUG_ABORT("The number of mip levels specified must be greater than 0");
     desc_.numMipLevels = 1;
@@ -334,14 +330,18 @@ Result Texture::createView(const Texture& baseTexture, const TextureViewDesc& de
   };
 
   VulkanImageView imageView = image.createImageView(
-      textureTypeToVkImageViewType(desc.type),
-      desc.format == TextureFormat::Invalid ? image.imageFormat_
-                                            : textureFormatToVkFormat(desc.format),
-      aspectToVkAspectFlags(vulkanTexture.imageView_.aspectMask_, desc.aspect),
-      desc.mipLevel,
-      desc.numMipLevels,
-      desc.layer,
-      desc.numLayers,
+      VulkanImageViewCreateInfo{
+          .viewType = textureTypeToVkImageViewType(desc.type),
+          .format = desc.format == TextureFormat::Invalid ? image.imageFormat_
+                                                          : textureFormatToVkFormat(desc.format),
+          .components = componentMappingToVkComponentMapping(desc.swizzle),
+          .subresourceRange = {.aspectMask = aspectToVkAspectFlags(
+                                   vulkanTexture.imageView_.aspectMask_, desc.aspect),
+                               .baseMipLevel = desc.mipLevel,
+                               .levelCount = desc.numMipLevels,
+                               .baseArrayLayer = desc.layer,
+                               .layerCount = desc.numLayers},
+      },
       debugNameImageView.c_str());
 
   if (!IGL_DEBUG_VERIFY(imageView.valid())) {
