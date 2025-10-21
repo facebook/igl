@@ -15,7 +15,13 @@ std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
                                                        ID3D12Device* device,
                                                        ID3D12CommandQueue* queue) {
   auto texture = std::make_shared<Texture>(format);
-  texture->resource_ = resource;
+
+  // Attach the resource to ComPtr (takes ownership, AddRefs)
+  if (resource) {
+    resource->AddRef();
+    texture->resource_.Attach(resource);
+  }
+
   texture->device_ = device;
   texture->queue_ = queue;
   texture->format_ = format;
@@ -25,11 +31,6 @@ std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
   texture->numMipLevels_ = desc.numMipLevels;
   texture->samples_ = desc.numSamples;
   texture->usage_ = desc.usage;
-
-  // AddRef since we're storing a raw pointer from external source
-  if (resource) {
-    resource->AddRef();
-  }
 
   return texture;
 }

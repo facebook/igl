@@ -76,6 +76,13 @@ namespace WRL {
       }
     }
 
+    void Attach(T* ptr) noexcept {
+      if (ptr_) {
+        ptr_->Release();
+      }
+      ptr_ = ptr;
+    }
+
    private:
     T* ptr_;
   };
