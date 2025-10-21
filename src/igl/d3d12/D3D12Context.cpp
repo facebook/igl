@@ -107,17 +107,13 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
 }
 
 void D3D12Context::createDevice() {
-#ifdef _DEBUG
-  // Enable debug layer
+  // Debug layer disabled temporarily due to hang in CreateGraphicsPipelineState
+#if 0 // def _DEBUG
+  // Enable debug layer (but NOT GPU-based validation which can cause hangs)
   Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
   if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf())))) {
     debugController->EnableDebugLayer();
-
-    // Enable GPU-based validation for more detailed error messages
-    Microsoft::WRL::ComPtr<ID3D12Debug1> debugController1;
-    if (SUCCEEDED(debugController->QueryInterface(IID_PPV_ARGS(debugController1.GetAddressOf())))) {
-      debugController1->SetEnableGPUBasedValidation(TRUE);
-    }
+    IGL_LOG_INFO("D3D12Context: Debug layer ENABLED (without GPU validation)\n");
   }
 #endif
 

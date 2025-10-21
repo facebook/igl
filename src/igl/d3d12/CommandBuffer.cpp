@@ -66,8 +66,19 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc)
 }
 
 void CommandBuffer::begin() {
-  commandAllocator_->Reset();
-  commandList_->Reset(commandAllocator_.Get(), nullptr);
+  IGL_LOG_INFO("CommandBuffer::begin() - Resetting allocator...\n");
+  HRESULT hr = commandAllocator_->Reset();
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("CommandBuffer::begin() - Reset allocator FAILED: 0x%08X\n", static_cast<unsigned>(hr));
+    return;
+  }
+  IGL_LOG_INFO("CommandBuffer::begin() - Allocator reset OK, resetting command list...\n");
+  hr = commandList_->Reset(commandAllocator_.Get(), nullptr);
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("CommandBuffer::begin() - Reset command list FAILED: 0x%08X\n", static_cast<unsigned>(hr));
+    return;
+  }
+  IGL_LOG_INFO("CommandBuffer::begin() - Command list reset OK\n");
 }
 
 void CommandBuffer::end() {

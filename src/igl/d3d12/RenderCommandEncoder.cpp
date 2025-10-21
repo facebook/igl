@@ -85,6 +85,11 @@ void RenderCommandEncoder::endEncoding() {
 }
 
 void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
+  static int callCount = 0;
+  if (callCount < 3) {
+    IGL_LOG_INFO("bindViewport called #%d: x=%.1f, y=%.1f, w=%.1f, h=%.1f\n",
+                 ++callCount, viewport.x, viewport.y, viewport.width, viewport.height);
+  }
   D3D12_VIEWPORT vp = {};
   vp.TopLeftX = viewport.x;
   vp.TopLeftY = viewport.y;
@@ -107,12 +112,29 @@ void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
 void RenderCommandEncoder::bindRenderPipelineState(
     const std::shared_ptr<IRenderPipelineState>& pipelineState) {
   if (!pipelineState) {
+    IGL_LOG_ERROR("bindRenderPipelineState: pipelineState is null!\n");
     return;
   }
 
   auto* d3dPipelineState = static_cast<const RenderPipelineState*>(pipelineState.get());
-  commandList_->SetPipelineState(d3dPipelineState->getPipelineState());
-  commandList_->SetGraphicsRootSignature(d3dPipelineState->getRootSignature());
+
+  // Validate pointers before calling D3D12
+  auto* pso = d3dPipelineState->getPipelineState();
+  auto* rootSig = d3dPipelineState->getRootSignature();
+
+  if (!pso) {
+    IGL_LOG_ERROR("bindRenderPipelineState: PSO is null!\n");
+    return;
+  }
+  if (!rootSig) {
+    IGL_LOG_ERROR("bindRenderPipelineState: Root signature is null!\n");
+    return;
+  }
+
+  IGL_LOG_INFO("bindRenderPipelineState: PSO=%p, RootSig=%p\n", pso, rootSig);
+
+  commandList_->SetPipelineState(pso);
+  commandList_->SetGraphicsRootSignature(rootSig);
   commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
@@ -123,6 +145,10 @@ void RenderCommandEncoder::bindDepthStencilState(
 void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
                                             IBuffer& buffer,
                                             size_t bufferOffset) {
+  static int callCount = 0;
+  if (callCount < 3) {
+    IGL_LOG_INFO("bindVertexBuffer called #%d: index=%u\n", ++callCount, index);
+  }
   auto* d3dBuffer = static_cast<Buffer*>(&buffer);
 
   D3D12_VERTEX_BUFFER_VIEW vbView = {};
@@ -138,6 +164,10 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
 void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
                                            IndexFormat format,
                                            size_t bufferOffset) {
+  static int callCount = 0;
+  if (callCount < 3) {
+    IGL_LOG_INFO("bindIndexBuffer called #%d\n", ++callCount);
+  }
   auto* d3dBuffer = static_cast<Buffer*>(&buffer);
 
   D3D12_INDEX_BUFFER_VIEW ibView = {};
@@ -204,10 +234,16 @@ void RenderCommandEncoder::bindTexture(size_t index,
 }
 
 void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
+  static int callCount = 0;
+  if (callCount < 5) {
+    IGL_LOG_INFO("bindTexture called #%d: index=%zu, texture=%p\n", ++callCount, index, texture);
+  }
   if (!texture || index >= 2) {
+    IGL_LOG_INFO("bindTexture: early return (texture=%p, index=%zu)\n", texture, index);
     return;  // Only support 2 texture slots (t0, t1) for now
   }
 
+  IGL_LOG_INFO("bindTexture: getting context...\n");
   auto& context = commandBuffer_.getContext();
   auto* device = context.getDevice();
   auto* d3dTexture = static_cast<Texture*>(texture);
@@ -216,6 +252,7 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   // For simplicity, we create SRVs on the fly at the next available slot in the heap
   // A real implementation would cache these
 
+  IGL_LOG_INFO("bindTexture: getting heap handles...\n");
   D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavHeap()->GetCPUDescriptorHandleForHeapStart();
   UINT descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
@@ -223,6 +260,7 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   UINT descriptorIndex = nextCbvSrvUavDescriptor_ + static_cast<UINT>(index);
   cpuHandle.ptr += descriptorIndex * descriptorSize;
 
+  IGL_LOG_INFO("bindTexture: creating SRV desc...\n");
   // Create SRV
   D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
   srvDesc.Format = textureFormatToDXGIFormat(d3dTexture->getFormat());
@@ -231,15 +269,19 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   srvDesc.Texture2D.MipLevels = d3dTexture->getNumMipLevels();
   srvDesc.Texture2D.MostDetailedMip = 0;
 
+  IGL_LOG_INFO("bindTexture: getting resource...\n");
   ID3D12Resource* resource = d3dTexture->getResource();
   if (resource) {
+    IGL_LOG_INFO("bindTexture: creating SRV...\n");
     device->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
 
+    IGL_LOG_INFO("bindTexture: setting descriptor table...\n");
     // Bind the descriptor table (root parameter 2) to the start of our SRV range
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavHeap()->GetGPUDescriptorHandleForHeapStart();
     gpuHandle.ptr += nextCbvSrvUavDescriptor_ * descriptorSize;
     commandList_->SetGraphicsRootDescriptorTable(2, gpuHandle);
   }
+  IGL_LOG_INFO("bindTexture: done\n");
 }
 void RenderCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, const void* /*data*/) {}
 
@@ -290,20 +332,52 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
                                        IBuffer* buffer,
                                        size_t offset,
                                        size_t /*bufferSize*/) {
+  static int callCount = 0;
+  if (callCount < 5) {
+    IGL_LOG_INFO("bindBuffer START #%d: index=%u\n", callCount + 1, index);
+  }
   if (!buffer) {
+    IGL_LOG_INFO("bindBuffer: null buffer, returning\n");
     return;
   }
 
+  IGL_LOG_INFO("bindBuffer: getting d3dBuffer...\n");
   auto* d3dBuffer = static_cast<Buffer*>(buffer);
-  D3D12_GPU_VIRTUAL_ADDRESS bufferAddress = d3dBuffer->gpuAddress(offset);
+
+  // D3D12 requires constant buffer addresses to be 256-byte aligned
+  // Round offset UP to nearest 256 bytes
+  const size_t alignedOffset = (offset + 255) & ~255;
+  if (offset != alignedOffset) {
+    IGL_LOG_INFO("bindBuffer: WARNING - offset %zu not 256-byte aligned, using %zu instead\n",
+                 offset, alignedOffset);
+  }
+
+  IGL_LOG_INFO("bindBuffer: getting gpuAddress(offset=%zu)...\n", alignedOffset);
+  D3D12_GPU_VIRTUAL_ADDRESS bufferAddress = d3dBuffer->gpuAddress(alignedOffset);
+  IGL_LOG_INFO("bindBuffer: got address=0x%llx, aligned=%d\n", bufferAddress, (bufferAddress & 0xFF) == 0);
 
   // Bind to root parameter based on index
   // Root parameter 0 = b0 (UniformsPerFrame)
   // Root parameter 1 = b1 (UniformsPerObject)
+  IGL_LOG_INFO("bindBuffer: commandList_ pointer = %p\n", commandList_);
+  if (!commandList_) {
+    IGL_LOG_ERROR("bindBuffer: commandList_ is NULL!\n");
+    return;
+  }
+
   if (index == 0) {
+    IGL_LOG_INFO("bindBuffer: About to call SetGraphicsRootConstantBufferView(0, 0x%llx)...\n", bufferAddress);
+    IGL_LOG_INFO("bindBuffer: Calling NOW...\n");
+    fflush(stdout); // Force flush to see if this line prints before hang
     commandList_->SetGraphicsRootConstantBufferView(0, bufferAddress);
+    IGL_LOG_INFO("bindBuffer: SetGraphicsRootConstantBufferView(0) COMPLETED\n");
   } else if (index == 1) {
+    IGL_LOG_INFO("bindBuffer: About to call SetGraphicsRootConstantBufferView(1, 0x%llx)...\n", bufferAddress);
     commandList_->SetGraphicsRootConstantBufferView(1, bufferAddress);
+    IGL_LOG_INFO("bindBuffer: SetGraphicsRootConstantBufferView(1) COMPLETED\n");
+  }
+  if (callCount < 5) {
+    IGL_LOG_INFO("bindBuffer END #%d\n", ++callCount);
   }
 }
 void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle /*handle*/) {}

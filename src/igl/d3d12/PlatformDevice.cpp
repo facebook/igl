@@ -37,13 +37,17 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t 
 }
 
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result* outResult) {
+  IGL_LOG_INFO("PlatformDevice::createTextureFromNativeDrawable() called\n");
   auto& ctx = device_.getD3D12Context();
 
   // Get current back buffer from swapchain
   uint32_t backBufferIndex = ctx.getCurrentBackBufferIndex();
   ID3D12Resource* backBuffer = ctx.getCurrentBackBuffer();
 
+  IGL_LOG_INFO("  backBufferIndex=%u, backBuffer=%p\n", backBufferIndex, backBuffer);
+
   if (!backBuffer) {
+    IGL_LOG_ERROR("  No back buffer available!\n");
     Result::setResult(outResult, Result::Code::RuntimeError, "No back buffer available");
     return nullptr;
   }

@@ -90,11 +90,20 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
   heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 
+  // For uniform buffers, size must be aligned to 256 bytes (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
+  const bool isUniformBuffer = (desc.type & BufferDesc::BufferTypeBits::Uniform) != 0;
+  const UINT64 alignedSize = isUniformBuffer
+      ? (desc.length + 255) & ~255  // Round up to nearest 256 bytes
+      : desc.length;
+
+  IGL_LOG_INFO("Device::createBuffer: type=%d, requested_size=%zu, aligned_size=%llu, isUniform=%d\n",
+               desc.type, desc.length, alignedSize, isUniformBuffer);
+
   // Create buffer description
   D3D12_RESOURCE_DESC bufferDesc = {};
   bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
   bufferDesc.Alignment = 0;
-  bufferDesc.Width = desc.length;
+  bufferDesc.Width = alignedSize;
   bufferDesc.Height = 1;
   bufferDesc.DepthOrArraySize = 1;
   bufferDesc.MipLevels = 1;
@@ -279,13 +288,17 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     const RenderPipelineDesc& desc,
     Result* IGL_NULLABLE outResult) const {
+  IGL_LOG_INFO("Device::createRenderPipeline() START - debugName='%s'\n", desc.debugName.c_str());
+
   auto* device = ctx_->getDevice();
   if (!device) {
+    IGL_LOG_ERROR("  D3D12 device is null!\n");
     Result::setResult(outResult, Result::Code::InvalidOperation, "D3D12 device is null");
     return nullptr;
   }
 
   if (!desc.shaderStages) {
+    IGL_LOG_ERROR("  Shader stages are required!\n");
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader stages are required");
     return nullptr;
   }
@@ -295,13 +308,16 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   auto* fragmentModule = static_cast<const ShaderModule*>(desc.shaderStages->getFragmentModule().get());
 
   if (!vertexModule || !fragmentModule) {
+    IGL_LOG_ERROR("  Vertex or fragment module is null!\n");
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Vertex and fragment shaders required");
     return nullptr;
   }
 
+  IGL_LOG_INFO("  Getting shader bytecode...\n");
   // Get shader bytecode first
   const auto& vsBytecode = vertexModule->getBytecode();
   const auto& psBytecode = fragmentModule->getBytecode();
+  IGL_LOG_INFO("  VS bytecode: %zu bytes, PS bytecode: %zu bytes\n", vsBytecode.size(), psBytecode.size());
 
   // Create root signature with descriptor tables for textures and constant buffers
   // Root signature layout:
@@ -363,6 +379,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   rootSigDesc.pStaticSamplers = nullptr;
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
+  IGL_LOG_INFO("  Serializing root signature...\n");
   HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
                                            signature.GetAddressOf(), error.GetAddressOf());
   if (FAILED(hr)) {
@@ -373,14 +390,18 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     Result::setResult(outResult, Result::Code::RuntimeError, "Failed to serialize root signature");
     return nullptr;
   }
+  IGL_LOG_INFO("  Root signature serialized OK\n");
 
+  IGL_LOG_INFO("  Creating root signature...\n");
   Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
   hr = device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
                                     IID_PPV_ARGS(rootSignature.GetAddressOf()));
   if (FAILED(hr)) {
+    IGL_LOG_ERROR("  CreateRootSignature FAILED: 0x%08X\n", static_cast<unsigned>(hr));
     Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create root signature");
     return nullptr;
   }
+  IGL_LOG_INFO("  Root signature created OK\n");
 
   // Create PSO
   D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
@@ -390,49 +411,47 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   psoDesc.VS = {vsBytecode.data(), vsBytecode.size()};
   psoDesc.PS = {psBytecode.data(), psBytecode.size()};
 
-  // Stream output (not used)
-  psoDesc.StreamOutput.pSODeclaration = nullptr;
-  psoDesc.StreamOutput.NumEntries = 0;
-  psoDesc.StreamOutput.pBufferStrides = nullptr;
-  psoDesc.StreamOutput.NumStrides = 0;
-  psoDesc.StreamOutput.RasterizedStream = 0;
-
-  // Blend state
-  psoDesc.BlendState.AlphaToCoverageEnable = FALSE;
-  psoDesc.BlendState.IndependentBlendEnable = FALSE;
-  psoDesc.BlendState.RenderTarget[0].BlendEnable = FALSE;
-  psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-
-  // Rasterizer state
+  // Rasterizer state - D3D12 default values
   psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-  psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+  psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;  // Default is BACK, not NONE
   psoDesc.RasterizerState.FrontCounterClockwise = FALSE;
-  psoDesc.RasterizerState.DepthBias = 0;
-  psoDesc.RasterizerState.DepthBiasClamp = 0.0f;
-  psoDesc.RasterizerState.SlopeScaledDepthBias = 0.0f;
+  psoDesc.RasterizerState.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
+  psoDesc.RasterizerState.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
+  psoDesc.RasterizerState.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
   psoDesc.RasterizerState.DepthClipEnable = TRUE;
   psoDesc.RasterizerState.MultisampleEnable = FALSE;
   psoDesc.RasterizerState.AntialiasedLineEnable = FALSE;
   psoDesc.RasterizerState.ForcedSampleCount = 0;
   psoDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
-  // Depth stencil state
-  psoDesc.DepthStencilState.DepthEnable = FALSE;
-  psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-  psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-  psoDesc.DepthStencilState.StencilEnable = FALSE;
-  psoDesc.DepthStencilState.StencilReadMask = 0xFF;
-  psoDesc.DepthStencilState.StencilWriteMask = 0xFF;
+  // Blend state - D3D12 default values (all RT blend disabled)
+  psoDesc.BlendState.AlphaToCoverageEnable = FALSE;
+  psoDesc.BlendState.IndependentBlendEnable = FALSE;
+  for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i) {
+    psoDesc.BlendState.RenderTarget[i].BlendEnable = FALSE;
+    psoDesc.BlendState.RenderTarget[i].LogicOpEnable = FALSE;
+    psoDesc.BlendState.RenderTarget[i].SrcBlend = D3D12_BLEND_ONE;
+    psoDesc.BlendState.RenderTarget[i].DestBlend = D3D12_BLEND_ZERO;
+    psoDesc.BlendState.RenderTarget[i].BlendOp = D3D12_BLEND_OP_ADD;
+    psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = D3D12_BLEND_ONE;
+    psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = D3D12_BLEND_ZERO;
+    psoDesc.BlendState.RenderTarget[i].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+    psoDesc.BlendState.RenderTarget[i].LogicOp = D3D12_LOGIC_OP_NOOP;
+    psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+  }
 
-  // Render target format
+  // Depth stencil state - minimal initialization like Microsoft sample
+  psoDesc.DepthStencilState.DepthEnable = FALSE;
+  psoDesc.DepthStencilState.StencilEnable = FALSE;
+
+  // Render target format (must match swapchain format!)
   psoDesc.NumRenderTargets = 1;
-  psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+  psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;  // Match swapchain format, not SRGB
   psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
 
-  // Sample settings
+  // Sample settings (match Microsoft sample - don't set Quality explicitly)
   psoDesc.SampleMask = UINT_MAX;
   psoDesc.SampleDesc.Count = 1;
-  psoDesc.SampleDesc.Quality = 0;
 
   // Primitive topology
   psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -446,19 +465,36 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     auto* d3d12VertexInput = static_cast<const VertexInputState*>(desc.vertexInputState.get());
     const auto& vertexDesc = d3d12VertexInput->getDesc();
 
+    // Pre-reserve space to prevent reallocation (which would invalidate c_str() pointers)
+    semanticNames.reserve(vertexDesc.numAttributes);
+
+    IGL_LOG_INFO("  Processing vertex input state: %zu attributes\n", vertexDesc.numAttributes);
     for (size_t i = 0; i < vertexDesc.numAttributes; ++i) {
       const auto& attr = vertexDesc.attributes[i];
+      IGL_LOG_INFO("    Attribute %zu: name='%s', format=%d, offset=%zu, bufferIndex=%u\n",
+                   i, attr.name.c_str(), static_cast<int>(attr.format), attr.offset, attr.bufferIndex);
 
-      // Store semantic name string to keep it alive
-      std::string semanticName = attr.name;
-      // Convert to D3D12 semantic convention: uppercase first letter, rest lowercase
-      if (!semanticName.empty()) {
-        semanticName[0] = static_cast<char>(toupper(semanticName[0]));
-        for (size_t j = 1; j < semanticName.size(); ++j) {
-          semanticName[j] = static_cast<char>(tolower(semanticName[j]));
+      // Map IGL attribute names to D3D12 HLSL semantic names
+      std::string semanticName;
+      if (attr.name == "pos" || attr.name == "position") {
+        semanticName = "POSITION";
+      } else if (attr.name == "col" || attr.name == "color") {
+        semanticName = "COLOR";
+      } else if (attr.name == "st" || attr.name == "uv" || attr.name == "texcoord") {
+        semanticName = "TEXCOORD0";
+      } else if (attr.name == "normal") {
+        semanticName = "NORMAL";
+      } else if (attr.name == "tangent") {
+        semanticName = "TANGENT";
+      } else {
+        // Fallback: capitalize first letter
+        semanticName = attr.name;
+        if (!semanticName.empty()) {
+          semanticName[0] = static_cast<char>(toupper(semanticName[0]));
         }
       }
       semanticNames.push_back(semanticName);
+      IGL_LOG_INFO("      Mapped '%s' -> '%s'\n", attr.name.c_str(), semanticName.c_str());
 
       D3D12_INPUT_ELEMENT_DESC element = {};
       element.SemanticName = semanticNames.back().c_str();
@@ -511,6 +547,15 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   }
   psoDesc.InputLayout = {inputElements.data(), static_cast<UINT>(inputElements.size())};
 
+  IGL_LOG_INFO("  Final input layout: %u elements\n", static_cast<unsigned>(inputElements.size()));
+  for (size_t i = 0; i < inputElements.size(); ++i) {
+    IGL_LOG_INFO("    [%zu]: %s (index %u), format %d, slot %u, offset %u\n",
+                 i, inputElements[i].SemanticName, inputElements[i].SemanticIndex,
+                 static_cast<int>(inputElements[i].Format),
+                 inputElements[i].InputSlot, inputElements[i].AlignedByteOffset);
+  }
+
+  IGL_LOG_INFO("  Creating pipeline state (this may take a moment)...\n");
   Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
   hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
   if (FAILED(hr)) {
@@ -530,6 +575,8 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     return nullptr;
   }
 
+  IGL_LOG_INFO("Device::createRenderPipeline() SUCCESS - PSO=%p, RootSig=%p\n",
+               pipelineState.Get(), rootSignature.Get());
   Result::setOk(outResult);
   return std::make_shared<RenderPipelineState>(desc, std::move(pipelineState), std::move(rootSignature));
 }
@@ -544,7 +591,11 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
 
 std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
+  IGL_LOG_INFO("Device::createShaderModule() - stage=%d, entryPoint='%s', debugName='%s'\n",
+               static_cast<int>(desc.info.stage), desc.info.entryPoint.c_str(), desc.debugName.c_str());
+
   if (!desc.input.isValid()) {
+    IGL_LOG_ERROR("  Invalid shader input!\n");
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Invalid shader input");
     return nullptr;
   }
@@ -553,10 +604,21 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
 
   if (desc.input.type == ShaderInputType::Binary) {
     // Binary input - copy bytecode directly
+    IGL_LOG_INFO("  Using binary input (%zu bytes)\n", desc.input.length);
     bytecode.resize(desc.input.length);
     std::memcpy(bytecode.data(), desc.input.data, desc.input.length);
   } else if (desc.input.type == ShaderInputType::String) {
     // String input - compile HLSL at runtime using D3DCompile
+    // For string input, use desc.input.source (not data) and calculate length
+    if (!desc.input.source) {
+      IGL_LOG_ERROR("  Shader source is null!\n");
+      Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader source is null");
+      return nullptr;
+    }
+
+    const size_t sourceLength = strlen(desc.input.source);
+    IGL_LOG_INFO("  Compiling HLSL from string (%zu bytes)...\n", sourceLength);
+
     Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob;
     Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
 
@@ -573,14 +635,15 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
       target = "cs_5_0";
       break;
     default:
+      IGL_LOG_ERROR("  Unsupported shader stage!\n");
       Result::setResult(outResult, Result::Code::ArgumentInvalid, "Unsupported shader stage");
       return nullptr;
     }
 
     // Compile HLSL source code
     HRESULT hr = D3DCompile(
-        desc.input.data,              // Source code
-        desc.input.length,            // Source code length
+        desc.input.source,            // Source code (use .source for string input)
+        sourceLength,                 // Source code length (calculated with strlen)
         desc.debugName.c_str(),       // Source name (for errors)
         nullptr,                      // Defines
         nullptr,                      // Include handler
@@ -598,9 +661,12 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
         errorMsg += ": ";
         errorMsg += static_cast<const char*>(errorBlob->GetBufferPointer());
       }
+      IGL_LOG_ERROR("  %s\n", errorMsg.c_str());
       Result::setResult(outResult, Result::Code::RuntimeError, errorMsg.c_str());
       return nullptr;
     }
+
+    IGL_LOG_INFO("  Shader compiled successfully (%zu bytes bytecode)\n", shaderBlob->GetBufferSize());
 
     // Copy compiled bytecode
     bytecode.resize(shaderBlob->GetBufferSize());
