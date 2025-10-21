@@ -23,6 +23,8 @@ class D3D12Context {
   ID3D12Device* getDevice() const { return device_.Get(); }
   ID3D12CommandQueue* getCommandQueue() const { return commandQueue_.Get(); }
   IDXGISwapChain3* getSwapChain() const { return swapChain_.Get(); }
+  ID3D12DescriptorHeap* getCbvSrvUavHeap() const { return cbvSrvUavHeap_.Get(); }
+  ID3D12DescriptorHeap* getSamplerHeap() const { return samplerHeap_.Get(); }
 
   uint32_t getCurrentBackBufferIndex() const;
   ID3D12Resource* getCurrentBackBuffer() const;
@@ -36,6 +38,7 @@ class D3D12Context {
   void createSwapChain(HWND hwnd, uint32_t width, uint32_t height);
   void createRTVHeap();
   void createBackBuffers();
+  void createDescriptorHeaps();
 
   Microsoft::WRL::ComPtr<IDXGIFactory4> dxgiFactory_;
   Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter_;
@@ -46,6 +49,12 @@ class D3D12Context {
   Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
   Microsoft::WRL::ComPtr<ID3D12Resource> renderTargets_[kMaxFramesInFlight];
   UINT rtvDescriptorSize_ = 0;
+
+  // Descriptor heaps for resource binding
+  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> cbvSrvUavHeap_;
+  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> samplerHeap_;
+  UINT cbvSrvUavDescriptorSize_ = 0;
+  UINT samplerDescriptorSize_ = 0;
 
   // Synchronization
   Microsoft::WRL::ComPtr<ID3D12Fence> fence_;

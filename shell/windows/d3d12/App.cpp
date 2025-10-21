@@ -84,12 +84,29 @@ SurfaceTextures D3D12Shell::createSurfaceTextures() noexcept {
   colorDesc.usage = TextureDesc::TextureUsageBits::Attachment;
   colorDesc.debugName = "Swapchain Back Buffer";
 
-  auto color = d3d12::Texture::createFromResource(backBuffer, colorDesc.format, colorDesc);
+  auto color = d3d12::Texture::createFromResource(backBuffer, colorDesc.format, colorDesc,
+                                                   ctx.getDevice(), ctx.getCommandQueue());
 
   // Create depth texture
-  // For Phase 2 (EmptySession), we can skip depth buffer or create a simple one
-  // Just return nullptr for depth for now - EmptySession doesn't need it
-  std::shared_ptr<ITexture> depth = nullptr;
+  TextureDesc depthDesc;
+  depthDesc.type = TextureType::TwoD;
+  depthDesc.format = TextureFormat::Z_UNorm32;  // 32-bit depth
+  depthDesc.width = shellParams().viewportSize.x;
+  depthDesc.height = shellParams().viewportSize.y;
+  depthDesc.depth = 1;
+  depthDesc.numLayers = 1;
+  depthDesc.numSamples = 1;
+  depthDesc.numMipLevels = 1;
+  depthDesc.usage = TextureDesc::TextureUsageBits::Attachment;
+  depthDesc.debugName = "Depth Buffer";
+
+  Result depthResult;
+  auto depth = device.createTexture(depthDesc, &depthResult);
+
+  if (!depthResult.isOk()) {
+    IGL_LOG_ERROR("Failed to create depth texture: %s\n", depthResult.message.c_str());
+    return SurfaceTextures{nullptr, nullptr};
+  }
 
   return SurfaceTextures{std::move(color), std::move(depth)};
 }

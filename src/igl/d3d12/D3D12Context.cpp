@@ -47,6 +47,10 @@ Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height) {
     createBackBuffers();
     IGL_LOG_INFO("D3D12Context: Back buffers created successfully\n");
 
+    IGL_LOG_INFO("D3D12Context: Creating descriptor heaps...\n");
+    createDescriptorHeaps();
+    IGL_LOG_INFO("D3D12Context: Descriptor heaps created successfully\n");
+
     IGL_LOG_INFO("D3D12Context: Creating fence for GPU synchronization...\n");
     HRESULT hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.GetAddressOf()));
     if (FAILED(hr)) {
@@ -241,6 +245,40 @@ void D3D12Context::createBackBuffers() {
     device_->CreateRenderTargetView(renderTargets_[i].Get(), nullptr, rtvHandle);
     rtvHandle.ptr += rtvDescriptorSize_;
   }
+}
+
+void D3D12Context::createDescriptorHeaps() {
+  // Create CBV/SRV/UAV descriptor heap (for textures and constant buffers)
+  D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc = {};
+  cbvSrvUavHeapDesc.NumDescriptors = 1000; // Large pool for textures and constant buffers
+  cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+  cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+  cbvSrvUavHeapDesc.NodeMask = 0;
+
+  HRESULT hr = device_->CreateDescriptorHeap(&cbvSrvUavHeapDesc,
+                                             IID_PPV_ARGS(cbvSrvUavHeap_.GetAddressOf()));
+  if (FAILED(hr)) {
+    throw std::runtime_error("Failed to create CBV/SRV/UAV descriptor heap");
+  }
+
+  cbvSrvUavDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(
+      D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+  // Create Sampler descriptor heap
+  D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc = {};
+  samplerHeapDesc.NumDescriptors = 16; // Sufficient for typical sampler needs
+  samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+  samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+  samplerHeapDesc.NodeMask = 0;
+
+  hr = device_->CreateDescriptorHeap(&samplerHeapDesc,
+                                     IID_PPV_ARGS(samplerHeap_.GetAddressOf()));
+  if (FAILED(hr)) {
+    throw std::runtime_error("Failed to create Sampler descriptor heap");
+  }
+
+  samplerDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(
+      D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 }
 
 uint32_t D3D12Context::getCurrentBackBufferIndex() const {
