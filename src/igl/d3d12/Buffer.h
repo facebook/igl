@@ -14,8 +14,8 @@ namespace igl::d3d12 {
 
 class Buffer final : public IBuffer {
  public:
-  Buffer(const BufferDesc& desc) : desc_(desc) {}
-  ~Buffer() override = default;
+  Buffer(Microsoft::WRL::ComPtr<ID3D12Resource> resource, const BufferDesc& desc);
+  ~Buffer() override;
 
   Result upload(const void* data, const BufferRange& range) override;
   void* map(const BufferRange& range, Result* IGL_NULLABLE outResult) override;
@@ -30,10 +30,14 @@ class Buffer final : public IBuffer {
 
   BufferDesc::BufferType getBufferType() const override;
 
+  // D3D12-specific accessors
+  ID3D12Resource* getResource() const { return resource_.Get(); }
+
  private:
   Microsoft::WRL::ComPtr<ID3D12Resource> resource_;
   BufferDesc desc_;
   void* mappedPtr_ = nullptr;
+  ResourceStorage storage_ = ResourceStorage::Private;
 };
 
 } // namespace igl::d3d12

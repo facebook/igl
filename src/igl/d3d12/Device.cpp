@@ -7,6 +7,7 @@
 
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/CommandQueue.h>
+#include <igl/d3d12/Buffer.h>
 
 namespace igl::d3d12 {
 
@@ -48,10 +49,80 @@ std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc
 }
 
 // Resources
-std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& /*desc*/,
+std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
                                               Result* IGL_NULLABLE outResult) const noexcept {
-  Result::setResult(outResult, Result::Code::Unimplemented, "D3D12 Buffer not yet implemented");
-  return nullptr;
+  auto* device = ctx_->getDevice();
+  if (!device) {
+    Result::setResult(outResult, Result::Code::RuntimeError, "D3D12 device is null");
+    return nullptr;
+  }
+
+  // Determine heap type and initial state based on storage
+  D3D12_HEAP_TYPE heapType;
+  D3D12_RESOURCE_STATES initialState;
+
+  if (desc.storage == ResourceStorage::Shared || desc.storage == ResourceStorage::Managed) {
+    // CPU-writable upload heap
+    heapType = D3D12_HEAP_TYPE_UPLOAD;
+    initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
+  } else {
+    // GPU-only default heap
+    heapType = D3D12_HEAP_TYPE_DEFAULT;
+    initialState = D3D12_RESOURCE_STATE_COMMON;
+  }
+
+  // Create heap properties
+  D3D12_HEAP_PROPERTIES heapProps = {};
+  heapProps.Type = heapType;
+  heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+  heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+
+  // Create buffer description
+  D3D12_RESOURCE_DESC bufferDesc = {};
+  bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+  bufferDesc.Alignment = 0;
+  bufferDesc.Width = desc.length;
+  bufferDesc.Height = 1;
+  bufferDesc.DepthOrArraySize = 1;
+  bufferDesc.MipLevels = 1;
+  bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+  bufferDesc.SampleDesc.Count = 1;
+  bufferDesc.SampleDesc.Quality = 0;
+  bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+  bufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+  // Create the buffer resource
+  Microsoft::WRL::ComPtr<ID3D12Resource> buffer;
+  HRESULT hr = device->CreateCommittedResource(
+      &heapProps,
+      D3D12_HEAP_FLAG_NONE,
+      &bufferDesc,
+      initialState,
+      nullptr,
+      IID_PPV_ARGS(buffer.GetAddressOf())
+  );
+
+  if (FAILED(hr)) {
+    char errorMsg[256];
+    snprintf(errorMsg, sizeof(errorMsg), "Failed to create buffer: HRESULT = 0x%08X", static_cast<unsigned>(hr));
+    Result::setResult(outResult, Result::Code::RuntimeError, errorMsg);
+    return nullptr;
+  }
+
+  // Upload initial data if provided
+  if (desc.data && heapType == D3D12_HEAP_TYPE_UPLOAD) {
+    void* mappedData = nullptr;
+    D3D12_RANGE readRange = {0, 0};
+    hr = buffer->Map(0, &readRange, &mappedData);
+
+    if (SUCCEEDED(hr)) {
+      std::memcpy(mappedData, desc.data, desc.length);
+      buffer->Unmap(0, nullptr);
+    }
+  }
+
+  Result::setOk(outResult);
+  return std::make_unique<Buffer>(std::move(buffer), desc);
 }
 
 std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
