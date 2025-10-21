@@ -15,13 +15,20 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc)
     : ICommandBuffer(desc), device_(device) {
   auto* d3dDevice = device_.getD3D12Context().getDevice();
 
+  if (!d3dDevice) {
+    IGL_DEBUG_ABORT("D3D12 device is null - context not initialized");
+    return;
+  }
+
   // Create command allocator
   HRESULT hr = d3dDevice->CreateCommandAllocator(
       D3D12_COMMAND_LIST_TYPE_DIRECT,
       IID_PPV_ARGS(commandAllocator_.GetAddressOf()));
 
   if (FAILED(hr)) {
-    IGL_DEBUG_ABORT("Failed to create command allocator");
+    char errorMsg[256];
+    snprintf(errorMsg, sizeof(errorMsg), "Failed to create command allocator: HRESULT = 0x%08X", static_cast<unsigned>(hr));
+    IGL_DEBUG_ABORT(errorMsg);
   }
 
   // Create command list
@@ -33,7 +40,9 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc)
       IID_PPV_ARGS(commandList_.GetAddressOf()));
 
   if (FAILED(hr)) {
-    IGL_DEBUG_ABORT("Failed to create command list");
+    char errorMsg[256];
+    snprintf(errorMsg, sizeof(errorMsg), "Failed to create command list: HRESULT = 0x%08X", static_cast<unsigned>(hr));
+    IGL_DEBUG_ABORT(errorMsg);
   }
 
   // Command lists are created in recording state, close it for now

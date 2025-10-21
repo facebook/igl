@@ -30,6 +30,7 @@ void EmptySession::update(SurfaceTextures surfaceTextures) noexcept {
 
   // Set up render pass with dark blue clear color (Phase 2 target)
   RenderPassDesc renderPass;
+  renderPass.colorAttachments.resize(1);
   renderPass.colorAttachments[0].loadAction = LoadAction::Clear;
   renderPass.colorAttachments[0].storeAction = StoreAction::Store;
   renderPass.colorAttachments[0].clearColor = {0.1f, 0.1f, 0.15f, 1.0f}; // Dark blue
