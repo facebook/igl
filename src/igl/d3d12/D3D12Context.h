@@ -28,6 +28,8 @@ class D3D12Context {
   ID3D12Resource* getCurrentBackBuffer() const;
   D3D12_CPU_DESCRIPTOR_HANDLE getCurrentRTV() const;
 
+  void waitForGPU();
+
  private:
   void createDevice();
   void createCommandQueue();
@@ -44,6 +46,11 @@ class D3D12Context {
   Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
   Microsoft::WRL::ComPtr<ID3D12Resource> renderTargets_[kMaxFramesInFlight];
   UINT rtvDescriptorSize_ = 0;
+
+  // Synchronization
+  Microsoft::WRL::ComPtr<ID3D12Fence> fence_;
+  UINT64 fenceValue_ = 0;
+  HANDLE fenceEvent_ = nullptr;
 
   uint32_t width_ = 0;
   uint32_t height_ = 0;

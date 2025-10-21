@@ -35,6 +35,10 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
     swapChain->Present(1, 0); // VSync on
   }
 
+  // Wait for GPU to finish (simple synchronization for Phase 2)
+  // TODO: For Phase 3+, use per-frame fences for better performance
+  ctx.waitForGPU();
+
   return 0;
 }
 

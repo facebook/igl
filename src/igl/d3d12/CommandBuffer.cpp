@@ -20,6 +20,22 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc)
     return;
   }
 
+  // Check if device is in good state
+  HRESULT deviceRemovedReason = d3dDevice->GetDeviceRemovedReason();
+  if (FAILED(deviceRemovedReason)) {
+    char errorMsg[512];
+    snprintf(errorMsg, sizeof(errorMsg),
+             "D3D12 device was removed before creating command buffer. Reason: 0x%08X\n"
+             "  0x887A0005 = DXGI_ERROR_DEVICE_REMOVED\n"
+             "  0x887A0006 = DXGI_ERROR_DEVICE_HUNG\n"
+             "  0x887A0007 = DXGI_ERROR_DEVICE_RESET\n"
+             "  0x887A0020 = DXGI_ERROR_DRIVER_INTERNAL_ERROR",
+             static_cast<unsigned>(deviceRemovedReason));
+    IGL_LOG_ERROR(errorMsg);
+    IGL_DEBUG_ABORT("Device removed - see error above");
+    return;
+  }
+
   // Create command allocator
   HRESULT hr = d3dDevice->CreateCommandAllocator(
       D3D12_COMMAND_LIST_TYPE_DIRECT,

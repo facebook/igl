@@ -12,6 +12,13 @@
 namespace igl::d3d12 {
 
 D3D12Context::~D3D12Context() {
+  // Wait for GPU to finish before cleanup
+  waitForGPU();
+
+  if (fenceEvent_) {
+    CloseHandle(fenceEvent_);
+  }
+
   // ComPtr handles cleanup automatically
 }
 
@@ -20,12 +27,40 @@ Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height) {
   height_ = height;
 
   try {
+    IGL_LOG_INFO("D3D12Context: Creating D3D12 device...\n");
     createDevice();
+    IGL_LOG_INFO("D3D12Context: Device created successfully\n");
+
+    IGL_LOG_INFO("D3D12Context: Creating command queue...\n");
     createCommandQueue();
+    IGL_LOG_INFO("D3D12Context: Command queue created successfully\n");
+
+    IGL_LOG_INFO("D3D12Context: Creating swapchain (%ux%u)...\n", width, height);
     createSwapChain(hwnd, width, height);
+    IGL_LOG_INFO("D3D12Context: Swapchain created successfully\n");
+
+    IGL_LOG_INFO("D3D12Context: Creating RTV heap...\n");
     createRTVHeap();
+    IGL_LOG_INFO("D3D12Context: RTV heap created successfully\n");
+
+    IGL_LOG_INFO("D3D12Context: Creating back buffers...\n");
     createBackBuffers();
+    IGL_LOG_INFO("D3D12Context: Back buffers created successfully\n");
+
+    IGL_LOG_INFO("D3D12Context: Creating fence for GPU synchronization...\n");
+    HRESULT hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.GetAddressOf()));
+    if (FAILED(hr)) {
+      throw std::runtime_error("Failed to create fence");
+    }
+    fenceEvent_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (!fenceEvent_) {
+      throw std::runtime_error("Failed to create fence event");
+    }
+    IGL_LOG_INFO("D3D12Context: Fence created successfully\n");
+
+    IGL_LOG_INFO("D3D12Context: Initialization complete!\n");
   } catch (const std::exception& e) {
+    IGL_LOG_ERROR("D3D12Context initialization failed: %s\n", e.what());
     return Result(Result::Code::RuntimeError, e.what());
   }
 
@@ -204,6 +239,22 @@ D3D12_CPU_DESCRIPTOR_HANDLE D3D12Context::getCurrentRTV() const {
   D3D12_CPU_DESCRIPTOR_HANDLE rtv = rtvHeap_->GetCPUDescriptorHandleForHeapStart();
   rtv.ptr += getCurrentBackBufferIndex() * rtvDescriptorSize_;
   return rtv;
+}
+
+void D3D12Context::waitForGPU() {
+  if (!fence_.Get() || !commandQueue_.Get()) {
+    return;
+  }
+
+  // Signal and increment the fence value
+  const UINT64 fenceToWaitFor = ++fenceValue_;
+  commandQueue_->Signal(fence_.Get(), fenceToWaitFor);
+
+  // Wait until the fence is crossed
+  if (fence_->GetCompletedValue() < fenceToWaitFor) {
+    fence_->SetEventOnCompletion(fenceToWaitFor, fenceEvent_);
+    WaitForSingleObject(fenceEvent_, INFINITE);
+  }
 }
 
 } // namespace igl::d3d12
