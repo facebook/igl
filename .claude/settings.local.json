@@ -30,7 +30,13 @@
       "Read(//c/**)",
       "Bash(dxc:*)",
       "Bash(powershell:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(\"C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.22621.0\\x64\\fxc.exe\" /T vs_5_0 /E main /Fo simple_vs_fxc.cso simple_triangle_vs.hlsl)",
+      "Bash(\"C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.22621.0\\x64\\fxc.exe\" /T ps_5_0 /E main /Fo simple_ps_fxc.cso simple_triangle_ps.hlsl)",
+      "Bash(\"/c/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64/fxc.exe\" //T vs_5_0 //E main //Fo simple_vs_fxc.cso simple_triangle_vs.hlsl)",
+      "Bash(\"/c/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64/fxc.exe\" //T vs_5_0 //E main //Fo /tmp/imgui_vs_fxc.cso /tmp/imgui_vs_d3d12.hlsl)",
+      "Bash(\"/c/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64/fxc.exe\" //T ps_5_0 //E main //Fo /tmp/imgui_ps_fxc.cso /tmp/imgui_ps_d3d12.hlsl)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []

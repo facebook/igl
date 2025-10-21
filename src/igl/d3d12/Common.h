@@ -15,6 +15,7 @@
 
 #include <igl/Common.h>
 #include <igl/Macros.h>
+#include <igl/TextureFormat.h>
 #include <igl/d3d12/D3D12Headers.h>
 
 // Set to 1 to see verbose debug console logs with D3D12 commands
@@ -88,6 +89,10 @@ void SafeRelease(T*& ptr) {
     ptr = nullptr;
   }
 }
+
+// Texture format conversion
+DXGI_FORMAT textureFormatToDXGIFormat(TextureFormat format);
+TextureFormat dxgiFormatToTextureFormat(DXGI_FORMAT format);
 
 } // namespace igl::d3d12
 

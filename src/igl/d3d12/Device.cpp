@@ -173,9 +173,74 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
 
 std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
                                                 Result* IGL_NULLABLE outResult) const noexcept {
-  // TODO: Create actual D3D12 texture resource with ID3D12Device::CreateCommittedResource
-  // For now, create a stub texture that will allow initialization to proceed
-  auto texture = std::make_shared<Texture>(desc.format);
+  auto* device = ctx_->getDevice();
+
+  // Convert IGL texture format to DXGI format
+  DXGI_FORMAT dxgiFormat = textureFormatToDXGIFormat(desc.format);
+  if (dxgiFormat == DXGI_FORMAT_UNKNOWN) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Unsupported texture format");
+    return nullptr;
+  }
+
+  // Create texture resource description
+  D3D12_RESOURCE_DESC resourceDesc = {};
+  resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; // TODO: Support other dimensions
+  resourceDesc.Alignment = 0;
+  resourceDesc.Width = desc.width;
+  resourceDesc.Height = desc.height;
+  resourceDesc.DepthOrArraySize = static_cast<UINT16>(desc.numLayers);
+  resourceDesc.MipLevels = static_cast<UINT16>(desc.numMipLevels);
+  resourceDesc.Format = dxgiFormat;
+  resourceDesc.SampleDesc.Count = desc.numSamples;
+  resourceDesc.SampleDesc.Quality = 0;
+  resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+  resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+  // Set resource flags based on usage
+  if (desc.usage & TextureDesc::TextureUsageBits::Sampled) {
+    // Shader resource - no special flags needed
+  }
+  if (desc.usage & TextureDesc::TextureUsageBits::Storage) {
+    resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+  }
+  if (desc.usage & TextureDesc::TextureUsageBits::Attachment) {
+    if (desc.format >= TextureFormat::Z_UNorm16 && desc.format <= TextureFormat::S_UInt8) {
+      resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+    } else {
+      resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+    }
+  }
+
+  // Create heap properties
+  D3D12_HEAP_PROPERTIES heapProps = {};
+  heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+  heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+  heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+  heapProps.CreationNodeMask = 1;
+  heapProps.VisibleNodeMask = 1;
+
+  // Determine initial state
+  D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
+
+  // Create the texture resource
+  Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+  HRESULT hr = device->CreateCommittedResource(
+      &heapProps,
+      D3D12_HEAP_FLAG_NONE,
+      &resourceDesc,
+      initialState,
+      nullptr, // Optimized clear value - TODO: set for render targets
+      IID_PPV_ARGS(resource.GetAddressOf()));
+
+  if (FAILED(hr)) {
+    char errorMsg[256];
+    snprintf(errorMsg, sizeof(errorMsg), "Failed to create texture resource. HRESULT: 0x%08X", static_cast<unsigned>(hr));
+    Result::setResult(outResult, Result::Code::RuntimeError, errorMsg);
+    return nullptr;
+  }
+
+  // Create IGL texture from D3D12 resource
+  auto texture = Texture::createFromResource(resource.Get(), desc.format, desc);
   Result::setOk(outResult);
   return texture;
 }
@@ -232,6 +297,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   }
 
   // Create root signature (empty for now - Phase 3 Step 3.3)
+  // TODO: Implement proper root signature based on shader reflection
   D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
   rootSigDesc.NumParameters = 0;
   rootSigDesc.pParameters = nullptr;
