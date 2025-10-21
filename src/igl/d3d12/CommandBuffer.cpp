@@ -100,7 +100,21 @@ std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncod
 }
 
 void CommandBuffer::present(const std::shared_ptr<ITexture>& /*surface*/) const {
-  // Stub: Not yet implemented
+  // Present the current back buffer to the screen
+  auto& context = device_.getD3D12Context();
+  auto* swapChain = context.getSwapChain();
+
+  if (!swapChain) {
+    IGL_LOG_ERROR("CommandBuffer::present() - No swapchain available\n");
+    return;
+  }
+
+  // Present with vsync (1) or without (0)
+  HRESULT hr = swapChain->Present(1, 0);
+
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("CommandBuffer::present() - Present failed: HRESULT = 0x%08X\n", static_cast<unsigned>(hr));
+  }
 }
 
 void CommandBuffer::waitUntilScheduled() {
