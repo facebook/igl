@@ -225,6 +225,10 @@ class DescriptorPoolsArena final {
     IGL_DEBUG_ASSERT(debugName);
     dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName ? debugName : "");
   }
+  DescriptorPoolsArena(const DescriptorPoolsArena&) = delete;
+  DescriptorPoolsArena& operator=(const DescriptorPoolsArena&) = delete;
+  DescriptorPoolsArena(DescriptorPoolsArena&&) = delete;
+  DescriptorPoolsArena& operator=(DescriptorPoolsArena&&) = delete;
   ~DescriptorPoolsArena() {
     extinct_.push_back({pool_, {}});
     ctx_.deferredTask(std::packaged_task<void()>(
