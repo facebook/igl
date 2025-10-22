@@ -11,11 +11,11 @@
 
 // clang-format off
 #if IGL_PLATFORM_WINDOWS
+  #include <igl/opengl/Device.h>
   #include <igl/opengl/wgl/Context.h>
-  #include <igl/opengl/wgl/Device.h>
 #elif IGL_PLATFORM_LINUX
+  #include <igl/opengl/Device.h>
   #include <igl/opengl/glx/Context.h>
-  #include <igl/opengl/glx/Device.h>
 #endif
 // clang-format on
 

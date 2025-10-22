@@ -15,6 +15,10 @@
 #include <igl/opengl/wgl/HWDevice.h>
 #endif // FORCE_USE_ANGLE
 
+#if IGL_PLATFORM_LINUX
+#include <igl/opengl/glx/Device.h>
+#endif
+
 // clang-format off
 #if !defined(IGL_CMAKE_BUILD)
   #if !defined(GLEW_STATIC)
