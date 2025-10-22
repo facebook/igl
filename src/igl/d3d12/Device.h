@@ -22,7 +22,7 @@ class PlatformDevice;
 class Device final : public IDevice {
  public:
   explicit Device(std::unique_ptr<D3D12Context> ctx);
-  ~Device() override = default;
+  ~Device() override;
 
   // BindGroups
   [[nodiscard]] Holder<BindGroupTextureHandle> createBindGroup(

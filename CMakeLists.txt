@@ -248,6 +248,12 @@ target_compile_definitions(IGLLibrary PUBLIC "IGL_CMAKE_BUILD=1")
 
 include_directories(.)
 
+# Enable CTest at top-level when tests are requested so `ctest` can discover tests
+if(IGL_WITH_TESTS)
+  include(CTest)
+  enable_testing()
+endif()
+
 if(IGL_WITH_IGLU OR IGL_WITH_SAMPLES)
   add_library(IGLstb third-party/deps/patches/stb_impl/stb_image.c third-party/deps/patches/stb_impl/stb_image_resize.c
                      third-party/deps/patches/stb_impl/stb_image_write.c)

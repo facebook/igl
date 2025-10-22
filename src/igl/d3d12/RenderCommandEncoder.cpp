@@ -30,35 +30,72 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
   };
   commandList_->SetDescriptorHeaps(2, heaps);
 
-  // Transition render target to RENDER_TARGET state
-  auto* backBuffer = context.getCurrentBackBuffer();
-  if (!backBuffer) {
-    IGL_LOG_ERROR("RenderCommandEncoder: No back buffer available\n");
-    return;
+  // Create RTV from framebuffer if provided; otherwise fallback to swapchain RTV
+  D3D12_CPU_DESCRIPTOR_HANDLE rtv = {};
+  bool usedOffscreenRTV = false;
+  if (framebuffer_ && framebuffer_->getColorAttachment(0)) {
+    auto colorTex = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(0));
+    ID3D12Device* device = context.getDevice();
+    if (device && colorTex && colorTex->getResource()) {
+      if (!rtvHeap_.Get()) {
+        D3D12_DESCRIPTOR_HEAP_DESC rtvDesc = {};
+        rtvDesc.NumDescriptors = 1;
+        rtvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+        rtvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+        device->CreateDescriptorHeap(&rtvDesc, IID_PPV_ARGS(rtvHeap_.GetAddressOf()));
+      }
+      rtvHandle_ = rtvHeap_->GetCPUDescriptorHandleForHeapStart();
+
+      D3D12_RENDER_TARGET_VIEW_DESC rdesc = {};
+      rdesc.Format = textureFormatToDXGIFormat(colorTex->getFormat());
+      rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+      device->CreateRenderTargetView(colorTex->getResource(), &rdesc, rtvHandle_);
+
+      D3D12_RESOURCE_BARRIER bb = {};
+      bb.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      bb.Transition.pResource = colorTex->getResource();
+      bb.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+      bb.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+      bb.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      commandList_->ResourceBarrier(1, &bb);
+
+      if (!renderPass.colorAttachments.empty() &&
+          renderPass.colorAttachments[0].loadAction == LoadAction::Clear) {
+        const auto& clearColor = renderPass.colorAttachments[0].clearColor;
+        const float color[] = {clearColor.r, clearColor.g, clearColor.b, clearColor.a};
+        commandList_->ClearRenderTargetView(rtvHandle_, color, 0, nullptr);
+      }
+
+      rtv = rtvHandle_;
+      usedOffscreenRTV = true;
+    }
   }
+  if (!usedOffscreenRTV) {
+    auto* backBuffer = context.getCurrentBackBuffer();
+    if (!backBuffer) {
+      IGL_LOG_ERROR("RenderCommandEncoder: No back buffer available\n");
+      return;
+    }
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barrier.Transition.pResource = backBuffer;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    commandList_->ResourceBarrier(1, &barrier);
 
-  D3D12_RESOURCE_BARRIER barrier = {};
-  barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-  barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-  barrier.Transition.pResource = backBuffer;
-  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-  barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-
-  commandList_->ResourceBarrier(1, &barrier);
-
-  // Clear render target if requested
-  if (!renderPass.colorAttachments.empty() &&
-      renderPass.colorAttachments[0].loadAction == LoadAction::Clear) {
-    const auto& clearColor = renderPass.colorAttachments[0].clearColor;
-    const float color[] = {clearColor.r, clearColor.g, clearColor.b, clearColor.a};
-
-    D3D12_CPU_DESCRIPTOR_HANDLE rtv = context.getCurrentRTV();
-    commandList_->ClearRenderTargetView(rtv, color, 0, nullptr);
+    if (!renderPass.colorAttachments.empty() &&
+        renderPass.colorAttachments[0].loadAction == LoadAction::Clear) {
+      const auto& cc = renderPass.colorAttachments[0].clearColor;
+      const float col[] = {cc.r, cc.g, cc.b, cc.a};
+      D3D12_CPU_DESCRIPTOR_HANDLE swapRtv = context.getCurrentRTV();
+      commandList_->ClearRenderTargetView(swapRtv, col, 0, nullptr);
+    }
+    rtv = context.getCurrentRTV();
   }
 
   // Create/Bind depth-stencil view if we have a framebuffer with a depth attachment
-  D3D12_CPU_DESCRIPTOR_HANDLE rtv = context.getCurrentRTV();
   const bool hasDepth = (framebuffer_ && framebuffer_->getDepthAttachment());
   if (hasDepth) {
     auto depthTex = std::static_pointer_cast<igl::d3d12::Texture>(framebuffer_->getDepthAttachment());
@@ -107,48 +144,42 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
     commandList_->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
   }
 
-  // Set a default full-screen viewport and scissor to ensure rasterization happens even if caller
-  // forgets to bind them explicitly. Use current back buffer dimensions.
-  auto* backBufferRes = context.getCurrentBackBuffer();
-  if (backBufferRes) {
-    D3D12_RESOURCE_DESC bbDesc = backBufferRes->GetDesc();
-    D3D12_VIEWPORT vp = {};
-    vp.TopLeftX = 0.0f;
-    vp.TopLeftY = 0.0f;
-    vp.Width = static_cast<float>(bbDesc.Width);
-    vp.Height = static_cast<float>(bbDesc.Height);
-    vp.MinDepth = 0.0f;
-    vp.MaxDepth = 1.0f;
-    commandList_->RSSetViewports(1, &vp);
-
-    D3D12_RECT scissor = {};
-    scissor.left = 0;
-    scissor.top = 0;
-    scissor.right = static_cast<LONG>(bbDesc.Width);
-    scissor.bottom = static_cast<LONG>(bbDesc.Height);
-    commandList_->RSSetScissorRects(1, &scissor);
+  // Set a default full-screen viewport/scissor if caller forgets. Prefer framebuffer attachment size.
+  if (framebuffer_ && framebuffer_->getColorAttachment(0)) {
+    auto colorTex = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(0));
+    if (colorTex) {
+      auto dims = colorTex->getDimensions();
+      D3D12_VIEWPORT vp{}; vp.TopLeftX=0; vp.TopLeftY=0; vp.Width=(float)dims.width; vp.Height=(float)dims.height; vp.MinDepth=0; vp.MaxDepth=1;
+      commandList_->RSSetViewports(1, &vp);
+      D3D12_RECT sc{}; sc.left=0; sc.top=0; sc.right=(LONG)dims.width; sc.bottom=(LONG)dims.height; commandList_->RSSetScissorRects(1, &sc);
+    }
+  } else {
+    auto* backBufferRes = context.getCurrentBackBuffer();
+    if (backBufferRes) {
+      D3D12_RESOURCE_DESC bbDesc = backBufferRes->GetDesc();
+      D3D12_VIEWPORT vp = {}; vp.TopLeftX=0; vp.TopLeftY=0; vp.Width=(float)bbDesc.Width; vp.Height=(float)bbDesc.Height; vp.MinDepth=0; vp.MaxDepth=1;
+      commandList_->RSSetViewports(1, &vp);
+      D3D12_RECT scissor = {}; scissor.left=0; scissor.top=0; scissor.right=(LONG)bbDesc.Width; scissor.bottom=(LONG)bbDesc.Height; commandList_->RSSetScissorRects(1, &scissor);
+    }
   }
 }
 
 void RenderCommandEncoder::endEncoding() {
-  // Transition render target back to PRESENT state
-  auto& context = commandBuffer_.getContext();
-  auto* backBuffer = context.getCurrentBackBuffer();
-
-  if (!backBuffer) {
-    IGL_LOG_ERROR("RenderCommandEncoder::endEncoding: No back buffer available\n");
-    return;
+  // Transition back to PRESENT only if swapchain RTV was used
+  auto& context2 = commandBuffer_.getContext();
+  if (!framebuffer_ || !framebuffer_->getColorAttachment(0)) {
+    auto* backBuffer = context2.getCurrentBackBuffer();
+    if (backBuffer) {
+      D3D12_RESOURCE_BARRIER barrier = {};
+      barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+      barrier.Transition.pResource = backBuffer;
+      barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+      barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+      barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      commandList_->ResourceBarrier(1, &barrier);
+    }
   }
-
-  D3D12_RESOURCE_BARRIER barrier = {};
-  barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-  barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-  barrier.Transition.pResource = backBuffer;
-  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-  barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-
-  commandList_->ResourceBarrier(1, &barrier);
 
   // Close the command buffer
   commandBuffer_.end();

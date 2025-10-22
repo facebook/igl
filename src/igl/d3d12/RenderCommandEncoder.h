@@ -84,10 +84,12 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   // Cache current vertex stride from bound pipeline's input layout
   UINT currentVertexStride_ = 0;
 
-  // Depth support
+  // Offscreen RTV/DSV support
   std::shared_ptr<IFramebuffer> framebuffer_;
   Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvHeap_;
   D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle_{};
+  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
+  D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle_{};
 };
 
 } // namespace igl::d3d12

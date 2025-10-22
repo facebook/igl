@@ -126,7 +126,7 @@ std::shared_ptr<IRenderPipelineReflection> RenderPipelineState::renderPipelineRe
     }
   };
 
-  if (auto stages = getDesc().shaderStages) {
+  if (auto stages = getRenderPipelineDesc().shaderStages) {
     reflectShader(stages->getVertexModule(), ShaderStage::Vertex);
     reflectShader(stages->getFragmentModule(), ShaderStage::Fragment);
   }

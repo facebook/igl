@@ -26,6 +26,8 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
   platformDevice_ = std::make_unique<PlatformDevice>(*this);
 }
 
+Device::~Device() = default;
+
 // BindGroups
 Holder<BindGroupTextureHandle> Device::createBindGroup(
     const BindGroupTextureDesc& /*desc*/,
