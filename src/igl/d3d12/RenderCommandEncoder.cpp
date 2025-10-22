@@ -15,10 +15,12 @@
 namespace igl::d3d12 {
 
 RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
-                                           const RenderPassDesc& renderPass)
+                                           const RenderPassDesc& renderPass,
+                                           const std::shared_ptr<IFramebuffer>& framebuffer)
     : IRenderCommandEncoder(nullptr),
       commandBuffer_(commandBuffer),
-      commandList_(commandBuffer.getCommandList()) {
+      commandList_(commandBuffer.getCommandList()),
+      framebuffer_(framebuffer) {
   auto& context = commandBuffer_.getContext();
 
   // Set descriptor heaps for this command list
@@ -55,9 +57,77 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
     commandList_->ClearRenderTargetView(rtv, color, 0, nullptr);
   }
 
-  // Set render target
+  // Create/Bind depth-stencil view if we have a framebuffer with a depth attachment
   D3D12_CPU_DESCRIPTOR_HANDLE rtv = context.getCurrentRTV();
-  commandList_->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+  const bool hasDepth = (framebuffer_ && framebuffer_->getDepthAttachment());
+  if (hasDepth) {
+    auto depthTex = std::static_pointer_cast<igl::d3d12::Texture>(framebuffer_->getDepthAttachment());
+    ID3D12Device* device = context.getDevice();
+    if (device && depthTex && depthTex->getResource()) {
+      // Create a small DSV heap (1 descriptor)
+      D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+      dsvHeapDesc.NumDescriptors = 1;
+      dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+      dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+      if (!dsvHeap_.Get()) {
+        device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(dsvHeap_.GetAddressOf()));
+      }
+      dsvHandle_ = dsvHeap_->GetCPUDescriptorHandleForHeapStart();
+
+      // Create DSV description
+      D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+      dsvDesc.Format = textureFormatToDXGIFormat(depthTex->getFormat());
+      dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+      dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+      // Transition depth to DEPTH_WRITE
+      D3D12_RESOURCE_BARRIER barrier = {};
+      barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+      barrier.Transition.pResource = depthTex->getResource();
+      barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+      barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+      barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      commandList_->ResourceBarrier(1, &barrier);
+
+      device->CreateDepthStencilView(depthTex->getResource(), &dsvDesc, dsvHandle_);
+
+      // Clear depth if requested
+      if (renderPass.depthAttachment.loadAction == LoadAction::Clear) {
+        float depthClear = renderPass.depthAttachment.clearDepth;
+        commandList_->ClearDepthStencilView(dsvHandle_, D3D12_CLEAR_FLAG_DEPTH, depthClear, 0, 0, nullptr);
+      }
+
+      // Bind RTV + DSV
+      commandList_->OMSetRenderTargets(1, &rtv, FALSE, &dsvHandle_);
+    } else {
+      commandList_->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+    }
+  } else {
+    commandList_->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+  }
+
+  // Set a default full-screen viewport and scissor to ensure rasterization happens even if caller
+  // forgets to bind them explicitly. Use current back buffer dimensions.
+  auto* backBufferRes = context.getCurrentBackBuffer();
+  if (backBufferRes) {
+    D3D12_RESOURCE_DESC bbDesc = backBufferRes->GetDesc();
+    D3D12_VIEWPORT vp = {};
+    vp.TopLeftX = 0.0f;
+    vp.TopLeftY = 0.0f;
+    vp.Width = static_cast<float>(bbDesc.Width);
+    vp.Height = static_cast<float>(bbDesc.Height);
+    vp.MinDepth = 0.0f;
+    vp.MaxDepth = 1.0f;
+    commandList_->RSSetViewports(1, &vp);
+
+    D3D12_RECT scissor = {};
+    scissor.left = 0;
+    scissor.top = 0;
+    scissor.right = static_cast<LONG>(bbDesc.Width);
+    scissor.bottom = static_cast<LONG>(bbDesc.Height);
+    commandList_->RSSetScissorRects(1, &scissor);
+  }
 }
 
 void RenderCommandEncoder::endEncoding() {
@@ -136,6 +206,9 @@ void RenderCommandEncoder::bindRenderPipelineState(
   commandList_->SetPipelineState(pso);
   commandList_->SetGraphicsRootSignature(rootSig);
   commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+  // Cache vertex stride from pipeline (used when binding vertex buffers)
+  currentVertexStride_ = d3dPipelineState->getVertexStride();
 }
 
 void RenderCommandEncoder::bindDepthStencilState(
@@ -154,9 +227,8 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
   D3D12_VERTEX_BUFFER_VIEW vbView = {};
   vbView.BufferLocation = d3dBuffer->gpuAddress(bufferOffset);
   vbView.SizeInBytes = static_cast<UINT>(d3dBuffer->getSizeInBytes() - bufferOffset);
-  // TODO: Get stride from vertex input state
-  // For now, hardcode for simple triangle (float3 position + float4 color = 28 bytes)
-  vbView.StrideInBytes = 28;
+  // Use stride from currently bound pipeline if available; fallback to 32 (pos3+col3+uv2)
+  vbView.StrideInBytes = currentVertexStride_ ? currentVertexStride_ : 32;
 
   commandList_->IASetVertexBuffers(index, 1, &vbView);
 }
@@ -188,6 +260,7 @@ void RenderCommandEncoder::bindPushConstants(const void* /*data*/,
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t /*target*/,
                                             ISamplerState* samplerState) {
+  // Enable binding: create SRV in the shader-visible CBV/SRV/UAV heap and set the descriptor table
   if (!samplerState || index >= 2) {
     return;  // Only support 2 sampler slots (s0, s1) for now
   }
@@ -332,6 +405,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
                                        IBuffer* buffer,
                                        size_t offset,
                                        size_t /*bufferSize*/) {
+  // Bind constant buffer GPU address to root parameters 0 (b0) and 1 (b1)
   static int callCount = 0;
   if (callCount < 5) {
     IGL_LOG_INFO("bindBuffer START #%d: index=%u\n", callCount + 1, index);

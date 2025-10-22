@@ -95,7 +95,7 @@ const D3D12Context& CommandBuffer::getContext() const {
 
 std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder(
     const RenderPassDesc& renderPass,
-    const std::shared_ptr<IFramebuffer>& /*framebuffer*/,
+    const std::shared_ptr<IFramebuffer>& framebuffer,
     const Dependencies& /*dependencies*/,
     Result* IGL_NULLABLE outResult) {
   Result::setOk(outResult);
@@ -103,7 +103,7 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
   // Begin command buffer if not already begun
   begin();
 
-  return std::make_unique<RenderCommandEncoder>(*this, renderPass);
+  return std::make_unique<RenderCommandEncoder>(*this, renderPass, framebuffer);
 }
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {

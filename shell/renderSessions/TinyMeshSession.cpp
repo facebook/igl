@@ -7,29 +7,33 @@
 
 // @fb-only
 
-#include <shell/renderSessions/TinyMeshSession.h>
+#include "TinyMeshSession.h"
 
 #include <cmath>
 #include <cstddef>
-#include <glm/ext/matrix_clip_space.hpp>
-#include <glm/ext/matrix_transform.hpp>
+#include <cstdio>
+#include <glm/ext.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
-#include <shell/shared/platform/DisplayContext.h>
 #include <igl/FPSCounter.h>
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/Device.h>
+#include <igl/opengl/GLIncludes.h>
+#include <igl/opengl/RenderCommandEncoder.h>
 #endif // IGL_BACKEND_OPENGL
 #if IGL_BACKEND_VULKAN
+#include <igl/vulkan/Common.h>
+#include <igl/vulkan/Device.h>
+#include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/PlatformDevice.h>
+#include <igl/vulkan/VulkanContext.h>
 #endif // IGL_BACKEND_VULKAN
 
 #if defined(IGL_CMAKE_BUILD)
 #include <filesystem>
 namespace fs = std::filesystem;
 #else
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
 #endif
 
@@ -40,14 +44,13 @@ namespace fs = boost::filesystem;
 #endif // __clang__
 #include <stb/stb_image.h>
 #define TINY_TEST_USE_DEPTH_BUFFER 1
-
-namespace igl::shell {
+#include <shell/shared/platform/DisplayContext.h>
 
 namespace {
 
-[[maybe_unused, nodiscard]] std::string stringReplaceAll(const char* input,
-                                                         const char* searchString,
-                                                         const char* replaceString) {
+[[maybe_unused]] std::string stringReplaceAll(const char* input,
+                                              const char* searchString,
+                                              const char* replaceString) {
   std::string s(input);
   const size_t len = strlen(searchString);
   size_t pos = 0;
@@ -57,74 +60,85 @@ namespace {
   return s;
 }
 
+} // namespace
+
+namespace igl::shell {
+
+using namespace igl;
+using glm::mat4;
+using glm::vec2;
+using glm::vec3;
+using glm::vec4;
+
 constexpr uint32_t kNumBufferedFrames = 3;
 
-int width = 0;
-int height = 0;
+int width_ = 0;
+int height_ = 0;
 
-constexpr uint32_t kNumCubes = 256;
+constexpr uint32_t kNumCubes = 16;
 
 struct VertexPosUvw {
-  glm::vec3 position;
-  glm::vec3 color;
-  glm::vec2 uv;
+  vec3 position;
+  vec3 color;
+  vec2 uv;
 };
 
 struct UniformsPerFrame {
-  glm::mat4 proj;
-  glm::mat4 view;
+  mat4 proj;
+  mat4 view;
 };
 struct UniformsPerObject {
-  glm::mat4 model;
+  mat4 model;
 };
 
 // from igl/shell/renderSessions/Textured3DCubeSession.cpp
-constexpr float kHalf = 1.0f;
+const float half = 1.0f;
 
 // UV-mapped cube with indices: 24 vertices, 36 indices
-const VertexPosUvw kVertexData0[] = {
+static VertexPosUvw vertexData0[] = {
     // top
-    {{-kHalf, -kHalf, +kHalf}, {0.0, 0.0, 1.0}, {0, 0}}, // 0
-    {{+kHalf, -kHalf, +kHalf}, {1.0, 0.0, 1.0}, {1, 0}}, // 1
-    {{+kHalf, +kHalf, +kHalf}, {1.0, 1.0, 1.0}, {1, 1}}, // 2
-    {{-kHalf, +kHalf, +kHalf}, {0.0, 1.0, 1.0}, {0, 1}}, // 3
+    {{-half, -half, +half}, {0.0, 0.0, 1.0}, {0, 0}}, // 0
+    {{+half, -half, +half}, {1.0, 0.0, 1.0}, {1, 0}}, // 1
+    {{+half, +half, +half}, {1.0, 1.0, 1.0}, {1, 1}}, // 2
+    {{-half, +half, +half}, {0.0, 1.0, 1.0}, {0, 1}}, // 3
     // bottom
-    {{-kHalf, -kHalf, -kHalf}, {1.0, 1.0, 1.0}, {0, 0}}, // 4
-    {{-kHalf, +kHalf, -kHalf}, {0.0, 1.0, 0.0}, {0, 1}}, // 5
-    {{+kHalf, +kHalf, -kHalf}, {1.0, 1.0, 0.0}, {1, 1}}, // 6
-    {{+kHalf, -kHalf, -kHalf}, {1.0, 0.0, 0.0}, {1, 0}}, // 7
+    {{-half, -half, -half}, {1.0, 1.0, 1.0}, {0, 0}}, // 4
+    {{-half, +half, -half}, {0.0, 1.0, 0.0}, {0, 1}}, // 5
+    {{+half, +half, -half}, {1.0, 1.0, 0.0}, {1, 1}}, // 6
+    {{+half, -half, -half}, {1.0, 0.0, 0.0}, {1, 0}}, // 7
     // left
-    {{+kHalf, +kHalf, -kHalf}, {1.0, 1.0, 0.0}, {1, 0}}, // 8
-    {{-kHalf, +kHalf, -kHalf}, {0.0, 1.0, 0.0}, {0, 0}}, // 9
-    {{-kHalf, +kHalf, +kHalf}, {0.0, 1.0, 1.0}, {0, 1}}, // 10
-    {{+kHalf, +kHalf, +kHalf}, {1.0, 1.0, 1.0}, {1, 1}}, // 11
+    {{+half, +half, -half}, {1.0, 1.0, 0.0}, {1, 0}}, // 8
+    {{-half, +half, -half}, {0.0, 1.0, 0.0}, {0, 0}}, // 9
+    {{-half, +half, +half}, {0.0, 1.0, 1.0}, {0, 1}}, // 10
+    {{+half, +half, +half}, {1.0, 1.0, 1.0}, {1, 1}}, // 11
     // right
-    {{-kHalf, -kHalf, -kHalf}, {1.0, 1.0, 1.0}, {0, 0}}, // 12
-    {{+kHalf, -kHalf, -kHalf}, {1.0, 0.0, 0.0}, {1, 0}}, // 13
-    {{+kHalf, -kHalf, +kHalf}, {1.0, 0.0, 1.0}, {1, 1}}, // 14
-    {{-kHalf, -kHalf, +kHalf}, {0.0, 0.0, 1.0}, {0, 1}}, // 15
+    {{-half, -half, -half}, {1.0, 1.0, 1.0}, {0, 0}}, // 12
+    {{+half, -half, -half}, {1.0, 0.0, 0.0}, {1, 0}}, // 13
+    {{+half, -half, +half}, {1.0, 0.0, 1.0}, {1, 1}}, // 14
+    {{-half, -half, +half}, {0.0, 0.0, 1.0}, {0, 1}}, // 15
     // front
-    {{+kHalf, -kHalf, -kHalf}, {1.0, 0.0, 0.0}, {0, 0}}, // 16
-    {{+kHalf, +kHalf, -kHalf}, {1.0, 1.0, 0.0}, {1, 0}}, // 17
-    {{+kHalf, +kHalf, +kHalf}, {1.0, 1.0, 1.0}, {1, 1}}, // 18
-    {{+kHalf, -kHalf, +kHalf}, {1.0, 0.0, 1.0}, {0, 1}}, // 19
+    {{+half, -half, -half}, {1.0, 0.0, 0.0}, {0, 0}}, // 16
+    {{+half, +half, -half}, {1.0, 1.0, 0.0}, {1, 0}}, // 17
+    {{+half, +half, +half}, {1.0, 1.0, 1.0}, {1, 1}}, // 18
+    {{+half, -half, +half}, {1.0, 0.0, 1.0}, {0, 1}}, // 19
     // back
-    {{-kHalf, +kHalf, -kHalf}, {0.0, 1.0, 0.0}, {1, 0}}, // 20
-    {{-kHalf, -kHalf, -kHalf}, {1.0, 1.0, 1.0}, {0, 0}}, // 21
-    {{-kHalf, -kHalf, +kHalf}, {0.0, 0.0, 1.0}, {0, 1}}, // 22
-    {{-kHalf, +kHalf, +kHalf}, {0.0, 1.0, 1.0}, {1, 1}}, // 23
+    {{-half, +half, -half}, {0.0, 1.0, 0.0}, {1, 0}}, // 20
+    {{-half, -half, -half}, {1.0, 1.0, 1.0}, {0, 0}}, // 21
+    {{-half, -half, +half}, {0.0, 0.0, 1.0}, {0, 1}}, // 22
+    {{-half, +half, +half}, {0.0, 1.0, 1.0}, {1, 1}}, // 23
 };
 
-constexpr uint16_t kIndexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
-                                   8,  9,  10, 10, 11, 8,  12, 13, 14, 14, 15, 12,
-                                   16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
+static uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
+                               8,  9,  10, 10, 11, 8,  12, 13, 14, 14, 15, 12,
+                               16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
 
 UniformsPerFrame perFrame;
 UniformsPerObject perObject[kNumCubes];
-glm::vec3 axis[kNumCubes];
+
+vec3 axis_[kNumCubes];
 
 #if IGL_BACKEND_METAL
-[[nodiscard]] const char* getMetalShaderSource() {
+static std::string getMetalShaderSource() {
   return R"(
           #include <metal_stdlib>
           #include <simd/simd.h>
@@ -163,7 +177,7 @@ glm::vec3 axis[kNumCubes];
 }
 #endif // IGL_BACKEND_METAL
 
-[[nodiscard]] const char* getVulkanVertexShaderSource() {
+static const char* getVulkanVertexShaderSource() {
   return R"(
 layout (location=0) in vec3 pos;
 layout (location=1) in vec3 col;
@@ -201,7 +215,7 @@ void main() {
 )";
 }
 
-[[nodiscard]] const char* getVulkanFragmentShaderSource() {
+static const char* getVulkanFragmentShaderSource() {
   return R"(
 layout (location=0) in vec3 color;
 layout (location=1) in vec2 uv;
@@ -218,70 +232,34 @@ layout (binding = 1) uniform sampler2D uTex1;
 void main() {
   vec4 t0 = texture(uTex0, 2.0 * uv);
   vec4 t1 = texture(uTex1,  uv);
-  out_FragColor = vec4(2.0 * color * (t0.rgb * t1.rgb), 1.0);
+  out_FragColor = vec4(color * (t0.rgb + t1.rgb), 1.0);
 };
 )";
 }
 
-[[nodiscard]] const char* getD3D12VertexShaderSource() {
-  return R"(
-cbuffer UniformsPerFrame : register(b0) {
-  float4x4 proj;
-  float4x4 view;
-};
-
-cbuffer UniformsPerObject : register(b1) {
-  float4x4 model;
-};
-
-struct VSInput {
-  float3 pos : POSITION;
-  float3 col : COLOR;
-  float2 st : TEXCOORD0;
-};
-
-struct PSInput {
-  float4 position : SV_POSITION;
-  float3 color : COLOR;
-  float2 uv : TEXCOORD0;
-};
-
-PSInput main(VSInput input) {
-  PSInput output;
-  output.position = mul(mul(mul(float4(input.pos, 1.0), model), view), proj);
-  output.color = input.col;
-  output.uv = input.st;
-  return output;
-}
-)";
-}
-
-[[nodiscard]] const char* getD3D12FragmentShaderSource() {
-  return R"(
-Texture2D uTex0 : register(t0);
-Texture2D uTex1 : register(t1);
-SamplerState sampler0 : register(s0);
-SamplerState sampler1 : register(s1);
-
-struct PSInput {
-  float4 position : SV_POSITION;
-  float3 color : COLOR;
-  float2 uv : TEXCOORD0;
-};
-
-float4 main(PSInput input) : SV_TARGET {
-  float4 t0 = uTex0.Sample(sampler0, 2.0 * input.uv);
-  float4 t1 = uTex1.Sample(sampler1, input.uv);
-  return float4(2.0 * input.color * (t0.rgb * t1.rgb), 1.0);
-}
-)";
-}
-
-[[nodiscard]] std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
+static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
+
+  case igl::BackendType::D3D12: {
+    // Minimal HLSL equivalent of the GLSL shaders used by this sample
+    const char* vsHlsl = R"(
+cbuffer UniformsPerFrame : register(b0) { float4x4 proj; float4x4 view; };
+cbuffer UniformsPerObject : register(b1) { float4x4 model; };
+struct VSInput { float3 pos:POSITION; float3 col:COLOR; float2 st:TEXCOORD0; };
+struct PSInput { float4 position:SV_POSITION; float3 color:COLOR; float2 uv:TEXCOORD0; };
+PSInput main(VSInput input){ PSInput o; float4 p = mul(model, float4(input.pos,1)); p=mul(view,p); o.position=mul(proj,p); o.color=input.col; o.uv=input.st; return o; }
+)";
+    const char* psHlsl = R"(
+Texture2D uTex0:register(t0); Texture2D uTex1:register(t1); SamplerState s0:register(s0); SamplerState s1:register(s1);
+struct PSInput { float4 position:SV_POSITION; float3 color:COLOR; float2 uv:TEXCOORD0; };
+float4 main(PSInput input):SV_TARGET{ float3 t0=uTex0.Sample(s0,input.uv*2).rgb; float3 t1=uTex1.Sample(s1,input.uv).rgb; return float4(2.0*input.color*(t0*t1),1.0); }
+)";
+    return igl::ShaderStagesCreator::fromModuleStringInput(
+        device, vsHlsl, "main", "", psHlsl, "main", "", nullptr);
+  }
 
 #if IGL_BACKEND_VULKAN
   case igl::BackendType::Vulkan:
@@ -293,17 +271,8 @@ float4 main(PSInput input) : SV_TARGET {
                                                            "main",
                                                            "",
                                                            nullptr);
+    return nullptr;
 #endif // IGL_BACKEND_VULKAN
-
-  case igl::BackendType::D3D12:
-    return igl::ShaderStagesCreator::fromModuleStringInput(device,
-                                                           getD3D12VertexShaderSource(),
-                                                           "main",
-                                                           "",
-                                                           getD3D12FragmentShaderSource(),
-                                                           "main",
-                                                           "",
-                                                           nullptr);
 
 // @fb-only
   // @fb-only
@@ -314,7 +283,7 @@ float4 main(PSInput input) : SV_TARGET {
 #if IGL_BACKEND_METAL
   case igl::BackendType::Metal:
     return igl::ShaderStagesCreator::fromLibraryStringInput(
-        device, getMetalShaderSource(), "vertexShader", "fragmentShader", "", nullptr);
+        device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
 #endif // IGL_BACKEND_METAL
 
 #if IGL_BACKEND_OPENGL
@@ -331,7 +300,7 @@ float4 main(PSInput input) : SV_TARGET {
       return igl::ShaderStagesCreator::fromModuleStringInput(
           device, codeVS2.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
     } else {
-      IGL_DEBUG_ABORT("This sample is incompatible with OpenGL 2.1");
+      IGL_DEBUG_ABORT(0, "This sample is incompatible with OpenGL 2.1");
       return nullptr;
     }
   }
@@ -343,45 +312,28 @@ float4 main(PSInput input) : SV_TARGET {
   }
 }
 
-} // namespace
-
 TinyMeshSession::TinyMeshSession(std::shared_ptr<Platform> platform) :
   RenderSession(std::move(platform)) {
-  IGL_LOG_INFO("TinyMeshSession::TinyMeshSession() - Constructor START\n");
   listener_ = std::make_shared<Listener>(*this);
   getPlatform().getInputDispatcher().addKeyListener(listener_);
-
-  // TEMPORARY: Disable ImGui to avoid hang during initialization on D3D12
-  // The ImGui session hangs after font texture upload - needs investigation
-#if 0
-  IGL_LOG_INFO("TinyMeshSession::TinyMeshSession() - Creating ImGui session...\n");
   imguiSession_ = std::make_unique<iglu::imgui::Session>(getPlatform().getDevice(),
                                                          getPlatform().getInputDispatcher());
-#else
-  IGL_LOG_INFO("TinyMeshSession::TinyMeshSession() - Skipping ImGui (temporary workaround)\n");
-#endif
-
-  IGL_LOG_INFO("TinyMeshSession::TinyMeshSession() - Constructor COMPLETE\n");
 }
 
 void TinyMeshSession::initialize() noexcept {
-  IGL_LOG_INFO("TinyMeshSession::initialize() - START\n");
   device_ = &getPlatform().getDevice();
-  IGL_LOG_INFO("TinyMeshSession::initialize() - Got device\n");
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
-  IGL_LOG_INFO("TinyMeshSession::initialize() - Creating vertex buffer\n");
   vb0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Vertex,
-                                          kVertexData0,
-                                          sizeof(kVertexData0),
+                                          vertexData0,
+                                          sizeof(vertexData0),
                                           ResourceStorage::Private,
                                           0,
                                           "Buffer: vertex"),
                                nullptr);
-  IGL_LOG_INFO("TinyMeshSession::initialize() - Creating index buffer\n");
   ib0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Index,
-                                          kIndexData,
-                                          sizeof(kIndexData),
+                                          indexData,
+                                          sizeof(indexData),
                                           ResourceStorage::Private,
                                           0,
                                           "Buffer: index"),
@@ -437,7 +389,6 @@ void TinyMeshSession::initialize() noexcept {
   }
 
   {
-    IGL_LOG_INFO("TinyMeshSession::initialize() - Creating XOR pattern texture\n");
     const uint32_t texWidth = 256;
     const uint32_t texHeight = 256;
     const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::BGRA_SRGB,
@@ -446,7 +397,6 @@ void TinyMeshSession::initialize() noexcept {
                                                 TextureDesc::TextureUsageBits::Sampled,
                                                 "XOR pattern");
     texture0_ = device_->createTexture(desc, nullptr);
-    IGL_LOG_INFO("TinyMeshSession::initialize() - Texture created, generating pixels\n");
     std::vector<uint32_t> pixels(
         static_cast<std::vector<unsigned int>::size_type>(texWidth * texHeight));
 
@@ -456,15 +406,13 @@ void TinyMeshSession::initialize() noexcept {
         pixels[y * texWidth + x] = 0xFF000000 + ((x ^ y) << 16) + ((x ^ y) << 8) + (x ^ y);
       }
     }
-    IGL_LOG_INFO("TinyMeshSession::initialize() - Uploading texture pixels (256x256)...\n");
     texture0_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels.data());
-    IGL_LOG_INFO("TinyMeshSession::initialize() - Texture upload complete\n");
   }
   {
     fs::path dir = fs::current_path();
     // find IGLU somewhere above our current directory
     // @fb-only
-    const char* contentFolder = "shell/resources/";
+    const char* contentFolder = "third-party/content/src/";
     // @fb-only
     while (dir != fs::current_path().root_path() && !fs::exists(dir / fs::path(contentFolder))) {
       dir = dir.parent_path();
@@ -472,24 +420,26 @@ void TinyMeshSession::initialize() noexcept {
     int32_t texWidth = 0;
     int32_t texHeight = 0;
     int32_t channels = 0;
-    uint8_t* pixels =
-        stbi_load((dir / fs::path(contentFolder) / fs::path("images/marble.png")).string().c_str(),
-                  &texWidth,
-                  &texHeight,
-                  &channels,
-                  4);
-    IGL_DEBUG_ASSERT(pixels, "Cannot load texture.");
+    uint8_t* pixels = stbi_load((dir / fs::path(contentFolder) /
+                                 fs::path("bistro/BuildingTextures/wood_polished_01_diff.png"))
+                                    .string()
+                                    .c_str(),
+                                &texWidth,
+                                &texHeight,
+                                &channels,
+                                4);
+    IGL_DEBUG_ASSERT(pixels, "Cannot load textures. Run `deploy_content.py` before running this app.");
     const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::RGBA_SRGB,
                                                 texWidth,
                                                 texHeight,
                                                 TextureDesc::TextureUsageBits::Sampled,
-                                                "marble.png");
+                                                "wood_polished_01_diff.png");
     texture1_ = device_->createTexture(desc, nullptr);
     texture1_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels);
     stbi_image_free(pixels);
   }
   {
-    SamplerStateDesc desc = igl::SamplerStateDesc::newLinear();
+    igl::SamplerStateDesc desc = igl::SamplerStateDesc::newLinear();
     desc.addressModeU = igl::SamplerAddressMode::Repeat;
     desc.addressModeV = igl::SamplerAddressMode::Repeat;
     desc.debugName = "Sampler: linear";
@@ -511,7 +461,7 @@ void TinyMeshSession::initialize() noexcept {
 #endif // TINY_TEST_USE_DEPTH_BUFFER
 
   // initialize random rotation axes for all cubes
-  for (auto& axi : axis) {
+  for (auto& axi : axis_) {
     axi = glm::sphericalRand(1.0f);
   }
 }
@@ -525,7 +475,7 @@ std::shared_ptr<ITexture> TinyMeshSession::getVulkanNativeDepth() {
 
     Result ret;
     std::shared_ptr<ITexture> drawable =
-        vkPlatformDevice->createTextureFromNativeDepth(width, height, &ret);
+        vkPlatformDevice->createTextureFromNativeDepth(width_, height_, &ret);
 
     IGL_DEBUG_ASSERT(ret.isOk());
     return drawable;
@@ -536,14 +486,9 @@ std::shared_ptr<ITexture> TinyMeshSession::getVulkanNativeDepth() {
   return nullptr;
 }
 
-void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
-  static int updateCount = 0;
-  if (updateCount < 3) {
-    IGL_LOG_INFO("TinyMeshSession::update() called #%d\n", ++updateCount);
-  }
-
-  width = surfaceTextures.color->getSize().width;
-  height = surfaceTextures.color->getSize().height;
+void TinyMeshSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
+  width_ = surfaceTextures.color->getSize().width;
+  height_ = surfaceTextures.color->getSize().height;
 
   const float deltaSeconds = getDeltaSeconds();
 
@@ -572,6 +517,16 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
 
     desc.vertexInputState = vertexInput0_;
     desc.shaderStages = getShaderStagesForBackend(*device_);
+    /*
+    desc.shaderStages = ShaderStagesCreator::fromModuleStringInput(*device_,
+                                                                   getVulkanVertexShaderSource(),
+                                                                   "main",
+                                                                   "",
+                                                                   getVulkanFragmentShaderSource(),
+                                                                   "main",
+                                                                   "",
+                                                                   nullptr);
+                                                                   */
 
 #if !TINY_TEST_USE_DEPTH_BUFFER
     desc.cullMode = igl::CullMode::Back;
@@ -581,47 +536,47 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
     desc.debugName = igl::genNameHandle("Pipeline: mesh");
     desc.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE("uTex0");
     desc.fragmentUnitSamplerMap[1] = IGL_NAMEHANDLE("uTex1");
-    renderPipelineStateMesh_ = device_->createRenderPipeline(desc, nullptr);
+    renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
   }
 
   framebuffer_->updateDrawable(surfaceTextures.color);
 
   // from igl/shell/renderSessions/Textured3DCubeSession.cpp
   const float fov = float(45.0f * (M_PI / 180.0f));
-  const float aspectRatio = (float)width / (float)height;
+  const float aspectRatio = (float)width_ / (float)height_;
   perFrame.proj = glm::perspectiveLH(fov, aspectRatio, 0.1f, 500.0f);
   // place a "camera" behind the cubes, the distance depends on the total number of cubes
-  perFrame.view = glm::translate(glm::mat4(1.0f),
-                                 glm::vec3(0.0f, 0.0f, sqrtf(kNumCubes / 16.0f) * 20.0f * kHalf));
-  ubPerFrame_[frameIndex_]->upload(&perFrame, BufferRange(sizeof(perFrame)));
+  perFrame.view =
+      glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, sqrtf(kNumCubes / 16.0f) * 20.0f * half));
+  ubPerFrame_[frameIndex_]->upload(&perFrame, igl::BufferRange(sizeof(perFrame)));
 
   // rotate cubes around random axes
   for (uint32_t i = 0; i != kNumCubes; i++) {
     const float direction = powf(-1, (float)(i + 1));
     const uint32_t cubesInLine = (uint32_t)sqrt(kNumCubes);
-    const glm::vec3 offset =
-        glm::vec3(-1.5f * sqrt(kNumCubes) + 4.0f * static_cast<float>(i % cubesInLine),
-                  -1.5f * sqrt(kNumCubes) + 4.0f * std::floor(static_cast<float>(i) / cubesInLine),
-                  0);
-    perObject[i].model = glm::rotate(
-        glm::translate(glm::mat4(1.0f), offset), float(direction * currentTime_), axis[i]);
+    const vec3 offset =
+        vec3(-1.5f * sqrt(kNumCubes) + 4.0f * static_cast<float>(i % cubesInLine),
+             -1.5f * sqrt(kNumCubes) + 4.0f * floor(static_cast<float>(i) / cubesInLine),
+             0);
+    perObject[i].model =
+        glm::rotate(glm::translate(mat4(1.0f), offset), float(direction * currentTime_), axis_[i]);
   }
 
-  ubPerObject_[frameIndex_]->upload(&perObject, BufferRange(sizeof(perObject)));
+  ubPerObject_[frameIndex_]->upload(&perObject, igl::BufferRange(sizeof(perObject)));
 
   // Command buffers (1-N per thread): create, submit and forget
   const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
-  const igl::Viewport viewport = {0.0f, 0.0f, (float)width, (float)height, 0.0f, +1.0f};
-  const igl::ScissorRect scissor = {0, 0, (uint32_t)width, (uint32_t)height};
+  const igl::Viewport viewport = {0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f};
+  const igl::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
 
   // This will clear the framebuffer
   auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
-  commands->bindRenderPipelineState(renderPipelineStateMesh_);
+  commands->bindRenderPipelineState(renderPipelineState_Mesh_);
   commands->bindViewport(viewport);
   commands->bindScissorRect(scissor);
-  commands->pushDebugGroupLabel("Render Mesh", Color(1, 0, 0));
+  commands->pushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
   commands->bindVertexBuffer(0, *vb0_);
   commands->bindDepthStencilState(depthStencilState_);
   commands->bindBuffer(0, ubPerFrame_[frameIndex_].get());
@@ -636,18 +591,15 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
     commands->drawIndexed(3u * 6u * 2u);
   }
   commands->popDebugGroupLabel();
-
-#if 0
   {
-    imguiSession_->beginFrame(framebufferDesc_, getPlatform().getDisplayContext().pixelsPerPoint);
+    imguiSession_->beginFrame(framebufferDesc_,
+                              getPlatform().getDisplayContext().pixelsPerPoint * 2);
     ImGui::Begin("Texture Viewer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::Image(ImTextureID(texture1_.get()), ImVec2(512, 512));
     ImGui::End();
     imguiSession_->drawFPS(fps_.getAverageFPS());
     imguiSession_->endFrame(getPlatform().getDevice(), *commands);
   }
-#endif
-
   commands->endEncoding();
 
   buffer->present(surfaceTextures.color);
@@ -657,12 +609,15 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
   frameIndex_ = (frameIndex_ + 1) % kNumBufferedFrames;
 }
 
-bool TinyMeshSession::Listener::process(const CharEvent& event) {
-  if (event.character == 't') {
-    session.texture1_.reset();
-    return true;
+bool TinyMeshSession::Listener::process(const KeyEvent& event) {
+  if (!event.isDown) {
+    if (event.key == 84) { // VK_T
+      session.texture1_.reset();
+    }
   }
-  return false;
+  return true;
 }
 
 } // namespace igl::shell
+
+

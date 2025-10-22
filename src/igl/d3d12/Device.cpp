@@ -132,14 +132,89 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   }
 
   // Upload initial data if provided
-  if (desc.data && heapType == D3D12_HEAP_TYPE_UPLOAD) {
-    void* mappedData = nullptr;
-    D3D12_RANGE readRange = {0, 0};
-    hr = buffer->Map(0, &readRange, &mappedData);
+  if (desc.data) {
+    if (heapType == D3D12_HEAP_TYPE_UPLOAD) {
+      void* mappedData = nullptr;
+      D3D12_RANGE readRange = {0, 0};
+      hr = buffer->Map(0, &readRange, &mappedData);
 
-    if (SUCCEEDED(hr)) {
-      std::memcpy(mappedData, desc.data, desc.length);
-      buffer->Unmap(0, nullptr);
+      if (SUCCEEDED(hr)) {
+        std::memcpy(mappedData, desc.data, desc.length);
+        buffer->Unmap(0, nullptr);
+      }
+    } else {
+      // DEFAULT heap: stage through an UPLOAD buffer and copy
+      IGL_LOG_INFO("Device::createBuffer: Staging initial data via UPLOAD heap for DEFAULT buffer\n");
+
+      // Create upload buffer
+      D3D12_HEAP_PROPERTIES uploadHeapProps = {};
+      uploadHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+      uploadHeapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+      uploadHeapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+
+      Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
+      HRESULT upHr = device->CreateCommittedResource(&uploadHeapProps,
+                                                     D3D12_HEAP_FLAG_NONE,
+                                                     &bufferDesc,
+                                                     D3D12_RESOURCE_STATE_GENERIC_READ,
+                                                     nullptr,
+                                                     IID_PPV_ARGS(uploadBuffer.GetAddressOf()));
+      if (FAILED(upHr)) {
+        IGL_LOG_ERROR("Device::createBuffer: Failed to create upload buffer: 0x%08X\n", static_cast<unsigned>(upHr));
+      } else {
+        // Map and copy data
+        void* mapped = nullptr;
+        D3D12_RANGE rr = {0, 0};
+        if (SUCCEEDED(uploadBuffer->Map(0, &rr, &mapped)) && mapped) {
+          std::memcpy(mapped, desc.data, desc.length);
+          uploadBuffer->Unmap(0, nullptr);
+
+          // Record copy commands
+          Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+          Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
+          if (SUCCEEDED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                                       IID_PPV_ARGS(allocator.GetAddressOf()))) &&
+              SUCCEEDED(device->CreateCommandList(0,
+                                                  D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                                  allocator.Get(),
+                                                  nullptr,
+                                                  IID_PPV_ARGS(cmdList.GetAddressOf())))) {
+            // Transition default buffer to COPY_DEST
+            D3D12_RESOURCE_BARRIER toCopyDest = {};
+            toCopyDest.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            toCopyDest.Transition.pResource = buffer.Get();
+            toCopyDest.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            toCopyDest.Transition.StateBefore = initialState; // COMMON
+            toCopyDest.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+            cmdList->ResourceBarrier(1, &toCopyDest);
+
+            // Copy upload -> default
+            cmdList->CopyBufferRegion(buffer.Get(), 0, uploadBuffer.Get(), 0, alignedSize);
+
+            // Transition to a likely-read state based on buffer type
+            D3D12_RESOURCE_STATES targetState = D3D12_RESOURCE_STATE_GENERIC_READ;
+            if (desc.type & BufferDesc::BufferTypeBits::Vertex) {
+              targetState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+            } else if (desc.type & BufferDesc::BufferTypeBits::Uniform) {
+              targetState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+            } else if (desc.type & BufferDesc::BufferTypeBits::Index) {
+              targetState = D3D12_RESOURCE_STATE_INDEX_BUFFER;
+            }
+            D3D12_RESOURCE_BARRIER toTarget = {};
+            toTarget.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            toTarget.Transition.pResource = buffer.Get();
+            toTarget.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            toTarget.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+            toTarget.Transition.StateAfter = targetState;
+            cmdList->ResourceBarrier(1, &toTarget);
+
+            cmdList->Close();
+            ID3D12CommandList* lists[] = {cmdList.Get()};
+            ctx_->getCommandQueue()->ExecuteCommandLists(1, lists);
+            ctx_->waitForGPU();
+          }
+        }
+      }
     }
   }
 
@@ -373,11 +448,14 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   rootParams[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
   D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
+  // Enable full root signature matching TinyMeshSession shaders
   rootSigDesc.NumParameters = 4;
   rootSigDesc.pParameters = rootParams;
   rootSigDesc.NumStaticSamplers = 0;
   rootSigDesc.pStaticSamplers = nullptr;
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+  IGL_LOG_INFO("  Creating root signature with CBVs/SRVs/Samplers\n");
 
   IGL_LOG_INFO("  Serializing root signature...\n");
   HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
@@ -444,18 +522,30 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
   }
 
-  // Depth stencil state - minimal initialization like Microsoft sample
-  psoDesc.DepthStencilState.DepthEnable = FALSE;
-  psoDesc.DepthStencilState.StencilEnable = FALSE;
+  // Depth stencil state
+  if (desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid) {
+    psoDesc.DepthStencilState.DepthEnable = TRUE;
+    psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+    psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+    psoDesc.DepthStencilState.StencilEnable = FALSE;
+  } else {
+    psoDesc.DepthStencilState.DepthEnable = FALSE;
+    psoDesc.DepthStencilState.StencilEnable = FALSE;
+  }
 
   // Render target format (must match swapchain format!)
   psoDesc.NumRenderTargets = 1;
   psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;  // Match swapchain format, not SRGB
-  psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+  if (desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid) {
+    psoDesc.DSVFormat = textureFormatToDXGIFormat(desc.targetDesc.depthAttachmentFormat);
+  } else {
+    psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+  }
 
-  // Sample settings (match Microsoft sample - don't set Quality explicitly)
+  // Sample settings
   psoDesc.SampleMask = UINT_MAX;
   psoDesc.SampleDesc.Count = 1;
+  psoDesc.SampleDesc.Quality = 0;  // Must be 0 for Count=1
 
   // Primitive topology
   psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -486,13 +576,14 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
                    i, attr.name.c_str(), static_cast<int>(attr.format), attr.offset, attr.bufferIndex);
 
       // Map IGL attribute names to D3D12 HLSL semantic names
+      // IMPORTANT: Semantic names must NOT end with numbers - use SemanticIndex field instead
       std::string semanticName;
       if (attr.name == "pos" || attr.name == "position") {
         semanticName = "POSITION";
       } else if (attr.name == "col" || attr.name == "color") {
         semanticName = "COLOR";
-      } else if (attr.name == "st" || attr.name == "uv" || attr.name == "texcoord") {
-        semanticName = "TEXCOORD0";
+      } else if (attr.name == "st" || attr.name == "uv" || attr.name == "texcoord" || attr.name == "texCoords") {
+        semanticName = "TEXCOORD";  // Fixed: was "TEXCOORD0" - number goes in SemanticIndex
       } else if (attr.name == "normal") {
         semanticName = "NORMAL";
       } else if (attr.name == "tangent") {
@@ -589,6 +680,33 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
   hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
   if (FAILED(hr)) {
+    // Print debug layer messages if available
+    Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
+    if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
+      UINT64 numMessages = infoQueue->GetNumStoredMessages();
+      IGL_LOG_INFO("  D3D12 Info Queue has %llu messages:\n", numMessages);
+      for (UINT64 i = 0; i < numMessages; ++i) {
+        SIZE_T messageLength = 0;
+        infoQueue->GetMessage(i, nullptr, &messageLength);
+        if (messageLength > 0) {
+          auto message = (D3D12_MESSAGE*)malloc(messageLength);
+          if (message && SUCCEEDED(infoQueue->GetMessage(i, message, &messageLength))) {
+            const char* severityStr = "UNKNOWN";
+            switch (message->Severity) {
+              case D3D12_MESSAGE_SEVERITY_CORRUPTION: severityStr = "CORRUPTION"; break;
+              case D3D12_MESSAGE_SEVERITY_ERROR: severityStr = "ERROR"; break;
+              case D3D12_MESSAGE_SEVERITY_WARNING: severityStr = "WARNING"; break;
+              case D3D12_MESSAGE_SEVERITY_INFO: severityStr = "INFO"; break;
+              case D3D12_MESSAGE_SEVERITY_MESSAGE: severityStr = "MESSAGE"; break;
+            }
+            IGL_LOG_INFO("    [%s] %s\n", severityStr, message->pDescription);
+          }
+          free(message);
+        }
+      }
+      infoQueue->ClearStoredMessages();
+    }
+
     char errorMsg[512];
     snprintf(errorMsg, sizeof(errorMsg),
              "Failed to create pipeline state. HRESULT: 0x%08X\n"
@@ -761,3 +879,4 @@ size_t Device::getShaderCompilationCount() const {
 }
 
 } // namespace igl::d3d12
+

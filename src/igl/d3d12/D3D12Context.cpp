@@ -107,15 +107,14 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
 }
 
 void D3D12Context::createDevice() {
-  // Debug layer disabled temporarily due to hang in CreateGraphicsPipelineState
-#if 0 // def _DEBUG
-  // Enable debug layer (but NOT GPU-based validation which can cause hangs)
+  // Re-enable debug layer to capture validation messages
   Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
   if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf())))) {
     debugController->EnableDebugLayer();
-    IGL_LOG_INFO("D3D12Context: Debug layer ENABLED (without GPU validation)\n");
+    IGL_LOG_INFO("D3D12Context: Debug layer ENABLED (to capture validation messages)\n");
+  } else {
+    IGL_LOG_ERROR("D3D12Context: Failed to get D3D12 debug interface - Graphics Tools may not be installed\n");
   }
-#endif
 
   // Create DXGI factory
   HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(dxgiFactory_.GetAddressOf()));
@@ -148,14 +147,15 @@ void D3D12Context::createDevice() {
   }
 
 #ifdef _DEBUG
-  // Setup info queue to break on errors and warnings
+  // Setup info queue to print validation messages without breaking
   Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
   if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
-    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
-    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
-    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, FALSE); // Don't break on warnings
+    // DO NOT break on errors - this causes hangs when no debugger is attached
+    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, FALSE);
+    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, FALSE);
+    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, FALSE);
 
-    // Print all messages to console
+    // Filter out INFO messages to reduce noise (still show CORRUPTION, ERROR, WARNING)
     D3D12_MESSAGE_SEVERITY severities[] = {
       D3D12_MESSAGE_SEVERITY_INFO
     };
@@ -164,6 +164,8 @@ void D3D12Context::createDevice() {
     filter.DenyList.NumSeverities = 1;
     filter.DenyList.pSeverityList = severities;
     infoQueue->PushStorageFilter(&filter);
+
+    IGL_LOG_INFO("D3D12Context: Info queue configured (break on error: DISABLED)\n");
   }
 #endif
 }

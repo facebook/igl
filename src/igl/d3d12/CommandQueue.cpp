@@ -8,6 +8,7 @@
 #include <igl/d3d12/CommandQueue.h>
 #include <igl/d3d12/CommandBuffer.h>
 #include <igl/d3d12/Device.h>
+#include <stdexcept>
 
 namespace igl::d3d12 {
 
@@ -24,20 +25,70 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   auto* d3dCommandList = d3dCommandBuffer.getCommandList();
   auto& ctx = device_.getD3D12Context();
   auto* d3dCommandQueue = ctx.getCommandQueue();
+  auto* d3dDevice = ctx.getDevice();
+
+  IGL_LOG_INFO("CommandQueue::submit() - Executing command list...\n");
 
   // Execute command list
   ID3D12CommandList* commandLists[] = {d3dCommandList};
   d3dCommandQueue->ExecuteCommandLists(1, commandLists);
 
+  IGL_LOG_INFO("CommandQueue::submit() - Command list executed, checking device status...\n");
+
+  // Check for device removed error
+  HRESULT hr = d3dDevice->GetDeviceRemovedReason();
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("DEVICE REMOVED! Reason: 0x%08X\n", static_cast<unsigned>(hr));
+
+    // Print debug layer messages
+    Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
+    if (SUCCEEDED(d3dDevice->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
+      UINT64 numMessages = infoQueue->GetNumStoredMessages();
+      IGL_LOG_INFO("D3D12 Info Queue has %llu messages:\n", numMessages);
+      for (UINT64 i = 0; i < numMessages; ++i) {
+        SIZE_T messageLength = 0;
+        infoQueue->GetMessage(i, nullptr, &messageLength);
+        if (messageLength > 0) {
+          auto message = (D3D12_MESSAGE*)malloc(messageLength);
+          if (message && SUCCEEDED(infoQueue->GetMessage(i, message, &messageLength))) {
+            const char* severityStr = "UNKNOWN";
+            switch (message->Severity) {
+              case D3D12_MESSAGE_SEVERITY_CORRUPTION: severityStr = "CORRUPTION"; break;
+              case D3D12_MESSAGE_SEVERITY_ERROR: severityStr = "ERROR"; break;
+              case D3D12_MESSAGE_SEVERITY_WARNING: severityStr = "WARNING"; break;
+              case D3D12_MESSAGE_SEVERITY_INFO: severityStr = "INFO"; break;
+              case D3D12_MESSAGE_SEVERITY_MESSAGE: severityStr = "MESSAGE"; break;
+            }
+            IGL_LOG_INFO("  [%s] %s\n", severityStr, message->pDescription);
+          }
+          free(message);
+        }
+      }
+    }
+
+    throw std::runtime_error("D3D12 device removed - check debug output above");
+  }
+
+  IGL_LOG_INFO("CommandQueue::submit() - Device OK, presenting...\n");
+
   // Present if this is end of frame
   auto* swapChain = ctx.getSwapChain();
   if (swapChain) {
-    swapChain->Present(1, 0); // VSync on
+    HRESULT presentHr = swapChain->Present(1, 0); // VSync on
+    if (FAILED(presentHr)) {
+      IGL_LOG_ERROR("Present failed: 0x%08X\n", static_cast<unsigned>(presentHr));
+    } else {
+      IGL_LOG_INFO("CommandQueue::submit() - Present OK\n");
+    }
   }
+
+  IGL_LOG_INFO("CommandQueue::submit() - Waiting for GPU...\n");
 
   // Wait for GPU to finish (simple synchronization for Phase 2)
   // TODO: For Phase 3+, use per-frame fences for better performance
   ctx.waitForGPU();
+
+  IGL_LOG_INFO("CommandQueue::submit() - Complete!\n");
 
   return 0;
 }

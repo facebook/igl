@@ -173,9 +173,10 @@ Result Texture::upload(const TextureRangeDesc& range,
 
   cmdList->CopyTextureRegion(&dst, range.x, range.y, range.z, &src, nullptr);
 
-  // Transition texture back to COMMON state
+  // Transition texture to PIXEL_SHADER_RESOURCE state for rendering
+  // This is more explicit than relying on COMMON state implicit promotion
   barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
   cmdList->ResourceBarrier(1, &barrier);
 
   cmdList->Close();

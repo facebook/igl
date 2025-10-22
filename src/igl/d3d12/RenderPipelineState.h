@@ -28,11 +28,13 @@ class RenderPipelineState final : public IRenderPipelineState {
   // D3D12-specific accessors
   ID3D12PipelineState* getPipelineState() const { return pipelineState_.Get(); }
   ID3D12RootSignature* getRootSignature() const { return rootSignature_.Get(); }
+  uint32_t getVertexStride() const { return vertexStride_; }
 
  private:
   Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState_;
   Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
   std::shared_ptr<IRenderPipelineReflection> reflection_;
+  uint32_t vertexStride_ = 0;
 };
 
 } // namespace igl::d3d12

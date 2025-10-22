@@ -17,7 +17,9 @@ class CommandBuffer;
 
 class RenderCommandEncoder final : public IRenderCommandEncoder {
  public:
-  RenderCommandEncoder(CommandBuffer& commandBuffer, const RenderPassDesc& renderPass);
+  RenderCommandEncoder(CommandBuffer& commandBuffer,
+                       const RenderPassDesc& renderPass,
+                       const std::shared_ptr<IFramebuffer>& framebuffer);
   ~RenderCommandEncoder() override = default;
 
   void endEncoding() override;
@@ -72,12 +74,20 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
                      const uint32_t* dynamicOffsets) override;
 
  private:
-  CommandBuffer& commandBuffer_;
+ CommandBuffer& commandBuffer_;
   ID3D12GraphicsCommandList* commandList_;
 
-  // Simple descriptor allocation (per-frame, reset on next frame)
+ // Simple descriptor allocation (per-frame, reset on next frame)
   UINT nextCbvSrvUavDescriptor_ = 0;
   UINT nextSamplerDescriptor_ = 0;
+
+  // Cache current vertex stride from bound pipeline's input layout
+  UINT currentVertexStride_ = 0;
+
+  // Depth support
+  std::shared_ptr<IFramebuffer> framebuffer_;
+  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvHeap_;
+  D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle_{};
 };
 
 } // namespace igl::d3d12
