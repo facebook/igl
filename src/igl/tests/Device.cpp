@@ -205,10 +205,13 @@ TEST_F(DeviceTest, GetBackendType) {
     ASSERT_EQ(backend_, util::kBackendOgl);
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
     ASSERT_EQ(backend_, util::kBackendVul);
+  } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
+    ASSERT_EQ(backend_, util::kBackendD3D12);
   } else {
-    // Unknow backend. Please add to this test.
     ASSERT_TRUE(0);
   }
 }
 
 } // namespace igl::tests
+
+

@@ -37,7 +37,13 @@
       "Bash(\"/c/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64/fxc.exe\" //T vs_5_0 //E main //Fo /tmp/imgui_vs_fxc.cso /tmp/imgui_vs_d3d12.hlsl)",
       "Bash(\"/c/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64/fxc.exe\" //T ps_5_0 //E main //Fo /tmp/imgui_ps_fxc.cso /tmp/imgui_ps_d3d12.hlsl)",
       "Bash(git reset:*)",
-      "Bash(./TinyMeshSession_d3d12.exe:*)"
+      "Bash(./TinyMeshSession_d3d12.exe:*)",
+      "Bash(systeminfo:*)",
+      "Bash(wmic os get:*)",
+      "Bash(ctest:*)",
+      "Bash(./src/igl/tests/Debug/IGLTests.exe:*)",
+      "Bash(./IGLTests.exe:*)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []

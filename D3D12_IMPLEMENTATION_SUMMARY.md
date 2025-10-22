@@ -1,5 +1,23 @@
 # DirectX 12 Backend Implementation - Complete
 
+> Parallel Execution Plan (active)
+
+- Goal: finish IGL’s D3D12 backend so backend‑agnostic tests pass and TinyMeshSession (triangle + ImGui) runs without changing sample logic (only add D3D12 shader source alongside existing backend branches). GLSL bridging is deferred; we will use HLSL for D3D12 now.
+
+Phases
+- Phase A — Tests inventory and initial run (Owner: Claude agent)
+  - Build and run `src/igl/tests/`; produce PASS/FAIL/SKIP per test; capture logs and suspected causes.
+  - Deliverables: markdown/JSON report; commands to reproduce.
+  - Status: [X] Done
+  - Report: [tests/reports/d3d12_test_report.md](tests/reports/d3d12_test_report.md)
+  - **Key Finding**: No D3D12 test infrastructure exists. Test device abstraction, CMakeLists.txt integration, and d3d12-specific tests are all missing. Generic tests (27 suites) exist but cannot run with D3D12 backend.
+- Phase B — D3D12 reflection + feature limits (Owner: Me)
+  - Implement D3DReflect‑based RenderPipelineReflection (buffers, members, textures, samplers) and realistic `hasFeature`/`getFeatureLimits` values.
+  - Acceptance: IGLU ImGui finds `projectionMatrix` and `texture`; reflection tests pass.
+  - Status: [ ] Not started  [ ] In progress  [ ] Done
+- Next: Descriptor management & caching; CBV alignment handling; framebuffer/depth/barriers polish; re‑run tests; then verify TinyMeshSession (rev 1b3fb840) with a D3D12 HLSL branch only.
+
+
 ## Status: ✅ FULLY FUNCTIONAL
 
 The DirectX 12 backend for IGL (Intermediate Graphics Library) has been successfully implemented and is rendering both simple and complex scenes.

@@ -32,7 +32,7 @@ class D3D12Context {
 
   void waitForGPU();
 
- private:
+ protected:
   void createDevice();
   void createCommandQueue();
   void createSwapChain(HWND hwnd, uint32_t width, uint32_t height);

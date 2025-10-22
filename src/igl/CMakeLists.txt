@@ -70,7 +70,9 @@ endif()
 
 # OpenGL tests use GLES on Windows and we do not use Angle with CMake - so OGL
 # tests are disabled for now on Windows
-if(IGL_WITH_TESTS AND IGL_WITH_IGLU AND (IGL_WITH_VULKAN OR (NOT WIN32)))
+# Enable tests when requested. On Windows, allow tests if either Vulkan or D3D12 is enabled
+# (previously required Vulkan on Windows, which blocked D3D12-only test runs).
+if(IGL_WITH_TESTS AND IGL_WITH_IGLU AND (IGL_WITH_VULKAN OR IGL_WITH_D3D12 OR (NOT WIN32)))
   add_subdirectory(tests)
   if((IGL_WITH_OPENGL OR IGL_WITH_OPENGLES) AND NOT APPLE)
     target_sources(IGLTests PRIVATE opengl/egl/Context.cpp opengl/egl/Device.cpp opengl/egl/HWDevice.cpp

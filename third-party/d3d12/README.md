@@ -84,3 +84,17 @@ reg query "HKLM\SOFTWARE\Microsoft\Windows Kits\Installed Roots" /v KitsRoot10
 - [DirectX Shader Compiler](https://github.com/microsoft/DirectXShaderCompiler)
 - [DirectX-Headers](https://github.com/microsoft/DirectX-Headers)
 - [Agility SDK](https://devblogs.microsoft.com/directx/directx12agility/)
+
+## Test Runtime Tweaks
+
+When running IGL unit tests with the D3D12 backend, the headless context supports tuning descriptor heap sizes via environment variables:
+
+- `IGL_D3D12_CBV_SRV_UAV_HEAP_SIZE` (default: `256`)
+- `IGL_D3D12_SAMPLER_HEAP_SIZE` (default: `16`)
+
+Example (PowerShell):
+```
+$env:IGL_D3D12_CBV_SRV_UAV_HEAP_SIZE = 512
+$env:IGL_D3D12_SAMPLER_HEAP_SIZE = 32
+ctest -C Debug -V
+```

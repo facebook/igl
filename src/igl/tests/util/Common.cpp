@@ -165,6 +165,25 @@ void createSimpleShaderStages(const std::shared_ptr<IDevice>& dev,
                        fragShader,
                        std::string(igl::tests::data::shader::kShaderFunc),
                        stages);
+  } else if (backendVersion.flavor == igl::BackendFlavor::D3D12) {
+    // Minimal HLSL equivalent used for D3D12 tests
+    const char* vsHlsl = R"(
+struct VSIn { float4 position_in : POSITION; float2 uv_in : TEXCOORD0; };
+struct PSIn { float4 position : SV_POSITION; float2 uv : TEXCOORD0; };
+PSIn main(VSIn i) { PSIn o; o.position = i.position_in; o.uv = i.uv_in; return o; }
+)";
+    const char* psHlsl = R"(
+Texture2D inputImage : register(t0);
+SamplerState samp0 : register(s0);
+struct PSIn { float4 position : SV_POSITION; float2 uv : TEXCOORD0; };
+float4 main(PSIn i) : SV_TARGET { return inputImage.Sample(samp0, i.uv); }
+)";
+    createShaderStages(dev,
+                       vsHlsl,
+                       std::string("main"),
+                       psHlsl,
+                       std::string("main"),
+                       stages);
   } else {
     ASSERT_TRUE(0);
   }

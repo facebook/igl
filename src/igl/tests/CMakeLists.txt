@@ -89,6 +89,8 @@ add_subdirectory(${IGL_ROOT_DIR}/third-party/deps/src/gtest "gtest")
 
 igl_set_folder(gtest "third-party")
 igl_set_folder(gtest_main "third-party")
+igl_set_cxxstd(gtest 17)
+igl_set_cxxstd(gtest_main 17)
 
 target_link_libraries(IGLTests PUBLIC IGLLibrary)
 target_link_libraries(IGLTests PUBLIC gtest)

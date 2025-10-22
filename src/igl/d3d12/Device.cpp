@@ -840,17 +840,39 @@ const IPlatformDevice& Device::getPlatformDevice() const noexcept {
   return *platformDevice_;
 }
 
-bool Device::hasFeature(DeviceFeatures /*feature*/) const {
-  return false;
+bool Device::hasFeature(DeviceFeatures feature) const {
+  switch (feature) {
+    case DeviceFeatures::CopyBuffer:
+    case DeviceFeatures::DrawInstanced:
+    case DeviceFeatures::MultipleRenderTargets:
+    case DeviceFeatures::SRGB:
+    case DeviceFeatures::SRGBSwapchain:
+    case DeviceFeatures::UniformBlocks:
+      return true;
+    default:
+      return false;
+  }
 }
 
 bool Device::hasRequirement(DeviceRequirement /*requirement*/) const {
   return false;
 }
 
-bool Device::getFeatureLimits(DeviceFeatureLimits /*featureLimits*/, size_t& result) const {
-  result = 0;
-  return false;
+bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const {
+  switch (featureLimits) {
+    case DeviceFeatureLimits::BufferAlignment:
+      result = 256; // D3D12 constant buffer alignment
+      return true;
+    case DeviceFeatureLimits::MaxUniformBufferBytes:
+      result = 64 * 1024; // 64KB typical CB size
+      return true;
+    case DeviceFeatureLimits::MaxBindBytesBytes:
+      result = 0; // bind-bytes not supported on D3D12 path
+      return true;
+    default:
+      result = 0;
+      return false;
+  }
 }
 
 ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(TextureFormat /*format*/) const {
