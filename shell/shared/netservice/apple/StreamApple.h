@@ -18,7 +18,12 @@ namespace igl::shell::netservice {
 // ----------------------------------------------------------------------------
 
 struct StreamAdapterApple final {
+  StreamAdapterApple() = default;
   ~StreamAdapterApple();
+  StreamAdapterApple(const StreamAdapterApple&) = delete;
+  StreamAdapterApple& operator=(const StreamAdapterApple&) = delete;
+  StreamAdapterApple(StreamAdapterApple&&) = delete;
+  StreamAdapterApple& operator=(StreamAdapterApple&&) = delete;
 
   bool initialize(Stream* owner, NSStream* stream) noexcept;
 
