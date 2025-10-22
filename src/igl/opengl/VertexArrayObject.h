@@ -21,6 +21,10 @@ class VertexArrayObject final : public WithContext {
  public:
   explicit VertexArrayObject(IContext& context) : WithContext(context) {}
   ~VertexArrayObject() override;
+  VertexArrayObject(const VertexArrayObject&) = delete;
+  VertexArrayObject& operator=(const VertexArrayObject&) = delete;
+  VertexArrayObject(VertexArrayObject&&) = delete;
+  VertexArrayObject& operator=(VertexArrayObject&&) = delete;
 
   Result create();
   void bind() const;
