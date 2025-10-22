@@ -20,6 +20,10 @@ class ComputePipelineState final : public IComputePipelineState, public Pipeline
  public:
   ComputePipelineState(const igl::vulkan::Device& device, ComputePipelineDesc desc);
   ~ComputePipelineState() override;
+  ComputePipelineState(const ComputePipelineState&) = delete;
+  ComputePipelineState& operator=(const ComputePipelineState&) = delete;
+  ComputePipelineState(ComputePipelineState&&) = delete;
+  ComputePipelineState& operator=(ComputePipelineState&&) = delete;
   std::shared_ptr<IComputePipelineReflection> computePipelineReflection() override {
     return nullptr;
   }
