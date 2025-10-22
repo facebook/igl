@@ -6,11 +6,22 @@
  */
 
 #include <memory>
+#include <shell/shared/platform/Platform.h>
+#if IGL_PLATFORM_ANDROID
 #include <shell/shared/platform/android/PlatformAndroid.h>
+#endif
+#if IGL_PLATFORM_IOS
 #include <shell/shared/platform/ios/PlatformIos.h>
+#endif
+#if IGL_PLATFORM_LINUX
 #include <shell/shared/platform/linux/PlatformLinux.h>
+#endif
+#if IGL_PLATFORM_MACOSX
 #include <shell/shared/platform/mac/PlatformMac.h>
+#endif
+#if IGL_PLATFORM_WINDOWS
 #include <shell/shared/platform/win/PlatformWin.h>
+#endif
 #include <shell/shared/renderSession/ShellParams.h>
 #include <shell/shared/testShell/TestShell.h>
 #include <igl/tests/util/device/TestDevice.h>

@@ -11,7 +11,6 @@
 #include <fstream>
 #include <iterator>
 #include <string>
-#include <igl/Common.h>
 // @fb-only
 // @fb-only
 // @fb-only
