@@ -181,10 +181,8 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
   // create images, image views and framebuffers
   swapchainTextures_ = std::make_unique<std::shared_ptr<VulkanTexture>[]>(numSwapchainImages_);
   for (uint32_t i = 0; i < numSwapchainImages_; i++) {
-    auto image = VulkanImage(ctx_,
-                             ctx_.getVkDevice(),
-                             swapchainImages[i],
-                             IGL_FORMAT("Image: swapchain #{}", i).c_str());
+    auto image =
+        VulkanImage(ctx_, swapchainImages[i], IGL_FORMAT("Image: swapchain #{}", i).c_str());
     image.extent_ = {width, height, 1};
     // set usage flags for retrieved images
     image.usageFlags_ = usageFlags;
@@ -250,7 +248,6 @@ void VulkanSwapchain::lazyAllocateDepthBuffer() const {
 #endif
 
   auto depthImage = VulkanImage(ctx_,
-                                ctx_.getVkDevice(),
                                 VkExtent3D{width_, height_, 1},
                                 VK_IMAGE_TYPE_2D,
                                 depthFormat,

@@ -1350,7 +1350,6 @@ VulkanImage VulkanContext::createImage(VkImageType imageType,
   }
 
   return {*this,
-          vkDevice_,
           extent,
           imageType,
           format,
@@ -1605,7 +1604,7 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTextureFromVkImage(
     VulkanImageCreateInfo imageCreateInfo,
     VulkanImageViewCreateInfo imageViewCreateInfo,
     const char* IGL_NULLABLE debugName) const {
-  auto iglImage = VulkanImage(*this, vkDevice_, vkImage, imageCreateInfo, debugName);
+  auto iglImage = VulkanImage(*this, vkImage, imageCreateInfo, debugName);
   auto imageView = iglImage.createImageView(imageViewCreateInfo, debugName);
   return createTexture(std::move(iglImage), std::move(imageView), debugName);
 }
