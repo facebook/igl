@@ -167,7 +167,6 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
       D3D12_VIEWPORT vp{}; vp.TopLeftX=0; vp.TopLeftY=0; vp.Width=(float)dims.width; vp.Height=(float)dims.height; vp.MinDepth=0; vp.MaxDepth=1;
       commandList_->RSSetViewports(1, &vp);
       D3D12_RECT sc{}; sc.left=0; sc.top=0; sc.right=(LONG)dims.width; sc.bottom=(LONG)dims.height; commandList_->RSSetScissorRects(1, &sc);
-      IGL_LOG_INFO("RenderCommandEncoder: Set default viewport/scissor to %ux%u\n", dims.width, dims.height);
     }
   } else {
     auto* backBufferRes = context.getCurrentBackBuffer();
@@ -176,7 +175,6 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
       D3D12_VIEWPORT vp = {}; vp.TopLeftX=0; vp.TopLeftY=0; vp.Width=(float)bbDesc.Width; vp.Height=(float)bbDesc.Height; vp.MinDepth=0; vp.MaxDepth=1;
       commandList_->RSSetViewports(1, &vp);
       D3D12_RECT scissor = {}; scissor.left=0; scissor.top=0; scissor.right=(LONG)bbDesc.Width; scissor.bottom=(LONG)bbDesc.Height; commandList_->RSSetScissorRects(1, &scissor);
-      IGL_LOG_INFO("RenderCommandEncoder: Set default viewport/scissor to back buffer %llux%u\n", bbDesc.Width, bbDesc.Height);
     }
   }
 }
@@ -326,30 +324,18 @@ void RenderCommandEncoder::bindPushConstants(const void* /*data*/,
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t /*target*/,
                                             ISamplerState* samplerState) {
-  static int callCount = 0;
-  if (callCount < 3) {
-    IGL_LOG_INFO("bindSamplerState called #%d: index=%zu, sampler=%p\n", ++callCount, index, samplerState);
-  }
-  // Enable binding: create sampler in the shader-visible sampler heap and set the descriptor table
+  // Enable binding: create SRV in the shader-visible CBV/SRV/UAV heap and set the descriptor table
   if (!samplerState || index >= 2) {
-    IGL_LOG_INFO("bindSamplerState: early return (sampler=%p, index=%zu)\n", samplerState, index);
     return;  // Only support 2 sampler slots (s0, s1) for now
   }
 
   auto& context = commandBuffer_.getContext();
   auto* device = context.getDevice();
-
-  // Use descriptor heap manager
-  auto* heapMgr = context.getDescriptorHeapManager();
-  if (!heapMgr) {
-    IGL_LOG_ERROR("bindSamplerState: no descriptor heap manager\n");
-    return;
-  }
-
-  // For simple cases, use slot 0 for s0 (first sampler)
-  // This matches the root signature which expects descriptor table starting at s0
-  const uint32_t descriptorIndex = 0;
-  IGL_LOG_INFO("bindSamplerState: using descriptor slot %u for s0\n", descriptorIndex);
+  // Allocate sampler descriptor from the same sampler heap bound on the command list (context heap)
+  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getSamplerHeap()->GetCPUDescriptorHandleForHeapStart();
+  UINT descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+  UINT descriptorIndex = nextSamplerDescriptor_ + static_cast<UINT>(index);
+  cpuHandle.ptr += descriptorIndex * descriptorSize;
 
   // Create sampler descriptor from ISamplerState if provided, else fallback
   D3D12_SAMPLER_DESC samplerDesc = {};
@@ -371,14 +357,19 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
     samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
   }
 
-  // Create sampler descriptor at the allocated slot
-  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heapMgr->getSamplerCpuHandle(descriptorIndex);
-  IGL_LOG_INFO("bindSamplerState: creating sampler at slot %u, CPU handle 0x%llx\n", descriptorIndex, cpuHandle.ptr);
   device->CreateSampler(&samplerDesc, cpuHandle);
 
-  // Cache sampler GPU handle - will be bound in drawIndexed along with texture
-  cachedSamplerGpuHandle_ = heapMgr->getSamplerGpuHandle(descriptorIndex);
-  IGL_LOG_INFO("bindSamplerState: cached sampler GPU handle 0x%llx\n", cachedSamplerGpuHandle_.ptr);
+  // Bind the sampler descriptor table (root parameter 3)
+  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getSamplerHeap()->GetGPUDescriptorHandleForHeapStart();
+  UINT samplerDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+  gpuHandle.ptr += descriptorIndex * samplerDescSize;
+  ID3D12DescriptorHeap* heaps[] = {context.getCbvSrvUavHeap(), context.getSamplerHeap()};
+  commandList_->SetDescriptorHeaps(2, heaps);
+  commandList_->SetGraphicsRootDescriptorTable(3, gpuHandle);
+  UINT after = descriptorIndex + 1;
+  if (after > nextSamplerDescriptor_) {
+    nextSamplerDescriptor_ = after;
+  }
 }
 void RenderCommandEncoder::bindTexture(size_t index,
                                        uint8_t /*target*/,
@@ -403,28 +394,24 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   auto* d3dTexture = static_cast<Texture*>(texture);
   ID3D12Resource* resource = d3dTexture->getResource();
 
-  if (!resource) {
-    IGL_LOG_ERROR("bindTexture: resource is null\n");
-    return;
-  }
+  // Get or create SRV for this texture
+  // For simplicity, we create SRVs on the fly at the next available slot in the heap
+  // A real implementation would cache these
 
-  IGL_LOG_INFO("bindTexture: resource=%p, format=%d, dimensions=%ux%u\n",
-               resource, d3dTexture->getFormat(),
-               d3dTexture->getDimensions().width, d3dTexture->getDimensions().height);
+  IGL_LOG_INFO("bindTexture: getting heap handles...\n");
+  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = {};
+  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = {};
+  UINT descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-  // Use descriptor heap manager
-  auto* heapMgr = context.getDescriptorHeapManager();
-  if (!heapMgr) {
-    IGL_LOG_ERROR("bindTexture: no descriptor heap manager\n");
-    return;
-  }
+  // Allocate in the same shader-visible heap bound on the command list (context heap)
+  UINT descriptorIndex = nextCbvSrvUavDescriptor_ + static_cast<UINT>(index);
+  cpuHandle = context.getCbvSrvUavHeap()->GetCPUDescriptorHandleForHeapStart();
+  cpuHandle.ptr += descriptorIndex * descriptorSize;
+  gpuHandle = context.getCbvSrvUavHeap()->GetGPUDescriptorHandleForHeapStart();
+  gpuHandle.ptr += descriptorIndex * descriptorSize;
 
-  // For simple cases, use slot 0 for t0 (first texture)
-  // This matches the root signature which expects descriptor table starting at t0
-  const uint32_t descriptorIndex = 0;
-  IGL_LOG_INFO("bindTexture: using descriptor slot %u for t0\n", descriptorIndex);
-
-  // Create SRV descriptor at the allocated slot
+  IGL_LOG_INFO("bindTexture: creating SRV desc...\n");
+  // Create SRV
   D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
   srvDesc.Format = textureFormatToDXGIFormat(d3dTexture->getFormat());
   srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
@@ -432,21 +419,32 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   srvDesc.Texture2D.MipLevels = d3dTexture->getNumMipLevels();
   srvDesc.Texture2D.MostDetailedMip = 0;
 
-  // Verify we're using the right heap
-  auto* heap = heapMgr->getCbvSrvUavHeap();
-  D3D12_CPU_DESCRIPTOR_HANDLE heapStartCpu = heap->GetCPUDescriptorHandleForHeapStart();
-  D3D12_GPU_DESCRIPTOR_HANDLE heapStartGpu = heap->GetGPUDescriptorHandleForHeapStart();
+  IGL_LOG_INFO("bindTexture: getting resource...\n");
+  if (resource) {
+    // Ensure resource is in a shader-readable state for this encoding
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = resource;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON; // best-effort
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    commandList_->ResourceBarrier(1, &barrier);
 
-  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heapMgr->getCbvSrvUavCpuHandle(descriptorIndex);
-  IGL_LOG_INFO("bindTexture: heap=%p, heapStart CPU=0x%llx, GPU=0x%llx\n", heap, heapStartCpu.ptr, heapStartGpu.ptr);
-  IGL_LOG_INFO("bindTexture: creating SRV at slot %u, CPU handle 0x%llx\n", descriptorIndex, cpuHandle.ptr);
-  device->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
+    IGL_LOG_INFO("bindTexture: creating SRV...\n");
+    device->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
 
-  // Cache texture GPU handle - will be bound in drawIndexed along with sampler
-  cachedTextureGpuHandle_ = heapMgr->getCbvSrvUavGpuHandle(descriptorIndex);
-  IGL_LOG_INFO("bindTexture: cached texture GPU handle 0x%llx (offset from heap start: %lld)\n",
-               cachedTextureGpuHandle_.ptr, (int64_t)(cachedTextureGpuHandle_.ptr - heapStartGpu.ptr));
+    IGL_LOG_INFO("bindTexture: setting descriptor table...\n");
+    // Re-assert heaps and bind the descriptor table (root parameter 2)
+    ID3D12DescriptorHeap* heaps[] = {context.getCbvSrvUavHeap(), context.getSamplerHeap()};
+    commandList_->SetDescriptorHeaps(2, heaps);
+    commandList_->SetGraphicsRootDescriptorTable(2, gpuHandle);
 
+    // Bump descriptor cursor to avoid reuse
+    UINT after = descriptorIndex + 1;
+    if (after > nextCbvSrvUavDescriptor_) {
+      nextCbvSrvUavDescriptor_ = after;
+    }
+  }
   IGL_LOG_INFO("bindTexture: done\n");
 }
 void RenderCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, const void* /*data*/) {}
@@ -471,39 +469,10 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
     IGL_LOG_INFO("DrawIndexed called: indexCount=%zu, instanceCount=%u\n", indexCount, instanceCount);
     drawCallCount++;
   }
-
-  // D3D12 requires ALL root parameters to be bound before drawing
-  // Root signature defines CBVs at parameters 0 and 1, but the test shader doesn't use them
-  // Note: Null CBV addresses (0) should be valid according to D3D12 spec for unused resources
-  // However, let's verify if this might be causing issues
-  commandList_->SetGraphicsRootConstantBufferView(0, 0);  // b0 - null address (unused by shader)
-  commandList_->SetGraphicsRootConstantBufferView(1, 0);  // b1 - null address (unused by shader)
-  IGL_LOG_INFO("DrawIndexed: bound null CBVs for unused root parameters 0 and 1\n");
-
-  // CRITICAL: SetDescriptorHeaps invalidates all previously bound descriptor tables
-  // We must set heaps ONCE, then bind ALL descriptor tables (texture + sampler)
+  // Reassert heaps right before draw to guarantee visibility of SRV/Sampler tables
   auto& context = commandBuffer_.getContext();
-  auto* heapMgr = context.getDescriptorHeapManager();
-  if (heapMgr) {
-    // Set both descriptor heaps (CBV/SRV/UAV and Sampler)
-    ID3D12DescriptorHeap* heaps[] = {heapMgr->getCbvSrvUavHeap(), heapMgr->getSamplerHeap()};
-    IGL_LOG_INFO("DrawIndexed: Setting descriptor heaps: CBV/SRV/UAV=%p, Sampler=%p\n", heaps[0], heaps[1]);
-    commandList_->SetDescriptorHeaps(2, heaps);
-
-    // Now bind descriptor tables - these are valid after SetDescriptorHeaps
-    // Parameter 2: Texture SRV table (t0)
-    if (cachedTextureGpuHandle_.ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(2, cachedTextureGpuHandle_);
-      IGL_LOG_INFO("DrawIndexed: bound texture descriptor table (handle=0x%llx)\n", cachedTextureGpuHandle_.ptr);
-    }
-
-    // Parameter 3: Sampler table (s0)
-    if (cachedSamplerGpuHandle_.ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(3, cachedSamplerGpuHandle_);
-      IGL_LOG_INFO("DrawIndexed: bound sampler descriptor table (handle=0x%llx)\n", cachedSamplerGpuHandle_.ptr);
-    }
-  }
-
+  ID3D12DescriptorHeap* heaps[] = {context.getCbvSrvUavHeap(), context.getSamplerHeap()};
+  commandList_->SetDescriptorHeaps(2, heaps);
   commandList_->DrawIndexedInstanced(static_cast<UINT>(indexCount),
                                      instanceCount,
                                      firstIndex,

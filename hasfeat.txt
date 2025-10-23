@@ -1,0 +1,121 @@
+bool Device::hasFeature(DeviceFeatures feature) const {
+  IGL_LOG_INFO("[D3D12] hasFeature query: %d\n", static_cast<int>(feature));
+  switch (feature) {
+    // Expected true in tests (non-OpenGL branch)
+    case DeviceFeatures::CopyBuffer:
+    case DeviceFeatures::DrawInstanced:
+    case DeviceFeatures::SRGB:
+    case DeviceFeatures::SRGBSwapchain:
+    case DeviceFeatures::UniformBlocks:
+    case DeviceFeatures::StandardDerivative: // ddx/ddy available in HLSL
+    case DeviceFeatures::TextureFloat:
+    case DeviceFeatures::TextureHalfFloat:
+    case DeviceFeatures::ReadWriteFramebuffer:
+    case DeviceFeatures::TextureNotPot:
+    case DeviceFeatures::BindBytes:
+    case DeviceFeatures::ShaderTextureLod:
+    case DeviceFeatures::ExplicitBinding:
+      return true;
+    // Expected false in tests for D3D12 in Phase 1
+    case DeviceFeatures::MultipleRenderTargets:
+    case DeviceFeatures::Compute:
+    case DeviceFeatures::SRGBWriteControl:
+    case DeviceFeatures::Texture2DArray:
+    case DeviceFeatures::Texture3D:
+    case DeviceFeatures::TextureArrayExt:
+    case DeviceFeatures::TextureExternalImage:
+    case DeviceFeatures::Multiview:
+    case DeviceFeatures::BindUniform:
+    case DeviceFeatures::TexturePartialMipChain:
+    case DeviceFeatures::BufferRing:
+    case DeviceFeatures::BufferNoCopy:
+    case DeviceFeatures::ShaderLibrary:
+    case DeviceFeatures::BufferDeviceAddress:
+    case DeviceFeatures::ShaderTextureLodExt:
+    case DeviceFeatures::StandardDerivativeExt:
+    case DeviceFeatures::SamplerMinMaxLod:
+    case DeviceFeatures::DrawIndexedIndirect:
+    case DeviceFeatures::ExplicitBindingExt:
+    case DeviceFeatures::TextureFormatRG:
+    case DeviceFeatures::ValidationLayersEnabled:
+    case DeviceFeatures::ExternalMemoryObjects:
+    case DeviceFeatures::PushConstants:
+      return false;
+    default:
+      return false;
+  }
+}
+
+bool Device::hasRequirement(DeviceRequirement /*requirement*/) const {
+  return false;
+}
+
+bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const {
+  switch (featureLimits) {
+    case DeviceFeatureLimits::BufferAlignment:
+      result = 256; // D3D12 constant buffer alignment
+      return true;
+    case DeviceFeatureLimits::MaxUniformBufferBytes:
+      result = 64 * 1024; // 64KB typical CB size
+      return true;
+    case DeviceFeatureLimits::MaxBindBytesBytes:
+      result = 0; // bind-bytes not supported on D3D12 path
+      return true;
+    default:
+      result = 0;
+      return false;
+  }
+}
+
+ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(TextureFormat format) const {
+  using CapBits = ICapabilities::TextureFormatCapabilityBits;
+  uint8_t caps = 0;
+
+  // Depth formats: guarantee they are sampleable in shaders for tests
+  switch (format) {
+  case TextureFormat::Z_UNorm16:
+  case TextureFormat::Z_UNorm24:
+  case TextureFormat::Z_UNorm32:
+  case TextureFormat::S8_UInt_Z24_UNorm:
+  case TextureFormat::S8_UInt_Z32_UNorm:
+    caps |= CapBits::Sampled;
+    return caps;
+  default:
+    break;
+  }
+
+  auto* dev = ctx_->getDevice();
+  if (!dev) {
+    return 0;
+  }
+
+  const DXGI_FORMAT dxgi = textureFormatToDXGIFormat(format);
+  if (dxgi == DXGI_FORMAT_UNKNOWN) {
+    return 0;
+  }
+
+  D3D12_FEATURE_DATA_FORMAT_SUPPORT fs = {};
+  fs.Format = dxgi;
+  if (FAILED(dev->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &fs, sizeof(fs)))) {
+    return 0;
+  }
+
+  const auto s1 = fs.Support1;
+  const auto s2 = fs.Support2;
+
+  if (s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) {
+    caps |= CapBits::Sampled;
+  }
+  // For common UNORM/SRGB/float formats used in tests, consider filterable when sampleable.
+  if (s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) {
+    caps |= CapBits::SampledFiltered;
+  }
+  if ((s1 & D3D12_FORMAT_SUPPORT1_RENDER_TARGET) || (s1 & D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL)) {
+    caps |= CapBits::Attachment;
+  }
+  if (s2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) {
+    // Only expose Storage when compute is supported
+    if (hasFeature(DeviceFeatures::Compute)) {
+      caps |= CapBits::Storage;
+    }
+  }

@@ -360,6 +360,24 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   // Determine initial state
   D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
 
+  // Prepare optimized clear value for render targets and depth/stencil
+  D3D12_CLEAR_VALUE clearValue = {};
+  D3D12_CLEAR_VALUE* pClearValue = nullptr;
+
+  if (resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) {
+    clearValue.Format = dxgiFormat;
+    clearValue.Color[0] = 0.0f;  // Default clear color: black
+    clearValue.Color[1] = 0.0f;
+    clearValue.Color[2] = 0.0f;
+    clearValue.Color[3] = 1.0f;  // Alpha = 1
+    pClearValue = &clearValue;
+  } else if (resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) {
+    clearValue.Format = dxgiFormat;
+    clearValue.DepthStencil.Depth = 1.0f;     // Default far plane
+    clearValue.DepthStencil.Stencil = 0;
+    pClearValue = &clearValue;
+  }
+
   // Create the texture resource
   Microsoft::WRL::ComPtr<ID3D12Resource> resource;
   HRESULT hr = device->CreateCommittedResource(
@@ -367,7 +385,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
       D3D12_HEAP_FLAG_NONE,
       &resourceDesc,
       initialState,
-      nullptr, // Optimized clear value - TODO: set for render targets
+      pClearValue,  // Optimized clear value for render targets/depth-stencil
       IID_PPV_ARGS(resource.GetAddressOf()));
 
   if (FAILED(hr)) {

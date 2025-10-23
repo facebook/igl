@@ -95,6 +95,12 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   uint32_t dsvIndex_ = UINT32_MAX;
   D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle_{};
   D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle_{};
+
+  // Cached descriptor table GPU handles
+  // These are set by bindTexture/bindSamplerState and used in drawIndexed
+  // to avoid invalidation by multiple SetDescriptorHeaps calls
+  D3D12_GPU_DESCRIPTOR_HANDLE cachedTextureGpuHandle_{};
+  D3D12_GPU_DESCRIPTOR_HANDLE cachedSamplerGpuHandle_{};
 };
 
 } // namespace igl::d3d12
