@@ -30,6 +30,8 @@ class VulkanDescriptorSetLayout final {
 
   VulkanDescriptorSetLayout(const VulkanDescriptorSetLayout&) = delete;
   VulkanDescriptorSetLayout& operator=(const VulkanDescriptorSetLayout&) = delete;
+  VulkanDescriptorSetLayout(VulkanDescriptorSetLayout&&) = delete;
+  VulkanDescriptorSetLayout& operator=(VulkanDescriptorSetLayout&&) = delete;
 
   [[nodiscard]] VkDescriptorSetLayout getVkDescriptorSetLayout() const {
     return vkDescriptorSetLayout_;
