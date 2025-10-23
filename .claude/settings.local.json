@@ -62,7 +62,9 @@
       "Bash(export VCPKG_ROOT=\"\")",
       "Bash(vcpkg integrate remove:*)",
       "Bash(/c/vcpkg/vcpkg integrate remove:*)",
-      "Bash(build\\src\\igl\\tests\\Debug\\IGLTests.exe:*)"
+      "Bash(build\\src\\igl\\tests\\Debug\\IGLTests.exe:*)",
+      "Bash(./PassthroughSession_d3d12.exe)",
+      "Bash(./HelloWorldSession_d3d12.exe)"
     ],
     "deny": [],
     "ask": []

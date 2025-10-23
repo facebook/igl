@@ -24,20 +24,31 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
       commandBuffer_(commandBuffer),
       commandList_(commandBuffer.getCommandList()),
       framebuffer_(framebuffer) {
+  IGL_LOG_INFO("RenderCommandEncoder::RenderCommandEncoder() - START\n");
   auto& context = commandBuffer_.getContext();
+  IGL_LOG_INFO("RenderCommandEncoder: Got context\n");
 
   // Set descriptor heaps for this command list
-  ID3D12DescriptorHeap* heaps[] = {
-    context.getCbvSrvUavHeap(),
-    context.getSamplerHeap()
-  };
+  IGL_LOG_INFO("RenderCommandEncoder: Getting CBV/SRV/UAV heap...\n");
+  auto* cbvSrvUavHeap = context.getCbvSrvUavHeap();
+  IGL_LOG_INFO("RenderCommandEncoder: CBV/SRV/UAV heap = %p\n", cbvSrvUavHeap);
+
+  IGL_LOG_INFO("RenderCommandEncoder: Getting Sampler heap...\n");
+  auto* samplerHeap = context.getSamplerHeap();
+  IGL_LOG_INFO("RenderCommandEncoder: Sampler heap = %p\n", samplerHeap);
+
+  ID3D12DescriptorHeap* heaps[] = {cbvSrvUavHeap, samplerHeap};
+  IGL_LOG_INFO("RenderCommandEncoder: Setting descriptor heaps...\n");
   commandList_->SetDescriptorHeaps(2, heaps);
+  IGL_LOG_INFO("RenderCommandEncoder: Descriptor heaps set\n");
 
   // Create RTV from framebuffer if provided; otherwise fallback to swapchain RTV
+  IGL_LOG_INFO("RenderCommandEncoder: Setting up RTV...\n");
   D3D12_CPU_DESCRIPTOR_HANDLE rtv = {};
   bool usedOffscreenRTV = false;
   // Try to get descriptor heap manager (available in headless context)
   DescriptorHeapManager* heapMgr = context.getDescriptorHeapManager();
+  IGL_LOG_INFO("RenderCommandEncoder: DescriptorHeapManager = %p\n", heapMgr);
 
   if (framebuffer_ && framebuffer_->getColorAttachment(0)) {
     auto colorTex = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(0));
@@ -151,34 +162,47 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
       }
 
       // Bind RTV + DSV
+      IGL_LOG_INFO("RenderCommandEncoder: Binding RTV with DSV\n");
       commandList_->OMSetRenderTargets(1, &rtv, FALSE, &dsvHandle_);
     } else {
+      IGL_LOG_INFO("RenderCommandEncoder: Binding RTV without DSV (no resource)\n");
       commandList_->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
     }
   } else {
+    IGL_LOG_INFO("RenderCommandEncoder: Binding RTV without DSV (no hasDepth)\n");
     commandList_->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
   }
 
   // Set a default full-screen viewport/scissor if caller forgets. Prefer framebuffer attachment size.
+  IGL_LOG_INFO("RenderCommandEncoder: Setting default viewport...\n");
   if (framebuffer_ && framebuffer_->getColorAttachment(0)) {
+    IGL_LOG_INFO("RenderCommandEncoder: Using framebuffer color attachment\n");
     auto colorTex = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(0));
-    if (colorTex) {
+    if (colorTex && colorTex->getResource()) {
       auto dims = colorTex->getDimensions();
+      IGL_LOG_INFO("RenderCommandEncoder: Framebuffer dimensions: %ux%u\n", dims.width, dims.height);
       D3D12_VIEWPORT vp{}; vp.TopLeftX=0; vp.TopLeftY=0; vp.Width=(float)dims.width; vp.Height=(float)dims.height; vp.MinDepth=0; vp.MaxDepth=1;
       commandList_->RSSetViewports(1, &vp);
       D3D12_RECT sc{}; sc.left=0; sc.top=0; sc.right=(LONG)dims.width; sc.bottom=(LONG)dims.height; commandList_->RSSetScissorRects(1, &sc);
       IGL_LOG_INFO("RenderCommandEncoder: Set default viewport/scissor to %ux%u\n", dims.width, dims.height);
+    } else {
+      IGL_LOG_ERROR("RenderCommandEncoder: Color texture is null or has no resource!\n");
     }
   } else {
+    IGL_LOG_INFO("RenderCommandEncoder: Using back buffer\n");
     auto* backBufferRes = context.getCurrentBackBuffer();
     if (backBufferRes) {
       D3D12_RESOURCE_DESC bbDesc = backBufferRes->GetDesc();
+      IGL_LOG_INFO("RenderCommandEncoder: Back buffer dimensions: %llux%u\n", bbDesc.Width, bbDesc.Height);
       D3D12_VIEWPORT vp = {}; vp.TopLeftX=0; vp.TopLeftY=0; vp.Width=(float)bbDesc.Width; vp.Height=(float)bbDesc.Height; vp.MinDepth=0; vp.MaxDepth=1;
       commandList_->RSSetViewports(1, &vp);
       D3D12_RECT scissor = {}; scissor.left=0; scissor.top=0; scissor.right=(LONG)bbDesc.Width; scissor.bottom=(LONG)bbDesc.Height; commandList_->RSSetScissorRects(1, &scissor);
       IGL_LOG_INFO("RenderCommandEncoder: Set default viewport/scissor to back buffer %llux%u\n", bbDesc.Width, bbDesc.Height);
+    } else {
+      IGL_LOG_ERROR("RenderCommandEncoder: No back buffer available!\n");
     }
   }
+  IGL_LOG_INFO("RenderCommandEncoder: Constructor complete!\n");
 }
 
 void RenderCommandEncoder::endEncoding() {
