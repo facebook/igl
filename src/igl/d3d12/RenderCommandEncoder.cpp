@@ -107,6 +107,11 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
       D3D12_RENDER_TARGET_VIEW_DESC rdesc = {};
       rdesc.Format = textureFormatToDXGIFormat(colorTex->getFormat());
       rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+      // Set mip level from render pass
+      rdesc.Texture2D.MipSlice = !renderPass.colorAttachments.empty()
+                                  ? renderPass.colorAttachments[0].mipLevel
+                                  : 0;
+      rdesc.Texture2D.PlaneSlice = 0;
       device->CreateRenderTargetView(colorTex->getResource(), &rdesc, rtvHandle_);
       IGL_LOG_INFO("RenderCommandEncoder: RenderTargetView created\n");
 
@@ -115,7 +120,10 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
       bb.Transition.pResource = colorTex->getResource();
       bb.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
       bb.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-      bb.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      // Transition only the specific mip level we're rendering to
+      bb.Transition.Subresource = !renderPass.colorAttachments.empty()
+                                    ? renderPass.colorAttachments[0].mipLevel
+                                    : D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
       commandList_->ResourceBarrier(1, &bb);
 
       if (!renderPass.colorAttachments.empty() &&
