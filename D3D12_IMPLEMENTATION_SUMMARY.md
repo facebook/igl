@@ -1,21 +1,42 @@
 # DirectX 12 Backend Implementation - Complete
 
-> Parallel Execution Plan (active)
+> **MILESTONE: Phase 0 (Rendering Sessions) and Phase 1 (Test Infrastructure) COMPLETE ✅**
 
-- Goal: finish IGL’s D3D12 backend so backend‑agnostic tests pass and TinyMeshSession (triangle + ImGui) runs without changing sample logic (only add D3D12 shader source alongside existing backend branches). GLSL bridging is deferred; we will use HLSL for D3D12 now.
+## Parallel Execution Plan
+
+- Goal: finish IGL's D3D12 backend so backend‑agnostic tests pass and TinyMeshSession (triangle + ImGui) runs without changing sample logic (only add D3D12 shader source alongside existing backend branches). GLSL bridging is deferred; we will use HLSL for D3D12 now.
+
+### Phase 0 — Rendering Sessions ✅ COMPLETE
+**Objective**: Implement core D3D12 rendering pipeline and verify with sample sessions
+**Status**: Complete - All sessions (EmptySession, HelloTriangle, TinyMeshSession) render successfully
+**Date Completed**: October 21, 2025
+
+### Phase 1 — Test Infrastructure ✅ COMPLETE
+**Objective**: Enable IGL unit tests to run with D3D12 backend
+**Status**: Complete - Test framework integrated and running
+**Date Completed**: October 22, 2025
 
 Phases
 - Phase A — Tests inventory and initial run (Owner: Claude agent)
   - Build and run `src/igl/tests/`; produce PASS/FAIL/SKIP per test; capture logs and suspected causes.
   - Deliverables: markdown/JSON report; commands to reproduce.
-  - Status: [X] Done ⚠️ (Infrastructure complete, execution blocked)
+  - Status: [X] **COMPLETE ✅**
   - Reports:
     - [tests/reports/d3d12_test_report.md](tests/reports/d3d12_test_report.md) - Initial infrastructure analysis
-    - [tests/reports/d3d12_test_execution_report.md](tests/reports/d3d12_test_execution_report.md) - Execution attempt results
-  - **Key Achievement**: D3D12 test infrastructure fully implemented (test device factory, CMakeLists integration, backend selection)
-  - **Critical Issue**: Runtime crash (SIGSEGV) prevents test execution. IGLTests.exe builds successfully (21MB) but segfaults on startup before gtest initialization.
-  - **Test Coverage**: 0 tests executed (crash occurs immediately), 27 generic test suites available, 0 D3D12-specific tests exist
-  - **Next Steps**: Debug device initialization crash (likely COM initialization or missing Graphics Tools)
+    - [tests/reports/d3d12_test_execution_report.md](tests/reports/d3d12_test_execution_report.md) - Execution results
+  - **Key Achievements**:
+    - ✅ D3D12 test infrastructure fully implemented (test device factory, CMakeLists integration, backend selection)
+    - ✅ HeadlessD3D12Context for creating test devices without swapchains
+    - ✅ Custom main.cpp with COM initialization for D3D12
+    - ✅ Fixed vcpkg gmock interference (removed global integration)
+    - ✅ Tests build and run successfully with D3D12 as default backend
+  - **Test Execution Status**:
+    - IGLTests.exe runs without crashing (exit code 0)
+    - 229 test failures (expected - D3D12 backend implementation incomplete)
+    - Test device creation works for headless scenarios
+    - Foundation ready for implementing remaining D3D12 features
+  - **Root Cause of Previous Crash**: vcpkg's global Visual Studio integration auto-linked incompatible gmock.dll
+  - **Solution**: Disabled vcpkg integration with `vcpkg integrate remove`
 - Phase B — D3D12 reflection + feature limits (Owner: Me)
   - Implement D3DReflect‑based RenderPipelineReflection (buffers, members, textures, samplers) and realistic `hasFeature`/`getFeatureLimits` values.
   - Acceptance: IGLU ImGui finds `projectionMatrix` and `texture`; reflection tests pass.
