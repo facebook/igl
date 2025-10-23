@@ -16,7 +16,9 @@
 
 #if IGL_PLATFORM_ANDROID
 #include <android/asset_manager.h>
-#include <android_native_app_glue_types.h>
+// Ignore unused-include-check
+// @lint-ignore CLANGTIDY
+#include <android_native_app_glue.h>
 #endif
 
 #include <glm/gtc/type_ptr.hpp>
