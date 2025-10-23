@@ -73,6 +73,13 @@ void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
     return nullptr;
   }
 
+  // Validate range
+  if (range.offset > desc_.length || range.size > desc_.length ||
+      (range.offset + range.size) > desc_.length) {
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Map range is out of bounds");
+    return nullptr;
+  }
+
   if (storage_ != ResourceStorage::Shared) {
     Result::setResult(outResult, Result::Code::Unsupported,
                       "Cannot map GPU-only buffer (use ResourceStorage::Shared)");

@@ -84,6 +84,8 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
 
   // Cache current vertex stride from bound pipeline's input layout
   UINT currentVertexStride_ = 0;
+  // Optional per-slot strides fetched from pipeline
+  UINT vertexStrides_[IGL_BUFFER_BINDINGS_MAX] = {};
 
   // Offscreen RTV/DSV support
   std::shared_ptr<IFramebuffer> framebuffer_;

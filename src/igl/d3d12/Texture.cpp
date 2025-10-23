@@ -64,9 +64,9 @@ Result Texture::upload(const TextureRangeDesc& range,
 
   // Calculate bytes per row if not provided
   if (bytesPerRow == 0) {
-    // Estimate based on format - this is a simplification
-    size_t bytesPerPixel = 4; // Assume RGBA8 for now
-    bytesPerRow = width * bytesPerPixel;
+    const auto props = TextureFormatProperties::fromTextureFormat(format_);
+    const size_t bpp = std::max<uint8_t>(props.bytesPerBlock, 1);
+    bytesPerRow = static_cast<size_t>(width) * bpp;
   }
 
   // Get the resource description to calculate required size

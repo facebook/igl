@@ -29,12 +29,14 @@ class RenderPipelineState final : public IRenderPipelineState {
   ID3D12PipelineState* getPipelineState() const { return pipelineState_.Get(); }
   ID3D12RootSignature* getRootSignature() const { return rootSignature_.Get(); }
   uint32_t getVertexStride() const { return vertexStride_; }
+  uint32_t getVertexStride(size_t slot) const { return (slot < IGL_BUFFER_BINDINGS_MAX) ? vertexStrides_[slot] : 0; }
 
  private:
   Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState_;
   Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
   std::shared_ptr<IRenderPipelineReflection> reflection_;
   uint32_t vertexStride_ = 0;
+  uint32_t vertexStrides_[IGL_BUFFER_BINDINGS_MAX] = {};
 };
 
 } // namespace igl::d3d12

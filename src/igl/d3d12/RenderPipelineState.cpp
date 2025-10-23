@@ -28,6 +28,10 @@ RenderPipelineState::RenderPipelineState(const RenderPipelineDesc& desc,
       const auto& d = d3dVis->getDesc();
       if (d.numInputBindings > 0) {
         vertexStride_ = static_cast<uint32_t>(d.inputBindings[0].stride);
+        // Cache per-slot strides
+        for (size_t s = 0; s < d.numInputBindings && s < IGL_BUFFER_BINDINGS_MAX; ++s) {
+          vertexStrides_[s] = static_cast<uint32_t>(d.inputBindings[s].stride);
+        }
       }
     }
   }

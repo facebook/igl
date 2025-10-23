@@ -240,21 +240,70 @@ std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc
 
 std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
-  // TODO: Convert IGL SamplerStateDesc to D3D12_SAMPLER_DESC properly
   D3D12_SAMPLER_DESC samplerDesc = {};
-  samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-  samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-  samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-  samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+
+  auto toD3D12Address = [](SamplerAddressMode m) {
+    switch (m) {
+    case SamplerAddressMode::Repeat: return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    case SamplerAddressMode::MirrorRepeat: return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+    case SamplerAddressMode::Clamp: return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    default: return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    }
+  };
+
+  auto toD3D12Compare = [](CompareFunction f) {
+    switch (f) {
+    case CompareFunction::Less: return D3D12_COMPARISON_FUNC_LESS;
+    case CompareFunction::LessEqual: return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    case CompareFunction::Greater: return D3D12_COMPARISON_FUNC_GREATER;
+    case CompareFunction::GreaterEqual: return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+    case CompareFunction::Equal: return D3D12_COMPARISON_FUNC_EQUAL;
+    case CompareFunction::NotEqual: return D3D12_COMPARISON_FUNC_NOT_EQUAL;
+    case CompareFunction::AlwaysPass: return D3D12_COMPARISON_FUNC_ALWAYS;
+    case CompareFunction::Never: return D3D12_COMPARISON_FUNC_NEVER;
+    default: return D3D12_COMPARISON_FUNC_NEVER;
+    }
+  };
+
+  const bool useComparison = desc.depthCompareEnabled;
+
+  // Filter mapping (basic, anisotropy optional)
+  const bool minLinear = (desc.minFilter != SamplerMinMagFilter::Nearest);
+  const bool magLinear = (desc.magFilter != SamplerMinMagFilter::Nearest);
+  const bool mipLinear = (desc.mipFilter == SamplerMipFilter::Linear);
+  const bool anisotropic = (desc.maxAnisotropic > 1);
+
+  if (anisotropic) {
+    samplerDesc.Filter = useComparison ? D3D12_FILTER_COMPARISON_ANISOTROPIC : D3D12_FILTER_ANISOTROPIC;
+    samplerDesc.MaxAnisotropy = std::min<uint32_t>(desc.maxAnisotropic, 16);
+  } else {
+    D3D12_FILTER filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+    if (minLinear && magLinear && mipLinear) filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+    else if (minLinear && magLinear && !mipLinear) filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+    else if (minLinear && !magLinear && mipLinear) filter = D3D12_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+    else if (minLinear && !magLinear && !mipLinear) filter = D3D12_FILTER_MIN_LINEAR_MAG_MIP_POINT;
+    else if (!minLinear && magLinear && mipLinear) filter = D3D12_FILTER_MIN_POINT_MAG_MIP_LINEAR;
+    else if (!minLinear && magLinear && !mipLinear) filter = D3D12_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
+    else if (!minLinear && !magLinear && mipLinear) filter = D3D12_FILTER_MIN_MAG_POINT_MIP_LINEAR;
+    // else remains POINT
+    if (useComparison) {
+      filter = static_cast<D3D12_FILTER>(filter | D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT - D3D12_FILTER_MIN_MAG_MIP_POINT);
+    }
+    samplerDesc.Filter = filter;
+    samplerDesc.MaxAnisotropy = 1;
+  }
+
+  samplerDesc.AddressU = toD3D12Address(desc.addressModeU);
+  samplerDesc.AddressV = toD3D12Address(desc.addressModeV);
+  samplerDesc.AddressW = toD3D12Address(desc.addressModeW);
   samplerDesc.MipLODBias = 0.0f;
-  samplerDesc.MaxAnisotropy = 1;
-  samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+  samplerDesc.ComparisonFunc = useComparison ? toD3D12Compare(desc.depthCompareFunction) : D3D12_COMPARISON_FUNC_NEVER;
   samplerDesc.BorderColor[0] = 0.0f;
   samplerDesc.BorderColor[1] = 0.0f;
   samplerDesc.BorderColor[2] = 0.0f;
   samplerDesc.BorderColor[3] = 0.0f;
-  samplerDesc.MinLOD = 0.0f;
-  samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+  samplerDesc.MinLOD = static_cast<float>(desc.mipLodMin);
+  samplerDesc.MaxLOD = static_cast<float>(desc.mipLodMax);
 
   Result::setOk(outResult);
   return std::make_shared<SamplerState>(samplerDesc);
@@ -409,7 +458,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   // Descriptor range for SRVs (textures)
   D3D12_DESCRIPTOR_RANGE srvRange = {};
   srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-  srvRange.NumDescriptors = 2;  // t0 and t1
+  srvRange.NumDescriptors = 1;  // t0
   srvRange.BaseShaderRegister = 0;  // Starting at t0
   srvRange.RegisterSpace = 0;
   srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -417,7 +466,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   // Descriptor range for Samplers
   D3D12_DESCRIPTOR_RANGE samplerRange = {};
   samplerRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-  samplerRange.NumDescriptors = 2;  // s0 and s1
+  samplerRange.NumDescriptors = 1;  // s0
   samplerRange.BaseShaderRegister = 0;  // Starting at s0
   samplerRange.RegisterSpace = 0;
   samplerRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -535,9 +584,14 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     psoDesc.DepthStencilState.StencilEnable = FALSE;
   }
 
-  // Render target format (must match swapchain format!)
-  psoDesc.NumRenderTargets = 1;
-  psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;  // Match swapchain format, not SRGB
+  // Render target format: match pipeline target description (offscreen FB)
+  if (!desc.targetDesc.colorAttachments.empty()) {
+    psoDesc.NumRenderTargets = 1;
+    psoDesc.RTVFormats[0] = textureFormatToDXGIFormat(desc.targetDesc.colorAttachments[0].textureFormat);
+  } else {
+    psoDesc.NumRenderTargets = 0;
+    psoDesc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN;
+  }
   if (desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid) {
     psoDesc.DSVFormat = textureFormatToDXGIFormat(desc.targetDesc.depthAttachmentFormat);
   } else {
@@ -580,22 +634,27 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
       // Map IGL attribute names to D3D12 HLSL semantic names
       // IMPORTANT: Semantic names must NOT end with numbers - use SemanticIndex field instead
       std::string semanticName;
-      if (attr.name == "pos" || attr.name == "position") {
+      // Case-insensitive helpers
+      auto toLower = [](std::string s){ for (auto& c : s) c = static_cast<char>(tolower(c)); return s; };
+      const std::string nlow = toLower(attr.name);
+      auto startsWith = [&](const char* p){ return nlow.rfind(p, 0) == 0; };
+      auto contains = [&](const char* p){ return nlow.find(p) != std::string::npos; };
+
+      if (startsWith("pos") || startsWith("position") || contains("position")) {
         semanticName = "POSITION";
-      } else if (attr.name == "col" || attr.name == "color") {
+      } else if (startsWith("col") || startsWith("color")) {
         semanticName = "COLOR";
-      } else if (attr.name == "st" || attr.name == "uv" || attr.name == "texcoord" || attr.name == "texCoords") {
-        semanticName = "TEXCOORD";  // Fixed: was "TEXCOORD0" - number goes in SemanticIndex
-      } else if (attr.name == "normal") {
+      } else if (startsWith("st") || startsWith("uv") || startsWith("tex") || contains("texcoord")) {
+        semanticName = "TEXCOORD";
+      } else if (startsWith("norm") || startsWith("normal")) {
         semanticName = "NORMAL";
-      } else if (attr.name == "tangent") {
+      } else if (startsWith("tangent")) {
         semanticName = "TANGENT";
       } else {
-        // Fallback: capitalize first letter
-        semanticName = attr.name;
-        if (!semanticName.empty()) {
-          semanticName[0] = static_cast<char>(toupper(semanticName[0]));
-        }
+        // Fallback: POSITION for first attribute, TEXCOORD for second, COLOR otherwise
+        if (i == 0) semanticName = "POSITION";
+        else if (i == 1) semanticName = "TEXCOORD";
+        else semanticName = "COLOR";
       }
       semanticNames.push_back(semanticName);
       IGL_LOG_INFO("      Mapped '%s' -> '%s'\n", attr.name.c_str(), semanticName.c_str());
@@ -859,6 +918,7 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     case DeviceFeatures::BindBytes:
     case DeviceFeatures::ShaderTextureLod:
     case DeviceFeatures::ExplicitBinding:
+    case DeviceFeatures::MapBufferRange: // UPLOAD/READBACK buffers support mapping
       return true;
     // Expected false in tests for D3D12 in Phase 1
     case DeviceFeatures::MultipleRenderTargets:
