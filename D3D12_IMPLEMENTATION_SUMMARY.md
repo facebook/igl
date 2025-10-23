@@ -1,6 +1,6 @@
 # DirectX 12 Backend Implementation - Complete
 
-> **MILESTONE: Phase 0 (Rendering Sessions) and Phase 1 (Test Infrastructure) COMPLETE ✅**
+> **MILESTONE: Phase 0, Phase 1, and Phase 2 COMPLETE ✅**
 
 ## Parallel Execution Plan
 
@@ -15,6 +15,11 @@
 **Objective**: Enable IGL unit tests to run with D3D12 backend
 **Status**: Complete - Test framework integrated and running
 **Date Completed**: October 22, 2025
+
+### Phase 2 — Resources & Views ✅ COMPLETE
+**Objective**: Fully implement buffers, textures, and samplers with correct memory heaps, state transitions, views, and upload paths
+**Status**: Complete - Advanced texture features implemented and tested
+**Date Completed**: October 23, 2025
 
 Phases
 - Phase A — Tests inventory and initial run (Owner: Claude agent)
@@ -37,11 +42,28 @@ Phases
     - Foundation ready for implementing remaining D3D12 features
   - **Root Cause of Previous Crash**: vcpkg's global Visual Studio integration auto-linked incompatible gmock.dll
   - **Solution**: Disabled vcpkg integration with `vcpkg integrate remove`
+
+- Phase 2 — Resources & Views (Buffers, Textures, Samplers)
+  - **Key Implementations**:
+    - ✅ Multi-mip texture upload via uploadInternal() with mipLevelBytes support
+    - ✅ Mipmap generation with full D3D12 compute pipeline (runtime shader compilation)
+    - ✅ Sub-rectangle texture uploads with proper D3D12_BOX region specification
+    - ✅ Render-to-mipmap support with per-mip RTV creation and subresource transitions
+    - ✅ Improved texture upload robustness (proper row counting and footprint handling)
+  - **Targeted Tests Passing**:
+    - TextureTest.Passthrough ✅
+    - TextureTest.Upload (multi-mip) ✅
+    - RenderCommandEncoderTest.RenderToMipmap ✅
+    - Texture format conversions ✅
+  - Status: [X] **COMPLETE ✅**
+  - Date Completed: October 23, 2025
+
 - Phase B — D3D12 reflection + feature limits (Owner: Me)
   - Implement D3DReflect‑based RenderPipelineReflection (buffers, members, textures, samplers) and realistic `hasFeature`/`getFeatureLimits` values.
   - Acceptance: IGLU ImGui finds `projectionMatrix` and `texture`; reflection tests pass.
-  - Status: [ ] Not started  [ ] In progress  [ ] Done
-- Next: Descriptor management & caching; CBV alignment handling; framebuffer/depth/barriers polish; re‑run tests; then verify TinyMeshSession (rev 1b3fb840) with a D3D12 HLSL branch only.
+  - Status: [X] **COMPLETE ✅** (Reflection implemented in commit 78a6de53)
+
+- Next: Continue test fixes; framebuffer/depth/barriers polish; verify more complex rendering scenarios.
 
 
 ## Status: ✅ FULLY FUNCTIONAL
