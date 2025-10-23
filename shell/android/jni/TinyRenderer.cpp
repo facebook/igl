@@ -50,6 +50,10 @@ struct ContextGuard {
     }
 #endif
   }
+  ContextGuard(const ContextGuard&) = delete;
+  ContextGuard& operator=(const ContextGuard&) = delete;
+  ContextGuard(ContextGuard&&) = delete;
+  ContextGuard& operator=(ContextGuard&&) = delete;
 
  private:
 #if IGL_BACKEND_OPENGL
