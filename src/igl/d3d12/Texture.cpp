@@ -81,6 +81,24 @@ Result Texture::upload(const TextureRangeDesc& range,
   device_->GetCopyableFootprints(&resourceDesc, range.mipLevel, 1, 0,
                                   &layout, &numRows, &rowSizeInBytes, &totalBytes);
 
+  // Adjust footprint for sub-rectangle uploads
+  // Note: GetCopyableFootprints gives us the full mip level's dimensions,
+  // but for sub-rect uploads we only need space for the specified region
+  layout.Footprint.Width = width;
+  layout.Footprint.Height = height;
+  layout.Footprint.Depth = 1;
+
+  // Recalculate totalBytes for the actual upload region
+  const auto props = TextureFormatProperties::fromTextureFormat(format_);
+  const size_t bpp = std::max<uint8_t>(props.bytesPerBlock, 1);
+  numRows = height;
+  rowSizeInBytes = static_cast<UINT64>(width) * bpp;
+  // Row pitch must be aligned to D3D12_TEXTURE_DATA_PITCH_ALIGNMENT (256)
+  const UINT64 alignedRowPitch = (rowSizeInBytes + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1)
+                                  & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1);
+  layout.Footprint.RowPitch = static_cast<UINT>(alignedRowPitch);
+  totalBytes = alignedRowPitch * height;
+
   // Create staging buffer (upload heap)
   D3D12_HEAP_PROPERTIES uploadHeapProps = {};
   uploadHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
@@ -171,7 +189,16 @@ Result Texture::upload(const TextureRangeDesc& range,
   src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
   src.PlacedFootprint = layout;
 
-  cmdList->CopyTextureRegion(&dst, range.x, range.y, range.z, &src, nullptr);
+  // Define source box for the copy region
+  D3D12_BOX srcBox = {};
+  srcBox.left = 0;
+  srcBox.top = 0;
+  srcBox.front = 0;
+  srcBox.right = width;
+  srcBox.bottom = height;
+  srcBox.back = 1;
+
+  cmdList->CopyTextureRegion(&dst, range.x, range.y, range.z, &src, &srcBox);
 
   // Transition texture to PIXEL_SHADER_RESOURCE state for rendering
   // This is more explicit than relying on COMMON state implicit promotion

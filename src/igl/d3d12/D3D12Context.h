@@ -9,6 +9,7 @@
 
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/D3D12Headers.h>
+#include <memory>
 
 namespace igl::d3d12 {
 
@@ -59,7 +60,8 @@ class D3D12Context {
   Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> samplerHeap_;
   UINT cbvSrvUavDescriptorSize_ = 0;
   UINT samplerDescriptorSize_ = 0;
-  DescriptorHeapManager* heapMgr_ = nullptr; // non-owning; set by headless
+  DescriptorHeapManager* ownedHeapMgr_ = nullptr;  // Owned manager for windowed contexts (raw ptr, manually deleted)
+  DescriptorHeapManager* heapMgr_ = nullptr; // non-owning; points to ownedHeapMgr_ or external (headless)
 
   // Synchronization
   Microsoft::WRL::ComPtr<ID3D12Fence> fence_;

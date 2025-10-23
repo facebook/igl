@@ -313,6 +313,13 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
                                                 Result* IGL_NULLABLE outResult) const noexcept {
   auto* device = ctx_->getDevice();
 
+  // Check for exportability - D3D12 doesn't support exportable textures
+  if (desc.exportability == TextureDesc::TextureExportability::Exportable) {
+    Result::setResult(outResult, Result::Code::Unimplemented,
+                      "D3D12 does not support exportable textures");
+    return nullptr;
+  }
+
   // Convert IGL texture format to DXGI format
   DXGI_FORMAT dxgiFormat = textureFormatToDXGIFormat(desc.format);
   if (dxgiFormat == DXGI_FORMAT_UNKNOWN) {

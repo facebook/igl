@@ -6,6 +6,7 @@
  */
 
 #include <igl/d3d12/D3D12Context.h>
+#include <igl/d3d12/DescriptorHeapManager.h>
 
 #include <stdexcept>
 
@@ -14,6 +15,11 @@ namespace igl::d3d12 {
 D3D12Context::~D3D12Context() {
   // Wait for GPU to finish before cleanup
   waitForGPU();
+
+  // Clean up owned descriptor heap manager
+  delete ownedHeapMgr_;
+  ownedHeapMgr_ = nullptr;
+  heapMgr_ = nullptr;
 
   if (fenceEvent_) {
     CloseHandle(fenceEvent_);
@@ -277,6 +283,27 @@ void D3D12Context::createDescriptorHeaps() {
 
   samplerDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(
       D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+
+  IGL_LOG_INFO("D3D12Context: Creating descriptor heap manager...\n");
+
+  // Create descriptor heap manager to manage allocations from the heaps
+  DescriptorHeapManager::Sizes sizes{};
+  sizes.cbvSrvUav = cbvSrvUavHeapDesc.NumDescriptors;
+  sizes.samplers = samplerHeapDesc.NumDescriptors;
+  sizes.rtvs = 64;   // Reasonable defaults for windowed rendering
+  sizes.dsvs = 32;
+
+  ownedHeapMgr_ = new DescriptorHeapManager();
+  Result result = ownedHeapMgr_->initialize(device_.Get(), sizes);
+  if (!result.isOk()) {
+    IGL_LOG_ERROR("D3D12Context: Failed to initialize descriptor heap manager: %s\n",
+                  result.message.c_str());
+    delete ownedHeapMgr_;
+    ownedHeapMgr_ = nullptr;
+  } else {
+    heapMgr_ = ownedHeapMgr_;
+    IGL_LOG_INFO("D3D12Context: Descriptor heap manager created successfully\n");
+  }
 }
 
 uint32_t D3D12Context::getCurrentBackBufferIndex() const {

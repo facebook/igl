@@ -101,6 +101,24 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   // to avoid invalidation by multiple SetDescriptorHeaps calls
   D3D12_GPU_DESCRIPTOR_HANDLE cachedTextureGpuHandle_{};
   D3D12_GPU_DESCRIPTOR_HANDLE cachedSamplerGpuHandle_{};
+
+  // Cached vertex buffer bindings
+  // Store binding info and apply in draw calls after pipeline state is bound
+  struct CachedVertexBuffer {
+    D3D12_GPU_VIRTUAL_ADDRESS bufferLocation = 0;
+    UINT sizeInBytes = 0;
+    bool bound = false;
+  };
+  CachedVertexBuffer cachedVertexBuffers_[IGL_BUFFER_BINDINGS_MAX] = {};
+
+  // Cached index buffer binding
+  struct CachedIndexBuffer {
+    D3D12_GPU_VIRTUAL_ADDRESS bufferLocation = 0;
+    UINT sizeInBytes = 0;
+    DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
+    bool bound = false;
+  };
+  CachedIndexBuffer cachedIndexBuffer_ = {};
 };
 
 } // namespace igl::d3d12

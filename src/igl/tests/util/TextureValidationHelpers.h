@@ -128,9 +128,10 @@ inline void validateTextureRange(IDevice& device,
   fb->copyBytesColorAttachment(cmdQueue, 0, actualData.data(), range);
 
   if (!isRenderTarget && (device.getBackendType() == igl::BackendType::Metal ||
-                          device.getBackendType() == igl::BackendType::Vulkan)) {
-    // The Vulkan and Metal implementations of copyBytesColorAttachment flip the returned image
-    // vertically. This is the desired behavior for render targets, but for non-render target
+                          device.getBackendType() == igl::BackendType::Vulkan ||
+                          device.getBackendType() == igl::BackendType::D3D12)) {
+    // The Vulkan, Metal, and D3D12 implementations of copyBytesColorAttachment flip the returned
+    // image vertically. This is the desired behavior for render targets, but for non-render target
     // textures, we want the unflipped data. This flips the output image again to get the unmodified
     // data.
     std::vector<ColorType> tmpData;

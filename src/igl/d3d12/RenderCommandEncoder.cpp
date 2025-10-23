@@ -29,12 +29,23 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
   IGL_LOG_INFO("RenderCommandEncoder: Got context\n");
 
   // Set descriptor heaps for this command list
-  IGL_LOG_INFO("RenderCommandEncoder: Getting CBV/SRV/UAV heap...\n");
-  auto* cbvSrvUavHeap = context.getCbvSrvUavHeap();
-  IGL_LOG_INFO("RenderCommandEncoder: CBV/SRV/UAV heap = %p\n", cbvSrvUavHeap);
+  // CRITICAL: We must set the descriptor heaps that match where we allocate descriptors!
+  // If DescriptorHeapManager exists, use ITS heaps (not D3D12Context's heaps)
+  DescriptorHeapManager* heapMgr = context.getDescriptorHeapManager();
+  ID3D12DescriptorHeap* cbvSrvUavHeap = nullptr;
+  ID3D12DescriptorHeap* samplerHeap = nullptr;
 
-  IGL_LOG_INFO("RenderCommandEncoder: Getting Sampler heap...\n");
-  auto* samplerHeap = context.getSamplerHeap();
+  if (heapMgr) {
+    IGL_LOG_INFO("RenderCommandEncoder: Using DescriptorHeapManager heaps\n");
+    cbvSrvUavHeap = heapMgr->getCbvSrvUavHeap();
+    samplerHeap = heapMgr->getSamplerHeap();
+  } else {
+    IGL_LOG_INFO("RenderCommandEncoder: Using D3D12Context heaps (legacy fallback)\n");
+    cbvSrvUavHeap = context.getCbvSrvUavHeap();
+    samplerHeap = context.getSamplerHeap();
+  }
+
+  IGL_LOG_INFO("RenderCommandEncoder: CBV/SRV/UAV heap = %p\n", cbvSrvUavHeap);
   IGL_LOG_INFO("RenderCommandEncoder: Sampler heap = %p\n", samplerHeap);
 
   ID3D12DescriptorHeap* heaps[] = {cbvSrvUavHeap, samplerHeap};
@@ -46,18 +57,42 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
   IGL_LOG_INFO("RenderCommandEncoder: Setting up RTV...\n");
   D3D12_CPU_DESCRIPTOR_HANDLE rtv = {};
   bool usedOffscreenRTV = false;
-  // Try to get descriptor heap manager (available in headless context)
-  DescriptorHeapManager* heapMgr = context.getDescriptorHeapManager();
+  // Note: heapMgr already retrieved above for setting descriptor heaps
   IGL_LOG_INFO("RenderCommandEncoder: DescriptorHeapManager = %p\n", heapMgr);
 
-  if (framebuffer_ && framebuffer_->getColorAttachment(0)) {
+  IGL_LOG_INFO("RenderCommandEncoder: Checking framebuffer_=%p\n", framebuffer_.get());
+  // Only create offscreen RTV if we have DescriptorHeapManager AND it's not a swapchain texture
+  // Swapchain textures should use context.getCurrentRTV() directly
+  if (framebuffer_ && framebuffer_->getColorAttachment(0) && heapMgr) {
+    IGL_LOG_INFO("RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager\n");
     auto colorTex = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(0));
+    IGL_LOG_INFO("RenderCommandEncoder: colorTex=%p\n", colorTex.get());
     ID3D12Device* device = context.getDevice();
-    if (device && colorTex && colorTex->getResource()) {
-      if (heapMgr) {
+    IGL_LOG_INFO("RenderCommandEncoder: device=%p\n", device);
+
+    // Check if this is a swapchain back buffer (don't create offscreen RTV for it)
+    // Heuristic: If swapchain exists and texture dimensions match swapchain, it's a swapchain texture
+    bool isSwapchainTexture = false;
+    if (context.getSwapChain()) {
+      DXGI_SWAP_CHAIN_DESC swapDesc{};
+      context.getSwapChain()->GetDesc(&swapDesc);
+      auto dims = colorTex->getDimensions();
+      // If dimensions match swapchain, assume it's a swapchain back buffer
+      if (dims.width == swapDesc.BufferDesc.Width &&
+          dims.height == swapDesc.BufferDesc.Height) {
+        isSwapchainTexture = true;
+      }
+    }
+    IGL_LOG_INFO("RenderCommandEncoder: isSwapchainTexture=%d\n", isSwapchainTexture);
+
+    if (device && colorTex && colorTex->getResource() && !isSwapchainTexture) {
+      IGL_LOG_INFO("RenderCommandEncoder: Creating offscreen RTV\n");
+      if (true) {  // Always use heapMgr here since we checked it above
+        IGL_LOG_INFO("RenderCommandEncoder: Using DescriptorHeapManager for RTV\n");
         rtvIndex_ = heapMgr->allocateRTV();
         rtvHandle_ = heapMgr->getRTVHandle(rtvIndex_);
       } else {
+        IGL_LOG_INFO("RenderCommandEncoder: Creating transient RTV heap\n");
         // Fallback: transient heap
         Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> tmpHeap;
         D3D12_DESCRIPTOR_HEAP_DESC rtvDesc = {};
@@ -68,10 +103,12 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
         rtvHandle_ = tmpHeap->GetCPUDescriptorHandleForHeapStart();
       }
 
+      IGL_LOG_INFO("RenderCommandEncoder: Creating RenderTargetView\n");
       D3D12_RENDER_TARGET_VIEW_DESC rdesc = {};
       rdesc.Format = textureFormatToDXGIFormat(colorTex->getFormat());
       rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
       device->CreateRenderTargetView(colorTex->getResource(), &rdesc, rtvHandle_);
+      IGL_LOG_INFO("RenderCommandEncoder: RenderTargetView created\n");
 
       D3D12_RESOURCE_BARRIER bb = {};
       bb.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -93,11 +130,14 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
     }
   }
   if (!usedOffscreenRTV) {
+    IGL_LOG_INFO("RenderCommandEncoder: Using swapchain back buffer\n");
     auto* backBuffer = context.getCurrentBackBuffer();
+    IGL_LOG_INFO("RenderCommandEncoder: Got back buffer=%p\n", backBuffer);
     if (!backBuffer) {
       IGL_LOG_ERROR("RenderCommandEncoder: No back buffer available\n");
       return;
     }
+    IGL_LOG_INFO("RenderCommandEncoder: Transitioning back buffer to RENDER_TARGET\n");
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -106,15 +146,19 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     commandList_->ResourceBarrier(1, &barrier);
+    IGL_LOG_INFO("RenderCommandEncoder: Resource barrier executed\n");
 
     if (!renderPass.colorAttachments.empty() &&
         renderPass.colorAttachments[0].loadAction == LoadAction::Clear) {
+      IGL_LOG_INFO("RenderCommandEncoder: Clearing render target\n");
       const auto& cc = renderPass.colorAttachments[0].clearColor;
       const float col[] = {cc.r, cc.g, cc.b, cc.a};
       D3D12_CPU_DESCRIPTOR_HANDLE swapRtv = context.getCurrentRTV();
       commandList_->ClearRenderTargetView(swapRtv, col, 0, nullptr);
+      IGL_LOG_INFO("RenderCommandEncoder: Clear complete\n");
     }
     rtv = context.getCurrentRTV();
+    IGL_LOG_INFO("RenderCommandEncoder: Got RTV handle\n");
   }
 
   // Create/Bind depth-stencil view if we have a framebuffer with a depth attachment
@@ -310,17 +354,15 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
   if (callCount < 3) {
     IGL_LOG_INFO("bindVertexBuffer called #%d: index=%u\n", ++callCount, index);
   }
+  if (index >= IGL_BUFFER_BINDINGS_MAX) {
+    IGL_LOG_ERROR("bindVertexBuffer: index %u exceeds max %u\n", index, IGL_BUFFER_BINDINGS_MAX);
+    return;
+  }
+
   auto* d3dBuffer = static_cast<Buffer*>(&buffer);
-
-  D3D12_VERTEX_BUFFER_VIEW vbView = {};
-  vbView.BufferLocation = d3dBuffer->gpuAddress(bufferOffset);
-  vbView.SizeInBytes = static_cast<UINT>(d3dBuffer->getSizeInBytes() - bufferOffset);
-  // Use stride from currently bound pipeline if available; fallback to 32 (pos3+col3+uv2)
-  UINT stride = vertexStrides_[index];
-  if (stride == 0) stride = currentVertexStride_ ? currentVertexStride_ : 32;
-  vbView.StrideInBytes = stride;
-
-  commandList_->IASetVertexBuffers(index, 1, &vbView);
+  cachedVertexBuffers_[index].bufferLocation = d3dBuffer->gpuAddress(bufferOffset);
+  cachedVertexBuffers_[index].sizeInBytes = static_cast<UINT>(d3dBuffer->getSizeInBytes() - bufferOffset);
+  cachedVertexBuffers_[index].bound = true;
 }
 
 void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
@@ -331,13 +373,10 @@ void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
     IGL_LOG_INFO("bindIndexBuffer called #%d\n", ++callCount);
   }
   auto* d3dBuffer = static_cast<Buffer*>(&buffer);
-
-  D3D12_INDEX_BUFFER_VIEW ibView = {};
-  ibView.BufferLocation = d3dBuffer->gpuAddress(bufferOffset);
-  ibView.SizeInBytes = static_cast<UINT>(d3dBuffer->getSizeInBytes() - bufferOffset);
-  ibView.Format = (format == IndexFormat::UInt16) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
-
-  commandList_->IASetIndexBuffer(&ibView);
+  cachedIndexBuffer_.bufferLocation = d3dBuffer->gpuAddress(bufferOffset);
+  cachedIndexBuffer_.sizeInBytes = static_cast<UINT>(d3dBuffer->getSizeInBytes() - bufferOffset);
+  cachedIndexBuffer_.format = (format == IndexFormat::UInt16) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
+  cachedIndexBuffer_.bound = true;
 }
 
 void RenderCommandEncoder::bindBytes(size_t /*index*/,
@@ -526,6 +565,28 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
       commandList_->SetGraphicsRootDescriptorTable(3, cachedSamplerGpuHandle_);
       IGL_LOG_INFO("DrawIndexed: bound sampler descriptor table (handle=0x%llx)\n", cachedSamplerGpuHandle_.ptr);
     }
+  }
+
+  // Apply cached vertex buffer bindings now that pipeline state is bound
+  for (uint32_t i = 0; i < IGL_BUFFER_BINDINGS_MAX; ++i) {
+    if (cachedVertexBuffers_[i].bound) {
+      UINT stride = vertexStrides_[i];
+      if (stride == 0) stride = currentVertexStride_ ? currentVertexStride_ : 32;
+      D3D12_VERTEX_BUFFER_VIEW vbView = {};
+      vbView.BufferLocation = cachedVertexBuffers_[i].bufferLocation;
+      vbView.SizeInBytes = cachedVertexBuffers_[i].sizeInBytes;
+      vbView.StrideInBytes = stride;
+      commandList_->IASetVertexBuffers(i, 1, &vbView);
+    }
+  }
+  
+  // Apply cached index buffer binding
+  if (cachedIndexBuffer_.bound) {
+    D3D12_INDEX_BUFFER_VIEW ibView = {};
+    ibView.BufferLocation = cachedIndexBuffer_.bufferLocation;
+    ibView.SizeInBytes = cachedIndexBuffer_.sizeInBytes;
+    ibView.Format = cachedIndexBuffer_.format;
+    commandList_->IASetIndexBuffer(&ibView);
   }
 
   commandList_->DrawIndexedInstanced(static_cast<UINT>(indexCount),

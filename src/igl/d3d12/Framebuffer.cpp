@@ -145,7 +145,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
   toCopySrc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
   toCopySrc.Transition.pResource = srcRes;
   toCopySrc.Transition.Subresource = mipLevel;
-  toCopySrc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+  toCopySrc.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
   toCopySrc.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
   cmdList->ResourceBarrier(1, &toCopySrc);
 
@@ -172,7 +172,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
 
   // Transition back to COMMON (best-effort)
   toCopySrc.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
-  toCopySrc.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+  toCopySrc.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
   cmdList->ResourceBarrier(1, &toCopySrc);
 
   cmdList->Close();
@@ -209,9 +209,11 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
   const size_t srcRowPitch = footprint.Footprint.RowPitch;
   const size_t copyRowBytes = static_cast<size_t>(range.width) * bytesPerPixel;
 
+  // Always flip vertically to match Metal/Vulkan behavior
+  // The validation helper will un-flip for non-render-target textures if needed
   for (uint32_t row = 0; row < range.height; ++row) {
     const uint8_t* s = srcPtr + row * srcRowPitch;
-    uint8_t* d = dstPtr + row * dstRowPitch;
+    uint8_t* d = dstPtr + (range.height - 1 - row) * dstRowPitch;  // Flip
     std::memcpy(d, s, copyRowBytes);
   }
 
