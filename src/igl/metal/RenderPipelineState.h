@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <Metal/Metal.h>
+#include <Metal/MTLRenderPass.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/metal/RenderPipelineReflection.h>
 
