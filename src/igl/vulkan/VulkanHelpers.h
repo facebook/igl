@@ -98,10 +98,6 @@ VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
                          const VkPhysicalDeviceFeatures2* supported,
                          VkDevice* outDevice);
 
-VkResult ivkCreateHeadlessSurface(const struct VulkanFunctionTable* vt,
-                                  VkInstance instance,
-                                  VkSurfaceKHR* surface);
-
 VkResult ivkCreateSwapchain(const struct VulkanFunctionTable* vt,
                             VkDevice device,
                             VkSurfaceKHR surface,

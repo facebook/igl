@@ -458,18 +458,6 @@ VkResult ivkCreateSwapchain(const struct VulkanFunctionTable* vt,
   return vt->vkCreateSwapchainKHR(device, &ci, NULL, outSwapchain);
 }
 
-VkResult ivkCreateHeadlessSurface(const struct VulkanFunctionTable* vt,
-                                  VkInstance instance,
-                                  VkSurfaceKHR* outSurface) {
-  const VkHeadlessSurfaceCreateInfoEXT ci = {
-      .sType = VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT,
-      .pNext = NULL,
-      .flags = 0,
-  };
-
-  return vt->vkCreateHeadlessSurfaceEXT(instance, &ci, NULL, outSurface);
-}
-
 VkResult ivkCreateFramebuffer(const struct VulkanFunctionTable* vt,
                               VkDevice device,
                               uint32_t width,
