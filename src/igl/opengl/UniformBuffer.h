@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <unordered_map>
 #include <vector>
 #include <igl/Uniform.h>
 #include <igl/opengl/Buffer.h>
