@@ -33,6 +33,8 @@ class VulkanFramebuffer final {
 
   VulkanFramebuffer(const VulkanFramebuffer&) = delete;
   VulkanFramebuffer& operator=(const VulkanFramebuffer&) = delete;
+  VulkanFramebuffer(VulkanFramebuffer&&) = delete;
+  VulkanFramebuffer& operator=(VulkanFramebuffer&&) = delete;
 
   [[nodiscard]] VkFramebuffer getVkFramebuffer() const {
     return vkFramebuffer;
