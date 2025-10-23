@@ -11,6 +11,8 @@
 #include <igl/d3d12/RenderPipelineState.h>
 #include <igl/d3d12/Texture.h>
 #include <igl/RenderPass.h>
+#include <igl/d3d12/HeadlessContext.h>
+#include <igl/d3d12/DescriptorHeapManager.h>
 
 namespace igl::d3d12 {
 
@@ -33,18 +35,26 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
   // Create RTV from framebuffer if provided; otherwise fallback to swapchain RTV
   D3D12_CPU_DESCRIPTOR_HANDLE rtv = {};
   bool usedOffscreenRTV = false;
+  // Try to get descriptor heap manager (available in headless context)
+  DescriptorHeapManager* heapMgr = context.getDescriptorHeapManager();
+
   if (framebuffer_ && framebuffer_->getColorAttachment(0)) {
     auto colorTex = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(0));
     ID3D12Device* device = context.getDevice();
     if (device && colorTex && colorTex->getResource()) {
-      if (!rtvHeap_.Get()) {
+      if (heapMgr) {
+        rtvIndex_ = heapMgr->allocateRTV();
+        rtvHandle_ = heapMgr->getRTVHandle(rtvIndex_);
+      } else {
+        // Fallback: transient heap
+        Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> tmpHeap;
         D3D12_DESCRIPTOR_HEAP_DESC rtvDesc = {};
         rtvDesc.NumDescriptors = 1;
         rtvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
         rtvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-        device->CreateDescriptorHeap(&rtvDesc, IID_PPV_ARGS(rtvHeap_.GetAddressOf()));
+        device->CreateDescriptorHeap(&rtvDesc, IID_PPV_ARGS(tmpHeap.GetAddressOf()));
+        rtvHandle_ = tmpHeap->GetCPUDescriptorHandleForHeapStart();
       }
-      rtvHandle_ = rtvHeap_->GetCPUDescriptorHandleForHeapStart();
 
       D3D12_RENDER_TARGET_VIEW_DESC rdesc = {};
       rdesc.Format = textureFormatToDXGIFormat(colorTex->getFormat());
@@ -101,15 +111,19 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
     auto depthTex = std::static_pointer_cast<igl::d3d12::Texture>(framebuffer_->getDepthAttachment());
     ID3D12Device* device = context.getDevice();
     if (device && depthTex && depthTex->getResource()) {
-      // Create a small DSV heap (1 descriptor)
-      D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
-      dsvHeapDesc.NumDescriptors = 1;
-      dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-      dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-      if (!dsvHeap_.Get()) {
-        device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(dsvHeap_.GetAddressOf()));
+      if (heapMgr) {
+        dsvIndex_ = heapMgr->allocateDSV();
+        dsvHandle_ = heapMgr->getDSVHandle(dsvIndex_);
+      } else {
+        // Fallback: transient heap
+        Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> tmpHeap;
+        D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+        dsvHeapDesc.NumDescriptors = 1;
+        dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+        dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+        device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(tmpHeap.GetAddressOf()));
+        dsvHandle_ = tmpHeap->GetCPUDescriptorHandleForHeapStart();
       }
-      dsvHandle_ = dsvHeap_->GetCPUDescriptorHandleForHeapStart();
 
       // Create DSV description
       D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
@@ -183,6 +197,18 @@ void RenderCommandEncoder::endEncoding() {
 
   // Close the command buffer
   commandBuffer_.end();
+
+  // Return RTV/DSV indices to the descriptor heap manager if used
+  if (auto* mgr = context2.getDescriptorHeapManager()) {
+    if (rtvIndex_ != UINT32_MAX) {
+      mgr->freeRTV(rtvIndex_);
+      rtvIndex_ = UINT32_MAX;
+    }
+    if (dsvIndex_ != UINT32_MAX) {
+      mgr->freeDSV(dsvIndex_);
+      dsvIndex_ = UINT32_MAX;
+    }
+  }
 }
 
 void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
@@ -298,14 +324,21 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
 
   auto& context = commandBuffer_.getContext();
   auto* device = context.getDevice();
-
-  // Create sampler descriptor
-  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getSamplerHeap()->GetCPUDescriptorHandleForHeapStart();
-  UINT descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-
-  // Allocate a descriptor for this sampler
-  UINT descriptorIndex = nextSamplerDescriptor_ + static_cast<UINT>(index);
-  cpuHandle.ptr += descriptorIndex * descriptorSize;
+  // Prefer DescriptorHeapManager if available
+  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = {};
+  auto* mgr = context.getDescriptorHeapManager();
+  uint32_t usedSamplerIdx = UINT32_MAX;
+  if (mgr) {
+    usedSamplerIdx = mgr->allocateSampler();
+    cpuHandle = mgr->getSamplerCpuHandle(usedSamplerIdx);
+  }
+  if (cpuHandle.ptr == 0) {
+    // Fallback to contiguous offset in sampler heap
+    cpuHandle = context.getSamplerHeap()->GetCPUDescriptorHandleForHeapStart();
+    UINT descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+    UINT descriptorIndex = nextSamplerDescriptor_ + static_cast<UINT>(index);
+    cpuHandle.ptr += descriptorIndex * descriptorSize;
+  }
 
   // Create sampler  descriptor
   D3D12_SAMPLER_DESC samplerDesc = {};
@@ -326,9 +359,15 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
   device->CreateSampler(&samplerDesc, cpuHandle);
 
   // Bind the sampler descriptor table (root parameter 3)
-  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getSamplerHeap()->GetGPUDescriptorHandleForHeapStart();
-  gpuHandle.ptr += nextSamplerDescriptor_ * descriptorSize;
-  commandList_->SetGraphicsRootDescriptorTable(3, gpuHandle);
+  if (mgr && usedSamplerIdx != UINT32_MAX) {
+    auto gpuHandle = mgr->getSamplerGpuHandle(usedSamplerIdx);
+    commandList_->SetGraphicsRootDescriptorTable(3, gpuHandle);
+  } else {
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getSamplerHeap()->GetGPUDescriptorHandleForHeapStart();
+    UINT samplerDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+    gpuHandle.ptr += nextSamplerDescriptor_ * samplerDescSize;
+    commandList_->SetGraphicsRootDescriptorTable(3, gpuHandle);
+  }
 }
 void RenderCommandEncoder::bindTexture(size_t index,
                                        uint8_t /*target*/,

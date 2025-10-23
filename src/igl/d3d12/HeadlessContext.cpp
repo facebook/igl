@@ -3,8 +3,11 @@
  */
 
 #include <igl/d3d12/HeadlessContext.h>
+#include <igl/d3d12/DescriptorHeapManager.h>
 
 namespace igl::d3d12 {
+
+HeadlessD3D12Context::~HeadlessD3D12Context() = default;
 
 Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height) {
   width_ = width;
@@ -147,6 +150,25 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
   fenceEvent_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
   if (!fenceEvent_) {
     return Result(Result::Code::RuntimeError, "Failed to create fence event");
+  }
+
+  // Create descriptor heap manager with the same sizes for consistency
+  {
+    DescriptorHeapManager::Sizes sz{};
+    sz.cbvSrvUav = heapSize;
+    sz.samplers = samplerHeapSize;
+    sz.rtvs = 64;
+    sz.dsvs = 32;
+    descriptorHeaps_ = std::make_unique<DescriptorHeapManager>();
+    const Result r = descriptorHeaps_->initialize(device_.Get(), sz);
+    if (!r.isOk()) {
+      IGL_LOG_ERROR("HeadlessD3D12Context: Failed to initialize descriptor heap manager: %s\n",
+                    r.message.c_str());
+      // Not fatal for Phase 1, continue without manager
+      descriptorHeaps_.reset();
+    }
+    // Expose manager to base context for consumers that only see D3D12Context
+    heapMgr_ = descriptorHeaps_.get();
   }
 
   IGL_LOG_INFO("HeadlessD3D12Context: Initialization complete\n");

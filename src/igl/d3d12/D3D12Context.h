@@ -12,6 +12,8 @@
 
 namespace igl::d3d12 {
 
+class DescriptorHeapManager; // fwd decl in igl::d3d12
+
 class D3D12Context {
  public:
   D3D12Context() = default;
@@ -25,6 +27,8 @@ class D3D12Context {
   IDXGISwapChain3* getSwapChain() const { return swapChain_.Get(); }
   ID3D12DescriptorHeap* getCbvSrvUavHeap() const { return cbvSrvUavHeap_.Get(); }
   ID3D12DescriptorHeap* getSamplerHeap() const { return samplerHeap_.Get(); }
+  // Optional descriptor heap manager (provided by headless context)
+  DescriptorHeapManager* getDescriptorHeapManager() const { return heapMgr_; }
 
   uint32_t getCurrentBackBufferIndex() const;
   ID3D12Resource* getCurrentBackBuffer() const;
@@ -55,6 +59,7 @@ class D3D12Context {
   Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> samplerHeap_;
   UINT cbvSrvUavDescriptorSize_ = 0;
   UINT samplerDescriptorSize_ = 0;
+  DescriptorHeapManager* heapMgr_ = nullptr; // non-owning; set by headless
 
   // Synchronization
   Microsoft::WRL::ComPtr<ID3D12Fence> fence_;

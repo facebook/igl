@@ -10,6 +10,7 @@
 #include <igl/RenderCommandEncoder.h>
 #include <igl/RenderPass.h>
 #include <igl/d3d12/Common.h>
+#include <cstdint>
 
 namespace igl::d3d12 {
 
@@ -86,9 +87,11 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
 
   // Offscreen RTV/DSV support
   std::shared_ptr<IFramebuffer> framebuffer_;
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvHeap_;
+  // If DescriptorHeapManager is available, we borrow indices from its heaps.
+  // Otherwise, we fall back to small ad-hoc heaps (constructor local scope).
+  uint32_t rtvIndex_ = UINT32_MAX;
+  uint32_t dsvIndex_ = UINT32_MAX;
   D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle_{};
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
   D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle_{};
 };
 
