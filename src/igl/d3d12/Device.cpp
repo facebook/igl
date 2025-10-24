@@ -17,6 +17,7 @@
 #include <igl/d3d12/Texture.h>
 #include <igl/d3d12/PlatformDevice.h>
 #include <igl/VertexInputState.h>
+#include <igl/Texture.h>
 #include <cstring>
 #include <vector>
 
@@ -1121,21 +1122,22 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(Te
   const auto s1 = fs.Support1;
   const auto s2 = fs.Support2;
 
+  const auto props = TextureFormatProperties::fromTextureFormat(format);
+
   if (s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) {
     caps |= CapBits::Sampled;
   }
-  // For common UNORM/SRGB/float formats used in tests, consider filterable when sampleable.
-  if (s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) {
+  // Filtered only for non-integer color formats when sampleable
+  if ((s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) && props.hasColor() && !props.isInteger()) {
     caps |= CapBits::SampledFiltered;
   }
   if ((s1 & D3D12_FORMAT_SUPPORT1_RENDER_TARGET) || (s1 & D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL)) {
     caps |= CapBits::Attachment;
   }
-  if (s2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) {
-    // Only expose Storage when compute is supported
-    if (hasFeature(DeviceFeatures::Compute)) {
-      caps |= CapBits::Storage;
-    }
+  // Typed UAV load + store required for Storage
+  if ((s2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) && (s2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE) &&
+      hasFeature(DeviceFeatures::Compute)) {
+    caps |= CapBits::Storage;
   }
 
   // SampledAttachment indicates formats that can be both sampled and used as attachment
