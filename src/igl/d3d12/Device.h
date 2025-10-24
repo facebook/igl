@@ -114,6 +114,8 @@ class Device final : public IDevice {
   [[nodiscard]] size_t getCurrentDrawCount() const override;
   [[nodiscard]] size_t getShaderCompilationCount() const override;
 
+  void incrementDrawCount(size_t n) { drawCount_ += n; }
+
   D3D12Context& getD3D12Context() {
     return *ctx_;
   }

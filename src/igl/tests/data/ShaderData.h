@@ -638,4 +638,88 @@ constexpr std::string_view kVulkanSimpleComputeShader =
             fOut[id] = fIn[id] * 2.0f;
         });
 // clang-format on
+//-----------------------------------------------------------------------------
+// D3D12/HLSL Shaders
+//-----------------------------------------------------------------------------
+
+// Simple D3D12 Shader with separate vertex and fragment functions
+// This is used for ShaderLibrary tests where multiple entry points are in the same source
+constexpr std::string_view kD3D12SimpleShader =
+    IGL_TO_STRING(
+      struct VSIn {
+        float4 position_in : POSITION;
+        float2 uv_in : TEXCOORD0;
+      };
+
+      struct VSOut {
+        float4 position : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
+
+      VSOut vertexShader(VSIn input) {
+        VSOut output;
+        output.position = input.position_in;
+        output.uv = input.uv_in;
+        return output;
+      }
+
+      Texture2D inputImage : register(t0);
+      SamplerState linearSampler : register(s0);
+
+      float4 fragmentShader(VSOut input) : SV_TARGET {
+        return inputImage.Sample(linearSampler, input.uv);
+      }
+    );
+
+// Simple D3D12 Vertex shader (standalone)
+constexpr std::string_view kD3D12SimpleVertShader =
+    IGL_TO_STRING(
+      struct VSIn {
+        float4 position_in : POSITION;
+        float2 uv_in : TEXCOORD0;
+      };
+
+      struct VSOut {
+        float4 position : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
+
+      VSOut main(VSIn input) {
+        VSOut output;
+        output.position = input.position_in;
+        output.uv = input.uv_in;
+        return output;
+      }
+    );
+
+// Simple D3D12 Fragment shader (standalone)
+constexpr std::string_view kD3D12SimpleFragShader =
+    IGL_TO_STRING(
+      struct PSIn {
+        float4 position : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
+
+      Texture2D inputImage : register(t0);
+      SamplerState linearSampler : register(s0);
+
+      float4 main(PSIn input) : SV_TARGET {
+        return inputImage.Sample(linearSampler, input.uv);
+      }
+    );
+
+// Simple D3D12 Compute shader
+constexpr std::string_view kD3D12SimpleComputeShader =
+    IGL_TO_STRING(
+      RWStructuredBuffer<float> floatsIn : register(u0);
+      RWStructuredBuffer<float> floatsOut : register(u1);
+
+      [numthreads(6, 1, 1)]
+      void doubleKernel(uint3 threadID : SV_DispatchThreadID) {
+        uint id = threadID.x;
+        floatsOut[id] = floatsIn[id] * 2.0;
+      }
+    );
+
+// clang-format on
 } // namespace igl::tests::data::shader

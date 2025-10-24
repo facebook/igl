@@ -31,4 +31,11 @@ class ShaderStages final : public IShaderStages {
   ~ShaderStages() override = default;
 };
 
+class ShaderLibrary final : public IShaderLibrary {
+ public:
+  explicit ShaderLibrary(std::vector<std::shared_ptr<IShaderModule>> modules)
+      : IShaderLibrary(std::move(modules)) {}
+  ~ShaderLibrary() override = default;
+};
+
 } // namespace igl::d3d12

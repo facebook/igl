@@ -816,11 +816,72 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
 }
 
 // Shader library and modules
-std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& /*desc*/,
+std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& desc,
                                                             Result* IGL_NULLABLE
                                                                 outResult) const {
-  Result::setResult(outResult, Result::Code::Unimplemented, "D3D12 ShaderLibrary not yet implemented");
-  return nullptr;
+  IGL_LOG_INFO("Device::createShaderLibrary() - moduleInfo count=%zu, debugName='%s'\n",
+               desc.moduleInfo.size(), desc.debugName.c_str());
+
+  if (desc.moduleInfo.empty()) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "ShaderLibrary requires at least one module");
+    return nullptr;
+  }
+
+  if (!desc.input.isValid()) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Invalid shader library input");
+    return nullptr;
+  }
+
+  std::vector<std::shared_ptr<IShaderModule>> modules;
+  modules.reserve(desc.moduleInfo.size());
+
+  if (desc.input.type == ShaderInputType::Binary) {
+    // Binary input: share the same bytecode across all modules (Metal-style)
+    IGL_LOG_INFO("  Using binary input (%zu bytes) for all modules\n", desc.input.length);
+    std::vector<uint8_t> bytecode(desc.input.length);
+    std::memcpy(bytecode.data(), desc.input.data, desc.input.length);
+
+    for (const auto& info : desc.moduleInfo) {
+      // Create a copy of the bytecode for each module
+      std::vector<uint8_t> moduleBytecode = bytecode;
+      modules.push_back(std::make_shared<ShaderModule>(info, std::move(moduleBytecode)));
+    }
+  } else if (desc.input.type == ShaderInputType::String) {
+    // String input: compile each module separately with its own entry point
+    if (!desc.input.source || !*desc.input.source) {
+      Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader library source is empty");
+      return nullptr;
+    }
+
+    IGL_LOG_INFO("  Compiling %zu modules from string input\n", desc.moduleInfo.size());
+
+    for (const auto& info : desc.moduleInfo) {
+      // Create a ShaderModuleDesc for this specific module
+      ShaderModuleDesc moduleDesc;
+      moduleDesc.info = info;
+      moduleDesc.input.type = ShaderInputType::String;
+      moduleDesc.input.source = desc.input.source;
+      moduleDesc.input.options = desc.input.options;
+      moduleDesc.debugName = desc.debugName + "_" + info.entryPoint;
+
+      Result moduleResult;
+      auto module = createShaderModule(moduleDesc, &moduleResult);
+      if (!moduleResult.isOk()) {
+        IGL_LOG_ERROR("  Failed to compile module '%s': %s\n",
+                      info.entryPoint.c_str(), moduleResult.message.c_str());
+        Result::setResult(outResult, std::move(moduleResult));
+        return nullptr;
+      }
+      modules.push_back(std::move(module));
+    }
+  } else {
+    Result::setResult(outResult, Result::Code::Unsupported, "Unsupported shader library input type");
+    return nullptr;
+  }
+
+  IGL_LOG_INFO("Device::createShaderLibrary() SUCCESS - created %zu modules\n", modules.size());
+  Result::setOk(outResult);
+  return std::make_unique<ShaderLibrary>(std::move(modules));
 }
 
 std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,
@@ -944,6 +1005,7 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     case DeviceFeatures::ShaderTextureLod:
     case DeviceFeatures::ExplicitBinding:
     case DeviceFeatures::MapBufferRange: // UPLOAD/READBACK buffers support mapping
+    case DeviceFeatures::ShaderLibrary: // Support shader libraries in D3D12
       return true;
     // Expected false in tests for D3D12 in Phase 1
     case DeviceFeatures::MultipleRenderTargets:
@@ -958,7 +1020,6 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     case DeviceFeatures::TexturePartialMipChain:
     case DeviceFeatures::BufferRing:
     case DeviceFeatures::BufferNoCopy:
-    case DeviceFeatures::ShaderLibrary:
     case DeviceFeatures::BufferDeviceAddress:
     case DeviceFeatures::ShaderTextureLodExt:
     case DeviceFeatures::StandardDerivativeExt:
