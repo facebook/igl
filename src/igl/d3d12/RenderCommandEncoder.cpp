@@ -342,7 +342,11 @@ void RenderCommandEncoder::bindRenderPipelineState(
 
   commandList_->SetPipelineState(pso);
   commandList_->SetGraphicsRootSignature(rootSig);
-  commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+  // Set primitive topology from the pipeline state
+  D3D_PRIMITIVE_TOPOLOGY topology = d3dPipelineState->getPrimitiveTopology();
+  IGL_LOG_INFO("bindRenderPipelineState: Setting topology=%d\n", (int)topology);
+  commandList_->IASetPrimitiveTopology(topology);
 
   // Cache vertex stride from pipeline (used when binding vertex buffers)
   currentVertexStride_ = d3dPipelineState->getVertexStride();
@@ -384,6 +388,7 @@ void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
   auto* d3dBuffer = static_cast<Buffer*>(&buffer);
   cachedIndexBuffer_.bufferLocation = d3dBuffer->gpuAddress(bufferOffset);
   cachedIndexBuffer_.sizeInBytes = static_cast<UINT>(d3dBuffer->getSizeInBytes() - bufferOffset);
+  // D3D12 only supports 16-bit and 32-bit index formats (not 8-bit)
   cachedIndexBuffer_.format = (format == IndexFormat::UInt16) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
   cachedIndexBuffer_.bound = true;
 }
@@ -527,6 +532,41 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t instanceCount,
                                 uint32_t firstVertex,
                                 uint32_t baseInstance) {
+  // Set up descriptor heaps and bind resources (same as drawIndexed)
+  commandList_->SetGraphicsRootConstantBufferView(0, 0);
+  commandList_->SetGraphicsRootConstantBufferView(1, 0);
+
+  auto& context = commandBuffer_.getContext();
+  auto* heapMgr = context.getDescriptorHeapManager();
+  if (heapMgr) {
+    ID3D12DescriptorHeap* heaps[] = {heapMgr->getCbvSrvUavHeap(), heapMgr->getSamplerHeap()};
+    commandList_->SetDescriptorHeaps(2, heaps);
+
+    if (cachedTextureGpuHandle_.ptr != 0) {
+      commandList_->SetGraphicsRootDescriptorTable(2, cachedTextureGpuHandle_);
+    }
+    if (cachedSamplerGpuHandle_.ptr != 0) {
+      commandList_->SetGraphicsRootDescriptorTable(3, cachedSamplerGpuHandle_);
+    }
+  }
+
+  // Apply vertex buffers
+  for (uint32_t i = 0; i < IGL_BUFFER_BINDINGS_MAX; ++i) {
+    if (cachedVertexBuffers_[i].bound) {
+      UINT stride = vertexStrides_[i];
+      if (stride == 0) stride = currentVertexStride_ ? currentVertexStride_ : 32;
+      D3D12_VERTEX_BUFFER_VIEW vbView = {};
+      vbView.BufferLocation = cachedVertexBuffers_[i].bufferLocation;
+      vbView.SizeInBytes = cachedVertexBuffers_[i].sizeInBytes;
+      vbView.StrideInBytes = stride;
+      IGL_LOG_INFO("draw: VB[%u] = GPU 0x%llx, size=%u, stride=%u\n", i, vbView.BufferLocation, vbView.SizeInBytes, vbView.StrideInBytes);
+      commandList_->IASetVertexBuffers(i, 1, &vbView);
+    }
+  }
+
+  commandBuffer_.incrementDrawCount();
+
+  IGL_LOG_INFO("draw: DrawInstanced(vertexCount=%zu, instanceCount=%u, firstVertex=%u, baseInstance=%u)\n", vertexCount, instanceCount, firstVertex, baseInstance);
   commandList_->DrawInstanced(static_cast<UINT>(vertexCount),
                               instanceCount,
                               firstVertex,
@@ -678,9 +718,43 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     IGL_LOG_INFO("bindBuffer END #%d\n", ++callCount);
   }
 }
-void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle /*handle*/) {}
+void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
+  IGL_LOG_INFO("bindBindGroup(texture): handle valid=%d\n", !handle.empty());
+
+  // Get the bind group descriptor from the device
+  auto& device = commandBuffer_.getDevice();
+  const auto* desc = device.getBindGroupTextureDesc(handle);
+  if (!desc) {
+    IGL_LOG_ERROR("bindBindGroup(texture): Invalid handle or descriptor not found\n");
+    return;
+  }
+
+  IGL_LOG_INFO("bindBindGroup(texture): Binding bind group\n");
+
+  // Bind textures and samplers (arrays are dense, stop at first null)
+  for (uint32_t i = 0; i < IGL_TEXTURE_SAMPLERS_MAX; ++i) {
+    if (desc->textures[i]) {
+      IGL_LOG_INFO("bindBindGroup: Binding texture at index %u\n", i);
+      bindTexture(i, desc->textures[i].get());
+    } else {
+      break; // Dense array - stop at first null
+    }
+  }
+
+  for (uint32_t i = 0; i < IGL_TEXTURE_SAMPLERS_MAX; ++i) {
+    if (desc->samplers[i]) {
+      IGL_LOG_INFO("bindBindGroup: Binding sampler at index %u\n", i);
+      bindSamplerState(i, BindTarget::kFragment, desc->samplers[i].get());
+    } else {
+      break; // Dense array - stop at first null
+    }
+  }
+}
+
 void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle /*handle*/,
                                           uint32_t /*numDynamicOffsets*/,
-                                          const uint32_t* /*dynamicOffsets*/) {}
+                                          const uint32_t* /*dynamicOffsets*/) {
+  IGL_LOG_INFO("bindBindGroup(buffer): Not yet implemented\n");
+}
 
 } // namespace igl::d3d12

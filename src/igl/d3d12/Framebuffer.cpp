@@ -340,7 +340,9 @@ void Framebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
 
 void Framebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
   desc_.colorAttachments[0].texture = std::move(surfaceTextures.color);
-  desc_.depthAttachment.texture = std::move(surfaceTextures.depth);
+  desc_.depthAttachment.texture = surfaceTextures.depth;
+  // Depth and stencil typically share the same texture
+  desc_.stencilAttachment.texture = std::move(surfaceTextures.depth);
 }
 
 void Framebuffer::updateResolveAttachment(std::shared_ptr<ITexture> texture) {

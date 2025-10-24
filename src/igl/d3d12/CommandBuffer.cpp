@@ -8,6 +8,7 @@
 #include <igl/d3d12/CommandBuffer.h>
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/RenderCommandEncoder.h>
+#include <igl/d3d12/Buffer.h>
 
 namespace igl::d3d12 {
 
@@ -135,12 +136,145 @@ void CommandBuffer::popDebugGroupLabel() const {
   // Stub: Not yet implemented
 }
 
-void CommandBuffer::copyBuffer(IBuffer& /*source*/,
-                               IBuffer& /*destination*/,
-                               uint64_t /*sourceOffset*/,
-                               uint64_t /*destinationOffset*/,
-                               uint64_t /*size*/) {
-  // Stub: Not yet implemented
+void CommandBuffer::copyBuffer(IBuffer& source,
+                               IBuffer& destination,
+                               uint64_t sourceOffset,
+                               uint64_t destinationOffset,
+                               uint64_t size) {
+  auto* src = static_cast<Buffer*>(&source);
+  auto* dst = static_cast<Buffer*>(&destination);
+  ID3D12Resource* srcRes = src->getResource();
+  ID3D12Resource* dstRes = dst->getResource();
+  if (!srcRes || !dstRes || size == 0) {
+    return;
+  }
+
+  // Use a transient copy with appropriate heap handling
+  auto& ctx = getContext();
+  ID3D12Device* device = ctx.getDevice();
+  ID3D12CommandQueue* queue = ctx.getCommandQueue();
+  if (!device || !queue) {
+    return;
+  }
+
+  auto doCopyOnList = [&](ID3D12GraphicsCommandList* list,
+                          ID3D12Resource* dstResLocal,
+                          uint64_t dstOffsetLocal) {
+    D3D12_RESOURCE_BARRIER barriers[2] = {};
+    barriers[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barriers[0].Transition.pResource = srcRes;
+    barriers[0].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_GENERIC_READ;
+    barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+    barriers[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barriers[1].Transition.pResource = dstResLocal;
+    barriers[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_GENERIC_READ;
+    barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+    list->ResourceBarrier(2, barriers);
+
+    list->CopyBufferRegion(dstResLocal, dstOffsetLocal, srcRes, sourceOffset, size);
+
+    barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+    barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
+    barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+    barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
+    list->ResourceBarrier(2, barriers);
+  };
+
+  if (dst->storage() == ResourceStorage::Shared) {
+    // GPU cannot write into UPLOAD heap; use a READBACK staging buffer and then memcpy into UPLOAD
+    D3D12_HEAP_PROPERTIES readbackHeap{};
+    readbackHeap.Type = D3D12_HEAP_TYPE_READBACK;
+    D3D12_RESOURCE_DESC desc{};
+    desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    desc.Width = size + destinationOffset;
+    desc.Height = 1;
+    desc.DepthOrArraySize = 1;
+    desc.MipLevels = 1;
+    desc.Format = DXGI_FORMAT_UNKNOWN;
+    desc.SampleDesc.Count = 1;
+    desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    Microsoft::WRL::ComPtr<ID3D12Resource> readback;
+    HRESULT hr = device->CreateCommittedResource(&readbackHeap,
+                                                  D3D12_HEAP_FLAG_NONE,
+                                                  &desc,
+                                                  D3D12_RESOURCE_STATE_COPY_DEST,
+                                                  nullptr,
+                                                  IID_PPV_ARGS(readback.GetAddressOf()));
+    if (FAILED(hr)) {
+      IGL_LOG_ERROR("copyBuffer: Failed to create READBACK buffer, hr=0x%08X\n", static_cast<unsigned>(hr));
+      return;
+    }
+
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> list;
+    if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                              IID_PPV_ARGS(allocator.GetAddressOf()))) ||
+        FAILED(device->CreateCommandList(0,
+                                         D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                         allocator.Get(),
+                                         nullptr,
+                                         IID_PPV_ARGS(list.GetAddressOf())))) {
+      IGL_LOG_ERROR("copyBuffer: Failed to create transient command list\n");
+      return;
+    }
+
+    // Transition source to COPY_SOURCE
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = srcRes;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+    list->ResourceBarrier(1, &barrier);
+
+    // Copy from source to readback (readback is already in COPY_DEST state)
+    list->CopyBufferRegion(readback.Get(), destinationOffset, srcRes, sourceOffset, size);
+
+    // Transition source back
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+    list->ResourceBarrier(1, &barrier);
+    list->Close();
+    ID3D12CommandList* lists[] = {list.Get()};
+    queue->ExecuteCommandLists(1, lists);
+    ctx.waitForGPU();
+
+    // Map readback and copy into the UPLOAD buffer
+    void* rbPtr = nullptr;
+    D3D12_RANGE readRange{static_cast<SIZE_T>(destinationOffset), static_cast<SIZE_T>(destinationOffset + size)};
+    if (SUCCEEDED(readback->Map(0, &readRange, &rbPtr)) && rbPtr) {
+      // Map destination upload buffer
+      Result r1;
+      void* dstPtr = dst->map(BufferRange(size, destinationOffset), &r1);
+      if (dstPtr && r1.isOk()) {
+        std::memcpy(dstPtr, static_cast<uint8_t*>(rbPtr) + destinationOffset, size);
+        dst->unmap();
+      }
+      readback->Unmap(0, nullptr);
+    }
+    return;
+  }
+
+  // Default path: copy using a transient command list to DEFAULT/COMMON destinations
+  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> list;
+  if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                            IID_PPV_ARGS(allocator.GetAddressOf()))) ||
+      FAILED(device->CreateCommandList(0,
+                                       D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                       allocator.Get(),
+                                       nullptr,
+                                       IID_PPV_ARGS(list.GetAddressOf())))) {
+    return;
+  }
+
+  doCopyOnList(list.Get(), dstRes, destinationOffset);
+  list->Close();
+  ID3D12CommandList* lists2[] = {list.Get()};
+  queue->ExecuteCommandLists(1, lists2);
+  ctx.waitForGPU();
 }
 
 void CommandBuffer::copyTextureToBuffer(ITexture& /*source*/,

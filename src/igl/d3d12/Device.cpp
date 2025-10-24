@@ -30,25 +30,41 @@ Device::~Device() = default;
 
 // BindGroups
 Holder<BindGroupTextureHandle> Device::createBindGroup(
-    const BindGroupTextureDesc& /*desc*/,
+    const BindGroupTextureDesc& desc,
     const IRenderPipelineState* IGL_NULLABLE /*compatiblePipeline*/,
     Result* IGL_NULLABLE outResult) {
-  Result::setResult(outResult, Result::Code::Unimplemented, "D3D12 Device not yet implemented");
-  return {};
+  // Store bind group descriptor in pool for later use by encoder
+  BindGroupTextureDesc description(desc);
+  const auto handle = bindGroupTexturesPool_.create(std::move(description));
+  Result::setResult(outResult,
+                    handle.empty() ? Result(Result::Code::RuntimeError, "Cannot create bind group")
+                                   : Result());
+  return {this, handle};
 }
 
-Holder<BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc& /*desc*/,
+Holder<BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc& desc,
                                                        Result* IGL_NULLABLE outResult) {
-  Result::setResult(outResult, Result::Code::Unimplemented, "D3D12 Device not yet implemented");
-  return {};
+  // Store bind group descriptor in pool for later use by encoder
+  BindGroupBufferDesc description(desc);
+  const auto handle = bindGroupBuffersPool_.create(std::move(description));
+  Result::setResult(outResult,
+                    handle.empty() ? Result(Result::Code::RuntimeError, "Cannot create bind group")
+                                   : Result());
+  return {this, handle};
 }
 
-void Device::destroy(BindGroupTextureHandle /*handle*/) {
-  // Stub: Not yet implemented
+void Device::destroy(BindGroupTextureHandle handle) {
+  if (handle.empty()) {
+    return;
+  }
+  bindGroupTexturesPool_.destroy(handle);
 }
 
-void Device::destroy(BindGroupBufferHandle /*handle*/) {
-  // Stub: Not yet implemented
+void Device::destroy(BindGroupBufferHandle handle) {
+  if (handle.empty()) {
+    return;
+  }
+  bindGroupBuffersPool_.destroy(handle);
 }
 
 void Device::destroy(SamplerHandle /*handle*/) {
@@ -602,7 +618,8 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   if (desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid) {
     psoDesc.DepthStencilState.DepthEnable = TRUE;
     psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-    psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+    // Use LESS_EQUAL to allow Z=0 to pass when depth buffer is cleared to 0
+    psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
     psoDesc.DepthStencilState.StencilEnable = FALSE;
   } else {
     psoDesc.DepthStencilState.DepthEnable = FALSE;
@@ -628,8 +645,18 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   psoDesc.SampleDesc.Count = 1;
   psoDesc.SampleDesc.Quality = 0;  // Must be 0 for Count=1
 
-  // Primitive topology
-  psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+  // Primitive topology - convert from IGL topology enum
+  if (desc.topology == igl::PrimitiveType::Point) {
+    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+    IGL_LOG_INFO("  Setting PSO topology type to POINT\n");
+  } else if (desc.topology == igl::PrimitiveType::Line ||
+             desc.topology == igl::PrimitiveType::LineStrip) {
+    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+    IGL_LOG_INFO("  Setting PSO topology type to LINE\n");
+  } else {
+    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    IGL_LOG_INFO("  Setting PSO topology type to TRIANGLE\n");
+  }
   psoDesc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
 
   // Additional required fields
@@ -993,6 +1020,7 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     // Expected true in tests (non-OpenGL branch)
     case DeviceFeatures::CopyBuffer:
     case DeviceFeatures::DrawInstanced:
+    case DeviceFeatures::DrawFirstIndexFirstVertex: // D3D12 DrawIndexedInstanced supports first index/vertex
     case DeviceFeatures::SRGB:
     case DeviceFeatures::SRGBSwapchain:
     case DeviceFeatures::UniformBlocks:

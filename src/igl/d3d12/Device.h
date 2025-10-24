@@ -9,8 +9,10 @@
 
 #include <memory>
 #include <igl/Buffer.h>
+#include <igl/CommandEncoder.h>
 #include <igl/Device.h>
 #include <igl/Shader.h>
+#include <igl/Common.h>
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/D3D12Context.h>
 
@@ -123,11 +125,23 @@ class Device final : public IDevice {
     return *ctx_;
   }
 
+  // Bind group accessors for RenderCommandEncoder
+  [[nodiscard]] const BindGroupTextureDesc* getBindGroupTextureDesc(BindGroupTextureHandle handle) const {
+    return bindGroupTexturesPool_.get(handle);
+  }
+  [[nodiscard]] const BindGroupBufferDesc* getBindGroupBufferDesc(BindGroupBufferHandle handle) const {
+    return bindGroupBuffersPool_.get(handle);
+  }
+
  private:
   std::unique_ptr<D3D12Context> ctx_;
   std::unique_ptr<PlatformDevice> platformDevice_;
   size_t drawCount_ = 0;
   size_t shaderCompilationCount_ = 0;
+
+  // Bind group pools
+  Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
+  Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
 };
 
 } // namespace igl::d3d12

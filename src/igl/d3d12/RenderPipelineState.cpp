@@ -20,6 +20,30 @@ RenderPipelineState::RenderPipelineState(const RenderPipelineDesc& desc,
     : IRenderPipelineState(desc),
       pipelineState_(std::move(pipelineState)),
       rootSignature_(std::move(rootSignature)) {
+  // Convert IGL primitive topology to D3D12 primitive topology
+  switch (desc.topology) {
+    case PrimitiveType::Point:
+      primitiveTopology_ = D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+      IGL_LOG_INFO("RenderPipelineState: Set topology to POINTLIST\n");
+      break;
+    case PrimitiveType::Line:
+      primitiveTopology_ = D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+      IGL_LOG_INFO("RenderPipelineState: Set topology to LINELIST\n");
+      break;
+    case PrimitiveType::LineStrip:
+      primitiveTopology_ = D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+      IGL_LOG_INFO("RenderPipelineState: Set topology to LINESTRIP\n");
+      break;
+    case PrimitiveType::Triangle:
+      primitiveTopology_ = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+      IGL_LOG_INFO("RenderPipelineState: Set topology to TRIANGLELIST\n");
+      break;
+    case PrimitiveType::TriangleStrip:
+      primitiveTopology_ = D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+      IGL_LOG_INFO("RenderPipelineState: Set topology to TRIANGLESTRIP\n");
+      break;
+  }
+
   // Cache the vertex stride from the vertex input state binding (slot 0) if available
   const auto& vis = desc.vertexInputState;
   if (vis) {
