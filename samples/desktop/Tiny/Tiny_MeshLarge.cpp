@@ -1284,7 +1284,7 @@ void initModel(int numSamplesMSAA) {
                                            sizeof(UniformsPerObject),
                                            ResourceStorage::Shared,
                                            hint,
-                                           "Buffer: uniforms (per object)" + std::to_string(i)),
+                                           "Buffer: uniforms (per object) " + std::to_string(i)),
                                 nullptr));
     }
   }
