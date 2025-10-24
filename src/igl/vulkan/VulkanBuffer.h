@@ -32,6 +32,8 @@ class VulkanBuffer {
 
   VulkanBuffer(const VulkanBuffer&) = delete;
   VulkanBuffer& operator=(const VulkanBuffer&) = delete;
+  VulkanBuffer(VulkanBuffer&&) = delete;
+  VulkanBuffer& operator=(VulkanBuffer&&) = delete;
 
   /** @brief Uploads the data located at `data` into the buffer on the device with the provided
    * `offset`. Only mapped host-visible buffers can be uploaded this way. All other GPU buffers
