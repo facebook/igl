@@ -146,7 +146,7 @@ ShaderLibraryDesc ShaderLibraryDesc::fromStringInput(const char* IGL_NONNULL lib
 
 ShaderLibraryDesc ShaderLibraryDesc::fromBinaryInput(const void* IGL_NONNULL libraryData,
                                                      size_t libraryDataLength,
-                                                     std::vector<igl::ShaderModuleInfo> moduleInfo,
+                                                     std::vector<ShaderModuleInfo> moduleInfo,
                                                      std::string libraryDebugName) {
   ShaderLibraryDesc libraryDesc;
   libraryDesc.input.type = ShaderInputType::Binary;
