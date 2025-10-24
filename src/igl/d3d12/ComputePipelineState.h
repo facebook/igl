@@ -14,7 +14,9 @@ namespace igl::d3d12 {
 
 class ComputePipelineState final : public IComputePipelineState {
  public:
-  ComputePipelineState() = default;
+  ComputePipelineState(Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState,
+                       Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature)
+      : pipelineState_(std::move(pipelineState)), rootSignature_(std::move(rootSignature)) {}
   ~ComputePipelineState() override = default;
 
   std::shared_ptr<IComputePipelineReflection> computePipelineReflection() override;
