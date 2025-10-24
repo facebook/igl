@@ -54,11 +54,16 @@ class CommandBuffer final : public ICommandBuffer {
   ID3D12GraphicsCommandList* getCommandList() const { return commandList_.Get(); }
   D3D12Context& getContext();
   const D3D12Context& getContext() const;
+  Device& getDevice() { return device_; }
+
+  size_t getCurrentDrawCount() const { return currentDrawCount_; }
+  void incrementDrawCount() { ++currentDrawCount_; }
 
  private:
   Device& device_;
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator_;
+  size_t currentDrawCount_ = 0;
 };
 
 } // namespace igl::d3d12

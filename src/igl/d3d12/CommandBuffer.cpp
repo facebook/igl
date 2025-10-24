@@ -93,6 +93,8 @@ const D3D12Context& CommandBuffer::getContext() const {
   return device_.getD3D12Context();
 }
 
+// Device draw count is incremented by CommandQueue::submit() using this buffer's count
+
 std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder(
     const RenderPassDesc& renderPass,
     const std::shared_ptr<IFramebuffer>& framebuffer,

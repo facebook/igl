@@ -90,6 +90,12 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
 
   IGL_LOG_INFO("CommandQueue::submit() - Complete!\n");
 
+  // Aggregate per-command-buffer draw count into the device, matching GL/Vulkan behavior
+  const auto cbDraws = d3dCommandBuffer.getCurrentDrawCount();
+  IGL_LOG_INFO("CommandQueue::submit() - Aggregating %zu draws from CB into device\n", cbDraws);
+  device_.incrementDrawCount(cbDraws);
+  IGL_LOG_INFO("CommandQueue::submit() - Device drawCount now=%zu\n", device_.getCurrentDrawCount());
+
   return 0;
 }
 

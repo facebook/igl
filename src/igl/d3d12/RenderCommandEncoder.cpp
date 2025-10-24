@@ -9,6 +9,7 @@
 #include <igl/d3d12/CommandBuffer.h>
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/RenderPipelineState.h>
+#include <igl/d3d12/Device.h>
 #include <igl/d3d12/Texture.h>
 #include <igl/RenderPass.h>
 #include <igl/d3d12/HeadlessContext.h>
@@ -588,20 +589,24 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
     }
   }
   
-  // Apply cached index buffer binding
-  if (cachedIndexBuffer_.bound) {
-    D3D12_INDEX_BUFFER_VIEW ibView = {};
-    ibView.BufferLocation = cachedIndexBuffer_.bufferLocation;
-    ibView.SizeInBytes = cachedIndexBuffer_.sizeInBytes;
-    ibView.Format = cachedIndexBuffer_.format;
-    commandList_->IASetIndexBuffer(&ibView);
-  }
+    // Apply cached index buffer binding
+    if (cachedIndexBuffer_.bound) {
+      D3D12_INDEX_BUFFER_VIEW ibView = {};
+      ibView.BufferLocation = cachedIndexBuffer_.bufferLocation;
+      ibView.SizeInBytes = cachedIndexBuffer_.sizeInBytes;
+      ibView.Format = cachedIndexBuffer_.format;
+      commandList_->IASetIndexBuffer(&ibView);
+    }
 
-  commandList_->DrawIndexedInstanced(static_cast<UINT>(indexCount),
-                                     instanceCount,
-                                     firstIndex,
-                                     vertexOffset,
-                                     baseInstance);
+    // Track per-command-buffer draw count; CommandQueue aggregates into device on submit
+    commandBuffer_.incrementDrawCount();
+    IGL_LOG_INFO("DrawIndexed: CB drawCount now=%zu\n", commandBuffer_.getCurrentDrawCount());
+
+    commandList_->DrawIndexedInstanced(static_cast<UINT>(indexCount),
+                                       instanceCount,
+                                       firstIndex,
+                                       vertexOffset,
+                                       baseInstance);
 }
 void RenderCommandEncoder::multiDrawIndirect(IBuffer& /*indirectBuffer*/,
                                              size_t /*indirectBufferOffset*/,
