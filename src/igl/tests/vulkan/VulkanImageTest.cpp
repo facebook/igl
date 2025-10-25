@@ -93,7 +93,6 @@ TEST_F(VulkanImageTest, CreateImageWithImportedMemoryWin32) {
   auto importedImage =
       igl::vulkan::VulkanImage(*context_,
                                exportedImage.exportedMemoryHandle_,
-                               context_->getVkDevice(),
                                VkExtent3D{.width = kWidth, .height = kHeight, .depth = 1},
                                VK_IMAGE_TYPE_2D,
                                kFormat,

@@ -1403,7 +1403,6 @@ VulkanImage VulkanContext::createImage(VkImageType imageType,
                                        // @fb-only
                                        // @fb-only
                                        // @fb-only
-                                       // @fb-only
 // @fb-only
 // @fb-only
 
@@ -1429,7 +1428,6 @@ std::unique_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
   return std::make_unique<VulkanImage>(*this,
                                        fileDescriptor,
                                        memoryAllocationSize,
-                                       vkDevice_,
                                        extent,
                                        imageType,
                                        format,

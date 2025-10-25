@@ -113,7 +113,6 @@ class VulkanImage final {
   VulkanImage(const VulkanContext& ctx,
               AHardwareBuffer* ahb,
               uint64_t memoryAllocationSize,
-              VkDevice device,
               VkExtent3D extent,
               VkImageType type,
               VkFormat format,
@@ -151,7 +150,6 @@ class VulkanImage final {
   VulkanImage(const VulkanContext& ctx,
               int32_t undupedFileDescriptor,
               uint64_t memoryAllocationSize,
-              VkDevice device,
               VkExtent3D extent,
               VkImageType type,
               VkFormat format,
@@ -174,7 +172,6 @@ class VulkanImage final {
    */
   VulkanImage(const VulkanContext& ctx,
               void* windowsHandle,
-              VkDevice device,
               VkExtent3D extent,
               VkImageType type,
               VkFormat format,
@@ -345,7 +342,6 @@ class VulkanImage final {
    * it is memory mapped until the object's destruction.
    */
   VulkanImage(const VulkanContext& ctx,
-              VkDevice device,
               VkExtent3D extent,
               VkImageType type,
               VkFormat format,
