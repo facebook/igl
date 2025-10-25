@@ -499,7 +499,7 @@ TEST_F(Ktx2TextureLoaderTest, InvalidHeaderWithExcessiveMipLevels_Fails) {
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 512u;
   const uint32_t vkFormat = VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
-  const uint32_t totalHeaderSize = getTotalHeaderSize(6u, bytesOfKeyValueData, vkFormat);
+  const uint32_t totalHeaderSize = getTotalHeaderSize(vkFormat, 6u, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, 6u);
 
   auto buffer = getBuffer(totalHeaderSize + totalDataSize);
