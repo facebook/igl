@@ -74,7 +74,19 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   // Present if this is end of frame
   auto* swapChain = ctx.getSwapChain();
   if (swapChain) {
-    HRESULT presentHr = swapChain->Present(1, 0); // VSync on
+    // VSync toggle via env var (IGL_D3D12_VSYNC=0 disables vsync)
+    UINT syncInterval = 1;
+    UINT presentFlags = 0;
+    {
+      char buf[8] = {};
+      if (GetEnvironmentVariableA("IGL_D3D12_VSYNC", buf, sizeof(buf)) > 0) {
+        if (buf[0] == '0') {
+          syncInterval = 0;
+          presentFlags |= DXGI_PRESENT_ALLOW_TEARING;
+        }
+      }
+    }
+    HRESULT presentHr = swapChain->Present(syncInterval, presentFlags);
     if (FAILED(presentHr)) {
       IGL_LOG_ERROR("Present failed: 0x%08X\n", static_cast<unsigned>(presentHr));
     } else {

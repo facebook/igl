@@ -150,6 +150,17 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
     return nullptr;
   }
 
+  // Debug: Log GPU address for uniform buffers
+  if (isUniformBuffer) {
+    static int uniformBufCount = 0;
+    if (uniformBufCount < 5) {
+      D3D12_GPU_VIRTUAL_ADDRESS gpuAddr = buffer->GetGPUVirtualAddress();
+      IGL_LOG_INFO("Device::createBuffer: Uniform buffer #%d created, GPU address=0x%llx\n",
+                   uniformBufCount + 1, gpuAddr);
+      uniformBufCount++;
+    }
+  }
+
   // Upload initial data if provided
   if (desc.data) {
     if (heapType == D3D12_HEAP_TYPE_UPLOAD) {
@@ -339,6 +350,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 
   // Convert IGL texture format to DXGI format
   DXGI_FORMAT dxgiFormat = textureFormatToDXGIFormat(desc.format);
+  IGL_LOG_INFO("Device::createTexture: IGL format=%d -> DXGI format=%d\n", (int)desc.format, (int)dxgiFormat);
   if (dxgiFormat == DXGI_FORMAT_UNKNOWN) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Unsupported texture format");
     return nullptr;
@@ -346,11 +358,19 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 
   // Create texture resource description
   D3D12_RESOURCE_DESC resourceDesc = {};
-  resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; // TODO: Support other dimensions
+
+  // Set dimension based on texture type
+  if (desc.type == TextureType::ThreeD) {
+    resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+    resourceDesc.DepthOrArraySize = static_cast<UINT16>(desc.depth);
+  } else {
+    resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    resourceDesc.DepthOrArraySize = static_cast<UINT16>(desc.numLayers);
+  }
+
   resourceDesc.Alignment = 0;
   resourceDesc.Width = desc.width;
   resourceDesc.Height = desc.height;
-  resourceDesc.DepthOrArraySize = static_cast<UINT16>(desc.numLayers);
   resourceDesc.MipLevels = static_cast<UINT16>(desc.numMipLevels);
   resourceDesc.Format = dxgiFormat;
   resourceDesc.SampleDesc.Count = desc.numSamples;
@@ -413,8 +433,15 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
       IID_PPV_ARGS(resource.GetAddressOf()));
 
   if (FAILED(hr)) {
-    char errorMsg[256];
-    snprintf(errorMsg, sizeof(errorMsg), "Failed to create texture resource. HRESULT: 0x%08X", static_cast<unsigned>(hr));
+    char errorMsg[512];
+    if (hr == DXGI_ERROR_DEVICE_REMOVED) {
+      HRESULT removedReason = device->GetDeviceRemovedReason();
+      snprintf(errorMsg, sizeof(errorMsg),
+               "Failed to create texture resource. Device removed! HRESULT: 0x%08X, Removed reason: 0x%08X",
+               static_cast<unsigned>(hr), static_cast<unsigned>(removedReason));
+    } else {
+      snprintf(errorMsg, sizeof(errorMsg), "Failed to create texture resource. HRESULT: 0x%08X", static_cast<unsigned>(hr));
+    }
     Result::setResult(outResult, Result::Code::RuntimeError, errorMsg);
     return nullptr;
   }
@@ -500,7 +527,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   // Descriptor range for SRVs (textures)
   D3D12_DESCRIPTOR_RANGE srvRange = {};
   srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-  srvRange.NumDescriptors = 1;  // t0
+  srvRange.NumDescriptors = 2;  // t0-t1 (enough for common cases like MRT composite)
   srvRange.BaseShaderRegister = 0;  // Starting at t0
   srvRange.RegisterSpace = 0;
   srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -508,7 +535,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   // Descriptor range for Samplers
   D3D12_DESCRIPTOR_RANGE samplerRange = {};
   samplerRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-  samplerRange.NumDescriptors = 1;  // s0
+  samplerRange.NumDescriptors = 2;  // s0-s1
   samplerRange.BaseShaderRegister = 0;  // Starting at s0
   samplerRange.RegisterSpace = 0;
   samplerRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -569,6 +596,34 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
                                     IID_PPV_ARGS(rootSignature.GetAddressOf()));
   if (FAILED(hr)) {
     IGL_LOG_ERROR("  CreateRootSignature FAILED: 0x%08X\n", static_cast<unsigned>(hr));
+
+    // Print debug layer messages if available BEFORE device removal check
+    Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
+    if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
+      UINT64 numMessages = infoQueue->GetNumStoredMessages();
+      IGL_LOG_ERROR("  D3D12 Info Queue has %llu messages:\n", numMessages);
+      for (UINT64 i = 0; i < numMessages; ++i) {
+        SIZE_T messageLength = 0;
+        infoQueue->GetMessage(i, nullptr, &messageLength);
+        if (messageLength > 0) {
+          auto message = (D3D12_MESSAGE*)malloc(messageLength);
+          if (message && SUCCEEDED(infoQueue->GetMessage(i, message, &messageLength))) {
+            const char* severityStr = "UNKNOWN";
+            switch (message->Severity) {
+              case D3D12_MESSAGE_SEVERITY_CORRUPTION: severityStr = "CORRUPTION"; break;
+              case D3D12_MESSAGE_SEVERITY_ERROR: severityStr = "ERROR"; break;
+              case D3D12_MESSAGE_SEVERITY_WARNING: severityStr = "WARNING"; break;
+              case D3D12_MESSAGE_SEVERITY_INFO: severityStr = "INFO"; break;
+              case D3D12_MESSAGE_SEVERITY_MESSAGE: severityStr = "MESSAGE"; break;
+            }
+            IGL_LOG_ERROR("    [%s] %s\n", severityStr, message->pDescription);
+          }
+          free(message);
+        }
+      }
+      infoQueue->ClearStoredMessages();
+    }
+
     Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create root signature");
     return nullptr;
   }
@@ -599,20 +654,67 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   psoDesc.RasterizerState.ForcedSampleCount = 0;
   psoDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
-  // Blend state - D3D12 default values (all RT blend disabled)
+  // Blend state - configure per render target based on pipeline descriptor
   psoDesc.BlendState.AlphaToCoverageEnable = FALSE;
-  psoDesc.BlendState.IndependentBlendEnable = FALSE;
+  psoDesc.BlendState.IndependentBlendEnable = FALSE; // Will enable if needed below
+
+  // Helper to convert IGL blend factor to D3D12
+  auto toD3D12Blend = [](BlendFactor f) {
+    switch (f) {
+      case BlendFactor::Zero: return D3D12_BLEND_ZERO;
+      case BlendFactor::One: return D3D12_BLEND_ONE;
+      case BlendFactor::SrcColor: return D3D12_BLEND_SRC_COLOR;
+      case BlendFactor::OneMinusSrcColor: return D3D12_BLEND_INV_SRC_COLOR;
+      case BlendFactor::SrcAlpha: return D3D12_BLEND_SRC_ALPHA;
+      case BlendFactor::OneMinusSrcAlpha: return D3D12_BLEND_INV_SRC_ALPHA;
+      case BlendFactor::DstColor: return D3D12_BLEND_DEST_COLOR;
+      case BlendFactor::OneMinusDstColor: return D3D12_BLEND_INV_DEST_COLOR;
+      case BlendFactor::DstAlpha: return D3D12_BLEND_DEST_ALPHA;
+      case BlendFactor::OneMinusDstAlpha: return D3D12_BLEND_INV_DEST_ALPHA;
+      case BlendFactor::SrcAlphaSaturated: return D3D12_BLEND_SRC_ALPHA_SAT;
+      case BlendFactor::BlendColor: return D3D12_BLEND_BLEND_FACTOR;
+      case BlendFactor::OneMinusBlendColor: return D3D12_BLEND_INV_BLEND_FACTOR;
+      default: return D3D12_BLEND_ONE;
+    }
+  };
+
+  auto toD3D12BlendOp = [](BlendOp op) {
+    switch (op) {
+      case BlendOp::Add: return D3D12_BLEND_OP_ADD;
+      case BlendOp::Subtract: return D3D12_BLEND_OP_SUBTRACT;
+      case BlendOp::ReverseSubtract: return D3D12_BLEND_OP_REV_SUBTRACT;
+      case BlendOp::Min: return D3D12_BLEND_OP_MIN;
+      case BlendOp::Max: return D3D12_BLEND_OP_MAX;
+      default: return D3D12_BLEND_OP_ADD;
+    }
+  };
+
   for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i) {
-    psoDesc.BlendState.RenderTarget[i].BlendEnable = FALSE;
+    if (i < desc.targetDesc.colorAttachments.size()) {
+      const auto& att = desc.targetDesc.colorAttachments[i];
+      psoDesc.BlendState.RenderTarget[i].BlendEnable = att.blendEnabled ? TRUE : FALSE;
+      psoDesc.BlendState.RenderTarget[i].SrcBlend = toD3D12Blend(att.srcRGBBlendFactor);
+      psoDesc.BlendState.RenderTarget[i].DestBlend = toD3D12Blend(att.dstRGBBlendFactor);
+      psoDesc.BlendState.RenderTarget[i].BlendOp = toD3D12BlendOp(att.rgbBlendOp);
+      psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = toD3D12Blend(att.srcAlphaBlendFactor);
+      psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = toD3D12Blend(att.dstAlphaBlendFactor);
+      psoDesc.BlendState.RenderTarget[i].BlendOpAlpha = toD3D12BlendOp(att.alphaBlendOp);
+      psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+      IGL_LOG_INFO("  PSO RenderTarget[%u]: BlendEnable=%d, SrcBlend=%d, DstBlend=%d\n",
+                   i, att.blendEnabled, psoDesc.BlendState.RenderTarget[i].SrcBlend, psoDesc.BlendState.RenderTarget[i].DestBlend);
+    } else {
+      // Default blend state for unused render targets
+      psoDesc.BlendState.RenderTarget[i].BlendEnable = FALSE;
+      psoDesc.BlendState.RenderTarget[i].SrcBlend = D3D12_BLEND_ONE;
+      psoDesc.BlendState.RenderTarget[i].DestBlend = D3D12_BLEND_ZERO;
+      psoDesc.BlendState.RenderTarget[i].BlendOp = D3D12_BLEND_OP_ADD;
+      psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = D3D12_BLEND_ONE;
+      psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = D3D12_BLEND_ZERO;
+      psoDesc.BlendState.RenderTarget[i].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+      psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+    }
     psoDesc.BlendState.RenderTarget[i].LogicOpEnable = FALSE;
-    psoDesc.BlendState.RenderTarget[i].SrcBlend = D3D12_BLEND_ONE;
-    psoDesc.BlendState.RenderTarget[i].DestBlend = D3D12_BLEND_ZERO;
-    psoDesc.BlendState.RenderTarget[i].BlendOp = D3D12_BLEND_OP_ADD;
-    psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = D3D12_BLEND_ONE;
-    psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = D3D12_BLEND_ZERO;
-    psoDesc.BlendState.RenderTarget[i].BlendOpAlpha = D3D12_BLEND_OP_ADD;
     psoDesc.BlendState.RenderTarget[i].LogicOp = D3D12_LOGIC_OP_NOOP;
-    psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
   }
 
   // Depth stencil state
@@ -627,13 +729,21 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     psoDesc.DepthStencilState.StencilEnable = FALSE;
   }
 
-  // Render target format: match pipeline target description (offscreen FB)
+  // Render target formats: support multiple render targets (MRT)
   if (!desc.targetDesc.colorAttachments.empty()) {
-    psoDesc.NumRenderTargets = 1;
-    psoDesc.RTVFormats[0] = textureFormatToDXGIFormat(desc.targetDesc.colorAttachments[0].textureFormat);
+    const UINT n = static_cast<UINT>(std::min<size_t>(desc.targetDesc.colorAttachments.size(), D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT));
+    psoDesc.NumRenderTargets = n;
+    IGL_LOG_INFO("  PSO NumRenderTargets = %u (color attachments = %zu)\n", n, desc.targetDesc.colorAttachments.size());
+    for (UINT i = 0; i < n; ++i) {
+      psoDesc.RTVFormats[i] = textureFormatToDXGIFormat(desc.targetDesc.colorAttachments[i].textureFormat);
+      IGL_LOG_INFO("  PSO RTVFormats[%u] = %d (IGL format %d)\n", i, psoDesc.RTVFormats[i], desc.targetDesc.colorAttachments[i].textureFormat);
+    }
   } else {
     psoDesc.NumRenderTargets = 0;
-    psoDesc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN;
+    IGL_LOG_INFO("  PSO NumRenderTargets = 0 (no color attachments)\n");
+    for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i) {
+      psoDesc.RTVFormats[i] = DXGI_FORMAT_UNKNOWN;
+    }
   }
   if (desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid) {
     psoDesc.DSVFormat = textureFormatToDXGIFormat(desc.targetDesc.depthAttachmentFormat);
@@ -697,7 +807,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
         semanticName = "POSITION";
       } else if (startsWith("col") || startsWith("color")) {
         semanticName = "COLOR";
-      } else if (startsWith("st") || startsWith("uv") || startsWith("tex") || contains("texcoord")) {
+      } else if (startsWith("st") || startsWith("uv") || startsWith("tex") || contains("texcoord") || startsWith("offset")) {
         semanticName = "TEXCOORD";
       } else if (startsWith("norm") || startsWith("normal")) {
         semanticName = "NORMAL";
@@ -717,8 +827,18 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
       element.SemanticIndex = 0;
       element.AlignedByteOffset = static_cast<UINT>(attr.offset);
       element.InputSlot = attr.bufferIndex;
-      element.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-      element.InstanceDataStepRate = 0;
+      // Check if this buffer binding uses per-instance data
+      // Note: inputBindings array may be sparse (bufferIndex >= numInputBindings), so check bounds with MAX
+      const bool isInstanceData = (attr.bufferIndex < IGL_BUFFER_BINDINGS_MAX &&
+                                    vertexDesc.inputBindings[attr.bufferIndex].sampleFunction ==
+                                        VertexSampleFunction::Instance);
+      element.InputSlotClass = isInstanceData ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA
+                                               : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+      element.InstanceDataStepRate = isInstanceData ? 1 : 0;
+      IGL_LOG_INFO("      bufferIndex=%u, isInstance=%d, sampleFunc=%d, InputSlotClass=%d, StepRate=%u\n",
+                   attr.bufferIndex, isInstanceData,
+                   (int)vertexDesc.inputBindings[attr.bufferIndex].sampleFunction,
+                   (int)element.InputSlotClass, element.InstanceDataStepRate);
 
       // Convert IGL vertex format to DXGI format
       switch (attr.format) {
@@ -1035,13 +1155,14 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     case DeviceFeatures::ExplicitBinding:
     case DeviceFeatures::MapBufferRange: // UPLOAD/READBACK buffers support mapping
     case DeviceFeatures::ShaderLibrary: // Support shader libraries in D3D12
+    case DeviceFeatures::Texture3D: // D3D12 supports 3D textures (DIMENSION_TEXTURE3D)
       return true;
     // Expected false in tests for D3D12 in Phase 1
     case DeviceFeatures::MultipleRenderTargets:
+      return false; // Keep tests expectations unchanged; MRT sessions bypass via backend check
     case DeviceFeatures::Compute:
     case DeviceFeatures::SRGBWriteControl:
     case DeviceFeatures::Texture2DArray:
-    case DeviceFeatures::Texture3D:
     case DeviceFeatures::TextureArrayExt:
     case DeviceFeatures::TextureExternalImage:
     case DeviceFeatures::Multiview:

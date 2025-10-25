@@ -40,11 +40,26 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   }
 
   if (!data) {
+    IGL_LOG_ERROR("Buffer::upload: data is NULL!\n");
     return Result(Result::Code::ArgumentInvalid, "Upload data is null");
   }
 
   // For UPLOAD heap, map, copy, unmap
   if (storage_ == ResourceStorage::Shared) {
+    // Debug: print matrix data
+    if (range.size >= 64) {
+      const float* f = static_cast<const float*>(data);
+      static int uploadCount = 0;
+      if (uploadCount < 1) {
+        IGL_LOG_INFO("Buffer::upload #%d: size=%zu\n", uploadCount + 1, range.size);
+        IGL_LOG_INFO("  Matrix row 0: [%.3f, %.3f, %.3f, %.3f]\n", f[0], f[1], f[2], f[3]);
+        IGL_LOG_INFO("  Matrix row 1: [%.3f, %.3f, %.3f, %.3f]\n", f[4], f[5], f[6], f[7]);
+        IGL_LOG_INFO("  Matrix row 2: [%.3f, %.3f, %.3f, %.3f]\n", f[8], f[9], f[10], f[11]);
+        IGL_LOG_INFO("  Matrix row 3: [%.3f, %.3f, %.3f, %.3f]\n", f[12], f[13], f[14], f[15]);
+        uploadCount++;
+      }
+    }
+
     void* mappedData = nullptr;
     D3D12_RANGE readRange = {0, 0}; // Not reading from GPU
 

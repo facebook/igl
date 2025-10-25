@@ -51,6 +51,9 @@ class ThreeCubesRenderSession : public RenderSession {
   CubeTransform cubes_[3];
   VertexUniforms vertexUniforms_;
 
+  // TEMP: Cache uniform buffers to prevent GPU memory reuse bug in D3D12
+  std::vector<std::shared_ptr<void>> cachedUniformBuffers_;
+
   // Utility functions
   void initializeCubeTransforms();
   void updateCubeTransform(size_t index, float deltaTime);

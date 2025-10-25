@@ -15,6 +15,7 @@
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/D3D12Context.h>
+#include <igl/d3d12/HeadlessContext.h>
 #include <igl/d3d12/PlatformDevice.h>
 #include <igl/d3d12/Texture.h>
 
@@ -29,6 +30,11 @@ class D3D12Shell final : public GlfwShell {
   std::shared_ptr<Platform> createPlatform() noexcept final;
 
   void willCreateWindow() noexcept final;
+
+  // Offscreen fallback when windowed swapchain fails
+  bool offscreen_ = false;
+  std::shared_ptr<ITexture> fallbackColor_;
+  std::shared_ptr<ITexture> fallbackDepth_;
 };
 
 void D3D12Shell::willCreateWindow() noexcept {
@@ -40,18 +46,30 @@ std::shared_ptr<Platform> D3D12Shell::createPlatform() noexcept {
   HWND hwnd = window() ? glfwGetWin32Window(window()) : nullptr;
 
   // Create D3D12 context
-  auto ctx = std::make_unique<d3d12::D3D12Context>();
-
-  Result result = ctx->initialize(
-      hwnd,
-      (uint32_t)shellParams().viewportSize.x,
-      (uint32_t)shellParams().viewportSize.y);
-
-  if (!result.isOk()) {
-    IGL_DEBUG_ABORT("Failed to initialize D3D12 context: %s", result.message.c_str());
+  std::unique_ptr<d3d12::D3D12Context> ctx;
+  Result result;
+  {
+    auto winCtx = std::make_unique<d3d12::D3D12Context>();
+    result = winCtx->initialize(
+        hwnd,
+        (uint32_t)shellParams().viewportSize.x,
+        (uint32_t)shellParams().viewportSize.y);
+    if (result.isOk()) {
+      ctx = std::move(winCtx);
+    } else {
+      IGL_LOG_ERROR("D3D12 windowed init failed: %s. Falling back to headless offscreen.\n", result.message.c_str());
+      auto headless = std::make_unique<d3d12::HeadlessD3D12Context>();
+      Result r2 = headless->initializeHeadless((uint32_t)shellParams().viewportSize.x,
+                                               (uint32_t)shellParams().viewportSize.y);
+      if (!r2.isOk()) {
+        IGL_DEBUG_ABORT("Failed to initialize headless D3D12 context: %s", r2.message.c_str());
+      }
+      ctx = std::move(headless);
+      offscreen_ = true;
+    }
   }
 
-  // Create Device with D3D12Context
+  // Create Device with selected context
   auto device = std::make_unique<d3d12::Device>(std::move(ctx));
 
   return std::make_shared<PlatformWin>(std::move(device));
@@ -65,20 +83,59 @@ SurfaceTextures D3D12Shell::createSurfaceTextures() noexcept {
     IGL_LOG_INFO("createSurfaceTextures() called #%d\n", ++callCount);
   }
 
-  auto& device = platform().getDevice();
-  const auto& d3dPlatformDevice = device.getPlatformDevice<d3d12::PlatformDevice>();
+  auto& dev = platform().getDevice();
 
-  IGL_DEBUG_ASSERT(d3dPlatformDevice != nullptr);
+  if (!offscreen_) {
+    const auto& d3dPlatformDevice = dev.getPlatformDevice<d3d12::PlatformDevice>();
+    IGL_DEBUG_ASSERT(d3dPlatformDevice != nullptr);
 
-  Result ret;
-  auto color = d3dPlatformDevice->createTextureFromNativeDrawable(&ret);
-  IGL_DEBUG_ASSERT(ret.isOk());
+    Result ret;
+    auto color = d3dPlatformDevice->createTextureFromNativeDrawable(&ret);
+    IGL_DEBUG_ASSERT(ret.isOk());
+    auto depth = d3dPlatformDevice->createTextureFromNativeDepth(
+        shellParams().viewportSize.x, shellParams().viewportSize.y, &ret);
+    IGL_DEBUG_ASSERT(ret.isOk());
+    return SurfaceTextures{color, depth};
+  }
 
-  auto depth = d3dPlatformDevice->createTextureFromNativeDepth(
-      shellParams().viewportSize.x, shellParams().viewportSize.y, &ret);
-  IGL_DEBUG_ASSERT(ret.isOk());
+  // Offscreen fallback path: create or resize cached textures
+  const uint32_t w = (uint32_t)shellParams().viewportSize.x;
+  const uint32_t h = (uint32_t)shellParams().viewportSize.y;
+  if (!fallbackColor_ || fallbackColor_->getDimensions().width != w || fallbackColor_->getDimensions().height != h) {
+    // Use BGRA_SRGB format to match Vulkan swapchain format for exact parity
+    TextureDesc colorDesc = TextureDesc::new2D(TextureFormat::BGRA_SRGB,
+                                               w, h,
+                                               TextureDesc::TextureUsageBits::Attachment |
+                                                 TextureDesc::TextureUsageBits::Sampled,
+                                               "Offscreen Color");
+    Result colorResult;
+    fallbackColor_ = dev.createTexture(colorDesc, &colorResult);
+    if (!fallbackColor_) {
+      IGL_LOG_ERROR("Failed to create offscreen color texture: %s\n", colorResult.message.c_str());
+    } else {
+      IGL_LOG_INFO("Created offscreen color texture: %ux%u format=%d\n", w, h, (int)TextureFormat::BGRA_SRGB);
+    }
+  }
+  if (!fallbackDepth_ || fallbackDepth_->getDimensions().width != w || fallbackDepth_->getDimensions().height != h) {
+    TextureDesc depthDesc = TextureDesc::new2D(TextureFormat::Z_UNorm32,
+                                               w, h,
+                                               TextureDesc::TextureUsageBits::Attachment,
+                                               "Offscreen Depth");
+    Result depthResult;
+    fallbackDepth_ = dev.createTexture(depthDesc, &depthResult);
+    if (!fallbackDepth_) {
+      IGL_LOG_ERROR("Failed to create offscreen depth texture: %s\n", depthResult.message.c_str());
+    } else {
+      IGL_LOG_INFO("Created offscreen depth texture: %ux%u format=%d\n", w, h, (int)TextureFormat::Z_UNorm32);
+    }
+  }
 
-  return SurfaceTextures{color, depth};
+  if (!fallbackColor_ || !fallbackDepth_) {
+    IGL_LOG_ERROR("createSurfaceTextures(): Returning NULL textures! color=%p depth=%p\n",
+                  fallbackColor_.get(), fallbackDepth_.get());
+  }
+
+  return SurfaceTextures{fallbackColor_, fallbackDepth_};
 }
 } // namespace
 

@@ -141,11 +141,26 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
   }
 
   // Transition to COPY_SOURCE
+  // For swapchain back buffers, transition from PRESENT; for offscreen RTs, from RENDER_TARGET or COMMON
+  D3D12_RESOURCE_STATES stateBefore = D3D12_RESOURCE_STATE_COMMON;
+  if (srcDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) {
+    // Check if this is a swapchain buffer (created for PRESENT usage)
+    // Heuristic: if format is typical swapchain format and has ALLOW_RENDER_TARGET, assume it's from swapchain
+    if (srcDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM || srcDesc.Format == DXGI_FORMAT_B8G8R8A8_UNORM ||
+        srcDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB || srcDesc.Format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB) {
+      // Likely a swapchain back buffer - transition from PRESENT
+      stateBefore = D3D12_RESOURCE_STATE_PRESENT;
+    } else {
+      // Offscreen render target - transition from RENDER_TARGET
+      stateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    }
+  }
+
   D3D12_RESOURCE_BARRIER toCopySrc{};
   toCopySrc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
   toCopySrc.Transition.pResource = srcRes;
   toCopySrc.Transition.Subresource = mipLevel;
-  toCopySrc.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+  toCopySrc.Transition.StateBefore = stateBefore;
   toCopySrc.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
   cmdList->ResourceBarrier(1, &toCopySrc);
 
@@ -170,9 +185,9 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
   srcBox.back = 1;
   cmdList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, &srcBox);
 
-  // Transition back to COMMON (best-effort)
+  // Transition back to original state (PRESENT for swapchain, RENDER_TARGET or COMMON for offscreen)
   toCopySrc.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
-  toCopySrc.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+  toCopySrc.Transition.StateAfter = stateBefore;
   cmdList->ResourceBarrier(1, &toCopySrc);
 
   cmdList->Close();
@@ -208,6 +223,11 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
 
   const size_t srcRowPitch = footprint.Footprint.RowPitch;
   const size_t copyRowBytes = static_cast<size_t>(range.width) * bytesPerPixel;
+
+  // Debug: log first pixel and format info
+  IGL_LOG_INFO("copyBytes: format=%d (DXGI=%d), bytesPerPixel=%zu, first 4 bytes: %d,%d,%d,%d\n",
+               (int)srcTex->getFormat(), (int)srcDesc.Format, bytesPerPixel,
+               (int)srcPtr[0], (int)srcPtr[1], (int)srcPtr[2], (int)srcPtr[3]);
 
   // Always flip vertically to match Metal/Vulkan behavior
   // The validation helper will un-flip for non-render-target textures if needed

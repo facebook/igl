@@ -236,7 +236,7 @@ Result Texture::uploadInternal(TextureType type,
                                 const void* data,
                                 size_t bytesPerRow,
                                 const uint32_t* mipLevelBytes) const {
-  if (!(type == TextureType::TwoD || type == TextureType::TwoDArray)) {
+  if (!(type == TextureType::TwoD || type == TextureType::TwoDArray || type == TextureType::ThreeD)) {
     return Result(Result::Code::Unimplemented, "Upload not implemented for this texture type");
   }
 
@@ -316,11 +316,32 @@ bool Texture::isRequiredGenerateMipmap() const {
 }
 
 void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc* /*range*/) const {
+  // TODO(D3D12): Mipmap generation currently causes device removal due to incorrect resource state
+  // transitions or invalid API usage. The issue occurs when transitioning mip levels between
+  // COMMON, RENDER_TARGET, and PIXEL_SHADER_RESOURCE states. Needs investigation with PIX or
+  // enhanced D3D12 debug layer output.
+  // For now, textures will use only mip level 0 (no mipmaps), which is acceptable for Phase 5.
+  IGL_LOG_INFO("Texture::generateMipmap() - DISABLED: Mipmap generation not yet fully implemented for D3D12\n");
+  return;
+
+  IGL_LOG_INFO("Texture::generateMipmap(cmdQueue) - START: numMips=%u\n", numMipLevels_);
+
   if (!device_ || !queue_ || !resource_.Get() || numMipLevels_ < 2) {
+    IGL_LOG_INFO("Texture::generateMipmap() - Skipping: device=%p queue=%p resource=%p numMips=%u\n",
+                 device_, queue_, resource_.Get(), numMipLevels_);
     return;
   }
 
   D3D12_RESOURCE_DESC resourceDesc = resource_->GetDesc();
+
+  // Only support 2D textures for mipmap generation
+  if (resourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
+    IGL_LOG_INFO("Texture::generateMipmap() - Skipping: only 2D textures supported (dimension=%d)\n",
+                 (int)resourceDesc.Dimension);
+    return;
+  }
+
+  IGL_LOG_INFO("Texture::generateMipmap() - Proceeding with mipmap generation\n");
 
   D3D12_DESCRIPTOR_RANGE ranges[2] = {};
   ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -434,6 +455,17 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   D3D12_GPU_DESCRIPTOR_HANDLE srvGpu = srvHeap->GetGPUDescriptorHandleForHeapStart();
   D3D12_GPU_DESCRIPTOR_HANDLE smpGpu = smpHeap->GetGPUDescriptorHandleForHeapStart();
 
+  // Ensure mip 0 is in PIXEL_SHADER_RESOURCE state for first SRV read
+  // (It should already be in this state from upload, but be explicit)
+  D3D12_RESOURCE_BARRIER initBarrier = {};
+  initBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+  initBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+  initBarrier.Transition.pResource = resource_.Get();
+  initBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+  initBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+  initBarrier.Transition.Subresource = 0;
+  // No-op barrier, just to be explicit (D3D12 allows this)
+
   for (UINT mip = 0; mip + 1 < numMipLevels_; ++mip) {
     D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
     srv.Format = resourceDesc.Format;
@@ -456,6 +488,9 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     D3D12_CPU_DESCRIPTOR_HANDLE rtvCpu = rtvHeap->GetCPUDescriptorHandleForHeapStart();
     device_->CreateRenderTargetView(resource_.Get(), &rtv, rtvCpu);
 
+    // Transition mip level to render target
+    // Note: Only mip 0 was uploaded and is in PIXEL_SHADER_RESOURCE state
+    // Higher mips (1+) are still in COMMON state (initial state)
     D3D12_RESOURCE_BARRIER toRT = {};
     toRT.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     toRT.Transition.pResource = resource_.Get();
@@ -500,10 +535,20 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
 }
 
 void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDesc* /*range*/) const {
+  // TODO(D3D12): Mipmap generation not yet implemented - see generateMipmap(ICommandQueue&) for details
+  IGL_LOG_INFO("Texture::generateMipmap(cmdBuffer) - DISABLED: Not yet implemented for D3D12\n");
+  return;
+
   if (!device_ || !queue_ || !resource_.Get() || numMipLevels_ < 2) {
     return;
   }
   D3D12_RESOURCE_DESC resourceDesc = resource_->GetDesc();
+
+  // Only support 2D textures for mipmap generation
+  if (resourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
+    IGL_LOG_INFO("Texture::generateMipmap(cmdBuffer) - Skipping: only 2D textures supported\n");
+    return;
+  }
   D3D12_DESCRIPTOR_RANGE ranges[2] = {};
   ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
   ranges[0].NumDescriptors = 1;
@@ -614,6 +659,9 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     if (FAILED(device_->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(rtvHeap.GetAddressOf())))) return;
     D3D12_CPU_DESCRIPTOR_HANDLE rtvCpu = rtvHeap->GetCPUDescriptorHandleForHeapStart();
     device_->CreateRenderTargetView(resource_.Get(), &rtv, rtvCpu);
+    // Transition mip level to render target
+    // Note: Only mip 0 was uploaded and is in PIXEL_SHADER_RESOURCE state
+    // Higher mips (1+) are still in COMMON state (initial state)
     D3D12_RESOURCE_BARRIER toRT = {};
     toRT.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     toRT.Transition.pResource = resource_.Get();

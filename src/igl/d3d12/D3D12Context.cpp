@@ -128,27 +128,58 @@ void D3D12Context::createDevice() {
     throw std::runtime_error("Failed to create DXGI factory");
   }
 
-  // Enumerate adapters
-  for (UINT i = 0; dxgiFactory_->EnumAdapters1(i, adapter_.GetAddressOf()) != DXGI_ERROR_NOT_FOUND; ++i) {
-    DXGI_ADAPTER_DESC1 desc;
-    adapter_->GetDesc1(&desc);
-
-    // Skip software adapter
-    if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
-      continue;
-    }
-
-    // Try to create device
-    if (SUCCEEDED(D3D12CreateDevice(adapter_.Get(), D3D_FEATURE_LEVEL_12_0,
-                                     _uuidof(ID3D12Device), nullptr))) {
-      break;
+  // Prefer high-performance hardware adapter first; fallback to WARP
+  bool created = false;
+  Microsoft::WRL::ComPtr<IDXGIFactory6> factory6;
+  (void)dxgiFactory_->QueryInterface(IID_PPV_ARGS(factory6.GetAddressOf()));
+  if (factory6.Get()) {
+    for (UINT i = 0;; ++i) {
+      Microsoft::WRL::ComPtr<IDXGIAdapter1> cand;
+      if (FAILED(factory6->EnumAdapterByGpuPreference(i,
+                                                      DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
+                                                      IID_PPV_ARGS(cand.GetAddressOf())))) {
+        break;
+      }
+      DXGI_ADAPTER_DESC1 desc{};
+      cand->GetDesc1(&desc);
+      if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
+        continue;
+      }
+      if (SUCCEEDED(D3D12CreateDevice(cand.Get(), D3D_FEATURE_LEVEL_12_0,
+                                      IID_PPV_ARGS(device_.GetAddressOf())))) {
+        created = true;
+        IGL_LOG_INFO("D3D12Context: Using HW adapter (FL 12.0)\n");
+        break;
+      }
     }
   }
-
-  // Create D3D12 device
-  hr = D3D12CreateDevice(adapter_.Get(), D3D_FEATURE_LEVEL_12_0,
-                          IID_PPV_ARGS(device_.GetAddressOf()));
-  if (FAILED(hr)) {
+  if (!created) {
+    // Fallback: enumerate adapters
+    for (UINT i = 0; dxgiFactory_->EnumAdapters1(i, adapter_.GetAddressOf()) != DXGI_ERROR_NOT_FOUND; ++i) {
+      DXGI_ADAPTER_DESC1 desc{};
+      adapter_->GetDesc1(&desc);
+      if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
+        continue;
+      }
+      if (SUCCEEDED(D3D12CreateDevice(adapter_.Get(), D3D_FEATURE_LEVEL_12_0,
+                                      IID_PPV_ARGS(device_.GetAddressOf())))) {
+        created = true;
+        IGL_LOG_INFO("D3D12Context: Using HW adapter via EnumAdapters1 (FL 12.0)\n");
+        break;
+      }
+    }
+  }
+  if (!created) {
+    // WARP fallback (FL 11.0)
+    Microsoft::WRL::ComPtr<IDXGIAdapter> warp;
+    if (SUCCEEDED(dxgiFactory_->EnumWarpAdapter(IID_PPV_ARGS(warp.GetAddressOf()))) &&
+        SUCCEEDED(D3D12CreateDevice(warp.Get(), D3D_FEATURE_LEVEL_11_0,
+                                    IID_PPV_ARGS(device_.GetAddressOf())))) {
+      created = true;
+      IGL_LOG_INFO("D3D12Context: Using WARP adapter (FL 11.0)\n");
+    }
+  }
+  if (!created) {
     throw std::runtime_error("Failed to create D3D12 device");
   }
 
@@ -191,7 +222,8 @@ void D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height) {
   DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
   swapChainDesc.Width = width;
   swapChainDesc.Height = height;
-  swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+  // Use sRGB format to match Vulkan/Metal behavior for correct color space
+  swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
   swapChainDesc.Stereo = FALSE;
   swapChainDesc.SampleDesc.Count = 1;
   swapChainDesc.SampleDesc.Quality = 0;
@@ -200,6 +232,15 @@ void D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height) {
   swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
   swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
   swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+
+  // Tearing support (optional) if vsync disabled by env var
+  BOOL allowTearing = FALSE;
+  Microsoft::WRL::ComPtr<IDXGIFactory5> factory5;
+  if (SUCCEEDED(dxgiFactory_.Get()->QueryInterface(IID_PPV_ARGS(factory5.GetAddressOf())))) {
+    (void)factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING,
+                                        &allowTearing,
+                                        sizeof(allowTearing));
+  }
 
   Microsoft::WRL::ComPtr<IDXGISwapChain1> tempSwapChain;
   HRESULT hr = dxgiFactory_->CreateSwapChainForHwnd(
@@ -212,7 +253,38 @@ void D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height) {
   );
 
   if (FAILED(hr)) {
-    throw std::runtime_error("Failed to create swapchain");
+    IGL_LOG_ERROR("CreateSwapChainForHwnd failed: 0x%08X, trying legacy CreateSwapChain\n", (unsigned)hr);
+    // Fallback: legacy CreateSwapChain
+    DXGI_SWAP_CHAIN_DESC legacy = {};
+    legacy.BufferDesc.Width = width;
+    legacy.BufferDesc.Height = height;
+    legacy.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+    legacy.BufferDesc.RefreshRate.Numerator = 60;
+    legacy.BufferDesc.RefreshRate.Denominator = 1;
+    legacy.SampleDesc.Count = 1;
+    legacy.SampleDesc.Quality = 0;
+    legacy.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    legacy.BufferCount = kMaxFramesInFlight;
+    legacy.OutputWindow = hwnd;
+    legacy.Windowed = TRUE;
+    legacy.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+    legacy.Flags = 0;
+
+    Microsoft::WRL::ComPtr<IDXGISwapChain> legacySwap;
+    HRESULT hr2 = dxgiFactory_->CreateSwapChain(commandQueue_.Get(), &legacy, legacySwap.GetAddressOf());
+    if (FAILED(hr2)) {
+      char buf2[160] = {};
+      snprintf(buf2, sizeof(buf2), "Failed to create swapchain (hr=0x%08X / 0x%08X)", (unsigned)hr, (unsigned)hr2);
+      throw std::runtime_error(buf2);
+    }
+    // Try to QI to IDXGISwapChain3
+    hr2 = legacySwap->QueryInterface(IID_PPV_ARGS(swapChain_.GetAddressOf()));
+    if (FAILED(hr2)) {
+      char buf3[160] = {};
+      snprintf(buf3, sizeof(buf3), "Failed to query IDXGISwapChain3 (hr=0x%08X)", (unsigned)hr2);
+      throw std::runtime_error(buf3);
+    }
+    return;
   }
 
   // Cast to IDXGISwapChain3

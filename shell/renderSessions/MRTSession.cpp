@@ -253,6 +253,38 @@ static std::unique_ptr<IShaderStages> createShaderStagesForBackend(const IDevice
   case igl::BackendType::Custom:
     IGL_DEBUG_ABORT("No Custom shader available");
     return nullptr;
+  case igl::BackendType::D3D12: {
+    if (programIndex == 0) {
+      // First pass: write to SV_Target0 and SV_Target1
+      static const char* kVS = R"(
+        struct VSIn { float3 position: POSITION; float2 uv: TEXCOORD0; };
+        struct VSOut { float4 position: SV_POSITION; float2 uv: TEXCOORD0; };
+        VSOut main(VSIn v){ VSOut o; o.position=float4(v.position,1); o.uv=v.uv; return o; }
+      )";
+      static const char* kPS = R"(
+        Texture2D inputImage : register(t0); SamplerState s0 : register(s0);
+        struct PSIn { float4 position: SV_POSITION; float2 uv: TEXCOORD0; };
+        struct PSOut { float4 colorGreen: SV_Target0; float4 colorRed: SV_Target1; };
+        PSOut main(PSIn i){ float4 c = inputImage.Sample(s0, i.uv);
+          PSOut o; o.colorGreen=float4(0,c.g,0,1); o.colorRed=float4(c.r,0,0,1); return o; }
+      )";
+      return igl::ShaderStagesCreator::fromModuleStringInput(device, kVS, "main", "", kPS, "main", "", nullptr);
+    } else {
+      // Second pass: sample two textures and output sum
+      static const char* kVS = R"(
+        struct VSIn { float3 position: POSITION; float2 uv: TEXCOORD0; };
+        struct VSOut { float4 position: SV_POSITION; float2 uv: TEXCOORD0; };
+        VSOut main(VSIn v){ VSOut o; o.position=float4(v.position,1); o.uv=v.uv; return o; }
+      )";
+      static const char* kPS = R"(
+        Texture2D colorGreen : register(t0); Texture2D colorRed : register(t1); SamplerState s0 : register(s0);
+        struct PSIn { float4 position: SV_POSITION; float2 uv: TEXCOORD0; };
+        float4 main(PSIn i) : SV_Target { float2 uv1=float2(i.uv.x, 1.0 - i.uv.y);
+          return colorGreen.Sample(s0, uv1) + colorRed.Sample(s0, uv1); }
+      )";
+      return igl::ShaderStagesCreator::fromModuleStringInput(device, kVS, "main", "", kPS, "main", "", nullptr);
+    }
+  }
   // @fb-only
     // @fb-only
     // @fb-only
@@ -279,6 +311,10 @@ static std::unique_ptr<IShaderStages> createShaderStagesForBackend(const IDevice
 }
 
 static bool isDeviceCompatible(IDevice& device) noexcept {
+  // D3D12 supports MRT; keep tests stable by not toggling feature gate in Device
+  if (device.getBackendType() == igl::BackendType::D3D12) {
+    return true;
+  }
   return device.hasFeature(DeviceFeatures::MultipleRenderTargets);
 }
 

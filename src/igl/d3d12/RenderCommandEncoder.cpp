@@ -40,8 +40,10 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
     IGL_LOG_INFO("RenderCommandEncoder: Using DescriptorHeapManager heaps\n");
     cbvSrvUavHeap = heapMgr->getCbvSrvUavHeap();
     samplerHeap = heapMgr->getSamplerHeap();
-  } else {
-    IGL_LOG_INFO("RenderCommandEncoder: Using D3D12Context heaps (legacy fallback)\n");
+  }
+  // Fallback if manager present but heaps not available
+  if (!cbvSrvUavHeap || !samplerHeap) {
+    IGL_LOG_INFO("RenderCommandEncoder: Falling back to context heaps\n");
     cbvSrvUavHeap = context.getCbvSrvUavHeap();
     samplerHeap = context.getSamplerHeap();
   }
@@ -57,6 +59,7 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
   // Create RTV from framebuffer if provided; otherwise fallback to swapchain RTV
   IGL_LOG_INFO("RenderCommandEncoder: Setting up RTV...\n");
   D3D12_CPU_DESCRIPTOR_HANDLE rtv = {};
+  std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvs;
   bool usedOffscreenRTV = false;
   // Note: heapMgr already retrieved above for setting descriptor heaps
   IGL_LOG_INFO("RenderCommandEncoder: DescriptorHeapManager = %p\n", heapMgr);
@@ -66,76 +69,65 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
   // Swapchain textures should use context.getCurrentRTV() directly
   if (framebuffer_ && framebuffer_->getColorAttachment(0) && heapMgr) {
     IGL_LOG_INFO("RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager\n");
-    auto colorTex = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(0));
-    IGL_LOG_INFO("RenderCommandEncoder: colorTex=%p\n", colorTex.get());
     ID3D12Device* device = context.getDevice();
-    IGL_LOG_INFO("RenderCommandEncoder: device=%p\n", device);
+    if (device) {
+      // Create RTVs for each color attachment
+      const size_t count = std::min<size_t>(framebuffer_->getColorAttachmentIndices().size(), D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT);
+      IGL_LOG_INFO("RenderCommandEncoder: MRT count = %zu (indices.size=%zu)\n", count, framebuffer_->getColorAttachmentIndices().size());
+      for (size_t i = 0; i < count; ++i) {
+        auto tex = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(i));
+        IGL_LOG_INFO("RenderCommandEncoder: MRT loop i=%zu, tex=%p, resource=%p\n", i, tex.get(), tex ? tex->getResource() : nullptr);
+        if (!tex || !tex->getResource()) {
+          IGL_LOG_INFO("RenderCommandEncoder: MRT loop i=%zu SKIPPED (null tex or resource)\n", i);
+          continue;
+        }
+        // Allocate RTV
+        uint32_t rtvIdx = heapMgr->allocateRTV();
+        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = heapMgr->getRTVHandle(rtvIdx);
+        if (i == 0) {
+          rtvIndex_ = rtvIdx;
+          rtvHandle_ = rtvHandle;
+        }
+        // Create RTV view
+        D3D12_RENDER_TARGET_VIEW_DESC rdesc = {};
+        rdesc.Format = textureFormatToDXGIFormat(tex->getFormat());
+        rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+        rdesc.Texture2D.MipSlice = (i < renderPass.colorAttachments.size()) ? renderPass.colorAttachments[i].mipLevel : 0;
+        rdesc.Texture2D.PlaneSlice = 0;
+        device->CreateRenderTargetView(tex->getResource(), &rdesc, rtvHandle);
 
-    // Check if this is a swapchain back buffer (don't create offscreen RTV for it)
-    // Heuristic: If swapchain exists and texture dimensions match swapchain, it's a swapchain texture
-    bool isSwapchainTexture = false;
-    if (context.getSwapChain()) {
-      DXGI_SWAP_CHAIN_DESC swapDesc{};
-      context.getSwapChain()->GetDesc(&swapDesc);
-      auto dims = colorTex->getDimensions();
-      // If dimensions match swapchain, assume it's a swapchain back buffer
-      if (dims.width == swapDesc.BufferDesc.Width &&
-          dims.height == swapDesc.BufferDesc.Height) {
-        isSwapchainTexture = true;
+        // Transition to RENDER_TARGET (detect swapchain backbuffer for correct StateBefore)
+        D3D12_RESOURCE_BARRIER bb = {};
+        bb.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        bb.Transition.pResource = tex->getResource();
+        // If this texture is the current swapchain backbuffer, transition from PRESENT
+        bb.Transition.StateBefore = (tex->getResource() == context.getCurrentBackBuffer())
+                                        ? D3D12_RESOURCE_STATE_PRESENT
+                                        : D3D12_RESOURCE_STATE_COMMON;
+        bb.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        bb.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        commandList_->ResourceBarrier(1, &bb);
+
+        // Clear if requested
+        if (i < renderPass.colorAttachments.size() && renderPass.colorAttachments[i].loadAction == LoadAction::Clear) {
+          const auto& clearColor = renderPass.colorAttachments[i].clearColor;
+          const float color[] = {clearColor.r, clearColor.g, clearColor.b, clearColor.a};
+          IGL_LOG_INFO("RenderCommandEncoder: Clearing MRT attachment %zu with color (%.2f, %.2f, %.2f, %.2f)\n",
+                       i, color[0], color[1], color[2], color[3]);
+          commandList_->ClearRenderTargetView(rtvHandle, color, 0, nullptr);
+        } else {
+          IGL_LOG_INFO("RenderCommandEncoder: NOT clearing MRT attachment %zu (loadAction=%d, hasAttachment=%d)\n",
+                       i, renderPass.colorAttachments.size() > i ? (int)renderPass.colorAttachments[i].loadAction : -1,
+                       i < renderPass.colorAttachments.size());
+        }
+        rtvs.push_back(rtvHandle);
+        IGL_LOG_INFO("RenderCommandEncoder: MRT Created RTV #%zu, total RTVs now=%zu\n", i, rtvs.size());
       }
-    }
-    IGL_LOG_INFO("RenderCommandEncoder: isSwapchainTexture=%d\n", isSwapchainTexture);
-
-    if (device && colorTex && colorTex->getResource() && !isSwapchainTexture) {
-      IGL_LOG_INFO("RenderCommandEncoder: Creating offscreen RTV\n");
-      if (true) {  // Always use heapMgr here since we checked it above
-        IGL_LOG_INFO("RenderCommandEncoder: Using DescriptorHeapManager for RTV\n");
-        rtvIndex_ = heapMgr->allocateRTV();
-        rtvHandle_ = heapMgr->getRTVHandle(rtvIndex_);
-      } else {
-        IGL_LOG_INFO("RenderCommandEncoder: Creating transient RTV heap\n");
-        // Fallback: transient heap
-        Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> tmpHeap;
-        D3D12_DESCRIPTOR_HEAP_DESC rtvDesc = {};
-        rtvDesc.NumDescriptors = 1;
-        rtvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-        rtvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-        device->CreateDescriptorHeap(&rtvDesc, IID_PPV_ARGS(tmpHeap.GetAddressOf()));
-        rtvHandle_ = tmpHeap->GetCPUDescriptorHandleForHeapStart();
+      IGL_LOG_INFO("RenderCommandEncoder: MRT Total RTVs created: %zu\n", rtvs.size());
+      if (!rtvs.empty()) {
+        rtv = rtvs[0];
+        usedOffscreenRTV = true;
       }
-
-      IGL_LOG_INFO("RenderCommandEncoder: Creating RenderTargetView\n");
-      D3D12_RENDER_TARGET_VIEW_DESC rdesc = {};
-      rdesc.Format = textureFormatToDXGIFormat(colorTex->getFormat());
-      rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-      // Set mip level from render pass
-      rdesc.Texture2D.MipSlice = !renderPass.colorAttachments.empty()
-                                  ? renderPass.colorAttachments[0].mipLevel
-                                  : 0;
-      rdesc.Texture2D.PlaneSlice = 0;
-      device->CreateRenderTargetView(colorTex->getResource(), &rdesc, rtvHandle_);
-      IGL_LOG_INFO("RenderCommandEncoder: RenderTargetView created\n");
-
-      D3D12_RESOURCE_BARRIER bb = {};
-      bb.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-      bb.Transition.pResource = colorTex->getResource();
-      bb.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
-      bb.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-      // Transition only the specific mip level we're rendering to
-      bb.Transition.Subresource = !renderPass.colorAttachments.empty()
-                                    ? renderPass.colorAttachments[0].mipLevel
-                                    : D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-      commandList_->ResourceBarrier(1, &bb);
-
-      if (!renderPass.colorAttachments.empty() &&
-          renderPass.colorAttachments[0].loadAction == LoadAction::Clear) {
-        const auto& clearColor = renderPass.colorAttachments[0].clearColor;
-        const float color[] = {clearColor.r, clearColor.g, clearColor.b, clearColor.a};
-        commandList_->ClearRenderTargetView(rtvHandle_, color, 0, nullptr);
-      }
-
-      rtv = rtvHandle_;
-      usedOffscreenRTV = true;
     }
   }
   if (!usedOffscreenRTV) {
@@ -216,14 +208,32 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
 
       // Bind RTV + DSV
       IGL_LOG_INFO("RenderCommandEncoder: Binding RTV with DSV\n");
-      commandList_->OMSetRenderTargets(1, &rtv, FALSE, &dsvHandle_);
+      if (!rtvs.empty()) {
+        IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with %zu RTVs + DSV\n", rtvs.size());
+        commandList_->OMSetRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(), FALSE, &dsvHandle_);
+      } else {
+        IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with 1 RTV + DSV\n");
+        commandList_->OMSetRenderTargets(1, &rtv, FALSE, &dsvHandle_);
+      }
     } else {
       IGL_LOG_INFO("RenderCommandEncoder: Binding RTV without DSV (no resource)\n");
-      commandList_->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+      if (!rtvs.empty()) {
+        IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with %zu RTVs, no DSV\n", rtvs.size());
+        commandList_->OMSetRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(), FALSE, nullptr);
+      } else {
+        IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with 1 RTV, no DSV\n");
+        commandList_->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+      }
     }
   } else {
     IGL_LOG_INFO("RenderCommandEncoder: Binding RTV without DSV (no hasDepth)\n");
-    commandList_->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+    if (!rtvs.empty()) {
+      IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with %zu RTVs, no DSV (no hasDepth)\n", rtvs.size());
+      commandList_->OMSetRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(), FALSE, nullptr);
+    } else {
+      IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with 1 RTV, no DSV (no hasDepth)\n");
+      commandList_->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+    }
   }
 
   // Set a default full-screen viewport/scissor if caller forgets. Prefer framebuffer attachment size.
@@ -268,6 +278,19 @@ void RenderCommandEncoder::endEncoding() {
       barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
       barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
       barrier.Transition.pResource = backBuffer;
+      barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+      barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+      barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      commandList_->ResourceBarrier(1, &barrier);
+    }
+  } else {
+    // If framebuffer color attachment is the current swapchain backbuffer, also transition to PRESENT
+    auto swapColor = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(0));
+    if (swapColor && swapColor->getResource() == context2.getCurrentBackBuffer()) {
+      D3D12_RESOURCE_BARRIER barrier = {};
+      barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+      barrier.Transition.pResource = swapColor->getResource();
       barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
       barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
       barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
@@ -423,10 +446,9 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
     return;
   }
 
-  // For simple cases, use slot 0 for s0 (first sampler)
-  // This matches the root signature which expects descriptor table starting at s0
-  const uint32_t descriptorIndex = 0;
-  IGL_LOG_INFO("bindSamplerState: using descriptor slot %u for s0\n", descriptorIndex);
+  // Use the index parameter to create sampler at correct descriptor slot (s0, s1, etc.)
+  const uint32_t descriptorIndex = static_cast<uint32_t>(index);
+  IGL_LOG_INFO("bindSamplerState: using descriptor slot %u for s%zu\n", descriptorIndex, index);
 
   // Create sampler descriptor from ISamplerState if provided, else fallback
   D3D12_SAMPLER_DESC samplerDesc = {};
@@ -453,9 +475,11 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
   IGL_LOG_INFO("bindSamplerState: creating sampler at slot %u, CPU handle 0x%llx\n", descriptorIndex, cpuHandle.ptr);
   device->CreateSampler(&samplerDesc, cpuHandle);
 
-  // Cache sampler GPU handle - will be bound in drawIndexed along with texture
-  cachedSamplerGpuHandle_ = heapMgr->getSamplerGpuHandle(descriptorIndex);
-  IGL_LOG_INFO("bindSamplerState: cached sampler GPU handle 0x%llx\n", cachedSamplerGpuHandle_.ptr);
+  // Cache sampler GPU handle for this index - store in array indexed by sampler unit
+  cachedSamplerGpuHandles_[index] = heapMgr->getSamplerGpuHandle(descriptorIndex);
+  cachedSamplerGpuHandle_ = cachedSamplerGpuHandles_[0]; // Maintain backward compat with single-sampler path
+  cachedSamplerCount_ = std::max(cachedSamplerCount_, index + 1);
+  IGL_LOG_INFO("bindSamplerState: cached sampler[%zu] GPU handle 0x%llx\n", index, cachedSamplerGpuHandles_[index].ptr);
 }
 void RenderCommandEncoder::bindTexture(size_t index,
                                        uint8_t /*target*/,
@@ -496,18 +520,60 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
     return;
   }
 
-  // For simple cases, use slot 0 for t0 (first texture)
-  // This matches the root signature which expects descriptor table starting at t0
-  const uint32_t descriptorIndex = 0;
-  IGL_LOG_INFO("bindTexture: using descriptor slot %u for t0\n", descriptorIndex);
+  // Ensure resource is in PIXEL_SHADER_RESOURCE state for sampling
+  // Only transition if not already in PIXEL_SHADER_RESOURCE or COMMON (which is implicitly compatible)
+  // For textures that were just used as render targets (have ALLOW_RENDER_TARGET flag), transition from RENDER_TARGET
+  // For regular sampled textures, assume they're already in COMMON or PIXEL_SHADER_RESOURCE
+  {
+    auto desc = resource->GetDesc();
+    const bool wasRenderTarget = (desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) != 0;
+
+    if (wasRenderTarget) {
+      // This texture can be used as a render target, so it may be in RENDER_TARGET state
+      // Transition it to PIXEL_SHADER_RESOURCE for sampling
+      D3D12_RESOURCE_BARRIER toSrv = {};
+      toSrv.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      toSrv.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+      toSrv.Transition.pResource = resource;
+      toSrv.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      toSrv.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+      toSrv.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+      commandList_->ResourceBarrier(1, &toSrv);
+      IGL_LOG_INFO("bindTexture: transitioned render target texture from RENDER_TARGET to PIXEL_SHADER_RESOURCE\n");
+    }
+    // For non-render-target textures, assume they're in COMMON/PIXEL_SHADER_RESOURCE already
+    // D3D12 allows implicit promotion from COMMON to read states, so no barrier needed
+  }
+
+  // Use the index parameter to create SRV at correct descriptor slot (t0, t1, etc.)
+  const uint32_t descriptorIndex = static_cast<uint32_t>(index);
+  IGL_LOG_INFO("bindTexture: using descriptor slot %u for t%zu\n", descriptorIndex, index);
 
   // Create SRV descriptor at the allocated slot
   D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
   srvDesc.Format = textureFormatToDXGIFormat(d3dTexture->getFormat());
-  srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
   srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-  srvDesc.Texture2D.MipLevels = d3dTexture->getNumMipLevels();
-  srvDesc.Texture2D.MostDetailedMip = 0;
+
+  // Set view dimension based on texture type
+  // CRITICAL: Must query actual resource dimension to avoid CreateShaderResourceView errors
+  auto resourceDesc = resource->GetDesc();
+  IGL_LOG_INFO("bindTexture: resource dimension=%d, texture type=%d\n", resourceDesc.Dimension, (int)d3dTexture->getType());
+
+  if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D) {
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+    srvDesc.Texture3D.MipLevels = d3dTexture->getNumMipLevels();
+    srvDesc.Texture3D.MostDetailedMip = 0;
+    IGL_LOG_INFO("bindTexture: using TEXTURE3D view dimension\n");
+  } else if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
+    // Default to 2D textures
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = d3dTexture->getNumMipLevels();
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    IGL_LOG_INFO("bindTexture: using TEXTURE2D view dimension\n");
+  } else {
+    IGL_LOG_ERROR("bindTexture: unsupported resource dimension %d\n", resourceDesc.Dimension);
+    return;
+  }
 
   // Verify we're using the right heap
   auto* heap = heapMgr->getCbvSrvUavHeap();
@@ -519,10 +585,13 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   IGL_LOG_INFO("bindTexture: creating SRV at slot %u, CPU handle 0x%llx\n", descriptorIndex, cpuHandle.ptr);
   device->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
 
-  // Cache texture GPU handle - will be bound in drawIndexed along with sampler
-  cachedTextureGpuHandle_ = heapMgr->getCbvSrvUavGpuHandle(descriptorIndex);
-  IGL_LOG_INFO("bindTexture: cached texture GPU handle 0x%llx (offset from heap start: %lld)\n",
-               cachedTextureGpuHandle_.ptr, (int64_t)(cachedTextureGpuHandle_.ptr - heapStartGpu.ptr));
+  // Cache texture GPU handle for this index - store in array indexed by texture unit
+  cachedTextureGpuHandles_[index] = heapMgr->getCbvSrvUavGpuHandle(descriptorIndex);
+  cachedTextureGpuHandle_ = cachedTextureGpuHandles_[0]; // Maintain backward compat with single-texture path
+  cachedTextureCount_ = std::max(cachedTextureCount_, index + 1);
+  IGL_LOG_INFO("bindTexture: cached texture[%zu] GPU handle 0x%llx (offset from heap start: %lld)\n",
+               index, cachedTextureGpuHandles_[index].ptr,
+               (int64_t)(cachedTextureGpuHandles_[index].ptr - heapStartGpu.ptr));
 
   IGL_LOG_INFO("bindTexture: done\n");
 }
@@ -533,8 +602,9 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t firstVertex,
                                 uint32_t baseInstance) {
   // Set up descriptor heaps and bind resources (same as drawIndexed)
-  commandList_->SetGraphicsRootConstantBufferView(0, 0);
-  commandList_->SetGraphicsRootConstantBufferView(1, 0);
+  // Bind cached constant buffers (use null address for unbound parameters)
+  commandList_->SetGraphicsRootConstantBufferView(0, cachedConstantBuffers_[0]);
+  commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[1]);
 
   auto& context = commandBuffer_.getContext();
   auto* heapMgr = context.getDescriptorHeapManager();
@@ -542,11 +612,13 @@ void RenderCommandEncoder::draw(size_t vertexCount,
     ID3D12DescriptorHeap* heaps[] = {heapMgr->getCbvSrvUavHeap(), heapMgr->getSamplerHeap()};
     commandList_->SetDescriptorHeaps(2, heaps);
 
-    if (cachedTextureGpuHandle_.ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(2, cachedTextureGpuHandle_);
+    // Bind texture descriptor table at t0 (covers t0-t1 range if multiple textures bound)
+    if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
+      commandList_->SetGraphicsRootDescriptorTable(2, cachedTextureGpuHandles_[0]);
     }
-    if (cachedSamplerGpuHandle_.ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(3, cachedSamplerGpuHandle_);
+    // Bind sampler descriptor table at s0 (covers s0-s1 range if multiple samplers bound)
+    if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
+      commandList_->SetGraphicsRootDescriptorTable(3, cachedSamplerGpuHandles_[0]);
     }
   }
 
@@ -585,12 +657,12 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   }
 
   // D3D12 requires ALL root parameters to be bound before drawing
-  // Root signature defines CBVs at parameters 0 and 1, but the test shader doesn't use them
-  // Note: Null CBV addresses (0) should be valid according to D3D12 spec for unused resources
-  // However, let's verify if this might be causing issues
-  commandList_->SetGraphicsRootConstantBufferView(0, 0);  // b0 - null address (unused by shader)
-  commandList_->SetGraphicsRootConstantBufferView(1, 0);  // b1 - null address (unused by shader)
-  IGL_LOG_INFO("DrawIndexed: bound null CBVs for unused root parameters 0 and 1\n");
+  // Bind cached constant buffers (use null address for unbound parameters)
+  commandList_->SetGraphicsRootConstantBufferView(0, cachedConstantBuffers_[0]);
+  commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[1]);
+  IGL_LOG_INFO("DrawIndexed: bound CBVs - b0=0x%llx (bound=%d), b1=0x%llx (bound=%d)\n",
+               cachedConstantBuffers_[0], constantBufferBound_[0],
+               cachedConstantBuffers_[1], constantBufferBound_[1]);
 
   // CRITICAL: SetDescriptorHeaps invalidates all previously bound descriptor tables
   // We must set heaps ONCE, then bind ALL descriptor tables (texture + sampler)
@@ -603,16 +675,20 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
     commandList_->SetDescriptorHeaps(2, heaps);
 
     // Now bind descriptor tables - these are valid after SetDescriptorHeaps
-    // Parameter 2: Texture SRV table (t0)
-    if (cachedTextureGpuHandle_.ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(2, cachedTextureGpuHandle_);
-      IGL_LOG_INFO("DrawIndexed: bound texture descriptor table (handle=0x%llx)\n", cachedTextureGpuHandle_.ptr);
+    // Parameter 2: Texture SRV table starting at t0
+    // When multiple textures are bound (t0, t1), the root signature defines a range covering both
+    // We always point the table to t0 (the first texture), and D3D12 will use consecutive descriptors
+    if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
+      commandList_->SetGraphicsRootDescriptorTable(2, cachedTextureGpuHandles_[0]);
+      IGL_LOG_INFO("DrawIndexed: bound texture descriptor table at t0 (handle=0x%llx, count=%zu)\n",
+                   cachedTextureGpuHandles_[0].ptr, cachedTextureCount_);
     }
 
-    // Parameter 3: Sampler table (s0)
-    if (cachedSamplerGpuHandle_.ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(3, cachedSamplerGpuHandle_);
-      IGL_LOG_INFO("DrawIndexed: bound sampler descriptor table (handle=0x%llx)\n", cachedSamplerGpuHandle_.ptr);
+    // Parameter 3: Sampler table starting at s0
+    if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
+      commandList_->SetGraphicsRootDescriptorTable(3, cachedSamplerGpuHandles_[0]);
+      IGL_LOG_INFO("DrawIndexed: bound sampler descriptor table at s0 (handle=0x%llx, count=%zu)\n",
+                   cachedSamplerGpuHandles_[0].ptr, cachedSamplerCount_);
     }
   }
 
@@ -625,6 +701,7 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
       vbView.BufferLocation = cachedVertexBuffers_[i].bufferLocation;
       vbView.SizeInBytes = cachedVertexBuffers_[i].sizeInBytes;
       vbView.StrideInBytes = stride;
+      IGL_LOG_INFO("DrawIndexed: VB[%u] = GPU 0x%llx, size=%u, stride=%u\n", i, vbView.BufferLocation, vbView.SizeInBytes, vbView.StrideInBytes);
       commandList_->IASetVertexBuffers(i, 1, &vbView);
     }
   }
@@ -703,17 +780,14 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     return;
   }
 
-  if (index == 0) {
-    IGL_LOG_INFO("bindBuffer: About to call SetGraphicsRootConstantBufferView(0, 0x%llx)...\n", bufferAddress);
-    IGL_LOG_INFO("bindBuffer: Calling NOW...\n");
-    fflush(stdout); // Force flush to see if this line prints before hang
-    commandList_->SetGraphicsRootConstantBufferView(0, bufferAddress);
-    IGL_LOG_INFO("bindBuffer: SetGraphicsRootConstantBufferView(0) COMPLETED\n");
-  } else if (index == 1) {
-    IGL_LOG_INFO("bindBuffer: About to call SetGraphicsRootConstantBufferView(1, 0x%llx)...\n", bufferAddress);
-    commandList_->SetGraphicsRootConstantBufferView(1, bufferAddress);
-    IGL_LOG_INFO("bindBuffer: SetGraphicsRootConstantBufferView(1) COMPLETED\n");
+  // Cache the constant buffer address for use in draw calls
+  // D3D12 requires all root parameters to be set before drawing
+  if (index <= 1) {
+    cachedConstantBuffers_[index] = bufferAddress;
+    constantBufferBound_[index] = true;
+    IGL_LOG_INFO("bindBuffer: Cached CBV at index %u with address 0x%llx\n", index, bufferAddress);
   }
+
   if (callCount < 5) {
     IGL_LOG_INFO("bindBuffer END #%d\n", ++callCount);
   }

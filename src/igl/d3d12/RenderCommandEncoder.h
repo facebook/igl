@@ -101,6 +101,11 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   // to avoid invalidation by multiple SetDescriptorHeaps calls
   D3D12_GPU_DESCRIPTOR_HANDLE cachedTextureGpuHandle_{};
   D3D12_GPU_DESCRIPTOR_HANDLE cachedSamplerGpuHandle_{};
+  // Support multiple textures (t0, t1) by caching handles per texture unit
+  D3D12_GPU_DESCRIPTOR_HANDLE cachedTextureGpuHandles_[2] = {};
+  D3D12_GPU_DESCRIPTOR_HANDLE cachedSamplerGpuHandles_[2] = {};
+  size_t cachedTextureCount_ = 0;
+  size_t cachedSamplerCount_ = 0;
 
   // Cached vertex buffer bindings
   // Store binding info and apply in draw calls after pipeline state is bound
@@ -119,6 +124,12 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
     bool bound = false;
   };
   CachedIndexBuffer cachedIndexBuffer_ = {};
+
+  // Track which constant buffer root parameters have been bound
+  // D3D12 requires all root parameters to be set before drawing
+  // We cache bound addresses here and set null (0) for unbound params in draw calls
+  D3D12_GPU_VIRTUAL_ADDRESS cachedConstantBuffers_[2] = {0, 0}; // b0, b1
+  bool constantBufferBound_[2] = {false, false};
 };
 
 } // namespace igl::d3d12

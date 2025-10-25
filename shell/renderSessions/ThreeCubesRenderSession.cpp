@@ -155,6 +155,27 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
                                                            "main",
                                                            "",
                                                            nullptr);
+  case igl::BackendType::D3D12: {
+    static const char* kVS = R"(
+      cbuffer VertexUniforms : register(b1) { float4x4 mvpMatrix; };
+      struct VSIn { float3 position : POSITION; float3 color : COLOR0; };
+      struct VSOut { float4 position : SV_POSITION; float3 color : COLOR0; };
+      VSOut main(VSIn v) {
+        VSOut o;
+        // GLM matrices are column-major, HLSL expects row-major by default
+        // Transpose to convert, then multiply: vector * transposed_matrix
+        o.position = mul(float4(v.position, 1.0), transpose(mvpMatrix));
+        o.color = v.color;
+        return o;
+      }
+    )";
+    static const char* kPS = R"(
+      struct PSIn { float4 position : SV_POSITION; float3 color : COLOR0; };
+      float4 main(PSIn i) : SV_TARGET { return float4(i.color, 1.0); }
+    )";
+    return igl::ShaderStagesCreator::fromModuleStringInput(
+        device, kVS, "main", "", kPS, "main", "", nullptr);
+  }
   case igl::BackendType::Custom:
     IGL_DEBUG_ABORT("IGLSamples not set up for Custom");
     return nullptr;
@@ -314,6 +335,9 @@ void ThreeCubesRenderSession::update(SurfaceTextures surfaceTextures) noexcept {
   commands->bindRenderPipelineState(pipelineState_);
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
 
+  // TEMP: Clear previous frame's cached buffers (GPU should be done with them by now)
+  cachedUniformBuffers_.clear();
+
   // Draw each cube with its own transform
   const float aspectRatio = surfaceTextures.color->getAspectRatio();
   for (size_t i = 0; i < 3; ++i) {
@@ -335,8 +359,14 @@ void ThreeCubesRenderSession::update(SurfaceTextures surfaceTextures) noexcept {
     const std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer =
         std::make_shared<iglu::ManagedUniformBuffer>(device, info);
     IGL_DEBUG_ASSERT(vertUniformBuffer->result.isOk());
+
+    // Upload vertex uniforms (MVP matrix for this cube)
     *static_cast<VertexUniforms*>(vertUniformBuffer->getData()) = vertexUniforms_;
+
     vertUniformBuffer->bind(device, *pipelineState_, *commands);
+
+    // Cache buffer to prevent GPU memory reuse during frame rendering
+    cachedUniformBuffers_.push_back(vertUniformBuffer);
 
     // Draw this cube
     commands->drawIndexed(static_cast<size_t>(36));

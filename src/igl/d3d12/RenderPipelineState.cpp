@@ -56,6 +56,48 @@ RenderPipelineState::RenderPipelineState(const RenderPipelineDesc& desc,
         for (size_t s = 0; s < d.numInputBindings && s < IGL_BUFFER_BINDINGS_MAX; ++s) {
           vertexStrides_[s] = static_cast<uint32_t>(d.inputBindings[s].stride);
         }
+        // If attributes reference slots beyond numInputBindings or strides are zero,
+        // derive reasonable defaults so sessions that bind to slot 1 still work.
+        size_t maxSlot = 0;
+        for (size_t i = 0; i < d.numAttributes; ++i) {
+          if (d.attributes[i].bufferIndex > maxSlot) {
+            maxSlot = d.attributes[i].bufferIndex;
+          }
+        }
+        // Helper to compute a minimal stride per slot from attributes (max end offset among attrs in that slot)
+        auto computeStrideForSlot = [&](size_t slot) -> uint32_t {
+          size_t maxEnd = 0;
+          for (size_t i = 0; i < d.numAttributes; ++i) {
+            const auto& a = d.attributes[i];
+            if (a.bufferIndex != slot) continue;
+            size_t compSize = 0;
+            switch (a.format) {
+              case VertexAttributeFormat::Float1: compSize = 4; break;
+              case VertexAttributeFormat::Float2: compSize = 8; break;
+              case VertexAttributeFormat::Float3: compSize = 12; break;
+              case VertexAttributeFormat::Float4: compSize = 16; break;
+              case VertexAttributeFormat::Byte1: compSize = 1; break;
+              case VertexAttributeFormat::Byte2: compSize = 2; break;
+              case VertexAttributeFormat::Byte4: compSize = 4; break;
+              case VertexAttributeFormat::UByte4Norm: compSize = 4; break;
+              default: compSize = 0; break;
+            }
+            maxEnd = std::max(maxEnd, a.offset + compSize);
+          }
+          // Fallback to slot0 stride if present
+          if (maxEnd == 0 && d.numInputBindings > 0) {
+            return static_cast<uint32_t>(d.inputBindings[0].stride);
+          }
+          return static_cast<uint32_t>(maxEnd);
+        };
+        for (size_t s = 0; s <= maxSlot && s < IGL_BUFFER_BINDINGS_MAX; ++s) {
+          if (vertexStrides_[s] == 0) {
+            vertexStrides_[s] = computeStrideForSlot(s);
+          }
+        }
+        if (vertexStride_ == 0) {
+          vertexStride_ = vertexStrides_[0];
+        }
       }
     }
   }

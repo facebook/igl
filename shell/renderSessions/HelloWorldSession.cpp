@@ -128,6 +128,20 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
                                                            "main",
                                                            "",
                                                            nullptr);
+  case igl::BackendType::D3D12: {
+    static const char* kVS = R"(
+      struct VSIn { float3 position : POSITION; float4 color : COLOR; };
+      struct VSOut { float4 position : SV_POSITION; float4 color : COLOR; };
+      VSOut main(VSIn v) {
+        VSOut o; o.position = float4(v.position, 1.0); o.color = v.color; return o; }
+    )";
+    static const char* kPS = R"(
+      struct PSIn { float4 position : SV_POSITION; float4 color : COLOR; };
+      float4 main(PSIn i) : SV_TARGET { return i.color; }
+    )";
+    return igl::ShaderStagesCreator::fromModuleStringInput(
+        device, kVS, "main", "", kPS, "main", "", nullptr);
+  }
   // @fb-only
     // @fb-only
     // @fb-only
