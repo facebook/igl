@@ -374,8 +374,49 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   resourceDesc.Height = desc.height;
   resourceDesc.MipLevels = static_cast<UINT16>(desc.numMipLevels);
   resourceDesc.Format = dxgiFormat;
-  resourceDesc.SampleDesc.Count = desc.numSamples;
-  resourceDesc.SampleDesc.Quality = 0;
+
+  // MSAA configuration
+  // D3D12 MSAA requirements:
+  // - Sample count must be 1, 2, 4, 8, or 16 (power of 2)
+  // - Quality level 0 is standard MSAA (higher quality levels are vendor-specific)
+  // - MSAA textures cannot have mipmaps (numMipLevels must be 1)
+  // - Not all formats support all sample counts - validation required
+  const uint32_t sampleCount = std::max(1u, desc.numSamples);
+
+  // Validate MSAA constraints
+  if (sampleCount > 1) {
+    // MSAA textures cannot have mipmaps
+    if (desc.numMipLevels > 1) {
+      IGL_LOG_ERROR("Device::createTexture: MSAA textures cannot have mipmaps (numMipLevels=%u, numSamples=%u)\n",
+                    desc.numMipLevels, sampleCount);
+      Result::setResult(outResult, Result::Code::ArgumentInvalid,
+                        "MSAA textures cannot have mipmaps (numMipLevels must be 1)");
+      return nullptr;
+    }
+
+    // Validate sample count is supported for this format
+    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msqLevels = {};
+    msqLevels.Format = dxgiFormat;
+    msqLevels.SampleCount = sampleCount;
+    msqLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+
+    if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msqLevels, sizeof(msqLevels))) ||
+        msqLevels.NumQualityLevels == 0) {
+      char errorMsg[256];
+      snprintf(errorMsg, sizeof(errorMsg),
+               "Device::createTexture: Format %d does not support %u samples (MSAA not supported)",
+               static_cast<int>(dxgiFormat), sampleCount);
+      IGL_LOG_ERROR("%s\n", errorMsg);
+      Result::setResult(outResult, Result::Code::Unsupported, errorMsg);
+      return nullptr;
+    }
+
+    IGL_LOG_INFO("Device::createTexture: MSAA enabled - format=%d, samples=%u, quality levels=%u\n",
+                 static_cast<int>(dxgiFormat), sampleCount, msqLevels.NumQualityLevels);
+  }
+
+  resourceDesc.SampleDesc.Count = sampleCount;
+  resourceDesc.SampleDesc.Quality = 0;  // Standard MSAA quality (0 = default/standard)
   resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
   resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
@@ -557,10 +598,11 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
   // Descriptor range for CBVs (constant buffer views)
+  // Note: b0 will be used for root constants (push constants), so CBV table starts at b1
   D3D12_DESCRIPTOR_RANGE cbvRange = {};
   cbvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
   cbvRange.NumDescriptors = UINT_MAX;  // UNBOUNDED
-  cbvRange.BaseShaderRegister = 0;  // Starting at b0
+  cbvRange.BaseShaderRegister = 1;  // Starting at b1 (b0 is root constants)
   cbvRange.RegisterSpace = 0;
   cbvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
@@ -573,40 +615,50 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   samplerRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
   // Root parameters
-  D3D12_ROOT_PARAMETER rootParams[4] = {};
+  D3D12_ROOT_PARAMETER rootParams[5] = {};
 
-  // Parameter 0: Descriptor table for UAVs
-  rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-  rootParams[0].DescriptorTable.NumDescriptorRanges = 1;
-  rootParams[0].DescriptorTable.pDescriptorRanges = &uavRange;
+  // Parameter 0: Root Constants for b0 (Push Constants)
+  // Using 32-bit constants for push constants in compute shaders
+  // 16 DWORDs = 64 bytes (4x4 matrix of floats or equivalent data)
+  rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+  rootParams[0].Constants.ShaderRegister = 0;  // b0
+  rootParams[0].Constants.RegisterSpace = 0;
+  rootParams[0].Constants.Num32BitValues = 16;  // 16 DWORDs = 64 bytes
   rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-  // Parameter 1: Descriptor table for SRVs
+  // Parameter 1: Descriptor table for UAVs
   rootParams[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   rootParams[1].DescriptorTable.NumDescriptorRanges = 1;
-  rootParams[1].DescriptorTable.pDescriptorRanges = &srvRange;
+  rootParams[1].DescriptorTable.pDescriptorRanges = &uavRange;
   rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-  // Parameter 2: Descriptor table for CBVs
+  // Parameter 2: Descriptor table for SRVs
   rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   rootParams[2].DescriptorTable.NumDescriptorRanges = 1;
-  rootParams[2].DescriptorTable.pDescriptorRanges = &cbvRange;
+  rootParams[2].DescriptorTable.pDescriptorRanges = &srvRange;
   rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-  // Parameter 3: Descriptor table for Samplers
+  // Parameter 3: Descriptor table for CBVs (b1+)
+  // Note: b0 is now root constants, this table starts at b1
   rootParams[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   rootParams[3].DescriptorTable.NumDescriptorRanges = 1;
-  rootParams[3].DescriptorTable.pDescriptorRanges = &samplerRange;
+  rootParams[3].DescriptorTable.pDescriptorRanges = &cbvRange;
   rootParams[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
+  // Parameter 4: Descriptor table for Samplers
+  rootParams[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+  rootParams[4].DescriptorTable.NumDescriptorRanges = 1;
+  rootParams[4].DescriptorTable.pDescriptorRanges = &samplerRange;
+  rootParams[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
   D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
-  rootSigDesc.NumParameters = 4;
+  rootSigDesc.NumParameters = 5;
   rootSigDesc.pParameters = rootParams;
   rootSigDesc.NumStaticSamplers = 0;
   rootSigDesc.pStaticSamplers = nullptr;
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
 
-  IGL_LOG_INFO("  Creating compute root signature with UAVs/SRVs/CBVs/Samplers\n");
+  IGL_LOG_INFO("  Creating compute root signature with Root Constants (b0)/UAVs/SRVs/CBVs/Samplers\n");
 
   HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
                                            signature.GetAddressOf(), error.GetAddressOf());
@@ -679,7 +731,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   IGL_LOG_INFO("Device::createComputePipeline() SUCCESS - PSO=%p, RootSig=%p\n",
                pipelineState.Get(), rootSignature.Get());
   Result::setOk(outResult);
-  return std::make_shared<ComputePipelineState>(std::move(pipelineState), std::move(rootSignature));
+  return std::make_shared<ComputePipelineState>(std::move(pipelineState), std::move(rootSignature), desc.debugName);
 }
 
 std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
@@ -747,10 +799,15 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   // Root parameters
   D3D12_ROOT_PARAMETER rootParams[4] = {};
 
-  // Parameter 0: Root CBV for b0 (UniformsPerFrame)
-  rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-  rootParams[0].Descriptor.ShaderRegister = 0;  // b0
-  rootParams[0].Descriptor.RegisterSpace = 0;
+  // Parameter 0: Root Constants for b0 (Push Constants)
+  // Using 32-bit constants instead of CBV for push constants
+  // 16 DWORDs = 64 bytes (4x4 matrix of floats)
+  // Root signature budget: 64 DWORD max total
+  // Cost: 16 root constants = 16 units, 1 root CBV = 2 units, 2 descriptor tables = 2 units = 20 units total
+  rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+  rootParams[0].Constants.ShaderRegister = 0;  // b0
+  rootParams[0].Constants.RegisterSpace = 0;
+  rootParams[0].Constants.Num32BitValues = 16;  // 16 DWORDs = 64 bytes (4x4 matrix)
   rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
   // Parameter 1: Root CBV for b1 (UniformsPerObject)
@@ -779,7 +836,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   rootSigDesc.pStaticSamplers = nullptr;
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-  IGL_LOG_INFO("  Creating root signature with CBVs/SRVs/Samplers\n");
+  IGL_LOG_INFO("  Creating root signature with Root Constants (b0)/CBVs/SRVs/Samplers\n");
 
   IGL_LOG_INFO("  Serializing root signature...\n");
   HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
@@ -1288,7 +1345,31 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
       return nullptr;
     }
 
-    // Compile HLSL source code
+    // Compile HLSL source code with debug info and optimizations based on build configuration
+    UINT compileFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+
+    // Enable shader debugging features
+    // D3DCOMPILE_DEBUG: Emit debug information into shader container
+    // D3DCOMPILE_SKIP_OPTIMIZATION: Disable optimizations for better debugging experience
+    #ifdef _DEBUG
+      compileFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+      IGL_LOG_INFO("  DEBUG BUILD: Enabling shader debug info and disabling optimizations\n");
+    #else
+      // In release builds, still enable debug info for PIX captures unless explicitly disabled
+      const char* disableDebugInfo = std::getenv("IGL_D3D12_DISABLE_SHADER_DEBUG");
+      if (!disableDebugInfo || std::string(disableDebugInfo) != "1") {
+        compileFlags |= D3DCOMPILE_DEBUG;
+        IGL_LOG_INFO("  RELEASE BUILD: Enabling shader debug info (disable with IGL_D3D12_DISABLE_SHADER_DEBUG=1)\n");
+      }
+    #endif
+
+    // Optional: Enable warnings as errors for stricter validation
+    const char* warningsAsErrors = std::getenv("IGL_D3D12_SHADER_WARNINGS_AS_ERRORS");
+    if (warningsAsErrors && std::string(warningsAsErrors) == "1") {
+      compileFlags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
+      IGL_LOG_INFO("  Treating shader warnings as errors\n");
+    }
+
     HRESULT hr = D3DCompile(
         desc.input.source,            // Source code (use .source for string input)
         sourceLength,                 // Source code length (calculated with strlen)
@@ -1297,24 +1378,141 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
         nullptr,                      // Include handler
         desc.info.entryPoint.c_str(), // Entry point
         target,                       // Target profile
-        D3DCOMPILE_ENABLE_STRICTNESS, // Compile flags
+        compileFlags,                 // Compile flags (now includes debug info)
         0,                            // Effect flags
         shaderBlob.GetAddressOf(),
         errorBlob.GetAddressOf()
     );
 
     if (FAILED(hr)) {
-      std::string errorMsg = "Shader compilation failed";
-      if (errorBlob.Get()) {
-        errorMsg += ": ";
-        errorMsg += static_cast<const char*>(errorBlob->GetBufferPointer());
+      // Enhanced error message with context
+      std::string errorMsg;
+      const char* stageStr = "";
+      switch (desc.info.stage) {
+        case ShaderStage::Vertex: stageStr = "VERTEX"; break;
+        case ShaderStage::Fragment: stageStr = "FRAGMENT/PIXEL"; break;
+        case ShaderStage::Compute: stageStr = "COMPUTE"; break;
+        default: stageStr = "UNKNOWN"; break;
       }
-      IGL_LOG_ERROR("  %s\n", errorMsg.c_str());
+
+      errorMsg = "Shader compilation FAILED\n";
+      errorMsg += "  Stage: " + std::string(stageStr) + "\n";
+      errorMsg += "  Entry Point: " + desc.info.entryPoint + "\n";
+      errorMsg += "  Target: " + std::string(target) + "\n";
+      errorMsg += "  Debug Name: " + desc.debugName + "\n";
+
+      if (errorBlob.Get()) {
+        errorMsg += "\n=== COMPILER ERRORS ===\n";
+        errorMsg += static_cast<const char*>(errorBlob->GetBufferPointer());
+        errorMsg += "\n======================\n";
+
+        // Try to extract and highlight the specific error line
+        std::string errors(static_cast<const char*>(errorBlob->GetBufferPointer()));
+        size_t linePos = errors.find("(");
+        if (linePos != std::string::npos) {
+          size_t lineEndPos = errors.find(")", linePos);
+          if (lineEndPos != std::string::npos) {
+            std::string lineInfo = errors.substr(linePos + 1, lineEndPos - linePos - 1);
+            errorMsg += "\nHINT: Check source line " + lineInfo + " in the shader\n";
+          }
+        }
+      } else {
+        errorMsg += "  HRESULT: 0x" + std::to_string(static_cast<unsigned>(hr)) + "\n";
+      }
+
+      IGL_LOG_ERROR("%s", errorMsg.c_str());
       Result::setResult(outResult, Result::Code::RuntimeError, errorMsg.c_str());
       return nullptr;
     }
 
     IGL_LOG_INFO("  Shader compiled successfully (%zu bytes bytecode)\n", shaderBlob->GetBufferSize());
+
+    // Optional: Disassemble shader for debugging (controlled by environment variable)
+    const char* disassembleShader = std::getenv("IGL_D3D12_DISASSEMBLE_SHADERS");
+    if (disassembleShader && std::string(disassembleShader) == "1") {
+      Microsoft::WRL::ComPtr<ID3DBlob> disassembly;
+      const char* stageStr = "";
+      switch (desc.info.stage) {
+        case ShaderStage::Vertex: stageStr = "VERTEX"; break;
+        case ShaderStage::Fragment: stageStr = "FRAGMENT/PIXEL"; break;
+        case ShaderStage::Compute: stageStr = "COMPUTE"; break;
+        default: stageStr = "UNKNOWN"; break;
+      }
+
+      HRESULT disasmHr = D3DDisassemble(
+          shaderBlob->GetBufferPointer(),
+          shaderBlob->GetBufferSize(),
+          D3D_DISASM_ENABLE_INSTRUCTION_NUMBERING | D3D_DISASM_ENABLE_INSTRUCTION_OFFSET,
+          nullptr,
+          disassembly.GetAddressOf()
+      );
+
+      if (SUCCEEDED(disasmHr) && disassembly.Get()) {
+        IGL_LOG_INFO("\n=== SHADER DISASSEMBLY (%s - %s) ===\n%s\n=========================\n",
+                     stageStr, desc.info.entryPoint.c_str(),
+                     static_cast<const char*>(disassembly->GetBufferPointer()));
+      }
+    }
+
+    // Perform shader reflection to validate bindings
+    const char* validateBindings = std::getenv("IGL_D3D12_VALIDATE_SHADER_BINDINGS");
+    if (validateBindings && std::string(validateBindings) == "1") {
+      Microsoft::WRL::ComPtr<ID3D12ShaderReflection> reflection;
+      HRESULT reflHr = D3DReflect(
+          shaderBlob->GetBufferPointer(),
+          shaderBlob->GetBufferSize(),
+          IID_PPV_ARGS(reflection.GetAddressOf())
+      );
+
+      if (SUCCEEDED(reflHr)) {
+        D3D12_SHADER_DESC shaderDesc = {};
+        reflection->GetDesc(&shaderDesc);
+
+        const char* stageStr = "";
+        switch (desc.info.stage) {
+          case ShaderStage::Vertex: stageStr = "VERTEX"; break;
+          case ShaderStage::Fragment: stageStr = "FRAGMENT/PIXEL"; break;
+          case ShaderStage::Compute: stageStr = "COMPUTE"; break;
+          default: stageStr = "UNKNOWN"; break;
+        }
+
+        IGL_LOG_INFO("\n=== SHADER REFLECTION (%s - %s) ===\n", stageStr, desc.info.entryPoint.c_str());
+        IGL_LOG_INFO("  Bound Resources: %u\n", shaderDesc.BoundResources);
+
+        for (UINT i = 0; i < shaderDesc.BoundResources; ++i) {
+          D3D12_SHADER_INPUT_BIND_DESC bindDesc = {};
+          if (SUCCEEDED(reflection->GetResourceBindingDesc(i, &bindDesc))) {
+            const char* typeStr = "";
+            const char* registerPrefix = "";
+            switch (bindDesc.Type) {
+              case D3D_SIT_CBUFFER: typeStr = "ConstantBuffer"; registerPrefix = "b"; break;
+              case D3D_SIT_TBUFFER: typeStr = "TextureBuffer"; registerPrefix = "t"; break;
+              case D3D_SIT_TEXTURE: typeStr = "Texture"; registerPrefix = "t"; break;
+              case D3D_SIT_SAMPLER: typeStr = "Sampler"; registerPrefix = "s"; break;
+              case D3D_SIT_UAV_RWTYPED: typeStr = "RWTexture"; registerPrefix = "u"; break;
+              case D3D_SIT_STRUCTURED: typeStr = "StructuredBuffer"; registerPrefix = "t"; break;
+              case D3D_SIT_UAV_RWSTRUCTURED: typeStr = "RWStructuredBuffer"; registerPrefix = "u"; break;
+              case D3D_SIT_BYTEADDRESS: typeStr = "ByteAddressBuffer"; registerPrefix = "t"; break;
+              case D3D_SIT_UAV_RWBYTEADDRESS: typeStr = "RWByteAddressBuffer"; registerPrefix = "u"; break;
+              default: typeStr = "Unknown"; registerPrefix = "?"; break;
+            }
+            IGL_LOG_INFO("    [%u] %s '%s' at %s%u (space %u)\n",
+                         i, typeStr, bindDesc.Name, registerPrefix, bindDesc.BindPoint, bindDesc.Space);
+          }
+        }
+
+        IGL_LOG_INFO("  Constant Buffers: %u\n", shaderDesc.ConstantBuffers);
+        for (UINT i = 0; i < shaderDesc.ConstantBuffers; ++i) {
+          ID3D12ShaderReflectionConstantBuffer* cb = reflection->GetConstantBufferByIndex(i);
+          D3D12_SHADER_BUFFER_DESC cbDesc = {};
+          if (cb && SUCCEEDED(cb->GetDesc(&cbDesc))) {
+            IGL_LOG_INFO("    [%u] %s: %u bytes, %u variables\n",
+                         i, cbDesc.Name, cbDesc.Size, cbDesc.Variables);
+          }
+        }
+        IGL_LOG_INFO("================================\n\n");
+      }
+    }
 
     // Copy compiled bytecode
     bytecode.resize(shaderBlob->GetBufferSize());
@@ -1364,13 +1562,16 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     case DeviceFeatures::TexturePartialMipChain: // D3D12 supports partial mip chains via custom SRVs
     case DeviceFeatures::TextureViews: // D3D12 supports createTextureView() via shared resources
       return true;
-    // Expected false in tests for D3D12 in Phase 1
+    // MRT fully implemented and tested in Phase 6
     case DeviceFeatures::MultipleRenderTargets:
-      return false; // Keep tests expectations unchanged; MRT sessions bypass via backend check
+      return true; // D3D12 supports up to 8 simultaneous render targets
     case DeviceFeatures::Compute:
       return true; // Compute shaders now supported with compute pipeline and dispatch
-    case DeviceFeatures::SRGBWriteControl:
     case DeviceFeatures::Texture2DArray:
+      return true; // D3D12 supports 2D texture arrays via DepthOrArraySize in D3D12_RESOURCE_DESC
+    case DeviceFeatures::PushConstants:
+      return true; // D3D12 supports push constants via SetGraphicsRoot32BitConstants/SetComputeRoot32BitConstants
+    case DeviceFeatures::SRGBWriteControl:
     case DeviceFeatures::TextureArrayExt:
     case DeviceFeatures::TextureExternalImage:
     case DeviceFeatures::Multiview:
@@ -1386,7 +1587,6 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     case DeviceFeatures::TextureFormatRG:
     case DeviceFeatures::ValidationLayersEnabled:
     case DeviceFeatures::ExternalMemoryObjects:
-    case DeviceFeatures::PushConstants:
       return false;
     default:
       return false;

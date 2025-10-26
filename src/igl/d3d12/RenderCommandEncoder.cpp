@@ -95,9 +95,18 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
         D3D12_RESOURCE_DESC resourceDesc = tex->getResource()->GetDesc();
         D3D12_RENDER_TARGET_VIEW_DESC rdesc = {};
         rdesc.Format = resourceDesc.Format;  // Use actual D3D12 resource format, not IGL format
-        rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-        rdesc.Texture2D.MipSlice = (i < renderPass.colorAttachments.size()) ? renderPass.colorAttachments[i].mipLevel : 0;
-        rdesc.Texture2D.PlaneSlice = 0;
+
+        // Set view dimension based on sample count (MSAA support)
+        if (resourceDesc.SampleDesc.Count > 1) {
+          // MSAA texture - use TEXTURE2DMS view dimension
+          rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
+          IGL_LOG_INFO("RenderCommandEncoder: Creating MSAA RTV with %u samples\n", resourceDesc.SampleDesc.Count);
+        } else {
+          // Non-MSAA texture - use standard TEXTURE2D view dimension
+          rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+          rdesc.Texture2D.MipSlice = (i < renderPass.colorAttachments.size()) ? renderPass.colorAttachments[i].mipLevel : 0;
+          rdesc.Texture2D.PlaneSlice = 0;
+        }
         device->CreateRenderTargetView(tex->getResource(), &rdesc, rtvHandle);
 
         // Transition to RENDER_TARGET
@@ -184,8 +193,19 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
       // Create DSV description
       D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
       dsvDesc.Format = textureFormatToDXGIFormat(depthTex->getFormat());
-      dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
       dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+      // Set view dimension based on sample count (MSAA support)
+      D3D12_RESOURCE_DESC depthResourceDesc = depthTex->getResource()->GetDesc();
+      if (depthResourceDesc.SampleDesc.Count > 1) {
+        // MSAA depth texture - use TEXTURE2DMS view dimension
+        dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
+        IGL_LOG_INFO("RenderCommandEncoder: Creating MSAA DSV with %u samples\n", depthResourceDesc.SampleDesc.Count);
+      } else {
+        // Non-MSAA depth texture - use standard TEXTURE2D view dimension
+        dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+        dsvDesc.Texture2D.MipSlice = renderPass.depthAttachment.mipLevel;
+      }
 
       const uint32_t depthMip = renderPass.depthAttachment.mipLevel;
       const uint32_t depthLayer = renderPass.depthAttachment.layer;
@@ -441,52 +461,29 @@ void RenderCommandEncoder::bindPushConstants(const void* data,
     return;
   }
 
-  // For D3D12, push constants are implemented as inline constant buffer data
-  // We need to create a temporary upload buffer and bind it to b0 (or the appropriate slot)
-  // The data is uploaded to the GPU via an upload buffer in shared memory
+  // D3D12 push constants are implemented using SetGraphicsRoot32BitConstants
+  // This sets inline root constants directly without needing an upload buffer
+  // The data is copied directly into the command list
 
-  // D3D12 constant buffers must be 256-byte aligned
-  const size_t alignedSize = (length + offset + 255) & ~255;
+  // Calculate the number of 32-bit values to set
+  // length is in bytes, so divide by 4 to get number of DWORDs
+  const UINT num32BitValues = static_cast<UINT>(length) / 4;
 
-  // Create a temporary upload buffer for this frame
-  // This is similar to how vertex/index data is uploaded
-  auto& iglDevice = commandBuffer_.getDevice();
+  // offset is in bytes, convert to 32-bit value offset
+  const UINT destOffset32Bit = static_cast<UINT>(offset) / 4;
 
-  // Create an upload buffer descriptor
-  BufferDesc uploadDesc;
-  uploadDesc.type = BufferDesc::BufferTypeBits::Uniform;
-  uploadDesc.data = nullptr;  // We'll upload manually
-  uploadDesc.length = alignedSize;
-  uploadDesc.storage = ResourceStorage::Shared;  // CPU-writable, GPU-readable
-  uploadDesc.hint = BufferDesc::BufferAPIHintBits::UniformBlock;
-
-  // Create the buffer via the IGL device
-  Result result;
-  auto uploadBuffer = iglDevice.createBuffer(uploadDesc, &result);
-  if (!uploadBuffer || !result.isOk()) {
-    IGL_LOG_ERROR("bindPushConstants: Failed to create upload buffer: %s\n", result.message.c_str());
-    return;
-  }
-
-  // Upload the data to the buffer at the specified offset
-  uploadBuffer->upload(data, {length, offset});
-
-  // Get the GPU address and bind it to constant buffer slot 0 (b0)
-  // Note: upload() already applied the offset, so we pass 0 here to get the base address
-  // Then we add the aligned offset to get the final GPU address
-  auto* d3dBuffer = static_cast<Buffer*>(uploadBuffer.get());
-  const size_t alignedOffset = (offset + 255) & ~255;  // CB addresses must be 256-byte aligned
-  D3D12_GPU_VIRTUAL_ADDRESS bufferAddress = d3dBuffer->gpuAddress(alignedOffset);
-
-  cachedConstantBuffers_[0] = bufferAddress;
-  constantBufferBound_[0] = true;
-
-  // CRITICAL: Keep the buffer alive until the command buffer is executed and completed
-  // Store it in the encoder's buffer list to prevent premature destruction
-  pushConstantBuffers_.push_back(std::move(uploadBuffer));
+  // Root parameter 0 is configured for root constants (b0)
+  // SetGraphicsRoot32BitConstants copies the data inline (no buffer needed)
+  commandList_->SetGraphicsRoot32BitConstants(
+    0,                    // RootParameterIndex - parameter 0 is our root constants
+    num32BitValues,       // Num32BitValuesToSet
+    data,                 // pSrcData - pointer to the constant data
+    destOffset32Bit       // DestOffsetIn32BitValues - offset within the root constant block
+  );
 
   if (callCount <= 3) {
-    IGL_LOG_INFO("bindPushConstants: Created upload buffer (kept alive), GPU address=0x%llx\n", bufferAddress);
+    IGL_LOG_INFO("bindPushConstants: Set %u 32-bit constants at offset %u using SetGraphicsRoot32BitConstants\n",
+                 num32BitValues, destOffset32Bit);
   }
 }
 void RenderCommandEncoder::bindSamplerState(size_t index,
@@ -614,15 +611,27 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
     srvDesc.Texture3D.MostDetailedMip = mostDetailedMip;
     IGL_LOG_INFO("bindTexture: using TEXTURE3D view dimension (mip offset=%u, mip count=%u)\n", mostDetailedMip, mipLevels);
   } else if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
-    // Check if this is a texture array view
-    if (isView && d3dTexture->getNumArraySlicesInView() > 0) {
+    // Check if this is a texture array (either a view or a regular array texture)
+    const bool isArrayTexture = (isView && d3dTexture->getNumArraySlicesInView() > 0) ||
+                                 (!isView && resourceDesc.DepthOrArraySize > 1);
+
+    if (isArrayTexture) {
       srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
       srvDesc.Texture2DArray.MipLevels = mipLevels;
       srvDesc.Texture2DArray.MostDetailedMip = mostDetailedMip;
-      srvDesc.Texture2DArray.FirstArraySlice = d3dTexture->getArraySliceOffset();
-      srvDesc.Texture2DArray.ArraySize = d3dTexture->getNumArraySlicesInView();
+
+      if (isView) {
+        // For texture views, use view-specific array parameters
+        srvDesc.Texture2DArray.FirstArraySlice = d3dTexture->getArraySliceOffset();
+        srvDesc.Texture2DArray.ArraySize = d3dTexture->getNumArraySlicesInView();
+      } else {
+        // For regular array textures, use full array size
+        srvDesc.Texture2DArray.FirstArraySlice = 0;
+        srvDesc.Texture2DArray.ArraySize = resourceDesc.DepthOrArraySize;
+      }
+
       IGL_LOG_INFO("bindTexture: using TEXTURE2DARRAY view dimension (mip offset=%u, mip count=%u, array offset=%u, array count=%u)\n",
-                   mostDetailedMip, mipLevels, d3dTexture->getArraySliceOffset(), d3dTexture->getNumArraySlicesInView());
+                   mostDetailedMip, mipLevels, srvDesc.Texture2DArray.FirstArraySlice, srvDesc.Texture2DArray.ArraySize);
     } else {
       // Default to 2D textures
       srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
@@ -662,9 +671,11 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t firstVertex,
                                 uint32_t baseInstance) {
   // Set up descriptor heaps and bind resources (same as drawIndexed)
-  // Bind cached constant buffers (use null address for unbound parameters)
-  commandList_->SetGraphicsRootConstantBufferView(0, cachedConstantBuffers_[0]);
-  commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[1]);
+  // Note: Root parameter 0 is now root constants (set via bindPushConstants/SetGraphicsRoot32BitConstants)
+  // Only bind root parameter 1 (b1) as a CBV
+  if (constantBufferBound_[1]) {
+    commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[1]);
+  }
 
   auto& context = commandBuffer_.getContext();
   auto* heapMgr = context.getDescriptorHeapManager();
@@ -745,19 +756,13 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   }
 
   // D3D12 requires ALL root parameters to be bound before drawing
-  // Bind constant buffers AFTER setting descriptor heaps (CBVs are root descriptors, not descriptor tables)
-  // Note: Root CBVs (SetGraphicsRootConstantBufferView) are NOT invalidated by SetDescriptorHeaps
-  // but we set them here for clarity and to match the Vulkan push constant model
-  // CRITICAL: D3D12 does not allow NULL (0) addresses for root CBVs
-  // If a slot isn't bound, use the bound address from slot 0 as a dummy (the shader won't read it)
-  D3D12_GPU_VIRTUAL_ADDRESS cb0Addr = cachedConstantBuffers_[0];
-  D3D12_GPU_VIRTUAL_ADDRESS cb1Addr = cachedConstantBuffers_[1] != 0 ? cachedConstantBuffers_[1] : cb0Addr;
-  commandList_->SetGraphicsRootConstantBufferView(0, cb0Addr);
-  commandList_->SetGraphicsRootConstantBufferView(1, cb1Addr);
-  IGL_LOG_INFO("DrawIndexed: bound CBVs - b0=0x%llx (bound=%d), b1=0x%llx (bound=%d, using %s)\n",
-               cb0Addr, constantBufferBound_[0],
-               cb1Addr, constantBufferBound_[1],
-               (cb1Addr == cb0Addr && !constantBufferBound_[1]) ? "b0 as dummy" : "actual");
+  // Note: Root parameter 0 is now root constants (set via bindPushConstants/SetGraphicsRoot32BitConstants)
+  // Only bind root parameter 1 (b1) as a CBV if it's been bound
+  // Root CBVs are NOT invalidated by SetDescriptorHeaps
+  if (constantBufferBound_[1]) {
+    commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[1]);
+    IGL_LOG_INFO("DrawIndexed: bound CBV b1=0x%llx\n", cachedConstantBuffers_[1]);
+  }
 
   // Apply cached vertex buffer bindings now that pipeline state is bound
   for (uint32_t i = 0; i < IGL_BUFFER_BINDINGS_MAX; ++i) {

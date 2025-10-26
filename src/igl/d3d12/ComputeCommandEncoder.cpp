@@ -79,12 +79,38 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   IGL_LOG_INFO("ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, UAV barrier inserted\n");
 }
 
-void ComputeCommandEncoder::bindPushConstants(const void* /*data*/,
-                                              size_t /*length*/,
-                                              size_t /*offset*/) {
-  // Push constants not yet implemented for D3D12 compute
-  // Would need to use root constants in the root signature
-  IGL_LOG_INFO("ComputeCommandEncoder::bindPushConstants - not yet implemented\n");
+void ComputeCommandEncoder::bindPushConstants(const void* data,
+                                              size_t length,
+                                              size_t offset) {
+  if (!data || length == 0) {
+    return;
+  }
+
+  auto* commandList = commandBuffer_.getCommandList();
+  if (!commandList) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindPushConstants - null command list\n");
+    return;
+  }
+
+  // D3D12 push constants for compute are implemented using SetComputeRoot32BitConstants
+  // This sets inline root constants directly without needing an upload buffer
+
+  // Calculate the number of 32-bit values to set
+  const UINT num32BitValues = static_cast<UINT>(length) / 4;
+
+  // offset is in bytes, convert to 32-bit value offset
+  const UINT destOffset32Bit = static_cast<UINT>(offset) / 4;
+
+  // Root parameter 0 is configured for root constants (b0)
+  commandList->SetComputeRoot32BitConstants(
+    0,                    // RootParameterIndex - parameter 0 is our root constants
+    num32BitValues,       // Num32BitValuesToSet
+    data,                 // pSrcData - pointer to the constant data
+    destOffset32Bit       // DestOffsetIn32BitValues - offset within the root constant block
+  );
+
+  IGL_LOG_INFO("ComputeCommandEncoder::bindPushConstants - Set %u 32-bit constants at offset %u\n",
+               num32BitValues, destOffset32Bit);
 }
 
 void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {

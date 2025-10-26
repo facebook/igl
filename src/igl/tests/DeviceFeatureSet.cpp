@@ -235,16 +235,17 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExternalMemoryObjects));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::PushConstants));
     } else {
-      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Texture2DArray));
-      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Texture3D));
+      // D3D12 backend
+      EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::Texture2DArray));
+      EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::Texture3D));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::TextureArrayExt));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::TextureExternalImage));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Multiview));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::BindUniform));
-      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::TexturePartialMipChain));
+      EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::TexturePartialMipChain));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::BufferRing));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::BufferNoCopy));
-      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ShaderLibrary));
+      EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ShaderLibrary));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::BindBytes));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::BufferDeviceAddress));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ShaderTextureLod));
@@ -252,7 +253,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::StandardDerivativeExt));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::SamplerMinMaxLod));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::DrawIndexedIndirect));
-      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::MultipleRenderTargets));
+      EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::MultipleRenderTargets));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ExplicitBinding));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExplicitBindingExt));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::TextureFormatRG));

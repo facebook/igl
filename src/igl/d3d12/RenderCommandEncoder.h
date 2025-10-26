@@ -127,13 +127,10 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
 
   // Track which constant buffer root parameters have been bound
   // D3D12 requires all root parameters to be set before drawing
-  // We cache bound addresses here and set null (0) for unbound params in draw calls
-  D3D12_GPU_VIRTUAL_ADDRESS cachedConstantBuffers_[2] = {0, 0}; // b0, b1
+  // Note: Root parameter 0 is now root constants (set via SetGraphicsRoot32BitConstants)
+  // Only parameter 1 (b1) uses a CBV
+  D3D12_GPU_VIRTUAL_ADDRESS cachedConstantBuffers_[2] = {0, 0}; // b0 unused, b1
   bool constantBufferBound_[2] = {false, false};
-
-  // Keep temporary push constant buffers alive until command buffer completes
-  // These are destroyed when the encoder is destroyed (at endEncoding)
-  std::vector<std::shared_ptr<IBuffer>> pushConstantBuffers_;
 };
 
 } // namespace igl::d3d12

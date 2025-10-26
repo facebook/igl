@@ -20,6 +20,18 @@ RenderPipelineState::RenderPipelineState(const RenderPipelineDesc& desc,
     : IRenderPipelineState(desc),
       pipelineState_(std::move(pipelineState)),
       rootSignature_(std::move(rootSignature)) {
+  // Set D3D12 object names for PIX debugging
+  const std::string& debugName = desc.debugName.toString();
+  if (pipelineState_.Get() && !debugName.empty()) {
+    std::wstring wideName(debugName.begin(), debugName.end());
+    pipelineState_->SetName((L"PSO_" + wideName).c_str());
+    IGL_LOG_INFO("RenderPipelineState: Set PIX debug name 'PSO_%s'\n", debugName.c_str());
+  }
+  if (rootSignature_.Get() && !debugName.empty()) {
+    std::wstring wideName(debugName.begin(), debugName.end());
+    rootSignature_->SetName((L"RootSig_" + wideName).c_str());
+    IGL_LOG_INFO("RenderPipelineState: Set PIX root signature name 'RootSig_%s'\n", debugName.c_str());
+  }
   // Convert IGL primitive topology to D3D12 primitive topology
   switch (desc.topology) {
     case PrimitiveType::Point:

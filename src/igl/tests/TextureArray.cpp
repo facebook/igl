@@ -162,6 +162,13 @@ class TextureArrayTest : public ::testing::Test {
                                igl::tests::data::shader::kSimpleVertFunc,
                                igl::tests::data::shader::kSimpleFragFunc,
                                stages);
+    } else if (iglDev_->getBackendType() == BackendType::D3D12) {
+      util::createShaderStages(iglDev_,
+                               igl::tests::data::shader::kD3D12SimpleVertShaderTexArray,
+                               igl::tests::data::shader::kShaderFunc,
+                               igl::tests::data::shader::kD3D12SimpleFragShaderTexArray,
+                               igl::tests::data::shader::kShaderFunc,
+                               stages);
     }
 
     ASSERT_TRUE(stages != nullptr);
