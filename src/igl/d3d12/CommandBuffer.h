@@ -50,6 +50,7 @@ class CommandBuffer final : public ICommandBuffer {
 
   void begin();
   void end();
+  bool isRecording() const { return recording_; }
 
   ID3D12GraphicsCommandList* getCommandList() const { return commandList_.Get(); }
   D3D12Context& getContext();
@@ -64,6 +65,7 @@ class CommandBuffer final : public ICommandBuffer {
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator_;
   size_t currentDrawCount_ = 0;
+  bool recording_ = false;
 };
 
 } // namespace igl::d3d12

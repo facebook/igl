@@ -88,7 +88,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
         iglFormat,
         textureDesc,
         ctx.getDevice(),
-        ctx.getCommandQueue());
+        ctx.getCommandQueue(),
+        D3D12_RESOURCE_STATE_PRESENT);
 
     if (!nativeDrawableTextures_[backBufferIndex]) {
       Result::setResult(outResult, Result::Code::RuntimeError,

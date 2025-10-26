@@ -12,6 +12,8 @@
 
 namespace igl::d3d12 {
 
+Framebuffer::Framebuffer(const FramebufferDesc& desc) : desc_(desc) {}
+
 std::vector<size_t> Framebuffer::getColorAttachmentIndices() const {
   std::vector<size_t> indices;
   for (size_t i = 0; i < IGL_COLOR_ATTACHMENTS_MAX; ++i) {
@@ -140,29 +142,9 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  // Transition to COPY_SOURCE
-  // For swapchain back buffers, transition from PRESENT; for offscreen RTs, from RENDER_TARGET or COMMON
-  D3D12_RESOURCE_STATES stateBefore = D3D12_RESOURCE_STATE_COMMON;
-  if (srcDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) {
-    // Check if this is a swapchain buffer (created for PRESENT usage)
-    // Heuristic: if format is typical swapchain format and has ALLOW_RENDER_TARGET, assume it's from swapchain
-    if (srcDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM || srcDesc.Format == DXGI_FORMAT_B8G8R8A8_UNORM ||
-        srcDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB || srcDesc.Format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB) {
-      // Likely a swapchain back buffer - transition from PRESENT
-      stateBefore = D3D12_RESOURCE_STATE_PRESENT;
-    } else {
-      // Offscreen render target - transition from RENDER_TARGET
-      stateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    }
-  }
-
-  D3D12_RESOURCE_BARRIER toCopySrc{};
-  toCopySrc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-  toCopySrc.Transition.pResource = srcRes;
-  toCopySrc.Transition.Subresource = mipLevel;
-  toCopySrc.Transition.StateBefore = stateBefore;
-  toCopySrc.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
-  cmdList->ResourceBarrier(1, &toCopySrc);
+  const uint32_t copyLayer = range.layer;
+  const auto previousState = srcTex->getSubresourceState(mipLevel, copyLayer);
+  srcTex->transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, mipLevel, copyLayer);
 
   // Define copy locations
   D3D12_TEXTURE_COPY_LOCATION dstLoc{};
@@ -185,10 +167,8 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
   srcBox.back = 1;
   cmdList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, &srcBox);
 
-  // Transition back to original state (PRESENT for swapchain, RENDER_TARGET or COMMON for offscreen)
-  toCopySrc.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
-  toCopySrc.Transition.StateAfter = stateBefore;
-  cmdList->ResourceBarrier(1, &toCopySrc);
+  // Transition back to original state
+  srcTex->transitionTo(cmdList.Get(), previousState, mipLevel, copyLayer);
 
   cmdList->Close();
   ID3D12CommandList* lists[] = {cmdList.Get()};
@@ -296,19 +276,11 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  // Barriers: src to COPY_SOURCE, dst to COPY_DEST
-  D3D12_RESOURCE_BARRIER barriers[2] = {};
-  barriers[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-  barriers[0].Transition.pResource = srcRes;
-  barriers[0].Transition.Subresource = range.mipLevel;
-  barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-  barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
-  barriers[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-  barriers[1].Transition.pResource = dstRes;
-  barriers[1].Transition.Subresource = range.mipLevel;
-  barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
-  barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
-  cmdList->ResourceBarrier(2, barriers);
+  const uint32_t mipLevel = range.mipLevel;
+  const uint32_t layer = range.layer;
+  const auto srcPrevState = srcTex->getSubresourceState(mipLevel, layer);
+  srcTex->transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, mipLevel, layer);
+  dstTex->transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_DEST, mipLevel, layer);
 
   D3D12_TEXTURE_COPY_LOCATION dstLoc{};
   dstLoc.pResource = dstRes;
@@ -328,12 +300,9 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   srcBox.back = 1;
   cmdList->CopyTextureRegion(&dstLoc, range.x, range.y, 0, &srcLoc, &srcBox);
 
-  // Transition dest to shader resource for sampling. Source back to COMMON.
-  barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
-  barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-  barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-  barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-  cmdList->ResourceBarrier(2, barriers);
+  // Transition dest to shader resource for sampling. Source back to its previous state.
+  srcTex->transitionTo(cmdList.Get(), srcPrevState, mipLevel, layer);
+  dstTex->transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mipLevel, layer);
 
   cmdList->Close();
   ID3D12CommandList* lists[] = {cmdList.Get()};

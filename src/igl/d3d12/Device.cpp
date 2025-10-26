@@ -447,7 +447,8 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   }
 
   // Create IGL texture from D3D12 resource
-  auto texture = Texture::createFromResource(resource.Get(), desc.format, desc, device, ctx_->getCommandQueue());
+  auto texture = Texture::createFromResource(
+      resource.Get(), desc.format, desc, device, ctx_->getCommandQueue(), initialState);
   Result::setOk(outResult);
   return texture;
 }
@@ -656,7 +657,8 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
 
   // Blend state - configure per render target based on pipeline descriptor
   psoDesc.BlendState.AlphaToCoverageEnable = FALSE;
-  psoDesc.BlendState.IndependentBlendEnable = FALSE; // Will enable if needed below
+  const size_t numColorAttachments = desc.targetDesc.colorAttachments.size();
+  psoDesc.BlendState.IndependentBlendEnable = numColorAttachments > 1 ? TRUE : FALSE;
 
   // Helper to convert IGL blend factor to D3D12
   auto toD3D12Blend = [](BlendFactor f) {

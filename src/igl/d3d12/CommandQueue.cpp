@@ -27,6 +27,9 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   auto* d3dCommandQueue = ctx.getCommandQueue();
   auto* d3dDevice = ctx.getDevice();
 
+  // Ensure the command list is closed before execution
+  const_cast<CommandBuffer&>(d3dCommandBuffer).end();
+
   IGL_LOG_INFO("CommandQueue::submit() - Executing command list...\n");
 
   // Execute command list

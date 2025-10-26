@@ -67,6 +67,9 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc)
 }
 
 void CommandBuffer::begin() {
+  if (recording_) {
+    return;
+  }
   IGL_LOG_INFO("CommandBuffer::begin() - Resetting allocator...\n");
   HRESULT hr = commandAllocator_->Reset();
   if (FAILED(hr)) {
@@ -80,10 +83,15 @@ void CommandBuffer::begin() {
     return;
   }
   IGL_LOG_INFO("CommandBuffer::begin() - Command list reset OK\n");
+  recording_ = true;
 }
 
 void CommandBuffer::end() {
+  if (!recording_) {
+    return;
+  }
   commandList_->Close();
+  recording_ = false;
 }
 
 D3D12Context& CommandBuffer::getContext() {

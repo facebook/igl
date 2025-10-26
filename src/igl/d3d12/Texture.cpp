@@ -5,16 +5,31 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <algorithm>
 #include <igl/d3d12/Texture.h>
 #include <d3dcompiler.h>
+
+namespace {
+bool needsRGBAChannelSwap(igl::TextureFormat format) {
+  using igl::TextureFormat;
+  switch (format) {
+  case TextureFormat::RGBA_UNorm8:
+  case TextureFormat::RGBA_SRGB:
+    return true;
+  default:
+    return false;
+  }
+}
+} // namespace
 
 namespace igl::d3d12 {
 
 std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
-                                                       TextureFormat format,
-                                                       const TextureDesc& desc,
-                                                       ID3D12Device* device,
-                                                       ID3D12CommandQueue* queue) {
+                                                     TextureFormat format,
+                                                     const TextureDesc& desc,
+                                                     ID3D12Device* device,
+                                                     ID3D12CommandQueue* queue,
+                                                     D3D12_RESOURCE_STATES initialState) {
   if (!resource) {
     IGL_LOG_ERROR("Texture::createFromResource - resource is NULL!\n");
     return nullptr;
@@ -35,6 +50,8 @@ std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
   texture->numMipLevels_ = desc.numMipLevels;
   texture->samples_ = desc.numSamples;
   texture->usage_ = desc.usage;
+
+  texture->initializeStateTracking(initialState);
 
   IGL_LOG_INFO("Texture::createFromResource - SUCCESS: %dx%d format=%d\n",
                desc.width, desc.height, (int)format);
@@ -63,9 +80,9 @@ Result Texture::upload(const TextureRangeDesc& range,
   const uint32_t width = range.width > 0 ? range.width : dimensions_.width;
   const uint32_t height = range.height > 0 ? range.height : dimensions_.height;
 
+  const auto props = TextureFormatProperties::fromTextureFormat(format_);
   // Calculate bytes per row if not provided
   if (bytesPerRow == 0) {
-    const auto props = TextureFormatProperties::fromTextureFormat(format_);
     const size_t bpp = std::max<uint8_t>(props.bytesPerBlock, 1);
     bytesPerRow = static_cast<size_t>(width) * bpp;
   }
@@ -131,10 +148,22 @@ Result Texture::upload(const TextureRangeDesc& range,
   uint8_t* dstData = static_cast<uint8_t*>(mappedData) + layout.Offset;
   const UINT rowsToCopy = (range.height > 0) ? std::min<UINT>(range.height, numRows) : numRows;
   const size_t copyBytes = std::min(static_cast<size_t>(rowSizeInBytes), bytesPerRow);
+  const bool swapRB = needsRGBAChannelSwap(format_) && props.bytesPerBlock == 4;
   for (UINT row = 0; row < rowsToCopy; ++row) {
-    memcpy(dstData + row * layout.Footprint.RowPitch,
-           srcData + row * bytesPerRow,
-           copyBytes);
+    uint8_t* dstRow = dstData + row * layout.Footprint.RowPitch;
+    const uint8_t* srcRow = srcData + row * bytesPerRow;
+    if (swapRB) {
+      const uint32_t pixels = width;
+      for (uint32_t col = 0; col < pixels; ++col) {
+        const uint32_t idx = col * 4;
+        dstRow[idx + 0] = srcRow[idx + 2]; // B <- R
+        dstRow[idx + 1] = srcRow[idx + 1]; // G stays
+        dstRow[idx + 2] = srcRow[idx + 0]; // R <- B
+        dstRow[idx + 3] = srcRow[idx + 3]; // A
+      }
+    } else {
+      memcpy(dstRow, srcRow, copyBytes);
+    }
   }
 
   stagingBuffer->Unmap(0, nullptr);
@@ -154,22 +183,16 @@ Result Texture::upload(const TextureRangeDesc& range,
     return Result(Result::Code::RuntimeError, "Failed to create command list for upload");
   }
 
-  // Transition texture to COPY_DEST state
-  D3D12_RESOURCE_BARRIER barrier = {};
-  barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-  barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-  barrier.Transition.pResource = resource_.Get();
-  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
-  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
-  barrier.Transition.Subresource = range.mipLevel;
+  const uint32_t dstSubresource = calcSubresourceIndex(range.mipLevel, range.layer);
 
-  cmdList->ResourceBarrier(1, &barrier);
+  // Transition texture to COPY_DEST state
+  transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_DEST, range.mipLevel, range.layer);
 
   // Copy from staging buffer to texture
   D3D12_TEXTURE_COPY_LOCATION dst = {};
   dst.pResource = resource_.Get();
   dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-  dst.SubresourceIndex = range.mipLevel;
+  dst.SubresourceIndex = dstSubresource;
 
   D3D12_TEXTURE_COPY_LOCATION src = {};
   src.pResource = stagingBuffer.Get();
@@ -188,10 +211,10 @@ Result Texture::upload(const TextureRangeDesc& range,
   cmdList->CopyTextureRegion(&dst, range.x, range.y, range.z, &src, &srcBox);
 
   // Transition texture to PIXEL_SHADER_RESOURCE state for rendering
-  // This is more explicit than relying on COMMON state implicit promotion
-  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-  cmdList->ResourceBarrier(1, &barrier);
+  transitionTo(cmdList.Get(),
+               D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+               range.mipLevel,
+               range.layer);
 
   cmdList->Close();
 
@@ -698,6 +721,110 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   fence->SetEventOnCompletion(1, evt);
   WaitForSingleObject(evt, INFINITE);
   CloseHandle(evt);
+}
+
+void Texture::initializeStateTracking(D3D12_RESOURCE_STATES initialState) const {
+  defaultState_ = initialState;
+  subresourceStates_.clear();
+  ensureStateStorage();
+  std::fill(subresourceStates_.begin(), subresourceStates_.end(), initialState);
+}
+
+void Texture::ensureStateStorage() const {
+  if (!resource_.Get()) {
+    subresourceStates_.clear();
+    return;
+  }
+  const uint32_t mipLevels = static_cast<uint32_t>(std::max<size_t>(numMipLevels_, 1));
+  const uint32_t arraySize =
+      (type_ == TextureType::ThreeD) ? 1u : static_cast<uint32_t>(std::max<size_t>(numLayers_, 1));
+  const size_t required = static_cast<size_t>(mipLevels) * arraySize;
+  if (subresourceStates_.size() != required) {
+    subresourceStates_.assign(required, defaultState_);
+  }
+}
+
+uint32_t Texture::calcSubresourceIndex(uint32_t mipLevel, uint32_t layer) const {
+  const uint32_t mipLevels = static_cast<uint32_t>(std::max<size_t>(numMipLevels_, 1));
+  const uint32_t arraySize =
+      (type_ == TextureType::ThreeD) ? 1u : static_cast<uint32_t>(std::max<size_t>(numLayers_, 1));
+  const uint32_t clampedMip = std::min(mipLevel, mipLevels - 1);
+  const uint32_t clampedLayer = std::min(layer, arraySize - 1);
+  return clampedLayer * mipLevels + clampedMip;
+}
+
+void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
+                           D3D12_RESOURCE_STATES newState,
+                           uint32_t mipLevel,
+                           uint32_t layer) const {
+  if (!commandList || !resource_.Get()) {
+    return;
+  }
+  ensureStateStorage();
+  if (subresourceStates_.empty()) {
+    return;
+  }
+  const uint32_t subresource = calcSubresourceIndex(mipLevel, layer);
+  if (subresource >= subresourceStates_.size()) {
+    return;
+  }
+  auto& currentState = subresourceStates_[subresource];
+  if (currentState == newState) {
+    return;
+  }
+
+  D3D12_RESOURCE_BARRIER barrier = {};
+  barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+  barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+  barrier.Transition.pResource = resource_.Get();
+  barrier.Transition.Subresource = subresource;
+  barrier.Transition.StateBefore = currentState;
+  barrier.Transition.StateAfter = newState;
+  commandList->ResourceBarrier(1, &barrier);
+  currentState = newState;
+}
+
+void Texture::transitionAll(ID3D12GraphicsCommandList* commandList,
+                            D3D12_RESOURCE_STATES newState) const {
+  if (!commandList || !resource_.Get()) {
+    return;
+  }
+  ensureStateStorage();
+  if (subresourceStates_.empty()) {
+    return;
+  }
+  std::vector<D3D12_RESOURCE_BARRIER> barriers;
+  barriers.reserve(subresourceStates_.size());
+  for (uint32_t i = 0; i < subresourceStates_.size(); ++i) {
+    auto& state = subresourceStates_[i];
+    if (state == newState) {
+      continue;
+    }
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barrier.Transition.pResource = resource_.Get();
+    barrier.Transition.Subresource = i;
+    barrier.Transition.StateBefore = state;
+    barrier.Transition.StateAfter = newState;
+    barriers.push_back(barrier);
+    state = newState;
+  }
+  if (!barriers.empty()) {
+    commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
+  }
+}
+
+D3D12_RESOURCE_STATES Texture::getSubresourceState(uint32_t mipLevel, uint32_t layer) const {
+  ensureStateStorage();
+  if (subresourceStates_.empty()) {
+    return defaultState_;
+  }
+  const uint32_t index = calcSubresourceIndex(mipLevel, layer);
+  if (index >= subresourceStates_.size()) {
+    return defaultState_;
+  }
+  return subresourceStates_[index];
 }
 
 } // namespace igl::d3d12

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <vector>
 #include <igl/Texture.h>
 #include <igl/d3d12/Common.h>
 
@@ -19,11 +20,13 @@ class Texture final : public ITexture {
   ~Texture() override = default;
 
   // Factory method to create texture from existing D3D12 resource
-  static std::shared_ptr<Texture> createFromResource(ID3D12Resource* resource,
-                                                      TextureFormat format,
-                                                      const TextureDesc& desc,
-                                                      ID3D12Device* device = nullptr,
-                                                      ID3D12CommandQueue* queue = nullptr);
+  static std::shared_ptr<Texture> createFromResource(
+      ID3D12Resource* resource,
+      TextureFormat format,
+      const TextureDesc& desc,
+      ID3D12Device* device = nullptr,
+      ID3D12CommandQueue* queue = nullptr,
+      D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON);
 
   // D3D12-specific upload methods (not part of ITexture interface)
   Result upload(const TextureRangeDesc& range,
@@ -51,6 +54,14 @@ class Texture final : public ITexture {
   // D3D12-specific accessors (not part of ITexture interface)
   TextureFormat getFormat() const;
   ID3D12Resource* getResource() const { return resource_.Get(); }
+  void transitionTo(ID3D12GraphicsCommandList* commandList,
+                    D3D12_RESOURCE_STATES newState,
+                    uint32_t mipLevel = 0,
+                    uint32_t layer = 0) const;
+  void transitionAll(ID3D12GraphicsCommandList* commandList,
+                     D3D12_RESOURCE_STATES newState) const;
+  D3D12_RESOURCE_STATES getSubresourceState(uint32_t mipLevel = 0,
+                                            uint32_t layer = 0) const;
 
  protected:
   // Override the base class upload method
@@ -71,6 +82,11 @@ class Texture final : public ITexture {
   size_t numMipLevels_ = 1;
   size_t samples_ = 1;
   TextureDesc::TextureUsage usage_ = 0;
+  void initializeStateTracking(D3D12_RESOURCE_STATES initialState) const;
+  uint32_t calcSubresourceIndex(uint32_t mipLevel, uint32_t layer) const;
+  void ensureStateStorage() const;
+  mutable std::vector<D3D12_RESOURCE_STATES> subresourceStates_;
+  mutable D3D12_RESOURCE_STATES defaultState_ = D3D12_RESOURCE_STATE_COMMON;
 };
 
 } // namespace igl::d3d12

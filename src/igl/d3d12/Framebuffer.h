@@ -12,9 +12,9 @@
 
 namespace igl::d3d12 {
 
-class Framebuffer final : public IFramebuffer {
+ class Framebuffer final : public IFramebuffer {
  public:
-  Framebuffer(const FramebufferDesc& desc) : desc_(desc) {}
+  Framebuffer(const FramebufferDesc& desc);
   ~Framebuffer() override = default;
 
   std::vector<size_t> getColorAttachmentIndices() const override;

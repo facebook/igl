@@ -84,7 +84,9 @@
       "Bash(./ThreeCubesRenderSession_vulkan.exe:*)",
       "Bash(./Textured3DCubeSession_vulkan.exe:*)",
       "Bash(./MRTSession_vulkan.exe:*)",
-      "Bash(./MRTSession_d3d12.exe:*)"
+      "Bash(./MRTSession_d3d12.exe:*)",
+      "Bash(.buildshellDebugMRTSession_d3d12.exe --screenshot-number 0 --screenshot-file artifactscapturesd3d12MRTSession640x360MRTSession.png --viewport-size 640x360)",
+      "Bash(./build/shell/Debug/MRTSession_d3d12.exe:*)"
     ],
     "deny": [],
     "ask": []

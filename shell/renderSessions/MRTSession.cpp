@@ -9,6 +9,9 @@
 
 #include <igl/NameHandle.h>
 
+#include <array>
+#include <numeric>
+#include <vector>
 #include <IGLU/simdtypes/SimdTypes.h>
 #include <shell/renderSessions/MRTSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
@@ -266,7 +269,8 @@ static std::unique_ptr<IShaderStages> createShaderStagesForBackend(const IDevice
         struct PSIn { float4 position: SV_POSITION; float2 uv: TEXCOORD0; };
         struct PSOut { float4 colorGreen: SV_Target0; float4 colorRed: SV_Target1; };
         PSOut main(PSIn i){ float4 c = inputImage.Sample(s0, i.uv);
-          PSOut o; o.colorGreen=float4(0,c.g,0,1); o.colorRed=float4(c.r,0,0,1); return o; }
+          // Input PNG data arrives as BGRA, so route blue channel into the second target.
+          PSOut o; o.colorGreen=float4(0,c.g,0,1); o.colorRed=float4(c.b,0,0,1); return o; }
       )";
       return igl::ShaderStagesCreator::fromModuleStringInput(device, kVS, "main", "", kPS, "main", "", nullptr);
     } else {
@@ -420,6 +424,7 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
 
   const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
+  IGL_LOG_INFO("Creating MRT encoder with framebuffer %p\n", framebufferMRT_.get());
   auto commands = buffer->createRenderCommandEncoder(renderPassMRT_, framebufferMRT_);
 
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
@@ -450,8 +455,8 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
     graphicsDesc.targetDesc.colorAttachments.resize(1);
     graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
         surfaceTextures.color->getProperties().format;
-    graphicsDesc.fragmentUnitSamplerMap[textureUnit] = IGL_NAMEHANDLE("colorRed");
-    graphicsDesc.fragmentUnitSamplerMap[textureUnit + 1] = IGL_NAMEHANDLE("colorGreen");
+    graphicsDesc.fragmentUnitSamplerMap[textureUnit] = IGL_NAMEHANDLE("colorGreen");
+    graphicsDesc.fragmentUnitSamplerMap[textureUnit + 1] = IGL_NAMEHANDLE("colorRed");
     graphicsDesc.cullMode = igl::CullMode::Back;
     graphicsDesc.frontFaceWinding = igl::WindingMode::Clockwise;
 
@@ -460,6 +465,8 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
 
   // Command buffers (1-N per thread): create, submit and forget
 
+  IGL_LOG_INFO("Creating display encoder with framebuffer %p\n",
+               framebufferDisplayLast_ ? framebufferDisplayLast_.get() : nullptr);
   commands = buffer->createRenderCommandEncoder(renderPassDisplayLast_, framebufferDisplayLast_);
 
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
@@ -468,11 +475,12 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
   // clang-format off
   commands->bindRenderPipelineState(pipelineStateLastDisplay_);
   auto green = framebufferMRT_->getColorAttachment(0);
+  auto red = framebufferMRT_->getColorAttachment(1);
+  IGL_LOG_INFO("Display pass textures: green=%p red=%p\n", green.get(), red.get());
   commands->bindTexture(textureUnit, BindTarget::kFragment, green.get());
   commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_.get());
-  auto red = framebufferMRT_->getColorAttachment(1);
-  commands->bindTexture(textureUnit+1, BindTarget::kFragment, red.get());
-  commands->bindSamplerState(textureUnit+1, BindTarget::kFragment, samp0_.get());
+  commands->bindTexture(textureUnit + 1, BindTarget::kFragment, red.get());
+  commands->bindSamplerState(textureUnit + 1, BindTarget::kFragment, samp0_.get());
 
   commands->bindVertexBuffer(0,  *vb0_);
   commands->drawIndexed(6);
@@ -488,11 +496,40 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
   }
 
   commandQueue_->submit(*buffer); // Guarantees ordering between command buffers
+
+  std::array<uint8_t, 4> sampleGreen{};
+  std::array<uint8_t, 4> sampleRed{};
+  auto leftSample = TextureRangeDesc::new2D(100, 90, 1, 1);
+  auto rightSample = TextureRangeDesc::new2D(500, 90, 1, 1);
+  IGL_LOG_INFO("Sampling MRT attachments...\n");
+  framebufferMRT_->copyBytesColorAttachment(*commandQueue_, 0, sampleGreen.data(), leftSample, 0);
+  framebufferMRT_->copyBytesColorAttachment(*commandQueue_, 1, sampleRed.data(), rightSample, 0);
+  IGL_LOG_INFO("MRT samples (left green, right red): green=(%u,%u,%u,%u) red=(%u,%u,%u,%u)\n",
+               (unsigned)sampleGreen[0],
+               (unsigned)sampleGreen[1],
+               (unsigned)sampleGreen[2],
+               (unsigned)sampleGreen[3],
+               (unsigned)sampleRed[0],
+               (unsigned)sampleRed[1],
+               (unsigned)sampleRed[2],
+               (unsigned)sampleRed[3]);
+
+  const auto dims = tex1_->getDimensions();
+  std::vector<uint8_t> attachment1(dims.width * dims.height * 4);
+  auto fullRange = TextureRangeDesc::new2D(0, 0, dims.width, dims.height);
+  framebufferMRT_->copyBytesColorAttachment(
+      *commandQueue_, 1, attachment1.data(), fullRange, dims.width * 4);
+  size_t redSum = 0;
+  for (size_t i = 0; i < attachment1.size(); i += 4) {
+    redSum += attachment1[i];
+  }
+  IGL_LOG_INFO("Attachment1 red sum=%zu\n", redSum);
 }
 
 std::shared_ptr<ITexture> MRTSession::createTexture2D(const std::shared_ptr<ITexture>& tex) {
   const auto dimensions = tex->getDimensions();
-  TextureDesc desc = TextureDesc::new2D(tex->getProperties().format,
+  // Use RGBA_UNorm8 for MRT attachments to match shader output expectations
+  TextureDesc desc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
                                         dimensions.width,
                                         dimensions.height,
                                         TextureDesc::TextureUsageBits::Attachment |
@@ -537,6 +574,12 @@ void MRTSession::createOrUpdateFramebufferMRT(const igl::SurfaceTextures& surfac
   };
 
   framebufferMRT_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, nullptr);
+  if (framebufferMRT_) {
+    auto indices = framebufferMRT_->getColorAttachmentIndices();
+    IGL_LOG_INFO("MRT framebuffer=%p attachments: %zu\n",
+                 framebufferMRT_.get(),
+                 indices.size());
+  }
 }
 
 } // namespace igl::shell

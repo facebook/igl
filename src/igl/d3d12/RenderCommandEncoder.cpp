@@ -81,6 +81,9 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
           IGL_LOG_INFO("RenderCommandEncoder: MRT loop i=%zu SKIPPED (null tex or resource)\n", i);
           continue;
         }
+        const bool hasAttachmentDesc = (i < renderPass.colorAttachments.size());
+        const uint32_t mipLevel = hasAttachmentDesc ? renderPass.colorAttachments[i].mipLevel : 0;
+        const uint32_t layer = hasAttachmentDesc ? renderPass.colorAttachments[i].layer : 0;
         // Allocate RTV
         uint32_t rtvIdx = heapMgr->allocateRTV();
         D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = heapMgr->getRTVHandle(rtvIdx);
@@ -97,19 +100,10 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
         device->CreateRenderTargetView(tex->getResource(), &rdesc, rtvHandle);
 
         // Transition to RENDER_TARGET (detect swapchain backbuffer for correct StateBefore)
-        D3D12_RESOURCE_BARRIER bb = {};
-        bb.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        bb.Transition.pResource = tex->getResource();
-        // If this texture is the current swapchain backbuffer, transition from PRESENT
-        bb.Transition.StateBefore = (tex->getResource() == context.getCurrentBackBuffer())
-                                        ? D3D12_RESOURCE_STATE_PRESENT
-                                        : D3D12_RESOURCE_STATE_COMMON;
-        bb.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-        bb.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-        commandList_->ResourceBarrier(1, &bb);
+        tex->transitionTo(commandList_, D3D12_RESOURCE_STATE_RENDER_TARGET, mipLevel, layer);
 
         // Clear if requested
-        if (i < renderPass.colorAttachments.size() && renderPass.colorAttachments[i].loadAction == LoadAction::Clear) {
+        if (hasAttachmentDesc && renderPass.colorAttachments[i].loadAction == LoadAction::Clear) {
           const auto& clearColor = renderPass.colorAttachments[i].clearColor;
           const float color[] = {clearColor.r, clearColor.g, clearColor.b, clearColor.a};
           IGL_LOG_INFO("RenderCommandEncoder: Clearing MRT attachment %zu with color (%.2f, %.2f, %.2f, %.2f)\n",
@@ -188,15 +182,9 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
       dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
       dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
 
-      // Transition depth to DEPTH_WRITE
-      D3D12_RESOURCE_BARRIER barrier = {};
-      barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-      barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-      barrier.Transition.pResource = depthTex->getResource();
-      barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
-      barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-      barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-      commandList_->ResourceBarrier(1, &barrier);
+      const uint32_t depthMip = renderPass.depthAttachment.mipLevel;
+      const uint32_t depthLayer = renderPass.depthAttachment.layer;
+      depthTex->transitionTo(commandList_, D3D12_RESOURCE_STATE_DEPTH_WRITE, depthMip, depthLayer);
 
       device->CreateDepthStencilView(depthTex->getResource(), &dsvDesc, dsvHandle_);
 
@@ -287,19 +275,9 @@ void RenderCommandEncoder::endEncoding() {
     // If framebuffer color attachment is the current swapchain backbuffer, also transition to PRESENT
     auto swapColor = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(0));
     if (swapColor && swapColor->getResource() == context2.getCurrentBackBuffer()) {
-      D3D12_RESOURCE_BARRIER barrier = {};
-      barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-      barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-      barrier.Transition.pResource = swapColor->getResource();
-      barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-      barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-      barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-      commandList_->ResourceBarrier(1, &barrier);
+      swapColor->transitionAll(commandList_, D3D12_RESOURCE_STATE_PRESENT);
     }
   }
-
-  // Close the command buffer
-  commandBuffer_.end();
 
   // Return RTV/DSV indices to the descriptor heap manager if used
   if (auto* mgr = context2.getDescriptorHeapManager()) {
@@ -521,29 +499,7 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   }
 
   // Ensure resource is in PIXEL_SHADER_RESOURCE state for sampling
-  // Only transition if not already in PIXEL_SHADER_RESOURCE or COMMON (which is implicitly compatible)
-  // For textures that were just used as render targets (have ALLOW_RENDER_TARGET flag), transition from RENDER_TARGET
-  // For regular sampled textures, assume they're already in COMMON or PIXEL_SHADER_RESOURCE
-  {
-    auto desc = resource->GetDesc();
-    const bool wasRenderTarget = (desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) != 0;
-
-    if (wasRenderTarget) {
-      // This texture can be used as a render target, so it may be in RENDER_TARGET state
-      // Transition it to PIXEL_SHADER_RESOURCE for sampling
-      D3D12_RESOURCE_BARRIER toSrv = {};
-      toSrv.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-      toSrv.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-      toSrv.Transition.pResource = resource;
-      toSrv.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-      toSrv.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-      toSrv.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-      commandList_->ResourceBarrier(1, &toSrv);
-      IGL_LOG_INFO("bindTexture: transitioned render target texture from RENDER_TARGET to PIXEL_SHADER_RESOURCE\n");
-    }
-    // For non-render-target textures, assume they're in COMMON/PIXEL_SHADER_RESOURCE already
-    // D3D12 allows implicit promotion from COMMON to read states, so no barrier needed
-  }
+  d3dTexture->transitionAll(commandList_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
   // Use the index parameter to create SRV at correct descriptor slot (t0, t1, etc.)
   const uint32_t descriptorIndex = static_cast<uint32_t>(index);
