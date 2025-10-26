@@ -91,15 +91,20 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
           rtvIndex_ = rtvIdx;
           rtvHandle_ = rtvHandle;
         }
-        // Create RTV view
+        // Create RTV view - use the resource's actual format to avoid SRGB/UNORM mismatches
+        D3D12_RESOURCE_DESC resourceDesc = tex->getResource()->GetDesc();
         D3D12_RENDER_TARGET_VIEW_DESC rdesc = {};
-        rdesc.Format = textureFormatToDXGIFormat(tex->getFormat());
+        rdesc.Format = resourceDesc.Format;  // Use actual D3D12 resource format, not IGL format
         rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
         rdesc.Texture2D.MipSlice = (i < renderPass.colorAttachments.size()) ? renderPass.colorAttachments[i].mipLevel : 0;
         rdesc.Texture2D.PlaneSlice = 0;
         device->CreateRenderTargetView(tex->getResource(), &rdesc, rtvHandle);
 
-        // Transition to RENDER_TARGET (detect swapchain backbuffer for correct StateBefore)
+        // Transition to RENDER_TARGET
+        // IMPORTANT: For multi-frame rendering, offscreen targets may have been transitioned to
+        // PIXEL_SHADER_RESOURCE in the previous frame's endEncoding(). We MUST transition them
+        // back to RENDER_TARGET at the start of each render pass.
+        // The transitionTo() function checks current state and only transitions if needed.
         tex->transitionTo(commandList_, D3D12_RESOURCE_STATE_RENDER_TARGET, mipLevel, layer);
 
         // Clear if requested
@@ -257,9 +262,32 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
 }
 
 void RenderCommandEncoder::endEncoding() {
-  // Transition back to PRESENT only if swapchain RTV was used
   auto& context2 = commandBuffer_.getContext();
-  if (!framebuffer_ || !framebuffer_->getColorAttachment(0)) {
+
+  // For offscreen framebuffers (MRT targets), transition all attachments to PIXEL_SHADER_RESOURCE
+  // so they can be sampled in subsequent passes
+  if (framebuffer_ && framebuffer_->getColorAttachment(0)) {
+    auto swapColor = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(0));
+
+    // Check if this is the swapchain backbuffer
+    const bool isSwapchainTarget = (swapColor && swapColor->getResource() == context2.getCurrentBackBuffer());
+
+    if (isSwapchainTarget) {
+      // Swapchain framebuffer: transition to PRESENT
+      swapColor->transitionAll(commandList_, D3D12_RESOURCE_STATE_PRESENT);
+    } else {
+      // Offscreen framebuffer (e.g., MRT targets): transition all color attachments to PIXEL_SHADER_RESOURCE
+      // This allows the render targets to be sampled in subsequent rendering passes (multi-frame support)
+      const auto indices = framebuffer_->getColorAttachmentIndices();
+      for (size_t i : indices) {
+        auto attachment = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(i));
+        if (attachment && attachment->getResource()) {
+          attachment->transitionAll(commandList_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        }
+      }
+    }
+  } else {
+    // No framebuffer provided - using swapchain directly
     auto* backBuffer = context2.getCurrentBackBuffer();
     if (backBuffer) {
       D3D12_RESOURCE_BARRIER barrier = {};
@@ -270,12 +298,6 @@ void RenderCommandEncoder::endEncoding() {
       barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
       barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
       commandList_->ResourceBarrier(1, &barrier);
-    }
-  } else {
-    // If framebuffer color attachment is the current swapchain backbuffer, also transition to PRESENT
-    auto swapColor = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(0));
-    if (swapColor && swapColor->getResource() == context2.getCurrentBackBuffer()) {
-      swapColor->transitionAll(commandList_, D3D12_RESOURCE_STATE_PRESENT);
     }
   }
 
@@ -398,9 +420,75 @@ void RenderCommandEncoder::bindBytes(size_t /*index*/,
                                      uint8_t /*target*/,
                                      const void* /*data*/,
                                      size_t /*length*/) {}
-void RenderCommandEncoder::bindPushConstants(const void* /*data*/,
-                                             size_t /*length*/,
-                                             size_t /*offset*/) {}
+void RenderCommandEncoder::bindPushConstants(const void* data,
+                                             size_t length,
+                                             size_t offset) {
+  static int callCount = 0;
+  if (callCount < 3) {
+    IGL_LOG_INFO("bindPushConstants called #%d: length=%zu, offset=%zu\n", ++callCount, length, offset);
+    // Log the matrix data being uploaded (assuming it's a 4x4 float matrix)
+    if (length >= sizeof(float) * 16) {
+      const float* matrix = static_cast<const float*>(data);
+      IGL_LOG_INFO("  Push constant matrix:\n");
+      IGL_LOG_INFO("    Row 0: [%.3f, %.3f, %.3f, %.3f]\n", matrix[0], matrix[1], matrix[2], matrix[3]);
+      IGL_LOG_INFO("    Row 1: [%.3f, %.3f, %.3f, %.3f]\n", matrix[4], matrix[5], matrix[6], matrix[7]);
+      IGL_LOG_INFO("    Row 2: [%.3f, %.3f, %.3f, %.3f]\n", matrix[8], matrix[9], matrix[10], matrix[11]);
+      IGL_LOG_INFO("    Row 3: [%.3f, %.3f, %.3f, %.3f]\n", matrix[12], matrix[13], matrix[14], matrix[15]);
+    }
+  }
+
+  if (!data || length == 0) {
+    return;
+  }
+
+  // For D3D12, push constants are implemented as inline constant buffer data
+  // We need to create a temporary upload buffer and bind it to b0 (or the appropriate slot)
+  // The data is uploaded to the GPU via an upload buffer in shared memory
+
+  // D3D12 constant buffers must be 256-byte aligned
+  const size_t alignedSize = (length + offset + 255) & ~255;
+
+  // Create a temporary upload buffer for this frame
+  // This is similar to how vertex/index data is uploaded
+  auto& iglDevice = commandBuffer_.getDevice();
+
+  // Create an upload buffer descriptor
+  BufferDesc uploadDesc;
+  uploadDesc.type = BufferDesc::BufferTypeBits::Uniform;
+  uploadDesc.data = nullptr;  // We'll upload manually
+  uploadDesc.length = alignedSize;
+  uploadDesc.storage = ResourceStorage::Shared;  // CPU-writable, GPU-readable
+  uploadDesc.hint = BufferDesc::BufferAPIHintBits::UniformBlock;
+
+  // Create the buffer via the IGL device
+  Result result;
+  auto uploadBuffer = iglDevice.createBuffer(uploadDesc, &result);
+  if (!uploadBuffer || !result.isOk()) {
+    IGL_LOG_ERROR("bindPushConstants: Failed to create upload buffer: %s\n", result.message.c_str());
+    return;
+  }
+
+  // Upload the data to the buffer at the specified offset
+  uploadBuffer->upload(data, {length, offset});
+
+  // Get the GPU address and bind it to constant buffer slot 0 (b0)
+  // Note: upload() already applied the offset, so we pass 0 here to get the base address
+  // Then we add the aligned offset to get the final GPU address
+  auto* d3dBuffer = static_cast<Buffer*>(uploadBuffer.get());
+  const size_t alignedOffset = (offset + 255) & ~255;  // CB addresses must be 256-byte aligned
+  D3D12_GPU_VIRTUAL_ADDRESS bufferAddress = d3dBuffer->gpuAddress(alignedOffset);
+
+  cachedConstantBuffers_[0] = bufferAddress;
+  constantBufferBound_[0] = true;
+
+  // CRITICAL: Keep the buffer alive until the command buffer is executed and completed
+  // Store it in the encoder's buffer list to prevent premature destruction
+  pushConstantBuffers_.push_back(std::move(uploadBuffer));
+
+  if (callCount <= 3) {
+    IGL_LOG_INFO("bindPushConstants: Created upload buffer (kept alive), GPU address=0x%llx\n", bufferAddress);
+  }
+}
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t /*target*/,
                                             ISamplerState* samplerState) {
@@ -515,17 +603,33 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   auto resourceDesc = resource->GetDesc();
   IGL_LOG_INFO("bindTexture: resource dimension=%d, texture type=%d\n", resourceDesc.Dimension, (int)d3dTexture->getType());
 
+  // Check if this is a texture view and use view parameters for SRV
+  const bool isView = d3dTexture->isView();
+  const uint32_t mostDetailedMip = isView ? d3dTexture->getMipLevelOffset() : 0;
+  const uint32_t mipLevels = isView ? d3dTexture->getNumMipLevelsInView() : d3dTexture->getNumMipLevels();
+
   if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D) {
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
-    srvDesc.Texture3D.MipLevels = d3dTexture->getNumMipLevels();
-    srvDesc.Texture3D.MostDetailedMip = 0;
-    IGL_LOG_INFO("bindTexture: using TEXTURE3D view dimension\n");
+    srvDesc.Texture3D.MipLevels = mipLevels;
+    srvDesc.Texture3D.MostDetailedMip = mostDetailedMip;
+    IGL_LOG_INFO("bindTexture: using TEXTURE3D view dimension (mip offset=%u, mip count=%u)\n", mostDetailedMip, mipLevels);
   } else if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
-    // Default to 2D textures
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MipLevels = d3dTexture->getNumMipLevels();
-    srvDesc.Texture2D.MostDetailedMip = 0;
-    IGL_LOG_INFO("bindTexture: using TEXTURE2D view dimension\n");
+    // Check if this is a texture array view
+    if (isView && d3dTexture->getNumArraySlicesInView() > 0) {
+      srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+      srvDesc.Texture2DArray.MipLevels = mipLevels;
+      srvDesc.Texture2DArray.MostDetailedMip = mostDetailedMip;
+      srvDesc.Texture2DArray.FirstArraySlice = d3dTexture->getArraySliceOffset();
+      srvDesc.Texture2DArray.ArraySize = d3dTexture->getNumArraySlicesInView();
+      IGL_LOG_INFO("bindTexture: using TEXTURE2DARRAY view dimension (mip offset=%u, mip count=%u, array offset=%u, array count=%u)\n",
+                   mostDetailedMip, mipLevels, d3dTexture->getArraySliceOffset(), d3dTexture->getNumArraySlicesInView());
+    } else {
+      // Default to 2D textures
+      srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+      srvDesc.Texture2D.MipLevels = mipLevels;
+      srvDesc.Texture2D.MostDetailedMip = mostDetailedMip;
+      IGL_LOG_INFO("bindTexture: using TEXTURE2D view dimension (mip offset=%u, mip count=%u)\n", mostDetailedMip, mipLevels);
+    }
   } else {
     IGL_LOG_ERROR("bindTexture: unsupported resource dimension %d\n", resourceDesc.Dimension);
     return;
@@ -612,16 +716,8 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
     drawCallCount++;
   }
 
-  // D3D12 requires ALL root parameters to be bound before drawing
-  // Bind cached constant buffers (use null address for unbound parameters)
-  commandList_->SetGraphicsRootConstantBufferView(0, cachedConstantBuffers_[0]);
-  commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[1]);
-  IGL_LOG_INFO("DrawIndexed: bound CBVs - b0=0x%llx (bound=%d), b1=0x%llx (bound=%d)\n",
-               cachedConstantBuffers_[0], constantBufferBound_[0],
-               cachedConstantBuffers_[1], constantBufferBound_[1]);
-
-  // CRITICAL: SetDescriptorHeaps invalidates all previously bound descriptor tables
-  // We must set heaps ONCE, then bind ALL descriptor tables (texture + sampler)
+  // CRITICAL: SetDescriptorHeaps must be called FIRST, before binding any root parameters
+  // Otherwise, SetDescriptorHeaps will invalidate the bound parameters
   auto& context = commandBuffer_.getContext();
   auto* heapMgr = context.getDescriptorHeapManager();
   if (heapMgr) {
@@ -647,6 +743,21 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
                    cachedSamplerGpuHandles_[0].ptr, cachedSamplerCount_);
     }
   }
+
+  // D3D12 requires ALL root parameters to be bound before drawing
+  // Bind constant buffers AFTER setting descriptor heaps (CBVs are root descriptors, not descriptor tables)
+  // Note: Root CBVs (SetGraphicsRootConstantBufferView) are NOT invalidated by SetDescriptorHeaps
+  // but we set them here for clarity and to match the Vulkan push constant model
+  // CRITICAL: D3D12 does not allow NULL (0) addresses for root CBVs
+  // If a slot isn't bound, use the bound address from slot 0 as a dummy (the shader won't read it)
+  D3D12_GPU_VIRTUAL_ADDRESS cb0Addr = cachedConstantBuffers_[0];
+  D3D12_GPU_VIRTUAL_ADDRESS cb1Addr = cachedConstantBuffers_[1] != 0 ? cachedConstantBuffers_[1] : cb0Addr;
+  commandList_->SetGraphicsRootConstantBufferView(0, cb0Addr);
+  commandList_->SetGraphicsRootConstantBufferView(1, cb1Addr);
+  IGL_LOG_INFO("DrawIndexed: bound CBVs - b0=0x%llx (bound=%d), b1=0x%llx (bound=%d, using %s)\n",
+               cb0Addr, constantBufferBound_[0],
+               cb1Addr, constantBufferBound_[1],
+               (cb1Addr == cb0Addr && !constantBufferBound_[1]) ? "b0 as dummy" : "actual");
 
   // Apply cached vertex buffer bindings now that pipeline state is bound
   for (uint32_t i = 0; i < IGL_BUFFER_BINDINGS_MAX; ++i) {

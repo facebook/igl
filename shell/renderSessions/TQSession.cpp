@@ -127,6 +127,54 @@ std::string getVulkanFragmentShaderSource() {
                 }
                 )";
 }
+
+std::string getD3D12VertexShaderSource() {
+  return R"(
+                struct UniformsPerObject {
+                  float3 color;
+                };
+
+                cbuffer PerObject : register(b0) {
+                  UniformsPerObject perObject;
+                };
+
+                struct VSInput {
+                  float3 position : POSITION;
+                  float2 uv_in : TEXCOORD0;
+                };
+
+                struct VSOutput {
+                  float4 position : SV_POSITION;
+                  float2 uv : TEXCOORD0;
+                  float3 color : COLOR0;
+                };
+
+                VSOutput main(VSInput input) {
+                  VSOutput output;
+                  output.position = float4(input.position, 1.0);
+                  output.uv = input.uv_in;
+                  output.color = perObject.color;
+                  return output;
+                }
+                )";
+}
+
+std::string getD3D12FragmentShaderSource() {
+  return R"(
+                Texture2D in_texture : register(t0);
+                SamplerState in_sampler : register(s0);
+
+                struct PSInput {
+                  float4 position : SV_POSITION;
+                  float2 uv : TEXCOORD0;
+                  float3 color : COLOR0;
+                };
+
+                float4 main(PSInput input) : SV_Target {
+                  return float4(input.color, 1.0) * in_texture.Sample(in_sampler, input.uv);
+                }
+                )";
+}
 // @fb-only
 
 std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
@@ -163,6 +211,15 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
                                                            "main",
                                                            "",
                                                            getOpenGLFragmentShaderSource().c_str(),
+                                                           "main",
+                                                           "",
+                                                           nullptr);
+  case igl::BackendType::D3D12:
+    return igl::ShaderStagesCreator::fromModuleStringInput(device,
+                                                           getD3D12VertexShaderSource().c_str(),
+                                                           "main",
+                                                           "",
+                                                           getD3D12FragmentShaderSource().c_str(),
                                                            "main",
                                                            "",
                                                            nullptr);

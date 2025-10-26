@@ -21,6 +21,10 @@ class ComputePipelineState final : public IComputePipelineState {
 
   std::shared_ptr<IComputePipelineReflection> computePipelineReflection() override;
 
+  // D3D12-specific accessors
+  ID3D12PipelineState* getPipelineState() const { return pipelineState_.Get(); }
+  ID3D12RootSignature* getRootSignature() const { return rootSignature_.Get(); }
+
  private:
   Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState_;
   Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;

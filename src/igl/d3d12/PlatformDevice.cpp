@@ -58,8 +58,14 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
   const auto height = static_cast<uint32_t>(desc.Height);
 
   // Determine texture format based on DXGI format
-  igl::TextureFormat iglFormat = igl::TextureFormat::RGBA_SRGB; // Default
-  // TODO: Map desc.Format to proper IGL format
+  // IMPORTANT: Use dxgiFormatToTextureFormat() to get the CORRECT IGL format
+  // from the actual D3D12 resource format. Do NOT hardcode RGBA_SRGB!
+  igl::TextureFormat iglFormat = dxgiFormatToTextureFormat(desc.Format);
+  if (iglFormat == igl::TextureFormat::Invalid) {
+    IGL_LOG_ERROR("  Unsupported DXGI format: %d\n", desc.Format);
+    Result::setResult(outResult, Result::Code::RuntimeError, "Unsupported swapchain DXGI format");
+    return nullptr;
+  }
 
   // Ensure we have enough cached textures for swapchain images
   while (nativeDrawableTextures_.size() <= backBufferIndex) {

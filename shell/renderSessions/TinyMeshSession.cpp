@@ -255,7 +255,7 @@ PSInput main(VSInput input){ PSInput o; float4 p = mul(model, float4(input.pos,1
     const char* psHlsl = R"(
 Texture2D uTex0:register(t0); Texture2D uTex1:register(t1); SamplerState s0:register(s0); SamplerState s1:register(s1);
 struct PSInput { float4 position:SV_POSITION; float3 color:COLOR; float2 uv:TEXCOORD0; };
-float4 main(PSInput input):SV_TARGET{ float3 t0=uTex0.Sample(s0,input.uv*2).rgb; float3 t1=uTex1.Sample(s1,input.uv).rgb; return float4(2.0*input.color*(t0*t1),1.0); }
+float4 main(PSInput input):SV_TARGET{ float3 t0=uTex0.Sample(s0,input.uv*2).rgb; float3 t1=uTex1.Sample(s1,input.uv).rgb; return float4(input.color*(t0+t1),1.0); }
 )";
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device, vsHlsl, "main", "", psHlsl, "main", "", nullptr);

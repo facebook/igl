@@ -135,7 +135,7 @@ void main() {
 static const char* getD3D12VertexShaderSource() {
   return R"(
 cbuffer Uniforms : register(b0) {
-  float4x4 proj;
+  float4x4 projectionMatrix;
 };
 
 struct VSInput {
@@ -152,7 +152,9 @@ struct PSInput {
 
 PSInput main(VSInput input) {
   PSInput output;
-  output.position = mul(proj, float4(input.position.xy, 0, 1));
+  // Column-major multiplication to match the CPU-side matrix format
+  // In HLSL: mul(vector, matrix) treats matrix as column-major
+  output.position = mul(float4(input.position.xy, 0, 1), projectionMatrix);
   output.color = input.color;
   output.uv = input.uv;
   return output;
@@ -167,11 +169,11 @@ struct PSInput {
   float2 uv : TEXCOORD0;
 };
 
-Texture2D uTex : register(t0);
+Texture2D tex : register(t0);
 SamplerState uSampler : register(s0);
 
 float4 main(PSInput input) : SV_Target {
-  return input.color * uTex.Sample(uSampler, input.uv);
+  return input.color * tex.Sample(uSampler, input.uv);
 })";
 }
 
@@ -349,7 +351,10 @@ Session::Renderer::Renderer(igl::IDevice& device) {
     material_->blendMode = iglu::material::BlendMode::Translucent();
 
     // @fb-only
-    if (device.getBackendType() != igl::BackendType::Vulkan) {
+    // D3D12 and Vulkan use direct slot binding, OpenGL/Metal use named binding
+    const bool usesDirectBinding = (device.getBackendType() == igl::BackendType::Vulkan ||
+                                     device.getBackendType() == igl::BackendType::D3D12);
+    if (!usesDirectBinding) {
       material_->shaderUniforms().setTexture("texture", fontTexture_.get(), linearSampler_);
     }
   }
@@ -382,7 +387,14 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
   // framebuffer coordinates)
   const int fbWidth = (int)(drawData->DisplaySize.x * drawData->FramebufferScale.x);
   const int fbHeight = (int)(drawData->DisplaySize.y * drawData->FramebufferScale.y);
+
+  IGL_LOG_INFO("ImGui renderDrawData: DisplaySize=(%.1f,%.1f), FramebufferScale=(%.1f,%.1f), fb=(%d,%d), CmdLists=%d, TotalVtx=%d, TotalIdx=%d\n",
+               drawData->DisplaySize.x, drawData->DisplaySize.y,
+               drawData->FramebufferScale.x, drawData->FramebufferScale.y,
+               fbWidth, fbHeight, drawData->CmdListsCount, drawData->TotalVtxCount, drawData->TotalIdxCount);
+
   if (fbWidth <= 0 || fbHeight <= 0 || drawData->CmdListsCount == 0) {
+    IGL_LOG_INFO("ImGui renderDrawData: Early return (invalid dimensions or no command lists)\n");
     return;
   }
 
@@ -408,7 +420,10 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
     orthoProjection.columns[1] = float4{0.0f, 2.0f / (t - b), 0.0f, 0.0f};
     orthoProjection.columns[2] = float4{0.0f, 0.0f, -1.0f, 0.0f};
     orthoProjection.columns[3] = float4{(r + l) / (l - r), (t + b) / (b - t), 0.0f, 1.0f};
-    if (device.getBackendType() != igl::BackendType::Vulkan) {
+    // D3D12 and Vulkan use direct slot binding, OpenGL/Metal use named binding
+    const bool usesDirectBinding = (device.getBackendType() == igl::BackendType::Vulkan ||
+                                     device.getBackendType() == igl::BackendType::D3D12);
+    if (!usesDirectBinding) {
       material_->shaderUniforms().setFloat4x4(igl::genNameHandle("projectionMatrix"),
                                               orthoProjection);
     }
@@ -424,6 +439,8 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
 
   const bool isOpenGL = device.getBackendType() == igl::BackendType::OpenGL;
   const bool isVulkan = device.getBackendType() == igl::BackendType::Vulkan;
+  const bool isD3D12 = device.getBackendType() == igl::BackendType::D3D12;
+  const bool usesDirectBinding = isVulkan || isD3D12;
 
   ImTextureID lastBoundTextureId = nullptr;
 
@@ -466,7 +483,8 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
       if (cmd.TextureId != lastBoundTextureId) {
         lastBoundTextureId = cmd.TextureId;
         auto* tex = reinterpret_cast<igl::ITexture*>(cmd.TextureId);
-        if (isVulkan) {
+        if (usesDirectBinding) {
+          // D3D12 and Vulkan use direct slot binding
           // @fb-only
           // Add Vulkan support for texture reflection info in ShaderUniforms so we don't need to
           // bind the texture directly
@@ -484,7 +502,7 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
       drawableData.drawable->draw(device,
                                   cmdEncoder,
                                   renderPipelineDesc_,
-                                  isVulkan ? sizeof(orthoProjection) : 0,
+                                  usesDirectBinding ? sizeof(orthoProjection) : 0,
                                   &orthoProjection);
     }
   }

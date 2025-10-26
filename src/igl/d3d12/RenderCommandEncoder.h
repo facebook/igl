@@ -130,6 +130,10 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   // We cache bound addresses here and set null (0) for unbound params in draw calls
   D3D12_GPU_VIRTUAL_ADDRESS cachedConstantBuffers_[2] = {0, 0}; // b0, b1
   bool constantBufferBound_[2] = {false, false};
+
+  // Keep temporary push constant buffers alive until command buffer completes
+  // These are destroyed when the encoder is destroyed (at endEncoding)
+  std::vector<std::shared_ptr<IBuffer>> pushConstantBuffers_;
 };
 
 } // namespace igl::d3d12

@@ -9,6 +9,7 @@
 #include <igl/d3d12/CommandQueue.h>
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/RenderPipelineState.h>
+#include <igl/d3d12/ComputePipelineState.h>
 #include <igl/d3d12/ShaderModule.h>
 #include <igl/d3d12/Framebuffer.h>
 #include <igl/d3d12/VertexInputState.h>
@@ -453,12 +454,31 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   return texture;
 }
 
-std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> /*texture*/,
-                                                    const TextureViewDesc& /*desc*/,
+std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> texture,
+                                                    const TextureViewDesc& desc,
                                                     Result* IGL_NULLABLE
                                                         outResult) const noexcept {
-  Result::setResult(outResult, Result::Code::Unimplemented, "D3D12 TextureView not yet implemented");
-  return nullptr;
+  if (!texture) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Parent texture is null");
+    return nullptr;
+  }
+
+  // Cast to D3D12 texture
+  auto d3d12Texture = std::static_pointer_cast<Texture>(texture);
+  if (!d3d12Texture) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Texture is not a D3D12 texture");
+    return nullptr;
+  }
+
+  // Create the texture view
+  auto view = Texture::createTextureView(d3d12Texture, desc);
+  if (!view) {
+    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create texture view");
+    return nullptr;
+  }
+
+  Result::setOk(outResult);
+  return view;
 }
 
 std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) const noexcept {
@@ -475,10 +495,191 @@ std::shared_ptr<IVertexInputState> Device::createVertexInputState(
 
 // Pipelines
 std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
-    const ComputePipelineDesc& /*desc*/,
+    const ComputePipelineDesc& desc,
     Result* IGL_NULLABLE outResult) const {
-  Result::setResult(outResult, Result::Code::Unimplemented, "D3D12 ComputePipeline not yet implemented");
-  return nullptr;
+  IGL_LOG_INFO("Device::createComputePipeline() START - debugName='%s'\n", desc.debugName.c_str());
+
+  auto* device = ctx_->getDevice();
+  if (!device) {
+    IGL_LOG_ERROR("  D3D12 device is null!\n");
+    Result::setResult(outResult, Result::Code::InvalidOperation, "D3D12 device is null");
+    return nullptr;
+  }
+
+  if (!desc.shaderStages) {
+    IGL_LOG_ERROR("  Shader stages are required!\n");
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader stages are required");
+    return nullptr;
+  }
+
+  if (desc.shaderStages->getType() != ShaderStagesType::Compute) {
+    IGL_LOG_ERROR("  Shader stages must be compute type!\n");
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader stages must be compute type");
+    return nullptr;
+  }
+
+  // Get compute shader module
+  auto* computeModule = static_cast<const ShaderModule*>(desc.shaderStages->getComputeModule().get());
+  if (!computeModule) {
+    IGL_LOG_ERROR("  Compute module is null!\n");
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Compute shader required");
+    return nullptr;
+  }
+
+  IGL_LOG_INFO("  Getting compute shader bytecode...\n");
+  const auto& csBytecode = computeModule->getBytecode();
+  IGL_LOG_INFO("  CS bytecode: %zu bytes\n", csBytecode.size());
+
+  // Create root signature for compute
+  // Root signature layout for compute:
+  // - Root parameter 0: Descriptor table with unbounded UAVs (u0-uN)
+  // - Root parameter 1: Descriptor table with unbounded SRVs (t0-tN)
+  // - Root parameter 2: Descriptor table with unbounded CBVs (b0-bN)
+  // - Root parameter 3: Descriptor table with unbounded Samplers (s0-sN)
+
+  Microsoft::WRL::ComPtr<ID3DBlob> signature;
+  Microsoft::WRL::ComPtr<ID3DBlob> error;
+
+  // Descriptor range for UAVs (unordered access views - read/write buffers and textures)
+  D3D12_DESCRIPTOR_RANGE uavRange = {};
+  uavRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+  uavRange.NumDescriptors = UINT_MAX;  // UNBOUNDED
+  uavRange.BaseShaderRegister = 0;  // Starting at u0
+  uavRange.RegisterSpace = 0;
+  uavRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+  // Descriptor range for SRVs (shader resource views - read-only textures and buffers)
+  D3D12_DESCRIPTOR_RANGE srvRange = {};
+  srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+  srvRange.NumDescriptors = UINT_MAX;  // UNBOUNDED
+  srvRange.BaseShaderRegister = 0;  // Starting at t0
+  srvRange.RegisterSpace = 0;
+  srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+  // Descriptor range for CBVs (constant buffer views)
+  D3D12_DESCRIPTOR_RANGE cbvRange = {};
+  cbvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+  cbvRange.NumDescriptors = UINT_MAX;  // UNBOUNDED
+  cbvRange.BaseShaderRegister = 0;  // Starting at b0
+  cbvRange.RegisterSpace = 0;
+  cbvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+  // Descriptor range for Samplers
+  D3D12_DESCRIPTOR_RANGE samplerRange = {};
+  samplerRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+  samplerRange.NumDescriptors = UINT_MAX;  // UNBOUNDED
+  samplerRange.BaseShaderRegister = 0;  // Starting at s0
+  samplerRange.RegisterSpace = 0;
+  samplerRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+  // Root parameters
+  D3D12_ROOT_PARAMETER rootParams[4] = {};
+
+  // Parameter 0: Descriptor table for UAVs
+  rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+  rootParams[0].DescriptorTable.NumDescriptorRanges = 1;
+  rootParams[0].DescriptorTable.pDescriptorRanges = &uavRange;
+  rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+  // Parameter 1: Descriptor table for SRVs
+  rootParams[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+  rootParams[1].DescriptorTable.NumDescriptorRanges = 1;
+  rootParams[1].DescriptorTable.pDescriptorRanges = &srvRange;
+  rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+  // Parameter 2: Descriptor table for CBVs
+  rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+  rootParams[2].DescriptorTable.NumDescriptorRanges = 1;
+  rootParams[2].DescriptorTable.pDescriptorRanges = &cbvRange;
+  rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+  // Parameter 3: Descriptor table for Samplers
+  rootParams[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+  rootParams[3].DescriptorTable.NumDescriptorRanges = 1;
+  rootParams[3].DescriptorTable.pDescriptorRanges = &samplerRange;
+  rootParams[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+  D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
+  rootSigDesc.NumParameters = 4;
+  rootSigDesc.pParameters = rootParams;
+  rootSigDesc.NumStaticSamplers = 0;
+  rootSigDesc.pStaticSamplers = nullptr;
+  rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
+
+  IGL_LOG_INFO("  Creating compute root signature with UAVs/SRVs/CBVs/Samplers\n");
+
+  HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+                                           signature.GetAddressOf(), error.GetAddressOf());
+  if (FAILED(hr)) {
+    if (error.Get()) {
+      const char* errorMsg = static_cast<const char*>(error->GetBufferPointer());
+      IGL_LOG_ERROR("Root signature serialization error: %s\n", errorMsg);
+    }
+    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to serialize compute root signature");
+    return nullptr;
+  }
+
+  Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+  hr = device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
+                                    IID_PPV_ARGS(rootSignature.GetAddressOf()));
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("  CreateRootSignature FAILED: 0x%08X\n", static_cast<unsigned>(hr));
+    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create compute root signature");
+    return nullptr;
+  }
+  IGL_LOG_INFO("  Compute root signature created OK\n");
+
+  // Create compute pipeline state
+  D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
+  psoDesc.pRootSignature = rootSignature.Get();
+  psoDesc.CS.pShaderBytecode = csBytecode.data();
+  psoDesc.CS.BytecodeLength = csBytecode.size();
+  psoDesc.NodeMask = 0;
+  psoDesc.CachedPSO.pCachedBlob = nullptr;
+  psoDesc.CachedPSO.CachedBlobSizeInBytes = 0;
+  psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+
+  IGL_LOG_INFO("  Creating compute pipeline state...\n");
+  Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
+  hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("  CreateComputePipelineState FAILED: 0x%08X\n", static_cast<unsigned>(hr));
+
+    // Print debug layer messages if available
+    Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
+    if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
+      UINT64 numMessages = infoQueue->GetNumStoredMessages();
+      IGL_LOG_ERROR("  D3D12 Info Queue has %llu messages:\n", numMessages);
+      for (UINT64 i = 0; i < numMessages; ++i) {
+        SIZE_T messageLength = 0;
+        infoQueue->GetMessage(i, nullptr, &messageLength);
+        if (messageLength > 0) {
+          auto message = (D3D12_MESSAGE*)malloc(messageLength);
+          if (message && SUCCEEDED(infoQueue->GetMessage(i, message, &messageLength))) {
+            const char* severityStr = "UNKNOWN";
+            switch (message->Severity) {
+              case D3D12_MESSAGE_SEVERITY_CORRUPTION: severityStr = "CORRUPTION"; break;
+              case D3D12_MESSAGE_SEVERITY_ERROR: severityStr = "ERROR"; break;
+              case D3D12_MESSAGE_SEVERITY_WARNING: severityStr = "WARNING"; break;
+              case D3D12_MESSAGE_SEVERITY_INFO: severityStr = "INFO"; break;
+              case D3D12_MESSAGE_SEVERITY_MESSAGE: severityStr = "MESSAGE"; break;
+            }
+            IGL_LOG_ERROR("    [%s] %s\n", severityStr, message->pDescription);
+          }
+          free(message);
+        }
+      }
+      infoQueue->ClearStoredMessages();
+    }
+
+    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create compute pipeline state");
+    return nullptr;
+  }
+
+  IGL_LOG_INFO("Device::createComputePipeline() SUCCESS - PSO=%p, RootSig=%p\n",
+               pipelineState.Get(), rootSignature.Get());
+  Result::setOk(outResult);
+  return std::make_shared<ComputePipelineState>(std::move(pipelineState), std::move(rootSignature));
 }
 
 std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
@@ -526,17 +727,19 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   Microsoft::WRL::ComPtr<ID3DBlob> error;
 
   // Descriptor range for SRVs (textures)
+  // Use UNBOUNDED to support variable number of textures (1-N) per shader
   D3D12_DESCRIPTOR_RANGE srvRange = {};
   srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-  srvRange.NumDescriptors = 2;  // t0-t1 (enough for common cases like MRT composite)
+  srvRange.NumDescriptors = UINT_MAX;  // UNBOUNDED - shader determines actual count
   srvRange.BaseShaderRegister = 0;  // Starting at t0
   srvRange.RegisterSpace = 0;
   srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
   // Descriptor range for Samplers
+  // Use UNBOUNDED to support variable number of samplers (1-N) per shader
   D3D12_DESCRIPTOR_RANGE samplerRange = {};
   samplerRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-  samplerRange.NumDescriptors = 2;  // s0-s1
+  samplerRange.NumDescriptors = UINT_MAX;  // UNBOUNDED - shader determines actual count
   samplerRange.BaseShaderRegister = 0;  // Starting at s0
   samplerRange.RegisterSpace = 0;
   samplerRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -1158,18 +1361,20 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     case DeviceFeatures::MapBufferRange: // UPLOAD/READBACK buffers support mapping
     case DeviceFeatures::ShaderLibrary: // Support shader libraries in D3D12
     case DeviceFeatures::Texture3D: // D3D12 supports 3D textures (DIMENSION_TEXTURE3D)
+    case DeviceFeatures::TexturePartialMipChain: // D3D12 supports partial mip chains via custom SRVs
+    case DeviceFeatures::TextureViews: // D3D12 supports createTextureView() via shared resources
       return true;
     // Expected false in tests for D3D12 in Phase 1
     case DeviceFeatures::MultipleRenderTargets:
       return false; // Keep tests expectations unchanged; MRT sessions bypass via backend check
     case DeviceFeatures::Compute:
+      return true; // Compute shaders now supported with compute pipeline and dispatch
     case DeviceFeatures::SRGBWriteControl:
     case DeviceFeatures::Texture2DArray:
     case DeviceFeatures::TextureArrayExt:
     case DeviceFeatures::TextureExternalImage:
     case DeviceFeatures::Multiview:
     case DeviceFeatures::BindUniform:
-    case DeviceFeatures::TexturePartialMipChain:
     case DeviceFeatures::BufferRing:
     case DeviceFeatures::BufferNoCopy:
     case DeviceFeatures::BufferDeviceAddress:

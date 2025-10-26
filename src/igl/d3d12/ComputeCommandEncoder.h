@@ -12,8 +12,12 @@
 
 namespace igl::d3d12 {
 
+class CommandBuffer;
+class ComputePipelineState;
+
 class ComputeCommandEncoder final : public IComputeCommandEncoder {
  public:
+  explicit ComputeCommandEncoder(CommandBuffer& commandBuffer);
   ~ComputeCommandEncoder() override = default;
 
   void endEncoding() override;
@@ -24,9 +28,21 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
                            const Dependencies& dependencies = {}) override;
   void bindPushConstants(const void* data, size_t length, size_t offset = 0) override;
   void bindTexture(uint32_t index, ITexture* texture) override;
+  void bindBuffer(uint32_t index, IBuffer* buffer, size_t offset = 0, size_t bufferSize = 0) override;
+  void bindUniform(const UniformDesc& uniformDesc, const void* data) override;
+  void bindBytes(uint32_t index, const void* data, size_t length) override;
+  void bindImageTexture(uint32_t index, ITexture* texture, TextureFormat format) override;
+  void bindSamplerState(uint32_t index, ISamplerState* samplerState) override;
+
+  // Debug labels
+  void pushDebugGroupLabel(const char* label, const Color& color) const override;
+  void insertDebugEventLabel(const char* label, const Color& color) const override;
+  void popDebugGroupLabel() const override;
 
  private:
-  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
+  CommandBuffer& commandBuffer_;
+  const ComputePipelineState* currentPipeline_ = nullptr;
+  bool isEncoding_ = false;
 };
 
 } // namespace igl::d3d12

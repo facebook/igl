@@ -222,8 +222,9 @@ void D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height) {
   DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
   swapChainDesc.Width = width;
   swapChainDesc.Height = height;
-  // Use sRGB format to match Vulkan/Metal behavior for correct color space
-  swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+  // Use BGRA_UNORM (non-sRGB) for maximum compatibility with all display adapters
+  // Vulkan baselines use BGRA channel ordering for swapchain and MRT targets
+  swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
   swapChainDesc.Stereo = FALSE;
   swapChainDesc.SampleDesc.Count = 1;
   swapChainDesc.SampleDesc.Quality = 0;
@@ -258,7 +259,7 @@ void D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height) {
     DXGI_SWAP_CHAIN_DESC legacy = {};
     legacy.BufferDesc.Width = width;
     legacy.BufferDesc.Height = height;
-    legacy.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+    legacy.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
     legacy.BufferDesc.RefreshRate.Numerator = 60;
     legacy.BufferDesc.RefreshRate.Denominator = 1;
     legacy.SampleDesc.Count = 1;

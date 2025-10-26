@@ -528,8 +528,9 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
 
 std::shared_ptr<ITexture> MRTSession::createTexture2D(const std::shared_ptr<ITexture>& tex) {
   const auto dimensions = tex->getDimensions();
-  // Use RGBA_UNorm8 for MRT attachments to match shader output expectations
-  TextureDesc desc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+  // Use the SAME format as the surface texture to ensure PSO/framebuffer format consistency
+  const auto format = tex->getProperties().format;
+  TextureDesc desc = TextureDesc::new2D(format,
                                         dimensions.width,
                                         dimensions.height,
                                         TextureDesc::TextureUsageBits::Attachment |

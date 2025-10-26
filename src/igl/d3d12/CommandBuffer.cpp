@@ -8,6 +8,7 @@
 #include <igl/d3d12/CommandBuffer.h>
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/RenderCommandEncoder.h>
+#include <igl/d3d12/ComputeCommandEncoder.h>
 #include <igl/d3d12/Buffer.h>
 
 namespace igl::d3d12 {
@@ -118,7 +119,10 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
 }
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {
-  return nullptr;
+  // Begin command buffer if not already begun
+  begin();
+
+  return std::make_unique<ComputeCommandEncoder>(*this);
 }
 
 void CommandBuffer::present(const std::shared_ptr<ITexture>& /*surface*/) const {

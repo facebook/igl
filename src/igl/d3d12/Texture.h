@@ -28,6 +28,11 @@ class Texture final : public ITexture {
       ID3D12CommandQueue* queue = nullptr,
       D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON);
 
+  // Factory method to create texture view from parent texture
+  static std::shared_ptr<Texture> createTextureView(
+      std::shared_ptr<Texture> parent,
+      const TextureViewDesc& desc);
+
   // D3D12-specific upload methods (not part of ITexture interface)
   Result upload(const TextureRangeDesc& range,
                 const void* data,
@@ -63,6 +68,13 @@ class Texture final : public ITexture {
   D3D12_RESOURCE_STATES getSubresourceState(uint32_t mipLevel = 0,
                                             uint32_t layer = 0) const;
 
+  // Texture view support
+  bool isView() const { return isView_; }
+  uint32_t getMipLevelOffset() const { return mipLevelOffset_; }
+  uint32_t getNumMipLevelsInView() const { return numMipLevelsInView_; }
+  uint32_t getArraySliceOffset() const { return arraySliceOffset_; }
+  uint32_t getNumArraySlicesInView() const { return numArraySlicesInView_; }
+
  protected:
   // Override the base class upload method
   Result uploadInternal(TextureType type,
@@ -87,6 +99,14 @@ class Texture final : public ITexture {
   void ensureStateStorage() const;
   mutable std::vector<D3D12_RESOURCE_STATES> subresourceStates_;
   mutable D3D12_RESOURCE_STATES defaultState_ = D3D12_RESOURCE_STATE_COMMON;
+
+  // Texture view support
+  bool isView_ = false;
+  std::shared_ptr<Texture> parentTexture_;  // For views, reference to parent
+  uint32_t mipLevelOffset_ = 0;  // MostDetailedMip for SRV
+  uint32_t numMipLevelsInView_ = 0;  // MipLevels for SRV
+  uint32_t arraySliceOffset_ = 0;  // FirstArraySlice for SRV
+  uint32_t numArraySlicesInView_ = 0;  // ArraySize for SRV
 };
 
 } // namespace igl::d3d12

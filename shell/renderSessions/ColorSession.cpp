@@ -347,6 +347,115 @@ std::unique_ptr<IShaderStages> ColorSession::getShaderStagesForBackend(IDevice& 
         "fragmentShader",
         "",
         nullptr);
+  case igl::BackendType::D3D12: {
+    if (colorTestModes_ == ColorTestModes::Gradient) {
+      // Gradient mode - no MVP matrix, just positional gradient
+      static const char* kVS = R"(
+        cbuffer UniformBlock : register(b0) {
+          float3 color;
+          float4x4 mvp;
+        };
+
+        struct VSInput {
+          float3 position : POSITION;
+          float2 uv : TEXCOORD0;
+        };
+
+        struct VSOutput {
+          float4 position : SV_POSITION;
+          float2 uv : TEXCOORD0;
+        };
+
+        VSOutput main(VSInput input) {
+          VSOutput output;
+          output.position = float4(input.position, 1.0);
+          output.uv = input.uv;
+          return output;
+        }
+      )";
+
+      static const char* kPS = R"(
+        cbuffer UniformBlock : register(b0) {
+          float3 color;
+          float4x4 mvp;
+        };
+
+        Texture2D diffuseTex : register(t0);
+        SamplerState linearSampler : register(s0);
+
+        struct PSInput {
+          float4 position : SV_POSITION;
+          float2 uv : TEXCOORD0;
+        };
+
+        float4 main(PSInput input) : SV_Target {
+          float numSteps = 20.0;
+          float uvX;
+          if (input.uv.y < 0.25) {
+            uvX = input.uv.x;
+          } else if (input.uv.y < 0.5) {
+            uvX = floor(input.uv.x * numSteps) / numSteps;
+          } else if (input.uv.y < 0.75) {
+            uvX = (floor(input.uv.x * numSteps) + 0.5) / numSteps;
+          } else {
+            uvX = 1.0 - input.uv.x;
+          }
+          return float4(uvX, input.uv.y, 0.5, 1.0);
+        }
+      )";
+
+      return igl::ShaderStagesCreator::fromModuleStringInput(
+          device, kVS, "main", "", kPS, "main", "", nullptr);
+    } else {
+      // Regular textured mode
+      static const char* kVS = R"(
+        cbuffer UniformBlock : register(b0) {
+          float3 color;
+          float4x4 mvp;
+        };
+
+        struct VSInput {
+          float3 position : POSITION;
+          float2 uv : TEXCOORD0;
+        };
+
+        struct VSOutput {
+          float4 position : SV_POSITION;
+          float2 uv : TEXCOORD0;
+        };
+
+        VSOutput main(VSInput input) {
+          VSOutput output;
+          output.position = mul(mvp, float4(input.position, 1.0));
+          output.uv = input.uv;
+          return output;
+        }
+      )";
+
+      static const char* kPS = R"(
+        cbuffer UniformBlock : register(b0) {
+          float3 color;
+          float4x4 mvp;
+        };
+
+        Texture2D diffuseTex : register(t0);
+        SamplerState linearSampler : register(s0);
+
+        struct PSInput {
+          float4 position : SV_POSITION;
+          float2 uv : TEXCOORD0;
+        };
+
+        float4 main(PSInput input) : SV_Target {
+          float4 tex = diffuseTex.Sample(linearSampler, input.uv);
+          return float4(color.r, color.g, color.b, 1.0) * tex;
+        }
+      )";
+
+      return igl::ShaderStagesCreator::fromModuleStringInput(
+          device, kVS, "main", "", kPS, "main", "", nullptr);
+    }
+  }
   case igl::BackendType::OpenGL:
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,

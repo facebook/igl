@@ -59,6 +59,64 @@ std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
   return texture;
 }
 
+std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> parent,
+                                                     const TextureViewDesc& desc) {
+  if (!parent) {
+    IGL_LOG_ERROR("Texture::createTextureView - parent is NULL!\n");
+    return nullptr;
+  }
+
+  // Determine the format to use for the view
+  TextureFormat viewFormat = (desc.format != TextureFormat::Invalid) ? desc.format : parent->format_;
+
+  auto view = std::make_shared<Texture>(viewFormat);
+
+  // Share the D3D12 resource (don't create new one)
+  // ComPtr doesn't have copy assignment, so we need to use Attach() and AddRef()
+  auto* parentResource = parent->resource_.Get();
+  if (parentResource) {
+    parentResource->AddRef();
+    view->resource_.Attach(parentResource);
+  }
+  view->isView_ = true;
+  view->parentTexture_ = parent;
+
+  // Store view parameters
+  view->mipLevelOffset_ = desc.mipLevel;
+  view->numMipLevelsInView_ = desc.numMipLevels;
+  view->arraySliceOffset_ = desc.layer;
+  view->numArraySlicesInView_ = desc.numLayers;
+
+  // Copy properties from parent
+  view->device_ = parent->device_;
+  view->queue_ = parent->queue_;
+  view->format_ = viewFormat;
+  view->type_ = desc.type;
+  view->usage_ = parent->usage_;
+  view->samples_ = parent->samples_;
+
+  // Calculate view dimensions based on mip level
+  const uint32_t mipDivisor = 1u << desc.mipLevel;
+  view->dimensions_ = Dimensions{
+      std::max(1u, parent->dimensions_.width >> desc.mipLevel),
+      std::max(1u, parent->dimensions_.height >> desc.mipLevel),
+      std::max(1u, parent->dimensions_.depth >> desc.mipLevel)
+  };
+  view->numLayers_ = desc.numLayers;
+  view->numMipLevels_ = desc.numMipLevels;
+
+  // Share state tracking with parent
+  view->subresourceStates_ = parent->subresourceStates_;
+  view->defaultState_ = parent->defaultState_;
+
+  IGL_LOG_INFO("Texture::createTextureView - SUCCESS: view of %dx%d, mips %u-%u, layers %u-%u\n",
+               view->dimensions_.width, view->dimensions_.height,
+               desc.mipLevel, desc.mipLevel + desc.numMipLevels - 1,
+               desc.layer, desc.layer + desc.numLayers - 1);
+
+  return view;
+}
+
 Result Texture::upload(const TextureRangeDesc& range,
                       const void* data,
                       size_t bytesPerRow) const {
@@ -79,6 +137,7 @@ Result Texture::upload(const TextureRangeDesc& range,
   // Calculate dimensions and data size
   const uint32_t width = range.width > 0 ? range.width : dimensions_.width;
   const uint32_t height = range.height > 0 ? range.height : dimensions_.height;
+  const uint32_t depth = range.depth > 0 ? range.depth : dimensions_.depth;
 
   const auto props = TextureFormatProperties::fromTextureFormat(format_);
   // Calculate bytes per row if not provided
@@ -98,6 +157,11 @@ Result Texture::upload(const TextureRangeDesc& range,
 
   device_->GetCopyableFootprints(&resourceDesc, range.mipLevel, 1, 0,
                                   &layout, &numRows, &rowSizeInBytes, &totalBytes);
+
+  IGL_LOG_INFO("Texture::upload() - Dimensions: %ux%ux%u, bytesPerRow=%zu, numRows=%u, totalBytes=%llu\n",
+               width, height, depth, bytesPerRow, numRows, totalBytes);
+  IGL_LOG_INFO("Texture::upload() - Layout: RowPitch=%u, Depth=%u, Format=%d, Dimension=%d\n",
+               layout.Footprint.RowPitch, layout.Footprint.Depth, layout.Footprint.Format, resourceDesc.Dimension);
 
   // Use footprint returned by GetCopyableFootprints for this subresource without overriding
   // Limit copy region via srcBox and row count below
@@ -143,26 +207,41 @@ Result Texture::upload(const TextureRangeDesc& range,
     return Result(Result::Code::RuntimeError, "Failed to map staging buffer");
   }
 
-  // Copy data row by row (limit to requested region height)
+  // Copy data for each depth slice (for 2D textures, depth=1)
   const uint8_t* srcData = static_cast<const uint8_t*>(data);
   uint8_t* dstData = static_cast<uint8_t*>(mappedData) + layout.Offset;
   const UINT rowsToCopy = (range.height > 0) ? std::min<UINT>(range.height, numRows) : numRows;
+  const UINT depthToCopy = depth;  // For 2D textures, depth=1; for 3D textures, depth=actual depth
   const size_t copyBytes = std::min(static_cast<size_t>(rowSizeInBytes), bytesPerRow);
   const bool swapRB = needsRGBAChannelSwap(format_) && props.bytesPerBlock == 4;
-  for (UINT row = 0; row < rowsToCopy; ++row) {
-    uint8_t* dstRow = dstData + row * layout.Footprint.RowPitch;
-    const uint8_t* srcRow = srcData + row * bytesPerRow;
-    if (swapRB) {
-      const uint32_t pixels = width;
-      for (uint32_t col = 0; col < pixels; ++col) {
-        const uint32_t idx = col * 4;
-        dstRow[idx + 0] = srcRow[idx + 2]; // B <- R
-        dstRow[idx + 1] = srcRow[idx + 1]; // G stays
-        dstRow[idx + 2] = srcRow[idx + 0]; // R <- B
-        dstRow[idx + 3] = srcRow[idx + 3]; // A
+
+  // For 3D textures: copy data slice by slice
+  // For 2D textures: depthToCopy=1, so this loops once
+  const size_t srcDepthPitch = bytesPerRow * height;  // Size of one depth slice in source data
+  const size_t dstDepthPitch = layout.Footprint.RowPitch * layout.Footprint.Height;  // Size of one depth slice in staging buffer
+
+  IGL_LOG_INFO("Texture::upload() - Copy loop: depth=%u, rows=%u, srcDepthPitch=%zu, dstDepthPitch=%zu\n",
+               depthToCopy, rowsToCopy, srcDepthPitch, dstDepthPitch);
+
+  for (UINT z = 0; z < depthToCopy; ++z) {
+    const uint8_t* srcSlice = srcData + z * srcDepthPitch;
+    uint8_t* dstSlice = dstData + z * dstDepthPitch;
+
+    for (UINT row = 0; row < rowsToCopy; ++row) {
+      uint8_t* dstRow = dstSlice + row * layout.Footprint.RowPitch;
+      const uint8_t* srcRow = srcSlice + row * bytesPerRow;
+      if (swapRB) {
+        const uint32_t pixels = width;
+        for (uint32_t col = 0; col < pixels; ++col) {
+          const uint32_t idx = col * 4;
+          dstRow[idx + 0] = srcRow[idx + 2]; // B <- R
+          dstRow[idx + 1] = srcRow[idx + 1]; // G stays
+          dstRow[idx + 2] = srcRow[idx + 0]; // R <- B
+          dstRow[idx + 3] = srcRow[idx + 3]; // A
+        }
+      } else {
+        memcpy(dstRow, srcRow, copyBytes);
       }
-    } else {
-      memcpy(dstRow, srcRow, copyBytes);
     }
   }
 
@@ -200,13 +279,19 @@ Result Texture::upload(const TextureRangeDesc& range,
   src.PlacedFootprint = layout;
 
   // Define source box for the copy region
+  // For 3D textures, srcBox.back must be set to the depth value
+  // For 2D textures, depth=1, so srcBox.back=1 (as before)
   D3D12_BOX srcBox = {};
   srcBox.left = 0;
   srcBox.top = 0;
   srcBox.front = 0;
   srcBox.right = width;
   srcBox.bottom = height;
-  srcBox.back = 1;
+  srcBox.back = depth;  // CRITICAL: Use actual depth, not hardcoded 1
+
+  IGL_LOG_INFO("Texture::upload() - CopyTextureRegion: srcBox (%u,%u,%u)->(%u,%u,%u), dst offset (%u,%u,%u)\n",
+               srcBox.left, srcBox.top, srcBox.front, srcBox.right, srcBox.bottom, srcBox.back,
+               range.x, range.y, range.z);
 
   cmdList->CopyTextureRegion(&dst, range.x, range.y, range.z, &src, &srcBox);
 
@@ -339,14 +424,6 @@ bool Texture::isRequiredGenerateMipmap() const {
 }
 
 void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc* /*range*/) const {
-  // TODO(D3D12): Mipmap generation currently causes device removal due to incorrect resource state
-  // transitions or invalid API usage. The issue occurs when transitioning mip levels between
-  // COMMON, RENDER_TARGET, and PIXEL_SHADER_RESOURCE states. Needs investigation with PIX or
-  // enhanced D3D12 debug layer output.
-  // For now, textures will use only mip level 0 (no mipmaps), which is acceptable for Phase 5.
-  IGL_LOG_INFO("Texture::generateMipmap() - DISABLED: Mipmap generation not yet fully implemented for D3D12\n");
-  return;
-
   IGL_LOG_INFO("Texture::generateMipmap(cmdQueue) - START: numMips=%u\n", numMipLevels_);
 
   if (!device_ || !queue_ || !resource_.Get() || numMipLevels_ < 2) {
@@ -361,6 +438,13 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
   if (resourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
     IGL_LOG_INFO("Texture::generateMipmap() - Skipping: only 2D textures supported (dimension=%d)\n",
                  (int)resourceDesc.Dimension);
+    return;
+  }
+
+  // Check if texture was created with RENDER_TARGET flag (required for mipmap generation)
+  if (!(resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)) {
+    IGL_LOG_INFO("Texture::generateMipmap() - Skipping: texture not created with RENDER_TARGET usage\n");
+    IGL_LOG_INFO("  To enable mipmap generation, create texture with TextureDesc::TextureUsageBits::Attachment\n");
     return;
   }
 
@@ -442,9 +526,11 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     return;
   }
 
+  // Create descriptor heap large enough for all mip levels
+  // We need one SRV descriptor per mip level (numMipLevels_ - 1 blits)
   D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
   srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-  srvHeapDesc.NumDescriptors = 1;
+  srvHeapDesc.NumDescriptors = numMipLevels_ - 1;  // One SRV per source mip level
   srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
   Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvHeap;
   if (FAILED(device_->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(srvHeap.GetAddressOf())))) return;
@@ -474,22 +560,23 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   list->SetGraphicsRootSignature(rootSig.Get());
   list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-  D3D12_CPU_DESCRIPTOR_HANDLE srvCpu = srvHeap->GetCPUDescriptorHandleForHeapStart();
-  D3D12_GPU_DESCRIPTOR_HANDLE srvGpu = srvHeap->GetGPUDescriptorHandleForHeapStart();
+  // Get descriptor size for incrementing through the heap
+  const UINT srvDescriptorSize = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+  D3D12_CPU_DESCRIPTOR_HANDLE srvCpuStart = srvHeap->GetCPUDescriptorHandleForHeapStart();
+  D3D12_GPU_DESCRIPTOR_HANDLE srvGpuStart = srvHeap->GetGPUDescriptorHandleForHeapStart();
   D3D12_GPU_DESCRIPTOR_HANDLE smpGpu = smpHeap->GetGPUDescriptorHandleForHeapStart();
 
   // Ensure mip 0 is in PIXEL_SHADER_RESOURCE state for first SRV read
-  // (It should already be in this state from upload, but be explicit)
-  D3D12_RESOURCE_BARRIER initBarrier = {};
-  initBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-  initBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-  initBarrier.Transition.pResource = resource_.Get();
-  initBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-  initBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-  initBarrier.Transition.Subresource = 0;
-  // No-op barrier, just to be explicit (D3D12 allows this)
+  // Use the Texture's state tracking to ensure correct transition
+  transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 0);
 
   for (UINT mip = 0; mip + 1 < numMipLevels_; ++mip) {
+    // Calculate descriptor handle for this mip level
+    D3D12_CPU_DESCRIPTOR_HANDLE srvCpu = srvCpuStart;
+    srvCpu.ptr += mip * srvDescriptorSize;
+    D3D12_GPU_DESCRIPTOR_HANDLE srvGpu = srvGpuStart;
+    srvGpu.ptr += mip * srvDescriptorSize;
+
     D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
     srv.Format = resourceDesc.Format;
     srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
@@ -511,16 +598,8 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     D3D12_CPU_DESCRIPTOR_HANDLE rtvCpu = rtvHeap->GetCPUDescriptorHandleForHeapStart();
     device_->CreateRenderTargetView(resource_.Get(), &rtv, rtvCpu);
 
-    // Transition mip level to render target
-    // Note: Only mip 0 was uploaded and is in PIXEL_SHADER_RESOURCE state
-    // Higher mips (1+) are still in COMMON state (initial state)
-    D3D12_RESOURCE_BARRIER toRT = {};
-    toRT.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    toRT.Transition.pResource = resource_.Get();
-    toRT.Transition.Subresource = mip + 1;
-    toRT.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
-    toRT.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    list->ResourceBarrier(1, &toRT);
+    // Transition mip level to render target using state tracking
+    transitionTo(list.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, mip + 1, 0);
 
     list->OMSetRenderTargets(1, &rtvCpu, FALSE, nullptr);
     const UINT w = std::max<UINT>(1u, (UINT)(resourceDesc.Width >> (mip + 1)));
@@ -534,13 +613,8 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     list->SetGraphicsRootDescriptorTable(1, smpGpu);
     list->DrawInstanced(3, 1, 0, 0);
 
-    D3D12_RESOURCE_BARRIER toSRV = {};
-    toSRV.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    toSRV.Transition.pResource = resource_.Get();
-    toSRV.Transition.Subresource = mip + 1;
-    toSRV.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    toSRV.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    list->ResourceBarrier(1, &toSRV);
+    // Transition mip level to shader resource for next iteration
+    transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mip + 1, 0);
   }
 
   list->Close();
@@ -558,18 +632,26 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
 }
 
 void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDesc* /*range*/) const {
-  // TODO(D3D12): Mipmap generation not yet implemented - see generateMipmap(ICommandQueue&) for details
-  IGL_LOG_INFO("Texture::generateMipmap(cmdBuffer) - DISABLED: Not yet implemented for D3D12\n");
-  return;
+  IGL_LOG_INFO("Texture::generateMipmap(cmdBuffer) - START: numMips=%u\n", numMipLevels_);
 
   if (!device_ || !queue_ || !resource_.Get() || numMipLevels_ < 2) {
+    IGL_LOG_INFO("Texture::generateMipmap(cmdBuffer) - Skipping: device=%p queue=%p resource=%p numMips=%u\n",
+                 device_, queue_, resource_.Get(), numMipLevels_);
     return;
   }
+
   D3D12_RESOURCE_DESC resourceDesc = resource_->GetDesc();
 
   // Only support 2D textures for mipmap generation
   if (resourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
     IGL_LOG_INFO("Texture::generateMipmap(cmdBuffer) - Skipping: only 2D textures supported\n");
+    return;
+  }
+
+  // Check if texture was created with RENDER_TARGET flag (required for mipmap generation)
+  if (!(resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)) {
+    IGL_LOG_INFO("Texture::generateMipmap(cmdBuffer) - Skipping: texture not created with RENDER_TARGET usage\n");
+    IGL_LOG_INFO("  To enable mipmap generation, create texture with TextureDesc::TextureUsageBits::Attachment\n");
     return;
   }
   D3D12_DESCRIPTOR_RANGE ranges[2] = {};
@@ -634,9 +716,11 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   pso.DSVFormat = DXGI_FORMAT_UNKNOWN;
   Microsoft::WRL::ComPtr<ID3D12PipelineState> psoObj;
   if (FAILED(device_->CreateGraphicsPipelineState(&pso, IID_PPV_ARGS(psoObj.GetAddressOf())))) return;
+  // Create descriptor heap large enough for all mip levels
+  // We need one SRV descriptor per mip level (numMipLevels_ - 1 blits)
   D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
   srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-  srvHeapDesc.NumDescriptors = 1;
+  srvHeapDesc.NumDescriptors = numMipLevels_ - 1;  // One SRV per source mip level
   srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
   Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvHeap;
   if (FAILED(device_->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(srvHeap.GetAddressOf())))) return;
@@ -660,10 +744,23 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   list->SetPipelineState(psoObj.Get());
   list->SetGraphicsRootSignature(rootSig.Get());
   list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-  D3D12_CPU_DESCRIPTOR_HANDLE srvCpu = srvHeap->GetCPUDescriptorHandleForHeapStart();
-  D3D12_GPU_DESCRIPTOR_HANDLE srvGpu = srvHeap->GetGPUDescriptorHandleForHeapStart();
+  // Get descriptor size for incrementing through the heap
+  const UINT srvDescriptorSize = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+  D3D12_CPU_DESCRIPTOR_HANDLE srvCpuStart = srvHeap->GetCPUDescriptorHandleForHeapStart();
+  D3D12_GPU_DESCRIPTOR_HANDLE srvGpuStart = srvHeap->GetGPUDescriptorHandleForHeapStart();
   D3D12_GPU_DESCRIPTOR_HANDLE smpGpu = smpHeap->GetGPUDescriptorHandleForHeapStart();
+
+  // Ensure mip 0 is in PIXEL_SHADER_RESOURCE state for first SRV read
+  // Use the Texture's state tracking to ensure correct transition
+  transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 0);
+
   for (UINT mip = 0; mip + 1 < numMipLevels_; ++mip) {
+    // Calculate descriptor handle for this mip level
+    D3D12_CPU_DESCRIPTOR_HANDLE srvCpu = srvCpuStart;
+    srvCpu.ptr += mip * srvDescriptorSize;
+    D3D12_GPU_DESCRIPTOR_HANDLE srvGpu = srvGpuStart;
+    srvGpu.ptr += mip * srvDescriptorSize;
+
     D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
     srv.Format = resourceDesc.Format;
     srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
@@ -682,16 +779,10 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     if (FAILED(device_->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(rtvHeap.GetAddressOf())))) return;
     D3D12_CPU_DESCRIPTOR_HANDLE rtvCpu = rtvHeap->GetCPUDescriptorHandleForHeapStart();
     device_->CreateRenderTargetView(resource_.Get(), &rtv, rtvCpu);
-    // Transition mip level to render target
-    // Note: Only mip 0 was uploaded and is in PIXEL_SHADER_RESOURCE state
-    // Higher mips (1+) are still in COMMON state (initial state)
-    D3D12_RESOURCE_BARRIER toRT = {};
-    toRT.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    toRT.Transition.pResource = resource_.Get();
-    toRT.Transition.Subresource = mip + 1;
-    toRT.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
-    toRT.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    list->ResourceBarrier(1, &toRT);
+
+    // Transition mip level to render target using state tracking
+    transitionTo(list.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, mip + 1, 0);
+
     list->OMSetRenderTargets(1, &rtvCpu, FALSE, nullptr);
     const UINT w = std::max<UINT>(1u, (UINT)(resourceDesc.Width >> (mip + 1)));
     const UINT h = std::max<UINT>(1u, (UINT)(resourceDesc.Height >> (mip + 1)));
@@ -702,13 +793,9 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     list->SetGraphicsRootDescriptorTable(0, srvGpu);
     list->SetGraphicsRootDescriptorTable(1, smpGpu);
     list->DrawInstanced(3, 1, 0, 0);
-    D3D12_RESOURCE_BARRIER toSRV = {};
-    toSRV.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    toSRV.Transition.pResource = resource_.Get();
-    toSRV.Transition.Subresource = mip + 1;
-    toSRV.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    toSRV.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    list->ResourceBarrier(1, &toSRV);
+
+    // Transition mip level to shader resource for next iteration
+    transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mip + 1, 0);
   }
   list->Close();
   ID3D12CommandList* lists[] = {list.Get()};
@@ -793,6 +880,7 @@ void Texture::transitionAll(ID3D12GraphicsCommandList* commandList,
   if (subresourceStates_.empty()) {
     return;
   }
+
   std::vector<D3D12_RESOURCE_BARRIER> barriers;
   barriers.reserve(subresourceStates_.size());
   for (uint32_t i = 0; i < subresourceStates_.size(); ++i) {
