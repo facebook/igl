@@ -185,7 +185,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
 
   auto vulkanImage = VulkanImage(ctx,
                                  vk_image,
-                                 "Image View: videoTexture",
+                                 "Image: videoTexture",
                                  usage_flags,
                                  false,
                                  vk_image_info.extent,
