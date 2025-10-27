@@ -248,16 +248,16 @@ Result INativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
   return result;
 }
 
-INativeHWTextureBuffer::LockGuard INativeHWTextureBuffer::lockHWBuffer(
-    std::byte* IGL_NULLABLE* IGL_NONNULL dst,
-    RangeDesc& outRange,
-    Result* outResult) const {
+INativeHWTextureBuffer::LockGuard INativeHWTextureBuffer::lockHWBuffer(std::byte * IGL_NULLABLE *
+                                                                           IGL_NONNULL dst,
+                                                                       RangeDesc& outRange,
+                                                                       Result* outResult) const {
   Result result = lockHWBuffer(dst, outRange);
   Result::setResult(outResult, result);
   return INativeHWTextureBuffer::LockGuard(result.isOk() ? this : nullptr);
 }
 
-Result INativeHWTextureBuffer::lockHWBuffer(std::byte* IGL_NULLABLE* IGL_NONNULL dst,
+Result INativeHWTextureBuffer::lockHWBuffer(std::byte * IGL_NULLABLE * IGL_NONNULL dst,
                                             RangeDesc& outRange) const {
   AHardwareBuffer_Desc hwbDesc;
   AHardwareBuffer_describe(hwBuffer_, &hwbDesc);

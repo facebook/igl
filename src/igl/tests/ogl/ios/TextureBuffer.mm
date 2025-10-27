@@ -71,8 +71,7 @@ std::shared_ptr<ITexture> TextureBufferIosTest::createCVPixelBufferTextureWithSi
   return texture;
 }
 
-#define PIXEL_FORMAT(pf) \
-  { pf, #pf }
+#define PIXEL_FORMAT(pf) {pf, #pf}
 
 TEST_F(TextureBufferIosTest, createTextureFromNativePixelBuffer) {
   const std::vector<std::pair<OSType, const char*>> pixelFormats = {

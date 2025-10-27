@@ -586,10 +586,8 @@ void iglDrawArraysIndirect(GLenum mode, const GLvoid* indirect) {
 #define CAN_CALL_glClearDepthf 0
 #endif
 
-void iglClearDepthf(GLfloat depth) {
-  GLEXTENSION_METHOD_BODY(CAN_CALL_glClearDepthf, glClearDepthf, PFNIGLCLEARDEPTHFPROC, depth)
-}
-
+void iglClearDepthf(GLfloat depth){
+    GLEXTENSION_METHOD_BODY(CAN_CALL_glClearDepthf, glClearDepthf, PFNIGLCLEARDEPTHFPROC, depth)}
 ///--------------------------------------
 /// MARK: - GL_ARB_framebuffer_object
 
@@ -813,17 +811,15 @@ void iglRenderbufferStorageMultisample(GLenum target,
                                        GLsizei samples,
                                        GLenum internalformat,
                                        GLsizei width,
-                                       GLsizei height) {
-  GLEXTENSION_METHOD_BODY(CAN_CALL_glRenderbufferStorageMultisample,
-                          glRenderbufferStorageMultisample,
-                          PFNIGLRENDERBUFFERSTORAGEMULTISAMPLEPROC,
-                          target,
-                          samples,
-                          internalformat,
-                          width,
-                          height)
-}
-
+                                       GLsizei height){
+    GLEXTENSION_METHOD_BODY(CAN_CALL_glRenderbufferStorageMultisample,
+                            glRenderbufferStorageMultisample,
+                            PFNIGLRENDERBUFFERSTORAGEMULTISAMPLEPROC,
+                            target,
+                            samples,
+                            internalformat,
+                            width,
+                            height)}
 ///--------------------------------------
 /// MARK: - GL_ARB_invalidate_subdata
 
@@ -926,18 +922,16 @@ void iglGetProgramResourceName(GLuint program,
                                GLuint index,
                                GLsizei bufSize,
                                GLsizei* length,
-                               char* name) {
-  GLEXTENSION_METHOD_BODY(CAN_CALL_glGetProgramResourceName,
-                          glGetProgramResourceName,
-                          PFNIGLGETPROGRAMRESOURCENAMEPROC,
-                          program,
-                          programInterface,
-                          index,
-                          bufSize,
-                          length,
-                          name)
-}
-
+                               char* name){
+    GLEXTENSION_METHOD_BODY(CAN_CALL_glGetProgramResourceName,
+                            glGetProgramResourceName,
+                            PFNIGLGETPROGRAMRESOURCENAMEPROC,
+                            program,
+                            programInterface,
+                            index,
+                            bufSize,
+                            length,
+                            name)}
 ///--------------------------------------
 /// MARK: - GL_ARB_shader_image_load_store
 
@@ -1476,17 +1470,15 @@ void iglRenderbufferStorageMultisampleEXT(GLenum target,
                                           GLsizei samples,
                                           GLenum internalformat,
                                           GLsizei width,
-                                          GLsizei height) {
-  GLEXTENSION_METHOD_BODY(CAN_CALL_glRenderbufferStorageMultisampleEXT,
-                          glRenderbufferStorageMultisampleEXT,
-                          PFNIGLRENDERBUFFERSTORAGEMULTISAMPLEPROC,
-                          target,
-                          samples,
-                          internalformat,
-                          width,
-                          height)
-}
-
+                                          GLsizei height){
+    GLEXTENSION_METHOD_BODY(CAN_CALL_glRenderbufferStorageMultisampleEXT,
+                            glRenderbufferStorageMultisampleEXT,
+                            PFNIGLRENDERBUFFERSTORAGEMULTISAMPLEPROC,
+                            target,
+                            samples,
+                            internalformat,
+                            width,
+                            height)}
 ///--------------------------------------
 /// MARK: - GL_EXT_shader_image_load_store
 
@@ -1569,18 +1561,15 @@ void iglTexStorage3DEXT(GLenum target,
                         GLenum internalformat,
                         GLsizei width,
                         GLsizei height,
-                        GLsizei depth) {
-  GLEXTENSION_METHOD_BODY(CAN_CALL_glTexStorage3DEXT,
-                          glTexStorage3DEXT,
-                          PFNIGLTEXSTORAGE3DPROC,
-                          target,
-                          levels,
-                          internalformat,
-                          width,
-                          height,
-                          depth)
-}
-
+                        GLsizei depth){GLEXTENSION_METHOD_BODY(CAN_CALL_glTexStorage3DEXT,
+                                                               glTexStorage3DEXT,
+                                                               PFNIGLTEXSTORAGE3DPROC,
+                                                               target,
+                                                               levels,
+                                                               internalformat,
+                                                               width,
+                                                               height,
+                                                               depth)}
 ///--------------------------------------
 /// MARK: - GL_IMG_multisampled_render_to_texture
 
@@ -1613,17 +1602,15 @@ void iglRenderbufferStorageMultisampleIMG(GLenum target,
                                           GLsizei samples,
                                           GLenum internalformat,
                                           GLsizei width,
-                                          GLsizei height) {
-  GLEXTENSION_METHOD_BODY(CAN_CALL_glRenderbufferStorageMultisampleIMG,
-                          glRenderbufferStorageMultisampleIMG,
-                          PFNIGLRENDERBUFFERSTORAGEMULTISAMPLEPROC,
-                          target,
-                          samples,
-                          internalformat,
-                          width,
-                          height)
-}
-
+                                          GLsizei height){
+    GLEXTENSION_METHOD_BODY(CAN_CALL_glRenderbufferStorageMultisampleIMG,
+                            glRenderbufferStorageMultisampleIMG,
+                            PFNIGLRENDERBUFFERSTORAGEMULTISAMPLEPROC,
+                            target,
+                            samples,
+                            internalformat,
+                            width,
+                            height)}
 ///--------------------------------------
 /// MARK: - GL_KHR_debug
 
@@ -1795,18 +1782,16 @@ void iglFramebufferTextureMultiviewOVR(GLenum target,
                                        GLuint texture,
                                        GLint level,
                                        GLint baseViewIndex,
-                                       GLsizei numViews) {
-  GLEXTENSION_METHOD_BODY(CAN_CALL_glFramebufferTextureMultiviewOVR,
-                          glFramebufferTextureMultiviewOVR,
-                          PFNIGLFRAMEBUFFERTEXTUREMULTIVIEWPROC,
-                          target,
-                          attachment,
-                          texture,
-                          level,
-                          baseViewIndex,
-                          numViews)
-}
-
+                                       GLsizei numViews){
+    GLEXTENSION_METHOD_BODY(CAN_CALL_glFramebufferTextureMultiviewOVR,
+                            glFramebufferTextureMultiviewOVR,
+                            PFNIGLFRAMEBUFFERTEXTUREMULTIVIEWPROC,
+                            target,
+                            attachment,
+                            texture,
+                            level,
+                            baseViewIndex,
+                            numViews)}
 ///--------------------------------------
 /// MARK: - GL_OVR_multiview_multisampled_render_to_texture
 
@@ -1822,18 +1807,17 @@ void iglFramebufferTextureMultisampleMultiviewOVR(GLenum target,
                                                   GLint level,
                                                   GLsizei samples,
                                                   GLint baseViewIndex,
-                                                  GLsizei numViews) {
-  GLEXTENSION_METHOD_BODY(CAN_CALL_glFramebufferTextureMultisampleMultiviewOVR,
-                          glFramebufferTextureMultisampleMultiviewOVR,
-                          PFNIGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWPROC,
-                          target,
-                          attachment,
-                          texture,
-                          level,
-                          samples,
-                          baseViewIndex,
-                          numViews)
-}
+                                                  GLsizei numViews){
+    GLEXTENSION_METHOD_BODY(CAN_CALL_glFramebufferTextureMultisampleMultiviewOVR,
+                            glFramebufferTextureMultisampleMultiviewOVR,
+                            PFNIGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWPROC,
+                            target,
+                            attachment,
+                            texture,
+                            level,
+                            samples,
+                            baseViewIndex,
+                            numViews)}
 
 ///--------------------------------------
 /// MARK: - GL_OES_mapbuffer

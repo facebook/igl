@@ -282,7 +282,9 @@ TEST_F(DeviceOGLTest, DeletionTest) {
   shaderModule = nullptr;
 
   // Entering main scope again to flush deletion queue
-  { const DeviceScope scope3(*iglDev_); }
+  {
+    const DeviceScope scope3(*iglDev_);
+  }
 }
 
 std::shared_ptr<IRenderPipelineState> createRenderPipeline(const std::shared_ptr<IDevice>& device,

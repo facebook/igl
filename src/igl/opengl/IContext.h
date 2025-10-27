@@ -356,7 +356,7 @@ class IContext {
   virtual void setEnabled(bool shouldEnable, GLenum cap);
   void shaderSource(GLuint shader,
                     GLsizei count,
-                    const GLchar* IGL_NULLABLE* IGL_NULLABLE string,
+                    const GLchar * IGL_NULLABLE * IGL_NULLABLE string,
                     const GLint* IGL_NULLABLE length);
   void stencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
   void stencilMask(GLuint mask);
@@ -577,7 +577,7 @@ class IContext {
   mutable Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
 
  protected:
-  static std::unordered_map<void * IGL_NULLABLE, IContext*>& getExistingContexts();
+  static std::unordered_map<void* IGL_NULLABLE, IContext*>& getExistingContexts();
   static void registerContext(void* IGL_NULLABLE glContext, IContext* IGL_NULLABLE context);
   static void unregisterContext(void* IGL_NULLABLE glContext);
   void initialize(Result* IGL_NULLABLE result = nullptr);

@@ -73,12 +73,12 @@ std::shared_ptr<ITexture> TextureBufferMacTest::createCVPixelBufferTextureWithSi
   return texture;
 }
 
-#define PIXEL_FORMAT(pf) \
-  { pf, #pf }
+#define PIXEL_FORMAT(pf) {pf, #pf}
 
 TEST_F(TextureBufferMacTest, createTextureFromNativePixelBuffer) {
   const std::vector<std::pair<OSType, const char*>> pixelFormats = {
-      PIXEL_FORMAT(kCVPixelFormatType_32BGRA), PIXEL_FORMAT(kCVPixelFormatType_OneComponent8),
+      PIXEL_FORMAT(kCVPixelFormatType_32BGRA),
+      PIXEL_FORMAT(kCVPixelFormatType_OneComponent8),
       // TODO: Figure out how to test YUV textures
       // PIXEL_FORMAT(kCVPixelFormatType_420YpCbCr8BiPlanarFullRange),
       // PIXEL_FORMAT(kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange),

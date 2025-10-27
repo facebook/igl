@@ -59,8 +59,7 @@ class ITrackedResource {
 #if defined(__clang__)
   __attribute__((no_sanitize("vptr")))
 #endif
-  inline T*
-  castThisAsTPtr() {
+  inline T* castThisAsTPtr() {
     return static_cast<T*>(this);
   }
 

@@ -1477,8 +1477,8 @@ std::string IContext::boundBuffersByIndex(bool ssbos, bool ubos) const {
 #endif // IGL_API_LOG
 
 // Creates a global map to ensure multiple IContexts are not created for a single glContext
-std::unordered_map<void * IGL_NULLABLE, IContext*>& IContext::getExistingContexts() {
-  static auto& map = *(new std::unordered_map<void * IGL_NULLABLE, IContext*>());
+std::unordered_map<void* IGL_NULLABLE, IContext*>& IContext::getExistingContexts() {
+  static auto& map = *(new std::unordered_map<void* IGL_NULLABLE, IContext*>());
   return map;
 }
 

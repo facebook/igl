@@ -42,7 +42,8 @@ class EGLDevice final : public ::igl::opengl::Device {
   // NOLINTNEXTLINE(clang-diagnostic-unused-member-function)
   explicit EGLDevice(std::unique_ptr<::igl::opengl::IContext> context) :
     Device(std::move(context)), platformDevice(*this) {
-    {}
+    {
+    }
   }
 
   [[nodiscard]] const igl::opengl::PlatformDevice& getPlatformDevice() const noexcept override {
