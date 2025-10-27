@@ -799,15 +799,10 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   // Root parameters
   D3D12_ROOT_PARAMETER rootParams[4] = {};
 
-  // Parameter 0: Root Constants for b0 (Push Constants)
-  // Using 32-bit constants instead of CBV for push constants
-  // 16 DWORDs = 64 bytes (4x4 matrix of floats)
-  // Root signature budget: 64 DWORD max total
-  // Cost: 16 root constants = 16 units, 1 root CBV = 2 units, 2 descriptor tables = 2 units = 20 units total
-  rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-  rootParams[0].Constants.ShaderRegister = 0;  // b0
-  rootParams[0].Constants.RegisterSpace = 0;
-  rootParams[0].Constants.Num32BitValues = 16;  // 16 DWORDs = 64 bytes (4x4 matrix)
+  // Parameter 0: Root CBV for b0 (UniformsPerFrame)
+  rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+  rootParams[0].Descriptor.ShaderRegister = 0;  // b0
+  rootParams[0].Descriptor.RegisterSpace = 0;
   rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
   // Parameter 1: Root CBV for b1 (UniformsPerObject)
@@ -836,7 +831,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   rootSigDesc.pStaticSamplers = nullptr;
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-  IGL_LOG_INFO("  Creating root signature with Root Constants (b0)/CBVs/SRVs/Samplers\n");
+  IGL_LOG_INFO("  Creating root signature with CBVs (b0,b1)/SRVs/Samplers\n");
 
   IGL_LOG_INFO("  Serializing root signature...\n");
   HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
@@ -1570,7 +1565,7 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     case DeviceFeatures::Texture2DArray:
       return true; // D3D12 supports 2D texture arrays via DepthOrArraySize in D3D12_RESOURCE_DESC
     case DeviceFeatures::PushConstants:
-      return true; // D3D12 supports push constants via SetGraphicsRoot32BitConstants/SetComputeRoot32BitConstants
+      return false; // Not yet properly implemented for D3D12 - requires proper root signature design
     case DeviceFeatures::SRGBWriteControl:
     case DeviceFeatures::TextureArrayExt:
     case DeviceFeatures::TextureExternalImage:

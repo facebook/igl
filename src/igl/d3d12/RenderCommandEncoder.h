@@ -127,9 +127,9 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
 
   // Track which constant buffer root parameters have been bound
   // D3D12 requires all root parameters to be set before drawing
-  // Note: Root parameter 0 is now root constants (set via SetGraphicsRoot32BitConstants)
-  // Only parameter 1 (b1) uses a CBV
-  D3D12_GPU_VIRTUAL_ADDRESS cachedConstantBuffers_[2] = {0, 0}; // b0 unused, b1
+  // Root parameter 0 = b0 (UniformsPerFrame)
+  // Root parameter 1 = b1 (UniformsPerObject)
+  D3D12_GPU_VIRTUAL_ADDRESS cachedConstantBuffers_[2] = {0, 0}; // b0, b1
   bool constantBufferBound_[2] = {false, false};
 };
 

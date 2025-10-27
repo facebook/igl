@@ -440,51 +440,11 @@ void RenderCommandEncoder::bindBytes(size_t /*index*/,
                                      uint8_t /*target*/,
                                      const void* /*data*/,
                                      size_t /*length*/) {}
-void RenderCommandEncoder::bindPushConstants(const void* data,
-                                             size_t length,
-                                             size_t offset) {
-  static int callCount = 0;
-  if (callCount < 3) {
-    IGL_LOG_INFO("bindPushConstants called #%d: length=%zu, offset=%zu\n", ++callCount, length, offset);
-    // Log the matrix data being uploaded (assuming it's a 4x4 float matrix)
-    if (length >= sizeof(float) * 16) {
-      const float* matrix = static_cast<const float*>(data);
-      IGL_LOG_INFO("  Push constant matrix:\n");
-      IGL_LOG_INFO("    Row 0: [%.3f, %.3f, %.3f, %.3f]\n", matrix[0], matrix[1], matrix[2], matrix[3]);
-      IGL_LOG_INFO("    Row 1: [%.3f, %.3f, %.3f, %.3f]\n", matrix[4], matrix[5], matrix[6], matrix[7]);
-      IGL_LOG_INFO("    Row 2: [%.3f, %.3f, %.3f, %.3f]\n", matrix[8], matrix[9], matrix[10], matrix[11]);
-      IGL_LOG_INFO("    Row 3: [%.3f, %.3f, %.3f, %.3f]\n", matrix[12], matrix[13], matrix[14], matrix[15]);
-    }
-  }
-
-  if (!data || length == 0) {
-    return;
-  }
-
-  // D3D12 push constants are implemented using SetGraphicsRoot32BitConstants
-  // This sets inline root constants directly without needing an upload buffer
-  // The data is copied directly into the command list
-
-  // Calculate the number of 32-bit values to set
-  // length is in bytes, so divide by 4 to get number of DWORDs
-  const UINT num32BitValues = static_cast<UINT>(length) / 4;
-
-  // offset is in bytes, convert to 32-bit value offset
-  const UINT destOffset32Bit = static_cast<UINT>(offset) / 4;
-
-  // Root parameter 0 is configured for root constants (b0)
-  // SetGraphicsRoot32BitConstants copies the data inline (no buffer needed)
-  commandList_->SetGraphicsRoot32BitConstants(
-    0,                    // RootParameterIndex - parameter 0 is our root constants
-    num32BitValues,       // Num32BitValuesToSet
-    data,                 // pSrcData - pointer to the constant data
-    destOffset32Bit       // DestOffsetIn32BitValues - offset within the root constant block
-  );
-
-  if (callCount <= 3) {
-    IGL_LOG_INFO("bindPushConstants: Set %u 32-bit constants at offset %u using SetGraphicsRoot32BitConstants\n",
-                 num32BitValues, destOffset32Bit);
-  }
+void RenderCommandEncoder::bindPushConstants(const void* /*data*/,
+                                             size_t /*length*/,
+                                             size_t /*offset*/) {
+  // Push constants not yet implemented for D3D12
+  // Requires proper root signature design and backward compatibility considerations
 }
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t /*target*/,
@@ -670,12 +630,10 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t instanceCount,
                                 uint32_t firstVertex,
                                 uint32_t baseInstance) {
-  // Set up descriptor heaps and bind resources (same as drawIndexed)
-  // Note: Root parameter 0 is now root constants (set via bindPushConstants/SetGraphicsRoot32BitConstants)
-  // Only bind root parameter 1 (b1) as a CBV
-  if (constantBufferBound_[1]) {
-    commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[1]);
-  }
+  // D3D12 requires ALL root parameters to be bound before drawing
+  // Bind cached constant buffers (use cached address which defaults to 0 for unbound parameters)
+  commandList_->SetGraphicsRootConstantBufferView(0, cachedConstantBuffers_[0]);
+  commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[1]);
 
   auto& context = commandBuffer_.getContext();
   auto* heapMgr = context.getDescriptorHeapManager();
@@ -727,8 +685,16 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
     drawCallCount++;
   }
 
-  // CRITICAL: SetDescriptorHeaps must be called FIRST, before binding any root parameters
-  // Otherwise, SetDescriptorHeaps will invalidate the bound parameters
+  // D3D12 requires ALL root parameters to be bound before drawing
+  // Bind cached constant buffers (use cached address which defaults to 0 for unbound parameters)
+  commandList_->SetGraphicsRootConstantBufferView(0, cachedConstantBuffers_[0]);
+  commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[1]);
+  IGL_LOG_INFO("DrawIndexed: bound CBVs - b0=0x%llx (bound=%d), b1=0x%llx (bound=%d)\n",
+               cachedConstantBuffers_[0], constantBufferBound_[0],
+               cachedConstantBuffers_[1], constantBufferBound_[1]);
+
+  // CRITICAL: SetDescriptorHeaps invalidates all previously bound descriptor tables
+  // We must set heaps ONCE, then bind ALL descriptor tables (texture + sampler)
   auto& context = commandBuffer_.getContext();
   auto* heapMgr = context.getDescriptorHeapManager();
   if (heapMgr) {
@@ -753,15 +719,6 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
       IGL_LOG_INFO("DrawIndexed: bound sampler descriptor table at s0 (handle=0x%llx, count=%zu)\n",
                    cachedSamplerGpuHandles_[0].ptr, cachedSamplerCount_);
     }
-  }
-
-  // D3D12 requires ALL root parameters to be bound before drawing
-  // Note: Root parameter 0 is now root constants (set via bindPushConstants/SetGraphicsRoot32BitConstants)
-  // Only bind root parameter 1 (b1) as a CBV if it's been bound
-  // Root CBVs are NOT invalidated by SetDescriptorHeaps
-  if (constantBufferBound_[1]) {
-    commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[1]);
-    IGL_LOG_INFO("DrawIndexed: bound CBV b1=0x%llx\n", cachedConstantBuffers_[1]);
   }
 
   // Apply cached vertex buffer bindings now that pipeline state is bound
