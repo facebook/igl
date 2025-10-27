@@ -43,6 +43,24 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
   CommandBuffer& commandBuffer_;
   const ComputePipelineState* currentPipeline_ = nullptr;
   bool isEncoding_ = false;
+
+  // Descriptor allocation tracking (similar to RenderCommandEncoder)
+  uint32_t nextCbvSrvUavDescriptor_ = 0;
+
+  // Cached GPU handles for resources
+  static constexpr size_t kMaxComputeBuffers = 8;
+  static constexpr size_t kMaxComputeTextures = 8;
+  static constexpr size_t kMaxComputeSamplers = 4;
+
+  D3D12_GPU_DESCRIPTOR_HANDLE cachedUavHandles_[kMaxComputeBuffers] = {};
+  D3D12_GPU_DESCRIPTOR_HANDLE cachedSrvHandles_[kMaxComputeTextures] = {};
+  D3D12_GPU_DESCRIPTOR_HANDLE cachedSamplerHandles_[kMaxComputeSamplers] = {};
+  D3D12_GPU_VIRTUAL_ADDRESS cachedCbvAddresses_[kMaxComputeBuffers] = {};
+
+  size_t boundUavCount_ = 0;
+  size_t boundSrvCount_ = 0;
+  size_t boundCbvCount_ = 0;
+  size_t boundSamplerCount_ = 0;
 };
 
 } // namespace igl::d3d12

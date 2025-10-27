@@ -906,15 +906,39 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   psoDesc.HS = {nullptr, 0};
   psoDesc.GS = {nullptr, 0};
 
-  // Rasterizer state - D3D12 default values
-  psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-  psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;  // Disable culling for debugging
-  psoDesc.RasterizerState.FrontCounterClockwise = FALSE;
-  psoDesc.RasterizerState.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
-  psoDesc.RasterizerState.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
-  psoDesc.RasterizerState.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
-  psoDesc.RasterizerState.DepthClipEnable = TRUE;
-  psoDesc.RasterizerState.MultisampleEnable = FALSE;
+  // Rasterizer state - configure based on pipeline descriptor
+  // Fill mode (solid vs wireframe)
+  psoDesc.RasterizerState.FillMode = (desc.polygonFillMode == PolygonFillMode::Line)
+      ? D3D12_FILL_MODE_WIREFRAME : D3D12_FILL_MODE_SOLID;
+
+  // Cull mode configuration
+  switch (desc.cullMode) {
+    case CullMode::Back:
+      psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+      break;
+    case CullMode::Front:
+      psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
+      break;
+    case CullMode::Disabled:
+    default:
+      psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+      break;
+  }
+
+  // Front face winding order
+  psoDesc.RasterizerState.FrontCounterClockwise =
+      (desc.frontFaceWinding == WindingMode::CounterClockwise) ? TRUE : FALSE;
+
+  // Depth bias (polygon offset) - baseline values set in PSO
+  // Note: IGL doesn't currently expose depth bias in RenderPipelineDesc
+  // Applications can dynamically adjust depth bias via RenderCommandEncoder::setDepthBias()
+  // These PSO values serve as the baseline which can be dynamically overridden
+  psoDesc.RasterizerState.DepthBias = 0;  // Integer depth bias (default: no bias)
+  psoDesc.RasterizerState.DepthBiasClamp = 0.0f;  // Max depth bias value (default: no clamp)
+  psoDesc.RasterizerState.SlopeScaledDepthBias = 0.0f;  // Slope-scaled bias for angled surfaces
+
+  psoDesc.RasterizerState.DepthClipEnable = TRUE;  // Enable depth clipping
+  psoDesc.RasterizerState.MultisampleEnable = (desc.sampleCount > 1) ? TRUE : FALSE;
   psoDesc.RasterizerState.AntialiasedLineEnable = FALSE;
   psoDesc.RasterizerState.ForcedSampleCount = 0;
   psoDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
@@ -940,6 +964,12 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
       case BlendFactor::SrcAlphaSaturated: return D3D12_BLEND_SRC_ALPHA_SAT;
       case BlendFactor::BlendColor: return D3D12_BLEND_BLEND_FACTOR;
       case BlendFactor::OneMinusBlendColor: return D3D12_BLEND_INV_BLEND_FACTOR;
+      case BlendFactor::BlendAlpha: return D3D12_BLEND_BLEND_FACTOR; // D3D12 uses same constant for RGB and Alpha
+      case BlendFactor::OneMinusBlendAlpha: return D3D12_BLEND_INV_BLEND_FACTOR; // D3D12 uses same constant for RGB and Alpha
+      case BlendFactor::Src1Color: return D3D12_BLEND_SRC1_COLOR; // Dual-source blending
+      case BlendFactor::OneMinusSrc1Color: return D3D12_BLEND_INV_SRC1_COLOR; // Dual-source blending
+      case BlendFactor::Src1Alpha: return D3D12_BLEND_SRC1_ALPHA; // Dual-source blending
+      case BlendFactor::OneMinusSrc1Alpha: return D3D12_BLEND_INV_SRC1_ALPHA; // Dual-source blending
       default: return D3D12_BLEND_ONE;
     }
   };
@@ -965,9 +995,18 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
       psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = toD3D12Blend(att.srcAlphaBlendFactor);
       psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = toD3D12Blend(att.dstAlphaBlendFactor);
       psoDesc.BlendState.RenderTarget[i].BlendOpAlpha = toD3D12BlendOp(att.alphaBlendOp);
-      psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-      IGL_LOG_INFO("  PSO RenderTarget[%u]: BlendEnable=%d, SrcBlend=%d, DstBlend=%d\n",
-                   i, att.blendEnabled, psoDesc.BlendState.RenderTarget[i].SrcBlend, psoDesc.BlendState.RenderTarget[i].DestBlend);
+
+      // Convert IGL color write mask to D3D12
+      UINT8 writeMask = 0;
+      if (att.colorWriteMask & ColorWriteBitsRed)   writeMask |= D3D12_COLOR_WRITE_ENABLE_RED;
+      if (att.colorWriteMask & ColorWriteBitsGreen) writeMask |= D3D12_COLOR_WRITE_ENABLE_GREEN;
+      if (att.colorWriteMask & ColorWriteBitsBlue)  writeMask |= D3D12_COLOR_WRITE_ENABLE_BLUE;
+      if (att.colorWriteMask & ColorWriteBitsAlpha) writeMask |= D3D12_COLOR_WRITE_ENABLE_ALPHA;
+      psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = writeMask;
+
+      IGL_LOG_INFO("  PSO RenderTarget[%u]: BlendEnable=%d, SrcBlend=%d, DstBlend=%d, WriteMask=0x%02X\n",
+                   i, att.blendEnabled, psoDesc.BlendState.RenderTarget[i].SrcBlend,
+                   psoDesc.BlendState.RenderTarget[i].DestBlend, writeMask);
     } else {
       // Default blend state for unused render targets
       psoDesc.BlendState.RenderTarget[i].BlendEnable = FALSE;
@@ -979,19 +1018,82 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
       psoDesc.BlendState.RenderTarget[i].BlendOpAlpha = D3D12_BLEND_OP_ADD;
       psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
     }
+    // Logic operations support (bitwise blend operations)
+    // Query hardware support for logic operations
+    // Note: LogicOp is currently disabled as IGL doesn't expose logic operation settings in RenderPipelineDesc
+    // To enable in the future:
+    // 1. Add LogicOp enum and logicOpEnabled/logicOp fields to RenderPipelineDesc::ColorAttachment
+    // 2. Query D3D12_FEATURE_D3D12_OPTIONS.OutputMergerLogicOp at device initialization
+    // 3. Set LogicOpEnable = TRUE and LogicOp = convertLogicOp(att.logicOp) when enabled
     psoDesc.BlendState.RenderTarget[i].LogicOpEnable = FALSE;
     psoDesc.BlendState.RenderTarget[i].LogicOp = D3D12_LOGIC_OP_NOOP;
   }
 
-  // Depth stencil state
-  if (desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid) {
+  // Helper to convert IGL stencil operation to D3D12
+  auto toD3D12StencilOp = [](StencilOperation op) {
+    switch (op) {
+      case StencilOperation::Keep: return D3D12_STENCIL_OP_KEEP;
+      case StencilOperation::Zero: return D3D12_STENCIL_OP_ZERO;
+      case StencilOperation::Replace: return D3D12_STENCIL_OP_REPLACE;
+      case StencilOperation::IncrementClamp: return D3D12_STENCIL_OP_INCR_SAT;
+      case StencilOperation::DecrementClamp: return D3D12_STENCIL_OP_DECR_SAT;
+      case StencilOperation::Invert: return D3D12_STENCIL_OP_INVERT;
+      case StencilOperation::IncrementWrap: return D3D12_STENCIL_OP_INCR;
+      case StencilOperation::DecrementWrap: return D3D12_STENCIL_OP_DECR;
+      default: return D3D12_STENCIL_OP_KEEP;
+    }
+  };
+
+  // Helper to convert IGL compare function to D3D12
+  auto toD3D12CompareFunc = [](CompareFunction func) {
+    switch (func) {
+      case CompareFunction::Never: return D3D12_COMPARISON_FUNC_NEVER;
+      case CompareFunction::Less: return D3D12_COMPARISON_FUNC_LESS;
+      case CompareFunction::Equal: return D3D12_COMPARISON_FUNC_EQUAL;
+      case CompareFunction::LessEqual: return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+      case CompareFunction::Greater: return D3D12_COMPARISON_FUNC_GREATER;
+      case CompareFunction::NotEqual: return D3D12_COMPARISON_FUNC_NOT_EQUAL;
+      case CompareFunction::GreaterEqual: return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+      case CompareFunction::AlwaysPass: return D3D12_COMPARISON_FUNC_ALWAYS;
+      default: return D3D12_COMPARISON_FUNC_LESS;
+    }
+  };
+
+  // Depth stencil state - check if we have a depth or stencil attachment
+  const bool hasDepth = (desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid);
+  const bool hasStencil = (desc.targetDesc.stencilAttachmentFormat != TextureFormat::Invalid);
+
+  if (hasDepth) {
     psoDesc.DepthStencilState.DepthEnable = TRUE;
     psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
     // Use LESS_EQUAL to allow Z=0 to pass when depth buffer is cleared to 0
     psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-    psoDesc.DepthStencilState.StencilEnable = FALSE;
   } else {
     psoDesc.DepthStencilState.DepthEnable = FALSE;
+    psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+    psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+  }
+
+  // Configure stencil state (can be used with or without depth)
+  if (hasStencil) {
+    // Note: In D3D12/IGL, stencil state is configured via DepthStencilState binding
+    // For now, we set up basic stencil configuration in the PSO
+    // Default: stencil disabled unless explicitly configured by DepthStencilState
+    psoDesc.DepthStencilState.StencilEnable = FALSE;
+    psoDesc.DepthStencilState.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
+    psoDesc.DepthStencilState.StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK;
+
+    // Front face stencil operations (defaults)
+    psoDesc.DepthStencilState.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+    psoDesc.DepthStencilState.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+    psoDesc.DepthStencilState.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+    psoDesc.DepthStencilState.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+
+    // Back face stencil operations (defaults, same as front)
+    psoDesc.DepthStencilState.BackFace = psoDesc.DepthStencilState.FrontFace;
+
+    IGL_LOG_INFO("  PSO Stencil configured: format=%d\n", (int)desc.targetDesc.stencilAttachmentFormat);
+  } else {
     psoDesc.DepthStencilState.StencilEnable = FALSE;
   }
 
