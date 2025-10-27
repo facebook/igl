@@ -27,6 +27,7 @@ There are a lot of good options for abstracting GPU API's; each making different
  * OpenGL ES 2.0+
  * Vulkan 1.2
  * WebGL 2.0
+ * Direct3D 12
 
 ## Supported platforms
 
@@ -46,6 +47,7 @@ There are a lot of good options for abstracting GPU API's; each making different
 | OpenGL ES 3.1 - 3.2      | :heavy_check_mark: (Angle) | :heavy_check_mark: (Angle) | :heavy_multiplication_x:      | :heavy_multiplication_x:      | :heavy_check_mark:                 |
 | OpenGL 3.1 - 4.6         | :heavy_check_mark:         | :heavy_check_mark:         | :heavy_check_mark:            | :heavy_multiplication_x:      | :heavy_multiplication_x:           |
 | Metal 2                  | :heavy_multiplication_x:   | :heavy_multiplication_x:   | :heavy_check_mark:            | :heavy_check_mark:            | :heavy_multiplication_x:           |
+| Direct3D 12              | :heavy_check_mark:         | :heavy_multiplication_x:   | :heavy_multiplication_x:      | :heavy_multiplication_x:      | :heavy_multiplication_x:           |
 
 ## Build
 
@@ -65,6 +67,18 @@ These scripts download external third-party dependencies. Please check [Dependen
 cd build
 cmake .. -G "Visual Studio 17 2022"
 ```
+
+To enable Direct3D 12 support on Windows (requires Windows 10 SDK):
+
+```
+cd build
+cmake .. -G "Visual Studio 17 2022" -DIGL_WITH_D3D12=ON
+```
+
+Note: D3D12 support requires:
+- Windows 10 SDK (version 10.0.22621.0 or later recommended)
+- Visual Studio 2022 with C++ development tools
+- Windows 10 version 1909 or later
 
 * Linux
 
