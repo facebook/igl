@@ -300,15 +300,15 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
     const uint32_t descriptorIndex = nextCbvSrvUavDescriptor_++;
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heapMgr->getCbvSrvUavCpuHandle(descriptorIndex);
 
-    // Create UAV descriptor
+    // Create UAV descriptor for RWByteAddressBuffer (raw buffer)
     D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-    uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+    uavDesc.Format = DXGI_FORMAT_R32_TYPELESS; // Required for raw buffers
     uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-    uavDesc.Buffer.FirstElement = offset / 4; // Element offset (4 bytes per element for raw/structured buffers)
+    uavDesc.Buffer.FirstElement = offset / 4; // Element offset (4 bytes per element)
     uavDesc.Buffer.NumElements = static_cast<UINT>((d3dBuffer->getSizeInBytes() - offset) / 4);
-    uavDesc.Buffer.StructureByteStride = 0; // Raw buffer (use ByteAddressBuffer in shader)
+    uavDesc.Buffer.StructureByteStride = 0; // 0 for raw buffers
     uavDesc.Buffer.CounterOffsetInBytes = 0;
-    uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+    uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW; // RAW flag required for ByteAddressBuffer
 
     device->CreateUnorderedAccessView(d3dBuffer->getResource(), nullptr, &uavDesc, cpuHandle);
 

@@ -133,6 +133,13 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
   bufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
+  // Add UAV flag for storage buffers (used by compute shaders)
+  const bool isStorageBuffer = (desc.type & BufferDesc::BufferTypeBits::Storage) != 0;
+  if (isStorageBuffer) {
+    bufferDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    IGL_LOG_INFO("Device::createBuffer: Storage buffer - adding UAV flag\n");
+  }
+
   // Create the buffer resource
   Microsoft::WRL::ComPtr<ID3D12Resource> buffer;
   HRESULT hr = device->CreateCommittedResource(
