@@ -770,10 +770,11 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
 
   // Create root signature with descriptor tables for textures and constant buffers
   // Root signature layout:
-  // - Root parameter 0: CBV for uniform buffer b0 (UniformsPerFrame)
-  // - Root parameter 1: CBV for uniform buffer b1 (UniformsPerObject)
-  // - Root parameter 2: Descriptor table with 2 SRVs for textures t0-t1
-  // - Root parameter 3: Descriptor table with 2 Samplers for s0-s1
+  // - Root parameter 0: Root Constants for b2 (Push Constants) - 16 DWORDs = 64 bytes max
+  // - Root parameter 1: CBV for uniform buffer b0 (UniformsPerFrame)
+  // - Root parameter 2: CBV for uniform buffer b1 (UniformsPerObject)
+  // - Root parameter 3: Descriptor table with SRVs for textures t0-tN (unbounded)
+  // - Root parameter 4: Descriptor table with Samplers for s0-sN (unbounded)
 
   Microsoft::WRL::ComPtr<ID3DBlob> signature;
   Microsoft::WRL::ComPtr<ID3DBlob> error;
@@ -797,41 +798,49 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   samplerRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
   // Root parameters
-  D3D12_ROOT_PARAMETER rootParams[4] = {};
+  D3D12_ROOT_PARAMETER rootParams[5] = {};
 
-  // Parameter 0: Root CBV for b0 (UniformsPerFrame)
-  rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-  rootParams[0].Descriptor.ShaderRegister = 0;  // b0
-  rootParams[0].Descriptor.RegisterSpace = 0;
+  // Parameter 0: Root Constants for b2 (Push Constants)
+  // Max 64 bytes = 16 DWORDs to match Vulkan push constant limits
+  rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+  rootParams[0].Constants.ShaderRegister = 2;  // b2 (b0/b1 reserved for uniform buffers)
+  rootParams[0].Constants.RegisterSpace = 0;
+  rootParams[0].Constants.Num32BitValues = 16;  // 16 DWORDs = 64 bytes
   rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-  // Parameter 1: Root CBV for b1 (UniformsPerObject)
+  // Parameter 1: Root CBV for b0 (UniformsPerFrame)
   rootParams[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-  rootParams[1].Descriptor.ShaderRegister = 1;  // b1
+  rootParams[1].Descriptor.ShaderRegister = 0;  // b0
   rootParams[1].Descriptor.RegisterSpace = 0;
   rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-  // Parameter 2: Descriptor table for SRVs (textures)
-  rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-  rootParams[2].DescriptorTable.NumDescriptorRanges = 1;
-  rootParams[2].DescriptorTable.pDescriptorRanges = &srvRange;
-  rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+  // Parameter 2: Root CBV for b1 (UniformsPerObject)
+  rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+  rootParams[2].Descriptor.ShaderRegister = 1;  // b1
+  rootParams[2].Descriptor.RegisterSpace = 0;
+  rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-  // Parameter 3: Descriptor table for Samplers
+  // Parameter 3: Descriptor table for SRVs (textures)
   rootParams[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   rootParams[3].DescriptorTable.NumDescriptorRanges = 1;
-  rootParams[3].DescriptorTable.pDescriptorRanges = &samplerRange;
+  rootParams[3].DescriptorTable.pDescriptorRanges = &srvRange;
   rootParams[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+  // Parameter 4: Descriptor table for Samplers
+  rootParams[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+  rootParams[4].DescriptorTable.NumDescriptorRanges = 1;
+  rootParams[4].DescriptorTable.pDescriptorRanges = &samplerRange;
+  rootParams[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
   D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
   // Enable full root signature matching TinyMeshSession shaders
-  rootSigDesc.NumParameters = 4;
+  rootSigDesc.NumParameters = 5;
   rootSigDesc.pParameters = rootParams;
   rootSigDesc.NumStaticSamplers = 0;
   rootSigDesc.pStaticSamplers = nullptr;
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-  IGL_LOG_INFO("  Creating root signature with CBVs (b0,b1)/SRVs/Samplers\n");
+  IGL_LOG_INFO("  Creating root signature with Push Constants (b2)/CBVs (b0,b1)/SRVs/Samplers\n");
 
   IGL_LOG_INFO("  Serializing root signature...\n");
   HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
@@ -1565,7 +1574,7 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     case DeviceFeatures::Texture2DArray:
       return true; // D3D12 supports 2D texture arrays via DepthOrArraySize in D3D12_RESOURCE_DESC
     case DeviceFeatures::PushConstants:
-      return false; // Not yet properly implemented for D3D12 - requires proper root signature design
+      return true; // Implemented via root constants at parameter 0 (shader register b2)
     case DeviceFeatures::SRGBWriteControl:
     case DeviceFeatures::TextureArrayExt:
     case DeviceFeatures::TextureExternalImage:

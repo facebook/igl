@@ -440,11 +440,23 @@ void RenderCommandEncoder::bindBytes(size_t /*index*/,
                                      uint8_t /*target*/,
                                      const void* /*data*/,
                                      size_t /*length*/) {}
-void RenderCommandEncoder::bindPushConstants(const void* /*data*/,
-                                             size_t /*length*/,
-                                             size_t /*offset*/) {
-  // Push constants not yet implemented for D3D12
-  // Requires proper root signature design and backward compatibility considerations
+void RenderCommandEncoder::bindPushConstants(const void* data,
+                                             size_t length,
+                                             size_t offset) {
+  if (!commandList_ || !data || length == 0 || length > 64 || offset != 0) {
+    IGL_LOG_ERROR("bindPushConstants: Invalid parameters (list=%p, data=%p, len=%zu, offset=%zu)\n",
+                  commandList_, data, length, offset);
+    return;
+  }
+
+  // Convert byte length to DWORD count
+  const UINT num32BitValues = static_cast<UINT>(length / 4);
+
+  // Set root constants at parameter 0 (mapped to shader register b2)
+  // Root signature layout: param 0 = push constants (b2), param 1 = b0, param 2 = b1, param 3 = SRVs, param 4 = samplers
+  commandList_->SetGraphicsRoot32BitConstants(0, num32BitValues, data, 0);
+
+  IGL_LOG_INFO("bindPushConstants: Set %u DWORDs at root parameter 0\n", num32BitValues);
 }
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t /*target*/,
@@ -632,8 +644,8 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t baseInstance) {
   // D3D12 requires ALL root parameters to be bound before drawing
   // Bind cached constant buffers (use cached address which defaults to 0 for unbound parameters)
-  commandList_->SetGraphicsRootConstantBufferView(0, cachedConstantBuffers_[0]);
-  commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[1]);
+  commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[0]);
+  commandList_->SetGraphicsRootConstantBufferView(2, cachedConstantBuffers_[1]);
 
   auto& context = commandBuffer_.getContext();
   auto* heapMgr = context.getDescriptorHeapManager();
@@ -643,11 +655,11 @@ void RenderCommandEncoder::draw(size_t vertexCount,
 
     // Bind texture descriptor table at t0 (covers t0-t1 range if multiple textures bound)
     if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(2, cachedTextureGpuHandles_[0]);
+      commandList_->SetGraphicsRootDescriptorTable(3, cachedTextureGpuHandles_[0]);
     }
     // Bind sampler descriptor table at s0 (covers s0-s1 range if multiple samplers bound)
     if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(3, cachedSamplerGpuHandles_[0]);
+      commandList_->SetGraphicsRootDescriptorTable(4, cachedSamplerGpuHandles_[0]);
     }
   }
 
@@ -687,8 +699,8 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
 
   // D3D12 requires ALL root parameters to be bound before drawing
   // Bind cached constant buffers (use cached address which defaults to 0 for unbound parameters)
-  commandList_->SetGraphicsRootConstantBufferView(0, cachedConstantBuffers_[0]);
-  commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[1]);
+  commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[0]);
+  commandList_->SetGraphicsRootConstantBufferView(2, cachedConstantBuffers_[1]);
   IGL_LOG_INFO("DrawIndexed: bound CBVs - b0=0x%llx (bound=%d), b1=0x%llx (bound=%d)\n",
                cachedConstantBuffers_[0], constantBufferBound_[0],
                cachedConstantBuffers_[1], constantBufferBound_[1]);
@@ -708,14 +720,14 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
     // When multiple textures are bound (t0, t1), the root signature defines a range covering both
     // We always point the table to t0 (the first texture), and D3D12 will use consecutive descriptors
     if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(2, cachedTextureGpuHandles_[0]);
+      commandList_->SetGraphicsRootDescriptorTable(3, cachedTextureGpuHandles_[0]);
       IGL_LOG_INFO("DrawIndexed: bound texture descriptor table at t0 (handle=0x%llx, count=%zu)\n",
                    cachedTextureGpuHandles_[0].ptr, cachedTextureCount_);
     }
 
     // Parameter 3: Sampler table starting at s0
     if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(3, cachedSamplerGpuHandles_[0]);
+      commandList_->SetGraphicsRootDescriptorTable(4, cachedSamplerGpuHandles_[0]);
       IGL_LOG_INFO("DrawIndexed: bound sampler descriptor table at s0 (handle=0x%llx, count=%zu)\n",
                    cachedSamplerGpuHandles_[0].ptr, cachedSamplerCount_);
     }

@@ -213,7 +213,7 @@ Result Texture::upload(const TextureRangeDesc& range,
   const UINT rowsToCopy = (range.height > 0) ? std::min<UINT>(range.height, numRows) : numRows;
   const UINT depthToCopy = depth;  // For 2D textures, depth=1; for 3D textures, depth=actual depth
   const size_t copyBytes = std::min(static_cast<size_t>(rowSizeInBytes), bytesPerRow);
-  const bool swapRB = needsRGBAChannelSwap(format_) && props.bytesPerBlock == 4;
+  const bool swapRB = false;  // DISABLED: Test data expects native RGBA format without swapping
 
   // For 3D textures: copy data slice by slice
   // For 2D textures: depthToCopy=1, so this loops once

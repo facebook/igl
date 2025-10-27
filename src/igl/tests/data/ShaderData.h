@@ -523,6 +523,33 @@ constexpr std::string_view kVulkanPushConstantFragShader =
         out_FragColor = tex * pushConstants.colorMultiplier;
       });
 
+// D3D12 HLSL push constant shaders
+constexpr const char* kD3D12PushConstantVertShader = R"(
+struct VSIn { float4 position_in : POSITION; float2 uv_in : TEXCOORD0; };
+struct PSIn { float4 position : SV_POSITION; float2 uv : TEXCOORD0; };
+PSIn main(VSIn i) {
+  PSIn o;
+  o.position = i.position_in;
+  o.uv = i.uv_in;
+  return o;
+}
+)";
+
+constexpr const char* kD3D12PushConstantFragShader = R"(
+Texture2D inputImage : register(t0);
+SamplerState samp0 : register(s0);
+
+cbuffer PushConstants : register(b2) {
+  float4 colorMultiplier;
+};
+
+struct PSIn { float4 position : SV_POSITION; float2 uv : TEXCOORD0; };
+float4 main(PSIn i) : SV_TARGET {
+  float4 tex = inputImage.Sample(samp0, i.uv);
+  return tex * colorMultiplier;
+}
+)";
+
 constexpr std::string_view kVulkanSimpleVertShaderTex2dArray =
 IGL_TO_STRING(
     layout(location = 0) in vec4 position_in;
