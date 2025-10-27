@@ -60,12 +60,21 @@ class CommandBuffer final : public ICommandBuffer {
   size_t getCurrentDrawCount() const { return currentDrawCount_; }
   void incrementDrawCount() { ++currentDrawCount_; }
 
+  // Track transient resources (e.g., push constants buffers) that need to be kept alive
+  // until command buffer execution completes
+  void trackTransientBuffer(std::shared_ptr<IBuffer> buffer) {
+    transientBuffers_.push_back(std::move(buffer));
+  }
+
  private:
   Device& device_;
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator_;
   size_t currentDrawCount_ = 0;
   bool recording_ = false;
+
+  // Transient buffers (push constants, etc.) - automatically released when CommandBuffer is destroyed
+  std::vector<std::shared_ptr<IBuffer>> transientBuffers_;
 };
 
 } // namespace igl::d3d12

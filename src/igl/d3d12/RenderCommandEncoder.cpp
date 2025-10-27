@@ -213,19 +213,44 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
 
       device->CreateDepthStencilView(depthTex->getResource(), &dsvDesc, dsvHandle_);
 
-      // Clear depth if requested
-      if (renderPass.depthAttachment.loadAction == LoadAction::Clear) {
-        float depthClear = renderPass.depthAttachment.clearDepth;
-        commandList_->ClearDepthStencilView(dsvHandle_, D3D12_CLEAR_FLAG_DEPTH, depthClear, 0, 0, nullptr);
+      // Clear depth and/or stencil if requested
+      const bool clearDepth = (renderPass.depthAttachment.loadAction == LoadAction::Clear);
+      const bool clearStencil = (renderPass.stencilAttachment.loadAction == LoadAction::Clear);
+
+      if (clearDepth || clearStencil) {
+        D3D12_CLEAR_FLAGS clearFlags = static_cast<D3D12_CLEAR_FLAGS>(0);
+        if (clearDepth) {
+          clearFlags = static_cast<D3D12_CLEAR_FLAGS>(clearFlags | D3D12_CLEAR_FLAG_DEPTH);
+        }
+        if (clearStencil) {
+          clearFlags = static_cast<D3D12_CLEAR_FLAGS>(clearFlags | D3D12_CLEAR_FLAG_STENCIL);
+        }
+
+        const float depthClearValue = renderPass.depthAttachment.clearDepth;
+        const UINT8 stencilClearValue = static_cast<UINT8>(renderPass.stencilAttachment.clearStencil);
+
+        commandList_->ClearDepthStencilView(dsvHandle_, clearFlags, depthClearValue, stencilClearValue, 0, nullptr);
+
+        IGL_LOG_INFO("RenderCommandEncoder: Cleared depth-stencil (depth=%d, stencil=%d, depthVal=%.2f, stencilVal=%u)\n",
+                     clearDepth, clearStencil, depthClearValue, stencilClearValue);
       }
 
-      // Bind RTV + DSV
-      IGL_LOG_INFO("RenderCommandEncoder: Binding RTV with DSV\n");
+      // Bind RTV + DSV (or DSV-only for depth-only rendering)
       if (!rtvs.empty()) {
+        // Multi-render target or offscreen rendering with color+depth
         IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with %zu RTVs + DSV\n", rtvs.size());
         commandList_->OMSetRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(), FALSE, &dsvHandle_);
-      } else {
+      } else if (usedOffscreenRTV) {
+        // Single offscreen render target with depth
         IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with 1 RTV + DSV\n");
+        commandList_->OMSetRenderTargets(1, &rtv, FALSE, &dsvHandle_);
+      } else if (!framebuffer_->getColorAttachment(0)) {
+        // Depth-only rendering (no color attachments) - shadow mapping scenario
+        IGL_LOG_INFO("RenderCommandEncoder: Depth-only rendering - OMSetRenderTargets with 0 RTVs + DSV\n");
+        commandList_->OMSetRenderTargets(0, nullptr, FALSE, &dsvHandle_);
+      } else {
+        // Swapchain backbuffer with depth
+        IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with swapchain RTV + DSV\n");
         commandList_->OMSetRenderTargets(1, &rtv, FALSE, &dsvHandle_);
       }
     } else {
@@ -549,14 +574,14 @@ void RenderCommandEncoder::bindPushConstants(const void* data,
   bufferDesc.storage = ResourceStorage::Shared; // CPU-writable, GPU-readable
   bufferDesc.hint = BufferDesc::BufferAPIHintBits::UniformBlock;
 
-  pushConstantsBuffer_ = device.createBuffer(bufferDesc, nullptr);
-  if (!pushConstantsBuffer_) {
+  auto buffer = device.createBuffer(bufferDesc, nullptr);
+  if (!buffer) {
     IGL_LOG_ERROR("bindPushConstants: Failed to create transient constant buffer\n");
     return;
   }
 
   // Get D3D12 buffer and its GPU address
-  auto* d3dBuffer = static_cast<Buffer*>(pushConstantsBuffer_.get());
+  auto* d3dBuffer = static_cast<Buffer*>(buffer.get());
   D3D12_GPU_VIRTUAL_ADDRESS gpuAddress = d3dBuffer->gpuAddress();
 
   // Cache the GPU address so drawIndexed() uses it instead of overwriting with 0
@@ -566,12 +591,12 @@ void RenderCommandEncoder::bindPushConstants(const void* data,
   // Bind to root parameter 1 (b0) - this is where most shaders expect uniform data
   commandList_->SetGraphicsRootConstantBufferView(1, gpuAddress);
 
+  // Track buffer in CommandBuffer to keep it alive until GPU execution completes
+  // This prevents memory leaks while ensuring the buffer isn't destroyed too early
+  static_cast<CommandBuffer&>(commandBuffer_).trackTransientBuffer(std::move(buffer));
+
   IGL_LOG_INFO("bindPushConstants: Created transient CB (%zu bytes aligned to %zu) and bound to root parameter 1 (b0) at GPU address 0x%llx\n",
                length, alignedSize, gpuAddress);
-
-  // Note: The buffer is stored in pushConstantsBuffer_ member and will be kept alive until this encoder is destroyed
-  // For better performance, we should pool/reuse these transient buffers in a ring buffer
-  // But for correctness, this simple approach works
 }
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t /*target*/,
@@ -892,9 +917,32 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& /*indirectBuffer*/,
                                                     uint32_t /*drawCount*/,
                                                     uint32_t /*stride*/) {}
 
-void RenderCommandEncoder::setStencilReferenceValue(uint32_t /*value*/) {}
-void RenderCommandEncoder::setBlendColor(const Color& /*color*/) {}
-void RenderCommandEncoder::setDepthBias(float /*depthBias*/, float /*slopeScale*/, float /*clamp*/) {}
+void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
+  if (!commandList_) {
+    return;
+  }
+  // Set stencil reference value for stencil testing
+  commandList_->OMSetStencilRef(value);
+  IGL_LOG_INFO("setStencilReferenceValue: Set stencil ref to %u\n", value);
+}
+
+void RenderCommandEncoder::setBlendColor(const Color& color) {
+  if (!commandList_) {
+    return;
+  }
+  // Set blend factor constants for BlendFactor::BlendColor operations
+  // D3D12 uses RGBA float array, matching IGL Color structure
+  const float blendFactor[4] = {color.r, color.g, color.b, color.a};
+  commandList_->OMSetBlendFactor(blendFactor);
+  IGL_LOG_INFO("setBlendColor: Set blend factor to (%.2f, %.2f, %.2f, %.2f)\n",
+               color.r, color.g, color.b, color.a);
+}
+
+void RenderCommandEncoder::setDepthBias(float /*depthBias*/, float /*slopeScale*/, float /*clamp*/) {
+  // Note: Depth bias is configured in the pipeline state (RasterizerState)
+  // D3D12 does not support dynamic depth bias changes during rendering
+  // This would require rebuilding the PSO with different depth bias values
+}
 
 void RenderCommandEncoder::pushDebugGroupLabel(const char* /*label*/, const Color& /*color*/) const {}
 void RenderCommandEncoder::insertDebugEventLabel(const char* /*label*/, const Color& /*color*/) const {}
