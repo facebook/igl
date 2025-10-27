@@ -71,6 +71,8 @@ using glm::vec3;
 using glm::vec4;
 
 constexpr uint32_t kNumBufferedFrames = 3;
+// D3D12 constant buffer alignment requirement
+constexpr size_t kConstantBufferAlignment = 256;
 
 int width_ = 0;
 int height_ = 0;
@@ -339,6 +341,9 @@ void TinyMeshSession::initialize() noexcept {
                                           "Buffer: index"),
                                nullptr);
   // create an Uniform buffers to store uniforms for 2 objects
+  // D3D12 requires constant buffer addresses to be 256-byte aligned
+  // Each object uniform needs 64 bytes, but with 256-byte alignment requirement,
+  // we need to allocate 256 bytes per object to avoid out-of-bounds access
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
     ubPerFrame_.push_back(
         device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
@@ -351,7 +356,7 @@ void TinyMeshSession::initialize() noexcept {
     ubPerObject_.push_back(
         device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
                                          perObject,
-                                         kNumCubes * sizeof(UniformsPerObject),
+                                         kNumCubes * kConstantBufferAlignment,
                                          ResourceStorage::Shared,
                                          BufferDesc::BufferAPIHintBits::UniformBlock,
                                          "Buffer: uniforms (per object)"),
@@ -587,7 +592,8 @@ void TinyMeshSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   // Draw 2 cubes: we use uniform buffer to update matrices
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
   for (uint32_t i = 0; i != kNumCubes; i++) {
-    commands->bindBuffer(1, ubPerObject_[frameIndex_].get(), i * sizeof(UniformsPerObject));
+    // Use aligned offset to match D3D12 constant buffer alignment requirement
+    commands->bindBuffer(1, ubPerObject_[frameIndex_].get(), i * kConstantBufferAlignment);
     commands->drawIndexed(3u * 6u * 2u);
   }
   commands->popDebugGroupLabel();

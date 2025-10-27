@@ -284,6 +284,88 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
 void RenderCommandEncoder::endEncoding() {
   auto& context2 = commandBuffer_.getContext();
 
+  // ========== MSAA RESOLVE OPERATION ==========
+  // Resolve MSAA textures to non-MSAA textures before transitioning resources
+  // This must happen AFTER rendering but BEFORE the final state transitions
+  if (framebuffer_) {
+    // Resolve color attachments
+    const auto indices = framebuffer_->getColorAttachmentIndices();
+    for (size_t i : indices) {
+      auto msaaAttachment = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(i));
+      auto resolveAttachment = std::static_pointer_cast<Texture>(framebuffer_->getResolveColorAttachment(i));
+
+      // Check if both MSAA source and resolve target exist
+      if (msaaAttachment && resolveAttachment &&
+          msaaAttachment->getResource() && resolveAttachment->getResource()) {
+
+        // Verify MSAA source has samples > 1 and resolve target has samples == 1
+        D3D12_RESOURCE_DESC msaaDesc = msaaAttachment->getResource()->GetDesc();
+        D3D12_RESOURCE_DESC resolveDesc = resolveAttachment->getResource()->GetDesc();
+
+        if (msaaDesc.SampleDesc.Count > 1 && resolveDesc.SampleDesc.Count == 1) {
+          IGL_LOG_INFO("RenderCommandEncoder::endEncoding - Resolving MSAA color attachment %zu (%u samples -> 1 sample)\n",
+                       i, msaaDesc.SampleDesc.Count);
+
+          // Transition MSAA texture to RESOLVE_SOURCE state
+          msaaAttachment->transitionAll(commandList_, D3D12_RESOURCE_STATE_RESOLVE_SOURCE);
+
+          // Transition resolve texture to RESOLVE_DEST state
+          resolveAttachment->transitionAll(commandList_, D3D12_RESOURCE_STATE_RESOLVE_DEST);
+
+          // Perform resolve operation: converts multi-sample texture to single-sample
+          // This averages all samples in the MSAA texture and writes to the resolve texture
+          commandList_->ResolveSubresource(
+              resolveAttachment->getResource(),  // pDstResource (non-MSAA)
+              0,                                  // DstSubresource (mip 0, layer 0)
+              msaaAttachment->getResource(),      // pSrcResource (MSAA)
+              0,                                  // SrcSubresource (mip 0, layer 0)
+              msaaDesc.Format                     // Format (must be compatible)
+          );
+
+          IGL_LOG_INFO("RenderCommandEncoder::endEncoding - MSAA color resolve completed for attachment %zu\n", i);
+
+          // Transition resolve texture to PIXEL_SHADER_RESOURCE for subsequent use
+          resolveAttachment->transitionAll(commandList_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        }
+      }
+    }
+
+    // Resolve depth attachment if present
+    auto msaaDepth = std::static_pointer_cast<Texture>(framebuffer_->getDepthAttachment());
+    auto resolveDepth = std::static_pointer_cast<Texture>(framebuffer_->getResolveDepthAttachment());
+
+    if (msaaDepth && resolveDepth &&
+        msaaDepth->getResource() && resolveDepth->getResource()) {
+
+      D3D12_RESOURCE_DESC msaaDesc = msaaDepth->getResource()->GetDesc();
+      D3D12_RESOURCE_DESC resolveDesc = resolveDepth->getResource()->GetDesc();
+
+      if (msaaDesc.SampleDesc.Count > 1 && resolveDesc.SampleDesc.Count == 1) {
+        IGL_LOG_INFO("RenderCommandEncoder::endEncoding - Resolving MSAA depth attachment (%u samples -> 1 sample)\n",
+                     msaaDesc.SampleDesc.Count);
+
+        // Transition depth textures to appropriate resolve states
+        msaaDepth->transitionAll(commandList_, D3D12_RESOURCE_STATE_RESOLVE_SOURCE);
+        resolveDepth->transitionAll(commandList_, D3D12_RESOURCE_STATE_RESOLVE_DEST);
+
+        // Resolve depth buffer
+        commandList_->ResolveSubresource(
+            resolveDepth->getResource(),
+            0,
+            msaaDepth->getResource(),
+            0,
+            msaaDesc.Format
+        );
+
+        IGL_LOG_INFO("RenderCommandEncoder::endEncoding - MSAA depth resolve completed\n");
+
+        // Transition resolved depth to shader resource for sampling
+        resolveDepth->transitionAll(commandList_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+      }
+    }
+  }
+  // ========== END MSAA RESOLVE OPERATION ==========
+
   // For offscreen framebuffers (MRT targets), transition all attachments to PIXEL_SHADER_RESOURCE
   // so they can be sampled in subsequent passes
   if (framebuffer_ && framebuffer_->getColorAttachment(0)) {
