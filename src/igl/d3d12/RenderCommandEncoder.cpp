@@ -563,9 +563,10 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
     return;
   }
 
-  // Use the index parameter to create sampler at correct descriptor slot (s0, s1, etc.)
-  const uint32_t descriptorIndex = static_cast<uint32_t>(index);
-  IGL_LOG_INFO("bindSamplerState: using descriptor slot %u for s%zu\n", descriptorIndex, index);
+  // Allocate a unique descriptor slot from the per-frame allocator
+  // This prevents descriptor conflicts when multiple samplers are bound (e.g., app samplers + ImGui)
+  const uint32_t descriptorIndex = nextSamplerDescriptor_++;
+  IGL_LOG_INFO("bindSamplerState: allocated descriptor slot %u for sampler index s%zu\n", descriptorIndex, index);
 
   // Create sampler descriptor from ISamplerState if provided, else fallback
   D3D12_SAMPLER_DESC samplerDesc = {};
@@ -640,9 +641,10 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   // Ensure resource is in PIXEL_SHADER_RESOURCE state for sampling
   d3dTexture->transitionAll(commandList_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-  // Use the index parameter to create SRV at correct descriptor slot (t0, t1, etc.)
-  const uint32_t descriptorIndex = static_cast<uint32_t>(index);
-  IGL_LOG_INFO("bindTexture: using descriptor slot %u for t%zu\n", descriptorIndex, index);
+  // Allocate a unique descriptor slot from the per-frame allocator
+  // This prevents descriptor conflicts when multiple textures are bound (e.g., app textures + ImGui)
+  const uint32_t descriptorIndex = nextCbvSrvUavDescriptor_++;
+  IGL_LOG_INFO("bindTexture: allocated descriptor slot %u for texture index t%zu\n", descriptorIndex, index);
 
   // Create SRV descriptor at the allocated slot
   D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};

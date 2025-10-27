@@ -209,12 +209,30 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
                (int)srcTex->getFormat(), (int)srcDesc.Format, bytesPerPixel,
                (int)srcPtr[0], (int)srcPtr[1], (int)srcPtr[2], (int)srcPtr[3]);
 
+  // Determine if we need R<->B channel swap for RGBA formats
+  // D3D12 stores in BGRA but IGL TextureFormat::RGBA expects RGBA byte order
+  const bool needsSwap = (srcTex->getFormat() == igl::TextureFormat::RGBA_UNorm8 ||
+                          srcTex->getFormat() == igl::TextureFormat::RGBA_SRGB);
+
   // Always flip vertically to match Metal/Vulkan behavior
   // The validation helper will un-flip for non-render-target textures if needed
   for (uint32_t row = 0; row < range.height; ++row) {
     const uint8_t* s = srcPtr + row * srcRowPitch;
     uint8_t* d = dstPtr + (range.height - 1 - row) * dstRowPitch;  // Flip
-    std::memcpy(d, s, copyRowBytes);
+
+    if (needsSwap && bytesPerPixel == 4) {
+      // Swap R<->B channels while copying
+      const uint32_t pixelCount = range.width;
+      for (uint32_t col = 0; col < pixelCount; ++col) {
+        const uint32_t idx = col * 4;
+        d[idx + 0] = s[idx + 2];  // R <- B
+        d[idx + 1] = s[idx + 1];  // G stays
+        d[idx + 2] = s[idx + 0];  // B <- R
+        d[idx + 3] = s[idx + 3];  // A stays
+      }
+    } else {
+      std::memcpy(d, s, copyRowBytes);
+    }
   }
 
   readbackBuf->Unmap(0, nullptr);
