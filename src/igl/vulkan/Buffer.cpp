@@ -76,14 +76,22 @@ Result Buffer::create(const BufferDesc& desc) {
 
   buffers_ = std::make_unique<std::unique_ptr<VulkanBuffer>[]>(bufferCount_);
   bufferPatches_ = std::make_unique<BufferRange[]>(bufferCount_);
+
+  // This is used to generate a unique number for unnamed buffers
+  static uint32_t bufferId = 0;
   Result result;
   for (size_t bufferIndex = 0; bufferIndex < bufferCount_; ++bufferIndex) {
     const std::string subBufferName =
         bufferCount_ > 1 ? " - sub-buffer " + std::to_string(bufferIndex) : "";
-    const std::string bufferName = desc_.debugName + subBufferName;
+    const std::string bufferName = !desc_.debugName.empty()
+                                       ? IGL_FORMAT("Buffer: {}", desc_.debugName + subBufferName)
+                                       : IGL_FORMAT("Buffer {}{}", bufferId, subBufferName);
     buffers_[bufferIndex] =
         ctx.createBuffer(desc_.length, usageFlags, memFlags, &result, bufferName.c_str());
     IGL_DEBUG_ASSERT(result.isOk());
+  }
+  if (desc_.debugName.empty()) {
+    ++bufferId;
   }
 
   // allocate local data for ring-buffer only if Vulkan Buffers are not mapped to the CPU
