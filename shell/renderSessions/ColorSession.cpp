@@ -63,7 +63,12 @@ BufferDesc getVertexBufferDesc(const igl::IDevice& device) {
         // @fb-only
   // @fb-only
 // @fb-only
-  return {BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData)};
+  return {BufferDesc::BufferTypeBits::Vertex,
+          vertexData,
+          sizeof(vertexData),
+          ResourceStorage::Invalid,
+          0,
+          "vertex"};
 }
 
 uint32_t getVertexBufferIndex(const igl::IDevice& device) {
@@ -382,7 +387,9 @@ void ColorSession::initialize() noexcept {
   const BufferDesc ibDesc = BufferDesc(BufferDesc::BufferTypeBits::Index,
                                        indexData,
                                        sizeof(indexData),
-                                       getIndexBufferResourceStorage(device));
+                                       getIndexBufferResourceStorage(device),
+                                       0,
+                                       "index");
   ib0_ = device.createBuffer(ibDesc, nullptr);
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
@@ -448,6 +455,7 @@ void ColorSession::initialize() noexcept {
   fpDesc.data = &fragmentParameters_;
   fpDesc.length = sizeof(fragmentParameters_);
   fpDesc.storage = ResourceStorage::Shared;
+  fpDesc.debugName = "uniforms";
 
   fragmentParamBuffer_ = device.createBuffer(fpDesc, nullptr);
   IGL_DEBUG_ASSERT(fragmentParamBuffer_ != nullptr);
