@@ -31,20 +31,23 @@ constexpr std::array<uint32_t, 16> kTexRgbaGray4x4 = {0x888888FF, 0x888888FF, 0x
                                                        0x888888FF, 0x888888FF, 0x888888FF, 0x888888FF,
                                                        0x888888FF, 0x888888FF, 0x888888FF, 0x888888FF};
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 constexpr std::array<uint32_t, 16> kTexRgbaRedAlpha128_4x4 = {0x80000080, 0x80000080, 0x80000080, 0x80000080,
-                                                              0x80000080, 0x80000080, 0x80000080, 0x80000080,
-                                                              0x80000080, 0x80000080, 0x80000080, 0x80000080,
-                                                              0x80000080, 0x80000080, 0x80000080, 0x80000080};
+                                                               0x80000080, 0x80000080, 0x80000080, 0x80000080,
+                                                               0x80000080, 0x80000080, 0x80000080, 0x80000080,
+                                                               0x80000080, 0x80000080, 0x80000080, 0x80000080};
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 constexpr std::array<uint32_t, 16> kTexRgbaBlueAlpha127_4x4 = {0x00007F7F, 0x00007F7F, 0x00007F7F, 0x00007F7F,
-                                                               0x00007F7F, 0x00007F7F, 0x00007F7F, 0x00007F7F,
-                                                               0x00007F7F, 0x00007F7F, 0x00007F7F, 0x00007F7F,
-                                                               0x00007F7F, 0x00007F7F, 0x00007F7F, 0x00007F7F};
+                                                                0x00007F7F, 0x00007F7F, 0x00007F7F, 0x00007F7F,
+                                                                0x00007F7F, 0x00007F7F, 0x00007F7F, 0x00007F7F,
+                                                                0x00007F7F, 0x00007F7F, 0x00007F7F, 0x00007F7F};
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 constexpr std::array<uint32_t, 16> kTexRgbaMisc1_4x4 = {0x00000000, 0x11111111, 0x22222222, 0x33333333,
-                                                        0x44444444, 0x55555555, 0x66666666, 0x77777777,
-                                                        0x88888888, 0x99999999, 0xAAAAAAAA, 0xBBBBBBBB,
-                                                        0xCCCCCCCC, 0xDDDDDDDD, 0xEEEEEEEE, 0xFFFFFFFF};
+                                                         0x44444444, 0x55555555, 0x66666666, 0x77777777,
+                                                         0x88888888, 0x99999999, 0xAAAAAAAA, 0xBBBBBBBB,
+                                                         0xCCCCCCCC, 0xDDDDDDDD, 0xEEEEEEEE, 0xFFFFFFFF};
 
 constexpr std::array<uint32_t, 25> kTexRgbaGray5x5 = {0x80808080, 0x80808080, 0x80808080, 0x80808080, 0x80808080,
                                                        0x80808080, 0x80808080, 0x80808080, 0x80808080, 0x80808080,
