@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <IGLU/uniform/Descriptor.h>
 #include <IGLU/uniform/Encoder.h>
+
+#include <IGLU/uniform/Descriptor.h>
 #include <igl/IGL.h> // IWYU pragma: keep
 
 namespace iglu::uniform {

@@ -9,7 +9,6 @@
 
 #include <set>
 #include <vector>
-
 #include <igl/vulkan/Common.h>
 
 namespace igl::vulkan {

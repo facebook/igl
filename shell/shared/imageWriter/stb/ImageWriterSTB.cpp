@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <shell/shared/imageWriter/stb/ImageWriterSTB.h>
+
 #include <limits>
 #include <shell/shared/imageLoader/ImageLoader.h>
-#include <shell/shared/imageWriter/stb/ImageWriterSTB.h>
 #include <string>
 #include <igl/IGL.h>
 #if defined(IGL_CMAKE_BUILD)

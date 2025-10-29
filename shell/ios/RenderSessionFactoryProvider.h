@@ -9,9 +9,9 @@
 
 // NOTE: This is a pure Obj-C compatible header (no C++) to simplify bridging with Swift
 
-#import <Foundation/NSObject.h>
-
 #import "RenderSessionFactoryAdapter.h"
+
+#import <Foundation/NSObject.h>
 
 typedef int IglBackendFlavor;
 typedef int IglOpenglRenderingAPI;

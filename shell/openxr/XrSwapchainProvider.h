@@ -12,7 +12,6 @@
 #include <shell/openxr/XrPlatform.h>
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
 #include <shell/shared/platform/Platform.h>
-
 #include <igl/Device.h>
 #include <igl/Texture.h>
 

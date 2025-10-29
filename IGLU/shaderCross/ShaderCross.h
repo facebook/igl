@@ -7,9 +7,8 @@
 
 #pragma once
 
-#include <igl/IGL.h>
-
 #include <string>
+#include <igl/IGL.h>
 
 namespace iglu {
 /// Wrapper for SPIR-V cross compiler to generate IGL-compatible shader sources for different

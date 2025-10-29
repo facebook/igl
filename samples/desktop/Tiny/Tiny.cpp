@@ -9,9 +9,8 @@
 
 #define GLFW_INCLUDE_NONE
 
-#include <igl/Config.h>
-
 #include <GLFW/glfw3.h>
+#include <igl/Config.h>
 
 #if defined(_XLESS_GLFW_)
 // do nothing
@@ -28,10 +27,8 @@
 #endif
 
 #include <GLFW/glfw3native.h>
-
 #include <cstdio>
 #include <regex>
-
 #include <stb/stb_image_write.h>
 #include <igl/IGL.h>
 

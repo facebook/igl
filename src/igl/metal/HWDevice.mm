@@ -8,7 +8,6 @@
 #include <igl/metal/HWDevice.h>
 
 #import <Foundation/Foundation.h>
-
 #import <Metal/Metal.h>
 #include <igl/Macros.h>
 #include <igl/metal/Device.h>

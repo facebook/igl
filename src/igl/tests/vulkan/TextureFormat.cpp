@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/vulkan/util/TextureFormat.h>
+
 #include <gtest/gtest.h>
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/util/TextureFormat.h>
 
 namespace igl::vulkan::tests {
 TEST(TextureFormatUtilTest, invertRedAndBlue) {

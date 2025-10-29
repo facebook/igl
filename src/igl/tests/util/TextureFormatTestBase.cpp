@@ -6,6 +6,7 @@
  */
 
 #include "TextureFormatTestBase.h"
+
 #include "../data/ShaderData.h"
 #include "../data/VertexIndexData.h"
 #include "Common.h"

@@ -7,10 +7,9 @@
 
 #pragma once
 
+#import <Foundation/Foundation.h>
 #include <shell/shared/netservice/NetServiceExtension.h>
 #include <igl/Common.h>
-
-#import <Foundation/Foundation.h>
 
 namespace igl::shell::netservice {
 

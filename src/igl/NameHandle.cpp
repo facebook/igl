@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/Macros.h>
 #include <igl/NameHandle.h>
 
 #include <functional>
 #include <string>
+#include <igl/Macros.h>
 
 namespace igl {
 namespace {

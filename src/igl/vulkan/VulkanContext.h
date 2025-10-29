@@ -11,7 +11,6 @@
 #include <future>
 #include <memory>
 #include <unordered_map>
-
 #include <igl/CommandEncoder.h>
 #include <igl/HWDevice.h>
 #include <igl/vulkan/Common.h>

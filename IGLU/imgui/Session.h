@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "imgui.h"
+
 #include <IGLU/imgui/InputListener.h>
 #include <memory>
 #include <shell/shared/input/InputDispatcher.h>
@@ -17,8 +19,6 @@
 #include <igl/Device.h>
 #include <igl/Framebuffer.h>
 #include <igl/RenderCommandEncoder.h>
-
-#include "imgui.h"
 
 namespace iglu::imgui {
 

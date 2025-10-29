@@ -8,7 +8,6 @@
 #pragma once
 
 #include <shell/shared/renderSession/RenderSessionLoader.hpp>
-
 #include <string>
 #include <unordered_map>
 

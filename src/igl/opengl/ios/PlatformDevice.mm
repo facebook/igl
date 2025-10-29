@@ -9,14 +9,10 @@
 
 #include <CoreVideo/CVBuffer.h>
 #include <CoreVideo/CVOpenGLESTextureCache.h>
-
 #import <Foundation/Foundation.h>
-
 #include <OpenGLES/EAGL.h>
 #import <OpenGLES/ES2/glext.h>
-
 #import <QuartzCore/QuartzCore.h>
-
 #include <cstdio>
 #include <cstring>
 #import <objc/runtime.h>

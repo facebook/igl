@@ -9,10 +9,9 @@
 
 #include <functional>
 #include <memory>
-#include <string_view>
-
 #include <shell/shared/extension/Extension.h>
 #include <shell/shared/netservice/NetService.h>
+#include <string_view>
 
 namespace igl::shell::netservice {
 

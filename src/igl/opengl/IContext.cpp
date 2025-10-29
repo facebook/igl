@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/DeviceFeatures.h>
 #include <igl/opengl/IContext.h>
 
 #include <cstring>
 #include <string>
+#include <igl/DeviceFeatures.h>
 #include <igl/opengl/GLFunc.h>
 #include <igl/opengl/GLIncludes.h>
 

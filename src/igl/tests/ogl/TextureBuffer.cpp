@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/opengl/TextureBuffer.h>
+
 #include "../util/TestDevice.h"
 
 #include <cmath>
@@ -12,7 +14,6 @@
 #include <string>
 #include <igl/opengl/CommandQueue.h>
 #include <igl/opengl/Device.h>
-#include <igl/opengl/TextureBuffer.h>
 
 namespace igl::tests {
 

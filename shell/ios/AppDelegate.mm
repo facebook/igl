@@ -9,10 +9,10 @@
 
 #import "AppDelegate.h"
 
+#include "RenderSessionFactoryAdapterInternal.hpp"
 #import "RenderSessionFactoryProvider.h"
 #import "ViewController.h"
 
-#include "RenderSessionFactoryAdapterInternal.hpp"
 #include <igl/Macros.h>
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/GLIncludes.h>

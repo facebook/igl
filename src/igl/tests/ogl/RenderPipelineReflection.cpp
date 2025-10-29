@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/opengl/RenderPipelineReflection.h>
+
 #include "../data/ShaderData.h"
 #include "../util/Common.h"
 
@@ -12,7 +14,6 @@
 #include <igl/Device.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/VertexInputState.h>
-#include <igl/opengl/RenderPipelineReflection.h>
 
 namespace igl::tests {
 

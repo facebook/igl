@@ -7,12 +7,9 @@
 
 #include <igl/metal/PlatformDevice.h>
 
-#import <QuartzCore/CAMetalLayer.h>
-
 #import <Foundation/Foundation.h>
-
+#import <QuartzCore/CAMetalLayer.h>
 #import <QuartzCore/QuartzCore.h>
-
 #include <igl/metal/DepthStencilState.h>
 #include <igl/metal/Device.h>
 #include <igl/metal/Framebuffer.h>

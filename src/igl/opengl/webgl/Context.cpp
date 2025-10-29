@@ -7,8 +7,9 @@
 
 // @fb-only
 
-#include <igl/opengl/Texture.h>
 #include <igl/opengl/webgl/Context.h>
+
+#include <igl/opengl/Texture.h>
 
 namespace igl::opengl::webgl {
 

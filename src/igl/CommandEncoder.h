@@ -9,7 +9,6 @@
 
 #include <memory>
 #include <string>
-
 #include <igl/Common.h>
 
 namespace igl {

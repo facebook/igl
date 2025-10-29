@@ -8,7 +8,6 @@
 #include <igl/opengl/ios/Context.h>
 
 #import <Foundation/NSValue.h>
-
 #include <OpenGLES/EAGL.h>
 #include <QuartzCore/CAEAGLLayer.h>
 #import <objc/runtime.h>

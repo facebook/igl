@@ -10,6 +10,7 @@
 #import "RenderSessionFactoryProvider.h"
 
 #import "RenderSessionFactoryAdapterInternal.hpp"
+
 #include <memory>
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 

@@ -7,13 +7,12 @@
 
 #include <igl/opengl/Framebuffer.h>
 
+#include <algorithm>
 #include <cstdlib>
 #include <igl/RenderPass.h>
 #include <igl/opengl/DeviceFeatureSet.h>
 #include <igl/opengl/DummyTexture.h>
 #include <igl/opengl/GLIncludes.h>
-
-#include <algorithm>
 #if !IGL_PLATFORM_ANDROID
 #include <string>
 #else

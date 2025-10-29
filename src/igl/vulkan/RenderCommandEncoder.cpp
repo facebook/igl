@@ -8,7 +8,6 @@
 #include <igl/vulkan/RenderCommandEncoder.h>
 
 #include <algorithm>
-
 #include <igl/IGLSafeC.h>
 #include <igl/RenderPass.h>
 #include <igl/vulkan/Buffer.h>

@@ -9,9 +9,8 @@
 
 #define IGL_VULKAN_HAS_LEGACY_RENDERPASS 1
 
-#include <igl/vulkan/Common.h>
-
 #include <vector>
+#include <igl/vulkan/Common.h>
 
 bool operator==(const VkAttachmentDescription2& a, const VkAttachmentDescription2& b);
 bool operator==(const VkAttachmentReference2& a, const VkAttachmentReference2& b);

@@ -7,9 +7,10 @@
 
 // @fb-only
 
+#include <igl/opengl/webgl/HWDevice.h>
+
 #include <igl/opengl/webgl/Context.h>
 #include <igl/opengl/webgl/Device.h>
-#include <igl/opengl/webgl/HWDevice.h>
 
 namespace igl::opengl::webgl {
 

@@ -12,6 +12,7 @@
 #import "IglShellPlatformAdapterInternal.hpp"
 #import "IglSurfaceTexturesAdapterInternal.hpp"
 #import "RenderSessionFactoryAdapterInternal.hpp"
+
 #import <QuartzCore/CADisplayLink.h>
 #import <UIKit/UIKit.h>
 #import <shell/shared/input/InputDispatcher.h>

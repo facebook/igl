@@ -8,7 +8,6 @@
 #include "RenderPipelineReflection.h"
 
 #include <Foundation/Foundation.h>
-
 #include <igl/Common.h>
 #include <igl/metal/Texture.h>
 

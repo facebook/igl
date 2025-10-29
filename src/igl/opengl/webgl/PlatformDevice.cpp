@@ -7,11 +7,12 @@
 
 // @fb-only
 
+#include <igl/opengl/webgl/PlatformDevice.h>
+
 #include <igl/opengl/TextureBuffer.h>
 #include <igl/opengl/ViewTextureTarget.h>
 #include <igl/opengl/webgl/Context.h>
 #include <igl/opengl/webgl/Device.h>
-#include <igl/opengl/webgl/PlatformDevice.h>
 
 namespace igl::opengl::webgl {
 

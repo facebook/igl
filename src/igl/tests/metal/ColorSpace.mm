@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <gtest/gtest.h>
 #include <igl/metal/ColorSpace.h>
+
+#include <gtest/gtest.h>
 
 namespace igl::metal::tests {
 TEST(ColorSpaceTest, colorSpaceToCGColorSpace) {

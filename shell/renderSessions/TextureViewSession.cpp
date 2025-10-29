@@ -7,8 +7,9 @@
 
 // @MARK:COVERAGE_EXCLUDE_FILE
 
-#include <cstddef>
 #include <shell/renderSessions/TextureViewSession.h>
+
+#include <cstddef>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/Device.h>

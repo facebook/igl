@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/opengl/Buffer.h>
 #include <igl/opengl/UniformAdapter.h>
+
+#include <igl/opengl/Buffer.h>
 #include <igl/opengl/UniformBuffer.h>
 
 namespace igl::opengl {

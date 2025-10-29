@@ -8,6 +8,7 @@
 // @MARK:COVERAGE_EXCLUDE_FILE
 
 #include "ParametricVertexData.h"
+
 #include <array>
 
 namespace iglu::vertexdata {

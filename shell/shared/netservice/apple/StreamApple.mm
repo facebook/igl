@@ -9,9 +9,8 @@
 
 #include <shell/shared/netservice/apple/StreamApple.h>
 
-#include <igl/Core.h>
-
 #import <Foundation/Foundation.h>
+#include <igl/Core.h>
 
 // ----------------------------------------------------------------------------
 

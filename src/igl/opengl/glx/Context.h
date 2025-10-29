@@ -7,13 +7,11 @@
 
 #pragma once
 
-#include <igl/opengl/GLIncludes.h>
-#include <igl/opengl/IContext.h>
-
 #include <X11/Xlib.h>
-
 #include <cstdint>
 #include <memory>
+#include <igl/opengl/GLIncludes.h>
+#include <igl/opengl/IContext.h>
 
 namespace igl::opengl::glx {
 

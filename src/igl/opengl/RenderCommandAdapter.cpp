@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/Common.h>
 #include <igl/opengl/RenderCommandAdapter.h>
 
 #include <algorithm>
+#include <igl/Common.h>
 #include <igl/RenderCommandEncoder.h>
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/DepthStencilState.h>

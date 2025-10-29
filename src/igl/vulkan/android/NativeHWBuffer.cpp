@@ -14,7 +14,6 @@
 
 #include <android/hardware_buffer.h>
 #include <vulkan/vulkan_android.h>
-
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>

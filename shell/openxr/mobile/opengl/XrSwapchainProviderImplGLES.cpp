@@ -10,14 +10,11 @@
 #include <shell/openxr/mobile/opengl/XrSwapchainProviderImplGLES.h>
 
 #include <algorithm>
-
+#include <iterator>
+#include <shell/openxr/XrLog.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/PlatformDevice.h>
 #include <igl/opengl/TextureBufferExternal.h>
-
-#include <shell/openxr/XrLog.h>
-
-#include <iterator>
 
 namespace igl::shell::openxr::mobile {
 namespace {

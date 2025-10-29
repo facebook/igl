@@ -15,7 +15,6 @@
 #include <memory>
 #include <optional>
 #include <vector>
-
 #include <igl/opengl/IContext.h>
 
 namespace igl::opengl::egl {

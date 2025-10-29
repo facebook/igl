@@ -6,7 +6,6 @@
  */
 
 #import <AppKit/AppKit.h>
-
 #include <memory>
 #include <shell/shared/platform/Platform.h>
 

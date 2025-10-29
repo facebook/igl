@@ -5,11 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <gtest/gtest.h>
-
 #include <IGLU/texture_loader/stb_hdr/Header.h>
 #include <IGLU/texture_loader/stb_hdr/TextureLoaderFactory.h>
 #include <cstring>
+#include <gtest/gtest.h>
 
 namespace igl::tests::stb::hdr {
 

@@ -9,13 +9,11 @@
 
 #include <igl/opengl/glx/Context.h>
 
-#include <igl/Texture.h>
-
 #include <X11/X.h>
 #include <dlfcn.h>
-
 #include <string>
 #include <vector>
+#include <igl/Texture.h>
 
 namespace {
 

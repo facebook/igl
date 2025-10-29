@@ -6,6 +6,7 @@
  */
 
 #include "TextureAccessorFactory.h"
+
 #include "ITextureAccessor.h"
 #if IGL_BACKEND_OPENGL
 #include "OpenGLTextureAccessor.h"

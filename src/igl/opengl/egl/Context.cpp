@@ -10,12 +10,11 @@
 #include <igl/opengl/egl/Context.h>
 
 #include <EGL/egl.h>
-#include <igl/opengl/HWDevice.h>
-
 #include <array>
 #include <tuple>
 #include <igl/Macros.h>
 #include <igl/Texture.h>
+#include <igl/opengl/HWDevice.h>
 
 #define CHECK_EGL_ERRORS() error_checking::checkForEGLErrors(__FILE__, __FUNCTION__, __LINE__)
 

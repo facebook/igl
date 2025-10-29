@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/opengl/ComputePipelineState.h>
+
 #include <igl/NameHandle.h>
 #include <igl/opengl/Buffer.h>
-#include <igl/opengl/ComputePipelineState.h>
 #include <igl/opengl/Texture.h>
 
 namespace igl::opengl {

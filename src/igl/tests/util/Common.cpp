@@ -9,6 +9,7 @@
 
 #include "../data/ShaderData.h"
 #include "TestDevice.h"
+
 #include <gtest/gtest.h>
 #include <igl/ShaderCreator.h>
 

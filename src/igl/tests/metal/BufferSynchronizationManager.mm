@@ -6,12 +6,12 @@
  */
 
 #include <igl/metal/BufferSynchronizationManager.h>
-#include <igl/metal/CommandBuffer.h>
 
 #include "../util/Common.h"
 
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
+#include <igl/metal/CommandBuffer.h>
 
 namespace igl::tests {
 

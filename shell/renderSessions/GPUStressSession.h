@@ -9,12 +9,11 @@
 
 #pragma once
 
-#include <shell/shared/renderSession/RenderSession.h>
-
 #include <IGLU/imgui/Session.h>
 #include <atomic>
 #include <glm/glm.hpp>
 #include <shell/shared/platform/Platform.h>
+#include <shell/shared/renderSession/RenderSession.h>
 #include <igl/FPSCounter.h>
 #include <igl/IGL.h>
 

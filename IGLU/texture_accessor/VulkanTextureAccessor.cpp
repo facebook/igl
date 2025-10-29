@@ -6,6 +6,7 @@
  */
 
 #include "VulkanTextureAccessor.h"
+
 #include "ITextureAccessor.h"
 #if IGL_BACKEND_VULKAN
 #include <igl/vulkan/Texture.h>

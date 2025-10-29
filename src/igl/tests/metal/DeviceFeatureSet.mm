@@ -7,9 +7,8 @@
 
 #include <igl/metal/DeviceFeatureSet.h>
 
-#include <igl/Assert.h>
-
 #include <gtest/gtest.h>
+#include <igl/Assert.h>
 #include <igl/DeviceFeatures.h>
 
 namespace igl::tests {

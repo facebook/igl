@@ -9,12 +9,10 @@
 
 #pragma once
 
+#include <glm/glm.hpp>
 #include <memory>
 #include <string>
 #include <unordered_map>
-
-#include <glm/glm.hpp>
-
 #include <igl/RenderPass.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/ResourcesBinder.h>

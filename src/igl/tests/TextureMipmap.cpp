@@ -6,7 +6,6 @@
  */
 
 #include "Texture.h"
-
 #include "util/TextureValidationHelpers.h"
 
 #include <cstddef>

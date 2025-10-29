@@ -7,12 +7,11 @@
 
 #pragma once
 
-#include <igl/Device.h>
-#include <igl/Shader.h>
-
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <igl/Device.h>
+#include <igl/Shader.h>
 
 namespace igl::shell {
 

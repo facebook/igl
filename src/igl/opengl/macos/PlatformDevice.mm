@@ -8,12 +8,13 @@
 // @fb-only
 // @fb-only
 
+#include <igl/opengl/macos/PlatformDevice.h>
+
 #import <AppKit/NSOpenGL.h>
 #import <AppKit/NSView.h> // IWYU pragma: keep
-#import <Foundation/NSGeometry.h>
-
 #include <CoreVideo/CVOpenGLTextureCache.h>
 #include <CoreVideo/CoreVideo.h>
+#import <Foundation/NSGeometry.h>
 #include <cstdio>
 #include <cstring>
 #include <igl/Common.h>
@@ -21,7 +22,6 @@
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/ViewTextureTarget.h>
 #include <igl/opengl/macos/Device.h>
-#include <igl/opengl/macos/PlatformDevice.h>
 #include <igl/opengl/macos/TextureBuffer.h>
 
 namespace igl::opengl::macos {

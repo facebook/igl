@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <shell/shared/renderSession/ShellParams.h>
+
 #include <cstdio>
 #include <cstring>
-#include <shell/shared/renderSession/ShellParams.h>
 #include <string>
 #include <vector>
 

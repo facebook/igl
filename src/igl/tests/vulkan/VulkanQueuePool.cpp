@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/vulkan/VulkanQueuePool.h>
+
 #include <gtest/gtest.h>
 #include <igl/Macros.h>
-#include <igl/vulkan/VulkanQueuePool.h>
 
 namespace igl::vulkan {
 IGL_MAYBE_UNUSED static std::ostream& operator<<(std::ostream& os,

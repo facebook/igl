@@ -6,8 +6,8 @@
  */
 
 #include "TestDevice.h"
-#include <igl/Device.h>
 
+#include <igl/Device.h>
 #include <igl/tests/util/device/TestDevice.h>
 
 namespace igl::tests::util {

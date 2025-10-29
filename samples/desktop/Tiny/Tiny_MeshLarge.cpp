@@ -19,32 +19,28 @@
 #if !defined(_USE_MATH_DEFINES)
 #define _USE_MATH_DEFINES
 #endif // _USE_MATH_DEFINES
+#include <Compress.h>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
-#include <mutex>
-#include <thread>
-
-#include <igl/FPSCounter.h>
-#include <igl/IGL.h>
-#include <igl/vulkan/util/TextureFormat.h>
-
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
-
 #include <ktx.h>
-
-#include <Compress.h>
 #include <meshoptimizer.h>
+#include <mutex>
 #include <shared/Camera.h>
 #include <shared/UtilsCubemap.h>
 #include <stb/stb_image.h>
 #include <stb/stb_image_resize.h>
 #include <taskflow/taskflow.hpp>
+#include <thread>
 #include <tiny_obj_loader.h>
+#include <igl/FPSCounter.h>
+#include <igl/IGL.h>
+#include <igl/vulkan/util/TextureFormat.h>
 
 #define USE_TEXTURE_LOADER 0
 #define USE_OPENGL_BACKEND 0

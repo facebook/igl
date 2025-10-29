@@ -7,14 +7,14 @@
 
 // @fb-only
 
-#include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 #include <shell/renderSessions/Textured3DCubeSession.h>
+
+#include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
+#include <cstddef>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/Version.h> // IWYU pragma: keep
-
-#include <cstddef>
 
 namespace igl::shell {
 

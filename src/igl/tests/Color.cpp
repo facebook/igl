@@ -6,6 +6,7 @@
  */
 
 #include "util/Color.h"
+
 #include <gtest/gtest.h>
 #include <igl/Color.h>
 

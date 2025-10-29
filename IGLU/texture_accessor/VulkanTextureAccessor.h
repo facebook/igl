@@ -8,6 +8,7 @@
 #pragma once
 
 #include "ITextureAccessor.h"
+
 #include <igl/CommandQueue.h>
 #include <igl/IGL.h>
 #include <igl/Texture.h>

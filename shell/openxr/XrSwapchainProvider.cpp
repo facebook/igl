@@ -7,14 +7,13 @@
 
 // @fb-only
 
-#include <cstdint>
-#include <igl/Core.h>
-
-#include <shell/openxr/XrLog.h>
 #include <shell/openxr/XrSwapchainProvider.h>
-#include <shell/openxr/impl/XrSwapchainProviderImpl.h>
 
 #include <algorithm>
+#include <cstdint>
+#include <shell/openxr/XrLog.h>
+#include <shell/openxr/impl/XrSwapchainProviderImpl.h>
+#include <igl/Core.h>
 
 namespace igl::shell::openxr {
 namespace {

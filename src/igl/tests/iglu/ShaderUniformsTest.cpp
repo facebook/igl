@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "../util/Common.h"
-
 #include <IGLU/simple_renderer/ShaderUniforms.h>
+
+#include "../util/Common.h"
 
 namespace igl::tests {
 

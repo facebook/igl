@@ -7,15 +7,15 @@
 
 // @fb-only
 
-#include <IGLU/shaderCross/ShaderCross.h>
-#include <IGLU/shaderCross/ShaderCrossUniformBuffer.h>
+#include <shell/renderSessions/HelloOpenXRSession.h>
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <glm/detail/qualifier.hpp>
-#include <shell/renderSessions/HelloOpenXRSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <IGLU/shaderCross/ShaderCross.h>
+#include <IGLU/shaderCross/ShaderCrossUniformBuffer.h>
 #include <igl/Device.h>
 #include <igl/NameHandle.h>
 #include <igl/RenderCommandEncoder.h>

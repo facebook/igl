@@ -10,7 +10,6 @@
 #pragma once
 
 #include <glslang/Include/glslang_c_interface.h>
-
 #include <igl/Macros.h>
 #include <igl/vulkan/VulkanFunctionTable.h>
 #include <igl/vulkan/VulkanVma.h>

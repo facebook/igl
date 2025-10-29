@@ -6,7 +6,9 @@
  */
 
 #include "MetalTextureAccessor.h"
+
 #include "ITextureAccessor.h"
+
 #include <igl/Buffer.h>
 #include <igl/Texture.h>
 #include <igl/metal/Buffer.h>

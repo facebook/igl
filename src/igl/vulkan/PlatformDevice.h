@@ -8,7 +8,6 @@
 #pragma once
 
 #include <future>
-
 #include <igl/PlatformDevice.h>
 #include <igl/Texture.h>
 #include <igl/vulkan/Common.h>

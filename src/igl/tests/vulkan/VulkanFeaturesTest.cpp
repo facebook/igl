@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/vulkan/VulkanFeatures.h>
+
 #include <gtest/gtest.h>
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/VulkanFeatures.h>
 
 namespace igl::tests {
 

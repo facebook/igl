@@ -31,6 +31,7 @@
 
 // clang-format on
 #include "AutoContextReleaseDevice.h"
+
 #include <memory>
 #include <shell/shared/platform/win/PlatformWin.h>
 #include <shell/windows/common/GlfwShell.h>

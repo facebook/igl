@@ -7,14 +7,12 @@
 
 #include <IGLU/shaderCross/ShaderCross.h>
 
-#include <igl/glslang/GlslCompiler.h>
-#include <igl/glslang/GlslangHelpers.h>
-
+#include <algorithm>
 #include <spirv_glsl.hpp>
 #include <spirv_msl.hpp>
-
-#include <algorithm>
 #include <vector>
+#include <igl/glslang/GlslCompiler.h>
+#include <igl/glslang/GlslangHelpers.h>
 
 namespace iglu {
 

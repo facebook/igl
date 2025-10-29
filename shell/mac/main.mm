@@ -6,7 +6,6 @@
  */
 
 #import <AppKit/NSApplication.h>
-
 #import <shell/shared/platform/Platform.h>
 
 int main(int argc, char* argv[]) {

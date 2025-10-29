@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include "VulkanBuffer.h"
+
 #include <igl/IGLSafeC.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
-
-#include "VulkanBuffer.h"
 
 namespace igl::vulkan {
 

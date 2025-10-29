@@ -7,9 +7,9 @@
 
 #include <igl/vulkan/util/SpvReflection.h>
 
-#include <gtest/gtest.h>
-
 #include "../util/SpvModules.h"
+
+#include <gtest/gtest.h>
 
 namespace igl::tests {
 

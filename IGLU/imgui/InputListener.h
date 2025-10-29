@@ -9,11 +9,11 @@
 
 #pragma once
 
+#include "imgui.h"
+
 #include <shell/shared/input/InputDispatcher.h> // IWYU pragma: export
 #include <shell/shared/input/KeyListener.h>
 #include <shell/shared/input/MouseListener.h>
-
-#include "imgui.h"
 
 namespace iglu::imgui {
 

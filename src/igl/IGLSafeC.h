@@ -13,7 +13,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-
 #include <igl/Common.h>
 
 #define ERR_POTENTIAL_BUFFER_OVERFLOW 34 // matches with ERANGE in errno.h

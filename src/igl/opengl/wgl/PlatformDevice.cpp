@@ -8,11 +8,12 @@
 // @fb-only
 // @fb-only
 
+#include <igl/opengl/wgl/PlatformDevice.h>
+
 #include <igl/opengl/TextureBuffer.h>
 #include <igl/opengl/ViewTextureTarget.h>
 #include <igl/opengl/wgl/Context.h>
 #include <igl/opengl/wgl/Device.h>
-#include <igl/opengl/wgl/PlatformDevice.h>
 
 namespace igl {
 namespace opengl {

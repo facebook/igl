@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/vulkan/Device.h>
 #include <igl/vulkan/SamplerState.h>
+
+#include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
 
 #define IGL_VULKAN_DEBUG_SAMPLER_STATE 1

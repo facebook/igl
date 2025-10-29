@@ -7,10 +7,9 @@
 
 #pragma once
 
+#include <array>
 #include <shell/openxr/XrPlatform.h>
 #include <shell/shared/renderSession/Hands.h>
-
-#include <array>
 #include <vector>
 
 namespace igl::shell::openxr {

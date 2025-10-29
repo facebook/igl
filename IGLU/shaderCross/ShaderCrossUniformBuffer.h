@@ -8,7 +8,6 @@
 #pragma once
 
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
-
 #include <string>
 
 namespace iglu {

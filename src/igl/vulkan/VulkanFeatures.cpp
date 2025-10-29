@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanFeatures.h>
+
+#include <igl/vulkan/VulkanContext.h>
 
 namespace igl::vulkan {
 

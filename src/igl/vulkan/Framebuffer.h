@@ -8,7 +8,6 @@
 #pragma once
 
 #include <unordered_map>
-
 #include <igl/Framebuffer.h>
 #include <igl/vulkan/Common.h>
 

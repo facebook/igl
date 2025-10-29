@@ -7,12 +7,12 @@
 
 // @fb-only
 
-#include <igl/NameHandle.h>
+#include <shell/renderSessions/MRTSession.h>
 
 #include <IGLU/simdtypes/SimdTypes.h>
-#include <shell/renderSessions/MRTSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/CommandBuffer.h>
+#include <igl/NameHandle.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/SamplerState.h>
 #include <igl/ShaderCreator.h>

@@ -7,8 +7,9 @@
 
 // @fb-only
 
-#include <IGLU/simdtypes/SimdTypes.h>
 #include <shell/renderSessions/TQSession.h>
+
+#include <IGLU/simdtypes/SimdTypes.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>

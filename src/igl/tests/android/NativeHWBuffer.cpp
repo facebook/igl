@@ -7,14 +7,7 @@
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
-#include <android/hardware_buffer.h>
-#include <gtest/gtest.h>
-
 #include <igl/android/NativeHWBuffer.h>
-#include <igl/opengl/Device.h>
-#include <igl/opengl/egl/PlatformDevice.h>
-#include <igl/vulkan/Device.h>
-#include <igl/vulkan/PlatformDevice.h>
 
 #include "../data/ShaderData.h"
 #include "../data/TextureData.h"
@@ -22,6 +15,13 @@
 #include "../util/Common.h"
 #include "../util/TextureValidationHelpers.h"
 #include "../util/device/TestDevice.h"
+
+#include <android/hardware_buffer.h>
+#include <gtest/gtest.h>
+#include <igl/opengl/Device.h>
+#include <igl/opengl/egl/PlatformDevice.h>
+#include <igl/vulkan/Device.h>
+#include <igl/vulkan/PlatformDevice.h>
 
 namespace igl::tests {
 

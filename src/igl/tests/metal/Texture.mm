@@ -5,14 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/metal/Texture.h>
+
 #include "../util/Common.h"
 #include "../util/TextureFormatTestBase.h"
-#include <igl/metal/CommandBuffer.h>
-#include <igl/metal/PlatformDevice.h>
-#include <igl/metal/Texture.h>
 
 #include <gtest/gtest.h>
 #include <utility>
+#include <igl/metal/CommandBuffer.h>
+#include <igl/metal/PlatformDevice.h>
 
 namespace igl::tests {
 

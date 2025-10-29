@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/IGLSafeC.h>
 #include <igl/metal/Buffer.h>
+
+#include <igl/IGLSafeC.h>
 #include <igl/metal/BufferSynchronizationManager.h>
 
 namespace {

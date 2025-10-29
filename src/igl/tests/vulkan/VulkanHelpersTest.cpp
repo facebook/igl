@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/vulkan/VulkanHelpers.h>
+
 #include <array>
 #include <gtest/gtest.h>
 #include <string>
-#include <igl/vulkan/VulkanHelpers.h>
 
 namespace igl::tests {
 

@@ -6,6 +6,7 @@
  */
 
 #include "../../util/TextureFormatTestBase.h"
+
 #include <CoreVideo/CVPixelBuffer.h>
 #include <gtest/gtest.h>
 #include <igl/Common.h>

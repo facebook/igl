@@ -10,13 +10,11 @@
 #include <igl/vulkan/EnhancedShaderDebuggingStore.h>
 
 #include <algorithm>
-
 #include <igl/Framebuffer.h>
 #include <igl/NameHandle.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/Shader.h>
 #include <igl/ShaderCreator.h>
-
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/CommandQueue.h>

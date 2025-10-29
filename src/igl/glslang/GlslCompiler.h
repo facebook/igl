@@ -8,11 +8,9 @@
 #pragma once
 
 #include <glslang/Include/glslang_c_interface.h>
-
+#include <vector>
 #include <igl/Common.h>
 #include <igl/Shader.h>
-
-#include <vector>
 
 namespace igl::glslang {
 

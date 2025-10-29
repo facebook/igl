@@ -8,7 +8,6 @@
 #include <igl/metal/CommandQueue.h>
 
 #include <Foundation/Foundation.h>
-
 #include <igl/metal/BufferSynchronizationManager.h>
 #include <igl/metal/CommandBuffer.h>
 #include <igl/metal/DeviceStatistics.h>

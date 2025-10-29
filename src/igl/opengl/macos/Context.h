@@ -7,11 +7,9 @@
 
 #pragma once
 
-#include <CoreVideo/CoreVideo.h>
-
 #include <AppKit/AppKit.h>
-
 #include <CoreVideo/CVOpenGLTextureCache.h>
+#include <CoreVideo/CoreVideo.h>
 #include <igl/opengl/IContext.h>
 
 @class NSOpenGLContext;

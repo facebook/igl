@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/opengl/WithContext.h>
+
 #include <igl/Core.h>
 #include <igl/opengl/IContext.h>
-#include <igl/opengl/WithContext.h>
 
 namespace igl::opengl {
 

@@ -10,6 +10,7 @@
 #include <jni.h>
 
 #include "TinyRenderer.h"
+
 #include <memory>
 
 namespace igl_samples::android {

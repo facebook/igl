@@ -8,7 +8,6 @@
 #pragma once
 
 #include <vector>
-
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanFence.h>
 #include <igl/vulkan/VulkanHelpers.h>

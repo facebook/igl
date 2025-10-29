@@ -9,12 +9,11 @@
 
 #include <array>
 #include <optional>
-#include <string>
-#include <vector>
-
 #include <shell/shared/renderSession/Hands.h>
 #include <shell/shared/renderSession/RenderMode.h>
 #include <shell/shared/renderSession/ViewParams.h>
+#include <string>
+#include <vector>
 #include <igl/ColorSpace.h>
 #include <igl/Common.h>
 #include <igl/TextureFormat.h>

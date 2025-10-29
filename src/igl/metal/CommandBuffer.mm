@@ -8,7 +8,6 @@
 #include <igl/metal/CommandBuffer.h>
 
 #import <Foundation/NSString.h>
-
 #import <Metal/Metal.h>
 #include <igl/metal/Buffer.h>
 #include <igl/metal/ComputeCommandEncoder.h>

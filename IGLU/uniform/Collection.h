@@ -8,11 +8,10 @@
 #pragma once
 
 #include <IGLU/uniform/Descriptor.h>
-#include <igl/Common.h>
-#include <igl/NameHandle.h>
-
 #include <memory>
 #include <unordered_map>
+#include <igl/Common.h>
+#include <igl/NameHandle.h>
 
 namespace iglu::uniform {
 

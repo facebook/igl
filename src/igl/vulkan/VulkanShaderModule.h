@@ -9,7 +9,6 @@
 
 #include <memory>
 #include <vector>
-
 #include <igl/vulkan/VulkanFunctionTable.h>
 #include <igl/vulkan/util/SpvReflection.h>
 

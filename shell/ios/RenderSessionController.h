@@ -9,13 +9,13 @@
 
 // NOTE: This is a pure Obj-C compatible header (no C++) to simplify bridging with Swift
 
-#import <CoreGraphics/CGGeometry.h>
-#import <Foundation/NSObject.h>
-
 #import "BackendVersion.h"
 #import "IglShellPlatformAdapter.h"
 #import "IglSurfaceTexturesAdapter.h"
 #import "RenderSessionFactoryProvider.h"
+
+#import <CoreGraphics/CGGeometry.h>
+#import <Foundation/NSObject.h>
 
 typedef int IglBackendFlavor;
 typedef int IglOpenglRenderingAPI;

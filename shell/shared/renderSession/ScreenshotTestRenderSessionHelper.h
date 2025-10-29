@@ -7,9 +7,8 @@
 
 #pragma once
 
-#include <shell/shared/platform/Platform.h>
-
 #include <memory>
+#include <shell/shared/platform/Platform.h>
 
 namespace igl {
 class IFramebuffer;

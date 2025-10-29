@@ -6,6 +6,7 @@
  */
 
 #include "OpenGLTextureAccessor.h"
+
 #include "ITextureAccessor.h"
 
 #if IGL_BACKEND_OPENGL

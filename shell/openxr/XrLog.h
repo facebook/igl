@@ -8,7 +8,6 @@
 #pragma once
 
 #include <openxr/openxr.h>
-
 #include <igl/Config.h>
 
 namespace igl::shell::openxr {

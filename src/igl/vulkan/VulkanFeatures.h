@@ -8,7 +8,6 @@
 #pragma once
 
 #include <unordered_set>
-
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 

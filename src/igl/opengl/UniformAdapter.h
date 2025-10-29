@@ -7,12 +7,11 @@
 
 #pragma once
 
-#include <igl/Buffer.h>
-#include <igl/Uniform.h>
-
 #include <array>
 #include <unordered_map>
 #include <vector>
+#include <igl/Buffer.h>
+#include <igl/Uniform.h>
 
 namespace igl::opengl {
 class IContext;

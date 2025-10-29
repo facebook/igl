@@ -5,20 +5,20 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <gtest/gtest.h>
-
-#include <igl/CommandBuffer.h>
-#include <igl/RenderCommandEncoder.h>
-#include <igl/RenderPass.h>
-#include <igl/RenderPipelineState.h>
-#include <igl/ShaderCreator.h>
-#include <igl/VertexInputState.h>
 #include <igl/opengl/Device.h>
 
 #include "../data/ShaderData.h"
 #include "../util/Common.h"
 #include "../util/TestDevice.h"
 #include "../util/TestErrorGuard.h"
+
+#include <gtest/gtest.h>
+#include <igl/CommandBuffer.h>
+#include <igl/RenderCommandEncoder.h>
+#include <igl/RenderPass.h>
+#include <igl/RenderPipelineState.h>
+#include <igl/ShaderCreator.h>
+#include <igl/VertexInputState.h>
 
 namespace igl::tests {
 

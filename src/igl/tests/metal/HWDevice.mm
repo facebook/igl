@@ -8,10 +8,10 @@
 #include <igl/metal/HWDevice.h>
 
 #include "../util/TestDevice.h"
-#include <igl/Assert.h>
 
 #include <gtest/gtest.h>
 #include <memory>
+#include <igl/Assert.h>
 #include <igl/IGL.h>
 
 namespace igl::tests {

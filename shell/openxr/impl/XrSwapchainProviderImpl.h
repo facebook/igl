@@ -7,14 +7,12 @@
 
 #pragma once
 
-#include <shell/openxr/XrPlatform.h>
-
-#include <igl/Device.h>
-#include <igl/Texture.h>
-
 #include <cstdint>
 #include <memory>
+#include <shell/openxr/XrPlatform.h>
 #include <vector>
+#include <igl/Device.h>
+#include <igl/Texture.h>
 
 namespace igl::shell::openxr::impl {
 constexpr int64_t kSwapchainImageInvalidFormat = -1;

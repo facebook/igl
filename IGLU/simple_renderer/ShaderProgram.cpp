@@ -10,7 +10,6 @@
 #include "ShaderProgram.h"
 
 #include <utility>
-
 #include <igl/NameHandle.h>
 
 namespace iglu::material {

@@ -7,11 +7,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <igl/Texture.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/PlatformDevice.h>
-
-#include <cstdint>
 
 namespace igl::opengl {
 class ViewTextureTarget;

@@ -8,6 +8,7 @@
 // @fb-only
 
 #include "TinyRenderer.h"
+
 #include <android/asset_manager_jni.h>
 #include <android/native_window_jni.h>
 #include <memory>

@@ -7,9 +7,8 @@
 
 #pragma once
 
-#include <shell/openxr/XrPlatform.h>
-
 #include <cstdint>
+#include <shell/openxr/XrPlatform.h>
 #include <vector>
 
 namespace igl::shell::openxr {

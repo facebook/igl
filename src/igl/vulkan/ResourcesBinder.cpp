@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/vulkan/ResourcesBinder.h>
+
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/PipelineState.h>
-#include <igl/vulkan/ResourcesBinder.h>
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanBuffer.h>

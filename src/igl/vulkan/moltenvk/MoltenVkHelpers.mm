@@ -17,7 +17,6 @@
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
-
 #include <igl/Common.h>
 #include <igl/vulkan/moltenvk/MoltenVkHelpers.h>
 

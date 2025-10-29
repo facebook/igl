@@ -8,7 +8,6 @@
 #include <igl/metal/ComputeCommandEncoder.h>
 
 #import <Foundation/Foundation.h>
-
 #import <Metal/Metal.h>
 #include <igl/metal/Buffer.h>
 #include <igl/metal/ComputePipelineState.h>

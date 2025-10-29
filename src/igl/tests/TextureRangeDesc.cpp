@@ -5,12 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/Common.h>
-#include <igl/Texture.h>
-
 #include <cstddef>
 #include <gtest/gtest.h>
 #include <string>
+#include <igl/Common.h>
+#include <igl/Texture.h>
 
 namespace igl::tests {
 

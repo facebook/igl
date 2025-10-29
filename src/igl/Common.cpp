@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/Common.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <igl/Common.h>
 #include <igl/Device.h>
 
 namespace igl {

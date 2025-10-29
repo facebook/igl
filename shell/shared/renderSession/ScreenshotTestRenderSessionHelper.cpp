@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/Config.h>
+#include <shell/shared/renderSession/ScreenshotTestRenderSessionHelper.h>
 
 #include <shell/shared/imageWriter/ImageWriter.h>
-#include <shell/shared/renderSession/ScreenshotTestRenderSessionHelper.h>
+#include <igl/Config.h>
 
 namespace igl::shell {
 

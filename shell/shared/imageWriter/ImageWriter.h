@@ -8,10 +8,9 @@
 #pragma once
 
 #include <memory>
+#include <shell/shared/imageLoader/ImageLoader.h>
 #include <string>
 #include <igl/IGL.h>
-
-#include <shell/shared/imageLoader/ImageLoader.h>
 
 namespace igl::shell {
 

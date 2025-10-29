@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/ComputeCommandEncoder.h>
+
 #include "data/ShaderData.h"
 #include "util/Common.h"
 
@@ -13,7 +15,6 @@
 #include <vector>
 #include <igl/Buffer.h>
 #include <igl/CommandBuffer.h>
-#include <igl/ComputeCommandEncoder.h>
 #include <igl/ComputePipelineState.h>
 #include <igl/Shader.h>
 #include <igl/ShaderCreator.h>

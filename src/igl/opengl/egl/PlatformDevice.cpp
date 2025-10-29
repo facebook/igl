@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/opengl/egl/PlatformDevice.h>
+
 #include <igl/opengl/ViewTextureTarget.h>
 #include <igl/opengl/egl/Context.h>
 #include <igl/opengl/egl/Device.h>
-#include <igl/opengl/egl/PlatformDevice.h>
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 #include <android/hardware_buffer.h>
 #include <igl/opengl/egl/android/NativeHWBuffer.h>

@@ -6,8 +6,8 @@
  */
 
 #include <IGLU/uniform/Collection.h>
-#include <IGLU/uniform/Descriptor.h>
 
+#include <IGLU/uniform/Descriptor.h>
 #include <algorithm>
 
 namespace iglu::uniform {

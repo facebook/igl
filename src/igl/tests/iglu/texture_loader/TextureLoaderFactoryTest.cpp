@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "../../util/Common.h"
 #include <IGLU/texture_loader/TextureLoaderFactory.h>
+
+#include "../../util/Common.h"
+
 #include <IGLU/texture_loader/ktx1/TextureLoaderFactory.h>
 #include <IGLU/texture_loader/ktx2/TextureLoaderFactory.h>
 #include <IGLU/texture_loader/stb_hdr/TextureLoaderFactory.h>

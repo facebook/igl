@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "../util/Common.h"
 #include <IGLU/shaderCross/ShaderCross.h>
+
+#include "../util/Common.h"
+
 #include <IGLU/shaderCross/ShaderCrossUniformBuffer.h>
 
 namespace igl::tests {

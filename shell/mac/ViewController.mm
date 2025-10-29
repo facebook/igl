@@ -9,21 +9,19 @@
 
 #import "ViewController.h"
 
-#import <AppKit/NSApplication.h>
-#import <AppKit/NSEvent.h>
-#import <AppKit/NSOpenGL.h>
-#import <AppKit/NSOpenGLView.h>
-#import <AppKit/NSView.h>
-
-#include <shell/shared/platform/Platform.h>
-
 #import "GLView.h"
 #import "HeadlessView.h"
 #import "MetalView.h"
 #import "VulkanView.h"
 // @fb-only
 
+#import <AppKit/NSApplication.h>
+#import <AppKit/NSEvent.h>
+#import <AppKit/NSOpenGL.h>
+#import <AppKit/NSOpenGLView.h>
+#import <AppKit/NSView.h>
 #import <shell/shared/input/InputDispatcher.h>
+#include <shell/shared/platform/Platform.h>
 #import <igl/Common.h>
 #import <igl/IGL.h>
 #if IGL_BACKEND_METAL
