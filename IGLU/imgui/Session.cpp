@@ -185,11 +185,15 @@ struct DrawableData {
     const igl::BufferDesc vbDesc(igl::BufferDesc::BufferTypeBits::Vertex,
                                  nullptr,
                                  kMaxVertexBufferSize,
-                                 igl::ResourceStorage::Shared);
+                                 igl::ResourceStorage::Shared,
+                                 0,
+                                 "vertex (" + material->name + ")");
     const igl::BufferDesc ibDesc(igl::BufferDesc::BufferTypeBits::Index,
                                  nullptr,
                                  kMaxIndexBufferSize,
-                                 igl::ResourceStorage::Shared);
+                                 igl::ResourceStorage::Shared,
+                                 0,
+                                 "index (" + material->name + ")");
 
     iglu::vertexdata::PrimitiveDesc primitiveDesc;
     primitiveDesc.numEntries = 0;
