@@ -13,8 +13,8 @@
 
 #import <Foundation/NSObject.h>
 
-typedef int IglBackendFlavor;
-typedef int IglOpenglRenderingAPI;
+using IglBackendFlavor = int;
+using IglOpenglRenderingAPI = int;
 
 @protocol RenderSessionFactoryAdapter <NSObject>
 - (RenderSessionFactoryAdapterPtr)adapter;
