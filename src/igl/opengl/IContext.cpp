@@ -2761,7 +2761,7 @@ void IContext::polygonFillMode(IGL_MAYBE_UNUSED GLenum mode) {
 }
 
 void IContext::generateMipmap(GLenum target) {
-  APILOG("glGenerateMipmap(%s) (texture: %u)\n", GL_ENUM_TO_STRING(target), boundTexture(target));
+  APILOG("glGenerateMipmap(%s)\n", GL_ENUM_TO_STRING(target));
   IGLCALL(GenerateMipmap)(target);
   GLCHECK_ERRORS();
 }
