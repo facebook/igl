@@ -230,6 +230,12 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                                      memFlags,
                                      false,
                                      &vkMemory_[p]));
+
+        VK_ASSERT(ivkSetDebugObjectName(&ctx_->vf_,
+                                        device_,
+                                        VK_OBJECT_TYPE_DEVICE_MEMORY,
+                                        (uint64_t)vkMemory_[p],
+                                        IGL_FORMAT("Memory [{}]: {}", p, debugName).c_str()));
       }
       // @fb-only
       const VkBindImagePlaneMemoryInfo bindImagePlaneMemoryInfo[kMaxImagePlanes] = {
@@ -500,6 +506,12 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_[0], 0));
 // @fb-only
 
+  VK_ASSERT(ivkSetDebugObjectName(&ctx_->vf_,
+                                  device_,
+                                  VK_OBJECT_TYPE_DEVICE_MEMORY,
+                                  (uint64_t)vkMemory_[0],
+                                  IGL_FORMAT("Memory: {}", debugName).c_str()));
+
   ctx_->vf_.vkGetPhysicalDeviceFormatProperties(physicalDevice_, imageFormat_, &formatProperties_);
 }
 
@@ -592,6 +604,12 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
   VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_[0]));
   VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_[0], 0));
+
+  VK_ASSERT(ivkSetDebugObjectName(&ctx_->vf_,
+                                  device_,
+                                  VK_OBJECT_TYPE_DEVICE_MEMORY,
+                                  (uint64_t)vkMemory_[0],
+                                  IGL_FORMAT("Memory: {}", debugName).c_str()));
 
   ctx_->vf_.vkGetPhysicalDeviceFormatProperties(physicalDevice_, imageFormat_, &formatProperties_);
 }
@@ -786,6 +804,12 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                  memoryAllocateInfo.memoryTypeIndex);
 
     VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_[p]));
+
+    VK_ASSERT(ivkSetDebugObjectName(&ctx_->vf_,
+                                    device_,
+                                    VK_OBJECT_TYPE_DEVICE_MEMORY,
+                                    (uint64_t)vkMemory_[p],
+                                    IGL_FORMAT("Memory [{}]: {}", p, debugName).c_str()));
 
     bindImagePlaneMemoryInfo[p] = VkBindImagePlaneMemoryInfo{
         .sType = VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO,
