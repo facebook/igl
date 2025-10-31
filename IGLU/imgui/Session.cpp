@@ -214,6 +214,10 @@ class Session::Renderer {
  public:
   explicit Renderer(igl::IDevice& device);
   ~Renderer();
+  Renderer(const Renderer&) = delete;
+  Renderer& operator=(const Renderer&) = delete;
+  Renderer(Renderer&&) = delete;
+  Renderer& operator=(Renderer&&) = delete;
 
   void newFrame(const igl::FramebufferDesc& desc);
   void renderDrawData(igl::IDevice& device,
