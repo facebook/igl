@@ -85,6 +85,12 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
                                   ctx.features().has_VK_KHR_buffer_device_address,
                                   &vkMemory_));
       VK_ASSERT(ctx_.vf_.vkBindBufferMemory(device_, vkBuffer_, vkMemory_, 0));
+
+      VK_ASSERT(ivkSetDebugObjectName(&ctx_.vf_,
+                                      device_,
+                                      VK_OBJECT_TYPE_DEVICE_MEMORY,
+                                      (uint64_t)vkMemory_,
+                                      IGL_FORMAT("Buffer memory: {}", debugName).c_str()));
     }
 
     // handle memory-mapped buffers
