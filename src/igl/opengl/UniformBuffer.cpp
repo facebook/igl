@@ -302,6 +302,7 @@ void UniformBuffer::bindUniformArray(IContext& context,
       UniformBuffer::bindUniform(
           context, shaderLocation, uniformType, (uint8_t*)packedFloatArray.get(), numElements);
     } break;
+    case UniformBaseType::Invalid:
     default:
       return;
     }

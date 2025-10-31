@@ -54,6 +54,8 @@ void ArrayBuffer::initialize(const BufferDesc& desc, Result* outResult) {
     usage = GL_STATIC_DRAW;
     isDynamic_ = false;
     break;
+  case ResourceStorage::Memoryless:
+  case ResourceStorage::Invalid:
   default:
     break;
   }

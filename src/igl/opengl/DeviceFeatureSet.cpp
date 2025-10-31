@@ -1574,6 +1574,15 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
       capabilities |= compressed;
     }
     break;
+
+  case TextureFormat::Invalid:
+  case TextureFormat::YUV_NV12:
+  case TextureFormat::YUV_420p:
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
   default:
     // We are relying on the fact that TextureFormatCapabilities::Unsupported is 0
     return textureCapabilityCache_[format];

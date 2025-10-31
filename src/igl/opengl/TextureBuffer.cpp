@@ -200,6 +200,8 @@ Result TextureBuffer::initializeWithTexStorage() const {
     getContext().texStorage2D(
         target, range.numMipLevels, glInternalFormat_, (GLsizei)range.width, (GLsizei)range.height);
     break;
+  case TextureType::ExternalImage:
+  case TextureType::Invalid:
   default:
     IGL_DEBUG_ABORT("Unknown texture type");
     return Result{Result::Code::InvalidOperation, "Unknown texture type"};
@@ -483,6 +485,8 @@ Result TextureBuffer::uploadInternal(GLenum target,
       case TextureType::Cube:
         result = upload2D(kCubeFaceTargets[faceRange.face], faceRange, texImage, faceData);
         break;
+      case TextureType::ExternalImage:
+      case TextureType::Invalid:
       default:
         return Result{Result::Code::InvalidOperation, "Unknown texture type"};
       }

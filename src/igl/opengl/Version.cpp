@@ -260,6 +260,8 @@ ShaderVersion getShaderVersion(GLVersion version) {
     return {ShaderFamily::Glsl, 4, 50};
   case GLVersion::v4_6:
     return {ShaderFamily::Glsl, 4, 60};
+  case GLVersion::v1_1:
+  case GLVersion::NotAvailable:
   default:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return {};

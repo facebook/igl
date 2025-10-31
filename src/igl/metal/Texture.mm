@@ -105,6 +105,8 @@ Result Texture::uploadInternal(TextureType type,
                bytesPerImage:toMetalBytesPerRow(rangeBytesPerRow * sliceRange.height)];
         break;
       }
+      case TextureType::ExternalImage:
+      case TextureType::Invalid:
       default:
         IGL_DEBUG_ABORT("Unknown texture type");
         break;
@@ -158,6 +160,8 @@ Result Texture::getBytes(const TextureRangeDesc& range, void* outData, size_t by
 }
 
 size_t Texture::toMetalBytesPerRow(size_t bytesPerRow) const {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch-enum"
   switch (getFormat()) {
   case TextureFormat::RGBA_PVRTC_2BPPV1:
   case TextureFormat::RGB_PVRTC_2BPPV1:
@@ -167,6 +171,7 @@ size_t Texture::toMetalBytesPerRow(size_t bytesPerRow) const {
   default:
     return bytesPerRow;
   }
+#pragma clang diagnostic pop
 }
 
 Dimensions Texture::getDimensions() const {
@@ -301,12 +306,13 @@ TextureType Texture::convertType(MTLTextureType value) {
     return TextureType::ThreeD;
   case MTLTextureTypeCube:
     return TextureType::Cube;
+  case MTLTextureType2DMultisampleArray:
+    return TextureType::TwoDArray;
+  case MTLTextureType1D:
+  case MTLTextureType1DArray:
+  case MTLTextureTypeTextureBuffer:
+  case MTLTextureTypeCubeArray:
   default:
-    if (@available(macOS 10.14, iOS 14.0, *)) {
-      if (value == MTLTextureType2DMultisampleArray) {
-        return TextureType::TwoDArray;
-      }
-    }
     return TextureType::Invalid;
   }
 }
@@ -729,6 +735,7 @@ MTLPixelFormat Texture::textureFormatToMTLPixelFormat(TextureFormat value) {
   // @fb-only
   // @fb-only
   // @fb-only
+  default:
     return MTLPixelFormatInvalid;
   }
 }

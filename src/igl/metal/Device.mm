@@ -712,11 +712,15 @@ MTLStorageMode Device::toMTLStorageMode(ResourceStorage storage) {
     return MTLStorageModeShared;
 #if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST
   case ResourceStorage::Managed:
+  case ResourceStorage::Memoryless:
+  case ResourceStorage::Invalid:
   default:
     return MTLStorageModeManaged;
 #else
   case ResourceStorage::Memoryless:
     return MTLStorageModeMemoryless;
+  case ResourceStorage::Managed:
+  case ResourceStorage::Invalid:
   default:
     return MTLStorageModeShared;
 #endif
@@ -731,11 +735,15 @@ MTLResourceOptions Device::toMTLResourceStorageMode(ResourceStorage storage) {
     return MTLResourceStorageModeShared;
 #if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST
   case ResourceStorage::Managed:
+  case ResourceStorage::Memoryless:
+  case ResourceStorage::Invalid:
   default:
     return MTLResourceStorageModeManaged;
 #else
   case ResourceStorage::Memoryless:
     return MTLResourceStorageModeMemoryless;
+  case ResourceStorage::Managed:
+  case ResourceStorage::Invalid:
   default:
     return MTLResourceStorageModeShared;
 #endif
