@@ -29,13 +29,13 @@ struct VertexPosUv {
   iglu::simdtypes::float3 position;
   iglu::simdtypes::float2 uv;
 };
-VertexPosUv vertexData[] = {
+const VertexPosUv kVertexData[] = {
     {{-1.f, 1.f, 0.0}, {0.0, 0.0}},
     {{1.f, 1.f, 0.0}, {1.0, 0.0}},
     {{-1.f, -1.f, 0.0}, {0.0, 1.0}},
     {{1.f, -1.f, 0.0}, {1.0, 1.0}},
 };
-uint16_t indexData[] = {0, 1, 2, 1, 3, 2};
+const uint16_t kIndexData[] = {0, 1, 2, 1, 3, 2};
 
 namespace {
 // @fb-only
@@ -64,8 +64,8 @@ BufferDesc getVertexBufferDesc(const igl::IDevice& device) {
   // @fb-only
 // @fb-only
   return {BufferDesc::BufferTypeBits::Vertex,
-          vertexData,
-          sizeof(vertexData),
+          kVertexData,
+          sizeof(kVertexData),
           ResourceStorage::Invalid,
           0,
           "vertex"};
@@ -374,8 +374,8 @@ void ColorSession::initialize() noexcept {
       getPlatform().getDevice().hasFeature(DeviceFeatures::SRGB)) {
     linearOrangeColor = glm::convertSRGBToLinear(linearOrangeColor);
   }
-  glm::vec3 fLinearOrangeColor = glm::vec3(linearOrangeColor);
-  iglu::simdtypes::float3 gpuLinearOrangeColor = {
+  const glm::vec3 fLinearOrangeColor = glm::vec3(linearOrangeColor);
+  const iglu::simdtypes::float3 gpuLinearOrangeColor = {
       fLinearOrangeColor.x, fLinearOrangeColor.y, fLinearOrangeColor.z};
 
   auto& device = getPlatform().getDevice();
@@ -385,15 +385,15 @@ void ColorSession::initialize() noexcept {
   vb0_ = device.createBuffer(vbDesc, nullptr);
   IGL_DEBUG_ASSERT(vb0_ != nullptr);
   const BufferDesc ibDesc = BufferDesc(BufferDesc::BufferTypeBits::Index,
-                                       indexData,
-                                       sizeof(indexData),
+                                       kIndexData,
+                                       sizeof(kIndexData),
                                        getIndexBufferResourceStorage(device),
                                        0,
                                        "index");
   ib0_ = device.createBuffer(ibDesc, nullptr);
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
-  auto vertexBufferIndex = getVertexBufferIndex(getPlatform().getDevice());
+  const auto vertexBufferIndex = getVertexBufferIndex(getPlatform().getDevice());
   VertexInputStateDesc inputDesc;
   inputDesc.numAttributes = 2;
   inputDesc.attributes[0] = VertexAttribute{.bufferIndex = vertexBufferIndex,
@@ -402,16 +402,23 @@ void ColorSession::initialize() noexcept {
                                             .name = "position",
                                             .location = 0};
   inputDesc.attributes[1] = VertexAttribute{
-      vertexBufferIndex, VertexAttributeFormat::Float2, offsetof(VertexPosUv, uv), "uv_in", 1};
+      .bufferIndex = vertexBufferIndex,
+      .format = VertexAttributeFormat::Float2,
+      .offset = offsetof(VertexPosUv, uv),
+      .name = "uv_in",
+      .location = 1,
+  };
   inputDesc.numInputBindings = 1;
   inputDesc.inputBindings[vertexBufferIndex].stride = sizeof(VertexPosUv);
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
   IGL_DEBUG_ASSERT(vertexInput0_ != nullptr);
 
   // Sampler & Texture
-  SamplerStateDesc samplerDesc;
-  samplerDesc.minFilter = samplerDesc.magFilter = SamplerMinMagFilter::Linear;
-  samplerDesc.debugName = "Sampler: linear";
+  SamplerStateDesc samplerDesc = {
+      .minFilter = SamplerMinMagFilter::Linear,
+      .magFilter = SamplerMinMagFilter::Linear,
+      .debugName = "Sampler: linear",
+  };
   samp0_ = device.createSamplerState(samplerDesc, nullptr);
   IGL_DEBUG_ASSERT(samp0_ != nullptr);
 
@@ -464,11 +471,12 @@ void ColorSession::initialize() noexcept {
 void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
   Result ret;
   if (framebuffer_ == nullptr) {
-    FramebufferDesc framebufferDesc;
+    FramebufferDesc framebufferDesc = {
+        .mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
+                                                          : FramebufferMode::Mono,
+    };
     framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
     framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
-    framebufferDesc.mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
-                                                                     : FramebufferMode::Mono;
     IGL_DEBUG_ASSERT(ret.isOk());
     framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
     IGL_DEBUG_ASSERT(ret.isOk());
@@ -481,17 +489,18 @@ void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
 
   // Graphics pipeline
   if (pipelineState_ == nullptr) {
-    RenderPipelineDesc graphicsDesc;
-    graphicsDesc.vertexInputState = vertexInput0_;
-    graphicsDesc.shaderStages = shaderStages_;
+    RenderPipelineDesc graphicsDesc = {
+        .vertexInputState = vertexInput0_,
+        .shaderStages = shaderStages_,
+        .cullMode = igl::CullMode::Back,
+        .frontFaceWinding = igl::WindingMode::Clockwise,
+    };
     graphicsDesc.targetDesc.colorAttachments.resize(1);
     graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
         framebuffer_->getColorAttachment(0)->getProperties().format;
     graphicsDesc.targetDesc.depthAttachmentFormat =
         framebuffer_->getDepthAttachment()->getProperties().format;
     graphicsDesc.fragmentUnitSamplerMap[textureUnit] = IGL_NAMEHANDLE("inputImage");
-    graphicsDesc.cullMode = igl::CullMode::Back;
-    graphicsDesc.frontFaceWinding = igl::WindingMode::Clockwise;
     graphicsDesc.targetDesc.colorAttachments[0].blendEnabled = true;
     graphicsDesc.targetDesc.colorAttachments[0].rgbBlendOp = BlendOp::Add;
     graphicsDesc.targetDesc.colorAttachments[0].alphaBlendOp = BlendOp::Add;
@@ -506,9 +515,9 @@ void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
 
   // Command Buffers
   const CommandBufferDesc cbDesc;
-  auto buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  const auto buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
-  auto drawableSurface = framebuffer_->getColorAttachment(0);
+  const auto drawableSurface = framebuffer_->getColorAttachment(0);
 
   framebuffer_->updateDrawable(drawableSurface);
 
@@ -545,8 +554,7 @@ void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
   fragmentParamBuffer_->upload(&fragmentParameters_, {sizeof(fragmentParameters_)});
 
   // Submit commands
-  const std::shared_ptr<IRenderCommandEncoder> commands =
-      buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+  const auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_DEBUG_ASSERT(commands != nullptr);
   if (commands) {
     commands->bindVertexBuffer(getVertexBufferIndex(getPlatform().getDevice()), *vb0_);
