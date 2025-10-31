@@ -17,8 +17,8 @@
 #import <CoreGraphics/CGGeometry.h>
 #import <Foundation/NSObject.h>
 
-using IglBackendFlavor = int;
-using IglOpenglRenderingAPI = int;
+typedef int IglBackendFlavor;
+typedef int IglOpenglRenderingAPI;
 
 @protocol IglSurfaceTexturesProvider <NSObject>
 - (IglSurfacesTextureAdapterPtr)createSurfaceTextures;

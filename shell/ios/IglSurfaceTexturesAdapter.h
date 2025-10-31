@@ -9,4 +9,4 @@
 
 // NOTE: This is a pure Obj-C compatible header (no C++) to simplify bridging with Swift
 
-using IglSurfacesTextureAdapterPtr = struct IglSurfaceTexturesAdapter*;
+typedef struct IglSurfaceTexturesAdapter* IglSurfacesTextureAdapterPtr;
