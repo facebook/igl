@@ -12,8 +12,8 @@
 
 #import <AppKit/NSOpenGL.h>
 #import <AppKit/NSView.h> // IWYU pragma: keep
+#include <CoreVideo/CVImageBuffer.h>
 #include <CoreVideo/CVOpenGLTextureCache.h>
-#include <CoreVideo/CoreVideo.h>
 #import <Foundation/NSGeometry.h>
 #include <cstdio>
 #include <cstring>
