@@ -95,12 +95,17 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   D3D12_HEAP_TYPE heapType;
   D3D12_RESOURCE_STATES initialState;
 
-  if (desc.storage == ResourceStorage::Shared || desc.storage == ResourceStorage::Managed) {
-    // CPU-writable upload heap
+  // CRITICAL: Storage buffers with UAV flags MUST use DEFAULT heap
+  // D3D12 does not allow UAV resources on UPLOAD heaps
+  const bool isStorageBuffer = (desc.type & BufferDesc::BufferTypeBits::Storage) != 0;
+  const bool forceDefaultHeap = isStorageBuffer;  // Storage buffers need UAV, which requires DEFAULT heap
+
+  if ((desc.storage == ResourceStorage::Shared || desc.storage == ResourceStorage::Managed) && !forceDefaultHeap) {
+    // CPU-writable upload heap (for non-storage buffers only)
     heapType = D3D12_HEAP_TYPE_UPLOAD;
     initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
   } else {
-    // GPU-only default heap
+    // GPU-only default heap (required for storage buffers with UAV)
     heapType = D3D12_HEAP_TYPE_DEFAULT;
     initialState = D3D12_RESOURCE_STATE_COMMON;
   }
@@ -135,7 +140,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   bufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
   // Add UAV flag for storage buffers (used by compute shaders)
-  const bool isStorageBuffer = (desc.type & BufferDesc::BufferTypeBits::Storage) != 0;
+  // isStorageBuffer already defined above for heap type determination
   if (isStorageBuffer) {
     bufferDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     IGL_LOG_INFO("Device::createBuffer: Storage buffer - adding UAV flag\n");
@@ -191,10 +196,14 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
       uploadHeapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
       uploadHeapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 
+      // Create upload buffer description WITHOUT UAV flag (UPLOAD heaps can't have UAV)
+      D3D12_RESOURCE_DESC uploadBufferDesc = bufferDesc;
+      uploadBufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;  // Remove UAV flag for upload buffer
+
       Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
       HRESULT upHr = device->CreateCommittedResource(&uploadHeapProps,
                                                      D3D12_HEAP_FLAG_NONE,
-                                                     &bufferDesc,
+                                                     &uploadBufferDesc,
                                                      D3D12_RESOURCE_STATE_GENERIC_READ,
                                                      nullptr,
                                                      IID_PPV_ARGS(uploadBuffer.GetAddressOf()));

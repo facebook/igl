@@ -1,0 +1,177 @@
+=== TinyMeshSession D3D12 Starting ===
+main(): Calling shell.initialize()...
+GlfwShell::initialize() - START
+GlfwShell::initialize() - Creating factory
+GlfwShell::initialize() - requestedConfigs.size()=1
+GlfwShell::initialize() - Creating window
+GlfwShell::initialize() - Creating platform
+D3D12Context: Creating D3D12 device...
+D3D12Context: Debug layer ENABLED (to capture validation messages)
+D3D12Context: DRED enabled (AutoBreadcrumbs + PageFault tracking)
+D3D12Context: Using HW adapter (FL 12.0)
+D3D12Context: Info queue configured (break on error: DISABLED)
+D3D12Context: Device created successfully
+D3D12Context: Creating command queue...
+D3D12Context: Command queue created successfully
+D3D12Context: Creating swapchain (640x360)...
+D3D12Context: Swapchain created successfully
+D3D12Context: Creating RTV heap...
+D3D12Context: RTV heap created successfully
+D3D12Context: Creating back buffers...
+D3D12Context: Back buffers created successfully
+D3D12Context: Creating descriptor heaps...
+D3D12Context: Creating descriptor heap manager...
+D3D12Context: Descriptor heap manager created successfully
+D3D12Context: Descriptor heaps created successfully
+D3D12Context: Creating fence for GPU synchronization...
+D3D12Context: Fence created successfully
+D3D12Context: Initialization complete!
+GlfwShell::initialize() - Creating session
+GlfwShell::initialize() - Initializing session
+Device::createBuffer: type=2, requested_size=192, aligned_size=192, isUniform=0
+Device::createBuffer: type=1, requested_size=72, aligned_size=72, isUniform=0
+Device::createShaderModule() - stage=0, entryPoint='main', debugName=''
+  Compiling HLSL from string (547 bytes)...
+  DEBUG BUILD: Enabling shader debug info and disabling optimizations
+  Shader compiled successfully (14868 bytes bytecode)
+Device::createShaderModule() - stage=1, entryPoint='main', debugName=''
+  Compiling HLSL from string (153 bytes)...
+  DEBUG BUILD: Enabling shader debug info and disabling optimizations
+  Shader compiled successfully (14376 bytes bytecode)
+GlfwShell::initialize() - SUCCESS
+main(): Initialization successful, calling shell.run()...
+GlfwShell::run() started, window_=000002828DEBA0D0
+Frame 0: willTick()
+createSurfaceTextures() called #1
+PlatformDevice::createTextureFromNativeDrawable() called
+getCurrentBackBuffer(): index=0, resource=0000028297DEE5E0
+  backBufferIndex=0, backBuffer=0000028297DEE5E0
+Texture::createFromResource - SUCCESS: 640x360 format=17
+Device::createTexture: IGL format=82 -> DXGI format=40
+Texture::createFromResource - SUCCESS: 640x360 format=82
+Device::createRenderPipeline() START - debugName=''
+  Getting shader bytecode...
+  VS bytecode: 14868 bytes, PS bytecode: 14376 bytes
+  Creating root signature with Push Constants (b2)/CBVs (b0,b1)/SRVs/Samplers
+  Serializing root signature...
+  Root signature serialized OK
+  Creating root signature...
+  Root signature created OK
+  PSO RenderTarget[0]: BlendEnable=0, SrcBlend=2, DstBlend=1, WriteMask=0x0F
+  PSO NumRenderTargets = 1 (color attachments = 1)
+  PSO RTVFormats[0] = 87 (IGL format 17)
+  Setting PSO topology type to TRIANGLE
+  Processing vertex input state: 2 attributes
+    Attribute 0: name='position', format=2, offset=0, bufferIndex=0
+      Mapped 'position' -> 'POSITION'
+      bufferIndex=0, isInstance=0, sampleFunc=1, InputSlotClass=0, StepRate=0
+    Attribute 1: name='color_in', format=2, offset=12, bufferIndex=0
+      Mapped 'color_in' -> 'COLOR'
+      bufferIndex=0, isInstance=0, sampleFunc=1, InputSlotClass=0, StepRate=0
+  Final input layout: 2 elements
+    [0]: POSITION (index 0), format 6, slot 0, offset 0
+    [1]: COLOR (index 0), format 6, slot 0, offset 12
+  Reflecting vertex shader to verify input signature...
+    Shader expects 2 input parameters:
+      [0]: POSITION0 (semantic index 0), mask 0x07
+      [1]: COLOR0 (semantic index 0), mask 0x07
+  Creating pipeline state (this may take a moment)...
+Device::createRenderPipeline() SUCCESS - PSO=0000028297E7EB70, RootSig=0000028297E68700
+RenderPipelineState: Set topology to TRIANGLELIST
+CommandBuffer::begin() - Resetting allocator...
+CommandBuffer::begin() - Allocator reset OK, resetting command list...
+CommandBuffer::begin() - Command list reset OK
+RenderCommandEncoder::RenderCommandEncoder() - START
+RenderCommandEncoder: Got context
+RenderCommandEncoder: Using DescriptorHeapManager heaps
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000028297E27BA0
+RenderCommandEncoder: Sampler heap = 0000028297E4E000
+RenderCommandEncoder: Setting descriptor heaps...
+RenderCommandEncoder: Descriptor heaps set
+RenderCommandEncoder: Setting up RTV...
+RenderCommandEncoder: DescriptorHeapManager = 000002828DF368E0
+RenderCommandEncoder: Checking framebuffer_=0000028297EB8A60
+RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
+RenderCommandEncoder: MRT count = 1 (indices.size=1)
+RenderCommandEncoder: MRT loop i=0, tex=0000028297DFEFF0, resource=0000028297DEE5E0
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
+RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
+RenderCommandEncoder: MRT Total RTVs created: 1
+RenderCommandEncoder: Cleared depth-stencil (depth=1, stencil=1, depthVal=1.00, stencilVal=0)
+RenderCommandEncoder: OMSetRenderTargets with 1 RTVs + DSV
+RenderCommandEncoder: Setting default viewport...
+RenderCommandEncoder: Using framebuffer color attachment
+RenderCommandEncoder: Framebuffer dimensions: 640x360
+RenderCommandEncoder: Set default viewport/scissor to 640x360
+RenderCommandEncoder: Constructor complete!
+bindVertexBuffer called #1: index=0
+bindRenderPipelineState: PSO=0000028297E7EB70, RootSig=0000028297E68700
+bindRenderPipelineState: Setting topology=4
+bindIndexBuffer called #1
+[D3D12] hasFeature query: 3
+Device::createBuffer: type=4, requested_size=64, aligned_size=256, isUniform=1
+Device::createBuffer: Uniform buffer #1 created, GPU address=0x87bd000
+[ManagedUniformBuffer::bind] #1: hasNoCopy=0, useBindBytes=0
+Buffer::upload #1: size=64
+  Matrix row 0: [1.358, 0.000, -0.009, -0.009]
+  Matrix row 1: [0.000, 2.414, 0.000, 0.000]
+  Matrix row 2: [0.012, 0.000, 1.002, 1.000]
+  Matrix row 3: [-4.074, 0.000, 7.816, 8.000]
+bindBuffer START #1: index=1
+bindBuffer: getting d3dBuffer...
+bindBuffer: getting gpuAddress(offset=0)...
+bindBuffer: got address=0x87bd000, aligned=1
+bindBuffer: commandList_ pointer = 0000028297E86BF0
+bindBuffer: Cached CBV at index 1 with address 0x87bd000
+bindBuffer END #1
+DrawIndexed called: indexCount=36, instanceCount=1
+DrawIndexed: bound CBVs - b0=0x0 (bound=0), b1=0x87bd000 (bound=1)
+DrawIndexed: VB[0] = GPU 0x87bb000, size=192, stride=24
+DrawIndexed: CB drawCount now=1
+[D3D12] hasFeature query: 3
+Device::createBuffer: type=4, requested_size=64, aligned_size=256, isUniform=1
+Device::createBuffer: Uniform buffer #2 created, GPU address=0x87be000
+[ManagedUniformBuffer::bind] #2: hasNoCopy=0, useBindBytes=0
+bindBuffer START #2: index=1
+bindBuffer: getting d3dBuffer...
+bindBuffer: getting gpuAddress(offset=0)...
+bindBuffer: got address=0x87be000, aligned=1
+bindBuffer: commandList_ pointer = 0000028297E86BF0
+bindBuffer: Cached CBV at index 1 with address 0x87be000
+bindBuffer END #2
+DrawIndexed called: indexCount=36, instanceCount=1
+DrawIndexed: bound CBVs - b0=0x0 (bound=0), b1=0x87be000 (bound=1)
+DrawIndexed: VB[0] = GPU 0x87bb000, size=192, stride=24
+DrawIndexed: CB drawCount now=2
+[D3D12] hasFeature query: 3
+Device::createBuffer: type=4, requested_size=64, aligned_size=256, isUniform=1
+Device::createBuffer: Uniform buffer #3 created, GPU address=0x87bf000
+[ManagedUniformBuffer::bind] #3: hasNoCopy=0, useBindBytes=0
+bindBuffer START #3: index=1
+bindBuffer: getting d3dBuffer...
+bindBuffer: getting gpuAddress(offset=0)...
+bindBuffer: got address=0x87bf000, aligned=1
+bindBuffer: commandList_ pointer = 0000028297E86BF0
+bindBuffer: Cached CBV at index 1 with address 0x87bf000
+bindBuffer END #3
+DrawIndexed called: indexCount=36, instanceCount=1
+DrawIndexed: bound CBVs - b0=0x0 (bound=0), b1=0x87bf000 (bound=1)
+DrawIndexed: VB[0] = GPU 0x87bb000, size=192, stride=24
+DrawIndexed: CB drawCount now=3
+getCurrentBackBuffer(): index=0, resource=0000028297DEE5E0
+CommandQueue::submit() - Executing command list...
+CommandQueue::submit() - Command list executed, checking device status...
+CommandQueue::submit() - Device OK, presenting...
+CommandQueue::submit() - Present OK
+CommandQueue::submit() - Signaled fence for frame 0 (value=1)
+CommandQueue::submit() - Advanced to frame index 1
+CommandQueue::submit() - Frame 2 resources already available (fence=0, completed=1)
+CommandQueue::submit() - Complete!
+CommandQueue::submit() - Aggregating 3 draws from CB into device
+CommandQueue::submit() - Device drawCount now=3
+
+We are running screenshot test - breaking after 0 frame
+copyBytes: format=17 (DXGI=87), bytesPerPixel=4, first 4 bytes: 255,255,0,255
+Writing screenshot to: 'artifacts/test_results/regression/ThreeCubesRenderSession.png'
+main(): shell.run() completed, calling teardown()...
+=== TinyMeshSession D3D12 Exiting ===
