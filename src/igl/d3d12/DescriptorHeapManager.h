@@ -55,6 +55,9 @@ class DescriptorHeapManager {
   uint32_t getRtvDescriptorSize() const { return rtvDescriptorSize_; }
   uint32_t getDsvDescriptorSize() const { return dsvDescriptorSize_; }
 
+  // Telemetry: Log current heap usage statistics
+  void logUsageStats() const;
+
  private:
   // Heaps
   Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> cbvSrvUavHeap_;

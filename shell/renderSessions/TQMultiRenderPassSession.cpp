@@ -103,6 +103,48 @@ static std::string getOpenGLFragmentShaderSource() {
                 })";
 }
 
+static std::string getD3D12VertexShaderSource() {
+  return R"(
+struct VertexIn {
+  float3 position : POSITION;
+  float2 uv : TEXCOORD0;
+};
+
+struct VertexOut {
+  float4 position : SV_Position;
+  float2 uv : TEXCOORD0;
+};
+
+VertexOut main(VertexIn IN) {
+  VertexOut OUT;
+  OUT.position = float4(IN.position, 1.0);
+  OUT.uv = IN.uv;
+  return OUT;
+}
+)";
+}
+
+static std::string getD3D12FragmentShaderSource() {
+  return R"(
+cbuffer UniformBlock : register(b0) {
+  float3 color;
+};
+
+Texture2D inputImage : register(t0);
+SamplerState linearSampler : register(s0);
+
+struct VertexOut {
+  float4 position : SV_Position;
+  float2 uv : TEXCOORD0;
+};
+
+float4 main(VertexOut IN) : SV_Target {
+  float4 tex = inputImage.Sample(linearSampler, IN.uv);
+  return float4(color.r, color.g, color.b, 1.0) * tex;
+}
+)";
+}
+
 static std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
@@ -126,6 +168,15 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device)
                                                            "main",
                                                            "",
                                                            getOpenGLFragmentShaderSource().c_str(),
+                                                           "main",
+                                                           "",
+                                                           nullptr);
+  case igl::BackendType::D3D12:
+    return igl::ShaderStagesCreator::fromModuleStringInput(device,
+                                                           getD3D12VertexShaderSource().c_str(),
+                                                           "main",
+                                                           "",
+                                                           getD3D12FragmentShaderSource().c_str(),
                                                            "main",
                                                            "",
                                                            nullptr);

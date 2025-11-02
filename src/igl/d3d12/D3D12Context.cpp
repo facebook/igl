@@ -118,9 +118,30 @@ void D3D12Context::createDevice() {
   if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf())))) {
     debugController->EnableDebugLayer();
     IGL_LOG_INFO("D3D12Context: Debug layer ENABLED (to capture validation messages)\n");
+
+    // Optional: Enable GPU-Based Validation (controlled by env var)
+    // WARNING: This significantly impacts performance (10-100x slower)
+    const char* enableGBV = std::getenv("IGL_D3D12_GPU_BASED_VALIDATION");
+    if (enableGBV && std::string(enableGBV) == "1") {
+      Microsoft::WRL::ComPtr<ID3D12Debug1> debugController1;
+      if (SUCCEEDED(debugController->QueryInterface(IID_PPV_ARGS(debugController1.GetAddressOf())))) {
+        debugController1->SetEnableGPUBasedValidation(TRUE);
+        IGL_LOG_INFO("D3D12Context: GPU-Based Validation ENABLED (may slow down rendering significantly)\n");
+      }
+    }
   } else {
     IGL_LOG_ERROR("D3D12Context: Failed to get D3D12 debug interface - Graphics Tools may not be installed\n");
   }
+
+#ifdef _DEBUG
+  // Enable DRED (Device Removed Extended Data) for better crash diagnostics
+  Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedDataSettings> dredSettings;
+  if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(dredSettings.GetAddressOf())))) {
+    dredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+    dredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+    IGL_LOG_INFO("D3D12Context: DRED enabled (AutoBreadcrumbs + PageFault tracking)\n");
+  }
+#endif
 
   // Create DXGI factory
   HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(dxgiFactory_.GetAddressOf()));

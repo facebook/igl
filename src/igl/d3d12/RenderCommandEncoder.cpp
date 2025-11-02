@@ -789,20 +789,12 @@ void RenderCommandEncoder::draw(size_t vertexCount,
   commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[0]);
   commandList_->SetGraphicsRootConstantBufferView(2, cachedConstantBuffers_[1]);
 
-  auto& context = commandBuffer_.getContext();
-  auto* heapMgr = context.getDescriptorHeapManager();
-  if (heapMgr) {
-    ID3D12DescriptorHeap* heaps[] = {heapMgr->getCbvSrvUavHeap(), heapMgr->getSamplerHeap()};
-    commandList_->SetDescriptorHeaps(2, heaps);
-
-    // Bind texture descriptor table at t0 (covers t0-t1 range if multiple textures bound)
-    if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(3, cachedTextureGpuHandles_[0]);
-    }
-    // Bind sampler descriptor table at s0 (covers s0-s1 range if multiple samplers bound)
-    if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(4, cachedSamplerGpuHandles_[0]);
-    }
+  // Descriptor heaps already set in constructor - bind descriptor tables only
+  if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
+    commandList_->SetGraphicsRootDescriptorTable(3, cachedTextureGpuHandles_[0]);
+  }
+  if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
+    commandList_->SetGraphicsRootDescriptorTable(4, cachedSamplerGpuHandles_[0]);
   }
 
   // Apply vertex buffers
@@ -847,32 +839,19 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
                cachedConstantBuffers_[0], constantBufferBound_[0],
                cachedConstantBuffers_[1], constantBufferBound_[1]);
 
-  // CRITICAL: SetDescriptorHeaps invalidates all previously bound descriptor tables
-  // We must set heaps ONCE, then bind ALL descriptor tables (texture + sampler)
-  auto& context = commandBuffer_.getContext();
-  auto* heapMgr = context.getDescriptorHeapManager();
-  if (heapMgr) {
-    // Set both descriptor heaps (CBV/SRV/UAV and Sampler)
-    ID3D12DescriptorHeap* heaps[] = {heapMgr->getCbvSrvUavHeap(), heapMgr->getSamplerHeap()};
-    IGL_LOG_INFO("DrawIndexed: Setting descriptor heaps: CBV/SRV/UAV=%p, Sampler=%p\n", heaps[0], heaps[1]);
-    commandList_->SetDescriptorHeaps(2, heaps);
+  // Descriptor heaps already set in constructor - bind descriptor tables only
+  // Texture SRV table starting at t0
+  if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
+    commandList_->SetGraphicsRootDescriptorTable(3, cachedTextureGpuHandles_[0]);
+    IGL_LOG_INFO("DrawIndexed: bound texture descriptor table at t0 (handle=0x%llx, count=%zu)\n",
+                 cachedTextureGpuHandles_[0].ptr, cachedTextureCount_);
+  }
 
-    // Now bind descriptor tables - these are valid after SetDescriptorHeaps
-    // Parameter 2: Texture SRV table starting at t0
-    // When multiple textures are bound (t0, t1), the root signature defines a range covering both
-    // We always point the table to t0 (the first texture), and D3D12 will use consecutive descriptors
-    if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(3, cachedTextureGpuHandles_[0]);
-      IGL_LOG_INFO("DrawIndexed: bound texture descriptor table at t0 (handle=0x%llx, count=%zu)\n",
-                   cachedTextureGpuHandles_[0].ptr, cachedTextureCount_);
-    }
-
-    // Parameter 3: Sampler table starting at s0
-    if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(4, cachedSamplerGpuHandles_[0]);
-      IGL_LOG_INFO("DrawIndexed: bound sampler descriptor table at s0 (handle=0x%llx, count=%zu)\n",
-                   cachedSamplerGpuHandles_[0].ptr, cachedSamplerCount_);
-    }
+  // Sampler table starting at s0
+  if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
+    commandList_->SetGraphicsRootDescriptorTable(4, cachedSamplerGpuHandles_[0]);
+    IGL_LOG_INFO("DrawIndexed: bound sampler descriptor table at s0 (handle=0x%llx, count=%zu)\n",
+                 cachedSamplerGpuHandles_[0].ptr, cachedSamplerCount_);
   }
 
   // Apply cached vertex buffer bindings now that pipeline state is bound

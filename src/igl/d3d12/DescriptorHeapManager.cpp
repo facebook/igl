@@ -206,4 +206,34 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getSamplerGpuHandle(uint32_t 
   return h;
 }
 
+void DescriptorHeapManager::logUsageStats() const {
+  IGL_LOG_INFO("=== Descriptor Heap Usage Statistics ===\n");
+
+  // CBV/SRV/UAV heap
+  const uint32_t cbvSrvUavUsed = sizes_.cbvSrvUav - static_cast<uint32_t>(freeCbvSrvUav_.size());
+  const float cbvSrvUavPercent = (cbvSrvUavUsed * 100.0f) / sizes_.cbvSrvUav;
+  IGL_LOG_INFO("  CBV/SRV/UAV: %u / %u (%.1f%% used)\n",
+               cbvSrvUavUsed, sizes_.cbvSrvUav, cbvSrvUavPercent);
+
+  // Sampler heap
+  const uint32_t samplersUsed = sizes_.samplers - static_cast<uint32_t>(freeSamplers_.size());
+  const float samplersPercent = (samplersUsed * 100.0f) / sizes_.samplers;
+  IGL_LOG_INFO("  Samplers:    %u / %u (%.1f%% used)\n",
+               samplersUsed, sizes_.samplers, samplersPercent);
+
+  // RTV heap
+  const uint32_t rtvsUsed = sizes_.rtvs - static_cast<uint32_t>(freeRtvs_.size());
+  const float rtvsPercent = (rtvsUsed * 100.0f) / sizes_.rtvs;
+  IGL_LOG_INFO("  RTVs:        %u / %u (%.1f%% used)\n",
+               rtvsUsed, sizes_.rtvs, rtvsPercent);
+
+  // DSV heap
+  const uint32_t dsvsUsed = sizes_.dsvs - static_cast<uint32_t>(freeDsvs_.size());
+  const float dsvsPercent = (dsvsUsed * 100.0f) / sizes_.dsvs;
+  IGL_LOG_INFO("  DSVs:        %u / %u (%.1f%% used)\n",
+               dsvsUsed, sizes_.dsvs, dsvsPercent);
+
+  IGL_LOG_INFO("========================================\n");
+}
+
 } // namespace igl::d3d12

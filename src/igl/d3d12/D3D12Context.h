@@ -15,6 +15,12 @@ namespace igl::d3d12 {
 
 class DescriptorHeapManager; // fwd decl in igl::d3d12
 
+// Per-frame context for CPU/GPU parallelism
+struct FrameContext {
+  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+  UINT64 fenceValue = 0;
+};
+
 class D3D12Context {
  public:
   D3D12Context() = default;
@@ -36,6 +42,13 @@ class D3D12Context {
   D3D12_CPU_DESCRIPTOR_HANDLE getCurrentRTV() const;
 
   void waitForGPU();
+
+  // Per-frame fence access for CommandQueue
+  FrameContext* getFrameContexts() { return frameContexts_; }
+  UINT& getCurrentFrameIndex() { return currentFrameIndex_; }
+  UINT64& getFenceValue() { return fenceValue_; }
+  ID3D12Fence* getFence() const { return fence_.Get(); }
+  HANDLE getFenceEvent() const { return fenceEvent_; }
 
  protected:
   void createDevice();
@@ -63,7 +76,11 @@ class D3D12Context {
   DescriptorHeapManager* ownedHeapMgr_ = nullptr;  // Owned manager for windowed contexts (raw ptr, manually deleted)
   DescriptorHeapManager* heapMgr_ = nullptr; // non-owning; points to ownedHeapMgr_ or external (headless)
 
-  // Synchronization
+  // Per-frame synchronization for CPU/GPU parallelism
+  FrameContext frameContexts_[kMaxFramesInFlight];
+  UINT currentFrameIndex_ = 0;
+
+  // Global synchronization
   Microsoft::WRL::ComPtr<ID3D12Fence> fence_;
   UINT64 fenceValue_ = 0;
   HANDLE fenceEvent_ = nullptr;

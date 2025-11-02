@@ -8,6 +8,7 @@
 #include <igl/d3d12/CommandQueue.h>
 #include <igl/d3d12/CommandBuffer.h>
 #include <igl/d3d12/Device.h>
+#include <igl/d3d12/Common.h>
 #include <stdexcept>
 
 namespace igl::d3d12 {
@@ -97,11 +98,40 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
     }
   }
 
-  IGL_LOG_INFO("CommandQueue::submit() - Waiting for GPU...\n");
+  // Per-frame fencing: Signal fence for current frame
+  const UINT64 currentFenceValue = ++ctx.getFenceValue();
+  auto* fence = ctx.getFence();
 
-  // Wait for GPU to finish (simple synchronization for Phase 2)
-  // TODO: For Phase 3+, use per-frame fences for better performance
-  ctx.waitForGPU();
+  d3dCommandQueue->Signal(fence, currentFenceValue);
+  ctx.getFrameContexts()[ctx.getCurrentFrameIndex()].fenceValue = currentFenceValue;
+  IGL_LOG_INFO("CommandQueue::submit() - Signaled fence for frame %u (value=%llu)\n",
+               ctx.getCurrentFrameIndex(), currentFenceValue);
+
+  // Move to next frame
+  if (swapChain) {
+    ctx.getCurrentFrameIndex() = (ctx.getCurrentFrameIndex() + 1) % kMaxFramesInFlight;
+    IGL_LOG_INFO("CommandQueue::submit() - Advanced to frame index %u\n", ctx.getCurrentFrameIndex());
+  }
+
+  // Wait for next frame's resources to be available (not current frame!)
+  // This allows 2-3 frames in flight for CPU/GPU parallelism
+  const UINT nextFrameIndex = (ctx.getCurrentFrameIndex() + 1) % kMaxFramesInFlight;
+  const UINT64 nextFenceValue = ctx.getFrameContexts()[nextFrameIndex].fenceValue;
+
+  if (nextFenceValue != 0 && fence->GetCompletedValue() < nextFenceValue) {
+    IGL_LOG_INFO("CommandQueue::submit() - Waiting for frame %u (fence value=%llu)\n",
+                 nextFrameIndex, nextFenceValue);
+    HRESULT hr = fence->SetEventOnCompletion(nextFenceValue, ctx.getFenceEvent());
+    if (SUCCEEDED(hr)) {
+      WaitForSingleObject(ctx.getFenceEvent(), INFINITE);
+      IGL_LOG_INFO("CommandQueue::submit() - Frame %u resources available\n", nextFrameIndex);
+    } else {
+      IGL_LOG_ERROR("CommandQueue::submit() - SetEventOnCompletion failed: 0x%08X\n", static_cast<unsigned>(hr));
+    }
+  } else {
+    IGL_LOG_INFO("CommandQueue::submit() - Frame %u resources already available (fence=%llu, completed=%llu)\n",
+                 nextFrameIndex, nextFenceValue, fence->GetCompletedValue());
+  }
 
   IGL_LOG_INFO("CommandQueue::submit() - Complete!\n");
 
