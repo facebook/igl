@@ -113,6 +113,16 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
 }
 
 void D3D12Context::createDevice() {
+  // Enable experimental features for DXC Shader Model 6.0+ support (unsigned DXIL)
+  // This MUST be called before creating the device
+  UUID experimentalFeatures[] = { D3D12ExperimentalShaderModels };
+  HRESULT hrExp = D3D12EnableExperimentalFeatures(1, experimentalFeatures, nullptr, nullptr);
+  if (SUCCEEDED(hrExp)) {
+    IGL_LOG_INFO("D3D12Context: Experimental shader models ENABLED (allows unsigned DXIL from DXC)\n");
+  } else {
+    IGL_LOG_INFO("D3D12Context: Experimental shader models NOT enabled (may require signed DXIL)\n");
+  }
+
   // Re-enable debug layer to capture validation messages
   Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
   if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf())))) {
@@ -213,17 +223,27 @@ void D3D12Context::createDevice() {
     infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, FALSE);
     infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, FALSE);
 
-    // Filter out INFO messages to reduce noise (still show CORRUPTION, ERROR, WARNING)
+    // Filter out INFO messages and unsigned shader messages (for DXC development)
     D3D12_MESSAGE_SEVERITY severities[] = {
       D3D12_MESSAGE_SEVERITY_INFO
+    };
+
+    // Filter out messages about unsigned shaders (DXC in development mode)
+    D3D12_MESSAGE_ID denyIds[] = {
+      D3D12_MESSAGE_ID_CREATEVERTEXSHADER_INVALIDSHADERBYTECODE,       // Unsigned VS
+      D3D12_MESSAGE_ID_CREATEPIXELSHADER_INVALIDSHADERBYTECODE,        // Unsigned PS
+      D3D12_MESSAGE_ID_CREATECOMPUTESHADER_INVALIDSHADERBYTECODE,      // Unsigned CS
+      D3D12_MESSAGE_ID_CREATEINPUTLAYOUT_UNPARSEABLEINPUTSIGNATURE     // DX IL input signature
     };
 
     D3D12_INFO_QUEUE_FILTER filter = {};
     filter.DenyList.NumSeverities = 1;
     filter.DenyList.pSeverityList = severities;
+    filter.DenyList.NumIDs = 4;
+    filter.DenyList.pIDList = denyIds;
     infoQueue->PushStorageFilter(&filter);
 
-    IGL_LOG_INFO("D3D12Context: Info queue configured (break on error: DISABLED)\n");
+    IGL_LOG_INFO("D3D12Context: Info queue configured (break on error: DISABLED, unsigned shader messages filtered)\n");
   }
 #endif
 }

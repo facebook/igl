@@ -17,6 +17,7 @@
 #include <igl/d3d12/SamplerState.h>
 #include <igl/d3d12/Texture.h>
 #include <igl/d3d12/PlatformDevice.h>
+#include <igl/d3d12/DXCCompiler.h>
 #include <igl/VertexInputState.h>
 #include <igl/Texture.h>
 #include <cstring>
@@ -1426,7 +1427,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
     bytecode.resize(desc.input.length);
     std::memcpy(bytecode.data(), desc.input.data, desc.input.length);
   } else if (desc.input.type == ShaderInputType::String) {
-    // String input - compile HLSL at runtime using D3DCompile
+    // String input - compile HLSL at runtime using DXC (DirectX Shader Compiler)
     // For string input, use desc.input.source (not data) and calculate length
     if (!desc.input.source) {
       IGL_LOG_ERROR("  Shader source is null!\n");
@@ -1435,22 +1436,40 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
     }
 
     const size_t sourceLength = strlen(desc.input.source);
-    IGL_LOG_INFO("  Compiling HLSL from string (%zu bytes)...\n", sourceLength);
+    IGL_LOG_INFO("  Compiling HLSL from string (%zu bytes) using DXC...\n", sourceLength);
 
-    Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob;
-    Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
+    // Initialize DXC compiler (once per process)
+    static DXCCompiler dxcCompiler;
+    static bool dxcInitialized = false;
+    static bool dxcAvailable = false;
 
-    // Determine shader target based on stage
+    if (!dxcInitialized) {
+      Result initResult = dxcCompiler.initialize();
+      dxcAvailable = initResult.isOk();
+      dxcInitialized = true;
+
+      if (!dxcAvailable) {
+        IGL_LOG_ERROR("  DXC compiler initialization failed: %s\n", initResult.message.c_str());
+        IGL_LOG_ERROR("  DXC is required for Shader Model 6.0+ support\n");
+      }
+    }
+
+    if (!dxcAvailable) {
+      Result::setResult(outResult, Result::Code::RuntimeError, "DXC compiler not available");
+      return nullptr;
+    }
+
+    // Determine shader target based on stage (Shader Model 6.0 for DXC)
     const char* target = nullptr;
     switch (desc.info.stage) {
     case ShaderStage::Vertex:
-      target = "vs_5_0";
+      target = "vs_6_0";
       break;
     case ShaderStage::Fragment:
-      target = "ps_5_0";
+      target = "ps_6_0";
       break;
     case ShaderStage::Compute:
-      target = "cs_5_0";
+      target = "cs_6_0";
       break;
     default:
       IGL_LOG_ERROR("  Unsupported shader stage!\n");
@@ -1458,12 +1477,10 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
       return nullptr;
     }
 
-    // Compile HLSL source code with debug info and optimizations based on build configuration
+    // Compile flags (DXC uses D3DCOMPILE_* flags)
     UINT compileFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 
     // Enable shader debugging features
-    // D3DCOMPILE_DEBUG: Emit debug information into shader container
-    // D3DCOMPILE_SKIP_OPTIMIZATION: Disable optimizations for better debugging experience
     #ifdef _DEBUG
       compileFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
       IGL_LOG_INFO("  DEBUG BUILD: Enabling shader debug info and disabling optimizations\n");
@@ -1483,21 +1500,20 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
       IGL_LOG_INFO("  Treating shader warnings as errors\n");
     }
 
-    HRESULT hr = D3DCompile(
-        desc.input.source,            // Source code (use .source for string input)
-        sourceLength,                 // Source code length (calculated with strlen)
-        desc.debugName.c_str(),       // Source name (for errors)
-        nullptr,                      // Defines
-        nullptr,                      // Include handler
-        desc.info.entryPoint.c_str(), // Entry point
-        target,                       // Target profile
-        compileFlags,                 // Compile flags (now includes debug info)
-        0,                            // Effect flags
-        shaderBlob.GetAddressOf(),
-        errorBlob.GetAddressOf()
+    // Compile with DXC
+    std::string errors;
+    Result compileResult = dxcCompiler.compile(
+        desc.input.source,
+        sourceLength,
+        desc.info.entryPoint.c_str(),
+        target,
+        desc.debugName.c_str(),
+        compileFlags,
+        bytecode,
+        errors
     );
 
-    if (FAILED(hr)) {
+    if (!compileResult.isOk()) {
       // Enhanced error message with context
       std::string errorMsg;
       const char* stageStr = "";
@@ -1508,29 +1524,18 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
         default: stageStr = "UNKNOWN"; break;
       }
 
-      errorMsg = "Shader compilation FAILED\n";
+      errorMsg = "DXC shader compilation FAILED\n";
       errorMsg += "  Stage: " + std::string(stageStr) + "\n";
       errorMsg += "  Entry Point: " + desc.info.entryPoint + "\n";
       errorMsg += "  Target: " + std::string(target) + "\n";
       errorMsg += "  Debug Name: " + desc.debugName + "\n";
 
-      if (errorBlob.Get()) {
-        errorMsg += "\n=== COMPILER ERRORS ===\n";
-        errorMsg += static_cast<const char*>(errorBlob->GetBufferPointer());
-        errorMsg += "\n======================\n";
-
-        // Try to extract and highlight the specific error line
-        std::string errors(static_cast<const char*>(errorBlob->GetBufferPointer()));
-        size_t linePos = errors.find("(");
-        if (linePos != std::string::npos) {
-          size_t lineEndPos = errors.find(")", linePos);
-          if (lineEndPos != std::string::npos) {
-            std::string lineInfo = errors.substr(linePos + 1, lineEndPos - linePos - 1);
-            errorMsg += "\nHINT: Check source line " + lineInfo + " in the shader\n";
-          }
-        }
+      if (!errors.empty()) {
+        errorMsg += "\n=== DXC COMPILER ERRORS ===\n";
+        errorMsg += errors;
+        errorMsg += "\n===========================\n";
       } else {
-        errorMsg += "  HRESULT: 0x" + std::to_string(static_cast<unsigned>(hr)) + "\n";
+        errorMsg += "  Error: " + compileResult.message + "\n";
       }
 
       IGL_LOG_ERROR("%s", errorMsg.c_str());
@@ -1538,98 +1543,11 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
       return nullptr;
     }
 
-    IGL_LOG_INFO("  Shader compiled successfully (%zu bytes bytecode)\n", shaderBlob->GetBufferSize());
+    IGL_LOG_INFO("  DXC shader compiled successfully (%zu bytes DXIL bytecode)\n", bytecode.size());
 
-    // Optional: Disassemble shader for debugging (controlled by environment variable)
-    const char* disassembleShader = std::getenv("IGL_D3D12_DISASSEMBLE_SHADERS");
-    if (disassembleShader && std::string(disassembleShader) == "1") {
-      Microsoft::WRL::ComPtr<ID3DBlob> disassembly;
-      const char* stageStr = "";
-      switch (desc.info.stage) {
-        case ShaderStage::Vertex: stageStr = "VERTEX"; break;
-        case ShaderStage::Fragment: stageStr = "FRAGMENT/PIXEL"; break;
-        case ShaderStage::Compute: stageStr = "COMPUTE"; break;
-        default: stageStr = "UNKNOWN"; break;
-      }
-
-      HRESULT disasmHr = D3DDisassemble(
-          shaderBlob->GetBufferPointer(),
-          shaderBlob->GetBufferSize(),
-          D3D_DISASM_ENABLE_INSTRUCTION_NUMBERING | D3D_DISASM_ENABLE_INSTRUCTION_OFFSET,
-          nullptr,
-          disassembly.GetAddressOf()
-      );
-
-      if (SUCCEEDED(disasmHr) && disassembly.Get()) {
-        IGL_LOG_INFO("\n=== SHADER DISASSEMBLY (%s - %s) ===\n%s\n=========================\n",
-                     stageStr, desc.info.entryPoint.c_str(),
-                     static_cast<const char*>(disassembly->GetBufferPointer()));
-      }
-    }
-
-    // Perform shader reflection to validate bindings
-    const char* validateBindings = std::getenv("IGL_D3D12_VALIDATE_SHADER_BINDINGS");
-    if (validateBindings && std::string(validateBindings) == "1") {
-      Microsoft::WRL::ComPtr<ID3D12ShaderReflection> reflection;
-      HRESULT reflHr = D3DReflect(
-          shaderBlob->GetBufferPointer(),
-          shaderBlob->GetBufferSize(),
-          IID_PPV_ARGS(reflection.GetAddressOf())
-      );
-
-      if (SUCCEEDED(reflHr)) {
-        D3D12_SHADER_DESC shaderDesc = {};
-        reflection->GetDesc(&shaderDesc);
-
-        const char* stageStr = "";
-        switch (desc.info.stage) {
-          case ShaderStage::Vertex: stageStr = "VERTEX"; break;
-          case ShaderStage::Fragment: stageStr = "FRAGMENT/PIXEL"; break;
-          case ShaderStage::Compute: stageStr = "COMPUTE"; break;
-          default: stageStr = "UNKNOWN"; break;
-        }
-
-        IGL_LOG_INFO("\n=== SHADER REFLECTION (%s - %s) ===\n", stageStr, desc.info.entryPoint.c_str());
-        IGL_LOG_INFO("  Bound Resources: %u\n", shaderDesc.BoundResources);
-
-        for (UINT i = 0; i < shaderDesc.BoundResources; ++i) {
-          D3D12_SHADER_INPUT_BIND_DESC bindDesc = {};
-          if (SUCCEEDED(reflection->GetResourceBindingDesc(i, &bindDesc))) {
-            const char* typeStr = "";
-            const char* registerPrefix = "";
-            switch (bindDesc.Type) {
-              case D3D_SIT_CBUFFER: typeStr = "ConstantBuffer"; registerPrefix = "b"; break;
-              case D3D_SIT_TBUFFER: typeStr = "TextureBuffer"; registerPrefix = "t"; break;
-              case D3D_SIT_TEXTURE: typeStr = "Texture"; registerPrefix = "t"; break;
-              case D3D_SIT_SAMPLER: typeStr = "Sampler"; registerPrefix = "s"; break;
-              case D3D_SIT_UAV_RWTYPED: typeStr = "RWTexture"; registerPrefix = "u"; break;
-              case D3D_SIT_STRUCTURED: typeStr = "StructuredBuffer"; registerPrefix = "t"; break;
-              case D3D_SIT_UAV_RWSTRUCTURED: typeStr = "RWStructuredBuffer"; registerPrefix = "u"; break;
-              case D3D_SIT_BYTEADDRESS: typeStr = "ByteAddressBuffer"; registerPrefix = "t"; break;
-              case D3D_SIT_UAV_RWBYTEADDRESS: typeStr = "RWByteAddressBuffer"; registerPrefix = "u"; break;
-              default: typeStr = "Unknown"; registerPrefix = "?"; break;
-            }
-            IGL_LOG_INFO("    [%u] %s '%s' at %s%u (space %u)\n",
-                         i, typeStr, bindDesc.Name, registerPrefix, bindDesc.BindPoint, bindDesc.Space);
-          }
-        }
-
-        IGL_LOG_INFO("  Constant Buffers: %u\n", shaderDesc.ConstantBuffers);
-        for (UINT i = 0; i < shaderDesc.ConstantBuffers; ++i) {
-          ID3D12ShaderReflectionConstantBuffer* cb = reflection->GetConstantBufferByIndex(i);
-          D3D12_SHADER_BUFFER_DESC cbDesc = {};
-          if (cb && SUCCEEDED(cb->GetDesc(&cbDesc))) {
-            IGL_LOG_INFO("    [%u] %s: %u bytes, %u variables\n",
-                         i, cbDesc.Name, cbDesc.Size, cbDesc.Variables);
-          }
-        }
-        IGL_LOG_INFO("================================\n\n");
-      }
-    }
-
-    // Copy compiled bytecode
-    bytecode.resize(shaderBlob->GetBufferSize());
-    std::memcpy(bytecode.data(), shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize());
+    // Note: Disassembly and reflection for DXIL bytecode can be added if needed
+    // DXC uses IDxcUtils::CreateReflection() instead of D3DReflect()
+    // For now, bytecode is ready to use (already populated by dxcCompiler.compile())
   } else {
     Result::setResult(outResult, Result::Code::Unsupported, "Unsupported shader input type");
     return nullptr;

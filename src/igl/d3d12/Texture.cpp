@@ -7,7 +7,7 @@
 
 #include <algorithm>
 #include <igl/d3d12/Texture.h>
-#include <d3dcompiler.h>
+#include <igl/d3d12/DXCCompiler.h>
 
 namespace {
 bool needsRGBAChannelSwap(igl::TextureFormat format) {
@@ -497,19 +497,38 @@ SamplerState smp : register(s0);
 float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return tex0.SampleLevel(smp, uv, 0); }
 )";
 
-  Microsoft::WRL::ComPtr<ID3DBlob> vs, ps, errs;
-  if (FAILED(D3DCompile(kVS, strlen(kVS), nullptr, nullptr, nullptr, "main", "vs_5_0", 0, 0, vs.GetAddressOf(), errs.GetAddressOf()))) {
+  // Initialize DXC compiler (static, initialized once)
+  static DXCCompiler dxcCompiler;
+  static bool dxcInitialized = false;
+  if (!dxcInitialized) {
+    Result initResult = dxcCompiler.initialize();
+    if (!initResult.isOk()) {
+      IGL_LOG_ERROR("Texture::generateMipMaps - DXC initialization failed: %s\n", initResult.message.c_str());
+      return;
+    }
+    dxcInitialized = true;
+  }
+
+  // Compile shaders with DXC (Shader Model 6.0)
+  std::vector<uint8_t> vsBytecode, psBytecode;
+  std::string vsErrors, psErrors;
+
+  Result vsResult = dxcCompiler.compile(kVS, strlen(kVS), "main", "vs_6_0", "MipmapGenerationVS", 0, vsBytecode, vsErrors);
+  if (!vsResult.isOk()) {
+    IGL_LOG_ERROR("Texture::generateMipMaps - VS compilation failed: %s\n%s\n", vsResult.message.c_str(), vsErrors.c_str());
     return;
   }
-  errs.Reset();
-  if (FAILED(D3DCompile(kPS, strlen(kPS), nullptr, nullptr, nullptr, "main", "ps_5_0", 0, 0, ps.GetAddressOf(), errs.GetAddressOf()))) {
+
+  Result psResult = dxcCompiler.compile(kPS, strlen(kPS), "main", "ps_6_0", "MipmapGenerationPS", 0, psBytecode, psErrors);
+  if (!psResult.isOk()) {
+    IGL_LOG_ERROR("Texture::generateMipMaps - PS compilation failed: %s\n%s\n", psResult.message.c_str(), psErrors.c_str());
     return;
   }
 
   D3D12_GRAPHICS_PIPELINE_STATE_DESC pso = {};
   pso.pRootSignature = rootSig.Get();
-  pso.VS = {vs->GetBufferPointer(), vs->GetBufferSize()};
-  pso.PS = {ps->GetBufferPointer(), ps->GetBufferSize()};
+  pso.VS = {vsBytecode.data(), vsBytecode.size()};
+  pso.PS = {psBytecode.data(), psBytecode.size()};
   pso.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
   pso.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
   pso.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
@@ -696,14 +715,39 @@ Texture2D tex0 : register(t0);
 SamplerState smp : register(s0);
 float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return tex0.SampleLevel(smp, uv, 0); }
 )";
-  Microsoft::WRL::ComPtr<ID3DBlob> vs, ps, errs;
-  if (FAILED(D3DCompile(kVS, strlen(kVS), nullptr, nullptr, nullptr, "main", "vs_5_0", 0, 0, vs.GetAddressOf(), errs.GetAddressOf()))) return;
-  errs.Reset();
-  if (FAILED(D3DCompile(kPS, strlen(kPS), nullptr, nullptr, nullptr, "main", "ps_5_0", 0, 0, ps.GetAddressOf(), errs.GetAddressOf()))) return;
+
+  // Initialize DXC compiler (static, initialized once)
+  static DXCCompiler dxcCompiler;
+  static bool dxcInitialized = false;
+  if (!dxcInitialized) {
+    Result initResult = dxcCompiler.initialize();
+    if (!initResult.isOk()) {
+      IGL_LOG_ERROR("Texture::upload - DXC initialization failed: %s\n", initResult.message.c_str());
+      return;
+    }
+    dxcInitialized = true;
+  }
+
+  // Compile shaders with DXC (Shader Model 6.0)
+  std::vector<uint8_t> vsBytecode, psBytecode;
+  std::string vsErrors, psErrors;
+
+  Result vsResult = dxcCompiler.compile(kVS, strlen(kVS), "main", "vs_6_0", "TextureUploadVS", 0, vsBytecode, vsErrors);
+  if (!vsResult.isOk()) {
+    IGL_LOG_ERROR("Texture::upload - VS compilation failed: %s\n%s\n", vsResult.message.c_str(), vsErrors.c_str());
+    return;
+  }
+
+  Result psResult = dxcCompiler.compile(kPS, strlen(kPS), "main", "ps_6_0", "TextureUploadPS", 0, psBytecode, psErrors);
+  if (!psResult.isOk()) {
+    IGL_LOG_ERROR("Texture::upload - PS compilation failed: %s\n%s\n", psResult.message.c_str(), psErrors.c_str());
+    return;
+  }
+
   D3D12_GRAPHICS_PIPELINE_STATE_DESC pso = {};
   pso.pRootSignature = rootSig.Get();
-  pso.VS = {vs->GetBufferPointer(), vs->GetBufferSize()};
-  pso.PS = {ps->GetBufferPointer(), ps->GetBufferSize()};
+  pso.VS = {vsBytecode.data(), vsBytecode.size()};
+  pso.PS = {psBytecode.data(), psBytecode.size()};
   pso.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
   pso.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
   pso.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
