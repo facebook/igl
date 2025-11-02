@@ -150,224 +150,180 @@ Result Texture::upload(const TextureRangeDesc& range,
   D3D12_RESOURCE_DESC resourceDesc = resource_->GetDesc();
 
   // Determine how many layers/faces and mip levels we need to upload
-  // For cube textures, use range.numFaces; for other textures, use range.numLayers
   const uint32_t numSlicesToUpload = (type_ == TextureType::Cube) ? range.numFaces : range.numLayers;
   const uint32_t baseSlice = (type_ == TextureType::Cube) ? range.face : range.layer;
   const uint32_t numMipsToUpload = range.numMipLevels;
   const uint32_t baseMip = range.mipLevel;
 
-  IGL_LOG_INFO("Texture::upload() - Uploading %u slices x %u mips starting from slice %u, mip %u\n",
-               numSlicesToUpload, numMipsToUpload, baseSlice, baseMip);
+  // Calculate total staging buffer size for ALL subresources
+  UINT64 totalStagingSize = 0;
+  std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts;
+  std::vector<UINT> numRowsArray;
+  std::vector<UINT64> rowSizesArray;
 
-  // Calculate current width/height/depth for mip level iteration
-  uint32_t currentWidth = width;
-  uint32_t currentHeight = height;
-  uint32_t currentDepth = depth;
-  size_t currentDataOffset = 0;
-
-  // Loop through all mip levels to upload
   for (uint32_t mipOffset = 0; mipOffset < numMipsToUpload; ++mipOffset) {
-    const uint32_t currentMip = baseMip + mipOffset;
-
-    // Loop through all layers/faces for this mip level
     for (uint32_t sliceOffset = 0; sliceOffset < numSlicesToUpload; ++sliceOffset) {
-      const uint32_t currentSlice = baseSlice + sliceOffset;
-      const uint32_t subresourceIndex = calcSubresourceIndex(currentMip, currentSlice);
+      const uint32_t subresource = calcSubresourceIndex(baseMip + mipOffset, baseSlice + sliceOffset);
+      D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout;
+      UINT numRows;
+      UINT64 rowSize;
+      UINT64 subresSize;
+      device_->GetCopyableFootprints(&resourceDesc, subresource, 1, totalStagingSize, &layout, &numRows, &rowSize, &subresSize);
+      layouts.push_back(layout);
+      numRowsArray.push_back(numRows);
+      rowSizesArray.push_back(rowSize);
+      totalStagingSize += subresSize;
+    }
+  }
 
-      IGL_LOG_INFO("Texture::upload() - Processing mip %u, slice %u (subresource %u)\n",
-                   currentMip, currentSlice, subresourceIndex);
-
-    D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout;
-    UINT numRows;
-    UINT64 rowSizeInBytes;
-    UINT64 totalBytes;
-
-    device_->GetCopyableFootprints(&resourceDesc, subresourceIndex, 1, 0,
-                                    &layout, &numRows, &rowSizeInBytes, &totalBytes);
-
-      // Use current mip dimensions for this upload
-      const uint32_t mipWidth = std::max(currentWidth >> mipOffset, 1u);
-      const uint32_t mipHeight = std::max(currentHeight >> mipOffset, 1u);
-      const uint32_t mipDepth = std::max(currentDepth >> mipOffset, 1u);
-      const size_t mipBytesPerRow = (bytesPerRow * mipWidth) / width;  // Scale bytes per row for mip level
-
-      IGL_LOG_INFO("Texture::upload() - Dimensions: %ux%ux%u, bytesPerRow=%zu, numRows=%u, totalBytes=%llu\n",
-                   mipWidth, mipHeight, mipDepth, mipBytesPerRow, numRows, totalBytes);
-      IGL_LOG_INFO("Texture::upload() - Layout: RowPitch=%u, Depth=%u, Format=%d, Dimension=%d\n",
-                   layout.Footprint.RowPitch, layout.Footprint.Depth, layout.Footprint.Format, resourceDesc.Dimension);
-
-      // Use footprint returned by GetCopyableFootprints for this subresource without overriding
-      // Limit copy region via srcBox and row count below
-
-      // Create staging buffer (upload heap)
+  // Create single staging buffer for all uploads
   D3D12_HEAP_PROPERTIES uploadHeapProps = {};
   uploadHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
-  uploadHeapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-  uploadHeapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
   uploadHeapProps.CreationNodeMask = 1;
   uploadHeapProps.VisibleNodeMask = 1;
 
   D3D12_RESOURCE_DESC stagingDesc = {};
   stagingDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-  stagingDesc.Alignment = 0;
-  stagingDesc.Width = totalBytes;
+  stagingDesc.Width = totalStagingSize;
   stagingDesc.Height = 1;
   stagingDesc.DepthOrArraySize = 1;
   stagingDesc.MipLevels = 1;
   stagingDesc.Format = DXGI_FORMAT_UNKNOWN;
   stagingDesc.SampleDesc.Count = 1;
-  stagingDesc.SampleDesc.Quality = 0;
   stagingDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-  stagingDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
   Microsoft::WRL::ComPtr<ID3D12Resource> stagingBuffer;
-  HRESULT hr = device_->CreateCommittedResource(
-      &uploadHeapProps,
-      D3D12_HEAP_FLAG_NONE,
-      &stagingDesc,
-      D3D12_RESOURCE_STATE_GENERIC_READ,
-      nullptr,
-      IID_PPV_ARGS(stagingBuffer.GetAddressOf()));
-
+  HRESULT hr = device_->CreateCommittedResource(&uploadHeapProps, D3D12_HEAP_FLAG_NONE, &stagingDesc,
+                                                 D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+                                                 IID_PPV_ARGS(stagingBuffer.GetAddressOf()));
   if (FAILED(hr)) {
-    return Result(Result::Code::RuntimeError, "Failed to create staging buffer for texture upload");
+    return Result(Result::Code::RuntimeError, "Failed to create staging buffer");
   }
 
-  // Map and copy data to staging buffer
+  // Map staging buffer once
   void* mappedData = nullptr;
   hr = stagingBuffer->Map(0, nullptr, &mappedData);
   if (FAILED(hr)) {
     return Result(Result::Code::RuntimeError, "Failed to map staging buffer");
   }
 
-      // Copy data for each depth slice (for 2D textures, depth=1)
-      // Calculate source data offset for this specific mip level and layer/face
-      const uint8_t* srcData = static_cast<const uint8_t*>(data) + currentDataOffset;
+  // Copy all subresource data to staging buffer
+  size_t srcDataOffset = 0;
+  size_t layoutIdx = 0;
+  const bool swapRB = needsRGBAChannelSwap(format_);
+
+  for (uint32_t mipOffset = 0; mipOffset < numMipsToUpload; ++mipOffset) {
+    const uint32_t mipWidth = std::max(width >> (baseMip + mipOffset), 1u);
+    const uint32_t mipHeight = std::max(height >> (baseMip + mipOffset), 1u);
+    const uint32_t mipDepth = std::max(depth >> (baseMip + mipOffset), 1u);
+    const size_t mipBytesPerRow = (bytesPerRow * mipWidth) / width;
+    const size_t srcLayerSize = mipBytesPerRow * mipHeight * mipDepth;
+
+    for (uint32_t sliceOffset = 0; sliceOffset < numSlicesToUpload; ++sliceOffset) {
+      const auto& layout = layouts[layoutIdx];
+      const UINT numRows = numRowsArray[layoutIdx];
+      const UINT64 rowSize = rowSizesArray[layoutIdx];
+      layoutIdx++;
+
+      const uint8_t* srcData = static_cast<const uint8_t*>(data) + srcDataOffset;
       uint8_t* dstData = static_cast<uint8_t*>(mappedData) + layout.Offset;
-      const UINT rowsToCopy = (range.height > 0) ? std::min<UINT>(mipHeight, numRows) : numRows;
-      const UINT depthToCopy = mipDepth;  // For 2D textures, depth=1; for 3D textures, depth=actual depth
-      const size_t copyBytes = std::min(static_cast<size_t>(rowSizeInBytes), mipBytesPerRow);
-      const bool swapRB = needsRGBAChannelSwap(format_);  // Swap R<->B for RGBA textures to match D3D12's BGRA format
+      const size_t copyBytes = std::min(static_cast<size_t>(rowSize), mipBytesPerRow);
+      const size_t srcDepthPitch = mipBytesPerRow * mipHeight;
+      const size_t dstDepthPitch = layout.Footprint.RowPitch * layout.Footprint.Height;
 
-      // For 3D textures: copy data slice by slice
-      // For 2D textures: depthToCopy=1, so this loops once
-      const size_t srcDepthPitch = mipBytesPerRow * mipHeight;  // Size of one depth slice in source data
-      const size_t dstDepthPitch = layout.Footprint.RowPitch * layout.Footprint.Height;  // Size of one depth slice in staging buffer
-
-      IGL_LOG_INFO("Texture::upload() - Copy loop: depth=%u, rows=%u, srcDepthPitch=%zu, dstDepthPitch=%zu\n",
-                   depthToCopy, rowsToCopy, srcDepthPitch, dstDepthPitch);
-
-      for (UINT z = 0; z < depthToCopy; ++z) {
-    const uint8_t* srcSlice = srcData + z * srcDepthPitch;
-    uint8_t* dstSlice = dstData + z * dstDepthPitch;
-
-        for (UINT row = 0; row < rowsToCopy; ++row) {
-          uint8_t* dstRow = dstSlice + row * layout.Footprint.RowPitch;
+      for (UINT z = 0; z < mipDepth; ++z) {
+        const uint8_t* srcSlice = srcData + z * srcDepthPitch;
+        uint8_t* dstSlice = dstData + z * dstDepthPitch;
+        for (UINT row = 0; row < std::min(mipHeight, numRows); ++row) {
           const uint8_t* srcRow = srcSlice + row * mipBytesPerRow;
+          uint8_t* dstRow = dstSlice + row * layout.Footprint.RowPitch;
           if (swapRB) {
-            const uint32_t pixels = mipWidth;
-            for (uint32_t col = 0; col < pixels; ++col) {
+            for (uint32_t col = 0; col < mipWidth; ++col) {
               const uint32_t idx = col * 4;
-              dstRow[idx + 0] = srcRow[idx + 2]; // B <- R
-              dstRow[idx + 1] = srcRow[idx + 1]; // G stays
-              dstRow[idx + 2] = srcRow[idx + 0]; // R <- B
-              dstRow[idx + 3] = srcRow[idx + 3]; // A
+              dstRow[idx + 0] = srcRow[idx + 2];
+              dstRow[idx + 1] = srcRow[idx + 1];
+              dstRow[idx + 2] = srcRow[idx + 0];
+              dstRow[idx + 3] = srcRow[idx + 3];
             }
           } else {
             memcpy(dstRow, srcRow, copyBytes);
           }
         }
       }
+      srcDataOffset += srcLayerSize;
+    }
+  }
 
   stagingBuffer->Unmap(0, nullptr);
 
-  // Create command allocator and command list for upload
+  // Create command list for all uploads
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAlloc;
-  hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                        IID_PPV_ARGS(cmdAlloc.GetAddressOf()));
+  hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(cmdAlloc.GetAddressOf()));
   if (FAILED(hr)) {
-    return Result(Result::Code::RuntimeError, "Failed to create command allocator for upload");
+    return Result(Result::Code::RuntimeError, "Failed to create command allocator");
   }
 
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
   hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAlloc.Get(), nullptr,
                                    IID_PPV_ARGS(cmdList.GetAddressOf()));
   if (FAILED(hr)) {
-    return Result(Result::Code::RuntimeError, "Failed to create command list for upload");
+    return Result(Result::Code::RuntimeError, "Failed to create command list");
   }
 
-      // Transition texture to COPY_DEST state
+  // Record all copy commands
+  layoutIdx = 0;
+  for (uint32_t mipOffset = 0; mipOffset < numMipsToUpload; ++mipOffset) {
+    const uint32_t currentMip = baseMip + mipOffset;
+    const uint32_t mipWidth = std::max(width >> currentMip, 1u);
+    const uint32_t mipHeight = std::max(height >> currentMip, 1u);
+    const uint32_t mipDepth = std::max(depth >> currentMip, 1u);
+
+    for (uint32_t sliceOffset = 0; sliceOffset < numSlicesToUpload; ++sliceOffset) {
+      const uint32_t currentSlice = baseSlice + sliceOffset;
+      const uint32_t subresource = calcSubresourceIndex(currentMip, currentSlice);
+
       transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_DEST, currentMip, currentSlice);
 
-      // Copy from staging buffer to texture
       D3D12_TEXTURE_COPY_LOCATION dst = {};
       dst.pResource = resource_.Get();
       dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-      dst.SubresourceIndex = subresourceIndex;  // Already calculated earlier with both mip and layer
+      dst.SubresourceIndex = subresource;
 
       D3D12_TEXTURE_COPY_LOCATION src = {};
       src.pResource = stagingBuffer.Get();
       src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-      src.PlacedFootprint = layout;
+      src.PlacedFootprint = layouts[layoutIdx];
+      layoutIdx++;
 
-      // Define source box for the copy region
-      // For 3D textures, srcBox.back must be set to the depth value
-      // For 2D textures, depth=1, so srcBox.back=1 (as before)
-      D3D12_BOX srcBox = {};
-      srcBox.left = 0;
-      srcBox.top = 0;
-      srcBox.front = 0;
-      srcBox.right = mipWidth;
-      srcBox.bottom = mipHeight;
-      srcBox.back = mipDepth;  // CRITICAL: Use actual depth, not hardcoded 1
-
-      IGL_LOG_INFO("Texture::upload() - CopyTextureRegion: srcBox (%u,%u,%u)->(%u,%u,%u), dst offset (%u,%u,%u)\n",
-                   srcBox.left, srcBox.top, srcBox.front, srcBox.right, srcBox.bottom, srcBox.back,
-                   range.x, range.y, range.z);
-
+      D3D12_BOX srcBox = {0, 0, 0, mipWidth, mipHeight, mipDepth};
       cmdList->CopyTextureRegion(&dst, range.x, range.y, range.z, &src, &srcBox);
 
-      // Transition texture to PIXEL_SHADER_RESOURCE state for rendering
-      transitionTo(cmdList.Get(),
-                   D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-                   currentMip,
-                   currentSlice);
+      transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, currentMip, currentSlice);
+    }
+  }
 
   cmdList->Close();
 
-  // Execute command list
+  // Execute once and wait once
   ID3D12CommandList* cmdLists[] = {cmdList.Get()};
   queue_->ExecuteCommandLists(1, cmdLists);
 
-  // Wait for upload to complete (synchronous for now)
-  IGL_LOG_INFO("Texture::upload() - Creating fence for GPU sync\n");
   Microsoft::WRL::ComPtr<ID3D12Fence> fence;
   hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf()));
   if (FAILED(hr)) {
-    IGL_LOG_ERROR("Texture::upload() - Failed to create fence\n");
-    return Result(Result::Code::RuntimeError, "Failed to create fence for upload sync");
+    return Result(Result::Code::RuntimeError, "Failed to create fence");
   }
 
   HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
   if (!fenceEvent) {
-    IGL_LOG_ERROR("Texture::upload() - Failed to create fence event\n");
     return Result(Result::Code::RuntimeError, "Failed to create fence event");
   }
 
-  IGL_LOG_INFO("Texture::upload() - Signaling fence and waiting...\n");
   queue_->Signal(fence.Get(), 1);
   fence->SetEventOnCompletion(1, fenceEvent);
-      WaitForSingleObject(fenceEvent, INFINITE);
-      IGL_LOG_INFO("Texture::upload() - Fence signaled, upload complete!\n");
-      CloseHandle(fenceEvent);
+  WaitForSingleObject(fenceEvent, INFINITE);
+  CloseHandle(fenceEvent);
 
-      // Update data offset for next slice
-      currentDataOffset += mipBytesPerRow * mipHeight * mipDepth;
-
-    } // End of layer/face loop
-  } // End of mip level loop
-
-  IGL_LOG_INFO("Texture::upload() - All %u mips x %u slices uploaded successfully\n", numMipsToUpload, numSlicesToUpload);
   return Result();
 }
 

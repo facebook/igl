@@ -98,13 +98,16 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
 
   // Describe the region to read back
   const uint32_t mipLevel = range.mipLevel;
+  // For cube textures, use range.face; for array textures, use range.layer
+  const uint32_t copyLayer = (srcTex->getType() == TextureType::Cube) ? range.face : range.layer;
+  const uint32_t subresourceIndex = srcTex->calcSubresourceIndex(mipLevel, copyLayer);
   D3D12_RESOURCE_DESC srcDesc = srcRes->GetDesc();
 
   D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint{};
   UINT numRows = 0;
   UINT64 rowSizeInBytes = 0;
   UINT64 totalBytes = 0;
-  device->GetCopyableFootprints(&srcDesc, mipLevel, 1, 0, &footprint, &numRows, &rowSizeInBytes, &totalBytes);
+  device->GetCopyableFootprints(&srcDesc, subresourceIndex, 1, 0, &footprint, &numRows, &rowSizeInBytes, &totalBytes);
 
   // Create readback buffer
   D3D12_HEAP_PROPERTIES readbackHeap{};
@@ -142,7 +145,6 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  const uint32_t copyLayer = range.layer;
   const auto previousState = srcTex->getSubresourceState(mipLevel, copyLayer);
   srcTex->transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, mipLevel, copyLayer);
 
@@ -155,7 +157,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
   D3D12_TEXTURE_COPY_LOCATION srcLoc{};
   srcLoc.pResource = srcRes;
   srcLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-  srcLoc.SubresourceIndex = mipLevel;
+  srcLoc.SubresourceIndex = subresourceIndex;
 
   // Copy the requested box region
   D3D12_BOX srcBox{};

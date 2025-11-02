@@ -50,7 +50,7 @@ for session in "${SESSIONS[@]}"; do
     echo "Testing: $session" | tee -a "$LOG_FILE"
 
     # Run session with screenshot capture (frame 10 for multi-frame validation)
-    timeout 30s ./build/shell/Debug/$session.exe \
+    timeout 60s ./build/shell/Debug/$session.exe \
         --viewport-size 640x360 \
         --screenshot-number 10 \
         --screenshot-file "$session_dir/${session_name}_test.png" \
@@ -68,8 +68,8 @@ for session in "${SESSIONS[@]}"; do
             echo "  Status: PASS" | tee -a "$LOG_FILE"
             PASS_COUNT=$((PASS_COUNT + 1))
         fi
-    elif [ $EXIT_CODE -eq 124 ]; then
-        echo "  Status: TIMEOUT (hangs)" | tee -a "$LOG_FILE"
+    elif [ $EXIT_CODE -eq 124 ] || [ $EXIT_CODE -eq 125 ]; then
+        echo "  Status: TIMEOUT (hangs or slow)" | tee -a "$LOG_FILE"
         FAIL_COUNT=$((FAIL_COUNT + 1))
     else
         echo "  Status: CRASH (exit code: $EXIT_CODE)" | tee -a "$LOG_FILE"

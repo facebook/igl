@@ -792,5 +792,46 @@ constexpr std::string_view kD3D12SimpleFragShaderTexArray =
       }
     );
 
+// D3D12 TextureCube Vertex shader
+constexpr std::string_view kD3D12SimpleVertShaderCube =
+    IGL_TO_STRING(
+      cbuffer VertexUniforms : register(b2) {
+        float4 view;
+      };
+
+      struct VSIn {
+        float4 position_in : POSITION;
+        float2 uv_in : TEXCOORD0;
+      };
+
+      struct VSOut {
+        float4 position : SV_POSITION;
+        float3 viewDir : TEXCOORD0;
+      };
+
+      VSOut main(VSIn input) {
+        VSOut output;
+        output.position = input.position_in;
+        output.viewDir = view.xyz;
+        return output;
+      }
+    );
+
+// D3D12 TextureCube Fragment shader
+constexpr std::string_view kD3D12SimpleFragShaderCube =
+    IGL_TO_STRING(
+      TextureCube inputImage : register(t0);
+      SamplerState inputSampler : register(s0);
+
+      struct PSIn {
+        float4 position : SV_POSITION;
+        float3 viewDir : TEXCOORD0;
+      };
+
+      float4 main(PSIn input) : SV_TARGET {
+        return inputImage.Sample(inputSampler, input.viewDir);
+      }
+    );
+
 // clang-format on
 } // namespace igl::tests::data::shader

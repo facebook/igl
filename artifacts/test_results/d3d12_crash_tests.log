@@ -1,0 +1,288 @@
+Note: Google Test filter = RenderCommandEncoderTest.drawUsingBindPushConstants:RenderCommandEncoderTest.shouldDrawTriangleStripCopyTextureToBuffer:DepthStencilStateTest.SetStencilReferenceValueAndCheck
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from RenderCommandEncoderTest
+[ RUN      ] RenderCommandEncoderTest.shouldDrawTriangleStripCopyTextureToBuffer
+[Tests] Creating D3D12 test device (debug layer: disabled)
+[Tests] D3D12 test device requested (debug layer: disabled)
+HeadlessD3D12Context: Debug layer enabled
+HeadlessD3D12Context: Created device on HW adapter (FL 12.0)
+HeadlessD3D12Context: Initialization complete
+[Tests] D3D12 test device created OK
+Texture::createFromResource - SUCCESS: 4x4 format=16
+Texture::createFromResource - SUCCESS: 4x4 format=84
+Device::createShaderModule() - stage=0, entryPoint='main', debugName=''
+  Compiling HLSL from string (230 bytes)...
+  Shader compiled successfully (604 bytes bytecode)
+Device::createShaderModule() - stage=1, entryPoint='main', debugName=''
+  Compiling HLSL from string (219 bytes)...
+  Shader compiled successfully (660 bytes bytecode)
+Texture::createFromResource - SUCCESS: 4x4 format=16
+Texture::upload() - START: 4x4
+Texture::upload() - Proceeding with upload
+Texture::upload() - Creating fence for GPU sync
+Texture::upload() - Signaling fence and waiting...
+Texture::upload() - Fence signaled, upload complete!
+Device::createRenderPipeline() START - debugName=''
+  Getting shader bytecode...
+  VS bytecode: 604 bytes, PS bytecode: 660 bytes
+  Creating root signature with CBVs/SRVs/Samplers
+  Serializing root signature...
+  Root signature serialized OK
+  Creating root signature...
+  Root signature created OK
+  Processing vertex input state: 2 attributes
+    Attribute 0: name='position_in', format=3, offset=0, bufferIndex=0
+      Mapped 'position_in' -> 'POSITION'
+    Attribute 1: name='uv_in', format=1, offset=0, bufferIndex=1
+      Mapped 'uv_in' -> 'TEXCOORD'
+  Final input layout: 2 elements
+    [0]: POSITION (index 0), format 2, slot 0, offset 0
+    [1]: TEXCOORD (index 0), format 16, slot 1, offset 0
+  Reflecting vertex shader to verify input signature...
+    Shader expects 2 input parameters:
+      [0]: POSITION0 (semantic index 0), mask 0x0F
+      [1]: TEXCOORD0 (semantic index 0), mask 0x03
+  Creating pipeline state (this may take a moment)...
+Device::createRenderPipeline() SUCCESS - PSO=0000020D6B0B45D0, RootSig=0000020D6B0300E0
+Device::createRenderPipeline() START - debugName=''
+  Getting shader bytecode...
+  VS bytecode: 604 bytes, PS bytecode: 660 bytes
+  Creating root signature with CBVs/SRVs/Samplers
+  Serializing root signature...
+  Root signature serialized OK
+  Creating root signature...
+  Root signature created OK
+  Processing vertex input state: 2 attributes
+    Attribute 0: name='position_in', format=3, offset=0, bufferIndex=0
+      Mapped 'position_in' -> 'POSITION'
+    Attribute 1: name='uv_in', format=1, offset=0, bufferIndex=1
+      Mapped 'uv_in' -> 'TEXCOORD'
+  Final input layout: 2 elements
+    [0]: POSITION (index 0), format 2, slot 0, offset 0
+    [1]: TEXCOORD (index 0), format 16, slot 1, offset 0
+  Reflecting vertex shader to verify input signature...
+    Shader expects 2 input parameters:
+      [0]: POSITION0 (semantic index 0), mask 0x0F
+      [1]: TEXCOORD0 (semantic index 0), mask 0x03
+  Creating pipeline state (this may take a moment)...
+Device::createRenderPipeline() SUCCESS - PSO=0000020D6465D8D0, RootSig=0000020D6B0300E0
+Device::createRenderPipeline() START - debugName=''
+  Getting shader bytecode...
+  VS bytecode: 604 bytes, PS bytecode: 660 bytes
+  Creating root signature with CBVs/SRVs/Samplers
+  Serializing root signature...
+  Root signature serialized OK
+  Creating root signature...
+  Root signature created OK
+  Processing vertex input state: 2 attributes
+    Attribute 0: name='position_in', format=3, offset=0, bufferIndex=0
+      Mapped 'position_in' -> 'POSITION'
+    Attribute 1: name='uv_in', format=1, offset=0, bufferIndex=1
+      Mapped 'uv_in' -> 'TEXCOORD'
+  Final input layout: 2 elements
+    [0]: POSITION (index 0), format 2, slot 0, offset 0
+    [1]: TEXCOORD (index 0), format 16, slot 1, offset 0
+  Reflecting vertex shader to verify input signature...
+    Shader expects 2 input parameters:
+      [0]: POSITION0 (semantic index 0), mask 0x0F
+      [1]: TEXCOORD0 (semantic index 0), mask 0x03
+  Creating pipeline state (this may take a moment)...
+Device::createRenderPipeline() SUCCESS - PSO=0000020D6465E8C0, RootSig=0000020D6B0300E0
+Device::createRenderPipeline() START - debugName=''
+  Getting shader bytecode...
+  VS bytecode: 604 bytes, PS bytecode: 660 bytes
+  Creating root signature with CBVs/SRVs/Samplers
+  Serializing root signature...
+  Root signature serialized OK
+  Creating root signature...
+  Root signature created OK
+  Processing vertex input state: 2 attributes
+    Attribute 0: name='position_in', format=3, offset=0, bufferIndex=0
+      Mapped 'position_in' -> 'POSITION'
+    Attribute 1: name='uv_in', format=1, offset=0, bufferIndex=1
+      Mapped 'uv_in' -> 'TEXCOORD'
+  Final input layout: 2 elements
+    [0]: POSITION (index 0), format 2, slot 0, offset 0
+    [1]: TEXCOORD (index 0), format 16, slot 1, offset 0
+  Reflecting vertex shader to verify input signature...
+    Shader expects 2 input parameters:
+      [0]: POSITION0 (semantic index 0), mask 0x0F
+      [1]: TEXCOORD0 (semantic index 0), mask 0x03
+  Creating pipeline state (this may take a moment)...
+Device::createRenderPipeline() SUCCESS - PSO=0000020D6465F8B0, RootSig=0000020D6B0300E0
+Device::createRenderPipeline() START - debugName=''
+  Getting shader bytecode...
+  VS bytecode: 604 bytes, PS bytecode: 660 bytes
+  Creating root signature with CBVs/SRVs/Samplers
+  Serializing root signature...
+  Root signature serialized OK
+  Creating root signature...
+  Root signature created OK
+  Processing vertex input state: 2 attributes
+    Attribute 0: name='position_in', format=3, offset=0, bufferIndex=0
+      Mapped 'position_in' -> 'POSITION'
+    Attribute 1: name='uv_in', format=1, offset=0, bufferIndex=1
+      Mapped 'uv_in' -> 'TEXCOORD'
+  Final input layout: 2 elements
+    [0]: POSITION (index 0), format 2, slot 0, offset 0
+    [1]: TEXCOORD (index 0), format 16, slot 1, offset 0
+  Reflecting vertex shader to verify input signature...
+    Shader expects 2 input parameters:
+      [0]: POSITION0 (semantic index 0), mask 0x0F
+      [1]: TEXCOORD0 (semantic index 0), mask 0x03
+  Creating pipeline state (this may take a moment)...
+Device::createRenderPipeline() SUCCESS - PSO=0000020D646608A0, RootSig=0000020D6B0300E0
+C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\RenderCommandEncoder.cpp(205): error: Value of: ret.isOk()
+  Actual: false
+Expected: true
+D3D12 Device not yet implemented
+
+[  FAILED  ] RenderCommandEncoderTest.shouldDrawTriangleStripCopyTextureToBuffer (1788 ms)
+[ RUN      ] RenderCommandEncoderTest.drawUsingBindPushConstants
+[Tests] Creating D3D12 test device (debug layer: disabled)
+[Tests] D3D12 test device requested (debug layer: disabled)
+HeadlessD3D12Context: Debug layer enabled
+HeadlessD3D12Context: Created device on HW adapter (FL 12.0)
+HeadlessD3D12Context: Initialization complete
+[Tests] D3D12 test device created OK
+Texture::createFromResource - SUCCESS: 4x4 format=16
+Texture::createFromResource - SUCCESS: 4x4 format=84
+Device::createShaderModule() - stage=0, entryPoint='main', debugName=''
+  Compiling HLSL from string (230 bytes)...
+  Shader compiled successfully (604 bytes bytecode)
+Device::createShaderModule() - stage=1, entryPoint='main', debugName=''
+  Compiling HLSL from string (219 bytes)...
+  Shader compiled successfully (660 bytes bytecode)
+Texture::createFromResource - SUCCESS: 4x4 format=16
+Texture::upload() - START: 4x4
+Texture::upload() - Proceeding with upload
+Texture::upload() - Creating fence for GPU sync
+Texture::upload() - Signaling fence and waiting...
+Texture::upload() - Fence signaled, upload complete!
+Device::createRenderPipeline() START - debugName=''
+  Getting shader bytecode...
+  VS bytecode: 604 bytes, PS bytecode: 660 bytes
+  Creating root signature with CBVs/SRVs/Samplers
+  Serializing root signature...
+  Root signature serialized OK
+  Creating root signature...
+  Root signature created OK
+  Processing vertex input state: 2 attributes
+    Attribute 0: name='position_in', format=3, offset=0, bufferIndex=0
+      Mapped 'position_in' -> 'POSITION'
+    Attribute 1: name='uv_in', format=1, offset=0, bufferIndex=1
+      Mapped 'uv_in' -> 'TEXCOORD'
+  Final input layout: 2 elements
+    [0]: POSITION (index 0), format 2, slot 0, offset 0
+    [1]: TEXCOORD (index 0), format 16, slot 1, offset 0
+  Reflecting vertex shader to verify input signature...
+    Shader expects 2 input parameters:
+      [0]: POSITION0 (semantic index 0), mask 0x0F
+      [1]: TEXCOORD0 (semantic index 0), mask 0x03
+  Creating pipeline state (this may take a moment)...
+Device::createRenderPipeline() SUCCESS - PSO=0000020D6495BB70, RootSig=0000020D6B0A6440
+Device::createRenderPipeline() START - debugName=''
+  Getting shader bytecode...
+  VS bytecode: 604 bytes, PS bytecode: 660 bytes
+  Creating root signature with CBVs/SRVs/Samplers
+  Serializing root signature...
+  Root signature serialized OK
+  Creating root signature...
+  Root signature created OK
+  Processing vertex input state: 2 attributes
+    Attribute 0: name='position_in', format=3, offset=0, bufferIndex=0
+      Mapped 'position_in' -> 'POSITION'
+    Attribute 1: name='uv_in', format=1, offset=0, bufferIndex=1
+      Mapped 'uv_in' -> 'TEXCOORD'
+  Final input layout: 2 elements
+    [0]: POSITION (index 0), format 2, slot 0, offset 0
+    [1]: TEXCOORD (index 0), format 16, slot 1, offset 0
+  Reflecting vertex shader to verify input signature...
+    Shader expects 2 input parameters:
+      [0]: POSITION0 (semantic index 0), mask 0x0F
+      [1]: TEXCOORD0 (semantic index 0), mask 0x03
+  Creating pipeline state (this may take a moment)...
+Device::createRenderPipeline() SUCCESS - PSO=0000020D6495CB60, RootSig=0000020D6B0A6440
+Device::createRenderPipeline() START - debugName=''
+  Getting shader bytecode...
+  VS bytecode: 604 bytes, PS bytecode: 660 bytes
+  Creating root signature with CBVs/SRVs/Samplers
+  Serializing root signature...
+  Root signature serialized OK
+  Creating root signature...
+  Root signature created OK
+  Processing vertex input state: 2 attributes
+    Attribute 0: name='position_in', format=3, offset=0, bufferIndex=0
+      Mapped 'position_in' -> 'POSITION'
+    Attribute 1: name='uv_in', format=1, offset=0, bufferIndex=1
+      Mapped 'uv_in' -> 'TEXCOORD'
+  Final input layout: 2 elements
+    [0]: POSITION (index 0), format 2, slot 0, offset 0
+    [1]: TEXCOORD (index 0), format 16, slot 1, offset 0
+  Reflecting vertex shader to verify input signature...
+    Shader expects 2 input parameters:
+      [0]: POSITION0 (semantic index 0), mask 0x0F
+      [1]: TEXCOORD0 (semantic index 0), mask 0x03
+  Creating pipeline state (this may take a moment)...
+Device::createRenderPipeline() SUCCESS - PSO=0000020D6495DB50, RootSig=0000020D6B0A6440
+Device::createRenderPipeline() START - debugName=''
+  Getting shader bytecode...
+  VS bytecode: 604 bytes, PS bytecode: 660 bytes
+  Creating root signature with CBVs/SRVs/Samplers
+  Serializing root signature...
+  Root signature serialized OK
+  Creating root signature...
+  Root signature created OK
+  Processing vertex input state: 2 attributes
+    Attribute 0: name='position_in', format=3, offset=0, bufferIndex=0
+      Mapped 'position_in' -> 'POSITION'
+    Attribute 1: name='uv_in', format=1, offset=0, bufferIndex=1
+      Mapped 'uv_in' -> 'TEXCOORD'
+  Final input layout: 2 elements
+    [0]: POSITION (index 0), format 2, slot 0, offset 0
+    [1]: TEXCOORD (index 0), format 16, slot 1, offset 0
+  Reflecting vertex shader to verify input signature...
+    Shader expects 2 input parameters:
+      [0]: POSITION0 (semantic index 0), mask 0x0F
+      [1]: TEXCOORD0 (semantic index 0), mask 0x03
+  Creating pipeline state (this may take a moment)...
+Device::createRenderPipeline() SUCCESS - PSO=0000020D6495F100, RootSig=0000020D6B0A6440
+Device::createRenderPipeline() START - debugName=''
+  Getting shader bytecode...
+  VS bytecode: 604 bytes, PS bytecode: 660 bytes
+  Creating root signature with CBVs/SRVs/Samplers
+  Serializing root signature...
+  Root signature serialized OK
+  Creating root signature...
+  Root signature created OK
+  Processing vertex input state: 2 attributes
+    Attribute 0: name='position_in', format=3, offset=0, bufferIndex=0
+      Mapped 'position_in' -> 'POSITION'
+    Attribute 1: name='uv_in', format=1, offset=0, bufferIndex=1
+      Mapped 'uv_in' -> 'TEXCOORD'
+  Final input layout: 2 elements
+    [0]: POSITION (index 0), format 2, slot 0, offset 0
+    [1]: TEXCOORD (index 0), format 16, slot 1, offset 0
+  Reflecting vertex shader to verify input signature...
+    Shader expects 2 input parameters:
+      [0]: POSITION0 (semantic index 0), mask 0x0F
+      [1]: TEXCOORD0 (semantic index 0), mask 0x03
+  Creating pipeline state (this may take a moment)...
+Device::createRenderPipeline() SUCCESS - PSO=0000020D649606B0, RootSig=0000020D6B0A6440
+C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\RenderCommandEncoder.cpp(205): error: Value of: ret.isOk()
+  Actual: false
+Expected: true
+D3D12 Device not yet implemented
+
+[  FAILED  ] RenderCommandEncoderTest.drawUsingBindPushConstants (34 ms)
+[----------] 2 tests from RenderCommandEncoderTest (1822 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (1822 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 2 tests, listed below:
+[  FAILED  ] RenderCommandEncoderTest.shouldDrawTriangleStripCopyTextureToBuffer
+[  FAILED  ] RenderCommandEncoderTest.drawUsingBindPushConstants
+
+ 2 FAILED TESTS

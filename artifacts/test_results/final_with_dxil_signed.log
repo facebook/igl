@@ -1,52 +1,96 @@
-C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\ComputeCommandEncoder.cpp(81): error: Value of: ret.isOk()
-  Actual: false
-Expected: true
-Invalid shader input
+=== D3D12 Comprehensive Test Suite ===
+Started: Sat, Nov  1, 2025 11:51:02 PM
 
-[  FAILED  ] ComputeCommandEncoderTest.canEncodeBasicBufferOperation (27 ms)
-C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\ComputeCommandEncoder.cpp(81): error: Value of: ret.isOk()
-  Actual: false
-Expected: true
-Invalid shader input
+Testing: BasicFramebufferSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
 
-[  FAILED  ] ComputeCommandEncoderTest.bindImageTexture (25 ms)
-C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\ComputeCommandEncoder.cpp(81): error: Value of: ret.isOk()
-  Actual: false
-Expected: true
-Invalid shader input
+Testing: BindGroupSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
 
-[  FAILED  ] ComputeCommandEncoderTest.canUseOutputBufferFromOnePassAsInputToNext (26 ms)
-C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\ComputeCommandEncoder.cpp(81): error: Value of: ret.isOk()
-  Actual: false
-Expected: true
-Invalid shader input
+Testing: ColorSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
 
-[  FAILED  ] ComputeCommandEncoderTest.bindSamplerState (30 ms)
-C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\ComputeCommandEncoder.cpp(81): error: Value of: ret.isOk()
-  Actual: false
-Expected: true
-Invalid shader input
+Testing: ComputeSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
 
-[  FAILED  ] ComputeCommandEncoderTest.copyBuffer (28 ms)
-C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\DeviceFeatureSet.cpp(262): error: Value of: iglDev_->hasFeature(DeviceFeatures::PushConstants)
-  Actual: true
-Expected: false
+Testing: DrawInstancedSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
 
-[  FAILED  ] DeviceFeatureSetTest.hasFeatureForMacOSOrWinOrAndroidTest (25 ms)
-C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\Multiview.cpp(76): Skipped
-Multiview is unsupported for this platform.
+Testing: EmptySession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
 
-C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\Multiview.cpp(76): Skipped
-Multiview is unsupported for this platform.
+Testing: EngineTestSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
 
-C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\RenderCommandEncoder.cpp(540): Skipped
+Testing: GPUStressSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
 
+Testing: HelloTriangleSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
 
-C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\RenderCommandEncoder.cpp(687): Skipped
-Not implemented for non-Vulkan backends
+Testing: HelloWorldSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
 
-unknown file: error: SEH exception with code 0x87d thrown in the test body.
-Stack trace:
+Testing: ImguiSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
 
+Testing: MRTSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
 
-[  FAILED  ] RenderCommandEncoderTest.drawUsingBindPushConstants (52 ms)
+Testing: PassthroughSession_d3d12
+  Status: TIMEOUT (hangs)
+  Screenshot: Missing
+
+Testing: Textured3DCubeSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: TextureViewSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: ThreeCubesRenderSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: TinyMeshBindGroupSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: TinyMeshSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: TQMultiRenderPassSession_d3d12
+  Status: TIMEOUT (hangs)
+  Screenshot: Generated
+
+Testing: TQSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: YUVColorSession_d3d12
+./test_all_d3d12_sessions.sh: line 45:  1488 Segmentation fault      timeout 30s ./build/shell/Debug/$session.exe --viewport-size 640x360 --screenshot-number 10 --screenshot-file "$session_dir/${session_name}_test.png" > "$OUTPUT_DIR/${session}_output.log" 2>&1
+  Status: CRASH (exit code: 139)
+  Screenshot: Missing
+
+=== Test Summary ===
+Total Sessions: 21
+Passed: 0
+Failed: 20
+Crashed: 1
+Success Rate: 0%
+
+Completed: Sat, Nov  1, 2025 11:52:24 PM
