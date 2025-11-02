@@ -381,6 +381,10 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   if (desc.type == TextureType::ThreeD) {
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
     resourceDesc.DepthOrArraySize = static_cast<UINT16>(desc.depth);
+  } else if (desc.type == TextureType::Cube) {
+    // Cube textures are 2D textures with 6 array slices (one per face)
+    resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    resourceDesc.DepthOrArraySize = 6;  // 6 faces for cube texture
   } else {
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
     resourceDesc.DepthOrArraySize = static_cast<UINT16>(desc.numLayers);
@@ -1292,7 +1296,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
                    paramDesc.SemanticIndex, paramDesc.Mask);
     }
   } else {
-    IGL_LOG_ERROR("    Shader reflection failed: 0x%08X\n", static_cast<unsigned>(hr));
+    IGL_LOG_INFO("    Shader reflection unavailable: 0x%08X (non-critical - pipeline will still be created)\n", static_cast<unsigned>(hr));
   }
 
   IGL_LOG_INFO("  Creating pipeline state (this may take a moment)...\n");
@@ -1608,6 +1612,7 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     case DeviceFeatures::Compute:
       return true; // Compute shaders now supported with compute pipeline and dispatch
     case DeviceFeatures::Texture2DArray:
+      IGL_LOG_INFO("[D3D12] hasFeature(Texture2DArray) returning TRUE\n");
       return true; // D3D12 supports 2D texture arrays via DepthOrArraySize in D3D12_RESOURCE_DESC
     case DeviceFeatures::PushConstants:
       return true; // Implemented via root constants at parameter 0 (shader register b2)

@@ -136,7 +136,33 @@ void CommandBuffer::waitUntilScheduled() {
 }
 
 void CommandBuffer::waitUntilCompleted() {
-  // Stub: Not yet implemented
+  // Wait for all submitted GPU work to complete
+  // The CommandQueue tracks frame completion via fences, so we need to wait for the current frame
+  auto& ctx = getContext();
+  auto* queue = ctx.getCommandQueue();
+  if (!queue) {
+    return;
+  }
+
+  // Signal a fence and wait for it
+  // This ensures all previously submitted command lists have completed on the GPU
+  Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+  auto* device = ctx.getDevice();
+  if (!device || FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf())))) {
+    return;
+  }
+
+  HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+  if (!fenceEvent) {
+    return;
+  }
+
+  queue->Signal(fence.Get(), 1);
+  fence->SetEventOnCompletion(1, fenceEvent);
+  WaitForSingleObject(fenceEvent, INFINITE);
+  CloseHandle(fenceEvent);
+
+  IGL_LOG_INFO("CommandBuffer::waitUntilCompleted() - GPU work completed\n");
 }
 
 void CommandBuffer::pushDebugGroupLabel(const char* /*label*/,

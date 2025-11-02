@@ -22,8 +22,9 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
     }
   }
 
-  // Enable experimental features to support unsigned DXIL shaders
-  // This is required for unit tests that compile shaders with DXC without signing
+  // Enable experimental features for headless contexts (unit tests)
+  // This allows unsigned DXIL shaders to run
+  // NOTE: This is ONLY called in headless mode (unit tests), NOT in windowed render sessions
   {
     UUID experimentalFeatures[] = {D3D12ExperimentalShaderModels};
     HRESULT hr = D3D12EnableExperimentalFeatures(1, experimentalFeatures, nullptr, nullptr);

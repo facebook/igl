@@ -137,6 +137,12 @@ target_link_libraries(IGLTests PUBLIC gtest)
 # NOTE: gmock is NOT linked - no tests use gmock, only gtest
 target_link_libraries(IGLTests PUBLIC IGLUmanagedUniformBuffer)
 target_link_libraries(IGLTests PUBLIC IGLUshaderCross)
+
+# Enable experimental features ONLY for unit tests (NOT for render sessions)
+# This allows D3D12 headless tests to use unsigned DXIL shaders
+if(IGL_WITH_D3D12)
+  target_compile_definitions(IGLTests PRIVATE IGL_ENABLE_EXPERIMENTAL_FEATURES_FOR_TESTS=1)
+endif()
 if(TARGET glfw)
   target_link_libraries(IGLTests PRIVATE glfw)
 endif()

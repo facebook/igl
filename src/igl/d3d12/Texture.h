@@ -75,6 +75,9 @@ class Texture final : public ITexture {
   uint32_t getArraySliceOffset() const { return arraySliceOffset_; }
   uint32_t getNumArraySlicesInView() const { return numArraySlicesInView_; }
 
+  // Subresource calculation helper
+  uint32_t calcSubresourceIndex(uint32_t mipLevel, uint32_t layer) const;
+
  protected:
   // Override the base class upload method
   Result uploadInternal(TextureType type,
@@ -95,7 +98,6 @@ class Texture final : public ITexture {
   size_t samples_ = 1;
   TextureDesc::TextureUsage usage_ = 0;
   void initializeStateTracking(D3D12_RESOURCE_STATES initialState) const;
-  uint32_t calcSubresourceIndex(uint32_t mipLevel, uint32_t layer) const;
   void ensureStateStorage() const;
   mutable std::vector<D3D12_RESOURCE_STATES> subresourceStates_;
   mutable D3D12_RESOURCE_STATES defaultState_ = D3D12_RESOURCE_STATE_COMMON;

@@ -113,15 +113,9 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
 }
 
 void D3D12Context::createDevice() {
-  // Enable experimental features for DXC Shader Model 6.0+ support (unsigned DXIL)
-  // This MUST be called before creating the device
-  UUID experimentalFeatures[] = { D3D12ExperimentalShaderModels };
-  HRESULT hrExp = D3D12EnableExperimentalFeatures(1, experimentalFeatures, nullptr, nullptr);
-  if (SUCCEEDED(hrExp)) {
-    IGL_LOG_INFO("D3D12Context: Experimental shader models ENABLED (allows unsigned DXIL from DXC)\n");
-  } else {
-    IGL_LOG_INFO("D3D12Context: Experimental shader models NOT enabled (may require signed DXIL)\n");
-  }
+  // DO NOT enable experimental features in windowed mode - it breaks swapchain creation!
+  // Experimental features are ONLY enabled in HeadlessD3D12Context for unit tests
+  // Windowed render sessions use signed DXIL (via IDxcValidator) which doesn't need experimental mode
 
   // Re-enable debug layer to capture validation messages
   Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
@@ -243,7 +237,7 @@ void D3D12Context::createDevice() {
     filter.DenyList.pIDList = denyIds;
     infoQueue->PushStorageFilter(&filter);
 
-    IGL_LOG_INFO("D3D12Context: Info queue configured (break on error: DISABLED, unsigned shader messages filtered)\n");
+    IGL_LOG_INFO("D3D12Context: Info queue configured (severity breaks DISABLED, unsigned shader messages filtered)\n");
   }
 #endif
 }
