@@ -20,6 +20,7 @@ class ComputeSession : public RenderSession {
 
  private:
   std::shared_ptr<IComputePipelineState> computePipeline_;
+  std::shared_ptr<IRenderPipelineState> renderPipeline_;
   std::shared_ptr<IBuffer> outputBuffer_;
   bool initialized_ = false;
 };
