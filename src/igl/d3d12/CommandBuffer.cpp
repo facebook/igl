@@ -71,6 +71,14 @@ void CommandBuffer::begin() {
   if (recording_) {
     return;
   }
+
+  // Clear transient buffers from previous frame
+  // These were kept alive for GPU execution, but can now be released
+  if (!transientBuffers_.empty()) {
+    IGL_LOG_INFO("CommandBuffer::begin() - Clearing %zu transient buffers\n", transientBuffers_.size());
+    transientBuffers_.clear();
+  }
+
   IGL_LOG_INFO("CommandBuffer::begin() - Resetting allocator...\n");
   HRESULT hr = commandAllocator_->Reset();
   if (FAILED(hr)) {

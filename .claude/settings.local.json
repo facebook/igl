@@ -25,7 +25,14 @@
       "Bash(for session in BasicFramebufferSession HelloWorldSession ThreeCubesRenderSession Textured3DCubeSession DrawInstancedSession MRTSession)",
       "Bash(do echo \"=== Testing $session_d3d12 ===\")",
       "Bash(git stash:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(for session in BasicFramebufferSession ColorSession DrawInstancedSession EmptySession GPUStressSession HelloTriangleSession HelloWorldSession MRTSession PassthroughSession Textured3DCubeSession TextureViewSession ThreeCubesRenderSession TinyMeshSession TinyMeshBindGroupSession TQSession BindGroupSession EngineTestSession ImguiSession TQMultiRenderPassSession YUVColorSession ComputeSession)",
+      "Bash(sessions=\"BasicFramebufferSession ColorSession DrawInstancedSession EmptySession GPUStressSession HelloTriangleSession HelloWorldSession MRTSession PassthroughSession Textured3DCubeSession TextureViewSession ThreeCubesRenderSession TinyMeshSession TinyMeshBindGroupSession TQSession BindGroupSession EngineTestSession ImguiSession TQMultiRenderPassSession YUVColorSession ComputeSession\")",
+      "Bash(for session in $sessions)",
+      "Bash(if [ -f \"$session_d3d12.exe\" ])",
+      "Bash(then timeout 5 ./$session_d3d12.exe)",
+      "Bash(else echo \"NOT FOUND\")",
+      "Bash(for session in BasicFramebufferSession ColorSession DrawInstancedSession EmptySession GPUStressSession HelloTriangleSession HelloWorldSession MRTSession PassthroughSession Textured3DCubeSession TextureViewSession ThreeCubesRenderSession TinyMeshSession BindGroupSession EngineTestSession ImguiSession TQMultiRenderPassSession YUVColorSession ComputeSession)"
     ],
     "deny": [],
     "ask": []
