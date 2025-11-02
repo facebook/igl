@@ -69,24 +69,23 @@ std::string getD3D12VertexShaderSource() {
   )";
 }
 
-// Fragment shader for visualization - reads compute buffer and visualizes as gradient
+// Fragment shader for visualization - reads compute buffer and displays as gradient
 std::string getD3D12FragmentShaderSource() {
   return R"(
-    // Read-only buffer containing compute results
-    ByteAddressBuffer computeResults : register(t0);
-
     struct PSInput {
       float4 position : SV_POSITION;
       float2 texCoord : TEXCOORD0;
     };
 
-    float4 main(PSInput input) : SV_TARGET {
-      // Sample the compute buffer based on UV coordinates
-      // We have 256 values, visualize them as a horizontal gradient
-      uint index = uint(input.texCoord.x * 255.0);
-      uint value = computeResults.Load(index * 4);
+    // Compute output buffer bound as SRV at t0
+    ByteAddressBuffer computeResults : register(t0);
 
-      // Normalize value to 0-1 range (values are 0-255)
+    float4 main(PSInput input) : SV_TARGET {
+      // Read value from compute buffer based on horizontal position
+      uint index = uint(input.texCoord.x * 255.0);
+      uint value = computeResults.Load(index * 4);  // Load 32-bit value
+
+      // Normalize value (0-255) to 0.0-1.0
       float normalizedValue = float(value) / 255.0;
 
       // Create a color gradient: blue -> cyan -> green -> yellow -> red

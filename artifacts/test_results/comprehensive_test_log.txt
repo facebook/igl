@@ -1,0 +1,95 @@
+=== D3D12 Comprehensive Test Suite ===
+Started: Sat, Nov  1, 2025  7:44:50 PM
+
+Testing: BasicFramebufferSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: BindGroupSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: ColorSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: ComputeSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: DrawInstancedSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: EmptySession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: EngineTestSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: GPUStressSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: HelloTriangleSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: HelloWorldSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: ImguiSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: MRTSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: PassthroughSession_d3d12
+  Status: CRASH (exit code: 3)
+  Screenshot: Missing
+
+Testing: Textured3DCubeSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: TextureViewSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: ThreeCubesRenderSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: TinyMeshBindGroupSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: TinyMeshSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: TQMultiRenderPassSession_d3d12
+  Status: CRASH (exit code: 139)
+  Screenshot: Missing
+
+Testing: TQSession_d3d12
+  Status: FAIL (errors detected)
+  Screenshot: Generated
+
+Testing: YUVColorSession_d3d12
+  Status: CRASH (exit code: 139)
+  Screenshot: Missing
+
+=== Test Summary ===
+Total Sessions: 21
+Passed: 0
+Failed: 18
+Crashed: 3
+Success Rate: 0%
+
+Completed: Sat, Nov  1, 2025  7:45:22 PM

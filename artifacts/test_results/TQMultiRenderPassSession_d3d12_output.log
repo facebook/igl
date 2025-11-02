@@ -1,0 +1,67 @@
+=== TinyMeshSession D3D12 Starting ===
+main(): Calling shell.initialize()...
+GlfwShell::initialize() - START
+GlfwShell::initialize() - Creating factory
+GlfwShell::initialize() - requestedConfigs.size()=1
+GlfwShell::initialize() - Creating window
+GlfwShell::initialize() - Creating platform
+D3D12Context: Creating D3D12 device...
+D3D12Context: Debug layer ENABLED (to capture validation messages)
+D3D12Context: Using HW adapter (FL 12.0)
+D3D12Context: Info queue configured (break on error: DISABLED)
+D3D12Context: Device created successfully
+D3D12Context: Creating command queue...
+D3D12Context: Command queue created successfully
+D3D12Context: Creating swapchain (640x360)...
+D3D12Context: Swapchain created successfully
+D3D12Context: Creating RTV heap...
+D3D12Context: RTV heap created successfully
+D3D12Context: Creating back buffers...
+D3D12Context: Back buffers created successfully
+D3D12Context: Creating descriptor heaps...
+D3D12Context: Creating descriptor heap manager...
+D3D12Context: Descriptor heap manager created successfully
+D3D12Context: Descriptor heaps created successfully
+D3D12Context: Creating fence for GPU synchronization...
+D3D12Context: Fence created successfully
+D3D12Context: Initialization complete!
+GlfwShell::initialize() - Creating session
+GlfwShell::initialize() - Initializing session
+Device::createBuffer: type=2, requested_size=96, aligned_size=96, isUniform=0
+Device::createBuffer: type=2, requested_size=96, aligned_size=96, isUniform=0
+Device::createBuffer: type=1, requested_size=12, aligned_size=12, isUniform=0
+Device::createTexture: IGL format=19 -> DXGI format=29
+Texture::createFromResource - SUCCESS: 1024x1024 format=19
+Texture::upload() - START: 1024x1024
+Texture::upload() - Proceeding with upload
+Texture::upload() - Dimensions: 1024x1024x1, bytesPerRow=4096, numRows=1024, totalBytes=4194304
+Texture::upload() - Layout: RowPitch=4096, Depth=1, Format=29, Dimension=3
+Texture::upload() - Copy loop: depth=1, rows=1024, srcDepthPitch=4194304, dstDepthPitch=4194304
+Texture::upload() - CopyTextureRegion: srcBox (0,0,0)->(1024,1024,1), dst offset (0,0,0)
+Texture::upload() - Creating fence for GPU sync
+Texture::upload() - Signaling fence and waiting...
+Texture::upload() - Fence signaled, upload complete!
+[IGL] Abort requested in 'class std::unique_ptr<class igl::IShaderStages,struct std::default_delete<class igl::IShaderStages> > __cdecl igl::shell::getShaderStagesForBackend(class igl::IDevice &)' (C:\Users\rudyb\source\repos\igl\igl\shell\renderSessions\TQMultiRenderPassSession.cpp:133): Code should NOT be reached
+[IGL] Skipping debug break - debugger not presentDevice::createBuffer: type=4, requested_size=16, aligned_size=256, isUniform=1
+Device::createBuffer: Uniform buffer #1 created, GPU address=0x879e000
+GlfwShell::initialize() - SUCCESS
+main(): Initialization successful, calling shell.run()...
+GlfwShell::run() started, window_=00000269913ABEB0
+Frame 0: willTick()
+createSurfaceTextures() called #1
+PlatformDevice::createTextureFromNativeDrawable() called
+getCurrentBackBuffer(): index=0, resource=000002699A894A80
+  backBufferIndex=0, backBuffer=000002699A894A80
+Texture::createFromResource - SUCCESS: 640x360 format=17
+Device::createTexture: IGL format=82 -> DXGI format=40
+Texture::createFromResource - SUCCESS: 640x360 format=82
+Device::createTexture: IGL format=16 -> DXGI format=28
+Texture::createFromResource - SUCCESS: 640x360 format=16
+Device::createTexture: IGL format=81 -> DXGI format=45
+Texture::createFromResource - SUCCESS: 640x360 format=81
+Device::createRenderPipeline() START - debugName=''
+[IGL] Error in (class std::shared_ptr<class igl::IRenderPipelineState> __cdecl igl::d3d12::Device::createRenderPipeline(const struct igl::RenderPipelineDesc &,struct igl::Result *) const).
+  Shader stages are required!
+Device::createRenderPipeline() START - debugName=''
+[IGL] Error in (class std::shared_ptr<class igl::IRenderPipelineState> __cdecl igl::d3d12::Device::createRenderPipeline(const struct igl::RenderPipelineDesc &,struct igl::Result *) const).
+  Shader stages are required!

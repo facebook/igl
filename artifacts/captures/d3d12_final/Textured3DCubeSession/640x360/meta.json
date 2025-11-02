@@ -1,0 +1,7 @@
+{
+    "backend":  "D3D12",
+    "format":  "RGBA8_UNORM",
+    "width":  640,
+    "height":  360,
+    "frame":  0
+}

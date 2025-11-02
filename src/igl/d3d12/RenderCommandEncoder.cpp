@@ -931,7 +931,6 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
                                        IBuffer* buffer,
                                        size_t offset,
                                        size_t /*bufferSize*/) {
-  // Bind constant buffer GPU address to root parameters 0 (b0) and 1 (b1)
   static int callCount = 0;
   if (callCount < 5) {
     IGL_LOG_INFO("bindBuffer START #%d: index=%u\n", callCount + 1, index);
@@ -941,36 +940,74 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     return;
   }
 
-  IGL_LOG_INFO("bindBuffer: getting d3dBuffer...\n");
   auto* d3dBuffer = static_cast<Buffer*>(buffer);
 
-  // D3D12 requires constant buffer addresses to be 256-byte aligned
-  // Round offset UP to nearest 256 bytes
-  const size_t alignedOffset = (offset + 255) & ~255;
-  if (offset != alignedOffset) {
-    IGL_LOG_INFO("bindBuffer: WARNING - offset %zu not 256-byte aligned, using %zu instead\n",
-                 offset, alignedOffset);
-  }
+  // Check if this is a storage buffer - needs SRV binding for shader reads
+  const bool isStorageBuffer = (d3dBuffer->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0;
 
-  IGL_LOG_INFO("bindBuffer: getting gpuAddress(offset=%zu)...\n", alignedOffset);
-  D3D12_GPU_VIRTUAL_ADDRESS bufferAddress = d3dBuffer->gpuAddress(alignedOffset);
-  IGL_LOG_INFO("bindBuffer: got address=0x%llx, aligned=%d\n", bufferAddress, (bufferAddress & 0xFF) == 0);
+  if (isStorageBuffer) {
+    // Storage buffer - create SRV for ByteAddressBuffer reads in pixel shader
+    IGL_LOG_INFO("bindBuffer: Storage buffer detected at index %u - creating SRV for pixel shader read\n", index);
 
-  // Bind to root parameter based on index
-  // Root parameter 0 = b0 (UniformsPerFrame)
-  // Root parameter 1 = b1 (UniformsPerObject)
-  IGL_LOG_INFO("bindBuffer: commandList_ pointer = %p\n", commandList_);
-  if (!commandList_) {
-    IGL_LOG_ERROR("bindBuffer: commandList_ is NULL!\n");
-    return;
-  }
+    auto& context = commandBuffer_.getContext();
+    auto* device = context.getDevice();
+    auto* heapMgr = context.getDescriptorHeapManager();
 
-  // Cache the constant buffer address for use in draw calls
-  // D3D12 requires all root parameters to be set before drawing
-  if (index <= 1) {
-    cachedConstantBuffers_[index] = bufferAddress;
-    constantBufferBound_[index] = true;
-    IGL_LOG_INFO("bindBuffer: Cached CBV at index %u with address 0x%llx\n", index, bufferAddress);
+    if (!device || !heapMgr) {
+      IGL_LOG_ERROR("bindBuffer: No device or descriptor heap manager for SRV creation\n");
+      return;
+    }
+
+    // Allocate descriptor slot
+    const uint32_t descriptorIndex = nextCbvSrvUavDescriptor_++;
+    IGL_LOG_INFO("bindBuffer: Allocated SRV descriptor slot %u for buffer at t%u\n", descriptorIndex, index);
+
+    // Create SRV descriptor for ByteAddressBuffer
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;  // Raw buffer (ByteAddressBuffer)
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.Buffer.FirstElement = static_cast<UINT64>(offset) / 4;  // Offset in 32-bit elements
+    srvDesc.Buffer.NumElements = static_cast<UINT>(buffer->getSizeInBytes() / 4);  // Size in 32-bit elements
+    srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;  // Raw buffer access
+
+    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heapMgr->getCbvSrvUavCpuHandle(descriptorIndex);
+    device->CreateShaderResourceView(d3dBuffer->getResource(), &srvDesc, cpuHandle);
+
+    IGL_LOG_INFO("bindBuffer: Created SRV at descriptor slot %u (FirstElement=%llu, NumElements=%u)\n",
+                 descriptorIndex, srvDesc.Buffer.FirstElement, srvDesc.Buffer.NumElements);
+
+    // Cache GPU handle for descriptor table binding in draw calls
+    // SRVs are bound to root parameter 3 (render root signature)
+    cachedTextureGpuHandles_[index] = heapMgr->getCbvSrvUavGpuHandle(descriptorIndex);
+    cachedTextureCount_ = std::max(cachedTextureCount_, static_cast<size_t>(index + 1));
+
+    IGL_LOG_INFO("bindBuffer: Storage buffer SRV binding complete\n");
+  } else {
+    // Constant buffer - use CBV binding (existing path)
+    IGL_LOG_INFO("bindBuffer: Constant buffer at index %u\n", index);
+
+    // D3D12 requires constant buffer addresses to be 256-byte aligned
+    const size_t alignedOffset = (offset + 255) & ~255;
+    if (offset != alignedOffset) {
+      IGL_LOG_INFO("bindBuffer: WARNING - offset %zu not 256-byte aligned, using %zu instead\n",
+                   offset, alignedOffset);
+    }
+
+    D3D12_GPU_VIRTUAL_ADDRESS bufferAddress = d3dBuffer->gpuAddress(alignedOffset);
+    IGL_LOG_INFO("bindBuffer: CBV address=0x%llx\n", bufferAddress);
+
+    if (!commandList_) {
+      IGL_LOG_ERROR("bindBuffer: commandList_ is NULL!\n");
+      return;
+    }
+
+    // Cache CBV for draw calls (b0, b1)
+    if (index <= 1) {
+      cachedConstantBuffers_[index] = bufferAddress;
+      constantBufferBound_[index] = true;
+      IGL_LOG_INFO("bindBuffer: Cached CBV at index %u with address 0x%llx\n", index, bufferAddress);
+    }
   }
 
   if (callCount < 5) {
