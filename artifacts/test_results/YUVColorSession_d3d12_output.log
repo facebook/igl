@@ -7,6 +7,7 @@ GlfwShell::initialize() - Creating window
 GlfwShell::initialize() - Creating platform
 D3D12Context: Creating D3D12 device...
 D3D12Context: Debug layer ENABLED (to capture validation messages)
+D3D12Context: DRED enabled (AutoBreadcrumbs + PageFault tracking)
 D3D12Context: Using HW adapter (FL 12.0)
 D3D12Context: Info queue configured (break on error: DISABLED)
 D3D12Context: Device created successfully
@@ -73,7 +74,7 @@ Device::createRenderPipeline() START - debugName=''
       [1]: TEXCOORD0 (semantic index 0), mask 0x03
       [2]: COLOR0 (semantic index 0), mask 0x0F
   Creating pipeline state (this may take a moment)...
-Device::createRenderPipeline() SUCCESS - PSO=000001511B6A07E0, RootSig=0000015114CDAE30
+Device::createRenderPipeline() SUCCESS - PSO=00000233FF20C630, RootSig=00000233F7F24E00
 RenderPipelineState: Set topology to TRIANGLELIST
 [D3D12] hasFeature query: 0
 GlfwShell::initialize() - Initializing session

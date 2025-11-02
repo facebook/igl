@@ -6,9 +6,11 @@ GlfwShell::initialize() - requestedConfigs.size()=1
 GlfwShell::initialize() - Creating window
 GlfwShell::initialize() - Creating platform
 D3D12Context: Creating D3D12 device...
+D3D12Context: Experimental shader models NOT enabled (may require signed DXIL)
 D3D12Context: Debug layer ENABLED (to capture validation messages)
+D3D12Context: DRED enabled (AutoBreadcrumbs + PageFault tracking)
 D3D12Context: Using HW adapter (FL 12.0)
-D3D12Context: Info queue configured (break on error: DISABLED)
+D3D12Context: Info queue configured (break on error: DISABLED, unsigned shader messages filtered)
 D3D12Context: Device created successfully
 D3D12Context: Creating command queue...
 D3D12Context: Command queue created successfully
@@ -29,31 +31,73 @@ GlfwShell::initialize() - Creating session
 GlfwShell::initialize() - Initializing session
 ComputeSession::initialize() START
 Device::createShaderModule() - stage=2, entryPoint='main', debugName=''
-  Compiling HLSL from string (289 bytes)...
+  Compiling HLSL from string (308 bytes) using DXC...
+DXCCompiler: Initializing DXC compiler...
+DXCCompiler: Initialization successful (Shader Model 6.0+ enabled)
   DEBUG BUILD: Enabling shader debug info and disabling optimizations
-  Shader compiled successfully (14396 bytes bytecode)
+DXCCompiler: Compiling shader '' with target 'cs_6_0' (308 bytes source)
+  DXC: Debug mode enabled
+DXCCompiler: Compilation successful (5336 bytes DXIL bytecode)
+  DXC shader compiled successfully (5336 bytes DXIL bytecode)
 Device::createComputePipeline() START - debugName='ComputeTestPipeline'
   Getting compute shader bytecode...
-  CS bytecode: 14396 bytes
+  CS bytecode: 5336 bytes
   Creating compute root signature with Root Constants (b0)/UAVs/SRVs/CBVs/Samplers
   Compute root signature created OK
   Creating compute pipeline state...
-Device::createComputePipeline() SUCCESS - PSO=000002C45B75DC60, RootSig=000002C45B73B270
+Device::createComputePipeline() SUCCESS - PSO=00000215FEAFD080, RootSig=00000215FEB87AA0
 ComputePipelineState: Set PIX debug name 'ComputePSO_ComputeTestPipeline'
 ComputePipelineState: Set PIX root signature name 'ComputeRootSig_ComputeTestPipeline'
 ComputeSession: Compute pipeline created successfully
 Device::createBuffer: type=8, requested_size=1024, aligned_size=1024, isUniform=0
 Device::createBuffer: Storage buffer - adding UAV flag
 ComputeSession: Output buffer created successfully (1024 bytes)
+ComputeSession: Creating visualization render pipeline...
+Device::createShaderModule() - stage=0, entryPoint='main', debugName=''
+  Compiling HLSL from string (405 bytes) using DXC...
+  DEBUG BUILD: Enabling shader debug info and disabling optimizations
+DXCCompiler: Compiling shader '' with target 'vs_6_0' (405 bytes source)
+  DXC: Debug mode enabled
+DXCCompiler: Compilation successful (6381 bytes DXIL bytecode)
+  DXC shader compiled successfully (6381 bytes DXIL bytecode)
+Device::createShaderModule() - stage=1, entryPoint='main', debugName=''
+  Compiling HLSL from string (1346 bytes) using DXC...
+  DEBUG BUILD: Enabling shader debug info and disabling optimizations
+DXCCompiler: Compiling shader '' with target 'ps_6_0' (1346 bytes source)
+  DXC: Debug mode enabled
+DXCCompiler: Compilation successful (9847 bytes DXIL bytecode)
+  DXC shader compiled successfully (9847 bytes DXIL bytecode)
+Device::createRenderPipeline() START - debugName=''
+  Getting shader bytecode...
+  VS bytecode: 6381 bytes, PS bytecode: 9847 bytes
+  Creating root signature with Push Constants (b2)/CBVs (b0,b1)/SRVs/Samplers
+  Serializing root signature...
+  Root signature serialized OK
+  Creating root signature...
+  Root signature created OK
+  PSO RenderTarget[0]: BlendEnable=0, SrcBlend=2, DstBlend=1, WriteMask=0x0F
+  PSO NumRenderTargets = 1 (color attachments = 1)
+  PSO RTVFormats[0] = 28 (IGL format 16)
+  Setting PSO topology type to TRIANGLE
+  Final input layout: 2 elements
+    [0]: POSITION (index 0), format 6, slot 0, offset 0
+    [1]: COLOR (index 0), format 2, slot 0, offset 12
+  Reflecting vertex shader to verify input signature...
+[IGL] Error in (class std::shared_ptr<class igl::IRenderPipelineState> __cdecl igl::d3d12::Device::createRenderPipeline(const struct igl::RenderPipelineDesc &,struct igl::Result *) const).
+    Shader reflection failed: 0x80070057
+  Creating pipeline state (this may take a moment)...
+Device::createRenderPipeline() SUCCESS - PSO=00000215FEB73370, RootSig=00000215FEAF0290
+RenderPipelineState: Set topology to TRIANGLELIST
+ComputeSession: Visualization render pipeline created successfully
 ComputeSession::initialize() COMPLETE
 GlfwShell::initialize() - SUCCESS
 main(): Initialization successful, calling shell.run()...
-GlfwShell::run() started, window_=000002C45202A9C0
+GlfwShell::run() started, window_=00000215F8C7B780
 Frame 0: willTick()
 createSurfaceTextures() called #1
 PlatformDevice::createTextureFromNativeDrawable() called
-getCurrentBackBuffer(): index=0, resource=000002C45B4FBCB0
-  backBufferIndex=0, backBuffer=000002C45B4FBCB0
+getCurrentBackBuffer(): index=0, resource=00000215FE8240A0
+  backBufferIndex=0, backBuffer=00000215FE8240A0
 Texture::createFromResource - SUCCESS: 640x360 format=17
 Device::createTexture: IGL format=82 -> DXGI format=40
 Texture::createFromResource - SUCCESS: 640x360 format=82
@@ -72,21 +116,21 @@ ComputeCommandEncoder: Bound 1 UAVs
 ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, global UAV barrier inserted
 ComputeSession::update() - ending compute encoder
 ComputeCommandEncoder::endEncoding()
-ComputeSession::update() - creating render pass for clear
+ComputeSession::update() - creating render pass for visualization
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000002C45B6B8460
-RenderCommandEncoder: Sampler heap = 000002C45B6DE8C0
+RenderCommandEncoder: CBV/SRV/UAV heap = 00000215FE8EB230
+RenderCommandEncoder: Sampler heap = 00000215FE8EB4C0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 000002C45207D450
-RenderCommandEncoder: Checking framebuffer_=000002C454BA3A80
+RenderCommandEncoder: DescriptorHeapManager = 00000215FE6B4700
+RenderCommandEncoder: Checking framebuffer_=00000215FEABB3E0
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000002C45B691E40, resource=000002C45B4FBCB0
-RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.80, 0.00, 1.00)
+RenderCommandEncoder: MRT loop i=0, tex=00000215FE7B76E0, resource=00000215FE8240A0
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.00, 0.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
 RenderCommandEncoder: Binding RTV without DSV (no hasDepth)
@@ -96,22 +140,34 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
-getCurrentBackBuffer(): index=0, resource=000002C45B4FBCB0
+bindRenderPipelineState: PSO=00000215FEB73370, RootSig=00000215FEAF0290
+bindRenderPipelineState: Setting topology=4
+bindBuffer START #1: index=0
+bindBuffer: Storage buffer detected at index 0 - creating SRV for pixel shader read
+bindBuffer: Allocated SRV descriptor slot 0 for buffer at t0
+bindBuffer: Created SRV at descriptor slot 0 (FirstElement=0, NumElements=256)
+bindBuffer: Storage buffer SRV binding complete
+bindBuffer END #1
+draw: DrawInstanced(vertexCount=3, instanceCount=1, firstVertex=0, baseInstance=0)
+getCurrentBackBuffer(): index=0, resource=00000215FE8240A0
+ComputeSession::update() - visualization rendered
 ComputeSession::update() - submitting command buffer
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 0 (value=1)
+CommandQueue::submit() - Advanced to frame index 1
+CommandQueue::submit() - Frame 2 resources already available (fence=0, completed=1)
 CommandQueue::submit() - Complete!
-CommandQueue::submit() - Aggregating 0 draws from CB into device
-CommandQueue::submit() - Device drawCount now=0
+CommandQueue::submit() - Aggregating 1 draws from CB into device
+CommandQueue::submit() - Device drawCount now=1
 ComputeSession::update() - COMPLETE
 Frame 1: willTick()
 createSurfaceTextures() called #2
 PlatformDevice::createTextureFromNativeDrawable() called
-getCurrentBackBuffer(): index=1, resource=000002C45B4FFB80
-  backBufferIndex=1, backBuffer=000002C45B4FFB80
+getCurrentBackBuffer(): index=1, resource=00000215FE822780
+  backBufferIndex=1, backBuffer=00000215FE822780
 Texture::createFromResource - SUCCESS: 640x360 format=17
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
@@ -128,21 +184,21 @@ ComputeCommandEncoder: Bound 1 UAVs
 ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, global UAV barrier inserted
 ComputeSession::update() - ending compute encoder
 ComputeCommandEncoder::endEncoding()
-ComputeSession::update() - creating render pass for clear
+ComputeSession::update() - creating render pass for visualization
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000002C45B6B8460
-RenderCommandEncoder: Sampler heap = 000002C45B6DE8C0
+RenderCommandEncoder: CBV/SRV/UAV heap = 00000215FE8EB230
+RenderCommandEncoder: Sampler heap = 00000215FE8EB4C0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 000002C45207D450
-RenderCommandEncoder: Checking framebuffer_=000002C454BA3A80
+RenderCommandEncoder: DescriptorHeapManager = 00000215FE6B4700
+RenderCommandEncoder: Checking framebuffer_=00000215FEB005A0
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000002C45B6911C0, resource=000002C45B4FFB80
-RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.80, 0.00, 1.00)
+RenderCommandEncoder: MRT loop i=0, tex=00000215FE7B8720, resource=00000215FE822780
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.00, 0.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
 RenderCommandEncoder: Binding RTV without DSV (no hasDepth)
@@ -152,20 +208,32 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
+bindRenderPipelineState: PSO=00000215FEB73370, RootSig=00000215FEAF0290
+bindRenderPipelineState: Setting topology=4
+bindBuffer START #2: index=0
+bindBuffer: Storage buffer detected at index 0 - creating SRV for pixel shader read
+bindBuffer: Allocated SRV descriptor slot 0 for buffer at t0
+bindBuffer: Created SRV at descriptor slot 0 (FirstElement=0, NumElements=256)
+bindBuffer: Storage buffer SRV binding complete
+bindBuffer END #2
+draw: DrawInstanced(vertexCount=3, instanceCount=1, firstVertex=0, baseInstance=0)
+ComputeSession::update() - visualization rendered
 ComputeSession::update() - submitting command buffer
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 1 (value=2)
+CommandQueue::submit() - Advanced to frame index 2
+CommandQueue::submit() - Frame 0 resources already available (fence=1, completed=2)
 CommandQueue::submit() - Complete!
-CommandQueue::submit() - Aggregating 0 draws from CB into device
-CommandQueue::submit() - Device drawCount now=0
+CommandQueue::submit() - Aggregating 1 draws from CB into device
+CommandQueue::submit() - Device drawCount now=2
 ComputeSession::update() - COMPLETE
 Frame 2: willTick()
 createSurfaceTextures() called #3
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=2, backBuffer=000002C45B4FE260
+  backBufferIndex=2, backBuffer=00000215FE823410
 Texture::createFromResource - SUCCESS: 640x360 format=17
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
@@ -182,21 +250,21 @@ ComputeCommandEncoder: Bound 1 UAVs
 ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, global UAV barrier inserted
 ComputeSession::update() - ending compute encoder
 ComputeCommandEncoder::endEncoding()
-ComputeSession::update() - creating render pass for clear
+ComputeSession::update() - creating render pass for visualization
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000002C45B6B8460
-RenderCommandEncoder: Sampler heap = 000002C45B6DE8C0
+RenderCommandEncoder: CBV/SRV/UAV heap = 00000215FE8EB230
+RenderCommandEncoder: Sampler heap = 00000215FE8EB4C0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 000002C45207D450
-RenderCommandEncoder: Checking framebuffer_=000002C454BA3A80
+RenderCommandEncoder: DescriptorHeapManager = 00000215FE6B4700
+RenderCommandEncoder: Checking framebuffer_=00000215FEB005A0
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000002C45B691440, resource=000002C45B4FE260
-RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.80, 0.00, 1.00)
+RenderCommandEncoder: MRT loop i=0, tex=00000215FE7B8860, resource=00000215FE823410
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.00, 0.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
 RenderCommandEncoder: Binding RTV without DSV (no hasDepth)
@@ -206,18 +274,30 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
+bindRenderPipelineState: PSO=00000215FEB73370, RootSig=00000215FEAF0290
+bindRenderPipelineState: Setting topology=4
+bindBuffer START #3: index=0
+bindBuffer: Storage buffer detected at index 0 - creating SRV for pixel shader read
+bindBuffer: Allocated SRV descriptor slot 0 for buffer at t0
+bindBuffer: Created SRV at descriptor slot 0 (FirstElement=0, NumElements=256)
+bindBuffer: Storage buffer SRV binding complete
+bindBuffer END #3
+draw: DrawInstanced(vertexCount=3, instanceCount=1, firstVertex=0, baseInstance=0)
+ComputeSession::update() - visualization rendered
 ComputeSession::update() - submitting command buffer
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 2 (value=3)
+CommandQueue::submit() - Advanced to frame index 0
+CommandQueue::submit() - Frame 1 resources already available (fence=2, completed=3)
 CommandQueue::submit() - Complete!
-CommandQueue::submit() - Aggregating 0 draws from CB into device
-CommandQueue::submit() - Device drawCount now=0
+CommandQueue::submit() - Aggregating 1 draws from CB into device
+CommandQueue::submit() - Device drawCount now=3
 ComputeSession::update() - COMPLETE
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000002C45B4FBCB0
+  backBufferIndex=0, backBuffer=00000215FE8240A0
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
@@ -233,21 +313,21 @@ ComputeCommandEncoder: Bound 1 UAVs
 ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, global UAV barrier inserted
 ComputeSession::update() - ending compute encoder
 ComputeCommandEncoder::endEncoding()
-ComputeSession::update() - creating render pass for clear
+ComputeSession::update() - creating render pass for visualization
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000002C45B6B8460
-RenderCommandEncoder: Sampler heap = 000002C45B6DE8C0
+RenderCommandEncoder: CBV/SRV/UAV heap = 00000215FE8EB230
+RenderCommandEncoder: Sampler heap = 00000215FE8EB4C0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 000002C45207D450
-RenderCommandEncoder: Checking framebuffer_=000002C454BA3A80
+RenderCommandEncoder: DescriptorHeapManager = 00000215FE6B4700
+RenderCommandEncoder: Checking framebuffer_=00000215FEB005A0
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000002C45B691E40, resource=000002C45B4FBCB0
-RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.80, 0.00, 1.00)
+RenderCommandEncoder: MRT loop i=0, tex=00000215FE7B76E0, resource=00000215FE8240A0
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.00, 0.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
 RenderCommandEncoder: Binding RTV without DSV (no hasDepth)
@@ -257,18 +337,30 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
+bindRenderPipelineState: PSO=00000215FEB73370, RootSig=00000215FEAF0290
+bindRenderPipelineState: Setting topology=4
+bindBuffer START #4: index=0
+bindBuffer: Storage buffer detected at index 0 - creating SRV for pixel shader read
+bindBuffer: Allocated SRV descriptor slot 0 for buffer at t0
+bindBuffer: Created SRV at descriptor slot 0 (FirstElement=0, NumElements=256)
+bindBuffer: Storage buffer SRV binding complete
+bindBuffer END #4
+draw: DrawInstanced(vertexCount=3, instanceCount=1, firstVertex=0, baseInstance=0)
+ComputeSession::update() - visualization rendered
 ComputeSession::update() - submitting command buffer
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 0 (value=4)
+CommandQueue::submit() - Advanced to frame index 1
+CommandQueue::submit() - Frame 2 resources already available (fence=3, completed=4)
 CommandQueue::submit() - Complete!
-CommandQueue::submit() - Aggregating 0 draws from CB into device
-CommandQueue::submit() - Device drawCount now=0
+CommandQueue::submit() - Aggregating 1 draws from CB into device
+CommandQueue::submit() - Device drawCount now=4
 ComputeSession::update() - COMPLETE
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=1, backBuffer=000002C45B4FFB80
+  backBufferIndex=1, backBuffer=00000215FE822780
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
@@ -284,21 +376,21 @@ ComputeCommandEncoder: Bound 1 UAVs
 ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, global UAV barrier inserted
 ComputeSession::update() - ending compute encoder
 ComputeCommandEncoder::endEncoding()
-ComputeSession::update() - creating render pass for clear
+ComputeSession::update() - creating render pass for visualization
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000002C45B6B8460
-RenderCommandEncoder: Sampler heap = 000002C45B6DE8C0
+RenderCommandEncoder: CBV/SRV/UAV heap = 00000215FE8EB230
+RenderCommandEncoder: Sampler heap = 00000215FE8EB4C0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 000002C45207D450
-RenderCommandEncoder: Checking framebuffer_=000002C454BA3A80
+RenderCommandEncoder: DescriptorHeapManager = 00000215FE6B4700
+RenderCommandEncoder: Checking framebuffer_=00000215FEC38900
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000002C45B6911C0, resource=000002C45B4FFB80
-RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.80, 0.00, 1.00)
+RenderCommandEncoder: MRT loop i=0, tex=00000215FE7B8720, resource=00000215FE822780
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.00, 0.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
 RenderCommandEncoder: Binding RTV without DSV (no hasDepth)
@@ -308,18 +400,30 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
+bindRenderPipelineState: PSO=00000215FEB73370, RootSig=00000215FEAF0290
+bindRenderPipelineState: Setting topology=4
+bindBuffer START #5: index=0
+bindBuffer: Storage buffer detected at index 0 - creating SRV for pixel shader read
+bindBuffer: Allocated SRV descriptor slot 0 for buffer at t0
+bindBuffer: Created SRV at descriptor slot 0 (FirstElement=0, NumElements=256)
+bindBuffer: Storage buffer SRV binding complete
+bindBuffer END #5
+draw: DrawInstanced(vertexCount=3, instanceCount=1, firstVertex=0, baseInstance=0)
+ComputeSession::update() - visualization rendered
 ComputeSession::update() - submitting command buffer
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 1 (value=5)
+CommandQueue::submit() - Advanced to frame index 2
+CommandQueue::submit() - Frame 0 resources already available (fence=4, completed=4)
 CommandQueue::submit() - Complete!
-CommandQueue::submit() - Aggregating 0 draws from CB into device
-CommandQueue::submit() - Device drawCount now=0
+CommandQueue::submit() - Aggregating 1 draws from CB into device
+CommandQueue::submit() - Device drawCount now=5
 ComputeSession::update() - COMPLETE
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=2, backBuffer=000002C45B4FE260
+  backBufferIndex=2, backBuffer=00000215FE823410
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
@@ -335,21 +439,21 @@ ComputeCommandEncoder: Bound 1 UAVs
 ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, global UAV barrier inserted
 ComputeSession::update() - ending compute encoder
 ComputeCommandEncoder::endEncoding()
-ComputeSession::update() - creating render pass for clear
+ComputeSession::update() - creating render pass for visualization
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000002C45B6B8460
-RenderCommandEncoder: Sampler heap = 000002C45B6DE8C0
+RenderCommandEncoder: CBV/SRV/UAV heap = 00000215FE8EB230
+RenderCommandEncoder: Sampler heap = 00000215FE8EB4C0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 000002C45207D450
-RenderCommandEncoder: Checking framebuffer_=000002C454BA3A80
+RenderCommandEncoder: DescriptorHeapManager = 00000215FE6B4700
+RenderCommandEncoder: Checking framebuffer_=00000215FEC38900
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000002C45B691440, resource=000002C45B4FE260
-RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.80, 0.00, 1.00)
+RenderCommandEncoder: MRT loop i=0, tex=00000215FE7B8860, resource=00000215FE823410
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.00, 0.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
 RenderCommandEncoder: Binding RTV without DSV (no hasDepth)
@@ -359,18 +463,29 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
+bindRenderPipelineState: PSO=00000215FEB73370, RootSig=00000215FEAF0290
+bindRenderPipelineState: Setting topology=4
+bindBuffer: Storage buffer detected at index 0 - creating SRV for pixel shader read
+bindBuffer: Allocated SRV descriptor slot 0 for buffer at t0
+bindBuffer: Created SRV at descriptor slot 0 (FirstElement=0, NumElements=256)
+bindBuffer: Storage buffer SRV binding complete
+draw: DrawInstanced(vertexCount=3, instanceCount=1, firstVertex=0, baseInstance=0)
+ComputeSession::update() - visualization rendered
 ComputeSession::update() - submitting command buffer
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 2 (value=6)
+CommandQueue::submit() - Advanced to frame index 0
+CommandQueue::submit() - Waiting for frame 1 (fence value=5)
+CommandQueue::submit() - Frame 1 resources available
 CommandQueue::submit() - Complete!
-CommandQueue::submit() - Aggregating 0 draws from CB into device
-CommandQueue::submit() - Device drawCount now=0
+CommandQueue::submit() - Aggregating 1 draws from CB into device
+CommandQueue::submit() - Device drawCount now=6
 ComputeSession::update() - COMPLETE
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000002C45B4FBCB0
+  backBufferIndex=0, backBuffer=00000215FE8240A0
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
@@ -386,21 +501,21 @@ ComputeCommandEncoder: Bound 1 UAVs
 ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, global UAV barrier inserted
 ComputeSession::update() - ending compute encoder
 ComputeCommandEncoder::endEncoding()
-ComputeSession::update() - creating render pass for clear
+ComputeSession::update() - creating render pass for visualization
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000002C45B6B8460
-RenderCommandEncoder: Sampler heap = 000002C45B6DE8C0
+RenderCommandEncoder: CBV/SRV/UAV heap = 00000215FE8EB230
+RenderCommandEncoder: Sampler heap = 00000215FE8EB4C0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 000002C45207D450
-RenderCommandEncoder: Checking framebuffer_=000002C454BA3A80
+RenderCommandEncoder: DescriptorHeapManager = 00000215FE6B4700
+RenderCommandEncoder: Checking framebuffer_=00000215FEC38900
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000002C45B691E40, resource=000002C45B4FBCB0
-RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.80, 0.00, 1.00)
+RenderCommandEncoder: MRT loop i=0, tex=00000215FE7B76E0, resource=00000215FE8240A0
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.00, 0.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
 RenderCommandEncoder: Binding RTV without DSV (no hasDepth)
@@ -410,18 +525,29 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
+bindRenderPipelineState: PSO=00000215FEB73370, RootSig=00000215FEAF0290
+bindRenderPipelineState: Setting topology=4
+bindBuffer: Storage buffer detected at index 0 - creating SRV for pixel shader read
+bindBuffer: Allocated SRV descriptor slot 0 for buffer at t0
+bindBuffer: Created SRV at descriptor slot 0 (FirstElement=0, NumElements=256)
+bindBuffer: Storage buffer SRV binding complete
+draw: DrawInstanced(vertexCount=3, instanceCount=1, firstVertex=0, baseInstance=0)
+ComputeSession::update() - visualization rendered
 ComputeSession::update() - submitting command buffer
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 0 (value=7)
+CommandQueue::submit() - Advanced to frame index 1
+CommandQueue::submit() - Waiting for frame 2 (fence value=6)
+CommandQueue::submit() - Frame 2 resources available
 CommandQueue::submit() - Complete!
-CommandQueue::submit() - Aggregating 0 draws from CB into device
-CommandQueue::submit() - Device drawCount now=0
+CommandQueue::submit() - Aggregating 1 draws from CB into device
+CommandQueue::submit() - Device drawCount now=7
 ComputeSession::update() - COMPLETE
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=1, backBuffer=000002C45B4FFB80
+  backBufferIndex=1, backBuffer=00000215FE822780
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
@@ -437,21 +563,21 @@ ComputeCommandEncoder: Bound 1 UAVs
 ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, global UAV barrier inserted
 ComputeSession::update() - ending compute encoder
 ComputeCommandEncoder::endEncoding()
-ComputeSession::update() - creating render pass for clear
+ComputeSession::update() - creating render pass for visualization
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000002C45B6B8460
-RenderCommandEncoder: Sampler heap = 000002C45B6DE8C0
+RenderCommandEncoder: CBV/SRV/UAV heap = 00000215FE8EB230
+RenderCommandEncoder: Sampler heap = 00000215FE8EB4C0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 000002C45207D450
-RenderCommandEncoder: Checking framebuffer_=000002C454BA3A80
+RenderCommandEncoder: DescriptorHeapManager = 00000215FE6B4700
+RenderCommandEncoder: Checking framebuffer_=00000215FEC38900
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000002C45B6911C0, resource=000002C45B4FFB80
-RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.80, 0.00, 1.00)
+RenderCommandEncoder: MRT loop i=0, tex=00000215FE7B8720, resource=00000215FE822780
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.00, 0.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
 RenderCommandEncoder: Binding RTV without DSV (no hasDepth)
@@ -461,18 +587,29 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
+bindRenderPipelineState: PSO=00000215FEB73370, RootSig=00000215FEAF0290
+bindRenderPipelineState: Setting topology=4
+bindBuffer: Storage buffer detected at index 0 - creating SRV for pixel shader read
+bindBuffer: Allocated SRV descriptor slot 0 for buffer at t0
+bindBuffer: Created SRV at descriptor slot 0 (FirstElement=0, NumElements=256)
+bindBuffer: Storage buffer SRV binding complete
+draw: DrawInstanced(vertexCount=3, instanceCount=1, firstVertex=0, baseInstance=0)
+ComputeSession::update() - visualization rendered
 ComputeSession::update() - submitting command buffer
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 1 (value=8)
+CommandQueue::submit() - Advanced to frame index 2
+CommandQueue::submit() - Waiting for frame 0 (fence value=7)
+CommandQueue::submit() - Frame 0 resources available
 CommandQueue::submit() - Complete!
-CommandQueue::submit() - Aggregating 0 draws from CB into device
-CommandQueue::submit() - Device drawCount now=0
+CommandQueue::submit() - Aggregating 1 draws from CB into device
+CommandQueue::submit() - Device drawCount now=8
 ComputeSession::update() - COMPLETE
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=2, backBuffer=000002C45B4FE260
+  backBufferIndex=2, backBuffer=00000215FE823410
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
@@ -488,21 +625,21 @@ ComputeCommandEncoder: Bound 1 UAVs
 ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, global UAV barrier inserted
 ComputeSession::update() - ending compute encoder
 ComputeCommandEncoder::endEncoding()
-ComputeSession::update() - creating render pass for clear
+ComputeSession::update() - creating render pass for visualization
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000002C45B6B8460
-RenderCommandEncoder: Sampler heap = 000002C45B6DE8C0
+RenderCommandEncoder: CBV/SRV/UAV heap = 00000215FE8EB230
+RenderCommandEncoder: Sampler heap = 00000215FE8EB4C0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 000002C45207D450
-RenderCommandEncoder: Checking framebuffer_=000002C454BA3A80
+RenderCommandEncoder: DescriptorHeapManager = 00000215FE6B4700
+RenderCommandEncoder: Checking framebuffer_=00000215FEC38900
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000002C45B691440, resource=000002C45B4FE260
-RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.80, 0.00, 1.00)
+RenderCommandEncoder: MRT loop i=0, tex=00000215FE7B8860, resource=00000215FE823410
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.00, 0.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
 RenderCommandEncoder: Binding RTV without DSV (no hasDepth)
@@ -512,18 +649,29 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
+bindRenderPipelineState: PSO=00000215FEB73370, RootSig=00000215FEAF0290
+bindRenderPipelineState: Setting topology=4
+bindBuffer: Storage buffer detected at index 0 - creating SRV for pixel shader read
+bindBuffer: Allocated SRV descriptor slot 0 for buffer at t0
+bindBuffer: Created SRV at descriptor slot 0 (FirstElement=0, NumElements=256)
+bindBuffer: Storage buffer SRV binding complete
+draw: DrawInstanced(vertexCount=3, instanceCount=1, firstVertex=0, baseInstance=0)
+ComputeSession::update() - visualization rendered
 ComputeSession::update() - submitting command buffer
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 2 (value=9)
+CommandQueue::submit() - Advanced to frame index 0
+CommandQueue::submit() - Waiting for frame 1 (fence value=8)
+CommandQueue::submit() - Frame 1 resources available
 CommandQueue::submit() - Complete!
-CommandQueue::submit() - Aggregating 0 draws from CB into device
-CommandQueue::submit() - Device drawCount now=0
+CommandQueue::submit() - Aggregating 1 draws from CB into device
+CommandQueue::submit() - Device drawCount now=9
 ComputeSession::update() - COMPLETE
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000002C45B4FBCB0
+  backBufferIndex=0, backBuffer=00000215FE8240A0
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
@@ -539,21 +687,21 @@ ComputeCommandEncoder: Bound 1 UAVs
 ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, global UAV barrier inserted
 ComputeSession::update() - ending compute encoder
 ComputeCommandEncoder::endEncoding()
-ComputeSession::update() - creating render pass for clear
+ComputeSession::update() - creating render pass for visualization
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000002C45B6B8460
-RenderCommandEncoder: Sampler heap = 000002C45B6DE8C0
+RenderCommandEncoder: CBV/SRV/UAV heap = 00000215FE8EB230
+RenderCommandEncoder: Sampler heap = 00000215FE8EB4C0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 000002C45207D450
-RenderCommandEncoder: Checking framebuffer_=000002C454BA3A80
+RenderCommandEncoder: DescriptorHeapManager = 00000215FE6B4700
+RenderCommandEncoder: Checking framebuffer_=00000215FEC38900
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000002C45B691E40, resource=000002C45B4FBCB0
-RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.80, 0.00, 1.00)
+RenderCommandEncoder: MRT loop i=0, tex=00000215FE7B76E0, resource=00000215FE8240A0
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.00, 0.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
 RenderCommandEncoder: Binding RTV without DSV (no hasDepth)
@@ -563,18 +711,29 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
+bindRenderPipelineState: PSO=00000215FEB73370, RootSig=00000215FEAF0290
+bindRenderPipelineState: Setting topology=4
+bindBuffer: Storage buffer detected at index 0 - creating SRV for pixel shader read
+bindBuffer: Allocated SRV descriptor slot 0 for buffer at t0
+bindBuffer: Created SRV at descriptor slot 0 (FirstElement=0, NumElements=256)
+bindBuffer: Storage buffer SRV binding complete
+draw: DrawInstanced(vertexCount=3, instanceCount=1, firstVertex=0, baseInstance=0)
+ComputeSession::update() - visualization rendered
 ComputeSession::update() - submitting command buffer
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 0 (value=10)
+CommandQueue::submit() - Advanced to frame index 1
+CommandQueue::submit() - Waiting for frame 2 (fence value=9)
+CommandQueue::submit() - Frame 2 resources available
 CommandQueue::submit() - Complete!
-CommandQueue::submit() - Aggregating 0 draws from CB into device
-CommandQueue::submit() - Device drawCount now=0
+CommandQueue::submit() - Aggregating 1 draws from CB into device
+CommandQueue::submit() - Device drawCount now=10
 ComputeSession::update() - COMPLETE
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=1, backBuffer=000002C45B4FFB80
+  backBufferIndex=1, backBuffer=00000215FE822780
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
@@ -590,21 +749,21 @@ ComputeCommandEncoder: Bound 1 UAVs
 ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, global UAV barrier inserted
 ComputeSession::update() - ending compute encoder
 ComputeCommandEncoder::endEncoding()
-ComputeSession::update() - creating render pass for clear
+ComputeSession::update() - creating render pass for visualization
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000002C45B6B8460
-RenderCommandEncoder: Sampler heap = 000002C45B6DE8C0
+RenderCommandEncoder: CBV/SRV/UAV heap = 00000215FE8EB230
+RenderCommandEncoder: Sampler heap = 00000215FE8EB4C0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 000002C45207D450
-RenderCommandEncoder: Checking framebuffer_=000002C454BA3A80
+RenderCommandEncoder: DescriptorHeapManager = 00000215FE6B4700
+RenderCommandEncoder: Checking framebuffer_=00000215FEC38900
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000002C45B6911C0, resource=000002C45B4FFB80
-RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.80, 0.00, 1.00)
+RenderCommandEncoder: MRT loop i=0, tex=00000215FE7B8720, resource=00000215FE822780
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 0.00, 0.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
 RenderCommandEncoder: Binding RTV without DSV (no hasDepth)
@@ -614,19 +773,30 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
+bindRenderPipelineState: PSO=00000215FEB73370, RootSig=00000215FEAF0290
+bindRenderPipelineState: Setting topology=4
+bindBuffer: Storage buffer detected at index 0 - creating SRV for pixel shader read
+bindBuffer: Allocated SRV descriptor slot 0 for buffer at t0
+bindBuffer: Created SRV at descriptor slot 0 (FirstElement=0, NumElements=256)
+bindBuffer: Storage buffer SRV binding complete
+draw: DrawInstanced(vertexCount=3, instanceCount=1, firstVertex=0, baseInstance=0)
+ComputeSession::update() - visualization rendered
 ComputeSession::update() - submitting command buffer
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 1 (value=11)
+CommandQueue::submit() - Advanced to frame index 2
+CommandQueue::submit() - Waiting for frame 0 (fence value=10)
+CommandQueue::submit() - Frame 0 resources available
 CommandQueue::submit() - Complete!
-CommandQueue::submit() - Aggregating 0 draws from CB into device
-CommandQueue::submit() - Device drawCount now=0
+CommandQueue::submit() - Aggregating 1 draws from CB into device
+CommandQueue::submit() - Device drawCount now=11
 ComputeSession::update() - COMPLETE
 
 We are running screenshot test - breaking after 10 frame
-copyBytes: format=17 (DXGI=87), bytesPerPixel=4, first 4 bytes: 0,204,0,255
+copyBytes: format=17 (DXGI=87), bytesPerPixel=4, first 4 bytes: 255,0,0,255
 Writing screenshot to: 'artifacts/captures/d3d12/ComputeSession/640x360/ComputeSession_test.png'
 main(): shell.run() completed, calling teardown()...
 === TinyMeshSession D3D12 Exiting ===

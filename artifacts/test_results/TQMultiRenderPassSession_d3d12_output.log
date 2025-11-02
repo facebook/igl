@@ -6,9 +6,11 @@ GlfwShell::initialize() - requestedConfigs.size()=1
 GlfwShell::initialize() - Creating window
 GlfwShell::initialize() - Creating platform
 D3D12Context: Creating D3D12 device...
+D3D12Context: Experimental shader models NOT enabled (may require signed DXIL)
 D3D12Context: Debug layer ENABLED (to capture validation messages)
+D3D12Context: DRED enabled (AutoBreadcrumbs + PageFault tracking)
 D3D12Context: Using HW adapter (FL 12.0)
-D3D12Context: Info queue configured (break on error: DISABLED)
+D3D12Context: Info queue configured (break on error: DISABLED, unsigned shader messages filtered)
 D3D12Context: Device created successfully
 D3D12Context: Creating command queue...
 D3D12Context: Command queue created successfully
@@ -41,17 +43,32 @@ Texture::upload() - CopyTextureRegion: srcBox (0,0,0)->(1024,1024,1), dst offset
 Texture::upload() - Creating fence for GPU sync
 Texture::upload() - Signaling fence and waiting...
 Texture::upload() - Fence signaled, upload complete!
-[IGL] Abort requested in 'class std::unique_ptr<class igl::IShaderStages,struct std::default_delete<class igl::IShaderStages> > __cdecl igl::shell::getShaderStagesForBackend(class igl::IDevice &)' (C:\Users\rudyb\source\repos\igl\igl\shell\renderSessions\TQMultiRenderPassSession.cpp:133): Code should NOT be reached
-[IGL] Skipping debug break - debugger not presentDevice::createBuffer: type=4, requested_size=16, aligned_size=256, isUniform=1
-Device::createBuffer: Uniform buffer #1 created, GPU address=0x879e000
+Device::createShaderModule() - stage=0, entryPoint='main', debugName=''
+  Compiling HLSL from string (283 bytes) using DXC...
+DXCCompiler: Initializing DXC compiler...
+DXCCompiler: Initialization successful (Shader Model 6.0+ enabled)
+  DEBUG BUILD: Enabling shader debug info and disabling optimizations
+DXCCompiler: Compiling shader '' with target 'vs_6_0' (283 bytes source)
+  DXC: Debug mode enabled
+DXCCompiler: Compilation successful (6507 bytes DXIL bytecode)
+  DXC shader compiled successfully (6507 bytes DXIL bytecode)
+Device::createShaderModule() - stage=1, entryPoint='main', debugName=''
+  Compiling HLSL from string (374 bytes) using DXC...
+  DEBUG BUILD: Enabling shader debug info and disabling optimizations
+DXCCompiler: Compiling shader '' with target 'ps_6_0' (374 bytes source)
+  DXC: Debug mode enabled
+DXCCompiler: Compilation successful (8335 bytes DXIL bytecode)
+  DXC shader compiled successfully (8335 bytes DXIL bytecode)
+Device::createBuffer: type=4, requested_size=16, aligned_size=256, isUniform=1
+Device::createBuffer: Uniform buffer #1 created, GPU address=0x87be000
 GlfwShell::initialize() - SUCCESS
 main(): Initialization successful, calling shell.run()...
-GlfwShell::run() started, window_=00000269913ABEB0
+GlfwShell::run() started, window_=0000024708A85FA0
 Frame 0: willTick()
 createSurfaceTextures() called #1
 PlatformDevice::createTextureFromNativeDrawable() called
-getCurrentBackBuffer(): index=0, resource=000002699A894A80
-  backBufferIndex=0, backBuffer=000002699A894A80
+getCurrentBackBuffer(): index=0, resource=0000024712764890
+  backBufferIndex=0, backBuffer=0000024712764890
 Texture::createFromResource - SUCCESS: 640x360 format=17
 Device::createTexture: IGL format=82 -> DXGI format=40
 Texture::createFromResource - SUCCESS: 640x360 format=82
@@ -60,8 +77,303 @@ Texture::createFromResource - SUCCESS: 640x360 format=16
 Device::createTexture: IGL format=81 -> DXGI format=45
 Texture::createFromResource - SUCCESS: 640x360 format=81
 Device::createRenderPipeline() START - debugName=''
+  Getting shader bytecode...
+  VS bytecode: 6507 bytes, PS bytecode: 8335 bytes
+  Creating root signature with Push Constants (b2)/CBVs (b0,b1)/SRVs/Samplers
+  Serializing root signature...
+  Root signature serialized OK
+  Creating root signature...
+  Root signature created OK
+  PSO RenderTarget[0]: BlendEnable=0, SrcBlend=2, DstBlend=1, WriteMask=0x0F
+  PSO NumRenderTargets = 1 (color attachments = 1)
+  PSO RTVFormats[0] = 28 (IGL format 16)
+  Setting PSO topology type to TRIANGLE
+  Processing vertex input state: 2 attributes
+    Attribute 0: name='position', format=2, offset=0, bufferIndex=0
+      Mapped 'position' -> 'POSITION'
+      bufferIndex=0, isInstance=0, sampleFunc=1, InputSlotClass=0, StepRate=0
+    Attribute 1: name='uv_in', format=1, offset=16, bufferIndex=0
+      Mapped 'uv_in' -> 'TEXCOORD'
+      bufferIndex=0, isInstance=0, sampleFunc=1, InputSlotClass=0, StepRate=0
+  Final input layout: 2 elements
+    [0]: POSITION (index 0), format 6, slot 0, offset 0
+    [1]: TEXCOORD (index 0), format 16, slot 0, offset 16
+  Reflecting vertex shader to verify input signature...
 [IGL] Error in (class std::shared_ptr<class igl::IRenderPipelineState> __cdecl igl::d3d12::Device::createRenderPipeline(const struct igl::RenderPipelineDesc &,struct igl::Result *) const).
-  Shader stages are required!
+    Shader reflection failed: 0x80070057
+  Creating pipeline state (this may take a moment)...
+Device::createRenderPipeline() SUCCESS - PSO=0000024712BFDC00, RootSig=000002470B7F7350
+RenderPipelineState: Set topology to TRIANGLELIST
 Device::createRenderPipeline() START - debugName=''
+  Getting shader bytecode...
+  VS bytecode: 6507 bytes, PS bytecode: 8335 bytes
+  Creating root signature with Push Constants (b2)/CBVs (b0,b1)/SRVs/Samplers
+  Serializing root signature...
+  Root signature serialized OK
+  Creating root signature...
+  Root signature created OK
+  PSO RenderTarget[0]: BlendEnable=0, SrcBlend=2, DstBlend=1, WriteMask=0x0F
+  PSO NumRenderTargets = 1 (color attachments = 1)
+  PSO RTVFormats[0] = 87 (IGL format 17)
+  Setting PSO topology type to TRIANGLE
+  Processing vertex input state: 2 attributes
+    Attribute 0: name='position', format=2, offset=0, bufferIndex=0
+      Mapped 'position' -> 'POSITION'
+      bufferIndex=0, isInstance=0, sampleFunc=1, InputSlotClass=0, StepRate=0
+    Attribute 1: name='uv_in', format=1, offset=16, bufferIndex=0
+      Mapped 'uv_in' -> 'TEXCOORD'
+      bufferIndex=0, isInstance=0, sampleFunc=1, InputSlotClass=0, StepRate=0
+  Final input layout: 2 elements
+    [0]: POSITION (index 0), format 6, slot 0, offset 0
+    [1]: TEXCOORD (index 0), format 16, slot 0, offset 16
+  Reflecting vertex shader to verify input signature...
 [IGL] Error in (class std::shared_ptr<class igl::IRenderPipelineState> __cdecl igl::d3d12::Device::createRenderPipeline(const struct igl::RenderPipelineDesc &,struct igl::Result *) const).
-  Shader stages are required!
+    Shader reflection failed: 0x80070057
+  Creating pipeline state (this may take a moment)...
+Device::createRenderPipeline() SUCCESS - PSO=0000024712A654C0, RootSig=000002470B7F7350
+RenderPipelineState: Set topology to TRIANGLELIST
+CommandBuffer::begin() - Resetting allocator...
+CommandBuffer::begin() - Allocator reset OK, resetting command list...
+CommandBuffer::begin() - Command list reset OK
+RenderCommandEncoder::RenderCommandEncoder() - START
+RenderCommandEncoder: Got context
+RenderCommandEncoder: Using DescriptorHeapManager heaps
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000024712843110
+RenderCommandEncoder: Sampler heap = 0000024712A0EF20
+RenderCommandEncoder: Setting descriptor heaps...
+RenderCommandEncoder: Descriptor heaps set
+RenderCommandEncoder: Setting up RTV...
+RenderCommandEncoder: DescriptorHeapManager = 00000247125FBF10
+RenderCommandEncoder: Checking framebuffer_=000002470B7F63A0
+RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
+RenderCommandEncoder: MRT count = 1 (indices.size=1)
+RenderCommandEncoder: MRT loop i=0, tex=000002470B96F800, resource=00000247127661B0
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
+RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
+RenderCommandEncoder: MRT Total RTVs created: 1
+RenderCommandEncoder: Cleared depth-stencil (depth=1, stencil=1, depthVal=1.00, stencilVal=0)
+RenderCommandEncoder: OMSetRenderTargets with 1 RTVs + DSV
+RenderCommandEncoder: Setting default viewport...
+RenderCommandEncoder: Using framebuffer color attachment
+RenderCommandEncoder: Framebuffer dimensions: 640x360
+RenderCommandEncoder: Set default viewport/scissor to 640x360
+RenderCommandEncoder: Constructor complete!
+bindRenderPipelineState: PSO=0000024712BFDC00, RootSig=000002470B7F7350
+bindRenderPipelineState: Setting topology=4
+bindBuffer START #1: index=0
+bindBuffer: getting d3dBuffer...
+bindBuffer: getting gpuAddress(offset=0)...
+bindBuffer: got address=0x87be000, aligned=1
+bindBuffer: commandList_ pointer = 0000024712AB60B0
+bindBuffer: Cached CBV at index 0 with address 0x87be000
+bindBuffer END #1
+bindTexture called #1: index=0, texture=000002470B96EB80
+bindTexture: getting context...
+bindTexture: resource=0000024712A19260, format=19, dimensions=1024x1024
+bindTexture: allocated descriptor slot 0 for texture index t0
+bindTexture: resource dimension=3, texture type=1
+bindTexture: using TEXTURE2D view dimension (mip offset=0, mip count=11)
+bindTexture: heap=0000024712843110, heapStart CPU=0x24710675000, GPU=0x35678a00120000
+bindTexture: creating SRV at slot 0, CPU handle 0x24710675000
+bindTexture: cached texture[0] GPU handle 0x35678a00120000 (offset from heap start: 0)
+bindTexture: done
+bindSamplerState called #1: index=0, sampler=00000247128B8040
+bindSamplerState: allocated descriptor slot 0 for sampler index s0
+bindSamplerState: creating sampler at slot 0, CPU handle 0x24710535100
+bindSamplerState: cached sampler[0] GPU handle 0x45678a00010100
+bindVertexBuffer called #1: index=0
+bindIndexBuffer called #1
+DrawIndexed called: indexCount=6, instanceCount=1
+DrawIndexed: bound CBVs - b0=0x87be000 (bound=1), b1=0x0 (bound=0)
+DrawIndexed: bound texture descriptor table at t0 (handle=0x35678a00120000, count=1)
+DrawIndexed: bound sampler descriptor table at s0 (handle=0x45678a00010100, count=1)
+DrawIndexed: VB[0] = GPU 0x87bb000, size=96, stride=24
+DrawIndexed: CB drawCount now=1
+getCurrentBackBuffer(): index=0, resource=0000024712764890
+RenderCommandEncoder::RenderCommandEncoder() - START
+RenderCommandEncoder: Got context
+RenderCommandEncoder: Using DescriptorHeapManager heaps
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000024712843110
+RenderCommandEncoder: Sampler heap = 0000024712A0EF20
+RenderCommandEncoder: Setting descriptor heaps...
+RenderCommandEncoder: Descriptor heaps set
+RenderCommandEncoder: Setting up RTV...
+RenderCommandEncoder: DescriptorHeapManager = 00000247125FBF10
+RenderCommandEncoder: Checking framebuffer_=000002470B7F6E20
+RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
+RenderCommandEncoder: MRT count = 1 (indices.size=1)
+RenderCommandEncoder: MRT loop i=0, tex=000002470B96FBC0, resource=0000024712764890
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
+RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
+RenderCommandEncoder: MRT Total RTVs created: 1
+RenderCommandEncoder: Cleared depth-stencil (depth=1, stencil=1, depthVal=1.00, stencilVal=0)
+RenderCommandEncoder: OMSetRenderTargets with 1 RTVs + DSV
+RenderCommandEncoder: Setting default viewport...
+RenderCommandEncoder: Using framebuffer color attachment
+RenderCommandEncoder: Framebuffer dimensions: 640x360
+RenderCommandEncoder: Set default viewport/scissor to 640x360
+RenderCommandEncoder: Constructor complete!
+bindRenderPipelineState: PSO=0000024712A654C0, RootSig=000002470B7F7350
+bindRenderPipelineState: Setting topology=4
+bindBuffer START #2: index=0
+bindBuffer: getting d3dBuffer...
+bindBuffer: getting gpuAddress(offset=0)...
+bindBuffer: got address=0x87be000, aligned=1
+bindBuffer: commandList_ pointer = 0000024712AB60B0
+bindBuffer: Cached CBV at index 0 with address 0x87be000
+bindBuffer END #2
+bindTexture called #2: index=0, texture=000002470B96F800
+bindTexture: getting context...
+bindTexture: resource=00000247127661B0, format=16, dimensions=640x360
+bindTexture: allocated descriptor slot 0 for texture index t0
+bindTexture: resource dimension=3, texture type=1
+bindTexture: using TEXTURE2D view dimension (mip offset=0, mip count=1)
+bindTexture: heap=0000024712843110, heapStart CPU=0x24710675000, GPU=0x35678a00120000
+bindTexture: creating SRV at slot 0, CPU handle 0x24710675000
+bindTexture: cached texture[0] GPU handle 0x35678a00120000 (offset from heap start: 0)
+bindTexture: done
+bindSamplerState called #2: index=0, sampler=00000247128B8040
+bindSamplerState: allocated descriptor slot 0 for sampler index s0
+bindSamplerState: creating sampler at slot 0, CPU handle 0x24710535100
+bindSamplerState: cached sampler[0] GPU handle 0x45678a00010100
+bindVertexBuffer called #2: index=0
+bindIndexBuffer called #2
+DrawIndexed called: indexCount=6, instanceCount=1
+DrawIndexed: bound CBVs - b0=0x87be000 (bound=1), b1=0x0 (bound=0)
+DrawIndexed: bound texture descriptor table at t0 (handle=0x35678a00120000, count=1)
+DrawIndexed: bound sampler descriptor table at s0 (handle=0x45678a00010100, count=1)
+DrawIndexed: VB[0] = GPU 0x87bc000, size=96, stride=24
+DrawIndexed: CB drawCount now=2
+getCurrentBackBuffer(): index=0, resource=0000024712764890
+CommandQueue::submit() - Executing command list...
+CommandQueue::submit() - Command list executed, checking device status...
+CommandQueue::submit() - Device OK, presenting...
+CommandQueue::submit() - Present OK
+CommandQueue::submit() - Signaled fence for frame 0 (value=1)
+CommandQueue::submit() - Advanced to frame index 1
+CommandQueue::submit() - Frame 2 resources already available (fence=0, completed=1)
+CommandQueue::submit() - Complete!
+CommandQueue::submit() - Aggregating 2 draws from CB into device
+CommandQueue::submit() - Device drawCount now=2
+Frame 1: willTick()
+createSurfaceTextures() called #2
+PlatformDevice::createTextureFromNativeDrawable() called
+  backBufferIndex=1, backBuffer=0000024712761650
+Texture::createFromResource - SUCCESS: 640x360 format=17
+CommandBuffer::begin() - Resetting allocator...
+CommandBuffer::begin() - Allocator reset OK, resetting command list...
+CommandBuffer::begin() - Command list reset OK
+RenderCommandEncoder::RenderCommandEncoder() - START
+RenderCommandEncoder: Got context
+RenderCommandEncoder: Using DescriptorHeapManager heaps
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000024712843110
+RenderCommandEncoder: Sampler heap = 0000024712A0EF20
+RenderCommandEncoder: Setting descriptor heaps...
+RenderCommandEncoder: Descriptor heaps set
+RenderCommandEncoder: Setting up RTV...
+RenderCommandEncoder: DescriptorHeapManager = 00000247125FBF10
+RenderCommandEncoder: Checking framebuffer_=000002470B7F63A0
+RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
+RenderCommandEncoder: MRT count = 1 (indices.size=1)
+RenderCommandEncoder: MRT loop i=0, tex=000002470B96F800, resource=00000247127661B0
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
+RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
+RenderCommandEncoder: MRT Total RTVs created: 1
+RenderCommandEncoder: Cleared depth-stencil (depth=1, stencil=1, depthVal=1.00, stencilVal=0)
+RenderCommandEncoder: OMSetRenderTargets with 1 RTVs + DSV
+RenderCommandEncoder: Setting default viewport...
+RenderCommandEncoder: Using framebuffer color attachment
+RenderCommandEncoder: Framebuffer dimensions: 640x360
+RenderCommandEncoder: Set default viewport/scissor to 640x360
+RenderCommandEncoder: Constructor complete!
+bindRenderPipelineState: PSO=0000024712BFDC00, RootSig=000002470B7F7350
+bindRenderPipelineState: Setting topology=4
+bindBuffer START #3: index=0
+bindBuffer: getting d3dBuffer...
+bindBuffer: getting gpuAddress(offset=0)...
+bindBuffer: got address=0x87be000, aligned=1
+bindBuffer: commandList_ pointer = 0000024712AB60B0
+bindBuffer: Cached CBV at index 0 with address 0x87be000
+bindBuffer END #3
+bindTexture called #3: index=0, texture=000002470B96EB80
+bindTexture: getting context...
+bindTexture: resource=0000024712A19260, format=19, dimensions=1024x1024
+bindTexture: allocated descriptor slot 0 for texture index t0
+bindTexture: resource dimension=3, texture type=1
+bindTexture: using TEXTURE2D view dimension (mip offset=0, mip count=11)
+bindTexture: heap=0000024712843110, heapStart CPU=0x24710675000, GPU=0x35678a00120000
+bindTexture: creating SRV at slot 0, CPU handle 0x24710675000
+bindTexture: cached texture[0] GPU handle 0x35678a00120000 (offset from heap start: 0)
+bindTexture: done
+bindSamplerState called #3: index=0, sampler=00000247128B8040
+bindSamplerState: allocated descriptor slot 0 for sampler index s0
+bindSamplerState: creating sampler at slot 0, CPU handle 0x24710535100
+bindSamplerState: cached sampler[0] GPU handle 0x45678a00010100
+bindVertexBuffer called #3: index=0
+bindIndexBuffer called #3
+DrawIndexed called: indexCount=6, instanceCount=1
+DrawIndexed: bound CBVs - b0=0x87be000 (bound=1), b1=0x0 (bound=0)
+DrawIndexed: bound texture descriptor table at t0 (handle=0x35678a00120000, count=1)
+DrawIndexed: bound sampler descriptor table at s0 (handle=0x45678a00010100, count=1)
+DrawIndexed: VB[0] = GPU 0x87bb000, size=96, stride=24
+DrawIndexed: CB drawCount now=1
+RenderCommandEncoder::RenderCommandEncoder() - START
+RenderCommandEncoder: Got context
+RenderCommandEncoder: Using DescriptorHeapManager heaps
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000024712843110
+RenderCommandEncoder: Sampler heap = 0000024712A0EF20
+RenderCommandEncoder: Setting descriptor heaps...
+RenderCommandEncoder: Descriptor heaps set
+RenderCommandEncoder: Setting up RTV...
+RenderCommandEncoder: DescriptorHeapManager = 00000247125FBF10
+RenderCommandEncoder: Checking framebuffer_=000002470B7F6E20
+RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
+RenderCommandEncoder: MRT count = 1 (indices.size=1)
+RenderCommandEncoder: MRT loop i=0, tex=000002470B96FBC0, resource=0000024712764890
+RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
+RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
+RenderCommandEncoder: MRT Total RTVs created: 1
+RenderCommandEncoder: Cleared depth-stencil (depth=1, stencil=1, depthVal=1.00, stencilVal=0)
+RenderCommandEncoder: OMSetRenderTargets with 1 RTVs + DSV
+RenderCommandEncoder: Setting default viewport...
+RenderCommandEncoder: Using framebuffer color attachment
+RenderCommandEncoder: Framebuffer dimensions: 640x360
+RenderCommandEncoder: Set default viewport/scissor to 640x360
+RenderCommandEncoder: Constructor complete!
+bindRenderPipelineState: PSO=0000024712A654C0, RootSig=000002470B7F7350
+bindRenderPipelineState: Setting topology=4
+bindBuffer START #4: index=0
+bindBuffer: getting d3dBuffer...
+bindBuffer: getting gpuAddress(offset=0)...
+bindBuffer: got address=0x87be000, aligned=1
+bindBuffer: commandList_ pointer = 0000024712AB60B0
+bindBuffer: Cached CBV at index 0 with address 0x87be000
+bindBuffer END #4
+bindTexture called #4: index=0, texture=000002470B96F800
+bindTexture: getting context...
+bindTexture: resource=00000247127661B0, format=16, dimensions=640x360
+bindTexture: allocated descriptor slot 0 for texture index t0
+bindTexture: resource dimension=3, texture type=1
+bindTexture: using TEXTURE2D view dimension (mip offset=0, mip count=1)
+bindTexture: heap=0000024712843110, heapStart CPU=0x24710675000, GPU=0x35678a00120000
+bindTexture: creating SRV at slot 0, CPU handle 0x24710675000
+bindTexture: cached texture[0] GPU handle 0x35678a00120000 (offset from heap start: 0)
+bindTexture: done
+bindSamplerState: allocated descriptor slot 0 for sampler index s0
+bindSamplerState: creating sampler at slot 0, CPU handle 0x24710535100
+bindSamplerState: cached sampler[0] GPU handle 0x45678a00010100
+DrawIndexed: bound CBVs - b0=0x87be000 (bound=1), b1=0x0 (bound=0)
+DrawIndexed: bound texture descriptor table at t0 (handle=0x35678a00120000, count=1)
+DrawIndexed: bound sampler descriptor table at s0 (handle=0x45678a00010100, count=1)
+DrawIndexed: VB[0] = GPU 0x87bc000, size=96, stride=24
+DrawIndexed: CB drawCount now=2
+CommandQueue::submit() - Executing command list...
+CommandQueue::submit() - Command list executed, checking device status...
+[IGL] Error in (unsigned __int64 __cdecl igl::d3d12::CommandQueue::submit(const class igl::ICommandBuffer &,bool)).
+DEVICE REMOVED! Reason: 0x887A002B
+D3D12 Info Queue has 5 messages:
+  [WARNING] ID3D12CommandList::ClearRenderTargetView: The clear values do not match those passed to resource creation. The clear operation is typically slower as a result; but will still clear to the desired value.
+  [ERROR] ID3D12CommandQueue1::ExecuteCommandLists: Using ClearDepthStencilView on Command List (0x0000024712AB60B0:'Unnamed ID3D12GraphicsCommandList Object'): Resource state (0x0: D3D12_RESOURCE_STATE_[COMMON|PRESENT]) of resource (0x0000024712763C00:'Unnamed ID3D12Resource Object') (subresource: 1) is invalid for use as a depth buffer.  Expected State Bits (all): 0x10: D3D12_RESOURCE_STATE_DEPTH_WRITE, Actual State: 0x0: D3D12_RESOURCE_STATE_[COMMON|PRESENT], Missing State: 0x10: D3D12_RESOURCE_STATE_DEPTH_WRITE.
+  [WARNING] ID3D12CommandList::ClearRenderTargetView: The clear values do not match those passed to resource creation. The clear operation is typically slower as a result; but will still clear to the desired value.
+  [ERROR] ID3D12CommandQueue1::ExecuteCommandLists: A command list, which writes to a swapchain back buffer, may only be executed when that back buffer is the back buffer that will be presented during the next call to Present*. Such a back buffer is also referred to as the "current back buffer". Swap Chain: 0x00000247125AD5B0:'Unnamed Object' - Current Back Buffer Buffer: 0x0000024712761650:'Unnamed ID3D12Resource Object' - Attempted Write Buffer: 0x0000024712764890:'Unnamed ID3D12Resource Object'
+  [ERROR] ID3D12Device::RemoveDevice: Device removal has been triggered for the following reason (DXGI_ERROR_ACCESS_DENIED: The application attempted to use a resource it does not access to.  This  could be, for example, rendering to a texture while only having read access.).

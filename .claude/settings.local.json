@@ -114,7 +114,9 @@
       "Bash(fi)",
       "Bash(./test_perframe_fencing.sh:*)",
       "Bash(./build/shell/Debug/ThreeCubesRenderSession_d3d12.exe:*)",
-      "Bash(./build/shell/Debug/Textured3DCubeSession_d3d12.exe:*)"
+      "Bash(./build/shell/Debug/Textured3DCubeSession_d3d12.exe:*)",
+      "Bash(dir \"C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.22621.0\\x64\\dxil.dll\")",
+      "Bash(artifacts/test_results/final_with_dxil_signed.log)"
     ],
     "deny": [],
     "ask": []

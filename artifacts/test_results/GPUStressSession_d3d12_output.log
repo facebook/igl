@@ -7,6 +7,7 @@ GlfwShell::initialize() - Creating window
 GlfwShell::initialize() - Creating platform
 D3D12Context: Creating D3D12 device...
 D3D12Context: Debug layer ENABLED (to capture validation messages)
+D3D12Context: DRED enabled (AutoBreadcrumbs + PageFault tracking)
 D3D12Context: Using HW adapter (FL 12.0)
 D3D12Context: Info queue configured (break on error: DISABLED)
 D3D12Context: Device created successfully
@@ -29,41 +30,41 @@ GlfwShell::initialize() - Creating session
 GlfwShell::initialize() - Initializing session
 GlfwShell::initialize() - SUCCESS
 main(): Initialization successful, calling shell.run()...
-GlfwShell::run() started, window_=000001A96AE89450
+GlfwShell::run() started, window_=000002D1480E4190
 Frame 0: willTick()
 createSurfaceTextures() called #1
 PlatformDevice::createTextureFromNativeDrawable() called
-getCurrentBackBuffer(): index=0, resource=000001A9744A3600
-  backBufferIndex=0, backBuffer=000001A9744A3600
+getCurrentBackBuffer(): index=0, resource=000002D151FB9240
+  backBufferIndex=0, backBuffer=000002D151FB9240
 Texture::createFromResource - SUCCESS: 640x360 format=17
 Device::createTexture: IGL format=82 -> DXGI format=40
 Texture::createFromResource - SUCCESS: 640x360 format=82
 Frame 1: willTick()
 createSurfaceTextures() called #2
 PlatformDevice::createTextureFromNativeDrawable() called
-getCurrentBackBuffer(): index=0, resource=000001A9744A3600
-  backBufferIndex=0, backBuffer=000001A9744A3600
+getCurrentBackBuffer(): index=0, resource=000002D151FB9240
+  backBufferIndex=0, backBuffer=000002D151FB9240
 Frame 2: willTick()
 createSurfaceTextures() called #3
 PlatformDevice::createTextureFromNativeDrawable() called
-getCurrentBackBuffer(): index=0, resource=000001A9744A3600
-  backBufferIndex=0, backBuffer=000001A9744A3600
+getCurrentBackBuffer(): index=0, resource=000002D151FB9240
+  backBufferIndex=0, backBuffer=000002D151FB9240
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001A9744A3600
+  backBufferIndex=0, backBuffer=000002D151FB9240
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001A9744A3600
+  backBufferIndex=0, backBuffer=000002D151FB9240
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001A9744A3600
+  backBufferIndex=0, backBuffer=000002D151FB9240
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001A9744A3600
+  backBufferIndex=0, backBuffer=000002D151FB9240
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001A9744A3600
+  backBufferIndex=0, backBuffer=000002D151FB9240
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001A9744A3600
+  backBufferIndex=0, backBuffer=000002D151FB9240
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001A9744A3600
+  backBufferIndex=0, backBuffer=000002D151FB9240
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001A9744A3600
+  backBufferIndex=0, backBuffer=000002D151FB9240
 
 We are running screenshot test - breaking after 10 frame
 copyBytes: format=17 (DXGI=87), bytesPerPixel=4, first 4 bytes: 0,0,0,0

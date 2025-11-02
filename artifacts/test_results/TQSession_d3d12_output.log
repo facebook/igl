@@ -7,6 +7,7 @@ GlfwShell::initialize() - Creating window
 GlfwShell::initialize() - Creating platform
 D3D12Context: Creating D3D12 device...
 D3D12Context: Debug layer ENABLED (to capture validation messages)
+D3D12Context: DRED enabled (AutoBreadcrumbs + PageFault tracking)
 D3D12Context: Using HW adapter (FL 12.0)
 D3D12Context: Info queue configured (break on error: DISABLED)
 D3D12Context: Device created successfully
@@ -49,15 +50,15 @@ Device::createShaderModule() - stage=1, entryPoint='main', debugName=''
   DEBUG BUILD: Enabling shader debug info and disabling optimizations
   Shader compiled successfully (14616 bytes bytecode)
 Device::createBuffer: type=4, requested_size=16, aligned_size=256, isUniform=1
-Device::createBuffer: Uniform buffer #1 created, GPU address=0x879d000
+Device::createBuffer: Uniform buffer #1 created, GPU address=0x87bd000
 GlfwShell::initialize() - SUCCESS
 main(): Initialization successful, calling shell.run()...
-GlfwShell::run() started, window_=0000028BA48F6FD0
+GlfwShell::run() started, window_=0000017D0CC4E690
 Frame 0: willTick()
 createSurfaceTextures() called #1
 PlatformDevice::createTextureFromNativeDrawable() called
-getCurrentBackBuffer(): index=0, resource=0000028BADEF3C10
-  backBufferIndex=0, backBuffer=0000028BADEF3C10
+getCurrentBackBuffer(): index=0, resource=0000017D16C31E70
+  backBufferIndex=0, backBuffer=0000017D16C31E70
 Texture::createFromResource - SUCCESS: 640x360 format=17
 Device::createTexture: IGL format=82 -> DXGI format=40
 Texture::createFromResource - SUCCESS: 640x360 format=82
@@ -88,7 +89,7 @@ Device::createRenderPipeline() START - debugName=''
       [0]: POSITION0 (semantic index 0), mask 0x07
       [1]: TEXCOORD0 (semantic index 0), mask 0x03
   Creating pipeline state (this may take a moment)...
-Device::createRenderPipeline() SUCCESS - PSO=0000028BADF6D4B0, RootSig=0000028BA76208E0
+Device::createRenderPipeline() SUCCESS - PSO=0000017D0F92AB10, RootSig=0000017D0F945360
 RenderPipelineState: Set topology to TRIANGLELIST
 [D3D12] hasFeature query: 1
 CommandBuffer::begin() - Resetting allocator...
@@ -97,16 +98,16 @@ CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 0000028BADF38840
-RenderCommandEncoder: Sampler heap = 0000028BADF5ECA0
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000017D16C6F1C0
+RenderCommandEncoder: Sampler heap = 0000017D16C95620
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000028BA4933980
-RenderCommandEncoder: Checking framebuffer_=0000028BA740E670
+RenderCommandEncoder: DescriptorHeapManager = 0000017D1686A280
+RenderCommandEncoder: Checking framebuffer_=0000017D0CBFA940
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=0000028BADF63030, resource=0000028BADEF3C10
+RenderCommandEncoder: MRT loop i=0, tex=0000017D16C99870, resource=0000017D16C31E70
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -118,40 +119,39 @@ RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
 bindVertexBuffer called #1: index=0
-bindRenderPipelineState: PSO=0000028BADF6D4B0, RootSig=0000028BA76208E0
+bindRenderPipelineState: PSO=0000017D0F92AB10, RootSig=0000017D0F945360
 bindRenderPipelineState: Setting topology=4
 [D3D12] hasFeature query: 1
 [D3D12] hasFeature query: 49
 bindBuffer START #1: index=0
 bindBuffer: getting d3dBuffer...
 bindBuffer: getting gpuAddress(offset=0)...
-bindBuffer: got address=0x879d000, aligned=1
-bindBuffer: commandList_ pointer = 0000028BA76CC8E0
-bindBuffer: Cached CBV at index 0 with address 0x879d000
+bindBuffer: got address=0x87bd000, aligned=1
+bindBuffer: commandList_ pointer = 0000017D16CF3040
+bindBuffer: Cached CBV at index 0 with address 0x87bd000
 bindBuffer END #1
-bindTexture called #1: index=0, texture=0000028BADF629F0
+bindTexture called #1: index=0, texture=0000017D16C9A630
 bindTexture: getting context...
-bindTexture: resource=0000028BADF6A530, format=19, dimensions=1024x1024
+bindTexture: resource=0000017D16CA0EB0, format=19, dimensions=1024x1024
 bindTexture: allocated descriptor slot 0 for texture index t0
 bindTexture: resource dimension=3, texture type=1
 bindTexture: using TEXTURE2D view dimension (mip offset=0, mip count=11)
-bindTexture: heap=0000028BADF38840, heapStart CPU=0x28babbc5000, GPU=0x35678a00120000
-bindTexture: creating SRV at slot 0, CPU handle 0x28babbc5000
+bindTexture: heap=0000017D16C6F1C0, heapStart CPU=0x17d147d5000, GPU=0x35678a00120000
+bindTexture: creating SRV at slot 0, CPU handle 0x17d147d5000
 bindTexture: cached texture[0] GPU handle 0x35678a00120000 (offset from heap start: 0)
 bindTexture: done
-bindSamplerState called #1: index=0, sampler=0000028BADDF95F0
+bindSamplerState called #1: index=0, sampler=0000017D16B37A70
 bindSamplerState: allocated descriptor slot 0 for sampler index s0
-bindSamplerState: creating sampler at slot 0, CPU handle 0x28baba85100
+bindSamplerState: creating sampler at slot 0, CPU handle 0x17d14695100
 bindSamplerState: cached sampler[0] GPU handle 0x45678a00010100
 bindIndexBuffer called #1
 DrawIndexed called: indexCount=6, instanceCount=1
-DrawIndexed: bound CBVs - b0=0x879d000 (bound=1), b1=0x0 (bound=0)
-DrawIndexed: Setting descriptor heaps: CBV/SRV/UAV=0000028BADF38840, Sampler=0000028BADF5ECA0
+DrawIndexed: bound CBVs - b0=0x87bd000 (bound=1), b1=0x0 (bound=0)
 DrawIndexed: bound texture descriptor table at t0 (handle=0x35678a00120000, count=1)
 DrawIndexed: bound sampler descriptor table at s0 (handle=0x45678a00010100, count=1)
-DrawIndexed: VB[0] = GPU 0x879b000, size=96, stride=24
+DrawIndexed: VB[0] = GPU 0x87bb000, size=96, stride=24
 DrawIndexed: CB drawCount now=1
-getCurrentBackBuffer(): index=0, resource=0000028BADEF3C10
+getCurrentBackBuffer(): index=0, resource=0000017D16C31E70
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
@@ -163,8 +163,8 @@ CommandQueue::submit() - Device drawCount now=1
 Frame 1: willTick()
 createSurfaceTextures() called #2
 PlatformDevice::createTextureFromNativeDrawable() called
-getCurrentBackBuffer(): index=1, resource=0000028BADEF6E50
-  backBufferIndex=1, backBuffer=0000028BADEF6E50
+getCurrentBackBuffer(): index=1, resource=0000017D16C33790
+  backBufferIndex=1, backBuffer=0000017D16C33790
 Texture::createFromResource - SUCCESS: 640x360 format=17
 [D3D12] hasFeature query: 1
 CommandBuffer::begin() - Resetting allocator...
@@ -173,16 +173,16 @@ CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 0000028BADF38840
-RenderCommandEncoder: Sampler heap = 0000028BADF5ECA0
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000017D16C6F1C0
+RenderCommandEncoder: Sampler heap = 0000017D16C95620
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000028BA4933980
-RenderCommandEncoder: Checking framebuffer_=0000028BA740E670
+RenderCommandEncoder: DescriptorHeapManager = 0000017D1686A280
+RenderCommandEncoder: Checking framebuffer_=0000017D0CBFA940
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=0000028BADF64570, resource=0000028BADEF6E50
+RenderCommandEncoder: MRT loop i=0, tex=0000017D16C9A8B0, resource=0000017D16C33790
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -194,38 +194,37 @@ RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
 bindVertexBuffer called #2: index=0
-bindRenderPipelineState: PSO=0000028BADF6D4B0, RootSig=0000028BA76208E0
+bindRenderPipelineState: PSO=0000017D0F92AB10, RootSig=0000017D0F945360
 bindRenderPipelineState: Setting topology=4
 [D3D12] hasFeature query: 1
 [D3D12] hasFeature query: 49
 bindBuffer START #2: index=0
 bindBuffer: getting d3dBuffer...
 bindBuffer: getting gpuAddress(offset=0)...
-bindBuffer: got address=0x879d000, aligned=1
-bindBuffer: commandList_ pointer = 0000028BA76CC8E0
-bindBuffer: Cached CBV at index 0 with address 0x879d000
+bindBuffer: got address=0x87bd000, aligned=1
+bindBuffer: commandList_ pointer = 0000017D16CF3040
+bindBuffer: Cached CBV at index 0 with address 0x87bd000
 bindBuffer END #2
-bindTexture called #2: index=0, texture=0000028BADF629F0
+bindTexture called #2: index=0, texture=0000017D16C9A630
 bindTexture: getting context...
-bindTexture: resource=0000028BADF6A530, format=19, dimensions=1024x1024
+bindTexture: resource=0000017D16CA0EB0, format=19, dimensions=1024x1024
 bindTexture: allocated descriptor slot 0 for texture index t0
 bindTexture: resource dimension=3, texture type=1
 bindTexture: using TEXTURE2D view dimension (mip offset=0, mip count=11)
-bindTexture: heap=0000028BADF38840, heapStart CPU=0x28babbc5000, GPU=0x35678a00120000
-bindTexture: creating SRV at slot 0, CPU handle 0x28babbc5000
+bindTexture: heap=0000017D16C6F1C0, heapStart CPU=0x17d147d5000, GPU=0x35678a00120000
+bindTexture: creating SRV at slot 0, CPU handle 0x17d147d5000
 bindTexture: cached texture[0] GPU handle 0x35678a00120000 (offset from heap start: 0)
 bindTexture: done
-bindSamplerState called #2: index=0, sampler=0000028BADDF95F0
+bindSamplerState called #2: index=0, sampler=0000017D16B37A70
 bindSamplerState: allocated descriptor slot 0 for sampler index s0
-bindSamplerState: creating sampler at slot 0, CPU handle 0x28baba85100
+bindSamplerState: creating sampler at slot 0, CPU handle 0x17d14695100
 bindSamplerState: cached sampler[0] GPU handle 0x45678a00010100
 bindIndexBuffer called #2
 DrawIndexed called: indexCount=6, instanceCount=1
-DrawIndexed: bound CBVs - b0=0x879d000 (bound=1), b1=0x0 (bound=0)
-DrawIndexed: Setting descriptor heaps: CBV/SRV/UAV=0000028BADF38840, Sampler=0000028BADF5ECA0
+DrawIndexed: bound CBVs - b0=0x87bd000 (bound=1), b1=0x0 (bound=0)
 DrawIndexed: bound texture descriptor table at t0 (handle=0x35678a00120000, count=1)
 DrawIndexed: bound sampler descriptor table at s0 (handle=0x45678a00010100, count=1)
-DrawIndexed: VB[0] = GPU 0x879b000, size=96, stride=24
+DrawIndexed: VB[0] = GPU 0x87bb000, size=96, stride=24
 DrawIndexed: CB drawCount now=1
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
@@ -238,7 +237,7 @@ CommandQueue::submit() - Device drawCount now=2
 Frame 2: willTick()
 createSurfaceTextures() called #3
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=2, backBuffer=0000028BADEF5530
+  backBufferIndex=2, backBuffer=0000017D16C35D40
 Texture::createFromResource - SUCCESS: 640x360 format=17
 [D3D12] hasFeature query: 1
 CommandBuffer::begin() - Resetting allocator...
@@ -247,16 +246,16 @@ CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 0000028BADF38840
-RenderCommandEncoder: Sampler heap = 0000028BADF5ECA0
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000017D16C6F1C0
+RenderCommandEncoder: Sampler heap = 0000017D16C95620
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000028BA4933980
-RenderCommandEncoder: Checking framebuffer_=0000028BA740E670
+RenderCommandEncoder: DescriptorHeapManager = 0000017D1686A280
+RenderCommandEncoder: Checking framebuffer_=0000017D0CBFA940
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=0000028BADF64430, resource=0000028BADEF5530
+RenderCommandEncoder: MRT loop i=0, tex=0000017D16C9A270, resource=0000017D16C35D40
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -268,38 +267,37 @@ RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
 bindVertexBuffer called #3: index=0
-bindRenderPipelineState: PSO=0000028BADF6D4B0, RootSig=0000028BA76208E0
+bindRenderPipelineState: PSO=0000017D0F92AB10, RootSig=0000017D0F945360
 bindRenderPipelineState: Setting topology=4
 [D3D12] hasFeature query: 1
 [D3D12] hasFeature query: 49
 bindBuffer START #3: index=0
 bindBuffer: getting d3dBuffer...
 bindBuffer: getting gpuAddress(offset=0)...
-bindBuffer: got address=0x879d000, aligned=1
-bindBuffer: commandList_ pointer = 0000028BA76CC8E0
-bindBuffer: Cached CBV at index 0 with address 0x879d000
+bindBuffer: got address=0x87bd000, aligned=1
+bindBuffer: commandList_ pointer = 0000017D16D9C010
+bindBuffer: Cached CBV at index 0 with address 0x87bd000
 bindBuffer END #3
-bindTexture called #3: index=0, texture=0000028BADF629F0
+bindTexture called #3: index=0, texture=0000017D16C9A630
 bindTexture: getting context...
-bindTexture: resource=0000028BADF6A530, format=19, dimensions=1024x1024
+bindTexture: resource=0000017D16CA0EB0, format=19, dimensions=1024x1024
 bindTexture: allocated descriptor slot 0 for texture index t0
 bindTexture: resource dimension=3, texture type=1
 bindTexture: using TEXTURE2D view dimension (mip offset=0, mip count=11)
-bindTexture: heap=0000028BADF38840, heapStart CPU=0x28babbc5000, GPU=0x35678a00120000
-bindTexture: creating SRV at slot 0, CPU handle 0x28babbc5000
+bindTexture: heap=0000017D16C6F1C0, heapStart CPU=0x17d147d5000, GPU=0x35678a00120000
+bindTexture: creating SRV at slot 0, CPU handle 0x17d147d5000
 bindTexture: cached texture[0] GPU handle 0x35678a00120000 (offset from heap start: 0)
 bindTexture: done
-bindSamplerState called #3: index=0, sampler=0000028BADDF95F0
+bindSamplerState called #3: index=0, sampler=0000017D16B37A70
 bindSamplerState: allocated descriptor slot 0 for sampler index s0
-bindSamplerState: creating sampler at slot 0, CPU handle 0x28baba85100
+bindSamplerState: creating sampler at slot 0, CPU handle 0x17d14695100
 bindSamplerState: cached sampler[0] GPU handle 0x45678a00010100
 bindIndexBuffer called #3
 DrawIndexed called: indexCount=6, instanceCount=1
-DrawIndexed: bound CBVs - b0=0x879d000 (bound=1), b1=0x0 (bound=0)
-DrawIndexed: Setting descriptor heaps: CBV/SRV/UAV=0000028BADF38840, Sampler=0000028BADF5ECA0
+DrawIndexed: bound CBVs - b0=0x87bd000 (bound=1), b1=0x0 (bound=0)
 DrawIndexed: bound texture descriptor table at t0 (handle=0x35678a00120000, count=1)
 DrawIndexed: bound sampler descriptor table at s0 (handle=0x45678a00010100, count=1)
-DrawIndexed: VB[0] = GPU 0x879b000, size=96, stride=24
+DrawIndexed: VB[0] = GPU 0x87bb000, size=96, stride=24
 DrawIndexed: CB drawCount now=1
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
@@ -310,7 +308,7 @@ CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 1 draws from CB into device
 CommandQueue::submit() - Device drawCount now=3
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=0000028BADEF3C10
+  backBufferIndex=0, backBuffer=0000017D16C31E70
 [D3D12] hasFeature query: 1
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
@@ -318,16 +316,16 @@ CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 0000028BADF38840
-RenderCommandEncoder: Sampler heap = 0000028BADF5ECA0
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000017D16C6F1C0
+RenderCommandEncoder: Sampler heap = 0000017D16C95620
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000028BA4933980
-RenderCommandEncoder: Checking framebuffer_=0000028BA740E670
+RenderCommandEncoder: DescriptorHeapManager = 0000017D1686A280
+RenderCommandEncoder: Checking framebuffer_=0000017D0CBFA940
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=0000028BADF63030, resource=0000028BADEF3C10
+RenderCommandEncoder: MRT loop i=0, tex=0000017D16C99870, resource=0000017D16C31E70
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -338,35 +336,34 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
-bindRenderPipelineState: PSO=0000028BADF6D4B0, RootSig=0000028BA76208E0
+bindRenderPipelineState: PSO=0000017D0F92AB10, RootSig=0000017D0F945360
 bindRenderPipelineState: Setting topology=4
 [D3D12] hasFeature query: 1
 [D3D12] hasFeature query: 49
 bindBuffer START #4: index=0
 bindBuffer: getting d3dBuffer...
 bindBuffer: getting gpuAddress(offset=0)...
-bindBuffer: got address=0x879d000, aligned=1
-bindBuffer: commandList_ pointer = 0000028BA76CC8E0
-bindBuffer: Cached CBV at index 0 with address 0x879d000
+bindBuffer: got address=0x87bd000, aligned=1
+bindBuffer: commandList_ pointer = 0000017D16D9C010
+bindBuffer: Cached CBV at index 0 with address 0x87bd000
 bindBuffer END #4
-bindTexture called #4: index=0, texture=0000028BADF629F0
+bindTexture called #4: index=0, texture=0000017D16C9A630
 bindTexture: getting context...
-bindTexture: resource=0000028BADF6A530, format=19, dimensions=1024x1024
+bindTexture: resource=0000017D16CA0EB0, format=19, dimensions=1024x1024
 bindTexture: allocated descriptor slot 0 for texture index t0
 bindTexture: resource dimension=3, texture type=1
 bindTexture: using TEXTURE2D view dimension (mip offset=0, mip count=11)
-bindTexture: heap=0000028BADF38840, heapStart CPU=0x28babbc5000, GPU=0x35678a00120000
-bindTexture: creating SRV at slot 0, CPU handle 0x28babbc5000
+bindTexture: heap=0000017D16C6F1C0, heapStart CPU=0x17d147d5000, GPU=0x35678a00120000
+bindTexture: creating SRV at slot 0, CPU handle 0x17d147d5000
 bindTexture: cached texture[0] GPU handle 0x35678a00120000 (offset from heap start: 0)
 bindTexture: done
 bindSamplerState: allocated descriptor slot 0 for sampler index s0
-bindSamplerState: creating sampler at slot 0, CPU handle 0x28baba85100
+bindSamplerState: creating sampler at slot 0, CPU handle 0x17d14695100
 bindSamplerState: cached sampler[0] GPU handle 0x45678a00010100
-DrawIndexed: bound CBVs - b0=0x879d000 (bound=1), b1=0x0 (bound=0)
-DrawIndexed: Setting descriptor heaps: CBV/SRV/UAV=0000028BADF38840, Sampler=0000028BADF5ECA0
+DrawIndexed: bound CBVs - b0=0x87bd000 (bound=1), b1=0x0 (bound=0)
 DrawIndexed: bound texture descriptor table at t0 (handle=0x35678a00120000, count=1)
 DrawIndexed: bound sampler descriptor table at s0 (handle=0x45678a00010100, count=1)
-DrawIndexed: VB[0] = GPU 0x879b000, size=96, stride=24
+DrawIndexed: VB[0] = GPU 0x87bb000, size=96, stride=24
 DrawIndexed: CB drawCount now=1
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
@@ -377,7 +374,7 @@ CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 1 draws from CB into device
 CommandQueue::submit() - Device drawCount now=4
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=1, backBuffer=0000028BADEF6E50
+  backBufferIndex=1, backBuffer=0000017D16C33790
 [D3D12] hasFeature query: 1
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
@@ -385,16 +382,16 @@ CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 0000028BADF38840
-RenderCommandEncoder: Sampler heap = 0000028BADF5ECA0
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000017D16C6F1C0
+RenderCommandEncoder: Sampler heap = 0000017D16C95620
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000028BA4933980
-RenderCommandEncoder: Checking framebuffer_=0000028BA740E670
+RenderCommandEncoder: DescriptorHeapManager = 0000017D1686A280
+RenderCommandEncoder: Checking framebuffer_=0000017D0CBFA940
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=0000028BADF64570, resource=0000028BADEF6E50
+RenderCommandEncoder: MRT loop i=0, tex=0000017D16C9A8B0, resource=0000017D16C33790
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -405,35 +402,34 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
-bindRenderPipelineState: PSO=0000028BADF6D4B0, RootSig=0000028BA76208E0
+bindRenderPipelineState: PSO=0000017D0F92AB10, RootSig=0000017D0F945360
 bindRenderPipelineState: Setting topology=4
 [D3D12] hasFeature query: 1
 [D3D12] hasFeature query: 49
 bindBuffer START #5: index=0
 bindBuffer: getting d3dBuffer...
 bindBuffer: getting gpuAddress(offset=0)...
-bindBuffer: got address=0x879d000, aligned=1
-bindBuffer: commandList_ pointer = 0000028BA76CC8E0
-bindBuffer: Cached CBV at index 0 with address 0x879d000
+bindBuffer: got address=0x87bd000, aligned=1
+bindBuffer: commandList_ pointer = 0000017D16D9C010
+bindBuffer: Cached CBV at index 0 with address 0x87bd000
 bindBuffer END #5
-bindTexture called #5: index=0, texture=0000028BADF629F0
+bindTexture called #5: index=0, texture=0000017D16C9A630
 bindTexture: getting context...
-bindTexture: resource=0000028BADF6A530, format=19, dimensions=1024x1024
+bindTexture: resource=0000017D16CA0EB0, format=19, dimensions=1024x1024
 bindTexture: allocated descriptor slot 0 for texture index t0
 bindTexture: resource dimension=3, texture type=1
 bindTexture: using TEXTURE2D view dimension (mip offset=0, mip count=11)
-bindTexture: heap=0000028BADF38840, heapStart CPU=0x28babbc5000, GPU=0x35678a00120000
-bindTexture: creating SRV at slot 0, CPU handle 0x28babbc5000
+bindTexture: heap=0000017D16C6F1C0, heapStart CPU=0x17d147d5000, GPU=0x35678a00120000
+bindTexture: creating SRV at slot 0, CPU handle 0x17d147d5000
 bindTexture: cached texture[0] GPU handle 0x35678a00120000 (offset from heap start: 0)
 bindTexture: done
 bindSamplerState: allocated descriptor slot 0 for sampler index s0
-bindSamplerState: creating sampler at slot 0, CPU handle 0x28baba85100
+bindSamplerState: creating sampler at slot 0, CPU handle 0x17d14695100
 bindSamplerState: cached sampler[0] GPU handle 0x45678a00010100
-DrawIndexed: bound CBVs - b0=0x879d000 (bound=1), b1=0x0 (bound=0)
-DrawIndexed: Setting descriptor heaps: CBV/SRV/UAV=0000028BADF38840, Sampler=0000028BADF5ECA0
+DrawIndexed: bound CBVs - b0=0x87bd000 (bound=1), b1=0x0 (bound=0)
 DrawIndexed: bound texture descriptor table at t0 (handle=0x35678a00120000, count=1)
 DrawIndexed: bound sampler descriptor table at s0 (handle=0x45678a00010100, count=1)
-DrawIndexed: VB[0] = GPU 0x879b000, size=96, stride=24
+DrawIndexed: VB[0] = GPU 0x87bb000, size=96, stride=24
 DrawIndexed: CB drawCount now=1
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
@@ -444,7 +440,7 @@ CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 1 draws from CB into device
 CommandQueue::submit() - Device drawCount now=5
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=2, backBuffer=0000028BADEF5530
+  backBufferIndex=2, backBuffer=0000017D16C35D40
 [D3D12] hasFeature query: 1
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
@@ -452,16 +448,16 @@ CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 0000028BADF38840
-RenderCommandEncoder: Sampler heap = 0000028BADF5ECA0
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000017D16C6F1C0
+RenderCommandEncoder: Sampler heap = 0000017D16C95620
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000028BA4933980
-RenderCommandEncoder: Checking framebuffer_=0000028BA740E670
+RenderCommandEncoder: DescriptorHeapManager = 0000017D1686A280
+RenderCommandEncoder: Checking framebuffer_=0000017D0CBFA940
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=0000028BADF64430, resource=0000028BADEF5530
+RenderCommandEncoder: MRT loop i=0, tex=0000017D16C9A270, resource=0000017D16C35D40
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -472,32 +468,31 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
-bindRenderPipelineState: PSO=0000028BADF6D4B0, RootSig=0000028BA76208E0
+bindRenderPipelineState: PSO=0000017D0F92AB10, RootSig=0000017D0F945360
 bindRenderPipelineState: Setting topology=4
 [D3D12] hasFeature query: 1
 [D3D12] hasFeature query: 49
 bindBuffer: getting d3dBuffer...
 bindBuffer: getting gpuAddress(offset=0)...
-bindBuffer: got address=0x879d000, aligned=1
-bindBuffer: commandList_ pointer = 0000028BA76CC8E0
-bindBuffer: Cached CBV at index 0 with address 0x879d000
+bindBuffer: got address=0x87bd000, aligned=1
+bindBuffer: commandList_ pointer = 0000017D16DE1000
+bindBuffer: Cached CBV at index 0 with address 0x87bd000
 bindTexture: getting context...
-bindTexture: resource=0000028BADF6A530, format=19, dimensions=1024x1024
+bindTexture: resource=0000017D16CA0EB0, format=19, dimensions=1024x1024
 bindTexture: allocated descriptor slot 0 for texture index t0
 bindTexture: resource dimension=3, texture type=1
 bindTexture: using TEXTURE2D view dimension (mip offset=0, mip count=11)
-bindTexture: heap=0000028BADF38840, heapStart CPU=0x28babbc5000, GPU=0x35678a00120000
-bindTexture: creating SRV at slot 0, CPU handle 0x28babbc5000
+bindTexture: heap=0000017D16C6F1C0, heapStart CPU=0x17d147d5000, GPU=0x35678a00120000
+bindTexture: creating SRV at slot 0, CPU handle 0x17d147d5000
 bindTexture: cached texture[0] GPU handle 0x35678a00120000 (offset from heap start: 0)
 bindTexture: done
 bindSamplerState: allocated descriptor slot 0 for sampler index s0
-bindSamplerState: creating sampler at slot 0, CPU handle 0x28baba85100
+bindSamplerState: creating sampler at slot 0, CPU handle 0x17d14695100
 bindSamplerState: cached sampler[0] GPU handle 0x45678a00010100
-DrawIndexed: bound CBVs - b0=0x879d000 (bound=1), b1=0x0 (bound=0)
-DrawIndexed: Setting descriptor heaps: CBV/SRV/UAV=0000028BADF38840, Sampler=0000028BADF5ECA0
+DrawIndexed: bound CBVs - b0=0x87bd000 (bound=1), b1=0x0 (bound=0)
 DrawIndexed: bound texture descriptor table at t0 (handle=0x35678a00120000, count=1)
 DrawIndexed: bound sampler descriptor table at s0 (handle=0x45678a00010100, count=1)
-DrawIndexed: VB[0] = GPU 0x879b000, size=96, stride=24
+DrawIndexed: VB[0] = GPU 0x87bb000, size=96, stride=24
 DrawIndexed: CB drawCount now=1
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
@@ -508,7 +503,7 @@ CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 1 draws from CB into device
 CommandQueue::submit() - Device drawCount now=6
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=0000028BADEF3C10
+  backBufferIndex=0, backBuffer=0000017D16C31E70
 [D3D12] hasFeature query: 1
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
@@ -516,16 +511,16 @@ CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 0000028BADF38840
-RenderCommandEncoder: Sampler heap = 0000028BADF5ECA0
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000017D16C6F1C0
+RenderCommandEncoder: Sampler heap = 0000017D16C95620
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000028BA4933980
-RenderCommandEncoder: Checking framebuffer_=0000028BA740E670
+RenderCommandEncoder: DescriptorHeapManager = 0000017D1686A280
+RenderCommandEncoder: Checking framebuffer_=0000017D0CBFA940
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=0000028BADF63030, resource=0000028BADEF3C10
+RenderCommandEncoder: MRT loop i=0, tex=0000017D16C99870, resource=0000017D16C31E70
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -536,32 +531,31 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
-bindRenderPipelineState: PSO=0000028BADF6D4B0, RootSig=0000028BA76208E0
+bindRenderPipelineState: PSO=0000017D0F92AB10, RootSig=0000017D0F945360
 bindRenderPipelineState: Setting topology=4
 [D3D12] hasFeature query: 1
 [D3D12] hasFeature query: 49
 bindBuffer: getting d3dBuffer...
 bindBuffer: getting gpuAddress(offset=0)...
-bindBuffer: got address=0x879d000, aligned=1
-bindBuffer: commandList_ pointer = 0000028BA76CC8E0
-bindBuffer: Cached CBV at index 0 with address 0x879d000
+bindBuffer: got address=0x87bd000, aligned=1
+bindBuffer: commandList_ pointer = 0000017D16DE1000
+bindBuffer: Cached CBV at index 0 with address 0x87bd000
 bindTexture: getting context...
-bindTexture: resource=0000028BADF6A530, format=19, dimensions=1024x1024
+bindTexture: resource=0000017D16CA0EB0, format=19, dimensions=1024x1024
 bindTexture: allocated descriptor slot 0 for texture index t0
 bindTexture: resource dimension=3, texture type=1
 bindTexture: using TEXTURE2D view dimension (mip offset=0, mip count=11)
-bindTexture: heap=0000028BADF38840, heapStart CPU=0x28babbc5000, GPU=0x35678a00120000
-bindTexture: creating SRV at slot 0, CPU handle 0x28babbc5000
+bindTexture: heap=0000017D16C6F1C0, heapStart CPU=0x17d147d5000, GPU=0x35678a00120000
+bindTexture: creating SRV at slot 0, CPU handle 0x17d147d5000
 bindTexture: cached texture[0] GPU handle 0x35678a00120000 (offset from heap start: 0)
 bindTexture: done
 bindSamplerState: allocated descriptor slot 0 for sampler index s0
-bindSamplerState: creating sampler at slot 0, CPU handle 0x28baba85100
+bindSamplerState: creating sampler at slot 0, CPU handle 0x17d14695100
 bindSamplerState: cached sampler[0] GPU handle 0x45678a00010100
-DrawIndexed: bound CBVs - b0=0x879d000 (bound=1), b1=0x0 (bound=0)
-DrawIndexed: Setting descriptor heaps: CBV/SRV/UAV=0000028BADF38840, Sampler=0000028BADF5ECA0
+DrawIndexed: bound CBVs - b0=0x87bd000 (bound=1), b1=0x0 (bound=0)
 DrawIndexed: bound texture descriptor table at t0 (handle=0x35678a00120000, count=1)
 DrawIndexed: bound sampler descriptor table at s0 (handle=0x45678a00010100, count=1)
-DrawIndexed: VB[0] = GPU 0x879b000, size=96, stride=24
+DrawIndexed: VB[0] = GPU 0x87bb000, size=96, stride=24
 DrawIndexed: CB drawCount now=1
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
@@ -572,7 +566,7 @@ CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 1 draws from CB into device
 CommandQueue::submit() - Device drawCount now=7
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=1, backBuffer=0000028BADEF6E50
+  backBufferIndex=1, backBuffer=0000017D16C33790
 [D3D12] hasFeature query: 1
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
@@ -580,16 +574,16 @@ CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 0000028BADF38840
-RenderCommandEncoder: Sampler heap = 0000028BADF5ECA0
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000017D16C6F1C0
+RenderCommandEncoder: Sampler heap = 0000017D16C95620
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000028BA4933980
-RenderCommandEncoder: Checking framebuffer_=0000028BA740E670
+RenderCommandEncoder: DescriptorHeapManager = 0000017D1686A280
+RenderCommandEncoder: Checking framebuffer_=0000017D0CBFA940
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=0000028BADF64570, resource=0000028BADEF6E50
+RenderCommandEncoder: MRT loop i=0, tex=0000017D16C9A8B0, resource=0000017D16C33790
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -600,32 +594,31 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
-bindRenderPipelineState: PSO=0000028BADF6D4B0, RootSig=0000028BA76208E0
+bindRenderPipelineState: PSO=0000017D0F92AB10, RootSig=0000017D0F945360
 bindRenderPipelineState: Setting topology=4
 [D3D12] hasFeature query: 1
 [D3D12] hasFeature query: 49
 bindBuffer: getting d3dBuffer...
 bindBuffer: getting gpuAddress(offset=0)...
-bindBuffer: got address=0x879d000, aligned=1
-bindBuffer: commandList_ pointer = 0000028BB807FBC0
-bindBuffer: Cached CBV at index 0 with address 0x879d000
+bindBuffer: got address=0x87bd000, aligned=1
+bindBuffer: commandList_ pointer = 0000017D16DE1000
+bindBuffer: Cached CBV at index 0 with address 0x87bd000
 bindTexture: getting context...
-bindTexture: resource=0000028BADF6A530, format=19, dimensions=1024x1024
+bindTexture: resource=0000017D16CA0EB0, format=19, dimensions=1024x1024
 bindTexture: allocated descriptor slot 0 for texture index t0
 bindTexture: resource dimension=3, texture type=1
 bindTexture: using TEXTURE2D view dimension (mip offset=0, mip count=11)
-bindTexture: heap=0000028BADF38840, heapStart CPU=0x28babbc5000, GPU=0x35678a00120000
-bindTexture: creating SRV at slot 0, CPU handle 0x28babbc5000
+bindTexture: heap=0000017D16C6F1C0, heapStart CPU=0x17d147d5000, GPU=0x35678a00120000
+bindTexture: creating SRV at slot 0, CPU handle 0x17d147d5000
 bindTexture: cached texture[0] GPU handle 0x35678a00120000 (offset from heap start: 0)
 bindTexture: done
 bindSamplerState: allocated descriptor slot 0 for sampler index s0
-bindSamplerState: creating sampler at slot 0, CPU handle 0x28baba85100
+bindSamplerState: creating sampler at slot 0, CPU handle 0x17d14695100
 bindSamplerState: cached sampler[0] GPU handle 0x45678a00010100
-DrawIndexed: bound CBVs - b0=0x879d000 (bound=1), b1=0x0 (bound=0)
-DrawIndexed: Setting descriptor heaps: CBV/SRV/UAV=0000028BADF38840, Sampler=0000028BADF5ECA0
+DrawIndexed: bound CBVs - b0=0x87bd000 (bound=1), b1=0x0 (bound=0)
 DrawIndexed: bound texture descriptor table at t0 (handle=0x35678a00120000, count=1)
 DrawIndexed: bound sampler descriptor table at s0 (handle=0x45678a00010100, count=1)
-DrawIndexed: VB[0] = GPU 0x879b000, size=96, stride=24
+DrawIndexed: VB[0] = GPU 0x87bb000, size=96, stride=24
 DrawIndexed: CB drawCount now=1
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
@@ -636,7 +629,7 @@ CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 1 draws from CB into device
 CommandQueue::submit() - Device drawCount now=8
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=2, backBuffer=0000028BADEF5530
+  backBufferIndex=2, backBuffer=0000017D16C35D40
 [D3D12] hasFeature query: 1
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
@@ -644,16 +637,16 @@ CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 0000028BADF38840
-RenderCommandEncoder: Sampler heap = 0000028BADF5ECA0
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000017D16C6F1C0
+RenderCommandEncoder: Sampler heap = 0000017D16C95620
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000028BA4933980
-RenderCommandEncoder: Checking framebuffer_=0000028BA740E670
+RenderCommandEncoder: DescriptorHeapManager = 0000017D1686A280
+RenderCommandEncoder: Checking framebuffer_=0000017D0CBFA940
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=0000028BADF64430, resource=0000028BADEF5530
+RenderCommandEncoder: MRT loop i=0, tex=0000017D16C9A270, resource=0000017D16C35D40
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -664,32 +657,31 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
-bindRenderPipelineState: PSO=0000028BADF6D4B0, RootSig=0000028BA76208E0
+bindRenderPipelineState: PSO=0000017D0F92AB10, RootSig=0000017D0F945360
 bindRenderPipelineState: Setting topology=4
 [D3D12] hasFeature query: 1
 [D3D12] hasFeature query: 49
 bindBuffer: getting d3dBuffer...
 bindBuffer: getting gpuAddress(offset=0)...
-bindBuffer: got address=0x879d000, aligned=1
-bindBuffer: commandList_ pointer = 0000028BA76CC8E0
-bindBuffer: Cached CBV at index 0 with address 0x879d000
+bindBuffer: got address=0x87bd000, aligned=1
+bindBuffer: commandList_ pointer = 0000017D16DE1000
+bindBuffer: Cached CBV at index 0 with address 0x87bd000
 bindTexture: getting context...
-bindTexture: resource=0000028BADF6A530, format=19, dimensions=1024x1024
+bindTexture: resource=0000017D16CA0EB0, format=19, dimensions=1024x1024
 bindTexture: allocated descriptor slot 0 for texture index t0
 bindTexture: resource dimension=3, texture type=1
 bindTexture: using TEXTURE2D view dimension (mip offset=0, mip count=11)
-bindTexture: heap=0000028BADF38840, heapStart CPU=0x28babbc5000, GPU=0x35678a00120000
-bindTexture: creating SRV at slot 0, CPU handle 0x28babbc5000
+bindTexture: heap=0000017D16C6F1C0, heapStart CPU=0x17d147d5000, GPU=0x35678a00120000
+bindTexture: creating SRV at slot 0, CPU handle 0x17d147d5000
 bindTexture: cached texture[0] GPU handle 0x35678a00120000 (offset from heap start: 0)
 bindTexture: done
 bindSamplerState: allocated descriptor slot 0 for sampler index s0
-bindSamplerState: creating sampler at slot 0, CPU handle 0x28baba85100
+bindSamplerState: creating sampler at slot 0, CPU handle 0x17d14695100
 bindSamplerState: cached sampler[0] GPU handle 0x45678a00010100
-DrawIndexed: bound CBVs - b0=0x879d000 (bound=1), b1=0x0 (bound=0)
-DrawIndexed: Setting descriptor heaps: CBV/SRV/UAV=0000028BADF38840, Sampler=0000028BADF5ECA0
+DrawIndexed: bound CBVs - b0=0x87bd000 (bound=1), b1=0x0 (bound=0)
 DrawIndexed: bound texture descriptor table at t0 (handle=0x35678a00120000, count=1)
 DrawIndexed: bound sampler descriptor table at s0 (handle=0x45678a00010100, count=1)
-DrawIndexed: VB[0] = GPU 0x879b000, size=96, stride=24
+DrawIndexed: VB[0] = GPU 0x87bb000, size=96, stride=24
 DrawIndexed: CB drawCount now=1
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
@@ -700,7 +692,7 @@ CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 1 draws from CB into device
 CommandQueue::submit() - Device drawCount now=9
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=0000028BADEF3C10
+  backBufferIndex=0, backBuffer=0000017D16C31E70
 [D3D12] hasFeature query: 1
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
@@ -708,16 +700,16 @@ CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 0000028BADF38840
-RenderCommandEncoder: Sampler heap = 0000028BADF5ECA0
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000017D16C6F1C0
+RenderCommandEncoder: Sampler heap = 0000017D16C95620
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000028BA4933980
-RenderCommandEncoder: Checking framebuffer_=0000028BA740E670
+RenderCommandEncoder: DescriptorHeapManager = 0000017D1686A280
+RenderCommandEncoder: Checking framebuffer_=0000017D0CBFA940
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=0000028BADF63030, resource=0000028BADEF3C10
+RenderCommandEncoder: MRT loop i=0, tex=0000017D16C99870, resource=0000017D16C31E70
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -728,32 +720,31 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
-bindRenderPipelineState: PSO=0000028BADF6D4B0, RootSig=0000028BA76208E0
+bindRenderPipelineState: PSO=0000017D0F92AB10, RootSig=0000017D0F945360
 bindRenderPipelineState: Setting topology=4
 [D3D12] hasFeature query: 1
 [D3D12] hasFeature query: 49
 bindBuffer: getting d3dBuffer...
 bindBuffer: getting gpuAddress(offset=0)...
-bindBuffer: got address=0x879d000, aligned=1
-bindBuffer: commandList_ pointer = 0000028BA76CC8E0
-bindBuffer: Cached CBV at index 0 with address 0x879d000
+bindBuffer: got address=0x87bd000, aligned=1
+bindBuffer: commandList_ pointer = 0000017D16DE0C70
+bindBuffer: Cached CBV at index 0 with address 0x87bd000
 bindTexture: getting context...
-bindTexture: resource=0000028BADF6A530, format=19, dimensions=1024x1024
+bindTexture: resource=0000017D16CA0EB0, format=19, dimensions=1024x1024
 bindTexture: allocated descriptor slot 0 for texture index t0
 bindTexture: resource dimension=3, texture type=1
 bindTexture: using TEXTURE2D view dimension (mip offset=0, mip count=11)
-bindTexture: heap=0000028BADF38840, heapStart CPU=0x28babbc5000, GPU=0x35678a00120000
-bindTexture: creating SRV at slot 0, CPU handle 0x28babbc5000
+bindTexture: heap=0000017D16C6F1C0, heapStart CPU=0x17d147d5000, GPU=0x35678a00120000
+bindTexture: creating SRV at slot 0, CPU handle 0x17d147d5000
 bindTexture: cached texture[0] GPU handle 0x35678a00120000 (offset from heap start: 0)
 bindTexture: done
 bindSamplerState: allocated descriptor slot 0 for sampler index s0
-bindSamplerState: creating sampler at slot 0, CPU handle 0x28baba85100
+bindSamplerState: creating sampler at slot 0, CPU handle 0x17d14695100
 bindSamplerState: cached sampler[0] GPU handle 0x45678a00010100
-DrawIndexed: bound CBVs - b0=0x879d000 (bound=1), b1=0x0 (bound=0)
-DrawIndexed: Setting descriptor heaps: CBV/SRV/UAV=0000028BADF38840, Sampler=0000028BADF5ECA0
+DrawIndexed: bound CBVs - b0=0x87bd000 (bound=1), b1=0x0 (bound=0)
 DrawIndexed: bound texture descriptor table at t0 (handle=0x35678a00120000, count=1)
 DrawIndexed: bound sampler descriptor table at s0 (handle=0x45678a00010100, count=1)
-DrawIndexed: VB[0] = GPU 0x879b000, size=96, stride=24
+DrawIndexed: VB[0] = GPU 0x87bb000, size=96, stride=24
 DrawIndexed: CB drawCount now=1
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
@@ -764,7 +755,7 @@ CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 1 draws from CB into device
 CommandQueue::submit() - Device drawCount now=10
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=1, backBuffer=0000028BADEF6E50
+  backBufferIndex=1, backBuffer=0000017D16C33790
 [D3D12] hasFeature query: 1
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
@@ -772,16 +763,16 @@ CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 0000028BADF38840
-RenderCommandEncoder: Sampler heap = 0000028BADF5ECA0
+RenderCommandEncoder: CBV/SRV/UAV heap = 0000017D16C6F1C0
+RenderCommandEncoder: Sampler heap = 0000017D16C95620
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000028BA4933980
-RenderCommandEncoder: Checking framebuffer_=0000028BA740E670
+RenderCommandEncoder: DescriptorHeapManager = 0000017D1686A280
+RenderCommandEncoder: Checking framebuffer_=0000017D0CBFA940
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=0000028BADF64570, resource=0000028BADEF6E50
+RenderCommandEncoder: MRT loop i=0, tex=0000017D16C9A8B0, resource=0000017D16C33790
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.00, 1.00, 1.00, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -792,32 +783,31 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
-bindRenderPipelineState: PSO=0000028BADF6D4B0, RootSig=0000028BA76208E0
+bindRenderPipelineState: PSO=0000017D0F92AB10, RootSig=0000017D0F945360
 bindRenderPipelineState: Setting topology=4
 [D3D12] hasFeature query: 1
 [D3D12] hasFeature query: 49
 bindBuffer: getting d3dBuffer...
 bindBuffer: getting gpuAddress(offset=0)...
-bindBuffer: got address=0x879d000, aligned=1
-bindBuffer: commandList_ pointer = 0000028BA76CC8E0
-bindBuffer: Cached CBV at index 0 with address 0x879d000
+bindBuffer: got address=0x87bd000, aligned=1
+bindBuffer: commandList_ pointer = 0000017D20D66C30
+bindBuffer: Cached CBV at index 0 with address 0x87bd000
 bindTexture: getting context...
-bindTexture: resource=0000028BADF6A530, format=19, dimensions=1024x1024
+bindTexture: resource=0000017D16CA0EB0, format=19, dimensions=1024x1024
 bindTexture: allocated descriptor slot 0 for texture index t0
 bindTexture: resource dimension=3, texture type=1
 bindTexture: using TEXTURE2D view dimension (mip offset=0, mip count=11)
-bindTexture: heap=0000028BADF38840, heapStart CPU=0x28babbc5000, GPU=0x35678a00120000
-bindTexture: creating SRV at slot 0, CPU handle 0x28babbc5000
+bindTexture: heap=0000017D16C6F1C0, heapStart CPU=0x17d147d5000, GPU=0x35678a00120000
+bindTexture: creating SRV at slot 0, CPU handle 0x17d147d5000
 bindTexture: cached texture[0] GPU handle 0x35678a00120000 (offset from heap start: 0)
 bindTexture: done
 bindSamplerState: allocated descriptor slot 0 for sampler index s0
-bindSamplerState: creating sampler at slot 0, CPU handle 0x28baba85100
+bindSamplerState: creating sampler at slot 0, CPU handle 0x17d14695100
 bindSamplerState: cached sampler[0] GPU handle 0x45678a00010100
-DrawIndexed: bound CBVs - b0=0x879d000 (bound=1), b1=0x0 (bound=0)
-DrawIndexed: Setting descriptor heaps: CBV/SRV/UAV=0000028BADF38840, Sampler=0000028BADF5ECA0
+DrawIndexed: bound CBVs - b0=0x87bd000 (bound=1), b1=0x0 (bound=0)
 DrawIndexed: bound texture descriptor table at t0 (handle=0x35678a00120000, count=1)
 DrawIndexed: bound sampler descriptor table at s0 (handle=0x45678a00010100, count=1)
-DrawIndexed: VB[0] = GPU 0x879b000, size=96, stride=24
+DrawIndexed: VB[0] = GPU 0x87bb000, size=96, stride=24
 DrawIndexed: CB drawCount now=1
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...

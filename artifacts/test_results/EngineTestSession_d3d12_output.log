@@ -7,6 +7,7 @@ GlfwShell::initialize() - Creating window
 GlfwShell::initialize() - Creating platform
 D3D12Context: Creating D3D12 device...
 D3D12Context: Debug layer ENABLED (to capture validation messages)
+D3D12Context: DRED enabled (AutoBreadcrumbs + PageFault tracking)
 D3D12Context: Using HW adapter (FL 12.0)
 D3D12Context: Info queue configured (break on error: DISABLED)
 D3D12Context: Device created successfully
@@ -32,7 +33,7 @@ Device::createBuffer: type=1, requested_size=144, aligned_size=144, isUniform=0
 Device::createBuffer: type=2, requested_size=1056, aligned_size=1056, isUniform=0
 Device::createBuffer: type=1, requested_size=144, aligned_size=144, isUniform=0
 Device::createBuffer: type=4, requested_size=16384, aligned_size=16384, isUniform=1
-Device::createBuffer: Uniform buffer #1 created, GPU address=0x8c41000
+Device::createBuffer: Uniform buffer #1 created, GPU address=0x8c61000
 Device::createTexture: IGL format=16 -> DXGI format=28
 Texture::createFromResource - SUCCESS: 1x1 format=16
 Texture::upload() - START: 1x1
@@ -46,12 +47,12 @@ Texture::upload() - Signaling fence and waiting...
 Texture::upload() - Fence signaled, upload complete!
 GlfwShell::initialize() - SUCCESS
 main(): Initialization successful, calling shell.run()...
-GlfwShell::run() started, window_=000001BDFE635240
+GlfwShell::run() started, window_=000001FDF6417A80
 Frame 0: willTick()
 createSurfaceTextures() called #1
 PlatformDevice::createTextureFromNativeDrawable() called
-getCurrentBackBuffer(): index=0, resource=000001BD87EE9EE0
-  backBufferIndex=0, backBuffer=000001BD87EE9EE0
+getCurrentBackBuffer(): index=0, resource=000001FD8041BF10
+  backBufferIndex=0, backBuffer=000001FD8041BF10
 Texture::createFromResource - SUCCESS: 640x360 format=17
 Device::createTexture: IGL format=82 -> DXGI format=40
 Texture::createFromResource - SUCCESS: 640x360 format=82
@@ -61,56 +62,56 @@ Device::createRenderPipeline() START - debugName=''
 Frame 1: willTick()
 createSurfaceTextures() called #2
 PlatformDevice::createTextureFromNativeDrawable() called
-getCurrentBackBuffer(): index=0, resource=000001BD87EE9EE0
-  backBufferIndex=0, backBuffer=000001BD87EE9EE0
+getCurrentBackBuffer(): index=0, resource=000001FD8041BF10
+  backBufferIndex=0, backBuffer=000001FD8041BF10
 Device::createRenderPipeline() START - debugName=''
 [IGL] Error in (class std::shared_ptr<class igl::IRenderPipelineState> __cdecl igl::d3d12::Device::createRenderPipeline(const struct igl::RenderPipelineDesc &,struct igl::Result *) const).
   Shader stages are required!
 Frame 2: willTick()
 createSurfaceTextures() called #3
 PlatformDevice::createTextureFromNativeDrawable() called
-getCurrentBackBuffer(): index=0, resource=000001BD87EE9EE0
-  backBufferIndex=0, backBuffer=000001BD87EE9EE0
+getCurrentBackBuffer(): index=0, resource=000001FD8041BF10
+  backBufferIndex=0, backBuffer=000001FD8041BF10
 Device::createRenderPipeline() START - debugName=''
 [IGL] Error in (class std::shared_ptr<class igl::IRenderPipelineState> __cdecl igl::d3d12::Device::createRenderPipeline(const struct igl::RenderPipelineDesc &,struct igl::Result *) const).
   Shader stages are required!
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001BD87EE9EE0
+  backBufferIndex=0, backBuffer=000001FD8041BF10
 Device::createRenderPipeline() START - debugName=''
 [IGL] Error in (class std::shared_ptr<class igl::IRenderPipelineState> __cdecl igl::d3d12::Device::createRenderPipeline(const struct igl::RenderPipelineDesc &,struct igl::Result *) const).
   Shader stages are required!
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001BD87EE9EE0
+  backBufferIndex=0, backBuffer=000001FD8041BF10
 Device::createRenderPipeline() START - debugName=''
 [IGL] Error in (class std::shared_ptr<class igl::IRenderPipelineState> __cdecl igl::d3d12::Device::createRenderPipeline(const struct igl::RenderPipelineDesc &,struct igl::Result *) const).
   Shader stages are required!
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001BD87EE9EE0
+  backBufferIndex=0, backBuffer=000001FD8041BF10
 Device::createRenderPipeline() START - debugName=''
 [IGL] Error in (class std::shared_ptr<class igl::IRenderPipelineState> __cdecl igl::d3d12::Device::createRenderPipeline(const struct igl::RenderPipelineDesc &,struct igl::Result *) const).
   Shader stages are required!
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001BD87EE9EE0
+  backBufferIndex=0, backBuffer=000001FD8041BF10
 Device::createRenderPipeline() START - debugName=''
 [IGL] Error in (class std::shared_ptr<class igl::IRenderPipelineState> __cdecl igl::d3d12::Device::createRenderPipeline(const struct igl::RenderPipelineDesc &,struct igl::Result *) const).
   Shader stages are required!
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001BD87EE9EE0
+  backBufferIndex=0, backBuffer=000001FD8041BF10
 Device::createRenderPipeline() START - debugName=''
 [IGL] Error in (class std::shared_ptr<class igl::IRenderPipelineState> __cdecl igl::d3d12::Device::createRenderPipeline(const struct igl::RenderPipelineDesc &,struct igl::Result *) const).
   Shader stages are required!
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001BD87EE9EE0
+  backBufferIndex=0, backBuffer=000001FD8041BF10
 Device::createRenderPipeline() START - debugName=''
 [IGL] Error in (class std::shared_ptr<class igl::IRenderPipelineState> __cdecl igl::d3d12::Device::createRenderPipeline(const struct igl::RenderPipelineDesc &,struct igl::Result *) const).
   Shader stages are required!
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001BD87EE9EE0
+  backBufferIndex=0, backBuffer=000001FD8041BF10
 Device::createRenderPipeline() START - debugName=''
 [IGL] Error in (class std::shared_ptr<class igl::IRenderPipelineState> __cdecl igl::d3d12::Device::createRenderPipeline(const struct igl::RenderPipelineDesc &,struct igl::Result *) const).
   Shader stages are required!
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001BD87EE9EE0
+  backBufferIndex=0, backBuffer=000001FD8041BF10
 Device::createRenderPipeline() START - debugName=''
 [IGL] Error in (class std::shared_ptr<class igl::IRenderPipelineState> __cdecl igl::d3d12::Device::createRenderPipeline(const struct igl::RenderPipelineDesc &,struct igl::Result *) const).
   Shader stages are required!

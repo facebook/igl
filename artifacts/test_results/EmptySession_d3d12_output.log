@@ -7,6 +7,7 @@ GlfwShell::initialize() - Creating window
 GlfwShell::initialize() - Creating platform
 D3D12Context: Creating D3D12 device...
 D3D12Context: Debug layer ENABLED (to capture validation messages)
+D3D12Context: DRED enabled (AutoBreadcrumbs + PageFault tracking)
 D3D12Context: Using HW adapter (FL 12.0)
 D3D12Context: Info queue configured (break on error: DISABLED)
 D3D12Context: Device created successfully
@@ -29,12 +30,12 @@ GlfwShell::initialize() - Creating session
 GlfwShell::initialize() - Initializing session
 GlfwShell::initialize() - SUCCESS
 main(): Initialization successful, calling shell.run()...
-GlfwShell::run() started, window_=0000017512F99C60
+GlfwShell::run() started, window_=000001EDB1CB2010
 Frame 0: willTick()
 createSurfaceTextures() called #1
 PlatformDevice::createTextureFromNativeDrawable() called
-getCurrentBackBuffer(): index=0, resource=000001751C566E60
-  backBufferIndex=0, backBuffer=000001751C566E60
+getCurrentBackBuffer(): index=0, resource=000001EDBBBBF4D0
+  backBufferIndex=0, backBuffer=000001EDBBBBF4D0
 Texture::createFromResource - SUCCESS: 640x360 format=17
 Device::createTexture: IGL format=82 -> DXGI format=40
 Texture::createFromResource - SUCCESS: 640x360 format=82
@@ -44,16 +45,16 @@ CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000001751C5AD130
-RenderCommandEncoder: Sampler heap = 000001751C5D3590
+RenderCommandEncoder: CBV/SRV/UAV heap = 000001EDBBBF5B30
+RenderCommandEncoder: Sampler heap = 000001EDBBA0D2D0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000017512FD3AD0
-RenderCommandEncoder: Checking framebuffer_=0000017515A9FA60
+RenderCommandEncoder: DescriptorHeapManager = 000001EDB1CF8760
+RenderCommandEncoder: Checking framebuffer_=000001EDBBBAE9A0
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000001751C57F6F0, resource=000001751C566E60
+RenderCommandEncoder: MRT loop i=0, tex=000001EDBBB92970, resource=000001EDBBBBF4D0
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.10, 0.10, 0.15, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -64,20 +65,22 @@ RenderCommandEncoder: Using framebuffer color attachment
 RenderCommandEncoder: Framebuffer dimensions: 640x360
 RenderCommandEncoder: Set default viewport/scissor to 640x360
 RenderCommandEncoder: Constructor complete!
-getCurrentBackBuffer(): index=0, resource=000001751C566E60
+getCurrentBackBuffer(): index=0, resource=000001EDBBBBF4D0
 CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 0 (value=1)
+CommandQueue::submit() - Advanced to frame index 1
+CommandQueue::submit() - Frame 2 resources already available (fence=0, completed=1)
 CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 0 draws from CB into device
 CommandQueue::submit() - Device drawCount now=0
 Frame 1: willTick()
 createSurfaceTextures() called #2
 PlatformDevice::createTextureFromNativeDrawable() called
-getCurrentBackBuffer(): index=1, resource=000001751C569410
-  backBufferIndex=1, backBuffer=000001751C569410
+getCurrentBackBuffer(): index=1, resource=000001EDBBBC0160
+  backBufferIndex=1, backBuffer=000001EDBBBC0160
 Texture::createFromResource - SUCCESS: 640x360 format=17
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
@@ -85,16 +88,16 @@ CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000001751C5AD130
-RenderCommandEncoder: Sampler heap = 000001751C5D3590
+RenderCommandEncoder: CBV/SRV/UAV heap = 000001EDBBBF5B30
+RenderCommandEncoder: Sampler heap = 000001EDBBA0D2D0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000017512FD3AD0
-RenderCommandEncoder: Checking framebuffer_=0000017515A9FA60
+RenderCommandEncoder: DescriptorHeapManager = 000001EDB1CF8760
+RenderCommandEncoder: Checking framebuffer_=000001EDBBBAA5F0
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000001751C5809B0, resource=000001751C569410
+RenderCommandEncoder: MRT loop i=0, tex=000001EDBBB90CB0, resource=000001EDBBBC0160
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.10, 0.10, 0.15, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -109,14 +112,16 @@ CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 1 (value=2)
+CommandQueue::submit() - Advanced to frame index 2
+CommandQueue::submit() - Frame 0 resources already available (fence=1, completed=2)
 CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 0 draws from CB into device
 CommandQueue::submit() - Device drawCount now=0
 Frame 2: willTick()
 createSurfaceTextures() called #3
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=2, backBuffer=000001751C56A0A0
+  backBufferIndex=2, backBuffer=000001EDBBBC4030
 Texture::createFromResource - SUCCESS: 640x360 format=17
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
@@ -124,16 +129,16 @@ CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000001751C5AD130
-RenderCommandEncoder: Sampler heap = 000001751C5D3590
+RenderCommandEncoder: CBV/SRV/UAV heap = 000001EDBBBF5B30
+RenderCommandEncoder: Sampler heap = 000001EDBBA0D2D0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000017512FD3AD0
-RenderCommandEncoder: Checking framebuffer_=0000017515A9FA60
+RenderCommandEncoder: DescriptorHeapManager = 000001EDB1CF8760
+RenderCommandEncoder: Checking framebuffer_=000001EDBBBAA5F0
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000001751C57FE70, resource=000001751C56A0A0
+RenderCommandEncoder: MRT loop i=0, tex=000001EDBBB921F0, resource=000001EDBBBC4030
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.10, 0.10, 0.15, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -148,28 +153,30 @@ CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 2 (value=3)
+CommandQueue::submit() - Advanced to frame index 0
+CommandQueue::submit() - Frame 1 resources already available (fence=2, completed=3)
 CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 0 draws from CB into device
 CommandQueue::submit() - Device drawCount now=0
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001751C566E60
+  backBufferIndex=0, backBuffer=000001EDBBBBF4D0
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000001751C5AD130
-RenderCommandEncoder: Sampler heap = 000001751C5D3590
+RenderCommandEncoder: CBV/SRV/UAV heap = 000001EDBBBF5B30
+RenderCommandEncoder: Sampler heap = 000001EDBBA0D2D0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000017512FD3AD0
-RenderCommandEncoder: Checking framebuffer_=0000017515A9FA60
+RenderCommandEncoder: DescriptorHeapManager = 000001EDB1CF8760
+RenderCommandEncoder: Checking framebuffer_=000001EDBBBAA5F0
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000001751C57F6F0, resource=000001751C566E60
+RenderCommandEncoder: MRT loop i=0, tex=000001EDBBB92970, resource=000001EDBBBBF4D0
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.10, 0.10, 0.15, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -184,28 +191,30 @@ CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 0 (value=4)
+CommandQueue::submit() - Advanced to frame index 1
+CommandQueue::submit() - Frame 2 resources already available (fence=3, completed=3)
 CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 0 draws from CB into device
 CommandQueue::submit() - Device drawCount now=0
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=1, backBuffer=000001751C569410
+  backBufferIndex=1, backBuffer=000001EDBBBC0160
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000001751C5AD130
-RenderCommandEncoder: Sampler heap = 000001751C5D3590
+RenderCommandEncoder: CBV/SRV/UAV heap = 000001EDBBBF5B30
+RenderCommandEncoder: Sampler heap = 000001EDBBA0D2D0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000017512FD3AD0
-RenderCommandEncoder: Checking framebuffer_=0000017515A9FA60
+RenderCommandEncoder: DescriptorHeapManager = 000001EDB1CF8760
+RenderCommandEncoder: Checking framebuffer_=000001EDBBBA59C0
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000001751C5809B0, resource=000001751C569410
+RenderCommandEncoder: MRT loop i=0, tex=000001EDBBB90CB0, resource=000001EDBBBC0160
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.10, 0.10, 0.15, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -220,28 +229,30 @@ CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 1 (value=5)
+CommandQueue::submit() - Advanced to frame index 2
+CommandQueue::submit() - Frame 0 resources already available (fence=4, completed=4)
 CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 0 draws from CB into device
 CommandQueue::submit() - Device drawCount now=0
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=2, backBuffer=000001751C56A0A0
+  backBufferIndex=2, backBuffer=000001EDBBBC4030
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000001751C5AD130
-RenderCommandEncoder: Sampler heap = 000001751C5D3590
+RenderCommandEncoder: CBV/SRV/UAV heap = 000001EDBBBF5B30
+RenderCommandEncoder: Sampler heap = 000001EDBBA0D2D0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000017512FD3AD0
-RenderCommandEncoder: Checking framebuffer_=0000017515A9FA60
+RenderCommandEncoder: DescriptorHeapManager = 000001EDB1CF8760
+RenderCommandEncoder: Checking framebuffer_=000001EDBBBA59C0
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000001751C57FE70, resource=000001751C56A0A0
+RenderCommandEncoder: MRT loop i=0, tex=000001EDBBB921F0, resource=000001EDBBBC4030
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.10, 0.10, 0.15, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -256,28 +267,31 @@ CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 2 (value=6)
+CommandQueue::submit() - Advanced to frame index 0
+CommandQueue::submit() - Waiting for frame 1 (fence value=5)
+CommandQueue::submit() - Frame 1 resources available
 CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 0 draws from CB into device
 CommandQueue::submit() - Device drawCount now=0
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001751C566E60
+  backBufferIndex=0, backBuffer=000001EDBBBBF4D0
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000001751C5AD130
-RenderCommandEncoder: Sampler heap = 000001751C5D3590
+RenderCommandEncoder: CBV/SRV/UAV heap = 000001EDBBBF5B30
+RenderCommandEncoder: Sampler heap = 000001EDBBA0D2D0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000017512FD3AD0
-RenderCommandEncoder: Checking framebuffer_=0000017515A9FA60
+RenderCommandEncoder: DescriptorHeapManager = 000001EDB1CF8760
+RenderCommandEncoder: Checking framebuffer_=000001EDBBBAA5F0
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000001751C57F6F0, resource=000001751C566E60
+RenderCommandEncoder: MRT loop i=0, tex=000001EDBBB92970, resource=000001EDBBBBF4D0
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.10, 0.10, 0.15, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -292,28 +306,31 @@ CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 0 (value=7)
+CommandQueue::submit() - Advanced to frame index 1
+CommandQueue::submit() - Waiting for frame 2 (fence value=6)
+CommandQueue::submit() - Frame 2 resources available
 CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 0 draws from CB into device
 CommandQueue::submit() - Device drawCount now=0
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=1, backBuffer=000001751C569410
+  backBufferIndex=1, backBuffer=000001EDBBBC0160
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000001751C5AD130
-RenderCommandEncoder: Sampler heap = 000001751C5D3590
+RenderCommandEncoder: CBV/SRV/UAV heap = 000001EDBBBF5B30
+RenderCommandEncoder: Sampler heap = 000001EDBBA0D2D0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000017512FD3AD0
-RenderCommandEncoder: Checking framebuffer_=0000017515A9FA60
+RenderCommandEncoder: DescriptorHeapManager = 000001EDB1CF8760
+RenderCommandEncoder: Checking framebuffer_=000001EDBBBAA5F0
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000001751C5809B0, resource=000001751C569410
+RenderCommandEncoder: MRT loop i=0, tex=000001EDBBB90CB0, resource=000001EDBBBC0160
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.10, 0.10, 0.15, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -328,28 +345,31 @@ CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 1 (value=8)
+CommandQueue::submit() - Advanced to frame index 2
+CommandQueue::submit() - Waiting for frame 0 (fence value=7)
+CommandQueue::submit() - Frame 0 resources available
 CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 0 draws from CB into device
 CommandQueue::submit() - Device drawCount now=0
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=2, backBuffer=000001751C56A0A0
+  backBufferIndex=2, backBuffer=000001EDBBBC4030
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000001751C5AD130
-RenderCommandEncoder: Sampler heap = 000001751C5D3590
+RenderCommandEncoder: CBV/SRV/UAV heap = 000001EDBBBF5B30
+RenderCommandEncoder: Sampler heap = 000001EDBBA0D2D0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000017512FD3AD0
-RenderCommandEncoder: Checking framebuffer_=0000017515A9FA60
+RenderCommandEncoder: DescriptorHeapManager = 000001EDB1CF8760
+RenderCommandEncoder: Checking framebuffer_=000001EDBBBAA5F0
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000001751C57FE70, resource=000001751C56A0A0
+RenderCommandEncoder: MRT loop i=0, tex=000001EDBBB921F0, resource=000001EDBBBC4030
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.10, 0.10, 0.15, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -364,28 +384,31 @@ CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 2 (value=9)
+CommandQueue::submit() - Advanced to frame index 0
+CommandQueue::submit() - Waiting for frame 1 (fence value=8)
+CommandQueue::submit() - Frame 1 resources available
 CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 0 draws from CB into device
 CommandQueue::submit() - Device drawCount now=0
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=0, backBuffer=000001751C566E60
+  backBufferIndex=0, backBuffer=000001EDBBBBF4D0
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000001751C5AD130
-RenderCommandEncoder: Sampler heap = 000001751C5D3590
+RenderCommandEncoder: CBV/SRV/UAV heap = 000001EDBBBF5B30
+RenderCommandEncoder: Sampler heap = 000001EDBBA0D2D0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000017512FD3AD0
-RenderCommandEncoder: Checking framebuffer_=0000017515A9FA60
+RenderCommandEncoder: DescriptorHeapManager = 000001EDB1CF8760
+RenderCommandEncoder: Checking framebuffer_=000001EDBBBAA5F0
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000001751C57F6F0, resource=000001751C566E60
+RenderCommandEncoder: MRT loop i=0, tex=000001EDBBB92970, resource=000001EDBBBBF4D0
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.10, 0.10, 0.15, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -400,28 +423,31 @@ CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 0 (value=10)
+CommandQueue::submit() - Advanced to frame index 1
+CommandQueue::submit() - Waiting for frame 2 (fence value=9)
+CommandQueue::submit() - Frame 2 resources available
 CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 0 draws from CB into device
 CommandQueue::submit() - Device drawCount now=0
 PlatformDevice::createTextureFromNativeDrawable() called
-  backBufferIndex=1, backBuffer=000001751C569410
+  backBufferIndex=1, backBuffer=000001EDBBBC0160
 CommandBuffer::begin() - Resetting allocator...
 CommandBuffer::begin() - Allocator reset OK, resetting command list...
 CommandBuffer::begin() - Command list reset OK
 RenderCommandEncoder::RenderCommandEncoder() - START
 RenderCommandEncoder: Got context
 RenderCommandEncoder: Using DescriptorHeapManager heaps
-RenderCommandEncoder: CBV/SRV/UAV heap = 000001751C5AD130
-RenderCommandEncoder: Sampler heap = 000001751C5D3590
+RenderCommandEncoder: CBV/SRV/UAV heap = 000001EDBBBF5B30
+RenderCommandEncoder: Sampler heap = 000001EDBBA0D2D0
 RenderCommandEncoder: Setting descriptor heaps...
 RenderCommandEncoder: Descriptor heaps set
 RenderCommandEncoder: Setting up RTV...
-RenderCommandEncoder: DescriptorHeapManager = 0000017512FD3AD0
-RenderCommandEncoder: Checking framebuffer_=0000017515A9FA60
+RenderCommandEncoder: DescriptorHeapManager = 000001EDB1CF8760
+RenderCommandEncoder: Checking framebuffer_=000001EDBBBAA5F0
 RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager
 RenderCommandEncoder: MRT count = 1 (indices.size=1)
-RenderCommandEncoder: MRT loop i=0, tex=000001751C5809B0, resource=000001751C569410
+RenderCommandEncoder: MRT loop i=0, tex=000001EDBBB90CB0, resource=000001EDBBBC0160
 RenderCommandEncoder: Clearing MRT attachment 0 with color (0.10, 0.10, 0.15, 1.00)
 RenderCommandEncoder: MRT Created RTV #0, total RTVs now=1
 RenderCommandEncoder: MRT Total RTVs created: 1
@@ -436,7 +462,9 @@ CommandQueue::submit() - Executing command list...
 CommandQueue::submit() - Command list executed, checking device status...
 CommandQueue::submit() - Device OK, presenting...
 CommandQueue::submit() - Present OK
-CommandQueue::submit() - Waiting for GPU...
+CommandQueue::submit() - Signaled fence for frame 1 (value=11)
+CommandQueue::submit() - Advanced to frame index 2
+CommandQueue::submit() - Frame 0 resources already available (fence=10, completed=10)
 CommandQueue::submit() - Complete!
 CommandQueue::submit() - Aggregating 0 draws from CB into device
 CommandQueue::submit() - Device drawCount now=0

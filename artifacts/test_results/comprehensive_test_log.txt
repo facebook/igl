@@ -1,5 +1,5 @@
 === D3D12 Comprehensive Test Suite ===
-Started: Sat, Nov  1, 2025  7:44:50 PM
+Started: Sat, Nov  1, 2025 11:42:02 PM
 
 Testing: BasicFramebufferSession_d3d12
   Status: FAIL (errors detected)
@@ -74,8 +74,8 @@ Testing: TinyMeshSession_d3d12
   Screenshot: Generated
 
 Testing: TQMultiRenderPassSession_d3d12
-  Status: CRASH (exit code: 139)
-  Screenshot: Missing
+  Status: CRASH (exit code: 3)
+  Screenshot: Generated
 
 Testing: TQSession_d3d12
   Status: FAIL (errors detected)
@@ -92,4 +92,4 @@ Failed: 18
 Crashed: 3
 Success Rate: 0%
 
-Completed: Sat, Nov  1, 2025  7:45:22 PM
+Completed: Sat, Nov  1, 2025 11:42:46 PM

@@ -68,6 +68,7 @@ class DXCCompiler {
   Microsoft::WRL::ComPtr<IDxcUtils> utils_;
   Microsoft::WRL::ComPtr<IDxcCompiler3> compiler_;
   Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler_;
+  Microsoft::WRL::ComPtr<IDxcValidator> validator_;
   bool initialized_ = false;
 };
 

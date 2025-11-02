@@ -1,0 +1,52 @@
+C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\ComputeCommandEncoder.cpp(81): error: Value of: ret.isOk()
+  Actual: false
+Expected: true
+Invalid shader input
+
+[  FAILED  ] ComputeCommandEncoderTest.canEncodeBasicBufferOperation (27 ms)
+C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\ComputeCommandEncoder.cpp(81): error: Value of: ret.isOk()
+  Actual: false
+Expected: true
+Invalid shader input
+
+[  FAILED  ] ComputeCommandEncoderTest.bindImageTexture (25 ms)
+C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\ComputeCommandEncoder.cpp(81): error: Value of: ret.isOk()
+  Actual: false
+Expected: true
+Invalid shader input
+
+[  FAILED  ] ComputeCommandEncoderTest.canUseOutputBufferFromOnePassAsInputToNext (26 ms)
+C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\ComputeCommandEncoder.cpp(81): error: Value of: ret.isOk()
+  Actual: false
+Expected: true
+Invalid shader input
+
+[  FAILED  ] ComputeCommandEncoderTest.bindSamplerState (30 ms)
+C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\ComputeCommandEncoder.cpp(81): error: Value of: ret.isOk()
+  Actual: false
+Expected: true
+Invalid shader input
+
+[  FAILED  ] ComputeCommandEncoderTest.copyBuffer (28 ms)
+C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\DeviceFeatureSet.cpp(262): error: Value of: iglDev_->hasFeature(DeviceFeatures::PushConstants)
+  Actual: true
+Expected: false
+
+[  FAILED  ] DeviceFeatureSetTest.hasFeatureForMacOSOrWinOrAndroidTest (25 ms)
+C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\Multiview.cpp(76): Skipped
+Multiview is unsupported for this platform.
+
+C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\Multiview.cpp(76): Skipped
+Multiview is unsupported for this platform.
+
+C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\RenderCommandEncoder.cpp(540): Skipped
+
+
+C:\Users\rudyb\source\repos\igl\igl\src\igl\tests\RenderCommandEncoder.cpp(687): Skipped
+Not implemented for non-Vulkan backends
+
+unknown file: error: SEH exception with code 0x87d thrown in the test body.
+Stack trace:
+
+
+[  FAILED  ] RenderCommandEncoderTest.drawUsingBindPushConstants (52 ms)

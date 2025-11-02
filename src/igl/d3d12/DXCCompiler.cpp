@@ -43,6 +43,15 @@ Result DXCCompiler::initialize() {
     return Result(Result::Code::RuntimeError, "Failed to create include handler");
   }
 
+  // Create DXC validator for DXIL signing (optional but highly recommended)
+  hr = DxcCreateInstance(CLSID_DxcValidator, IID_PPV_ARGS(validator_.GetAddressOf()));
+  if (FAILED(hr)) {
+    IGL_LOG_INFO("DXCCompiler: Validator not available (0x%08X) - DXIL will be unsigned\n", static_cast<unsigned>(hr));
+    // Not a fatal error - continue without validator
+  } else {
+    IGL_LOG_INFO("DXCCompiler: Validator initialized - DXIL signing available\n");
+  }
+
   initialized_ = true;
   IGL_LOG_INFO("DXCCompiler: Initialization successful (Shader Model 6.0+ enabled)\n");
 
@@ -169,7 +178,50 @@ Result DXCCompiler::compile(
     return Result(Result::Code::RuntimeError, "No bytecode produced");
   }
 
-  // Copy bytecode to output
+  // Validate and sign DXIL if validator is available
+  if (validator_.Get()) {
+    IGL_LOG_INFO("DXCCompiler: Attempting DXIL validation and signing...\n");
+    Microsoft::WRL::ComPtr<IDxcOperationResult> validationResult;
+    hr = validator_->Validate(bytecode.Get(), DxcValidatorFlags_InPlaceEdit, validationResult.GetAddressOf());
+
+    if (SUCCEEDED(hr)) {
+      HRESULT validationStatus;
+      validationResult->GetStatus(&validationStatus);
+      IGL_LOG_INFO("DXCCompiler: Validation status: 0x%08X\n", static_cast<unsigned>(validationStatus));
+
+      if (SUCCEEDED(validationStatus)) {
+        // Get the validated (signed) bytecode - this replaces the original
+        Microsoft::WRL::ComPtr<IDxcBlob> validatedBlob;
+        validationResult->GetResult(validatedBlob.GetAddressOf());
+
+        if (validatedBlob.Get()) {
+          IGL_LOG_INFO("DXCCompiler: Got validated blob (%zu bytes)\n", validatedBlob->GetBufferSize());
+          // Replace bytecode with validated version using move semantics
+          bytecode.Reset();
+          bytecode = std::move(validatedBlob);
+          IGL_LOG_INFO("DXCCompiler: DXIL validated and signed successfully\n");
+        } else {
+          IGL_LOG_INFO("DXCCompiler: Validation succeeded but no blob returned\n");
+        }
+      } else {
+        // Validation failed - get error messages
+        Microsoft::WRL::ComPtr<IDxcBlobEncoding> validationErrors;
+        validationResult->GetErrorBuffer(validationErrors.GetAddressOf());
+        if (validationErrors.Get() && validationErrors->GetBufferSize() > 0) {
+          std::string errMsg(static_cast<const char*>(validationErrors->GetBufferPointer()),
+                           validationErrors->GetBufferSize());
+          IGL_LOG_INFO("DXCCompiler: DXIL validation failed:\n%s\n", errMsg.c_str());
+        }
+        IGL_LOG_INFO("DXCCompiler: Using unsigned DXIL (may require experimental features)\n");
+      }
+    } else {
+      IGL_LOG_INFO("DXCCompiler: DXIL validation skipped (validator error 0x%08X)\n", static_cast<unsigned>(hr));
+    }
+  } else {
+    IGL_LOG_INFO("DXCCompiler: Using unsigned DXIL (validator not available)\n");
+  }
+
+  // Copy bytecode to output (either signed or unsigned)
   const uint8_t* data = static_cast<const uint8_t*>(bytecode->GetBufferPointer());
   size_t size = bytecode->GetBufferSize();
   outBytecode.assign(data, data + size);

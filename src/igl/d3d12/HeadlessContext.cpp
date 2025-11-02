@@ -22,6 +22,18 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
     }
   }
 
+  // Enable experimental features to support unsigned DXIL shaders
+  // This is required for unit tests that compile shaders with DXC without signing
+  {
+    UUID experimentalFeatures[] = {D3D12ExperimentalShaderModels};
+    HRESULT hr = D3D12EnableExperimentalFeatures(1, experimentalFeatures, nullptr, nullptr);
+    if (SUCCEEDED(hr)) {
+      IGL_LOG_INFO("HeadlessD3D12Context: Experimental shader models enabled (allows unsigned DXIL)\n");
+    } else {
+      IGL_LOG_INFO("HeadlessD3D12Context: Failed to enable experimental features (0x%08X) - signed DXIL required\n", static_cast<unsigned>(hr));
+    }
+  }
+
   // Create DXGI factory and prefer a high-performance hardware adapter
   HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(dxgiFactory_.GetAddressOf()));
   if (FAILED(hr)) {
