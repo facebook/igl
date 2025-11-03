@@ -17,6 +17,7 @@ using namespace igl;
 namespace {
 
 igl::UniformType metalDataTypeToIGLUniformType(MTLDataType type) {
+  NON_EXHAUSTIVE_SWITCH_BEGIN
   switch (type) {
   case MTLDataTypeFloat:
     return igl::UniformType::Float;
@@ -46,6 +47,7 @@ igl::UniformType metalDataTypeToIGLUniformType(MTLDataType type) {
     IGL_LOG_ERROR("Unsupported MTLDataType: %ld\n", type);
     return igl::UniformType::Invalid;
   }
+  NON_EXHAUSTIVE_SWITCH_END
 }
 
 } // namespace
