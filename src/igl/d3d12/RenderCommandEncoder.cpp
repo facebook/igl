@@ -30,23 +30,16 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
   IGL_LOG_INFO("RenderCommandEncoder: Got context\n");
 
   // Set descriptor heaps for this command list
-  // CRITICAL: We must set the descriptor heaps that match where we allocate descriptors!
-  // If DescriptorHeapManager exists, use ITS heaps (not D3D12Context's heaps)
+  // CRITICAL: Must use per-frame heaps from D3D12Context, NOT DescriptorHeapManager!
+  // DescriptorHeapManager has a shared heap (old broken approach) which causes race conditions.
+  // Per-frame heaps are isolated per frame to prevent descriptor conflicts.
   DescriptorHeapManager* heapMgr = context.getDescriptorHeapManager();
-  ID3D12DescriptorHeap* cbvSrvUavHeap = nullptr;
-  ID3D12DescriptorHeap* samplerHeap = nullptr;
 
-  if (heapMgr) {
-    IGL_LOG_INFO("RenderCommandEncoder: Using DescriptorHeapManager heaps\n");
-    cbvSrvUavHeap = heapMgr->getCbvSrvUavHeap();
-    samplerHeap = heapMgr->getSamplerHeap();
-  }
-  // Fallback if manager present but heaps not available
-  if (!cbvSrvUavHeap || !samplerHeap) {
-    IGL_LOG_INFO("RenderCommandEncoder: Falling back to context heaps\n");
-    cbvSrvUavHeap = context.getCbvSrvUavHeap();
-    samplerHeap = context.getSamplerHeap();
-  }
+  // ALWAYS use per-frame heaps from D3D12Context (NOT DescriptorHeapManager)
+  ID3D12DescriptorHeap* cbvSrvUavHeap = context.getCbvSrvUavHeap();
+  ID3D12DescriptorHeap* samplerHeap = context.getSamplerHeap();
+
+  IGL_LOG_INFO("RenderCommandEncoder: Using per-frame heaps from D3D12Context\n");
 
   IGL_LOG_INFO("RenderCommandEncoder: CBV/SRV/UAV heap = %p\n", cbvSrvUavHeap);
   IGL_LOG_INFO("RenderCommandEncoder: Sampler heap = %p\n", samplerHeap);
