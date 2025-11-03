@@ -189,7 +189,9 @@ bool isTextureFormatBGR(VkFormat format);
 bool hasDepth(VkFormat format);
 bool hasStencil(VkFormat format);
 uint32_t getNumImagePlanes(VkFormat format);
-VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(ResourceStorage resourceStorage);
+VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(
+    ResourceStorage resourceStorage,
+    const VkPhysicalDeviceMemoryProperties* IGL_NULLABLE memProperties = nullptr);
 VkCompareOp compareFunctionToVkCompareOp(CompareFunction func);
 VkStencilOp stencilOperationToVkStencilOp(StencilOperation op);
 VkSampleCountFlagBits getVulkanSampleCountFlags(size_t numSamples);

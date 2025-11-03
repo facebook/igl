@@ -313,7 +313,9 @@ TextureFormat vkFormatToTextureFormat(VkFormat format) {
   return util::vkTextureFormatToTextureFormat(static_cast<int32_t>(format));
 }
 
-VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(ResourceStorage resourceStorage) {
+VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(
+    ResourceStorage resourceStorage,
+    const VkPhysicalDeviceMemoryProperties* IGL_NULLABLE memProperties) {
   VkMemoryPropertyFlags memFlags{0};
 
   switch (resourceStorage) {
@@ -329,9 +331,23 @@ VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(ResourceStorage res
   case ResourceStorage::Managed:
     memFlags |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     break;
-  case ResourceStorage::Memoryless:
-    memFlags |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+  case ResourceStorage::Memoryless: {
+    memFlags |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    if (!memProperties) {
+      break;
+    }
+    constexpr VkMemoryPropertyFlags targetFlags =
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+    const auto* const memoryTypesEnd = memProperties->memoryTypes + memProperties->memoryTypeCount;
+    if (std::find_if(
+            memProperties->memoryTypes, memoryTypesEnd, [](const VkMemoryType& memoryType) {
+              return (memoryType.propertyFlags & targetFlags) == targetFlags;
+            }) != memoryTypesEnd) {
+      memFlags |= VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+    }
+
     break;
+  }
   }
 
   return memFlags;
