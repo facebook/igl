@@ -59,13 +59,16 @@ bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
 
 igl::TextureRangeDesc TextureLoaderFactory::textureRange(DataReader reader) const noexcept {
   const Header* header = reader.as<Header>();
-  igl::TextureRangeDesc range;
-  range.numMipLevels = std::max(header->levelCount, 1u);
-  range.numLayers = std::max(header->layerCount, 1u);
-  range.numFaces = header->faceCount;
-  range.width = std::max(header->pixelWidth, 1u);
-  range.height = std::max(header->pixelHeight, 1u);
-  range.depth = std::max(header->pixelDepth, 1u);
+
+  const igl::TextureRangeDesc range{
+      .width = std::max(header->pixelWidth, 1u),
+      .height = std::max(header->pixelHeight, 1u),
+      .depth = std::max(header->pixelDepth, 1u),
+      .numLayers = std::max(header->layerCount, 1u),
+      .numMipLevels = std::max(header->levelCount, 1u),
+      .numFaces = header->faceCount,
+  };
+
   return range;
 }
 
