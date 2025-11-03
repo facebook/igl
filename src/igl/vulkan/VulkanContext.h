@@ -382,6 +382,8 @@ class VulkanContext final {
   uint32_t syncCurrentIndex_ = 0u;
   std::vector<SubmitHandle> syncSubmitHandles_;
 
+  VkPhysicalDeviceMemoryProperties memoryProperties{};
+
 #if IGL_VULKAN_VALIDATION_LAYER_ERROR_SUMMARY
   std::unordered_map<std::string, uint32_t> validationErrorsSummary_;
 #endif

@@ -981,6 +981,9 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                               &pimpl_->vma));
   }
 
+  // Caches the memory types
+  vf_.vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice_, &memoryProperties);
+
   // The staging device will use VMA to allocate a buffer, so this needs
   // to happen after VMA has been initialized.
   stagingDevice_ = std::make_unique<igl::vulkan::VulkanStagingDevice>(*this);
