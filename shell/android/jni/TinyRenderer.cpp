@@ -83,6 +83,9 @@ void TinyRenderer::init(AAssetManager* mgr,
   const igl::HWDeviceQueryDesc queryDesc(HWDeviceType::IntegratedGpu);
   std::unique_ptr<IDevice> d;
 
+  // Parse shell params early to determine headless mode
+  shell::parseShellParams(args, shellParams_);
+
   switch (backendVersion_.flavor) {
 #if IGL_BACKEND_OPENGL
   case igl::BackendFlavor::OpenGL_ES: {
@@ -109,6 +112,9 @@ void TinyRenderer::init(AAssetManager* mgr,
     vulkan::VulkanContextConfig config;
     config.terminateOnValidationError = true;
     config.requestedSwapChainTextureFormat = swapchainColorTextureFormat;
+    // Don't use headless mode on Android - instead we'll render to offscreen surface
+    config.headless = false;
+
     auto ctx = vulkan::HWDevice::createContext(config, nativeWindow);
 
     auto devices =
@@ -118,8 +124,15 @@ void TinyRenderer::init(AAssetManager* mgr,
       __android_log_print(ANDROID_LOG_ERROR, "igl", "Error: %s\n", result.message.c_str());
     }
     IGL_DEBUG_ASSERT(result.isOk());
-    width_ = static_cast<uint32_t>(ANativeWindow_getWidth(nativeWindow));
-    height_ = static_cast<uint32_t>(ANativeWindow_getHeight(nativeWindow));
+
+    if (shellParams_.isHeadless) {
+      // Use viewport size from shell params for headless mode
+      width_ = static_cast<uint32_t>(shellParams_.viewportSize.x);
+      height_ = static_cast<uint32_t>(shellParams_.viewportSize.y);
+    } else {
+      width_ = static_cast<uint32_t>(ANativeWindow_getWidth(nativeWindow));
+      height_ = static_cast<uint32_t>(ANativeWindow_getHeight(nativeWindow));
+    }
 
     // https://github.com/gpuweb/gpuweb/issues/4283
     // Only 49.5% of Android devices support dualSrcBlend.
@@ -160,8 +173,6 @@ void TinyRenderer::init(AAssetManager* mgr,
 
     session_ = factory.createRenderSession(platform_);
 
-    shell::parseShellParams(args, shellParams_);
-
     session_->setShellParams(shellParams_);
     IGL_DEBUG_ASSERT(session_ != nullptr);
     session_->initialize();
@@ -200,33 +211,69 @@ void TinyRenderer::render(float displayScale) {
   Result result;
   SurfaceTextures surfaceTextures;
 
-  switch (backendVersion_.flavor) {
+  if (shellParams_.isHeadless) {
+    // In headless mode, create offscreen textures instead of native drawable textures
+    auto& device = platform_->getDevice();
+
+    // Create or reuse offscreen color texture
+    if (!offscreenColorTexture_ || offscreenColorTexture_->getSize().width != width_ ||
+        offscreenColorTexture_->getSize().height != height_) {
+      TextureDesc colorTexDesc = TextureDesc::new2D(swapchainColorTextureFormat_,
+                                                    width_,
+                                                    height_,
+                                                    TextureDesc::TextureUsageBits::Attachment |
+                                                        TextureDesc::TextureUsageBits::Sampled);
+      colorTexDesc.storage = ResourceStorage::Private;
+      offscreenColorTexture_ = device.createTexture(colorTexDesc, &result);
+      IGL_DEBUG_ASSERT(result.isOk());
+      IGL_SOFT_ASSERT(result.isOk());
+    }
+
+    // Create or reuse offscreen depth texture
+    if (!offscreenDepthTexture_ || offscreenDepthTexture_->getSize().width != width_ ||
+        offscreenDepthTexture_->getSize().height != height_) {
+      TextureDesc depthTexDesc = TextureDesc::new2D(
+          TextureFormat::Z_UNorm24, width_, height_, TextureDesc::TextureUsageBits::Attachment);
+      depthTexDesc.storage = ResourceStorage::Private;
+      offscreenDepthTexture_ = device.createTexture(depthTexDesc, &result);
+      IGL_DEBUG_ASSERT(result.isOk());
+      IGL_SOFT_ASSERT(result.isOk());
+    }
+
+    surfaceTextures.color = offscreenColorTexture_;
+    surfaceTextures.depth = offscreenDepthTexture_;
+  } else {
+    // Normal mode: create surface textures from native drawable
+    switch (backendVersion_.flavor) {
 #if IGL_BACKEND_OPENGL
-  case igl::BackendFlavor::OpenGL_ES: {
-    auto* platformDevice = platform_->getDevice().getPlatformDevice<opengl::egl::PlatformDevice>();
-    surfaceTextures.color =
-        platformDevice->createTextureFromNativeDrawable(swapchainColorTextureFormat_, &result);
-    surfaceTextures.depth =
-        platformDevice->createTextureFromNativeDepth(igl::TextureFormat::Z_UNorm24, &result);
-    break;
-  }
+    case igl::BackendFlavor::OpenGL_ES: {
+      auto* platformDevice =
+          platform_->getDevice().getPlatformDevice<opengl::egl::PlatformDevice>();
+      surfaceTextures.color =
+          platformDevice->createTextureFromNativeDrawable(swapchainColorTextureFormat_, &result);
+      surfaceTextures.depth =
+          platformDevice->createTextureFromNativeDepth(igl::TextureFormat::Z_UNorm24, &result);
+      break;
+    }
 #endif
 
 #if IGL_BACKEND_VULKAN
-  case igl::BackendFlavor::Vulkan: {
-    auto* platformDevice = platform_->getDevice().getPlatformDevice<vulkan::PlatformDevice>();
-    surfaceTextures.color = platformDevice->createTextureFromNativeDrawable(&result);
-    surfaceTextures.depth = platformDevice->createTextureFromNativeDepth(width_, height_, &result);
-    break;
-  }
+    case igl::BackendFlavor::Vulkan: {
+      auto* platformDevice = platform_->getDevice().getPlatformDevice<vulkan::PlatformDevice>();
+      surfaceTextures.color = platformDevice->createTextureFromNativeDrawable(&result);
+      surfaceTextures.depth =
+          platformDevice->createTextureFromNativeDepth(width_, height_, &result);
+      break;
+    }
 #endif
 
-  default:
-    Result::setResult(&result, Result::Code::Unsupported, "Invalid backend");
-    break;
+    default:
+      Result::setResult(&result, Result::Code::Unsupported, "Invalid backend");
+      break;
+    }
+    IGL_DEBUG_ASSERT(result.isOk());
+    IGL_SOFT_ASSERT(result.isOk());
   }
-  IGL_DEBUG_ASSERT(result.isOk());
-  IGL_SOFT_ASSERT(result.isOk());
 
   const ContextGuard guard(platform_->getDevice()); // wrap 'session_' operations
 

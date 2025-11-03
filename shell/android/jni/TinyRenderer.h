@@ -48,6 +48,10 @@ class TinyRenderer final {
   uint32_t height_ = 0;
   TextureFormat swapchainColorTextureFormat_ = TextureFormat::RGBA_UNorm8;
   ANativeWindow* nativeWindow_ = nullptr;
+
+  // Offscreen textures for headless rendering
+  std::shared_ptr<ITexture> offscreenColorTexture_;
+  std::shared_ptr<ITexture> offscreenDepthTexture_;
 };
 
 } // namespace igl::samples
