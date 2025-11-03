@@ -30,14 +30,14 @@ const igl::TextureDesc& ITextureLoader::descriptor() const noexcept {
 
 [[nodiscard]] uint32_t ITextureLoader::memorySizeInBytes() const noexcept {
   const auto properties = igl::TextureFormatProperties::fromTextureFormat(desc_.format);
-  igl::TextureRangeDesc range;
-  range.width = desc_.width;
-  range.height = desc_.height;
-  range.depth = desc_.depth;
-  range.numFaces = desc_.type == igl::TextureType::Cube ? static_cast<size_t>(6)
-                                                        : static_cast<size_t>(1);
-  range.numLayers = desc_.numLayers;
-  range.numMipLevels = shouldGenerateMipmaps() ? 1 : desc_.numMipLevels;
+  const igl::TextureRangeDesc range = {
+      .width = desc_.width,
+      .height = desc_.height,
+      .depth = desc_.depth,
+      .numLayers = desc_.numLayers,
+      .numMipLevels = shouldGenerateMipmaps() ? 1 : desc_.numMipLevels,
+      .numFaces = desc_.type == igl::TextureType::Cube ? 6u : 1u,
+  };
 
   return static_cast<uint32_t>(properties.getBytesPerRange(range));
 }
