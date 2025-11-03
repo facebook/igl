@@ -1060,32 +1060,166 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
     return;
   }
 
-  IGL_LOG_INFO("bindBindGroup(texture): Binding bind group\n");
-
-  // Bind textures and samplers (arrays are dense, stop at first null)
-  for (uint32_t i = 0; i < IGL_TEXTURE_SAMPLERS_MAX; ++i) {
-    if (desc->textures[i]) {
-      IGL_LOG_INFO("bindBindGroup: Binding texture at index %u\n", i);
-      bindTexture(i, desc->textures[i].get());
-    } else {
-      break; // Dense array - stop at first null
-    }
+  auto& context = commandBuffer_.getContext();
+  auto* d3dDevice = context.getDevice();
+  auto* cmd = commandList_;
+  if (!d3dDevice || !cmd) {
+    IGL_LOG_ERROR("bindBindGroup(texture): missing device or command list\n");
+    return;
   }
 
-  for (uint32_t i = 0; i < IGL_TEXTURE_SAMPLERS_MAX; ++i) {
-    if (desc->samplers[i]) {
-      IGL_LOG_INFO("bindBindGroup: Binding sampler at index %u\n", i);
-      bindSamplerState(i, BindTarget::kFragment, desc->samplers[i].get());
-    } else {
-      break; // Dense array - stop at first null
+  // Compute dense counts for textures and samplers
+  uint32_t texCount = 0;
+  for (; texCount < IGL_TEXTURE_SAMPLERS_MAX; ++texCount) {
+    if (!desc->textures[texCount]) break;
+  }
+  uint32_t smpCount = 0;
+  for (; smpCount < IGL_TEXTURE_SAMPLERS_MAX; ++smpCount) {
+    if (!desc->samplers[smpCount]) break;
+  }
+
+  // Allocate contiguous slices from per-frame descriptor heaps
+  uint32_t& nextSrv = commandBuffer_.getNextCbvSrvUavDescriptor();
+  const uint32_t srvBaseIndex = nextSrv;
+  nextSrv += texCount;
+  uint32_t& nextSmp = commandBuffer_.getNextSamplerDescriptor();
+  const uint32_t smpBaseIndex = nextSmp;
+  nextSmp += smpCount;
+
+  // Create SRVs into the allocated SRV slice
+  for (uint32_t i = 0; i < texCount; ++i) {
+    auto* tex = static_cast<Texture*>(desc->textures[i].get());
+    if (!tex || !tex->getResource()) {
+      IGL_LOG_ERROR("bindBindGroup(texture): null texture at index %u\n", i);
+      continue;
     }
+    tex->transitionAll(cmd, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+    // Build SRV description for the texture/view
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = textureFormatToDXGIFormat(tex->getFormat());
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+    auto resourceDesc = tex->getResource()->GetDesc();
+    const bool isView = tex->isView();
+    const uint32_t mostDetailedMip = isView ? tex->getMipLevelOffset() : 0;
+    const uint32_t mipLevels = isView ? tex->getNumMipLevelsInView() : tex->getNumMipLevels();
+
+    if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
+      if (tex->getType() == TextureType::TwoDArray) {
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+        srvDesc.Texture2DArray.MostDetailedMip = mostDetailedMip;
+        srvDesc.Texture2DArray.MipLevels = mipLevels;
+        srvDesc.Texture2DArray.FirstArraySlice = isView ? tex->getArraySliceOffset() : 0;
+        srvDesc.Texture2DArray.ArraySize = isView ? tex->getNumArraySlicesInView() : resourceDesc.DepthOrArraySize;
+        srvDesc.Texture2DArray.PlaneSlice = 0;
+        srvDesc.Texture2DArray.ResourceMinLODClamp = 0.0f;
+      } else {
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        srvDesc.Texture2D.MostDetailedMip = mostDetailedMip;
+        srvDesc.Texture2D.MipLevels = mipLevels;
+        srvDesc.Texture2D.PlaneSlice = 0;
+        srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+      }
+    } else if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D) {
+      srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+      srvDesc.Texture3D.MostDetailedMip = mostDetailedMip;
+      srvDesc.Texture3D.MipLevels = mipLevels;
+      srvDesc.Texture3D.ResourceMinLODClamp = 0.0f;
+    } else if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE1D) {
+      srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+      srvDesc.Texture1D.MostDetailedMip = mostDetailedMip;
+      srvDesc.Texture1D.MipLevels = mipLevels;
+      srvDesc.Texture1D.ResourceMinLODClamp = 0.0f;
+    } else {
+      // Fallback
+      srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+      srvDesc.Texture2D.MostDetailedMip = mostDetailedMip;
+      srvDesc.Texture2D.MipLevels = mipLevels;
+      srvDesc.Texture2D.PlaneSlice = 0;
+      srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+    }
+
+    const uint32_t dstIndex = srvBaseIndex + i;
+    D3D12_CPU_DESCRIPTOR_HANDLE dstCpu = context.getCbvSrvUavCpuHandle(dstIndex);
+    d3dDevice->CreateShaderResourceView(tex->getResource(), &srvDesc, dstCpu);
+  }
+
+  // Create samplers into the allocated sampler slice
+  for (uint32_t i = 0; i < smpCount; ++i) {
+    auto* smp = static_cast<SamplerState*>(desc->samplers[i].get());
+    D3D12_SAMPLER_DESC samplerDesc = smp ? smp->getDesc() : D3D12_SAMPLER_DESC{};
+    D3D12_CPU_DESCRIPTOR_HANDLE dstCpu = context.getSamplerCpuHandle(smpBaseIndex + i);
+    d3dDevice->CreateSampler(&samplerDesc, dstCpu);
+  }
+
+  // Cache base GPU handles so draw() binds once per table
+  if (texCount > 0) {
+    cachedTextureGpuHandles_[0] = context.getCbvSrvUavGpuHandle(srvBaseIndex);
+    cachedTextureCount_ = texCount;
+  }
+  if (smpCount > 0) {
+    cachedSamplerGpuHandles_[0] = context.getSamplerGpuHandle(smpBaseIndex);
+    cachedSamplerCount_ = smpCount;
   }
 }
 
-void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle /*handle*/,
-                                          uint32_t /*numDynamicOffsets*/,
-                                          const uint32_t* /*dynamicOffsets*/) {
-  IGL_LOG_INFO("bindBindGroup(buffer): Not yet implemented\n");
+void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
+                                          uint32_t numDynamicOffsets,
+                                          const uint32_t* dynamicOffsets) {
+  IGL_LOG_INFO("bindBindGroup(buffer): handle valid=%d, dynCount=%u\n", !handle.empty(), numDynamicOffsets);
+
+  auto& device = commandBuffer_.getDevice();
+  const auto* desc = device.getBindGroupBufferDesc(handle);
+  if (!desc) {
+    IGL_LOG_ERROR("bindBindGroup(buffer): Invalid handle or descriptor not found\n");
+    return;
+  }
+
+  auto* cmd = commandList_;
+  if (!cmd) {
+    IGL_LOG_ERROR("bindBindGroup(buffer): null command list\n");
+    return;
+  }
+
+  // Emulate Vulkan dynamic offsets for uniform buffers by binding to root CBVs (b0,b1) when possible.
+  // Note: Current RS exposes two root CBVs (params 1 and 2). Additional CBVs and storage buffers should
+  // be promoted to SRV/UAV tables in a future RS update.
+  uint32_t dynIdx = 0;
+
+  for (uint32_t slot = 0; slot < IGL_UNIFORM_BLOCKS_BINDING_MAX; ++slot) {
+    if (!desc->buffers[slot]) break; // dense
+
+    auto* buf = static_cast<Buffer*>(desc->buffers[slot].get());
+    const bool isUniform = (buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0;
+    const bool isStorage = (buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0;
+
+    size_t baseOffset = desc->offset[slot];
+    if ((desc->isDynamicBufferMask & (1u << slot)) != 0) {
+      if (dynIdx < numDynamicOffsets && dynamicOffsets) {
+        baseOffset = dynamicOffsets[dynIdx++];
+      }
+    }
+
+    if (isUniform) {
+      // 256B alignment required for CBVs
+      const size_t aligned = (baseOffset + 255) & ~size_t(255);
+      D3D12_GPU_VIRTUAL_ADDRESS addr = buf->gpuAddress(aligned);
+
+      if (slot == 0) {
+        cachedConstantBuffers_[0] = addr;
+        constantBufferBound_[0] = true;
+      } else if (slot == 1) {
+        cachedConstantBuffers_[1] = addr;
+        constantBufferBound_[1] = true;
+      } else {
+        IGL_LOG_INFO("bindBindGroup(buffer): additional uniform buffer at slot %u not bound (RS lacks CBV table)\n", slot);
+      }
+    } else if (isStorage) {
+      // For now, storage buffers are not table-bound in bind-group path due to RS layout.
+      IGL_LOG_INFO("bindBindGroup(buffer): storage buffer at slot %u - SRV/UAV table binding pending RS update\n", slot);
+    }
+  }
 }
 
 } // namespace igl::d3d12
