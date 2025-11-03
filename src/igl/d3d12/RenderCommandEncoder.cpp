@@ -709,10 +709,19 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   // Ensure resource is in PIXEL_SHADER_RESOURCE state for sampling
   d3dTexture->transitionAll(commandList_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-  // Allocate a unique descriptor slot from the command buffer's shared counter
-  // This prevents descriptor conflicts between render passes (e.g., cubes pass + ImGui pass)
-  const uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
-  IGL_LOG_INFO("bindTexture: allocated descriptor slot %u for texture index t%zu\n", descriptorIndex, index);
+  // Check if texture already has a cached SRV descriptor
+  uint32_t descriptorIndex = d3dTexture->getCachedSRVDescriptorIndex();
+  bool needsDescriptorCreation = (descriptorIndex == UINT32_MAX);
+
+  if (needsDescriptorCreation) {
+    // First time binding this texture - allocate and cache descriptor
+    descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
+    d3dTexture->setCachedSRVDescriptorIndex(descriptorIndex);
+    IGL_LOG_INFO("bindTexture: allocated NEW descriptor slot %u for texture index t%zu (will be cached)\n", descriptorIndex, index);
+  } else {
+    // Reuse cached descriptor - no new allocation needed
+    IGL_LOG_INFO("bindTexture: reusing CACHED descriptor slot %u for texture index t%zu\n", descriptorIndex, index);
+  }
 
   // Create SRV descriptor at the allocated slot
   D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -785,8 +794,14 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   }
 
   IGL_LOG_INFO("bindTexture: heap=%p, heapStart CPU=0x%llx, GPU=0x%llx\n", heap, heapStartCpu.ptr, heapStartGpu.ptr);
-  IGL_LOG_INFO("bindTexture: creating SRV at slot %u, CPU handle 0x%llx\n", descriptorIndex, cpuHandle.ptr);
-  device->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
+
+  // Only create descriptor if this is the first time binding (not cached)
+  if (needsDescriptorCreation) {
+    IGL_LOG_INFO("bindTexture: creating NEW SRV at slot %u, CPU handle 0x%llx\n", descriptorIndex, cpuHandle.ptr);
+    device->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
+  } else {
+    IGL_LOG_INFO("bindTexture: skipping SRV creation (using cached descriptor at slot %u)\n", descriptorIndex);
+  }
 
   // Cache texture GPU handle for this index - store in array indexed by texture unit
   cachedTextureGpuHandles_[index] = gpuHandle;

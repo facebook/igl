@@ -8,7 +8,10 @@
 // @fb-only
 
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
+#include <chrono>
+#include <thread>
 
 #include <shell/windows/common/GlfwShell.h>
 
@@ -266,6 +269,20 @@ void GlfwShell::run() noexcept {
 
     platform_->getInputDispatcher().processEvents();
     session_->update(std::move(surfaceTextures));
+
+    // Debug FPS throttling to trigger descriptor race conditions
+    // Command-line: --fps-throttle <ms> [--fps-throttle-random]
+    // Example: --fps-throttle 50 (forces 20 FPS with fixed 50ms delay)
+    // Example: --fps-throttle 100 --fps-throttle-random (random delay 1-100ms per frame)
+    if (session_->shellParams().fpsThrottleMs > 0) {
+      uint32_t delayMs = session_->shellParams().fpsThrottleMs;
+      if (session_->shellParams().fpsThrottleRandom) {
+        // Random delay in range [1, fpsThrottleMs]
+        delayMs = 1 + (rand() % delayMs);
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+    }
+
     if (window_) {
       glfwPollEvents();
     }

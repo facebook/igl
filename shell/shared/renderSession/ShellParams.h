@@ -45,6 +45,10 @@ struct ShellParams {
   bool isHeadless = false;
   bool enableVulkanValidationLayers = true;
   std::optional<BenchmarkRenderSessionParams> benchmarkParams = {};
+
+  // FPS throttling for testing race conditions
+  uint32_t fpsThrottleMs = 0;     // 0 = disabled, >0 = delay in milliseconds per frame
+  bool fpsThrottleRandom = false; // if true, throttle is random in range [1, fpsThrottleMs]
 };
 
 std::vector<std::string> convertArgvToParams(int argc, char** argv);

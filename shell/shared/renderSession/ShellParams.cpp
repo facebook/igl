@@ -103,6 +103,12 @@ void parseShellParams(const std::vector<std::string>& args, ShellParams& shellPa
           }
         }
       }
+    } else if (arg == "--fps-throttle") {
+      if (i + 1 < args.size()) {
+        shellParams.fpsThrottleMs = static_cast<uint32_t>(std::stoi(args[++i]));
+      }
+    } else if (arg == "--fps-throttle-random") {
+      shellParams.fpsThrottleRandom = true;
     }
   }
 }

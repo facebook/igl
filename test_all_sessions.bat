@@ -1,13 +1,29 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
-cd build\vs\shell\Debug
-
 set SESSIONS=BasicFramebufferSession ColorSession DrawInstancedSession EmptySession HelloTriangleSession HelloWorldSession MRTSession Textured3DCubeSession TextureViewSession ThreeCubesRenderSession TinyMeshSession TQSession BindGroupSession ImguiSession TQMultiRenderPassSession ComputeSession
 
 set PASS_COUNT=0
 set FAIL_COUNT=0
 set TIMEOUT_SECONDS=30
+
+echo.
+echo ========================================
+echo Building D3D12 render sessions (Debug)
+echo ========================================
+
+REM Build only the D3D12 shell targets, not Metal/Vulkan/unit tests
+for %%S in (%SESSIONS%) do (
+    cmake --build build/vs --config Debug --target %%S_d3d12 --parallel 8 >> artifacts\render_sessions_build.log 2>&1
+    if !ERRORLEVEL! neq 0 (
+        echo BUILD FAILED for %%S_d3d12 - see artifacts\render_sessions_build.log
+        type artifacts\render_sessions_build.log | findstr /C:"error"
+        exit /b 1
+    )
+)
+echo BUILD SUCCESSFUL
+
+cd build\vs\shell\Debug
 
 for %%S in (%SESSIONS%) do (
     set "EXEC=%%S_d3d12.exe"
