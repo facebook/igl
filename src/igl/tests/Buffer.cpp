@@ -9,6 +9,7 @@
 
 #include <string>
 #include <igl/Buffer.h>
+#include <igl/CommandBuffer.h>
 #include <igl/Uniform.h>
 
 namespace igl::tests {
@@ -260,6 +261,56 @@ TEST_F(BufferTest, mapUniformBuffer) {
   ASSERT_EQ(color.g, bufferData[1]);
   ASSERT_EQ(color.b, bufferData[2]);
   ASSERT_EQ(color.a, bufferData[3]);
+}
+
+TEST_F(BufferTest, UploadDefaultHeapCopiesData) {
+  if (iglDev_->getBackendType() != igl::BackendType::D3D12) {
+    GTEST_SKIP() << "DEFAULT heap upload test only applies to D3D12 backend";
+  }
+
+  Result ret;
+  constexpr std::array<uint32_t, 4> kData = {11u, 22u, 33u, 44u};
+  const size_t dataSize = kData.size() * sizeof(uint32_t);
+
+  BufferDesc defaultDesc = BufferDesc(BufferDesc::BufferTypeBits::Vertex,
+                                      nullptr,
+                                      dataSize,
+                                      ResourceStorage::Private);
+  defaultDesc.debugName = "default-upload-buffer";
+  const std::shared_ptr<IBuffer> defaultBuffer = iglDev_->createBuffer(defaultDesc, &ret);
+  ASSERT_TRUE(defaultBuffer);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+
+  ret = defaultBuffer->upload(kData.data(), BufferRange(dataSize, 0));
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+
+  BufferDesc stagingDesc = BufferDesc(BufferDesc::BufferTypeBits::Vertex,
+                                      nullptr,
+                                      dataSize,
+                                      ResourceStorage::Shared);
+  stagingDesc.debugName = "staging-upload-buffer";
+  const std::shared_ptr<IBuffer> stagingBuffer = iglDev_->createBuffer(stagingDesc, &ret);
+  ASSERT_TRUE(stagingBuffer);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+
+  CommandBufferDesc cbDesc = {};
+  const std::shared_ptr<ICommandBuffer> commandBuffer = cmdQueue_->createCommandBuffer(cbDesc, &ret);
+  ASSERT_TRUE(commandBuffer);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+
+  commandBuffer->copyBuffer(*defaultBuffer, *stagingBuffer, 0, 0, dataSize);
+  cmdQueue_->submit(*commandBuffer, true);
+  commandBuffer->waitUntilCompleted();
+
+  Result mapResult;
+  const BufferRange range(dataSize, 0);
+  auto* mapped = static_cast<const uint32_t*>(stagingBuffer->map(range, &mapResult));
+  ASSERT_EQ(mapResult.code, Result::Code::Ok);
+  ASSERT_NE(mapped, nullptr);
+  for (size_t i = 0; i < kData.size(); ++i) {
+    EXPECT_EQ(mapped[i], kData[i]);
+  }
+  stagingBuffer->unmap();
 }
 
 } // namespace igl::tests

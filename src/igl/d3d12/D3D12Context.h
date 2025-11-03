@@ -11,6 +11,10 @@
 #include <igl/d3d12/D3D12Headers.h>
 #include <memory>
 
+namespace igl {
+class IBuffer; // Forward declaration for igl::IBuffer
+}
+
 namespace igl::d3d12 {
 
 class DescriptorHeapManager; // fwd decl in igl::d3d12
@@ -19,6 +23,22 @@ class DescriptorHeapManager; // fwd decl in igl::d3d12
 struct FrameContext {
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
   UINT64 fenceValue = 0;
+
+  // Per-frame shader-visible descriptor heaps (following Microsoft MiniEngine pattern)
+  // Each frame gets its own isolated heaps to prevent descriptor conflicts
+  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> cbvSrvUavHeap;  // 1024 descriptors (MiniEngine size)
+  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> samplerHeap;     // 32 descriptors (kMaxSamplers)
+
+  // Linear allocator counters - reset to 0 each frame
+  // Incremented by each command buffer's encoders as they allocate descriptors
+  uint32_t nextCbvSrvUavDescriptor = 0;
+  uint32_t nextSamplerDescriptor = 0;
+
+  // Transient resources that must be kept alive until this frame completes GPU execution
+  // Examples: push constant buffers, temporary upload buffers
+  // CRITICAL: These are cleared when we advance to the next frame AFTER waiting for
+  // this frame's fence, ensuring the GPU has finished reading them
+  std::vector<std::shared_ptr<igl::IBuffer>> transientBuffers;
 };
 
 class D3D12Context {
@@ -32,8 +52,44 @@ class D3D12Context {
   ID3D12Device* getDevice() const { return device_.Get(); }
   ID3D12CommandQueue* getCommandQueue() const { return commandQueue_.Get(); }
   IDXGISwapChain3* getSwapChain() const { return swapChain_.Get(); }
-  ID3D12DescriptorHeap* getCbvSrvUavHeap() const { return cbvSrvUavHeap_.Get(); }
-  ID3D12DescriptorHeap* getSamplerHeap() const { return samplerHeap_.Get(); }
+
+  // Get descriptor heap for current frame
+  ID3D12DescriptorHeap* getCbvSrvUavHeap() const {
+    return frameContexts_[currentFrameIndex_].cbvSrvUavHeap.Get();
+  }
+  ID3D12DescriptorHeap* getSamplerHeap() const {
+    return frameContexts_[currentFrameIndex_].samplerHeap.Get();
+  }
+
+  // Get descriptor sizes
+  UINT getCbvSrvUavDescriptorSize() const { return cbvSrvUavDescriptorSize_; }
+  UINT getSamplerDescriptorSize() const { return samplerDescriptorSize_; }
+
+  // Get descriptor handles from per-frame heaps
+  D3D12_CPU_DESCRIPTOR_HANDLE getCbvSrvUavCpuHandle(uint32_t descriptorIndex) const {
+    auto h = frameContexts_[currentFrameIndex_].cbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart();
+    h.ptr += descriptorIndex * cbvSrvUavDescriptorSize_;
+    return h;
+  }
+
+  D3D12_GPU_DESCRIPTOR_HANDLE getCbvSrvUavGpuHandle(uint32_t descriptorIndex) const {
+    auto h = frameContexts_[currentFrameIndex_].cbvSrvUavHeap->GetGPUDescriptorHandleForHeapStart();
+    h.ptr += descriptorIndex * cbvSrvUavDescriptorSize_;
+    return h;
+  }
+
+  D3D12_CPU_DESCRIPTOR_HANDLE getSamplerCpuHandle(uint32_t descriptorIndex) const {
+    auto h = frameContexts_[currentFrameIndex_].samplerHeap->GetCPUDescriptorHandleForHeapStart();
+    h.ptr += descriptorIndex * samplerDescriptorSize_;
+    return h;
+  }
+
+  D3D12_GPU_DESCRIPTOR_HANDLE getSamplerGpuHandle(uint32_t descriptorIndex) const {
+    auto h = frameContexts_[currentFrameIndex_].samplerHeap->GetGPUDescriptorHandleForHeapStart();
+    h.ptr += descriptorIndex * samplerDescriptorSize_;
+    return h;
+  }
+
   // Optional descriptor heap manager (provided by headless context)
   DescriptorHeapManager* getDescriptorHeapManager() const { return heapMgr_; }
 
@@ -68,11 +124,11 @@ class D3D12Context {
   Microsoft::WRL::ComPtr<ID3D12Resource> renderTargets_[kMaxFramesInFlight];
   UINT rtvDescriptorSize_ = 0;
 
-  // Descriptor heaps for resource binding
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> cbvSrvUavHeap_;
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> samplerHeap_;
+  // Descriptor sizes (cached from device)
   UINT cbvSrvUavDescriptorSize_ = 0;
   UINT samplerDescriptorSize_ = 0;
+
+  // Descriptor heap manager for headless contexts (unit tests)
   DescriptorHeapManager* ownedHeapMgr_ = nullptr;  // Owned manager for windowed contexts (raw ptr, manually deleted)
   DescriptorHeapManager* heapMgr_ = nullptr; // non-owning; points to ownedHeapMgr_ or external (headless)
 

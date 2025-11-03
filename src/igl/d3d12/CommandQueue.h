@@ -24,6 +24,8 @@ class CommandQueue final : public ICommandQueue {
                                                        Result* IGL_NULLABLE outResult) override;
   SubmitHandle submit(const ICommandBuffer& commandBuffer, bool endOfFrame = false) override;
 
+  Device& getDevice() { return device_; }
+
  private:
   Device& device_;
 };

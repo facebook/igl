@@ -29,8 +29,8 @@ constexpr uint32_t kMaxFramesInFlight = 3;
 // Maximum number of descriptor sets (matching IGL's Vulkan backend)
 constexpr uint32_t kMaxDescriptorSets = 4;
 
-// Maximum number of samplers
-constexpr uint32_t kMaxSamplers = 16;
+// Maximum number of samplers (increased from 16 to accommodate ImGui with multiple texture views)
+constexpr uint32_t kMaxSamplers = 32;
 
 // Maximum number of vertex attributes
 constexpr uint32_t kMaxVertexAttributes = 16;

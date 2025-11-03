@@ -53,10 +53,10 @@ if not "!CMD_ERROR!"=="0" (
 echo [%NAME%] Configure OK
 
 echo --- [%NAME%] Build ---
-cmake --build build/vs --config Release --target IGLTests -j 8 >> "%LOG_DIR%\build.log" 2>&1
+cmake --build build/vs --config Release --target IGLTests -j 8 >> "%LOG_DIR%\build_release.log" 2>&1
 set CMD_ERROR=!ERRORLEVEL!
 if not "!CMD_ERROR!"=="0" (
-  echo [%NAME%] CRITICAL: Build failed ^(exit !CMD_ERROR!^), see %LOG_DIR%\build.log
+  echo [%NAME%] CRITICAL: Build failed ^(exit !CMD_ERROR!^), see %LOG_DIR%\build_release.log
   set /A FAIL_COUNT+=1
   set FAILURES=%FAILURES% %NAME%-BUILD-CRITICAL
   goto :eof

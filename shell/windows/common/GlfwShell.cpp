@@ -255,19 +255,11 @@ bool GlfwShell::initialize(int argc,
 }
 
 void GlfwShell::run() noexcept {
-  IGL_LOG_INFO("GlfwShell::run() started, window_=%p\n", (void*)window_.get());
-
   uint64_t frameNumber = 0;
   while ((!window_ || !glfwWindowShouldClose(window_.get())) &&
          !session_->appParams().exitRequested) {
-    if (frameNumber < 3) {
-      IGL_LOG_INFO("Frame %llu: willTick()\n", (unsigned long long)frameNumber);
-    }
     willTick();
     auto surfaceTextures = createSurfaceTextures();
-    if (!surfaceTextures.color) {
-      IGL_LOG_ERROR("Frame %llu: surfaceTextures.color is NULL!\n", (unsigned long long)frameNumber);
-    }
     IGL_DEBUG_ASSERT(surfaceTextures.color != nullptr);  // Depth is optional for some sessions
 
     std::shared_ptr<ITexture> colorTexture = surfaceTextures.color;

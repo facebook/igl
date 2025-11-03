@@ -11,6 +11,7 @@
 #include <igl/RenderPass.h>
 #include <igl/d3d12/Common.h>
 #include <cstdint>
+#include <vector>
 
 namespace igl::d3d12 {
 
@@ -78,10 +79,6 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
  CommandBuffer& commandBuffer_;
   ID3D12GraphicsCommandList* commandList_;
 
- // Simple descriptor allocation (per-frame, reset on next frame)
-  UINT nextCbvSrvUavDescriptor_ = 0;
-  UINT nextSamplerDescriptor_ = 0;
-
   // Cache current vertex stride from bound pipeline's input layout
   UINT currentVertexStride_ = 0;
   // Optional per-slot strides fetched from pipeline
@@ -91,10 +88,9 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   std::shared_ptr<IFramebuffer> framebuffer_;
   // If DescriptorHeapManager is available, we borrow indices from its heaps.
   // Otherwise, we fall back to small ad-hoc heaps (constructor local scope).
-  uint32_t rtvIndex_ = UINT32_MAX;
+  std::vector<uint32_t> rtvIndices_;
   uint32_t dsvIndex_ = UINT32_MAX;
   D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle_{};
-  D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle_{};
 
   // Cached descriptor table GPU handles
   // These are set by bindTexture/bindSamplerState and used in drawIndexed

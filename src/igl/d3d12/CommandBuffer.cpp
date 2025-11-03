@@ -38,22 +38,16 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc)
     return;
   }
 
-  // Create command allocator
-  HRESULT hr = d3dDevice->CreateCommandAllocator(
-      D3D12_COMMAND_LIST_TYPE_DIRECT,
-      IID_PPV_ARGS(commandAllocator_.GetAddressOf()));
+  // Use the current frame's command allocator - allocators are created ready-to-use
+  // Following Microsoft's D3D12HelloFrameBuffering: each frame has its own allocator
+  auto& ctx = device_.getD3D12Context();
+  const uint32_t frameIdx = ctx.getCurrentFrameIndex();
+  auto* frameAllocator = ctx.getFrameContexts()[frameIdx].allocator.Get();
 
-  if (FAILED(hr)) {
-    char errorMsg[256];
-    snprintf(errorMsg, sizeof(errorMsg), "Failed to create command allocator: HRESULT = 0x%08X", static_cast<unsigned>(hr));
-    IGL_DEBUG_ABORT(errorMsg);
-  }
-
-  // Create command list
-  hr = d3dDevice->CreateCommandList(
+  HRESULT hr = d3dDevice->CreateCommandList(
       0,
       D3D12_COMMAND_LIST_TYPE_DIRECT,
-      commandAllocator_.Get(),
+      frameAllocator,  // Use frame allocator directly - it's in ready-to-use state after creation
       nullptr,
       IID_PPV_ARGS(commandList_.GetAddressOf()));
 
@@ -67,26 +61,65 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc)
   commandList_->Close();
 }
 
+uint32_t& CommandBuffer::getNextCbvSrvUavDescriptor() {
+  auto& ctx = device_.getD3D12Context();
+  const uint32_t frameIdx = ctx.getCurrentFrameIndex();
+  IGL_LOG_INFO("CommandBuffer::getNextCbvSrvUavDescriptor() - frame %u, current value=%u\n",
+               frameIdx, ctx.getFrameContexts()[frameIdx].nextCbvSrvUavDescriptor);
+  return ctx.getFrameContexts()[frameIdx].nextCbvSrvUavDescriptor;
+}
+
+uint32_t& CommandBuffer::getNextSamplerDescriptor() {
+  auto& ctx = device_.getD3D12Context();
+  const uint32_t frameIdx = ctx.getCurrentFrameIndex();
+  IGL_LOG_INFO("CommandBuffer::getNextSamplerDescriptor() - frame %u, current value=%u\n",
+               frameIdx, ctx.getFrameContexts()[frameIdx].nextSamplerDescriptor);
+  return ctx.getFrameContexts()[frameIdx].nextSamplerDescriptor;
+}
+
+void CommandBuffer::trackTransientBuffer(std::shared_ptr<IBuffer> buffer) {
+  // Add to the CURRENT frame's transient buffer list
+  // These will be kept alive until the frame completes GPU execution
+  auto& ctx = device_.getD3D12Context();
+  const uint32_t frameIdx = ctx.getCurrentFrameIndex();
+  ctx.getFrameContexts()[frameIdx].transientBuffers.push_back(std::move(buffer));
+  IGL_LOG_INFO("CommandBuffer::trackTransientBuffer() - Added buffer to frame %u (total=%zu)\n",
+               frameIdx, ctx.getFrameContexts()[frameIdx].transientBuffers.size());
+}
+
 void CommandBuffer::begin() {
   if (recording_) {
     return;
   }
 
-  // Clear transient buffers from previous frame
-  // These were kept alive for GPU execution, but can now be released
-  if (!transientBuffers_.empty()) {
-    IGL_LOG_INFO("CommandBuffer::begin() - Clearing %zu transient buffers\n", transientBuffers_.size());
-    transientBuffers_.clear();
-  }
+  // NOTE: Transient buffers are now stored in FrameContext and cleared when advancing frames
+  // NOTE: Descriptor counters are now stored in FrameContext and shared across all CommandBuffers
+  // They are reset at the start of each frame in CommandQueue::submit(), not here
 
-  IGL_LOG_INFO("CommandBuffer::begin() - Resetting allocator...\n");
-  HRESULT hr = commandAllocator_->Reset();
-  if (FAILED(hr)) {
-    IGL_LOG_ERROR("CommandBuffer::begin() - Reset allocator FAILED: 0x%08X\n", static_cast<unsigned>(hr));
-    return;
-  }
-  IGL_LOG_INFO("CommandBuffer::begin() - Allocator reset OK, resetting command list...\n");
-  hr = commandList_->Reset(commandAllocator_.Get(), nullptr);
+  // Reset per-command-buffer draw count for this recording
+  currentDrawCount_ = 0;
+
+  // CRITICAL: Set the per-frame descriptor heaps before recording commands
+  // Each frame has its own isolated heaps to prevent descriptor conflicts
+  auto& ctx = device_.getD3D12Context();
+  const uint32_t frameIdx = ctx.getCurrentFrameIndex();
+
+  ID3D12DescriptorHeap* heaps[] = {
+      ctx.getFrameContexts()[frameIdx].cbvSrvUavHeap.Get(),
+      ctx.getFrameContexts()[frameIdx].samplerHeap.Get()
+  };
+  commandList_->SetDescriptorHeaps(2, heaps);
+
+  IGL_LOG_INFO("CommandBuffer::begin() - Set per-frame descriptor heaps for frame %u\n", frameIdx);
+
+  // Use the CURRENT FRAME's command allocator from FrameContext
+  // Following Microsoft's D3D12HelloFrameBuffering pattern
+  auto* frameAllocator = ctx.getFrameContexts()[frameIdx].allocator.Get();
+
+  // Microsoft pattern: Reset allocator THEN reset command list
+  // Allocator was reset in CommandQueue::submit() after fence wait, OR is in initial ready state
+  IGL_LOG_INFO("CommandBuffer::begin() - Frame %u: Resetting command list with allocator...\n", frameIdx);
+  HRESULT hr = commandList_->Reset(frameAllocator, nullptr);
   if (FAILED(hr)) {
     IGL_LOG_ERROR("CommandBuffer::begin() - Reset command list FAILED: 0x%08X\n", static_cast<unsigned>(hr));
     return;

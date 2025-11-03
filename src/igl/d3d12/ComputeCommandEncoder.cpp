@@ -226,7 +226,7 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
   }
 
   // Allocate descriptor and create SRV
-  const uint32_t descriptorIndex = nextCbvSrvUavDescriptor_++;
+  const uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
   D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heapMgr->getCbvSrvUavCpuHandle(descriptorIndex);
 
   // Create SRV descriptor
@@ -297,7 +297,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
       return;
     }
 
-    const uint32_t descriptorIndex = nextCbvSrvUavDescriptor_++;
+    const uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heapMgr->getCbvSrvUavCpuHandle(descriptorIndex);
 
     // Create UAV descriptor for RWByteAddressBuffer (raw buffer)
@@ -383,7 +383,7 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, 
   }
 
   // Allocate descriptor and create UAV
-  const uint32_t descriptorIndex = nextCbvSrvUavDescriptor_++;
+  const uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
   D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heapMgr->getCbvSrvUavCpuHandle(descriptorIndex);
 
   // Create UAV descriptor

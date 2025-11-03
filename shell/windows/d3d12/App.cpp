@@ -85,8 +85,6 @@ SurfaceTextures D3D12Shell::createSurfaceTextures() noexcept {
 } // namespace igl::shell
 
 int main(int argc, char* argv[]) {
-  IGL_LOG_INFO("=== TinyMeshSession D3D12 Starting ===\n");
-
   igl::shell::D3D12Shell shell;
 
   igl::shell::RenderSessionWindowConfig suggestedWindowConfig = {

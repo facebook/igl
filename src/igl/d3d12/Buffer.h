@@ -12,9 +12,14 @@
 
 namespace igl::d3d12 {
 
+class Device;
+
 class Buffer final : public IBuffer {
  public:
-  Buffer(Microsoft::WRL::ComPtr<ID3D12Resource> resource, const BufferDesc& desc);
+  Buffer(Device& device,
+         Microsoft::WRL::ComPtr<ID3D12Resource> resource,
+         const BufferDesc& desc,
+         D3D12_RESOURCE_STATES initialState);
   ~Buffer() override;
 
   Result upload(const void* data, const BufferRange& range) override;
@@ -34,10 +39,15 @@ class Buffer final : public IBuffer {
   ID3D12Resource* getResource() const { return resource_.Get(); }
 
  private:
+  [[nodiscard]] D3D12_RESOURCE_STATES computeDefaultState(const BufferDesc& desc) const;
+
+  Device* device_ = nullptr;
   Microsoft::WRL::ComPtr<ID3D12Resource> resource_;
   BufferDesc desc_;
   void* mappedPtr_ = nullptr;
   ResourceStorage storage_ = ResourceStorage::Private;
+  D3D12_RESOURCE_STATES defaultState_ = D3D12_RESOURCE_STATE_GENERIC_READ;
+  D3D12_RESOURCE_STATES currentState_ = D3D12_RESOURCE_STATE_COMMON;
 };
 
 } // namespace igl::d3d12

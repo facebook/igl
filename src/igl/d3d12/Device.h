@@ -8,6 +8,8 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
+#include <vector>
 #include <igl/Buffer.h>
 #include <igl/CommandEncoder.h>
 #include <igl/Device.h>
@@ -133,6 +135,9 @@ class Device final : public IDevice {
     return bindGroupBuffersPool_.get(handle);
   }
 
+  void processCompletedUploads() const;
+  void trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer) const;
+
  private:
   std::unique_ptr<D3D12Context> ctx_;
   std::unique_ptr<PlatformDevice> platformDevice_;
@@ -142,6 +147,13 @@ class Device final : public IDevice {
   // Bind group pools
   Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
   Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
+
+  struct PendingUpload {
+    UINT64 fenceValue = 0;
+    Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+  };
+  mutable std::mutex pendingUploadsMutex_;
+  mutable std::vector<PendingUpload> pendingUploads_;
 };
 
 } // namespace igl::d3d12

@@ -60,6 +60,7 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
   IGL_LOG_INFO("RenderCommandEncoder: Setting up RTV...\n");
   D3D12_CPU_DESCRIPTOR_HANDLE rtv = {};
   std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvs;
+  rtvIndices_.clear();
   bool usedOffscreenRTV = false;
   // Note: heapMgr already retrieved above for setting descriptor heaps
   IGL_LOG_INFO("RenderCommandEncoder: DescriptorHeapManager = %p\n", heapMgr);
@@ -86,11 +87,12 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
         const uint32_t layer = hasAttachmentDesc ? renderPass.colorAttachments[i].layer : 0;
         // Allocate RTV
         uint32_t rtvIdx = heapMgr->allocateRTV();
-        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = heapMgr->getRTVHandle(rtvIdx);
-        if (i == 0) {
-          rtvIndex_ = rtvIdx;
-          rtvHandle_ = rtvHandle;
+        if (rtvIdx == UINT32_MAX) {
+          IGL_LOG_ERROR("RenderCommandEncoder: Failed to allocate RTV descriptor (heap exhausted)\n");
+          continue;
         }
+        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = heapMgr->getRTVHandle(rtvIdx);
+        rtvIndices_.push_back(rtvIdx);
         // Create RTV view - use the resource's actual format to avoid SRGB/UNORM mismatches
         D3D12_RESOURCE_DESC resourceDesc = tex->getResource()->GetDesc();
         D3D12_RENDER_TARGET_VIEW_DESC rdesc = {};
@@ -430,9 +432,11 @@ void RenderCommandEncoder::endEncoding() {
 
   // Return RTV/DSV indices to the descriptor heap manager if used
   if (auto* mgr = context2.getDescriptorHeapManager()) {
-    if (rtvIndex_ != UINT32_MAX) {
-      mgr->freeRTV(rtvIndex_);
-      rtvIndex_ = UINT32_MAX;
+    if (!rtvIndices_.empty()) {
+      for (auto idx : rtvIndices_) {
+        mgr->freeRTV(idx);
+      }
+      rtvIndices_.clear();
     }
     if (dsvIndex_ != UINT32_MAX) {
       mgr->freeDSV(dsvIndex_);
@@ -621,9 +625,9 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
     return;
   }
 
-  // Allocate a unique descriptor slot from the per-frame allocator
-  // This prevents descriptor conflicts when multiple samplers are bound (e.g., app samplers + ImGui)
-  const uint32_t descriptorIndex = nextSamplerDescriptor_++;
+  // Allocate a unique descriptor slot from the command buffer's shared counter
+  // This prevents descriptor conflicts between render passes (e.g., cubes pass + ImGui pass)
+  const uint32_t descriptorIndex = commandBuffer_.getNextSamplerDescriptor()++;
   IGL_LOG_INFO("bindSamplerState: allocated descriptor slot %u for sampler index s%zu\n", descriptorIndex, index);
 
   // Create sampler descriptor from ISamplerState if provided, else fallback
@@ -647,12 +651,22 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
   }
 
   // Create sampler descriptor at the allocated slot
-  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heapMgr->getSamplerCpuHandle(descriptorIndex);
+  // Use per-frame heap methods for windowed contexts, heapMgr for headless
+  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
+  if (heapMgr) {
+    cpuHandle = heapMgr->getSamplerCpuHandle(descriptorIndex);
+    gpuHandle = heapMgr->getSamplerGpuHandle(descriptorIndex);
+  } else {
+    cpuHandle = context.getSamplerCpuHandle(descriptorIndex);
+    gpuHandle = context.getSamplerGpuHandle(descriptorIndex);
+  }
+
   IGL_LOG_INFO("bindSamplerState: creating sampler at slot %u, CPU handle 0x%llx\n", descriptorIndex, cpuHandle.ptr);
   device->CreateSampler(&samplerDesc, cpuHandle);
 
   // Cache sampler GPU handle for this index - store in array indexed by sampler unit
-  cachedSamplerGpuHandles_[index] = heapMgr->getSamplerGpuHandle(descriptorIndex);
+  cachedSamplerGpuHandles_[index] = gpuHandle;
   cachedSamplerGpuHandle_ = cachedSamplerGpuHandles_[0]; // Maintain backward compat with single-sampler path
   cachedSamplerCount_ = std::max(cachedSamplerCount_, index + 1);
   IGL_LOG_INFO("bindSamplerState: cached sampler[%zu] GPU handle 0x%llx\n", index, cachedSamplerGpuHandles_[index].ptr);
@@ -689,19 +703,15 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
                resource, d3dTexture->getFormat(),
                d3dTexture->getDimensions().width, d3dTexture->getDimensions().height);
 
-  // Use descriptor heap manager
+  // Use descriptor heap manager (for headless contexts) or D3D12Context (for windowed)
   auto* heapMgr = context.getDescriptorHeapManager();
-  if (!heapMgr) {
-    IGL_LOG_ERROR("bindTexture: no descriptor heap manager\n");
-    return;
-  }
 
   // Ensure resource is in PIXEL_SHADER_RESOURCE state for sampling
   d3dTexture->transitionAll(commandList_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-  // Allocate a unique descriptor slot from the per-frame allocator
-  // This prevents descriptor conflicts when multiple textures are bound (e.g., app textures + ImGui)
-  const uint32_t descriptorIndex = nextCbvSrvUavDescriptor_++;
+  // Allocate a unique descriptor slot from the command buffer's shared counter
+  // This prevents descriptor conflicts between render passes (e.g., cubes pass + ImGui pass)
+  const uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
   IGL_LOG_INFO("bindTexture: allocated descriptor slot %u for texture index t%zu\n", descriptorIndex, index);
 
   // Create SRV descriptor at the allocated slot
@@ -763,13 +773,23 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   D3D12_CPU_DESCRIPTOR_HANDLE heapStartCpu = heap->GetCPUDescriptorHandleForHeapStart();
   D3D12_GPU_DESCRIPTOR_HANDLE heapStartGpu = heap->GetGPUDescriptorHandleForHeapStart();
 
-  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heapMgr->getCbvSrvUavCpuHandle(descriptorIndex);
+  // Get descriptor handles: use heapMgr for headless, D3D12Context for windowed
+  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
+  if (heapMgr) {
+    cpuHandle = heapMgr->getCbvSrvUavCpuHandle(descriptorIndex);
+    gpuHandle = heapMgr->getCbvSrvUavGpuHandle(descriptorIndex);
+  } else {
+    cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
+    gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
+  }
+
   IGL_LOG_INFO("bindTexture: heap=%p, heapStart CPU=0x%llx, GPU=0x%llx\n", heap, heapStartCpu.ptr, heapStartGpu.ptr);
   IGL_LOG_INFO("bindTexture: creating SRV at slot %u, CPU handle 0x%llx\n", descriptorIndex, cpuHandle.ptr);
   device->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
 
   // Cache texture GPU handle for this index - store in array indexed by texture unit
-  cachedTextureGpuHandles_[index] = heapMgr->getCbvSrvUavGpuHandle(descriptorIndex);
+  cachedTextureGpuHandles_[index] = gpuHandle;
   cachedTextureGpuHandle_ = cachedTextureGpuHandles_[0]; // Maintain backward compat with single-texture path
   cachedTextureCount_ = std::max(cachedTextureCount_, index + 1);
   IGL_LOG_INFO("bindTexture: cached texture[%zu] GPU handle 0x%llx (offset from heap start: %lld)\n",
@@ -958,8 +978,8 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
       return;
     }
 
-    // Allocate descriptor slot
-    const uint32_t descriptorIndex = nextCbvSrvUavDescriptor_++;
+    // Allocate descriptor slot from command buffer's shared counter
+    const uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
     IGL_LOG_INFO("bindBuffer: Allocated SRV descriptor slot %u for buffer at t%u\n", descriptorIndex, index);
 
     // Create SRV descriptor for ByteAddressBuffer

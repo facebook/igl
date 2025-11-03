@@ -116,44 +116,73 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
     return Result(Result::Code::RuntimeError, "Failed to create command queue");
   }
 
-  // Create descriptor heaps (smaller defaults for tests). Allow override via env vars.
-  UINT heapSize = 256; // default CBV/SRV/UAV
+  // Create per-frame descriptor heaps (consistent with windowed D3D12Context)
+  // Allow override via env vars for headless tests
+  UINT cbvSrvUavHeapSize = 1024; // default matching Microsoft MiniEngine
   {
     char buf[32] = {};
     const DWORD n = GetEnvironmentVariableA("IGL_D3D12_CBV_SRV_UAV_HEAP_SIZE", buf, sizeof(buf));
     if (n > 0) {
-      heapSize = std::max<UINT>(64, static_cast<UINT>(strtoul(buf, nullptr, 10)));
+      cbvSrvUavHeapSize = std::max<UINT>(256, static_cast<UINT>(strtoul(buf, nullptr, 10)));
     }
   }
-  D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc = {};
-  cbvSrvUavHeapDesc.NumDescriptors = heapSize;
-  cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-  cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-  cbvSrvUavHeapDesc.NodeMask = 0;
-  hr = device_->CreateDescriptorHeap(&cbvSrvUavHeapDesc, IID_PPV_ARGS(cbvSrvUavHeap_.GetAddressOf()));
-  if (FAILED(hr)) {
-    return Result(Result::Code::RuntimeError, "Failed to create CBV/SRV/UAV descriptor heap");
-  }
-  cbvSrvUavDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-  UINT samplerHeapSize = 16; // default samplers
+  UINT samplerHeapSize = 32; // default matching kMaxSamplers
   {
     char buf[32] = {};
     const DWORD n = GetEnvironmentVariableA("IGL_D3D12_SAMPLER_HEAP_SIZE", buf, sizeof(buf));
     if (n > 0) {
-      samplerHeapSize = std::max<UINT>(8, static_cast<UINT>(strtoul(buf, nullptr, 10)));
+      samplerHeapSize = std::max<UINT>(16, static_cast<UINT>(strtoul(buf, nullptr, 10)));
     }
   }
-  D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc = {};
-  samplerHeapDesc.NumDescriptors = samplerHeapSize;
-  samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-  samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-  samplerHeapDesc.NodeMask = 0;
-  hr = device_->CreateDescriptorHeap(&samplerHeapDesc, IID_PPV_ARGS(samplerHeap_.GetAddressOf()));
-  if (FAILED(hr)) {
-    return Result(Result::Code::RuntimeError, "Failed to create sampler descriptor heap");
-  }
+
+  // Cache descriptor sizes
+  cbvSrvUavDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
   samplerDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+
+  IGL_LOG_INFO("HeadlessContext: Creating per-frame descriptor heaps (CBV/SRV/UAV=%u, Samplers=%u)...\n",
+               cbvSrvUavHeapSize, samplerHeapSize);
+
+  // Create per-frame shader-visible descriptor heaps
+  for (UINT i = 0; i < kMaxFramesInFlight; i++) {
+    // CBV/SRV/UAV heap per frame
+    D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+    desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    desc.NumDescriptors = cbvSrvUavHeapSize;
+    desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    desc.NodeMask = 0;
+    hr = device_->CreateDescriptorHeap(&desc, IID_PPV_ARGS(frameContexts_[i].cbvSrvUavHeap.GetAddressOf()));
+    if (FAILED(hr)) {
+      return Result(Result::Code::RuntimeError, "Failed to create per-frame CBV/SRV/UAV heap for frame " + std::to_string(i));
+    }
+    IGL_LOG_INFO("  Frame %u: Created CBV/SRV/UAV heap (%u descriptors)\n", i, cbvSrvUavHeapSize);
+
+    // Sampler heap per frame
+    desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+    desc.NumDescriptors = samplerHeapSize;
+    desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    desc.NodeMask = 0;
+    hr = device_->CreateDescriptorHeap(&desc, IID_PPV_ARGS(frameContexts_[i].samplerHeap.GetAddressOf()));
+    if (FAILED(hr)) {
+      return Result(Result::Code::RuntimeError, "Failed to create per-frame Sampler heap for frame " + std::to_string(i));
+    }
+    IGL_LOG_INFO("  Frame %u: Created Sampler heap (%u descriptors)\n", i, samplerHeapSize);
+  }
+
+  IGL_LOG_INFO("HeadlessContext: Per-frame descriptor heaps created successfully\n");
+
+  // Create per-frame command allocators (following Microsoft's D3D12HelloFrameBuffering pattern)
+  IGL_LOG_INFO("HeadlessContext: Creating per-frame command allocators...\n");
+  for (UINT i = 0; i < kMaxFramesInFlight; i++) {
+    hr = device_->CreateCommandAllocator(
+        D3D12_COMMAND_LIST_TYPE_DIRECT,
+        IID_PPV_ARGS(frameContexts_[i].allocator.GetAddressOf()));
+    if (FAILED(hr)) {
+      return Result(Result::Code::RuntimeError, "Failed to create command allocator for frame " + std::to_string(i));
+    }
+    IGL_LOG_INFO("  Frame %u: Created command allocator\n", i);
+  }
+  IGL_LOG_INFO("HeadlessContext: Per-frame command allocators created successfully\n");
 
   // Fence for GPU synchronization
   hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.GetAddressOf()));
@@ -168,7 +197,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
   // Create descriptor heap manager with the same sizes for consistency
   {
     DescriptorHeapManager::Sizes sz{};
-    sz.cbvSrvUav = heapSize;
+    sz.cbvSrvUav = cbvSrvUavHeapSize;
     sz.samplers = samplerHeapSize;
     sz.rtvs = 64;
     sz.dsvs = 32;

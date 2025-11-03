@@ -176,6 +176,12 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   }
 
   // Upload initial data if provided
+  D3D12_RESOURCE_STATES finalState = initialState;
+
+  if (heapType == D3D12_HEAP_TYPE_UPLOAD) {
+    finalState = D3D12_RESOURCE_STATE_GENERIC_READ;
+  }
+
   if (desc.data) {
     if (heapType == D3D12_HEAP_TYPE_UPLOAD) {
       void* mappedData = nullptr;
@@ -186,7 +192,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
         std::memcpy(mappedData, desc.data, desc.length);
         buffer->Unmap(0, nullptr);
       }
-    } else {
+    } else if (heapType == D3D12_HEAP_TYPE_DEFAULT) {
       // DEFAULT heap: stage through an UPLOAD buffer and copy
       IGL_LOG_INFO("Device::createBuffer: Staging initial data via UPLOAD heap for DEFAULT buffer\n");
 
@@ -260,6 +266,8 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
             ID3D12CommandList* lists[] = {cmdList.Get()};
             ctx_->getCommandQueue()->ExecuteCommandLists(1, lists);
             ctx_->waitForGPU();
+
+            finalState = targetState;
           }
         }
       }
@@ -267,7 +275,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   }
 
   Result::setOk(outResult);
-  return std::make_unique<Buffer>(std::move(buffer), desc);
+  return std::make_unique<Buffer>(const_cast<Device&>(*this), std::move(buffer), desc, finalState);
 }
 
 std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
@@ -1781,6 +1789,48 @@ BackendVersion Device::getBackendVersion() const {
 
 BackendType Device::getBackendType() const {
   return BackendType::D3D12;
+}
+
+void Device::processCompletedUploads() const {
+  auto* fence = ctx_->getFence();
+  if (!fence) {
+    return;
+  }
+
+  const UINT64 completed = fence->GetCompletedValue();
+
+  std::lock_guard<std::mutex> lock(pendingUploadsMutex_);
+  auto& uploads = pendingUploads_;
+  auto it = uploads.begin();
+  while (it != uploads.end()) {
+    if (it->fenceValue <= completed) {
+      it = uploads.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
+void Device::trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer) const {
+  if (!buffer.Get()) {
+    return;
+  }
+
+  auto& ctx = const_cast<D3D12Context&>(getD3D12Context());
+  ID3D12CommandQueue* queue = ctx.getCommandQueue();
+  ID3D12Fence* fence = ctx.getFence();
+  if (!queue || !fence) {
+    return;
+  }
+
+  UINT64& fenceValue = ctx.getFenceValue();
+  const UINT64 signalValue = ++fenceValue;
+  if (FAILED(queue->Signal(fence, signalValue))) {
+    return;
+  }
+
+  std::lock_guard<std::mutex> lock(pendingUploadsMutex_);
+  pendingUploads_.push_back(PendingUpload{signalValue, std::move(buffer)});
 }
 
 size_t Device::getCurrentDrawCount() const {

@@ -9,6 +9,7 @@
 #include <igl/d3d12/DescriptorHeapManager.h>
 
 #include <stdexcept>
+#include <string>
 
 namespace igl::d3d12 {
 
@@ -67,6 +68,19 @@ Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height) {
       throw std::runtime_error("Failed to create fence event");
     }
     IGL_LOG_INFO("D3D12Context: Fence created successfully\n");
+
+    // Create per-frame command allocators (following Microsoft's D3D12HelloFrameBuffering pattern)
+    IGL_LOG_INFO("D3D12Context: Creating per-frame command allocators...\n");
+    for (UINT i = 0; i < kMaxFramesInFlight; i++) {
+      hr = device_->CreateCommandAllocator(
+          D3D12_COMMAND_LIST_TYPE_DIRECT,
+          IID_PPV_ARGS(frameContexts_[i].allocator.GetAddressOf()));
+      if (FAILED(hr)) {
+        throw std::runtime_error("Failed to create command allocator for frame " + std::to_string(i));
+      }
+      IGL_LOG_INFO("D3D12Context: Created command allocator for frame %u\n", i);
+    }
+    IGL_LOG_INFO("D3D12Context: Per-frame command allocators created successfully\n");
 
     IGL_LOG_INFO("D3D12Context: Initialization complete!\n");
   } catch (const std::exception& e) {
@@ -360,45 +374,60 @@ void D3D12Context::createBackBuffers() {
 }
 
 void D3D12Context::createDescriptorHeaps() {
-  // Create CBV/SRV/UAV descriptor heap (for textures and constant buffers)
-  D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc = {};
-  cbvSrvUavHeapDesc.NumDescriptors = 1000; // Large pool for textures and constant buffers
-  cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-  cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-  cbvSrvUavHeapDesc.NodeMask = 0;
-
-  HRESULT hr = device_->CreateDescriptorHeap(&cbvSrvUavHeapDesc,
-                                             IID_PPV_ARGS(cbvSrvUavHeap_.GetAddressOf()));
-  if (FAILED(hr)) {
-    throw std::runtime_error("Failed to create CBV/SRV/UAV descriptor heap");
-  }
-
+  // Cache descriptor sizes
   cbvSrvUavDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(
       D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-  // Create Sampler descriptor heap
-  D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc = {};
-  samplerHeapDesc.NumDescriptors = 16; // Sufficient for typical sampler needs
-  samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-  samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-  samplerHeapDesc.NodeMask = 0;
-
-  hr = device_->CreateDescriptorHeap(&samplerHeapDesc,
-                                     IID_PPV_ARGS(samplerHeap_.GetAddressOf()));
-  if (FAILED(hr)) {
-    throw std::runtime_error("Failed to create Sampler descriptor heap");
-  }
-
   samplerDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(
       D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
+  // Create per-frame shader-visible descriptor heaps (following Microsoft MiniEngine pattern)
+  // Each frame gets its own isolated heaps to prevent descriptor conflicts between frames
+  IGL_LOG_INFO("D3D12Context: Creating per-frame descriptor heaps...\n");
+
+  for (UINT i = 0; i < kMaxFramesInFlight; i++) {
+    // CBV/SRV/UAV heap: 1024 descriptors (MiniEngine DynamicDescriptorHeap size)
+    {
+      D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+      desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+      desc.NumDescriptors = 1024;  // Microsoft MiniEngine size for dynamic per-frame allocation
+      desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+      desc.NodeMask = 0;
+
+      HRESULT hr = device_->CreateDescriptorHeap(&desc,
+          IID_PPV_ARGS(frameContexts_[i].cbvSrvUavHeap.GetAddressOf()));
+      if (FAILED(hr)) {
+        throw std::runtime_error("Failed to create per-frame CBV/SRV/UAV heap for frame " + std::to_string(i));
+      }
+      IGL_LOG_INFO("  Frame %u: Created CBV/SRV/UAV heap (1024 descriptors)\n", i);
+    }
+
+    // Sampler heap: 32 descriptors (kMaxSamplers from Common.h)
+    {
+      D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+      desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+      desc.NumDescriptors = kMaxSamplers;  // 32 samplers
+      desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+      desc.NodeMask = 0;
+
+      HRESULT hr = device_->CreateDescriptorHeap(&desc,
+          IID_PPV_ARGS(frameContexts_[i].samplerHeap.GetAddressOf()));
+      if (FAILED(hr)) {
+        throw std::runtime_error("Failed to create per-frame Sampler heap for frame " + std::to_string(i));
+      }
+      IGL_LOG_INFO("  Frame %u: Created Sampler heap (%u descriptors)\n", i, kMaxSamplers);
+    }
+  }
+
+  IGL_LOG_INFO("D3D12Context: Per-frame descriptor heaps created successfully\n");
+  IGL_LOG_INFO("  Total memory: 3 frames × (1024 CBV/SRV/UAV + 32 Samplers) × 32 bytes ≈ 99 KB\n");
+
   IGL_LOG_INFO("D3D12Context: Creating descriptor heap manager...\n");
 
-  // Create descriptor heap manager to manage allocations from the heaps
+  // Create descriptor heap manager to manage allocations for CPU-visible heaps (RTV/DSV)
   DescriptorHeapManager::Sizes sizes{};
-  sizes.cbvSrvUav = cbvSrvUavHeapDesc.NumDescriptors;
-  sizes.samplers = samplerHeapDesc.NumDescriptors;
-  sizes.rtvs = 64;   // Reasonable defaults for windowed rendering
+  sizes.cbvSrvUav = 256;  // For CPU-visible staging (not used for shader-visible)
+  sizes.samplers = 16;    // For CPU-visible staging (not used for shader-visible)
+  sizes.rtvs = 64;        // Reasonable defaults for windowed rendering
   sizes.dsvs = 32;
 
   ownedHeapMgr_ = new DescriptorHeapManager();

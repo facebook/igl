@@ -7,15 +7,18 @@
 
 #pragma once
 
+#include <array>
+#include <limits>
+#include <vector>
 #include <igl/Framebuffer.h>
 #include <igl/d3d12/Common.h>
 
 namespace igl::d3d12 {
 
- class Framebuffer final : public IFramebuffer {
+class Framebuffer final : public IFramebuffer {
  public:
   Framebuffer(const FramebufferDesc& desc);
-  ~Framebuffer() override = default;
+  ~Framebuffer() override;
 
   std::vector<size_t> getColorAttachmentIndices() const override;
   std::shared_ptr<ITexture> getColorAttachment(size_t index) const override;
@@ -48,6 +51,26 @@ namespace igl::d3d12 {
   void updateResolveAttachment(std::shared_ptr<ITexture> texture) override;
 
  private:
+  struct ReadbackResources {
+    Microsoft::WRL::ComPtr<ID3D12Resource> readbackBuffer;
+    uint64_t readbackBufferSize = 0;
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
+    Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+    HANDLE fenceEvent = nullptr;
+    uint64_t lastFenceValue = 0;
+    std::vector<uint8_t> cachedData;
+    uint32_t cachedWidth = 0;
+    uint32_t cachedHeight = 0;
+    uint32_t cachedMipLevel = 0;
+    uint32_t cachedLayer = 0;
+    uint64_t cachedRowPitch = 0;
+    size_t cachedBytesPerPixel = 0;
+    UINT64 cachedFrameFenceValue = std::numeric_limits<UINT64>::max();
+    bool cacheValid = false;
+  };
+
+  mutable std::array<ReadbackResources, IGL_COLOR_ATTACHMENTS_MAX> readbackCache_{};
   FramebufferDesc desc_;
 };
 

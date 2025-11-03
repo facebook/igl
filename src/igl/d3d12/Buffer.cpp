@@ -6,12 +6,39 @@
  */
 
 #include <igl/d3d12/Buffer.h>
+#include <igl/d3d12/Device.h>
+#include <igl/d3d12/D3D12Context.h>
 #include <cstring>
 
 namespace igl::d3d12 {
 
-Buffer::Buffer(Microsoft::WRL::ComPtr<ID3D12Resource> resource, const BufferDesc& desc)
-    : resource_(std::move(resource)), desc_(desc) {
+namespace {
+constexpr D3D12_RESOURCE_DESC makeBufferDesc(UINT64 size, D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE) {
+  D3D12_RESOURCE_DESC desc = {};
+  desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+  desc.Alignment = 0;
+  desc.Width = size;
+  desc.Height = 1;
+  desc.DepthOrArraySize = 1;
+  desc.MipLevels = 1;
+  desc.Format = DXGI_FORMAT_UNKNOWN;
+  desc.SampleDesc.Count = 1;
+  desc.SampleDesc.Quality = 0;
+  desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+  desc.Flags = flags;
+  return desc;
+}
+} // namespace
+
+Buffer::Buffer(Device& device,
+               Microsoft::WRL::ComPtr<ID3D12Resource> resource,
+               const BufferDesc& desc,
+               D3D12_RESOURCE_STATES initialState)
+    : device_(&device),
+      resource_(std::move(resource)),
+      desc_(desc),
+      defaultState_(computeDefaultState(desc)),
+      currentState_(initialState) {
   // Determine storage type based on heap properties
   if (resource_.Get()) {
     D3D12_HEAP_PROPERTIES heapProps;
@@ -25,13 +52,24 @@ Buffer::Buffer(Microsoft::WRL::ComPtr<ID3D12Resource> resource, const BufferDesc
     } else {
       storage_ = ResourceStorage::Private;
     }
+
+    if (storage_ != ResourceStorage::Private) {
+      currentState_ = D3D12_RESOURCE_STATE_GENERIC_READ;
+    }
   }
 }
 
 Buffer::~Buffer() {
+  ULONG refCount = 0;
+  if (resource_.Get()) {
+    resource_.Get()->AddRef();
+    refCount = resource_.Get()->Release();  // Returns count AFTER the Release
+  }
+  IGL_LOG_INFO("Buffer::~Buffer() - Destroying buffer, resource_=%p, final_refCount_before_ComPtr_dtor=%lu\n", resource_.Get(), refCount);
   if (mappedPtr_) {
     unmap();
   }
+  // ComPtr destructor will now release, bringing refcount to refCount-1 (which should be 0)
 }
 
 Result Buffer::upload(const void* data, const BufferRange& range) {
@@ -44,22 +82,13 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
     return Result(Result::Code::ArgumentInvalid, "Upload data is null");
   }
 
+  // Validate range
+  if (range.size == 0 || range.offset + range.size > desc_.length) {
+    return Result(Result::Code::ArgumentOutOfRange, "Upload range is out of bounds");
+  }
+
   // For UPLOAD heap, map, copy, unmap
   if (storage_ == ResourceStorage::Shared) {
-    // Debug: print matrix data
-    if (range.size >= 64) {
-      const float* f = static_cast<const float*>(data);
-      static int uploadCount = 0;
-      if (uploadCount < 1) {
-        IGL_LOG_INFO("Buffer::upload #%d: size=%zu\n", uploadCount + 1, range.size);
-        IGL_LOG_INFO("  Matrix row 0: [%.3f, %.3f, %.3f, %.3f]\n", f[0], f[1], f[2], f[3]);
-        IGL_LOG_INFO("  Matrix row 1: [%.3f, %.3f, %.3f, %.3f]\n", f[4], f[5], f[6], f[7]);
-        IGL_LOG_INFO("  Matrix row 2: [%.3f, %.3f, %.3f, %.3f]\n", f[8], f[9], f[10], f[11]);
-        IGL_LOG_INFO("  Matrix row 3: [%.3f, %.3f, %.3f, %.3f]\n", f[12], f[13], f[14], f[15]);
-        uploadCount++;
-      }
-    }
-
     void* mappedData = nullptr;
     D3D12_RANGE readRange = {0, 0}; // Not reading from GPU
 
@@ -78,8 +107,98 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   }
 
   // For DEFAULT heap, need upload via intermediate buffer
-  // TODO: Implement staging buffer upload for GPU-only buffers
-  return Result(Result::Code::Unimplemented, "Upload to DEFAULT heap not yet implemented");
+  if (!device_) {
+    return Result(Result::Code::RuntimeError, "Buffer device is null");
+  }
+
+  auto& ctx = device_->getD3D12Context();
+  ID3D12Device* d3dDevice = ctx.getDevice();
+  ID3D12CommandQueue* queue = ctx.getCommandQueue();
+  if (!d3dDevice || !queue) {
+    return Result(Result::Code::RuntimeError, "D3D12 device or command queue unavailable");
+  }
+
+  // Reclaim completed upload buffers before allocating new ones.
+  device_->processCompletedUploads();
+
+  Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
+  D3D12_HEAP_PROPERTIES uploadHeapProps = {};
+  uploadHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+  const auto uploadDesc = makeBufferDesc(range.size);
+  HRESULT hr = d3dDevice->CreateCommittedResource(&uploadHeapProps,
+                                                  D3D12_HEAP_FLAG_NONE,
+                                                  &uploadDesc,
+                                                  D3D12_RESOURCE_STATE_GENERIC_READ,
+                                                  nullptr,
+                                                  IID_PPV_ARGS(uploadBuffer.GetAddressOf()));
+  if (FAILED(hr)) {
+    return Result(Result::Code::RuntimeError, "Failed to create upload buffer");
+  }
+
+  void* mapped = nullptr;
+  D3D12_RANGE rr = {0, 0};
+  hr = uploadBuffer->Map(0, &rr, &mapped);
+  if (FAILED(hr) || mapped == nullptr) {
+    return Result(Result::Code::RuntimeError, "Failed to map upload buffer");
+  }
+  std::memcpy(mapped, data, range.size);
+  uploadBuffer->Unmap(0, nullptr);
+
+  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
+  hr = d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                         IID_PPV_ARGS(allocator.GetAddressOf()));
+  if (FAILED(hr)) {
+    return Result(Result::Code::RuntimeError, "Failed to create command allocator for upload");
+  }
+  hr = d3dDevice->CreateCommandList(0,
+                                    D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                    allocator.Get(),
+                                    nullptr,
+                                    IID_PPV_ARGS(cmdList.GetAddressOf()));
+  if (FAILED(hr)) {
+    return Result(Result::Code::RuntimeError, "Failed to create command list for upload");
+  }
+
+  if (currentState_ != D3D12_RESOURCE_STATE_COPY_DEST) {
+    D3D12_RESOURCE_BARRIER toCopyDest = {};
+    toCopyDest.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    toCopyDest.Transition.pResource = resource_.Get();
+    toCopyDest.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    toCopyDest.Transition.StateBefore = currentState_;
+    toCopyDest.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+    cmdList->ResourceBarrier(1, &toCopyDest);
+  }
+
+  cmdList->CopyBufferRegion(resource_.Get(), range.offset, uploadBuffer.Get(), 0, range.size);
+
+  D3D12_RESOURCE_STATES postState =
+      (defaultState_ == D3D12_RESOURCE_STATE_COMMON) ? D3D12_RESOURCE_STATE_GENERIC_READ : defaultState_;
+
+  if (postState != D3D12_RESOURCE_STATE_COPY_DEST) {
+    D3D12_RESOURCE_BARRIER toDefault = {};
+    toDefault.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    toDefault.Transition.pResource = resource_.Get();
+    toDefault.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    toDefault.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+    toDefault.Transition.StateAfter = postState;
+    cmdList->ResourceBarrier(1, &toDefault);
+    currentState_ = postState;
+  } else {
+    currentState_ = D3D12_RESOURCE_STATE_COPY_DEST;
+  }
+
+  hr = cmdList->Close();
+  if (FAILED(hr)) {
+    return Result(Result::Code::RuntimeError, "Failed to close upload command list");
+  }
+
+  ID3D12CommandList* lists[] = {cmdList.Get()};
+  queue->ExecuteCommandLists(1, lists);
+
+  device_->trackUploadBuffer(std::move(uploadBuffer));
+
+  return Result();
 }
 
 void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
@@ -157,6 +276,32 @@ uint64_t Buffer::gpuAddress(size_t offset) const {
 
 BufferDesc::BufferType Buffer::getBufferType() const {
   return desc_.type;
+}
+
+D3D12_RESOURCE_STATES Buffer::computeDefaultState(const BufferDesc& desc) const {
+  D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
+
+  if ((desc.type & BufferDesc::BufferTypeBits::Storage) != 0) {
+    state |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+  }
+  if ((desc.type & BufferDesc::BufferTypeBits::Vertex) != 0 ||
+      (desc.type & BufferDesc::BufferTypeBits::Uniform) != 0) {
+    state |= D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+  }
+  if ((desc.type & BufferDesc::BufferTypeBits::Index) != 0) {
+    state |= D3D12_RESOURCE_STATE_INDEX_BUFFER;
+  }
+  if ((desc.type & BufferDesc::BufferTypeBits::Indirect) != 0) {
+    state |= D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
+  }
+
+  if (state == D3D12_RESOURCE_STATE_COMMON) {
+    return D3D12_RESOURCE_STATE_GENERIC_READ;
+  }
+
+  // Remove COMMON bit if other bits are set.
+  state &= ~D3D12_RESOURCE_STATE_COMMON;
+  return state;
 }
 
 } // namespace igl::d3d12

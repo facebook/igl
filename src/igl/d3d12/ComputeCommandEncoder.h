@@ -44,9 +44,6 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
   const ComputePipelineState* currentPipeline_ = nullptr;
   bool isEncoding_ = false;
 
-  // Descriptor allocation tracking (similar to RenderCommandEncoder)
-  uint32_t nextCbvSrvUavDescriptor_ = 0;
-
   // Cached GPU handles for resources
   static constexpr size_t kMaxComputeBuffers = 8;
   static constexpr size_t kMaxComputeTextures = 8;
