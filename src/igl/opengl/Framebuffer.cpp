@@ -471,8 +471,8 @@ void CustomFramebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
 }
 
 void CustomFramebuffer::updateResolveAttachment(std::shared_ptr<ITexture> texture) {
-  if (resolveFramebuffer) {
-    resolveFramebuffer->updateDrawable(std::move(texture));
+  if (resolveFramebuffer_) {
+    resolveFramebuffer_->updateDrawable(std::move(texture));
   }
 }
 
@@ -662,7 +662,7 @@ void CustomFramebuffer::prepareResource(const std::string& debugName, Result* ou
     if (outResult) {
       *outResult = result;
     }
-    resolveFramebuffer = std::move(cfb);
+    resolveFramebuffer_ = std::move(cfb);
   }
 }
 

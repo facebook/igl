@@ -68,7 +68,7 @@ class Framebuffer : public WithContext, public IFramebuffer {
   }
 
   inline std::shared_ptr<Framebuffer> getResolveFramebuffer() const {
-    return resolveFramebuffer;
+    return resolveFramebuffer_;
   }
 
   [[nodiscard]] bool isSwapchainBound() const override;
@@ -97,7 +97,7 @@ class Framebuffer : public WithContext, public IFramebuffer {
   mutable CachedState depthCachedState_;
   mutable CachedState stencilCachedState_;
 
-  std::shared_ptr<Framebuffer> resolveFramebuffer = nullptr;
+  std::shared_ptr<Framebuffer> resolveFramebuffer_ = nullptr;
 };
 
 // CustomFramebuffer enables caller-defined attachments
