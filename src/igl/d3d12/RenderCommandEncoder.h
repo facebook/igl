@@ -102,9 +102,9 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   // to avoid invalidation by multiple SetDescriptorHeaps calls
   D3D12_GPU_DESCRIPTOR_HANDLE cachedTextureGpuHandle_{};
   D3D12_GPU_DESCRIPTOR_HANDLE cachedSamplerGpuHandle_{};
-  // Support multiple textures (t0, t1) by caching handles per texture unit
-  D3D12_GPU_DESCRIPTOR_HANDLE cachedTextureGpuHandles_[2] = {};
-  D3D12_GPU_DESCRIPTOR_HANDLE cachedSamplerGpuHandles_[2] = {};
+  // Support up to IGL_TEXTURE_SAMPLERS_MAX textures/samplers (t0-t15, s0-s15)
+  D3D12_GPU_DESCRIPTOR_HANDLE cachedTextureGpuHandles_[IGL_TEXTURE_SAMPLERS_MAX] = {};
+  D3D12_GPU_DESCRIPTOR_HANDLE cachedSamplerGpuHandles_[IGL_TEXTURE_SAMPLERS_MAX] = {};
   size_t cachedTextureCount_ = 0;
   size_t cachedSamplerCount_ = 0;
 

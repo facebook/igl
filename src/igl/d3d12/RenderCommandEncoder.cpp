@@ -603,10 +603,12 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
   if (callCount < 3) {
     IGL_LOG_INFO("bindSamplerState called #%d: index=%zu, sampler=%p\n", ++callCount, index, samplerState);
   }
-  // Enable binding: create sampler in the shader-visible sampler heap and set the descriptor table
-  if (!samplerState || index >= 2) {
-    IGL_LOG_INFO("bindSamplerState: early return (sampler=%p, index=%zu)\n", samplerState, index);
-    return;  // Only support 2 sampler slots (s0, s1) for now
+  // Validate index range against IGL_TEXTURE_SAMPLERS_MAX
+  if (!samplerState || index >= IGL_TEXTURE_SAMPLERS_MAX) {
+    if (index >= IGL_TEXTURE_SAMPLERS_MAX) {
+      IGL_LOG_ERROR("bindSamplerState: index %zu exceeds maximum %u\n", index, IGL_TEXTURE_SAMPLERS_MAX);
+    }
+    return;
   }
 
   auto& context = commandBuffer_.getContext();
@@ -675,9 +677,12 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   if (callCount < 5) {
     IGL_LOG_INFO("bindTexture called #%d: index=%zu, texture=%p\n", ++callCount, index, texture);
   }
-  if (!texture || index >= 2) {
-    IGL_LOG_INFO("bindTexture: early return (texture=%p, index=%zu)\n", texture, index);
-    return;  // Only support 2 texture slots (t0, t1) for now
+  // Validate index range against IGL_TEXTURE_SAMPLERS_MAX
+  if (!texture || index >= IGL_TEXTURE_SAMPLERS_MAX) {
+    if (index >= IGL_TEXTURE_SAMPLERS_MAX) {
+      IGL_LOG_ERROR("bindTexture: index %zu exceeds maximum %u\n", index, IGL_TEXTURE_SAMPLERS_MAX);
+    }
+    return;
   }
 
   IGL_LOG_INFO("bindTexture: getting context...\n");
