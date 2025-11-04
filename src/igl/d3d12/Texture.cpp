@@ -401,11 +401,123 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     return;
   }
 
-  // Check if texture was created with RENDER_TARGET flag (required for mipmap generation)
+  // If texture wasn't created with RENDER_TARGET flag, we need to recreate it
+  // D3D12 requires ALLOW_RENDER_TARGET for mipmap generation via rendering
   if (!(resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)) {
-    IGL_LOG_INFO("Texture::generateMipmap() - Skipping: texture not created with RENDER_TARGET usage\n");
-    IGL_LOG_INFO("  To enable mipmap generation, create texture with TextureDesc::TextureUsageBits::Attachment\n");
-    return;
+    IGL_LOG_INFO("Texture::generateMipmap() - Recreating texture with RENDER_TARGET flag for mipmap generation\n");
+
+    // Save current resource (AddRef to keep it alive)
+    ID3D12Resource* oldResource = resource_.Get();
+    oldResource->AddRef();
+
+    // Modify descriptor to add RENDER_TARGET flag
+    resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+
+    // Create new resource with RENDER_TARGET flag
+    D3D12_HEAP_PROPERTIES heapProps = {};
+    heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+    D3D12_CLEAR_VALUE clearValue = {};
+    clearValue.Format = resourceDesc.Format;
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> newResource;
+    HRESULT hr = device_->CreateCommittedResource(
+        &heapProps,
+        D3D12_HEAP_FLAG_NONE,
+        &resourceDesc,
+        D3D12_RESOURCE_STATE_COPY_DEST,
+        &clearValue,
+        IID_PPV_ARGS(newResource.GetAddressOf()));
+
+    if (FAILED(hr)) {
+      IGL_LOG_ERROR("Texture::generateMipmap() - Failed to recreate texture with RENDER_TARGET flag\n");
+      return;
+    }
+
+    // Copy mip 0 from old resource to new resource
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> copyAlloc;
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> copyList;
+    if (FAILED(device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(copyAlloc.GetAddressOf())))) {
+      IGL_LOG_ERROR("Texture::generateMipmap() - Failed to create copy command allocator\n");
+      return;
+    }
+    if (FAILED(device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, copyAlloc.Get(), nullptr, IID_PPV_ARGS(copyList.GetAddressOf())))) {
+      IGL_LOG_ERROR("Texture::generateMipmap() - Failed to create copy command list\n");
+      return;
+    }
+
+    // Transition old resource to COPY_SOURCE
+    D3D12_RESOURCE_BARRIER barrierOld = {};
+    barrierOld.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrierOld.Transition.pResource = oldResource;
+    barrierOld.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    barrierOld.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+    barrierOld.Transition.Subresource = 0;
+    copyList->ResourceBarrier(1, &barrierOld);
+
+    // Copy mip 0
+    D3D12_TEXTURE_COPY_LOCATION srcLoc = {};
+    srcLoc.pResource = oldResource;
+    srcLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    srcLoc.SubresourceIndex = 0;
+
+    D3D12_TEXTURE_COPY_LOCATION dstLoc = {};
+    dstLoc.pResource = newResource.Get();
+    dstLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    dstLoc.SubresourceIndex = 0;
+
+    copyList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, nullptr);
+
+    // Transition new resource to PIXEL_SHADER_RESOURCE for mipmap generation
+    D3D12_RESOURCE_BARRIER barrierNew = {};
+    barrierNew.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrierNew.Transition.pResource = newResource.Get();
+    barrierNew.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+    barrierNew.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    barrierNew.Transition.Subresource = 0;
+    copyList->ResourceBarrier(1, &barrierNew);
+
+    copyList->Close();
+    ID3D12CommandList* copyLists[] = {copyList.Get()};
+    queue_->ExecuteCommandLists(1, copyLists);
+
+    // Wait for copy to complete
+    Microsoft::WRL::ComPtr<ID3D12Fence> copyFence;
+    if (FAILED(device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(copyFence.GetAddressOf())))) {
+      IGL_LOG_ERROR("Texture::generateMipmap() - Failed to create copy fence\n");
+      oldResource->Release();
+      return;
+    }
+    HANDLE copyEvt = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (!copyEvt) {
+      IGL_LOG_ERROR("Texture::generateMipmap() - Failed to create copy event\n");
+      oldResource->Release();
+      return;
+    }
+    queue_->Signal(copyFence.Get(), 1);
+    copyFence->SetEventOnCompletion(1, copyEvt);
+    WaitForSingleObject(copyEvt, INFINITE);
+    CloseHandle(copyEvt);
+
+    // Release old resource
+    oldResource->Release();
+
+    // Replace resource with new one (need const_cast since function is const)
+    auto& mutableResource = const_cast<Microsoft::WRL::ComPtr<ID3D12Resource>&>(resource_);
+    mutableResource.Reset();
+    mutableResource = std::move(newResource);
+
+    // Update state tracking for new resource - mip 0 is now in PIXEL_SHADER_RESOURCE
+    initializeStateTracking(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    subresourceStates_[0] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    for (size_t i = 1; i < subresourceStates_.size(); ++i) {
+      subresourceStates_[i] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    }
+
+    // Update resourceDesc for the rest of the function
+    resourceDesc = resource_->GetDesc();
+
+    IGL_LOG_INFO("Texture::generateMipmap() - Texture recreated successfully\n");
   }
 
   IGL_LOG_INFO("Texture::generateMipmap() - Proceeding with mipmap generation\n");
