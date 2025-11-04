@@ -188,12 +188,40 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   IGL_LOG_INFO("ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, global UAV barrier inserted\n");
 }
 
-void ComputeCommandEncoder::bindPushConstants(const void* /*data*/,
-                                              size_t /*length*/,
-                                              size_t /*offset*/) {
-  // Push constants not yet implemented for D3D12
-  // Requires proper root signature design and backward compatibility considerations
-  IGL_LOG_INFO("ComputeCommandEncoder::bindPushConstants - not yet implemented\n");
+void ComputeCommandEncoder::bindPushConstants(const void* data,
+                                              size_t length,
+                                              size_t offset) {
+  auto* commandList = commandBuffer_.getCommandList();
+  if (!commandList || !data || length == 0) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindPushConstants: Invalid parameters (list=%p, data=%p, len=%zu)\n",
+                  commandList, data, length);
+    return;
+  }
+
+  // Compute root signature parameter 0 is declared as D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS (b0)
+  // with 16 DWORDs (64 bytes) capacity
+  constexpr size_t kMaxPushConstantBytes = 64;
+
+  if (length + offset > kMaxPushConstantBytes) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindPushConstants: size %zu + offset %zu exceeds maximum %zu bytes\n",
+                  length, offset, kMaxPushConstantBytes);
+    return;
+  }
+
+  // Calculate number of 32-bit values and offset in DWORDs
+  const uint32_t num32BitValues = static_cast<uint32_t>((length + 3) / 4);  // Round up to DWORDs
+  const uint32_t destOffsetIn32BitValues = static_cast<uint32_t>(offset / 4);
+
+  // Use SetComputeRoot32BitConstants to directly write data to root constants
+  // Root parameter 0 = b0 (Push Constants), as declared in compute root signature
+  commandList->SetComputeRoot32BitConstants(
+      0,                          // Root parameter index (push constants at parameter 0)
+      num32BitValues,             // Number of 32-bit values to set
+      data,                       // Source data
+      destOffsetIn32BitValues);   // Destination offset in 32-bit values
+
+  IGL_LOG_INFO("ComputeCommandEncoder::bindPushConstants: Set %u DWORDs (%zu bytes) at offset %zu to root parameter 0 (b0)\n",
+               num32BitValues, length, offset);
 }
 
 void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {

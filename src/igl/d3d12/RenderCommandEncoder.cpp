@@ -548,53 +548,36 @@ void RenderCommandEncoder::bindBytes(size_t /*index*/,
 void RenderCommandEncoder::bindPushConstants(const void* data,
                                              size_t length,
                                              size_t offset) {
-  if (!commandList_ || !data || length == 0 || offset != 0) {
-    IGL_LOG_ERROR("bindPushConstants: Invalid parameters (list=%p, data=%p, len=%zu, offset=%zu)\n",
-                  commandList_, data, length, offset);
+  if (!commandList_ || !data || length == 0) {
+    IGL_LOG_ERROR("bindPushConstants: Invalid parameters (list=%p, data=%p, len=%zu)\n",
+                  commandList_, data, length);
     return;
   }
 
-  // D3D12 implementation: Create a transient constant buffer and bind to b0 (root parameter 1)
-  // This matches Vulkan's push constants behavior where data is passed to shaders
-  // Most shaders (including ImGui) expect uniforms at b0, not b2
+  // Root signature parameter 0 is declared as D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS (b2)
+  // with 16 DWORDs (64 bytes) capacity
+  constexpr size_t kMaxPushConstantBytes = 64;
 
-  // Get device to create a transient upload buffer
-  auto& device = static_cast<CommandBuffer&>(commandBuffer_).getDevice();
-
-  // Align size to 256 bytes (D3D12 constant buffer alignment requirement)
-  const size_t alignedSize = (length + 255) & ~255;
-
-  // Create upload buffer for constant data
-  BufferDesc bufferDesc;
-  bufferDesc.type = BufferDesc::BufferTypeBits::Uniform;
-  bufferDesc.data = data;
-  bufferDesc.length = alignedSize;
-  bufferDesc.storage = ResourceStorage::Shared; // CPU-writable, GPU-readable
-  bufferDesc.hint = BufferDesc::BufferAPIHintBits::UniformBlock;
-
-  auto buffer = device.createBuffer(bufferDesc, nullptr);
-  if (!buffer) {
-    IGL_LOG_ERROR("bindPushConstants: Failed to create transient constant buffer\n");
+  if (length + offset > kMaxPushConstantBytes) {
+    IGL_LOG_ERROR("bindPushConstants: size %zu + offset %zu exceeds maximum %zu bytes\n",
+                  length, offset, kMaxPushConstantBytes);
     return;
   }
 
-  // Get D3D12 buffer and its GPU address
-  auto* d3dBuffer = static_cast<Buffer*>(buffer.get());
-  D3D12_GPU_VIRTUAL_ADDRESS gpuAddress = d3dBuffer->gpuAddress();
+  // Calculate number of 32-bit values and offset in DWORDs
+  const uint32_t num32BitValues = static_cast<uint32_t>((length + 3) / 4);  // Round up to DWORDs
+  const uint32_t destOffsetIn32BitValues = static_cast<uint32_t>(offset / 4);
 
-  // Cache the GPU address so drawIndexed() uses it instead of overwriting with 0
-  cachedConstantBuffers_[0] = gpuAddress;
-  constantBufferBound_[0] = true;
+  // Use SetGraphicsRoot32BitConstants to directly write data to root constants
+  // Root parameter 0 = b2 (Push Constants), as declared in graphics root signature
+  commandList_->SetGraphicsRoot32BitConstants(
+      0,                          // Root parameter index (push constants at parameter 0)
+      num32BitValues,             // Number of 32-bit values to set
+      data,                       // Source data
+      destOffsetIn32BitValues);   // Destination offset in 32-bit values
 
-  // Bind to root parameter 1 (b0) - this is where most shaders expect uniform data
-  commandList_->SetGraphicsRootConstantBufferView(1, gpuAddress);
-
-  // Track buffer in CommandBuffer to keep it alive until GPU execution completes
-  // This prevents memory leaks while ensuring the buffer isn't destroyed too early
-  static_cast<CommandBuffer&>(commandBuffer_).trackTransientBuffer(std::move(buffer));
-
-  IGL_LOG_INFO("bindPushConstants: Created transient CB (%zu bytes aligned to %zu) and bound to root parameter 1 (b0) at GPU address 0x%llx\n",
-               length, alignedSize, gpuAddress);
+  IGL_LOG_INFO("bindPushConstants: Set %u DWORDs (%zu bytes) at offset %zu to root parameter 0 (b2)\n",
+               num32BitValues, length, offset);
 }
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t /*target*/,
