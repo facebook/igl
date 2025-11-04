@@ -12,7 +12,6 @@
 #import "GLView.h"
 #import "HeadlessView.h"
 #import "MetalView.h"
-#import "VulkanView.h"
 // @fb-only
 
 #import <AppKit/NSApplication.h>
@@ -45,6 +44,7 @@
 // @fb-only
 // @fb-only
 #if IGL_BACKEND_VULKAN
+#import "VulkanView.h"
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
