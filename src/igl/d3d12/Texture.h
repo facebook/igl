@@ -75,10 +75,6 @@ class Texture final : public ITexture {
   uint32_t getArraySliceOffset() const { return arraySliceOffset_; }
   uint32_t getNumArraySlicesInView() const { return numArraySlicesInView_; }
 
-  // Descriptor caching (UINT32_MAX = not cached)
-  uint32_t getCachedSRVDescriptorIndex() const { return cachedSRVDescriptorIndex_; }
-  void setCachedSRVDescriptorIndex(uint32_t index) const { cachedSRVDescriptorIndex_ = index; }
-
   // Subresource calculation helper
   uint32_t calcSubresourceIndex(uint32_t mipLevel, uint32_t layer) const;
 
@@ -113,9 +109,6 @@ class Texture final : public ITexture {
   uint32_t numMipLevelsInView_ = 0;  // MipLevels for SRV
   uint32_t arraySliceOffset_ = 0;  // FirstArraySlice for SRV
   uint32_t numArraySlicesInView_ = 0;  // ArraySize for SRV
-
-  // Cached SRV descriptor index (UINT32_MAX = not cached)
-  mutable uint32_t cachedSRVDescriptorIndex_ = UINT32_MAX;
 };
 
 } // namespace igl::d3d12
