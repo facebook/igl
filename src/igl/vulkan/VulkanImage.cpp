@@ -355,14 +355,11 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   VK_ASSERT(ctx_->vf_.vkGetAndroidHardwareBufferPropertiesANDROID(
       device_, hwBuffer, &hwBufferProperties));
 
-  VkPhysicalDeviceMemoryProperties vulkanMemoryProperties;
-  ctx_->vf_.vkGetPhysicalDeviceMemoryProperties(physicalDevice_, &vulkanMemoryProperties);
-
   const VkMemoryAllocateInfo memoryAllocateInfo = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
       .pNext = &dedicatedAllocateInfo,
       .allocationSize = hwBufferProperties.allocationSize,
-      .memoryTypeIndex = ivkGetMemoryTypeIndex(vulkanMemoryProperties,
+      .memoryTypeIndex = ivkGetMemoryTypeIndex(ctx_->memoryProperties,
                                                hwBufferProperties.memoryTypeBits,
                                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)};
 
@@ -435,9 +432,6 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
   ci.pNext = &extImgMem;
 
-  VkPhysicalDeviceMemoryProperties vulkanMemoryProperties;
-  ctx_->vf_.vkGetPhysicalDeviceMemoryProperties(physicalDevice_, &vulkanMemoryProperties);
-
   // create image.. importing external memory cannot use VMA
   VK_ASSERT(ctx_->vf_.vkCreateImage(device_, &ci, nullptr, &vkImage_));
   VK_ASSERT(ivkSetDebugObjectName(
@@ -482,7 +476,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
       .pNext = &fdInfo,
       .allocationSize = memoryAllocationSize,
-      .memoryTypeIndex = ivkGetMemoryTypeIndex(vulkanMemoryProperties,
+      .memoryTypeIndex = ivkGetMemoryTypeIndex(ctx_->memoryProperties,
                                                memoryRequirements.memoryRequirements.memoryTypeBits,
                                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
   };
@@ -567,9 +561,6 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
   ci.pNext = &extImgMem;
 
-  VkPhysicalDeviceMemoryProperties vulkanMemoryProperties;
-  ctx_->vf_.vkGetPhysicalDeviceMemoryProperties(physicalDevice_, &vulkanMemoryProperties);
-
   // create image. importing external memory cannot use VMA
   VK_ASSERT(ctx_->vf_.vkCreateImage(device_, &ci, nullptr, &vkImage_));
   VK_ASSERT(ivkSetDebugObjectName(
@@ -591,7 +582,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
       .pNext = &handleInfo,
       .allocationSize = memoryRequirements.memoryRequirements.size,
-      .memoryTypeIndex = ivkGetMemoryTypeIndex(vulkanMemoryProperties,
+      .memoryTypeIndex = ivkGetMemoryTypeIndex(ctx_->memoryProperties,
                                                memoryRequirements.memoryRequirements.memoryTypeBits,
                                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
   };
@@ -744,9 +735,6 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
   ci.pNext = &externalImageCreateInfo;
 
-  VkPhysicalDeviceMemoryProperties vulkanMemoryProperties;
-  ctx_->vf_.vkGetPhysicalDeviceMemoryProperties(physicalDevice_, &vulkanMemoryProperties);
-
   // create VkImage importing external memory cannot use VMA
   VK_ASSERT(ctx_->vf_.vkCreateImage(device_, &ci, nullptr, &vkImage_));
   VK_ASSERT(ivkSetDebugObjectName(
@@ -794,7 +782,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
         .pNext = &externalMemoryAllocateInfo,
         .allocationSize = memoryRequirements.memoryRequirements.size,
         .memoryTypeIndex = ivkGetMemoryTypeIndex(
-            vulkanMemoryProperties, memoryRequirements.memoryRequirements.memoryTypeBits, memFlags),
+            ctx_->memoryProperties, memoryRequirements.memoryRequirements.memoryTypeBits, memFlags),
     };
 
     IGL_LOG_INFO("Creating image to be exported with memoryAllocationSize %" PRIu64
