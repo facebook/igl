@@ -317,6 +317,8 @@ void TQMultiRenderPassSession::update(SurfaceTextures surfaceTextures) noexcept 
     framebuffer1_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
     IGL_DEBUG_ASSERT(ret.isOk());
     IGL_DEBUG_ASSERT(framebuffer1_ != nullptr);
+  } else {
+    framebuffer1_->updateDrawable(surfaceTextures);
   }
   const size_t textureUnit = 0;
 
