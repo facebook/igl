@@ -256,6 +256,9 @@ void TQMultiRenderPassSession::initialize() noexcept {
   const CommandQueueDesc desc{};
   commandQueue_ = device.createCommandQueue(desc, nullptr);
 
+  // Generate mipmaps for texture
+  tex0_->generateMipmap(*commandQueue_);
+
   renderPass0_.colorAttachments.resize(1);
   renderPass0_.colorAttachments[0].loadAction = LoadAction::Clear;
   renderPass0_.colorAttachments[0].storeAction = StoreAction::Store;
