@@ -258,6 +258,53 @@ void D3D12Context::createDevice() {
     IGL_LOG_INFO("D3D12Context: Info queue configured (severity breaks DISABLED, unsigned shader messages filtered)\n");
   }
 #endif
+
+  // Query root signature capabilities (P0_DX12-003)
+  // This is critical for Tier-1 devices which don't support unbounded descriptor ranges
+  IGL_LOG_INFO("D3D12Context: Querying root signature capabilities...\n");
+
+  // Query highest supported root signature version
+  D3D12_FEATURE_DATA_ROOT_SIGNATURE featureDataRootSig = {};
+  featureDataRootSig.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+
+  hr = device_->CheckFeatureSupport(
+      D3D12_FEATURE_ROOT_SIGNATURE,
+      &featureDataRootSig,
+      sizeof(featureDataRootSig));
+
+  if (SUCCEEDED(hr)) {
+    highestRootSignatureVersion_ = featureDataRootSig.HighestVersion;
+    IGL_LOG_INFO("  Highest Root Signature Version: %s\n",
+                 highestRootSignatureVersion_ == D3D_ROOT_SIGNATURE_VERSION_1_1 ? "1.1" : "1.0");
+  } else {
+    // If query fails, assume v1.0 (most conservative)
+    highestRootSignatureVersion_ = D3D_ROOT_SIGNATURE_VERSION_1_0;
+    IGL_LOG_INFO("  Root Signature query failed (assuming v1.0)\n");
+  }
+
+  // Query resource binding tier
+  D3D12_FEATURE_DATA_D3D12_OPTIONS options = {};
+  hr = device_->CheckFeatureSupport(
+      D3D12_FEATURE_D3D12_OPTIONS,
+      &options,
+      sizeof(options));
+
+  if (SUCCEEDED(hr)) {
+    resourceBindingTier_ = options.ResourceBindingTier;
+    const char* tierName = "Unknown";
+    switch (resourceBindingTier_) {
+      case D3D12_RESOURCE_BINDING_TIER_1: tierName = "Tier 1 (bounded descriptors required)"; break;
+      case D3D12_RESOURCE_BINDING_TIER_2: tierName = "Tier 2 (unbounded arrays except samplers)"; break;
+      case D3D12_RESOURCE_BINDING_TIER_3: tierName = "Tier 3 (fully unbounded)"; break;
+    }
+    IGL_LOG_INFO("  Resource Binding Tier: %s\n", tierName);
+  } else {
+    // If query fails, assume Tier 1 (most conservative)
+    resourceBindingTier_ = D3D12_RESOURCE_BINDING_TIER_1;
+    IGL_LOG_INFO("  Resource Binding Tier query failed (assuming Tier 1)\n");
+  }
+
+  IGL_LOG_INFO("D3D12Context: Root signature capabilities detected successfully\n");
 }
 
 void D3D12Context::createCommandQueue() {

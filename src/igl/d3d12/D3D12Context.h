@@ -67,6 +67,10 @@ class D3D12Context {
   UINT getCbvSrvUavDescriptorSize() const { return cbvSrvUavDescriptorSize_; }
   UINT getSamplerDescriptorSize() const { return samplerDescriptorSize_; }
 
+  // Get root signature capabilities
+  D3D_ROOT_SIGNATURE_VERSION getHighestRootSignatureVersion() const { return highestRootSignatureVersion_; }
+  D3D12_RESOURCE_BINDING_TIER getResourceBindingTier() const { return resourceBindingTier_; }
+
   // Get descriptor handles from per-frame heaps
   D3D12_CPU_DESCRIPTOR_HANDLE getCbvSrvUavCpuHandle(uint32_t descriptorIndex) const {
     auto h = frameContexts_[currentFrameIndex_].cbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart();
@@ -134,6 +138,10 @@ class D3D12Context {
   // Descriptor sizes (cached from device)
   UINT cbvSrvUavDescriptorSize_ = 0;
   UINT samplerDescriptorSize_ = 0;
+
+  // Feature detection for root signature capabilities
+  D3D_ROOT_SIGNATURE_VERSION highestRootSignatureVersion_ = D3D_ROOT_SIGNATURE_VERSION_1_0;
+  D3D12_RESOURCE_BINDING_TIER resourceBindingTier_ = D3D12_RESOURCE_BINDING_TIER_1;
 
   // Descriptor heap manager for headless contexts (unit tests)
   DescriptorHeapManager* ownedHeapMgr_ = nullptr;  // Owned manager for windowed contexts (raw ptr, manually deleted)

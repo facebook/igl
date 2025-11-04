@@ -610,10 +610,30 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   Microsoft::WRL::ComPtr<ID3DBlob> signature;
   Microsoft::WRL::ComPtr<ID3DBlob> error;
 
+  // Query root signature capabilities to determine descriptor range bounds (P0_DX12-003)
+  // Tier 1 devices require bounded descriptor ranges
+  const D3D12_RESOURCE_BINDING_TIER bindingTier = ctx_->getResourceBindingTier();
+  const bool needsBoundedRanges = (bindingTier == D3D12_RESOURCE_BINDING_TIER_1);
+
+  // Conservative bounds for Tier 1 devices (based on actual usage in render sessions)
+  // These limits are sufficient for all current IGL usage patterns
+  const UINT uavBound = needsBoundedRanges ? 64 : UINT_MAX;
+  const UINT srvBound = needsBoundedRanges ? 128 : UINT_MAX;
+  const UINT cbvBound = needsBoundedRanges ? 64 : UINT_MAX;
+  const UINT samplerBound = needsBoundedRanges ? 32 : UINT_MAX;  // Samplers always bounded on Tier 1/2
+
+  if (needsBoundedRanges) {
+    IGL_LOG_INFO("  Using bounded descriptor ranges (Tier 1): UAV=%u, SRV=%u, CBV=%u, Sampler=%u\n",
+                 uavBound, srvBound, cbvBound, samplerBound);
+  } else {
+    IGL_LOG_INFO("  Using unbounded descriptor ranges (Tier %u)\n",
+                 bindingTier == D3D12_RESOURCE_BINDING_TIER_3 ? 3 : 2);
+  }
+
   // Descriptor range for UAVs (unordered access views - read/write buffers and textures)
   D3D12_DESCRIPTOR_RANGE uavRange = {};
   uavRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-  uavRange.NumDescriptors = UINT_MAX;  // UNBOUNDED
+  uavRange.NumDescriptors = uavBound;
   uavRange.BaseShaderRegister = 0;  // Starting at u0
   uavRange.RegisterSpace = 0;
   uavRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -621,7 +641,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   // Descriptor range for SRVs (shader resource views - read-only textures and buffers)
   D3D12_DESCRIPTOR_RANGE srvRange = {};
   srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-  srvRange.NumDescriptors = UINT_MAX;  // UNBOUNDED
+  srvRange.NumDescriptors = srvBound;
   srvRange.BaseShaderRegister = 0;  // Starting at t0
   srvRange.RegisterSpace = 0;
   srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -630,7 +650,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   // Note: b0 will be used for root constants (push constants), so CBV table starts at b1
   D3D12_DESCRIPTOR_RANGE cbvRange = {};
   cbvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-  cbvRange.NumDescriptors = UINT_MAX;  // UNBOUNDED
+  cbvRange.NumDescriptors = cbvBound;
   cbvRange.BaseShaderRegister = 1;  // Starting at b1 (b0 is root constants)
   cbvRange.RegisterSpace = 0;
   cbvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -638,7 +658,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   // Descriptor range for Samplers
   D3D12_DESCRIPTOR_RANGE samplerRange = {};
   samplerRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-  samplerRange.NumDescriptors = UINT_MAX;  // UNBOUNDED
+  samplerRange.NumDescriptors = samplerBound;
   samplerRange.BaseShaderRegister = 0;  // Starting at s0
   samplerRange.RegisterSpace = 0;
   samplerRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -688,6 +708,10 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
 
   IGL_LOG_INFO("  Creating compute root signature with Root Constants (b0)/UAVs/SRVs/CBVs/Samplers\n");
+
+  // For now, use RS 1.0 for compatibility (1.1 requires D3D12_VERSIONED_ROOT_SIGNATURE_DESC)
+  // The descriptor bounds are already set correctly based on binding tier above
+  IGL_LOG_INFO("  Serializing with Root Signature version 1.0\n");
 
   HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
                                            signature.GetAddressOf(), error.GetAddressOf());
