@@ -326,10 +326,6 @@ VkPipelineLayoutCreateInfo ivkGetPipelineLayoutCreateInfo(uint32_t numLayouts,
                                                           const VkDescriptorSetLayout* layouts,
                                                           const VkPushConstantRange* range);
 
-VkPushConstantRange ivkGetPushConstantRange(VkShaderStageFlags stageFlags,
-                                            size_t offset,
-                                            size_t size);
-
 VkRect2D ivkGetRect2D(int32_t x, int32_t y, uint32_t width, uint32_t height);
 
 VkPipelineShaderStageCreateInfo ivkGetPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,

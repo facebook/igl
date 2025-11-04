@@ -897,17 +897,6 @@ VkPipelineLayoutCreateInfo ivkGetPipelineLayoutCreateInfo(uint32_t numLayouts,
   return ci;
 }
 
-VkPushConstantRange ivkGetPushConstantRange(VkShaderStageFlags stageFlags,
-                                            size_t offset,
-                                            size_t size) {
-  const VkPushConstantRange range = {
-      .stageFlags = stageFlags,
-      .offset = (uint32_t)offset,
-      .size = (uint32_t)size,
-  };
-  return range;
-}
-
 VkPipelineShaderStageCreateInfo ivkGetPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,
                                                                     VkShaderModule shaderModule,
                                                                     const char* entryPoint) {

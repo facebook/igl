@@ -808,36 +808,6 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
-// ivkGetPushConstantRange *******************************
-class GetPushConstantRangeTest
-  : public ::testing::TestWithParam<std::tuple<VkShaderStageFlags, uint32_t, uint32_t>> {};
-
-TEST_P(GetPushConstantRangeTest, GetPushConstantRange) {
-  const VkShaderStageFlags shaderStageFlags = std::get<0>(GetParam());
-  const uint32_t offset = std::get<1>(GetParam());
-  const uint32_t size = std::get<2>(GetParam());
-
-  const VkPushConstantRange pushConstantRange =
-      ivkGetPushConstantRange(shaderStageFlags, offset, size);
-
-  EXPECT_EQ(pushConstantRange.stageFlags, shaderStageFlags);
-  EXPECT_EQ(pushConstantRange.offset, offset);
-  EXPECT_EQ(pushConstantRange.size, size);
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    AllCombinations,
-    GetPushConstantRangeTest,
-    ::testing::Combine(::testing::Values(VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT),
-                       ::testing::Values(0, 100),
-                       ::testing::Values(1000, 2000)),
-    [](const testing::TestParamInfo<GetPushConstantRangeTest::ParamType>& info) {
-      const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
-                               std::to_string(std::get<1>(info.param)) + "_" +
-                               std::to_string(std::get<2>(info.param));
-      return name;
-    });
-
 // ivkGetRect2D *******************************
 class GetRect2DTest
   : public ::testing::TestWithParam<std::tuple<uint32_t, uint32_t, uint32_t, uint32_t>> {};
