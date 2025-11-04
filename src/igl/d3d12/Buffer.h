@@ -14,7 +14,7 @@ namespace igl::d3d12 {
 
 class Device;
 
-class Buffer final : public IBuffer {
+class Buffer final : public IBuffer, public std::enable_shared_from_this<Buffer> {
  public:
   Buffer(Device& device,
          Microsoft::WRL::ComPtr<ID3D12Resource> resource,

@@ -36,15 +36,16 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
   DescriptorHeapManager* heapMgr = context.getDescriptorHeapManager();
 
   // ALWAYS use per-frame heaps from D3D12Context (NOT DescriptorHeapManager)
-  ID3D12DescriptorHeap* cbvSrvUavHeap = context.getCbvSrvUavHeap();
-  ID3D12DescriptorHeap* samplerHeap = context.getSamplerHeap();
+  // Store in member variables so bindTexture/bindSamplerState can use them
+  cbvSrvUavHeap_ = context.getCbvSrvUavHeap();
+  samplerHeap_ = context.getSamplerHeap();
 
   IGL_LOG_INFO("RenderCommandEncoder: Using per-frame heaps from D3D12Context\n");
 
-  IGL_LOG_INFO("RenderCommandEncoder: CBV/SRV/UAV heap = %p\n", cbvSrvUavHeap);
-  IGL_LOG_INFO("RenderCommandEncoder: Sampler heap = %p\n", samplerHeap);
+  IGL_LOG_INFO("RenderCommandEncoder: CBV/SRV/UAV heap = %p\n", cbvSrvUavHeap_);
+  IGL_LOG_INFO("RenderCommandEncoder: Sampler heap = %p\n", samplerHeap_);
 
-  ID3D12DescriptorHeap* heaps[] = {cbvSrvUavHeap, samplerHeap};
+  ID3D12DescriptorHeap* heaps[] = {cbvSrvUavHeap_, samplerHeap_};
   IGL_LOG_INFO("RenderCommandEncoder: Setting descriptor heaps...\n");
   commandList_->SetDescriptorHeaps(2, heaps);
   IGL_LOG_INFO("RenderCommandEncoder: Descriptor heaps set\n");
@@ -610,11 +611,8 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
 
   auto& context = commandBuffer_.getContext();
   auto* device = context.getDevice();
-
-  // Use descriptor heap manager
-  auto* heapMgr = context.getDescriptorHeapManager();
-  if (!heapMgr) {
-    IGL_LOG_ERROR("bindSamplerState: no descriptor heap manager\n");
+  if (!device || samplerHeap_ == nullptr) {
+    IGL_LOG_ERROR("bindSamplerState: missing device or per-frame sampler heap\n");
     return;
   }
 
@@ -644,24 +642,25 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
   }
 
   // Create sampler descriptor at the allocated slot
-  // Use per-frame heap methods for windowed contexts, heapMgr for headless
-  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
-  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
-  if (heapMgr) {
-    cpuHandle = heapMgr->getSamplerCpuHandle(descriptorIndex);
-    gpuHandle = heapMgr->getSamplerGpuHandle(descriptorIndex);
-  } else {
-    cpuHandle = context.getSamplerCpuHandle(descriptorIndex);
-    gpuHandle = context.getSamplerGpuHandle(descriptorIndex);
-  }
+  // ALWAYS use per-frame heaps from D3D12Context
+  // CRITICAL: Do NOT use heapMgr handles - they point to shared heap, not per-frame heap
+  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getSamplerCpuHandle(descriptorIndex);
+  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getSamplerGpuHandle(descriptorIndex);
 
   IGL_LOG_INFO("bindSamplerState: creating sampler at slot %u, CPU handle 0x%llx\n", descriptorIndex, cpuHandle.ptr);
   device->CreateSampler(&samplerDesc, cpuHandle);
+  D3D12Context::trackResourceCreation("Sampler", 0);
 
   // Cache sampler GPU handle for this index - store in array indexed by sampler unit
   cachedSamplerGpuHandles_[index] = gpuHandle;
-  cachedSamplerGpuHandle_ = cachedSamplerGpuHandles_[0]; // Maintain backward compat with single-sampler path
-  cachedSamplerCount_ = std::max(cachedSamplerCount_, index + 1);
+  constexpr size_t kMaxCachedSamplers =
+      sizeof(cachedSamplerGpuHandles_) / sizeof(cachedSamplerGpuHandles_[0]);
+  for (size_t i = index + 1; i < kMaxCachedSamplers; ++i) {
+    cachedSamplerGpuHandles_[i] = {};
+  }
+  cachedSamplerCount_ = index + 1;
+  cachedSamplerGpuHandle_ =
+      (cachedSamplerCount_ > 0) ? cachedSamplerGpuHandles_[0] : D3D12_GPU_DESCRIPTOR_HANDLE{};
   IGL_LOG_INFO("bindSamplerState: cached sampler[%zu] GPU handle 0x%llx\n", index, cachedSamplerGpuHandles_[index].ptr);
 }
 void RenderCommandEncoder::bindTexture(size_t index,
@@ -696,25 +695,13 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
                resource, d3dTexture->getFormat(),
                d3dTexture->getDimensions().width, d3dTexture->getDimensions().height);
 
-  // Use descriptor heap manager (for headless contexts) or D3D12Context (for windowed)
-  auto* heapMgr = context.getDescriptorHeapManager();
-
   // Ensure resource is in PIXEL_SHADER_RESOURCE state for sampling
   d3dTexture->transitionAll(commandList_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-  // Check if texture already has a cached SRV descriptor
-  uint32_t descriptorIndex = d3dTexture->getCachedSRVDescriptorIndex();
-  bool needsDescriptorCreation = (descriptorIndex == UINT32_MAX);
-
-  if (needsDescriptorCreation) {
-    // First time binding this texture - allocate and cache descriptor
-    descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
-    d3dTexture->setCachedSRVDescriptorIndex(descriptorIndex);
-    IGL_LOG_INFO("bindTexture: allocated NEW descriptor slot %u for texture index t%zu (will be cached)\n", descriptorIndex, index);
-  } else {
-    // Reuse cached descriptor - no new allocation needed
-    IGL_LOG_INFO("bindTexture: reusing CACHED descriptor slot %u for texture index t%zu\n", descriptorIndex, index);
-  }
+  // Allocate descriptor from per-frame heap (descriptors are recreated each frame)
+  // CRITICAL: Do NOT cache descriptor indices globally - per-frame heaps reset counters to 0 each frame
+  uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
+  IGL_LOG_INFO("bindTexture: allocated descriptor slot %u for texture index t%zu\n", descriptorIndex, index);
 
   // Create SRV descriptor at the allocated slot
   D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -770,36 +757,33 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
     return;
   }
 
-  // Verify we're using the right heap
-  auto* heap = heapMgr->getCbvSrvUavHeap();
+  // Verify we're using the right heap - MUST use per-frame heap from constructor
+  auto* heap = cbvSrvUavHeap_;  // Use per-frame heap, NOT heapMgr->getCbvSrvUavHeap()
   D3D12_CPU_DESCRIPTOR_HANDLE heapStartCpu = heap->GetCPUDescriptorHandleForHeapStart();
   D3D12_GPU_DESCRIPTOR_HANDLE heapStartGpu = heap->GetGPUDescriptorHandleForHeapStart();
 
-  // Get descriptor handles: use heapMgr for headless, D3D12Context for windowed
-  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
-  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
-  if (heapMgr) {
-    cpuHandle = heapMgr->getCbvSrvUavCpuHandle(descriptorIndex);
-    gpuHandle = heapMgr->getCbvSrvUavGpuHandle(descriptorIndex);
-  } else {
-    cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
-    gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
-  }
+  // Get descriptor handles: ALWAYS use per-frame heaps from D3D12Context
+  // CRITICAL: Do NOT use heapMgr handles - they point to shared heap, not per-frame heap
+  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
+  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 
   IGL_LOG_INFO("bindTexture: heap=%p, heapStart CPU=0x%llx, GPU=0x%llx\n", heap, heapStartCpu.ptr, heapStartGpu.ptr);
 
-  // Only create descriptor if this is the first time binding (not cached)
-  if (needsDescriptorCreation) {
-    IGL_LOG_INFO("bindTexture: creating NEW SRV at slot %u, CPU handle 0x%llx\n", descriptorIndex, cpuHandle.ptr);
-    device->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
-  } else {
-    IGL_LOG_INFO("bindTexture: skipping SRV creation (using cached descriptor at slot %u)\n", descriptorIndex);
-  }
+  // Always create descriptor (per-frame heaps require recreation each frame)
+  IGL_LOG_INFO("bindTexture: creating SRV at slot %u, CPU handle 0x%llx\n", descriptorIndex, cpuHandle.ptr);
+  device->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
+  D3D12Context::trackResourceCreation("SRV", 0);
 
   // Cache texture GPU handle for this index - store in array indexed by texture unit
   cachedTextureGpuHandles_[index] = gpuHandle;
-  cachedTextureGpuHandle_ = cachedTextureGpuHandles_[0]; // Maintain backward compat with single-texture path
-  cachedTextureCount_ = std::max(cachedTextureCount_, index + 1);
+  constexpr size_t kMaxCachedTextures =
+      sizeof(cachedTextureGpuHandles_) / sizeof(cachedTextureGpuHandles_[0]);
+  for (size_t i = index + 1; i < kMaxCachedTextures; ++i) {
+    cachedTextureGpuHandles_[i] = {};
+  }
+  cachedTextureCount_ = index + 1;
+  cachedTextureGpuHandle_ =
+      (cachedTextureCount_ > 0) ? cachedTextureGpuHandles_[0] : D3D12_GPU_DESCRIPTOR_HANDLE{};
   IGL_LOG_INFO("bindTexture: cached texture[%zu] GPU handle 0x%llx (offset from heap start: %lld)\n",
                index, cachedTextureGpuHandles_[index].ptr,
                (int64_t)(cachedTextureGpuHandles_[index].ptr - heapStartGpu.ptr));
@@ -979,10 +963,8 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
 
     auto& context = commandBuffer_.getContext();
     auto* device = context.getDevice();
-    auto* heapMgr = context.getDescriptorHeapManager();
-
-    if (!device || !heapMgr) {
-      IGL_LOG_ERROR("bindBuffer: No device or descriptor heap manager for SRV creation\n");
+    if (!device || cbvSrvUavHeap_ == nullptr) {
+      IGL_LOG_ERROR("bindBuffer: Missing device or per-frame CBV/SRV/UAV heap\n");
       return;
     }
 
@@ -999,7 +981,8 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     srvDesc.Buffer.NumElements = static_cast<UINT>(buffer->getSizeInBytes() / 4);  // Size in 32-bit elements
     srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;  // Raw buffer access
 
-    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heapMgr->getCbvSrvUavCpuHandle(descriptorIndex);
+    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
     device->CreateShaderResourceView(d3dBuffer->getResource(), &srvDesc, cpuHandle);
 
     IGL_LOG_INFO("bindBuffer: Created SRV at descriptor slot %u (FirstElement=%llu, NumElements=%u)\n",
@@ -1007,10 +990,23 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
 
     // Cache GPU handle for descriptor table binding in draw calls
     // SRVs are bound to root parameter 3 (render root signature)
-    cachedTextureGpuHandles_[index] = heapMgr->getCbvSrvUavGpuHandle(descriptorIndex);
+    cachedTextureGpuHandles_[index] = gpuHandle;
     cachedTextureCount_ = std::max(cachedTextureCount_, static_cast<size_t>(index + 1));
 
     IGL_LOG_INFO("bindBuffer: Storage buffer SRV binding complete\n");
+
+    // CRITICAL: Track the Buffer OBJECT (not just resource) to keep it alive until GPU finishes
+    // This prevents the Buffer destructor from releasing the resource while GPU commands reference it
+    try {
+      std::shared_ptr<IBuffer> sharedBuffer = d3dBuffer->shared_from_this();
+      static_cast<CommandBuffer&>(commandBuffer_).trackTransientBuffer(std::move(sharedBuffer));
+      IGL_LOG_INFO("bindBuffer: Tracking Buffer object (shared_ptr) for lifetime management\n");
+    } catch (const std::bad_weak_ptr&) {
+      // Buffer not managed by shared_ptr (e.g., persistent buffer from member variable)
+      // Fall back to tracking just the resource (AddRef on ID3D12Resource)
+      static_cast<CommandBuffer&>(commandBuffer_).trackTransientResource(d3dBuffer->getResource());
+      IGL_LOG_INFO("bindBuffer: Buffer not shared_ptr-managed, tracking resource only\n");
+    }
   } else {
     // Constant buffer - use CBV binding (existing path)
     IGL_LOG_INFO("bindBuffer: Constant buffer at index %u\n", index);
@@ -1028,6 +1024,19 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     if (!commandList_) {
       IGL_LOG_ERROR("bindBuffer: commandList_ is NULL!\n");
       return;
+    }
+
+    // CRITICAL: Track the Buffer OBJECT (not just resource) to keep it alive until GPU finishes
+    // This prevents the Buffer destructor from releasing the resource while GPU commands reference it
+    try {
+      std::shared_ptr<IBuffer> sharedBuffer = d3dBuffer->shared_from_this();
+      static_cast<CommandBuffer&>(commandBuffer_).trackTransientBuffer(std::move(sharedBuffer));
+      IGL_LOG_INFO("bindBuffer: Tracking Buffer object (shared_ptr) for lifetime management\n");
+    } catch (const std::bad_weak_ptr&) {
+      // Buffer not managed by shared_ptr (e.g., persistent buffer from member variable)
+      // Fall back to tracking just the resource (AddRef on ID3D12Resource)
+      static_cast<CommandBuffer&>(commandBuffer_).trackTransientResource(d3dBuffer->getResource());
+      IGL_LOG_INFO("bindBuffer: Buffer not shared_ptr-managed, tracking resource only\n");
     }
 
     // Cache CBV for draw calls (b0, b1)
@@ -1136,6 +1145,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
     const uint32_t dstIndex = srvBaseIndex + i;
     D3D12_CPU_DESCRIPTOR_HANDLE dstCpu = context.getCbvSrvUavCpuHandle(dstIndex);
     d3dDevice->CreateShaderResourceView(tex->getResource(), &srvDesc, dstCpu);
+    D3D12Context::trackResourceCreation("SRV", 0);
   }
 
   // Create samplers into the allocated sampler slice
@@ -1144,6 +1154,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
     D3D12_SAMPLER_DESC samplerDesc = smp ? smp->getDesc() : D3D12_SAMPLER_DESC{};
     D3D12_CPU_DESCRIPTOR_HANDLE dstCpu = context.getSamplerCpuHandle(smpBaseIndex + i);
     d3dDevice->CreateSampler(&samplerDesc, dstCpu);
+    D3D12Context::trackResourceCreation("Sampler", 0);
   }
 
   // Cache base GPU handles so draw() binds once per table

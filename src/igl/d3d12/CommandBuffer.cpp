@@ -87,6 +87,20 @@ void CommandBuffer::trackTransientBuffer(std::shared_ptr<IBuffer> buffer) {
                frameIdx, ctx.getFrameContexts()[frameIdx].transientBuffers.size());
 }
 
+void CommandBuffer::trackTransientResource(ID3D12Resource* resource) {
+  if (!resource) {
+    return;
+  }
+  auto& ctx = device_.getD3D12Context();
+  const uint32_t frameIdx = ctx.getCurrentFrameIndex();
+  Microsoft::WRL::ComPtr<ID3D12Resource> keepAlive;
+  resource->AddRef();
+  keepAlive.Attach(resource);
+  ctx.getFrameContexts()[frameIdx].transientResources.push_back(std::move(keepAlive));
+  IGL_LOG_INFO("CommandBuffer::trackTransientResource() - Added resource to frame %u (total=%zu)\n",
+               frameIdx, ctx.getFrameContexts()[frameIdx].transientResources.size());
+}
+
 void CommandBuffer::begin() {
   if (recording_) {
     return;
@@ -365,3 +379,4 @@ void CommandBuffer::copyTextureToBuffer(ITexture& /*source*/,
 }
 
 } // namespace igl::d3d12
+
