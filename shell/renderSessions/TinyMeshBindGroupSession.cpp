@@ -356,10 +356,13 @@ void TinyMeshBindGroupSession::initialize() noexcept {
                                          BufferDesc::BufferAPIHintBits::UniformBlock,
                                          "Buffer: uniforms (per frame)"),
                               nullptr));
+    // D3D12 requires 256-byte alignment for constant buffer views
+    // So we need 256 bytes per object, not just sizeof(UniformsPerObject)
+    constexpr size_t kAlignedSizePerObject = 256;
     ubPerObject_.push_back(
         device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
                                          perObject,
-                                         kNumCubes * sizeof(UniformsPerObject),
+                                         kNumCubes * kAlignedSizePerObject,
                                          ResourceStorage::Shared,
                                          BufferDesc::BufferAPIHintBits::UniformBlock,
                                          "Buffer: uniforms (per object)"),

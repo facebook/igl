@@ -837,33 +837,20 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
                                        uint32_t firstIndex,
                                        int32_t vertexOffset,
                                        uint32_t baseInstance) {
-  static int drawCallCount = 0;
-  if (drawCallCount < 3) {
-    IGL_LOG_INFO("DrawIndexed called: indexCount=%zu, instanceCount=%u\n", indexCount, instanceCount);
-    drawCallCount++;
-  }
-
   // D3D12 requires ALL root parameters to be bound before drawing
   // Bind cached constant buffers (use cached address which defaults to 0 for unbound parameters)
   commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[0]);
   commandList_->SetGraphicsRootConstantBufferView(2, cachedConstantBuffers_[1]);
-  IGL_LOG_INFO("DrawIndexed: bound CBVs - b0=0x%llx (bound=%d), b1=0x%llx (bound=%d)\n",
-               cachedConstantBuffers_[0], constantBufferBound_[0],
-               cachedConstantBuffers_[1], constantBufferBound_[1]);
 
   // Descriptor heaps already set in constructor - bind descriptor tables only
   // Texture SRV table starting at t0
   if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
     commandList_->SetGraphicsRootDescriptorTable(3, cachedTextureGpuHandles_[0]);
-    IGL_LOG_INFO("DrawIndexed: bound texture descriptor table at t0 (handle=0x%llx, count=%zu)\n",
-                 cachedTextureGpuHandles_[0].ptr, cachedTextureCount_);
   }
 
   // Sampler table starting at s0
   if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
     commandList_->SetGraphicsRootDescriptorTable(4, cachedSamplerGpuHandles_[0]);
-    IGL_LOG_INFO("DrawIndexed: bound sampler descriptor table at s0 (handle=0x%llx, count=%zu)\n",
-                 cachedSamplerGpuHandles_[0].ptr, cachedSamplerCount_);
   }
 
   // Apply cached vertex buffer bindings now that pipeline state is bound
@@ -875,11 +862,10 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
       vbView.BufferLocation = cachedVertexBuffers_[i].bufferLocation;
       vbView.SizeInBytes = cachedVertexBuffers_[i].sizeInBytes;
       vbView.StrideInBytes = stride;
-      IGL_LOG_INFO("DrawIndexed: VB[%u] = GPU 0x%llx, size=%u, stride=%u\n", i, vbView.BufferLocation, vbView.SizeInBytes, vbView.StrideInBytes);
       commandList_->IASetVertexBuffers(i, 1, &vbView);
     }
   }
-  
+
     // Apply cached index buffer binding
     if (cachedIndexBuffer_.bound) {
       D3D12_INDEX_BUFFER_VIEW ibView = {};
@@ -891,7 +877,6 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
 
     // Track per-command-buffer draw count; CommandQueue aggregates into device on submit
     commandBuffer_.incrementDrawCount();
-    IGL_LOG_INFO("DrawIndexed: CB drawCount now=%zu\n", commandBuffer_.getCurrentDrawCount());
 
     commandList_->DrawIndexedInstanced(static_cast<UINT>(indexCount),
                                        instanceCount,
