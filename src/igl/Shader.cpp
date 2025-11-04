@@ -180,7 +180,7 @@ IShaderLibrary::IShaderLibrary(std::vector<std::shared_ptr<IShaderModule>> modul
 
 std::shared_ptr<IShaderModule> IShaderLibrary::getShaderModule(const std::string& entryPoint) {
   for (const auto& sm : modules_) {
-    if (sm->info().entryPoint == entryPoint) {
+    if (sm && sm->info().entryPoint == entryPoint) {
       return sm;
     }
   }
@@ -190,9 +190,11 @@ std::shared_ptr<IShaderModule> IShaderLibrary::getShaderModule(const std::string
 std::shared_ptr<IShaderModule> IShaderLibrary::getShaderModule(ShaderStage stage,
                                                                const std::string& entryPoint) {
   for (const auto& sm : modules_) {
-    const auto& info = sm->info();
-    if (info.stage == stage && info.entryPoint == entryPoint) {
-      return sm;
+    if (sm) {
+      const auto& info = sm->info();
+      if (info.stage == stage && info.entryPoint == entryPoint) {
+        return sm;
+      }
     }
   }
   return nullptr;
