@@ -329,6 +329,9 @@ void TQSession::initialize() noexcept {
   commandQueue_ = device.createCommandQueue(desc, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 
+  // Generate mipmaps for texture
+  tex0_->generateMipmap(*commandQueue_);
+
   renderPass_.colorAttachments = {
       {
           .loadAction = LoadAction::Clear,
