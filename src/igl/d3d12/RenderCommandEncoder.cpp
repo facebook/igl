@@ -1198,6 +1198,9 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
     const bool isUniform = (buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0;
     const bool isStorage = (buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0;
 
+    // Track buffer resource to prevent it from being deleted while GPU address is cached
+    commandBuffer_.trackTransientResource(buf->getResource());
+
     size_t baseOffset = desc->offset[slot];
     if ((desc->isDynamicBufferMask & (1u << slot)) != 0) {
       if (dynIdx < numDynamicOffsets && dynamicOffsets) {
