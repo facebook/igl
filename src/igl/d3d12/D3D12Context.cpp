@@ -13,6 +13,10 @@
 
 namespace igl::d3d12 {
 
+// Static member initialization
+D3D12Context::ResourceStats D3D12Context::resourceStats_;
+std::mutex D3D12Context::resourceStatsMutex_;
+
 D3D12Context::~D3D12Context() {
   // Wait for GPU to finish before cleanup
   waitForGPU();
@@ -490,6 +494,50 @@ void D3D12Context::waitForGPU() {
     fence_->SetEventOnCompletion(fenceToWaitFor, fenceEvent_);
     WaitForSingleObject(fenceEvent_, INFINITE);
   }
+}
+
+void D3D12Context::trackResourceCreation(const char* type, size_t sizeBytes) {
+  std::lock_guard<std::mutex> lock(resourceStatsMutex_);
+  if (strcmp(type, "Buffer") == 0) {
+    resourceStats_.totalBuffersCreated++;
+    resourceStats_.bufferMemoryBytes += sizeBytes;
+  } else if (strcmp(type, "Texture") == 0) {
+    resourceStats_.totalTexturesCreated++;
+    resourceStats_.textureMemoryBytes += sizeBytes;
+  } else if (strcmp(type, "SRV") == 0) {
+    resourceStats_.totalSRVsCreated++;
+  } else if (strcmp(type, "Sampler") == 0) {
+    resourceStats_.totalSamplersCreated++;
+  }
+}
+
+void D3D12Context::trackResourceDestruction(const char* type, size_t sizeBytes) {
+  std::lock_guard<std::mutex> lock(resourceStatsMutex_);
+  if (strcmp(type, "Buffer") == 0) {
+    resourceStats_.totalBuffersDestroyed++;
+    resourceStats_.bufferMemoryBytes -= sizeBytes;
+  } else if (strcmp(type, "Texture") == 0) {
+    resourceStats_.totalTexturesDestroyed++;
+    resourceStats_.textureMemoryBytes -= sizeBytes;
+  }
+}
+
+void D3D12Context::logResourceStats() {
+  std::lock_guard<std::mutex> lock(resourceStatsMutex_);
+  IGL_LOG_INFO("=== D3D12 Resource Statistics ===\n");
+  IGL_LOG_INFO("  Buffers: %zu created, %zu destroyed (leaked: %zd)\n",
+               resourceStats_.totalBuffersCreated,
+               resourceStats_.totalBuffersDestroyed,
+               (int64_t)resourceStats_.totalBuffersCreated - (int64_t)resourceStats_.totalBuffersDestroyed);
+  IGL_LOG_INFO("  Textures: %zu created, %zu destroyed (leaked: %zd)\n",
+               resourceStats_.totalTexturesCreated,
+               resourceStats_.totalTexturesDestroyed,
+               (int64_t)resourceStats_.totalTexturesCreated - (int64_t)resourceStats_.totalTexturesDestroyed);
+  IGL_LOG_INFO("  SRVs created: %zu\n", resourceStats_.totalSRVsCreated);
+  IGL_LOG_INFO("  Samplers created: %zu\n", resourceStats_.totalSamplersCreated);
+  IGL_LOG_INFO("  Buffer memory: %.2f MB\n", resourceStats_.bufferMemoryBytes / (1024.0 * 1024.0));
+  IGL_LOG_INFO("  Texture memory: %.2f MB\n", resourceStats_.textureMemoryBytes / (1024.0 * 1024.0));
+  IGL_LOG_INFO("==================================\n");
 }
 
 } // namespace igl::d3d12

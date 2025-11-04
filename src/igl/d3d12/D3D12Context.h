@@ -10,6 +10,7 @@
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/D3D12Headers.h>
 #include <memory>
+#include <mutex>
 
 namespace igl {
 class IBuffer; // Forward declaration for igl::IBuffer
@@ -39,6 +40,7 @@ struct FrameContext {
   // CRITICAL: These are cleared when we advance to the next frame AFTER waiting for
   // this frame's fence, ensuring the GPU has finished reading them
   std::vector<std::shared_ptr<igl::IBuffer>> transientBuffers;
+  std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> transientResources;
 };
 
 class D3D12Context {
@@ -106,6 +108,11 @@ class D3D12Context {
   ID3D12Fence* getFence() const { return fence_.Get(); }
   HANDLE getFenceEvent() const { return fenceEvent_; }
 
+  // Resource tracking for diagnostics
+  static void trackResourceCreation(const char* type, size_t sizeBytes);
+  static void trackResourceDestruction(const char* type, size_t sizeBytes);
+  static void logResourceStats();
+
  protected:
   void createDevice();
   void createCommandQueue();
@@ -143,6 +150,20 @@ class D3D12Context {
 
   uint32_t width_ = 0;
   uint32_t height_ = 0;
+
+  // Resource tracking (static for global tracking across all contexts)
+  struct ResourceStats {
+    size_t totalBuffersCreated = 0;
+    size_t totalBuffersDestroyed = 0;
+    size_t totalTexturesCreated = 0;
+    size_t totalTexturesDestroyed = 0;
+    size_t totalSRVsCreated = 0;
+    size_t totalSamplersCreated = 0;
+    size_t bufferMemoryBytes = 0;
+    size_t textureMemoryBytes = 0;
+  };
+  static ResourceStats resourceStats_;
+  static std::mutex resourceStatsMutex_;
 };
 
 } // namespace igl::d3d12
