@@ -5,11 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <gtest/gtest.h>
+
 #include <igl/metal/HWDevice.h>
 
 #include "../util/TestDevice.h"
 
-#include <gtest/gtest.h>
 #include <memory>
 #include <igl/Assert.h>
 #include <igl/IGL.h>

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
+
 #include <igl/CommandQueue.h>
 #include <igl/NameHandle.h>
 #include <igl/RenderPass.h>

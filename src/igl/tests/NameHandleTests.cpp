@@ -6,6 +6,7 @@
  */
 
 #include <gtest/gtest.h>
+
 #include <set>
 #include <igl/NameHandle.h>
 

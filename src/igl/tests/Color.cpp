@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <gtest/gtest.h>
+
 #include "util/Color.h"
 
-#include <gtest/gtest.h>
 #include <igl/Color.h>
 
 namespace igl::tests {

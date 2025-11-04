@@ -5,11 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <gtest/gtest.h>
+
 #include "../data/ShaderData.h"
 #include "../data/VertexIndexData.h"
 #include "../util/Common.h"
 
-#include <gtest/gtest.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/SamplerState.h>
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX

@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <gtest/gtest.h>
+
 #include <igl/RenderCommandEncoder.h>
 
 #include "data/ShaderData.h"
@@ -13,7 +15,6 @@
 
 #include <cstddef>
 #include <functional>
-#include <gtest/gtest.h>
 #include <memory>
 #include <utility>
 #include <vector>

@@ -7,6 +7,8 @@
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
+#include <gtest/gtest.h>
+
 #include <igl/android/NativeHWBuffer.h>
 
 #include "../data/ShaderData.h"
@@ -17,7 +19,6 @@
 #include "../util/device/TestDevice.h"
 
 #include <android/hardware_buffer.h>
-#include <gtest/gtest.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/egl/PlatformDevice.h>
 #include <igl/vulkan/Device.h>

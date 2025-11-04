@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <gtest/gtest.h>
+
 #include <igl/opengl/Version.h>
 
-#include <gtest/gtest.h>
 #include <igl/opengl/Config.h>
 
 namespace igl::tests {

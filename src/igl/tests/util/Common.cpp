@@ -5,12 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <gtest/gtest.h>
+
 #include "Common.h"
 
 #include "../data/ShaderData.h"
 #include "TestDevice.h"
 
-#include <gtest/gtest.h>
 #include <igl/ShaderCreator.h>
 
 namespace igl::tests::util {

@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/metal/SamplerState.h>
-
 #include <gtest/gtest.h>
+
+#include <igl/metal/SamplerState.h>
 
 namespace igl::tests {
 

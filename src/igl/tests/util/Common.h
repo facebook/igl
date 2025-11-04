@@ -8,6 +8,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
+
 #include <string_view>
 #include <igl/Device.h>
 

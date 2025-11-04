@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <gtest/gtest.h>
+
 #include <igl/vulkan/VulkanImage.h>
 
 #include <cstddef>
-#include <gtest/gtest.h>
 #include <memory>
 #include <igl/Common.h>
 #include <igl/tests/util/device/TestDevice.h>

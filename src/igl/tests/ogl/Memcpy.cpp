@@ -6,6 +6,7 @@
  */
 
 #include <gtest/gtest.h>
+
 #include <igl/Common.h>
 
 namespace igl::tests {

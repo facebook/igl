@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include <glm/glm.hpp>
 #include <gtest/gtest.h>
+
+#include <glm/glm.hpp>
 #include <igl/CommandBuffer.h>
 #include <igl/Common.h>
 

@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "TestErrorGuard.h"
-
 #include <gtest/gtest.h>
+
+#include "TestErrorGuard.h"
 
 igl::tests::util::TestErrorGuard::TestErrorGuard() {
 #if IGL_SOFT_ERROR_ENABLED

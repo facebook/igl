@@ -5,12 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <gtest/gtest.h>
+
 #include <igl/metal/RenderPipelineReflection.h>
 
 #include "../data/ShaderData.h"
 #include "../util/Common.h"
 
-#include <gtest/gtest.h>
 #include <igl/Device.h>
 #include <igl/IGL.h>
 #include <igl/metal/Shader.h>

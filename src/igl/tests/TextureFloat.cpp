@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <gtest/gtest.h>
+
 #include "data/ShaderData.h"
 #include "data/VertexIndexData.h"
 #include "util/Color.h"
@@ -15,7 +17,6 @@
 #include <array>
 #include <cstring>
 #include <glm/gtc/color_space.hpp>
-#include <gtest/gtest.h>
 #include <string>
 #include <igl/NameHandle.h>
 

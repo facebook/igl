@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/vulkan/util/SpvConstantSpecialization.h>
-
 #include <gtest/gtest.h>
+
+#include <igl/vulkan/util/SpvConstantSpecialization.h>
 
 namespace igl::tests {
 // GLSL:

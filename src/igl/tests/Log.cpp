@@ -6,6 +6,7 @@
  */
 
 #include <gtest/gtest.h>
+
 #include <random>
 #include <string>
 #include <thread>

@@ -5,13 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <gtest/gtest.h>
+
 #include "data/ShaderData.h"
 #include "data/VertexIndexData.h"
 #include "util/Common.h"
 
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 #include <glm/glm.hpp>
-#include <gtest/gtest.h>
 #include <string>
 
 namespace igl::tests {

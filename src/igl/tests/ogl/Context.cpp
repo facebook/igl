@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <gtest/gtest.h>
+
 #include "../util/TestDevice.h"
 
-#include <gtest/gtest.h>
 #include <igl/Common.h>
 #include <igl/DeviceFeatures.h>
 #include <igl/Texture.h>

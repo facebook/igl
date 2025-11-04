@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include <IGLU/uniform/Descriptor.h>
 #include <gtest/gtest.h>
+
+#include <IGLU/uniform/Descriptor.h>
 #include <string>
 #include <igl/Shader.h>
 

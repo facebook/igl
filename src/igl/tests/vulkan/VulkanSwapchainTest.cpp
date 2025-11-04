@@ -8,8 +8,9 @@
 #include <igl/vulkan/Common.h>
 
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
-#include <cstddef>
 #include <gtest/gtest.h>
+
+#include <cstddef>
 #include <memory>
 #include <igl/tests/util/device/vulkan/TestDevice.h> // IWYU pragma: export
 #include <igl/vulkan/Device.h>

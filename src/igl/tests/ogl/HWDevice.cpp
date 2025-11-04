@@ -6,6 +6,7 @@
  */
 
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <igl/Common.h>
 #include <igl/Device.h>

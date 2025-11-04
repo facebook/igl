@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <cstddef>
 #include <gtest/gtest.h>
+
+#include <cstddef>
 #include <string>
 #include <igl/Common.h>
 #include <igl/Texture.h>

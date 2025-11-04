@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <gtest/gtest.h>
+
 #include <IGLU/texture_loader/ktx2/Header.h>
 #include <IGLU/texture_loader/ktx2/TextureLoaderFactory.h>
 #include <cstring>
-#include <gtest/gtest.h>
 #include <numeric>
 #include <vector>
 #include <igl/vulkan/util/TextureFormat.h>

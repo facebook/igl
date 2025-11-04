@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <gtest/gtest.h>
+
 #include <igl/Common.h>
 
-#include <gtest/gtest.h>
 #include <igl/CommandEncoder.h>
 
 namespace igl::tests {

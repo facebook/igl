@@ -5,11 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <gtest/gtest.h>
+
 #include <igl/opengl/TextureTarget.h>
 
 #include "../util/TestDevice.h"
 
-#include <gtest/gtest.h>
 #include <string>
 #include <igl/opengl/Device.h>
 

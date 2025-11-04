@@ -6,6 +6,7 @@
  */
 
 #include <gtest/gtest.h>
+
 #include <igl/vulkan/Common.h>
 
 namespace igl::vulkan::tests {

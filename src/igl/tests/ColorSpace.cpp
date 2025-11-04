@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/ColorSpace.h>
-
 #include <gtest/gtest.h>
+
+#include <igl/ColorSpace.h>
 
 namespace igl::tests {
 

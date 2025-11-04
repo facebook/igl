@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <gtest/gtest.h>
+
 #include <igl/vulkan/util/SpvReflection.h>
 
 #include "../util/SpvModules.h"
-
-#include <gtest/gtest.h>
 
 namespace igl::tests {
 

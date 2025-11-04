@@ -11,6 +11,8 @@
 #define GLM_FORCE_XYZW_ONLY 1
 #endif
 
+#include <gtest/gtest.h>
+
 #include "data/ShaderData.h"
 #include "data/VertexIndexData.h"
 #include "util/Color.h"
@@ -22,7 +24,6 @@
 #include <array>
 #include <cstring>
 #include <glm/gtc/color_space.hpp>
-#include <gtest/gtest.h>
 #include <string>
 #include <igl/NameHandle.h>
 
