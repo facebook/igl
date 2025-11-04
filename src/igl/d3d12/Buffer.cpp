@@ -56,6 +56,9 @@ Buffer::Buffer(Device& device,
     if (storage_ != ResourceStorage::Private) {
       currentState_ = D3D12_RESOURCE_STATE_GENERIC_READ;
     }
+
+    // Track resource creation
+    D3D12Context::trackResourceCreation("Buffer", desc_.length);
   }
 }
 
@@ -64,6 +67,9 @@ Buffer::~Buffer() {
   if (resource_.Get()) {
     resource_.Get()->AddRef();
     refCount = resource_.Get()->Release();  // Returns count AFTER the Release
+
+    // Track resource destruction
+    D3D12Context::trackResourceDestruction("Buffer", desc_.length);
   }
   IGL_LOG_INFO("Buffer::~Buffer() - Destroying buffer, resource_=%p, final_refCount_before_ComPtr_dtor=%lu\n", resource_.Get(), refCount);
   if (mappedPtr_) {
