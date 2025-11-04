@@ -10,8 +10,106 @@
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/Common.h>
 #include <stdexcept>
+#include <d3d12sdklayers.h>
 
 namespace igl::d3d12 {
+
+namespace {
+void logInfoQueueMessages(ID3D12Device* device) {
+  Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
+  if (FAILED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
+    return;
+  }
+
+  UINT64 numMessages = infoQueue->GetNumStoredMessages();
+  IGL_LOG_INFO("D3D12 Info Queue has %llu messages:\n", numMessages);
+  for (UINT64 i = 0; i < numMessages; ++i) {
+    SIZE_T messageLength = 0;
+    infoQueue->GetMessage(i, nullptr, &messageLength);
+    if (messageLength == 0) {
+      continue;
+    }
+    auto* message = static_cast<D3D12_MESSAGE*>(malloc(messageLength));
+    if (message && SUCCEEDED(infoQueue->GetMessage(i, message, &messageLength))) {
+      const char* severityStr = "UNKNOWN";
+      switch (message->Severity) {
+        case D3D12_MESSAGE_SEVERITY_CORRUPTION: severityStr = "CORRUPTION"; break;
+        case D3D12_MESSAGE_SEVERITY_ERROR: severityStr = "ERROR"; break;
+        case D3D12_MESSAGE_SEVERITY_WARNING: severityStr = "WARNING"; break;
+        case D3D12_MESSAGE_SEVERITY_INFO: severityStr = "INFO"; break;
+        case D3D12_MESSAGE_SEVERITY_MESSAGE: severityStr = "MESSAGE"; break;
+      }
+      IGL_LOG_INFO("  [%s] %s\n", severityStr, message->pDescription);
+    }
+    free(message);
+  }
+}
+
+void logDredInfo(ID3D12Device* device) {
+#if defined(__ID3D12DeviceRemovedExtendedData1_INTERFACE_DEFINED__)
+  Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedData1> dred;
+  if (FAILED(device->QueryInterface(IID_PPV_ARGS(dred.GetAddressOf())))) {
+    IGL_LOG_INFO("DRED: ID3D12DeviceRemovedExtendedData1 not available.\n");
+    return;
+  }
+
+  D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 breadcrumbs = {};
+  if (SUCCEEDED(dred->GetAutoBreadcrumbsOutput1(&breadcrumbs)) && breadcrumbs.pHeadAutoBreadcrumbNode) {
+    IGL_LOG_ERROR("DRED AutoBreadcrumbs (most recent first):\n");
+    const D3D12_AUTO_BREADCRUMB_NODE1* node = breadcrumbs.pHeadAutoBreadcrumbNode;
+    uint32_t nodeIndex = 0;
+    constexpr uint32_t kMaxNodesToPrint = 16;
+    while (node && nodeIndex < kMaxNodesToPrint) {
+      const char* listName = node->pCommandListDebugNameA ? node->pCommandListDebugNameA : "<unnamed>";
+      const char* queueName = node->pCommandQueueDebugNameA ? node->pCommandQueueDebugNameA : "<unnamed>";
+      IGL_LOG_ERROR("  Node #%u: CommandList=%p (%s) CommandQueue=%p (%s) Breadcrumbs=%u completed=%u\n",
+                    nodeIndex,
+                    node->pCommandList,
+                    listName,
+                    node->pCommandQueue,
+                    queueName,
+                    node->BreadcrumbCount,
+                    node->pLastBreadcrumbValue ? *node->pLastBreadcrumbValue : 0);
+      if (node->pCommandHistory && node->BreadcrumbCount > 0) {
+        D3D12_AUTO_BREADCRUMB_OP lastOp = node->pCommandHistory[node->BreadcrumbCount - 1];
+        IGL_LOG_ERROR("    Last command: %d (history count=%u)\n", static_cast<int>(lastOp), node->BreadcrumbCount);
+      }
+      node = node->pNext;
+      ++nodeIndex;
+    }
+    if (node) {
+      IGL_LOG_ERROR("  ... additional breadcrumbs omitted ...\n");
+    }
+  } else {
+    IGL_LOG_INFO("DRED: No auto breadcrumbs captured.\n");
+  }
+
+  D3D12_DRED_PAGE_FAULT_OUTPUT1 pageFault = {};
+  if (SUCCEEDED(dred->GetPageFaultAllocationOutput1(&pageFault)) && pageFault.PageFaultVA != 0) {
+    IGL_LOG_ERROR("DRED PageFault: VA=0x%016llx\n", pageFault.PageFaultVA);
+    if (pageFault.pHeadExistingAllocationNode) {
+      const auto* alloc = pageFault.pHeadExistingAllocationNode;
+      IGL_LOG_ERROR("  Existing allocation: Object=%p Name=%s Type=%u\n",
+                    alloc->pObject,
+                    alloc->ObjectNameA ? alloc->ObjectNameA : "<unnamed>",
+                    static_cast<unsigned>(alloc->AllocationType));
+    }
+    if (pageFault.pHeadRecentFreedAllocationNode) {
+      const auto* freed = pageFault.pHeadRecentFreedAllocationNode;
+      IGL_LOG_ERROR("  Recently freed allocation: Object=%p Name=%s Type=%u\n",
+                    freed->pObject,
+                    freed->ObjectNameA ? freed->ObjectNameA : "<unnamed>",
+                    static_cast<unsigned>(freed->AllocationType));
+    }
+  } else {
+    IGL_LOG_INFO("DRED: No page fault data available.\n");
+  }
+#else
+  (void)device;
+  IGL_LOG_INFO("DRED: Extended data interfaces not available on this SDK.\n");
+#endif
+}
+} // namespace
 
 CommandQueue::CommandQueue(Device& device) : device_(device) {}
 
@@ -43,33 +141,8 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   HRESULT hr = d3dDevice->GetDeviceRemovedReason();
   if (FAILED(hr)) {
     IGL_LOG_ERROR("DEVICE REMOVED! Reason: 0x%08X\n", static_cast<unsigned>(hr));
-
-    // Print debug layer messages
-    Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
-    if (SUCCEEDED(d3dDevice->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
-      UINT64 numMessages = infoQueue->GetNumStoredMessages();
-      IGL_LOG_INFO("D3D12 Info Queue has %llu messages:\n", numMessages);
-      for (UINT64 i = 0; i < numMessages; ++i) {
-        SIZE_T messageLength = 0;
-        infoQueue->GetMessage(i, nullptr, &messageLength);
-        if (messageLength > 0) {
-          auto message = (D3D12_MESSAGE*)malloc(messageLength);
-          if (message && SUCCEEDED(infoQueue->GetMessage(i, message, &messageLength))) {
-            const char* severityStr = "UNKNOWN";
-            switch (message->Severity) {
-              case D3D12_MESSAGE_SEVERITY_CORRUPTION: severityStr = "CORRUPTION"; break;
-              case D3D12_MESSAGE_SEVERITY_ERROR: severityStr = "ERROR"; break;
-              case D3D12_MESSAGE_SEVERITY_WARNING: severityStr = "WARNING"; break;
-              case D3D12_MESSAGE_SEVERITY_INFO: severityStr = "INFO"; break;
-              case D3D12_MESSAGE_SEVERITY_MESSAGE: severityStr = "MESSAGE"; break;
-            }
-            IGL_LOG_INFO("  [%s] %s\n", severityStr, message->pDescription);
-          }
-          free(message);
-        }
-      }
-    }
-
+    logInfoQueueMessages(d3dDevice);
+    logDredInfo(d3dDevice);
     throw std::runtime_error("D3D12 device removed - check debug output above");
   }
 
@@ -97,6 +170,8 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
       HRESULT deviceStatus = d3dDevice->GetDeviceRemovedReason();
       if (FAILED(deviceStatus)) {
         IGL_LOG_ERROR("DEVICE REMOVED during Present! Reason: 0x%08X\n", static_cast<unsigned>(deviceStatus));
+        logInfoQueueMessages(d3dDevice);
+        logDredInfo(d3dDevice);
         throw std::runtime_error("D3D12 device removed during Present");
       }
     } else {
@@ -108,33 +183,8 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
     HRESULT postPresentStatus = d3dDevice->GetDeviceRemovedReason();
     if (FAILED(postPresentStatus)) {
       IGL_LOG_ERROR("DEVICE REMOVED after Present! Reason: 0x%08X\n", static_cast<unsigned>(postPresentStatus));
-
-      // Print debug layer messages
-      Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
-      if (SUCCEEDED(d3dDevice->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
-        UINT64 numMessages = infoQueue->GetNumStoredMessages();
-        IGL_LOG_INFO("D3D12 Info Queue has %llu messages:\n", numMessages);
-        for (UINT64 i = 0; i < numMessages; ++i) {
-          SIZE_T messageLength = 0;
-          infoQueue->GetMessage(i, nullptr, &messageLength);
-          if (messageLength > 0) {
-            auto message = (D3D12_MESSAGE*)malloc(messageLength);
-            if (message && SUCCEEDED(infoQueue->GetMessage(i, message, &messageLength))) {
-              const char* severityStr = "UNKNOWN";
-              switch (message->Severity) {
-                case D3D12_MESSAGE_SEVERITY_CORRUPTION: severityStr = "CORRUPTION"; break;
-                case D3D12_MESSAGE_SEVERITY_ERROR: severityStr = "ERROR"; break;
-                case D3D12_MESSAGE_SEVERITY_WARNING: severityStr = "WARNING"; break;
-                case D3D12_MESSAGE_SEVERITY_INFO: severityStr = "INFO"; break;
-                case D3D12_MESSAGE_SEVERITY_MESSAGE: severityStr = "MESSAGE"; break;
-              }
-              IGL_LOG_INFO("  [%s] %s\n", severityStr, message->pDescription);
-            }
-            free(message);
-          }
-        }
-      }
-
+      logInfoQueueMessages(d3dDevice);
+      logDredInfo(d3dDevice);
       throw std::runtime_error("D3D12 device removed after Present - check debug output above");
     }
   }
@@ -269,10 +319,16 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
 
     // CRITICAL: Clear transient buffers from the frame we just waited for
     // The GPU has finished executing that frame, so these resources can now be released
-    if (!ctx.getFrameContexts()[nextFrameIndex].transientBuffers.empty()) {
+    auto& frameCtx = ctx.getFrameContexts()[nextFrameIndex];
+    if (!frameCtx.transientBuffers.empty()) {
       IGL_LOG_INFO("CommandQueue::submit() - Clearing %zu transient buffers from frame %u\n",
-                   ctx.getFrameContexts()[nextFrameIndex].transientBuffers.size(), nextFrameIndex);
-      ctx.getFrameContexts()[nextFrameIndex].transientBuffers.clear();
+                   frameCtx.transientBuffers.size(), nextFrameIndex);
+      frameCtx.transientBuffers.clear();
+    }
+    if (!frameCtx.transientResources.empty()) {
+      IGL_LOG_INFO("CommandQueue::submit() - Releasing %zu transient D3D resources from frame %u\n",
+                   frameCtx.transientResources.size(), nextFrameIndex);
+      frameCtx.transientResources.clear();
     }
 
     // Reset descriptor allocation counters for the new frame
@@ -290,6 +346,15 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   IGL_LOG_INFO("CommandQueue::submit() - Aggregating %zu draws from CB into device\n", cbDraws);
   device_.incrementDrawCount(cbDraws);
   IGL_LOG_INFO("CommandQueue::submit() - Device drawCount now=%zu\n", device_.getCurrentDrawCount());
+
+  // Log resource stats every 30 draws to track leaks
+  const size_t drawCount = device_.getCurrentDrawCount();
+  if (drawCount == 30 || drawCount == 60 || drawCount == 90 || drawCount == 120 ||
+      drawCount == 150 || drawCount == 300 || drawCount == 600 || drawCount == 900 ||
+      drawCount == 1200 || drawCount == 1500 || drawCount == 1800) {
+    IGL_LOG_INFO("CommandQueue::submit() - Logging resource stats at drawCount=%zu\n", drawCount);
+    D3D12Context::logResourceStats();
+  }
 
   return 0;
 }
