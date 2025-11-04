@@ -92,6 +92,11 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   uint32_t dsvIndex_ = UINT32_MAX;
   D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle_{};
 
+  // Per-frame descriptor heaps (set in constructor from D3D12Context)
+  // CRITICAL: These MUST be per-frame isolated heaps, NOT shared DescriptorHeapManager heaps
+  ID3D12DescriptorHeap* cbvSrvUavHeap_ = nullptr;
+  ID3D12DescriptorHeap* samplerHeap_ = nullptr;
+
   // Cached descriptor table GPU handles
   // These are set by bindTexture/bindSamplerState and used in drawIndexed
   // to avoid invalidation by multiple SetDescriptorHeaps calls

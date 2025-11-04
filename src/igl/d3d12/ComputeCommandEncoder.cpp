@@ -22,19 +22,18 @@ ComputeCommandEncoder::ComputeCommandEncoder(CommandBuffer& commandBuffer) :
 
   // Set descriptor heaps for this command list
   auto& context = commandBuffer_.getContext();
-  DescriptorHeapManager* heapMgr = context.getDescriptorHeapManager();
-  ID3D12DescriptorHeap* cbvSrvUavHeap = nullptr;
-  ID3D12DescriptorHeap* samplerHeap = nullptr;
+  ID3D12DescriptorHeap* cbvSrvUavHeap = context.getCbvSrvUavHeap();
+  ID3D12DescriptorHeap* samplerHeap = context.getSamplerHeap();
 
-  if (heapMgr) {
-    cbvSrvUavHeap = heapMgr->getCbvSrvUavHeap();
-    samplerHeap = heapMgr->getSamplerHeap();
-  }
-
-  // Fallback if manager present but heaps not available
-  if (!cbvSrvUavHeap || !samplerHeap) {
-    cbvSrvUavHeap = context.getCbvSrvUavHeap();
-    samplerHeap = context.getSamplerHeap();
+  // Legacy fallback: if the context does not provide per-frame heaps, try the manager once
+  if ((!cbvSrvUavHeap || !samplerHeap) && context.getDescriptorHeapManager()) {
+    auto* heapMgr = context.getDescriptorHeapManager();
+    if (!cbvSrvUavHeap) {
+      cbvSrvUavHeap = heapMgr->getCbvSrvUavHeap();
+    }
+    if (!samplerHeap) {
+      samplerHeap = heapMgr->getSamplerHeap();
+    }
   }
 
   if (cbvSrvUavHeap && samplerHeap) {
@@ -211,11 +210,10 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
 
   auto& context = commandBuffer_.getContext();
   auto* device = context.getDevice();
-  auto* heapMgr = context.getDescriptorHeapManager();
   auto* d3dTexture = static_cast<Texture*>(texture);
 
-  if (!heapMgr || !device || !d3dTexture->getResource()) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindTexture: missing resources\n");
+  if (!device || !d3dTexture->getResource() || context.getCbvSrvUavHeap() == nullptr) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindTexture: missing device, resource, or per-frame heap\n");
     return;
   }
 
@@ -227,7 +225,8 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
 
   // Allocate descriptor and create SRV
   const uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
-  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heapMgr->getCbvSrvUavCpuHandle(descriptorIndex);
+  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
+  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 
   // Create SRV descriptor
   D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -258,8 +257,11 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
 
   device->CreateShaderResourceView(d3dTexture->getResource(), &srvDesc, cpuHandle);
 
-  cachedSrvHandles_[index] = heapMgr->getCbvSrvUavGpuHandle(descriptorIndex);
-  boundSrvCount_ = std::max(boundSrvCount_, static_cast<size_t>(index + 1));
+  cachedSrvHandles_[index] = gpuHandle;
+  for (size_t i = index + 1; i < kMaxComputeTextures; ++i) {
+    cachedSrvHandles_[i] = {};
+  }
+  boundSrvCount_ = static_cast<size_t>(index + 1);
 
   IGL_LOG_INFO("ComputeCommandEncoder::bindTexture: Created SRV at index %u, descriptor slot %u\n",
                index, descriptorIndex);
@@ -274,10 +276,9 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
   auto* d3dBuffer = static_cast<Buffer*>(buffer);
   auto& context = commandBuffer_.getContext();
   auto* device = context.getDevice();
-  auto* heapMgr = context.getDescriptorHeapManager();
 
-  if (!heapMgr || !device) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindBuffer: no descriptor heap manager or device\n");
+  if (!device || context.getCbvSrvUavHeap() == nullptr) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindBuffer: missing device or per-frame descriptor heap\n");
     return;
   }
 
@@ -298,7 +299,8 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
     }
 
     const uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
-    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heapMgr->getCbvSrvUavCpuHandle(descriptorIndex);
+    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 
     // Create UAV descriptor for RWByteAddressBuffer (raw buffer)
     D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
@@ -312,11 +314,16 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
 
     device->CreateUnorderedAccessView(d3dBuffer->getResource(), nullptr, &uavDesc, cpuHandle);
 
-    cachedUavHandles_[index] = heapMgr->getCbvSrvUavGpuHandle(descriptorIndex);
-    boundUavCount_ = std::max(boundUavCount_, static_cast<size_t>(index + 1));
+    cachedUavHandles_[index] = gpuHandle;
+    for (size_t i = index + 1; i < kMaxComputeBuffers; ++i) {
+      cachedUavHandles_[i] = {};
+    }
+    boundUavCount_ = static_cast<size_t>(index + 1);
 
     IGL_LOG_INFO("ComputeCommandEncoder::bindBuffer: Created UAV at index %u, descriptor slot %u\n",
                  index, descriptorIndex);
+
+    commandBuffer_.trackTransientResource(d3dBuffer->getResource());
   } else if (isUniformBuffer) {
     // Uniform buffer - bind as CBV (constant buffer view)
     if (index >= kMaxComputeBuffers) {
@@ -333,10 +340,15 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
     }
 
     cachedCbvAddresses_[index] = d3dBuffer->gpuAddress(alignedOffset);
-    boundCbvCount_ = std::max(boundCbvCount_, static_cast<size_t>(index + 1));
+    for (size_t i = index + 1; i < kMaxComputeBuffers; ++i) {
+      cachedCbvAddresses_[i] = 0;
+    }
+    boundCbvCount_ = static_cast<size_t>(index + 1);
 
     IGL_LOG_INFO("ComputeCommandEncoder::bindBuffer: Cached CBV at index %u, address 0x%llx\n",
                  index, cachedCbvAddresses_[index]);
+
+    commandBuffer_.trackTransientResource(d3dBuffer->getResource());
   } else {
     IGL_LOG_ERROR("ComputeCommandEncoder::bindBuffer: Buffer must be Uniform or Storage type\n");
   }
@@ -368,11 +380,10 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, 
 
   auto& context = commandBuffer_.getContext();
   auto* device = context.getDevice();
-  auto* heapMgr = context.getDescriptorHeapManager();
   auto* d3dTexture = static_cast<Texture*>(texture);
 
-  if (!heapMgr || !device || !d3dTexture->getResource()) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindImageTexture: missing resources\n");
+  if (!device || !d3dTexture->getResource() || context.getCbvSrvUavHeap() == nullptr) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindImageTexture: missing device, resource, or per-frame heap\n");
     return;
   }
 
@@ -384,7 +395,8 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, 
 
   // Allocate descriptor and create UAV
   const uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
-  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heapMgr->getCbvSrvUavCpuHandle(descriptorIndex);
+  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
+  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 
   // Create UAV descriptor
   D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
@@ -415,8 +427,11 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, 
 
   device->CreateUnorderedAccessView(d3dTexture->getResource(), nullptr, &uavDesc, cpuHandle);
 
-  cachedUavHandles_[index] = heapMgr->getCbvSrvUavGpuHandle(descriptorIndex);
-  boundUavCount_ = std::max(boundUavCount_, static_cast<size_t>(index + 1));
+  cachedUavHandles_[index] = gpuHandle;
+  for (size_t i = index + 1; i < kMaxComputeBuffers; ++i) {
+    cachedUavHandles_[i] = {};
+  }
+  boundUavCount_ = static_cast<size_t>(index + 1);
 
   IGL_LOG_INFO("ComputeCommandEncoder::bindImageTexture: Created UAV at index %u, descriptor slot %u\n",
                index, descriptorIndex);
@@ -436,24 +451,27 @@ void ComputeCommandEncoder::bindSamplerState(uint32_t index, ISamplerState* samp
 
   auto& context = commandBuffer_.getContext();
   auto* device = context.getDevice();
-  auto* heapMgr = context.getDescriptorHeapManager();
   auto* d3dSampler = static_cast<SamplerState*>(samplerState);
 
-  if (!heapMgr || !device) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindSamplerState: missing resources\n");
+  if (!device || !d3dSampler || context.getSamplerHeap() == nullptr) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindSamplerState: missing device, sampler, or per-frame sampler heap\n");
     return;
   }
 
   // Allocate descriptor and create sampler
-  const uint32_t descriptorIndex = heapMgr->allocateSampler();
-  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heapMgr->getSamplerCpuHandle(descriptorIndex);
+  const uint32_t descriptorIndex = commandBuffer_.getNextSamplerDescriptor()++;
+  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getSamplerCpuHandle(descriptorIndex);
+  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getSamplerGpuHandle(descriptorIndex);
 
   // Get sampler desc from IGL sampler state and create D3D12 sampler
   const D3D12_SAMPLER_DESC& samplerDesc = d3dSampler->getDesc();
   device->CreateSampler(&samplerDesc, cpuHandle);
 
-  cachedSamplerHandles_[index] = heapMgr->getSamplerGpuHandle(descriptorIndex);
-  boundSamplerCount_ = std::max(boundSamplerCount_, static_cast<size_t>(index + 1));
+  cachedSamplerHandles_[index] = gpuHandle;
+  for (size_t i = index + 1; i < kMaxComputeSamplers; ++i) {
+    cachedSamplerHandles_[i] = {};
+  }
+  boundSamplerCount_ = static_cast<size_t>(index + 1);
 
   IGL_LOG_INFO("ComputeCommandEncoder::bindSamplerState: Created sampler at index %u, descriptor slot %u\n",
                index, descriptorIndex);
