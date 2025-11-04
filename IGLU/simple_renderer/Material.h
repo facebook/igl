@@ -107,10 +107,10 @@ class Material final {
   ~Material() = default;
 
  private:
-  std::shared_ptr<ShaderProgram> _shaderProgram;
-  std::unique_ptr<ShaderUniforms> _shaderUniforms;
-  std::shared_ptr<igl::IDepthStencilState> _depthState;
-  DepthTestConfig _depthTestConfig = DepthTestConfig::Disable;
+  std::shared_ptr<ShaderProgram> shaderProgram_;
+  std::unique_ptr<ShaderUniforms> shaderUniforms_;
+  std::shared_ptr<igl::IDepthStencilState> depthState_;
+  DepthTestConfig depthTestConfig_ = DepthTestConfig::Disable;
 };
 
 } // namespace iglu::material

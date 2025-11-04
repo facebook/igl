@@ -14,37 +14,37 @@
 namespace iglu::material {
 
 Material::Material(igl::IDevice& device, std::string name) : name(std::move(name)) {
-  setDepthTestConfig(device, _depthTestConfig);
+  setDepthTestConfig(device, depthTestConfig_);
 }
 
 std::shared_ptr<ShaderProgram> Material::shaderProgram() const {
-  return _shaderProgram;
+  return shaderProgram_;
 }
 
 void Material::setShaderProgram(igl::IDevice& device,
                                 const std::shared_ptr<ShaderProgram>& program) {
-  _shaderProgram = program;
-  _shaderUniforms =
-      std::make_unique<ShaderUniforms>(device, _shaderProgram->renderPipelineReflection());
+  shaderProgram_ = program;
+  shaderUniforms_ =
+      std::make_unique<ShaderUniforms>(device, shaderProgram_->renderPipelineReflection());
 }
 
 ShaderUniforms& Material::shaderUniforms() const {
-  return *_shaderUniforms;
+  return *shaderUniforms_;
 }
 
 DepthTestConfig Material::depthTestConfig() const {
-  return _depthTestConfig;
+  return depthTestConfig_;
 }
 
 void Material::setDepthTestConfig(igl::IDevice& device, const DepthTestConfig& config) {
-  _depthTestConfig = config;
+  depthTestConfig_ = config;
 
   igl::DepthStencilStateDesc depthDesc;
-  depthDesc.compareFunction = (_depthTestConfig != DepthTestConfig::Disable)
+  depthDesc.compareFunction = (depthTestConfig_ != DepthTestConfig::Disable)
                                   ? igl::CompareFunction::Less
                                   : igl::CompareFunction::AlwaysPass;
-  depthDesc.isDepthWriteEnabled = (_depthTestConfig == DepthTestConfig::Enable);
-  _depthState = device.createDepthStencilState(depthDesc, nullptr);
+  depthDesc.isDepthWriteEnabled = (depthTestConfig_ == DepthTestConfig::Enable);
+  depthState_ = device.createDepthStencilState(depthDesc, nullptr);
 }
 
 void Material::populatePipelineDescriptor(igl::RenderPipelineDesc& pipelineDesc) const {
@@ -66,14 +66,14 @@ void Material::populatePipelineDescriptor(igl::RenderPipelineDesc& pipelineDesc)
 
   pipelineDesc.cullMode = cullMode;
 
-  _shaderProgram->populatePipelineDescriptor(pipelineDesc);
+  shaderProgram_->populatePipelineDescriptor(pipelineDesc);
 }
 
 void Material::bind(igl::IDevice& device,
                     igl::IRenderPipelineState& pipelineState,
                     igl::IRenderCommandEncoder& commandEncoder) {
-  _shaderUniforms->bind(device, pipelineState, commandEncoder);
-  commandEncoder.bindDepthStencilState(_depthState);
+  shaderUniforms_->bind(device, pipelineState, commandEncoder);
+  commandEncoder.bindDepthStencilState(depthState_);
 }
 
 } // namespace iglu::material
