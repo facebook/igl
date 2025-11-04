@@ -683,8 +683,9 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStrip) {
 }
 
 TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStripCopyTextureToBuffer) {
-  if (iglDev_->getBackendType() != igl::BackendType::Vulkan) {
-    GTEST_SKIP() << "Not implemented for non-Vulkan backends";
+  if (iglDev_->getBackendType() != igl::BackendType::Vulkan &&
+      iglDev_->getBackendType() != igl::BackendType::D3D12) {
+    GTEST_SKIP() << "Not implemented for this backend";
     return;
   }
 

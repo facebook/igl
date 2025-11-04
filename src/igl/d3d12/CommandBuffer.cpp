@@ -10,6 +10,8 @@
 #include <igl/d3d12/RenderCommandEncoder.h>
 #include <igl/d3d12/ComputeCommandEncoder.h>
 #include <igl/d3d12/Buffer.h>
+#include <igl/d3d12/Texture.h>
+#include <igl/d3d12/Common.h>
 
 namespace igl::d3d12 {
 
@@ -370,12 +372,203 @@ void CommandBuffer::copyBuffer(IBuffer& source,
   ctx.waitForGPU();
 }
 
-void CommandBuffer::copyTextureToBuffer(ITexture& /*source*/,
-                                       IBuffer& /*destination*/,
-                                       uint64_t /*destinationOffset*/,
-                                       uint32_t /*mipLevel*/,
-                                       uint32_t /*layer*/) {
-  // Stub: Not yet implemented
+void CommandBuffer::copyTextureToBuffer(ITexture& source,
+                                       IBuffer& destination,
+                                       uint64_t destinationOffset,
+                                       uint32_t mipLevel,
+                                       uint32_t layer) {
+  auto* srcTex = static_cast<Texture*>(&source);
+  auto* dstBuf = static_cast<Buffer*>(&destination);
+
+  ID3D12Resource* srcRes = srcTex->getResource();
+  ID3D12Resource* dstRes = dstBuf->getResource();
+
+  if (!srcRes || !dstRes) {
+    IGL_LOG_ERROR("copyTextureToBuffer: Invalid source or destination resource\n");
+    return;
+  }
+
+  auto& ctx = getContext();
+  ID3D12Device* device = ctx.getDevice();
+  ID3D12CommandQueue* queue = ctx.getCommandQueue();
+
+  if (!device || !queue) {
+    IGL_LOG_ERROR("copyTextureToBuffer: Device or command queue is null\n");
+    return;
+  }
+
+  // Get texture description for GetCopyableFootprints
+  D3D12_RESOURCE_DESC srcDesc = srcRes->GetDesc();
+  DXGI_FORMAT dxgiFormat = textureFormatToDXGIFormat(srcTex->getFormat());
+
+  // Calculate subresource index
+  const uint32_t subresource = srcTex->calcSubresourceIndex(mipLevel, layer);
+
+  // Get copyable footprint for this subresource
+  D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout;
+  UINT numRows;
+  UINT64 rowSizeInBytes;
+  UINT64 totalBytes;
+
+  device->GetCopyableFootprints(&srcDesc,
+                                subresource,
+                                1,
+                                destinationOffset,
+                                &layout,
+                                &numRows,
+                                &rowSizeInBytes,
+                                &totalBytes);
+
+  // Calculate the unpacked texture data size (without D3D12 padding)
+  // rowSizeInBytes is the unpadded row size, so we can use it directly
+  const UINT64 unpackedDataSize = rowSizeInBytes * numRows * layout.Footprint.Depth;
+
+  // Check if destination buffer is large enough for the unpacked data
+  if (destinationOffset + unpackedDataSize > dstBuf->getSizeInBytes()) {
+    IGL_LOG_ERROR("copyTextureToBuffer: Destination buffer too small (need %llu, have %zu)\n",
+                  destinationOffset + unpackedDataSize, dstBuf->getSizeInBytes());
+    return;
+  }
+
+  // For UPLOAD/READBACK buffers, we need an intermediate READBACK buffer
+  // For DEFAULT buffers, we can copy directly
+  bool needsReadbackStaging = (dstBuf->storage() == ResourceStorage::Shared);
+
+  Microsoft::WRL::ComPtr<ID3D12Resource> readbackBuffer;
+  ID3D12Resource* copyDestination = dstRes;
+
+  if (needsReadbackStaging) {
+    // Create a READBACK buffer for staging
+    // The readback buffer needs to be large enough to hold the data at layout.Offset
+    D3D12_HEAP_PROPERTIES readbackHeap{};
+    readbackHeap.Type = D3D12_HEAP_TYPE_READBACK;
+
+    D3D12_RESOURCE_DESC readbackDesc{};
+    readbackDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    readbackDesc.Width = layout.Offset + totalBytes;  // Use layout.Offset, not destinationOffset
+    readbackDesc.Height = 1;
+    readbackDesc.DepthOrArraySize = 1;
+    readbackDesc.MipLevels = 1;
+    readbackDesc.Format = DXGI_FORMAT_UNKNOWN;
+    readbackDesc.SampleDesc.Count = 1;
+    readbackDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+    HRESULT hr = device->CreateCommittedResource(&readbackHeap,
+                                                  D3D12_HEAP_FLAG_NONE,
+                                                  &readbackDesc,
+                                                  D3D12_RESOURCE_STATE_COPY_DEST,
+                                                  nullptr,
+                                                  IID_PPV_ARGS(readbackBuffer.GetAddressOf()));
+    if (FAILED(hr)) {
+      IGL_LOG_ERROR("copyTextureToBuffer: Failed to create readback buffer, hr=0x%08X\n",
+                    static_cast<unsigned>(hr));
+      return;
+    }
+
+    copyDestination = readbackBuffer.Get();
+  }
+
+  // Create transient command list for the copy operation
+  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
+
+  if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                            IID_PPV_ARGS(allocator.GetAddressOf()))) ||
+      FAILED(device->CreateCommandList(0,
+                                       D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                       allocator.Get(),
+                                       nullptr,
+                                       IID_PPV_ARGS(cmdList.GetAddressOf())))) {
+    IGL_LOG_ERROR("copyTextureToBuffer: Failed to create command list\n");
+    return;
+  }
+
+  // Get current texture state
+  D3D12_RESOURCE_STATES srcStateBefore = srcTex->getSubresourceState(mipLevel, layer);
+
+  // Transition texture to COPY_SOURCE if needed
+  if (srcStateBefore != D3D12_RESOURCE_STATE_COPY_SOURCE) {
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = srcRes;
+    barrier.Transition.Subresource = subresource;
+    barrier.Transition.StateBefore = srcStateBefore;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+    cmdList->ResourceBarrier(1, &barrier);
+  }
+
+  // Setup source texture copy location
+  D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
+  srcLocation.pResource = srcRes;
+  srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+  srcLocation.SubresourceIndex = subresource;
+
+  // Setup destination buffer copy location
+  D3D12_TEXTURE_COPY_LOCATION dstLocation = {};
+  dstLocation.pResource = copyDestination;
+  dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+  dstLocation.PlacedFootprint = layout;
+
+  // Perform the copy
+  cmdList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
+
+  // Transition texture back to original state
+  if (srcStateBefore != D3D12_RESOURCE_STATE_COPY_SOURCE) {
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = srcRes;
+    barrier.Transition.Subresource = subresource;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+    barrier.Transition.StateAfter = srcStateBefore;
+    cmdList->ResourceBarrier(1, &barrier);
+  }
+
+  cmdList->Close();
+
+  // Execute the command list
+  ID3D12CommandList* lists[] = {cmdList.Get()};
+  queue->ExecuteCommandLists(1, lists);
+
+  // Wait for GPU to complete
+  ctx.waitForGPU();
+
+  // If we used a readback staging buffer, copy to the final UPLOAD destination
+  if (needsReadbackStaging) {
+    void* readbackData = nullptr;
+    // Map the readback buffer region containing the texture data
+    D3D12_RANGE readRange{static_cast<SIZE_T>(layout.Offset),
+                         static_cast<SIZE_T>(layout.Offset + totalBytes)};
+
+    if (SUCCEEDED(readbackBuffer->Map(0, &readRange, &readbackData)) && readbackData) {
+      // Map the destination UPLOAD buffer
+      Result mapResult;
+      void* dstData = dstBuf->map(BufferRange(unpackedDataSize, destinationOffset), &mapResult);
+
+      if (dstData && mapResult.isOk()) {
+        // Copy row-by-row, removing D3D12's row pitch padding
+        const uint8_t* src = static_cast<uint8_t*>(readbackData) + layout.Offset;
+        uint8_t* dst = static_cast<uint8_t*>(dstData);
+        const UINT64 srcRowPitch = layout.Footprint.RowPitch;
+        const UINT64 dstRowPitch = rowSizeInBytes;  // Unpadded row size
+
+        for (UINT z = 0; z < layout.Footprint.Depth; ++z) {
+          for (UINT row = 0; row < numRows; ++row) {
+            std::memcpy(dst, src, dstRowPitch);
+            src += srcRowPitch;
+            dst += dstRowPitch;
+          }
+        }
+
+        dstBuf->unmap();
+      } else {
+        IGL_LOG_ERROR("copyTextureToBuffer: Failed to map destination buffer\n");
+      }
+
+      readbackBuffer->Unmap(0, nullptr);
+    } else {
+      IGL_LOG_ERROR("copyTextureToBuffer: Failed to map readback buffer\n");
+    }
+  }
 }
 
 } // namespace igl::d3d12
