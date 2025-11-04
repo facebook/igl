@@ -11,24 +11,6 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-#if !defined(VK_QCOM_multiview_per_view_viewports)
-// this is copied from `vulkan_core.h`, just in case we compile using some old Vulkan headers
-// NOLINTBEGIN(modernize-use-using)
-// NOLINTBEGIN(readability-identifier-naming)
-#define VK_QCOM_multiview_per_view_viewports 1
-#define VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_SPEC_VERSION 1
-#define VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME "VK_QCOM_multiview_per_view_viewports"
-typedef struct VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM {
-  VkStructureType sType;
-  void* pNext;
-  VkBool32 multiviewPerViewViewports;
-} VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM;
-#define VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM \
-  (VkStructureType)1000488000
-// NOLINTEND(readability-identifier-naming)
-// NOLINTEND(modernize-use-using)
-#endif // VK_QCOM_multiview_per_view_viewports
-
 namespace igl::vulkan {
 
 class VulkanContext;
