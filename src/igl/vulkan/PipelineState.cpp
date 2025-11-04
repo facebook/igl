@@ -66,7 +66,11 @@ void PipelineState::initializeSpvModuleInfoFromShaderStages(const VulkanContext&
                     limits.maxPushConstantsSize);
     }
 
-    pushConstantRange_ = ivkGetPushConstantRange(pushConstantMask, 0, kPushConstantsSize);
+    pushConstantRange_ = VkPushConstantRange{
+        .stageFlags = pushConstantMask,
+        .offset = 0u,
+        .size = kPushConstantsSize,
+    };
   }
 }
 
