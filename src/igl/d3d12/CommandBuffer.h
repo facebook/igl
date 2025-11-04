@@ -63,6 +63,7 @@ class CommandBuffer final : public ICommandBuffer {
   // Track transient resources (e.g., push constants buffers) that need to be kept alive
   // until this FRAME completes GPU execution (not just until this command buffer is destroyed)
   void trackTransientBuffer(std::shared_ptr<IBuffer> buffer);
+  void trackTransientResource(ID3D12Resource* resource);
 
   // Descriptor allocation tracking - delegates to frame context to share across ALL command buffers
   uint32_t& getNextCbvSrvUavDescriptor();
