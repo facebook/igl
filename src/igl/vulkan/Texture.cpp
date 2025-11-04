@@ -112,7 +112,8 @@ Result Texture::create(const TextureDesc& desc) {
 
   IGL_DEBUG_ASSERT(usageFlags != 0, "Invalid usage flags");
 
-  const VkMemoryPropertyFlags memFlags = resourceStorageToVkMemoryPropertyFlags(desc_.storage);
+  const VkMemoryPropertyFlags memFlags =
+      resourceStorageToVkMemoryPropertyFlags(desc_.storage, &ctx.memoryProperties);
 
   const std::string debugNameImage =
       !desc_.debugName.empty() ? IGL_FORMAT("Image: {}", desc_.debugName.c_str()) : "";
