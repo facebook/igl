@@ -323,7 +323,13 @@ std::unique_ptr<IShaderStages> fromLibraryDesc(const IDevice& device,
   Result localResult;
   Result* result = outResult ? outResult : &localResult;
   IGL_DEBUG_ASSERT(result);
-  IGL_DEBUG_ASSERT(libraryDesc.moduleInfo.size() == 2);
+
+  if (!IGL_DEBUG_VERIFY(libraryDesc.moduleInfo.size() == 2)) {
+    Result::setResult(result,
+                      Result::Code::ArgumentInvalid,
+                      "Library descriptor must contain 2 module info entries");
+    return nullptr;
+  }
 
   auto library = device.createShaderLibrary(libraryDesc, result);
   if (result && !result->isOk()) {
