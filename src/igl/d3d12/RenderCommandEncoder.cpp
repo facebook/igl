@@ -785,16 +785,37 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t firstVertex,
                                 uint32_t baseInstance) {
   // D3D12 requires ALL root parameters to be bound before drawing
-  // Bind cached constant buffers (use cached address which defaults to 0 for unbound parameters)
-  commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[0]);
-  commandList_->SetGraphicsRootConstantBufferView(2, cachedConstantBuffers_[1]);
+  // Hybrid root signature layout:
+  // - Root parameter 0: Push constants at b2
+  // - Root parameter 1: Root CBV for b0 (legacy bindBuffer)
+  // - Root parameter 2: Root CBV for b1 (legacy bindBuffer)
+  // - Root parameter 3: CBV descriptor table for b3-b15 (bindBindGroup)
+  // - Root parameter 4: SRV descriptor table for t0-tN
+  // - Root parameter 5: Sampler descriptor table for s0-sN
 
-  // Descriptor heaps already set in constructor - bind descriptor tables only
+  // Bind root CBVs for b0 and b1 (legacy bindBuffer support)
+  if (constantBufferBound_[0]) {
+    commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[0]);  // Root param 1: b0
+    IGL_LOG_INFO("draw: binding root CBV for b0 (address 0x%llx)\n", cachedConstantBuffers_[0]);
+  }
+  if (constantBufferBound_[1]) {
+    commandList_->SetGraphicsRootConstantBufferView(2, cachedConstantBuffers_[1]);  // Root param 2: b1
+    IGL_LOG_INFO("draw: binding root CBV for b1 (address 0x%llx)\n", cachedConstantBuffers_[1]);
+  }
+
+  // Bind CBV descriptor table for b3-b15 (bindBindGroup support)
+  if (cbvTableCount_ > 0 && cachedCbvTableGpuHandles_[0].ptr != 0) {
+    commandList_->SetGraphicsRootDescriptorTable(3, cachedCbvTableGpuHandles_[0]);  // Root param 3: CBV table (b3-b15)
+    IGL_LOG_INFO("draw: binding CBV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
+                 cbvTableCount_, cachedCbvTableGpuHandles_[0].ptr);
+  }
+
+  // Bind SRV and sampler descriptor tables
   if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
-    commandList_->SetGraphicsRootDescriptorTable(3, cachedTextureGpuHandles_[0]);
+    commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
   }
   if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
-    commandList_->SetGraphicsRootDescriptorTable(4, cachedSamplerGpuHandles_[0]);
+    commandList_->SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0]);  // Root param 5: Sampler table
   }
 
   // Apply vertex buffers
@@ -826,19 +847,33 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
                                        int32_t vertexOffset,
                                        uint32_t baseInstance) {
   // D3D12 requires ALL root parameters to be bound before drawing
-  // Bind cached constant buffers (use cached address which defaults to 0 for unbound parameters)
-  commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[0]);
-  commandList_->SetGraphicsRootConstantBufferView(2, cachedConstantBuffers_[1]);
+  // Hybrid root signature layout:
+  // - Root parameter 0: Push constants at b2
+  // - Root parameter 1: Root CBV for b0 (legacy bindBuffer)
+  // - Root parameter 2: Root CBV for b1 (legacy bindBuffer)
+  // - Root parameter 3: CBV descriptor table for b3-b15 (bindBindGroup)
+  // - Root parameter 4: SRV descriptor table for t0-tN
+  // - Root parameter 5: Sampler descriptor table for s0-sN
 
-  // Descriptor heaps already set in constructor - bind descriptor tables only
-  // Texture SRV table starting at t0
-  if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
-    commandList_->SetGraphicsRootDescriptorTable(3, cachedTextureGpuHandles_[0]);
+  // Bind root CBVs for b0 and b1 (legacy bindBuffer support)
+  if (constantBufferBound_[0]) {
+    commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[0]);  // Root param 1: b0
+  }
+  if (constantBufferBound_[1]) {
+    commandList_->SetGraphicsRootConstantBufferView(2, cachedConstantBuffers_[1]);  // Root param 2: b1
   }
 
-  // Sampler table starting at s0
+  // Bind CBV descriptor table for b3-b15 (bindBindGroup support)
+  if (cbvTableCount_ > 0 && cachedCbvTableGpuHandles_[0].ptr != 0) {
+    commandList_->SetGraphicsRootDescriptorTable(3, cachedCbvTableGpuHandles_[0]);  // Root param 3: CBV table (b3-b15)
+  }
+
+  // Bind SRV and sampler descriptor tables
+  if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
+    commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
+  }
   if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
-    commandList_->SetGraphicsRootDescriptorTable(4, cachedSamplerGpuHandles_[0]);
+    commandList_->SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0]);  // Root param 5: Sampler table
   }
 
   // Apply cached vertex buffer bindings now that pipeline state is bound
@@ -1012,7 +1047,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
       IGL_LOG_INFO("bindBuffer: Buffer not shared_ptr-managed, tracking resource only\n");
     }
 
-    // Cache CBV for draw calls (b0, b1)
+    // Cache CBV for draw calls (b0, b1) - bind to root CBVs
     if (index <= 1) {
       cachedConstantBuffers_[index] = bufferAddress;
       constantBufferBound_[index] = true;
@@ -1165,7 +1200,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
   uint32_t dynIdx = 0;
 
   for (uint32_t slot = 0; slot < IGL_UNIFORM_BLOCKS_BINDING_MAX; ++slot) {
-    if (!desc->buffers[slot]) break; // dense
+    if (!desc->buffers[slot]) continue; // Skip empty slots
 
     auto* buf = static_cast<Buffer*>(desc->buffers[slot].get());
     const bool isUniform = (buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0;
@@ -1186,14 +1221,40 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
       const size_t aligned = (baseOffset + 255) & ~size_t(255);
       D3D12_GPU_VIRTUAL_ADDRESS addr = buf->gpuAddress(aligned);
 
-      if (slot == 0) {
-        cachedConstantBuffers_[0] = addr;
-        constantBufferBound_[0] = true;
-      } else if (slot == 1) {
-        cachedConstantBuffers_[1] = addr;
-        constantBufferBound_[1] = true;
+      // Map BindGroupBufferDesc slot index to descriptor table index
+      // BindGroupBufferDesc slots 0,1,2,... map to descriptor table b3,b4,b5,...
+      // This allows cross-platform bind group code to use indices starting from 0
+      const uint32_t tableIndex = slot;  // slot 0 -> b3, slot 1 -> b4, etc.
+
+      if (tableIndex < IGL_BUFFER_BINDINGS_MAX) {
+        // Allocate descriptor from per-frame heap
+        uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
+
+        // Get context and device
+        auto& context = commandBuffer_.getContext();
+        auto* device = context.getDevice();
+
+        // Get CPU/GPU descriptor handles for this slot
+        D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
+        D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
+
+        // Create CBV descriptor
+        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+        cbvDesc.BufferLocation = addr;
+        cbvDesc.SizeInBytes = static_cast<UINT>((buf->getSizeInBytes() + 255) & ~255);  // Must be 256-byte aligned
+
+        device->CreateConstantBufferView(&cbvDesc, cpuHandle);
+
+        // Cache the GPU handle for the descriptor table
+        // BindGroupBufferDesc index 0 -> table index 0 (b3), index 1 -> table index 1 (b4), etc.
+        cachedCbvTableGpuHandles_[tableIndex] = gpuHandle;
+        cbvTableBound_[tableIndex] = true;
+        cbvTableCount_ = std::max(cbvTableCount_, static_cast<size_t>(tableIndex + 1));
+
+        IGL_LOG_INFO("bindBindGroup(buffer): bound uniform buffer at BindGroupBufferDesc[%u] to b%u (descriptor table index %u, GPU handle 0x%llx)\n",
+                     slot, slot + 3, tableIndex, gpuHandle.ptr);
       } else {
-        IGL_LOG_INFO("bindBindGroup(buffer): additional uniform buffer at slot %u not bound (RS lacks CBV table)\n", slot);
+        IGL_LOG_ERROR("bindBindGroup(buffer): BindGroupBufferDesc slot %u exceeds maximum (%u)\n", slot, IGL_BUFFER_BINDINGS_MAX);
       }
     } else if (isStorage) {
       // For now, storage buffers are not table-bound in bind-group path due to RS layout.
