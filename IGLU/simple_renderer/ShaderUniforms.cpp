@@ -822,12 +822,13 @@ void ShaderUniforms::bindUniformOpenGL(const igl::NameHandle& uniformName,
                                        const igl::IRenderPipelineState& pipelineState,
                                        igl::IRenderCommandEncoder& encoder) {
   const igl::BufferArgDesc::BufferMemberDesc& iglMemberDesc = uniformDesc.iglMemberDesc;
-  igl::UniformDesc desc;
-  desc.location = pipelineState.getIndexByName(uniformName, igl::ShaderStage::Fragment);
-  desc.type = iglMemberDesc.type;
-  desc.offset = iglMemberDesc.offset;
-  desc.numElements = iglMemberDesc.arrayLength;
-  desc.elementStride = igl::sizeForUniformType(iglMemberDesc.type);
+  igl::UniformDesc desc{
+      .location = pipelineState.getIndexByName(uniformName, igl::ShaderStage::Fragment),
+      .type = iglMemberDesc.type,
+      .numElements = iglMemberDesc.arrayLength,
+      .offset = iglMemberDesc.offset,
+      .elementStride = igl::sizeForUniformType(iglMemberDesc.type),
+  };
 
   if (desc.location >= 0) {
     auto strongBuffer = uniformDesc.buffer.lock();
