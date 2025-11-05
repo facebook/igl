@@ -963,7 +963,7 @@ static GLFWwindow* initIGL(bool isHeadless) {
 
 #elif __APPLE__
       auto ctx = vulkan::HWDevice::createContext(
-          cfg, window ? (void*)glfwGetCocoaWindow(window) : nuullptr);
+          cfg, window ? (void*)glfwGetCocoaWindow(window) : nullptr);
 
 #elif defined(__linux__)
       auto ctx = vulkan::HWDevice::createContext(
