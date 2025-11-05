@@ -128,10 +128,16 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
 
   // Track which constant buffer root parameters have been bound
   // D3D12 requires all root parameters to be set before drawing
-  // Root parameter 0 = b0 (UniformsPerFrame)
-  // Root parameter 1 = b1 (UniformsPerObject)
+  // Root parameter 1 = b0 (UniformsPerFrame) - root descriptor
+  // Root parameter 2 = b1 (UniformsPerObject) - root descriptor
   D3D12_GPU_VIRTUAL_ADDRESS cachedConstantBuffers_[2] = {0, 0}; // b0, b1
   bool constantBufferBound_[2] = {false, false};
+
+  // Cached CBV descriptor table for b2-b15 (root parameter 3)
+  // Supports up to 14 additional uniform buffers via descriptor table
+  D3D12_GPU_DESCRIPTOR_HANDLE cachedCbvTableGpuHandles_[IGL_BUFFER_BINDINGS_MAX] = {};
+  bool cbvTableBound_[IGL_BUFFER_BINDINGS_MAX] = {};
+  size_t cbvTableCount_ = 0;
 };
 
 } // namespace igl::d3d12

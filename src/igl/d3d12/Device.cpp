@@ -824,13 +824,27 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   // Create root signature with descriptor tables for textures and constant buffers
   // Root signature layout:
   // - Root parameter 0: Root Constants for b2 (Push Constants) - 16 DWORDs = 64 bytes max
-  // - Root parameter 1: CBV for uniform buffer b0 (UniformsPerFrame)
-  // - Root parameter 2: CBV for uniform buffer b1 (UniformsPerObject)
-  // - Root parameter 3: Descriptor table with SRVs for textures t0-tN (unbounded)
-  // - Root parameter 4: Descriptor table with Samplers for s0-sN (unbounded)
+  // - Root parameter 1: Root CBV for b0 (legacy bindBuffer support)
+  // - Root parameter 2: Root CBV for b1 (legacy bindBuffer support)
+  // - Root parameter 3: Descriptor table for CBVs b3-b15 (bindBindGroup support)
+  // - Root parameter 4: Descriptor table with SRVs for textures t0-tN (unbounded)
+  // - Root parameter 5: Descriptor table with Samplers for s0-sN (unbounded)
+  //
+  // This hybrid approach supports:
+  //   - Legacy sessions using bindBuffer(0/1) -> root CBVs at b0/b1
+  //   - New buffer bind groups using bindBindGroup() -> descriptor table at b3-b15
+  //   - Push constants at b2 (inline root constants, cannot overlap with CBV table)
 
   Microsoft::WRL::ComPtr<ID3DBlob> signature;
   Microsoft::WRL::ComPtr<ID3DBlob> error;
+
+  // Descriptor range for CBVs b3-b15 (buffer bind groups)
+  D3D12_DESCRIPTOR_RANGE cbvRange = {};
+  cbvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+  cbvRange.NumDescriptors = 13;  // b3 through b15
+  cbvRange.BaseShaderRegister = 3;  // Starting at b3 (b2 reserved for push constants)
+  cbvRange.RegisterSpace = 0;
+  cbvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
   // Descriptor range for SRVs (textures)
   // Use UNBOUNDED to support variable number of textures (1-N) per shader
@@ -851,49 +865,55 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   samplerRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
   // Root parameters
-  D3D12_ROOT_PARAMETER rootParams[5] = {};
+  D3D12_ROOT_PARAMETER rootParams[6] = {};
 
   // Parameter 0: Root Constants for b2 (Push Constants)
   // Max 64 bytes = 16 DWORDs to match Vulkan push constant limits
   rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-  rootParams[0].Constants.ShaderRegister = 2;  // b2 (b0/b1 reserved for uniform buffers)
+  rootParams[0].Constants.ShaderRegister = 2;  // b2
   rootParams[0].Constants.RegisterSpace = 0;
   rootParams[0].Constants.Num32BitValues = 16;  // 16 DWORDs = 64 bytes
   rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-  // Parameter 1: Root CBV for b0 (UniformsPerFrame)
+  // Parameter 1: Root CBV for b0 (legacy bindBuffer support)
   rootParams[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
   rootParams[1].Descriptor.ShaderRegister = 0;  // b0
   rootParams[1].Descriptor.RegisterSpace = 0;
   rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-  // Parameter 2: Root CBV for b1 (UniformsPerObject)
+  // Parameter 2: Root CBV for b1 (legacy bindBuffer support)
   rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
   rootParams[2].Descriptor.ShaderRegister = 1;  // b1
   rootParams[2].Descriptor.RegisterSpace = 0;
   rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-  // Parameter 3: Descriptor table for SRVs (textures)
+  // Parameter 3: Descriptor table for CBVs b2-b15 (buffer bind groups)
   rootParams[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   rootParams[3].DescriptorTable.NumDescriptorRanges = 1;
-  rootParams[3].DescriptorTable.pDescriptorRanges = &srvRange;
-  rootParams[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+  rootParams[3].DescriptorTable.pDescriptorRanges = &cbvRange;
+  rootParams[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-  // Parameter 4: Descriptor table for Samplers
+  // Parameter 4: Descriptor table for SRVs (textures)
   rootParams[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   rootParams[4].DescriptorTable.NumDescriptorRanges = 1;
-  rootParams[4].DescriptorTable.pDescriptorRanges = &samplerRange;
+  rootParams[4].DescriptorTable.pDescriptorRanges = &srvRange;
   rootParams[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+  // Parameter 5: Descriptor table for Samplers
+  rootParams[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+  rootParams[5].DescriptorTable.NumDescriptorRanges = 1;
+  rootParams[5].DescriptorTable.pDescriptorRanges = &samplerRange;
+  rootParams[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
   D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
   // Enable full root signature matching TinyMeshSession shaders
-  rootSigDesc.NumParameters = 5;
+  rootSigDesc.NumParameters = 6;
   rootSigDesc.pParameters = rootParams;
   rootSigDesc.NumStaticSamplers = 0;
   rootSigDesc.pStaticSamplers = nullptr;
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-  IGL_LOG_INFO("  Creating root signature with Push Constants (b2)/CBVs (b0,b1)/SRVs/Samplers\n");
+  IGL_LOG_INFO("  Creating root signature with Push Constants (b2)/Root CBVs (b0,b1)/CBV Table (b3-b15)/SRVs/Samplers\n");
 
   IGL_LOG_INFO("  Serializing root signature...\n");
   HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
