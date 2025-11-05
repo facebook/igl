@@ -87,60 +87,108 @@ Result DescriptorHeapManager::initialize(ID3D12Device* device, const Sizes& size
 }
 
 uint32_t DescriptorHeapManager::allocateRTV() {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (freeRtvs_.empty()) {
+    IGL_LOG_ERROR("DescriptorHeapManager: RTV heap exhausted! "
+                  "Requested allocation failed (capacity: %u descriptors)\n",
+                  sizes_.rtvs);
     return UINT32_MAX;
   }
   const uint32_t idx = freeRtvs_.back();
   freeRtvs_.pop_back();
+
+  // Track high-watermark
+  const uint32_t currentUsage = sizes_.rtvs - static_cast<uint32_t>(freeRtvs_.size());
+  if (currentUsage > highWaterMarkRtvs_) {
+    highWaterMarkRtvs_ = currentUsage;
+  }
+
   return idx;
 }
 
 uint32_t DescriptorHeapManager::allocateDSV() {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (freeDsvs_.empty()) {
+    IGL_LOG_ERROR("DescriptorHeapManager: DSV heap exhausted! "
+                  "Requested allocation failed (capacity: %u descriptors)\n",
+                  sizes_.dsvs);
     return UINT32_MAX;
   }
   const uint32_t idx = freeDsvs_.back();
   freeDsvs_.pop_back();
+
+  // Track high-watermark
+  const uint32_t currentUsage = sizes_.dsvs - static_cast<uint32_t>(freeDsvs_.size());
+  if (currentUsage > highWaterMarkDsvs_) {
+    highWaterMarkDsvs_ = currentUsage;
+  }
+
   return idx;
 }
 
 void DescriptorHeapManager::freeRTV(uint32_t index) {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (index != UINT32_MAX && index < sizes_.rtvs) {
     freeRtvs_.push_back(index);
   }
 }
 
 void DescriptorHeapManager::freeDSV(uint32_t index) {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (index != UINT32_MAX && index < sizes_.dsvs) {
     freeDsvs_.push_back(index);
   }
 }
 
 uint32_t DescriptorHeapManager::allocateCbvSrvUav() {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (freeCbvSrvUav_.empty()) {
+    IGL_LOG_ERROR("DescriptorHeapManager: CBV/SRV/UAV heap exhausted! "
+                  "Requested allocation failed (capacity: %u descriptors)\n",
+                  sizes_.cbvSrvUav);
     return UINT32_MAX;
   }
   const uint32_t idx = freeCbvSrvUav_.back();
   freeCbvSrvUav_.pop_back();
+
+  // Track high-watermark
+  const uint32_t currentUsage = sizes_.cbvSrvUav - static_cast<uint32_t>(freeCbvSrvUav_.size());
+  if (currentUsage > highWaterMarkCbvSrvUav_) {
+    highWaterMarkCbvSrvUav_ = currentUsage;
+  }
+
   return idx;
 }
 
 uint32_t DescriptorHeapManager::allocateSampler() {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (freeSamplers_.empty()) {
+    IGL_LOG_ERROR("DescriptorHeapManager: Sampler heap exhausted! "
+                  "Requested allocation failed (capacity: %u descriptors)\n",
+                  sizes_.samplers);
     return UINT32_MAX;
   }
   const uint32_t idx = freeSamplers_.back();
   freeSamplers_.pop_back();
+
+  // Track high-watermark
+  const uint32_t currentUsage = sizes_.samplers - static_cast<uint32_t>(freeSamplers_.size());
+  if (currentUsage > highWaterMarkSamplers_) {
+    highWaterMarkSamplers_ = currentUsage;
+  }
+
   return idx;
 }
 
 void DescriptorHeapManager::freeCbvSrvUav(uint32_t index) {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (index != UINT32_MAX && index < sizes_.cbvSrvUav) {
     freeCbvSrvUav_.push_back(index);
   }
 }
 
 void DescriptorHeapManager::freeSampler(uint32_t index) {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (index != UINT32_MAX && index < sizes_.samplers) {
     freeSamplers_.push_back(index);
   }
@@ -207,6 +255,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getSamplerGpuHandle(uint32_t 
 }
 
 void DescriptorHeapManager::logUsageStats() const {
+  std::lock_guard<std::mutex> lock(mutex_);
   IGL_LOG_INFO("=== Descriptor Heap Usage Statistics ===\n");
 
   // CBV/SRV/UAV heap
@@ -232,6 +281,29 @@ void DescriptorHeapManager::logUsageStats() const {
   const float dsvsPercent = (dsvsUsed * 100.0f) / sizes_.dsvs;
   IGL_LOG_INFO("  DSVs:        %u / %u (%.1f%% used)\n",
                dsvsUsed, sizes_.dsvs, dsvsPercent);
+
+  IGL_LOG_INFO("\n");
+  IGL_LOG_INFO("=== Peak Usage (High-Watermarks) ===\n");
+
+  // Peak CBV/SRV/UAV
+  const float cbvSrvUavPeakPercent = (highWaterMarkCbvSrvUav_ * 100.0f) / sizes_.cbvSrvUav;
+  IGL_LOG_INFO("  Peak CBV/SRV/UAV: %u / %u (%.1f%% peak)\n",
+               highWaterMarkCbvSrvUav_, sizes_.cbvSrvUav, cbvSrvUavPeakPercent);
+
+  // Peak Samplers
+  const float samplersPeakPercent = (highWaterMarkSamplers_ * 100.0f) / sizes_.samplers;
+  IGL_LOG_INFO("  Peak Samplers:    %u / %u (%.1f%% peak)\n",
+               highWaterMarkSamplers_, sizes_.samplers, samplersPeakPercent);
+
+  // Peak RTVs
+  const float rtvsPeakPercent = (highWaterMarkRtvs_ * 100.0f) / sizes_.rtvs;
+  IGL_LOG_INFO("  Peak RTVs:        %u / %u (%.1f%% peak)\n",
+               highWaterMarkRtvs_, sizes_.rtvs, rtvsPeakPercent);
+
+  // Peak DSVs
+  const float dsvsPeakPercent = (highWaterMarkDsvs_ * 100.0f) / sizes_.dsvs;
+  IGL_LOG_INFO("  Peak DSVs:        %u / %u (%.1f%% peak)\n",
+               highWaterMarkDsvs_, sizes_.dsvs, dsvsPeakPercent);
 
   IGL_LOG_INFO("========================================\n");
 }
