@@ -92,16 +92,57 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
         D3D12_RENDER_TARGET_VIEW_DESC rdesc = {};
         rdesc.Format = resourceDesc.Format;  // Use actual D3D12 resource format, not IGL format
 
-        // Set view dimension based on sample count (MSAA support)
+        // Determine if this is a texture array or texture view
+        // IMPORTANT: Cube textures have DepthOrArraySize=6 but should NOT be treated as arrays for RTVs
+        const bool isView = tex->isView();
+        const bool isCubeTexture = (tex->getType() == TextureType::Cube);
+        const bool isArrayTexture = !isCubeTexture &&
+                                     ((isView && tex->getNumArraySlicesInView() > 0) ||
+                                      (!isView && resourceDesc.DepthOrArraySize > 1));
+
+        // Set view dimension based on sample count (MSAA support) and array type
         if (resourceDesc.SampleDesc.Count > 1) {
-          // MSAA texture - use TEXTURE2DMS view dimension
-          rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
-          IGL_LOG_INFO("RenderCommandEncoder: Creating MSAA RTV with %u samples\n", resourceDesc.SampleDesc.Count);
+          // MSAA texture
+          if (isArrayTexture) {
+            // MSAA texture array - use TEXTURE2DMSARRAY view dimension
+            rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
+            if (isView) {
+              rdesc.Texture2DMSArray.FirstArraySlice = tex->getArraySliceOffset();
+              rdesc.Texture2DMSArray.ArraySize = tex->getNumArraySlicesInView();
+            } else {
+              rdesc.Texture2DMSArray.FirstArraySlice = layer;
+              rdesc.Texture2DMSArray.ArraySize = 1;  // Render to single layer
+            }
+            IGL_LOG_INFO("RenderCommandEncoder: Creating MSAA array RTV with %u samples, layer %u\n",
+                         resourceDesc.SampleDesc.Count, rdesc.Texture2DMSArray.FirstArraySlice);
+          } else {
+            // MSAA non-array texture - use TEXTURE2DMS view dimension
+            rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
+            IGL_LOG_INFO("RenderCommandEncoder: Creating MSAA RTV with %u samples\n", resourceDesc.SampleDesc.Count);
+          }
         } else {
-          // Non-MSAA texture - use standard TEXTURE2D view dimension
-          rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-          rdesc.Texture2D.MipSlice = (i < renderPass.colorAttachments.size()) ? renderPass.colorAttachments[i].mipLevel : 0;
-          rdesc.Texture2D.PlaneSlice = 0;
+          // Non-MSAA texture
+          if (isArrayTexture) {
+            // Texture array - use TEXTURE2DARRAY view dimension
+            rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+            rdesc.Texture2DArray.MipSlice = (i < renderPass.colorAttachments.size()) ? renderPass.colorAttachments[i].mipLevel : 0;
+            rdesc.Texture2DArray.PlaneSlice = 0;
+            if (isView) {
+              rdesc.Texture2DArray.FirstArraySlice = tex->getArraySliceOffset();
+              rdesc.Texture2DArray.ArraySize = tex->getNumArraySlicesInView();
+            } else {
+              rdesc.Texture2DArray.FirstArraySlice = layer;
+              rdesc.Texture2DArray.ArraySize = 1;  // Render to single layer
+            }
+            IGL_LOG_INFO("RenderCommandEncoder: Creating array RTV, mip %u, layer %u\n",
+                         rdesc.Texture2DArray.MipSlice, rdesc.Texture2DArray.FirstArraySlice);
+          } else {
+            // Non-array texture - use standard TEXTURE2D view dimension
+            rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+            rdesc.Texture2D.MipSlice = (i < renderPass.colorAttachments.size()) ? renderPass.colorAttachments[i].mipLevel : 0;
+            rdesc.Texture2D.PlaneSlice = 0;
+            IGL_LOG_INFO("RenderCommandEncoder: Creating RTV, mip %u\n", rdesc.Texture2D.MipSlice);
+          }
         }
         device->CreateRenderTargetView(tex->getResource(), &rdesc, rtvHandle);
 
