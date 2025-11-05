@@ -397,14 +397,24 @@ void D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height) {
   swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
   swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
 
-  // Tearing support (optional) if vsync disabled by env var
+  // Query tearing support capability (required for variable refresh rate displays)
+  // This capability must be queried before creating the swapchain
   BOOL allowTearing = FALSE;
   Microsoft::WRL::ComPtr<IDXGIFactory5> factory5;
   if (SUCCEEDED(dxgiFactory_.Get()->QueryInterface(IID_PPV_ARGS(factory5.GetAddressOf())))) {
-    (void)factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING,
-                                        &allowTearing,
-                                        sizeof(allowTearing));
+    if (SUCCEEDED(factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING,
+                                                &allowTearing,
+                                                sizeof(allowTearing)))) {
+      tearingSupported_ = (allowTearing == TRUE);
+      if (tearingSupported_) {
+        IGL_LOG_INFO("D3D12Context: Tearing support available (variable refresh rate)\n");
+      }
+    }
   }
+
+  // Set swapchain tearing flag if supported (required to use DXGI_PRESENT_ALLOW_TEARING)
+  // Without this flag, using DXGI_PRESENT_ALLOW_TEARING in Present() is invalid
+  swapChainDesc.Flags = tearingSupported_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
   Microsoft::WRL::ComPtr<IDXGISwapChain1> tempSwapChain;
   HRESULT hr = dxgiFactory_->CreateSwapChainForHwnd(

@@ -159,7 +159,11 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
       if (GetEnvironmentVariableA("IGL_D3D12_VSYNC", buf, sizeof(buf)) > 0) {
         if (buf[0] == '0') {
           syncInterval = 0;
-          presentFlags |= DXGI_PRESENT_ALLOW_TEARING;
+          // Only use tearing flag if swapchain was created with DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING
+          // Using DXGI_PRESENT_ALLOW_TEARING without the swapchain flag is invalid
+          if (ctx.isTearingSupported()) {
+            presentFlags |= DXGI_PRESENT_ALLOW_TEARING;
+          }
         }
       }
     }

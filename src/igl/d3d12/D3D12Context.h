@@ -71,6 +71,9 @@ class D3D12Context {
   D3D_ROOT_SIGNATURE_VERSION getHighestRootSignatureVersion() const { return highestRootSignatureVersion_; }
   D3D12_RESOURCE_BINDING_TIER getResourceBindingTier() const { return resourceBindingTier_; }
 
+  // Get tearing support capability
+  bool isTearingSupported() const { return tearingSupported_; }
+
   // Get descriptor handles from per-frame heaps
   D3D12_CPU_DESCRIPTOR_HANDLE getCbvSrvUavCpuHandle(uint32_t descriptorIndex) const {
     auto h = frameContexts_[currentFrameIndex_].cbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart();
@@ -142,6 +145,9 @@ class D3D12Context {
   // Feature detection for root signature capabilities
   D3D_ROOT_SIGNATURE_VERSION highestRootSignatureVersion_ = D3D_ROOT_SIGNATURE_VERSION_1_0;
   D3D12_RESOURCE_BINDING_TIER resourceBindingTier_ = D3D12_RESOURCE_BINDING_TIER_1;
+
+  // Feature detection for variable refresh rate (tearing) support
+  bool tearingSupported_ = false;
 
   // Descriptor heap manager for headless contexts (unit tests)
   DescriptorHeapManager* ownedHeapMgr_ = nullptr;  // Owned manager for windowed contexts (raw ptr, manually deleted)
