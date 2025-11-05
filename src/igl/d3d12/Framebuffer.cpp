@@ -395,14 +395,22 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   srcTex->transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, mipLevel, layer);
   dstTex->transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_DEST, mipLevel, layer);
 
+  // Calculate proper subresource indices for array textures and cubemaps
+  // D3D12CalcSubresource(MipSlice, ArraySlice, PlaneSlice, MipLevels, ArraySize)
+  const UINT srcMipLevels = srcTex->getNumMipLevels();
+  const UINT dstMipLevels = dstTex->getNumMipLevels();
+  const UINT srcArraySize = srcTex->getNumLayers();
+  const UINT dstArraySize = dstTex->getNumLayers();
+
   D3D12_TEXTURE_COPY_LOCATION dstLoc{};
   dstLoc.pResource = dstRes;
   dstLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-  dstLoc.SubresourceIndex = range.mipLevel;
+  dstLoc.SubresourceIndex = D3D12CalcSubresource(mipLevel, layer, 0, dstMipLevels, dstArraySize);
+
   D3D12_TEXTURE_COPY_LOCATION srcLoc{};
   srcLoc.pResource = srcRes;
   srcLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-  srcLoc.SubresourceIndex = range.mipLevel;
+  srcLoc.SubresourceIndex = D3D12CalcSubresource(mipLevel, layer, 0, srcMipLevels, srcArraySize);
 
   D3D12_BOX srcBox{};
   srcBox.left = range.x;
