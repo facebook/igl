@@ -39,11 +39,12 @@ DepthTestConfig Material::depthTestConfig() const {
 void Material::setDepthTestConfig(igl::IDevice& device, const DepthTestConfig& config) {
   depthTestConfig_ = config;
 
-  igl::DepthStencilStateDesc depthDesc;
-  depthDesc.compareFunction = (depthTestConfig_ != DepthTestConfig::Disable)
-                                  ? igl::CompareFunction::Less
-                                  : igl::CompareFunction::AlwaysPass;
-  depthDesc.isDepthWriteEnabled = (depthTestConfig_ == DepthTestConfig::Enable);
+  igl::DepthStencilStateDesc depthDesc{
+      .compareFunction = (depthTestConfig_ != DepthTestConfig::Disable)
+                             ? igl::CompareFunction::Less
+                             : igl::CompareFunction::AlwaysPass,
+      .isDepthWriteEnabled = (depthTestConfig_ == DepthTestConfig::Enable),
+  };
   depthState_ = device.createDepthStencilState(depthDesc, nullptr);
 }
 
