@@ -1020,13 +1020,14 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     IGL_LOG_INFO("bindBuffer: Constant buffer at index %u\n", index);
 
     // D3D12 requires constant buffer addresses to be 256-byte aligned
-    const size_t alignedOffset = (offset + 255) & ~255;
-    if (offset != alignedOffset) {
-      IGL_LOG_INFO("bindBuffer: WARNING - offset %zu not 256-byte aligned, using %zu instead\n",
-                   offset, alignedOffset);
+    // (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
+    if ((offset & 255) != 0) {
+      IGL_LOG_ERROR("bindBuffer: ERROR - CBV offset %zu is not 256-byte aligned (required by D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT). "
+                    "Constant buffers must be created at aligned offsets. Ignoring bind request.\n", offset);
+      return;
     }
 
-    D3D12_GPU_VIRTUAL_ADDRESS bufferAddress = d3dBuffer->gpuAddress(alignedOffset);
+    D3D12_GPU_VIRTUAL_ADDRESS bufferAddress = d3dBuffer->gpuAddress(offset);
     IGL_LOG_INFO("bindBuffer: CBV address=0x%llx\n", bufferAddress);
 
     if (!commandList_) {
