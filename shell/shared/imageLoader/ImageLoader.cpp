@@ -19,7 +19,7 @@ namespace igl::shell {
 namespace {
 std::vector<std::unique_ptr<iglu::textureloader::ITextureLoaderFactory>> createLoaderFactories() {
   std::vector<std::unique_ptr<iglu::textureloader::ITextureLoaderFactory>> factories;
-  factories.reserve(3);
+  factories.reserve(5);
   factories.emplace_back(std::make_unique<iglu::textureloader::stb::hdr::TextureLoaderFactory>());
   factories.emplace_back(std::make_unique<iglu::textureloader::stb::jpeg::TextureLoaderFactory>());
   factories.emplace_back(std::make_unique<iglu::textureloader::stb::png::TextureLoaderFactory>());
