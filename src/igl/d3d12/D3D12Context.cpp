@@ -171,8 +171,51 @@ void D3D12Context::createDevice() {
     throw std::runtime_error("Failed to create DXGI factory");
   }
 
+  // Helper lambda to query highest supported feature level for an adapter
+  auto getHighestFeatureLevel = [](IDXGIAdapter1* adapter) -> D3D_FEATURE_LEVEL {
+    // Try creating device with FL 11.0 first (minimum required)
+    Microsoft::WRL::ComPtr<ID3D12Device> tempDevice;
+    if (FAILED(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(tempDevice.GetAddressOf())))) {
+      return static_cast<D3D_FEATURE_LEVEL>(0); // Adapter doesn't support D3D12
+    }
+
+    // Query supported feature levels (check from highest to lowest)
+    const D3D_FEATURE_LEVEL featureLevels[] = {
+        D3D_FEATURE_LEVEL_12_2,
+        D3D_FEATURE_LEVEL_12_1,
+        D3D_FEATURE_LEVEL_12_0,
+        D3D_FEATURE_LEVEL_11_1,
+        D3D_FEATURE_LEVEL_11_0,
+    };
+    D3D12_FEATURE_DATA_FEATURE_LEVELS featureLevelsInfo = {};
+    featureLevelsInfo.NumFeatureLevels = static_cast<UINT>(std::size(featureLevels));
+    featureLevelsInfo.pFeatureLevelsRequested = featureLevels;
+
+    if (SUCCEEDED(tempDevice->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS,
+                                                   &featureLevelsInfo,
+                                                   sizeof(featureLevelsInfo)))) {
+      return featureLevelsInfo.MaxSupportedFeatureLevel;
+    }
+
+    return D3D_FEATURE_LEVEL_11_0; // Fallback to minimum
+  };
+
+  // Helper to get feature level string
+  auto featureLevelToString = [](D3D_FEATURE_LEVEL level) -> const char* {
+    switch (level) {
+      case D3D_FEATURE_LEVEL_12_2: return "12.2";
+      case D3D_FEATURE_LEVEL_12_1: return "12.1";
+      case D3D_FEATURE_LEVEL_12_0: return "12.0";
+      case D3D_FEATURE_LEVEL_11_1: return "11.1";
+      case D3D_FEATURE_LEVEL_11_0: return "11.0";
+      default: return "Unknown";
+    }
+  };
+
   // Prefer high-performance hardware adapter first; fallback to WARP
   bool created = false;
+  D3D_FEATURE_LEVEL selectedFeatureLevel = D3D_FEATURE_LEVEL_11_0;
+
   Microsoft::WRL::ComPtr<IDXGIFactory6> factory6;
   (void)dxgiFactory_->QueryInterface(IID_PPV_ARGS(factory6.GetAddressOf()));
   if (factory6.Get()) {
@@ -188,10 +231,18 @@ void D3D12Context::createDevice() {
       if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
         continue;
       }
-      if (SUCCEEDED(D3D12CreateDevice(cand.Get(), D3D_FEATURE_LEVEL_12_0,
+
+      // Probe for highest supported feature level
+      D3D_FEATURE_LEVEL featureLevel = getHighestFeatureLevel(cand.Get());
+      if (featureLevel == static_cast<D3D_FEATURE_LEVEL>(0)) {
+        continue; // Adapter doesn't support D3D12
+      }
+
+      if (SUCCEEDED(D3D12CreateDevice(cand.Get(), featureLevel,
                                       IID_PPV_ARGS(device_.GetAddressOf())))) {
         created = true;
-        IGL_LOG_INFO("D3D12Context: Using HW adapter (FL 12.0)\n");
+        selectedFeatureLevel = featureLevel;
+        IGL_LOG_INFO("D3D12Context: Using HW adapter (FL %s)\n", featureLevelToString(featureLevel));
         break;
       }
     }
@@ -204,22 +255,34 @@ void D3D12Context::createDevice() {
       if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
         continue;
       }
-      if (SUCCEEDED(D3D12CreateDevice(adapter_.Get(), D3D_FEATURE_LEVEL_12_0,
+
+      // Probe for highest supported feature level
+      D3D_FEATURE_LEVEL featureLevel = getHighestFeatureLevel(adapter_.Get());
+      if (featureLevel == static_cast<D3D_FEATURE_LEVEL>(0)) {
+        continue; // Adapter doesn't support D3D12
+      }
+
+      if (SUCCEEDED(D3D12CreateDevice(adapter_.Get(), featureLevel,
                                       IID_PPV_ARGS(device_.GetAddressOf())))) {
         created = true;
-        IGL_LOG_INFO("D3D12Context: Using HW adapter via EnumAdapters1 (FL 12.0)\n");
+        selectedFeatureLevel = featureLevel;
+        IGL_LOG_INFO("D3D12Context: Using HW adapter via EnumAdapters1 (FL %s)\n", featureLevelToString(featureLevel));
         break;
       }
     }
   }
   if (!created) {
-    // WARP fallback (FL 11.0)
-    Microsoft::WRL::ComPtr<IDXGIAdapter> warp;
-    if (SUCCEEDED(dxgiFactory_->EnumWarpAdapter(IID_PPV_ARGS(warp.GetAddressOf()))) &&
-        SUCCEEDED(D3D12CreateDevice(warp.Get(), D3D_FEATURE_LEVEL_11_0,
-                                    IID_PPV_ARGS(device_.GetAddressOf())))) {
-      created = true;
-      IGL_LOG_INFO("D3D12Context: Using WARP adapter (FL 11.0)\n");
+    // WARP fallback - probe for highest supported FL
+    Microsoft::WRL::ComPtr<IDXGIAdapter1> warp;
+    if (SUCCEEDED(dxgiFactory_->EnumWarpAdapter(IID_PPV_ARGS(warp.GetAddressOf())))) {
+      D3D_FEATURE_LEVEL featureLevel = getHighestFeatureLevel(warp.Get());
+      if (featureLevel != static_cast<D3D_FEATURE_LEVEL>(0) &&
+          SUCCEEDED(D3D12CreateDevice(warp.Get(), featureLevel,
+                                      IID_PPV_ARGS(device_.GetAddressOf())))) {
+        created = true;
+        selectedFeatureLevel = featureLevel;
+        IGL_LOG_INFO("D3D12Context: Using WARP adapter (FL %s)\n", featureLevelToString(featureLevel));
+      }
     }
   }
   if (!created) {
