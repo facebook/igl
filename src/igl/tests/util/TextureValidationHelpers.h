@@ -22,7 +22,7 @@ namespace igl::tests::util {
 constexpr auto kTestPrecision = 0.0001f;
 
 template<typename ColorType>
-inline void TestArray(std::vector<ColorType> actualData,
+inline void testArray(std::vector<ColorType> actualData,
                       const ColorType* expectedData,
                       size_t expectedDataSize,
                       const char* message) {
@@ -36,7 +36,7 @@ inline void TestArray(std::vector<ColorType> actualData,
 }
 
 template<typename VectorUnit, glm::qualifier Precision>
-inline void TestArray(std::vector<glm::vec<4, VectorUnit, Precision>> actualData,
+inline void testArray(std::vector<glm::vec<4, VectorUnit, Precision>> actualData,
                       const glm::vec<4, VectorUnit, Precision>* expectedData,
                       size_t expectedDataSize,
                       const char* message) {
@@ -55,7 +55,7 @@ inline void TestArray(std::vector<glm::vec<4, VectorUnit, Precision>> actualData
 }
 
 template<typename VectorUnit, glm::qualifier Precision>
-inline void TestArray(std::vector<glm::vec<3, VectorUnit, Precision>> actualData,
+inline void testArray(std::vector<glm::vec<3, VectorUnit, Precision>> actualData,
                       const glm::vec<3, VectorUnit, Precision>* expectedData,
                       size_t expectedDataSize,
                       const char* message) {
@@ -73,7 +73,7 @@ inline void TestArray(std::vector<glm::vec<3, VectorUnit, Precision>> actualData
 }
 
 template<typename VectorUnit, glm::qualifier Precision>
-inline void TestArray(std::vector<glm::vec<2, VectorUnit, Precision>> actualData,
+inline void testArray(std::vector<glm::vec<2, VectorUnit, Precision>> actualData,
                       const glm::vec<2, VectorUnit, Precision>* expectedData,
                       size_t expectedDataSize,
                       const char* message) {
@@ -146,7 +146,7 @@ inline void validateTextureRange(IDevice& device,
     actualData = std::move(tmpData);
   }
 
-  TestArray(actualData, expectedData, expectedDataSize, message);
+  testArray(actualData, expectedData, expectedDataSize, message);
 }
 
 template<typename ColorType>
