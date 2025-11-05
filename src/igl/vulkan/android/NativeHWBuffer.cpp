@@ -202,10 +202,13 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
       .image = vk_image,
       .viewType = VK_IMAGE_VIEW_TYPE_2D,
       .format = vk_image_info.format,
-      .components = {.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-                     .g = VK_COMPONENT_SWIZZLE_IDENTITY,
-                     .b = VK_COMPONENT_SWIZZLE_IDENTITY,
-                     .a = VK_COMPONENT_SWIZZLE_IDENTITY},
+      .components =
+          {
+              .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+              .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+              .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+              .a = VK_COMPONENT_SWIZZLE_IDENTITY,
+          },
       .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                            .baseMipLevel = 0,
                            .levelCount = vk_image_info.mipLevels,
@@ -228,10 +231,13 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
         .format = ahb_format_props.format,
         .ycbcrModel = ahb_format_props.suggestedYcbcrModel,
         .ycbcrRange = ahb_format_props.suggestedYcbcrRange,
-        .components = {VK_COMPONENT_SWIZZLE_IDENTITY,
-                       VK_COMPONENT_SWIZZLE_IDENTITY,
-                       VK_COMPONENT_SWIZZLE_IDENTITY,
-                       VK_COMPONENT_SWIZZLE_IDENTITY},
+        .components =
+            {
+                VK_COMPONENT_SWIZZLE_IDENTITY,
+                VK_COMPONENT_SWIZZLE_IDENTITY,
+                VK_COMPONENT_SWIZZLE_IDENTITY,
+                VK_COMPONENT_SWIZZLE_IDENTITY,
+            },
         .xChromaOffset = ahb_format_props.suggestedXChromaOffset,
         .yChromaOffset = ahb_format_props.suggestedYChromaOffset,
         .chromaFilter = VK_FILTER_LINEAR,
@@ -241,12 +247,12 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
                                            &vulkanImage.samplerYcbcrConversionCreateInfo_,
                                            nullptr,
                                            &conversionInfo.conversion);
-    IGL_LOG_INFO("created sampler ycbcr conversion at %x with %d %d %d and %d",
-                 conversionInfo.conversion,
-                 ahb_format_props.suggestedYcbcrModel,
-                 ahb_format_props.suggestedYcbcrRange,
-                 ahb_format_props.suggestedXChromaOffset,
-                 ahb_format_props.suggestedYChromaOffset);
+    IGL_LOG_DEBUG("created sampler ycbcr conversion at %x with %d %d %d and %d",
+                  conversionInfo.conversion,
+                  ahb_format_props.suggestedYcbcrModel,
+                  ahb_format_props.suggestedYcbcrRange,
+                  ahb_format_props.suggestedXChromaOffset,
+                  ahb_format_props.suggestedYChromaOffset);
   } else if (igl::vulkan::getNumImagePlanes(ahb_format_props.format) > 1) {
     auto createInfo = ctx.getOrCreateYcbcrConversionInfo(VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
     conversionInfo.conversion = createInfo.conversion;
