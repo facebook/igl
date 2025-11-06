@@ -82,6 +82,62 @@ DXGI_FORMAT textureFormatToDXGIFormat(TextureFormat format) {
   }
 }
 
+namespace {
+bool isDepthOrStencilFormat(TextureFormat format) {
+  switch (format) {
+  case TextureFormat::Z_UNorm16:
+  case TextureFormat::Z_UNorm24:
+  case TextureFormat::Z_UNorm32:
+  case TextureFormat::S8_UInt_Z24_UNorm:
+  case TextureFormat::S8_UInt_Z32_UNorm:
+    return true;
+  default:
+    return false;
+  }
+}
+} // namespace
+
+DXGI_FORMAT textureFormatToDXGIResourceFormat(TextureFormat format, bool sampledUsage) {
+  if (!sampledUsage || !isDepthOrStencilFormat(format)) {
+    return textureFormatToDXGIFormat(format);
+  }
+
+  switch (format) {
+  case TextureFormat::Z_UNorm16:
+    return DXGI_FORMAT_R16_TYPELESS;
+  case TextureFormat::Z_UNorm24:
+  case TextureFormat::S8_UInt_Z24_UNorm:
+    return DXGI_FORMAT_R24G8_TYPELESS;
+  case TextureFormat::Z_UNorm32:
+    return DXGI_FORMAT_R32_TYPELESS;
+  case TextureFormat::S8_UInt_Z32_UNorm:
+    return DXGI_FORMAT_R32G8X24_TYPELESS;
+  default:
+    return textureFormatToDXGIFormat(format);
+  }
+}
+
+DXGI_FORMAT textureFormatToDXGIShaderResourceViewFormat(TextureFormat format) {
+  if (!isDepthOrStencilFormat(format)) {
+    return textureFormatToDXGIFormat(format);
+  }
+
+  switch (format) {
+  case TextureFormat::Z_UNorm16:
+    return DXGI_FORMAT_R16_UNORM;
+  case TextureFormat::Z_UNorm24:
+    return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+  case TextureFormat::S8_UInt_Z24_UNorm:
+    return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+  case TextureFormat::Z_UNorm32:
+    return DXGI_FORMAT_R32_FLOAT;
+  case TextureFormat::S8_UInt_Z32_UNorm:
+    return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+  default:
+    return textureFormatToDXGIFormat(format);
+  }
+}
+
 TextureFormat dxgiFormatToTextureFormat(DXGI_FORMAT format) {
   switch (format) {
   case DXGI_FORMAT_UNKNOWN:

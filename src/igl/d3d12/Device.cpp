@@ -401,11 +401,19 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
     resourceDesc.DepthOrArraySize = static_cast<UINT16>(desc.numLayers);
   }
 
+  const bool sampledUsage =
+      (desc.usage & TextureDesc::TextureUsageBits::Sampled) != 0;
+  const DXGI_FORMAT resourceFormat =
+      textureFormatToDXGIResourceFormat(desc.format, sampledUsage);
+  if (resourceFormat == DXGI_FORMAT_UNKNOWN) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Unsupported resource format");
+    return nullptr;
+  }
   resourceDesc.Alignment = 0;
   resourceDesc.Width = desc.width;
   resourceDesc.Height = desc.height;
   resourceDesc.MipLevels = static_cast<UINT16>(desc.numMipLevels);
-  resourceDesc.Format = dxgiFormat;
+  resourceDesc.Format = resourceFormat;
 
   // MSAA configuration
   // D3D12 MSAA requirements:

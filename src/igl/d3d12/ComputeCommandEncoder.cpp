@@ -258,7 +258,8 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
 
   // Create SRV descriptor
   D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-  srvDesc.Format = textureFormatToDXGIFormat(d3dTexture->getFormat());
+  srvDesc.Format =
+      textureFormatToDXGIShaderResourceViewFormat(d3dTexture->getFormat());
   srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
   auto resourceDesc = d3dTexture->getResource()->GetDesc();

@@ -92,6 +92,8 @@ void SafeRelease(T*& ptr) {
 
 // Texture format conversion
 DXGI_FORMAT textureFormatToDXGIFormat(TextureFormat format);
+DXGI_FORMAT textureFormatToDXGIResourceFormat(TextureFormat format, bool sampledUsage);
+DXGI_FORMAT textureFormatToDXGIShaderResourceViewFormat(TextureFormat format);
 TextureFormat dxgiFormatToTextureFormat(DXGI_FORMAT format);
 
 } // namespace igl::d3d12

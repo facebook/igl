@@ -77,8 +77,12 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
           continue;
         }
         const bool hasAttachmentDesc = (i < renderPass.colorAttachments.size());
-        const uint32_t mipLevel = hasAttachmentDesc ? renderPass.colorAttachments[i].mipLevel : 0;
-        const uint32_t layer = hasAttachmentDesc ? renderPass.colorAttachments[i].layer : 0;
+        const uint32_t mipLevel =
+            hasAttachmentDesc ? renderPass.colorAttachments[i].mipLevel : 0;
+        const uint32_t attachmentLayer =
+            hasAttachmentDesc ? renderPass.colorAttachments[i].layer : 0;
+        const uint32_t attachmentFace =
+            hasAttachmentDesc ? renderPass.colorAttachments[i].face : 0;
         // Allocate RTV
         uint32_t rtvIdx = heapMgr->allocateRTV();
         if (rtvIdx == UINT32_MAX) {
@@ -92,25 +96,51 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
         D3D12_RENDER_TARGET_VIEW_DESC rdesc = {};
         rdesc.Format = resourceDesc.Format;  // Use actual D3D12 resource format, not IGL format
 
-        // Determine if this is a texture array or texture view
-        // IMPORTANT: Cube textures have DepthOrArraySize=6 but should NOT be treated as arrays for RTVs
+        // Determine if this is a texture array or texture view.
+        // Cube textures are stored as 2D array resources (6 slices per cube).
         const bool isView = tex->isView();
         const bool isCubeTexture = (tex->getType() == TextureType::Cube);
+        const uint32_t arraySliceOffset = isView ? tex->getArraySliceOffset() : 0;
+        const uint32_t totalArraySlices =
+            isView ? tex->getNumArraySlicesInView() : resourceDesc.DepthOrArraySize;
         const bool isArrayTexture = !isCubeTexture &&
                                      ((isView && tex->getNumArraySlicesInView() > 0) ||
                                       (!isView && resourceDesc.DepthOrArraySize > 1));
+        uint32_t targetArraySlice = attachmentLayer;
+        if (isCubeTexture) {
+          // Cube textures map faces onto 2D array slices. See Texture Subresources (D3D12).
+          const uint32_t clampedFace = std::min<uint32_t>(attachmentFace, 5u);
+          const uint32_t cubesInView = (totalArraySlices + 5u) / 6u;
+          const uint32_t clampedCubeIndex =
+              std::min<uint32_t>(attachmentLayer, (cubesInView == 0u) ? 0u : (cubesInView - 1u));
+          const uint32_t baseSlice = arraySliceOffset + clampedCubeIndex * 6u;
+          const uint32_t maxSlice =
+              (totalArraySlices > 0u) ? (arraySliceOffset + totalArraySlices - 1u)
+                                      : arraySliceOffset;
+          targetArraySlice = std::min<uint32_t>(baseSlice + clampedFace, maxSlice);
+        }
 
         // Set view dimension based on sample count (MSAA support) and array type
         if (resourceDesc.SampleDesc.Count > 1) {
           // MSAA texture
-          if (isArrayTexture) {
+          if (isCubeTexture) {
+            rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
+            rdesc.Texture2DMSArray.FirstArraySlice = targetArraySlice;
+            rdesc.Texture2DMSArray.ArraySize = 1;
+            IGL_LOG_INFO(
+                "RenderCommandEncoder: Creating MSAA cube RTV with %u samples, face %u, cube index %u (array slice %u)\n",
+                resourceDesc.SampleDesc.Count,
+                attachmentFace,
+                attachmentLayer,
+                rdesc.Texture2DMSArray.FirstArraySlice);
+          } else if (isArrayTexture) {
             // MSAA texture array - use TEXTURE2DMSARRAY view dimension
             rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
             if (isView) {
               rdesc.Texture2DMSArray.FirstArraySlice = tex->getArraySliceOffset();
               rdesc.Texture2DMSArray.ArraySize = tex->getNumArraySlicesInView();
             } else {
-              rdesc.Texture2DMSArray.FirstArraySlice = layer;
+              rdesc.Texture2DMSArray.FirstArraySlice = attachmentLayer;
               rdesc.Texture2DMSArray.ArraySize = 1;  // Render to single layer
             }
             IGL_LOG_INFO("RenderCommandEncoder: Creating MSAA array RTV with %u samples, layer %u\n",
@@ -122,7 +152,19 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
           }
         } else {
           // Non-MSAA texture
-          if (isArrayTexture) {
+          if (isCubeTexture) {
+            rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+            rdesc.Texture2DArray.MipSlice = mipLevel;
+            rdesc.Texture2DArray.PlaneSlice = 0;
+            rdesc.Texture2DArray.FirstArraySlice = targetArraySlice;
+            rdesc.Texture2DArray.ArraySize = 1;
+            IGL_LOG_INFO(
+                "RenderCommandEncoder: Creating cube RTV, mip %u, face %u, cube index %u (array slice %u)\n",
+                mipLevel,
+                attachmentFace,
+                attachmentLayer,
+                rdesc.Texture2DArray.FirstArraySlice);
+          } else if (isArrayTexture) {
             // Texture array - use TEXTURE2DARRAY view dimension
             rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
             rdesc.Texture2DArray.MipSlice = (i < renderPass.colorAttachments.size()) ? renderPass.colorAttachments[i].mipLevel : 0;
@@ -131,7 +173,7 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
               rdesc.Texture2DArray.FirstArraySlice = tex->getArraySliceOffset();
               rdesc.Texture2DArray.ArraySize = tex->getNumArraySlicesInView();
             } else {
-              rdesc.Texture2DArray.FirstArraySlice = layer;
+              rdesc.Texture2DArray.FirstArraySlice = attachmentLayer;
               rdesc.Texture2DArray.ArraySize = 1;  // Render to single layer
             }
             IGL_LOG_INFO("RenderCommandEncoder: Creating array RTV, mip %u, layer %u\n",
@@ -151,7 +193,10 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
         // PIXEL_SHADER_RESOURCE in the previous frame's endEncoding(). We MUST transition them
         // back to RENDER_TARGET at the start of each render pass.
         // The transitionTo() function checks current state and only transitions if needed.
-        tex->transitionTo(commandList_, D3D12_RESOURCE_STATE_RENDER_TARGET, mipLevel, layer);
+        const uint32_t transitionSlice =
+            isCubeTexture ? targetArraySlice : attachmentLayer;
+        tex->transitionTo(
+            commandList_, D3D12_RESOURCE_STATE_RENDER_TARGET, mipLevel, transitionSlice);
 
         // Clear if requested
         if (hasAttachmentDesc && renderPass.colorAttachments[i].loadAction == LoadAction::Clear) {
@@ -734,7 +779,8 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
 
   // Create SRV descriptor at the allocated slot
   D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-  srvDesc.Format = textureFormatToDXGIFormat(d3dTexture->getFormat());
+  srvDesc.Format =
+      textureFormatToDXGIShaderResourceViewFormat(d3dTexture->getFormat());
   srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
   // Set view dimension based on texture type
@@ -753,14 +799,49 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
     srvDesc.Texture3D.MostDetailedMip = mostDetailedMip;
     IGL_LOG_INFO("bindTexture: using TEXTURE3D view dimension (mip offset=%u, mip count=%u)\n", mostDetailedMip, mipLevels);
   } else if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
+    const auto textureType = d3dTexture->getType();
     // Check if this is a texture array (either a view or a regular array texture)
     const bool isArrayTexture = (isView && d3dTexture->getNumArraySlicesInView() > 0) ||
                                  (!isView && resourceDesc.DepthOrArraySize > 1);
 
-    if (isArrayTexture) {
+    if (textureType == TextureType::Cube) {
+      // Cube textures are stored as 2D array resources with six faces per cube.
+      // References: Texture Subresources (D3D12), D3D12_TEXCUBE_SRV, D3D12_TEX2D_ARRAY_SRV docs.
+      const uint32_t firstArraySlice = isView ? d3dTexture->getArraySliceOffset() : 0;
+      const uint32_t facesInView =
+          isView ? d3dTexture->getNumArraySlicesInView() : resourceDesc.DepthOrArraySize;
+      const bool isCubeArray = (firstArraySlice != 0) || (facesInView > 6);
+
+      if (isCubeArray) {
+        const uint32_t numCubes = std::max(1u, facesInView / 6);
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
+        srvDesc.TextureCubeArray.MostDetailedMip = mostDetailedMip;
+        srvDesc.TextureCubeArray.MipLevels = mipLevels;
+        srvDesc.TextureCubeArray.First2DArrayFace = firstArraySlice;
+        srvDesc.TextureCubeArray.NumCubes = numCubes;
+        srvDesc.TextureCubeArray.ResourceMinLODClamp = 0.0f;
+        IGL_LOG_INFO(
+            "bindTexture: using TEXTURECUBE_ARRAY view dimension (mip offset=%u, mip count=%u, first face=%u, cube count=%u)\n",
+            mostDetailedMip,
+            mipLevels,
+            srvDesc.TextureCubeArray.First2DArrayFace,
+            srvDesc.TextureCubeArray.NumCubes);
+      } else {
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+        srvDesc.TextureCube.MostDetailedMip = mostDetailedMip;
+        srvDesc.TextureCube.MipLevels = mipLevels;
+        srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+        IGL_LOG_INFO(
+            "bindTexture: using TEXTURECUBE view dimension (mip offset=%u, mip count=%u)\n",
+            mostDetailedMip,
+            mipLevels);
+      }
+    } else if (isArrayTexture) {
       srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
       srvDesc.Texture2DArray.MipLevels = mipLevels;
       srvDesc.Texture2DArray.MostDetailedMip = mostDetailedMip;
+      srvDesc.Texture2DArray.PlaneSlice = 0;
+      srvDesc.Texture2DArray.ResourceMinLODClamp = 0.0f;
 
       if (isView) {
         // For texture views, use view-specific array parameters
@@ -772,14 +853,20 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
         srvDesc.Texture2DArray.ArraySize = resourceDesc.DepthOrArraySize;
       }
 
-      IGL_LOG_INFO("bindTexture: using TEXTURE2DARRAY view dimension (mip offset=%u, mip count=%u, array offset=%u, array count=%u)\n",
-                   mostDetailedMip, mipLevels, srvDesc.Texture2DArray.FirstArraySlice, srvDesc.Texture2DArray.ArraySize);
+      IGL_LOG_INFO(
+          "bindTexture: using TEXTURE2DARRAY view dimension (mip offset=%u, mip count=%u, array offset=%u, array count=%u)\n",
+          mostDetailedMip,
+          mipLevels,
+          srvDesc.Texture2DArray.FirstArraySlice,
+          srvDesc.Texture2DArray.ArraySize);
     } else {
       // Default to 2D textures
       srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
       srvDesc.Texture2D.MipLevels = mipLevels;
       srvDesc.Texture2D.MostDetailedMip = mostDetailedMip;
-      IGL_LOG_INFO("bindTexture: using TEXTURE2D view dimension (mip offset=%u, mip count=%u)\n", mostDetailedMip, mipLevels);
+      IGL_LOG_INFO("bindTexture: using TEXTURE2D view dimension (mip offset=%u, mip count=%u)\n",
+                   mostDetailedMip,
+                   mipLevels);
     }
   } else {
     IGL_LOG_ERROR("bindTexture: unsupported resource dimension %d\n", resourceDesc.Dimension);
@@ -1169,7 +1256,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
 
     // Build SRV description for the texture/view
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format = textureFormatToDXGIFormat(tex->getFormat());
+    srvDesc.Format = textureFormatToDXGIShaderResourceViewFormat(tex->getFormat());
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
     auto resourceDesc = tex->getResource()->GetDesc();

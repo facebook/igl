@@ -137,6 +137,8 @@ target_link_libraries(IGLTests PUBLIC gtest)
 # NOTE: gmock is NOT linked - no tests use gmock, only gtest
 target_link_libraries(IGLTests PUBLIC IGLUmanagedUniformBuffer)
 target_link_libraries(IGLTests PUBLIC IGLUshaderCross)
+# Add STB include directory for image utilities used by test artifacts
+target_include_directories(IGLTests PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/stb")
 
 # Enable experimental features ONLY for unit tests (NOT for render sessions)
 # This allows D3D12 headless tests to use unsigned DXIL shaders
