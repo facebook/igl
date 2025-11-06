@@ -71,7 +71,10 @@ void Device::destroy(BindGroupBufferHandle handle) {
 }
 
 void Device::destroy(SamplerHandle /*handle*/) {
-  // Stub: Not yet implemented
+  // No-op: D3D12 backend doesn't use the SamplerHandle system.
+  // Samplers are created as shared_ptr<ISamplerState> and managed via ref-counting.
+  // Sampler descriptors are allocated transiently per command encoder at bind time,
+  // not persistently at sampler creation time, so there's nothing to deallocate here.
 }
 
 // Command Queue
