@@ -289,6 +289,11 @@ Result Texture::upload(const TextureRangeDesc& range,
       dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
       dst.SubresourceIndex = subresource;
 
+      if (type_ == TextureType::Cube) {
+        IGL_LOG_INFO("CopyTextureRegion: Copying to CUBE subresource=%u (mip=%u, slice=%u)\n",
+                     subresource, currentMip, currentSlice);
+      }
+
       D3D12_TEXTURE_COPY_LOCATION src = {};
       src.pResource = stagingBuffer.Get();
       src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
@@ -959,7 +964,13 @@ uint32_t Texture::calcSubresourceIndex(uint32_t mipLevel, uint32_t layer) const 
   }
   const uint32_t clampedMip = std::min(mipLevel, mipLevels - 1);
   const uint32_t clampedLayer = std::min(layer, arraySize - 1);
-  return clampedLayer * mipLevels + clampedMip;
+  // D3D12CalcSubresource formula: MipSlice + (ArraySlice * MipLevels)
+  const uint32_t subresource = clampedMip + (clampedLayer * mipLevels);
+  if (type_ == TextureType::Cube) {
+    IGL_LOG_INFO("calcSubresourceIndex: mip=%u, layer=%u, mipLevels=%u -> subresource=%u\n",
+                 mipLevel, layer, mipLevels, subresource);
+  }
+  return subresource;
 }
 
 void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
