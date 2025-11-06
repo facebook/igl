@@ -222,13 +222,20 @@ void CommandBuffer::waitUntilCompleted() {
   IGL_LOG_INFO("CommandBuffer::waitUntilCompleted() - GPU work completed\n");
 }
 
-void CommandBuffer::pushDebugGroupLabel(const char* /*label*/,
+void CommandBuffer::pushDebugGroupLabel(const char* label,
                                         const igl::Color& /*color*/) const {
-  // Stub: Not yet implemented
+  if (commandList_.Get() && label) {
+    const size_t len = strlen(label);
+    std::wstring wlabel(len, L' ');
+    std::mbstowcs(&wlabel[0], label, len);
+    commandList_->BeginEvent(0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
+  }
 }
 
 void CommandBuffer::popDebugGroupLabel() const {
-  // Stub: Not yet implemented
+  if (commandList_.Get()) {
+    commandList_->EndEvent();
+  }
 }
 
 void CommandBuffer::copyBuffer(IBuffer& source,

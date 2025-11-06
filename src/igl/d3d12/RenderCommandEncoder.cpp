@@ -984,9 +984,29 @@ void RenderCommandEncoder::setDepthBias(float /*depthBias*/, float /*slopeScale*
   // This would require rebuilding the PSO with different depth bias values
 }
 
-void RenderCommandEncoder::pushDebugGroupLabel(const char* /*label*/, const Color& /*color*/) const {}
-void RenderCommandEncoder::insertDebugEventLabel(const char* /*label*/, const Color& /*color*/) const {}
-void RenderCommandEncoder::popDebugGroupLabel() const {}
+void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const Color& /*color*/) const {
+  if (commandList_ && label) {
+    const size_t len = strlen(label);
+    std::wstring wlabel(len, L' ');
+    std::mbstowcs(&wlabel[0], label, len);
+    commandList_->BeginEvent(0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
+  }
+}
+
+void RenderCommandEncoder::insertDebugEventLabel(const char* label, const Color& /*color*/) const {
+  if (commandList_ && label) {
+    const size_t len = strlen(label);
+    std::wstring wlabel(len, L' ');
+    std::mbstowcs(&wlabel[0], label, len);
+    commandList_->SetMarker(0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
+  }
+}
+
+void RenderCommandEncoder::popDebugGroupLabel() const {
+  if (commandList_) {
+    commandList_->EndEvent();
+  }
+}
 
 void RenderCommandEncoder::bindBuffer(uint32_t index,
                                        IBuffer* buffer,
