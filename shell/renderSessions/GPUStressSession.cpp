@@ -608,6 +608,62 @@ void GPUStressSession::createCubes() {
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
 }
 
+void GPUStressSession::processCustomParameter(const std::string& key, const std::string& value) {
+  auto toLower = [](std::string str) {
+    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    return str;
+  };
+
+  const std::string lowerKey = toLower(key);
+
+  if (lowerKey == "numthreads") {
+    setNumThreads(std::stoi(value));
+  } else if (lowerKey == "thrashmemory") {
+    setThrashMemory(toLower(value) == "true" || value == "1");
+  } else if (lowerKey == "memorysize") {
+    setMemorySize(static_cast<size_t>(std::stoull(value)));
+  } else if (lowerKey == "memoryreads") {
+    setMemoryReads(static_cast<size_t>(std::stoull(value)));
+  } else if (lowerKey == "memorywrites") {
+    setMemoryWrites(static_cast<size_t>(std::stoull(value)));
+  } else if (lowerKey == "goslowoncpu") {
+    setGoSlowOnCpu(std::stoi(value));
+  } else if (lowerKey == "cubecount") {
+    setCubeCount(std::stoi(value));
+  } else if (lowerKey == "drawcount") {
+    setDrawCount(std::stoi(value));
+  } else if (lowerKey == "testoverdraw") {
+    setTestOverdraw(toLower(value) == "true" || value == "1");
+  } else if (lowerKey == "enableblending") {
+    setEnableBlending(toLower(value) == "true" || value == "1");
+  } else if (lowerKey == "usemsaa") {
+    setUseMSAA(toLower(value) == "true" || value == "1");
+  } else if (lowerKey == "lightcount") {
+    setLightCount(std::stoi(value));
+  } else if (lowerKey == "threadcore") {
+    const size_t commaPos = value.find(',');
+    if (commaPos != std::string::npos) {
+      int thread = std::stoi(value.substr(0, commaPos));
+      int core = std::stoi(value.substr(commaPos + 1));
+      if (thread >= 0 && threadCount_ > 0) {
+        setThreadCore(thread, core);
+      } else {
+        IGL_LOG_ERROR(
+            "Invalid threadCore parameter: thread=%d, threadCount=%d. Ensure numThreads > 0 is "
+            "set before threadCore.",
+            thread,
+            threadCount_.load());
+      }
+    }
+  } else if (lowerKey == "dropframeinterval") {
+    setDropFrameInterval(std::stoi(value));
+  } else if (lowerKey == "dropframecount") {
+    setDropFrameCount(std::stoi(value));
+  } else if (lowerKey == "rotatecubes") {
+    setRotateCubes(toLower(value) == "true" || value == "1");
+  }
+}
+
 void GPUStressSession::initialize() noexcept {
   pipelineState_ = nullptr;
   vertexInput0_ = nullptr;
@@ -623,6 +679,16 @@ void GPUStressSession::initialize() noexcept {
   //  changed pixels we send to the delphi.
   appParamsRef().sizeX = .5f;
   appParamsRef().sizeY = .5f;
+  // Process custom parameters from ShellParams
+  if (shellParams().benchmarkParams.has_value()) {
+    const auto& benchmarkParams = shellParams().benchmarkParams.value();
+    const auto& customParams = benchmarkParams.customParams;
+    for (const auto& [key, value] : customParams) {
+      IGL_LOG_DEBUG("Processing custom parameter: '%s' = '%s'", key.c_str(), value.c_str());
+      processCustomParameter(key, value);
+    }
+  }
+
   auto& device = getPlatform().getDevice();
   if (!isDeviceCompatible(device)) {
     return;
