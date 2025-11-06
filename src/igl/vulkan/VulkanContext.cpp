@@ -794,7 +794,10 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   vkPhysicalDevice_ = (VkPhysicalDevice)desc.guid; // NOLINT(performance-no-int-to-ptr)
 
-  useStagingForBuffers_ = !ivkIsHostVisibleSingleHeapMemory(&vf_, vkPhysicalDevice_);
+  // Caches the memory types
+  vf_.vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice_, &memoryProperties);
+
+  useStagingForBuffers_ = !ivkIsHostVisibleSingleHeapMemory(&memoryProperties);
 
   // Get the available physical device features
   VulkanFeatures availableFeatures(config_);

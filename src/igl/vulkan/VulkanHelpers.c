@@ -145,11 +145,14 @@ VkResult ivkAllocateMemory(const struct VulkanFunctionTable* vt,
       .flags = enableBufferDeviceAddress ? VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR : 0,
   };
 
+  VkPhysicalDeviceMemoryProperties memProperties;
+  vt->vkGetPhysicalDeviceMemoryProperties(physDev, &memProperties);
+
   const VkMemoryAllocateInfo ai = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
       .pNext = &memoryAllocateFlagsInfo,
       .allocationSize = memRequirements->size,
-      .memoryTypeIndex = ivkFindMemoryType(vt, physDev, memRequirements->memoryTypeBits, props),
+      .memoryTypeIndex = ivkFindMemoryType(&memProperties, memRequirements->memoryTypeBits, props),
   };
 
   return vt->vkAllocateMemory(device, &ai, NULL, outMemory);
@@ -169,12 +172,15 @@ VkResult ivkAllocateMemory2(const struct VulkanFunctionTable* vt,
       .flags = enableBufferDeviceAddress ? VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR : 0,
   };
 
+  VkPhysicalDeviceMemoryProperties memProperties;
+  vt->vkGetPhysicalDeviceMemoryProperties(physDev, &memProperties);
+
   const VkMemoryAllocateInfo ai = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
       .pNext = &memoryAllocateFlagsInfo,
       .allocationSize = memRequirements->memoryRequirements.size,
-      .memoryTypeIndex =
-          ivkFindMemoryType(vt, physDev, memRequirements->memoryRequirements.memoryTypeBits, props),
+      .memoryTypeIndex = ivkFindMemoryType(
+          &memProperties, memRequirements->memoryRequirements.memoryTypeBits, props),
   };
 
   return vt->vkAllocateMemory(device, &ai, NULL, outMemory);
@@ -214,20 +220,15 @@ VkBindImageMemoryInfo ivkGetBindImageMemoryInfo(const VkBindImagePlaneMemoryInfo
   return info;
 }
 
-bool ivkIsHostVisibleSingleHeapMemory(const struct VulkanFunctionTable* vt,
-                                      VkPhysicalDevice physDev) {
-  VkPhysicalDeviceMemoryProperties memProperties;
-
-  vt->vkGetPhysicalDeviceMemoryProperties(physDev, &memProperties);
-
-  if (memProperties.memoryHeapCount != 1) {
+bool ivkIsHostVisibleSingleHeapMemory(const VkPhysicalDeviceMemoryProperties* memProps) {
+  if (memProps->memoryHeapCount != 1) {
     return false;
   }
 
   const uint32_t flag = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-  for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-    if ((memProperties.memoryTypes[i].propertyFlags & flag) == flag) {
+  for (uint32_t i = 0; i < memProps->memoryTypeCount; i++) {
+    if ((memProps->memoryTypes[i].propertyFlags & flag) == flag) {
       return true;
     }
   }
@@ -235,15 +236,11 @@ bool ivkIsHostVisibleSingleHeapMemory(const struct VulkanFunctionTable* vt,
   return false;
 }
 
-uint32_t ivkFindMemoryType(const struct VulkanFunctionTable* vt,
-                           VkPhysicalDevice physDev,
+uint32_t ivkFindMemoryType(const VkPhysicalDeviceMemoryProperties* memProps,
                            uint32_t memoryTypeBits,
                            VkMemoryPropertyFlags flags) {
-  VkPhysicalDeviceMemoryProperties memProperties;
-  vt->vkGetPhysicalDeviceMemoryProperties(physDev, &memProperties);
-
-  for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-    const bool hasProperties = (memProperties.memoryTypes[i].propertyFlags & flags) == flags;
+  for (uint32_t i = 0; i < memProps->memoryTypeCount; i++) {
+    const bool hasProperties = (memProps->memoryTypes[i].propertyFlags & flags) == flags;
     if ((memoryTypeBits & (1 << i)) && hasProperties) {
       return i;
     }

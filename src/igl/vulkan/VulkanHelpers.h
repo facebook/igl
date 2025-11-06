@@ -157,11 +157,9 @@ VkBindImageMemoryInfo ivkGetBindImageMemoryInfo(const VkBindImagePlaneMemoryInfo
                                                 VkImage image,
                                                 VkDeviceMemory memory);
 
-bool ivkIsHostVisibleSingleHeapMemory(const struct VulkanFunctionTable* vt,
-                                      VkPhysicalDevice physDev);
+bool ivkIsHostVisibleSingleHeapMemory(const VkPhysicalDeviceMemoryProperties* memProps);
 
-uint32_t ivkFindMemoryType(const struct VulkanFunctionTable* vt,
-                           VkPhysicalDevice physDev,
+uint32_t ivkFindMemoryType(const VkPhysicalDeviceMemoryProperties* memProps,
                            uint32_t memoryTypeBits,
                            VkMemoryPropertyFlags flags);
 
