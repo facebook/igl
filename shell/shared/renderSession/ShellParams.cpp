@@ -54,6 +54,16 @@ std::optional<BenchmarkRenderSessionParams> parseBenchmarkRenderSessionParams(
     else if (arg == "--benchmark" || arg == "-b") {
       benchmarkParamsFound = true;
     }
+    // Check for custom parameters in the form --key value
+    else if (arg.rfind("--", 0) == 0) {
+      std::string key = arg.substr(2); // Remove "--" prefix
+      std::string value;
+      if (i + 1 < args.size() && args[i + 1].rfind("--", 0) != 0) {
+        // Next argument is the value (not another flag)
+        value = args[++i];
+      }
+      benchmarkParams.customParams.emplace_back(key, value);
+    }
   }
 
   // Return the params if any benchmark-related parameters were found, otherwise return nullopt

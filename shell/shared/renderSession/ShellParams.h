@@ -25,6 +25,7 @@ struct BenchmarkRenderSessionParams {
   size_t numSessionsToRun = 10;
   bool logReporter = false;
   bool offscreenRenderingOnly = false;
+  std::vector<std::pair<std::string, std::string>> customParams;
 };
 
 struct ShellParams {
