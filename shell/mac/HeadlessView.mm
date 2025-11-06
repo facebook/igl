@@ -14,8 +14,10 @@
 #import <Foundation/Foundation.h> // IWYU pragma: keep
 
 @interface HeadlessView () {
-  CVDisplayLinkRef displayLink_; // display link for managing rendering thread
-  NSTrackingArea* trackingArea_; // needed for mouseMoved: events
+  CVDisplayLinkRef displayLink_; // display link for managing rendering thread //
+                                 // NOLINT(readability-identifier-naming)
+  NSTrackingArea* trackingArea_; // needed for mouseMoved: events //
+                                 // NOLINT(readability-identifier-naming)
 }
 @property (weak) ViewController* viewController;
 @end
@@ -40,13 +42,14 @@
   [self startTimer];
 }
 
-static CVReturn DisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
-                                    const CVTimeStamp* /*now*/,
-                                    const CVTimeStamp* /*outputTime*/,
-                                    CVOptionFlags /*flagsIn*/,
-                                    CVOptionFlags* /*flagsOut*/,
+static CVReturn DisplayLinkCallback(
+    CVDisplayLinkRef /*displayLink*/, // NOLINT(readability-identifier-naming)
+    const CVTimeStamp* /*now*/,
+    const CVTimeStamp* /*outputTime*/,
+    CVOptionFlags /*flagsIn*/,
+    CVOptionFlags* /*flagsOut*/,
 
-                                    void* userdata) {
+    void* userdata) {
   auto view = (__bridge HeadlessView*)userdata;
   [view.viewController performSelectorOnMainThread:@selector(render)
                                         withObject:nil
