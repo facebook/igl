@@ -18,11 +18,11 @@ namespace iglu::uniform {
 
 namespace {
 
-template<typename Test, template<typename...> class Ref>
+template<typename Test, template<typename...> class REF>
 struct IsSpecialization : std::false_type {};
 
-template<template<typename...> class Ref, typename... Args>
-struct IsSpecialization<Ref<Args...>, Ref> : std::true_type {};
+template<template<typename...> class REF, typename... Args>
+struct IsSpecialization<REF<Args...>, REF> : std::true_type {};
 
 } // namespace
 
