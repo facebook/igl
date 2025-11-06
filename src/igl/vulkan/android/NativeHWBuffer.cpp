@@ -57,7 +57,6 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
 
   auto& ctx = device_.getVulkanContext();
   auto device = device_.getVulkanContext().getVkDevice();
-  auto physicalDevice = device_.getVulkanContext().getVkPhysicalDevice();
   VkImageCreateFlags create_flags = 0;
   if (hwbDesc.usage & AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT) {
     create_flags |= VK_IMAGE_CREATE_PROTECTED_BIT;
@@ -152,13 +151,10 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
       .buffer = VK_NULL_HANDLE};
 
   // Find the memory type that supports the required properties.
-  VkPhysicalDeviceMemoryProperties vulkanMemoryProperties;
-  ctx.vf_.vkGetPhysicalDeviceMemoryProperties(physicalDevice, &vulkanMemoryProperties);
-
   uint32_t memory_type_bits = ahb_props.memoryTypeBits;
 
   uint32_t type_index = ivkGetMemoryTypeIndex(
-      vulkanMemoryProperties, memory_type_bits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+      ctx.memoryProperties, memory_type_bits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
   // An instance of the VkMemoryAllocateInfo structure defines a memory import
   // operation.
