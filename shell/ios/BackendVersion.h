@@ -13,11 +13,11 @@
 
 // MUST match igl/Common.h
 typedef NS_ENUM(NSUInteger, BackendFlavor) {
-  BackendFlavorInvalid,
-  BackendFlavorOpenGL,
-  BackendFlavorOpenGL_ES,
-  BackendFlavorMetal,
-  BackendFlavorVulkan,
+  kBackendFlavorInvalid,
+  kBackendFlavorOpenGL,
+  kBackendFlavorOpenGLES,
+  kBackendFlavorMetal,
+  kBackendFlavorVulkan,
   // @fb-only
 };
 
