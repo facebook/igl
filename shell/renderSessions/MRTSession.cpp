@@ -17,7 +17,9 @@
 #include <igl/SamplerState.h>
 #include <igl/ShaderCreator.h>
 #include <igl/VertexInputState.h>
+#if IGL_BACKEND_OPENGL
 #include <igl/opengl/Config.h>
+#endif
 
 namespace igl::shell {
 struct VertexPosUv {
@@ -48,7 +50,7 @@ static uint16_t indexData[] = {
 enum class ShaderPrecision { Low, Medium, High };
 
 static std::string getPrecisionProlog(ShaderPrecision precision) {
-#if IGL_OPENGL_ES
+#if IGL_BACKEND_OPENGL && IGL_OPENGL_ES
   switch (precision) {
   case ShaderPrecision::Low:
     return {"precision lowp float;"};
@@ -63,10 +65,14 @@ static std::string getPrecisionProlog(ShaderPrecision precision) {
 }
 
 static std::string getVersionProlog() {
+#if IGL_BACKEND_OPENGL
 #if IGL_OPENGL_ES
-  return {"#version 300 es\n"};
+  return "#version 300 es\n";
 #else
-  return std::string("#version 410\n");
+  return "#version 410\n";
+#endif
+#else
+  return "";
 #endif
 }
 

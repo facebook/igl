@@ -11,8 +11,9 @@
 
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/RenderCommandEncoder.h>
+#if IGL_BACKEND_OPENGL
 #include <igl/opengl/Device.h>
-
+#endif
 namespace igl::shell {
 
 namespace {

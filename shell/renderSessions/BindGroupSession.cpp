@@ -17,7 +17,9 @@
 #include <igl/NameHandle.h>
 #include <igl/RenderCommandEncoder.h>
 #include <igl/ShaderCreator.h>
+#if IGL_BACKEND_OPENGL
 #include <igl/opengl/Version.h>
+#endif
 
 namespace {
 struct VertexPosUvw {
@@ -74,6 +76,8 @@ std::string getProlog(igl::IDevice& device) {
     prependVersionString += "\nprecision highp float;\n";
     return prependVersionString;
   }
+#else
+  (void)device; // Suppress unused parameter warning
 #endif // IGL_BACKEND_OPENGL
   return "";
 }
