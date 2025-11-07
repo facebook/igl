@@ -164,7 +164,7 @@ class TexturesRGBBaseTest : public ::testing::Test {
 // Panther is external codename for Quest3s and Eureka is external codename for Quest3
 #if IGL_PLATFORM_LINUX_SWIFTSHADER || defined(PANTHER_PLATFORM) || defined(EUREKA_PLATFORM)
     if (iglDev_->getBackendType() == BackendType::OpenGL) {
-      kTolerance_ = 1; // Swiftshader and quest 3(s) opengl is not accurate enough.
+      tolerance_ = 1; // Swiftshader and quest 3(s) opengl is not accurate enough.
     }
 #endif
   }
@@ -203,7 +203,7 @@ class TexturesRGBBaseTest : public ::testing::Test {
   size_t offscreenTexWidth_ = 2;
   size_t offscreenTexHeight_ = 2;
 
-  uint8_t kTolerance_ = 0; // some platforms aren't perfect and need some tolerance
+  uint8_t tolerance_ = 0; // some platforms aren't perfect and need some tolerance
 };
 
 class TexturesRGBSmallTest : public TexturesRGBBaseTest {
@@ -311,10 +311,10 @@ TEST_F(TexturesRGBSmallTest, Passthrough) {
   for (size_t i = 0; i < offscreenTexWidth_ * offscreenTexHeight_; i++) {
     const util::sRGBColor currentColor(pixels[i]);
     const util::sRGBColor testColor(data::texture::kTexRgba2x2[i]);
-    ASSERT_LE(abs(currentColor.r - testColor.r), kTolerance_);
-    ASSERT_LE(abs(currentColor.g - testColor.g), kTolerance_);
-    ASSERT_LE(abs(currentColor.b - testColor.b), kTolerance_);
-    ASSERT_LE(abs(currentColor.a - testColor.a), kTolerance_);
+    ASSERT_LE(abs(currentColor.r - testColor.r), tolerance_);
+    ASSERT_LE(abs(currentColor.g - testColor.g), tolerance_);
+    ASSERT_LE(abs(currentColor.b - testColor.b), tolerance_);
+    ASSERT_LE(abs(currentColor.a - testColor.a), tolerance_);
   }
 }
 
@@ -395,10 +395,10 @@ TEST_F(TexturesRGBBigTest, Passthrough) {
   for (size_t i = 0; i < offscreenTexWidth_ * offscreenTexHeight_; i++) {
     const util::sRGBColor currentColor(pixels[i]);
     const util::sRGBColor testColor(allColorsBuffer[i]);
-    ASSERT_LE(abs(currentColor.r - testColor.r), kTolerance_);
-    ASSERT_LE(abs(currentColor.g - testColor.g), kTolerance_);
-    ASSERT_LE(abs(currentColor.b - testColor.b), kTolerance_);
-    ASSERT_LE(abs(currentColor.a - testColor.a), kTolerance_);
+    ASSERT_LE(abs(currentColor.r - testColor.r), tolerance_);
+    ASSERT_LE(abs(currentColor.g - testColor.g), tolerance_);
+    ASSERT_LE(abs(currentColor.b - testColor.b), tolerance_);
+    ASSERT_LE(abs(currentColor.a - testColor.a), tolerance_);
   }
 }
 
