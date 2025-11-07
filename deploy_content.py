@@ -6,6 +6,7 @@
 
 
 import os
+import platform
 import sys
 
 folder = "third-party"
@@ -17,6 +18,15 @@ try:
     os.mkdir(base)
 except FileExistsError:
     pass
+
+# @fb-only
+    # @fb-only
+        # @fb-only
+    # @fb-only
+    # @fb-only
+        # @fb-only
+    # @fb-only
+    # @fb-only
 
 os.system(
     '"{}" {} -b {} --bootstrap-file={}'.format(sys.executable, script, base, json)
