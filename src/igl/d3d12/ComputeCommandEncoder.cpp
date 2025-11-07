@@ -391,10 +391,96 @@ void ComputeCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, cons
   IGL_LOG_INFO("ComputeCommandEncoder::bindUniform - not supported, use uniform buffers\n");
 }
 
-void ComputeCommandEncoder::bindBytes(uint32_t /*index*/, const void* /*data*/, size_t /*length*/) {
-  // bindBytes not yet implemented
-  // Would need to create a temporary upload buffer and copy data
-  IGL_LOG_INFO("ComputeCommandEncoder::bindBytes - not yet implemented\n");
+void ComputeCommandEncoder::bindBytes(uint32_t index, const void* data, size_t length) {
+  auto* commandList = commandBuffer_.getCommandList();
+  if (!commandList || !data || length == 0) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindBytes: Invalid parameters (list=%p, data=%p, len=%zu)\n",
+                  commandList, data, length);
+    return;
+  }
+
+  // bindBytes binds small constant data as a constant buffer
+  // We use a dynamic CBV approach: allocate temp buffer from upload heap and cache its GPU address
+
+  // Validate index range - we support binding to b1-b7 (b0 is reserved for push constants)
+  if (index >= kMaxComputeBuffers) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindBytes: index %u exceeds supported range [0,%zu)\n",
+                  index, kMaxComputeBuffers);
+    return;
+  }
+
+  // D3D12 requires constant buffer addresses to be 256-byte aligned
+  constexpr size_t kCBVAlignment = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT; // 256 bytes
+  const size_t alignedSize = (length + kCBVAlignment - 1) & ~(kCBVAlignment - 1);
+
+  // Create transient upload buffer for this data
+  auto& context = commandBuffer_.getContext();
+  auto* device = context.getDevice();
+  if (!device) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindBytes: D3D12 device is null\n");
+    return;
+  }
+
+  // Create upload heap buffer
+  D3D12_HEAP_PROPERTIES heapProps = {};
+  heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+  heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+  heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+
+  D3D12_RESOURCE_DESC bufferDesc = {};
+  bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+  bufferDesc.Alignment = 0;
+  bufferDesc.Width = alignedSize;
+  bufferDesc.Height = 1;
+  bufferDesc.DepthOrArraySize = 1;
+  bufferDesc.MipLevels = 1;
+  bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+  bufferDesc.SampleDesc.Count = 1;
+  bufferDesc.SampleDesc.Quality = 0;
+  bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+  bufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+  Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
+  HRESULT hr = device->CreateCommittedResource(
+      &heapProps,
+      D3D12_HEAP_FLAG_NONE,
+      &bufferDesc,
+      D3D12_RESOURCE_STATE_GENERIC_READ,
+      nullptr,
+      IID_PPV_ARGS(uploadBuffer.GetAddressOf())
+  );
+
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindBytes: Failed to create upload buffer: HRESULT = 0x%08X\n",
+                  static_cast<unsigned>(hr));
+    return;
+  }
+
+  // Map and copy data
+  void* mappedPtr = nullptr;
+  hr = uploadBuffer->Map(0, nullptr, &mappedPtr);
+  if (FAILED(hr) || !mappedPtr) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindBytes: Failed to map upload buffer: HRESULT = 0x%08X\n",
+                  static_cast<unsigned>(hr));
+    return;
+  }
+
+  memcpy(mappedPtr, data, length);
+  uploadBuffer->Unmap(0, nullptr);
+
+  // Get GPU virtual address and cache it (matching bindBuffer behavior for uniform buffers)
+  D3D12_GPU_VIRTUAL_ADDRESS gpuAddress = uploadBuffer->GetGPUVirtualAddress();
+  cachedCbvAddresses_[index] = gpuAddress;
+  for (size_t i = index + 1; i < kMaxComputeBuffers; ++i) {
+    cachedCbvAddresses_[i] = 0;
+  }
+  boundCbvCount_ = static_cast<size_t>(index + 1);
+
+  // Track transient resource to keep it alive until GPU finishes
+  commandBuffer_.trackTransientResource(uploadBuffer.Get());
+
+  IGL_LOG_INFO("ComputeCommandEncoder::bindBytes: Bound %zu bytes (aligned to %zu) to index %u (GPU address 0x%llx)\n",
+               length, alignedSize, index, gpuAddress);
 }
 
 void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, TextureFormat /*format*/) {
