@@ -907,10 +907,10 @@ VulkanImageView VulkanImage::createImageView(VkImageViewType type,
   return VulkanImageView{*ctx_, ci, debugName};
 }
 
-VulkanImageView VulkanImage::createImageView(VulkanImageViewCreateInfo ci,
+VulkanImageView VulkanImage::createImageView(VulkanImageViewCreateInfo createInfo,
                                              const char* debugName) const {
-  ci.image = vkImage_;
-  return VulkanImageView{*ctx_, ci, debugName};
+  createInfo.image = vkImage_;
+  return VulkanImageView{*ctx_, createInfo, debugName};
 }
 
 void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
