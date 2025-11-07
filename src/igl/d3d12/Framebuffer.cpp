@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <chrono>
 #include <igl/d3d12/Framebuffer.h>
+#include <igl/d3d12/Common.h>
 #include <igl/d3d12/CommandBuffer.h>
 #include <igl/d3d12/CommandQueue.h>
 #include <igl/d3d12/Device.h>
@@ -116,6 +117,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
 
   const auto fmtProps = TextureFormatProperties::fromTextureFormat(srcTex->getFormat());
   const size_t bytesPerPixel = std::max<size_t>(fmtProps.bytesPerBlock, 1);
+  const bool needsRgbUnpadding = formatNeedsRgbPadding(srcTex->getFormat());
   const size_t fullRowBytes = static_cast<size_t>(mipWidth) * bytesPerPixel;
 
   bool cacheUpToDate = cache.cacheValid &&
@@ -254,6 +256,11 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
       return;
     }
 
+    const size_t rowSizeNoPadding = static_cast<size_t>(rowSizeInBytes);
+    const size_t gpuBytesPerPixel =
+        mipWidth > 0 ? std::max<size_t>(rowSizeNoPadding / mipWidth, 1) : bytesPerPixel;
+    const bool applyRgbUnpadding = needsRgbUnpadding && gpuBytesPerPixel > bytesPerPixel;
+
     const uint8_t* srcPtr = static_cast<const uint8_t*>(mapped) + footprint.Offset;
     const size_t srcRowPitch = footprint.Footprint.RowPitch;
     const size_t copyRowBytes = fullRowBytes;
@@ -270,7 +277,17 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
           cache.cachedData.data() +
           static_cast<size_t>(mipHeight - 1 - row) * static_cast<size_t>(cache.cachedRowPitch);
 
-      if (needsSwap && bytesPerPixel == 4) {
+      if (applyRgbUnpadding) {
+        // GPU stores RGB_F16/F32 textures as RGBA resources (see D3D12 texture format mapping),
+        // so drop the padded alpha channel when caching readback data to keep CPU-visible rows RGB.
+        const uint8_t* srcPixel = s;
+        uint8_t* dstPixel = d;
+        for (uint32_t col = 0; col < mipWidth; ++col) {
+          std::memcpy(dstPixel, srcPixel, bytesPerPixel);
+          srcPixel += gpuBytesPerPixel;
+          dstPixel += bytesPerPixel;
+        }
+      } else if (needsSwap && bytesPerPixel == 4) {
         for (uint32_t col = 0; col < mipWidth; ++col) {
           const uint32_t idx = col * 4;
           d[idx + 0] = s[idx + 2];

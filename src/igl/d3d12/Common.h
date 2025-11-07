@@ -23,16 +23,41 @@
 
 namespace igl::d3d12 {
 
-// Frame buffering count (2-3 for double/triple buffering)
+// ===== D3D12 Backend Configuration Limits =====
+//
+// These constants define the IGL D3D12 backend's operational limits.
+// They are validated against actual device capabilities at runtime (see Device::validateDeviceLimits).
+//
+// Design Principles:
+// - Conservative defaults that work on all D3D12 Feature Level 11.0+ hardware
+// - Balance between compatibility and performance
+// - Aligned with IGL's cross-platform design (matching Vulkan backend where applicable)
+//
+// Device Capability Validation (P2_DX12-018):
+// - At Device initialization, actual hardware capabilities are queried via CheckFeatureSupport
+// - Limits are validated against D3D12 specifications and logged for diagnostics
+// - No runtime failures on capability mismatches; warnings are logged instead
+
+// Frame buffering count for CPU/GPU parallelism (2-3 for double/triple buffering)
+// Design Choice: 3 frames allows optimal pipeline parallelism on most hardware
+// No direct D3D12 limit; validated against available system memory at runtime
 constexpr uint32_t kMaxFramesInFlight = 3;
 
 // Maximum number of descriptor sets (matching IGL's Vulkan backend)
+// Design Choice: Matches Vulkan's typical descriptor set count for cross-backend consistency
+// Validated against: Resource Binding Tier (Tier 1/2/3 affect descriptor table limits)
 constexpr uint32_t kMaxDescriptorSets = 4;
 
 // Maximum number of samplers (increased from 16 to accommodate ImGui with multiple texture views)
+// D3D12 Limit: D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE = 2048
+// Current Value: 32 (conservative, well within spec)
+// Validated at runtime to ensure kMaxSamplers <= 2048
 constexpr uint32_t kMaxSamplers = 32;
 
 // Maximum number of vertex attributes
+// D3D12 Limit: D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT = 32
+// Current Value: 16 (conservative, matches common usage patterns)
+// Validated at runtime to ensure kMaxVertexAttributes <= 32
 constexpr uint32_t kMaxVertexAttributes = 16;
 
 // Macro to check HRESULT and convert to IGL Result
@@ -95,6 +120,7 @@ DXGI_FORMAT textureFormatToDXGIFormat(TextureFormat format);
 DXGI_FORMAT textureFormatToDXGIResourceFormat(TextureFormat format, bool sampledUsage);
 DXGI_FORMAT textureFormatToDXGIShaderResourceViewFormat(TextureFormat format);
 TextureFormat dxgiFormatToTextureFormat(DXGI_FORMAT format);
+bool formatNeedsRgbPadding(TextureFormat format);
 
 } // namespace igl::d3d12
 

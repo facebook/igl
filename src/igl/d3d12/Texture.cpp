@@ -20,6 +20,37 @@ bool needsRGBAChannelSwap(igl::TextureFormat format) {
     return false;
   }
 }
+
+void expandRgbToRgbaRow(const uint8_t* src,
+                        uint8_t* dst,
+                        uint32_t width,
+                        igl::TextureFormat format) {
+  using igl::TextureFormat;
+  if (format == TextureFormat::RGB_F16) {
+    constexpr uint16_t kHalfOne = 0x3C00; // 1.0 in IEEE half
+    const uint16_t* srcHalf = reinterpret_cast<const uint16_t*>(src);
+    uint16_t* dstHalf = reinterpret_cast<uint16_t*>(dst);
+    for (uint32_t col = 0; col < width; ++col) {
+      dstHalf[0] = srcHalf[0];
+      dstHalf[1] = srcHalf[1];
+      dstHalf[2] = srcHalf[2];
+      dstHalf[3] = kHalfOne;
+      srcHalf += 3;
+      dstHalf += 4;
+    }
+  } else {
+    const float* srcFloat = reinterpret_cast<const float*>(src);
+    float* dstFloat = reinterpret_cast<float*>(dst);
+    for (uint32_t col = 0; col < width; ++col) {
+      dstFloat[0] = srcFloat[0];
+      dstFloat[1] = srcFloat[1];
+      dstFloat[2] = srcFloat[2];
+      dstFloat[3] = 1.0f;
+      srcFloat += 3;
+      dstFloat += 4;
+    }
+  }
+}
 } // namespace
 
 namespace igl::d3d12 {
@@ -140,10 +171,11 @@ Result Texture::upload(const TextureRangeDesc& range,
   const uint32_t depth = range.depth > 0 ? range.depth : dimensions_.depth;
 
   const auto props = TextureFormatProperties::fromTextureFormat(format_);
+  const size_t srcBytesPerPixel = std::max<size_t>(props.bytesPerBlock, 1);
+  const bool padRgbToRgba = formatNeedsRgbPadding(format_);
   // Calculate bytes per row if not provided
   if (bytesPerRow == 0) {
-    const size_t bpp = std::max<uint8_t>(props.bytesPerBlock, 1);
-    bytesPerRow = static_cast<size_t>(width) * bpp;
+    bytesPerRow = static_cast<size_t>(width) * srcBytesPerPixel;
   }
 
   // Get the resource description to calculate required size
@@ -227,7 +259,8 @@ Result Texture::upload(const TextureRangeDesc& range,
 
       const uint8_t* srcData = static_cast<const uint8_t*>(data) + srcDataOffset;
       uint8_t* dstData = static_cast<uint8_t*>(mappedData) + layout.Offset;
-      const size_t copyBytes = std::min(static_cast<size_t>(rowSize), mipBytesPerRow);
+      const size_t requiredRowBytes = static_cast<size_t>(rowSize);
+      const size_t copyBytes = std::min(requiredRowBytes, mipBytesPerRow);
       const size_t srcDepthPitch = mipBytesPerRow * mipHeight;
       const size_t dstDepthPitch = layout.Footprint.RowPitch * layout.Footprint.Height;
 
@@ -237,7 +270,9 @@ Result Texture::upload(const TextureRangeDesc& range,
         for (UINT row = 0; row < std::min(mipHeight, numRows); ++row) {
           const uint8_t* srcRow = srcSlice + row * mipBytesPerRow;
           uint8_t* dstRow = dstSlice + row * layout.Footprint.RowPitch;
-          if (swapRB) {
+          if (padRgbToRgba) {
+            expandRgbToRgbaRow(srcRow, dstRow, mipWidth, format_);
+          } else if (swapRB && srcBytesPerPixel == 4) {
             for (uint32_t col = 0; col < mipWidth; ++col) {
               const uint32_t idx = col * 4;
               dstRow[idx + 0] = srcRow[idx + 2];
@@ -247,6 +282,13 @@ Result Texture::upload(const TextureRangeDesc& range,
             }
           } else {
             memcpy(dstRow, srcRow, copyBytes);
+            if (requiredRowBytes > copyBytes) {
+              std::memset(dstRow + copyBytes, 0, requiredRowBytes - copyBytes);
+            }
+          }
+          const size_t rowPitch = layout.Footprint.RowPitch;
+          if (rowPitch > requiredRowBytes) {
+            std::memset(dstRow + requiredRowBytes, 0, rowPitch - requiredRowBytes);
           }
         }
       }
