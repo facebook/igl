@@ -44,14 +44,14 @@
 #include <igl/DeviceFeatures.h>
 
 @interface ViewController () <TouchDelegate, ViewSizeChangeDelegate, IglSurfaceTexturesProvider> {
-  igl::shell::RenderSessionConfig config_;
-  CALayer* layer_;
-  CGRect frame_;
-  id<CAMetalDrawable> currentDrawable_;
-  id<MTLTexture> depthStencilTexture_;
+  igl::shell::RenderSessionConfig config;
+  CALayer* layer;
+  CGRect frame;
+  id<CAMetalDrawable> currentDrawable;
+  id<MTLTexture> depthStencilTexture;
 
-  RenderSessionController* renderSessionController_;
-  IglSurfaceTexturesAdapter surfaceTexturesAdapter_;
+  RenderSessionController* renderSessionController;
+  IglSurfaceTexturesAdapter surfaceTexturesAdapter;
 }
 - (BackendVersion*)toBackendVersion:(igl::BackendVersion)iglBackendVersion;
 @end
@@ -59,28 +59,28 @@
 @implementation ViewController
 
 - (void)drawInMTKView:(nonnull MTKView*)view {
-  currentDrawable_ = view.currentDrawable;
-  depthStencilTexture_ = view.depthStencilTexture;
+  currentDrawable = view.currentDrawable;
+  depthStencilTexture = view.depthStencilTexture;
 
-  IGL_DEBUG_ASSERT(renderSessionController_);
-  [renderSessionController_ tick];
+  IGL_DEBUG_ASSERT(renderSessionController);
+  [renderSessionController tick];
 }
 
 - (void)mtkView:(nonnull MTKView*)view drawableSizeWillChange:(CGSize)size {
-  [renderSessionController_ releaseSessionFrameBuffer];
+  [renderSessionController releaseSessionFrameBuffer];
 }
 
 - (void)onViewSizeChange {
-  [renderSessionController_ releaseSessionFrameBuffer];
+  [renderSessionController releaseSessionFrameBuffer];
 }
 
 - (instancetype)init:(igl::shell::RenderSessionConfig)config
      factoryProvider:(RenderSessionFactoryProvider*)factoryProvider
                frame:(CGRect)frame {
   if (self = [super initWithNibName:nil bundle:nil]) {
-    config_ = config;
-    frame_ = frame;
-    renderSessionController_ = [[RenderSessionController alloc]
+    self->config = config;
+    self->frame = frame;
+    renderSessionController = [[RenderSessionController alloc]
         initWithBackendVersion:[self toBackendVersion:config.backendVersion]
                factoryProvider:factoryProvider
                surfaceProvider:self];
@@ -89,7 +89,7 @@
 }
 
 - (void)initRenderSessionController {
-  IGL_DEBUG_ASSERT(renderSessionController_);
+  IGL_DEBUG_ASSERT(renderSessionController);
 
 // @fb-only
   // @fb-only
@@ -98,11 +98,11 @@
   // @fb-only
 // @fb-only
 
-  [renderSessionController_ initializeDevice];
+  [renderSessionController initializeDevice];
 }
 
 - (igl::shell::Platform*)platform {
-  IglShellPlatformAdapter* adapter = [renderSessionController_ adapter];
+  IglShellPlatformAdapter* adapter = [renderSessionController adapter];
   IGL_DEBUG_ASSERT(adapter);
   return adapter->platform;
 }
@@ -110,14 +110,14 @@
 // clang-format off
 - (igl::SurfaceTextures)createSurfaceTexturesInternal {
   [[maybe_unused]] auto& device = [self platform]->getDevice();
-  switch (config_.backendVersion.flavor) {
+  switch (config.backendVersion.flavor) {
 #if IGL_BACKEND_METAL
   case igl::BackendFlavor::Metal: {
     auto *platformDevice = device.getPlatformDevice<igl::metal::PlatformDevice>();
     IGL_DEBUG_ASSERT(platformDevice);
     return igl::SurfaceTextures{
-        .color = platformDevice->createTextureFromNativeDrawable(currentDrawable_, nullptr),
-        .depth = platformDevice->createTextureFromNativeDepth(depthStencilTexture_, nullptr),
+        .color = platformDevice->createTextureFromNativeDrawable(currentDrawable, nullptr),
+        .depth = platformDevice->createTextureFromNativeDepth(depthStencilTexture, nullptr),
     };
   }
 #endif
@@ -127,8 +127,8 @@
     auto *platformDevice = device.getPlatformDevice<igl::opengl::ios::PlatformDevice>();
     IGL_DEBUG_ASSERT(platformDevice);
     return igl::SurfaceTextures{
-        .color = platformDevice->createTextureFromNativeDrawable((CAEAGLLayer*)layer_, nullptr),
-        .depth = platformDevice->createTextureFromNativeDepth((CAEAGLLayer*)layer_, config_.depthTextureFormat, nullptr),
+        .color = platformDevice->createTextureFromNativeDrawable((CAEAGLLayer*)layer, nullptr),
+        .depth = platformDevice->createTextureFromNativeDepth((CAEAGLLayer*)layer, config.depthTextureFormat, nullptr),
     };
   }
 #endif
@@ -154,12 +154,12 @@
 
 // Protocol IglSurfaceTexturesProvider
 - (IglSurfacesTextureAdapterPtr)createSurfaceTextures {
-  surfaceTexturesAdapter_.surfaceTextures = [self createSurfaceTexturesInternal];
-  return &surfaceTexturesAdapter_;
+  surfaceTexturesAdapter.surfaceTextures = [self createSurfaceTexturesInternal];
+  return &surfaceTexturesAdapter;
 }
 
 - (void)loadView {
-  switch (config_.backendVersion.flavor) {
+  switch (config.backendVersion.flavor) {
   case igl::BackendFlavor::Invalid:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     break;
@@ -168,15 +168,15 @@
     [self initRenderSessionController];
     auto d = static_cast<igl::metal::Device&>([self platform]->getDevice()).get();
 
-    auto metalView = [[MetalView alloc] initWithFrame:frame_ device:d];
+    auto metalView = [[MetalView alloc] initWithFrame:frame device:d];
     metalView.colorPixelFormat =
-        igl::metal::Texture::textureFormatToMTLPixelFormat(config_.swapchainColorTextureFormat);
+        igl::metal::Texture::textureFormatToMTLPixelFormat(config.swapchainColorTextureFormat);
     metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
 
     metalView.delegate = self;
     [metalView setTouchDelegate:self];
     self.view = metalView;
-    layer_ = metalView.layer;
+    layer = metalView.layer;
 #endif
     break;
   }
@@ -187,7 +187,7 @@
 
     NSString* drawablePropertyColorFormat = kEAGLColorFormatRGBA8;
 
-    switch (config_.swapchainColorTextureFormat) {
+    switch (config.swapchainColorTextureFormat) {
     case igl::TextureFormat::BGRA_UNorm8:
       drawablePropertyColorFormat = kEAGLColorFormatRGBA8;
       break;
@@ -223,26 +223,26 @@
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  if (config_.backendVersion.flavor != igl::BackendFlavor::Metal) {
-    layer_ = self.view.layer;
+  if (config.backendVersion.flavor != igl::BackendFlavor::Metal) {
+    layer = self.view.layer;
     [self initRenderSessionController];
   }
 }
 
 - (void)viewWillAppear:(BOOL)animated {
   [super viewWillAppear:animated];
-  if (config_.backendVersion.flavor != igl::BackendFlavor::Metal) {
-    IGL_DEBUG_ASSERT(renderSessionController_);
-    [renderSessionController_ start];
+  if (config.backendVersion.flavor != igl::BackendFlavor::Metal) {
+    IGL_DEBUG_ASSERT(renderSessionController);
+    [renderSessionController start];
   }
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
   [super viewWillDisappear:animated];
 
-  if (config_.backendVersion.flavor != igl::BackendFlavor::Metal) {
-    IGL_DEBUG_ASSERT(renderSessionController_);
-    [renderSessionController_ stop];
+  if (config.backendVersion.flavor != igl::BackendFlavor::Metal) {
+    IGL_DEBUG_ASSERT(renderSessionController);
+    [renderSessionController stop];
   }
 }
 
