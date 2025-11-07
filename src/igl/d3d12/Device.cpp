@@ -1831,6 +1831,16 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(Te
     break;
   }
 
+  // D3D12 does not support 3-channel RGB formats natively - they are mapped to RGBA formats
+  // However, 3-channel formats cannot be used as render targets because:
+  // 1. RGB_F16/RGB_F32 map to RGBA equivalents, but D3D12 expects RGBA data layout for RT
+  // 2. Rendering to these formats would require alpha channel handling that IGL doesn't expose
+  // 3. Other backends (OpenGL, Metal) also don't support RGB formats as render targets
+  // See also: OpenGL's DeviceFeatureSet.cpp line 1271 "RGB floating point textures are NOT renderable"
+  const bool isThreeChannelRgbFormat =
+      format == TextureFormat::RGB_F16 ||
+      format == TextureFormat::RGB_F32;
+
   auto* dev = ctx_->getDevice();
   if (!dev) {
     return 0;
@@ -1859,7 +1869,10 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(Te
   if ((s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) && props.hasColor() && !props.isInteger()) {
     caps |= CapBits::SampledFiltered;
   }
-  if ((s1 & D3D12_FORMAT_SUPPORT1_RENDER_TARGET) || (s1 & D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL)) {
+  // Don't report Attachment capability for 3-channel RGB formats even if D3D12 reports the
+  // underlying RGBA format as renderable - using them as render targets causes device removal
+  if (!isThreeChannelRgbFormat &&
+      ((s1 & D3D12_FORMAT_SUPPORT1_RENDER_TARGET) || (s1 & D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL))) {
     caps |= CapBits::Attachment;
   }
   // Typed UAV load + store required for Storage
