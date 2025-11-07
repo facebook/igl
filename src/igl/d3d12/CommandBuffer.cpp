@@ -61,6 +61,29 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc)
 
   // Command lists are created in recording state, close it for now
   commandList_->Close();
+
+  // Create scheduling fence for waitUntilScheduled() support
+  hr = d3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(scheduleFence_.GetAddressOf()));
+  if (FAILED(hr)) {
+    char errorMsg[256];
+    snprintf(errorMsg, sizeof(errorMsg), "Failed to create scheduling fence: HRESULT = 0x%08X", static_cast<unsigned>(hr));
+    IGL_DEBUG_ABORT(errorMsg);
+  }
+
+  // Create event for fence waiting
+  scheduleFenceEvent_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+  if (!scheduleFenceEvent_) {
+    IGL_DEBUG_ABORT("Failed to create scheduling fence event");
+  }
+}
+
+CommandBuffer::~CommandBuffer() {
+  // Clean up scheduling fence event handle
+  if (scheduleFenceEvent_) {
+    CloseHandle(scheduleFenceEvent_);
+    scheduleFenceEvent_ = nullptr;
+  }
+  // scheduleFence_ is a ComPtr and will be automatically released
 }
 
 uint32_t& CommandBuffer::getNextCbvSrvUavDescriptor() {
@@ -189,7 +212,48 @@ void CommandBuffer::present(const std::shared_ptr<ITexture>& /*surface*/) const 
 }
 
 void CommandBuffer::waitUntilScheduled() {
-  // Stub: Not yet implemented
+  // If scheduleValue_ is 0, the command buffer hasn't been submitted yet
+  if (scheduleValue_ == 0) {
+    IGL_LOG_INFO("CommandBuffer::waitUntilScheduled() - Not yet submitted, returning immediately\n");
+    return;
+  }
+
+  // Check if the scheduling fence has already been signaled
+  if (!scheduleFence_.Get()) {
+    IGL_LOG_ERROR("CommandBuffer::waitUntilScheduled() - Scheduling fence is null\n");
+    return;
+  }
+
+  const UINT64 completedValue = scheduleFence_->GetCompletedValue();
+  if (completedValue >= scheduleValue_) {
+    IGL_LOG_INFO("CommandBuffer::waitUntilScheduled() - Already scheduled (completed=%llu, target=%llu)\n",
+                 completedValue, scheduleValue_);
+    return;
+  }
+
+  // Wait for the scheduling fence to be signaled
+  IGL_LOG_INFO("CommandBuffer::waitUntilScheduled() - Waiting for scheduling (completed=%llu, target=%llu)\n",
+               completedValue, scheduleValue_);
+
+  if (!scheduleFenceEvent_) {
+    IGL_LOG_ERROR("CommandBuffer::waitUntilScheduled() - Fence event is null\n");
+    return;
+  }
+
+  HRESULT hr = scheduleFence_->SetEventOnCompletion(scheduleValue_, scheduleFenceEvent_);
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("CommandBuffer::waitUntilScheduled() - SetEventOnCompletion failed: 0x%08X\n",
+                  static_cast<unsigned>(hr));
+    return;
+  }
+
+  // Re-check after SetEventOnCompletion to avoid race condition
+  if (scheduleFence_->GetCompletedValue() < scheduleValue_) {
+    WaitForSingleObject(scheduleFenceEvent_, INFINITE);
+  }
+
+  IGL_LOG_INFO("CommandBuffer::waitUntilScheduled() - Scheduling complete (fence now=%llu)\n",
+               scheduleFence_->GetCompletedValue());
 }
 
 void CommandBuffer::waitUntilCompleted() {

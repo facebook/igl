@@ -19,7 +19,7 @@ class Device;
 class CommandBuffer final : public ICommandBuffer {
  public:
   CommandBuffer(Device& device, const CommandBufferDesc& desc);
-  ~CommandBuffer() override = default;
+  ~CommandBuffer() override;
 
   std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
       const RenderPassDesc& renderPass,
@@ -75,6 +75,14 @@ class CommandBuffer final : public ICommandBuffer {
   // NOTE: Command allocators are now managed per-frame in FrameContext, not per-CommandBuffer
   size_t currentDrawCount_ = 0;
   bool recording_ = false;
+
+  // Scheduling fence infrastructure (separate from completion fence)
+  // Used to track when command buffer is submitted to GPU queue (not when GPU completes)
+  Microsoft::WRL::ComPtr<ID3D12Fence> scheduleFence_;
+  uint64_t scheduleValue_ = 0;
+  HANDLE scheduleFenceEvent_ = nullptr;
+
+  friend class CommandQueue; // Allow CommandQueue to signal scheduleFence_
 };
 
 } // namespace igl::d3d12

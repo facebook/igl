@@ -135,6 +135,14 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   ID3D12CommandList* commandLists[] = {d3dCommandList};
   d3dCommandQueue->ExecuteCommandLists(1, commandLists);
 
+  // Signal the command buffer's scheduling fence immediately after submission
+  // This allows waitUntilScheduled() to return as soon as the command buffer is queued
+  // (NOT when GPU completes execution)
+  auto& cmdBuf = const_cast<CommandBuffer&>(d3dCommandBuffer);
+  cmdBuf.scheduleValue_ = 1;  // Use simple 0/1 toggle (0 = not scheduled, 1 = scheduled)
+  d3dCommandQueue->Signal(cmdBuf.scheduleFence_.Get(), cmdBuf.scheduleValue_);
+  IGL_LOG_INFO("CommandQueue::submit() - Signaled scheduling fence (value=%llu)\n", cmdBuf.scheduleValue_);
+
   IGL_LOG_INFO("CommandQueue::submit() - Command list executed, checking device status...\n");
 
   // Check for device removed error
