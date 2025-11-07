@@ -773,6 +773,55 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
   }
   return (PFN_vkGetInstanceProcAddr)dlsym(lib, "vkGetInstanceProcAddr");
 #else
+  // Preload libraries that Vulkan ICD drivers commonly depend on.
+  // This ensures they're available when the Vulkan loader dlopens() ICD drivers.
+  // Libraries must be preloaded in dependency order (leaf dependencies first).
+  // This is required because Buck2 uses a custom dynamic linker that doesn't search
+  // standard system library paths (/lib64, /usr/lib64). We cannot use LD_LIBRARY_PATH
+  // or RPATH because they would interfere with Buck2's hermetic build environment.
+#if IGL_PLATFORM_LINUX && !defined(IGL_CMAKE_BUILD)
+  const std::array<const char*, 27> kPreloadLibs = {
+      // Base system libraries (leaf dependencies)
+      "/lib64/libtinfo.so.6", // Required by libedit
+      "/lib64/liblzma.so.5", // Required by libxml2
+      "/lib64/libz.so.1", // Required by libLLVM, libxml2, Intel drivers
+      "/usr/lib64/libzstd.so.1", // Required by libLLVM, Intel drivers
+      "/usr/lib64/libffi.so.8", // Required by libLLVM
+      "/lib64/libelf.so.1", // Required by Radeon driver
+      // Mid-level dependencies
+      "/lib64/libedit.so.0", // Required by libLLVM (depends on libtinfo)
+      "/lib64/libxml2.so.2", // Required by libLLVM (depends on liblzma, libz)
+      "/lib64/libexpat.so.1", // Required by Mesa drivers
+      "/lib64/libXau.so.6", // Required by libxcb
+      // X11/XCB libraries (for Intel and other hardware drivers)
+      "/lib64/libxcb.so.1", // Required by Mesa drivers (depends on libXau)
+      "/lib64/libxcb-randr.so.0", // Required by Lavapipe and all drivers
+      "/lib64/libxcb-present.so.0", // Required by all Mesa Vulkan drivers
+      "/lib64/libxcb-sync.so.1", // Required by Mesa drivers
+      "/lib64/libxcb-xfixes.so.0", // Required by Mesa drivers
+      "/lib64/libxcb-shm.so.0", // Required by Mesa drivers
+      "/lib64/libX11-xcb.so.1", // Required by Intel drivers
+      "/lib64/libxshmfence.so.1", // Required by Intel drivers
+      "/lib64/libwayland-client.so.0", // Required by Intel drivers
+      // DRM libraries
+      "/lib64/libdrm.so.2", // Required by all hardware drivers
+      "/usr/lib64/libdrm_amdgpu.so.1", // Required by Radeon driver
+      // High-level dependencies
+      "/lib64/libLLVM.so.20.1", // Required by Lavapipe and Radeon drivers
+      "/lib64/libSPIRV-Tools.so", // Required by Lavapipe
+      // Additional X11 libraries for Intel drivers
+      "/lib64/libxcb-dri3.so.0", // Required by Intel drivers
+  };
+  for (const char* preload : kPreloadLibs) {
+    const void* handle = dlopen(preload, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+    if (handle) {
+      IGL_LOG_DEBUG("IGL/Vulkan: preloaded `%s`.\n", preload);
+    } else {
+      // Log but continue - not all systems will have all drivers
+      IGL_LOG_DEBUG("IGL/Vulkan: failed to preload `%s`: %s (not critical).\n", preload, dlerror());
+    }
+  }
+#endif // IGL_PLATFORM_LINUX && !defined(IGL_CMAKE_BUILD)
   const std::array<const char*, 4> libs = {
       "libvulkan.so.1",
       "libvulkan.so",
