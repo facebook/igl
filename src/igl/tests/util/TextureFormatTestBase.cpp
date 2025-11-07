@@ -15,13 +15,35 @@
 #include <igl/SamplerState.h>
 #include <igl/VertexInputState.h>
 
+#if IGL_PLATFORM_WINDOWS
+#include <windows.h>
+#include <eh.h>
+#endif
+
 namespace igl::tests::util {
+
+#if IGL_PLATFORM_WINDOWS
+namespace {
+struct SehException : std::exception {
+  explicit SehException(unsigned int c) : code(c) {}
+  const char* what() const noexcept override { return "Structured exception"; }
+  unsigned int code;
+};
+
+void __cdecl sehTranslator(unsigned int code, EXCEPTION_POINTERS*) {
+  throw SehException(code);
+}
+} // namespace
+#endif
 
 #define OFFSCREEN_TEX_WIDTH 2
 #define OFFSCREEN_TEX_HEIGHT 2
 
 void TextureFormatTestBase::SetUp() {
   setDebugBreakEnabled(false);
+#if IGL_PLATFORM_WINDOWS
+  _set_se_translator(sehTranslator);
+#endif
 
   util::createDeviceAndQueue(iglDev_, cmdQueue_);
   ASSERT_TRUE(iglDev_ != nullptr);
@@ -198,35 +220,54 @@ void TextureFormatTestBase::render(std::shared_ptr<ITexture> sampledTexture,
   Dependencies dep;
   dep.textures[0] = sampledTexture.get();
 
-  Result result;
-  auto cmds = cmdBuf->createRenderCommandEncoder(renderPass_, framebuffer, dep, &result);
-  ASSERT_TRUE(result.isOk());
-  cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
-  cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
+  try {
+    Result result;
+    auto cmds = cmdBuf->createRenderCommandEncoder(renderPass_, framebuffer, dep, &result);
+    ASSERT_TRUE(result.isOk());
+    cmds->bindVertexBuffer(data::shader::kSimplePosIndex, *vb_);
+    cmds->bindVertexBuffer(data::shader::kSimpleUvIndex, *uv_);
 
-  // Create createFramebuffer fills in proper texture formats and shader stages in
-  // renderPipelineDesc_
+    // Create createFramebuffer fills in proper texture formats and shader stages in
+    // renderPipelineDesc_
 
-  auto pipelineState = iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
-  ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
-  ASSERT_TRUE(pipelineState != nullptr);
+    auto pipelineState = iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
+    ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+    ASSERT_TRUE(pipelineState != nullptr);
 
-  cmds->bindRenderPipelineState(pipelineState);
+    cmds->bindRenderPipelineState(pipelineState);
 
-  cmds->bindTexture(textureUnit_, BindTarget::kFragment, sampledTexture.get());
-  // Choose appropriate sampler.
-  cmds->bindSamplerState(textureUnit_,
-                         BindTarget::kFragment,
-                         (linearSampling ? linearSampler_ : nearestSampler_).get());
+    cmds->bindTexture(textureUnit_, BindTarget::kFragment, sampledTexture.get());
+    // Choose appropriate sampler.
+    cmds->bindSamplerState(textureUnit_,
+                           BindTarget::kFragment,
+                           (linearSampling ? linearSampler_ : nearestSampler_).get());
 
-  cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
-  cmds->drawIndexed(6);
+    cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
+    IGL_LOG_INFO("TextureFormatTestBase::render issuing draw for %s\n", testProperties.name);
+    cmds->drawIndexed(6);
 
-  cmds->endEncoding();
+    cmds->endEncoding();
+    IGL_LOG_INFO("TextureFormatTestBase::render finished encoding for %s\n", testProperties.name);
 
-  cmdQueue_->submit(*cmdBuf);
+    cmdQueue_->submit(*cmdBuf);
+    IGL_LOG_INFO("TextureFormatTestBase::render submitted work for %s\n", testProperties.name);
 
-  cmdBuf->waitUntilCompleted();
+    cmdBuf->waitUntilCompleted();
+#if IGL_DEBUG
+    IGL_LOG_INFO("TextureFormatTestBase::render completed for format %s\n", testProperties.name);
+#else
+    (void)testProperties;
+#endif
+#if IGL_PLATFORM_WINDOWS
+  } catch (const SehException& seh) {
+    IGL_LOG_ERROR("TextureFormatTestBase::render caught SEH exception 0x%08X", seh.code);
+    ADD_FAILURE() << "TextureFormatTestBase::render caught SEH exception 0x" << std::hex << seh.code;
+    return;
+#endif
+  } catch (const std::exception& ex) {
+    ADD_FAILURE() << "TextureFormatTestBase::render threw std::exception: " << ex.what();
+    return;
+  }
 }
 
 std::pair<TextureFormat, bool> TextureFormatTestBase::checkSupport(
