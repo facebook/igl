@@ -27,9 +27,101 @@ namespace igl::d3d12 {
 
 Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
   platformDevice_ = std::make_unique<PlatformDevice>(*this);
+
+  // Validate device limits against actual device capabilities (P2_DX12-018)
+  validateDeviceLimits();
 }
 
 Device::~Device() = default;
+
+void Device::validateDeviceLimits() {
+  auto* device = ctx_->getDevice();
+  if (!device) {
+    IGL_LOG_ERROR("Device::validateDeviceLimits: D3D12 device is null\n");
+    return;
+  }
+
+  IGL_LOG_INFO("=== D3D12 Device Capabilities and Limits Validation ===\n");
+
+  // Query D3D12_FEATURE_D3D12_OPTIONS for resource binding tier and other capabilities
+  HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &deviceOptions_, sizeof(deviceOptions_));
+
+  if (SUCCEEDED(hr)) {
+    // Log resource binding tier
+    const char* tierName = "Unknown";
+    switch (deviceOptions_.ResourceBindingTier) {
+      case D3D12_RESOURCE_BINDING_TIER_1:
+        tierName = "Tier 1 (bounded descriptors required)";
+        break;
+      case D3D12_RESOURCE_BINDING_TIER_2:
+        tierName = "Tier 2 (unbounded arrays except samplers)";
+        break;
+      case D3D12_RESOURCE_BINDING_TIER_3:
+        tierName = "Tier 3 (fully unbounded)";
+        break;
+    }
+    IGL_LOG_INFO("  Resource Binding Tier: %s\n", tierName);
+
+    // Log other relevant capabilities
+    IGL_LOG_INFO("  Standard Swizzle 64KB Supported: %s\n",
+                 deviceOptions_.StandardSwizzle64KBSupported ? "Yes" : "No");
+    IGL_LOG_INFO("  Cross-Node Sharing Tier: %d\n", deviceOptions_.CrossNodeSharingTier);
+    IGL_LOG_INFO("  Conservative Rasterization Tier: %d\n",
+                 deviceOptions_.ConservativeRasterizationTier);
+  } else {
+    IGL_LOG_ERROR("  Failed to query D3D12_FEATURE_D3D12_OPTIONS (HRESULT: 0x%08X)\n", hr);
+  }
+
+  // Query D3D12_FEATURE_D3D12_OPTIONS1 for root signature version
+  hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS1, &deviceOptions1_, sizeof(deviceOptions1_));
+
+  if (SUCCEEDED(hr)) {
+    IGL_LOG_INFO("  Wave Intrinsics Supported: %s\n",
+                 deviceOptions1_.WaveOps ? "Yes" : "No");
+    IGL_LOG_INFO("  Wave Lane Count Min: %u\n", deviceOptions1_.WaveLaneCountMin);
+    IGL_LOG_INFO("  Wave Lane Count Max: %u\n", deviceOptions1_.WaveLaneCountMax);
+    IGL_LOG_INFO("  Total Lane Count: %u\n", deviceOptions1_.TotalLaneCount);
+  } else {
+    IGL_LOG_INFO("  D3D12_FEATURE_D3D12_OPTIONS1 query failed (not critical)\n");
+  }
+
+  // Validate hard-coded limits against D3D12 specifications
+  IGL_LOG_INFO("\n=== Limit Validation ===\n");
+
+  // Validate kMaxSamplers (32) against D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE (2048)
+  // D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE is defined in d3d12.h
+  constexpr uint32_t kD3D12MaxShaderVisibleSamplers = 2048;
+  IGL_LOG_INFO("  kMaxSamplers: %u (D3D12 spec limit: %u)\n",
+               kMaxSamplers, kD3D12MaxShaderVisibleSamplers);
+  if (kMaxSamplers > kD3D12MaxShaderVisibleSamplers) {
+    IGL_LOG_ERROR("  WARNING: kMaxSamplers (%u) exceeds D3D12 limit (%u)!\n",
+                  kMaxSamplers, kD3D12MaxShaderVisibleSamplers);
+  } else {
+    IGL_LOG_INFO("  OK: kMaxSamplers within D3D12 limits\n");
+  }
+
+  // Validate kMaxVertexAttributes (16) against D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT (32)
+  // D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT is defined in d3d12.h
+  constexpr uint32_t kD3D12MaxVertexInputElements = 32;
+  IGL_LOG_INFO("  kMaxVertexAttributes: %u (D3D12 spec limit: %u)\n",
+               kMaxVertexAttributes, kD3D12MaxVertexInputElements);
+  if (kMaxVertexAttributes > kD3D12MaxVertexInputElements) {
+    IGL_LOG_ERROR("  WARNING: kMaxVertexAttributes (%u) exceeds D3D12 limit (%u)!\n",
+                  kMaxVertexAttributes, kD3D12MaxVertexInputElements);
+  } else {
+    IGL_LOG_INFO("  OK: kMaxVertexAttributes within D3D12 limits\n");
+  }
+
+  // Validate kMaxDescriptorSets - this is architecture-dependent but log for reference
+  IGL_LOG_INFO("  kMaxDescriptorSets: %u (architecture-specific, validated at runtime)\n",
+               kMaxDescriptorSets);
+
+  // Validate kMaxFramesInFlight - this is a design choice but log for reference
+  IGL_LOG_INFO("  kMaxFramesInFlight: %u (application design choice for frame buffering)\n",
+               kMaxFramesInFlight);
+
+  IGL_LOG_INFO("=== Device Limits Validation Complete ===\n\n");
+}
 
 // BindGroups
 Holder<BindGroupTextureHandle> Device::createBindGroup(

@@ -135,10 +135,28 @@ class Device final : public IDevice {
     return bindGroupBuffersPool_.get(handle);
   }
 
+  // Device capabilities accessors (P2_DX12-018)
+  [[nodiscard]] const D3D12_FEATURE_DATA_D3D12_OPTIONS& getDeviceOptions() const {
+    return deviceOptions_;
+  }
+  [[nodiscard]] const D3D12_FEATURE_DATA_D3D12_OPTIONS1& getDeviceOptions1() const {
+    return deviceOptions1_;
+  }
+  [[nodiscard]] D3D12_RESOURCE_BINDING_TIER getResourceBindingTier() const {
+    return deviceOptions_.ResourceBindingTier;
+  }
+
   void processCompletedUploads() const;
   void trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer) const;
 
  private:
+  // Validate device limits against actual device capabilities (P2_DX12-018)
+  void validateDeviceLimits();
+
+  // Device capabilities (P2_DX12-018)
+  D3D12_FEATURE_DATA_D3D12_OPTIONS deviceOptions_ = {};
+  D3D12_FEATURE_DATA_D3D12_OPTIONS1 deviceOptions1_ = {};
+
   std::unique_ptr<D3D12Context> ctx_;
   std::unique_ptr<PlatformDevice> platformDevice_;
   size_t drawCount_ = 0;
