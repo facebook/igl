@@ -59,7 +59,7 @@ DXGI_FORMAT textureFormatToDXGIFormat(TextureFormat format) {
   case TextureFormat::RGBA_F16:
     return DXGI_FORMAT_R16G16B16A16_FLOAT;
   case TextureFormat::RGB_F32:
-    return DXGI_FORMAT_R32G32B32A32_FLOAT; // Treat RGB32 as RGBA32 and pad alpha for D3D12
+    return DXGI_FORMAT_R32G32B32_FLOAT;
   case TextureFormat::RGBA_UInt32:
     return DXGI_FORMAT_R32G32B32A32_UINT;
   case TextureFormat::RGBA_F32:
@@ -170,16 +170,6 @@ TextureFormat dxgiFormatToTextureFormat(DXGI_FORMAT format) {
     return TextureFormat::Z_UNorm32;
   default:
     return TextureFormat::Invalid;
-  }
-}
-
-bool formatNeedsRgbPadding(TextureFormat format) {
-  switch (format) {
-  case TextureFormat::RGB_F16:
-  case TextureFormat::RGB_F32:
-    return true;
-  default:
-    return false;
   }
 }
 
