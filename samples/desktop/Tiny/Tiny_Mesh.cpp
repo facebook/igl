@@ -7,6 +7,8 @@
 
 // @fb-only
 
+#define GLFW_INCLUDE_NONE
+
 #include <GLFW/glfw3.h>
 #include <igl/Config.h>
 
@@ -121,8 +123,8 @@ using glm::vec4;
 vec3 axis_[kNumCubes];
 
 GLFWwindow* window_ = nullptr;
-int width_ = 0;
-int height_ = 0;
+int width_ = 1024;
+int height_ = 768;
 igl::FPSCounter fps_;
 bool saveScreenshot_ = false;
 [[maybe_unused]] igl::SubmitHandle screenshotSubmitHandle_ = {};
@@ -200,89 +202,90 @@ const uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
 UniformsPerFrame perFrame;
 UniformsPerObject perObject[kNumCubes];
 
-bool initWindow(GLFWwindow** outWindow) {
+GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
   if (!glfwInit()) {
-    return false;
+    printf("glfwInit() failed");
+    return nullptr;
   }
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-  GLFWwindow* window = glfwCreateWindow(1280, 1024, "Vulkan Mesh", nullptr, nullptr);
+  GLFWwindow* window = isHeadless ? nullptr
+                                  : glfwCreateWindow(1280, 1024, "Vulkan Mesh", nullptr, nullptr);
 
-  if (!window) {
+  if (!isHeadless && !window) {
     glfwTerminate();
-    return false;
+    return nullptr;
   }
 
-  glfwSetErrorCallback([](int error, const char* description) {
-    printf("GLFW Error (%i): %s\n", error, description);
-  });
+  if (window) {
+    glfwSetErrorCallback([](int error, const char* description) {
+      printf("GLFW Error (%i): %s\n", error, description);
+    });
 
-  glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-      glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-    if (key == GLFW_KEY_T && action == GLFW_PRESS) {
-      texture1_.reset();
-    }
-    if (key == GLFW_KEY_C && action == GLFW_PRESS) {
-      saveScreenshot_ = true;
-    }
-  });
+    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int) {
+      if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+      }
+      if (key == GLFW_KEY_T && action == GLFW_PRESS) {
+        texture1_.reset();
+      }
+      if (key == GLFW_KEY_C && action == GLFW_PRESS) {
+        saveScreenshot_ = true;
+      }
+    });
 
-  // @lint-ignore CLANGTIDY
-  glfwSetWindowSizeCallback(window, [](GLFWwindow* /*window*/, int width, int height) {
-    printf("Window resized! width=%d, height=%d\n", width, height);
-    width_ = width;
-    height_ = height;
+    // @lint-ignore CLANGTIDY
+    glfwSetWindowSizeCallback(window, [](GLFWwindow* /*window*/, int width, int height) {
+      printf("Window resized! width=%d, height=%d\n", width, height);
+      width_ = width;
+      height_ = height;
 #if !USE_OPENGL_BACKEND
-    auto* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
-    auto& ctx = vulkanDevice->getVulkanContext();
-    ctx.initSwapchain(width_, height_);
+      auto* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
+      auto& ctx = vulkanDevice->getVulkanContext();
+      ctx.initSwapchain(width_, height_);
 #endif
-  });
+    });
 
 #if IGL_WITH_IGLU
-  glfwSetCursorPosCallback(window, [](auto* window, double x, double y) {
-    inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
-  });
-  glfwSetMouseButtonCallback(window, [](auto* window, int button, int action, int mods) {
-    double xpos = 0.0, ypos = 0.0;
-    glfwGetCursorPos(window, &xpos, &ypos);
-    using igl::shell::MouseButton;
-    const MouseButton iglButton =
-        (button == GLFW_MOUSE_BUTTON_LEFT)
-            ? MouseButton::Left
-            : (button == GLFW_MOUSE_BUTTON_RIGHT ? MouseButton::Right : MouseButton::Middle);
-    inputDispatcher_.queueEvent(
-        igl::shell::MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
-  });
+    glfwSetCursorPosCallback(window, [](auto* window, double x, double y) {
+      inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
+    });
+    glfwSetMouseButtonCallback(window, [](auto* window, int button, int action, int mods) {
+      double xpos = 0.0, ypos = 0.0;
+      glfwGetCursorPos(window, &xpos, &ypos);
+      using igl::shell::MouseButton;
+      const MouseButton iglButton =
+          (button == GLFW_MOUSE_BUTTON_LEFT)
+              ? MouseButton::Left
+              : (button == GLFW_MOUSE_BUTTON_RIGHT ? MouseButton::Right : MouseButton::Middle);
+      inputDispatcher_.queueEvent(
+          igl::shell::MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
+    });
 #endif // IGL_WITH_IGLU
 
-  glfwGetWindowSize(window, &width_, &height_);
-
-  if (outWindow) {
-    *outWindow = window;
+    glfwGetWindowSize(window, &width_, &height_);
   }
 
-  return true;
-}
-
-void initIGL() {
   // create a device
   {
     const igl::vulkan::VulkanContextConfig cfg = {
         .terminateOnValidationError = true,
+        .enableValidation = enableVulkanValidationLayers,
+        .headless = isHeadless,
     };
 #ifdef _WIN32
-    auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));
+    auto ctx =
+        vulkan::HWDevice::createContext(cfg, window ? (void*)glfwGetWin32Window(window) : nullptr);
 #elif IGL_PLATFORM_APPLE
-    auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetCocoaWindow(window_));
+    auto ctx =
+        vulkan::HWDevice::createContext(cfg, window ? (void*)glfwGetCocoaWindow(window) : nullptr);
 #elif defined(_XLESS_GLFW_)
     auto ctx = vulkan::HWDevice::createContext(cfg, nullptr, nullptr);
 #elif IGL_PLATFORM_LINUX
-    auto ctx = vulkan::HWDevice::createContext(
-        cfg, (void*)glfwGetX11Window(window_), (void*)glfwGetX11Display());
+    auto ctx = vulkan::HWDevice::createContext(cfg,
+                                               window ? (void*)glfwGetX11Window(window) : nullptr,
+                                               window ? (void*)glfwGetX11Display() : nullptr);
 #else
 #error Unsupported OS
 #endif
@@ -454,6 +457,8 @@ void initIGL() {
   for (auto& axi : axis_) {
     axi = glm::sphericalRand(1.0f);
   }
+
+  return window;
 }
 
 void createRenderPipeline() {
@@ -642,8 +647,18 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 } // namespace
 
 int main(int argc, char* argv[]) {
-  initWindow(&window_);
-  initIGL();
+  bool isHeadless = false;
+  bool enableVulkanValidationLayers = true;
+
+  for (int i = 1; i < argc; i++) {
+    if (!strcmp(argv[i], "--headless")) {
+      isHeadless = true;
+    } else if (!strcmp(argv[i], "--disable-vulkan-validation-layers")) {
+      enableVulkanValidationLayers = false;
+    }
+  }
+
+  window_ = initIGL(isHeadless, enableVulkanValidationLayers);
 
   createFramebuffer(getVulkanNativeDrawable());
   createRenderPipeline();
@@ -662,8 +677,38 @@ int main(int argc, char* argv[]) {
     fps_.updateFPS(newTime - prevTime);
     prevTime = newTime;
     render(getVulkanNativeDrawable(), frameIndex);
-    glfwPollEvents();
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
+    if (window_) {
+      glfwPollEvents();
+    } else {
+      printf("We are running headless - breaking after 1 frame\n");
+      std::shared_ptr<ITexture> texture = framebuffer_->getColorAttachment(0);
+      const Dimensions dim = texture->getDimensions();
+      std::vector<uint8_t> pixelsRGBA(dim.width * dim.height * 4);
+      std::vector<uint8_t> pixelsRGB(dim.width * dim.height * 3);
+      framebuffer_->copyBytesColorAttachment(*commandQueue_,
+                                             0,
+                                             pixelsRGBA.data(),
+                                             TextureRangeDesc::new2D(0, 0, dim.width, dim.height));
+      if (texture->getFormat() == igl::TextureFormat::BGRA_UNorm8 ||
+          texture->getFormat() == igl::TextureFormat::BGRA_SRGB) {
+        // swap R-B
+        for (uint32_t i = 0; i < pixelsRGBA.size(); i += 4) {
+          std::swap(pixelsRGBA[i + 0], pixelsRGBA[i + 2]);
+        }
+      }
+      // convert to RGB
+      for (uint32_t i = 0; i < pixelsRGB.size() / 3; i++) {
+        pixelsRGB[3 * i + 0] = pixelsRGBA[4 * i + 0];
+        pixelsRGB[3 * i + 1] = pixelsRGBA[4 * i + 1];
+        pixelsRGB[3 * i + 2] = pixelsRGBA[4 * i + 2];
+      }
+      const char* fileName = "TinyMesh.png";
+      IGLLog(IGLLogInfo, "Writing screenshot to: '%s'\n", fileName);
+      stbi_flip_vertically_on_write(1);
+      stbi_write_png(fileName, (int)dim.width, (int)dim.height, 3, pixelsRGB.data(), 0);
+      break;
+    }
   }
 
 #if IGL_WITH_IGLU

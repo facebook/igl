@@ -130,7 +130,7 @@ static RenderPassDesc renderPass;
 static std::shared_ptr<IFramebuffer> framebuffer;
 static std::shared_ptr<IRenderPipelineState> renderPipelineStateTriangle;
 
-static GLFWwindow* initIGL(bool isHeadless) {
+static GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
   if (!glfwInit()) {
     printf("glfwInit() failed");
     return nullptr;
@@ -202,7 +202,8 @@ static GLFWwindow* initIGL(bool isHeadless) {
 #endif
 #else
     const igl::vulkan::VulkanContextConfig cfg{
-        .terminateOnValidationError = true,
+        .terminateOnValidationError = false,
+        .enableValidation = enableVulkanValidationLayers,
         .headless = isHeadless,
     };
 #ifdef _WIN32
@@ -378,9 +379,18 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
 }
 
 int main(int argc, char* argv[]) {
-  const bool isHeadless = argc > 1 && (strcmp(argv[1], "--headless") == 0);
+  bool isHeadless = false;
+  bool enableVulkanValidationLayers = true;
 
-  GLFWwindow* window = initIGL(isHeadless);
+  for (int i = 1; i < argc; i++) {
+    if (!strcmp(argv[i], "--headless")) {
+      isHeadless = true;
+    } else if (!strcmp(argv[i], "--disable-vulkan-validation-layers")) {
+      enableVulkanValidationLayers = false;
+    }
+  }
+
+  GLFWwindow* window = initIGL(isHeadless, enableVulkanValidationLayers);
 
   createFramebuffer(getNativeDrawable());
   createRenderPipeline();
