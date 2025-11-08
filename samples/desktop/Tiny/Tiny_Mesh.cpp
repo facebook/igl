@@ -8,6 +8,8 @@
 // @fb-only
 
 #include <GLFW/glfw3.h>
+#include <igl/Config.h>
+
 #if !defined(_USE_MATH_DEFINES)
 #define _USE_MATH_DEFINES // NOLINT(bugprone-reserved-identifier)
 #endif // _USE_MATH_DEFINES
@@ -15,13 +17,17 @@
 #include <cstddef>
 #include <cstdio>
 #include <filesystem>
-#ifdef _WIN32
+
+#if defined(_XLESS_GLFW_)
+// do nothing
+#elif IGL_PLATFORM_WINDOWS
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_EXPOSE_NATIVE_WGL
-#elif __APPLE__
+#elif IGL_PLATFORM_APPLE
 #define GLFW_EXPOSE_NATIVE_COCOA
-#elif defined(__linux__)
+#elif IGL_PLATFORM_LINUX
 #define GLFW_EXPOSE_NATIVE_X11
+#define GLFW_EXPOSE_NATIVE_GLX
 #else
 #error Unsupported OS
 #endif
@@ -270,9 +276,11 @@ void initIGL() {
     };
 #ifdef _WIN32
     auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));
-#elif __APPLE__
+#elif IGL_PLATFORM_APPLE
     auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetCocoaWindow(window_));
-#elif defined(__linux__)
+#elif defined(_XLESS_GLFW_)
+    auto ctx = vulkan::HWDevice::createContext(cfg, nullptr, nullptr);
+#elif IGL_PLATFORM_LINUX
     auto ctx = vulkan::HWDevice::createContext(
         cfg, (void*)glfwGetX11Window(window_), (void*)glfwGetX11Display());
 #else
@@ -284,6 +292,11 @@ void initIGL() {
     if (devices.empty()) {
       devices = vulkan::HWDevice::queryDevices(
           *ctx, HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
+    }
+    if (devices.empty() || cfg.headless) {
+      // LavaPipe etc
+      devices = vulkan::HWDevice::queryDevices(
+          *ctx, HWDeviceQueryDesc(HWDeviceType::SoftwareGpu), nullptr);
     }
     device_ =
         vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
@@ -644,7 +657,7 @@ int main(int argc, char* argv[]) {
   uint32_t frameIndex = 0;
 
   // Main loop
-  while (!glfwWindowShouldClose(window_)) {
+  while (!window_ || !glfwWindowShouldClose(window_)) {
     const double newTime = glfwGetTime();
     fps_.updateFPS(newTime - prevTime);
     prevTime = newTime;

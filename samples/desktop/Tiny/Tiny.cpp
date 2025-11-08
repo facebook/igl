@@ -28,7 +28,6 @@
 
 #include <GLFW/glfw3native.h>
 #include <cstdio>
-#include <regex>
 #include <stb/stb_image_write.h>
 #include <igl/IGL.h>
 
