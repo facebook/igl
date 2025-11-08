@@ -560,20 +560,6 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
     resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
   }
   if (desc.usage & TextureDesc::TextureUsageBits::Attachment) {
-    // Validate that this format actually supports Attachment usage before adding render target flag
-    // This prevents D3D12 device removal when attempting to create render targets with unsupported formats
-    const auto caps = getTextureFormatCapabilities(desc.format);
-    const bool supportsAttachment = (caps & ICapabilities::TextureFormatCapabilityBits::Attachment) != 0;
-
-    if (!supportsAttachment) {
-      // Format doesn't support Attachment usage - return error with clear message
-      const auto formatName = TextureFormatProperties::fromTextureFormat(desc.format).name;
-      IGL_LOG_ERROR("Device::createTexture: Format %s does not support Attachment usage\n", formatName);
-      Result::setResult(outResult, Result::Code::Unsupported,
-                        "Texture format does not support Attachment usage");
-      return nullptr;
-    }
-
     if (desc.format >= TextureFormat::Z_UNorm16 && desc.format <= TextureFormat::S_UInt8) {
       resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     } else {
