@@ -41,6 +41,11 @@ struct FrameContext {
   // this frame's fence, ensuring the GPU has finished reading them
   std::vector<std::shared_ptr<igl::IBuffer>> transientBuffers;
   std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> transientResources;
+
+  // Telemetry for transient resource tracking (P2_DX12-120)
+  // Tracks high-water mark to observe peak usage and detect unbounded growth
+  size_t transientBuffersHighWater = 0;
+  size_t transientResourcesHighWater = 0;
 };
 
 class D3D12Context {

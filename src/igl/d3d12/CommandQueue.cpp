@@ -331,15 +331,16 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
 
     // CRITICAL: Clear transient buffers from the frame we just waited for
     // The GPU has finished executing that frame, so these resources can now be released
+    // P2_DX12-120: Added telemetry for transient resource tracking
     auto& frameCtx = ctx.getFrameContexts()[nextFrameIndex];
     if (!frameCtx.transientBuffers.empty()) {
-      IGL_LOG_INFO("CommandQueue::submit() - Clearing %zu transient buffers from frame %u\n",
-                   frameCtx.transientBuffers.size(), nextFrameIndex);
+      IGL_LOG_INFO("CommandQueue::submit() - Clearing %zu transient buffers from frame %u (high-water=%zu)\n",
+                   frameCtx.transientBuffers.size(), nextFrameIndex, frameCtx.transientBuffersHighWater);
       frameCtx.transientBuffers.clear();
     }
     if (!frameCtx.transientResources.empty()) {
-      IGL_LOG_INFO("CommandQueue::submit() - Releasing %zu transient D3D resources from frame %u\n",
-                   frameCtx.transientResources.size(), nextFrameIndex);
+      IGL_LOG_INFO("CommandQueue::submit() - Releasing %zu transient D3D resources from frame %u (high-water=%zu)\n",
+                   frameCtx.transientResources.size(), nextFrameIndex, frameCtx.transientResourcesHighWater);
       frameCtx.transientResources.clear();
     }
 

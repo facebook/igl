@@ -107,9 +107,18 @@ void CommandBuffer::trackTransientBuffer(std::shared_ptr<IBuffer> buffer) {
   // These will be kept alive until the frame completes GPU execution
   auto& ctx = device_.getD3D12Context();
   const uint32_t frameIdx = ctx.getCurrentFrameIndex();
-  ctx.getFrameContexts()[frameIdx].transientBuffers.push_back(std::move(buffer));
-  IGL_LOG_INFO("CommandBuffer::trackTransientBuffer() - Added buffer to frame %u (total=%zu)\n",
-               frameIdx, ctx.getFrameContexts()[frameIdx].transientBuffers.size());
+  auto& frameCtx = ctx.getFrameContexts()[frameIdx];
+
+  frameCtx.transientBuffers.push_back(std::move(buffer));
+
+  // P2_DX12-120: Track high-water mark for telemetry
+  const size_t currentCount = frameCtx.transientBuffers.size();
+  if (currentCount > frameCtx.transientBuffersHighWater) {
+    frameCtx.transientBuffersHighWater = currentCount;
+  }
+
+  IGL_LOG_INFO("CommandBuffer::trackTransientBuffer() - Added buffer to frame %u (total=%zu, high-water=%zu)\n",
+               frameIdx, currentCount, frameCtx.transientBuffersHighWater);
 }
 
 void CommandBuffer::trackTransientResource(ID3D12Resource* resource) {
@@ -118,12 +127,21 @@ void CommandBuffer::trackTransientResource(ID3D12Resource* resource) {
   }
   auto& ctx = device_.getD3D12Context();
   const uint32_t frameIdx = ctx.getCurrentFrameIndex();
+  auto& frameCtx = ctx.getFrameContexts()[frameIdx];
+
   Microsoft::WRL::ComPtr<ID3D12Resource> keepAlive;
   resource->AddRef();
   keepAlive.Attach(resource);
-  ctx.getFrameContexts()[frameIdx].transientResources.push_back(std::move(keepAlive));
-  IGL_LOG_INFO("CommandBuffer::trackTransientResource() - Added resource to frame %u (total=%zu)\n",
-               frameIdx, ctx.getFrameContexts()[frameIdx].transientResources.size());
+  frameCtx.transientResources.push_back(std::move(keepAlive));
+
+  // P2_DX12-120: Track high-water mark for telemetry
+  const size_t currentCount = frameCtx.transientResources.size();
+  if (currentCount > frameCtx.transientResourcesHighWater) {
+    frameCtx.transientResourcesHighWater = currentCount;
+  }
+
+  IGL_LOG_INFO("CommandBuffer::trackTransientResource() - Added resource to frame %u (total=%zu, high-water=%zu)\n",
+               frameIdx, currentCount, frameCtx.transientResourcesHighWater);
 }
 
 void CommandBuffer::begin() {
