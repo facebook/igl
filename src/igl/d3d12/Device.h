@@ -157,6 +157,9 @@ class Device final : public IDevice {
   ID3D12Fence* getUploadFence() const { return uploadFence_.Get(); }
   UINT64 getNextUploadFenceValue() { return ++uploadFenceValue_; }
 
+  // Check for device removal and throw exception if detected (P1_DX12-006)
+  void checkDeviceRemoval() const;
+
  private:
   // Validate device limits against actual device capabilities (P2_DX12-018)
   void validateDeviceLimits();

@@ -174,6 +174,43 @@ void Device::validateDeviceLimits() {
   IGL_LOG_INFO("=== Device Limits Validation Complete ===\n\n");
 }
 
+// P1_DX12-006: Check for device removal and report detailed error
+void Device::checkDeviceRemoval() const {
+  auto* device = ctx_->getDevice();
+  if (!device) {
+    return;  // Device not initialized yet
+  }
+
+  HRESULT hr = device->GetDeviceRemovedReason();
+  if (FAILED(hr)) {
+    const char* reason = "Unknown";
+    switch (hr) {
+      case DXGI_ERROR_DEVICE_HUNG:
+        reason = "DEVICE_HUNG (GPU not responding)";
+        break;
+      case DXGI_ERROR_DEVICE_REMOVED:
+        reason = "DEVICE_REMOVED (Driver crash or hardware failure)";
+        break;
+      case DXGI_ERROR_DEVICE_RESET:
+        reason = "DEVICE_RESET (Driver update or TDR)";
+        break;
+      case DXGI_ERROR_DRIVER_INTERNAL_ERROR:
+        reason = "DRIVER_INTERNAL_ERROR (Driver bug)";
+        break;
+      case DXGI_ERROR_INVALID_CALL:
+        reason = "INVALID_CALL (API misuse detected)";
+        break;
+      case S_OK:
+        return;  // No device removal
+      default:
+        break;
+    }
+
+    IGL_LOG_ERROR("D3D12 Device Removal Detected: %s (HRESULT=0x%08X)\n", reason, hr);
+    throw std::runtime_error(std::string("D3D12 device removed: ") + reason);
+  }
+}
+
 // BindGroups
 Holder<BindGroupTextureHandle> Device::createBindGroup(
     const BindGroupTextureDesc& desc,

@@ -12,11 +12,13 @@
 
 namespace {
 bool needsRGBAChannelSwap(igl::TextureFormat format) {
+  // NOTE: This function is used during texture upload to handle CPU-side data layout
+  // RGBA data from CPU needs R/B swap to match DXGI_FORMAT_R8G8B8A8 layout
   using igl::TextureFormat;
   switch (format) {
   case TextureFormat::RGBA_UNorm8:
   case TextureFormat::RGBA_SRGB:
-    return true;
+    return true;  // CPU RGBA data needs swap for GPU upload
   default:
     return false;
   }

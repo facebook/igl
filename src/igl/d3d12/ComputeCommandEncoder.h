@@ -46,13 +46,17 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
 
   // Cached GPU handles for resources
   static constexpr size_t kMaxComputeBuffers = 8;
-  static constexpr size_t kMaxComputeTextures = 8;
-  static constexpr size_t kMaxComputeSamplers = 4;
+  // P1_DX12-007: Increased from 8 to 16 to match IGL_TEXTURE_SAMPLERS_MAX contract
+  static constexpr size_t kMaxComputeTextures = IGL_TEXTURE_SAMPLERS_MAX;  // 16
+  // P1_DX12-007: Increased from 4 to 16 to match IGL_TEXTURE_SAMPLERS_MAX contract
+  static constexpr size_t kMaxComputeSamplers = IGL_TEXTURE_SAMPLERS_MAX;  // 16
 
   D3D12_GPU_DESCRIPTOR_HANDLE cachedUavHandles_[kMaxComputeBuffers] = {};
   D3D12_GPU_DESCRIPTOR_HANDLE cachedSrvHandles_[kMaxComputeTextures] = {};
   D3D12_GPU_DESCRIPTOR_HANDLE cachedSamplerHandles_[kMaxComputeSamplers] = {};
   D3D12_GPU_VIRTUAL_ADDRESS cachedCbvAddresses_[kMaxComputeBuffers] = {};
+  // P1_DX12-FIND-04: Track CBV sizes for descriptor creation
+  size_t cachedCbvSizes_[kMaxComputeBuffers] = {};
 
   size_t boundUavCount_ = 0;
   size_t boundSrvCount_ = 0;

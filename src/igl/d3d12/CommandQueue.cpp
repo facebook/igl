@@ -147,13 +147,14 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
 
   IGL_LOG_INFO("CommandQueue::submit() - Command list executed, checking device status...\n");
 
-  // Check for device removed error
-  HRESULT hr = d3dDevice->GetDeviceRemovedReason();
-  if (FAILED(hr)) {
-    IGL_LOG_ERROR("DEVICE REMOVED! Reason: 0x%08X\n", static_cast<unsigned>(hr));
+  // P1_DX12-006: Check for device removal after command execution
+  try {
+    device_.checkDeviceRemoval();
+  } catch (const std::exception& e) {
+    // Log additional diagnostics before rethrowing
     logInfoQueueMessages(d3dDevice);
     logDredInfo(d3dDevice);
-    throw std::runtime_error("D3D12 device removed - check debug output above");
+    throw;  // Rethrow with detailed error message from checkDeviceRemoval()
   }
 
   IGL_LOG_INFO("CommandQueue::submit() - Device OK, presenting...\n");

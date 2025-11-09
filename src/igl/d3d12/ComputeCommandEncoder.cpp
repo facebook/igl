@@ -159,14 +159,40 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   }
 
   // Bind CBVs (Parameter 3)
+  // P1_DX12-FIND-04: Create CBV descriptors and bind via descriptor table
   if (boundCbvCount_ > 0) {
-    // For CBVs, we use root descriptor table, but we cached GPU addresses
-    // We need to create a descriptor table for CBVs if we have any
-    // For simplicity, if CBV count is 1, we could use SetComputeRootConstantBufferView on a different parameter
-    // But to match our root signature, we should use descriptor table
-    // For now, log that CBV binding via table is not yet fully implemented
-    IGL_LOG_INFO("ComputeCommandEncoder: CBV table binding (%zu CBVs) - using direct root CBV for now\n", boundCbvCount_);
-    // Note: This is a simplification. Full implementation would require creating CBV descriptors in a table
+    auto& context = commandBuffer_.getContext();
+    auto* device = context.getDevice();
+
+    // Get starting descriptor index for our CBV table
+    const uint32_t firstCbvDescriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor();
+
+    // Create CBV descriptors for all bound constant buffers
+    for (size_t i = 0; i < boundCbvCount_; ++i) {
+      if (cachedCbvAddresses_[i] != 0 && cachedCbvSizes_[i] > 0) {
+        const uint32_t descriptorIndex = firstCbvDescriptorIndex + static_cast<uint32_t>(i);
+        D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
+
+        // Align size to 256-byte boundary (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
+        const size_t alignedSize = (cachedCbvSizes_[i] + 255) & ~255;
+
+        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+        cbvDesc.BufferLocation = cachedCbvAddresses_[i];
+        cbvDesc.SizeInBytes = static_cast<UINT>(alignedSize);
+
+        device->CreateConstantBufferView(&cbvDesc, cpuHandle);
+      }
+    }
+
+    // Advance descriptor counter for all CBVs we created
+    commandBuffer_.getNextCbvSrvUavDescriptor() += static_cast<uint32_t>(boundCbvCount_);
+
+    // Bind the CBV descriptor table to root parameter 3
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(firstCbvDescriptorIndex);
+    commandList->SetComputeRootDescriptorTable(3, gpuHandle);
+
+    IGL_LOG_INFO("ComputeCommandEncoder: Bound %zu CBVs via descriptor table (descriptors %u-%u)\n",
+                 boundCbvCount_, firstCbvDescriptorIndex, firstCbvDescriptorIndex + static_cast<uint32_t>(boundCbvCount_) - 1);
   }
 
   // Bind Samplers (Parameter 4)
@@ -381,13 +407,16 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
     }
 
     cachedCbvAddresses_[index] = d3dBuffer->gpuAddress(offset);
+    // P1_DX12-FIND-04: Store buffer size for CBV descriptor creation in dispatchThreadGroups()
+    cachedCbvSizes_[index] = d3dBuffer->getSizeInBytes() - offset;
     for (size_t i = index + 1; i < kMaxComputeBuffers; ++i) {
       cachedCbvAddresses_[i] = 0;
+      cachedCbvSizes_[i] = 0;
     }
     boundCbvCount_ = static_cast<size_t>(index + 1);
 
-    IGL_LOG_INFO("ComputeCommandEncoder::bindBuffer: Cached CBV at index %u, address 0x%llx\n",
-                 index, cachedCbvAddresses_[index]);
+    IGL_LOG_INFO("ComputeCommandEncoder::bindBuffer: Cached CBV at index %u, address 0x%llx, size %zu\n",
+                 index, cachedCbvAddresses_[index], cachedCbvSizes_[index]);
 
     commandBuffer_.trackTransientResource(d3dBuffer->getResource());
   } else {
