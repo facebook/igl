@@ -1332,8 +1332,18 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   samplerRange.RegisterSpace = 0;
   samplerRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-  // Root parameters
-  D3D12_ROOT_PARAMETER rootParams[6] = {};
+  // P1_DX12-FIND-05: Descriptor range for UAVs (read-write storage buffers)
+  // Use bounded range for Tier 1, unbounded for Tier 2+
+  const UINT uavBound = needsBoundedRanges ? 8 : UINT_MAX;  // Conservative: 8 UAVs for storage buffers
+  D3D12_DESCRIPTOR_RANGE uavRange = {};
+  uavRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+  uavRange.NumDescriptors = uavBound;
+  uavRange.BaseShaderRegister = 0;  // Starting at u0
+  uavRange.RegisterSpace = 0;
+  uavRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+  // Root parameters (P1_DX12-FIND-05: Increased to 7 to add UAV support)
+  D3D12_ROOT_PARAMETER rootParams[7] = {};
 
   // Parameter 0: Root Constants for b2 (Push Constants)
   // Max 64 bytes = 16 DWORDs to match Vulkan push constant limits
@@ -1373,15 +1383,21 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   rootParams[5].DescriptorTable.pDescriptorRanges = &samplerRange;
   rootParams[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
+  // P1_DX12-FIND-05: Parameter 6: Descriptor table for UAVs (storage buffers)
+  rootParams[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+  rootParams[6].DescriptorTable.NumDescriptorRanges = 1;
+  rootParams[6].DescriptorTable.pDescriptorRanges = &uavRange;
+  rootParams[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
   D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
-  // Enable full root signature matching TinyMeshSession shaders
-  rootSigDesc.NumParameters = 6;
+  // P1_DX12-FIND-05: Updated to 7 parameters (added UAV support)
+  rootSigDesc.NumParameters = 7;
   rootSigDesc.pParameters = rootParams;
   rootSigDesc.NumStaticSamplers = 0;
   rootSigDesc.pStaticSamplers = nullptr;
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-  IGL_LOG_INFO("  Creating root signature with Push Constants (b2)/Root CBVs (b0,b1)/CBV Table (b3-b15)/SRVs/Samplers\n");
+  IGL_LOG_INFO("  Creating root signature with Push Constants (b2)/Root CBVs (b0,b1)/CBV Table (b3-b15)/SRVs/Samplers/UAVs\n");
 
   // Get or create cached root signature (P0_DX12-002)
   Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = getOrCreateRootSignature(rootSigDesc, outResult);

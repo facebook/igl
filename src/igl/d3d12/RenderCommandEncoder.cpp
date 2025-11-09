@@ -1564,8 +1564,75 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
         IGL_LOG_ERROR("bindBindGroup(buffer): BindGroupBufferDesc slot %u exceeds maximum (%u)\n", slot, IGL_BUFFER_BINDINGS_MAX);
       }
     } else if (isStorage) {
-      // For now, storage buffers are not table-bound in bind-group path due to RS layout.
-      IGL_LOG_INFO("bindBindGroup(buffer): storage buffer at slot %u - SRV/UAV table binding pending RS update\n", slot);
+      // P1_DX12-FIND-05: Implement storage buffer binding via UAV/SRV descriptors
+      auto& context = commandBuffer_.getContext();
+      auto* device = context.getDevice();
+      ID3D12Resource* resource = buf->getResource();
+
+      // Determine if buffer is read-write (UAV) or read-only (SRV)
+      // D3D12 storage buffers with UAV flag are read-write by default
+      // Private/Shared storage indicates read-write access, Managed indicates read-only
+      const bool isReadWrite = (buf->storage() == ResourceStorage::Private ||
+                                buf->storage() == ResourceStorage::Shared);
+
+      if (isReadWrite) {
+        // Create UAV for read-write storage buffer
+        uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
+        D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
+        D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
+
+        // Create UAV descriptor for structured buffer
+        D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+        uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+        uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+        uavDesc.Buffer.FirstElement = static_cast<UINT64>(baseOffset / 4);  // Assume 4-byte stride for now
+        uavDesc.Buffer.NumElements = static_cast<UINT>(buf->getSizeInBytes() / 4);
+        uavDesc.Buffer.StructureByteStride = 4;  // TODO: Get from buffer desc if available
+        uavDesc.Buffer.CounterOffsetInBytes = 0;
+        uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+
+        // Pre-creation validation (TASK_P0_DX12-004)
+        IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateUnorderedAccessView");
+        IGL_DEBUG_ASSERT(resource != nullptr, "Buffer resource is null");
+        IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "UAV descriptor handle is invalid");
+
+        device->CreateUnorderedAccessView(resource, nullptr, &uavDesc, cpuHandle);
+
+        // Bind UAV descriptor table (Parameter 6 in graphics root signature)
+        commandList_->SetGraphicsRootDescriptorTable(6, gpuHandle);
+
+        IGL_LOG_INFO("bindBindGroup(buffer): bound read-write storage buffer at slot %u (UAV u%u, GPU handle 0x%llx)\n",
+                     slot, slot, gpuHandle.ptr);
+      } else {
+        // Create SRV for read-only storage buffer
+        uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
+        D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
+        D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
+
+        // Create SRV descriptor for structured buffer
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+        srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srvDesc.Buffer.FirstElement = static_cast<UINT64>(baseOffset / 4);  // Assume 4-byte stride for now
+        srvDesc.Buffer.NumElements = static_cast<UINT>(buf->getSizeInBytes() / 4);
+        srvDesc.Buffer.StructureByteStride = 4;  // TODO: Get from buffer desc if available
+        srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+        // Pre-creation validation (TASK_P0_DX12-004)
+        IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateShaderResourceView");
+        IGL_DEBUG_ASSERT(resource != nullptr, "Buffer resource is null");
+        IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "SRV descriptor handle is invalid");
+
+        device->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
+
+        // Bind SRV descriptor table (Parameter 4 in graphics root signature)
+        // Note: This shares the texture SRV table, storage buffers and textures will be bound together
+        commandList_->SetGraphicsRootDescriptorTable(4, gpuHandle);
+
+        IGL_LOG_INFO("bindBindGroup(buffer): bound read-only storage buffer at slot %u (SRV t%u, GPU handle 0x%llx)\n",
+                     slot, slot, gpuHandle.ptr);
+      }
     }
   }
 }
