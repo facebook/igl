@@ -347,8 +347,32 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
     // Reset descriptor allocation counters for the new frame
     // CORRECT: Simple linear allocator reset to 0 (each frame has its own isolated heap)
     // Following Microsoft MiniEngine pattern with per-frame heaps (1024 CBV/SRV/UAV, 32 Samplers)
+
+    // P0_DX12-FIND-02: Log descriptor usage statistics before reset for telemetry
+    const uint32_t cbvSrvUavUsage = ctx.getFrameContexts()[nextFrameIndex].nextCbvSrvUavDescriptor;
+    const uint32_t samplerUsage = ctx.getFrameContexts()[nextFrameIndex].nextSamplerDescriptor;
+    const uint32_t peakCbvSrvUav = ctx.getFrameContexts()[nextFrameIndex].peakCbvSrvUavUsage;
+    const uint32_t peakSampler = ctx.getFrameContexts()[nextFrameIndex].peakSamplerUsage;
+
+    if (cbvSrvUavUsage > 0 || samplerUsage > 0) {
+      const float cbvSrvUavPercent = (static_cast<float>(cbvSrvUavUsage) / kCbvSrvUavHeapSize) * 100.0f;
+      const float samplerPercent = (static_cast<float>(samplerUsage) / kSamplerHeapSize) * 100.0f;
+      const float peakCbvSrvUavPercent = (static_cast<float>(peakCbvSrvUav) / kCbvSrvUavHeapSize) * 100.0f;
+      const float peakSamplerPercent = (static_cast<float>(peakSampler) / kSamplerHeapSize) * 100.0f;
+
+      IGL_LOG_INFO("CommandQueue::submit() - Frame %u descriptor usage:\n"
+                   "  CBV/SRV/UAV: final=%u/%u (%.1f%%), peak=%u/%u (%.1f%%)\n"
+                   "  Samplers:    final=%u/%u (%.1f%%), peak=%u/%u (%.1f%%)\n",
+                   nextFrameIndex,
+                   cbvSrvUavUsage, kCbvSrvUavHeapSize, cbvSrvUavPercent,
+                   peakCbvSrvUav, kCbvSrvUavHeapSize, peakCbvSrvUavPercent,
+                   samplerUsage, kSamplerHeapSize, samplerPercent,
+                   peakSampler, kSamplerHeapSize, peakSamplerPercent);
+    }
+
     ctx.getFrameContexts()[nextFrameIndex].nextCbvSrvUavDescriptor = 0;
     ctx.getFrameContexts()[nextFrameIndex].nextSamplerDescriptor = 0;
+    // Note: We don't reset peak usage counters - they accumulate across frames for telemetry
     IGL_LOG_INFO("CommandQueue::submit() - Reset descriptor counters for frame %u to 0\n", nextFrameIndex);
   }
 

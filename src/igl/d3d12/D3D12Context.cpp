@@ -492,6 +492,11 @@ void D3D12Context::createBackBuffers() {
       throw std::runtime_error("Failed to get swapchain buffer");
     }
 
+    // Pre-creation validation (TASK_P0_DX12-004)
+    IGL_DEBUG_ASSERT(device_.Get() != nullptr, "Device is null before CreateRenderTargetView");
+    IGL_DEBUG_ASSERT(renderTargets_[i].Get() != nullptr, "Swapchain buffer is null");
+    IGL_DEBUG_ASSERT(rtvHandle.ptr != 0, "RTV descriptor handle is invalid");
+
     device_->CreateRenderTargetView(renderTargets_[i].Get(), nullptr, rtvHandle);
     rtvHandle.ptr += rtvDescriptorSize_;
   }
@@ -509,11 +514,11 @@ void D3D12Context::createDescriptorHeaps() {
   IGL_LOG_INFO("D3D12Context: Creating per-frame descriptor heaps...\n");
 
   for (UINT i = 0; i < kMaxFramesInFlight; i++) {
-    // CBV/SRV/UAV heap: 1024 descriptors (MiniEngine DynamicDescriptorHeap size)
+    // CBV/SRV/UAV heap: kCbvSrvUavHeapSize descriptors (MiniEngine DynamicDescriptorHeap size)
     {
       D3D12_DESCRIPTOR_HEAP_DESC desc = {};
       desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-      desc.NumDescriptors = 1024;  // Microsoft MiniEngine size for dynamic per-frame allocation
+      desc.NumDescriptors = kCbvSrvUavHeapSize;  // P0_DX12-FIND-02: Use constant for bounds checking
       desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
       desc.NodeMask = 0;
 
@@ -522,14 +527,14 @@ void D3D12Context::createDescriptorHeaps() {
       if (FAILED(hr)) {
         throw std::runtime_error("Failed to create per-frame CBV/SRV/UAV heap for frame " + std::to_string(i));
       }
-      IGL_LOG_INFO("  Frame %u: Created CBV/SRV/UAV heap (1024 descriptors)\n", i);
+      IGL_LOG_INFO("  Frame %u: Created CBV/SRV/UAV heap (%u descriptors)\n", i, kCbvSrvUavHeapSize);
     }
 
-    // Sampler heap: 32 descriptors (kMaxSamplers from Common.h)
+    // Sampler heap: kSamplerHeapSize descriptors
     {
       D3D12_DESCRIPTOR_HEAP_DESC desc = {};
       desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-      desc.NumDescriptors = kMaxSamplers;  // 32 samplers
+      desc.NumDescriptors = kSamplerHeapSize;  // P0_DX12-FIND-02: Use constant for bounds checking
       desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
       desc.NodeMask = 0;
 
@@ -538,7 +543,7 @@ void D3D12Context::createDescriptorHeaps() {
       if (FAILED(hr)) {
         throw std::runtime_error("Failed to create per-frame Sampler heap for frame " + std::to_string(i));
       }
-      IGL_LOG_INFO("  Frame %u: Created Sampler heap (%u descriptors)\n", i, kMaxSamplers);
+      IGL_LOG_INFO("  Frame %u: Created Sampler heap (%u descriptors)\n", i, kSamplerHeapSize);
     }
   }
 

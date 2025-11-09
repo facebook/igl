@@ -284,6 +284,11 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
     return;
   }
 
+  // Pre-creation validation (TASK_P0_DX12-004)
+  IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateShaderResourceView");
+  IGL_DEBUG_ASSERT(d3dTexture->getResource() != nullptr, "Texture resource is null");
+  IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "SRV descriptor handle is invalid");
+
   device->CreateShaderResourceView(d3dTexture->getResource(), &srvDesc, cpuHandle);
 
   cachedSrvHandles_[index] = gpuHandle;
@@ -340,6 +345,11 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
     uavDesc.Buffer.StructureByteStride = 0; // 0 for raw buffers
     uavDesc.Buffer.CounterOffsetInBytes = 0;
     uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW; // RAW flag required for ByteAddressBuffer
+
+    // Pre-creation validation (TASK_P0_DX12-004)
+    IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateUnorderedAccessView");
+    IGL_DEBUG_ASSERT(d3dBuffer->getResource() != nullptr, "Buffer resource is null");
+    IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "UAV descriptor handle is invalid");
 
     device->CreateUnorderedAccessView(d3dBuffer->getResource(), nullptr, &uavDesc, cpuHandle);
 
@@ -542,6 +552,11 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, 
     return;
   }
 
+  // Pre-creation validation (TASK_P0_DX12-004)
+  IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateUnorderedAccessView");
+  IGL_DEBUG_ASSERT(d3dTexture->getResource() != nullptr, "Texture resource is null");
+  IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "UAV descriptor handle is invalid");
+
   device->CreateUnorderedAccessView(d3dTexture->getResource(), nullptr, &uavDesc, cpuHandle);
 
   cachedUavHandles_[index] = gpuHandle;
@@ -582,6 +597,10 @@ void ComputeCommandEncoder::bindSamplerState(uint32_t index, ISamplerState* samp
 
   // Get sampler desc from IGL sampler state and create D3D12 sampler
   const D3D12_SAMPLER_DESC& samplerDesc = d3dSampler->getDesc();
+  // Pre-creation validation (TASK_P0_DX12-004)
+  IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateSampler");
+  IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "Sampler descriptor handle is invalid");
+
   device->CreateSampler(&samplerDesc, cpuHandle);
 
   cachedSamplerHandles_[index] = gpuHandle;

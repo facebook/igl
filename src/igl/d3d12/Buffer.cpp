@@ -150,19 +150,21 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   std::memcpy(mapped, data, range.size);
   uploadBuffer->Unmap(0, nullptr);
 
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
-  hr = d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                         IID_PPV_ARGS(allocator.GetAddressOf()));
-  if (FAILED(hr)) {
-    return Result(Result::Code::RuntimeError, "Failed to create command allocator for upload");
+  // P0_DX12-005: Get command allocator from pool with fence tracking
+  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator = device_->getUploadCommandAllocator();
+  if (!allocator.Get()) {
+    return Result(Result::Code::RuntimeError, "Failed to get command allocator from pool");
   }
+
+  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
   hr = d3dDevice->CreateCommandList(0,
                                     D3D12_COMMAND_LIST_TYPE_DIRECT,
                                     allocator.Get(),
                                     nullptr,
                                     IID_PPV_ARGS(cmdList.GetAddressOf()));
   if (FAILED(hr)) {
+    // Return allocator to pool with fence value 0 (immediately available)
+    device_->returnUploadCommandAllocator(allocator, 0);
     return Result(Result::Code::RuntimeError, "Failed to create command list for upload");
   }
 
@@ -196,11 +198,28 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
 
   hr = cmdList->Close();
   if (FAILED(hr)) {
+    // Return allocator to pool with fence value 0 (immediately available)
+    device_->returnUploadCommandAllocator(allocator, 0);
     return Result(Result::Code::RuntimeError, "Failed to close upload command list");
   }
 
   ID3D12CommandList* lists[] = {cmdList.Get()};
   queue->ExecuteCommandLists(1, lists);
+
+  // P0_DX12-005: Signal upload fence and return allocator to pool with fence value
+  // CRITICAL: This ensures the allocator is not reused until GPU completes execution
+  ID3D12Fence* uploadFence = device_->getUploadFence();
+  const UINT64 signalValue = device_->getNextUploadFenceValue();
+
+  hr = queue->Signal(uploadFence, signalValue);
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("Buffer::upload: Failed to signal upload fence: 0x%08X\n", hr);
+    // Still return allocator, but with 0 to avoid blocking the pool
+    device_->returnUploadCommandAllocator(allocator, 0);
+  } else {
+    // Return allocator to pool with fence value (will be reused after fence signaled)
+    device_->returnUploadCommandAllocator(allocator, signalValue);
+  }
 
   device_->trackUploadBuffer(std::move(uploadBuffer));
 

@@ -26,7 +26,8 @@ class Texture final : public ITexture {
       const TextureDesc& desc,
       ID3D12Device* device = nullptr,
       ID3D12CommandQueue* queue = nullptr,
-      D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON);
+      D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON,
+      class Device* iglDevice = nullptr);
 
   // Factory method to create texture view from parent texture
   static std::shared_ptr<Texture> createTextureView(
@@ -90,6 +91,7 @@ class Texture final : public ITexture {
   Microsoft::WRL::ComPtr<ID3D12Resource> resource_;
   ID3D12Device* device_ = nullptr; // Non-owning pointer
   ID3D12CommandQueue* queue_ = nullptr; // Non-owning pointer
+  class Device* iglDevice_ = nullptr; // Non-owning pointer to igl::d3d12::Device for upload operations (P0_DX12-005)
   TextureFormat format_;
   Dimensions dimensions_{0, 0, 0};
   TextureType type_ = TextureType::TwoD;

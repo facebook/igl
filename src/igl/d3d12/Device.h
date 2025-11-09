@@ -10,6 +10,7 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+#include <unordered_map>
 #include <igl/Buffer.h>
 #include <igl/CommandEncoder.h>
 #include <igl/Device.h>
@@ -149,9 +150,22 @@ class Device final : public IDevice {
   void processCompletedUploads() const;
   void trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer) const;
 
+  // Command allocator pool access for upload operations (P0_DX12-005)
+  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> getUploadCommandAllocator();
+  void returnUploadCommandAllocator(Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator,
+                                     UINT64 fenceValue);
+  ID3D12Fence* getUploadFence() const { return uploadFence_.Get(); }
+  UINT64 getNextUploadFenceValue() { return ++uploadFenceValue_; }
+
  private:
   // Validate device limits against actual device capabilities (P2_DX12-018)
   void validateDeviceLimits();
+
+  // Root signature caching (P0_DX12-002)
+  size_t hashRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc) const;
+  Microsoft::WRL::ComPtr<ID3D12RootSignature> getOrCreateRootSignature(
+      const D3D12_ROOT_SIGNATURE_DESC& desc,
+      Result* IGL_NULLABLE outResult) const;
 
   // Device capabilities (P2_DX12-018)
   D3D12_FEATURE_DATA_D3D12_OPTIONS deviceOptions_ = {};
@@ -172,6 +186,35 @@ class Device final : public IDevice {
   };
   mutable std::mutex pendingUploadsMutex_;
   mutable std::vector<PendingUpload> pendingUploads_;
+
+  // Command allocator pool for upload operations (P0_DX12-005)
+  // Tracks command allocators with fence values to prevent reuse before GPU completion
+  struct TrackedCommandAllocator {
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+    UINT64 fenceValue = 0;  // Fence value when last used
+  };
+  mutable std::mutex commandAllocatorPoolMutex_;
+  mutable std::vector<TrackedCommandAllocator> commandAllocatorPool_;
+  mutable Microsoft::WRL::ComPtr<ID3D12Fence> uploadFence_;
+  mutable UINT64 uploadFenceValue_ = 0;
+
+  // PSO caching (P0_DX12-001)
+  mutable std::unordered_map<size_t, Microsoft::WRL::ComPtr<ID3D12PipelineState>> graphicsPSOCache_;
+  mutable std::unordered_map<size_t, Microsoft::WRL::ComPtr<ID3D12PipelineState>> computePSOCache_;
+  mutable size_t graphicsPSOCacheHits_ = 0;
+  mutable size_t graphicsPSOCacheMisses_ = 0;
+  mutable size_t computePSOCacheHits_ = 0;
+  mutable size_t computePSOCacheMisses_ = 0;
+
+  // Helper functions for PSO hashing
+  size_t hashRenderPipelineDesc(const RenderPipelineDesc& desc) const;
+  size_t hashComputePipelineDesc(const ComputePipelineDesc& desc) const;
+
+  // Root signature cache (P0_DX12-002)
+  mutable std::unordered_map<size_t, Microsoft::WRL::ComPtr<ID3D12RootSignature>> rootSignatureCache_;
+  mutable std::mutex rootSignatureCacheMutex_;
+  mutable size_t rootSignatureCacheHits_ = 0;
+  mutable size_t rootSignatureCacheMisses_ = 0;
 };
 
 } // namespace igl::d3d12

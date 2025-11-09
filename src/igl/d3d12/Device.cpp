@@ -30,6 +30,18 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
 
   // Validate device limits against actual device capabilities (P2_DX12-018)
   validateDeviceLimits();
+
+  // Initialize upload fence for command allocator synchronization (P0_DX12-005)
+  auto* device = ctx_->getDevice();
+  if (device) {
+    HRESULT hr = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(uploadFence_.GetAddressOf()));
+    if (FAILED(hr)) {
+      IGL_LOG_ERROR("Device::Device: Failed to create upload fence: 0x%08X\n", hr);
+    } else {
+      uploadFenceValue_ = 0;
+      IGL_LOG_INFO("Device::Device: Upload fence created successfully for command allocator sync\n");
+    }
+  }
 }
 
 Device::~Device() = default;
@@ -621,8 +633,10 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   }
 
   // Create IGL texture from D3D12 resource
+  // P0_DX12-005: Pass this pointer for command allocator pool access in upload operations
   auto texture = Texture::createFromResource(
-      resource.Get(), desc.format, desc, device, ctx_->getCommandQueue(), initialState);
+      resource.Get(), desc.format, desc, device, ctx_->getCommandQueue(), initialState,
+      const_cast<Device*>(this));
   Result::setOk(outResult);
   return texture;
 }
@@ -667,6 +681,260 @@ std::shared_ptr<IVertexInputState> Device::createVertexInputState(
 }
 
 // Pipelines
+
+// Root signature caching (P0_DX12-002)
+
+// Helper function to hash root signature descriptor
+size_t Device::hashRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc) const {
+  size_t hash = 0;
+
+  // Helper lambda to combine hashes (boost::hash_combine pattern)
+  auto hashCombine = [](size_t& seed, size_t value) {
+    seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  };
+
+  // Hash root signature flags
+  hashCombine(hash, static_cast<size_t>(desc.Flags));
+
+  // Hash number of parameters
+  hashCombine(hash, static_cast<size_t>(desc.NumParameters));
+
+  // Hash each root parameter
+  for (UINT i = 0; i < desc.NumParameters; ++i) {
+    const auto& param = desc.pParameters[i];
+
+    // Hash parameter type
+    hashCombine(hash, static_cast<size_t>(param.ParameterType));
+    hashCombine(hash, static_cast<size_t>(param.ShaderVisibility));
+
+    switch (param.ParameterType) {
+      case D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE: {
+        // Hash number of ranges
+        hashCombine(hash, static_cast<size_t>(param.DescriptorTable.NumDescriptorRanges));
+
+        // Hash each descriptor range
+        for (UINT j = 0; j < param.DescriptorTable.NumDescriptorRanges; ++j) {
+          const auto& range = param.DescriptorTable.pDescriptorRanges[j];
+          hashCombine(hash, static_cast<size_t>(range.RangeType));
+          hashCombine(hash, static_cast<size_t>(range.NumDescriptors));
+          hashCombine(hash, static_cast<size_t>(range.BaseShaderRegister));
+          hashCombine(hash, static_cast<size_t>(range.RegisterSpace));
+          hashCombine(hash, static_cast<size_t>(range.OffsetInDescriptorsFromTableStart));
+        }
+        break;
+      }
+      case D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS: {
+        hashCombine(hash, static_cast<size_t>(param.Constants.ShaderRegister));
+        hashCombine(hash, static_cast<size_t>(param.Constants.RegisterSpace));
+        hashCombine(hash, static_cast<size_t>(param.Constants.Num32BitValues));
+        break;
+      }
+      case D3D12_ROOT_PARAMETER_TYPE_CBV:
+      case D3D12_ROOT_PARAMETER_TYPE_SRV:
+      case D3D12_ROOT_PARAMETER_TYPE_UAV: {
+        hashCombine(hash, static_cast<size_t>(param.Descriptor.ShaderRegister));
+        hashCombine(hash, static_cast<size_t>(param.Descriptor.RegisterSpace));
+        break;
+      }
+    }
+  }
+
+  // Hash static samplers
+  hashCombine(hash, static_cast<size_t>(desc.NumStaticSamplers));
+  for (UINT i = 0; i < desc.NumStaticSamplers; ++i) {
+    const auto& sampler = desc.pStaticSamplers[i];
+    hashCombine(hash, static_cast<size_t>(sampler.Filter));
+    hashCombine(hash, static_cast<size_t>(sampler.AddressU));
+    hashCombine(hash, static_cast<size_t>(sampler.AddressV));
+    hashCombine(hash, static_cast<size_t>(sampler.AddressW));
+    hashCombine(hash, static_cast<size_t>(sampler.ComparisonFunc));
+    hashCombine(hash, static_cast<size_t>(sampler.ShaderRegister));
+    hashCombine(hash, static_cast<size_t>(sampler.RegisterSpace));
+    hashCombine(hash, static_cast<size_t>(sampler.ShaderVisibility));
+  }
+
+  return hash;
+}
+
+// Helper function to get or create cached root signature
+Microsoft::WRL::ComPtr<ID3D12RootSignature> Device::getOrCreateRootSignature(
+    const D3D12_ROOT_SIGNATURE_DESC& desc,
+    Result* IGL_NULLABLE outResult) const {
+
+  // Compute hash for root signature
+  const size_t hash = hashRootSignature(desc);
+
+  // Thread-safe cache lookup
+  {
+    std::lock_guard<std::mutex> lock(rootSignatureCacheMutex_);
+    auto it = rootSignatureCache_.find(hash);
+    if (it != rootSignatureCache_.end()) {
+      rootSignatureCacheHits_++;
+      IGL_LOG_INFO("  Root signature cache HIT (hash=0x%zx, hits=%zu, misses=%zu)\n",
+                   hash, rootSignatureCacheHits_, rootSignatureCacheMisses_);
+      return it->second;
+    }
+  }
+
+  // Cache miss - create new root signature
+  rootSignatureCacheMisses_++;
+  IGL_LOG_INFO("  Root signature cache MISS (hash=0x%zx, hits=%zu, misses=%zu)\n",
+               hash, rootSignatureCacheHits_, rootSignatureCacheMisses_);
+
+  auto* device = ctx_->getDevice();
+  if (!device) {
+    Result::setResult(outResult, Result::Code::InvalidOperation, "D3D12 device is null");
+    return nullptr;
+  }
+
+  // Serialize root signature
+  Microsoft::WRL::ComPtr<ID3DBlob> signature;
+  Microsoft::WRL::ComPtr<ID3DBlob> error;
+
+  IGL_LOG_INFO("  Serializing root signature (version 1.0)...\n");
+  HRESULT hr = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1,
+                                           signature.GetAddressOf(), error.GetAddressOf());
+  if (FAILED(hr)) {
+    if (error.Get()) {
+      const char* errorMsg = static_cast<const char*>(error->GetBufferPointer());
+      IGL_LOG_ERROR("Root signature serialization error: %s\n", errorMsg);
+    }
+    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to serialize root signature");
+    return nullptr;
+  }
+
+  // Create root signature
+  Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+  hr = device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
+                                    IID_PPV_ARGS(rootSignature.GetAddressOf()));
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("  CreateRootSignature FAILED: 0x%08X\n", static_cast<unsigned>(hr));
+    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create root signature");
+    return nullptr;
+  }
+
+  IGL_LOG_INFO("  Root signature created successfully\n");
+
+  // Cache the created root signature
+  {
+    std::lock_guard<std::mutex> lock(rootSignatureCacheMutex_);
+    rootSignatureCache_[hash] = rootSignature;
+  }
+
+  return rootSignature;
+}
+
+// Helper function to hash render pipeline descriptor (P0_DX12-001)
+size_t Device::hashRenderPipelineDesc(const RenderPipelineDesc& desc) const {
+  size_t hash = 0;
+
+  // Helper lambda to combine hashes (boost::hash_combine pattern)
+  auto hashCombine = [](size_t& seed, size_t value) {
+    seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  };
+
+  // Hash shader stages
+  if (desc.shaderStages) {
+    auto* vertexModule = static_cast<const ShaderModule*>(desc.shaderStages->getVertexModule().get());
+    auto* fragmentModule = static_cast<const ShaderModule*>(desc.shaderStages->getFragmentModule().get());
+
+    if (vertexModule) {
+      const auto& vsBytecode = vertexModule->getBytecode();
+      hashCombine(hash, std::hash<size_t>{}(vsBytecode.size()));
+      // Hash a portion of bytecode for uniqueness (first 256 bytes or full size if smaller)
+      size_t bytesToHash = std::min<size_t>(256, vsBytecode.size());
+      for (size_t i = 0; i < bytesToHash; i += 8) {
+        hashCombine(hash, std::hash<uint8_t>{}(vsBytecode[i]));
+      }
+    }
+
+    if (fragmentModule) {
+      const auto& psBytecode = fragmentModule->getBytecode();
+      hashCombine(hash, std::hash<size_t>{}(psBytecode.size()));
+      size_t bytesToHash = std::min<size_t>(256, psBytecode.size());
+      for (size_t i = 0; i < bytesToHash; i += 8) {
+        hashCombine(hash, std::hash<uint8_t>{}(psBytecode[i]));
+      }
+    }
+  }
+
+  // Hash vertex input state
+  if (desc.vertexInputState) {
+    auto* d3d12VertexInput = static_cast<const VertexInputState*>(desc.vertexInputState.get());
+    const auto& vertexDesc = d3d12VertexInput->getDesc();
+    hashCombine(hash, vertexDesc.numAttributes);
+    for (size_t i = 0; i < vertexDesc.numAttributes; ++i) {
+      hashCombine(hash, static_cast<size_t>(vertexDesc.attributes[i].format));
+      hashCombine(hash, vertexDesc.attributes[i].offset);
+      hashCombine(hash, vertexDesc.attributes[i].bufferIndex);
+      hashCombine(hash, std::hash<std::string>{}(vertexDesc.attributes[i].name));
+    }
+  }
+
+  // Hash render target formats
+  hashCombine(hash, desc.targetDesc.colorAttachments.size());
+  for (const auto& att : desc.targetDesc.colorAttachments) {
+    hashCombine(hash, static_cast<size_t>(att.textureFormat));
+  }
+  hashCombine(hash, static_cast<size_t>(desc.targetDesc.depthAttachmentFormat));
+  hashCombine(hash, static_cast<size_t>(desc.targetDesc.stencilAttachmentFormat));
+
+  // Hash blend state
+  for (const auto& att : desc.targetDesc.colorAttachments) {
+    hashCombine(hash, att.blendEnabled ? 1 : 0);
+    hashCombine(hash, static_cast<size_t>(att.srcRGBBlendFactor));
+    hashCombine(hash, static_cast<size_t>(att.dstRGBBlendFactor));
+    hashCombine(hash, static_cast<size_t>(att.rgbBlendOp));
+    hashCombine(hash, static_cast<size_t>(att.srcAlphaBlendFactor));
+    hashCombine(hash, static_cast<size_t>(att.dstAlphaBlendFactor));
+    hashCombine(hash, static_cast<size_t>(att.alphaBlendOp));
+    hashCombine(hash, static_cast<size_t>(att.colorWriteMask));
+  }
+
+  // Hash rasterizer state
+  hashCombine(hash, static_cast<size_t>(desc.cullMode));
+  hashCombine(hash, static_cast<size_t>(desc.frontFaceWinding));
+  hashCombine(hash, static_cast<size_t>(desc.polygonFillMode));
+
+  // Hash primitive topology
+  hashCombine(hash, static_cast<size_t>(desc.topology));
+
+  // Hash sample count
+  hashCombine(hash, desc.sampleCount);
+
+  return hash;
+}
+
+// Helper function to hash compute pipeline descriptor (P0_DX12-001)
+size_t Device::hashComputePipelineDesc(const ComputePipelineDesc& desc) const {
+  size_t hash = 0;
+
+  // Helper lambda to combine hashes
+  auto hashCombine = [](size_t& seed, size_t value) {
+    seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  };
+
+  // Hash shader stages
+  if (desc.shaderStages) {
+    auto* computeModule = static_cast<const ShaderModule*>(desc.shaderStages->getComputeModule().get());
+
+    if (computeModule) {
+      const auto& csBytecode = computeModule->getBytecode();
+      hashCombine(hash, std::hash<size_t>{}(csBytecode.size()));
+      // Hash a portion of bytecode for uniqueness (first 256 bytes or full size if smaller)
+      size_t bytesToHash = std::min<size_t>(256, csBytecode.size());
+      for (size_t i = 0; i < bytesToHash; i += 8) {
+        hashCombine(hash, std::hash<uint8_t>{}(csBytecode[i]));
+      }
+    }
+  }
+
+  // Hash debug name for additional differentiation (optional)
+  hashCombine(hash, std::hash<std::string>{}(desc.debugName));
+
+  return hash;
+}
+
 std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     const ComputePipelineDesc& desc,
     Result* IGL_NULLABLE outResult) const {
@@ -705,13 +973,11 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 
   // Create root signature for compute
   // Root signature layout for compute:
-  // - Root parameter 0: Descriptor table with unbounded UAVs (u0-uN)
-  // - Root parameter 1: Descriptor table with unbounded SRVs (t0-tN)
-  // - Root parameter 2: Descriptor table with unbounded CBVs (b0-bN)
-  // - Root parameter 3: Descriptor table with unbounded Samplers (s0-sN)
-
-  Microsoft::WRL::ComPtr<ID3DBlob> signature;
-  Microsoft::WRL::ComPtr<ID3DBlob> error;
+  // - Root parameter 0: Root Constants for b0 (Push Constants)
+  // - Root parameter 1: Descriptor table with unbounded UAVs (u0-uN)
+  // - Root parameter 2: Descriptor table with unbounded SRVs (t0-tN)
+  // - Root parameter 3: Descriptor table with unbounded CBVs (b1-bN)
+  // - Root parameter 4: Descriptor table with unbounded Samplers (s0-sN)
 
   // Query root signature capabilities to determine descriptor range bounds (P0_DX12-003)
   // Tier 1 devices require bounded descriptor ranges
@@ -812,30 +1078,11 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 
   IGL_LOG_INFO("  Creating compute root signature with Root Constants (b0)/UAVs/SRVs/CBVs/Samplers\n");
 
-  // For now, use RS 1.0 for compatibility (1.1 requires D3D12_VERSIONED_ROOT_SIGNATURE_DESC)
-  // The descriptor bounds are already set correctly based on binding tier above
-  IGL_LOG_INFO("  Serializing with Root Signature version 1.0\n");
-
-  HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
-                                           signature.GetAddressOf(), error.GetAddressOf());
-  if (FAILED(hr)) {
-    if (error.Get()) {
-      const char* errorMsg = static_cast<const char*>(error->GetBufferPointer());
-      IGL_LOG_ERROR("Root signature serialization error: %s\n", errorMsg);
-    }
-    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to serialize compute root signature");
+  // Get or create cached root signature (P0_DX12-002)
+  Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = getOrCreateRootSignature(rootSigDesc, outResult);
+  if (!rootSignature.Get()) {
     return nullptr;
   }
-
-  Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
-  hr = device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
-                                    IID_PPV_ARGS(rootSignature.GetAddressOf()));
-  if (FAILED(hr)) {
-    IGL_LOG_ERROR("  CreateRootSignature FAILED: 0x%08X\n", static_cast<unsigned>(hr));
-    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create compute root signature");
-    return nullptr;
-  }
-  IGL_LOG_INFO("  Compute root signature created OK\n");
 
   // Create compute pipeline state
   D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
@@ -847,9 +1094,33 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   psoDesc.CachedPSO.CachedBlobSizeInBytes = 0;
   psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
-  IGL_LOG_INFO("  Creating compute pipeline state...\n");
+  // PSO Cache lookup (P0_DX12-001)
+  const size_t psoHash = hashComputePipelineDesc(desc);
+  auto psoIt = computePSOCache_.find(psoHash);
   Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
-  hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
+
+  if (psoIt != computePSOCache_.end()) {
+    // Cache hit - reuse existing PSO
+    computePSOCacheHits_++;
+    pipelineState = psoIt->second;  // Assignment creates a ref-counted copy
+    IGL_LOG_INFO("  [PSO CACHE HIT] Hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%\n",
+                 psoHash, computePSOCacheHits_, computePSOCacheMisses_,
+                 100.0 * computePSOCacheHits_ / (computePSOCacheHits_ + computePSOCacheMisses_));
+    IGL_LOG_INFO("Device::createComputePipeline() SUCCESS (CACHED) - PSO=%p, RootSig=%p\n",
+                 pipelineState.Get(), rootSignature.Get());
+    Result::setOk(outResult);
+    // Create a copy of the root signature for the returned object
+    Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSigCopy = rootSignature;
+    return std::make_shared<ComputePipelineState>(std::move(pipelineState), std::move(rootSigCopy), desc.debugName);
+  }
+
+  // Cache miss - create new PSO
+  computePSOCacheMisses_++;
+  IGL_LOG_INFO("  [PSO CACHE MISS] Hash=0x%zx, hits=%zu, misses=%zu\n",
+               psoHash, computePSOCacheHits_, computePSOCacheMisses_);
+
+  IGL_LOG_INFO("  Creating compute pipeline state...\n");
+  HRESULT hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
   if (FAILED(hr)) {
     IGL_LOG_ERROR("  CreateComputePipelineState FAILED: 0x%08X\n", static_cast<unsigned>(hr));
 
@@ -884,8 +1155,11 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     return nullptr;
   }
 
-  IGL_LOG_INFO("Device::createComputePipeline() SUCCESS - PSO=%p, RootSig=%p\n",
-               pipelineState.Get(), rootSignature.Get());
+  // Cache the newly created PSO (P0_DX12-001)
+  computePSOCache_[psoHash] = pipelineState;
+
+  IGL_LOG_INFO("Device::createComputePipeline() SUCCESS - PSO=%p, RootSig=%p (cached with hash=0x%zx)\n",
+               pipelineState.Get(), rootSignature.Get(), psoHash);
   Result::setOk(outResult);
   return std::make_shared<ComputePipelineState>(std::move(pipelineState), std::move(rootSignature), desc.debugName);
 }
@@ -938,8 +1212,23 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   //   - New buffer bind groups using bindBindGroup() -> descriptor table at b3-b15
   //   - Push constants at b2 (inline root constants, cannot overlap with CBV table)
 
-  Microsoft::WRL::ComPtr<ID3DBlob> signature;
-  Microsoft::WRL::ComPtr<ID3DBlob> error;
+  // Query root signature capabilities to determine descriptor range bounds (P0_DX12-FIND-01)
+  // Tier 1 devices (integrated GPUs, WARP) require bounded descriptor ranges
+  const D3D12_RESOURCE_BINDING_TIER bindingTier = ctx_->getResourceBindingTier();
+  const bool needsBoundedRanges = (bindingTier == D3D12_RESOURCE_BINDING_TIER_1);
+
+  // Conservative bounds for Tier 1 devices (based on actual usage in render sessions)
+  // These limits are sufficient for all current IGL usage patterns
+  const UINT srvBound = needsBoundedRanges ? 128 : UINT_MAX;
+  const UINT samplerBound = needsBoundedRanges ? 32 : UINT_MAX;
+
+  if (needsBoundedRanges) {
+    IGL_LOG_INFO("  Using bounded descriptor ranges (Tier 1): SRV=%u, Sampler=%u\n",
+                 srvBound, samplerBound);
+  } else {
+    IGL_LOG_INFO("  Using unbounded descriptor ranges (Tier %u)\n",
+                 bindingTier == D3D12_RESOURCE_BINDING_TIER_3 ? 3 : 2);
+  }
 
   // Descriptor range for CBVs b3-b15 (buffer bind groups)
   D3D12_DESCRIPTOR_RANGE cbvRange = {};
@@ -950,19 +1239,19 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   cbvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
   // Descriptor range for SRVs (textures)
-  // Use UNBOUNDED to support variable number of textures (1-N) per shader
+  // Use bounded ranges on Tier 1 hardware (integrated GPUs, WARP), unbounded on Tier 2+
   D3D12_DESCRIPTOR_RANGE srvRange = {};
   srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-  srvRange.NumDescriptors = UINT_MAX;  // UNBOUNDED - shader determines actual count
+  srvRange.NumDescriptors = srvBound;
   srvRange.BaseShaderRegister = 0;  // Starting at t0
   srvRange.RegisterSpace = 0;
   srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
   // Descriptor range for Samplers
-  // Use UNBOUNDED to support variable number of samplers (1-N) per shader
+  // Use bounded ranges on Tier 1 hardware (integrated GPUs, WARP), unbounded on Tier 2+
   D3D12_DESCRIPTOR_RANGE samplerRange = {};
   samplerRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-  samplerRange.NumDescriptors = UINT_MAX;  // UNBOUNDED - shader determines actual count
+  samplerRange.NumDescriptors = samplerBound;
   samplerRange.BaseShaderRegister = 0;  // Starting at s0
   samplerRange.RegisterSpace = 0;
   samplerRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -1018,57 +1307,11 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
 
   IGL_LOG_INFO("  Creating root signature with Push Constants (b2)/Root CBVs (b0,b1)/CBV Table (b3-b15)/SRVs/Samplers\n");
 
-  IGL_LOG_INFO("  Serializing root signature...\n");
-  HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
-                                           signature.GetAddressOf(), error.GetAddressOf());
-  if (FAILED(hr)) {
-    if (error.Get()) {
-      const char* errorMsg = static_cast<const char*>(error->GetBufferPointer());
-      IGL_LOG_ERROR("Root signature serialization error: %s\n", errorMsg);
-    }
-    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to serialize root signature");
+  // Get or create cached root signature (P0_DX12-002)
+  Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = getOrCreateRootSignature(rootSigDesc, outResult);
+  if (!rootSignature.Get()) {
     return nullptr;
   }
-  IGL_LOG_INFO("  Root signature serialized OK\n");
-
-  IGL_LOG_INFO("  Creating root signature...\n");
-  Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
-  hr = device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
-                                    IID_PPV_ARGS(rootSignature.GetAddressOf()));
-  if (FAILED(hr)) {
-    IGL_LOG_ERROR("  CreateRootSignature FAILED: 0x%08X\n", static_cast<unsigned>(hr));
-
-    // Print debug layer messages if available BEFORE device removal check
-    Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
-    if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
-      UINT64 numMessages = infoQueue->GetNumStoredMessages();
-      IGL_LOG_ERROR("  D3D12 Info Queue has %llu messages:\n", numMessages);
-      for (UINT64 i = 0; i < numMessages; ++i) {
-        SIZE_T messageLength = 0;
-        infoQueue->GetMessage(i, nullptr, &messageLength);
-        if (messageLength > 0) {
-          auto message = (D3D12_MESSAGE*)malloc(messageLength);
-          if (message && SUCCEEDED(infoQueue->GetMessage(i, message, &messageLength))) {
-            const char* severityStr = "UNKNOWN";
-            switch (message->Severity) {
-              case D3D12_MESSAGE_SEVERITY_CORRUPTION: severityStr = "CORRUPTION"; break;
-              case D3D12_MESSAGE_SEVERITY_ERROR: severityStr = "ERROR"; break;
-              case D3D12_MESSAGE_SEVERITY_WARNING: severityStr = "WARNING"; break;
-              case D3D12_MESSAGE_SEVERITY_INFO: severityStr = "INFO"; break;
-              case D3D12_MESSAGE_SEVERITY_MESSAGE: severityStr = "MESSAGE"; break;
-            }
-            IGL_LOG_ERROR("    [%s] %s\n", severityStr, message->pDescription);
-          }
-          free(message);
-        }
-      }
-      infoQueue->ClearStoredMessages();
-    }
-
-    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create root signature");
-    return nullptr;
-  }
-  IGL_LOG_INFO("  Root signature created OK\n");
 
   // Create PSO - zero-initialize all fields
   D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
@@ -1438,7 +1681,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   // Use shader reflection to verify input signature matches input layout
   IGL_LOG_INFO("  Reflecting vertex shader to verify input signature...\n");
   Microsoft::WRL::ComPtr<ID3D12ShaderReflection> vsReflection;
-  hr = D3DReflect(vsBytecode.data(), vsBytecode.size(), IID_PPV_ARGS(vsReflection.GetAddressOf()));
+  HRESULT hr = D3DReflect(vsBytecode.data(), vsBytecode.size(), IID_PPV_ARGS(vsReflection.GetAddressOf()));
   if (SUCCEEDED(hr)) {
     D3D12_SHADER_DESC shaderDesc = {};
     vsReflection->GetDesc(&shaderDesc);
@@ -1454,8 +1697,32 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     IGL_LOG_INFO("    Shader reflection unavailable: 0x%08X (non-critical - pipeline will still be created)\n", static_cast<unsigned>(hr));
   }
 
-  IGL_LOG_INFO("  Creating pipeline state (this may take a moment)...\n");
+  // PSO Cache lookup (P0_DX12-001)
+  const size_t psoHash = hashRenderPipelineDesc(desc);
+  auto psoIt = graphicsPSOCache_.find(psoHash);
   Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
+
+  if (psoIt != graphicsPSOCache_.end()) {
+    // Cache hit - reuse existing PSO
+    graphicsPSOCacheHits_++;
+    pipelineState = psoIt->second;  // Assignment creates a ref-counted copy
+    IGL_LOG_INFO("  [PSO CACHE HIT] Hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%\n",
+                 psoHash, graphicsPSOCacheHits_, graphicsPSOCacheMisses_,
+                 100.0 * graphicsPSOCacheHits_ / (graphicsPSOCacheHits_ + graphicsPSOCacheMisses_));
+    IGL_LOG_INFO("Device::createRenderPipeline() SUCCESS (CACHED) - PSO=%p, RootSig=%p\n",
+                 pipelineState.Get(), rootSignature.Get());
+    Result::setOk(outResult);
+    // Create a copy of the root signature for the returned object
+    Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSigCopy = rootSignature;
+    return std::make_shared<RenderPipelineState>(desc, std::move(pipelineState), std::move(rootSigCopy));
+  }
+
+  // Cache miss - create new PSO
+  graphicsPSOCacheMisses_++;
+  IGL_LOG_INFO("  [PSO CACHE MISS] Hash=0x%zx, hits=%zu, misses=%zu\n",
+               psoHash, graphicsPSOCacheHits_, graphicsPSOCacheMisses_);
+
+  IGL_LOG_INFO("  Creating pipeline state (this may take a moment)...\n");
   hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
   if (FAILED(hr)) {
     // Print debug layer messages if available
@@ -1501,8 +1768,11 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     return nullptr;
   }
 
-  IGL_LOG_INFO("Device::createRenderPipeline() SUCCESS - PSO=%p, RootSig=%p\n",
-               pipelineState.Get(), rootSignature.Get());
+  // Cache the newly created PSO (P0_DX12-001)
+  graphicsPSOCache_[psoHash] = pipelineState;
+
+  IGL_LOG_INFO("Device::createRenderPipeline() SUCCESS - PSO=%p, RootSig=%p (cached with hash=0x%zx)\n",
+               pipelineState.Get(), rootSignature.Get(), psoHash);
   Result::setOk(outResult);
   return std::make_shared<RenderPipelineState>(desc, std::move(pipelineState), std::move(rootSignature));
 }
@@ -1991,6 +2261,81 @@ void Device::trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer) co
 
   std::lock_guard<std::mutex> lock(pendingUploadsMutex_);
   pendingUploads_.push_back(PendingUpload{signalValue, std::move(buffer)});
+}
+
+// Command Allocator Pool Implementation (P0_DX12-005)
+// Ensures command allocators are only reused after GPU completes execution
+Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator() {
+  if (!uploadFence_.Get()) {
+    IGL_LOG_ERROR("Device::getUploadCommandAllocator: Upload fence not initialized\n");
+    return nullptr;
+  }
+
+  std::lock_guard<std::mutex> lock(commandAllocatorPoolMutex_);
+
+  // Check if any existing allocator is available (fence signaled)
+  const UINT64 completedValue = uploadFence_->GetCompletedValue();
+
+  for (size_t i = 0; i < commandAllocatorPool_.size(); ++i) {
+    auto& tracked = commandAllocatorPool_[i];
+
+    if (completedValue >= tracked.fenceValue) {
+      // GPU finished using this allocator, safe to reuse
+      auto allocator = tracked.allocator;
+
+      // Remove from pool (will be returned later with new fence value)
+      commandAllocatorPool_[i] = commandAllocatorPool_.back();
+      commandAllocatorPool_.pop_back();
+
+      // Reset allocator for reuse
+      HRESULT hr = allocator->Reset();
+      if (FAILED(hr)) {
+        IGL_LOG_ERROR("Device::getUploadCommandAllocator: CommandAllocator::Reset failed: 0x%08X\n", hr);
+        return nullptr;
+      }
+
+      IGL_LOG_INFO("Device::getUploadCommandAllocator: Reusing allocator (completed fence: %llu >= %llu), pool size: %zu\n",
+                   completedValue, tracked.fenceValue, commandAllocatorPool_.size());
+      return allocator;
+    }
+  }
+
+  // No available allocator, create new one
+  auto* device = ctx_->getDevice();
+  if (!device) {
+    IGL_LOG_ERROR("Device::getUploadCommandAllocator: D3D12 device is null\n");
+    return nullptr;
+  }
+
+  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> newAllocator;
+  HRESULT hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                               IID_PPV_ARGS(newAllocator.GetAddressOf()));
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("Device::getUploadCommandAllocator: CreateCommandAllocator failed: 0x%08X\n", hr);
+    return nullptr;
+  }
+
+  IGL_LOG_INFO("Device::getUploadCommandAllocator: Created new allocator (pool size: %zu)\n",
+               commandAllocatorPool_.size());
+  return newAllocator;
+}
+
+void Device::returnUploadCommandAllocator(Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator,
+                                          UINT64 fenceValue) {
+  if (!allocator.Get()) {
+    return;
+  }
+
+  std::lock_guard<std::mutex> lock(commandAllocatorPoolMutex_);
+
+  TrackedCommandAllocator tracked;
+  tracked.allocator = allocator;
+  tracked.fenceValue = fenceValue;
+
+  commandAllocatorPool_.push_back(tracked);
+
+  IGL_LOG_INFO("Device::returnUploadCommandAllocator: Returned allocator with fence %llu, pool size: %zu\n",
+               fenceValue, commandAllocatorPool_.size());
 }
 
 size_t Device::getCurrentDrawCount() const {

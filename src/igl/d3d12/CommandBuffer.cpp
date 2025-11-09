@@ -89,17 +89,87 @@ CommandBuffer::~CommandBuffer() {
 uint32_t& CommandBuffer::getNextCbvSrvUavDescriptor() {
   auto& ctx = device_.getD3D12Context();
   const uint32_t frameIdx = ctx.getCurrentFrameIndex();
+  auto& frameCtx = ctx.getFrameContexts()[frameIdx];
+
+  // P0_DX12-FIND-02: Add bounds checking to prevent descriptor heap overflow
+  // The CBV/SRV/UAV heap is allocated with kCbvSrvUavHeapSize descriptors
+  const uint32_t currentValue = frameCtx.nextCbvSrvUavDescriptor;
+
+  // Track peak usage for telemetry (before incrementing)
+  if (currentValue > frameCtx.peakCbvSrvUavUsage) {
+    frameCtx.peakCbvSrvUavUsage = currentValue;
+
+    // Warn if approaching capacity (>80%)
+    const float usage = static_cast<float>(currentValue) / static_cast<float>(kCbvSrvUavHeapSize);
+    if (usage > 0.8f) {
+      IGL_LOG_ERROR("D3D12: CBV/SRV/UAV descriptor usage at %.1f%% capacity (%u/%u) for frame %u\n",
+                    usage * 100.0f, currentValue, kCbvSrvUavHeapSize, frameIdx);
+    }
+  }
+
+  // CRITICAL: Assert on overflow in debug builds
+  IGL_DEBUG_ASSERT(currentValue < kCbvSrvUavHeapSize,
+                   "D3D12: CBV/SRV/UAV descriptor heap overflow! Allocated: %u, Capacity: %u (frame %u). "
+                   "This will cause memory corruption and device removal. Increase heap size or optimize descriptor usage.",
+                   currentValue, kCbvSrvUavHeapSize, frameIdx);
+
+  // Graceful degradation in release builds: clamp to last valid descriptor
+  if (currentValue >= kCbvSrvUavHeapSize) {
+    IGL_LOG_ERROR("D3D12: CBV/SRV/UAV descriptor heap overflow! Allocated: %u, Capacity: %u (frame %u)\n"
+                  "Clamping to last valid descriptor. Rendering artifacts expected.\n",
+                  currentValue, kCbvSrvUavHeapSize, frameIdx);
+    // Return reference to a clamped value to prevent further damage
+    // This will cause rendering artifacts but prevent crashes
+    static uint32_t clampedValue = kCbvSrvUavHeapSize - 1;
+    return clampedValue;
+  }
+
   IGL_LOG_INFO("CommandBuffer::getNextCbvSrvUavDescriptor() - frame %u, current value=%u\n",
-               frameIdx, ctx.getFrameContexts()[frameIdx].nextCbvSrvUavDescriptor);
-  return ctx.getFrameContexts()[frameIdx].nextCbvSrvUavDescriptor;
+               frameIdx, currentValue);
+  return frameCtx.nextCbvSrvUavDescriptor;
 }
 
 uint32_t& CommandBuffer::getNextSamplerDescriptor() {
   auto& ctx = device_.getD3D12Context();
   const uint32_t frameIdx = ctx.getCurrentFrameIndex();
+  auto& frameCtx = ctx.getFrameContexts()[frameIdx];
+
+  // P0_DX12-FIND-02: Add bounds checking to prevent descriptor heap overflow
+  // The sampler heap is allocated with kSamplerHeapSize descriptors
+  const uint32_t currentValue = frameCtx.nextSamplerDescriptor;
+
+  // Track peak usage for telemetry (before incrementing)
+  if (currentValue > frameCtx.peakSamplerUsage) {
+    frameCtx.peakSamplerUsage = currentValue;
+
+    // Warn if approaching capacity (>80%)
+    const float usage = static_cast<float>(currentValue) / static_cast<float>(kSamplerHeapSize);
+    if (usage > 0.8f) {
+      IGL_LOG_ERROR("D3D12: Sampler descriptor usage at %.1f%% capacity (%u/%u) for frame %u\n",
+                    usage * 100.0f, currentValue, kSamplerHeapSize, frameIdx);
+    }
+  }
+
+  // CRITICAL: Assert on overflow in debug builds
+  IGL_DEBUG_ASSERT(currentValue < kSamplerHeapSize,
+                   "D3D12: Sampler descriptor heap overflow! Allocated: %u, Capacity: %u (frame %u). "
+                   "This will cause memory corruption and device removal. Increase heap size or optimize descriptor usage.",
+                   currentValue, kSamplerHeapSize, frameIdx);
+
+  // Graceful degradation in release builds: clamp to last valid descriptor
+  if (currentValue >= kSamplerHeapSize) {
+    IGL_LOG_ERROR("D3D12: Sampler descriptor heap overflow! Allocated: %u, Capacity: %u (frame %u)\n"
+                  "Clamping to last valid descriptor. Rendering artifacts expected.\n",
+                  currentValue, kSamplerHeapSize, frameIdx);
+    // Return reference to a clamped value to prevent further damage
+    // This will cause rendering artifacts but prevent crashes
+    static uint32_t clampedValue = kSamplerHeapSize - 1;
+    return clampedValue;
+  }
+
   IGL_LOG_INFO("CommandBuffer::getNextSamplerDescriptor() - frame %u, current value=%u\n",
-               frameIdx, ctx.getFrameContexts()[frameIdx].nextSamplerDescriptor);
-  return ctx.getFrameContexts()[frameIdx].nextSamplerDescriptor;
+               frameIdx, currentValue);
+  return frameCtx.nextSamplerDescriptor;
 }
 
 void CommandBuffer::trackTransientBuffer(std::shared_ptr<IBuffer> buffer) {

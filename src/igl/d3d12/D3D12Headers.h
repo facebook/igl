@@ -51,9 +51,23 @@ namespace WRL {
   class ComPtr {
    public:
     ComPtr() noexcept : ptr_(nullptr) {}
-    ComPtr(T* ptr) noexcept : ptr_(ptr) {}
-    ComPtr(const ComPtr&) = delete;
-    ComPtr& operator=(const ComPtr&) = delete;
+    ComPtr(T* ptr) noexcept : ptr_(ptr) { if (ptr_) ptr_->AddRef(); }
+
+    // Copy constructor - AddRef the pointer
+    ComPtr(const ComPtr& other) noexcept : ptr_(other.ptr_) {
+      if (ptr_) ptr_->AddRef();
+    }
+
+    // Copy assignment - AddRef new, Release old
+    ComPtr& operator=(const ComPtr& other) noexcept {
+      if (this != &other) {
+        if (other.ptr_) other.ptr_->AddRef();
+        if (ptr_) ptr_->Release();
+        ptr_ = other.ptr_;
+      }
+      return *this;
+    }
+
     ComPtr(ComPtr&& other) noexcept : ptr_(other.ptr_) { other.ptr_ = nullptr; }
     ComPtr& operator=(ComPtr&& other) noexcept {
       if (this != &other) {

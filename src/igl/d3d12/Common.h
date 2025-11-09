@@ -32,6 +32,11 @@ constexpr uint32_t kMaxDescriptorSets = 4;
 // Maximum number of samplers (increased from 16 to accommodate ImGui with multiple texture views)
 constexpr uint32_t kMaxSamplers = 32;
 
+// Descriptor heap sizes (per-frame shader-visible heaps)
+// Following Microsoft MiniEngine pattern for dynamic per-frame allocation
+constexpr uint32_t kCbvSrvUavHeapSize = 1024;  // CBV/SRV/UAV descriptors per frame
+constexpr uint32_t kSamplerHeapSize = kMaxSamplers;  // Sampler descriptors per frame
+
 // Maximum number of vertex attributes
 constexpr uint32_t kMaxVertexAttributes = 16;
 

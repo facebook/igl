@@ -187,6 +187,11 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
             IGL_LOG_INFO("RenderCommandEncoder: Creating RTV, mip %u\n", rdesc.Texture2D.MipSlice);
           }
         }
+        // Pre-creation validation (TASK_P0_DX12-004)
+        IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateRenderTargetView");
+        IGL_DEBUG_ASSERT(tex->getResource() != nullptr, "Texture resource is null before CreateRenderTargetView");
+        IGL_DEBUG_ASSERT(rtvHandle.ptr != 0, "RTV descriptor handle is invalid");
+
         device->CreateRenderTargetView(tex->getResource(), &rdesc, rtvHandle);
 
         // Transition to RENDER_TARGET
@@ -293,6 +298,11 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
       const uint32_t depthMip = renderPass.depthAttachment.mipLevel;
       const uint32_t depthLayer = renderPass.depthAttachment.layer;
       depthTex->transitionTo(commandList_, D3D12_RESOURCE_STATE_DEPTH_WRITE, depthMip, depthLayer);
+
+      // Pre-creation validation (TASK_P0_DX12-004)
+      IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateDepthStencilView");
+      IGL_DEBUG_ASSERT(depthTex->getResource() != nullptr, "Depth texture resource is null");
+      IGL_DEBUG_ASSERT(dsvHandle_.ptr != 0, "DSV descriptor handle is invalid");
 
       device->CreateDepthStencilView(depthTex->getResource(), &dsvDesc, dsvHandle_);
 
@@ -811,6 +821,10 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
   D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getSamplerGpuHandle(descriptorIndex);
 
   IGL_LOG_INFO("bindSamplerState: creating sampler at slot %u, CPU handle 0x%llx\n", descriptorIndex, cpuHandle.ptr);
+  // Pre-creation validation (TASK_P0_DX12-004)
+  IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateSampler");
+  IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "Sampler descriptor handle is invalid");
+
   device->CreateSampler(&samplerDesc, cpuHandle);
   D3D12Context::trackResourceCreation("Sampler", 0);
 
@@ -979,6 +993,11 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
 
   // Always create descriptor (per-frame heaps require recreation each frame)
   IGL_LOG_INFO("bindTexture: creating SRV at slot %u, CPU handle 0x%llx\n", descriptorIndex, cpuHandle.ptr);
+  // Pre-creation validation (TASK_P0_DX12-004)
+  IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateShaderResourceView");
+  IGL_DEBUG_ASSERT(resource != nullptr, "Texture resource is null before CreateShaderResourceView");
+  IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "SRV descriptor handle is invalid");
+
   device->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
   D3D12Context::trackResourceCreation("SRV", 0);
 
@@ -1259,6 +1278,11 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
 
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
+    // Pre-creation validation (TASK_P0_DX12-004)
+    IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateShaderResourceView");
+    IGL_DEBUG_ASSERT(d3dBuffer->getResource() != nullptr, "Buffer resource is null");
+    IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "SRV descriptor handle is invalid");
+
     device->CreateShaderResourceView(d3dBuffer->getResource(), &srvDesc, cpuHandle);
 
     IGL_LOG_INFO("bindBuffer: Created SRV at descriptor slot %u (FirstElement=%llu, NumElements=%u)\n",
@@ -1421,6 +1445,11 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
 
     const uint32_t dstIndex = srvBaseIndex + i;
     D3D12_CPU_DESCRIPTOR_HANDLE dstCpu = context.getCbvSrvUavCpuHandle(dstIndex);
+    // Pre-creation validation (TASK_P0_DX12-004)
+    IGL_DEBUG_ASSERT(d3dDevice != nullptr, "Device is null before CreateShaderResourceView");
+    IGL_DEBUG_ASSERT(tex->getResource() != nullptr, "Texture resource is null");
+    IGL_DEBUG_ASSERT(dstCpu.ptr != 0, "SRV descriptor handle is invalid");
+
     d3dDevice->CreateShaderResourceView(tex->getResource(), &srvDesc, dstCpu);
     D3D12Context::trackResourceCreation("SRV", 0);
   }
@@ -1430,6 +1459,10 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
     auto* smp = static_cast<SamplerState*>(desc->samplers[i].get());
     D3D12_SAMPLER_DESC samplerDesc = smp ? smp->getDesc() : D3D12_SAMPLER_DESC{};
     D3D12_CPU_DESCRIPTOR_HANDLE dstCpu = context.getSamplerCpuHandle(smpBaseIndex + i);
+    // Pre-creation validation (TASK_P0_DX12-004)
+    IGL_DEBUG_ASSERT(d3dDevice != nullptr, "Device is null before CreateSampler");
+    IGL_DEBUG_ASSERT(dstCpu.ptr != 0, "Sampler descriptor handle is invalid");
+
     d3dDevice->CreateSampler(&samplerDesc, dstCpu);
     D3D12Context::trackResourceCreation("Sampler", 0);
   }
@@ -1511,6 +1544,11 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
         cbvDesc.BufferLocation = addr;
         cbvDesc.SizeInBytes = static_cast<UINT>((buf->getSizeInBytes() + 255) & ~255);  // Must be 256-byte aligned
+
+        // Pre-creation validation (TASK_P0_DX12-004)
+        IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateConstantBufferView");
+        IGL_DEBUG_ASSERT(addr != 0, "Buffer GPU address is null");
+        IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "CBV descriptor handle is invalid");
 
         device->CreateConstantBufferView(&cbvDesc, cpuHandle);
 

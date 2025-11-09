@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <igl/d3d12/Texture.h>
+#include <igl/d3d12/Device.h>  // P0_DX12-005: For command allocator pool access
 #include <igl/d3d12/DXCCompiler.h>
 
 namespace {
@@ -29,7 +30,8 @@ std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
                                                      const TextureDesc& desc,
                                                      ID3D12Device* device,
                                                      ID3D12CommandQueue* queue,
-                                                     D3D12_RESOURCE_STATES initialState) {
+                                                     D3D12_RESOURCE_STATES initialState,
+                                                     Device* iglDevice) {
   if (!resource) {
     IGL_LOG_ERROR("Texture::createFromResource - resource is NULL!\n");
     return nullptr;
@@ -43,6 +45,7 @@ std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
 
   texture->device_ = device;
   texture->queue_ = queue;
+  texture->iglDevice_ = iglDevice;  // P0_DX12-005: Store igl Device for command allocator pool access
   texture->format_ = format;
   texture->dimensions_ = Dimensions{desc.width, desc.height, desc.depth};
   texture->type_ = desc.type;
@@ -90,6 +93,7 @@ std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> par
   // Copy properties from parent
   view->device_ = parent->device_;
   view->queue_ = parent->queue_;
+  view->iglDevice_ = parent->iglDevice_;  // P0_DX12-005: Propagate igl Device pointer
   view->format_ = viewFormat;
   view->type_ = desc.type;
   view->usage_ = parent->usage_;
@@ -256,17 +260,29 @@ Result Texture::upload(const TextureRangeDesc& range,
 
   stagingBuffer->Unmap(0, nullptr);
 
-  // Create command list for all uploads
+  // P0_DX12-005: Get command allocator from pool with fence tracking
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAlloc;
-  hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(cmdAlloc.GetAddressOf()));
-  if (FAILED(hr)) {
-    return Result(Result::Code::RuntimeError, "Failed to create command allocator");
+  if (iglDevice_) {
+    cmdAlloc = iglDevice_->getUploadCommandAllocator();
+    if (!cmdAlloc.Get()) {
+      return Result(Result::Code::RuntimeError, "Failed to get command allocator from pool");
+    }
+  } else {
+    // Fallback for textures created without Device* (shouldn't happen in normal flow)
+    hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(cmdAlloc.GetAddressOf()));
+    if (FAILED(hr)) {
+      return Result(Result::Code::RuntimeError, "Failed to create command allocator");
+    }
   }
 
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
   hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAlloc.Get(), nullptr,
                                    IID_PPV_ARGS(cmdList.GetAddressOf()));
   if (FAILED(hr)) {
+    if (iglDevice_) {
+      // Return allocator to pool with fence value 0 (immediately available)
+      iglDevice_->returnUploadCommandAllocator(cmdAlloc, 0);
+    }
     return Result(Result::Code::RuntimeError, "Failed to create command list");
   }
 
@@ -313,21 +329,49 @@ Result Texture::upload(const TextureRangeDesc& range,
   ID3D12CommandList* cmdLists[] = {cmdList.Get()};
   queue_->ExecuteCommandLists(1, cmdLists);
 
-  Microsoft::WRL::ComPtr<ID3D12Fence> fence;
-  hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf()));
-  if (FAILED(hr)) {
-    return Result(Result::Code::RuntimeError, "Failed to create fence");
-  }
+  // P0_DX12-005: Use upload fence for command allocator synchronization
+  if (iglDevice_) {
+    ID3D12Fence* uploadFence = iglDevice_->getUploadFence();
+    const UINT64 signalValue = iglDevice_->getNextUploadFenceValue();
 
-  HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-  if (!fenceEvent) {
-    return Result(Result::Code::RuntimeError, "Failed to create fence event");
-  }
+    hr = queue_->Signal(uploadFence, signalValue);
+    if (FAILED(hr)) {
+      IGL_LOG_ERROR("Texture::upload: Failed to signal upload fence: 0x%08X\n", hr);
+      // Return allocator with 0 to avoid blocking the pool
+      iglDevice_->returnUploadCommandAllocator(cmdAlloc, 0);
+      return Result(Result::Code::RuntimeError, "Failed to signal fence");
+    }
 
-  queue_->Signal(fence.Get(), 1);
-  fence->SetEventOnCompletion(1, fenceEvent);
-  WaitForSingleObject(fenceEvent, INFINITE);
-  CloseHandle(fenceEvent);
+    // Return allocator to pool with fence value (will be reused after fence signaled)
+    iglDevice_->returnUploadCommandAllocator(cmdAlloc, signalValue);
+
+    // Wait for upload to complete (texture upload is synchronous)
+    HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (!fenceEvent) {
+      return Result(Result::Code::RuntimeError, "Failed to create fence event");
+    }
+
+    uploadFence->SetEventOnCompletion(signalValue, fenceEvent);
+    WaitForSingleObject(fenceEvent, INFINITE);
+    CloseHandle(fenceEvent);
+  } else {
+    // Fallback for textures without iglDevice_ (create temporary fence)
+    Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+    hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf()));
+    if (FAILED(hr)) {
+      return Result(Result::Code::RuntimeError, "Failed to create fence");
+    }
+
+    HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (!fenceEvent) {
+      return Result(Result::Code::RuntimeError, "Failed to create fence event");
+    }
+
+    queue_->Signal(fence.Get(), 1);
+    fence->SetEventOnCompletion(1, fenceEvent);
+    WaitForSingleObject(fenceEvent, INFINITE);
+    CloseHandle(fenceEvent);
+  }
 
   return Result();
 }
@@ -411,9 +455,14 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
   if (!(resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)) {
     IGL_LOG_INFO("Texture::generateMipmap() - Recreating texture with RENDER_TARGET flag for mipmap generation\n");
 
-    // Save current resource (AddRef to keep it alive)
-    ID3D12Resource* oldResource = resource_.Get();
-    oldResource->AddRef();
+    // Save current resource using ComPtr for automatic reference counting
+    // Note: ComPtr copy is deleted, so we manually AddRef and Attach
+    ID3D12Resource* rawOldResource = resource_.Get();
+    if (rawOldResource) {
+      rawOldResource->AddRef();
+    }
+    Microsoft::WRL::ComPtr<ID3D12Resource> oldResource;
+    oldResource.Attach(rawOldResource);
 
     // Modify descriptor to add RENDER_TARGET flag
     resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
@@ -454,7 +503,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     // Transition old resource to COPY_SOURCE
     D3D12_RESOURCE_BARRIER barrierOld = {};
     barrierOld.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrierOld.Transition.pResource = oldResource;
+    barrierOld.Transition.pResource = oldResource.Get();
     barrierOld.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
     barrierOld.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
     barrierOld.Transition.Subresource = 0;
@@ -462,7 +511,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
 
     // Copy mip 0
     D3D12_TEXTURE_COPY_LOCATION srcLoc = {};
-    srcLoc.pResource = oldResource;
+    srcLoc.pResource = oldResource.Get();
     srcLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
     srcLoc.SubresourceIndex = 0;
 
@@ -490,13 +539,11 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     Microsoft::WRL::ComPtr<ID3D12Fence> copyFence;
     if (FAILED(device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(copyFence.GetAddressOf())))) {
       IGL_LOG_ERROR("Texture::generateMipmap() - Failed to create copy fence\n");
-      oldResource->Release();
       return;
     }
     HANDLE copyEvt = CreateEvent(nullptr, FALSE, FALSE, nullptr);
     if (!copyEvt) {
       IGL_LOG_ERROR("Texture::generateMipmap() - Failed to create copy event\n");
-      oldResource->Release();
       return;
     }
     queue_->Signal(copyFence.Get(), 1);
@@ -504,8 +551,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     WaitForSingleObject(copyEvt, INFINITE);
     CloseHandle(copyEvt);
 
-    // Release old resource
-    oldResource->Release();
+    // oldResource will be automatically released by ComPtr destructor
 
     // Replace resource with new one (need const_cast since function is const)
     auto& mutableResource = const_cast<Microsoft::WRL::ComPtr<ID3D12Resource>&>(resource_);
@@ -638,12 +684,19 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> smpHeap;
   if (FAILED(device_->CreateDescriptorHeap(&smpHeapDesc, IID_PPV_ARGS(smpHeap.GetAddressOf())))) return;
 
+  // Pre-creation validation (TASK_P0_DX12-004)
+  IGL_DEBUG_ASSERT(device_ != nullptr, "Device is null before CreateSampler");
+  IGL_DEBUG_ASSERT(smpHeap.Get() != nullptr, "Sampler heap is null");
+
   // Fixed sampler
   D3D12_SAMPLER_DESC samp = {};
   samp.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
   samp.AddressU = samp.AddressV = samp.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
   samp.MinLOD = 0; samp.MaxLOD = D3D12_FLOAT32_MAX;
-  device_->CreateSampler(&samp, smpHeap->GetCPUDescriptorHandleForHeapStart());
+
+  D3D12_CPU_DESCRIPTOR_HANDLE smpHandle = smpHeap->GetCPUDescriptorHandleForHeapStart();
+  IGL_DEBUG_ASSERT(smpHandle.ptr != 0, "Sampler descriptor handle is invalid");
+  device_->CreateSampler(&samp, smpHandle);
 
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> alloc;
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> list;
@@ -662,6 +715,14 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   D3D12_GPU_DESCRIPTOR_HANDLE srvGpuStart = srvHeap->GetGPUDescriptorHandleForHeapStart();
   D3D12_GPU_DESCRIPTOR_HANDLE smpGpu = smpHeap->GetGPUDescriptorHandleForHeapStart();
 
+  // Create single RTV descriptor heap outside the loop (reused for all mip levels)
+  D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
+  rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+  rtvHeapDesc.NumDescriptors = 1;
+  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap;
+  if (FAILED(device_->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(rtvHeap.GetAddressOf())))) return;
+  D3D12_CPU_DESCRIPTOR_HANDLE rtvCpu = rtvHeap->GetCPUDescriptorHandleForHeapStart();
+
   // Ensure mip 0 is in PIXEL_SHADER_RESOURCE state for first SRV read
   // Use the Texture's state tracking to ensure correct transition
   transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 0);
@@ -673,6 +734,11 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     D3D12_GPU_DESCRIPTOR_HANDLE srvGpu = srvGpuStart;
     srvGpu.ptr += mip * srvDescriptorSize;
 
+    // Pre-creation validation (TASK_P0_DX12-004)
+    IGL_DEBUG_ASSERT(device_ != nullptr, "Device is null before CreateShaderResourceView");
+    IGL_DEBUG_ASSERT(resource_.Get() != nullptr, "Resource is null before CreateShaderResourceView");
+    IGL_DEBUG_ASSERT(srvCpu.ptr != 0, "SRV descriptor handle is invalid");
+
     D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
     srv.Format = resourceDesc.Format;
     srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
@@ -681,17 +747,17 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     srv.Texture2D.MipLevels = 1;
     device_->CreateShaderResourceView(resource_.Get(), &srv, srvCpu);
 
+    // Pre-creation validation (TASK_P0_DX12-004)
+    IGL_DEBUG_ASSERT(device_ != nullptr, "Device is null before CreateRenderTargetView");
+    IGL_DEBUG_ASSERT(resource_.Get() != nullptr, "Resource is null before CreateRenderTargetView");
+    IGL_DEBUG_ASSERT(rtvCpu.ptr != 0, "RTV descriptor handle is invalid");
+
     D3D12_RENDER_TARGET_VIEW_DESC rtv = {};
     rtv.Format = resourceDesc.Format;
     rtv.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
     rtv.Texture2D.MipSlice = mip + 1;
 
-    D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-    rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-    rtvHeapDesc.NumDescriptors = 1;
-    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap;
-    if (FAILED(device_->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(rtvHeap.GetAddressOf())))) return;
-    D3D12_CPU_DESCRIPTOR_HANDLE rtvCpu = rtvHeap->GetCPUDescriptorHandleForHeapStart();
+    // Reuse the same RTV heap by recreating the view for each mip level
     device_->CreateRenderTargetView(resource_.Get(), &rtv, rtvCpu);
 
     // Transition mip level to render target using state tracking
@@ -849,13 +915,22 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   smpHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
   smpHeapDesc.NumDescriptors = 1;
   smpHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
   Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> smpHeap;
   if (FAILED(device_->CreateDescriptorHeap(&smpHeapDesc, IID_PPV_ARGS(smpHeap.GetAddressOf())))) return;
+
+  // Pre-creation validation (TASK_P0_DX12-004)
+  IGL_DEBUG_ASSERT(device_ != nullptr, "Device is null before CreateSampler");
+  IGL_DEBUG_ASSERT(smpHeap.Get() != nullptr, "Sampler heap is null");
+
   D3D12_SAMPLER_DESC samp = {};
   samp.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
   samp.AddressU = samp.AddressV = samp.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
   samp.MinLOD = 0; samp.MaxLOD = D3D12_FLOAT32_MAX;
-  device_->CreateSampler(&samp, smpHeap->GetCPUDescriptorHandleForHeapStart());
+
+  D3D12_CPU_DESCRIPTOR_HANDLE smpHandle = smpHeap->GetCPUDescriptorHandleForHeapStart();
+  IGL_DEBUG_ASSERT(smpHandle.ptr != 0, "Sampler descriptor handle is invalid");
+  device_->CreateSampler(&samp, smpHandle);
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> alloc;
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> list;
   if (FAILED(device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(alloc.GetAddressOf())))) return;
@@ -871,6 +946,14 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   D3D12_GPU_DESCRIPTOR_HANDLE srvGpuStart = srvHeap->GetGPUDescriptorHandleForHeapStart();
   D3D12_GPU_DESCRIPTOR_HANDLE smpGpu = smpHeap->GetGPUDescriptorHandleForHeapStart();
 
+  // Create single RTV descriptor heap outside the loop (reused for all mip levels)
+  D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
+  rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+  rtvHeapDesc.NumDescriptors = 1;
+  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap;
+  if (FAILED(device_->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(rtvHeap.GetAddressOf())))) return;
+  D3D12_CPU_DESCRIPTOR_HANDLE rtvCpu = rtvHeap->GetCPUDescriptorHandleForHeapStart();
+
   // Ensure mip 0 is in PIXEL_SHADER_RESOURCE state for first SRV read
   // Use the Texture's state tracking to ensure correct transition
   transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 0);
@@ -882,6 +965,11 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     D3D12_GPU_DESCRIPTOR_HANDLE srvGpu = srvGpuStart;
     srvGpu.ptr += mip * srvDescriptorSize;
 
+    // Pre-creation validation (TASK_P0_DX12-004)
+    IGL_DEBUG_ASSERT(device_ != nullptr, "Device is null before CreateShaderResourceView");
+    IGL_DEBUG_ASSERT(resource_.Get() != nullptr, "Resource is null before CreateShaderResourceView");
+    IGL_DEBUG_ASSERT(srvCpu.ptr != 0, "SRV descriptor handle is invalid");
+
     D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
     srv.Format = resourceDesc.Format;
     srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
@@ -889,16 +977,18 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     srv.Texture2D.MostDetailedMip = mip;
     srv.Texture2D.MipLevels = 1;
     device_->CreateShaderResourceView(resource_.Get(), &srv, srvCpu);
+
+    // Pre-creation validation (TASK_P0_DX12-004)
+    IGL_DEBUG_ASSERT(device_ != nullptr, "Device is null before CreateRenderTargetView");
+    IGL_DEBUG_ASSERT(resource_.Get() != nullptr, "Resource is null before CreateRenderTargetView");
+    IGL_DEBUG_ASSERT(rtvCpu.ptr != 0, "RTV descriptor handle is invalid");
+
     D3D12_RENDER_TARGET_VIEW_DESC rtv = {};
     rtv.Format = resourceDesc.Format;
     rtv.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
     rtv.Texture2D.MipSlice = mip + 1;
-    D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-    rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-    rtvHeapDesc.NumDescriptors = 1;
-    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap;
-    if (FAILED(device_->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(rtvHeap.GetAddressOf())))) return;
-    D3D12_CPU_DESCRIPTOR_HANDLE rtvCpu = rtvHeap->GetCPUDescriptorHandleForHeapStart();
+
+    // Reuse the same RTV heap by recreating the view for each mip level
     device_->CreateRenderTargetView(resource_.Get(), &rtv, rtvCpu);
 
     // Transition mip level to render target using state tracking

@@ -46,6 +46,11 @@ struct FrameContext {
   // Tracks high-water mark to observe peak usage and detect unbounded growth
   size_t transientBuffersHighWater = 0;
   size_t transientResourcesHighWater = 0;
+
+  // Telemetry for descriptor heap usage tracking (P0_DX12-FIND-02)
+  // Tracks peak descriptor usage per frame to detect heap overflow risks
+  uint32_t peakCbvSrvUavUsage = 0;
+  uint32_t peakSamplerUsage = 0;
 };
 
 class D3D12Context {
