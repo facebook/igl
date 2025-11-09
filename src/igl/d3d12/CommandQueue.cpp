@@ -9,6 +9,7 @@
 #include <igl/d3d12/CommandBuffer.h>
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/Common.h>
+#include <igl/d3d12/Timer.h>
 #include <stdexcept>
 #include <d3d12sdklayers.h>
 
@@ -125,6 +126,13 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   auto& ctx = device_.getD3D12Context();
   auto* d3dCommandQueue = ctx.getCommandQueue();
   auto* d3dDevice = ctx.getDevice();
+
+  // TASK_P2_DX12-FIND-11: End timer before closing command list
+  // Timer must record timestamps while command list is still in recording state
+  if (commandBuffer.desc.timer) {
+    auto* timer = static_cast<Timer*>(commandBuffer.desc.timer.get());
+    timer->end(d3dCommandList);
+  }
 
   // Ensure the command list is closed before execution
   const_cast<CommandBuffer&>(d3dCommandBuffer).end();

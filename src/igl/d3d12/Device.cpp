@@ -18,6 +18,7 @@
 #include <igl/d3d12/Texture.h>
 #include <igl/d3d12/PlatformDevice.h>
 #include <igl/d3d12/DXCCompiler.h>
+#include <igl/d3d12/Timer.h>
 #include <igl/VertexInputState.h>
 #include <igl/Texture.h>
 #include <cstring>
@@ -745,8 +746,15 @@ std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> te
 }
 
 std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) const noexcept {
-  Result::setResult(outResult, Result::Code::Unimplemented, "D3D12 Timer not yet implemented");
-  return nullptr;
+  // TASK_P2_DX12-FIND-11: Implement GPU Timer Queries
+  try {
+    auto timer = std::make_shared<Timer>(*this);
+    Result::setOk(outResult);
+    return timer;
+  } catch (const std::exception& e) {
+    Result::setResult(outResult, Result::Code::RuntimeError, e.what());
+    return nullptr;
+  }
 }
 
 std::shared_ptr<IVertexInputState> Device::createVertexInputState(
