@@ -127,7 +127,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
     }
   }
 
-  UINT samplerHeapSize = 32; // default matching kMaxSamplers
+  UINT samplerHeapSize = kMaxSamplers; // Match D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE (2048)
   {
     char buf[32] = {};
     const DWORD n = GetEnvironmentVariableA("IGL_D3D12_SAMPLER_HEAP_SIZE", buf, sizeof(buf));

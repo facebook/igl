@@ -178,6 +178,9 @@ Result Texture::upload(const TextureRangeDesc& range,
   UINT64 uploadFenceValue = 0;
 
   if (iglDevice_) {
+    // Reclaim completed upload buffers before allocating new ones.
+    iglDevice_->processCompletedUploads();
+
     ringBuffer = iglDevice_->getUploadRingBuffer();
     // Get fence value that will signal when this upload completes
     uploadFenceValue = iglDevice_->getNextUploadFenceValue();
