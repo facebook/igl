@@ -8,6 +8,7 @@
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/D3D12Context.h>
+#include <igl/d3d12/UploadRingBuffer.h>
 #include <cstring>
 
 namespace igl::d3d12 {
@@ -127,28 +128,54 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   // Reclaim completed upload buffers before allocating new ones.
   device_->processCompletedUploads();
 
-  Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
-  D3D12_HEAP_PROPERTIES uploadHeapProps = {};
-  uploadHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
-  const auto uploadDesc = makeBufferDesc(range.size);
-  HRESULT hr = d3dDevice->CreateCommittedResource(&uploadHeapProps,
-                                                  D3D12_HEAP_FLAG_NONE,
-                                                  &uploadDesc,
-                                                  D3D12_RESOURCE_STATE_GENERIC_READ,
-                                                  nullptr,
-                                                  IID_PPV_ARGS(uploadBuffer.GetAddressOf()));
-  if (FAILED(hr)) {
-    return Result(Result::Code::RuntimeError, "Failed to create upload buffer");
+  // P1_DX12-009: Try to allocate from upload ring buffer first
+  UploadRingBuffer* ringBuffer = device_->getUploadRingBuffer();
+  UploadRingBuffer::Allocation ringAllocation;
+  bool useRingBuffer = false;
+
+  // Get fence value that will signal when this upload completes
+  const UINT64 uploadFenceValue = device_->getNextUploadFenceValue();
+
+  if (ringBuffer) {
+    // D3D12 requires 256-byte alignment for constant buffers
+    constexpr uint64_t kUploadAlignment = 256;
+    ringAllocation = ringBuffer->allocate(range.size, kUploadAlignment, uploadFenceValue);
+
+    if (ringAllocation.valid) {
+      // Successfully allocated from ring buffer
+      std::memcpy(ringAllocation.cpuAddress, data, range.size);
+      useRingBuffer = true;
+    }
   }
 
-  void* mapped = nullptr;
-  D3D12_RANGE rr = {0, 0};
-  hr = uploadBuffer->Map(0, &rr, &mapped);
-  if (FAILED(hr) || mapped == nullptr) {
-    return Result(Result::Code::RuntimeError, "Failed to map upload buffer");
+  // Fallback: create temporary upload buffer if ring buffer allocation failed
+  Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
+  uint64_t uploadBufferOffset = 0;
+  HRESULT hr = S_OK;
+
+  if (!useRingBuffer) {
+    D3D12_HEAP_PROPERTIES uploadHeapProps = {};
+    uploadHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+    const auto uploadDesc = makeBufferDesc(range.size);
+    hr = d3dDevice->CreateCommittedResource(&uploadHeapProps,
+                                                    D3D12_HEAP_FLAG_NONE,
+                                                    &uploadDesc,
+                                                    D3D12_RESOURCE_STATE_GENERIC_READ,
+                                                    nullptr,
+                                                    IID_PPV_ARGS(uploadBuffer.GetAddressOf()));
+    if (FAILED(hr)) {
+      return Result(Result::Code::RuntimeError, "Failed to create upload buffer");
+    }
+
+    void* mapped = nullptr;
+    D3D12_RANGE rr = {0, 0};
+    hr = uploadBuffer->Map(0, &rr, &mapped);
+    if (FAILED(hr) || mapped == nullptr) {
+      return Result(Result::Code::RuntimeError, "Failed to map upload buffer");
+    }
+    std::memcpy(mapped, data, range.size);
+    uploadBuffer->Unmap(0, nullptr);
   }
-  std::memcpy(mapped, data, range.size);
-  uploadBuffer->Unmap(0, nullptr);
 
   // P0_DX12-005: Get command allocator from pool with fence tracking
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator = device_->getUploadCommandAllocator();
@@ -178,7 +205,14 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
     cmdList->ResourceBarrier(1, &toCopyDest);
   }
 
-  cmdList->CopyBufferRegion(resource_.Get(), range.offset, uploadBuffer.Get(), 0, range.size);
+  // Copy from either ring buffer or temporary upload buffer
+  if (useRingBuffer) {
+    cmdList->CopyBufferRegion(resource_.Get(), range.offset,
+                              ringBuffer->getUploadHeap(), ringAllocation.offset,
+                              range.size);
+  } else {
+    cmdList->CopyBufferRegion(resource_.Get(), range.offset, uploadBuffer.Get(), 0, range.size);
+  }
 
   D3D12_RESOURCE_STATES postState =
       (defaultState_ == D3D12_RESOURCE_STATE_COMMON) ? D3D12_RESOURCE_STATE_GENERIC_READ : defaultState_;
@@ -207,21 +241,24 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   queue->ExecuteCommandLists(1, lists);
 
   // P0_DX12-005: Signal upload fence and return allocator to pool with fence value
+  // P1_DX12-009: Use pre-allocated uploadFenceValue (already incremented for ring buffer)
   // CRITICAL: This ensures the allocator is not reused until GPU completes execution
   ID3D12Fence* uploadFence = device_->getUploadFence();
-  const UINT64 signalValue = device_->getNextUploadFenceValue();
 
-  hr = queue->Signal(uploadFence, signalValue);
+  hr = queue->Signal(uploadFence, uploadFenceValue);
   if (FAILED(hr)) {
     IGL_LOG_ERROR("Buffer::upload: Failed to signal upload fence: 0x%08X\n", hr);
     // Still return allocator, but with 0 to avoid blocking the pool
     device_->returnUploadCommandAllocator(allocator, 0);
   } else {
     // Return allocator to pool with fence value (will be reused after fence signaled)
-    device_->returnUploadCommandAllocator(allocator, signalValue);
+    device_->returnUploadCommandAllocator(allocator, uploadFenceValue);
   }
 
-  device_->trackUploadBuffer(std::move(uploadBuffer));
+  // Only track temporary upload buffers (ring buffer is persistent)
+  if (!useRingBuffer && uploadBuffer.Get()) {
+    device_->trackUploadBuffer(std::move(uploadBuffer));
+  }
 
   return Result();
 }

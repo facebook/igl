@@ -22,6 +22,7 @@
 namespace igl::d3d12 {
 
 class PlatformDevice;
+class UploadRingBuffer;
 
 /// @brief Implements the igl::IDevice interface for DirectX 12
 class Device final : public IDevice {
@@ -157,6 +158,9 @@ class Device final : public IDevice {
   ID3D12Fence* getUploadFence() const { return uploadFence_.Get(); }
   UINT64 getNextUploadFenceValue() { return ++uploadFenceValue_; }
 
+  // Upload ring buffer access (P1_DX12-009)
+  UploadRingBuffer* getUploadRingBuffer() const { return uploadRingBuffer_.get(); }
+
   // Check for device removal and throw exception if detected (P1_DX12-006)
   void checkDeviceRemoval() const;
 
@@ -218,6 +222,9 @@ class Device final : public IDevice {
   mutable std::mutex rootSignatureCacheMutex_;
   mutable size_t rootSignatureCacheHits_ = 0;
   mutable size_t rootSignatureCacheMisses_ = 0;
+
+  // Upload ring buffer for streaming resources (P1_DX12-009)
+  std::unique_ptr<UploadRingBuffer> uploadRingBuffer_;
 };
 
 } // namespace igl::d3d12

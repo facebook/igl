@@ -19,6 +19,7 @@
 #include <igl/d3d12/PlatformDevice.h>
 #include <igl/d3d12/DXCCompiler.h>
 #include <igl/d3d12/Timer.h>
+#include <igl/d3d12/UploadRingBuffer.h>
 #include <igl/VertexInputState.h>
 #include <igl/Texture.h>
 #include <cstring>
@@ -42,6 +43,13 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
       uploadFenceValue_ = 0;
       IGL_LOG_INFO("Device::Device: Upload fence created successfully for command allocator sync\n");
     }
+
+    // Initialize upload ring buffer for streaming resources (P1_DX12-009)
+    // Default size: 128MB (configurable via UploadRingBuffer constructor)
+    constexpr uint64_t kUploadRingBufferSize = 128 * 1024 * 1024; // 128 MB
+    uploadRingBuffer_ = std::make_unique<UploadRingBuffer>(device, kUploadRingBufferSize);
+    IGL_LOG_INFO("Device::Device: Upload ring buffer initialized (size=%llu MB)\n",
+                 kUploadRingBufferSize / (1024 * 1024));
   }
 }
 
@@ -2458,6 +2466,11 @@ void Device::processCompletedUploads() const {
     } else {
       ++it;
     }
+  }
+
+  // Retire ring buffer allocations that have completed (P1_DX12-009)
+  if (uploadRingBuffer_) {
+    uploadRingBuffer_->retire(completed);
   }
 }
 

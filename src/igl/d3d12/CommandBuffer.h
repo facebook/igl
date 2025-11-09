@@ -58,7 +58,7 @@ class CommandBuffer final : public ICommandBuffer {
   Device& getDevice() { return device_; }
 
   size_t getCurrentDrawCount() const { return currentDrawCount_; }
-  void incrementDrawCount() { ++currentDrawCount_; }
+  void incrementDrawCount(size_t count = 1) { currentDrawCount_ += count; }
 
   // Track transient resources (e.g., push constants buffers) that need to be kept alive
   // until this FRAME completes GPU execution (not just until this command buffer is destroyed)

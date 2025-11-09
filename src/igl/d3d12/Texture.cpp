@@ -9,6 +9,7 @@
 #include <igl/d3d12/Texture.h>
 #include <igl/d3d12/Device.h>  // P0_DX12-005: For command allocator pool access
 #include <igl/d3d12/DXCCompiler.h>
+#include <igl/d3d12/UploadRingBuffer.h>  // P1_DX12-009: Upload ring buffer
 
 // P1_DX12-FIND-06: Removed needsRGBAChannelSwap() function
 // No channel swap needed - DXGI_FORMAT_R8G8B8A8_UNORM matches IGL TextureFormat::RGBA_UNorm8 byte order
@@ -170,35 +171,67 @@ Result Texture::upload(const TextureRangeDesc& range,
     }
   }
 
-  // Create single staging buffer for all uploads
-  D3D12_HEAP_PROPERTIES uploadHeapProps = {};
-  uploadHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
-  uploadHeapProps.CreationNodeMask = 1;
-  uploadHeapProps.VisibleNodeMask = 1;
+  // P1_DX12-009: Try to allocate from upload ring buffer first
+  UploadRingBuffer* ringBuffer = nullptr;
+  UploadRingBuffer::Allocation ringAllocation;
+  bool useRingBuffer = false;
+  UINT64 uploadFenceValue = 0;
 
-  D3D12_RESOURCE_DESC stagingDesc = {};
-  stagingDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-  stagingDesc.Width = totalStagingSize;
-  stagingDesc.Height = 1;
-  stagingDesc.DepthOrArraySize = 1;
-  stagingDesc.MipLevels = 1;
-  stagingDesc.Format = DXGI_FORMAT_UNKNOWN;
-  stagingDesc.SampleDesc.Count = 1;
-  stagingDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+  if (iglDevice_) {
+    ringBuffer = iglDevice_->getUploadRingBuffer();
+    // Get fence value that will signal when this upload completes
+    uploadFenceValue = iglDevice_->getNextUploadFenceValue();
 
-  Microsoft::WRL::ComPtr<ID3D12Resource> stagingBuffer;
-  HRESULT hr = device_->CreateCommittedResource(&uploadHeapProps, D3D12_HEAP_FLAG_NONE, &stagingDesc,
-                                                 D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-                                                 IID_PPV_ARGS(stagingBuffer.GetAddressOf()));
-  if (FAILED(hr)) {
-    return Result(Result::Code::RuntimeError, "Failed to create staging buffer");
+    if (ringBuffer) {
+      // D3D12 requires 512-byte alignment for texture uploads (D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT)
+      constexpr uint64_t kTextureUploadAlignment = 512;
+      ringAllocation = ringBuffer->allocate(totalStagingSize, kTextureUploadAlignment, uploadFenceValue);
+
+      if (ringAllocation.valid) {
+        useRingBuffer = true;
+      }
+    }
   }
 
-  // Map staging buffer once
+  // Fallback: Create temporary staging buffer if ring buffer allocation failed
+  Microsoft::WRL::ComPtr<ID3D12Resource> stagingBuffer;
   void* mappedData = nullptr;
-  hr = stagingBuffer->Map(0, nullptr, &mappedData);
-  if (FAILED(hr)) {
-    return Result(Result::Code::RuntimeError, "Failed to map staging buffer");
+  uint64_t stagingBaseOffset = 0;
+  HRESULT hr = S_OK;
+
+  if (useRingBuffer) {
+    // Use ring buffer allocation
+    mappedData = ringAllocation.cpuAddress;
+    stagingBaseOffset = ringAllocation.offset;
+  } else {
+    // Create temporary staging buffer
+    D3D12_HEAP_PROPERTIES uploadHeapProps = {};
+    uploadHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+    uploadHeapProps.CreationNodeMask = 1;
+    uploadHeapProps.VisibleNodeMask = 1;
+
+    D3D12_RESOURCE_DESC stagingDesc = {};
+    stagingDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    stagingDesc.Width = totalStagingSize;
+    stagingDesc.Height = 1;
+    stagingDesc.DepthOrArraySize = 1;
+    stagingDesc.MipLevels = 1;
+    stagingDesc.Format = DXGI_FORMAT_UNKNOWN;
+    stagingDesc.SampleDesc.Count = 1;
+    stagingDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+    hr = device_->CreateCommittedResource(&uploadHeapProps, D3D12_HEAP_FLAG_NONE, &stagingDesc,
+                                                   D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+                                                   IID_PPV_ARGS(stagingBuffer.GetAddressOf()));
+    if (FAILED(hr)) {
+      return Result(Result::Code::RuntimeError, "Failed to create staging buffer");
+    }
+
+    // Map staging buffer once
+    hr = stagingBuffer->Map(0, nullptr, &mappedData);
+    if (FAILED(hr)) {
+      return Result(Result::Code::RuntimeError, "Failed to map staging buffer");
+    }
   }
 
   // Copy all subresource data to staging buffer
@@ -239,7 +272,10 @@ Result Texture::upload(const TextureRangeDesc& range,
     }
   }
 
-  stagingBuffer->Unmap(0, nullptr);
+  // Unmap temporary staging buffer (ring buffer stays persistently mapped)
+  if (!useRingBuffer && stagingBuffer.Get()) {
+    stagingBuffer->Unmap(0, nullptr);
+  }
 
   // P0_DX12-005: Get command allocator from pool with fence tracking
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAlloc;
@@ -292,9 +328,19 @@ Result Texture::upload(const TextureRangeDesc& range,
       }
 
       D3D12_TEXTURE_COPY_LOCATION src = {};
-      src.pResource = stagingBuffer.Get();
       src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-      src.PlacedFootprint = layouts[layoutIdx];
+
+      // Use ring buffer or temporary staging buffer
+      if (useRingBuffer) {
+        src.pResource = ringBuffer->getUploadHeap();
+        // Adjust layout offset to account for ring buffer base offset
+        D3D12_PLACED_SUBRESOURCE_FOOTPRINT adjustedLayout = layouts[layoutIdx];
+        adjustedLayout.Offset += stagingBaseOffset;
+        src.PlacedFootprint = adjustedLayout;
+      } else {
+        src.pResource = stagingBuffer.Get();
+        src.PlacedFootprint = layouts[layoutIdx];
+      }
       layoutIdx++;
 
       D3D12_BOX srcBox = {0, 0, 0, mipWidth, mipHeight, mipDepth};
@@ -311,11 +357,11 @@ Result Texture::upload(const TextureRangeDesc& range,
   queue_->ExecuteCommandLists(1, cmdLists);
 
   // P0_DX12-005: Use upload fence for command allocator synchronization
+  // P1_DX12-009: Use pre-allocated uploadFenceValue (already incremented for ring buffer)
   if (iglDevice_) {
     ID3D12Fence* uploadFence = iglDevice_->getUploadFence();
-    const UINT64 signalValue = iglDevice_->getNextUploadFenceValue();
 
-    hr = queue_->Signal(uploadFence, signalValue);
+    hr = queue_->Signal(uploadFence, uploadFenceValue);
     if (FAILED(hr)) {
       IGL_LOG_ERROR("Texture::upload: Failed to signal upload fence: 0x%08X\n", hr);
       // Return allocator with 0 to avoid blocking the pool
@@ -324,19 +370,16 @@ Result Texture::upload(const TextureRangeDesc& range,
     }
 
     // Return allocator to pool with fence value (will be reused after fence signaled)
-    iglDevice_->returnUploadCommandAllocator(cmdAlloc, signalValue);
+    iglDevice_->returnUploadCommandAllocator(cmdAlloc, uploadFenceValue);
 
-    // Wait for upload to complete (texture upload is synchronous)
-    HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    if (!fenceEvent) {
-      return Result(Result::Code::RuntimeError, "Failed to create fence event");
+    // P2_DX12-FIND-07: Track staging buffer for async cleanup (no synchronous wait)
+    // P1_DX12-009: Only track temporary staging buffers (ring buffer is persistent)
+    if (!useRingBuffer && stagingBuffer.Get()) {
+      iglDevice_->trackUploadBuffer(std::move(stagingBuffer));
     }
-
-    uploadFence->SetEventOnCompletion(signalValue, fenceEvent);
-    WaitForSingleObject(fenceEvent, INFINITE);
-    CloseHandle(fenceEvent);
   } else {
-    // Fallback for textures without iglDevice_ (create temporary fence)
+    // Fallback for textures without iglDevice_ (shouldn't happen in normal flow)
+    // In this case, we need to wait synchronously since we can't track the buffer
     Microsoft::WRL::ComPtr<ID3D12Fence> fence;
     hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf()));
     if (FAILED(hr)) {
