@@ -84,6 +84,10 @@ class D3D12Context {
   // Get tearing support capability
   bool isTearingSupported() const { return tearingSupported_; }
 
+  // Get command signatures for indirect drawing (P3_DX12-FIND-13)
+  ID3D12CommandSignature* getDrawIndirectSignature() const { return drawIndirectSignature_.Get(); }
+  ID3D12CommandSignature* getDrawIndexedIndirectSignature() const { return drawIndexedIndirectSignature_.Get(); }
+
   // Get descriptor handles from per-frame heaps
   D3D12_CPU_DESCRIPTOR_HANDLE getCbvSrvUavCpuHandle(uint32_t descriptorIndex) const {
     auto h = frameContexts_[currentFrameIndex_].cbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart();
@@ -137,6 +141,7 @@ class D3D12Context {
   void createRTVHeap();
   void createBackBuffers();
   void createDescriptorHeaps();
+  void createCommandSignatures();
 
   Microsoft::WRL::ComPtr<IDXGIFactory4> dxgiFactory_;
   Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter_;
@@ -158,6 +163,10 @@ class D3D12Context {
 
   // Feature detection for variable refresh rate (tearing) support
   bool tearingSupported_ = false;
+
+  // Command signatures for indirect drawing (P3_DX12-FIND-13)
+  Microsoft::WRL::ComPtr<ID3D12CommandSignature> drawIndirectSignature_;
+  Microsoft::WRL::ComPtr<ID3D12CommandSignature> drawIndexedIndirectSignature_;
 
   // Descriptor heap manager for headless contexts (unit tests)
   DescriptorHeapManager* ownedHeapMgr_ = nullptr;  // Owned manager for windowed contexts (raw ptr, manually deleted)

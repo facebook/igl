@@ -1174,14 +1174,104 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   }
 #endif
 }
-void RenderCommandEncoder::multiDrawIndirect(IBuffer& /*indirectBuffer*/,
-                                             size_t /*indirectBufferOffset*/,
-                                             uint32_t /*drawCount*/,
-                                             uint32_t /*stride*/) {}
-void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& /*indirectBuffer*/,
-                                                    size_t /*indirectBufferOffset*/,
-                                                    uint32_t /*drawCount*/,
-                                                    uint32_t /*stride*/) {}
+void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
+                                             size_t indirectBufferOffset,
+                                             uint32_t drawCount,
+                                             uint32_t stride) {
+  if (!commandList_) {
+    IGL_LOG_ERROR("RenderCommandEncoder::multiDrawIndirect: commandList_ is null\n");
+    return;
+  }
+
+  // Get D3D12 buffer resource
+  auto* d3dBuffer = static_cast<Buffer*>(&indirectBuffer);
+  if (!d3dBuffer) {
+    IGL_LOG_ERROR("RenderCommandEncoder::multiDrawIndirect: indirectBuffer is null\n");
+    return;
+  }
+
+  ID3D12Resource* argBuffer = d3dBuffer->getResource();
+  if (!argBuffer) {
+    IGL_LOG_ERROR("RenderCommandEncoder::multiDrawIndirect: argBuffer resource is null\n");
+    return;
+  }
+
+  // Get command signature from D3D12Context
+  auto& ctx = commandBuffer_.getContext();
+  ID3D12CommandSignature* signature = ctx.getDrawIndirectSignature();
+  if (!signature) {
+    IGL_LOG_ERROR("RenderCommandEncoder::multiDrawIndirect: command signature is null\n");
+    return;
+  }
+
+  // Use default stride if not provided (sizeof D3D12_DRAW_ARGUMENTS = 16 bytes)
+  const UINT actualStride = stride ? stride : sizeof(D3D12_DRAW_ARGUMENTS);
+
+  // ExecuteIndirect for multi-draw
+  // Parameters: signature, maxCommandCount, argumentBuffer, argumentBufferOffset, countBuffer, countBufferOffset
+  commandList_->ExecuteIndirect(
+      signature,
+      drawCount,
+      argBuffer,
+      static_cast<UINT64>(indirectBufferOffset),
+      nullptr,  // No count buffer (exact draw count specified)
+      0);
+
+  // Track draw call count
+  commandBuffer_.incrementDrawCount(drawCount);
+
+  IGL_LOG_INFO("RenderCommandEncoder::multiDrawIndirect: Executed %u indirect draws (stride: %u)\n",
+               drawCount, actualStride);
+}
+void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
+                                                    size_t indirectBufferOffset,
+                                                    uint32_t drawCount,
+                                                    uint32_t stride) {
+  if (!commandList_) {
+    IGL_LOG_ERROR("RenderCommandEncoder::multiDrawIndexedIndirect: commandList_ is null\n");
+    return;
+  }
+
+  // Get D3D12 buffer resource
+  auto* d3dBuffer = static_cast<Buffer*>(&indirectBuffer);
+  if (!d3dBuffer) {
+    IGL_LOG_ERROR("RenderCommandEncoder::multiDrawIndexedIndirect: indirectBuffer is null\n");
+    return;
+  }
+
+  ID3D12Resource* argBuffer = d3dBuffer->getResource();
+  if (!argBuffer) {
+    IGL_LOG_ERROR("RenderCommandEncoder::multiDrawIndexedIndirect: argBuffer resource is null\n");
+    return;
+  }
+
+  // Get command signature from D3D12Context
+  auto& ctx = commandBuffer_.getContext();
+  ID3D12CommandSignature* signature = ctx.getDrawIndexedIndirectSignature();
+  if (!signature) {
+    IGL_LOG_ERROR("RenderCommandEncoder::multiDrawIndexedIndirect: command signature is null\n");
+    return;
+  }
+
+  // Use default stride if not provided (sizeof D3D12_DRAW_INDEXED_ARGUMENTS = 20 bytes)
+  const UINT actualStride = stride ? stride : sizeof(D3D12_DRAW_INDEXED_ARGUMENTS);
+
+  // ExecuteIndirect for multi-draw indexed
+  // Parameters: signature, maxCommandCount, argumentBuffer, argumentBufferOffset, countBuffer, countBufferOffset
+  commandList_->ExecuteIndirect(
+      signature,
+      drawCount,
+      argBuffer,
+      static_cast<UINT64>(indirectBufferOffset),
+      nullptr,  // No count buffer (exact draw count specified)
+      0);
+
+  // Track draw call count
+  commandBuffer_.incrementDrawCount(drawCount);
+
+  IGL_LOG_INFO("RenderCommandEncoder::multiDrawIndexedIndirect: Executed %u indirect indexed draws (stride: %u)\n",
+               drawCount, actualStride);
+}
 
 void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
   if (!commandList_) {

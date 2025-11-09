@@ -62,6 +62,10 @@ Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height) {
     createDescriptorHeaps();
     IGL_LOG_INFO("D3D12Context: Descriptor heaps created successfully\n");
 
+    IGL_LOG_INFO("D3D12Context: Creating command signatures...\n");
+    createCommandSignatures();
+    IGL_LOG_INFO("D3D12Context: Command signatures created successfully\n");
+
     IGL_LOG_INFO("D3D12Context: Creating fence for GPU synchronization...\n");
     HRESULT hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.GetAddressOf()));
     if (FAILED(hr)) {
@@ -570,6 +574,56 @@ void D3D12Context::createDescriptorHeaps() {
   } else {
     heapMgr_ = ownedHeapMgr_;
     IGL_LOG_INFO("D3D12Context: Descriptor heap manager created successfully\n");
+  }
+}
+
+void D3D12Context::createCommandSignatures() {
+  // Create command signature for DrawInstanced (multiDrawIndirect)
+  // D3D12_DRAW_ARGUMENTS: { VertexCountPerInstance, InstanceCount, StartVertexLocation, StartInstanceLocation }
+  {
+    D3D12_INDIRECT_ARGUMENT_DESC drawArg = {};
+    drawArg.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
+
+    D3D12_COMMAND_SIGNATURE_DESC drawSigDesc = {};
+    drawSigDesc.ByteStride = sizeof(D3D12_DRAW_ARGUMENTS);  // 16 bytes (4 x UINT)
+    drawSigDesc.NumArgumentDescs = 1;
+    drawSigDesc.pArgumentDescs = &drawArg;
+    drawSigDesc.NodeMask = 0;
+
+    HRESULT hr = device_->CreateCommandSignature(
+        &drawSigDesc,
+        nullptr,  // No root signature needed for simple draw commands
+        IID_PPV_ARGS(drawIndirectSignature_.GetAddressOf()));
+
+    if (FAILED(hr)) {
+      throw std::runtime_error("Failed to create draw indirect command signature");
+    }
+    IGL_LOG_INFO("D3D12Context: Created draw indirect command signature (stride: %u bytes)\n",
+                 drawSigDesc.ByteStride);
+  }
+
+  // Create command signature for DrawIndexedInstanced (multiDrawIndexedIndirect)
+  // D3D12_DRAW_INDEXED_ARGUMENTS: { IndexCountPerInstance, InstanceCount, StartIndexLocation, BaseVertexLocation, StartInstanceLocation }
+  {
+    D3D12_INDIRECT_ARGUMENT_DESC drawIndexedArg = {};
+    drawIndexedArg.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
+
+    D3D12_COMMAND_SIGNATURE_DESC drawIndexedSigDesc = {};
+    drawIndexedSigDesc.ByteStride = sizeof(D3D12_DRAW_INDEXED_ARGUMENTS);  // 20 bytes (5 x UINT)
+    drawIndexedSigDesc.NumArgumentDescs = 1;
+    drawIndexedSigDesc.pArgumentDescs = &drawIndexedArg;
+    drawIndexedSigDesc.NodeMask = 0;
+
+    HRESULT hr = device_->CreateCommandSignature(
+        &drawIndexedSigDesc,
+        nullptr,  // No root signature needed for simple draw commands
+        IID_PPV_ARGS(drawIndexedIndirectSignature_.GetAddressOf()));
+
+    if (FAILED(hr)) {
+      throw std::runtime_error("Failed to create draw indexed indirect command signature");
+    }
+    IGL_LOG_INFO("D3D12Context: Created draw indexed indirect command signature (stride: %u bytes)\n",
+                 drawIndexedSigDesc.ByteStride);
   }
 }
 
