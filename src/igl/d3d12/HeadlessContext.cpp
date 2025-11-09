@@ -13,12 +13,21 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
   width_ = width;
   height_ = height;
 
+  // Initialize DXGI factory flags for debug builds
+  UINT dxgiFactoryFlags = 0;
+
   // Try to enable debug layer if available (ignore failures)
   {
     Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf())))) {
       debugController->EnableDebugLayer();
       IGL_LOG_INFO("HeadlessD3D12Context: Debug layer enabled\n");
+
+#ifdef _DEBUG
+      // Enable DXGI debug layer (C-009: critical for DXGI validation)
+      dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+      IGL_LOG_INFO("HeadlessD3D12Context: DXGI debug layer enabled\n");
+#endif
     }
   }
 
@@ -35,8 +44,8 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
     }
   }
 
-  // Create DXGI factory and prefer a high-performance hardware adapter
-  HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(dxgiFactory_.GetAddressOf()));
+  // Create DXGI factory with debug flag in debug builds (C-009)
+  HRESULT hr = CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(dxgiFactory_.GetAddressOf()));
   if (FAILED(hr)) {
     return Result(Result::Code::RuntimeError, "Failed to create DXGI factory");
   }

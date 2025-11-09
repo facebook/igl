@@ -46,9 +46,12 @@ constexpr uint32_t kMaxVertexAttributes = 16;
   {                                                                          \
     const HRESULT d3d12_check_result = func;                                 \
     if (FAILED(d3d12_check_result)) {                                        \
-      IGL_DEBUG_ABORT("D3D12 API call failed: %s\n  HRESULT: 0x%08X\n",      \
-                      #func,                                                 \
-                      static_cast<unsigned int>(d3d12_check_result));        \
+      IGL_DEBUG_ASSERT(false, "D3D12 API call failed: %s, HRESULT: 0x%08X",  \
+                       #func,                                                \
+                       static_cast<unsigned int>(d3d12_check_result));       \
+      IGL_LOG_ERROR("D3D12 API call failed: %s\n  HRESULT: 0x%08X\n",        \
+                    #func,                                                   \
+                    static_cast<unsigned int>(d3d12_check_result));          \
     }                                                                        \
   }
 
@@ -57,9 +60,12 @@ constexpr uint32_t kMaxVertexAttributes = 16;
   {                                                                          \
     const HRESULT d3d12_check_result = func;                                 \
     if (FAILED(d3d12_check_result)) {                                        \
-      IGL_DEBUG_ABORT("D3D12 API call failed: %s\n  HRESULT: 0x%08X\n",      \
-                      #func,                                                 \
-                      static_cast<unsigned int>(d3d12_check_result));        \
+      IGL_DEBUG_ASSERT(false, "D3D12 API call failed: %s, HRESULT: 0x%08X",  \
+                       #func,                                                \
+                       static_cast<unsigned int>(d3d12_check_result));       \
+      IGL_LOG_ERROR("D3D12 API call failed: %s\n  HRESULT: 0x%08X\n",        \
+                    #func,                                                   \
+                    static_cast<unsigned int>(d3d12_check_result));          \
       return getResultFromHRESULT(d3d12_check_result);                       \
     }                                                                        \
   }

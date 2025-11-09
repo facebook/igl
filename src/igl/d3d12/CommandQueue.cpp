@@ -116,8 +116,18 @@ CommandQueue::CommandQueue(Device& device) : device_(device) {}
 
 std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandBufferDesc& desc,
                                                                    Result* IGL_NULLABLE outResult) {
+  auto cmdBuffer = std::make_shared<CommandBuffer>(device_, desc);
+
+  // Check if CommandBuffer was successfully initialized
+  // CommandBuffer leaves commandList_ null on failure
+  if (!cmdBuffer->getCommandList()) {
+    Result::setResult(outResult, Result::Code::RuntimeError,
+                     "Failed to create command buffer - check logs for details");
+    return nullptr;
+  }
+
   Result::setOk(outResult);
-  return std::make_shared<CommandBuffer>(device_, desc);
+  return cmdBuffer;
 }
 
 SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*endOfFrame*/) {
@@ -137,7 +147,9 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   // Ensure the command list is closed before execution
   const_cast<CommandBuffer&>(d3dCommandBuffer).end();
 
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandQueue::submit() - Executing command list...\n");
+#endif
 
   // Execute command list
   ID3D12CommandList* commandLists[] = {d3dCommandList};
@@ -151,9 +163,13 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   ++scheduleFenceValue_;  // Increment BEFORE signaling
   cmdBuf.scheduleValue_ = scheduleFenceValue_;  // Store fence value in command buffer
   d3dCommandQueue->Signal(cmdBuf.scheduleFence_.Get(), scheduleFenceValue_);
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandQueue::submit() - Signaled scheduling fence (value=%llu)\n", scheduleFenceValue_);
+#endif
 
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandQueue::submit() - Command list executed, checking device status...\n");
+#endif
 
   // P1_DX12-006: Check for device removal after command execution
   try {
@@ -165,7 +181,9 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
     throw;  // Rethrow with detailed error message from checkDeviceRemoval()
   }
 
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandQueue::submit() - Device OK, presenting...\n");
+#endif
 
   // Present if this is end of frame
   auto* swapChain = ctx.getSwapChain();
@@ -198,7 +216,9 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
         throw std::runtime_error("D3D12 device removed during Present");
       }
     } else {
+#ifdef IGL_DEBUG
       IGL_LOG_INFO("CommandQueue::submit() - Present OK\n");
+#endif
     }
 
     // CRITICAL: Check device status AFTER Present() as well
@@ -218,8 +238,10 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
 
   d3dCommandQueue->Signal(fence, currentFenceValue);
   ctx.getFrameContexts()[ctx.getCurrentFrameIndex()].fenceValue = currentFenceValue;
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandQueue::submit() - Signaled fence for frame %u (value=%llu)\n",
                ctx.getCurrentFrameIndex(), currentFenceValue);
+#endif
 
   // Move to next frame
   if (swapChain) {
@@ -241,23 +263,29 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
         : 0;
 
     if (currentCompletedValue < minimumSafeFence) {
+#ifdef IGL_DEBUG
       IGL_LOG_INFO("CommandQueue::submit() - SAFETY WAIT: Ensuring frame pipeline is not overloaded (completed=%llu, need=%llu)\n",
                    currentCompletedValue, minimumSafeFence);
+#endif
       // Wait for the frame that's (kMaxFramesInFlight-1) frames back to complete
       // This ensures we never have more than kMaxFramesInFlight frames in flight
       HRESULT hr = fence->SetEventOnCompletion(minimumSafeFence, ctx.getFenceEvent());
       if (SUCCEEDED(hr)) {
         if (fence->GetCompletedValue() < minimumSafeFence) {
           WaitForSingleObject(ctx.getFenceEvent(), INFINITE);
+#ifdef IGL_DEBUG
           IGL_LOG_INFO("CommandQueue::submit() - Safety wait completed (fence now=%llu)\n",
                        fence->GetCompletedValue());
+#endif
         }
       }
     }
 
     if (nextFrameFence != 0 && fence->GetCompletedValue() < nextFrameFence) {
+#ifdef IGL_DEBUG
       IGL_LOG_INFO("CommandQueue::submit() - Waiting for frame %u to complete (fence value=%llu, current=%llu)\n",
                    nextFrameIndex, nextFrameFence, fence->GetCompletedValue());
+#endif
       HRESULT hr = fence->SetEventOnCompletion(nextFrameFence, ctx.getFenceEvent());
       if (SUCCEEDED(hr)) {
         // CRITICAL: Re-check fence after SetEventOnCompletion to avoid race condition
@@ -283,8 +311,10 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
                 spinCount++;
               }
               if (fence->GetCompletedValue() >= nextFrameFence) {
+#ifdef IGL_DEBUG
                 IGL_LOG_INFO("CommandQueue::submit() - GPU finally completed after %d spins (fence now=%llu)\n",
                              spinCount, fence->GetCompletedValue());
+#endif
               } else {
                 IGL_LOG_ERROR("CommandQueue::submit() - GPU STILL not complete after busy-wait! (fence=%llu)\n",
                              fence->GetCompletedValue());
@@ -292,12 +322,16 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
                 while (fence->GetCompletedValue() < nextFrameFence) {
                   Sleep(10);
                 }
+#ifdef IGL_DEBUG
                 IGL_LOG_INFO("CommandQueue::submit() - Emergency infinite wait completed (fence=%llu)\n",
                              fence->GetCompletedValue());
+#endif
               }
             } else {
+#ifdef IGL_DEBUG
               IGL_LOG_INFO("CommandQueue::submit() - Frame %u resources now available (completed=%llu)\n",
                            nextFrameIndex, completedAfterWait);
+#endif
             }
           } else if (waitResult == WAIT_TIMEOUT) {
             IGL_LOG_ERROR("CommandQueue::submit() - TIMEOUT waiting for frame %u fence %llu (completed=%llu)\n",
@@ -306,27 +340,35 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
             // CRITICAL: Must wait for GPU to finish before resetting allocator
             // This can happen during window drag or very low FPS scenarios
             WaitForSingleObject(ctx.getFenceEvent(), INFINITE);
+#ifdef IGL_DEBUG
             IGL_LOG_INFO("CommandQueue::submit() - Infinite wait completed (fence now=%llu)\n",
                          fence->GetCompletedValue());
+#endif
           } else {
             IGL_LOG_ERROR("CommandQueue::submit() - Wait failed with result 0x%08X\n", waitResult);
           }
         } else {
           // Fence completed during SetEventOnCompletion (race condition handled)
+#ifdef IGL_DEBUG
           IGL_LOG_INFO("CommandQueue::submit() - Frame %u fence completed during setup (race avoided, completed=%llu)\n",
                        nextFrameIndex, fence->GetCompletedValue());
+#endif
         }
       } else {
         IGL_LOG_ERROR("CommandQueue::submit() - SetEventOnCompletion failed: 0x%08X\n", static_cast<unsigned>(hr));
       }
     } else {
+#ifdef IGL_DEBUG
       IGL_LOG_INFO("CommandQueue::submit() - Frame %u resources already available (fence=%llu, completed=%llu)\n",
                    nextFrameIndex, nextFrameFence, fence->GetCompletedValue());
+#endif
     }
 
     // Now advance to next frame
     ctx.getCurrentFrameIndex() = nextFrameIndex;
+#ifdef IGL_DEBUG
     IGL_LOG_INFO("CommandQueue::submit() - Advanced to frame index %u\n", nextFrameIndex);
+#endif
 
     // CRITICAL: Reset the command allocator for this frame AFTER fence wait
     // Following Microsoft's D3D12HelloFrameBuffering pattern: allocator can only be reset
@@ -337,7 +379,9 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
       IGL_LOG_ERROR("CommandQueue::submit() - FAILED to reset frame %u allocator: 0x%08X\n",
                     nextFrameIndex, static_cast<unsigned>(allocResetHr));
     } else {
+#ifdef IGL_DEBUG
       IGL_LOG_INFO("CommandQueue::submit() - Reset frame %u allocator successfully\n", nextFrameIndex);
+#endif
     }
 
     // CRITICAL: Clear transient buffers from the frame we just waited for
@@ -345,13 +389,17 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
     // P2_DX12-120: Added telemetry for transient resource tracking
     auto& frameCtx = ctx.getFrameContexts()[nextFrameIndex];
     if (!frameCtx.transientBuffers.empty()) {
+#ifdef IGL_DEBUG
       IGL_LOG_INFO("CommandQueue::submit() - Clearing %zu transient buffers from frame %u (high-water=%zu)\n",
                    frameCtx.transientBuffers.size(), nextFrameIndex, frameCtx.transientBuffersHighWater);
+#endif
       frameCtx.transientBuffers.clear();
     }
     if (!frameCtx.transientResources.empty()) {
+#ifdef IGL_DEBUG
       IGL_LOG_INFO("CommandQueue::submit() - Releasing %zu transient D3D resources from frame %u (high-water=%zu)\n",
                    frameCtx.transientResources.size(), nextFrameIndex, frameCtx.transientResourcesHighWater);
+#endif
       frameCtx.transientResources.clear();
     }
 
@@ -366,6 +414,7 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
     const uint32_t peakSampler = ctx.getFrameContexts()[nextFrameIndex].peakSamplerUsage;
 
     if (cbvSrvUavUsage > 0 || samplerUsage > 0) {
+#ifdef IGL_DEBUG
       const float cbvSrvUavPercent = (static_cast<float>(cbvSrvUavUsage) / kCbvSrvUavHeapSize) * 100.0f;
       const float samplerPercent = (static_cast<float>(samplerUsage) / kSamplerHeapSize) * 100.0f;
       const float peakCbvSrvUavPercent = (static_cast<float>(peakCbvSrvUav) / kCbvSrvUavHeapSize) * 100.0f;
@@ -379,20 +428,28 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
                    peakCbvSrvUav, kCbvSrvUavHeapSize, peakCbvSrvUavPercent,
                    samplerUsage, kSamplerHeapSize, samplerPercent,
                    peakSampler, kSamplerHeapSize, peakSamplerPercent);
+#endif
     }
 
     ctx.getFrameContexts()[nextFrameIndex].nextCbvSrvUavDescriptor = 0;
     ctx.getFrameContexts()[nextFrameIndex].nextSamplerDescriptor = 0;
     // Note: We don't reset peak usage counters - they accumulate across frames for telemetry
+#ifdef IGL_DEBUG
     IGL_LOG_INFO("CommandQueue::submit() - Reset descriptor counters for frame %u to 0\n", nextFrameIndex);
+#endif
   }
 
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandQueue::submit() - Complete!\n");
+#endif
 
   // Aggregate per-command-buffer draw count into the device, matching GL/Vulkan behavior
   const auto cbDraws = d3dCommandBuffer.getCurrentDrawCount();
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandQueue::submit() - Aggregating %zu draws from CB into device\n", cbDraws);
+#endif
   device_.incrementDrawCount(cbDraws);
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandQueue::submit() - Device drawCount now=%zu\n", device_.getCurrentDrawCount());
 
   // Log resource stats every 30 draws to track leaks
@@ -403,6 +460,7 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
     IGL_LOG_INFO("CommandQueue::submit() - Logging resource stats at drawCount=%zu\n", drawCount);
     D3D12Context::logResourceStats();
   }
+#endif
 
   return 0;
 }

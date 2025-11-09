@@ -2526,8 +2526,10 @@ Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator
         return nullptr;
       }
 
+#ifdef IGL_DEBUG
       IGL_LOG_INFO("Device::getUploadCommandAllocator: Reusing allocator (completed fence: %llu >= %llu), pool size: %zu\n",
                    completedValue, tracked.fenceValue, commandAllocatorPool_.size());
+#endif
       return allocator;
     }
   }
@@ -2547,8 +2549,10 @@ Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator
     return nullptr;
   }
 
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("Device::getUploadCommandAllocator: Created new allocator (pool size: %zu)\n",
                commandAllocatorPool_.size());
+#endif
   return newAllocator;
 }
 
@@ -2566,8 +2570,10 @@ void Device::returnUploadCommandAllocator(Microsoft::WRL::ComPtr<ID3D12CommandAl
 
   commandAllocatorPool_.push_back(tracked);
 
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("Device::returnUploadCommandAllocator: Returned allocator with fence %llu, pool size: %zu\n",
                fenceValue, commandAllocatorPool_.size());
+#endif
 }
 
 size_t Device::getCurrentDrawCount() const {

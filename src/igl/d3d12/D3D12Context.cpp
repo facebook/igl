@@ -151,11 +151,20 @@ void D3D12Context::createDevice() {
   // Experimental features are ONLY enabled in HeadlessD3D12Context for unit tests
   // Windowed render sessions use signed DXIL (via IDxcValidator) which doesn't need experimental mode
 
+  // Initialize DXGI factory flags for debug builds
+  UINT dxgiFactoryFlags = 0;
+
   // Re-enable debug layer to capture validation messages
   Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
   if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf())))) {
     debugController->EnableDebugLayer();
     IGL_LOG_INFO("D3D12Context: Debug layer ENABLED (to capture validation messages)\n");
+
+#ifdef _DEBUG
+    // Enable DXGI debug layer (C-009: critical for DXGI validation)
+    dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+    IGL_LOG_INFO("D3D12Context: DXGI debug layer ENABLED (swap chain validation)\n");
+#endif
 
     // Optional: Enable GPU-Based Validation (controlled by env var)
     // WARNING: This significantly impacts performance (10-100x slower)
@@ -181,8 +190,8 @@ void D3D12Context::createDevice() {
   }
 #endif
 
-  // Create DXGI factory
-  HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(dxgiFactory_.GetAddressOf()));
+  // Create DXGI factory with debug flag in debug builds (C-009)
+  HRESULT hr = CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(dxgiFactory_.GetAddressOf()));
   if (FAILED(hr)) {
     throw std::runtime_error("Failed to create DXGI factory");
   }

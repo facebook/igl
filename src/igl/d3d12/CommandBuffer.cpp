@@ -20,8 +20,9 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc)
   auto* d3dDevice = device_.getD3D12Context().getDevice();
 
   if (!d3dDevice) {
-    IGL_DEBUG_ABORT("D3D12 device is null - context not initialized");
-    return;
+    IGL_DEBUG_ASSERT(false, "D3D12 device is null - context not initialized");
+    IGL_LOG_ERROR("D3D12 device is null - context not initialized");
+    return;  // Leave commandList_ null to indicate failure
   }
 
   // Check if device is in good state
@@ -36,8 +37,8 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc)
              "  0x887A0020 = DXGI_ERROR_DRIVER_INTERNAL_ERROR",
              static_cast<unsigned>(deviceRemovedReason));
     IGL_LOG_ERROR(errorMsg);
-    IGL_DEBUG_ABORT("Device removed - see error above");
-    return;
+    IGL_DEBUG_ASSERT(false, "Device removed - see error above");
+    return;  // Leave commandList_ null to indicate failure
   }
 
   // Use the current frame's command allocator - allocators are created ready-to-use
@@ -56,7 +57,9 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc)
   if (FAILED(hr)) {
     char errorMsg[256];
     snprintf(errorMsg, sizeof(errorMsg), "Failed to create command list: HRESULT = 0x%08X", static_cast<unsigned>(hr));
-    IGL_DEBUG_ABORT(errorMsg);
+    IGL_DEBUG_ASSERT(false, "%s", errorMsg);
+    IGL_LOG_ERROR(errorMsg);
+    return;  // Leave commandList_ null to indicate failure
   }
 
   // Command lists are created in recording state, close it for now
@@ -67,13 +70,17 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc)
   if (FAILED(hr)) {
     char errorMsg[256];
     snprintf(errorMsg, sizeof(errorMsg), "Failed to create scheduling fence: HRESULT = 0x%08X", static_cast<unsigned>(hr));
-    IGL_DEBUG_ABORT(errorMsg);
+    IGL_DEBUG_ASSERT(false, "%s", errorMsg);
+    IGL_LOG_ERROR(errorMsg);
+    return;  // Leave fence null to indicate failure
   }
 
   // Create event for fence waiting
   scheduleFenceEvent_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
   if (!scheduleFenceEvent_) {
-    IGL_DEBUG_ABORT("Failed to create scheduling fence event");
+    IGL_DEBUG_ASSERT(false, "Failed to create scheduling fence event");
+    IGL_LOG_ERROR("Failed to create scheduling fence event");
+    return;  // Leave event null to indicate failure
   }
 }
 
@@ -124,8 +131,10 @@ uint32_t& CommandBuffer::getNextCbvSrvUavDescriptor() {
     return clampedValue;
   }
 
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandBuffer::getNextCbvSrvUavDescriptor() - frame %u, current value=%u\n",
                frameIdx, currentValue);
+#endif
   return frameCtx.nextCbvSrvUavDescriptor;
 }
 
@@ -167,8 +176,10 @@ uint32_t& CommandBuffer::getNextSamplerDescriptor() {
     return clampedValue;
   }
 
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandBuffer::getNextSamplerDescriptor() - frame %u, current value=%u\n",
                frameIdx, currentValue);
+#endif
   return frameCtx.nextSamplerDescriptor;
 }
 
@@ -187,8 +198,10 @@ void CommandBuffer::trackTransientBuffer(std::shared_ptr<IBuffer> buffer) {
     frameCtx.transientBuffersHighWater = currentCount;
   }
 
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandBuffer::trackTransientBuffer() - Added buffer to frame %u (total=%zu, high-water=%zu)\n",
                frameIdx, currentCount, frameCtx.transientBuffersHighWater);
+#endif
 }
 
 void CommandBuffer::trackTransientResource(ID3D12Resource* resource) {
@@ -210,8 +223,10 @@ void CommandBuffer::trackTransientResource(ID3D12Resource* resource) {
     frameCtx.transientResourcesHighWater = currentCount;
   }
 
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandBuffer::trackTransientResource() - Added resource to frame %u (total=%zu, high-water=%zu)\n",
                frameIdx, currentCount, frameCtx.transientResourcesHighWater);
+#endif
 }
 
 void CommandBuffer::begin() {
@@ -237,7 +252,9 @@ void CommandBuffer::begin() {
   };
   commandList_->SetDescriptorHeaps(2, heaps);
 
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandBuffer::begin() - Set per-frame descriptor heaps for frame %u\n", frameIdx);
+#endif
 
   // Use the CURRENT FRAME's command allocator from FrameContext
   // Following Microsoft's D3D12HelloFrameBuffering pattern
@@ -245,13 +262,17 @@ void CommandBuffer::begin() {
 
   // Microsoft pattern: Reset allocator THEN reset command list
   // Allocator was reset in CommandQueue::submit() after fence wait, OR is in initial ready state
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandBuffer::begin() - Frame %u: Resetting command list with allocator...\n", frameIdx);
+#endif
   HRESULT hr = commandList_->Reset(frameAllocator, nullptr);
   if (FAILED(hr)) {
     IGL_LOG_ERROR("CommandBuffer::begin() - Reset command list FAILED: 0x%08X\n", static_cast<unsigned>(hr));
     return;
   }
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandBuffer::begin() - Command list reset OK\n");
+#endif
   recording_ = true;
 }
 
@@ -302,7 +323,9 @@ void CommandBuffer::present(const std::shared_ptr<ITexture>& /*surface*/) const 
 void CommandBuffer::waitUntilScheduled() {
   // If scheduleValue_ is 0, the command buffer hasn't been submitted yet
   if (scheduleValue_ == 0) {
+#ifdef IGL_DEBUG
     IGL_LOG_INFO("CommandBuffer::waitUntilScheduled() - Not yet submitted, returning immediately\n");
+#endif
     return;
   }
 
@@ -314,14 +337,18 @@ void CommandBuffer::waitUntilScheduled() {
 
   const UINT64 completedValue = scheduleFence_->GetCompletedValue();
   if (completedValue >= scheduleValue_) {
+#ifdef IGL_DEBUG
     IGL_LOG_INFO("CommandBuffer::waitUntilScheduled() - Already scheduled (completed=%llu, target=%llu)\n",
                  completedValue, scheduleValue_);
+#endif
     return;
   }
 
   // Wait for the scheduling fence to be signaled
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandBuffer::waitUntilScheduled() - Waiting for scheduling (completed=%llu, target=%llu)\n",
                completedValue, scheduleValue_);
+#endif
 
   if (!scheduleFenceEvent_) {
     IGL_LOG_ERROR("CommandBuffer::waitUntilScheduled() - Fence event is null\n");
@@ -340,8 +367,10 @@ void CommandBuffer::waitUntilScheduled() {
     WaitForSingleObject(scheduleFenceEvent_, INFINITE);
   }
 
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandBuffer::waitUntilScheduled() - Scheduling complete (fence now=%llu)\n",
                scheduleFence_->GetCompletedValue());
+#endif
 }
 
 void CommandBuffer::waitUntilCompleted() {
@@ -371,7 +400,9 @@ void CommandBuffer::waitUntilCompleted() {
   WaitForSingleObject(fenceEvent, INFINITE);
   CloseHandle(fenceEvent);
 
+#ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandBuffer::waitUntilCompleted() - GPU work completed\n");
+#endif
 }
 
 void CommandBuffer::pushDebugGroupLabel(const char* label,
