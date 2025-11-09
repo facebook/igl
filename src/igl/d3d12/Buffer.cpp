@@ -239,6 +239,120 @@ void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
     return nullptr;
   }
 
+  // Handle mapping of DEFAULT heap storage buffers requested as Shared
+  // This happens when compute shader output buffers need to be read back
+  const bool isStorageBuffer = (desc_.type & BufferDesc::BufferTypeBits::Storage) != 0;
+  const bool requestedShared = (desc_.storage == ResourceStorage::Shared ||
+                                desc_.storage == ResourceStorage::Managed);
+  const bool needsReadbackStaging = (storage_ != ResourceStorage::Shared) &&
+                                    isStorageBuffer && requestedShared;
+
+  if (needsReadbackStaging) {
+    // Storage buffer in DEFAULT heap but requested as Shared - need staging
+    if (!device_) {
+      Result::setResult(outResult, Result::Code::RuntimeError, "Device is null");
+      return nullptr;
+    }
+
+    auto& ctx = device_->getD3D12Context();
+    auto* d3dDevice = ctx.getDevice();
+    auto* queue = ctx.getCommandQueue();
+
+    if (!d3dDevice || !queue) {
+      Result::setResult(outResult, Result::Code::RuntimeError, "D3D12 device or queue is null");
+      return nullptr;
+    }
+
+    // Create READBACK staging buffer if not already created
+    if (!readbackStagingBuffer_.Get()) {
+      D3D12_HEAP_PROPERTIES readbackHeap = {};
+      readbackHeap.Type = D3D12_HEAP_TYPE_READBACK;
+      readbackHeap.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+      readbackHeap.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+
+      D3D12_RESOURCE_DESC bufferDesc = {};
+      bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+      bufferDesc.Alignment = 0;
+      bufferDesc.Width = desc_.length;
+      bufferDesc.Height = 1;
+      bufferDesc.DepthOrArraySize = 1;
+      bufferDesc.MipLevels = 1;
+      bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+      bufferDesc.SampleDesc.Count = 1;
+      bufferDesc.SampleDesc.Quality = 0;
+      bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+      bufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+      HRESULT hr = d3dDevice->CreateCommittedResource(
+          &readbackHeap,
+          D3D12_HEAP_FLAG_NONE,
+          &bufferDesc,
+          D3D12_RESOURCE_STATE_COPY_DEST,
+          nullptr,
+          IID_PPV_ARGS(readbackStagingBuffer_.GetAddressOf()));
+
+      if (FAILED(hr)) {
+        Result::setResult(outResult, Result::Code::RuntimeError,
+                         "Failed to create readback staging buffer");
+        return nullptr;
+      }
+
+      // Copy from DEFAULT heap buffer to READBACK staging buffer
+      Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+      Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
+
+      if (FAILED(d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                                   IID_PPV_ARGS(allocator.GetAddressOf()))) ||
+          FAILED(d3dDevice->CreateCommandList(0,
+                                              D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                              allocator.Get(),
+                                              nullptr,
+                                              IID_PPV_ARGS(cmdList.GetAddressOf())))) {
+        Result::setResult(outResult, Result::Code::RuntimeError,
+                         "Failed to create command list for buffer copy");
+        return nullptr;
+      }
+
+      // Transition source buffer to COPY_SOURCE
+      D3D12_RESOURCE_BARRIER barrier = {};
+      barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      barrier.Transition.pResource = resource_.Get();
+      barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+      barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+      cmdList->ResourceBarrier(1, &barrier);
+
+      // Copy entire buffer
+      cmdList->CopyBufferRegion(readbackStagingBuffer_.Get(), 0, resource_.Get(), 0, desc_.length);
+
+      // Transition back
+      barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+      barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+      cmdList->ResourceBarrier(1, &barrier);
+
+      cmdList->Close();
+      ID3D12CommandList* lists[] = {cmdList.Get()};
+      queue->ExecuteCommandLists(1, lists);
+
+      // Wait for copy to complete
+      ctx.waitForGPU();
+    }
+
+    // Map the READBACK staging buffer
+    D3D12_RANGE readRange = {static_cast<SIZE_T>(range.offset),
+                            static_cast<SIZE_T>(range.offset + range.size)};
+    HRESULT hr = readbackStagingBuffer_->Map(0, &readRange, &mappedPtr_);
+
+    if (FAILED(hr)) {
+      Result::setResult(outResult, Result::Code::RuntimeError, "Failed to map readback staging buffer");
+      return nullptr;
+    }
+
+    Result::setOk(outResult);
+    return static_cast<uint8_t*>(mappedPtr_) + range.offset;
+  }
+
+  // Standard path for UPLOAD/READBACK heap buffers
   if (storage_ != ResourceStorage::Shared) {
     Result::setResult(outResult, Result::Code::Unsupported,
                       "Cannot map GPU-only buffer (use ResourceStorage::Shared)");
@@ -268,7 +382,10 @@ void Buffer::unmap() {
     return;
   }
 
-  if (resource_.Get()) {
+  // Unmap the appropriate resource (staging buffer or main buffer)
+  if (readbackStagingBuffer_.Get()) {
+    readbackStagingBuffer_->Unmap(0, nullptr);
+  } else if (resource_.Get()) {
     resource_->Unmap(0, nullptr);
   }
 

@@ -362,15 +362,16 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 
-    // Create UAV descriptor for RWByteAddressBuffer (raw buffer)
+    // Create UAV descriptor for RWStructuredBuffer (structured buffer)
+    // D3D12 compute shaders expect structured buffers, not raw buffers
     D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-    uavDesc.Format = DXGI_FORMAT_R32_TYPELESS; // Required for raw buffers
+    uavDesc.Format = DXGI_FORMAT_UNKNOWN; // Required for structured buffers
     uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
     uavDesc.Buffer.FirstElement = offset / 4; // Element offset (4 bytes per element)
     uavDesc.Buffer.NumElements = static_cast<UINT>((d3dBuffer->getSizeInBytes() - offset) / 4);
-    uavDesc.Buffer.StructureByteStride = 0; // 0 for raw buffers
+    uavDesc.Buffer.StructureByteStride = 4; // 4 bytes per element (float)
     uavDesc.Buffer.CounterOffsetInBytes = 0;
-    uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW; // RAW flag required for ByteAddressBuffer
+    uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE; // No flags for structured buffers
 
     // Pre-creation validation (TASK_P0_DX12-004)
     IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateUnorderedAccessView");

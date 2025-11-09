@@ -48,6 +48,9 @@ class Buffer final : public IBuffer, public std::enable_shared_from_this<Buffer>
   ResourceStorage storage_ = ResourceStorage::Private;
   D3D12_RESOURCE_STATES defaultState_ = D3D12_RESOURCE_STATE_GENERIC_READ;
   D3D12_RESOURCE_STATES currentState_ = D3D12_RESOURCE_STATE_COMMON;
+
+  // Staging buffer for mapping DEFAULT heap storage buffers requested as Shared
+  Microsoft::WRL::ComPtr<ID3D12Resource> readbackStagingBuffer_;
 };
 
 } // namespace igl::d3d12
