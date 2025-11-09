@@ -357,11 +357,26 @@ Result Texture::upload(const TextureRangeDesc& range,
   return Result();
 }
 
-Result Texture::uploadCube(const TextureRangeDesc& /*range*/,
-                          TextureCubeFace /*face*/,
-                          const void* /*data*/,
-                          size_t /*bytesPerRow*/) const {
-  return Result(Result::Code::Unimplemented, "D3D12 Texture::uploadCube not yet implemented");
+Result Texture::uploadCube(const TextureRangeDesc& range,
+                          TextureCubeFace face,
+                          const void* data,
+                          size_t bytesPerRow) const {
+  // TASK_P2_DX12-FIND-12: Implement cube texture upload
+  // Cube textures are stored as texture arrays with 6 slices (one per face)
+  // The upload() method already handles cube textures correctly when face/numFaces are set
+
+  // Validate this is a cube texture
+  if (type_ != TextureType::Cube) {
+    return Result(Result::Code::ArgumentInvalid, "uploadCube called on non-cube texture");
+  }
+
+  // Create a modified range with the correct face index
+  TextureRangeDesc cubeRange = range;
+  cubeRange.face = static_cast<uint32_t>(face);  // Convert TextureCubeFace enum to face index (0-5)
+  cubeRange.numFaces = 1;  // Upload single face
+
+  // Delegate to upload() which handles cube texture subresource indexing correctly
+  return upload(cubeRange, data, bytesPerRow);
 }
 
 Result Texture::uploadInternal(TextureType type,
