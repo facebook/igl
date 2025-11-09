@@ -1112,12 +1112,12 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   D3D12_ROOT_PARAMETER rootParams[5] = {};
 
   // Parameter 0: Root Constants for b0 (Push Constants)
+  // P2_DX12-FIND-09: Increased from 16 to 32 DWORDs (64→128 bytes) to match Vulkan
   // Using 32-bit constants for push constants in compute shaders
-  // 16 DWORDs = 64 bytes (4x4 matrix of floats or equivalent data)
   rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
   rootParams[0].Constants.ShaderRegister = 0;  // b0
   rootParams[0].Constants.RegisterSpace = 0;
-  rootParams[0].Constants.Num32BitValues = 16;  // 16 DWORDs = 64 bytes
+  rootParams[0].Constants.Num32BitValues = 32;  // 32 DWORDs = 128 bytes (matches Vulkan)
   rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
   // Parameter 1: Descriptor table for UAVs
@@ -1346,11 +1346,11 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   D3D12_ROOT_PARAMETER rootParams[7] = {};
 
   // Parameter 0: Root Constants for b2 (Push Constants)
-  // Max 64 bytes = 16 DWORDs to match Vulkan push constant limits
+  // P2_DX12-FIND-09: Increased from 16 to 32 DWORDs (64→128 bytes) to match Vulkan
   rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
   rootParams[0].Constants.ShaderRegister = 2;  // b2
   rootParams[0].Constants.RegisterSpace = 0;
-  rootParams[0].Constants.Num32BitValues = 16;  // 16 DWORDs = 64 bytes
+  rootParams[0].Constants.Num32BitValues = 32;  // 32 DWORDs = 128 bytes (matches Vulkan)
   rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
   // Parameter 1: Root CBV for b0 (legacy bindBuffer support)
