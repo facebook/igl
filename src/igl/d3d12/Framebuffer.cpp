@@ -257,30 +257,20 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
     const uint8_t* srcPtr = static_cast<const uint8_t*>(mapped) + footprint.Offset;
     const size_t srcRowPitch = footprint.Footprint.RowPitch;
     const size_t copyRowBytes = fullRowBytes;
-    const bool needsSwap = (srcTex->getFormat() == igl::TextureFormat::RGBA_UNorm8 ||
-                            srcTex->getFormat() == igl::TextureFormat::RGBA_SRGB);
 
     cache.cachedRowPitch = static_cast<uint64_t>(fullRowBytes);
     cache.cachedData.resize(static_cast<size_t>(cache.cachedRowPitch) *
                             static_cast<size_t>(mipHeight));
 
+    // P1_DX12-FIND-06: Direct copy with vertical flip only - no channel swap needed
+    // DXGI_FORMAT_R8G8B8A8_UNORM has R,G,B,A byte order matching IGL expectations
     for (uint32_t row = 0; row < mipHeight; ++row) {
       const uint8_t* s = srcPtr + static_cast<size_t>(row) * srcRowPitch;
       uint8_t* d =
           cache.cachedData.data() +
           static_cast<size_t>(mipHeight - 1 - row) * static_cast<size_t>(cache.cachedRowPitch);
 
-      if (needsSwap && bytesPerPixel == 4) {
-        for (uint32_t col = 0; col < mipWidth; ++col) {
-          const uint32_t idx = col * 4;
-          d[idx + 0] = s[idx + 2];
-          d[idx + 1] = s[idx + 1];
-          d[idx + 2] = s[idx + 0];
-          d[idx + 3] = s[idx + 3];
-        }
-      } else {
-        std::memcpy(d, s, copyRowBytes);
-      }
+      std::memcpy(d, s, copyRowBytes);
     }
 
     cache.readbackBuffer->Unmap(0, nullptr);

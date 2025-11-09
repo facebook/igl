@@ -10,20 +10,8 @@
 #include <igl/d3d12/Device.h>  // P0_DX12-005: For command allocator pool access
 #include <igl/d3d12/DXCCompiler.h>
 
-namespace {
-bool needsRGBAChannelSwap(igl::TextureFormat format) {
-  // NOTE: This function is used during texture upload to handle CPU-side data layout
-  // RGBA data from CPU needs R/B swap to match DXGI_FORMAT_R8G8B8A8 layout
-  using igl::TextureFormat;
-  switch (format) {
-  case TextureFormat::RGBA_UNorm8:
-  case TextureFormat::RGBA_SRGB:
-    return true;  // CPU RGBA data needs swap for GPU upload
-  default:
-    return false;
-  }
-}
-} // namespace
+// P1_DX12-FIND-06: Removed needsRGBAChannelSwap() function
+// No channel swap needed - DXGI_FORMAT_R8G8B8A8_UNORM matches IGL TextureFormat::RGBA_UNorm8 byte order
 
 namespace igl::d3d12 {
 
@@ -214,9 +202,10 @@ Result Texture::upload(const TextureRangeDesc& range,
   }
 
   // Copy all subresource data to staging buffer
+  // P1_DX12-FIND-06: Direct copy - no channel swap needed for RGBA formats
+  // DXGI_FORMAT_R8G8B8A8_UNORM has R,G,B,A byte order matching IGL TextureFormat::RGBA_UNorm8
   size_t srcDataOffset = 0;
   size_t layoutIdx = 0;
-  const bool swapRB = needsRGBAChannelSwap(format_);
 
   for (uint32_t mipOffset = 0; mipOffset < numMipsToUpload; ++mipOffset) {
     const uint32_t mipWidth = std::max(width >> (baseMip + mipOffset), 1u);
@@ -243,17 +232,7 @@ Result Texture::upload(const TextureRangeDesc& range,
         for (UINT row = 0; row < std::min(mipHeight, numRows); ++row) {
           const uint8_t* srcRow = srcSlice + row * mipBytesPerRow;
           uint8_t* dstRow = dstSlice + row * layout.Footprint.RowPitch;
-          if (swapRB) {
-            for (uint32_t col = 0; col < mipWidth; ++col) {
-              const uint32_t idx = col * 4;
-              dstRow[idx + 0] = srcRow[idx + 2];
-              dstRow[idx + 1] = srcRow[idx + 1];
-              dstRow[idx + 2] = srcRow[idx + 0];
-              dstRow[idx + 3] = srcRow[idx + 3];
-            }
-          } else {
-            memcpy(dstRow, srcRow, copyBytes);
-          }
+          memcpy(dstRow, srcRow, copyBytes);
         }
       }
       srcDataOffset += srcLayerSize;
