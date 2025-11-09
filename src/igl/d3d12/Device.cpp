@@ -2450,12 +2450,11 @@ BackendType Device::getBackendType() const {
 }
 
 void Device::processCompletedUploads() const {
-  auto* fence = ctx_->getFence();
-  if (!fence) {
+  if (!uploadFence_.Get()) {
     return;
   }
 
-  const UINT64 completed = fence->GetCompletedValue();
+  const UINT64 completed = uploadFence_->GetCompletedValue();
 
   std::lock_guard<std::mutex> lock(pendingUploadsMutex_);
   auto& uploads = pendingUploads_;

@@ -108,6 +108,18 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
   height_ = height;
 
   try {
+    // Wait for all GPU work to complete before releasing backbuffers
+    // This prevents DXGI_ERROR_DEVICE_REMOVED when GPU is still rendering to old buffers
+    if (fence_.Get() && fenceEvent_) {
+      const UINT64 currentFence = fenceValue_;
+      commandQueue_->Signal(fence_.Get(), currentFence);
+
+      if (fence_->GetCompletedValue() < currentFence) {
+        fence_->SetEventOnCompletion(currentFence, fenceEvent_);
+        WaitForSingleObject(fenceEvent_, INFINITE);
+      }
+    }
+
     // Release old back buffers
     for (UINT i = 0; i < kMaxFramesInFlight; i++) {
       renderTargets_[i].Reset();
