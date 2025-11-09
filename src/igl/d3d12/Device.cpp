@@ -171,6 +171,27 @@ void Device::validateDeviceLimits() {
   if (getFeatureLimits(DeviceFeatureLimits::ShaderStorageBufferOffsetAlignment, limitValue)) {
     IGL_LOG_INFO("  ShaderStorageBufferOffsetAlignment: %zu bytes\n", limitValue);
   }
+  if (getFeatureLimits(DeviceFeatureLimits::MaxTextureDimension3D, limitValue)) {
+    IGL_LOG_INFO("  MaxTextureDimension3D: %zu\n", limitValue);
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::MaxComputeWorkGroupSizeX, limitValue)) {
+    IGL_LOG_INFO("  MaxComputeWorkGroupSizeX: %zu\n", limitValue);
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::MaxComputeWorkGroupSizeY, limitValue)) {
+    IGL_LOG_INFO("  MaxComputeWorkGroupSizeY: %zu\n", limitValue);
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::MaxComputeWorkGroupSizeZ, limitValue)) {
+    IGL_LOG_INFO("  MaxComputeWorkGroupSizeZ: %zu\n", limitValue);
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::MaxComputeWorkGroupInvocations, limitValue)) {
+    IGL_LOG_INFO("  MaxComputeWorkGroupInvocations: %zu\n", limitValue);
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::MaxVertexInputAttributes, limitValue)) {
+    IGL_LOG_INFO("  MaxVertexInputAttributes: %zu\n", limitValue);
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::MaxColorAttachments, limitValue)) {
+    IGL_LOG_INFO("  MaxColorAttachments: %zu\n", limitValue);
+  }
 
   IGL_LOG_INFO("=== Device Limits Validation Complete ===\n\n");
 }
@@ -2238,6 +2259,42 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
     case DeviceFeatureLimits::ShaderStorageBufferOffsetAlignment:
       // D3D12 structured buffer/UAV alignment: 4 bytes for structured buffers
       result = 4;
+      return true;
+
+    case DeviceFeatureLimits::MaxTextureDimension3D:
+      // D3D12 3D texture dimension limits (Feature Level 11_0+: 2048)
+      // Feature Level 10_0+: 2048
+      result = 2048; // D3D12_REQ_TEXTURE3D_U_V_OR_W_DIMENSION
+      return true;
+
+    case DeviceFeatureLimits::MaxComputeWorkGroupSizeX:
+      // D3D12 compute shader thread group limits
+      result = D3D12_CS_THREAD_GROUP_MAX_X; // 1024
+      return true;
+
+    case DeviceFeatureLimits::MaxComputeWorkGroupSizeY:
+      // D3D12 compute shader thread group limits
+      result = D3D12_CS_THREAD_GROUP_MAX_Y; // 1024
+      return true;
+
+    case DeviceFeatureLimits::MaxComputeWorkGroupSizeZ:
+      // D3D12 compute shader thread group limits
+      result = D3D12_CS_THREAD_GROUP_MAX_Z; // 64
+      return true;
+
+    case DeviceFeatureLimits::MaxComputeWorkGroupInvocations:
+      // D3D12 max threads per thread group
+      result = D3D12_CS_THREAD_GROUP_MAX_THREADS_PER_GROUP; // 1024
+      return true;
+
+    case DeviceFeatureLimits::MaxVertexInputAttributes:
+      // D3D12 max vertex input slots
+      result = D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT; // 32
+      return true;
+
+    case DeviceFeatureLimits::MaxColorAttachments:
+      // D3D12 max simultaneous render targets
+      result = D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; // 8
       return true;
   }
 
