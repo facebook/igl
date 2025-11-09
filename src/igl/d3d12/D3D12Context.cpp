@@ -536,23 +536,30 @@ void D3D12Context::createDescriptorHeaps() {
 
   // Create per-frame shader-visible descriptor heaps (following Microsoft MiniEngine pattern)
   // Each frame gets its own isolated heaps to prevent descriptor conflicts between frames
-  IGL_LOG_INFO("D3D12Context: Creating per-frame descriptor heaps...\n");
+  // C-001: Now creates initial page with dynamic growth support
+  IGL_LOG_INFO("D3D12Context: Creating per-frame descriptor heaps with dynamic growth support...\n");
 
   for (UINT i = 0; i < kMaxFramesInFlight; i++) {
-    // CBV/SRV/UAV heap: kCbvSrvUavHeapSize descriptors (MiniEngine DynamicDescriptorHeap size)
+    // CBV/SRV/UAV heap: Start with one page of kDescriptorsPerPage descriptors
+    // Additional pages will be allocated on-demand up to kMaxHeapPages
     {
-      D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-      desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-      desc.NumDescriptors = kCbvSrvUavHeapSize;  // P0_DX12-FIND-02: Use constant for bounds checking
-      desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-      desc.NodeMask = 0;
+      Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> initialHeap;
+      Result result = allocateDescriptorHeapPage(
+          D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+          kDescriptorsPerPage,
+          &initialHeap);
 
-      HRESULT hr = device_->CreateDescriptorHeap(&desc,
-          IID_PPV_ARGS(frameContexts_[i].cbvSrvUavHeap.GetAddressOf()));
-      if (FAILED(hr)) {
-        throw std::runtime_error("Failed to create per-frame CBV/SRV/UAV heap for frame " + std::to_string(i));
+      if (!result.isOk()) {
+        throw std::runtime_error("Failed to create initial CBV/SRV/UAV heap page for frame " + std::to_string(i));
       }
-      IGL_LOG_INFO("  Frame %u: Created CBV/SRV/UAV heap (%u descriptors)\n", i, kCbvSrvUavHeapSize);
+
+      // Initialize page vector with first page
+      frameContexts_[i].cbvSrvUavHeapPages.clear();
+      frameContexts_[i].cbvSrvUavHeapPages.emplace_back(initialHeap, kDescriptorsPerPage);
+      frameContexts_[i].currentCbvSrvUavPageIndex = 0;
+
+      IGL_LOG_INFO("  Frame %u: Created initial CBV/SRV/UAV heap page (%u descriptors, max %u pages = %u total)\n",
+                   i, kDescriptorsPerPage, kMaxHeapPages, kMaxDescriptorsPerFrame);
     }
 
     // Sampler heap: kSamplerHeapSize descriptors
@@ -739,6 +746,33 @@ void D3D12Context::logResourceStats() {
   IGL_LOG_INFO("  Buffer memory: %.2f MB\n", resourceStats_.bufferMemoryBytes / (1024.0 * 1024.0));
   IGL_LOG_INFO("  Texture memory: %.2f MB\n", resourceStats_.textureMemoryBytes / (1024.0 * 1024.0));
   IGL_LOG_INFO("==================================\n");
+}
+
+// C-001: Allocate a new descriptor heap page for dynamic growth
+Result D3D12Context::allocateDescriptorHeapPage(
+    D3D12_DESCRIPTOR_HEAP_TYPE type,
+    uint32_t numDescriptors,
+    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>* outHeap) {
+  if (!device_.Get()) {
+    return Result{Result::Code::RuntimeError, "Device is null"};
+  }
+
+  D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+  heapDesc.Type = type;
+  heapDesc.NumDescriptors = numDescriptors;
+  heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+  heapDesc.NodeMask = 0;
+
+  HRESULT hr = device_->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(outHeap->GetAddressOf()));
+  if (FAILED(hr)) {
+    char errorMsg[256];
+    snprintf(errorMsg, sizeof(errorMsg),
+             "Failed to create descriptor heap page (type=%d, numDescriptors=%u): HRESULT=0x%08X",
+             static_cast<int>(type), numDescriptors, static_cast<unsigned>(hr));
+    return Result{Result::Code::RuntimeError, errorMsg};
+  }
+
+  return Result{};
 }
 
 } // namespace igl::d3d12

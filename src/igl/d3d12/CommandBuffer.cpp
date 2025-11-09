@@ -93,49 +93,82 @@ CommandBuffer::~CommandBuffer() {
   // scheduleFence_ is a ComPtr and will be automatically released
 }
 
-uint32_t& CommandBuffer::getNextCbvSrvUavDescriptor() {
+// C-001: Dynamic descriptor heap allocation with multi-page growth
+Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
   auto& ctx = device_.getD3D12Context();
   const uint32_t frameIdx = ctx.getCurrentFrameIndex();
   auto& frameCtx = ctx.getFrameContexts()[frameIdx];
+  auto& pages = frameCtx.cbvSrvUavHeapPages;
+  uint32_t currentPageIdx = frameCtx.currentCbvSrvUavPageIndex;
 
-  // P0_DX12-FIND-02: Add bounds checking to prevent descriptor heap overflow
-  // The CBV/SRV/UAV heap is allocated with kCbvSrvUavHeapSize descriptors
-  const uint32_t currentValue = frameCtx.nextCbvSrvUavDescriptor;
+  // Validate we have at least one page
+  if (pages.empty()) {
+    return Result{Result::Code::RuntimeError, "No CBV/SRV/UAV descriptor heap pages available"};
+  }
 
-  // Track peak usage for telemetry (before incrementing)
-  if (currentValue > frameCtx.peakCbvSrvUavUsage) {
-    frameCtx.peakCbvSrvUavUsage = currentValue;
+  // Get current page
+  if (currentPageIdx >= pages.size()) {
+    return Result{Result::Code::RuntimeError, "Invalid descriptor heap page index"};
+  }
 
-    // Warn if approaching capacity (>80%)
-    const float usage = static_cast<float>(currentValue) / static_cast<float>(kCbvSrvUavHeapSize);
-    if (usage > 0.8f) {
-      IGL_LOG_ERROR("D3D12: CBV/SRV/UAV descriptor usage at %.1f%% capacity (%u/%u) for frame %u\n",
-                    usage * 100.0f, currentValue, kCbvSrvUavHeapSize, frameIdx);
+  auto& currentPage = pages[currentPageIdx];
+  const uint32_t currentOffset = frameCtx.nextCbvSrvUavDescriptor;
+
+  // Check if current page has space
+  if (currentOffset >= currentPage.capacity) {
+    // Current page is full - try to allocate a new page
+    if (pages.size() >= kMaxHeapPages) {
+      char errorMsg[512];
+      snprintf(errorMsg, sizeof(errorMsg),
+               "CBV/SRV/UAV descriptor heap pool exhausted! Frame %u used all %u pages (%u descriptors total). "
+               "This indicates excessive descriptor allocation. Consider optimizing descriptor usage or increasing kMaxHeapPages.",
+               frameIdx, kMaxHeapPages, kMaxDescriptorsPerFrame);
+      return Result{Result::Code::RuntimeError, errorMsg};
     }
+
+    // Allocate new page
+    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> newHeap;
+    Result result = ctx.allocateDescriptorHeapPage(
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+        kDescriptorsPerPage,
+        &newHeap);
+
+    if (!result.isOk()) {
+      return result;
+    }
+
+    // Add new page to vector
+    pages.emplace_back(newHeap, kDescriptorsPerPage);
+    currentPageIdx = static_cast<uint32_t>(pages.size() - 1);
+    frameCtx.currentCbvSrvUavPageIndex = currentPageIdx;
+    frameCtx.nextCbvSrvUavDescriptor = 0;  // Reset offset for new page
+
+    IGL_LOG_INFO("D3D12: Allocated new CBV/SRV/UAV descriptor heap page %u for frame %u (total: %zu pages, %zu descriptors)\n",
+                 currentPageIdx, frameIdx, pages.size(), pages.size() * kDescriptorsPerPage);
+
+    // Update current page reference
+    currentPage = pages[currentPageIdx];
   }
 
-  // CRITICAL: Assert on overflow in debug builds
-  IGL_DEBUG_ASSERT(currentValue < kCbvSrvUavHeapSize,
-                   "D3D12: CBV/SRV/UAV descriptor heap overflow! Allocated: %u, Capacity: %u (frame %u). "
-                   "This will cause memory corruption and device removal. Increase heap size or optimize descriptor usage.",
-                   currentValue, kCbvSrvUavHeapSize, frameIdx);
+  // Allocate from current page
+  const uint32_t descriptorIndex = frameCtx.nextCbvSrvUavDescriptor++;
+  currentPage.used = frameCtx.nextCbvSrvUavDescriptor;
 
-  // Graceful degradation in release builds: clamp to last valid descriptor
-  if (currentValue >= kCbvSrvUavHeapSize) {
-    IGL_LOG_ERROR("D3D12: CBV/SRV/UAV descriptor heap overflow! Allocated: %u, Capacity: %u (frame %u)\n"
-                  "Clamping to last valid descriptor. Rendering artifacts expected.\n",
-                  currentValue, kCbvSrvUavHeapSize, frameIdx);
-    // Return reference to a clamped value to prevent further damage
-    // This will cause rendering artifacts but prevent crashes
-    static uint32_t clampedValue = kCbvSrvUavHeapSize - 1;
-    return clampedValue;
+  // Track peak usage for telemetry
+  const uint32_t totalUsed = static_cast<uint32_t>(currentPageIdx * kDescriptorsPerPage + descriptorIndex);
+  if (totalUsed > frameCtx.peakCbvSrvUavUsage) {
+    frameCtx.peakCbvSrvUavUsage = totalUsed;
   }
+
+  // Return the descriptor index within the current page
+  *outDescriptorIndex = descriptorIndex;
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandBuffer::getNextCbvSrvUavDescriptor() - frame %u, current value=%u\n",
-               frameIdx, currentValue);
+  IGL_LOG_INFO("CommandBuffer::getNextCbvSrvUavDescriptor() - frame %u, page %u, descriptor %u (total allocated: %u)\n",
+               frameIdx, currentPageIdx, descriptorIndex, totalUsed);
 #endif
-  return frameCtx.nextCbvSrvUavDescriptor;
+
+  return Result{};
 }
 
 uint32_t& CommandBuffer::getNextSamplerDescriptor() {
@@ -243,12 +276,24 @@ void CommandBuffer::begin() {
 
   // CRITICAL: Set the per-frame descriptor heaps before recording commands
   // Each frame has its own isolated heaps to prevent descriptor conflicts
+  // C-001: Use current page's heap (will be updated if we grow to new pages)
   auto& ctx = device_.getD3D12Context();
   const uint32_t frameIdx = ctx.getCurrentFrameIndex();
+  auto& frameCtx = ctx.getFrameContexts()[frameIdx];
+
+  // Get current page's heap (or first page if not initialized)
+  ID3D12DescriptorHeap* cbvSrvUavHeap = frameCtx.cbvSrvUavHeapPages.empty()
+      ? nullptr
+      : frameCtx.cbvSrvUavHeapPages[frameCtx.currentCbvSrvUavPageIndex].heap.Get();
+
+  if (!cbvSrvUavHeap) {
+    IGL_LOG_ERROR("CommandBuffer::begin() - No CBV/SRV/UAV heap available for frame %u\n", frameIdx);
+    return;
+  }
 
   ID3D12DescriptorHeap* heaps[] = {
-      ctx.getFrameContexts()[frameIdx].cbvSrvUavHeap.Get(),
-      ctx.getFrameContexts()[frameIdx].samplerHeap.Get()
+      cbvSrvUavHeap,
+      frameCtx.samplerHeap.Get()
   };
   commandList_->SetDescriptorHeaps(2, heaps);
 

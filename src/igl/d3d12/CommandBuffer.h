@@ -66,7 +66,8 @@ class CommandBuffer final : public ICommandBuffer {
   void trackTransientResource(ID3D12Resource* resource);
 
   // Descriptor allocation tracking - delegates to frame context to share across ALL command buffers
-  uint32_t& getNextCbvSrvUavDescriptor();
+  // C-001: Changed to return Result for error handling on heap overflow
+  Result getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex);
   uint32_t& getNextSamplerDescriptor();
 
  private:

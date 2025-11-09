@@ -20,15 +20,37 @@ namespace igl::d3d12 {
 
 class DescriptorHeapManager; // fwd decl in igl::d3d12
 
+// Descriptor heap page for dynamic growth (C-001)
+// Following Microsoft MiniEngine's DynamicDescriptorHeap pattern
+struct DescriptorHeapPage {
+  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> heap;
+  uint32_t capacity;  // Total descriptors in this page
+  uint32_t used;      // Currently allocated descriptors
+
+  DescriptorHeapPage() : capacity(0), used(0) {}
+  DescriptorHeapPage(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> h, uint32_t cap)
+      : heap(h), capacity(cap), used(0) {}
+};
+
 // Per-frame context for CPU/GPU parallelism
 struct FrameContext {
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
   UINT64 fenceValue = 0;
 
   // Per-frame shader-visible descriptor heaps (following Microsoft MiniEngine pattern)
-  // Each frame gets its own isolated heaps to prevent descriptor conflicts
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> cbvSrvUavHeap;  // 1024 descriptors (MiniEngine size)
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> samplerHeap;     // 32 descriptors (kMaxSamplers)
+  // C-001: Now supports multiple pages for dynamic growth to prevent overflow corruption
+  // Each frame gets its own isolated heap pages to prevent descriptor conflicts
+  std::vector<DescriptorHeapPage> cbvSrvUavHeapPages;  // Dynamic array of 1024-descriptor pages
+  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> samplerHeap;     // 2048 descriptors (kMaxSamplers)
+
+  // Current active page index for CBV/SRV/UAV allocation
+  uint32_t currentCbvSrvUavPageIndex = 0;
+
+  // Legacy accessor for backward compatibility (returns first page)
+  // DEPRECATED: Use cbvSrvUavHeapPages directly for multi-page access
+  ID3D12DescriptorHeap* cbvSrvUavHeap() const {
+    return cbvSrvUavHeapPages.empty() ? nullptr : cbvSrvUavHeapPages[0].heap.Get();
+  }
 
   // Linear allocator counters - reset to 0 each frame
   // Incremented by each command buffer's encoders as they allocate descriptors
@@ -66,12 +88,18 @@ class D3D12Context {
   IDXGISwapChain3* getSwapChain() const { return swapChain_.Get(); }
 
   // Get descriptor heap for current frame
+  // C-001: Returns first page for backward compatibility, but prefer using getFrameContexts()
   ID3D12DescriptorHeap* getCbvSrvUavHeap() const {
-    return frameContexts_[currentFrameIndex_].cbvSrvUavHeap.Get();
+    return frameContexts_[currentFrameIndex_].cbvSrvUavHeap();
   }
   ID3D12DescriptorHeap* getSamplerHeap() const {
     return frameContexts_[currentFrameIndex_].samplerHeap.Get();
   }
+
+  // C-001: Allocate a new descriptor heap page for dynamic growth
+  Result allocateDescriptorHeapPage(D3D12_DESCRIPTOR_HEAP_TYPE type,
+                                     uint32_t numDescriptors,
+                                     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>* outHeap);
 
   // Get descriptor sizes
   UINT getCbvSrvUavDescriptorSize() const { return cbvSrvUavDescriptorSize_; }
@@ -89,14 +117,31 @@ class D3D12Context {
   ID3D12CommandSignature* getDrawIndexedIndirectSignature() const { return drawIndexedIndirectSignature_.Get(); }
 
   // Get descriptor handles from per-frame heaps
+  // C-001: Now uses current page for multi-heap support
   D3D12_CPU_DESCRIPTOR_HANDLE getCbvSrvUavCpuHandle(uint32_t descriptorIndex) const {
-    auto h = frameContexts_[currentFrameIndex_].cbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart();
+    const auto& frameCtx = frameContexts_[currentFrameIndex_];
+    const auto& pages = frameCtx.cbvSrvUavHeapPages;
+    const uint32_t pageIdx = frameCtx.currentCbvSrvUavPageIndex;
+
+    if (pages.empty() || pageIdx >= pages.size()) {
+      return {0};  // Invalid handle
+    }
+
+    auto h = pages[pageIdx].heap->GetCPUDescriptorHandleForHeapStart();
     h.ptr += descriptorIndex * cbvSrvUavDescriptorSize_;
     return h;
   }
 
   D3D12_GPU_DESCRIPTOR_HANDLE getCbvSrvUavGpuHandle(uint32_t descriptorIndex) const {
-    auto h = frameContexts_[currentFrameIndex_].cbvSrvUavHeap->GetGPUDescriptorHandleForHeapStart();
+    const auto& frameCtx = frameContexts_[currentFrameIndex_];
+    const auto& pages = frameCtx.cbvSrvUavHeapPages;
+    const uint32_t pageIdx = frameCtx.currentCbvSrvUavPageIndex;
+
+    if (pages.empty() || pageIdx >= pages.size()) {
+      return {0};  // Invalid handle
+    }
+
+    auto h = pages[pageIdx].heap->GetGPUDescriptorHandleForHeapStart();
     h.ptr += descriptorIndex * cbvSrvUavDescriptorSize_;
     return h;
   }

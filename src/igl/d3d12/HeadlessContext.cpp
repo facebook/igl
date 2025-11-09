@@ -153,18 +153,26 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
                cbvSrvUavHeapSize, samplerHeapSize);
 
   // Create per-frame shader-visible descriptor heaps
+  // C-001: Now creates initial page with dynamic growth support
   for (UINT i = 0; i < kMaxFramesInFlight; i++) {
-    // CBV/SRV/UAV heap per frame
+    // CBV/SRV/UAV heap per frame - create initial page
+    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> initialHeap;
     D3D12_DESCRIPTOR_HEAP_DESC desc = {};
     desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     desc.NumDescriptors = cbvSrvUavHeapSize;
     desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     desc.NodeMask = 0;
-    hr = device_->CreateDescriptorHeap(&desc, IID_PPV_ARGS(frameContexts_[i].cbvSrvUavHeap.GetAddressOf()));
+    hr = device_->CreateDescriptorHeap(&desc, IID_PPV_ARGS(initialHeap.GetAddressOf()));
     if (FAILED(hr)) {
       return Result(Result::Code::RuntimeError, "Failed to create per-frame CBV/SRV/UAV heap for frame " + std::to_string(i));
     }
-    IGL_LOG_INFO("  Frame %u: Created CBV/SRV/UAV heap (%u descriptors)\n", i, cbvSrvUavHeapSize);
+
+    // Initialize page vector with first page
+    frameContexts_[i].cbvSrvUavHeapPages.clear();
+    frameContexts_[i].cbvSrvUavHeapPages.emplace_back(initialHeap, cbvSrvUavHeapSize);
+    frameContexts_[i].currentCbvSrvUavPageIndex = 0;
+
+    IGL_LOG_INFO("  Frame %u: Created CBV/SRV/UAV heap page (%u descriptors)\n", i, cbvSrvUavHeapSize);
 
     // Sampler heap per frame
     desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;

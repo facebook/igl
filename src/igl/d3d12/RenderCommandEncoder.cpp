@@ -880,7 +880,13 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
 
   // Allocate descriptor from per-frame heap (descriptors are recreated each frame)
   // CRITICAL: Do NOT cache descriptor indices globally - per-frame heaps reset counters to 0 each frame
-  uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
+  // C-001: Now uses Result-based allocation with dynamic heap growth
+  uint32_t descriptorIndex = 0;
+  Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
+  if (!allocResult.isOk()) {
+    IGL_LOG_ERROR("bindTexture: Failed to allocate descriptor: %s\n", allocResult.message.c_str());
+    return;
+  }
   IGL_LOG_INFO("bindTexture: allocated descriptor slot %u for texture index t%zu\n", descriptorIndex, index);
 
   // Create SRV descriptor at the allocated slot
@@ -1354,7 +1360,13 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     }
 
     // Allocate descriptor slot from command buffer's shared counter
-    const uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
+    // C-001: Now uses Result-based allocation with dynamic heap growth
+    uint32_t descriptorIndex = 0;
+    Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
+    if (!allocResult.isOk()) {
+      IGL_LOG_ERROR("bindBuffer: Failed to allocate descriptor: %s\n", allocResult.message.c_str());
+      return;
+    }
     IGL_LOG_INFO("bindBuffer: Allocated SRV descriptor slot %u for buffer at t%u\n", descriptorIndex, index);
 
     // Create SRV descriptor for ByteAddressBuffer
@@ -1472,9 +1484,18 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
   }
 
   // Allocate contiguous slices from per-frame descriptor heaps
-  uint32_t& nextSrv = commandBuffer_.getNextCbvSrvUavDescriptor();
-  const uint32_t srvBaseIndex = nextSrv;
-  nextSrv += texCount;
+  // C-001: Allocate descriptors one at a time (they may span pages)
+  const uint32_t srvBaseIndex = 0;  // Will use first allocated index
+  std::vector<uint32_t> srvIndices;
+  for (uint32_t i = 0; i < texCount; ++i) {
+    uint32_t descriptorIndex = 0;
+    Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
+    if (!allocResult.isOk()) {
+      IGL_LOG_ERROR("bindBindGroup: Failed to allocate SRV descriptor %u: %s\n", i, allocResult.message.c_str());
+      return;
+    }
+    srvIndices.push_back(descriptorIndex);
+  }
   uint32_t& nextSmp = commandBuffer_.getNextSamplerDescriptor();
   const uint32_t smpBaseIndex = nextSmp;
   nextSmp += smpCount;
@@ -1533,7 +1554,8 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
       srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
     }
 
-    const uint32_t dstIndex = srvBaseIndex + i;
+    // C-001: Use individually allocated descriptor indices (may span multiple pages)
+    const uint32_t dstIndex = srvIndices[i];
     D3D12_CPU_DESCRIPTOR_HANDLE dstCpu = context.getCbvSrvUavCpuHandle(dstIndex);
     // Pre-creation validation (TASK_P0_DX12-004)
     IGL_DEBUG_ASSERT(d3dDevice != nullptr, "Device is null before CreateShaderResourceView");
@@ -1558,8 +1580,9 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
   }
 
   // Cache base GPU handles so draw() binds once per table
-  if (texCount > 0) {
-    cachedTextureGpuHandles_[0] = context.getCbvSrvUavGpuHandle(srvBaseIndex);
+  // C-001: Use first allocated descriptor index (descriptors may span pages)
+  if (texCount > 0 && !srvIndices.empty()) {
+    cachedTextureGpuHandles_[0] = context.getCbvSrvUavGpuHandle(srvIndices[0]);
     cachedTextureCount_ = texCount;
   }
   if (smpCount > 0) {
@@ -1620,7 +1643,13 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
 
       if (tableIndex < IGL_BUFFER_BINDINGS_MAX) {
         // Allocate descriptor from per-frame heap
-        uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
+        // C-001: Now uses Result-based allocation with dynamic heap growth
+        uint32_t descriptorIndex = 0;
+        Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
+        if (!allocResult.isOk()) {
+          IGL_LOG_ERROR("bindBindGroup(buffer): Failed to allocate CBV descriptor: %s\n", allocResult.message.c_str());
+          continue;
+        }
 
         // Get context and device
         auto& context = commandBuffer_.getContext();
@@ -1667,7 +1696,13 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
 
       if (isReadWrite) {
         // Create UAV for read-write storage buffer
-        uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
+        // C-001: Now uses Result-based allocation with dynamic heap growth
+        uint32_t descriptorIndex = 0;
+        Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
+        if (!allocResult.isOk()) {
+          IGL_LOG_ERROR("bindBindGroup(buffer): Failed to allocate UAV descriptor: %s\n", allocResult.message.c_str());
+          continue;
+        }
         D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
         D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 
@@ -1695,7 +1730,13 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
                      slot, slot, gpuHandle.ptr);
       } else {
         // Create SRV for read-only storage buffer
-        uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
+        // C-001: Now uses Result-based allocation with dynamic heap growth
+        uint32_t descriptorIndex = 0;
+        Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
+        if (!allocResult.isOk()) {
+          IGL_LOG_ERROR("bindBindGroup(buffer): Failed to allocate SRV descriptor: %s\n", allocResult.message.c_str());
+          continue;
+        }
         D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
         D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 

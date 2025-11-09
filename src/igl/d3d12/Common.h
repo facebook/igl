@@ -35,8 +35,13 @@ constexpr uint32_t kMaxSamplers = D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE;
 
 // Descriptor heap sizes (per-frame shader-visible heaps)
 // Following Microsoft MiniEngine pattern for dynamic per-frame allocation
-constexpr uint32_t kCbvSrvUavHeapSize = 1024;  // CBV/SRV/UAV descriptors per frame
+constexpr uint32_t kCbvSrvUavHeapSize = 1024;  // CBV/SRV/UAV descriptors per page
 constexpr uint32_t kSamplerHeapSize = kMaxSamplers;  // Sampler descriptors per frame
+
+// C-001: Dynamic heap growth limits (prevent unbounded memory usage)
+constexpr uint32_t kDescriptorsPerPage = kCbvSrvUavHeapSize;  // 1024 descriptors per page
+constexpr uint32_t kMaxHeapPages = 16;  // Maximum 16 pages = 16K descriptors per frame
+constexpr uint32_t kMaxDescriptorsPerFrame = kMaxHeapPages * kDescriptorsPerPage;  // 16384 total
 
 // Maximum number of vertex attributes
 constexpr uint32_t kMaxVertexAttributes = 16;

@@ -165,12 +165,22 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
     auto* device = context.getDevice();
 
     // Get starting descriptor index for our CBV table
-    const uint32_t firstCbvDescriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor();
+    // C-001: Allocate descriptors individually (may span multiple pages)
+    std::vector<uint32_t> cbvIndices;
+    for (size_t i = 0; i < boundCbvCount_; ++i) {
+      uint32_t descriptorIndex = 0;
+      Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
+      if (!allocResult.isOk()) {
+        IGL_LOG_ERROR("ComputeCommandEncoder: Failed to allocate CBV descriptor %zu: %s\n", i, allocResult.message.c_str());
+        return;
+      }
+      cbvIndices.push_back(descriptorIndex);
+    }
 
     // Create CBV descriptors for all bound constant buffers
     for (size_t i = 0; i < boundCbvCount_; ++i) {
       if (cachedCbvAddresses_[i] != 0 && cachedCbvSizes_[i] > 0) {
-        const uint32_t descriptorIndex = firstCbvDescriptorIndex + static_cast<uint32_t>(i);
+        const uint32_t descriptorIndex = cbvIndices[i];
         D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
 
         // Align size to 256-byte boundary (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
@@ -184,15 +194,13 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
       }
     }
 
-    // Advance descriptor counter for all CBVs we created
-    commandBuffer_.getNextCbvSrvUavDescriptor() += static_cast<uint32_t>(boundCbvCount_);
-
     // Bind the CBV descriptor table to root parameter 3
-    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(firstCbvDescriptorIndex);
+    // C-001: Use first allocated descriptor index
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(cbvIndices[0]);
     commandList->SetComputeRootDescriptorTable(3, gpuHandle);
 
     IGL_LOG_INFO("ComputeCommandEncoder: Bound %zu CBVs via descriptor table (descriptors %u-%u)\n",
-                 boundCbvCount_, firstCbvDescriptorIndex, firstCbvDescriptorIndex + static_cast<uint32_t>(boundCbvCount_) - 1);
+                 boundCbvCount_, cbvIndices[0], cbvIndices[boundCbvCount_ - 1]);
   }
 
   // Bind Samplers (Parameter 4)
@@ -278,7 +286,13 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
   }
 
   // Allocate descriptor and create SRV
-  const uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
+  // C-001: Now uses Result-based allocation with dynamic heap growth
+  uint32_t descriptorIndex = 0;
+  Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
+  if (!allocResult.isOk()) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindTexture: Failed to allocate descriptor: %s\n", allocResult.message.c_str());
+    return;
+  }
   D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
   D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 
@@ -358,7 +372,13 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
       return;
     }
 
-    const uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
+    // C-001: Now uses Result-based allocation with dynamic heap growth
+    uint32_t descriptorIndex = 0;
+    Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
+    if (!allocResult.isOk()) {
+      IGL_LOG_ERROR("ComputeCommandEncoder::bindBuffer: Failed to allocate UAV descriptor: %s\n", allocResult.message.c_str());
+      return;
+    }
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 
@@ -551,7 +571,13 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, 
   }
 
   // Allocate descriptor and create UAV
-  const uint32_t descriptorIndex = commandBuffer_.getNextCbvSrvUavDescriptor()++;
+  // C-001: Now uses Result-based allocation with dynamic heap growth
+  uint32_t descriptorIndex = 0;
+  Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
+  if (!allocResult.isOk()) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindImageTexture: Failed to allocate UAV descriptor: %s\n", allocResult.message.c_str());
+    return;
+  }
   D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
   D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 
