@@ -323,18 +323,386 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
   }
 }
 
-void Framebuffer::copyBytesDepthAttachment(ICommandQueue& /*cmdQueue*/,
-                                           void* /*pixelBytes*/,
-                                           const TextureRangeDesc& /*range*/,
-                                           size_t /*bytesPerRow*/) const {
-  // TODO: Implement for D3D12
+void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
+                                           void* pixelBytes,
+                                           const TextureRangeDesc& range,
+                                           size_t bytesPerRow) const {
+  // TASK_P2_DX12-FIND-10: Implement depth attachment readback
+  if (!pixelBytes) {
+    return;
+  }
+
+  auto* d3dQueueWrapper = dynamic_cast<CommandQueue*>(&cmdQueue);
+  if (!d3dQueueWrapper) {
+    return;
+  }
+
+  auto& ctx = d3dQueueWrapper->getDevice().getD3D12Context();
+  auto* device = ctx.getDevice();
+  auto* d3dQueue = ctx.getCommandQueue();
+  if (!device || !d3dQueue) {
+    return;
+  }
+
+  auto depthTex = std::static_pointer_cast<Texture>(desc_.depthAttachment.texture);
+  if (!depthTex) {
+    return;
+  }
+
+  ID3D12Resource* depthRes = depthTex->getResource();
+  if (!depthRes) {
+    return;
+  }
+
+  const uint32_t mipLevel = range.mipLevel;
+  const uint32_t copyLayer = (depthTex->getType() == TextureType::Cube) ? range.face : range.layer;
+  const uint32_t subresourceIndex = depthTex->calcSubresourceIndex(mipLevel, copyLayer);
+
+  const auto texDims = depthTex->getDimensions();
+  const uint32_t mipWidth = std::max<uint32_t>(1u, texDims.width >> mipLevel);
+  const uint32_t mipHeight = std::max<uint32_t>(1u, texDims.height >> mipLevel);
+
+  // Create temporary command resources for readback
+  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
+  Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+  HANDLE fenceEvent = nullptr;
+
+  if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                            IID_PPV_ARGS(allocator.GetAddressOf())))) {
+    return;
+  }
+
+  if (FAILED(device->CreateCommandList(0,
+                                       D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                       allocator.Get(),
+                                       nullptr,
+                                       IID_PPV_ARGS(commandList.GetAddressOf())))) {
+    return;
+  }
+
+  if (FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf())))) {
+    return;
+  }
+
+  fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+  if (!fenceEvent) {
+    return;
+  }
+
+  // Get footprint for the depth resource
+  D3D12_RESOURCE_DESC depthDesc = depthRes->GetDesc();
+  D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint{};
+  UINT numRows = 0;
+  UINT64 rowSizeInBytes = 0;
+  UINT64 totalBytes = 0;
+  device->GetCopyableFootprints(
+      &depthDesc, subresourceIndex, 1, 0, &footprint, &numRows, &rowSizeInBytes, &totalBytes);
+
+  if (totalBytes == 0) {
+    CloseHandle(fenceEvent);
+    return;
+  }
+
+  // Create readback buffer
+  D3D12_HEAP_PROPERTIES readbackHeap{};
+  readbackHeap.Type = D3D12_HEAP_TYPE_READBACK;
+  D3D12_RESOURCE_DESC readbackDesc{};
+  readbackDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+  readbackDesc.Width = totalBytes;
+  readbackDesc.Height = 1;
+  readbackDesc.DepthOrArraySize = 1;
+  readbackDesc.MipLevels = 1;
+  readbackDesc.Format = DXGI_FORMAT_UNKNOWN;
+  readbackDesc.SampleDesc.Count = 1;
+  readbackDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+  Microsoft::WRL::ComPtr<ID3D12Resource> readbackBuffer;
+  if (FAILED(device->CreateCommittedResource(&readbackHeap,
+                                             D3D12_HEAP_FLAG_NONE,
+                                             &readbackDesc,
+                                             D3D12_RESOURCE_STATE_COPY_DEST,
+                                             nullptr,
+                                             IID_PPV_ARGS(readbackBuffer.GetAddressOf())))) {
+    CloseHandle(fenceEvent);
+    return;
+  }
+
+  // Transition depth texture to copy source
+  const auto previousState = depthTex->getSubresourceState(mipLevel, copyLayer);
+  depthTex->transitionTo(commandList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, mipLevel, copyLayer);
+
+  // Set up copy locations
+  D3D12_TEXTURE_COPY_LOCATION dstLoc{};
+  dstLoc.pResource = readbackBuffer.Get();
+  dstLoc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+  dstLoc.PlacedFootprint = footprint;
+
+  D3D12_TEXTURE_COPY_LOCATION srcLoc{};
+  srcLoc.pResource = depthRes;
+  srcLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+  srcLoc.SubresourceIndex = subresourceIndex;
+
+  D3D12_BOX srcBox{};
+  srcBox.left = 0;
+  srcBox.top = 0;
+  srcBox.front = 0;
+  srcBox.right = mipWidth;
+  srcBox.bottom = mipHeight;
+  srcBox.back = 1;
+
+  // Copy depth data
+  commandList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, &srcBox);
+
+  // Transition back to previous state
+  depthTex->transitionTo(commandList.Get(), previousState, mipLevel, copyLayer);
+
+  if (FAILED(commandList->Close())) {
+    CloseHandle(fenceEvent);
+    return;
+  }
+
+  // Execute command list
+  ID3D12CommandList* lists[] = {commandList.Get()};
+  d3dQueue->ExecuteCommandLists(1, lists);
+
+  // Wait for GPU to complete
+  if (FAILED(d3dQueue->Signal(fence.Get(), 1))) {
+    CloseHandle(fenceEvent);
+    return;
+  }
+  if (FAILED(fence->SetEventOnCompletion(1, fenceEvent))) {
+    CloseHandle(fenceEvent);
+    return;
+  }
+  WaitForSingleObject(fenceEvent, INFINITE);
+  CloseHandle(fenceEvent);
+
+  // Map readback buffer and copy data
+  void* mapped = nullptr;
+  if (FAILED(readbackBuffer->Map(0, nullptr, &mapped))) {
+    return;
+  }
+
+  const uint8_t* srcPtr = static_cast<const uint8_t*>(mapped) + footprint.Offset;
+  const size_t srcRowPitch = footprint.Footprint.RowPitch;
+
+  // Determine bytes per pixel based on depth format
+  const auto fmtProps = TextureFormatProperties::fromTextureFormat(depthTex->getFormat());
+  const size_t bytesPerPixel = std::max<size_t>(fmtProps.bytesPerBlock, 1);
+  const size_t fullRowBytes = static_cast<size_t>(mipWidth) * bytesPerPixel;
+
+  // Copy with vertical flip (D3D12 textures are top-down, IGL expects bottom-up)
+  const size_t copyRowBytes = static_cast<size_t>(range.width) * bytesPerPixel;
+  const size_t dstRowPitch = bytesPerRow ? bytesPerRow : copyRowBytes;
+  uint8_t* dstPtr = static_cast<uint8_t*>(pixelBytes);
+
+  for (uint32_t destRow = 0; destRow < range.height; ++destRow) {
+    const uint32_t gpuRow = range.y + (range.height - 1 - destRow);
+    if (gpuRow >= mipHeight) {
+      break;
+    }
+    const uint32_t srcRow = mipHeight - 1 - gpuRow;
+    const uint8_t* src = srcPtr + static_cast<size_t>(srcRow) * srcRowPitch +
+                         static_cast<size_t>(range.x) * bytesPerPixel;
+    std::memcpy(dstPtr + static_cast<size_t>(destRow) * dstRowPitch, src, copyRowBytes);
+  }
+
+  readbackBuffer->Unmap(0, nullptr);
 }
 
-void Framebuffer::copyBytesStencilAttachment(ICommandQueue& /*cmdQueue*/,
-                                             void* /*pixelBytes*/,
-                                             const TextureRangeDesc& /*range*/,
-                                             size_t /*bytesPerRow*/) const {
-  // TODO: Implement for D3D12
+void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
+                                             void* pixelBytes,
+                                             const TextureRangeDesc& range,
+                                             size_t bytesPerRow) const {
+  // TASK_P2_DX12-FIND-10: Implement stencil attachment readback
+  if (!pixelBytes) {
+    return;
+  }
+
+  auto* d3dQueueWrapper = dynamic_cast<CommandQueue*>(&cmdQueue);
+  if (!d3dQueueWrapper) {
+    return;
+  }
+
+  auto& ctx = d3dQueueWrapper->getDevice().getD3D12Context();
+  auto* device = ctx.getDevice();
+  auto* d3dQueue = ctx.getCommandQueue();
+  if (!device || !d3dQueue) {
+    return;
+  }
+
+  auto stencilTex = std::static_pointer_cast<Texture>(desc_.stencilAttachment.texture);
+  if (!stencilTex) {
+    return;
+  }
+
+  ID3D12Resource* stencilRes = stencilTex->getResource();
+  if (!stencilRes) {
+    return;
+  }
+
+  const uint32_t mipLevel = range.mipLevel;
+  const uint32_t copyLayer = (stencilTex->getType() == TextureType::Cube) ? range.face : range.layer;
+
+  // For depth/stencil formats, stencil is typically in plane slice 1
+  // D24_UNORM_S8_UINT: Plane 0 = depth, Plane 1 = stencil
+  // D32_FLOAT_S8X24_UINT: Plane 0 = depth, Plane 1 = stencil
+  const UINT planeSlice = 1; // Stencil plane
+  const UINT numMipLevels = stencilTex->getNumMipLevels();
+  const UINT numLayers = stencilTex->getNumLayers();
+  const uint32_t subresourceIndex = D3D12CalcSubresource(mipLevel, copyLayer, planeSlice, numMipLevels, numLayers);
+
+  const auto texDims = stencilTex->getDimensions();
+  const uint32_t mipWidth = std::max<uint32_t>(1u, texDims.width >> mipLevel);
+  const uint32_t mipHeight = std::max<uint32_t>(1u, texDims.height >> mipLevel);
+
+  // Create temporary command resources for readback
+  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
+  Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+  HANDLE fenceEvent = nullptr;
+
+  if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                            IID_PPV_ARGS(allocator.GetAddressOf())))) {
+    return;
+  }
+
+  if (FAILED(device->CreateCommandList(0,
+                                       D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                       allocator.Get(),
+                                       nullptr,
+                                       IID_PPV_ARGS(commandList.GetAddressOf())))) {
+    return;
+  }
+
+  if (FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf())))) {
+    return;
+  }
+
+  fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+  if (!fenceEvent) {
+    return;
+  }
+
+  // Get footprint for the stencil plane
+  D3D12_RESOURCE_DESC stencilDesc = stencilRes->GetDesc();
+  D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint{};
+  UINT numRows = 0;
+  UINT64 rowSizeInBytes = 0;
+  UINT64 totalBytes = 0;
+  device->GetCopyableFootprints(
+      &stencilDesc, subresourceIndex, 1, 0, &footprint, &numRows, &rowSizeInBytes, &totalBytes);
+
+  if (totalBytes == 0) {
+    CloseHandle(fenceEvent);
+    return;
+  }
+
+  // Create readback buffer
+  D3D12_HEAP_PROPERTIES readbackHeap{};
+  readbackHeap.Type = D3D12_HEAP_TYPE_READBACK;
+  D3D12_RESOURCE_DESC readbackDesc{};
+  readbackDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+  readbackDesc.Width = totalBytes;
+  readbackDesc.Height = 1;
+  readbackDesc.DepthOrArraySize = 1;
+  readbackDesc.MipLevels = 1;
+  readbackDesc.Format = DXGI_FORMAT_UNKNOWN;
+  readbackDesc.SampleDesc.Count = 1;
+  readbackDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+  Microsoft::WRL::ComPtr<ID3D12Resource> readbackBuffer;
+  if (FAILED(device->CreateCommittedResource(&readbackHeap,
+                                             D3D12_HEAP_FLAG_NONE,
+                                             &readbackDesc,
+                                             D3D12_RESOURCE_STATE_COPY_DEST,
+                                             nullptr,
+                                             IID_PPV_ARGS(readbackBuffer.GetAddressOf())))) {
+    CloseHandle(fenceEvent);
+    return;
+  }
+
+  // Transition stencil texture to copy source
+  const auto previousState = stencilTex->getSubresourceState(mipLevel, copyLayer);
+  stencilTex->transitionTo(commandList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, mipLevel, copyLayer);
+
+  // Set up copy locations for stencil plane
+  D3D12_TEXTURE_COPY_LOCATION dstLoc{};
+  dstLoc.pResource = readbackBuffer.Get();
+  dstLoc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+  dstLoc.PlacedFootprint = footprint;
+
+  D3D12_TEXTURE_COPY_LOCATION srcLoc{};
+  srcLoc.pResource = stencilRes;
+  srcLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+  srcLoc.SubresourceIndex = subresourceIndex;
+
+  D3D12_BOX srcBox{};
+  srcBox.left = 0;
+  srcBox.top = 0;
+  srcBox.front = 0;
+  srcBox.right = mipWidth;
+  srcBox.bottom = mipHeight;
+  srcBox.back = 1;
+
+  // Copy stencil data
+  commandList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, &srcBox);
+
+  // Transition back to previous state
+  stencilTex->transitionTo(commandList.Get(), previousState, mipLevel, copyLayer);
+
+  if (FAILED(commandList->Close())) {
+    CloseHandle(fenceEvent);
+    return;
+  }
+
+  // Execute command list
+  ID3D12CommandList* lists[] = {commandList.Get()};
+  d3dQueue->ExecuteCommandLists(1, lists);
+
+  // Wait for GPU to complete
+  if (FAILED(d3dQueue->Signal(fence.Get(), 1))) {
+    CloseHandle(fenceEvent);
+    return;
+  }
+  if (FAILED(fence->SetEventOnCompletion(1, fenceEvent))) {
+    CloseHandle(fenceEvent);
+    return;
+  }
+  WaitForSingleObject(fenceEvent, INFINITE);
+  CloseHandle(fenceEvent);
+
+  // Map readback buffer and copy data
+  void* mapped = nullptr;
+  if (FAILED(readbackBuffer->Map(0, nullptr, &mapped))) {
+    return;
+  }
+
+  const uint8_t* srcPtr = static_cast<const uint8_t*>(mapped) + footprint.Offset;
+  const size_t srcRowPitch = footprint.Footprint.RowPitch;
+
+  // Stencil is always 8-bit (1 byte per pixel)
+  const size_t bytesPerPixel = 1;
+  const size_t fullRowBytes = static_cast<size_t>(mipWidth) * bytesPerPixel;
+
+  // Copy with vertical flip (D3D12 textures are top-down, IGL expects bottom-up)
+  const size_t copyRowBytes = static_cast<size_t>(range.width) * bytesPerPixel;
+  const size_t dstRowPitch = bytesPerRow ? bytesPerRow : copyRowBytes;
+  uint8_t* dstPtr = static_cast<uint8_t*>(pixelBytes);
+
+  for (uint32_t destRow = 0; destRow < range.height; ++destRow) {
+    const uint32_t gpuRow = range.y + (range.height - 1 - destRow);
+    if (gpuRow >= mipHeight) {
+      break;
+    }
+    const uint32_t srcRow = mipHeight - 1 - gpuRow;
+    const uint8_t* src = srcPtr + static_cast<size_t>(srcRow) * srcRowPitch +
+                         static_cast<size_t>(range.x) * bytesPerPixel;
+    std::memcpy(dstPtr + static_cast<size_t>(destRow) * dstRowPitch, src, copyRowBytes);
+  }
+
+  readbackBuffer->Unmap(0, nullptr);
 }
 
 void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
