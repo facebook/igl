@@ -132,6 +132,45 @@ void Device::validateDeviceLimits() {
   IGL_LOG_INFO("  kMaxFramesInFlight: %u (application design choice for frame buffering)\n",
                kMaxFramesInFlight);
 
+  // Log IGL DeviceFeatureLimits values (P1_DX12-008)
+  IGL_LOG_INFO("\n=== IGL Device Feature Limits ===\n");
+
+  size_t limitValue = 0;
+
+  if (getFeatureLimits(DeviceFeatureLimits::BufferAlignment, limitValue)) {
+    IGL_LOG_INFO("  BufferAlignment: %zu bytes\n", limitValue);
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::MaxTextureDimension1D2D, limitValue)) {
+    IGL_LOG_INFO("  MaxTextureDimension1D2D: %zu\n", limitValue);
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::MaxCubeMapDimension, limitValue)) {
+    IGL_LOG_INFO("  MaxCubeMapDimension: %zu\n", limitValue);
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::MaxUniformBufferBytes, limitValue)) {
+    IGL_LOG_INFO("  MaxUniformBufferBytes: %zu bytes (%zu KB)\n", limitValue, limitValue / 1024);
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::MaxStorageBufferBytes, limitValue)) {
+    IGL_LOG_INFO("  MaxStorageBufferBytes: %zu bytes (%zu MB)\n", limitValue, limitValue / (1024 * 1024));
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::MaxVertexUniformVectors, limitValue)) {
+    IGL_LOG_INFO("  MaxVertexUniformVectors: %zu vec4s\n", limitValue);
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::MaxFragmentUniformVectors, limitValue)) {
+    IGL_LOG_INFO("  MaxFragmentUniformVectors: %zu vec4s\n", limitValue);
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::MaxMultisampleCount, limitValue)) {
+    IGL_LOG_INFO("  MaxMultisampleCount: %zux\n", limitValue);
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::MaxPushConstantBytes, limitValue)) {
+    IGL_LOG_INFO("  MaxPushConstantBytes: %zu bytes\n", limitValue);
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::PushConstantsAlignment, limitValue)) {
+    IGL_LOG_INFO("  PushConstantsAlignment: %zu bytes\n", limitValue);
+  }
+  if (getFeatureLimits(DeviceFeatureLimits::ShaderStorageBufferOffsetAlignment, limitValue)) {
+    IGL_LOG_INFO("  ShaderStorageBufferOffsetAlignment: %zu bytes\n", limitValue);
+  }
+
   IGL_LOG_INFO("=== Device Limits Validation Complete ===\n\n");
 }
 
@@ -2070,19 +2109,82 @@ bool Device::hasRequirement(DeviceRequirement /*requirement*/) const {
 bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const {
   switch (featureLimits) {
     case DeviceFeatureLimits::BufferAlignment:
-      result = 256; // D3D12 constant buffer alignment
+      // D3D12 constant buffer alignment requirement
+      result = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT; // 256 bytes
       return true;
-    case DeviceFeatureLimits::MaxUniformBufferBytes:
-      result = 64 * 1024; // 64KB typical CB size
-      return true;
-    case DeviceFeatureLimits::MaxBindBytesBytes:
-      result = 0; // bind-bytes not supported on D3D12 path
-      return true;
-    default:
+
+    case DeviceFeatureLimits::BufferNoCopyAlignment:
+      // D3D12 doesn't support no-copy buffers in the same way as Metal
       result = 0;
-      return false;
+      return true;
+
+    case DeviceFeatureLimits::MaxBindBytesBytes:
+      // bind-bytes (like Metal setVertexBytes) not supported on D3D12
+      result = 0;
+      return true;
+
+    case DeviceFeatureLimits::MaxCubeMapDimension:
+      // D3D12 cube map dimension limits (Feature Level 11_0+: 16384)
+      result = 16384; // D3D12_REQ_TEXTURECUBE_DIMENSION
+      return true;
+
+    case DeviceFeatureLimits::MaxFragmentUniformVectors:
+      // D3D12 allows 64KB constant buffers, each vec4 is 16 bytes
+      // 64KB / 16 bytes = 4096 vec4s
+      result = 4096;
+      return true;
+
+    case DeviceFeatureLimits::MaxMultisampleCount:
+      // D3D12 supports up to 8x MSAA for most render target formats
+      result = 8;
+      return true;
+
+    case DeviceFeatureLimits::MaxPushConstantBytes:
+      // D3D12 root constants: each root constant is 4 bytes (DWORD)
+      // D3D12 root signature limit is 64 DWORDs total, but not all for constants
+      // Conservative limit: 256 bytes (64 DWORDs)
+      result = 256;
+      return true;
+
+    case DeviceFeatureLimits::MaxTextureDimension1D2D:
+      // D3D12 Feature Level 11_0+: 16384 for 1D and 2D textures
+      // Feature Level 12+: still 16384
+      result = 16384; // D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION
+      return true;
+
+    case DeviceFeatureLimits::MaxStorageBufferBytes:
+      // D3D12 structured buffer max size: 128MB (2^27 bytes)
+      // UAV structured buffer limit
+      result = 128 * 1024 * 1024; // 128 MB
+      return true;
+
+    case DeviceFeatureLimits::MaxUniformBufferBytes:
+      // D3D12 constant buffer size limit: 64KB (65536 bytes)
+      result = 64 * 1024; // D3D12_REQ_CONSTANT_BUFFER_ELEMENT_COUNT * 16
+      return true;
+
+    case DeviceFeatureLimits::MaxVertexUniformVectors:
+      // Same as fragment uniform vectors for D3D12
+      // 64KB / 16 bytes per vec4 = 4096 vec4s
+      result = 4096;
+      return true;
+
+    case DeviceFeatureLimits::PushConstantsAlignment:
+      // Root constants are aligned to DWORD (4 bytes)
+      result = 4;
+      return true;
+
+    case DeviceFeatureLimits::ShaderStorageBufferOffsetAlignment:
+      // D3D12 structured buffer/UAV alignment: 4 bytes for structured buffers
+      result = 4;
+      return true;
   }
+
+  // Should never reach here - all cases handled
+  result = 0;
+  return false;
 }
+
 
 ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(TextureFormat format) const {
   using CapBits = ICapabilities::TextureFormatCapabilityBits;

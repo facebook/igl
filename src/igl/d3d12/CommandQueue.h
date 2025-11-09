@@ -28,6 +28,7 @@ class CommandQueue final : public ICommandQueue {
 
  private:
   Device& device_;
+  uint64_t scheduleFenceValue_ = 0;  // P1_DX12-FIND-03: Monotonically increasing fence value
 };
 
 } // namespace igl::d3d12

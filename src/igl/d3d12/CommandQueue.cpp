@@ -138,10 +138,12 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   // Signal the command buffer's scheduling fence immediately after submission
   // This allows waitUntilScheduled() to return as soon as the command buffer is queued
   // (NOT when GPU completes execution)
+  // P1_DX12-FIND-03: Use monotonically increasing fence values (1, 2, 3, ...)
   auto& cmdBuf = const_cast<CommandBuffer&>(d3dCommandBuffer);
-  cmdBuf.scheduleValue_ = 1;  // Use simple 0/1 toggle (0 = not scheduled, 1 = scheduled)
-  d3dCommandQueue->Signal(cmdBuf.scheduleFence_.Get(), cmdBuf.scheduleValue_);
-  IGL_LOG_INFO("CommandQueue::submit() - Signaled scheduling fence (value=%llu)\n", cmdBuf.scheduleValue_);
+  ++scheduleFenceValue_;  // Increment BEFORE signaling
+  cmdBuf.scheduleValue_ = scheduleFenceValue_;  // Store fence value in command buffer
+  d3dCommandQueue->Signal(cmdBuf.scheduleFence_.Get(), scheduleFenceValue_);
+  IGL_LOG_INFO("CommandQueue::submit() - Signaled scheduling fence (value=%llu)\n", scheduleFenceValue_);
 
   IGL_LOG_INFO("CommandQueue::submit() - Command list executed, checking device status...\n");
 
