@@ -548,7 +548,8 @@ void D3D12Context::createDescriptorHeaps() {
   }
 
   IGL_LOG_INFO("D3D12Context: Per-frame descriptor heaps created successfully\n");
-  IGL_LOG_INFO("  Total memory: 3 frames × (1024 CBV/SRV/UAV + 32 Samplers) × 32 bytes ≈ 99 KB\n");
+  IGL_LOG_INFO("  Total memory: 3 frames × (1024 CBV/SRV/UAV + %u Samplers) × 32 bytes ≈ %u KB\n",
+               kMaxSamplers, (3 * (kCbvSrvUavHeapSize + kMaxSamplers) * 32) / 1024);
 
   IGL_LOG_INFO("D3D12Context: Creating descriptor heap manager...\n");
 

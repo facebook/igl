@@ -29,8 +29,9 @@ constexpr uint32_t kMaxFramesInFlight = 3;
 // Maximum number of descriptor sets (matching IGL's Vulkan backend)
 constexpr uint32_t kMaxDescriptorSets = 4;
 
-// Maximum number of samplers (increased from 16 to accommodate ImGui with multiple texture views)
-constexpr uint32_t kMaxSamplers = 32;
+// Maximum number of samplers (TASK_P2_DX12-FIND-08: Increased to D3D12 spec limit to support complex scenes)
+// D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE is defined as 2048 in d3d12.h
+constexpr uint32_t kMaxSamplers = D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE;
 
 // Descriptor heap sizes (per-frame shader-visible heaps)
 // Following Microsoft MiniEngine pattern for dynamic per-frame allocation
