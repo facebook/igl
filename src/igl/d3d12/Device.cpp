@@ -22,8 +22,11 @@
 #include <igl/d3d12/UploadRingBuffer.h>
 #include <igl/VertexInputState.h>
 #include <igl/Texture.h>
+#include <d3dcompiler.h>
 #include <cstring>
 #include <vector>
+
+#pragma comment(lib, "d3dcompiler.lib")
 
 namespace igl::d3d12 {
 
@@ -1975,6 +1978,76 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
   return std::make_unique<ShaderLibrary>(std::move(modules));
 }
 
+// Helper function: Compile HLSL shader using legacy FXC compiler (Shader Model 5.1)
+// This is a fallback when DXC is unavailable or fails
+namespace {
+Result compileShaderFXC(
+    const char* source,
+    size_t sourceLength,
+    const char* entryPoint,
+    const char* target,
+    const char* debugName,
+    UINT compileFlags,
+    std::vector<uint8_t>& outBytecode,
+    std::string& outErrors) {
+
+  IGL_LOG_INFO("FXC: Compiling shader '%s' with target '%s' (%zu bytes source)\n",
+               debugName ? debugName : "unnamed",
+               target,
+               sourceLength);
+
+  Microsoft::WRL::ComPtr<ID3DBlob> bytecode;
+  Microsoft::WRL::ComPtr<ID3DBlob> errors;
+
+  // D3DCompile is the legacy FXC compiler API
+  // It's always available on Windows 10+ (via d3dcompiler_47.dll)
+  HRESULT hr = D3DCompile(
+      source,
+      sourceLength,
+      debugName,  // Source name (for error messages)
+      nullptr,    // Defines
+      D3D_COMPILE_STANDARD_FILE_INCLUDE,
+      entryPoint,
+      target,
+      compileFlags,
+      0,          // Effect flags (not used for shaders)
+      bytecode.GetAddressOf(),
+      errors.GetAddressOf()
+  );
+
+  if (FAILED(hr)) {
+    std::string errorMsg = "FXC compilation failed";
+    if (errors.Get() && errors->GetBufferSize() > 0) {
+      outErrors = std::string(
+          static_cast<const char*>(errors->GetBufferPointer()),
+          errors->GetBufferSize()
+      );
+      errorMsg += ": " + outErrors;
+      IGL_LOG_ERROR("FXC: %s\n", outErrors.c_str());
+    }
+    return Result(Result::Code::RuntimeError, errorMsg);
+  }
+
+  // Log warnings if any
+  if (errors.Get() && errors->GetBufferSize() > 0) {
+    outErrors = std::string(
+        static_cast<const char*>(errors->GetBufferPointer()),
+        errors->GetBufferSize()
+    );
+    IGL_LOG_INFO("FXC: Compilation warnings:\n%s\n", outErrors.c_str());
+  }
+
+  // Copy bytecode to output
+  const uint8_t* data = static_cast<const uint8_t*>(bytecode->GetBufferPointer());
+  size_t size = bytecode->GetBufferSize();
+  outBytecode.assign(data, data + size);
+
+  IGL_LOG_INFO("FXC: Compilation successful (%zu bytes bytecode)\n", size);
+
+  return Result();
+}
+} // anonymous namespace
+
 std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
   IGL_LOG_INFO("Device::createShaderModule() - stage=%d, entryPoint='%s', debugName='%s'\n",
@@ -2015,28 +2088,30 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
       dxcAvailable = initResult.isOk();
       dxcInitialized = true;
 
-      if (!dxcAvailable) {
-        IGL_LOG_ERROR("  DXC compiler initialization failed: %s\n", initResult.message.c_str());
-        IGL_LOG_ERROR("  DXC is required for Shader Model 6.0+ support\n");
+      if (dxcAvailable) {
+        IGL_LOG_INFO("  DXC compiler initialized successfully (Shader Model 6.0+ support)\n");
+      } else {
+        IGL_LOG_INFO("  DXC compiler initialization failed: %s\n", initResult.message.c_str());
+        IGL_LOG_INFO("  Falling back to FXC (Shader Model 5.1)\n");
       }
     }
 
-    if (!dxcAvailable) {
-      Result::setResult(outResult, Result::Code::RuntimeError, "DXC compiler not available");
-      return nullptr;
-    }
-
-    // Determine shader target based on stage (Shader Model 6.0 for DXC)
-    const char* target = nullptr;
+    // Determine shader target based on stage
+    // Use SM 6.0 for DXC, SM 5.1 for FXC fallback
+    const char* targetDXC = nullptr;
+    const char* targetFXC = nullptr;
     switch (desc.info.stage) {
     case ShaderStage::Vertex:
-      target = "vs_6_0";
+      targetDXC = "vs_6_0";
+      targetFXC = "vs_5_1";
       break;
     case ShaderStage::Fragment:
-      target = "ps_6_0";
+      targetDXC = "ps_6_0";
+      targetFXC = "ps_5_1";
       break;
     case ShaderStage::Compute:
-      target = "cs_6_0";
+      targetDXC = "cs_6_0";
+      targetFXC = "cs_5_1";
       break;
     default:
       IGL_LOG_ERROR("  Unsupported shader stage!\n");
@@ -2067,61 +2142,125 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
       IGL_LOG_INFO("  Treating shader warnings as errors\n");
     }
 
-    // Compile with DXC
+    // Try DXC first if available, fallback to FXC if DXC fails or unavailable
     std::string errors;
-    Result compileResult = dxcCompiler.compile(
-        desc.input.source,
-        sourceLength,
-        desc.info.entryPoint.c_str(),
-        target,
-        desc.debugName.c_str(),
-        compileFlags,
-        bytecode,
-        errors
-    );
+    Result compileResult;
+    bool compiledWithDXC = false;
 
-    if (!compileResult.isOk()) {
-      // Enhanced error message with context
-      std::string errorMsg;
-      const char* stageStr = "";
-      switch (desc.info.stage) {
-        case ShaderStage::Vertex: stageStr = "VERTEX"; break;
-        case ShaderStage::Fragment: stageStr = "FRAGMENT/PIXEL"; break;
-        case ShaderStage::Compute: stageStr = "COMPUTE"; break;
-        default: stageStr = "UNKNOWN"; break;
-      }
+    if (dxcAvailable) {
+      // Try DXC compilation (Shader Model 6.0)
+      IGL_LOG_INFO("  Attempting DXC compilation (Shader Model 6.0)...\n");
+      compileResult = dxcCompiler.compile(
+          desc.input.source,
+          sourceLength,
+          desc.info.entryPoint.c_str(),
+          targetDXC,
+          desc.debugName.c_str(),
+          compileFlags,
+          bytecode,
+          errors
+      );
 
-      errorMsg = "DXC shader compilation FAILED\n";
-      errorMsg += "  Stage: " + std::string(stageStr) + "\n";
-      errorMsg += "  Entry Point: " + desc.info.entryPoint + "\n";
-      errorMsg += "  Target: " + std::string(target) + "\n";
-      errorMsg += "  Debug Name: " + desc.debugName + "\n";
-
-      if (!errors.empty()) {
-        errorMsg += "\n=== DXC COMPILER ERRORS ===\n";
-        errorMsg += errors;
-        errorMsg += "\n===========================\n";
+      if (compileResult.isOk()) {
+        IGL_LOG_INFO("  DXC shader compiled successfully (%zu bytes DXIL bytecode)\n", bytecode.size());
+        compiledWithDXC = true;
       } else {
-        errorMsg += "  Error: " + compileResult.message + "\n";
+        IGL_LOG_INFO("  DXC compilation failed: %s\n", compileResult.message.c_str());
+        if (!errors.empty()) {
+          IGL_LOG_INFO("  DXC errors: %s\n", errors.c_str());
+        }
+        IGL_LOG_INFO("  Falling back to FXC (Shader Model 5.1)...\n");
       }
-
-      IGL_LOG_ERROR("%s", errorMsg.c_str());
-      Result::setResult(outResult, Result::Code::RuntimeError, errorMsg.c_str());
-      return nullptr;
     }
 
-    IGL_LOG_INFO("  DXC shader compiled successfully (%zu bytes DXIL bytecode)\n", bytecode.size());
+    // Use FXC if DXC is unavailable or failed
+    if (!compiledWithDXC) {
+      errors.clear();
+      compileResult = compileShaderFXC(
+          desc.input.source,
+          sourceLength,
+          desc.info.entryPoint.c_str(),
+          targetFXC,
+          desc.debugName.c_str(),
+          compileFlags,
+          bytecode,
+          errors
+      );
 
-    // Note: Disassembly and reflection for DXIL bytecode can be added if needed
-    // DXC uses IDxcUtils::CreateReflection() instead of D3DReflect()
-    // For now, bytecode is ready to use (already populated by dxcCompiler.compile())
+      if (!compileResult.isOk()) {
+        // Both DXC and FXC failed - report error
+        std::string errorMsg;
+        const char* stageStr = "";
+        switch (desc.info.stage) {
+          case ShaderStage::Vertex: stageStr = "VERTEX"; break;
+          case ShaderStage::Fragment: stageStr = "FRAGMENT/PIXEL"; break;
+          case ShaderStage::Compute: stageStr = "COMPUTE"; break;
+          default: stageStr = "UNKNOWN"; break;
+        }
+
+        errorMsg = "Shader compilation FAILED (both DXC and FXC)\n";
+        errorMsg += "  Stage: " + std::string(stageStr) + "\n";
+        errorMsg += "  Entry Point: " + desc.info.entryPoint + "\n";
+        errorMsg += "  Target (FXC): " + std::string(targetFXC) + "\n";
+        errorMsg += "  Debug Name: " + desc.debugName + "\n";
+
+        if (!errors.empty()) {
+          errorMsg += "\n=== FXC COMPILER ERRORS ===\n";
+          errorMsg += errors;
+          errorMsg += "\n===========================\n";
+        } else {
+          errorMsg += "  Error: " + compileResult.message + "\n";
+        }
+
+        IGL_LOG_ERROR("%s", errorMsg.c_str());
+        Result::setResult(outResult, Result::Code::RuntimeError, errorMsg.c_str());
+        return nullptr;
+      }
+
+      IGL_LOG_INFO("  FXC shader compiled successfully (%zu bytes bytecode)\n", bytecode.size());
+    }
   } else {
     Result::setResult(outResult, Result::Code::Unsupported, "Unsupported shader input type");
     return nullptr;
   }
 
+  // Create shader module with bytecode
+  auto module = std::make_shared<ShaderModule>(desc.info, std::move(bytecode));
+
+  // Create shader reflection from DXIL bytecode (C-007: DXIL Reflection)
+  // This allows runtime queries of shader resources, bindings, and constant buffers
+  IGL_LOG_INFO("  Attempting to create shader reflection (bytecode size=%zu)...\n", module->getBytecode().size());
+  if (!module->getBytecode().empty()) {
+    // Create IDxcUtils for reflection
+    Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils;
+    IGL_LOG_INFO("    Creating IDxcUtils for reflection...\n");
+    HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(dxcUtils.GetAddressOf()));
+    IGL_LOG_INFO("    DxcCreateInstance result: 0x%08X\n", hr);
+
+    if (SUCCEEDED(hr)) {
+      // Prepare buffer for reflection
+      DxcBuffer reflectionBuffer = {};
+      reflectionBuffer.Ptr = module->getBytecode().data();
+      reflectionBuffer.Size = module->getBytecode().size();
+      reflectionBuffer.Encoding = 0;
+
+      // Create reflection interface
+      Microsoft::WRL::ComPtr<ID3D12ShaderReflection> reflection;
+      hr = dxcUtils->CreateReflection(&reflectionBuffer, IID_PPV_ARGS(reflection.GetAddressOf()));
+
+      if (SUCCEEDED(hr)) {
+        module->setReflection(reflection);
+        IGL_LOG_INFO("  Shader reflection created successfully (C-007: DXIL Reflection)\n");
+      } else {
+        IGL_LOG_INFO("  Failed to create shader reflection: 0x%08X (non-fatal)\n", hr);
+      }
+    } else {
+      IGL_LOG_INFO("  Failed to create DXC utils for reflection: 0x%08X (non-fatal)\n", hr);
+    }
+  }
+
   Result::setOk(outResult);
-  return std::make_shared<ShaderModule>(desc.info, std::move(bytecode));
+  return module;
 }
 
 // Framebuffer
