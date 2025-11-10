@@ -9,6 +9,7 @@
 
 #include <igl/Shader.h>
 #include <igl/d3d12/Common.h>
+#include <igl/Log.h>
 #include <d3d12shader.h>
 #include <vector>
 #include <string>
@@ -34,7 +35,11 @@ class ShaderModule final : public IShaderModule {
   };
 
   ShaderModule(ShaderModuleInfo info, std::vector<uint8_t> bytecode)
-      : IShaderModule(info), bytecode_(std::move(bytecode)) {}
+      : IShaderModule(info), bytecode_(std::move(bytecode)) {
+    if (!validateBytecode()) {
+      IGL_LOG_ERROR("ShaderModule: Created with invalid bytecode (validation failed)\n");
+    }
+  }
   ~ShaderModule() override = default;
 
   const std::vector<uint8_t>& getBytecode() const { return bytecode_; }
@@ -47,6 +52,9 @@ class ShaderModule final : public IShaderModule {
   bool hasResource(const std::string& name) const;
   UINT getResourceBindPoint(const std::string& name) const;
   size_t getConstantBufferSize(const std::string& name) const;
+
+  // Bytecode validation
+  bool validateBytecode() const;
 
  private:
   std::vector<uint8_t> bytecode_; // DXIL bytecode

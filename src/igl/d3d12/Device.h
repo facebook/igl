@@ -208,6 +208,7 @@ class Device final : public IDevice {
   // PSO caching (P0_DX12-001)
   mutable std::unordered_map<size_t, Microsoft::WRL::ComPtr<ID3D12PipelineState>> graphicsPSOCache_;
   mutable std::unordered_map<size_t, Microsoft::WRL::ComPtr<ID3D12PipelineState>> computePSOCache_;
+  mutable std::mutex psoCacheMutex_;  // H-013: Thread-safe PSO cache access
   mutable size_t graphicsPSOCacheHits_ = 0;
   mutable size_t graphicsPSOCacheMisses_ = 0;
   mutable size_t computePSOCacheHits_ = 0;

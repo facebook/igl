@@ -6,6 +6,7 @@
  */
 
 #include <igl/d3d12/ShaderModule.h>
+#include <cstring>
 
 namespace igl::d3d12 {
 
@@ -153,6 +154,35 @@ size_t ShaderModule::getConstantBufferSize(const std::string& name) const {
     }
   }
   return 0; // Not found
+}
+
+bool ShaderModule::validateBytecode() const {
+  // Check minimum size for signature
+  if (bytecode_.size() < 4) {
+    IGL_LOG_ERROR("Shader bytecode too small (< 4 bytes): %zu bytes\n", bytecode_.size());
+    return false;
+  }
+
+  const char* signature = reinterpret_cast<const char*>(bytecode_.data());
+
+  // Valid signatures: "DXBC" (legacy D3D11/D3D12) or "DXIL" (modern D3D12)
+  if (std::memcmp(signature, "DXBC", 4) == 0) {
+    IGL_LOG_DEBUG("Shader bytecode validated: DXBC format (%zu bytes)\n", bytecode_.size());
+    return true;  // Valid DXBC shader
+  }
+
+  if (std::memcmp(signature, "DXIL", 4) == 0) {
+    IGL_LOG_DEBUG("Shader bytecode validated: DXIL format (%zu bytes)\n", bytecode_.size());
+    return true;  // Valid DXIL shader
+  }
+
+  // Log the invalid signature for debugging
+  IGL_LOG_ERROR("Invalid shader bytecode signature: 0x%02X%02X%02X%02X (expected 'DXBC' or 'DXIL')\n",
+                static_cast<unsigned char>(signature[0]),
+                static_cast<unsigned char>(signature[1]),
+                static_cast<unsigned char>(signature[2]),
+                static_cast<unsigned char>(signature[3]));
+  return false;
 }
 
 } // namespace igl::d3d12

@@ -182,11 +182,14 @@ void D3D12Context::createDevice() {
 
 #ifdef _DEBUG
   // Enable DRED (Device Removed Extended Data) for better crash diagnostics
-  Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedDataSettings> dredSettings;
-  if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(dredSettings.GetAddressOf())))) {
-    dredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-    dredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-    IGL_LOG_INFO("D3D12Context: DRED enabled (AutoBreadcrumbs + PageFault tracking)\n");
+  Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> dredSettings1;
+  if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(dredSettings1.GetAddressOf())))) {
+    dredSettings1->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+    dredSettings1->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+    dredSettings1->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+    IGL_LOG_INFO("D3D12Context: DRED 1.2 fully configured (breadcrumbs + page faults + context)\n");
+  } else {
+    IGL_LOG_ERROR("D3D12Context: Failed to configure DRED (requires Windows 10 19041+)\n");
   }
 #endif
 
@@ -390,6 +393,29 @@ void D3D12Context::createDevice() {
     // If query fails, assume Tier 1 (most conservative)
     resourceBindingTier_ = D3D12_RESOURCE_BINDING_TIER_1;
     IGL_LOG_INFO("  Resource Binding Tier query failed (assuming Tier 1)\n");
+  }
+
+  // Query shader model support (H-010)
+  // This is critical for FL11 hardware which only supports SM 5.1, not SM 6.0+
+  IGL_LOG_INFO("D3D12Context: Querying shader model capabilities...\n");
+
+  // Start by probing for SM 6.6 (highest commonly available)
+  D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { D3D_SHADER_MODEL_6_6 };
+
+  hr = device_->CheckFeatureSupport(
+      D3D12_FEATURE_SHADER_MODEL,
+      &shaderModel,
+      sizeof(shaderModel));
+
+  if (SUCCEEDED(hr)) {
+    maxShaderModel_ = shaderModel.HighestShaderModel;
+    IGL_LOG_INFO("  Detected Shader Model: %d.%d\n",
+                 (maxShaderModel_ >> 4) & 0xF,
+                 maxShaderModel_ & 0xF);
+  } else {
+    // If query fails, assume SM 5.1 (FL11 minimum)
+    maxShaderModel_ = D3D_SHADER_MODEL_5_1;
+    IGL_LOG_INFO("  Shader model query failed, assuming SM 5.1 (FL11 minimum)\n");
   }
 
   IGL_LOG_INFO("D3D12Context: Root signature capabilities detected successfully\n");

@@ -109,6 +109,9 @@ class D3D12Context {
   D3D_ROOT_SIGNATURE_VERSION getHighestRootSignatureVersion() const { return highestRootSignatureVersion_; }
   D3D12_RESOURCE_BINDING_TIER getResourceBindingTier() const { return resourceBindingTier_; }
 
+  // Get shader model capability (H-010)
+  D3D_SHADER_MODEL getMaxShaderModel() const { return maxShaderModel_; }
+
   // Get tearing support capability
   bool isTearingSupported() const { return tearingSupported_; }
 
@@ -205,6 +208,10 @@ class D3D12Context {
   // Feature detection for root signature capabilities
   D3D_ROOT_SIGNATURE_VERSION highestRootSignatureVersion_ = D3D_ROOT_SIGNATURE_VERSION_1_0;
   D3D12_RESOURCE_BINDING_TIER resourceBindingTier_ = D3D12_RESOURCE_BINDING_TIER_1;
+
+  // Feature detection for shader model (H-010)
+  // FL11 hardware guarantees SM 5.1 minimum
+  D3D_SHADER_MODEL maxShaderModel_ = D3D_SHADER_MODEL_5_1;
 
   // Feature detection for variable refresh rate (tearing) support
   bool tearingSupported_ = false;

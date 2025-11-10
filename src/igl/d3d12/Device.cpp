@@ -1210,30 +1210,32 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   psoDesc.CachedPSO.CachedBlobSizeInBytes = 0;
   psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
-  // PSO Cache lookup (P0_DX12-001)
+  // PSO Cache lookup (P0_DX12-001, H-013: Thread-safe with double-checked locking)
   const size_t psoHash = hashComputePipelineDesc(desc);
-  auto psoIt = computePSOCache_.find(psoHash);
   Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
 
-  if (psoIt != computePSOCache_.end()) {
-    // Cache hit - reuse existing PSO
-    computePSOCacheHits_++;
-    pipelineState = psoIt->second;  // Assignment creates a ref-counted copy
-    IGL_LOG_INFO("  [PSO CACHE HIT] Hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%\n",
-                 psoHash, computePSOCacheHits_, computePSOCacheMisses_,
-                 100.0 * computePSOCacheHits_ / (computePSOCacheHits_ + computePSOCacheMisses_));
-    IGL_LOG_INFO("Device::createComputePipeline() SUCCESS (CACHED) - PSO=%p, RootSig=%p\n",
-                 pipelineState.Get(), rootSignature.Get());
-    Result::setOk(outResult);
-    // Create a copy of the root signature for the returned object
-    Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSigCopy = rootSignature;
-    return std::make_shared<ComputePipelineState>(std::move(pipelineState), std::move(rootSigCopy), desc.debugName);
+  // First check: Lock for cache lookup
+  {
+    std::lock_guard<std::mutex> lock(psoCacheMutex_);
+    auto psoIt = computePSOCache_.find(psoHash);
+    if (psoIt != computePSOCache_.end()) {
+      // Cache hit - reuse existing PSO
+      computePSOCacheHits_++;
+      pipelineState = psoIt->second;  // Assignment creates a ref-counted copy
+      IGL_LOG_INFO("  [PSO CACHE HIT] Hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%\n",
+                   psoHash, computePSOCacheHits_, computePSOCacheMisses_,
+                   100.0 * computePSOCacheHits_ / (computePSOCacheHits_ + computePSOCacheMisses_));
+      IGL_LOG_INFO("Device::createComputePipeline() SUCCESS (CACHED) - PSO=%p, RootSig=%p\n",
+                   pipelineState.Get(), rootSignature.Get());
+      Result::setOk(outResult);
+      // Create a copy of the root signature for the returned object
+      Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSigCopy = rootSignature;
+      return std::make_shared<ComputePipelineState>(std::move(pipelineState), std::move(rootSigCopy), desc.debugName);
+    }
   }
 
-  // Cache miss - create new PSO
-  computePSOCacheMisses_++;
-  IGL_LOG_INFO("  [PSO CACHE MISS] Hash=0x%zx, hits=%zu, misses=%zu\n",
-               psoHash, computePSOCacheHits_, computePSOCacheMisses_);
+  // Cache miss - create new PSO outside lock (expensive operation)
+  IGL_LOG_INFO("  [PSO CACHE MISS] Hash=0x%zx\n", psoHash);
 
   IGL_LOG_INFO("  Creating compute pipeline state...\n");
   HRESULT hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
@@ -1271,10 +1273,26 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     return nullptr;
   }
 
-  // Cache the newly created PSO (P0_DX12-001)
-  computePSOCache_[psoHash] = pipelineState;
+  // Second check: Lock for cache insertion with double-check (H-013: Thread-safe)
+  // Another thread may have created the PSO while we were creating ours
+  {
+    std::lock_guard<std::mutex> lock(psoCacheMutex_);
+    auto psoIt = computePSOCache_.find(psoHash);
+    if (psoIt != computePSOCache_.end()) {
+      // Another thread beat us to it - use their PSO
+      computePSOCacheHits_++;
+      pipelineState = psoIt->second;
+      IGL_LOG_INFO("  [PSO DOUBLE-CHECK HIT] Another thread created PSO, using theirs. Hash=0x%zx\n", psoHash);
+    } else {
+      // We're the first to complete - cache our PSO
+      computePSOCacheMisses_++;
+      computePSOCache_[psoHash] = pipelineState;
+      IGL_LOG_INFO("  [PSO CACHED] Hash=0x%zx, hits=%zu, misses=%zu\n",
+                   psoHash, computePSOCacheHits_, computePSOCacheMisses_);
+    }
+  }
 
-  IGL_LOG_INFO("Device::createComputePipeline() SUCCESS - PSO=%p, RootSig=%p (cached with hash=0x%zx)\n",
+  IGL_LOG_INFO("Device::createComputePipeline() SUCCESS - PSO=%p, RootSig=%p (hash=0x%zx)\n",
                pipelineState.Get(), rootSignature.Get(), psoHash);
   Result::setOk(outResult);
   return std::make_shared<ComputePipelineState>(std::move(pipelineState), std::move(rootSignature), desc.debugName);
@@ -1829,30 +1847,32 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     IGL_LOG_INFO("    Shader reflection unavailable: 0x%08X (non-critical - pipeline will still be created)\n", static_cast<unsigned>(hr));
   }
 
-  // PSO Cache lookup (P0_DX12-001)
+  // PSO Cache lookup (P0_DX12-001, H-013: Thread-safe with double-checked locking)
   const size_t psoHash = hashRenderPipelineDesc(desc);
-  auto psoIt = graphicsPSOCache_.find(psoHash);
   Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
 
-  if (psoIt != graphicsPSOCache_.end()) {
-    // Cache hit - reuse existing PSO
-    graphicsPSOCacheHits_++;
-    pipelineState = psoIt->second;  // Assignment creates a ref-counted copy
-    IGL_LOG_INFO("  [PSO CACHE HIT] Hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%\n",
-                 psoHash, graphicsPSOCacheHits_, graphicsPSOCacheMisses_,
-                 100.0 * graphicsPSOCacheHits_ / (graphicsPSOCacheHits_ + graphicsPSOCacheMisses_));
-    IGL_LOG_INFO("Device::createRenderPipeline() SUCCESS (CACHED) - PSO=%p, RootSig=%p\n",
-                 pipelineState.Get(), rootSignature.Get());
-    Result::setOk(outResult);
-    // Create a copy of the root signature for the returned object
-    Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSigCopy = rootSignature;
-    return std::make_shared<RenderPipelineState>(desc, std::move(pipelineState), std::move(rootSigCopy));
+  // First check: Lock for cache lookup
+  {
+    std::lock_guard<std::mutex> lock(psoCacheMutex_);
+    auto psoIt = graphicsPSOCache_.find(psoHash);
+    if (psoIt != graphicsPSOCache_.end()) {
+      // Cache hit - reuse existing PSO
+      graphicsPSOCacheHits_++;
+      pipelineState = psoIt->second;  // Assignment creates a ref-counted copy
+      IGL_LOG_INFO("  [PSO CACHE HIT] Hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%\n",
+                   psoHash, graphicsPSOCacheHits_, graphicsPSOCacheMisses_,
+                   100.0 * graphicsPSOCacheHits_ / (graphicsPSOCacheHits_ + graphicsPSOCacheMisses_));
+      IGL_LOG_INFO("Device::createRenderPipeline() SUCCESS (CACHED) - PSO=%p, RootSig=%p\n",
+                   pipelineState.Get(), rootSignature.Get());
+      Result::setOk(outResult);
+      // Create a copy of the root signature for the returned object
+      Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSigCopy = rootSignature;
+      return std::make_shared<RenderPipelineState>(desc, std::move(pipelineState), std::move(rootSigCopy));
+    }
   }
 
-  // Cache miss - create new PSO
-  graphicsPSOCacheMisses_++;
-  IGL_LOG_INFO("  [PSO CACHE MISS] Hash=0x%zx, hits=%zu, misses=%zu\n",
-               psoHash, graphicsPSOCacheHits_, graphicsPSOCacheMisses_);
+  // Cache miss - create new PSO outside lock (expensive operation)
+  IGL_LOG_INFO("  [PSO CACHE MISS] Hash=0x%zx\n", psoHash);
 
   IGL_LOG_INFO("  Creating pipeline state (this may take a moment)...\n");
   hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
@@ -1900,10 +1920,26 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     return nullptr;
   }
 
-  // Cache the newly created PSO (P0_DX12-001)
-  graphicsPSOCache_[psoHash] = pipelineState;
+  // Second check: Lock for cache insertion with double-check (H-013: Thread-safe)
+  // Another thread may have created the PSO while we were creating ours
+  {
+    std::lock_guard<std::mutex> lock(psoCacheMutex_);
+    auto psoIt = graphicsPSOCache_.find(psoHash);
+    if (psoIt != graphicsPSOCache_.end()) {
+      // Another thread beat us to it - use their PSO
+      graphicsPSOCacheHits_++;
+      pipelineState = psoIt->second;
+      IGL_LOG_INFO("  [PSO DOUBLE-CHECK HIT] Another thread created PSO, using theirs. Hash=0x%zx\n", psoHash);
+    } else {
+      // We're the first to complete - cache our PSO
+      graphicsPSOCacheMisses_++;
+      graphicsPSOCache_[psoHash] = pipelineState;
+      IGL_LOG_INFO("  [PSO CACHED] Hash=0x%zx, hits=%zu, misses=%zu\n",
+                   psoHash, graphicsPSOCacheHits_, graphicsPSOCacheMisses_);
+    }
+  }
 
-  IGL_LOG_INFO("Device::createRenderPipeline() SUCCESS - PSO=%p, RootSig=%p (cached with hash=0x%zx)\n",
+  IGL_LOG_INFO("Device::createRenderPipeline() SUCCESS - PSO=%p, RootSig=%p (hash=0x%zx)\n",
                pipelineState.Get(), rootSignature.Get(), psoHash);
   Result::setOk(outResult);
   return std::make_shared<RenderPipelineState>(desc, std::move(pipelineState), std::move(rootSignature));
