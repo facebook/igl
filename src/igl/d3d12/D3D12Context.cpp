@@ -100,9 +100,18 @@ Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height) {
 }
 
 Result D3D12Context::resize(uint32_t width, uint32_t height) {
+  // Validate dimensions
+  if (width == 0 || height == 0) {
+    return Result{Result::Code::ArgumentInvalid,
+                 "Invalid resize dimensions: width and height must be non-zero"};
+  }
+
   if (width == width_ && height == height_) {
     return Result();
   }
+
+  IGL_LOG_INFO("D3D12Context: Resizing swapchain from %ux%u to %ux%u\n",
+               width_, height_, width, height);
 
   width_ = width;
   height_ = height;
@@ -125,25 +134,124 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
       renderTargets_[i].Reset();
     }
 
-    // Resize swapchain buffers
+    // Store swapchain format and flags for potential recreation
+    DXGI_SWAP_CHAIN_DESC1 currentDesc = {};
+    if (swapChain_.Get()) {
+      swapChain_->GetDesc1(&currentDesc);
+    }
+
+    // Try to resize existing swapchain
     HRESULT hr = swapChain_->ResizeBuffers(
         kMaxFramesInFlight,
         width,
         height,
-        DXGI_FORMAT_R8G8B8A8_UNORM,
-        0);
+        currentDesc.Format ? currentDesc.Format : DXGI_FORMAT_B8G8R8A8_UNORM,
+        currentDesc.Flags);
 
     if (FAILED(hr)) {
-      throw std::runtime_error("Failed to resize swapchain buffers");
+      IGL_LOG_ERROR("D3D12Context: ResizeBuffers failed (HRESULT=0x%08X), attempting to recreate swapchain\n",
+                    static_cast<unsigned>(hr));
+
+      // Graceful fallback: Recreate swapchain from scratch
+      Result result = recreateSwapChain(width, height);
+      if (!result.isOk()) {
+        IGL_LOG_ERROR("D3D12Context: Failed to recreate swapchain: %s\n", result.message.c_str());
+        return Result{Result::Code::RuntimeError,
+                     "Failed to resize or recreate swapchain"};
+      }
+
+      IGL_LOG_INFO("D3D12Context: Swapchain recreated successfully\n");
+    } else {
+      IGL_LOG_INFO("D3D12Context: ResizeBuffers succeeded\n");
     }
 
     // Recreate back buffer views
     createBackBuffers();
+    IGL_LOG_INFO("D3D12Context: Swapchain resize complete\n");
   } catch (const std::exception& e) {
+    IGL_LOG_ERROR("D3D12Context: Exception during resize: %s\n", e.what());
     return Result(Result::Code::RuntimeError, e.what());
   }
 
   return Result();
+}
+
+Result D3D12Context::recreateSwapChain(uint32_t width, uint32_t height) {
+  IGL_LOG_INFO("D3D12Context: Recreating swapchain with dimensions %ux%u\n", width, height);
+
+  // Get window handle from existing swapchain before releasing it
+  DXGI_SWAP_CHAIN_DESC1 oldDesc = {};
+  if (!swapChain_.Get()) {
+    return Result{Result::Code::RuntimeError, "No existing swapchain to recreate"};
+  }
+
+  HRESULT hr = swapChain_->GetDesc1(&oldDesc);
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("D3D12Context: Failed to get swapchain description (HRESULT=0x%08X)\n",
+                  static_cast<unsigned>(hr));
+    return Result{Result::Code::RuntimeError, "Failed to get swapchain description"};
+  }
+
+  // Try to get HWND via GetHwnd (IDXGISwapChain3)
+  HWND hwnd = nullptr;
+  hr = swapChain_->GetHwnd(&hwnd);
+  if (FAILED(hr) || !hwnd) {
+    IGL_LOG_ERROR("D3D12Context: Failed to get HWND from swapchain (HRESULT=0x%08X)\n",
+                  static_cast<unsigned>(hr));
+    return Result{Result::Code::RuntimeError, "Failed to get HWND from swapchain"};
+  }
+
+  IGL_LOG_INFO("D3D12Context: Retrieved HWND=%p from existing swapchain\n", hwnd);
+
+  // Release old swapchain completely
+  swapChain_.Reset();
+  IGL_LOG_INFO("D3D12Context: Old swapchain released\n");
+
+  // Create new swapchain with updated dimensions
+  DXGI_SWAP_CHAIN_DESC1 newDesc = {};
+  newDesc.Width = width;
+  newDesc.Height = height;
+  newDesc.Format = oldDesc.Format ? oldDesc.Format : DXGI_FORMAT_B8G8R8A8_UNORM;
+  newDesc.Stereo = FALSE;
+  newDesc.SampleDesc.Count = 1;
+  newDesc.SampleDesc.Quality = 0;
+  newDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+  newDesc.BufferCount = kMaxFramesInFlight;
+  newDesc.Scaling = DXGI_SCALING_STRETCH;
+  newDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+  newDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+  newDesc.Flags = oldDesc.Flags;  // Preserve tearing support flag
+
+  IGL_LOG_INFO("D3D12Context: Creating new swapchain (format=%u, flags=0x%X)\n",
+               newDesc.Format, newDesc.Flags);
+
+  Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain1;
+  hr = dxgiFactory_->CreateSwapChainForHwnd(
+      commandQueue_.Get(),
+      hwnd,
+      &newDesc,
+      nullptr,
+      nullptr,
+      swapChain1.GetAddressOf());
+
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("D3D12Context: CreateSwapChainForHwnd failed (HRESULT=0x%08X)\n",
+                  static_cast<unsigned>(hr));
+    return Result{Result::Code::RuntimeError,
+                 "Failed to recreate swapchain with CreateSwapChainForHwnd"};
+  }
+
+  // Query IDXGISwapChain3 interface
+  hr = swapChain1->QueryInterface(IID_PPV_ARGS(swapChain_.GetAddressOf()));
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("D3D12Context: Failed to query IDXGISwapChain3 (HRESULT=0x%08X)\n",
+                  static_cast<unsigned>(hr));
+    return Result{Result::Code::RuntimeError,
+                 "Failed to query IDXGISwapChain3 interface"};
+  }
+
+  IGL_LOG_INFO("D3D12Context: Swapchain recreated successfully\n");
+  return Result{};
 }
 
 void D3D12Context::createDevice() {

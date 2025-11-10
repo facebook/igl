@@ -186,6 +186,7 @@ class D3D12Context {
   void createDevice();
   void createCommandQueue();
   void createSwapChain(HWND hwnd, uint32_t width, uint32_t height);
+  Result recreateSwapChain(uint32_t width, uint32_t height);
   void createRTVHeap();
   void createBackBuffers();
   void createDescriptorHeaps();

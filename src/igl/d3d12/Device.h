@@ -194,14 +194,16 @@ class Device final : public IDevice {
   mutable std::mutex pendingUploadsMutex_;
   mutable std::vector<PendingUpload> pendingUploads_;
 
-  // Command allocator pool for upload operations (P0_DX12-005)
+  // Command allocator pool for upload operations (P0_DX12-005, H-004)
   // Tracks command allocators with fence values to prevent reuse before GPU completion
+  // H-004: Pool capped at 64 allocators to prevent memory leaks
   struct TrackedCommandAllocator {
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
     UINT64 fenceValue = 0;  // Fence value when last used
   };
   mutable std::mutex commandAllocatorPoolMutex_;
   mutable std::vector<TrackedCommandAllocator> commandAllocatorPool_;
+  mutable size_t totalCommandAllocatorsCreated_ = 0;  // H-004: Track total allocators created
   mutable Microsoft::WRL::ComPtr<ID3D12Fence> uploadFence_;
   mutable UINT64 uploadFenceValue_ = 0;
 

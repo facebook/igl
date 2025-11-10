@@ -674,17 +674,34 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     dxcInitialized = true;
   }
 
-  // Compile shaders with DXC (Shader Model 6.0)
+  // Get shader model from device context (H-009)
+  D3D_SHADER_MODEL shaderModel = D3D_SHADER_MODEL_5_1;  // Default fallback
+  if (iglDevice_) {
+    shaderModel = iglDevice_->getD3D12Context().getMaxShaderModel();
+    int smMajor = (shaderModel >> 4) & 0xF;
+    int smMinor = shaderModel & 0xF;
+    IGL_LOG_INFO("Texture::generateMipmap - Using Shader Model %d.%d\n", smMajor, smMinor);
+  } else {
+    IGL_LOG_INFO("Texture::generateMipmap - No IGL device, using SM 5.1 fallback\n");
+  }
+
+  // Build dynamic shader targets
+  std::string vsTarget = getShaderTarget(shaderModel, ShaderStage::Vertex);
+  std::string psTarget = getShaderTarget(shaderModel, ShaderStage::Fragment);
+
+  // Compile shaders with dynamic shader model (H-009)
   std::vector<uint8_t> vsBytecode, psBytecode;
   std::string vsErrors, psErrors;
 
-  Result vsResult = dxcCompiler.compile(kVS, strlen(kVS), "main", "vs_6_0", "MipmapGenerationVS", 0, vsBytecode, vsErrors);
+  IGL_LOG_INFO("Texture::generateMipmap - Compiling VS with target: %s\n", vsTarget.c_str());
+  Result vsResult = dxcCompiler.compile(kVS, strlen(kVS), "main", vsTarget.c_str(), "MipmapGenerationVS", 0, vsBytecode, vsErrors);
   if (!vsResult.isOk()) {
     IGL_LOG_ERROR("Texture::generateMipMaps - VS compilation failed: %s\n%s\n", vsResult.message.c_str(), vsErrors.c_str());
     return;
   }
 
-  Result psResult = dxcCompiler.compile(kPS, strlen(kPS), "main", "ps_6_0", "MipmapGenerationPS", 0, psBytecode, psErrors);
+  IGL_LOG_INFO("Texture::generateMipmap - Compiling PS with target: %s\n", psTarget.c_str());
+  Result psResult = dxcCompiler.compile(kPS, strlen(kPS), "main", psTarget.c_str(), "MipmapGenerationPS", 0, psBytecode, psErrors);
   if (!psResult.isOk()) {
     IGL_LOG_ERROR("Texture::generateMipMaps - PS compilation failed: %s\n%s\n", psResult.message.c_str(), psErrors.c_str());
     return;
@@ -913,17 +930,34 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     dxcInitialized = true;
   }
 
-  // Compile shaders with DXC (Shader Model 6.0)
+  // Get shader model from device context (H-009)
+  D3D_SHADER_MODEL shaderModel = D3D_SHADER_MODEL_5_1;  // Default fallback
+  if (iglDevice_) {
+    shaderModel = iglDevice_->getD3D12Context().getMaxShaderModel();
+    int smMajor = (shaderModel >> 4) & 0xF;
+    int smMinor = shaderModel & 0xF;
+    IGL_LOG_INFO("Texture::upload - Using Shader Model %d.%d\n", smMajor, smMinor);
+  } else {
+    IGL_LOG_INFO("Texture::upload - No IGL device, using SM 5.1 fallback\n");
+  }
+
+  // Build dynamic shader targets
+  std::string vsTarget = getShaderTarget(shaderModel, ShaderStage::Vertex);
+  std::string psTarget = getShaderTarget(shaderModel, ShaderStage::Fragment);
+
+  // Compile shaders with dynamic shader model (H-009)
   std::vector<uint8_t> vsBytecode, psBytecode;
   std::string vsErrors, psErrors;
 
-  Result vsResult = dxcCompiler.compile(kVS, strlen(kVS), "main", "vs_6_0", "TextureUploadVS", 0, vsBytecode, vsErrors);
+  IGL_LOG_INFO("Texture::upload - Compiling VS with target: %s\n", vsTarget.c_str());
+  Result vsResult = dxcCompiler.compile(kVS, strlen(kVS), "main", vsTarget.c_str(), "TextureUploadVS", 0, vsBytecode, vsErrors);
   if (!vsResult.isOk()) {
     IGL_LOG_ERROR("Texture::upload - VS compilation failed: %s\n%s\n", vsResult.message.c_str(), vsErrors.c_str());
     return;
   }
 
-  Result psResult = dxcCompiler.compile(kPS, strlen(kPS), "main", "ps_6_0", "TextureUploadPS", 0, psBytecode, psErrors);
+  IGL_LOG_INFO("Texture::upload - Compiling PS with target: %s\n", psTarget.c_str());
+  Result psResult = dxcCompiler.compile(kPS, strlen(kPS), "main", psTarget.c_str(), "TextureUploadPS", 0, psBytecode, psErrors);
   if (!psResult.isOk()) {
     IGL_LOG_ERROR("Texture::upload - PS compilation failed: %s\n%s\n", psResult.message.c_str(), psErrors.c_str());
     return;
@@ -1076,8 +1110,15 @@ void Texture::ensureStateStorage() const {
     return;
   }
   const uint32_t mipLevels = static_cast<uint32_t>(std::max<size_t>(numMipLevels_, 1));
-  const uint32_t arraySize =
-      (type_ == TextureType::ThreeD) ? 1u : static_cast<uint32_t>(std::max<size_t>(numLayers_, 1));
+  uint32_t arraySize;
+  if (type_ == TextureType::ThreeD) {
+    arraySize = 1u;
+  } else if (type_ == TextureType::Cube) {
+    // Cube textures: 6 faces per layer (DX12-COD-003)
+    arraySize = static_cast<uint32_t>(std::max<size_t>(numLayers_, 1)) * 6u;
+  } else {
+    arraySize = static_cast<uint32_t>(std::max<size_t>(numLayers_, 1));
+  }
   const size_t required = static_cast<size_t>(mipLevels) * arraySize;
   if (subresourceStates_.size() != required) {
     subresourceStates_.assign(required, defaultState_);
@@ -1090,7 +1131,8 @@ uint32_t Texture::calcSubresourceIndex(uint32_t mipLevel, uint32_t layer) const 
   if (type_ == TextureType::ThreeD) {
     arraySize = 1u;
   } else if (type_ == TextureType::Cube) {
-    arraySize = 6u;  // Cube textures always have 6 faces
+    // Cube textures: 6 faces per layer (DX12-COD-003)
+    arraySize = static_cast<uint32_t>(std::max<size_t>(numLayers_, 1)) * 6u;
   } else {
     arraySize = static_cast<uint32_t>(std::max<size_t>(numLayers_, 1));
   }
@@ -1099,8 +1141,8 @@ uint32_t Texture::calcSubresourceIndex(uint32_t mipLevel, uint32_t layer) const 
   // D3D12CalcSubresource formula: MipSlice + (ArraySlice * MipLevels)
   const uint32_t subresource = clampedMip + (clampedLayer * mipLevels);
   if (type_ == TextureType::Cube) {
-    IGL_LOG_INFO("calcSubresourceIndex: mip=%u, layer=%u, mipLevels=%u -> subresource=%u\n",
-                 mipLevel, layer, mipLevels, subresource);
+    IGL_LOG_INFO("calcSubresourceIndex: mip=%u, layer=%u, arraySize=%u, mipLevels=%u -> subresource=%u (DX12-COD-003)\n",
+                 mipLevel, layer, arraySize, mipLevels, subresource);
   }
   return subresource;
 }

@@ -606,9 +606,12 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
     resourceDesc.DepthOrArraySize = static_cast<UINT16>(desc.depth);
   } else if (desc.type == TextureType::Cube) {
-    // Cube textures are 2D textures with 6 array slices (one per face)
+    // Cube textures are 2D textures with 6 array slices per layer (one per face)
+    // For cube arrays: numLayers * 6 faces (DX12-COD-003)
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-    resourceDesc.DepthOrArraySize = 6;  // 6 faces for cube texture
+    resourceDesc.DepthOrArraySize = static_cast<UINT16>(desc.numLayers * 6);
+    IGL_LOG_INFO("Device::createTexture: Cube texture with %u layers -> %u array slices (DX12-COD-003)\n",
+                 desc.numLayers, resourceDesc.DepthOrArraySize);
   } else {
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
     resourceDesc.DepthOrArraySize = static_cast<UINT16>(desc.numLayers);
@@ -2084,6 +2087,8 @@ Result compileShaderFXC(
 }
 } // anonymous namespace
 
+// Note: getShaderTarget() helper moved to Common.h for shared use (H-009)
+
 std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
   IGL_LOG_INFO("Device::createShaderModule() - stage=%d, entryPoint='%s', debugName='%s'\n",
@@ -2670,8 +2675,11 @@ void Device::trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer) co
   pendingUploads_.push_back(PendingUpload{signalValue, std::move(buffer)});
 }
 
-// Command Allocator Pool Implementation (P0_DX12-005)
+// Command Allocator Pool Implementation (P0_DX12-005, H-004)
 // Ensures command allocators are only reused after GPU completes execution
+// H-004: Cap pool at 64 allocators to prevent memory leaks
+static constexpr size_t kMaxCommandAllocators = 64;
+
 Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator() {
   if (!uploadFence_.Get()) {
     IGL_LOG_ERROR("Device::getUploadCommandAllocator: Upload fence not initialized\n");
@@ -2709,7 +2717,17 @@ Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator
     }
   }
 
-  // No available allocator, create new one
+  // H-004: Check if we've reached the pool limit
+  // totalCommandAllocatorsCreated_ tracks all allocators ever created (in pool + currently in use)
+  if (totalCommandAllocatorsCreated_ >= kMaxCommandAllocators) {
+    IGL_LOG_ERROR("Device::getUploadCommandAllocator: Command allocator pool exhausted (%zu/%zu), "
+                  "completed fence: %llu, pool size: %zu. All allocators still in use by GPU.\n",
+                  totalCommandAllocatorsCreated_, kMaxCommandAllocators, completedValue,
+                  commandAllocatorPool_.size());
+    return nullptr;
+  }
+
+  // No available allocator, create new one (under limit)
   auto* device = ctx_->getDevice();
   if (!device) {
     IGL_LOG_ERROR("Device::getUploadCommandAllocator: D3D12 device is null\n");
@@ -2724,9 +2742,12 @@ Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator
     return nullptr;
   }
 
+  // H-004: Track total allocators created
+  totalCommandAllocatorsCreated_++;
+
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("Device::getUploadCommandAllocator: Created new allocator (pool size: %zu)\n",
-               commandAllocatorPool_.size());
+  IGL_LOG_INFO("Device::getUploadCommandAllocator: Created new allocator (total: %zu/%zu, pool size: %zu)\n",
+               totalCommandAllocatorsCreated_, kMaxCommandAllocators, commandAllocatorPool_.size());
 #endif
   return newAllocator;
 }

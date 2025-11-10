@@ -15,6 +15,7 @@
 
 #include <igl/Common.h>
 #include <igl/Macros.h>
+#include <igl/Shader.h>
 #include <igl/TextureFormat.h>
 #include <igl/d3d12/D3D12Headers.h>
 
@@ -112,6 +113,36 @@ DXGI_FORMAT textureFormatToDXGIFormat(TextureFormat format);
 DXGI_FORMAT textureFormatToDXGIResourceFormat(TextureFormat format, bool sampledUsage);
 DXGI_FORMAT textureFormatToDXGIShaderResourceViewFormat(TextureFormat format);
 TextureFormat dxgiFormatToTextureFormat(DXGI_FORMAT format);
+
+// Shader target helper (H-009)
+// Convert D3D_SHADER_MODEL enum to shader target string (e.g., "vs_6_6", "ps_5_1")
+inline std::string getShaderTarget(D3D_SHADER_MODEL shaderModel, ShaderStage stage) {
+  // Extract major and minor version from D3D_SHADER_MODEL enum
+  // Format: 0xMm where M = major, m = minor (e.g., 0x66 = SM 6.6, 0x51 = SM 5.1)
+  int major = (shaderModel >> 4) & 0xF;
+  int minor = shaderModel & 0xF;
+
+  // Get stage prefix
+  const char* stagePrefix = nullptr;
+  switch (stage) {
+  case ShaderStage::Vertex:
+    stagePrefix = "vs";
+    break;
+  case ShaderStage::Fragment:
+    stagePrefix = "ps";  // DirectX uses "ps" for pixel/fragment shaders
+    break;
+  case ShaderStage::Compute:
+    stagePrefix = "cs";
+    break;
+  default:
+    return "";
+  }
+
+  // Build target string (e.g., "vs_6_6", "ps_5_1", "cs_6_0")
+  char target[16];
+  snprintf(target, sizeof(target), "%s_%d_%d", stagePrefix, major, minor);
+  return std::string(target);
+}
 
 } // namespace igl::d3d12
 
