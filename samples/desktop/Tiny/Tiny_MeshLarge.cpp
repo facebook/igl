@@ -849,9 +849,9 @@ static GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
     });
 
     glfwSetCursorPosCallback(window, [](auto* window, double x, double y) {
-      int width, height;
-      glfwGetFramebufferSize(window, &width, &height);
-      mousePos_ = vec2(x / width, 1.0f - y / height);
+      int fbWidth, fbHeight;
+      glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+      mousePos_ = vec2(x / fbWidth, 1.0f - y / fbHeight);
 #if IGL_WITH_IGLU
       inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
 #endif // IGL_WITH_IGLU
