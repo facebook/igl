@@ -42,6 +42,7 @@ std::unique_ptr<RenderCommandAdapter> RenderCommandAdapter::create(
     const RenderPassDesc& renderPass,
     const std::shared_ptr<IFramebuffer>& framebuffer,
     Result* outResult) {
+  // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
   std::unique_ptr<RenderCommandAdapter> newAdapter(new RenderCommandAdapter(context));
   newAdapter->initialize(renderPass, framebuffer, outResult);
   return newAdapter;
