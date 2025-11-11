@@ -1447,6 +1447,26 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
       cachedConstantBuffers_[index] = bufferAddress;
       constantBufferBound_[index] = true;
       IGL_LOG_INFO("bindBuffer: Cached CBV at index %u with address 0x%llx\n", index, bufferAddress);
+    } else if (index == 2) {
+      // b2 maps to push constants (root parameter 0)
+      void* bufferData = nullptr;
+      HRESULT hr = d3dBuffer->getResource()->Map(0, nullptr, &bufferData);
+      if (SUCCEEDED(hr) && bufferData) {
+        const size_t bufferSize = d3dBuffer->getSizeInBytes();
+        const size_t clampedSize = std::min(bufferSize, static_cast<size_t>(256));
+
+        const uint32_t num32BitValues = static_cast<uint32_t>((clampedSize + 3) / 4);
+        commandList_->SetGraphicsRoot32BitConstants(
+            0,  // Root parameter index (push constants at b2)
+            num32BitValues,
+            static_cast<const uint8_t*>(bufferData) + offset,
+            0);
+
+        d3dBuffer->getResource()->Unmap(0, nullptr);
+        IGL_LOG_INFO("bindBuffer: Bound index 2 (b2) as push constants (%zu bytes)\n", clampedSize);
+      } else {
+        IGL_LOG_ERROR("bindBuffer: Failed to map buffer for index 2 (b2) push constants\n");
+      }
     }
   }
 

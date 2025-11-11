@@ -795,7 +795,7 @@ constexpr std::string_view kD3D12SimpleFragShaderTexArray =
 // D3D12 TextureCube Vertex shader
 constexpr std::string_view kD3D12SimpleVertShaderCube =
     IGL_TO_STRING(
-      cbuffer VertexUniforms : register(b2) {
+      cbuffer VertexUniforms : register(b1) {
         float4 view;
       };
 
