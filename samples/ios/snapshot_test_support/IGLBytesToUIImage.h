@@ -14,8 +14,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 extern "C" {
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 UIImage* IGLRGBABytesToUIImage(void* bytes, size_t width, size_t height);
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 UIImage* IGLFramebufferToUIImage(const igl::IFramebuffer& framebuffer,
                                  igl::ICommandQueue& commandQueue,
                                  size_t width,

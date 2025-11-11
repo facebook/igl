@@ -17,6 +17,7 @@
 #import <UIKit/UIGraphics.h>
 #import <UIKit/UIImage.h>
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 UIImage* IGLRGBABytesToUIImage(void* bytes, size_t width, size_t height) {
   auto data = [NSData dataWithBytes:bytes length:width * height * 4];
 
@@ -50,6 +51,7 @@ UIImage* IGLRGBABytesToUIImage(void* bytes, size_t width, size_t height) {
   return snapshot;
 }
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 UIImage* IGLFramebufferToUIImage(const igl::IFramebuffer& framebuffer,
                                  igl::ICommandQueue& commandQueue,
                                  size_t width,
