@@ -24,21 +24,21 @@
 
 static void* kAssociatedRenderBufferHolderKey = &kAssociatedRenderBufferHolderKey;
 
-/// Object used to hold onto a _renderBuffer so we can attach it as an associated object
+/// Object used to hold onto a renderBuffer so we can attach it as an associated object
 @interface _IGLRenderBufferHolder : NSObject {
  @public
-  std::weak_ptr<igl::opengl::TextureTarget> _renderBuffer;
+  std::weak_ptr<igl::opengl::TextureTarget> renderBuffer;
 }
 @end
 
 namespace {
-/// Backed by an associated object. This is used to track the last _renderBuffer used to create this
+/// Backed by an associated object. This is used to track the last renderBuffer used to create this
 /// texture so we can reuse it and invalidate it when necessary
 /// This always returns a renderBufferHolder, but it is up to the responsibility of the caller to
-/// set _renderBuffer.
+/// set renderBuffer.
 // @fb-only
 // @fb-only
-_IGLRenderBufferHolder* GetAssociatedRenderBufferHolder(CAEAGLLayer* nativeDrawable);
+_IGLRenderBufferHolder* getAssociatedRenderBufferHolder(CAEAGLLayer* nativeDrawable);
 
 } // namespace
 
@@ -66,9 +66,9 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
   const CGRect resolution = CGRectMake(
       bounds.origin.x, bounds.origin.y, bounds.size.width * scale, bounds.size.height * scale);
 
-  _IGLRenderBufferHolder* renderBufferHolder = GetAssociatedRenderBufferHolder(nativeDrawable);
+  _IGLRenderBufferHolder* renderBufferHolder = getAssociatedRenderBufferHolder(nativeDrawable);
 
-  const auto renderBuffer = renderBufferHolder->_renderBuffer.lock();
+  const auto renderBuffer = renderBufferHolder->renderBuffer.lock();
 
   if (renderBuffer != nullptr && renderBuffer->getSize().width == resolution.size.width &&
       renderBuffer->getSize().height == resolution.size.height) {
@@ -132,7 +132,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
       }
     }
 
-    renderBufferHolder->_renderBuffer = texture;
+    renderBufferHolder->renderBuffer = texture;
     if (auto resourceTracker = owner_.getResourceTracker()) {
       texture->initResourceTracker(resourceTracker);
     }
@@ -293,7 +293,7 @@ CVOpenGLESTextureCacheRef PlatformDevice::getTextureCache() {
 } // namespace igl::opengl::ios
 
 namespace {
-_IGLRenderBufferHolder* GetAssociatedRenderBufferHolder(CAEAGLLayer* nativeDrawable) {
+_IGLRenderBufferHolder* getAssociatedRenderBufferHolder(CAEAGLLayer* nativeDrawable) {
   _IGLRenderBufferHolder* renderBufferHolder =
       objc_getAssociatedObject(nativeDrawable, kAssociatedRenderBufferHolderKey);
   if (renderBufferHolder) {
