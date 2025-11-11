@@ -38,8 +38,8 @@ VulkanFramebuffer::~VulkanFramebuffer() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
   ctx.deferredTask(
-      std::packaged_task<void()>([vf = &ctx.vf_, device = device, framebuffer = vkFramebuffer]() {
-        vf->vkDestroyFramebuffer(device, framebuffer, nullptr);
+      std::packaged_task<void()>([vf = &ctx.vf_, device_ = device, framebuffer = vkFramebuffer]() {
+        vf->vkDestroyFramebuffer(device_, framebuffer, nullptr);
       }));
 }
 
