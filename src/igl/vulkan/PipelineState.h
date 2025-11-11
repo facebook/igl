@@ -37,26 +37,26 @@ class PipelineState {
   VkPipelineLayout getVkPipelineLayout() const;
 
   const util::SpvModuleInfo& getSpvModuleInfo() const {
-    return info_;
+    return info;
   }
 
  private:
   void initializeSpvModuleInfoFromShaderStages(const VulkanContext& ctx, IShaderStages* stages);
 
  public:
-  igl::vulkan::util::SpvModuleInfo info_;
+  igl::vulkan::util::SpvModuleInfo info;
 
-  VkPushConstantRange pushConstantRange_ = {};
-  VkShaderStageFlags stageFlags_ = 0;
+  VkPushConstantRange pushConstantRange = {};
+  VkShaderStageFlags stageFlags = 0;
 
-  mutable VkPipelineLayout pipelineLayout_ = VK_NULL_HANDLE;
+  mutable VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 
   // the last seen VkDescriptorSetLayout from VulkanContext::dslBindless_
-  mutable VkDescriptorSetLayout lastBindlessVkDescriptorSetLayout_ = VK_NULL_HANDLE;
+  mutable VkDescriptorSetLayout lastBindlessVkDescriptorSetLayout = VK_NULL_HANDLE;
 
-  std::unique_ptr<VulkanDescriptorSetLayout> dslCombinedImageSamplers_;
-  std::unique_ptr<VulkanDescriptorSetLayout> dslBuffers_;
-  std::unique_ptr<VulkanDescriptorSetLayout> dslStorageImages_;
+  std::unique_ptr<VulkanDescriptorSetLayout> dslCombinedImageSamplers;
+  std::unique_ptr<VulkanDescriptorSetLayout> dslBuffers;
+  std::unique_ptr<VulkanDescriptorSetLayout> dslStorageImages;
 };
 
 } // namespace igl::vulkan

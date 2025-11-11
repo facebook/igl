@@ -272,10 +272,9 @@ void ComputeCommandEncoder::bindPushConstants(const void* data, size_t length, s
                                      // of 4
 
   IGL_DEBUG_ASSERT(cps_, "Did you forget to call bindComputePipelineState()?");
-  IGL_DEBUG_ASSERT(cps_->pushConstantRange_.size,
+  IGL_DEBUG_ASSERT(cps_->pushConstantRange.size,
                    "Currently bound compute pipeline state has no push constants");
-  IGL_DEBUG_ASSERT(offset + length <=
-                       cps_->pushConstantRange_.offset + cps_->pushConstantRange_.size,
+  IGL_DEBUG_ASSERT(offset + length <= cps_->pushConstantRange.offset + cps_->pushConstantRange.size,
                    "Push constants size exceeded");
 
 #if IGL_VULKAN_PRINT_COMMANDS

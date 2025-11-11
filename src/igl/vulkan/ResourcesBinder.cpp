@@ -199,8 +199,8 @@ void ResourcesBinder::updateBindings(VkPipelineLayout layout, const vulkan::Pipe
                                 bindPoint_,
                                 nextSubmitHandle_,
                                 bindingsTextures_,
-                                *state.dslCombinedImageSamplers_,
-                                state.info_);
+                                *state.dslCombinedImageSamplers,
+                                state.info);
   }
   if (isDirtyFlags_ & DirtyFlagBits_Buffers) {
     ctx_.updateBindingsBuffers(cmdBuffer_,
@@ -208,8 +208,8 @@ void ResourcesBinder::updateBindings(VkPipelineLayout layout, const vulkan::Pipe
                                bindPoint_,
                                nextSubmitHandle_,
                                bindingsBuffers_,
-                               *state.dslBuffers_,
-                               state.info_);
+                               *state.dslBuffers,
+                               state.info);
   }
   if (isDirtyFlags_ & DirtyFlagBits_StorageImages) {
     ctx_.updateBindingsStorageImages(cmdBuffer_,
@@ -217,8 +217,8 @@ void ResourcesBinder::updateBindings(VkPipelineLayout layout, const vulkan::Pipe
                                      bindPoint_,
                                      nextSubmitHandle_,
                                      bindingsStorageImages_,
-                                     *state.dslStorageImages_,
-                                     state.info_);
+                                     *state.dslStorageImages,
+                                     state.info);
   }
 
   isDirtyFlags_ = 0;

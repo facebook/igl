@@ -36,10 +36,10 @@ ComputePipelineState ::~ComputePipelineState() {
           vf->vkDestroyPipeline(device, pipeline, nullptr);
         }));
   }
-  if (pipelineLayout_ != VK_NULL_HANDLE) {
+  if (pipelineLayout != VK_NULL_HANDLE) {
     const auto& ctx = device_.getVulkanContext();
     ctx.deferredTask(std::packaged_task<void()>(
-        [vf = &ctx.vf_, device = ctx.getVkDevice(), layout = pipelineLayout_]() {
+        [vf = &ctx.vf_, device = ctx.getVkDevice(), layout = pipelineLayout]() {
           vf->vkDestroyPipelineLayout(device, layout, nullptr);
         }));
   }
@@ -51,19 +51,19 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
   if (ctx.config_.enableDescriptorIndexing) {
     // the bindless descriptor set layout can be changed in VulkanContext when the number of
     // existing textures increases
-    if (lastBindlessVkDescriptorSetLayout_ != ctx.getBindlessVkDescriptorSetLayout()) {
+    if (lastBindlessVkDescriptorSetLayout != ctx.getBindlessVkDescriptorSetLayout()) {
       // there's a new descriptor set layout - drop the previous Vulkan pipeline
       VkDevice device = ctx.getVkDevice();
       if (pipeline_ != VK_NULL_HANDLE) {
         ctx.deferredTask(std::packaged_task<void()>(
-            [vf = &ctx.vf_, device, pipeline = pipeline_, layout = pipelineLayout_]() {
+            [vf = &ctx.vf_, device, pipeline = pipeline_, layout = pipelineLayout]() {
               vf->vkDestroyPipeline(device, pipeline, nullptr);
               vf->vkDestroyPipelineLayout(device, layout, nullptr);
             }));
       }
       pipeline_ = VK_NULL_HANDLE;
-      pipelineLayout_ = VK_NULL_HANDLE;
-      lastBindlessVkDescriptorSetLayout_ = ctx.getBindlessVkDescriptorSetLayout();
+      pipelineLayout = VK_NULL_HANDLE;
+      lastBindlessVkDescriptorSetLayout = ctx.getBindlessVkDescriptorSetLayout();
     }
   }
 
@@ -76,9 +76,9 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
   // NOLINTBEGIN(readability-identifier-naming)
   // @fb-only
   const VkDescriptorSetLayout DSLs[] = {
-      dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
-      dslBuffers_->getVkDescriptorSetLayout(),
-      dslStorageImages_->getVkDescriptorSetLayout(),
+      dslCombinedImageSamplers->getVkDescriptorSetLayout(),
+      dslBuffers->getVkDescriptorSetLayout(),
+      dslStorageImages->getVkDescriptorSetLayout(),
       ctx.getBindlessVkDescriptorSetLayout(),
   };
   // NOLINTEND(readability-identifier-naming)
@@ -88,15 +88,15 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
                                                                ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
                                                                : IGL_ARRAY_NUM_ELEMENTS(DSLs) - 1u),
                                      DSLs,
-                                     info_.hasPushConstants ? &pushConstantRange_ : nullptr);
+                                     info.hasPushConstants ? &pushConstantRange : nullptr);
 
   VkDevice device = ctx.getVkDevice();
-  VK_ASSERT(ctx.vf_.vkCreatePipelineLayout(device, &ci, nullptr, &pipelineLayout_));
+  VK_ASSERT(ctx.vf_.vkCreatePipelineLayout(device, &ci, nullptr, &pipelineLayout));
   VK_ASSERT(
       ivkSetDebugObjectName(&ctx.vf_,
                             device,
                             VK_OBJECT_TYPE_PIPELINE_LAYOUT,
-                            (uint64_t)pipelineLayout_,
+                            (uint64_t)pipelineLayout,
                             IGL_FORMAT("Pipeline Layout: {}", desc_.debugName.c_str()).c_str()));
 
   const auto& shaderModule = desc_.shaderStages->getComputeModule();
@@ -106,12 +106,8 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
           VK_SHADER_STAGE_COMPUTE_BIT,
           igl::vulkan::ShaderModule::getVkShaderModule(shaderModule),
           shaderModule->info().entryPoint.c_str()))
-      .build(ctx.vf_,
-             device,
-             ctx.pipelineCache_,
-             pipelineLayout_,
-             &pipeline_,
-             desc_.debugName.c_str());
+      .build(
+          ctx.vf_, device, ctx.pipelineCache_, pipelineLayout, &pipeline_, desc_.debugName.c_str());
 
   return pipeline_;
 }

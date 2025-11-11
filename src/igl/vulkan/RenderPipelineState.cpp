@@ -345,9 +345,9 @@ RenderPipelineState::~RenderPipelineState() {
           }));
     }
   }
-  if (pipelineLayout_) {
+  if (pipelineLayout) {
     ctx.deferredTask(std::packaged_task<void()>(
-        [vf = &ctx.vf_, device = ctx.getVkDevice(), layout = pipelineLayout_]() {
+        [vf = &ctx.vf_, device = ctx.getVkDevice(), layout = pipelineLayout]() {
           vf->vkDestroyPipelineLayout(device, layout, nullptr);
         }));
   }
@@ -360,7 +360,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
   if (ctx.config_.enableDescriptorIndexing) {
     // the bindless descriptor set layout can be changed in VulkanContext when the number of
     // existing textures increases
-    if (lastBindlessVkDescriptorSetLayout_ != ctx.getBindlessVkDescriptorSetLayout()) {
+    if (lastBindlessVkDescriptorSetLayout != ctx.getBindlessVkDescriptorSetLayout()) {
       // there's a new descriptor set layout - drop the previous Vulkan pipeline
       VkDevice device = ctx.getVkDevice();
       for (const auto& p : pipelines_) {
@@ -371,15 +371,15 @@ VkPipeline RenderPipelineState::getVkPipeline(
               }));
         }
       }
-      if (pipelineLayout_) {
+      if (pipelineLayout) {
         ctx.deferredTask(std::packaged_task<void()>(
-            [vf = &ctx.vf_, device = ctx.getVkDevice(), layout = pipelineLayout_]() {
+            [vf = &ctx.vf_, device = ctx.getVkDevice(), layout = pipelineLayout]() {
               vf->vkDestroyPipelineLayout(device, layout, nullptr);
             }));
       }
       pipelines_.clear();
-      pipelineLayout_ = VK_NULL_HANDLE;
-      lastBindlessVkDescriptorSetLayout_ = ctx.getBindlessVkDescriptorSetLayout();
+      pipelineLayout = VK_NULL_HANDLE;
+      lastBindlessVkDescriptorSetLayout = ctx.getBindlessVkDescriptorSetLayout();
     }
   }
 
@@ -391,13 +391,13 @@ VkPipeline RenderPipelineState::getVkPipeline(
 
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  if (!pipelineLayout_) {
+  if (!pipelineLayout) {
     // NOLINTBEGIN(readability-identifier-naming)
     // @fb-only
     const VkDescriptorSetLayout DSLs[] = {
-        dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
-        dslBuffers_->getVkDescriptorSetLayout(),
-        dslStorageImages_->getVkDescriptorSetLayout(),
+        dslCombinedImageSamplers->getVkDescriptorSetLayout(),
+        dslBuffers->getVkDescriptorSetLayout(),
+        dslStorageImages->getVkDescriptorSetLayout(),
         ctx.getBindlessVkDescriptorSetLayout(),
     };
     // NOLINTEND(readability-identifier-naming)
@@ -407,15 +407,15 @@ VkPipeline RenderPipelineState::getVkPipeline(
                                   ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
                                   : IGL_ARRAY_NUM_ELEMENTS(DSLs) - 1u),
         DSLs,
-        info_.hasPushConstants ? &pushConstantRange_ : nullptr);
+        info.hasPushConstants ? &pushConstantRange : nullptr);
 
     VkDevice device = ctx.getVkDevice();
-    VK_ASSERT(ctx.vf_.vkCreatePipelineLayout(device, &ci, nullptr, &pipelineLayout_));
+    VK_ASSERT(ctx.vf_.vkCreatePipelineLayout(device, &ci, nullptr, &pipelineLayout));
     VK_ASSERT(
         ivkSetDebugObjectName(&ctx.vf_,
                               device,
                               VK_OBJECT_TYPE_PIPELINE_LAYOUT,
-                              (uint64_t)pipelineLayout_,
+                              (uint64_t)pipelineLayout,
                               IGL_FORMAT("Pipeline Layout: {}", desc_.debugName.c_str()).c_str()));
   }
 
@@ -508,7 +508,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
           .build(ctx.vf_,
                  ctx.getVkDevice(),
                  ctx.pipelineCache_,
-                 pipelineLayout_,
+                 pipelineLayout,
                  renderPass,
                  &pipeline,
                  desc_.debugName.c_str()));

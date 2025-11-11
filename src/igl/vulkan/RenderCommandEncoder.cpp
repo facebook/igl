@@ -518,13 +518,12 @@ void RenderCommandEncoder::bindPushConstants(const void* data, size_t length, si
                                      // of 4
 
   IGL_DEBUG_ASSERT(rps_, "Did you forget to call bindRenderPipelineState()?");
-  IGL_DEBUG_ASSERT(rps_->pushConstantRange_.size,
+  IGL_DEBUG_ASSERT(rps_->pushConstantRange.size,
                    "Currently bound render pipeline state has no push constants");
-  IGL_DEBUG_ASSERT(offset + length <=
-                       rps_->pushConstantRange_.offset + rps_->pushConstantRange_.size,
+  IGL_DEBUG_ASSERT(offset + length <= rps_->pushConstantRange.offset + rps_->pushConstantRange.size,
                    "Push constants size exceeded");
 
-  if (!rps_->pipelineLayout_) {
+  if (!rps_->pipelineLayout) {
     // bring a pipeline layout into existence - we don't really care about the dynamic state here
     (void)rps_->getVkPipeline(dynamicState_);
   }
@@ -534,7 +533,7 @@ void RenderCommandEncoder::bindPushConstants(const void* data, size_t length, si
 #endif // IGL_VULKAN_PRINT_COMMANDS
   ctx_.vf_.vkCmdPushConstants(cmdBuffer_,
                               rps_->getVkPipelineLayout(),
-                              rps_->pushConstantRange_.stageFlags,
+                              rps_->pushConstantRange.stageFlags,
                               (uint32_t)offset,
                               (uint32_t)length,
                               data);

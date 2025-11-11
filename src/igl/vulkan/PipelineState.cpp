@@ -25,13 +25,13 @@ void PipelineState::initializeSpvModuleInfoFromShaderStages(const VulkanContext&
     // compute
     ensureShaderModule(smComp);
 
-    info_ = smComp->getVulkanShaderModule().getSpvModuleInfo();
+    info = smComp->getVulkanShaderModule().getSpvModuleInfo();
 
-    if (info_.hasPushConstants) {
+    if (info.hasPushConstants) {
       pushConstantMask |= VK_SHADER_STAGE_COMPUTE_BIT;
     }
 
-    stageFlags_ = VK_SHADER_STAGE_COMPUTE_BIT;
+    stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
   } else {
     auto* smVert = static_cast<ShaderModule*>(stages->getVertexModule().get());
     auto* smFrag = static_cast<ShaderModule*>(stages->getFragmentModule().get());
@@ -50,9 +50,9 @@ void PipelineState::initializeSpvModuleInfoFromShaderStages(const VulkanContext&
       pushConstantMask |= VK_SHADER_STAGE_FRAGMENT_BIT;
     }
 
-    info_ = util::mergeReflectionData(infoVert, infoFrag);
+    info = util::mergeReflectionData(infoVert, infoFrag);
 
-    stageFlags_ = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
   }
 
   if (pushConstantMask) {
@@ -66,7 +66,7 @@ void PipelineState::initializeSpvModuleInfoFromShaderStages(const VulkanContext&
                     limits.maxPushConstantsSize);
     }
 
-    pushConstantRange_ = VkPushConstantRange{
+    pushConstantRange = VkPushConstantRange{
         .stageFlags = pushConstantMask,
         .offset = 0u,
         .size = kPushConstantsSize,
@@ -89,18 +89,18 @@ PipelineState::PipelineState(
   // 0. Combined image samplers
   {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-    bindings.reserve(info_.textures.size());
-    for (const auto& t : info_.textures) {
+    bindings.reserve(info.textures.size());
+    for (const auto& t : info.textures) {
       const uint32_t loc = t.bindingLocation;
       bindings.emplace_back(ivkGetDescriptorSetLayoutBinding(
-          loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, stageFlags_));
+          loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, stageFlags));
       if (loc < IGL_TEXTURE_SAMPLERS_MAX && immutableSamplers && immutableSamplers[loc]) {
         auto* sampler = static_cast<SamplerState*>(immutableSamplers[loc].get());
         bindings.back().pImmutableSamplers = &ctx.samplers_.get(sampler->sampler_)->vkSampler;
       }
     }
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
-    dslCombinedImageSamplers_ = std::make_unique<VulkanDescriptorSetLayout>(
+    dslCombinedImageSamplers = std::make_unique<VulkanDescriptorSetLayout>(
         ctx,
         VkDescriptorSetLayoutCreateFlags{},
         static_cast<uint32_t>(bindings.size()),
@@ -111,8 +111,8 @@ PipelineState::PipelineState(
   // 1. Buffers
   {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-    bindings.reserve(info_.buffers.size());
-    for (const auto& b : info_.buffers) {
+    bindings.reserve(info.buffers.size());
+    for (const auto& b : info.buffers) {
       const bool isDynamic = (isDynamicBufferMask & (1ul << b.bindingLocation)) != 0;
       const VkDescriptorType type = b.isStorage
                                         ? (isDynamic ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC
@@ -120,10 +120,10 @@ PipelineState::PipelineState(
                                         : (isDynamic ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
                                                      : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
       bindings.emplace_back(
-          ivkGetDescriptorSetLayoutBinding(b.bindingLocation, type, 1, stageFlags_));
+          ivkGetDescriptorSetLayoutBinding(b.bindingLocation, type, 1, stageFlags));
     }
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
-    dslBuffers_ = std::make_unique<VulkanDescriptorSetLayout>(
+    dslBuffers = std::make_unique<VulkanDescriptorSetLayout>(
         ctx,
         VkDescriptorSetLayoutCreateFlags{},
         static_cast<uint32_t>(bindings.size()),
@@ -136,14 +136,14 @@ PipelineState::PipelineState(
   // 3. Storage images
   {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-    bindings.reserve(info_.images.size());
-    for (const auto& t : info_.images) {
+    bindings.reserve(info.images.size());
+    for (const auto& t : info.images) {
       const uint32_t loc = t.bindingLocation;
       bindings.emplace_back(
-          ivkGetDescriptorSetLayoutBinding(loc, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, stageFlags_));
+          ivkGetDescriptorSetLayoutBinding(loc, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, stageFlags));
     }
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
-    dslStorageImages_ = std::make_unique<VulkanDescriptorSetLayout>(
+    dslStorageImages = std::make_unique<VulkanDescriptorSetLayout>(
         ctx,
         VkDescriptorSetLayoutCreateFlags{},
         static_cast<uint32_t>(bindings.size()),
@@ -154,9 +154,9 @@ PipelineState::PipelineState(
 }
 
 VkPipelineLayout PipelineState::getVkPipelineLayout() const {
-  IGL_DEBUG_ASSERT(pipelineLayout_);
+  IGL_DEBUG_ASSERT(pipelineLayout);
 
-  return pipelineLayout_;
+  return pipelineLayout;
 }
 
 } // namespace igl::vulkan
