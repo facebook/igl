@@ -87,7 +87,7 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
   std::vector<int> bufferAttribLocations_[IGL_BUFFER_BINDINGS_MAX];
 
   std::shared_ptr<RenderPipelineReflection> reflection_;
-  std::unordered_map<size_t, size_t> vertexTextureUnitRemap;
+  std::unordered_map<size_t, size_t> vertexTextureUnitRemap_;
   std::array<GLint, IGL_TEXTURE_SAMPLERS_MAX> unitSamplerLocationMap_{};
   std::unordered_map<int, size_t> uniformBlockBindingMap_;
   std::array<GLboolean, 4> colorMask_ = {GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE};

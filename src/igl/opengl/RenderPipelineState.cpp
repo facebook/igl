@@ -187,7 +187,7 @@ Result RenderPipelineState::create() {
       return Result{Result::Code::RuntimeError, "Too many samplers"};
     }
 
-    vertexTextureUnitRemap[textureUnit] = realTextureUnit;
+    vertexTextureUnitRemap_[textureUnit] = realTextureUnit;
     unitSamplerLocationMap_[realTextureUnit] = loc;
   }
 
@@ -352,8 +352,8 @@ Result RenderPipelineState::bindTextureUnit(const size_t unit,
 
   GLint samplerLocation = -1;
   if (bindTarget == igl::BindTarget::kVertex) {
-    auto it = vertexTextureUnitRemap.find(unit);
-    if (it == vertexTextureUnitRemap.end()) {
+    auto it = vertexTextureUnitRemap_.find(unit);
+    if (it == vertexTextureUnitRemap_.end()) {
       return Result{Result::Code::RuntimeError, "Unable to find sampler location\n"};
     }
     auto realUnit = it->second;
