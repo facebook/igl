@@ -50,13 +50,13 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
  public:
   // Ignore modernize-use-default-member-init
   // @lint-ignore CLANGTIDY
-  uint32_t renderPassIndex_ : 8;
+  uint32_t renderPassIndex : 8;
   // Ignore modernize-use-default-member-init
   // @lint-ignore CLANGTIDY
-  uint32_t depthBiasEnable_ : 1;
+  uint32_t depthBiasEnable : 1;
   // Ignore modernize-use-default-member-init
   // @lint-ignore CLANGTIDY
-  uint32_t depthWriteEnable_ : 1;
+  uint32_t depthWriteEnable : 1;
 
   RenderPipelineDynamicState() {
     // memset makes sure all padding bits are zero
@@ -72,9 +72,9 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
     stencilBackPassOp_ = VK_STENCIL_OP_KEEP;
     stencilBackDepthFailOp_ = VK_STENCIL_OP_KEEP;
     stencilBackCompareOp_ = VK_COMPARE_OP_ALWAYS;
-    renderPassIndex_ = 0;
-    depthBiasEnable_ = false;
-    depthWriteEnable_ = false;
+    renderPassIndex = 0;
+    depthBiasEnable = false;
+    depthWriteEnable = false;
   }
 
   [[nodiscard]] VkCompareOp getDepthCompareOp() const {

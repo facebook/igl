@@ -424,7 +424,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
       deviceFeatures.vkPhysicalDeviceFeatures2.features.dualSrcBlend;
 
   // build a new Vulkan pipeline
-  VkRenderPass renderPass = ctx.getRenderPass(dynamicState.renderPassIndex_).pass;
+  VkRenderPass renderPass = ctx.getRenderPass(dynamicState.renderPassIndex).pass;
 
   VkPipeline pipeline = VK_NULL_HANDLE;
 
@@ -476,9 +476,9 @@ VkPipeline RenderPipelineState::getVkPipeline(
               VK_DYNAMIC_STATE_STENCIL_REFERENCE,
           })
           .primitiveTopology(primitiveTypeToVkPrimitiveTopology(desc_.topology))
-          .depthBiasEnable(dynamicState.depthBiasEnable_)
-          .depthCompareOp(dynamicState.getDepthCompareOp(), dynamicState.depthWriteEnable_)
-          .depthWriteEnable(dynamicState.depthWriteEnable_)
+          .depthBiasEnable(dynamicState.depthBiasEnable)
+          .depthCompareOp(dynamicState.getDepthCompareOp(), dynamicState.depthWriteEnable)
+          .depthWriteEnable(dynamicState.depthWriteEnable)
           .rasterizationSamples(getVulkanSampleCountFlags(desc_.sampleCount))
           .polygonMode(polygonFillModeToVkPolygonMode(desc_.polygonFillMode))
           .stencilStateOps(VK_STENCIL_FACE_FRONT_BIT,

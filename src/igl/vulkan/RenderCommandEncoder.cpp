@@ -200,8 +200,8 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
 
   auto renderPassHandle = ctx_.findRenderPass(builder);
 
-  dynamicState_.renderPassIndex_ = renderPassHandle.index;
-  dynamicState_.depthBiasEnable_ = false;
+  dynamicState_.renderPassIndex = renderPassHandle.index;
+  dynamicState_.depthBiasEnable = false;
 
   VkRenderPassBeginInfo bi = fb.getRenderPassBeginInfo(
       renderPassHandle.pass, mipLevel, layer, (uint32_t)clearValues.size(), clearValues.data());
@@ -405,7 +405,7 @@ void RenderCommandEncoder::bindDepthStencilState(
 
   const igl::DepthStencilStateDesc& desc = state->desc_;
 
-  dynamicState_.depthWriteEnable_ = desc.isDepthWriteEnabled;
+  dynamicState_.depthWriteEnable = desc.isDepthWriteEnabled;
   dynamicState_.setDepthCompareOp(compareFunctionToVkCompareOp(desc.compareFunction));
 
   auto setStencilState = [this](VkStencilFaceFlagBits faceMask, const igl::StencilStateDesc& desc) {
@@ -724,7 +724,7 @@ void RenderCommandEncoder::setBlendColor(const Color& color) {
 void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float clamp) {
   IGL_PROFILER_FUNCTION();
 
-  dynamicState_.depthBiasEnable_ = true;
+  dynamicState_.depthBiasEnable = true;
   ctx_.vf_.vkCmdSetDepthBias(cmdBuffer_, depthBias, clamp, slopeScale);
 }
 
