@@ -21,8 +21,8 @@
 #endif
 
 @interface VulkanView () {
-  CVDisplayLinkRef displayLink_; // display link for managing rendering thread
-  igl::shell::Platform* shellPlatform_;
+  CVDisplayLinkRef displayLink; // display link for managing rendering thread
+  igl::shell::Platform* shellPlatform;
   IBOutlet NSViewController* viewController;
 }
 @end
@@ -30,8 +30,8 @@
 @implementation VulkanView
 
 - (void)dealloc {
-  CVDisplayLinkRelease(displayLink_);
-  shellPlatform_ = nullptr;
+  CVDisplayLinkRelease(displayLink);
+  shellPlatform = nullptr;
 }
 
 - (void)prepareVulkan:(igl::shell::Platform*)platform {
@@ -42,7 +42,7 @@
 
   ViewController* controller = (ViewController*)item.viewController;
   self->viewController = controller;
-  shellPlatform_ = platform;
+  shellPlatform = platform;
   self.postsFrameChangedNotifications = YES;
 
   [[NSNotificationCenter defaultCenter] addObserver:self
@@ -56,7 +56,7 @@
   [self startTimer];
 }
 
-static CVReturn DisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
+static CVReturn displayLinkCallback(CVDisplayLinkRef /*displayLink*/,
                                     const CVTimeStamp* /*now*/,
                                     const CVTimeStamp* /*outputTime*/,
                                     CVOptionFlags /*flagsIn*/,
@@ -72,18 +72,18 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
 
 - (void)initTimer {
   // Create a display link capable of being used with all active displays
-  CVDisplayLinkCreateWithActiveCGDisplays(&displayLink_);
+  CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
 
   // Set the renderer output callback function
-  CVDisplayLinkSetOutputCallback(displayLink_, &DisplayLinkCallback, (__bridge void*)self);
+  CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, (__bridge void*)self);
 }
 
 - (void)startTimer {
-  CVDisplayLinkStart(displayLink_);
+  CVDisplayLinkStart(displayLink);
 }
 
 - (void)stopTimer {
-  CVDisplayLinkStop(displayLink_);
+  CVDisplayLinkStop(displayLink);
 }
 
 /** Indicates that the view wants to draw using the backing layer instead of using drawRect:.  */
@@ -105,8 +105,8 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
   }
 
 #if IGL_BACKEND_VULKAN
-  if (shellPlatform_ != nullptr) {
-    auto& device = static_cast<igl::vulkan::Device&>(shellPlatform_->getDevice());
+  if (shellPlatform != nullptr) {
+    auto& device = static_cast<igl::vulkan::Device&>(shellPlatform->getDevice());
     const igl::vulkan::VulkanContext& vulkanContext = device.getVulkanContext();
     auto extents = vulkanContext.getSwapchainExtent();
     if (imageRect.size.width != extents.width || imageRect.size.height != extents.height) {
