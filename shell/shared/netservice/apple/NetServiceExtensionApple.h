@@ -37,6 +37,7 @@ class NetServiceExtensionApple final : public NetServiceExtension {
   id<NSNetServiceBrowserDelegate> netServiceBrowserDelegate_ = nil;
 };
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 IGL_API IGLShellExtension* IGLShellExtension_NewIglShellNetService();
 
 } // namespace igl::shell::netservice

@@ -12,6 +12,7 @@
 #include <shell/shared/netservice/apple/NetServiceApple.h>
 
 @interface IGLShellNetBrowserServiceDelegateAdapter : NSObject <NSNetServiceBrowserDelegate> {
+  // NOLINTNEXTLINE(readability-identifier-naming)
   igl::shell::netservice::NetServiceExtensionApple* owner_; // weak ref
 }
 @end
@@ -110,6 +111,7 @@ void NetServiceExtensionApple::stopSearch() const noexcept {
   }
 }
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 IGL_API __attribute((retain, used)) IGLShellExtension* IGLShellExtension_NewIglShellNetService() {
   auto* extension = new NetServiceExtensionApple;
   return static_cast<IGLShellExtension*>(extension);
