@@ -434,7 +434,7 @@ void Texture::generateMipmap(ICommandQueue& /* unused */,
   if (texture_ && desc_.numMipLevels > 1) {
     const auto& ctx = device_.getVulkanContext();
     const auto& wrapper = ctx.immediate_->acquire();
-    texture_->image_.generateMipmap(wrapper.cmdBuf_, range ? *range : desc_.asRange());
+    texture_->image_.generateMipmap(wrapper.cmdBuf, range ? *range : desc_.asRange());
     ctx.immediate_->submit(wrapper);
   }
 }
@@ -530,7 +530,7 @@ void Texture::clearColorTexture(const igl::Color& rgba) {
 
   // There is a memory barrier inserted in clearColorImage().
   // The memory barrier is necessary to ensure synchronized access.
-  img.clearColorImage(wrapper.cmdBuf_, rgba);
+  img.clearColorImage(wrapper.cmdBuf, rgba);
 
   img.ctx_->stagingDevice_->immediate_->submit(wrapper);
 }

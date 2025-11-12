@@ -76,11 +76,11 @@ class CommandBuffer final : public ICommandBuffer,
   void waitUntilScheduled() override;
 
   VkCommandBuffer getVkCommandBuffer() const {
-    return wrapper_.cmdBuf_;
+    return wrapper_.cmdBuf;
   }
 
   VulkanImmediateCommands::SubmitHandle getNextSubmitHandle() const {
-    return wrapper_.handle_;
+    return wrapper_.handle;
   }
 
   bool isFromSwapchain() const {

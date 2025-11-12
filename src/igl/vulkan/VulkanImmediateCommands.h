@@ -52,30 +52,30 @@ class VulkanImmediateCommands final {
    * while the buffer index occupies the least significant 32 bits
    */
   struct SubmitHandle {
-    uint32_t bufferIndex_ = 0;
-    uint32_t submitId_ = 0;
+    uint32_t bufferIndex = 0;
+    uint32_t submitId = 0;
     SubmitHandle() = default;
 
     /// @brief Creates a SubmitHandle object from an existing handle
     explicit SubmitHandle(uint64_t handle) :
-      bufferIndex_(uint32_t(handle & 0xffffffff)), submitId_(uint32_t(handle >> 32)) {
-      IGL_DEBUG_ASSERT(submitId_);
+      bufferIndex(uint32_t(handle & 0xffffffff)), submitId(uint32_t(handle >> 32)) {
+      IGL_DEBUG_ASSERT(submitId);
     }
 
     /// @brief Checks whether the structure is empty and has not been associates with a command
     /// buffer submission yet
     [[nodiscard]] bool empty() const {
-      return submitId_ == 0;
+      return submitId == 0;
     }
 
     /// @brief Returns a unique identifiable handle, which is made of the `submitId_` and the
     /// `bufferIndex_` member variables
     [[nodiscard]] uint64_t handle() const {
-      return (uint64_t(submitId_) << 32) + bufferIndex_;
+      return (uint64_t(submitId) << 32) + bufferIndex;
     }
 
     [[nodiscard]] bool operator==(const SubmitHandle& rhs) const {
-      return bufferIndex_ == rhs.bufferIndex_ && submitId_ == rhs.submitId_;
+      return bufferIndex == rhs.bufferIndex && submitId == rhs.submitId;
     }
     [[nodiscard]] bool operator!=(const SubmitHandle& rhs) const {
       return !(*this == rhs);
@@ -89,24 +89,24 @@ class VulkanImmediateCommands final {
   /// the synchronization of a command buffer along with a command buffer
   struct CommandBufferWrapper {
     CommandBufferWrapper(VulkanFence&& fence, VulkanSemaphore&& semaphore) :
-      fence_(std::move(fence)), semaphore_(std::move(semaphore)) {}
+      fence(std::move(fence)), semaphore(std::move(semaphore)) {}
 
     /// @brief The command buffer handle. It is initialied to VK_NULL_HANDLE. The command buffer
     /// handle stored in `cmdBufAllocated_` is copied into `cmdBuf_` when the command buffer is
     /// acquired for recording
-    VkCommandBuffer cmdBuf_ = VK_NULL_HANDLE;
+    VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
     /// @brief Stores the command buffer handle allocated during initialization
-    VkCommandBuffer cmdBufAllocated_ = VK_NULL_HANDLE;
+    VkCommandBuffer cmdBufAllocated = VK_NULL_HANDLE;
     /// @brief the SubmitHandle object used to synchronize this command buffer
-    SubmitHandle handle_ = {};
+    SubmitHandle handle = {};
     /// @brief A VulkanFence object that is associated with the submission of the command buffer. It
     /// is used to check whether a command buffer is still executing or for waiting the command
     /// buffer to finish execution by the GPU
-    VulkanFence fence_;
+    VulkanFence fence;
     /// @brief A VulkanSemaphore object associated with the submission of the command buffer for
     /// execution.
-    VulkanSemaphore semaphore_;
-    bool isEncoding_ = false;
+    VulkanSemaphore semaphore;
+    bool isEncoding = false;
     /// @brief The file descriptor for the underlying VkFence. It's only populated if an FD is set
     /// explicitly using VulkanImmediateCommands::storeFDInSubmitHandle(). It's reset in `acquire()`
     int fd = -1;

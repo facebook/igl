@@ -76,7 +76,7 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
 
     const auto& wrapper = immediate_->acquire();
     ctx_.vf_.vkCmdCopyBuffer(
-        wrapper.cmdBuf_, stagingBuffer->getVkBuffer(), buffer.getVkBuffer(), 1, &copy);
+        wrapper.cmdBuf, stagingBuffer->getVkBuffer(), buffer.getVkBuffer(), 1, &copy);
     memoryChunk.handle = immediate_->submit(wrapper); // store the submit handle with the allocation
     regions_.push_back(memoryChunk);
 
@@ -262,7 +262,7 @@ void VulkanStagingDevice::getBufferSubData(const VulkanBuffer& buffer,
     auto& stagingBuffer = stagingBuffers_[memoryChunk.stagingBufferIndex];
 
     ctx_.vf_.vkCmdCopyBuffer(
-        wrapper.cmdBuf_, buffer.getVkBuffer(), stagingBuffer->getVkBuffer(), 1, &copy);
+        wrapper.cmdBuf, buffer.getVkBuffer(), stagingBuffer->getVkBuffer(), 1, &copy);
 
     // Wait for command to finish
     immediate_->wait(immediate_->submit(wrapper), ctx_.config_.fenceTimeoutNanoseconds);
@@ -332,7 +332,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
     const uint32_t w = image.extent_.width;
     const uint32_t h = image.extent_.height;
     ivkCmdBeginDebugUtilsLabel(&ctx_.vf_,
-                               wrapper.cmdBuf_,
+                               wrapper.cmdBuf,
                                "VulkanStagingDevice::imageData (upload YUV image data)",
                                kColorUploadImage.toFloatPtr());
     VkImageAspectFlags imageAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -375,7 +375,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
         imageAspect, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
     // 1. Transition initial image layout into TRANSFER_DST_OPTIMAL
     ivkImageMemoryBarrier(&ctx_.vf_,
-                          wrapper.cmdBuf_,
+                          wrapper.cmdBuf,
                           image.getVkImage(),
                           0,
                           VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -387,9 +387,9 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
 
     // 2. Copy the pixel data from the staging buffer into the image
 #if IGL_VULKAN_PRINT_COMMANDS
-    IGL_LOG_INFO("%p vkCmdCopyBufferToImage()\n", wrapper.cmdBuf_);
+    IGL_LOG_INFO("%p vkCmdCopyBufferToImage()\n", wrapper.cmdBuf);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-    ctx_.vf_.vkCmdCopyBufferToImage(wrapper.cmdBuf_,
+    ctx_.vf_.vkCmdCopyBufferToImage(wrapper.cmdBuf,
                                     stagingBuffer->getVkBuffer(),
                                     image.getVkImage(),
                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -400,7 +400,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
 
     // 3. Transition TRANSFER_DST_OPTIMAL into `targetLayout`
     ivkImageMemoryBarrier(&ctx_.vf_,
-                          wrapper.cmdBuf_,
+                          wrapper.cmdBuf,
                           image.getVkImage(),
                           VK_ACCESS_TRANSFER_WRITE_BIT,
                           VK_ACCESS_SHADER_READ_BIT,
@@ -412,7 +412,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
 
     image.imageLayout_ = targetLayout;
 
-    ivkCmdEndDebugUtilsLabel(&ctx_.vf_, wrapper.cmdBuf_);
+    ivkCmdEndDebugUtilsLabel(&ctx_.vf_, wrapper.cmdBuf);
 
     // Store the allocated block with the SubmitHandle at the end of the deque
     memoryChunk.handle = immediate_->submit(wrapper);
@@ -430,7 +430,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
                            : (image.isStencilFormat_ ? VK_IMAGE_ASPECT_STENCIL_BIT : aspectFlags);
 
   ivkCmdBeginDebugUtilsLabel(&ctx_.vf_,
-                             wrapper.cmdBuf_,
+                             wrapper.cmdBuf,
                              "VulkanStagingDevice::imageData (upload image data)",
                              kColorUploadImage.toFloatPtr());
 
@@ -476,7 +476,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
   };
   // 1. Transition initial image layout into TRANSFER_DST_OPTIMAL
   ivkImageMemoryBarrier(&ctx_.vf_,
-                        wrapper.cmdBuf_,
+                        wrapper.cmdBuf,
                         image.getVkImage(),
                         0,
                         VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -488,9 +488,9 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
 
   // 2. Copy the pixel data from the staging buffer into the image
 #if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkCmdCopyBufferToImage()\n", wrapper.cmdBuf_);
+  IGL_LOG_INFO("%p vkCmdCopyBufferToImage()\n", wrapper.cmdBuf);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-  ctx_.vf_.vkCmdCopyBufferToImage(wrapper.cmdBuf_,
+  ctx_.vf_.vkCmdCopyBufferToImage(wrapper.cmdBuf,
                                   stagingBuffer->getVkBuffer(),
                                   image.getVkImage(),
                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -527,7 +527,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
 
   // 3. Transition TRANSFER_DST_OPTIMAL into `targetLayout`
   ivkImageMemoryBarrier(&ctx_.vf_,
-                        wrapper.cmdBuf_,
+                        wrapper.cmdBuf,
                         image.getVkImage(),
                         VK_ACCESS_TRANSFER_WRITE_BIT,
                         dstAccessMask,
@@ -539,7 +539,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
 
   image.imageLayout_ = targetLayout;
 
-  ivkCmdEndDebugUtilsLabel(&ctx_.vf_, wrapper.cmdBuf_);
+  ivkCmdEndDebugUtilsLabel(&ctx_.vf_, wrapper.cmdBuf);
 
   // Store the allocated block with the SubmitHandle at the end of the deque
   memoryChunk.handle = immediate_->submit(wrapper);
@@ -584,7 +584,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
 
   // 1. Transition to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
   ivkImageMemoryBarrier(&ctx_.vf_,
-                        wrapper1.cmdBuf_,
+                        wrapper1.cmdBuf,
                         srcImage,
                         0, // srcAccessMask
                         VK_ACCESS_TRANSFER_READ_BIT, // dstAccessMask
@@ -603,7 +603,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                  : bytesPerRow / static_cast<uint32_t>(properties.bytesPerBlock), // bufferRowLength
       imageRegion,
       VkImageSubresourceLayers{aspectFlags, level, layer, 1});
-  ctx_.vf_.vkCmdCopyImageToBuffer(wrapper1.cmdBuf_,
+  ctx_.vf_.vkCmdCopyImageToBuffer(wrapper1.cmdBuf,
                                   srcImage,
                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                   stagingBuffer->getVkBuffer(),
@@ -638,7 +638,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   const auto& wrapper2 = immediate_->acquire();
 
   ivkImageMemoryBarrier(&ctx_.vf_,
-                        wrapper2.cmdBuf_,
+                        wrapper2.cmdBuf,
                         srcImage,
                         VK_ACCESS_TRANSFER_READ_BIT, // srcAccessMask
                         0, // dstAccessMask
