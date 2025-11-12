@@ -780,7 +780,7 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
   // standard system library paths (/lib64, /usr/lib64). We cannot use LD_LIBRARY_PATH
   // or RPATH because they would interfere with Buck2's hermetic build environment.
 #if IGL_PLATFORM_LINUX && !defined(IGL_CMAKE_BUILD)
-  const std::array<const char*, 27> kPreloadLibs = {
+  const std::array<const char*, 25> kPreloadLibs = {
       // Base system libraries (leaf dependencies)
       "/lib64/libtinfo.so.6", // Required by libedit
       "/lib64/liblzma.so.5", // Required by libxml2
@@ -809,16 +809,28 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
       // High-level dependencies
       "/lib64/libLLVM.so.20.1", // Required by Lavapipe and Radeon drivers
       "/lib64/libSPIRV-Tools.so", // Required by Lavapipe
+      "/lib64/libSPIRV-Tools-opt.so", // Required by libVkLayer_khronos_validation
       // Additional X11 libraries for Intel drivers
       "/lib64/libxcb-dri3.so.0", // Required by Intel drivers
   };
   for (const char* preload : kPreloadLibs) {
-    const void* handle = dlopen(preload, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+    // First try loading just the library name (allows LD_LIBRARY_PATH to work)
+    const char* libName = strrchr(preload, '/');
+    libName = libName ? libName + 1 : preload;
+
+    const void* handle = dlopen(libName, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
     if (handle) {
-      IGL_LOG_DEBUG("IGL/Vulkan: preloaded `%s`.\n", preload);
+      IGL_LOG_DEBUG("IGL/Vulkan: preloaded `%s` (via library name).\n", libName);
     } else {
-      // Log but continue - not all systems will have all drivers
-      IGL_LOG_DEBUG("IGL/Vulkan: failed to preload `%s`: %s (not critical).\n", preload, dlerror());
+      // Fall back to full path if library name didn't work
+      handle = dlopen(preload, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+      if (handle) {
+        IGL_LOG_DEBUG("IGL/Vulkan: preloaded `%s` (via full path).\n", preload);
+      } else {
+        // Log but continue - not all systems will have all drivers
+        IGL_LOG_DEBUG(
+            "IGL/Vulkan: failed to preload `%s`: %s (not critical).\n", preload, dlerror());
+      }
     }
   }
 #endif // IGL_PLATFORM_LINUX && !defined(IGL_CMAKE_BUILD)
