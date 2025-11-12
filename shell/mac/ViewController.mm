@@ -56,20 +56,22 @@
 using namespace igl;
 
 @interface ViewController () {
-  igl::shell::IRenderSessionFactory* factory_;
-  igl::shell::RenderSessionConfig config_;
-  igl::shell::ShellParams shellParams_;
-  CGRect frame_;
-  CVDisplayLinkRef displayLink_; // For OpenGL only
-  id<CAMetalDrawable> currentDrawable_;
-  id<MTLTexture> depthStencilTexture_;
-  std::shared_ptr<igl::shell::Platform> shellPlatform_;
-  std::unique_ptr<igl::shell::RenderSession> session_;
-  float kMouseSpeed_;
+  igl::shell::IRenderSessionFactory* factory;
+  igl::shell::RenderSessionConfig config;
+  igl::shell::ShellParams shellParams;
+  CGRect frame;
+  CVDisplayLinkRef displayLink; // For OpenGL only
+  id<CAMetalDrawable> currentDrawable;
+  id<MTLTexture> depthStencilTexture;
+  std::shared_ptr<igl::shell::Platform> shellPlatform;
+  std::unique_ptr<igl::shell::RenderSession> session;
+  float kMouseSpeed;
 }
 @end
 
 @implementation ViewController
+
+@synthesize iglView = iglView;
 
 ///--------------------------------------
 /// MARK: - Init
@@ -83,15 +85,15 @@ using namespace igl;
     return self;
   }
 
-  config_ = std::move(config);
-  factory_ = &factory;
-  shellParams_ = igl::shell::ShellParams();
-  shellParams_.viewportSize.x = frame.size.width;
-  shellParams_.viewportSize.y = frame.size.height;
-  frame_ = frame;
-  kMouseSpeed_ = 0.05f;
-  currentDrawable_ = nil;
-  depthStencilTexture_ = nil;
+  self->config = std::move(config);
+  self->factory = &factory;
+  self->shellParams = igl::shell::ShellParams();
+  self->shellParams.viewportSize.x = frame.size.width;
+  self->shellParams.viewportSize.y = frame.size.height;
+  self->frame = frame;
+  self->kMouseSpeed = 0.05f;
+  self->currentDrawable = nil;
+  self->depthStencilTexture = nil;
 
   return self;
 }
@@ -100,29 +102,29 @@ using namespace igl;
 }
 
 - (void)teardown {
-  if (session_) {
-    session_->teardown();
+  if (session) {
+    session->teardown();
   }
-  session_ = nullptr;
-  shellPlatform_ = nullptr;
+  session = nullptr;
+  shellPlatform = nullptr;
 }
 
 - (void)render {
-  if (session_ == nullptr) {
+  if (session == nullptr) {
     return;
   }
 
   const NSRect contentRect = self.view.frame;
 
-  shellParams_.viewportSize = glm::vec2(contentRect.size.width, contentRect.size.height);
-  shellParams_.viewportScale = self.view.window.backingScaleFactor;
-  session_->setShellParams(shellParams_);
+  shellParams.viewportSize = glm::vec2(contentRect.size.width, contentRect.size.height);
+  shellParams.viewportScale = self.view.window.backingScaleFactor;
+  session->setShellParams(shellParams);
   // process user input
-  shellPlatform_->getInputDispatcher().processEvents();
+  shellPlatform->getInputDispatcher().processEvents();
 
   igl::SurfaceTextures surfaceTextures;
-  if (config_.backendVersion.flavor != igl::BackendFlavor::Invalid &&
-      shellPlatform_->getDevicePtr() != nullptr) {
+  if (config.backendVersion.flavor != igl::BackendFlavor::Invalid &&
+      shellPlatform->getDevicePtr() != nullptr) {
 // @fb-only
     // @fb-only
     // @fb-only
@@ -138,11 +140,11 @@ using namespace igl;
                                            .depth = [self createTextureFromNativeDepth]};
     IGL_DEBUG_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
     const auto& dims = surfaceTextures.color->getDimensions();
-    shellParams_.nativeSurfaceDimensions = glm::ivec2{dims.width, dims.height};
+    shellParams.nativeSurfaceDimensions = glm::ivec2{dims.width, dims.height};
 
     // update retina scale
-    float pixelsPerPoint = shellParams_.nativeSurfaceDimensions.x / shellParams_.viewportSize.x;
-    session_->setPixelsPerPoint(pixelsPerPoint);
+    float pixelsPerPoint = shellParams.nativeSurfaceDimensions.x / shellParams.viewportSize.x;
+    session->setPixelsPerPoint(pixelsPerPoint);
 // @fb-only
     // @fb-only
     // @fb-only
@@ -151,8 +153,8 @@ using namespace igl;
 // @fb-only
   }
   // draw
-  session_->update(std::move(surfaceTextures));
-  if (session_->appParams().exitRequested) {
+  session->update(std::move(surfaceTextures));
+  if (session->appParams().exitRequested) {
     [[NSApplication sharedApplication] terminate:nil];
   }
 }
@@ -162,16 +164,16 @@ using namespace igl;
   // return something that works
   HWDeviceQueryDesc queryDesc(HWDeviceType::Unknown);
 
-  switch (config_.backendVersion.flavor) {
+  switch (config.backendVersion.flavor) {
   case igl::BackendFlavor::Invalid: {
-    auto headlessView = [[HeadlessView alloc] initWithFrame:frame_];
+    auto headlessView = [[HeadlessView alloc] initWithFrame:frame];
     self.view = headlessView;
 
     // @fb-only
         // @fb-only
 
     // Headless platform does not run on a real device
-    shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(nullptr);
+    shellPlatform = std::make_shared<igl::shell::PlatformMac>(nullptr);
 
     [headlessView prepareHeadless];
     break;
@@ -184,19 +186,19 @@ using namespace igl;
 
     auto d = static_cast<igl::metal::macos::Device*>(device.get())->get();
 
-    auto metalView = [[MetalView alloc] initWithFrame:frame_ device:d];
+    auto metalView = [[MetalView alloc] initWithFrame:frame device:d];
     metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
 
     metalView.delegate = self;
 
     metalView.colorPixelFormat =
-        metal::Texture::textureFormatToMTLPixelFormat(config_.swapchainColorTextureFormat);
-    metalView.colorspace = metal::colorSpaceToCGColorSpace(config_.swapchainColorSpace);
+        metal::Texture::textureFormatToMTLPixelFormat(config.swapchainColorTextureFormat);
+    metalView.colorspace = metal::colorSpaceToCGColorSpace(config.swapchainColorSpace);
 
     metalView.framebufferOnly = NO;
     [metalView setViewController:self];
     self.view = metalView;
-    shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(std::move(device));
+    shellPlatform = std::make_shared<igl::shell::PlatformMac>(std::move(device));
     break;
   }
 #endif
@@ -204,12 +206,12 @@ using namespace igl;
 #if IGL_BACKEND_OPENGL
   case igl::BackendFlavor::OpenGL: {
     const bool enableStencilBuffer =
-        config_.depthTextureFormat == igl::TextureFormat::S8_UInt_Z24_UNorm ||
-        config_.depthTextureFormat == igl::TextureFormat::S_UInt8;
+        config.depthTextureFormat == igl::TextureFormat::S8_UInt_Z24_UNorm ||
+        config.depthTextureFormat == igl::TextureFormat::S_UInt8;
     const NSOpenGLPixelFormatAttribute stencilSize = enableStencilBuffer ? 8 : 0;
 
     NSOpenGLPixelFormat* pixelFormat;
-    if (config_.backendVersion.majorVersion == 4 && config_.backendVersion.minorVersion == 1) {
+    if (config.backendVersion.majorVersion == 4 && config.backendVersion.minorVersion == 1) {
       static NSOpenGLPixelFormatAttribute attributes[] = {
           NSOpenGLPFADoubleBuffer,
           NSOpenGLPFAAllowOfflineRenderers,
@@ -231,8 +233,7 @@ using namespace igl;
       };
       pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
       IGL_DEBUG_ASSERT(pixelFormat, "Requested attributes not supported");
-    } else if (config_.backendVersion.majorVersion == 3 &&
-               config_.backendVersion.minorVersion == 2) {
+    } else if (config.backendVersion.majorVersion == 3 && config.backendVersion.minorVersion == 2) {
       static NSOpenGLPixelFormatAttribute attributes[] = {
           NSOpenGLPFADoubleBuffer,
           NSOpenGLPFAAllowOfflineRenderers,
@@ -253,8 +254,7 @@ using namespace igl;
           0,
       };
       pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
-    } else if (config_.backendVersion.majorVersion == 2 &&
-               config_.backendVersion.minorVersion == 1) {
+    } else if (config.backendVersion.majorVersion == 2 && config.backendVersion.minorVersion == 1) {
       static NSOpenGLPixelFormatAttribute attributes[] = {
           NSOpenGLPFADoubleBuffer,
           NSOpenGLPFAAllowOfflineRenderers,
@@ -277,19 +277,19 @@ using namespace igl;
       pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
     } else {
       IGL_DEBUG_ABORT("Unsupported OpenGL version: %u.%u\n",
-                      config_.backendVersion.majorVersion,
-                      config_.backendVersion.minorVersion);
+                      config.backendVersion.majorVersion,
+                      config.backendVersion.minorVersion);
     }
-    auto openGLView = [[GLView alloc] initWithFrame:frame_ pixelFormat:pixelFormat];
+    auto openGLView = [[GLView alloc] initWithFrame:frame pixelFormat:pixelFormat];
     igl::Result result;
     auto context = igl::opengl::macos::Context::createContext(openGLView.openGLContext, &result);
     IGL_DEBUG_ASSERT(result.isOk());
-    shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(
+    shellPlatform = std::make_shared<igl::shell::PlatformMac>(
         opengl::macos::HWDevice().createWithContext(std::move(context), nullptr));
 
-    auto& device = shellPlatform_->getDevice();
+    auto& device = shellPlatform->getDevice();
     auto* platformDevice = device.getPlatformDevice<igl::opengl::macos::PlatformDevice>();
-    platformDevice->setNativeDrawableTextureFormat(config_.swapchainColorTextureFormat, nullptr);
+    platformDevice->setNativeDrawableTextureFormat(config.swapchainColorTextureFormat, nullptr);
     self.view = openGLView;
     break;
   }
@@ -297,7 +297,7 @@ using namespace igl;
 
 #if IGL_BACKEND_VULKAN
   case igl::BackendFlavor::Vulkan: {
-    auto vulkanView = [[VulkanView alloc] initWithFrame:frame_];
+    auto vulkanView = [[VulkanView alloc] initWithFrame:frame];
 
     self.view = vulkanView;
 
@@ -308,8 +308,8 @@ using namespace igl;
     vulkanContextConfig.terminateOnValidationError = true;
     vulkanContextConfig.enhancedShaderDebugging = false;
 
-    vulkanContextConfig.swapChainColorSpace = config_.swapchainColorSpace;
-    vulkanContextConfig.requestedSwapChainTextureFormat = config_.swapchainColorTextureFormat;
+    vulkanContextConfig.swapChainColorSpace = config.swapchainColorSpace;
+    vulkanContextConfig.requestedSwapChainTextureFormat = config.swapchainColorTextureFormat;
 
     auto context =
         igl::vulkan::HWDevice::createContext(vulkanContextConfig, (__bridge void*)vulkanView);
@@ -322,8 +322,8 @@ using namespace igl;
     auto device = igl::vulkan::HWDevice::create(
         std::move(context), devices[0], 0, 0, 0, nullptr, nullptr, "IGL Shell", nullptr);
 
-    shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(std::move(device));
-    [vulkanView prepareVulkan:shellPlatform_.get()];
+    shellPlatform = std::make_shared<igl::shell::PlatformMac>(std::move(device));
+    [vulkanView prepareVulkan:shellPlatform.get()];
     break;
   }
 #endif
@@ -359,16 +359,16 @@ using namespace igl;
   }
   }
 
-  session_ = factory_->createRenderSession(shellPlatform_);
-  IGL_DEBUG_ASSERT(session_, "createDefaultRenderSession() must return a valid session");
+  session = factory->createRenderSession(shellPlatform);
+  IGL_DEBUG_ASSERT(session, "createDefaultRenderSession() must return a valid session");
   // Get initial native surface dimensions
-  shellParams_.nativeSurfaceDimensions = glm::ivec2(2048, 1536);
+  shellParams.nativeSurfaceDimensions = glm::ivec2(2048, 1536);
   auto args =
       shell::convertArgvToParams(igl::shell::Platform::argc(), igl::shell::Platform::argv());
-  shell::parseShellParams(args, shellParams_);
+  shell::parseShellParams(args, shellParams);
 
-  session_->setShellParams(shellParams_);
-  session_->initialize();
+  session->setShellParams(shellParams);
+  session->initialize();
 }
 
 - (void)viewDidAppear {
@@ -394,36 +394,36 @@ using namespace igl;
 
 - (void)drawInMTKView:(nonnull MTKView*)view {
   @autoreleasepool {
-    currentDrawable_ = view.currentDrawable;
-    depthStencilTexture_ = view.depthStencilTexture;
+    currentDrawable = view.currentDrawable;
+    depthStencilTexture = view.depthStencilTexture;
     [self render];
-    currentDrawable_ = nil;
+    currentDrawable = nil;
   }
 }
 
 - (void)mtkView:(nonnull MTKView*)view drawableSizeWillChange:(CGSize)size {
-  frame_.size = size;
+  frame.size = size;
 }
 
 - (void)mtkView:(nonnull MTKView*)view drawableSizeDidChange:(CGSize)size {
 }
 
 - (std::shared_ptr<igl::ITexture>)createTextureFromNativeDrawable {
-  switch (config_.backendVersion.flavor) {
+  switch (config.backendVersion.flavor) {
 #if IGL_BACKEND_METAL
   case igl::BackendFlavor::Metal: {
-    auto& device = shellPlatform_->getDevice();
+    auto& device = shellPlatform->getDevice();
     auto* platformDevice = device.getPlatformDevice<igl::metal::PlatformDevice>();
     IGL_DEBUG_ASSERT(platformDevice);
-    IGL_DEBUG_ASSERT(currentDrawable_ != nil);
-    auto texture = platformDevice->createTextureFromNativeDrawable(currentDrawable_, nullptr);
+    IGL_DEBUG_ASSERT(currentDrawable != nil);
+    auto texture = platformDevice->createTextureFromNativeDrawable(currentDrawable, nullptr);
     return texture;
   }
 #endif
 
 #if IGL_BACKEND_OPENGL
   case igl::BackendFlavor::OpenGL: {
-    auto& device = shellPlatform_->getDevice();
+    auto& device = shellPlatform->getDevice();
     auto* platformDevice = device.getPlatformDevice<igl::opengl::macos::PlatformDevice>();
     IGL_DEBUG_ASSERT(platformDevice);
     auto texture = platformDevice->createTextureFromNativeDrawable(nullptr);
@@ -433,7 +433,7 @@ using namespace igl;
 
 #if IGL_BACKEND_VULKAN
   case igl::BackendFlavor::Vulkan: {
-    auto& device = shellPlatform_->getDevice();
+    auto& device = shellPlatform->getDevice();
     auto* platformDevice = device.getPlatformDevice<igl::vulkan::PlatformDevice>();
     IGL_DEBUG_ASSERT(platformDevice);
     auto texture = platformDevice->createTextureFromNativeDrawable(nullptr);
@@ -459,20 +459,20 @@ using namespace igl;
 }
 
 - (std::shared_ptr<igl::ITexture>)createTextureFromNativeDepth {
-  switch (config_.backendVersion.flavor) {
+  switch (config.backendVersion.flavor) {
 #if IGL_BACKEND_METAL
   case igl::BackendFlavor::Metal: {
-    auto& device = shellPlatform_->getDevice();
+    auto& device = shellPlatform->getDevice();
     auto* platformDevice = device.getPlatformDevice<igl::metal::PlatformDevice>();
     IGL_DEBUG_ASSERT(platformDevice);
-    auto texture = platformDevice->createTextureFromNativeDepth(depthStencilTexture_, nullptr);
+    auto texture = platformDevice->createTextureFromNativeDepth(depthStencilTexture, nullptr);
     return texture;
   }
 #endif
 
 #if IGL_BACKEND_OPENGL
   case igl::BackendFlavor::OpenGL: {
-    auto& device = shellPlatform_->getDevice();
+    auto& device = shellPlatform->getDevice();
     auto* platformDevice = device.getPlatformDevice<igl::opengl::macos::PlatformDevice>();
     IGL_DEBUG_ASSERT(platformDevice);
     auto texture = platformDevice->createTextureFromNativeDepth(nullptr);
@@ -482,10 +482,10 @@ using namespace igl;
 
 #if IGL_BACKEND_VULKAN
   case igl::BackendFlavor::Vulkan: {
-    auto& device = static_cast<igl::vulkan::Device&>(shellPlatform_->getDevice());
+    auto& device = static_cast<igl::vulkan::Device&>(shellPlatform->getDevice());
     auto extents = device.getVulkanContext().getSwapchainExtent();
     auto* platformDevice =
-        shellPlatform_->getDevice().getPlatformDevice<igl::vulkan::PlatformDevice>();
+        shellPlatform->getDevice().getPlatformDevice<igl::vulkan::PlatformDevice>();
 
     IGL_DEBUG_ASSERT(platformDevice);
     auto texture =
@@ -536,7 +536,7 @@ static uint32_t getModifiers(NSEvent* event) {
   if (flags & NSEventModifierFlagOption) {
     modifiers |= igl::shell::KeyEventModifierOption;
   }
-  if (flags & NSCommandKeyMask) {
+  if (flags & NSEventModifierFlagCommand) {
     modifiers |= igl::shell::KeyEventModifierCommand;
   }
   if (flags & NSEventModifierFlagNumericPad) {
@@ -546,90 +546,90 @@ static uint32_t getModifiers(NSEvent* event) {
 }
 
 - (void)keyUp:(NSEvent*)event {
-  shellPlatform_->getInputDispatcher().queueEvent(
+  shellPlatform->getInputDispatcher().queueEvent(
       igl::shell::KeyEvent(false, event.keyCode, getModifiers(event)));
 }
 
 - (void)keyDown:(NSEvent*)event {
-  shellPlatform_->getInputDispatcher().queueEvent(
+  shellPlatform->getInputDispatcher().queueEvent(
       igl::shell::KeyEvent(true, event.keyCode, getModifiers(event)));
   std::string characters([event.characters UTF8String]);
   for (const auto& c : characters) {
-    shellPlatform_->getInputDispatcher().queueEvent(igl::shell::CharEvent{.character = c});
+    shellPlatform->getInputDispatcher().queueEvent(igl::shell::CharEvent{.character = c});
   }
 }
 
 - (void)mouseDown:(NSEvent*)event {
   NSPoint curPoint = [self locationForEvent:event];
-  shellPlatform_->getInputDispatcher().queueEvent(
+  shellPlatform->getInputDispatcher().queueEvent(
       igl::shell::MouseButtonEvent(igl::shell::MouseButton::Left, true, curPoint.x, curPoint.y));
 }
 
 - (void)rightMouseDown:(NSEvent*)event {
   NSPoint curPoint = [self locationForEvent:event];
-  shellPlatform_->getInputDispatcher().queueEvent(
+  shellPlatform->getInputDispatcher().queueEvent(
       igl::shell::MouseButtonEvent(igl::shell::MouseButton::Right, true, curPoint.x, curPoint.y));
 }
 
 - (void)otherMouseDown:(NSEvent*)event {
   NSPoint curPoint = [self locationForEvent:event];
-  shellPlatform_->getInputDispatcher().queueEvent(
+  shellPlatform->getInputDispatcher().queueEvent(
       igl::shell::MouseButtonEvent(igl::shell::MouseButton::Middle, true, curPoint.x, curPoint.y));
 }
 
 - (void)mouseUp:(NSEvent*)event {
   NSPoint curPoint = [self locationForEvent:event];
-  shellPlatform_->getInputDispatcher().queueEvent(
+  shellPlatform->getInputDispatcher().queueEvent(
       igl::shell::MouseButtonEvent(igl::shell::MouseButton::Left, false, curPoint.x, curPoint.y));
 }
 
 - (void)rightMouseUp:(NSEvent*)event {
   NSPoint curPoint = [self locationForEvent:event];
-  shellPlatform_->getInputDispatcher().queueEvent(
+  shellPlatform->getInputDispatcher().queueEvent(
       igl::shell::MouseButtonEvent(igl::shell::MouseButton::Right, false, curPoint.x, curPoint.y));
 }
 
 - (void)otherMouseUp:(NSEvent*)event {
   NSPoint curPoint = [self locationForEvent:event];
-  shellPlatform_->getInputDispatcher().queueEvent(
+  shellPlatform->getInputDispatcher().queueEvent(
       igl::shell::MouseButtonEvent(igl::shell::MouseButton::Middle, false, curPoint.x, curPoint.y));
 }
 
 - (void)mouseMoved:(NSEvent*)event {
   NSPoint curPoint = [self locationForEvent:event];
-  shellPlatform_->getInputDispatcher().queueEvent(
+  shellPlatform->getInputDispatcher().queueEvent(
       igl::shell::MouseMotionEvent(curPoint.x, curPoint.y, event.deltaX, event.deltaY));
 }
 
 - (void)mouseDragged:(NSEvent*)event {
   NSPoint curPoint = [self locationForEvent:event];
-  shellPlatform_->getInputDispatcher().queueEvent(
+  shellPlatform->getInputDispatcher().queueEvent(
       igl::shell::MouseMotionEvent(curPoint.x, curPoint.y, event.deltaX, event.deltaY));
 }
 
 - (void)rightMouseDragged:(NSEvent*)event {
   NSPoint curPoint = [self locationForEvent:event];
-  shellPlatform_->getInputDispatcher().queueEvent(
+  shellPlatform->getInputDispatcher().queueEvent(
       igl::shell::MouseMotionEvent(curPoint.x, curPoint.y, event.deltaX, event.deltaY));
 }
 
 - (void)otherMouseDragged:(NSEvent*)event {
   NSPoint curPoint = [self locationForEvent:event];
-  shellPlatform_->getInputDispatcher().queueEvent(
+  shellPlatform->getInputDispatcher().queueEvent(
       igl::shell::MouseMotionEvent(curPoint.x, curPoint.y, event.deltaX, event.deltaY));
 }
 
 - (void)scrollWheel:(NSEvent*)event {
-  shellPlatform_->getInputDispatcher().queueEvent(igl::shell::MouseWheelEvent(
-      event.scrollingDeltaX * kMouseSpeed_, event.scrollingDeltaY * kMouseSpeed_));
+  shellPlatform->getInputDispatcher().queueEvent(igl::shell::MouseWheelEvent(
+      event.scrollingDeltaX * kMouseSpeed, event.scrollingDeltaY * kMouseSpeed));
 }
 
 - (CGRect)frame {
-  return frame_;
+  return frame;
 }
 
 - (igl::ColorSpace)colorSpace {
-  return config_.swapchainColorSpace;
+  return config.swapchainColorSpace;
 }
 
 @end
