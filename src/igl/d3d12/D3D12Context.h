@@ -211,8 +211,8 @@ class D3D12Context {
   D3D12_RESOURCE_BINDING_TIER resourceBindingTier_ = D3D12_RESOURCE_BINDING_TIER_1;
 
   // Feature detection for shader model (H-010)
-  // FL11 hardware guarantees SM 5.1 minimum
-  D3D_SHADER_MODEL maxShaderModel_ = D3D_SHADER_MODEL_5_1;
+  // DXC requires SM 6.0 minimum (SM 5.x deprecated)
+  D3D_SHADER_MODEL maxShaderModel_ = D3D_SHADER_MODEL_6_0;
 
   // Feature detection for variable refresh rate (tearing) support
   bool tearingSupported_ = false;

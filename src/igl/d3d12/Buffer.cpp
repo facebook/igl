@@ -333,47 +333,51 @@ void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
                          "Failed to create readback staging buffer");
         return nullptr;
       }
-
-      // Copy from DEFAULT heap buffer to READBACK staging buffer
-      Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-      Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
-
-      if (FAILED(d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                                   IID_PPV_ARGS(allocator.GetAddressOf()))) ||
-          FAILED(d3dDevice->CreateCommandList(0,
-                                              D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                              allocator.Get(),
-                                              nullptr,
-                                              IID_PPV_ARGS(cmdList.GetAddressOf())))) {
-        Result::setResult(outResult, Result::Code::RuntimeError,
-                         "Failed to create command list for buffer copy");
-        return nullptr;
-      }
-
-      // Transition source buffer to COPY_SOURCE
-      D3D12_RESOURCE_BARRIER barrier = {};
-      barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-      barrier.Transition.pResource = resource_.Get();
-      barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-      barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-      barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
-      cmdList->ResourceBarrier(1, &barrier);
-
-      // Copy entire buffer
-      cmdList->CopyBufferRegion(readbackStagingBuffer_.Get(), 0, resource_.Get(), 0, desc_.length);
-
-      // Transition back
-      barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
-      barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-      cmdList->ResourceBarrier(1, &barrier);
-
-      cmdList->Close();
-      ID3D12CommandList* lists[] = {cmdList.Get()};
-      queue->ExecuteCommandLists(1, lists);
-
-      // Wait for copy to complete
-      ctx.waitForGPU();
     }
+
+    // ALWAYS copy from DEFAULT buffer to readback staging when mapping
+    // The DEFAULT buffer content may have changed since the last map() call
+    // (e.g., via copyTextureToBuffer or compute shader writes)
+    IGL_LOG_INFO("Buffer::map() - Copying from DEFAULT buffer (resource=%p) to readback staging\n",
+                 resource_.Get());
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
+
+    if (FAILED(d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                                 IID_PPV_ARGS(allocator.GetAddressOf()))) ||
+        FAILED(d3dDevice->CreateCommandList(0,
+                                            D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                            allocator.Get(),
+                                            nullptr,
+                                            IID_PPV_ARGS(cmdList.GetAddressOf())))) {
+      Result::setResult(outResult, Result::Code::RuntimeError,
+                       "Failed to create command list for buffer copy");
+      return nullptr;
+    }
+
+    // Transition source buffer to COPY_SOURCE
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = resource_.Get();
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+    cmdList->ResourceBarrier(1, &barrier);
+
+    // Copy entire buffer
+    cmdList->CopyBufferRegion(readbackStagingBuffer_.Get(), 0, resource_.Get(), 0, desc_.length);
+
+    // Transition back
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    cmdList->ResourceBarrier(1, &barrier);
+
+    cmdList->Close();
+    ID3D12CommandList* lists[] = {cmdList.Get()};
+    queue->ExecuteCommandLists(1, lists);
+
+    // Wait for copy to complete
+    ctx.waitForGPU();
 
     // Map the READBACK staging buffer
     D3D12_RANGE readRange = {static_cast<SIZE_T>(range.offset),

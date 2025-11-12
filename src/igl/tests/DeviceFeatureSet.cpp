@@ -259,7 +259,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::TextureFormatRG));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ValidationLayersEnabled));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExternalMemoryObjects));
-      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::PushConstants));
+      EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::PushConstants));  // D3D12 supports push constants via root constants (shader register b2)
     }
   }
 

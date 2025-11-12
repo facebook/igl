@@ -149,6 +149,8 @@ Result Texture::upload(const TextureRangeDesc& range,
   const uint32_t baseSlice = (type_ == TextureType::Cube) ? range.face : range.layer;
   const uint32_t numMipsToUpload = range.numMipLevels;
   const uint32_t baseMip = range.mipLevel;
+  IGL_LOG_INFO("Texture::upload - type=%d, baseSlice=%u, numSlicesToUpload=%u, baseMip=%u, numMipsToUpload=%u\n",
+               (int)type_, baseSlice, numSlicesToUpload, baseMip, numMipsToUpload);
 
   // Calculate total staging buffer size for ALL subresources
   UINT64 totalStagingSize = 0;
@@ -159,10 +161,10 @@ Result Texture::upload(const TextureRangeDesc& range,
   for (uint32_t mipOffset = 0; mipOffset < numMipsToUpload; ++mipOffset) {
     for (uint32_t sliceOffset = 0; sliceOffset < numSlicesToUpload; ++sliceOffset) {
       const uint32_t subresource = calcSubresourceIndex(baseMip + mipOffset, baseSlice + sliceOffset);
-      D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout;
-      UINT numRows;
-      UINT64 rowSize;
-      UINT64 subresSize;
+      D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
+      UINT numRows = 0;
+      UINT64 rowSize = 0;
+      UINT64 subresSize = 0;
       device_->GetCopyableFootprints(&resourceDesc, subresource, 1, totalStagingSize, &layout, &numRows, &rowSize, &subresSize);
       layouts.push_back(layout);
       numRowsArray.push_back(numRows);
@@ -675,14 +677,15 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   }
 
   // Get shader model from device context (H-009)
-  D3D_SHADER_MODEL shaderModel = D3D_SHADER_MODEL_5_1;  // Default fallback
+  // DXC requires SM 6.0 minimum (SM 5.x deprecated)
+  D3D_SHADER_MODEL shaderModel = D3D_SHADER_MODEL_6_0;  // Default fallback
   if (iglDevice_) {
     shaderModel = iglDevice_->getD3D12Context().getMaxShaderModel();
     int smMajor = (shaderModel >> 4) & 0xF;
     int smMinor = shaderModel & 0xF;
     IGL_LOG_INFO("Texture::generateMipmap - Using Shader Model %d.%d\n", smMajor, smMinor);
   } else {
-    IGL_LOG_INFO("Texture::generateMipmap - No IGL device, using SM 5.1 fallback\n");
+    IGL_LOG_INFO("Texture::generateMipmap - No IGL device, using SM 6.0 fallback (DXC minimum)\n");
   }
 
   // Build dynamic shader targets
@@ -931,14 +934,15 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   }
 
   // Get shader model from device context (H-009)
-  D3D_SHADER_MODEL shaderModel = D3D_SHADER_MODEL_5_1;  // Default fallback
+  // DXC requires SM 6.0 minimum (SM 5.x deprecated)
+  D3D_SHADER_MODEL shaderModel = D3D_SHADER_MODEL_6_0;  // Default fallback
   if (iglDevice_) {
     shaderModel = iglDevice_->getD3D12Context().getMaxShaderModel();
     int smMajor = (shaderModel >> 4) & 0xF;
     int smMinor = shaderModel & 0xF;
     IGL_LOG_INFO("Texture::upload - Using Shader Model %d.%d\n", smMajor, smMinor);
   } else {
-    IGL_LOG_INFO("Texture::upload - No IGL device, using SM 5.1 fallback\n");
+    IGL_LOG_INFO("Texture::upload - No IGL device, using SM 6.0 fallback (DXC minimum)\n");
   }
 
   // Build dynamic shader targets
@@ -1140,9 +1144,9 @@ uint32_t Texture::calcSubresourceIndex(uint32_t mipLevel, uint32_t layer) const 
   const uint32_t clampedLayer = std::min(layer, arraySize - 1);
   // D3D12CalcSubresource formula: MipSlice + (ArraySlice * MipLevels)
   const uint32_t subresource = clampedMip + (clampedLayer * mipLevels);
-  if (type_ == TextureType::Cube) {
-    IGL_LOG_INFO("calcSubresourceIndex: mip=%u, layer=%u, arraySize=%u, mipLevels=%u -> subresource=%u (DX12-COD-003)\n",
-                 mipLevel, layer, arraySize, mipLevels, subresource);
+  if (type_ == TextureType::Cube || type_ == TextureType::TwoDArray) {
+    IGL_LOG_INFO("calcSubresourceIndex: type=%d, mip=%u, layer=%u, arraySize=%u, mipLevels=%u -> subresource=%u\n",
+                 (int)type_, mipLevel, layer, arraySize, mipLevels, subresource);
   }
   return subresource;
 }
@@ -1158,6 +1162,49 @@ void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
   if (subresourceStates_.empty()) {
     return;
   }
+
+  // For depth-stencil textures, we need to transition ALL subresources (both depth and stencil planes)
+  // D3D12 depth-stencil formats have 2 planes: plane 0 = depth, plane 1 = stencil
+  // The D3D12 spec requires that both planes be in the same state for depth-stencil operations
+  const auto props = getProperties();
+  const bool isDepthStencil = props.isDepthOrStencil() && props.hasStencil();
+
+  if (isDepthStencil) {
+    // Transition ALL subresources (all mips, all layers, all planes) for depth-stencil textures
+    // This ensures both depth and stencil planes are synchronized
+    bool needsTransition = false;
+    D3D12_RESOURCE_STATES currentState = defaultState_;
+
+    // Check if any subresource needs transition
+    for (const auto& state : subresourceStates_) {
+      if (state != newState) {
+        needsTransition = true;
+        currentState = state;  // Use first differing state as "before" state
+        break;
+      }
+    }
+
+    if (!needsTransition) {
+      return;  // All subresources already in target state
+    }
+
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barrier.Transition.pResource = resource_.Get();
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barrier.Transition.StateBefore = currentState;
+    barrier.Transition.StateAfter = newState;
+    commandList->ResourceBarrier(1, &barrier);
+
+    // Update all subresource states
+    for (auto& state : subresourceStates_) {
+      state = newState;
+    }
+    return;
+  }
+
+  // Non-depth-stencil texture: transition single subresource
   const uint32_t subresource = calcSubresourceIndex(mipLevel, layer);
   if (subresource >= subresourceStates_.size()) {
     return;

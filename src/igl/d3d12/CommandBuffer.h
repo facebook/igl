@@ -70,6 +70,20 @@ class CommandBuffer final : public ICommandBuffer {
   Result getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex);
   uint32_t& getNextSamplerDescriptor();
 
+  // Deferred texture-to-buffer copy operations
+  // These are recorded during command buffer recording and executed in CommandQueue::submit()
+  // AFTER all render/compute commands have been executed by the GPU
+  struct DeferredTextureCopy {
+    ITexture* source;
+    IBuffer* destination;
+    uint64_t destinationOffset;
+    uint32_t mipLevel;
+    uint32_t layer;
+  };
+  const std::vector<DeferredTextureCopy>& getDeferredTextureCopies() const {
+    return deferredTextureCopies_;
+  }
+
  private:
   Device& device_;
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
@@ -82,6 +96,9 @@ class CommandBuffer final : public ICommandBuffer {
   Microsoft::WRL::ComPtr<ID3D12Fence> scheduleFence_;
   uint64_t scheduleValue_ = 0;
   HANDLE scheduleFenceEvent_ = nullptr;
+
+  // Deferred copy operations to execute after command buffer submission
+  std::vector<DeferredTextureCopy> deferredTextureCopies_;
 
   friend class CommandQueue; // Allow CommandQueue to signal scheduleFence_
 };

@@ -325,6 +325,8 @@ void CommandBuffer::end() {
   if (!recording_) {
     return;
   }
+
+  // Close the command list - all recording is complete
   commandList_->Close();
   recording_ = false;
 }
@@ -607,14 +609,14 @@ void CommandBuffer::copyBuffer(IBuffer& source,
   ctx.waitForGPU();
 }
 
-void CommandBuffer::copyTextureToBuffer(ITexture& source,
-                                       IBuffer& destination,
+// Helper function to execute a texture-to-buffer copy operation immediately
+// This is called from end() for deferred copies
+static void executeCopyTextureToBuffer(D3D12Context& ctx,
+                                       Texture* srcTex,
+                                       Buffer* dstBuf,
                                        uint64_t destinationOffset,
                                        uint32_t mipLevel,
                                        uint32_t layer) {
-  auto* srcTex = static_cast<Texture*>(&source);
-  auto* dstBuf = static_cast<Buffer*>(&destination);
-
   ID3D12Resource* srcRes = srcTex->getResource();
   ID3D12Resource* dstRes = dstBuf->getResource();
 
@@ -623,7 +625,6 @@ void CommandBuffer::copyTextureToBuffer(ITexture& source,
     return;
   }
 
-  auto& ctx = getContext();
   ID3D12Device* device = ctx.getDevice();
   ID3D12CommandQueue* queue = ctx.getCommandQueue();
 
@@ -640,10 +641,10 @@ void CommandBuffer::copyTextureToBuffer(ITexture& source,
   const uint32_t subresource = srcTex->calcSubresourceIndex(mipLevel, layer);
 
   // Get copyable footprint for this subresource
-  D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout;
-  UINT numRows;
-  UINT64 rowSizeInBytes;
-  UINT64 totalBytes;
+  D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
+  UINT numRows = 0;
+  UINT64 rowSizeInBytes = 0;
+  UINT64 totalBytes = 0;
 
   device->GetCopyableFootprints(&srcDesc,
                                 subresource,
@@ -665,9 +666,10 @@ void CommandBuffer::copyTextureToBuffer(ITexture& source,
     return;
   }
 
-  // For UPLOAD/READBACK buffers, we need an intermediate READBACK buffer
-  // For DEFAULT buffers, we can copy directly
-  bool needsReadbackStaging = (dstBuf->storage() == ResourceStorage::Shared);
+  // ALWAYS use a readback staging buffer because D3D12 requires row-pitch alignment (256 bytes)
+  // The staging buffer accommodates D3D12's padding, then we copy the unpacked data to the destination
+  // This is necessary even for DEFAULT heap buffers that can't be CPU-mapped directly
+  bool needsReadbackStaging = true;
 
   Microsoft::WRL::ComPtr<ID3D12Resource> readbackBuffer;
   ID3D12Resource* copyDestination = dstRes;
@@ -767,7 +769,7 @@ void CommandBuffer::copyTextureToBuffer(ITexture& source,
   // Wait for GPU to complete
   ctx.waitForGPU();
 
-  // If we used a readback staging buffer, copy to the final UPLOAD destination
+  // If we used a readback staging buffer, copy to the final destination
   if (needsReadbackStaging) {
     void* readbackData = nullptr;
     // Map the readback buffer region containing the texture data
@@ -775,28 +777,127 @@ void CommandBuffer::copyTextureToBuffer(ITexture& source,
                          static_cast<SIZE_T>(layout.Offset + totalBytes)};
 
     if (SUCCEEDED(readbackBuffer->Map(0, &readRange, &readbackData)) && readbackData) {
-      // Map the destination UPLOAD buffer
-      Result mapResult;
-      void* dstData = dstBuf->map(BufferRange(unpackedDataSize, destinationOffset), &mapResult);
+      // Check if destination buffer is in DEFAULT heap (Storage buffers)
+      // We cannot call map() on DEFAULT heap buffers because Buffer::map() would
+      // create its own staging buffer and copy FROM (empty) DEFAULT buffer first
+      D3D12_HEAP_PROPERTIES heapProps;
+      dstRes->GetHeapProperties(&heapProps, nullptr);
+      const bool isDefaultHeap = (heapProps.Type == D3D12_HEAP_TYPE_DEFAULT);
 
-      if (dstData && mapResult.isOk()) {
+      IGL_LOG_INFO("copyTextureToBuffer: Destination heap type = %d (1=UPLOAD, 2=DEFAULT, 3=READBACK), isDefaultHeap=%d\n",
+                   heapProps.Type, isDefaultHeap);
+
+      if (!isDefaultHeap) {
+        // Destination is CPU-mappable (UPLOAD/READBACK heap) - copy via CPU
         // Copy row-by-row, removing D3D12's row pitch padding
-        const uint8_t* src = static_cast<uint8_t*>(readbackData) + layout.Offset;
-        uint8_t* dst = static_cast<uint8_t*>(dstData);
-        const UINT64 srcRowPitch = layout.Footprint.RowPitch;
-        const UINT64 dstRowPitch = rowSizeInBytes;  // Unpadded row size
+        Result mapResult;
+        void* dstData = dstBuf->map(BufferRange(unpackedDataSize, destinationOffset), &mapResult);
+        if (dstData && mapResult.isOk()) {
+          const uint8_t* src = static_cast<uint8_t*>(readbackData) + layout.Offset;
+          uint8_t* dst = static_cast<uint8_t*>(dstData);
+          const UINT64 srcRowPitch = layout.Footprint.RowPitch;
+          const UINT64 dstRowPitch = rowSizeInBytes;  // Unpadded row size
 
-        for (UINT z = 0; z < layout.Footprint.Depth; ++z) {
-          for (UINT row = 0; row < numRows; ++row) {
-            std::memcpy(dst, src, dstRowPitch);
-            src += srcRowPitch;
-            dst += dstRowPitch;
+          for (UINT z = 0; z < layout.Footprint.Depth; ++z) {
+            for (UINT row = 0; row < numRows; ++row) {
+              std::memcpy(dst, src, dstRowPitch);
+              src += srcRowPitch;
+              dst += dstRowPitch;
+            }
           }
+
+          dstBuf->unmap();
+        } else {
+          IGL_LOG_ERROR("copyTextureToBuffer: Failed to map UPLOAD heap buffer\n");
+        }
+      } else {
+        // Destination is NOT CPU-mappable (DEFAULT heap) - need GPU copy
+        // Create temporary UPLOAD buffer with unpacked data, then GPU copy to destination
+        D3D12_HEAP_PROPERTIES uploadHeap{};
+        uploadHeap.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+        D3D12_RESOURCE_DESC uploadDesc{};
+        uploadDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+        uploadDesc.Width = unpackedDataSize;
+        uploadDesc.Height = 1;
+        uploadDesc.DepthOrArraySize = 1;
+        uploadDesc.MipLevels = 1;
+        uploadDesc.Format = DXGI_FORMAT_UNKNOWN;
+        uploadDesc.SampleDesc.Count = 1;
+        uploadDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+        Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
+        HRESULT hr = device->CreateCommittedResource(&uploadHeap,
+                                                      D3D12_HEAP_FLAG_NONE,
+                                                      &uploadDesc,
+                                                      D3D12_RESOURCE_STATE_GENERIC_READ,
+                                                      nullptr,
+                                                      IID_PPV_ARGS(uploadBuffer.GetAddressOf()));
+        if (FAILED(hr)) {
+          IGL_LOG_ERROR("copyTextureToBuffer: Failed to create upload buffer for DEFAULT heap copy, hr=0x%08X\n",
+                        static_cast<unsigned>(hr));
+          readbackBuffer->Unmap(0, nullptr);
+          return;
         }
 
-        dstBuf->unmap();
-      } else {
-        IGL_LOG_ERROR("copyTextureToBuffer: Failed to map destination buffer\n");
+        // Map upload buffer and unpack data from readback
+        void* uploadData = nullptr;
+        if (SUCCEEDED(uploadBuffer->Map(0, nullptr, &uploadData)) && uploadData) {
+          const uint8_t* src = static_cast<uint8_t*>(readbackData) + layout.Offset;
+          uint8_t* dst = static_cast<uint8_t*>(uploadData);
+          const UINT64 srcRowPitch = layout.Footprint.RowPitch;
+          const UINT64 dstRowPitch = rowSizeInBytes;
+
+          for (UINT z = 0; z < layout.Footprint.Depth; ++z) {
+            for (UINT row = 0; row < numRows; ++row) {
+              std::memcpy(dst, src, dstRowPitch);
+              src += srcRowPitch;
+              dst += dstRowPitch;
+            }
+          }
+          uploadBuffer->Unmap(0, nullptr);
+
+          // GPU copy from upload buffer to destination DEFAULT buffer
+          Microsoft::WRL::ComPtr<ID3D12CommandAllocator> copyAllocator;
+          Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> copyList;
+          if (SUCCEEDED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                                        IID_PPV_ARGS(copyAllocator.GetAddressOf()))) &&
+              SUCCEEDED(device->CreateCommandList(0,
+                                                   D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                                   copyAllocator.Get(),
+                                                   nullptr,
+                                                   IID_PPV_ARGS(copyList.GetAddressOf())))) {
+            // Transition destination buffer to COPY_DEST state
+            D3D12_RESOURCE_BARRIER barrier = {};
+            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            barrier.Transition.pResource = dstRes;
+            barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+            barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+            copyList->ResourceBarrier(1, &barrier);
+
+            // Copy unpacked data to destination
+            IGL_LOG_INFO("copyTextureToBuffer: GPU copy %llu bytes from upload buffer to DEFAULT buffer at offset %llu\n",
+                         unpackedDataSize, destinationOffset);
+            copyList->CopyBufferRegion(dstRes, destinationOffset, uploadBuffer.Get(), 0, unpackedDataSize);
+
+            // Transition destination buffer back to UAV state (Storage buffer)
+            barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+            barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+            copyList->ResourceBarrier(1, &barrier);
+
+            copyList->Close();
+            ID3D12CommandList* lists[] = {copyList.Get()};
+            queue->ExecuteCommandLists(1, lists);
+            IGL_LOG_INFO("copyTextureToBuffer: Waiting for GPU copy to complete...\n");
+            ctx.waitForGPU();
+            IGL_LOG_INFO("copyTextureToBuffer: GPU copy complete!\n");
+          } else {
+            IGL_LOG_ERROR("copyTextureToBuffer: Failed to create command list for GPU copy\n");
+          }
+        } else {
+          IGL_LOG_ERROR("copyTextureToBuffer: Failed to map upload buffer\n");
+        }
       }
 
       readbackBuffer->Unmap(0, nullptr);
@@ -804,6 +905,27 @@ void CommandBuffer::copyTextureToBuffer(ITexture& source,
       IGL_LOG_ERROR("copyTextureToBuffer: Failed to map readback buffer\n");
     }
   }
+}
+
+// Public API: Record texture-to-buffer copy for deferred execution
+void CommandBuffer::copyTextureToBuffer(ITexture& source,
+                                       IBuffer& destination,
+                                       uint64_t destinationOffset,
+                                       uint32_t mipLevel,
+                                       uint32_t layer) {
+  // Like Vulkan, defer the copy operation until command buffer submission
+  // D3D12 requires this to execute AFTER render commands complete, not during recording
+  // (Unlike Vulkan which can record into the command buffer, D3D12 has closed command list and padding constraints)
+
+  IGL_LOG_INFO("copyTextureToBuffer: Recording deferred copy operation (will execute in CommandQueue::submit)\n");
+
+  deferredTextureCopies_.push_back({
+    &source,
+    &destination,
+    destinationOffset,
+    mipLevel,
+    layer
+  });
 }
 
 } // namespace igl::d3d12

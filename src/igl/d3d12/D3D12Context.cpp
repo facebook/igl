@@ -521,9 +521,9 @@ void D3D12Context::createDevice() {
                  (maxShaderModel_ >> 4) & 0xF,
                  maxShaderModel_ & 0xF);
   } else {
-    // If query fails, assume SM 5.1 (FL11 minimum)
-    maxShaderModel_ = D3D_SHADER_MODEL_5_1;
-    IGL_LOG_INFO("  Shader model query failed, assuming SM 5.1 (FL11 minimum)\n");
+    // If query fails, assume SM 6.0 (DXC minimum, SM 5.x deprecated)
+    maxShaderModel_ = D3D_SHADER_MODEL_6_0;
+    IGL_LOG_INFO("  Shader model query failed, assuming SM 6.0 (DXC minimum)\n");
   }
 
   IGL_LOG_INFO("D3D12Context: Root signature capabilities detected successfully\n");
