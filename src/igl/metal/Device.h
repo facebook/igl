@@ -117,8 +117,8 @@ class Device : public IDevice {
   static MTLResourceOptions toMTLResourceStorageMode(ResourceStorage storage);
 
  public:
-  Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
-  Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
+  Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool;
+  Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool;
 
  private:
   std::unique_ptr<IBuffer> createRingBuffer(const BufferDesc& desc,

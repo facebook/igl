@@ -556,7 +556,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
     return;
   }
 
-  const BindGroupTextureDesc* desc = device_.bindGroupTexturesPool_.get(handle);
+  const BindGroupTextureDesc* desc = device_.bindGroupTexturesPool.get(handle);
 
   for (uint32_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
     if (desc->textures[i]) {
@@ -574,7 +574,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
     return;
   }
 
-  const BindGroupBufferDesc* desc = device_.bindGroupBuffersPool_.get(handle);
+  const BindGroupBufferDesc* desc = device_.bindGroupBuffersPool.get(handle);
 
   uint32_t dynamicOffset = 0;
 
