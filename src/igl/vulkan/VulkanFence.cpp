@@ -30,7 +30,7 @@ VulkanFence::VulkanFence(const VulkanFunctionTable& vf,
       .pNext = exportable ? &exportInfo : nullptr,
       .flags = flags,
   };
-  VK_ASSERT(vf_->vkCreateFence(device, &ci, nullptr, &vkFence_));
+  VK_ASSERT(vf_->vkCreateFence(device_, &ci, nullptr, &vkFence_));
 
   VK_ASSERT(
       ivkSetDebugObjectName(vf_, device_, VK_OBJECT_TYPE_FENCE, (uint64_t)vkFence_, debugName));

@@ -48,10 +48,12 @@ class VulkanFence final {
   [[nodiscard]] bool exportable() const noexcept;
 
  public:
+  // NOLINTBEGIN(readability-identifier-naming)
   const VulkanFunctionTable* vf_{};
   VkDevice device_ = VK_NULL_HANDLE;
   VkFence vkFence_ = VK_NULL_HANDLE;
   bool exportable_ = false;
+  // NOLINTEND(readability-identifier-naming)
 };
 
 } // namespace igl::vulkan
