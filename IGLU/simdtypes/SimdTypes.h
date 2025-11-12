@@ -163,29 +163,29 @@ using bool1 = bool;
 
 #endif
 
-struct float4x4 {
+struct Float4x4 {
   float4 columns[4];
-  float4x4() = default;
-  explicit float4x4(float val) {
+  Float4x4() = default;
+  explicit Float4x4(float val) {
     columns[0] = float4{val, 0.0, 0.0, 0.0};
     columns[1] = float4{0.0, val, 0.0, 0.0};
     columns[2] = float4{0.0, 0.0, val, 0.0};
     columns[3] = float4{0.0, 0.0, 0.0, val};
   }
-  explicit float4x4(float4 diag) {
+  explicit Float4x4(float4 diag) {
     columns[0] = float4{diag[0], 0.0, 0.0, 0.0};
     columns[1] = float4{0.0, diag[1], 0.0, 0.0};
     columns[2] = float4{0.0, 0.0, diag[2], 0.0};
     columns[3] = float4{0.0, 0.0, 0.0, diag[3]};
   }
-  float4x4(float4 c0, float4 c1, float4 c2, float4 c3) {
+  Float4x4(float4 c0, float4 c1, float4 c2, float4 c3) {
     columns[0] = c0;
     columns[1] = c1;
     columns[2] = c2;
     columns[3] = c3;
   }
   // TODO BE remove this float*
-  explicit float4x4(const float* vals) {
+  explicit Float4x4(const float* vals) {
     columns[0] = float4{vals[0], vals[1], vals[2], vals[3]};
     columns[1] = float4{vals[4], vals[5], vals[6], vals[7]};
     columns[2] = float4{vals[8], vals[9], vals[10], vals[11]};
@@ -193,68 +193,73 @@ struct float4x4 {
   }
 };
 
-struct float3x4 {
+struct Float3x4 {
   float4 columns[3];
-  float3x4() = default;
-  explicit float3x4(float val) {
+  Float3x4() = default;
+  explicit Float3x4(float val) {
     columns[0] = float4{val, 0.0, 0.0, 0.0};
     columns[1] = float4{0.0, val, 0.0, 0.0};
     columns[2] = float4{0.0, 0.0, val, 0.0};
   }
-  explicit float3x4(float3 diag) {
+  explicit Float3x4(float3 diag) {
     columns[0] = float4{diag[0], 0.0, 0.0, 0.0};
     columns[1] = float4{0.0, diag[1], 0.0, 0.0};
     columns[2] = float4{0.0, 0.0, diag[2], 0.0};
   }
-  float3x4(float4 c0, float4 c1, float4 c2) {
+  Float3x4(float4 c0, float4 c1, float4 c2) {
     columns[0] = c0;
     columns[1] = c1;
     columns[2] = c2;
   }
   // TODO BE remove this float*
-  explicit float3x4(const float* vals) {
+  explicit Float3x4(const float* vals) {
     columns[0] = float4{vals[0], vals[1], vals[2], vals[3]};
     columns[1] = float4{vals[4], vals[5], vals[6], vals[7]};
     columns[2] = float4{vals[8], vals[9], vals[10], vals[11]};
   }
 };
 
-struct float3x3 {
+struct Float3x3 {
   float3 columns[3];
-  float3x3() = default;
-  explicit float3x3(float val) {
+  Float3x3() = default;
+  explicit Float3x3(float val) {
     columns[0] = float3{val, 0.0, 0.0};
     columns[1] = float3{0.0, val, 0.0};
     columns[2] = float3{0.0, 0.0, val};
   }
-  explicit float3x3(float3 diag) {
+  explicit Float3x3(float3 diag) {
     columns[0] = float3{diag[0], 0.0, 0.0};
     columns[1] = float3{0.0, diag[1], 0.0};
     columns[2] = float3{0.0, 0.0, diag[2]};
   }
-  float3x3(float3 c0, float3 c1, float3 c2) {
+  Float3x3(float3 c0, float3 c1, float3 c2) {
     columns[0] = c0;
     columns[1] = c1;
     columns[2] = c2;
   }
 };
 
-struct float2x2 {
+struct Float2x2 {
   float2 columns[2];
-  float2x2() = default;
-  explicit float2x2(float val) {
+  Float2x2() = default;
+  explicit Float2x2(float val) {
     columns[0] = float2{val, 0.0};
     columns[1] = float2{0.0, val};
   }
-  explicit float2x2(float2 diag) {
+  explicit Float2x2(float2 diag) {
     columns[0] = float2{diag[0], 0.0};
     columns[1] = float2{0.0, diag[1]};
   }
-  float2x2(float2 c0, float2 c1) {
+  Float2x2(float2 c0, float2 c1) {
     columns[0] = c0;
     columns[1] = c1;
   }
 };
+
+using float4x4 = Float4x4;
+using float3x4 = Float3x4;
+using float3x3 = Float3x3;
+using float2x2 = Float2x2;
 
 #endif // defined(__APPLE__)
 
