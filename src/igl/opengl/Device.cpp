@@ -95,9 +95,7 @@ std::unique_ptr<T> createUniqueResource(const Desc& desc,
 } // namespace
 
 Device::Device(std::unique_ptr<IContext> context) : // NOLINT(bugprone-exception-escape)
-  context_(std::move(context)),
-  deviceFeatureSet_(getContext().deviceFeatures()),
-  cachedUnbindPolicy_() {}
+  context_(std::move(context)), deviceFeatureSet_(getContext().deviceFeatures()) {}
 Device::~Device() = default;
 
 // debug markers useful in GPU captures

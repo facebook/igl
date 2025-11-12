@@ -134,7 +134,7 @@ class Device : public IDevice {
   // on OpenGL we only need one command queue
   std::shared_ptr<CommandQueue> commandQueue_;
   const DeviceFeatureSet& deviceFeatureSet_;
-  UnbindPolicy cachedUnbindPolicy_;
+  UnbindPolicy cachedUnbindPolicy_{};
 };
 
 } // namespace igl::opengl
