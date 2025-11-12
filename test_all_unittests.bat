@@ -52,62 +52,69 @@ if not "!CMD_ERROR!"=="0" (
 )
 echo [%NAME%] Configure OK
 
-echo --- [%NAME%] Build ---
-cmake --build build/vs --config Release --target IGLTests -j 8 >> "%LOG_DIR%\build_release.log" 2>&1
-set CMD_ERROR=!ERRORLEVEL!
-if not "!CMD_ERROR!"=="0" (
-  echo [%NAME%] CRITICAL: Build failed ^(exit !CMD_ERROR!^), see %LOG_DIR%\build_release.log
-  set /A FAIL_COUNT+=1
-  set FAILURES=%FAILURES% %NAME%-BUILD-CRITICAL
-  goto :eof
-)
-echo [%NAME%] Build OK
+rem Test both Debug and Release configurations
+for %%C in (Debug Release) do (
+  echo.
+  echo --- [%NAME%] Build %%C ---
+  cmake --build build/vs --config %%C --target IGLTests -j 8 >> "%LOG_DIR%\build_%%C.log" 2>&1
+  set CMD_ERROR=!ERRORLEVEL!
+  if not "!CMD_ERROR!"=="0" (
+    echo [%NAME%] CRITICAL: %%C build failed ^(exit !CMD_ERROR!^), see %LOG_DIR%\build_%%C.log
+    set /A FAIL_COUNT+=1
+    set FAILURES=%FAILURES% %NAME%-BUILD-%%C-CRITICAL
+    goto :eof
+  )
+  echo [%NAME%] %%C build OK
 
-set DXIL_SOURCE=build\vs\src\igl\d3d12\Release\dxil.dll
-set DXIL_DEST=build\vs\src\igl\tests\Release\dxil.dll
-if exist "%DXIL_SOURCE%" (
-  copy /Y "%DXIL_SOURCE%" "%DXIL_DEST%" >nul 2>&1
-  if errorlevel 1 (
-    echo [%NAME%] WARNING: Failed to copy dxil.dll to test output directory.
+  set DXIL_SOURCE=build\vs\src\igl\d3d12\%%C\dxil.dll
+  set DXIL_DEST=build\vs\src\igl\tests\%%C\dxil.dll
+  if exist "!DXIL_SOURCE!" (
+    copy /Y "!DXIL_SOURCE!" "!DXIL_DEST!" >nul 2>&1
+    if errorlevel 1 (
+      echo [%NAME%] WARNING: Failed to copy dxil.dll to %%C test output directory.
+    ) else (
+      echo [%NAME%] Copied dxil.dll to %%C test output.
+    )
   ) else (
-    echo [%NAME%] Copied dxil.dll to test output.
+    echo [%NAME%] WARNING: dxil.dll not found at !DXIL_SOURCE!.
   )
-) else (
-  echo [%NAME%] WARNING: dxil.dll not found at %DXIL_SOURCE%.
-)
 
-set TEST_EXE=build\vs\src\igl\tests\Release\IGLTests.exe
-if not exist "%TEST_EXE%" (
-  echo [%NAME%] CRITICAL: Test executable not found: %TEST_EXE%
-  set /A FAIL_COUNT+=1
-  set FAILURES=%FAILURES% %NAME%-MISSING-EXE-CRITICAL
-  goto :eof
-)
-
-echo --- [%NAME%] Run ---
-"%TEST_EXE%" --gtest_color=no --gtest_brief=1 --gtest_output=xml:%LOG_DIR%\IGLTests.xml > "%LOG_DIR%\IGLTests.log" 2>&1
-set TEST_EXIT=!ERRORLEVEL!
-set TESTS_EXECUTED=1
-if not "!TEST_EXIT!"=="0" (
-  echo [%NAME%] UNIT TESTS FAILED, exit !TEST_EXIT!
-  findstr /C:"[  FAILED  ]" "%LOG_DIR%\IGLTests.log" > "%LOG_DIR%\failed_tests.txt" 2>&1
-  if exist "%LOG_DIR%\failed_tests.txt" (
-    echo Failed tests:
-    type "%LOG_DIR%\failed_tests.txt"
+  set TEST_EXE=build\vs\src\igl\tests\%%C\IGLTests.exe
+  if not exist "!TEST_EXE!" (
+    echo [%NAME%] CRITICAL: %%C test executable not found: !TEST_EXE!
+    set /A FAIL_COUNT+=1
+    set FAILURES=%FAILURES% %NAME%-MISSING-EXE-%%C-CRITICAL
+    goto :eof
   )
-  set /A FAIL_COUNT+=1
-  set FAILURES=%FAILURES% %NAME%-TESTS
-) else (
-  echo [%NAME%] UNIT TESTS PASSED
-  set /A PASS_COUNT+=1
-)
 
-set TEST_FAILURES=
-if exist "%LOG_DIR%\IGLTests.log" (
-  for /f %%I in ('findstr /C:"[  FAILED  ]" "%LOG_DIR%\IGLTests.log" ^| find /c /v ""') do set TEST_FAILURES=%%I
+  echo --- [%NAME%] Run %%C ---
+  "!TEST_EXE!" --gtest_color=no --gtest_brief=1 --gtest_output=xml:%LOG_DIR%\IGLTests_%%C.xml > "%LOG_DIR%\IGLTests_%%C.log" 2>&1
+  set TEST_EXIT=!ERRORLEVEL!
+  set TESTS_EXECUTED=1
+  if not "!TEST_EXIT!"=="0" (
+    echo [%NAME%] %%C UNIT TESTS FAILED, exit !TEST_EXIT!
+    findstr /C:"[  FAILED  ]" "%LOG_DIR%\IGLTests_%%C.log" > "%LOG_DIR%\failed_tests_%%C.txt" 2>&1
+    if exist "%LOG_DIR%\failed_tests_%%C.txt" (
+      echo Failed tests:
+      type "%LOG_DIR%\failed_tests_%%C.txt"
+    )
+    set /A FAIL_COUNT+=1
+    set FAILURES=%FAILURES% %NAME%-TESTS-%%C
+  ) else (
+    echo [%NAME%] %%C UNIT TESTS PASSED
+    set /A PASS_COUNT+=1
+  )
+
+  set TEST_FAILURES=0
+  if exist "%LOG_DIR%\IGLTests_%%C.log" (
+    findstr /C:"[  FAILED  ]" "%LOG_DIR%\IGLTests_%%C.log" | find /c /v "" > "%LOG_DIR%\temp_count_%%C.txt" 2>nul
+    if exist "%LOG_DIR%\temp_count_%%C.txt" (
+      set /p TEST_FAILURES=<"%LOG_DIR%\temp_count_%%C.txt"
+      del "%LOG_DIR%\temp_count_%%C.txt"
+    )
+  )
+  echo [%NAME%] %%C detected failing tests: !TEST_FAILURES!
+  set /A TOTAL_FAILED_TESTS+=!TEST_FAILURES!
 )
-if not defined TEST_FAILURES set TEST_FAILURES=0
-echo [%NAME%] Detected failing tests: !TEST_FAILURES!
-for /f "delims=" %%F in ("!TEST_FAILURES!") do set /A TOTAL_FAILED_TESTS+=%%F
 
 goto :eof
