@@ -79,6 +79,7 @@ enum class VertexAttributeFormat {
   HalfFloat3,
   HalfFloat4,
 
+  // NOLINTNEXTLINE(readability-identifier-naming)
   Int_2_10_10_10_REV, // standard format to store normal vectors
 };
 
