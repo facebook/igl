@@ -21,9 +21,9 @@
 namespace igl::opengl {
 
 namespace {
-GLenum toGlPrimitive(PrimitiveType t) {
+GLenum toGlPrimitive(PrimitiveType primitiveType) {
   GLenum result = GL_TRIANGLES;
-  switch (t) {
+  switch (primitiveType) {
   case PrimitiveType::Point:
     result = GL_POINTS;
     break;
