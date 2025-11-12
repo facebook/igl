@@ -22,7 +22,7 @@ constexpr int kFragmentIndex = 51;
 
 template<typename T>
 struct Compare {
-  static void VerifyAligned(const T* expected, const void* aligned) {
+  static void verifyAligned(const T* expected, const void* aligned) {
     const T& alignedValue = *(static_cast<const T*>(aligned));
     ASSERT_EQ(*expected, alignedValue);
   }
@@ -30,7 +30,7 @@ struct Compare {
 
 template<>
 struct Compare<glm::mat3> {
-  static void VerifyAligned(const glm::mat3* expected, const void* aligned) {
+  static void verifyAligned(const glm::mat3* expected, const void* aligned) {
     const auto& alignedValue =
         *static_cast<const typename uniform::Trait<glm::mat3>::Aligned*>(aligned);
     const auto* expectedPtr = static_cast<const float*>(glm::value_ptr(*expected));
@@ -44,7 +44,7 @@ struct Compare<glm::mat3> {
   }
 };
 
-inline void TestIndex(uniform::Descriptor& uniform) {
+inline void testIndex(uniform::Descriptor& uniform) {
   ASSERT_EQ(uniform.getIndex(igl::ShaderStage::Fragment), -1);
   ASSERT_EQ(uniform.getIndex(igl::ShaderStage::Vertex), -1);
 
@@ -56,7 +56,7 @@ inline void TestIndex(uniform::Descriptor& uniform) {
 }
 
 template<typename T>
-void TestUniformData(const T& expected, uniform::DescriptorValue<T>& uniform) {
+void testUniformData(const T& expected, uniform::DescriptorValue<T>& uniform) {
   ASSERT_EQ(uniform.numBytes(uniform::Alignment::Packed), sizeof(T));
   ASSERT_EQ(uniform.numBytes(uniform::Alignment::Aligned), sizeof(T) + uniform::Trait<T>::kPadding);
   ASSERT_EQ(uniform.size(), 1);
@@ -72,12 +72,12 @@ void TestUniformData(const T& expected, uniform::DescriptorValue<T>& uniform) {
   ASSERT_EQ(expected, *uniformPacked);
 
   if (uniform::Trait<T>::kPadding > 0) {
-    Compare<T>::VerifyAligned(&expected, uniformAlignedPtr);
+    Compare<T>::verifyAligned(&expected, uniformAlignedPtr);
   }
 }
 
 template<typename T>
-void TestUniformData(const std::vector<T>& expected, uniform::DescriptorVector<T>& uniform) {
+void testUniformData(const std::vector<T>& expected, uniform::DescriptorVector<T>& uniform) {
   ASSERT_EQ(uniform.numBytes(uniform::Alignment::Packed), uniform.size() * sizeof(T));
   ASSERT_EQ(uniform.numBytes(uniform::Alignment::Aligned),
             uniform.size() * (sizeof(T) + uniform::Trait<T>::kPadding));
@@ -100,7 +100,7 @@ void TestUniformData(const std::vector<T>& expected, uniform::DescriptorVector<T
     ASSERT_EQ(expected[i], *uniformPacked);
 
     if (uniform::Trait<T>::kPadding > 0) {
-      Compare<T>::VerifyAligned(&(expected[i]), uniformAlignedBytePtr);
+      Compare<T>::verifyAligned(&(expected[i]), uniformAlignedBytePtr);
     }
 
     uniformPackedBytePtr += kNumBytesPacked;
