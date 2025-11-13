@@ -3,3 +3,7 @@
 
 # vkDestroyDevice called in igl::vulkan::Device::~Device() causes false-positive in TSAN because of some swiftshader issue
 race:igl::vulkan::Device::~Device()
+
+# libvulkan_lvp.so (LLVMpipe Vulkan driver)
+race:pthread_mutex_destroy
+race:pthread_cond_destroy
