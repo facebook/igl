@@ -93,9 +93,9 @@ class CommandBuffer final : public ICommandBuffer {
 
   // Scheduling fence infrastructure (separate from completion fence)
   // Used to track when command buffer is submitted to GPU queue (not when GPU completes)
+  // D-003: Removed scheduleFenceEvent_ - now using dedicated events per wait operation
   Microsoft::WRL::ComPtr<ID3D12Fence> scheduleFence_;
   uint64_t scheduleValue_ = 0;
-  HANDLE scheduleFenceEvent_ = nullptr;
 
   // Deferred copy operations to execute after command buffer submission
   std::vector<DeferredTextureCopy> deferredTextureCopies_;

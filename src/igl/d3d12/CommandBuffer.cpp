@@ -66,6 +66,7 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc)
   commandList_->Close();
 
   // Create scheduling fence for waitUntilScheduled() support
+  // D-003: Fence event is now created per-wait in waitUntilScheduled() to eliminate TOCTOU race
   hr = d3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(scheduleFence_.GetAddressOf()));
   if (FAILED(hr)) {
     char errorMsg[256];
@@ -74,22 +75,10 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc)
     IGL_LOG_ERROR(errorMsg);
     return;  // Leave fence null to indicate failure
   }
-
-  // Create event for fence waiting
-  scheduleFenceEvent_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-  if (!scheduleFenceEvent_) {
-    IGL_DEBUG_ASSERT(false, "Failed to create scheduling fence event");
-    IGL_LOG_ERROR("Failed to create scheduling fence event");
-    return;  // Leave event null to indicate failure
-  }
 }
 
 CommandBuffer::~CommandBuffer() {
-  // Clean up scheduling fence event handle
-  if (scheduleFenceEvent_) {
-    CloseHandle(scheduleFenceEvent_);
-    scheduleFenceEvent_ = nullptr;
-  }
+  // D-003: No need to clean up scheduleFenceEvent_ - now using dedicated events per wait
   // scheduleFence_ is a ComPtr and will be automatically released
 }
 
@@ -414,22 +403,31 @@ void CommandBuffer::waitUntilScheduled() {
                completedValue, scheduleValue_);
 #endif
 
-  if (!scheduleFenceEvent_) {
-    IGL_LOG_ERROR("CommandBuffer::waitUntilScheduled() - Fence event is null\n");
+  // D-003: Create dedicated fence event per wait operation to eliminate TOCTOU race
+  // Using auto-reset event (FALSE, FALSE, nullptr) ensures proper signaling behavior
+  HANDLE hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+  if (!hEvent) {
+    IGL_LOG_ERROR("CommandBuffer::waitUntilScheduled() - Failed to create fence event\n");
     return;
   }
 
-  HRESULT hr = scheduleFence_->SetEventOnCompletion(scheduleValue_, scheduleFenceEvent_);
+  // D-003: Set event on completion BEFORE checking fence value again
+  HRESULT hr = scheduleFence_->SetEventOnCompletion(scheduleValue_, hEvent);
   if (FAILED(hr)) {
     IGL_LOG_ERROR("CommandBuffer::waitUntilScheduled() - SetEventOnCompletion failed: 0x%08X\n",
                   static_cast<unsigned>(hr));
+    CloseHandle(hEvent);
     return;
   }
 
-  // Re-check after SetEventOnCompletion to avoid race condition
+  // D-003: Re-check after SetEventOnCompletion to avoid race condition
+  // If fence completed between initial check and SetEventOnCompletion, skip wait
   if (scheduleFence_->GetCompletedValue() < scheduleValue_) {
-    WaitForSingleObject(scheduleFenceEvent_, INFINITE);
+    WaitForSingleObject(hEvent, INFINITE);
   }
+
+  // D-003: Clean up dedicated event handle
+  CloseHandle(hEvent);
 
 #ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandBuffer::waitUntilScheduled() - Scheduling complete (fence now=%llu)\n",

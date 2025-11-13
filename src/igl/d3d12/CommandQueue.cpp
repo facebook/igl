@@ -629,17 +629,25 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
       IGL_LOG_INFO("CommandQueue::submit() - SAFETY WAIT: Ensuring frame pipeline is not overloaded (completed=%llu, need=%llu)\n",
                    currentCompletedValue, minimumSafeFence);
 #endif
+      // D-003: Create dedicated fence event per wait operation to eliminate TOCTOU race
       // Wait for the frame that's (kMaxFramesInFlight-1) frames back to complete
       // This ensures we never have more than kMaxFramesInFlight frames in flight
-      HRESULT hr = fence->SetEventOnCompletion(minimumSafeFence, ctx.getFenceEvent());
-      if (SUCCEEDED(hr)) {
-        if (fence->GetCompletedValue() < minimumSafeFence) {
-          WaitForSingleObject(ctx.getFenceEvent(), INFINITE);
+      HANDLE hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+      if (hEvent) {
+        HRESULT hr = fence->SetEventOnCompletion(minimumSafeFence, hEvent);
+        if (SUCCEEDED(hr)) {
+          // D-003: Re-check fence after SetEventOnCompletion to avoid race
+          if (fence->GetCompletedValue() < minimumSafeFence) {
+            WaitForSingleObject(hEvent, INFINITE);
 #ifdef IGL_DEBUG
-          IGL_LOG_INFO("CommandQueue::submit() - Safety wait completed (fence now=%llu)\n",
-                       fence->GetCompletedValue());
+            IGL_LOG_INFO("CommandQueue::submit() - Safety wait completed (fence now=%llu)\n",
+                         fence->GetCompletedValue());
 #endif
+          }
         }
+        CloseHandle(hEvent);
+      } else {
+        IGL_LOG_ERROR("CommandQueue::submit() - Failed to create event for safety wait\n");
       }
     }
 
@@ -648,76 +656,83 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
       IGL_LOG_INFO("CommandQueue::submit() - Waiting for frame %u to complete (fence value=%llu, current=%llu)\n",
                    nextFrameIndex, nextFrameFence, fence->GetCompletedValue());
 #endif
-      HRESULT hr = fence->SetEventOnCompletion(nextFrameFence, ctx.getFenceEvent());
-      if (SUCCEEDED(hr)) {
-        // CRITICAL: Re-check fence after SetEventOnCompletion to avoid race condition
-        // The fence may have completed between our initial check and SetEventOnCompletion,
-        // in which case the event won't be signaled and we'd wait forever
-        if (fence->GetCompletedValue() < nextFrameFence) {
-          // Fence still not complete, proceed with wait
-          // Use timeout to prevent deadlock during window drag (when Present blocks message pump)
-          DWORD waitResult = WaitForSingleObject(ctx.getFenceEvent(), 5000); // 5 second timeout
-          if (waitResult == WAIT_OBJECT_0) {
-            // CRITICAL: Even if wait succeeded, verify fence actually reached expected value
-            // On some systems, the event can be signaled before GetCompletedValue() is fully updated
-            UINT64 completedAfterWait = fence->GetCompletedValue();
-            if (completedAfterWait < nextFrameFence) {
-              IGL_LOG_ERROR("CommandQueue::submit() - Wait returned but fence not complete! Expected=%llu, got=%llu\n",
-                           nextFrameFence, completedAfterWait);
-              IGL_LOG_ERROR("CommandQueue::submit() - Forcing GPU wait with busy loop...\n");
-              // CRITICAL: Busy-wait until fence actually completes (with timeout)
-              const int maxSpins = 10000;
-              int spinCount = 0;
-              while (fence->GetCompletedValue() < nextFrameFence && spinCount < maxSpins) {
-                Sleep(1);  // Small sleep to avoid burning CPU
-                spinCount++;
-              }
-              if (fence->GetCompletedValue() >= nextFrameFence) {
-#ifdef IGL_DEBUG
-                IGL_LOG_INFO("CommandQueue::submit() - GPU finally completed after %d spins (fence now=%llu)\n",
-                             spinCount, fence->GetCompletedValue());
-#endif
-              } else {
-                IGL_LOG_ERROR("CommandQueue::submit() - GPU STILL not complete after busy-wait! (fence=%llu)\n",
-                             fence->GetCompletedValue());
-                // Last resort: wait forever
-                while (fence->GetCompletedValue() < nextFrameFence) {
-                  Sleep(10);
+      // D-003: Create dedicated fence event per wait operation to eliminate TOCTOU race
+      HANDLE hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+      if (hEvent) {
+        HRESULT hr = fence->SetEventOnCompletion(nextFrameFence, hEvent);
+        if (SUCCEEDED(hr)) {
+          // D-003: Re-check fence after SetEventOnCompletion to avoid race condition
+          // The fence may have completed between our initial check and SetEventOnCompletion
+          if (fence->GetCompletedValue() < nextFrameFence) {
+            // Fence still not complete, proceed with wait
+            // Use timeout to prevent deadlock during window drag (when Present blocks message pump)
+            DWORD waitResult = WaitForSingleObject(hEvent, 5000); // 5 second timeout
+            if (waitResult == WAIT_OBJECT_0) {
+              // CRITICAL: Even if wait succeeded, verify fence actually reached expected value
+              // On some systems, the event can be signaled before GetCompletedValue() is fully updated
+              UINT64 completedAfterWait = fence->GetCompletedValue();
+              if (completedAfterWait < nextFrameFence) {
+                IGL_LOG_ERROR("CommandQueue::submit() - Wait returned but fence not complete! Expected=%llu, got=%llu\n",
+                             nextFrameFence, completedAfterWait);
+                IGL_LOG_ERROR("CommandQueue::submit() - Forcing GPU wait with busy loop...\n");
+                // CRITICAL: Busy-wait until fence actually completes (with timeout)
+                const int maxSpins = 10000;
+                int spinCount = 0;
+                while (fence->GetCompletedValue() < nextFrameFence && spinCount < maxSpins) {
+                  Sleep(1);  // Small sleep to avoid burning CPU
+                  spinCount++;
                 }
+                if (fence->GetCompletedValue() >= nextFrameFence) {
 #ifdef IGL_DEBUG
-                IGL_LOG_INFO("CommandQueue::submit() - Emergency infinite wait completed (fence=%llu)\n",
-                             fence->GetCompletedValue());
+                  IGL_LOG_INFO("CommandQueue::submit() - GPU finally completed after %d spins (fence now=%llu)\n",
+                               spinCount, fence->GetCompletedValue());
+#endif
+                } else {
+                  IGL_LOG_ERROR("CommandQueue::submit() - GPU STILL not complete after busy-wait! (fence=%llu)\n",
+                               fence->GetCompletedValue());
+                  // Last resort: wait forever
+                  while (fence->GetCompletedValue() < nextFrameFence) {
+                    Sleep(10);
+                  }
+#ifdef IGL_DEBUG
+                  IGL_LOG_INFO("CommandQueue::submit() - Emergency infinite wait completed (fence=%llu)\n",
+                               fence->GetCompletedValue());
+#endif
+                }
+              } else {
+#ifdef IGL_DEBUG
+                IGL_LOG_INFO("CommandQueue::submit() - Frame %u resources now available (completed=%llu)\n",
+                             nextFrameIndex, completedAfterWait);
 #endif
               }
+            } else if (waitResult == WAIT_TIMEOUT) {
+              IGL_LOG_ERROR("CommandQueue::submit() - TIMEOUT waiting for frame %u fence %llu (completed=%llu)\n",
+                           nextFrameIndex, nextFrameFence, fence->GetCompletedValue());
+              IGL_LOG_ERROR("CommandQueue::submit() - Forcing infinite wait to prevent device removed...\n");
+              // CRITICAL: Must wait for GPU to finish before resetting allocator
+              // This can happen during window drag or very low FPS scenarios
+              // D-003: Fallback to infinite wait on same dedicated event
+              WaitForSingleObject(hEvent, INFINITE);
+#ifdef IGL_DEBUG
+              IGL_LOG_INFO("CommandQueue::submit() - Infinite wait completed (fence now=%llu)\n",
+                           fence->GetCompletedValue());
+#endif
             } else {
-#ifdef IGL_DEBUG
-              IGL_LOG_INFO("CommandQueue::submit() - Frame %u resources now available (completed=%llu)\n",
-                           nextFrameIndex, completedAfterWait);
-#endif
+              IGL_LOG_ERROR("CommandQueue::submit() - Wait failed with result 0x%08X\n", waitResult);
             }
-          } else if (waitResult == WAIT_TIMEOUT) {
-            IGL_LOG_ERROR("CommandQueue::submit() - TIMEOUT waiting for frame %u fence %llu (completed=%llu)\n",
-                         nextFrameIndex, nextFrameFence, fence->GetCompletedValue());
-            IGL_LOG_ERROR("CommandQueue::submit() - Forcing infinite wait to prevent device removed...\n");
-            // CRITICAL: Must wait for GPU to finish before resetting allocator
-            // This can happen during window drag or very low FPS scenarios
-            WaitForSingleObject(ctx.getFenceEvent(), INFINITE);
-#ifdef IGL_DEBUG
-            IGL_LOG_INFO("CommandQueue::submit() - Infinite wait completed (fence now=%llu)\n",
-                         fence->GetCompletedValue());
-#endif
           } else {
-            IGL_LOG_ERROR("CommandQueue::submit() - Wait failed with result 0x%08X\n", waitResult);
+            // Fence completed during SetEventOnCompletion (race condition handled)
+#ifdef IGL_DEBUG
+            IGL_LOG_INFO("CommandQueue::submit() - Frame %u fence completed during setup (race avoided, completed=%llu)\n",
+                         nextFrameIndex, fence->GetCompletedValue());
+#endif
           }
         } else {
-          // Fence completed during SetEventOnCompletion (race condition handled)
-#ifdef IGL_DEBUG
-          IGL_LOG_INFO("CommandQueue::submit() - Frame %u fence completed during setup (race avoided, completed=%llu)\n",
-                       nextFrameIndex, fence->GetCompletedValue());
-#endif
+          IGL_LOG_ERROR("CommandQueue::submit() - SetEventOnCompletion failed: 0x%08X\n", static_cast<unsigned>(hr));
         }
+        CloseHandle(hEvent);
       } else {
-        IGL_LOG_ERROR("CommandQueue::submit() - SetEventOnCompletion failed: 0x%08X\n", static_cast<unsigned>(hr));
+        IGL_LOG_ERROR("CommandQueue::submit() - Failed to create event for frame fence wait\n");
       }
     } else {
 #ifdef IGL_DEBUG
@@ -758,14 +773,21 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
                       "(completed=%llu, need=%llu, cmdBufCount=%u). Waiting...\n",
                       completedValue, allocatorCompletionFence, nextFrame.commandBufferCount);
 
-        // Wait for allocator completion fence
-        HRESULT hr = fence->SetEventOnCompletion(allocatorCompletionFence, ctx.getFenceEvent());
-        if (SUCCEEDED(hr)) {
-          if (fence->GetCompletedValue() < allocatorCompletionFence) {
-            WaitForSingleObject(ctx.getFenceEvent(), INFINITE);
-            IGL_LOG_ERROR("CommandQueue::submit() - Allocator wait completed (fence now=%llu)\n",
-                         fence->GetCompletedValue());
+        // D-003: Create dedicated fence event per wait operation to eliminate TOCTOU race
+        HANDLE hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        if (hEvent) {
+          HRESULT hr = fence->SetEventOnCompletion(allocatorCompletionFence, hEvent);
+          if (SUCCEEDED(hr)) {
+            // D-003: Re-check fence after SetEventOnCompletion to avoid race
+            if (fence->GetCompletedValue() < allocatorCompletionFence) {
+              WaitForSingleObject(hEvent, INFINITE);
+              IGL_LOG_ERROR("CommandQueue::submit() - Allocator wait completed (fence now=%llu)\n",
+                           fence->GetCompletedValue());
+            }
           }
+          CloseHandle(hEvent);
+        } else {
+          IGL_LOG_ERROR("CommandQueue::submit() - Failed to create event for allocator wait\n");
         }
       }
 
