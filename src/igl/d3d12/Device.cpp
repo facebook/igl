@@ -1636,13 +1636,15 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   rootParams[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   rootParams[4].DescriptorTable.NumDescriptorRanges = 1;
   rootParams[4].DescriptorTable.pDescriptorRanges = &srvRange;
-  rootParams[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+  // C-006: Enable texture access in all shader stages (vertex, pixel, etc.)
+  rootParams[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
   // Parameter 5: Descriptor table for Samplers
   rootParams[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   rootParams[5].DescriptorTable.NumDescriptorRanges = 1;
   rootParams[5].DescriptorTable.pDescriptorRanges = &samplerRange;
-  rootParams[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+  // C-006: Enable sampler access in all shader stages (vertex, pixel, etc.)
+  rootParams[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
   // P1_DX12-FIND-05: Parameter 6: Descriptor table for UAVs (storage buffers)
   rootParams[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;

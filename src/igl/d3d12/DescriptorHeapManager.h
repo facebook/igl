@@ -56,6 +56,12 @@ class DescriptorHeapManager {
   uint32_t getRtvDescriptorSize() const { return rtvDescriptorSize_; }
   uint32_t getDsvDescriptorSize() const { return dsvDescriptorSize_; }
 
+  // C-006: Descriptor handle validation helpers
+  [[nodiscard]] bool isValidRTVIndex(uint32_t index) const;
+  [[nodiscard]] bool isValidDSVIndex(uint32_t index) const;
+  [[nodiscard]] bool isValidCbvSrvUavIndex(uint32_t index) const;
+  [[nodiscard]] bool isValidSamplerIndex(uint32_t index) const;
+
   // Telemetry: Log current heap usage statistics
   void logUsageStats() const;
 
