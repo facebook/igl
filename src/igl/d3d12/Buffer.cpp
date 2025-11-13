@@ -341,18 +341,25 @@ void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
     // (e.g., via copyTextureToBuffer or compute shader writes)
     IGL_LOG_INFO("Buffer::map() - Copying from DEFAULT buffer (resource=%p) to readback staging\n",
                  resource_.Get());
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
 
-    if (FAILED(d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                                 IID_PPV_ARGS(allocator.GetAddressOf()))) ||
-        FAILED(d3dDevice->CreateCommandList(0,
+    // D-001: Use pooled allocator instead of creating transient one
+    auto allocator = device_->getUploadCommandAllocator();
+    if (!allocator.Get()) {
+      Result::setResult(outResult, Result::Code::RuntimeError,
+                       "Failed to get allocator from pool");
+      return nullptr;
+    }
+
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
+    if (FAILED(d3dDevice->CreateCommandList(0,
                                             D3D12_COMMAND_LIST_TYPE_DIRECT,
                                             allocator.Get(),
                                             nullptr,
                                             IID_PPV_ARGS(cmdList.GetAddressOf())))) {
       Result::setResult(outResult, Result::Code::RuntimeError,
                        "Failed to create command list for buffer copy");
+      // D-001: Return allocator to pool even on failure
+      device_->returnUploadCommandAllocator(allocator, 0);
       return nullptr;
     }
 
@@ -379,6 +386,9 @@ void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
 
     // Wait for copy to complete
     ctx.waitForGPU();
+
+    // D-001: Return allocator to pool after synchronous GPU wait
+    device_->returnUploadCommandAllocator(allocator, 0);
 
     // Map the READBACK staging buffer
     D3D12_RANGE readRange = {static_cast<SIZE_T>(range.offset),

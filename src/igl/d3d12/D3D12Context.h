@@ -35,7 +35,14 @@ struct DescriptorHeapPage {
 // Per-frame context for CPU/GPU parallelism
 struct FrameContext {
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-  UINT64 fenceValue = 0;
+  UINT64 fenceValue = 0;  // First fence signaled this frame (backward compatibility)
+
+  // D-002: Track maximum fence value of ALL command lists using this allocator
+  // CRITICAL: Allocator can only be reset when GPU completes maxAllocatorFence
+  UINT64 maxAllocatorFence = 0;
+
+  // D-002: Count command buffers submitted with this allocator (telemetry)
+  uint32_t commandBufferCount = 0;
 
   // Per-frame shader-visible descriptor heaps (following Microsoft MiniEngine pattern)
   // C-001: Now supports multiple pages for dynamic growth to prevent overflow corruption

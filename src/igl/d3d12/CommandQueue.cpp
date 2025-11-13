@@ -21,6 +21,7 @@ namespace {
 // Helper function to execute a texture-to-buffer copy operation immediately
 // This is called from CommandQueue::submit() for deferred copies
 void executeCopyTextureToBuffer(D3D12Context& ctx,
+                                       Device& iglDevice,
                                        Texture& srcTex,
                                        Buffer& dstBuf,
                                        uint64_t destinationOffset,
@@ -114,18 +115,22 @@ void executeCopyTextureToBuffer(D3D12Context& ctx,
     copyDestination = readbackBuffer.Get();
   }
 
-  // Create transient command list for the copy operation
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
+  // D-001: Use pooled allocator instead of creating transient one
+  auto allocator = iglDevice.getUploadCommandAllocator();
+  if (!allocator.Get()) {
+    IGL_LOG_ERROR("copyTextureToBuffer: Failed to get allocator from pool\n");
+    return;
+  }
 
-  if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                            IID_PPV_ARGS(allocator.GetAddressOf()))) ||
-      FAILED(device->CreateCommandList(0,
+  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
+  if (FAILED(device->CreateCommandList(0,
                                        D3D12_COMMAND_LIST_TYPE_DIRECT,
                                        allocator.Get(),
                                        nullptr,
                                        IID_PPV_ARGS(cmdList.GetAddressOf())))) {
     IGL_LOG_ERROR("copyTextureToBuffer: Failed to create command list\n");
+    // D-001: Return allocator to pool even on failure (with fence value 0)
+    iglDevice.returnUploadCommandAllocator(allocator, 0);
     return;
   }
 
@@ -177,6 +182,10 @@ void executeCopyTextureToBuffer(D3D12Context& ctx,
 
   // Wait for GPU to complete
   ctx.waitForGPU();
+
+  // D-001: Return allocator to pool after synchronous GPU wait
+  // Since waitForGPU() completes, the allocator is safe to reuse
+  iglDevice.returnUploadCommandAllocator(allocator, 0);
 
   // If we used a readback staging buffer, copy to the final destination
   if (needsReadbackStaging) {
@@ -267,15 +276,21 @@ void executeCopyTextureToBuffer(D3D12Context& ctx,
           uploadBuffer->Unmap(0, nullptr);
 
           // GPU copy from upload buffer to destination DEFAULT buffer
-          Microsoft::WRL::ComPtr<ID3D12CommandAllocator> copyAllocator;
-          Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> copyList;
-          if (SUCCEEDED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                                        IID_PPV_ARGS(copyAllocator.GetAddressOf()))) &&
-              SUCCEEDED(device->CreateCommandList(0,
-                                                   D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                                   copyAllocator.Get(),
-                                                   nullptr,
-                                                   IID_PPV_ARGS(copyList.GetAddressOf())))) {
+          // D-001: Use pooled allocator instead of creating transient one
+          auto copyAllocator = iglDevice.getUploadCommandAllocator();
+          if (!copyAllocator.Get()) {
+            IGL_LOG_ERROR("copyTextureToBuffer: Failed to get allocator from pool for GPU copy\n");
+          } else {
+            Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> copyList;
+            if (FAILED(device->CreateCommandList(0,
+                                                  D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                                  copyAllocator.Get(),
+                                                  nullptr,
+                                                  IID_PPV_ARGS(copyList.GetAddressOf())))) {
+              IGL_LOG_ERROR("copyTextureToBuffer: Failed to create command list for GPU copy\n");
+              // D-001: Return allocator to pool even on failure
+              iglDevice.returnUploadCommandAllocator(copyAllocator, 0);
+            } else {
             // Transition destination buffer to COPY_DEST state
             D3D12_RESOURCE_BARRIER barrier = {};
             barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -295,14 +310,16 @@ void executeCopyTextureToBuffer(D3D12Context& ctx,
             barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
             copyList->ResourceBarrier(1, &barrier);
 
-            copyList->Close();
-            ID3D12CommandList* lists[] = {copyList.Get()};
-            queue->ExecuteCommandLists(1, lists);
-            IGL_LOG_INFO("copyTextureToBuffer: Waiting for GPU copy to complete...\n");
-            ctx.waitForGPU();
-            IGL_LOG_INFO("copyTextureToBuffer: GPU copy complete!\n");
-          } else {
-            IGL_LOG_ERROR("copyTextureToBuffer: Failed to create command list for GPU copy\n");
+              copyList->Close();
+              ID3D12CommandList* lists[] = {copyList.Get()};
+              queue->ExecuteCommandLists(1, lists);
+              IGL_LOG_INFO("copyTextureToBuffer: Waiting for GPU copy to complete...\n");
+              ctx.waitForGPU();
+              IGL_LOG_INFO("copyTextureToBuffer: GPU copy complete!\n");
+
+              // D-001: Return allocator to pool after synchronous GPU wait
+              iglDevice.returnUploadCommandAllocator(copyAllocator, 0);
+            }
           }
         } else {
           IGL_LOG_ERROR("copyTextureToBuffer: Failed to map upload buffer\n");
@@ -474,7 +491,8 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
 
       // Get command buffer's helper function (it's private, so we need to friend CommandQueue or make it public)
       // For now, we'll inline the copy logic here
-      executeCopyTextureToBuffer(ctx, *srcTex, *dstBuf, copy.destinationOffset, copy.mipLevel, copy.layer);
+      // D-001: Pass device_ for allocator pooling
+      executeCopyTextureToBuffer(ctx, device_, *srcTex, *dstBuf, copy.destinationOffset, copy.mipLevel, copy.layer);
     }
 #ifdef IGL_DEBUG
     IGL_LOG_INFO("CommandQueue::submit() - All deferred copies executed successfully\n");
@@ -563,10 +581,28 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   auto* fence = ctx.getFence();
 
   d3dCommandQueue->Signal(fence, currentFenceValue);
-  ctx.getFrameContexts()[ctx.getCurrentFrameIndex()].fenceValue = currentFenceValue;
+
+  auto& frameCtx = ctx.getFrameContexts()[ctx.getCurrentFrameIndex()];
+
+  // D-002: Update frame fence (first signal, backward compatibility)
+  if (frameCtx.fenceValue == 0) {
+    frameCtx.fenceValue = currentFenceValue;
+  }
+
+  // D-002: CRITICAL - Update max allocator fence to track ALL command lists
+  // This is the fence value we must wait for before resetting allocator
+  if (currentFenceValue > frameCtx.maxAllocatorFence) {
+    frameCtx.maxAllocatorFence = currentFenceValue;
+  }
+
+  // D-002: Track command buffer count (telemetry)
+  frameCtx.commandBufferCount++;
+
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandQueue::submit() - Signaled fence for frame %u (value=%llu)\n",
-               ctx.getCurrentFrameIndex(), currentFenceValue);
+  IGL_LOG_INFO("CommandQueue::submit() - Signaled fence for frame %u "
+               "(value=%llu, maxAllocatorFence=%llu, cmdBufCount=%u)\n",
+               ctx.getCurrentFrameIndex(), currentFenceValue,
+               frameCtx.maxAllocatorFence, frameCtx.commandBufferCount);
 #endif
 
   // Move to next frame
@@ -696,19 +732,73 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
     IGL_LOG_INFO("CommandQueue::submit() - Advanced to frame index %u\n", nextFrameIndex);
 #endif
 
-    // CRITICAL: Reset the command allocator for this frame AFTER fence wait
-    // Following Microsoft's D3D12HelloFrameBuffering pattern: allocator can only be reset
-    // when GPU has finished all work submitted with it
-    auto* frameAllocator = ctx.getFrameContexts()[nextFrameIndex].allocator.Get();
-    HRESULT allocResetHr = frameAllocator->Reset();
-    if (FAILED(allocResetHr)) {
-      IGL_LOG_ERROR("CommandQueue::submit() - FAILED to reset frame %u allocator: 0x%08X\n",
-                    nextFrameIndex, static_cast<unsigned>(allocResetHr));
+    // D-002: CRITICAL - Reset allocator only after ALL command lists using it complete
+    auto& nextFrame = ctx.getFrameContexts()[nextFrameIndex];
+    auto* frameAllocator = nextFrame.allocator.Get();
+
+    // D-002: Must wait for maxAllocatorFence, not just fenceValue
+    // maxAllocatorFence tracks the LAST command list submitted with this allocator
+    const UINT64 allocatorCompletionFence = nextFrame.maxAllocatorFence;
+
+    if (allocatorCompletionFence == 0) {
+      // First frame, allocator never used, safe to reset
+      HRESULT allocResetHr = frameAllocator->Reset();
+      if (FAILED(allocResetHr)) {
+        IGL_LOG_ERROR("CommandQueue::submit() - FAILED to reset frame %u allocator: 0x%08X\n",
+                      nextFrameIndex, static_cast<unsigned>(allocResetHr));
+      }
     } else {
+      // D-002: Verify GPU has completed ALL command lists using this allocator
+      const UINT64 completedValue = fence->GetCompletedValue();
+
+      if (completedValue < allocatorCompletionFence) {
+        // ⚠️ SAFETY CATCH: GPU hasn't finished all command lists yet
+        // This should NOT happen if frame pacing is correct, but we check defensively
+        IGL_LOG_ERROR("CommandQueue::submit() - ALLOCATOR SYNC ISSUE: GPU not done with all command lists "
+                      "(completed=%llu, need=%llu, cmdBufCount=%u). Waiting...\n",
+                      completedValue, allocatorCompletionFence, nextFrame.commandBufferCount);
+
+        // Wait for allocator completion fence
+        HRESULT hr = fence->SetEventOnCompletion(allocatorCompletionFence, ctx.getFenceEvent());
+        if (SUCCEEDED(hr)) {
+          if (fence->GetCompletedValue() < allocatorCompletionFence) {
+            WaitForSingleObject(ctx.getFenceEvent(), INFINITE);
+            IGL_LOG_ERROR("CommandQueue::submit() - Allocator wait completed (fence now=%llu)\n",
+                         fence->GetCompletedValue());
+          }
+        }
+      }
+
+      // Now safe to reset allocator - GPU finished ALL command lists
+      HRESULT allocResetHr = frameAllocator->Reset();
+      if (FAILED(allocResetHr)) {
+        IGL_LOG_ERROR("CommandQueue::submit() - FAILED to reset frame %u allocator: 0x%08X "
+                      "(maxFence=%llu, completed=%llu, cmdBufCount=%u)\n",
+                      nextFrameIndex, static_cast<unsigned>(allocResetHr),
+                      allocatorCompletionFence, fence->GetCompletedValue(),
+                      nextFrame.commandBufferCount);
+      } else {
 #ifdef IGL_DEBUG
-      IGL_LOG_INFO("CommandQueue::submit() - Reset frame %u allocator successfully\n", nextFrameIndex);
+        IGL_LOG_INFO("CommandQueue::submit() - Reset frame %u allocator successfully "
+                     "(waited for %u command buffers, maxFence=%llu)\n",
+                     nextFrameIndex, nextFrame.commandBufferCount, allocatorCompletionFence);
+#endif
+      }
+
+#ifdef _DEBUG
+      // D-002: Validate allocator reset was safe
+      if (SUCCEEDED(allocResetHr)) {
+        const UINT64 currentCompleted = fence->GetCompletedValue();
+        IGL_DEBUG_ASSERT(currentCompleted >= allocatorCompletionFence,
+                         "Allocator reset before GPU completed all command lists!");
+      }
 #endif
     }
+
+    // D-002: Reset frame tracking for next usage
+    nextFrame.fenceValue = 0;
+    nextFrame.maxAllocatorFence = 0;
+    nextFrame.commandBufferCount = 0;
 
     // CRITICAL: Clear transient buffers from the frame we just waited for
     // The GPU has finished executing that frame, so these resources can now be released

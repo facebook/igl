@@ -363,30 +363,38 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
   const uint32_t mipHeight = std::max<uint32_t>(1u, texDims.height >> mipLevel);
 
   // Create temporary command resources for readback
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+  // D-001: Use pooled allocator instead of creating transient one
+  auto& iglDevice = d3dQueueWrapper->getDevice();
+  auto allocator = iglDevice.getUploadCommandAllocator();
+  if (!allocator.Get()) {
+    IGL_LOG_ERROR("Framebuffer::copyBytesDepthAttachment: Failed to get allocator from pool\n");
+    return;
+  }
+
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
   Microsoft::WRL::ComPtr<ID3D12Fence> fence;
   HANDLE fenceEvent = nullptr;
-
-  if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                            IID_PPV_ARGS(allocator.GetAddressOf())))) {
-    return;
-  }
 
   if (FAILED(device->CreateCommandList(0,
                                        D3D12_COMMAND_LIST_TYPE_DIRECT,
                                        allocator.Get(),
                                        nullptr,
                                        IID_PPV_ARGS(commandList.GetAddressOf())))) {
+    // D-001: Return allocator to pool even on failure
+    iglDevice.returnUploadCommandAllocator(allocator, 0);
     return;
   }
 
   if (FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf())))) {
+    // D-001: Return allocator to pool even on failure
+    iglDevice.returnUploadCommandAllocator(allocator, 0);
     return;
   }
 
   fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
   if (!fenceEvent) {
+    // D-001: Return allocator to pool even on failure
+    iglDevice.returnUploadCommandAllocator(allocator, 0);
     return;
   }
 
@@ -401,6 +409,8 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
 
   if (totalBytes == 0) {
     CloseHandle(fenceEvent);
+    // D-001: Return allocator to pool even on failure
+    iglDevice.returnUploadCommandAllocator(allocator, 0);
     return;
   }
 
@@ -425,6 +435,8 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
                                              nullptr,
                                              IID_PPV_ARGS(readbackBuffer.GetAddressOf())))) {
     CloseHandle(fenceEvent);
+    // D-001: Return allocator to pool even on failure
+    iglDevice.returnUploadCommandAllocator(allocator, 0);
     return;
   }
 
@@ -459,6 +471,8 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
 
   if (FAILED(commandList->Close())) {
     CloseHandle(fenceEvent);
+    // D-001: Return allocator to pool even on failure
+    iglDevice.returnUploadCommandAllocator(allocator, 0);
     return;
   }
 
@@ -469,14 +483,21 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
   // Wait for GPU to complete
   if (FAILED(d3dQueue->Signal(fence.Get(), 1))) {
     CloseHandle(fenceEvent);
+    // D-001: Return allocator to pool even on failure
+    iglDevice.returnUploadCommandAllocator(allocator, 0);
     return;
   }
   if (FAILED(fence->SetEventOnCompletion(1, fenceEvent))) {
     CloseHandle(fenceEvent);
+    // D-001: Return allocator to pool even on failure
+    iglDevice.returnUploadCommandAllocator(allocator, 0);
     return;
   }
   WaitForSingleObject(fenceEvent, INFINITE);
   CloseHandle(fenceEvent);
+
+  // D-001: Return allocator to pool after synchronous GPU wait
+  iglDevice.returnUploadCommandAllocator(allocator, 0);
 
   // Map readback buffer and copy data
   void* mapped = nullptr;
