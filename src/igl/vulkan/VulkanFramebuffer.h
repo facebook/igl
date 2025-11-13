@@ -42,7 +42,7 @@ class VulkanFramebuffer final {
 
  public:
   const VulkanContext& ctx;
-  VkDevice device = VK_NULL_HANDLE;
+  VkDevice vkDevice = VK_NULL_HANDLE;
   VkFramebuffer vkFramebuffer = VK_NULL_HANDLE;
 };
 
