@@ -2558,36 +2558,44 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
 }
 
 void processLoadedMaterials() {
-  LoadedMaterial mtl;
+  int numLoaded = 0;
 
-  {
-    const std::lock_guard guard(loadedMaterialsMutex_);
-    if (loadedMaterials_.empty()) {
-      return;
-    } else {
-      mtl = loadedMaterials_.back();
-      loadedMaterials_.pop_back();
-      remainingMaterialsToLoad_.fetch_sub(1u, std::memory_order_release);
+  const int kMaxMaterialsPerFrame = 5;
+
+  for (; numLoaded < kMaxMaterialsPerFrame; numLoaded++) {
+    LoadedMaterial mtl;
+
+    {
+      const std::lock_guard guard(loadedMaterialsMutex_);
+      if (loadedMaterials_.empty()) {
+        break;
+      } else {
+        mtl = loadedMaterials_.back();
+        loadedMaterials_.pop_back();
+        remainingMaterialsToLoad_.fetch_sub(1u, std::memory_order_release);
+      }
     }
-  }
 
-  MaterialTextures tex;
+    MaterialTextures tex;
 
-  tex.ambient = createTexture(mtl.ambient);
-  tex.diffuse = createTexture(mtl.diffuse);
-  tex.alpha = createTexture(mtl.alpha);
+    tex.ambient = createTexture(mtl.ambient);
+    tex.diffuse = createTexture(mtl.diffuse);
+    tex.alpha = createTexture(mtl.alpha);
 
-  // update GPU materials
-  textures_[mtl.idx] = tex;
+    // update GPU materials
+    textures_[mtl.idx] = tex;
 #if !USE_OPENGL_BACKEND
-  materials_[mtl.idx].texAmbient = tex.ambient ? (uint32_t)tex.ambient->getTextureId() : 0;
-  materials_[mtl.idx].texDiffuse = tex.diffuse ? (uint32_t)tex.diffuse->getTextureId() : 0;
-  materials_[mtl.idx].texAlpha = tex.alpha ? (uint32_t)tex.alpha->getTextureId() : 0;
-  IGL_DEBUG_ASSERT(materials_[mtl.idx].texAmbient >= 0);
-  IGL_DEBUG_ASSERT(materials_[mtl.idx].texDiffuse >= 0);
-  IGL_DEBUG_ASSERT(materials_[mtl.idx].texAlpha >= 0);
+    materials_[mtl.idx].texAmbient = tex.ambient ? (uint32_t)tex.ambient->getTextureId() : 0;
+    materials_[mtl.idx].texDiffuse = tex.diffuse ? (uint32_t)tex.diffuse->getTextureId() : 0;
+    materials_[mtl.idx].texAlpha = tex.alpha ? (uint32_t)tex.alpha->getTextureId() : 0;
+    IGL_DEBUG_ASSERT(materials_[mtl.idx].texAmbient >= 0);
+    IGL_DEBUG_ASSERT(materials_[mtl.idx].texDiffuse >= 0);
+    IGL_DEBUG_ASSERT(materials_[mtl.idx].texAlpha >= 0);
 #endif
-  sbMaterials_->upload(materials_.data(), BufferRange(sizeof(GPUMaterial) * materials_.size()));
+  }
+  if (numLoaded) {
+    sbMaterials_->upload(materials_.data(), BufferRange(sizeof(GPUMaterial) * materials_.size()));
+  }
 }
 
 } // namespace
