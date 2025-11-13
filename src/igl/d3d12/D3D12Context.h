@@ -46,6 +46,10 @@ struct FrameContext {
   // Current active page index for CBV/SRV/UAV allocation
   uint32_t currentCbvSrvUavPageIndex = 0;
 
+  // DX12-NEW-01: Track the currently active shader-visible heap
+  // This is updated when allocating new pages and must be rebound to the command list
+  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> activeCbvSrvUavHeap;
+
   // Legacy accessor for backward compatibility (returns first page)
   // DEPRECATED: Use cbvSrvUavHeapPages directly for multi-page access
   ID3D12DescriptorHeap* cbvSrvUavHeap() const {

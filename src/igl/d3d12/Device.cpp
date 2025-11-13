@@ -439,51 +439,74 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
           std::memcpy(mapped, desc.data, desc.length);
           uploadBuffer->Unmap(0, nullptr);
 
-          // Record copy commands
-          Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-          Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
-          if (SUCCEEDED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                                       IID_PPV_ARGS(allocator.GetAddressOf()))) &&
-              SUCCEEDED(device->CreateCommandList(0,
-                                                  D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                                  allocator.Get(),
-                                                  nullptr,
-                                                  IID_PPV_ARGS(cmdList.GetAddressOf())))) {
-            // Transition default buffer to COPY_DEST
-            D3D12_RESOURCE_BARRIER toCopyDest = {};
-            toCopyDest.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-            toCopyDest.Transition.pResource = buffer.Get();
-            toCopyDest.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-            toCopyDest.Transition.StateBefore = initialState; // COMMON
-            toCopyDest.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
-            cmdList->ResourceBarrier(1, &toCopyDest);
+          // P0_DX12-005: Get command allocator from pool with fence tracking
+          Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator = getUploadCommandAllocator();
+          if (!allocator.Get()) {
+            IGL_LOG_ERROR("Device::createBuffer: Failed to get command allocator from pool\n");
+          } else {
+            Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
+            if (SUCCEEDED(device->CreateCommandList(0,
+                                                    D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                                    allocator.Get(),
+                                                    nullptr,
+                                                    IID_PPV_ARGS(cmdList.GetAddressOf())))) {
+              // Transition default buffer to COPY_DEST
+              D3D12_RESOURCE_BARRIER toCopyDest = {};
+              toCopyDest.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+              toCopyDest.Transition.pResource = buffer.Get();
+              toCopyDest.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+              toCopyDest.Transition.StateBefore = initialState; // COMMON
+              toCopyDest.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+              cmdList->ResourceBarrier(1, &toCopyDest);
 
-            // Copy upload -> default
-            cmdList->CopyBufferRegion(buffer.Get(), 0, uploadBuffer.Get(), 0, alignedSize);
+              // Copy upload -> default
+              cmdList->CopyBufferRegion(buffer.Get(), 0, uploadBuffer.Get(), 0, alignedSize);
 
-            // Transition to a likely-read state based on buffer type
-            D3D12_RESOURCE_STATES targetState = D3D12_RESOURCE_STATE_GENERIC_READ;
-            if (desc.type & BufferDesc::BufferTypeBits::Vertex) {
-              targetState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-            } else if (desc.type & BufferDesc::BufferTypeBits::Uniform) {
-              targetState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-            } else if (desc.type & BufferDesc::BufferTypeBits::Index) {
-              targetState = D3D12_RESOURCE_STATE_INDEX_BUFFER;
+              // Transition to a likely-read state based on buffer type
+              D3D12_RESOURCE_STATES targetState = D3D12_RESOURCE_STATE_GENERIC_READ;
+              if (desc.type & BufferDesc::BufferTypeBits::Vertex) {
+                targetState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+              } else if (desc.type & BufferDesc::BufferTypeBits::Uniform) {
+                targetState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+              } else if (desc.type & BufferDesc::BufferTypeBits::Index) {
+                targetState = D3D12_RESOURCE_STATE_INDEX_BUFFER;
+              }
+              D3D12_RESOURCE_BARRIER toTarget = {};
+              toTarget.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+              toTarget.Transition.pResource = buffer.Get();
+              toTarget.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+              toTarget.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+              toTarget.Transition.StateAfter = targetState;
+              cmdList->ResourceBarrier(1, &toTarget);
+
+              cmdList->Close();
+              ID3D12CommandList* lists[] = {cmdList.Get()};
+              ctx_->getCommandQueue()->ExecuteCommandLists(1, lists);
+
+              // DX12-NEW-03: Replace synchronous waitForGPU() with async fence signaling
+              // Get fence value that will signal when this upload completes
+              UINT64 uploadFenceValue = getNextUploadFenceValue();
+
+              // Signal upload fence after copy completes
+              HRESULT hrSignal = ctx_->getCommandQueue()->Signal(uploadFence_.Get(), uploadFenceValue);
+              if (FAILED(hrSignal)) {
+                IGL_LOG_ERROR("Device::createBuffer: Failed to signal upload fence: 0x%08X\n", hrSignal);
+                // Return allocator with 0 to avoid blocking the pool
+                returnUploadCommandAllocator(allocator, 0);
+              } else {
+                // Return allocator to pool with fence value (will be reused after fence signaled)
+                returnUploadCommandAllocator(allocator, uploadFenceValue);
+
+                // DX12-NEW-02: Track staging buffer for async cleanup with fence value
+                trackUploadBuffer(std::move(uploadBuffer), uploadFenceValue);
+              }
+
+              finalState = targetState;
+            } else {
+              IGL_LOG_ERROR("Device::createBuffer: Failed to create command list\n");
+              // Return allocator with 0 to avoid blocking the pool
+              returnUploadCommandAllocator(allocator, 0);
             }
-            D3D12_RESOURCE_BARRIER toTarget = {};
-            toTarget.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-            toTarget.Transition.pResource = buffer.Get();
-            toTarget.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-            toTarget.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-            toTarget.Transition.StateAfter = targetState;
-            cmdList->ResourceBarrier(1, &toTarget);
-
-            cmdList->Close();
-            ID3D12CommandList* lists[] = {cmdList.Get()};
-            ctx_->getCommandQueue()->ExecuteCommandLists(1, lists);
-            ctx_->waitForGPU();
-
-            finalState = targetState;
           }
         }
       }
@@ -2653,26 +2676,16 @@ void Device::processCompletedUploads() const {
   }
 }
 
-void Device::trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer) const {
+void Device::trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer, UINT64 fenceValue) const {
   if (!buffer.Get()) {
     return;
   }
 
-  auto& ctx = const_cast<D3D12Context&>(getD3D12Context());
-  ID3D12CommandQueue* queue = ctx.getCommandQueue();
-  ID3D12Fence* fence = ctx.getFence();
-  if (!queue || !fence) {
-    return;
-  }
-
-  UINT64& fenceValue = ctx.getFenceValue();
-  const UINT64 signalValue = ++fenceValue;
-  if (FAILED(queue->Signal(fence, signalValue))) {
-    return;
-  }
-
+  // DX12-NEW-02: Track with upload fence value (not swap-chain fence)
+  // The caller must signal uploadFence_ BEFORE calling this method
+  // This ensures pendingUploads_ is synchronized with uploadFence_->GetCompletedValue()
   std::lock_guard<std::mutex> lock(pendingUploadsMutex_);
-  pendingUploads_.push_back(PendingUpload{signalValue, std::move(buffer)});
+  pendingUploads_.push_back(PendingUpload{fenceValue, std::move(buffer)});
 }
 
 // Command Allocator Pool Implementation (P0_DX12-005, H-004)
@@ -2680,7 +2693,7 @@ void Device::trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer) co
 // H-004: Cap pool at 64 allocators to prevent memory leaks
 static constexpr size_t kMaxCommandAllocators = 64;
 
-Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator() {
+Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator() const {
   if (!uploadFence_.Get()) {
     IGL_LOG_ERROR("Device::getUploadCommandAllocator: Upload fence not initialized\n");
     return nullptr;
@@ -2753,7 +2766,7 @@ Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator
 }
 
 void Device::returnUploadCommandAllocator(Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator,
-                                          UINT64 fenceValue) {
+                                          UINT64 fenceValue) const {
   if (!allocator.Get()) {
     return;
   }

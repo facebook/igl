@@ -146,6 +146,19 @@ Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
     IGL_LOG_INFO("D3D12: Allocated new CBV/SRV/UAV descriptor heap page %u for frame %u (total: %zu pages, %zu descriptors)\n",
                  currentPageIdx, frameIdx, pages.size(), pages.size() * kDescriptorsPerPage);
 
+    // DX12-NEW-01: Store the new heap for encoder rebinding
+    frameCtx.activeCbvSrvUavHeap = newHeap;
+
+    // DX12-NEW-01: Rebind heap on the command list immediately
+    if (commandList_.Get()) {
+      ID3D12DescriptorHeap* heaps[] = {
+        frameCtx.activeCbvSrvUavHeap.Get(),
+        frameCtx.samplerHeap.Get()
+      };
+      commandList_->SetDescriptorHeaps(2, heaps);
+      IGL_LOG_INFO("D3D12: Rebound descriptor heaps after page allocation (page %u)\n", currentPageIdx);
+    }
+
     // Update current page reference
     currentPage = pages[currentPageIdx];
   }
@@ -281,18 +294,22 @@ void CommandBuffer::begin() {
   const uint32_t frameIdx = ctx.getCurrentFrameIndex();
   auto& frameCtx = ctx.getFrameContexts()[frameIdx];
 
-  // Get current page's heap (or first page if not initialized)
-  ID3D12DescriptorHeap* cbvSrvUavHeap = frameCtx.cbvSrvUavHeapPages.empty()
-      ? nullptr
-      : frameCtx.cbvSrvUavHeapPages[frameCtx.currentCbvSrvUavPageIndex].heap.Get();
+  // DX12-NEW-01: Initialize active heap to current page at frame start
+  if (frameCtx.cbvSrvUavHeapPages.empty()) {
+    IGL_LOG_ERROR("CommandBuffer::begin() - No CBV/SRV/UAV heap pages available for frame %u\n", frameIdx);
+    return;
+  }
 
-  if (!cbvSrvUavHeap) {
+  frameCtx.activeCbvSrvUavHeap = frameCtx.cbvSrvUavHeapPages[frameCtx.currentCbvSrvUavPageIndex].heap;
+
+  if (!frameCtx.activeCbvSrvUavHeap.Get()) {
     IGL_LOG_ERROR("CommandBuffer::begin() - No CBV/SRV/UAV heap available for frame %u\n", frameIdx);
     return;
   }
 
+  // DX12-NEW-01: Bind heaps using active heap, not legacy accessor
   ID3D12DescriptorHeap* heaps[] = {
-      cbvSrvUavHeap,
+      frameCtx.activeCbvSrvUavHeap.Get(),
       frameCtx.samplerHeap.Get()
   };
   commandList_->SetDescriptorHeaps(2, heaps);

@@ -21,9 +21,12 @@ ComputeCommandEncoder::ComputeCommandEncoder(CommandBuffer& commandBuffer) :
   IGL_LOG_INFO("ComputeCommandEncoder created\n");
 
   // Set descriptor heaps for this command list
+  // DX12-NEW-01: Use active heap from frame context, not legacy accessor
   auto& context = commandBuffer_.getContext();
-  ID3D12DescriptorHeap* cbvSrvUavHeap = context.getCbvSrvUavHeap();
-  ID3D12DescriptorHeap* samplerHeap = context.getSamplerHeap();
+  auto& frameCtx = context.getFrameContexts()[context.getCurrentFrameIndex()];
+
+  ID3D12DescriptorHeap* cbvSrvUavHeap = frameCtx.activeCbvSrvUavHeap.Get();
+  ID3D12DescriptorHeap* samplerHeap = frameCtx.samplerHeap.Get();
 
   // Legacy fallback: if the context does not provide per-frame heaps, try the manager once
   if ((!cbvSrvUavHeap || !samplerHeap) && context.getDescriptorHeapManager()) {
@@ -41,7 +44,7 @@ ComputeCommandEncoder::ComputeCommandEncoder(CommandBuffer& commandBuffer) :
     if (commandList) {
       ID3D12DescriptorHeap* heaps[] = {cbvSrvUavHeap, samplerHeap};
       commandList->SetDescriptorHeaps(2, heaps);
-      IGL_LOG_INFO("ComputeCommandEncoder: Descriptor heaps set\n");
+      IGL_LOG_INFO("ComputeCommandEncoder: Descriptor heaps set (active heap from FrameContext)\n");
     }
   }
 }

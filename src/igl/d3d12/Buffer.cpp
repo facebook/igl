@@ -256,8 +256,9 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   }
 
   // Only track temporary upload buffers (ring buffer is persistent)
+  // DX12-NEW-02: Pass uploadFenceValue (already signaled above) to track with correct fence
   if (!useRingBuffer && uploadBuffer.Get()) {
-    device_->trackUploadBuffer(std::move(uploadBuffer));
+    device_->trackUploadBuffer(std::move(uploadBuffer), uploadFenceValue);
   }
 
   return Result();

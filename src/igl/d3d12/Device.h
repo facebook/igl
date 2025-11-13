@@ -149,14 +149,14 @@ class Device final : public IDevice {
   }
 
   void processCompletedUploads() const;
-  void trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer) const;
+  void trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer, UINT64 fenceValue) const;
 
   // Command allocator pool access for upload operations (P0_DX12-005)
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> getUploadCommandAllocator();
+  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> getUploadCommandAllocator() const;
   void returnUploadCommandAllocator(Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator,
-                                     UINT64 fenceValue);
+                                     UINT64 fenceValue) const;
   ID3D12Fence* getUploadFence() const { return uploadFence_.Get(); }
-  UINT64 getNextUploadFenceValue() { return ++uploadFenceValue_; }
+  UINT64 getNextUploadFenceValue() const { return ++uploadFenceValue_; }
 
   // Upload ring buffer access (P1_DX12-009)
   UploadRingBuffer* getUploadRingBuffer() const { return uploadRingBuffer_.get(); }

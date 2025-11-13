@@ -379,8 +379,9 @@ Result Texture::upload(const TextureRangeDesc& range,
 
     // P2_DX12-FIND-07: Track staging buffer for async cleanup (no synchronous wait)
     // P1_DX12-009: Only track temporary staging buffers (ring buffer is persistent)
+    // DX12-NEW-02: Pass uploadFenceValue (already signaled above) to track with correct fence
     if (!useRingBuffer && stagingBuffer.Get()) {
-      iglDevice_->trackUploadBuffer(std::move(stagingBuffer));
+      iglDevice_->trackUploadBuffer(std::move(stagingBuffer), uploadFenceValue);
     }
   } else {
     // Fallback for textures without iglDevice_ (shouldn't happen in normal flow)

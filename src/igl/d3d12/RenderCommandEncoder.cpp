@@ -36,16 +36,18 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
   // Per-frame heaps are isolated per frame to prevent descriptor conflicts.
   DescriptorHeapManager* heapMgr = context.getDescriptorHeapManager();
 
-  // ALWAYS use per-frame heaps from D3D12Context (NOT DescriptorHeapManager)
-  // Store in member variables so bindTexture/bindSamplerState can use them
-  cbvSrvUavHeap_ = context.getCbvSrvUavHeap();
-  samplerHeap_ = context.getSamplerHeap();
+  // DX12-NEW-01: Use active heap from frame context, not legacy accessor
+  // This ensures we bind the currently active page, not hardcoded page 0
+  auto& frameCtx = context.getFrameContexts()[context.getCurrentFrameIndex()];
+  cbvSrvUavHeap_ = frameCtx.activeCbvSrvUavHeap.Get();
+  samplerHeap_ = frameCtx.samplerHeap.Get();
 
-  IGL_LOG_INFO("RenderCommandEncoder: Using per-frame heaps from D3D12Context\n");
+  IGL_LOG_INFO("RenderCommandEncoder: Using active per-frame heap from FrameContext\n");
 
-  IGL_LOG_INFO("RenderCommandEncoder: CBV/SRV/UAV heap = %p\n", cbvSrvUavHeap_);
+  IGL_LOG_INFO("RenderCommandEncoder: CBV/SRV/UAV heap (active) = %p\n", cbvSrvUavHeap_);
   IGL_LOG_INFO("RenderCommandEncoder: Sampler heap = %p\n", samplerHeap_);
 
+  // DX12-NEW-01: Bind active heap (may be page 0 or a later page)
   ID3D12DescriptorHeap* heaps[] = {cbvSrvUavHeap_, samplerHeap_};
   IGL_LOG_INFO("RenderCommandEncoder: Setting descriptor heaps...\n");
   commandList_->SetDescriptorHeaps(2, heaps);
