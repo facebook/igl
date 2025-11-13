@@ -30,6 +30,68 @@
 
 namespace igl::d3d12 {
 
+// Helper: Calculate root signature cost in DWORDs
+// Root signature limit: 64 DWORDs
+// Cost formula (per Microsoft documentation):
+//   - Root constants: 1 DWORD per 32-bit value
+//   - Root descriptors (CBV/SRV/UAV): 2 DWORDs each
+//   - Descriptor tables: 1 DWORD each (regardless of table size)
+//   - Static samplers: 0 DWORDs (free)
+// Reference: https://learn.microsoft.com/en-us/windows/win32/direct3d12/root-signature-limits
+static uint32_t calculateRootSignatureCost(const D3D12_ROOT_SIGNATURE_DESC& desc) {
+  uint32_t totalCost = 0;
+
+  for (uint32_t i = 0; i < desc.NumParameters; ++i) {
+    const auto& param = desc.pParameters[i];
+
+    switch (param.ParameterType) {
+      case D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS:
+        totalCost += param.Constants.Num32BitValues;
+        IGL_LOG_INFO("    [%u] Root constants (b%u): %u DWORDs\n",
+                     i, param.Constants.ShaderRegister, param.Constants.Num32BitValues);
+        break;
+
+      case D3D12_ROOT_PARAMETER_TYPE_CBV:
+        totalCost += 2;
+        IGL_LOG_INFO("    [%u] Root CBV (b%u): 2 DWORDs\n",
+                     i, param.Descriptor.ShaderRegister);
+        break;
+
+      case D3D12_ROOT_PARAMETER_TYPE_SRV:
+        totalCost += 2;
+        IGL_LOG_INFO("    [%u] Root SRV (t%u): 2 DWORDs\n",
+                     i, param.Descriptor.ShaderRegister);
+        break;
+
+      case D3D12_ROOT_PARAMETER_TYPE_UAV:
+        totalCost += 2;
+        IGL_LOG_INFO("    [%u] Root UAV (u%u): 2 DWORDs\n",
+                     i, param.Descriptor.ShaderRegister);
+        break;
+
+      case D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE:
+        totalCost += 1;
+        const char* tableType = "Unknown";
+        if (param.DescriptorTable.NumDescriptorRanges > 0) {
+          switch (param.DescriptorTable.pDescriptorRanges[0].RangeType) {
+            case D3D12_DESCRIPTOR_RANGE_TYPE_CBV: tableType = "CBV"; break;
+            case D3D12_DESCRIPTOR_RANGE_TYPE_SRV: tableType = "SRV"; break;
+            case D3D12_DESCRIPTOR_RANGE_TYPE_UAV: tableType = "UAV"; break;
+            case D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER: tableType = "Sampler"; break;
+          }
+        }
+        IGL_LOG_INFO("    [%u] Descriptor table (%s): 1 DWORD\n", i, tableType);
+        break;
+    }
+  }
+
+  if (desc.NumStaticSamplers > 0) {
+    IGL_LOG_INFO("    Static samplers: 0 DWORDs (free, count=%u)\n", desc.NumStaticSamplers);
+  }
+
+  return totalCost;
+}
+
 Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
   platformDevice_ = std::make_unique<PlatformDevice>(*this);
 
@@ -1218,6 +1280,25 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   rootSigDesc.pStaticSamplers = nullptr;
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
 
+  // CRITICAL: Validate root signature cost (64 DWORD limit) - C-003
+  IGL_LOG_INFO("  Validating compute root signature cost:\n");
+  const uint32_t cost = calculateRootSignatureCost(rootSigDesc);
+  IGL_LOG_INFO("  Total cost: %u / 64 DWORDs (%.1f%%)\n", cost, 100.0f * cost / 64.0f);
+
+  // Warning threshold at 50% (32 DWORDs)
+  if (cost > 32) {
+    IGL_LOG_INFO("  WARNING: Root signature cost exceeds 50%% of limit: %u / 64 DWORDs\n", cost);
+  }
+
+  // Hard limit enforcement
+  IGL_DEBUG_ASSERT(cost <= 64, "Root signature exceeds 64 DWORD limit!");
+  if (cost > 64) {
+    IGL_LOG_ERROR("  ROOT SIGNATURE COST OVERFLOW: %u DWORDs (limit: 64)\n", cost);
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange,
+                      "Root signature cost exceeds 64 DWORD hardware limit");
+    return nullptr;
+  }
+
   IGL_LOG_INFO("  Creating compute root signature with Root Constants (b0)/UAVs/SRVs/CBVs/Samplers\n");
 
   // Get or create cached root signature (P0_DX12-002)
@@ -1480,6 +1561,25 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   rootSigDesc.NumStaticSamplers = 0;
   rootSigDesc.pStaticSamplers = nullptr;
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+  // CRITICAL: Validate root signature cost (64 DWORD limit) - C-003
+  IGL_LOG_INFO("  Validating render root signature cost:\n");
+  const uint32_t cost = calculateRootSignatureCost(rootSigDesc);
+  IGL_LOG_INFO("  Total cost: %u / 64 DWORDs (%.1f%%)\n", cost, 100.0f * cost / 64.0f);
+
+  // Warning threshold at 50% (32 DWORDs)
+  if (cost > 32) {
+    IGL_LOG_INFO("  WARNING: Root signature cost exceeds 50%% of limit: %u / 64 DWORDs\n", cost);
+  }
+
+  // Hard limit enforcement
+  IGL_DEBUG_ASSERT(cost <= 64, "Root signature exceeds 64 DWORD limit!");
+  if (cost > 64) {
+    IGL_LOG_ERROR("  ROOT SIGNATURE COST OVERFLOW: %u DWORDs (limit: 64)\n", cost);
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange,
+                      "Root signature cost exceeds 64 DWORD hardware limit");
+    return nullptr;
+  }
 
   IGL_LOG_INFO("  Creating root signature with Push Constants (b2)/Root CBVs (b0,b1)/CBV Table (b3-b15)/SRVs/Samplers/UAVs\n");
 

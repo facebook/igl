@@ -83,6 +83,12 @@ Result DescriptorHeapManager::initialize(ID3D12Device* device, const Sizes& size
     }
   }
 
+  // Initialize allocation tracking bitsets (all descriptors start as free)
+  allocatedRtvs_.resize(sizes_.rtvs, false);
+  allocatedDsvs_.resize(sizes_.dsvs, false);
+  allocatedCbvSrvUav_.resize(sizes_.cbvSrvUav, false);
+  allocatedSamplers_.resize(sizes_.samplers, false);
+
   return Result();
 }
 
@@ -96,6 +102,10 @@ uint32_t DescriptorHeapManager::allocateRTV() {
   }
   const uint32_t idx = freeRtvs_.back();
   freeRtvs_.pop_back();
+
+  // Mark as allocated
+  IGL_DEBUG_ASSERT(!allocatedRtvs_[idx], "Free list contained allocated descriptor!");
+  allocatedRtvs_[idx] = true;
 
   // Track high-watermark
   const uint32_t currentUsage = sizes_.rtvs - static_cast<uint32_t>(freeRtvs_.size());
@@ -117,6 +127,10 @@ uint32_t DescriptorHeapManager::allocateDSV() {
   const uint32_t idx = freeDsvs_.back();
   freeDsvs_.pop_back();
 
+  // Mark as allocated
+  IGL_DEBUG_ASSERT(!allocatedDsvs_[idx], "Free list contained allocated descriptor!");
+  allocatedDsvs_[idx] = true;
+
   // Track high-watermark
   const uint32_t currentUsage = sizes_.dsvs - static_cast<uint32_t>(freeDsvs_.size());
   if (currentUsage > highWaterMarkDsvs_) {
@@ -128,16 +142,42 @@ uint32_t DescriptorHeapManager::allocateDSV() {
 
 void DescriptorHeapManager::freeRTV(uint32_t index) {
   std::lock_guard<std::mutex> lock(mutex_);
-  if (index != UINT32_MAX && index < sizes_.rtvs) {
-    freeRtvs_.push_back(index);
+
+  // Validate bounds
+  if (index == UINT32_MAX || index >= sizes_.rtvs) {
+    return;
   }
+
+  // CRITICAL: Detect double-free bugs
+  if (!allocatedRtvs_[index]) {
+    IGL_LOG_ERROR("DescriptorHeapManager: DOUBLE-FREE DETECTED - RTV index %u already freed!\n", index);
+    IGL_DEBUG_ASSERT(false, "Double-free of RTV descriptor - caller bug detected");
+    return;  // Prevent corruption even in release builds
+  }
+
+  // Mark as free and add to free list
+  allocatedRtvs_[index] = false;
+  freeRtvs_.push_back(index);
 }
 
 void DescriptorHeapManager::freeDSV(uint32_t index) {
   std::lock_guard<std::mutex> lock(mutex_);
-  if (index != UINT32_MAX && index < sizes_.dsvs) {
-    freeDsvs_.push_back(index);
+
+  // Validate bounds
+  if (index == UINT32_MAX || index >= sizes_.dsvs) {
+    return;
   }
+
+  // CRITICAL: Detect double-free bugs
+  if (!allocatedDsvs_[index]) {
+    IGL_LOG_ERROR("DescriptorHeapManager: DOUBLE-FREE DETECTED - DSV index %u already freed!\n", index);
+    IGL_DEBUG_ASSERT(false, "Double-free of DSV descriptor - caller bug detected");
+    return;  // Prevent corruption even in release builds
+  }
+
+  // Mark as free and add to free list
+  allocatedDsvs_[index] = false;
+  freeDsvs_.push_back(index);
 }
 
 uint32_t DescriptorHeapManager::allocateCbvSrvUav() {
@@ -150,6 +190,10 @@ uint32_t DescriptorHeapManager::allocateCbvSrvUav() {
   }
   const uint32_t idx = freeCbvSrvUav_.back();
   freeCbvSrvUav_.pop_back();
+
+  // Mark as allocated
+  IGL_DEBUG_ASSERT(!allocatedCbvSrvUav_[idx], "Free list contained allocated descriptor!");
+  allocatedCbvSrvUav_[idx] = true;
 
   // Track high-watermark
   const uint32_t currentUsage = sizes_.cbvSrvUav - static_cast<uint32_t>(freeCbvSrvUav_.size());
@@ -171,6 +215,10 @@ uint32_t DescriptorHeapManager::allocateSampler() {
   const uint32_t idx = freeSamplers_.back();
   freeSamplers_.pop_back();
 
+  // Mark as allocated
+  IGL_DEBUG_ASSERT(!allocatedSamplers_[idx], "Free list contained allocated descriptor!");
+  allocatedSamplers_[idx] = true;
+
   // Track high-watermark
   const uint32_t currentUsage = sizes_.samplers - static_cast<uint32_t>(freeSamplers_.size());
   if (currentUsage > highWaterMarkSamplers_) {
@@ -182,16 +230,42 @@ uint32_t DescriptorHeapManager::allocateSampler() {
 
 void DescriptorHeapManager::freeCbvSrvUav(uint32_t index) {
   std::lock_guard<std::mutex> lock(mutex_);
-  if (index != UINT32_MAX && index < sizes_.cbvSrvUav) {
-    freeCbvSrvUav_.push_back(index);
+
+  // Validate bounds
+  if (index == UINT32_MAX || index >= sizes_.cbvSrvUav) {
+    return;
   }
+
+  // CRITICAL: Detect double-free bugs
+  if (!allocatedCbvSrvUav_[index]) {
+    IGL_LOG_ERROR("DescriptorHeapManager: DOUBLE-FREE DETECTED - CBV/SRV/UAV index %u already freed!\n", index);
+    IGL_DEBUG_ASSERT(false, "Double-free of CBV/SRV/UAV descriptor - caller bug detected");
+    return;  // Prevent corruption even in release builds
+  }
+
+  // Mark as free and add to free list
+  allocatedCbvSrvUav_[index] = false;
+  freeCbvSrvUav_.push_back(index);
 }
 
 void DescriptorHeapManager::freeSampler(uint32_t index) {
   std::lock_guard<std::mutex> lock(mutex_);
-  if (index != UINT32_MAX && index < sizes_.samplers) {
-    freeSamplers_.push_back(index);
+
+  // Validate bounds
+  if (index == UINT32_MAX || index >= sizes_.samplers) {
+    return;
   }
+
+  // CRITICAL: Detect double-free bugs
+  if (!allocatedSamplers_[index]) {
+    IGL_LOG_ERROR("DescriptorHeapManager: DOUBLE-FREE DETECTED - Sampler index %u already freed!\n", index);
+    IGL_DEBUG_ASSERT(false, "Double-free of Sampler descriptor - caller bug detected");
+    return;  // Prevent corruption even in release builds
+  }
+
+  // Mark as free and add to free list
+  allocatedSamplers_[index] = false;
+  freeSamplers_.push_back(index);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getRTVHandle(uint32_t index) const {

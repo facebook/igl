@@ -100,8 +100,12 @@ UploadRingBuffer::Allocation UploadRingBuffer::allocate(uint64_t size, uint64_t 
   // Align size up for proper alignment of next allocation
   const uint64_t alignedSize = alignUp(size, alignment);
 
+  // Load current head and tail atomically
+  const uint64_t currentHead = head_.load(std::memory_order_acquire);
+  const uint64_t currentTail = tail_.load(std::memory_order_acquire);
+
   // Align head to requested alignment
-  const uint64_t alignedHead = alignUp(head_, alignment);
+  const uint64_t alignedHead = alignUp(currentHead, alignment);
 
   // Check if we have enough contiguous space
   // Case 1: head <= tail (normal case, free space is at end and beginning)
@@ -110,20 +114,31 @@ UploadRingBuffer::Allocation UploadRingBuffer::allocate(uint64_t size, uint64_t 
   bool canFit = false;
   uint64_t allocationOffset = alignedHead;
 
-  if (head_ <= tail_) {
+  if (currentHead <= currentTail) {
     // Free space: [head, size) and [0, tail)
     // Try to allocate at alignedHead first
     if (alignedHead + alignedSize <= size_) {
       canFit = true;
       allocationOffset = alignedHead;
-    } else if (alignedSize <= tail_) {
-      // Wrap around to beginning
-      canFit = true;
+    } else if (alignedSize <= currentTail) {
+      // Wrap around to beginning - but validate tail hasn't moved
       allocationOffset = 0;
+
+      // CRITICAL: Re-check tail after deciding to wrap
+      // (retire() could have advanced it while we calculated)
+      const uint64_t recheckTail = tail_.load(std::memory_order_acquire);
+      if (alignedSize <= recheckTail) {
+        canFit = true;
+      } else {
+        // Tail advanced during calculation, allocation would overlap!
+        IGL_LOG_INFO("UploadRingBuffer: Wraparound race avoided "
+                     "(tail advanced from %llu to %llu during allocation)\n", currentTail, recheckTail);
+        canFit = false;
+      }
     }
   } else {
     // Free space: [head, tail)
-    if (alignedHead + alignedSize <= tail_) {
+    if (alignedHead + alignedSize <= currentTail) {
       canFit = true;
       allocationOffset = alignedHead;
     }
@@ -133,6 +148,29 @@ UploadRingBuffer::Allocation UploadRingBuffer::allocate(uint64_t size, uint64_t 
     // Not enough space - caller should fall back to dedicated staging buffer
     failureCount_++;
     return Allocation{};
+  }
+
+  // Validate allocation doesn't overlap with tail (final safety check)
+  const uint64_t allocationEnd = allocationOffset + alignedSize;
+  const uint64_t finalTail = tail_.load(std::memory_order_acquire);
+
+  if (allocationOffset == 0) {
+    // Wraparound case: ensure we don't exceed tail
+    if (allocationEnd > finalTail) {
+      IGL_LOG_ERROR("UploadRingBuffer: Allocation [0, %llu) would overlap tail at %llu\n",
+                    allocationEnd, finalTail);
+      failureCount_++;
+      return Allocation{};
+    }
+  } else if (allocationEnd > size_) {
+    // Allocation would wrap past buffer end - check for overlap with tail
+    const uint64_t wrappedEnd = allocationEnd - size_;
+    if (wrappedEnd > finalTail) {
+      IGL_LOG_ERROR("UploadRingBuffer: Allocation would wrap and overlap tail (end=%llu, tail=%llu)\n",
+                    wrappedEnd, finalTail);
+      failureCount_++;
+      return Allocation{};
+    }
   }
 
   // Create allocation
@@ -146,13 +184,37 @@ UploadRingBuffer::Allocation UploadRingBuffer::allocate(uint64_t size, uint64_t 
   // Track pending allocation for retirement
   pendingAllocations_.push({allocationOffset, alignedSize, fenceValue});
 
-  // Update head pointer
-  head_ = allocationOffset + alignedSize;
-  if (head_ >= size_) {
-    head_ = 0; // Wrap around
+  // Update head pointer atomically
+  uint64_t newHead = allocationOffset + alignedSize;
+  if (newHead >= size_) {
+    newHead = 0; // Wrap around
   }
+  head_.store(newHead, std::memory_order_release);
 
   allocationCount_++;
+
+#ifdef _DEBUG
+  // Debug validation: ensure invariants hold
+  IGL_DEBUG_ASSERT(newHead <= size_, "Head exceeded buffer size!");
+
+  // Validate free space calculation
+  const uint64_t debugTail = tail_.load(std::memory_order_acquire);
+  uint64_t freeSpace = (newHead <= debugTail)
+      ? (size_ - newHead) + debugTail
+      : debugTail - newHead;
+  IGL_DEBUG_ASSERT(freeSpace <= size_, "Free space calculation invalid!");
+
+  // Ensure this allocation doesn't overlap with any pending allocations
+  // Note: This is a simplified check since we only track head/tail, not individual allocations
+  if (allocationOffset < newHead) {
+    // Normal case: allocation is [allocationOffset, newHead)
+    // Check it doesn't overlap with tail region
+    if (newHead > debugTail && allocationOffset < debugTail) {
+      // Would wrap around and potentially overlap
+      IGL_DEBUG_ASSERT(newHead <= size_, "Allocation wraps incorrectly!");
+    }
+  }
+#endif
 
   return allocation;
 }
@@ -170,10 +232,11 @@ void UploadRingBuffer::retire(uint64_t completedFenceValue) {
     }
 
     // This allocation has completed, reclaim the memory
-    tail_ = pending.offset + pending.size;
-    if (tail_ >= size_) {
-      tail_ = 0; // Wrap around
+    uint64_t newTail = pending.offset + pending.size;
+    if (newTail >= size_) {
+      newTail = 0; // Wrap around
     }
+    tail_.store(newTail, std::memory_order_release);
 
     pendingAllocations_.pop();
   }
@@ -182,20 +245,26 @@ void UploadRingBuffer::retire(uint64_t completedFenceValue) {
 uint64_t UploadRingBuffer::getUsedSize() const {
   std::lock_guard<std::mutex> lock(mutex_);
 
-  if (head_ >= tail_) {
-    return head_ - tail_;
+  const uint64_t currentHead = head_.load(std::memory_order_acquire);
+  const uint64_t currentTail = tail_.load(std::memory_order_acquire);
+
+  if (currentHead >= currentTail) {
+    return currentHead - currentTail;
   } else {
-    return (size_ - tail_) + head_;
+    return (size_ - currentTail) + currentHead;
   }
 }
 
 bool UploadRingBuffer::canAllocate(uint64_t size) const {
-  if (head_ <= tail_) {
+  const uint64_t currentHead = head_.load(std::memory_order_acquire);
+  const uint64_t currentTail = tail_.load(std::memory_order_acquire);
+
+  if (currentHead <= currentTail) {
     // Free space at end and beginning
-    return (size <= size_ - head_) || (size <= tail_);
+    return (size <= size_ - currentHead) || (size <= currentTail);
   } else {
     // Free space between head and tail
-    return size <= tail_ - head_;
+    return size <= currentTail - currentHead;
   }
 }
 

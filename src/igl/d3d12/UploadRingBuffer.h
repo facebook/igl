@@ -10,6 +10,7 @@
 #include <igl/d3d12/Common.h>
 #include <queue>
 #include <mutex>
+#include <atomic>
 
 namespace igl::d3d12 {
 
@@ -125,8 +126,8 @@ class UploadRingBuffer {
   D3D12_GPU_VIRTUAL_ADDRESS gpuBase_ = 0;          // GPU base address
 
   uint64_t size_ = 0;                               // Total ring buffer size
-  uint64_t head_ = 0;                               // Next allocation offset
-  uint64_t tail_ = 0;                               // Oldest in-use allocation offset
+  std::atomic<uint64_t> head_{0};                  // Next allocation offset (atomic for memory ordering)
+  std::atomic<uint64_t> tail_{0};                  // Oldest in-use allocation offset (atomic for memory ordering)
 
   std::queue<PendingAllocation> pendingAllocations_; // Allocations waiting for GPU
   mutable std::mutex mutex_;                        // Thread safety
