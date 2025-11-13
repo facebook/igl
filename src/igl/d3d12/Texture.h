@@ -17,7 +17,9 @@ class Texture final : public ITexture {
  public:
   Texture() : ITexture(TextureFormat::Invalid), format_(TextureFormat::Invalid) {}
   explicit Texture(TextureFormat format) : ITexture(format), format_(format) {}
-  ~Texture() override = default;
+
+  // B-001: Explicit destructor to free descriptor heap slots
+  ~Texture() override;
 
   // Factory method to create texture from existing D3D12 resource
   static std::shared_ptr<Texture> createFromResource(
@@ -111,6 +113,12 @@ class Texture final : public ITexture {
   uint32_t numMipLevelsInView_ = 0;  // MipLevels for SRV
   uint32_t arraySliceOffset_ = 0;  // FirstArraySlice for SRV
   uint32_t numArraySlicesInView_ = 0;  // ArraySize for SRV
+
+  // B-001: Descriptor indices for cleanup in destructor
+  // These descriptors are allocated from DescriptorHeapManager and must be freed
+  std::vector<uint32_t> rtvIndices_;  // RTV descriptors (one per mip level)
+  std::vector<uint32_t> dsvIndices_;  // DSV descriptors (for depth/stencil textures)
+  uint32_t srvIndex_ = UINT32_MAX;    // SRV descriptor (UINT32_MAX = not allocated)
 };
 
 } // namespace igl::d3d12

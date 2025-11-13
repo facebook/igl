@@ -306,6 +306,84 @@ void Device::checkDeviceRemoval() const {
   }
 }
 
+// B-005: Alignment validation methods
+
+bool Device::validateMSAAAlignment(const TextureDesc& desc, Result* IGL_NULLABLE outResult) const {
+  if (desc.numSamples <= 1) {
+    return true;  // Not MSAA, no special alignment requirements
+  }
+
+  // MSAA resources require 64KB alignment in D3D12
+  // D3D12 CreateCommittedResource automatically handles this, but we validate dimensions
+  // to ensure resource won't exceed device limits
+  IGL_LOG_INFO("Device::validateMSAAAlignment: Validating MSAA texture (samples=%u, %ux%u)\n",
+               desc.numSamples, desc.width, desc.height);
+
+  // Check if texture dimensions are reasonable for MSAA
+  // Large MSAA textures may fail due to memory constraints
+  const size_t pixelCount = static_cast<size_t>(desc.width) * desc.height;
+  const size_t bytesPerPixel = 4;  // Conservative estimate (RGBA8)
+  const size_t estimatedSize = pixelCount * bytesPerPixel * desc.numSamples;
+
+  // Warn if MSAA texture is very large (> 256MB)
+  if (estimatedSize > 256 * 1024 * 1024) {
+    IGL_LOG_INFO("Device::validateMSAAAlignment: WARNING - Large MSAA texture detected (%zu MB). "
+                 "May cause memory pressure.\n", estimatedSize / (1024 * 1024));
+  }
+
+  return true;
+}
+
+bool Device::validateTextureAlignment(const D3D12_RESOURCE_DESC& resourceDesc,
+                                       uint32_t sampleCount,
+                                       Result* IGL_NULLABLE outResult) const {
+  // D3D12 texture alignment requirements:
+  // - MSAA textures (SampleDesc.Count > 1): 64KB alignment (automatic via CreateCommittedResource)
+  // - Regular textures: 64KB alignment (automatic via CreateCommittedResource)
+  // - Small textures (<= 64KB): May use 4KB alignment
+
+  // This validation is informational - D3D12 handles alignment automatically
+  // We just verify parameters are within expected ranges
+
+  if (sampleCount > 1) {
+    // MSAA texture - will use 64KB alignment
+    IGL_LOG_INFO("Device::validateTextureAlignment: MSAA texture will use 64KB alignment (samples=%u)\n",
+                 sampleCount);
+  }
+
+  // Validate resource dimensions don't exceed D3D12 limits
+  constexpr UINT64 kMaxTextureDimension2D = D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION;  // 16384
+
+  if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
+    if (resourceDesc.Width > kMaxTextureDimension2D || resourceDesc.Height > kMaxTextureDimension2D) {
+      IGL_LOG_ERROR("Device::validateTextureAlignment: Texture dimensions (%llux%u) exceed D3D12 limit (%llu)\n",
+                    resourceDesc.Width, resourceDesc.Height, kMaxTextureDimension2D);
+      Result::setResult(outResult, Result::Code::ArgumentInvalid,
+                        "Texture dimensions exceed D3D12 maximum (16384x16384)");
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool Device::validateBufferAlignment(size_t bufferSize, bool isUniform) const {
+  // D3D12 buffer alignment requirements:
+  // - Constant buffers: 256 bytes (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
+  // - Other buffers: No strict alignment requirement
+
+  if (isUniform) {
+    // Uniform buffers must be 256-byte aligned
+    // This is already handled in createBuffer() by rounding up the size
+    if (bufferSize % BUFFER_ALIGNMENT != 0) {
+      IGL_LOG_INFO("Device::validateBufferAlignment: Uniform buffer size %zu will be rounded up to %zu\n",
+                   bufferSize, (bufferSize + BUFFER_ALIGNMENT - 1) & ~(BUFFER_ALIGNMENT - 1));
+    }
+  }
+
+  return true;
+}
+
 // BindGroups
 Holder<BindGroupTextureHandle> Device::createBindGroup(
     const BindGroupTextureDesc& desc,
@@ -396,6 +474,10 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
 
   // For uniform buffers, size must be aligned to 256 bytes (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
   const bool isUniformBuffer = (desc.type & BufferDesc::BufferTypeBits::Uniform) != 0;
+
+  // B-005: Validate buffer alignment requirements
+  validateBufferAlignment(desc.length, isUniformBuffer);
+
   const UINT64 alignedSize = isUniformBuffer
       ? (desc.length + 255) & ~255  // Round up to nearest 256 bytes
       : desc.length;
@@ -724,6 +806,14 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   // - Not all formats support all sample counts - validation required
   const uint32_t sampleCount = std::max(1u, desc.numSamples);
 
+  // B-005: Validate MSAA alignment requirements before creating resource
+  if (sampleCount > 1) {
+    if (!validateMSAAAlignment(desc, outResult)) {
+      // Error already set by validation function
+      return nullptr;
+    }
+  }
+
   // Validate MSAA constraints
   if (sampleCount > 1) {
     // MSAA textures cannot have mipmaps
@@ -803,6 +893,12 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
     clearValue.DepthStencil.Depth = 1.0f;     // Default far plane
     clearValue.DepthStencil.Stencil = 0;
     pClearValue = &clearValue;
+  }
+
+  // B-005: Validate texture alignment before creating resource
+  if (!validateTextureAlignment(resourceDesc, sampleCount, outResult)) {
+    // Error already set by validation function
+    return nullptr;
   }
 
   // Create the texture resource

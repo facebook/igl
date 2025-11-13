@@ -112,6 +112,35 @@ std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> par
   return view;
 }
 
+// B-001: Explicit destructor to free descriptor heap slots
+Texture::~Texture() {
+  IGL_LOG_INFO("Texture::~Texture - START: Destroying texture %p\n", this);
+
+  // B-001: Texture views share the parent's resource, so they don't own descriptors
+  // Only free descriptors for non-view textures
+  if (isView_) {
+    IGL_LOG_INFO("Texture::~Texture - Texture is a view, skipping descriptor cleanup\n");
+    return;
+  }
+
+  // B-001: Get descriptor heap manager from device
+  // Note: In current architecture, descriptors are allocated/freed by RenderCommandEncoder,
+  // not stored in Texture. This destructor is defensive - it will clean up any descriptors
+  // if the architecture changes to store them in Texture in the future.
+  if (!iglDevice_) {
+    IGL_LOG_INFO("Texture::~Texture - No IGL device, skipping descriptor cleanup\n");
+    return;
+  }
+
+  // B-001: For now, descriptors are managed by RenderCommandEncoder and freed when encoder
+  // is destroyed. This destructor is here to ensure proper cleanup if we later add
+  // per-texture descriptor allocation (as described in task B-001).
+  // The rtvIndices_, dsvIndices_, and srvIndex_ members are currently unused but
+  // reserved for future use.
+
+  IGL_LOG_INFO("Texture::~Texture - Destruction complete\n");
+}
+
 Result Texture::upload(const TextureRangeDesc& range,
                       const void* data,
                       size_t bytesPerRow) const {

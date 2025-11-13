@@ -168,6 +168,17 @@ class Device final : public IDevice {
   // Validate device limits against actual device capabilities (P2_DX12-018)
   void validateDeviceLimits();
 
+  // Alignment validation helpers (B-005)
+  bool validateMSAAAlignment(const TextureDesc& desc, Result* IGL_NULLABLE outResult) const;
+  bool validateTextureAlignment(const D3D12_RESOURCE_DESC& resourceDesc,
+                                 uint32_t sampleCount, Result* IGL_NULLABLE outResult) const;
+  bool validateBufferAlignment(size_t bufferSize, bool isUniform) const;
+
+  // Alignment constants (B-005)
+  static constexpr size_t MSAA_ALIGNMENT = 65536;  // 64KB for MSAA textures
+  static constexpr size_t BUFFER_ALIGNMENT = 256;   // 256 bytes for constant buffers
+  static constexpr size_t DEFAULT_TEXTURE_ALIGNMENT = 65536;  // 64KB default for textures
+
   // Root signature caching (P0_DX12-002)
   size_t hashRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc) const;
   Microsoft::WRL::ComPtr<ID3D12RootSignature> getOrCreateRootSignature(
