@@ -137,6 +137,16 @@ class D3D12Context {
     }
   };
 
+  // A-010: HDR output capabilities
+  struct HDRCapabilities {
+    bool hdrSupported = false;           // HDR10 support
+    bool scRGBSupported = false;          // scRGB (FP16) support
+    DXGI_COLOR_SPACE_TYPE nativeColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;  // SDR default
+    float maxLuminance = 80.0f;          // Max luminance in nits (SDR default)
+    float minLuminance = 0.0f;           // Min luminance in nits
+    float maxFullFrameLuminance = 80.0f; // Max full-frame luminance in nits
+  };
+
   D3D12Context() = default;
   ~D3D12Context();
 
@@ -288,6 +298,10 @@ class D3D12Context {
     memoryBudget_.estimatedUsage = newUsage;
   }
 
+  // A-010: HDR output capabilities
+  const HDRCapabilities& getHDRCapabilities() const { return hdrCapabilities_; }
+  bool isHDRSupported() const { return hdrCapabilities_.hdrSupported; }
+
  protected:
   void createDevice();
   void createCommandQueue();
@@ -304,6 +318,9 @@ class D3D12Context {
 
   // A-012: Memory budget detection
   void detectMemoryBudget();
+
+  // A-010: HDR output detection
+  void detectHDRCapabilities();
 
   Microsoft::WRL::ComPtr<IDXGIFactory4> dxgiFactory_;
   Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter_;
@@ -340,6 +357,9 @@ class D3D12Context {
   // A-012: Memory budget tracking (struct defined in public section)
   MemoryBudget memoryBudget_;
   mutable std::mutex memoryTrackingMutex_;
+
+  // A-010: HDR output capabilities (struct defined in public section)
+  HDRCapabilities hdrCapabilities_;
 
   // Command signatures for indirect drawing (P3_DX12-FIND-13)
   Microsoft::WRL::ComPtr<ID3D12CommandSignature> drawIndirectSignature_;

@@ -787,6 +787,83 @@ void D3D12Context::detectMemoryBudget() {
                recommendedBudget / (1024.0 * 1024.0));
 }
 
+// A-010: Detect HDR output capabilities
+void D3D12Context::detectHDRCapabilities() {
+  IGL_LOG_INFO("D3D12Context: Detecting HDR output capabilities...\n");
+
+  // Reset to defaults
+  hdrCapabilities_ = HDRCapabilities{};
+
+  // Need a valid swapchain to query output
+  if (!swapChain_.Get()) {
+    IGL_LOG_INFO("  No swapchain available, HDR detection skipped\n");
+    return;
+  }
+
+  // Get the output (monitor) containing the swapchain
+  Microsoft::WRL::ComPtr<IDXGIOutput> output;
+  HRESULT hr = swapChain_->GetContainingOutput(output.GetAddressOf());
+  if (FAILED(hr)) {
+    IGL_LOG_INFO("  Failed to get containing output (0x%08X), HDR not available\n", static_cast<unsigned>(hr));
+    return;
+  }
+
+  // Query for IDXGIOutput6 (required for HDR queries)
+  Microsoft::WRL::ComPtr<IDXGIOutput6> output6;
+  hr = output->QueryInterface(IID_PPV_ARGS(output6.GetAddressOf()));
+  if (FAILED(hr)) {
+    IGL_LOG_INFO("  IDXGIOutput6 not available (needs Windows 10 1703+), HDR not supported\n");
+    return;
+  }
+
+  // Get output description with color space info
+  DXGI_OUTPUT_DESC1 outputDesc = {};
+  hr = output6->GetDesc1(&outputDesc);
+  if (FAILED(hr)) {
+    IGL_LOG_INFO("  Failed to get output description (0x%08X)\n", static_cast<unsigned>(hr));
+    return;
+  }
+
+  // Store native color space
+  hdrCapabilities_.nativeColorSpace = outputDesc.ColorSpace;
+
+  // Store luminance information
+  hdrCapabilities_.maxLuminance = outputDesc.MaxLuminance;
+  hdrCapabilities_.minLuminance = outputDesc.MinLuminance;
+  hdrCapabilities_.maxFullFrameLuminance = outputDesc.MaxFullFrameLuminance;
+
+  IGL_LOG_INFO("  Native Color Space: %u\n", outputDesc.ColorSpace);
+  IGL_LOG_INFO("  Max Luminance: %.2f nits\n", outputDesc.MaxLuminance);
+  IGL_LOG_INFO("  Min Luminance: %.4f nits\n", outputDesc.MinLuminance);
+  IGL_LOG_INFO("  Max Full Frame Luminance: %.2f nits\n", outputDesc.MaxFullFrameLuminance);
+
+  // Check for HDR10 support (BT.2020 ST2084 - PQ curve) via swapchain
+  UINT colorSpaceSupport = 0;
+  hr = swapChain_->CheckColorSpaceSupport(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020, &colorSpaceSupport);
+  if (SUCCEEDED(hr) && (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT)) {
+    hdrCapabilities_.hdrSupported = true;
+    IGL_LOG_INFO("  HDR10 (BT.2020 PQ): SUPPORTED\n");
+  } else {
+    IGL_LOG_INFO("  HDR10 (BT.2020 PQ): NOT SUPPORTED\n");
+  }
+
+  // Check for scRGB support (linear floating-point HDR)
+  hr = swapChain_->CheckColorSpaceSupport(DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709, &colorSpaceSupport);
+  if (SUCCEEDED(hr) && (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT)) {
+    hdrCapabilities_.scRGBSupported = true;
+    IGL_LOG_INFO("  scRGB (Linear FP16): SUPPORTED\n");
+  } else {
+    IGL_LOG_INFO("  scRGB (Linear FP16): NOT SUPPORTED\n");
+  }
+
+  // Summary
+  if (hdrCapabilities_.hdrSupported || hdrCapabilities_.scRGBSupported) {
+    IGL_LOG_INFO("D3D12Context: HDR output AVAILABLE (max %.0f nits)\n", outputDesc.MaxLuminance);
+  } else {
+    IGL_LOG_INFO("D3D12Context: HDR output NOT AVAILABLE (SDR display)\n");
+  }
+}
+
 void D3D12Context::createCommandQueue() {
   D3D12_COMMAND_QUEUE_DESC queueDesc = {};
   queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -883,6 +960,33 @@ void D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height) {
   if (FAILED(hr)) {
     throw std::runtime_error("Failed to query IDXGISwapChain3 interface");
   }
+
+  // A-009: Verify swapchain actually supports tearing after creation
+  if (tearingSupported_) {
+    DXGI_SWAP_CHAIN_DESC1 actualDesc = {};
+    hr = swapChain_->GetDesc1(&actualDesc);
+    if (SUCCEEDED(hr)) {
+      const bool actualTearingFlag = (actualDesc.Flags & DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING) != 0;
+      const bool actualWindowedMode = (actualDesc.SwapEffect == DXGI_SWAP_EFFECT_FLIP_DISCARD ||
+                                        actualDesc.SwapEffect == DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL);
+
+      if (!actualTearingFlag) {
+        IGL_LOG_INFO("D3D12Context: Tearing flag was NOT set on swapchain (downgraded by driver)\n");
+        tearingSupported_ = false;
+      } else if (!actualWindowedMode) {
+        IGL_LOG_INFO("D3D12Context: Swapchain not in flip mode (tearing requires flip model)\n");
+        tearingSupported_ = false;
+      } else {
+        IGL_LOG_INFO("D3D12Context: Tearing verified on swapchain (windowed flip model + tearing flag)\n");
+      }
+    } else {
+      IGL_LOG_INFO("D3D12Context: Failed to verify swapchain desc, assuming tearing unavailable\n");
+      tearingSupported_ = false;
+    }
+  }
+
+  // A-010: Detect HDR capabilities now that swapchain is created
+  detectHDRCapabilities();
 }
 
 void D3D12Context::createRTVHeap() {
