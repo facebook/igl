@@ -1562,6 +1562,17 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     return nullptr;
   }
 
+  // E-011: Set debug name on compute PSO for better debugging in PIX/RenderDoc
+  if (desc.shaderStages && desc.shaderStages->getComputeModule()) {
+    const std::string& psoName = desc.shaderStages->getComputeModule()->info().debugName;
+    if (!psoName.empty()) {
+      // Convert to wide string for D3D12 SetName API
+      std::wstring wideName(psoName.begin(), psoName.end());
+      pipelineState->SetName(wideName.c_str());
+      IGL_LOG_INFO("  Set compute PSO debug name: %s\n", psoName.c_str());
+    }
+  }
+
   // Second check: Lock for cache insertion with double-check (H-013: Thread-safe)
   // Another thread may have created the PSO while we were creating ours
   {
@@ -2230,6 +2241,24 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     IGL_LOG_ERROR(errorMsg);
     Result::setResult(outResult, Result::Code::RuntimeError, errorMsg);
     return nullptr;
+  }
+
+  // E-011: Set debug name on PSO for better debugging in PIX/RenderDoc
+  std::string psoName;
+  if (desc.shaderStages->getVertexModule()) {
+    psoName += desc.shaderStages->getVertexModule()->info().debugName;
+  }
+  if (desc.shaderStages->getFragmentModule()) {
+    if (!psoName.empty()) {
+      psoName += " + ";
+    }
+    psoName += desc.shaderStages->getFragmentModule()->info().debugName;
+  }
+  if (!psoName.empty()) {
+    // Convert to wide string for D3D12 SetName API
+    std::wstring wideName(psoName.begin(), psoName.end());
+    pipelineState->SetName(wideName.c_str());
+    IGL_LOG_INFO("  Set PSO debug name: %s\n", psoName.c_str());
   }
 
   // Second check: Lock for cache insertion with double-check (H-013: Thread-safe)
