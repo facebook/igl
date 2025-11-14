@@ -13,7 +13,10 @@ Result DescriptorHeapManager::initialize(ID3D12Device* device, const Sizes& size
   if (!device) {
     return Result(Result::Code::ArgumentInvalid, "Null device for DescriptorHeapManager");
   }
+
+  // A-006: Copy requested sizes, then validate/clamp against device limits
   sizes_ = sizes;
+  validateAndClampSizes(device);
 
   // Create shader-visible CBV/SRV/UAV heap
   {
@@ -22,6 +25,9 @@ Result DescriptorHeapManager::initialize(ID3D12Device* device, const Sizes& size
     desc.NumDescriptors = sizes_.cbvSrvUav;
     desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     if (FAILED(device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(cbvSrvUavHeap_.GetAddressOf())))) {
+      // A-006: Enhanced error message with size context
+      IGL_LOG_ERROR("DescriptorHeapManager: Failed to create CBV/SRV/UAV heap "
+                    "(size=%u descriptors)\n", sizes_.cbvSrvUav);
       return Result(Result::Code::RuntimeError, "Failed to create CBV/SRV/UAV heap");
     }
     cbvSrvUavDescriptorSize_ = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -39,6 +45,9 @@ Result DescriptorHeapManager::initialize(ID3D12Device* device, const Sizes& size
     desc.NumDescriptors = sizes_.samplers;
     desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     if (FAILED(device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(samplerHeap_.GetAddressOf())))) {
+      // A-006: Enhanced error message with size context
+      IGL_LOG_ERROR("DescriptorHeapManager: Failed to create sampler heap "
+                    "(size=%u descriptors, limit=2048)\n", sizes_.samplers);
       return Result(Result::Code::RuntimeError, "Failed to create sampler heap");
     }
     samplerDescriptorSize_ = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
@@ -56,6 +65,9 @@ Result DescriptorHeapManager::initialize(ID3D12Device* device, const Sizes& size
     desc.NumDescriptors = sizes_.rtvs;
     desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     if (FAILED(device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(rtvHeap_.GetAddressOf())))) {
+      // A-006: Enhanced error message with size context
+      IGL_LOG_ERROR("DescriptorHeapManager: Failed to create RTV heap "
+                    "(size=%u descriptors)\n", sizes_.rtvs);
       return Result(Result::Code::RuntimeError, "Failed to create RTV heap");
     }
     rtvDescriptorSize_ = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -73,6 +85,9 @@ Result DescriptorHeapManager::initialize(ID3D12Device* device, const Sizes& size
     desc.NumDescriptors = sizes_.dsvs;
     desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     if (FAILED(device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(dsvHeap_.GetAddressOf())))) {
+      // A-006: Enhanced error message with size context
+      IGL_LOG_ERROR("DescriptorHeapManager: Failed to create DSV heap "
+                    "(size=%u descriptors)\n", sizes_.dsvs);
       return Result(Result::Code::RuntimeError, "Failed to create DSV heap");
     }
     dsvDescriptorSize_ = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
@@ -632,6 +647,89 @@ void DescriptorHeapManager::logUsageStats() const {
   const float dsvsPeakPercent = (highWaterMarkDsvs_ * 100.0f) / sizes_.dsvs;
   IGL_LOG_INFO("  Peak DSVs:        %u / %u (%.1f%% peak)\n",
                highWaterMarkDsvs_, sizes_.dsvs, dsvsPeakPercent);
+
+  IGL_LOG_INFO("========================================\n");
+}
+
+void DescriptorHeapManager::validateAndClampSizes(ID3D12Device* device) {
+  // A-006: Validate descriptor heap sizes against D3D12 device limits
+  IGL_LOG_INFO("=== Descriptor Heap Size Validation ===\n");
+
+  // Query device options for resource binding tier (affects limits)
+  D3D12_FEATURE_DATA_D3D12_OPTIONS options = {};
+  HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS,
+                                            &options,
+                                            sizeof(options));
+
+  if (SUCCEEDED(hr)) {
+    const char* tierName = "Unknown";
+    switch (options.ResourceBindingTier) {
+      case D3D12_RESOURCE_BINDING_TIER_1: tierName = "Tier 1"; break;
+      case D3D12_RESOURCE_BINDING_TIER_2: tierName = "Tier 2"; break;
+      case D3D12_RESOURCE_BINDING_TIER_3: tierName = "Tier 3"; break;
+    }
+    IGL_LOG_INFO("  Resource Binding Tier: %s\n", tierName);
+  }
+
+  // === SHADER-VISIBLE CBV/SRV/UAV HEAP ===
+  // D3D12 spec: Max 1,000,000 descriptors for shader-visible heaps (FL 11.0+)
+  // Conservative limit: 1,000,000 (actual limit may be lower on some hardware)
+  constexpr uint32_t kMaxCbvSrvUavDescriptors = 1000000;
+
+  if (sizes_.cbvSrvUav > kMaxCbvSrvUavDescriptors) {
+    IGL_LOG_ERROR("  WARNING: Requested CBV/SRV/UAV heap size (%u) exceeds "
+                  "D3D12 spec limit (%u)\n",
+                  sizes_.cbvSrvUav, kMaxCbvSrvUavDescriptors);
+    IGL_LOG_ERROR("  Clamping to %u descriptors\n", kMaxCbvSrvUavDescriptors);
+    sizes_.cbvSrvUav = kMaxCbvSrvUavDescriptors;
+  } else {
+    IGL_LOG_INFO("  CBV/SRV/UAV heap size: %u (limit: %u) - OK\n",
+                 sizes_.cbvSrvUav, kMaxCbvSrvUavDescriptors);
+  }
+
+  // === SHADER-VISIBLE SAMPLER HEAP ===
+  // D3D12 spec: Max 2,048 descriptors (D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE)
+  constexpr uint32_t kMaxSamplerDescriptors = 2048;
+
+  if (sizes_.samplers > kMaxSamplerDescriptors) {
+    IGL_LOG_ERROR("  WARNING: Requested sampler heap size (%u) exceeds "
+                  "D3D12 limit (%u)\n",
+                  sizes_.samplers, kMaxSamplerDescriptors);
+    IGL_LOG_ERROR("  Clamping to %u descriptors\n", kMaxSamplerDescriptors);
+    sizes_.samplers = kMaxSamplerDescriptors;
+  } else {
+    IGL_LOG_INFO("  Sampler heap size: %u (limit: %u) - OK\n",
+                 sizes_.samplers, kMaxSamplerDescriptors);
+  }
+
+  // === CPU-VISIBLE RTV HEAP ===
+  // D3D12 spec: Typically 64K+ descriptors (device-dependent)
+  // Conservative validation: Warn if exceeding 16K (reasonable limit)
+  constexpr uint32_t kMaxRtvDescriptors = 16384;
+
+  if (sizes_.rtvs > kMaxRtvDescriptors) {
+    IGL_LOG_ERROR("  WARNING: Requested RTV heap size (%u) is unusually large\n",
+                  sizes_.rtvs);
+    IGL_LOG_ERROR("  Recommended maximum: %u descriptors\n", kMaxRtvDescriptors);
+    // Don't clamp - let CreateDescriptorHeap fail if truly excessive
+  } else {
+    IGL_LOG_INFO("  RTV heap size: %u (recommended max: %u) - OK\n",
+                 sizes_.rtvs, kMaxRtvDescriptors);
+  }
+
+  // === CPU-VISIBLE DSV HEAP ===
+  // Similar limits to RTV heap
+  constexpr uint32_t kMaxDsvDescriptors = 16384;
+
+  if (sizes_.dsvs > kMaxDsvDescriptors) {
+    IGL_LOG_ERROR("  WARNING: Requested DSV heap size (%u) is unusually large\n",
+                  sizes_.dsvs);
+    IGL_LOG_ERROR("  Recommended maximum: %u descriptors\n", kMaxDsvDescriptors);
+    // Don't clamp - let CreateDescriptorHeap fail if truly excessive
+  } else {
+    IGL_LOG_INFO("  DSV heap size: %u (recommended max: %u) - OK\n",
+                 sizes_.dsvs, kMaxDsvDescriptors);
+  }
 
   IGL_LOG_INFO("========================================\n");
 }

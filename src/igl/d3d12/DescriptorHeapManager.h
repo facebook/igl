@@ -111,6 +111,9 @@ class DescriptorHeapManager {
 
   // Thread safety
   mutable std::mutex mutex_;
+
+  // A-006: Validate and clamp descriptor heap sizes to device limits
+  void validateAndClampSizes(ID3D12Device* device);
 };
 
 } // namespace igl::d3d12
