@@ -730,6 +730,13 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
                                              size_t index,
                                              std::shared_ptr<ITexture> destTexture,
                                              const TextureRangeDesc& range) const {
+  // Bounds check for index parameter
+  if (index >= IGL_COLOR_ATTACHMENTS_MAX) {
+    IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment: index %zu out of bounds (max %u)\n",
+                  index, IGL_COLOR_ATTACHMENTS_MAX);
+    return;
+  }
+
   // Create a transient command buffer to access the D3D12 context
   Result r;
   auto cmdBuf = cmdQueue.createCommandBuffer({}, &r);

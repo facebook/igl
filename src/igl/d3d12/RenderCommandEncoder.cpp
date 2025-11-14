@@ -80,19 +80,23 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
           continue;
         }
         const bool hasAttachmentDesc = (i < renderPass.colorAttachments.size());
-        const uint32_t mipLevel =
-            hasAttachmentDesc ? renderPass.colorAttachments[i].mipLevel : 0;
-        const uint32_t attachmentLayer =
-            hasAttachmentDesc ? renderPass.colorAttachments[i].layer : 0;
-        const uint32_t attachmentFace =
-            hasAttachmentDesc ? renderPass.colorAttachments[i].face : 0;
+        // CRITICAL: Extract values before using in expressions to avoid MSVC debug iterator checks
+        const uint32_t mipLevel = hasAttachmentDesc ? renderPass.colorAttachments[i].mipLevel : 0;
+        const uint32_t attachmentLayer = hasAttachmentDesc ? renderPass.colorAttachments[i].layer : 0;
+        const uint32_t attachmentFace = hasAttachmentDesc ? renderPass.colorAttachments[i].face : 0;
         // Allocate RTV
         uint32_t rtvIdx = heapMgr->allocateRTV();
         if (rtvIdx == UINT32_MAX) {
           IGL_LOG_ERROR("RenderCommandEncoder: Failed to allocate RTV descriptor (heap exhausted)\n");
           continue;
         }
-        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = heapMgr->getRTVHandle(rtvIdx);
+        // C-007: Check return value from getHandle
+        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
+        if (!heapMgr->getRTVHandle(rtvIdx, &rtvHandle)) {
+          IGL_LOG_ERROR("RenderCommandEncoder: Failed to get RTV handle for index %u\n", rtvIdx);
+          heapMgr->freeRTV(rtvIdx);
+          continue;
+        }
         rtvIndices_.push_back(rtvIdx);
         // Create RTV view - use the resource's actual format to avoid SRGB/UNORM mismatches
         D3D12_RESOURCE_DESC resourceDesc = tex->getResource()->GetDesc();
@@ -170,7 +174,9 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
           } else if (isArrayTexture) {
             // Texture array - use TEXTURE2DARRAY view dimension
             rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
-            rdesc.Texture2DArray.MipSlice = (i < renderPass.colorAttachments.size()) ? renderPass.colorAttachments[i].mipLevel : 0;
+            // CRITICAL: Extract value before assignment to avoid MSVC debug iterator bounds check
+            const uint32_t mipSliceArray = (i < renderPass.colorAttachments.size()) ? renderPass.colorAttachments[i].mipLevel : 0;
+            rdesc.Texture2DArray.MipSlice = mipSliceArray;
             rdesc.Texture2DArray.PlaneSlice = 0;
             if (isView) {
               rdesc.Texture2DArray.FirstArraySlice = tex->getArraySliceOffset();
@@ -184,7 +190,9 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
           } else {
             // Non-array texture - use standard TEXTURE2D view dimension
             rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-            rdesc.Texture2D.MipSlice = (i < renderPass.colorAttachments.size()) ? renderPass.colorAttachments[i].mipLevel : 0;
+            // CRITICAL: Extract value before assignment to avoid MSVC debug iterator bounds check
+            const uint32_t mipSlice2D = (i < renderPass.colorAttachments.size()) ? renderPass.colorAttachments[i].mipLevel : 0;
+            rdesc.Texture2D.MipSlice = mipSlice2D;
             rdesc.Texture2D.PlaneSlice = 0;
             IGL_LOG_INFO("RenderCommandEncoder: Creating RTV, mip %u\n", rdesc.Texture2D.MipSlice);
           }
@@ -214,9 +222,13 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
                        i, color[0], color[1], color[2], color[3]);
           commandList_->ClearRenderTargetView(rtvHandle, color, 0, nullptr);
         } else {
+          // CRITICAL: Must extract value completely outside ternary to avoid MSVC debug iterator check
+          int loadActionDbg = -1;
+          if (i < renderPass.colorAttachments.size()) {
+            loadActionDbg = (int)renderPass.colorAttachments[i].loadAction;
+          }
           IGL_LOG_INFO("RenderCommandEncoder: NOT clearing MRT attachment %zu (loadAction=%d, hasAttachment=%d)\n",
-                       i, renderPass.colorAttachments.size() > i ? (int)renderPass.colorAttachments[i].loadAction : -1,
-                       i < renderPass.colorAttachments.size());
+                       i, loadActionDbg, i < renderPass.colorAttachments.size());
         }
         rtvs.push_back(rtvHandle);
         IGL_LOG_INFO("RenderCommandEncoder: MRT Created RTV #%zu, total RTVs now=%zu\n", i, rtvs.size());
@@ -268,7 +280,13 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
     if (device && depthTex && depthTex->getResource()) {
       if (heapMgr) {
         dsvIndex_ = heapMgr->allocateDSV();
-        dsvHandle_ = heapMgr->getDSVHandle(dsvIndex_);
+        // C-007: Check return value from getHandle
+        if (!heapMgr->getDSVHandle(dsvIndex_, &dsvHandle_)) {
+          IGL_LOG_ERROR("RenderCommandEncoder: Failed to get DSV handle for index %u\n", dsvIndex_);
+          heapMgr->freeDSV(dsvIndex_);
+          dsvIndex_ = UINT32_MAX;
+          return;
+        }
       } else {
         // Fallback: transient heap
         Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> tmpHeap;

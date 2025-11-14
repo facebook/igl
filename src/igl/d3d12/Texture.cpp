@@ -632,12 +632,9 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     mutableResource.Reset();
     mutableResource = std::move(newResource);
 
-    // Update state tracking for new resource - mip 0 is now in PIXEL_SHADER_RESOURCE
+    // Update state tracking for new resource - all mips are now in PIXEL_SHADER_RESOURCE
+    // initializeStateTracking sets uniform state, so no need to manually update subresourceStates_
     initializeStateTracking(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    subresourceStates_[0] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    for (size_t i = 1; i < subresourceStates_.size(); ++i) {
-      subresourceStates_[i] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    }
 
     // Update resourceDesc for the rest of the function
     resourceDesc = resource_->GetDesc();
@@ -661,11 +658,13 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
   params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   params[0].DescriptorTable.NumDescriptorRanges = 1;
   params[0].DescriptorTable.pDescriptorRanges = &ranges[0];
-  params[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+  // C-006: Enable texture access in all shader stages (vertex, pixel, etc.)
+  params[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
   params[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   params[1].DescriptorTable.NumDescriptorRanges = 1;
   params[1].DescriptorTable.pDescriptorRanges = &ranges[1];
-  params[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+  // C-006: Enable sampler access in all shader stages (vertex, pixel, etc.)
+  params[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
   D3D12_ROOT_SIGNATURE_DESC rsDesc = {};
   rsDesc.NumParameters = 2;
@@ -921,11 +920,13 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDe
   params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   params[0].DescriptorTable.NumDescriptorRanges = 1;
   params[0].DescriptorTable.pDescriptorRanges = &ranges[0];
-  params[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+  // C-006: Enable texture access in all shader stages (vertex, pixel, etc.)
+  params[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
   params[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   params[1].DescriptorTable.NumDescriptorRanges = 1;
   params[1].DescriptorTable.pDescriptorRanges = &ranges[1];
-  params[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+  // C-006: Enable sampler access in all shader stages (vertex, pixel, etc.)
+  params[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
   D3D12_ROOT_SIGNATURE_DESC rsDesc = {};
   rsDesc.NumParameters = 2;
   rsDesc.pParameters = params;
@@ -1132,17 +1133,56 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
 }
 
 void Texture::initializeStateTracking(D3D12_RESOURCE_STATES initialState) const {
+  // B-006: Start with uniform state (no allocation)
+  hasUniformState_ = true;
+  uniformState_ = initialState;
+  subresourceStates_.clear();  // No allocation unless needed
   defaultState_ = initialState;
-  subresourceStates_.clear();
-  ensureStateStorage();
-  std::fill(subresourceStates_.begin(), subresourceStates_.end(), initialState);
+}
+
+void Texture::promoteToHeterogeneousState() const {
+  if (!hasUniformState_) {
+    return;  // Already heterogeneous
+  }
+
+  // Promote to per-subresource tracking
+  if (!resource_.Get()) {
+    return;
+  }
+
+  const uint32_t mipLevels = static_cast<uint32_t>(std::max<size_t>(numMipLevels_, 1));
+  uint32_t arraySize;
+  if (type_ == TextureType::ThreeD) {
+    arraySize = 1u;
+  } else if (type_ == TextureType::Cube) {
+    // Cube textures: 6 faces per layer (DX12-COD-003)
+    arraySize = static_cast<uint32_t>(std::max<size_t>(numLayers_, 1)) * 6u;
+  } else {
+    arraySize = static_cast<uint32_t>(std::max<size_t>(numLayers_, 1));
+  }
+  const size_t required = static_cast<size_t>(mipLevels) * arraySize;
+  subresourceStates_.assign(required, uniformState_);
+  hasUniformState_ = false;
+
+#ifdef IGL_DEBUG
+  IGL_LOG_INFO("Texture::promoteToHeterogeneousState() - %dx%d promoted to per-subresource tracking (%zu states)\n",
+               dimensions_.width, dimensions_.height, required);
+#endif
 }
 
 void Texture::ensureStateStorage() const {
+  // B-006: Only allocate when transitioning from uniform to heterogeneous
+  if (hasUniformState_) {
+    // Don't allocate yet - wait until heterogeneous transition is needed
+    return;
+  }
+
   if (!resource_.Get()) {
     subresourceStates_.clear();
     return;
   }
+
+  // Verify allocation size is correct (paranoid check)
   const uint32_t mipLevels = static_cast<uint32_t>(std::max<size_t>(numMipLevels_, 1));
   uint32_t arraySize;
   if (type_ == TextureType::ThreeD) {
@@ -1155,7 +1195,9 @@ void Texture::ensureStateStorage() const {
   }
   const size_t required = static_cast<size_t>(mipLevels) * arraySize;
   if (subresourceStates_.size() != required) {
-    subresourceStates_.assign(required, defaultState_);
+    IGL_LOG_ERROR("Texture::ensureStateStorage() - Size mismatch (expected=%zu, actual=%zu)\n",
+                  required, subresourceStates_.size());
+    promoteToHeterogeneousState();  // Re-allocate with correct size
   }
 }
 
@@ -1188,6 +1230,28 @@ void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
   if (!commandList || !resource_.Get()) {
     return;
   }
+
+  // B-006: Fast path for uniform state
+  if (hasUniformState_) {
+    if (uniformState_ == newState) {
+      return;  // Already in target state (NO-OP)
+    }
+
+    // Transition all subresources with single barrier
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barrier.Transition.pResource = resource_.Get();
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barrier.Transition.StateBefore = uniformState_;
+    barrier.Transition.StateAfter = newState;
+    commandList->ResourceBarrier(1, &barrier);
+
+    uniformState_ = newState;  // Update uniform state
+    return;
+  }
+
+  // Slow path: Per-subresource tracking
   ensureStateStorage();
   if (subresourceStates_.empty()) {
     return;
@@ -1260,6 +1324,27 @@ void Texture::transitionAll(ID3D12GraphicsCommandList* commandList,
   if (!commandList || !resource_.Get()) {
     return;
   }
+
+  // B-006: Fast path for uniform state
+  if (hasUniformState_) {
+    if (uniformState_ == newState) {
+      return;  // Already in target state
+    }
+
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barrier.Transition.pResource = resource_.Get();
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barrier.Transition.StateBefore = uniformState_;
+    barrier.Transition.StateAfter = newState;
+    commandList->ResourceBarrier(1, &barrier);
+
+    uniformState_ = newState;
+    return;
+  }
+
+  // Slow path: Transition each subresource individually
   ensureStateStorage();
   if (subresourceStates_.empty()) {
     return;
@@ -1285,9 +1370,34 @@ void Texture::transitionAll(ID3D12GraphicsCommandList* commandList,
   if (!barriers.empty()) {
     commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
   }
+
+  // Check if all states are now uniform (can demote to fast path)
+  bool allSame = true;
+  for (const auto& state : subresourceStates_) {
+    if (state != newState) {
+      allSame = false;
+      break;
+    }
+  }
+
+  if (allSame) {
+    // Demote back to uniform state
+    hasUniformState_ = true;
+    uniformState_ = newState;
+    subresourceStates_.clear();  // Free memory
+#ifdef IGL_DEBUG
+    IGL_LOG_INFO("Texture::transitionAll() - Demoted back to uniform state (%d)\n", newState);
+#endif
+  }
 }
 
 D3D12_RESOURCE_STATES Texture::getSubresourceState(uint32_t mipLevel, uint32_t layer) const {
+  // B-006: Fast path for uniform state (most common case)
+  if (hasUniformState_) {
+    return uniformState_;
+  }
+
+  // Slow path: Look up specific subresource
   ensureStateStorage();
   if (subresourceStates_.empty()) {
     return defaultState_;

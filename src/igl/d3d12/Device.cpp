@@ -20,6 +20,7 @@
 #include <igl/d3d12/DXCCompiler.h>
 #include <igl/d3d12/Timer.h>
 #include <igl/d3d12/UploadRingBuffer.h>
+#include <igl/d3d12/ResourceAlignment.h>  // B-007: Resource alignment validation
 #include <igl/VertexInputState.h>
 #include <igl/Texture.h>
 #include <d3dcompiler.h>
@@ -29,6 +30,37 @@
 #pragma comment(lib, "d3dcompiler.lib")
 
 namespace igl::d3d12 {
+
+namespace {
+// C-005: Hash function for SamplerStateDesc to enable deduplication
+// Hashes all relevant fields that determine sampler state behavior
+size_t hashSamplerStateDesc(const SamplerStateDesc& desc) {
+  size_t hash = 0;
+
+  // Hash filter modes
+  hash ^= std::hash<int>{}(static_cast<int>(desc.minFilter)) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+  hash ^= std::hash<int>{}(static_cast<int>(desc.magFilter)) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+  hash ^= std::hash<int>{}(static_cast<int>(desc.mipFilter)) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+
+  // Hash address modes
+  hash ^= std::hash<int>{}(static_cast<int>(desc.addressModeU)) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+  hash ^= std::hash<int>{}(static_cast<int>(desc.addressModeV)) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+  hash ^= std::hash<int>{}(static_cast<int>(desc.addressModeW)) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+
+  // Hash LOD parameters
+  hash ^= std::hash<uint8_t>{}(desc.mipLodMin) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+  hash ^= std::hash<uint8_t>{}(desc.mipLodMax) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+
+  // Hash max anisotropy
+  hash ^= std::hash<uint8_t>{}(desc.maxAnisotropic) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+
+  // Hash depth compare function and enabled flag
+  hash ^= std::hash<int>{}(static_cast<int>(desc.depthCompareFunction)) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+  hash ^= std::hash<bool>{}(desc.depthCompareEnabled) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+
+  return hash;
+}
+} // namespace
 
 // Helper: Calculate root signature cost in DWORDs
 // Root signature limit: 64 DWORDs
@@ -524,6 +556,19 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
     return nullptr;
   }
 
+  // B-007: Query and log allocation requirements for diagnostic purposes
+#ifdef IGL_DEBUG
+  auto allocInfo = ResourceAlignment::GetResourceAllocationInfo(device, bufferDesc);
+  ResourceAlignment::LogResourceAllocationInfo("Buffer", allocInfo);
+
+  // Validate alignment (paranoid check - committed resources should handle this automatically)
+  UINT64 requiredAlignment = 0;
+  if (!ResourceAlignment::ValidateResourcePlacementAlignment(0, bufferDesc, &requiredAlignment)) {
+    IGL_LOG_INFO("Device::createBuffer: Buffer would require %llu-byte alignment for placed resources\n",
+                 requiredAlignment);
+  }
+#endif
+
   // Debug: Log GPU address for uniform buffers
   if (isUniformBuffer) {
     static int uniformBufCount = 0;
@@ -677,6 +722,39 @@ std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc
 
 std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
+  // C-005: Sampler deduplication - Check cache first to reduce descriptor usage
+  const size_t samplerHash = hashSamplerStateDesc(desc);
+
+  {
+    std::lock_guard<std::mutex> lock(samplerCacheMutex_);
+
+    // Check if sampler with this descriptor already exists
+    auto it = samplerCache_.find(samplerHash);
+    if (it != samplerCache_.end()) {
+      // Try to promote weak_ptr to shared_ptr
+      std::shared_ptr<SamplerState> existingSampler = it->second.lock();
+
+      if (existingSampler) {
+        // Cache hit - reuse existing sampler
+        samplerCacheHits_++;
+        const size_t totalRequests = samplerCacheHits_ + samplerCacheMisses_;
+        IGL_LOG_INFO("Device::createSamplerState: Cache HIT (hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%)\n",
+                     samplerHash, samplerCacheHits_, samplerCacheMisses_,
+                     100.0 * samplerCacheHits_ / totalRequests);
+        Result::setOk(outResult);
+        return existingSampler;
+      } else {
+        // Weak pointer expired - remove from cache
+        samplerCache_.erase(it);
+      }
+    }
+  }
+
+  // Cache miss - create new sampler
+  samplerCacheMisses_++;
+  IGL_LOG_INFO("Device::createSamplerState: Cache MISS (hash=0x%zx, total misses=%zu)\n",
+               samplerHash, samplerCacheMisses_);
+
   D3D12_SAMPLER_DESC samplerDesc = {};
 
   auto toD3D12Address = [](SamplerAddressMode m) {
@@ -742,8 +820,16 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
   samplerDesc.MinLOD = static_cast<float>(desc.mipLodMin);
   samplerDesc.MaxLOD = static_cast<float>(desc.mipLodMax);
 
+  auto samplerState = std::make_shared<SamplerState>(samplerDesc);
+
+  // Add to cache for future reuse (C-005)
+  {
+    std::lock_guard<std::mutex> lock(samplerCacheMutex_);
+    samplerCache_[samplerHash] = samplerState;  // weak_ptr stored
+  }
+
   Result::setOk(outResult);
-  return std::make_shared<SamplerState>(samplerDesc);
+  return samplerState;
 }
 
 std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
@@ -1433,7 +1519,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
       Result::setOk(outResult);
       // Create a copy of the root signature for the returned object
       Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSigCopy = rootSignature;
-      return std::make_shared<ComputePipelineState>(std::move(pipelineState), std::move(rootSigCopy), desc.debugName);
+      return std::make_shared<ComputePipelineState>(desc, std::move(pipelineState), std::move(rootSigCopy));
     }
   }
 
@@ -1498,7 +1584,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   IGL_LOG_INFO("Device::createComputePipeline() SUCCESS - PSO=%p, RootSig=%p (hash=0x%zx)\n",
                pipelineState.Get(), rootSignature.Get(), psoHash);
   Result::setOk(outResult);
-  return std::make_shared<ComputePipelineState>(std::move(pipelineState), std::move(rootSignature), desc.debugName);
+  return std::make_shared<ComputePipelineState>(desc, std::move(pipelineState), std::move(rootSignature));
 }
 
 std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
@@ -1896,8 +1982,10 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     psoDesc.NumRenderTargets = n;
     IGL_LOG_INFO("  PSO NumRenderTargets = %u (color attachments = %zu)\n", n, desc.targetDesc.colorAttachments.size());
     for (UINT i = 0; i < n; ++i) {
-      psoDesc.RTVFormats[i] = textureFormatToDXGIFormat(desc.targetDesc.colorAttachments[i].textureFormat);
-      IGL_LOG_INFO("  PSO RTVFormats[%u] = %d (IGL format %d)\n", i, psoDesc.RTVFormats[i], desc.targetDesc.colorAttachments[i].textureFormat);
+      // CRITICAL: Extract value to avoid MSVC debug iterator bounds check in function call
+      const auto textureFormat = desc.targetDesc.colorAttachments[i].textureFormat;
+      psoDesc.RTVFormats[i] = textureFormatToDXGIFormat(textureFormat);
+      IGL_LOG_INFO("  PSO RTVFormats[%u] = %d (IGL format %d)\n", i, psoDesc.RTVFormats[i], textureFormat);
     }
   } else {
     psoDesc.NumRenderTargets = 0;
@@ -2850,6 +2938,31 @@ BackendType Device::getBackendType() const {
   return BackendType::D3D12;
 }
 
+// C-005: Get sampler cache statistics for telemetry and debugging
+Device::SamplerCacheStats Device::getSamplerCacheStats() const {
+  std::lock_guard<std::mutex> lock(samplerCacheMutex_);
+
+  SamplerCacheStats stats;
+  stats.cacheHits = samplerCacheHits_;
+  stats.cacheMisses = samplerCacheMisses_;
+
+  // Count active samplers (weak_ptrs that haven't expired)
+  stats.activeSamplers = 0;
+  for (const auto& [hash, weakPtr] : samplerCache_) {
+    if (!weakPtr.expired()) {
+      stats.activeSamplers++;
+    }
+  }
+
+  // Calculate hit rate
+  const size_t totalRequests = stats.cacheHits + stats.cacheMisses;
+  if (totalRequests > 0) {
+    stats.hitRate = 100.0f * stats.cacheHits / totalRequests;
+  }
+
+  return stats;
+}
+
 void Device::processCompletedUploads() const {
   if (!uploadFence_.Get()) {
     return;
@@ -2886,10 +2999,11 @@ void Device::trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer, UI
   pendingUploads_.push_back(PendingUpload{fenceValue, std::move(buffer)});
 }
 
-// Command Allocator Pool Implementation (P0_DX12-005, H-004)
+// Command Allocator Pool Implementation (P0_DX12-005, H-004, B-008)
 // Ensures command allocators are only reused after GPU completes execution
 // H-004: Cap pool at 64 allocators to prevent memory leaks
-static constexpr size_t kMaxCommandAllocators = 64;
+// B-008: Increased to 256 allocators with enhanced statistics and error handling
+static constexpr size_t kMaxCommandAllocators = 256;
 
 Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator() const {
   if (!uploadFence_.Get()) {
@@ -2920,21 +3034,48 @@ Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator
         return nullptr;
       }
 
+      // B-008: Track reuse statistics
+      totalAllocatorReuses_++;
+
 #ifdef IGL_DEBUG
-      IGL_LOG_INFO("Device::getUploadCommandAllocator: Reusing allocator (completed fence: %llu >= %llu), pool size: %zu\n",
-                   completedValue, tracked.fenceValue, commandAllocatorPool_.size());
+      IGL_LOG_INFO("Device::getUploadCommandAllocator: Reusing allocator (completed fence: %llu >= %llu), "
+                   "pool size: %zu, reuses: %zu\n",
+                   completedValue, tracked.fenceValue, commandAllocatorPool_.size(), totalAllocatorReuses_);
 #endif
       return allocator;
     }
   }
 
-  // H-004: Check if we've reached the pool limit
+  // H-004, B-008: Check if we've reached the pool limit
   // totalCommandAllocatorsCreated_ tracks all allocators ever created (in pool + currently in use)
   if (totalCommandAllocatorsCreated_ >= kMaxCommandAllocators) {
-    IGL_LOG_ERROR("Device::getUploadCommandAllocator: Command allocator pool exhausted (%zu/%zu), "
-                  "completed fence: %llu, pool size: %zu. All allocators still in use by GPU.\n",
-                  totalCommandAllocatorsCreated_, kMaxCommandAllocators, completedValue,
-                  commandAllocatorPool_.size());
+    // B-008: Enhanced error message with statistics and guidance
+    const size_t allocatorsInUse = totalCommandAllocatorsCreated_ - commandAllocatorPool_.size();
+    const float reuseRate = totalCommandAllocatorsCreated_ > 0
+        ? (100.0f * totalAllocatorReuses_ / (totalCommandAllocatorsCreated_ + totalAllocatorReuses_))
+        : 0.0f;
+
+    IGL_LOG_ERROR("Device::getUploadCommandAllocator: Command allocator pool EXHAUSTED!\n");
+    IGL_LOG_ERROR("  Pool limit: %zu allocators (hard limit to prevent GPU memory leak)\n",
+                  kMaxCommandAllocators);
+    IGL_LOG_ERROR("  Currently in use: %zu allocators\n", allocatorsInUse);
+    IGL_LOG_ERROR("  Waiting in pool: %zu allocators\n", commandAllocatorPool_.size());
+    IGL_LOG_ERROR("  Peak pool size: %zu\n", peakPoolSize_);
+    IGL_LOG_ERROR("  Total reuses: %zu (%.1f%% reuse rate)\n", totalAllocatorReuses_, reuseRate);
+    IGL_LOG_ERROR("  Completed fence: %llu\n", completedValue);
+    IGL_LOG_ERROR("\n");
+    IGL_LOG_ERROR("POSSIBLE CAUSES:\n");
+    IGL_LOG_ERROR("  1. Too many frames in flight - reduce frame pacing\n");
+    IGL_LOG_ERROR("  2. GPU stalled - check for synchronization issues\n");
+    IGL_LOG_ERROR("  3. Commands submitted faster than GPU can process\n");
+    IGL_LOG_ERROR("  4. Memory-intensive operations causing GPU slowdown\n");
+    IGL_LOG_ERROR("\n");
+    IGL_LOG_ERROR("RECOMMENDED ACTIONS:\n");
+    IGL_LOG_ERROR("  1. Add explicit GPU synchronization (waitForGPU) before intensive operations\n");
+    IGL_LOG_ERROR("  2. Reduce number of simultaneous command buffer submissions\n");
+    IGL_LOG_ERROR("  3. Check for infinite loops in command recording\n");
+    IGL_LOG_ERROR("  4. Profile GPU workload to identify bottlenecks\n");
+
     return nullptr;
   }
 
@@ -2977,9 +3118,15 @@ void Device::returnUploadCommandAllocator(Microsoft::WRL::ComPtr<ID3D12CommandAl
 
   commandAllocatorPool_.push_back(tracked);
 
+  // B-008: Track peak pool size for statistics
+  if (commandAllocatorPool_.size() > peakPoolSize_) {
+    peakPoolSize_ = commandAllocatorPool_.size();
+  }
+
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("Device::returnUploadCommandAllocator: Returned allocator with fence %llu, pool size: %zu\n",
-               fenceValue, commandAllocatorPool_.size());
+  IGL_LOG_INFO("Device::returnUploadCommandAllocator: Returned allocator with fence %llu, "
+               "pool size: %zu, peak: %zu\n",
+               fenceValue, commandAllocatorPool_.size(), peakPoolSize_);
 #endif
 }
 
