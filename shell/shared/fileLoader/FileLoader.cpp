@@ -11,6 +11,16 @@
 #include <limits>
 #include <igl/Common.h>
 
+#if IGL_PLATFORM_ANDROID
+#include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
+#elif IGL_PLATFORM_LINUX
+#include <shell/shared/fileLoader/linux/FileLoaderLinux.h>
+#elif IGL_PLATFORM_MACOS || IGL_PLATFORM_IOS
+#include <shell/shared/fileLoader/apple/FileLoaderApple.h>
+#elif IGL_PLATFORM_WINDOWS
+#include <shell/shared/fileLoader/win/FileLoaderWin.h>
+#endif
+
 #if defined(IGL_CMAKE_BUILD)
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -46,6 +56,20 @@ FileLoader::FileData FileLoader::loadBinaryDataInternal(const std::string& fileP
   }
 
   return {std::move(data), static_cast<uint32_t>(length)};
+}
+
+std::unique_ptr<FileLoader> createFileLoader() {
+#if IGL_PLATFORM_ANDROID
+  return std::make_unique<FileLoaderAndroid>();
+#elif IGL_PLATFORM_LINUX
+  return std::make_unique<FileLoaderLinux>();
+#elif IGL_PLATFORM_MACOS || IGL_PLATFORM_IOS
+  return std::make_unique<FileLoaderApple>();
+#elif IGL_PLATFORM_WINDOWS
+  return std::make_unique<FileLoaderWin>();
+#else
+  return nullptr;
+#endif
 }
 
 } // namespace igl::shell

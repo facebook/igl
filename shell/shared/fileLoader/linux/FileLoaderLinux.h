@@ -13,8 +13,9 @@ namespace igl::shell {
 
 class FileLoaderLinux final : public FileLoader {
  public:
-  FileLoaderLinux();
+  FileLoaderLinux() = default;
   ~FileLoaderLinux() override = default;
+
   FileData loadBinaryData(const std::string& fileName) override;
   [[nodiscard]] bool fileExists(const std::string& fileName) const override;
   [[nodiscard]] std::string basePath() const override;

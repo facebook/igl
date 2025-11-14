@@ -13,7 +13,31 @@ if(WIN32)
 endif()
 
 file(GLOB SHELL_SHARED_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-     shared/fileLoader/*.cpp shared/imageLoader/*.cpp shared/extension/*.cpp shared/input/*.cpp shared/platform/*.cpp shared/renderSession/*.cpp shared/netservice/*.cpp)
+     shared/fileLoader/*.cpp
+     shared/imageLoader/*.cpp
+     shared/extension/*.cpp
+     shared/input/*.cpp
+     shared/platform/*.cpp
+     shared/renderSession/*.cpp
+     shared/netservice/*.cpp)
+
+if(APPLE)
+  file(GLOB SHELL_FILELOADER_PLATFORM_SRC LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+       shared/fileLoader/apple/*.cpp)
+elseif(ANDROID)
+  file(GLOB SHELL_FILELOADER_PLATFORM_SRC LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+       shared/fileLoader/android/*.cpp)
+elseif(UNIX AND NOT APPLE)
+  file(GLOB SHELL_FILELOADER_PLATFORM_SRC LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+       shared/fileLoader/linux/*.cpp)
+elseif(WIN32)
+  file(GLOB SHELL_FILELOADER_PLATFORM_SRC LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+       shared/fileLoader/win/*.cpp)
+else()
+  set(SHELL_FILELOADER_PLATFORM_SRC)
+endif()
+
+list(APPEND SHELL_SHARED_SRC_FILES ${SHELL_FILELOADER_PLATFORM_SRC})
 file(GLOB SHELL_SHARED_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
      shared/fileLoader/*.h shared/imageLoader/*.h shared/extension/*.h shared/input/*.h shared/platform/*.h shared/renderSession/*.h shared/netservice/*.h)
 

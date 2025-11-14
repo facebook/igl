@@ -45,8 +45,6 @@ std::string findSubdir(const char* subdir, const std::string& fileName) {
 
 namespace igl::shell {
 
-FileLoaderLinux::FileLoaderLinux() = default;
-
 FileLoader::FileData FileLoaderLinux::loadBinaryData(const std::string& fileName) {
   return loadBinaryDataInternal(fullPath(fileName));
 }
