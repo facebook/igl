@@ -54,6 +54,27 @@ function(ADD_SHELL_SESSION_BACKEND targetApp backend srcs libs)
   target_compile_definitions(${target} PRIVATE "IGL_SHELL_SESSION=${targetApp}")
   target_link_libraries(${target} PUBLIC ${libs})
   target_link_libraries(${target} PUBLIC IGLShellApp_${backend})
+
+  # Copy dxil.dll for D3D12 executables (required for DXIL signing)
+  if(backend STREQUAL "d3d12" AND WIN32 AND MSVC)
+    find_file(DXIL_DLL_FOR_${target}
+      NAMES dxil.dll
+      PATHS
+        "C:/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64"
+        "C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64"
+        "C:/Program Files (x86)/Windows Kits/10/bin/10.0.19041.0/x64"
+        "$ENV{WindowsSdkBinPath}/x64"
+      NO_DEFAULT_PATH
+    )
+    if(DXIL_DLL_FOR_${target})
+      add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          "${DXIL_DLL_FOR_${target}}"
+          "$<TARGET_FILE_DIR:${target}>/"
+        COMMENT "Copying dxil.dll for ${target}"
+      )
+    endif()
+  endif()
 endfunction()
 
 function(ADD_SHELL_SESSION_BACKEND_OPENXR_SIM targetApp backend srcs libs compileDefs)

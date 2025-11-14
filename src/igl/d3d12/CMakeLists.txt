@@ -42,26 +42,7 @@ if(WIN32 AND MSVC)
   # Note: /Zc:preprocessor (conformant preprocessor) causes issues with
   # some d3dx12 headers and WRL, so we're using the traditional preprocessor
 
-  # Copy dxil.dll to output directories for DXIL signing support
-  # This DLL is required by DXC validator to sign DXIL bytecode
-  find_file(DXIL_DLL
-    NAMES dxil.dll
-    PATHS
-      "C:/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64"
-      "C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64"
-      "C:/Program Files (x86)/Windows Kits/10/bin/10.0.19041.0/x64"
-      "$ENV{WindowsSdkBinPath}/x64"
-  )
-
-  if(DXIL_DLL)
-    message(STATUS "Found dxil.dll: ${DXIL_DLL}")
-    # Copy to test and shell output directories
-    add_custom_target(copy_dxil_dll ALL
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${DXIL_DLL}" "$<TARGET_FILE_DIR:IGLD3D12>/"
-      COMMENT "Copying dxil.dll for DXIL signing support"
-    )
-    add_dependencies(IGLD3D12 copy_dxil_dll)
-  else()
-    message(WARNING "dxil.dll not found - DXIL shaders will be unsigned")
-  endif()
+  # Note: dxil.dll deployment is now handled by individual executable targets
+  # (shell sessions and tests) to ensure it's copied to the correct directories.
+  # See shell/windows/CMakeLists.txt and src/igl/tests/CMakeLists.txt
 endif()
