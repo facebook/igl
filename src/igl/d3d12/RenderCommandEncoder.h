@@ -138,6 +138,17 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   D3D12_GPU_DESCRIPTOR_HANDLE cachedCbvTableGpuHandles_[IGL_BUFFER_BINDINGS_MAX] = {};
   bool cbvTableBound_[IGL_BUFFER_BINDINGS_MAX] = {};
   size_t cbvTableCount_ = 0;
+
+  // G-001: Barrier batching infrastructure
+  // Accumulates resource barriers and flushes them before draw/dispatch calls
+  // This reduces D3D12 API overhead and allows driver optimization
+  std::vector<D3D12_RESOURCE_BARRIER> pendingBarriers_;
+
+  // Flushes all pending barriers to the command list
+  void flushBarriers();
+
+  // Queue a barrier for batched submission
+  void queueBarrier(const D3D12_RESOURCE_BARRIER& barrier);
 };
 
 } // namespace igl::d3d12

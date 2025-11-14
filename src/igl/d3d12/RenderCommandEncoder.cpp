@@ -541,6 +541,9 @@ void RenderCommandEncoder::endEncoding() {
     }
   }
 
+  // G-001: Flush any remaining barriers before ending encoding
+  flushBarriers();
+
   // Return RTV/DSV indices to the descriptor heap manager if used
   if (auto* mgr = context2.getDescriptorHeapManager()) {
     if (!rtvIndices_.empty()) {
@@ -1049,6 +1052,9 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t instanceCount,
                                 uint32_t firstVertex,
                                 uint32_t baseInstance) {
+  // G-001: Flush any pending barriers before draw call
+  flushBarriers();
+
   // D3D12 requires ALL root parameters to be bound before drawing
   // Hybrid root signature layout:
   // - Root parameter 0: Push constants at b2
@@ -1111,6 +1117,9 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
                                        uint32_t firstIndex,
                                        int32_t vertexOffset,
                                        uint32_t baseInstance) {
+  // G-001: Flush any pending barriers before draw call
+  flushBarriers();
+
   // D3D12 requires ALL root parameters to be bound before drawing
   // Hybrid root signature layout:
   // - Root parameter 0: Push constants at b2
@@ -1806,6 +1815,29 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
       }
     }
   }
+}
+
+// G-001: Barrier batching implementation
+void RenderCommandEncoder::flushBarriers() {
+  if (pendingBarriers_.empty()) {
+    return;
+  }
+
+  IGL_LOG_INFO("RenderCommandEncoder: Flushing %zu batched resource barriers\n",
+               pendingBarriers_.size());
+
+  // Submit all pending barriers in a single API call
+  commandList_->ResourceBarrier(static_cast<UINT>(pendingBarriers_.size()),
+                                 pendingBarriers_.data());
+
+  // Clear the pending barrier queue
+  pendingBarriers_.clear();
+}
+
+void RenderCommandEncoder::queueBarrier(const D3D12_RESOURCE_BARRIER& barrier) {
+  pendingBarriers_.push_back(barrier);
+  IGL_LOG_INFO("RenderCommandEncoder: Queued barrier (total pending: %zu)\n",
+               pendingBarriers_.size());
 }
 
 } // namespace igl::d3d12
