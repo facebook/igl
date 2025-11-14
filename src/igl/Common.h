@@ -28,7 +28,14 @@ using Deleter = void (*)(void* IGL_NULLABLE);
 
 /// Device Capabilities or Metal Features
 constexpr uint32_t IGL_TEXTURE_SAMPLERS_MAX = 16;
-constexpr uint32_t IGL_VERTEX_ATTRIBUTES_MAX = 24;
+
+// Maximum vertex attributes across all backends
+// - D3D12: D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT = 32
+// - Vulkan: VkPhysicalDeviceLimits::maxVertexInputAttributes (typically >= 16, commonly 32)
+// - Metal: 31 (Metal Feature Set Tables)
+// - OpenGL: GL_MAX_VERTEX_ATTRIBS (typically >= 16)
+// Setting to 32 ensures compatibility with D3D12 (the most widely-supported modern API)
+constexpr uint32_t IGL_VERTEX_ATTRIBUTES_MAX = 32;
 
 // maximum number of buffers that can be bound to a shader stage
 // See maximum number of entries in the buffer argument table, per graphics or kernel function

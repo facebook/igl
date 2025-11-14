@@ -17,6 +17,19 @@ class Device;
 /// @brief GPU timer implementation using D3D12 timestamp queries
 /// @details Implements ITimer interface for D3D12 backend using query heaps.
 /// Timer starts recording immediately on construction and ends when command buffer is submitted.
+///
+/// I-007: Cross-Platform Timestamp Semantics
+/// ------------------------------------------
+/// All timestamps returned by getElapsedTimeNanos() are in NANOSECONDS, providing
+/// cross-platform consistency with Vulkan and other backends.
+///
+/// D3D12 GPU timestamps are automatically converted from hardware ticks to nanoseconds
+/// using the GPU timestamp frequency (ID3D12CommandQueue::GetTimestampFrequency()).
+///
+/// Formula: elapsedNanos = (endTicks - startTicks) * 1,000,000,000 / frequencyHz
+///
+/// This ensures consistent timing across all IGL backends regardless of hardware.
+///
 /// TASK_P2_DX12-FIND-11: Implement GPU Timer Queries
 class Timer final : public ITimer {
  public:

@@ -173,6 +173,10 @@ enum class DeviceRequirement {
  * MaxComputeWorkGroupInvocations       Maximum total compute work group invocations
  * MaxVertexInputAttributes             Maximum number of vertex input attributes
  * MaxColorAttachments                  Maximum number of color attachments (render targets)
+ * MaxDescriptorHeapCbvSrvUav           Maximum CBV/SRV/UAV descriptors in shader-visible heap (I-005)
+ * MaxDescriptorHeapSamplers            Maximum sampler descriptors in shader-visible heap (I-005)
+ * MaxDescriptorHeapRtvs                Maximum RTV descriptors in CPU-visible heap (I-005)
+ * MaxDescriptorHeapDsvs                Maximum DSV descriptors in CPU-visible heap (I-005)
  */
 enum class DeviceFeatureLimits {
   BufferAlignment = 0,
@@ -195,6 +199,11 @@ enum class DeviceFeatureLimits {
   MaxComputeWorkGroupInvocations,
   MaxVertexInputAttributes,
   MaxColorAttachments,
+  // I-005: Descriptor heap size limits for cross-platform compatibility
+  MaxDescriptorHeapCbvSrvUav,
+  MaxDescriptorHeapSamplers,
+  MaxDescriptorHeapRtvs,
+  MaxDescriptorHeapDsvs,
 };
 
 /**

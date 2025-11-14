@@ -174,6 +174,10 @@ class Device final : public IDevice {
   };
   [[nodiscard]] SamplerCacheStats getSamplerCacheStats() const;
 
+  // I-003: Query maximum MSAA sample count for a specific format
+  // Returns 1 if format does not support MSAA
+  [[nodiscard]] uint32_t getMaxMSAASamplesForFormat(TextureFormat format) const;
+
  private:
   // Validate device limits against actual device capabilities (P2_DX12-018)
   void validateDeviceLimits();
@@ -259,6 +263,11 @@ class Device final : public IDevice {
 
   // Upload ring buffer for streaming resources (P1_DX12-009)
   std::unique_ptr<UploadRingBuffer> uploadRingBuffer_;
+
+  // I-007: GPU timestamp frequency for timer queries (Hz)
+  // Queried once during device initialization via ID3D12CommandQueue::GetTimestampFrequency()
+  // Used by Timer to convert GPU ticks to nanoseconds
+  uint64_t gpuTimestampFrequencyHz_ = 0;
 };
 
 } // namespace igl::d3d12

@@ -147,6 +147,21 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
     uploadRingBuffer_ = std::make_unique<UploadRingBuffer>(device, kUploadRingBufferSize);
     IGL_LOG_INFO("Device::Device: Upload ring buffer initialized (size=%llu MB)\n",
                  kUploadRingBufferSize / (1024 * 1024));
+
+    // I-007: Query GPU timestamp frequency for Timer queries
+    // This is used to convert GPU timestamp ticks to nanoseconds
+    auto* commandQueue = ctx_->getCommandQueue();
+    if (commandQueue) {
+      hr = commandQueue->GetTimestampFrequency(&gpuTimestampFrequencyHz_);
+      if (FAILED(hr)) {
+        IGL_LOG_ERROR("Device::Device: Failed to get GPU timestamp frequency: 0x%08X\n", hr);
+        gpuTimestampFrequencyHz_ = 1000000000; // Fallback: assume 1 GHz
+      } else {
+        IGL_LOG_INFO("Device::Device: GPU timestamp frequency: %llu Hz (%.2f MHz)\n",
+                     gpuTimestampFrequencyHz_,
+                     gpuTimestampFrequencyHz_ / 1000000.0);
+      }
+    }
   }
 }
 
@@ -911,7 +926,9 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
       return nullptr;
     }
 
-    // Validate sample count is supported for this format
+    // I-003: Validate sample count is supported for this format
+    // NOTE: Applications should query DeviceFeatureLimits::MaxMultisampleCount proactively
+    //       to avoid runtime errors. Use getMaxMSAASamplesForFormat() for format-specific queries.
     D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msqLevels = {};
     msqLevels.Format = dxgiFormat;
     msqLevels.SampleCount = sampleCount;
@@ -919,10 +936,14 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 
     if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msqLevels, sizeof(msqLevels))) ||
         msqLevels.NumQualityLevels == 0) {
-      char errorMsg[256];
+      // I-003: Query maximum supported samples for better error message
+      const uint32_t maxSamples = getMaxMSAASamplesForFormat(desc.format);
+
+      char errorMsg[512];
       snprintf(errorMsg, sizeof(errorMsg),
-               "Device::createTexture: Format %d does not support %u samples (MSAA not supported)",
-               static_cast<int>(dxgiFormat), sampleCount);
+               "Device::createTexture: Format %d does not support %u samples (max supported: %u). "
+               "Query DeviceFeatureLimits::MaxMultisampleCount before texture creation.",
+               static_cast<int>(dxgiFormat), sampleCount, maxSamples);
       IGL_LOG_ERROR("%s\n", errorMsg);
       Result::setResult(outResult, Result::Code::Unsupported, errorMsg);
       return nullptr;
@@ -2715,9 +2736,18 @@ bool Device::hasRequirement(DeviceRequirement /*requirement*/) const {
 }
 
 bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const {
+  // Compile-time validation: IGL constant must not exceed D3D12 API limit
+  static_assert(IGL_VERTEX_ATTRIBUTES_MAX <= D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT,
+                "IGL_VERTEX_ATTRIBUTES_MAX exceeds D3D12 vertex input limit");
+
   switch (featureLimits) {
     case DeviceFeatureLimits::BufferAlignment:
-      // D3D12 constant buffer alignment requirement
+      // I-002: D3D12 buffer alignment requirements vary by buffer type:
+      // - Constant buffers: 256 bytes (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
+      // - Storage buffers: 4 bytes (see ShaderStorageBufferOffsetAlignment)
+      // - Vertex/Index buffers: 4 bytes (DWORD alignment)
+      // This returns the most restrictive alignment (constant buffers).
+      // See: https://learn.microsoft.com/en-us/windows/win32/direct3d12/constants
       result = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT; // 256 bytes
       return true;
 
@@ -2742,10 +2772,44 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
       result = 4096;
       return true;
 
-    case DeviceFeatureLimits::MaxMultisampleCount:
-      // D3D12 supports up to 8x MSAA for most render target formats
-      result = 8;
+    case DeviceFeatureLimits::MaxMultisampleCount: {
+      // I-003: Query maximum MSAA sample count supported by device
+      // Test common sample counts (1, 2, 4, 8, 16) for RGBA8 (most widely supported format)
+      // This provides conservative estimate - actual support varies by format
+      // Applications should use getMaxMSAASamplesForFormat() for format-specific queries
+      auto* device = ctx_->getDevice();
+      if (!device) {
+        result = 1;  // No MSAA support if device unavailable
+        return false;
+      }
+
+      // Use RGBA8 as reference format (most widely supported)
+      const DXGI_FORMAT referenceFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+      // Test sample counts in descending order: 16, 8, 4, 2, 1
+      const uint32_t testCounts[] = {16, 8, 4, 2, 1};
+
+      for (uint32_t sampleCount : testCounts) {
+        D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msqLevels = {};
+        msqLevels.Format = referenceFormat;
+        msqLevels.SampleCount = sampleCount;
+        msqLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+
+        HRESULT hr = device->CheckFeatureSupport(
+            D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
+            &msqLevels,
+            sizeof(msqLevels));
+
+        if (SUCCEEDED(hr) && msqLevels.NumQualityLevels > 0) {
+          result = sampleCount;
+          return true;
+        }
+      }
+
+      // Fallback to 1x (no MSAA)
+      result = 1;
       return true;
+    }
 
     case DeviceFeatureLimits::MaxPushConstantBytes:
       // D3D12 root constants: each root constant is 4 bytes (DWORD)
@@ -2783,7 +2847,10 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
       return true;
 
     case DeviceFeatureLimits::ShaderStorageBufferOffsetAlignment:
-      // D3D12 structured buffer/UAV alignment: 4 bytes for structured buffers
+      // I-002: D3D12 storage buffer (UAV/structured buffer) alignment
+      // D3D12 structured buffers require 4-byte (DWORD) alignment, unlike constant buffers (256 bytes)
+      // This matches Vulkan's typical minStorageBufferOffsetAlignment (often 16-64 bytes, device-dependent)
+      // See: https://learn.microsoft.com/en-us/windows/win32/direct3d12/alignment
       result = 4;
       return true;
 
@@ -2814,13 +2881,45 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
       return true;
 
     case DeviceFeatureLimits::MaxVertexInputAttributes:
-      // D3D12 max vertex input slots
+      // D3D12 max vertex input slots (32 per D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT)
       result = D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT; // 32
+      IGL_DEBUG_ASSERT(IGL_VERTEX_ATTRIBUTES_MAX <= result,
+                       "IGL_VERTEX_ATTRIBUTES_MAX exceeds D3D12 reported limit");
       return true;
 
     case DeviceFeatureLimits::MaxColorAttachments:
       // D3D12 max simultaneous render targets
       result = D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; // 8
+      return true;
+
+    // I-005: Descriptor heap size limits for cross-platform compatibility
+    case DeviceFeatureLimits::MaxDescriptorHeapCbvSrvUav:
+      // D3D12 shader-visible CBV/SRV/UAV descriptor heap size
+      // Hardware limit: 1,000,000+ descriptors
+      // Current implementation uses 4096 descriptors (see DescriptorHeapManager::Sizes)
+      // This reports the configured limit, not the hardware maximum
+      result = 4096;
+      return true;
+
+    case DeviceFeatureLimits::MaxDescriptorHeapSamplers:
+      // D3D12 shader-visible sampler descriptor heap size
+      // Hardware limit: 2048 descriptors (D3D12 spec limit for sampler heaps)
+      // Current implementation uses 2048 descriptors (see DescriptorHeapManager::Sizes)
+      result = 2048;
+      return true;
+
+    case DeviceFeatureLimits::MaxDescriptorHeapRtvs:
+      // D3D12 CPU-visible RTV descriptor heap size
+      // Hardware limit: 16,384 descriptors
+      // Current implementation uses 256 descriptors (see DescriptorHeapManager::Sizes)
+      result = 256;
+      return true;
+
+    case DeviceFeatureLimits::MaxDescriptorHeapDsvs:
+      // D3D12 CPU-visible DSV descriptor heap size
+      // Hardware limit: 16,384 descriptors
+      // Current implementation uses 128 descriptors (see DescriptorHeapManager::Sizes)
+      result = 128;
       return true;
   }
 
@@ -3075,6 +3174,42 @@ Device::SamplerCacheStats Device::getSamplerCacheStats() const {
   }
 
   return stats;
+}
+
+// I-003: Query maximum MSAA sample count for a specific format
+uint32_t Device::getMaxMSAASamplesForFormat(TextureFormat format) const {
+  auto* device = ctx_->getDevice();
+  if (!device) {
+    return 1;
+  }
+
+  // Convert IGL format to DXGI format
+  const DXGI_FORMAT dxgiFormat = textureFormatToDXGIFormat(format);
+  if (dxgiFormat == DXGI_FORMAT_UNKNOWN) {
+    IGL_LOG_ERROR("Device::getMaxMSAASamplesForFormat: Unknown format %d\n", static_cast<int>(format));
+    return 1;
+  }
+
+  // Test sample counts in descending order: 16, 8, 4, 2, 1
+  const uint32_t testCounts[] = {16, 8, 4, 2, 1};
+
+  for (uint32_t sampleCount : testCounts) {
+    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msqLevels = {};
+    msqLevels.Format = dxgiFormat;
+    msqLevels.SampleCount = sampleCount;
+    msqLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+
+    HRESULT hr = device->CheckFeatureSupport(
+        D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
+        &msqLevels,
+        sizeof(msqLevels));
+
+    if (SUCCEEDED(hr) && msqLevels.NumQualityLevels > 0) {
+      return sampleCount;
+    }
+  }
+
+  return 1;  // No MSAA support
 }
 
 void Device::processCompletedUploads() const {
