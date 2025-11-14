@@ -44,8 +44,9 @@ constexpr uint32_t kDescriptorsPerPage = kCbvSrvUavHeapSize;  // 1024 descriptor
 constexpr uint32_t kMaxHeapPages = 16;  // Maximum 16 pages = 16K descriptors per frame
 constexpr uint32_t kMaxDescriptorsPerFrame = kMaxHeapPages * kDescriptorsPerPage;  // 16384 total
 
-// Maximum number of vertex attributes
-constexpr uint32_t kMaxVertexAttributes = 16;
+// Maximum number of vertex attributes (D3D12 spec limit)
+// H-015: Use D3D12 spec constant instead of hard-coded value
+constexpr uint32_t kMaxVertexAttributes = D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;  // 32
 
 // Macro to check HRESULT and convert to IGL Result
 #define D3D12_CHECK(func)                                                    \
