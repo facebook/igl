@@ -17,6 +17,25 @@ namespace igl::d3d12 {
 D3D12Context::ResourceStats D3D12Context::resourceStats_;
 std::mutex D3D12Context::resourceStatsMutex_;
 
+// A-011: Helper function to probe highest supported feature level for an adapter
+D3D_FEATURE_LEVEL D3D12Context::getHighestFeatureLevel(IDXGIAdapter1* adapter) {
+  const D3D_FEATURE_LEVEL featureLevels[] = {
+    D3D_FEATURE_LEVEL_12_2,
+    D3D_FEATURE_LEVEL_12_1,
+    D3D_FEATURE_LEVEL_12_0,
+    D3D_FEATURE_LEVEL_11_1,
+    D3D_FEATURE_LEVEL_11_0,
+  };
+
+  for (D3D_FEATURE_LEVEL fl : featureLevels) {
+    if (SUCCEEDED(D3D12CreateDevice(adapter, fl, _uuidof(ID3D12Device), nullptr))) {
+      return fl;
+    }
+  }
+
+  return static_cast<D3D_FEATURE_LEVEL>(0);  // No supported feature level
+}
+
 D3D12Context::~D3D12Context() {
   // Wait for GPU to finish before cleanup
   waitForGPU();
@@ -259,47 +278,95 @@ void D3D12Context::createDevice() {
   // Experimental features are ONLY enabled in HeadlessD3D12Context for unit tests
   // Windowed render sessions use signed DXIL (via IDxcValidator) which doesn't need experimental mode
 
-  // Initialize DXGI factory flags for debug builds
+  // A-007: Read debug configuration from environment variables
+  // Helper function to read boolean env var (returns defaultValue if not set)
+  auto getEnvBool = [](const char* name, bool defaultValue) -> bool {
+    const char* value = std::getenv(name);
+    if (!value) return defaultValue;
+    return (std::string(value) == "1") || (std::string(value) == "true");
+  };
+
+  // A-007: Debug configuration from environment variables
+  bool enableDebugLayer = getEnvBool("IGL_D3D12_DEBUG",
+#ifdef _DEBUG
+    true  // Default ON in debug builds
+#else
+    false // Default OFF in release builds
+#endif
+  );
+  bool enableGPUValidation = getEnvBool("IGL_D3D12_GPU_VALIDATION", false);
+  bool enableDRED = getEnvBool("IGL_D3D12_DRED",
+#ifdef _DEBUG
+    true  // Default ON in debug builds
+#else
+    false // Default OFF in release builds
+#endif
+  );
+  bool enableDXGIDebug = getEnvBool("IGL_DXGI_DEBUG",
+#ifdef _DEBUG
+    true  // Default ON in debug builds
+#else
+    false // Default OFF in release builds
+#endif
+  );
+  bool breakOnError = getEnvBool("IGL_D3D12_BREAK_ON_ERROR", false);  // OFF by default to avoid hangs
+  bool breakOnWarning = getEnvBool("IGL_D3D12_BREAK_ON_WARNING", false);
+
+  IGL_LOG_INFO("=== D3D12 Debug Configuration ===\n");
+  IGL_LOG_INFO("  Debug Layer:       %s\n", enableDebugLayer ? "ENABLED" : "DISABLED");
+  IGL_LOG_INFO("  GPU Validation:    %s\n", enableGPUValidation ? "ENABLED" : "DISABLED");
+  IGL_LOG_INFO("  DRED:              %s\n", enableDRED ? "ENABLED" : "DISABLED");
+  IGL_LOG_INFO("  DXGI Debug:        %s\n", enableDXGIDebug ? "ENABLED" : "DISABLED");
+  IGL_LOG_INFO("  Break on Error:    %s\n", breakOnError ? "ENABLED" : "DISABLED");
+  IGL_LOG_INFO("  Break on Warning:  %s\n", breakOnWarning ? "ENABLED" : "DISABLED");
+  IGL_LOG_INFO("=================================\n");
+
+  // Initialize DXGI factory flags
   UINT dxgiFactoryFlags = 0;
 
-  // Re-enable debug layer to capture validation messages
-  Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
-  if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf())))) {
-    debugController->EnableDebugLayer();
-    IGL_LOG_INFO("D3D12Context: Debug layer ENABLED (to capture validation messages)\n");
+  // A-007: Enable debug layer if configured
+  if (enableDebugLayer) {
+    Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
+    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf())))) {
+      debugController->EnableDebugLayer();
+      IGL_LOG_INFO("D3D12Context: Debug layer ENABLED\n");
 
-#ifdef _DEBUG
-    // Enable DXGI debug layer (C-009: critical for DXGI validation)
-    dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
-    IGL_LOG_INFO("D3D12Context: DXGI debug layer ENABLED (swap chain validation)\n");
-#endif
-
-    // Optional: Enable GPU-Based Validation (controlled by env var)
-    // WARNING: This significantly impacts performance (10-100x slower)
-    const char* enableGBV = std::getenv("IGL_D3D12_GPU_BASED_VALIDATION");
-    if (enableGBV && std::string(enableGBV) == "1") {
-      Microsoft::WRL::ComPtr<ID3D12Debug1> debugController1;
-      if (SUCCEEDED(debugController->QueryInterface(IID_PPV_ARGS(debugController1.GetAddressOf())))) {
-        debugController1->SetEnableGPUBasedValidation(TRUE);
-        IGL_LOG_INFO("D3D12Context: GPU-Based Validation ENABLED (may slow down rendering significantly)\n");
+      // Enable DXGI debug layer if configured
+      if (enableDXGIDebug) {
+        dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+        IGL_LOG_INFO("D3D12Context: DXGI debug layer ENABLED\n");
       }
+
+      // A-007: Enable GPU-Based Validation if configured
+      // WARNING: This significantly impacts performance (10-100x slower)
+      if (enableGPUValidation) {
+        Microsoft::WRL::ComPtr<ID3D12Debug1> debugController1;
+        if (SUCCEEDED(debugController->QueryInterface(IID_PPV_ARGS(debugController1.GetAddressOf())))) {
+          debugController1->SetEnableGPUBasedValidation(TRUE);
+          IGL_LOG_INFO("D3D12Context: GPU-Based Validation ENABLED (may slow down rendering 10-100x)\n");
+        } else {
+          IGL_LOG_ERROR("D3D12Context: Failed to enable GPU-Based Validation (requires ID3D12Debug1)\n");
+        }
+      }
+    } else {
+      IGL_LOG_ERROR("D3D12Context: Failed to get D3D12 debug interface - Graphics Tools may not be installed\n");
     }
   } else {
-    IGL_LOG_ERROR("D3D12Context: Failed to get D3D12 debug interface - Graphics Tools may not be installed\n");
+    IGL_LOG_INFO("D3D12Context: Debug layer DISABLED\n");
   }
 
-#ifdef _DEBUG
-  // Enable DRED (Device Removed Extended Data) for better crash diagnostics
-  Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> dredSettings1;
-  if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(dredSettings1.GetAddressOf())))) {
-    dredSettings1->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-    dredSettings1->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-    dredSettings1->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-    IGL_LOG_INFO("D3D12Context: DRED 1.2 fully configured (breadcrumbs + page faults + context)\n");
-  } else {
-    IGL_LOG_ERROR("D3D12Context: Failed to configure DRED (requires Windows 10 19041+)\n");
+  // A-007: Enable DRED if configured (Device Removed Extended Data for better crash diagnostics)
+  if (enableDRED) {
+    Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> dredSettings1;
+    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(dredSettings1.GetAddressOf())))) {
+      dredSettings1->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+      dredSettings1->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+      dredSettings1->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+      IGL_LOG_INFO("D3D12Context: DRED 1.2 fully configured (breadcrumbs + page faults + context)\n");
+    } else {
+      IGL_LOG_ERROR("D3D12Context: Failed to configure DRED (requires Windows 10 19041+)\n");
+    }
   }
-#endif
 
   // Create DXGI factory with debug flag in debug builds (C-009)
   HRESULT hr = CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(dxgiFactory_.GetAddressOf()));
@@ -307,36 +374,23 @@ void D3D12Context::createDevice() {
     throw std::runtime_error("Failed to create DXGI factory");
   }
 
-  // Helper lambda to query highest supported feature level for an adapter
-  auto getHighestFeatureLevel = [](IDXGIAdapter1* adapter) -> D3D_FEATURE_LEVEL {
-    // Try creating device with FL 11.0 first (minimum required)
-    Microsoft::WRL::ComPtr<ID3D12Device> tempDevice;
-    if (FAILED(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(tempDevice.GetAddressOf())))) {
-      return static_cast<D3D_FEATURE_LEVEL>(0); // Adapter doesn't support D3D12
-    }
+  // A-011: Enumerate and select best adapter
+  enumerateAndSelectAdapter();
 
-    // Query supported feature levels (check from highest to lowest)
-    const D3D_FEATURE_LEVEL featureLevels[] = {
-        D3D_FEATURE_LEVEL_12_2,
-        D3D_FEATURE_LEVEL_12_1,
-        D3D_FEATURE_LEVEL_12_0,
-        D3D_FEATURE_LEVEL_11_1,
-        D3D_FEATURE_LEVEL_11_0,
-    };
-    D3D12_FEATURE_DATA_FEATURE_LEVELS featureLevelsInfo = {};
-    featureLevelsInfo.NumFeatureLevels = static_cast<UINT>(std::size(featureLevels));
-    featureLevelsInfo.pFeatureLevelsRequested = featureLevels;
+  // A-012: Detect memory budget
+  detectMemoryBudget();
 
-    if (SUCCEEDED(tempDevice->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS,
-                                                   &featureLevelsInfo,
-                                                   sizeof(featureLevelsInfo)))) {
-      return featureLevelsInfo.MaxSupportedFeatureLevel;
-    }
+  // Create D3D12 device on selected adapter
+  hr = D3D12CreateDevice(
+      adapter_.Get(),
+      selectedFeatureLevel_,
+      IID_PPV_ARGS(device_.GetAddressOf()));
 
-    return D3D_FEATURE_LEVEL_11_0; // Fallback to minimum
-  };
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("D3D12CreateDevice failed on selected adapter: 0x%08X\n", static_cast<unsigned>(hr));
+    throw std::runtime_error("Failed to create D3D12 device on selected adapter");
+  }
 
-  // Helper to get feature level string
   auto featureLevelToString = [](D3D_FEATURE_LEVEL level) -> const char* {
     switch (level) {
       case D3D_FEATURE_LEVEL_12_2: return "12.2";
@@ -348,115 +402,42 @@ void D3D12Context::createDevice() {
     }
   };
 
-  // Prefer high-performance hardware adapter first; fallback to WARP
-  bool created = false;
-  D3D_FEATURE_LEVEL selectedFeatureLevel = D3D_FEATURE_LEVEL_11_0;
+  IGL_LOG_INFO("D3D12Context: Device created with Feature Level %s\n",
+               featureLevelToString(selectedFeatureLevel_));
 
-  Microsoft::WRL::ComPtr<IDXGIFactory6> factory6;
-  (void)dxgiFactory_->QueryInterface(IID_PPV_ARGS(factory6.GetAddressOf()));
-  if (factory6.Get()) {
-    for (UINT i = 0;; ++i) {
-      Microsoft::WRL::ComPtr<IDXGIAdapter1> cand;
-      if (FAILED(factory6->EnumAdapterByGpuPreference(i,
-                                                      DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
-                                                      IID_PPV_ARGS(cand.GetAddressOf())))) {
-        break;
-      }
-      DXGI_ADAPTER_DESC1 desc{};
-      cand->GetDesc1(&desc);
-      if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
-        continue;
-      }
+  // A-007: Setup info queue with configurable break-on-severity settings
+  if (enableDebugLayer) {
+    Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
+    if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
+      // A-007: Configure break-on-severity based on environment variables
+      infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);  // Always break on corruption
+      infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, breakOnError ? TRUE : FALSE);
+      infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, breakOnWarning ? TRUE : FALSE);
 
-      // Probe for highest supported feature level
-      D3D_FEATURE_LEVEL featureLevel = getHighestFeatureLevel(cand.Get());
-      if (featureLevel == static_cast<D3D_FEATURE_LEVEL>(0)) {
-        continue; // Adapter doesn't support D3D12
-      }
+      // Filter out INFO messages and unsigned shader messages (for DXC development)
+      D3D12_MESSAGE_SEVERITY severities[] = {
+        D3D12_MESSAGE_SEVERITY_INFO
+      };
 
-      if (SUCCEEDED(D3D12CreateDevice(cand.Get(), featureLevel,
-                                      IID_PPV_ARGS(device_.GetAddressOf())))) {
-        created = true;
-        selectedFeatureLevel = featureLevel;
-        IGL_LOG_INFO("D3D12Context: Using HW adapter (FL %s)\n", featureLevelToString(featureLevel));
-        break;
-      }
+      // Filter out messages about unsigned shaders (DXC in development mode)
+      D3D12_MESSAGE_ID denyIds[] = {
+        D3D12_MESSAGE_ID_CREATEVERTEXSHADER_INVALIDSHADERBYTECODE,       // Unsigned VS
+        D3D12_MESSAGE_ID_CREATEPIXELSHADER_INVALIDSHADERBYTECODE,        // Unsigned PS
+        D3D12_MESSAGE_ID_CREATECOMPUTESHADER_INVALIDSHADERBYTECODE,      // Unsigned CS
+        D3D12_MESSAGE_ID_CREATEINPUTLAYOUT_UNPARSEABLEINPUTSIGNATURE     // DX IL input signature
+      };
+
+      D3D12_INFO_QUEUE_FILTER filter = {};
+      filter.DenyList.NumSeverities = 1;
+      filter.DenyList.pSeverityList = severities;
+      filter.DenyList.NumIDs = 4;
+      filter.DenyList.pIDList = denyIds;
+      infoQueue->PushStorageFilter(&filter);
+
+      IGL_LOG_INFO("D3D12Context: Info queue configured (Corruption=BREAK, Error=%s, Warning=%s)\n",
+                   breakOnError ? "BREAK" : "LOG", breakOnWarning ? "BREAK" : "LOG");
     }
   }
-  if (!created) {
-    // Fallback: enumerate adapters
-    for (UINT i = 0; dxgiFactory_->EnumAdapters1(i, adapter_.GetAddressOf()) != DXGI_ERROR_NOT_FOUND; ++i) {
-      DXGI_ADAPTER_DESC1 desc{};
-      adapter_->GetDesc1(&desc);
-      if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
-        continue;
-      }
-
-      // Probe for highest supported feature level
-      D3D_FEATURE_LEVEL featureLevel = getHighestFeatureLevel(adapter_.Get());
-      if (featureLevel == static_cast<D3D_FEATURE_LEVEL>(0)) {
-        continue; // Adapter doesn't support D3D12
-      }
-
-      if (SUCCEEDED(D3D12CreateDevice(adapter_.Get(), featureLevel,
-                                      IID_PPV_ARGS(device_.GetAddressOf())))) {
-        created = true;
-        selectedFeatureLevel = featureLevel;
-        IGL_LOG_INFO("D3D12Context: Using HW adapter via EnumAdapters1 (FL %s)\n", featureLevelToString(featureLevel));
-        break;
-      }
-    }
-  }
-  if (!created) {
-    // WARP fallback - probe for highest supported FL
-    Microsoft::WRL::ComPtr<IDXGIAdapter1> warp;
-    if (SUCCEEDED(dxgiFactory_->EnumWarpAdapter(IID_PPV_ARGS(warp.GetAddressOf())))) {
-      D3D_FEATURE_LEVEL featureLevel = getHighestFeatureLevel(warp.Get());
-      if (featureLevel != static_cast<D3D_FEATURE_LEVEL>(0) &&
-          SUCCEEDED(D3D12CreateDevice(warp.Get(), featureLevel,
-                                      IID_PPV_ARGS(device_.GetAddressOf())))) {
-        created = true;
-        selectedFeatureLevel = featureLevel;
-        IGL_LOG_INFO("D3D12Context: Using WARP adapter (FL %s)\n", featureLevelToString(featureLevel));
-      }
-    }
-  }
-  if (!created) {
-    throw std::runtime_error("Failed to create D3D12 device");
-  }
-
-#ifdef _DEBUG
-  // Setup info queue to print validation messages without breaking
-  Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
-  if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
-    // DO NOT break on errors - this causes hangs when no debugger is attached
-    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, FALSE);
-    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, FALSE);
-    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, FALSE);
-
-    // Filter out INFO messages and unsigned shader messages (for DXC development)
-    D3D12_MESSAGE_SEVERITY severities[] = {
-      D3D12_MESSAGE_SEVERITY_INFO
-    };
-
-    // Filter out messages about unsigned shaders (DXC in development mode)
-    D3D12_MESSAGE_ID denyIds[] = {
-      D3D12_MESSAGE_ID_CREATEVERTEXSHADER_INVALIDSHADERBYTECODE,       // Unsigned VS
-      D3D12_MESSAGE_ID_CREATEPIXELSHADER_INVALIDSHADERBYTECODE,        // Unsigned PS
-      D3D12_MESSAGE_ID_CREATECOMPUTESHADER_INVALIDSHADERBYTECODE,      // Unsigned CS
-      D3D12_MESSAGE_ID_CREATEINPUTLAYOUT_UNPARSEABLEINPUTSIGNATURE     // DX IL input signature
-    };
-
-    D3D12_INFO_QUEUE_FILTER filter = {};
-    filter.DenyList.NumSeverities = 1;
-    filter.DenyList.pSeverityList = severities;
-    filter.DenyList.NumIDs = 4;
-    filter.DenyList.pIDList = denyIds;
-    infoQueue->PushStorageFilter(&filter);
-
-    IGL_LOG_INFO("D3D12Context: Info queue configured (severity breaks DISABLED, unsigned shader messages filtered)\n");
-  }
-#endif
 
   // Query root signature capabilities (P0_DX12-003)
   // This is critical for Tier-1 devices which don't support unbounded descriptor ranges
@@ -503,30 +484,307 @@ void D3D12Context::createDevice() {
     IGL_LOG_INFO("  Resource Binding Tier query failed (assuming Tier 1)\n");
   }
 
-  // Query shader model support (H-010)
+  // Query shader model support with progressive fallback (A-005)
   // This is critical for FL11 hardware which only supports SM 5.1, not SM 6.0+
-  IGL_LOG_INFO("D3D12Context: Querying shader model capabilities...\n");
+  IGL_LOG_INFO("D3D12Context: Querying shader model capabilities for Feature Level %d.%d...\n",
+               (selectedFeatureLevel_ >> 12) & 0xF, (selectedFeatureLevel_ >> 8) & 0xF);
 
-  // Start by probing for SM 6.6 (highest commonly available)
-  D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { D3D_SHADER_MODEL_6_6 };
+  // Helper to map feature level to expected minimum shader model
+  auto getMinShaderModelForFeatureLevel = [](D3D_FEATURE_LEVEL fl) -> D3D_SHADER_MODEL {
+    switch (fl) {
+      case D3D_FEATURE_LEVEL_12_2:
+        return D3D_SHADER_MODEL_6_6;  // FL 12.2 supports SM 6.6+
+      case D3D_FEATURE_LEVEL_12_1:
+        return D3D_SHADER_MODEL_6_1;  // FL 12.1 supports SM 6.1 (mesh shaders)
+      case D3D_FEATURE_LEVEL_12_0:
+        return D3D_SHADER_MODEL_6_0;  // FL 12.0 supports SM 6.0 (wave operations)
+      case D3D_FEATURE_LEVEL_11_1:
+      case D3D_FEATURE_LEVEL_11_0:
+        return D3D_SHADER_MODEL_5_1;  // FL 11.x only supports SM 5.1
+      default:
+        return D3D_SHADER_MODEL_5_1;  // Conservative fallback
+    }
+  };
 
-  hr = device_->CheckFeatureSupport(
-      D3D12_FEATURE_SHADER_MODEL,
-      &shaderModel,
-      sizeof(shaderModel));
+  auto shaderModelToString = [](D3D_SHADER_MODEL sm) -> const char* {
+    switch (sm) {
+      case D3D_SHADER_MODEL_6_6: return "6.6";
+      case D3D_SHADER_MODEL_6_5: return "6.5";
+      case D3D_SHADER_MODEL_6_4: return "6.4";
+      case D3D_SHADER_MODEL_6_3: return "6.3";
+      case D3D_SHADER_MODEL_6_2: return "6.2";
+      case D3D_SHADER_MODEL_6_1: return "6.1";
+      case D3D_SHADER_MODEL_6_0: return "6.0";
+      case D3D_SHADER_MODEL_5_1: return "5.1";
+      default: return "Unknown";
+    }
+  };
 
-  if (SUCCEEDED(hr)) {
-    maxShaderModel_ = shaderModel.HighestShaderModel;
-    IGL_LOG_INFO("  Detected Shader Model: %d.%d\n",
-                 (maxShaderModel_ >> 4) & 0xF,
-                 maxShaderModel_ & 0xF);
-  } else {
-    // If query fails, assume SM 6.0 (DXC minimum, SM 5.x deprecated)
-    maxShaderModel_ = D3D_SHADER_MODEL_6_0;
-    IGL_LOG_INFO("  Shader model query failed, assuming SM 6.0 (DXC minimum)\n");
+  // Shader models to attempt, from highest to lowest
+  const D3D_SHADER_MODEL shaderModels[] = {
+      D3D_SHADER_MODEL_6_6,
+      D3D_SHADER_MODEL_6_5,
+      D3D_SHADER_MODEL_6_4,
+      D3D_SHADER_MODEL_6_3,
+      D3D_SHADER_MODEL_6_2,
+      D3D_SHADER_MODEL_6_1,
+      D3D_SHADER_MODEL_6_0,
+      D3D_SHADER_MODEL_5_1,
+  };
+
+  D3D_SHADER_MODEL detectedShaderModel = D3D_SHADER_MODEL_5_1;
+  bool shaderModelDetected = false;
+
+  // Try each shader model from highest to lowest
+  for (D3D_SHADER_MODEL sm : shaderModels) {
+    D3D12_FEATURE_DATA_SHADER_MODEL shaderModelData = { sm };
+    hr = device_->CheckFeatureSupport(
+        D3D12_FEATURE_SHADER_MODEL,
+        &shaderModelData,
+        sizeof(shaderModelData));
+
+    if (SUCCEEDED(hr)) {
+      detectedShaderModel = shaderModelData.HighestShaderModel;
+      shaderModelDetected = true;
+      IGL_LOG_INFO("  Detected Shader Model: %s\n", shaderModelToString(detectedShaderModel));
+      break;  // Found highest supported, stop trying
+    } else {
+      IGL_LOG_INFO("  Shader Model %s not supported, trying lower version\n",
+                   shaderModelToString(sm));
+    }
   }
 
+  if (!shaderModelDetected) {
+    // Fallback based on feature level
+    D3D_SHADER_MODEL minimumSM = getMinShaderModelForFeatureLevel(selectedFeatureLevel_);
+    IGL_LOG_INFO("  WARNING: Shader model detection failed, using minimum for Feature Level: %s\n",
+                    shaderModelToString(minimumSM));
+    detectedShaderModel = minimumSM;
+  }
+
+  // Validate shader model is appropriate for feature level
+  D3D_SHADER_MODEL minimumRequired = getMinShaderModelForFeatureLevel(selectedFeatureLevel_);
+  if (detectedShaderModel < minimumRequired) {
+    IGL_LOG_INFO("  WARNING: Detected Shader Model %s is below minimum for Feature Level: %s\n",
+                    shaderModelToString(detectedShaderModel),
+                    shaderModelToString(minimumRequired));
+  }
+
+  maxShaderModel_ = detectedShaderModel;
+  IGL_LOG_INFO("D3D12Context: Final Shader Model selected: %s\n", shaderModelToString(maxShaderModel_));
+
   IGL_LOG_INFO("D3D12Context: Root signature capabilities detected successfully\n");
+}
+
+// A-011: Enumerate and select best adapter
+void D3D12Context::enumerateAndSelectAdapter() {
+  enumeratedAdapters_.clear();
+
+  IGL_LOG_INFO("D3D12Context: Enumerating DXGI adapters...\n");
+
+  // Helper to convert feature level to string
+  auto featureLevelToString = [](D3D_FEATURE_LEVEL level) -> const char* {
+    switch (level) {
+      case D3D_FEATURE_LEVEL_12_2: return "12.2";
+      case D3D_FEATURE_LEVEL_12_1: return "12.1";
+      case D3D_FEATURE_LEVEL_12_0: return "12.0";
+      case D3D_FEATURE_LEVEL_11_1: return "11.1";
+      case D3D_FEATURE_LEVEL_11_0: return "11.0";
+      default: return "Unknown";
+    }
+  };
+
+  // Try IDXGIFactory6 first for high-performance GPU preference
+  Microsoft::WRL::ComPtr<IDXGIFactory6> factory6;
+  dxgiFactory_.As(&factory6);
+
+  if (factory6.Get()) {
+    for (UINT i = 0; ; ++i) {
+      Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter;
+      if (FAILED(factory6->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
+                                                      IID_PPV_ARGS(adapter.GetAddressOf())))) {
+        break;
+      }
+
+      AdapterInfo info{};
+      info.adapter = adapter;
+      info.index = i;
+      info.isWarp = false;
+
+      adapter->GetDesc1(&info.desc);
+
+      // Skip software adapters in main enumeration (we'll add WARP separately)
+      if (info.desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
+        continue;
+      }
+
+      // Determine feature level
+      info.featureLevel = getHighestFeatureLevel(adapter.Get());
+      if (info.featureLevel == static_cast<D3D_FEATURE_LEVEL>(0)) {
+        IGL_LOG_INFO("D3D12Context: Adapter %u does not support D3D12 (skipping)\n", i);
+        continue;
+      }
+
+      enumeratedAdapters_.push_back(info);
+
+      // Log adapter details
+      IGL_LOG_INFO("D3D12Context: Adapter %u:\n", i);
+      IGL_LOG_INFO("  Description: %ls\n", info.desc.Description);
+      IGL_LOG_INFO("  Vendor ID: 0x%04X (%s)\n", info.desc.VendorId, info.getVendorName());
+      IGL_LOG_INFO("  Device ID: 0x%04X\n", info.desc.DeviceId);
+      IGL_LOG_INFO("  Dedicated VRAM: %llu MB\n", info.getDedicatedVideoMemoryMB());
+      IGL_LOG_INFO("  Shared System Memory: %llu MB\n", info.desc.SharedSystemMemory / (1024 * 1024));
+      IGL_LOG_INFO("  Feature Level: %s\n", featureLevelToString(info.featureLevel));
+      IGL_LOG_INFO("  LUID: 0x%08X:0x%08X\n", info.desc.AdapterLuid.HighPart, info.desc.AdapterLuid.LowPart);
+    }
+  }
+
+  // Fallback enumeration if Factory6 not available
+  if (enumeratedAdapters_.empty()) {
+    for (UINT i = 0; ; ++i) {
+      Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter;
+      if (dxgiFactory_->EnumAdapters1(i, adapter.GetAddressOf()) == DXGI_ERROR_NOT_FOUND) {
+        break;
+      }
+
+      AdapterInfo info{};
+      info.adapter = adapter;
+      info.index = i;
+      info.isWarp = false;
+
+      adapter->GetDesc1(&info.desc);
+
+      // Skip software adapters
+      if (info.desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
+        continue;
+      }
+
+      // Determine feature level
+      info.featureLevel = getHighestFeatureLevel(adapter.Get());
+      if (info.featureLevel == static_cast<D3D_FEATURE_LEVEL>(0)) {
+        continue;
+      }
+
+      enumeratedAdapters_.push_back(info);
+
+      // Log adapter details
+      IGL_LOG_INFO("D3D12Context: Adapter %u:\n", i);
+      IGL_LOG_INFO("  Description: %ls\n", info.desc.Description);
+      IGL_LOG_INFO("  Vendor ID: 0x%04X (%s)\n", info.desc.VendorId, info.getVendorName());
+      IGL_LOG_INFO("  Device ID: 0x%04X\n", info.desc.DeviceId);
+      IGL_LOG_INFO("  Dedicated VRAM: %llu MB\n", info.getDedicatedVideoMemoryMB());
+      IGL_LOG_INFO("  Shared System Memory: %llu MB\n", info.desc.SharedSystemMemory / (1024 * 1024));
+      IGL_LOG_INFO("  Feature Level: %s\n", featureLevelToString(info.featureLevel));
+    }
+  }
+
+  // Add WARP adapter as fallback option (software rasterizer)
+  Microsoft::WRL::ComPtr<IDXGIAdapter> warpAdapter;
+  if (SUCCEEDED(dxgiFactory_->EnumWarpAdapter(IID_PPV_ARGS(warpAdapter.GetAddressOf())))) {
+    Microsoft::WRL::ComPtr<IDXGIAdapter1> warpAdapter1;
+    if (SUCCEEDED(warpAdapter.As(&warpAdapter1))) {
+      AdapterInfo warpInfo{};
+      warpInfo.adapter = warpAdapter1;
+      warpInfo.index = static_cast<uint32_t>(enumeratedAdapters_.size());
+      warpInfo.isWarp = true;
+
+      warpAdapter1->GetDesc1(&warpInfo.desc);
+      warpInfo.featureLevel = getHighestFeatureLevel(warpAdapter1.Get());
+
+      enumeratedAdapters_.push_back(warpInfo);
+
+      IGL_LOG_INFO("D3D12Context: WARP Adapter (Software):\n");
+      IGL_LOG_INFO("  Description: %ls\n", warpInfo.desc.Description);
+      IGL_LOG_INFO("  Feature Level: %s\n", featureLevelToString(warpInfo.featureLevel));
+    }
+  }
+
+  if (enumeratedAdapters_.empty()) {
+    IGL_LOG_ERROR("D3D12Context: No compatible D3D12 adapters found!\n");
+    throw std::runtime_error("No D3D12-compatible adapters available");
+  }
+
+  // Select adapter based on environment variable or heuristic
+  selectedAdapterIndex_ = 0;  // Default to first adapter (discrete GPU on laptops)
+
+  char adapterEnv[64] = {};
+  DWORD envResult = GetEnvironmentVariableA("IGL_D3D12_ADAPTER", adapterEnv, sizeof(adapterEnv));
+  if (envResult > 0 && envResult < sizeof(adapterEnv)) {
+    if (strcmp(adapterEnv, "WARP") == 0) {
+      // Find WARP adapter
+      for (size_t i = 0; i < enumeratedAdapters_.size(); ++i) {
+        if (enumeratedAdapters_[i].isWarp) {
+          selectedAdapterIndex_ = static_cast<uint32_t>(i);
+          IGL_LOG_INFO("D3D12Context: Environment override - using WARP adapter\n");
+          break;
+        }
+      }
+    } else {
+      // Parse adapter index
+      int requestedIndex = atoi(adapterEnv);
+      if (requestedIndex >= 0 && requestedIndex < static_cast<int>(enumeratedAdapters_.size())) {
+        selectedAdapterIndex_ = static_cast<uint32_t>(requestedIndex);
+        IGL_LOG_INFO("D3D12Context: Environment override - using adapter %d\n", requestedIndex);
+      } else {
+        IGL_LOG_ERROR("D3D12Context: Invalid adapter index %d (available: 0-%zu)\n",
+                      requestedIndex, enumeratedAdapters_.size() - 1);
+      }
+    }
+  } else {
+    // Heuristic: Choose adapter with highest feature level and most VRAM
+    D3D_FEATURE_LEVEL highestFL = enumeratedAdapters_[0].featureLevel;
+    uint64_t largestVRAM = enumeratedAdapters_[0].getDedicatedVideoMemoryMB();
+
+    for (size_t i = 1; i < enumeratedAdapters_.size(); ++i) {
+      if (enumeratedAdapters_[i].isWarp) {
+        continue;  // Skip WARP for automatic selection
+      }
+
+      uint64_t vram = enumeratedAdapters_[i].getDedicatedVideoMemoryMB();
+      D3D_FEATURE_LEVEL fl = enumeratedAdapters_[i].featureLevel;
+
+      // Prefer higher feature level, or same feature level with more VRAM
+      if (fl > highestFL || (fl == highestFL && vram > largestVRAM)) {
+        selectedAdapterIndex_ = static_cast<uint32_t>(i);
+        highestFL = fl;
+        largestVRAM = vram;
+      }
+    }
+  }
+
+  adapter_ = enumeratedAdapters_[selectedAdapterIndex_].adapter;
+  selectedFeatureLevel_ = enumeratedAdapters_[selectedAdapterIndex_].featureLevel;
+
+  IGL_LOG_INFO("D3D12Context: Selected adapter %u: %ls (FL %s)\n",
+               selectedAdapterIndex_,
+               enumeratedAdapters_[selectedAdapterIndex_].desc.Description,
+               featureLevelToString(selectedFeatureLevel_));
+}
+
+// A-012: Detect memory budget from selected adapter
+void D3D12Context::detectMemoryBudget() {
+  if (selectedAdapterIndex_ >= enumeratedAdapters_.size()) {
+    IGL_LOG_ERROR("D3D12Context: No adapter selected for memory budget detection\n");
+    return;
+  }
+
+  const auto& selectedAdapter = enumeratedAdapters_[selectedAdapterIndex_];
+
+  memoryBudget_.dedicatedVideoMemory = selectedAdapter.desc.DedicatedVideoMemory;
+  memoryBudget_.sharedSystemMemory = selectedAdapter.desc.SharedSystemMemory;
+
+  IGL_LOG_INFO("D3D12Context: GPU Memory Budget:\n");
+  IGL_LOG_INFO("  Dedicated Video Memory: %.2f MB\n",
+               memoryBudget_.dedicatedVideoMemory / (1024.0 * 1024.0));
+  IGL_LOG_INFO("  Shared System Memory: %.2f MB\n",
+               memoryBudget_.sharedSystemMemory / (1024.0 * 1024.0));
+  IGL_LOG_INFO("  Total Available: %.2f MB\n",
+               memoryBudget_.totalAvailableMemory() / (1024.0 * 1024.0));
+
+  // Recommend conservative budget (80% of available)
+  uint64_t recommendedBudget = static_cast<uint64_t>(memoryBudget_.totalAvailableMemory() * 0.8);
+  IGL_LOG_INFO("  Recommended Budget (80%%): %.2f MB\n",
+               recommendedBudget / (1024.0 * 1024.0));
 }
 
 void D3D12Context::createCommandQueue() {
