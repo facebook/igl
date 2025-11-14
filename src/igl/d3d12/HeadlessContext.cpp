@@ -49,10 +49,49 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
   if (FAILED(hr)) {
     return Result(Result::Code::RuntimeError, "Failed to create DXGI factory");
   }
+
+  // Helper function to try creating device with progressive feature level fallback (A-004)
+  auto tryCreateDeviceWithFallback =
+      [](IDXGIAdapter1* adapter, D3D_FEATURE_LEVEL& outFeatureLevel) -> Microsoft::WRL::ComPtr<ID3D12Device> {
+    const D3D_FEATURE_LEVEL featureLevels[] = {
+        D3D_FEATURE_LEVEL_12_2,
+        D3D_FEATURE_LEVEL_12_1,
+        D3D_FEATURE_LEVEL_12_0,
+        D3D_FEATURE_LEVEL_11_1,
+        D3D_FEATURE_LEVEL_11_0,
+    };
+
+    Microsoft::WRL::ComPtr<ID3D12Device> device;
+    for (D3D_FEATURE_LEVEL fl : featureLevels) {
+      HRESULT hr = D3D12CreateDevice(adapter, fl, IID_PPV_ARGS(device.GetAddressOf()));
+      if (SUCCEEDED(hr)) {
+        outFeatureLevel = fl;
+        IGL_LOG_INFO("HeadlessD3D12Context: Device created with Feature Level %d.%d\n",
+                     (fl >> 12) & 0xF, (fl >> 8) & 0xF);
+        return device;
+      }
+    }
+    outFeatureLevel = static_cast<D3D_FEATURE_LEVEL>(0);
+    return nullptr;
+  };
+
+  auto featureLevelToString = [](D3D_FEATURE_LEVEL level) -> const char* {
+    switch (level) {
+      case D3D_FEATURE_LEVEL_12_2: return "12.2";
+      case D3D_FEATURE_LEVEL_12_1: return "12.1";
+      case D3D_FEATURE_LEVEL_12_0: return "12.0";
+      case D3D_FEATURE_LEVEL_11_1: return "11.1";
+      case D3D_FEATURE_LEVEL_11_0: return "11.0";
+      default: return "Unknown";
+    }
+  };
+
   Microsoft::WRL::ComPtr<IDXGIFactory6> factory6;
   (void)dxgiFactory_->QueryInterface(IID_PPV_ARGS(factory6.GetAddressOf()));
 
   bool created = false;
+  D3D_FEATURE_LEVEL selectedFeatureLevel = D3D_FEATURE_LEVEL_11_0;
+
   if (factory6.Get()) {
     for (UINT i = 0;; ++i) {
       Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter;
@@ -65,10 +104,15 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
       if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
         continue;
       }
-      if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_0,
-                                      IID_PPV_ARGS(device_.GetAddressOf())))) {
+
+      D3D_FEATURE_LEVEL featureLevel = static_cast<D3D_FEATURE_LEVEL>(0);
+      auto device = tryCreateDeviceWithFallback(adapter.Get(), featureLevel);
+      if (device.Get() != nullptr) {
+        device_ = device;
         created = true;
-        IGL_LOG_INFO("HeadlessD3D12Context: Created device on HW adapter (FL 12.0)\n");
+        selectedFeatureLevel = featureLevel;
+        IGL_LOG_INFO("HeadlessD3D12Context: Selected HW adapter (FL %s)\n",
+                     featureLevelToString(featureLevel));
         break;
       }
     }
@@ -84,26 +128,43 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
       if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
         continue;
       }
-      if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_0,
-                                      IID_PPV_ARGS(device_.GetAddressOf())))) {
+
+      D3D_FEATURE_LEVEL featureLevel = static_cast<D3D_FEATURE_LEVEL>(0);
+      auto device = tryCreateDeviceWithFallback(adapter.Get(), featureLevel);
+      if (device.Get() != nullptr) {
+        device_ = device;
         created = true;
-        IGL_LOG_INFO("HeadlessD3D12Context: Created device on HW adapter via EnumAdapters1 (FL 12.0)\n");
+        selectedFeatureLevel = featureLevel;
+        IGL_LOG_INFO("HeadlessD3D12Context: Selected HW adapter via EnumAdapters1 (FL %s)\n",
+                     featureLevelToString(featureLevel));
         break;
       }
     }
   }
   if (!created) {
     Microsoft::WRL::ComPtr<IDXGIAdapter> warp;
-    if (SUCCEEDED(dxgiFactory_->EnumWarpAdapter(IID_PPV_ARGS(warp.GetAddressOf()))) &&
-        SUCCEEDED(D3D12CreateDevice(warp.Get(), D3D_FEATURE_LEVEL_11_0,
-                                    IID_PPV_ARGS(device_.GetAddressOf())))) {
-      created = true;
-      IGL_LOG_INFO("HeadlessD3D12Context: WARP device created (FL 11.0)\n");
+    if (SUCCEEDED(dxgiFactory_->EnumWarpAdapter(IID_PPV_ARGS(warp.GetAddressOf())))) {
+      Microsoft::WRL::ComPtr<IDXGIAdapter1> warp1;
+      warp->QueryInterface(IID_PPV_ARGS(warp1.GetAddressOf()));
+      if (warp1.Get()) {
+        D3D_FEATURE_LEVEL featureLevel = static_cast<D3D_FEATURE_LEVEL>(0);
+        auto device = tryCreateDeviceWithFallback(warp1.Get(), featureLevel);
+        if (device.Get() != nullptr) {
+          device_ = device;
+          created = true;
+          selectedFeatureLevel = featureLevel;
+          IGL_LOG_INFO("HeadlessD3D12Context: Using WARP adapter (FL %s)\n",
+                       featureLevelToString(featureLevel));
+        }
+      }
     }
   }
   if (!created) {
     return Result(Result::Code::RuntimeError, "Failed to create any D3D12 device");
   }
+
+  // Store selected feature level (A-004)
+  selectedFeatureLevel_ = selectedFeatureLevel;
 
 #ifdef _DEBUG
   {

@@ -596,7 +596,7 @@ void D3D12Context::enumerateAndSelectAdapter() {
 
   // Try IDXGIFactory6 first for high-performance GPU preference
   Microsoft::WRL::ComPtr<IDXGIFactory6> factory6;
-  dxgiFactory_.As(&factory6);
+  (void)dxgiFactory_->QueryInterface(IID_PPV_ARGS(factory6.GetAddressOf()));
 
   if (factory6.Get()) {
     for (UINT i = 0; ; ++i) {
@@ -682,7 +682,7 @@ void D3D12Context::enumerateAndSelectAdapter() {
   Microsoft::WRL::ComPtr<IDXGIAdapter> warpAdapter;
   if (SUCCEEDED(dxgiFactory_->EnumWarpAdapter(IID_PPV_ARGS(warpAdapter.GetAddressOf())))) {
     Microsoft::WRL::ComPtr<IDXGIAdapter1> warpAdapter1;
-    if (SUCCEEDED(warpAdapter.As(&warpAdapter1))) {
+    if (SUCCEEDED(warpAdapter->QueryInterface(IID_PPV_ARGS(warpAdapter1.GetAddressOf())))) {
       AdapterInfo warpInfo{};
       warpInfo.adapter = warpAdapter1;
       warpInfo.index = static_cast<uint32_t>(enumeratedAdapters_.size());

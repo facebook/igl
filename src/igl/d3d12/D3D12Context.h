@@ -88,6 +88,55 @@ struct FrameContext {
 
 class D3D12Context {
  public:
+  // A-011: Multi-adapter enumeration and tracking
+  struct AdapterInfo {
+    Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter;
+    DXGI_ADAPTER_DESC1 desc;
+    D3D_FEATURE_LEVEL featureLevel;
+    bool isWarp;  // Software rasterizer
+    uint32_t index;  // Original enumeration index
+
+    // Helper methods
+    uint64_t getDedicatedVideoMemoryMB() const {
+      return desc.DedicatedVideoMemory / (1024 * 1024);
+    }
+
+    const char* getVendorName() const {
+      switch (desc.VendorId) {
+        case 0x10DE: return "NVIDIA";
+        case 0x1002: case 0x1022: return "AMD";
+        case 0x8086: return "Intel";
+        case 0x1414: return "Microsoft";
+        default: return "Unknown";
+      }
+    }
+  };
+
+  // A-012: Memory budget tracking
+  struct MemoryBudget {
+    uint64_t dedicatedVideoMemory = 0;  // Dedicated GPU memory (bytes)
+    uint64_t sharedSystemMemory = 0;     // Shared system memory accessible to GPU (bytes)
+    uint64_t estimatedUsage = 0;         // Current estimated usage by this device (bytes)
+    uint64_t userDefinedBudgetLimit = 0; // Optional soft limit
+
+    uint64_t totalAvailableMemory() const {
+      return dedicatedVideoMemory + sharedSystemMemory;
+    }
+
+    double getUsagePercentage() const {
+      if (totalAvailableMemory() == 0) return 0.0;
+      return (static_cast<double>(estimatedUsage) / totalAvailableMemory()) * 100.0;
+    }
+
+    bool isMemoryCritical() const {
+      return getUsagePercentage() > 90.0;
+    }
+
+    bool isMemoryLow() const {
+      return getUsagePercentage() > 70.0;
+    }
+  };
+
   D3D12Context() = default;
   ~D3D12Context();
 
@@ -122,6 +171,9 @@ class D3D12Context {
 
   // Get shader model capability (H-010)
   D3D_SHADER_MODEL getMaxShaderModel() const { return maxShaderModel_; }
+
+  // Get selected feature level (A-004, A-005)
+  D3D_FEATURE_LEVEL getSelectedFeatureLevel() const { return selectedFeatureLevel_; }
 
   // Get tearing support capability
   bool isTearingSupported() const { return tearingSupported_; }
@@ -193,6 +245,49 @@ class D3D12Context {
   static void trackResourceDestruction(const char* type, size_t sizeBytes);
   static void logResourceStats();
 
+  // A-011: Adapter enumeration and selection
+  const std::vector<AdapterInfo>& getEnumeratedAdapters() const { return enumeratedAdapters_; }
+  const AdapterInfo* getSelectedAdapter() const {
+    if (selectedAdapterIndex_ < enumeratedAdapters_.size()) {
+      return &enumeratedAdapters_[selectedAdapterIndex_];
+    }
+    return nullptr;
+  }
+  uint32_t getSelectedAdapterIndex() const { return selectedAdapterIndex_; }
+
+  // A-012: Memory budget tracking
+  MemoryBudget getMemoryBudget() const {
+    std::lock_guard<std::mutex> lock(memoryTrackingMutex_);
+    return memoryBudget_;
+  }
+
+  double getMemoryUsagePercentage() const {
+    std::lock_guard<std::mutex> lock(memoryTrackingMutex_);
+    return memoryBudget_.getUsagePercentage();
+  }
+
+  bool isMemoryLow() const {
+    std::lock_guard<std::mutex> lock(memoryTrackingMutex_);
+    return memoryBudget_.isMemoryLow();
+  }
+
+  bool isMemoryCritical() const {
+    std::lock_guard<std::mutex> lock(memoryTrackingMutex_);
+    return memoryBudget_.isMemoryCritical();
+  }
+
+  void updateMemoryUsage(int64_t delta) {
+    std::lock_guard<std::mutex> lock(memoryTrackingMutex_);
+    uint64_t newUsage = memoryBudget_.estimatedUsage;
+    if (delta < 0) {
+      uint64_t absDelta = static_cast<uint64_t>(-delta);
+      newUsage = (absDelta > newUsage) ? 0 : (newUsage - absDelta);
+    } else {
+      newUsage += static_cast<uint64_t>(delta);
+    }
+    memoryBudget_.estimatedUsage = newUsage;
+  }
+
  protected:
   void createDevice();
   void createCommandQueue();
@@ -202,6 +297,13 @@ class D3D12Context {
   void createBackBuffers();
   void createDescriptorHeaps();
   void createCommandSignatures();
+
+  // A-011: Adapter enumeration
+  void enumerateAndSelectAdapter();
+  static D3D_FEATURE_LEVEL getHighestFeatureLevel(IDXGIAdapter1* adapter);
+
+  // A-012: Memory budget detection
+  void detectMemoryBudget();
 
   Microsoft::WRL::ComPtr<IDXGIFactory4> dxgiFactory_;
   Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter_;
@@ -221,12 +323,23 @@ class D3D12Context {
   D3D_ROOT_SIGNATURE_VERSION highestRootSignatureVersion_ = D3D_ROOT_SIGNATURE_VERSION_1_0;
   D3D12_RESOURCE_BINDING_TIER resourceBindingTier_ = D3D12_RESOURCE_BINDING_TIER_1;
 
+  // Feature detection for device feature level (A-004)
+  D3D_FEATURE_LEVEL selectedFeatureLevel_ = D3D_FEATURE_LEVEL_11_0;
+
   // Feature detection for shader model (H-010)
   // DXC requires SM 6.0 minimum (SM 5.x deprecated)
   D3D_SHADER_MODEL maxShaderModel_ = D3D_SHADER_MODEL_6_0;
 
   // Feature detection for variable refresh rate (tearing) support
   bool tearingSupported_ = false;
+
+  // A-011: Multi-adapter tracking (structs defined in public section)
+  std::vector<AdapterInfo> enumeratedAdapters_;
+  uint32_t selectedAdapterIndex_ = 0;
+
+  // A-012: Memory budget tracking (struct defined in public section)
+  MemoryBudget memoryBudget_;
+  mutable std::mutex memoryTrackingMutex_;
 
   // Command signatures for indirect drawing (P3_DX12-FIND-13)
   Microsoft::WRL::ComPtr<ID3D12CommandSignature> drawIndirectSignature_;
