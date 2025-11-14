@@ -2849,29 +2849,114 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(Te
 
   const auto props = TextureFormatProperties::fromTextureFormat(format);
 
+  // I-004: Enhanced D3D12 format capability mapping
+  // Map D3D12_FORMAT_SUPPORT1 flags to IGL capabilities
+
+  // Sampled: Can be used with texture sampling instructions
   if (s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) {
     caps |= CapBits::Sampled;
   }
-  // Filtered only for non-integer color formats when sampleable
-  if ((s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) && props.hasColor() && !props.isInteger()) {
-    caps |= CapBits::SampledFiltered;
+
+  // SampledFiltered: Supports linear filtering (only for non-integer color formats)
+  // Also check D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE_COMPARISON for depth formats
+  if (props.hasColor() && !props.isInteger()) {
+    if (s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) {
+      caps |= CapBits::SampledFiltered;
+    }
+  } else if (props.hasDepth() || props.hasStencil()) {
+    // Depth formats: check for comparison filtering support
+    if (s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE_COMPARISON) {
+      caps |= CapBits::SampledFiltered;
+    }
   }
+
+  // Attachment: Can be used as render target or depth/stencil attachment
+  // Also consider D3D12_FORMAT_SUPPORT1_BLENDABLE and D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RENDERTARGET
   // Don't report Attachment capability for 3-channel RGB formats even if D3D12 reports the
   // underlying RGBA format as renderable - using them as render targets causes device removal
-  if (!isThreeChannelRgbFormat &&
-      ((s1 & D3D12_FORMAT_SUPPORT1_RENDER_TARGET) || (s1 & D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL))) {
-    caps |= CapBits::Attachment;
+  if (!isThreeChannelRgbFormat) {
+    if ((s1 & D3D12_FORMAT_SUPPORT1_RENDER_TARGET) || (s1 & D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL)) {
+      caps |= CapBits::Attachment;
+    }
   }
-  // Typed UAV load + store required for Storage
-  if ((s2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) && (s2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE) &&
-      hasFeature(DeviceFeatures::Compute)) {
+
+  // Storage: Can be used with unordered access (UAV)
+  // Check for typed UAV load/store, or atomic operations
+  // I-004: Enhanced UAV capability detection
+  const bool hasUAVTypedOps = (s2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) &&
+                              (s2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE);
+  const bool hasUAVAtomicOps = (s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_ADD) ||
+                               (s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_BITWISE_OPS) ||
+                               (s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_COMPARE_STORE_OR_COMPARE_EXCHANGE) ||
+                               (s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_EXCHANGE) ||
+                               (s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_SIGNED_MIN_OR_MAX) ||
+                               (s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_UNSIGNED_MIN_OR_MAX);
+
+  if (hasFeature(DeviceFeatures::Compute) && (hasUAVTypedOps || hasUAVAtomicOps)) {
     caps |= CapBits::Storage;
   }
 
-  // SampledAttachment indicates formats that can be both sampled and used as attachment
+  // SampledAttachment: Can be both sampled and used as attachment
   if ((caps & CapBits::Sampled) && (caps & CapBits::Attachment)) {
     caps |= CapBits::SampledAttachment;
   }
+
+#if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
+  // I-004: Debug logging for unmapped D3D12 capabilities
+  // This helps identify format capabilities that D3D12 supports but IGL doesn't expose
+  uint32_t unmappedS1 = 0;
+  uint32_t unmappedS2 = 0;
+
+  // Check unmapped D3D12_FORMAT_SUPPORT1 flags
+  const uint32_t mappedS1 = D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE |
+                            D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE_COMPARISON |
+                            D3D12_FORMAT_SUPPORT1_RENDER_TARGET |
+                            D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL |
+                            D3D12_FORMAT_SUPPORT1_BLENDABLE |
+                            D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RENDERTARGET;
+  unmappedS1 = s1 & ~mappedS1;
+
+  // Check unmapped D3D12_FORMAT_SUPPORT2 flags
+  const uint32_t mappedS2 = D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD |
+                            D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE |
+                            D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_ADD |
+                            D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_BITWISE_OPS |
+                            D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_COMPARE_STORE_OR_COMPARE_EXCHANGE |
+                            D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_EXCHANGE |
+                            D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_SIGNED_MIN_OR_MAX |
+                            D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_UNSIGNED_MIN_OR_MAX;
+  unmappedS2 = s2 & ~mappedS2;
+
+  if (unmappedS1 != 0 || unmappedS2 != 0) {
+    IGL_LOG_INFO("Format %d (DXGI %d) has unmapped D3D12 capabilities:\n",
+                 static_cast<int>(format), static_cast<int>(dxgi));
+    if (unmappedS1 != 0) {
+      IGL_LOG_INFO("  Support1 unmapped flags: 0x%08X\n", unmappedS1);
+      // Log specific unmapped flags that might be useful
+      // Note: Some flags may not be defined in older Windows SDK versions
+      const uint32_t MIP_AUTOGEN = 0x800;           // D3D12_FORMAT_SUPPORT1_MIP_AUTOGEN
+      const uint32_t MULTISAMPLE_RESOLVE = 0x40;    // D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RESOLVE
+      const uint32_t MULTISAMPLE_LOAD = 0x100000;   // D3D12_FORMAT_SUPPORT1_MULTISAMPLE_LOAD
+
+      if (unmappedS1 & MIP_AUTOGEN) {
+        IGL_LOG_INFO("    - MIP_AUTOGEN (0x800)\n");
+      }
+      if (unmappedS1 & MULTISAMPLE_RESOLVE) {
+        IGL_LOG_INFO("    - MULTISAMPLE_RESOLVE (0x40)\n");
+      }
+      if (unmappedS1 & MULTISAMPLE_LOAD) {
+        IGL_LOG_INFO("    - MULTISAMPLE_LOAD (0x100000)\n");
+      }
+    }
+    if (unmappedS2 != 0) {
+      IGL_LOG_INFO("  Support2 unmapped flags: 0x%08X\n", unmappedS2);
+      const uint32_t OUTPUT_MERGER_LOGIC_OP = 0x2;  // D3D12_FORMAT_SUPPORT2_OUTPUT_MERGER_LOGIC_OP
+      if (unmappedS2 & OUTPUT_MERGER_LOGIC_OP) {
+        IGL_LOG_INFO("    - OUTPUT_MERGER_LOGIC_OP (0x2)\n");
+      }
+    }
+  }
+#endif
 
   return caps;
 }
