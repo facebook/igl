@@ -103,8 +103,14 @@ class Texture final : public ITexture {
   TextureDesc::TextureUsage usage_ = 0;
   void initializeStateTracking(D3D12_RESOURCE_STATES initialState) const;
   void ensureStateStorage() const;
+
+  // B-006: Optimized state tracking with fast path for uniform states
+  mutable bool hasUniformState_ = true;
+  mutable D3D12_RESOURCE_STATES uniformState_ = D3D12_RESOURCE_STATE_COMMON;
   mutable std::vector<D3D12_RESOURCE_STATES> subresourceStates_;
   mutable D3D12_RESOURCE_STATES defaultState_ = D3D12_RESOURCE_STATE_COMMON;
+
+  void promoteToHeterogeneousState() const;
 
   // Texture view support
   bool isView_ = false;

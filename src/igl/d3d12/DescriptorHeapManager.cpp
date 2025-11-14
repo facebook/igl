@@ -268,64 +268,318 @@ void DescriptorHeapManager::freeSampler(uint32_t index) {
   freeSamplers_.push_back(index);
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getRTVHandle(uint32_t index) const {
-  D3D12_CPU_DESCRIPTOR_HANDLE h = {};
-  if (!rtvHeap_.Get() || index >= sizes_.rtvs) {
-    return h;
+// C-007: Explicit error checking with bool return (builds on C-006 validation)
+bool DescriptorHeapManager::getRTVHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const {
+  if (!outHandle) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getRTVHandle: outHandle is null\n");
+    return false;
   }
-  h = rtvHeap_->GetCPUDescriptorHandleForHeapStart();
-  h.ptr += index * rtvDescriptorSize_;
-  return h;
+
+  // Initialize to zero in case of error
+  *outHandle = {};
+
+  if (!rtvHeap_.Get()) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getRTVHandle: RTV heap is null\n");
+    IGL_DEBUG_ASSERT(false, "RTV heap is null");
+    return false;
+  }
+
+  if (index == UINT32_MAX) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getRTVHandle: Invalid index UINT32_MAX (allocation failure sentinel)\n");
+    IGL_DEBUG_ASSERT(false, "Attempted to get RTV handle with invalid index UINT32_MAX");
+    return false;
+  }
+
+  if (index >= sizes_.rtvs) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getRTVHandle: Index %u exceeds heap size %u\n",
+                  index, sizes_.rtvs);
+    IGL_DEBUG_ASSERT(false, "RTV descriptor index out of bounds");
+    return false;
+  }
+
+  // Check if descriptor has been freed (use-after-free detection)
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!allocatedRtvs_[index]) {
+      IGL_LOG_ERROR("DescriptorHeapManager::getRTVHandle: Descriptor index %u has been freed (use-after-free)\n", index);
+      IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed RTV descriptor");
+      return false;
+    }
+  }
+
+  *outHandle = rtvHeap_->GetCPUDescriptorHandleForHeapStart();
+  outHandle->ptr += index * rtvDescriptorSize_;
+
+  // Validate final handle is non-null
+  IGL_DEBUG_ASSERT(outHandle->ptr != 0, "getRTVHandle returned null CPU descriptor handle");
+
+  return true;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getDSVHandle(uint32_t index) const {
-  D3D12_CPU_DESCRIPTOR_HANDLE h = {};
-  if (!dsvHeap_.Get() || index >= sizes_.dsvs) {
-    return h;
+// C-007: Explicit error checking with bool return (builds on C-006 validation)
+bool DescriptorHeapManager::getDSVHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const {
+  if (!outHandle) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getDSVHandle: outHandle is null\n");
+    return false;
   }
-  h = dsvHeap_->GetCPUDescriptorHandleForHeapStart();
-  h.ptr += index * dsvDescriptorSize_;
-  return h;
+
+  // Initialize to zero in case of error
+  *outHandle = {};
+
+  if (!dsvHeap_.Get()) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getDSVHandle: DSV heap is null\n");
+    IGL_DEBUG_ASSERT(false, "DSV heap is null");
+    return false;
+  }
+
+  if (index == UINT32_MAX) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getDSVHandle: Invalid index UINT32_MAX (allocation failure sentinel)\n");
+    IGL_DEBUG_ASSERT(false, "Attempted to get DSV handle with invalid index UINT32_MAX");
+    return false;
+  }
+
+  if (index >= sizes_.dsvs) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getDSVHandle: Index %u exceeds heap size %u\n",
+                  index, sizes_.dsvs);
+    IGL_DEBUG_ASSERT(false, "DSV descriptor index out of bounds");
+    return false;
+  }
+
+  // Check if descriptor has been freed (use-after-free detection)
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!allocatedDsvs_[index]) {
+      IGL_LOG_ERROR("DescriptorHeapManager::getDSVHandle: Descriptor index %u has been freed (use-after-free)\n", index);
+      IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed DSV descriptor");
+      return false;
+    }
+  }
+
+  *outHandle = dsvHeap_->GetCPUDescriptorHandleForHeapStart();
+  outHandle->ptr += index * dsvDescriptorSize_;
+
+  // Validate final handle is non-null
+  IGL_DEBUG_ASSERT(outHandle->ptr != 0, "getDSVHandle returned null CPU descriptor handle");
+
+  return true;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getCbvSrvUavCpuHandle(uint32_t index) const {
+  // C-006: Validate descriptor index before returning handle
   D3D12_CPU_DESCRIPTOR_HANDLE h = {};
-  if (!cbvSrvUavHeap_.Get() || index >= sizes_.cbvSrvUav) {
+
+  if (!cbvSrvUavHeap_.Get()) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavCpuHandle: CBV/SRV/UAV heap is null\n");
+    IGL_DEBUG_ASSERT(false, "CBV/SRV/UAV heap is null");
     return h;
   }
+
+  if (index == UINT32_MAX) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavCpuHandle: Invalid index UINT32_MAX (allocation failure sentinel)\n");
+    IGL_DEBUG_ASSERT(false, "Attempted to get CBV/SRV/UAV handle with invalid index UINT32_MAX");
+    return h;
+  }
+
+  if (index >= sizes_.cbvSrvUav) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavCpuHandle: Index %u exceeds heap size %u\n",
+                  index, sizes_.cbvSrvUav);
+    IGL_DEBUG_ASSERT(false, "CBV/SRV/UAV descriptor index out of bounds");
+    return h;
+  }
+
+  // Check if descriptor has been freed (use-after-free detection)
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!allocatedCbvSrvUav_[index]) {
+      IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavCpuHandle: Descriptor index %u has been freed (use-after-free)\n", index);
+      IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed CBV/SRV/UAV descriptor");
+      return h;
+    }
+  }
+
   h = cbvSrvUavHeap_->GetCPUDescriptorHandleForHeapStart();
   h.ptr += index * cbvSrvUavDescriptorSize_;
+
+  // Validate final handle is non-null
+  IGL_DEBUG_ASSERT(h.ptr != 0, "getCbvSrvUavCpuHandle returned null CPU descriptor handle");
+
   return h;
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getCbvSrvUavGpuHandle(uint32_t index) const {
+  // C-006: Validate descriptor index before returning handle
   D3D12_GPU_DESCRIPTOR_HANDLE h = {};
-  if (!cbvSrvUavHeap_.Get() || index >= sizes_.cbvSrvUav) {
+
+  if (!cbvSrvUavHeap_.Get()) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavGpuHandle: CBV/SRV/UAV heap is null\n");
+    IGL_DEBUG_ASSERT(false, "CBV/SRV/UAV heap is null");
     return h;
   }
+
+  if (index == UINT32_MAX) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavGpuHandle: Invalid index UINT32_MAX (allocation failure sentinel)\n");
+    IGL_DEBUG_ASSERT(false, "Attempted to get CBV/SRV/UAV GPU handle with invalid index UINT32_MAX");
+    return h;
+  }
+
+  if (index >= sizes_.cbvSrvUav) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavGpuHandle: Index %u exceeds heap size %u\n",
+                  index, sizes_.cbvSrvUav);
+    IGL_DEBUG_ASSERT(false, "CBV/SRV/UAV descriptor index out of bounds");
+    return h;
+  }
+
+  // Check if descriptor has been freed (use-after-free detection)
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!allocatedCbvSrvUav_[index]) {
+      IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavGpuHandle: Descriptor index %u has been freed (use-after-free)\n", index);
+      IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed CBV/SRV/UAV descriptor");
+      return h;
+    }
+  }
+
   h = cbvSrvUavHeap_->GetGPUDescriptorHandleForHeapStart();
   h.ptr += index * cbvSrvUavDescriptorSize_;
+
+  // Validate final handle is non-null
+  IGL_DEBUG_ASSERT(h.ptr != 0, "getCbvSrvUavGpuHandle returned null GPU descriptor handle");
+
   return h;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getSamplerCpuHandle(uint32_t index) const {
+  // C-006: Validate descriptor index before returning handle
   D3D12_CPU_DESCRIPTOR_HANDLE h = {};
-  if (!samplerHeap_.Get() || index >= sizes_.samplers) {
+
+  if (!samplerHeap_.Get()) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getSamplerCpuHandle: Sampler heap is null\n");
+    IGL_DEBUG_ASSERT(false, "Sampler heap is null");
     return h;
   }
+
+  if (index == UINT32_MAX) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getSamplerCpuHandle: Invalid index UINT32_MAX (allocation failure sentinel)\n");
+    IGL_DEBUG_ASSERT(false, "Attempted to get Sampler handle with invalid index UINT32_MAX");
+    return h;
+  }
+
+  if (index >= sizes_.samplers) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getSamplerCpuHandle: Index %u exceeds heap size %u\n",
+                  index, sizes_.samplers);
+    IGL_DEBUG_ASSERT(false, "Sampler descriptor index out of bounds");
+    return h;
+  }
+
+  // Check if descriptor has been freed (use-after-free detection)
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!allocatedSamplers_[index]) {
+      IGL_LOG_ERROR("DescriptorHeapManager::getSamplerCpuHandle: Descriptor index %u has been freed (use-after-free)\n", index);
+      IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed Sampler descriptor");
+      return h;
+    }
+  }
+
   h = samplerHeap_->GetCPUDescriptorHandleForHeapStart();
   h.ptr += index * samplerDescriptorSize_;
+
+  // Validate final handle is non-null
+  IGL_DEBUG_ASSERT(h.ptr != 0, "getSamplerCpuHandle returned null CPU descriptor handle");
+
   return h;
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getSamplerGpuHandle(uint32_t index) const {
+  // C-006: Validate descriptor index before returning handle
   D3D12_GPU_DESCRIPTOR_HANDLE h = {};
-  if (!samplerHeap_.Get() || index >= sizes_.samplers) {
+
+  if (!samplerHeap_.Get()) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getSamplerGpuHandle: Sampler heap is null\n");
+    IGL_DEBUG_ASSERT(false, "Sampler heap is null");
     return h;
   }
+
+  if (index == UINT32_MAX) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getSamplerGpuHandle: Invalid index UINT32_MAX (allocation failure sentinel)\n");
+    IGL_DEBUG_ASSERT(false, "Attempted to get Sampler GPU handle with invalid index UINT32_MAX");
+    return h;
+  }
+
+  if (index >= sizes_.samplers) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getSamplerGpuHandle: Index %u exceeds heap size %u\n",
+                  index, sizes_.samplers);
+    IGL_DEBUG_ASSERT(false, "Sampler descriptor index out of bounds");
+    return h;
+  }
+
+  // Check if descriptor has been freed (use-after-free detection)
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!allocatedSamplers_[index]) {
+      IGL_LOG_ERROR("DescriptorHeapManager::getSamplerGpuHandle: Descriptor index %u has been freed (use-after-free)\n", index);
+      IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed Sampler descriptor");
+      return h;
+    }
+  }
+
   h = samplerHeap_->GetGPUDescriptorHandleForHeapStart();
   h.ptr += index * samplerDescriptorSize_;
+
+  // Validate final handle is non-null
+  IGL_DEBUG_ASSERT(h.ptr != 0, "getSamplerGpuHandle returned null GPU descriptor handle");
+
   return h;
+}
+
+// C-006: Descriptor handle validation helpers
+bool DescriptorHeapManager::isValidRTVIndex(uint32_t index) const {
+  if (index == UINT32_MAX) {
+    return false;  // Sentinel value for allocation failure
+  }
+  if (index >= sizes_.rtvs) {
+    return false;  // Out of bounds
+  }
+  // Check if descriptor is currently allocated (not in free list)
+  // This helps detect use-after-free bugs
+  std::lock_guard<std::mutex> lock(mutex_);
+  return allocatedRtvs_[index];
+}
+
+bool DescriptorHeapManager::isValidDSVIndex(uint32_t index) const {
+  if (index == UINT32_MAX) {
+    return false;  // Sentinel value for allocation failure
+  }
+  if (index >= sizes_.dsvs) {
+    return false;  // Out of bounds
+  }
+  // Check if descriptor is currently allocated
+  std::lock_guard<std::mutex> lock(mutex_);
+  return allocatedDsvs_[index];
+}
+
+bool DescriptorHeapManager::isValidCbvSrvUavIndex(uint32_t index) const {
+  if (index == UINT32_MAX) {
+    return false;  // Sentinel value for allocation failure
+  }
+  if (index >= sizes_.cbvSrvUav) {
+    return false;  // Out of bounds
+  }
+  // Check if descriptor is currently allocated
+  std::lock_guard<std::mutex> lock(mutex_);
+  return allocatedCbvSrvUav_[index];
+}
+
+bool DescriptorHeapManager::isValidSamplerIndex(uint32_t index) const {
+  if (index == UINT32_MAX) {
+    return false;  // Sentinel value for allocation failure
+  }
+  if (index >= sizes_.samplers) {
+    return false;  // Out of bounds
+  }
+  // Check if descriptor is currently allocated
+  std::lock_guard<std::mutex> lock(mutex_);
+  return allocatedSamplers_[index];
 }
 
 void DescriptorHeapManager::logUsageStats() const {

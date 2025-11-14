@@ -9,6 +9,8 @@
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/D3D12Context.h>
 #include <igl/d3d12/UploadRingBuffer.h>
+#include <igl/d3d12/D3D12StateTransition.h>
+#include <igl/d3d12/ResourceAlignment.h>  // B-007: Resource alignment validation
 #include <cstring>
 
 namespace igl::d3d12 {
@@ -196,6 +198,26 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   }
 
   if (currentState_ != D3D12_RESOURCE_STATE_COPY_DEST) {
+    // B-006: Validate state transition and insert intermediate state if needed
+    const bool needsIntermediate = !D3D12StateTransition::isLegalDirectTransition(
+        currentState_, D3D12_RESOURCE_STATE_COPY_DEST);
+
+    D3D12StateTransition::logTransition("Buffer", currentState_,
+                                       D3D12_RESOURCE_STATE_COPY_DEST, needsIntermediate);
+
+    if (needsIntermediate) {
+      // Transition to COMMON first
+      D3D12_RESOURCE_BARRIER toCommon = {};
+      toCommon.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      toCommon.Transition.pResource = resource_.Get();
+      toCommon.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      toCommon.Transition.StateBefore = currentState_;
+      toCommon.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+      cmdList->ResourceBarrier(1, &toCommon);
+      currentState_ = D3D12_RESOURCE_STATE_COMMON;
+    }
+
+    // Now transition to COPY_DEST (guaranteed legal from COMMON or if direct was legal)
     D3D12_RESOURCE_BARRIER toCopyDest = {};
     toCopyDest.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     toCopyDest.Transition.pResource = resource_.Get();
@@ -218,13 +240,41 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
       (defaultState_ == D3D12_RESOURCE_STATE_COMMON) ? D3D12_RESOURCE_STATE_GENERIC_READ : defaultState_;
 
   if (postState != D3D12_RESOURCE_STATE_COPY_DEST) {
-    D3D12_RESOURCE_BARRIER toDefault = {};
-    toDefault.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    toDefault.Transition.pResource = resource_.Get();
-    toDefault.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    toDefault.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-    toDefault.Transition.StateAfter = postState;
-    cmdList->ResourceBarrier(1, &toDefault);
+    // B-006: Validate state transition and insert intermediate state if needed
+    const bool needsIntermediate = !D3D12StateTransition::isLegalDirectTransition(
+        D3D12_RESOURCE_STATE_COPY_DEST, postState);
+
+    D3D12StateTransition::logTransition("Buffer", D3D12_RESOURCE_STATE_COPY_DEST,
+                                       postState, needsIntermediate);
+
+    if (needsIntermediate) {
+      // Transition to COMMON first
+      D3D12_RESOURCE_BARRIER toCommon = {};
+      toCommon.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      toCommon.Transition.pResource = resource_.Get();
+      toCommon.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      toCommon.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+      toCommon.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+      cmdList->ResourceBarrier(1, &toCommon);
+
+      // Then transition to final state
+      D3D12_RESOURCE_BARRIER toFinal = {};
+      toFinal.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      toFinal.Transition.pResource = resource_.Get();
+      toFinal.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      toFinal.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+      toFinal.Transition.StateAfter = postState;
+      cmdList->ResourceBarrier(1, &toFinal);
+    } else {
+      // Direct transition is legal
+      D3D12_RESOURCE_BARRIER toDefault = {};
+      toDefault.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      toDefault.Transition.pResource = resource_.Get();
+      toDefault.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      toDefault.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+      toDefault.Transition.StateAfter = postState;
+      cmdList->ResourceBarrier(1, &toDefault);
+    }
     currentState_ = postState;
   } else {
     currentState_ = D3D12_RESOURCE_STATE_COPY_DEST;
@@ -363,22 +413,81 @@ void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
       return nullptr;
     }
 
-    // Transition source buffer to COPY_SOURCE
-    D3D12_RESOURCE_BARRIER barrier = {};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = resource_.Get();
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
-    cmdList->ResourceBarrier(1, &barrier);
+    // B-006: Transition source buffer to COPY_SOURCE with validation
+    const D3D12_RESOURCE_STATES assumedState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    const bool needsIntermediate = !D3D12StateTransition::isLegalDirectTransition(
+        assumedState, D3D12_RESOURCE_STATE_COPY_SOURCE);
+
+    D3D12StateTransition::logTransition("Buffer::map", assumedState,
+                                       D3D12_RESOURCE_STATE_COPY_SOURCE, needsIntermediate);
+
+    if (needsIntermediate) {
+      // Transition to COMMON first
+      D3D12_RESOURCE_BARRIER toCommon = {};
+      toCommon.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      toCommon.Transition.pResource = resource_.Get();
+      toCommon.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      toCommon.Transition.StateBefore = assumedState;
+      toCommon.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+      cmdList->ResourceBarrier(1, &toCommon);
+
+      // Then to COPY_SOURCE
+      D3D12_RESOURCE_BARRIER toCopySource = {};
+      toCopySource.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      toCopySource.Transition.pResource = resource_.Get();
+      toCopySource.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      toCopySource.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+      toCopySource.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+      cmdList->ResourceBarrier(1, &toCopySource);
+    } else {
+      // Direct transition is legal
+      D3D12_RESOURCE_BARRIER barrier = {};
+      barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      barrier.Transition.pResource = resource_.Get();
+      barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      barrier.Transition.StateBefore = assumedState;
+      barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+      cmdList->ResourceBarrier(1, &barrier);
+    }
 
     // Copy entire buffer
     cmdList->CopyBufferRegion(readbackStagingBuffer_.Get(), 0, resource_.Get(), 0, desc_.length);
 
-    // Transition back
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-    cmdList->ResourceBarrier(1, &barrier);
+    // B-006: Transition back with validation
+    const bool needsIntermediateBack = !D3D12StateTransition::isLegalDirectTransition(
+        D3D12_RESOURCE_STATE_COPY_SOURCE, assumedState);
+
+    D3D12StateTransition::logTransition("Buffer::map", D3D12_RESOURCE_STATE_COPY_SOURCE,
+                                       assumedState, needsIntermediateBack);
+
+    if (needsIntermediateBack) {
+      // Transition to COMMON first
+      D3D12_RESOURCE_BARRIER toCommon = {};
+      toCommon.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      toCommon.Transition.pResource = resource_.Get();
+      toCommon.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      toCommon.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+      toCommon.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+      cmdList->ResourceBarrier(1, &toCommon);
+
+      // Then back to original state
+      D3D12_RESOURCE_BARRIER toOriginal = {};
+      toOriginal.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      toOriginal.Transition.pResource = resource_.Get();
+      toOriginal.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      toOriginal.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+      toOriginal.Transition.StateAfter = assumedState;
+      cmdList->ResourceBarrier(1, &toOriginal);
+    } else {
+      // Direct transition is legal
+      D3D12_RESOURCE_BARRIER barrier = {};
+      barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+      barrier.Transition.pResource = resource_.Get();
+      barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+      barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+      barrier.Transition.StateAfter = assumedState;
+      cmdList->ResourceBarrier(1, &barrier);
+    }
 
     cmdList->Close();
     ID3D12CommandList* lists[] = {cmdList.Get()};

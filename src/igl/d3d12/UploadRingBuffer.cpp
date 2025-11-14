@@ -154,22 +154,28 @@ UploadRingBuffer::Allocation UploadRingBuffer::allocate(uint64_t size, uint64_t 
   const uint64_t allocationEnd = allocationOffset + alignedSize;
   const uint64_t finalTail = tail_.load(std::memory_order_acquire);
 
-  if (allocationOffset == 0) {
-    // Wraparound case: ensure we don't exceed tail
-    if (allocationEnd > finalTail) {
-      IGL_LOG_ERROR("UploadRingBuffer: Allocation [0, %llu) would overlap tail at %llu\n",
-                    allocationEnd, finalTail);
-      failureCount_++;
-      return Allocation{};
-    }
-  } else if (allocationEnd > size_) {
-    // Allocation would wrap past buffer end - check for overlap with tail
-    const uint64_t wrappedEnd = allocationEnd - size_;
-    if (wrappedEnd > finalTail) {
-      IGL_LOG_ERROR("UploadRingBuffer: Allocation would wrap and overlap tail (end=%llu, tail=%llu)\n",
-                    wrappedEnd, finalTail);
-      failureCount_++;
-      return Allocation{};
+  // CRITICAL FIX: When buffer is empty (no pending allocations), tail_ is meaningless
+  // In this case, the entire buffer is free and we should allow the allocation
+  const bool bufferEmpty = pendingAllocations_.empty();
+
+  if (!bufferEmpty) {
+    if (allocationOffset == 0) {
+      // Wraparound case: ensure we don't exceed tail
+      if (allocationEnd > finalTail) {
+        IGL_LOG_ERROR("UploadRingBuffer: Allocation [0, %llu) would overlap tail at %llu\n",
+                      allocationEnd, finalTail);
+        failureCount_++;
+        return Allocation{};
+      }
+    } else if (allocationEnd > size_) {
+      // Allocation would wrap past buffer end - check for overlap with tail
+      const uint64_t wrappedEnd = allocationEnd - size_;
+      if (wrappedEnd > finalTail) {
+        IGL_LOG_ERROR("UploadRingBuffer: Allocation would wrap and overlap tail (end=%llu, tail=%llu)\n",
+                      wrappedEnd, finalTail);
+        failureCount_++;
+        return Allocation{};
+      }
     }
   }
 
@@ -197,21 +203,23 @@ UploadRingBuffer::Allocation UploadRingBuffer::allocate(uint64_t size, uint64_t 
   // Debug validation: ensure invariants hold
   IGL_DEBUG_ASSERT(newHead <= size_, "Head exceeded buffer size!");
 
-  // Validate free space calculation
-  const uint64_t debugTail = tail_.load(std::memory_order_acquire);
-  uint64_t freeSpace = (newHead <= debugTail)
-      ? (size_ - newHead) + debugTail
-      : debugTail - newHead;
-  IGL_DEBUG_ASSERT(freeSpace <= size_, "Free space calculation invalid!");
+  // Validate free space calculation (skip if buffer was empty before this allocation)
+  if (!bufferEmpty) {
+    const uint64_t debugTail = tail_.load(std::memory_order_acquire);
+    uint64_t freeSpace = (newHead <= debugTail)
+        ? (size_ - newHead) + debugTail
+        : debugTail - newHead;
+    IGL_DEBUG_ASSERT(freeSpace <= size_, "Free space calculation invalid!");
 
-  // Ensure this allocation doesn't overlap with any pending allocations
-  // Note: This is a simplified check since we only track head/tail, not individual allocations
-  if (allocationOffset < newHead) {
-    // Normal case: allocation is [allocationOffset, newHead)
-    // Check it doesn't overlap with tail region
-    if (newHead > debugTail && allocationOffset < debugTail) {
-      // Would wrap around and potentially overlap
-      IGL_DEBUG_ASSERT(newHead <= size_, "Allocation wraps incorrectly!");
+    // Ensure this allocation doesn't overlap with any pending allocations
+    // Note: This is a simplified check since we only track head/tail, not individual allocations
+    if (allocationOffset < newHead) {
+      // Normal case: allocation is [allocationOffset, newHead)
+      // Check it doesn't overlap with tail region
+      if (newHead > debugTail && allocationOffset < debugTail) {
+        // Would wrap around and potentially overlap
+        IGL_DEBUG_ASSERT(newHead <= size_, "Allocation wraps incorrectly!");
+      }
     }
   }
 #endif

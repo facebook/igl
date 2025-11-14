@@ -76,6 +76,29 @@ constexpr uint32_t kMaxVertexAttributes = 16;
     }                                                                        \
   }
 
+// C-006: Validate D3D12 descriptor handles before use
+#if IGL_DEBUG
+  #define IGL_D3D12_VALIDATE_CPU_HANDLE(handle, name) \
+    do { \
+      if ((handle).ptr == 0) { \
+        IGL_LOG_ERROR("D3D12: Invalid CPU descriptor handle (%s) - ptr is null\n", name); \
+        IGL_DEBUG_ASSERT(false, "Invalid CPU descriptor handle"); \
+      } \
+    } while (0)
+
+  #define IGL_D3D12_VALIDATE_GPU_HANDLE(handle, name) \
+    do { \
+      if ((handle).ptr == 0) { \
+        IGL_LOG_ERROR("D3D12: Invalid GPU descriptor handle (%s) - ptr is null\n", name); \
+        IGL_DEBUG_ASSERT(false, "Invalid GPU descriptor handle"); \
+      } \
+    } while (0)
+#else
+  // No-op in release builds (performance-critical paths)
+  #define IGL_D3D12_VALIDATE_CPU_HANDLE(handle, name) ((void)0)
+  #define IGL_D3D12_VALIDATE_GPU_HANDLE(handle, name) ((void)0)
+#endif
+
 // Convert HRESULT to IGL Result
 inline Result getResultFromHRESULT(HRESULT hr) {
   if (SUCCEEDED(hr)) {

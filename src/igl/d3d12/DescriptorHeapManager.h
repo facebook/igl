@@ -18,10 +18,10 @@ namespace igl::d3d12 {
 class DescriptorHeapManager {
  public:
   struct Sizes {
-    uint32_t cbvSrvUav = 256; // shader-visible
-    uint32_t samplers = 16;    // shader-visible
-    uint32_t rtvs = 64;        // CPU-visible
-    uint32_t dsvs = 32;        // CPU-visible
+    uint32_t cbvSrvUav = 4096; // shader-visible
+    uint32_t samplers = 2048;  // shader-visible
+    uint32_t rtvs = 256;       // CPU-visible
+    uint32_t dsvs = 128;       // CPU-visible
   };
 
   DescriptorHeapManager() = default;
@@ -43,13 +43,22 @@ class DescriptorHeapManager {
   void freeCbvSrvUav(uint32_t index);
   void freeSampler(uint32_t index);
 
-  // Get CPU/GPU handles for the given indices
+  // C-006: Get CPU/GPU handles for the given indices (with validation)
   D3D12_CPU_DESCRIPTOR_HANDLE getRTVHandle(uint32_t index) const;
   D3D12_CPU_DESCRIPTOR_HANDLE getDSVHandle(uint32_t index) const;
   D3D12_CPU_DESCRIPTOR_HANDLE getCbvSrvUavCpuHandle(uint32_t index) const;
   D3D12_GPU_DESCRIPTOR_HANDLE getCbvSrvUavGpuHandle(uint32_t index) const;
   D3D12_CPU_DESCRIPTOR_HANDLE getSamplerCpuHandle(uint32_t index) const;
   D3D12_GPU_DESCRIPTOR_HANDLE getSamplerGpuHandle(uint32_t index) const;
+
+  // C-007: Alternative error-checking variants with bool return
+  // Returns false on error (invalid index, null heap), true on success
+  [[nodiscard]] bool getRTVHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const;
+  [[nodiscard]] bool getDSVHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const;
+  [[nodiscard]] bool getCbvSrvUavCpuHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const;
+  [[nodiscard]] bool getCbvSrvUavGpuHandle(uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE* outHandle) const;
+  [[nodiscard]] bool getSamplerCpuHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const;
+  [[nodiscard]] bool getSamplerGpuHandle(uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE* outHandle) const;
 
   uint32_t getCbvSrvUavDescriptorSize() const { return cbvSrvUavDescriptorSize_; }
   uint32_t getSamplerDescriptorSize() const { return samplerDescriptorSize_; }

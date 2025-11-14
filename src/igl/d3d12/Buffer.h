@@ -9,6 +9,7 @@
 
 #include <igl/Buffer.h>
 #include <igl/d3d12/Common.h>
+#include <igl/d3d12/D3D12StateTransition.h>
 
 namespace igl::d3d12 {
 

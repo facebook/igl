@@ -23,6 +23,7 @@ namespace igl::d3d12 {
 
 class PlatformDevice;
 class UploadRingBuffer;
+class SamplerState;  // Forward declaration for sampler cache
 
 /// @brief Implements the igl::IDevice interface for DirectX 12
 class Device final : public IDevice {
@@ -164,6 +165,15 @@ class Device final : public IDevice {
   // Check for device removal and throw exception if detected (P1_DX12-006)
   void checkDeviceRemoval() const;
 
+  // Sampler cache statistics (C-005)
+  struct SamplerCacheStats {
+    size_t cacheHits = 0;
+    size_t cacheMisses = 0;
+    size_t activeSamplers = 0;    // Currently cached samplers
+    float hitRate = 0.0f;         // Hit rate percentage
+  };
+  [[nodiscard]] SamplerCacheStats getSamplerCacheStats() const;
+
  private:
   // Validate device limits against actual device capabilities (P2_DX12-018)
   void validateDeviceLimits();
@@ -205,9 +215,10 @@ class Device final : public IDevice {
   mutable std::mutex pendingUploadsMutex_;
   mutable std::vector<PendingUpload> pendingUploads_;
 
-  // Command allocator pool for upload operations (P0_DX12-005, H-004)
+  // Command allocator pool for upload operations (P0_DX12-005, H-004, B-008)
   // Tracks command allocators with fence values to prevent reuse before GPU completion
   // H-004: Pool capped at 64 allocators to prevent memory leaks
+  // B-008: Increased to 256 allocators with enhanced statistics
   struct TrackedCommandAllocator {
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
     UINT64 fenceValue = 0;  // Fence value when last used
@@ -215,6 +226,8 @@ class Device final : public IDevice {
   mutable std::mutex commandAllocatorPoolMutex_;
   mutable std::vector<TrackedCommandAllocator> commandAllocatorPool_;
   mutable size_t totalCommandAllocatorsCreated_ = 0;  // H-004: Track total allocators created
+  mutable size_t peakPoolSize_ = 0;  // B-008: Track peak pool size
+  mutable size_t totalAllocatorReuses_ = 0;  // B-008: Track reuse count for statistics
   mutable Microsoft::WRL::ComPtr<ID3D12Fence> uploadFence_;
   mutable UINT64 uploadFenceValue_ = 0;
 
@@ -236,6 +249,13 @@ class Device final : public IDevice {
   mutable std::mutex rootSignatureCacheMutex_;
   mutable size_t rootSignatureCacheHits_ = 0;
   mutable size_t rootSignatureCacheMisses_ = 0;
+
+  // Sampler state cache for deduplication (C-005: Mitigate 2048 sampler heap limit)
+  // Use weak_ptr so cache entries are automatically removed when all references destroyed
+  mutable std::unordered_map<size_t, std::weak_ptr<SamplerState>> samplerCache_;
+  mutable std::mutex samplerCacheMutex_;
+  mutable size_t samplerCacheHits_ = 0;
+  mutable size_t samplerCacheMisses_ = 0;
 
   // Upload ring buffer for streaming resources (P1_DX12-009)
   std::unique_ptr<UploadRingBuffer> uploadRingBuffer_;

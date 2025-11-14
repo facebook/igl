@@ -14,9 +14,9 @@ namespace igl::d3d12 {
 
 class ComputePipelineState final : public IComputePipelineState {
  public:
-  ComputePipelineState(Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState,
-                       Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature,
-                       const std::string& debugName = "");
+  ComputePipelineState(const ComputePipelineDesc& desc,
+                       Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState,
+                       Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature);
   ~ComputePipelineState() override = default;
 
   std::shared_ptr<IComputePipelineReflection> computePipelineReflection() override;
@@ -26,8 +26,10 @@ class ComputePipelineState final : public IComputePipelineState {
   ID3D12RootSignature* getRootSignature() const { return rootSignature_.Get(); }
 
  private:
+  ComputePipelineDesc desc_;
   Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState_;
   Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
+  std::shared_ptr<IComputePipelineReflection> reflection_;
 };
 
 } // namespace igl::d3d12
