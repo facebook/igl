@@ -19,7 +19,7 @@ namespace igl::shell {
 
 class FileLoaderAndroid final : public FileLoader {
  public:
-  FileLoaderAndroid() = default;
+  FileLoaderAndroid();
   ~FileLoaderAndroid() override = default;
   FileData loadBinaryData(const std::string& fileName) override;
   [[nodiscard]] bool fileExists(const std::string& fileName) const override;
@@ -34,7 +34,7 @@ class FileLoaderAndroid final : public FileLoader {
   }
 
  private:
-  AAssetManager* assetManager_{};
+  AAssetManager* assetManager_ = nullptr;
 };
 
 } // namespace igl::shell

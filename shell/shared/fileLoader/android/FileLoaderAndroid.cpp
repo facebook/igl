@@ -10,10 +10,56 @@
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 
 #include <android/asset_manager.h>
+// @fb-only
+// @fb-only
 #include <filesystem>
 #include <igl/Core.h>
 
 namespace igl::shell {
+
+namespace {
+
+// @fb-only
+  // @fb-only// Try to get ActivityThread so we can get a Context
+  // @fb-only
+  // @fb-only
+    // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only // Get an Application (a Context) object from ActivityThread
+  // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+  // @fb-only
+    // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+// @fb-only
+
+// @fb-only
+  // @fb-only
+    // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+      // @fb-only
+          // @fb-only
+          // @fb-only
+          // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+// @fb-only
+
+} // namespace
+
+FileLoaderAndroid::FileLoaderAndroid() {
+  // @fb-only
+}
 
 FileLoader::FileData FileLoaderAndroid::loadBinaryData(const std::string& fileName) {
   if (fileName.empty()) {
