@@ -19,6 +19,7 @@
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #include <shell/shared/input/InputDispatcher.h>
 #include <shell/shared/platform/DisplayContext.h>
+#include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #if IGL_BACKEND_VULKAN
 #include <igl/vulkan/Device.h>
@@ -26,8 +27,183 @@
 #include <igl/vulkan/VulkanContext.h>
 #endif
 #include <memory>
+#include <sys/system_properties.h>
+#include <unordered_set>
 
 namespace {
+
+// Helper functions to read Android system properties
+std::optional<std::string> getAndroidSystemProperty(const char* keyName) noexcept {
+  std::array<char, PROP_VALUE_MAX> value{};
+  int len = __system_property_get(keyName, value.data());
+  if (len > 0) {
+    return std::string(value.data());
+  }
+  return std::nullopt;
+}
+
+std::optional<bool> getAndroidSystemPropertyBool(const char* keyName) noexcept {
+  auto prop = getAndroidSystemProperty(keyName);
+  if (!prop.has_value()) {
+    return std::nullopt;
+  }
+  const auto& value = prop.value();
+  if (value == "true" || value == "1") {
+    return true;
+  }
+  if (value == "false" || value == "0") {
+    return false;
+  }
+  return std::nullopt;
+}
+
+std::optional<int> getAndroidSystemPropertyInt(const char* keyName) noexcept {
+  auto prop = getAndroidSystemProperty(keyName);
+  if (!prop.has_value()) {
+    return std::nullopt;
+  }
+  try {
+    return std::stoi(prop.value());
+  } catch (...) {
+    return std::nullopt;
+  }
+}
+
+std::optional<size_t> getAndroidSystemPropertySizeT(const char* keyName) noexcept {
+  auto prop = getAndroidSystemProperty(keyName);
+  if (!prop.has_value()) {
+    return std::nullopt;
+  }
+  try {
+    return std::stoul(prop.value());
+  } catch (...) {
+    return std::nullopt;
+  }
+}
+
+// Read shell parameters from Android system properties
+void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
+                                     const char* prefix) noexcept {
+  std::string prefixStr(prefix);
+  prefixStr += ".";
+
+  // Read ShellParams
+  auto headless = getAndroidSystemPropertyBool((prefixStr + "headless").c_str());
+  if (headless.has_value()) {
+    shellParams.isHeadless = headless.value();
+    if (shellParams.isHeadless && shellParams.screenshotNumber == ~0u) {
+      shellParams.screenshotNumber = 0;
+    }
+  }
+
+  auto disableVulkanValidation =
+      getAndroidSystemPropertyBool((prefixStr + "disable-vulkan-validation-layers").c_str());
+  if (disableVulkanValidation.has_value()) {
+    shellParams.enableVulkanValidationLayers = !disableVulkanValidation.value();
+  }
+
+  auto screenshotFile = getAndroidSystemProperty((prefixStr + "screenshot-file").c_str());
+  if (screenshotFile.has_value()) {
+    shellParams.screenshotFileName = screenshotFile.value();
+  }
+
+  auto screenshotNumber = getAndroidSystemPropertyInt((prefixStr + "screenshot-number").c_str());
+  if (screenshotNumber.has_value()) {
+    shellParams.screenshotNumber = static_cast<uint32_t>(screenshotNumber.value());
+  }
+
+  auto viewportSize = getAndroidSystemProperty((prefixStr + "viewport-size").c_str());
+  if (viewportSize.has_value()) {
+    unsigned int w = 0;
+    unsigned int h = 0;
+    if (sscanf(viewportSize.value().c_str(), "%ux%u", &w, &h) == 2) {
+      if (w && h) {
+        shellParams.viewportSize = glm::vec2(w, h);
+      }
+    }
+  }
+
+  // Read BenchmarkRenderSessionParams - always try to read them
+  auto timeout = getAndroidSystemPropertySizeT((prefixStr + "timeout").c_str());
+  auto sessions = getAndroidSystemPropertySizeT((prefixStr + "sessions").c_str());
+  auto logReporter = getAndroidSystemPropertyBool((prefixStr + "log-reporter").c_str());
+  auto offscreenOnly = getAndroidSystemPropertyBool((prefixStr + "offscreen-only").c_str());
+  auto benchmark = getAndroidSystemPropertyBool((prefixStr + "benchmark").c_str());
+
+  // Read custom parameters using __system_property_foreach (API 26+)
+  // Custom parameters are any properties under the prefix that are not standard params
+  std::vector<std::pair<std::string, std::string>> customParams;
+
+#if __ANDROID_API__ >= 26
+  // Known standard parameter names to exclude from custom params
+  static const std::unordered_set<std::string> standardParams = {"headless",
+                                                                 "disable-vulkan-validation-layers",
+                                                                 "screenshot-file",
+                                                                 "screenshot-number",
+                                                                 "viewport-size",
+                                                                 "timeout",
+                                                                 "sessions",
+                                                                 "log-reporter",
+                                                                 "offscreen-only",
+                                                                 "benchmark"};
+
+  struct CallbackData {
+    const std::string& prefix;
+    const std::unordered_set<std::string>& standardParams;
+    std::vector<std::pair<std::string, std::string>>* customParams;
+  };
+
+  CallbackData callbackData{prefixStr, standardParams, &customParams};
+
+  __system_property_foreach(
+      [](const prop_info* pi, void* cookie) {
+        auto* data = reinterpret_cast<CallbackData*>(cookie);
+
+        // Get property name
+        char name[PROP_NAME_MAX];
+        char value[PROP_VALUE_MAX];
+        __system_property_read(pi, name, value);
+
+        std::string propName(name);
+        // Check if property starts with our prefix
+        if (propName.rfind(data->prefix, 0) == 0) {
+          // Extract the key (remove prefix)
+          std::string key = propName.substr(data->prefix.length());
+          // Only add if not empty and not a standard parameter
+          if (!key.empty() && data->standardParams.find(key) == data->standardParams.end()) {
+            data->customParams->emplace_back(key, std::string(value));
+          }
+        }
+      },
+      reinterpret_cast<void*>(&callbackData));
+#endif
+
+  // If any benchmark parameter is set (including custom params), create the benchmark params
+  if (timeout.has_value() || sessions.has_value() || logReporter.has_value() ||
+      offscreenOnly.has_value() || benchmark.has_value() || !customParams.empty()) {
+    if (!shellParams.benchmarkParams.has_value()) {
+      shellParams.benchmarkParams = igl::shell::BenchmarkRenderSessionParams();
+    }
+
+    if (timeout.has_value()) {
+      shellParams.benchmarkParams->renderSessionTimeoutMs = timeout.value();
+    }
+    if (sessions.has_value()) {
+      shellParams.benchmarkParams->numSessionsToRun = sessions.value();
+    }
+    if (logReporter.has_value()) {
+      shellParams.benchmarkParams->logReporter = logReporter.value();
+    }
+    if (offscreenOnly.has_value()) {
+      shellParams.benchmarkParams->offscreenRenderingOnly = offscreenOnly.value();
+    }
+
+    // Add custom parameters
+    for (const auto& [key, value] : customParams) {
+      shellParams.benchmarkParams->customParams.emplace_back(key, value);
+    }
+  }
+}
 
 // Stores the current EGL context when created, and restores it when destroyed.
 struct ContextGuard {
@@ -83,7 +259,10 @@ void TinyRenderer::init(AAssetManager* mgr,
   const igl::HWDeviceQueryDesc queryDesc(HWDeviceType::IntegratedGpu);
   std::unique_ptr<IDevice> d;
 
-  // Parse shell params early to determine headless mode
+  // Read shell params from Android system properties first
+  readShellParamsFromAndroidProps(shellParams_, factory.getAndroidSystemPropsPrefix());
+
+  // Parse shell params from command line (overrides properties)
   shell::parseShellParams(args, shellParams_);
 
   switch (backendVersion_.flavor) {
