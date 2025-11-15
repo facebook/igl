@@ -11,6 +11,6 @@
 
 namespace igl::shell {
 
-std::shared_ptr<Platform> createPlatform(std::shared_ptr<IDevice> device);
+std::unique_ptr<Platform> createPlatform(std::shared_ptr<IDevice> device);
 
 } // namespace igl::shell

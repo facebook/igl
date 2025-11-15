@@ -21,17 +21,17 @@
 
 namespace igl::shell {
 
-std::shared_ptr<Platform> createPlatform(std::shared_ptr<IDevice> device) {
+std::unique_ptr<Platform> createPlatform(std::shared_ptr<IDevice> device) {
 #if IGL_PLATFORM_ANDROID
-  return std::make_shared<PlatformAndroid>(std::move(device));
+  return std::make_unique<PlatformAndroid>(std::move(device));
 #elif IGL_PLATFORM_LINUX
-  return std::make_shared<PlatformLinux>(std::move(device));
+  return std::make_unique<PlatformLinux>(std::move(device));
 #elif IGL_PLATFORM_MACOS
-  return std::make_shared<PlatformMac>(std::move(device));
+  return std::make_unique<PlatformMac>(std::move(device));
 #elif IGL_PLATFORM_WINDOWS
-  return std::make_shared<PlatformWin>(std::move(device));
+  return std::make_unique<PlatformWin>(std::move(device));
 #elif IGL_PLATFORM_IOS
-  return std::make_shared<PlatformIos>(std::move(device));
+  return std::make_unique<PlatformIos>(std::move(device));
 #else
   return nullptr;
 #endif
