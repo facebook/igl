@@ -186,8 +186,18 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
         const uint32_t descriptorIndex = cbvIndices[i];
         D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
 
+        // DX12-COD-005: Enforce 64 KB limit for CBVs
+        constexpr size_t kMaxCBVSize = 65536;  // 64 KB (D3D12 spec limit)
+        if (cachedCbvSizes_[i] > kMaxCBVSize) {
+          IGL_LOG_ERROR("ComputeCommandEncoder: Constant buffer %zu size (%zu bytes) exceeds D3D12 64 KB limit\n",
+                        i, cachedCbvSizes_[i]);
+          continue;  // Skip this CBV
+        }
+
         // Align size to 256-byte boundary (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
         const size_t alignedSize = (cachedCbvSizes_[i] + 255) & ~255;
+
+        IGL_DEBUG_ASSERT(alignedSize <= kMaxCBVSize, "CBV size exceeds 64 KB after alignment");
 
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
         cbvDesc.BufferLocation = cachedCbvAddresses_[i];
@@ -432,7 +442,18 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
 
     cachedCbvAddresses_[index] = d3dBuffer->gpuAddress(offset);
     // P1_DX12-FIND-04: Store buffer size for CBV descriptor creation in dispatchThreadGroups()
-    cachedCbvSizes_[index] = d3dBuffer->getSizeInBytes() - offset;
+    // DX12-COD-005: Respect requested buffer size and enforce 64 KB limit
+    size_t bufferSize = d3dBuffer->getSizeInBytes() - offset;
+
+    // D3D12 spec: Constant buffers must be ≤ 64 KB
+    constexpr size_t kMaxCBVSize = 65536;  // 64 KB
+    if (bufferSize > kMaxCBVSize) {
+      IGL_LOG_ERROR("ComputeCommandEncoder::bindBuffer: Buffer size (%zu bytes) exceeds D3D12 64 KB limit for constant buffers at index %u. Clamping to 64 KB.\n",
+                    bufferSize, index);
+      bufferSize = kMaxCBVSize;
+    }
+
+    cachedCbvSizes_[index] = bufferSize;
     for (size_t i = index + 1; i < kMaxComputeBuffers; ++i) {
       cachedCbvAddresses_[i] = 0;
       cachedCbvSizes_[i] = 0;

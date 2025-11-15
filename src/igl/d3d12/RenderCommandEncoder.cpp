@@ -1708,15 +1708,31 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
         D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
         D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 
+        // DX12-COD-005: Respect requested buffer size and enforce 64 KB limit
+        // If size[slot] is 0, use remaining buffer size from offset
+        size_t requestedSize = desc->size[slot];
+        if (requestedSize == 0) {
+          requestedSize = buf->getSizeInBytes() - aligned;
+        }
+
+        // D3D12 spec: Constant buffers must be ≤ 64 KB
+        constexpr size_t kMaxCBVSize = 65536;  // 64 KB
+        if (requestedSize > kMaxCBVSize) {
+          IGL_LOG_ERROR("bindBindGroup(buffer): Constant buffer size (%zu bytes) exceeds D3D12 64 KB limit at slot %u\n",
+                        requestedSize, slot);
+          continue;  // Skip this binding
+        }
+
         // Create CBV descriptor
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
         cbvDesc.BufferLocation = addr;
-        cbvDesc.SizeInBytes = static_cast<UINT>((buf->getSizeInBytes() + 255) & ~255);  // Must be 256-byte aligned
+        cbvDesc.SizeInBytes = static_cast<UINT>((requestedSize + 255) & ~255);  // Must be 256-byte aligned
 
         // Pre-creation validation (TASK_P0_DX12-004)
         IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateConstantBufferView");
         IGL_DEBUG_ASSERT(addr != 0, "Buffer GPU address is null");
         IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "CBV descriptor handle is invalid");
+        IGL_DEBUG_ASSERT(cbvDesc.SizeInBytes <= kMaxCBVSize, "CBV size exceeds 64 KB after alignment");
 
         device->CreateConstantBufferView(&cbvDesc, cpuHandle);
 
