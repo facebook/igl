@@ -8,6 +8,7 @@
 #include <shell/shared/fileLoader/FileLoader.h>
 
 #include <cstdio>
+#include <filesystem>
 #include <limits>
 #include <igl/Common.h>
 
@@ -21,21 +22,14 @@
 #include <shell/shared/fileLoader/win/FileLoaderWin.h>
 #endif
 
-#if defined(IGL_CMAKE_BUILD)
-#include <filesystem>
-namespace fs = std::filesystem;
-#else
-#include <boost/filesystem/operations.hpp>
-namespace fs = boost::filesystem;
-#endif
-
 namespace igl::shell {
 
 FileLoader::FileData FileLoader::loadBinaryDataInternal(const std::string& filePath) {
-  if (IGL_DEBUG_VERIFY_NOT(!fs::exists(filePath), "Couldn't find file: %s", filePath.c_str())) {
+  if (IGL_DEBUG_VERIFY_NOT(
+          !std::filesystem::exists(filePath), "Couldn't find file: %s", filePath.c_str())) {
     return {};
   }
-  const uintmax_t length = fs::file_size(filePath);
+  const uintmax_t length = std::filesystem::file_size(filePath);
 
   if (IGL_DEBUG_VERIFY_NOT(length > std::numeric_limits<uint32_t>::max())) {
     return {};

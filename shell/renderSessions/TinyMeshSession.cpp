@@ -11,27 +11,20 @@
 
 #include <cmath>
 #include <cstddef>
+#include <filesystem>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
 #include <shell/shared/platform/DisplayContext.h>
 #include <igl/FPSCounter.h>
+
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/Device.h>
 #endif // IGL_BACKEND_OPENGL
 #if IGL_BACKEND_VULKAN
 #include <igl/vulkan/PlatformDevice.h>
 #endif // IGL_BACKEND_VULKAN
-
-#if defined(IGL_CMAKE_BUILD)
-#include <filesystem>
-namespace fs = std::filesystem;
-#else
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
-namespace fs = boost::filesystem;
-#endif
 
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough"
@@ -378,23 +371,24 @@ void TinyMeshSession::initialize() noexcept {
     texture0_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels.data());
   }
   {
-    fs::path dir = fs::current_path();
+    auto dir = std::filesystem::current_path();
     // find IGLU somewhere above our current directory
     // @fb-only
     const char* contentFolder = "shell/resources/";
     // @fb-only
-    while (dir != fs::current_path().root_path() && !fs::exists(dir / fs::path(contentFolder))) {
+    while (dir != std::filesystem::current_path().root_path() &&
+           !std::filesystem::exists(dir / contentFolder)) {
       dir = dir.parent_path();
     }
     int32_t texWidth = 0;
     int32_t texHeight = 0;
     int32_t channels = 0;
-    uint8_t* pixels =
-        stbi_load((dir / fs::path(contentFolder) / fs::path("images/marble.png")).string().c_str(),
-                  &texWidth,
-                  &texHeight,
-                  &channels,
-                  4);
+    uint8_t* pixels = stbi_load(
+        (dir / std::filesystem::path(contentFolder) / "images/marble.png").string().c_str(),
+        &texWidth,
+        &texHeight,
+        &channels,
+        4);
     IGL_DEBUG_ASSERT(pixels, "Cannot load texture.");
     const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::RGBA_SRGB,
                                                 texWidth,
