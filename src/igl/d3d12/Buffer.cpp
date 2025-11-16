@@ -152,7 +152,6 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
 
   // Fallback: create temporary upload buffer if ring buffer allocation failed
   Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
-  uint64_t uploadBufferOffset = 0;
   HRESULT hr = S_OK;
 
   if (!useRingBuffer) {
@@ -236,6 +235,7 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
     cmdList->CopyBufferRegion(resource_.Get(), range.offset, uploadBuffer.Get(), 0, range.size);
   }
 
+  // T05: Prepare state transition barriers, but defer state update until after GPU completes
   D3D12_RESOURCE_STATES postState =
       (defaultState_ == D3D12_RESOURCE_STATE_COMMON) ? D3D12_RESOURCE_STATE_GENERIC_READ : defaultState_;
 
@@ -275,9 +275,7 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
       toDefault.Transition.StateAfter = postState;
       cmdList->ResourceBarrier(1, &toDefault);
     }
-    currentState_ = postState;
-  } else {
-    currentState_ = D3D12_RESOURCE_STATE_COPY_DEST;
+    // T05: Defer state update - will be set after GPU completes (see below)
   }
 
   hr = cmdList->Close();
@@ -295,21 +293,39 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   // CRITICAL: This ensures the allocator is not reused until GPU completes execution
   ID3D12Fence* uploadFence = device_->getUploadFence();
 
+  // T05: Signal must succeed - otherwise fence will never reach uploadFenceValue
   hr = queue->Signal(uploadFence, uploadFenceValue);
   if (FAILED(hr)) {
-    IGL_LOG_ERROR("Buffer::upload: Failed to signal upload fence: 0x%08X\n", hr);
-    // Still return allocator, but with 0 to avoid blocking the pool
+    // Return allocator immediately (no fence wait needed)
     device_->returnUploadCommandAllocator(allocator, 0);
-  } else {
-    // Return allocator to pool with fence value (will be reused after fence signaled)
-    device_->returnUploadCommandAllocator(allocator, uploadFenceValue);
+
+    // T05: Check for device removal to provide richer diagnostics
+    Result deviceStatus = device_->checkDeviceRemoval();
+    if (!deviceStatus.isOk()) {
+      return deviceStatus;  // Device removed - return specific error
+    }
+
+    return Result(Result::Code::RuntimeError, "Failed to signal upload fence");
   }
+
+  // Return allocator to pool with fence value (will be reused after fence signaled)
+  device_->returnUploadCommandAllocator(allocator, uploadFenceValue);
 
   // Only track temporary upload buffers (ring buffer is persistent)
   // DX12-NEW-02: Pass uploadFenceValue (already signaled above) to track with correct fence
   if (!useRingBuffer && uploadBuffer.Get()) {
     device_->trackUploadBuffer(std::move(uploadBuffer), uploadFenceValue);
   }
+
+  // T05: Wait for upload fence to signal before returning
+  // This ensures the buffer upload completes before caller uses it
+  Result waitResult = device_->waitForUploadFence(uploadFenceValue);
+  if (!waitResult.isOk()) {
+    return waitResult;
+  }
+
+  // T05: Now safe to update resource state - GPU upload has completed
+  currentState_ = (postState != D3D12_RESOURCE_STATE_COPY_DEST) ? postState : D3D12_RESOURCE_STATE_COPY_DEST;
 
   return Result();
 }

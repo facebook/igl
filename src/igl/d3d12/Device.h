@@ -159,6 +159,7 @@ class Device final : public IDevice {
                                      UINT64 fenceValue) const;
   ID3D12Fence* getUploadFence() const { return uploadFence_.Get(); }
   UINT64 getNextUploadFenceValue() const { return ++uploadFenceValue_; }
+  Result waitForUploadFence(UINT64 fenceValue) const;  // T05: Wait for upload to complete
 
   // Upload ring buffer access (P1_DX12-009)
   UploadRingBuffer* getUploadRingBuffer() const { return uploadRingBuffer_.get(); }
@@ -238,6 +239,7 @@ class Device final : public IDevice {
   mutable size_t totalAllocatorReuses_ = 0;  // B-008: Track reuse count for statistics
   mutable Microsoft::WRL::ComPtr<ID3D12Fence> uploadFence_;
   mutable UINT64 uploadFenceValue_ = 0;
+  // T05: No shared event - waitForUploadFence creates per-call events for thread safety
 
   // PSO caching (P0_DX12-001)
   mutable std::unordered_map<size_t, Microsoft::WRL::ComPtr<ID3D12PipelineState>> graphicsPSOCache_;

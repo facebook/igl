@@ -23,6 +23,7 @@
 #include <igl/d3d12/ResourceAlignment.h>  // B-007: Resource alignment validation
 #include <igl/VertexInputState.h>
 #include <igl/Texture.h>
+#include <igl/Assert.h>  // T05: For IGL_DEBUG_ASSERT in waitForUploadFence
 #include <d3dcompiler.h>
 #include <cstring>
 #include <vector>
@@ -138,6 +139,7 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
       IGL_LOG_ERROR("Device::Device: Failed to create upload fence: 0x%08X\n", hr);
     } else {
       uploadFenceValue_ = 0;
+      // T05: Per-call events created in waitForUploadFence for thread safety
       IGL_LOG_INFO("Device::Device: Upload fence created successfully for command allocator sync\n");
     }
 
@@ -165,7 +167,9 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
   }
 }
 
-Device::~Device() = default;
+Device::~Device() {
+  // T05: No shared event to clean up - events are per-call in waitForUploadFence
+}
 
 void Device::validateDeviceLimits() {
   auto* device = ctx_->getDevice();
@@ -3243,6 +3247,64 @@ void Device::processCompletedUploads() const {
   if (uploadRingBuffer_) {
     uploadRingBuffer_->retire(completed);
   }
+}
+
+Result Device::waitForUploadFence(UINT64 fenceValue) const {
+  // T05: Wait for upload fence to reach specified value
+  if (!uploadFence_.Get()) {
+    return Result(Result::Code::RuntimeError, "Upload fence not initialized");
+  }
+
+  // Check if fence has already been signaled
+  if (uploadFence_->GetCompletedValue() >= fenceValue) {
+    return Result();  // Already completed, no need to wait
+  }
+
+  // T05: Create a per-call event to avoid thread-safety issues with shared event
+  // Using auto-reset event (FALSE) so it's automatically reset after WaitForSingleObject
+  HANDLE eventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+  if (eventHandle == nullptr) {
+    // T05: Check for device removal - may indicate device loss or system resource exhaustion
+    Result deviceStatus = checkDeviceRemoval();
+    if (!deviceStatus.isOk()) {
+      return deviceStatus;
+    }
+    return Result(Result::Code::RuntimeError, "Failed to create upload fence event");
+  }
+
+  // Set event to signal when fence reaches target value
+  HRESULT hr = uploadFence_->SetEventOnCompletion(fenceValue, eventHandle);
+  if (FAILED(hr)) {
+    CloseHandle(eventHandle);
+    // T05: Check for device removal - may indicate device loss or fence object corruption
+    Result deviceStatus = checkDeviceRemoval();
+    if (!deviceStatus.isOk()) {
+      return deviceStatus;
+    }
+    return Result(Result::Code::RuntimeError, "Failed to set event on upload fence");
+  }
+
+  // Wait for GPU to signal the fence
+  DWORD waitResult = WaitForSingleObject(eventHandle, INFINITE);
+  CloseHandle(eventHandle);
+
+  if (waitResult == WAIT_FAILED || waitResult == WAIT_ABANDONED) {
+    // T05: Check for device removal to provide richer diagnostics
+    Result deviceStatus = checkDeviceRemoval();
+    if (!deviceStatus.isOk()) {
+      return deviceStatus;
+    }
+
+    // Not device removal - generic wait failure
+    if (waitResult == WAIT_FAILED) {
+      return Result(Result::Code::RuntimeError, "WaitForSingleObject failed for upload fence");
+    }
+    // WAIT_ABANDONED: Defensive check (not expected for event objects, only mutexes)
+    IGL_DEBUG_ASSERT(waitResult != WAIT_ABANDONED, "WAIT_ABANDONED returned for event object (should only occur for mutexes)");
+    return Result(Result::Code::RuntimeError, "Upload fence wait abandoned (unexpected for events)");
+  }
+
+  return Result();
 }
 
 void Device::trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer, UINT64 fenceValue) const {
