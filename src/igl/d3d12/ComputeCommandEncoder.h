@@ -9,6 +9,7 @@
 
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/d3d12/Common.h>
+#include <igl/d3d12/D3D12ResourcesBinder.h>
 
 namespace igl::d3d12 {
 
@@ -43,6 +44,9 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
   CommandBuffer& commandBuffer_;
   const ComputePipelineState* currentPipeline_ = nullptr;
   bool isEncoding_ = false;
+
+  // T08: Centralized resource binding management
+  D3D12ResourcesBinder resourcesBinder_;
 
   // Cached GPU handles for resources
   // IMPORTANT: Bindings must be DENSE and start at slot 0 for each table.

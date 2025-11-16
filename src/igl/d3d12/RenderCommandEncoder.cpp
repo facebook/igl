@@ -25,6 +25,7 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
     : IRenderCommandEncoder(nullptr),
       commandBuffer_(commandBuffer),
       commandList_(commandBuffer.getCommandList()),
+      resourcesBinder_(commandBuffer, false /* isCompute */),
       framebuffer_(framebuffer) {
   IGL_LOG_INFO("RenderCommandEncoder::RenderCommandEncoder() - START\n");
   auto& context = commandBuffer_.getContext();
@@ -793,75 +794,8 @@ void RenderCommandEncoder::bindPushConstants(const void* data,
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t /*target*/,
                                             ISamplerState* samplerState) {
-  static int callCount = 0;
-  if (callCount < 3) {
-    IGL_LOG_INFO("bindSamplerState called #%d: index=%zu, sampler=%p\n", ++callCount, index, samplerState);
-  }
-  // Validate index range against IGL_TEXTURE_SAMPLERS_MAX
-  if (!samplerState || index >= IGL_TEXTURE_SAMPLERS_MAX) {
-    if (index >= IGL_TEXTURE_SAMPLERS_MAX) {
-      IGL_LOG_ERROR("bindSamplerState: index %zu exceeds maximum %u\n", index, IGL_TEXTURE_SAMPLERS_MAX);
-    }
-    return;
-  }
-
-  auto& context = commandBuffer_.getContext();
-  auto* device = context.getDevice();
-  if (!device || samplerHeap_ == nullptr) {
-    IGL_LOG_ERROR("bindSamplerState: missing device or per-frame sampler heap\n");
-    return;
-  }
-
-  // Allocate a unique descriptor slot from the command buffer's shared counter
-  // This prevents descriptor conflicts between render passes (e.g., cubes pass + ImGui pass)
-  const uint32_t descriptorIndex = commandBuffer_.getNextSamplerDescriptor()++;
-  IGL_LOG_INFO("bindSamplerState: allocated descriptor slot %u for sampler index s%zu\n", descriptorIndex, index);
-
-  // Create sampler descriptor from ISamplerState if provided, else fallback
-  D3D12_SAMPLER_DESC samplerDesc = {};
-  if (auto* d3dSampler = dynamic_cast<SamplerState*>(samplerState)) {
-    samplerDesc = d3dSampler->getDesc();
-  } else {
-    samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-    samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    samplerDesc.MipLODBias = 0.0f;
-    samplerDesc.MaxAnisotropy = 1;
-    samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-    samplerDesc.BorderColor[0] = 0.0f;
-    samplerDesc.BorderColor[1] = 0.0f;
-    samplerDesc.BorderColor[2] = 0.0f;
-    samplerDesc.BorderColor[3] = 0.0f;
-    samplerDesc.MinLOD = 0.0f;
-    samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
-  }
-
-  // Create sampler descriptor at the allocated slot
-  // ALWAYS use per-frame heaps from D3D12Context
-  // CRITICAL: Do NOT use heapMgr handles - they point to shared heap, not per-frame heap
-  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getSamplerCpuHandle(descriptorIndex);
-  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getSamplerGpuHandle(descriptorIndex);
-
-  IGL_LOG_INFO("bindSamplerState: creating sampler at slot %u, CPU handle 0x%llx\n", descriptorIndex, cpuHandle.ptr);
-  // Pre-creation validation (TASK_P0_DX12-004)
-  IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateSampler");
-  IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "Sampler descriptor handle is invalid");
-
-  device->CreateSampler(&samplerDesc, cpuHandle);
-  D3D12Context::trackResourceCreation("Sampler", 0);
-
-  // Cache sampler GPU handle for this index - store in array indexed by sampler unit
-  cachedSamplerGpuHandles_[index] = gpuHandle;
-  constexpr size_t kMaxCachedSamplers =
-      sizeof(cachedSamplerGpuHandles_) / sizeof(cachedSamplerGpuHandles_[0]);
-  for (size_t i = index + 1; i < kMaxCachedSamplers; ++i) {
-    cachedSamplerGpuHandles_[i] = {};
-  }
-  cachedSamplerCount_ = index + 1;
-  cachedSamplerGpuHandle_ =
-      (cachedSamplerCount_ > 0) ? cachedSamplerGpuHandles_[0] : D3D12_GPU_DESCRIPTOR_HANDLE{};
-  IGL_LOG_INFO("bindSamplerState: cached sampler[%zu] GPU handle 0x%llx\n", index, cachedSamplerGpuHandles_[index].ptr);
+  // T08: Delegate to D3D12ResourcesBinder for centralized descriptor management
+  resourcesBinder_.bindSamplerState(static_cast<uint32_t>(index), samplerState);
 }
 void RenderCommandEncoder::bindTexture(size_t index,
                                        uint8_t /*target*/,
@@ -871,180 +805,8 @@ void RenderCommandEncoder::bindTexture(size_t index,
 }
 
 void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
-  static int callCount = 0;
-  if (callCount < 5) {
-    IGL_LOG_INFO("bindTexture called #%d: index=%zu, texture=%p\n", ++callCount, index, texture);
-  }
-  // Validate index range against IGL_TEXTURE_SAMPLERS_MAX
-  if (!texture || index >= IGL_TEXTURE_SAMPLERS_MAX) {
-    if (index >= IGL_TEXTURE_SAMPLERS_MAX) {
-      IGL_LOG_ERROR("bindTexture: index %zu exceeds maximum %u\n", index, IGL_TEXTURE_SAMPLERS_MAX);
-    }
-    return;
-  }
-
-  IGL_LOG_INFO("bindTexture: getting context...\n");
-  auto& context = commandBuffer_.getContext();
-  auto* device = context.getDevice();
-  auto* d3dTexture = static_cast<Texture*>(texture);
-  ID3D12Resource* resource = d3dTexture->getResource();
-
-  if (!resource) {
-    IGL_LOG_ERROR("bindTexture: resource is null\n");
-    return;
-  }
-
-  IGL_LOG_INFO("bindTexture: resource=%p, format=%d, dimensions=%ux%u\n",
-               resource, d3dTexture->getFormat(),
-               d3dTexture->getDimensions().width, d3dTexture->getDimensions().height);
-
-  // Ensure resource is in PIXEL_SHADER_RESOURCE state for sampling
-  d3dTexture->transitionAll(commandList_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-  // Allocate descriptor from per-frame heap (descriptors are recreated each frame)
-  // CRITICAL: Do NOT cache descriptor indices globally - per-frame heaps reset counters to 0 each frame
-  // C-001: Now uses Result-based allocation with dynamic heap growth
-  uint32_t descriptorIndex = 0;
-  Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
-  if (!allocResult.isOk()) {
-    IGL_LOG_ERROR("bindTexture: Failed to allocate descriptor: %s\n", allocResult.message.c_str());
-    return;
-  }
-  IGL_LOG_INFO("bindTexture: allocated descriptor slot %u for texture index t%zu\n", descriptorIndex, index);
-
-  // Create SRV descriptor at the allocated slot
-  D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-  srvDesc.Format =
-      textureFormatToDXGIShaderResourceViewFormat(d3dTexture->getFormat());
-  srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-  // Set view dimension based on texture type
-  // CRITICAL: Must query actual resource dimension to avoid CreateShaderResourceView errors
-  auto resourceDesc = resource->GetDesc();
-  IGL_LOG_INFO("bindTexture: resource dimension=%d, texture type=%d\n", resourceDesc.Dimension, (int)d3dTexture->getType());
-
-  // Check if this is a texture view and use view parameters for SRV
-  const bool isView = d3dTexture->isView();
-  const uint32_t mostDetailedMip = isView ? d3dTexture->getMipLevelOffset() : 0;
-  const uint32_t mipLevels = isView ? d3dTexture->getNumMipLevelsInView() : d3dTexture->getNumMipLevels();
-
-  if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D) {
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
-    srvDesc.Texture3D.MipLevels = mipLevels;
-    srvDesc.Texture3D.MostDetailedMip = mostDetailedMip;
-    IGL_LOG_INFO("bindTexture: using TEXTURE3D view dimension (mip offset=%u, mip count=%u)\n", mostDetailedMip, mipLevels);
-  } else if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
-    const auto textureType = d3dTexture->getType();
-    // Check if this is a texture array (either a view or a regular array texture)
-    const bool isArrayTexture = (isView && d3dTexture->getNumArraySlicesInView() > 0) ||
-                                 (!isView && resourceDesc.DepthOrArraySize > 1);
-
-    if (textureType == TextureType::Cube) {
-      // Cube textures are stored as 2D array resources with six faces per cube.
-      // References: Texture Subresources (D3D12), D3D12_TEXCUBE_SRV, D3D12_TEX2D_ARRAY_SRV docs.
-      const uint32_t firstArraySlice = isView ? d3dTexture->getArraySliceOffset() : 0;
-      const uint32_t facesInView =
-          isView ? d3dTexture->getNumArraySlicesInView() : resourceDesc.DepthOrArraySize;
-      const bool isCubeArray = (firstArraySlice != 0) || (facesInView > 6);
-
-      if (isCubeArray) {
-        const uint32_t numCubes = std::max(1u, facesInView / 6);
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
-        srvDesc.TextureCubeArray.MostDetailedMip = mostDetailedMip;
-        srvDesc.TextureCubeArray.MipLevels = mipLevels;
-        srvDesc.TextureCubeArray.First2DArrayFace = firstArraySlice;
-        srvDesc.TextureCubeArray.NumCubes = numCubes;
-        srvDesc.TextureCubeArray.ResourceMinLODClamp = 0.0f;
-        IGL_LOG_INFO(
-            "bindTexture: using TEXTURECUBE_ARRAY view dimension (mip offset=%u, mip count=%u, first face=%u, cube count=%u)\n",
-            mostDetailedMip,
-            mipLevels,
-            srvDesc.TextureCubeArray.First2DArrayFace,
-            srvDesc.TextureCubeArray.NumCubes);
-      } else {
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-        srvDesc.TextureCube.MostDetailedMip = mostDetailedMip;
-        srvDesc.TextureCube.MipLevels = mipLevels;
-        srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
-        IGL_LOG_INFO(
-            "bindTexture: using TEXTURECUBE view dimension (mip offset=%u, mip count=%u)\n",
-            mostDetailedMip,
-            mipLevels);
-      }
-    } else if (isArrayTexture) {
-      srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-      srvDesc.Texture2DArray.MipLevels = mipLevels;
-      srvDesc.Texture2DArray.MostDetailedMip = mostDetailedMip;
-      srvDesc.Texture2DArray.PlaneSlice = 0;
-      srvDesc.Texture2DArray.ResourceMinLODClamp = 0.0f;
-
-      if (isView) {
-        // For texture views, use view-specific array parameters
-        srvDesc.Texture2DArray.FirstArraySlice = d3dTexture->getArraySliceOffset();
-        srvDesc.Texture2DArray.ArraySize = d3dTexture->getNumArraySlicesInView();
-      } else {
-        // For regular array textures, use full array size
-        srvDesc.Texture2DArray.FirstArraySlice = 0;
-        srvDesc.Texture2DArray.ArraySize = resourceDesc.DepthOrArraySize;
-      }
-
-      IGL_LOG_INFO(
-          "bindTexture: using TEXTURE2DARRAY view dimension (mip offset=%u, mip count=%u, array offset=%u, array count=%u)\n",
-          mostDetailedMip,
-          mipLevels,
-          srvDesc.Texture2DArray.FirstArraySlice,
-          srvDesc.Texture2DArray.ArraySize);
-    } else {
-      // Default to 2D textures
-      srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-      srvDesc.Texture2D.MipLevels = mipLevels;
-      srvDesc.Texture2D.MostDetailedMip = mostDetailedMip;
-      IGL_LOG_INFO("bindTexture: using TEXTURE2D view dimension (mip offset=%u, mip count=%u)\n",
-                   mostDetailedMip,
-                   mipLevels);
-    }
-  } else {
-    IGL_LOG_ERROR("bindTexture: unsupported resource dimension %d\n", resourceDesc.Dimension);
-    return;
-  }
-
-  // Verify we're using the right heap - MUST use per-frame heap from constructor
-  auto* heap = cbvSrvUavHeap_;  // Use per-frame heap, NOT heapMgr->getCbvSrvUavHeap()
-  D3D12_CPU_DESCRIPTOR_HANDLE heapStartCpu = heap->GetCPUDescriptorHandleForHeapStart();
-  D3D12_GPU_DESCRIPTOR_HANDLE heapStartGpu = heap->GetGPUDescriptorHandleForHeapStart();
-
-  // Get descriptor handles: ALWAYS use per-frame heaps from D3D12Context
-  // CRITICAL: Do NOT use heapMgr handles - they point to shared heap, not per-frame heap
-  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
-  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
-
-  IGL_LOG_INFO("bindTexture: heap=%p, heapStart CPU=0x%llx, GPU=0x%llx\n", heap, heapStartCpu.ptr, heapStartGpu.ptr);
-
-  // Always create descriptor (per-frame heaps require recreation each frame)
-  IGL_LOG_INFO("bindTexture: creating SRV at slot %u, CPU handle 0x%llx\n", descriptorIndex, cpuHandle.ptr);
-  // Pre-creation validation (TASK_P0_DX12-004)
-  IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateShaderResourceView");
-  IGL_DEBUG_ASSERT(resource != nullptr, "Texture resource is null before CreateShaderResourceView");
-  IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "SRV descriptor handle is invalid");
-
-  device->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
-  D3D12Context::trackResourceCreation("SRV", 0);
-
-  // Cache texture GPU handle for this index - store in array indexed by texture unit
-  cachedTextureGpuHandles_[index] = gpuHandle;
-  constexpr size_t kMaxCachedTextures =
-      sizeof(cachedTextureGpuHandles_) / sizeof(cachedTextureGpuHandles_[0]);
-  for (size_t i = index + 1; i < kMaxCachedTextures; ++i) {
-    cachedTextureGpuHandles_[i] = {};
-  }
-  cachedTextureCount_ = index + 1;
-  cachedTextureGpuHandle_ =
-      (cachedTextureCount_ > 0) ? cachedTextureGpuHandles_[0] : D3D12_GPU_DESCRIPTOR_HANDLE{};
-  IGL_LOG_INFO("bindTexture: cached texture[%zu] GPU handle 0x%llx (offset from heap start: %lld)\n",
-               index, cachedTextureGpuHandles_[index].ptr,
-               (int64_t)(cachedTextureGpuHandles_[index].ptr - heapStartGpu.ptr));
-
-  IGL_LOG_INFO("bindTexture: done\n");
+  // T08: Delegate to D3D12ResourcesBinder for centralized descriptor management
+  resourcesBinder_.bindTexture(static_cast<uint32_t>(index), texture);
 }
 void RenderCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, const void* /*data*/) {}
 
@@ -1054,6 +816,13 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t baseInstance) {
   // G-001: Flush any pending barriers before draw call
   flushBarriers();
+
+  // T08: Apply all resource bindings (textures, samplers, buffers) before draw
+  Result bindResult;
+  if (!resourcesBinder_.updateBindings(&bindResult)) {
+    IGL_LOG_ERROR("draw: Failed to update resource bindings: %s\n", bindResult.message.c_str());
+    return;
+  }
 
   // D3D12 requires ALL root parameters to be bound before drawing
   // Hybrid root signature layout:
@@ -1079,23 +848,6 @@ void RenderCommandEncoder::draw(size_t vertexCount,
     commandList_->SetGraphicsRootDescriptorTable(3, cachedCbvTableGpuHandles_[0]);  // Root param 3: CBV table (b3-b15)
     IGL_LOG_INFO("draw: binding CBV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
                  cbvTableCount_, cachedCbvTableGpuHandles_[0].ptr);
-  }
-
-  // Bind SRV and sampler descriptor tables
-  // T01: Add debug validation to catch sparse binding (non-zero count with zero base handle)
-  if (cachedTextureCount_ > 0) {
-    IGL_DEBUG_ASSERT(cachedTextureGpuHandles_[0].ptr != 0,
-                     "Texture count > 0 but base handle is null - did you bind only higher slots?");
-    if (cachedTextureGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
-    }
-  }
-  if (cachedSamplerCount_ > 0) {
-    IGL_DEBUG_ASSERT(cachedSamplerGpuHandles_[0].ptr != 0,
-                     "Sampler count > 0 but base handle is null - did you bind only higher slots?");
-    if (cachedSamplerGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0]);  // Root param 5: Sampler table
-    }
   }
 
   // Apply vertex buffers
@@ -1135,6 +887,13 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   // G-001: Flush any pending barriers before draw call
   flushBarriers();
 
+  // T08: Apply all resource bindings (textures, samplers, buffers) before draw
+  Result bindResult;
+  if (!resourcesBinder_.updateBindings(&bindResult)) {
+    IGL_LOG_ERROR("drawIndexed: Failed to update resource bindings: %s\n", bindResult.message.c_str());
+    return;
+  }
+
   // D3D12 requires ALL root parameters to be bound before drawing
   // Hybrid root signature layout:
   // - Root parameter 0: Push constants at b2
@@ -1155,23 +914,6 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   // Bind CBV descriptor table for b3-b15 (bindBindGroup support)
   if (cbvTableCount_ > 0 && cachedCbvTableGpuHandles_[0].ptr != 0) {
     commandList_->SetGraphicsRootDescriptorTable(3, cachedCbvTableGpuHandles_[0]);  // Root param 3: CBV table (b3-b15)
-  }
-
-  // Bind SRV and sampler descriptor tables
-  // T01: Add debug validation to catch sparse binding (non-zero count with zero base handle)
-  if (cachedTextureCount_ > 0) {
-    IGL_DEBUG_ASSERT(cachedTextureGpuHandles_[0].ptr != 0,
-                     "Texture count > 0 but base handle is null - did you bind only higher slots?");
-    if (cachedTextureGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
-    }
-  }
-  if (cachedSamplerCount_ > 0) {
-    IGL_DEBUG_ASSERT(cachedSamplerGpuHandles_[0].ptr != 0,
-                     "Sampler count > 0 but base handle is null - did you bind only higher slots?");
-    if (cachedSamplerGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0]);  // Root param 5: Sampler table
-    }
   }
 
   // Apply cached vertex buffer bindings now that pipeline state is bound

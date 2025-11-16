@@ -17,7 +17,7 @@
 namespace igl::d3d12 {
 
 ComputeCommandEncoder::ComputeCommandEncoder(CommandBuffer& commandBuffer) :
-  commandBuffer_(commandBuffer), isEncoding_(true) {
+  commandBuffer_(commandBuffer), resourcesBinder_(commandBuffer, true /* isCompute */), isEncoding_(true) {
   IGL_LOG_INFO("ComputeCommandEncoder created\n");
 
   // Set descriptor heaps for this command list
@@ -139,6 +139,13 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
 
     commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
     IGL_LOG_INFO("ComputeCommandEncoder: Inserted %zu UAV barriers before dispatch\n", barriers.size());
+  }
+
+  // T08: Apply all resource bindings (textures, samplers, buffers, UAVs) before dispatch
+  Result bindResult;
+  if (!resourcesBinder_.updateBindings(&bindResult)) {
+    IGL_LOG_ERROR("dispatchThreadGroups: Failed to update resource bindings: %s\n", bindResult.message.c_str());
+    return;
   }
 
   // Bind all cached resources to root parameters
@@ -297,86 +304,8 @@ void ComputeCommandEncoder::bindPushConstants(const void* data,
 }
 
 void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
-  if (!texture) {
-    IGL_LOG_INFO("ComputeCommandEncoder::bindTexture: null texture\n");
-    return;
-  }
-
-  if (index >= kMaxComputeTextures) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindTexture: index %u exceeds max %zu\n",
-                  index, kMaxComputeTextures);
-    return;
-  }
-
-  auto& context = commandBuffer_.getContext();
-  auto* device = context.getDevice();
-  auto* d3dTexture = static_cast<Texture*>(texture);
-
-  if (!device || !d3dTexture->getResource() || context.getCbvSrvUavHeap() == nullptr) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindTexture: missing device, resource, or per-frame heap\n");
-    return;
-  }
-
-  // Transition texture to shader resource state for compute shader access
-  auto* commandList = commandBuffer_.getCommandList();
-  if (commandList) {
-    d3dTexture->transitionAll(commandList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-  }
-
-  // Allocate descriptor and create SRV
-  // C-001: Now uses Result-based allocation with dynamic heap growth
-  uint32_t descriptorIndex = 0;
-  Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
-  if (!allocResult.isOk()) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindTexture: Failed to allocate descriptor: %s\n", allocResult.message.c_str());
-    return;
-  }
-  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
-  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
-
-  // Create SRV descriptor
-  D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-  srvDesc.Format =
-      textureFormatToDXGIShaderResourceViewFormat(d3dTexture->getFormat());
-  srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-  auto resourceDesc = d3dTexture->getResource()->GetDesc();
-  if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D) {
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
-    srvDesc.Texture3D.MipLevels = d3dTexture->getNumMipLevels();
-    srvDesc.Texture3D.MostDetailedMip = 0;
-  } else if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
-    if (resourceDesc.DepthOrArraySize > 1) {
-      srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-      srvDesc.Texture2DArray.MipLevels = d3dTexture->getNumMipLevels();
-      srvDesc.Texture2DArray.MostDetailedMip = 0;
-      srvDesc.Texture2DArray.FirstArraySlice = 0;
-      srvDesc.Texture2DArray.ArraySize = resourceDesc.DepthOrArraySize;
-    } else {
-      srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-      srvDesc.Texture2D.MipLevels = d3dTexture->getNumMipLevels();
-      srvDesc.Texture2D.MostDetailedMip = 0;
-    }
-  } else {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindTexture: unsupported dimension\n");
-    return;
-  }
-
-  // Pre-creation validation (TASK_P0_DX12-004)
-  IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateShaderResourceView");
-  IGL_DEBUG_ASSERT(d3dTexture->getResource() != nullptr, "Texture resource is null");
-  IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "SRV descriptor handle is invalid");
-
-  device->CreateShaderResourceView(d3dTexture->getResource(), &srvDesc, cpuHandle);
-
-  cachedSrvHandles_[index] = gpuHandle;
-  for (size_t i = index + 1; i < kMaxComputeTextures; ++i) {
-    cachedSrvHandles_[i] = {};
-  }
-  boundSrvCount_ = static_cast<size_t>(index + 1);
-
-  IGL_LOG_INFO("ComputeCommandEncoder::bindTexture: Created SRV at index %u, descriptor slot %u\n",
-               index, descriptorIndex);
+  // T08: Delegate to D3D12ResourcesBinder for centralized descriptor management
+  resourcesBinder_.bindTexture(index, texture);
 }
 
 void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t offset, size_t /*bufferSize*/) {
@@ -718,47 +647,8 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, 
 }
 
 void ComputeCommandEncoder::bindSamplerState(uint32_t index, ISamplerState* samplerState) {
-  if (!samplerState) {
-    IGL_LOG_INFO("ComputeCommandEncoder::bindSamplerState: null sampler\n");
-    return;
-  }
-
-  if (index >= kMaxComputeSamplers) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindSamplerState: index %u exceeds max %zu\n",
-                  index, kMaxComputeSamplers);
-    return;
-  }
-
-  auto& context = commandBuffer_.getContext();
-  auto* device = context.getDevice();
-  auto* d3dSampler = static_cast<SamplerState*>(samplerState);
-
-  if (!device || !d3dSampler || context.getSamplerHeap() == nullptr) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindSamplerState: missing device, sampler, or per-frame sampler heap\n");
-    return;
-  }
-
-  // Allocate descriptor and create sampler
-  const uint32_t descriptorIndex = commandBuffer_.getNextSamplerDescriptor()++;
-  D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getSamplerCpuHandle(descriptorIndex);
-  D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getSamplerGpuHandle(descriptorIndex);
-
-  // Get sampler desc from IGL sampler state and create D3D12 sampler
-  const D3D12_SAMPLER_DESC& samplerDesc = d3dSampler->getDesc();
-  // Pre-creation validation (TASK_P0_DX12-004)
-  IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateSampler");
-  IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "Sampler descriptor handle is invalid");
-
-  device->CreateSampler(&samplerDesc, cpuHandle);
-
-  cachedSamplerHandles_[index] = gpuHandle;
-  for (size_t i = index + 1; i < kMaxComputeSamplers; ++i) {
-    cachedSamplerHandles_[i] = {};
-  }
-  boundSamplerCount_ = static_cast<size_t>(index + 1);
-
-  IGL_LOG_INFO("ComputeCommandEncoder::bindSamplerState: Created sampler at index %u, descriptor slot %u\n",
-               index, descriptorIndex);
+  // T08: Delegate to D3D12ResourcesBinder for centralized descriptor management
+  resourcesBinder_.bindSamplerState(index, samplerState);
 }
 
 void ComputeCommandEncoder::pushDebugGroupLabel(const char* label, const Color& /*color*/) const {

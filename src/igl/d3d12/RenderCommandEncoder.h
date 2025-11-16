@@ -10,6 +10,7 @@
 #include <igl/RenderCommandEncoder.h>
 #include <igl/RenderPass.h>
 #include <igl/d3d12/Common.h>
+#include <igl/d3d12/D3D12ResourcesBinder.h>
 #include <cstdint>
 #include <vector>
 
@@ -78,6 +79,9 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
  private:
  CommandBuffer& commandBuffer_;
   ID3D12GraphicsCommandList* commandList_;
+
+  // T08: Centralized resource binding management
+  D3D12ResourcesBinder resourcesBinder_;
 
   // Cache current vertex stride from bound pipeline's input layout
   UINT currentVertexStride_ = 0;

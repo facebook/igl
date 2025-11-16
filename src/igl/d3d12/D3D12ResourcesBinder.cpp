@@ -9,11 +9,11 @@
 
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/CommandBuffer.h>
+#include <igl/d3d12/Common.h>
 #include <igl/d3d12/D3D12Context.h>
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/SamplerState.h>
 #include <igl/d3d12/Texture.h>
-#include <igl/d3d12/TextureFormatUtils.h>
 
 namespace igl::d3d12 {
 
