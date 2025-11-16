@@ -303,17 +303,17 @@ class D3D12Context {
   bool isHDRSupported() const { return hdrCapabilities_.hdrSupported; }
 
  protected:
-  void createDevice();
-  void createCommandQueue();
-  void createSwapChain(HWND hwnd, uint32_t width, uint32_t height);
+  [[nodiscard]] Result createDevice();
+  [[nodiscard]] Result createCommandQueue();
+  [[nodiscard]] Result createSwapChain(HWND hwnd, uint32_t width, uint32_t height);
   Result recreateSwapChain(uint32_t width, uint32_t height);
-  void createRTVHeap();
-  void createBackBuffers();
-  void createDescriptorHeaps();
-  void createCommandSignatures();
+  [[nodiscard]] Result createRTVHeap();
+  [[nodiscard]] Result createBackBuffers();
+  [[nodiscard]] Result createDescriptorHeaps();
+  [[nodiscard]] Result createCommandSignatures();
 
   // A-011: Adapter enumeration
-  void enumerateAndSelectAdapter();
+  [[nodiscard]] Result enumerateAndSelectAdapter();
   static D3D_FEATURE_LEVEL getHighestFeatureLevel(IDXGIAdapter1* adapter);
 
   // A-012: Memory budget detection

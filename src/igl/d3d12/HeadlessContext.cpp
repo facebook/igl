@@ -293,7 +293,12 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
 
   // Create command signatures for indirect drawing (P3_DX12-FIND-13)
   IGL_LOG_INFO("HeadlessD3D12Context: Creating command signatures...\n");
-  createCommandSignatures();
+  Result commandSigResult = createCommandSignatures();
+  if (!commandSigResult.isOk()) {
+    IGL_LOG_ERROR("HeadlessD3D12Context: Failed to create command signatures: %s\n",
+                  commandSigResult.message.c_str());
+    return commandSigResult;
+  }
   IGL_LOG_INFO("HeadlessD3D12Context: Command signatures created successfully\n");
 
   IGL_LOG_INFO("HeadlessD3D12Context: Initialization complete\n");

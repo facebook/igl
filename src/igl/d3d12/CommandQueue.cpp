@@ -12,7 +12,6 @@
 #include <igl/d3d12/Timer.h>
 #include <igl/d3d12/Texture.h>
 #include <igl/d3d12/Buffer.h>
-#include <stdexcept>
 #include <d3d12sdklayers.h>
 
 namespace igl::d3d12 {
@@ -448,6 +447,15 @@ std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandB
   return cmdBuffer;
 }
 
+// T03: Error handling behavior for submit()
+// This function executes command lists and presents frames. Error handling:
+// - Device removal: Detected via checkDeviceRemoval(), logs diagnostics, sets device.isDeviceLost()
+//   flag, and triggers IGL_DEBUG_ASSERT. Returns SubmitHandle normally (legacy API limitation).
+// - Present failures: Logged with IGL_LOG_ERROR and IGL_DEBUG_ASSERT, but not propagated as Result.
+// - Return value: The SubmitHandle is always returned regardless of errors and does NOT reflect
+//   submission success/failure. Use device.checkDeviceRemoval() or device.isDeviceLost() as the
+//   authoritative source for fatal error detection.
+// Future: Consider Result-based submission API for explicit error propagation.
 SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*endOfFrame*/) {
   const auto& d3dCommandBuffer = static_cast<const CommandBuffer&>(commandBuffer);
   auto* d3dCommandList = d3dCommandBuffer.getCommandList();
@@ -524,17 +532,21 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
 #endif
 
   // P1_DX12-006: Check for device removal after command execution
-  try {
-    device_.checkDeviceRemoval();
-  } catch (const std::exception& e) {
-    // Log additional diagnostics before rethrowing
+  Result deviceCheck = device_.checkDeviceRemoval();
+  if (!deviceCheck.isOk()) {
+    // Log additional diagnostics on device removal
     logInfoQueueMessages(d3dDevice);
     logDredInfo(d3dDevice);
-    throw;  // Rethrow with detailed error message from checkDeviceRemoval()
+    IGL_LOG_ERROR("CommandQueue::submit() - Device removal detected: %s\n", deviceCheck.message.c_str());
+    // Device removal is fatal - continue with presentation attempt but expect failure
   }
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandQueue::submit() - Device OK, presenting...\n");
+  if (deviceCheck.isOk()) {
+    IGL_LOG_INFO("CommandQueue::submit() - Device OK, presenting...\n");
+  } else {
+    IGL_LOG_INFO("CommandQueue::submit() - Device lost, attempting Present for diagnostics...\n");
+  }
 #endif
 
   // Present if this is end of frame
@@ -565,7 +577,8 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
         IGL_LOG_ERROR("DEVICE REMOVED during Present! Reason: 0x%08X\n", static_cast<unsigned>(deviceStatus));
         logInfoQueueMessages(d3dDevice);
         logDredInfo(d3dDevice);
-        throw std::runtime_error("D3D12 device removed during Present");
+        IGL_DEBUG_ASSERT(false);
+        // Device removal is fatal but don't throw - let application handle via error checking
       }
     } else {
 #ifdef IGL_DEBUG
@@ -580,7 +593,8 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
       IGL_LOG_ERROR("DEVICE REMOVED after Present! Reason: 0x%08X\n", static_cast<unsigned>(postPresentStatus));
       logInfoQueueMessages(d3dDevice);
       logDredInfo(d3dDevice);
-      throw std::runtime_error("D3D12 device removed after Present - check debug output above");
+      IGL_DEBUG_ASSERT(false);
+      // Device removal is fatal but don't throw - let application handle via error checking
     }
   }
 

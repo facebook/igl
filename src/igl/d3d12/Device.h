@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -162,8 +163,11 @@ class Device final : public IDevice {
   // Upload ring buffer access (P1_DX12-009)
   UploadRingBuffer* getUploadRingBuffer() const { return uploadRingBuffer_.get(); }
 
-  // Check for device removal and throw exception if detected (P1_DX12-006)
-  void checkDeviceRemoval() const;
+  // Check for device removal and return error Result if detected (P1_DX12-006)
+  [[nodiscard]] Result checkDeviceRemoval() const;
+
+  // Query if device has been lost (T03: Result-based error handling)
+  [[nodiscard]] bool isDeviceLost() const { return deviceLost_; }
 
   // Sampler cache statistics (C-005)
   struct SamplerCacheStats {
@@ -263,6 +267,10 @@ class Device final : public IDevice {
 
   // Upload ring buffer for streaming resources (P1_DX12-009)
   std::unique_ptr<UploadRingBuffer> uploadRingBuffer_;
+
+  // T03: Device lost flag and reason for fatal error handling (atomic for thread-safe access)
+  mutable std::atomic<bool> deviceLost_{false};
+  mutable std::string deviceLostReason_;  // Cached reason for diagnostics
 
   // I-007: GPU timestamp frequency for timer queries (Hz)
   // Queried once during device initialization via ID3D12CommandQueue::GetTimestampFrequency()

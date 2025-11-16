@@ -317,10 +317,18 @@ void Device::validateDeviceLimits() {
 }
 
 // P1_DX12-006: Check for device removal and report detailed error
-void Device::checkDeviceRemoval() const {
+Result Device::checkDeviceRemoval() const {
   auto* device = ctx_->getDevice();
   if (!device) {
-    return;  // Device not initialized yet
+    // T03: Device not initialized is an invalid operation, not success
+    IGL_DEBUG_ASSERT(false, "Device::checkDeviceRemoval() called before device initialization");
+    return Result(Result::Code::InvalidOperation, "Device not initialized");
+  }
+
+  // Early return if device already marked as lost (return cached reason for diagnostics)
+  if (deviceLost_) {
+    return Result(Result::Code::RuntimeError,
+                  std::string("Device previously lost: ") + deviceLostReason_);
   }
 
   HRESULT hr = device->GetDeviceRemovedReason();
@@ -342,15 +350,21 @@ void Device::checkDeviceRemoval() const {
       case DXGI_ERROR_INVALID_CALL:
         reason = "INVALID_CALL (API misuse detected)";
         break;
-      case S_OK:
-        return;  // No device removal
       default:
         break;
     }
 
+    // T03: Cache the reason and mark device as lost for diagnostics
+    deviceLostReason_ = reason;
+    deviceLost_ = true;
+
     IGL_LOG_ERROR("D3D12 Device Removal Detected: %s (HRESULT=0x%08X)\n", reason, hr);
-    throw std::runtime_error(std::string("D3D12 device removed: ") + reason);
+    IGL_DEBUG_ASSERT(false);
+    return Result(Result::Code::RuntimeError, std::string("D3D12 device removed: ") + reason);
   }
+
+  // On success (S_OK), device is healthy
+  return Result();
 }
 
 // B-005: Alignment validation methods
@@ -1070,14 +1084,9 @@ std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> te
 
 std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) const noexcept {
   // TASK_P2_DX12-FIND-11: Implement GPU Timer Queries
-  try {
-    auto timer = std::make_shared<Timer>(*this);
-    Result::setOk(outResult);
-    return timer;
-  } catch (const std::exception& e) {
-    Result::setResult(outResult, Result::Code::RuntimeError, e.what());
-    return nullptr;
-  }
+  auto timer = std::make_shared<Timer>(*this);
+  Result::setOk(outResult);
+  return timer;
 }
 
 std::shared_ptr<IVertexInputState> Device::createVertexInputState(

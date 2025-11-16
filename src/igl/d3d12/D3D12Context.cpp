@@ -8,7 +8,7 @@
 #include <igl/d3d12/D3D12Context.h>
 #include <igl/d3d12/DescriptorHeapManager.h>
 
-#include <stdexcept>
+#include <cstdlib>
 #include <string>
 
 namespace igl::d3d12 {
@@ -56,64 +56,86 @@ Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height) {
   width_ = width;
   height_ = height;
 
-  try {
-    IGL_LOG_INFO("D3D12Context: Creating D3D12 device...\n");
-    createDevice();
-    IGL_LOG_INFO("D3D12Context: Device created successfully\n");
-
-    IGL_LOG_INFO("D3D12Context: Creating command queue...\n");
-    createCommandQueue();
-    IGL_LOG_INFO("D3D12Context: Command queue created successfully\n");
-
-    IGL_LOG_INFO("D3D12Context: Creating swapchain (%ux%u)...\n", width, height);
-    createSwapChain(hwnd, width, height);
-    IGL_LOG_INFO("D3D12Context: Swapchain created successfully\n");
-
-    IGL_LOG_INFO("D3D12Context: Creating RTV heap...\n");
-    createRTVHeap();
-    IGL_LOG_INFO("D3D12Context: RTV heap created successfully\n");
-
-    IGL_LOG_INFO("D3D12Context: Creating back buffers...\n");
-    createBackBuffers();
-    IGL_LOG_INFO("D3D12Context: Back buffers created successfully\n");
-
-    IGL_LOG_INFO("D3D12Context: Creating descriptor heaps...\n");
-    createDescriptorHeaps();
-    IGL_LOG_INFO("D3D12Context: Descriptor heaps created successfully\n");
-
-    IGL_LOG_INFO("D3D12Context: Creating command signatures...\n");
-    createCommandSignatures();
-    IGL_LOG_INFO("D3D12Context: Command signatures created successfully\n");
-
-    IGL_LOG_INFO("D3D12Context: Creating fence for GPU synchronization...\n");
-    HRESULT hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.GetAddressOf()));
-    if (FAILED(hr)) {
-      throw std::runtime_error("Failed to create fence");
-    }
-    fenceEvent_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    if (!fenceEvent_) {
-      throw std::runtime_error("Failed to create fence event");
-    }
-    IGL_LOG_INFO("D3D12Context: Fence created successfully\n");
-
-    // Create per-frame command allocators (following Microsoft's D3D12HelloFrameBuffering pattern)
-    IGL_LOG_INFO("D3D12Context: Creating per-frame command allocators...\n");
-    for (UINT i = 0; i < kMaxFramesInFlight; i++) {
-      hr = device_->CreateCommandAllocator(
-          D3D12_COMMAND_LIST_TYPE_DIRECT,
-          IID_PPV_ARGS(frameContexts_[i].allocator.GetAddressOf()));
-      if (FAILED(hr)) {
-        throw std::runtime_error("Failed to create command allocator for frame " + std::to_string(i));
-      }
-      IGL_LOG_INFO("D3D12Context: Created command allocator for frame %u\n", i);
-    }
-    IGL_LOG_INFO("D3D12Context: Per-frame command allocators created successfully\n");
-
-    IGL_LOG_INFO("D3D12Context: Initialization complete!\n");
-  } catch (const std::exception& e) {
-    IGL_LOG_ERROR("D3D12Context initialization failed: %s\n", e.what());
-    return Result(Result::Code::RuntimeError, e.what());
+  IGL_LOG_INFO("D3D12Context: Creating D3D12 device...\n");
+  Result deviceResult = createDevice();
+  if (!deviceResult.isOk()) {
+    return deviceResult;
   }
+  IGL_LOG_INFO("D3D12Context: Device created successfully\n");
+
+  IGL_LOG_INFO("D3D12Context: Creating command queue...\n");
+  Result queueResult = createCommandQueue();
+  if (!queueResult.isOk()) {
+    return queueResult;
+  }
+  IGL_LOG_INFO("D3D12Context: Command queue created successfully\n");
+
+  IGL_LOG_INFO("D3D12Context: Creating swapchain (%ux%u)...\n", width, height);
+  Result swapChainResult = createSwapChain(hwnd, width, height);
+  if (!swapChainResult.isOk()) {
+    return swapChainResult;
+  }
+  IGL_LOG_INFO("D3D12Context: Swapchain created successfully\n");
+
+  IGL_LOG_INFO("D3D12Context: Creating RTV heap...\n");
+  Result rtvResult = createRTVHeap();
+  if (!rtvResult.isOk()) {
+    return rtvResult;
+  }
+  IGL_LOG_INFO("D3D12Context: RTV heap created successfully\n");
+
+  IGL_LOG_INFO("D3D12Context: Creating back buffers...\n");
+  Result backBufferResult = createBackBuffers();
+  if (!backBufferResult.isOk()) {
+    return backBufferResult;
+  }
+  IGL_LOG_INFO("D3D12Context: Back buffers created successfully\n");
+
+  IGL_LOG_INFO("D3D12Context: Creating descriptor heaps...\n");
+  Result descriptorHeapResult = createDescriptorHeaps();
+  if (!descriptorHeapResult.isOk()) {
+    return descriptorHeapResult;
+  }
+  IGL_LOG_INFO("D3D12Context: Descriptor heaps created successfully\n");
+
+  IGL_LOG_INFO("D3D12Context: Creating command signatures...\n");
+  Result commandSigResult = createCommandSignatures();
+  if (!commandSigResult.isOk()) {
+    return commandSigResult;
+  }
+  IGL_LOG_INFO("D3D12Context: Command signatures created successfully\n");
+
+  IGL_LOG_INFO("D3D12Context: Creating fence for GPU synchronization...\n");
+  HRESULT hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.GetAddressOf()));
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("D3D12Context: Failed to create fence (HRESULT: 0x%08X)\n", static_cast<unsigned>(hr));
+    IGL_DEBUG_ASSERT(false);
+    return Result(Result::Code::RuntimeError, "Failed to create fence");
+  }
+  fenceEvent_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+  if (!fenceEvent_) {
+    IGL_LOG_ERROR("D3D12Context: Failed to create fence event\n");
+    IGL_DEBUG_ASSERT(false);
+    return Result(Result::Code::RuntimeError, "Failed to create fence event");
+  }
+  IGL_LOG_INFO("D3D12Context: Fence created successfully\n");
+
+  // Create per-frame command allocators (following Microsoft's D3D12HelloFrameBuffering pattern)
+  IGL_LOG_INFO("D3D12Context: Creating per-frame command allocators...\n");
+  for (UINT i = 0; i < kMaxFramesInFlight; i++) {
+    hr = device_->CreateCommandAllocator(
+        D3D12_COMMAND_LIST_TYPE_DIRECT,
+        IID_PPV_ARGS(frameContexts_[i].allocator.GetAddressOf()));
+    if (FAILED(hr)) {
+      IGL_LOG_ERROR("D3D12Context: Failed to create command allocator for frame %u (HRESULT: 0x%08X)\n", i, static_cast<unsigned>(hr));
+      IGL_DEBUG_ASSERT(false);
+      return Result(Result::Code::RuntimeError, "Failed to create command allocator for frame " + std::to_string(i));
+    }
+    IGL_LOG_INFO("D3D12Context: Created command allocator for frame %u\n", i);
+  }
+  IGL_LOG_INFO("D3D12Context: Per-frame command allocators created successfully\n");
+
+  IGL_LOG_INFO("D3D12Context: Initialization complete!\n");
 
   return Result();
 }
@@ -135,62 +157,61 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
   width_ = width;
   height_ = height;
 
-  try {
-    // Wait for all GPU work to complete before releasing backbuffers
-    // This prevents DXGI_ERROR_DEVICE_REMOVED when GPU is still rendering to old buffers
-    if (fence_.Get() && fenceEvent_) {
-      const UINT64 currentFence = fenceValue_;
-      commandQueue_->Signal(fence_.Get(), currentFence);
+  // Wait for all GPU work to complete before releasing backbuffers
+  // This prevents DXGI_ERROR_DEVICE_REMOVED when GPU is still rendering to old buffers
+  if (fence_.Get() && fenceEvent_) {
+    const UINT64 currentFence = fenceValue_;
+    commandQueue_->Signal(fence_.Get(), currentFence);
 
-      if (fence_->GetCompletedValue() < currentFence) {
-        fence_->SetEventOnCompletion(currentFence, fenceEvent_);
-        WaitForSingleObject(fenceEvent_, INFINITE);
-      }
+    if (fence_->GetCompletedValue() < currentFence) {
+      fence_->SetEventOnCompletion(currentFence, fenceEvent_);
+      WaitForSingleObject(fenceEvent_, INFINITE);
     }
-
-    // Release old back buffers
-    for (UINT i = 0; i < kMaxFramesInFlight; i++) {
-      renderTargets_[i].Reset();
-    }
-
-    // Store swapchain format and flags for potential recreation
-    DXGI_SWAP_CHAIN_DESC1 currentDesc = {};
-    if (swapChain_.Get()) {
-      swapChain_->GetDesc1(&currentDesc);
-    }
-
-    // Try to resize existing swapchain
-    HRESULT hr = swapChain_->ResizeBuffers(
-        kMaxFramesInFlight,
-        width,
-        height,
-        currentDesc.Format ? currentDesc.Format : DXGI_FORMAT_B8G8R8A8_UNORM,
-        currentDesc.Flags);
-
-    if (FAILED(hr)) {
-      IGL_LOG_ERROR("D3D12Context: ResizeBuffers failed (HRESULT=0x%08X), attempting to recreate swapchain\n",
-                    static_cast<unsigned>(hr));
-
-      // Graceful fallback: Recreate swapchain from scratch
-      Result result = recreateSwapChain(width, height);
-      if (!result.isOk()) {
-        IGL_LOG_ERROR("D3D12Context: Failed to recreate swapchain: %s\n", result.message.c_str());
-        return Result{Result::Code::RuntimeError,
-                     "Failed to resize or recreate swapchain"};
-      }
-
-      IGL_LOG_INFO("D3D12Context: Swapchain recreated successfully\n");
-    } else {
-      IGL_LOG_INFO("D3D12Context: ResizeBuffers succeeded\n");
-    }
-
-    // Recreate back buffer views
-    createBackBuffers();
-    IGL_LOG_INFO("D3D12Context: Swapchain resize complete\n");
-  } catch (const std::exception& e) {
-    IGL_LOG_ERROR("D3D12Context: Exception during resize: %s\n", e.what());
-    return Result(Result::Code::RuntimeError, e.what());
   }
+
+  // Release old back buffers
+  for (UINT i = 0; i < kMaxFramesInFlight; i++) {
+    renderTargets_[i].Reset();
+  }
+
+  // Store swapchain format and flags for potential recreation
+  DXGI_SWAP_CHAIN_DESC1 currentDesc = {};
+  if (swapChain_.Get()) {
+    swapChain_->GetDesc1(&currentDesc);
+  }
+
+  // Try to resize existing swapchain
+  HRESULT hr = swapChain_->ResizeBuffers(
+      kMaxFramesInFlight,
+      width,
+      height,
+      currentDesc.Format ? currentDesc.Format : DXGI_FORMAT_B8G8R8A8_UNORM,
+      currentDesc.Flags);
+
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("D3D12Context: ResizeBuffers failed (HRESULT=0x%08X), attempting to recreate swapchain\n",
+                  static_cast<unsigned>(hr));
+
+    // Graceful fallback: Recreate swapchain from scratch
+    Result result = recreateSwapChain(width, height);
+    if (!result.isOk()) {
+      IGL_LOG_ERROR("D3D12Context: Failed to recreate swapchain: %s\n", result.message.c_str());
+      return Result{Result::Code::RuntimeError,
+                   "Failed to resize or recreate swapchain"};
+    }
+
+    IGL_LOG_INFO("D3D12Context: Swapchain recreated successfully\n");
+  } else {
+    IGL_LOG_INFO("D3D12Context: ResizeBuffers succeeded\n");
+  }
+
+  // Recreate back buffer views
+  Result backBufferResult = createBackBuffers();
+  if (!backBufferResult.isOk()) {
+    IGL_LOG_ERROR("D3D12Context: Failed to recreate back buffers: %s\n", backBufferResult.message.c_str());
+    return backBufferResult;
+  }
+  IGL_LOG_INFO("D3D12Context: Swapchain resize complete\n");
 
   return Result();
 }
@@ -273,7 +294,7 @@ Result D3D12Context::recreateSwapChain(uint32_t width, uint32_t height) {
   return Result{};
 }
 
-void D3D12Context::createDevice() {
+Result D3D12Context::createDevice() {
   // DO NOT enable experimental features in windowed mode - it breaks swapchain creation!
   // Experimental features are ONLY enabled in HeadlessD3D12Context for unit tests
   // Windowed render sessions use signed DXIL (via IDxcValidator) which doesn't need experimental mode
@@ -371,11 +392,16 @@ void D3D12Context::createDevice() {
   // Create DXGI factory with debug flag in debug builds (C-009)
   HRESULT hr = CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(dxgiFactory_.GetAddressOf()));
   if (FAILED(hr)) {
-    throw std::runtime_error("Failed to create DXGI factory");
+    IGL_LOG_ERROR("D3D12Context: Failed to create DXGI factory (HRESULT: 0x%08X)\n", static_cast<unsigned>(hr));
+    IGL_DEBUG_ASSERT(false);
+    return Result(Result::Code::RuntimeError, "Failed to create DXGI factory");
   }
 
   // A-011: Enumerate and select best adapter
-  enumerateAndSelectAdapter();
+  Result enumResult = enumerateAndSelectAdapter();
+  if (!enumResult.isOk()) {
+    return enumResult;
+  }
 
   // A-012: Detect memory budget
   detectMemoryBudget();
@@ -388,7 +414,8 @@ void D3D12Context::createDevice() {
 
   if (FAILED(hr)) {
     IGL_LOG_ERROR("D3D12CreateDevice failed on selected adapter: 0x%08X\n", static_cast<unsigned>(hr));
-    throw std::runtime_error("Failed to create D3D12 device on selected adapter");
+    IGL_DEBUG_ASSERT(false);
+    return Result(Result::Code::RuntimeError, "Failed to create D3D12 device on selected adapter");
   }
 
   auto featureLevelToString = [](D3D_FEATURE_LEVEL level) -> const char* {
@@ -574,10 +601,12 @@ void D3D12Context::createDevice() {
   IGL_LOG_INFO("D3D12Context: Final Shader Model selected: %s\n", shaderModelToString(maxShaderModel_));
 
   IGL_LOG_INFO("D3D12Context: Root signature capabilities detected successfully\n");
+
+  return Result();
 }
 
 // A-011: Enumerate and select best adapter
-void D3D12Context::enumerateAndSelectAdapter() {
+Result D3D12Context::enumerateAndSelectAdapter() {
   enumeratedAdapters_.clear();
 
   IGL_LOG_INFO("D3D12Context: Enumerating DXGI adapters...\n");
@@ -701,7 +730,8 @@ void D3D12Context::enumerateAndSelectAdapter() {
 
   if (enumeratedAdapters_.empty()) {
     IGL_LOG_ERROR("D3D12Context: No compatible D3D12 adapters found!\n");
-    throw std::runtime_error("No D3D12-compatible adapters available");
+    IGL_DEBUG_ASSERT(false);
+    return Result(Result::Code::RuntimeError, "No D3D12-compatible adapters available");
   }
 
   // Select adapter based on environment variable or heuristic
@@ -759,6 +789,8 @@ void D3D12Context::enumerateAndSelectAdapter() {
                selectedAdapterIndex_,
                enumeratedAdapters_[selectedAdapterIndex_].desc.Description,
                featureLevelToString(selectedFeatureLevel_));
+
+  return Result();
 }
 
 // A-012: Detect memory budget from selected adapter
@@ -864,18 +896,22 @@ void D3D12Context::detectHDRCapabilities() {
   }
 }
 
-void D3D12Context::createCommandQueue() {
+Result D3D12Context::createCommandQueue() {
   D3D12_COMMAND_QUEUE_DESC queueDesc = {};
   queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
   queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 
   HRESULT hr = device_->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(commandQueue_.GetAddressOf()));
   if (FAILED(hr)) {
-    throw std::runtime_error("Failed to create command queue");
+    IGL_LOG_ERROR("D3D12Context: Failed to create command queue (HRESULT: 0x%08X)\n", static_cast<unsigned>(hr));
+    IGL_DEBUG_ASSERT(false);
+    return Result(Result::Code::RuntimeError, "Failed to create command queue");
   }
+
+  return Result();
 }
 
-void D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height) {
+Result D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height) {
   DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
   swapChainDesc.Width = width;
   swapChainDesc.Height = height;
@@ -941,24 +977,26 @@ void D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height) {
     Microsoft::WRL::ComPtr<IDXGISwapChain> legacySwap;
     HRESULT hr2 = dxgiFactory_->CreateSwapChain(commandQueue_.Get(), &legacy, legacySwap.GetAddressOf());
     if (FAILED(hr2)) {
-      char buf2[160] = {};
-      snprintf(buf2, sizeof(buf2), "Failed to create swapchain (hr=0x%08X / 0x%08X)", (unsigned)hr, (unsigned)hr2);
-      throw std::runtime_error(buf2);
+      IGL_LOG_ERROR("D3D12Context: Failed to create swapchain (hr=0x%08X / 0x%08X)\n", (unsigned)hr, (unsigned)hr2);
+      IGL_DEBUG_ASSERT(false);
+      return Result(Result::Code::RuntimeError, "Failed to create swapchain");
     }
     // Try to QI to IDXGISwapChain3
     hr2 = legacySwap->QueryInterface(IID_PPV_ARGS(swapChain_.GetAddressOf()));
     if (FAILED(hr2)) {
-      char buf3[160] = {};
-      snprintf(buf3, sizeof(buf3), "Failed to query IDXGISwapChain3 (hr=0x%08X)", (unsigned)hr2);
-      throw std::runtime_error(buf3);
+      IGL_LOG_ERROR("D3D12Context: Failed to query IDXGISwapChain3 (hr=0x%08X)\n", (unsigned)hr2);
+      IGL_DEBUG_ASSERT(false);
+      return Result(Result::Code::RuntimeError, "Failed to query IDXGISwapChain3");
     }
-    return;
+    return Result();
   }
 
   // Cast to IDXGISwapChain3
   hr = tempSwapChain->QueryInterface(IID_PPV_ARGS(swapChain_.GetAddressOf()));
   if (FAILED(hr)) {
-    throw std::runtime_error("Failed to query IDXGISwapChain3 interface");
+    IGL_LOG_ERROR("D3D12Context: Failed to query IDXGISwapChain3 interface (HRESULT: 0x%08X)\n", static_cast<unsigned>(hr));
+    IGL_DEBUG_ASSERT(false);
+    return Result(Result::Code::RuntimeError, "Failed to query IDXGISwapChain3 interface");
   }
 
   // A-009: Verify swapchain actually supports tearing after creation
@@ -987,9 +1025,11 @@ void D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height) {
 
   // A-010: Detect HDR capabilities now that swapchain is created
   detectHDRCapabilities();
+
+  return Result();
 }
 
-void D3D12Context::createRTVHeap() {
+Result D3D12Context::createRTVHeap() {
   D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
   heapDesc.NumDescriptors = kMaxFramesInFlight;
   heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
@@ -997,20 +1037,26 @@ void D3D12Context::createRTVHeap() {
 
   HRESULT hr = device_->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(rtvHeap_.GetAddressOf()));
   if (FAILED(hr)) {
-    throw std::runtime_error("Failed to create RTV heap");
+    IGL_LOG_ERROR("D3D12Context: Failed to create RTV heap (HRESULT: 0x%08X)\n", static_cast<unsigned>(hr));
+    IGL_DEBUG_ASSERT(false);
+    return Result(Result::Code::RuntimeError, "Failed to create RTV heap");
   }
 
   rtvDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(
       D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+  return Result();
 }
 
-void D3D12Context::createBackBuffers() {
+Result D3D12Context::createBackBuffers() {
   D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap_->GetCPUDescriptorHandleForHeapStart();
 
   for (UINT i = 0; i < kMaxFramesInFlight; i++) {
     HRESULT hr = swapChain_->GetBuffer(i, IID_PPV_ARGS(renderTargets_[i].GetAddressOf()));
     if (FAILED(hr)) {
-      throw std::runtime_error("Failed to get swapchain buffer");
+      IGL_LOG_ERROR("D3D12Context: Failed to get swapchain buffer %u (HRESULT: 0x%08X)\n", i, static_cast<unsigned>(hr));
+      IGL_DEBUG_ASSERT(false);
+      return Result(Result::Code::RuntimeError, "Failed to get swapchain buffer");
     }
 
     // Pre-creation validation (TASK_P0_DX12-004)
@@ -1021,9 +1067,11 @@ void D3D12Context::createBackBuffers() {
     device_->CreateRenderTargetView(renderTargets_[i].Get(), nullptr, rtvHandle);
     rtvHandle.ptr += rtvDescriptorSize_;
   }
+
+  return Result();
 }
 
-void D3D12Context::createDescriptorHeaps() {
+Result D3D12Context::createDescriptorHeaps() {
   // Cache descriptor sizes
   cbvSrvUavDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(
       D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -1046,7 +1094,9 @@ void D3D12Context::createDescriptorHeaps() {
           &initialHeap);
 
       if (!result.isOk()) {
-        throw std::runtime_error("Failed to create initial CBV/SRV/UAV heap page for frame " + std::to_string(i));
+        IGL_LOG_ERROR("D3D12Context: Failed to create initial CBV/SRV/UAV heap page for frame %u\n", i);
+        IGL_DEBUG_ASSERT(false);
+        return result;
       }
 
       // Initialize page vector with first page
@@ -1069,7 +1119,9 @@ void D3D12Context::createDescriptorHeaps() {
       HRESULT hr = device_->CreateDescriptorHeap(&desc,
           IID_PPV_ARGS(frameContexts_[i].samplerHeap.GetAddressOf()));
       if (FAILED(hr)) {
-        throw std::runtime_error("Failed to create per-frame Sampler heap for frame " + std::to_string(i));
+        IGL_LOG_ERROR("D3D12Context: Failed to create per-frame Sampler heap for frame %u (HRESULT: 0x%08X)\n", i, static_cast<unsigned>(hr));
+        IGL_DEBUG_ASSERT(false);
+        return Result(Result::Code::RuntimeError, "Failed to create per-frame Sampler heap for frame " + std::to_string(i));
       }
       IGL_LOG_INFO("  Frame %u: Created Sampler heap (%u descriptors)\n", i, kSamplerHeapSize);
     }
@@ -1099,9 +1151,11 @@ void D3D12Context::createDescriptorHeaps() {
     heapMgr_ = ownedHeapMgr_;
     IGL_LOG_INFO("D3D12Context: Descriptor heap manager created successfully\n");
   }
+
+  return Result();
 }
 
-void D3D12Context::createCommandSignatures() {
+Result D3D12Context::createCommandSignatures() {
   // Create command signature for DrawInstanced (multiDrawIndirect)
   // D3D12_DRAW_ARGUMENTS: { VertexCountPerInstance, InstanceCount, StartVertexLocation, StartInstanceLocation }
   {
@@ -1120,7 +1174,9 @@ void D3D12Context::createCommandSignatures() {
         IID_PPV_ARGS(drawIndirectSignature_.GetAddressOf()));
 
     if (FAILED(hr)) {
-      throw std::runtime_error("Failed to create draw indirect command signature");
+      IGL_LOG_ERROR("D3D12Context: Failed to create draw indirect command signature (HRESULT: 0x%08X)\n", static_cast<unsigned>(hr));
+      IGL_DEBUG_ASSERT(false);
+      return Result(Result::Code::RuntimeError, "Failed to create draw indirect command signature");
     }
     IGL_LOG_INFO("D3D12Context: Created draw indirect command signature (stride: %u bytes)\n",
                  drawSigDesc.ByteStride);
@@ -1144,11 +1200,15 @@ void D3D12Context::createCommandSignatures() {
         IID_PPV_ARGS(drawIndexedIndirectSignature_.GetAddressOf()));
 
     if (FAILED(hr)) {
-      throw std::runtime_error("Failed to create draw indexed indirect command signature");
+      IGL_LOG_ERROR("D3D12Context: Failed to create draw indexed indirect command signature (HRESULT: 0x%08X)\n", static_cast<unsigned>(hr));
+      IGL_DEBUG_ASSERT(false);
+      return Result(Result::Code::RuntimeError, "Failed to create draw indexed indirect command signature");
     }
     IGL_LOG_INFO("D3D12Context: Created draw indexed indirect command signature (stride: %u bytes)\n",
                  drawIndexedSigDesc.ByteStride);
   }
+
+  return Result();
 }
 
 uint32_t D3D12Context::getCurrentBackBufferIndex() const {

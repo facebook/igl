@@ -1469,11 +1469,12 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
 
     // CRITICAL: Track the Buffer OBJECT (not just resource) to keep it alive until GPU finishes
     // This prevents the Buffer destructor from releasing the resource while GPU commands reference it
-    try {
-      std::shared_ptr<IBuffer> sharedBuffer = d3dBuffer->shared_from_this();
+    // Use weak_from_this().lock() instead of shared_from_this() to avoid exception
+    std::shared_ptr<IBuffer> sharedBuffer = d3dBuffer->weak_from_this().lock();
+    if (sharedBuffer) {
       static_cast<CommandBuffer&>(commandBuffer_).trackTransientBuffer(std::move(sharedBuffer));
       IGL_LOG_INFO("bindBuffer: Tracking Buffer object (shared_ptr) for lifetime management\n");
-    } catch (const std::bad_weak_ptr&) {
+    } else {
       // Buffer not managed by shared_ptr (e.g., persistent buffer from member variable)
       // Fall back to tracking just the resource (AddRef on ID3D12Resource)
       static_cast<CommandBuffer&>(commandBuffer_).trackTransientResource(d3dBuffer->getResource());
@@ -1501,11 +1502,12 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
 
     // CRITICAL: Track the Buffer OBJECT (not just resource) to keep it alive until GPU finishes
     // This prevents the Buffer destructor from releasing the resource while GPU commands reference it
-    try {
-      std::shared_ptr<IBuffer> sharedBuffer = d3dBuffer->shared_from_this();
+    // Use weak_from_this().lock() instead of shared_from_this() to avoid exception
+    std::shared_ptr<IBuffer> sharedBuffer = d3dBuffer->weak_from_this().lock();
+    if (sharedBuffer) {
       static_cast<CommandBuffer&>(commandBuffer_).trackTransientBuffer(std::move(sharedBuffer));
       IGL_LOG_INFO("bindBuffer: Tracking Buffer object (shared_ptr) for lifetime management\n");
-    } catch (const std::bad_weak_ptr&) {
+    } else {
       // Buffer not managed by shared_ptr (e.g., persistent buffer from member variable)
       // Fall back to tracking just the resource (AddRef on ID3D12Resource)
       static_cast<CommandBuffer&>(commandBuffer_).trackTransientResource(d3dBuffer->getResource());
