@@ -100,6 +100,9 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   // Cached descriptor table GPU handles
   // These are set by bindTexture/bindSamplerState and used in drawIndexed
   // to avoid invalidation by multiple SetDescriptorHeaps calls
+  // IMPORTANT: Bindings must be DENSE and start at slot 0 for each table.
+  // SetGraphicsRootDescriptorTable always uses cachedTextureGpuHandles_[0] as the base,
+  // so binding only higher slots (e.g., slot 1 without slot 0) will fail.
   D3D12_GPU_DESCRIPTOR_HANDLE cachedTextureGpuHandle_{};
   D3D12_GPU_DESCRIPTOR_HANDLE cachedSamplerGpuHandle_{};
   // Support up to IGL_TEXTURE_SAMPLERS_MAX textures/samplers (t0-t15, s0-s15)

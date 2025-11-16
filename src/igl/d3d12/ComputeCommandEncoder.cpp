@@ -150,15 +150,32 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   // - Parameter 4: Sampler table (s0-sN)
 
   // Bind UAVs (Parameter 1)
+  // T01: Add debug validation to catch sparse binding
   if (boundUavCount_ > 0) {
-    commandList->SetComputeRootDescriptorTable(1, cachedUavHandles_[0]);
-    IGL_LOG_INFO("ComputeCommandEncoder: Bound %zu UAVs\n", boundUavCount_);
+    IGL_DEBUG_ASSERT(cachedUavHandles_[0].ptr != 0,
+                     "UAV count > 0 but base handle is null - did you bind only higher slots?");
+    if (cachedUavHandles_[0].ptr != 0) {
+      commandList->SetComputeRootDescriptorTable(1, cachedUavHandles_[0]);
+      IGL_LOG_INFO("ComputeCommandEncoder: Bound %zu UAVs\n", boundUavCount_);
+    } else {
+      IGL_LOG_ERROR("ComputeCommandEncoder: UAV count > 0 but base handle is null - skipping binding and clearing boundUavCount_ to 0\n");
+      // Clear count to avoid repeated errors on subsequent dispatches
+      boundUavCount_ = 0;
+    }
   }
 
   // Bind SRVs (Parameter 2)
   if (boundSrvCount_ > 0) {
-    commandList->SetComputeRootDescriptorTable(2, cachedSrvHandles_[0]);
-    IGL_LOG_INFO("ComputeCommandEncoder: Bound %zu SRVs\n", boundSrvCount_);
+    IGL_DEBUG_ASSERT(cachedSrvHandles_[0].ptr != 0,
+                     "SRV count > 0 but base handle is null - did you bind only higher slots?");
+    if (cachedSrvHandles_[0].ptr != 0) {
+      commandList->SetComputeRootDescriptorTable(2, cachedSrvHandles_[0]);
+      IGL_LOG_INFO("ComputeCommandEncoder: Bound %zu SRVs\n", boundSrvCount_);
+    } else {
+      IGL_LOG_ERROR("ComputeCommandEncoder: SRV count > 0 but base handle is null - skipping binding and clearing boundSrvCount_ to 0\n");
+      // Clear count to avoid repeated errors on subsequent dispatches
+      boundSrvCount_ = 0;
+    }
   }
 
   // Bind CBVs (Parameter 3)
@@ -218,8 +235,16 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
 
   // Bind Samplers (Parameter 4)
   if (boundSamplerCount_ > 0) {
-    commandList->SetComputeRootDescriptorTable(4, cachedSamplerHandles_[0]);
-    IGL_LOG_INFO("ComputeCommandEncoder: Bound %zu samplers\n", boundSamplerCount_);
+    IGL_DEBUG_ASSERT(cachedSamplerHandles_[0].ptr != 0,
+                     "Sampler count > 0 but base handle is null - did you bind only higher slots?");
+    if (cachedSamplerHandles_[0].ptr != 0) {
+      commandList->SetComputeRootDescriptorTable(4, cachedSamplerHandles_[0]);
+      IGL_LOG_INFO("ComputeCommandEncoder: Bound %zu samplers\n", boundSamplerCount_);
+    } else {
+      IGL_LOG_ERROR("ComputeCommandEncoder: Sampler count > 0 but base handle is null - skipping binding and clearing boundSamplerCount_ to 0\n");
+      // Clear count to avoid repeated errors on subsequent dispatches
+      boundSamplerCount_ = 0;
+    }
   }
 
   // Dispatch compute work
@@ -385,6 +410,38 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
       return;
     }
 
+    // Determine element stride for structured buffer views
+    // If storageStride is not specified, default to 4 bytes to preserve existing behavior
+    size_t elementStride = d3dBuffer->getStorageElementStride();
+    if (elementStride == 0) {
+      elementStride = 4;
+    }
+
+    // D3D12 requires UAV buffer views to use element-aligned offsets
+    if (offset % elementStride != 0) {
+      IGL_LOG_ERROR("ComputeCommandEncoder::bindBuffer: Storage buffer offset %zu is not aligned to "
+                    "element stride (%zu bytes). UAV FirstElement will be truncated (offset/stride).\n",
+                    offset, elementStride);
+      // Continue but log warning – FirstElement below uses integer division
+    }
+
+    // Validate offset doesn't exceed buffer size to prevent underflow
+    const size_t bufferSizeBytes = d3dBuffer->getSizeInBytes();
+    if (offset > bufferSizeBytes) {
+      IGL_LOG_ERROR("ComputeCommandEncoder::bindBuffer: Storage buffer offset %zu exceeds buffer size %zu; skipping UAV binding\n",
+                    offset, bufferSizeBytes);
+      return;
+    }
+    const size_t remaining = bufferSizeBytes - offset;
+
+    // Check for undersized buffer (would create empty or partial view)
+    if (remaining < elementStride) {
+      IGL_LOG_ERROR("ComputeCommandEncoder::bindBuffer: Remaining buffer size %zu is less than element stride %zu; "
+                    "UAV will have NumElements=0 (empty view). Check buffer size and offset.\n",
+                    remaining, elementStride);
+      // Continue to create the descriptor, but it will be empty (NumElements=0)
+    }
+
     // C-001: Now uses Result-based allocation with dynamic heap growth
     uint32_t descriptorIndex = 0;
     Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
@@ -400,9 +457,12 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
     D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
     uavDesc.Format = DXGI_FORMAT_UNKNOWN; // Required for structured buffers
     uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-    uavDesc.Buffer.FirstElement = offset / 4; // Element offset (4 bytes per element)
-    uavDesc.Buffer.NumElements = static_cast<UINT>((d3dBuffer->getSizeInBytes() - offset) / 4);
-    uavDesc.Buffer.StructureByteStride = 4; // 4 bytes per element (float)
+    // Element index and count are expressed in units of elementStride bytes
+    // Division truncates if offset is not aligned; see warning above
+    uavDesc.Buffer.FirstElement = static_cast<UINT64>(offset / elementStride);
+    // CRITICAL: NumElements must be (size - offset) / stride, not total size / stride
+    uavDesc.Buffer.NumElements = static_cast<UINT>(remaining / elementStride);
+    uavDesc.Buffer.StructureByteStride = static_cast<UINT>(elementStride);
     uavDesc.Buffer.CounterOffsetInBytes = 0;
     uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE; // No flags for structured buffers
 
@@ -555,16 +615,24 @@ void ComputeCommandEncoder::bindBytes(uint32_t index, const void* data, size_t l
   // Get GPU virtual address and cache it (matching bindBuffer behavior for uniform buffers)
   D3D12_GPU_VIRTUAL_ADDRESS gpuAddress = uploadBuffer->GetGPUVirtualAddress();
   cachedCbvAddresses_[index] = gpuAddress;
+
+  // DX12-COD-005: Enforce 64 KB limit for CBVs and set size for descriptor creation
+  // Note: alignedSize is already 256-byte aligned; will be rechecked in dispatchThreadGroups
+  constexpr size_t kMaxCBVSize = 65536;  // 64 KB (D3D12 spec limit)
+  const size_t alignedCbvSize = std::min(alignedSize, kMaxCBVSize);
+  cachedCbvSizes_[index] = alignedCbvSize;
+
   for (size_t i = index + 1; i < kMaxComputeBuffers; ++i) {
     cachedCbvAddresses_[i] = 0;
+    cachedCbvSizes_[i] = 0;
   }
   boundCbvCount_ = static_cast<size_t>(index + 1);
 
   // Track transient resource to keep it alive until GPU finishes
   commandBuffer_.trackTransientResource(uploadBuffer.Get());
 
-  IGL_LOG_INFO("ComputeCommandEncoder::bindBytes: Bound %zu bytes (aligned to %zu) to index %u (GPU address 0x%llx)\n",
-               length, alignedSize, index, gpuAddress);
+  IGL_LOG_INFO("ComputeCommandEncoder::bindBytes: Bound %zu bytes (aligned to %zu, CBV size %zu) to index %u (GPU address 0x%llx)\n",
+               length, alignedSize, alignedCbvSize, index, gpuAddress);
 }
 
 void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, TextureFormat /*format*/) {

@@ -45,6 +45,9 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
   bool isEncoding_ = false;
 
   // Cached GPU handles for resources
+  // IMPORTANT: Bindings must be DENSE and start at slot 0 for each table.
+  // SetComputeRootDescriptorTable always uses cached*Handles_[0] as the base,
+  // so binding only higher slots (e.g., slot 1 without slot 0) will fail.
   static constexpr size_t kMaxComputeBuffers = 8;
   // P1_DX12-007: Increased from 8 to 16 to match IGL_TEXTURE_SAMPLERS_MAX contract
   static constexpr size_t kMaxComputeTextures = IGL_TEXTURE_SAMPLERS_MAX;  // 16

@@ -1082,18 +1082,33 @@ void RenderCommandEncoder::draw(size_t vertexCount,
   }
 
   // Bind SRV and sampler descriptor tables
-  if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
-    commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
+  // T01: Add debug validation to catch sparse binding (non-zero count with zero base handle)
+  if (cachedTextureCount_ > 0) {
+    IGL_DEBUG_ASSERT(cachedTextureGpuHandles_[0].ptr != 0,
+                     "Texture count > 0 but base handle is null - did you bind only higher slots?");
+    if (cachedTextureGpuHandles_[0].ptr != 0) {
+      commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
+    }
   }
-  if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
-    commandList_->SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0]);  // Root param 5: Sampler table
+  if (cachedSamplerCount_ > 0) {
+    IGL_DEBUG_ASSERT(cachedSamplerGpuHandles_[0].ptr != 0,
+                     "Sampler count > 0 but base handle is null - did you bind only higher slots?");
+    if (cachedSamplerGpuHandles_[0].ptr != 0) {
+      commandList_->SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0]);  // Root param 5: Sampler table
+    }
   }
 
   // Apply vertex buffers
   for (uint32_t i = 0; i < IGL_BUFFER_BINDINGS_MAX; ++i) {
     if (cachedVertexBuffers_[i].bound) {
       UINT stride = vertexStrides_[i];
-      if (stride == 0) stride = currentVertexStride_ ? currentVertexStride_ : 32;
+      if (stride == 0) {
+        // T01: Assert in debug builds to catch misconfigured pipelines
+        // Check both per-slot stride and fallback currentVertexStride_
+        IGL_DEBUG_ASSERT(vertexStrides_[i] != 0 || currentVertexStride_ != 0,
+                         "Vertex buffer bound but no stride from pipeline for this slot - check vertex input layout");
+        stride = currentVertexStride_ ? currentVertexStride_ : 32;
+      }
       D3D12_VERTEX_BUFFER_VIEW vbView = {};
       vbView.BufferLocation = cachedVertexBuffers_[i].bufferLocation;
       vbView.SizeInBytes = cachedVertexBuffers_[i].sizeInBytes;
@@ -1143,18 +1158,33 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   }
 
   // Bind SRV and sampler descriptor tables
-  if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
-    commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
+  // T01: Add debug validation to catch sparse binding (non-zero count with zero base handle)
+  if (cachedTextureCount_ > 0) {
+    IGL_DEBUG_ASSERT(cachedTextureGpuHandles_[0].ptr != 0,
+                     "Texture count > 0 but base handle is null - did you bind only higher slots?");
+    if (cachedTextureGpuHandles_[0].ptr != 0) {
+      commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
+    }
   }
-  if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
-    commandList_->SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0]);  // Root param 5: Sampler table
+  if (cachedSamplerCount_ > 0) {
+    IGL_DEBUG_ASSERT(cachedSamplerGpuHandles_[0].ptr != 0,
+                     "Sampler count > 0 but base handle is null - did you bind only higher slots?");
+    if (cachedSamplerGpuHandles_[0].ptr != 0) {
+      commandList_->SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0]);  // Root param 5: Sampler table
+    }
   }
 
   // Apply cached vertex buffer bindings now that pipeline state is bound
   for (uint32_t i = 0; i < IGL_BUFFER_BINDINGS_MAX; ++i) {
     if (cachedVertexBuffers_[i].bound) {
       UINT stride = vertexStrides_[i];
-      if (stride == 0) stride = currentVertexStride_ ? currentVertexStride_ : 32;
+      if (stride == 0) {
+        // T01: Assert in debug builds to catch misconfigured pipelines
+        // Check both per-slot stride and fallback currentVertexStride_
+        IGL_DEBUG_ASSERT(vertexStrides_[i] != 0 || currentVertexStride_ != 0,
+                         "Vertex buffer bound but no stride from pipeline for this slot - check vertex input layout");
+        stride = currentVertexStride_ ? currentVertexStride_ : 32;
+      }
       D3D12_VERTEX_BUFFER_VIEW vbView = {};
       vbView.BufferLocation = cachedVertexBuffers_[i].bufferLocation;
       vbView.SizeInBytes = cachedVertexBuffers_[i].sizeInBytes;
@@ -1381,6 +1411,14 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     // Storage buffer - create SRV for ByteAddressBuffer reads in pixel shader
     IGL_LOG_INFO("bindBuffer: Storage buffer detected at index %u - creating SRV for pixel shader read\n", index);
 
+    // For raw (ByteAddressBuffer) SRVs we treat the buffer as a sequence of 4-byte units.
+    // This matches HLSL ByteAddressBuffer / RWByteAddressBuffer semantics.
+    if ((offset & 3) != 0) {
+      IGL_LOG_ERROR("bindBuffer: Storage buffer offset %zu is not 4-byte aligned (required for DXGI_FORMAT_R32_TYPELESS). "
+                    "Raw buffer SRV FirstElement will be rounded down, which may cause incorrect data access.\n", offset);
+      // Continue but log warning - FirstElement below uses integer division
+    }
+
     auto& context = commandBuffer_.getContext();
     auto* device = context.getDevice();
     if (!device || cbvSrvUavHeap_ == nullptr) {
@@ -1398,13 +1436,16 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     }
     IGL_LOG_INFO("bindBuffer: Allocated SRV descriptor slot %u for buffer at t%u\n", descriptorIndex, index);
 
-    // Create SRV descriptor for ByteAddressBuffer
+    // Create SRV descriptor for ByteAddressBuffer (raw view)
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;  // Raw buffer (ByteAddressBuffer)
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    // FirstElement/NumElements expressed in 32-bit units (4 bytes)
     srvDesc.Buffer.FirstElement = static_cast<UINT64>(offset) / 4;  // Offset in 32-bit elements
-    srvDesc.Buffer.NumElements = static_cast<UINT>(buffer->getSizeInBytes() / 4);  // Size in 32-bit elements
+    // NumElements must be (totalSize - offset) to avoid exceeding buffer bounds
+    srvDesc.Buffer.NumElements =
+        static_cast<UINT>((buffer->getSizeInBytes() - offset) / 4);  // Size in 32-bit elements
     srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;  // Raw buffer access
 
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
@@ -1772,12 +1813,43 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
         D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 
         // Create UAV descriptor for structured buffer
+        // Use the storage stride from BufferDesc when available; default to 4 bytes otherwise.
+        size_t elementStride = buf->getStorageElementStride();
+        if (elementStride == 0) {
+          elementStride = 4;
+        }
+
+        // Validate baseOffset doesn't exceed buffer size
+        const size_t bufferSizeBytes = buf->getSizeInBytes();
+        if (baseOffset > bufferSizeBytes) {
+          IGL_LOG_ERROR("bindBindGroup(buffer): baseOffset %zu exceeds buffer size %zu; skipping UAV binding\n",
+                        baseOffset, bufferSizeBytes);
+          continue;
+        }
+
+        if (baseOffset % elementStride != 0) {
+          IGL_LOG_ERROR("bindBindGroup(buffer): Storage buffer baseOffset %zu is not aligned to "
+                        "element stride (%zu bytes). UAV FirstElement will be truncated (offset/stride).\n",
+                        baseOffset, elementStride);
+        }
+
+        const size_t remaining = bufferSizeBytes - baseOffset;
+
+        // Check for undersized buffer (would create empty or partial view)
+        if (remaining < elementStride) {
+          IGL_LOG_ERROR("bindBindGroup(buffer): Remaining buffer size %zu is less than element stride %zu; "
+                        "UAV will have NumElements=0 (empty view). Check buffer size and offset.\n",
+                        remaining, elementStride);
+          // Continue to create the descriptor, but it will be empty (NumElements=0)
+        }
+
         D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
         uavDesc.Format = DXGI_FORMAT_UNKNOWN;
         uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-        uavDesc.Buffer.FirstElement = static_cast<UINT64>(baseOffset / 4);  // Assume 4-byte stride for now
-        uavDesc.Buffer.NumElements = static_cast<UINT>(buf->getSizeInBytes() / 4);
-        uavDesc.Buffer.StructureByteStride = 4;  // TODO: Get from buffer desc if available
+        uavDesc.Buffer.FirstElement = static_cast<UINT64>(baseOffset / elementStride);
+        // CRITICAL: NumElements must be (size - offset) / stride, not total size / stride
+        uavDesc.Buffer.NumElements = static_cast<UINT>(remaining / elementStride);
+        uavDesc.Buffer.StructureByteStride = static_cast<UINT>(elementStride);
         uavDesc.Buffer.CounterOffsetInBytes = 0;
         uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 
@@ -1806,13 +1878,43 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
         D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 
         // Create SRV descriptor for structured buffer
+        size_t elementStride = buf->getStorageElementStride();
+        if (elementStride == 0) {
+          elementStride = 4;
+        }
+
+        // Validate baseOffset doesn't exceed buffer size
+        const size_t bufferSizeBytes = buf->getSizeInBytes();
+        if (baseOffset > bufferSizeBytes) {
+          IGL_LOG_ERROR("bindBindGroup(buffer): baseOffset %zu exceeds buffer size %zu; skipping SRV binding\n",
+                        baseOffset, bufferSizeBytes);
+          continue;
+        }
+
+        if (baseOffset % elementStride != 0) {
+          IGL_LOG_ERROR("bindBindGroup(buffer): Storage buffer baseOffset %zu is not aligned to "
+                        "element stride (%zu bytes). SRV FirstElement will be truncated (offset/stride).\n",
+                        baseOffset, elementStride);
+        }
+
+        const size_t remaining = bufferSizeBytes - baseOffset;
+
+        // Check for undersized buffer (would create empty or partial view)
+        if (remaining < elementStride) {
+          IGL_LOG_ERROR("bindBindGroup(buffer): Remaining buffer size %zu is less than element stride %zu; "
+                        "SRV will have NumElements=0 (empty view). Check buffer size and offset.\n",
+                        remaining, elementStride);
+          // Continue to create the descriptor, but it will be empty (NumElements=0)
+        }
+
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
         srvDesc.Format = DXGI_FORMAT_UNKNOWN;
         srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
         srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        srvDesc.Buffer.FirstElement = static_cast<UINT64>(baseOffset / 4);  // Assume 4-byte stride for now
-        srvDesc.Buffer.NumElements = static_cast<UINT>(buf->getSizeInBytes() / 4);
-        srvDesc.Buffer.StructureByteStride = 4;  // TODO: Get from buffer desc if available
+        srvDesc.Buffer.FirstElement = static_cast<UINT64>(baseOffset / elementStride);
+        // CRITICAL: NumElements must be (size - offset) / stride, not total size / stride
+        srvDesc.Buffer.NumElements = static_cast<UINT>(remaining / elementStride);
+        srvDesc.Buffer.StructureByteStride = static_cast<UINT>(elementStride);
         srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
         // Pre-creation validation (TASK_P0_DX12-004)

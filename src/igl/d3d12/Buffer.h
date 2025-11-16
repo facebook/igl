@@ -38,6 +38,10 @@ class Buffer final : public IBuffer, public std::enable_shared_from_this<Buffer>
 
   // D3D12-specific accessors
   ID3D12Resource* getResource() const { return resource_.Get(); }
+  // Returns the element stride in bytes for storage buffers, as provided in BufferDesc.
+  // A value of 0 means "unspecified"; callers should fall back to a reasonable default
+  // (e.g. 4 bytes) when this occurs.
+  size_t getStorageElementStride() const noexcept { return desc_.storageStride; }
 
  private:
   [[nodiscard]] D3D12_RESOURCE_STATES computeDefaultState(const BufferDesc& desc) const;
