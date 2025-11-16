@@ -160,6 +160,34 @@ if (commandQueue) {
 
 ---
 
+### 9. Internal Helper Comment Clarity
+**Status**: ✅ FIXED
+
+**Location**: D3D12ImmediateCommands.cpp:173, D3D12StagingDevice.cpp:159
+
+**Problem**: Comments on `reclaimCompletedAllocators()` and `reclaimCompletedBuffers()` stated "must be called with poolMutex_ held by the caller", which implied an external contract even though the methods are private internal helpers.
+
+**Before**:
+```cpp
+// Note: This method must be called with poolMutex_ held by the caller
+```
+
+**After**:
+```cpp
+// D3D12ImmediateCommands.cpp:
+// Note: Internal helper called by begin() with poolMutex_ already held
+
+// D3D12StagingDevice.cpp:
+// Note: Internal helper called by allocate* methods with poolMutex_ already held
+```
+
+**Impact**:
+- Clarifies these are internal-only helpers, not external API contracts
+- Aligns with the methods being private
+- Makes it clear who calls them and under what conditions
+
+---
+
 ## 🔄 Deferred Issues (Not Critical)
 
 The following issues were identified but deferred as they don't affect correctness:
