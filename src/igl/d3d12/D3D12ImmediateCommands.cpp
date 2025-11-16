@@ -171,6 +171,7 @@ Result D3D12ImmediateCommands::waitForFence(uint64_t fenceValue) {
 }
 
 void D3D12ImmediateCommands::reclaimCompletedAllocators() {
+  // Note: Internal helper called by begin() with poolMutex_ already held
   if (!fence_) {
     return;
   }

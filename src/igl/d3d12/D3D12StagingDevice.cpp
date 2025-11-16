@@ -157,7 +157,7 @@ void D3D12StagingDevice::free(StagingBuffer buffer, uint64_t fenceValue) {
 }
 
 void D3D12StagingDevice::reclaimCompletedBuffers() {
-  // Note: This method must be called with poolMutex_ held by the caller
+  // Note: Internal helper called by allocate* methods with poolMutex_ already held
   if (!fence_) {
     return;
   }
