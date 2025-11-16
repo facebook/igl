@@ -181,6 +181,7 @@ UploadRingBuffer::Allocation UploadRingBuffer::allocate(uint64_t size, uint64_t 
 
   // Create allocation
   Allocation allocation;
+  allocation.buffer = uploadHeap_;  // T07: Set underlying buffer
   allocation.cpuAddress = static_cast<uint8_t*>(cpuBase_) + allocationOffset;
   allocation.gpuAddress = gpuBase_ + allocationOffset;
   allocation.offset = allocationOffset;

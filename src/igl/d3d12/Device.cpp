@@ -20,6 +20,8 @@
 #include <igl/d3d12/DXCCompiler.h>
 #include <igl/d3d12/Timer.h>
 #include <igl/d3d12/UploadRingBuffer.h>
+#include <igl/d3d12/D3D12ImmediateCommands.h>  // T07
+#include <igl/d3d12/D3D12StagingDevice.h>  // T07
 #include <igl/d3d12/ResourceAlignment.h>  // B-007: Resource alignment validation
 #include <igl/VertexInputState.h>
 #include <igl/Texture.h>
@@ -136,7 +138,7 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
   if (device) {
     HRESULT hr = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(uploadFence_.GetAddressOf()));
     if (FAILED(hr)) {
-      IGL_LOG_ERROR("Device::Device: Failed to create upload fence: 0x%08X\n", hr);
+      IGL_LOG_ERROR("Device::Device: Failed to create upload fence: 0x%08X (upload/readback unavailable)\n", hr);
     } else {
       uploadFenceValue_ = 0;
       // T05: Per-call events created in waitForUploadFence for thread safety
@@ -154,6 +156,20 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
     // This is used to convert GPU timestamp ticks to nanoseconds
     auto* commandQueue = ctx_->getCommandQueue();
     if (commandQueue) {
+      // T07: Initialize immediate commands and staging device for centralized upload/readback
+      // Only if upload fence was successfully created (avoid null fence dereference)
+      if (uploadFence_.Get()) {
+        // Pass 'this' as IFenceProvider to share the fence timeline
+        immediateCommands_ = std::make_unique<D3D12ImmediateCommands>(
+            device, commandQueue, uploadFence_.Get(), this);
+        stagingDevice_ = std::make_unique<D3D12StagingDevice>(
+            device, uploadFence_.Get(), uploadRingBuffer_.get());
+        IGL_LOG_INFO("Device::Device: Immediate commands and staging device initialized (shared fence)\n");
+      } else {
+        IGL_LOG_ERROR("Device::Device: Cannot initialize immediate commands/staging device without valid upload fence\n");
+      }
+
+      // Query timestamp frequency
       hr = commandQueue->GetTimestampFrequency(&gpuTimestampFrequencyHz_);
       if (FAILED(hr)) {
         IGL_LOG_ERROR("Device::Device: Failed to get GPU timestamp frequency: 0x%08X\n", hr);

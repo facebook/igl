@@ -33,6 +33,7 @@ class UploadRingBuffer {
    * @brief Represents a sub-allocation from the ring buffer
    */
   struct Allocation {
+    Microsoft::WRL::ComPtr<ID3D12Resource> buffer;  // T07: Underlying buffer resource
     void* cpuAddress = nullptr;                     // CPU-visible mapped address
     D3D12_GPU_VIRTUAL_ADDRESS gpuAddress = 0;      // GPU virtual address
     uint64_t offset = 0;                            // Offset within ring buffer

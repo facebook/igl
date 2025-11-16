@@ -19,15 +19,17 @@
 #include <igl/Common.h>
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/D3D12Context.h>
+#include <igl/d3d12/D3D12ImmediateCommands.h>  // T07: For IFenceProvider interface
 
 namespace igl::d3d12 {
 
 class PlatformDevice;
 class UploadRingBuffer;
 class SamplerState;  // Forward declaration for sampler cache
+class D3D12StagingDevice;  // T07: Forward declaration
 
 /// @brief Implements the igl::IDevice interface for DirectX 12
-class Device final : public IDevice {
+class Device final : public IDevice, public IFenceProvider {
  public:
   explicit Device(std::unique_ptr<D3D12Context> ctx);
   ~Device() override;
@@ -161,6 +163,9 @@ class Device final : public IDevice {
   UINT64 getNextUploadFenceValue() const { return ++uploadFenceValue_; }
   Result waitForUploadFence(UINT64 fenceValue) const;  // T05: Wait for upload to complete
 
+  // T07: IFenceProvider implementation (shared fence timeline)
+  uint64_t getNextFenceValue() override { return getNextUploadFenceValue(); }
+
   // Upload ring buffer access (P1_DX12-009)
   UploadRingBuffer* getUploadRingBuffer() const { return uploadRingBuffer_.get(); }
 
@@ -270,6 +275,10 @@ class Device final : public IDevice {
   // Upload ring buffer for streaming resources (P1_DX12-009)
   std::unique_ptr<UploadRingBuffer> uploadRingBuffer_;
 
+  // T07: Centralized immediate commands and staging device
+  std::unique_ptr<D3D12ImmediateCommands> immediateCommands_;
+  std::unique_ptr<D3D12StagingDevice> stagingDevice_;
+
   // T03: Device lost flag and reason for fatal error handling (atomic for thread-safe access)
   mutable std::atomic<bool> deviceLost_{false};
   mutable std::string deviceLostReason_;  // Cached reason for diagnostics
@@ -278,6 +287,15 @@ class Device final : public IDevice {
   // Queried once during device initialization via ID3D12CommandQueue::GetTimestampFrequency()
   // Used by Timer to convert GPU ticks to nanoseconds
   uint64_t gpuTimestampFrequencyHz_ = 0;
+
+ public:
+  // T07: Access to immediate commands and staging device for upload/readback operations
+  [[nodiscard]] D3D12ImmediateCommands* getImmediateCommands() const {
+    return immediateCommands_.get();
+  }
+  [[nodiscard]] D3D12StagingDevice* getStagingDevice() const {
+    return stagingDevice_.get();
+  }
 };
 
 } // namespace igl::d3d12
