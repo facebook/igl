@@ -9,6 +9,7 @@
 
 #include <igl/Timer.h>
 #include <igl/d3d12/Common.h>
+#include <atomic>
 
 namespace igl::d3d12 {
 
@@ -16,7 +17,13 @@ class Device;
 
 /// @brief GPU timer implementation using D3D12 timestamp queries
 /// @details Implements ITimer interface for D3D12 backend using query heaps.
-/// Timer starts recording immediately on construction and ends when command buffer is submitted.
+///
+/// Lifecycle:
+/// - Constructor creates query heap and readback buffer resources
+/// - begin() called when command list is reset for recording (CommandBuffer::begin())
+/// - GPU work is encoded in the command list
+/// - end() called during submission before command list is closed (CommandQueue::submit())
+/// - Query results are fence-synchronized and only read after GPU completes
 ///
 /// I-007: Cross-Platform Timestamp Semantics
 /// ------------------------------------------
@@ -31,6 +38,8 @@ class Device;
 /// This ensures consistent timing across all IGL backends regardless of hardware.
 ///
 /// TASK_P2_DX12-FIND-11: Implement GPU Timer Queries
+/// T02: Fixed GPU timer to measure actual execution time via proper timestamp placement
+/// and fence-synchronized readback. Thread-safe for cross-thread queries.
 class Timer final : public ITimer {
  public:
   /// @brief Constructor - creates query heap and readback buffer, starts timer
@@ -43,23 +52,40 @@ class Timer final : public ITimer {
   Timer(Timer&&) = delete;
   Timer& operator=(Timer&&) = delete;
 
-  /// @brief Called by CommandQueue when command buffer is submitted
-  /// @param commandList D3D12 command list to record timestamp and resolve queries
-  void end(ID3D12GraphicsCommandList* commandList);
+  /// @brief Record start timestamp in command list
+  /// @param commandList D3D12 command list to record start timestamp
+  void begin(ID3D12GraphicsCommandList* commandList);
+
+  /// @brief Record end timestamp and associate with fence value
+  /// @param commandList D3D12 command list to record end timestamp and resolve queries
+  /// @param fence Fence to check for GPU completion
+  /// @param fenceValue Fence value that will be signaled when GPU completes
+  void end(ID3D12GraphicsCommandList* commandList, ID3D12Fence* fence, uint64_t fenceValue);
 
   /// @brief Returns elapsed GPU time in nanoseconds
   /// @return Elapsed time in nanoseconds, or 0 if results not yet available
   [[nodiscard]] uint64_t getElapsedTimeNanos() const override;
 
   /// @brief Check if timer results are available
-  /// @return true if results can be read without blocking
+  /// @return true if results can be read without blocking (fence has signaled)
   [[nodiscard]] bool resultsAvailable() const override;
 
  private:
   Microsoft::WRL::ComPtr<ID3D12QueryHeap> queryHeap_;
   Microsoft::WRL::ComPtr<ID3D12Resource> readbackBuffer_;
-  uint64_t timestampFrequency_ = 0;  // GPU timestamp frequency (ticks per second)
-  bool ended_ = false;  // Track if end() has been called
+  uint64_t timestampFrequency_ = 0;  // GPU timestamp frequency (ticks per second), 0 = timer disabled
+  bool resourceCreationFailed_ = false;  // Track if constructor failed to create resources
+
+  // T02: Fence synchronization for accurate GPU timing
+  // Thread-safe: Use atomics to allow safe cross-thread queries
+  ID3D12Fence* fence_ = nullptr;     // Fence to check completion (not owned, set once in end())
+  std::atomic<uint64_t> fenceValue_{0};      // Fence value when timer ended
+  mutable std::atomic<bool> resolved_{false};        // Has query data been resolved and cached? (mutable for lazy resolution in const getter)
+  std::atomic<bool> ended_{false};           // Has end() been called?
+
+  // T02: Cached results to avoid re-reading from GPU
+  // Thread-safe: Only written once after fence signals, then immutable (mutable for lazy resolution in const getter)
+  mutable std::atomic<uint64_t> cachedElapsedNanos_{0};
 };
 
 } // namespace igl::d3d12

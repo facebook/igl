@@ -454,12 +454,20 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   auto& ctx = device_.getD3D12Context();
   auto* d3dCommandQueue = ctx.getCommandQueue();
   auto* d3dDevice = ctx.getDevice();
+  auto* fence = ctx.getFence();
 
-  // TASK_P2_DX12-FIND-11: End timer before closing command list
-  // Timer must record timestamps while command list is still in recording state
+  // T02: Record timer end timestamp BEFORE closing command list
+  // Timer begin() was called in CommandBuffer::begin(), bracketing the GPU work
+  // Now record the end timestamp and associate with fence
   if (commandBuffer.desc.timer) {
     auto* timer = static_cast<Timer*>(commandBuffer.desc.timer.get());
-    timer->end(d3dCommandList);
+
+    // Calculate fence value that will be signaled after this command list completes
+    // We increment the fence value after submit, so predict the next value
+    const UINT64 timerFenceValue = ctx.getFenceValue() + 1;
+
+    // Record end timestamp and resolve queries, associate with fence
+    timer->end(d3dCommandList, fence, timerFenceValue);
   }
 
   // Ensure the command list is closed before execution
@@ -578,7 +586,7 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
 
   // Per-frame fencing: Signal fence for current frame
   const UINT64 currentFenceValue = ++ctx.getFenceValue();
-  auto* fence = ctx.getFence();
+  // T02: fence already declared earlier for timer, reuse it
 
   d3dCommandQueue->Signal(fence, currentFenceValue);
 

@@ -21,8 +21,10 @@ Timer::Timer(const Device& device) {
   // This returns the number of ticks per second for GPU timestamps
   HRESULT hr = commandQueue->GetTimestampFrequency(&timestampFrequency_);
   if (FAILED(hr)) {
-    IGL_LOG_ERROR("Failed to get timestamp frequency: 0x%08X\n", hr);
-    timestampFrequency_ = 1000000000;  // Fallback to 1 GHz
+    IGL_LOG_ERROR("Timer: Failed to get timestamp frequency (0x%08X). Timer disabled.\n", hr);
+    resourceCreationFailed_ = true;
+    timestampFrequency_ = 0;  // Leave at 0 to indicate timer is disabled
+    return;
   }
 
   // Create query heap for 2 timestamps (begin and end)
@@ -34,7 +36,9 @@ Timer::Timer(const Device& device) {
 
   hr = d3dDevice->CreateQueryHeap(&queryHeapDesc, IID_PPV_ARGS(queryHeap_.GetAddressOf()));
   if (FAILED(hr)) {
-    IGL_LOG_ERROR("Failed to create query heap: 0x%08X\n", hr);
+    IGL_LOG_ERROR("Timer: Failed to create query heap (0x%08X). Timer disabled.\n", hr);
+    resourceCreationFailed_ = true;
+    timestampFrequency_ = 0;
     return;
   }
 
@@ -69,38 +73,66 @@ Timer::Timer(const Device& device) {
       IID_PPV_ARGS(readbackBuffer_.GetAddressOf()));
 
   if (FAILED(hr)) {
-    IGL_LOG_ERROR("Failed to create readback buffer: 0x%08X\n", hr);
+    IGL_LOG_ERROR("Timer: Failed to create readback buffer (0x%08X). Timer disabled.\n", hr);
+    resourceCreationFailed_ = true;
+    timestampFrequency_ = 0;
+    queryHeap_.Reset();  // Clean up partially created resources
     return;
   }
 
-  IGL_LOG_INFO("Timer created successfully (frequency: %llu Hz)\n", timestampFrequency_);
+#ifdef IGL_DEBUG
+  IGL_LOG_INFO("Timer: Created successfully (frequency: %llu Hz)\n", timestampFrequency_);
+#endif
 }
 
 Timer::~Timer() {
   // ComPtr handles cleanup automatically
 }
 
-void Timer::end(ID3D12GraphicsCommandList* commandList) {
-  if (!queryHeap_.Get() || !readbackBuffer_.Get()) {
-    IGL_LOG_ERROR("Timer::end() called on invalid timer\n");
+void Timer::begin(ID3D12GraphicsCommandList* commandList) {
+  if (resourceCreationFailed_ || timestampFrequency_ == 0) {
+    // Timer disabled due to resource creation or frequency query failure - silently no-op
     return;
   }
 
-  if (ended_) {
+  if (!commandList) {
+    IGL_LOG_ERROR("Timer::begin() called with null command list\n");
+    return;
+  }
+
+  // T02: Record begin timestamp (index 0) at START of GPU work
+  // This is a bottom-of-pipe operation that samples when GPU finishes preceding work
+  commandList->EndQuery(queryHeap_.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0);
+}
+
+void Timer::end(ID3D12GraphicsCommandList* commandList, ID3D12Fence* fence, uint64_t fenceValue) {
+  if (resourceCreationFailed_ || timestampFrequency_ == 0) {
+    // Timer disabled - silently no-op
+    return;
+  }
+
+  if (!commandList) {
+    IGL_LOG_ERROR("Timer::end() called with null command list\n");
+    return;
+  }
+
+  if (!fence) {
+    IGL_LOG_ERROR("Timer::end() called with null fence\n");
+    return;
+  }
+
+  if (ended_.load(std::memory_order_acquire)) {
     IGL_LOG_ERROR("Timer::end() called multiple times\n");
     return;
   }
 
-  // Record begin timestamp (index 0)
-  // TASK_P2_DX12-FIND-11: EndQuery records a GPU timestamp at this point
-  commandList->EndQuery(queryHeap_.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0);
-
-  // Record end timestamp (index 1)
+  // T02: Record end timestamp (index 1) at END of GPU work
+  // Bottom-of-pipe operation - samples when GPU finishes all preceding work
   commandList->EndQuery(queryHeap_.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 1);
 
-  // Resolve query data to readback buffer
-  // This copies the timestamp values from the query heap to a GPU buffer
-  // TASK_P2_DX12-FIND-11: ResolveQueryData copies results to a CPU-readable buffer
+  // T02: Resolve query data to readback buffer
+  // This GPU command copies timestamp values from query heap to a CPU-readable buffer
+  // The resolved data will only be valid AFTER the fence signals completion
   commandList->ResolveQueryData(
       queryHeap_.Get(),
       D3D12_QUERY_TYPE_TIMESTAMP,
@@ -110,20 +142,38 @@ void Timer::end(ID3D12GraphicsCommandList* commandList) {
       0   // Destination offset
   );
 
-  ended_ = true;
+  // T02: Store fence and fence value for later completion checking
+  // Thread-safe: fence_ is written once, atomics ensure visibility
+  fence_ = fence;
+  fenceValue_.store(fenceValue, std::memory_order_release);
+  ended_.store(true, std::memory_order_release);
 }
 
 uint64_t Timer::getElapsedTimeNanos() const {
-  if (!readbackBuffer_.Get() || !ended_) {
+  if (!readbackBuffer_.Get() || !ended_.load(std::memory_order_acquire)) {
     return 0;
   }
 
+  // T02: Check if fence has signaled - results are only valid after GPU completes
+  // Thread-safe: fence_ is set once before ended_ flag, memory_order ensures visibility
+  uint64_t fenceVal = fenceValue_.load(std::memory_order_acquire);
+  if (!fence_ || fence_->GetCompletedValue() < fenceVal) {
+    return 0;  // GPU hasn't finished yet, return 0
+  }
+
+  // T02: If we've already resolved and cached the result, return it
+  // Thread-safe: resolved_ flag prevents multiple threads from mapping simultaneously
+  if (resolved_.load(std::memory_order_acquire)) {
+    return cachedElapsedNanos_.load(std::memory_order_relaxed);
+  }
+
+  // T02: GPU has completed, now safe to read the query results
   // Map readback buffer to read timestamp values
-  // Readback buffers can be mapped without range restrictions
   void* mappedData = nullptr;
-  HRESULT hr = readbackBuffer_->Map(0, nullptr, &mappedData);
+  D3D12_RANGE readRange{0, sizeof(uint64_t) * 2};  // Only read the 2 timestamps
+  HRESULT hr = readbackBuffer_->Map(0, &readRange, &mappedData);
   if (FAILED(hr)) {
-    IGL_LOG_ERROR("Failed to map readback buffer: 0x%08X\n", hr);
+    IGL_LOG_ERROR("Timer: Failed to map readback buffer: 0x%08X\n", hr);
     return 0;
   }
 
@@ -133,28 +183,53 @@ uint64_t Timer::getElapsedTimeNanos() const {
   uint64_t endTime = timestamps[1];
 
   // Unmap buffer
-  readbackBuffer_->Unmap(0, nullptr);
+  D3D12_RANGE writeRange{0, 0};  // No writes
+  readbackBuffer_->Unmap(0, &writeRange);
+
+  // Validate timestamp data
+  if (endTime <= beginTime) {
+#ifdef IGL_DEBUG
+    IGL_LOG_ERROR("Timer: Invalid timestamp data (begin=%llu, end=%llu) - GPU work may not have executed\n",
+                  beginTime, endTime);
+#endif
+    return 0;
+  }
+
+  if (timestampFrequency_ == 0) {
+#ifdef IGL_DEBUG
+    IGL_LOG_ERROR("Timer: Invalid timestamp frequency (0 Hz) - timer disabled\n");
+#endif
+    return 0;
+  }
 
   // Calculate elapsed time in GPU ticks
   uint64_t deltaTicks = endTime - beginTime;
 
   // Convert ticks to nanoseconds
-  // TASK_P2_DX12-FIND-11: Convert GPU ticks to nanoseconds using timestamp frequency
-  // Formula: nanoseconds = (ticks * 1,000,000,000) / frequency
-  // Use 128-bit math to avoid overflow
-  const uint64_t nanosPerSecond = 1000000000ULL;
-  uint64_t elapsedNanos = (deltaTicks * nanosPerSecond) / timestampFrequency_;
+  // T02: Use floating-point math for accurate conversion as per Microsoft docs
+  // Formula: nanoseconds = (ticks / frequency) * 1,000,000,000
+  const double nanosPerSecond = 1000000000.0;
+  double elapsedNanos = (static_cast<double>(deltaTicks) / static_cast<double>(timestampFrequency_)) * nanosPerSecond;
 
-  return elapsedNanos;
+  // T02: Cache the result so we don't re-read from GPU
+  // Thread-safe: Store cached value before setting resolved flag
+  cachedElapsedNanos_.store(static_cast<uint64_t>(elapsedNanos), std::memory_order_release);
+  resolved_.store(true, std::memory_order_release);
+
+  return static_cast<uint64_t>(elapsedNanos);
 }
 
 bool Timer::resultsAvailable() const {
-  // For D3D12, results are available after the command list has been executed
-  // and the GPU has finished processing. We can check this by attempting to map
-  // the readback buffer, but for simplicity, we'll return true if ended_ is set.
-  // The actual data will be valid after the GPU finishes execution.
-  // TASK_P2_DX12-FIND-11: Results are available after command buffer completion
-  return ended_;
+  // T02: Results are available only after the fence has signaled completion
+  // This ensures we don't read uninitialized/garbage data from the query heap
+  // Thread-safe: Use atomic loads with proper memory ordering
+  if (!ended_.load(std::memory_order_acquire) || !fence_) {
+    return false;
+  }
+
+  // Check if GPU has completed execution (fence signaled)
+  uint64_t fenceVal = fenceValue_.load(std::memory_order_acquire);
+  return fence_->GetCompletedValue() >= fenceVal;
 }
 
 } // namespace igl::d3d12

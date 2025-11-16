@@ -11,6 +11,7 @@
 #include <igl/d3d12/ComputeCommandEncoder.h>
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/Texture.h>
+#include <igl/d3d12/Timer.h>
 #include <igl/d3d12/Common.h>
 
 namespace igl::d3d12 {
@@ -325,12 +326,22 @@ void CommandBuffer::begin() {
   IGL_LOG_INFO("CommandBuffer::begin() - Command list reset OK\n");
 #endif
   recording_ = true;
+
+  // T02: Record timer start timestamp AFTER reset, BEFORE any GPU work is recorded
+  // This ensures the timer measures the actual command buffer workload
+  if (desc.timer) {
+    auto* timer = static_cast<Timer*>(desc.timer.get());
+    timer->begin(commandList_.Get());
+  }
 }
 
 void CommandBuffer::end() {
   if (!recording_) {
     return;
   }
+
+  // T02: NO timer recording here - timer->begin() was called in begin(),
+  // timer->end() will be called in CommandQueue::submit() before close
 
   // Close the command list - all recording is complete
   commandList_->Close();
