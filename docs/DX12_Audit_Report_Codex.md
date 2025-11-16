@@ -2,9 +2,10 @@
 
 ## 1. Executive Verdict
 - Overall risk: **Fail (Critical)** – The D3D12 backend violates Microsoft resource-binding requirements, can overflow descriptor heaps (especially in headless mode), and leaves core compute/descriptor features unbound, so the backend is not conformant.
-- Critical (2):
+- Critical (3):
   - **DX12-FIND-01** – Render root signatures always declare `UINT_MAX` SRV/sampler ranges even on ResourceBindingTier‑1 hardware (src/igl/d3d12/Device.cpp:956-965), which fails device creation per Microsoft limits.
   - **DX12-FIND-02** – Descriptor heaps are linear allocators with no bounds checking, and headless submissions never reset `nextCbvSrvUavDescriptor`/`nextSamplerDescriptor` (src/igl/d3d12/RenderCommandEncoder.cpp:869-884; src/igl/d3d12/CommandQueue.cpp:212-323), so >1024 SRVs or long-running headless sessions write past heap memory and cause device removal.
+  - **DX12-FIND-14** – CMake deployment of dxil.dll fails, causing all render sessions to break with unsigned DXIL bytecode (src/igl/d3d12/CMakeLists.txt:56-67). Without dxil.dll, DXC produces unsigned DXIL which D3D12 rejects with E_INVALIDARG (0x80070057) during PSO creation, breaking all rendering.
 - High (4):
   - **DX12-FIND-03** – `CommandQueue::submit` signals `scheduleFence_` with value `1` every time (src/igl/d3d12/CommandQueue.cpp:142-144) even though `ID3D12CommandQueue::Signal` must be monotonic, so `CommandBuffer::waitUntilScheduled()` silently fails for every submission after the first.
   - **DX12-FIND-04** – Compute CBVs (root parameter 3) are never populated; the encoder just logs “using direct root CBV for now” (src/igl/d3d12/ComputeCommandEncoder.cpp:155-170), so compute constant buffers are undefined.
@@ -19,7 +20,7 @@
   - **DX12-FIND-12** – `Texture::uploadCube` is a stub returning `Unimplemented` (src/igl/d3d12/Texture.cpp:335-340).
 - Low (1):
   - **DX12-FIND-13** – `multiDrawIndirect` and `multiDrawIndexedIndirect` are empty stubs (src/igl/d3d12/RenderCommandEncoder.cpp:1158-1163), so the API surface is incomplete.
-- Totals: 13 findings (Descriptors & Root Signatures: 5; Command/Synchronization: 2; Resources & Memory: 3; Feature/Tooling gaps: 3).
+- Totals: 14 findings (Descriptors & Root Signatures: 5; Command/Synchronization: 2; Resources & Memory: 3; Feature/Tooling gaps: 3; Deployment: 1).
 
 ## 2. Findings Register
 | ID | Severity | Category | Location | Description | Official Reference | Recommendation | Status |

@@ -1,129 +1,166 @@
-# D3D12 Backend Backlog
+# D3D12 Backend Refactoring - Task Backlog
 
-This directory contains task specifications for **unimplemented** D3D12 backend improvements.
+## Overview
+This folder contains the comprehensive backlog of tasks for refactoring and improving the D3D12 backend based on a unified code review analysis.
 
-## Status Overview
+## Documents
 
-### Completed Tasks (Moved to Git History)
-- **P0 Critical:** 8 of 11 completed (73%)
-  - ✅ C-001: Descriptor heap overflow
-  - ✅ C-003: FXC fallback
-  - ✅ C-006: Excessive logging
-  - ✅ C-007: DXIL reflection
-  - ✅ C-008: Debug-only validation
-  - ✅ C-009: DXGI debug flag
-  - ✅ COD-001: Swapchain resize
-  - ✅ COD-004: Upload fence mismatch
+### Core References
+- **[VERIFICATION_COMBINED.md](VERIFICATION_COMBINED.md)** – Authoritative verification guide for all tasks
+  - Mandatory test harness: `cmd /c mandatory_all_tests.bat`
+  - Targeted verification per task
+  - Artifact inspection procedures
 
-- **P1 High Priority:** 5 of 20 completed (25%)
-  - ✅ H-007: Descriptor bounds checking (already in C-001)
-  - ✅ H-008: Shader bytecode validation
-  - ✅ H-010: Shader model query
-  - ✅ H-011: Complete DRED configuration
-  - ✅ H-013: PSO cache thread-safety
+- **[ALL_TASKS_REFERENCE.md](ALL_TASKS_REFERENCE.md)** – Complete reference for all 50 tasks
+  - Condensed problem/solution/scope for each task
+  - Dependencies graph
+  - Microsoft Docs findings
+  - Quick lookup for task details
 
-### Skipped Tasks (Too Complex)
-See [backlog/skipped/](skipped/) directory:
-- C-002: Pipeline Library (5 days)
-- C-004: Async readback (3 days)
-- C-005: Mipmap fix (3 days)
+- **[TASK_GENERATION_STATUS.md](TASK_GENERATION_STATUS.md)** – Task file generation tracking
+  - Template for individual task files
+  - Completion status
+  - Organization by priority and category
 
----
+### Source Analysis
+- **[../D3D12_UNIFIED_CODE_REVIEW.md](../D3D12_UNIFIED_CODE_REVIEW.md)** – Original comprehensive code review
+  - Merged findings from two independent reviews
+  - ~130+ issues identified across 44 files
+  - ~800 lines of duplicated code cataloged
+  - Cross-backend consistency analysis
 
-## Remaining Tasks (15 Total)
+- **[../D3D12_BACKEND_TASKS.md](../D3D12_BACKEND_TASKS.md)** – Original 18 tasks
+  - Now superseded by expanded 50-task analysis
+  - Integrated into new task set
 
-### Quick Wins (1-2 days each) - 4 tasks
+## Task Files (Individual)
 
-1. **[H-004_unbounded_allocator_pool.md](H-004_unbounded_allocator_pool.md)** (1 day)
-   - Cap command allocator pool at 64
-   - Prevent memory leak during upload spikes
+### Created (6/50)
+- ✅ [T01_Fix_Descriptor_Root_Binding.md](T01_Fix_Descriptor_Root_Binding.md) – **CRITICAL**
+- ✅ [T02_Fix_GPU_Timer_Implementation.md](T02_Fix_GPU_Timer_Implementation.md) – **CRITICAL**
+- ✅ [T03_Replace_Exceptions_With_Result.md](T03_Replace_Exceptions_With_Result.md) – **CRITICAL**
+- ✅ [T04_Fix_State_Transition_Rules.md](T04_Fix_State_Transition_Rules.md) – **HIGH**
+- ✅ [T05_Fix_Async_Upload_Race.md](T05_Fix_Async_Upload_Race.md) – **HIGH**
+- ✅ [T06_Deduplicate_Code.md](T06_Deduplicate_Code.md) – **HIGH**
 
-2. **[H-009_missing_shader_model_detection.md](H-009_missing_shader_model_detection.md)** (1 day)
-   - Use H-010's query for compilation targets
-   - Dynamic SM 5.1/6.0/6.6 selection
+### To Be Created (44)
+Refer to [ALL_TASKS_REFERENCE.md](ALL_TASKS_REFERENCE.md) for details on all remaining tasks.
 
-3. **[H-014_swapchain_resize_exception.md](H-014_swapchain_resize_exception.md)** (1 day)
-   - Graceful fallback on resize failure
-   - Swapchain recreation support
+Use [TASK_GENERATION_STATUS.md](TASK_GENERATION_STATUS.md) template to create additional task files as needed.
 
-4. **[DX12-COD-003_cube_array_wrong_layers.md](DX12-COD-003_cube_array_wrong_layers.md)** (1 day)
-   - Fix `DepthOrArraySize` for cube arrays
-   - Multiply by `numLayers * 6`
+## Task Summary
 
-### Medium Complexity (2-3 days each) - 7 tasks
+### By Priority
+- **Critical (13)**: Correctness bugs, must be done immediately
+- **High (15)**: Major improvements, deduplication, architecture
+- **Medium (17)**: Quality improvements, simplification
+- **Low (5)**: Polish, cleanup
 
-5. **[H-003_texture_state_tracking_race.md](H-003_texture_state_tracking_race.md)** (2 days)
-   - Add mutex/atomic for state tracking
-   - Fix multi-threaded barrier race
+### By Category
+- **Correctness (10)**: T01-T05, T15, T19, T31, T49, T50
+- **Deduplication (5)**: T06-T10
+- **Architecture (8)**: T08, T11, T20, T26, T34, T35
+- **Simplification (9)**: T09, T12, T21-T24, T27
+- **Cleanup (18)**: T13, T14, T16-T18, T28-T33, T36-T48
 
-6. **[H-005_missing_uav_barriers.md](H-005_missing_uav_barriers.md)** (2 days)
-   - Add `uavBarrier()` API
-   - Compute→render synchronization
+### Key Wins
+- **~800 lines of code eliminated** via deduplication (T06-T10)
+- **Monolithic functions refactored**: 453-line submit() → <100, 398-line constructor → <50
+- **Cross-backend consistency**: Exception handling, logging, error patterns aligned
+- **Microsoft Docs grounded**: All uncertain questions researched and answered definitively
 
-7. **[H-006_root_signature_bloat.md](H-006_root_signature_bloat.md)** (2 days)
-   - Reduce from 53 to <48 DWORDs
-   - Convert root CBVs to descriptor tables
+## Verification Process
 
-8. **[H-012_descriptor_creation_redundancy.md](H-012_descriptor_creation_redundancy.md)** (2 days)
-   - Cache texture→descriptor mappings
-   - Save 100-200μs per frame
+### Every Task Must Pass
 
-9. **[DX12-COD-002_root_signature_v10_only.md](DX12-COD-002_root_signature_v10_only.md)** (2 days)
-   - Serialize as v1.1 when available
-   - Add descriptor range flags
+1. **Targeted Verification** (task-specific)
+   - Relevant unit tests
+   - Specific render session tests
+   - Feature-specific validation
 
-10. **[DX12-COD-005_cbv_64kb_violation.md](DX12-COD-005_cbv_64kb_violation.md)** (2 days)
-    - Enforce 64 KB CBV limit
-    - Respect requested buffer ranges
+2. **Mandatory Full Harness**
+   ```bash
+   cmd /c mandatory_all_tests.bat
+   ```
 
-11. **[DX12-COD-006_structured_buffer_stride.md](DX12-COD-006_structured_buffer_stride.md)** (2 days)
-    - Add `elementStride` to BufferDesc
-    - Fix hard-coded 4-byte stride
+3. **Passing Criteria**
+   - Zero render session failures
+   - Zero unit test failures
+   - No GPU validation/DRED errors
+   - All render sessions show "Frame 0" + "Signaled fence"
 
-### High Complexity (5-7 days each) - 3 tasks
+4. **Artifact Inspection**
+   - `artifacts\mandatory\render_sessions.log`
+   - `artifacts\mandatory\unit_tests.log`
+   - `artifacts\unit_tests\D3D12\failed_tests.txt` (should be empty)
 
-12. **[H-001_no_multi_queue_support.md](H-001_no_multi_queue_support.md)** (7 days)
-    - Create compute and copy queues
-    - Cross-queue synchronization
-    - **Impact:** 20% GPU utilization gain
+See [VERIFICATION_COMBINED.md](VERIFICATION_COMBINED.md) for complete details.
 
-13. **[H-002_no_parallel_command_recording.md](H-002_no_parallel_command_recording.md)** (3 days)
-    - Atomic descriptor counters
-    - Thread-local allocators
-    - **Impact:** 40-60% CPU time reduction
+## How to Use This Backlog
 
-14. **[H-015_hardcoded_limits.md](H-015_hardcoded_limits.md)** (2 days)
-    - Query device capabilities
-    - Remove hard-coded constants
+### For Implementers
+1. Pick a task file (start with Critical priority)
+2. Read Problem Summary and Proposed Solution
+3. Review Microsoft Docs Reference for API details
+4. Implement following step-by-step approach
+5. Run targeted verification for the specific task
+6. Run full mandatory harness: `cmd /c mandatory_all_tests.bat`
+7. Inspect artifacts for any failures
+8. Only commit if all tests pass
 
----
+### For Task File Creation
+1. Use template from [TASK_GENERATION_STATUS.md](TASK_GENERATION_STATUS.md)
+2. Pull details from [ALL_TASKS_REFERENCE.md](ALL_TASKS_REFERENCE.md)
+3. Ensure all sections filled:
+   - Problem Summary
+   - Proposed Solution (step-by-step)
+   - Scope/Impact with file paths
+   - Dependencies
+   - Microsoft Docs Reference (if applicable)
+   - Full Acceptance Criteria
+   - Testing requirements per VERIFICATION_COMBINED.md
+4. Include verification checklist
+5. Name file `T##_Short_Title.md`
 
-## Task Categories
+### For Orchestration
+Tasks have dependencies (see ALL_TASKS_REFERENCE.md dependency graph):
+- Do T01-T06 first (critical + foundational)
+- T07-T11 build on early tasks
+- T20+ are incremental improvements
 
-**By Priority:**
-- High Impact: H-001, H-002, H-012
-- Debug Layer Compliance: COD-002, COD-005, COD-006
-- Robustness: H-003, H-004, H-005, H-014
-- Feature Parity: H-009, H-015, COD-003
+Some tasks can run in parallel if no dependencies.
 
-**By Complexity:**
-- Quick (1-2 days): 4 tasks
-- Medium (2-3 days): 7 tasks
-- Complex (5-7 days): 3 tasks
+## Microsoft Documentation Integration
 
-**Total Estimated Effort:** ~30-35 days (6-7 weeks)
+All tasks with uncertain questions have been researched against official Microsoft D3D12 documentation:
 
----
+### Key Findings
+1. **State Transitions** (T04): Write-to-write transitions require intermediate state (COMMON or read state)
+2. **Timer Implementation** (T02): Timestamps are bottom-of-pipe, results only valid after fence signals
+3. **Upload Synchronization** (T05): Map doesn't block, explicit fence sync mandatory
+4. **Descriptor Binding** (T01): SetDescriptorHeaps + SetGraphicsRootDescriptorTable required before draw
+5. **Push Constants** (T38): SetComputeRoot32BitConstants supports up to 256 bytes
+6. **Alignment** (T29): D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT = 256 bytes
 
-## Implementation Notes
+Each task file includes specific API references where applicable.
 
-Each task file contains:
-- Problem statement with impact analysis
-- Technical details with code examples
-- Location guidance (files, line numbers)
-- Microsoft documentation references
-- Step-by-step implementation guidance
-- Testing requirements
-- Definition of done checklist
+## Success Metrics
 
-Refer to individual markdown files for complete specifications.
+Upon completion of all tasks:
+- ✅ Zero critical correctness bugs
+- ✅ ~800+ lines of duplicated code eliminated
+- ✅ Logging volume reduced 10x to match Vulkan/Metal
+- ✅ Error handling consistent across backends (no exceptions)
+- ✅ Descriptor management unified and clear
+- ✅ State tracking simplified (single field like Vulkan)
+- ✅ All functions <100 lines (no 400+ line monsters)
+- ✅ All hard-coded constants replaced with config/SDK values
+- ✅ 100% test pass rate maintained throughout
+
+## Contact / Questions
+
+For questions about:
+- **Task content**: Refer to ALL_TASKS_REFERENCE.md and original code review
+- **Verification**: See VERIFICATION_COMBINED.md
+- **Dependencies**: Check dependency graph in ALL_TASKS_REFERENCE.md
+- **Microsoft Docs**: Check MS Docs Reference section in each task
