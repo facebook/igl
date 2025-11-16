@@ -138,6 +138,25 @@ DXGI_FORMAT textureFormatToDXGIResourceFormat(TextureFormat format, bool sampled
 DXGI_FORMAT textureFormatToDXGIShaderResourceViewFormat(TextureFormat format);
 TextureFormat dxgiFormatToTextureFormat(DXGI_FORMAT format);
 
+// Hash combining utility (boost::hash_combine pattern)
+// Used for hashing complex structures like root signatures and pipeline descriptors
+template<typename T>
+inline void hashCombine(size_t& seed, const T& value) {
+  seed ^= std::hash<T>{}(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+// Feature level to string conversion
+inline const char* featureLevelToString(D3D_FEATURE_LEVEL level) {
+  switch (level) {
+    case D3D_FEATURE_LEVEL_12_2: return "12.2";
+    case D3D_FEATURE_LEVEL_12_1: return "12.1";
+    case D3D_FEATURE_LEVEL_12_0: return "12.0";
+    case D3D_FEATURE_LEVEL_11_1: return "11.1";
+    case D3D_FEATURE_LEVEL_11_0: return "11.0";
+    default: return "Unknown";
+  }
+}
+
 // Shader target helper (H-009)
 // Convert D3D_SHADER_MODEL enum to shader target string (e.g., "vs_6_6", "ps_5_1")
 inline std::string getShaderTarget(D3D_SHADER_MODEL shaderModel, ShaderStage stage) {

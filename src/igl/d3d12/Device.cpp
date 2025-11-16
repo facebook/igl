@@ -1108,11 +1108,6 @@ std::shared_ptr<IVertexInputState> Device::createVertexInputState(
 size_t Device::hashRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc) const {
   size_t hash = 0;
 
-  // Helper lambda to combine hashes (boost::hash_combine pattern)
-  auto hashCombine = [](size_t& seed, size_t value) {
-    seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-  };
-
   // Hash root signature flags
   hashCombine(hash, static_cast<size_t>(desc.Flags));
 
@@ -1248,11 +1243,6 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> Device::getOrCreateRootSignature(
 size_t Device::hashRenderPipelineDesc(const RenderPipelineDesc& desc) const {
   size_t hash = 0;
 
-  // Helper lambda to combine hashes (boost::hash_combine pattern)
-  auto hashCombine = [](size_t& seed, size_t value) {
-    seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-  };
-
   // Hash shader stages
   if (desc.shaderStages) {
     auto* vertexModule = static_cast<const ShaderModule*>(desc.shaderStages->getVertexModule().get());
@@ -1260,20 +1250,20 @@ size_t Device::hashRenderPipelineDesc(const RenderPipelineDesc& desc) const {
 
     if (vertexModule) {
       const auto& vsBytecode = vertexModule->getBytecode();
-      hashCombine(hash, std::hash<size_t>{}(vsBytecode.size()));
+      hashCombine(hash, vsBytecode.size());
       // Hash a portion of bytecode for uniqueness (first 256 bytes or full size if smaller)
       size_t bytesToHash = std::min<size_t>(256, vsBytecode.size());
       for (size_t i = 0; i < bytesToHash; i += 8) {
-        hashCombine(hash, std::hash<uint8_t>{}(vsBytecode[i]));
+        hashCombine(hash, static_cast<size_t>(vsBytecode[i]));
       }
     }
 
     if (fragmentModule) {
       const auto& psBytecode = fragmentModule->getBytecode();
-      hashCombine(hash, std::hash<size_t>{}(psBytecode.size()));
+      hashCombine(hash, psBytecode.size());
       size_t bytesToHash = std::min<size_t>(256, psBytecode.size());
       for (size_t i = 0; i < bytesToHash; i += 8) {
-        hashCombine(hash, std::hash<uint8_t>{}(psBytecode[i]));
+        hashCombine(hash, static_cast<size_t>(psBytecode[i]));
       }
     }
   }
@@ -1329,28 +1319,25 @@ size_t Device::hashRenderPipelineDesc(const RenderPipelineDesc& desc) const {
 size_t Device::hashComputePipelineDesc(const ComputePipelineDesc& desc) const {
   size_t hash = 0;
 
-  // Helper lambda to combine hashes
-  auto hashCombine = [](size_t& seed, size_t value) {
-    seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-  };
-
   // Hash shader stages
   if (desc.shaderStages) {
     auto* computeModule = static_cast<const ShaderModule*>(desc.shaderStages->getComputeModule().get());
 
     if (computeModule) {
       const auto& csBytecode = computeModule->getBytecode();
-      hashCombine(hash, std::hash<size_t>{}(csBytecode.size()));
+      hashCombine(hash, csBytecode.size());
       // Hash a portion of bytecode for uniqueness (first 256 bytes or full size if smaller)
       size_t bytesToHash = std::min<size_t>(256, csBytecode.size());
       for (size_t i = 0; i < bytesToHash; i += 8) {
-        hashCombine(hash, std::hash<uint8_t>{}(csBytecode[i]));
+        hashCombine(hash, static_cast<size_t>(csBytecode[i]));
       }
     }
   }
 
   // Hash debug name for additional differentiation (optional)
-  hashCombine(hash, std::hash<std::string>{}(desc.debugName));
+  for (char c : desc.debugName) {
+    hashCombine(hash, static_cast<size_t>(c));
+  }
 
   return hash;
 }

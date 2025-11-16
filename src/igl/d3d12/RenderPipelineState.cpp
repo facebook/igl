@@ -10,6 +10,7 @@
 #include <igl/NameHandle.h>
 #include <igl/d3d12/VertexInputState.h>
 #include <igl/d3d12/ShaderModule.h>
+#include <igl/d3d12/D3D12ReflectionUtils.h>
 #include <d3dcompiler.h>
 
 namespace igl::d3d12 {
@@ -131,24 +132,6 @@ std::shared_ptr<IRenderPipelineReflection> RenderPipelineState::renderPipelineRe
 
   auto out = std::make_shared<ReflectionImpl>();
 
-  auto mapUniformType = [](const D3D12_SHADER_TYPE_DESC& td) -> UniformType {
-    if ((td.Class == D3D_SVC_MATRIX_ROWS || td.Class == D3D_SVC_MATRIX_COLUMNS) && td.Rows == 4 && td.Columns == 4) {
-      return UniformType::Mat4x4;
-    }
-    if (td.Type == D3D_SVT_FLOAT) {
-      if (td.Class == D3D_SVC_SCALAR) return UniformType::Float;
-      if (td.Class == D3D_SVC_VECTOR) {
-        switch (td.Columns) {
-          case 2: return UniformType::Float2;
-          case 3: return UniformType::Float3;
-          case 4: return UniformType::Float4;
-          default: return UniformType::Invalid;
-        }
-      }
-    }
-    return UniformType::Invalid;
-  };
-
   auto reflectShader = [&](const std::shared_ptr<IShaderModule>& mod, ShaderStage stage) {
     if (!mod) return;
     auto* d3dMod = dynamic_cast<const igl::d3d12::ShaderModule*>(mod.get());
@@ -188,7 +171,7 @@ std::shared_ptr<IRenderPipelineReflection> RenderPipelineState::renderPipelineRe
         D3D12_SHADER_TYPE_DESC td{}; if (FAILED(t->GetDesc(&td))) continue;
         BufferArgDesc::BufferMemberDesc m;
         m.name = igl::genNameHandle(vd.Name ? vd.Name : "");
-        m.type = mapUniformType(td);
+        m.type = ReflectionUtils::mapUniformType(td);
         m.offset = vd.StartOffset;
         m.arrayLength = td.Elements ? td.Elements : 1;
         ub.members.push_back(std::move(m));

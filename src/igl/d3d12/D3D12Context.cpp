@@ -418,17 +418,6 @@ Result D3D12Context::createDevice() {
     return Result(Result::Code::RuntimeError, "Failed to create D3D12 device on selected adapter");
   }
 
-  auto featureLevelToString = [](D3D_FEATURE_LEVEL level) -> const char* {
-    switch (level) {
-      case D3D_FEATURE_LEVEL_12_2: return "12.2";
-      case D3D_FEATURE_LEVEL_12_1: return "12.1";
-      case D3D_FEATURE_LEVEL_12_0: return "12.0";
-      case D3D_FEATURE_LEVEL_11_1: return "11.1";
-      case D3D_FEATURE_LEVEL_11_0: return "11.0";
-      default: return "Unknown";
-    }
-  };
-
   IGL_LOG_INFO("D3D12Context: Device created with Feature Level %s\n",
                featureLevelToString(selectedFeatureLevel_));
 
@@ -610,18 +599,6 @@ Result D3D12Context::enumerateAndSelectAdapter() {
   enumeratedAdapters_.clear();
 
   IGL_LOG_INFO("D3D12Context: Enumerating DXGI adapters...\n");
-
-  // Helper to convert feature level to string
-  auto featureLevelToString = [](D3D_FEATURE_LEVEL level) -> const char* {
-    switch (level) {
-      case D3D_FEATURE_LEVEL_12_2: return "12.2";
-      case D3D_FEATURE_LEVEL_12_1: return "12.1";
-      case D3D_FEATURE_LEVEL_12_0: return "12.0";
-      case D3D_FEATURE_LEVEL_11_1: return "11.1";
-      case D3D_FEATURE_LEVEL_11_0: return "11.0";
-      default: return "Unknown";
-    }
-  };
 
   // Try IDXGIFactory6 first for high-performance GPU preference
   Microsoft::WRL::ComPtr<IDXGIFactory6> factory6;
