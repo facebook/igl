@@ -88,8 +88,13 @@ void D3D12ResourcesBinder::bindTexture(uint32_t index, ITexture* texture) {
 
   // Transition texture to shader resource state
   // Note: This must happen immediately, not deferred until updateBindings()
+  // Use pipeline-specific states for optimal barrier tracking:
+  // - Graphics: PIXEL_SHADER_RESOURCE (pixel shader read)
+  // - Compute: NON_PIXEL_SHADER_RESOURCE (compute/vertex/geometry shader read)
   auto* commandList = commandBuffer_.getCommandList();
-  d3dTexture->transitionAll(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+  const auto targetState = isCompute_ ? D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
+                                      : D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+  d3dTexture->transitionAll(commandList, targetState);
 
   // Store texture pointer for descriptor creation in updateBindings()
   bindingsTextures_.textures[index] = texture;
@@ -291,9 +296,21 @@ bool D3D12ResourcesBinder::updateTextureBindings(ID3D12GraphicsCommandList* cmdL
 
   auto& context = commandBuffer_.getContext();
 
-  // Allocate descriptors for each texture individually
-  // (they may span multiple pages in the heap)
-  std::vector<uint32_t> descriptorIndices;
+  // Allocate a contiguous range of descriptors for all textures on a single page
+  // This ensures we can bind them as a single descriptor table
+  uint32_t baseDescriptorIndex = 0;
+  Result allocResult = commandBuffer_.allocateCbvSrvUavRange(bindingsTextures_.count, &baseDescriptorIndex);
+  if (!allocResult.isOk()) {
+    IGL_LOG_ERROR("D3D12ResourcesBinder: Failed to allocate contiguous SRV range (%u descriptors): %s\n",
+                  bindingsTextures_.count,
+                  allocResult.message.c_str());
+    if (outResult) {
+      *outResult = allocResult;
+    }
+    return false;
+  }
+
+  // Verify all textures are bound (dense binding requirement)
   for (uint32_t i = 0; i < bindingsTextures_.count; ++i) {
     if (bindingsTextures_.textures[i] == nullptr) {
       IGL_LOG_ERROR("D3D12ResourcesBinder: Sparse texture binding detected at slot %u\n", i);
@@ -302,19 +319,6 @@ bool D3D12ResourcesBinder::updateTextureBindings(ID3D12GraphicsCommandList* cmdL
       }
       return false;
     }
-
-    uint32_t descriptorIndex = 0;
-    Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
-    if (!allocResult.isOk()) {
-      IGL_LOG_ERROR("D3D12ResourcesBinder: Failed to allocate SRV descriptor %u: %s\n",
-                    i,
-                    allocResult.message.c_str());
-      if (outResult) {
-        *outResult = allocResult;
-      }
-      return false;
-    }
-    descriptorIndices.push_back(descriptorIndex);
   }
 
   // Create SRV descriptors for all bound textures
@@ -323,7 +327,8 @@ bool D3D12ResourcesBinder::updateTextureBindings(ID3D12GraphicsCommandList* cmdL
     auto* d3dTexture = static_cast<Texture*>(texture);
     ID3D12Resource* resource = d3dTexture->getResource();
 
-    const uint32_t descriptorIndex = descriptorIndices[i];
+    // Use contiguous descriptor index (baseDescriptorIndex + i)
+    const uint32_t descriptorIndex = baseDescriptorIndex + i;
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 
@@ -368,6 +373,9 @@ bool D3D12ResourcesBinder::updateTextureBindings(ID3D12GraphicsCommandList* cmdL
     } else {
       IGL_LOG_ERROR("D3D12ResourcesBinder: Unsupported texture dimension %d\n",
                     resourceDesc.Dimension);
+      if (outResult) {
+        *outResult = Result{Result::Code::Unsupported, "Unsupported texture dimension for SRV"};
+      }
       return false;
     }
 
@@ -483,39 +491,104 @@ bool D3D12ResourcesBinder::updateBufferBindings(ID3D12GraphicsCommandList* cmdLi
     // Compute pipeline: all CBVs go through descriptor table (root parameter 3)
     auto& context = commandBuffer_.getContext();
 
-    // Allocate descriptors for all CBVs
-    std::vector<uint32_t> cbvIndices;
+    // Count bound CBVs and validate dense binding
+    uint32_t boundCbvCount = 0;
+    for (uint32_t i = 0; i < bindingsBuffers_.count; ++i) {
+      if (bindingsBuffers_.addresses[i] != 0) {
+        boundCbvCount++;
+      }
+    }
+
+    if (boundCbvCount == 0) {
+      return true; // No CBVs to bind
+    }
+
+    // CRITICAL VALIDATION: Enforce dense CBV binding for compute shaders
+    // =====================================================================
+    // D3D12 descriptor tables bind contiguously starting from the base register.
+    // For compute CBVs, this means:
+    //   - VALID:   binding slots 0, 1, 2 (dense from b0)
+    //   - INVALID: binding slots 0, 2 (gap at slot 1)
+    //   - INVALID: binding slots 1, 2 (slot 0 not bound)
+    //
+    // This is FATAL validation - sparse bindings will return InvalidOperation error.
+    // Application code must ensure CBVs are bound densely from index 0 with no gaps.
+    //
+    // Rationale: When we call SetComputeRootDescriptorTable with N descriptors at base b0,
+    // D3D12 expects HLSL registers b0, b1, ..., b(N-1) to map 1:1 with descriptor table
+    // entries. Gaps would cause shader register mismatches and undefined behavior.
+
+    if (bindingsBuffers_.addresses[0] == 0) {
+      IGL_LOG_ERROR("D3D12ResourcesBinder: Compute CBV bindings are sparse (slot 0 not bound). "
+                    "D3D12 requires dense bindings starting at index 0.\n");
+      if (outResult) {
+        *outResult = Result{Result::Code::InvalidOperation,
+                            "Compute CBV bindings must be dense starting at slot 0"};
+      }
+      return false;
+    }
+
+    // Verify no gaps in binding range (all slots from 0 to boundCbvCount-1 must be bound)
+    for (uint32_t i = 1; i < boundCbvCount; ++i) {
+      if (bindingsBuffers_.addresses[i] == 0) {
+        IGL_LOG_ERROR("D3D12ResourcesBinder: Sparse compute CBV binding detected at slot %u "
+                      "(expected dense binding through slot %u)\n", i, boundCbvCount - 1);
+        if (outResult) {
+          *outResult = Result{Result::Code::InvalidOperation, "Compute CBV bindings must be dense"};
+        }
+        return false;
+      }
+    }
+
+    // Allocate a contiguous range of descriptors for all CBVs on a single page
+    // This ensures we can bind them as a single descriptor table
+    uint32_t baseDescriptorIndex = 0;
+    Result allocResult = commandBuffer_.allocateCbvSrvUavRange(boundCbvCount, &baseDescriptorIndex);
+    if (!allocResult.isOk()) {
+      IGL_LOG_ERROR("D3D12ResourcesBinder: Failed to allocate contiguous CBV range (%u descriptors): %s\n",
+                    boundCbvCount,
+                    allocResult.message.c_str());
+      if (outResult) {
+        *outResult = allocResult;
+      }
+      return false;
+    }
+
+    // Create CBV descriptors for all bound buffers
+    uint32_t descriptorOffset = 0;
     for (uint32_t i = 0; i < bindingsBuffers_.count; ++i) {
       if (bindingsBuffers_.addresses[i] == 0) {
         continue; // Skip unbound slots
       }
 
-      uint32_t descriptorIndex = 0;
-      Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
-      if (!allocResult.isOk()) {
-        IGL_LOG_ERROR("D3D12ResourcesBinder: Failed to allocate CBV descriptor %u: %s\n",
-                      i,
-                      allocResult.message.c_str());
+      // Validate address alignment (D3D12 requires 256-byte alignment)
+      if (bindingsBuffers_.addresses[i] % kConstantBufferAlignment != 0) {
+        IGL_LOG_ERROR("D3D12ResourcesBinder: Constant buffer %u address 0x%llx is not 256-byte aligned\n",
+                      i, bindingsBuffers_.addresses[i]);
         if (outResult) {
-          *outResult = allocResult;
+          *outResult = Result{Result::Code::ArgumentInvalid,
+                              "Constant buffer address must be 256-byte aligned"};
         }
         return false;
       }
-      cbvIndices.push_back(descriptorIndex);
-
-      // Create CBV descriptor
-      size_t size = bindingsBuffers_.sizes[i];
 
       // Validate size
+      size_t size = bindingsBuffers_.sizes[i];
       if (size > kMaxCBVSize) {
         IGL_LOG_ERROR("D3D12ResourcesBinder: Constant buffer %u size (%zu bytes) exceeds 64 KB limit\n",
                       i, size);
-        continue;
+        if (outResult) {
+          *outResult = Result{Result::Code::ArgumentOutOfRange,
+                              "Constant buffer size exceeds 64 KB D3D12 limit"};
+        }
+        return false;
       }
 
       // Align size to 256-byte boundary
       const size_t alignedSize = (size + kConstantBufferAlignment - 1) & ~(kConstantBufferAlignment - 1);
 
+      // Use contiguous descriptor index (baseDescriptorIndex + descriptorOffset)
+      const uint32_t descriptorIndex = baseDescriptorIndex + descriptorOffset;
       D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
 
       D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
@@ -523,13 +596,17 @@ bool D3D12ResourcesBinder::updateBufferBindings(ID3D12GraphicsCommandList* cmdLi
       cbvDesc.SizeInBytes = static_cast<UINT>(alignedSize);
 
       device->CreateConstantBufferView(&cbvDesc, cpuHandle);
+      descriptorOffset++;
     }
 
-    if (!cbvIndices.empty()) {
-      // Bind the CBV descriptor table to root parameter 3
-      D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(cbvIndices[0]);
-      cmdList->SetComputeRootDescriptorTable(kComputeRootParam_CBVTable, gpuHandle);
-    }
+    // Sanity check: descriptorOffset should match boundCbvCount after dense packing
+    IGL_DEBUG_ASSERT(descriptorOffset == boundCbvCount,
+                     "CBV descriptor packing mismatch: allocated %u but created %u",
+                     boundCbvCount, descriptorOffset);
+
+    // Bind the CBV descriptor table to root parameter 3
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(baseDescriptorIndex);
+    cmdList->SetComputeRootDescriptorTable(kComputeRootParam_CBVTable, gpuHandle);
   } else {
     // Graphics pipeline: b0 and b1 are root CBVs, b2+ would use descriptor table
     // For now, we only support b0 and b1 as root CBVs (legacy behavior)
@@ -576,8 +653,7 @@ bool D3D12ResourcesBinder::updateUAVBindings(ID3D12GraphicsCommandList* cmdList,
 
   auto& context = commandBuffer_.getContext();
 
-  // Allocate UAV descriptors for all storage buffers
-  std::vector<uint32_t> descriptorIndices;
+  // Verify all UAVs are bound (dense binding requirement)
   for (uint32_t i = 0; i < bindingsUAVs_.count; ++i) {
     if (bindingsUAVs_.buffers[i] == nullptr) {
       IGL_LOG_ERROR("D3D12ResourcesBinder: Sparse UAV binding detected at slot %u\n", i);
@@ -586,19 +662,20 @@ bool D3D12ResourcesBinder::updateUAVBindings(ID3D12GraphicsCommandList* cmdList,
       }
       return false;
     }
+  }
 
-    uint32_t descriptorIndex = 0;
-    Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
-    if (!allocResult.isOk()) {
-      IGL_LOG_ERROR("D3D12ResourcesBinder: Failed to allocate UAV descriptor %u: %s\n",
-                    i,
-                    allocResult.message.c_str());
-      if (outResult) {
-        *outResult = allocResult;
-      }
-      return false;
+  // Allocate a contiguous range of descriptors for all UAVs on a single page
+  // This ensures we can bind them as a single descriptor table
+  uint32_t baseDescriptorIndex = 0;
+  Result allocResult = commandBuffer_.allocateCbvSrvUavRange(bindingsUAVs_.count, &baseDescriptorIndex);
+  if (!allocResult.isOk()) {
+    IGL_LOG_ERROR("D3D12ResourcesBinder: Failed to allocate contiguous UAV range (%u descriptors): %s\n",
+                  bindingsUAVs_.count,
+                  allocResult.message.c_str());
+    if (outResult) {
+      *outResult = allocResult;
     }
-    descriptorIndices.push_back(descriptorIndex);
+    return false;
   }
 
   // Create UAV descriptors for all bound storage buffers
@@ -611,16 +688,28 @@ bool D3D12ResourcesBinder::updateUAVBindings(ID3D12GraphicsCommandList* cmdList,
     const size_t elementStride = bindingsUAVs_.elementStrides[i];
     const size_t bufferSize = d3dBuffer->getSizeInBytes();
 
-    // Validate offset and element stride
+    // FATAL VALIDATION: UAV offset must be aligned to element stride
+    // This check immediately fails the entire updateBindings() call and returns InvalidOperation.
+    // Misaligned offsets would create invalid D3D12 UAV descriptors and cause device removal.
     if (offset % elementStride != 0) {
       IGL_LOG_ERROR(
-          "D3D12ResourcesBinder: UAV offset %zu is not aligned to element stride %zu\n",
+          "D3D12ResourcesBinder: UAV offset %zu is not aligned to element stride %zu. "
+          "This is a FATAL error - updateBindings() will fail.\n",
           offset,
           elementStride);
+      if (outResult) {
+        *outResult = Result{Result::Code::ArgumentInvalid,
+                            "UAV offset must be aligned to element stride"};
+      }
+      return false;
     }
 
+    // FATAL VALIDATION: UAV offset must be within buffer bounds
+    // This check immediately fails the entire updateBindings() call and returns ArgumentOutOfRange.
+    // Out-of-bounds offsets would access invalid memory and cause GPU faults.
     if (offset > bufferSize) {
-      IGL_LOG_ERROR("D3D12ResourcesBinder: UAV offset %zu exceeds buffer size %zu\n",
+      IGL_LOG_ERROR("D3D12ResourcesBinder: UAV offset %zu exceeds buffer size %zu. "
+                    "This is a FATAL error - updateBindings() will fail.\n",
                     offset,
                     bufferSize);
       if (outResult) {
@@ -630,13 +719,23 @@ bool D3D12ResourcesBinder::updateUAVBindings(ID3D12GraphicsCommandList* cmdList,
     }
 
     const size_t remaining = bufferSize - offset;
+    // FATAL VALIDATION: At least one full element must fit in remaining buffer space
+    // This check immediately fails the entire updateBindings() call and returns ArgumentOutOfRange.
+    // Creating a UAV with zero elements or partial elements would be invalid.
     if (remaining < elementStride) {
-      IGL_LOG_ERROR("D3D12ResourcesBinder: UAV remaining size %zu < element stride %zu\n",
+      IGL_LOG_ERROR("D3D12ResourcesBinder: UAV remaining size %zu < element stride %zu. "
+                    "This is a FATAL error - updateBindings() will fail.\n",
                     remaining,
                     elementStride);
+      if (outResult) {
+        *outResult = Result{Result::Code::ArgumentOutOfRange,
+                            "UAV remaining size less than element stride"};
+      }
+      return false;
     }
 
-    const uint32_t descriptorIndex = descriptorIndices[i];
+    // Use contiguous descriptor index (baseDescriptorIndex + i)
+    const uint32_t descriptorIndex = baseDescriptorIndex + i;
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 

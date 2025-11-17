@@ -149,6 +149,9 @@ class D3D12ResourcesBinder final {
    * For uniform buffers (constant buffers):
    * - Stores GPU virtual address for root CBV binding (b0-b1)
    * - Or creates CBV descriptor for descriptor table binding (b2+)
+   * - **COMPUTE SHADERS**: CBV bindings MUST be dense starting from index 0 with no gaps.
+   *   For example, binding slots 0, 1, 2 is valid; binding 0, 2 (skipping 1) will fail.
+   *   This constraint is enforced because descriptor tables bind contiguously from b0.
    *
    * For storage buffers:
    * - Creates UAV descriptor in the per-frame CBV/SRV/UAV heap

@@ -18,6 +18,28 @@ namespace igl::d3d12 {
 
 class CommandBuffer;
 
+/**
+ * @brief D3D12 implementation of render command encoder
+ *
+ * IMPORTANT BINDING PRECEDENCE NOTES:
+ * ====================================
+ * This encoder supports multiple ways to bind shader resources (textures, buffers, samplers).
+ * Some binding methods share the same D3D12 root parameters, which means the LAST binding wins:
+ *
+ * 1. SRV Table (Root Parameter 4):
+ *    - Textures bound via bindTexture() or D3D12ResourcesBinder
+ *    - Storage buffers (read-only) bound via bindBindGroup(BindGroupBufferHandle)
+ *    - If you bind BOTH textures and storage buffer SRVs, the last binding before draw() wins
+ *    - Application code must coordinate which binding method to use per draw call
+ *
+ * 2. Sampler Table (Root Parameter 5):
+ *    - Samplers bound via bindSamplerState() or D3D12ResourcesBinder
+ *
+ * 3. CBV Table (Root Parameter 3):
+ *    - Constant buffers b3-b15 bound via bindBindGroup(BindGroupBufferHandle)
+ *
+ * See individual binding method documentation for details.
+ */
 class RenderCommandEncoder final : public IRenderCommandEncoder {
  public:
   RenderCommandEncoder(CommandBuffer& commandBuffer,
@@ -114,6 +136,10 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   D3D12_GPU_DESCRIPTOR_HANDLE cachedSamplerGpuHandles_[IGL_TEXTURE_SAMPLERS_MAX] = {};
   size_t cachedTextureCount_ = 0;
   size_t cachedSamplerCount_ = 0;
+
+  // Track whether bindBindGroup was explicitly called (vs storage buffer SRV or binder paths)
+  // This decouples bindBindGroup usage from cachedTextureCount_/cachedSamplerCount_
+  bool usedBindGroup_ = false;
 
   // Cached vertex buffer bindings
   // Store binding info and apply in draw calls after pipeline state is bound

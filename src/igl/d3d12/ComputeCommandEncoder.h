@@ -29,6 +29,24 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
                            const Dependencies& dependencies = {}) override;
   void bindPushConstants(const void* data, size_t length, size_t offset = 0) override;
   void bindTexture(uint32_t index, ITexture* texture) override;
+
+  /**
+   * @brief Bind a buffer to a compute shader slot
+   *
+   * IMPORTANT: For constant buffers (uniform buffers) in compute shaders, bindings MUST be DENSE
+   * starting from index 0 with NO GAPS. For example:
+   *   - VALID:   bindBuffer(0, ...), bindBuffer(1, ...), bindBuffer(2, ...)
+   *   - INVALID: bindBuffer(0, ...), bindBuffer(2, ...) // gap at index 1
+   *   - INVALID: bindBuffer(1, ...), bindBuffer(2, ...) // index 0 not bound
+   *
+   * This constraint is enforced by D3D12ResourcesBinder and will return InvalidOperation if violated.
+   * See D3D12ResourcesBinder::updateBufferBindings for implementation details.
+   *
+   * @param index Buffer slot index (maps to HLSL register b0, b1, etc. for CBVs)
+   * @param buffer Buffer to bind
+   * @param offset Offset in bytes into the buffer
+   * @param bufferSize Size of the buffer region to bind
+   */
   void bindBuffer(uint32_t index, IBuffer* buffer, size_t offset = 0, size_t bufferSize = 0) override;
   void bindUniform(const UniformDesc& uniformDesc, const void* data) override;
   void bindBytes(uint32_t index, const void* data, size_t length) override;

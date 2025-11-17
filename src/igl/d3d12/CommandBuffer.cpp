@@ -96,16 +96,16 @@ Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
     return Result{Result::Code::RuntimeError, "No CBV/SRV/UAV descriptor heap pages available"};
   }
 
-  // Get current page
+  // Get current page index validation
   if (currentPageIdx >= pages.size()) {
     return Result{Result::Code::RuntimeError, "Invalid descriptor heap page index"};
   }
 
-  auto& currentPage = pages[currentPageIdx];
+  // Check current offset before acquiring reference (avoid use-after-reallocation)
   const uint32_t currentOffset = frameCtx.nextCbvSrvUavDescriptor;
 
-  // Check if current page has space
-  if (currentOffset >= currentPage.capacity) {
+  // Check if current page has space (check capacity without acquiring reference yet)
+  if (currentOffset >= pages[currentPageIdx].capacity) {
     // Current page is full - try to allocate a new page
     if (pages.size() >= kMaxHeapPages) {
       char errorMsg[512];
@@ -127,7 +127,7 @@ Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
       return result;
     }
 
-    // Add new page to vector
+    // Add new page to vector (may reallocate - do NOT hold references before this)
     pages.emplace_back(newHeap, kDescriptorsPerPage);
     currentPageIdx = static_cast<uint32_t>(pages.size() - 1);
     frameCtx.currentCbvSrvUavPageIndex = currentPageIdx;
@@ -148,10 +148,10 @@ Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
       commandList_->SetDescriptorHeaps(2, heaps);
       IGL_LOG_INFO("D3D12: Rebound descriptor heaps after page allocation (page %u)\n", currentPageIdx);
     }
-
-    // Update current page reference
-    currentPage = pages[currentPageIdx];
   }
+
+  // SAFE: Acquire reference AFTER any potential reallocation from emplace_back
+  auto& currentPage = pages[currentPageIdx];
 
   // Allocate from current page
   const uint32_t descriptorIndex = frameCtx.nextCbvSrvUavDescriptor++;
@@ -169,6 +169,105 @@ Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
 #ifdef IGL_DEBUG
   IGL_LOG_INFO("CommandBuffer::getNextCbvSrvUavDescriptor() - frame %u, page %u, descriptor %u (total allocated: %u)\n",
                frameIdx, currentPageIdx, descriptorIndex, totalUsed);
+#endif
+
+  return Result{};
+}
+
+// Allocate a contiguous range of CBV/SRV/UAV descriptors on a single page
+Result CommandBuffer::allocateCbvSrvUavRange(uint32_t count, uint32_t* outBaseDescriptorIndex) {
+  if (count == 0) {
+    return Result{Result::Code::ArgumentInvalid, "Cannot allocate zero descriptors"};
+  }
+
+  auto& ctx = device_.getD3D12Context();
+  const uint32_t frameIdx = ctx.getCurrentFrameIndex();
+  auto& frameCtx = ctx.getFrameContexts()[frameIdx];
+  auto& pages = frameCtx.cbvSrvUavHeapPages;
+  uint32_t currentPageIdx = frameCtx.currentCbvSrvUavPageIndex;
+
+  if (pages.empty()) {
+    return Result{Result::Code::RuntimeError, "No CBV/SRV/UAV descriptor heap pages available"};
+  }
+
+  if (currentPageIdx >= pages.size()) {
+    return Result{Result::Code::RuntimeError, "Invalid descriptor heap page index"};
+  }
+
+  // Check space before acquiring reference (avoid use-after-reallocation)
+  const uint32_t currentOffset = frameCtx.nextCbvSrvUavDescriptor;
+  const uint32_t spaceRemaining = pages[currentPageIdx].capacity - currentOffset;
+
+  // Check if the requested range fits in the current page
+  if (count > spaceRemaining) {
+    // Not enough space in current page - try to allocate a new page
+    if (count > kDescriptorsPerPage) {
+      char errorMsg[256];
+      snprintf(errorMsg, sizeof(errorMsg),
+               "Requested descriptor range (%u) exceeds page capacity (%u)",
+               count, kDescriptorsPerPage);
+      return Result{Result::Code::ArgumentOutOfRange, errorMsg};
+    }
+
+    if (pages.size() >= kMaxHeapPages) {
+      char errorMsg[512];
+      snprintf(errorMsg, sizeof(errorMsg),
+               "CBV/SRV/UAV descriptor heap pool exhausted! Frame %u used all %u pages. "
+               "Cannot allocate contiguous range of %u descriptors.",
+               frameIdx, kMaxHeapPages, count);
+      return Result{Result::Code::RuntimeError, errorMsg};
+    }
+
+    // Allocate new page
+    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> newHeap;
+    Result result = ctx.allocateDescriptorHeapPage(
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+        kDescriptorsPerPage,
+        &newHeap);
+
+    if (!result.isOk()) {
+      return result;
+    }
+
+    // Add new page (may reallocate - do NOT hold references before this)
+    pages.emplace_back(newHeap, kDescriptorsPerPage);
+    currentPageIdx = static_cast<uint32_t>(pages.size() - 1);
+    frameCtx.currentCbvSrvUavPageIndex = currentPageIdx;
+    frameCtx.nextCbvSrvUavDescriptor = 0;
+
+    IGL_LOG_INFO("D3D12: Allocated new CBV/SRV/UAV page %u for contiguous range of %u descriptors\n",
+                 currentPageIdx, count);
+
+    // Rebind heap on command list
+    frameCtx.activeCbvSrvUavHeap = newHeap;
+    if (commandList_.Get()) {
+      ID3D12DescriptorHeap* heaps[] = {
+        frameCtx.activeCbvSrvUavHeap.Get(),
+        frameCtx.samplerHeap.Get()
+      };
+      commandList_->SetDescriptorHeaps(2, heaps);
+    }
+  }
+
+  // SAFE: Acquire reference AFTER any potential reallocation from emplace_back
+  auto& currentPage = pages[currentPageIdx];
+
+  // Allocate the range from current page
+  const uint32_t baseIndex = frameCtx.nextCbvSrvUavDescriptor;
+  frameCtx.nextCbvSrvUavDescriptor += count;
+  currentPage.used = frameCtx.nextCbvSrvUavDescriptor;
+
+  // Track peak usage
+  const uint32_t totalUsed = static_cast<uint32_t>(currentPageIdx * kDescriptorsPerPage + baseIndex + count);
+  if (totalUsed > frameCtx.peakCbvSrvUavUsage) {
+    frameCtx.peakCbvSrvUavUsage = totalUsed;
+  }
+
+  *outBaseDescriptorIndex = baseIndex;
+
+#ifdef IGL_DEBUG
+  IGL_LOG_INFO("CommandBuffer::allocateCbvSrvUavRange() - frame %u, page %u, base %u, count %u\n",
+               frameIdx, currentPageIdx, baseIndex, count);
 #endif
 
   return Result{};

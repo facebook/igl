@@ -796,6 +796,12 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
                                             ISamplerState* samplerState) {
   // T08: Delegate to D3D12ResourcesBinder for centralized descriptor management
   resourcesBinder_.bindSamplerState(static_cast<uint32_t>(index), samplerState);
+
+  // Clear bindBindGroup cache to switch from bindBindGroup path to bindSamplerState path
+  // This ensures draw() will call resourcesBinder_.updateBindings() instead of using cached handles
+  cachedTextureCount_ = 0;
+  cachedSamplerCount_ = 0;
+  usedBindGroup_ = false;
 }
 void RenderCommandEncoder::bindTexture(size_t index,
                                        uint8_t /*target*/,
@@ -807,6 +813,12 @@ void RenderCommandEncoder::bindTexture(size_t index,
 void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   // T08: Delegate to D3D12ResourcesBinder for centralized descriptor management
   resourcesBinder_.bindTexture(static_cast<uint32_t>(index), texture);
+
+  // Clear bindBindGroup cache to switch from bindBindGroup path to bindTexture path
+  // This ensures draw() will call resourcesBinder_.updateBindings() instead of using cached handles
+  cachedTextureCount_ = 0;
+  cachedSamplerCount_ = 0;
+  usedBindGroup_ = false;
 }
 void RenderCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, const void* /*data*/) {}
 
@@ -818,10 +830,15 @@ void RenderCommandEncoder::draw(size_t vertexCount,
   flushBarriers();
 
   // T08: Apply all resource bindings (textures, samplers, buffers) before draw
-  Result bindResult;
-  if (!resourcesBinder_.updateBindings(&bindResult)) {
-    IGL_LOG_ERROR("draw: Failed to update resource bindings: %s\n", bindResult.message.c_str());
-    return;
+  // Skip ResourcesBinder if bindBindGroup was explicitly used
+  // Note: cachedTextureCount_/cachedSamplerCount_ may also be set by storage buffer SRV path,
+  // so we use dedicated usedBindGroup_ flag to distinguish bindBindGroup from other paths
+  if (!usedBindGroup_) {
+    Result bindResult;
+    if (!resourcesBinder_.updateBindings(&bindResult)) {
+      IGL_LOG_ERROR("draw: Failed to update resource bindings: %s\n", bindResult.message.c_str());
+      return;
+    }
   }
 
   // D3D12 requires ALL root parameters to be bound before drawing
@@ -848,6 +865,29 @@ void RenderCommandEncoder::draw(size_t vertexCount,
     commandList_->SetGraphicsRootDescriptorTable(3, cachedCbvTableGpuHandles_[0]);  // Root param 3: CBV table (b3-b15)
     IGL_LOG_INFO("draw: binding CBV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
                  cbvTableCount_, cachedCbvTableGpuHandles_[0].ptr);
+  }
+
+  // Bind SRV and sampler descriptor tables (bindBindGroup support)
+  // T01: Add debug validation to catch sparse binding (non-zero count with zero base handle)
+  // Note: Storage buffer SRVs bound via bindBindGroup(buffer) may have already set root parameter 4.
+  // This will rebind it with texture SRVs. The last binding wins for each draw call.
+  if (cachedTextureCount_ > 0) {
+    IGL_DEBUG_ASSERT(cachedTextureGpuHandles_[0].ptr != 0,
+                     "Texture count > 0 but base handle is null - did you bind only higher slots?");
+    if (cachedTextureGpuHandles_[0].ptr != 0) {
+      commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
+      IGL_LOG_INFO("draw: binding SRV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
+                   cachedTextureCount_, cachedTextureGpuHandles_[0].ptr);
+    }
+  }
+  if (cachedSamplerCount_ > 0) {
+    IGL_DEBUG_ASSERT(cachedSamplerGpuHandles_[0].ptr != 0,
+                     "Sampler count > 0 but base handle is null - did you bind only higher slots?");
+    if (cachedSamplerGpuHandles_[0].ptr != 0) {
+      commandList_->SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0]);  // Root param 5: Sampler table
+      IGL_LOG_INFO("draw: binding Sampler descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
+                   cachedSamplerCount_, cachedSamplerGpuHandles_[0].ptr);
+    }
   }
 
   // Apply vertex buffers
@@ -888,10 +928,15 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   flushBarriers();
 
   // T08: Apply all resource bindings (textures, samplers, buffers) before draw
-  Result bindResult;
-  if (!resourcesBinder_.updateBindings(&bindResult)) {
-    IGL_LOG_ERROR("drawIndexed: Failed to update resource bindings: %s\n", bindResult.message.c_str());
-    return;
+  // Skip ResourcesBinder if bindBindGroup was explicitly used
+  // Note: cachedTextureCount_/cachedSamplerCount_ may also be set by storage buffer SRV path,
+  // so we use dedicated usedBindGroup_ flag to distinguish bindBindGroup from other paths
+  if (!usedBindGroup_) {
+    Result bindResult;
+    if (!resourcesBinder_.updateBindings(&bindResult)) {
+      IGL_LOG_ERROR("drawIndexed: Failed to update resource bindings: %s\n", bindResult.message.c_str());
+      return;
+    }
   }
 
   // D3D12 requires ALL root parameters to be bound before drawing
@@ -914,6 +959,25 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   // Bind CBV descriptor table for b3-b15 (bindBindGroup support)
   if (cbvTableCount_ > 0 && cachedCbvTableGpuHandles_[0].ptr != 0) {
     commandList_->SetGraphicsRootDescriptorTable(3, cachedCbvTableGpuHandles_[0]);  // Root param 3: CBV table (b3-b15)
+  }
+
+  // Bind SRV and sampler descriptor tables (bindBindGroup support)
+  // T01: Add debug validation to catch sparse binding (non-zero count with zero base handle)
+  // Note: Storage buffer SRVs bound via bindBindGroup(buffer) may have already set root parameter 4.
+  // This will rebind it with texture SRVs. The last binding wins for each draw call.
+  if (cachedTextureCount_ > 0) {
+    IGL_DEBUG_ASSERT(cachedTextureGpuHandles_[0].ptr != 0,
+                     "Texture count > 0 but base handle is null - did you bind only higher slots?");
+    if (cachedTextureGpuHandles_[0].ptr != 0) {
+      commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
+    }
+  }
+  if (cachedSamplerCount_ > 0) {
+    IGL_DEBUG_ASSERT(cachedSamplerGpuHandles_[0].ptr != 0,
+                     "Sampler count > 0 but base handle is null - did you bind only higher slots?");
+    if (cachedSamplerGpuHandles_[0].ptr != 0) {
+      commandList_->SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0]);  // Root param 5: Sampler table
+    }
   }
 
   // Apply cached vertex buffer bindings now that pipeline state is bound
@@ -1423,6 +1487,9 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
     cachedSamplerGpuHandles_[0] = context.getSamplerGpuHandle(smpBaseIndex);
     cachedSamplerCount_ = smpCount;
   }
+
+  // Mark that bindBindGroup was used (vs storage buffer SRV or binder paths)
+  usedBindGroup_ = true;
 }
 
 void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
@@ -1670,6 +1737,11 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
 
         // Bind SRV descriptor table (Parameter 4 in graphics root signature)
         // Note: This shares the texture SRV table, storage buffers and textures will be bound together
+        // PRECEDENCE: Storage buffer SRVs bound here will override any previous texture SRVs bound via
+        // the binder or bindBindGroup(texture) for root parameter 4. The last SetGraphicsRootDescriptorTable
+        // call wins. This is intentional - storage buffer bindings via bindBindGroup(buffer) take precedence
+        // over texture bindings. If both storage buffers and textures are needed, they should be coordinated
+        // at the application level to ensure correct binding order.
         commandList_->SetGraphicsRootDescriptorTable(4, gpuHandle);
 
         IGL_LOG_INFO("bindBindGroup(buffer): bound read-only storage buffer at slot %u (SRV t%u, GPU handle 0x%llx)\n",
@@ -1677,6 +1749,9 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
       }
     }
   }
+
+  // Mark that bindBindGroup was used (vs storage buffer SRV or binder paths)
+  usedBindGroup_ = true;
 }
 
 // G-001: Barrier batching implementation

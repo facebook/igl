@@ -68,6 +68,12 @@ class CommandBuffer final : public ICommandBuffer {
   // Descriptor allocation tracking - delegates to frame context to share across ALL command buffers
   // C-001: Changed to return Result for error handling on heap overflow
   Result getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex);
+
+  // Allocate a contiguous range of CBV/SRV/UAV descriptors on a single page
+  // This ensures the range can be bound as a single descriptor table
+  // Returns the base descriptor index; descriptors are [baseIndex, baseIndex+count)
+  Result allocateCbvSrvUavRange(uint32_t count, uint32_t* outBaseDescriptorIndex);
+
   uint32_t& getNextSamplerDescriptor();
 
   // Deferred texture-to-buffer copy operations
