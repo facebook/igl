@@ -467,7 +467,14 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
   // Begin command buffer if not already begun
   begin();
 
-  return std::make_unique<RenderCommandEncoder>(*this, renderPass, framebuffer);
+  // Create encoder with lightweight constructor, then initialize with render pass
+  // NOTE: begin() may encounter D3D12 errors (descriptor allocation, resource transitions, etc.)
+  // but currently only logs failures and does not propagate errors to outResult.
+  // Callers should rely on D3D12 debug layer and logging for error detection.
+  // TODO: Consider propagating errors from begin() to outResult for better error handling.
+  auto encoder = std::make_unique<RenderCommandEncoder>(*this, framebuffer);
+  encoder->begin(renderPass);
+  return encoder;
 }
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {

@@ -20,14 +20,21 @@
 namespace igl::d3d12 {
 
 RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
-                                           const RenderPassDesc& renderPass,
                                            const std::shared_ptr<IFramebuffer>& framebuffer)
     : IRenderCommandEncoder(nullptr),
       commandBuffer_(commandBuffer),
       commandList_(commandBuffer.getCommandList()),
       resourcesBinder_(commandBuffer, false /* isCompute */),
       framebuffer_(framebuffer) {
-  IGL_LOG_INFO("RenderCommandEncoder::RenderCommandEncoder() - START\n");
+  IGL_LOG_INFO("RenderCommandEncoder::RenderCommandEncoder() - Lightweight initialization\n");
+}
+
+void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
+  // T12: Enforce single-call semantics - begin() allocates descriptors and cannot be safely called twice
+  IGL_DEBUG_ASSERT(!hasBegun_, "begin() called multiple times - this will cause resource leaks");
+  hasBegun_ = true;
+
+  IGL_LOG_INFO("RenderCommandEncoder::begin() - START\n");
   auto& context = commandBuffer_.getContext();
   IGL_LOG_INFO("RenderCommandEncoder: Got context\n");
 
@@ -417,7 +424,7 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
       IGL_LOG_ERROR("RenderCommandEncoder: No back buffer available!\n");
     }
   }
-  IGL_LOG_INFO("RenderCommandEncoder: Constructor complete!\n");
+  IGL_LOG_INFO("RenderCommandEncoder::begin() - Complete!\n");
 }
 
 void RenderCommandEncoder::endEncoding() {

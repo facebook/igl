@@ -43,9 +43,14 @@ class CommandBuffer;
 class RenderCommandEncoder final : public IRenderCommandEncoder {
  public:
   RenderCommandEncoder(CommandBuffer& commandBuffer,
-                       const RenderPassDesc& renderPass,
                        const std::shared_ptr<IFramebuffer>& framebuffer);
   ~RenderCommandEncoder() override = default;
+
+  // Initialize encoder and setup render targets
+  // IMPORTANT: Must be called exactly once after construction by CommandBuffer::createRenderCommandEncoder.
+  // Calling multiple times will result in resource leaks and undefined behavior.
+  // Debug builds will assert if called more than once.
+  void begin(const RenderPassDesc& renderPass);
 
   void endEncoding() override;
 
@@ -104,6 +109,10 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
 
   // T08: Centralized resource binding management
   D3D12ResourcesBinder resourcesBinder_;
+
+  // T12: Guard against multiple begin() calls
+  // begin() allocates RTV/DSV descriptors and sets up state that should only happen once
+  bool hasBegun_ = false;
 
   // Cache current vertex stride from bound pipeline's input layout
   UINT currentVertexStride_ = 0;
