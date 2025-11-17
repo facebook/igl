@@ -29,7 +29,7 @@ void ShaderModule::extractShaderMetadata() {
     return;
   }
 
-  IGL_LOG_INFO("ShaderModule: Reflection extracted - %u constant buffers, %u bound resources, %u input params, %u output params\n",
+  IGL_D3D12_LOG_VERBOSE("ShaderModule: Reflection extracted - %u constant buffers, %u bound resources, %u input params, %u output params\n",
                shaderDesc.ConstantBuffers,
                shaderDesc.BoundResources,
                shaderDesc.InputParameters,

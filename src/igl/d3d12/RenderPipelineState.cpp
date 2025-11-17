@@ -26,34 +26,34 @@ RenderPipelineState::RenderPipelineState(const RenderPipelineDesc& desc,
   if (pipelineState_.Get() && !debugName.empty()) {
     std::wstring wideName(debugName.begin(), debugName.end());
     pipelineState_->SetName((L"PSO_" + wideName).c_str());
-    IGL_LOG_INFO("RenderPipelineState: Set PIX debug name 'PSO_%s'\n", debugName.c_str());
+    IGL_D3D12_LOG_VERBOSE("RenderPipelineState: Set PIX debug name 'PSO_%s'\n", debugName.c_str());
   }
   if (rootSignature_.Get() && !debugName.empty()) {
     std::wstring wideName(debugName.begin(), debugName.end());
     rootSignature_->SetName((L"RootSig_" + wideName).c_str());
-    IGL_LOG_INFO("RenderPipelineState: Set PIX root signature name 'RootSig_%s'\n", debugName.c_str());
+    IGL_D3D12_LOG_VERBOSE("RenderPipelineState: Set PIX root signature name 'RootSig_%s'\n", debugName.c_str());
   }
   // Convert IGL primitive topology to D3D12 primitive topology
   switch (desc.topology) {
     case PrimitiveType::Point:
       primitiveTopology_ = D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
-      IGL_LOG_INFO("RenderPipelineState: Set topology to POINTLIST\n");
+      IGL_D3D12_LOG_VERBOSE("RenderPipelineState: Set topology to POINTLIST\n");
       break;
     case PrimitiveType::Line:
       primitiveTopology_ = D3D_PRIMITIVE_TOPOLOGY_LINELIST;
-      IGL_LOG_INFO("RenderPipelineState: Set topology to LINELIST\n");
+      IGL_D3D12_LOG_VERBOSE("RenderPipelineState: Set topology to LINELIST\n");
       break;
     case PrimitiveType::LineStrip:
       primitiveTopology_ = D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
-      IGL_LOG_INFO("RenderPipelineState: Set topology to LINESTRIP\n");
+      IGL_D3D12_LOG_VERBOSE("RenderPipelineState: Set topology to LINESTRIP\n");
       break;
     case PrimitiveType::Triangle:
       primitiveTopology_ = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-      IGL_LOG_INFO("RenderPipelineState: Set topology to TRIANGLELIST\n");
+      IGL_D3D12_LOG_VERBOSE("RenderPipelineState: Set topology to TRIANGLELIST\n");
       break;
     case PrimitiveType::TriangleStrip:
       primitiveTopology_ = D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-      IGL_LOG_INFO("RenderPipelineState: Set topology to TRIANGLESTRIP\n");
+      IGL_D3D12_LOG_VERBOSE("RenderPipelineState: Set topology to TRIANGLESTRIP\n");
       break;
   }
 

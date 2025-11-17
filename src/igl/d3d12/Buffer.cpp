@@ -74,7 +74,7 @@ Buffer::~Buffer() {
     // Track resource destruction
     D3D12Context::trackResourceDestruction("Buffer", desc_.length);
   }
-  IGL_LOG_INFO("Buffer::~Buffer() - Destroying buffer, resource_=%p, final_refCount_before_ComPtr_dtor=%lu\n", resource_.Get(), refCount);
+  IGL_D3D12_LOG_VERBOSE("Buffer::~Buffer() - Destroying buffer, resource_=%p, final_refCount_before_ComPtr_dtor=%lu\n", resource_.Get(), refCount);
   if (mappedPtr_) {
     unmap();
   }
@@ -405,7 +405,7 @@ void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
     // ALWAYS copy from DEFAULT buffer to readback staging when mapping
     // The DEFAULT buffer content may have changed since the last map() call
     // (e.g., via copyTextureToBuffer or compute shader writes)
-    IGL_LOG_INFO("Buffer::map() - Copying from DEFAULT buffer (resource=%p) to readback staging\n",
+    IGL_D3D12_LOG_VERBOSE("Buffer::map() - Copying from DEFAULT buffer (resource=%p) to readback staging\n",
                  resource_.Get());
 
     // D-001: Use pooled allocator instead of creating transient one

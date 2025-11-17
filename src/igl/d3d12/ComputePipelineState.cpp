@@ -25,12 +25,12 @@ ComputePipelineState::ComputePipelineState(const ComputePipelineDesc& desc,
   if (pipelineState_.Get() && !debugName.empty()) {
     std::wstring wideName(debugName.begin(), debugName.end());
     pipelineState_->SetName((L"ComputePSO_" + wideName).c_str());
-    IGL_LOG_INFO("ComputePipelineState: Set PIX debug name 'ComputePSO_%s'\n", debugName.c_str());
+    IGL_D3D12_LOG_VERBOSE("ComputePipelineState: Set PIX debug name 'ComputePSO_%s'\n", debugName.c_str());
   }
   if (rootSignature_.Get() && !debugName.empty()) {
     std::wstring wideName(debugName.begin(), debugName.end());
     rootSignature_->SetName((L"ComputeRootSig_" + wideName).c_str());
-    IGL_LOG_INFO("ComputePipelineState: Set PIX root signature name 'ComputeRootSig_%s'\n", debugName.c_str());
+    IGL_D3D12_LOG_VERBOSE("ComputePipelineState: Set PIX root signature name 'ComputeRootSig_%s'\n", debugName.c_str());
   }
 }
 

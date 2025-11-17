@@ -160,7 +160,7 @@ Result executeCopyTextureToBuffer(D3D12Context& ctx,
       const bool isDefaultHeap = (heapProps.Type == D3D12_HEAP_TYPE_DEFAULT);
 
 #ifdef IGL_DEBUG
-      IGL_LOG_INFO("copyTextureToBuffer: Destination heap type = %d (1=DEFAULT, 2=UPLOAD, 3=READBACK), isDefaultHeap=%d\n",
+      IGL_D3D12_LOG_VERBOSE("copyTextureToBuffer: Destination heap type = %d (1=DEFAULT, 2=UPLOAD, 3=READBACK), isDefaultHeap=%d\n",
                    heapProps.Type, isDefaultHeap);
 #endif
 
@@ -252,7 +252,7 @@ Result executeCopyTextureToBuffer(D3D12Context& ctx,
 
           // Copy unpacked data to destination
 #ifdef IGL_DEBUG
-          IGL_LOG_INFO("copyTextureToBuffer: GPU copy %llu bytes from upload buffer to DEFAULT buffer at offset %llu\n",
+          IGL_D3D12_LOG_VERBOSE("copyTextureToBuffer: GPU copy %llu bytes from upload buffer to DEFAULT buffer at offset %llu\n",
                        unpackedDataSize, destinationOffset);
 #endif
           copyList->CopyBufferRegion(dstRes, destinationOffset, uploadBuffer.Get(), 0, unpackedDataSize);
@@ -266,7 +266,7 @@ Result executeCopyTextureToBuffer(D3D12Context& ctx,
           Result copySubmitResult;
           const uint64_t copyFenceValue = immediateCommands->submit(true, &copySubmitResult);
 #ifdef IGL_DEBUG
-          IGL_LOG_INFO("copyTextureToBuffer: GPU copy complete!\n");
+          IGL_D3D12_LOG_VERBOSE("copyTextureToBuffer: GPU copy complete!\n");
 #endif
           if (!copySubmitResult.isOk() || copyFenceValue == 0) {
             readbackBuffer->Unmap(0, nullptr);

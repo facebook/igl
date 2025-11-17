@@ -32,7 +32,7 @@ void executeDeferredCopies(D3D12Context& ctx, Device& device, const CommandBuffe
   }
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandQueue: Executing %zu deferred copyTextureToBuffer operations\n",
+  IGL_D3D12_LOG_VERBOSE("CommandQueue: Executing %zu deferred copyTextureToBuffer operations\n",
                deferredCopies.size());
 #endif
 
@@ -51,7 +51,7 @@ void executeDeferredCopies(D3D12Context& ctx, Device& device, const CommandBuffe
   }
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandQueue: All deferred copies executed successfully\n");
+  IGL_D3D12_LOG_VERBOSE("CommandQueue: All deferred copies executed successfully\n");
 #endif
 }
 
@@ -77,7 +77,7 @@ void updateFrameFences(D3D12Context& ctx, UINT64 currentFenceValue) {
   frameCtx.commandBufferCount++;
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandQueue: Signaled fence for frame %u "
+  IGL_D3D12_LOG_VERBOSE("CommandQueue: Signaled fence for frame %u "
                "(value=%llu, maxAllocatorFence=%llu, cmdBufCount=%u)\n",
                ctx.getCurrentFrameIndex(), currentFenceValue,
                frameCtx.maxAllocatorFence, frameCtx.commandBufferCount);
@@ -146,11 +146,11 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   cmdBuffer.scheduleValue_ = scheduleFenceValue_;
   ctx.getCommandQueue()->Signal(cmdBuffer.scheduleFence_.Get(), scheduleFenceValue_);
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandQueue: Signaled scheduling fence (value=%llu)\n", scheduleFenceValue_);
+  IGL_D3D12_LOG_VERBOSE("CommandQueue: Signaled scheduling fence (value=%llu)\n", scheduleFenceValue_);
 #endif
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandQueue::submit() - Executing command list...\n");
+  IGL_D3D12_LOG_VERBOSE("CommandQueue::submit() - Executing command list...\n");
 #endif
 
   // Execute command list
@@ -193,24 +193,24 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   }
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandQueue::submit() - Complete!\n");
+  IGL_D3D12_LOG_VERBOSE("CommandQueue::submit() - Complete!\n");
 #endif
 
   // Aggregate per-command-buffer draw count into the device, matching GL/Vulkan behavior
   const auto cbDraws = cmdBuffer.getCurrentDrawCount();
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandQueue::submit() - Aggregating %zu draws from CB into device\n", cbDraws);
+  IGL_D3D12_LOG_VERBOSE("CommandQueue::submit() - Aggregating %zu draws from CB into device\n", cbDraws);
 #endif
   device_.incrementDrawCount(cbDraws);
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandQueue::submit() - Device drawCount now=%zu\n", device_.getCurrentDrawCount());
+  IGL_D3D12_LOG_VERBOSE("CommandQueue::submit() - Device drawCount now=%zu\n", device_.getCurrentDrawCount());
 
   // Log resource stats every 30 draws to track leaks
   const size_t drawCount = device_.getCurrentDrawCount();
   if (drawCount == 30 || drawCount == 60 || drawCount == 90 || drawCount == 120 ||
       drawCount == 150 || drawCount == 300 || drawCount == 600 || drawCount == 900 ||
       drawCount == 1200 || drawCount == 1500 || drawCount == 1800) {
-    IGL_LOG_INFO("CommandQueue::submit() - Logging resource stats at drawCount=%zu\n", drawCount);
+    IGL_D3D12_LOG_VERBOSE("CommandQueue::submit() - Logging resource stats at drawCount=%zu\n", drawCount);
     D3D12Context::logResourceStats();
   }
 #endif

@@ -133,7 +133,7 @@ Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
     frameCtx.currentCbvSrvUavPageIndex = currentPageIdx;
     frameCtx.nextCbvSrvUavDescriptor = 0;  // Reset offset for new page
 
-    IGL_LOG_INFO("D3D12: Allocated new CBV/SRV/UAV descriptor heap page %u for frame %u (total: %zu pages, %zu descriptors)\n",
+    IGL_D3D12_LOG_VERBOSE("D3D12: Allocated new CBV/SRV/UAV descriptor heap page %u for frame %u (total: %zu pages, %zu descriptors)\n",
                  currentPageIdx, frameIdx, pages.size(), pages.size() * kDescriptorsPerPage);
 
     // DX12-NEW-01: Store the new heap for encoder rebinding
@@ -146,7 +146,7 @@ Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
         frameCtx.samplerHeap.Get()
       };
       commandList_->SetDescriptorHeaps(2, heaps);
-      IGL_LOG_INFO("D3D12: Rebound descriptor heaps after page allocation (page %u)\n", currentPageIdx);
+      IGL_D3D12_LOG_VERBOSE("D3D12: Rebound descriptor heaps after page allocation (page %u)\n", currentPageIdx);
     }
   }
 
@@ -167,7 +167,7 @@ Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
   *outDescriptorIndex = descriptorIndex;
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandBuffer::getNextCbvSrvUavDescriptor() - frame %u, page %u, descriptor %u (total allocated: %u)\n",
+  IGL_D3D12_LOG_VERBOSE("CommandBuffer::getNextCbvSrvUavDescriptor() - frame %u, page %u, descriptor %u (total allocated: %u)\n",
                frameIdx, currentPageIdx, descriptorIndex, totalUsed);
 #endif
 
@@ -235,7 +235,7 @@ Result CommandBuffer::allocateCbvSrvUavRange(uint32_t count, uint32_t* outBaseDe
     frameCtx.currentCbvSrvUavPageIndex = currentPageIdx;
     frameCtx.nextCbvSrvUavDescriptor = 0;
 
-    IGL_LOG_INFO("D3D12: Allocated new CBV/SRV/UAV page %u for contiguous range of %u descriptors\n",
+    IGL_D3D12_LOG_VERBOSE("D3D12: Allocated new CBV/SRV/UAV page %u for contiguous range of %u descriptors\n",
                  currentPageIdx, count);
 
     // Rebind heap on command list
@@ -266,7 +266,7 @@ Result CommandBuffer::allocateCbvSrvUavRange(uint32_t count, uint32_t* outBaseDe
   *outBaseDescriptorIndex = baseIndex;
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandBuffer::allocateCbvSrvUavRange() - frame %u, page %u, base %u, count %u\n",
+  IGL_D3D12_LOG_VERBOSE("CommandBuffer::allocateCbvSrvUavRange() - frame %u, page %u, base %u, count %u\n",
                frameIdx, currentPageIdx, baseIndex, count);
 #endif
 
@@ -312,7 +312,7 @@ uint32_t& CommandBuffer::getNextSamplerDescriptor() {
   }
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandBuffer::getNextSamplerDescriptor() - frame %u, current value=%u\n",
+  IGL_D3D12_LOG_VERBOSE("CommandBuffer::getNextSamplerDescriptor() - frame %u, current value=%u\n",
                frameIdx, currentValue);
 #endif
   return frameCtx.nextSamplerDescriptor;
@@ -334,7 +334,7 @@ void CommandBuffer::trackTransientBuffer(std::shared_ptr<IBuffer> buffer) {
   }
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandBuffer::trackTransientBuffer() - Added buffer to frame %u (total=%zu, high-water=%zu)\n",
+  IGL_D3D12_LOG_VERBOSE("CommandBuffer::trackTransientBuffer() - Added buffer to frame %u (total=%zu, high-water=%zu)\n",
                frameIdx, currentCount, frameCtx.transientBuffersHighWater);
 #endif
 }
@@ -359,7 +359,7 @@ void CommandBuffer::trackTransientResource(ID3D12Resource* resource) {
   }
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandBuffer::trackTransientResource() - Added resource to frame %u (total=%zu, high-water=%zu)\n",
+  IGL_D3D12_LOG_VERBOSE("CommandBuffer::trackTransientResource() - Added resource to frame %u (total=%zu, high-water=%zu)\n",
                frameIdx, currentCount, frameCtx.transientResourcesHighWater);
 #endif
 }
@@ -404,7 +404,7 @@ void CommandBuffer::begin() {
   commandList_->SetDescriptorHeaps(2, heaps);
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandBuffer::begin() - Set per-frame descriptor heaps for frame %u\n", frameIdx);
+  IGL_D3D12_LOG_VERBOSE("CommandBuffer::begin() - Set per-frame descriptor heaps for frame %u\n", frameIdx);
 #endif
 
   // Use the CURRENT FRAME's command allocator from FrameContext
@@ -414,7 +414,7 @@ void CommandBuffer::begin() {
   // Microsoft pattern: Reset allocator THEN reset command list
   // Allocator was reset in CommandQueue::submit() after fence wait, OR is in initial ready state
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandBuffer::begin() - Frame %u: Resetting command list with allocator...\n", frameIdx);
+  IGL_D3D12_LOG_VERBOSE("CommandBuffer::begin() - Frame %u: Resetting command list with allocator...\n", frameIdx);
 #endif
   HRESULT hr = commandList_->Reset(frameAllocator, nullptr);
   if (FAILED(hr)) {
@@ -422,7 +422,7 @@ void CommandBuffer::begin() {
     return;
   }
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandBuffer::begin() - Command list reset OK\n");
+  IGL_D3D12_LOG_VERBOSE("CommandBuffer::begin() - Command list reset OK\n");
 #endif
   recording_ = true;
 
@@ -494,7 +494,7 @@ void CommandBuffer::waitUntilScheduled() {
   // If scheduleValue_ is 0, the command buffer hasn't been submitted yet
   if (scheduleValue_ == 0) {
 #ifdef IGL_DEBUG
-    IGL_LOG_INFO("CommandBuffer::waitUntilScheduled() - Not yet submitted, returning immediately\n");
+    IGL_D3D12_LOG_VERBOSE("CommandBuffer::waitUntilScheduled() - Not yet submitted, returning immediately\n");
 #endif
     return;
   }
@@ -508,7 +508,7 @@ void CommandBuffer::waitUntilScheduled() {
   const UINT64 completedValue = scheduleFence_->GetCompletedValue();
   if (completedValue >= scheduleValue_) {
 #ifdef IGL_DEBUG
-    IGL_LOG_INFO("CommandBuffer::waitUntilScheduled() - Already scheduled (completed=%llu, target=%llu)\n",
+    IGL_D3D12_LOG_VERBOSE("CommandBuffer::waitUntilScheduled() - Already scheduled (completed=%llu, target=%llu)\n",
                  completedValue, scheduleValue_);
 #endif
     return;
@@ -516,7 +516,7 @@ void CommandBuffer::waitUntilScheduled() {
 
   // Wait for the scheduling fence to be signaled
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandBuffer::waitUntilScheduled() - Waiting for scheduling (completed=%llu, target=%llu)\n",
+  IGL_D3D12_LOG_VERBOSE("CommandBuffer::waitUntilScheduled() - Waiting for scheduling (completed=%llu, target=%llu)\n",
                completedValue, scheduleValue_);
 #endif
 
@@ -547,7 +547,7 @@ void CommandBuffer::waitUntilScheduled() {
   CloseHandle(hEvent);
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandBuffer::waitUntilScheduled() - Scheduling complete (fence now=%llu)\n",
+  IGL_D3D12_LOG_VERBOSE("CommandBuffer::waitUntilScheduled() - Scheduling complete (fence now=%llu)\n",
                scheduleFence_->GetCompletedValue());
 #endif
 }
@@ -580,7 +580,7 @@ void CommandBuffer::waitUntilCompleted() {
   CloseHandle(fenceEvent);
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("CommandBuffer::waitUntilCompleted() - GPU work completed\n");
+  IGL_D3D12_LOG_VERBOSE("CommandBuffer::waitUntilCompleted() - GPU work completed\n");
 #endif
 }
 
@@ -751,7 +751,7 @@ void CommandBuffer::copyTextureToBuffer(ITexture& source,
   // D3D12 requires this to execute AFTER render commands complete, not during recording
   // (Unlike Vulkan which can record into the command buffer, D3D12 has closed command list and padding constraints)
 
-  IGL_LOG_INFO("copyTextureToBuffer: Recording deferred copy operation (will execute in CommandQueue::submit)\n");
+  IGL_D3D12_LOG_VERBOSE("copyTextureToBuffer: Recording deferred copy operation (will execute in CommandQueue::submit)\n");
 
   deferredTextureCopies_.push_back({
     &source,

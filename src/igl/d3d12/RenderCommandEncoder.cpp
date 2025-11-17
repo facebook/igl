@@ -26,7 +26,7 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
       commandList_(commandBuffer.getCommandList()),
       resourcesBinder_(commandBuffer, false /* isCompute */),
       framebuffer_(framebuffer) {
-  IGL_LOG_INFO("RenderCommandEncoder::RenderCommandEncoder() - Lightweight initialization\n");
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder::RenderCommandEncoder() - Lightweight initialization\n");
 }
 
 void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
@@ -34,9 +34,9 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
   IGL_DEBUG_ASSERT(!hasBegun_, "begin() called multiple times - this will cause resource leaks");
   hasBegun_ = true;
 
-  IGL_LOG_INFO("RenderCommandEncoder::begin() - START\n");
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder::begin() - START\n");
   auto& context = commandBuffer_.getContext();
-  IGL_LOG_INFO("RenderCommandEncoder: Got context\n");
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Got context\n");
 
   // Set descriptor heaps for this command list
   // CRITICAL: Must use per-frame heaps from D3D12Context, NOT DescriptorHeapManager!
@@ -50,41 +50,41 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
   cbvSrvUavHeap_ = frameCtx.activeCbvSrvUavHeap.Get();
   samplerHeap_ = frameCtx.samplerHeap.Get();
 
-  IGL_LOG_INFO("RenderCommandEncoder: Using active per-frame heap from FrameContext\n");
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Using active per-frame heap from FrameContext\n");
 
-  IGL_LOG_INFO("RenderCommandEncoder: CBV/SRV/UAV heap (active) = %p\n", cbvSrvUavHeap_);
-  IGL_LOG_INFO("RenderCommandEncoder: Sampler heap = %p\n", samplerHeap_);
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: CBV/SRV/UAV heap (active) = %p\n", cbvSrvUavHeap_);
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Sampler heap = %p\n", samplerHeap_);
 
   // DX12-NEW-01: Bind active heap (may be page 0 or a later page)
   ID3D12DescriptorHeap* heaps[] = {cbvSrvUavHeap_, samplerHeap_};
-  IGL_LOG_INFO("RenderCommandEncoder: Setting descriptor heaps...\n");
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Setting descriptor heaps...\n");
   commandList_->SetDescriptorHeaps(2, heaps);
-  IGL_LOG_INFO("RenderCommandEncoder: Descriptor heaps set\n");
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Descriptor heaps set\n");
 
   // Create RTV from framebuffer if provided; otherwise fallback to swapchain RTV
-  IGL_LOG_INFO("RenderCommandEncoder: Setting up RTV...\n");
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Setting up RTV...\n");
   D3D12_CPU_DESCRIPTOR_HANDLE rtv = {};
   std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvs;
   rtvIndices_.clear();
   bool usedOffscreenRTV = false;
   // Note: heapMgr already retrieved above for setting descriptor heaps
-  IGL_LOG_INFO("RenderCommandEncoder: DescriptorHeapManager = %p\n", heapMgr);
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: DescriptorHeapManager = %p\n", heapMgr);
 
-  IGL_LOG_INFO("RenderCommandEncoder: Checking framebuffer_=%p\n", framebuffer_.get());
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Checking framebuffer_=%p\n", framebuffer_.get());
   // Only create offscreen RTV if we have DescriptorHeapManager AND it's not a swapchain texture
   // Swapchain textures should use context.getCurrentRTV() directly
   if (framebuffer_ && framebuffer_->getColorAttachment(0) && heapMgr) {
-    IGL_LOG_INFO("RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager\n");
+    IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Has framebuffer with color attachment AND DescriptorHeapManager\n");
     ID3D12Device* device = context.getDevice();
     if (device) {
       // Create RTVs for each color attachment
       const size_t count = std::min<size_t>(framebuffer_->getColorAttachmentIndices().size(), D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT);
-      IGL_LOG_INFO("RenderCommandEncoder: MRT count = %zu (indices.size=%zu)\n", count, framebuffer_->getColorAttachmentIndices().size());
+      IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: MRT count = %zu (indices.size=%zu)\n", count, framebuffer_->getColorAttachmentIndices().size());
       for (size_t i = 0; i < count; ++i) {
         auto tex = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(i));
-        IGL_LOG_INFO("RenderCommandEncoder: MRT loop i=%zu, tex=%p, resource=%p\n", i, tex.get(), tex ? tex->getResource() : nullptr);
+        IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: MRT loop i=%zu, tex=%p, resource=%p\n", i, tex.get(), tex ? tex->getResource() : nullptr);
         if (!tex || !tex->getResource()) {
-          IGL_LOG_INFO("RenderCommandEncoder: MRT loop i=%zu SKIPPED (null tex or resource)\n", i);
+          IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: MRT loop i=%zu SKIPPED (null tex or resource)\n", i);
           continue;
         }
         const bool hasAttachmentDesc = (i < renderPass.colorAttachments.size());
@@ -142,7 +142,7 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
             rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
             rdesc.Texture2DMSArray.FirstArraySlice = targetArraySlice;
             rdesc.Texture2DMSArray.ArraySize = 1;
-            IGL_LOG_INFO(
+            IGL_D3D12_LOG_VERBOSE(
                 "RenderCommandEncoder: Creating MSAA cube RTV with %u samples, face %u, cube index %u (array slice %u)\n",
                 resourceDesc.SampleDesc.Count,
                 attachmentFace,
@@ -158,12 +158,12 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
               rdesc.Texture2DMSArray.FirstArraySlice = attachmentLayer;
               rdesc.Texture2DMSArray.ArraySize = 1;  // Render to single layer
             }
-            IGL_LOG_INFO("RenderCommandEncoder: Creating MSAA array RTV with %u samples, layer %u\n",
+            IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Creating MSAA array RTV with %u samples, layer %u\n",
                          resourceDesc.SampleDesc.Count, rdesc.Texture2DMSArray.FirstArraySlice);
           } else {
             // MSAA non-array texture - use TEXTURE2DMS view dimension
             rdesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
-            IGL_LOG_INFO("RenderCommandEncoder: Creating MSAA RTV with %u samples\n", resourceDesc.SampleDesc.Count);
+            IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Creating MSAA RTV with %u samples\n", resourceDesc.SampleDesc.Count);
           }
         } else {
           // Non-MSAA texture
@@ -173,7 +173,7 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
             rdesc.Texture2DArray.PlaneSlice = 0;
             rdesc.Texture2DArray.FirstArraySlice = targetArraySlice;
             rdesc.Texture2DArray.ArraySize = 1;
-            IGL_LOG_INFO(
+            IGL_D3D12_LOG_VERBOSE(
                 "RenderCommandEncoder: Creating cube RTV, mip %u, face %u, cube index %u (array slice %u)\n",
                 mipLevel,
                 attachmentFace,
@@ -193,7 +193,7 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
               rdesc.Texture2DArray.FirstArraySlice = attachmentLayer;
               rdesc.Texture2DArray.ArraySize = 1;  // Render to single layer
             }
-            IGL_LOG_INFO("RenderCommandEncoder: Creating array RTV, mip %u, layer %u\n",
+            IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Creating array RTV, mip %u, layer %u\n",
                          rdesc.Texture2DArray.MipSlice, rdesc.Texture2DArray.FirstArraySlice);
           } else {
             // Non-array texture - use standard TEXTURE2D view dimension
@@ -202,7 +202,7 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
             const uint32_t mipSlice2D = (i < renderPass.colorAttachments.size()) ? renderPass.colorAttachments[i].mipLevel : 0;
             rdesc.Texture2D.MipSlice = mipSlice2D;
             rdesc.Texture2D.PlaneSlice = 0;
-            IGL_LOG_INFO("RenderCommandEncoder: Creating RTV, mip %u\n", rdesc.Texture2D.MipSlice);
+            IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Creating RTV, mip %u\n", rdesc.Texture2D.MipSlice);
           }
         }
         // Pre-creation validation (TASK_P0_DX12-004)
@@ -226,7 +226,7 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
         if (hasAttachmentDesc && renderPass.colorAttachments[i].loadAction == LoadAction::Clear) {
           const auto& clearColor = renderPass.colorAttachments[i].clearColor;
           const float color[] = {clearColor.r, clearColor.g, clearColor.b, clearColor.a};
-          IGL_LOG_INFO("RenderCommandEncoder: Clearing MRT attachment %zu with color (%.2f, %.2f, %.2f, %.2f)\n",
+          IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Clearing MRT attachment %zu with color (%.2f, %.2f, %.2f, %.2f)\n",
                        i, color[0], color[1], color[2], color[3]);
           commandList_->ClearRenderTargetView(rtvHandle, color, 0, nullptr);
         } else {
@@ -235,13 +235,13 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
           if (i < renderPass.colorAttachments.size()) {
             loadActionDbg = (int)renderPass.colorAttachments[i].loadAction;
           }
-          IGL_LOG_INFO("RenderCommandEncoder: NOT clearing MRT attachment %zu (loadAction=%d, hasAttachment=%d)\n",
+          IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: NOT clearing MRT attachment %zu (loadAction=%d, hasAttachment=%d)\n",
                        i, loadActionDbg, i < renderPass.colorAttachments.size());
         }
         rtvs.push_back(rtvHandle);
-        IGL_LOG_INFO("RenderCommandEncoder: MRT Created RTV #%zu, total RTVs now=%zu\n", i, rtvs.size());
+        IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: MRT Created RTV #%zu, total RTVs now=%zu\n", i, rtvs.size());
       }
-      IGL_LOG_INFO("RenderCommandEncoder: MRT Total RTVs created: %zu\n", rtvs.size());
+      IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: MRT Total RTVs created: %zu\n", rtvs.size());
       if (!rtvs.empty()) {
         rtv = rtvs[0];
         usedOffscreenRTV = true;
@@ -249,14 +249,14 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
     }
   }
   if (!usedOffscreenRTV) {
-    IGL_LOG_INFO("RenderCommandEncoder: Using swapchain back buffer\n");
+    IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Using swapchain back buffer\n");
     auto* backBuffer = context.getCurrentBackBuffer();
-    IGL_LOG_INFO("RenderCommandEncoder: Got back buffer=%p\n", backBuffer);
+    IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Got back buffer=%p\n", backBuffer);
     if (!backBuffer) {
       IGL_LOG_ERROR("RenderCommandEncoder: No back buffer available\n");
       return;
     }
-    IGL_LOG_INFO("RenderCommandEncoder: Transitioning back buffer to RENDER_TARGET\n");
+    IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Transitioning back buffer to RENDER_TARGET\n");
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -265,19 +265,19 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     commandList_->ResourceBarrier(1, &barrier);
-    IGL_LOG_INFO("RenderCommandEncoder: Resource barrier executed\n");
+    IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Resource barrier executed\n");
 
     if (!renderPass.colorAttachments.empty() &&
         renderPass.colorAttachments[0].loadAction == LoadAction::Clear) {
-      IGL_LOG_INFO("RenderCommandEncoder: Clearing render target\n");
+      IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Clearing render target\n");
       const auto& cc = renderPass.colorAttachments[0].clearColor;
       const float col[] = {cc.r, cc.g, cc.b, cc.a};
       D3D12_CPU_DESCRIPTOR_HANDLE swapRtv = context.getCurrentRTV();
       commandList_->ClearRenderTargetView(swapRtv, col, 0, nullptr);
-      IGL_LOG_INFO("RenderCommandEncoder: Clear complete\n");
+      IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Clear complete\n");
     }
     rtv = context.getCurrentRTV();
-    IGL_LOG_INFO("RenderCommandEncoder: Got RTV handle\n");
+    IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Got RTV handle\n");
   }
 
   // Create/Bind depth-stencil view if we have a framebuffer with a depth attachment
@@ -316,7 +316,7 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
       if (depthResourceDesc.SampleDesc.Count > 1) {
         // MSAA depth texture - use TEXTURE2DMS view dimension
         dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
-        IGL_LOG_INFO("RenderCommandEncoder: Creating MSAA DSV with %u samples\n", depthResourceDesc.SampleDesc.Count);
+        IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Creating MSAA DSV with %u samples\n", depthResourceDesc.SampleDesc.Count);
       } else {
         // Non-MSAA depth texture - use standard TEXTURE2D view dimension
         dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
@@ -352,79 +352,79 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
 
         commandList_->ClearDepthStencilView(dsvHandle_, clearFlags, depthClearValue, stencilClearValue, 0, nullptr);
 
-        IGL_LOG_INFO("RenderCommandEncoder: Cleared depth-stencil (depth=%d, stencil=%d, depthVal=%.2f, stencilVal=%u)\n",
+        IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Cleared depth-stencil (depth=%d, stencil=%d, depthVal=%.2f, stencilVal=%u)\n",
                      clearDepth, clearStencil, depthClearValue, stencilClearValue);
       }
 
       // Bind RTV + DSV (or DSV-only for depth-only rendering)
       if (!rtvs.empty()) {
         // Multi-render target or offscreen rendering with color+depth
-        IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with %zu RTVs + DSV\n", rtvs.size());
+        IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: OMSetRenderTargets with %zu RTVs + DSV\n", rtvs.size());
         commandList_->OMSetRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(), FALSE, &dsvHandle_);
       } else if (usedOffscreenRTV) {
         // Single offscreen render target with depth
-        IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with 1 RTV + DSV\n");
+        IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: OMSetRenderTargets with 1 RTV + DSV\n");
         commandList_->OMSetRenderTargets(1, &rtv, FALSE, &dsvHandle_);
       } else if (!framebuffer_->getColorAttachment(0)) {
         // Depth-only rendering (no color attachments) - shadow mapping scenario
-        IGL_LOG_INFO("RenderCommandEncoder: Depth-only rendering - OMSetRenderTargets with 0 RTVs + DSV\n");
+        IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Depth-only rendering - OMSetRenderTargets with 0 RTVs + DSV\n");
         commandList_->OMSetRenderTargets(0, nullptr, FALSE, &dsvHandle_);
       } else {
         // Swapchain backbuffer with depth
-        IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with swapchain RTV + DSV\n");
+        IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: OMSetRenderTargets with swapchain RTV + DSV\n");
         commandList_->OMSetRenderTargets(1, &rtv, FALSE, &dsvHandle_);
       }
     } else {
-      IGL_LOG_INFO("RenderCommandEncoder: Binding RTV without DSV (no resource)\n");
+      IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Binding RTV without DSV (no resource)\n");
       if (!rtvs.empty()) {
-        IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with %zu RTVs, no DSV\n", rtvs.size());
+        IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: OMSetRenderTargets with %zu RTVs, no DSV\n", rtvs.size());
         commandList_->OMSetRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(), FALSE, nullptr);
       } else {
-        IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with 1 RTV, no DSV\n");
+        IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: OMSetRenderTargets with 1 RTV, no DSV\n");
         commandList_->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
       }
     }
   } else {
-    IGL_LOG_INFO("RenderCommandEncoder: Binding RTV without DSV (no hasDepth)\n");
+    IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Binding RTV without DSV (no hasDepth)\n");
     if (!rtvs.empty()) {
-      IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with %zu RTVs, no DSV (no hasDepth)\n", rtvs.size());
+      IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: OMSetRenderTargets with %zu RTVs, no DSV (no hasDepth)\n", rtvs.size());
       commandList_->OMSetRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(), FALSE, nullptr);
     } else {
-      IGL_LOG_INFO("RenderCommandEncoder: OMSetRenderTargets with 1 RTV, no DSV (no hasDepth)\n");
+      IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: OMSetRenderTargets with 1 RTV, no DSV (no hasDepth)\n");
       commandList_->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
     }
   }
 
   // Set a default full-screen viewport/scissor if caller forgets. Prefer framebuffer attachment size.
-  IGL_LOG_INFO("RenderCommandEncoder: Setting default viewport...\n");
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Setting default viewport...\n");
   if (framebuffer_ && framebuffer_->getColorAttachment(0)) {
-    IGL_LOG_INFO("RenderCommandEncoder: Using framebuffer color attachment\n");
+    IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Using framebuffer color attachment\n");
     auto colorTex = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(0));
     if (colorTex && colorTex->getResource()) {
       auto dims = colorTex->getDimensions();
-      IGL_LOG_INFO("RenderCommandEncoder: Framebuffer dimensions: %ux%u\n", dims.width, dims.height);
+      IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Framebuffer dimensions: %ux%u\n", dims.width, dims.height);
       D3D12_VIEWPORT vp{}; vp.TopLeftX=0; vp.TopLeftY=0; vp.Width=(float)dims.width; vp.Height=(float)dims.height; vp.MinDepth=0; vp.MaxDepth=1;
       commandList_->RSSetViewports(1, &vp);
       D3D12_RECT sc{}; sc.left=0; sc.top=0; sc.right=(LONG)dims.width; sc.bottom=(LONG)dims.height; commandList_->RSSetScissorRects(1, &sc);
-      IGL_LOG_INFO("RenderCommandEncoder: Set default viewport/scissor to %ux%u\n", dims.width, dims.height);
+      IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Set default viewport/scissor to %ux%u\n", dims.width, dims.height);
     } else {
       IGL_LOG_ERROR("RenderCommandEncoder: Color texture is null or has no resource!\n");
     }
   } else {
-    IGL_LOG_INFO("RenderCommandEncoder: Using back buffer\n");
+    IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Using back buffer\n");
     auto* backBufferRes = context.getCurrentBackBuffer();
     if (backBufferRes) {
       D3D12_RESOURCE_DESC bbDesc = backBufferRes->GetDesc();
-      IGL_LOG_INFO("RenderCommandEncoder: Back buffer dimensions: %llux%u\n", bbDesc.Width, bbDesc.Height);
+      IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Back buffer dimensions: %llux%u\n", bbDesc.Width, bbDesc.Height);
       D3D12_VIEWPORT vp = {}; vp.TopLeftX=0; vp.TopLeftY=0; vp.Width=(float)bbDesc.Width; vp.Height=(float)bbDesc.Height; vp.MinDepth=0; vp.MaxDepth=1;
       commandList_->RSSetViewports(1, &vp);
       D3D12_RECT scissor = {}; scissor.left=0; scissor.top=0; scissor.right=(LONG)bbDesc.Width; scissor.bottom=(LONG)bbDesc.Height; commandList_->RSSetScissorRects(1, &scissor);
-      IGL_LOG_INFO("RenderCommandEncoder: Set default viewport/scissor to back buffer %llux%u\n", bbDesc.Width, bbDesc.Height);
+      IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Set default viewport/scissor to back buffer %llux%u\n", bbDesc.Width, bbDesc.Height);
     } else {
       IGL_LOG_ERROR("RenderCommandEncoder: No back buffer available!\n");
     }
   }
-  IGL_LOG_INFO("RenderCommandEncoder::begin() - Complete!\n");
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder::begin() - Complete!\n");
 }
 
 void RenderCommandEncoder::endEncoding() {
@@ -449,7 +449,7 @@ void RenderCommandEncoder::endEncoding() {
         D3D12_RESOURCE_DESC resolveDesc = resolveAttachment->getResource()->GetDesc();
 
         if (msaaDesc.SampleDesc.Count > 1 && resolveDesc.SampleDesc.Count == 1) {
-          IGL_LOG_INFO("RenderCommandEncoder::endEncoding - Resolving MSAA color attachment %zu (%u samples -> 1 sample)\n",
+          IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder::endEncoding - Resolving MSAA color attachment %zu (%u samples -> 1 sample)\n",
                        i, msaaDesc.SampleDesc.Count);
 
           // Transition MSAA texture to RESOLVE_SOURCE state
@@ -468,7 +468,7 @@ void RenderCommandEncoder::endEncoding() {
               msaaDesc.Format                     // Format (must be compatible)
           );
 
-          IGL_LOG_INFO("RenderCommandEncoder::endEncoding - MSAA color resolve completed for attachment %zu\n", i);
+          IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder::endEncoding - MSAA color resolve completed for attachment %zu\n", i);
 
           // Transition resolve texture to PIXEL_SHADER_RESOURCE for subsequent use
           resolveAttachment->transitionAll(commandList_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -487,7 +487,7 @@ void RenderCommandEncoder::endEncoding() {
       D3D12_RESOURCE_DESC resolveDesc = resolveDepth->getResource()->GetDesc();
 
       if (msaaDesc.SampleDesc.Count > 1 && resolveDesc.SampleDesc.Count == 1) {
-        IGL_LOG_INFO("RenderCommandEncoder::endEncoding - Resolving MSAA depth attachment (%u samples -> 1 sample)\n",
+        IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder::endEncoding - Resolving MSAA depth attachment (%u samples -> 1 sample)\n",
                      msaaDesc.SampleDesc.Count);
 
         // Transition depth textures to appropriate resolve states
@@ -503,7 +503,7 @@ void RenderCommandEncoder::endEncoding() {
             msaaDesc.Format
         );
 
-        IGL_LOG_INFO("RenderCommandEncoder::endEncoding - MSAA depth resolve completed\n");
+        IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder::endEncoding - MSAA depth resolve completed\n");
 
         // Transition resolved depth to shader resource for sampling
         resolveDepth->transitionAll(commandList_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -570,7 +570,7 @@ void RenderCommandEncoder::endEncoding() {
 void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
   static int callCount = 0;
   if (callCount < 3) {
-    IGL_LOG_INFO("bindViewport called #%d: x=%.1f, y=%.1f, w=%.1f, h=%.1f\n",
+    IGL_D3D12_LOG_VERBOSE("bindViewport called #%d: x=%.1f, y=%.1f, w=%.1f, h=%.1f\n",
                  ++callCount, viewport.x, viewport.y, viewport.width, viewport.height);
   }
   D3D12_VIEWPORT vp = {};
@@ -614,14 +614,14 @@ void RenderCommandEncoder::bindRenderPipelineState(
     return;
   }
 
-  IGL_LOG_INFO("bindRenderPipelineState: PSO=%p, RootSig=%p\n", pso, rootSig);
+  IGL_D3D12_LOG_VERBOSE("bindRenderPipelineState: PSO=%p, RootSig=%p\n", pso, rootSig);
 
   commandList_->SetPipelineState(pso);
   commandList_->SetGraphicsRootSignature(rootSig);
 
   // Set primitive topology from the pipeline state
   D3D_PRIMITIVE_TOPOLOGY topology = d3dPipelineState->getPrimitiveTopology();
-  IGL_LOG_INFO("bindRenderPipelineState: Setting topology=%d\n", (int)topology);
+  IGL_D3D12_LOG_VERBOSE("bindRenderPipelineState: Setting topology=%d\n", (int)topology);
   commandList_->IASetPrimitiveTopology(topology);
 
   // Cache vertex stride from pipeline (used when binding vertex buffers)
@@ -641,7 +641,7 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
                                             size_t bufferOffset) {
   static int callCount = 0;
   if (callCount < 3) {
-    IGL_LOG_INFO("bindVertexBuffer called #%d: index=%u\n", ++callCount, index);
+    IGL_D3D12_LOG_VERBOSE("bindVertexBuffer called #%d: index=%u\n", ++callCount, index);
   }
   if (index >= IGL_BUFFER_BINDINGS_MAX) {
     IGL_LOG_ERROR("bindVertexBuffer: index %u exceeds max %u\n", index, IGL_BUFFER_BINDINGS_MAX);
@@ -659,7 +659,7 @@ void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
                                            size_t bufferOffset) {
   static int callCount = 0;
   if (callCount < 3) {
-    IGL_LOG_INFO("bindIndexBuffer called #%d\n", ++callCount);
+    IGL_D3D12_LOG_VERBOSE("bindIndexBuffer called #%d\n", ++callCount);
   }
   auto* d3dBuffer = static_cast<Buffer*>(&buffer);
   cachedIndexBuffer_.bufferLocation = d3dBuffer->gpuAddress(bufferOffset);
@@ -761,7 +761,7 @@ void RenderCommandEncoder::bindBytes(size_t index,
   // Track transient resource to keep it alive until GPU finishes
   commandBuffer_.trackTransientResource(uploadBuffer.Get());
 
-  IGL_LOG_INFO("bindBytes: Bound %zu bytes (aligned to %zu) to b%zu (root param %u, GPU address 0x%llx)\n",
+  IGL_D3D12_LOG_VERBOSE("bindBytes: Bound %zu bytes (aligned to %zu) to b%zu (root param %u, GPU address 0x%llx)\n",
                length, alignedSize, index, rootParameterIndex, gpuAddress);
 }
 void RenderCommandEncoder::bindPushConstants(const void* data,
@@ -795,7 +795,7 @@ void RenderCommandEncoder::bindPushConstants(const void* data,
       data,                       // Source data
       destOffsetIn32BitValues);   // Destination offset in 32-bit values
 
-  IGL_LOG_INFO("bindPushConstants: Set %u DWORDs (%zu bytes) at offset %zu to root parameter 0 (b2)\n",
+  IGL_D3D12_LOG_VERBOSE("bindPushConstants: Set %u DWORDs (%zu bytes) at offset %zu to root parameter 0 (b2)\n",
                num32BitValues, length, offset);
 }
 void RenderCommandEncoder::bindSamplerState(size_t index,
@@ -860,17 +860,17 @@ void RenderCommandEncoder::draw(size_t vertexCount,
   // Bind root CBVs for b0 and b1 (legacy bindBuffer support)
   if (constantBufferBound_[0]) {
     commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[0]);  // Root param 1: b0
-    IGL_LOG_INFO("draw: binding root CBV for b0 (address 0x%llx)\n", cachedConstantBuffers_[0]);
+    IGL_D3D12_LOG_VERBOSE("draw: binding root CBV for b0 (address 0x%llx)\n", cachedConstantBuffers_[0]);
   }
   if (constantBufferBound_[1]) {
     commandList_->SetGraphicsRootConstantBufferView(2, cachedConstantBuffers_[1]);  // Root param 2: b1
-    IGL_LOG_INFO("draw: binding root CBV for b1 (address 0x%llx)\n", cachedConstantBuffers_[1]);
+    IGL_D3D12_LOG_VERBOSE("draw: binding root CBV for b1 (address 0x%llx)\n", cachedConstantBuffers_[1]);
   }
 
   // Bind CBV descriptor table for b3-b15 (bindBindGroup support)
   if (cbvTableCount_ > 0 && cachedCbvTableGpuHandles_[0].ptr != 0) {
     commandList_->SetGraphicsRootDescriptorTable(3, cachedCbvTableGpuHandles_[0]);  // Root param 3: CBV table (b3-b15)
-    IGL_LOG_INFO("draw: binding CBV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
+    IGL_D3D12_LOG_VERBOSE("draw: binding CBV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
                  cbvTableCount_, cachedCbvTableGpuHandles_[0].ptr);
   }
 
@@ -883,7 +883,7 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                      "Texture count > 0 but base handle is null - did you bind only higher slots?");
     if (cachedTextureGpuHandles_[0].ptr != 0) {
       commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
-      IGL_LOG_INFO("draw: binding SRV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
+      IGL_D3D12_LOG_VERBOSE("draw: binding SRV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
                    cachedTextureCount_, cachedTextureGpuHandles_[0].ptr);
     }
   }
@@ -892,7 +892,7 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                      "Sampler count > 0 but base handle is null - did you bind only higher slots?");
     if (cachedSamplerGpuHandles_[0].ptr != 0) {
       commandList_->SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0]);  // Root param 5: Sampler table
-      IGL_LOG_INFO("draw: binding Sampler descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
+      IGL_D3D12_LOG_VERBOSE("draw: binding Sampler descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
                    cachedSamplerCount_, cachedSamplerGpuHandles_[0].ptr);
     }
   }
@@ -912,14 +912,14 @@ void RenderCommandEncoder::draw(size_t vertexCount,
       vbView.BufferLocation = cachedVertexBuffers_[i].bufferLocation;
       vbView.SizeInBytes = cachedVertexBuffers_[i].sizeInBytes;
       vbView.StrideInBytes = stride;
-      IGL_LOG_INFO("draw: VB[%u] = GPU 0x%llx, size=%u, stride=%u\n", i, vbView.BufferLocation, vbView.SizeInBytes, vbView.StrideInBytes);
+      IGL_D3D12_LOG_VERBOSE("draw: VB[%u] = GPU 0x%llx, size=%u, stride=%u\n", i, vbView.BufferLocation, vbView.SizeInBytes, vbView.StrideInBytes);
       commandList_->IASetVertexBuffers(i, 1, &vbView);
     }
   }
 
   commandBuffer_.incrementDrawCount();
 
-  IGL_LOG_INFO("draw: DrawInstanced(vertexCount=%zu, instanceCount=%u, firstVertex=%u, baseInstance=%u)\n", vertexCount, instanceCount, firstVertex, baseInstance);
+  IGL_D3D12_LOG_VERBOSE("draw: DrawInstanced(vertexCount=%zu, instanceCount=%u, firstVertex=%u, baseInstance=%u)\n", vertexCount, instanceCount, firstVertex, baseInstance);
   commandList_->DrawInstanced(static_cast<UINT>(vertexCount),
                               instanceCount,
                               firstVertex,
@@ -1098,7 +1098,7 @@ void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
   // Track draw call count
   commandBuffer_.incrementDrawCount(drawCount);
 
-  IGL_LOG_INFO("RenderCommandEncoder::multiDrawIndirect: Executed %u indirect draws (stride: %u)\n",
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder::multiDrawIndirect: Executed %u indirect draws (stride: %u)\n",
                drawCount, actualStride);
 }
 void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
@@ -1147,7 +1147,7 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
   // Track draw call count
   commandBuffer_.incrementDrawCount(drawCount);
 
-  IGL_LOG_INFO("RenderCommandEncoder::multiDrawIndexedIndirect: Executed %u indirect indexed draws (stride: %u)\n",
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder::multiDrawIndexedIndirect: Executed %u indirect indexed draws (stride: %u)\n",
                drawCount, actualStride);
 }
 
@@ -1157,7 +1157,7 @@ void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
   }
   // Set stencil reference value for stencil testing
   commandList_->OMSetStencilRef(value);
-  IGL_LOG_INFO("setStencilReferenceValue: Set stencil ref to %u\n", value);
+  IGL_D3D12_LOG_VERBOSE("setStencilReferenceValue: Set stencil ref to %u\n", value);
 }
 
 void RenderCommandEncoder::setBlendColor(const Color& color) {
@@ -1168,7 +1168,7 @@ void RenderCommandEncoder::setBlendColor(const Color& color) {
   // D3D12 uses RGBA float array, matching IGL Color structure
   const float blendFactor[4] = {color.r, color.g, color.b, color.a};
   commandList_->OMSetBlendFactor(blendFactor);
-  IGL_LOG_INFO("setBlendColor: Set blend factor to (%.2f, %.2f, %.2f, %.2f)\n",
+  IGL_D3D12_LOG_VERBOSE("setBlendColor: Set blend factor to (%.2f, %.2f, %.2f, %.2f)\n",
                color.r, color.g, color.b, color.a);
 }
 
@@ -1208,10 +1208,10 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
                                        size_t /*bufferSize*/) {
   static int callCount = 0;
   if (callCount < 5) {
-    IGL_LOG_INFO("bindBuffer START #%d: index=%u\n", callCount + 1, index);
+    IGL_D3D12_LOG_VERBOSE("bindBuffer START #%d: index=%u\n", callCount + 1, index);
   }
   if (!buffer) {
-    IGL_LOG_INFO("bindBuffer: null buffer, returning\n");
+    IGL_D3D12_LOG_VERBOSE("bindBuffer: null buffer, returning\n");
     return;
   }
 
@@ -1222,7 +1222,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
 
   if (isStorageBuffer) {
     // Storage buffer - create SRV for ByteAddressBuffer reads in pixel shader
-    IGL_LOG_INFO("bindBuffer: Storage buffer detected at index %u - creating SRV for pixel shader read\n", index);
+    IGL_D3D12_LOG_VERBOSE("bindBuffer: Storage buffer detected at index %u - creating SRV for pixel shader read\n", index);
 
     // For raw (ByteAddressBuffer) SRVs we treat the buffer as a sequence of 4-byte units.
     // This matches HLSL ByteAddressBuffer / RWByteAddressBuffer semantics.
@@ -1247,7 +1247,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
       IGL_LOG_ERROR("bindBuffer: Failed to allocate descriptor: %s\n", allocResult.message.c_str());
       return;
     }
-    IGL_LOG_INFO("bindBuffer: Allocated SRV descriptor slot %u for buffer at t%u\n", descriptorIndex, index);
+    IGL_D3D12_LOG_VERBOSE("bindBuffer: Allocated SRV descriptor slot %u for buffer at t%u\n", descriptorIndex, index);
 
     // Create SRV descriptor for ByteAddressBuffer (raw view)
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -1270,7 +1270,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
 
     device->CreateShaderResourceView(d3dBuffer->getResource(), &srvDesc, cpuHandle);
 
-    IGL_LOG_INFO("bindBuffer: Created SRV at descriptor slot %u (FirstElement=%llu, NumElements=%u)\n",
+    IGL_D3D12_LOG_VERBOSE("bindBuffer: Created SRV at descriptor slot %u (FirstElement=%llu, NumElements=%u)\n",
                  descriptorIndex, srvDesc.Buffer.FirstElement, srvDesc.Buffer.NumElements);
 
     // Cache GPU handle for descriptor table binding in draw calls
@@ -1278,7 +1278,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     cachedTextureGpuHandles_[index] = gpuHandle;
     cachedTextureCount_ = std::max(cachedTextureCount_, static_cast<size_t>(index + 1));
 
-    IGL_LOG_INFO("bindBuffer: Storage buffer SRV binding complete\n");
+    IGL_D3D12_LOG_VERBOSE("bindBuffer: Storage buffer SRV binding complete\n");
 
     // CRITICAL: Track the Buffer OBJECT (not just resource) to keep it alive until GPU finishes
     // This prevents the Buffer destructor from releasing the resource while GPU commands reference it
@@ -1286,16 +1286,16 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     std::shared_ptr<IBuffer> sharedBuffer = d3dBuffer->weak_from_this().lock();
     if (sharedBuffer) {
       static_cast<CommandBuffer&>(commandBuffer_).trackTransientBuffer(std::move(sharedBuffer));
-      IGL_LOG_INFO("bindBuffer: Tracking Buffer object (shared_ptr) for lifetime management\n");
+      IGL_D3D12_LOG_VERBOSE("bindBuffer: Tracking Buffer object (shared_ptr) for lifetime management\n");
     } else {
       // Buffer not managed by shared_ptr (e.g., persistent buffer from member variable)
       // Fall back to tracking just the resource (AddRef on ID3D12Resource)
       static_cast<CommandBuffer&>(commandBuffer_).trackTransientResource(d3dBuffer->getResource());
-      IGL_LOG_INFO("bindBuffer: Buffer not shared_ptr-managed, tracking resource only\n");
+      IGL_D3D12_LOG_VERBOSE("bindBuffer: Buffer not shared_ptr-managed, tracking resource only\n");
     }
   } else {
     // Constant buffer - use CBV binding (existing path)
-    IGL_LOG_INFO("bindBuffer: Constant buffer at index %u\n", index);
+    IGL_D3D12_LOG_VERBOSE("bindBuffer: Constant buffer at index %u\n", index);
 
     // D3D12 requires constant buffer addresses to be 256-byte aligned
     // (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
@@ -1306,7 +1306,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     }
 
     D3D12_GPU_VIRTUAL_ADDRESS bufferAddress = d3dBuffer->gpuAddress(offset);
-    IGL_LOG_INFO("bindBuffer: CBV address=0x%llx\n", bufferAddress);
+    IGL_D3D12_LOG_VERBOSE("bindBuffer: CBV address=0x%llx\n", bufferAddress);
 
     if (!commandList_) {
       IGL_LOG_ERROR("bindBuffer: commandList_ is NULL!\n");
@@ -1319,19 +1319,19 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     std::shared_ptr<IBuffer> sharedBuffer = d3dBuffer->weak_from_this().lock();
     if (sharedBuffer) {
       static_cast<CommandBuffer&>(commandBuffer_).trackTransientBuffer(std::move(sharedBuffer));
-      IGL_LOG_INFO("bindBuffer: Tracking Buffer object (shared_ptr) for lifetime management\n");
+      IGL_D3D12_LOG_VERBOSE("bindBuffer: Tracking Buffer object (shared_ptr) for lifetime management\n");
     } else {
       // Buffer not managed by shared_ptr (e.g., persistent buffer from member variable)
       // Fall back to tracking just the resource (AddRef on ID3D12Resource)
       static_cast<CommandBuffer&>(commandBuffer_).trackTransientResource(d3dBuffer->getResource());
-      IGL_LOG_INFO("bindBuffer: Buffer not shared_ptr-managed, tracking resource only\n");
+      IGL_D3D12_LOG_VERBOSE("bindBuffer: Buffer not shared_ptr-managed, tracking resource only\n");
     }
 
     // Cache CBV for draw calls (b0, b1) - bind to root CBVs
     if (index <= 1) {
       cachedConstantBuffers_[index] = bufferAddress;
       constantBufferBound_[index] = true;
-      IGL_LOG_INFO("bindBuffer: Cached CBV at index %u with address 0x%llx\n", index, bufferAddress);
+      IGL_D3D12_LOG_VERBOSE("bindBuffer: Cached CBV at index %u with address 0x%llx\n", index, bufferAddress);
     } else if (index == 2) {
       // b2 maps to push constants (root parameter 0)
       void* bufferData = nullptr;
@@ -1348,7 +1348,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
             0);
 
         d3dBuffer->getResource()->Unmap(0, nullptr);
-        IGL_LOG_INFO("bindBuffer: Bound index 2 (b2) as push constants (%zu bytes)\n", clampedSize);
+        IGL_D3D12_LOG_VERBOSE("bindBuffer: Bound index 2 (b2) as push constants (%zu bytes)\n", clampedSize);
       } else {
         IGL_LOG_ERROR("bindBuffer: Failed to map buffer for index 2 (b2) push constants\n");
       }
@@ -1356,11 +1356,11 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
   }
 
   if (callCount < 5) {
-    IGL_LOG_INFO("bindBuffer END #%d\n", ++callCount);
+    IGL_D3D12_LOG_VERBOSE("bindBuffer END #%d\n", ++callCount);
   }
 }
 void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
-  IGL_LOG_INFO("bindBindGroup(texture): handle valid=%d\n", !handle.empty());
+  IGL_D3D12_LOG_VERBOSE("bindBindGroup(texture): handle valid=%d\n", !handle.empty());
 
   // Get the bind group descriptor from the device
   auto& device = commandBuffer_.getDevice();
@@ -1502,7 +1502,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
 void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
                                           uint32_t numDynamicOffsets,
                                           const uint32_t* dynamicOffsets) {
-  IGL_LOG_INFO("bindBindGroup(buffer): handle valid=%d, dynCount=%u\n", !handle.empty(), numDynamicOffsets);
+  IGL_D3D12_LOG_VERBOSE("bindBindGroup(buffer): handle valid=%d, dynCount=%u\n", !handle.empty(), numDynamicOffsets);
 
   auto& device = commandBuffer_.getDevice();
   const auto* desc = device.getBindGroupBufferDesc(handle);
@@ -1601,7 +1601,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
         cbvTableBound_[tableIndex] = true;
         cbvTableCount_ = std::max(cbvTableCount_, static_cast<size_t>(tableIndex + 1));
 
-        IGL_LOG_INFO("bindBindGroup(buffer): bound uniform buffer at BindGroupBufferDesc[%u] to b%u (descriptor table index %u, GPU handle 0x%llx)\n",
+        IGL_D3D12_LOG_VERBOSE("bindBindGroup(buffer): bound uniform buffer at BindGroupBufferDesc[%u] to b%u (descriptor table index %u, GPU handle 0x%llx)\n",
                      slot, slot + 3, tableIndex, gpuHandle.ptr);
       } else {
         IGL_LOG_ERROR("bindBindGroup(buffer): BindGroupBufferDesc slot %u exceeds maximum (%u)\n", slot, IGL_BUFFER_BINDINGS_MAX);
@@ -1681,7 +1681,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
         // Bind UAV descriptor table (Parameter 6 in graphics root signature)
         commandList_->SetGraphicsRootDescriptorTable(6, gpuHandle);
 
-        IGL_LOG_INFO("bindBindGroup(buffer): bound read-write storage buffer at slot %u (UAV u%u, GPU handle 0x%llx)\n",
+        IGL_D3D12_LOG_VERBOSE("bindBindGroup(buffer): bound read-write storage buffer at slot %u (UAV u%u, GPU handle 0x%llx)\n",
                      slot, slot, gpuHandle.ptr);
       } else {
         // Create SRV for read-only storage buffer
@@ -1751,7 +1751,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
         // at the application level to ensure correct binding order.
         commandList_->SetGraphicsRootDescriptorTable(4, gpuHandle);
 
-        IGL_LOG_INFO("bindBindGroup(buffer): bound read-only storage buffer at slot %u (SRV t%u, GPU handle 0x%llx)\n",
+        IGL_D3D12_LOG_VERBOSE("bindBindGroup(buffer): bound read-only storage buffer at slot %u (SRV t%u, GPU handle 0x%llx)\n",
                      slot, slot, gpuHandle.ptr);
       }
     }
@@ -1767,7 +1767,7 @@ void RenderCommandEncoder::flushBarriers() {
     return;
   }
 
-  IGL_LOG_INFO("RenderCommandEncoder: Flushing %zu batched resource barriers\n",
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Flushing %zu batched resource barriers\n",
                pendingBarriers_.size());
 
   // Submit all pending barriers in a single API call
@@ -1780,7 +1780,7 @@ void RenderCommandEncoder::flushBarriers() {
 
 void RenderCommandEncoder::queueBarrier(const D3D12_RESOURCE_BARRIER& barrier) {
   pendingBarriers_.push_back(barrier);
-  IGL_LOG_INFO("RenderCommandEncoder: Queued barrier (total pending: %zu)\n",
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Queued barrier (total pending: %zu)\n",
                pendingBarriers_.size());
 }
 

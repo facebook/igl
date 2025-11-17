@@ -47,7 +47,7 @@ std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
 
   texture->initializeStateTracking(initialState);
 
-  IGL_LOG_INFO("Texture::createFromResource - SUCCESS: %dx%d format=%d\n",
+  IGL_D3D12_LOG_VERBOSE("Texture::createFromResource - SUCCESS: %dx%d format=%d\n",
                desc.width, desc.height, (int)format);
 
   return texture;
@@ -108,7 +108,7 @@ std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> par
   // State is accessed via getStateOwner() which walks to root for views.
   // subresourceStates_ and defaultState_ remain empty/default for views.
 
-  IGL_LOG_INFO("Texture::createTextureView - SUCCESS: view of %dx%d, mips %u-%u, layers %u-%u\n",
+  IGL_D3D12_LOG_VERBOSE("Texture::createTextureView - SUCCESS: view of %dx%d, mips %u-%u, layers %u-%u\n",
                view->dimensions_.width, view->dimensions_.height,
                desc.mipLevel, desc.mipLevel + desc.numMipLevels - 1,
                desc.layer, desc.layer + desc.numLayers - 1);
@@ -118,12 +118,12 @@ std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> par
 
 // B-001: Explicit destructor to free descriptor heap slots
 Texture::~Texture() {
-  IGL_LOG_INFO("Texture::~Texture - START: Destroying texture %p\n", this);
+  IGL_D3D12_LOG_VERBOSE("Texture::~Texture - START: Destroying texture %p\n", this);
 
   // B-001: Texture views share the parent's resource, so they don't own descriptors
   // Only free descriptors for non-view textures
   if (isView_) {
-    IGL_LOG_INFO("Texture::~Texture - Texture is a view, skipping descriptor cleanup\n");
+    IGL_D3D12_LOG_VERBOSE("Texture::~Texture - Texture is a view, skipping descriptor cleanup\n");
     return;
   }
 
@@ -132,7 +132,7 @@ Texture::~Texture() {
   // not stored in Texture. This destructor is defensive - it will clean up any descriptors
   // if the architecture changes to store them in Texture in the future.
   if (!iglDevice_) {
-    IGL_LOG_INFO("Texture::~Texture - No IGL device, skipping descriptor cleanup\n");
+    IGL_D3D12_LOG_VERBOSE("Texture::~Texture - No IGL device, skipping descriptor cleanup\n");
     return;
   }
 
@@ -142,13 +142,13 @@ Texture::~Texture() {
   // The rtvIndices_, dsvIndices_, and srvIndex_ members are currently unused but
   // reserved for future use.
 
-  IGL_LOG_INFO("Texture::~Texture - Destruction complete\n");
+  IGL_D3D12_LOG_VERBOSE("Texture::~Texture - Destruction complete\n");
 }
 
 Result Texture::upload(const TextureRangeDesc& range,
                       const void* data,
                       size_t bytesPerRow) const {
-  IGL_LOG_INFO("Texture::upload() - START: %dx%d\n", range.width, range.height);
+  IGL_D3D12_LOG_VERBOSE("Texture::upload() - START: %dx%d\n", range.width, range.height);
 
   if (!device_ || !queue_ || !resource_.Get()) {
     IGL_LOG_ERROR("Texture::upload() - FAILED: device, queue, or resource not available\n");
@@ -160,7 +160,7 @@ Result Texture::upload(const TextureRangeDesc& range,
     return Result(Result::Code::ArgumentInvalid, "Upload data is null");
   }
 
-  IGL_LOG_INFO("Texture::upload() - Proceeding with upload\n");
+  IGL_D3D12_LOG_VERBOSE("Texture::upload() - Proceeding with upload\n");
 
   // Calculate dimensions and data size
   const uint32_t width = range.width > 0 ? range.width : dimensions_.width;
@@ -182,7 +182,7 @@ Result Texture::upload(const TextureRangeDesc& range,
   const uint32_t baseSlice = (type_ == TextureType::Cube) ? range.face : range.layer;
   const uint32_t numMipsToUpload = range.numMipLevels;
   const uint32_t baseMip = range.mipLevel;
-  IGL_LOG_INFO("Texture::upload - type=%d, baseSlice=%u, numSlicesToUpload=%u, baseMip=%u, numMipsToUpload=%u\n",
+  IGL_D3D12_LOG_VERBOSE("Texture::upload - type=%d, baseSlice=%u, numSlicesToUpload=%u, baseMip=%u, numMipsToUpload=%u\n",
                (int)type_, baseSlice, numSlicesToUpload, baseMip, numMipsToUpload);
 
   // Calculate total staging buffer size for ALL subresources
@@ -363,7 +363,7 @@ Result Texture::upload(const TextureRangeDesc& range,
       dst.SubresourceIndex = subresource;
 
       if (type_ == TextureType::Cube) {
-        IGL_LOG_INFO("CopyTextureRegion: Copying to CUBE subresource=%u (mip=%u, slice=%u)\n",
+        IGL_D3D12_LOG_VERBOSE("CopyTextureRegion: Copying to CUBE subresource=%u (mip=%u, slice=%u)\n",
                      subresource, currentMip, currentSlice);
       }
 
@@ -514,10 +514,10 @@ bool Texture::isRequiredGenerateMipmap() const {
 }
 
 void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc* /*range*/) const {
-  IGL_LOG_INFO("Texture::generateMipmap(cmdQueue) - START: numMips=%u\n", numMipLevels_);
+  IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap(cmdQueue) - START: numMips=%u\n", numMipLevels_);
 
   if (!device_ || !queue_ || !resource_.Get() || numMipLevels_ < 2) {
-    IGL_LOG_INFO("Texture::generateMipmap() - Skipping: device=%p queue=%p resource=%p numMips=%u\n",
+    IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap() - Skipping: device=%p queue=%p resource=%p numMips=%u\n",
                  device_, queue_, resource_.Get(), numMipLevels_);
     return;
   }
@@ -526,7 +526,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
 
   // Only support 2D textures for mipmap generation
   if (resourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
-    IGL_LOG_INFO("Texture::generateMipmap() - Skipping: only 2D textures supported (dimension=%d)\n",
+    IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap() - Skipping: only 2D textures supported (dimension=%d)\n",
                  (int)resourceDesc.Dimension);
     return;
   }
@@ -534,7 +534,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
   // If texture wasn't created with RENDER_TARGET flag, we need to recreate it
   // D3D12 requires ALLOW_RENDER_TARGET for mipmap generation via rendering
   if (!(resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)) {
-    IGL_LOG_INFO("Texture::generateMipmap() - Recreating texture with RENDER_TARGET flag for mipmap generation\n");
+    IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap() - Recreating texture with RENDER_TARGET flag for mipmap generation\n");
 
     // Save current resource using ComPtr for automatic reference counting
     // Note: ComPtr copy is deleted, so we manually AddRef and Attach
@@ -647,10 +647,10 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     // Update resourceDesc for the rest of the function
     resourceDesc = resource_->GetDesc();
 
-    IGL_LOG_INFO("Texture::generateMipmap() - Texture recreated successfully\n");
+    IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap() - Texture recreated successfully\n");
   }
 
-  IGL_LOG_INFO("Texture::generateMipmap() - Proceeding with mipmap generation\n");
+  IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap() - Proceeding with mipmap generation\n");
 
   D3D12_DESCRIPTOR_RANGE ranges[2] = {};
   ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -720,9 +720,9 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     shaderModel = iglDevice_->getD3D12Context().getMaxShaderModel();
     int smMajor = (shaderModel >> 4) & 0xF;
     int smMinor = shaderModel & 0xF;
-    IGL_LOG_INFO("Texture::generateMipmap - Using Shader Model %d.%d\n", smMajor, smMinor);
+    IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap - Using Shader Model %d.%d\n", smMajor, smMinor);
   } else {
-    IGL_LOG_INFO("Texture::generateMipmap - No IGL device, using SM 6.0 fallback (DXC minimum)\n");
+    IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap - No IGL device, using SM 6.0 fallback (DXC minimum)\n");
   }
 
   // Build dynamic shader targets
@@ -733,14 +733,14 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   std::vector<uint8_t> vsBytecode, psBytecode;
   std::string vsErrors, psErrors;
 
-  IGL_LOG_INFO("Texture::generateMipmap - Compiling VS with target: %s\n", vsTarget.c_str());
+  IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap - Compiling VS with target: %s\n", vsTarget.c_str());
   Result vsResult = dxcCompiler.compile(kVS, strlen(kVS), "main", vsTarget.c_str(), "MipmapGenerationVS", 0, vsBytecode, vsErrors);
   if (!vsResult.isOk()) {
     IGL_LOG_ERROR("Texture::generateMipMaps - VS compilation failed: %s\n%s\n", vsResult.message.c_str(), vsErrors.c_str());
     return;
   }
 
-  IGL_LOG_INFO("Texture::generateMipmap - Compiling PS with target: %s\n", psTarget.c_str());
+  IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap - Compiling PS with target: %s\n", psTarget.c_str());
   Result psResult = dxcCompiler.compile(kPS, strlen(kPS), "main", psTarget.c_str(), "MipmapGenerationPS", 0, psBytecode, psErrors);
   if (!psResult.isOk()) {
     IGL_LOG_ERROR("Texture::generateMipMaps - PS compilation failed: %s\n%s\n", psResult.message.c_str(), psErrors.c_str());
@@ -896,10 +896,10 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
 }
 
 void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDesc* /*range*/) const {
-  IGL_LOG_INFO("Texture::generateMipmap(cmdBuffer) - START: numMips=%u\n", numMipLevels_);
+  IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap(cmdBuffer) - START: numMips=%u\n", numMipLevels_);
 
   if (!device_ || !queue_ || !resource_.Get() || numMipLevels_ < 2) {
-    IGL_LOG_INFO("Texture::generateMipmap(cmdBuffer) - Skipping: device=%p queue=%p resource=%p numMips=%u\n",
+    IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap(cmdBuffer) - Skipping: device=%p queue=%p resource=%p numMips=%u\n",
                  device_, queue_, resource_.Get(), numMipLevels_);
     return;
   }
@@ -908,14 +908,14 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDe
 
   // Only support 2D textures for mipmap generation
   if (resourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
-    IGL_LOG_INFO("Texture::generateMipmap(cmdBuffer) - Skipping: only 2D textures supported\n");
+    IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap(cmdBuffer) - Skipping: only 2D textures supported\n");
     return;
   }
 
   // Check if texture was created with RENDER_TARGET flag (required for mipmap generation)
   if (!(resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)) {
-    IGL_LOG_INFO("Texture::generateMipmap(cmdBuffer) - Skipping: texture not created with RENDER_TARGET usage\n");
-    IGL_LOG_INFO("  To enable mipmap generation, create texture with TextureDesc::TextureUsageBits::Attachment\n");
+    IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap(cmdBuffer) - Skipping: texture not created with RENDER_TARGET usage\n");
+    IGL_D3D12_LOG_VERBOSE("  To enable mipmap generation, create texture with TextureDesc::TextureUsageBits::Attachment\n");
     return;
   }
   D3D12_DESCRIPTOR_RANGE ranges[2] = {};
@@ -982,9 +982,9 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     shaderModel = iglDevice_->getD3D12Context().getMaxShaderModel();
     int smMajor = (shaderModel >> 4) & 0xF;
     int smMinor = shaderModel & 0xF;
-    IGL_LOG_INFO("Texture::upload - Using Shader Model %d.%d\n", smMajor, smMinor);
+    IGL_D3D12_LOG_VERBOSE("Texture::upload - Using Shader Model %d.%d\n", smMajor, smMinor);
   } else {
-    IGL_LOG_INFO("Texture::upload - No IGL device, using SM 6.0 fallback (DXC minimum)\n");
+    IGL_D3D12_LOG_VERBOSE("Texture::upload - No IGL device, using SM 6.0 fallback (DXC minimum)\n");
   }
 
   // Build dynamic shader targets
@@ -995,14 +995,14 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   std::vector<uint8_t> vsBytecode, psBytecode;
   std::string vsErrors, psErrors;
 
-  IGL_LOG_INFO("Texture::upload - Compiling VS with target: %s\n", vsTarget.c_str());
+  IGL_D3D12_LOG_VERBOSE("Texture::upload - Compiling VS with target: %s\n", vsTarget.c_str());
   Result vsResult = dxcCompiler.compile(kVS, strlen(kVS), "main", vsTarget.c_str(), "TextureUploadVS", 0, vsBytecode, vsErrors);
   if (!vsResult.isOk()) {
     IGL_LOG_ERROR("Texture::upload - VS compilation failed: %s\n%s\n", vsResult.message.c_str(), vsErrors.c_str());
     return;
   }
 
-  IGL_LOG_INFO("Texture::upload - Compiling PS with target: %s\n", psTarget.c_str());
+  IGL_D3D12_LOG_VERBOSE("Texture::upload - Compiling PS with target: %s\n", psTarget.c_str());
   Result psResult = dxcCompiler.compile(kPS, strlen(kPS), "main", psTarget.c_str(), "TextureUploadPS", 0, psBytecode, psErrors);
   if (!psResult.isOk()) {
     IGL_LOG_ERROR("Texture::upload - PS compilation failed: %s\n%s\n", psResult.message.c_str(), psErrors.c_str());
@@ -1197,7 +1197,7 @@ uint32_t Texture::calcSubresourceIndex(uint32_t mipLevel, uint32_t layer) const 
 #ifdef IGL_DEBUG
   // Reduce log verbosity - only log in debug builds for views
   if ((type_ == TextureType::Cube || type_ == TextureType::TwoDArray) && isView_) {
-    IGL_LOG_INFO("calcSubresourceIndex (view): type=%d, mip=%u, layer=%u -> resource mip=%u, layer=%u -> subresource=%u\n",
+    IGL_D3D12_LOG_VERBOSE("calcSubresourceIndex (view): type=%d, mip=%u, layer=%u -> resource mip=%u, layer=%u -> subresource=%u\n",
                  (int)type_, mipLevel, layer, resourceMip, resourceLayer, subresource);
   }
 #endif

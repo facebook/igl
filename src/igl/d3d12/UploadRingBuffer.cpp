@@ -60,7 +60,7 @@ UploadRingBuffer::UploadRingBuffer(ID3D12Device* device, uint64_t size)
 
   gpuBase_ = uploadHeap_->GetGPUVirtualAddress();
 
-  IGL_LOG_INFO("UploadRingBuffer: Created ring buffer (size=%llu MB, cpuBase=%p, gpuBase=0x%llX)\n",
+  IGL_D3D12_LOG_VERBOSE("UploadRingBuffer: Created ring buffer (size=%llu MB, cpuBase=%p, gpuBase=0x%llX)\n",
                size_ / (1024 * 1024), cpuBase_, gpuBase_);
 
   // Track resource creation
@@ -78,7 +78,7 @@ UploadRingBuffer::~UploadRingBuffer() {
     D3D12Context::trackResourceDestruction("UploadRingBuffer", size_);
   }
 
-  IGL_LOG_INFO("UploadRingBuffer: Destroyed (allocations=%llu, failures=%llu)\n",
+  IGL_D3D12_LOG_VERBOSE("UploadRingBuffer: Destroyed (allocations=%llu, failures=%llu)\n",
                allocationCount_, failureCount_);
 }
 
@@ -131,7 +131,7 @@ UploadRingBuffer::Allocation UploadRingBuffer::allocate(uint64_t size, uint64_t 
         canFit = true;
       } else {
         // Tail advanced during calculation, allocation would overlap!
-        IGL_LOG_INFO("UploadRingBuffer: Wraparound race avoided "
+        IGL_D3D12_LOG_VERBOSE("UploadRingBuffer: Wraparound race avoided "
                      "(tail advanced from %llu to %llu during allocation)\n", currentTail, recheckTail);
         canFit = false;
       }

@@ -73,7 +73,7 @@ bool FenceWaiter::wait(DWORD timeoutMs) {
         }
 
         if (fence_->GetCompletedValue() >= targetValue_) {
-          IGL_LOG_INFO("FenceWaiter: Fence completed after %d recovery spins\n", spins);
+          IGL_D3D12_LOG_VERBOSE("FenceWaiter: Fence completed after %d recovery spins\n", spins);
           return true;
         }
 

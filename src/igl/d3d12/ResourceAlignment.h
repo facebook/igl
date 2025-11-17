@@ -79,7 +79,7 @@ inline bool ValidateResourcePlacementAlignment(
 inline void LogResourceAllocationInfo(
     const char* resourceType,
     const D3D12_RESOURCE_ALLOCATION_INFO& allocInfo) {
-  IGL_LOG_INFO("D3D12: %s allocation: size=%llu bytes (%.2f MB), alignment=%llu bytes\n",
+  IGL_D3D12_LOG_VERBOSE("D3D12: %s allocation: size=%llu bytes (%.2f MB), alignment=%llu bytes\n",
                resourceType,
                allocInfo.SizeInBytes,
                allocInfo.SizeInBytes / (1024.0 * 1024.0),

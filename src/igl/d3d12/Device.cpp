@@ -82,25 +82,25 @@ static uint32_t calculateRootSignatureCost(const D3D12_ROOT_SIGNATURE_DESC& desc
     switch (param.ParameterType) {
       case D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS:
         totalCost += param.Constants.Num32BitValues;
-        IGL_LOG_INFO("    [%u] Root constants (b%u): %u DWORDs\n",
+        IGL_D3D12_LOG_VERBOSE("    [%u] Root constants (b%u): %u DWORDs\n",
                      i, param.Constants.ShaderRegister, param.Constants.Num32BitValues);
         break;
 
       case D3D12_ROOT_PARAMETER_TYPE_CBV:
         totalCost += 2;
-        IGL_LOG_INFO("    [%u] Root CBV (b%u): 2 DWORDs\n",
+        IGL_D3D12_LOG_VERBOSE("    [%u] Root CBV (b%u): 2 DWORDs\n",
                      i, param.Descriptor.ShaderRegister);
         break;
 
       case D3D12_ROOT_PARAMETER_TYPE_SRV:
         totalCost += 2;
-        IGL_LOG_INFO("    [%u] Root SRV (t%u): 2 DWORDs\n",
+        IGL_D3D12_LOG_VERBOSE("    [%u] Root SRV (t%u): 2 DWORDs\n",
                      i, param.Descriptor.ShaderRegister);
         break;
 
       case D3D12_ROOT_PARAMETER_TYPE_UAV:
         totalCost += 2;
-        IGL_LOG_INFO("    [%u] Root UAV (u%u): 2 DWORDs\n",
+        IGL_D3D12_LOG_VERBOSE("    [%u] Root UAV (u%u): 2 DWORDs\n",
                      i, param.Descriptor.ShaderRegister);
         break;
 
@@ -115,13 +115,13 @@ static uint32_t calculateRootSignatureCost(const D3D12_ROOT_SIGNATURE_DESC& desc
             case D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER: tableType = "Sampler"; break;
           }
         }
-        IGL_LOG_INFO("    [%u] Descriptor table (%s): 1 DWORD\n", i, tableType);
+        IGL_D3D12_LOG_VERBOSE("    [%u] Descriptor table (%s): 1 DWORD\n", i, tableType);
         break;
     }
   }
 
   if (desc.NumStaticSamplers > 0) {
-    IGL_LOG_INFO("    Static samplers: 0 DWORDs (free, count=%u)\n", desc.NumStaticSamplers);
+    IGL_D3D12_LOG_VERBOSE("    Static samplers: 0 DWORDs (free, count=%u)\n", desc.NumStaticSamplers);
   }
 
   return totalCost;
@@ -142,14 +142,14 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
     } else {
       uploadFenceValue_ = 0;
       // T05: Per-call events created in waitForUploadFence for thread safety
-      IGL_LOG_INFO("Device::Device: Upload fence created successfully for command allocator sync\n");
+      IGL_D3D12_LOG_VERBOSE("Device::Device: Upload fence created successfully for command allocator sync\n");
     }
 
     // Initialize upload ring buffer for streaming resources (P1_DX12-009)
     // Default size: 128MB (configurable via UploadRingBuffer constructor)
     constexpr uint64_t kUploadRingBufferSize = 128 * 1024 * 1024; // 128 MB
     uploadRingBuffer_ = std::make_unique<UploadRingBuffer>(device, kUploadRingBufferSize);
-    IGL_LOG_INFO("Device::Device: Upload ring buffer initialized (size=%llu MB)\n",
+    IGL_D3D12_LOG_VERBOSE("Device::Device: Upload ring buffer initialized (size=%llu MB)\n",
                  kUploadRingBufferSize / (1024 * 1024));
 
     // I-007: Query GPU timestamp frequency for Timer queries
@@ -164,7 +164,7 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
             device, commandQueue, uploadFence_.Get(), this);
         stagingDevice_ = std::make_unique<D3D12StagingDevice>(
             device, uploadFence_.Get(), uploadRingBuffer_.get());
-        IGL_LOG_INFO("Device::Device: Immediate commands and staging device initialized (shared fence)\n");
+        IGL_D3D12_LOG_VERBOSE("Device::Device: Immediate commands and staging device initialized (shared fence)\n");
       } else {
         IGL_LOG_ERROR("Device::Device: Cannot initialize immediate commands/staging device without valid upload fence\n");
       }
@@ -175,7 +175,7 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
         IGL_LOG_ERROR("Device::Device: Failed to get GPU timestamp frequency: 0x%08X\n", hr);
         gpuTimestampFrequencyHz_ = 1000000000; // Fallback: assume 1 GHz
       } else {
-        IGL_LOG_INFO("Device::Device: GPU timestamp frequency: %llu Hz (%.2f MHz)\n",
+        IGL_D3D12_LOG_VERBOSE("Device::Device: GPU timestamp frequency: %llu Hz (%.2f MHz)\n",
                      gpuTimestampFrequencyHz_,
                      gpuTimestampFrequencyHz_ / 1000000.0);
       }
@@ -194,7 +194,7 @@ void Device::validateDeviceLimits() {
     return;
   }
 
-  IGL_LOG_INFO("=== D3D12 Device Capabilities and Limits Validation ===\n");
+  IGL_D3D12_LOG_VERBOSE("=== D3D12 Device Capabilities and Limits Validation ===\n");
 
   // Query D3D12_FEATURE_D3D12_OPTIONS for resource binding tier and other capabilities
   HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &deviceOptions_, sizeof(deviceOptions_));
@@ -213,13 +213,13 @@ void Device::validateDeviceLimits() {
         tierName = "Tier 3 (fully unbounded)";
         break;
     }
-    IGL_LOG_INFO("  Resource Binding Tier: %s\n", tierName);
+    IGL_D3D12_LOG_VERBOSE("  Resource Binding Tier: %s\n", tierName);
 
     // Log other relevant capabilities
-    IGL_LOG_INFO("  Standard Swizzle 64KB Supported: %s\n",
+    IGL_D3D12_LOG_VERBOSE("  Standard Swizzle 64KB Supported: %s\n",
                  deviceOptions_.StandardSwizzle64KBSupported ? "Yes" : "No");
-    IGL_LOG_INFO("  Cross-Node Sharing Tier: %d\n", deviceOptions_.CrossNodeSharingTier);
-    IGL_LOG_INFO("  Conservative Rasterization Tier: %d\n",
+    IGL_D3D12_LOG_VERBOSE("  Cross-Node Sharing Tier: %d\n", deviceOptions_.CrossNodeSharingTier);
+    IGL_D3D12_LOG_VERBOSE("  Conservative Rasterization Tier: %d\n",
                  deviceOptions_.ConservativeRasterizationTier);
   } else {
     IGL_LOG_ERROR("  Failed to query D3D12_FEATURE_D3D12_OPTIONS (HRESULT: 0x%08X)\n", hr);
@@ -229,111 +229,111 @@ void Device::validateDeviceLimits() {
   hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS1, &deviceOptions1_, sizeof(deviceOptions1_));
 
   if (SUCCEEDED(hr)) {
-    IGL_LOG_INFO("  Wave Intrinsics Supported: %s\n",
+    IGL_D3D12_LOG_VERBOSE("  Wave Intrinsics Supported: %s\n",
                  deviceOptions1_.WaveOps ? "Yes" : "No");
-    IGL_LOG_INFO("  Wave Lane Count Min: %u\n", deviceOptions1_.WaveLaneCountMin);
-    IGL_LOG_INFO("  Wave Lane Count Max: %u\n", deviceOptions1_.WaveLaneCountMax);
-    IGL_LOG_INFO("  Total Lane Count: %u\n", deviceOptions1_.TotalLaneCount);
+    IGL_D3D12_LOG_VERBOSE("  Wave Lane Count Min: %u\n", deviceOptions1_.WaveLaneCountMin);
+    IGL_D3D12_LOG_VERBOSE("  Wave Lane Count Max: %u\n", deviceOptions1_.WaveLaneCountMax);
+    IGL_D3D12_LOG_VERBOSE("  Total Lane Count: %u\n", deviceOptions1_.TotalLaneCount);
   } else {
-    IGL_LOG_INFO("  D3D12_FEATURE_D3D12_OPTIONS1 query failed (not critical)\n");
+    IGL_D3D12_LOG_VERBOSE("  D3D12_FEATURE_D3D12_OPTIONS1 query failed (not critical)\n");
   }
 
   // Validate hard-coded limits against D3D12 specifications
-  IGL_LOG_INFO("\n=== Limit Validation ===\n");
+  IGL_D3D12_LOG_VERBOSE("\n=== Limit Validation ===\n");
 
   // Validate kMaxSamplers (32) against D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE (2048)
   // D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE is defined in d3d12.h
   constexpr uint32_t kD3D12MaxShaderVisibleSamplers = 2048;
-  IGL_LOG_INFO("  kMaxSamplers: %u (D3D12 spec limit: %u)\n",
+  IGL_D3D12_LOG_VERBOSE("  kMaxSamplers: %u (D3D12 spec limit: %u)\n",
                kMaxSamplers, kD3D12MaxShaderVisibleSamplers);
   if (kMaxSamplers > kD3D12MaxShaderVisibleSamplers) {
     IGL_LOG_ERROR("  WARNING: kMaxSamplers (%u) exceeds D3D12 limit (%u)!\n",
                   kMaxSamplers, kD3D12MaxShaderVisibleSamplers);
   } else {
-    IGL_LOG_INFO("  OK: kMaxSamplers within D3D12 limits\n");
+    IGL_D3D12_LOG_VERBOSE("  OK: kMaxSamplers within D3D12 limits\n");
   }
 
   // Validate kMaxVertexAttributes (16) against D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT (32)
   // D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT is defined in d3d12.h
   constexpr uint32_t kD3D12MaxVertexInputElements = 32;
-  IGL_LOG_INFO("  kMaxVertexAttributes: %u (D3D12 spec limit: %u)\n",
+  IGL_D3D12_LOG_VERBOSE("  kMaxVertexAttributes: %u (D3D12 spec limit: %u)\n",
                kMaxVertexAttributes, kD3D12MaxVertexInputElements);
   if (kMaxVertexAttributes > kD3D12MaxVertexInputElements) {
     IGL_LOG_ERROR("  WARNING: kMaxVertexAttributes (%u) exceeds D3D12 limit (%u)!\n",
                   kMaxVertexAttributes, kD3D12MaxVertexInputElements);
   } else {
-    IGL_LOG_INFO("  OK: kMaxVertexAttributes within D3D12 limits\n");
+    IGL_D3D12_LOG_VERBOSE("  OK: kMaxVertexAttributes within D3D12 limits\n");
   }
 
   // Validate kMaxDescriptorSets - this is architecture-dependent but log for reference
-  IGL_LOG_INFO("  kMaxDescriptorSets: %u (architecture-specific, validated at runtime)\n",
+  IGL_D3D12_LOG_VERBOSE("  kMaxDescriptorSets: %u (architecture-specific, validated at runtime)\n",
                kMaxDescriptorSets);
 
   // Validate kMaxFramesInFlight - this is a design choice but log for reference
-  IGL_LOG_INFO("  kMaxFramesInFlight: %u (application design choice for frame buffering)\n",
+  IGL_D3D12_LOG_VERBOSE("  kMaxFramesInFlight: %u (application design choice for frame buffering)\n",
                kMaxFramesInFlight);
 
   // Log IGL DeviceFeatureLimits values (P1_DX12-008)
-  IGL_LOG_INFO("\n=== IGL Device Feature Limits ===\n");
+  IGL_D3D12_LOG_VERBOSE("\n=== IGL Device Feature Limits ===\n");
 
   size_t limitValue = 0;
 
   if (getFeatureLimits(DeviceFeatureLimits::BufferAlignment, limitValue)) {
-    IGL_LOG_INFO("  BufferAlignment: %zu bytes\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  BufferAlignment: %zu bytes\n", limitValue);
   }
   if (getFeatureLimits(DeviceFeatureLimits::MaxTextureDimension1D2D, limitValue)) {
-    IGL_LOG_INFO("  MaxTextureDimension1D2D: %zu\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  MaxTextureDimension1D2D: %zu\n", limitValue);
   }
   if (getFeatureLimits(DeviceFeatureLimits::MaxCubeMapDimension, limitValue)) {
-    IGL_LOG_INFO("  MaxCubeMapDimension: %zu\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  MaxCubeMapDimension: %zu\n", limitValue);
   }
   if (getFeatureLimits(DeviceFeatureLimits::MaxUniformBufferBytes, limitValue)) {
-    IGL_LOG_INFO("  MaxUniformBufferBytes: %zu bytes (%zu KB)\n", limitValue, limitValue / 1024);
+    IGL_D3D12_LOG_VERBOSE("  MaxUniformBufferBytes: %zu bytes (%zu KB)\n", limitValue, limitValue / 1024);
   }
   if (getFeatureLimits(DeviceFeatureLimits::MaxStorageBufferBytes, limitValue)) {
-    IGL_LOG_INFO("  MaxStorageBufferBytes: %zu bytes (%zu MB)\n", limitValue, limitValue / (1024 * 1024));
+    IGL_D3D12_LOG_VERBOSE("  MaxStorageBufferBytes: %zu bytes (%zu MB)\n", limitValue, limitValue / (1024 * 1024));
   }
   if (getFeatureLimits(DeviceFeatureLimits::MaxVertexUniformVectors, limitValue)) {
-    IGL_LOG_INFO("  MaxVertexUniformVectors: %zu vec4s\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  MaxVertexUniformVectors: %zu vec4s\n", limitValue);
   }
   if (getFeatureLimits(DeviceFeatureLimits::MaxFragmentUniformVectors, limitValue)) {
-    IGL_LOG_INFO("  MaxFragmentUniformVectors: %zu vec4s\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  MaxFragmentUniformVectors: %zu vec4s\n", limitValue);
   }
   if (getFeatureLimits(DeviceFeatureLimits::MaxMultisampleCount, limitValue)) {
-    IGL_LOG_INFO("  MaxMultisampleCount: %zux\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  MaxMultisampleCount: %zux\n", limitValue);
   }
   if (getFeatureLimits(DeviceFeatureLimits::MaxPushConstantBytes, limitValue)) {
-    IGL_LOG_INFO("  MaxPushConstantBytes: %zu bytes\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  MaxPushConstantBytes: %zu bytes\n", limitValue);
   }
   if (getFeatureLimits(DeviceFeatureLimits::PushConstantsAlignment, limitValue)) {
-    IGL_LOG_INFO("  PushConstantsAlignment: %zu bytes\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  PushConstantsAlignment: %zu bytes\n", limitValue);
   }
   if (getFeatureLimits(DeviceFeatureLimits::ShaderStorageBufferOffsetAlignment, limitValue)) {
-    IGL_LOG_INFO("  ShaderStorageBufferOffsetAlignment: %zu bytes\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  ShaderStorageBufferOffsetAlignment: %zu bytes\n", limitValue);
   }
   if (getFeatureLimits(DeviceFeatureLimits::MaxTextureDimension3D, limitValue)) {
-    IGL_LOG_INFO("  MaxTextureDimension3D: %zu\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  MaxTextureDimension3D: %zu\n", limitValue);
   }
   if (getFeatureLimits(DeviceFeatureLimits::MaxComputeWorkGroupSizeX, limitValue)) {
-    IGL_LOG_INFO("  MaxComputeWorkGroupSizeX: %zu\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  MaxComputeWorkGroupSizeX: %zu\n", limitValue);
   }
   if (getFeatureLimits(DeviceFeatureLimits::MaxComputeWorkGroupSizeY, limitValue)) {
-    IGL_LOG_INFO("  MaxComputeWorkGroupSizeY: %zu\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  MaxComputeWorkGroupSizeY: %zu\n", limitValue);
   }
   if (getFeatureLimits(DeviceFeatureLimits::MaxComputeWorkGroupSizeZ, limitValue)) {
-    IGL_LOG_INFO("  MaxComputeWorkGroupSizeZ: %zu\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  MaxComputeWorkGroupSizeZ: %zu\n", limitValue);
   }
   if (getFeatureLimits(DeviceFeatureLimits::MaxComputeWorkGroupInvocations, limitValue)) {
-    IGL_LOG_INFO("  MaxComputeWorkGroupInvocations: %zu\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  MaxComputeWorkGroupInvocations: %zu\n", limitValue);
   }
   if (getFeatureLimits(DeviceFeatureLimits::MaxVertexInputAttributes, limitValue)) {
-    IGL_LOG_INFO("  MaxVertexInputAttributes: %zu\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  MaxVertexInputAttributes: %zu\n", limitValue);
   }
   if (getFeatureLimits(DeviceFeatureLimits::MaxColorAttachments, limitValue)) {
-    IGL_LOG_INFO("  MaxColorAttachments: %zu\n", limitValue);
+    IGL_D3D12_LOG_VERBOSE("  MaxColorAttachments: %zu\n", limitValue);
   }
 
-  IGL_LOG_INFO("=== Device Limits Validation Complete ===\n\n");
+  IGL_D3D12_LOG_VERBOSE("=== Device Limits Validation Complete ===\n\n");
 }
 
 // P1_DX12-006: Check for device removal and report detailed error
@@ -397,7 +397,7 @@ bool Device::validateMSAAAlignment(const TextureDesc& desc, Result* IGL_NULLABLE
   // MSAA resources require 64KB alignment in D3D12
   // D3D12 CreateCommittedResource automatically handles this, but we validate dimensions
   // to ensure resource won't exceed device limits
-  IGL_LOG_INFO("Device::validateMSAAAlignment: Validating MSAA texture (samples=%u, %ux%u)\n",
+  IGL_D3D12_LOG_VERBOSE("Device::validateMSAAAlignment: Validating MSAA texture (samples=%u, %ux%u)\n",
                desc.numSamples, desc.width, desc.height);
 
   // Check if texture dimensions are reasonable for MSAA
@@ -408,7 +408,7 @@ bool Device::validateMSAAAlignment(const TextureDesc& desc, Result* IGL_NULLABLE
 
   // Warn if MSAA texture is very large (> 256MB)
   if (estimatedSize > 256 * 1024 * 1024) {
-    IGL_LOG_INFO("Device::validateMSAAAlignment: WARNING - Large MSAA texture detected (%zu MB). "
+    IGL_D3D12_LOG_VERBOSE("Device::validateMSAAAlignment: WARNING - Large MSAA texture detected (%zu MB). "
                  "May cause memory pressure.\n", estimatedSize / (1024 * 1024));
   }
 
@@ -428,7 +428,7 @@ bool Device::validateTextureAlignment(const D3D12_RESOURCE_DESC& resourceDesc,
 
   if (sampleCount > 1) {
     // MSAA texture - will use 64KB alignment
-    IGL_LOG_INFO("Device::validateTextureAlignment: MSAA texture will use 64KB alignment (samples=%u)\n",
+    IGL_D3D12_LOG_VERBOSE("Device::validateTextureAlignment: MSAA texture will use 64KB alignment (samples=%u)\n",
                  sampleCount);
   }
 
@@ -457,7 +457,7 @@ bool Device::validateBufferAlignment(size_t bufferSize, bool isUniform) const {
     // Uniform buffers must be 256-byte aligned
     // This is already handled in createBuffer() by rounding up the size
     if (bufferSize % BUFFER_ALIGNMENT != 0) {
-      IGL_LOG_INFO("Device::validateBufferAlignment: Uniform buffer size %zu will be rounded up to %zu\n",
+      IGL_D3D12_LOG_VERBOSE("Device::validateBufferAlignment: Uniform buffer size %zu will be rounded up to %zu\n",
                    bufferSize, (bufferSize + BUFFER_ALIGNMENT - 1) & ~(BUFFER_ALIGNMENT - 1));
     }
   }
@@ -563,7 +563,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
       ? (desc.length + 255) & ~255  // Round up to nearest 256 bytes
       : desc.length;
 
-  IGL_LOG_INFO("Device::createBuffer: type=%d, requested_size=%zu, aligned_size=%llu, isUniform=%d\n",
+  IGL_D3D12_LOG_VERBOSE("Device::createBuffer: type=%d, requested_size=%zu, aligned_size=%llu, isUniform=%d\n",
                desc.type, desc.length, alignedSize, isUniformBuffer);
 
   // Create buffer description
@@ -584,7 +584,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   // isStorageBuffer already defined above for heap type determination
   if (isStorageBuffer) {
     bufferDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-    IGL_LOG_INFO("Device::createBuffer: Storage buffer - adding UAV flag\n");
+    IGL_D3D12_LOG_VERBOSE("Device::createBuffer: Storage buffer - adding UAV flag\n");
   }
 
   // Create the buffer resource
@@ -613,7 +613,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   // Validate alignment (paranoid check - committed resources should handle this automatically)
   UINT64 requiredAlignment = 0;
   if (!ResourceAlignment::ValidateResourcePlacementAlignment(0, bufferDesc, &requiredAlignment)) {
-    IGL_LOG_INFO("Device::createBuffer: Buffer would require %llu-byte alignment for placed resources\n",
+    IGL_D3D12_LOG_VERBOSE("Device::createBuffer: Buffer would require %llu-byte alignment for placed resources\n",
                  requiredAlignment);
   }
 #endif
@@ -623,7 +623,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
     static int uniformBufCount = 0;
     if (uniformBufCount < 5) {
       D3D12_GPU_VIRTUAL_ADDRESS gpuAddr = buffer->GetGPUVirtualAddress();
-      IGL_LOG_INFO("Device::createBuffer: Uniform buffer #%d created, GPU address=0x%llx\n",
+      IGL_D3D12_LOG_VERBOSE("Device::createBuffer: Uniform buffer #%d created, GPU address=0x%llx\n",
                    uniformBufCount + 1, gpuAddr);
       uniformBufCount++;
     }
@@ -648,7 +648,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
       }
     } else if (heapType == D3D12_HEAP_TYPE_DEFAULT) {
       // DEFAULT heap: stage through an UPLOAD buffer and copy
-      IGL_LOG_INFO("Device::createBuffer: Staging initial data via UPLOAD heap for DEFAULT buffer\n");
+      IGL_D3D12_LOG_VERBOSE("Device::createBuffer: Staging initial data via UPLOAD heap for DEFAULT buffer\n");
 
       // Create upload buffer
       D3D12_HEAP_PROPERTIES uploadHeapProps = {};
@@ -787,7 +787,7 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
         // Cache hit - reuse existing sampler
         samplerCacheHits_++;
         const size_t totalRequests = samplerCacheHits_ + samplerCacheMisses_;
-        IGL_LOG_INFO("Device::createSamplerState: Cache HIT (hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%)\n",
+        IGL_D3D12_LOG_VERBOSE("Device::createSamplerState: Cache HIT (hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%)\n",
                      samplerHash, samplerCacheHits_, samplerCacheMisses_,
                      100.0 * samplerCacheHits_ / totalRequests);
         Result::setOk(outResult);
@@ -801,7 +801,7 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
 
   // Cache miss - create new sampler
   samplerCacheMisses_++;
-  IGL_LOG_INFO("Device::createSamplerState: Cache MISS (hash=0x%zx, total misses=%zu)\n",
+  IGL_D3D12_LOG_VERBOSE("Device::createSamplerState: Cache MISS (hash=0x%zx, total misses=%zu)\n",
                samplerHash, samplerCacheMisses_);
 
   D3D12_SAMPLER_DESC samplerDesc = {};
@@ -894,7 +894,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 
   // Convert IGL texture format to DXGI format
   DXGI_FORMAT dxgiFormat = textureFormatToDXGIFormat(desc.format);
-  IGL_LOG_INFO("Device::createTexture: IGL format=%d -> DXGI format=%d\n", (int)desc.format, (int)dxgiFormat);
+  IGL_D3D12_LOG_VERBOSE("Device::createTexture: IGL format=%d -> DXGI format=%d\n", (int)desc.format, (int)dxgiFormat);
   if (dxgiFormat == DXGI_FORMAT_UNKNOWN) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Unsupported texture format");
     return nullptr;
@@ -912,7 +912,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
     // For cube arrays: numLayers * 6 faces (DX12-COD-003)
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
     resourceDesc.DepthOrArraySize = static_cast<UINT16>(desc.numLayers * 6);
-    IGL_LOG_INFO("Device::createTexture: Cube texture with %u layers -> %u array slices (DX12-COD-003)\n",
+    IGL_D3D12_LOG_VERBOSE("Device::createTexture: Cube texture with %u layers -> %u array slices (DX12-COD-003)\n",
                  desc.numLayers, resourceDesc.DepthOrArraySize);
   } else {
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -983,7 +983,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
       return nullptr;
     }
 
-    IGL_LOG_INFO("Device::createTexture: MSAA enabled - format=%d, samples=%u, quality levels=%u\n",
+    IGL_D3D12_LOG_VERBOSE("Device::createTexture: MSAA enabled - format=%d, samples=%u, quality levels=%u\n",
                  static_cast<int>(dxgiFormat), sampleCount, msqLevels.NumQualityLevels);
   }
 
@@ -1201,7 +1201,7 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> Device::getOrCreateRootSignature(
     auto it = rootSignatureCache_.find(hash);
     if (it != rootSignatureCache_.end()) {
       rootSignatureCacheHits_++;
-      IGL_LOG_INFO("  Root signature cache HIT (hash=0x%zx, hits=%zu, misses=%zu)\n",
+      IGL_D3D12_LOG_VERBOSE("  Root signature cache HIT (hash=0x%zx, hits=%zu, misses=%zu)\n",
                    hash, rootSignatureCacheHits_, rootSignatureCacheMisses_);
       return it->second;
     }
@@ -1209,7 +1209,7 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> Device::getOrCreateRootSignature(
 
   // Cache miss - create new root signature
   rootSignatureCacheMisses_++;
-  IGL_LOG_INFO("  Root signature cache MISS (hash=0x%zx, hits=%zu, misses=%zu)\n",
+  IGL_D3D12_LOG_VERBOSE("  Root signature cache MISS (hash=0x%zx, hits=%zu, misses=%zu)\n",
                hash, rootSignatureCacheHits_, rootSignatureCacheMisses_);
 
   auto* device = ctx_->getDevice();
@@ -1222,7 +1222,7 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> Device::getOrCreateRootSignature(
   Microsoft::WRL::ComPtr<ID3DBlob> signature;
   Microsoft::WRL::ComPtr<ID3DBlob> error;
 
-  IGL_LOG_INFO("  Serializing root signature (version 1.0)...\n");
+  IGL_D3D12_LOG_VERBOSE("  Serializing root signature (version 1.0)...\n");
   HRESULT hr = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1,
                                            signature.GetAddressOf(), error.GetAddressOf());
   if (FAILED(hr)) {
@@ -1244,7 +1244,7 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> Device::getOrCreateRootSignature(
     return nullptr;
   }
 
-  IGL_LOG_INFO("  Root signature created successfully\n");
+  IGL_D3D12_LOG_VERBOSE("  Root signature created successfully\n");
 
   // Cache the created root signature
   {
@@ -1361,7 +1361,7 @@ size_t Device::hashComputePipelineDesc(const ComputePipelineDesc& desc) const {
 std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     const ComputePipelineDesc& desc,
     Result* IGL_NULLABLE outResult) const {
-  IGL_LOG_INFO("Device::createComputePipeline() START - debugName='%s'\n", desc.debugName.c_str());
+  IGL_D3D12_LOG_VERBOSE("Device::createComputePipeline() START - debugName='%s'\n", desc.debugName.c_str());
 
   auto* device = ctx_->getDevice();
   if (!device) {
@@ -1390,9 +1390,9 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     return nullptr;
   }
 
-  IGL_LOG_INFO("  Getting compute shader bytecode...\n");
+  IGL_D3D12_LOG_VERBOSE("  Getting compute shader bytecode...\n");
   const auto& csBytecode = computeModule->getBytecode();
-  IGL_LOG_INFO("  CS bytecode: %zu bytes\n", csBytecode.size());
+  IGL_D3D12_LOG_VERBOSE("  CS bytecode: %zu bytes\n", csBytecode.size());
 
   // Create root signature for compute
   // Root signature layout for compute:
@@ -1415,10 +1415,10 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   const UINT samplerBound = needsBoundedRanges ? 32 : UINT_MAX;  // Samplers always bounded on Tier 1/2
 
   if (needsBoundedRanges) {
-    IGL_LOG_INFO("  Using bounded descriptor ranges (Tier 1): UAV=%u, SRV=%u, CBV=%u, Sampler=%u\n",
+    IGL_D3D12_LOG_VERBOSE("  Using bounded descriptor ranges (Tier 1): UAV=%u, SRV=%u, CBV=%u, Sampler=%u\n",
                  uavBound, srvBound, cbvBound, samplerBound);
   } else {
-    IGL_LOG_INFO("  Using unbounded descriptor ranges (Tier %u)\n",
+    IGL_D3D12_LOG_VERBOSE("  Using unbounded descriptor ranges (Tier %u)\n",
                  bindingTier == D3D12_RESOURCE_BINDING_TIER_3 ? 3 : 2);
   }
 
@@ -1500,13 +1500,13 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
 
   // CRITICAL: Validate root signature cost (64 DWORD limit) - C-003
-  IGL_LOG_INFO("  Validating compute root signature cost:\n");
+  IGL_D3D12_LOG_VERBOSE("  Validating compute root signature cost:\n");
   const uint32_t cost = calculateRootSignatureCost(rootSigDesc);
-  IGL_LOG_INFO("  Total cost: %u / 64 DWORDs (%.1f%%)\n", cost, 100.0f * cost / 64.0f);
+  IGL_D3D12_LOG_VERBOSE("  Total cost: %u / 64 DWORDs (%.1f%%)\n", cost, 100.0f * cost / 64.0f);
 
   // Warning threshold at 50% (32 DWORDs)
   if (cost > 32) {
-    IGL_LOG_INFO("  WARNING: Root signature cost exceeds 50%% of limit: %u / 64 DWORDs\n", cost);
+    IGL_D3D12_LOG_VERBOSE("  WARNING: Root signature cost exceeds 50%% of limit: %u / 64 DWORDs\n", cost);
   }
 
   // Hard limit enforcement
@@ -1518,7 +1518,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     return nullptr;
   }
 
-  IGL_LOG_INFO("  Creating compute root signature with Root Constants (b0)/UAVs/SRVs/CBVs/Samplers\n");
+  IGL_D3D12_LOG_VERBOSE("  Creating compute root signature with Root Constants (b0)/UAVs/SRVs/CBVs/Samplers\n");
 
   // Get or create cached root signature (P0_DX12-002)
   Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = getOrCreateRootSignature(rootSigDesc, outResult);
@@ -1548,10 +1548,10 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
       // Cache hit - reuse existing PSO
       computePSOCacheHits_++;
       pipelineState = psoIt->second;  // Assignment creates a ref-counted copy
-      IGL_LOG_INFO("  [PSO CACHE HIT] Hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%\n",
+      IGL_D3D12_LOG_VERBOSE("  [PSO CACHE HIT] Hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%\n",
                    psoHash, computePSOCacheHits_, computePSOCacheMisses_,
                    100.0 * computePSOCacheHits_ / (computePSOCacheHits_ + computePSOCacheMisses_));
-      IGL_LOG_INFO("Device::createComputePipeline() SUCCESS (CACHED) - PSO=%p, RootSig=%p\n",
+      IGL_D3D12_LOG_VERBOSE("Device::createComputePipeline() SUCCESS (CACHED) - PSO=%p, RootSig=%p\n",
                    pipelineState.Get(), rootSignature.Get());
       Result::setOk(outResult);
       // Create a copy of the root signature for the returned object
@@ -1561,9 +1561,9 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   }
 
   // Cache miss - create new PSO outside lock (expensive operation)
-  IGL_LOG_INFO("  [PSO CACHE MISS] Hash=0x%zx\n", psoHash);
+  IGL_D3D12_LOG_VERBOSE("  [PSO CACHE MISS] Hash=0x%zx\n", psoHash);
 
-  IGL_LOG_INFO("  Creating compute pipeline state...\n");
+  IGL_D3D12_LOG_VERBOSE("  Creating compute pipeline state...\n");
   HRESULT hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
   if (FAILED(hr)) {
     IGL_LOG_ERROR("  CreateComputePipelineState FAILED: 0x%08X\n", static_cast<unsigned>(hr));
@@ -1606,7 +1606,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
       // Convert to wide string for D3D12 SetName API
       std::wstring wideName(psoName.begin(), psoName.end());
       pipelineState->SetName(wideName.c_str());
-      IGL_LOG_INFO("  Set compute PSO debug name: %s\n", psoName.c_str());
+      IGL_D3D12_LOG_VERBOSE("  Set compute PSO debug name: %s\n", psoName.c_str());
     }
   }
 
@@ -1619,17 +1619,17 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
       // Another thread beat us to it - use their PSO
       computePSOCacheHits_++;
       pipelineState = psoIt->second;
-      IGL_LOG_INFO("  [PSO DOUBLE-CHECK HIT] Another thread created PSO, using theirs. Hash=0x%zx\n", psoHash);
+      IGL_D3D12_LOG_VERBOSE("  [PSO DOUBLE-CHECK HIT] Another thread created PSO, using theirs. Hash=0x%zx\n", psoHash);
     } else {
       // We're the first to complete - cache our PSO
       computePSOCacheMisses_++;
       computePSOCache_[psoHash] = pipelineState;
-      IGL_LOG_INFO("  [PSO CACHED] Hash=0x%zx, hits=%zu, misses=%zu\n",
+      IGL_D3D12_LOG_VERBOSE("  [PSO CACHED] Hash=0x%zx, hits=%zu, misses=%zu\n",
                    psoHash, computePSOCacheHits_, computePSOCacheMisses_);
     }
   }
 
-  IGL_LOG_INFO("Device::createComputePipeline() SUCCESS - PSO=%p, RootSig=%p (hash=0x%zx)\n",
+  IGL_D3D12_LOG_VERBOSE("Device::createComputePipeline() SUCCESS - PSO=%p, RootSig=%p (hash=0x%zx)\n",
                pipelineState.Get(), rootSignature.Get(), psoHash);
   Result::setOk(outResult);
   return std::make_shared<ComputePipelineState>(desc, std::move(pipelineState), std::move(rootSignature));
@@ -1638,7 +1638,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     const RenderPipelineDesc& desc,
     Result* IGL_NULLABLE outResult) const {
-  IGL_LOG_INFO("Device::createRenderPipeline() START - debugName='%s'\n", desc.debugName.c_str());
+  IGL_D3D12_LOG_VERBOSE("Device::createRenderPipeline() START - debugName='%s'\n", desc.debugName.c_str());
 
   auto* device = ctx_->getDevice();
   if (!device) {
@@ -1663,11 +1663,11 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     return nullptr;
   }
 
-  IGL_LOG_INFO("  Getting shader bytecode...\n");
+  IGL_D3D12_LOG_VERBOSE("  Getting shader bytecode...\n");
   // Get shader bytecode first
   const auto& vsBytecode = vertexModule->getBytecode();
   const auto& psBytecode = fragmentModule->getBytecode();
-  IGL_LOG_INFO("  VS bytecode: %zu bytes, PS bytecode: %zu bytes\n", vsBytecode.size(), psBytecode.size());
+  IGL_D3D12_LOG_VERBOSE("  VS bytecode: %zu bytes, PS bytecode: %zu bytes\n", vsBytecode.size(), psBytecode.size());
 
   // Create root signature with descriptor tables for textures and constant buffers
   // Root signature layout:
@@ -1694,10 +1694,10 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   const UINT samplerBound = needsBoundedRanges ? 32 : UINT_MAX;
 
   if (needsBoundedRanges) {
-    IGL_LOG_INFO("  Using bounded descriptor ranges (Tier 1): SRV=%u, Sampler=%u\n",
+    IGL_D3D12_LOG_VERBOSE("  Using bounded descriptor ranges (Tier 1): SRV=%u, Sampler=%u\n",
                  srvBound, samplerBound);
   } else {
-    IGL_LOG_INFO("  Using unbounded descriptor ranges (Tier %u)\n",
+    IGL_D3D12_LOG_VERBOSE("  Using unbounded descriptor ranges (Tier %u)\n",
                  bindingTier == D3D12_RESOURCE_BINDING_TIER_3 ? 3 : 2);
   }
 
@@ -1795,13 +1795,13 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
   // CRITICAL: Validate root signature cost (64 DWORD limit) - C-003
-  IGL_LOG_INFO("  Validating render root signature cost:\n");
+  IGL_D3D12_LOG_VERBOSE("  Validating render root signature cost:\n");
   const uint32_t cost = calculateRootSignatureCost(rootSigDesc);
-  IGL_LOG_INFO("  Total cost: %u / 64 DWORDs (%.1f%%)\n", cost, 100.0f * cost / 64.0f);
+  IGL_D3D12_LOG_VERBOSE("  Total cost: %u / 64 DWORDs (%.1f%%)\n", cost, 100.0f * cost / 64.0f);
 
   // Warning threshold at 50% (32 DWORDs)
   if (cost > 32) {
-    IGL_LOG_INFO("  WARNING: Root signature cost exceeds 50%% of limit: %u / 64 DWORDs\n", cost);
+    IGL_D3D12_LOG_VERBOSE("  WARNING: Root signature cost exceeds 50%% of limit: %u / 64 DWORDs\n", cost);
   }
 
   // Hard limit enforcement
@@ -1813,7 +1813,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     return nullptr;
   }
 
-  IGL_LOG_INFO("  Creating root signature with Push Constants (b2)/Root CBVs (b0,b1)/CBV Table (b3-b15)/SRVs/Samplers/UAVs\n");
+  IGL_D3D12_LOG_VERBOSE("  Creating root signature with Push Constants (b2)/Root CBVs (b0,b1)/CBV Table (b3-b15)/SRVs/Samplers/UAVs\n");
 
   // Get or create cached root signature (P0_DX12-002)
   Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = getOrCreateRootSignature(rootSigDesc, outResult);
@@ -1931,7 +1931,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
       if (att.colorWriteMask & ColorWriteBitsAlpha) writeMask |= D3D12_COLOR_WRITE_ENABLE_ALPHA;
       psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = writeMask;
 
-      IGL_LOG_INFO("  PSO RenderTarget[%u]: BlendEnable=%d, SrcBlend=%d, DstBlend=%d, WriteMask=0x%02X\n",
+      IGL_D3D12_LOG_VERBOSE("  PSO RenderTarget[%u]: BlendEnable=%d, SrcBlend=%d, DstBlend=%d, WriteMask=0x%02X\n",
                    i, att.blendEnabled, psoDesc.BlendState.RenderTarget[i].SrcBlend,
                    psoDesc.BlendState.RenderTarget[i].DestBlend, writeMask);
     } else {
@@ -2019,7 +2019,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     // Back face stencil operations (defaults, same as front)
     psoDesc.DepthStencilState.BackFace = psoDesc.DepthStencilState.FrontFace;
 
-    IGL_LOG_INFO("  PSO Stencil configured: format=%d\n", (int)desc.targetDesc.stencilAttachmentFormat);
+    IGL_D3D12_LOG_VERBOSE("  PSO Stencil configured: format=%d\n", (int)desc.targetDesc.stencilAttachmentFormat);
   } else {
     psoDesc.DepthStencilState.StencilEnable = FALSE;
   }
@@ -2028,16 +2028,16 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   if (!desc.targetDesc.colorAttachments.empty()) {
     const UINT n = static_cast<UINT>(std::min<size_t>(desc.targetDesc.colorAttachments.size(), D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT));
     psoDesc.NumRenderTargets = n;
-    IGL_LOG_INFO("  PSO NumRenderTargets = %u (color attachments = %zu)\n", n, desc.targetDesc.colorAttachments.size());
+    IGL_D3D12_LOG_VERBOSE("  PSO NumRenderTargets = %u (color attachments = %zu)\n", n, desc.targetDesc.colorAttachments.size());
     for (UINT i = 0; i < n; ++i) {
       // CRITICAL: Extract value to avoid MSVC debug iterator bounds check in function call
       const auto textureFormat = desc.targetDesc.colorAttachments[i].textureFormat;
       psoDesc.RTVFormats[i] = textureFormatToDXGIFormat(textureFormat);
-      IGL_LOG_INFO("  PSO RTVFormats[%u] = %d (IGL format %d)\n", i, psoDesc.RTVFormats[i], textureFormat);
+      IGL_D3D12_LOG_VERBOSE("  PSO RTVFormats[%u] = %d (IGL format %d)\n", i, psoDesc.RTVFormats[i], textureFormat);
     }
   } else {
     psoDesc.NumRenderTargets = 0;
-    IGL_LOG_INFO("  PSO NumRenderTargets = 0 (no color attachments)\n");
+    IGL_D3D12_LOG_VERBOSE("  PSO NumRenderTargets = 0 (no color attachments)\n");
     for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i) {
       psoDesc.RTVFormats[i] = DXGI_FORMAT_UNKNOWN;
     }
@@ -2056,14 +2056,14 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   // Primitive topology - convert from IGL topology enum
   if (desc.topology == igl::PrimitiveType::Point) {
     psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-    IGL_LOG_INFO("  Setting PSO topology type to POINT\n");
+    IGL_D3D12_LOG_VERBOSE("  Setting PSO topology type to POINT\n");
   } else if (desc.topology == igl::PrimitiveType::Line ||
              desc.topology == igl::PrimitiveType::LineStrip) {
     psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
-    IGL_LOG_INFO("  Setting PSO topology type to LINE\n");
+    IGL_D3D12_LOG_VERBOSE("  Setting PSO topology type to LINE\n");
   } else {
     psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    IGL_LOG_INFO("  Setting PSO topology type to TRIANGLE\n");
+    IGL_D3D12_LOG_VERBOSE("  Setting PSO topology type to TRIANGLE\n");
   }
   psoDesc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
 
@@ -2085,10 +2085,10 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     // Pre-reserve space to prevent reallocation (which would invalidate c_str() pointers)
     semanticNames.reserve(vertexDesc.numAttributes);
 
-    IGL_LOG_INFO("  Processing vertex input state: %zu attributes\n", vertexDesc.numAttributes);
+    IGL_D3D12_LOG_VERBOSE("  Processing vertex input state: %zu attributes\n", vertexDesc.numAttributes);
     for (size_t i = 0; i < vertexDesc.numAttributes; ++i) {
       const auto& attr = vertexDesc.attributes[i];
-      IGL_LOG_INFO("    Attribute %zu: name='%s', format=%d, offset=%zu, bufferIndex=%u\n",
+      IGL_D3D12_LOG_VERBOSE("    Attribute %zu: name='%s', format=%d, offset=%zu, bufferIndex=%u\n",
                    i, attr.name.c_str(), static_cast<int>(attr.format), attr.offset, attr.bufferIndex);
 
       // Map IGL attribute names to D3D12 HLSL semantic names
@@ -2117,7 +2117,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
         else semanticName = "COLOR";
       }
       semanticNames.push_back(semanticName);
-      IGL_LOG_INFO("      Mapped '%s' -> '%s'\n", attr.name.c_str(), semanticName.c_str());
+      IGL_D3D12_LOG_VERBOSE("      Mapped '%s' -> '%s'\n", attr.name.c_str(), semanticName.c_str());
 
       D3D12_INPUT_ELEMENT_DESC element = {};
       element.SemanticName = semanticNames.back().c_str();
@@ -2132,7 +2132,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
       element.InputSlotClass = isInstanceData ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA
                                                : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
       element.InstanceDataStepRate = isInstanceData ? 1 : 0;
-      IGL_LOG_INFO("      bufferIndex=%u, isInstance=%d, sampleFunc=%d, InputSlotClass=%d, StepRate=%u\n",
+      IGL_D3D12_LOG_VERBOSE("      bufferIndex=%u, isInstance=%d, sampleFunc=%d, InputSlotClass=%d, StepRate=%u\n",
                    attr.bufferIndex, isInstanceData,
                    (int)vertexDesc.inputBindings[attr.bufferIndex].sampleFunction,
                    (int)element.InputSlotClass, element.InstanceDataStepRate);
@@ -2180,31 +2180,31 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   }
   psoDesc.InputLayout = {inputElements.data(), static_cast<UINT>(inputElements.size())};
 
-  IGL_LOG_INFO("  Final input layout: %u elements\n", static_cast<unsigned>(inputElements.size()));
+  IGL_D3D12_LOG_VERBOSE("  Final input layout: %u elements\n", static_cast<unsigned>(inputElements.size()));
   for (size_t i = 0; i < inputElements.size(); ++i) {
-    IGL_LOG_INFO("    [%zu]: %s (index %u), format %d, slot %u, offset %u\n",
+    IGL_D3D12_LOG_VERBOSE("    [%zu]: %s (index %u), format %d, slot %u, offset %u\n",
                  i, inputElements[i].SemanticName, inputElements[i].SemanticIndex,
                  static_cast<int>(inputElements[i].Format),
                  inputElements[i].InputSlot, inputElements[i].AlignedByteOffset);
   }
 
   // Use shader reflection to verify input signature matches input layout
-  IGL_LOG_INFO("  Reflecting vertex shader to verify input signature...\n");
+  IGL_D3D12_LOG_VERBOSE("  Reflecting vertex shader to verify input signature...\n");
   Microsoft::WRL::ComPtr<ID3D12ShaderReflection> vsReflection;
   HRESULT hr = D3DReflect(vsBytecode.data(), vsBytecode.size(), IID_PPV_ARGS(vsReflection.GetAddressOf()));
   if (SUCCEEDED(hr)) {
     D3D12_SHADER_DESC shaderDesc = {};
     vsReflection->GetDesc(&shaderDesc);
-    IGL_LOG_INFO("    Shader expects %u input parameters:\n", shaderDesc.InputParameters);
+    IGL_D3D12_LOG_VERBOSE("    Shader expects %u input parameters:\n", shaderDesc.InputParameters);
     for (UINT i = 0; i < shaderDesc.InputParameters; ++i) {
       D3D12_SIGNATURE_PARAMETER_DESC paramDesc = {};
       vsReflection->GetInputParameterDesc(i, &paramDesc);
-      IGL_LOG_INFO("      [%u]: %s%u (semantic index %u), mask 0x%02X\n",
+      IGL_D3D12_LOG_VERBOSE("      [%u]: %s%u (semantic index %u), mask 0x%02X\n",
                    i, paramDesc.SemanticName, paramDesc.SemanticIndex,
                    paramDesc.SemanticIndex, paramDesc.Mask);
     }
   } else {
-    IGL_LOG_INFO("    Shader reflection unavailable: 0x%08X (non-critical - pipeline will still be created)\n", static_cast<unsigned>(hr));
+    IGL_D3D12_LOG_VERBOSE("    Shader reflection unavailable: 0x%08X (non-critical - pipeline will still be created)\n", static_cast<unsigned>(hr));
   }
 
   // PSO Cache lookup (P0_DX12-001, H-013: Thread-safe with double-checked locking)
@@ -2219,10 +2219,10 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
       // Cache hit - reuse existing PSO
       graphicsPSOCacheHits_++;
       pipelineState = psoIt->second;  // Assignment creates a ref-counted copy
-      IGL_LOG_INFO("  [PSO CACHE HIT] Hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%\n",
+      IGL_D3D12_LOG_VERBOSE("  [PSO CACHE HIT] Hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%\n",
                    psoHash, graphicsPSOCacheHits_, graphicsPSOCacheMisses_,
                    100.0 * graphicsPSOCacheHits_ / (graphicsPSOCacheHits_ + graphicsPSOCacheMisses_));
-      IGL_LOG_INFO("Device::createRenderPipeline() SUCCESS (CACHED) - PSO=%p, RootSig=%p\n",
+      IGL_D3D12_LOG_VERBOSE("Device::createRenderPipeline() SUCCESS (CACHED) - PSO=%p, RootSig=%p\n",
                    pipelineState.Get(), rootSignature.Get());
       Result::setOk(outResult);
       // Create a copy of the root signature for the returned object
@@ -2232,16 +2232,16 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   }
 
   // Cache miss - create new PSO outside lock (expensive operation)
-  IGL_LOG_INFO("  [PSO CACHE MISS] Hash=0x%zx\n", psoHash);
+  IGL_D3D12_LOG_VERBOSE("  [PSO CACHE MISS] Hash=0x%zx\n", psoHash);
 
-  IGL_LOG_INFO("  Creating pipeline state (this may take a moment)...\n");
+  IGL_D3D12_LOG_VERBOSE("  Creating pipeline state (this may take a moment)...\n");
   hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
   if (FAILED(hr)) {
     // Print debug layer messages if available
     Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
     if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
       UINT64 numMessages = infoQueue->GetNumStoredMessages();
-      IGL_LOG_INFO("  D3D12 Info Queue has %llu messages:\n", numMessages);
+      IGL_D3D12_LOG_VERBOSE("  D3D12 Info Queue has %llu messages:\n", numMessages);
       for (UINT64 i = 0; i < numMessages; ++i) {
         SIZE_T messageLength = 0;
         infoQueue->GetMessage(i, nullptr, &messageLength);
@@ -2256,7 +2256,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
               case D3D12_MESSAGE_SEVERITY_INFO: severityStr = "INFO"; break;
               case D3D12_MESSAGE_SEVERITY_MESSAGE: severityStr = "MESSAGE"; break;
             }
-            IGL_LOG_INFO("    [%s] %s\n", severityStr, message->pDescription);
+            IGL_D3D12_LOG_VERBOSE("    [%s] %s\n", severityStr, message->pDescription);
           }
           free(message);
         }
@@ -2295,7 +2295,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     // Convert to wide string for D3D12 SetName API
     std::wstring wideName(psoName.begin(), psoName.end());
     pipelineState->SetName(wideName.c_str());
-    IGL_LOG_INFO("  Set PSO debug name: %s\n", psoName.c_str());
+    IGL_D3D12_LOG_VERBOSE("  Set PSO debug name: %s\n", psoName.c_str());
   }
 
   // Second check: Lock for cache insertion with double-check (H-013: Thread-safe)
@@ -2307,17 +2307,17 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
       // Another thread beat us to it - use their PSO
       graphicsPSOCacheHits_++;
       pipelineState = psoIt->second;
-      IGL_LOG_INFO("  [PSO DOUBLE-CHECK HIT] Another thread created PSO, using theirs. Hash=0x%zx\n", psoHash);
+      IGL_D3D12_LOG_VERBOSE("  [PSO DOUBLE-CHECK HIT] Another thread created PSO, using theirs. Hash=0x%zx\n", psoHash);
     } else {
       // We're the first to complete - cache our PSO
       graphicsPSOCacheMisses_++;
       graphicsPSOCache_[psoHash] = pipelineState;
-      IGL_LOG_INFO("  [PSO CACHED] Hash=0x%zx, hits=%zu, misses=%zu\n",
+      IGL_D3D12_LOG_VERBOSE("  [PSO CACHED] Hash=0x%zx, hits=%zu, misses=%zu\n",
                    psoHash, graphicsPSOCacheHits_, graphicsPSOCacheMisses_);
     }
   }
 
-  IGL_LOG_INFO("Device::createRenderPipeline() SUCCESS - PSO=%p, RootSig=%p (hash=0x%zx)\n",
+  IGL_D3D12_LOG_VERBOSE("Device::createRenderPipeline() SUCCESS - PSO=%p, RootSig=%p (hash=0x%zx)\n",
                pipelineState.Get(), rootSignature.Get(), psoHash);
   Result::setOk(outResult);
   return std::make_shared<RenderPipelineState>(desc, std::move(pipelineState), std::move(rootSignature));
@@ -2327,7 +2327,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
 std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& desc,
                                                             Result* IGL_NULLABLE
                                                                 outResult) const {
-  IGL_LOG_INFO("Device::createShaderLibrary() - moduleInfo count=%zu, debugName='%s'\n",
+  IGL_D3D12_LOG_VERBOSE("Device::createShaderLibrary() - moduleInfo count=%zu, debugName='%s'\n",
                desc.moduleInfo.size(), desc.debugName.c_str());
 
   if (desc.moduleInfo.empty()) {
@@ -2345,7 +2345,7 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
 
   if (desc.input.type == ShaderInputType::Binary) {
     // Binary input: share the same bytecode across all modules (Metal-style)
-    IGL_LOG_INFO("  Using binary input (%zu bytes) for all modules\n", desc.input.length);
+    IGL_D3D12_LOG_VERBOSE("  Using binary input (%zu bytes) for all modules\n", desc.input.length);
     std::vector<uint8_t> bytecode(desc.input.length);
     std::memcpy(bytecode.data(), desc.input.data, desc.input.length);
 
@@ -2361,7 +2361,7 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
       return nullptr;
     }
 
-    IGL_LOG_INFO("  Compiling %zu modules from string input\n", desc.moduleInfo.size());
+    IGL_D3D12_LOG_VERBOSE("  Compiling %zu modules from string input\n", desc.moduleInfo.size());
 
     for (const auto& info : desc.moduleInfo) {
       // Create a ShaderModuleDesc for this specific module
@@ -2387,7 +2387,7 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
     return nullptr;
   }
 
-  IGL_LOG_INFO("Device::createShaderLibrary() SUCCESS - created %zu modules\n", modules.size());
+  IGL_D3D12_LOG_VERBOSE("Device::createShaderLibrary() SUCCESS - created %zu modules\n", modules.size());
   Result::setOk(outResult);
   return std::make_unique<ShaderLibrary>(std::move(modules));
 }
@@ -2405,7 +2405,7 @@ Result compileShaderFXC(
     std::vector<uint8_t>& outBytecode,
     std::string& outErrors) {
 
-  IGL_LOG_INFO("FXC: Compiling shader '%s' with target '%s' (%zu bytes source)\n",
+  IGL_D3D12_LOG_VERBOSE("FXC: Compiling shader '%s' with target '%s' (%zu bytes source)\n",
                debugName ? debugName : "unnamed",
                target,
                sourceLength);
@@ -2448,7 +2448,7 @@ Result compileShaderFXC(
         static_cast<const char*>(errors->GetBufferPointer()),
         errors->GetBufferSize()
     );
-    IGL_LOG_INFO("FXC: Compilation warnings:\n%s\n", outErrors.c_str());
+    IGL_D3D12_LOG_VERBOSE("FXC: Compilation warnings:\n%s\n", outErrors.c_str());
   }
 
   // Copy bytecode to output
@@ -2456,7 +2456,7 @@ Result compileShaderFXC(
   size_t size = bytecode->GetBufferSize();
   outBytecode.assign(data, data + size);
 
-  IGL_LOG_INFO("FXC: Compilation successful (%zu bytes bytecode)\n", size);
+  IGL_D3D12_LOG_VERBOSE("FXC: Compilation successful (%zu bytes bytecode)\n", size);
 
   return Result();
 }
@@ -2466,7 +2466,7 @@ Result compileShaderFXC(
 
 std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
-  IGL_LOG_INFO("Device::createShaderModule() - stage=%d, entryPoint='%s', debugName='%s'\n",
+  IGL_D3D12_LOG_VERBOSE("Device::createShaderModule() - stage=%d, entryPoint='%s', debugName='%s'\n",
                static_cast<int>(desc.info.stage), desc.info.entryPoint.c_str(), desc.debugName.c_str());
 
   if (!desc.input.isValid()) {
@@ -2479,7 +2479,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
 
   if (desc.input.type == ShaderInputType::Binary) {
     // Binary input - copy bytecode directly
-    IGL_LOG_INFO("  Using binary input (%zu bytes)\n", desc.input.length);
+    IGL_D3D12_LOG_VERBOSE("  Using binary input (%zu bytes)\n", desc.input.length);
     bytecode.resize(desc.input.length);
     std::memcpy(bytecode.data(), desc.input.data, desc.input.length);
   } else if (desc.input.type == ShaderInputType::String) {
@@ -2492,7 +2492,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
     }
 
     const size_t sourceLength = strlen(desc.input.source);
-    IGL_LOG_INFO("  Compiling HLSL from string (%zu bytes) using DXC...\n", sourceLength);
+    IGL_D3D12_LOG_VERBOSE("  Compiling HLSL from string (%zu bytes) using DXC...\n", sourceLength);
 
     // Initialize DXC compiler (once per process)
     static DXCCompiler dxcCompiler;
@@ -2505,10 +2505,10 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
       dxcInitialized = true;
 
       if (dxcAvailable) {
-        IGL_LOG_INFO("  DXC compiler initialized successfully (Shader Model 6.0+ support)\n");
+        IGL_D3D12_LOG_VERBOSE("  DXC compiler initialized successfully (Shader Model 6.0+ support)\n");
       } else {
-        IGL_LOG_INFO("  DXC compiler initialization failed: %s\n", initResult.message.c_str());
-        IGL_LOG_INFO("  Falling back to FXC (Shader Model 5.1)\n");
+        IGL_D3D12_LOG_VERBOSE("  DXC compiler initialization failed: %s\n", initResult.message.c_str());
+        IGL_D3D12_LOG_VERBOSE("  Falling back to FXC (Shader Model 5.1)\n");
       }
     }
 
@@ -2541,13 +2541,13 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
     // Enable shader debugging features
     #ifdef _DEBUG
       compileFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-      IGL_LOG_INFO("  DEBUG BUILD: Enabling shader debug info and disabling optimizations\n");
+      IGL_D3D12_LOG_VERBOSE("  DEBUG BUILD: Enabling shader debug info and disabling optimizations\n");
     #else
       // In release builds, still enable debug info for PIX captures unless explicitly disabled
       const char* disableDebugInfo = std::getenv("IGL_D3D12_DISABLE_SHADER_DEBUG");
       if (!disableDebugInfo || std::string(disableDebugInfo) != "1") {
         compileFlags |= D3DCOMPILE_DEBUG;
-        IGL_LOG_INFO("  RELEASE BUILD: Enabling shader debug info (disable with IGL_D3D12_DISABLE_SHADER_DEBUG=1)\n");
+        IGL_D3D12_LOG_VERBOSE("  RELEASE BUILD: Enabling shader debug info (disable with IGL_D3D12_DISABLE_SHADER_DEBUG=1)\n");
       }
     #endif
 
@@ -2555,7 +2555,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
     const char* warningsAsErrors = std::getenv("IGL_D3D12_SHADER_WARNINGS_AS_ERRORS");
     if (warningsAsErrors && std::string(warningsAsErrors) == "1") {
       compileFlags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
-      IGL_LOG_INFO("  Treating shader warnings as errors\n");
+      IGL_D3D12_LOG_VERBOSE("  Treating shader warnings as errors\n");
     }
 
     // Try DXC first if available, fallback to FXC if DXC fails or unavailable
@@ -2565,7 +2565,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
 
     if (dxcAvailable) {
       // Try DXC compilation (Shader Model 6.0)
-      IGL_LOG_INFO("  Attempting DXC compilation (Shader Model 6.0)...\n");
+      IGL_D3D12_LOG_VERBOSE("  Attempting DXC compilation (Shader Model 6.0)...\n");
       compileResult = dxcCompiler.compile(
           desc.input.source,
           sourceLength,
@@ -2578,14 +2578,14 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
       );
 
       if (compileResult.isOk()) {
-        IGL_LOG_INFO("  DXC shader compiled successfully (%zu bytes DXIL bytecode)\n", bytecode.size());
+        IGL_D3D12_LOG_VERBOSE("  DXC shader compiled successfully (%zu bytes DXIL bytecode)\n", bytecode.size());
         compiledWithDXC = true;
       } else {
-        IGL_LOG_INFO("  DXC compilation failed: %s\n", compileResult.message.c_str());
+        IGL_D3D12_LOG_VERBOSE("  DXC compilation failed: %s\n", compileResult.message.c_str());
         if (!errors.empty()) {
-          IGL_LOG_INFO("  DXC errors: %s\n", errors.c_str());
+          IGL_D3D12_LOG_VERBOSE("  DXC errors: %s\n", errors.c_str());
         }
-        IGL_LOG_INFO("  Falling back to FXC (Shader Model 5.1)...\n");
+        IGL_D3D12_LOG_VERBOSE("  Falling back to FXC (Shader Model 5.1)...\n");
       }
     }
 
@@ -2633,7 +2633,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
         return nullptr;
       }
 
-      IGL_LOG_INFO("  FXC shader compiled successfully (%zu bytes bytecode)\n", bytecode.size());
+      IGL_D3D12_LOG_VERBOSE("  FXC shader compiled successfully (%zu bytes bytecode)\n", bytecode.size());
     }
   } else {
     Result::setResult(outResult, Result::Code::Unsupported, "Unsupported shader input type");
@@ -2645,13 +2645,13 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
 
   // Create shader reflection from DXIL bytecode (C-007: DXIL Reflection)
   // This allows runtime queries of shader resources, bindings, and constant buffers
-  IGL_LOG_INFO("  Attempting to create shader reflection (bytecode size=%zu)...\n", module->getBytecode().size());
+  IGL_D3D12_LOG_VERBOSE("  Attempting to create shader reflection (bytecode size=%zu)...\n", module->getBytecode().size());
   if (!module->getBytecode().empty()) {
     // Create IDxcUtils for reflection
     Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils;
-    IGL_LOG_INFO("    Creating IDxcUtils for reflection...\n");
+    IGL_D3D12_LOG_VERBOSE("    Creating IDxcUtils for reflection...\n");
     HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(dxcUtils.GetAddressOf()));
-    IGL_LOG_INFO("    DxcCreateInstance result: 0x%08X\n", hr);
+    IGL_D3D12_LOG_VERBOSE("    DxcCreateInstance result: 0x%08X\n", hr);
 
     if (SUCCEEDED(hr)) {
       // Prepare buffer for reflection
@@ -2666,12 +2666,12 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
 
       if (SUCCEEDED(hr)) {
         module->setReflection(reflection);
-        IGL_LOG_INFO("  Shader reflection created successfully (C-007: DXIL Reflection)\n");
+        IGL_D3D12_LOG_VERBOSE("  Shader reflection created successfully (C-007: DXIL Reflection)\n");
       } else {
-        IGL_LOG_INFO("  Failed to create shader reflection: 0x%08X (non-fatal)\n", hr);
+        IGL_D3D12_LOG_VERBOSE("  Failed to create shader reflection: 0x%08X (non-fatal)\n", hr);
       }
     } else {
-      IGL_LOG_INFO("  Failed to create DXC utils for reflection: 0x%08X (non-fatal)\n", hr);
+      IGL_D3D12_LOG_VERBOSE("  Failed to create DXC utils for reflection: 0x%08X (non-fatal)\n", hr);
     }
   }
 
@@ -2692,7 +2692,7 @@ const IPlatformDevice& Device::getPlatformDevice() const noexcept {
 }
 
 bool Device::hasFeature(DeviceFeatures feature) const {
-  IGL_LOG_INFO("[D3D12] hasFeature query: %d\n", static_cast<int>(feature));
+  IGL_D3D12_LOG_VERBOSE("[D3D12] hasFeature query: %d\n", static_cast<int>(feature));
   switch (feature) {
     // Expected true in tests (non-OpenGL branch)
     case DeviceFeatures::CopyBuffer:
@@ -2721,7 +2721,7 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     case DeviceFeatures::Compute:
       return true; // Compute shaders now supported with compute pipeline and dispatch
     case DeviceFeatures::Texture2DArray:
-      IGL_LOG_INFO("[D3D12] hasFeature(Texture2DArray) returning TRUE\n");
+      IGL_D3D12_LOG_VERBOSE("[D3D12] hasFeature(Texture2DArray) returning TRUE\n");
       return true; // D3D12 supports 2D texture arrays via DepthOrArraySize in D3D12_RESOURCE_DESC
     case DeviceFeatures::PushConstants:
       return true; // Implemented via root constants at parameter 0 (shader register b2)
@@ -3072,10 +3072,10 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(Te
   unmappedS2 = s2 & ~mappedS2;
 
   if (unmappedS1 != 0 || unmappedS2 != 0) {
-    IGL_LOG_INFO("Format %d (DXGI %d) has unmapped D3D12 capabilities:\n",
+    IGL_D3D12_LOG_VERBOSE("Format %d (DXGI %d) has unmapped D3D12 capabilities:\n",
                  static_cast<int>(format), static_cast<int>(dxgi));
     if (unmappedS1 != 0) {
-      IGL_LOG_INFO("  Support1 unmapped flags: 0x%08X\n", unmappedS1);
+      IGL_D3D12_LOG_VERBOSE("  Support1 unmapped flags: 0x%08X\n", unmappedS1);
       // Log specific unmapped flags that might be useful
       // Note: Some flags may not be defined in older Windows SDK versions
       const uint32_t MIP_AUTOGEN = 0x800;           // D3D12_FORMAT_SUPPORT1_MIP_AUTOGEN
@@ -3083,20 +3083,20 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(Te
       const uint32_t MULTISAMPLE_LOAD = 0x100000;   // D3D12_FORMAT_SUPPORT1_MULTISAMPLE_LOAD
 
       if (unmappedS1 & MIP_AUTOGEN) {
-        IGL_LOG_INFO("    - MIP_AUTOGEN (0x800)\n");
+        IGL_D3D12_LOG_VERBOSE("    - MIP_AUTOGEN (0x800)\n");
       }
       if (unmappedS1 & MULTISAMPLE_RESOLVE) {
-        IGL_LOG_INFO("    - MULTISAMPLE_RESOLVE (0x40)\n");
+        IGL_D3D12_LOG_VERBOSE("    - MULTISAMPLE_RESOLVE (0x40)\n");
       }
       if (unmappedS1 & MULTISAMPLE_LOAD) {
-        IGL_LOG_INFO("    - MULTISAMPLE_LOAD (0x100000)\n");
+        IGL_D3D12_LOG_VERBOSE("    - MULTISAMPLE_LOAD (0x100000)\n");
       }
     }
     if (unmappedS2 != 0) {
-      IGL_LOG_INFO("  Support2 unmapped flags: 0x%08X\n", unmappedS2);
+      IGL_D3D12_LOG_VERBOSE("  Support2 unmapped flags: 0x%08X\n", unmappedS2);
       const uint32_t OUTPUT_MERGER_LOGIC_OP = 0x2;  // D3D12_FORMAT_SUPPORT2_OUTPUT_MERGER_LOGIC_OP
       if (unmappedS2 & OUTPUT_MERGER_LOGIC_OP) {
-        IGL_LOG_INFO("    - OUTPUT_MERGER_LOGIC_OP (0x2)\n");
+        IGL_D3D12_LOG_VERBOSE("    - OUTPUT_MERGER_LOGIC_OP (0x2)\n");
       }
     }
   }
@@ -3361,7 +3361,7 @@ Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator
       totalAllocatorReuses_++;
 
 #ifdef IGL_DEBUG
-      IGL_LOG_INFO("Device::getUploadCommandAllocator: Reusing allocator (completed fence: %llu >= %llu), "
+      IGL_D3D12_LOG_VERBOSE("Device::getUploadCommandAllocator: Reusing allocator (completed fence: %llu >= %llu), "
                    "pool size: %zu, reuses: %zu\n",
                    completedValue, tracked.fenceValue, commandAllocatorPool_.size(), totalAllocatorReuses_);
 #endif
@@ -3421,7 +3421,7 @@ Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator
   totalCommandAllocatorsCreated_++;
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("Device::getUploadCommandAllocator: Created new allocator (total: %zu/%zu, pool size: %zu)\n",
+  IGL_D3D12_LOG_VERBOSE("Device::getUploadCommandAllocator: Created new allocator (total: %zu/%zu, pool size: %zu)\n",
                totalCommandAllocatorsCreated_, kMaxCommandAllocators, commandAllocatorPool_.size());
 #endif
   return newAllocator;
@@ -3447,7 +3447,7 @@ void Device::returnUploadCommandAllocator(Microsoft::WRL::ComPtr<ID3D12CommandAl
   }
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("Device::returnUploadCommandAllocator: Returned allocator with fence %llu, "
+  IGL_D3D12_LOG_VERBOSE("Device::returnUploadCommandAllocator: Returned allocator with fence %llu, "
                "pool size: %zu, peak: %zu\n",
                fenceValue, commandAllocatorPool_.size(), peakPoolSize_);
 #endif

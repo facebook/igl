@@ -228,12 +228,12 @@ class D3D12StateTransition {
     }
 
     if (needsIntermediate) {
-      IGL_LOG_INFO("%s state transition: %s → COMMON → %s (using intermediate state)\n",
+      IGL_D3D12_LOG_VERBOSE("%s state transition: %s → COMMON → %s (using intermediate state)\n",
                    resourceType,
                    getStateName(from),
                    getStateName(to));
     } else {
-      IGL_LOG_INFO("%s state transition: %s → %s (direct)\n",
+      IGL_D3D12_LOG_VERBOSE("%s state transition: %s → %s (direct)\n",
                    resourceType,
                    getStateName(from),
                    getStateName(to));
@@ -274,7 +274,7 @@ class D3D12StateTransition {
 
     if (!allowedDirect) {
       // Write-to-write transition detected per conservative policy
-      IGL_LOG_INFO("%s: Direct transition %s → %s disallowed by policy (write-to-write), will use intermediate COMMON state\n",
+      IGL_D3D12_LOG_VERBOSE("%s: Direct transition %s → %s disallowed by policy (write-to-write), will use intermediate COMMON state\n",
                    resourceType,
                    getStateName(from),
                    getStateName(to));

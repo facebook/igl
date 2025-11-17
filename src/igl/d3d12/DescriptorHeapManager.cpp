@@ -599,61 +599,61 @@ bool DescriptorHeapManager::isValidSamplerIndex(uint32_t index) const {
 
 void DescriptorHeapManager::logUsageStats() const {
   std::lock_guard<std::mutex> lock(mutex_);
-  IGL_LOG_INFO("=== Descriptor Heap Usage Statistics ===\n");
+  IGL_D3D12_LOG_VERBOSE("=== Descriptor Heap Usage Statistics ===\n");
 
   // CBV/SRV/UAV heap
   const uint32_t cbvSrvUavUsed = sizes_.cbvSrvUav - static_cast<uint32_t>(freeCbvSrvUav_.size());
   const float cbvSrvUavPercent = (cbvSrvUavUsed * 100.0f) / sizes_.cbvSrvUav;
-  IGL_LOG_INFO("  CBV/SRV/UAV: %u / %u (%.1f%% used)\n",
+  IGL_D3D12_LOG_VERBOSE("  CBV/SRV/UAV: %u / %u (%.1f%% used)\n",
                cbvSrvUavUsed, sizes_.cbvSrvUav, cbvSrvUavPercent);
 
   // Sampler heap
   const uint32_t samplersUsed = sizes_.samplers - static_cast<uint32_t>(freeSamplers_.size());
   const float samplersPercent = (samplersUsed * 100.0f) / sizes_.samplers;
-  IGL_LOG_INFO("  Samplers:    %u / %u (%.1f%% used)\n",
+  IGL_D3D12_LOG_VERBOSE("  Samplers:    %u / %u (%.1f%% used)\n",
                samplersUsed, sizes_.samplers, samplersPercent);
 
   // RTV heap
   const uint32_t rtvsUsed = sizes_.rtvs - static_cast<uint32_t>(freeRtvs_.size());
   const float rtvsPercent = (rtvsUsed * 100.0f) / sizes_.rtvs;
-  IGL_LOG_INFO("  RTVs:        %u / %u (%.1f%% used)\n",
+  IGL_D3D12_LOG_VERBOSE("  RTVs:        %u / %u (%.1f%% used)\n",
                rtvsUsed, sizes_.rtvs, rtvsPercent);
 
   // DSV heap
   const uint32_t dsvsUsed = sizes_.dsvs - static_cast<uint32_t>(freeDsvs_.size());
   const float dsvsPercent = (dsvsUsed * 100.0f) / sizes_.dsvs;
-  IGL_LOG_INFO("  DSVs:        %u / %u (%.1f%% used)\n",
+  IGL_D3D12_LOG_VERBOSE("  DSVs:        %u / %u (%.1f%% used)\n",
                dsvsUsed, sizes_.dsvs, dsvsPercent);
 
-  IGL_LOG_INFO("\n");
-  IGL_LOG_INFO("=== Peak Usage (High-Watermarks) ===\n");
+  IGL_D3D12_LOG_VERBOSE("\n");
+  IGL_D3D12_LOG_VERBOSE("=== Peak Usage (High-Watermarks) ===\n");
 
   // Peak CBV/SRV/UAV
   const float cbvSrvUavPeakPercent = (highWaterMarkCbvSrvUav_ * 100.0f) / sizes_.cbvSrvUav;
-  IGL_LOG_INFO("  Peak CBV/SRV/UAV: %u / %u (%.1f%% peak)\n",
+  IGL_D3D12_LOG_VERBOSE("  Peak CBV/SRV/UAV: %u / %u (%.1f%% peak)\n",
                highWaterMarkCbvSrvUav_, sizes_.cbvSrvUav, cbvSrvUavPeakPercent);
 
   // Peak Samplers
   const float samplersPeakPercent = (highWaterMarkSamplers_ * 100.0f) / sizes_.samplers;
-  IGL_LOG_INFO("  Peak Samplers:    %u / %u (%.1f%% peak)\n",
+  IGL_D3D12_LOG_VERBOSE("  Peak Samplers:    %u / %u (%.1f%% peak)\n",
                highWaterMarkSamplers_, sizes_.samplers, samplersPeakPercent);
 
   // Peak RTVs
   const float rtvsPeakPercent = (highWaterMarkRtvs_ * 100.0f) / sizes_.rtvs;
-  IGL_LOG_INFO("  Peak RTVs:        %u / %u (%.1f%% peak)\n",
+  IGL_D3D12_LOG_VERBOSE("  Peak RTVs:        %u / %u (%.1f%% peak)\n",
                highWaterMarkRtvs_, sizes_.rtvs, rtvsPeakPercent);
 
   // Peak DSVs
   const float dsvsPeakPercent = (highWaterMarkDsvs_ * 100.0f) / sizes_.dsvs;
-  IGL_LOG_INFO("  Peak DSVs:        %u / %u (%.1f%% peak)\n",
+  IGL_D3D12_LOG_VERBOSE("  Peak DSVs:        %u / %u (%.1f%% peak)\n",
                highWaterMarkDsvs_, sizes_.dsvs, dsvsPeakPercent);
 
-  IGL_LOG_INFO("========================================\n");
+  IGL_D3D12_LOG_VERBOSE("========================================\n");
 }
 
 void DescriptorHeapManager::validateAndClampSizes(ID3D12Device* device) {
   // A-006: Validate descriptor heap sizes against D3D12 device limits
-  IGL_LOG_INFO("=== Descriptor Heap Size Validation ===\n");
+  IGL_D3D12_LOG_VERBOSE("=== Descriptor Heap Size Validation ===\n");
 
   // Query device options for resource binding tier (affects limits)
   D3D12_FEATURE_DATA_D3D12_OPTIONS options = {};
@@ -668,7 +668,7 @@ void DescriptorHeapManager::validateAndClampSizes(ID3D12Device* device) {
       case D3D12_RESOURCE_BINDING_TIER_2: tierName = "Tier 2"; break;
       case D3D12_RESOURCE_BINDING_TIER_3: tierName = "Tier 3"; break;
     }
-    IGL_LOG_INFO("  Resource Binding Tier: %s\n", tierName);
+    IGL_D3D12_LOG_VERBOSE("  Resource Binding Tier: %s\n", tierName);
   }
 
   // === SHADER-VISIBLE CBV/SRV/UAV HEAP ===
@@ -683,7 +683,7 @@ void DescriptorHeapManager::validateAndClampSizes(ID3D12Device* device) {
     IGL_LOG_ERROR("  Clamping to %u descriptors\n", kMaxCbvSrvUavDescriptors);
     sizes_.cbvSrvUav = kMaxCbvSrvUavDescriptors;
   } else {
-    IGL_LOG_INFO("  CBV/SRV/UAV heap size: %u (limit: %u) - OK\n",
+    IGL_D3D12_LOG_VERBOSE("  CBV/SRV/UAV heap size: %u (limit: %u) - OK\n",
                  sizes_.cbvSrvUav, kMaxCbvSrvUavDescriptors);
   }
 
@@ -698,7 +698,7 @@ void DescriptorHeapManager::validateAndClampSizes(ID3D12Device* device) {
     IGL_LOG_ERROR("  Clamping to %u descriptors\n", kMaxSamplerDescriptors);
     sizes_.samplers = kMaxSamplerDescriptors;
   } else {
-    IGL_LOG_INFO("  Sampler heap size: %u (limit: %u) - OK\n",
+    IGL_D3D12_LOG_VERBOSE("  Sampler heap size: %u (limit: %u) - OK\n",
                  sizes_.samplers, kMaxSamplerDescriptors);
   }
 
@@ -713,7 +713,7 @@ void DescriptorHeapManager::validateAndClampSizes(ID3D12Device* device) {
     IGL_LOG_ERROR("  Recommended maximum: %u descriptors\n", kMaxRtvDescriptors);
     // Don't clamp - let CreateDescriptorHeap fail if truly excessive
   } else {
-    IGL_LOG_INFO("  RTV heap size: %u (recommended max: %u) - OK\n",
+    IGL_D3D12_LOG_VERBOSE("  RTV heap size: %u (recommended max: %u) - OK\n",
                  sizes_.rtvs, kMaxRtvDescriptors);
   }
 
@@ -727,11 +727,11 @@ void DescriptorHeapManager::validateAndClampSizes(ID3D12Device* device) {
     IGL_LOG_ERROR("  Recommended maximum: %u descriptors\n", kMaxDsvDescriptors);
     // Don't clamp - let CreateDescriptorHeap fail if truly excessive
   } else {
-    IGL_LOG_INFO("  DSV heap size: %u (recommended max: %u) - OK\n",
+    IGL_D3D12_LOG_VERBOSE("  DSV heap size: %u (recommended max: %u) - OK\n",
                  sizes_.dsvs, kMaxDsvDescriptors);
   }
 
-  IGL_LOG_INFO("========================================\n");
+  IGL_D3D12_LOG_VERBOSE("========================================\n");
 }
 
 } // namespace igl::d3d12

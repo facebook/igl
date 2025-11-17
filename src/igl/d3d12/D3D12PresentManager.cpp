@@ -61,7 +61,7 @@ bool PresentManager::present() {
   }
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("PresentManager: Present OK\n");
+  IGL_D3D12_LOG_VERBOSE("PresentManager: Present OK\n");
 #endif
 
   // Check device status after Present
@@ -95,7 +95,7 @@ void PresentManager::logInfoQueueMessages(ID3D12Device* device) {
   }
 
   UINT64 numMessages = infoQueue->GetNumStoredMessages();
-  IGL_LOG_INFO("D3D12 Info Queue has %llu messages:\n", numMessages);
+  IGL_D3D12_LOG_VERBOSE("D3D12 Info Queue has %llu messages:\n", numMessages);
   for (UINT64 i = 0; i < numMessages; ++i) {
     SIZE_T messageLength = 0;
     infoQueue->GetMessage(i, nullptr, &messageLength);
@@ -114,7 +114,7 @@ void PresentManager::logInfoQueueMessages(ID3D12Device* device) {
         case D3D12_MESSAGE_SEVERITY_INFO: severityStr = "INFO"; break;
         case D3D12_MESSAGE_SEVERITY_MESSAGE: severityStr = "MESSAGE"; break;
       }
-      IGL_LOG_INFO("  [%s] %s\n", severityStr, message->pDescription);
+      IGL_D3D12_LOG_VERBOSE("  [%s] %s\n", severityStr, message->pDescription);
     }
     // messageBuffer automatically freed at end of scope
   }
@@ -124,7 +124,7 @@ void PresentManager::logDredInfo(ID3D12Device* device) {
 #if defined(__ID3D12DeviceRemovedExtendedData1_INTERFACE_DEFINED__)
   Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedData1> dred;
   if (FAILED(device->QueryInterface(IID_PPV_ARGS(dred.GetAddressOf())))) {
-    IGL_LOG_INFO("DRED: ID3D12DeviceRemovedExtendedData1 not available.\n");
+    IGL_D3D12_LOG_VERBOSE("DRED: ID3D12DeviceRemovedExtendedData1 not available.\n");
     return;
   }
 
@@ -156,7 +156,7 @@ void PresentManager::logDredInfo(ID3D12Device* device) {
       IGL_LOG_ERROR("  ... additional breadcrumbs omitted ...\n");
     }
   } else {
-    IGL_LOG_INFO("DRED: No auto breadcrumbs captured.\n");
+    IGL_D3D12_LOG_VERBOSE("DRED: No auto breadcrumbs captured.\n");
   }
 
   D3D12_DRED_PAGE_FAULT_OUTPUT1 pageFault = {};
@@ -177,11 +177,11 @@ void PresentManager::logDredInfo(ID3D12Device* device) {
                     static_cast<unsigned>(freed->AllocationType));
     }
   } else {
-    IGL_LOG_INFO("DRED: No page fault data available.\n");
+    IGL_D3D12_LOG_VERBOSE("DRED: No page fault data available.\n");
   }
 #else
   (void)device;
-  IGL_LOG_INFO("DRED: Extended data interfaces not available on this SDK.\n");
+  IGL_D3D12_LOG_VERBOSE("DRED: Extended data interfaces not available on this SDK.\n");
 #endif
 }
 

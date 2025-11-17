@@ -57,56 +57,56 @@ Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height) {
   width_ = width;
   height_ = height;
 
-  IGL_LOG_INFO("D3D12Context: Creating D3D12 device...\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating D3D12 device...\n");
   Result deviceResult = createDevice();
   if (!deviceResult.isOk()) {
     return deviceResult;
   }
-  IGL_LOG_INFO("D3D12Context: Device created successfully\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Device created successfully\n");
 
-  IGL_LOG_INFO("D3D12Context: Creating command queue...\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating command queue...\n");
   Result queueResult = createCommandQueue();
   if (!queueResult.isOk()) {
     return queueResult;
   }
-  IGL_LOG_INFO("D3D12Context: Command queue created successfully\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Command queue created successfully\n");
 
-  IGL_LOG_INFO("D3D12Context: Creating swapchain (%ux%u)...\n", width, height);
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating swapchain (%ux%u)...\n", width, height);
   Result swapChainResult = createSwapChain(hwnd, width, height);
   if (!swapChainResult.isOk()) {
     return swapChainResult;
   }
-  IGL_LOG_INFO("D3D12Context: Swapchain created successfully\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Swapchain created successfully\n");
 
-  IGL_LOG_INFO("D3D12Context: Creating RTV heap...\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating RTV heap...\n");
   Result rtvResult = createRTVHeap();
   if (!rtvResult.isOk()) {
     return rtvResult;
   }
-  IGL_LOG_INFO("D3D12Context: RTV heap created successfully\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: RTV heap created successfully\n");
 
-  IGL_LOG_INFO("D3D12Context: Creating back buffers...\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating back buffers...\n");
   Result backBufferResult = createBackBuffers();
   if (!backBufferResult.isOk()) {
     return backBufferResult;
   }
-  IGL_LOG_INFO("D3D12Context: Back buffers created successfully\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Back buffers created successfully\n");
 
-  IGL_LOG_INFO("D3D12Context: Creating descriptor heaps...\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating descriptor heaps...\n");
   Result descriptorHeapResult = createDescriptorHeaps();
   if (!descriptorHeapResult.isOk()) {
     return descriptorHeapResult;
   }
-  IGL_LOG_INFO("D3D12Context: Descriptor heaps created successfully\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Descriptor heaps created successfully\n");
 
-  IGL_LOG_INFO("D3D12Context: Creating command signatures...\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating command signatures...\n");
   Result commandSigResult = createCommandSignatures();
   if (!commandSigResult.isOk()) {
     return commandSigResult;
   }
-  IGL_LOG_INFO("D3D12Context: Command signatures created successfully\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Command signatures created successfully\n");
 
-  IGL_LOG_INFO("D3D12Context: Creating fence for GPU synchronization...\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating fence for GPU synchronization...\n");
   HRESULT hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.GetAddressOf()));
   if (FAILED(hr)) {
     IGL_LOG_ERROR("D3D12Context: Failed to create fence (HRESULT: 0x%08X)\n", static_cast<unsigned>(hr));
@@ -119,10 +119,10 @@ Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height) {
     IGL_DEBUG_ASSERT(false);
     return Result(Result::Code::RuntimeError, "Failed to create fence event");
   }
-  IGL_LOG_INFO("D3D12Context: Fence created successfully\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Fence created successfully\n");
 
   // Create per-frame command allocators (following Microsoft's D3D12HelloFrameBuffering pattern)
-  IGL_LOG_INFO("D3D12Context: Creating per-frame command allocators...\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating per-frame command allocators...\n");
   for (UINT i = 0; i < kMaxFramesInFlight; i++) {
     hr = device_->CreateCommandAllocator(
         D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -132,11 +132,11 @@ Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height) {
       IGL_DEBUG_ASSERT(false);
       return Result(Result::Code::RuntimeError, "Failed to create command allocator for frame " + std::to_string(i));
     }
-    IGL_LOG_INFO("D3D12Context: Created command allocator for frame %u\n", i);
+    IGL_D3D12_LOG_VERBOSE("D3D12Context: Created command allocator for frame %u\n", i);
   }
-  IGL_LOG_INFO("D3D12Context: Per-frame command allocators created successfully\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Per-frame command allocators created successfully\n");
 
-  IGL_LOG_INFO("D3D12Context: Initialization complete!\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Initialization complete!\n");
 
   return Result();
 }
@@ -152,7 +152,7 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
     return Result();
   }
 
-  IGL_LOG_INFO("D3D12Context: Resizing swapchain from %ux%u to %ux%u\n",
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Resizing swapchain from %ux%u to %ux%u\n",
                width_, height_, width, height);
 
   width_ = width;
@@ -201,9 +201,9 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
                    "Failed to resize or recreate swapchain"};
     }
 
-    IGL_LOG_INFO("D3D12Context: Swapchain recreated successfully\n");
+    IGL_D3D12_LOG_VERBOSE("D3D12Context: Swapchain recreated successfully\n");
   } else {
-    IGL_LOG_INFO("D3D12Context: ResizeBuffers succeeded\n");
+    IGL_D3D12_LOG_VERBOSE("D3D12Context: ResizeBuffers succeeded\n");
   }
 
   // Recreate back buffer views
@@ -212,13 +212,13 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
     IGL_LOG_ERROR("D3D12Context: Failed to recreate back buffers: %s\n", backBufferResult.message.c_str());
     return backBufferResult;
   }
-  IGL_LOG_INFO("D3D12Context: Swapchain resize complete\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Swapchain resize complete\n");
 
   return Result();
 }
 
 Result D3D12Context::recreateSwapChain(uint32_t width, uint32_t height) {
-  IGL_LOG_INFO("D3D12Context: Recreating swapchain with dimensions %ux%u\n", width, height);
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Recreating swapchain with dimensions %ux%u\n", width, height);
 
   // Get window handle from existing swapchain before releasing it
   DXGI_SWAP_CHAIN_DESC1 oldDesc = {};
@@ -242,11 +242,11 @@ Result D3D12Context::recreateSwapChain(uint32_t width, uint32_t height) {
     return Result{Result::Code::RuntimeError, "Failed to get HWND from swapchain"};
   }
 
-  IGL_LOG_INFO("D3D12Context: Retrieved HWND=%p from existing swapchain\n", hwnd);
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Retrieved HWND=%p from existing swapchain\n", hwnd);
 
   // Release old swapchain completely
   swapChain_.Reset();
-  IGL_LOG_INFO("D3D12Context: Old swapchain released\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Old swapchain released\n");
 
   // Create new swapchain with updated dimensions
   DXGI_SWAP_CHAIN_DESC1 newDesc = {};
@@ -263,7 +263,7 @@ Result D3D12Context::recreateSwapChain(uint32_t width, uint32_t height) {
   newDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
   newDesc.Flags = oldDesc.Flags;  // Preserve tearing support flag
 
-  IGL_LOG_INFO("D3D12Context: Creating new swapchain (format=%u, flags=0x%X)\n",
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating new swapchain (format=%u, flags=0x%X)\n",
                newDesc.Format, newDesc.Flags);
 
   Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain1;
@@ -291,7 +291,7 @@ Result D3D12Context::recreateSwapChain(uint32_t width, uint32_t height) {
                  "Failed to query IDXGISwapChain3 interface"};
   }
 
-  IGL_LOG_INFO("D3D12Context: Swapchain recreated successfully\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Swapchain recreated successfully\n");
   return Result{};
 }
 
@@ -334,14 +334,14 @@ Result D3D12Context::createDevice() {
   bool breakOnError = getEnvBool("IGL_D3D12_BREAK_ON_ERROR", false);  // OFF by default to avoid hangs
   bool breakOnWarning = getEnvBool("IGL_D3D12_BREAK_ON_WARNING", false);
 
-  IGL_LOG_INFO("=== D3D12 Debug Configuration ===\n");
-  IGL_LOG_INFO("  Debug Layer:       %s\n", enableDebugLayer ? "ENABLED" : "DISABLED");
-  IGL_LOG_INFO("  GPU Validation:    %s\n", enableGPUValidation ? "ENABLED" : "DISABLED");
-  IGL_LOG_INFO("  DRED:              %s\n", enableDRED ? "ENABLED" : "DISABLED");
-  IGL_LOG_INFO("  DXGI Debug:        %s\n", enableDXGIDebug ? "ENABLED" : "DISABLED");
-  IGL_LOG_INFO("  Break on Error:    %s\n", breakOnError ? "ENABLED" : "DISABLED");
-  IGL_LOG_INFO("  Break on Warning:  %s\n", breakOnWarning ? "ENABLED" : "DISABLED");
-  IGL_LOG_INFO("=================================\n");
+  IGL_D3D12_LOG_VERBOSE("=== D3D12 Debug Configuration ===\n");
+  IGL_D3D12_LOG_VERBOSE("  Debug Layer:       %s\n", enableDebugLayer ? "ENABLED" : "DISABLED");
+  IGL_D3D12_LOG_VERBOSE("  GPU Validation:    %s\n", enableGPUValidation ? "ENABLED" : "DISABLED");
+  IGL_D3D12_LOG_VERBOSE("  DRED:              %s\n", enableDRED ? "ENABLED" : "DISABLED");
+  IGL_D3D12_LOG_VERBOSE("  DXGI Debug:        %s\n", enableDXGIDebug ? "ENABLED" : "DISABLED");
+  IGL_D3D12_LOG_VERBOSE("  Break on Error:    %s\n", breakOnError ? "ENABLED" : "DISABLED");
+  IGL_D3D12_LOG_VERBOSE("  Break on Warning:  %s\n", breakOnWarning ? "ENABLED" : "DISABLED");
+  IGL_D3D12_LOG_VERBOSE("=================================\n");
 
   // Initialize DXGI factory flags
   UINT dxgiFactoryFlags = 0;
@@ -351,12 +351,12 @@ Result D3D12Context::createDevice() {
     Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf())))) {
       debugController->EnableDebugLayer();
-      IGL_LOG_INFO("D3D12Context: Debug layer ENABLED\n");
+      IGL_D3D12_LOG_VERBOSE("D3D12Context: Debug layer ENABLED\n");
 
       // Enable DXGI debug layer if configured
       if (enableDXGIDebug) {
         dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
-        IGL_LOG_INFO("D3D12Context: DXGI debug layer ENABLED\n");
+        IGL_D3D12_LOG_VERBOSE("D3D12Context: DXGI debug layer ENABLED\n");
       }
 
       // A-007: Enable GPU-Based Validation if configured
@@ -365,7 +365,7 @@ Result D3D12Context::createDevice() {
         Microsoft::WRL::ComPtr<ID3D12Debug1> debugController1;
         if (SUCCEEDED(debugController->QueryInterface(IID_PPV_ARGS(debugController1.GetAddressOf())))) {
           debugController1->SetEnableGPUBasedValidation(TRUE);
-          IGL_LOG_INFO("D3D12Context: GPU-Based Validation ENABLED (may slow down rendering 10-100x)\n");
+          IGL_D3D12_LOG_VERBOSE("D3D12Context: GPU-Based Validation ENABLED (may slow down rendering 10-100x)\n");
         } else {
           IGL_LOG_ERROR("D3D12Context: Failed to enable GPU-Based Validation (requires ID3D12Debug1)\n");
         }
@@ -374,7 +374,7 @@ Result D3D12Context::createDevice() {
       IGL_LOG_ERROR("D3D12Context: Failed to get D3D12 debug interface - Graphics Tools may not be installed\n");
     }
   } else {
-    IGL_LOG_INFO("D3D12Context: Debug layer DISABLED\n");
+    IGL_D3D12_LOG_VERBOSE("D3D12Context: Debug layer DISABLED\n");
   }
 
   // A-007: Enable DRED if configured (Device Removed Extended Data for better crash diagnostics)
@@ -384,7 +384,7 @@ Result D3D12Context::createDevice() {
       dredSettings1->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
       dredSettings1->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
       dredSettings1->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-      IGL_LOG_INFO("D3D12Context: DRED 1.2 fully configured (breadcrumbs + page faults + context)\n");
+      IGL_D3D12_LOG_VERBOSE("D3D12Context: DRED 1.2 fully configured (breadcrumbs + page faults + context)\n");
     } else {
       IGL_LOG_ERROR("D3D12Context: Failed to configure DRED (requires Windows 10 19041+)\n");
     }
@@ -419,7 +419,7 @@ Result D3D12Context::createDevice() {
     return Result(Result::Code::RuntimeError, "Failed to create D3D12 device on selected adapter");
   }
 
-  IGL_LOG_INFO("D3D12Context: Device created with Feature Level %s\n",
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Device created with Feature Level %s\n",
                featureLevelToString(selectedFeatureLevel_));
 
   // A-007: Setup info queue with configurable break-on-severity settings
@@ -451,14 +451,14 @@ Result D3D12Context::createDevice() {
       filter.DenyList.pIDList = denyIds;
       infoQueue->PushStorageFilter(&filter);
 
-      IGL_LOG_INFO("D3D12Context: Info queue configured (Corruption=BREAK, Error=%s, Warning=%s)\n",
+      IGL_D3D12_LOG_VERBOSE("D3D12Context: Info queue configured (Corruption=BREAK, Error=%s, Warning=%s)\n",
                    breakOnError ? "BREAK" : "LOG", breakOnWarning ? "BREAK" : "LOG");
     }
   }
 
   // Query root signature capabilities (P0_DX12-003)
   // This is critical for Tier-1 devices which don't support unbounded descriptor ranges
-  IGL_LOG_INFO("D3D12Context: Querying root signature capabilities...\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Querying root signature capabilities...\n");
 
   // Query highest supported root signature version
   D3D12_FEATURE_DATA_ROOT_SIGNATURE featureDataRootSig = {};
@@ -471,12 +471,12 @@ Result D3D12Context::createDevice() {
 
   if (SUCCEEDED(hr)) {
     highestRootSignatureVersion_ = featureDataRootSig.HighestVersion;
-    IGL_LOG_INFO("  Highest Root Signature Version: %s\n",
+    IGL_D3D12_LOG_VERBOSE("  Highest Root Signature Version: %s\n",
                  highestRootSignatureVersion_ == D3D_ROOT_SIGNATURE_VERSION_1_1 ? "1.1" : "1.0");
   } else {
     // If query fails, assume v1.0 (most conservative)
     highestRootSignatureVersion_ = D3D_ROOT_SIGNATURE_VERSION_1_0;
-    IGL_LOG_INFO("  Root Signature query failed (assuming v1.0)\n");
+    IGL_D3D12_LOG_VERBOSE("  Root Signature query failed (assuming v1.0)\n");
   }
 
   // Query resource binding tier
@@ -494,16 +494,16 @@ Result D3D12Context::createDevice() {
       case D3D12_RESOURCE_BINDING_TIER_2: tierName = "Tier 2 (unbounded arrays except samplers)"; break;
       case D3D12_RESOURCE_BINDING_TIER_3: tierName = "Tier 3 (fully unbounded)"; break;
     }
-    IGL_LOG_INFO("  Resource Binding Tier: %s\n", tierName);
+    IGL_D3D12_LOG_VERBOSE("  Resource Binding Tier: %s\n", tierName);
   } else {
     // If query fails, assume Tier 1 (most conservative)
     resourceBindingTier_ = D3D12_RESOURCE_BINDING_TIER_1;
-    IGL_LOG_INFO("  Resource Binding Tier query failed (assuming Tier 1)\n");
+    IGL_D3D12_LOG_VERBOSE("  Resource Binding Tier query failed (assuming Tier 1)\n");
   }
 
   // Query shader model support with progressive fallback (A-005)
   // This is critical for FL11 hardware which only supports SM 5.1, not SM 6.0+
-  IGL_LOG_INFO("D3D12Context: Querying shader model capabilities for Feature Level %d.%d...\n",
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Querying shader model capabilities for Feature Level %d.%d...\n",
                (selectedFeatureLevel_ >> 12) & 0xF, (selectedFeatureLevel_ >> 8) & 0xF);
 
   // Helper to map feature level to expected minimum shader model
@@ -563,10 +563,10 @@ Result D3D12Context::createDevice() {
     if (SUCCEEDED(hr)) {
       detectedShaderModel = shaderModelData.HighestShaderModel;
       shaderModelDetected = true;
-      IGL_LOG_INFO("  Detected Shader Model: %s\n", shaderModelToString(detectedShaderModel));
+      IGL_D3D12_LOG_VERBOSE("  Detected Shader Model: %s\n", shaderModelToString(detectedShaderModel));
       break;  // Found highest supported, stop trying
     } else {
-      IGL_LOG_INFO("  Shader Model %s not supported, trying lower version\n",
+      IGL_D3D12_LOG_VERBOSE("  Shader Model %s not supported, trying lower version\n",
                    shaderModelToString(sm));
     }
   }
@@ -574,7 +574,7 @@ Result D3D12Context::createDevice() {
   if (!shaderModelDetected) {
     // Fallback based on feature level
     D3D_SHADER_MODEL minimumSM = getMinShaderModelForFeatureLevel(selectedFeatureLevel_);
-    IGL_LOG_INFO("  WARNING: Shader model detection failed, using minimum for Feature Level: %s\n",
+    IGL_D3D12_LOG_VERBOSE("  WARNING: Shader model detection failed, using minimum for Feature Level: %s\n",
                     shaderModelToString(minimumSM));
     detectedShaderModel = minimumSM;
   }
@@ -582,15 +582,15 @@ Result D3D12Context::createDevice() {
   // Validate shader model is appropriate for feature level
   D3D_SHADER_MODEL minimumRequired = getMinShaderModelForFeatureLevel(selectedFeatureLevel_);
   if (detectedShaderModel < minimumRequired) {
-    IGL_LOG_INFO("  WARNING: Detected Shader Model %s is below minimum for Feature Level: %s\n",
+    IGL_D3D12_LOG_VERBOSE("  WARNING: Detected Shader Model %s is below minimum for Feature Level: %s\n",
                     shaderModelToString(detectedShaderModel),
                     shaderModelToString(minimumRequired));
   }
 
   maxShaderModel_ = detectedShaderModel;
-  IGL_LOG_INFO("D3D12Context: Final Shader Model selected: %s\n", shaderModelToString(maxShaderModel_));
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Final Shader Model selected: %s\n", shaderModelToString(maxShaderModel_));
 
-  IGL_LOG_INFO("D3D12Context: Root signature capabilities detected successfully\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Root signature capabilities detected successfully\n");
 
   return Result();
 }
@@ -599,7 +599,7 @@ Result D3D12Context::createDevice() {
 Result D3D12Context::enumerateAndSelectAdapter() {
   enumeratedAdapters_.clear();
 
-  IGL_LOG_INFO("D3D12Context: Enumerating DXGI adapters...\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Enumerating DXGI adapters...\n");
 
   // Try IDXGIFactory6 first for high-performance GPU preference
   Microsoft::WRL::ComPtr<IDXGIFactory6> factory6;
@@ -628,21 +628,21 @@ Result D3D12Context::enumerateAndSelectAdapter() {
       // Determine feature level
       info.featureLevel = getHighestFeatureLevel(adapter.Get());
       if (info.featureLevel == static_cast<D3D_FEATURE_LEVEL>(0)) {
-        IGL_LOG_INFO("D3D12Context: Adapter %u does not support D3D12 (skipping)\n", i);
+        IGL_D3D12_LOG_VERBOSE("D3D12Context: Adapter %u does not support D3D12 (skipping)\n", i);
         continue;
       }
 
       enumeratedAdapters_.push_back(info);
 
       // Log adapter details
-      IGL_LOG_INFO("D3D12Context: Adapter %u:\n", i);
-      IGL_LOG_INFO("  Description: %ls\n", info.desc.Description);
-      IGL_LOG_INFO("  Vendor ID: 0x%04X (%s)\n", info.desc.VendorId, info.getVendorName());
-      IGL_LOG_INFO("  Device ID: 0x%04X\n", info.desc.DeviceId);
-      IGL_LOG_INFO("  Dedicated VRAM: %llu MB\n", info.getDedicatedVideoMemoryMB());
-      IGL_LOG_INFO("  Shared System Memory: %llu MB\n", info.desc.SharedSystemMemory / (1024 * 1024));
-      IGL_LOG_INFO("  Feature Level: %s\n", featureLevelToString(info.featureLevel));
-      IGL_LOG_INFO("  LUID: 0x%08X:0x%08X\n", info.desc.AdapterLuid.HighPart, info.desc.AdapterLuid.LowPart);
+      IGL_D3D12_LOG_VERBOSE("D3D12Context: Adapter %u:\n", i);
+      IGL_D3D12_LOG_VERBOSE("  Description: %ls\n", info.desc.Description);
+      IGL_D3D12_LOG_VERBOSE("  Vendor ID: 0x%04X (%s)\n", info.desc.VendorId, info.getVendorName());
+      IGL_D3D12_LOG_VERBOSE("  Device ID: 0x%04X\n", info.desc.DeviceId);
+      IGL_D3D12_LOG_VERBOSE("  Dedicated VRAM: %llu MB\n", info.getDedicatedVideoMemoryMB());
+      IGL_D3D12_LOG_VERBOSE("  Shared System Memory: %llu MB\n", info.desc.SharedSystemMemory / (1024 * 1024));
+      IGL_D3D12_LOG_VERBOSE("  Feature Level: %s\n", featureLevelToString(info.featureLevel));
+      IGL_D3D12_LOG_VERBOSE("  LUID: 0x%08X:0x%08X\n", info.desc.AdapterLuid.HighPart, info.desc.AdapterLuid.LowPart);
     }
   }
 
@@ -675,13 +675,13 @@ Result D3D12Context::enumerateAndSelectAdapter() {
       enumeratedAdapters_.push_back(info);
 
       // Log adapter details
-      IGL_LOG_INFO("D3D12Context: Adapter %u:\n", i);
-      IGL_LOG_INFO("  Description: %ls\n", info.desc.Description);
-      IGL_LOG_INFO("  Vendor ID: 0x%04X (%s)\n", info.desc.VendorId, info.getVendorName());
-      IGL_LOG_INFO("  Device ID: 0x%04X\n", info.desc.DeviceId);
-      IGL_LOG_INFO("  Dedicated VRAM: %llu MB\n", info.getDedicatedVideoMemoryMB());
-      IGL_LOG_INFO("  Shared System Memory: %llu MB\n", info.desc.SharedSystemMemory / (1024 * 1024));
-      IGL_LOG_INFO("  Feature Level: %s\n", featureLevelToString(info.featureLevel));
+      IGL_D3D12_LOG_VERBOSE("D3D12Context: Adapter %u:\n", i);
+      IGL_D3D12_LOG_VERBOSE("  Description: %ls\n", info.desc.Description);
+      IGL_D3D12_LOG_VERBOSE("  Vendor ID: 0x%04X (%s)\n", info.desc.VendorId, info.getVendorName());
+      IGL_D3D12_LOG_VERBOSE("  Device ID: 0x%04X\n", info.desc.DeviceId);
+      IGL_D3D12_LOG_VERBOSE("  Dedicated VRAM: %llu MB\n", info.getDedicatedVideoMemoryMB());
+      IGL_D3D12_LOG_VERBOSE("  Shared System Memory: %llu MB\n", info.desc.SharedSystemMemory / (1024 * 1024));
+      IGL_D3D12_LOG_VERBOSE("  Feature Level: %s\n", featureLevelToString(info.featureLevel));
     }
   }
 
@@ -700,9 +700,9 @@ Result D3D12Context::enumerateAndSelectAdapter() {
 
       enumeratedAdapters_.push_back(warpInfo);
 
-      IGL_LOG_INFO("D3D12Context: WARP Adapter (Software):\n");
-      IGL_LOG_INFO("  Description: %ls\n", warpInfo.desc.Description);
-      IGL_LOG_INFO("  Feature Level: %s\n", featureLevelToString(warpInfo.featureLevel));
+      IGL_D3D12_LOG_VERBOSE("D3D12Context: WARP Adapter (Software):\n");
+      IGL_D3D12_LOG_VERBOSE("  Description: %ls\n", warpInfo.desc.Description);
+      IGL_D3D12_LOG_VERBOSE("  Feature Level: %s\n", featureLevelToString(warpInfo.featureLevel));
     }
   }
 
@@ -723,7 +723,7 @@ Result D3D12Context::enumerateAndSelectAdapter() {
       for (size_t i = 0; i < enumeratedAdapters_.size(); ++i) {
         if (enumeratedAdapters_[i].isWarp) {
           selectedAdapterIndex_ = static_cast<uint32_t>(i);
-          IGL_LOG_INFO("D3D12Context: Environment override - using WARP adapter\n");
+          IGL_D3D12_LOG_VERBOSE("D3D12Context: Environment override - using WARP adapter\n");
           break;
         }
       }
@@ -732,7 +732,7 @@ Result D3D12Context::enumerateAndSelectAdapter() {
       int requestedIndex = atoi(adapterEnv);
       if (requestedIndex >= 0 && requestedIndex < static_cast<int>(enumeratedAdapters_.size())) {
         selectedAdapterIndex_ = static_cast<uint32_t>(requestedIndex);
-        IGL_LOG_INFO("D3D12Context: Environment override - using adapter %d\n", requestedIndex);
+        IGL_D3D12_LOG_VERBOSE("D3D12Context: Environment override - using adapter %d\n", requestedIndex);
       } else {
         IGL_LOG_ERROR("D3D12Context: Invalid adapter index %d (available: 0-%zu)\n",
                       requestedIndex, enumeratedAdapters_.size() - 1);
@@ -763,7 +763,7 @@ Result D3D12Context::enumerateAndSelectAdapter() {
   adapter_ = enumeratedAdapters_[selectedAdapterIndex_].adapter;
   selectedFeatureLevel_ = enumeratedAdapters_[selectedAdapterIndex_].featureLevel;
 
-  IGL_LOG_INFO("D3D12Context: Selected adapter %u: %ls (FL %s)\n",
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Selected adapter %u: %ls (FL %s)\n",
                selectedAdapterIndex_,
                enumeratedAdapters_[selectedAdapterIndex_].desc.Description,
                featureLevelToString(selectedFeatureLevel_));
@@ -783,30 +783,30 @@ void D3D12Context::detectMemoryBudget() {
   memoryBudget_.dedicatedVideoMemory = selectedAdapter.desc.DedicatedVideoMemory;
   memoryBudget_.sharedSystemMemory = selectedAdapter.desc.SharedSystemMemory;
 
-  IGL_LOG_INFO("D3D12Context: GPU Memory Budget:\n");
-  IGL_LOG_INFO("  Dedicated Video Memory: %.2f MB\n",
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: GPU Memory Budget:\n");
+  IGL_D3D12_LOG_VERBOSE("  Dedicated Video Memory: %.2f MB\n",
                memoryBudget_.dedicatedVideoMemory / (1024.0 * 1024.0));
-  IGL_LOG_INFO("  Shared System Memory: %.2f MB\n",
+  IGL_D3D12_LOG_VERBOSE("  Shared System Memory: %.2f MB\n",
                memoryBudget_.sharedSystemMemory / (1024.0 * 1024.0));
-  IGL_LOG_INFO("  Total Available: %.2f MB\n",
+  IGL_D3D12_LOG_VERBOSE("  Total Available: %.2f MB\n",
                memoryBudget_.totalAvailableMemory() / (1024.0 * 1024.0));
 
   // Recommend conservative budget (80% of available)
   uint64_t recommendedBudget = static_cast<uint64_t>(memoryBudget_.totalAvailableMemory() * 0.8);
-  IGL_LOG_INFO("  Recommended Budget (80%%): %.2f MB\n",
+  IGL_D3D12_LOG_VERBOSE("  Recommended Budget (80%%): %.2f MB\n",
                recommendedBudget / (1024.0 * 1024.0));
 }
 
 // A-010: Detect HDR output capabilities
 void D3D12Context::detectHDRCapabilities() {
-  IGL_LOG_INFO("D3D12Context: Detecting HDR output capabilities...\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Detecting HDR output capabilities...\n");
 
   // Reset to defaults
   hdrCapabilities_ = HDRCapabilities{};
 
   // Need a valid swapchain to query output
   if (!swapChain_.Get()) {
-    IGL_LOG_INFO("  No swapchain available, HDR detection skipped\n");
+    IGL_D3D12_LOG_VERBOSE("  No swapchain available, HDR detection skipped\n");
     return;
   }
 
@@ -814,7 +814,7 @@ void D3D12Context::detectHDRCapabilities() {
   Microsoft::WRL::ComPtr<IDXGIOutput> output;
   HRESULT hr = swapChain_->GetContainingOutput(output.GetAddressOf());
   if (FAILED(hr)) {
-    IGL_LOG_INFO("  Failed to get containing output (0x%08X), HDR not available\n", static_cast<unsigned>(hr));
+    IGL_D3D12_LOG_VERBOSE("  Failed to get containing output (0x%08X), HDR not available\n", static_cast<unsigned>(hr));
     return;
   }
 
@@ -822,7 +822,7 @@ void D3D12Context::detectHDRCapabilities() {
   Microsoft::WRL::ComPtr<IDXGIOutput6> output6;
   hr = output->QueryInterface(IID_PPV_ARGS(output6.GetAddressOf()));
   if (FAILED(hr)) {
-    IGL_LOG_INFO("  IDXGIOutput6 not available (needs Windows 10 1703+), HDR not supported\n");
+    IGL_D3D12_LOG_VERBOSE("  IDXGIOutput6 not available (needs Windows 10 1703+), HDR not supported\n");
     return;
   }
 
@@ -830,7 +830,7 @@ void D3D12Context::detectHDRCapabilities() {
   DXGI_OUTPUT_DESC1 outputDesc = {};
   hr = output6->GetDesc1(&outputDesc);
   if (FAILED(hr)) {
-    IGL_LOG_INFO("  Failed to get output description (0x%08X)\n", static_cast<unsigned>(hr));
+    IGL_D3D12_LOG_VERBOSE("  Failed to get output description (0x%08X)\n", static_cast<unsigned>(hr));
     return;
   }
 
@@ -842,35 +842,35 @@ void D3D12Context::detectHDRCapabilities() {
   hdrCapabilities_.minLuminance = outputDesc.MinLuminance;
   hdrCapabilities_.maxFullFrameLuminance = outputDesc.MaxFullFrameLuminance;
 
-  IGL_LOG_INFO("  Native Color Space: %u\n", outputDesc.ColorSpace);
-  IGL_LOG_INFO("  Max Luminance: %.2f nits\n", outputDesc.MaxLuminance);
-  IGL_LOG_INFO("  Min Luminance: %.4f nits\n", outputDesc.MinLuminance);
-  IGL_LOG_INFO("  Max Full Frame Luminance: %.2f nits\n", outputDesc.MaxFullFrameLuminance);
+  IGL_D3D12_LOG_VERBOSE("  Native Color Space: %u\n", outputDesc.ColorSpace);
+  IGL_D3D12_LOG_VERBOSE("  Max Luminance: %.2f nits\n", outputDesc.MaxLuminance);
+  IGL_D3D12_LOG_VERBOSE("  Min Luminance: %.4f nits\n", outputDesc.MinLuminance);
+  IGL_D3D12_LOG_VERBOSE("  Max Full Frame Luminance: %.2f nits\n", outputDesc.MaxFullFrameLuminance);
 
   // Check for HDR10 support (BT.2020 ST2084 - PQ curve) via swapchain
   UINT colorSpaceSupport = 0;
   hr = swapChain_->CheckColorSpaceSupport(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020, &colorSpaceSupport);
   if (SUCCEEDED(hr) && (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT)) {
     hdrCapabilities_.hdrSupported = true;
-    IGL_LOG_INFO("  HDR10 (BT.2020 PQ): SUPPORTED\n");
+    IGL_D3D12_LOG_VERBOSE("  HDR10 (BT.2020 PQ): SUPPORTED\n");
   } else {
-    IGL_LOG_INFO("  HDR10 (BT.2020 PQ): NOT SUPPORTED\n");
+    IGL_D3D12_LOG_VERBOSE("  HDR10 (BT.2020 PQ): NOT SUPPORTED\n");
   }
 
   // Check for scRGB support (linear floating-point HDR)
   hr = swapChain_->CheckColorSpaceSupport(DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709, &colorSpaceSupport);
   if (SUCCEEDED(hr) && (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT)) {
     hdrCapabilities_.scRGBSupported = true;
-    IGL_LOG_INFO("  scRGB (Linear FP16): SUPPORTED\n");
+    IGL_D3D12_LOG_VERBOSE("  scRGB (Linear FP16): SUPPORTED\n");
   } else {
-    IGL_LOG_INFO("  scRGB (Linear FP16): NOT SUPPORTED\n");
+    IGL_D3D12_LOG_VERBOSE("  scRGB (Linear FP16): NOT SUPPORTED\n");
   }
 
   // Summary
   if (hdrCapabilities_.hdrSupported || hdrCapabilities_.scRGBSupported) {
-    IGL_LOG_INFO("D3D12Context: HDR output AVAILABLE (max %.0f nits)\n", outputDesc.MaxLuminance);
+    IGL_D3D12_LOG_VERBOSE("D3D12Context: HDR output AVAILABLE (max %.0f nits)\n", outputDesc.MaxLuminance);
   } else {
-    IGL_LOG_INFO("D3D12Context: HDR output NOT AVAILABLE (SDR display)\n");
+    IGL_D3D12_LOG_VERBOSE("D3D12Context: HDR output NOT AVAILABLE (SDR display)\n");
   }
 }
 
@@ -915,7 +915,7 @@ Result D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height)
                                                 sizeof(allowTearing)))) {
       tearingSupported_ = (allowTearing == TRUE);
       if (tearingSupported_) {
-        IGL_LOG_INFO("D3D12Context: Tearing support available (variable refresh rate)\n");
+        IGL_D3D12_LOG_VERBOSE("D3D12Context: Tearing support available (variable refresh rate)\n");
       }
     }
   }
@@ -987,16 +987,16 @@ Result D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height)
                                         actualDesc.SwapEffect == DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL);
 
       if (!actualTearingFlag) {
-        IGL_LOG_INFO("D3D12Context: Tearing flag was NOT set on swapchain (downgraded by driver)\n");
+        IGL_D3D12_LOG_VERBOSE("D3D12Context: Tearing flag was NOT set on swapchain (downgraded by driver)\n");
         tearingSupported_ = false;
       } else if (!actualWindowedMode) {
-        IGL_LOG_INFO("D3D12Context: Swapchain not in flip mode (tearing requires flip model)\n");
+        IGL_D3D12_LOG_VERBOSE("D3D12Context: Swapchain not in flip mode (tearing requires flip model)\n");
         tearingSupported_ = false;
       } else {
-        IGL_LOG_INFO("D3D12Context: Tearing verified on swapchain (windowed flip model + tearing flag)\n");
+        IGL_D3D12_LOG_VERBOSE("D3D12Context: Tearing verified on swapchain (windowed flip model + tearing flag)\n");
       }
     } else {
-      IGL_LOG_INFO("D3D12Context: Failed to verify swapchain desc, assuming tearing unavailable\n");
+      IGL_D3D12_LOG_VERBOSE("D3D12Context: Failed to verify swapchain desc, assuming tearing unavailable\n");
       tearingSupported_ = false;
     }
   }
@@ -1059,7 +1059,7 @@ Result D3D12Context::createDescriptorHeaps() {
   // Create per-frame shader-visible descriptor heaps (following Microsoft MiniEngine pattern)
   // Each frame gets its own isolated heaps to prevent descriptor conflicts between frames
   // C-001: Now creates initial page with dynamic growth support
-  IGL_LOG_INFO("D3D12Context: Creating per-frame descriptor heaps with dynamic growth support...\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating per-frame descriptor heaps with dynamic growth support...\n");
 
   for (UINT i = 0; i < kMaxFramesInFlight; i++) {
     // CBV/SRV/UAV heap: Start with one page of kDescriptorsPerPage descriptors
@@ -1082,7 +1082,7 @@ Result D3D12Context::createDescriptorHeaps() {
       frameContexts_[i].cbvSrvUavHeapPages.emplace_back(initialHeap, kDescriptorsPerPage);
       frameContexts_[i].currentCbvSrvUavPageIndex = 0;
 
-      IGL_LOG_INFO("  Frame %u: Created initial CBV/SRV/UAV heap page (%u descriptors, max %u pages = %u total)\n",
+      IGL_D3D12_LOG_VERBOSE("  Frame %u: Created initial CBV/SRV/UAV heap page (%u descriptors, max %u pages = %u total)\n",
                    i, kDescriptorsPerPage, kMaxHeapPages, kMaxDescriptorsPerFrame);
     }
 
@@ -1101,15 +1101,15 @@ Result D3D12Context::createDescriptorHeaps() {
         IGL_DEBUG_ASSERT(false);
         return Result(Result::Code::RuntimeError, "Failed to create per-frame Sampler heap for frame " + std::to_string(i));
       }
-      IGL_LOG_INFO("  Frame %u: Created Sampler heap (%u descriptors)\n", i, kSamplerHeapSize);
+      IGL_D3D12_LOG_VERBOSE("  Frame %u: Created Sampler heap (%u descriptors)\n", i, kSamplerHeapSize);
     }
   }
 
-  IGL_LOG_INFO("D3D12Context: Per-frame descriptor heaps created successfully\n");
-  IGL_LOG_INFO("  Total memory: 3 frames × (1024 CBV/SRV/UAV + %u Samplers) × 32 bytes ≈ %u KB\n",
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Per-frame descriptor heaps created successfully\n");
+  IGL_D3D12_LOG_VERBOSE("  Total memory: 3 frames × (1024 CBV/SRV/UAV + %u Samplers) × 32 bytes ≈ %u KB\n",
                kMaxSamplers, (3 * (kCbvSrvUavHeapSize + kMaxSamplers) * 32) / 1024);
 
-  IGL_LOG_INFO("D3D12Context: Creating descriptor heap manager...\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating descriptor heap manager...\n");
 
   // Create descriptor heap manager to manage allocations for CPU-visible heaps (RTV/DSV)
   DescriptorHeapManager::Sizes sizes{};
@@ -1127,7 +1127,7 @@ Result D3D12Context::createDescriptorHeaps() {
     ownedHeapMgr_ = nullptr;
   } else {
     heapMgr_ = ownedHeapMgr_;
-    IGL_LOG_INFO("D3D12Context: Descriptor heap manager created successfully\n");
+    IGL_D3D12_LOG_VERBOSE("D3D12Context: Descriptor heap manager created successfully\n");
   }
 
   return Result();
@@ -1156,7 +1156,7 @@ Result D3D12Context::createCommandSignatures() {
       IGL_DEBUG_ASSERT(false);
       return Result(Result::Code::RuntimeError, "Failed to create draw indirect command signature");
     }
-    IGL_LOG_INFO("D3D12Context: Created draw indirect command signature (stride: %u bytes)\n",
+    IGL_D3D12_LOG_VERBOSE("D3D12Context: Created draw indirect command signature (stride: %u bytes)\n",
                  drawSigDesc.ByteStride);
   }
 
@@ -1182,7 +1182,7 @@ Result D3D12Context::createCommandSignatures() {
       IGL_DEBUG_ASSERT(false);
       return Result(Result::Code::RuntimeError, "Failed to create draw indexed indirect command signature");
     }
-    IGL_LOG_INFO("D3D12Context: Created draw indexed indirect command signature (stride: %u bytes)\n",
+    IGL_D3D12_LOG_VERBOSE("D3D12Context: Created draw indexed indirect command signature (stride: %u bytes)\n",
                  drawIndexedSigDesc.ByteStride);
   }
 
@@ -1206,7 +1206,7 @@ ID3D12Resource* D3D12Context::getCurrentBackBuffer() const {
   ID3D12Resource* resource = renderTargets_[index].Get();
   static int logCount = 0;
   if (logCount < 3) {
-    IGL_LOG_INFO("getCurrentBackBuffer(): index=%u, resource=%p\n", index, (void*)resource);
+    IGL_D3D12_LOG_VERBOSE("getCurrentBackBuffer(): index=%u, resource=%p\n", index, (void*)resource);
     logCount++;
   }
 
@@ -1267,20 +1267,20 @@ void D3D12Context::trackResourceDestruction(const char* type, size_t sizeBytes) 
 
 void D3D12Context::logResourceStats() {
   std::lock_guard<std::mutex> lock(resourceStatsMutex_);
-  IGL_LOG_INFO("=== D3D12 Resource Statistics ===\n");
-  IGL_LOG_INFO("  Buffers: %zu created, %zu destroyed (leaked: %zd)\n",
+  IGL_D3D12_LOG_VERBOSE("=== D3D12 Resource Statistics ===\n");
+  IGL_D3D12_LOG_VERBOSE("  Buffers: %zu created, %zu destroyed (leaked: %zd)\n",
                resourceStats_.totalBuffersCreated,
                resourceStats_.totalBuffersDestroyed,
                (int64_t)resourceStats_.totalBuffersCreated - (int64_t)resourceStats_.totalBuffersDestroyed);
-  IGL_LOG_INFO("  Textures: %zu created, %zu destroyed (leaked: %zd)\n",
+  IGL_D3D12_LOG_VERBOSE("  Textures: %zu created, %zu destroyed (leaked: %zd)\n",
                resourceStats_.totalTexturesCreated,
                resourceStats_.totalTexturesDestroyed,
                (int64_t)resourceStats_.totalTexturesCreated - (int64_t)resourceStats_.totalTexturesDestroyed);
-  IGL_LOG_INFO("  SRVs created: %zu\n", resourceStats_.totalSRVsCreated);
-  IGL_LOG_INFO("  Samplers created: %zu\n", resourceStats_.totalSamplersCreated);
-  IGL_LOG_INFO("  Buffer memory: %.2f MB\n", resourceStats_.bufferMemoryBytes / (1024.0 * 1024.0));
-  IGL_LOG_INFO("  Texture memory: %.2f MB\n", resourceStats_.textureMemoryBytes / (1024.0 * 1024.0));
-  IGL_LOG_INFO("==================================\n");
+  IGL_D3D12_LOG_VERBOSE("  SRVs created: %zu\n", resourceStats_.totalSRVsCreated);
+  IGL_D3D12_LOG_VERBOSE("  Samplers created: %zu\n", resourceStats_.totalSamplersCreated);
+  IGL_D3D12_LOG_VERBOSE("  Buffer memory: %.2f MB\n", resourceStats_.bufferMemoryBytes / (1024.0 * 1024.0));
+  IGL_D3D12_LOG_VERBOSE("  Texture memory: %.2f MB\n", resourceStats_.textureMemoryBytes / (1024.0 * 1024.0));
+  IGL_D3D12_LOG_VERBOSE("==================================\n");
 }
 
 // C-001: Allocate a new descriptor heap page for dynamic growth

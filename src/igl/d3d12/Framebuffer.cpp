@@ -286,7 +286,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
     const auto refreshEnd = std::chrono::high_resolution_clock::now();
     const double refreshMs =
         std::chrono::duration<double, std::milli>(refreshEnd - refreshStart).count();
-    IGL_LOG_INFO("copyBytesColorAttachment: refreshed subresource (mip=%u, layer=%u) in %.2f ms (%ux%u)\n",
+    IGL_D3D12_LOG_VERBOSE("copyBytesColorAttachment: refreshed subresource (mip=%u, layer=%u) in %.2f ms (%ux%u)\n",
                  mipLevel,
                  copyLayer,
                  refreshMs,

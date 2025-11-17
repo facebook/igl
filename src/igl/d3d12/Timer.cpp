@@ -81,7 +81,7 @@ Timer::Timer(const Device& device) {
   }
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("Timer: Created successfully (frequency: %llu Hz)\n", timestampFrequency_);
+  IGL_D3D12_LOG_VERBOSE("Timer: Created successfully (frequency: %llu Hz)\n", timestampFrequency_);
 #endif
 }
 

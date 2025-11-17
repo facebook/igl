@@ -18,7 +18,7 @@ namespace igl::d3d12 {
 
 ComputeCommandEncoder::ComputeCommandEncoder(CommandBuffer& commandBuffer) :
   commandBuffer_(commandBuffer), resourcesBinder_(commandBuffer, true /* isCompute */), isEncoding_(true) {
-  IGL_LOG_INFO("ComputeCommandEncoder created\n");
+  IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder created\n");
 
   // Set descriptor heaps for this command list
   // DX12-NEW-01: Use active heap from frame context, not legacy accessor
@@ -44,7 +44,7 @@ ComputeCommandEncoder::ComputeCommandEncoder(CommandBuffer& commandBuffer) :
     if (commandList) {
       ID3D12DescriptorHeap* heaps[] = {cbvSrvUavHeap, samplerHeap};
       commandList->SetDescriptorHeaps(2, heaps);
-      IGL_LOG_INFO("ComputeCommandEncoder: Descriptor heaps set (active heap from FrameContext)\n");
+      IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder: Descriptor heaps set (active heap from FrameContext)\n");
     }
   }
 }
@@ -54,7 +54,7 @@ void ComputeCommandEncoder::endEncoding() {
     return;
   }
 
-  IGL_LOG_INFO("ComputeCommandEncoder::endEncoding()\n");
+  IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::endEncoding()\n");
   isEncoding_ = false;
 }
 
@@ -77,7 +77,7 @@ void ComputeCommandEncoder::bindComputePipelineState(
   commandList->SetComputeRootSignature(currentPipeline_->getRootSignature());
   commandList->SetPipelineState(currentPipeline_->getPipelineState());
 
-  IGL_LOG_INFO("ComputeCommandEncoder::bindComputePipelineState - PSO and root signature set\n");
+  IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindComputePipelineState - PSO and root signature set\n");
 }
 
 void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCount,
@@ -94,7 +94,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
     return;
   }
 
-  IGL_LOG_INFO("ComputeCommandEncoder::dispatchThreadGroups(%u, %u, %u)\n",
+  IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::dispatchThreadGroups(%u, %u, %u)\n",
                threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
 
   // Process dependencies - insert barriers for buffers and textures
@@ -138,7 +138,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
     }
 
     commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
-    IGL_LOG_INFO("ComputeCommandEncoder: Inserted %zu UAV barriers before dispatch\n", barriers.size());
+    IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder: Inserted %zu UAV barriers before dispatch\n", barriers.size());
   }
 
   // T08: Apply all resource bindings (textures, samplers, buffers, UAVs) before dispatch
@@ -163,7 +163,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
                      "UAV count > 0 but base handle is null - did you bind only higher slots?");
     if (cachedUavHandles_[0].ptr != 0) {
       commandList->SetComputeRootDescriptorTable(1, cachedUavHandles_[0]);
-      IGL_LOG_INFO("ComputeCommandEncoder: Bound %zu UAVs\n", boundUavCount_);
+      IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder: Bound %zu UAVs\n", boundUavCount_);
     } else {
       IGL_LOG_ERROR("ComputeCommandEncoder: UAV count > 0 but base handle is null - skipping binding and clearing boundUavCount_ to 0\n");
       // Clear count to avoid repeated errors on subsequent dispatches
@@ -177,7 +177,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
                      "SRV count > 0 but base handle is null - did you bind only higher slots?");
     if (cachedSrvHandles_[0].ptr != 0) {
       commandList->SetComputeRootDescriptorTable(2, cachedSrvHandles_[0]);
-      IGL_LOG_INFO("ComputeCommandEncoder: Bound %zu SRVs\n", boundSrvCount_);
+      IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder: Bound %zu SRVs\n", boundSrvCount_);
     } else {
       IGL_LOG_ERROR("ComputeCommandEncoder: SRV count > 0 but base handle is null - skipping binding and clearing boundSrvCount_ to 0\n");
       // Clear count to avoid repeated errors on subsequent dispatches
@@ -236,7 +236,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(cbvIndices[0]);
     commandList->SetComputeRootDescriptorTable(3, gpuHandle);
 
-    IGL_LOG_INFO("ComputeCommandEncoder: Bound %zu CBVs via descriptor table (descriptors %u-%u)\n",
+    IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder: Bound %zu CBVs via descriptor table (descriptors %u-%u)\n",
                  boundCbvCount_, cbvIndices[0], cbvIndices[boundCbvCount_ - 1]);
   }
 
@@ -246,7 +246,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
                      "Sampler count > 0 but base handle is null - did you bind only higher slots?");
     if (cachedSamplerHandles_[0].ptr != 0) {
       commandList->SetComputeRootDescriptorTable(4, cachedSamplerHandles_[0]);
-      IGL_LOG_INFO("ComputeCommandEncoder: Bound %zu samplers\n", boundSamplerCount_);
+      IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder: Bound %zu samplers\n", boundSamplerCount_);
     } else {
       IGL_LOG_ERROR("ComputeCommandEncoder: Sampler count > 0 but base handle is null - skipping binding and clearing boundSamplerCount_ to 0\n");
       // Clear count to avoid repeated errors on subsequent dispatches
@@ -264,7 +264,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   globalBarrier.UAV.pResource = nullptr;  // Global UAV barrier
   commandList->ResourceBarrier(1, &globalBarrier);
 
-  IGL_LOG_INFO("ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, global UAV barrier inserted\n");
+  IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, global UAV barrier inserted\n");
 }
 
 void ComputeCommandEncoder::bindPushConstants(const void* data,
@@ -299,7 +299,7 @@ void ComputeCommandEncoder::bindPushConstants(const void* data,
       data,                       // Source data
       destOffsetIn32BitValues);   // Destination offset in 32-bit values
 
-  IGL_LOG_INFO("ComputeCommandEncoder::bindPushConstants: Set %u DWORDs (%zu bytes) at offset %zu to root parameter 0 (b0)\n",
+  IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindPushConstants: Set %u DWORDs (%zu bytes) at offset %zu to root parameter 0 (b0)\n",
                num32BitValues, length, offset);
 }
 
@@ -310,7 +310,7 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
 
 void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t offset, size_t /*bufferSize*/) {
   if (!buffer) {
-    IGL_LOG_INFO("ComputeCommandEncoder::bindBuffer: null buffer\n");
+    IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindBuffer: null buffer\n");
     return;
   }
 
@@ -328,7 +328,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
   const bool isUniformBuffer = (bufferType & BufferDesc::BufferTypeBits::Uniform) != 0;
   const bool isStorageBuffer = (bufferType & BufferDesc::BufferTypeBits::Storage) != 0;
 
-  IGL_LOG_INFO("ComputeCommandEncoder::bindBuffer(%u): isUniform=%d, isStorage=%d\n",
+  IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindBuffer(%u): isUniform=%d, isStorage=%d\n",
                index, isUniformBuffer, isStorageBuffer);
 
   if (isStorageBuffer) {
@@ -408,7 +408,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
     }
     boundUavCount_ = static_cast<size_t>(index + 1);
 
-    IGL_LOG_INFO("ComputeCommandEncoder::bindBuffer: Created UAV at index %u, descriptor slot %u\n",
+    IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindBuffer: Created UAV at index %u, descriptor slot %u\n",
                  index, descriptorIndex);
 
     commandBuffer_.trackTransientResource(d3dBuffer->getResource());
@@ -449,7 +449,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
     }
     boundCbvCount_ = static_cast<size_t>(index + 1);
 
-    IGL_LOG_INFO("ComputeCommandEncoder::bindBuffer: Cached CBV at index %u, address 0x%llx, size %zu\n",
+    IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindBuffer: Cached CBV at index %u, address 0x%llx, size %zu\n",
                  index, cachedCbvAddresses_[index], cachedCbvSizes_[index]);
 
     commandBuffer_.trackTransientResource(d3dBuffer->getResource());
@@ -461,7 +461,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
 void ComputeCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, const void* /*data*/) {
   // Single uniform binding not supported in D3D12
   // Use uniform buffers (CBVs) instead
-  IGL_LOG_INFO("ComputeCommandEncoder::bindUniform - not supported, use uniform buffers\n");
+  IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindUniform - not supported, use uniform buffers\n");
 }
 
 void ComputeCommandEncoder::bindBytes(uint32_t index, const void* data, size_t length) {
@@ -560,13 +560,13 @@ void ComputeCommandEncoder::bindBytes(uint32_t index, const void* data, size_t l
   // Track transient resource to keep it alive until GPU finishes
   commandBuffer_.trackTransientResource(uploadBuffer.Get());
 
-  IGL_LOG_INFO("ComputeCommandEncoder::bindBytes: Bound %zu bytes (aligned to %zu, CBV size %zu) to index %u (GPU address 0x%llx)\n",
+  IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindBytes: Bound %zu bytes (aligned to %zu, CBV size %zu) to index %u (GPU address 0x%llx)\n",
                length, alignedSize, alignedCbvSize, index, gpuAddress);
 }
 
 void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, TextureFormat /*format*/) {
   if (!texture) {
-    IGL_LOG_INFO("ComputeCommandEncoder::bindImageTexture: null texture\n");
+    IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindImageTexture: null texture\n");
     return;
   }
 
@@ -642,7 +642,7 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, 
   }
   boundUavCount_ = static_cast<size_t>(index + 1);
 
-  IGL_LOG_INFO("ComputeCommandEncoder::bindImageTexture: Created UAV at index %u, descriptor slot %u\n",
+  IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindImageTexture: Created UAV at index %u, descriptor slot %u\n",
                index, descriptorIndex);
 }
 

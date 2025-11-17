@@ -21,7 +21,7 @@ D3D12ImmediateCommands::D3D12ImmediateCommands(ID3D12Device* device,
   IGL_DEBUG_ASSERT(fence_);
   IGL_DEBUG_ASSERT(fenceProvider_);
 
-  IGL_LOG_INFO("D3D12ImmediateCommands: Initialized (using shared fence timeline)\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12ImmediateCommands: Initialized (using shared fence timeline)\n");
 }
 
 D3D12ImmediateCommands::~D3D12ImmediateCommands() {
@@ -39,7 +39,7 @@ D3D12ImmediateCommands::~D3D12ImmediateCommands() {
     }
   }
 
-  IGL_LOG_INFO("D3D12ImmediateCommands: Destroyed\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12ImmediateCommands: Destroyed\n");
 }
 
 ID3D12GraphicsCommandList* D3D12ImmediateCommands::begin(Result* outResult) {
@@ -208,7 +208,7 @@ Result D3D12ImmediateCommands::getOrCreateAllocator(
     return Result{Result::Code::RuntimeError, "Failed to create command allocator"};
   }
 
-  IGL_LOG_INFO("D3D12ImmediateCommands: Created new command allocator (pool size: %zu)\n",
+  IGL_D3D12_LOG_VERBOSE("D3D12ImmediateCommands: Created new command allocator (pool size: %zu)\n",
                availableAllocators_.size() + inFlightAllocators_.size() + 1);
 
   return Result{};

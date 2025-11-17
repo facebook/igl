@@ -27,7 +27,7 @@ void FrameManager::advanceFrame(UINT64 currentFenceValue) {
   // STEP 3: Advance to next frame
   context_.getCurrentFrameIndex() = nextFrameIndex;
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("FrameManager: Advanced to frame index %u\n", nextFrameIndex);
+  IGL_D3D12_LOG_VERBOSE("FrameManager: Advanced to frame index %u\n", nextFrameIndex);
 #endif
 
   // STEP 4: Reset allocator safely
@@ -51,7 +51,7 @@ void FrameManager::waitForPipelineSync(UINT64 currentFenceValue) {
   const UINT64 currentCompletedValue = fence->GetCompletedValue();
   if (currentCompletedValue < minimumSafeFence) {
 #ifdef IGL_DEBUG
-    IGL_LOG_INFO("FrameManager: SAFETY WAIT - Pipeline overload protection (completed=%llu, need=%llu)\n",
+    IGL_D3D12_LOG_VERBOSE("FrameManager: SAFETY WAIT - Pipeline overload protection (completed=%llu, need=%llu)\n",
                  currentCompletedValue, minimumSafeFence);
 #endif
 
@@ -63,7 +63,7 @@ void FrameManager::waitForPipelineSync(UINT64 currentFenceValue) {
     }
 #ifdef IGL_DEBUG
     else {
-      IGL_LOG_INFO("FrameManager: Safety wait completed (fence now=%llu)\n",
+      IGL_D3D12_LOG_VERBOSE("FrameManager: Safety wait completed (fence now=%llu)\n",
                    fence->GetCompletedValue());
     }
 #endif
@@ -76,7 +76,7 @@ bool FrameManager::waitForFrame(uint32_t frameIndex) {
 
   if (frameFence != 0 && fence->GetCompletedValue() < frameFence) {
 #ifdef IGL_DEBUG
-    IGL_LOG_INFO("FrameManager: Waiting for frame %u (fence=%llu, current=%llu)\n",
+    IGL_D3D12_LOG_VERBOSE("FrameManager: Waiting for frame %u (fence=%llu, current=%llu)\n",
                  frameIndex, frameFence, fence->GetCompletedValue());
 #endif
 
@@ -95,12 +95,12 @@ bool FrameManager::waitForFrame(uint32_t frameIndex) {
     }
 
 #ifdef IGL_DEBUG
-    IGL_LOG_INFO("FrameManager: Frame %u resources now available (completed=%llu)\n",
+    IGL_D3D12_LOG_VERBOSE("FrameManager: Frame %u resources now available (completed=%llu)\n",
                  frameIndex, fence->GetCompletedValue());
 #endif
   } else {
 #ifdef IGL_DEBUG
-    IGL_LOG_INFO("FrameManager: Frame %u resources already available (fence=%llu, completed=%llu)\n",
+    IGL_D3D12_LOG_VERBOSE("FrameManager: Frame %u resources already available (fence=%llu, completed=%llu)\n",
                  frameIndex, frameFence, fence->GetCompletedValue());
 #endif
   }
@@ -137,7 +137,7 @@ void FrameManager::resetAllocator(uint32_t frameIndex) {
         // Do not reset allocator if GPU hasn't completed - would cause sync violations
         return;
       }
-      IGL_LOG_INFO("FrameManager: Allocator wait completed (fence now=%llu)\n",
+      IGL_D3D12_LOG_VERBOSE("FrameManager: Allocator wait completed (fence now=%llu)\n",
                    fence->GetCompletedValue());
     }
 
@@ -151,7 +151,7 @@ void FrameManager::resetAllocator(uint32_t frameIndex) {
                     frame.commandBufferCount);
     } else {
 #ifdef IGL_DEBUG
-      IGL_LOG_INFO("FrameManager: Reset frame %u allocator (waited for %u command buffers, maxFence=%llu)\n",
+      IGL_D3D12_LOG_VERBOSE("FrameManager: Reset frame %u allocator (waited for %u command buffers, maxFence=%llu)\n",
                    frameIndex, frame.commandBufferCount, allocatorFence);
 #endif
     }
@@ -176,7 +176,7 @@ void FrameManager::clearTransientResources(uint32_t frameIndex) {
 
   if (!frame.transientBuffers.empty()) {
 #ifdef IGL_DEBUG
-    IGL_LOG_INFO("FrameManager: Clearing %zu transient buffers from frame %u (high-water=%zu)\n",
+    IGL_D3D12_LOG_VERBOSE("FrameManager: Clearing %zu transient buffers from frame %u (high-water=%zu)\n",
                  frame.transientBuffers.size(), frameIndex, frame.transientBuffersHighWater);
 #endif
     frame.transientBuffers.clear();
@@ -184,7 +184,7 @@ void FrameManager::clearTransientResources(uint32_t frameIndex) {
 
   if (!frame.transientResources.empty()) {
 #ifdef IGL_DEBUG
-    IGL_LOG_INFO("FrameManager: Releasing %zu transient D3D resources from frame %u (high-water=%zu)\n",
+    IGL_D3D12_LOG_VERBOSE("FrameManager: Releasing %zu transient D3D resources from frame %u (high-water=%zu)\n",
                  frame.transientResources.size(), frameIndex, frame.transientResourcesHighWater);
 #endif
     frame.transientResources.clear();
@@ -206,7 +206,7 @@ void FrameManager::resetDescriptorCounters(uint32_t frameIndex) {
     const float peakCbvSrvUavPercent = (static_cast<float>(peakCbvSrvUav) / kCbvSrvUavHeapSize) * 100.0f;
     const float peakSamplerPercent = (static_cast<float>(peakSampler) / kSamplerHeapSize) * 100.0f;
 
-    IGL_LOG_INFO("FrameManager: Frame %u descriptor usage:\n"
+    IGL_D3D12_LOG_VERBOSE("FrameManager: Frame %u descriptor usage:\n"
                  "  CBV/SRV/UAV: final=%u/%u (%.1f%%), peak=%u/%u (%.1f%%)\n"
                  "  Samplers:    final=%u/%u (%.1f%%), peak=%u/%u (%.1f%%)\n",
                  frameIndex,
@@ -222,7 +222,7 @@ void FrameManager::resetDescriptorCounters(uint32_t frameIndex) {
   frame.nextSamplerDescriptor = 0;
 
 #ifdef IGL_DEBUG
-  IGL_LOG_INFO("FrameManager: Reset descriptor counters for frame %u to 0\n", frameIndex);
+  IGL_D3D12_LOG_VERBOSE("FrameManager: Reset descriptor counters for frame %u to 0\n", frameIndex);
 #endif
 }
 

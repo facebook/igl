@@ -21,12 +21,12 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
     Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf())))) {
       debugController->EnableDebugLayer();
-      IGL_LOG_INFO("HeadlessD3D12Context: Debug layer enabled\n");
+      IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Debug layer enabled\n");
 
 #ifdef _DEBUG
       // Enable DXGI debug layer (C-009: critical for DXGI validation)
       dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
-      IGL_LOG_INFO("HeadlessD3D12Context: DXGI debug layer enabled\n");
+      IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: DXGI debug layer enabled\n");
 #endif
     }
   }
@@ -38,9 +38,9 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
     UUID experimentalFeatures[] = {D3D12ExperimentalShaderModels};
     HRESULT hr = D3D12EnableExperimentalFeatures(1, experimentalFeatures, nullptr, nullptr);
     if (SUCCEEDED(hr)) {
-      IGL_LOG_INFO("HeadlessD3D12Context: Experimental shader models enabled (allows unsigned DXIL)\n");
+      IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Experimental shader models enabled (allows unsigned DXIL)\n");
     } else {
-      IGL_LOG_INFO("HeadlessD3D12Context: Failed to enable experimental features (0x%08X) - signed DXIL required\n", static_cast<unsigned>(hr));
+      IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Failed to enable experimental features (0x%08X) - signed DXIL required\n", static_cast<unsigned>(hr));
     }
   }
 
@@ -66,7 +66,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
       HRESULT hr = D3D12CreateDevice(adapter, fl, IID_PPV_ARGS(device.GetAddressOf()));
       if (SUCCEEDED(hr)) {
         outFeatureLevel = fl;
-        IGL_LOG_INFO("HeadlessD3D12Context: Device created with Feature Level %d.%d\n",
+        IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Device created with Feature Level %d.%d\n",
                      (fl >> 12) & 0xF, (fl >> 8) & 0xF);
         return device;
       }
@@ -111,7 +111,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
         device_ = device;
         created = true;
         selectedFeatureLevel = featureLevel;
-        IGL_LOG_INFO("HeadlessD3D12Context: Selected HW adapter (FL %s)\n",
+        IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Selected HW adapter (FL %s)\n",
                      featureLevelToString(featureLevel));
         break;
       }
@@ -135,7 +135,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
         device_ = device;
         created = true;
         selectedFeatureLevel = featureLevel;
-        IGL_LOG_INFO("HeadlessD3D12Context: Selected HW adapter via EnumAdapters1 (FL %s)\n",
+        IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Selected HW adapter via EnumAdapters1 (FL %s)\n",
                      featureLevelToString(featureLevel));
         break;
       }
@@ -153,7 +153,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
           device_ = device;
           created = true;
           selectedFeatureLevel = featureLevel;
-          IGL_LOG_INFO("HeadlessD3D12Context: Using WARP adapter (FL %s)\n",
+          IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Using WARP adapter (FL %s)\n",
                        featureLevelToString(featureLevel));
         }
       }
@@ -210,7 +210,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
   cbvSrvUavDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
   samplerDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
-  IGL_LOG_INFO("HeadlessContext: Creating per-frame descriptor heaps (CBV/SRV/UAV=%u, Samplers=%u)...\n",
+  IGL_D3D12_LOG_VERBOSE("HeadlessContext: Creating per-frame descriptor heaps (CBV/SRV/UAV=%u, Samplers=%u)...\n",
                cbvSrvUavHeapSize, samplerHeapSize);
 
   // Create per-frame shader-visible descriptor heaps
@@ -233,7 +233,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
     frameContexts_[i].cbvSrvUavHeapPages.emplace_back(initialHeap, cbvSrvUavHeapSize);
     frameContexts_[i].currentCbvSrvUavPageIndex = 0;
 
-    IGL_LOG_INFO("  Frame %u: Created CBV/SRV/UAV heap page (%u descriptors)\n", i, cbvSrvUavHeapSize);
+    IGL_D3D12_LOG_VERBOSE("  Frame %u: Created CBV/SRV/UAV heap page (%u descriptors)\n", i, cbvSrvUavHeapSize);
 
     // Sampler heap per frame
     desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
@@ -244,13 +244,13 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
     if (FAILED(hr)) {
       return Result(Result::Code::RuntimeError, "Failed to create per-frame Sampler heap for frame " + std::to_string(i));
     }
-    IGL_LOG_INFO("  Frame %u: Created Sampler heap (%u descriptors)\n", i, samplerHeapSize);
+    IGL_D3D12_LOG_VERBOSE("  Frame %u: Created Sampler heap (%u descriptors)\n", i, samplerHeapSize);
   }
 
-  IGL_LOG_INFO("HeadlessContext: Per-frame descriptor heaps created successfully\n");
+  IGL_D3D12_LOG_VERBOSE("HeadlessContext: Per-frame descriptor heaps created successfully\n");
 
   // Create per-frame command allocators (following Microsoft's D3D12HelloFrameBuffering pattern)
-  IGL_LOG_INFO("HeadlessContext: Creating per-frame command allocators...\n");
+  IGL_D3D12_LOG_VERBOSE("HeadlessContext: Creating per-frame command allocators...\n");
   for (UINT i = 0; i < kMaxFramesInFlight; i++) {
     hr = device_->CreateCommandAllocator(
         D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -258,9 +258,9 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
     if (FAILED(hr)) {
       return Result(Result::Code::RuntimeError, "Failed to create command allocator for frame " + std::to_string(i));
     }
-    IGL_LOG_INFO("  Frame %u: Created command allocator\n", i);
+    IGL_D3D12_LOG_VERBOSE("  Frame %u: Created command allocator\n", i);
   }
-  IGL_LOG_INFO("HeadlessContext: Per-frame command allocators created successfully\n");
+  IGL_D3D12_LOG_VERBOSE("HeadlessContext: Per-frame command allocators created successfully\n");
 
   // Fence for GPU synchronization
   hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.GetAddressOf()));
@@ -292,16 +292,16 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height)
   }
 
   // Create command signatures for indirect drawing (P3_DX12-FIND-13)
-  IGL_LOG_INFO("HeadlessD3D12Context: Creating command signatures...\n");
+  IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Creating command signatures...\n");
   Result commandSigResult = createCommandSignatures();
   if (!commandSigResult.isOk()) {
     IGL_LOG_ERROR("HeadlessD3D12Context: Failed to create command signatures: %s\n",
                   commandSigResult.message.c_str());
     return commandSigResult;
   }
-  IGL_LOG_INFO("HeadlessD3D12Context: Command signatures created successfully\n");
+  IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Command signatures created successfully\n");
 
-  IGL_LOG_INFO("HeadlessD3D12Context: Initialization complete\n");
+  IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Initialization complete\n");
   return Result();
 }
 

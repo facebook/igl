@@ -19,7 +19,7 @@ D3D12StagingDevice::D3D12StagingDevice(ID3D12Device* device,
   IGL_DEBUG_ASSERT(device_);
   IGL_DEBUG_ASSERT(fence_);
 
-  IGL_LOG_INFO("D3D12StagingDevice: Initialized (ring buffer: %s)\n",
+  IGL_D3D12_LOG_VERBOSE("D3D12StagingDevice: Initialized (ring buffer: %s)\n",
                uploadRingBuffer_ ? "yes" : "no");
 }
 
@@ -38,7 +38,7 @@ D3D12StagingDevice::~D3D12StagingDevice() {
     }
   }
 
-  IGL_LOG_INFO("D3D12StagingDevice: Destroyed\n");
+  IGL_D3D12_LOG_VERBOSE("D3D12StagingDevice: Destroyed\n");
 }
 
 D3D12StagingDevice::StagingBuffer D3D12StagingDevice::allocateUpload(size_t size,
@@ -207,7 +207,7 @@ Result D3D12StagingDevice::createStagingBuffer(
     return Result{Result::Code::RuntimeError, "Failed to create staging buffer"};
   }
 
-  IGL_LOG_INFO("D3D12StagingDevice: Created new %s buffer (size: %zu bytes)\n",
+  IGL_D3D12_LOG_VERBOSE("D3D12StagingDevice: Created new %s buffer (size: %zu bytes)\n",
                forReadback ? "readback" : "upload",
                size);
 

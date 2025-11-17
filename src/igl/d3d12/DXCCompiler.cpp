@@ -20,7 +20,7 @@ Result DXCCompiler::initialize() {
     return Result();
   }
 
-  IGL_LOG_INFO("DXCCompiler: Initializing DXC compiler...\n");
+  IGL_D3D12_LOG_VERBOSE("DXCCompiler: Initializing DXC compiler...\n");
 
   // Create DXC utils
   HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(utils_.GetAddressOf()));
@@ -46,14 +46,14 @@ Result DXCCompiler::initialize() {
   // Create DXC validator for DXIL signing (optional but highly recommended)
   hr = DxcCreateInstance(CLSID_DxcValidator, IID_PPV_ARGS(validator_.GetAddressOf()));
   if (FAILED(hr)) {
-    IGL_LOG_INFO("DXCCompiler: Validator not available (0x%08X) - DXIL will be unsigned\n", static_cast<unsigned>(hr));
+    IGL_D3D12_LOG_VERBOSE("DXCCompiler: Validator not available (0x%08X) - DXIL will be unsigned\n", static_cast<unsigned>(hr));
     // Not a fatal error - continue without validator
   } else {
-    IGL_LOG_INFO("DXCCompiler: Validator initialized - DXIL signing available\n");
+    IGL_D3D12_LOG_VERBOSE("DXCCompiler: Validator initialized - DXIL signing available\n");
   }
 
   initialized_ = true;
-  IGL_LOG_INFO("DXCCompiler: Initialization successful (Shader Model 6.0+ enabled)\n");
+  IGL_D3D12_LOG_VERBOSE("DXCCompiler: Initialization successful (Shader Model 6.0+ enabled)\n");
 
   return Result();
 }
@@ -72,7 +72,7 @@ Result DXCCompiler::compile(
     return Result(Result::Code::InvalidOperation, "DXC compiler not initialized");
   }
 
-  IGL_LOG_INFO("DXCCompiler: Compiling shader '%s' with target '%s' (%zu bytes source)\n",
+  IGL_D3D12_LOG_VERBOSE("DXCCompiler: Compiling shader '%s' with target '%s' (%zu bytes source)\n",
                debugName ? debugName : "unnamed",
                target,
                sourceLength);
@@ -103,12 +103,12 @@ Result DXCCompiler::compile(
 
   // Debug info and optimization
   if (flags & D3DCOMPILE_DEBUG) {
-    IGL_LOG_INFO("  DXC: Debug mode enabled\n");
+    IGL_D3D12_LOG_VERBOSE("  DXC: Debug mode enabled\n");
     arguments.push_back(L"-Zi");              // Debug info
     arguments.push_back(L"-Qembed_debug");    // Embed debug info in shader
     arguments.push_back(L"-Od");              // Disable optimizations
   } else {
-    IGL_LOG_INFO("  DXC: Release mode - maximum optimization\n");
+    IGL_D3D12_LOG_VERBOSE("  DXC: Release mode - maximum optimization\n");
     arguments.push_back(L"-O3");              // Maximum optimization
   }
 
@@ -119,7 +119,7 @@ Result DXCCompiler::compile(
 
   // Warnings as errors
   if (flags & D3DCOMPILE_WARNINGS_ARE_ERRORS) {
-    IGL_LOG_INFO("  DXC: Treating warnings as errors\n");
+    IGL_D3D12_LOG_VERBOSE("  DXC: Treating warnings as errors\n");
     arguments.push_back(L"-WX");
   }
 
@@ -165,7 +165,7 @@ Result DXCCompiler::compile(
 
   // Log warnings if any
   if (!outErrors.empty()) {
-    IGL_LOG_INFO("DXCCompiler: Compilation warnings:\n%s\n", outErrors.c_str());
+    IGL_D3D12_LOG_VERBOSE("DXCCompiler: Compilation warnings:\n%s\n", outErrors.c_str());
   }
 
   // Get compiled bytecode (DXIL)
@@ -180,14 +180,14 @@ Result DXCCompiler::compile(
 
   // Validate and sign DXIL if validator is available
   if (validator_.Get()) {
-    IGL_LOG_INFO("DXCCompiler: Attempting DXIL validation and signing...\n");
+    IGL_D3D12_LOG_VERBOSE("DXCCompiler: Attempting DXIL validation and signing...\n");
     Microsoft::WRL::ComPtr<IDxcOperationResult> validationResult;
     hr = validator_->Validate(bytecode.Get(), DxcValidatorFlags_InPlaceEdit, validationResult.GetAddressOf());
 
     if (SUCCEEDED(hr)) {
       HRESULT validationStatus;
       validationResult->GetStatus(&validationStatus);
-      IGL_LOG_INFO("DXCCompiler: Validation status: 0x%08X\n", static_cast<unsigned>(validationStatus));
+      IGL_D3D12_LOG_VERBOSE("DXCCompiler: Validation status: 0x%08X\n", static_cast<unsigned>(validationStatus));
 
       if (SUCCEEDED(validationStatus)) {
         // Get the validated (signed) bytecode - this replaces the original
@@ -195,13 +195,13 @@ Result DXCCompiler::compile(
         validationResult->GetResult(validatedBlob.GetAddressOf());
 
         if (validatedBlob.Get()) {
-          IGL_LOG_INFO("DXCCompiler: Got validated blob (%zu bytes)\n", validatedBlob->GetBufferSize());
+          IGL_D3D12_LOG_VERBOSE("DXCCompiler: Got validated blob (%zu bytes)\n", validatedBlob->GetBufferSize());
           // Replace bytecode with validated version using move semantics
           bytecode.Reset();
           bytecode = std::move(validatedBlob);
-          IGL_LOG_INFO("DXCCompiler: DXIL validated and signed successfully\n");
+          IGL_D3D12_LOG_VERBOSE("DXCCompiler: DXIL validated and signed successfully\n");
         } else {
-          IGL_LOG_INFO("DXCCompiler: Validation succeeded but no blob returned\n");
+          IGL_D3D12_LOG_VERBOSE("DXCCompiler: Validation succeeded but no blob returned\n");
         }
       } else {
         // Validation failed - get error messages
@@ -210,15 +210,15 @@ Result DXCCompiler::compile(
         if (validationErrors.Get() && validationErrors->GetBufferSize() > 0) {
           std::string errMsg(static_cast<const char*>(validationErrors->GetBufferPointer()),
                            validationErrors->GetBufferSize());
-          IGL_LOG_INFO("DXCCompiler: DXIL validation failed:\n%s\n", errMsg.c_str());
+          IGL_D3D12_LOG_VERBOSE("DXCCompiler: DXIL validation failed:\n%s\n", errMsg.c_str());
         }
-        IGL_LOG_INFO("DXCCompiler: Using unsigned DXIL (may require experimental features)\n");
+        IGL_D3D12_LOG_VERBOSE("DXCCompiler: Using unsigned DXIL (may require experimental features)\n");
       }
     } else {
-      IGL_LOG_INFO("DXCCompiler: DXIL validation skipped (validator error 0x%08X)\n", static_cast<unsigned>(hr));
+      IGL_D3D12_LOG_VERBOSE("DXCCompiler: DXIL validation skipped (validator error 0x%08X)\n", static_cast<unsigned>(hr));
     }
   } else {
-    IGL_LOG_INFO("DXCCompiler: Using unsigned DXIL (validator not available)\n");
+    IGL_D3D12_LOG_VERBOSE("DXCCompiler: Using unsigned DXIL (validator not available)\n");
   }
 
   // Copy bytecode to output (either signed or unsigned)
@@ -226,7 +226,7 @@ Result DXCCompiler::compile(
   size_t size = bytecode->GetBufferSize();
   outBytecode.assign(data, data + size);
 
-  IGL_LOG_INFO("DXCCompiler: Compilation successful (%zu bytes DXIL bytecode)\n", size);
+  IGL_D3D12_LOG_VERBOSE("DXCCompiler: Compilation successful (%zu bytes DXIL bytecode)\n", size);
 
   return Result();
 }
