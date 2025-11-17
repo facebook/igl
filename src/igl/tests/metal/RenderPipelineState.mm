@@ -166,22 +166,22 @@ TEST_F(RenderPipelineStateMTLTest, GetIndexByNameHandleWithoutRefl) {
 }
 
 TEST_F(RenderPipelineStateMTLTest, ConvertColorWriteMaskRed) {
-  auto mask = igl::metal::RenderPipelineState::convertColorWriteMask(ColorWriteBitsRed);
+  auto mask = igl::metal::RenderPipelineState::convertColorWriteMask(kColorWriteBitsRed);
   ASSERT_EQ(mask, MTLColorWriteMaskRed);
 }
 
 TEST_F(RenderPipelineStateMTLTest, ConvertColorWriteMaskGreen) {
-  auto mask = igl::metal::RenderPipelineState::convertColorWriteMask(ColorWriteBitsGreen);
+  auto mask = igl::metal::RenderPipelineState::convertColorWriteMask(kColorWriteBitsGreen);
   ASSERT_EQ(mask, MTLColorWriteMaskGreen);
 }
 
 TEST_F(RenderPipelineStateMTLTest, ConvertColorWriteMaskBlue) {
-  auto mask = igl::metal::RenderPipelineState::convertColorWriteMask(ColorWriteBitsBlue);
+  auto mask = igl::metal::RenderPipelineState::convertColorWriteMask(kColorWriteBitsBlue);
   ASSERT_EQ(mask, MTLColorWriteMaskBlue);
 }
 
 TEST_F(RenderPipelineStateMTLTest, ConvertColorWriteMaskAlpha) {
-  auto mask = igl::metal::RenderPipelineState::convertColorWriteMask(ColorWriteBitsAlpha);
+  auto mask = igl::metal::RenderPipelineState::convertColorWriteMask(kColorWriteBitsAlpha);
   ASSERT_EQ(mask, MTLColorWriteMaskAlpha);
 }
 

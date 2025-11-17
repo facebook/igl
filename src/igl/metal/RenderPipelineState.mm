@@ -44,16 +44,16 @@ int RenderPipelineState::getIndexByName(const std::string& name, ShaderStage sta
 
 MTLColorWriteMask RenderPipelineState::convertColorWriteMask(ColorWriteMask value) {
   MTLColorWriteMask result = MTLColorWriteMaskNone;
-  if (value & ColorWriteBitsRed) {
+  if (value & kColorWriteBitsRed) {
     result |= MTLColorWriteMaskRed;
   }
-  if (value & ColorWriteBitsGreen) {
+  if (value & kColorWriteBitsGreen) {
     result |= MTLColorWriteMaskGreen;
   }
-  if (value & ColorWriteBitsBlue) {
+  if (value & kColorWriteBitsBlue) {
     result |= MTLColorWriteMaskBlue;
   }
-  if (value & ColorWriteBitsAlpha) {
+  if (value & kColorWriteBitsAlpha) {
     result |= MTLColorWriteMaskAlpha;
   }
   return result;

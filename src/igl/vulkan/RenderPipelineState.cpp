@@ -261,16 +261,16 @@ VkBlendFactor blendFactorToVkBlendFactor(igl::BlendFactor value) {
 
 VkColorComponentFlags colorWriteMaskToVkColorComponentFlags(igl::ColorWriteMask value) {
   VkColorComponentFlags result = 0;
-  if (value & igl::ColorWriteBitsRed) {
+  if (value & igl::kColorWriteBitsRed) {
     result |= VK_COLOR_COMPONENT_R_BIT;
   }
-  if (value & igl::ColorWriteBitsGreen) {
+  if (value & igl::kColorWriteBitsGreen) {
     result |= VK_COLOR_COMPONENT_G_BIT;
   }
-  if (value & igl::ColorWriteBitsBlue) {
+  if (value & igl::kColorWriteBitsBlue) {
     result |= VK_COLOR_COMPONENT_B_BIT;
   }
-  if (value & igl::ColorWriteBitsAlpha) {
+  if (value & igl::kColorWriteBitsAlpha) {
     result |= VK_COLOR_COMPONENT_A_BIT;
   }
   return result;
@@ -439,7 +439,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
        dualSrcBlendSupported = dualSrcBlendSupported](auto attachment) mutable {
         if (attachment.textureFormat != TextureFormat::Invalid) {
           // In Vulkan color write bits are part of blending.
-          if (!attachment.blendEnabled && attachment.colorWriteMask == igl::ColorWriteBitsAll) {
+          if (!attachment.blendEnabled && attachment.colorWriteMask == igl::kColorWriteBitsAll) {
             colorBlendAttachmentStates.push_back(
                 ivkGetPipelineColorBlendAttachmentState_NoBlending());
           } else {

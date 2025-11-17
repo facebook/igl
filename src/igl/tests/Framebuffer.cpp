@@ -295,7 +295,7 @@ TEST_F(FramebufferTest, Clear) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
-  renderPipelineDesc_.targetDesc.colorAttachments[0].colorWriteMask = ColorWriteBitsDisabled;
+  renderPipelineDesc_.targetDesc.colorAttachments[0].colorWriteMask = kColorWriteBitsDisabled;
   pipelineState = iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(pipelineState != nullptr);
