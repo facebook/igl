@@ -5,5 +5,7 @@
 race:igl::vulkan::Device::~Device()
 
 # libvulkan_lvp.so (LLVMpipe Vulkan driver)
+race:pthread_mutex_init
 race:pthread_mutex_destroy
 race:pthread_cond_destroy
+race:free
