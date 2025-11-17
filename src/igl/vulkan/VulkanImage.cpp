@@ -189,6 +189,10 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
     }
 
     if (vmaAllocation_) {
+      vmaSetAllocationName((VmaAllocator)ctx_->getVmaAllocator(),
+                           vmaAllocation_,
+                           IGL_FORMAT("VMA Allocation: {}", debugName).c_str());
+
       VmaAllocationInfo allocationInfo;
       vmaGetAllocationInfo((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, &allocationInfo);
       allocatedSize = allocationInfo.size;
