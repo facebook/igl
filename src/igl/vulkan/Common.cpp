@@ -642,29 +642,29 @@ void ensureShaderModule(IShaderModule* sm) {
       static_cast<ShaderModule*>(sm)->getVulkanShaderModule().getSpvModuleInfo();
 
   for (const auto& t : info.textures) {
-    if (!IGL_DEBUG_VERIFY(t.descriptorSet == kBindPoint_CombinedImageSamplers)) {
+    if (!IGL_DEBUG_VERIFY(t.descriptorSet == kBindPointCombinedImageSamplers)) {
       IGL_LOG_ERROR(
           "Missing descriptor set id for textures: the shader should contain \"layout(set = "
           "%u, ...)\"",
-          kBindPoint_CombinedImageSamplers);
+          kBindPointCombinedImageSamplers);
       continue;
     }
   }
   for (const auto& b : info.buffers) {
-    if (!IGL_DEBUG_VERIFY(b.descriptorSet == kBindPoint_Buffers)) {
+    if (!IGL_DEBUG_VERIFY(b.descriptorSet == kBindPointBuffers)) {
       IGL_LOG_ERROR(
           "Missing descriptor set id for buffers: the shader should contain \"layout(set = "
           "%u, ...)\"",
-          kBindPoint_Buffers);
+          kBindPointBuffers);
       continue;
     }
   }
   for (const auto& i : info.images) {
-    if (!IGL_DEBUG_VERIFY(i.descriptorSet == kBindPoint_StorageImages)) {
+    if (!IGL_DEBUG_VERIFY(i.descriptorSet == kBindPointStorageImages)) {
       IGL_LOG_ERROR(
           "Missing descriptor set id for storage images: the shader should contain \"layout(set = "
           "%u, ...)\"",
-          kBindPoint_StorageImages);
+          kBindPointStorageImages);
       continue;
     }
   }

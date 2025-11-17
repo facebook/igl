@@ -958,7 +958,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                                          "VulkanContext::immediate_");
   IGL_DEBUG_ASSERT(config_.maxResourceCount > 0,
                    "Max resource count needs to be greater than zero");
-  syncSubmitHandles_.resize(config_.maxResourceCount);
+  syncSubmitHandles.resize(config_.maxResourceCount);
 
   // create Vulkan pipeline cache
   {
@@ -1795,7 +1795,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
   for (const util::TextureDescription& d : info.textures) {
-    IGL_DEBUG_ASSERT(d.descriptorSet == kBindPoint_CombinedImageSamplers);
+    IGL_DEBUG_ASSERT(d.descriptorSet == kBindPointCombinedImageSamplers);
     const uint32_t loc = d.bindingLocation;
     IGL_DEBUG_ASSERT(loc < IGL_TEXTURE_SAMPLERS_MAX);
     VkImageView texture = data.textures[loc];
@@ -1822,7 +1822,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
     IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - textures\n", cmdBuf, bindPoint);
 #endif // IGL_VULKAN_PRINT_COMMANDS
     vf_.vkCmdBindDescriptorSets(
-        cmdBuf, bindPoint, layout, kBindPoint_CombinedImageSamplers, 1, &dset, 0, nullptr);
+        cmdBuf, bindPoint, layout, kBindPointCombinedImageSamplers, 1, &dset, 0, nullptr);
   }
 }
 
@@ -1856,7 +1856,7 @@ void VulkanContext::updateBindingsStorageImages(
   VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
 
   for (const util::ImageDescription& d : info.images) {
-    IGL_DEBUG_ASSERT(d.descriptorSet == kBindPoint_StorageImages);
+    IGL_DEBUG_ASSERT(d.descriptorSet == kBindPointStorageImages);
     const uint32_t loc = d.bindingLocation;
     IGL_DEBUG_ASSERT(loc < IGL_TEXTURE_SAMPLERS_MAX);
     VkImageView imageView = data.images[loc];
@@ -1878,7 +1878,7 @@ void VulkanContext::updateBindingsStorageImages(
     IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - storage images\n", cmdBuf, bindPoint);
 #endif // IGL_VULKAN_PRINT_COMMANDS
     vf_.vkCmdBindDescriptorSets(
-        cmdBuf, bindPoint, layout, kBindPoint_StorageImages, 1, &dset, 0, nullptr);
+        cmdBuf, bindPoint, layout, kBindPointStorageImages, 1, &dset, 0, nullptr);
   }
 }
 
@@ -1901,7 +1901,7 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
   uint32_t numWrites = 0;
 
   for (const util::BufferDescription& b : info.buffers) {
-    IGL_DEBUG_ASSERT(b.descriptorSet == kBindPoint_Buffers);
+    IGL_DEBUG_ASSERT(b.descriptorSet == kBindPointBuffers);
     IGL_DEBUG_ASSERT(
         data.buffers[b.bindingLocation].buffer != VK_NULL_HANDLE,
         IGL_FORMAT("Did you forget to call bindBuffer() for a buffer at the binding location {}?",
@@ -1923,8 +1923,7 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
 #if IGL_VULKAN_PRINT_COMMANDS
     IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - buffers\n", cmdBuf, bindPoint);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-    vf_.vkCmdBindDescriptorSets(
-        cmdBuf, bindPoint, layout, kBindPoint_Buffers, 1, &dset, 0, nullptr);
+    vf_.vkCmdBindDescriptorSets(cmdBuf, bindPoint, layout, kBindPointBuffers, 1, &dset, 0, nullptr);
   }
 }
 
@@ -1932,8 +1931,8 @@ void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle
   if (handle.empty()) {
     handle = immediate_->getNextSubmitHandle();
   }
-  deferredTasks_.emplace_back(std::move(task), handle);
-  deferredTasks_.back().frameId_ = this->getFrameNumber();
+  deferredTasks.emplace_back(std::move(task), handle);
+  deferredTasks.back().frameId = this->getFrameNumber();
 }
 
 bool VulkanContext::areValidationLayersEnabled() const {
@@ -1950,24 +1949,24 @@ void VulkanContext::processDeferredTasks() const {
   const uint64_t frameId = getFrameNumber();
   constexpr uint64_t kNumWaitFrames = 3u;
 
-  while (!deferredTasks_.empty() && immediate_->isReady(deferredTasks_.front().handle_)) {
-    if (frameId && frameId <= deferredTasks_.front().frameId_ + kNumWaitFrames) {
+  while (!deferredTasks.empty() && immediate_->isReady(deferredTasks.front().handle)) {
+    if (frameId && frameId <= deferredTasks.front().frameId + kNumWaitFrames) {
       // do not check anything if it is not yet older than kNumWaitFrames
       break;
     }
-    deferredTasks_.front().task_();
-    deferredTasks_.pop_front();
+    deferredTasks.front().task();
+    deferredTasks.pop_front();
   }
 }
 
 void VulkanContext::waitDeferredTasks() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
 
-  for (auto& task : deferredTasks_) {
-    immediate_->wait(task.handle_, config_.fenceTimeoutNanoseconds);
-    task.task_();
+  for (auto& task : deferredTasks) {
+    immediate_->wait(task.handle, config_.fenceTimeoutNanoseconds);
+    task.task();
   }
-  deferredTasks_.clear();
+  deferredTasks.clear();
 }
 
 VkFence VulkanContext::getVkFenceFromSubmitHandle(igl::SubmitHandle handle) const noexcept {
@@ -2453,16 +2452,16 @@ const VulkanFeatures& VulkanContext::features() const noexcept {
 void VulkanContext::syncAcquireNext() noexcept {
   IGL_PROFILER_FUNCTION();
 
-  syncCurrentIndex_ = (syncCurrentIndex_ + 1) % config_.maxResourceCount;
+  syncCurrentIndex = (syncCurrentIndex + 1) % config_.maxResourceCount;
 
   // Wait for the current buffer to become available
-  immediate_->wait(syncSubmitHandles_[syncCurrentIndex_], config_.fenceTimeoutNanoseconds);
+  immediate_->wait(syncSubmitHandles[syncCurrentIndex], config_.fenceTimeoutNanoseconds);
 }
 
 void VulkanContext::syncMarkSubmitted(VulkanImmediateCommands::SubmitHandle handle) noexcept {
   IGL_PROFILER_FUNCTION();
 
-  syncSubmitHandles_[syncCurrentIndex_] = handle;
+  syncSubmitHandles[syncCurrentIndex] = handle;
 
   syncAcquireNext();
 }

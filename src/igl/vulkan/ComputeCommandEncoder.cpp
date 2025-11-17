@@ -84,7 +84,7 @@ void ComputeCommandEncoder::bindComputePipelineState(
     ctx_.vf_.vkCmdBindDescriptorSets(cmdBuffer_,
                                      VK_PIPELINE_BIND_POINT_COMPUTE,
                                      cps_->getVkPipelineLayout(),
-                                     kBindPoint_Bindless,
+                                     kBindPointBindless,
                                      1,
                                      &dset,
                                      0,

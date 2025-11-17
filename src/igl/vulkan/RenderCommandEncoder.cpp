@@ -763,7 +763,7 @@ void RenderCommandEncoder::flushDynamicState() {
     IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - textures bind group\n", cmdBuffer_);
 #endif // IGL_VULKAN_PRINT_COMMANDS
     ctx_.vf_.vkCmdBindDescriptorSets(
-        cmdBuffer_, bindPoint, layout, kBindPoint_CombinedImageSamplers, 1, &dset, 0, nullptr);
+        cmdBuffer_, bindPoint, layout, kBindPointCombinedImageSamplers, 1, &dset, 0, nullptr);
     // This is necessary to support a mix of BindGroups and bindTexture() calls in the same command
     // encoder. A typical use case for that is running ImGui rendering etc.
     binder_.isDirtyFlags_ &= ~igl::vulkan::ResourcesBinder::DirtyFlagBits_Textures;
@@ -792,7 +792,7 @@ void RenderCommandEncoder::flushDynamicState() {
     ctx_.vf_.vkCmdBindDescriptorSets(cmdBuffer_,
                                      bindPoint,
                                      layout,
-                                     kBindPoint_Buffers,
+                                     kBindPointBuffers,
                                      1,
                                      &dset,
                                      numDynamicOffsets_,
@@ -814,7 +814,7 @@ void RenderCommandEncoder::flushDynamicState() {
     ctx_.vf_.vkCmdBindDescriptorSets(cmdBuffer_,
                                      VK_PIPELINE_BIND_POINT_GRAPHICS,
                                      rps_->getVkPipelineLayout(),
-                                     kBindPoint_Bindless,
+                                     kBindPointBindless,
                                      1,
                                      &dset,
                                      0,
