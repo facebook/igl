@@ -12,56 +12,56 @@
 #import <QuartzCore/CAMetalLayer.h>
 
 @implementation BaseView {
-  id<TouchDelegate> __weak _delegate;
+  id<TouchDelegate> __weak delegate;
 }
 
 - (instancetype)initWithTouchDelegate:(id<TouchDelegate>)delegate {
   if (self = [super init]) {
-    _delegate = delegate;
+    self->delegate = delegate;
   }
   return self;
 }
 
 - (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
-  [_delegate touchBegan:touches.anyObject];
+  [self->delegate touchBegan:touches.anyObject];
 }
 
 - (void)touchesMoved:(NSSet<UITouch*>*)touches withEvent:(nullable UIEvent*)event {
-  [_delegate touchMoved:touches.anyObject];
+  [self->delegate touchMoved:touches.anyObject];
 }
 
 - (void)touchesEnded:(NSSet<UITouch*>*)touches withEvent:(nullable UIEvent*)event {
-  [_delegate touchEnded:touches.anyObject];
+  [self->delegate touchEnded:touches.anyObject];
 }
 
 - (void)touchesCanceled:(NSSet<UITouch*>*)touches withEvent:(nullable UIEvent*)event {
-  [_delegate touchEnded:touches.anyObject];
+  [self->delegate touchEnded:touches.anyObject];
 }
 
 @end
 
 @implementation MetalView {
-  id<TouchDelegate> __weak _touchDelegate;
+  id<TouchDelegate> __weak touchDelegate;
 }
 
 - (void)setTouchDelegate:(id<TouchDelegate>)delegate {
-  _touchDelegate = delegate;
+  self->touchDelegate = delegate;
 }
 
 - (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
-  [_touchDelegate touchBegan:touches.anyObject];
+  [self->touchDelegate touchBegan:touches.anyObject];
 }
 
 - (void)touchesMoved:(NSSet<UITouch*>*)touches withEvent:(nullable UIEvent*)event {
-  [_touchDelegate touchMoved:touches.anyObject];
+  [self->touchDelegate touchMoved:touches.anyObject];
 }
 
 - (void)touchesEnded:(NSSet<UITouch*>*)touches withEvent:(nullable UIEvent*)event {
-  [_touchDelegate touchEnded:touches.anyObject];
+  [self->touchDelegate touchEnded:touches.anyObject];
 }
 
 - (void)touchesCanceled:(NSSet<UITouch*>*)touches withEvent:(nullable UIEvent*)event {
-  [_touchDelegate touchEnded:touches.anyObject];
+  [self->touchDelegate touchEnded:touches.anyObject];
 }
 
 + (Class)layerClass {
@@ -78,6 +78,7 @@
 @end
 
 @implementation OpenGLView
+@synthesize viewSizeChangeDelegate = viewSizeChangeDelegate;
 
 - (void)layoutSubviews {
   [super layoutSubviews];
