@@ -75,10 +75,14 @@ std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> par
   view->isView_ = true;
   view->parentTexture_ = parent;
 
-  // Store view parameters
-  view->mipLevelOffset_ = desc.mipLevel;
+  // Defensive check: parent and view must share the same underlying D3D12 resource
+  IGL_DEBUG_ASSERT(parent->resource_.Get() == view->resource_.Get(),
+                   "Parent and view must share the same D3D12 resource");
+
+  // Store view parameters (cumulative offsets for nested views)
+  view->mipLevelOffset_ = parent->mipLevelOffset_ + desc.mipLevel;
   view->numMipLevelsInView_ = desc.numMipLevels;
-  view->arraySliceOffset_ = desc.layer;
+  view->arraySliceOffset_ = parent->arraySliceOffset_ + desc.layer;
   view->numArraySlicesInView_ = desc.numLayers;
 
   // Copy properties from parent
@@ -100,9 +104,9 @@ std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> par
   view->numLayers_ = desc.numLayers;
   view->numMipLevels_ = desc.numMipLevels;
 
-  // Share state tracking with parent
-  view->subresourceStates_ = parent->subresourceStates_;
-  view->defaultState_ = parent->defaultState_;
+  // Views delegate state tracking to root texture - don't copy state vectors.
+  // State is accessed via getStateOwner() which walks to root for views.
+  // subresourceStates_ and defaultState_ remain empty/default for views.
 
   IGL_LOG_INFO("Texture::createTextureView - SUCCESS: view of %dx%d, mips %u-%u, layers %u-%u\n",
                view->dimensions_.width, view->dimensions_.height,
@@ -349,7 +353,9 @@ Result Texture::upload(const TextureRangeDesc& range,
       const uint32_t currentSlice = baseSlice + sliceOffset;
       const uint32_t subresource = calcSubresourceIndex(currentMip, currentSlice);
 
-      transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_DEST, currentMip, currentSlice);
+      // const_cast needed because upload is const (required by ITexture interface)
+      // but state tracking is non-const by design
+      const_cast<Texture*>(this)->transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_DEST, currentMip, currentSlice);
 
       D3D12_TEXTURE_COPY_LOCATION dst = {};
       dst.pResource = resource_.Get();
@@ -380,7 +386,8 @@ Result Texture::upload(const TextureRangeDesc& range,
       D3D12_BOX srcBox = {0, 0, 0, mipWidth, mipHeight, mipDepth};
       cmdList->CopyTextureRegion(&dst, range.x, range.y, range.z, &src, &srcBox);
 
-      transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, currentMip, currentSlice);
+      // const_cast needed (see above)
+      const_cast<Texture*>(this)->transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, currentMip, currentSlice);
     }
   }
 
@@ -432,7 +439,7 @@ Result Texture::upload(const TextureRangeDesc& range,
     CloseHandle(fenceEvent);
   }
 
-  return Result();
+  return Result(Result::Code::Ok);
 }
 
 Result Texture::uploadCube(const TextureRangeDesc& range,
@@ -633,8 +640,9 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     mutableResource = std::move(newResource);
 
     // Update state tracking for new resource - all mips are now in PIXEL_SHADER_RESOURCE
-    // initializeStateTracking sets uniform state, so no need to manually update subresourceStates_
-    initializeStateTracking(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    // const_cast needed because generateMipmap is const (required by ITexture interface)
+    // but state tracking is non-const by design
+    const_cast<Texture*>(this)->initializeStateTracking(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
     // Update resourceDesc for the rest of the function
     resourceDesc = resource_->GetDesc();
@@ -815,8 +823,9 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   D3D12_CPU_DESCRIPTOR_HANDLE rtvCpu = rtvHeap->GetCPUDescriptorHandleForHeapStart();
 
   // Ensure mip 0 is in PIXEL_SHADER_RESOURCE state for first SRV read
-  // Use the Texture's state tracking to ensure correct transition
-  transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 0);
+  // const_cast needed because generateMipmap is const (required by ITexture interface)
+  // but state tracking is non-const by design
+  const_cast<Texture*>(this)->transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 0);
 
   for (UINT mip = 0; mip + 1 < numMipLevels_; ++mip) {
     // Calculate descriptor handle for this mip level
@@ -852,7 +861,8 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     device_->CreateRenderTargetView(resource_.Get(), &rtv, rtvCpu);
 
     // Transition mip level to render target using state tracking
-    transitionTo(list.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, mip + 1, 0);
+    // T10: const_cast needed (see above)
+    const_cast<Texture*>(this)->transitionTo(list.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, mip + 1, 0);
 
     list->OMSetRenderTargets(1, &rtvCpu, FALSE, nullptr);
     const UINT w = std::max<UINT>(1u, (UINT)(resourceDesc.Width >> (mip + 1)));
@@ -867,7 +877,8 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     list->DrawInstanced(3, 1, 0, 0);
 
     // Transition mip level to shader resource for next iteration
-    transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mip + 1, 0);
+    // T10: const_cast needed (see above)
+    const_cast<Texture*>(this)->transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mip + 1, 0);
   }
 
   list->Close();
@@ -1066,8 +1077,9 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   D3D12_CPU_DESCRIPTOR_HANDLE rtvCpu = rtvHeap->GetCPUDescriptorHandleForHeapStart();
 
   // Ensure mip 0 is in PIXEL_SHADER_RESOURCE state for first SRV read
-  // Use the Texture's state tracking to ensure correct transition
-  transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 0);
+  // const_cast needed because generateMipmap is const (required by ITexture interface)
+  // but state tracking is non-const by design
+  const_cast<Texture*>(this)->transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 0);
 
   for (UINT mip = 0; mip + 1 < numMipLevels_; ++mip) {
     // Calculate descriptor handle for this mip level
@@ -1103,7 +1115,8 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     device_->CreateRenderTargetView(resource_.Get(), &rtv, rtvCpu);
 
     // Transition mip level to render target using state tracking
-    transitionTo(list.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, mip + 1, 0);
+    // T10: const_cast needed (see above)
+    const_cast<Texture*>(this)->transitionTo(list.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, mip + 1, 0);
 
     list->OMSetRenderTargets(1, &rtvCpu, FALSE, nullptr);
     const UINT w = std::max<UINT>(1u, (UINT)(resourceDesc.Width >> (mip + 1)));
@@ -1117,7 +1130,8 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
     list->DrawInstanced(3, 1, 0, 0);
 
     // Transition mip level to shader resource for next iteration
-    transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mip + 1, 0);
+    // T10: const_cast needed (see above)
+    const_cast<Texture*>(this)->transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mip + 1, 0);
   }
   list->Close();
   ID3D12CommandList* lists[] = {list.Get()};
@@ -1132,154 +1146,110 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   CloseHandle(evt);
 }
 
-void Texture::initializeStateTracking(D3D12_RESOURCE_STATES initialState) const {
-  // B-006: Start with uniform state (no allocation)
-  hasUniformState_ = true;
-  uniformState_ = initialState;
-  subresourceStates_.clear();  // No allocation unless needed
+void Texture::initializeStateTracking(D3D12_RESOURCE_STATES initialState) {
+  // State tracking: always allocate per-subresource vector upfront
   defaultState_ = initialState;
-}
-
-void Texture::promoteToHeterogeneousState() const {
-  if (!hasUniformState_) {
-    return;  // Already heterogeneous
-  }
-
-  // Promote to per-subresource tracking
-  if (!resource_.Get()) {
-    return;
-  }
-
-  const uint32_t mipLevels = static_cast<uint32_t>(std::max<size_t>(numMipLevels_, 1));
-  uint32_t arraySize;
-  if (type_ == TextureType::ThreeD) {
-    arraySize = 1u;
-  } else if (type_ == TextureType::Cube) {
-    // Cube textures: 6 faces per layer (DX12-COD-003)
-    arraySize = static_cast<uint32_t>(std::max<size_t>(numLayers_, 1)) * 6u;
-  } else {
-    arraySize = static_cast<uint32_t>(std::max<size_t>(numLayers_, 1));
-  }
-  const size_t required = static_cast<size_t>(mipLevels) * arraySize;
-  subresourceStates_.assign(required, uniformState_);
-  hasUniformState_ = false;
-
-#ifdef IGL_DEBUG
-  IGL_LOG_INFO("Texture::promoteToHeterogeneousState() - %dx%d promoted to per-subresource tracking (%zu states)\n",
-               dimensions_.width, dimensions_.height, required);
-#endif
-}
-
-void Texture::ensureStateStorage() const {
-  // B-006: Only allocate when transitioning from uniform to heterogeneous
-  if (hasUniformState_) {
-    // Don't allocate yet - wait until heterogeneous transition is needed
-    return;
-  }
 
   if (!resource_.Get()) {
     subresourceStates_.clear();
     return;
   }
 
-  // Verify allocation size is correct (paranoid check)
   const uint32_t mipLevels = static_cast<uint32_t>(std::max<size_t>(numMipLevels_, 1));
   uint32_t arraySize;
   if (type_ == TextureType::ThreeD) {
     arraySize = 1u;
   } else if (type_ == TextureType::Cube) {
-    // Cube textures: 6 faces per layer (DX12-COD-003)
+    // Cube textures: 6 faces per layer
     arraySize = static_cast<uint32_t>(std::max<size_t>(numLayers_, 1)) * 6u;
   } else {
     arraySize = static_cast<uint32_t>(std::max<size_t>(numLayers_, 1));
   }
-  const size_t required = static_cast<size_t>(mipLevels) * arraySize;
-  if (subresourceStates_.size() != required) {
-    IGL_LOG_ERROR("Texture::ensureStateStorage() - Size mismatch (expected=%zu, actual=%zu)\n",
-                  required, subresourceStates_.size());
-    promoteToHeterogeneousState();  // Re-allocate with correct size
-  }
+  const size_t numSubresources = static_cast<size_t>(mipLevels) * arraySize;
+  subresourceStates_.assign(numSubresources, initialState);
 }
 
+// State tracking implementation: always uses per-subresource vectors for simplicity and predictability.
+
 uint32_t Texture::calcSubresourceIndex(uint32_t mipLevel, uint32_t layer) const {
-  const uint32_t mipLevels = static_cast<uint32_t>(std::max<size_t>(numMipLevels_, 1));
+  // For views, map view-local coordinates to resource coordinates.
+  // Note: mipLevelOffset_ and arraySliceOffset_ are resource-relative (accumulated at view creation for nested views).
+  const uint32_t resourceMip = isView_ ? (mipLevel + mipLevelOffset_) : mipLevel;
+  const uint32_t resourceLayer = isView_ ? (layer + arraySliceOffset_) : layer;
+
+  // Use state owner's dimensions for subresource calculation
+  const Texture* owner = getStateOwner();
+  IGL_DEBUG_ASSERT(owner != nullptr, "State owner must not be null");
+  const uint32_t mipLevels = static_cast<uint32_t>(std::max<size_t>(owner->numMipLevels_, 1));
   uint32_t arraySize;
-  if (type_ == TextureType::ThreeD) {
+  if (owner->type_ == TextureType::ThreeD) {
     arraySize = 1u;
-  } else if (type_ == TextureType::Cube) {
-    // Cube textures: 6 faces per layer (DX12-COD-003)
-    arraySize = static_cast<uint32_t>(std::max<size_t>(numLayers_, 1)) * 6u;
+  } else if (owner->type_ == TextureType::Cube) {
+    // Cube textures: 6 faces per layer
+    arraySize = static_cast<uint32_t>(std::max<size_t>(owner->numLayers_, 1)) * 6u;
   } else {
-    arraySize = static_cast<uint32_t>(std::max<size_t>(numLayers_, 1));
+    arraySize = static_cast<uint32_t>(std::max<size_t>(owner->numLayers_, 1));
   }
-  const uint32_t clampedMip = std::min(mipLevel, mipLevels - 1);
-  const uint32_t clampedLayer = std::min(layer, arraySize - 1);
+  const uint32_t clampedMip = std::min(resourceMip, mipLevels - 1);
+  const uint32_t clampedLayer = std::min(resourceLayer, arraySize - 1);
   // D3D12CalcSubresource formula: MipSlice + (ArraySlice * MipLevels)
   const uint32_t subresource = clampedMip + (clampedLayer * mipLevels);
-  if (type_ == TextureType::Cube || type_ == TextureType::TwoDArray) {
-    IGL_LOG_INFO("calcSubresourceIndex: type=%d, mip=%u, layer=%u, arraySize=%u, mipLevels=%u -> subresource=%u\n",
-                 (int)type_, mipLevel, layer, arraySize, mipLevels, subresource);
+#ifdef IGL_DEBUG
+  // Reduce log verbosity - only log in debug builds for views
+  if ((type_ == TextureType::Cube || type_ == TextureType::TwoDArray) && isView_) {
+    IGL_LOG_INFO("calcSubresourceIndex (view): type=%d, mip=%u, layer=%u -> resource mip=%u, layer=%u -> subresource=%u\n",
+                 (int)type_, mipLevel, layer, resourceMip, resourceLayer, subresource);
   }
+#endif
   return subresource;
 }
 
 void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
                            D3D12_RESOURCE_STATES newState,
                            uint32_t mipLevel,
-                           uint32_t layer) const {
-  if (!commandList || !resource_.Get()) {
+                           uint32_t layer) {
+  // For views, delegate state tracking to root texture (state owner)
+  Texture* owner = getStateOwner();
+  if (!commandList || !resource_.Get() || owner->subresourceStates_.empty()) {
     return;
   }
 
-  // B-006: Fast path for uniform state
-  if (hasUniformState_) {
-    if (uniformState_ == newState) {
-      return;  // Already in target state (NO-OP)
-    }
-
-    // Transition all subresources with single barrier
-    D3D12_RESOURCE_BARRIER barrier = {};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = resource_.Get();
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    barrier.Transition.StateBefore = uniformState_;
-    barrier.Transition.StateAfter = newState;
-    commandList->ResourceBarrier(1, &barrier);
-
-    uniformState_ = newState;  // Update uniform state
-    return;
-  }
-
-  // Slow path: Per-subresource tracking
-  ensureStateStorage();
-  if (subresourceStates_.empty()) {
-    return;
-  }
-
-  // For depth-stencil textures, we need to transition ALL subresources (both depth and stencil planes)
-  // D3D12 depth-stencil formats have 2 planes: plane 0 = depth, plane 1 = stencil
-  // The D3D12 spec requires that both planes be in the same state for depth-stencil operations
+  // Always use per-subresource tracking for consistency
+  // For depth-stencil textures, transition ALL subresources (both depth and stencil planes)
   const auto props = getProperties();
   const bool isDepthStencil = props.isDepthOrStencil() && props.hasStencil();
 
   if (isDepthStencil) {
-    // Transition ALL subresources (all mips, all layers, all planes) for depth-stencil textures
-    // This ensures both depth and stencil planes are synchronized
-    bool needsTransition = false;
-    D3D12_RESOURCE_STATES currentState = defaultState_;
-
-    // Check if any subresource needs transition
-    for (const auto& state : subresourceStates_) {
-      if (state != newState) {
-        needsTransition = true;
-        currentState = state;  // Use first differing state as "before" state
+    // T10 Fix: Verify all subresources are in same state before using ALL_SUBRESOURCES
+    D3D12_RESOURCE_STATES firstState = owner->subresourceStates_[0];
+    bool allSameState = true;
+    for (const auto& state : owner->subresourceStates_) {
+      if (state != firstState) {
+        allSameState = false;
+        IGL_LOG_ERROR("Depth-stencil texture has divergent subresource states - this violates invariant\n");
         break;
       }
     }
 
-    if (!needsTransition) {
+    if (firstState == newState) {
       return;  // All subresources already in target state
+    }
+
+    // Safety check: If states have diverged, return early to avoid invalid ALL_SUBRESOURCES barrier.
+    //
+    // This early return is intentional - issuing a barrier with mismatched StateBefore would be
+    // undefined behavior per D3D12 spec (ALL_SUBRESOURCES requires all subresources in same state).
+    //
+    // Behavior by build type:
+    // - Debug builds: Assert fires to catch the invariant violation immediately during development
+    // - Release builds: Log error and skip transition (no-op) to avoid undefined behavior
+    //
+    // Tradeoff: In release builds with broken invariants, the transition is silently skipped.
+    // This is safer than corrupting state, but may cause missing transitions. The error log
+    // signals that investigation is needed to understand why the invariant was violated.
+    if (!allSameState) {
+      IGL_DEBUG_ASSERT(false, "Depth-stencil textures must have uniform state across all subresources");
+      return;  // Intentionally skip transition to avoid undefined behavior
     }
 
     D3D12_RESOURCE_BARRIER barrier = {};
@@ -1287,12 +1257,12 @@ void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
     barrier.Transition.pResource = resource_.Get();
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    barrier.Transition.StateBefore = currentState;
+    barrier.Transition.StateBefore = firstState;
     barrier.Transition.StateAfter = newState;
     commandList->ResourceBarrier(1, &barrier);
 
-    // Update all subresource states
-    for (auto& state : subresourceStates_) {
+    // Update all subresource states in owner
+    for (auto& state : owner->subresourceStates_) {
       state = newState;
     }
     return;
@@ -1300,10 +1270,10 @@ void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
 
   // Non-depth-stencil texture: transition single subresource
   const uint32_t subresource = calcSubresourceIndex(mipLevel, layer);
-  if (subresource >= subresourceStates_.size()) {
+  if (subresource >= owner->subresourceStates_.size()) {
     return;
   }
-  auto& currentState = subresourceStates_[subresource];
+  auto& currentState = owner->subresourceStates_[subresource];
   if (currentState == newState) {
     return;
   }
@@ -1320,40 +1290,18 @@ void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
 }
 
 void Texture::transitionAll(ID3D12GraphicsCommandList* commandList,
-                            D3D12_RESOURCE_STATES newState) const {
-  if (!commandList || !resource_.Get()) {
+                            D3D12_RESOURCE_STATES newState) {
+  // For views, delegate state tracking to root texture (state owner)
+  Texture* owner = getStateOwner();
+  if (!commandList || !resource_.Get() || owner->subresourceStates_.empty()) {
     return;
   }
 
-  // B-006: Fast path for uniform state
-  if (hasUniformState_) {
-    if (uniformState_ == newState) {
-      return;  // Already in target state
-    }
-
-    D3D12_RESOURCE_BARRIER barrier = {};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = resource_.Get();
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    barrier.Transition.StateBefore = uniformState_;
-    barrier.Transition.StateAfter = newState;
-    commandList->ResourceBarrier(1, &barrier);
-
-    uniformState_ = newState;
-    return;
-  }
-
-  // Slow path: Transition each subresource individually
-  ensureStateStorage();
-  if (subresourceStates_.empty()) {
-    return;
-  }
-
+  // Always use per-subresource tracking for consistency
   std::vector<D3D12_RESOURCE_BARRIER> barriers;
-  barriers.reserve(subresourceStates_.size());
-  for (uint32_t i = 0; i < subresourceStates_.size(); ++i) {
-    auto& state = subresourceStates_[i];
+  barriers.reserve(owner->subresourceStates_.size());
+  for (size_t i = 0; i < owner->subresourceStates_.size(); ++i) {
+    auto& state = owner->subresourceStates_[i];
     if (state == newState) {
       continue;
     }
@@ -1361,7 +1309,7 @@ void Texture::transitionAll(ID3D12GraphicsCommandList* commandList,
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
     barrier.Transition.pResource = resource_.Get();
-    barrier.Transition.Subresource = i;
+    barrier.Transition.Subresource = static_cast<UINT>(i);
     barrier.Transition.StateBefore = state;
     barrier.Transition.StateAfter = newState;
     barriers.push_back(barrier);
@@ -1370,43 +1318,19 @@ void Texture::transitionAll(ID3D12GraphicsCommandList* commandList,
   if (!barriers.empty()) {
     commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
   }
-
-  // Check if all states are now uniform (can demote to fast path)
-  bool allSame = true;
-  for (const auto& state : subresourceStates_) {
-    if (state != newState) {
-      allSame = false;
-      break;
-    }
-  }
-
-  if (allSame) {
-    // Demote back to uniform state
-    hasUniformState_ = true;
-    uniformState_ = newState;
-    subresourceStates_.clear();  // Free memory
-#ifdef IGL_DEBUG
-    IGL_LOG_INFO("Texture::transitionAll() - Demoted back to uniform state (%d)\n", newState);
-#endif
-  }
 }
 
 D3D12_RESOURCE_STATES Texture::getSubresourceState(uint32_t mipLevel, uint32_t layer) const {
-  // B-006: Fast path for uniform state (most common case)
-  if (hasUniformState_) {
-    return uniformState_;
-  }
-
-  // Slow path: Look up specific subresource
-  ensureStateStorage();
-  if (subresourceStates_.empty()) {
-    return defaultState_;
+  // For views, delegate to root texture (state owner)
+  const Texture* owner = getStateOwner();
+  if (owner->subresourceStates_.empty()) {
+    return owner->defaultState_;
   }
   const uint32_t index = calcSubresourceIndex(mipLevel, layer);
-  if (index >= subresourceStates_.size()) {
-    return defaultState_;
+  if (index >= owner->subresourceStates_.size()) {
+    return owner->defaultState_;
   }
-  return subresourceStates_[index];
+  return owner->subresourceStates_[index];
 }
 
 } // namespace igl::d3d12

@@ -52,6 +52,7 @@ class Buffer final : public IBuffer, public std::enable_shared_from_this<Buffer>
   void* mappedPtr_ = nullptr;
   ResourceStorage storage_ = ResourceStorage::Private;
   D3D12_RESOURCE_STATES defaultState_ = D3D12_RESOURCE_STATE_GENERIC_READ;
+  // State tracking: single non-mutable field, updated only via non-const methods
   D3D12_RESOURCE_STATES currentState_ = D3D12_RESOURCE_STATE_COMMON;
 
   // Staging buffer for mapping DEFAULT heap storage buffers requested as Shared

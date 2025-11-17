@@ -112,7 +112,7 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
     D3D12_RANGE writtenRange = {range.offset, range.offset + range.size};
     resource_->Unmap(0, &writtenRange);
 
-    return Result();
+    return Result(Result::Code::Ok);
   }
 
   // For DEFAULT heap, need upload via intermediate buffer
@@ -327,7 +327,7 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   // T05: Now safe to update resource state - GPU upload has completed
   currentState_ = (postState != D3D12_RESOURCE_STATE_COPY_DEST) ? postState : D3D12_RESOURCE_STATE_COPY_DEST;
 
-  return Result();
+  return Result(Result::Code::Ok);
 }
 
 void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {

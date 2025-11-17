@@ -62,12 +62,13 @@ class Texture final : public ITexture {
   // D3D12-specific accessors (not part of ITexture interface)
   TextureFormat getFormat() const;
   ID3D12Resource* getResource() const { return resource_.Get(); }
+  // State transition methods are non-const (state updates not allowed in const methods)
   void transitionTo(ID3D12GraphicsCommandList* commandList,
                     D3D12_RESOURCE_STATES newState,
                     uint32_t mipLevel = 0,
-                    uint32_t layer = 0) const;
+                    uint32_t layer = 0);
   void transitionAll(ID3D12GraphicsCommandList* commandList,
-                     D3D12_RESOURCE_STATES newState) const;
+                     D3D12_RESOURCE_STATES newState);
   D3D12_RESOURCE_STATES getSubresourceState(uint32_t mipLevel = 0,
                                             uint32_t layer = 0) const;
 
@@ -101,16 +102,28 @@ class Texture final : public ITexture {
   size_t numMipLevels_ = 1;
   size_t samples_ = 1;
   TextureDesc::TextureUsage usage_ = 0;
-  void initializeStateTracking(D3D12_RESOURCE_STATES initialState) const;
-  void ensureStateStorage() const;
+  void initializeStateTracking(D3D12_RESOURCE_STATES initialState);
 
-  // B-006: Optimized state tracking with fast path for uniform states
-  mutable bool hasUniformState_ = true;
-  mutable D3D12_RESOURCE_STATES uniformState_ = D3D12_RESOURCE_STATE_COMMON;
-  mutable std::vector<D3D12_RESOURCE_STATES> subresourceStates_;
-  mutable D3D12_RESOURCE_STATES defaultState_ = D3D12_RESOURCE_STATE_COMMON;
+  // State tracking: per-subresource vector, updated only via non-const methods.
+  // Views delegate state tracking to their root texture; only root textures maintain state.
+  std::vector<D3D12_RESOURCE_STATES> subresourceStates_;
+  D3D12_RESOURCE_STATES defaultState_ = D3D12_RESOURCE_STATE_COMMON;
 
-  void promoteToHeterogeneousState() const;
+  // Helper to get the texture that owns state tracking (walks to root for nested views)
+  Texture* getStateOwner() {
+    Texture* owner = this;
+    while (owner->isView_ && owner->parentTexture_) {
+      owner = owner->parentTexture_.get();
+    }
+    return owner;
+  }
+  const Texture* getStateOwner() const {
+    const Texture* owner = this;
+    while (owner->isView_ && owner->parentTexture_) {
+      owner = owner->parentTexture_.get();
+    }
+    return owner;
+  }
 
   // Texture view support
   bool isView_ = false;
