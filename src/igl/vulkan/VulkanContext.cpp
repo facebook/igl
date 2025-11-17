@@ -1772,7 +1772,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
   IGL_PROFILER_FUNCTION();
 
   DescriptorPoolsArena& arena = pimpl_->getOrCreateArena_CombinedImageSamplers(
-      *this, dsl.getVkDescriptorSetLayout(), dsl.numBindings_);
+      *this, dsl.getVkDescriptorSetLayout(), dsl.numBindings);
 
   VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, nextSubmitHandle);
 
@@ -1837,7 +1837,7 @@ void VulkanContext::updateBindingsStorageImages(
   IGL_PROFILER_FUNCTION();
 
   DescriptorPoolsArena& arena = pimpl_->getOrCreateArena_StorageImages(
-      *this, dsl.getVkDescriptorSetLayout(), dsl.numBindings_);
+      *this, dsl.getVkDescriptorSetLayout(), dsl.numBindings);
 
   VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, nextSubmitHandle);
 
@@ -1892,7 +1892,7 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
   IGL_PROFILER_FUNCTION();
 
   DescriptorPoolsArena& arena =
-      pimpl_->getOrCreateArena_Buffers(*this, dsl.getVkDescriptorSetLayout(), dsl.numBindings_);
+      pimpl_->getOrCreateArena_Buffers(*this, dsl.getVkDescriptorSetLayout(), dsl.numBindings);
 
   VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, nextSubmitHandle);
 
