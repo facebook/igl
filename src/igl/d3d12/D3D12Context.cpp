@@ -7,6 +7,7 @@
 
 #include <igl/d3d12/D3D12Context.h>
 #include <igl/d3d12/DescriptorHeapManager.h>
+#include <igl/d3d12/D3D12FenceWaiter.h>
 
 #include <cstdlib>
 #include <string>
@@ -1230,10 +1231,11 @@ void D3D12Context::waitForGPU() {
   const UINT64 fenceToWaitFor = ++fenceValue_;
   commandQueue_->Signal(fence_.Get(), fenceToWaitFor);
 
-  // Wait until the fence is crossed
-  if (fence_->GetCompletedValue() < fenceToWaitFor) {
-    fence_->SetEventOnCompletion(fenceToWaitFor, fenceEvent_);
-    WaitForSingleObject(fenceEvent_, INFINITE);
+  // Wait until the fence is crossed using FenceWaiter (TOCTOU-safe)
+  FenceWaiter waiter(fence_.Get(), fenceToWaitFor);
+  if (!waiter.wait(INFINITE)) {
+    IGL_LOG_ERROR("D3D12Context::waitForGPU() - Failed to wait for GPU completion (fence=%llu)\n",
+                  fenceToWaitFor);
   }
 }
 
