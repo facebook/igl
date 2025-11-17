@@ -10,7 +10,7 @@
 #import "MetalView.h"
 
 @implementation MetalView {
-  NSTrackingArea* _trackingArea; // needed for mouseMoved: events
+  NSTrackingArea* trackingArea; // needed for mouseMoved: events
   IBOutlet NSViewController* viewController;
 }
 
@@ -23,30 +23,30 @@
 
 - (void)setViewController:(NSViewController*)newController {
   if (viewController) {
-    NSResponder* controllerNextResponder = [viewController nextResponder];
+    NSResponder* _Nullable controllerNextResponder = [viewController nextResponder];
     [super setNextResponder:controllerNextResponder];
     [viewController setNextResponder:nil];
   }
   viewController = newController;
   if (newController) {
-    NSResponder* ownNextResponder = [self nextResponder];
+    NSResponder* _Nullable ownNextResponder = [self nextResponder];
     [super setNextResponder:viewController];
     [viewController setNextResponder:ownNextResponder];
   }
 }
 
 - (void)addFullScreenTrackingArea {
-  _trackingArea =
+  trackingArea =
       [[NSTrackingArea alloc] initWithRect:self.bounds
                                    options:NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved |
                                            NSTrackingActiveInKeyWindow
                                      owner:self
                                   userInfo:nil];
-  [self addTrackingArea:_trackingArea];
+  [self addTrackingArea:trackingArea];
 }
 
 - (void)updateTrackingAreas {
-  [self removeTrackingArea:_trackingArea];
+  [self removeTrackingArea:trackingArea];
   [self addFullScreenTrackingArea];
 }
 
