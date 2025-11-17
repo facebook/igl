@@ -61,6 +61,12 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
         (VmaAllocator)ctx_.getVmaAllocator(), &ci, &ciAlloc, &vkBuffer_, &vmaAllocation_, nullptr);
     IGL_DEBUG_ASSERT(vmaAllocation_ != nullptr);
 
+    if (vmaAllocation_) {
+      vmaSetAllocationName((VmaAllocator)ctx_.getVmaAllocator(),
+                           vmaAllocation_,
+                           IGL_FORMAT("VMA Allocation: {}", debugName).c_str());
+    }
+
     // handle memory-mapped buffers
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
       vmaMapMemory((VmaAllocator)ctx_.getVmaAllocator(), vmaAllocation_, &mappedPtr_);
