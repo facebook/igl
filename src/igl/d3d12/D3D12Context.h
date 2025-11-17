@@ -150,7 +150,9 @@ class D3D12Context {
   D3D12Context() = default;
   ~D3D12Context();
 
-  Result initialize(HWND hwnd, uint32_t width, uint32_t height);
+  // T14: initialize() now accepts optional D3D12ContextConfig for configurable sizes
+  Result initialize(HWND hwnd, uint32_t width, uint32_t height,
+                   const D3D12ContextConfig& config = D3D12ContextConfig::defaultConfig());
   Result resize(uint32_t width, uint32_t height);
 
   ID3D12Device* getDevice() const { return device_.Get(); }
@@ -380,6 +382,9 @@ class D3D12Context {
 
   uint32_t width_ = 0;
   uint32_t height_ = 0;
+
+  // T14: Configuration for customizable sizes
+  D3D12ContextConfig config_;
 
   // Resource tracking (static for global tracking across all contexts)
   struct ResourceStats {

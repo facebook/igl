@@ -53,9 +53,14 @@ D3D12Context::~D3D12Context() {
   // ComPtr handles cleanup automatically
 }
 
-Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height) {
+Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height,
+                                const D3D12ContextConfig& config) {
   width_ = width;
   height_ = height;
+
+  // T14: Store and validate configuration
+  config_ = config;
+  config_.validate();
 
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating D3D12 device...\n");
   Result deviceResult = createDevice();
@@ -121,9 +126,9 @@ Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height) {
   }
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Fence created successfully\n");
 
-  // Create per-frame command allocators (following Microsoft's D3D12HelloFrameBuffering pattern)
+  // T14: Create per-frame command allocators using configurable frame count
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating per-frame command allocators...\n");
-  for (UINT i = 0; i < kMaxFramesInFlight; i++) {
+  for (UINT i = 0; i < config_.maxFramesInFlight; i++) {
     hr = device_->CreateCommandAllocator(
         D3D12_COMMAND_LIST_TYPE_DIRECT,
         IID_PPV_ARGS(frameContexts_[i].allocator.GetAddressOf()));
@@ -171,7 +176,7 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
   }
 
   // Release old back buffers
-  for (UINT i = 0; i < kMaxFramesInFlight; i++) {
+  for (UINT i = 0; i < config_.maxFramesInFlight; i++) {
     renderTargets_[i].Reset();
   }
 
@@ -183,7 +188,7 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
 
   // Try to resize existing swapchain
   HRESULT hr = swapChain_->ResizeBuffers(
-      kMaxFramesInFlight,
+      config_.maxFramesInFlight,
       width,
       height,
       currentDesc.Format ? currentDesc.Format : DXGI_FORMAT_B8G8R8A8_UNORM,
@@ -257,7 +262,7 @@ Result D3D12Context::recreateSwapChain(uint32_t width, uint32_t height) {
   newDesc.SampleDesc.Count = 1;
   newDesc.SampleDesc.Quality = 0;
   newDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-  newDesc.BufferCount = kMaxFramesInFlight;
+  newDesc.BufferCount = config_.maxFramesInFlight;
   newDesc.Scaling = DXGI_SCALING_STRETCH;
   newDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
   newDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
@@ -1056,19 +1061,23 @@ Result D3D12Context::createDescriptorHeaps() {
   samplerDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(
       D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
-  // Create per-frame shader-visible descriptor heaps (following Microsoft MiniEngine pattern)
+  // T14: Create per-frame shader-visible descriptor heaps using configurable sizes
   // Each frame gets its own isolated heaps to prevent descriptor conflicts between frames
   // C-001: Now creates initial page with dynamic growth support
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating per-frame descriptor heaps with dynamic growth support...\n");
+  IGL_D3D12_LOG_VERBOSE("  Config: maxFramesInFlight=%u, cbvSrvUavHeapSize=%u, samplerHeapSize=%u, "
+               "descriptorsPerPage=%u, maxHeapPages=%u\n",
+               config_.maxFramesInFlight, config_.cbvSrvUavHeapSize, config_.samplerHeapSize,
+               config_.descriptorsPerPage, config_.maxHeapPages);
 
-  for (UINT i = 0; i < kMaxFramesInFlight; i++) {
-    // CBV/SRV/UAV heap: Start with one page of kDescriptorsPerPage descriptors
-    // Additional pages will be allocated on-demand up to kMaxHeapPages
+  for (UINT i = 0; i < config_.maxFramesInFlight; i++) {
+    // CBV/SRV/UAV heap: Start with one page of descriptorsPerPage descriptors
+    // Additional pages will be allocated on-demand up to maxHeapPages
     {
       Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> initialHeap;
       Result result = allocateDescriptorHeapPage(
           D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-          kDescriptorsPerPage,
+          config_.descriptorsPerPage,
           &initialHeap);
 
       if (!result.isOk()) {
@@ -1079,18 +1088,19 @@ Result D3D12Context::createDescriptorHeaps() {
 
       // Initialize page vector with first page
       frameContexts_[i].cbvSrvUavHeapPages.clear();
-      frameContexts_[i].cbvSrvUavHeapPages.emplace_back(initialHeap, kDescriptorsPerPage);
+      frameContexts_[i].cbvSrvUavHeapPages.emplace_back(initialHeap, config_.descriptorsPerPage);
       frameContexts_[i].currentCbvSrvUavPageIndex = 0;
 
+      const uint32_t maxDescriptorsPerFrame = config_.maxHeapPages * config_.descriptorsPerPage;
       IGL_D3D12_LOG_VERBOSE("  Frame %u: Created initial CBV/SRV/UAV heap page (%u descriptors, max %u pages = %u total)\n",
-                   i, kDescriptorsPerPage, kMaxHeapPages, kMaxDescriptorsPerFrame);
+                   i, config_.descriptorsPerPage, config_.maxHeapPages, maxDescriptorsPerFrame);
     }
 
-    // Sampler heap: kSamplerHeapSize descriptors
+    // Sampler heap: samplerHeapSize descriptors
     {
       D3D12_DESCRIPTOR_HEAP_DESC desc = {};
       desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-      desc.NumDescriptors = kSamplerHeapSize;  // P0_DX12-FIND-02: Use constant for bounds checking
+      desc.NumDescriptors = config_.samplerHeapSize;  // T14: Use configurable size
       desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
       desc.NodeMask = 0;
 
@@ -1101,22 +1111,29 @@ Result D3D12Context::createDescriptorHeaps() {
         IGL_DEBUG_ASSERT(false);
         return Result(Result::Code::RuntimeError, "Failed to create per-frame Sampler heap for frame " + std::to_string(i));
       }
-      IGL_D3D12_LOG_VERBOSE("  Frame %u: Created Sampler heap (%u descriptors)\n", i, kSamplerHeapSize);
+      IGL_D3D12_LOG_VERBOSE("  Frame %u: Created Sampler heap (%u descriptors)\n", i, config_.samplerHeapSize);
     }
   }
 
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Per-frame descriptor heaps created successfully\n");
-  IGL_D3D12_LOG_VERBOSE("  Total memory: 3 frames × (1024 CBV/SRV/UAV + %u Samplers) × 32 bytes ≈ %u KB\n",
-               kMaxSamplers, (3 * (kCbvSrvUavHeapSize + kMaxSamplers) * 32) / 1024);
+  // Memory calculation: initial page + samplers per frame
+  const uint32_t initialDescriptors = config_.descriptorsPerPage + config_.samplerHeapSize;
+  const uint32_t maxDescriptors = (config_.descriptorsPerPage * config_.maxHeapPages) + config_.samplerHeapSize;
+  const uint32_t initialMemoryKB = (config_.maxFramesInFlight * initialDescriptors * 32) / 1024;
+  const uint32_t maxMemoryKB = (config_.maxFramesInFlight * maxDescriptors * 32) / 1024;
+  IGL_D3D12_LOG_VERBOSE("  Initial memory: %u frames × (%u CBV/SRV/UAV + %u Samplers) × 32 bytes ≈ %u KB\n",
+               config_.maxFramesInFlight, config_.descriptorsPerPage, config_.samplerHeapSize, initialMemoryKB);
+  IGL_D3D12_LOG_VERBOSE("  Max memory (if all pages allocated): %u frames × (%u CBV/SRV/UAV + %u Samplers) × 32 bytes ≈ %u KB\n",
+               config_.maxFramesInFlight, config_.descriptorsPerPage * config_.maxHeapPages, config_.samplerHeapSize, maxMemoryKB);
 
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating descriptor heap manager...\n");
 
-  // Create descriptor heap manager to manage allocations for CPU-visible heaps (RTV/DSV)
+  // T14: Create descriptor heap manager using config values
   DescriptorHeapManager::Sizes sizes{};
   sizes.cbvSrvUav = 256;  // For CPU-visible staging (not used for shader-visible)
   sizes.samplers = 16;    // For CPU-visible staging (not used for shader-visible)
-  sizes.rtvs = 64;        // Reasonable defaults for windowed rendering
-  sizes.dsvs = 32;
+  sizes.rtvs = config_.rtvHeapSize;   // T14: From config
+  sizes.dsvs = config_.dsvHeapSize;   // T14: From config
 
   ownedHeapMgr_ = new DescriptorHeapManager();
   Result result = ownedHeapMgr_->initialize(device_.Get(), sizes);
@@ -1198,8 +1215,8 @@ uint32_t D3D12Context::getCurrentBackBufferIndex() const {
 
 ID3D12Resource* D3D12Context::getCurrentBackBuffer() const {
   uint32_t index = getCurrentBackBufferIndex();
-  if (index >= kMaxFramesInFlight) {
-    IGL_LOG_ERROR("getCurrentBackBuffer(): index %u >= kMaxFramesInFlight %u\n", index, kMaxFramesInFlight);
+  if (index >= config_.maxFramesInFlight) {
+    IGL_LOG_ERROR("getCurrentBackBuffer(): index %u >= maxFramesInFlight %u\n", index, config_.maxFramesInFlight);
     return nullptr;
   }
 

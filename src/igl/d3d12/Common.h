@@ -28,8 +28,154 @@
 
 namespace igl::d3d12 {
 
+// T14: Configuration structure for D3D12 backend
+// Centralizes all size-related configuration with documented rationale
+struct D3D12ContextConfig {
+  // === Frame Buffering ===
+  // Rationale: Triple buffering (3 frames) provides optimal GPU/CPU parallelism on modern hardware
+  // while maintaining reasonable memory overhead. Reducing to 2 can save memory on constrained
+  // devices but may reduce throughput. Increasing beyond 3 provides minimal benefit.
+  // D3D12 spec: Minimum 2, recommended 2-3 for flip model swapchains
+  //
+  // LIMITATION: Currently fixed at 3 due to fixed-size arrays (frameContexts_, renderTargets_).
+  // Attempting to change this value will be clamped by validate(). To enable true configurability,
+  // D3D12Context must be refactored to use std::vector instead of fixed-size arrays.
+  uint32_t maxFramesInFlight = 3;
+
+  // === Descriptor Heap Sizes (Per-Frame Shader-Visible) ===
+  // Rationale: Following Microsoft MiniEngine pattern for dynamic per-frame allocation
+  // Samplers: D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE (2048) is the hardware limit.
+  // D3D12 spec limits: CBV/SRV/UAV up to 1,000,000, Samplers max 2048
+  uint32_t samplerHeapSize = 2048;       // Total sampler descriptors per frame (D3D12 spec limit)
+
+  // === CBV/SRV/UAV Dynamic Heap Growth ===
+  // Rationale: Prevents unbounded memory growth while supporting complex scenes
+  // Starts with one page, can grow up to maxHeapPages as needed
+  // 16 pages × 1024 descriptors = 16,384 max descriptors per frame
+  // This supports ~500-1000 draw calls per frame with typical descriptor usage patterns
+  uint32_t descriptorsPerPage = 1024;    // CBV/SRV/UAV descriptors per heap page
+  uint32_t maxHeapPages = 16;            // Maximum pages per frame (total capacity = pages × descriptorsPerPage)
+
+  // DEPRECATED: Use descriptorsPerPage instead
+  // This field is kept for backward compatibility but has the same value as descriptorsPerPage
+  uint32_t cbvSrvUavHeapSize = 1024;     // Alias for descriptorsPerPage (deprecated)
+
+  // === CPU-Visible Descriptor Heaps (Static) ===
+  // Rationale: RTVs/DSVs are created once per texture and persist across frames
+  // 256 RTVs: Supports ~128 textures with mips/array layers (typical for games)
+  // 128 DSVs: Sufficient for depth buffers, shadow maps, and multi-pass rendering
+  // These values should be tuned based on application texture usage patterns
+  uint32_t rtvHeapSize = 256;
+  uint32_t dsvHeapSize = 128;
+
+  // === Upload Ring Buffer ===
+  // Rationale: 128MB provides good balance for streaming resources (textures, constant buffers)
+  // Smaller values (64MB) reduce memory footprint but increase allocation failures
+  // Larger values (256MB) reduce failures but waste memory on simple scenes
+  // Microsoft MiniEngine uses similar sizes (64-256MB range)
+  uint64_t uploadRingBufferSize = 128 * 1024 * 1024;  // 128 MB
+
+  // === Validation Helpers ===
+  // Clamp values to D3D12 spec limits and provide warnings for unusual configurations
+  void validate() {
+    // Frame buffering: CRITICAL - must match kMaxFramesInFlight due to fixed-size arrays
+    // (frameContexts_[kMaxFramesInFlight], renderTargets_[kMaxFramesInFlight])
+    // TODO: Replace fixed arrays with std::vector to enable true runtime configurability
+    // Note: kMaxFramesInFlight is declared below this struct, so we use the literal value here.
+    // A static_assert after kMaxFramesInFlight declaration ensures they stay in sync.
+    constexpr uint32_t kCompiledMaxFrames = 3;
+    if (maxFramesInFlight != kCompiledMaxFrames) {
+      IGL_LOG_ERROR("D3D12ContextConfig: maxFramesInFlight=%u is not yet supported "
+                    "(fixed-size arrays limit to %u), clamping\n",
+                    maxFramesInFlight, kCompiledMaxFrames);
+      maxFramesInFlight = kCompiledMaxFrames;
+    }
+
+    // Sampler heap: Use D3D12 constant instead of magic number
+    if (samplerHeapSize > D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE) {
+      IGL_LOG_INFO("D3D12ContextConfig: samplerHeapSize=%u exceeds D3D12 limit (%u), clamping\n",
+                   samplerHeapSize, D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE);
+      samplerHeapSize = D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE;
+    }
+
+    // Descriptor page limits: Prevent absurd/invalid values
+    if (descriptorsPerPage == 0) {
+      IGL_LOG_ERROR("D3D12ContextConfig: descriptorsPerPage=0 is invalid, setting to 1024\n");
+      descriptorsPerPage = 1024;
+    }
+    if (maxHeapPages == 0) {
+      IGL_LOG_ERROR("D3D12ContextConfig: maxHeapPages=0 is invalid, setting to 16\n");
+      maxHeapPages = 16;
+    }
+
+    // CBV/SRV/UAV heap: D3D12 spec limit (generic, tier-independent upper bound)
+    // Note: Actual device limits may be lower depending on resource binding tier;
+    // use CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS) for precise caps
+    constexpr uint32_t kMaxCbvSrvUavDescriptors = 1000000;
+    if (descriptorsPerPage > kMaxCbvSrvUavDescriptors) {
+      IGL_LOG_INFO("D3D12ContextConfig: descriptorsPerPage=%u exceeds D3D12 limit (%u), clamping\n",
+                   descriptorsPerPage, kMaxCbvSrvUavDescriptors);
+      descriptorsPerPage = kMaxCbvSrvUavDescriptors;
+    }
+
+    // Keep deprecated cbvSrvUavHeapSize in sync with descriptorsPerPage
+    cbvSrvUavHeapSize = descriptorsPerPage;
+
+    // Upload ring buffer: Warn if too small (may cause allocation failures)
+    constexpr uint64_t kMinRecommendedSize = 32 * 1024 * 1024;  // 32 MB
+    if (uploadRingBufferSize < kMinRecommendedSize) {
+      IGL_LOG_INFO("D3D12ContextConfig: uploadRingBufferSize=%llu MB is small, "
+                   "may cause allocation failures (recommended minimum: %llu MB)\n",
+                   uploadRingBufferSize / (1024 * 1024), kMinRecommendedSize / (1024 * 1024));
+    }
+  }
+
+  // === Preset Configurations ===
+  // Factory methods for common use cases
+
+  // Default configuration (balanced for most applications)
+  static D3D12ContextConfig defaultConfig() {
+    return D3D12ContextConfig{};  // Uses default member initializers
+  }
+
+  // Low memory configuration (mobile, integrated GPUs, constrained devices)
+  static D3D12ContextConfig lowMemoryConfig() {
+    D3D12ContextConfig config;
+    // NOTE: maxFramesInFlight kept at 3 (not configurable yet due to fixed-size arrays)
+    config.descriptorsPerPage = 512;     // Smaller pages
+    config.cbvSrvUavHeapSize = 512;      // Keep in sync (deprecated field)
+    config.maxHeapPages = 8;             // Fewer pages (total: 512 × 8 = 4K descriptors)
+    config.rtvHeapSize = 128;            // Fewer RTVs
+    config.dsvHeapSize = 64;             // Fewer DSVs
+    config.uploadRingBufferSize = 64 * 1024 * 1024;  // 64 MB
+    config.validate();
+    return config;
+  }
+
+  // High performance configuration (discrete GPUs, desktop, complex scenes)
+  static D3D12ContextConfig highPerformanceConfig() {
+    D3D12ContextConfig config;
+    // NOTE: maxFramesInFlight kept at 3 (not configurable yet due to fixed-size arrays)
+    config.descriptorsPerPage = 2048;    // Larger pages
+    config.cbvSrvUavHeapSize = 2048;     // Keep in sync (deprecated field)
+    config.maxHeapPages = 32;            // More pages (total: 2048 × 32 = 64K descriptors)
+    config.rtvHeapSize = 512;            // More RTVs for render targets
+    config.dsvHeapSize = 256;            // More DSVs for shadow maps
+    config.uploadRingBufferSize = 256 * 1024 * 1024;  // 256 MB
+    config.validate();
+    return config;
+  }
+};
+
 // Frame buffering count (2-3 for double/triple buffering)
+// T14: D3D12ContextConfig struct exists but maxFramesInFlight currently fixed at 3
+// until D3D12Context arrays are refactored to std::vector. Kept as constant for backward compatibility.
 constexpr uint32_t kMaxFramesInFlight = 3;
+
+// Compile-time check: ensure kMaxFramesInFlight matches the value in D3D12ContextConfig::validate()
+// This prevents the local constant in validate() from drifting out of sync
+static_assert(kMaxFramesInFlight == 3,
+              "kMaxFramesInFlight must match kCompiledMaxFrames in D3D12ContextConfig::validate()");
 
 // Maximum number of descriptor sets (matching IGL's Vulkan backend)
 constexpr uint32_t kMaxDescriptorSets = 4;

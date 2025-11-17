@@ -9,9 +9,14 @@ namespace igl::d3d12 {
 
 HeadlessD3D12Context::~HeadlessD3D12Context() = default;
 
-Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height) {
+Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
+                                                const D3D12ContextConfig& config) {
   width_ = width;
   height_ = height;
+
+  // T14: Store and validate configuration
+  config_ = config;
+  config_.validate();
 
   // Initialize DXGI factory flags for debug builds
   UINT dxgiFactoryFlags = 0;

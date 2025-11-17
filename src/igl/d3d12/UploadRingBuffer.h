@@ -45,6 +45,10 @@ class UploadRingBuffer {
    * @brief Constructs an upload ring buffer
    * @param device D3D12 device for resource creation
    * @param size Total size of ring buffer (default: 128MB)
+   *
+   * T14: Default value (128MB) matches D3D12ContextConfig::defaultConfig().uploadRingBufferSize
+   * Configurable by passing explicit size parameter at construction time.
+   * TODO: Wire D3D12ContextConfig::uploadRingBufferSize into call sites for automatic configuration.
    */
   explicit UploadRingBuffer(ID3D12Device* device, uint64_t size = 128 * 1024 * 1024);
   ~UploadRingBuffer();

@@ -17,11 +17,17 @@ namespace igl::d3d12 {
 // Simple descriptor heap manager suitable for unit tests and headless runs.
 class DescriptorHeapManager {
  public:
+  // T14: Descriptor heap sizes configuration
+  // Default values match D3D12ContextConfig for consistency but can be customized at runtime
   struct Sizes {
-    uint32_t cbvSrvUav = 4096; // shader-visible
-    uint32_t samplers = 2048;  // shader-visible
-    uint32_t rtvs = 256;       // CPU-visible
-    uint32_t dsvs = 128;       // CPU-visible
+    uint32_t cbvSrvUav = 4096; // shader-visible (kept larger for unit tests/headless)
+    uint32_t samplers = 2048;  // shader-visible (D3D12 spec limit)
+    uint32_t rtvs = 256;       // CPU-visible (default from D3D12ContextConfig)
+    uint32_t dsvs = 128;       // CPU-visible (default from D3D12ContextConfig)
+
+    // Note: D3D12Context and HeadlessContext construct Sizes manually based on their
+    // specific needs (environment overrides, test requirements, etc.) rather than using
+    // a generic factory method. To customize, construct Sizes with desired values.
   };
 
   DescriptorHeapManager() = default;
