@@ -118,7 +118,7 @@ Use these per-task checks to validate individual backlog items before the full h
 - P2_DX12-018_Device_Limits_vs_Caps
   - Unit: enforced caps; no overcommit without downgrade/error.
 - P2_DX12-021_022_BindBytes
-  - Unit/Render/Compute: small constants via root constants or CBV read correctly.
+  - Unit/Render/Compute: small constants via push constants (root constants) or CBV read correctly. On D3D12, this covers the push-constant/uniform-buffer path; `bindBytes` itself is not used.
 - P2_DX12-120_Transient_Cache_Purging
   - Long-run: bounded transient memory across many submissions.
 - P3_DX12-019_Debug_Labels
