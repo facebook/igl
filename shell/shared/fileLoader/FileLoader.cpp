@@ -16,7 +16,7 @@
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #elif IGL_PLATFORM_LINUX
 #include <shell/shared/fileLoader/linux/FileLoaderLinux.h>
-#elif IGL_PLATFORM_MACOS || IGL_PLATFORM_IOS
+#elif IGL_PLATFORM_APPLE
 #include <shell/shared/fileLoader/apple/FileLoaderApple.h>
 #elif IGL_PLATFORM_WINDOWS
 #include <shell/shared/fileLoader/win/FileLoaderWin.h>
@@ -57,7 +57,7 @@ std::unique_ptr<FileLoader> createFileLoader() {
   return std::make_unique<FileLoaderAndroid>();
 #elif IGL_PLATFORM_LINUX
   return std::make_unique<FileLoaderLinux>();
-#elif IGL_PLATFORM_MACOS || IGL_PLATFORM_IOS
+#elif IGL_PLATFORM_APPLE
   return std::make_unique<FileLoaderApple>();
 #elif IGL_PLATFORM_WINDOWS
   return std::make_unique<FileLoaderWin>();
