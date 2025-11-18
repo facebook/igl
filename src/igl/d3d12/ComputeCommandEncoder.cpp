@@ -464,104 +464,13 @@ void ComputeCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, cons
   IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindUniform - not supported, use uniform buffers\n");
 }
 
-void ComputeCommandEncoder::bindBytes(uint32_t index, const void* data, size_t length) {
-  auto* commandList = commandBuffer_.getCommandList();
-  if (!commandList || !data || length == 0) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindBytes: Invalid parameters (list=%p, data=%p, len=%zu)\n",
-                  commandList, data, length);
-    return;
-  }
+void ComputeCommandEncoder::bindBytes(uint32_t /*index*/, const void* /*data*/, size_t /*length*/) {
 
-  // bindBytes binds small constant data as a constant buffer
-  // We use a dynamic CBV approach: allocate temp buffer from upload heap and cache its GPU address
-
-  // Validate index range - we support binding to b1-b7 (b0 is reserved for push constants)
-  if (index >= kMaxComputeBuffers) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindBytes: index %u exceeds supported range [0,%zu)\n",
-                  index, kMaxComputeBuffers);
-    return;
-  }
-
-  // D3D12 requires constant buffer addresses to be 256-byte aligned
-  constexpr size_t kCBVAlignment = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT; // 256 bytes
-  const size_t alignedSize = (length + kCBVAlignment - 1) & ~(kCBVAlignment - 1);
-
-  // Create transient upload buffer for this data
-  auto& context = commandBuffer_.getContext();
-  auto* device = context.getDevice();
-  if (!device) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindBytes: D3D12 device is null\n");
-    return;
-  }
-
-  // Create upload heap buffer
-  D3D12_HEAP_PROPERTIES heapProps = {};
-  heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
-  heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-  heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-
-  D3D12_RESOURCE_DESC bufferDesc = {};
-  bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-  bufferDesc.Alignment = 0;
-  bufferDesc.Width = alignedSize;
-  bufferDesc.Height = 1;
-  bufferDesc.DepthOrArraySize = 1;
-  bufferDesc.MipLevels = 1;
-  bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
-  bufferDesc.SampleDesc.Count = 1;
-  bufferDesc.SampleDesc.Quality = 0;
-  bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-  bufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-  Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
-  HRESULT hr = device->CreateCommittedResource(
-      &heapProps,
-      D3D12_HEAP_FLAG_NONE,
-      &bufferDesc,
-      D3D12_RESOURCE_STATE_GENERIC_READ,
-      nullptr,
-      IID_PPV_ARGS(uploadBuffer.GetAddressOf())
-  );
-
-  if (FAILED(hr)) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindBytes: Failed to create upload buffer: HRESULT = 0x%08X\n",
-                  static_cast<unsigned>(hr));
-    return;
-  }
-
-  // Map and copy data
-  void* mappedPtr = nullptr;
-  hr = uploadBuffer->Map(0, nullptr, &mappedPtr);
-  if (FAILED(hr) || !mappedPtr) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindBytes: Failed to map upload buffer: HRESULT = 0x%08X\n",
-                  static_cast<unsigned>(hr));
-    return;
-  }
-
-  memcpy(mappedPtr, data, length);
-  uploadBuffer->Unmap(0, nullptr);
-
-  // Get GPU virtual address and cache it (matching bindBuffer behavior for uniform buffers)
-  D3D12_GPU_VIRTUAL_ADDRESS gpuAddress = uploadBuffer->GetGPUVirtualAddress();
-  cachedCbvAddresses_[index] = gpuAddress;
-
-  // DX12-COD-005: Enforce 64 KB limit for CBVs and set size for descriptor creation
-  // Note: alignedSize is already 256-byte aligned; will be rechecked in dispatchThreadGroups
-  constexpr size_t kMaxCBVSize = 65536;  // 64 KB (D3D12 spec limit)
-  const size_t alignedCbvSize = std::min(alignedSize, kMaxCBVSize);
-  cachedCbvSizes_[index] = alignedCbvSize;
-
-  for (size_t i = index + 1; i < kMaxComputeBuffers; ++i) {
-    cachedCbvAddresses_[i] = 0;
-    cachedCbvSizes_[i] = 0;
-  }
-  boundCbvCount_ = static_cast<size_t>(index + 1);
-
-  // Track transient resource to keep it alive until GPU finishes
-  commandBuffer_.trackTransientResource(uploadBuffer.Get());
-
-  IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindBytes: Bound %zu bytes (aligned to %zu, CBV size %zu) to index %u (GPU address 0x%llx)\n",
-               length, alignedSize, alignedCbvSize, index, gpuAddress);
+  // D3D12 backend does not support bindBytes
+  // Applications should use uniform buffers (bindBuffer) instead
+  // This is a no-op to maintain compatibility with cross-platform code
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  IGL_LOG_INFO_ONCE("bindBytes is not supported in D3D12 backend. Use bindBuffer with uniform buffers instead.\n");
 }
 
 void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, TextureFormat /*format*/) {

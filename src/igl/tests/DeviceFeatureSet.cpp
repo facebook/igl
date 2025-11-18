@@ -246,7 +246,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::BufferRing));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::BufferNoCopy));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ShaderLibrary));
-      EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::BindBytes));
+      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::BindBytes));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::BufferDeviceAddress));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ShaderTextureLod));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ShaderTextureLodExt));

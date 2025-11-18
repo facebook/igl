@@ -29,6 +29,7 @@
 #include <d3dcompiler.h>
 #include <cstring>
 #include <vector>
+#include <mutex>   // T15: For std::call_once
 
 #pragma comment(lib, "d3dcompiler.lib")
 
@@ -2494,15 +2495,14 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
     const size_t sourceLength = strlen(desc.input.source);
     IGL_D3D12_LOG_VERBOSE("  Compiling HLSL from string (%zu bytes) using DXC...\n", sourceLength);
 
-    // Initialize DXC compiler (once per process)
+    // T15: Initialize DXC compiler thread-safely using std::call_once
     static DXCCompiler dxcCompiler;
-    static bool dxcInitialized = false;
+    static std::once_flag dxcInitFlag;
     static bool dxcAvailable = false;
 
-    if (!dxcInitialized) {
+    std::call_once(dxcInitFlag, []() {
       Result initResult = dxcCompiler.initialize();
       dxcAvailable = initResult.isOk();
-      dxcInitialized = true;
 
       if (dxcAvailable) {
         IGL_D3D12_LOG_VERBOSE("  DXC compiler initialized successfully (Shader Model 6.0+ support)\n");
@@ -2510,7 +2510,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
         IGL_D3D12_LOG_VERBOSE("  DXC compiler initialization failed: %s\n", initResult.message.c_str());
         IGL_D3D12_LOG_VERBOSE("  Falling back to FXC (Shader Model 5.1)\n");
       }
-    }
+    });
 
     // Determine shader target based on stage
     // Use SM 6.0 for DXC, SM 5.1 for FXC fallback
@@ -2706,7 +2706,6 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     case DeviceFeatures::TextureHalfFloat:
     case DeviceFeatures::ReadWriteFramebuffer:
     case DeviceFeatures::TextureNotPot:
-    case DeviceFeatures::BindBytes:
     case DeviceFeatures::ShaderTextureLod:
     case DeviceFeatures::ExplicitBinding:
     case DeviceFeatures::MapBufferRange: // UPLOAD/READBACK buffers support mapping
@@ -2729,6 +2728,7 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     case DeviceFeatures::TextureArrayExt:
     case DeviceFeatures::TextureExternalImage:
     case DeviceFeatures::Multiview:
+    case DeviceFeatures::BindBytes:  // Not supported - use uniform buffers instead
     case DeviceFeatures::BindUniform:
     case DeviceFeatures::BufferRing:
     case DeviceFeatures::BufferNoCopy:

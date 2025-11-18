@@ -270,6 +270,11 @@ void GlfwShell::run() noexcept {
     platform_->getInputDispatcher().processEvents();
     session_->update(std::move(surfaceTextures));
 
+    // Log frame number for test validation (test_all_sessions.bat checks for this output)
+    if (frameNumber % 100 == 0 || frameNumber < 3) {
+      IGL_LOG_INFO("Frame %llu\n", (unsigned long long)frameNumber);
+    }
+
     // Debug FPS throttling to trigger descriptor race conditions
     // Command-line: --fps-throttle <ms> [--fps-throttle-random]
     // Example: --fps-throttle 50 (forces 20 FPS with fixed 50ms delay)

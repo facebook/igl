@@ -669,100 +669,15 @@ void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
   cachedIndexBuffer_.bound = true;
 }
 
-void RenderCommandEncoder::bindBytes(size_t index,
+void RenderCommandEncoder::bindBytes(size_t /*index*/,
                                      uint8_t /*target*/,
-                                     const void* data,
-                                     size_t length) {
-  if (!commandList_ || !data || length == 0) {
-    IGL_LOG_ERROR("bindBytes: Invalid parameters (list=%p, data=%p, len=%zu)\n",
-                  commandList_, data, length);
-    return;
-  }
-
-  // bindBytes binds small constant data as a constant buffer
-  // We use a dynamic CBV approach: allocate temp buffer from upload heap and bind as root CBV
-
-  // Validate index range - we support binding to b0 and b1 via root parameters 1 and 2
-  if (index >= 2) {
-    IGL_LOG_ERROR("bindBytes: index %zu exceeds supported range [0,1] for root CBV binding\n", index);
-    return;
-  }
-
-  // D3D12 requires constant buffer addresses to be 256-byte aligned
-  constexpr size_t kCBVAlignment = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT; // 256 bytes
-  const size_t alignedSize = (length + kCBVAlignment - 1) & ~(kCBVAlignment - 1);
-
-  // Create transient upload buffer for this data
-  // The buffer will be tracked by the frame context and kept alive until GPU finishes
-  auto& context = commandBuffer_.getContext();
-  auto* device = context.getDevice();
-  if (!device) {
-    IGL_LOG_ERROR("bindBytes: D3D12 device is null\n");
-    return;
-  }
-
-  // Create upload heap buffer
-  D3D12_HEAP_PROPERTIES heapProps = {};
-  heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
-  heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-  heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-
-  D3D12_RESOURCE_DESC bufferDesc = {};
-  bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-  bufferDesc.Alignment = 0;
-  bufferDesc.Width = alignedSize;
-  bufferDesc.Height = 1;
-  bufferDesc.DepthOrArraySize = 1;
-  bufferDesc.MipLevels = 1;
-  bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
-  bufferDesc.SampleDesc.Count = 1;
-  bufferDesc.SampleDesc.Quality = 0;
-  bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-  bufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-  Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
-  HRESULT hr = device->CreateCommittedResource(
-      &heapProps,
-      D3D12_HEAP_FLAG_NONE,
-      &bufferDesc,
-      D3D12_RESOURCE_STATE_GENERIC_READ,
-      nullptr,
-      IID_PPV_ARGS(uploadBuffer.GetAddressOf())
-  );
-
-  if (FAILED(hr)) {
-    IGL_LOG_ERROR("bindBytes: Failed to create upload buffer: HRESULT = 0x%08X\n", static_cast<unsigned>(hr));
-    return;
-  }
-
-  // Map and copy data
-  void* mappedPtr = nullptr;
-  hr = uploadBuffer->Map(0, nullptr, &mappedPtr);
-  if (FAILED(hr) || !mappedPtr) {
-    IGL_LOG_ERROR("bindBytes: Failed to map upload buffer: HRESULT = 0x%08X\n", static_cast<unsigned>(hr));
-    return;
-  }
-
-  memcpy(mappedPtr, data, length);
-  uploadBuffer->Unmap(0, nullptr);
-
-  // Get GPU virtual address
-  D3D12_GPU_VIRTUAL_ADDRESS gpuAddress = uploadBuffer->GetGPUVirtualAddress();
-
-  // Bind as root CBV
-  // Root parameter 1 = b0, Root parameter 2 = b1
-  const uint32_t rootParameterIndex = static_cast<uint32_t>(index + 1);
-  commandList_->SetGraphicsRootConstantBufferView(rootParameterIndex, gpuAddress);
-
-  // Track in cached state for draw calls
-  cachedConstantBuffers_[index] = gpuAddress;
-  constantBufferBound_[index] = true;
-
-  // Track transient resource to keep it alive until GPU finishes
-  commandBuffer_.trackTransientResource(uploadBuffer.Get());
-
-  IGL_D3D12_LOG_VERBOSE("bindBytes: Bound %zu bytes (aligned to %zu) to b%zu (root param %u, GPU address 0x%llx)\n",
-               length, alignedSize, index, rootParameterIndex, gpuAddress);
+                                     const void* /*data*/,
+                                     size_t /*length*/) {
+  // D3D12 backend does not support bindBytes
+  // Applications should use uniform buffers (bindBuffer) instead
+  // This is a no-op to maintain compatibility with cross-platform code
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  IGL_LOG_INFO_ONCE("bindBytes is not supported in D3D12 backend. Use bindBuffer with uniform buffers instead.\n");
 }
 void RenderCommandEncoder::bindPushConstants(const void* data,
                                              size_t length,
@@ -906,6 +821,9 @@ void RenderCommandEncoder::draw(size_t vertexCount,
         // Check both per-slot stride and fallback currentVertexStride_
         IGL_DEBUG_ASSERT(vertexStrides_[i] != 0 || currentVertexStride_ != 0,
                          "Vertex buffer bound but no stride from pipeline for this slot - check vertex input layout");
+        if (vertexStrides_[i] == 0 && currentVertexStride_ == 0) {
+          IGL_LOG_INFO_ONCE("Vertex buffer bound to slot %u but no stride from pipeline - using fallback stride of 32 bytes\n", i);
+        }
         stride = currentVertexStride_ ? currentVertexStride_ : 32;
       }
       D3D12_VERTEX_BUFFER_VIEW vbView = {};
@@ -996,6 +914,9 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
         // Check both per-slot stride and fallback currentVertexStride_
         IGL_DEBUG_ASSERT(vertexStrides_[i] != 0 || currentVertexStride_ != 0,
                          "Vertex buffer bound but no stride from pipeline for this slot - check vertex input layout");
+        if (vertexStrides_[i] == 0 && currentVertexStride_ == 0) {
+          IGL_LOG_INFO_ONCE("Vertex buffer bound to slot %u but no stride from pipeline - using fallback stride of 32 bytes\n", i);
+        }
         stride = currentVertexStride_ ? currentVertexStride_ : 32;
       }
       D3D12_VERTEX_BUFFER_VIEW vbView = {};

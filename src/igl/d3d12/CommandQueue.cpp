@@ -77,7 +77,9 @@ void updateFrameFences(D3D12Context& ctx, UINT64 currentFenceValue) {
   frameCtx.commandBufferCount++;
 
 #ifdef IGL_DEBUG
-  IGL_D3D12_LOG_VERBOSE("CommandQueue: Signaled fence for frame %u "
+  // Keep this at IGL_LOG_INFO because the test harness (test_all_sessions.bat) parses
+  // "Signaled fence" from the INFO log; do not downgrade to VERBOSE
+  IGL_LOG_INFO("CommandQueue: Signaled fence for frame %u "
                "(value=%llu, maxAllocatorFence=%llu, cmdBufCount=%u)\n",
                ctx.getCurrentFrameIndex(), currentFenceValue,
                frameCtx.maxAllocatorFence, frameCtx.commandBufferCount);
