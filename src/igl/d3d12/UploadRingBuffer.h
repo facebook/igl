@@ -33,7 +33,7 @@ class UploadRingBuffer {
    * @brief Represents a sub-allocation from the ring buffer
    */
   struct Allocation {
-    Microsoft::WRL::ComPtr<ID3D12Resource> buffer;  // T07: Underlying buffer resource
+    igl::d3d12::ComPtr<ID3D12Resource> buffer;  // T07: Underlying buffer resource
     void* cpuAddress = nullptr;                     // CPU-visible mapped address
     D3D12_GPU_VIRTUAL_ADDRESS gpuAddress = 0;      // GPU virtual address
     uint64_t offset = 0;                            // Offset within ring buffer
@@ -126,7 +126,7 @@ class UploadRingBuffer {
   bool canAllocate(uint64_t size) const;
 
   ID3D12Device* device_ = nullptr;
-  Microsoft::WRL::ComPtr<ID3D12Resource> uploadHeap_;
+  igl::d3d12::ComPtr<ID3D12Resource> uploadHeap_;
   void* cpuBase_ = nullptr;                         // CPU-mapped base address
   D3D12_GPU_VIRTUAL_ADDRESS gpuBase_ = 0;          // GPU base address
 

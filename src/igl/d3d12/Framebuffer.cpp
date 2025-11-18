@@ -16,6 +16,12 @@
 
 namespace igl::d3d12 {
 
+namespace {
+// Import ComPtr for readability
+template<typename T>
+using ComPtr = igl::d3d12::ComPtr<T>;
+} // namespace
+
 Framebuffer::Framebuffer(const FramebufferDesc& desc) : desc_(desc) {}
 
 Framebuffer::~Framebuffer() {
@@ -189,7 +195,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
       readbackDesc.SampleDesc.Count = 1;
       readbackDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-      Microsoft::WRL::ComPtr<ID3D12Resource> newReadback;
+      igl::d3d12::ComPtr<ID3D12Resource> newReadback;
       if (FAILED(device->CreateCommittedResource(&readbackHeap,
                                                  D3D12_HEAP_FLAG_NONE,
                                                  &readbackDesc,
@@ -371,8 +377,8 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
-  Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+  igl::d3d12::ComPtr<ID3D12GraphicsCommandList> commandList;
+  igl::d3d12::ComPtr<ID3D12Fence> fence;
   HANDLE fenceEvent = nullptr;
 
   if (FAILED(device->CreateCommandList(0,
@@ -427,7 +433,7 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
   readbackDesc.SampleDesc.Count = 1;
   readbackDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-  Microsoft::WRL::ComPtr<ID3D12Resource> readbackBuffer;
+  igl::d3d12::ComPtr<ID3D12Resource> readbackBuffer;
   if (FAILED(device->CreateCommittedResource(&readbackHeap,
                                              D3D12_HEAP_FLAG_NONE,
                                              &readbackDesc,
@@ -588,9 +594,9 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
   const uint32_t mipHeight = std::max<uint32_t>(1u, texDims.height >> mipLevel);
 
   // Create temporary command resources for readback
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
-  Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+  igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator;
+  igl::d3d12::ComPtr<ID3D12GraphicsCommandList> commandList;
+  igl::d3d12::ComPtr<ID3D12Fence> fence;
   HANDLE fenceEvent = nullptr;
 
   if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -642,7 +648,7 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
   readbackDesc.SampleDesc.Count = 1;
   readbackDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-  Microsoft::WRL::ComPtr<ID3D12Resource> readbackBuffer;
+  igl::d3d12::ComPtr<ID3D12Resource> readbackBuffer;
   if (FAILED(device->CreateCommittedResource(&readbackHeap,
                                              D3D12_HEAP_FLAG_NONE,
                                              &readbackDesc,
@@ -772,8 +778,8 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   }
 
   // Command list/allocator
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
+  igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator;
+  igl::d3d12::ComPtr<ID3D12GraphicsCommandList> cmdList;
   if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
                                             IID_PPV_ARGS(allocator.GetAddressOf()))) ||
       FAILED(device->CreateCommandList(0,
@@ -825,7 +831,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   d3dQueue->ExecuteCommandLists(1, lists);
 
   // Sync (simple fence)
-  Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+  igl::d3d12::ComPtr<ID3D12Fence> fence;
   if (FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf())))) {
     return;
   }

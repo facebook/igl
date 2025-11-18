@@ -14,6 +14,12 @@
 
 namespace igl::d3d12 {
 
+namespace {
+// Import ComPtr for readability
+template<typename T>
+using ComPtr = igl::d3d12::ComPtr<T>;
+} // namespace
+
 // Static member initialization
 D3D12Context::ResourceStats D3D12Context::resourceStats_;
 std::mutex D3D12Context::resourceStatsMutex_;
@@ -271,7 +277,7 @@ Result D3D12Context::recreateSwapChain(uint32_t width, uint32_t height) {
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating new swapchain (format=%u, flags=0x%X)\n",
                newDesc.Format, newDesc.Flags);
 
-  Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain1;
+  igl::d3d12::ComPtr<IDXGISwapChain1> swapChain1;
   hr = dxgiFactory_->CreateSwapChainForHwnd(
       commandQueue_.Get(),
       hwnd,
@@ -353,7 +359,7 @@ Result D3D12Context::createDevice() {
 
   // A-007: Enable debug layer if configured
   if (enableDebugLayer) {
-    Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
+    igl::d3d12::ComPtr<ID3D12Debug> debugController;
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf())))) {
       debugController->EnableDebugLayer();
       IGL_D3D12_LOG_VERBOSE("D3D12Context: Debug layer ENABLED\n");
@@ -367,7 +373,7 @@ Result D3D12Context::createDevice() {
       // A-007: Enable GPU-Based Validation if configured
       // WARNING: This significantly impacts performance (10-100x slower)
       if (enableGPUValidation) {
-        Microsoft::WRL::ComPtr<ID3D12Debug1> debugController1;
+        igl::d3d12::ComPtr<ID3D12Debug1> debugController1;
         if (SUCCEEDED(debugController->QueryInterface(IID_PPV_ARGS(debugController1.GetAddressOf())))) {
           debugController1->SetEnableGPUBasedValidation(TRUE);
           IGL_D3D12_LOG_VERBOSE("D3D12Context: GPU-Based Validation ENABLED (may slow down rendering 10-100x)\n");
@@ -384,7 +390,7 @@ Result D3D12Context::createDevice() {
 
   // A-007: Enable DRED if configured (Device Removed Extended Data for better crash diagnostics)
   if (enableDRED) {
-    Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> dredSettings1;
+    igl::d3d12::ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> dredSettings1;
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(dredSettings1.GetAddressOf())))) {
       dredSettings1->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
       dredSettings1->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
@@ -429,7 +435,7 @@ Result D3D12Context::createDevice() {
 
   // A-007: Setup info queue with configurable break-on-severity settings
   if (enableDebugLayer) {
-    Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
+    igl::d3d12::ComPtr<ID3D12InfoQueue> infoQueue;
     if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
       // A-007: Configure break-on-severity based on environment variables
       infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);  // Always break on corruption
@@ -607,12 +613,12 @@ Result D3D12Context::enumerateAndSelectAdapter() {
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Enumerating DXGI adapters...\n");
 
   // Try IDXGIFactory6 first for high-performance GPU preference
-  Microsoft::WRL::ComPtr<IDXGIFactory6> factory6;
+  igl::d3d12::ComPtr<IDXGIFactory6> factory6;
   (void)dxgiFactory_->QueryInterface(IID_PPV_ARGS(factory6.GetAddressOf()));
 
   if (factory6.Get()) {
     for (UINT i = 0; ; ++i) {
-      Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter;
+      igl::d3d12::ComPtr<IDXGIAdapter1> adapter;
       if (FAILED(factory6->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
                                                       IID_PPV_ARGS(adapter.GetAddressOf())))) {
         break;
@@ -654,7 +660,7 @@ Result D3D12Context::enumerateAndSelectAdapter() {
   // Fallback enumeration if Factory6 not available
   if (enumeratedAdapters_.empty()) {
     for (UINT i = 0; ; ++i) {
-      Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter;
+      igl::d3d12::ComPtr<IDXGIAdapter1> adapter;
       if (dxgiFactory_->EnumAdapters1(i, adapter.GetAddressOf()) == DXGI_ERROR_NOT_FOUND) {
         break;
       }
@@ -691,9 +697,9 @@ Result D3D12Context::enumerateAndSelectAdapter() {
   }
 
   // Add WARP adapter as fallback option (software rasterizer)
-  Microsoft::WRL::ComPtr<IDXGIAdapter> warpAdapter;
+  igl::d3d12::ComPtr<IDXGIAdapter> warpAdapter;
   if (SUCCEEDED(dxgiFactory_->EnumWarpAdapter(IID_PPV_ARGS(warpAdapter.GetAddressOf())))) {
-    Microsoft::WRL::ComPtr<IDXGIAdapter1> warpAdapter1;
+    igl::d3d12::ComPtr<IDXGIAdapter1> warpAdapter1;
     if (SUCCEEDED(warpAdapter->QueryInterface(IID_PPV_ARGS(warpAdapter1.GetAddressOf())))) {
       AdapterInfo warpInfo{};
       warpInfo.adapter = warpAdapter1;
@@ -816,7 +822,7 @@ void D3D12Context::detectHDRCapabilities() {
   }
 
   // Get the output (monitor) containing the swapchain
-  Microsoft::WRL::ComPtr<IDXGIOutput> output;
+  igl::d3d12::ComPtr<IDXGIOutput> output;
   HRESULT hr = swapChain_->GetContainingOutput(output.GetAddressOf());
   if (FAILED(hr)) {
     IGL_D3D12_LOG_VERBOSE("  Failed to get containing output (0x%08X), HDR not available\n", static_cast<unsigned>(hr));
@@ -824,7 +830,7 @@ void D3D12Context::detectHDRCapabilities() {
   }
 
   // Query for IDXGIOutput6 (required for HDR queries)
-  Microsoft::WRL::ComPtr<IDXGIOutput6> output6;
+  igl::d3d12::ComPtr<IDXGIOutput6> output6;
   hr = output->QueryInterface(IID_PPV_ARGS(output6.GetAddressOf()));
   if (FAILED(hr)) {
     IGL_D3D12_LOG_VERBOSE("  IDXGIOutput6 not available (needs Windows 10 1703+), HDR not supported\n");
@@ -913,7 +919,7 @@ Result D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height)
   // Query tearing support capability (required for variable refresh rate displays)
   // This capability must be queried before creating the swapchain
   BOOL allowTearing = FALSE;
-  Microsoft::WRL::ComPtr<IDXGIFactory5> factory5;
+  igl::d3d12::ComPtr<IDXGIFactory5> factory5;
   if (SUCCEEDED(dxgiFactory_.Get()->QueryInterface(IID_PPV_ARGS(factory5.GetAddressOf())))) {
     if (SUCCEEDED(factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING,
                                                 &allowTearing,
@@ -929,7 +935,7 @@ Result D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height)
   // Without this flag, using DXGI_PRESENT_ALLOW_TEARING in Present() is invalid
   swapChainDesc.Flags = tearingSupported_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
-  Microsoft::WRL::ComPtr<IDXGISwapChain1> tempSwapChain;
+  igl::d3d12::ComPtr<IDXGISwapChain1> tempSwapChain;
   HRESULT hr = dxgiFactory_->CreateSwapChainForHwnd(
       commandQueue_.Get(),
       hwnd,
@@ -957,7 +963,7 @@ Result D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height)
     legacy.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
     legacy.Flags = 0;
 
-    Microsoft::WRL::ComPtr<IDXGISwapChain> legacySwap;
+    igl::d3d12::ComPtr<IDXGISwapChain> legacySwap;
     HRESULT hr2 = dxgiFactory_->CreateSwapChain(commandQueue_.Get(), &legacy, legacySwap.GetAddressOf());
     if (FAILED(hr2)) {
       IGL_LOG_ERROR("D3D12Context: Failed to create swapchain (hr=0x%08X / 0x%08X)\n", (unsigned)hr, (unsigned)hr2);
@@ -1074,7 +1080,7 @@ Result D3D12Context::createDescriptorHeaps() {
     // CBV/SRV/UAV heap: Start with one page of descriptorsPerPage descriptors
     // Additional pages will be allocated on-demand up to maxHeapPages
     {
-      Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> initialHeap;
+      igl::d3d12::ComPtr<ID3D12DescriptorHeap> initialHeap;
       Result result = allocateDescriptorHeapPage(
           D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
           config_.descriptorsPerPage,
@@ -1304,7 +1310,7 @@ void D3D12Context::logResourceStats() {
 Result D3D12Context::allocateDescriptorHeapPage(
     D3D12_DESCRIPTOR_HEAP_TYPE type,
     uint32_t numDescriptors,
-    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>* outHeap) {
+    igl::d3d12::ComPtr<ID3D12DescriptorHeap>* outHeap) {
   if (!device_.Get()) {
     return Result{Result::Code::RuntimeError, "Device is null"};
   }

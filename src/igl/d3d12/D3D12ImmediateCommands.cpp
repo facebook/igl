@@ -191,7 +191,7 @@ void D3D12ImmediateCommands::reclaimCompletedAllocators() {
 }
 
 Result D3D12ImmediateCommands::getOrCreateAllocator(
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator>* outAllocator) {
+    igl::d3d12::ComPtr<ID3D12CommandAllocator>* outAllocator) {
   // Try to reuse an available allocator
   if (!availableAllocators_.empty()) {
     *outAllocator = availableAllocators_.back().allocator;

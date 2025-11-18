@@ -82,10 +82,10 @@ class DescriptorHeapManager {
 
  private:
   // Heaps
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> cbvSrvUavHeap_;
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> samplerHeap_;
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvHeap_;
+  igl::d3d12::ComPtr<ID3D12DescriptorHeap> cbvSrvUavHeap_;
+  igl::d3d12::ComPtr<ID3D12DescriptorHeap> samplerHeap_;
+  igl::d3d12::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
+  igl::d3d12::ComPtr<ID3D12DescriptorHeap> dsvHeap_;
 
   // Increments
   UINT cbvSrvUavDescriptorSize_ = 0;

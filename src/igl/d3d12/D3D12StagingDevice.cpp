@@ -65,7 +65,7 @@ D3D12StagingDevice::StagingBuffer D3D12StagingDevice::allocateUpload(size_t size
   // Reclaim completed buffers
   reclaimCompletedBuffers();
 
-  Microsoft::WRL::ComPtr<ID3D12Resource> buffer;
+  igl::d3d12::ComPtr<ID3D12Resource> buffer;
 
   // Try to find a reusable buffer
   if (!findReusableBuffer(size, false, &buffer)) {
@@ -102,7 +102,7 @@ D3D12StagingDevice::StagingBuffer D3D12StagingDevice::allocateReadback(size_t si
   // Reclaim completed buffers
   reclaimCompletedBuffers();
 
-  Microsoft::WRL::ComPtr<ID3D12Resource> buffer;
+  igl::d3d12::ComPtr<ID3D12Resource> buffer;
 
   // Try to find a reusable buffer
   if (!findReusableBuffer(size, true, &buffer)) {
@@ -179,7 +179,7 @@ void D3D12StagingDevice::reclaimCompletedBuffers() {
 Result D3D12StagingDevice::createStagingBuffer(
     size_t size,
     bool forReadback,
-    Microsoft::WRL::ComPtr<ID3D12Resource>* outBuffer) {
+    igl::d3d12::ComPtr<ID3D12Resource>* outBuffer) {
   D3D12_HEAP_PROPERTIES heapProps{};
   heapProps.Type = forReadback ? D3D12_HEAP_TYPE_READBACK : D3D12_HEAP_TYPE_UPLOAD;
 
@@ -216,7 +216,7 @@ Result D3D12StagingDevice::createStagingBuffer(
 
 bool D3D12StagingDevice::findReusableBuffer(size_t size,
                                             bool forReadback,
-                                            Microsoft::WRL::ComPtr<ID3D12Resource>* outBuffer) {
+                                            igl::d3d12::ComPtr<ID3D12Resource>* outBuffer) {
   // Find a buffer that matches type and is large enough
   for (auto it = availableBuffers_.begin(); it != availableBuffers_.end(); ++it) {
     if (it->isReadback == forReadback && it->size >= size) {

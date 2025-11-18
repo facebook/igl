@@ -204,7 +204,7 @@ Result executeCopyTextureToBuffer(D3D12Context& ctx,
         uploadDesc.SampleDesc.Count = 1;
         uploadDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-        Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
+        igl::d3d12::ComPtr<ID3D12Resource> uploadBuffer;
         HRESULT hr = device->CreateCommittedResource(&uploadHeap,
                                                       D3D12_HEAP_FLAG_NONE,
                                                       &uploadDesc,

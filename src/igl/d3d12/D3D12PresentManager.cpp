@@ -89,7 +89,7 @@ bool PresentManager::checkDeviceStatus(const char* contextStr) {
 }
 
 void PresentManager::logInfoQueueMessages(ID3D12Device* device) {
-  Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
+  igl::d3d12::ComPtr<ID3D12InfoQueue> infoQueue;
   if (FAILED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
     return;
   }
@@ -122,7 +122,7 @@ void PresentManager::logInfoQueueMessages(ID3D12Device* device) {
 
 void PresentManager::logDredInfo(ID3D12Device* device) {
 #if defined(__ID3D12DeviceRemovedExtendedData1_INTERFACE_DEFINED__)
-  Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedData1> dred;
+  igl::d3d12::ComPtr<ID3D12DeviceRemovedExtendedData1> dred;
   if (FAILED(device->QueryInterface(IID_PPV_ARGS(dred.GetAddressOf())))) {
     IGL_D3D12_LOG_VERBOSE("DRED: ID3D12DeviceRemovedExtendedData1 not available.\n");
     return;

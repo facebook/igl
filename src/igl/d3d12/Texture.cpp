@@ -16,6 +16,12 @@
 
 namespace igl::d3d12 {
 
+namespace {
+// Import ComPtr for readability
+template<typename T>
+using ComPtr = igl::d3d12::ComPtr<T>;
+} // namespace
+
 std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
                                                      TextureFormat format,
                                                      const TextureDesc& desc,
@@ -232,7 +238,7 @@ Result Texture::upload(const TextureRangeDesc& range,
   }
 
   // Fallback: Create temporary staging buffer if ring buffer allocation failed
-  Microsoft::WRL::ComPtr<ID3D12Resource> stagingBuffer;
+  igl::d3d12::ComPtr<ID3D12Resource> stagingBuffer;
   void* mappedData = nullptr;
   uint64_t stagingBaseOffset = 0;
   HRESULT hr = S_OK;
@@ -316,7 +322,7 @@ Result Texture::upload(const TextureRangeDesc& range,
   }
 
   // P0_DX12-005: Get command allocator from pool with fence tracking
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAlloc;
+  igl::d3d12::ComPtr<ID3D12CommandAllocator> cmdAlloc;
   if (iglDevice_) {
     cmdAlloc = iglDevice_->getUploadCommandAllocator();
     if (!cmdAlloc.Get()) {
@@ -330,7 +336,7 @@ Result Texture::upload(const TextureRangeDesc& range,
     }
   }
 
-  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
+  igl::d3d12::ComPtr<ID3D12GraphicsCommandList> cmdList;
   hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAlloc.Get(), nullptr,
                                    IID_PPV_ARGS(cmdList.GetAddressOf()));
   if (FAILED(hr)) {
@@ -422,7 +428,7 @@ Result Texture::upload(const TextureRangeDesc& range,
   } else {
     // Fallback for textures without iglDevice_ (shouldn't happen in normal flow)
     // In this case, we need to wait synchronously since we can't track the buffer
-    Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+    igl::d3d12::ComPtr<ID3D12Fence> fence;
     hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf()));
     if (FAILED(hr)) {
       return Result(Result::Code::RuntimeError, "Failed to create fence");
@@ -542,7 +548,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     if (rawOldResource) {
       rawOldResource->AddRef();
     }
-    Microsoft::WRL::ComPtr<ID3D12Resource> oldResource;
+    igl::d3d12::ComPtr<ID3D12Resource> oldResource;
     oldResource.Attach(rawOldResource);
 
     // Modify descriptor to add RENDER_TARGET flag
@@ -555,7 +561,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     D3D12_CLEAR_VALUE clearValue = {};
     clearValue.Format = resourceDesc.Format;
 
-    Microsoft::WRL::ComPtr<ID3D12Resource> newResource;
+    igl::d3d12::ComPtr<ID3D12Resource> newResource;
     HRESULT hr = device_->CreateCommittedResource(
         &heapProps,
         D3D12_HEAP_FLAG_NONE,
@@ -570,8 +576,8 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     }
 
     // Copy mip 0 from old resource to new resource
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> copyAlloc;
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> copyList;
+    igl::d3d12::ComPtr<ID3D12CommandAllocator> copyAlloc;
+    igl::d3d12::ComPtr<ID3D12GraphicsCommandList> copyList;
     if (FAILED(device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(copyAlloc.GetAddressOf())))) {
       IGL_LOG_ERROR("Texture::generateMipmap() - Failed to create copy command allocator\n");
       return;
@@ -617,7 +623,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     queue_->ExecuteCommandLists(1, copyLists);
 
     // Wait for copy to complete
-    Microsoft::WRL::ComPtr<ID3D12Fence> copyFence;
+    igl::d3d12::ComPtr<ID3D12Fence> copyFence;
     if (FAILED(device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(copyFence.GetAddressOf())))) {
       IGL_LOG_ERROR("Texture::generateMipmap() - Failed to create copy fence\n");
       return;
@@ -635,7 +641,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     // oldResource will be automatically released by ComPtr destructor
 
     // Replace resource with new one (need const_cast since function is const)
-    auto& mutableResource = const_cast<Microsoft::WRL::ComPtr<ID3D12Resource>&>(resource_);
+    auto& mutableResource = const_cast<igl::d3d12::ComPtr<ID3D12Resource>&>(resource_);
     mutableResource.Reset();
     mutableResource = std::move(newResource);
 
@@ -679,11 +685,11 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
   rsDesc.pParameters = params;
   rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-  Microsoft::WRL::ComPtr<ID3DBlob> sig, err;
+  igl::d3d12::ComPtr<ID3DBlob> sig, err;
   if (FAILED(D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, sig.GetAddressOf(), err.GetAddressOf()))) {
     return;
   }
-  Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSig;
+  igl::d3d12::ComPtr<ID3D12RootSignature> rootSig;
   if (FAILED(device_->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(), IID_PPV_ARGS(rootSig.GetAddressOf())))) {
     return;
   }
@@ -762,7 +768,7 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   pso.RTVFormats[0] = resourceDesc.Format;
   pso.DSVFormat = DXGI_FORMAT_UNKNOWN;
 
-  Microsoft::WRL::ComPtr<ID3D12PipelineState> psoObj;
+  igl::d3d12::ComPtr<ID3D12PipelineState> psoObj;
   if (FAILED(device_->CreateGraphicsPipelineState(&pso, IID_PPV_ARGS(psoObj.GetAddressOf())))) {
     return;
   }
@@ -773,14 +779,14 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
   srvHeapDesc.NumDescriptors = numMipLevels_ - 1;  // One SRV per source mip level
   srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvHeap;
+  igl::d3d12::ComPtr<ID3D12DescriptorHeap> srvHeap;
   if (FAILED(device_->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(srvHeap.GetAddressOf())))) return;
 
   D3D12_DESCRIPTOR_HEAP_DESC smpHeapDesc = {};
   smpHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
   smpHeapDesc.NumDescriptors = 1;
   smpHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> smpHeap;
+  igl::d3d12::ComPtr<ID3D12DescriptorHeap> smpHeap;
   if (FAILED(device_->CreateDescriptorHeap(&smpHeapDesc, IID_PPV_ARGS(smpHeap.GetAddressOf())))) return;
 
   // Pre-creation validation (TASK_P0_DX12-004)
@@ -797,8 +803,8 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   IGL_DEBUG_ASSERT(smpHandle.ptr != 0, "Sampler descriptor handle is invalid");
   device_->CreateSampler(&samp, smpHandle);
 
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> alloc;
-  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> list;
+  igl::d3d12::ComPtr<ID3D12CommandAllocator> alloc;
+  igl::d3d12::ComPtr<ID3D12GraphicsCommandList> list;
   if (FAILED(device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(alloc.GetAddressOf())))) return;
   if (FAILED(device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, alloc.Get(), psoObj.Get(), IID_PPV_ARGS(list.GetAddressOf())))) return;
 
@@ -818,7 +824,7 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
   rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
   rtvHeapDesc.NumDescriptors = 1;
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap;
+  igl::d3d12::ComPtr<ID3D12DescriptorHeap> rtvHeap;
   if (FAILED(device_->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(rtvHeap.GetAddressOf())))) return;
   D3D12_CPU_DESCRIPTOR_HANDLE rtvCpu = rtvHeap->GetCPUDescriptorHandleForHeapStart();
 
@@ -885,7 +891,7 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   ID3D12CommandList* lists[] = {list.Get()};
   queue_->ExecuteCommandLists(1, lists);
 
-  Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+  igl::d3d12::ComPtr<ID3D12Fence> fence;
   if (FAILED(device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf())))) return;
   HANDLE evt = CreateEvent(nullptr, FALSE, FALSE, nullptr);
   if (!evt) return;
@@ -942,11 +948,11 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDe
   rsDesc.NumParameters = 2;
   rsDesc.pParameters = params;
   rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-  Microsoft::WRL::ComPtr<ID3DBlob> sig, err;
+  igl::d3d12::ComPtr<ID3DBlob> sig, err;
   if (FAILED(D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, sig.GetAddressOf(), err.GetAddressOf()))) {
     return;
   }
-  Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSig;
+  igl::d3d12::ComPtr<ID3D12RootSignature> rootSig;
   if (FAILED(device_->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(), IID_PPV_ARGS(rootSig.GetAddressOf())))) {
     return;
   }
@@ -1023,7 +1029,7 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   pso.NumRenderTargets = 1;
   pso.RTVFormats[0] = resourceDesc.Format;
   pso.DSVFormat = DXGI_FORMAT_UNKNOWN;
-  Microsoft::WRL::ComPtr<ID3D12PipelineState> psoObj;
+  igl::d3d12::ComPtr<ID3D12PipelineState> psoObj;
   if (FAILED(device_->CreateGraphicsPipelineState(&pso, IID_PPV_ARGS(psoObj.GetAddressOf())))) return;
   // Create descriptor heap large enough for all mip levels
   // We need one SRV descriptor per mip level (numMipLevels_ - 1 blits)
@@ -1031,14 +1037,14 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
   srvHeapDesc.NumDescriptors = numMipLevels_ - 1;  // One SRV per source mip level
   srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvHeap;
+  igl::d3d12::ComPtr<ID3D12DescriptorHeap> srvHeap;
   if (FAILED(device_->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(srvHeap.GetAddressOf())))) return;
   D3D12_DESCRIPTOR_HEAP_DESC smpHeapDesc = {};
   smpHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
   smpHeapDesc.NumDescriptors = 1;
   smpHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> smpHeap;
+  igl::d3d12::ComPtr<ID3D12DescriptorHeap> smpHeap;
   if (FAILED(device_->CreateDescriptorHeap(&smpHeapDesc, IID_PPV_ARGS(smpHeap.GetAddressOf())))) return;
 
   // Pre-creation validation (TASK_P0_DX12-004)
@@ -1053,8 +1059,8 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   D3D12_CPU_DESCRIPTOR_HANDLE smpHandle = smpHeap->GetCPUDescriptorHandleForHeapStart();
   IGL_DEBUG_ASSERT(smpHandle.ptr != 0, "Sampler descriptor handle is invalid");
   device_->CreateSampler(&samp, smpHandle);
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> alloc;
-  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> list;
+  igl::d3d12::ComPtr<ID3D12CommandAllocator> alloc;
+  igl::d3d12::ComPtr<ID3D12GraphicsCommandList> list;
   if (FAILED(device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(alloc.GetAddressOf())))) return;
   if (FAILED(device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, alloc.Get(), psoObj.Get(), IID_PPV_ARGS(list.GetAddressOf())))) return;
   ID3D12DescriptorHeap* heaps[] = {srvHeap.Get(), smpHeap.Get()};
@@ -1072,7 +1078,7 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
   rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
   rtvHeapDesc.NumDescriptors = 1;
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap;
+  igl::d3d12::ComPtr<ID3D12DescriptorHeap> rtvHeap;
   if (FAILED(device_->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(rtvHeap.GetAddressOf())))) return;
   D3D12_CPU_DESCRIPTOR_HANDLE rtvCpu = rtvHeap->GetCPUDescriptorHandleForHeapStart();
 
@@ -1136,7 +1142,7 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   list->Close();
   ID3D12CommandList* lists[] = {list.Get()};
   queue_->ExecuteCommandLists(1, lists);
-  Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+  igl::d3d12::ComPtr<ID3D12Fence> fence;
   if (FAILED(device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf())))) return;
   HANDLE evt = CreateEvent(nullptr, FALSE, FALSE, nullptr);
   if (!evt) return;

@@ -34,7 +34,7 @@ constexpr D3D12_RESOURCE_DESC makeBufferDesc(UINT64 size, D3D12_RESOURCE_FLAGS f
 } // namespace
 
 Buffer::Buffer(Device& device,
-               Microsoft::WRL::ComPtr<ID3D12Resource> resource,
+               igl::d3d12::ComPtr<ID3D12Resource> resource,
                const BufferDesc& desc,
                D3D12_RESOURCE_STATES initialState)
     : device_(&device),
@@ -151,7 +151,7 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   }
 
   // Fallback: create temporary upload buffer if ring buffer allocation failed
-  Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
+  igl::d3d12::ComPtr<ID3D12Resource> uploadBuffer;
   HRESULT hr = S_OK;
 
   if (!useRingBuffer) {
@@ -179,12 +179,12 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   }
 
   // P0_DX12-005: Get command allocator from pool with fence tracking
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator = device_->getUploadCommandAllocator();
+  igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator = device_->getUploadCommandAllocator();
   if (!allocator.Get()) {
     return Result(Result::Code::RuntimeError, "Failed to get command allocator from pool");
   }
 
-  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
+  igl::d3d12::ComPtr<ID3D12GraphicsCommandList> cmdList;
   hr = d3dDevice->CreateCommandList(0,
                                     D3D12_COMMAND_LIST_TYPE_DIRECT,
                                     allocator.Get(),
@@ -416,7 +416,7 @@ void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
       return nullptr;
     }
 
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
+    igl::d3d12::ComPtr<ID3D12GraphicsCommandList> cmdList;
     if (FAILED(d3dDevice->CreateCommandList(0,
                                             D3D12_COMMAND_LIST_TYPE_DIRECT,
                                             allocator.Get(),

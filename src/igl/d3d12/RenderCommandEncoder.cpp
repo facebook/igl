@@ -297,7 +297,7 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
         }
       } else {
         // Fallback: transient heap
-        Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> tmpHeap;
+        igl::d3d12::ComPtr<ID3D12DescriptorHeap> tmpHeap;
         D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
         dsvHeapDesc.NumDescriptors = 1;
         dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
@@ -953,7 +953,7 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   if (kLogDrawErrors) {
     auto* device = commandBuffer_.getContext().getDevice();
     if (device) {
-      Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
+      igl::d3d12::ComPtr<ID3D12InfoQueue> infoQueue;
       if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
         const UINT64 messageCount = infoQueue->GetNumStoredMessages();
         for (UINT64 i = 0; i < messageCount; ++i) {

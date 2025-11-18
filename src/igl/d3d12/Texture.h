@@ -91,7 +91,7 @@ class Texture final : public ITexture {
                         const uint32_t* mipLevelBytes = nullptr) const override;
 
  private:
-  Microsoft::WRL::ComPtr<ID3D12Resource> resource_;
+  igl::d3d12::ComPtr<ID3D12Resource> resource_;
   ID3D12Device* device_ = nullptr; // Non-owning pointer
   ID3D12CommandQueue* queue_ = nullptr; // Non-owning pointer
   class Device* iglDevice_ = nullptr; // Non-owning pointer to igl::d3d12::Device for upload operations (P0_DX12-005)

@@ -52,11 +52,11 @@ class Framebuffer final : public IFramebuffer {
 
  private:
   struct ReadbackResources {
-    Microsoft::WRL::ComPtr<ID3D12Resource> readbackBuffer;
+    igl::d3d12::ComPtr<ID3D12Resource> readbackBuffer;
     uint64_t readbackBufferSize = 0;
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
-    Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+    igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator;
+    igl::d3d12::ComPtr<ID3D12GraphicsCommandList> commandList;
+    igl::d3d12::ComPtr<ID3D12Fence> fence;
     HANDLE fenceEvent = nullptr;
     uint64_t lastFenceValue = 0;
     std::vector<uint8_t> cachedData;

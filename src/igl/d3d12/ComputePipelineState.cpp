@@ -15,8 +15,8 @@
 namespace igl::d3d12 {
 
 ComputePipelineState::ComputePipelineState(const ComputePipelineDesc& desc,
-                                           Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState,
-                                           Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature)
+                                           igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState,
+                                           igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature)
     : desc_(desc),
       pipelineState_(std::move(pipelineState)),
       rootSignature_(std::move(rootSignature)) {
@@ -74,7 +74,7 @@ ComputePipelineState::computePipelineReflection() {
   }
 
   // Create shader reflection interface using D3DReflect
-  Microsoft::WRL::ComPtr<ID3D12ShaderReflection> refl;
+  igl::d3d12::ComPtr<ID3D12ShaderReflection> refl;
   if (FAILED(D3DReflect(bc.data(), bc.size(), IID_PPV_ARGS(refl.GetAddressOf())))) {
     return out;
   }

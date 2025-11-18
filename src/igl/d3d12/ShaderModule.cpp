@@ -10,7 +10,7 @@
 
 namespace igl::d3d12 {
 
-void ShaderModule::setReflection(Microsoft::WRL::ComPtr<ID3D12ShaderReflection> reflection) {
+void ShaderModule::setReflection(igl::d3d12::ComPtr<ID3D12ShaderReflection> reflection) {
   reflection_ = reflection;
   if (reflection_.Get()) {
     extractShaderMetadata();

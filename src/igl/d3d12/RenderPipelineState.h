@@ -15,8 +15,8 @@ namespace igl::d3d12 {
 class RenderPipelineState final : public IRenderPipelineState {
  public:
   RenderPipelineState(const RenderPipelineDesc& desc,
-                      Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState,
-                      Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature);
+                      igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState,
+                      igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature);
   ~RenderPipelineState() override = default;
 
   std::shared_ptr<IRenderPipelineReflection> renderPipelineReflection() override;
@@ -33,8 +33,8 @@ class RenderPipelineState final : public IRenderPipelineState {
   D3D_PRIMITIVE_TOPOLOGY getPrimitiveTopology() const { return primitiveTopology_; }
 
  private:
-  Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState_;
-  Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
+  igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState_;
+  igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature_;
   std::shared_ptr<IRenderPipelineReflection> reflection_;
   uint32_t vertexStride_ = 0;
   uint32_t vertexStrides_[IGL_BUFFER_BINDINGS_MAX] = {};

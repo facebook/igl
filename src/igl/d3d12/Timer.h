@@ -71,8 +71,8 @@ class Timer final : public ITimer {
   [[nodiscard]] bool resultsAvailable() const override;
 
  private:
-  Microsoft::WRL::ComPtr<ID3D12QueryHeap> queryHeap_;
-  Microsoft::WRL::ComPtr<ID3D12Resource> readbackBuffer_;
+  igl::d3d12::ComPtr<ID3D12QueryHeap> queryHeap_;
+  igl::d3d12::ComPtr<ID3D12Resource> readbackBuffer_;
   uint64_t timestampFrequency_ = 0;  // GPU timestamp frequency (ticks per second), 0 = timer disabled
   bool resourceCreationFailed_ = false;  // Track if constructor failed to create resources
 

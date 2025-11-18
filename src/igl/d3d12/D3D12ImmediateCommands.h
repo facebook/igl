@@ -109,7 +109,7 @@ private:
    */
   void reclaimCompletedAllocators();
   struct AllocatorEntry {
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+    igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator;
     uint64_t fenceValue = 0;  // Fence value when this allocator was last used
   };
 
@@ -119,10 +119,10 @@ private:
   IFenceProvider* fenceProvider_ = nullptr;  // Provides fence values from shared timeline
 
   // Current command list for recording
-  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList_;
+  igl::d3d12::ComPtr<ID3D12GraphicsCommandList> cmdList_;
 
   // Current allocator being used
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> currentAllocator_;
+  igl::d3d12::ComPtr<ID3D12CommandAllocator> currentAllocator_;
 
   // Pool of available allocators
   std::vector<AllocatorEntry> availableAllocators_;
@@ -135,7 +135,7 @@ private:
 
   // Get or create an allocator from the pool
   [[nodiscard]] Result getOrCreateAllocator(
-      Microsoft::WRL::ComPtr<ID3D12CommandAllocator>* outAllocator);
+      igl::d3d12::ComPtr<ID3D12CommandAllocator>* outAllocator);
 };
 
 } // namespace igl::d3d12

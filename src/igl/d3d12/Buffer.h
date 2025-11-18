@@ -18,7 +18,7 @@ class Device;
 class Buffer final : public IBuffer, public std::enable_shared_from_this<Buffer> {
  public:
   Buffer(Device& device,
-         Microsoft::WRL::ComPtr<ID3D12Resource> resource,
+         igl::d3d12::ComPtr<ID3D12Resource> resource,
          const BufferDesc& desc,
          D3D12_RESOURCE_STATES initialState);
   ~Buffer() override;
@@ -47,7 +47,7 @@ class Buffer final : public IBuffer, public std::enable_shared_from_this<Buffer>
   [[nodiscard]] D3D12_RESOURCE_STATES computeDefaultState(const BufferDesc& desc) const;
 
   Device* device_ = nullptr;
-  Microsoft::WRL::ComPtr<ID3D12Resource> resource_;
+  igl::d3d12::ComPtr<ID3D12Resource> resource_;
   BufferDesc desc_;
   void* mappedPtr_ = nullptr;
   ResourceStorage storage_ = ResourceStorage::Private;
@@ -56,7 +56,7 @@ class Buffer final : public IBuffer, public std::enable_shared_from_this<Buffer>
   D3D12_RESOURCE_STATES currentState_ = D3D12_RESOURCE_STATE_COMMON;
 
   // Staging buffer for mapping DEFAULT heap storage buffers requested as Shared
-  Microsoft::WRL::ComPtr<ID3D12Resource> readbackStagingBuffer_;
+  igl::d3d12::ComPtr<ID3D12Resource> readbackStagingBuffer_;
 };
 
 } // namespace igl::d3d12

@@ -12,6 +12,12 @@
 
 namespace igl::d3d12 {
 
+namespace {
+// Import ComPtr for readability
+template<typename T>
+using ComPtr = igl::d3d12::ComPtr<T>;
+} // namespace
+
 DXCCompiler::DXCCompiler() = default;
 DXCCompiler::~DXCCompiler() = default;
 
@@ -78,7 +84,7 @@ Result DXCCompiler::compile(
                sourceLength);
 
   // Create source blob
-  Microsoft::WRL::ComPtr<IDxcBlobEncoding> sourceBlob;
+  igl::d3d12::ComPtr<IDxcBlobEncoding> sourceBlob;
   HRESULT hr = utils_->CreateBlob(source, static_cast<UINT32>(sourceLength), CP_UTF8, sourceBlob.GetAddressOf());
   if (FAILED(hr)) {
     IGL_LOG_ERROR("DXCCompiler: Failed to create source blob: 0x%08X\n", static_cast<unsigned>(hr));
@@ -129,7 +135,7 @@ Result DXCCompiler::compile(
   sourceBuffer.Size = sourceBlob->GetBufferSize();
   sourceBuffer.Encoding = CP_UTF8;
 
-  Microsoft::WRL::ComPtr<IDxcResult> result;
+  igl::d3d12::ComPtr<IDxcResult> result;
   hr = compiler_->Compile(
       &sourceBuffer,
       arguments.data(),
@@ -148,8 +154,8 @@ Result DXCCompiler::compile(
   result->GetStatus(&compileStatus);
 
   // Get errors/warnings
-  Microsoft::WRL::ComPtr<IDxcBlobUtf8> errors;
-  Microsoft::WRL::ComPtr<IDxcBlobWide> errorsName;
+  igl::d3d12::ComPtr<IDxcBlobUtf8> errors;
+  igl::d3d12::ComPtr<IDxcBlobWide> errorsName;
   result->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(errors.GetAddressOf()), errorsName.GetAddressOf());
   if (errors.Get() && errors->GetStringLength() > 0) {
     outErrors = std::string(errors->GetStringPointer(), errors->GetStringLength());
@@ -169,8 +175,8 @@ Result DXCCompiler::compile(
   }
 
   // Get compiled bytecode (DXIL)
-  Microsoft::WRL::ComPtr<IDxcBlob> bytecode;
-  Microsoft::WRL::ComPtr<IDxcBlobWide> bytecodeName;
+  igl::d3d12::ComPtr<IDxcBlob> bytecode;
+  igl::d3d12::ComPtr<IDxcBlobWide> bytecodeName;
   result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(bytecode.GetAddressOf()), bytecodeName.GetAddressOf());
 
   if (!bytecode.Get()) {
@@ -181,7 +187,7 @@ Result DXCCompiler::compile(
   // Validate and sign DXIL if validator is available
   if (validator_.Get()) {
     IGL_D3D12_LOG_VERBOSE("DXCCompiler: Attempting DXIL validation and signing...\n");
-    Microsoft::WRL::ComPtr<IDxcOperationResult> validationResult;
+    igl::d3d12::ComPtr<IDxcOperationResult> validationResult;
     hr = validator_->Validate(bytecode.Get(), DxcValidatorFlags_InPlaceEdit, validationResult.GetAddressOf());
 
     if (SUCCEEDED(hr)) {
@@ -191,7 +197,7 @@ Result DXCCompiler::compile(
 
       if (SUCCEEDED(validationStatus)) {
         // Get the validated (signed) bytecode - this replaces the original
-        Microsoft::WRL::ComPtr<IDxcBlob> validatedBlob;
+        igl::d3d12::ComPtr<IDxcBlob> validatedBlob;
         validationResult->GetResult(validatedBlob.GetAddressOf());
 
         if (validatedBlob.Get()) {
@@ -205,7 +211,7 @@ Result DXCCompiler::compile(
         }
       } else {
         // Validation failed - get error messages
-        Microsoft::WRL::ComPtr<IDxcBlobEncoding> validationErrors;
+        igl::d3d12::ComPtr<IDxcBlobEncoding> validationErrors;
         validationResult->GetErrorBuffer(validationErrors.GetAddressOf());
         if (validationErrors.Get() && validationErrors->GetBufferSize() > 0) {
           std::string errMsg(static_cast<const char*>(validationErrors->GetBufferPointer()),

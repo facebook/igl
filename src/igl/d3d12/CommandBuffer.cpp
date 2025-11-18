@@ -117,7 +117,7 @@ Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
     }
 
     // Allocate new page
-    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> newHeap;
+    igl::d3d12::ComPtr<ID3D12DescriptorHeap> newHeap;
     Result result = ctx.allocateDescriptorHeapPage(
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
         kDescriptorsPerPage,
@@ -219,7 +219,7 @@ Result CommandBuffer::allocateCbvSrvUavRange(uint32_t count, uint32_t* outBaseDe
     }
 
     // Allocate new page
-    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> newHeap;
+    igl::d3d12::ComPtr<ID3D12DescriptorHeap> newHeap;
     Result result = ctx.allocateDescriptorHeapPage(
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
         kDescriptorsPerPage,
@@ -347,7 +347,7 @@ void CommandBuffer::trackTransientResource(ID3D12Resource* resource) {
   const uint32_t frameIdx = ctx.getCurrentFrameIndex();
   auto& frameCtx = ctx.getFrameContexts()[frameIdx];
 
-  Microsoft::WRL::ComPtr<ID3D12Resource> keepAlive;
+  igl::d3d12::ComPtr<ID3D12Resource> keepAlive;
   resource->AddRef();
   keepAlive.Attach(resource);
   frameCtx.transientResources.push_back(std::move(keepAlive));
@@ -563,7 +563,7 @@ void CommandBuffer::waitUntilCompleted() {
 
   // Signal a fence and wait for it
   // This ensures all previously submitted command lists have completed on the GPU
-  Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+  igl::d3d12::ComPtr<ID3D12Fence> fence;
   auto* device = ctx.getDevice();
   if (!device || FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf())))) {
     return;
@@ -659,7 +659,7 @@ void CommandBuffer::copyBuffer(IBuffer& source,
     desc.Format = DXGI_FORMAT_UNKNOWN;
     desc.SampleDesc.Count = 1;
     desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-    Microsoft::WRL::ComPtr<ID3D12Resource> readback;
+    igl::d3d12::ComPtr<ID3D12Resource> readback;
     HRESULT hr = device->CreateCommittedResource(&readbackHeap,
                                                   D3D12_HEAP_FLAG_NONE,
                                                   &desc,
@@ -671,8 +671,8 @@ void CommandBuffer::copyBuffer(IBuffer& source,
       return;
     }
 
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> list;
+    igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator;
+    igl::d3d12::ComPtr<ID3D12GraphicsCommandList> list;
     if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
                                               IID_PPV_ARGS(allocator.GetAddressOf()))) ||
         FAILED(device->CreateCommandList(0,
@@ -722,8 +722,8 @@ void CommandBuffer::copyBuffer(IBuffer& source,
   }
 
   // Default path: copy using a transient command list to DEFAULT/COMMON destinations
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> list;
+  igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator;
+  igl::d3d12::ComPtr<ID3D12GraphicsCommandList> list;
   if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
                                             IID_PPV_ARGS(allocator.GetAddressOf()))) ||
       FAILED(device->CreateCommandList(0,

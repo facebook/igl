@@ -7,6 +7,12 @@
 
 namespace igl::d3d12 {
 
+namespace {
+// Import ComPtr for readability
+template<typename T>
+using ComPtr = igl::d3d12::ComPtr<T>;
+} // namespace
+
 HeadlessD3D12Context::~HeadlessD3D12Context() = default;
 
 Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
@@ -23,7 +29,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
 
   // Try to enable debug layer if available (ignore failures)
   {
-    Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
+    igl::d3d12::ComPtr<ID3D12Debug> debugController;
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf())))) {
       debugController->EnableDebugLayer();
       IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Debug layer enabled\n");
@@ -57,7 +63,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
 
   // Helper function to try creating device with progressive feature level fallback (A-004)
   auto tryCreateDeviceWithFallback =
-      [](IDXGIAdapter1* adapter, D3D_FEATURE_LEVEL& outFeatureLevel) -> Microsoft::WRL::ComPtr<ID3D12Device> {
+      [](IDXGIAdapter1* adapter, D3D_FEATURE_LEVEL& outFeatureLevel) -> igl::d3d12::ComPtr<ID3D12Device> {
     const D3D_FEATURE_LEVEL featureLevels[] = {
         D3D_FEATURE_LEVEL_12_2,
         D3D_FEATURE_LEVEL_12_1,
@@ -66,7 +72,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
         D3D_FEATURE_LEVEL_11_0,
     };
 
-    Microsoft::WRL::ComPtr<ID3D12Device> device;
+    igl::d3d12::ComPtr<ID3D12Device> device;
     for (D3D_FEATURE_LEVEL fl : featureLevels) {
       HRESULT hr = D3D12CreateDevice(adapter, fl, IID_PPV_ARGS(device.GetAddressOf()));
       if (SUCCEEDED(hr)) {
@@ -91,7 +97,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
     }
   };
 
-  Microsoft::WRL::ComPtr<IDXGIFactory6> factory6;
+  igl::d3d12::ComPtr<IDXGIFactory6> factory6;
   (void)dxgiFactory_->QueryInterface(IID_PPV_ARGS(factory6.GetAddressOf()));
 
   bool created = false;
@@ -99,7 +105,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
 
   if (factory6.Get()) {
     for (UINT i = 0;; ++i) {
-      Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter;
+      igl::d3d12::ComPtr<IDXGIAdapter1> adapter;
       if (FAILED(factory6->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
                                                       IID_PPV_ARGS(adapter.GetAddressOf())))) {
         break;
@@ -124,7 +130,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
   }
   if (!created) {
     for (UINT i = 0;; ++i) {
-      Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter;
+      igl::d3d12::ComPtr<IDXGIAdapter1> adapter;
       if (dxgiFactory_->EnumAdapters1(i, adapter.GetAddressOf()) == DXGI_ERROR_NOT_FOUND) {
         break;
       }
@@ -147,9 +153,9 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
     }
   }
   if (!created) {
-    Microsoft::WRL::ComPtr<IDXGIAdapter> warp;
+    igl::d3d12::ComPtr<IDXGIAdapter> warp;
     if (SUCCEEDED(dxgiFactory_->EnumWarpAdapter(IID_PPV_ARGS(warp.GetAddressOf())))) {
-      Microsoft::WRL::ComPtr<IDXGIAdapter1> warp1;
+      igl::d3d12::ComPtr<IDXGIAdapter1> warp1;
       warp->QueryInterface(IID_PPV_ARGS(warp1.GetAddressOf()));
       if (warp1.Get()) {
         D3D_FEATURE_LEVEL featureLevel = static_cast<D3D_FEATURE_LEVEL>(0);
@@ -173,7 +179,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
 
 #ifdef _DEBUG
   {
-    Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
+    igl::d3d12::ComPtr<ID3D12InfoQueue> infoQueue;
     if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
       infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, FALSE);
       infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, FALSE);
@@ -222,7 +228,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
   // C-001: Now creates initial page with dynamic growth support
   for (UINT i = 0; i < kMaxFramesInFlight; i++) {
     // CBV/SRV/UAV heap per frame - create initial page
-    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> initialHeap;
+    igl::d3d12::ComPtr<ID3D12DescriptorHeap> initialHeap;
     D3D12_DESCRIPTOR_HEAP_DESC desc = {};
     desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     desc.NumDescriptors = cbvSrvUavHeapSize;

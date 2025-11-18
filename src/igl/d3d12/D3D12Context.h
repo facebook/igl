@@ -23,18 +23,18 @@ class DescriptorHeapManager; // fwd decl in igl::d3d12
 // Descriptor heap page for dynamic growth (C-001)
 // Following Microsoft MiniEngine's DynamicDescriptorHeap pattern
 struct DescriptorHeapPage {
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> heap;
+  igl::d3d12::ComPtr<ID3D12DescriptorHeap> heap;
   uint32_t capacity;  // Total descriptors in this page
   uint32_t used;      // Currently allocated descriptors
 
   DescriptorHeapPage() : capacity(0), used(0) {}
-  DescriptorHeapPage(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> h, uint32_t cap)
+  DescriptorHeapPage(igl::d3d12::ComPtr<ID3D12DescriptorHeap> h, uint32_t cap)
       : heap(h), capacity(cap), used(0) {}
 };
 
 // Per-frame context for CPU/GPU parallelism
 struct FrameContext {
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+  igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator;
   UINT64 fenceValue = 0;  // First fence signaled this frame (backward compatibility)
 
   // D-002: Track maximum fence value of ALL command lists using this allocator
@@ -48,14 +48,14 @@ struct FrameContext {
   // C-001: Now supports multiple pages for dynamic growth to prevent overflow corruption
   // Each frame gets its own isolated heap pages to prevent descriptor conflicts
   std::vector<DescriptorHeapPage> cbvSrvUavHeapPages;  // Dynamic array of 1024-descriptor pages
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> samplerHeap;     // 2048 descriptors (kMaxSamplers)
+  igl::d3d12::ComPtr<ID3D12DescriptorHeap> samplerHeap;     // 2048 descriptors (kMaxSamplers)
 
   // Current active page index for CBV/SRV/UAV allocation
   uint32_t currentCbvSrvUavPageIndex = 0;
 
   // DX12-NEW-01: Track the currently active shader-visible heap
   // This is updated when allocating new pages and must be rebound to the command list
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> activeCbvSrvUavHeap;
+  igl::d3d12::ComPtr<ID3D12DescriptorHeap> activeCbvSrvUavHeap;
 
   // Legacy accessor for backward compatibility (returns first page)
   // DEPRECATED: Use cbvSrvUavHeapPages directly for multi-page access
@@ -73,7 +73,7 @@ struct FrameContext {
   // CRITICAL: These are cleared when we advance to the next frame AFTER waiting for
   // this frame's fence, ensuring the GPU has finished reading them
   std::vector<std::shared_ptr<igl::IBuffer>> transientBuffers;
-  std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> transientResources;
+  std::vector<igl::d3d12::ComPtr<ID3D12Resource>> transientResources;
 
   // Telemetry for transient resource tracking (P2_DX12-120)
   // Tracks high-water mark to observe peak usage and detect unbounded growth
@@ -90,7 +90,7 @@ class D3D12Context {
  public:
   // A-011: Multi-adapter enumeration and tracking
   struct AdapterInfo {
-    Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter;
+    igl::d3d12::ComPtr<IDXGIAdapter1> adapter;
     DXGI_ADAPTER_DESC1 desc;
     D3D_FEATURE_LEVEL featureLevel;
     bool isWarp;  // Software rasterizer
@@ -171,7 +171,7 @@ class D3D12Context {
   // C-001: Allocate a new descriptor heap page for dynamic growth
   Result allocateDescriptorHeapPage(D3D12_DESCRIPTOR_HEAP_TYPE type,
                                      uint32_t numDescriptors,
-                                     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>* outHeap);
+                                     igl::d3d12::ComPtr<ID3D12DescriptorHeap>* outHeap);
 
   // Get descriptor sizes
   UINT getCbvSrvUavDescriptorSize() const { return cbvSrvUavDescriptorSize_; }
@@ -324,14 +324,14 @@ class D3D12Context {
   // A-010: HDR output detection
   void detectHDRCapabilities();
 
-  Microsoft::WRL::ComPtr<IDXGIFactory4> dxgiFactory_;
-  Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter_;
-  Microsoft::WRL::ComPtr<ID3D12Device> device_;
-  Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_;
-  Microsoft::WRL::ComPtr<IDXGISwapChain3> swapChain_;
+  igl::d3d12::ComPtr<IDXGIFactory4> dxgiFactory_;
+  igl::d3d12::ComPtr<IDXGIAdapter1> adapter_;
+  igl::d3d12::ComPtr<ID3D12Device> device_;
+  igl::d3d12::ComPtr<ID3D12CommandQueue> commandQueue_;
+  igl::d3d12::ComPtr<IDXGISwapChain3> swapChain_;
 
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
-  Microsoft::WRL::ComPtr<ID3D12Resource> renderTargets_[kMaxFramesInFlight];
+  igl::d3d12::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
+  igl::d3d12::ComPtr<ID3D12Resource> renderTargets_[kMaxFramesInFlight];
   UINT rtvDescriptorSize_ = 0;
 
   // Descriptor sizes (cached from device)
@@ -364,8 +364,8 @@ class D3D12Context {
   HDRCapabilities hdrCapabilities_;
 
   // Command signatures for indirect drawing (P3_DX12-FIND-13)
-  Microsoft::WRL::ComPtr<ID3D12CommandSignature> drawIndirectSignature_;
-  Microsoft::WRL::ComPtr<ID3D12CommandSignature> drawIndexedIndirectSignature_;
+  igl::d3d12::ComPtr<ID3D12CommandSignature> drawIndirectSignature_;
+  igl::d3d12::ComPtr<ID3D12CommandSignature> drawIndexedIndirectSignature_;
 
   // Descriptor heap manager for headless contexts (unit tests)
   DescriptorHeapManager* ownedHeapMgr_ = nullptr;  // Owned manager for windowed contexts (raw ptr, manually deleted)
@@ -376,7 +376,7 @@ class D3D12Context {
   UINT currentFrameIndex_ = 0;
 
   // Global synchronization
-  Microsoft::WRL::ComPtr<ID3D12Fence> fence_;
+  igl::d3d12::ComPtr<ID3D12Fence> fence_;
   UINT64 fenceValue_ = 0;
   HANDLE fenceEvent_ = nullptr;
 

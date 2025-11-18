@@ -31,7 +31,7 @@ public:
    * @brief Staging buffer allocation
    */
   struct StagingBuffer {
-    Microsoft::WRL::ComPtr<ID3D12Resource> buffer;
+    igl::d3d12::ComPtr<ID3D12Resource> buffer;
     void* mappedPtr = nullptr;
     size_t size = 0;
     uint64_t offset = 0;  // Offset within buffer (for ring buffer allocations)
@@ -98,7 +98,7 @@ private:
    */
   void reclaimCompletedBuffers();
   struct BufferEntry {
-    Microsoft::WRL::ComPtr<ID3D12Resource> buffer;
+    igl::d3d12::ComPtr<ID3D12Resource> buffer;
     size_t size = 0;
     uint64_t fenceValue = 0;  // Fence value when this buffer was last used
     bool isReadback = false;  // True for READBACK heap, false for UPLOAD heap
@@ -123,12 +123,12 @@ private:
   // Create a new staging buffer
   [[nodiscard]] Result createStagingBuffer(size_t size,
                                           bool forReadback,
-                                          Microsoft::WRL::ComPtr<ID3D12Resource>* outBuffer);
+                                          igl::d3d12::ComPtr<ID3D12Resource>* outBuffer);
 
   // Find a reusable buffer from the pool
   [[nodiscard]] bool findReusableBuffer(size_t size,
                                        bool forReadback,
-                                       Microsoft::WRL::ComPtr<ID3D12Resource>* outBuffer);
+                                       igl::d3d12::ComPtr<ID3D12Resource>* outBuffer);
 };
 
 } // namespace igl::d3d12

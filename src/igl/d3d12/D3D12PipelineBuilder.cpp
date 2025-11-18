@@ -357,7 +357,7 @@ Result D3D12GraphicsPipelineBuilder::build(ID3D12Device* device,
   psoDesc_.pRootSignature = rootSignature;
 
   // Create pipeline state
-  Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
+  igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState;
   HRESULT hr = device->CreateGraphicsPipelineState(&psoDesc_, IID_PPV_ARGS(pipelineState.GetAddressOf()));
   if (FAILED(hr)) {
     char errorMsg[512];
@@ -425,7 +425,7 @@ Result D3D12ComputePipelineBuilder::build(ID3D12Device* device,
   psoDesc_.pRootSignature = rootSignature;
 
   // Create pipeline state
-  Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
+  igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState;
   HRESULT hr = device->CreateComputePipelineState(&psoDesc_, IID_PPV_ARGS(pipelineState.GetAddressOf()));
   if (FAILED(hr)) {
     char errorMsg[512];
@@ -588,8 +588,8 @@ Result D3D12RootSignatureBuilder::build(ID3D12Device* device,
   }
 
   // Serialize root signature
-  Microsoft::WRL::ComPtr<ID3DBlob> signature;
-  Microsoft::WRL::ComPtr<ID3DBlob> error;
+  igl::d3d12::ComPtr<ID3DBlob> signature;
+  igl::d3d12::ComPtr<ID3DBlob> error;
   HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc,
                                             D3D_ROOT_SIGNATURE_VERSION_1,
                                             signature.GetAddressOf(),
@@ -605,7 +605,7 @@ Result D3D12RootSignatureBuilder::build(ID3D12Device* device,
   }
 
   // Create root signature
-  Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+  igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature;
   hr = device->CreateRootSignature(0,
                                     signature->GetBufferPointer(),
                                     signature->GetBufferSize(),

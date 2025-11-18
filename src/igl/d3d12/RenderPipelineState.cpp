@@ -16,8 +16,8 @@
 namespace igl::d3d12 {
 
 RenderPipelineState::RenderPipelineState(const RenderPipelineDesc& desc,
-                                         Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState,
-                                         Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature)
+                                         igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState,
+                                         igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature)
     : IRenderPipelineState(desc),
       pipelineState_(std::move(pipelineState)),
       rootSignature_(std::move(rootSignature)) {
@@ -138,7 +138,7 @@ std::shared_ptr<IRenderPipelineReflection> RenderPipelineState::renderPipelineRe
     if (!d3dMod) return;
     const auto& bc = d3dMod->getBytecode();
     if (bc.empty()) return;
-    Microsoft::WRL::ComPtr<ID3D12ShaderReflection> refl;
+    igl::d3d12::ComPtr<ID3D12ShaderReflection> refl;
     if (FAILED(D3DReflect(bc.data(), bc.size(), IID_PPV_ARGS(refl.GetAddressOf())))) return;
     D3D12_SHADER_DESC sd{};
     if (FAILED(refl->GetDesc(&sd))) return;

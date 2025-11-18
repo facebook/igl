@@ -153,11 +153,11 @@ class Device final : public IDevice, public IFenceProvider {
   }
 
   void processCompletedUploads() const;
-  void trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer, UINT64 fenceValue) const;
+  void trackUploadBuffer(igl::d3d12::ComPtr<ID3D12Resource> buffer, UINT64 fenceValue) const;
 
   // Command allocator pool access for upload operations (P0_DX12-005)
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> getUploadCommandAllocator() const;
-  void returnUploadCommandAllocator(Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator,
+  igl::d3d12::ComPtr<ID3D12CommandAllocator> getUploadCommandAllocator() const;
+  void returnUploadCommandAllocator(igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator,
                                      UINT64 fenceValue) const;
   ID3D12Fence* getUploadFence() const { return uploadFence_.Get(); }
   UINT64 getNextUploadFenceValue() const { return ++uploadFenceValue_; }
@@ -205,7 +205,7 @@ class Device final : public IDevice, public IFenceProvider {
 
   // Root signature caching (P0_DX12-002)
   size_t hashRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc) const;
-  Microsoft::WRL::ComPtr<ID3D12RootSignature> getOrCreateRootSignature(
+  igl::d3d12::ComPtr<ID3D12RootSignature> getOrCreateRootSignature(
       const D3D12_ROOT_SIGNATURE_DESC& desc,
       Result* IGL_NULLABLE outResult) const;
 
@@ -224,7 +224,7 @@ class Device final : public IDevice, public IFenceProvider {
 
   struct PendingUpload {
     UINT64 fenceValue = 0;
-    Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+    igl::d3d12::ComPtr<ID3D12Resource> resource;
   };
   mutable std::mutex pendingUploadsMutex_;
   mutable std::vector<PendingUpload> pendingUploads_;
@@ -234,7 +234,7 @@ class Device final : public IDevice, public IFenceProvider {
   // H-004: Pool capped at 64 allocators to prevent memory leaks
   // B-008: Increased to 256 allocators with enhanced statistics
   struct TrackedCommandAllocator {
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+    igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator;
     UINT64 fenceValue = 0;  // Fence value when last used
   };
   mutable std::mutex commandAllocatorPoolMutex_;
@@ -242,13 +242,13 @@ class Device final : public IDevice, public IFenceProvider {
   mutable size_t totalCommandAllocatorsCreated_ = 0;  // H-004: Track total allocators created
   mutable size_t peakPoolSize_ = 0;  // B-008: Track peak pool size
   mutable size_t totalAllocatorReuses_ = 0;  // B-008: Track reuse count for statistics
-  mutable Microsoft::WRL::ComPtr<ID3D12Fence> uploadFence_;
+  mutable igl::d3d12::ComPtr<ID3D12Fence> uploadFence_;
   mutable UINT64 uploadFenceValue_ = 0;
   // T05: No shared event - waitForUploadFence creates per-call events for thread safety
 
   // PSO caching (P0_DX12-001)
-  mutable std::unordered_map<size_t, Microsoft::WRL::ComPtr<ID3D12PipelineState>> graphicsPSOCache_;
-  mutable std::unordered_map<size_t, Microsoft::WRL::ComPtr<ID3D12PipelineState>> computePSOCache_;
+  mutable std::unordered_map<size_t, igl::d3d12::ComPtr<ID3D12PipelineState>> graphicsPSOCache_;
+  mutable std::unordered_map<size_t, igl::d3d12::ComPtr<ID3D12PipelineState>> computePSOCache_;
   mutable std::mutex psoCacheMutex_;  // H-013: Thread-safe PSO cache access
   mutable size_t graphicsPSOCacheHits_ = 0;
   mutable size_t graphicsPSOCacheMisses_ = 0;
@@ -260,7 +260,7 @@ class Device final : public IDevice, public IFenceProvider {
   size_t hashComputePipelineDesc(const ComputePipelineDesc& desc) const;
 
   // Root signature cache (P0_DX12-002)
-  mutable std::unordered_map<size_t, Microsoft::WRL::ComPtr<ID3D12RootSignature>> rootSignatureCache_;
+  mutable std::unordered_map<size_t, igl::d3d12::ComPtr<ID3D12RootSignature>> rootSignatureCache_;
   mutable std::mutex rootSignatureCacheMutex_;
   mutable size_t rootSignatureCacheHits_ = 0;
   mutable size_t rootSignatureCacheMisses_ = 0;

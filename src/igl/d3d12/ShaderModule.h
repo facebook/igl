@@ -45,7 +45,7 @@ class ShaderModule final : public IShaderModule {
   const std::vector<uint8_t>& getBytecode() const { return bytecode_; }
 
   // Shader reflection API
-  void setReflection(Microsoft::WRL::ComPtr<ID3D12ShaderReflection> reflection);
+  void setReflection(igl::d3d12::ComPtr<ID3D12ShaderReflection> reflection);
   const std::vector<ResourceBinding>& getResourceBindings() const { return resourceBindings_; }
   const std::vector<ConstantBufferInfo>& getConstantBuffers() const { return constantBuffers_; }
 
@@ -58,7 +58,7 @@ class ShaderModule final : public IShaderModule {
 
  private:
   std::vector<uint8_t> bytecode_; // DXIL bytecode
-  Microsoft::WRL::ComPtr<ID3D12ShaderReflection> reflection_;
+  igl::d3d12::ComPtr<ID3D12ShaderReflection> reflection_;
   std::vector<ResourceBinding> resourceBindings_;
   std::vector<ConstantBufferInfo> constantBuffers_;
 

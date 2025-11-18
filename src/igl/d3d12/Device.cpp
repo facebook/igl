@@ -36,6 +36,10 @@
 namespace igl::d3d12 {
 
 namespace {
+// Import ComPtr for readability
+template<typename T>
+using ComPtr = igl::d3d12::ComPtr<T>;
+
 // C-005: Hash function for SamplerStateDesc to enable deduplication
 // Hashes all relevant fields that determine sampler state behavior
 size_t hashSamplerStateDesc(const SamplerStateDesc& desc) {
@@ -589,7 +593,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   }
 
   // Create the buffer resource
-  Microsoft::WRL::ComPtr<ID3D12Resource> buffer;
+  igl::d3d12::ComPtr<ID3D12Resource> buffer;
   HRESULT hr = device->CreateCommittedResource(
       &heapProps,
       D3D12_HEAP_FLAG_NONE,
@@ -661,7 +665,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
       D3D12_RESOURCE_DESC uploadBufferDesc = bufferDesc;
       uploadBufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;  // Remove UAV flag for upload buffer
 
-      Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
+      igl::d3d12::ComPtr<ID3D12Resource> uploadBuffer;
       HRESULT upHr = device->CreateCommittedResource(&uploadHeapProps,
                                                      D3D12_HEAP_FLAG_NONE,
                                                      &uploadBufferDesc,
@@ -679,11 +683,11 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
           uploadBuffer->Unmap(0, nullptr);
 
           // P0_DX12-005: Get command allocator from pool with fence tracking
-          Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator = getUploadCommandAllocator();
+          igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator = getUploadCommandAllocator();
           if (!allocator.Get()) {
             IGL_LOG_ERROR("Device::createBuffer: Failed to get command allocator from pool\n");
           } else {
-            Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
+            igl::d3d12::ComPtr<ID3D12GraphicsCommandList> cmdList;
             if (SUCCEEDED(device->CreateCommandList(0,
                                                     D3D12_COMMAND_LIST_TYPE_DIRECT,
                                                     allocator.Get(),
@@ -1044,7 +1048,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   }
 
   // Create the texture resource
-  Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+  igl::d3d12::ComPtr<ID3D12Resource> resource;
   HRESULT hr = device->CreateCommittedResource(
       &heapProps,
       D3D12_HEAP_FLAG_NONE,
@@ -1189,7 +1193,7 @@ size_t Device::hashRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc) const {
 }
 
 // Helper function to get or create cached root signature
-Microsoft::WRL::ComPtr<ID3D12RootSignature> Device::getOrCreateRootSignature(
+igl::d3d12::ComPtr<ID3D12RootSignature> Device::getOrCreateRootSignature(
     const D3D12_ROOT_SIGNATURE_DESC& desc,
     Result* IGL_NULLABLE outResult) const {
 
@@ -1220,8 +1224,8 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> Device::getOrCreateRootSignature(
   }
 
   // Serialize root signature
-  Microsoft::WRL::ComPtr<ID3DBlob> signature;
-  Microsoft::WRL::ComPtr<ID3DBlob> error;
+  igl::d3d12::ComPtr<ID3DBlob> signature;
+  igl::d3d12::ComPtr<ID3DBlob> error;
 
   IGL_D3D12_LOG_VERBOSE("  Serializing root signature (version 1.0)...\n");
   HRESULT hr = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1,
@@ -1236,7 +1240,7 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> Device::getOrCreateRootSignature(
   }
 
   // Create root signature
-  Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+  igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature;
   hr = device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
                                     IID_PPV_ARGS(rootSignature.GetAddressOf()));
   if (FAILED(hr)) {
@@ -1522,7 +1526,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   IGL_D3D12_LOG_VERBOSE("  Creating compute root signature with Root Constants (b0)/UAVs/SRVs/CBVs/Samplers\n");
 
   // Get or create cached root signature (P0_DX12-002)
-  Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = getOrCreateRootSignature(rootSigDesc, outResult);
+  igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature = getOrCreateRootSignature(rootSigDesc, outResult);
   if (!rootSignature.Get()) {
     return nullptr;
   }
@@ -1539,7 +1543,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 
   // PSO Cache lookup (P0_DX12-001, H-013: Thread-safe with double-checked locking)
   const size_t psoHash = hashComputePipelineDesc(desc);
-  Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
+  igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState;
 
   // First check: Lock for cache lookup
   {
@@ -1556,7 +1560,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
                    pipelineState.Get(), rootSignature.Get());
       Result::setOk(outResult);
       // Create a copy of the root signature for the returned object
-      Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSigCopy = rootSignature;
+      igl::d3d12::ComPtr<ID3D12RootSignature> rootSigCopy = rootSignature;
       return std::make_shared<ComputePipelineState>(desc, std::move(pipelineState), std::move(rootSigCopy));
     }
   }
@@ -1570,7 +1574,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     IGL_LOG_ERROR("  CreateComputePipelineState FAILED: 0x%08X\n", static_cast<unsigned>(hr));
 
     // Print debug layer messages if available
-    Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
+    igl::d3d12::ComPtr<ID3D12InfoQueue> infoQueue;
     if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
       UINT64 numMessages = infoQueue->GetNumStoredMessages();
       IGL_LOG_ERROR("  D3D12 Info Queue has %llu messages:\n", numMessages);
@@ -1817,7 +1821,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   IGL_D3D12_LOG_VERBOSE("  Creating root signature with Push Constants (b2)/Root CBVs (b0,b1)/CBV Table (b3-b15)/SRVs/Samplers/UAVs\n");
 
   // Get or create cached root signature (P0_DX12-002)
-  Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = getOrCreateRootSignature(rootSigDesc, outResult);
+  igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature = getOrCreateRootSignature(rootSigDesc, outResult);
   if (!rootSignature.Get()) {
     return nullptr;
   }
@@ -2191,7 +2195,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
 
   // Use shader reflection to verify input signature matches input layout
   IGL_D3D12_LOG_VERBOSE("  Reflecting vertex shader to verify input signature...\n");
-  Microsoft::WRL::ComPtr<ID3D12ShaderReflection> vsReflection;
+  igl::d3d12::ComPtr<ID3D12ShaderReflection> vsReflection;
   HRESULT hr = D3DReflect(vsBytecode.data(), vsBytecode.size(), IID_PPV_ARGS(vsReflection.GetAddressOf()));
   if (SUCCEEDED(hr)) {
     D3D12_SHADER_DESC shaderDesc = {};
@@ -2210,7 +2214,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
 
   // PSO Cache lookup (P0_DX12-001, H-013: Thread-safe with double-checked locking)
   const size_t psoHash = hashRenderPipelineDesc(desc);
-  Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
+  igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState;
 
   // First check: Lock for cache lookup
   {
@@ -2227,7 +2231,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
                    pipelineState.Get(), rootSignature.Get());
       Result::setOk(outResult);
       // Create a copy of the root signature for the returned object
-      Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSigCopy = rootSignature;
+      igl::d3d12::ComPtr<ID3D12RootSignature> rootSigCopy = rootSignature;
       return std::make_shared<RenderPipelineState>(desc, std::move(pipelineState), std::move(rootSigCopy));
     }
   }
@@ -2239,7 +2243,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
   if (FAILED(hr)) {
     // Print debug layer messages if available
-    Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
+    igl::d3d12::ComPtr<ID3D12InfoQueue> infoQueue;
     if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
       UINT64 numMessages = infoQueue->GetNumStoredMessages();
       IGL_D3D12_LOG_VERBOSE("  D3D12 Info Queue has %llu messages:\n", numMessages);
@@ -2411,8 +2415,8 @@ Result compileShaderFXC(
                target,
                sourceLength);
 
-  Microsoft::WRL::ComPtr<ID3DBlob> bytecode;
-  Microsoft::WRL::ComPtr<ID3DBlob> errors;
+  igl::d3d12::ComPtr<ID3DBlob> bytecode;
+  igl::d3d12::ComPtr<ID3DBlob> errors;
 
   // D3DCompile is the legacy FXC compiler API
   // It's always available on Windows 10+ (via d3dcompiler_47.dll)
@@ -2648,7 +2652,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
   IGL_D3D12_LOG_VERBOSE("  Attempting to create shader reflection (bytecode size=%zu)...\n", module->getBytecode().size());
   if (!module->getBytecode().empty()) {
     // Create IDxcUtils for reflection
-    Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils;
+    igl::d3d12::ComPtr<IDxcUtils> dxcUtils;
     IGL_D3D12_LOG_VERBOSE("    Creating IDxcUtils for reflection...\n");
     HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(dxcUtils.GetAddressOf()));
     IGL_D3D12_LOG_VERBOSE("    DxcCreateInstance result: 0x%08X\n", hr);
@@ -2661,7 +2665,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
       reflectionBuffer.Encoding = 0;
 
       // Create reflection interface
-      Microsoft::WRL::ComPtr<ID3D12ShaderReflection> reflection;
+      igl::d3d12::ComPtr<ID3D12ShaderReflection> reflection;
       hr = dxcUtils->CreateReflection(&reflectionBuffer, IID_PPV_ARGS(reflection.GetAddressOf()));
 
       if (SUCCEEDED(hr)) {
@@ -3310,7 +3314,7 @@ Result Device::waitForUploadFence(UINT64 fenceValue) const {
   return Result();
 }
 
-void Device::trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer, UINT64 fenceValue) const {
+void Device::trackUploadBuffer(igl::d3d12::ComPtr<ID3D12Resource> buffer, UINT64 fenceValue) const {
   if (!buffer.Get()) {
     return;
   }
@@ -3328,7 +3332,7 @@ void Device::trackUploadBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer, UI
 // B-008: Increased to 256 allocators with enhanced statistics and error handling
 static constexpr size_t kMaxCommandAllocators = 256;
 
-Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator() const {
+igl::d3d12::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator() const {
   if (!uploadFence_.Get()) {
     IGL_LOG_ERROR("Device::getUploadCommandAllocator: Upload fence not initialized\n");
     return nullptr;
@@ -3409,7 +3413,7 @@ Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator
     return nullptr;
   }
 
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> newAllocator;
+  igl::d3d12::ComPtr<ID3D12CommandAllocator> newAllocator;
   HRESULT hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
                                                IID_PPV_ARGS(newAllocator.GetAddressOf()));
   if (FAILED(hr)) {
@@ -3427,7 +3431,7 @@ Microsoft::WRL::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator
   return newAllocator;
 }
 
-void Device::returnUploadCommandAllocator(Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator,
+void Device::returnUploadCommandAllocator(igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator,
                                           UINT64 fenceValue) const {
   if (!allocator.Get()) {
     return;
