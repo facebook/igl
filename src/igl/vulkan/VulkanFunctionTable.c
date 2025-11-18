@@ -11,14 +11,14 @@
 extern "C" {
 #endif
 
-#if defined(FORCE_USE_STATIC_SWIFTSHADER) && !defined(FORCE_USE_STATIC_SWIFTSHADER_DISABLED)
+#if defined(FORCE_USE_STATIC_VULKAN_LOADER) && !defined(FORCE_USE_STATIC_VULKAN_LOADER_DISABLED)
 extern PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkInstance instance, const char* pName);
 #endif
 
 int loadVulkanLoaderFunctions(struct VulkanFunctionTable* table, PFN_vkGetInstanceProcAddr load) {
   /* IGL_GENERATE_LOAD_LOADER_TABLE */
 
-#if defined(FORCE_USE_STATIC_SWIFTSHADER) && !defined(FORCE_USE_STATIC_SWIFTSHADER_DISABLED)
+#if defined(FORCE_USE_STATIC_VULKAN_LOADER) && !defined(FORCE_USE_STATIC_VULKAN_LOADER_DISABLED)
   if (table->vkGetInstanceProcAddr == NULL) {
     table->vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
     load = table->vkGetInstanceProcAddr;
