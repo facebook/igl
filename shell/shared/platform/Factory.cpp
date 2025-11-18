@@ -11,7 +11,7 @@
 #include <shell/shared/platform/android/PlatformAndroid.h>
 #elif IGL_PLATFORM_LINUX
 #include <shell/shared/platform/linux/PlatformLinux.h>
-#elif IGL_PLATFORM_MACOS
+#elif IGL_PLATFORM_MACOSX
 #include <shell/shared/platform/mac/PlatformMac.h>
 #elif IGL_PLATFORM_WINDOWS
 #include <shell/shared/platform/win/PlatformWin.h>
@@ -26,7 +26,7 @@ std::unique_ptr<Platform> createPlatform(std::shared_ptr<IDevice> device) {
   return std::make_unique<PlatformAndroid>(std::move(device));
 #elif IGL_PLATFORM_LINUX
   return std::make_unique<PlatformLinux>(std::move(device));
-#elif IGL_PLATFORM_MACOS
+#elif IGL_PLATFORM_MACOSX
   return std::make_unique<PlatformMac>(std::move(device));
 #elif IGL_PLATFORM_WINDOWS
   return std::make_unique<PlatformWin>(std::move(device));
