@@ -47,7 +47,7 @@ class IRenderSessionFactory {
       std::shared_ptr<Platform> platform) noexcept = 0;
 
   // Used on Android to get the system properties prefix for reading shell params
-  virtual const char* getAndroidSystemPropsPrefix() const noexcept {
+  [[nodiscard]] virtual const char* getAndroidSystemPropsPrefix() const noexcept {
     return "debug.iglshell.renderSession";
   }
 };
