@@ -330,6 +330,15 @@ DXGI_FORMAT textureFormatToDXGIResourceFormat(TextureFormat format, bool sampled
 DXGI_FORMAT textureFormatToDXGIShaderResourceViewFormat(TextureFormat format);
 TextureFormat dxgiFormatToTextureFormat(DXGI_FORMAT format);
 
+// Align value to specified alignment (must be power-of-two)
+// Template allows use with different integer types (UINT64, size_t, etc.)
+// IMPORTANT: alignment must be a power of 2 (e.g., 256, 4096, 65536)
+template<typename T>
+inline T AlignUp(T value, T alignment) {
+  IGL_DEBUG_ASSERT((alignment & (alignment - 1)) == 0, "AlignUp: alignment must be power-of-two");
+  return (value + alignment - 1) & ~(alignment - 1);
+}
+
 // Hash combining utility (boost::hash_combine pattern)
 // Used for hashing complex structures like root signatures and pipeline descriptors
 template<typename T>

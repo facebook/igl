@@ -22,7 +22,6 @@
 #include <igl/d3d12/UploadRingBuffer.h>
 #include <igl/d3d12/D3D12ImmediateCommands.h>  // T07
 #include <igl/d3d12/D3D12StagingDevice.h>  // T07
-#include <igl/d3d12/ResourceAlignment.h>  // B-007: Resource alignment validation
 #include <igl/VertexInputState.h>
 #include <igl/Texture.h>
 #include <igl/Assert.h>  // T05: For IGL_DEBUG_ASSERT in waitForUploadFence
@@ -573,7 +572,7 @@ std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
   validateBufferAlignment(desc.length, isUniformBuffer);
 
   const UINT64 alignedSize = isUniformBuffer
-      ? (desc.length + 255) & ~255  // Round up to nearest 256 bytes
+      ? AlignUp<UINT64>(desc.length, 256)  // D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT
       : desc.length;
 
   IGL_D3D12_LOG_VERBOSE("Device::createBuffer: type=%d, requested_size=%zu, aligned_size=%llu, isUniform=%d\n",
@@ -617,19 +616,6 @@ std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
     Result::setResult(outResult, Result::Code::RuntimeError, errorMsg);
     return nullptr;
   }
-
-  // B-007: Query and log allocation requirements for diagnostic purposes
-#ifdef IGL_DEBUG
-  auto allocInfo = ResourceAlignment::GetResourceAllocationInfo(device, bufferDesc);
-  ResourceAlignment::LogResourceAllocationInfo("Buffer", allocInfo);
-
-  // Validate alignment (paranoid check - committed resources should handle this automatically)
-  UINT64 requiredAlignment = 0;
-  if (!ResourceAlignment::ValidateResourcePlacementAlignment(0, bufferDesc, &requiredAlignment)) {
-    IGL_D3D12_LOG_VERBOSE("Device::createBuffer: Buffer would require %llu-byte alignment for placed resources\n",
-                 requiredAlignment);
-  }
-#endif
 
   // Debug: Log GPU address for uniform buffers
   if (isUniformBuffer) {

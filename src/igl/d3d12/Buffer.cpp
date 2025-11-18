@@ -10,7 +10,6 @@
 #include <igl/d3d12/D3D12Context.h>
 #include <igl/d3d12/UploadRingBuffer.h>
 #include <igl/d3d12/D3D12StateTransition.h>
-#include <igl/d3d12/ResourceAlignment.h>  // B-007: Resource alignment validation
 #include <cstring>
 
 namespace igl::d3d12 {
