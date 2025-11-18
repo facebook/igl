@@ -521,26 +521,26 @@ using namespace igl;
 }
 
 static uint32_t getModifiers(NSEvent* event) {
-  uint32_t modifiers = igl::shell::KeyEventModifierNone;
+  uint32_t modifiers = igl::shell::kKeyEventModifierNone;
   const NSUInteger flags = [event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask;
 
   if (flags & NSEventModifierFlagShift) {
-    modifiers |= igl::shell::KeyEventModifierShift;
+    modifiers |= igl::shell::kKeyEventModifierShift;
   }
   if (flags & NSEventModifierFlagCapsLock) {
-    modifiers |= igl::shell::KeyEventModifierCapsLock;
+    modifiers |= igl::shell::kKeyEventModifierCapsLock;
   }
   if (flags & NSEventModifierFlagControl) {
-    modifiers |= igl::shell::KeyEventModifierControl;
+    modifiers |= igl::shell::kKeyEventModifierControl;
   }
   if (flags & NSEventModifierFlagOption) {
-    modifiers |= igl::shell::KeyEventModifierOption;
+    modifiers |= igl::shell::kKeyEventModifierOption;
   }
   if (flags & NSEventModifierFlagCommand) {
-    modifiers |= igl::shell::KeyEventModifierCommand;
+    modifiers |= igl::shell::kKeyEventModifierCommand;
   }
   if (flags & NSEventModifierFlagNumericPad) {
-    modifiers |= igl::shell::KeyEventModifierNumLock;
+    modifiers |= igl::shell::kKeyEventModifierNumLock;
   }
   return modifiers;
 }

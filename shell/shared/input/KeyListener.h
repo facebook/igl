@@ -13,13 +13,13 @@
 namespace igl::shell {
 
 enum {
-  KeyEventModifierNone = 0,
-  KeyEventModifierShift = 1 << 0,
-  KeyEventModifierControl = 1 << 1,
-  KeyEventModifierOption = 1 << 2,
-  KeyEventModifierCapsLock = 1 << 3,
-  KeyEventModifierNumLock = 1 << 4,
-  KeyEventModifierCommand = 1 << 5,
+  kKeyEventModifierNone = 0,
+  kKeyEventModifierShift = 1 << 0,
+  kKeyEventModifierControl = 1 << 1,
+  kKeyEventModifierOption = 1 << 2,
+  kKeyEventModifierCapsLock = 1 << 3,
+  kKeyEventModifierNumLock = 1 << 4,
+  kKeyEventModifierCommand = 1 << 5,
 };
 
 struct KeyEvent {
@@ -28,7 +28,7 @@ struct KeyEvent {
   uint32_t modifiers;
 
   KeyEvent() = default;
-  KeyEvent(bool isDown, int key, uint32_t modifiers = KeyEventModifierNone) :
+  KeyEvent(bool isDown, int key, uint32_t modifiers = kKeyEventModifierNone) :
     key(key), isDown(isDown), modifiers(modifiers) {}
 };
 
