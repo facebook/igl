@@ -83,29 +83,78 @@ struct BindingsUAVs {
 /**
  * @brief Centralized resource binding management for D3D12 command encoders
  *
- * This class consolidates descriptor allocation and resource binding logic that was
- * previously fragmented across RenderCommandEncoder and ComputeCommandEncoder.
- * It follows the Vulkan ResourcesBinder pattern to provide a consistent, centralized
- * interface for binding resources to the GPU pipeline.
+ * D3D12ResourcesBinder is the single entry point for shader-visible descriptor binding
+ * (CBV/SRV/UAV/Sampler) used by command encoders. It consolidates descriptor allocation
+ * and resource binding logic that was previously fragmented across RenderCommandEncoder
+ * and ComputeCommandEncoder.
  *
- * Key responsibilities:
+ * Note: RTV/DSV descriptors are managed separately by DescriptorHeapManager and bound
+ * directly by encoders during render pass setup.
+ *
+ * ============================================================================
+ * ARCHITECTURE: D3D12 Descriptor Management Overview
+ * ============================================================================
+ *
+ * The D3D12 backend uses THREE distinct descriptor management strategies:
+ *
+ * 1. **Transient Descriptor Allocator** (Per-Frame Heaps)
+ *    - Location: D3D12Context::FrameContext, CommandBuffer allocation methods
+ *    - Purpose: Shader-visible descriptors (CBV/SRV/UAV/Samplers) for rendering
+ *    - Lifecycle: Allocated during command encoding, reset at frame boundary
+ *    - Strategy: Linear allocation with dynamic multi-page growth
+ *    - Used for: SRVs (textures), UAVs (storage buffers), CBVs, Samplers
+ *    - Access: ONLY through D3D12ResourcesBinder (internal detail)
+ *
+ * 2. **Persistent Descriptor Allocator** (DescriptorHeapManager)
+ *    - Location: DescriptorHeapManager class
+ *    - Purpose: CPU-visible descriptors (RTV/DSV) with explicit lifecycle
+ *    - Lifecycle: Allocated at resource creation, freed at resource destruction
+ *    - Strategy: Free-list allocation with double-free protection
+ *    - Used for: Render target views, depth-stencil views
+ *    - Access: Directly by Texture and Framebuffer classes
+ *
+ * 3. **Root Descriptor Optimization** (Inline Binding)
+ *    - Location: D3D12ResourcesBinder::updateBufferBindings()
+ *    - Purpose: Bypass descriptor heaps for frequently-updated constant buffers
+ *    - Lifecycle: No descriptor created - binds GPU virtual address directly
+ *    - Strategy: D3D12 root CBVs (graphics b0-b1 only)
+ *    - Used for: Hot-path constant buffers in graphics pipeline
+ *    - Access: ONLY through D3D12ResourcesBinder (internal optimization)
+ *
+ * **Design Rationale**:
+ * - Strategies 1 and 2 handle DIFFERENT descriptor types (shader-visible vs CPU-visible)
+ *   and lifecycles (transient vs persistent), so they cannot be merged
+ * - Strategy 3 is a D3D12-specific optimization, not a separate "system"
+ * - D3D12ResourcesBinder abstracts these details, providing a unified binding interface
+ *
+ * ============================================================================
+ * Key Responsibilities of D3D12ResourcesBinder
+ * ============================================================================
+ *
  * - Cache resource bindings locally until updateBindings() is called
- * - Allocate descriptors from per-frame shader-visible heaps on-demand
+ * - Allocate descriptors from per-frame shader-visible heaps on-demand (Strategy 1)
  * - Create SRV/UAV/CBV/Sampler descriptors in GPU-visible heaps
+ * - Decide when to use root CBVs vs descriptor tables (Strategy 3)
  * - Track dirty state to minimize descriptor creation and root parameter updates
  * - Support both graphics and compute pipeline bind points
+ * - Transition texture resources to appropriate shader-resource states (buffers must
+ *   be created in the correct state and are not transitioned here)
  *
  * Design principles:
- * - Lazy update: Bindings are cached locally and only applied to GPU on updateBindings()
- * - Dirty tracking: Only update descriptor sets when resources change
- * - Pipeline awareness: Different root signature layouts for graphics vs compute
- * - Per-frame isolation: Uses per-frame descriptor heaps to prevent race conditions
+ * - **Lazy update**: Bindings are cached locally and only applied to GPU on updateBindings()
+ * - **Dirty tracking**: Only update descriptor sets when resources change
+ * - **Pipeline awareness**: Different root signature layouts for graphics vs compute
+ * - **Per-frame isolation**: Uses per-frame descriptor heaps to prevent race conditions
+ * - **Implementation hiding**: External code should never directly access CommandBuffer
+ *   descriptor allocation methods - always go through ResourcesBinder
  *
  * Thread-safety: This class is NOT thread-safe. Each encoder should own its own binder.
  *
  * Dependencies:
  * - T01: Correct descriptor binding patterns
  * - T06: Shared helper utilities for descriptor creation
+ * - T16: Unified logging controls
+ * - T20: Consolidated descriptor management architecture
  *
  * Related to Vulkan ResourcesBinder pattern (src/igl/vulkan/ResourcesBinder.h)
  */
@@ -184,7 +233,9 @@ class D3D12ResourcesBinder final {
    *
    * This should be called before draw/dispatch commands to ensure all bindings are active.
    *
-   * @param outResult Optional result for error reporting (e.g., descriptor heap overflow)
+   * @param outResult Optional result for error reporting (e.g., descriptor heap overflow).
+   *                  If nullptr, caller receives only success/fail boolean. If non-null,
+   *                  all failure paths populate both error code and diagnostic message.
    * @return true if bindings applied successfully, false on error
    */
   [[nodiscard]] bool updateBindings(Result* outResult = nullptr);

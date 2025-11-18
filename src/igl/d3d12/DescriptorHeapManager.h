@@ -14,7 +14,40 @@
 
 namespace igl::d3d12 {
 
-// Simple descriptor heap manager suitable for unit tests and headless runs.
+/**
+ * @brief Persistent Descriptor Allocator for CPU-visible and long-lived descriptors
+ *
+ * ============================================================================
+ * ARCHITECTURE: Strategy 2 - Persistent Descriptor Allocator
+ * ============================================================================
+ *
+ * DescriptorHeapManager handles descriptors with EXPLICIT lifecycle management:
+ * - **PRIMARY USE**: CPU-visible descriptors (RTV/DSV) for Texture and Framebuffer
+ * - **SECONDARY USE**: Shader-visible descriptors for headless/unit test contexts
+ *
+ * **Key Differences from Per-Frame System (Strategy 1)**:
+ * - Lifecycle: Allocated at resource creation, freed at destruction (not per-frame reset)
+ * - Allocation: Free-list pattern (not linear) - supports arbitrary alloc/free
+ * - Safety: Double-free detection, mutex protection for thread-safety
+ * - Visibility: Creates both CPU-visible AND shader-visible heaps
+ *
+ * **When to Use This vs Per-Frame (D3D12ResourcesBinder)**:
+ * - Use DescriptorHeapManager for: RTV/DSV allocation for textures/framebuffers
+ * - Use DescriptorHeapManager for: Headless contexts without per-frame infrastructure
+ * - Do NOT use for: Transient SRV/UAV/CBV/Samplers during rendering
+ * - Do NOT use for: Descriptor table binding in encoders
+ *
+ * **Design Note**: This class creates shader-visible heaps (CBV/SRV/UAV, Samplers)
+ * for backward compatibility with headless contexts. In normal rendering contexts:
+ * - D3D12Context uses per-frame heaps (Strategy 1) for shader-visible descriptors
+ * - DescriptorHeapManager is only used for RTV/DSV allocation
+ * - Its shader-visible heaps serve as a fallback when per-frame heaps are unavailable
+ *   (e.g., headless/unit-test contexts - see ComputeCommandEncoder.cpp:32-40)
+ *
+ * For architecture overview, see D3D12ResourcesBinder.h documentation.
+ *
+ * Thread-safety: This class IS thread-safe (uses mutex for allocation/free).
+ */
 class DescriptorHeapManager {
  public:
   // T14: Descriptor heap sizes configuration

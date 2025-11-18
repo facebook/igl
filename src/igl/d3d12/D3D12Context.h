@@ -20,8 +20,17 @@ namespace igl::d3d12 {
 
 class DescriptorHeapManager; // fwd decl in igl::d3d12
 
-// Descriptor heap page for dynamic growth (C-001)
-// Following Microsoft MiniEngine's DynamicDescriptorHeap pattern
+/**
+ * @brief Descriptor heap page for dynamic multi-page growth
+ *
+ * Part of Strategy 1 (Transient Descriptor Allocator) architecture.
+ * See D3D12ResourcesBinder.h for full architecture documentation.
+ *
+ * Following Microsoft MiniEngine's DynamicDescriptorHeap pattern:
+ * - Start with 1 page of 1024 descriptors per frame
+ * - Grow to up to 16 pages (16,384 descriptors) on-demand
+ * - Reset all counters at frame boundary (no deallocation needed)
+ */
 struct DescriptorHeapPage {
   igl::d3d12::ComPtr<ID3D12DescriptorHeap> heap;
   uint32_t capacity;  // Total descriptors in this page
@@ -32,7 +41,41 @@ struct DescriptorHeapPage {
       : heap(h), capacity(cap), used(0) {}
 };
 
-// Per-frame context for CPU/GPU parallelism
+/**
+ * @brief Per-frame context for CPU/GPU parallelism and descriptor management
+ *
+ * ============================================================================
+ * ARCHITECTURE: Strategy 1 - Transient Descriptor Allocator
+ * ============================================================================
+ *
+ * FrameContext implements the per-frame descriptor heap management system
+ * (Strategy 1 in D3D12ResourcesBinder.h architecture).
+ *
+ * **Key Design Decisions**:
+ * - 3 frames in flight: Prevents CPU/GPU stalls while enabling triple buffering
+ * - Per-frame isolation: Each frame gets independent descriptor heaps
+ * - Shared across command buffers: ALL command buffers in a frame share these heaps
+ * - Linear allocation: O(1) descriptor allocation with simple counter increment
+ * - Frame-boundary reset: Counters reset to 0, no per-descriptor deallocation
+ * - Dynamic growth: CBV/SRV/UAV heaps can grow from 1 to 16 pages on-demand
+ *
+ * **Descriptor Heap Layout**:
+ * - CBV/SRV/UAV: Multi-page array (1024 descriptors/page, up to 16 pages = 16K total)
+ * - Samplers: Single heap (2048 descriptors, D3D12 spec limit, no growth)
+ *
+ * **Access Pattern**:
+ * - CommandBuffer::getNextCbvSrvUavDescriptor() - allocates from current page
+ * - CommandBuffer::allocateCbvSrvUavRange() - allocates contiguous range
+ * - CommandBuffer::getNextSamplerDescriptor() - returns reference for increment
+ * - FrameManager::resetDescriptorCounters() - resets at frame boundary
+ *
+ * **Performance Characteristics**:
+ * - Allocation: O(1) with occasional page growth (O(n) for page vector resize)
+ * - Deallocation: None (bulk reset at frame boundary)
+ * - Memory: ~4MB worst case per frame (16 pages * 1024 descriptors * 32 bytes/descriptor)
+ *
+ * For architecture overview, see D3D12ResourcesBinder.h documentation.
+ */
 struct FrameContext {
   igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator;
   UINT64 fenceValue = 0;  // First fence signaled this frame (backward compatibility)

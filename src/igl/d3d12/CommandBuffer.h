@@ -65,15 +65,42 @@ class CommandBuffer final : public ICommandBuffer {
   void trackTransientBuffer(std::shared_ptr<IBuffer> buffer);
   void trackTransientResource(ID3D12Resource* resource);
 
-  // Descriptor allocation tracking - delegates to frame context to share across ALL command buffers
-  // C-001: Changed to return Result for error handling on heap overflow
+  // ============================================================================
+  // INTERNAL API: Descriptor Allocation (Transient Descriptor Allocator)
+  // ============================================================================
+  //
+  // These methods are implementation details of the per-frame descriptor heap
+  // management system (Strategy 1 in D3D12ResourcesBinder.h).
+  //
+  // WARNING: Do NOT call these methods directly. Use D3D12ResourcesBinder instead.
+  //
+  // These methods delegate to D3D12Context::FrameContext to share descriptor heaps
+  // across all command buffers in the current frame, ensuring efficient utilization
+  // and automatic cleanup at frame boundaries.
+  //
+  // Access: Public for friend class D3D12ResourcesBinder, conceptually private.
+  // C-001: Changed to return Result for error handling on heap overflow.
+  // ============================================================================
+
+  /**
+   * @brief Allocate a single CBV/SRV/UAV descriptor from per-frame heap
+   * @internal This is an implementation detail - use D3D12ResourcesBinder instead
+   */
   Result getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex);
 
-  // Allocate a contiguous range of CBV/SRV/UAV descriptors on a single page
-  // This ensures the range can be bound as a single descriptor table
-  // Returns the base descriptor index; descriptors are [baseIndex, baseIndex+count)
+  /**
+   * @brief Allocate a contiguous range of CBV/SRV/UAV descriptors on a single page
+   * @internal This is an implementation detail - use D3D12ResourcesBinder instead
+   *
+   * This ensures the range can be bound as a single descriptor table.
+   * Returns the base descriptor index; descriptors are [baseIndex, baseIndex+count)
+   */
   Result allocateCbvSrvUavRange(uint32_t count, uint32_t* outBaseDescriptorIndex);
 
+  /**
+   * @brief Get reference to next sampler descriptor index (for increment)
+   * @internal This is an implementation detail - use D3D12ResourcesBinder instead
+   */
   uint32_t& getNextSamplerDescriptor();
 
   // Deferred texture-to-buffer copy operations
