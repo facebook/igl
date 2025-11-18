@@ -224,11 +224,7 @@ namespace WRL {
 } // namespace WRL
 } // namespace Microsoft
 
-// Link required libraries
-#pragma comment(lib, "d3d12.lib")
-#pragma comment(lib, "dxgi.lib")
-#pragma comment(lib, "dxguid.lib")
-#pragma comment(lib, "dxcompiler.lib")
-#pragma comment(lib, "d3dcompiler.lib")  // For D3DCompile (legacy HLSL compiler)
+// Note: Library linking is handled by CMake (see src/igl/d3d12/CMakeLists.txt)
+// Required libraries: d3d12.lib, dxgi.lib, dxguid.lib, dxcompiler.lib, d3dcompiler.lib
 
 #endif // IGL_D3D12_D3D12HEADERS_H

@@ -23,6 +23,7 @@ target_link_libraries(IGLD3D12 PUBLIC
   dxgi.lib
   dxguid.lib
   dxcompiler.lib
+  d3dcompiler.lib
 )
 
 # Include d3dx12 helper headers
