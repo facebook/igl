@@ -111,22 +111,22 @@ class VulkanContext final {
                           Result* IGL_NULLABLE outResult,
                           const char* IGL_NULLABLE debugName = nullptr) const;
 
-// @fb-only
-  // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-// @fb-only
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
+  std::unique_ptr<VulkanImage> createImageFromAndroidHardwareBuffer(
+      AHardwareBuffer* androidHardwareBuffer,
+      uint64_t memoryAllocationSize,
+      VkImageType imageType,
+      VkExtent3D extent,
+      VkFormat format,
+      uint32_t mipLevels,
+      uint32_t arrayLayers,
+      VkImageTiling tiling,
+      VkImageUsageFlags usageFlags,
+      VkImageCreateFlags flags,
+      VkSampleCountFlagBits samples,
+      igl::Result* IGL_NULLABLE outResult,
+      const char* IGL_NULLABLE debugName = nullptr) const;
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
   std::unique_ptr<VulkanImage> createImageFromFileDescriptor(
       int32_t fileDescriptor,

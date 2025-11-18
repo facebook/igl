@@ -1372,44 +1372,40 @@ VulkanImage VulkanContext::createImage(VkImageType imageType,
           debugName};
 }
 
-// @fb-only
-// @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-  // @fb-only
-          // @fb-only
-          // @fb-only
-          // @fb-only
-          // @fb-only
-          // @fb-only
-    // @fb-only
-  // @fb-only
-  // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-// @fb-only
-// @fb-only
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
+std::unique_ptr<VulkanImage> VulkanContext::createImageFromAndroidHardwareBuffer(
+    AHardwareBuffer* androidHardwareBuffer,
+    uint64_t memoryAllocationSize,
+    VkImageType imageType,
+    VkExtent3D extent,
+    VkFormat format,
+    uint32_t mipLevels,
+    uint32_t arrayLayers,
+    VkImageTiling tiling,
+    VkImageUsageFlags usageFlags,
+    VkImageCreateFlags flags,
+    VkSampleCountFlagBits samples,
+    igl::Result* IGL_NULLABLE outResult,
+    const char* IGL_NULLABLE debugName) const {
+  if (!validateImageLimits(
+          imageType, samples, extent, getVkPhysicalDeviceProperties().limits, outResult)) {
+    return nullptr;
+  }
+  return std::make_unique<VulkanImage>(*this,
+                                       androidHardwareBuffer,
+                                       memoryAllocationSize,
+                                       extent,
+                                       imageType,
+                                       format,
+                                       mipLevels,
+                                       arrayLayers,
+                                       tiling,
+                                       usageFlags,
+                                       flags,
+                                       samples,
+                                       debugName);
+}
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 std::unique_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
     int32_t fileDescriptor,
