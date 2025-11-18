@@ -277,6 +277,17 @@ constexpr uint32_t kMaxVertexAttributes = D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_CO
   #define IGL_D3D12_LOG_VERBOSE(format, ...) ((void)0)
 #endif
 
+// T16: Command logging macro (D3D12 API command traces)
+// Only logs when IGL_D3D12_PRINT_COMMANDS is enabled (disabled by default)
+// Use for command recording, state transitions, and D3D12 API call traces
+// Note: Treated as INFO-level severity but controlled separately from DEBUG_VERBOSE
+// to allow independent toggling of command traces vs general verbose output
+#if IGL_D3D12_PRINT_COMMANDS
+  #define IGL_D3D12_LOG_CMD(format, ...) IGL_LOG_INFO(format, ##__VA_ARGS__)
+#else
+  #define IGL_D3D12_LOG_CMD(format, ...) ((void)0)
+#endif
+
 // Convert HRESULT to IGL Result
 inline Result getResultFromHRESULT(HRESULT hr) {
   if (SUCCEEDED(hr)) {
