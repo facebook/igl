@@ -56,6 +56,10 @@ class Device final : public IDevice, public IFenceProvider {
                                                       Result* IGL_NULLABLE
                                                           outResult) const noexcept override;
 
+  // T19: Non-const helper for createBuffer - handles upload operations that mutate internal state
+  [[nodiscard]] std::unique_ptr<IBuffer> createBufferImpl(const BufferDesc& desc,
+                                                          Result* IGL_NULLABLE outResult) noexcept;
+
   [[nodiscard]] std::shared_ptr<IDepthStencilState> createDepthStencilState(
       const DepthStencilStateDesc& desc,
       Result* IGL_NULLABLE outResult) const override;
@@ -152,15 +156,15 @@ class Device final : public IDevice, public IFenceProvider {
     return deviceOptions_.ResourceBindingTier;
   }
 
-  void processCompletedUploads() const;
-  void trackUploadBuffer(igl::d3d12::ComPtr<ID3D12Resource> buffer, UINT64 fenceValue) const;
+  void processCompletedUploads();
+  void trackUploadBuffer(igl::d3d12::ComPtr<ID3D12Resource> buffer, UINT64 fenceValue);
 
   // Command allocator pool access for upload operations (P0_DX12-005)
-  igl::d3d12::ComPtr<ID3D12CommandAllocator> getUploadCommandAllocator() const;
+  igl::d3d12::ComPtr<ID3D12CommandAllocator> getUploadCommandAllocator();
   void returnUploadCommandAllocator(igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator,
-                                     UINT64 fenceValue) const;
+                                     UINT64 fenceValue);
   ID3D12Fence* getUploadFence() const { return uploadFence_.Get(); }
-  UINT64 getNextUploadFenceValue() const { return ++uploadFenceValue_; }
+  UINT64 getNextUploadFenceValue() { return ++uploadFenceValue_; }
   Result waitForUploadFence(UINT64 fenceValue) const;  // T05: Wait for upload to complete
 
   // T07: IFenceProvider implementation (shared fence timeline)
@@ -222,28 +226,32 @@ class Device final : public IDevice, public IFenceProvider {
   Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
   Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
 
+  // T19: Upload tracking state (non-mutable, mutated only from non-const paths)
+  // Modified by: createBufferImpl, Buffer::upload, Texture::upload via non-const Device references
+  // Synchronized via pendingUploadsMutex_ for thread-safe access
   struct PendingUpload {
     UINT64 fenceValue = 0;
     igl::d3d12::ComPtr<ID3D12Resource> resource;
   };
-  mutable std::mutex pendingUploadsMutex_;
-  mutable std::vector<PendingUpload> pendingUploads_;
+  std::mutex pendingUploadsMutex_;
+  std::vector<PendingUpload> pendingUploads_;
 
   // Command allocator pool for upload operations (P0_DX12-005, H-004, B-008)
   // Tracks command allocators with fence values to prevent reuse before GPU completion
   // H-004: Pool capped at 64 allocators to prevent memory leaks
   // B-008: Increased to 256 allocators with enhanced statistics
+  // T19: Non-mutable, synchronized via commandAllocatorPoolMutex_
   struct TrackedCommandAllocator {
     igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator;
     UINT64 fenceValue = 0;  // Fence value when last used
   };
-  mutable std::mutex commandAllocatorPoolMutex_;
-  mutable std::vector<TrackedCommandAllocator> commandAllocatorPool_;
-  mutable size_t totalCommandAllocatorsCreated_ = 0;  // H-004: Track total allocators created
-  mutable size_t peakPoolSize_ = 0;  // B-008: Track peak pool size
-  mutable size_t totalAllocatorReuses_ = 0;  // B-008: Track reuse count for statistics
-  mutable igl::d3d12::ComPtr<ID3D12Fence> uploadFence_;
-  mutable UINT64 uploadFenceValue_ = 0;
+  std::mutex commandAllocatorPoolMutex_;
+  std::vector<TrackedCommandAllocator> commandAllocatorPool_;
+  size_t totalCommandAllocatorsCreated_ = 0;  // H-004: Track total allocators created
+  size_t peakPoolSize_ = 0;  // B-008: Track peak pool size
+  size_t totalAllocatorReuses_ = 0;  // B-008: Track reuse count for statistics
+  igl::d3d12::ComPtr<ID3D12Fence> uploadFence_;
+  UINT64 uploadFenceValue_ = 0;  // T19: Incremented only from non-const methods
   // T05: No shared event - waitForUploadFence creates per-call events for thread safety
 
   // PSO caching (P0_DX12-001)

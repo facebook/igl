@@ -525,8 +525,16 @@ std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc
 }
 
 // Resources
+// T19: Const createBuffer delegates to non-const implementation that handles upload mutations
 std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
                                               Result* IGL_NULLABLE outResult) const noexcept {
+  // T19: Single const_cast at API boundary - all mutation happens in non-const helper
+  auto& self = const_cast<Device&>(*this);
+  return self.createBufferImpl(desc, outResult);
+}
+
+std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
+                                                   Result* IGL_NULLABLE outResult) noexcept {
   auto* device = ctx_->getDevice();
   if (!device) {
     Result::setResult(outResult, Result::Code::RuntimeError, "D3D12 device is null");
@@ -3232,7 +3240,7 @@ uint32_t Device::getMaxMSAASamplesForFormat(TextureFormat format) const {
   return 1;  // No MSAA support
 }
 
-void Device::processCompletedUploads() const {
+void Device::processCompletedUploads() {
   if (!uploadFence_.Get()) {
     return;
   }
@@ -3314,7 +3322,7 @@ Result Device::waitForUploadFence(UINT64 fenceValue) const {
   return Result();
 }
 
-void Device::trackUploadBuffer(igl::d3d12::ComPtr<ID3D12Resource> buffer, UINT64 fenceValue) const {
+void Device::trackUploadBuffer(igl::d3d12::ComPtr<ID3D12Resource> buffer, UINT64 fenceValue) {
   if (!buffer.Get()) {
     return;
   }
@@ -3332,7 +3340,7 @@ void Device::trackUploadBuffer(igl::d3d12::ComPtr<ID3D12Resource> buffer, UINT64
 // B-008: Increased to 256 allocators with enhanced statistics and error handling
 static constexpr size_t kMaxCommandAllocators = 256;
 
-igl::d3d12::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator() const {
+igl::d3d12::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator() {
   if (!uploadFence_.Get()) {
     IGL_LOG_ERROR("Device::getUploadCommandAllocator: Upload fence not initialized\n");
     return nullptr;
@@ -3432,7 +3440,7 @@ igl::d3d12::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator() c
 }
 
 void Device::returnUploadCommandAllocator(igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator,
-                                          UINT64 fenceValue) const {
+                                          UINT64 fenceValue) {
   if (!allocator.Get()) {
     return;
   }
