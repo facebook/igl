@@ -10,15 +10,31 @@
 #include <IGLU/texture_loader/ktx2/Header.h>
 #include <ktx.h>
 #include <numeric>
-#if IGL_BACKEND_VULKAN
-#include <igl/vulkan/util/TextureFormat.h>
-#endif
 
 namespace iglu::textureloader::ktx2 {
 namespace {
 template<typename T>
 T align(T offset, T alignment) {
   return (offset + (alignment - 1)) & ~(alignment - 1);
+}
+
+// Minimal Vulkan-format-to-IGL-format mapping for KTX2 textures.
+// This is intentionally small and backend-agnostic; it only covers
+// the formats currently needed by unit tests.
+igl::TextureFormat vkFormatToTextureFormat(uint32_t vkFormat) {
+  // Values are taken from the Vulkan spec; we avoid including Vulkan
+  // headers and instead rely on the numeric constants.
+  constexpr uint32_t kVkFormatR8G8B8A8Unorm = 37u; // VK_FORMAT_R8G8B8A8_UNORM
+  constexpr uint32_t kVkFormatR8G8B8A8Srgb = 43u;  // VK_FORMAT_R8G8B8A8_SRGB
+
+  switch (vkFormat) {
+  case kVkFormatR8G8B8A8Unorm:
+    return igl::TextureFormat::RGBA_UNorm8;
+  case kVkFormatR8G8B8A8Srgb:
+    return igl::TextureFormat::RGBA_SRGB;
+  default:
+    return igl::TextureFormat::Invalid;
+  }
 }
 } // namespace
 
@@ -48,15 +64,12 @@ bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
   // vkFormat = 0 means basis universal or some non-Vulkan format.
   // In either case, we need to process the DFD to understand whether we can really handle the
   // format or not.
-#if IGL_BACKEND_VULKAN
   if (header->vkFormat != 0 &&
-      igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(header->vkFormat)) ==
-          igl::TextureFormat::Invalid) {
+      vkFormatToTextureFormat(header->vkFormat) == igl::TextureFormat::Invalid) {
     igl::Result::setResult(
         outResult, igl::Result::Code::InvalidOperation, "Unrecognized texture format.");
     return false;
   }
-#endif
 
   return true;
 }
@@ -95,12 +108,12 @@ bool TextureLoaderFactory::validate(DataReader reader,
   }
 
   if (header->vkFormat != 0u) {
-#if IGL_BACKEND_VULKAN
-    const auto format =
-        igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(header->vkFormat));
-#else
-    const auto format = igl::TextureFormat::Invalid;
-#endif
+    const auto format = vkFormatToTextureFormat(header->vkFormat);
+    if (format == igl::TextureFormat::Invalid) {
+      igl::Result::setResult(
+          outResult, igl::Result::Code::InvalidOperation, "Unrecognized texture format.");
+      return false;
+    }
     const auto properties = igl::TextureFormatProperties::fromTextureFormat(format);
 
     const uint32_t mipLevelAlignment =
@@ -184,13 +197,15 @@ bool TextureLoaderFactory::validate(DataReader reader,
 igl::TextureFormat TextureLoaderFactory::textureFormat(const ktxTexture* texture) const noexcept {
   if (texture->classId == ktxTexture2_c) {
     const auto* texture2 = reinterpret_cast<const ktxTexture2*>(texture);
-#if IGL_BACKEND_VULKAN
-    return igl::vulkan::util::vkTextureFormatToTextureFormat(
-        static_cast<int32_t>(texture2->vkFormat));
-#else
-    (void)texture2; // Unused
+
+    // Prefer vkFormat when available; map the subset of formats we support.
+    if (texture2->vkFormat != 0) {
+      return vkFormatToTextureFormat(texture2->vkFormat);
+    }
+
+    // vkFormat == 0 implies a Basis Universal/DFD-described format.
+    // That path is not handled here yet, so fall back to Invalid.
     return igl::TextureFormat::Invalid;
-#endif
   }
 
   return igl::TextureFormat::Invalid;

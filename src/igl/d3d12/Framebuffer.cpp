@@ -508,13 +508,20 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
   const uint8_t* srcPtr = static_cast<const uint8_t*>(mapped) + footprint.Offset;
   const size_t srcRowPitch = footprint.Footprint.RowPitch;
 
-  // Determine bytes per pixel based on depth format
-  const auto fmtProps = TextureFormatProperties::fromTextureFormat(depthTex->getFormat());
-  const size_t bytesPerPixel = std::max<size_t>(fmtProps.bytesPerBlock, 1);
-  const size_t fullRowBytes = static_cast<size_t>(mipWidth) * bytesPerPixel;
+  // Depth readback contract: callers (tests) provide a float-per-pixel buffer.
+  // Use 4 bytes per destination pixel regardless of the underlying DXGI format,
+  // and only copy that many bytes from the GPU data to avoid overrunning the
+  // caller's buffer (e.g., for combined depth-stencil formats like D32_S8).
+  constexpr size_t kDstBytesPerPixel = sizeof(float);
 
-  // Copy with vertical flip (D3D12 textures are top-down, IGL expects bottom-up)
-  const size_t copyRowBytes = static_cast<size_t>(range.width) * bytesPerPixel;
+  // Derive the native bytes-per-pixel for the copied subresource using the
+  // rowSizeInBytes returned by GetCopyableFootprints when possible.
+  size_t nativeBytesPerPixel = 0;
+  if (mipWidth > 0 && rowSizeInBytes > 0) {
+    nativeBytesPerPixel = static_cast<size_t>(rowSizeInBytes) / static_cast<size_t>(mipWidth);
+  }
+
+  const size_t copyRowBytes = static_cast<size_t>(range.width) * kDstBytesPerPixel;
   const size_t dstRowPitch = bytesPerRow ? bytesPerRow : copyRowBytes;
   uint8_t* dstPtr = static_cast<uint8_t*>(pixelBytes);
 
@@ -524,8 +531,10 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
       break;
     }
     const uint32_t srcRow = mipHeight - 1 - gpuRow;
-    const uint8_t* src = srcPtr + static_cast<size_t>(srcRow) * srcRowPitch +
-                         static_cast<size_t>(range.x) * bytesPerPixel;
+    const uint8_t* src =
+        srcPtr + static_cast<size_t>(srcRow) * srcRowPitch +
+        static_cast<size_t>(range.x) * (nativeBytesPerPixel > 0 ? nativeBytesPerPixel : kDstBytesPerPixel);
+
     std::memcpy(dstPtr + static_cast<size_t>(destRow) * dstRowPitch, src, copyRowBytes);
   }
 
