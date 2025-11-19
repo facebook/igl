@@ -10,8 +10,6 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
 
-#define IGL_VULKAN_DEBUG_SAMPLER_STATE 1
-
 namespace {
 VkFilter samplerMinMagFilterToVkFilter(igl::SamplerMinMagFilter filter) {
   switch (filter) {
@@ -87,14 +85,12 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
                      "Anisotropic filtering is not supported by the device.");
     ci.anisotropyEnable = isAnisotropicFilteringSupported ? VK_TRUE : VK_FALSE;
 
-#ifdef IGL_VULKAN_DEBUG_SAMPLER_STATE
     if (limits.maxSamplerAnisotropy < desc.maxAnisotropic) {
       IGL_LOG_INFO(
           "Supplied sampler anisotropic value greater than max supported by the device, setting to "
           "%.0f",
           static_cast<double>(limits.maxSamplerAnisotropy));
     }
-#endif
     ci.maxAnisotropy = std::min((float)limits.maxSamplerAnisotropy, (float)desc.maxAnisotropic);
   }
 
