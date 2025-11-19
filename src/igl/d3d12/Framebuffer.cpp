@@ -13,6 +13,8 @@
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/Texture.h>
 #include <igl/d3d12/D3D12FenceWaiter.h>
+#include <igl/d3d12/D3D12ImmediateCommands.h>
+#include <igl/d3d12/D3D12StagingDevice.h>
 #include <cstring>
 
 namespace igl::d3d12 {
@@ -87,10 +89,18 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  auto& ctx = d3dQueueWrapper->getDevice().getD3D12Context();
+  auto& iglDevice = d3dQueueWrapper->getDevice();
+  auto& ctx = iglDevice.getD3D12Context();
   auto* device = ctx.getDevice();
-  auto* d3dQueue = ctx.getCommandQueue();
-  if (!device || !d3dQueue) {
+  if (!device) {
+    return;
+  }
+
+  // T26: Get shared infrastructure
+  auto* immediateCommands = iglDevice.getImmediateCommands();
+  auto* stagingDevice = iglDevice.getStagingDevice();
+  if (!immediateCommands || !stagingDevice) {
+    IGL_LOG_ERROR("Framebuffer::copyBytesColorAttachment - Shared infrastructure not available\n");
     return;
   }
 
@@ -142,73 +152,30 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
       return;
     }
 
-    if (cache.allocator.Get() == nullptr) {
-      if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                                IID_PPV_ARGS(cache.allocator.GetAddressOf())))) {
-        return;
-      }
+    // T26: Use D3D12StagingDevice for readback buffer allocation
+    auto stagingBuffer = stagingDevice->allocateReadback(totalBytes);
+    if (!stagingBuffer.valid || !stagingBuffer.buffer.Get()) {
+      IGL_LOG_ERROR("Framebuffer::copyBytesColorAttachment - Failed to allocate readback buffer\n");
+      cache.cacheValid = false;
+      return;
     }
 
-    if (cache.commandList.Get() == nullptr) {
-      if (FAILED(device->CreateCommandList(0,
-                                           D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                           cache.allocator.Get(),
-                                           nullptr,
-                                           IID_PPV_ARGS(cache.commandList.GetAddressOf())))) {
-        return;
-      }
-      if (FAILED(cache.commandList->Close())) {
-        cache.commandList.Reset();
-        return;
-      }
-    }
-
-    if (cache.fence.Get() == nullptr) {
-      if (FAILED(device->CreateFence(0,
-                                     D3D12_FENCE_FLAG_NONE,
-                                     IID_PPV_ARGS(cache.fence.GetAddressOf())))) {
-        return;
-      }
-    }
-
-
-    if (cache.readbackBuffer.Get() == nullptr || cache.readbackBufferSize < totalBytes) {
-      D3D12_HEAP_PROPERTIES readbackHeap{};
-      readbackHeap.Type = D3D12_HEAP_TYPE_READBACK;
-      D3D12_RESOURCE_DESC readbackDesc{};
-      readbackDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-      readbackDesc.Width = totalBytes;
-      readbackDesc.Height = 1;
-      readbackDesc.DepthOrArraySize = 1;
-      readbackDesc.MipLevels = 1;
-      readbackDesc.Format = DXGI_FORMAT_UNKNOWN;
-      readbackDesc.SampleDesc.Count = 1;
-      readbackDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-
-      igl::d3d12::ComPtr<ID3D12Resource> newReadback;
-      if (FAILED(device->CreateCommittedResource(&readbackHeap,
-                                                 D3D12_HEAP_FLAG_NONE,
-                                                 &readbackDesc,
-                                                 D3D12_RESOURCE_STATE_COPY_DEST,
-                                                 nullptr,
-                                                 IID_PPV_ARGS(newReadback.GetAddressOf())))) {
-        return;
-      }
-      cache.readbackBuffer = std::move(newReadback);
-      cache.readbackBufferSize = totalBytes;
-    }
-
-    if (FAILED(cache.allocator->Reset()) ||
-        FAILED(cache.commandList->Reset(cache.allocator.Get(), nullptr))) {
+    // T26: Use D3D12ImmediateCommands for copy operation
+    Result result;
+    ID3D12GraphicsCommandList* cmdList = immediateCommands->begin(&result);
+    if (!cmdList || !result.isOk()) {
+      IGL_LOG_ERROR("Framebuffer::copyBytesColorAttachment - Failed to begin command list: %s\n",
+                    result.message.c_str());
+      stagingDevice->free(stagingBuffer, 0);
+      cache.cacheValid = false;
       return;
     }
 
     const auto previousState = srcTex->getSubresourceState(mipLevel, copyLayer);
-    srcTex->transitionTo(
-        cache.commandList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, mipLevel, copyLayer);
+    srcTex->transitionTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE, mipLevel, copyLayer);
 
     D3D12_TEXTURE_COPY_LOCATION dstLoc{};
-    dstLoc.pResource = cache.readbackBuffer.Get();
+    dstLoc.pResource = stagingBuffer.buffer.Get();
     dstLoc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
     dstLoc.PlacedFootprint = footprint;
 
@@ -224,32 +191,26 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
     srcBox.right = mipWidth;
     srcBox.bottom = mipHeight;
     srcBox.back = 1;
-    cache.commandList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, &srcBox);
+    cmdList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, &srcBox);
 
-    srcTex->transitionTo(cache.commandList.Get(), previousState, mipLevel, copyLayer);
+    srcTex->transitionTo(cmdList, previousState, mipLevel, copyLayer);
 
-    if (FAILED(cache.commandList->Close())) {
+    // T26: Submit and wait using shared fence
+    uint64_t fenceValue = immediateCommands->submit(true, &result);
+    if (fenceValue == 0 || !result.isOk()) {
+      IGL_LOG_ERROR("Framebuffer::copyBytesColorAttachment - Failed to submit command list: %s\n",
+                    result.message.c_str());
+      stagingDevice->free(stagingBuffer, 0);
+      cache.cacheValid = false;
       return;
     }
 
-    ID3D12CommandList* lists[] = {cache.commandList.Get()};
-    d3dQueue->ExecuteCommandLists(1, lists);
-
-    const uint64_t fenceValue = ++cache.lastFenceValue;
-    if (FAILED(d3dQueue->Signal(cache.fence.Get(), fenceValue))) {
-      return;
-    }
-
-    FenceWaiter waiter(cache.fence.Get(), fenceValue);
-    Result waitResult = waiter.wait();
-    if (!waitResult.isOk()) {
-      IGL_LOG_ERROR("Framebuffer::copyColorBytesFromFramebuffer() - Fence wait failed: %s\n",
-                    waitResult.message.c_str());
-      return;
-    }
-
+    // Map and read the readback buffer
     void* mapped = nullptr;
-    if (FAILED(cache.readbackBuffer->Map(0, nullptr, &mapped))) {
+    D3D12_RANGE readRange{0, totalBytes};
+    if (FAILED(stagingBuffer.buffer->Map(0, &readRange, &mapped))) {
+      IGL_LOG_ERROR("Framebuffer::copyBytesColorAttachment - Failed to map readback buffer\n");
+      stagingDevice->free(stagingBuffer, fenceValue);
       cache.cacheValid = false;
       return;
     }
@@ -273,7 +234,10 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
       std::memcpy(d, s, copyRowBytes);
     }
 
-    cache.readbackBuffer->Unmap(0, nullptr);
+    stagingBuffer.buffer->Unmap(0, nullptr);
+
+    // T26: Free the staging buffer back to the pool
+    stagingDevice->free(stagingBuffer, fenceValue);
 
     cache.cachedWidth = mipWidth;
     cache.cachedHeight = mipHeight;
@@ -362,32 +326,12 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
   const uint32_t mipWidth = std::max<uint32_t>(1u, texDims.width >> mipLevel);
   const uint32_t mipHeight = std::max<uint32_t>(1u, texDims.height >> mipLevel);
 
-  // Create temporary command resources for readback
-  // D-001: Use pooled allocator instead of creating transient one
+  // T26: Use shared staging infrastructure for readback
   auto& iglDevice = d3dQueueWrapper->getDevice();
-  auto allocator = iglDevice.getUploadCommandAllocator();
-  if (!allocator.Get()) {
-    IGL_LOG_ERROR("Framebuffer::copyBytesDepthAttachment: Failed to get allocator from pool\n");
-    return;
-  }
-
-  igl::d3d12::ComPtr<ID3D12GraphicsCommandList> commandList;
-  igl::d3d12::ComPtr<ID3D12Fence> fence;
-  HANDLE fenceEvent = nullptr;
-
-  if (FAILED(device->CreateCommandList(0,
-                                       D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                       allocator.Get(),
-                                       nullptr,
-                                       IID_PPV_ARGS(commandList.GetAddressOf())))) {
-    // D-001: Return allocator to pool even on failure
-    iglDevice.returnUploadCommandAllocator(allocator, 0);
-    return;
-  }
-
-  if (FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf())))) {
-    // D-001: Return allocator to pool even on failure
-    iglDevice.returnUploadCommandAllocator(allocator, 0);
+  auto* immediateCommands = iglDevice.getImmediateCommands();
+  auto* stagingDevice = iglDevice.getStagingDevice();
+  if (!immediateCommands || !stagingDevice) {
+    IGL_LOG_ERROR("Framebuffer::copyBytesDepthAttachment - Shared infrastructure not available\n");
     return;
   }
 
@@ -401,43 +345,33 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
       &depthDesc, subresourceIndex, 1, 0, &footprint, &numRows, &rowSizeInBytes, &totalBytes);
 
   if (totalBytes == 0) {
-    // D-001: Return allocator to pool even on failure
-    iglDevice.returnUploadCommandAllocator(allocator, 0);
     return;
   }
 
-  // Create readback buffer
-  D3D12_HEAP_PROPERTIES readbackHeap{};
-  readbackHeap.Type = D3D12_HEAP_TYPE_READBACK;
-  D3D12_RESOURCE_DESC readbackDesc{};
-  readbackDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-  readbackDesc.Width = totalBytes;
-  readbackDesc.Height = 1;
-  readbackDesc.DepthOrArraySize = 1;
-  readbackDesc.MipLevels = 1;
-  readbackDesc.Format = DXGI_FORMAT_UNKNOWN;
-  readbackDesc.SampleDesc.Count = 1;
-  readbackDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+  // T26: Allocate readback buffer from staging device
+  auto stagingBuffer = stagingDevice->allocateReadback(totalBytes);
+  if (!stagingBuffer.valid || !stagingBuffer.buffer.Get()) {
+    IGL_LOG_ERROR("Framebuffer::copyBytesDepthAttachment - Failed to allocate readback buffer\n");
+    return;
+  }
 
-  igl::d3d12::ComPtr<ID3D12Resource> readbackBuffer;
-  if (FAILED(device->CreateCommittedResource(&readbackHeap,
-                                             D3D12_HEAP_FLAG_NONE,
-                                             &readbackDesc,
-                                             D3D12_RESOURCE_STATE_COPY_DEST,
-                                             nullptr,
-                                             IID_PPV_ARGS(readbackBuffer.GetAddressOf())))) {
-    // D-001: Return allocator to pool even on failure
-    iglDevice.returnUploadCommandAllocator(allocator, 0);
+  // T26: Begin immediate command recording
+  Result result;
+  ID3D12GraphicsCommandList* cmdList = immediateCommands->begin(&result);
+  if (!cmdList || !result.isOk()) {
+    IGL_LOG_ERROR("Framebuffer::copyBytesDepthAttachment - Failed to begin command list: %s\n",
+                  result.message.c_str());
+    stagingDevice->free(stagingBuffer, 0);
     return;
   }
 
   // Transition depth texture to copy source
   const auto previousState = depthTex->getSubresourceState(mipLevel, copyLayer);
-  depthTex->transitionTo(commandList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, mipLevel, copyLayer);
+  depthTex->transitionTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE, mipLevel, copyLayer);
 
   // Set up copy locations
   D3D12_TEXTURE_COPY_LOCATION dstLoc{};
-  dstLoc.pResource = readbackBuffer.Get();
+  dstLoc.pResource = stagingBuffer.buffer.Get();
   dstLoc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
   dstLoc.PlacedFootprint = footprint;
 
@@ -455,44 +389,26 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
   srcBox.back = 1;
 
   // Copy depth data
-  commandList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, &srcBox);
+  cmdList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, &srcBox);
 
   // Transition back to previous state
-  depthTex->transitionTo(commandList.Get(), previousState, mipLevel, copyLayer);
+  depthTex->transitionTo(cmdList, previousState, mipLevel, copyLayer);
 
-  if (FAILED(commandList->Close())) {
-    // D-001: Return allocator to pool even on failure
-    iglDevice.returnUploadCommandAllocator(allocator, 0);
+  // T26: Submit and wait using shared fence
+  uint64_t fenceValue = immediateCommands->submit(true, &result);
+  if (fenceValue == 0 || !result.isOk()) {
+    IGL_LOG_ERROR("Framebuffer::copyBytesDepthAttachment - Failed to submit command list: %s\n",
+                  result.message.c_str());
+    stagingDevice->free(stagingBuffer, 0);
     return;
   }
-
-  // Execute command list
-  ID3D12CommandList* lists[] = {commandList.Get()};
-  d3dQueue->ExecuteCommandLists(1, lists);
-
-  // Wait for GPU to complete
-  if (FAILED(d3dQueue->Signal(fence.Get(), 1))) {
-    // D-001: Return allocator to pool even on failure
-    iglDevice.returnUploadCommandAllocator(allocator, 0);
-    return;
-  }
-
-  FenceWaiter waiter(fence.Get(), 1);
-  Result waitResult = waiter.wait();
-  if (!waitResult.isOk()) {
-    IGL_LOG_ERROR("Framebuffer::copyDepthBytesFromFramebuffer() - Fence wait failed: %s\n",
-                  waitResult.message.c_str());
-    // D-001: Return allocator to pool even on failure
-    iglDevice.returnUploadCommandAllocator(allocator, 0);
-    return;
-  }
-
-  // D-001: Return allocator to pool after synchronous GPU wait
-  iglDevice.returnUploadCommandAllocator(allocator, 0);
 
   // Map readback buffer and copy data
   void* mapped = nullptr;
-  if (FAILED(readbackBuffer->Map(0, nullptr, &mapped))) {
+  D3D12_RANGE readRange{0, totalBytes};
+  if (FAILED(stagingBuffer.buffer->Map(0, &readRange, &mapped))) {
+    IGL_LOG_ERROR("Framebuffer::copyBytesDepthAttachment - Failed to map readback buffer\n");
+    stagingDevice->free(stagingBuffer, fenceValue);
     return;
   }
 
@@ -529,7 +445,10 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
     std::memcpy(dstPtr + static_cast<size_t>(destRow) * dstRowPitch, src, copyRowBytes);
   }
 
-  readbackBuffer->Unmap(0, nullptr);
+  stagingBuffer.buffer->Unmap(0, nullptr);
+
+  // T26: Free staging buffer back to pool
+  stagingDevice->free(stagingBuffer, fenceValue);
 }
 
 void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
@@ -546,10 +465,18 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  auto& ctx = d3dQueueWrapper->getDevice().getD3D12Context();
+  auto& iglDevice = d3dQueueWrapper->getDevice();
+  auto& ctx = iglDevice.getD3D12Context();
   auto* device = ctx.getDevice();
-  auto* d3dQueue = ctx.getCommandQueue();
-  if (!device || !d3dQueue) {
+  if (!device) {
+    return;
+  }
+
+  // T26: Get shared infrastructure
+  auto* immediateCommands = iglDevice.getImmediateCommands();
+  auto* stagingDevice = iglDevice.getStagingDevice();
+  if (!immediateCommands || !stagingDevice) {
+    IGL_LOG_ERROR("Framebuffer::copyBytesStencilAttachment - Shared infrastructure not available\n");
     return;
   }
 
@@ -578,29 +505,6 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
   const uint32_t mipWidth = std::max<uint32_t>(1u, texDims.width >> mipLevel);
   const uint32_t mipHeight = std::max<uint32_t>(1u, texDims.height >> mipLevel);
 
-  // Create temporary command resources for readback
-  igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator;
-  igl::d3d12::ComPtr<ID3D12GraphicsCommandList> commandList;
-  igl::d3d12::ComPtr<ID3D12Fence> fence;
-  HANDLE fenceEvent = nullptr;
-
-  if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                            IID_PPV_ARGS(allocator.GetAddressOf())))) {
-    return;
-  }
-
-  if (FAILED(device->CreateCommandList(0,
-                                       D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                       allocator.Get(),
-                                       nullptr,
-                                       IID_PPV_ARGS(commandList.GetAddressOf())))) {
-    return;
-  }
-
-  if (FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf())))) {
-    return;
-  }
-
   // Get footprint for the stencil plane
   D3D12_RESOURCE_DESC stencilDesc = stencilRes->GetDesc();
   D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint{};
@@ -614,36 +518,30 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  // Create readback buffer
-  D3D12_HEAP_PROPERTIES readbackHeap{};
-  readbackHeap.Type = D3D12_HEAP_TYPE_READBACK;
-  D3D12_RESOURCE_DESC readbackDesc{};
-  readbackDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-  readbackDesc.Width = totalBytes;
-  readbackDesc.Height = 1;
-  readbackDesc.DepthOrArraySize = 1;
-  readbackDesc.MipLevels = 1;
-  readbackDesc.Format = DXGI_FORMAT_UNKNOWN;
-  readbackDesc.SampleDesc.Count = 1;
-  readbackDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+  // T26: Allocate readback buffer from staging device
+  auto stagingBuffer = stagingDevice->allocateReadback(totalBytes);
+  if (!stagingBuffer.valid || !stagingBuffer.buffer.Get()) {
+    IGL_LOG_ERROR("Framebuffer::copyBytesStencilAttachment - Failed to allocate readback buffer\n");
+    return;
+  }
 
-  igl::d3d12::ComPtr<ID3D12Resource> readbackBuffer;
-  if (FAILED(device->CreateCommittedResource(&readbackHeap,
-                                             D3D12_HEAP_FLAG_NONE,
-                                             &readbackDesc,
-                                             D3D12_RESOURCE_STATE_COPY_DEST,
-                                             nullptr,
-                                             IID_PPV_ARGS(readbackBuffer.GetAddressOf())))) {
+  // T26: Begin immediate command recording
+  Result result;
+  ID3D12GraphicsCommandList* cmdList = immediateCommands->begin(&result);
+  if (!cmdList || !result.isOk()) {
+    IGL_LOG_ERROR("Framebuffer::copyBytesStencilAttachment - Failed to begin command list: %s\n",
+                  result.message.c_str());
+    stagingDevice->free(stagingBuffer, 0);
     return;
   }
 
   // Transition stencil texture to copy source
   const auto previousState = stencilTex->getSubresourceState(mipLevel, copyLayer);
-  stencilTex->transitionTo(commandList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, mipLevel, copyLayer);
+  stencilTex->transitionTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE, mipLevel, copyLayer);
 
   // Set up copy locations for stencil plane
   D3D12_TEXTURE_COPY_LOCATION dstLoc{};
-  dstLoc.pResource = readbackBuffer.Get();
+  dstLoc.pResource = stagingBuffer.buffer.Get();
   dstLoc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
   dstLoc.PlacedFootprint = footprint;
 
@@ -661,35 +559,26 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
   srcBox.back = 1;
 
   // Copy stencil data
-  commandList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, &srcBox);
+  cmdList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, &srcBox);
 
   // Transition back to previous state
-  stencilTex->transitionTo(commandList.Get(), previousState, mipLevel, copyLayer);
+  stencilTex->transitionTo(cmdList, previousState, mipLevel, copyLayer);
 
-  if (FAILED(commandList->Close())) {
-    return;
-  }
-
-  // Execute command list
-  ID3D12CommandList* lists[] = {commandList.Get()};
-  d3dQueue->ExecuteCommandLists(1, lists);
-
-  // Wait for GPU to complete
-  if (FAILED(d3dQueue->Signal(fence.Get(), 1))) {
-    return;
-  }
-
-  FenceWaiter waiter(fence.Get(), 1);
-  Result waitResult = waiter.wait();
-  if (!waitResult.isOk()) {
-    IGL_LOG_ERROR("Framebuffer::copyStencilBytesFromFramebuffer() - Fence wait failed: %s\n",
-                  waitResult.message.c_str());
+  // T26: Submit and wait using shared fence
+  uint64_t fenceValue = immediateCommands->submit(true, &result);
+  if (fenceValue == 0 || !result.isOk()) {
+    IGL_LOG_ERROR("Framebuffer::copyBytesStencilAttachment - Failed to submit command list: %s\n",
+                  result.message.c_str());
+    stagingDevice->free(stagingBuffer, 0);
     return;
   }
 
   // Map readback buffer and copy data
   void* mapped = nullptr;
-  if (FAILED(readbackBuffer->Map(0, nullptr, &mapped))) {
+  D3D12_RANGE readRange{0, totalBytes};
+  if (FAILED(stagingBuffer.buffer->Map(0, &readRange, &mapped))) {
+    IGL_LOG_ERROR("Framebuffer::copyBytesStencilAttachment - Failed to map readback buffer\n");
+    stagingDevice->free(stagingBuffer, fenceValue);
     return;
   }
 
@@ -716,7 +605,10 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
     std::memcpy(dstPtr + static_cast<size_t>(destRow) * dstRowPitch, src, copyRowBytes);
   }
 
-  readbackBuffer->Unmap(0, nullptr);
+  stagingBuffer.buffer->Unmap(0, nullptr);
+
+  // T26: Free staging buffer back to pool
+  stagingDevice->free(stagingBuffer, fenceValue);
 }
 
 void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
@@ -755,24 +647,27 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  // Command list/allocator
-  igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator;
-  igl::d3d12::ComPtr<ID3D12GraphicsCommandList> cmdList;
-  if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                            IID_PPV_ARGS(allocator.GetAddressOf()))) ||
-      FAILED(device->CreateCommandList(0,
-                                       D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                       allocator.Get(),
-                                       nullptr,
-                                       IID_PPV_ARGS(cmdList.GetAddressOf())))) {
+  // T26: Use D3D12ImmediateCommands for texture copy operations
+  auto* iglDevice = dynamic_cast<igl::d3d12::Device*>(&cmdQueue.getDevice());
+  if (!iglDevice || !iglDevice->getImmediateCommands()) {
+    IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment - Immediate commands not available\n");
+    return;
+  }
+
+  auto* immediateCommands = iglDevice->getImmediateCommands();
+  Result result;
+  ID3D12GraphicsCommandList* cmdList = immediateCommands->begin(&result);
+  if (!cmdList || !result.isOk()) {
+    IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment - Failed to begin command list: %s\n",
+                  result.message.c_str());
     return;
   }
 
   const uint32_t mipLevel = range.mipLevel;
   const uint32_t layer = range.layer;
   const auto srcPrevState = srcTex->getSubresourceState(mipLevel, layer);
-  srcTex->transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, mipLevel, layer);
-  dstTex->transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_DEST, mipLevel, layer);
+  srcTex->transitionTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE, mipLevel, layer);
+  dstTex->transitionTo(cmdList, D3D12_RESOURCE_STATE_COPY_DEST, mipLevel, layer);
 
   // Calculate proper subresource indices for array textures and cubemaps
   // D3D12CalcSubresource(MipSlice, ArraySlice, PlaneSlice, MipLevels, ArraySize)
@@ -801,26 +696,16 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   cmdList->CopyTextureRegion(&dstLoc, range.x, range.y, 0, &srcLoc, &srcBox);
 
   // Transition dest to shader resource for sampling. Source back to its previous state.
-  srcTex->transitionTo(cmdList.Get(), srcPrevState, mipLevel, layer);
-  dstTex->transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mipLevel, layer);
+  srcTex->transitionTo(cmdList, srcPrevState, mipLevel, layer);
+  dstTex->transitionTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mipLevel, layer);
 
-  cmdList->Close();
-  ID3D12CommandList* lists[] = {cmdList.Get()};
-  d3dQueue->ExecuteCommandLists(1, lists);
-
-  // Sync (simple fence)
-  igl::d3d12::ComPtr<ID3D12Fence> fence;
-  if (FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf())))) {
+  // T26: Submit and wait using shared fence (replaces manual CreateEvent/WaitForSingleObject)
+  uint64_t fenceValue = immediateCommands->submit(true, &result);
+  if (fenceValue == 0 || !result.isOk()) {
+    IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment - Failed to submit command list: %s\n",
+                  result.message.c_str());
     return;
   }
-  HANDLE evt = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-  if (!evt) {
-    return;
-  }
-  d3dQueue->Signal(fence.Get(), 1);
-  fence->SetEventOnCompletion(1, evt);
-  WaitForSingleObject(evt, INFINITE);
-  CloseHandle(evt);
 }
 
 void Framebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {

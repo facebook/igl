@@ -51,13 +51,9 @@ class Framebuffer final : public IFramebuffer {
   void updateResolveAttachment(std::shared_ptr<ITexture> texture) override;
 
  private:
+  // T26: Simplified readback resources (removed per-attachment allocator/fence - use shared infrastructure)
   struct ReadbackResources {
-    igl::d3d12::ComPtr<ID3D12Resource> readbackBuffer;
-    uint64_t readbackBufferSize = 0;
-    igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator;
-    igl::d3d12::ComPtr<ID3D12GraphicsCommandList> commandList;
-    igl::d3d12::ComPtr<ID3D12Fence> fence;
-    uint64_t lastFenceValue = 0;
+    // Cached data for repeated reads from same region
     std::vector<uint8_t> cachedData;
     uint32_t cachedWidth = 0;
     uint32_t cachedHeight = 0;
