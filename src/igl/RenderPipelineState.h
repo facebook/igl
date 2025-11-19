@@ -206,7 +206,7 @@ struct RenderPipelineDesc {
   uint32_t isDynamicBufferMask = 0; // one bit per each buffer binding slot
 
   // Vulkan only: immutable samplers per each binding slot (for example, Ycbcr conversion etc)
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   std::shared_ptr<ISamplerState> immutableSamplers[IGL_TEXTURE_SAMPLERS_MAX] = {};
 
   NameHandle debugName;

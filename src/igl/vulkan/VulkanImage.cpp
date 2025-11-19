@@ -213,13 +213,13 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
     {
       const uint32_t numPlanes = igl::vulkan::getNumImagePlanes(format);
       IGL_DEBUG_ASSERT(numPlanes > 0 && numPlanes <= kMaxImagePlanes);
-      // @fb-only
+      // NOLINTNEXTLINE(modernize-avoid-c-arrays)
       const VkImagePlaneMemoryRequirementsInfo planes[kMaxImagePlanes] = {
           ivkGetImagePlaneMemoryRequirementsInfo(VK_IMAGE_ASPECT_PLANE_0_BIT),
           ivkGetImagePlaneMemoryRequirementsInfo(VK_IMAGE_ASPECT_PLANE_1_BIT),
           ivkGetImagePlaneMemoryRequirementsInfo(VK_IMAGE_ASPECT_PLANE_2_BIT),
       };
-      // @fb-only
+      // NOLINTNEXTLINE(modernize-avoid-c-arrays)
       const VkImageMemoryRequirementsInfo2 imgRequirements[kMaxImagePlanes] = {
           ivkGetImageMemoryRequirementsInfo2(numPlanes > 0 ? &planes[0] : nullptr, vkImage_),
           ivkGetImageMemoryRequirementsInfo2(numPlanes > 1 ? &planes[1] : nullptr, vkImage_),
@@ -241,13 +241,13 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                                         (uint64_t)vkMemory_[p],
                                         IGL_FORMAT("Memory [{}]: {}", p, debugName).c_str()));
       }
-      // @fb-only
+      // NOLINTNEXTLINE(modernize-avoid-c-arrays)
       const VkBindImagePlaneMemoryInfo bindImagePlaneMemoryInfo[kMaxImagePlanes] = {
           {VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, nullptr, VK_IMAGE_ASPECT_PLANE_0_BIT},
           {VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, nullptr, VK_IMAGE_ASPECT_PLANE_1_BIT},
           {VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, nullptr, VK_IMAGE_ASPECT_PLANE_2_BIT},
       };
-      // @fb-only
+      // NOLINTNEXTLINE(modernize-avoid-c-arrays)
       const VkBindImageMemoryInfo bindInfo[kMaxImagePlanes] = {
           ivkGetBindImageMemoryInfo(
               isDisjoint ? &bindImagePlaneMemoryInfo[0] : nullptr, vkImage_, vkMemory_[0]),

@@ -49,7 +49,7 @@ IGL_API int IGLLogOnce(IGLLogLevel logLevel, const char* IGL_RESTRICT format, ..
   va_copy(apCopy, ap); // make a copy for later passing to IGLLogV()
 
   constexpr size_t bufferLength = 256;
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   char buffer[bufferLength]; // uninitialized
   FOLLY_PUSH_WARNING
   FOLLY_GNU_DISABLE_WARNING("-Wformat-nonliteral")

@@ -393,7 +393,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
 
   if (!pipelineLayout) {
     // NOLINTBEGIN(readability-identifier-naming)
-    // @fb-only
+    // NOLINTNEXTLINE(modernize-avoid-c-arrays)
     const VkDescriptorSetLayout DSLs[] = {
         dslCombinedImageSamplers->getVkDescriptorSetLayout(),
         dslBuffers->getVkDescriptorSetLayout(),

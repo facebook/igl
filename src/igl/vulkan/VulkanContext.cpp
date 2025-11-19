@@ -273,7 +273,7 @@ class DescriptorPoolsArena final {
         return;
       }
     }
-    // @fb-only
+    // NOLINTNEXTLINE(modernize-avoid-c-arrays)
     VkDescriptorPoolSize poolSizes[IGL_ARRAY_NUM_ELEMENTS(types_)];
     for (uint32_t i = 0; i != numTypes_; i++) {
       poolSizes[i] = VkDescriptorPoolSize{
@@ -1649,7 +1649,7 @@ SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
 
 void VulkanContext::querySurfaceCapabilities() {
   // This is not an exhaustive list. It's only formats that we are using.
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   const VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT,
                                    VK_FORMAT_D24_UNORM_S8_UINT,
                                    VK_FORMAT_D16_UNORM_S8_UINT,
@@ -1772,11 +1772,11 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
 
   VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, nextSubmitHandle);
 
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkDescriptorImageInfo infoSampledImages[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
   uint32_t numImages = 0;
 
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkWriteDescriptorSet writes[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
   uint32_t numWrites = 0;
 
@@ -1837,11 +1837,11 @@ void VulkanContext::updateBindingsStorageImages(
 
   VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, nextSubmitHandle);
 
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkDescriptorImageInfo infoStorageImages[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
   uint32_t numStorageImages = 0;
 
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkWriteDescriptorSet writes[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
   uint32_t numWrites = 0;
 
@@ -1892,7 +1892,7 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
 
   VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, nextSubmitHandle);
 
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkWriteDescriptorSet writes[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
   uint32_t numWrites = 0;
 
@@ -2100,7 +2100,7 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
 
   BindGroupMetadataTextures metadata{desc};
 
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkDescriptorSetLayoutBinding bindings[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
   uint32_t numBindings = 0;
 
@@ -2125,7 +2125,7 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
   VkDescriptorSetLayout dsl = VK_NULL_HANDLE;
 
   {
-    // @fb-only
+    // NOLINTNEXTLINE(modernize-avoid-c-arrays)
     const VkDescriptorBindingFlags bindingFlags[IGL_TEXTURE_SAMPLERS_MAX] = {};
 
     VK_ASSERT(ivkCreateDescriptorSetLayout(&vf_,
@@ -2165,9 +2165,9 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
   // use the dummy texture to ensure pipeline compatibility
   VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
 
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkDescriptorImageInfo images[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkWriteDescriptorSet writes[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
   uint32_t numWrites = 0;
 
@@ -2229,11 +2229,11 @@ igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferD
 
   BindGroupMetadataBuffers metadata{desc};
 
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkDescriptorSetLayoutBinding bindings[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
   uint32_t numBindings = 0;
 
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkDescriptorPoolSize poolSizes[] = {
       VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0},
       VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0},
@@ -2301,7 +2301,7 @@ igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferD
   VkDescriptorSetLayout dsl = VK_NULL_HANDLE;
 
   {
-    // @fb-only
+    // NOLINTNEXTLINE(modernize-avoid-c-arrays)
     const VkDescriptorBindingFlags bindingFlags[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
 
     VK_ASSERT(ivkCreateDescriptorSetLayout(&vf_,
@@ -2330,9 +2330,9 @@ igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferD
     VK_ASSERT(ivkAllocateDescriptorSet(&vf_, device, metadata.pool, dsl, &metadata.dset));
   }
 
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkDescriptorBufferInfo buffers[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkWriteDescriptorSet writes[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
   uint32_t numWrites = 0;
 

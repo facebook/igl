@@ -290,7 +290,7 @@ class VulkanImage final {
   VkImage vkImage_ = VK_NULL_HANDLE;
   VkImageUsageFlags usageFlags_ = 0;
   // Separate VkDeviceMemory objects to support disjoint multiplanar images
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkDeviceMemory vkMemory_[kMaxImagePlanes] = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
   VmaAllocation vmaAllocation_ = VK_NULL_HANDLE;
   VkFormatProperties formatProperties_{};

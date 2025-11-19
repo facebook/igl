@@ -74,7 +74,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   // NOLINTBEGIN(readability-identifier-naming)
-  // @fb-only
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   const VkDescriptorSetLayout DSLs[] = {
       dslCombinedImageSamplers->getVkDescriptorSetLayout(),
       dslBuffers->getVkDescriptorSetLayout(),
