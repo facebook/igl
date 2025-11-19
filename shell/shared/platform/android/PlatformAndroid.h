@@ -9,8 +9,8 @@
 
 #include <memory>
 #include <shell/shared/fileLoader/FileLoader.h>
-#include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/platform/Platform.h>
+#include <shell/shared/imageLoader/ImageLoader.h>
 
 namespace igl::shell {
 

@@ -8,8 +8,8 @@
 #include <shell/shared/imageWriter/stb/ImageWriterSTB.h>
 
 #include <limits>
-#include <shell/shared/imageLoader/ImageLoader.h>
 #include <string>
+#include <shell/shared/imageLoader/ImageLoader.h>
 #include <igl/IGL.h>
 #if defined(IGL_CMAKE_BUILD)
 #define STB_IMAGE_WRITE_IMPLEMENTATION

@@ -11,8 +11,8 @@
 
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 #include <cstddef>
-#include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/platform/DisplayContext.h>
+#include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/NameHandle.h>
 #include <igl/RenderCommandEncoder.h>
