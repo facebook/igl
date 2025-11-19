@@ -10,8 +10,8 @@
 #ifdef __ANDROID__
 
 #include <android/log.h>
-#include <shell/shared/fileLoader/FileLoader.h>
 #include <string>
+#include <shell/shared/fileLoader/FileLoader.h>
 
 struct AAssetManager;
 

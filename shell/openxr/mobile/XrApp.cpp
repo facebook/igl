@@ -25,8 +25,8 @@
 #include <xr_linear.h>
 
 #if IGL_PLATFORM_ANDROID
-#include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #include <shell/shared/platform/android/PlatformAndroid.h>
+#include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #endif
 #if IGL_PLATFORM_WINDOWS
 #include <shell/shared/platform/win/PlatformWin.h>
