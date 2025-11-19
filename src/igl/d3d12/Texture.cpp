@@ -110,9 +110,9 @@ std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> par
   view->numLayers_ = desc.numLayers;
   view->numMipLevels_ = desc.numMipLevels;
 
-  // Views delegate state tracking to root texture - don't copy state vectors.
+  // T24: Views delegate state tracking to root texture - don't maintain separate state.
   // State is accessed via getStateOwner() which walks to root for views.
-  // subresourceStates_ and defaultState_ remain empty/default for views.
+  // Views share the same D3D12 resource and subresourceStates_ tracking with their root.
 
   IGL_D3D12_LOG_VERBOSE("Texture::createTextureView - SUCCESS: view of %dx%d, mips %u-%u, layers %u-%u\n",
                view->dimensions_.width, view->dimensions_.height,
@@ -1153,9 +1153,7 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
 }
 
 void Texture::initializeStateTracking(D3D12_RESOURCE_STATES initialState) {
-  // State tracking: always allocate per-subresource vector upfront
-  defaultState_ = initialState;
-
+  // T24: Simplified per-subresource state tracking - always use vector (no dual-mode)
   if (!resource_.Get()) {
     subresourceStates_.clear();
     return;
@@ -1166,7 +1164,6 @@ void Texture::initializeStateTracking(D3D12_RESOURCE_STATES initialState) {
   if (type_ == TextureType::ThreeD) {
     arraySize = 1u;
   } else if (type_ == TextureType::Cube) {
-    // Cube textures: 6 faces per layer
     arraySize = static_cast<uint32_t>(std::max<size_t>(numLayers_, 1)) * 6u;
   } else {
     arraySize = static_cast<uint32_t>(std::max<size_t>(numLayers_, 1));
@@ -1174,8 +1171,6 @@ void Texture::initializeStateTracking(D3D12_RESOURCE_STATES initialState) {
   const size_t numSubresources = static_cast<size_t>(mipLevels) * arraySize;
   subresourceStates_.assign(numSubresources, initialState);
 }
-
-// State tracking implementation: always uses per-subresource vectors for simplicity and predictability.
 
 uint32_t Texture::calcSubresourceIndex(uint32_t mipLevel, uint32_t layer) const {
   // For views, map view-local coordinates to resource coordinates.
@@ -1214,14 +1209,13 @@ void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
                            D3D12_RESOURCE_STATES newState,
                            uint32_t mipLevel,
                            uint32_t layer) {
-  // For views, delegate state tracking to root texture (state owner)
+  // T24: Simplified per-subresource state tracking
   Texture* owner = getStateOwner();
-  if (!commandList || !resource_.Get() || owner->subresourceStates_.empty()) {
+  if (!commandList || !owner || !owner->resource_.Get() || owner->subresourceStates_.empty()) {
     return;
   }
 
-  // Always use per-subresource tracking for consistency
-  // For depth-stencil textures, transition ALL subresources (both depth and stencil planes)
+  // T10/T24: For depth-stencil textures, transition ALL subresources (both depth and stencil planes)
   const auto props = getProperties();
   const bool isDepthStencil = props.isDepthOrStencil() && props.hasStencil();
 
@@ -1242,17 +1236,6 @@ void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
     }
 
     // Safety check: If states have diverged, return early to avoid invalid ALL_SUBRESOURCES barrier.
-    //
-    // This early return is intentional - issuing a barrier with mismatched StateBefore would be
-    // undefined behavior per D3D12 spec (ALL_SUBRESOURCES requires all subresources in same state).
-    //
-    // Behavior by build type:
-    // - Debug builds: Assert fires to catch the invariant violation immediately during development
-    // - Release builds: Log error and skip transition (no-op) to avoid undefined behavior
-    //
-    // Tradeoff: In release builds with broken invariants, the transition is silently skipped.
-    // This is safer than corrupting state, but may cause missing transitions. The error log
-    // signals that investigation is needed to understand why the invariant was violated.
     if (!allSameState) {
       IGL_DEBUG_ASSERT(false, "Depth-stencil textures must have uniform state across all subresources");
       return;  // Intentionally skip transition to avoid undefined behavior
@@ -1261,24 +1244,25 @@ void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = resource_.Get();
+    barrier.Transition.pResource = owner->resource_.Get();
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     barrier.Transition.StateBefore = firstState;
     barrier.Transition.StateAfter = newState;
     commandList->ResourceBarrier(1, &barrier);
 
-    // Update all subresource states in owner
+    // Update all subresource states
     for (auto& state : owner->subresourceStates_) {
       state = newState;
     }
     return;
   }
 
-  // Non-depth-stencil texture: transition single subresource
+  // Non-depth-stencil: transition single subresource
   const uint32_t subresource = calcSubresourceIndex(mipLevel, layer);
   if (subresource >= owner->subresourceStates_.size()) {
     return;
   }
+
   auto& currentState = owner->subresourceStates_[subresource];
   if (currentState == newState) {
     return;
@@ -1287,55 +1271,67 @@ void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
   D3D12_RESOURCE_BARRIER barrier = {};
   barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
   barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-  barrier.Transition.pResource = resource_.Get();
+  barrier.Transition.pResource = owner->resource_.Get();
   barrier.Transition.Subresource = subresource;
   barrier.Transition.StateBefore = currentState;
   barrier.Transition.StateAfter = newState;
   commandList->ResourceBarrier(1, &barrier);
+
   currentState = newState;
 }
 
 void Texture::transitionAll(ID3D12GraphicsCommandList* commandList,
                             D3D12_RESOURCE_STATES newState) {
-  // For views, delegate state tracking to root texture (state owner)
+  // T24: Simplified per-subresource state tracking
   Texture* owner = getStateOwner();
-  if (!commandList || !resource_.Get() || owner->subresourceStates_.empty()) {
+  if (!commandList || !owner || !owner->resource_.Get() || owner->subresourceStates_.empty()) {
     return;
   }
 
-  // Always use per-subresource tracking for consistency
-  std::vector<D3D12_RESOURCE_BARRIER> barriers;
-  barriers.reserve(owner->subresourceStates_.size());
+  // Check if all subresources are already in the target state
+  bool allMatch = true;
+  for (const auto& state : owner->subresourceStates_) {
+    if (state != newState) {
+      allMatch = false;
+      break;
+    }
+  }
+  if (allMatch) {
+    return;
+  }
+
+  // Transition each subresource individually
   for (size_t i = 0; i < owner->subresourceStates_.size(); ++i) {
     auto& state = owner->subresourceStates_[i];
     if (state == newState) {
       continue;
     }
+
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = resource_.Get();
+    barrier.Transition.pResource = owner->resource_.Get();
     barrier.Transition.Subresource = static_cast<UINT>(i);
     barrier.Transition.StateBefore = state;
     barrier.Transition.StateAfter = newState;
-    barriers.push_back(barrier);
+    commandList->ResourceBarrier(1, &barrier);
+
     state = newState;
-  }
-  if (!barriers.empty()) {
-    commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
   }
 }
 
 D3D12_RESOURCE_STATES Texture::getSubresourceState(uint32_t mipLevel, uint32_t layer) const {
-  // For views, delegate to root texture (state owner)
+  // T24: Simplified per-subresource state tracking
   const Texture* owner = getStateOwner();
   if (owner->subresourceStates_.empty()) {
-    return owner->defaultState_;
+    return D3D12_RESOURCE_STATE_COMMON;
   }
+
   const uint32_t index = calcSubresourceIndex(mipLevel, layer);
   if (index >= owner->subresourceStates_.size()) {
-    return owner->defaultState_;
+    return D3D12_RESOURCE_STATE_COMMON;
   }
+
   return owner->subresourceStates_[index];
 }
 

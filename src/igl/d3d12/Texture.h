@@ -104,10 +104,10 @@ class Texture final : public ITexture {
   TextureDesc::TextureUsage usage_ = 0;
   void initializeStateTracking(D3D12_RESOURCE_STATES initialState);
 
-  // State tracking: per-subresource vector, updated only via non-const methods.
+  // T24: Simplified per-subresource state tracking.
   // Views delegate state tracking to their root texture; only root textures maintain state.
+  // Always uses per-subresource vector for simplicity (no dual-mode complexity).
   std::vector<D3D12_RESOURCE_STATES> subresourceStates_;
-  D3D12_RESOURCE_STATES defaultState_ = D3D12_RESOURCE_STATE_COMMON;
 
   // Helper to get the texture that owns state tracking (walks to root for nested views)
   Texture* getStateOwner() {
