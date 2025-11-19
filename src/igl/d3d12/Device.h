@@ -173,10 +173,6 @@ class Device final : public IDevice, public IFenceProvider {
   // Upload ring buffer access (P1_DX12-009)
   UploadRingBuffer* getUploadRingBuffer() const { return uploadRingBuffer_.get(); }
 
-  // T26: Shared staging infrastructure access
-  D3D12ImmediateCommands* getImmediateCommands() const { return immediateCommands_.get(); }
-  D3D12StagingDevice* getStagingDevice() const { return stagingDevice_.get(); }
-
   // Check for device removal and return error Result if detected (P1_DX12-006)
   [[nodiscard]] Result checkDeviceRemoval() const;
 

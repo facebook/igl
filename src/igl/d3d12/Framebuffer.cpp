@@ -412,6 +412,17 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
+  // T26: Validate range bounds before copying
+  if (range.width == 0 || range.height == 0 ||
+      range.x + range.width > mipWidth ||
+      range.y + range.height > mipHeight) {
+    IGL_LOG_ERROR("Framebuffer::copyBytesDepthAttachment - Invalid range: [%u,%u %ux%u] exceeds mip size %ux%u\n",
+                  range.x, range.y, range.width, range.height, mipWidth, mipHeight);
+    stagingBuffer.buffer->Unmap(0, nullptr);
+    stagingDevice->free(stagingBuffer, fenceValue);
+    return;
+  }
+
   const uint8_t* srcPtr = static_cast<const uint8_t*>(mapped) + footprint.Offset;
   const size_t srcRowPitch = footprint.Footprint.RowPitch;
 
@@ -578,6 +589,17 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
   D3D12_RANGE readRange{0, totalBytes};
   if (FAILED(stagingBuffer.buffer->Map(0, &readRange, &mapped))) {
     IGL_LOG_ERROR("Framebuffer::copyBytesStencilAttachment - Failed to map readback buffer\n");
+    stagingDevice->free(stagingBuffer, fenceValue);
+    return;
+  }
+
+  // T26: Validate range bounds before copying
+  if (range.width == 0 || range.height == 0 ||
+      range.x + range.width > mipWidth ||
+      range.y + range.height > mipHeight) {
+    IGL_LOG_ERROR("Framebuffer::copyBytesStencilAttachment - Invalid range: [%u,%u %ux%u] exceeds mip size %ux%u\n",
+                  range.x, range.y, range.width, range.height, mipWidth, mipHeight);
+    stagingBuffer.buffer->Unmap(0, nullptr);
     stagingDevice->free(stagingBuffer, fenceValue);
     return;
   }
