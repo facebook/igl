@@ -18,9 +18,9 @@
 #endif
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #include <shell/shared/platform/DisplayContext.h>
+#include <shell/shared/input/InputDispatcher.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
-#include <shell/shared/input/InputDispatcher.h>
 #if IGL_BACKEND_VULKAN
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>

@@ -39,8 +39,8 @@
 #include <memory>
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/platform/ios/PlatformIos.h>
-#include <shell/shared/renderSession/RenderSessionConfig.h>
 #include <shell/shared/input/TouchListener.h>
+#include <shell/shared/renderSession/RenderSessionConfig.h>
 #include <igl/DeviceFeatures.h>
 
 @interface ViewController () <TouchDelegate, ViewSizeChangeDelegate, IglSurfaceTexturesProvider> {

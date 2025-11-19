@@ -39,11 +39,11 @@
 #include <shell/openxr/XrPassthrough.h>
 #include <shell/openxr/impl/XrAppImpl.h>
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
+#include <shell/shared/input/InputDispatcher.h>
+#include <shell/shared/input/IntentListener.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/ShellParams.h>
-#include <shell/shared/input/InputDispatcher.h>
-#include <shell/shared/input/IntentListener.h>
 
 #if !IGL_PLATFORM_ANDROID
 struct android_app {};

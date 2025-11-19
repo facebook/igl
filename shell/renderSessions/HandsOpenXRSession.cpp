@@ -14,10 +14,10 @@
 #include <cstdint>
 #include <glm/detail/qualifier.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include <shell/shared/renderSession/ShellParams.h>
 #include <vector>
 #include <IGLU/shaderCross/ShaderCross.h>
 #include <IGLU/shaderCross/ShaderCrossUniformBuffer.h>
+#include <shell/shared/renderSession/ShellParams.h>
 #include <igl/Device.h>
 #include <igl/DeviceFeatures.h>
 #include <igl/NameHandle.h>

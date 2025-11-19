@@ -9,8 +9,8 @@
 
 #include <array>
 #include <shell/openxr/XrPlatform.h>
-#include <shell/shared/renderSession/Hands.h>
 #include <vector>
+#include <shell/shared/renderSession/Hands.h>
 
 namespace igl::shell::openxr {
 

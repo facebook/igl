@@ -8,10 +8,10 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
 #include <shell/shared/renderSession/RenderSessionWindowConfig.h>
 #include <shell/shared/renderSession/ShellType.h>
-#include <vector>
 
 namespace igl::shell {
 

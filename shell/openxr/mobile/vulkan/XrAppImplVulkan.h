@@ -9,8 +9,8 @@
 
 #include <shell/openxr/XrPlatform.h>
 #include <shell/openxr/impl/XrAppImpl.h>
-#include <shell/shared/renderSession/RenderSessionConfig.h>
 #include <vector>
+#include <shell/shared/renderSession/RenderSessionConfig.h>
 
 namespace igl::shell::openxr::mobile {
 

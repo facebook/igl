@@ -11,12 +11,12 @@
 
 #include <cmath>
 #include <cstring>
+#include <shell/shared/input/InputDispatcher.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
 #include <shell/shared/renderSession/ScreenshotTestRenderSessionHelper.h>
 #include <shell/shared/renderSession/ShellParams.h>
-#include <shell/shared/input/InputDispatcher.h>
 #include <igl/Framebuffer.h>
 
 namespace igl::shell {
