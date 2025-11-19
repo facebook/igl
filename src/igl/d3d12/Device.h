@@ -297,7 +297,8 @@ class Device final : public IDevice, public IFenceProvider {
   uint64_t gpuTimestampFrequencyHz_ = 0;
 
  public:
-  // T07: Access to immediate commands and staging device for upload/readback operations
+  // T07/T26: Shared staging infrastructure for upload/readback operations
+  // Used by Buffer, Texture, Framebuffer, CommandBuffer for centralized resource management
   [[nodiscard]] D3D12ImmediateCommands* getImmediateCommands() const {
     return immediateCommands_.get();
   }

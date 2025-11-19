@@ -301,10 +301,18 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  auto& ctx = d3dQueueWrapper->getDevice().getD3D12Context();
+  auto& iglDevice = d3dQueueWrapper->getDevice();
+  auto& ctx = iglDevice.getD3D12Context();
   auto* device = ctx.getDevice();
-  auto* d3dQueue = ctx.getCommandQueue();
-  if (!device || !d3dQueue) {
+  if (!device) {
+    return;
+  }
+
+  // T26: Get shared staging infrastructure
+  auto* immediateCommands = iglDevice.getImmediateCommands();
+  auto* stagingDevice = iglDevice.getStagingDevice();
+  if (!immediateCommands || !stagingDevice) {
+    IGL_LOG_ERROR("Framebuffer::copyBytesDepthAttachment - Shared infrastructure not available\n");
     return;
   }
 
@@ -325,15 +333,6 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
   const auto texDims = depthTex->getDimensions();
   const uint32_t mipWidth = std::max<uint32_t>(1u, texDims.width >> mipLevel);
   const uint32_t mipHeight = std::max<uint32_t>(1u, texDims.height >> mipLevel);
-
-  // T26: Use shared staging infrastructure for readback
-  auto& iglDevice = d3dQueueWrapper->getDevice();
-  auto* immediateCommands = iglDevice.getImmediateCommands();
-  auto* stagingDevice = iglDevice.getStagingDevice();
-  if (!immediateCommands || !stagingDevice) {
-    IGL_LOG_ERROR("Framebuffer::copyBytesDepthAttachment - Shared infrastructure not available\n");
-    return;
-  }
 
   // Get footprint for the depth resource
   D3D12_RESOURCE_DESC depthDesc = depthRes->GetDesc();
@@ -430,6 +429,14 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
   // Use 4 bytes per destination pixel regardless of the underlying DXGI format,
   // and only copy that many bytes from the GPU data to avoid overrunning the
   // caller's buffer (e.g., for combined depth-stencil formats like D32_S8).
+  //
+  // T26 LIMITATION: This implementation assumes a "raw bits" contract - it copies
+  // the native GPU representation without format conversion. This is correct for
+  // D32_FLOAT (which is already IEEE 754 float), but for normalized integer depth
+  // formats (D16_UNORM, D24_UNORM_S8_UINT), the copied data is raw bits, not
+  // converted [0,1] floats. Callers expecting normalized depth values from non-float
+  // formats will receive unconverted data. Future work should add format detection
+  // and explicit UNORM-to-float conversion for broader compatibility.
   constexpr size_t kDstBytesPerPixel = sizeof(float);
 
   // Derive the native bytes-per-pixel for the copied subresource using the
@@ -507,6 +514,12 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
   // For depth/stencil formats, stencil is typically in plane slice 1
   // D24_UNORM_S8_UINT: Plane 0 = depth, Plane 1 = stencil
   // D32_FLOAT_S8X24_UINT: Plane 0 = depth, Plane 1 = stencil
+  //
+  // T26 LIMITATION: This hardcodes planeSlice = 1, which is correct for planar
+  // depth-stencil formats but invalid for pure stencil formats (DXGI_FORMAT_S8_UINT)
+  // or non-planar configurations where PlaneSlice must be 0. Future work should
+  // inspect the actual DXGI_FORMAT and branch accordingly to ensure correctness
+  // across all stencil-capable formats.
   const UINT planeSlice = 1; // Stencil plane
   const UINT numMipLevels = stencilTex->getNumMipLevels();
   const UINT numLayers = stencilTex->getNumLayers();
@@ -644,17 +657,16 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  // Create a transient command buffer to access the D3D12 context
-  Result r;
-  auto cmdBuf = cmdQueue.createCommandBuffer({}, &r);
-  if (!cmdBuf || !r.isOk()) {
+  // T26: Get device and shared infrastructure directly (avoid transient CommandBuffer)
+  auto* iglDevice = dynamic_cast<igl::d3d12::Device*>(&cmdQueue.getDevice());
+  if (!iglDevice) {
+    IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment - Invalid device\n");
     return;
   }
-  auto* d3dCmdBuf = dynamic_cast<igl::d3d12::CommandBuffer*>(cmdBuf.get());
-  auto& ctx = d3dCmdBuf->getContext();
-  auto* device = ctx.getDevice();
-  auto* d3dQueue = ctx.getCommandQueue();
-  if (!device || !d3dQueue) {
+
+  auto* immediateCommands = iglDevice->getImmediateCommands();
+  if (!immediateCommands) {
+    IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment - Immediate commands not available\n");
     return;
   }
 
@@ -668,15 +680,6 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   if (!srcRes || !dstRes) {
     return;
   }
-
-  // T26: Use D3D12ImmediateCommands for texture copy operations
-  auto* iglDevice = dynamic_cast<igl::d3d12::Device*>(&cmdQueue.getDevice());
-  if (!iglDevice || !iglDevice->getImmediateCommands()) {
-    IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment - Immediate commands not available\n");
-    return;
-  }
-
-  auto* immediateCommands = iglDevice->getImmediateCommands();
   Result result;
   ID3D12GraphicsCommandList* cmdList = immediateCommands->begin(&result);
   if (!cmdList || !result.isOk()) {
