@@ -27,8 +27,14 @@ class Texture final : public ITexture {
   friend class PlatformDevice;
 
  public:
-  Texture(id<MTLTexture> texture, const ICapabilities& capabilities);
-  Texture(id<CAMetalDrawable> drawable, const ICapabilities& capabilities);
+  Texture(id<MTLTexture> texture,
+          const ICapabilities& capabilities,
+          TextureDesc::TextureMipmapGeneration mipmapGeneration =
+              TextureDesc::TextureMipmapGeneration::Manual);
+  Texture(id<CAMetalDrawable> drawable,
+          const ICapabilities& capabilities,
+          TextureDesc::TextureMipmapGeneration mipmapGeneration =
+              TextureDesc::TextureMipmapGeneration::Manual);
   ~Texture() override;
   Texture(const Texture&) = delete;
   Texture& operator=(const Texture&) = delete;
@@ -50,6 +56,7 @@ class Texture final : public ITexture {
                       const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
   [[nodiscard]] bool isRequiredGenerateMipmap() const override;
   [[nodiscard]] uint64_t getTextureId() const override;
+  [[nodiscard]] TextureDesc::TextureMipmapGeneration getMipmapGeneration() const;
 
   IGL_INLINE id<MTLTexture> _Nullable get() const {
     return (drawable_) ? drawable_.texture : value_;
@@ -87,6 +94,8 @@ class Texture final : public ITexture {
   id<MTLTexture> _Nullable value_;
   id<CAMetalDrawable> _Nullable drawable_;
   const ICapabilities& capabilities_;
+  TextureDesc::TextureMipmapGeneration mipmapGeneration_ =
+      TextureDesc::TextureMipmapGeneration::Manual;
 };
 
 } // namespace igl::metal

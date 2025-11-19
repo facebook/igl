@@ -25,17 +25,23 @@ void bgrToRgb(unsigned char* dstImg, size_t width, size_t height, size_t bytesPe
 
 namespace igl::metal {
 
-Texture::Texture(id<MTLTexture> texture, const ICapabilities& capabilities) :
+Texture::Texture(id<MTLTexture> texture,
+                 const ICapabilities& capabilities,
+                 TextureDesc::TextureMipmapGeneration mipmapGeneration) :
   ITexture(mtlPixelFormatToTextureFormat([texture pixelFormat])),
   value_(texture),
   drawable_(nullptr),
-  capabilities_(capabilities) {}
+  capabilities_(capabilities),
+  mipmapGeneration_(mipmapGeneration) {}
 
-Texture::Texture(id<CAMetalDrawable> drawable, const ICapabilities& capabilities) :
+Texture::Texture(id<CAMetalDrawable> drawable,
+                 const ICapabilities& capabilities,
+                 TextureDesc::TextureMipmapGeneration mipmapGeneration) :
   ITexture(mtlPixelFormatToTextureFormat([drawable.texture pixelFormat])),
   value_(nullptr),
   drawable_(drawable),
-  capabilities_(capabilities) {}
+  capabilities_(capabilities),
+  mipmapGeneration_(mipmapGeneration) {}
 
 Texture::~Texture() {
   value_ = nil;
@@ -251,6 +257,10 @@ uint64_t Texture::getTextureId() const {
   // TODO: implement via gpuResourceID
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   return 0;
+}
+
+TextureDesc::TextureMipmapGeneration Texture::getMipmapGeneration() const {
+  return mipmapGeneration_;
 }
 
 TextureDesc::TextureUsage Texture::toTextureUsage(MTLTextureUsage usage) {

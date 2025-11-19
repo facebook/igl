@@ -61,7 +61,7 @@ class TextureFormatMTLTest : public util::TextureFormatTestBase {
 
 // Test basic getter methods for successful construction
 TEST_F(TextureMTLTest, ConstructionFromMTLTexture) {
-  auto mtlTexture = std::dynamic_pointer_cast<metal::Texture>(texture_);
+  auto* mtlTexture = static_cast<metal::Texture*>(texture_.get());
   ASSERT_NE(mtlTexture->get(), nullptr);
 
   auto dimensions = texture_->getDimensions();
@@ -140,6 +140,15 @@ TEST_F(TextureMTLTest, ToTextureType) {
     auto result = igl::metal::Texture::convertType(input);
     ASSERT_EQ(expected, result);
   }
+}
+
+// Test mipmap generation flag initialization
+TEST_F(TextureMTLTest, MipmapGenerationFlagInitialization) {
+  const auto mtlTexture = std::dynamic_pointer_cast<metal::Texture>(texture_);
+  ASSERT_NE(mtlTexture, nullptr);
+
+  // Test that the mipmapGeneration flag is initialized to Manual by default
+  ASSERT_EQ(mtlTexture->getMipmapGeneration(), TextureDesc::TextureMipmapGeneration::Manual);
 }
 
 // Test conversion from IGL TextureType to MTLTextureType
