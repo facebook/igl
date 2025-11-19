@@ -512,6 +512,8 @@ struct TextureViewDesc {
  *  storage            - Internal resource storage type
  *  tiling             - Image layout for texture storage (Optimal or Linear)
  *  exportability      - Whether the texture can be exported (NoExport or Exportable)
+ *  mipmapGeneration   - Specifies when and how mipmaps should be generated (Manual,
+ *                       AutoGenerateOnUpload)
  *  debugName          - Optional debug name for the texture
  */
 struct TextureDesc {
@@ -542,6 +544,20 @@ struct TextureDesc {
 
   enum class TextureExportability : uint8_t { NoExport, Exportable };
 
+  /**
+   * @brief Flag to specify whether IGL needs to generate mipmaps and when
+   *
+   *  Manual - Mip levels are expected to be generated after the texture
+   *           is created and uploaded by the caller by calling one of IGL's
+   *           mipmap generation functions OR provided during upload.
+   *
+   *  AutoGenerateOnUpload - IGL will generate mipmaps when the texture
+   *                         is uploaded to the device
+   */
+  // @fb-only
+  // @fb-only
+  enum class TextureMipmapGeneration : uint8_t { Manual /*, AutoGenerateOnUpload */ };
+
   uint32_t width = 1;
   uint32_t height = 1;
   uint32_t depth = 1;
@@ -554,6 +570,7 @@ struct TextureDesc {
   ResourceStorage storage = ResourceStorage::Invalid;
   TextureTiling tiling = TextureTiling::Optimal;
   TextureExportability exportability = TextureExportability::NoExport;
+  TextureMipmapGeneration mipmapGeneration = TextureMipmapGeneration::Manual;
 
   std::string debugName;
 
@@ -587,6 +604,7 @@ struct TextureDesc {
                        ResourceStorage::Invalid,
                        TextureTiling::Optimal,
                        TextureExportability::NoExport,
+                       TextureMipmapGeneration::Manual,
                        debugName ? debugName : ""};
   }
 
@@ -620,6 +638,7 @@ struct TextureDesc {
         ResourceStorage::Invalid,
         TextureTiling::Optimal,
         TextureExportability::NoExport,
+        TextureMipmapGeneration::Manual,
         debugName ? debugName : "",
     };
   }
@@ -651,6 +670,7 @@ struct TextureDesc {
                        ResourceStorage::Invalid,
                        TextureTiling::Optimal,
                        TextureExportability::NoExport,
+                       TextureMipmapGeneration::Manual,
                        debugName ? debugName : ""};
   }
 
@@ -683,6 +703,7 @@ struct TextureDesc {
                        ResourceStorage::Invalid,
                        TextureTiling::Optimal,
                        TextureExportability::NoExport,
+                       TextureMipmapGeneration::Manual,
                        debugName ? debugName : ""};
   }
 
@@ -712,6 +733,7 @@ struct TextureDesc {
                        ResourceStorage::Invalid,
                        TextureTiling::Optimal,
                        TextureExportability::NoExport,
+                       TextureMipmapGeneration::Manual,
                        debugName ? debugName : ""};
   }
 
@@ -743,6 +765,7 @@ struct TextureDesc {
                        ResourceStorage::Shared,
                        TextureTiling::Optimal,
                        TextureExportability::NoExport,
+                       TextureMipmapGeneration::Manual,
                        debugName ? debugName : ""};
   }
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
