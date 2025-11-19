@@ -336,6 +336,19 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
 
   // Get footprint for the depth resource
   D3D12_RESOURCE_DESC depthDesc = depthRes->GetDesc();
+
+  // T26: Validate and log depth format to clarify raw-bits vs converted-float behavior
+  const DXGI_FORMAT depthFormat = depthDesc.Format;
+  const bool isD32Float = (depthFormat == DXGI_FORMAT_D32_FLOAT ||
+                           depthFormat == DXGI_FORMAT_D32_FLOAT_S8X24_UINT);
+
+  if (!isD32Float) {
+    IGL_LOG_INFO("Framebuffer::copyBytesDepthAttachment - Format 0x%X is not D32_FLOAT; "
+                 "returning raw GPU bits (not normalized [0,1] floats). "
+                 "For UNORM formats, caller must convert manually.\n",
+                 static_cast<unsigned int>(depthFormat));
+  }
+
   D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint{};
   UINT numRows = 0;
   UINT64 rowSizeInBytes = 0;
@@ -511,16 +524,32 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
   const uint32_t mipLevel = range.mipLevel;
   const uint32_t copyLayer = (stencilTex->getType() == TextureType::Cube) ? range.face : range.layer;
 
-  // For depth/stencil formats, stencil is typically in plane slice 1
-  // D24_UNORM_S8_UINT: Plane 0 = depth, Plane 1 = stencil
-  // D32_FLOAT_S8X24_UINT: Plane 0 = depth, Plane 1 = stencil
-  //
-  // T26 LIMITATION: This hardcodes planeSlice = 1, which is correct for planar
-  // depth-stencil formats but invalid for pure stencil formats (DXGI_FORMAT_S8_UINT)
-  // or non-planar configurations where PlaneSlice must be 0. Future work should
-  // inspect the actual DXGI_FORMAT and branch accordingly to ensure correctness
-  // across all stencil-capable formats.
-  const UINT planeSlice = 1; // Stencil plane
+  // T26: Detect stencil format and select appropriate plane slice
+  D3D12_RESOURCE_DESC stencilDesc = stencilRes->GetDesc();
+  const DXGI_FORMAT stencilFormat = stencilDesc.Format;
+
+  // Determine plane slice based on format:
+  // - Planar depth-stencil formats: stencil is in plane 1
+  // - Pure stencil formats: plane 0
+  UINT planeSlice = 0; // Default for non-planar
+
+  if (stencilFormat == DXGI_FORMAT_D24_UNORM_S8_UINT ||
+      stencilFormat == DXGI_FORMAT_D32_FLOAT_S8X24_UINT ||
+      stencilFormat == DXGI_FORMAT_R24G8_TYPELESS ||
+      stencilFormat == DXGI_FORMAT_R32G8X24_TYPELESS) {
+    // Planar depth-stencil: Plane 0 = depth, Plane 1 = stencil
+    planeSlice = 1;
+  } else if (stencilFormat == DXGI_FORMAT_S8_UINT ||
+             stencilFormat == DXGI_FORMAT_R8_TYPELESS) {
+    // Pure stencil: Plane 0
+    planeSlice = 0;
+  } else {
+    IGL_LOG_ERROR("Framebuffer::copyBytesStencilAttachment - Unsupported stencil format 0x%X; "
+                  "assuming plane 0. May fail for planar formats.\n",
+                  static_cast<unsigned int>(stencilFormat));
+    planeSlice = 0;
+  }
+
   const UINT numMipLevels = stencilTex->getNumMipLevels();
   const UINT numLayers = stencilTex->getNumLayers();
   const uint32_t subresourceIndex = D3D12CalcSubresource(mipLevel, copyLayer, planeSlice, numMipLevels, numLayers);
