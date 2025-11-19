@@ -61,12 +61,14 @@ struct VulkanImageViewCreateInfo;
  *  2 - storage images
  *  3 - bindless textures/samplers  <--  optional
  */
+// NOLINTBEGIN(readability-identifier-naming)
 enum {
-  kBindPointCombinedImageSamplers = 0,
-  kBindPointBuffers = 1,
-  kBindPointStorageImages = 2,
-  kBindPointBindless = 3,
+  kBindPoint_CombinedImageSamplers = 0,
+  kBindPoint_Buffers = 1,
+  kBindPoint_StorageImages = 2,
+  kBindPoint_Bindless = 3,
 };
+// NOLINTEND(readability-identifier-naming)
 
 struct DeviceQueues {
   const static uint32_t kInvalid = 0xFFFFFFFF;

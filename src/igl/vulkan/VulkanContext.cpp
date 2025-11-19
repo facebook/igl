@@ -1791,7 +1791,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
   for (const util::TextureDescription& d : info.textures) {
-    IGL_DEBUG_ASSERT(d.descriptorSet == kBindPointCombinedImageSamplers);
+    IGL_DEBUG_ASSERT(d.descriptorSet == kBindPoint_CombinedImageSamplers);
     const uint32_t loc = d.bindingLocation;
     IGL_DEBUG_ASSERT(loc < IGL_TEXTURE_SAMPLERS_MAX);
     VkImageView texture = data.textures[loc];
@@ -1818,7 +1818,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
     IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - textures\n", cmdBuf, bindPoint);
 #endif // IGL_VULKAN_PRINT_COMMANDS
     vf_.vkCmdBindDescriptorSets(
-        cmdBuf, bindPoint, layout, kBindPointCombinedImageSamplers, 1, &dset, 0, nullptr);
+        cmdBuf, bindPoint, layout, kBindPoint_CombinedImageSamplers, 1, &dset, 0, nullptr);
   }
 }
 
@@ -1852,7 +1852,7 @@ void VulkanContext::updateBindingsStorageImages(
   VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
 
   for (const util::ImageDescription& d : info.images) {
-    IGL_DEBUG_ASSERT(d.descriptorSet == kBindPointStorageImages);
+    IGL_DEBUG_ASSERT(d.descriptorSet == kBindPoint_StorageImages);
     const uint32_t loc = d.bindingLocation;
     IGL_DEBUG_ASSERT(loc < IGL_TEXTURE_SAMPLERS_MAX);
     VkImageView imageView = data.images[loc];
@@ -1874,7 +1874,7 @@ void VulkanContext::updateBindingsStorageImages(
     IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - storage images\n", cmdBuf, bindPoint);
 #endif // IGL_VULKAN_PRINT_COMMANDS
     vf_.vkCmdBindDescriptorSets(
-        cmdBuf, bindPoint, layout, kBindPointStorageImages, 1, &dset, 0, nullptr);
+        cmdBuf, bindPoint, layout, kBindPoint_StorageImages, 1, &dset, 0, nullptr);
   }
 }
 
@@ -1897,7 +1897,7 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
   uint32_t numWrites = 0;
 
   for (const util::BufferDescription& b : info.buffers) {
-    IGL_DEBUG_ASSERT(b.descriptorSet == kBindPointBuffers);
+    IGL_DEBUG_ASSERT(b.descriptorSet == kBindPoint_Buffers);
     IGL_DEBUG_ASSERT(
         data.buffers[b.bindingLocation].buffer != VK_NULL_HANDLE,
         IGL_FORMAT("Did you forget to call bindBuffer() for a buffer at the binding location {}?",
@@ -1919,7 +1919,8 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
 #if IGL_VULKAN_PRINT_COMMANDS
     IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - buffers\n", cmdBuf, bindPoint);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-    vf_.vkCmdBindDescriptorSets(cmdBuf, bindPoint, layout, kBindPointBuffers, 1, &dset, 0, nullptr);
+    vf_.vkCmdBindDescriptorSets(
+        cmdBuf, bindPoint, layout, kBindPoint_Buffers, 1, &dset, 0, nullptr);
   }
 }
 
