@@ -51,6 +51,7 @@ class Texture : public ITexture {
   bool isRequiredGenerateMipmap() const override;
   uint64_t getTextureId() const override;
   bool isSwapchainTexture() const override;
+  TextureDesc::TextureMipmapGeneration getMipmapGeneration() const;
   VkFormat getVkFormat() const;
   uint32_t getVkExtendedFormat() const;
   VkImageUsageFlags getVkUsageFlags() const;

@@ -514,6 +514,10 @@ bool Texture::isSwapchainTexture() const {
   return texture_ ? texture_->image_.isExternallyManaged_ : false;
 }
 
+TextureDesc::TextureMipmapGeneration Texture::getMipmapGeneration() const {
+  return desc_.mipmapGeneration;
+}
+
 uint32_t Texture::getNumVkLayers() const {
   return desc_.type == TextureType::Cube ? 6u : desc_.numLayers;
 }
