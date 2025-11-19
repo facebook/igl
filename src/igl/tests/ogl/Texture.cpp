@@ -341,4 +341,28 @@ TEST_F(TextureOGLTest, TextureAlignment) {
   }
 }
 
+//
+// Mipmap Generation Flag Initialization Test
+//
+// This tests that the mipmapGeneration_ flag is properly initialized to Manual
+//
+TEST_F(TextureOGLTest, MipmapGenerationFlagInitialization) {
+  Result ret;
+  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                           OFFSCREEN_TEX_WIDTH,
+                                           OFFSCREEN_TEX_HEIGHT,
+                                           TextureDesc::TextureUsageBits::Sampled);
+
+  auto texture = device_->createTexture(texDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(texture, nullptr);
+
+  // Cast to OpenGL texture to access the getMipmapGeneration method
+  auto* oglTexture = static_cast<opengl::Texture*>(texture.get());
+  ASSERT_NE(oglTexture, nullptr);
+
+  // Test that the mipmapGeneration flag is initialized to Manual by default
+  ASSERT_EQ(oglTexture->getMipmapGeneration(), TextureDesc::TextureMipmapGeneration::Manual);
+}
+
 } // namespace igl::tests

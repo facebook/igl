@@ -49,6 +49,10 @@ uint64_t Texture::getTextureId() const {
   return 0;
 }
 
+TextureDesc::TextureMipmapGeneration Texture::getMipmapGeneration() const {
+  return mipmapGeneration_;
+}
+
 bool Texture::isSwapchainTexture() const {
   return isImplicitStorage();
 }

@@ -20,7 +20,11 @@ namespace opengl {
 // 2. render targets (attachments to framebuffers)
 class Texture : public WithContext, public ITexture {
  public:
-  Texture(IContext& context, TextureFormat format) : WithContext(context), ITexture(format) {}
+  Texture(IContext& context,
+          TextureFormat format,
+          TextureDesc::TextureMipmapGeneration mipmapGeneration =
+              TextureDesc::TextureMipmapGeneration::Manual) :
+    WithContext(context), ITexture(format), mipmapGeneration_(mipmapGeneration) {}
   ~Texture() override = default;
 
  public:
@@ -37,6 +41,7 @@ class Texture : public WithContext, public ITexture {
   [[nodiscard]] uint64_t getTextureId() const override;
   [[nodiscard]] bool isSwapchainTexture() const override;
   [[nodiscard]] virtual bool canPresent() const noexcept;
+  [[nodiscard]] TextureDesc::TextureMipmapGeneration getMipmapGeneration() const;
 
   virtual Result create(const TextureDesc& desc, bool hasStorageAlready);
 
@@ -134,6 +139,8 @@ class Texture : public WithContext, public ITexture {
   GLenum glInternalFormat_{};
   uint32_t numMipLevels_ = 1;
   TextureType type_ = TextureType::Invalid;
+  TextureDesc::TextureMipmapGeneration mipmapGeneration_ =
+      TextureDesc::TextureMipmapGeneration::Manual;
 
  private:
   size_t samplerHash_ = std::numeric_limits<size_t>::max();
