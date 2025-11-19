@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <shell/shared/imageWriter/ImageWriter.h>
 #include <string>
+#include <shell/shared/imageWriter/ImageWriter.h>
 
 namespace igl::shell {
 
