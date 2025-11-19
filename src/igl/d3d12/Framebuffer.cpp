@@ -539,9 +539,8 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
       stencilFormat == DXGI_FORMAT_R32G8X24_TYPELESS) {
     // Planar depth-stencil: Plane 0 = depth, Plane 1 = stencil
     planeSlice = 1;
-  } else if (stencilFormat == DXGI_FORMAT_S8_UINT ||
-             stencilFormat == DXGI_FORMAT_R8_TYPELESS) {
-    // Pure stencil: Plane 0
+  } else if (stencilFormat == DXGI_FORMAT_R8_TYPELESS) {
+    // Pure stencil formats: Plane 0
     planeSlice = 0;
   } else {
     IGL_LOG_ERROR("Framebuffer::copyBytesStencilAttachment - Unsupported stencil format 0x%X; "
@@ -558,8 +557,7 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
   const uint32_t mipWidth = std::max<uint32_t>(1u, texDims.width >> mipLevel);
   const uint32_t mipHeight = std::max<uint32_t>(1u, texDims.height >> mipLevel);
 
-  // Get footprint for the stencil plane
-  D3D12_RESOURCE_DESC stencilDesc = stencilRes->GetDesc();
+  // Get footprint for the stencil plane (reuse stencilDesc from above)
   D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint{};
   UINT numRows = 0;
   UINT64 rowSizeInBytes = 0;
@@ -687,13 +685,14 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   }
 
   // T26: Get device and shared infrastructure directly (avoid transient CommandBuffer)
-  auto* iglDevice = dynamic_cast<igl::d3d12::Device*>(&cmdQueue.getDevice());
-  if (!iglDevice) {
-    IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment - Invalid device\n");
+  auto* d3dQueueWrapper = dynamic_cast<CommandQueue*>(&cmdQueue);
+  if (!d3dQueueWrapper) {
+    IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment - Invalid command queue\n");
     return;
   }
 
-  auto* immediateCommands = iglDevice->getImmediateCommands();
+  auto& iglDevice = d3dQueueWrapper->getDevice();
+  auto* immediateCommands = iglDevice.getImmediateCommands();
   if (!immediateCommands) {
     IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment - Immediate commands not available\n");
     return;
