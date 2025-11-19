@@ -11,8 +11,8 @@
 
 #include <cstring>
 #include <glm/gtc/color_space.hpp>
-#include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/imageLoader/ImageLoader.h>
+#include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/NameHandle.h>

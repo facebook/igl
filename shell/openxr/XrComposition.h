@@ -13,8 +13,8 @@
 #include <shell/openxr/XrPlatform.h>
 #include <shell/openxr/XrSwapchainProvider.h>
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
-#include <shell/shared/platform/Platform.h>
 #include <vector>
+#include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/DepthParams.h>
 #include <shell/shared/renderSession/ViewParams.h>
 

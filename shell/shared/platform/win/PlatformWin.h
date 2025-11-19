@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <shell/shared/platform/Platform.h>
 #include <shell/shared/fileLoader/FileLoader.h>
+#include <shell/shared/platform/Platform.h>
 
 namespace igl::shell {
 

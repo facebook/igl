@@ -14,10 +14,10 @@
 #include <shell/openxr/XrComposition.h>
 #include <shell/openxr/XrPlatform.h>
 #include <shell/openxr/XrRefreshRate.h>
-#include <shell/shared/platform/Platform.h>
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
 #include <igl/IGL.h>

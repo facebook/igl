@@ -16,9 +16,9 @@
 #include <igl/opengl/egl/HWDevice.h>
 #include <igl/opengl/egl/PlatformDevice.h>
 #endif
-#include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #include <shell/shared/input/InputDispatcher.h>
+#include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #if IGL_BACKEND_VULKAN

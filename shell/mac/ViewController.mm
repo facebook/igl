@@ -19,8 +19,8 @@
 #import <AppKit/NSOpenGL.h>
 #import <AppKit/NSOpenGLView.h>
 #import <AppKit/NSView.h>
-#include <shell/shared/platform/Platform.h>
 #import <shell/shared/input/InputDispatcher.h>
+#include <shell/shared/platform/Platform.h>
 #import <igl/Common.h>
 #import <igl/IGL.h>
 #if IGL_BACKEND_METAL

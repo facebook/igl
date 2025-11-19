@@ -33,8 +33,8 @@
 #include "AutoContextReleaseDevice.h"
 
 #include <memory>
-#include <shell/shared/platform/win/PlatformWin.h>
 #include <shell/windows/common/GlfwShell.h>
+#include <shell/shared/platform/win/PlatformWin.h>
 #include <igl/Core.h>
 #include <igl/IGL.h>
 #include <igl/opengl/Device.h>

@@ -20,8 +20,8 @@
 #endif // IGL_ANGLE
 #include <GLFW/glfw3.h>
 #include <memory>
-#include <shell/shared/platform/Platform.h>
 #include <shell/windows/common/GlfwShell.h>
+#include <shell/shared/platform/Platform.h>
 
 using namespace igl;
 namespace igl::shell {
