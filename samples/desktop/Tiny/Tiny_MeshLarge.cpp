@@ -31,6 +31,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
 #include <ktx.h>
+#include <math.h>
 #include <meshoptimizer.h>
 #include <mutex>
 #include <shared/Camera.h>
@@ -849,7 +850,7 @@ static GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
     });
 
     glfwSetCursorPosCallback(window, [](auto* window, double x, double y) {
-      int fbWidth, fbHeight;
+      int fbWidth = 0, fbHeight = 0;
       glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
       mousePos_ = vec2(x / fbWidth, 1.0f - y / fbHeight);
 #if IGL_WITH_IGLU
@@ -869,7 +870,7 @@ static GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
         // release the mouse
         mousePressed_ = false;
       }
-      double xpos, ypos;
+      double xpos = NAN, ypos = NAN;
       glfwGetCursorPos(window, &xpos, &ypos);
       using igl::shell::MouseButton;
       const MouseButton iglButton =
@@ -2286,7 +2287,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
 #if USE_TEXTURE_LOADER
   loadKtxTexture(*device_, *commandQueue_, fileNameKTX, tex, !kEnableCompression);
 #else
-  ktxTexture2* texture;
+  ktxTexture2* texture = nullptr;
   auto error = ktxTexture2_CreateFromNamedFile(
       fileNameKTX.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
   IGL_DEBUG_ASSERT(error == KTX_SUCCESS);
@@ -2319,7 +2320,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
   IGL_DEBUG_ASSERT(tex);
   for (uint8_t face = 0; face < 6; ++face) {
     for (size_t i = 0; i < desc.numMipLevels; ++i) {
-      size_t offset;
+      size_t offset = 0;
       error = ktxTexture_GetImageOffset(ktxTexture(texture), i, 0, face, &offset);
       IGL_DEBUG_ASSERT(error == KTX_SUCCESS);
 
@@ -2403,7 +2404,7 @@ void generateMipmaps(const std::string& outFilename, ktxTexture2* cubemap) {
       const auto width = prevWidth > 1 ? prevWidth >> 1 : 1;
       const auto height = prevHeight > 1 ? prevWidth >> 1 : 1;
 
-      size_t prevOffset;
+      size_t prevOffset = 0;
       auto error =
           ktxTexture_GetImageOffset(ktxTexture(cubemap), miplevel - 1, 0, face, &prevOffset);
       IGL_DEBUG_ASSERT(error == KTX_SUCCESS);
@@ -2439,7 +2440,7 @@ void generateMipmaps(const std::string& outFilename, ktxTexture2* cubemap) {
 void processCubemap(const std::string& inFilename,
                     const std::string& outFilenameEnv,
                     const std::string& outFilenameIrr) {
-  int sourceWidth, sourceHeight;
+  int sourceWidth = 0, sourceHeight = 0;
   float* pxs = stbi_loadf(inFilename.c_str(), &sourceWidth, &sourceHeight, nullptr, 3);
   IGL_SCOPE_EXIT {
     if (pxs) {
@@ -2531,7 +2532,7 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
 #else
     // Uploading the texture
     const auto rangeDesc = TextureRangeDesc::new2D(0, 0, img.w, img.h, 0, desc.numMipLevels);
-    ktxTexture* texture;
+    ktxTexture* texture = nullptr;
     auto error = ktxTexture_CreateFromNamedFile(
         img.compressedFileName.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
     if (IGL_DEBUG_VERIFY_NOT(error != KTX_SUCCESS)) {
@@ -2542,7 +2543,7 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
     };
 
     for (size_t i = 0; i < desc.numMipLevels; ++i) {
-      size_t offset;
+      size_t offset = 0;
       error = ktxTexture_GetImageOffset(ktxTexture(texture), i, 0, 0, &offset);
       IGL_DEBUG_ASSERT(error == KTX_SUCCESS);
 
