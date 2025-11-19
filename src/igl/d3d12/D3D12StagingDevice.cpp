@@ -6,6 +6,7 @@
  */
 
 #include <igl/d3d12/D3D12StagingDevice.h>
+#include <igl/d3d12/D3D12FenceWaiter.h>
 #include <igl/d3d12/UploadRingBuffer.h>
 #include <igl/d3d12/Common.h>
 #include <igl/Assert.h>
@@ -28,11 +29,11 @@ D3D12StagingDevice::~D3D12StagingDevice() {
   if (fence_) {
     for (const auto& entry : inFlightBuffers_) {
       if (fence_->GetCompletedValue() < entry.fenceValue) {
-        HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        if (event) {
-          fence_->SetEventOnCompletion(entry.fenceValue, event);
-          WaitForSingleObject(event, INFINITE);
-          CloseHandle(event);
+        FenceWaiter waiter(fence_, entry.fenceValue);
+        Result waitResult = waiter.wait();
+        if (!waitResult.isOk()) {
+          IGL_LOG_ERROR("D3D12StagingDevice::~D3D12StagingDevice() - Fence wait failed during cleanup: %s\n",
+                        waitResult.message.c_str());
         }
       }
     }

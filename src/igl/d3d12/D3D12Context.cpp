@@ -52,10 +52,6 @@ D3D12Context::~D3D12Context() {
   ownedHeapMgr_ = nullptr;
   heapMgr_ = nullptr;
 
-  if (fenceEvent_) {
-    CloseHandle(fenceEvent_);
-  }
-
   // ComPtr handles cleanup automatically
 }
 
@@ -124,12 +120,6 @@ Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height,
     IGL_DEBUG_ASSERT(false);
     return Result(Result::Code::RuntimeError, "Failed to create fence");
   }
-  fenceEvent_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-  if (!fenceEvent_) {
-    IGL_LOG_ERROR("D3D12Context: Failed to create fence event\n");
-    IGL_DEBUG_ASSERT(false);
-    return Result(Result::Code::RuntimeError, "Failed to create fence event");
-  }
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Fence created successfully\n");
 
   // T14: Create per-frame command allocators using configurable frame count
@@ -171,13 +161,16 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
 
   // Wait for all GPU work to complete before releasing backbuffers
   // This prevents DXGI_ERROR_DEVICE_REMOVED when GPU is still rendering to old buffers
-  if (fence_.Get() && fenceEvent_) {
+  if (fence_.Get() && commandQueue_.Get()) {
     const UINT64 currentFence = fenceValue_;
     commandQueue_->Signal(fence_.Get(), currentFence);
 
-    if (fence_->GetCompletedValue() < currentFence) {
-      fence_->SetEventOnCompletion(currentFence, fenceEvent_);
-      WaitForSingleObject(fenceEvent_, INFINITE);
+    FenceWaiter waiter(fence_.Get(), currentFence);
+    Result waitResult = waiter.wait();
+    if (!waitResult.isOk()) {
+      IGL_LOG_ERROR("D3D12Context::resize() - Fence wait failed: %s\n",
+                    waitResult.message.c_str());
+      // Continue with resize despite error - old buffers will be released anyway
     }
   }
 
@@ -1256,9 +1249,10 @@ void D3D12Context::waitForGPU() {
 
   // Wait until the fence is crossed using FenceWaiter (TOCTOU-safe)
   FenceWaiter waiter(fence_.Get(), fenceToWaitFor);
-  if (!waiter.wait(INFINITE)) {
-    IGL_LOG_ERROR("D3D12Context::waitForGPU() - Failed to wait for GPU completion (fence=%llu)\n",
-                  fenceToWaitFor);
+  Result waitResult = waiter.wait(INFINITE);
+  if (!waitResult.isOk()) {
+    IGL_LOG_ERROR("D3D12Context::waitForGPU() - Fence wait failed: %s (fence=%llu)\n",
+                  waitResult.message.c_str(), fenceToWaitFor);
   }
 }
 

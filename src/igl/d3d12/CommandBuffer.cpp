@@ -12,6 +12,7 @@
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/Texture.h>
 #include <igl/d3d12/Timer.h>
+#include <igl/d3d12/D3D12FenceWaiter.h>
 #include <igl/d3d12/Common.h>
 
 namespace igl::d3d12 {
@@ -520,31 +521,14 @@ void CommandBuffer::waitUntilScheduled() {
                completedValue, scheduleValue_);
 #endif
 
-  // D-003: Create dedicated fence event per wait operation to eliminate TOCTOU race
-  // Using auto-reset event (FALSE, FALSE, nullptr) ensures proper signaling behavior
-  HANDLE hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-  if (!hEvent) {
-    IGL_LOG_ERROR("CommandBuffer::waitUntilScheduled() - Failed to create fence event\n");
+  // Use FenceWaiter RAII wrapper for proper fence waiting with TOCTOU protection
+  FenceWaiter waiter(scheduleFence_.Get(), scheduleValue_);
+  Result waitResult = waiter.wait();
+  if (!waitResult.isOk()) {
+    IGL_LOG_ERROR("CommandBuffer::waitUntilScheduled() - Fence wait failed: %s\n",
+                  waitResult.message.c_str());
     return;
   }
-
-  // D-003: Set event on completion BEFORE checking fence value again
-  HRESULT hr = scheduleFence_->SetEventOnCompletion(scheduleValue_, hEvent);
-  if (FAILED(hr)) {
-    IGL_LOG_ERROR("CommandBuffer::waitUntilScheduled() - SetEventOnCompletion failed: 0x%08X\n",
-                  static_cast<unsigned>(hr));
-    CloseHandle(hEvent);
-    return;
-  }
-
-  // D-003: Re-check after SetEventOnCompletion to avoid race condition
-  // If fence completed between initial check and SetEventOnCompletion, skip wait
-  if (scheduleFence_->GetCompletedValue() < scheduleValue_) {
-    WaitForSingleObject(hEvent, INFINITE);
-  }
-
-  // D-003: Clean up dedicated event handle
-  CloseHandle(hEvent);
 
 #ifdef IGL_DEBUG
   IGL_D3D12_LOG_VERBOSE("CommandBuffer::waitUntilScheduled() - Scheduling complete (fence now=%llu)\n",
@@ -569,15 +553,15 @@ void CommandBuffer::waitUntilCompleted() {
     return;
   }
 
-  HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-  if (!fenceEvent) {
+  queue->Signal(fence.Get(), 1);
+
+  FenceWaiter waiter(fence.Get(), 1);
+  Result waitResult = waiter.wait();
+  if (!waitResult.isOk()) {
+    IGL_LOG_ERROR("CommandBuffer::waitUntilCompleted() - Fence wait failed: %s\n",
+                  waitResult.message.c_str());
     return;
   }
-
-  queue->Signal(fence.Get(), 1);
-  fence->SetEventOnCompletion(1, fenceEvent);
-  WaitForSingleObject(fenceEvent, INFINITE);
-  CloseHandle(fenceEvent);
 
 #ifdef IGL_DEBUG
   IGL_D3D12_LOG_VERBOSE("CommandBuffer::waitUntilCompleted() - GPU work completed\n");

@@ -56,8 +56,10 @@ void FrameManager::waitForPipelineSync(UINT64 currentFenceValue) {
 #endif
 
     FenceWaiter waiter(fence, minimumSafeFence);
-    if (!waiter.wait(INFINITE)) {
-      IGL_LOG_ERROR("FrameManager: CRITICAL - Pipeline safety wait failed; continuing but overload protection compromised\n");
+    Result waitResult = waiter.wait(INFINITE);
+    if (!waitResult.isOk()) {
+      IGL_LOG_ERROR("FrameManager: CRITICAL - Pipeline safety wait failed: %s; continuing but overload protection compromised\n",
+                    waitResult.message.c_str());
       // Continue anyway - this is a safety net, not a hard requirement
       // But future work should consider aborting here as well
     }
@@ -83,13 +85,21 @@ bool FrameManager::waitForFrame(uint32_t frameIndex) {
     FenceWaiter waiter(fence, frameFence);
 
     // Try with 5-second timeout first (handles window drag scenarios)
-    if (!waiter.wait(5000)) {
-      IGL_LOG_ERROR("FrameManager: Wait for frame %u fence %llu failed after 5s; forcing infinite wait\n",
-                    frameIndex, frameFence);
+    Result waitResult = waiter.wait(5000);
+    if (!waitResult.isOk()) {
+      // Check if it's a timeout or other error
+      if (FenceWaiter::isTimeoutError(waitResult)) {
+        IGL_LOG_ERROR("FrameManager: Wait for frame %u fence %llu timed out after 5s; forcing infinite wait\n",
+                      frameIndex, frameFence);
+      } else {
+        IGL_LOG_ERROR("FrameManager: Wait for frame %u fence %llu failed: %s; forcing infinite wait\n",
+                      frameIndex, frameFence, waitResult.message.c_str());
+      }
       // Fall back to infinite wait
-      if (!waiter.wait(INFINITE)) {
-        IGL_LOG_ERROR("FrameManager: CRITICAL - Infinite wait for frame %u failed; aborting frame advancement\n",
-                      frameIndex);
+      waitResult = waiter.wait(INFINITE);
+      if (!waitResult.isOk()) {
+        IGL_LOG_ERROR("FrameManager: CRITICAL - Infinite wait for frame %u failed: %s; aborting frame advancement\n",
+                      frameIndex, waitResult.message.c_str());
         return false; // Abort frame advancement - unsafe to proceed
       }
     }
@@ -131,9 +141,10 @@ void FrameManager::resetAllocator(uint32_t frameIndex) {
                     completedValue, allocatorFence, frame.commandBufferCount);
 
       FenceWaiter waiter(fence, allocatorFence);
-      if (!waiter.wait(INFINITE)) {
-        IGL_LOG_ERROR("FrameManager: CRITICAL - Allocator wait failed; skipping unsafe allocator reset for frame %u\n",
-                      frameIndex);
+      Result waitResult = waiter.wait(INFINITE);
+      if (!waitResult.isOk()) {
+        IGL_LOG_ERROR("FrameManager: CRITICAL - Allocator wait failed: %s; skipping unsafe allocator reset for frame %u\n",
+                      waitResult.message.c_str(), frameIndex);
         // Do not reset allocator if GPU hasn't completed - would cause sync violations
         return;
       }

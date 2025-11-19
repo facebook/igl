@@ -10,6 +10,7 @@
 #include <igl/d3d12/Device.h>  // P0_DX12-005: For command allocator pool access
 #include <igl/d3d12/DXCCompiler.h>
 #include <igl/d3d12/UploadRingBuffer.h>  // P1_DX12-009: Upload ring buffer
+#include <igl/d3d12/D3D12FenceWaiter.h>
 
 // P1_DX12-FIND-06: Removed needsRGBAChannelSwap() function
 // No channel swap needed - DXGI_FORMAT_R8G8B8A8_UNORM matches IGL TextureFormat::RGBA_UNorm8 byte order
@@ -434,18 +435,16 @@ Result Texture::upload(const TextureRangeDesc& range,
       return Result(Result::Code::RuntimeError, "Failed to create fence");
     }
 
-    HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    if (!fenceEvent) {
-      return Result(Result::Code::RuntimeError, "Failed to create fence event");
-    }
-
     queue_->Signal(fence.Get(), 1);
-    fence->SetEventOnCompletion(1, fenceEvent);
-    WaitForSingleObject(fenceEvent, INFINITE);
-    CloseHandle(fenceEvent);
+
+    FenceWaiter waiter(fence.Get(), 1);
+    Result waitResult = waiter.wait();
+    if (!waitResult.isOk()) {
+      return waitResult;  // Propagate detailed timeout/setup error
+    }
   }
 
-  return Result(Result::Code::Ok);
+  return Result();
 }
 
 Result Texture::uploadCube(const TextureRangeDesc& range,
@@ -628,15 +627,15 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
       IGL_LOG_ERROR("Texture::generateMipmap() - Failed to create copy fence\n");
       return;
     }
-    HANDLE copyEvt = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    if (!copyEvt) {
-      IGL_LOG_ERROR("Texture::generateMipmap() - Failed to create copy event\n");
+    queue_->Signal(copyFence.Get(), 1);
+
+    FenceWaiter waiter(copyFence.Get(), 1);
+    Result waitResult = waiter.wait();
+    if (!waitResult.isOk()) {
+      IGL_LOG_ERROR("Texture::generateMipmap() - Fence wait failed: %s\n",
+                    waitResult.message.c_str());
       return;
     }
-    queue_->Signal(copyFence.Get(), 1);
-    copyFence->SetEventOnCompletion(1, copyEvt);
-    WaitForSingleObject(copyEvt, INFINITE);
-    CloseHandle(copyEvt);
 
     // oldResource will be automatically released by ComPtr destructor
 
@@ -893,12 +892,14 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
 
   igl::d3d12::ComPtr<ID3D12Fence> fence;
   if (FAILED(device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf())))) return;
-  HANDLE evt = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-  if (!evt) return;
   queue_->Signal(fence.Get(), 1);
-  fence->SetEventOnCompletion(1, evt);
-  WaitForSingleObject(evt, INFINITE);
-  CloseHandle(evt);
+
+  FenceWaiter waiter(fence.Get(), 1);
+  Result waitResult = waiter.wait();
+  if (!waitResult.isOk()) {
+    IGL_LOG_ERROR("Texture::generateMipmap() - Fence wait failed: %s\n",
+                  waitResult.message.c_str());
+  }
 }
 
 void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDesc* /*range*/) const {
@@ -1144,12 +1145,14 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   queue_->ExecuteCommandLists(1, lists);
   igl::d3d12::ComPtr<ID3D12Fence> fence;
   if (FAILED(device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf())))) return;
-  HANDLE evt = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-  if (!evt) return;
   queue_->Signal(fence.Get(), 1);
-  fence->SetEventOnCompletion(1, evt);
-  WaitForSingleObject(evt, INFINITE);
-  CloseHandle(evt);
+
+  FenceWaiter waiter(fence.Get(), 1);
+  Result waitResult = waiter.wait();
+  if (!waitResult.isOk()) {
+    IGL_LOG_ERROR("Texture::generateMipmap(cmdBuffer) - Fence wait failed: %s\n",
+                  waitResult.message.c_str());
+  }
 }
 
 void Texture::initializeStateTracking(D3D12_RESOURCE_STATES initialState) {

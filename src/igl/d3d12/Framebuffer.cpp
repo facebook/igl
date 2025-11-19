@@ -12,6 +12,7 @@
 #include <igl/d3d12/CommandQueue.h>
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/Texture.h>
+#include <igl/d3d12/D3D12FenceWaiter.h>
 #include <cstring>
 
 namespace igl::d3d12 {
@@ -25,12 +26,7 @@ using ComPtr = igl::d3d12::ComPtr<T>;
 Framebuffer::Framebuffer(const FramebufferDesc& desc) : desc_(desc) {}
 
 Framebuffer::~Framebuffer() {
-  for (auto& cache : readbackCache_) {
-    if (cache.fenceEvent) {
-      CloseHandle(cache.fenceEvent);
-      cache.fenceEvent = nullptr;
-    }
-  }
+  // FenceWaiter RAII handles event cleanup automatically
 }
 
 std::vector<size_t> Framebuffer::getColorAttachmentIndices() const {
@@ -175,12 +171,6 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
       }
     }
 
-    if (!cache.fenceEvent) {
-      cache.fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-      if (!cache.fenceEvent) {
-        return;
-      }
-    }
 
     if (cache.readbackBuffer.Get() == nullptr || cache.readbackBufferSize < totalBytes) {
       D3D12_HEAP_PROPERTIES readbackHeap{};
@@ -249,10 +239,14 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
     if (FAILED(d3dQueue->Signal(cache.fence.Get(), fenceValue))) {
       return;
     }
-    if (FAILED(cache.fence->SetEventOnCompletion(fenceValue, cache.fenceEvent))) {
+
+    FenceWaiter waiter(cache.fence.Get(), fenceValue);
+    Result waitResult = waiter.wait();
+    if (!waitResult.isOk()) {
+      IGL_LOG_ERROR("Framebuffer::copyColorBytesFromFramebuffer() - Fence wait failed: %s\n",
+                    waitResult.message.c_str());
       return;
     }
-    WaitForSingleObject(cache.fenceEvent, INFINITE);
 
     void* mapped = nullptr;
     if (FAILED(cache.readbackBuffer->Map(0, nullptr, &mapped))) {
@@ -397,13 +391,6 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-  if (!fenceEvent) {
-    // D-001: Return allocator to pool even on failure
-    iglDevice.returnUploadCommandAllocator(allocator, 0);
-    return;
-  }
-
   // Get footprint for the depth resource
   D3D12_RESOURCE_DESC depthDesc = depthRes->GetDesc();
   D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint{};
@@ -414,7 +401,6 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
       &depthDesc, subresourceIndex, 1, 0, &footprint, &numRows, &rowSizeInBytes, &totalBytes);
 
   if (totalBytes == 0) {
-    CloseHandle(fenceEvent);
     // D-001: Return allocator to pool even on failure
     iglDevice.returnUploadCommandAllocator(allocator, 0);
     return;
@@ -440,7 +426,6 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
                                              D3D12_RESOURCE_STATE_COPY_DEST,
                                              nullptr,
                                              IID_PPV_ARGS(readbackBuffer.GetAddressOf())))) {
-    CloseHandle(fenceEvent);
     // D-001: Return allocator to pool even on failure
     iglDevice.returnUploadCommandAllocator(allocator, 0);
     return;
@@ -476,7 +461,6 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
   depthTex->transitionTo(commandList.Get(), previousState, mipLevel, copyLayer);
 
   if (FAILED(commandList->Close())) {
-    CloseHandle(fenceEvent);
     // D-001: Return allocator to pool even on failure
     iglDevice.returnUploadCommandAllocator(allocator, 0);
     return;
@@ -488,19 +472,20 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
 
   // Wait for GPU to complete
   if (FAILED(d3dQueue->Signal(fence.Get(), 1))) {
-    CloseHandle(fenceEvent);
     // D-001: Return allocator to pool even on failure
     iglDevice.returnUploadCommandAllocator(allocator, 0);
     return;
   }
-  if (FAILED(fence->SetEventOnCompletion(1, fenceEvent))) {
-    CloseHandle(fenceEvent);
+
+  FenceWaiter waiter(fence.Get(), 1);
+  Result waitResult = waiter.wait();
+  if (!waitResult.isOk()) {
+    IGL_LOG_ERROR("Framebuffer::copyDepthBytesFromFramebuffer() - Fence wait failed: %s\n",
+                  waitResult.message.c_str());
     // D-001: Return allocator to pool even on failure
     iglDevice.returnUploadCommandAllocator(allocator, 0);
     return;
   }
-  WaitForSingleObject(fenceEvent, INFINITE);
-  CloseHandle(fenceEvent);
 
   // D-001: Return allocator to pool after synchronous GPU wait
   iglDevice.returnUploadCommandAllocator(allocator, 0);
@@ -616,11 +601,6 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-  if (!fenceEvent) {
-    return;
-  }
-
   // Get footprint for the stencil plane
   D3D12_RESOURCE_DESC stencilDesc = stencilRes->GetDesc();
   D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint{};
@@ -631,7 +611,6 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
       &stencilDesc, subresourceIndex, 1, 0, &footprint, &numRows, &rowSizeInBytes, &totalBytes);
 
   if (totalBytes == 0) {
-    CloseHandle(fenceEvent);
     return;
   }
 
@@ -655,7 +634,6 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
                                              D3D12_RESOURCE_STATE_COPY_DEST,
                                              nullptr,
                                              IID_PPV_ARGS(readbackBuffer.GetAddressOf())))) {
-    CloseHandle(fenceEvent);
     return;
   }
 
@@ -689,7 +667,6 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
   stencilTex->transitionTo(commandList.Get(), previousState, mipLevel, copyLayer);
 
   if (FAILED(commandList->Close())) {
-    CloseHandle(fenceEvent);
     return;
   }
 
@@ -699,15 +676,16 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
 
   // Wait for GPU to complete
   if (FAILED(d3dQueue->Signal(fence.Get(), 1))) {
-    CloseHandle(fenceEvent);
     return;
   }
-  if (FAILED(fence->SetEventOnCompletion(1, fenceEvent))) {
-    CloseHandle(fenceEvent);
+
+  FenceWaiter waiter(fence.Get(), 1);
+  Result waitResult = waiter.wait();
+  if (!waitResult.isOk()) {
+    IGL_LOG_ERROR("Framebuffer::copyStencilBytesFromFramebuffer() - Fence wait failed: %s\n",
+                  waitResult.message.c_str());
     return;
   }
-  WaitForSingleObject(fenceEvent, INFINITE);
-  CloseHandle(fenceEvent);
 
   // Map readback buffer and copy data
   void* mapped = nullptr;

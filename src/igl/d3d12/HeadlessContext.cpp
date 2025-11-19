@@ -278,10 +278,6 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
   if (FAILED(hr)) {
     return Result(Result::Code::RuntimeError, "Failed to create fence");
   }
-  fenceEvent_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-  if (!fenceEvent_) {
-    return Result(Result::Code::RuntimeError, "Failed to create fence event");
-  }
 
   // Create descriptor heap manager with the same sizes for consistency
   {

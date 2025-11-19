@@ -293,7 +293,6 @@ class D3D12Context {
   UINT& getCurrentFrameIndex() { return currentFrameIndex_; }
   UINT64& getFenceValue() { return fenceValue_; }
   ID3D12Fence* getFence() const { return fence_.Get(); }
-  HANDLE getFenceEvent() const { return fenceEvent_; }
 
   // Resource tracking for diagnostics
   static void trackResourceCreation(const char* type, size_t sizeBytes);
@@ -421,7 +420,6 @@ class D3D12Context {
   // Global synchronization
   igl::d3d12::ComPtr<ID3D12Fence> fence_;
   UINT64 fenceValue_ = 0;
-  HANDLE fenceEvent_ = nullptr;
 
   uint32_t width_ = 0;
   uint32_t height_ = 0;

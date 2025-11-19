@@ -6,6 +6,7 @@
  */
 
 #include <igl/d3d12/D3D12ImmediateCommands.h>
+#include <igl/d3d12/D3D12FenceWaiter.h>
 #include <igl/d3d12/Common.h>
 #include <igl/Assert.h>
 
@@ -29,11 +30,11 @@ D3D12ImmediateCommands::~D3D12ImmediateCommands() {
   if (fence_) {
     for (const auto& entry : inFlightAllocators_) {
       if (fence_->GetCompletedValue() < entry.fenceValue) {
-        HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        if (event) {
-          fence_->SetEventOnCompletion(entry.fenceValue, event);
-          WaitForSingleObject(event, INFINITE);
-          CloseHandle(event);
+        FenceWaiter waiter(fence_, entry.fenceValue);
+        Result waitResult = waiter.wait();
+        if (!waitResult.isOk()) {
+          IGL_LOG_ERROR("D3D12ImmediateCommands::~D3D12ImmediateCommands() - Fence wait failed during cleanup: %s\n",
+                        waitResult.message.c_str());
         }
       }
     }
@@ -153,21 +154,8 @@ Result D3D12ImmediateCommands::waitForFence(uint64_t fenceValue) {
     return Result{};
   }
 
-  HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-  if (!event) {
-    return Result{Result::Code::RuntimeError, "Failed to create fence event"};
-  }
-
-  HRESULT hr = fence_->SetEventOnCompletion(fenceValue, event);
-  if (FAILED(hr)) {
-    CloseHandle(event);
-    return Result{Result::Code::RuntimeError, "Failed to set fence event"};
-  }
-
-  WaitForSingleObject(event, INFINITE);
-  CloseHandle(event);
-
-  return Result{};
+  FenceWaiter waiter(fence_, fenceValue);
+  return waiter.wait();  // Directly return the detailed Result
 }
 
 void D3D12ImmediateCommands::reclaimCompletedAllocators() {

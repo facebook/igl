@@ -57,7 +57,6 @@ class Framebuffer final : public IFramebuffer {
     igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator;
     igl::d3d12::ComPtr<ID3D12GraphicsCommandList> commandList;
     igl::d3d12::ComPtr<ID3D12Fence> fence;
-    HANDLE fenceEvent = nullptr;
     uint64_t lastFenceValue = 0;
     std::vector<uint8_t> cachedData;
     uint32_t cachedWidth = 0;
