@@ -1062,37 +1062,49 @@ Result D3D12Context::createDescriptorHeaps() {
 
   // T14: Create per-frame shader-visible descriptor heaps using configurable sizes
   // Each frame gets its own isolated heaps to prevent descriptor conflicts between frames
-  // C-001: Now creates initial page with dynamic growth support
-  IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating per-frame descriptor heaps with dynamic growth support...\n");
-  IGL_D3D12_LOG_VERBOSE("  Config: maxFramesInFlight=%u, cbvSrvUavHeapSize=%u, samplerHeapSize=%u, "
-               "descriptorsPerPage=%u, maxHeapPages=%u\n",
-               config_.maxFramesInFlight, config_.cbvSrvUavHeapSize, config_.samplerHeapSize,
-               config_.descriptorsPerPage, config_.maxHeapPages);
+  // T27: Pre-allocation with fail-fast on exhaustion (Vulkan pattern, no dynamic growth)
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating per-frame descriptor heaps with fail-fast allocation...\n");
+  IGL_D3D12_LOG_VERBOSE("  Config: maxFramesInFlight=%u, samplerHeapSize=%u, "
+               "descriptorsPerPage=%u, maxHeapPages=%u, preAllocate=%s\n",
+               config_.maxFramesInFlight, config_.samplerHeapSize,
+               config_.descriptorsPerPage, config_.maxHeapPages,
+               config_.preAllocateDescriptorPages ? "true" : "false");
 
   for (UINT i = 0; i < config_.maxFramesInFlight; i++) {
-    // CBV/SRV/UAV heap: Start with one page of descriptorsPerPage descriptors
-    // Additional pages will be allocated on-demand up to maxHeapPages
+    // CBV/SRV/UAV heap: Pre-allocate pages based on config policy
+    // T27: When preAllocateDescriptorPages=true, allocate all maxHeapPages upfront
+    //      to prevent mid-frame allocation and descriptor invalidation (Vulkan fail-fast pattern)
     {
-      igl::d3d12::ComPtr<ID3D12DescriptorHeap> initialHeap;
-      Result result = allocateDescriptorHeapPage(
-          D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-          config_.descriptorsPerPage,
-          &initialHeap);
-
-      if (!result.isOk()) {
-        IGL_LOG_ERROR("D3D12Context: Failed to create initial CBV/SRV/UAV heap page for frame %u\n", i);
-        IGL_DEBUG_ASSERT(false);
-        return result;
-      }
-
-      // Initialize page vector with first page
       frameContexts_[i].cbvSrvUavHeapPages.clear();
-      frameContexts_[i].cbvSrvUavHeapPages.emplace_back(initialHeap, config_.descriptorsPerPage);
       frameContexts_[i].currentCbvSrvUavPageIndex = 0;
 
-      const uint32_t maxDescriptorsPerFrame = config_.maxHeapPages * config_.descriptorsPerPage;
-      IGL_D3D12_LOG_VERBOSE("  Frame %u: Created initial CBV/SRV/UAV heap page (%u descriptors, max %u pages = %u total)\n",
-                   i, config_.descriptorsPerPage, config_.maxHeapPages, maxDescriptorsPerFrame);
+      const uint32_t pagesToAllocate = config_.preAllocateDescriptorPages ? config_.maxHeapPages : 1;
+
+      for (uint32_t pageIdx = 0; pageIdx < pagesToAllocate; ++pageIdx) {
+        igl::d3d12::ComPtr<ID3D12DescriptorHeap> heap;
+        Result result = allocateDescriptorHeapPage(
+            D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+            config_.descriptorsPerPage,
+            &heap);
+
+        if (!result.isOk()) {
+          IGL_LOG_ERROR("D3D12Context: Failed to create CBV/SRV/UAV heap page %u for frame %u: %s\n",
+                        pageIdx, i, result.message.c_str());
+          IGL_DEBUG_ASSERT(false);
+          return result;
+        }
+
+        frameContexts_[i].cbvSrvUavHeapPages.emplace_back(heap, config_.descriptorsPerPage);
+      }
+
+      const uint32_t allocatedDescriptors = pagesToAllocate * config_.descriptorsPerPage;
+      if (config_.preAllocateDescriptorPages) {
+        IGL_D3D12_LOG_VERBOSE("  Frame %u: Pre-allocated %u CBV/SRV/UAV heap pages (%u descriptors, fail-fast on exhaustion)\n",
+                     i, pagesToAllocate, allocatedDescriptors);
+      } else {
+        IGL_D3D12_LOG_VERBOSE("  Frame %u: Allocated %u CBV/SRV/UAV heap page (%u descriptors, fail-fast on exhaustion)\n",
+                     i, pagesToAllocate, allocatedDescriptors);
+      }
     }
 
     // Sampler heap: samplerHeapSize descriptors
@@ -1115,15 +1127,14 @@ Result D3D12Context::createDescriptorHeaps() {
   }
 
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Per-frame descriptor heaps created successfully\n");
-  // Memory calculation: initial page + samplers per frame
-  const uint32_t initialDescriptors = config_.descriptorsPerPage + config_.samplerHeapSize;
-  const uint32_t maxDescriptors = (config_.descriptorsPerPage * config_.maxHeapPages) + config_.samplerHeapSize;
-  const uint32_t initialMemoryKB = (config_.maxFramesInFlight * initialDescriptors * 32) / 1024;
-  const uint32_t maxMemoryKB = (config_.maxFramesInFlight * maxDescriptors * 32) / 1024;
-  IGL_D3D12_LOG_VERBOSE("  Initial memory: %u frames × (%u CBV/SRV/UAV + %u Samplers) × 32 bytes ≈ %u KB\n",
-               config_.maxFramesInFlight, config_.descriptorsPerPage, config_.samplerHeapSize, initialMemoryKB);
-  IGL_D3D12_LOG_VERBOSE("  Max memory (if all pages allocated): %u frames × (%u CBV/SRV/UAV + %u Samplers) × 32 bytes ≈ %u KB\n",
-               config_.maxFramesInFlight, config_.descriptorsPerPage * config_.maxHeapPages, config_.samplerHeapSize, maxMemoryKB);
+  // T27: Memory calculation reflects actual pre-allocation (no dynamic growth)
+  const uint32_t pagesPerFrame = config_.preAllocateDescriptorPages ? config_.maxHeapPages : 1;
+  const uint32_t cbvSrvUavDescriptors = config_.descriptorsPerPage * pagesPerFrame;
+  const uint32_t totalDescriptorsPerFrame = cbvSrvUavDescriptors + config_.samplerHeapSize;
+  const uint32_t totalMemoryKB = (config_.maxFramesInFlight * totalDescriptorsPerFrame * 32) / 1024;
+  IGL_D3D12_LOG_VERBOSE("  Allocated memory: %u frames * (%u CBV/SRV/UAV + %u Samplers) * 32 bytes = %u KB\n",
+               config_.maxFramesInFlight, cbvSrvUavDescriptors,
+               config_.samplerHeapSize, totalMemoryKB);
 
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating descriptor heap manager...\n");
 

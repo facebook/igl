@@ -56,6 +56,14 @@ struct D3D12ContextConfig {
   uint32_t descriptorsPerPage = 1024;    // CBV/SRV/UAV descriptors per heap page
   uint32_t maxHeapPages = 16;            // Maximum pages per frame (total capacity = pages × descriptorsPerPage)
 
+  // T27: Pre-allocation policy for descriptor pages
+  // Rationale: Following Vulkan fail-fast pattern to prevent mid-frame descriptor invalidation
+  // When true: All maxHeapPages are pre-allocated at init (recommended)
+  // When false: Only 1 page pre-allocated at init (minimal memory footprint)
+  // Both modes fail-fast when pages are exhausted - NO dynamic growth to prevent descriptor invalidation
+  // Default: true for safety (matches Vulkan behavior and supports complex scenes)
+  bool preAllocateDescriptorPages = true;
+
   // DEPRECATED: Use descriptorsPerPage instead
   // This field is kept for backward compatibility but has the same value as descriptorsPerPage
   uint32_t cbvSrvUavHeapSize = 1024;     // Alias for descriptorsPerPage (deprecated)
