@@ -7,9 +7,9 @@
 
 #pragma once
 
+#include <string>
 #include <shell/shared/netservice/NetService.h>
 #include <shell/shared/netservice/apple/StreamApple.h>
-#include <string>
 
 @class NSNetService;
 @protocol NSNetServiceDelegate;
