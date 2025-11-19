@@ -102,11 +102,12 @@ void TextureLoader::loadToExternalMemoryInternal(uint8_t* IGL_NONNULL data,
                                                      outResult) const noexcept {
   const auto& desc = descriptor();
 
-  size_t offset = 0;
+  size_t offsetDestination = 0;
+  size_t offsetSource = 0;
   for (uint32_t mipLevel = 0; mipLevel < desc.numMipLevels && mipLevel < texture_->numLevels;
        ++mipLevel) {
     const auto ktxResult =
-        ktxTexture_GetImageOffset(ktxTexture(texture_.get()), 0, 0, mipLevel, &offset);
+        ktxTexture_GetImageOffset(ktxTexture(texture_.get()), mipLevel, 0, 0, &offsetSource);
     if (ktxResult != KTX_SUCCESS) {
       IGL_LOG_ERROR(
           "Error getting KTX texture data: %d %s\n", ktxResult, ktxErrorString(ktxResult));
@@ -121,15 +122,16 @@ void TextureLoader::loadToExternalMemoryInternal(uint8_t* IGL_NONNULL data,
     // will overflow `size_t` and hence act additive to destination_size.
     //
     // To avoid this, we properly compute the available_size and then check that.
-    const size_t availableSize = offset > length ? 0 : length - offset;
+    const size_t availableSize = offsetSource > length ? 0 : length - offsetSource;
     if (mipLevelLength > availableSize) {
       igl::Result::setResult(
           outResult, igl::Result::Code::InvalidOperation, "data length is too small.");
       return;
     }
 
-    checked_memcpy_offset(data, length, offset, texture_->pData + offset, mipLevelLength);
-    offset += mipLevelLength;
+    checked_memcpy_offset(
+        data, length, offsetDestination, texture_->pData + offsetSource, mipLevelLength);
+    offsetDestination += mipLevelLength;
   }
 }
 } // namespace
