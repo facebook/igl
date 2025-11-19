@@ -185,6 +185,113 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
                      gpuTimestampFrequencyHz_ / 1000000.0);
       }
     }
+
+    // T28: Pre-compile mipmap generation shaders at device initialization
+    // This avoids runtime compilation overhead in Texture::generateMipmap()
+    {
+      // HLSL shader sources (identical to those in Texture.cpp)
+      static const char* kVS = R"(
+struct VSOut { float4 pos: SV_POSITION; float2 uv: TEXCOORD0; };
+VSOut main(uint id: SV_VertexID) {
+  float2 p = float2((id << 1) & 2, id & 2);
+  VSOut o; o.pos = float4(p*float2(2,-2)+float2(-1,1), 0, 1); o.uv = p; return o;
+}
+)";
+      static const char* kPS = R"(
+Texture2D tex0 : register(t0);
+SamplerState smp : register(s0);
+float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return tex0.SampleLevel(smp, uv, 0); }
+)";
+
+      // Initialize DXC compiler
+      DXCCompiler dxcCompiler;
+      Result initResult = dxcCompiler.initialize();
+      if (!initResult.isOk()) {
+        IGL_LOG_ERROR("Device::Device: Failed to initialize DXC for mipmap shader compilation: %s\n",
+                      initResult.message.c_str());
+        IGL_LOG_ERROR("  Mipmap generation will be unavailable\n");
+        return;  // Early exit - don't attempt compilation without DXC
+      }
+
+      // Get shader model from context (minimum SM 6.0 for DXC)
+      D3D_SHADER_MODEL shaderModel = ctx_->getMaxShaderModel();
+      std::string vsTarget = getShaderTarget(shaderModel, ShaderStage::Vertex);
+      std::string psTarget = getShaderTarget(shaderModel, ShaderStage::Fragment);
+
+      // Compile vertex shader
+      std::string vsErrors;
+      Result vsResult = dxcCompiler.compile(kVS, strlen(kVS), "main", vsTarget.c_str(),
+                                             "MipmapGenerationVS", 0, mipmapVSBytecode_, vsErrors);
+      if (!vsResult.isOk()) {
+        IGL_LOG_ERROR("Device::Device: Failed to pre-compile mipmap VS: %s\n%s\n",
+                      vsResult.message.c_str(), vsErrors.c_str());
+        mipmapVSBytecode_.clear();
+        return;  // Early exit - can't proceed without VS
+      }
+
+      // Compile pixel shader
+      std::string psErrors;
+      Result psResult = dxcCompiler.compile(kPS, strlen(kPS), "main", psTarget.c_str(),
+                                             "MipmapGenerationPS", 0, mipmapPSBytecode_, psErrors);
+      if (!psResult.isOk()) {
+        IGL_LOG_ERROR("Device::Device: Failed to pre-compile mipmap PS: %s\n%s\n",
+                      psResult.message.c_str(), psErrors.c_str());
+        mipmapPSBytecode_.clear();
+        mipmapVSBytecode_.clear();  // Clear VS too for consistency
+        return;  // Early exit - can't proceed without PS
+      }
+
+      // Create root signature for mipmap generation
+      D3D12_DESCRIPTOR_RANGE ranges[2] = {};
+      ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+      ranges[0].NumDescriptors = 1;
+      ranges[0].BaseShaderRegister = 0;
+      ranges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+      ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+      ranges[1].NumDescriptors = 1;
+      ranges[1].BaseShaderRegister = 0;
+      ranges[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+      D3D12_ROOT_PARAMETER params[2] = {};
+      params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+      params[0].DescriptorTable.NumDescriptorRanges = 1;
+      params[0].DescriptorTable.pDescriptorRanges = &ranges[0];
+      params[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+      params[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+      params[1].DescriptorTable.NumDescriptorRanges = 1;
+      params[1].DescriptorTable.pDescriptorRanges = &ranges[1];
+      params[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+      D3D12_ROOT_SIGNATURE_DESC rsDesc = {};
+      rsDesc.NumParameters = 2;
+      rsDesc.pParameters = params;
+      rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+      igl::d3d12::ComPtr<ID3DBlob> sig, err;
+      if (FAILED(D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+                                             sig.GetAddressOf(), err.GetAddressOf()))) {
+        IGL_LOG_ERROR("Device::Device: Failed to serialize mipmap root signature\n");
+        if (err && err->GetBufferPointer()) {
+          IGL_LOG_ERROR("  D3D12 error: %s\n", static_cast<const char*>(err->GetBufferPointer()));
+        }
+        mipmapVSBytecode_.clear();
+        mipmapPSBytecode_.clear();
+        return;
+      }
+
+      if (FAILED(device->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(),
+                                              IID_PPV_ARGS(mipmapRootSignature_.GetAddressOf())))) {
+        IGL_LOG_ERROR("Device::Device: Failed to create mipmap root signature\n");
+        mipmapVSBytecode_.clear();
+        mipmapPSBytecode_.clear();
+        return;
+      }
+
+      // Success! Mark mipmap shaders as available
+      mipmapShadersAvailable_ = true;
+      IGL_D3D12_LOG_VERBOSE("Device::Device: Mipmap shaders pre-compiled successfully (%zu bytes VS, %zu bytes PS)\n",
+                   mipmapVSBytecode_.size(), mipmapPSBytecode_.size());
+    }
   }
 }
 

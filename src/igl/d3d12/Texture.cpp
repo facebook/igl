@@ -657,103 +657,32 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
 
   IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap() - Proceeding with mipmap generation\n");
 
-  D3D12_DESCRIPTOR_RANGE ranges[2] = {};
-  ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-  ranges[0].NumDescriptors = 1;
-  ranges[0].BaseShaderRegister = 0;
-  ranges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-  ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-  ranges[1].NumDescriptors = 1;
-  ranges[1].BaseShaderRegister = 0;
-  ranges[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-  D3D12_ROOT_PARAMETER params[2] = {};
-  params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-  params[0].DescriptorTable.NumDescriptorRanges = 1;
-  params[0].DescriptorTable.pDescriptorRanges = &ranges[0];
-  // C-006: Enable texture access in all shader stages (vertex, pixel, etc.)
-  params[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-  params[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-  params[1].DescriptorTable.NumDescriptorRanges = 1;
-  params[1].DescriptorTable.pDescriptorRanges = &ranges[1];
-  // C-006: Enable sampler access in all shader stages (vertex, pixel, etc.)
-  params[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-  D3D12_ROOT_SIGNATURE_DESC rsDesc = {};
-  rsDesc.NumParameters = 2;
-  rsDesc.pParameters = params;
-  rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-
-  igl::d3d12::ComPtr<ID3DBlob> sig, err;
-  if (FAILED(D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, sig.GetAddressOf(), err.GetAddressOf()))) {
-    return;
-  }
-  igl::d3d12::ComPtr<ID3D12RootSignature> rootSig;
-  if (FAILED(device_->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(), IID_PPV_ARGS(rootSig.GetAddressOf())))) {
+  // T28: Use pre-compiled shaders from Device instead of runtime compilation
+  // Note: iglDevice_ should always be set in normal flow (see Texture::createFromResource)
+  // This check is defensive; if it triggers, it indicates a texture creation path that bypassed proper initialization
+  if (!iglDevice_) {
+    IGL_LOG_ERROR("Texture::generateMipmap() - No IGL device available (texture not properly initialized)\n");
+    IGL_LOG_ERROR("  This is a programming error: textures must be created via Device methods to support mipmap generation\n");
     return;
   }
 
-  static const char* kVS = R"(
-struct VSOut { float4 pos: SV_POSITION; float2 uv: TEXCOORD0; };
-VSOut main(uint id: SV_VertexID) {
-  float2 p = float2((id << 1) & 2, id & 2);
-  VSOut o; o.pos = float4(p*float2(2,-2)+float2(-1,1), 0, 1); o.uv = p; return o;
-}
-)";
-  static const char* kPS = R"(
-Texture2D tex0 : register(t0);
-SamplerState smp : register(s0);
-float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return tex0.SampleLevel(smp, uv, 0); }
-)";
+  const auto& vsBytecode = iglDevice_->getMipmapVSBytecode();
+  const auto& psBytecode = iglDevice_->getMipmapPSBytecode();
+  ID3D12RootSignature* rootSig = iglDevice_->getMipmapRootSignature();
 
-  // Initialize DXC compiler (static, initialized once)
-  static DXCCompiler dxcCompiler;
-  static bool dxcInitialized = false;
-  if (!dxcInitialized) {
-    Result initResult = dxcCompiler.initialize();
-    if (!initResult.isOk()) {
-      IGL_LOG_ERROR("Texture::generateMipMaps - DXC initialization failed: %s\n", initResult.message.c_str());
-      return;
-    }
-    dxcInitialized = true;
-  }
-
-  // Get shader model from device context (H-009)
-  // DXC requires SM 6.0 minimum (SM 5.x deprecated)
-  D3D_SHADER_MODEL shaderModel = D3D_SHADER_MODEL_6_0;  // Default fallback
-  if (iglDevice_) {
-    shaderModel = iglDevice_->getD3D12Context().getMaxShaderModel();
-    int smMajor = (shaderModel >> 4) & 0xF;
-    int smMinor = shaderModel & 0xF;
-    IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap - Using Shader Model %d.%d\n", smMajor, smMinor);
-  } else {
-    IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap - No IGL device, using SM 6.0 fallback (DXC minimum)\n");
-  }
-
-  // Build dynamic shader targets
-  std::string vsTarget = getShaderTarget(shaderModel, ShaderStage::Vertex);
-  std::string psTarget = getShaderTarget(shaderModel, ShaderStage::Fragment);
-
-  // Compile shaders with dynamic shader model (H-009)
-  std::vector<uint8_t> vsBytecode, psBytecode;
-  std::string vsErrors, psErrors;
-
-  IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap - Compiling VS with target: %s\n", vsTarget.c_str());
-  Result vsResult = dxcCompiler.compile(kVS, strlen(kVS), "main", vsTarget.c_str(), "MipmapGenerationVS", 0, vsBytecode, vsErrors);
-  if (!vsResult.isOk()) {
-    IGL_LOG_ERROR("Texture::generateMipMaps - VS compilation failed: %s\n%s\n", vsResult.message.c_str(), vsErrors.c_str());
+  // Validate pre-compiled shaders are available
+  // This can fail if device initialization encountered DXC errors
+  if (vsBytecode.empty() || psBytecode.empty() || !rootSig) {
+    IGL_LOG_ERROR("Texture::generateMipmap() - Pre-compiled mipmap shaders unavailable\n");
+    IGL_LOG_ERROR("  Device may not support mipmap generation (check Device initialization logs for DXC errors)\n");
     return;
   }
 
-  IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap - Compiling PS with target: %s\n", psTarget.c_str());
-  Result psResult = dxcCompiler.compile(kPS, strlen(kPS), "main", psTarget.c_str(), "MipmapGenerationPS", 0, psBytecode, psErrors);
-  if (!psResult.isOk()) {
-    IGL_LOG_ERROR("Texture::generateMipMaps - PS compilation failed: %s\n%s\n", psResult.message.c_str(), psErrors.c_str());
-    return;
-  }
+  IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap() - Using pre-compiled shaders (%zu bytes VS, %zu bytes PS)\n",
+               vsBytecode.size(), psBytecode.size());
 
   D3D12_GRAPHICS_PIPELINE_STATE_DESC pso = {};
-  pso.pRootSignature = rootSig.Get();
+  pso.pRootSignature = rootSig;
   pso.VS = {vsBytecode.data(), vsBytecode.size()};
   pso.PS = {psBytecode.data(), psBytecode.size()};
   pso.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -810,7 +739,7 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   ID3D12DescriptorHeap* heaps[] = {srvHeap.Get(), smpHeap.Get()};
   list->SetDescriptorHeaps(2, heaps);
   list->SetPipelineState(psoObj.Get());
-  list->SetGraphicsRootSignature(rootSig.Get());
+  list->SetGraphicsRootSignature(rootSig);  // T28: rootSig is already a raw pointer
   list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   // Get descriptor size for incrementing through the heap
@@ -925,99 +854,33 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDe
     IGL_D3D12_LOG_VERBOSE("  To enable mipmap generation, create texture with TextureDesc::TextureUsageBits::Attachment\n");
     return;
   }
-  D3D12_DESCRIPTOR_RANGE ranges[2] = {};
-  ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-  ranges[0].NumDescriptors = 1;
-  ranges[0].BaseShaderRegister = 0;
-  ranges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-  ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-  ranges[1].NumDescriptors = 1;
-  ranges[1].BaseShaderRegister = 0;
-  ranges[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-  D3D12_ROOT_PARAMETER params[2] = {};
-  params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-  params[0].DescriptorTable.NumDescriptorRanges = 1;
-  params[0].DescriptorTable.pDescriptorRanges = &ranges[0];
-  // C-006: Enable texture access in all shader stages (vertex, pixel, etc.)
-  params[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-  params[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-  params[1].DescriptorTable.NumDescriptorRanges = 1;
-  params[1].DescriptorTable.pDescriptorRanges = &ranges[1];
-  // C-006: Enable sampler access in all shader stages (vertex, pixel, etc.)
-  params[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-  D3D12_ROOT_SIGNATURE_DESC rsDesc = {};
-  rsDesc.NumParameters = 2;
-  rsDesc.pParameters = params;
-  rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-  igl::d3d12::ComPtr<ID3DBlob> sig, err;
-  if (FAILED(D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, sig.GetAddressOf(), err.GetAddressOf()))) {
-    return;
-  }
-  igl::d3d12::ComPtr<ID3D12RootSignature> rootSig;
-  if (FAILED(device_->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(), IID_PPV_ARGS(rootSig.GetAddressOf())))) {
-    return;
-  }
-  static const char* kVS = R"(
-struct VSOut { float4 pos: SV_POSITION; float2 uv: TEXCOORD0; };
-VSOut main(uint id: SV_VertexID) {
-  float2 p = float2((id << 1) & 2, id & 2);
-  VSOut o; o.pos = float4(p*float2(2,-2)+float2(-1,1), 0, 1); o.uv = p; return o;
-}
-)";
-  static const char* kPS = R"(
-Texture2D tex0 : register(t0);
-SamplerState smp : register(s0);
-float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return tex0.SampleLevel(smp, uv, 0); }
-)";
 
-  // Initialize DXC compiler (static, initialized once)
-  static DXCCompiler dxcCompiler;
-  static bool dxcInitialized = false;
-  if (!dxcInitialized) {
-    Result initResult = dxcCompiler.initialize();
-    if (!initResult.isOk()) {
-      IGL_LOG_ERROR("Texture::upload - DXC initialization failed: %s\n", initResult.message.c_str());
-      return;
-    }
-    dxcInitialized = true;
-  }
-
-  // Get shader model from device context (H-009)
-  // DXC requires SM 6.0 minimum (SM 5.x deprecated)
-  D3D_SHADER_MODEL shaderModel = D3D_SHADER_MODEL_6_0;  // Default fallback
-  if (iglDevice_) {
-    shaderModel = iglDevice_->getD3D12Context().getMaxShaderModel();
-    int smMajor = (shaderModel >> 4) & 0xF;
-    int smMinor = shaderModel & 0xF;
-    IGL_D3D12_LOG_VERBOSE("Texture::upload - Using Shader Model %d.%d\n", smMajor, smMinor);
-  } else {
-    IGL_D3D12_LOG_VERBOSE("Texture::upload - No IGL device, using SM 6.0 fallback (DXC minimum)\n");
-  }
-
-  // Build dynamic shader targets
-  std::string vsTarget = getShaderTarget(shaderModel, ShaderStage::Vertex);
-  std::string psTarget = getShaderTarget(shaderModel, ShaderStage::Fragment);
-
-  // Compile shaders with dynamic shader model (H-009)
-  std::vector<uint8_t> vsBytecode, psBytecode;
-  std::string vsErrors, psErrors;
-
-  IGL_D3D12_LOG_VERBOSE("Texture::upload - Compiling VS with target: %s\n", vsTarget.c_str());
-  Result vsResult = dxcCompiler.compile(kVS, strlen(kVS), "main", vsTarget.c_str(), "TextureUploadVS", 0, vsBytecode, vsErrors);
-  if (!vsResult.isOk()) {
-    IGL_LOG_ERROR("Texture::upload - VS compilation failed: %s\n%s\n", vsResult.message.c_str(), vsErrors.c_str());
+  // T28: Use pre-compiled shaders from Device instead of runtime compilation
+  // Note: iglDevice_ should always be set in normal flow (see Texture::createFromResource)
+  // This check is defensive; if it triggers, it indicates a texture creation path that bypassed proper initialization
+  if (!iglDevice_) {
+    IGL_LOG_ERROR("Texture::generateMipmap(cmdBuffer) - No IGL device available (texture not properly initialized)\n");
+    IGL_LOG_ERROR("  This is a programming error: textures must be created via Device methods to support mipmap generation\n");
     return;
   }
 
-  IGL_D3D12_LOG_VERBOSE("Texture::upload - Compiling PS with target: %s\n", psTarget.c_str());
-  Result psResult = dxcCompiler.compile(kPS, strlen(kPS), "main", psTarget.c_str(), "TextureUploadPS", 0, psBytecode, psErrors);
-  if (!psResult.isOk()) {
-    IGL_LOG_ERROR("Texture::upload - PS compilation failed: %s\n%s\n", psResult.message.c_str(), psErrors.c_str());
+  const auto& vsBytecode = iglDevice_->getMipmapVSBytecode();
+  const auto& psBytecode = iglDevice_->getMipmapPSBytecode();
+  ID3D12RootSignature* rootSig = iglDevice_->getMipmapRootSignature();
+
+  // Validate pre-compiled shaders are available
+  // This can fail if device initialization encountered DXC errors
+  if (vsBytecode.empty() || psBytecode.empty() || !rootSig) {
+    IGL_LOG_ERROR("Texture::generateMipmap(cmdBuffer) - Pre-compiled mipmap shaders unavailable\n");
+    IGL_LOG_ERROR("  Device may not support mipmap generation (check Device initialization logs for DXC errors)\n");
     return;
   }
+
+  IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap(cmdBuffer) - Using pre-compiled shaders (%zu bytes VS, %zu bytes PS)\n",
+               vsBytecode.size(), psBytecode.size());
 
   D3D12_GRAPHICS_PIPELINE_STATE_DESC pso = {};
-  pso.pRootSignature = rootSig.Get();
+  pso.pRootSignature = rootSig;
   pso.VS = {vsBytecode.data(), vsBytecode.size()};
   pso.PS = {psBytecode.data(), psBytecode.size()};
   pso.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -1067,7 +930,7 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   ID3D12DescriptorHeap* heaps[] = {srvHeap.Get(), smpHeap.Get()};
   list->SetDescriptorHeaps(2, heaps);
   list->SetPipelineState(psoObj.Get());
-  list->SetGraphicsRootSignature(rootSig.Get());
+  list->SetGraphicsRootSignature(rootSig);  // T28: rootSig is already a raw pointer
   list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   // Get descriptor size for incrementing through the heap
   const UINT srvDescriptorSize = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);

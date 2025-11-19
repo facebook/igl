@@ -296,6 +296,13 @@ class Device final : public IDevice, public IFenceProvider {
   // Used by Timer to convert GPU ticks to nanoseconds
   uint64_t gpuTimestampFrequencyHz_ = 0;
 
+  // T28: Pre-compiled mipmap generation shaders
+  // Compiled once at device initialization to avoid runtime compilation overhead
+  std::vector<uint8_t> mipmapVSBytecode_;
+  std::vector<uint8_t> mipmapPSBytecode_;
+  igl::d3d12::ComPtr<ID3D12RootSignature> mipmapRootSignature_;
+  bool mipmapShadersAvailable_ = false;  // True if pre-compilation succeeded
+
  public:
   // T07/T26: Shared staging infrastructure for upload/readback operations
   // Used by Buffer, Texture, Framebuffer, CommandBuffer for centralized resource management
@@ -304,6 +311,20 @@ class Device final : public IDevice, public IFenceProvider {
   }
   [[nodiscard]] D3D12StagingDevice* getStagingDevice() const {
     return stagingDevice_.get();
+  }
+
+  // T28: Access pre-compiled mipmap shaders
+  [[nodiscard]] bool areMipmapShadersAvailable() const {
+    return mipmapShadersAvailable_;
+  }
+  [[nodiscard]] const std::vector<uint8_t>& getMipmapVSBytecode() const {
+    return mipmapVSBytecode_;
+  }
+  [[nodiscard]] const std::vector<uint8_t>& getMipmapPSBytecode() const {
+    return mipmapPSBytecode_;
+  }
+  [[nodiscard]] ID3D12RootSignature* getMipmapRootSignature() const {
+    return mipmapRootSignature_.Get();
   }
 };
 
