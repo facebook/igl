@@ -343,10 +343,10 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
                            depthFormat == DXGI_FORMAT_D32_FLOAT_S8X24_UINT);
 
   if (!isD32Float) {
-    IGL_LOG_INFO("Framebuffer::copyBytesDepthAttachment - Format 0x%X is not D32_FLOAT; "
-                 "returning raw GPU bits (not normalized [0,1] floats). "
-                 "For UNORM formats, caller must convert manually.\n",
-                 static_cast<unsigned int>(depthFormat));
+    IGL_D3D12_LOG_VERBOSE("Framebuffer::copyBytesDepthAttachment - Format 0x%X is not D32_FLOAT; "
+                          "returning raw GPU bits (not normalized [0,1] floats). "
+                          "For UNORM formats, caller must convert manually.\n",
+                          static_cast<unsigned int>(depthFormat));
   }
 
   D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint{};
@@ -546,6 +546,7 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
     IGL_LOG_ERROR("Framebuffer::copyBytesStencilAttachment - Unsupported stencil format 0x%X; "
                   "assuming plane 0. May fail for planar formats.\n",
                   static_cast<unsigned int>(stencilFormat));
+    IGL_DEBUG_ASSERT(false, "Unsupported stencil format - add to known format list");
     planeSlice = 0;
   }
 
@@ -649,7 +650,6 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
 
   // Stencil is always 8-bit (1 byte per pixel)
   const size_t bytesPerPixel = 1;
-  const size_t fullRowBytes = static_cast<size_t>(mipWidth) * bytesPerPixel;
 
   // Copy with vertical flip (D3D12 textures are top-down, IGL expects bottom-up)
   const size_t copyRowBytes = static_cast<size_t>(range.width) * bytesPerPixel;
@@ -688,6 +688,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   auto* d3dQueueWrapper = dynamic_cast<CommandQueue*>(&cmdQueue);
   if (!d3dQueueWrapper) {
     IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment - Invalid command queue\n");
+    IGL_DEBUG_ASSERT(false, "D3D12 Framebuffer used with non-D3D12 command queue");
     return;
   }
 
@@ -695,6 +696,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   auto* immediateCommands = iglDevice.getImmediateCommands();
   if (!immediateCommands) {
     IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment - Immediate commands not available\n");
+    IGL_DEBUG_ASSERT(false, "D3D12ImmediateCommands not initialized");
     return;
   }
 
