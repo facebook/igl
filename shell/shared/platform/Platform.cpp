@@ -10,8 +10,8 @@
 #include <shell/shared/extension/Extension.h>
 #include <shell/shared/extension/ExtensionLoader.h>
 #include <shell/shared/imageLoader/ImageLoader.h>
-#include <shell/shared/input/InputDispatcher.h>
 #include <shell/shared/platform/DisplayContext.h>
+#include <shell/shared/input/InputDispatcher.h>
 
 namespace {
 

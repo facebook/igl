@@ -10,13 +10,13 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <variant>
+#include <vector>
 #include <shell/shared/input/IntentListener.h>
 #include <shell/shared/input/KeyListener.h>
 #include <shell/shared/input/MouseListener.h>
 #include <shell/shared/input/RayListener.h>
 #include <shell/shared/input/TouchListener.h>
-#include <variant>
-#include <vector>
 
 namespace igl::shell {
 
