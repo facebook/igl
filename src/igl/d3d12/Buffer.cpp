@@ -199,9 +199,6 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
     const bool needsIntermediate = !D3D12StateTransition::isLegalDirectTransition(
         currentState_, D3D12_RESOURCE_STATE_COPY_DEST);
 
-    D3D12StateTransition::logTransition("Buffer", currentState_,
-                                       D3D12_RESOURCE_STATE_COPY_DEST, needsIntermediate);
-
     if (needsIntermediate) {
       // Transition to COMMON first
       D3D12_RESOURCE_BARRIER toCommon = {};
@@ -241,9 +238,6 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
     // B-006: Validate state transition and insert intermediate state if needed
     const bool needsIntermediate = !D3D12StateTransition::isLegalDirectTransition(
         D3D12_RESOURCE_STATE_COPY_DEST, postState);
-
-    D3D12StateTransition::logTransition("Buffer", D3D12_RESOURCE_STATE_COPY_DEST,
-                                       postState, needsIntermediate);
 
     if (needsIntermediate) {
       // Transition to COMMON first
@@ -432,9 +426,6 @@ void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
     const bool needsIntermediate = !D3D12StateTransition::isLegalDirectTransition(
         assumedState, D3D12_RESOURCE_STATE_COPY_SOURCE);
 
-    D3D12StateTransition::logTransition("Buffer::map", assumedState,
-                                       D3D12_RESOURCE_STATE_COPY_SOURCE, needsIntermediate);
-
     if (needsIntermediate) {
       // Transition to COMMON first
       D3D12_RESOURCE_BARRIER toCommon = {};
@@ -470,9 +461,6 @@ void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
     // B-006: Transition back with validation
     const bool needsIntermediateBack = !D3D12StateTransition::isLegalDirectTransition(
         D3D12_RESOURCE_STATE_COPY_SOURCE, assumedState);
-
-    D3D12StateTransition::logTransition("Buffer::map", D3D12_RESOURCE_STATE_COPY_SOURCE,
-                                       assumedState, needsIntermediateBack);
 
     if (needsIntermediateBack) {
       // Transition to COMMON first

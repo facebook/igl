@@ -142,12 +142,6 @@ class DescriptorHeapManager {
   // Total sizes
   Sizes sizes_{};
 
-  // High-watermark tracking
-  uint32_t highWaterMarkCbvSrvUav_ = 0;
-  uint32_t highWaterMarkSamplers_ = 0;
-  uint32_t highWaterMarkRtvs_ = 0;
-  uint32_t highWaterMarkDsvs_ = 0;
-
   // Thread safety
   mutable std::mutex mutex_;
 

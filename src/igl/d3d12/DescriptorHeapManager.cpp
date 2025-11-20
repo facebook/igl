@@ -122,12 +122,6 @@ uint32_t DescriptorHeapManager::allocateRTV() {
   IGL_DEBUG_ASSERT(!allocatedRtvs_[idx], "Free list contained allocated descriptor!");
   allocatedRtvs_[idx] = true;
 
-  // Track high-watermark
-  const uint32_t currentUsage = sizes_.rtvs - static_cast<uint32_t>(freeRtvs_.size());
-  if (currentUsage > highWaterMarkRtvs_) {
-    highWaterMarkRtvs_ = currentUsage;
-  }
-
   return idx;
 }
 
@@ -145,12 +139,6 @@ uint32_t DescriptorHeapManager::allocateDSV() {
   // Mark as allocated
   IGL_DEBUG_ASSERT(!allocatedDsvs_[idx], "Free list contained allocated descriptor!");
   allocatedDsvs_[idx] = true;
-
-  // Track high-watermark
-  const uint32_t currentUsage = sizes_.dsvs - static_cast<uint32_t>(freeDsvs_.size());
-  if (currentUsage > highWaterMarkDsvs_) {
-    highWaterMarkDsvs_ = currentUsage;
-  }
 
   return idx;
 }
@@ -210,12 +198,6 @@ uint32_t DescriptorHeapManager::allocateCbvSrvUav() {
   IGL_DEBUG_ASSERT(!allocatedCbvSrvUav_[idx], "Free list contained allocated descriptor!");
   allocatedCbvSrvUav_[idx] = true;
 
-  // Track high-watermark
-  const uint32_t currentUsage = sizes_.cbvSrvUav - static_cast<uint32_t>(freeCbvSrvUav_.size());
-  if (currentUsage > highWaterMarkCbvSrvUav_) {
-    highWaterMarkCbvSrvUav_ = currentUsage;
-  }
-
   return idx;
 }
 
@@ -233,12 +215,6 @@ uint32_t DescriptorHeapManager::allocateSampler() {
   // Mark as allocated
   IGL_DEBUG_ASSERT(!allocatedSamplers_[idx], "Free list contained allocated descriptor!");
   allocatedSamplers_[idx] = true;
-
-  // Track high-watermark
-  const uint32_t currentUsage = sizes_.samplers - static_cast<uint32_t>(freeSamplers_.size());
-  if (currentUsage > highWaterMarkSamplers_) {
-    highWaterMarkSamplers_ = currentUsage;
-  }
 
   return idx;
 }
@@ -624,29 +600,6 @@ void DescriptorHeapManager::logUsageStats() const {
   const float dsvsPercent = (dsvsUsed * 100.0f) / sizes_.dsvs;
   IGL_D3D12_LOG_VERBOSE("  DSVs:        %u / %u (%.1f%% used)\n",
                dsvsUsed, sizes_.dsvs, dsvsPercent);
-
-  IGL_D3D12_LOG_VERBOSE("\n");
-  IGL_D3D12_LOG_VERBOSE("=== Peak Usage (High-Watermarks) ===\n");
-
-  // Peak CBV/SRV/UAV
-  const float cbvSrvUavPeakPercent = (highWaterMarkCbvSrvUav_ * 100.0f) / sizes_.cbvSrvUav;
-  IGL_D3D12_LOG_VERBOSE("  Peak CBV/SRV/UAV: %u / %u (%.1f%% peak)\n",
-               highWaterMarkCbvSrvUav_, sizes_.cbvSrvUav, cbvSrvUavPeakPercent);
-
-  // Peak Samplers
-  const float samplersPeakPercent = (highWaterMarkSamplers_ * 100.0f) / sizes_.samplers;
-  IGL_D3D12_LOG_VERBOSE("  Peak Samplers:    %u / %u (%.1f%% peak)\n",
-               highWaterMarkSamplers_, sizes_.samplers, samplersPeakPercent);
-
-  // Peak RTVs
-  const float rtvsPeakPercent = (highWaterMarkRtvs_ * 100.0f) / sizes_.rtvs;
-  IGL_D3D12_LOG_VERBOSE("  Peak RTVs:        %u / %u (%.1f%% peak)\n",
-               highWaterMarkRtvs_, sizes_.rtvs, rtvsPeakPercent);
-
-  // Peak DSVs
-  const float dsvsPeakPercent = (highWaterMarkDsvs_ * 100.0f) / sizes_.dsvs;
-  IGL_D3D12_LOG_VERBOSE("  Peak DSVs:        %u / %u (%.1f%% peak)\n",
-               highWaterMarkDsvs_, sizes_.dsvs, dsvsPeakPercent);
 
   IGL_D3D12_LOG_VERBOSE("========================================\n");
 }
