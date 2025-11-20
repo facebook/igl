@@ -186,58 +186,84 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   }
 
   // Bind CBVs (Parameter 3)
-  // P1_DX12-FIND-04: Create CBV descriptors and bind via descriptor table
+  // T36: Only create/allocate CBV descriptors when bindings have changed or heap page changed
   if (boundCbvCount_ > 0) {
     auto& context = commandBuffer_.getContext();
-    auto* device = context.getDevice();
+    auto& frameCtx = context.getFrameContexts()[context.getCurrentFrameIndex()];
+    const uint32_t currentPageIdx = frameCtx.currentCbvSrvUavPageIndex;
 
-    // Get starting descriptor index for our CBV table
-    // C-001: Allocate descriptors individually (may span multiple pages)
-    std::vector<uint32_t> cbvIndices;
-    for (size_t i = 0; i < boundCbvCount_; ++i) {
-      uint32_t descriptorIndex = 0;
-      Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
-      if (!allocResult.isOk()) {
-        IGL_LOG_ERROR("ComputeCommandEncoder: Failed to allocate CBV descriptor %zu: %s\n", i, allocResult.message.c_str());
-        return;
-      }
-      cbvIndices.push_back(descriptorIndex);
+    // Check if heap page changed - invalidates cached descriptors
+    const bool heapPageChanged = (cachedCbvPageIndex_ != currentPageIdx);
+    if (heapPageChanged) {
+      cbvBindingsDirty_ = true;
+      IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder: Heap page changed (%u -> %u), invalidating CBV cache\n",
+                   cachedCbvPageIndex_, currentPageIdx);
     }
 
-    // Create CBV descriptors for all bound constant buffers
-    for (size_t i = 0; i < boundCbvCount_; ++i) {
-      if (cachedCbvAddresses_[i] != 0 && cachedCbvSizes_[i] > 0) {
-        const uint32_t descriptorIndex = cbvIndices[i];
-        D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
+    // Only recreate descriptors if bindings are dirty or heap changed
+    if (cbvBindingsDirty_) {
+      auto* device = context.getDevice();
 
-        // DX12-COD-005: Enforce 64 KB limit for CBVs
-        constexpr size_t kMaxCBVSize = 65536;  // 64 KB (D3D12 spec limit)
-        if (cachedCbvSizes_[i] > kMaxCBVSize) {
-          IGL_LOG_ERROR("ComputeCommandEncoder: Constant buffer %zu size (%zu bytes) exceeds D3D12 64 KB limit\n",
-                        i, cachedCbvSizes_[i]);
-          continue;  // Skip this CBV
+      // Allocate descriptors for CBV table - use fixed-size array to avoid heap allocation
+      uint32_t cbvIndices[kMaxComputeBuffers] = {};
+      for (size_t i = 0; i < boundCbvCount_; ++i) {
+        uint32_t descriptorIndex = 0;
+        Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
+        if (!allocResult.isOk()) {
+          IGL_LOG_ERROR("ComputeCommandEncoder: Failed to allocate CBV descriptor %zu: %s\n", i, allocResult.message.c_str());
+          return;
         }
-
-        // Align size to 256-byte boundary (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
-        const size_t alignedSize = (cachedCbvSizes_[i] + 255) & ~255;
-
-        IGL_DEBUG_ASSERT(alignedSize <= kMaxCBVSize, "CBV size exceeds 64 KB after alignment");
-
-        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-        cbvDesc.BufferLocation = cachedCbvAddresses_[i];
-        cbvDesc.SizeInBytes = static_cast<UINT>(alignedSize);
-
-        device->CreateConstantBufferView(&cbvDesc, cpuHandle);
+        cbvIndices[i] = descriptorIndex;
       }
+
+      // Create CBV descriptors for all bound constant buffers
+      for (size_t i = 0; i < boundCbvCount_; ++i) {
+        if (cachedCbvAddresses_[i] != 0 && cachedCbvSizes_[i] > 0) {
+          const uint32_t descriptorIndex = cbvIndices[i];
+          D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
+
+          // DX12-COD-005: Enforce 64 KB limit for CBVs
+          constexpr size_t kMaxCBVSize = 65536;  // 64 KB (D3D12 spec limit)
+          if (cachedCbvSizes_[i] > kMaxCBVSize) {
+            IGL_LOG_ERROR("ComputeCommandEncoder: Constant buffer %zu size (%zu bytes) exceeds D3D12 64 KB limit\n",
+                          i, cachedCbvSizes_[i]);
+            continue;  // Skip this CBV
+          }
+
+          // Align size to 256-byte boundary (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
+          const size_t alignedSize = (cachedCbvSizes_[i] + 255) & ~255;
+
+          IGL_DEBUG_ASSERT(alignedSize <= kMaxCBVSize, "CBV size exceeds 64 KB after alignment");
+
+          D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+          cbvDesc.BufferLocation = cachedCbvAddresses_[i];
+          cbvDesc.SizeInBytes = static_cast<UINT>(alignedSize);
+
+          device->CreateConstantBufferView(&cbvDesc, cpuHandle);
+        }
+      }
+
+      // Cache the base index and page for reuse
+      cachedCbvBaseIndex_ = cbvIndices[0];
+      cachedCbvPageIndex_ = currentPageIdx;
+      cbvBindingsDirty_ = false;
+
+      IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder: Created %zu CBV descriptors at page %u (descriptors %u-%u)\n",
+                   boundCbvCount_, currentPageIdx, cbvIndices[0], cbvIndices[boundCbvCount_ - 1]);
     }
 
-    // Bind the CBV descriptor table to root parameter 3
-    // C-001: Use first allocated descriptor index
-    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(cbvIndices[0]);
-    commandList->SetComputeRootDescriptorTable(3, gpuHandle);
+    // Recompute GPU handle from cached base index for current heap
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(cachedCbvBaseIndex_);
 
-    IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder: Bound %zu CBVs via descriptor table (descriptors %u-%u)\n",
-                 boundCbvCount_, cbvIndices[0], cbvIndices[boundCbvCount_ - 1]);
+    // Defensive check: ensure handle is valid before binding
+    IGL_DEBUG_ASSERT(gpuHandle.ptr != 0, "CBV count > 0 but GPU handle is null");
+    if (gpuHandle.ptr != 0) {
+      commandList->SetComputeRootDescriptorTable(3, gpuHandle);
+      IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder: Bound %zu CBVs via descriptor table (base index %u)\n",
+                   boundCbvCount_, cachedCbvBaseIndex_);
+    } else {
+      IGL_LOG_ERROR("ComputeCommandEncoder: CBV GPU handle is null, skipping binding\n");
+    }
   }
 
   // Bind Samplers (Parameter 4)
@@ -420,6 +446,22 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
       return;
     }
 
+    // Enforce dense binding: CBVs must start at slot 0 with no gaps
+    if (index > 0 && cachedCbvAddresses_[0] == 0) {
+      IGL_LOG_ERROR("ComputeCommandEncoder::bindBuffer: CBV bindings must be dense starting from slot 0. "
+                    "Cannot bind slot %u when slot 0 is not bound.\n", index);
+      return;
+    }
+
+    // Check for gaps in bindings
+    for (size_t i = 0; i < index; ++i) {
+      if (cachedCbvAddresses_[i] == 0) {
+        IGL_LOG_ERROR("ComputeCommandEncoder::bindBuffer: CBV bindings must be dense. "
+                      "Cannot bind slot %u when slot %zu is not bound (gap detected).\n", index, i);
+        return;
+      }
+    }
+
     // D3D12 requires constant buffer addresses to be 256-byte aligned
     // (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
     if ((offset & 255) != 0) {
@@ -430,7 +472,8 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
     }
 
     cachedCbvAddresses_[index] = d3dBuffer->gpuAddress(offset);
-    // P1_DX12-FIND-04: Store buffer size for CBV descriptor creation in dispatchThreadGroups()
+    // P1_DX12-FIND-04: Store buffer size for CBV descriptor creation on next dispatch
+    // T36: Actual descriptor creation happens in dispatchThreadGroups when cbvBindingsDirty_ is set
     // DX12-COD-005: Respect requested buffer size and enforce 64 KB limit
     size_t bufferSize = d3dBuffer->getSizeInBytes() - offset;
 
@@ -448,6 +491,9 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
       cachedCbvSizes_[i] = 0;
     }
     boundCbvCount_ = static_cast<size_t>(index + 1);
+
+    // T36: Mark CBV bindings as dirty to trigger descriptor recreation on next dispatch
+    cbvBindingsDirty_ = true;
 
     IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindBuffer: Cached CBV at index %u, address 0x%llx, size %zu\n",
                  index, cachedCbvAddresses_[index], cachedCbvSizes_[index]);

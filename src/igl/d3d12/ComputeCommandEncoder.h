@@ -87,6 +87,11 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
   size_t boundSrvCount_ = 0;
   size_t boundCbvCount_ = 0;
   size_t boundSamplerCount_ = 0;
+
+  // T36: Cache CBV descriptor indices to avoid per-dispatch allocation
+  uint32_t cachedCbvBaseIndex_ = 0;
+  uint32_t cachedCbvPageIndex_ = UINT32_MAX;  // Track heap page for invalidation
+  bool cbvBindingsDirty_ = true;  // Track if CBV bindings have changed
 };
 
 } // namespace igl::d3d12
