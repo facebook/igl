@@ -319,8 +319,8 @@ void ComputeCommandEncoder::bindPushConstants(const void* data,
   }
 
   // Compute root signature parameter 0 is declared as D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS (b0)
-  // with 16 DWORDs (64 bytes) capacity
-  constexpr size_t kMaxPushConstantBytes = 64;
+  // P2_DX12-FIND-09: Increased to 32 DWORDs (128 bytes) to match Vulkan
+  constexpr size_t kMaxPushConstantBytes = 128;
 
   if (length + offset > kMaxPushConstantBytes) {
     IGL_LOG_ERROR("ComputeCommandEncoder::bindPushConstants: size %zu + offset %zu exceeds maximum %zu bytes\n",
