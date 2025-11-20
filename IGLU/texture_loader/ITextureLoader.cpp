@@ -39,6 +39,17 @@ const igl::TextureDesc& ITextureLoader::descriptor() const noexcept {
       .numFaces = desc_.type == igl::TextureType::Cube ? 6u : 1u,
   };
 
+  // If the format is a variable length format, we need to sum up the size of each mip level
+  // as specified in the KTX file
+  if (properties.isVariableLength()) {
+    uint32_t size = 0;
+    for (uint32_t mipLevel = range.mipLevel; mipLevel < (range.mipLevel + range.numMipLevels);
+         mipLevel++) {
+      size += getMemorySizeInBytesFromFile(mipLevel);
+    }
+    return size;
+  }
+
   return static_cast<uint32_t>(properties.getBytesPerRange(range));
 }
 

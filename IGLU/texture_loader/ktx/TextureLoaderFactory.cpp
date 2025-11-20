@@ -10,6 +10,10 @@
 #include <ktx.h>
 #include <igl/IGLSafeC.h>
 
+// @fb-only
+// @fb-only
+// @fb-only
+
 namespace iglu::textureloader::ktx {
 namespace {
 
@@ -30,6 +34,40 @@ class TextureLoader : public ITextureLoader {
 
   [[nodiscard]] bool canUploadSourceData() const noexcept final;
   [[nodiscard]] bool shouldGenerateMipmaps() const noexcept final;
+
+  [[nodiscard]] size_t getMemorySizeInBytesFromFile(uint32_t miplevel) const noexcept final {
+    // Structure to hold the data for the callback function
+    struct Data {
+      uint32_t mipLevel = 0;
+      ktx_uint64_t size = 0;
+    };
+
+    // Store the mip level in the userData struct
+    Data userData = {
+        .mipLevel = miplevel,
+    };
+
+    // Callback function to iterate over the mip levels and calculate the total size
+    // Passed to the ktxTexture_IterateLevelFaces function
+    PFNKTXITERCB iterCb = [](int miplevel,
+                             int face,
+                             int width,
+                             int height,
+                             int depth,
+                             ktx_uint64_t faceLodSize,
+                             void* pixels,
+                             void* userdata) -> ktx_error_code_e {
+      Data* data = static_cast<Data*>(userdata);
+      data->size += (data->mipLevel == miplevel) ? faceLodSize : 0;
+      return KTX_SUCCESS;
+    };
+    const auto result = ktxTexture_IterateLevelFaces(texture_.get(), iterCb, &userData);
+    if (result == KTX_SUCCESS) {
+      return userData.size;
+    }
+
+    return 0;
+  }
 
  private:
   void uploadInternal(igl::ITexture& texture,
@@ -106,7 +144,7 @@ void TextureLoader::loadToExternalMemoryInternal(uint8_t* IGL_NONNULL data,
   size_t offsetSource = 0;
   for (uint32_t mipLevel = 0; mipLevel < desc.numMipLevels && mipLevel < texture_->numLevels;
        ++mipLevel) {
-    const auto ktxResult =
+    auto ktxResult =
         ktxTexture_GetImageOffset(ktxTexture(texture_.get()), mipLevel, 0, 0, &offsetSource);
     if (ktxResult != KTX_SUCCESS) {
       IGL_LOG_ERROR(
@@ -115,7 +153,27 @@ void TextureLoader::loadToExternalMemoryInternal(uint8_t* IGL_NONNULL data,
           outResult, igl::Result::Code::RuntimeError, "Error getting KTX texture data.");
     }
 
-    const auto mipLevelLength = ktxTexture_GetImageSize(ktxTexture(texture_.get()), mipLevel);
+    ktx_size_t mipLevelLength = 0;
+// @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+        // @fb-only
+            // @fb-only
+            // @fb-only
+            // @fb-only
+            // @fb-only
+    // @fb-only
+// @fb-only
+      mipLevelLength = ktxTexture_GetImageSize(ktxTexture(texture_.get()), mipLevel);
+// @fb-only
+    // @fb-only
+      // @fb-only
+    // @fb-only
+// @fb-only
 
     // Naively, we could just check mipmapLength > length - offset. However,
     // if offset is very large, e.g. size_t(-1), then destination_size - offset

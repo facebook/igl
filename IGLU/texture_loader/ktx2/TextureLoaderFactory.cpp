@@ -12,6 +12,10 @@
 #include <numeric>
 #include <igl/vulkan/util/TextureFormat.h>
 
+// @fb-only
+// @fb-only
+// @fb-only
+
 namespace iglu::textureloader::ktx2 {
 namespace {
 template<typename T>
@@ -176,13 +180,70 @@ bool TextureLoaderFactory::validate(DataReader reader,
   return true;
 }
 
+namespace {
+// @fb-only
+// @fb-only
+// @fb-only
+  // @fb-only
+  // @fb-only
+    // @fb-only
+  // @fb-only
+    // @fb-only
+  // @fb-only
+    // @fb-only
+  // @fb-only
+    // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+    // @fb-only
+  // @fb-only
+  // @fb-only
+// @fb-only
+// @fb-only
+} // namespace
+
 igl::TextureFormat TextureLoaderFactory::textureFormat(const ktxTexture* texture) const noexcept {
   if (texture->classId == ktxTexture2_c) {
-    const auto* texture2 = reinterpret_cast<const ktxTexture2*>(texture);
-    return igl::vulkan::util::vkTextureFormatToTextureFormat(
-        static_cast<int32_t>(texture2->vkFormat));
+// @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+        // @fb-only
+        // @fb-only
+        // @fb-only
+        // @fb-only
+    // @fb-only
+// @fb-only
+      const auto* texture2 = reinterpret_cast<const ktxTexture2*>(texture);
+      return igl::vulkan::util::vkTextureFormatToTextureFormat(
+          static_cast<int32_t>(texture2->vkFormat));
+// @fb-only
+    // @fb-only
+
+    // @fb-only
+    // @fb-only
+
+    // @fb-only
+      // @fb-only
+    // @fb-only
+// @fb-only
   }
 
   return igl::TextureFormat::Invalid;
 }
+
 } // namespace iglu::textureloader::ktx2

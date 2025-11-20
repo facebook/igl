@@ -93,6 +93,10 @@ class ITextureLoader {
     defaultLoadToExternalMemory(data, length, outResult);
   }
 
+  [[nodiscard]] virtual size_t getMemorySizeInBytesFromFile(uint32_t miplevel) const noexcept {
+    return 0;
+  }
+
  private:
   void defaultUpload(igl::ITexture& texture, igl::Result* IGL_NULLABLE outResult) const noexcept;
   [[nodiscard]] std::unique_ptr<IData> defaultLoad(
