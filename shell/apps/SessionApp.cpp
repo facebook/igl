@@ -9,7 +9,7 @@
 #error "IGL_SHELL_SESSION must be defined";
 #endif
 
-#define IGL_SHELL_PATH <shell/renderSessions/IGL_SHELL_SESSION.h>
+#define IGL_SHELL_PATH <xplat/graphics/igl/public/shell/renderSessions/IGL_SHELL_SESSION.h>
 
 #include IGL_SHELL_PATH
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
