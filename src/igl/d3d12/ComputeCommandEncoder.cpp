@@ -284,13 +284,28 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   // Note: threadgroupSize is embedded in the compute shader ([numthreads(...)])
   commandList->Dispatch(threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
 
-  // Insert global UAV barrier after dispatch to ensure compute writes are visible
-  D3D12_RESOURCE_BARRIER globalBarrier = {};
-  globalBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-  globalBarrier.UAV.pResource = nullptr;  // Global UAV barrier
-  commandList->ResourceBarrier(1, &globalBarrier);
+  // T37: Insert resource-specific UAV barriers for bound UAVs to ensure compute writes are visible
+  // Only barrier UAVs that were actually bound (more efficient than global barrier)
+  if (boundUavCount_ > 0) {
+    // Use fixed-size array to avoid heap allocation in hot path
+    D3D12_RESOURCE_BARRIER barriers[kMaxComputeBuffers];
+    UINT barrierCount = 0;
 
-  IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, global UAV barrier inserted\n");
+    for (size_t i = 0; i < boundUavCount_; ++i) {
+      if (boundUavResources_[i] != nullptr) {
+        D3D12_RESOURCE_BARRIER& barrier = barriers[barrierCount++];
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.UAV.pResource = boundUavResources_[i];  // Resource-specific UAV barrier
+      }
+    }
+
+    if (barrierCount > 0) {
+      commandList->ResourceBarrier(barrierCount, barriers);
+      IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::dispatchThreadGroups - dispatch complete, %u resource-specific UAV barriers inserted\n",
+                   barrierCount);
+    }
+  }
 }
 
 void ComputeCommandEncoder::bindPushConstants(const void* data,
@@ -433,6 +448,14 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
       cachedUavHandles_[i] = {};
     }
     boundUavCount_ = static_cast<size_t>(index + 1);
+
+    // T37: Track UAV resource for precise barrier synchronization
+    // Note: UAV bindings are assumed to be dense (slots 0..boundUavCount_-1)
+    // Both cachedUavHandles_ and boundUavResources_ rely on this invariant
+    boundUavResources_[index] = d3dBuffer->getResource();
+    for (size_t i = index + 1; i < kMaxComputeBuffers; ++i) {
+      boundUavResources_[i] = nullptr;
+    }
 
     IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindBuffer: Created UAV at index %u, descriptor slot %u\n",
                  index, descriptorIndex);
@@ -596,6 +619,14 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, 
     cachedUavHandles_[i] = {};
   }
   boundUavCount_ = static_cast<size_t>(index + 1);
+
+  // T37: Track UAV resource for precise barrier synchronization
+  // Note: UAV bindings are assumed to be dense (slots 0..boundUavCount_-1)
+  // Both cachedUavHandles_ and boundUavResources_ rely on this invariant
+  boundUavResources_[index] = d3dTexture->getResource();
+  for (size_t i = index + 1; i < kMaxComputeBuffers; ++i) {
+    boundUavResources_[i] = nullptr;
+  }
 
   IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindImageTexture: Created UAV at index %u, descriptor slot %u\n",
                index, descriptorIndex);

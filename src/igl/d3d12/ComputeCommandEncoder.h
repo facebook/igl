@@ -92,6 +92,10 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
   uint32_t cachedCbvBaseIndex_ = 0;
   uint32_t cachedCbvPageIndex_ = UINT32_MAX;  // Track heap page for invalidation
   bool cbvBindingsDirty_ = true;  // Track if CBV bindings have changed
+
+  // T37: Track UAV resources for precise synchronization barriers
+  // Tracks UAV resources bound via bindBuffer (storage buffers) and bindImageTexture (RW textures)
+  ID3D12Resource* boundUavResources_[kMaxComputeBuffers] = {};
 };
 
 } // namespace igl::d3d12
