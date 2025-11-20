@@ -93,7 +93,7 @@ SubmitHandle CommandQueue::endCommandBuffer(VulkanContext& ctx,
       const uint64_t signalValue =
           ctx.swapchain_->getFrameNumber() + ctx.swapchain_->getNumSwapchainImages();
       // we wait for this value next time we want to acquire this swapchain image
-      ctx.swapchain_->timelineWaitValues_[ctx.swapchain_->getCurrentImageIndex()] = signalValue;
+      ctx.swapchain_->timelineWaitValues[ctx.swapchain_->getCurrentImageIndex()] = signalValue;
       ctx.immediate_->signalSemaphore(ctx.timelineSemaphore_->getVkSemaphore(), signalValue);
     } else {
       // this can be removed once we switch to timeline semaphores

@@ -201,18 +201,18 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
 
   // create semaphores and fences for swapchain images
   for (uint32_t i = 0; i < numSwapchainImages_; ++i) {
-    timelineWaitValues_.emplace_back(0);
-    acquireSemaphores_.emplace_back(ctx_.vf_,
-                                    ctx_.getVkDevice(),
-                                    false,
-                                    IGL_FORMAT("Semaphore: swapchain-acquire #{}", i).c_str());
+    timelineWaitValues.emplace_back(0);
+    acquireSemaphores.emplace_back(ctx_.vf_,
+                                   ctx_.getVkDevice(),
+                                   false,
+                                   IGL_FORMAT("Semaphore: swapchain-acquire #{}", i).c_str());
     if (!ctx_.timelineSemaphore_) {
       // this can be removed once we switch to timeline semaphores
-      acquireFences_.emplace_back(ctx_.vf_,
-                                  ctx_.getVkDevice(),
-                                  VK_FENCE_CREATE_SIGNALED_BIT,
-                                  false,
-                                  IGL_FORMAT("Fence: swapchain-acquire #{}", i).c_str());
+      acquireFences.emplace_back(ctx_.vf_,
+                                 ctx_.getVkDevice(),
+                                 VK_FENCE_CREATE_SIGNALED_BIT,
+                                 false,
+                                 IGL_FORMAT("Fence: swapchain-acquire #{}", i).c_str());
     }
   }
 }
@@ -266,11 +266,11 @@ void VulkanSwapchain::lazyAllocateDepthBuffer() const {
 }
 
 VkSemaphore VulkanSwapchain::getSemaphore() const noexcept {
-  return acquireSemaphores_[currentSemaphoreIndex_].vkSemaphore_;
+  return acquireSemaphores[currentSemaphoreIndex_].vkSemaphore_;
 }
 
 VulkanSwapchain::~VulkanSwapchain() {
-  for (auto& fence : acquireFences_) {
+  for (auto& fence : acquireFences) {
     // this can be removed once we switch to timeline semaphores
     fence.wait();
   }
@@ -287,11 +287,11 @@ Result VulkanSwapchain::acquireNextImage() {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
         .semaphoreCount = 1,
         .pSemaphores = &ctx_.timelineSemaphore_->vkSemaphore_,
-        .pValues = &timelineWaitValues_[currentImageIndex_],
+        .pValues = &timelineWaitValues[currentImageIndex_],
     };
     VK_ASSERT(ctx_.vf_.vkWaitSemaphoresKHR(ctx_.getVkDevice(), &waitInfo, UINT64_MAX));
 
-    VkSemaphore acquireSemaphore = acquireSemaphores_[currentImageIndex_].getVkSemaphore();
+    VkSemaphore acquireSemaphore = acquireSemaphores[currentImageIndex_].getVkSemaphore();
     // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
     acquireResult = ctx_.vf_.vkAcquireNextImageKHR(ctx_.getVkDevice(),
                                                    swapchain_,
@@ -314,8 +314,8 @@ Result VulkanSwapchain::acquireNextImage() {
     //   If semaphore is not VK_NULL_HANDLE it must not have any uncompleted signal or wait
     //   operations pending
     //   (https://vulkan.lunarg.com/doc/view/1.3.275.0/windows/1.3-extensions/vkspec.html#VUID-vkAcquireNextImageKHR-semaphore-01779)
-    acquireFences_[currentImageIndex_].wait();
-    acquireFences_[currentImageIndex_].reset();
+    acquireFences[currentImageIndex_].wait();
+    acquireFences[currentImageIndex_].reset();
 
     currentSemaphoreIndex_ = currentImageIndex_;
 
@@ -324,8 +324,8 @@ Result VulkanSwapchain::acquireNextImage() {
         ctx_.vf_.vkAcquireNextImageKHR(ctx_.getVkDevice(),
                                        swapchain_,
                                        UINT64_MAX,
-                                       acquireSemaphores_[currentImageIndex_].vkSemaphore_,
-                                       acquireFences_[currentImageIndex_].vkFence_,
+                                       acquireSemaphores[currentImageIndex_].vkSemaphore_,
+                                       acquireFences[currentImageIndex_].vkFence_,
                                        &currentImageIndex_);
   }
 
