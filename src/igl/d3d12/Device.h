@@ -19,6 +19,11 @@
 #include <igl/Common.h>
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/D3D12Context.h>
+#include <igl/d3d12/D3D12AllocatorPool.h>
+#include <igl/d3d12/D3D12DeviceCapabilities.h>
+#include <igl/d3d12/D3D12PipelineCache.h>
+#include <igl/d3d12/D3D12SamplerCache.h>
+#include <igl/d3d12/D3D12Telemetry.h>
 #include <igl/d3d12/D3D12ImmediateCommands.h>  // T07: For IFenceProvider interface
 
 namespace igl::d3d12 {
@@ -128,7 +133,7 @@ class Device final : public IDevice, public IFenceProvider {
   [[nodiscard]] size_t getCurrentDrawCount() const override;
   [[nodiscard]] size_t getShaderCompilationCount() const override;
 
-  void incrementDrawCount(size_t n) { drawCount_ += n; }
+  void incrementDrawCount(size_t n) { telemetry_.incrementDrawCount(n); }
 
   D3D12Context& getD3D12Context() {
     return *ctx_;
@@ -147,13 +152,13 @@ class Device final : public IDevice, public IFenceProvider {
 
   // Device capabilities accessors (P2_DX12-018)
   [[nodiscard]] const D3D12_FEATURE_DATA_D3D12_OPTIONS& getDeviceOptions() const {
-    return deviceOptions_;
+    return capabilities_.getOptions();
   }
   [[nodiscard]] const D3D12_FEATURE_DATA_D3D12_OPTIONS1& getDeviceOptions1() const {
-    return deviceOptions1_;
+    return capabilities_.getOptions1();
   }
   [[nodiscard]] D3D12_RESOURCE_BINDING_TIER getResourceBindingTier() const {
-    return deviceOptions_.ResourceBindingTier;
+    return capabilities_.getResourceBindingTier();
   }
 
   void processCompletedUploads();
@@ -163,15 +168,15 @@ class Device final : public IDevice, public IFenceProvider {
   igl::d3d12::ComPtr<ID3D12CommandAllocator> getUploadCommandAllocator();
   void returnUploadCommandAllocator(igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator,
                                      UINT64 fenceValue);
-  ID3D12Fence* getUploadFence() const { return uploadFence_.Get(); }
-  UINT64 getNextUploadFenceValue() { return ++uploadFenceValue_; }
+  ID3D12Fence* getUploadFence() const { return allocatorPool_.getUploadFence(); }
+  UINT64 getNextUploadFenceValue() { return allocatorPool_.getNextUploadFenceValue(); }
   Result waitForUploadFence(UINT64 fenceValue) const;  // T05: Wait for upload to complete
 
   // T07: IFenceProvider implementation (shared fence timeline)
   uint64_t getNextFenceValue() override { return getNextUploadFenceValue(); }
 
   // Upload ring buffer access (P1_DX12-009)
-  UploadRingBuffer* getUploadRingBuffer() const { return uploadRingBuffer_.get(); }
+  UploadRingBuffer* getUploadRingBuffer() const { return allocatorPool_.getUploadRingBuffer(); }
 
   // Check for device removal and return error Result if detected (P1_DX12-006)
   [[nodiscard]] Result checkDeviceRemoval() const;
@@ -180,12 +185,6 @@ class Device final : public IDevice, public IFenceProvider {
   [[nodiscard]] bool isDeviceLost() const { return deviceLost_; }
 
   // Sampler cache statistics (C-005)
-  struct SamplerCacheStats {
-    size_t cacheHits = 0;
-    size_t cacheMisses = 0;
-    size_t activeSamplers = 0;    // Currently cached samplers
-    float hitRate = 0.0f;         // Hit rate percentage
-  };
   [[nodiscard]] SamplerCacheStats getSamplerCacheStats() const;
 
   // I-003: Query maximum MSAA sample count for a specific format
@@ -193,9 +192,6 @@ class Device final : public IDevice, public IFenceProvider {
   [[nodiscard]] uint32_t getMaxMSAASamplesForFormat(TextureFormat format) const;
 
  private:
-  // Validate device limits against actual device capabilities (P2_DX12-018)
-  void validateDeviceLimits();
-
   // Alignment validation helpers (B-005)
   bool validateMSAAAlignment(const TextureDesc& desc, Result* IGL_NULLABLE outResult) const;
   bool validateTextureAlignment(const D3D12_RESOURCE_DESC& resourceDesc,
@@ -207,20 +203,11 @@ class Device final : public IDevice, public IFenceProvider {
   static constexpr size_t BUFFER_ALIGNMENT = 256;   // 256 bytes for constant buffers
   static constexpr size_t DEFAULT_TEXTURE_ALIGNMENT = 65536;  // 64KB default for textures
 
-  // Root signature caching (P0_DX12-002)
-  size_t hashRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc) const;
-  igl::d3d12::ComPtr<ID3D12RootSignature> getOrCreateRootSignature(
-      const D3D12_ROOT_SIGNATURE_DESC& desc,
-      Result* IGL_NULLABLE outResult) const;
-
-  // Device capabilities (P2_DX12-018)
-  D3D12_FEATURE_DATA_D3D12_OPTIONS deviceOptions_ = {};
-  D3D12_FEATURE_DATA_D3D12_OPTIONS1 deviceOptions1_ = {};
+  D3D12DeviceCapabilities capabilities_;
 
   std::unique_ptr<D3D12Context> ctx_;
   std::unique_ptr<PlatformDevice> platformDevice_;
-  size_t drawCount_ = 0;
-  size_t shaderCompilationCount_ = 0;
+  D3D12Telemetry telemetry_;
 
   // Bind group pools
   Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
@@ -229,102 +216,36 @@ class Device final : public IDevice, public IFenceProvider {
   // T19: Upload tracking state (non-mutable, mutated only from non-const paths)
   // Modified by: createBufferImpl, Buffer::upload, Texture::upload via non-const Device references
   // Synchronized via pendingUploadsMutex_ for thread-safe access
-  struct PendingUpload {
-    UINT64 fenceValue = 0;
-    igl::d3d12::ComPtr<ID3D12Resource> resource;
-  };
-  std::mutex pendingUploadsMutex_;
-  std::vector<PendingUpload> pendingUploads_;
-
-  // Command allocator pool for upload operations (P0_DX12-005, H-004, B-008)
-  // Tracks command allocators with fence values to prevent reuse before GPU completion
-  // H-004: Pool capped at 64 allocators to prevent memory leaks
-  // B-008: Increased to 256 allocators with enhanced statistics
-  // T19: Non-mutable, synchronized via commandAllocatorPoolMutex_
-  struct TrackedCommandAllocator {
-    igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator;
-    UINT64 fenceValue = 0;  // Fence value when last used
-  };
-  std::mutex commandAllocatorPoolMutex_;
-  std::vector<TrackedCommandAllocator> commandAllocatorPool_;
-  size_t totalCommandAllocatorsCreated_ = 0;  // H-004: Track total allocators created
-  size_t peakPoolSize_ = 0;  // B-008: Track peak pool size
-  size_t totalAllocatorReuses_ = 0;  // B-008: Track reuse count for statistics
-  igl::d3d12::ComPtr<ID3D12Fence> uploadFence_;
-  UINT64 uploadFenceValue_ = 0;  // T19: Incremented only from non-const methods
-  // T05: No shared event - waitForUploadFence creates per-call events for thread safety
-
-  // PSO caching (P0_DX12-001)
-  mutable std::unordered_map<size_t, igl::d3d12::ComPtr<ID3D12PipelineState>> graphicsPSOCache_;
-  mutable std::unordered_map<size_t, igl::d3d12::ComPtr<ID3D12PipelineState>> computePSOCache_;
-  mutable std::mutex psoCacheMutex_;  // H-013: Thread-safe PSO cache access
-  mutable size_t graphicsPSOCacheHits_ = 0;
-  mutable size_t graphicsPSOCacheMisses_ = 0;
-  mutable size_t computePSOCacheHits_ = 0;
-  mutable size_t computePSOCacheMisses_ = 0;
-
-  // Helper functions for PSO hashing
-  size_t hashRenderPipelineDesc(const RenderPipelineDesc& desc) const;
-  size_t hashComputePipelineDesc(const ComputePipelineDesc& desc) const;
-
-  // Root signature cache (P0_DX12-002)
-  mutable std::unordered_map<size_t, igl::d3d12::ComPtr<ID3D12RootSignature>> rootSignatureCache_;
-  mutable std::mutex rootSignatureCacheMutex_;
-  mutable size_t rootSignatureCacheHits_ = 0;
-  mutable size_t rootSignatureCacheMisses_ = 0;
-
-  // Sampler state cache for deduplication (C-005: Mitigate 2048 sampler heap limit)
-  // Use weak_ptr so cache entries are automatically removed when all references destroyed
-  mutable std::unordered_map<size_t, std::weak_ptr<SamplerState>> samplerCache_;
-  mutable std::mutex samplerCacheMutex_;
-  mutable size_t samplerCacheHits_ = 0;
-  mutable size_t samplerCacheMisses_ = 0;
-
-  // Upload ring buffer for streaming resources (P1_DX12-009)
-  std::unique_ptr<UploadRingBuffer> uploadRingBuffer_;
-
-  // T07: Centralized immediate commands and staging device
-  std::unique_ptr<D3D12ImmediateCommands> immediateCommands_;
-  std::unique_ptr<D3D12StagingDevice> stagingDevice_;
+  D3D12AllocatorPool allocatorPool_;
+  D3D12PipelineCache pipelineCache_;
+  D3D12SamplerCache samplerCache_;
 
   // T03: Device lost flag and reason for fatal error handling (atomic for thread-safe access)
   mutable std::atomic<bool> deviceLost_{false};
   mutable std::string deviceLostReason_;  // Cached reason for diagnostics
 
-  // I-007: GPU timestamp frequency for timer queries (Hz)
-  // Queried once during device initialization via ID3D12CommandQueue::GetTimestampFrequency()
-  // Used by Timer to convert GPU ticks to nanoseconds
-  uint64_t gpuTimestampFrequencyHz_ = 0;
-
-  // T28: Pre-compiled mipmap generation shaders
-  // Compiled once at device initialization to avoid runtime compilation overhead
-  std::vector<uint8_t> mipmapVSBytecode_;
-  std::vector<uint8_t> mipmapPSBytecode_;
-  igl::d3d12::ComPtr<ID3D12RootSignature> mipmapRootSignature_;
-  bool mipmapShadersAvailable_ = false;  // True if pre-compilation succeeded
-
  public:
   // T07/T26: Shared staging infrastructure for upload/readback operations
   // Used by Buffer, Texture, Framebuffer, CommandBuffer for centralized resource management
   [[nodiscard]] D3D12ImmediateCommands* getImmediateCommands() const {
-    return immediateCommands_.get();
+    return allocatorPool_.getImmediateCommands();
   }
   [[nodiscard]] D3D12StagingDevice* getStagingDevice() const {
-    return stagingDevice_.get();
+    return allocatorPool_.getStagingDevice();
   }
 
   // T28: Access pre-compiled mipmap shaders
   [[nodiscard]] bool areMipmapShadersAvailable() const {
-    return mipmapShadersAvailable_;
+    return pipelineCache_.mipmapShadersAvailable_;
   }
   [[nodiscard]] const std::vector<uint8_t>& getMipmapVSBytecode() const {
-    return mipmapVSBytecode_;
+    return pipelineCache_.mipmapVSBytecode_;
   }
   [[nodiscard]] const std::vector<uint8_t>& getMipmapPSBytecode() const {
-    return mipmapPSBytecode_;
+    return pipelineCache_.mipmapPSBytecode_;
   }
   [[nodiscard]] ID3D12RootSignature* getMipmapRootSignature() const {
-    return mipmapRootSignature_.Get();
+    return pipelineCache_.mipmapRootSignature_.Get();
   }
 };
 

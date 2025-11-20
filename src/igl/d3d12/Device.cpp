@@ -109,56 +109,13 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
   platformDevice_ = std::make_unique<PlatformDevice>(*this);
 
   // Validate device limits against actual device capabilities (P2_DX12-018)
-  validateDeviceLimits();
+  capabilities_.initialize(*ctx_);
 
-  // Initialize upload fence for command allocator synchronization (P0_DX12-005)
+  // Initialize upload infrastructure (P0_DX12-005, P1_DX12-009, T07)
+  allocatorPool_.initialize(*ctx_, this);
+
   auto* device = ctx_->getDevice();
   if (device) {
-    HRESULT hr = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(uploadFence_.GetAddressOf()));
-    if (FAILED(hr)) {
-      IGL_LOG_ERROR("Device::Device: Failed to create upload fence: 0x%08X (upload/readback unavailable)\n", hr);
-    } else {
-      uploadFenceValue_ = 0;
-      // T05: Per-call events created in waitForUploadFence for thread safety
-      IGL_D3D12_LOG_VERBOSE("Device::Device: Upload fence created successfully for command allocator sync\n");
-    }
-
-    // Initialize upload ring buffer for streaming resources (P1_DX12-009)
-    // Default size: 128MB (configurable via UploadRingBuffer constructor)
-    constexpr uint64_t kUploadRingBufferSize = 128 * 1024 * 1024; // 128 MB
-    uploadRingBuffer_ = std::make_unique<UploadRingBuffer>(device, kUploadRingBufferSize);
-    IGL_D3D12_LOG_VERBOSE("Device::Device: Upload ring buffer initialized (size=%llu MB)\n",
-                 kUploadRingBufferSize / (1024 * 1024));
-
-    // I-007: Query GPU timestamp frequency for Timer queries
-    // This is used to convert GPU timestamp ticks to nanoseconds
-    auto* commandQueue = ctx_->getCommandQueue();
-    if (commandQueue) {
-      // T07: Initialize immediate commands and staging device for centralized upload/readback
-      // Only if upload fence was successfully created (avoid null fence dereference)
-      if (uploadFence_.Get()) {
-        // Pass 'this' as IFenceProvider to share the fence timeline
-        immediateCommands_ = std::make_unique<D3D12ImmediateCommands>(
-            device, commandQueue, uploadFence_.Get(), this);
-        stagingDevice_ = std::make_unique<D3D12StagingDevice>(
-            device, uploadFence_.Get(), uploadRingBuffer_.get());
-        IGL_D3D12_LOG_VERBOSE("Device::Device: Immediate commands and staging device initialized (shared fence)\n");
-      } else {
-        IGL_LOG_ERROR("Device::Device: Cannot initialize immediate commands/staging device without valid upload fence\n");
-      }
-
-      // Query timestamp frequency
-      hr = commandQueue->GetTimestampFrequency(&gpuTimestampFrequencyHz_);
-      if (FAILED(hr)) {
-        IGL_LOG_ERROR("Device::Device: Failed to get GPU timestamp frequency: 0x%08X\n", hr);
-        gpuTimestampFrequencyHz_ = 1000000000; // Fallback: assume 1 GHz
-      } else {
-        IGL_D3D12_LOG_VERBOSE("Device::Device: GPU timestamp frequency: %llu Hz (%.2f MHz)\n",
-                     gpuTimestampFrequencyHz_,
-                     gpuTimestampFrequencyHz_ / 1000000.0);
-      }
-    }
-
     // T28: Pre-compile mipmap generation shaders at device initialization
     // This avoids runtime compilation overhead in Texture::generateMipmap()
     {
@@ -193,24 +150,36 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
 
       // Compile vertex shader
       std::string vsErrors;
-      Result vsResult = dxcCompiler.compile(kVS, strlen(kVS), "main", vsTarget.c_str(),
-                                             "MipmapGenerationVS", 0, mipmapVSBytecode_, vsErrors);
+      Result vsResult = dxcCompiler.compile(kVS,
+                                            strlen(kVS),
+                                            "main",
+                                            vsTarget.c_str(),
+                                            "MipmapGenerationVS",
+                                            0,
+                                            pipelineCache_.mipmapVSBytecode_,
+                                            vsErrors);
       if (!vsResult.isOk()) {
         IGL_LOG_ERROR("Device::Device: Failed to pre-compile mipmap VS: %s\n%s\n",
                       vsResult.message.c_str(), vsErrors.c_str());
-        mipmapVSBytecode_.clear();
+        pipelineCache_.mipmapVSBytecode_.clear();
         return;  // Early exit - can't proceed without VS
       }
 
       // Compile pixel shader
       std::string psErrors;
-      Result psResult = dxcCompiler.compile(kPS, strlen(kPS), "main", psTarget.c_str(),
-                                             "MipmapGenerationPS", 0, mipmapPSBytecode_, psErrors);
+      Result psResult = dxcCompiler.compile(kPS,
+                                            strlen(kPS),
+                                            "main",
+                                            psTarget.c_str(),
+                                            "MipmapGenerationPS",
+                                            0,
+                                            pipelineCache_.mipmapPSBytecode_,
+                                            psErrors);
       if (!psResult.isOk()) {
         IGL_LOG_ERROR("Device::Device: Failed to pre-compile mipmap PS: %s\n%s\n",
                       psResult.message.c_str(), psErrors.c_str());
-        mipmapPSBytecode_.clear();
-        mipmapVSBytecode_.clear();  // Clear VS too for consistency
+        pipelineCache_.mipmapPSBytecode_.clear();
+        pipelineCache_.mipmapVSBytecode_.clear();  // Clear VS too for consistency
         return;  // Early exit - can't proceed without PS
       }
 
@@ -247,23 +216,27 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
         if (err && err->GetBufferPointer()) {
           IGL_LOG_ERROR("  D3D12 error: %s\n", static_cast<const char*>(err->GetBufferPointer()));
         }
-        mipmapVSBytecode_.clear();
-        mipmapPSBytecode_.clear();
+        pipelineCache_.mipmapVSBytecode_.clear();
+        pipelineCache_.mipmapPSBytecode_.clear();
         return;
       }
 
-      if (FAILED(device->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(),
-                                              IID_PPV_ARGS(mipmapRootSignature_.GetAddressOf())))) {
+      if (FAILED(device->CreateRootSignature(0,
+                                             sig->GetBufferPointer(),
+                                             sig->GetBufferSize(),
+                                             IID_PPV_ARGS(
+                                                 pipelineCache_.mipmapRootSignature_.GetAddressOf())))) {
         IGL_LOG_ERROR("Device::Device: Failed to create mipmap root signature\n");
-        mipmapVSBytecode_.clear();
-        mipmapPSBytecode_.clear();
+        pipelineCache_.mipmapVSBytecode_.clear();
+        pipelineCache_.mipmapPSBytecode_.clear();
         return;
       }
 
       // Success! Mark mipmap shaders as available
-      mipmapShadersAvailable_ = true;
+      pipelineCache_.mipmapShadersAvailable_ = true;
       IGL_D3D12_LOG_VERBOSE("Device::Device: Mipmap shaders pre-compiled successfully (%zu bytes VS, %zu bytes PS)\n",
-                   mipmapVSBytecode_.size(), mipmapPSBytecode_.size());
+                   pipelineCache_.mipmapVSBytecode_.size(),
+                   pipelineCache_.mipmapPSBytecode_.size());
     }
   }
 }
@@ -273,207 +246,19 @@ Device::~Device() {
 
   // T32: Ensure upload operations complete before destroying device
   // D3D12Context destructor handles main queue fence wait via waitForGPU()
-  if (uploadFenceValue_ > 0) {
-    waitForUploadFence(uploadFenceValue_);
-  }
+  // Upload-specific fence synchronization is handled by D3D12Context and
+  // per-call waitForUploadFence; no additional wait is required here.
 
-  // T32: Clear all D3D12 object caches to release references
-  // This prevents resource leaks when running many tests
-
-  // Release mipmap shaders and root signature
-  mipmapRootSignature_.Reset();
-  mipmapVSBytecode_.clear();
-  mipmapPSBytecode_.clear();
-
-  // Clear caches
-  {
-    std::lock_guard<std::mutex> lock(psoCacheMutex_);
-    graphicsPSOCache_.clear();
-    computePSOCache_.clear();
-  }
-
-  {
-    std::lock_guard<std::mutex> lock(rootSignatureCacheMutex_);
-    rootSignatureCache_.clear();
-  }
-
-  {
-    std::lock_guard<std::mutex> lock(samplerCacheMutex_);
-    samplerCache_.clear();
-  }
-
-  // T32: Clear command allocator pool to release D3D12 object references
-  {
-    std::lock_guard<std::mutex> lock(commandAllocatorPoolMutex_);
-    commandAllocatorPool_.clear();
-  }
-
-  // T32: Clear pending uploads to release staging buffer references
-  {
-    std::lock_guard<std::mutex> lock(pendingUploadsMutex_);
-    pendingUploads_.clear();
-  }
+  // T32: Clear all D3D12 object caches to release references (handled by managers)
+  pipelineCache_.clear();
+  samplerCache_.clear();
+  allocatorPool_.clearOnDeviceDestruction();
 
   // T32: Clear bind group pools to release texture/buffer shared_ptrs
   // BindGroupTextureDesc/BufferDesc hold shared_ptr<ITexture> and shared_ptr<IBuffer>
   // which keep D3D12 resources (and device references) alive
   bindGroupTexturesPool_.clear();
   bindGroupBuffersPool_.clear();
-
-  // T32: Release staging/immediate command helpers before context destruction
-  // These may hold D3D12 resources that need to be freed before device cleanup
-  stagingDevice_.reset();
-  immediateCommands_.reset();
-  uploadRingBuffer_.reset();
-}
-
-void Device::validateDeviceLimits() {
-  auto* device = ctx_->getDevice();
-  if (!device) {
-    IGL_LOG_ERROR("Device::validateDeviceLimits: D3D12 device is null\n");
-    return;
-  }
-
-  IGL_D3D12_LOG_VERBOSE("=== D3D12 Device Capabilities and Limits Validation ===\n");
-
-  // Query D3D12_FEATURE_D3D12_OPTIONS for resource binding tier and other capabilities
-  HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &deviceOptions_, sizeof(deviceOptions_));
-
-  if (SUCCEEDED(hr)) {
-    // Log resource binding tier
-    const char* tierName = "Unknown";
-    switch (deviceOptions_.ResourceBindingTier) {
-      case D3D12_RESOURCE_BINDING_TIER_1:
-        tierName = "Tier 1 (bounded descriptors required)";
-        break;
-      case D3D12_RESOURCE_BINDING_TIER_2:
-        tierName = "Tier 2 (unbounded arrays except samplers)";
-        break;
-      case D3D12_RESOURCE_BINDING_TIER_3:
-        tierName = "Tier 3 (fully unbounded)";
-        break;
-    }
-    IGL_D3D12_LOG_VERBOSE("  Resource Binding Tier: %s\n", tierName);
-
-    // Log other relevant capabilities
-    IGL_D3D12_LOG_VERBOSE("  Standard Swizzle 64KB Supported: %s\n",
-                 deviceOptions_.StandardSwizzle64KBSupported ? "Yes" : "No");
-    IGL_D3D12_LOG_VERBOSE("  Cross-Node Sharing Tier: %d\n", deviceOptions_.CrossNodeSharingTier);
-    IGL_D3D12_LOG_VERBOSE("  Conservative Rasterization Tier: %d\n",
-                 deviceOptions_.ConservativeRasterizationTier);
-  } else {
-    IGL_LOG_ERROR("  Failed to query D3D12_FEATURE_D3D12_OPTIONS (HRESULT: 0x%08X)\n", hr);
-  }
-
-  // Query D3D12_FEATURE_D3D12_OPTIONS1 for root signature version
-  hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS1, &deviceOptions1_, sizeof(deviceOptions1_));
-
-  if (SUCCEEDED(hr)) {
-    IGL_D3D12_LOG_VERBOSE("  Wave Intrinsics Supported: %s\n",
-                 deviceOptions1_.WaveOps ? "Yes" : "No");
-    IGL_D3D12_LOG_VERBOSE("  Wave Lane Count Min: %u\n", deviceOptions1_.WaveLaneCountMin);
-    IGL_D3D12_LOG_VERBOSE("  Wave Lane Count Max: %u\n", deviceOptions1_.WaveLaneCountMax);
-    IGL_D3D12_LOG_VERBOSE("  Total Lane Count: %u\n", deviceOptions1_.TotalLaneCount);
-  } else {
-    IGL_D3D12_LOG_VERBOSE("  D3D12_FEATURE_D3D12_OPTIONS1 query failed (not critical)\n");
-  }
-
-  // Validate hard-coded limits against D3D12 specifications
-  IGL_D3D12_LOG_VERBOSE("\n=== Limit Validation ===\n");
-
-  // Validate kMaxSamplers (32) against D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE (2048)
-  // D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE is defined in d3d12.h
-  constexpr uint32_t kD3D12MaxShaderVisibleSamplers = 2048;
-  IGL_D3D12_LOG_VERBOSE("  kMaxSamplers: %u (D3D12 spec limit: %u)\n",
-               kMaxSamplers, kD3D12MaxShaderVisibleSamplers);
-  if (kMaxSamplers > kD3D12MaxShaderVisibleSamplers) {
-    IGL_LOG_ERROR("  WARNING: kMaxSamplers (%u) exceeds D3D12 limit (%u)!\n",
-                  kMaxSamplers, kD3D12MaxShaderVisibleSamplers);
-  } else {
-    IGL_D3D12_LOG_VERBOSE("  OK: kMaxSamplers within D3D12 limits\n");
-  }
-
-  // Validate kMaxVertexAttributes (16) against D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT (32)
-  // D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT is defined in d3d12.h
-  constexpr uint32_t kD3D12MaxVertexInputElements = 32;
-  IGL_D3D12_LOG_VERBOSE("  kMaxVertexAttributes: %u (D3D12 spec limit: %u)\n",
-               kMaxVertexAttributes, kD3D12MaxVertexInputElements);
-  if (kMaxVertexAttributes > kD3D12MaxVertexInputElements) {
-    IGL_LOG_ERROR("  WARNING: kMaxVertexAttributes (%u) exceeds D3D12 limit (%u)!\n",
-                  kMaxVertexAttributes, kD3D12MaxVertexInputElements);
-  } else {
-    IGL_D3D12_LOG_VERBOSE("  OK: kMaxVertexAttributes within D3D12 limits\n");
-  }
-
-  // Validate kMaxDescriptorSets - this is architecture-dependent but log for reference
-  IGL_D3D12_LOG_VERBOSE("  kMaxDescriptorSets: %u (architecture-specific, validated at runtime)\n",
-               kMaxDescriptorSets);
-
-  // Validate kMaxFramesInFlight - this is a design choice but log for reference
-  IGL_D3D12_LOG_VERBOSE("  kMaxFramesInFlight: %u (application design choice for frame buffering)\n",
-               kMaxFramesInFlight);
-
-  // Log IGL DeviceFeatureLimits values (P1_DX12-008)
-  IGL_D3D12_LOG_VERBOSE("\n=== IGL Device Feature Limits ===\n");
-
-  size_t limitValue = 0;
-
-  if (getFeatureLimits(DeviceFeatureLimits::BufferAlignment, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  BufferAlignment: %zu bytes\n", limitValue);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::MaxTextureDimension1D2D, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  MaxTextureDimension1D2D: %zu\n", limitValue);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::MaxCubeMapDimension, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  MaxCubeMapDimension: %zu\n", limitValue);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::MaxUniformBufferBytes, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  MaxUniformBufferBytes: %zu bytes (%zu KB)\n", limitValue, limitValue / 1024);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::MaxStorageBufferBytes, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  MaxStorageBufferBytes: %zu bytes (%zu MB)\n", limitValue, limitValue / (1024 * 1024));
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::MaxVertexUniformVectors, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  MaxVertexUniformVectors: %zu vec4s\n", limitValue);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::MaxFragmentUniformVectors, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  MaxFragmentUniformVectors: %zu vec4s\n", limitValue);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::MaxMultisampleCount, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  MaxMultisampleCount: %zux\n", limitValue);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::MaxPushConstantBytes, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  MaxPushConstantBytes: %zu bytes\n", limitValue);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::PushConstantsAlignment, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  PushConstantsAlignment: %zu bytes\n", limitValue);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::ShaderStorageBufferOffsetAlignment, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  ShaderStorageBufferOffsetAlignment: %zu bytes\n", limitValue);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::MaxTextureDimension3D, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  MaxTextureDimension3D: %zu\n", limitValue);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::MaxComputeWorkGroupSizeX, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  MaxComputeWorkGroupSizeX: %zu\n", limitValue);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::MaxComputeWorkGroupSizeY, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  MaxComputeWorkGroupSizeY: %zu\n", limitValue);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::MaxComputeWorkGroupSizeZ, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  MaxComputeWorkGroupSizeZ: %zu\n", limitValue);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::MaxComputeWorkGroupInvocations, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  MaxComputeWorkGroupInvocations: %zu\n", limitValue);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::MaxVertexInputAttributes, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  MaxVertexInputAttributes: %zu\n", limitValue);
-  }
-  if (getFeatureLimits(DeviceFeatureLimits::MaxColorAttachments, limitValue)) {
-    IGL_D3D12_LOG_VERBOSE("  MaxColorAttachments: %zu\n", limitValue);
-  }
-
-  IGL_D3D12_LOG_VERBOSE("=== Device Limits Validation Complete ===\n\n");
 }
 
 // P1_DX12-006: Check for device removal and report detailed error
@@ -861,7 +646,8 @@ std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
               UINT64 uploadFenceValue = getNextUploadFenceValue();
 
               // Signal upload fence after copy completes
-              HRESULT hrSignal = ctx_->getCommandQueue()->Signal(uploadFence_.Get(), uploadFenceValue);
+              HRESULT hrSignal =
+                  ctx_->getCommandQueue()->Signal(allocatorPool_.getUploadFence(), uploadFenceValue);
               if (FAILED(hrSignal)) {
                 IGL_LOG_ERROR("Device::createBuffer: Failed to signal upload fence: 0x%08X\n", hrSignal);
                 // Return allocator with 0 to avoid blocking the pool
@@ -906,113 +692,7 @@ std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc
 
 std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
-  // C-005: Sampler deduplication - Check cache first to reduce descriptor usage
-  const size_t samplerHash = std::hash<SamplerStateDesc>{}(desc);
-
-  {
-    std::lock_guard<std::mutex> lock(samplerCacheMutex_);
-
-    // Check if sampler with this descriptor already exists
-    auto it = samplerCache_.find(samplerHash);
-    if (it != samplerCache_.end()) {
-      // Try to promote weak_ptr to shared_ptr
-      std::shared_ptr<SamplerState> existingSampler = it->second.lock();
-
-      if (existingSampler) {
-        // Cache hit - reuse existing sampler
-        samplerCacheHits_++;
-        const size_t totalRequests = samplerCacheHits_ + samplerCacheMisses_;
-        IGL_D3D12_LOG_VERBOSE("Device::createSamplerState: Cache HIT (hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%)\n",
-                     samplerHash, samplerCacheHits_, samplerCacheMisses_,
-                     100.0 * samplerCacheHits_ / totalRequests);
-        Result::setOk(outResult);
-        return existingSampler;
-      } else {
-        // Weak pointer expired - remove from cache
-        samplerCache_.erase(it);
-      }
-    }
-  }
-
-  // Cache miss - create new sampler
-  D3D12_SAMPLER_DESC samplerDesc = {};
-
-  auto toD3D12Address = [](SamplerAddressMode m) {
-    switch (m) {
-    case SamplerAddressMode::Repeat: return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    case SamplerAddressMode::MirrorRepeat: return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
-    case SamplerAddressMode::Clamp: return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-    default: return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    }
-  };
-
-  auto toD3D12Compare = [](CompareFunction f) {
-    switch (f) {
-    case CompareFunction::Less: return D3D12_COMPARISON_FUNC_LESS;
-    case CompareFunction::LessEqual: return D3D12_COMPARISON_FUNC_LESS_EQUAL;
-    case CompareFunction::Greater: return D3D12_COMPARISON_FUNC_GREATER;
-    case CompareFunction::GreaterEqual: return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-    case CompareFunction::Equal: return D3D12_COMPARISON_FUNC_EQUAL;
-    case CompareFunction::NotEqual: return D3D12_COMPARISON_FUNC_NOT_EQUAL;
-    case CompareFunction::AlwaysPass: return D3D12_COMPARISON_FUNC_ALWAYS;
-    case CompareFunction::Never: return D3D12_COMPARISON_FUNC_NEVER;
-    default: return D3D12_COMPARISON_FUNC_NEVER;
-    }
-  };
-
-  const bool useComparison = desc.depthCompareEnabled;
-
-  // Filter mapping (basic, anisotropy optional)
-  const bool minLinear = (desc.minFilter != SamplerMinMagFilter::Nearest);
-  const bool magLinear = (desc.magFilter != SamplerMinMagFilter::Nearest);
-  const bool mipLinear = (desc.mipFilter == SamplerMipFilter::Linear);
-  const bool anisotropic = (desc.maxAnisotropic > 1);
-
-  if (anisotropic) {
-    samplerDesc.Filter = useComparison ? D3D12_FILTER_COMPARISON_ANISOTROPIC : D3D12_FILTER_ANISOTROPIC;
-    samplerDesc.MaxAnisotropy = std::min<uint32_t>(desc.maxAnisotropic, 16);
-  } else {
-    D3D12_FILTER filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-    if (minLinear && magLinear && mipLinear) filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-    else if (minLinear && magLinear && !mipLinear) filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-    else if (minLinear && !magLinear && mipLinear) filter = D3D12_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
-    else if (minLinear && !magLinear && !mipLinear) filter = D3D12_FILTER_MIN_LINEAR_MAG_MIP_POINT;
-    else if (!minLinear && magLinear && mipLinear) filter = D3D12_FILTER_MIN_POINT_MAG_MIP_LINEAR;
-    else if (!minLinear && magLinear && !mipLinear) filter = D3D12_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
-    else if (!minLinear && !magLinear && mipLinear) filter = D3D12_FILTER_MIN_MAG_POINT_MIP_LINEAR;
-    // else remains POINT
-    if (useComparison) {
-      filter = static_cast<D3D12_FILTER>(filter | D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT - D3D12_FILTER_MIN_MAG_MIP_POINT);
-    }
-    samplerDesc.Filter = filter;
-    samplerDesc.MaxAnisotropy = 1;
-  }
-
-  samplerDesc.AddressU = toD3D12Address(desc.addressModeU);
-  samplerDesc.AddressV = toD3D12Address(desc.addressModeV);
-  samplerDesc.AddressW = toD3D12Address(desc.addressModeW);
-  samplerDesc.MipLODBias = 0.0f;
-  samplerDesc.ComparisonFunc = useComparison ? toD3D12Compare(desc.depthCompareFunction) : D3D12_COMPARISON_FUNC_NEVER;
-  samplerDesc.BorderColor[0] = 0.0f;
-  samplerDesc.BorderColor[1] = 0.0f;
-  samplerDesc.BorderColor[2] = 0.0f;
-  samplerDesc.BorderColor[3] = 0.0f;
-  samplerDesc.MinLOD = static_cast<float>(desc.mipLodMin);
-  samplerDesc.MaxLOD = static_cast<float>(desc.mipLodMax);
-
-  auto samplerState = std::make_shared<SamplerState>(samplerDesc);
-
-  // Add to cache for future reuse (C-005)
-  {
-    std::lock_guard<std::mutex> lock(samplerCacheMutex_);
-    samplerCache_[samplerHash] = samplerState;  // weak_ptr stored
-    samplerCacheMisses_++;
-    IGL_D3D12_LOG_VERBOSE("Device::createSamplerState: Cache MISS (hash=0x%zx, total misses=%zu)\n",
-                 samplerHash, samplerCacheMisses_);
-  }
-
-  Result::setOk(outResult);
-  return samplerState;
+  return samplerCache_.createSamplerState(desc, outResult);
 }
 
 std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
@@ -1250,248 +930,6 @@ std::shared_ptr<IVertexInputState> Device::createVertexInputState(
   return std::make_shared<VertexInputState>(desc);
 }
 
-// Pipelines
-
-// Root signature caching (P0_DX12-002)
-
-// Helper function to hash root signature descriptor
-size_t Device::hashRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc) const {
-  size_t hash = 0;
-
-  // Hash root signature flags
-  hashCombine(hash, static_cast<size_t>(desc.Flags));
-
-  // Hash number of parameters
-  hashCombine(hash, static_cast<size_t>(desc.NumParameters));
-
-  // Hash each root parameter
-  for (UINT i = 0; i < desc.NumParameters; ++i) {
-    const auto& param = desc.pParameters[i];
-
-    // Hash parameter type
-    hashCombine(hash, static_cast<size_t>(param.ParameterType));
-    hashCombine(hash, static_cast<size_t>(param.ShaderVisibility));
-
-    switch (param.ParameterType) {
-      case D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE: {
-        // Hash number of ranges
-        hashCombine(hash, static_cast<size_t>(param.DescriptorTable.NumDescriptorRanges));
-
-        // Hash each descriptor range
-        for (UINT j = 0; j < param.DescriptorTable.NumDescriptorRanges; ++j) {
-          const auto& range = param.DescriptorTable.pDescriptorRanges[j];
-          hashCombine(hash, static_cast<size_t>(range.RangeType));
-          hashCombine(hash, static_cast<size_t>(range.NumDescriptors));
-          hashCombine(hash, static_cast<size_t>(range.BaseShaderRegister));
-          hashCombine(hash, static_cast<size_t>(range.RegisterSpace));
-          hashCombine(hash, static_cast<size_t>(range.OffsetInDescriptorsFromTableStart));
-        }
-        break;
-      }
-      case D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS: {
-        hashCombine(hash, static_cast<size_t>(param.Constants.ShaderRegister));
-        hashCombine(hash, static_cast<size_t>(param.Constants.RegisterSpace));
-        hashCombine(hash, static_cast<size_t>(param.Constants.Num32BitValues));
-        break;
-      }
-      case D3D12_ROOT_PARAMETER_TYPE_CBV:
-      case D3D12_ROOT_PARAMETER_TYPE_SRV:
-      case D3D12_ROOT_PARAMETER_TYPE_UAV: {
-        hashCombine(hash, static_cast<size_t>(param.Descriptor.ShaderRegister));
-        hashCombine(hash, static_cast<size_t>(param.Descriptor.RegisterSpace));
-        break;
-      }
-    }
-  }
-
-  // Hash static samplers
-  hashCombine(hash, static_cast<size_t>(desc.NumStaticSamplers));
-  for (UINT i = 0; i < desc.NumStaticSamplers; ++i) {
-    const auto& sampler = desc.pStaticSamplers[i];
-    hashCombine(hash, static_cast<size_t>(sampler.Filter));
-    hashCombine(hash, static_cast<size_t>(sampler.AddressU));
-    hashCombine(hash, static_cast<size_t>(sampler.AddressV));
-    hashCombine(hash, static_cast<size_t>(sampler.AddressW));
-    hashCombine(hash, static_cast<size_t>(sampler.ComparisonFunc));
-    hashCombine(hash, static_cast<size_t>(sampler.ShaderRegister));
-    hashCombine(hash, static_cast<size_t>(sampler.RegisterSpace));
-    hashCombine(hash, static_cast<size_t>(sampler.ShaderVisibility));
-  }
-
-  return hash;
-}
-
-// Helper function to get or create cached root signature
-igl::d3d12::ComPtr<ID3D12RootSignature> Device::getOrCreateRootSignature(
-    const D3D12_ROOT_SIGNATURE_DESC& desc,
-    Result* IGL_NULLABLE outResult) const {
-
-  // Compute hash for root signature
-  const size_t hash = hashRootSignature(desc);
-
-  // Thread-safe cache lookup
-  {
-    std::lock_guard<std::mutex> lock(rootSignatureCacheMutex_);
-    auto it = rootSignatureCache_.find(hash);
-    if (it != rootSignatureCache_.end()) {
-      rootSignatureCacheHits_++;
-      IGL_D3D12_LOG_VERBOSE("  Root signature cache HIT (hash=0x%zx, hits=%zu, misses=%zu)\n",
-                   hash, rootSignatureCacheHits_, rootSignatureCacheMisses_);
-      return it->second;
-    }
-  }
-
-  // Cache miss - create new root signature
-  rootSignatureCacheMisses_++;
-  IGL_D3D12_LOG_VERBOSE("  Root signature cache MISS (hash=0x%zx, hits=%zu, misses=%zu)\n",
-               hash, rootSignatureCacheHits_, rootSignatureCacheMisses_);
-
-  auto* device = ctx_->getDevice();
-  if (!device) {
-    Result::setResult(outResult, Result::Code::InvalidOperation, "D3D12 device is null");
-    return nullptr;
-  }
-
-  // Serialize root signature
-  igl::d3d12::ComPtr<ID3DBlob> signature;
-  igl::d3d12::ComPtr<ID3DBlob> error;
-
-  IGL_D3D12_LOG_VERBOSE("  Serializing root signature (version 1.0)...\n");
-  HRESULT hr = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1,
-                                           signature.GetAddressOf(), error.GetAddressOf());
-  if (FAILED(hr)) {
-    if (error.Get()) {
-      const char* errorMsg = static_cast<const char*>(error->GetBufferPointer());
-      IGL_LOG_ERROR("Root signature serialization error: %s\n", errorMsg);
-    }
-    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to serialize root signature");
-    return nullptr;
-  }
-
-  // Create root signature
-  igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature;
-  hr = device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
-                                    IID_PPV_ARGS(rootSignature.GetAddressOf()));
-  if (FAILED(hr)) {
-    IGL_LOG_ERROR("  CreateRootSignature FAILED: 0x%08X\n", static_cast<unsigned>(hr));
-    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create root signature");
-    return nullptr;
-  }
-
-  IGL_D3D12_LOG_VERBOSE("  Root signature created successfully\n");
-
-  // Cache the created root signature
-  {
-    std::lock_guard<std::mutex> lock(rootSignatureCacheMutex_);
-    rootSignatureCache_[hash] = rootSignature;
-  }
-
-  return rootSignature;
-}
-
-// Helper function to hash render pipeline descriptor (P0_DX12-001)
-size_t Device::hashRenderPipelineDesc(const RenderPipelineDesc& desc) const {
-  size_t hash = 0;
-
-  // Hash shader stages
-  if (desc.shaderStages) {
-    auto* vertexModule = static_cast<const ShaderModule*>(desc.shaderStages->getVertexModule().get());
-    auto* fragmentModule = static_cast<const ShaderModule*>(desc.shaderStages->getFragmentModule().get());
-
-    if (vertexModule) {
-      const auto& vsBytecode = vertexModule->getBytecode();
-      hashCombine(hash, vsBytecode.size());
-      // Hash a portion of bytecode for uniqueness (first 256 bytes or full size if smaller)
-      size_t bytesToHash = std::min<size_t>(256, vsBytecode.size());
-      for (size_t i = 0; i < bytesToHash; i += 8) {
-        hashCombine(hash, static_cast<size_t>(vsBytecode[i]));
-      }
-    }
-
-    if (fragmentModule) {
-      const auto& psBytecode = fragmentModule->getBytecode();
-      hashCombine(hash, psBytecode.size());
-      size_t bytesToHash = std::min<size_t>(256, psBytecode.size());
-      for (size_t i = 0; i < bytesToHash; i += 8) {
-        hashCombine(hash, static_cast<size_t>(psBytecode[i]));
-      }
-    }
-  }
-
-  // Hash vertex input state
-  if (desc.vertexInputState) {
-    auto* d3d12VertexInput = static_cast<const VertexInputState*>(desc.vertexInputState.get());
-    const auto& vertexDesc = d3d12VertexInput->getDesc();
-    hashCombine(hash, vertexDesc.numAttributes);
-    for (size_t i = 0; i < vertexDesc.numAttributes; ++i) {
-      hashCombine(hash, static_cast<size_t>(vertexDesc.attributes[i].format));
-      hashCombine(hash, vertexDesc.attributes[i].offset);
-      hashCombine(hash, vertexDesc.attributes[i].bufferIndex);
-      hashCombine(hash, std::hash<std::string>{}(vertexDesc.attributes[i].name));
-    }
-  }
-
-  // Hash render target formats
-  hashCombine(hash, desc.targetDesc.colorAttachments.size());
-  for (const auto& att : desc.targetDesc.colorAttachments) {
-    hashCombine(hash, static_cast<size_t>(att.textureFormat));
-  }
-  hashCombine(hash, static_cast<size_t>(desc.targetDesc.depthAttachmentFormat));
-  hashCombine(hash, static_cast<size_t>(desc.targetDesc.stencilAttachmentFormat));
-
-  // Hash blend state
-  for (const auto& att : desc.targetDesc.colorAttachments) {
-    hashCombine(hash, att.blendEnabled ? 1 : 0);
-    hashCombine(hash, static_cast<size_t>(att.srcRGBBlendFactor));
-    hashCombine(hash, static_cast<size_t>(att.dstRGBBlendFactor));
-    hashCombine(hash, static_cast<size_t>(att.rgbBlendOp));
-    hashCombine(hash, static_cast<size_t>(att.srcAlphaBlendFactor));
-    hashCombine(hash, static_cast<size_t>(att.dstAlphaBlendFactor));
-    hashCombine(hash, static_cast<size_t>(att.alphaBlendOp));
-    hashCombine(hash, static_cast<size_t>(att.colorWriteMask));
-  }
-
-  // Hash rasterizer state
-  hashCombine(hash, static_cast<size_t>(desc.cullMode));
-  hashCombine(hash, static_cast<size_t>(desc.frontFaceWinding));
-  hashCombine(hash, static_cast<size_t>(desc.polygonFillMode));
-
-  // Hash primitive topology
-  hashCombine(hash, static_cast<size_t>(desc.topology));
-
-  // Hash sample count
-  hashCombine(hash, desc.sampleCount);
-
-  return hash;
-}
-
-// Helper function to hash compute pipeline descriptor (P0_DX12-001)
-size_t Device::hashComputePipelineDesc(const ComputePipelineDesc& desc) const {
-  size_t hash = 0;
-
-  // Hash shader stages
-  if (desc.shaderStages) {
-    auto* computeModule = static_cast<const ShaderModule*>(desc.shaderStages->getComputeModule().get());
-
-    if (computeModule) {
-      const auto& csBytecode = computeModule->getBytecode();
-      hashCombine(hash, csBytecode.size());
-      // Hash a portion of bytecode for uniqueness (first 256 bytes or full size if smaller)
-      size_t bytesToHash = std::min<size_t>(256, csBytecode.size());
-      for (size_t i = 0; i < bytesToHash; i += 8) {
-        hashCombine(hash, static_cast<size_t>(csBytecode[i]));
-      }
-    }
-  }
-
-  // Hash debug name for additional differentiation (optional)
-  for (char c : desc.debugName) {
-    hashCombine(hash, static_cast<size_t>(c));
-  }
-
-  return hash;
-}
-
 std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     const ComputePipelineDesc& desc,
     Result* IGL_NULLABLE outResult) const {
@@ -1655,7 +1093,8 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   IGL_D3D12_LOG_VERBOSE("  Creating compute root signature with Root Constants (b0)/UAVs/SRVs/CBVs/Samplers\n");
 
   // Get or create cached root signature (P0_DX12-002)
-  igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature = getOrCreateRootSignature(rootSigDesc, outResult);
+  igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature =
+      pipelineCache_.getOrCreateRootSignature(ctx_->getDevice(), rootSigDesc, outResult);
   if (!rootSignature.Get()) {
     return nullptr;
   }
@@ -1671,20 +1110,24 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
   // PSO Cache lookup (P0_DX12-001, H-013: Thread-safe with double-checked locking)
-  const size_t psoHash = hashComputePipelineDesc(desc);
+  const size_t psoHash = pipelineCache_.hashComputePipelineDesc(desc);
   igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState;
 
   // First check: Lock for cache lookup
   {
-    std::lock_guard<std::mutex> lock(psoCacheMutex_);
-    auto psoIt = computePSOCache_.find(psoHash);
-    if (psoIt != computePSOCache_.end()) {
+    std::lock_guard<std::mutex> lock(pipelineCache_.psoCacheMutex_);
+    auto psoIt = pipelineCache_.computePSOCache_.find(psoHash);
+    if (psoIt != pipelineCache_.computePSOCache_.end()) {
       // Cache hit - reuse existing PSO
-      computePSOCacheHits_++;
+      pipelineCache_.computePSOCacheHits_++;
       pipelineState = psoIt->second;  // Assignment creates a ref-counted copy
       IGL_D3D12_LOG_VERBOSE("  [PSO CACHE HIT] Hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%\n",
-                   psoHash, computePSOCacheHits_, computePSOCacheMisses_,
-                   100.0 * computePSOCacheHits_ / (computePSOCacheHits_ + computePSOCacheMisses_));
+                   psoHash,
+                   pipelineCache_.computePSOCacheHits_,
+                   pipelineCache_.computePSOCacheMisses_,
+                   100.0 * pipelineCache_.computePSOCacheHits_ /
+                       (pipelineCache_.computePSOCacheHits_ +
+                        pipelineCache_.computePSOCacheMisses_));
       IGL_D3D12_LOG_VERBOSE("Device::createComputePipeline() SUCCESS (CACHED) - PSO=%p, RootSig=%p\n",
                    pipelineState.Get(), rootSignature.Get());
       Result::setOk(outResult);
@@ -1747,19 +1190,21 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   // Second check: Lock for cache insertion with double-check (H-013: Thread-safe)
   // Another thread may have created the PSO while we were creating ours
   {
-    std::lock_guard<std::mutex> lock(psoCacheMutex_);
-    auto psoIt = computePSOCache_.find(psoHash);
-    if (psoIt != computePSOCache_.end()) {
+    std::lock_guard<std::mutex> lock(pipelineCache_.psoCacheMutex_);
+    auto psoIt = pipelineCache_.computePSOCache_.find(psoHash);
+    if (psoIt != pipelineCache_.computePSOCache_.end()) {
       // Another thread beat us to it - use their PSO
-      computePSOCacheHits_++;
+      pipelineCache_.computePSOCacheHits_++;
       pipelineState = psoIt->second;
       IGL_D3D12_LOG_VERBOSE("  [PSO DOUBLE-CHECK HIT] Another thread created PSO, using theirs. Hash=0x%zx\n", psoHash);
     } else {
       // We're the first to complete - cache our PSO
-      computePSOCacheMisses_++;
-      computePSOCache_[psoHash] = pipelineState;
+      pipelineCache_.computePSOCacheMisses_++;
+      pipelineCache_.computePSOCache_[psoHash] = pipelineState;
       IGL_D3D12_LOG_VERBOSE("  [PSO CACHED] Hash=0x%zx, hits=%zu, misses=%zu\n",
-                   psoHash, computePSOCacheHits_, computePSOCacheMisses_);
+                   psoHash,
+                   pipelineCache_.computePSOCacheHits_,
+                   pipelineCache_.computePSOCacheMisses_);
     }
   }
 
@@ -1950,7 +1395,8 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   IGL_D3D12_LOG_VERBOSE("  Creating root signature with Push Constants (b2)/Root CBVs (b0,b1)/CBV Table (b3-b15)/SRVs/Samplers/UAVs\n");
 
   // Get or create cached root signature (P0_DX12-002)
-  igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature = getOrCreateRootSignature(rootSigDesc, outResult);
+  igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature =
+      pipelineCache_.getOrCreateRootSignature(ctx_->getDevice(), rootSigDesc, outResult);
   if (!rootSignature.Get()) {
     return nullptr;
   }
@@ -2342,20 +1788,24 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   }
 
   // PSO Cache lookup (P0_DX12-001, H-013: Thread-safe with double-checked locking)
-  const size_t psoHash = hashRenderPipelineDesc(desc);
+  const size_t psoHash = pipelineCache_.hashRenderPipelineDesc(desc);
   igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState;
 
   // First check: Lock for cache lookup
   {
-    std::lock_guard<std::mutex> lock(psoCacheMutex_);
-    auto psoIt = graphicsPSOCache_.find(psoHash);
-    if (psoIt != graphicsPSOCache_.end()) {
+    std::lock_guard<std::mutex> lock(pipelineCache_.psoCacheMutex_);
+    auto psoIt = pipelineCache_.graphicsPSOCache_.find(psoHash);
+    if (psoIt != pipelineCache_.graphicsPSOCache_.end()) {
       // Cache hit - reuse existing PSO
-      graphicsPSOCacheHits_++;
+      pipelineCache_.graphicsPSOCacheHits_++;
       pipelineState = psoIt->second;  // Assignment creates a ref-counted copy
       IGL_D3D12_LOG_VERBOSE("  [PSO CACHE HIT] Hash=0x%zx, hits=%zu, misses=%zu, hit rate=%.1f%%\n",
-                   psoHash, graphicsPSOCacheHits_, graphicsPSOCacheMisses_,
-                   100.0 * graphicsPSOCacheHits_ / (graphicsPSOCacheHits_ + graphicsPSOCacheMisses_));
+                   psoHash,
+                   pipelineCache_.graphicsPSOCacheHits_,
+                   pipelineCache_.graphicsPSOCacheMisses_,
+                   100.0 * pipelineCache_.graphicsPSOCacheHits_ /
+                       (pipelineCache_.graphicsPSOCacheHits_ +
+                        pipelineCache_.graphicsPSOCacheMisses_));
       IGL_D3D12_LOG_VERBOSE("Device::createRenderPipeline() SUCCESS (CACHED) - PSO=%p, RootSig=%p\n",
                    pipelineState.Get(), rootSignature.Get());
       Result::setOk(outResult);
@@ -2435,19 +1885,21 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   // Second check: Lock for cache insertion with double-check (H-013: Thread-safe)
   // Another thread may have created the PSO while we were creating ours
   {
-    std::lock_guard<std::mutex> lock(psoCacheMutex_);
-    auto psoIt = graphicsPSOCache_.find(psoHash);
-    if (psoIt != graphicsPSOCache_.end()) {
+    std::lock_guard<std::mutex> lock(pipelineCache_.psoCacheMutex_);
+    auto psoIt = pipelineCache_.graphicsPSOCache_.find(psoHash);
+    if (psoIt != pipelineCache_.graphicsPSOCache_.end()) {
       // Another thread beat us to it - use their PSO
-      graphicsPSOCacheHits_++;
+      pipelineCache_.graphicsPSOCacheHits_++;
       pipelineState = psoIt->second;
       IGL_D3D12_LOG_VERBOSE("  [PSO DOUBLE-CHECK HIT] Another thread created PSO, using theirs. Hash=0x%zx\n", psoHash);
     } else {
       // We're the first to complete - cache our PSO
-      graphicsPSOCacheMisses_++;
-      graphicsPSOCache_[psoHash] = pipelineState;
+      pipelineCache_.graphicsPSOCacheMisses_++;
+      pipelineCache_.graphicsPSOCache_[psoHash] = pipelineState;
       IGL_D3D12_LOG_VERBOSE("  [PSO CACHED] Hash=0x%zx, hits=%zu, misses=%zu\n",
-                   psoHash, graphicsPSOCacheHits_, graphicsPSOCacheMisses_);
+                   psoHash,
+                   pipelineCache_.graphicsPSOCacheHits_,
+                   pipelineCache_.graphicsPSOCacheMisses_);
     }
   }
 
@@ -3301,28 +2753,8 @@ BackendType Device::getBackendType() const {
 }
 
 // C-005: Get sampler cache statistics for telemetry and debugging
-Device::SamplerCacheStats Device::getSamplerCacheStats() const {
-  std::lock_guard<std::mutex> lock(samplerCacheMutex_);
-
-  SamplerCacheStats stats;
-  stats.cacheHits = samplerCacheHits_;
-  stats.cacheMisses = samplerCacheMisses_;
-
-  // Count active samplers (weak_ptrs that haven't expired)
-  stats.activeSamplers = 0;
-  for (const auto& [hash, weakPtr] : samplerCache_) {
-    if (!weakPtr.expired()) {
-      stats.activeSamplers++;
-    }
-  }
-
-  // Calculate hit rate
-  const size_t totalRequests = stats.cacheHits + stats.cacheMisses;
-  if (totalRequests > 0) {
-    stats.hitRate = 100.0f * stats.cacheHits / totalRequests;
-  }
-
-  return stats;
+SamplerCacheStats Device::getSamplerCacheStats() const {
+  return samplerCache_.getStats();
 }
 
 // I-003: Query maximum MSAA sample count for a specific format
@@ -3362,205 +2794,32 @@ uint32_t Device::getMaxMSAASamplesForFormat(TextureFormat format) const {
 }
 
 void Device::processCompletedUploads() {
-  if (!uploadFence_.Get()) {
-    return;
-  }
-
-  const UINT64 completed = uploadFence_->GetCompletedValue();
-
-  std::lock_guard<std::mutex> lock(pendingUploadsMutex_);
-  auto& uploads = pendingUploads_;
-  auto it = uploads.begin();
-  while (it != uploads.end()) {
-    if (it->fenceValue <= completed) {
-      it = uploads.erase(it);
-    } else {
-      ++it;
-    }
-  }
-
-  // Retire ring buffer allocations that have completed (P1_DX12-009)
-  if (uploadRingBuffer_) {
-    uploadRingBuffer_->retire(completed);
-  }
+  allocatorPool_.processCompletedUploads();
 }
 
 Result Device::waitForUploadFence(UINT64 fenceValue) const {
-  // T05: Wait for upload fence to reach specified value
-  if (!uploadFence_.Get()) {
-    return Result(Result::Code::InvalidOperation, "Upload fence not initialized");
-  }
-
-  // Check if fence has already been signaled
-  if (uploadFence_->GetCompletedValue() >= fenceValue) {
-    return Result();  // Already completed, no need to wait
-  }
-
-  // Use FenceWaiter RAII wrapper for proper fence waiting
-  FenceWaiter waiter(uploadFence_.Get(), fenceValue);
-  Result waitResult = waiter.wait();
-  if (!waitResult.isOk()) {
-    // Check for device removal to provide richer diagnostics
-    Result deviceStatus = checkDeviceRemoval();
-    if (!deviceStatus.isOk()) {
-      return deviceStatus;  // Device removal is the root cause
-    }
-    // Return the specific fence wait error (timeout, setup failure, etc.)
-    return waitResult;
-  }
-
-  return Result();
+  return allocatorPool_.waitForUploadFence(*this, fenceValue);
 }
 
 void Device::trackUploadBuffer(igl::d3d12::ComPtr<ID3D12Resource> buffer, UINT64 fenceValue) {
-  if (!buffer.Get()) {
-    return;
-  }
-
-  // DX12-NEW-02: Track with upload fence value (not swap-chain fence)
-  // The caller must signal uploadFence_ BEFORE calling this method
-  // This ensures pendingUploads_ is synchronized with uploadFence_->GetCompletedValue()
-  std::lock_guard<std::mutex> lock(pendingUploadsMutex_);
-  pendingUploads_.push_back(PendingUpload{fenceValue, std::move(buffer)});
+  allocatorPool_.trackUploadBuffer(std::move(buffer), fenceValue);
 }
 
-// Command Allocator Pool Implementation (P0_DX12-005, H-004, B-008)
-// Ensures command allocators are only reused after GPU completes execution
-// H-004: Cap pool at 64 allocators to prevent memory leaks
-// B-008: Increased to 256 allocators with enhanced statistics and error handling
-static constexpr size_t kMaxCommandAllocators = 256;
-
 igl::d3d12::ComPtr<ID3D12CommandAllocator> Device::getUploadCommandAllocator() {
-  if (!uploadFence_.Get()) {
-    IGL_LOG_ERROR("Device::getUploadCommandAllocator: Upload fence not initialized\n");
-    return nullptr;
-  }
-
-  std::lock_guard<std::mutex> lock(commandAllocatorPoolMutex_);
-
-  // Check if any existing allocator is available (fence signaled)
-  const UINT64 completedValue = uploadFence_->GetCompletedValue();
-
-  for (size_t i = 0; i < commandAllocatorPool_.size(); ++i) {
-    auto& tracked = commandAllocatorPool_[i];
-
-    if (completedValue >= tracked.fenceValue) {
-      // GPU finished using this allocator, safe to reuse
-      auto allocator = tracked.allocator;
-
-      // Remove from pool (will be returned later with new fence value)
-      commandAllocatorPool_[i] = commandAllocatorPool_.back();
-      commandAllocatorPool_.pop_back();
-
-      // Reset allocator for reuse
-      HRESULT hr = allocator->Reset();
-      if (FAILED(hr)) {
-        IGL_LOG_ERROR("Device::getUploadCommandAllocator: CommandAllocator::Reset failed: 0x%08X\n", hr);
-        return nullptr;
-      }
-
-      // B-008: Track reuse statistics
-      totalAllocatorReuses_++;
-
-#ifdef IGL_DEBUG
-      IGL_D3D12_LOG_VERBOSE("Device::getUploadCommandAllocator: Reusing allocator (completed fence: %llu >= %llu), "
-                   "pool size: %zu, reuses: %zu\n",
-                   completedValue, tracked.fenceValue, commandAllocatorPool_.size(), totalAllocatorReuses_);
-#endif
-      return allocator;
-    }
-  }
-
-  // H-004, B-008: Check if we've reached the pool limit
-  // totalCommandAllocatorsCreated_ tracks all allocators ever created (in pool + currently in use)
-  if (totalCommandAllocatorsCreated_ >= kMaxCommandAllocators) {
-    // B-008: Enhanced error message with statistics and guidance
-    const size_t allocatorsInUse = totalCommandAllocatorsCreated_ - commandAllocatorPool_.size();
-    const float reuseRate = totalCommandAllocatorsCreated_ > 0
-        ? (100.0f * totalAllocatorReuses_ / (totalCommandAllocatorsCreated_ + totalAllocatorReuses_))
-        : 0.0f;
-
-    IGL_LOG_ERROR("Device::getUploadCommandAllocator: Command allocator pool EXHAUSTED!\n");
-    IGL_LOG_ERROR("  Pool limit: %zu allocators (hard limit to prevent GPU memory leak)\n",
-                  kMaxCommandAllocators);
-    IGL_LOG_ERROR("  Currently in use: %zu allocators\n", allocatorsInUse);
-    IGL_LOG_ERROR("  Waiting in pool: %zu allocators\n", commandAllocatorPool_.size());
-    IGL_LOG_ERROR("  Peak pool size: %zu\n", peakPoolSize_);
-    IGL_LOG_ERROR("  Total reuses: %zu (%.1f%% reuse rate)\n", totalAllocatorReuses_, reuseRate);
-    IGL_LOG_ERROR("  Completed fence: %llu\n", completedValue);
-    IGL_LOG_ERROR("\n");
-    IGL_LOG_ERROR("POSSIBLE CAUSES:\n");
-    IGL_LOG_ERROR("  1. Too many frames in flight - reduce frame pacing\n");
-    IGL_LOG_ERROR("  2. GPU stalled - check for synchronization issues\n");
-    IGL_LOG_ERROR("  3. Commands submitted faster than GPU can process\n");
-    IGL_LOG_ERROR("  4. Memory-intensive operations causing GPU slowdown\n");
-    IGL_LOG_ERROR("\n");
-    IGL_LOG_ERROR("RECOMMENDED ACTIONS:\n");
-    IGL_LOG_ERROR("  1. Add explicit GPU synchronization (waitForGPU) before intensive operations\n");
-    IGL_LOG_ERROR("  2. Reduce number of simultaneous command buffer submissions\n");
-    IGL_LOG_ERROR("  3. Check for infinite loops in command recording\n");
-    IGL_LOG_ERROR("  4. Profile GPU workload to identify bottlenecks\n");
-
-    return nullptr;
-  }
-
-  // No available allocator, create new one (under limit)
-  auto* device = ctx_->getDevice();
-  if (!device) {
-    IGL_LOG_ERROR("Device::getUploadCommandAllocator: D3D12 device is null\n");
-    return nullptr;
-  }
-
-  igl::d3d12::ComPtr<ID3D12CommandAllocator> newAllocator;
-  HRESULT hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                               IID_PPV_ARGS(newAllocator.GetAddressOf()));
-  if (FAILED(hr)) {
-    IGL_LOG_ERROR("Device::getUploadCommandAllocator: CreateCommandAllocator failed: 0x%08X\n", hr);
-    return nullptr;
-  }
-
-  // H-004: Track total allocators created
-  totalCommandAllocatorsCreated_++;
-
-#ifdef IGL_DEBUG
-  IGL_D3D12_LOG_VERBOSE("Device::getUploadCommandAllocator: Created new allocator (total: %zu/%zu, pool size: %zu)\n",
-               totalCommandAllocatorsCreated_, kMaxCommandAllocators, commandAllocatorPool_.size());
-#endif
-  return newAllocator;
+  return allocatorPool_.getUploadCommandAllocator(*ctx_);
 }
 
 void Device::returnUploadCommandAllocator(igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator,
                                           UINT64 fenceValue) {
-  if (!allocator.Get()) {
-    return;
-  }
-
-  std::lock_guard<std::mutex> lock(commandAllocatorPoolMutex_);
-
-  TrackedCommandAllocator tracked;
-  tracked.allocator = allocator;
-  tracked.fenceValue = fenceValue;
-
-  commandAllocatorPool_.push_back(tracked);
-
-  // B-008: Track peak pool size for statistics
-  if (commandAllocatorPool_.size() > peakPoolSize_) {
-    peakPoolSize_ = commandAllocatorPool_.size();
-  }
-
-#ifdef IGL_DEBUG
-  IGL_D3D12_LOG_VERBOSE("Device::returnUploadCommandAllocator: Returned allocator with fence %llu, "
-               "pool size: %zu, peak: %zu\n",
-               fenceValue, commandAllocatorPool_.size(), peakPoolSize_);
-#endif
+  allocatorPool_.returnUploadCommandAllocator(std::move(allocator), fenceValue);
 }
 
 size_t Device::getCurrentDrawCount() const {
-  return drawCount_;
+  return telemetry_.getDrawCount();
 }
 
 size_t Device::getShaderCompilationCount() const {
-  return shaderCompilationCount_;
+  return telemetry_.getShaderCompilationCount();
 }
 
 } // namespace igl::d3d12

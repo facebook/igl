@@ -9,6 +9,10 @@
 #include "data/VertexIndexData.h"
 #include "util/Common.h"
 
+#if IGL_PLATFORM_WINDOWS
+#include <windows.h>
+#endif
+
 #include <string>
 #include <igl/CommandBuffer.h>
 #include <igl/RenderPass.h>
@@ -31,7 +35,11 @@ namespace igl::tests {
 class DeviceTest : public ::testing::Test {
  public:
   DeviceTest() = default;
-  ~DeviceTest() override = default;
+  ~DeviceTest() override {
+    cmdBuf_.reset();
+    cmdQueue_.reset();
+    iglDev_.reset();
+  }
 
   // Set up common resources. This will create a device and a command queue
   void SetUp() override {
