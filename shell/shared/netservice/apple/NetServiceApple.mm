@@ -14,7 +14,7 @@
 // ----------------------------------------------------------------------------
 
 @interface IGLShellNetServiceDelegateAdapter : NSObject <NSNetServiceDelegate> {
-  igl::shell::netservice::NetServiceApple* owner_; // weak ref
+  igl::shell::netservice::NetServiceApple* owner; // weak ref
 }
 @end
 
@@ -22,77 +22,77 @@
 - (id)initWithOwner:(igl::shell::netservice::NetServiceApple*)owner {
   self = [super init];
   if (self) {
-    owner_ = owner;
+    self->owner = owner;
   }
   return self;
 }
 
 - (void)netServiceWillPublish:(NSNetService*)sender {
-  auto* target = (owner_ ? owner_->delegate() : nullptr);
+  auto* target = (owner ? owner->delegate() : nullptr);
   if (target) {
-    target->willPublish(*owner_);
+    target->willPublish(*owner);
   }
 }
 
 - (void)netService:(NSNetService*)sender
      didNotPublish:(NSDictionary<NSString*, NSNumber*>*)errorDict {
-  auto* target = (owner_ ? owner_->delegate() : nullptr);
+  auto* target = (owner ? owner->delegate() : nullptr);
   if (target) {
     int errorCode = [[errorDict valueForKey:NSNetServicesErrorCode] intValue];
     int errorDomain = [[errorDict valueForKey:NSNetServicesErrorDomain] intValue];
-    target->didNotPublish(*owner_, errorCode, errorDomain);
+    target->didNotPublish(*owner, errorCode, errorDomain);
   }
 }
 
 - (void)netServiceDidPublish:(NSNetService*)sender {
-  auto* target = (owner_ ? owner_->delegate() : nullptr);
+  auto* target = (owner ? owner->delegate() : nullptr);
   if (target) {
-    target->didPublish(*owner_);
+    target->didPublish(*owner);
   }
 }
 
 - (void)netServiceWillResolve:(NSNetService*)sender {
-  auto* target = (owner_ ? owner_->delegate() : nullptr);
+  auto* target = (owner ? owner->delegate() : nullptr);
   if (target) {
-    target->willResolve(*owner_);
+    target->willResolve(*owner);
   }
 }
 
 - (void)netService:(NSNetService*)sender
      didNotResolve:(NSDictionary<NSString*, NSNumber*>*)errorDict {
-  auto* target = (owner_ ? owner_->delegate() : nullptr);
+  auto* target = (owner ? owner->delegate() : nullptr);
   if (target) {
     int errorCode = [[errorDict valueForKey:NSNetServicesErrorCode] intValue];
     int errorDomain = [[errorDict valueForKey:NSNetServicesErrorDomain] intValue];
-    target->didNotResolve(*owner_, errorCode, errorDomain);
+    target->didNotResolve(*owner, errorCode, errorDomain);
   }
 }
 
 - (void)netServiceDidResolveAddress:(NSNetService*)sender {
-  auto* target = (owner_ ? owner_->delegate() : nullptr);
+  auto* target = (owner ? owner->delegate() : nullptr);
   if (target) {
-    target->didResolveAddress(*owner_);
+    target->didResolveAddress(*owner);
   }
 }
 
 - (void)netServiceDidStop:(NSNetService*)sender {
-  auto* target = (owner_ ? owner_->delegate() : nullptr);
+  auto* target = (owner ? owner->delegate() : nullptr);
   if (target) {
-    target->didStop(*owner_);
+    target->didStop(*owner);
   }
 }
 
 - (void)netService:(NSNetService*)sender
     didAcceptConnectionWithInputStream:(NSInputStream*)inputStream
                           outputStream:(NSOutputStream*)outputStream {
-  auto* target = (owner_ ? owner_->delegate() : nullptr);
+  auto* target = (owner ? owner->delegate() : nullptr);
   if (target) {
     auto input = std::make_shared<igl::shell::netservice::InputStreamApple>();
     input->initialize(inputStream);
     auto output = std::make_shared<igl::shell::netservice::OutputStreamApple>();
     output->initialize(outputStream);
 
-    target->didAcceptConnection(*owner_, std::move(input), std::move(output));
+    target->didAcceptConnection(*owner, std::move(input), std::move(output));
   }
 }
 
