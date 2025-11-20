@@ -20,7 +20,7 @@
 #include <shell/shared/renderSession/RenderSessionConfig.h>
 
 @interface AppDelegate () {
-  RenderSessionFactoryProvider* factoryProvider_;
+  RenderSessionFactoryProvider* factoryProvider;
 }
 - (void)addTab:(igl::shell::RenderSessionConfig)config
     viewControllers:(NSMutableArray<UIViewController*>*)viewControllers;
@@ -28,10 +28,12 @@
 
 @implementation AppDelegate
 
+@synthesize window = window;
+
 - (BOOL)application:(UIApplication*)application
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
   self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-  factoryProvider_ = [[RenderSessionFactoryProvider alloc] init];
+  factoryProvider = [[RenderSessionFactoryProvider alloc] init];
   NSMutableArray<UIViewController*>* viewControllers = [NSMutableArray array];
 
   std::vector<igl::shell::RenderSessionConfig> suggestedSessionConfigs = {
@@ -78,7 +80,7 @@
 // @fb-only
   };
 
-  const auto requestedSessionConfigs = factoryProvider_.adapter->factory->requestedSessionConfigs(
+  const auto requestedSessionConfigs = factoryProvider.adapter->factory->requestedSessionConfigs(
       igl::shell::ShellType::iOS, std::move(suggestedSessionConfigs));
   for (const auto& sessionConfig : requestedSessionConfigs) {
     [self addTab:sessionConfig viewControllers:viewControllers];
@@ -122,7 +124,7 @@
   }
 
   UIViewController* viewController = [[ViewController alloc] init:config
-                                                  factoryProvider:factoryProvider_
+                                                  factoryProvider:factoryProvider
                                                             frame:self.window.frame];
   viewController.tabBarItem =
       [[UITabBarItem alloc] initWithTitle:[NSString stringWithUTF8String:config.displayName.c_str()]
