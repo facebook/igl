@@ -253,30 +253,6 @@ constexpr uint32_t kMaxVertexAttributes = D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_CO
     } while (0)
 #endif
 
-// C-006: Validate D3D12 descriptor handles before use
-// T13: Single log per error (IGL_DEBUG_ASSERT already logs)
-// Note: These validations are debug-only. Invalid handles in release builds will
-// cause device removal but are caught early in debug builds.
-#if IGL_DEBUG
-  #define IGL_D3D12_VALIDATE_CPU_HANDLE(handle, name) \
-    do { \
-      if ((handle).ptr == 0) { \
-        IGL_DEBUG_ASSERT(false, "Invalid CPU descriptor handle (%s)", name); \
-      } \
-    } while (0)
-
-  #define IGL_D3D12_VALIDATE_GPU_HANDLE(handle, name) \
-    do { \
-      if ((handle).ptr == 0) { \
-        IGL_DEBUG_ASSERT(false, "Invalid GPU descriptor handle (%s)", name); \
-      } \
-    } while (0)
-#else
-  // No-op in release builds (performance-critical paths)
-  #define IGL_D3D12_VALIDATE_CPU_HANDLE(handle, name) ((void)0)
-  #define IGL_D3D12_VALIDATE_GPU_HANDLE(handle, name) ((void)0)
-#endif
-
 // T13: Verbose logging macro (hot-path logs, detailed state tracking)
 // Only logs when IGL_D3D12_DEBUG_VERBOSE is enabled (disabled by default)
 #if IGL_D3D12_DEBUG_VERBOSE
@@ -299,7 +275,7 @@ constexpr uint32_t kMaxVertexAttributes = D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_CO
 // Convert HRESULT to IGL Result
 inline Result getResultFromHRESULT(HRESULT hr) {
   if (SUCCEEDED(hr)) {
-    return Result();
+    return Result(Result::Code::Ok);
   }
 
   // Map common HRESULT codes to IGL Result codes
