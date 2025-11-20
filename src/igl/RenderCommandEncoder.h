@@ -95,6 +95,9 @@ class IRenderCommandEncoder : public ICommandEncoder {
                            uint32_t firstIndex = 0,
                            int32_t vertexOffset = 0,
                            uint32_t baseInstance = 0) = 0;
+  virtual void drawMesh(const Dimensions& threadgroupsPerGrid,
+                        const Dimensions& threadsPerTaskThreadgroup,
+                        const Dimensions& threadsPerMeshThreadgroup) {}                           
   virtual void multiDrawIndirect(IBuffer& indirectBuffer,
                                  size_t indirectBufferOffset = 0,
                                  uint32_t drawCount = 1,

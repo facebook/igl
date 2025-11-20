@@ -508,6 +508,33 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
 #endif // IGL_PLATFORM_IOS
 }
 
+void RenderCommandEncoder::drawMesh(const Dimensions& threadgroupsPerGrid,
+                                    const Dimensions& threadsPerTaskThreadgroup,
+                                    const Dimensions& threadsPerMeshThreadgroup){
+  IGL_DEBUG_ASSERT(encoder_);
+    
+  if (@available(iOS 16, *)) {
+    MTLSize tgg;
+    tgg.width = threadgroupsPerGrid.width;
+    tgg.height = threadgroupsPerGrid.height;
+    tgg.depth = threadgroupsPerGrid.depth;
+    
+    MTLSize tgt;
+    tgt.width = threadsPerTaskThreadgroup.width;
+    tgt.height = threadsPerTaskThreadgroup.height;
+    tgt.depth = threadsPerTaskThreadgroup.depth;
+    
+    MTLSize tgm;
+    tgm.width = threadsPerMeshThreadgroup.width;
+    tgm.height = threadsPerMeshThreadgroup.height;
+    tgm.depth = threadsPerMeshThreadgroup.depth;
+    
+    [encoder_ drawMeshThreadgroups:tgg threadsPerObjectThreadgroup:tgt threadsPerMeshThreadgroup:tgm];
+  } else {
+    IGL_DEBUG_ASSERT_NOT_REACHED();
+  }
+}
+
 void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
                                              // Ignore bugprone-easily-swappable-parameters
                                              // @lint-ignore CLANGTIDY
