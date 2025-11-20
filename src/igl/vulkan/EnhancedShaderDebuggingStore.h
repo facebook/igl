@@ -34,16 +34,16 @@ class VulkanFeatures;
 class EnhancedShaderDebuggingStore {
  public:
   struct Line {
-    glm::vec4 v0_;
-    glm::vec4 color0_;
-    glm::vec4 v1_;
-    glm::vec4 color1_;
-    glm::mat4 transform_;
+    glm::vec4 v0;
+    glm::vec4 color0;
+    glm::vec4 v1;
+    glm::vec4 color1;
+    glm::mat4 transform;
   };
 
   struct Metadata {
-    explicit Metadata(uint32_t maxNumberOfLines) : maxNumLines_{maxNumberOfLines} {}
-    uint32_t maxNumLines_ = 0u;
+    explicit Metadata(uint32_t maxNumberOfLines) : maxNumLines{maxNumberOfLines} {}
+    uint32_t maxNumLines = 0u;
     uint32_t padding1 = 0u;
     uint32_t padding2 = 0u;
     uint32_t padding3 = 0u;
@@ -51,9 +51,9 @@ class EnhancedShaderDebuggingStore {
 
   struct Header {
     Header(uint32_t maxNumberOfLines, VkDrawIndirectCommand command) :
-      metadata_{maxNumberOfLines}, command_{command} {}
-    Metadata metadata_;
-    VkDrawIndirectCommand command_ = {
+      metadata{maxNumberOfLines}, command{command} {}
+    Metadata metadata;
+    VkDrawIndirectCommand command = {
         0u,
         0u,
         0u,

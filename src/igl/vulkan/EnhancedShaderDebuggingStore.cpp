@@ -430,7 +430,7 @@ void EnhancedShaderDebuggingStore::enhancedShaderDebuggingPass(CommandQueue& que
   // Reset instanceCount of the buffer
   ctx.vf_.vkCmdFillBuffer(vkResetCmdBuffer,
                           lineBuffer->getVkBuffer(),
-                          offsetof(EnhancedShaderDebuggingStore::Header, command_) +
+                          offsetof(EnhancedShaderDebuggingStore::Header, command) +
                               offsetof(VkDrawIndirectCommand, instanceCount),
                           sizeof(uint32_t), // reset only the instance count
                           0);
