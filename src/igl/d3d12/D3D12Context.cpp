@@ -47,12 +47,57 @@ D3D12Context::~D3D12Context() {
   // Wait for GPU to finish before cleanup
   waitForGPU();
 
-  // Clean up owned descriptor heap manager
+  // T32: Explicitly release all frame context resources to prevent leaks
+  for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+    frameContexts_[i].transientBuffers.clear();
+    frameContexts_[i].transientResources.clear();
+
+    // T32: Explicitly reset heaps inside each page before clearing the vector
+    for (auto& page : frameContexts_[i].cbvSrvUavHeapPages) {
+      page.heap.Reset();
+    }
+    frameContexts_[i].cbvSrvUavHeapPages.clear();
+
+    frameContexts_[i].samplerHeap.Reset();
+    frameContexts_[i].activeCbvSrvUavHeap.Reset();
+    frameContexts_[i].allocator.Reset();
+  }
+
+  // T32: Release render targets explicitly
+  for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+    renderTargets_[i].Reset();
+  }
+
+  // T32: Release command signatures
+  drawIndirectSignature_.Reset();
+  drawIndexedIndirectSignature_.Reset();
+
+  // T32: Release core resources explicitly
+  rtvHeap_.Reset();
+  swapChain_.Reset();
+  fence_.Reset();
+  commandQueue_.Reset();
+
+  // T32: Cleanup descriptor heap manager's heaps BEFORE deleting it
+  // Note: heapMgr_ may point to either ownedHeapMgr_ OR external heap manager
+  // (e.g., HeadlessContext owns it via unique_ptr). We cleanup the heaps regardless.
+  if (heapMgr_) {
+    heapMgr_->cleanup();
+  }
+
+  // Clean up owned descriptor heap manager (if we own it)
   delete ownedHeapMgr_;
   ownedHeapMgr_ = nullptr;
   heapMgr_ = nullptr;
 
-  // ComPtr handles cleanup automatically
+  // T32: Release device LAST after all dependent resources are freed
+  device_.Reset();
+  adapter_.Reset();
+  dxgiFactory_.Reset();
+
+#ifdef IGL_DEBUG
+  IGL_LOG_INFO("[D3D12Context] All resources released\n");
+#endif
 }
 
 Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height,

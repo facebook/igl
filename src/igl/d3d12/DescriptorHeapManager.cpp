@@ -604,6 +604,29 @@ void DescriptorHeapManager::logUsageStats() const {
   IGL_D3D12_LOG_VERBOSE("========================================\n");
 }
 
+// T32: Explicit cleanup to release descriptor heaps before device destruction
+void DescriptorHeapManager::cleanup() {
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  // Release all descriptor heaps explicitly to prevent leaks
+  cbvSrvUavHeap_.Reset();
+  samplerHeap_.Reset();
+  rtvHeap_.Reset();
+  dsvHeap_.Reset();
+
+  // Clear free lists
+  freeCbvSrvUav_.clear();
+  freeSamplers_.clear();
+  freeRtvs_.clear();
+  freeDsvs_.clear();
+
+  // Clear allocation tracking
+  allocatedCbvSrvUav_.clear();
+  allocatedSamplers_.clear();
+  allocatedRtvs_.clear();
+  allocatedDsvs_.clear();
+}
+
 void DescriptorHeapManager::validateAndClampSizes(ID3D12Device* device) {
   // A-006: Validate descriptor heap sizes against D3D12 device limits
   IGL_D3D12_LOG_VERBOSE("=== Descriptor Heap Size Validation ===\n");

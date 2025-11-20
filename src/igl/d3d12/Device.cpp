@@ -297,6 +297,61 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
 
 Device::~Device() {
   // T05: No shared event to clean up - events are per-call in waitForUploadFence
+
+  // T32: Ensure upload operations complete before destroying device
+  // D3D12Context destructor handles main queue fence wait via waitForGPU()
+  if (uploadFenceValue_ > 0) {
+    waitForUploadFence(uploadFenceValue_);
+  }
+
+  // T32: Clear all D3D12 object caches to release references
+  // This prevents resource leaks when running many tests
+
+  // Release mipmap shaders and root signature
+  mipmapRootSignature_.Reset();
+  mipmapVSBytecode_.clear();
+  mipmapPSBytecode_.clear();
+
+  // Clear caches
+  {
+    std::lock_guard<std::mutex> lock(psoCacheMutex_);
+    graphicsPSOCache_.clear();
+    computePSOCache_.clear();
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(rootSignatureCacheMutex_);
+    rootSignatureCache_.clear();
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(samplerCacheMutex_);
+    samplerCache_.clear();
+  }
+
+  // T32: Clear command allocator pool to release D3D12 object references
+  {
+    std::lock_guard<std::mutex> lock(commandAllocatorPoolMutex_);
+    commandAllocatorPool_.clear();
+  }
+
+  // T32: Clear pending uploads to release staging buffer references
+  {
+    std::lock_guard<std::mutex> lock(pendingUploadsMutex_);
+    pendingUploads_.clear();
+  }
+
+  // T32: Clear bind group pools to release texture/buffer shared_ptrs
+  // BindGroupTextureDesc/BufferDesc hold shared_ptr<ITexture> and shared_ptr<IBuffer>
+  // which keep D3D12 resources (and device references) alive
+  bindGroupTexturesPool_.clear();
+  bindGroupBuffersPool_.clear();
+
+  // T32: Release staging/immediate command helpers before context destruction
+  // These may hold D3D12 resources that need to be freed before device cleanup
+  stagingDevice_.reset();
+  immediateCommands_.reset();
+  uploadRingBuffer_.reset();
 }
 
 void Device::validateDeviceLimits() {

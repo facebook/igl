@@ -113,6 +113,9 @@ class DescriptorHeapManager {
   // Telemetry: Log current heap usage statistics
   void logUsageStats() const;
 
+  // T32: Explicit cleanup of descriptor heaps to prevent leaks
+  void cleanup();
+
  private:
   // Heaps
   igl::d3d12::ComPtr<ID3D12DescriptorHeap> cbvSrvUavHeap_;
