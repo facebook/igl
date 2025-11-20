@@ -138,9 +138,8 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   const UINT64 uploadFenceValue = device_->getNextUploadFenceValue();
 
   if (ringBuffer) {
-    // D3D12 requires 256-byte alignment for constant buffers
-    constexpr uint64_t kUploadAlignment = 256;
-    ringAllocation = ringBuffer->allocate(range.size, kUploadAlignment, uploadFenceValue);
+    // D3D12 requires 256-byte alignment (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
+    ringAllocation = ringBuffer->allocate(range.size, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, uploadFenceValue);
 
     if (ringAllocation.valid) {
       // Successfully allocated from ring buffer
