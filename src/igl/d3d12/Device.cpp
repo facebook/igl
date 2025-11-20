@@ -40,34 +40,7 @@ namespace {
 template<typename T>
 using ComPtr = igl::d3d12::ComPtr<T>;
 
-// C-005: Hash function for SamplerStateDesc to enable deduplication
-// Hashes all relevant fields that determine sampler state behavior
-size_t hashSamplerStateDesc(const SamplerStateDesc& desc) {
-  size_t hash = 0;
-
-  // Hash filter modes
-  hash ^= std::hash<int>{}(static_cast<int>(desc.minFilter)) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-  hash ^= std::hash<int>{}(static_cast<int>(desc.magFilter)) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-  hash ^= std::hash<int>{}(static_cast<int>(desc.mipFilter)) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-
-  // Hash address modes
-  hash ^= std::hash<int>{}(static_cast<int>(desc.addressModeU)) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-  hash ^= std::hash<int>{}(static_cast<int>(desc.addressModeV)) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-  hash ^= std::hash<int>{}(static_cast<int>(desc.addressModeW)) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-
-  // Hash LOD parameters
-  hash ^= std::hash<uint8_t>{}(desc.mipLodMin) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-  hash ^= std::hash<uint8_t>{}(desc.mipLodMax) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-
-  // Hash max anisotropy
-  hash ^= std::hash<uint8_t>{}(desc.maxAnisotropic) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-
-  // Hash depth compare function and enabled flag
-  hash ^= std::hash<int>{}(static_cast<int>(desc.depthCompareFunction)) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-  hash ^= std::hash<bool>{}(desc.depthCompareEnabled) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-
-  return hash;
-}
+// C-005: Use std::hash<SamplerStateDesc> for deduplication (implemented in igl/SamplerState.cpp)
 } // namespace
 
 // Helper: Calculate root signature cost in DWORDs
@@ -934,7 +907,7 @@ std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc
 std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
   // C-005: Sampler deduplication - Check cache first to reduce descriptor usage
-  const size_t samplerHash = hashSamplerStateDesc(desc);
+  const size_t samplerHash = std::hash<SamplerStateDesc>{}(desc);
 
   {
     std::lock_guard<std::mutex> lock(samplerCacheMutex_);
@@ -962,10 +935,6 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
   }
 
   // Cache miss - create new sampler
-  samplerCacheMisses_++;
-  IGL_D3D12_LOG_VERBOSE("Device::createSamplerState: Cache MISS (hash=0x%zx, total misses=%zu)\n",
-               samplerHash, samplerCacheMisses_);
-
   D3D12_SAMPLER_DESC samplerDesc = {};
 
   auto toD3D12Address = [](SamplerAddressMode m) {
@@ -1037,6 +1006,9 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
   {
     std::lock_guard<std::mutex> lock(samplerCacheMutex_);
     samplerCache_[samplerHash] = samplerState;  // weak_ptr stored
+    samplerCacheMisses_++;
+    IGL_D3D12_LOG_VERBOSE("Device::createSamplerState: Cache MISS (hash=0x%zx, total misses=%zu)\n",
+                 samplerHash, samplerCacheMisses_);
   }
 
   Result::setOk(outResult);

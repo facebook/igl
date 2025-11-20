@@ -21,6 +21,12 @@ class SamplerState final : public ISamplerState {
 
   const D3D12_SAMPLER_DESC& getDesc() const { return desc_; }
 
+  /// Computes hash value based on D3D12_SAMPLER_DESC fields
+  size_t hash() const noexcept;
+
+  /// Compares two SamplerState objects for equality
+  bool operator==(const SamplerState& rhs) const noexcept;
+
  private:
   D3D12_SAMPLER_DESC desc_;
 };
