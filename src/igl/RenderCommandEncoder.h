@@ -50,6 +50,11 @@ class IRenderCommandEncoder : public ICommandEncoder {
   // `bufferSize` is the size of the buffer to bind used for additional validation (0 means the
   // remaining size starting from `bufferOffset`)
   virtual void bindBuffer(uint32_t index,
+                          uint8_t target,
+                          IBuffer* buffer,
+                          size_t bufferOffset = 0,
+                          size_t bufferSize = 0) = 0;
+  virtual void bindBuffer(uint32_t index,
                           IBuffer* buffer,
                           size_t bufferOffset = 0,
                           size_t bufferSize = 0) = 0;

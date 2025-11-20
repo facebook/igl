@@ -53,6 +53,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   void bindRenderPipelineState(const std::shared_ptr<IRenderPipelineState>& pipelineState) override;
   void bindDepthStencilState(const std::shared_ptr<IDepthStencilState>& depthStencilState) override;
 
+  void bindBuffer(uint32_t index, uint8_t target, IBuffer* buffer, size_t bufferOffset, size_t bufferSize) override;
   void bindBuffer(uint32_t index, IBuffer* buffer, size_t bufferOffset, size_t bufferSize) override;
   void bindVertexBuffer(uint32_t index, IBuffer& buffer, size_t bufferOffset) override;
   void bindIndexBuffer(IBuffer& buffer, IndexFormat format, size_t bufferOffset) override;

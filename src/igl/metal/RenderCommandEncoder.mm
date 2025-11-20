@@ -258,6 +258,35 @@ void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
 }
 
 void RenderCommandEncoder::bindBuffer(uint32_t index,
+                                      uint8_t bindTarget,
+                                      IBuffer* buffer,
+                                      size_t offset,
+                                      size_t bufferSize) {
+  (void)bufferSize;
+
+  IGL_DEBUG_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX);
+    
+  auto iglBuffer = static_cast<Buffer*>(buffer);
+  auto metalBuffer = iglBuffer ? iglBuffer->get() : nil;
+    
+  if ((bindTarget & BindTarget::kVertex) != 0) {
+    [encoder_ setVertexBuffer:metalBuffer offset:offset atIndex:index];
+  }
+  if ((bindTarget & BindTarget::kFragment) != 0) {
+    [encoder_ setFragmentBuffer:metalBuffer offset:offset atIndex:index];
+  }
+  if (@available(iOS 16, *)) {
+    if ((bindTarget & BindTarget::kTask) != 0) {
+      [encoder_ setObjectBuffer:metalBuffer offset:offset atIndex:index];
+    }
+    if ((bindTarget & BindTarget::kMesh) != 0) {
+      [encoder_ setMeshBuffer:metalBuffer offset:offset atIndex:index];
+    }
+  }
+}
+
+void RenderCommandEncoder::bindBuffer(uint32_t index,
                                       IBuffer* buffer,
                                       size_t offset,
                                       size_t bufferSize) {

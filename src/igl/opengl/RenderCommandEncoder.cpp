@@ -268,6 +268,14 @@ void RenderCommandEncoder::bindUniform(const UniformDesc& uniformDesc, const voi
 }
 
 void RenderCommandEncoder::bindBuffer(uint32_t index,
+                                      uint8_t bindTarget, 
+                                      IBuffer* buffer,
+                                      size_t offset,
+                                      size_t bufferSize){
+  bindBuffer(index, buffer, offset, bufferSize);
+}
+
+void RenderCommandEncoder::bindBuffer(uint32_t index,
                                       IBuffer* buffer,
                                       size_t offset,
                                       size_t bufferSize) {

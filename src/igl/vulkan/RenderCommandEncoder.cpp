@@ -423,6 +423,14 @@ void RenderCommandEncoder::bindDepthStencilState(
 }
 
 void RenderCommandEncoder::bindBuffer(uint32_t index,
+                                      uint8_t target,   
+                                      IBuffer* buffer,
+                                      size_t bufferOffset,
+                                      size_t bufferSize) {
+  bindBuffer(index, buffer, bufferOffset, bufferSize);
+}
+
+void RenderCommandEncoder::bindBuffer(uint32_t index,
                                       IBuffer* buffer,
                                       size_t bufferOffset,
                                       size_t bufferSize) {
