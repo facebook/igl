@@ -9,7 +9,11 @@
 #error "IGL_SHELL_SESSION must be defined";
 #endif
 
+#if !defined(IGL_CMAKE_BUILD)
 #define IGL_SHELL_PATH <xplat/graphics/igl/public/shell/renderSessions/IGL_SHELL_SESSION.h>
+#else
+#define IGL_SHELL_PATH <shell/renderSessions/IGL_SHELL_SESSION.h>
+#endif // IGL_CMAKE_BUILD
 
 #include IGL_SHELL_PATH
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
