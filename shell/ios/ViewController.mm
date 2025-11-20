@@ -10,14 +10,18 @@
 #import "ViewController.h"
 
 #import "BackendVersion.h"
-#import "IglShellPlatformAdapterInternal.hpp"
-#import "IglSurfaceTexturesAdapterInternal.hpp"
-#import "RenderSessionController.h"
+#import "IglShellPlatformAdapter.h"
+#import "IglShellPlatformAdapterInternal.hpp" // IWYU pragma: keep
+#import "IglSurfaceTexturesAdapter.h"
+#import "IglSurfaceTexturesAdapterInternal.hpp" // IWYU pragma: keep
+#import "RenderSessionController.h" // IWYU pragma: keep
 #import "RenderSessionFactoryProvider.h"
 #import "View.h"
 
 #import <shell/shared/input/InputDispatcher.h>
+#include <shell/shared/platform/Platform.h>
 #import <igl/IGL.h> // IWYU pragma: keep
+#include <igl/Texture.h>
 
 #if IGL_BACKEND_METAL
 #import <Metal/Metal.h>
@@ -38,7 +42,6 @@
 
 #include <memory>
 #include <shell/shared/input/TouchListener.h>
-#include <shell/shared/platform/Platform.h>
 #include <shell/shared/platform/ios/PlatformIos.h>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
 #include <igl/DeviceFeatures.h>
