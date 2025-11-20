@@ -35,13 +35,13 @@ TEST(ColorTest, ctor) {
 }
 
 TEST(sRGBColorTest, ctor) {
-  const util::sRGBColor testColor(255, 128, 0);
+  const util::SRgbColor testColor(255, 128, 0);
   ASSERT_EQ(testColor.r, 255);
   ASSERT_EQ(testColor.g, 128);
   ASSERT_EQ(testColor.b, 0);
   ASSERT_EQ(testColor.a, 255);
 
-  const util::sRGBColor testColor2(255, 128, 0, 255);
+  const util::SRgbColor testColor2(255, 128, 0, 255);
 
   ASSERT_EQ(testColor2.r, 255);
   ASSERT_EQ(testColor2.g, 128);
@@ -50,12 +50,12 @@ TEST(sRGBColorTest, ctor) {
 }
 
 TEST(sRGBColorTest, toRGBA32) {
-  const util::sRGBColor testColor(255, 128, 0);
+  const util::SRgbColor testColor(255, 128, 0);
   ASSERT_EQ(testColor.toRGBA32(), 0xff8000ff);
 }
 
 TEST(sRGBColorTest, fromRGBA32) {
-  const util::sRGBColor testColor(0xff8000ff);
+  const util::SRgbColor testColor(0xff8000ff);
   ASSERT_EQ(testColor.r, 255);
   ASSERT_EQ(testColor.g, 128);
   ASSERT_EQ(testColor.b, 0);

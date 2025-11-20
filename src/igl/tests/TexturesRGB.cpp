@@ -309,8 +309,8 @@ TEST_F(TexturesRGBSmallTest, Passthrough) {
   // Verify against original texture
   //--------------------------------
   for (size_t i = 0; i < offscreenTexWidth_ * offscreenTexHeight_; i++) {
-    const util::sRGBColor currentColor(pixels[i]);
-    const util::sRGBColor testColor(data::texture::kTexRgba2x2[i]);
+    const util::SRgbColor currentColor(pixels[i]);
+    const util::SRgbColor testColor(data::texture::kTexRgba2x2[i]);
     ASSERT_LE(abs(currentColor.r - testColor.r), tolerance_);
     ASSERT_LE(abs(currentColor.g - testColor.g), tolerance_);
     ASSERT_LE(abs(currentColor.b - testColor.b), tolerance_);
@@ -393,8 +393,8 @@ TEST_F(TexturesRGBBigTest, Passthrough) {
   // Verify against original texture
   //--------------------------------
   for (size_t i = 0; i < offscreenTexWidth_ * offscreenTexHeight_; i++) {
-    const util::sRGBColor currentColor(pixels[i]);
-    const util::sRGBColor testColor(allColorsBuffer[i]);
+    const util::SRgbColor currentColor(pixels[i]);
+    const util::SRgbColor testColor(allColorsBuffer[i]);
     ASSERT_LE(abs(currentColor.r - testColor.r), tolerance_);
     ASSERT_LE(abs(currentColor.g - testColor.g), tolerance_);
     ASSERT_LE(abs(currentColor.b - testColor.b), tolerance_);
