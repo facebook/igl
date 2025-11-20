@@ -386,6 +386,24 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 
 std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderPipelineDesc& desc,
                                                                    Result* outResult) const {
+  if (!IGL_DEBUG_VERIFY(desc.shaderStages)) {
+    Result::setResult(
+      outResult, Result::Code::RuntimeError, "RenderPipeline requires shader stages");
+    return nullptr;
+  }
+  
+  if (desc.shaderStages->getType() == ShaderStagesType::Render) {
+    return createTraditionalRenderPipeline(desc, outResult);
+  } else if (desc.shaderStages->getType() == ShaderStagesType::MeshRender){
+    return createMeshRenderPipeline(desc, outResult);
+  } else{
+    IGL_DEBUG_ASSERT_NOT_REACHED();
+    return nullptr;
+  }
+}
+
+std::shared_ptr<IRenderPipelineState> Device::createTraditionalRenderPipeline(const RenderPipelineDesc& desc,
+                                                                              Result* outResult) const {
   // TODO
   //  Size drawableSize = IGLNativeDrawableSize(layer_);
   //  graphicsDesc.viewportState.viewportCount = 1;
@@ -477,6 +495,101 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
   }
 
   return std::make_shared<RenderPipelineState>(metalObject, reflection, desc);
+}
+
+std::shared_ptr<IRenderPipelineState> Device::createMeshRenderPipeline(const RenderPipelineDesc& desc,
+                                                                       Result* outResult) const {
+  if (@available(iOS 16, *)) {
+    NSError* error = nil;
+    MTLMeshRenderPipelineDescriptor* metalDesc = [MTLMeshRenderPipelineDescriptor new];
+    
+    metalDesc.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
+    
+    metalDesc.rasterSampleCount = desc.sampleCount;
+    
+    if (!IGL_DEBUG_VERIFY(desc.shaderStages)) {
+      Result::setResult(
+                        outResult, Result::Code::RuntimeError, "RenderPipeline requires shader stages");
+      return nullptr;
+    }
+    if (!IGL_DEBUG_VERIFY(desc.shaderStages->getType() == ShaderStagesType::MeshRender)) {
+      Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader stages not for mesh render");
+      return nullptr;
+    }
+    
+    // Mesh shader is required
+    auto meshModule = desc.shaderStages->getMeshModule();
+    if (!IGL_DEBUG_VERIFY(meshModule)) {
+      Result::setResult(
+                        outResult, Result::Code::RuntimeError, "MeshRenderPipeline requires mesh module");
+      return nullptr;
+    }
+    
+    auto* meshFunc = static_cast<ShaderModule*>(meshModule.get());
+    metalDesc.meshFunction = meshFunc->get();
+    
+    if (!IGL_DEBUG_VERIFY(metalDesc.meshFunction)) {
+      Result::setResult(
+                        outResult, Result::Code::RuntimeError, "RenderPipeline requires non-null mesh function");
+      return nullptr;
+    }
+    
+    // Task shader is optional
+    auto taskModule = desc.shaderStages->getTaskModule();
+    if (taskModule) {
+      auto* taskFunc = static_cast<ShaderModule*>(taskModule.get());
+      metalDesc.objectFunction = taskFunc->get();
+    }
+    
+    // Fragment shader is optional
+    auto fragmentModule = desc.shaderStages->getFragmentModule();
+    if (fragmentModule) {
+      auto* fragmentFunc = static_cast<ShaderModule*>(fragmentModule.get());
+      metalDesc.fragmentFunction = fragmentFunc->get();
+    }
+    
+    // Framebuffer
+    for (uint32_t i = 0; i < desc.targetDesc.colorAttachments.size(); ++i) {
+      const auto& src = desc.targetDesc.colorAttachments[i];
+      if (igl::TextureFormat::Invalid == src.textureFormat)
+          continue;
+      MTLRenderPipelineColorAttachmentDescriptor* dst = metalDesc.colorAttachments[i];
+      dst.pixelFormat = Texture::textureFormatToMTLPixelFormat(src.textureFormat);
+      dst.writeMask = RenderPipelineState::convertColorWriteMask(src.colorWriteMask);
+      dst.blendingEnabled = src.blendEnabled;
+      dst.rgbBlendOperation = MTLBlendOperation(src.rgbBlendOp);
+      dst.alphaBlendOperation = MTLBlendOperation(src.alphaBlendOp);
+      dst.sourceRGBBlendFactor = MTLBlendFactor(src.srcRGBBlendFactor);
+      dst.sourceAlphaBlendFactor = MTLBlendFactor(src.srcAlphaBlendFactor);
+      dst.destinationRGBBlendFactor = MTLBlendFactor(src.dstRGBBlendFactor);
+      dst.destinationAlphaBlendFactor = MTLBlendFactor(src.dstAlphaBlendFactor);
+    }
+    
+    // Depth and Stencil
+    metalDesc.depthAttachmentPixelFormat =
+    Texture::textureFormatToMTLPixelFormat(desc.targetDesc.depthAttachmentFormat);
+    metalDesc.stencilAttachmentPixelFormat =
+    Texture::textureFormatToMTLPixelFormat(desc.targetDesc.stencilAttachmentFormat);
+    
+    MTLRenderPipelineReflection* reflection = nil;
+    
+    // Create reflection for use later in binding, etc.
+    id<MTLRenderPipelineState> metalObject =
+    [device_ newRenderPipelineStateWithMeshDescriptor:metalDesc
+                                              options:MTLPipelineOptionArgumentInfo | MTLPipelineOptionBufferTypeInfo
+                                           reflection:&reflection
+                                                error:&error];
+    setResultFrom(outResult, error);
+    if (error != nil) {
+      IGL_LOG_ERROR("%s\n", [error.localizedDescription UTF8String]);
+      return nullptr;
+    }
+    
+    return std::make_shared<RenderPipelineState>(metalObject, reflection, desc);
+  } else {
+    IGL_DEBUG_ASSERT_NOT_REACHED();
+    return nullptr;
+  }
 }
 
 std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& desc,
