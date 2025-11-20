@@ -73,7 +73,10 @@ std::shared_ptr<ITexture> Platform::loadTexture(const ImageData& imageData,
   auto tex = getDevice().createTexture(texDesc, &res);
   IGL_DEBUG_ASSERT(res.isOk(), res.message.c_str());
   IGL_DEBUG_ASSERT(tex != nullptr, "createTexture returned null for some reason");
-  tex->upload(tex->getFullRange(), imageData.data->data());
+  tex->upload(tex->getFullRange(),
+              imageData.data->data(),
+              0,
+              !imageData.mipLevelBytes.empty() ? imageData.mipLevelBytes.data() : nullptr);
   return tex;
 }
 

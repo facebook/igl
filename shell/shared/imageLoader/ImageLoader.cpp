@@ -123,6 +123,7 @@ ImageData ImageLoader::loadImageDataFromMemory(
   ImageData imageData;
   imageData.data = std::move(texData);
   imageData.desc = loader->descriptor();
+  imageData.mipLevelBytes = loader->mipLevelBytes();
 
   return imageData;
 }

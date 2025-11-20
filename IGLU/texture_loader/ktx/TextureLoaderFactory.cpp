@@ -69,6 +69,15 @@ class TextureLoader : public ITextureLoader {
     return 0;
   }
 
+  [[nodiscard]] std::vector<uint32_t> mipLevelBytes() const noexcept override {
+    std::vector<uint32_t> mipLevelBytes;
+    mipLevelBytes.reserve(descriptor().numMipLevels);
+    for (uint32_t i = 0; i < descriptor().numMipLevels; ++i) {
+      mipLevelBytes.push_back(static_cast<uint32_t>(getMemorySizeInBytesFromFile(i)));
+    }
+    return mipLevelBytes;
+  }
+
  private:
   void uploadInternal(igl::ITexture& texture,
                       igl::Result* IGL_NULLABLE outResult) const noexcept final;

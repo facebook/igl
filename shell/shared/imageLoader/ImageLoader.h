@@ -22,6 +22,7 @@ class FileLoader;
 struct ImageData {
   TextureDesc desc;
   std::unique_ptr<iglu::textureloader::IData> data;
+  std::vector<uint32_t> mipLevelBytes;
 };
 
 class ImageLoader {

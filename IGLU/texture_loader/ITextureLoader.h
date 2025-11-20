@@ -30,6 +30,10 @@ class ITextureLoader {
 
   [[nodiscard]] const igl::TextureDesc& descriptor() const noexcept;
 
+  [[nodiscard]] virtual std::vector<uint32_t> mipLevelBytes() const noexcept {
+    return {};
+  }
+
   [[nodiscard]] uint32_t memorySizeInBytes() const noexcept;
 
   [[nodiscard]] bool isSupported(const igl::ICapabilities& capabilities) const noexcept;
