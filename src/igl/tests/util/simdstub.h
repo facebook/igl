@@ -9,52 +9,66 @@
 
 namespace simd {
 
-struct float1 {
+struct Float1 {
   float x;
 };
 
-struct float2 {
+struct Float2 {
   float x, y;
 };
 
-struct float3 {
+struct Float3 {
   float x, y, z;
 };
 
-struct float4 {
+struct Float4 {
   float x, y, z, w;
 };
 
-struct int1 {
+struct Int1 {
   int x;
 };
 
-struct int2 {
+struct Int2 {
   int x, y;
 };
 
-struct int3 {
+struct Int3 {
   int x, y, z;
 };
 
-struct int4 {
+struct Int4 {
   int x, y, z, w;
 };
 
-struct float2x2 {
-  float2 columns[2];
+struct Float2x2 {
+  Float2 columns[2];
 };
 
-struct float3x2 {
-  float2 columns[3];
+struct Float3x2 {
+  Float2 columns[3];
 };
 
-struct float3x3 {
-  float3 columns[3];
+struct Float3x3 {
+  Float3 columns[3];
 };
 
-struct float4x4 {
-  float4 columns[4];
+struct Float4x4 {
+  Float4 columns[4];
 };
+
+// Type aliases for backward compatibility with Apple SIMD API
+using float1 = Float1;
+using float2 = Float2;
+using float3 = Float3;
+using float4 = Float4;
+using int1 = Int1;
+using int2 = Int2;
+using int3 = Int3;
+using int4 = Int4;
+using float2x2 = Float2x2;
+using float3x2 = Float3x2;
+using float3x3 = Float3x3;
+using float4x4 = Float4x4;
 
 } // namespace simd
