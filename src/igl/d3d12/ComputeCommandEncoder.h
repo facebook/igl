@@ -63,7 +63,7 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
   const ComputePipelineState* currentPipeline_ = nullptr;
   bool isEncoding_ = false;
 
-  // T08: Centralized resource binding management
+  // Centralized resource binding management.
   D3D12ResourcesBinder resourcesBinder_;
 
   // Cached GPU handles for resources
@@ -71,16 +71,16 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
   // SetComputeRootDescriptorTable always uses cached*Handles_[0] as the base,
   // so binding only higher slots (e.g., slot 1 without slot 0) will fail.
   static constexpr size_t kMaxComputeBuffers = 8;
-  // P1_DX12-007: Increased from 8 to 16 to match IGL_TEXTURE_SAMPLERS_MAX contract
+  // Increased from 8 to 16 to match IGL_TEXTURE_SAMPLERS_MAX contract.
   static constexpr size_t kMaxComputeTextures = IGL_TEXTURE_SAMPLERS_MAX;  // 16
-  // P1_DX12-007: Increased from 4 to 16 to match IGL_TEXTURE_SAMPLERS_MAX contract
+  // Increased from 4 to 16 to match IGL_TEXTURE_SAMPLERS_MAX contract.
   static constexpr size_t kMaxComputeSamplers = IGL_TEXTURE_SAMPLERS_MAX;  // 16
 
   D3D12_GPU_DESCRIPTOR_HANDLE cachedUavHandles_[kMaxComputeBuffers] = {};
   D3D12_GPU_DESCRIPTOR_HANDLE cachedSrvHandles_[kMaxComputeTextures] = {};
   D3D12_GPU_DESCRIPTOR_HANDLE cachedSamplerHandles_[kMaxComputeSamplers] = {};
   D3D12_GPU_VIRTUAL_ADDRESS cachedCbvAddresses_[kMaxComputeBuffers] = {};
-  // P1_DX12-FIND-04: Track CBV sizes for descriptor creation
+  // Track CBV sizes for descriptor creation.
   size_t cachedCbvSizes_[kMaxComputeBuffers] = {};
 
   size_t boundUavCount_ = 0;
@@ -88,13 +88,13 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
   size_t boundCbvCount_ = 0;
   size_t boundSamplerCount_ = 0;
 
-  // T36: Cache CBV descriptor indices to avoid per-dispatch allocation
+  // Cache CBV descriptor indices to avoid per-dispatch allocation.
   uint32_t cachedCbvBaseIndex_ = 0;
   uint32_t cachedCbvPageIndex_ = UINT32_MAX;  // Track heap page for invalidation
   bool cbvBindingsDirty_ = true;  // Track if CBV bindings have changed
 
-  // T37: Track UAV resources for precise synchronization barriers
-  // Tracks UAV resources bound via bindBuffer (storage buffers) and bindImageTexture (RW textures)
+  // Track UAV resources for precise synchronization barriers.
+  // Tracks UAV resources bound via bindBuffer (storage buffers) and bindImageTexture (RW textures).
   ID3D12Resource* boundUavResources_[kMaxComputeBuffers] = {};
 };
 

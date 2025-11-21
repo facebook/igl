@@ -16,7 +16,7 @@ class HeadlessD3D12Context final : public D3D12Context {
   ~HeadlessD3D12Context();
 
   // Initialize a headless context with default dimensions used only for fallback viewports
-  // T14: Now accepts optional D3D12ContextConfig for configurable sizes
+  // Accepts optional D3D12ContextConfig for configurable sizes.
   // NOTE: Headless mode currently uses environment variable overrides and internal defaults
   // for descriptor heap sizes. Config parameter is stored for base-class consistency and
   // future extension but is not fully wired to all heap creation paths yet.

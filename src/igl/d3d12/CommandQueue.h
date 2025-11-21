@@ -24,11 +24,11 @@ class CommandQueue final : public ICommandQueue {
                                                        Result* IGL_NULLABLE outResult) override;
   SubmitHandle submit(const ICommandBuffer& commandBuffer, bool endOfFrame = false) override;
 
-  Device& getDevice() { return device_; }
+ Device& getDevice() { return device_; }
 
  private:
   Device& device_;
-  uint64_t scheduleFenceValue_ = 0;  // P1_DX12-FIND-03: Monotonically increasing fence value
+  uint64_t scheduleFenceValue_ = 0;  // Monotonically increasing fence value used for scheduling.
 };
 
 } // namespace igl::d3d12

@@ -23,13 +23,13 @@
 #define IGL_D3D12_PRINT_COMMANDS 0
 
 // Set to 1 to enable verbose logging (hot-path logs, detailed state tracking, etc.)
-// This is disabled by default to reduce log volume (Task T13)
+// This is disabled by default to reduce log volume.
 #define IGL_D3D12_DEBUG_VERBOSE 0
 
 namespace igl::d3d12 {
 
-// T14: Configuration structure for D3D12 backend
-// Centralizes all size-related configuration with documented rationale
+// Configuration structure for D3D12 backend.
+// Centralizes all size-related configuration with documented rationale.
 struct D3D12ContextConfig {
   // === Frame Buffering ===
   // Rationale: Triple buffering (3 frames) provides optimal GPU/CPU parallelism on modern hardware
@@ -56,12 +56,12 @@ struct D3D12ContextConfig {
   uint32_t descriptorsPerPage = 1024;    // CBV/SRV/UAV descriptors per heap page
   uint32_t maxHeapPages = 16;            // Maximum pages per frame (total capacity = pages × descriptorsPerPage)
 
-  // T27: Pre-allocation policy for descriptor pages
-  // Rationale: Following Vulkan fail-fast pattern to prevent mid-frame descriptor invalidation
-  // When true: All maxHeapPages are pre-allocated at init (recommended)
-  // When false: Only 1 page pre-allocated at init (minimal memory footprint)
-  // Both modes fail-fast when pages are exhausted - NO dynamic growth to prevent descriptor invalidation
-  // Default: true for safety (matches Vulkan behavior and supports complex scenes)
+  // Pre-allocation policy for descriptor pages.
+  // Rationale: Following Vulkan fail-fast pattern to prevent mid-frame descriptor invalidation.
+  // When true: All maxHeapPages are pre-allocated at init (recommended).
+  // When false: Only 1 page pre-allocated at init (minimal memory footprint).
+  // Both modes fail-fast when pages are exhausted - no dynamic growth to prevent descriptor invalidation.
+  // Default: true for safety (matches Vulkan behavior and supports complex scenes).
   bool preAllocateDescriptorPages = true;
 
   // DEPRECATED: Use descriptorsPerPage instead
@@ -175,8 +175,8 @@ struct D3D12ContextConfig {
   }
 };
 
-// Frame buffering count (2-3 for double/triple buffering)
-// T14: D3D12ContextConfig struct exists but maxFramesInFlight currently fixed at 3
+// Frame buffering count (2-3 for double/triple buffering).
+// D3D12ContextConfig exists but maxFramesInFlight is currently fixed at 3
 // until D3D12Context arrays are refactored to std::vector. Kept as constant for backward compatibility.
 constexpr uint32_t kMaxFramesInFlight = 3;
 
@@ -188,8 +188,8 @@ static_assert(kMaxFramesInFlight == 3,
 // Maximum number of descriptor sets (matching IGL's Vulkan backend)
 constexpr uint32_t kMaxDescriptorSets = 4;
 
-// Maximum number of samplers (TASK_P2_DX12-FIND-08: Increased to D3D12 spec limit to support complex scenes)
-// D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE is defined as 2048 in d3d12.h
+// Maximum number of samplers; increased to D3D12 spec limit to support complex scenes.
+// D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE is defined as 2048 in d3d12.h.
 constexpr uint32_t kMaxSamplers = D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE;
 
 // Descriptor heap sizes (per-frame shader-visible heaps)
@@ -197,16 +197,16 @@ constexpr uint32_t kMaxSamplers = D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE;
 constexpr uint32_t kCbvSrvUavHeapSize = 1024;  // CBV/SRV/UAV descriptors per page
 constexpr uint32_t kSamplerHeapSize = kMaxSamplers;  // Sampler descriptors per frame
 
-// C-001: Dynamic heap growth limits (prevent unbounded memory usage)
+// Dynamic heap growth limits (prevent unbounded memory usage).
 constexpr uint32_t kDescriptorsPerPage = kCbvSrvUavHeapSize;  // 1024 descriptors per page
 constexpr uint32_t kMaxHeapPages = 16;  // Maximum 16 pages = 16K descriptors per frame
 constexpr uint32_t kMaxDescriptorsPerFrame = kMaxHeapPages * kDescriptorsPerPage;  // 16384 total
 
-// Maximum number of vertex attributes (D3D12 spec limit)
-// H-015: Use D3D12 spec constant instead of hard-coded value
+// Maximum number of vertex attributes (D3D12 spec limit).
+// Uses D3D12 spec constant instead of a hard-coded value.
 constexpr uint32_t kMaxVertexAttributes = D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;  // 32
 
-// T13: Normalized error macros - single log per error (no double logging)
+// Normalized error macros - single log per error (no double logging).
 // Debug builds: IGL_DEBUG_ASSERT logs via _IGLDebugAbort
 // Release builds: IGL_LOG_ERROR provides visibility
 #if IGL_DEBUG_ABORT_ENABLED
@@ -253,7 +253,7 @@ constexpr uint32_t kMaxVertexAttributes = D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_CO
     } while (0)
 #endif
 
-// T13: Verbose logging macro (hot-path logs, detailed state tracking)
+// Verbose logging macro (hot-path logs, detailed state tracking).
 // Only logs when IGL_D3D12_DEBUG_VERBOSE is enabled (disabled by default)
 #if IGL_D3D12_DEBUG_VERBOSE
   #define IGL_D3D12_LOG_VERBOSE(format, ...) IGL_LOG_INFO(format, ##__VA_ARGS__)
@@ -261,7 +261,7 @@ constexpr uint32_t kMaxVertexAttributes = D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_CO
   #define IGL_D3D12_LOG_VERBOSE(format, ...) ((void)0)
 #endif
 
-// T16: Command logging macro (D3D12 API command traces)
+// Command logging macro (D3D12 API command traces).
 // Only logs when IGL_D3D12_PRINT_COMMANDS is enabled (disabled by default)
 // Use for command recording, state transitions, and D3D12 API call traces
 // Note: Treated as INFO-level severity but controlled separately from DEBUG_VERBOSE
@@ -291,7 +291,7 @@ inline Result getResultFromHRESULT(HRESULT hr) {
   case DXGI_ERROR_DEVICE_RESET:
     return Result(Result::Code::RuntimeError, "Device reset");
   default: {
-    // T13: Include HRESULT code for better debugging of unexpected errors
+    // Include HRESULT code for better debugging of unexpected errors.
     char buf[64];
     snprintf(buf, sizeof(buf), "D3D12 error (hr=0x%08X)", static_cast<unsigned>(hr));
     return Result(Result::Code::RuntimeError, buf);
@@ -342,8 +342,8 @@ inline const char* featureLevelToString(D3D_FEATURE_LEVEL level) {
   }
 }
 
-// Shader target helper (H-009)
-// Convert D3D_SHADER_MODEL enum to shader target string (e.g., "vs_6_6", "ps_5_1")
+// Shader target helper.
+// Convert D3D_SHADER_MODEL enum to shader target string (e.g., "vs_6_6", "ps_5_1").
 inline std::string getShaderTarget(D3D_SHADER_MODEL shaderModel, ShaderStage stage) {
   // Extract major and minor version from D3D_SHADER_MODEL enum
   // Format: 0xMm where M = major, m = minor (e.g., 0x66 = SM 6.6, 0x51 = SM 5.1)

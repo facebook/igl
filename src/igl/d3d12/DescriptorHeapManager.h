@@ -50,8 +50,8 @@ namespace igl::d3d12 {
  */
 class DescriptorHeapManager {
  public:
-  // T14: Descriptor heap sizes configuration
-  // Default values match D3D12ContextConfig for consistency but can be customized at runtime
+  // Descriptor heap sizes configuration.
+  // Default values match D3D12ContextConfig for consistency but can be customized at runtime.
   struct Sizes {
     uint32_t cbvSrvUav = 4096; // shader-visible (kept larger for unit tests/headless)
     uint32_t samplers = 2048;  // shader-visible (D3D12 spec limit)
@@ -82,7 +82,7 @@ class DescriptorHeapManager {
   void freeCbvSrvUav(uint32_t index);
   void freeSampler(uint32_t index);
 
-  // C-006: Get CPU/GPU handles for the given indices (with validation)
+  // Get CPU/GPU handles for the given indices (with validation).
   D3D12_CPU_DESCRIPTOR_HANDLE getRTVHandle(uint32_t index) const;
   D3D12_CPU_DESCRIPTOR_HANDLE getDSVHandle(uint32_t index) const;
   D3D12_CPU_DESCRIPTOR_HANDLE getCbvSrvUavCpuHandle(uint32_t index) const;
@@ -90,8 +90,8 @@ class DescriptorHeapManager {
   D3D12_CPU_DESCRIPTOR_HANDLE getSamplerCpuHandle(uint32_t index) const;
   D3D12_GPU_DESCRIPTOR_HANDLE getSamplerGpuHandle(uint32_t index) const;
 
-  // C-007: Alternative error-checking variants with bool return
-  // Returns false on error (invalid index, null heap), true on success
+  // Alternative error-checking variants with bool return.
+  // Returns false on error (invalid index, null heap), true on success.
   [[nodiscard]] bool getRTVHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const;
   [[nodiscard]] bool getDSVHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const;
   [[nodiscard]] bool getCbvSrvUavCpuHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const;
@@ -104,7 +104,7 @@ class DescriptorHeapManager {
   uint32_t getRtvDescriptorSize() const { return rtvDescriptorSize_; }
   uint32_t getDsvDescriptorSize() const { return dsvDescriptorSize_; }
 
-  // C-006: Descriptor handle validation helpers
+  // Descriptor handle validation helpers.
   [[nodiscard]] bool isValidRTVIndex(uint32_t index) const;
   [[nodiscard]] bool isValidDSVIndex(uint32_t index) const;
   [[nodiscard]] bool isValidCbvSrvUavIndex(uint32_t index) const;
@@ -113,7 +113,7 @@ class DescriptorHeapManager {
   // Telemetry: Log current heap usage statistics
   void logUsageStats() const;
 
-  // T32: Explicit cleanup of descriptor heaps to prevent leaks
+  // Explicit cleanup of descriptor heaps to prevent leaks.
   void cleanup();
 
  private:

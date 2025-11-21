@@ -51,7 +51,7 @@ class Framebuffer final : public IFramebuffer {
   void updateResolveAttachment(std::shared_ptr<ITexture> texture) override;
 
  private:
-  // T26: Simplified readback resources (removed per-attachment allocator/fence - use shared infrastructure)
+  // Simplified readback resources (removed per-attachment allocator/fence; use shared infrastructure).
   struct ReadbackResources {
     // Cached data for repeated reads from same region
     std::vector<uint8_t> cachedData;

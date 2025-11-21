@@ -107,10 +107,10 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
  CommandBuffer& commandBuffer_;
   ID3D12GraphicsCommandList* commandList_;
 
-  // T08: Centralized resource binding management
+  // Centralized resource binding management.
   D3D12ResourcesBinder resourcesBinder_;
 
-  // T12: Guard against multiple begin() calls
+  // Guard against multiple begin() calls.
   // begin() allocates RTV/DSV descriptors and sets up state that should only happen once
   bool hasBegun_ = false;
 

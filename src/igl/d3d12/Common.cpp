@@ -76,7 +76,7 @@ DXGI_FORMAT textureFormatToDXGIFormat(TextureFormat format) {
   case TextureFormat::S8_UInt_Z32_UNorm:
     return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
   case TextureFormat::S_UInt8:
-    // T31: Stencil-only format not natively supported by D3D12
+    // Stencil-only formats are not natively supported by D3D12.
     // TODO: Implement via typed subresource views using stencil plane formats:
     //   - DXGI_FORMAT_X24_TYPELESS_G8_UINT (for D24_UNORM_S8_UINT backing resource)
     //   - DXGI_FORMAT_X32_TYPELESS_G8X24_UINT (for D32_FLOAT_S8X24_UINT backing resource)

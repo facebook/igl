@@ -259,7 +259,7 @@ void DescriptorHeapManager::freeSampler(uint32_t index) {
   freeSamplers_.push_back(index);
 }
 
-// C-007: Explicit error checking with bool return (builds on C-006 validation)
+// Explicit error checking with bool return, building on the basic index validation helpers.
 bool DescriptorHeapManager::getRTVHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const {
   if (!outHandle) {
     IGL_LOG_ERROR("DescriptorHeapManager::getRTVHandle: outHandle is null\n");
@@ -307,7 +307,7 @@ bool DescriptorHeapManager::getRTVHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HA
   return true;
 }
 
-// C-007: Explicit error checking with bool return (builds on C-006 validation)
+// Explicit error checking with bool return, building on descriptor validation helpers.
 bool DescriptorHeapManager::getDSVHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const {
   if (!outHandle) {
     IGL_LOG_ERROR("DescriptorHeapManager::getDSVHandle: outHandle is null\n");
@@ -523,7 +523,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getSamplerGpuHandle(uint32_t 
   return h;
 }
 
-// C-006: Descriptor handle validation helpers
+// Descriptor handle validation helpers.
 bool DescriptorHeapManager::isValidRTVIndex(uint32_t index) const {
   if (index == UINT32_MAX) {
     return false;  // Sentinel value for allocation failure

@@ -87,17 +87,17 @@ struct FrameContext {
   // D-002: Count command buffers submitted with this allocator (telemetry)
   uint32_t commandBufferCount = 0;
 
-  // Per-frame shader-visible descriptor heaps (following Microsoft MiniEngine pattern)
-  // C-001: Now supports multiple pages for dynamic growth to prevent overflow corruption
-  // Each frame gets its own isolated heap pages to prevent descriptor conflicts
+  // Per-frame shader-visible descriptor heaps (following Microsoft MiniEngine pattern).
+  // Supports multiple pages for dynamic growth to prevent overflow and corruption.
+  // Each frame gets its own isolated heap pages to prevent descriptor conflicts.
   std::vector<DescriptorHeapPage> cbvSrvUavHeapPages;  // Dynamic array of 1024-descriptor pages
   igl::d3d12::ComPtr<ID3D12DescriptorHeap> samplerHeap;     // 2048 descriptors (kMaxSamplers)
 
-  // Current active page index for CBV/SRV/UAV allocation
+  // Current active page index for CBV/SRV/UAV allocation.
   uint32_t currentCbvSrvUavPageIndex = 0;
 
-  // DX12-NEW-01: Track the currently active shader-visible heap
-  // This is updated when allocating new pages and must be rebound to the command list
+  // Track the currently active shader-visible heap.
+  // This is updated when allocating new pages and must be rebound to the command list.
   igl::d3d12::ComPtr<ID3D12DescriptorHeap> activeCbvSrvUavHeap;
 
   // Legacy accessor for backward compatibility (returns first page)
@@ -118,13 +118,13 @@ struct FrameContext {
   std::vector<std::shared_ptr<igl::IBuffer>> transientBuffers;
   std::vector<igl::d3d12::ComPtr<ID3D12Resource>> transientResources;
 
-  // Telemetry for transient resource tracking (P2_DX12-120)
-  // Tracks high-water mark to observe peak usage and detect unbounded growth
+  // Telemetry for transient resource tracking.
+  // Tracks high-water mark to observe peak usage and detect unbounded growth.
   size_t transientBuffersHighWater = 0;
   size_t transientResourcesHighWater = 0;
 
-  // Telemetry for descriptor heap usage tracking (P0_DX12-FIND-02)
-  // Tracks peak descriptor usage per frame to detect heap overflow risks
+  // Telemetry for descriptor heap usage tracking.
+  // Tracks peak descriptor usage per frame to detect heap overflow risks.
   uint32_t peakCbvSrvUavUsage = 0;
   uint32_t peakSamplerUsage = 0;
 };
@@ -193,7 +193,7 @@ class D3D12Context {
   D3D12Context() = default;
   ~D3D12Context();
 
-  // T14: initialize() now accepts optional D3D12ContextConfig for configurable sizes
+  // initialize() accepts optional D3D12ContextConfig for configurable sizes.
   Result initialize(HWND hwnd, uint32_t width, uint32_t height,
                    const D3D12ContextConfig& config = D3D12ContextConfig::defaultConfig());
   Result resize(uint32_t width, uint32_t height);
@@ -202,8 +202,8 @@ class D3D12Context {
   ID3D12CommandQueue* getCommandQueue() const { return commandQueue_.Get(); }
   IDXGISwapChain3* getSwapChain() const { return swapChain_.Get(); }
 
-  // Get descriptor heap for current frame
-  // C-001: Returns first page for backward compatibility, but prefer using getFrameContexts()
+  // Get descriptor heap for current frame.
+  // Returns first page for backward compatibility; prefer using getFrameContexts() for multi-page access.
   ID3D12DescriptorHeap* getCbvSrvUavHeap() const {
     return frameContexts_[currentFrameIndex_].cbvSrvUavHeap();
   }
@@ -211,7 +211,7 @@ class D3D12Context {
     return frameContexts_[currentFrameIndex_].samplerHeap.Get();
   }
 
-  // C-001: Allocate a new descriptor heap page for dynamic growth
+  // Allocate a new descriptor heap page for dynamic growth.
   Result allocateDescriptorHeapPage(D3D12_DESCRIPTOR_HEAP_TYPE type,
                                      uint32_t numDescriptors,
                                      igl::d3d12::ComPtr<ID3D12DescriptorHeap>* outHeap);
@@ -224,7 +224,7 @@ class D3D12Context {
   D3D_ROOT_SIGNATURE_VERSION getHighestRootSignatureVersion() const { return highestRootSignatureVersion_; }
   D3D12_RESOURCE_BINDING_TIER getResourceBindingTier() const { return resourceBindingTier_; }
 
-  // Get shader model capability (H-010)
+  // Get shader model capability.
   D3D_SHADER_MODEL getMaxShaderModel() const { return maxShaderModel_; }
 
   // Get selected feature level (A-004, A-005)
@@ -233,12 +233,11 @@ class D3D12Context {
   // Get tearing support capability
   bool isTearingSupported() const { return tearingSupported_; }
 
-  // Get command signatures for indirect drawing (P3_DX12-FIND-13)
+  // Get command signatures for indirect drawing.
   ID3D12CommandSignature* getDrawIndirectSignature() const { return drawIndirectSignature_.Get(); }
   ID3D12CommandSignature* getDrawIndexedIndirectSignature() const { return drawIndexedIndirectSignature_.Get(); }
 
-  // Get descriptor handles from per-frame heaps
-  // C-001: Now uses current page for multi-heap support
+  // Get descriptor handles from per-frame heaps using the current page for multi-heap support.
   D3D12_CPU_DESCRIPTOR_HANDLE getCbvSrvUavCpuHandle(uint32_t descriptorIndex) const {
     const auto& frameCtx = frameContexts_[currentFrameIndex_];
     const auto& pages = frameCtx.cbvSrvUavHeapPages;
@@ -387,8 +386,8 @@ class D3D12Context {
   // Feature detection for device feature level (A-004)
   D3D_FEATURE_LEVEL selectedFeatureLevel_ = D3D_FEATURE_LEVEL_11_0;
 
-  // Feature detection for shader model (H-010)
-  // DXC requires SM 6.0 minimum (SM 5.x deprecated)
+  // Feature detection for shader model.
+  // DXC requires SM 6.0 minimum (SM 5.x deprecated).
   D3D_SHADER_MODEL maxShaderModel_ = D3D_SHADER_MODEL_6_0;
 
   // Feature detection for variable refresh rate (tearing) support
@@ -405,7 +404,7 @@ class D3D12Context {
   // A-010: HDR output capabilities (struct defined in public section)
   HDRCapabilities hdrCapabilities_;
 
-  // Command signatures for indirect drawing (P3_DX12-FIND-13)
+  // Command signatures for indirect drawing.
   igl::d3d12::ComPtr<ID3D12CommandSignature> drawIndirectSignature_;
   igl::d3d12::ComPtr<ID3D12CommandSignature> drawIndexedIndirectSignature_;
 
@@ -424,7 +423,7 @@ class D3D12Context {
   uint32_t width_ = 0;
   uint32_t height_ = 0;
 
-  // T14: Configuration for customizable sizes
+  // Configuration for customizable sizes.
   D3D12ContextConfig config_;
 
   // Resource tracking (static for global tracking across all contexts)

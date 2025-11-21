@@ -20,7 +20,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
   width_ = width;
   height_ = height;
 
-  // T14: Store and validate configuration
+  // Store and validate configuration.
   config_ = config;
   config_.validate();
 
@@ -34,11 +34,6 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
       debugController->EnableDebugLayer();
       IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Debug layer enabled\n");
 
-#ifdef _DEBUG
-      // Enable DXGI debug layer (C-009: critical for DXGI validation)
-      dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
-      IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: DXGI debug layer enabled\n");
-#endif
     }
   }
 
@@ -55,7 +50,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
     }
   }
 
-  // Create DXGI factory with debug flag in debug builds (C-009)
+  // Create DXGI factory with debug flag in debug builds.
   HRESULT hr = CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(dxgiFactory_.GetAddressOf()));
   if (FAILED(hr)) {
     return Result(Result::Code::RuntimeError, "Failed to create DXGI factory");
@@ -224,8 +219,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
   IGL_D3D12_LOG_VERBOSE("HeadlessContext: Creating per-frame descriptor heaps (CBV/SRV/UAV=%u, Samplers=%u)...\n",
                cbvSrvUavHeapSize, samplerHeapSize);
 
-  // Create per-frame shader-visible descriptor heaps
-  // C-001: Now creates initial page with dynamic growth support
+  // Create per-frame shader-visible descriptor heaps and an initial page for each frame.
   for (UINT i = 0; i < kMaxFramesInFlight; i++) {
     // CBV/SRV/UAV heap per frame - create initial page
     igl::d3d12::ComPtr<ID3D12DescriptorHeap> initialHeap;
@@ -279,7 +273,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
     return Result(Result::Code::RuntimeError, "Failed to create fence");
   }
 
-  // Create descriptor heap manager with the same sizes for consistency
+  // Create descriptor heap manager with the same sizes for consistency.
   {
     DescriptorHeapManager::Sizes sz{};
     sz.cbvSrvUav = cbvSrvUavHeapSize;
@@ -291,14 +285,14 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
     if (!r.isOk()) {
       IGL_LOG_ERROR("HeadlessD3D12Context: Failed to initialize descriptor heap manager: %s\n",
                     r.message.c_str());
-      // Not fatal for Phase 1, continue without manager
+      // Non-fatal: continue without a dedicated manager.
       descriptorHeaps_.reset();
     }
     // Expose manager to base context for consumers that only see D3D12Context
     heapMgr_ = descriptorHeaps_.get();
   }
 
-  // Create command signatures for indirect drawing (P3_DX12-FIND-13)
+  // Create command signatures for indirect drawing.
   IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Creating command signatures...\n");
   Result commandSigResult = createCommandSignatures();
   if (!commandSigResult.isOk()) {

@@ -108,7 +108,7 @@ std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandB
   return cmdBuffer;
 }
 
-// T03/T09: Error handling behavior for submit()
+// Error handling behavior for submit().
 // This function executes command lists and presents frames. Error handling:
 // - Device removal: Detected via checkDeviceRemoval(), logs diagnostics, sets device.isDeviceLost()
 //   flag, and triggers IGL_DEBUG_ASSERT. Returns SubmitHandle normally (legacy API limitation).
@@ -120,7 +120,7 @@ std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandB
 //   authoritative source for fatal error detection.
 // Future: Consider Result-based submission API for explicit error propagation.
 //
-// T09: Refactored from 614 lines to <100 lines using helper classes:
+// Refactored from 614 lines to under 100 lines using helper classes:
 // - FenceWaiter: RAII fence waiting with TOCTOU protection
 // - FrameManager: Frame advancement and resource management
 // - PresentManager: Swapchain presentation with device removal detection

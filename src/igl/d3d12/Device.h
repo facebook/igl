@@ -24,14 +24,14 @@
 #include <igl/d3d12/D3D12PipelineCache.h>
 #include <igl/d3d12/D3D12SamplerCache.h>
 #include <igl/d3d12/D3D12Telemetry.h>
-#include <igl/d3d12/D3D12ImmediateCommands.h>  // T07: For IFenceProvider interface
+#include <igl/d3d12/D3D12ImmediateCommands.h>  // For IFenceProvider interface.
 
 namespace igl::d3d12 {
 
 class PlatformDevice;
 class UploadRingBuffer;
 class SamplerState;  // Forward declaration for sampler cache
-class D3D12StagingDevice;  // T07: Forward declaration
+class D3D12StagingDevice;  // Forward declaration.
 
 /// @brief Implements the igl::IDevice interface for DirectX 12
 class Device final : public IDevice, public IFenceProvider {
@@ -61,7 +61,7 @@ class Device final : public IDevice, public IFenceProvider {
                                                       Result* IGL_NULLABLE
                                                           outResult) const noexcept override;
 
-  // T19: Non-const helper for createBuffer - handles upload operations that mutate internal state
+  // Non-const helper for createBuffer; handles upload operations that mutate internal state.
   [[nodiscard]] std::unique_ptr<IBuffer> createBufferImpl(const BufferDesc& desc,
                                                           Result* IGL_NULLABLE outResult) noexcept;
 
@@ -150,7 +150,7 @@ class Device final : public IDevice, public IFenceProvider {
     return bindGroupBuffersPool_.get(handle);
   }
 
-  // Device capabilities accessors (P2_DX12-018)
+  // Device capabilities accessors.
   [[nodiscard]] const D3D12_FEATURE_DATA_D3D12_OPTIONS& getDeviceOptions() const {
     return capabilities_.getOptions();
   }
@@ -164,41 +164,41 @@ class Device final : public IDevice, public IFenceProvider {
   void processCompletedUploads();
   void trackUploadBuffer(igl::d3d12::ComPtr<ID3D12Resource> buffer, UINT64 fenceValue);
 
-  // Command allocator pool access for upload operations (P0_DX12-005)
+  // Command allocator pool access for upload operations.
   igl::d3d12::ComPtr<ID3D12CommandAllocator> getUploadCommandAllocator();
   void returnUploadCommandAllocator(igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator,
                                      UINT64 fenceValue);
   ID3D12Fence* getUploadFence() const { return allocatorPool_.getUploadFence(); }
   UINT64 getNextUploadFenceValue() { return allocatorPool_.getNextUploadFenceValue(); }
-  Result waitForUploadFence(UINT64 fenceValue) const;  // T05: Wait for upload to complete
+  Result waitForUploadFence(UINT64 fenceValue) const;
 
-  // T07: IFenceProvider implementation (shared fence timeline)
+  // IFenceProvider implementation (shared fence timeline).
   uint64_t getNextFenceValue() override { return getNextUploadFenceValue(); }
 
-  // Upload ring buffer access (P1_DX12-009)
+  // Upload ring buffer access.
   UploadRingBuffer* getUploadRingBuffer() const { return allocatorPool_.getUploadRingBuffer(); }
 
-  // Check for device removal and return error Result if detected (P1_DX12-006)
+  // Check for device removal and return error Result if detected.
   [[nodiscard]] Result checkDeviceRemoval() const;
 
-  // Query if device has been lost (T03: Result-based error handling)
+  // Query if device has been lost.
   [[nodiscard]] bool isDeviceLost() const { return deviceLost_; }
 
-  // Sampler cache statistics (C-005)
+  // Sampler cache statistics.
   [[nodiscard]] SamplerCacheStats getSamplerCacheStats() const;
 
-  // I-003: Query maximum MSAA sample count for a specific format
-  // Returns 1 if format does not support MSAA
+  // Query maximum MSAA sample count for a specific format.
+  // Returns 1 if the format does not support MSAA.
   [[nodiscard]] uint32_t getMaxMSAASamplesForFormat(TextureFormat format) const;
 
  private:
-  // Alignment validation helpers (B-005)
+  // Alignment validation helpers.
   bool validateMSAAAlignment(const TextureDesc& desc, Result* IGL_NULLABLE outResult) const;
   bool validateTextureAlignment(const D3D12_RESOURCE_DESC& resourceDesc,
                                  uint32_t sampleCount, Result* IGL_NULLABLE outResult) const;
   bool validateBufferAlignment(size_t bufferSize, bool isUniform) const;
 
-  // Alignment constants (B-005)
+  // Alignment constants.
   static constexpr size_t MSAA_ALIGNMENT = 65536;  // 64KB for MSAA textures
   static constexpr size_t BUFFER_ALIGNMENT = 256;   // 256 bytes for constant buffers
   static constexpr size_t DEFAULT_TEXTURE_ALIGNMENT = 65536;  // 64KB default for textures
@@ -213,20 +213,20 @@ class Device final : public IDevice, public IFenceProvider {
   Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
   Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
 
-  // T19: Upload tracking state (non-mutable, mutated only from non-const paths)
-  // Modified by: createBufferImpl, Buffer::upload, Texture::upload via non-const Device references
-  // Synchronized via pendingUploadsMutex_ for thread-safe access
+  // Upload tracking state (non-mutable, mutated only from non-const paths).
+  // Modified by createBufferImpl, Buffer::upload, Texture::upload via non-const Device references
+  // and synchronized via pendingUploadsMutex_ for thread-safe access.
   D3D12AllocatorPool allocatorPool_;
   D3D12PipelineCache pipelineCache_;
   D3D12SamplerCache samplerCache_;
 
-  // T03: Device lost flag and reason for fatal error handling (atomic for thread-safe access)
+  // Device lost flag and reason for fatal error handling (atomic for thread-safe access).
   mutable std::atomic<bool> deviceLost_{false};
   mutable std::string deviceLostReason_;  // Cached reason for diagnostics
 
  public:
-  // T07/T26: Shared staging infrastructure for upload/readback operations
-  // Used by Buffer, Texture, Framebuffer, CommandBuffer for centralized resource management
+  // Shared staging infrastructure for upload/readback operations.
+  // Used by Buffer, Texture, Framebuffer, CommandBuffer for centralized resource management.
   [[nodiscard]] D3D12ImmediateCommands* getImmediateCommands() const {
     return allocatorPool_.getImmediateCommands();
   }
@@ -234,7 +234,7 @@ class Device final : public IDevice, public IFenceProvider {
     return allocatorPool_.getStagingDevice();
   }
 
-  // T28: Access pre-compiled mipmap shaders
+  // Access pre-compiled mipmap shaders.
   [[nodiscard]] bool areMipmapShadersAvailable() const {
     return pipelineCache_.mipmapShadersAvailable_;
   }

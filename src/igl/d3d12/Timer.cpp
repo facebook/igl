@@ -27,8 +27,8 @@ Timer::Timer(const Device& device) {
     return;
   }
 
-  // Create query heap for 2 timestamps (begin and end)
-  // TASK_P2_DX12-FIND-11: Use D3D12_QUERY_HEAP_TYPE_TIMESTAMP for GPU timer queries
+  // Create query heap for 2 timestamps (begin and end).
+  // Use D3D12_QUERY_HEAP_TYPE_TIMESTAMP for GPU timer queries.
   D3D12_QUERY_HEAP_DESC queryHeapDesc = {};
   queryHeapDesc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
   queryHeapDesc.Count = 2;  // Begin and end timestamps
@@ -100,8 +100,8 @@ void Timer::begin(ID3D12GraphicsCommandList* commandList) {
     return;
   }
 
-  // T02: Record begin timestamp (index 0) at START of GPU work
-  // This is a bottom-of-pipe operation that samples when GPU finishes preceding work
+  // Record begin timestamp (index 0) at the start of GPU work.
+  // This is a bottom-of-pipe operation that samples when the GPU finishes preceding work.
   commandList->EndQuery(queryHeap_.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0);
 }
 
@@ -126,13 +126,13 @@ void Timer::end(ID3D12GraphicsCommandList* commandList, ID3D12Fence* fence, uint
     return;
   }
 
-  // T02: Record end timestamp (index 1) at END of GPU work
-  // Bottom-of-pipe operation - samples when GPU finishes all preceding work
+  // Record end timestamp (index 1) at the end of GPU work.
+  // Bottom-of-pipe operation: samples when the GPU finishes all preceding work.
   commandList->EndQuery(queryHeap_.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 1);
 
-  // T02: Resolve query data to readback buffer
-  // This GPU command copies timestamp values from query heap to a CPU-readable buffer
-  // The resolved data will only be valid AFTER the fence signals completion
+  // Resolve query data to the readback buffer.
+  // This GPU command copies timestamp values from the query heap to a CPU-readable buffer;
+  // the resolved data is only valid after the fence signals completion.
   commandList->ResolveQueryData(
       queryHeap_.Get(),
       D3D12_QUERY_TYPE_TIMESTAMP,
@@ -142,8 +142,8 @@ void Timer::end(ID3D12GraphicsCommandList* commandList, ID3D12Fence* fence, uint
       0   // Destination offset
   );
 
-  // T02: Store fence and fence value for later completion checking
-  // Thread-safe: fence_ is written once, atomics ensure visibility
+  // Store fence and fence value for later completion checking.
+  // Thread-safe: fence_ is written once; atomics ensure visibility.
   fence_ = fence;
   fenceValue_.store(fenceValue, std::memory_order_release);
   ended_.store(true, std::memory_order_release);
@@ -154,21 +154,21 @@ uint64_t Timer::getElapsedTimeNanos() const {
     return 0;
   }
 
-  // T02: Check if fence has signaled - results are only valid after GPU completes
-  // Thread-safe: fence_ is set once before ended_ flag, memory_order ensures visibility
+  // Check if the fence has signaled; results are only valid after GPU completes.
+  // Thread-safe: fence_ is set once before the ended_ flag, and memory ordering ensures visibility.
   uint64_t fenceVal = fenceValue_.load(std::memory_order_acquire);
   if (!fence_ || fence_->GetCompletedValue() < fenceVal) {
     return 0;  // GPU hasn't finished yet, return 0
   }
 
-  // T02: If we've already resolved and cached the result, return it
-  // Thread-safe: resolved_ flag prevents multiple threads from mapping simultaneously
+  // If we've already resolved and cached the result, return it.
+  // Thread-safe: resolved_ flag prevents multiple threads from mapping simultaneously.
   if (resolved_.load(std::memory_order_acquire)) {
     return cachedElapsedNanos_.load(std::memory_order_relaxed);
   }
 
-  // T02: GPU has completed, now safe to read the query results
-  // Map readback buffer to read timestamp values
+  // GPU has completed; it is now safe to read the query results.
+  // Map the readback buffer to read timestamp values.
   void* mappedData = nullptr;
   D3D12_RANGE readRange{0, sizeof(uint64_t) * 2};  // Only read the 2 timestamps
   HRESULT hr = readbackBuffer_->Map(0, &readRange, &mappedData);
@@ -205,14 +205,13 @@ uint64_t Timer::getElapsedTimeNanos() const {
   // Calculate elapsed time in GPU ticks
   uint64_t deltaTicks = endTime - beginTime;
 
-  // Convert ticks to nanoseconds
-  // T02: Use floating-point math for accurate conversion as per Microsoft docs
-  // Formula: nanoseconds = (ticks / frequency) * 1,000,000,000
+  // Convert ticks to nanoseconds using floating-point math for accuracy,
+  // as recommended by Microsoft docs: nanoseconds = (ticks / frequency) * 1,000,000,000.
   const double nanosPerSecond = 1000000000.0;
   double elapsedNanos = (static_cast<double>(deltaTicks) / static_cast<double>(timestampFrequency_)) * nanosPerSecond;
 
-  // T02: Cache the result so we don't re-read from GPU
-  // Thread-safe: Store cached value before setting resolved flag
+  // Cache the result so we don't re-read from GPU.
+  // Thread-safe: store cached value before setting the resolved flag.
   cachedElapsedNanos_.store(static_cast<uint64_t>(elapsedNanos), std::memory_order_release);
   resolved_.store(true, std::memory_order_release);
 
@@ -220,9 +219,9 @@ uint64_t Timer::getElapsedTimeNanos() const {
 }
 
 bool Timer::resultsAvailable() const {
-  // T02: Results are available only after the fence has signaled completion
-  // This ensures we don't read uninitialized/garbage data from the query heap
-  // Thread-safe: Use atomic loads with proper memory ordering
+  // Results are available only after the fence has signaled completion.
+  // This ensures we don't read uninitialized or garbage data from the query heap.
+  // Thread-safe: use atomic loads with proper memory ordering.
   if (!ended_.load(std::memory_order_acquire) || !fence_) {
     return false;
   }

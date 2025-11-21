@@ -96,7 +96,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  // T26: Get shared infrastructure
+  // Get shared infrastructure used for readback.
   auto* immediateCommands = iglDevice.getImmediateCommands();
   auto* stagingDevice = iglDevice.getStagingDevice();
   if (!immediateCommands || !stagingDevice) {
@@ -152,7 +152,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
       return;
     }
 
-    // T26: Use D3D12StagingDevice for readback buffer allocation
+    // Use D3D12StagingDevice for readback buffer allocation.
     auto stagingBuffer = stagingDevice->allocateReadback(totalBytes);
     if (!stagingBuffer.valid || !stagingBuffer.buffer.Get()) {
       IGL_LOG_ERROR("Framebuffer::copyBytesColorAttachment - Failed to allocate readback buffer\n");
@@ -160,7 +160,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
       return;
     }
 
-    // T26: Use D3D12ImmediateCommands for copy operation
+    // Use D3D12ImmediateCommands for the copy operation.
     Result result;
     ID3D12GraphicsCommandList* cmdList = immediateCommands->begin(&result);
     if (!cmdList || !result.isOk()) {
@@ -195,7 +195,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
 
     srcTex->transitionTo(cmdList, previousState, mipLevel, copyLayer);
 
-    // T26: Submit and wait using shared fence
+    // Submit and wait using the shared fence.
     uint64_t fenceValue = immediateCommands->submit(true, &result);
     if (fenceValue == 0 || !result.isOk()) {
       IGL_LOG_ERROR("Framebuffer::copyBytesColorAttachment - Failed to submit command list: %s\n",
@@ -223,8 +223,8 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
     cache.cachedData.resize(static_cast<size_t>(cache.cachedRowPitch) *
                             static_cast<size_t>(mipHeight));
 
-    // P1_DX12-FIND-06: Direct copy with vertical flip only - no channel swap needed
-    // DXGI_FORMAT_R8G8B8A8_UNORM has R,G,B,A byte order matching IGL expectations
+    // Direct copy with vertical flip only; no channel swap needed.
+    // DXGI_FORMAT_R8G8B8A8_UNORM has R,G,B,A byte order matching IGL expectations.
     for (uint32_t row = 0; row < mipHeight; ++row) {
       const uint8_t* s = srcPtr + static_cast<size_t>(row) * srcRowPitch;
       uint8_t* d =
@@ -236,7 +236,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
 
     stagingBuffer.buffer->Unmap(0, nullptr);
 
-    // T26: Free the staging buffer back to the pool
+    // Free the staging buffer back to the pool.
     stagingDevice->free(stagingBuffer, fenceValue);
 
     cache.cachedWidth = mipWidth;
@@ -291,7 +291,7 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
                                            void* pixelBytes,
                                            const TextureRangeDesc& range,
                                            size_t bytesPerRow) const {
-  // TASK_P2_DX12-FIND-10: Implement depth attachment readback
+  // Depth attachment readback.
   if (!pixelBytes) {
     return;
   }
@@ -308,7 +308,7 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  // T26: Get shared staging infrastructure
+  // Get shared staging infrastructure.
   auto* immediateCommands = iglDevice.getImmediateCommands();
   auto* stagingDevice = iglDevice.getStagingDevice();
   if (!immediateCommands || !stagingDevice) {
@@ -337,7 +337,7 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
   // Get footprint for the depth resource
   D3D12_RESOURCE_DESC depthDesc = depthRes->GetDesc();
 
-  // T26: Validate and log depth format to clarify raw-bits vs converted-float behavior
+  // Validate and log depth format to clarify raw-bits vs converted-float behavior.
   const DXGI_FORMAT depthFormat = depthDesc.Format;
   const bool isD32Float = (depthFormat == DXGI_FORMAT_D32_FLOAT ||
                            depthFormat == DXGI_FORMAT_D32_FLOAT_S8X24_UINT);
@@ -360,14 +360,14 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  // T26: Allocate readback buffer from staging device
+  // Allocate readback buffer from the staging device.
   auto stagingBuffer = stagingDevice->allocateReadback(totalBytes);
   if (!stagingBuffer.valid || !stagingBuffer.buffer.Get()) {
     IGL_LOG_ERROR("Framebuffer::copyBytesDepthAttachment - Failed to allocate readback buffer\n");
     return;
   }
 
-  // T26: Begin immediate command recording
+  // Begin immediate command recording.
   Result result;
   ID3D12GraphicsCommandList* cmdList = immediateCommands->begin(&result);
   if (!cmdList || !result.isOk()) {
@@ -406,7 +406,7 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
   // Transition back to previous state
   depthTex->transitionTo(cmdList, previousState, mipLevel, copyLayer);
 
-  // T26: Submit and wait using shared fence
+  // Submit and wait using the shared fence.
   uint64_t fenceValue = immediateCommands->submit(true, &result);
   if (fenceValue == 0 || !result.isOk()) {
     IGL_LOG_ERROR("Framebuffer::copyBytesDepthAttachment - Failed to submit command list: %s\n",
@@ -424,7 +424,7 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  // T26: Validate range bounds before copying
+  // Validate range bounds before copying.
   if (range.width == 0 || range.height == 0 ||
       range.x + range.width > mipWidth ||
       range.y + range.height > mipHeight) {
@@ -443,7 +443,7 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
   // and only copy that many bytes from the GPU data to avoid overrunning the
   // caller's buffer (e.g., for combined depth-stencil formats like D32_S8).
   //
-  // T26 LIMITATION: This implementation assumes a "raw bits" contract - it copies
+  // LIMITATION: This implementation assumes a "raw bits" contract - it copies
   // the native GPU representation without format conversion. This is correct for
   // D32_FLOAT (which is already IEEE 754 float), but for normalized integer depth
   // formats (D16_UNORM, D24_UNORM_S8_UINT), the copied data is raw bits, not
@@ -478,7 +478,7 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
 
   stagingBuffer.buffer->Unmap(0, nullptr);
 
-  // T26: Free staging buffer back to pool
+  // Free staging buffer back to the pool.
   stagingDevice->free(stagingBuffer, fenceValue);
 }
 
@@ -486,7 +486,7 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
                                              void* pixelBytes,
                                              const TextureRangeDesc& range,
                                              size_t bytesPerRow) const {
-  // TASK_P2_DX12-FIND-10: Implement stencil attachment readback
+  // Stencil attachment readback.
   if (!pixelBytes) {
     return;
   }
@@ -503,7 +503,7 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  // T26: Get shared infrastructure
+  // Get shared infrastructure.
   auto* immediateCommands = iglDevice.getImmediateCommands();
   auto* stagingDevice = iglDevice.getStagingDevice();
   if (!immediateCommands || !stagingDevice) {
@@ -524,7 +524,7 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
   const uint32_t mipLevel = range.mipLevel;
   const uint32_t copyLayer = (stencilTex->getType() == TextureType::Cube) ? range.face : range.layer;
 
-  // T26: Detect stencil format and select appropriate plane slice
+  // Detect stencil format and select the appropriate plane slice.
   D3D12_RESOURCE_DESC stencilDesc = stencilRes->GetDesc();
   const DXGI_FORMAT stencilFormat = stencilDesc.Format;
 
@@ -570,14 +570,14 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  // T26: Allocate readback buffer from staging device
+  // Allocate readback buffer from the staging device.
   auto stagingBuffer = stagingDevice->allocateReadback(totalBytes);
   if (!stagingBuffer.valid || !stagingBuffer.buffer.Get()) {
     IGL_LOG_ERROR("Framebuffer::copyBytesStencilAttachment - Failed to allocate readback buffer\n");
     return;
   }
 
-  // T26: Begin immediate command recording
+  // Begin immediate command recording.
   Result result;
   ID3D12GraphicsCommandList* cmdList = immediateCommands->begin(&result);
   if (!cmdList || !result.isOk()) {
@@ -616,7 +616,7 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
   // Transition back to previous state
   stencilTex->transitionTo(cmdList, previousState, mipLevel, copyLayer);
 
-  // T26: Submit and wait using shared fence
+  // Submit and wait using the shared fence.
   uint64_t fenceValue = immediateCommands->submit(true, &result);
   if (fenceValue == 0 || !result.isOk()) {
     IGL_LOG_ERROR("Framebuffer::copyBytesStencilAttachment - Failed to submit command list: %s\n",
@@ -634,7 +634,7 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  // T26: Validate range bounds before copying
+  // Validate range bounds before copying.
   if (range.width == 0 || range.height == 0 ||
       range.x + range.width > mipWidth ||
       range.y + range.height > mipHeight) {
@@ -669,7 +669,7 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
 
   stagingBuffer.buffer->Unmap(0, nullptr);
 
-  // T26: Free staging buffer back to pool
+  // Free staging buffer back to the pool.
   stagingDevice->free(stagingBuffer, fenceValue);
 }
 
@@ -684,7 +684,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  // T26: Get device and shared infrastructure directly (avoid transient CommandBuffer)
+  // Get device and shared infrastructure directly (avoid transient CommandBuffer).
   auto* d3dQueueWrapper = dynamic_cast<CommandQueue*>(&cmdQueue);
   if (!d3dQueueWrapper) {
     IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment - Invalid command queue\n");
@@ -754,7 +754,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   srcTex->transitionTo(cmdList, srcPrevState, mipLevel, layer);
   dstTex->transitionTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mipLevel, layer);
 
-  // T26: Submit and wait using shared fence (replaces manual CreateEvent/WaitForSingleObject)
+  // Submit and wait using the shared fence (replaces manual CreateEvent/WaitForSingleObject).
   uint64_t fenceValue = immediateCommands->submit(true, &result);
   if (fenceValue == 0 || !result.isOk()) {
     IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment - Failed to submit command list: %s\n",

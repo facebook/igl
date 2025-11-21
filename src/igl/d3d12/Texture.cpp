@@ -7,13 +7,12 @@
 
 #include <algorithm>
 #include <igl/d3d12/Texture.h>
-#include <igl/d3d12/Device.h>  // P0_DX12-005: For command allocator pool access
+#include <igl/d3d12/Device.h>
 #include <igl/d3d12/DXCCompiler.h>
-#include <igl/d3d12/UploadRingBuffer.h>  // P1_DX12-009: Upload ring buffer
+#include <igl/d3d12/UploadRingBuffer.h>
 #include <igl/d3d12/D3D12FenceWaiter.h>
 
-// P1_DX12-FIND-06: Removed needsRGBAChannelSwap() function
-// No channel swap needed - DXGI_FORMAT_R8G8B8A8_UNORM matches IGL TextureFormat::RGBA_UNorm8 byte order
+// No channel swap needed: DXGI_FORMAT_R8G8B8A8_UNORM matches IGL TextureFormat::RGBA_UNorm8 byte order.
 
 namespace igl::d3d12 {
 
@@ -43,7 +42,7 @@ std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
 
   texture->device_ = device;
   texture->queue_ = queue;
-  texture->iglDevice_ = iglDevice;  // P0_DX12-005: Store igl Device for command allocator pool access
+  texture->iglDevice_ = iglDevice;  // Store igl Device for upload-related operations.
   texture->format_ = format;
   texture->dimensions_ = Dimensions{desc.width, desc.height, desc.depth};
   texture->type_ = desc.type;
@@ -95,7 +94,7 @@ std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> par
   // Copy properties from parent
   view->device_ = parent->device_;
   view->queue_ = parent->queue_;
-  view->iglDevice_ = parent->iglDevice_;  // P0_DX12-005: Propagate igl Device pointer
+  view->iglDevice_ = parent->iglDevice_;  // Propagate igl Device pointer.
   view->format_ = viewFormat;
   view->type_ = desc.type;
   view->usage_ = parent->usage_;
@@ -111,8 +110,8 @@ std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> par
   view->numLayers_ = desc.numLayers;
   view->numMipLevels_ = desc.numMipLevels;
 
-  // T24: Views delegate state tracking to root texture - don't maintain separate state.
-  // State is accessed via getStateOwner() which walks to root for views.
+  // Views delegate state tracking to the root texture and do not maintain separate state.
+  // State is accessed via getStateOwner(), which walks to the root for views.
   // Views share the same D3D12 resource and subresourceStates_ tracking with their root.
 
   IGL_D3D12_LOG_VERBOSE("Texture::createTextureView - SUCCESS: view of %dx%d, mips %u-%u, layers %u-%u\n",
@@ -123,31 +122,26 @@ std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> par
   return view;
 }
 
-// B-001: Explicit destructor to free descriptor heap slots
 Texture::~Texture() {
   IGL_D3D12_LOG_VERBOSE("Texture::~Texture - START: Destroying texture %p\n", this);
 
-  // B-001: Texture views share the parent's resource, so they don't own descriptors
-  // Only free descriptors for non-view textures
+  // Texture views share the parent's resource, so they don't own descriptors.
+  // Only free descriptors for non-view textures.
   if (isView_) {
     IGL_D3D12_LOG_VERBOSE("Texture::~Texture - Texture is a view, skipping descriptor cleanup\n");
     return;
   }
 
-  // B-001: Get descriptor heap manager from device
-  // Note: In current architecture, descriptors are allocated/freed by RenderCommandEncoder,
-  // not stored in Texture. This destructor is defensive - it will clean up any descriptors
-  // if the architecture changes to store them in Texture in the future.
+  // Get descriptor heap manager from device.
+  // Note: in the current architecture, descriptors are allocated/freed by RenderCommandEncoder,
+  // not stored in Texture. This destructor is defensive in case descriptors become per-texture later.
   if (!iglDevice_) {
     IGL_D3D12_LOG_VERBOSE("Texture::~Texture - No IGL device, skipping descriptor cleanup\n");
     return;
   }
 
-  // B-001: For now, descriptors are managed by RenderCommandEncoder and freed when encoder
-  // is destroyed. This destructor is here to ensure proper cleanup if we later add
-  // per-texture descriptor allocation (as described in task B-001).
-  // The rtvIndices_, dsvIndices_, and srvIndex_ members are currently unused but
-  // reserved for future use.
+  // For now, descriptors are managed by RenderCommandEncoder and freed when the encoder is destroyed.
+  // The rtvIndices_, dsvIndices_, and srvIndex_ members are currently unused but reserved for future use.
 
   IGL_D3D12_LOG_VERBOSE("Texture::~Texture - Destruction complete\n");
 }
@@ -213,7 +207,7 @@ Result Texture::upload(const TextureRangeDesc& range,
     }
   }
 
-  // P1_DX12-009: Try to allocate from upload ring buffer first
+  // Try to allocate from upload ring buffer first.
   UploadRingBuffer* ringBuffer = nullptr;
   UploadRingBuffer::Allocation ringAllocation;
   bool useRingBuffer = false;
@@ -279,9 +273,9 @@ Result Texture::upload(const TextureRangeDesc& range,
     }
   }
 
-  // Copy all subresource data to staging buffer
-  // P1_DX12-FIND-06: Direct copy - no channel swap needed for RGBA formats
-  // DXGI_FORMAT_R8G8B8A8_UNORM has R,G,B,A byte order matching IGL TextureFormat::RGBA_UNorm8
+  // Copy all subresource data to the staging buffer.
+  // Direct copy: no channel swap needed for RGBA formats.
+  // DXGI_FORMAT_R8G8B8A8_UNORM has R,G,B,A byte order matching IGL TextureFormat::RGBA_UNorm8.
   size_t srcDataOffset = 0;
   size_t layoutIdx = 0;
 
@@ -322,7 +316,7 @@ Result Texture::upload(const TextureRangeDesc& range,
     stagingBuffer->Unmap(0, nullptr);
   }
 
-  // P0_DX12-005: Get command allocator from pool with fence tracking
+  // Get command allocator from pool with fence tracking when an iglDevice is available.
   igl::d3d12::ComPtr<ID3D12CommandAllocator> cmdAlloc;
   if (iglDevice_) {
     cmdAlloc = iglDevice_->getUploadCommandAllocator();
@@ -404,8 +398,8 @@ Result Texture::upload(const TextureRangeDesc& range,
   ID3D12CommandList* cmdLists[] = {cmdList.Get()};
   queue_->ExecuteCommandLists(1, cmdLists);
 
-  // P0_DX12-005: Use upload fence for command allocator synchronization
-  // P1_DX12-009: Use pre-allocated uploadFenceValue (already incremented for ring buffer)
+  // Use upload fence for command allocator synchronization.
+  // Use pre-allocated uploadFenceValue (already incremented for ring buffer).
   if (iglDevice_) {
     ID3D12Fence* uploadFence = iglDevice_->getUploadFence();
 
@@ -417,12 +411,12 @@ Result Texture::upload(const TextureRangeDesc& range,
       return Result(Result::Code::RuntimeError, "Failed to signal fence");
     }
 
-    // Return allocator to pool with fence value (will be reused after fence signaled)
+    // Return allocator to pool with fence value (will be reused after the fence is signaled).
     iglDevice_->returnUploadCommandAllocator(cmdAlloc, uploadFenceValue);
 
-    // P2_DX12-FIND-07: Track staging buffer for async cleanup (no synchronous wait)
-    // P1_DX12-009: Only track temporary staging buffers (ring buffer is persistent)
-    // DX12-NEW-02: Pass uploadFenceValue (already signaled above) to track with correct fence
+    // Track staging buffer for async cleanup (no synchronous wait).
+    // Only track temporary staging buffers; ring buffer is persistent.
+    // Pass uploadFenceValue (already signaled above) to track with the correct fence.
     if (!useRingBuffer && stagingBuffer.Get()) {
       iglDevice_->trackUploadBuffer(std::move(stagingBuffer), uploadFenceValue);
     }
@@ -451,9 +445,8 @@ Result Texture::uploadCube(const TextureRangeDesc& range,
                           TextureCubeFace face,
                           const void* data,
                           size_t bytesPerRow) const {
-  // TASK_P2_DX12-FIND-12: Implement cube texture upload
-  // Cube textures are stored as texture arrays with 6 slices (one per face)
-  // The upload() method already handles cube textures correctly when face/numFaces are set
+  // Cube textures are stored as texture arrays with 6 slices (one per face).
+  // The upload() method already handles cube textures correctly when face/numFaces are set.
 
   // Validate this is a cube texture
   if (type_ != TextureType::Cube) {
@@ -657,7 +650,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
 
   IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap() - Proceeding with mipmap generation\n");
 
-  // T28: Use pre-compiled shaders from Device instead of runtime compilation
+  // Use pre-compiled shaders from Device instead of runtime compilation.
   // Note: iglDevice_ should always be set in normal flow (see Texture::createFromResource)
   // This check is defensive; if it triggers, it indicates a texture creation path that bypassed proper initialization
   if (!iglDevice_) {
@@ -717,7 +710,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
   igl::d3d12::ComPtr<ID3D12DescriptorHeap> smpHeap;
   if (FAILED(device_->CreateDescriptorHeap(&smpHeapDesc, IID_PPV_ARGS(smpHeap.GetAddressOf())))) return;
 
-  // Pre-creation validation (TASK_P0_DX12-004)
+  // Pre-creation validation.
   IGL_DEBUG_ASSERT(device_ != nullptr, "Device is null before CreateSampler");
   IGL_DEBUG_ASSERT(smpHeap.Get() != nullptr, "Sampler heap is null");
 
@@ -739,7 +732,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
   ID3D12DescriptorHeap* heaps[] = {srvHeap.Get(), smpHeap.Get()};
   list->SetDescriptorHeaps(2, heaps);
   list->SetPipelineState(psoObj.Get());
-  list->SetGraphicsRootSignature(rootSig);  // T28: rootSig is already a raw pointer
+  list->SetGraphicsRootSignature(rootSig);
   list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   // Get descriptor size for incrementing through the heap
@@ -768,7 +761,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     D3D12_GPU_DESCRIPTOR_HANDLE srvGpu = srvGpuStart;
     srvGpu.ptr += mip * srvDescriptorSize;
 
-    // Pre-creation validation (TASK_P0_DX12-004)
+    // Pre-creation validation.
     IGL_DEBUG_ASSERT(device_ != nullptr, "Device is null before CreateShaderResourceView");
     IGL_DEBUG_ASSERT(resource_.Get() != nullptr, "Resource is null before CreateShaderResourceView");
     IGL_DEBUG_ASSERT(srvCpu.ptr != 0, "SRV descriptor handle is invalid");
@@ -781,7 +774,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     srv.Texture2D.MipLevels = 1;
     device_->CreateShaderResourceView(resource_.Get(), &srv, srvCpu);
 
-    // Pre-creation validation (TASK_P0_DX12-004)
+    // Pre-creation validation.
     IGL_DEBUG_ASSERT(device_ != nullptr, "Device is null before CreateRenderTargetView");
     IGL_DEBUG_ASSERT(resource_.Get() != nullptr, "Resource is null before CreateRenderTargetView");
     IGL_DEBUG_ASSERT(rtvCpu.ptr != 0, "RTV descriptor handle is invalid");
@@ -795,7 +788,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     device_->CreateRenderTargetView(resource_.Get(), &rtv, rtvCpu);
 
     // Transition mip level to render target using state tracking
-    // T10: const_cast needed (see above)
+    // const_cast needed (see above).
     const_cast<Texture*>(this)->transitionTo(list.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, mip + 1, 0);
 
     list->OMSetRenderTargets(1, &rtvCpu, FALSE, nullptr);
@@ -811,7 +804,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     list->DrawInstanced(3, 1, 0, 0);
 
     // Transition mip level to shader resource for next iteration
-    // T10: const_cast needed (see above)
+    // const_cast needed (see above).
     const_cast<Texture*>(this)->transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mip + 1, 0);
   }
 
@@ -855,7 +848,7 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDe
     return;
   }
 
-  // T28: Use pre-compiled shaders from Device instead of runtime compilation
+  // Use pre-compiled shaders from Device instead of runtime compilation.
   // Note: iglDevice_ should always be set in normal flow (see Texture::createFromResource)
   // This check is defensive; if it triggers, it indicates a texture creation path that bypassed proper initialization
   if (!iglDevice_) {
@@ -911,7 +904,7 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDe
   igl::d3d12::ComPtr<ID3D12DescriptorHeap> smpHeap;
   if (FAILED(device_->CreateDescriptorHeap(&smpHeapDesc, IID_PPV_ARGS(smpHeap.GetAddressOf())))) return;
 
-  // Pre-creation validation (TASK_P0_DX12-004)
+  // Pre-creation validation.
   IGL_DEBUG_ASSERT(device_ != nullptr, "Device is null before CreateSampler");
   IGL_DEBUG_ASSERT(smpHeap.Get() != nullptr, "Sampler heap is null");
 
@@ -930,7 +923,7 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDe
   ID3D12DescriptorHeap* heaps[] = {srvHeap.Get(), smpHeap.Get()};
   list->SetDescriptorHeaps(2, heaps);
   list->SetPipelineState(psoObj.Get());
-  list->SetGraphicsRootSignature(rootSig);  // T28: rootSig is already a raw pointer
+  list->SetGraphicsRootSignature(rootSig);
   list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   // Get descriptor size for incrementing through the heap
   const UINT srvDescriptorSize = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -958,7 +951,7 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDe
     D3D12_GPU_DESCRIPTOR_HANDLE srvGpu = srvGpuStart;
     srvGpu.ptr += mip * srvDescriptorSize;
 
-    // Pre-creation validation (TASK_P0_DX12-004)
+    // Pre-creation validation.
     IGL_DEBUG_ASSERT(device_ != nullptr, "Device is null before CreateShaderResourceView");
     IGL_DEBUG_ASSERT(resource_.Get() != nullptr, "Resource is null before CreateShaderResourceView");
     IGL_DEBUG_ASSERT(srvCpu.ptr != 0, "SRV descriptor handle is invalid");
@@ -971,7 +964,7 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDe
     srv.Texture2D.MipLevels = 1;
     device_->CreateShaderResourceView(resource_.Get(), &srv, srvCpu);
 
-    // Pre-creation validation (TASK_P0_DX12-004)
+    // Pre-creation validation.
     IGL_DEBUG_ASSERT(device_ != nullptr, "Device is null before CreateRenderTargetView");
     IGL_DEBUG_ASSERT(resource_.Get() != nullptr, "Resource is null before CreateRenderTargetView");
     IGL_DEBUG_ASSERT(rtvCpu.ptr != 0, "RTV descriptor handle is invalid");
@@ -985,7 +978,7 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDe
     device_->CreateRenderTargetView(resource_.Get(), &rtv, rtvCpu);
 
     // Transition mip level to render target using state tracking
-    // T10: const_cast needed (see above)
+    // const_cast needed (see above).
     const_cast<Texture*>(this)->transitionTo(list.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, mip + 1, 0);
 
     list->OMSetRenderTargets(1, &rtvCpu, FALSE, nullptr);
@@ -1000,7 +993,7 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDe
     list->DrawInstanced(3, 1, 0, 0);
 
     // Transition mip level to shader resource for next iteration
-    // T10: const_cast needed (see above)
+    // const_cast needed (see above).
     const_cast<Texture*>(this)->transitionTo(list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mip + 1, 0);
   }
   list->Close();
@@ -1019,7 +1012,7 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/, const TextureRangeDe
 }
 
 void Texture::initializeStateTracking(D3D12_RESOURCE_STATES initialState) {
-  // T24: Simplified per-subresource state tracking - always use vector (no dual-mode)
+  // Simplified per-subresource state tracking: always use a vector (no dual-mode).
   if (!resource_.Get()) {
     subresourceStates_.clear();
     return;
@@ -1075,18 +1068,18 @@ void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
                            D3D12_RESOURCE_STATES newState,
                            uint32_t mipLevel,
                            uint32_t layer) {
-  // T24: Simplified per-subresource state tracking
+  // Simplified per-subresource state tracking.
   Texture* owner = getStateOwner();
   if (!commandList || !owner || !owner->resource_.Get() || owner->subresourceStates_.empty()) {
     return;
   }
 
-  // T10/T24: For depth-stencil textures, transition ALL subresources (both depth and stencil planes)
+  // For depth-stencil textures, transition all subresources (both depth and stencil planes).
   const auto props = getProperties();
   const bool isDepthStencil = props.isDepthOrStencil() && props.hasStencil();
 
   if (isDepthStencil) {
-    // T10 Fix: Verify all subresources are in same state before using ALL_SUBRESOURCES
+    // Verify all subresources are in the same state before using ALL_SUBRESOURCES.
     D3D12_RESOURCE_STATES firstState = owner->subresourceStates_[0];
     bool allSameState = true;
     for (const auto& state : owner->subresourceStates_) {
@@ -1148,7 +1141,7 @@ void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
 
 void Texture::transitionAll(ID3D12GraphicsCommandList* commandList,
                             D3D12_RESOURCE_STATES newState) {
-  // T24: Simplified per-subresource state tracking
+  // Simplified per-subresource state tracking.
   Texture* owner = getStateOwner();
   if (!commandList || !owner || !owner->resource_.Get() || owner->subresourceStates_.empty()) {
     return;
@@ -1187,7 +1180,7 @@ void Texture::transitionAll(ID3D12GraphicsCommandList* commandList,
 }
 
 D3D12_RESOURCE_STATES Texture::getSubresourceState(uint32_t mipLevel, uint32_t layer) const {
-  // T24: Simplified per-subresource state tracking
+  // Simplified per-subresource state tracking.
   const Texture* owner = getStateOwner();
   if (owner->subresourceStates_.empty()) {
     return D3D12_RESOURCE_STATE_COMMON;

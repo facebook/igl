@@ -25,21 +25,20 @@ class Device;
 /// - end() called during submission before command list is closed (CommandQueue::submit())
 /// - Query results are fence-synchronized and only read after GPU completes
 ///
-/// I-007: Cross-Platform Timestamp Semantics
-/// ------------------------------------------
-/// All timestamps returned by getElapsedTimeNanos() are in NANOSECONDS, providing
+/// Cross-platform timestamp semantics
+/// ----------------------------------
+/// All timestamps returned by getElapsedTimeNanos() are in nanoseconds, providing
 /// cross-platform consistency with Vulkan and other backends.
 ///
 /// D3D12 GPU timestamps are automatically converted from hardware ticks to nanoseconds
 /// using the GPU timestamp frequency (ID3D12CommandQueue::GetTimestampFrequency()).
 ///
-/// Formula: elapsedNanos = (endTicks - startTicks) * 1,000,000,000 / frequencyHz
+/// Formula: elapsedNanos = (endTicks - startTicks) * 1,000,000,000 / frequencyHz.
 ///
 /// This ensures consistent timing across all IGL backends regardless of hardware.
 ///
-/// TASK_P2_DX12-FIND-11: Implement GPU Timer Queries
-/// T02: Fixed GPU timer to measure actual execution time via proper timestamp placement
-/// and fence-synchronized readback. Thread-safe for cross-thread queries.
+/// The implementation measures GPU execution time via timestamp placement
+/// and fence-synchronized readback, and is safe for cross-thread queries.
 class Timer final : public ITimer {
  public:
   /// @brief Constructor - creates query heap and readback buffer, starts timer
@@ -76,15 +75,15 @@ class Timer final : public ITimer {
   uint64_t timestampFrequency_ = 0;  // GPU timestamp frequency (ticks per second), 0 = timer disabled
   bool resourceCreationFailed_ = false;  // Track if constructor failed to create resources
 
-  // T02: Fence synchronization for accurate GPU timing
-  // Thread-safe: Use atomics to allow safe cross-thread queries
+  // Fence synchronization for accurate GPU timing.
+  // Thread-safe: use atomics to allow safe cross-thread queries.
   ID3D12Fence* fence_ = nullptr;     // Fence to check completion (not owned, set once in end())
   std::atomic<uint64_t> fenceValue_{0};      // Fence value when timer ended
   mutable std::atomic<bool> resolved_{false};        // Has query data been resolved and cached? (mutable for lazy resolution in const getter)
   std::atomic<bool> ended_{false};           // Has end() been called?
 
-  // T02: Cached results to avoid re-reading from GPU
-  // Thread-safe: Only written once after fence signals, then immutable (mutable for lazy resolution in const getter)
+  // Cached results to avoid re-reading from GPU.
+  // Thread-safe: only written once after the fence signals, then immutable (mutable for lazy resolution in const getter).
   mutable std::atomic<uint64_t> cachedElapsedNanos_{0};
 };
 

@@ -129,7 +129,6 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   // Reclaim completed upload buffers before allocating new ones.
   device_->processCompletedUploads();
 
-  // P1_DX12-009: Try to allocate from upload ring buffer first
   UploadRingBuffer* ringBuffer = device_->getUploadRingBuffer();
   UploadRingBuffer::Allocation ringAllocation;
   bool useRingBuffer = false;
@@ -176,7 +175,6 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
     uploadBuffer->Unmap(0, nullptr);
   }
 
-  // P0_DX12-005: Get command allocator from pool with fence tracking
   igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator = device_->getUploadCommandAllocator();
   if (!allocator.Get()) {
     return Result(Result::Code::RuntimeError, "Failed to get command allocator from pool");
@@ -195,7 +193,7 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   }
 
   if (currentState_ != D3D12_RESOURCE_STATE_COPY_DEST) {
-    // B-006: Validate state transition and insert intermediate state if needed
+    // Validate state transition and insert intermediate state if needed
     const bool needsIntermediate = !D3D12StateTransition::isLegalDirectTransition(
         currentState_, D3D12_RESOURCE_STATE_COPY_DEST);
 
@@ -230,12 +228,12 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
     cmdList->CopyBufferRegion(resource_.Get(), range.offset, uploadBuffer.Get(), 0, range.size);
   }
 
-  // T05: Prepare state transition barriers, but defer state update until after GPU completes
+  // Prepare state transition barriers but defer state update until after GPU completes
   D3D12_RESOURCE_STATES postState =
       (defaultState_ == D3D12_RESOURCE_STATE_COMMON) ? D3D12_RESOURCE_STATE_GENERIC_READ : defaultState_;
 
   if (postState != D3D12_RESOURCE_STATE_COPY_DEST) {
-    // B-006: Validate state transition and insert intermediate state if needed
+    // Validate state transition and insert intermediate state if needed
     const bool needsIntermediate = !D3D12StateTransition::isLegalDirectTransition(
         D3D12_RESOURCE_STATE_COPY_DEST, postState);
 
@@ -267,7 +265,6 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
       toDefault.Transition.StateAfter = postState;
       cmdList->ResourceBarrier(1, &toDefault);
     }
-    // T05: Defer state update - will be set after GPU completes (see below)
   }
 
   hr = cmdList->Close();
@@ -280,18 +277,16 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   ID3D12CommandList* lists[] = {cmdList.Get()};
   queue->ExecuteCommandLists(1, lists);
 
-  // P0_DX12-005: Signal upload fence and return allocator to pool with fence value
-  // P1_DX12-009: Use pre-allocated uploadFenceValue (already incremented for ring buffer)
-  // CRITICAL: This ensures the allocator is not reused until GPU completes execution
+  // Ensure the allocator is not reused until GPU completes execution
   ID3D12Fence* uploadFence = device_->getUploadFence();
 
-  // T05: Signal must succeed - otherwise fence will never reach uploadFenceValue
+  // Signal must succeed; otherwise fence will never reach uploadFenceValue
   hr = queue->Signal(uploadFence, uploadFenceValue);
   if (FAILED(hr)) {
     // Return allocator immediately (no fence wait needed)
     device_->returnUploadCommandAllocator(allocator, 0);
 
-    // T05: Check for device removal to provide richer diagnostics
+    // Check for device removal to provide richer diagnostics
     Result deviceStatus = device_->checkDeviceRemoval();
     if (!deviceStatus.isOk()) {
       return deviceStatus;  // Device removed - return specific error
@@ -300,23 +295,23 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
     return Result(Result::Code::RuntimeError, "Failed to signal upload fence");
   }
 
-  // Return allocator to pool with fence value (will be reused after fence signaled)
+  // Return allocator to pool with fence value (will be reused after fence is signaled)
   device_->returnUploadCommandAllocator(allocator, uploadFenceValue);
 
   // Only track temporary upload buffers (ring buffer is persistent)
-  // DX12-NEW-02: Pass uploadFenceValue (already signaled above) to track with correct fence
+  // Pass uploadFenceValue (already signaled above) to track with correct fence
   if (!useRingBuffer && uploadBuffer.Get()) {
     device_->trackUploadBuffer(std::move(uploadBuffer), uploadFenceValue);
   }
 
-  // T05: Wait for upload fence to signal before returning
-  // This ensures the buffer upload completes before caller uses it
+  // Wait for upload fence to signal before returning.
+  // This ensures the buffer upload completes before the caller uses it.
   Result waitResult = device_->waitForUploadFence(uploadFenceValue);
   if (!waitResult.isOk()) {
     return waitResult;
   }
 
-  // T05: Now safe to update resource state - GPU upload has completed
+  // Now safe to update resource state; GPU upload has completed
   currentState_ = (postState != D3D12_RESOURCE_STATE_COPY_DEST) ? postState : D3D12_RESOURCE_STATE_COPY_DEST;
 
   return Result(Result::Code::Ok);
@@ -421,7 +416,7 @@ void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
       return nullptr;
     }
 
-    // B-006: Transition source buffer to COPY_SOURCE with validation
+    // Transition source buffer to COPY_SOURCE with validation.
     const D3D12_RESOURCE_STATES assumedState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
     const bool needsIntermediate = !D3D12StateTransition::isLegalDirectTransition(
         assumedState, D3D12_RESOURCE_STATE_COPY_SOURCE);
@@ -455,10 +450,10 @@ void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
       cmdList->ResourceBarrier(1, &barrier);
     }
 
-    // Copy entire buffer
+    // Copy entire buffer.
     cmdList->CopyBufferRegion(readbackStagingBuffer_.Get(), 0, resource_.Get(), 0, desc_.length);
 
-    // B-006: Transition back with validation
+    // Transition back with validation.
     const bool needsIntermediateBack = !D3D12StateTransition::isLegalDirectTransition(
         D3D12_RESOURCE_STATE_COPY_SOURCE, assumedState);
 

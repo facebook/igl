@@ -13,8 +13,8 @@
 #include <igl/d3d12/D3D12Context.h>
 #include <igl/d3d12/Texture.h>
 #include <igl/d3d12/Buffer.h>
-#include <igl/d3d12/D3D12ImmediateCommands.h>  // T07
-#include <igl/d3d12/D3D12StagingDevice.h>  // T07
+#include <igl/d3d12/D3D12ImmediateCommands.h>
+#include <igl/d3d12/D3D12StagingDevice.h>
 
 #include <cstring>
 
@@ -70,7 +70,7 @@ Result executeCopyTextureToBuffer(D3D12Context& ctx,
     return Result{Result::Code::ArgumentOutOfRange, "Destination buffer too small"};
   }
 
-  // T07: Use centralized staging device for readback buffer allocation
+  // Use centralized staging device for readback buffer allocation.
   auto* stagingDevice = iglDevice.getStagingDevice();
   if (!stagingDevice) {
     return Result{Result::Code::RuntimeError, "Staging device not available"};
@@ -85,7 +85,7 @@ Result executeCopyTextureToBuffer(D3D12Context& ctx,
   ID3D12Resource* readbackBuffer = staging.buffer.Get();
   ID3D12Resource* copyDestination = readbackBuffer;
 
-  // T07: Use centralized immediate commands instead of creating transient allocator/list
+  // Use centralized immediate commands instead of creating transient allocator/list.
   auto* immediateCommands = iglDevice.getImmediateCommands();
   if (!immediateCommands) {
     return Result{Result::Code::RuntimeError, "Immediate commands not available"};
@@ -137,7 +137,7 @@ Result executeCopyTextureToBuffer(D3D12Context& ctx,
     cmdList->ResourceBarrier(1, &barrier);
   }
 
-  // T07: Submit via immediate commands with synchronous wait
+  // Submit via immediate commands with synchronous wait.
   Result submitResult;
   const uint64_t fenceValue = immediateCommands->submit(true, &submitResult);
   if (!submitResult.isOk() || fenceValue == 0) {
@@ -233,7 +233,7 @@ Result executeCopyTextureToBuffer(D3D12Context& ctx,
           }
           uploadBuffer->Unmap(0, nullptr);
 
-          // T07: GPU copy from upload buffer to destination DEFAULT buffer using immediate commands
+          // GPU copy from upload buffer to destination DEFAULT buffer using immediate commands.
           Result gpuCopyResult;
           ID3D12GraphicsCommandList* copyList = immediateCommands->begin(&gpuCopyResult);
           if (!copyList || !gpuCopyResult.isOk()) {
@@ -262,7 +262,7 @@ Result executeCopyTextureToBuffer(D3D12Context& ctx,
           barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
           copyList->ResourceBarrier(1, &barrier);
 
-          // T07: Submit and wait for GPU copy
+          // Submit and wait for GPU copy.
           Result copySubmitResult;
           const uint64_t copyFenceValue = immediateCommands->submit(true, &copySubmitResult);
 #ifdef IGL_DEBUG
@@ -284,7 +284,7 @@ Result executeCopyTextureToBuffer(D3D12Context& ctx,
     return Result{Result::Code::RuntimeError, "Failed to map readback buffer"};
   }
 
-  // T07: Return staging buffer to pool
+  // Return staging buffer to pool.
   stagingDevice->free(staging, fenceValue);
 
   return Result{};

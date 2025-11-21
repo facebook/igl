@@ -20,16 +20,16 @@
 #include <igl/d3d12/DXCCompiler.h>
 #include <igl/d3d12/Timer.h>
 #include <igl/d3d12/UploadRingBuffer.h>
-#include <igl/d3d12/D3D12ImmediateCommands.h>  // T07
-#include <igl/d3d12/D3D12StagingDevice.h>  // T07
+#include <igl/d3d12/D3D12ImmediateCommands.h>
+#include <igl/d3d12/D3D12StagingDevice.h>
 #include <igl/d3d12/D3D12FenceWaiter.h>
 #include <igl/VertexInputState.h>
 #include <igl/Texture.h>
-#include <igl/Assert.h>  // T05: For IGL_DEBUG_ASSERT in waitForUploadFence
+#include <igl/Assert.h>  // For IGL_DEBUG_ASSERT in waitForUploadFence.
 #include <d3dcompiler.h>
 #include <cstring>
 #include <vector>
-#include <mutex>   // T15: For std::call_once
+#include <mutex>   // For std::call_once.
 
 #pragma comment(lib, "d3dcompiler.lib")
 
@@ -40,7 +40,7 @@ namespace {
 template<typename T>
 using ComPtr = igl::d3d12::ComPtr<T>;
 
-// C-005: Use std::hash<SamplerStateDesc> for deduplication (implemented in igl/SamplerState.cpp)
+// Use std::hash<SamplerStateDesc> for deduplication (implemented in igl/SamplerState.cpp).
 } // namespace
 
 // Helper: Calculate root signature cost in DWORDs
@@ -108,16 +108,16 @@ static uint32_t calculateRootSignatureCost(const D3D12_ROOT_SIGNATURE_DESC& desc
 Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
   platformDevice_ = std::make_unique<PlatformDevice>(*this);
 
-  // Validate device limits against actual device capabilities (P2_DX12-018)
+  // Validate device limits against actual device capabilities.
   capabilities_.initialize(*ctx_);
 
-  // Initialize upload infrastructure (P0_DX12-005, P1_DX12-009, T07)
+  // Initialize upload infrastructure (allocator pool and upload helpers).
   allocatorPool_.initialize(*ctx_, this);
 
   auto* device = ctx_->getDevice();
   if (device) {
-    // T28: Pre-compile mipmap generation shaders at device initialization
-    // This avoids runtime compilation overhead in Texture::generateMipmap()
+    // Pre-compile mipmap generation shaders at device initialization.
+    // This avoids runtime compilation overhead in Texture::generateMipmap().
     {
       // HLSL shader sources (identical to those in Texture.cpp)
       static const char* kVS = R"(
@@ -242,30 +242,24 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
 }
 
 Device::~Device() {
-  // T05: No shared event to clean up - events are per-call in waitForUploadFence
+  // No shared event to clean up; events are per-call in waitForUploadFence.
 
-  // T32: Ensure upload operations complete before destroying device
-  // D3D12Context destructor handles main queue fence wait via waitForGPU()
-  // Upload-specific fence synchronization is handled by D3D12Context and
-  // per-call waitForUploadFence; no additional wait is required here.
-
-  // T32: Clear all D3D12 object caches to release references (handled by managers)
+  // Ensure upload-related resources are released before destroying the device.
+  // D3D12Context destructor handles main queue fence waits via waitForGPU().
   pipelineCache_.clear();
   samplerCache_.clear();
   allocatorPool_.clearOnDeviceDestruction();
 
-  // T32: Clear bind group pools to release texture/buffer shared_ptrs
-  // BindGroupTextureDesc/BufferDesc hold shared_ptr<ITexture> and shared_ptr<IBuffer>
-  // which keep D3D12 resources (and device references) alive
+  // Clear bind group pools to release texture and buffer shared_ptrs that keep resources alive.
   bindGroupTexturesPool_.clear();
   bindGroupBuffersPool_.clear();
 }
 
-// P1_DX12-006: Check for device removal and report detailed error
+// Check for device removal and report detailed error.
 Result Device::checkDeviceRemoval() const {
   auto* device = ctx_->getDevice();
   if (!device) {
-    // T03: Device not initialized is an invalid operation, not success
+    // Device not initialized is an invalid operation, not success.
     IGL_DEBUG_ASSERT(false, "Device::checkDeviceRemoval() called before device initialization");
     return Result(Result::Code::InvalidOperation, "Device not initialized");
   }
@@ -299,7 +293,7 @@ Result Device::checkDeviceRemoval() const {
         break;
     }
 
-    // T03: Cache the reason and mark device as lost for diagnostics
+    // Cache the reason and mark device as lost for diagnostics.
     deviceLostReason_ = reason;
     deviceLost_ = true;
 
@@ -312,7 +306,7 @@ Result Device::checkDeviceRemoval() const {
   return Result();
 }
 
-// B-005: Alignment validation methods
+// Alignment validation methods.
 
 bool Device::validateMSAAAlignment(const TextureDesc& desc, Result* IGL_NULLABLE outResult) const {
   if (desc.numSamples <= 1) {
@@ -445,10 +439,9 @@ std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc
 }
 
 // Resources
-// T19: Const createBuffer delegates to non-const implementation that handles upload mutations
 std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
                                               Result* IGL_NULLABLE outResult) const noexcept {
-  // T19: Single const_cast at API boundary - all mutation happens in non-const helper
+  // Single const_cast at the API boundary; all mutation happens in the non-const helper.
   auto& self = const_cast<Device&>(*this);
   return self.createBufferImpl(desc, outResult);
 }
@@ -489,7 +482,7 @@ std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
   // For uniform buffers, size must be aligned to 256 bytes (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
   const bool isUniformBuffer = (desc.type & BufferDesc::BufferTypeBits::Uniform) != 0;
 
-  // B-005: Validate buffer alignment requirements
+  // Validate buffer alignment requirements.
   validateBufferAlignment(desc.length, isUniformBuffer);
 
   const UINT64 alignedSize = isUniformBuffer
@@ -597,7 +590,6 @@ std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
           std::memcpy(mapped, desc.data, desc.length);
           uploadBuffer->Unmap(0, nullptr);
 
-          // P0_DX12-005: Get command allocator from pool with fence tracking
           igl::d3d12::ComPtr<ID3D12CommandAllocator> allocator = getUploadCommandAllocator();
           if (!allocator.Get()) {
             IGL_LOG_ERROR("Device::createBuffer: Failed to get command allocator from pool\n");
@@ -641,8 +633,8 @@ std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
               ID3D12CommandList* lists[] = {cmdList.Get()};
               ctx_->getCommandQueue()->ExecuteCommandLists(1, lists);
 
-              // DX12-NEW-03: Replace synchronous waitForGPU() with async fence signaling
-              // Get fence value that will signal when this upload completes
+              // Use async fence signaling instead of synchronous waitForGPU().
+              // Get fence value that will signal when this upload completes.
               UINT64 uploadFenceValue = getNextUploadFenceValue();
 
               // Signal upload fence after copy completes
@@ -653,10 +645,10 @@ std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
                 // Return allocator with 0 to avoid blocking the pool
                 returnUploadCommandAllocator(allocator, 0);
               } else {
-                // Return allocator to pool with fence value (will be reused after fence signaled)
+                // Return allocator to pool with fence value (will be reused after the fence is signaled).
                 returnUploadCommandAllocator(allocator, uploadFenceValue);
 
-                // DX12-NEW-02: Track staging buffer for async cleanup with fence value
+                // Track staging buffer for async cleanup with the associated fence value.
                 trackUploadBuffer(std::move(uploadBuffer), uploadFenceValue);
               }
 
@@ -722,11 +714,11 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
     resourceDesc.DepthOrArraySize = static_cast<UINT16>(desc.depth);
   } else if (desc.type == TextureType::Cube) {
-    // Cube textures are 2D textures with 6 array slices per layer (one per face)
-    // For cube arrays: numLayers * 6 faces (DX12-COD-003)
+    // Cube textures are 2D textures with 6 array slices per layer (one per face).
+    // For cube arrays: numLayers * 6 faces.
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
     resourceDesc.DepthOrArraySize = static_cast<UINT16>(desc.numLayers * 6);
-    IGL_D3D12_LOG_VERBOSE("Device::createTexture: Cube texture with %u layers -> %u array slices (DX12-COD-003)\n",
+    IGL_D3D12_LOG_VERBOSE("Device::createTexture: Cube texture with %u layers -> %u array slices\n",
                  desc.numLayers, resourceDesc.DepthOrArraySize);
   } else {
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -755,7 +747,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   // - Not all formats support all sample counts - validation required
   const uint32_t sampleCount = std::max(1u, desc.numSamples);
 
-  // B-005: Validate MSAA alignment requirements before creating resource
+  // Validate MSAA alignment requirements before creating the resource.
   if (sampleCount > 1) {
     if (!validateMSAAAlignment(desc, outResult)) {
       // Error already set by validation function
@@ -763,7 +755,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
     }
   }
 
-  // Validate MSAA constraints
+  // Validate MSAA constraints.
   if (sampleCount > 1) {
     // MSAA textures cannot have mipmaps
     if (desc.numMipLevels > 1) {
@@ -774,7 +766,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
       return nullptr;
     }
 
-    // I-003: Validate sample count is supported for this format
+    // Validate that the requested MSAA sample count is supported for this format.
     // NOTE: Applications should query DeviceFeatureLimits::MaxMultisampleCount proactively
     //       to avoid runtime errors. Use getMaxMSAASamplesForFormat() for format-specific queries.
     D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msqLevels = {};
@@ -784,7 +776,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 
     if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msqLevels, sizeof(msqLevels))) ||
         msqLevels.NumQualityLevels == 0) {
-      // I-003: Query maximum supported samples for better error message
+      // Query maximum supported samples for better error messages.
       const uint32_t maxSamples = getMaxMSAASamplesForFormat(desc.format);
 
       char errorMsg[512];
@@ -850,7 +842,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
     pClearValue = &clearValue;
   }
 
-  // B-005: Validate texture alignment before creating resource
+  // Validate texture alignment before creating the resource.
   if (!validateTextureAlignment(resourceDesc, sampleCount, outResult)) {
     // Error already set by validation function
     return nullptr;
@@ -880,8 +872,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
     return nullptr;
   }
 
-  // Create IGL texture from D3D12 resource
-  // P0_DX12-005: Pass this pointer for command allocator pool access in upload operations
+  // Create IGL texture from D3D12 resource.
   auto texture = Texture::createFromResource(
       resource.Get(), desc.format, desc, device, ctx_->getCommandQueue(), initialState,
       const_cast<Device*>(this));
@@ -917,7 +908,6 @@ std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> te
 }
 
 std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) const noexcept {
-  // TASK_P2_DX12-FIND-11: Implement GPU Timer Queries
   auto timer = std::make_shared<Timer>(*this);
   Result::setOk(outResult);
   return timer;
@@ -974,8 +964,8 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   // - Root parameter 3: Descriptor table with unbounded CBVs (b1-bN)
   // - Root parameter 4: Descriptor table with unbounded Samplers (s0-sN)
 
-  // Query root signature capabilities to determine descriptor range bounds (P0_DX12-003)
-  // Tier 1 devices require bounded descriptor ranges
+  // Query root signature capabilities to determine descriptor range bounds.
+  // Tier 1 devices require bounded descriptor ranges.
   const D3D12_RESOURCE_BINDING_TIER bindingTier = ctx_->getResourceBindingTier();
   const bool needsBoundedRanges = (bindingTier == D3D12_RESOURCE_BINDING_TIER_1);
 
@@ -994,7 +984,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
                  bindingTier == D3D12_RESOURCE_BINDING_TIER_3 ? 3 : 2);
   }
 
-  // Descriptor range for UAVs (unordered access views - read/write buffers and textures)
+  // Descriptor range for UAVs (unordered access views - read/write buffers and textures).
   D3D12_DESCRIPTOR_RANGE uavRange = {};
   uavRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
   uavRange.NumDescriptors = uavBound;
@@ -1010,8 +1000,8 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   srvRange.RegisterSpace = 0;
   srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-  // Descriptor range for CBVs (constant buffer views)
-  // Note: b0 will be used for root constants (push constants), so CBV table starts at b1
+  // Descriptor range for CBVs (constant buffer views).
+  // Note: b0 will be used for root constants (push constants), so the CBV table starts at b1.
   D3D12_DESCRIPTOR_RANGE cbvRange = {};
   cbvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
   cbvRange.NumDescriptors = cbvBound;
@@ -1019,7 +1009,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   cbvRange.RegisterSpace = 0;
   cbvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-  // Descriptor range for Samplers
+  // Descriptor range for Samplers.
   D3D12_DESCRIPTOR_RANGE samplerRange = {};
   samplerRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
   samplerRange.NumDescriptors = samplerBound;
@@ -1031,7 +1021,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   D3D12_ROOT_PARAMETER rootParams[5] = {};
 
   // Parameter 0: Root Constants for b0 (Push Constants)
-  // P2_DX12-FIND-09: Increased from 16 to 32 DWORDs (64→128 bytes) to match Vulkan
+  //  Increased from 16 to 32 DWORDs (64→128 bytes) to match Vulkan
   // Using 32-bit constants for push constants in compute shaders
   rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
   rootParams[0].Constants.ShaderRegister = 0;  // b0
@@ -1071,7 +1061,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   rootSigDesc.pStaticSamplers = nullptr;
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
 
-  // CRITICAL: Validate root signature cost (64 DWORD limit) - C-003
+  // CRITICAL: Validate root signature cost (64 DWORD hardware limit).
   IGL_D3D12_LOG_VERBOSE("  Validating compute root signature cost:\n");
   const uint32_t cost = calculateRootSignatureCost(rootSigDesc);
   IGL_D3D12_LOG_VERBOSE("  Total cost: %u / 64 DWORDs (%.1f%%)\n", cost, 100.0f * cost / 64.0f);
@@ -1092,7 +1082,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 
   IGL_D3D12_LOG_VERBOSE("  Creating compute root signature with Root Constants (b0)/UAVs/SRVs/CBVs/Samplers\n");
 
-  // Get or create cached root signature (P0_DX12-002)
+  // Get or create cached root signature.
   igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature =
       pipelineCache_.getOrCreateRootSignature(ctx_->getDevice(), rootSigDesc, outResult);
   if (!rootSignature.Get()) {
@@ -1109,7 +1099,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   psoDesc.CachedPSO.CachedBlobSizeInBytes = 0;
   psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
-  // PSO Cache lookup (P0_DX12-001, H-013: Thread-safe with double-checked locking)
+  // PSO cache lookup (thread-safe with double-checked locking).
   const size_t psoHash = pipelineCache_.hashComputePipelineDesc(desc);
   igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState;
 
@@ -1187,7 +1177,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     }
   }
 
-  // Second check: Lock for cache insertion with double-check (H-013: Thread-safe)
+  // Second check: Lock for cache insertion with double-check.
   // Another thread may have created the PSO while we were creating ours
   {
     std::lock_guard<std::mutex> lock(pipelineCache_.psoCacheMutex_);
@@ -1262,8 +1252,8 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   //   - New buffer bind groups using bindBindGroup() -> descriptor table at b3-b15
   //   - Push constants at b2 (inline root constants, cannot overlap with CBV table)
 
-  // Query root signature capabilities to determine descriptor range bounds (P0_DX12-FIND-01)
-  // Tier 1 devices (integrated GPUs, WARP) require bounded descriptor ranges
+  // Query root signature capabilities to determine descriptor range bounds.
+  // Tier 1 devices (integrated GPUs, WARP) require bounded descriptor ranges.
   const D3D12_RESOURCE_BINDING_TIER bindingTier = ctx_->getResourceBindingTier();
   const bool needsBoundedRanges = (bindingTier == D3D12_RESOURCE_BINDING_TIER_1);
 
@@ -1306,8 +1296,8 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   samplerRange.RegisterSpace = 0;
   samplerRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-  // P1_DX12-FIND-05: Descriptor range for UAVs (read-write storage buffers)
-  // Use bounded range for Tier 1, unbounded for Tier 2+
+  // Descriptor range for UAVs (read-write storage buffers).
+  // Use bounded range for Tier 1, unbounded for Tier 2+.
   const UINT uavBound = needsBoundedRanges ? 8 : UINT_MAX;  // Conservative: 8 UAVs for storage buffers
   D3D12_DESCRIPTOR_RANGE uavRange = {};
   uavRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
@@ -1316,11 +1306,11 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   uavRange.RegisterSpace = 0;
   uavRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-  // Root parameters (P1_DX12-FIND-05: Increased to 7 to add UAV support)
+  // Root parameters (increased to 7 to add UAV support).
   D3D12_ROOT_PARAMETER rootParams[7] = {};
 
   // Parameter 0: Root Constants for b2 (Push Constants)
-  // P2_DX12-FIND-09: Increased from 16 to 32 DWORDs (64→128 bytes) to match Vulkan
+  //  Increased from 16 to 32 DWORDs (64→128 bytes) to match Vulkan
   rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
   rootParams[0].Constants.ShaderRegister = 2;  // b2
   rootParams[0].Constants.RegisterSpace = 0;
@@ -1349,31 +1339,31 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   rootParams[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   rootParams[4].DescriptorTable.NumDescriptorRanges = 1;
   rootParams[4].DescriptorTable.pDescriptorRanges = &srvRange;
-  // C-006: Enable texture access in all shader stages (vertex, pixel, etc.)
+  // Enable texture access in all shader stages (vertex, pixel, etc.).
   rootParams[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-  // Parameter 5: Descriptor table for Samplers
+  // Parameter 5: Descriptor table for Samplers.
   rootParams[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   rootParams[5].DescriptorTable.NumDescriptorRanges = 1;
   rootParams[5].DescriptorTable.pDescriptorRanges = &samplerRange;
-  // C-006: Enable sampler access in all shader stages (vertex, pixel, etc.)
+  // Enable sampler access in all shader stages (vertex, pixel, etc.).
   rootParams[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-  // P1_DX12-FIND-05: Parameter 6: Descriptor table for UAVs (storage buffers)
+  // Parameter 6: Descriptor table for UAVs (storage buffers).
   rootParams[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   rootParams[6].DescriptorTable.NumDescriptorRanges = 1;
   rootParams[6].DescriptorTable.pDescriptorRanges = &uavRange;
   rootParams[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
   D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
-  // P1_DX12-FIND-05: Updated to 7 parameters (added UAV support)
+  // Updated to 7 parameters (added UAV support).
   rootSigDesc.NumParameters = 7;
   rootSigDesc.pParameters = rootParams;
   rootSigDesc.NumStaticSamplers = 0;
   rootSigDesc.pStaticSamplers = nullptr;
   rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-  // CRITICAL: Validate root signature cost (64 DWORD limit) - C-003
+  // CRITICAL: Validate root signature cost (64 DWORD hardware limit).
   IGL_D3D12_LOG_VERBOSE("  Validating render root signature cost:\n");
   const uint32_t cost = calculateRootSignatureCost(rootSigDesc);
   IGL_D3D12_LOG_VERBOSE("  Total cost: %u / 64 DWORDs (%.1f%%)\n", cost, 100.0f * cost / 64.0f);
@@ -1394,7 +1384,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
 
   IGL_D3D12_LOG_VERBOSE("  Creating root signature with Push Constants (b2)/Root CBVs (b0,b1)/CBV Table (b3-b15)/SRVs/Samplers/UAVs\n");
 
-  // Get or create cached root signature (P0_DX12-002)
+  // Get or create cached root signature.
   igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature =
       pipelineCache_.getOrCreateRootSignature(ctx_->getDevice(), rootSigDesc, outResult);
   if (!rootSignature.Get()) {
@@ -1653,7 +1643,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   psoDesc.CachedPSO.CachedBlobSizeInBytes = 0;
   psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
-  // Input layout (Phase 3 Step 3.4)
+  // Input layout.
   std::vector<D3D12_INPUT_ELEMENT_DESC> inputElements;
   std::vector<std::string> semanticNames; // Keep semantic name strings alive
 
@@ -1787,7 +1777,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     IGL_D3D12_LOG_VERBOSE("    Shader reflection unavailable: 0x%08X (non-critical - pipeline will still be created)\n", static_cast<unsigned>(hr));
   }
 
-  // PSO Cache lookup (P0_DX12-001, H-013: Thread-safe with double-checked locking)
+  // PSO cache lookup (thread-safe with double-checked locking).
   const size_t psoHash = pipelineCache_.hashRenderPipelineDesc(desc);
   igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState;
 
@@ -1882,7 +1872,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
     IGL_D3D12_LOG_VERBOSE("  Set PSO debug name: %s\n", psoName.c_str());
   }
 
-  // Second check: Lock for cache insertion with double-check (H-013: Thread-safe)
+  // Second check: Lock for cache insertion with double-check.
   // Another thread may have created the PSO while we were creating ours
   {
     std::lock_guard<std::mutex> lock(pipelineCache_.psoCacheMutex_);
@@ -1909,7 +1899,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   return std::make_shared<RenderPipelineState>(desc, std::move(pipelineState), std::move(rootSignature));
 }
 
-// Shader library and modules
+  // Shader library and modules.
 std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& desc,
                                                             Result* IGL_NULLABLE
                                                                 outResult) const {
@@ -2048,7 +2038,7 @@ Result compileShaderFXC(
 }
 } // anonymous namespace
 
-// Note: getShaderTarget() helper moved to Common.h for shared use (H-009)
+// Note: getShaderTarget() helper moved to Common.h for shared use.
 
 std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
@@ -2080,7 +2070,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
     const size_t sourceLength = strlen(desc.input.source);
     IGL_D3D12_LOG_VERBOSE("  Compiling HLSL from string (%zu bytes) using DXC...\n", sourceLength);
 
-    // T15: Initialize DXC compiler thread-safely using std::call_once
+    // Initialize DXC compiler thread-safely using std::call_once.
     static DXCCompiler dxcCompiler;
     static std::once_flag dxcInitFlag;
     static bool dxcAvailable = false;
@@ -2228,7 +2218,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
   // Create shader module with bytecode
   auto module = std::make_shared<ShaderModule>(desc.info, std::move(bytecode));
 
-  // Create shader reflection from DXIL bytecode (C-007: DXIL Reflection)
+  // Create shader reflection from DXIL bytecode.
   // This allows runtime queries of shader resources, bindings, and constant buffers
   IGL_D3D12_LOG_VERBOSE("  Attempting to create shader reflection (bytecode size=%zu)...\n", module->getBytecode().size());
   if (!module->getBytecode().empty()) {
@@ -2251,7 +2241,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
 
       if (SUCCEEDED(hr)) {
         module->setReflection(reflection);
-        IGL_D3D12_LOG_VERBOSE("  Shader reflection created successfully (C-007: DXIL Reflection)\n");
+        IGL_D3D12_LOG_VERBOSE("  Shader reflection created successfully (DXIL reflection)\n");
       } else {
         IGL_D3D12_LOG_VERBOSE("  Failed to create shader reflection: 0x%08X (non-fatal)\n", hr);
       }
@@ -2295,13 +2285,12 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     case DeviceFeatures::ExplicitBinding:
     case DeviceFeatures::MapBufferRange: // UPLOAD/READBACK buffers support mapping
     case DeviceFeatures::ShaderLibrary: // Support shader libraries in D3D12
-    case DeviceFeatures::Texture3D: // D3D12 supports 3D textures (DIMENSION_TEXTURE3D)
-    case DeviceFeatures::TexturePartialMipChain: // D3D12 supports partial mip chains via custom SRVs
-    case DeviceFeatures::TextureViews: // D3D12 supports createTextureView() via shared resources
+    case DeviceFeatures::Texture3D: // D3D12 supports 3D textures (DIMENSION_TEXTURE3D).
+    case DeviceFeatures::TexturePartialMipChain: // D3D12 supports partial mip chains via custom SRVs.
+    case DeviceFeatures::TextureViews: // D3D12 supports createTextureView() via shared resources.
       return true;
-    // MRT fully implemented and tested in Phase 6
     case DeviceFeatures::MultipleRenderTargets:
-      return true; // D3D12 supports up to 8 simultaneous render targets
+      return true; // D3D12 supports up to 8 simultaneous render targets.
     case DeviceFeatures::Compute:
       return true; // Compute shaders now supported with compute pipeline and dispatch
     case DeviceFeatures::Texture2DArray:
@@ -2343,10 +2332,10 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
 
   switch (featureLimits) {
     case DeviceFeatureLimits::BufferAlignment:
-      // I-002: D3D12 buffer alignment requirements vary by buffer type:
+      // D3D12 buffer alignment requirements vary by buffer type:
       // - Constant buffers: 256 bytes (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
       // - Storage buffers: 4 bytes (see ShaderStorageBufferOffsetAlignment)
-      // - Vertex/Index buffers: 4 bytes (DWORD alignment)
+      // - Vertex/index buffers: 4 bytes (DWORD alignment)
       // This returns the most restrictive alignment (constant buffers).
       // See: https://learn.microsoft.com/en-us/windows/win32/direct3d12/constants
       result = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT; // 256 bytes
@@ -2374,10 +2363,10 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
       return true;
 
     case DeviceFeatureLimits::MaxMultisampleCount: {
-      // I-003: Query maximum MSAA sample count supported by device
-      // Test common sample counts (1, 2, 4, 8, 16) for RGBA8 (most widely supported format)
-      // This provides conservative estimate - actual support varies by format
-      // Applications should use getMaxMSAASamplesForFormat() for format-specific queries
+      // Query the maximum MSAA sample count supported by the device.
+      // Test common sample counts (1, 2, 4, 8, 16) for RGBA8 (most widely supported format).
+      // This provides a conservative estimate; actual support varies by format.
+      // Applications should use getMaxMSAASamplesForFormat() for format-specific queries.
       auto* device = ctx_->getDevice();
       if (!device) {
         result = 1;  // No MSAA support if device unavailable
@@ -2448,7 +2437,7 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
       return true;
 
     case DeviceFeatureLimits::ShaderStorageBufferOffsetAlignment:
-      // I-002: D3D12 storage buffer (UAV/structured buffer) alignment
+      // D3D12 storage buffer (UAV/structured buffer) alignment.
       // D3D12 structured buffers require 4-byte (DWORD) alignment, unlike constant buffers (256 bytes)
       // This matches Vulkan's typical minStorageBufferOffsetAlignment (often 16-64 bytes, device-dependent)
       // See: https://learn.microsoft.com/en-us/windows/win32/direct3d12/alignment
@@ -2493,7 +2482,7 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
       result = D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; // 8
       return true;
 
-    // I-005: Descriptor heap size limits for cross-platform compatibility
+    // Descriptor heap size limits chosen for cross-platform compatibility.
     case DeviceFeatureLimits::MaxDescriptorHeapCbvSrvUav:
       // D3D12 shader-visible CBV/SRV/UAV descriptor heap size
       // Hardware limit: 1,000,000+ descriptors
@@ -2578,7 +2567,7 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(Te
 
   const auto props = TextureFormatProperties::fromTextureFormat(format);
 
-  // I-004: Enhanced D3D12 format capability mapping
+  // Enhanced D3D12 format capability mapping.
   // Map D3D12_FORMAT_SUPPORT1 flags to IGL capabilities
 
   // Sampled: Can be used with texture sampling instructions
@@ -2611,7 +2600,7 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(Te
 
   // Storage: Can be used with unordered access (UAV)
   // Check for typed UAV load/store, or atomic operations
-  // I-004: Enhanced UAV capability detection
+  // Enhanced UAV capability detection.
   const bool hasUAVTypedOps = (s2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) &&
                               (s2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE);
   const bool hasUAVAtomicOps = (s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_ADD) ||
@@ -2631,7 +2620,7 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(Te
   }
 
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
-  // I-004: Debug logging for unmapped D3D12 capabilities
+  // Debug logging for unmapped D3D12 capabilities.
   // This helps identify format capabilities that D3D12 supports but IGL doesn't expose
   uint32_t unmappedS1 = 0;
   uint32_t unmappedS2 = 0;
@@ -2752,12 +2741,12 @@ BackendType Device::getBackendType() const {
   return BackendType::D3D12;
 }
 
-// C-005: Get sampler cache statistics for telemetry and debugging
+// Get sampler cache statistics for telemetry and debugging.
 SamplerCacheStats Device::getSamplerCacheStats() const {
   return samplerCache_.getStats();
 }
 
-// I-003: Query maximum MSAA sample count for a specific format
+// Query maximum MSAA sample count for a specific format.
 uint32_t Device::getMaxMSAASamplesForFormat(TextureFormat format) const {
   auto* device = ctx_->getDevice();
   if (!device) {

@@ -30,7 +30,7 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
 }
 
 void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
-  // T12: Enforce single-call semantics - begin() allocates descriptors and cannot be safely called twice
+  // Enforce single-call semantics: begin() allocates descriptors and cannot be safely called twice.
   IGL_DEBUG_ASSERT(!hasBegun_, "begin() called multiple times - this will cause resource leaks");
   hasBegun_ = true;
 
@@ -38,14 +38,13 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
   auto& context = commandBuffer_.getContext();
   IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Got context\n");
 
-  // Set descriptor heaps for this command list
-  // CRITICAL: Must use per-frame heaps from D3D12Context, NOT DescriptorHeapManager!
-  // DescriptorHeapManager has a shared heap (old broken approach) which causes race conditions.
+  // Set descriptor heaps for this command list.
+  // Must use per-frame heaps from D3D12Context, not DescriptorHeapManager.
   // Per-frame heaps are isolated per frame to prevent descriptor conflicts.
   DescriptorHeapManager* heapMgr = context.getDescriptorHeapManager();
 
-  // DX12-NEW-01: Use active heap from frame context, not legacy accessor
-  // This ensures we bind the currently active page, not hardcoded page 0
+  // Use active heap from frame context, not the legacy accessor.
+  // This ensures we bind the currently active page, not hardcoded page 0.
   auto& frameCtx = context.getFrameContexts()[context.getCurrentFrameIndex()];
   cbvSrvUavHeap_ = frameCtx.activeCbvSrvUavHeap.Get();
   samplerHeap_ = frameCtx.samplerHeap.Get();
@@ -55,7 +54,7 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
   IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: CBV/SRV/UAV heap (active) = %p\n", cbvSrvUavHeap_);
   IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Sampler heap = %p\n", samplerHeap_);
 
-  // DX12-NEW-01: Bind active heap (may be page 0 or a later page)
+  // Bind active heap (may be page 0 or a later page).
   ID3D12DescriptorHeap* heaps[] = {cbvSrvUavHeap_, samplerHeap_};
   IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Setting descriptor heaps...\n");
   commandList_->SetDescriptorHeaps(2, heaps);
@@ -98,7 +97,7 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
           IGL_LOG_ERROR("RenderCommandEncoder: Failed to allocate RTV descriptor (heap exhausted)\n");
           continue;
         }
-        // C-007: Check return value from getHandle
+  // Check return value from getHandle.
         D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
         if (!heapMgr->getRTVHandle(rtvIdx, &rtvHandle)) {
           IGL_LOG_ERROR("RenderCommandEncoder: Failed to get RTV handle for index %u\n", rtvIdx);
@@ -205,7 +204,7 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
             IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Creating RTV, mip %u\n", rdesc.Texture2D.MipSlice);
           }
         }
-        // Pre-creation validation (TASK_P0_DX12-004)
+        // Pre-creation validation.
         IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateRenderTargetView");
         IGL_DEBUG_ASSERT(tex->getResource() != nullptr, "Texture resource is null before CreateRenderTargetView");
         IGL_DEBUG_ASSERT(rtvHandle.ptr != 0, "RTV descriptor handle is invalid");
@@ -288,7 +287,7 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
     if (device && depthTex && depthTex->getResource()) {
       if (heapMgr) {
         dsvIndex_ = heapMgr->allocateDSV();
-        // C-007: Check return value from getHandle
+  // Check return value from getHandle.
         if (!heapMgr->getDSVHandle(dsvIndex_, &dsvHandle_)) {
           IGL_LOG_ERROR("RenderCommandEncoder: Failed to get DSV handle for index %u\n", dsvIndex_);
           heapMgr->freeDSV(dsvIndex_);
@@ -327,7 +326,7 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
       const uint32_t depthLayer = renderPass.depthAttachment.layer;
       depthTex->transitionTo(commandList_, D3D12_RESOURCE_STATE_DEPTH_WRITE, depthMip, depthLayer);
 
-      // Pre-creation validation (TASK_P0_DX12-004)
+      // Pre-creation validation.
       IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateDepthStencilView");
       IGL_DEBUG_ASSERT(depthTex->getResource() != nullptr, "Depth texture resource is null");
       IGL_DEBUG_ASSERT(dsvHandle_.ptr != 0, "DSV descriptor handle is invalid");
@@ -716,7 +715,7 @@ void RenderCommandEncoder::bindPushConstants(const void* data,
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t /*target*/,
                                             ISamplerState* samplerState) {
-  // T08: Delegate to D3D12ResourcesBinder for centralized descriptor management
+  // Delegate to D3D12ResourcesBinder for centralized descriptor management.
   resourcesBinder_.bindSamplerState(static_cast<uint32_t>(index), samplerState);
 
   // Clear bindBindGroup cache to switch from bindBindGroup path to bindSamplerState path
@@ -733,7 +732,7 @@ void RenderCommandEncoder::bindTexture(size_t index,
 }
 
 void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
-  // T08: Delegate to D3D12ResourcesBinder for centralized descriptor management
+  // Delegate to D3D12ResourcesBinder for centralized descriptor management.
   resourcesBinder_.bindTexture(static_cast<uint32_t>(index), texture);
 
   // Clear bindBindGroup cache to switch from bindBindGroup path to bindTexture path
@@ -751,7 +750,7 @@ void RenderCommandEncoder::draw(size_t vertexCount,
   // G-001: Flush any pending barriers before draw call
   flushBarriers();
 
-  // T08: Apply all resource bindings (textures, samplers, buffers) before draw
+  // Apply all resource bindings (textures, samplers, buffers) before draw.
   // Skip ResourcesBinder if bindBindGroup was explicitly used
   // Note: cachedTextureCount_/cachedSamplerCount_ may also be set by storage buffer SRV path,
   // so we use dedicated usedBindGroup_ flag to distinguish bindBindGroup from other paths
@@ -790,7 +789,7 @@ void RenderCommandEncoder::draw(size_t vertexCount,
   }
 
   // Bind SRV and sampler descriptor tables (bindBindGroup support)
-  // T01: Add debug validation to catch sparse binding (non-zero count with zero base handle)
+  // Add debug validation to catch sparse binding (non-zero count with zero base handle).
   // Note: Storage buffer SRVs bound via bindBindGroup(buffer) may have already set root parameter 4.
   // This will rebind it with texture SRVs. The last binding wins for each draw call.
   if (cachedTextureCount_ > 0) {
@@ -817,7 +816,7 @@ void RenderCommandEncoder::draw(size_t vertexCount,
     if (cachedVertexBuffers_[i].bound) {
       UINT stride = vertexStrides_[i];
       if (stride == 0) {
-        // T01: Assert in debug builds to catch misconfigured pipelines
+        // Assert in debug builds to catch misconfigured pipelines.
         // Check both per-slot stride and fallback currentVertexStride_
         IGL_DEBUG_ASSERT(vertexStrides_[i] != 0 || currentVertexStride_ != 0,
                          "Vertex buffer bound but no stride from pipeline for this slot - check vertex input layout");
@@ -852,7 +851,7 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   // G-001: Flush any pending barriers before draw call
   flushBarriers();
 
-  // T08: Apply all resource bindings (textures, samplers, buffers) before draw
+  // Apply all resource bindings (textures, samplers, buffers) before draw.
   // Skip ResourcesBinder if bindBindGroup was explicitly used
   // Note: cachedTextureCount_/cachedSamplerCount_ may also be set by storage buffer SRV path,
   // so we use dedicated usedBindGroup_ flag to distinguish bindBindGroup from other paths
@@ -887,7 +886,7 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   }
 
   // Bind SRV and sampler descriptor tables (bindBindGroup support)
-  // T01: Add debug validation to catch sparse binding (non-zero count with zero base handle)
+  // Add debug validation to catch sparse binding (non-zero count with zero base handle).
   // Note: Storage buffer SRVs bound via bindBindGroup(buffer) may have already set root parameter 4.
   // This will rebind it with texture SRVs. The last binding wins for each draw call.
   if (cachedTextureCount_ > 0) {
@@ -910,7 +909,7 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
     if (cachedVertexBuffers_[i].bound) {
       UINT stride = vertexStrides_[i];
       if (stride == 0) {
-        // T01: Assert in debug builds to catch misconfigured pipelines
+        // Assert in debug builds to catch misconfigured pipelines.
         // Check both per-slot stride and fallback currentVertexStride_
         IGL_DEBUG_ASSERT(vertexStrides_[i] != 0 || currentVertexStride_ != 0,
                          "Vertex buffer bound but no stride from pipeline for this slot - check vertex input layout");
@@ -1161,7 +1160,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     }
 
     // Allocate descriptor slot from command buffer's shared counter
-    // C-001: Now uses Result-based allocation with dynamic heap growth
+    // Uses Result-based allocation with dynamic heap growth.
     uint32_t descriptorIndex = 0;
     Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
     if (!allocResult.isOk()) {
@@ -1184,7 +1183,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
 
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
-    // Pre-creation validation (TASK_P0_DX12-004)
+    // Pre-creation validation.
     IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateShaderResourceView");
     IGL_DEBUG_ASSERT(d3dBuffer->getResource() != nullptr, "Buffer resource is null");
     IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "SRV descriptor handle is invalid");
@@ -1310,7 +1309,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
   }
 
   // Allocate contiguous slices from per-frame descriptor heaps
-  // C-001: Allocate descriptors one at a time (they may span pages)
+  // Allocate descriptors one at a time (they may span pages).
   const uint32_t srvBaseIndex = 0;  // Will use first allocated index
   std::vector<uint32_t> srvIndices;
   for (uint32_t i = 0; i < texCount; ++i) {
@@ -1380,10 +1379,10 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
       srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
     }
 
-    // C-001: Use individually allocated descriptor indices (may span multiple pages)
+    // Use individually allocated descriptor indices (may span multiple pages).
     const uint32_t dstIndex = srvIndices[i];
     D3D12_CPU_DESCRIPTOR_HANDLE dstCpu = context.getCbvSrvUavCpuHandle(dstIndex);
-    // Pre-creation validation (TASK_P0_DX12-004)
+    // Pre-creation validation.
     IGL_DEBUG_ASSERT(d3dDevice != nullptr, "Device is null before CreateShaderResourceView");
     IGL_DEBUG_ASSERT(tex->getResource() != nullptr, "Texture resource is null");
     IGL_DEBUG_ASSERT(dstCpu.ptr != 0, "SRV descriptor handle is invalid");
@@ -1397,7 +1396,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
     auto* smp = static_cast<SamplerState*>(desc->samplers[i].get());
     D3D12_SAMPLER_DESC samplerDesc = smp ? smp->getDesc() : D3D12_SAMPLER_DESC{};
     D3D12_CPU_DESCRIPTOR_HANDLE dstCpu = context.getSamplerCpuHandle(smpBaseIndex + i);
-    // Pre-creation validation (TASK_P0_DX12-004)
+    // Pre-creation validation.
     IGL_DEBUG_ASSERT(d3dDevice != nullptr, "Device is null before CreateSampler");
     IGL_DEBUG_ASSERT(dstCpu.ptr != 0, "Sampler descriptor handle is invalid");
 
@@ -1405,8 +1404,8 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
     D3D12Context::trackResourceCreation("Sampler", 0);
   }
 
-  // Cache base GPU handles so draw() binds once per table
-  // C-001: Use first allocated descriptor index (descriptors may span pages)
+  // Cache base GPU handles so draw() binds once per table.
+  // Use first allocated descriptor index (descriptors may span pages).
   if (texCount > 0 && !srvIndices.empty()) {
     cachedTextureGpuHandles_[0] = context.getCbvSrvUavGpuHandle(srvIndices[0]);
     cachedTextureCount_ = texCount;
@@ -1472,7 +1471,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
 
       if (tableIndex < IGL_BUFFER_BINDINGS_MAX) {
         // Allocate descriptor from per-frame heap
-        // C-001: Now uses Result-based allocation with dynamic heap growth
+        // Uses Result-based allocation with dynamic heap growth.
         uint32_t descriptorIndex = 0;
         Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
         if (!allocResult.isOk()) {
@@ -1488,7 +1487,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
         D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
         D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
 
-        // DX12-COD-005: Respect requested buffer size and enforce 64 KB limit
+        // Respect requested buffer size and enforce the 64 KB limit.
         // If size[slot] is 0, use remaining buffer size from offset
         size_t requestedSize = desc->size[slot];
         if (requestedSize == 0) {
@@ -1508,7 +1507,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
         cbvDesc.BufferLocation = addr;
         cbvDesc.SizeInBytes = static_cast<UINT>((requestedSize + 255) & ~255);  // Must be 256-byte aligned
 
-        // Pre-creation validation (TASK_P0_DX12-004)
+        // Pre-creation validation.
         IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateConstantBufferView");
         IGL_DEBUG_ASSERT(addr != 0, "Buffer GPU address is null");
         IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "CBV descriptor handle is invalid");
@@ -1528,7 +1527,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
         IGL_LOG_ERROR("bindBindGroup(buffer): BindGroupBufferDesc slot %u exceeds maximum (%u)\n", slot, IGL_BUFFER_BINDINGS_MAX);
       }
     } else if (isStorage) {
-      // P1_DX12-FIND-05: Implement storage buffer binding via UAV/SRV descriptors
+      // Implement storage buffer binding via UAV/SRV descriptors.
       auto& context = commandBuffer_.getContext();
       auto* device = context.getDevice();
       ID3D12Resource* resource = buf->getResource();
@@ -1541,7 +1540,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
 
       if (isReadWrite) {
         // Create UAV for read-write storage buffer
-        // C-001: Now uses Result-based allocation with dynamic heap growth
+        // Uses Result-based allocation with dynamic heap growth.
         uint32_t descriptorIndex = 0;
         Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
         if (!allocResult.isOk()) {
@@ -1592,7 +1591,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
         uavDesc.Buffer.CounterOffsetInBytes = 0;
         uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 
-        // Pre-creation validation (TASK_P0_DX12-004)
+        // Pre-creation validation.
         IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateUnorderedAccessView");
         IGL_DEBUG_ASSERT(resource != nullptr, "Buffer resource is null");
         IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "UAV descriptor handle is invalid");
@@ -1606,7 +1605,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
                      slot, slot, gpuHandle.ptr);
       } else {
         // Create SRV for read-only storage buffer
-        // C-001: Now uses Result-based allocation with dynamic heap growth
+        // Uses Result-based allocation with dynamic heap growth.
         uint32_t descriptorIndex = 0;
         Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
         if (!allocResult.isOk()) {
@@ -1656,7 +1655,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
         srvDesc.Buffer.StructureByteStride = static_cast<UINT>(elementStride);
         srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-        // Pre-creation validation (TASK_P0_DX12-004)
+        // Pre-creation validation.
         IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateShaderResourceView");
         IGL_DEBUG_ASSERT(resource != nullptr, "Buffer resource is null");
         IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "SRV descriptor handle is invalid");
@@ -1678,7 +1677,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
     }
   }
 
-  // Mark that bindBindGroup was used (vs storage buffer SRV or binder paths)
+  // Mark that bindBindGroup was used (vs storage buffer SRV or binder paths).
   usedBindGroup_ = true;
 }
 

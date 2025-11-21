@@ -47,12 +47,12 @@ D3D12Context::~D3D12Context() {
   // Wait for GPU to finish before cleanup
   waitForGPU();
 
-  // T32: Explicitly release all frame context resources to prevent leaks
+  // Explicitly release all frame context resources to prevent leaks.
   for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
     frameContexts_[i].transientBuffers.clear();
     frameContexts_[i].transientResources.clear();
 
-    // T32: Explicitly reset heaps inside each page before clearing the vector
+    // Explicitly reset heaps inside each page before clearing the vector.
     for (auto& page : frameContexts_[i].cbvSrvUavHeapPages) {
       page.heap.Reset();
     }
@@ -63,22 +63,22 @@ D3D12Context::~D3D12Context() {
     frameContexts_[i].allocator.Reset();
   }
 
-  // T32: Release render targets explicitly
+  // Release render targets explicitly.
   for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
     renderTargets_[i].Reset();
   }
 
-  // T32: Release command signatures
+  // Release command signatures.
   drawIndirectSignature_.Reset();
   drawIndexedIndirectSignature_.Reset();
 
-  // T32: Release core resources explicitly
+  // Release core resources explicitly.
   rtvHeap_.Reset();
   swapChain_.Reset();
   fence_.Reset();
   commandQueue_.Reset();
 
-  // T32: Cleanup descriptor heap manager's heaps BEFORE deleting it
+  // Clean up descriptor heap manager's heaps before deleting it.
   // Note: heapMgr_ may point to either ownedHeapMgr_ OR external heap manager
   // (e.g., HeadlessContext owns it via unique_ptr). We cleanup the heaps regardless.
   if (heapMgr_) {
@@ -90,7 +90,7 @@ D3D12Context::~D3D12Context() {
   ownedHeapMgr_ = nullptr;
   heapMgr_ = nullptr;
 
-  // T32: Release device LAST after all dependent resources are freed
+  // Release device last, after all dependent resources are freed.
   device_.Reset();
   adapter_.Reset();
   dxgiFactory_.Reset();
@@ -105,7 +105,7 @@ Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height,
   width_ = width;
   height_ = height;
 
-  // T14: Store and validate configuration
+  // Store and validate configuration.
   config_ = config;
   config_.validate();
 
@@ -167,7 +167,7 @@ Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height,
   }
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Fence created successfully\n");
 
-  // T14: Create per-frame command allocators using configurable frame count
+  // Create per-frame command allocators using configurable frame count.
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating per-frame command allocators...\n");
   for (UINT i = 0; i < config_.maxFramesInFlight; i++) {
     hr = device_->CreateCommandAllocator(
@@ -439,7 +439,7 @@ Result D3D12Context::createDevice() {
     }
   }
 
-  // Create DXGI factory with debug flag in debug builds (C-009)
+  // Create DXGI factory with debug flag in debug builds.
   HRESULT hr = CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(dxgiFactory_.GetAddressOf()));
   if (FAILED(hr)) {
     IGL_LOG_ERROR("D3D12Context: Failed to create DXGI factory (HRESULT: 0x%08X)\n", static_cast<unsigned>(hr));
@@ -505,8 +505,8 @@ Result D3D12Context::createDevice() {
     }
   }
 
-  // Query root signature capabilities (P0_DX12-003)
-  // This is critical for Tier-1 devices which don't support unbounded descriptor ranges
+  // Query root signature capabilities.
+  // This is critical for Tier-1 devices which don't support unbounded descriptor ranges.
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Querying root signature capabilities...\n");
 
   // Query highest supported root signature version
@@ -1086,7 +1086,7 @@ Result D3D12Context::createBackBuffers() {
       return Result(Result::Code::RuntimeError, "Failed to get swapchain buffer");
     }
 
-    // Pre-creation validation (TASK_P0_DX12-004)
+    // Pre-creation validation.
     IGL_DEBUG_ASSERT(device_.Get() != nullptr, "Device is null before CreateRenderTargetView");
     IGL_DEBUG_ASSERT(renderTargets_[i].Get() != nullptr, "Swapchain buffer is null");
     IGL_DEBUG_ASSERT(rtvHandle.ptr != 0, "RTV descriptor handle is invalid");
@@ -1105,9 +1105,9 @@ Result D3D12Context::createDescriptorHeaps() {
   samplerDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(
       D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
-  // T14: Create per-frame shader-visible descriptor heaps using configurable sizes
-  // Each frame gets its own isolated heaps to prevent descriptor conflicts between frames
-  // T27: Pre-allocation with fail-fast on exhaustion (Vulkan pattern, no dynamic growth)
+  // Create per-frame shader-visible descriptor heaps using configurable sizes.
+  // Each frame gets its own isolated heaps to prevent descriptor conflicts between frames.
+  // Use pre-allocation with fail-fast on exhaustion (Vulkan pattern, no dynamic growth).
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating per-frame descriptor heaps with fail-fast allocation...\n");
   IGL_D3D12_LOG_VERBOSE("  Config: maxFramesInFlight=%u, samplerHeapSize=%u, "
                "descriptorsPerPage=%u, maxHeapPages=%u, preAllocate=%s\n",
@@ -1116,9 +1116,9 @@ Result D3D12Context::createDescriptorHeaps() {
                config_.preAllocateDescriptorPages ? "true" : "false");
 
   for (UINT i = 0; i < config_.maxFramesInFlight; i++) {
-    // CBV/SRV/UAV heap: Pre-allocate pages based on config policy
-    // T27: When preAllocateDescriptorPages=true, allocate all maxHeapPages upfront
-    //      to prevent mid-frame allocation and descriptor invalidation (Vulkan fail-fast pattern)
+    // CBV/SRV/UAV heap: pre-allocate pages based on the configuration policy.
+    // When preAllocateDescriptorPages is true, allocate all maxHeapPages upfront
+    // to prevent mid-frame allocation and descriptor invalidation (Vulkan fail-fast pattern).
     {
       frameContexts_[i].cbvSrvUavHeapPages.clear();
       frameContexts_[i].currentCbvSrvUavPageIndex = 0;
@@ -1172,7 +1172,7 @@ Result D3D12Context::createDescriptorHeaps() {
   }
 
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Per-frame descriptor heaps created successfully\n");
-  // T27: Memory calculation reflects actual pre-allocation (no dynamic growth)
+  // Memory calculation reflects actual pre-allocation (no dynamic growth).
   const uint32_t pagesPerFrame = config_.preAllocateDescriptorPages ? config_.maxHeapPages : 1;
   const uint32_t cbvSrvUavDescriptors = config_.descriptorsPerPage * pagesPerFrame;
   const uint32_t totalDescriptorsPerFrame = cbvSrvUavDescriptors + config_.samplerHeapSize;
@@ -1183,12 +1183,12 @@ Result D3D12Context::createDescriptorHeaps() {
 
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating descriptor heap manager...\n");
 
-  // T14: Create descriptor heap manager using config values
+  // Create descriptor heap manager using configuration values.
   DescriptorHeapManager::Sizes sizes{};
-  sizes.cbvSrvUav = 256;  // For CPU-visible staging (not used for shader-visible)
-  sizes.samplers = 16;    // For CPU-visible staging (not used for shader-visible)
-  sizes.rtvs = config_.rtvHeapSize;   // T14: From config
-  sizes.dsvs = config_.dsvHeapSize;   // T14: From config
+  sizes.cbvSrvUav = 256;  // For CPU-visible staging (not used for shader-visible).
+  sizes.samplers = 16;    // For CPU-visible staging (not used for shader-visible).
+  sizes.rtvs = config_.rtvHeapSize;
+  sizes.dsvs = config_.dsvHeapSize;
 
   ownedHeapMgr_ = new DescriptorHeapManager();
   Result result = ownedHeapMgr_->initialize(device_.Get(), sizes);
@@ -1356,7 +1356,7 @@ void D3D12Context::logResourceStats() {
   IGL_D3D12_LOG_VERBOSE("==================================\n");
 }
 
-// C-001: Allocate a new descriptor heap page for dynamic growth
+// Allocate a new descriptor heap page for dynamic growth.
 Result D3D12Context::allocateDescriptorHeapPage(
     D3D12_DESCRIPTOR_HEAP_TYPE type,
     uint32_t numDescriptors,

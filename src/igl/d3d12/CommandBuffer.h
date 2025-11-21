@@ -78,8 +78,8 @@ class CommandBuffer final : public ICommandBuffer {
   // across all command buffers in the current frame, ensuring efficient utilization
   // and automatic cleanup at frame boundaries.
   //
-  // Access: Public for friend class D3D12ResourcesBinder, conceptually private.
-  // C-001: Changed to return Result for error handling on heap overflow.
+  // Access: public for friend class D3D12ResourcesBinder, conceptually private.
+  // Returns Result to allow error handling on heap overflow.
   // ============================================================================
 
   /**

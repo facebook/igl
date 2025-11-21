@@ -20,8 +20,8 @@ ComputeCommandEncoder::ComputeCommandEncoder(CommandBuffer& commandBuffer) :
   commandBuffer_(commandBuffer), resourcesBinder_(commandBuffer, true /* isCompute */), isEncoding_(true) {
   IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder created\n");
 
-  // Set descriptor heaps for this command list
-  // DX12-NEW-01: Use active heap from frame context, not legacy accessor
+  // Set descriptor heaps for this command list.
+  // Use active heap from frame context, not the legacy accessor.
   auto& context = commandBuffer_.getContext();
   auto& frameCtx = context.getFrameContexts()[context.getCurrentFrameIndex()];
 
@@ -141,7 +141,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
     IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder: Inserted %zu UAV barriers before dispatch\n", barriers.size());
   }
 
-  // T08: Apply all resource bindings (textures, samplers, buffers, UAVs) before dispatch
+  // Apply all resource bindings (textures, samplers, buffers, UAVs) before dispatch.
   Result bindResult;
   if (!resourcesBinder_.updateBindings(&bindResult)) {
     IGL_LOG_ERROR("dispatchThreadGroups: Failed to update resource bindings: %s\n", bindResult.message.c_str());
@@ -156,8 +156,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   // - Parameter 3: CBV table (b1-bN)
   // - Parameter 4: Sampler table (s0-sN)
 
-  // Bind UAVs (Parameter 1)
-  // T01: Add debug validation to catch sparse binding
+  // Bind UAVs (parameter 1), with debug validation to catch sparse binding.
   if (boundUavCount_ > 0) {
     IGL_DEBUG_ASSERT(cachedUavHandles_[0].ptr != 0,
                      "UAV count > 0 but base handle is null - did you bind only higher slots?");
@@ -185,8 +184,8 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
     }
   }
 
-  // Bind CBVs (Parameter 3)
-  // T36: Only create/allocate CBV descriptors when bindings have changed or heap page changed
+  // Bind CBVs (parameter 3). Only create/allocate CBV descriptors when bindings have
+  // changed or the heap page has changed.
   if (boundCbvCount_ > 0) {
     auto& context = commandBuffer_.getContext();
     auto& frameCtx = context.getFrameContexts()[context.getCurrentFrameIndex()];
@@ -222,7 +221,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
           const uint32_t descriptorIndex = cbvIndices[i];
           D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
 
-          // DX12-COD-005: Enforce 64 KB limit for CBVs
+          // Enforce 64 KB limit for CBVs.
           constexpr size_t kMaxCBVSize = 65536;  // 64 KB (D3D12 spec limit)
           if (cachedCbvSizes_[i] > kMaxCBVSize) {
             IGL_LOG_ERROR("ComputeCommandEncoder: Constant buffer %zu size (%zu bytes) exceeds D3D12 64 KB limit\n",
@@ -284,8 +283,8 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   // Note: threadgroupSize is embedded in the compute shader ([numthreads(...)])
   commandList->Dispatch(threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
 
-  // T37: Insert resource-specific UAV barriers for bound UAVs to ensure compute writes are visible
-  // Only barrier UAVs that were actually bound (more efficient than global barrier)
+  // Insert resource-specific UAV barriers for bound UAVs to ensure compute writes are visible.
+  // Only barrier UAVs that were actually bound (more efficient than a global barrier).
   if (boundUavCount_ > 0) {
     // Use fixed-size array to avoid heap allocation in hot path
     D3D12_RESOURCE_BARRIER barriers[kMaxComputeBuffers];
@@ -318,8 +317,8 @@ void ComputeCommandEncoder::bindPushConstants(const void* data,
     return;
   }
 
-  // Compute root signature parameter 0 is declared as D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS (b0)
-  // P2_DX12-FIND-09: Increased to 32 DWORDs (128 bytes) to match Vulkan
+  // Compute root signature parameter 0 is declared as D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS (b0).
+  // Increased to 32 DWORDs (128 bytes) to match Vulkan.
   constexpr size_t kMaxPushConstantBytes = 128;
 
   if (length + offset > kMaxPushConstantBytes) {
@@ -345,7 +344,7 @@ void ComputeCommandEncoder::bindPushConstants(const void* data,
 }
 
 void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
-  // T08: Delegate to D3D12ResourcesBinder for centralized descriptor management
+  // Delegate to D3D12ResourcesBinder for centralized descriptor management.
   resourcesBinder_.bindTexture(index, texture);
 }
 
@@ -412,7 +411,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
       // Continue to create the descriptor, but it will be empty (NumElements=0)
     }
 
-    // C-001: Now uses Result-based allocation with dynamic heap growth
+    // Use Result-based allocation with dynamic heap growth.
     uint32_t descriptorIndex = 0;
     Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
     if (!allocResult.isOk()) {
@@ -436,7 +435,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
     uavDesc.Buffer.CounterOffsetInBytes = 0;
     uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE; // No flags for structured buffers
 
-    // Pre-creation validation (TASK_P0_DX12-004)
+    // Pre-creation validation.
     IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateUnorderedAccessView");
     IGL_DEBUG_ASSERT(d3dBuffer->getResource() != nullptr, "Buffer resource is null");
     IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "UAV descriptor handle is invalid");
@@ -449,9 +448,9 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
     }
     boundUavCount_ = static_cast<size_t>(index + 1);
 
-    // T37: Track UAV resource for precise barrier synchronization
-    // Note: UAV bindings are assumed to be dense (slots 0..boundUavCount_-1)
-    // Both cachedUavHandles_ and boundUavResources_ rely on this invariant
+    // Track UAV resource for precise barrier synchronization.
+    // Note: UAV bindings are assumed to be dense (slots 0..boundUavCount_-1).
+    // Both cachedUavHandles_ and boundUavResources_ rely on this invariant.
     boundUavResources_[index] = d3dBuffer->getResource();
     for (size_t i = index + 1; i < kMaxComputeBuffers; ++i) {
       boundUavResources_[i] = nullptr;
@@ -495,9 +494,8 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
     }
 
     cachedCbvAddresses_[index] = d3dBuffer->gpuAddress(offset);
-    // P1_DX12-FIND-04: Store buffer size for CBV descriptor creation on next dispatch
-    // T36: Actual descriptor creation happens in dispatchThreadGroups when cbvBindingsDirty_ is set
-    // DX12-COD-005: Respect requested buffer size and enforce 64 KB limit
+    // Store buffer size for CBV descriptor creation on the next dispatch.
+    // Actual descriptor creation happens in dispatchThreadGroups when cbvBindingsDirty_ is set.
     size_t bufferSize = d3dBuffer->getSizeInBytes() - offset;
 
     // D3D12 spec: Constant buffers must be ≤ 64 KB
@@ -515,7 +513,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index, IBuffer* buffer, size_t o
     }
     boundCbvCount_ = static_cast<size_t>(index + 1);
 
-    // T36: Mark CBV bindings as dirty to trigger descriptor recreation on next dispatch
+    // Mark CBV bindings as dirty to trigger descriptor recreation on the next dispatch.
     cbvBindingsDirty_ = true;
 
     IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindBuffer: Cached CBV at index %u, address 0x%llx, size %zu\n",
@@ -569,8 +567,7 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, 
     d3dTexture->transitionAll(commandList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
   }
 
-  // Allocate descriptor and create UAV
-  // C-001: Now uses Result-based allocation with dynamic heap growth
+  // Allocate descriptor and create UAV using Result-based allocation with dynamic heap growth.
   uint32_t descriptorIndex = 0;
   Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
   if (!allocResult.isOk()) {
@@ -607,7 +604,7 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, 
     return;
   }
 
-  // Pre-creation validation (TASK_P0_DX12-004)
+  // Pre-creation validation.
   IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateUnorderedAccessView");
   IGL_DEBUG_ASSERT(d3dTexture->getResource() != nullptr, "Texture resource is null");
   IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "UAV descriptor handle is invalid");
@@ -620,9 +617,9 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, 
   }
   boundUavCount_ = static_cast<size_t>(index + 1);
 
-  // T37: Track UAV resource for precise barrier synchronization
-  // Note: UAV bindings are assumed to be dense (slots 0..boundUavCount_-1)
-  // Both cachedUavHandles_ and boundUavResources_ rely on this invariant
+  // Track UAV resources for precise barrier synchronization.
+  // Note: UAV bindings are assumed to be dense (slots 0..boundUavCount_-1).
+  // Both cachedUavHandles_ and boundUavResources_ rely on this invariant.
   boundUavResources_[index] = d3dTexture->getResource();
   for (size_t i = index + 1; i < kMaxComputeBuffers; ++i) {
     boundUavResources_[i] = nullptr;
@@ -633,7 +630,7 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index, ITexture* texture, 
 }
 
 void ComputeCommandEncoder::bindSamplerState(uint32_t index, ISamplerState* samplerState) {
-  // T08: Delegate to D3D12ResourcesBinder for centralized descriptor management
+  // Delegate to D3D12ResourcesBinder for centralized descriptor management.
   resourcesBinder_.bindSamplerState(index, samplerState);
 }
 

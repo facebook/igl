@@ -84,9 +84,9 @@ CommandBuffer::~CommandBuffer() {
   // scheduleFence_ is a ComPtr and will be automatically released
 }
 
-// T27: Pre-allocated descriptor heap with fail-fast on exhaustion
-// Allocates from pre-allocated pages, switching pages as needed
-// Fails immediately if all pages are exhausted (Vulkan fail-fast pattern)
+// Pre-allocated descriptor heap with fail-fast on exhaustion.
+// Allocates from pre-allocated pages, switching pages as needed.
+// Fails immediately if all pages are exhausted (Vulkan fail-fast pattern).
 Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
   auto& ctx = device_.getD3D12Context();
   const uint32_t frameIdx = ctx.getCurrentFrameIndex();
@@ -107,16 +107,16 @@ Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
   // Check current offset before acquiring reference (avoid use-after-reallocation)
   const uint32_t currentOffset = frameCtx.nextCbvSrvUavDescriptor;
 
-  // T27: Check if current page has space - with fail-fast error if pre-allocation is enabled
+  // Check if current page has space; fail fast if pre-allocation is enabled.
   if (currentOffset >= pages[currentPageIdx].capacity) {
     // Current page is full - check if we can move to next page
     const uint32_t nextPageIdx = currentPageIdx + 1;
 
-    // T27: Fail-fast if we've exhausted pre-allocated pages (Vulkan pattern)
+    // Fail-fast if pre-allocated pages are exhausted (Vulkan pattern).
     if (nextPageIdx >= pages.size()) {
       char errorMsg[512];
-      // T27: All pages exhausted - fail immediately (no mid-frame allocation)
-      // Calculate actual descriptor capacity from allocated pages
+      // All pages exhausted - fail immediately (no mid-frame allocation).
+      // Calculate actual descriptor capacity from allocated pages.
       uint32_t totalCapacity = 0;
       for (const auto& page : pages) {
         totalCapacity += page.capacity;
@@ -129,7 +129,7 @@ Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
       return Result{Result::Code::RuntimeError, errorMsg};
     }
 
-    // Move to next pre-allocated page
+    // Move to next pre-allocated page.
     currentPageIdx = nextPageIdx;
     frameCtx.currentCbvSrvUavPageIndex = currentPageIdx;
     frameCtx.nextCbvSrvUavDescriptor = 0;  // Reset offset for new page
@@ -137,10 +137,10 @@ Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
     IGL_D3D12_LOG_VERBOSE("D3D12: Switching to pre-allocated CBV/SRV/UAV page %u for frame %u\n",
                  currentPageIdx, frameIdx);
 
-    // DX12-NEW-01: Update active heap when switching pages
+    // Update active heap when switching pages.
     frameCtx.activeCbvSrvUavHeap = pages[currentPageIdx].heap;
 
-    // DX12-NEW-01: Rebind heap on the command list when switching pages
+    // Rebind heap on the command list when switching pages.
     if (commandList_.Get()) {
       ID3D12DescriptorHeap* heaps[] = {
         frameCtx.activeCbvSrvUavHeap.Get(),
@@ -175,9 +175,9 @@ Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
   return Result{};
 }
 
-// T27: Allocate a contiguous range of CBV/SRV/UAV descriptors from pre-allocated pages
-// Ensures the range can be bound as a single descriptor table
-// Fails immediately if all pages are exhausted (Vulkan fail-fast pattern)
+// Allocate a contiguous range of CBV/SRV/UAV descriptors from pre-allocated pages.
+// Ensures the range can be bound as a single descriptor table.
+// Fails immediately if all pages are exhausted (Vulkan fail-fast pattern).
 Result CommandBuffer::allocateCbvSrvUavRange(uint32_t count, uint32_t* outBaseDescriptorIndex) {
   if (count == 0) {
     return Result{Result::Code::ArgumentInvalid, "Cannot allocate zero descriptors"};
@@ -201,7 +201,7 @@ Result CommandBuffer::allocateCbvSrvUavRange(uint32_t count, uint32_t* outBaseDe
   const uint32_t currentOffset = frameCtx.nextCbvSrvUavDescriptor;
   const uint32_t spaceRemaining = pages[currentPageIdx].capacity - currentOffset;
 
-  // T27: Check if the requested range fits in the current page - fail-fast on exhaustion
+  // Check if the requested range fits in the current page; fail fast on exhaustion.
   if (count > spaceRemaining) {
     // Not enough space in current page - validate range and check for next page
     if (count > kDescriptorsPerPage) {
@@ -212,7 +212,7 @@ Result CommandBuffer::allocateCbvSrvUavRange(uint32_t count, uint32_t* outBaseDe
       return Result{Result::Code::ArgumentOutOfRange, errorMsg};
     }
 
-    // T27: Move to next pre-allocated page (fail-fast if exhausted)
+    // Move to next pre-allocated page (fail-fast if exhausted).
     const uint32_t nextPageIdx = currentPageIdx + 1;
     if (nextPageIdx >= pages.size()) {
       char errorMsg[512];
@@ -272,8 +272,8 @@ uint32_t& CommandBuffer::getNextSamplerDescriptor() {
   const uint32_t frameIdx = ctx.getCurrentFrameIndex();
   auto& frameCtx = ctx.getFrameContexts()[frameIdx];
 
-  // P0_DX12-FIND-02: Add bounds checking to prevent descriptor heap overflow
-  // The sampler heap is allocated with kSamplerHeapSize descriptors
+  // Add bounds checking to prevent sampler descriptor heap overflow.
+  // The sampler heap is allocated with kSamplerHeapSize descriptors.
   const uint32_t currentValue = frameCtx.nextSamplerDescriptor;
 
   // Track peak usage for telemetry (before incrementing)
@@ -321,7 +321,7 @@ void CommandBuffer::trackTransientBuffer(std::shared_ptr<IBuffer> buffer) {
 
   frameCtx.transientBuffers.push_back(std::move(buffer));
 
-  // P2_DX12-120: Track high-water mark for telemetry
+  // Track high-water mark for telemetry.
   const size_t currentCount = frameCtx.transientBuffers.size();
   if (currentCount > frameCtx.transientBuffersHighWater) {
     frameCtx.transientBuffersHighWater = currentCount;
@@ -346,7 +346,7 @@ void CommandBuffer::trackTransientResource(ID3D12Resource* resource) {
   keepAlive.Attach(resource);
   frameCtx.transientResources.push_back(std::move(keepAlive));
 
-  // P2_DX12-120: Track high-water mark for telemetry
+  // Track high-water mark for telemetry.
   const size_t currentCount = frameCtx.transientResources.size();
   if (currentCount > frameCtx.transientResourcesHighWater) {
     frameCtx.transientResourcesHighWater = currentCount;
@@ -370,14 +370,14 @@ void CommandBuffer::begin() {
   // Reset per-command-buffer draw count for this recording
   currentDrawCount_ = 0;
 
-  // CRITICAL: Set the per-frame descriptor heaps before recording commands
-  // Each frame has its own isolated heaps to prevent descriptor conflicts
-  // C-001: Use current page's heap (will be updated if we grow to new pages)
+  // CRITICAL: Set the per-frame descriptor heaps before recording commands.
+  // Each frame has its own isolated heaps to prevent descriptor conflicts.
+  // Uses the current page's heap (will be updated if we grow to new pages).
   auto& ctx = device_.getD3D12Context();
   const uint32_t frameIdx = ctx.getCurrentFrameIndex();
   auto& frameCtx = ctx.getFrameContexts()[frameIdx];
 
-  // DX12-NEW-01: Initialize active heap to current page at frame start
+  // Initialize active heap to current page at frame start.
   if (frameCtx.cbvSrvUavHeapPages.empty()) {
     IGL_LOG_ERROR("CommandBuffer::begin() - No CBV/SRV/UAV heap pages available for frame %u\n", frameIdx);
     return;
@@ -390,7 +390,7 @@ void CommandBuffer::begin() {
     return;
   }
 
-  // DX12-NEW-01: Bind heaps using active heap, not legacy accessor
+  // Bind heaps using active heap, not legacy accessor.
   ID3D12DescriptorHeap* heaps[] = {
       frameCtx.activeCbvSrvUavHeap.Get(),
       frameCtx.samplerHeap.Get()
@@ -420,8 +420,8 @@ void CommandBuffer::begin() {
 #endif
   recording_ = true;
 
-  // T02: Record timer start timestamp AFTER reset, BEFORE any GPU work is recorded
-  // This ensures the timer measures the actual command buffer workload
+  // Record timer start timestamp after reset and before any GPU work is recorded.
+  // This ensures the timer measures the actual command buffer workload.
   if (desc.timer) {
     auto* timer = static_cast<Timer*>(desc.timer.get());
     timer->begin(commandList_.Get());
@@ -433,8 +433,8 @@ void CommandBuffer::end() {
     return;
   }
 
-  // T02: NO timer recording here - timer->begin() was called in begin(),
-  // timer->end() will be called in CommandQueue::submit() before close
+  // No timer recording here; timer->begin() was called in begin(),
+  // and timer->end() will be called in CommandQueue::submit() before close.
 
   // Close the command list - all recording is complete
   commandList_->Close();

@@ -14,13 +14,13 @@
 namespace igl::d3d12 {
 
 /**
- * @brief Upload Ring Buffer for Streaming Resources (P1_DX12-009)
+ * @brief Upload ring buffer for streaming resources.
  *
  * Manages a large staging buffer (64-256MB) for efficient resource uploads.
  * Implements a ring buffer pattern with fence-based memory retirement to
  * reduce allocator churn and memory fragmentation.
  *
- * Key Features:
+ * Key features:
  * - Large pre-allocated upload heap
  * - Linear sub-allocation with wraparound
  * - Fence-based memory retirement and recycling
@@ -32,7 +32,7 @@ class UploadRingBuffer {
    * @brief Represents a sub-allocation from the ring buffer
    */
   struct Allocation {
-    igl::d3d12::ComPtr<ID3D12Resource> buffer;  // T07: Underlying buffer resource
+    igl::d3d12::ComPtr<ID3D12Resource> buffer;  // Underlying buffer resource.
     void* cpuAddress = nullptr;                     // CPU-visible mapped address
     D3D12_GPU_VIRTUAL_ADDRESS gpuAddress = 0;      // GPU virtual address
     uint64_t offset = 0;                            // Offset within ring buffer

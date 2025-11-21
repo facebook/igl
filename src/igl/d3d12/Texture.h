@@ -18,7 +18,7 @@ class Texture final : public ITexture {
   Texture() : ITexture(TextureFormat::Invalid), format_(TextureFormat::Invalid) {}
   explicit Texture(TextureFormat format) : ITexture(format), format_(format) {}
 
-  // B-001: Explicit destructor to free descriptor heap slots
+  // Explicit destructor to free descriptor heap slots.
   ~Texture() override;
 
   // Factory method to create texture from existing D3D12 resource
@@ -93,8 +93,8 @@ class Texture final : public ITexture {
  private:
   igl::d3d12::ComPtr<ID3D12Resource> resource_;
   ID3D12Device* device_ = nullptr; // Non-owning pointer
-  ID3D12CommandQueue* queue_ = nullptr; // Non-owning pointer
-  class Device* iglDevice_ = nullptr; // Non-owning pointer to igl::d3d12::Device for upload operations (P0_DX12-005)
+  ID3D12CommandQueue* queue_ = nullptr; // Non-owning pointer.
+  class Device* iglDevice_ = nullptr; // Non-owning pointer to igl::d3d12::Device for upload operations.
   TextureFormat format_;
   Dimensions dimensions_{0, 0, 0};
   TextureType type_ = TextureType::TwoD;
@@ -104,9 +104,9 @@ class Texture final : public ITexture {
   TextureDesc::TextureUsage usage_ = 0;
   void initializeStateTracking(D3D12_RESOURCE_STATES initialState);
 
-  // T24: Simplified per-subresource state tracking.
+  // Simplified per-subresource state tracking.
   // Views delegate state tracking to their root texture; only root textures maintain state.
-  // Always uses per-subresource vector for simplicity (no dual-mode complexity).
+  // Always uses a per-subresource vector for simplicity (no dual-mode complexity).
   std::vector<D3D12_RESOURCE_STATES> subresourceStates_;
 
   // Helper to get the texture that owns state tracking (walks to root for nested views)
@@ -133,8 +133,8 @@ class Texture final : public ITexture {
   uint32_t arraySliceOffset_ = 0;  // FirstArraySlice for SRV
   uint32_t numArraySlicesInView_ = 0;  // ArraySize for SRV
 
-  // B-001: Descriptor indices for cleanup in destructor
-  // These descriptors are allocated from DescriptorHeapManager and must be freed
+  // Descriptor indices for cleanup in destructor.
+  // These descriptors are allocated from DescriptorHeapManager and must be freed.
   std::vector<uint32_t> rtvIndices_;  // RTV descriptors (one per mip level)
   std::vector<uint32_t> dsvIndices_;  // DSV descriptors (for depth/stencil textures)
   uint32_t srvIndex_ = UINT32_MAX;    // SRV descriptor (UINT32_MAX = not allocated)
