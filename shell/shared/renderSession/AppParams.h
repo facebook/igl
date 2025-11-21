@@ -6,7 +6,6 @@
  */
 
 #pragma once
-#include <cstdint>
 #include <functional>
 #include <shell/shared/renderSession/DepthParams.h>
 #include <shell/shared/renderSession/QuadLayerParams.h>

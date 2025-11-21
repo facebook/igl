@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <glm/glm.hpp>
 #include <vector>
 #include <igl/RenderPipelineState.h>
