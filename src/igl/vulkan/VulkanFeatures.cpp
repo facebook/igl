@@ -476,7 +476,8 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
       enable(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, ExtensionType::Device);
 #endif // !IGL_DEBUG
 
-#if IGL_PLATFORM_MACOSX
+// We should not use the Portability Subset extension with Lavapipe
+#if IGL_PLATFORM_MACOSX && !defined(IGL_USE_STATIC_LAVAPIPE)
   std::ignore = IGL_DEBUG_VERIFY(enable("VK_KHR_portability_subset", ExtensionType::Device));
 #endif // IGL_PLATFORM_MACOSX
 
