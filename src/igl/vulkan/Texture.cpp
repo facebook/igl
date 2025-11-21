@@ -385,9 +385,22 @@ Result Texture::uploadInternal(TextureType /*type*/,
   ctx.stagingDevice_->imageData(
       vulkanImage, desc_.type, range, getProperties(), bytesPerRow, imageAspectFlags, data);
 
+  // Generate mipmaps if requested by the user
   if (desc_.mipmapGeneration == TextureDesc::TextureMipmapGeneration::AutoGenerateOnUpload) {
-    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unimplemented);
+    if (range.mipLevel != 0) {
+      return Result{Result::Code::InvalidOperation,
+                    "AutoGenerateOnUpload requires mipLevel to be uploaded to be 0"};
+    }
+
+    Result result;
+    const auto cq = device_.createCommandQueue({}, &result);
+    if (!result.isOk()) {
+      return result;
+    }
+
+    generateMipmap(*cq, nullptr);
+
+    mipmapsAreAvailableAndUploaded_ = true;
   }
 
   return Result();
