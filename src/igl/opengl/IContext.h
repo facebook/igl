@@ -14,7 +14,6 @@
 #include <vector>
 #include <igl/CommandEncoder.h>
 #include <igl/Common.h>
-#include <igl/DeviceFeatures.h>
 #include <igl/PlatformDevice.h>
 #include <igl/opengl/ComputeCommandAdapter.h>
 #include <igl/opengl/Config.h>
