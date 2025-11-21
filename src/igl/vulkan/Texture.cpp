@@ -453,6 +453,10 @@ void Texture::generateMipmap(ICommandBuffer& cmdBuffer, const TextureRangeDesc* 
 }
 
 bool Texture::isRequiredGenerateMipmap() const {
+  if (mipmapsAreAvailableAndUploaded_) {
+    return false;
+  }
+
   if (!texture_ || desc_.numMipLevels <= 1) {
     return false;
   }
