@@ -731,7 +731,9 @@ namespace igl::vulkan::functions {
 
 namespace {
 PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
-#if defined(_WIN32)
+#if defined(FORCE_USE_STATIC_VULKAN_LOADER)
+  return nullptr;
+#elif defined(_WIN32)
   HMODULE lib = LoadLibraryA("vulkan-1.dll");
   if (!lib) {
     DWORD dw = GetLastError();
