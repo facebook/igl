@@ -22,6 +22,7 @@
 #define _USE_MATH_DEFINES
 #endif // _USE_MATH_DEFINES
 #include <Compress.h>
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
@@ -2240,13 +2241,14 @@ void loadMaterial(size_t i) {
     remainingMaterialsToLoad_.fetch_sub(1u, std::memory_order_release);
   };
 
-#define LOAD_TEX(result, tex, channels)                                          \
-  const LoadedImage result =                                                     \
-      std::string(cachedMaterials_[i].tex).empty()                               \
-          ? LoadedImage()                                                        \
-          : loadImage((pathPrefix + cachedMaterials_[i].tex).c_str(), channels); \
-  if (loaderShouldExit_.load(std::memory_order_acquire)) {                       \
-    return;                                                                      \
+#define LOAD_TEX(result, tex, channels)                                                     \
+  std::string tmp##result = cachedMaterials_[i].tex;                                        \
+  std::replace(tmp##result.begin(), tmp##result.end(), '\\', '/');                          \
+  const LoadedImage result = std::string(cachedMaterials_[i].tex).empty()                   \
+                                 ? LoadedImage()                                            \
+                                 : loadImage((pathPrefix + tmp##result).c_str(), channels); \
+  if (loaderShouldExit_.load(std::memory_order_acquire)) {                                  \
+    return;                                                                                 \
   }
 
   LOAD_TEX(ambient, ambient_texname, 4);
@@ -2613,8 +2615,11 @@ int main(int argc, char* argv[]) {
     }
   }
 
+#if defined(IGL_USE_STATIC_LAVAPIPE)
+  const int kNumSamplesMSAA = 1;
+#else
   const int kNumSamplesMSAA = isHeadless ? 1 : 8;
-
+#endif
   // find the content folder
   {
     using namespace std::filesystem;
