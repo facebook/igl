@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <igl/opengl/Config.h>
+#include <igl/Macros.h>
 #include <igl/opengl/GLIncludes.h>
 
 //

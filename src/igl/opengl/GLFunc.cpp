@@ -11,6 +11,7 @@
 #include <igl/opengl/GLFunc.h>
 
 #include <igl/Core.h>
+#include <igl/opengl/Config.h>
 
 #if IGL_EGL
 #include <EGL/egl.h>
