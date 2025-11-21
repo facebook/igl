@@ -116,6 +116,8 @@ class Device : public IDevice {
   static MTLStorageMode toMTLStorageMode(ResourceStorage storage);
   static MTLResourceOptions toMTLResourceStorageMode(ResourceStorage storage);
 
+  std::shared_ptr<ICommandQueue> getMostRecentCommandQueue() const noexcept;
+
  public:
   Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool;
   Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool;

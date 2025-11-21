@@ -753,6 +753,10 @@ MTLResourceOptions Device::toMTLResourceStorageMode(ResourceStorage storage) {
   }
 }
 
+std::shared_ptr<ICommandQueue> Device::getMostRecentCommandQueue() const noexcept {
+  return mostRecentCommandQueue_;
+}
+
 Holder<BindGroupTextureHandle> Device::createBindGroup(
     const BindGroupTextureDesc& desc,
     const IRenderPipelineState* IGL_NULLABLE /*compatiblePipeline*/,
