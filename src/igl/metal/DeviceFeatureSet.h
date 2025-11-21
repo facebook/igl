@@ -7,8 +7,8 @@
 
 #pragma once
 
+#import <Metal/Metal.h>
 #include <igl/DeviceFeatures.h>
-#include <igl/metal/PlatformDevice.h>
 
 namespace igl::metal {
 
