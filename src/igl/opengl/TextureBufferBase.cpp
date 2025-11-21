@@ -165,6 +165,10 @@ void TextureBufferBase::generateMipmap() const {
 }
 
 bool TextureBufferBase::isRequiredGenerateMipmap() const {
+  if (mipmapsAreAvailableAndUploaded_) {
+    return false;
+  }
+
   return numMipLevels_ > 1;
 }
 

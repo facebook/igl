@@ -61,6 +61,10 @@ class TextureBufferBase : public Texture {
 
   [[nodiscard]] bool isValidForTexImage(const TextureRangeDesc& range) const;
 
+  /// @brief To record whether mipmaps are available and uploaded to the GPU. This is used by the
+  /// `isRequiredGenerateMipmap()` function
+  mutable bool mipmapsAreAvailableAndUploaded_ = false;
+
  private:
   void generateMipmap() const;
 
