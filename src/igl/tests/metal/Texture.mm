@@ -9,12 +9,13 @@
 
 #include <igl/metal/Texture.h>
 
-#include "../util/Common.h"
-#include "../util/TextureFormatTestBase.h"
-
 #include <utility>
 #include <igl/metal/CommandBuffer.h>
 #include <igl/metal/PlatformDevice.h>
+#include <igl/metal/Texture.h>
+#include <igl/tests/util/Common.h>
+#include <igl/tests/util/TextureFormatTestBase.h>
+#include <igl/tests/util/TextureValidationHelpers.h>
 
 namespace igl::tests {
 
@@ -149,6 +150,150 @@ TEST_F(TextureMTLTest, MipmapGenerationFlagInitialization) {
 
   // Test that the mipmapGeneration flag is initialized to Manual by default
   ASSERT_EQ(mtlTexture->getMipmapGeneration(), TextureDesc::TextureMipmapGeneration::Manual);
+}
+
+// Test auto-generation of mipmaps on upload
+TEST_F(TextureMTLTest, AutoGenerateMipmapOnUpload) {
+  Result ret;
+
+  // Create a texture with AutoGenerateOnUpload flag - similar to existing mipmap tests
+  constexpr uint32_t kNumMipLevels = 2;
+  constexpr uint32_t kTexWidth = 2u;
+  constexpr uint32_t kTexHeight = 2u;
+
+  constexpr uint32_t kColor = 0xdeadbeef;
+  constexpr std::array<uint32_t, 4> kBaseMipData = {kColor, kColor, kColor, kColor};
+  constexpr std::array<uint32_t, 1> kExpectedMip1Data = {kColor}; // Should be same color after
+                                                                  // generation
+
+  // Create texture with AutoGenerateOnUpload flag
+  TextureDesc textureDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                               kTexWidth,
+                                               kTexHeight,
+                                               TextureDesc::TextureUsageBits::Sampled |
+                                                   TextureDesc::TextureUsageBits::Attachment);
+  textureDesc.numMipLevels = kNumMipLevels;
+  textureDesc.mipmapGeneration = TextureDesc::TextureMipmapGeneration::AutoGenerateOnUpload;
+
+  auto texture = device_->createTexture(textureDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(texture, nullptr);
+
+  // Cast to Metal texture to access Metal-specific methods
+  auto* mtlTexture = static_cast<metal::Texture*>(texture.get());
+  ASSERT_NE(mtlTexture, nullptr);
+
+  // Verify the texture was created with the correct mipmap generation flag
+  ASSERT_EQ(mtlTexture->getMipmapGeneration(),
+            TextureDesc::TextureMipmapGeneration::AutoGenerateOnUpload);
+
+  // Verify the texture has the expected number of mip levels
+  ASSERT_EQ(mtlTexture->getNumMipLevels(), kNumMipLevels);
+
+  // Upload data to mip level 0 - this should trigger automatic mipmap generation
+  ret = texture->upload(texture->getFullRange(0), kBaseMipData.data());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  //  Validate that mip level 0 contains the uploaded data
+  util::validateUploadedTextureRange(*device_,
+                                     *cmdQueue_,
+                                     texture,
+                                     texture->getFullRange(0),
+                                     kBaseMipData.data(),
+                                     "AutoGen: Base level (0)");
+
+  // Validate that mip level 1 was auto-generated with expected content
+  // The auto-generated mip should contain the same solid color (averaged from base level)
+  util::validateUploadedTextureRange(*device_,
+                                     *cmdQueue_,
+                                     texture,
+                                     texture->getFullRange(1),
+                                     kExpectedMip1Data.data(),
+                                     "AutoGen: Generated level (1)");
+
+  // Verify that the Metal texture resources remain valid
+  ASSERT_NE(mtlTexture->get(), nullptr);
+}
+
+// Test manual mipmap generation for comparison
+TEST_F(TextureMTLTest, ManualMipmapGeneration) {
+  Result ret;
+
+  // Create a texture with Manual mipmap generation - follow same pattern as existing tests
+  constexpr uint32_t kNumMipLevels = 2;
+  constexpr uint32_t kTexWidth = 2u;
+  constexpr uint32_t kTexHeight = 2u;
+
+  constexpr uint32_t kColor = 0x8badf00d; // Different color from auto test
+  constexpr std::array<uint32_t, 4> kBaseMipData = {kColor, kColor, kColor, kColor};
+  constexpr std::array<uint32_t, 1> kInitialMip1Data = {0}; // Initialize mip 1 with zero
+  constexpr std::array<uint32_t, 1> kExpectedMip1Data = {kColor}; // Should match base after
+                                                                  // generation
+
+  // Create texture with Manual mipmap generation
+  TextureDesc textureDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                               kTexWidth,
+                                               kTexHeight,
+                                               TextureDesc::TextureUsageBits::Sampled |
+                                                   TextureDesc::TextureUsageBits::Attachment);
+  textureDesc.numMipLevels = kNumMipLevels;
+  textureDesc.mipmapGeneration = TextureDesc::TextureMipmapGeneration::Manual;
+
+  auto texture = device_->createTexture(textureDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(texture, nullptr);
+
+  auto* mtlTexture = static_cast<metal::Texture*>(texture.get());
+  ASSERT_NE(mtlTexture, nullptr);
+
+  // Verify the texture was created with Manual mipmap generation
+  ASSERT_EQ(mtlTexture->getMipmapGeneration(), TextureDesc::TextureMipmapGeneration::Manual);
+
+  // Verify the texture has the expected number of mip levels
+  ASSERT_EQ(mtlTexture->getNumMipLevels(), kNumMipLevels);
+
+  // Upload data to base mip level (level 0)
+  ret = texture->upload(texture->getFullRange(0), kBaseMipData.data());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  // Upload initial data to mip level 1 (will be overwritten by generateMipmap)
+  ret = texture->upload(texture->getFullRange(1), kInitialMip1Data.data());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  // Validate initial state - base level should have uploaded data
+  util::validateUploadedTextureRange(*device_,
+                                     *cmdQueue_,
+                                     texture,
+                                     texture->getFullRange(0),
+                                     kBaseMipData.data(),
+                                     "Manual: Initial base level (0)");
+
+  // Validate initial state - mip level 1 should have initial zero data
+  util::validateUploadedTextureRange(*device_,
+                                     *cmdQueue_,
+                                     texture,
+                                     texture->getFullRange(1),
+                                     kInitialMip1Data.data(),
+                                     "Manual: Initial mip level (1)");
+
+  // Now manually generate mipmaps - this should overwrite mip level 1
+  mtlTexture->generateMipmap(*cmdQueue_, nullptr);
+
+  // Validate final state - base level should still have original data
+  util::validateUploadedTextureRange(*device_,
+                                     *cmdQueue_,
+                                     texture,
+                                     texture->getFullRange(0),
+                                     kBaseMipData.data(),
+                                     "Manual: Final base level (0)");
+
+  // Validate final state - mip level 1 should now have generated data
+  util::validateUploadedTextureRange(*device_,
+                                     *cmdQueue_,
+                                     texture,
+                                     texture->getFullRange(1),
+                                     kExpectedMip1Data.data(),
+                                     "Manual: Generated mip level (1)");
 }
 
 // Test conversion from IGL TextureType to MTLTextureType

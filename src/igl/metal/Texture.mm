@@ -121,8 +121,26 @@ Result Texture::uploadInternal(TextureType type,
   }
 
   if (mipmapGeneration_ == TextureDesc::TextureMipmapGeneration::AutoGenerateOnUpload) {
-    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unimplemented);
+    if (range.mipLevel != 0) {
+      return Result{Result::Code::InvalidOperation,
+                    "AutoGenerateOnUpload requires mipLevel to be uploaded to be 0"};
+    }
+    const auto* device = static_cast<const igl::metal::Device*>(&capabilities_);
+    if (device) {
+      auto cmdQueue = const_cast<igl::metal::Device*>(device)->getMostRecentCommandQueue();
+      if (!cmdQueue) {
+        igl::Result result;
+        cmdQueue = const_cast<igl::metal::Device*>(device)->createCommandQueue({}, &result);
+        if (!result.isOk()) {
+          return result;
+        }
+      }
+      generateMipmap(*cmdQueue, nullptr);
+      mipmapsAreAvailableAndUploaded_ = true;
+    } else {
+      return igl::Result(igl::Result::Code::RuntimeError,
+                         "Device is not available; cannot generate mipmaps.");
+    }
   }
 
   return Result{};
