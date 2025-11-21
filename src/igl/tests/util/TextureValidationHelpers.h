@@ -12,6 +12,7 @@
 #include <glm/glm.hpp>
 #include <igl/CommandBuffer.h>
 #include <igl/Common.h>
+#include <igl/Device.h>
 
 #if IGL_PLATFORM_IOS || IGL_PLATFORM_MACOSX
 #include "simd/simd.h"

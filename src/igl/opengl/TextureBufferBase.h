@@ -65,9 +65,10 @@ class TextureBufferBase : public Texture {
   /// `isRequiredGenerateMipmap()` function
   mutable bool mipmapsAreAvailableAndUploaded_ = false;
 
- private:
+ protected:
   void generateMipmap() const;
 
+ private:
   // the GL ID for this texture
   GLuint textureID_ = 0;
   // target depends on usage and texture type

@@ -95,6 +95,7 @@ Result Texture::create(const TextureDesc& desc, bool hasStorageAlready) {
     numLayers_ = desc.numLayers;
     numSamples_ = desc.numSamples;
     numMipLevels_ = desc.numMipLevels;
+    mipmapGeneration_ = desc.mipmapGeneration;
     if (!getContext().deviceFeatures().hasFeature(DeviceFeatures::TexturePartialMipChain)) {
       // For ES 2.0, we have to ignore numMipLevels_
       const auto maxNumMipLevels = TextureDesc::calcNumMipLevels(width_, height_, depth_);

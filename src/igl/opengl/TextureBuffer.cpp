@@ -500,8 +500,12 @@ Result TextureBuffer::uploadInternal(GLenum target,
   }
 
   if (mipmapGeneration_ == TextureDesc::TextureMipmapGeneration::AutoGenerateOnUpload) {
-    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unimplemented);
+    if (range.mipLevel != 0) {
+      return Result{Result::Code::InvalidOperation,
+                    "AutoGenerateOnUpload requires mipLevel to be uploaded to be 0"};
+    }
+    generateMipmap();
+    mipmapsAreAvailableAndUploaded_ = true;
   }
 
   return result;
