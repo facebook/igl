@@ -133,6 +133,7 @@ class Device : public IDevice {
   DeviceFeatureSet deviceFeatureSet_;
   std::shared_ptr<BufferSynchronizationManager> bufferSyncManager_;
   mutable DeviceStatistics deviceStatistics_;
+  std::shared_ptr<ICommandQueue> mostRecentCommandQueue_;
 };
 
 } // namespace igl::metal

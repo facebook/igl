@@ -45,6 +45,9 @@ std::shared_ptr<ICommandQueue> Device::createCommandQueue( // NOLINT(bugprone-ex
   id<MTLCommandQueue> metalObject = [device_ newCommandQueue];
   auto resource =
       std::make_shared<CommandQueue>(*this, metalObject, bufferSyncManager_, deviceStatistics_);
+
+  mostRecentCommandQueue_ = resource;
+
   Result::setOk(outResult);
   return resource;
 }
