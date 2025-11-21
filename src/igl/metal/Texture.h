@@ -96,6 +96,10 @@ class Texture final : public ITexture {
   const ICapabilities& capabilities_;
   TextureDesc::TextureMipmapGeneration mipmapGeneration_ =
       TextureDesc::TextureMipmapGeneration::Manual;
+
+  /// @brief To record whether mipmaps are available and uploaded to the GPU. This is used by the
+  /// `isRequiredGenerateMipmap()` function
+  mutable bool mipmapsAreAvailableAndUploaded_ = false;
 };
 
 } // namespace igl::metal

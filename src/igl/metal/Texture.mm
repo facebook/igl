@@ -256,6 +256,10 @@ void Texture::generateMipmap(id<MTLCommandBuffer> cmdBuffer) const {
 }
 
 bool Texture::isRequiredGenerateMipmap() const {
+  if (mipmapsAreAvailableAndUploaded_) {
+    return false;
+  }
+
   return value_.mipmapLevelCount > 1;
 }
 
