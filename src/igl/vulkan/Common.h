@@ -120,7 +120,6 @@ struct VulkanContextConfig {
   bool enableGPUAssistedValidation = true;
   bool enableExtraLogs = true;
   bool enableDescriptorIndexing = false;
-  // @fb-only
   bool enableShaderInt16 = true;
   bool enableShaderDrawParameters = true;
   bool enableStorageBuffer16BitAccess = true;

@@ -18,21 +18,6 @@
 extern "C" {
 #endif
 
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-// @fb-only
-
 /// @brief Adds a node to the linked list of next nodes
 void ivkAddNext(void* node, const void* next);
 
