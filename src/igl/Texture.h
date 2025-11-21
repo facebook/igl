@@ -554,9 +554,7 @@ struct TextureDesc {
    *  AutoGenerateOnUpload - IGL will generate mipmaps when the texture
    *                         is uploaded to the device
    */
-  // @fb-only
-  // @fb-only
-  enum class TextureMipmapGeneration : uint8_t { Manual /*, AutoGenerateOnUpload */ };
+  enum class TextureMipmapGeneration : uint8_t { Manual, AutoGenerateOnUpload };
 
   uint32_t width = 1;
   uint32_t height = 1;

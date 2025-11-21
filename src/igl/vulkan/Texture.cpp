@@ -385,6 +385,11 @@ Result Texture::uploadInternal(TextureType /*type*/,
   ctx.stagingDevice_->imageData(
       vulkanImage, desc_.type, range, getProperties(), bytesPerRow, imageAspectFlags, data);
 
+  if (desc_.mipmapGeneration == TextureDesc::TextureMipmapGeneration::AutoGenerateOnUpload) {
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+    return Result(Result::Code::Unimplemented);
+  }
+
   return Result();
 }
 

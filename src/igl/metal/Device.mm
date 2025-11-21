@@ -203,7 +203,7 @@ std::shared_ptr<ITexture> Device::createTexture( // NOLINT(bugprone-exception-es
     return nullptr;
   }
   metalObject.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
-  auto iglObject = std::make_shared<Texture>(metalObject, *this);
+  auto iglObject = std::make_shared<Texture>(metalObject, *this, desc.mipmapGeneration);
   if (hasResourceTracker()) {
     iglObject->initResourceTracker(getResourceTracker(), desc.debugName);
   }

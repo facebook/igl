@@ -119,6 +119,12 @@ Result Texture::uploadInternal(TextureType type,
       }
     }
   }
+
+  if (mipmapGeneration_ == TextureDesc::TextureMipmapGeneration::AutoGenerateOnUpload) {
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+    return Result(Result::Code::Unimplemented);
+  }
+
   return Result{};
 }
 
