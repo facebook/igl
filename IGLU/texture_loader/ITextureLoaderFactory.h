@@ -9,7 +9,8 @@
 
 #include <IGLU/texture_loader/DataReader.h>
 #include <IGLU/texture_loader/ITextureLoader.h>
-#include <igl/DeviceFeatures.h>
+#include <igl/Common.h>
+#include <igl/TextureFormat.h>
 
 namespace iglu::textureloader {
 
