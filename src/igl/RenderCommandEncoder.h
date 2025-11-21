@@ -21,9 +21,9 @@ class ISamplerState;
 namespace BindTarget {
 const uint8_t kVertex = 0x0001;
 const uint8_t kFragment = 0x0002;
+const uint8_t kAllGraphics = 0x0003;
 const uint8_t kTask = 0x0004;
 const uint8_t kMesh = 0x0008;
-const uint8_t kAllGraphics = 0x00FF;
 } // namespace BindTarget
 
 class IRenderCommandEncoder : public ICommandEncoder {
