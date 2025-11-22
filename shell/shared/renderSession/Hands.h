@@ -8,8 +8,10 @@
 #pragma once
 
 #include <cstdint>
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
+#include <glm/ext/quaternion_float.hpp>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 #include <vector>
 
 namespace igl::shell {
