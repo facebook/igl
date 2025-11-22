@@ -7,6 +7,7 @@
 
 #include <igl/metal/PlatformDevice.h>
 
+#import <CoreVideo/CVPixelBuffer.h>
 #import <Foundation/Foundation.h>
 #import <QuartzCore/CAMetalLayer.h>
 #import <QuartzCore/QuartzCore.h>

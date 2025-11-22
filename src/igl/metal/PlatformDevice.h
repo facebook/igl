@@ -7,8 +7,8 @@
 
 #pragma once
 
+#import <CoreVideo/CVImageBuffer.h>
 #import <CoreVideo/CVMetalTextureCache.h>
-#import <CoreVideo/CVPixelBuffer.h>
 #import <Metal/Metal.h>
 #import <QuartzCore/CALayer.h>
 #import <QuartzCore/CAMetalLayer.h>

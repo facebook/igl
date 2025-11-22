@@ -9,6 +9,7 @@
 
 #include <igl/metal/Texture.h>
 
+#import <CoreVideo/CVPixelBuffer.h>
 #include <utility>
 #include <igl/metal/CommandBuffer.h>
 #include <igl/metal/PlatformDevice.h>
