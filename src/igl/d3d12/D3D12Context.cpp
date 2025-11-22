@@ -24,6 +24,39 @@ using ComPtr = igl::d3d12::ComPtr<T>;
 D3D12Context::ResourceStats D3D12Context::resourceStats_;
 std::mutex D3D12Context::resourceStatsMutex_;
 
+// AdapterInfo helper methods
+uint64_t D3D12Context::AdapterInfo::getDedicatedVideoMemoryMB() const {
+  return desc.DedicatedVideoMemory / (1024 * 1024);
+}
+
+const char* D3D12Context::AdapterInfo::getVendorName() const {
+  switch (desc.VendorId) {
+    case 0x10DE: return "NVIDIA";
+    case 0x1002: case 0x1022: return "AMD";
+    case 0x8086: return "Intel";
+    case 0x1414: return "Microsoft";
+    default: return "Unknown";
+  }
+}
+
+// MemoryBudget helper methods
+uint64_t D3D12Context::MemoryBudget::totalAvailableMemory() const {
+  return dedicatedVideoMemory + sharedSystemMemory;
+}
+
+double D3D12Context::MemoryBudget::getUsagePercentage() const {
+  if (totalAvailableMemory() == 0) return 0.0;
+  return (static_cast<double>(estimatedUsage) / totalAvailableMemory()) * 100.0;
+}
+
+bool D3D12Context::MemoryBudget::isMemoryCritical() const {
+  return getUsagePercentage() > 90.0;
+}
+
+bool D3D12Context::MemoryBudget::isMemoryLow() const {
+  return getUsagePercentage() > 70.0;
+}
+
 // A-011: Helper function to probe highest supported feature level for an adapter
 D3D_FEATURE_LEVEL D3D12Context::getHighestFeatureLevel(IDXGIAdapter1* adapter) {
   const D3D_FEATURE_LEVEL featureLevels[] = {

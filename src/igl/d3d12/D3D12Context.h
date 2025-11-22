@@ -135,19 +135,8 @@ class D3D12Context {
     uint32_t index;  // Original enumeration index
 
     // Helper methods
-    uint64_t getDedicatedVideoMemoryMB() const {
-      return desc.DedicatedVideoMemory / (1024 * 1024);
-    }
-
-    const char* getVendorName() const {
-      switch (desc.VendorId) {
-        case 0x10DE: return "NVIDIA";
-        case 0x1002: case 0x1022: return "AMD";
-        case 0x8086: return "Intel";
-        case 0x1414: return "Microsoft";
-        default: return "Unknown";
-      }
-    }
+    uint64_t getDedicatedVideoMemoryMB() const;
+    const char* getVendorName() const;
   };
 
   // A-012: Memory budget tracking
@@ -157,22 +146,10 @@ class D3D12Context {
     uint64_t estimatedUsage = 0;         // Current estimated usage by this device (bytes)
     uint64_t userDefinedBudgetLimit = 0; // Optional soft limit
 
-    uint64_t totalAvailableMemory() const {
-      return dedicatedVideoMemory + sharedSystemMemory;
-    }
-
-    double getUsagePercentage() const {
-      if (totalAvailableMemory() == 0) return 0.0;
-      return (static_cast<double>(estimatedUsage) / totalAvailableMemory()) * 100.0;
-    }
-
-    bool isMemoryCritical() const {
-      return getUsagePercentage() > 90.0;
-    }
-
-    bool isMemoryLow() const {
-      return getUsagePercentage() > 70.0;
-    }
+    uint64_t totalAvailableMemory() const;
+    double getUsagePercentage() const;
+    bool isMemoryCritical() const;
+    bool isMemoryLow() const;
   };
 
   // A-010: HDR output capabilities
