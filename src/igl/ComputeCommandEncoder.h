@@ -10,7 +10,7 @@
 #include <igl/Buffer.h>
 #include <igl/CommandEncoder.h>
 #include <igl/Common.h>
-#include <igl/Framebuffer.h>
+#include <igl/TextureFormat.h>
 #include <igl/Uniform.h>
 
 namespace igl {
