@@ -50,8 +50,10 @@ bool PresentManager::present() {
     if (FAILED(deviceStatus)) {
       IGL_LOG_ERROR("PresentManager: DEVICE REMOVED during Present! Reason: 0x%08X\n",
                     static_cast<unsigned>(deviceStatus));
+#ifdef IGL_DEBUG
       logInfoQueueMessages(device);
       logDredInfo(device);
+#endif
       IGL_DEBUG_ASSERT(false);
     } else {
       IGL_LOG_ERROR("PresentManager: Present failed but device reports OK; check swapchain/window state\n");
@@ -79,8 +81,10 @@ bool PresentManager::checkDeviceStatus(const char* contextStr) {
   if (FAILED(deviceStatus)) {
     IGL_LOG_ERROR("PresentManager: DEVICE REMOVED %s! Reason: 0x%08X\n",
                   contextStr, static_cast<unsigned>(deviceStatus));
+#ifdef IGL_DEBUG
     logInfoQueueMessages(device);
     logDredInfo(device);
+#endif
     IGL_DEBUG_ASSERT(false);
     return false;
   }
@@ -88,6 +92,7 @@ bool PresentManager::checkDeviceStatus(const char* contextStr) {
   return true;
 }
 
+#ifdef IGL_DEBUG
 void PresentManager::logInfoQueueMessages(ID3D12Device* device) {
   igl::d3d12::ComPtr<ID3D12InfoQueue> infoQueue;
   if (FAILED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
@@ -184,5 +189,6 @@ void PresentManager::logDredInfo(ID3D12Device* device) {
   IGL_D3D12_LOG_VERBOSE("DRED: Extended data interfaces not available on this SDK.\n");
 #endif
 }
+#endif // IGL_DEBUG
 
 } // namespace igl::d3d12

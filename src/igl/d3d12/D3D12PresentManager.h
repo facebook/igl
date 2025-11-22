@@ -42,15 +42,17 @@ class PresentManager final {
    */
   bool checkDeviceStatus(const char* context);
 
+#ifdef IGL_DEBUG
   /**
-   * @brief Log Info Queue messages for debugging
+   * @brief Log Info Queue messages for debugging (debug builds only)
    */
   void logInfoQueueMessages(ID3D12Device* device);
 
   /**
-   * @brief Log DRED breadcrumbs and page fault info
+   * @brief Log DRED breadcrumbs and page fault info (debug builds only)
    */
   void logDredInfo(ID3D12Device* device);
+#endif
 
   D3D12Context& context_;
 };
