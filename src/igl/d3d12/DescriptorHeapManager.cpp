@@ -341,184 +341,189 @@ bool DescriptorHeapManager::getDSVHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HA
   return true;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getCbvSrvUavCpuHandle(uint32_t index) const {
-  // C-006: Validate descriptor index before returning handle
-  D3D12_CPU_DESCRIPTOR_HANDLE h = {};
+// Bool-returning CBV/SRV/UAV handle getters
+bool DescriptorHeapManager::getCbvSrvUavCpuHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const {
+  if (!outHandle) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavCpuHandle: outHandle is null\n");
+    return false;
+  }
+
+  *outHandle = {};
 
   if (!cbvSrvUavHeap_.Get()) {
     IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavCpuHandle: CBV/SRV/UAV heap is null\n");
     IGL_DEBUG_ASSERT(false, "CBV/SRV/UAV heap is null");
-    return h;
+    return false;
   }
 
   if (index == UINT32_MAX) {
     IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavCpuHandle: Invalid index UINT32_MAX (allocation failure sentinel)\n");
     IGL_DEBUG_ASSERT(false, "Attempted to get CBV/SRV/UAV handle with invalid index UINT32_MAX");
-    return h;
+    return false;
   }
 
   if (index >= sizes_.cbvSrvUav) {
     IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavCpuHandle: Index %u exceeds heap size %u\n",
                   index, sizes_.cbvSrvUav);
     IGL_DEBUG_ASSERT(false, "CBV/SRV/UAV descriptor index out of bounds");
-    return h;
+    return false;
   }
 
 #if IGL_DEBUG
-  // Check if descriptor has been freed (use-after-free detection)
-  // Note: O(N) scan - only enabled in debug builds
   {
     std::lock_guard<std::mutex> lock(mutex_);
     if (std::find(freeCbvSrvUav_.begin(), freeCbvSrvUav_.end(), index) != freeCbvSrvUav_.end()) {
       IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavCpuHandle: Descriptor index %u has been freed (use-after-free)\n", index);
       IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed CBV/SRV/UAV descriptor");
-      return h;
+      return false;
     }
   }
 #endif
 
-  h = cbvSrvUavHeap_->GetCPUDescriptorHandleForHeapStart();
-  h.ptr += index * cbvSrvUavDescriptorSize_;
+  *outHandle = cbvSrvUavHeap_->GetCPUDescriptorHandleForHeapStart();
+  outHandle->ptr += index * cbvSrvUavDescriptorSize_;
 
-  // Validate final handle is non-null
-  IGL_DEBUG_ASSERT(h.ptr != 0, "getCbvSrvUavCpuHandle returned null CPU descriptor handle");
+  IGL_DEBUG_ASSERT(outHandle->ptr != 0, "getCbvSrvUavCpuHandle returned null CPU descriptor handle");
 
-  return h;
+  return true;
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getCbvSrvUavGpuHandle(uint32_t index) const {
-  // C-006: Validate descriptor index before returning handle
-  D3D12_GPU_DESCRIPTOR_HANDLE h = {};
+bool DescriptorHeapManager::getCbvSrvUavGpuHandle(uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE* outHandle) const {
+  if (!outHandle) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavGpuHandle: outHandle is null\n");
+    return false;
+  }
+
+  *outHandle = {};
 
   if (!cbvSrvUavHeap_.Get()) {
     IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavGpuHandle: CBV/SRV/UAV heap is null\n");
     IGL_DEBUG_ASSERT(false, "CBV/SRV/UAV heap is null");
-    return h;
+    return false;
   }
 
   if (index == UINT32_MAX) {
     IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavGpuHandle: Invalid index UINT32_MAX (allocation failure sentinel)\n");
     IGL_DEBUG_ASSERT(false, "Attempted to get CBV/SRV/UAV GPU handle with invalid index UINT32_MAX");
-    return h;
+    return false;
   }
 
   if (index >= sizes_.cbvSrvUav) {
     IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavGpuHandle: Index %u exceeds heap size %u\n",
                   index, sizes_.cbvSrvUav);
     IGL_DEBUG_ASSERT(false, "CBV/SRV/UAV descriptor index out of bounds");
-    return h;
+    return false;
   }
 
 #if IGL_DEBUG
-  // Check if descriptor has been freed (use-after-free detection)
-  // Note: O(N) scan - only enabled in debug builds
   {
     std::lock_guard<std::mutex> lock(mutex_);
     if (std::find(freeCbvSrvUav_.begin(), freeCbvSrvUav_.end(), index) != freeCbvSrvUav_.end()) {
       IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavGpuHandle: Descriptor index %u has been freed (use-after-free)\n", index);
       IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed CBV/SRV/UAV descriptor");
-      return h;
+      return false;
     }
   }
 #endif
 
-  h = cbvSrvUavHeap_->GetGPUDescriptorHandleForHeapStart();
-  h.ptr += index * cbvSrvUavDescriptorSize_;
+  *outHandle = cbvSrvUavHeap_->GetGPUDescriptorHandleForHeapStart();
+  outHandle->ptr += index * cbvSrvUavDescriptorSize_;
 
-  // Validate final handle is non-null
-  IGL_DEBUG_ASSERT(h.ptr != 0, "getCbvSrvUavGpuHandle returned null GPU descriptor handle");
+  IGL_DEBUG_ASSERT(outHandle->ptr != 0, "getCbvSrvUavGpuHandle returned null GPU descriptor handle");
 
-  return h;
+  return true;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getSamplerCpuHandle(uint32_t index) const {
-  // C-006: Validate descriptor index before returning handle
-  D3D12_CPU_DESCRIPTOR_HANDLE h = {};
+bool DescriptorHeapManager::getSamplerCpuHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const {
+  if (!outHandle) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getSamplerCpuHandle: outHandle is null\n");
+    return false;
+  }
+
+  *outHandle = {};
 
   if (!samplerHeap_.Get()) {
     IGL_LOG_ERROR("DescriptorHeapManager::getSamplerCpuHandle: Sampler heap is null\n");
     IGL_DEBUG_ASSERT(false, "Sampler heap is null");
-    return h;
+    return false;
   }
 
   if (index == UINT32_MAX) {
     IGL_LOG_ERROR("DescriptorHeapManager::getSamplerCpuHandle: Invalid index UINT32_MAX (allocation failure sentinel)\n");
     IGL_DEBUG_ASSERT(false, "Attempted to get Sampler handle with invalid index UINT32_MAX");
-    return h;
+    return false;
   }
 
   if (index >= sizes_.samplers) {
     IGL_LOG_ERROR("DescriptorHeapManager::getSamplerCpuHandle: Index %u exceeds heap size %u\n",
                   index, sizes_.samplers);
     IGL_DEBUG_ASSERT(false, "Sampler descriptor index out of bounds");
-    return h;
+    return false;
   }
 
 #if IGL_DEBUG
-  // Check if descriptor has been freed (use-after-free detection)
-  // Note: O(N) scan - only enabled in debug builds
   {
     std::lock_guard<std::mutex> lock(mutex_);
     if (std::find(freeSamplers_.begin(), freeSamplers_.end(), index) != freeSamplers_.end()) {
       IGL_LOG_ERROR("DescriptorHeapManager::getSamplerCpuHandle: Descriptor index %u has been freed (use-after-free)\n", index);
       IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed Sampler descriptor");
-      return h;
+      return false;
     }
   }
 #endif
 
-  h = samplerHeap_->GetCPUDescriptorHandleForHeapStart();
-  h.ptr += index * samplerDescriptorSize_;
+  *outHandle = samplerHeap_->GetCPUDescriptorHandleForHeapStart();
+  outHandle->ptr += index * samplerDescriptorSize_;
 
-  // Validate final handle is non-null
-  IGL_DEBUG_ASSERT(h.ptr != 0, "getSamplerCpuHandle returned null CPU descriptor handle");
+  IGL_DEBUG_ASSERT(outHandle->ptr != 0, "getSamplerCpuHandle returned null CPU descriptor handle");
 
-  return h;
+  return true;
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getSamplerGpuHandle(uint32_t index) const {
-  // C-006: Validate descriptor index before returning handle
-  D3D12_GPU_DESCRIPTOR_HANDLE h = {};
+bool DescriptorHeapManager::getSamplerGpuHandle(uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE* outHandle) const {
+  if (!outHandle) {
+    IGL_LOG_ERROR("DescriptorHeapManager::getSamplerGpuHandle: outHandle is null\n");
+    return false;
+  }
+
+  *outHandle = {};
 
   if (!samplerHeap_.Get()) {
     IGL_LOG_ERROR("DescriptorHeapManager::getSamplerGpuHandle: Sampler heap is null\n");
     IGL_DEBUG_ASSERT(false, "Sampler heap is null");
-    return h;
+    return false;
   }
 
   if (index == UINT32_MAX) {
     IGL_LOG_ERROR("DescriptorHeapManager::getSamplerGpuHandle: Invalid index UINT32_MAX (allocation failure sentinel)\n");
     IGL_DEBUG_ASSERT(false, "Attempted to get Sampler GPU handle with invalid index UINT32_MAX");
-    return h;
+    return false;
   }
 
   if (index >= sizes_.samplers) {
     IGL_LOG_ERROR("DescriptorHeapManager::getSamplerGpuHandle: Index %u exceeds heap size %u\n",
                   index, sizes_.samplers);
     IGL_DEBUG_ASSERT(false, "Sampler descriptor index out of bounds");
-    return h;
+    return false;
   }
 
 #if IGL_DEBUG
-  // Check if descriptor has been freed (use-after-free detection)
-  // Note: O(N) scan - only enabled in debug builds
   {
     std::lock_guard<std::mutex> lock(mutex_);
     if (std::find(freeSamplers_.begin(), freeSamplers_.end(), index) != freeSamplers_.end()) {
       IGL_LOG_ERROR("DescriptorHeapManager::getSamplerGpuHandle: Descriptor index %u has been freed (use-after-free)\n", index);
       IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed Sampler descriptor");
-      return h;
+      return false;
     }
   }
 #endif
 
-  h = samplerHeap_->GetGPUDescriptorHandleForHeapStart();
-  h.ptr += index * samplerDescriptorSize_;
+  *outHandle = samplerHeap_->GetGPUDescriptorHandleForHeapStart();
+  outHandle->ptr += index * samplerDescriptorSize_;
 
-  // Validate final handle is non-null
-  IGL_DEBUG_ASSERT(h.ptr != 0, "getSamplerGpuHandle returned null GPU descriptor handle");
+  IGL_DEBUG_ASSERT(outHandle->ptr != 0, "getSamplerGpuHandle returned null GPU descriptor handle");
 
-  return h;
+  return true;
 }
 
 // Descriptor handle validation helpers.
