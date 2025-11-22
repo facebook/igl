@@ -56,16 +56,16 @@ struct BufferDesc {
 
   using BufferAPIHint = uint8_t;
   /** @brief Data to upload at the time of creation. Can be nullptr. */
-  const void* IGL_NULLABLE data;
+  const void* IGL_NULLABLE data = nullptr;
 
   /** @brief Total internal store to allocate */
-  size_t length;
+  size_t length = 0;
 
   /**
    * @brief Storage mode.
    * @See igl::ResourceStorage
    */
-  ResourceStorage storage;
+  ResourceStorage storage = ResourceStorage::Invalid;
   /**
    * @brief Backend API hint flags.
    *
