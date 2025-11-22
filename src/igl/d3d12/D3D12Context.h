@@ -96,15 +96,10 @@ struct FrameContext {
   // Current active page index for CBV/SRV/UAV allocation.
   uint32_t currentCbvSrvUavPageIndex = 0;
 
-  // Track the currently active shader-visible heap.
+  // Track the currently active shader-visible heap for command list binding.
   // This is updated when allocating new pages and must be rebound to the command list.
+  // This heap is returned by D3D12Context::getCbvSrvUavHeap() for binding.
   igl::d3d12::ComPtr<ID3D12DescriptorHeap> activeCbvSrvUavHeap;
-
-  // Legacy accessor for backward compatibility (returns first page)
-  // DEPRECATED: Use cbvSrvUavHeapPages directly for multi-page access
-  ID3D12DescriptorHeap* cbvSrvUavHeap() const {
-    return cbvSrvUavHeapPages.empty() ? nullptr : cbvSrvUavHeapPages[0].heap.Get();
-  }
 
   // Linear allocator counters - reset to 0 each frame
   // Incremented by each command buffer's encoders as they allocate descriptors
@@ -202,10 +197,12 @@ class D3D12Context {
   ID3D12CommandQueue* getCommandQueue() const { return commandQueue_.Get(); }
   IDXGISwapChain3* getSwapChain() const { return swapChain_.Get(); }
 
-  // Get descriptor heap for current frame.
-  // Returns first page for backward compatibility; prefer using getFrameContexts() for multi-page access.
+  // Get currently active CBV/SRV/UAV descriptor heap for current frame.
+  // Returns the active heap used for descriptor allocation. Use this for heap binding.
+  // For multi-page access or diagnostics, use getFrameContexts().
   ID3D12DescriptorHeap* getCbvSrvUavHeap() const {
-    return frameContexts_[currentFrameIndex_].cbvSrvUavHeap();
+    const auto& frameCtx = frameContexts_[currentFrameIndex_];
+    return frameCtx.activeCbvSrvUavHeap.Get();
   }
   ID3D12DescriptorHeap* getSamplerHeap() const {
     return frameContexts_[currentFrameIndex_].samplerHeap.Get();
