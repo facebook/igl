@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <igl/Common.h>
+#include <cstdint>
+#include <string>
 #include <igl/DepthStencilState.h>
 #include <igl/ITrackedResource.h>
 #include <igl/TextureFormat.h>
