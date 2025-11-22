@@ -123,12 +123,9 @@ std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> par
 }
 
 Texture::~Texture() {
-  IGL_D3D12_LOG_VERBOSE("Texture::~Texture - START: Destroying texture %p\n", this);
-
   // Texture views share the parent's resource, so they don't own descriptors.
   // Only free descriptors for non-view textures.
   if (isView_) {
-    IGL_D3D12_LOG_VERBOSE("Texture::~Texture - Texture is a view, skipping descriptor cleanup\n");
     return;
   }
 
@@ -136,14 +133,11 @@ Texture::~Texture() {
   // Note: in the current architecture, descriptors are allocated/freed by RenderCommandEncoder,
   // not stored in Texture. This destructor is defensive in case descriptors become per-texture later.
   if (!iglDevice_) {
-    IGL_D3D12_LOG_VERBOSE("Texture::~Texture - No IGL device, skipping descriptor cleanup\n");
     return;
   }
 
   // For now, descriptors are managed by RenderCommandEncoder and freed when the encoder is destroyed.
   // The rtvIndices_, dsvIndices_, and srvIndex_ members are currently unused but reserved for future use.
-
-  IGL_D3D12_LOG_VERBOSE("Texture::~Texture - Destruction complete\n");
 }
 
 Result Texture::upload(const TextureRangeDesc& range,
