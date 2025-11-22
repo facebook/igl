@@ -1338,12 +1338,7 @@ ID3D12Resource* D3D12Context::getCurrentBackBuffer() const {
   }
 
   ID3D12Resource* resource = renderTargets_[index].Get();
-  static int logCount = 0;
-  if (logCount < 3) {
-    IGL_D3D12_LOG_VERBOSE("getCurrentBackBuffer(): index=%u, resource=%p\n", index, (void*)resource);
-    logCount++;
-  }
-
+  IGL_D3D12_LOG_VERBOSE("getCurrentBackBuffer(): index=%u, resource=%p\n", index, (void*)resource);
   return resource;
 }
 

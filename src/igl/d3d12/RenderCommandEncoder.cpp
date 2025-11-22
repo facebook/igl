@@ -567,11 +567,8 @@ void RenderCommandEncoder::endEncoding() {
 }
 
 void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
-  static int callCount = 0;
-  if (callCount < 3) {
-    IGL_D3D12_LOG_VERBOSE("bindViewport called #%d: x=%.1f, y=%.1f, w=%.1f, h=%.1f\n",
-                 ++callCount, viewport.x, viewport.y, viewport.width, viewport.height);
-  }
+  IGL_D3D12_LOG_VERBOSE("bindViewport called: x=%.1f, y=%.1f, w=%.1f, h=%.1f\n",
+               viewport.x, viewport.y, viewport.width, viewport.height);
   D3D12_VIEWPORT vp = {};
   vp.TopLeftX = viewport.x;
   vp.TopLeftY = viewport.y;
@@ -638,10 +635,7 @@ void RenderCommandEncoder::bindDepthStencilState(
 void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
                                             IBuffer& buffer,
                                             size_t bufferOffset) {
-  static int callCount = 0;
-  if (callCount < 3) {
-    IGL_D3D12_LOG_VERBOSE("bindVertexBuffer called #%d: index=%u\n", ++callCount, index);
-  }
+  IGL_D3D12_LOG_VERBOSE("bindVertexBuffer called: index=%u\n", index);
   if (index >= IGL_BUFFER_BINDINGS_MAX) {
     IGL_LOG_ERROR("bindVertexBuffer: index %u exceeds max %u\n", index, IGL_BUFFER_BINDINGS_MAX);
     return;
@@ -656,10 +650,7 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
 void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
                                            IndexFormat format,
                                            size_t bufferOffset) {
-  static int callCount = 0;
-  if (callCount < 3) {
-    IGL_D3D12_LOG_VERBOSE("bindIndexBuffer called #%d\n", ++callCount);
-  }
+  IGL_D3D12_LOG_VERBOSE("bindIndexBuffer called\n");
   auto* d3dBuffer = static_cast<Buffer*>(&buffer);
   cachedIndexBuffer_.bufferLocation = d3dBuffer->gpuAddress(bufferOffset);
   cachedIndexBuffer_.sizeInBytes = static_cast<UINT>(d3dBuffer->getSizeInBytes() - bufferOffset);
@@ -1126,10 +1117,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
                                        IBuffer* buffer,
                                        size_t offset,
                                        size_t /*bufferSize*/) {
-  static int callCount = 0;
-  if (callCount < 5) {
-    IGL_D3D12_LOG_VERBOSE("bindBuffer START #%d: index=%u\n", callCount + 1, index);
-  }
+  IGL_D3D12_LOG_VERBOSE("bindBuffer START: index=%u\n", index);
   if (!buffer) {
     IGL_D3D12_LOG_VERBOSE("bindBuffer: null buffer, returning\n");
     return;
@@ -1275,9 +1263,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     }
   }
 
-  if (callCount < 5) {
-    IGL_D3D12_LOG_VERBOSE("bindBuffer END #%d\n", ++callCount);
-  }
+  IGL_D3D12_LOG_VERBOSE("bindBuffer END\n");
 }
 void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
   IGL_D3D12_LOG_VERBOSE("bindBindGroup(texture): handle valid=%d\n", !handle.empty());

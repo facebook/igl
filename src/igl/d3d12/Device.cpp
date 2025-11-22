@@ -533,13 +533,8 @@ std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
 
   // Debug: Log GPU address for uniform buffers
   if (isUniformBuffer) {
-    static int uniformBufCount = 0;
-    if (uniformBufCount < 5) {
-      D3D12_GPU_VIRTUAL_ADDRESS gpuAddr = buffer->GetGPUVirtualAddress();
-      IGL_D3D12_LOG_VERBOSE("Device::createBuffer: Uniform buffer #%d created, GPU address=0x%llx\n",
-                   uniformBufCount + 1, gpuAddr);
-      uniformBufCount++;
-    }
+    D3D12_GPU_VIRTUAL_ADDRESS gpuAddr = buffer->GetGPUVirtualAddress();
+    IGL_D3D12_LOG_VERBOSE("Device::createBuffer: Uniform buffer created, GPU address=0x%llx\n", gpuAddr);
   }
 
   // Upload initial data if provided
