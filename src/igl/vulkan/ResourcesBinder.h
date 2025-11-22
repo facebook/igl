@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <igl/Buffer.h>
 #include <igl/Common.h>
 #include <igl/Texture.h>
 #include <igl/vulkan/CommandBuffer.h>
