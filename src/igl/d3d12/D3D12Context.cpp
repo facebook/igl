@@ -817,9 +817,17 @@ Result D3D12Context::enumerateAndSelectAdapter() {
   adapter_ = enumeratedAdapters_[selectedAdapterIndex_].adapter;
   selectedFeatureLevel_ = enumeratedAdapters_[selectedAdapterIndex_].featureLevel;
 
+  // T44: Concise single-line adapter log at INFO level (matches Vulkan/Metal minimalism)
+  const auto& selected = enumeratedAdapters_[selectedAdapterIndex_];
+  IGL_LOG_INFO("D3D12 Adapter: %ls (FL %s, %llu MB VRAM)\n",
+               selected.desc.Description,
+               featureLevelToString(selectedFeatureLevel_),
+               selected.getDedicatedVideoMemoryMB());
+
+  // Verbose: Detailed adapter info (vendor, device ID, LUID, etc.)
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Selected adapter %u: %ls (FL %s)\n",
                selectedAdapterIndex_,
-               enumeratedAdapters_[selectedAdapterIndex_].desc.Description,
+               selected.desc.Description,
                featureLevelToString(selectedFeatureLevel_));
 
   return Result();
