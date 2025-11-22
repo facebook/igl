@@ -86,17 +86,17 @@ struct D3D12ContextConfig {
   // === Validation Helpers ===
   // Clamp values to D3D12 spec limits and provide warnings for unusual configurations
   void validate() {
-    // Frame buffering: CRITICAL - must match kMaxFramesInFlight due to fixed-size arrays
-    // (frameContexts_[kMaxFramesInFlight], renderTargets_[kMaxFramesInFlight])
-    // TODO: Replace fixed arrays with std::vector to enable true runtime configurability
-    // Note: kMaxFramesInFlight is declared below this struct, so we use the literal value here.
-    // A static_assert after kMaxFramesInFlight declaration ensures they stay in sync.
-    constexpr uint32_t kCompiledMaxFrames = 3;
-    if (maxFramesInFlight != kCompiledMaxFrames) {
-      IGL_LOG_ERROR("D3D12ContextConfig: maxFramesInFlight=%u is not yet supported "
-                    "(fixed-size arrays limit to %u), clamping\n",
-                    maxFramesInFlight, kCompiledMaxFrames);
-      maxFramesInFlight = kCompiledMaxFrames;
+    // Frame buffering: Allow 2-4 buffers (double/triple/quad buffering)
+    // T43: Now that renderTargets_ and frameContexts_ are std::vector, we can support runtime counts.
+    // Practical range: 2 (double-buffer, higher latency), 3 (triple-buffer, balanced), 4 (lower latency, more memory)
+    // Note: DXGI may adjust the requested count; actual runtime count comes from GetDesc1().
+    constexpr uint32_t kMinFrames = 2;
+    constexpr uint32_t kMaxFrames = 4;
+    if (maxFramesInFlight < kMinFrames || maxFramesInFlight > kMaxFrames) {
+      IGL_LOG_ERROR("D3D12ContextConfig: maxFramesInFlight=%u out of range [%u, %u], clamping to %u\n",
+                    maxFramesInFlight, kMinFrames, kMaxFrames,
+                    (maxFramesInFlight < kMinFrames) ? kMinFrames : kMaxFrames);
+      maxFramesInFlight = (maxFramesInFlight < kMinFrames) ? kMinFrames : kMaxFrames;
     }
 
     // Sampler heap: Use D3D12 constant instead of magic number
@@ -149,7 +149,7 @@ struct D3D12ContextConfig {
   // Low memory configuration (mobile, integrated GPUs, constrained devices)
   static D3D12ContextConfig lowMemoryConfig() {
     D3D12ContextConfig config;
-    // NOTE: maxFramesInFlight kept at 3 (not configurable yet due to fixed-size arrays)
+    config.maxFramesInFlight = 2;        // Double-buffering to reduce memory (T43)
     config.descriptorsPerPage = 512;     // Smaller pages
     config.cbvSrvUavHeapSize = 512;      // Keep in sync (deprecated field)
     config.maxHeapPages = 8;             // Fewer pages (total: 512 × 8 = 4K descriptors)
@@ -163,7 +163,7 @@ struct D3D12ContextConfig {
   // High performance configuration (discrete GPUs, desktop, complex scenes)
   static D3D12ContextConfig highPerformanceConfig() {
     D3D12ContextConfig config;
-    // NOTE: maxFramesInFlight kept at 3 (not configurable yet due to fixed-size arrays)
+    config.maxFramesInFlight = 3;        // Triple-buffering (balanced, default) (T43)
     config.descriptorsPerPage = 2048;    // Larger pages
     config.cbvSrvUavHeapSize = 2048;     // Keep in sync (deprecated field)
     config.maxHeapPages = 32;            // More pages (total: 2048 × 32 = 64K descriptors)
@@ -175,15 +175,12 @@ struct D3D12ContextConfig {
   }
 };
 
-// Frame buffering count (2-3 for double/triple buffering).
-// D3D12ContextConfig exists but maxFramesInFlight is currently fixed at 3
-// until D3D12Context arrays are refactored to std::vector. Kept as constant for backward compatibility.
+// Default frame buffering count (triple buffering).
+// T43: D3D12Context now uses runtime swapchainBufferCount_ queried from the swapchain.
+// This constant serves as the default value for D3D12ContextConfig::maxFramesInFlight
+// and is used by headless contexts (which have no swapchain to query).
+// Applications can configure 2-4 buffers via D3D12ContextConfig::maxFramesInFlight.
 constexpr uint32_t kMaxFramesInFlight = 3;
-
-// Compile-time check: ensure kMaxFramesInFlight matches the value in D3D12ContextConfig::validate()
-// This prevents the local constant in validate() from drifting out of sync
-static_assert(kMaxFramesInFlight == 3,
-              "kMaxFramesInFlight must match kCompiledMaxFrames in D3D12ContextConfig::validate()");
 
 // Maximum number of descriptor sets (matching IGL's Vulkan backend)
 constexpr uint32_t kMaxDescriptorSets = 4;

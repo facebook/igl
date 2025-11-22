@@ -24,6 +24,13 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
   config_ = config;
   config_.validate();
 
+  // Headless mode: No swapchain, so use kMaxFramesInFlight as buffer count (T43)
+  swapchainBufferCount_ = kMaxFramesInFlight;
+  renderTargets_.resize(swapchainBufferCount_);
+  frameContexts_.resize(swapchainBufferCount_);
+  IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Initialized with %u frame buffers (no swapchain)\n",
+                        swapchainBufferCount_);
+
   // Initialize DXGI factory flags for debug builds
   UINT dxgiFactoryFlags = 0;
 
@@ -220,7 +227,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
                cbvSrvUavHeapSize, samplerHeapSize);
 
   // Create per-frame shader-visible descriptor heaps and an initial page for each frame.
-  for (UINT i = 0; i < kMaxFramesInFlight; i++) {
+  for (UINT i = 0; i < swapchainBufferCount_; i++) {
     // CBV/SRV/UAV heap per frame - create initial page
     igl::d3d12::ComPtr<ID3D12DescriptorHeap> initialHeap;
     D3D12_DESCRIPTOR_HEAP_DESC desc = {};
@@ -256,7 +263,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
 
   // Create per-frame command allocators (following Microsoft's D3D12HelloFrameBuffering pattern)
   IGL_D3D12_LOG_VERBOSE("HeadlessContext: Creating per-frame command allocators...\n");
-  for (UINT i = 0; i < kMaxFramesInFlight; i++) {
+  for (UINT i = 0; i < swapchainBufferCount_; i++) {
     hr = device_->CreateCommandAllocator(
         D3D12_COMMAND_LIST_TYPE_DIRECT,
         IID_PPV_ARGS(frameContexts_[i].allocator.GetAddressOf()));

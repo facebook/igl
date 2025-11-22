@@ -13,7 +13,8 @@ namespace igl::d3d12 {
 
 void FrameManager::advanceFrame(UINT64 currentFenceValue) {
   // Calculate next frame index
-  const uint32_t nextFrameIndex = (context_.getCurrentFrameIndex() + 1) % kMaxFramesInFlight;
+  const uint32_t bufferCount = context_.getSwapchainBufferCount();
+  const uint32_t nextFrameIndex = (context_.getCurrentFrameIndex() + 1) % bufferCount;
 
   // STEP 1: Pipeline overload protection
   waitForPipelineSync(currentFenceValue);
@@ -43,9 +44,10 @@ void FrameManager::advanceFrame(UINT64 currentFenceValue) {
 void FrameManager::waitForPipelineSync(UINT64 currentFenceValue) {
   auto* fence = context_.getFence();
 
-  // Ensure we don't have more than kMaxFramesInFlight frames in flight
-  const UINT64 minimumSafeFence = (currentFenceValue >= kMaxFramesInFlight)
-      ? (currentFenceValue - (kMaxFramesInFlight - 1))
+  // Ensure we don't have more frames in flight than swapchain buffers
+  const uint32_t bufferCount = context_.getSwapchainBufferCount();
+  const UINT64 minimumSafeFence = (currentFenceValue >= bufferCount)
+      ? (currentFenceValue - (bufferCount - 1))
       : 0;
 
   const UINT64 currentCompletedValue = fence->GetCompletedValue();

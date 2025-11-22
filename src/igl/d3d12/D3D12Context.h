@@ -288,8 +288,9 @@ class D3D12Context {
   void waitForGPU();
 
   // Per-frame fence access for CommandQueue
-  FrameContext* getFrameContexts() { return frameContexts_; }
+  FrameContext* getFrameContexts() { return frameContexts_.data(); }
   UINT& getCurrentFrameIndex() { return currentFrameIndex_; }
+  UINT getSwapchainBufferCount() const { return swapchainBufferCount_; }
   UINT64& getFenceValue() { return fenceValue_; }
   ID3D12Fence* getFence() const { return fence_.Get(); }
 
@@ -370,9 +371,10 @@ class D3D12Context {
   igl::d3d12::ComPtr<ID3D12Device> device_;
   igl::d3d12::ComPtr<ID3D12CommandQueue> commandQueue_;
   igl::d3d12::ComPtr<IDXGISwapChain3> swapChain_;
+  UINT swapchainBufferCount_ = 0;  // Queried from swapchain, replaces kMaxFramesInFlight
 
   igl::d3d12::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
-  igl::d3d12::ComPtr<ID3D12Resource> renderTargets_[kMaxFramesInFlight];
+  std::vector<igl::d3d12::ComPtr<ID3D12Resource>> renderTargets_;  // Sized to swapchainBufferCount_
   UINT rtvDescriptorSize_ = 0;
 
   // Descriptor sizes (cached from device)
@@ -413,7 +415,7 @@ class D3D12Context {
   DescriptorHeapManager* heapMgr_ = nullptr; // non-owning; points to ownedHeapMgr_ or external (headless)
 
   // Per-frame synchronization for CPU/GPU parallelism
-  FrameContext frameContexts_[kMaxFramesInFlight];
+  std::vector<FrameContext> frameContexts_;  // Sized to swapchainBufferCount_
   UINT currentFrameIndex_ = 0;
 
   // Global synchronization

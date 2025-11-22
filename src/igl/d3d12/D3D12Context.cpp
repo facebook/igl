@@ -48,7 +48,7 @@ D3D12Context::~D3D12Context() {
   waitForGPU();
 
   // Explicitly release all frame context resources to prevent leaks.
-  for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+  for (uint32_t i = 0; i < frameContexts_.size(); ++i) {
     frameContexts_[i].transientBuffers.clear();
     frameContexts_[i].transientResources.clear();
 
@@ -64,7 +64,7 @@ D3D12Context::~D3D12Context() {
   }
 
   // Release render targets explicitly.
-  for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+  for (uint32_t i = 0; i < renderTargets_.size(); ++i) {
     renderTargets_[i].Reset();
   }
 
@@ -108,6 +108,11 @@ Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height,
   // Store and validate configuration.
   config_ = config;
   config_.validate();
+
+  // Pre-allocate vectors to config size (T43). Will be verified/resized after swapchain creation.
+  swapchainBufferCount_ = config_.maxFramesInFlight;
+  renderTargets_.resize(swapchainBufferCount_);
+  frameContexts_.resize(swapchainBufferCount_);
 
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating D3D12 device...\n");
   Result deviceResult = createDevice();
@@ -167,9 +172,9 @@ Result D3D12Context::initialize(HWND hwnd, uint32_t width, uint32_t height,
   }
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Fence created successfully\n");
 
-  // Create per-frame command allocators using configurable frame count.
+  // Create per-frame command allocators using runtime buffer count (T43).
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating per-frame command allocators...\n");
-  for (UINT i = 0; i < config_.maxFramesInFlight; i++) {
+  for (UINT i = 0; i < swapchainBufferCount_; i++) {
     hr = device_->CreateCommandAllocator(
         D3D12_COMMAND_LIST_TYPE_DIRECT,
         IID_PPV_ARGS(frameContexts_[i].allocator.GetAddressOf()));
@@ -219,8 +224,8 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
     }
   }
 
-  // Release old back buffers
-  for (UINT i = 0; i < config_.maxFramesInFlight; i++) {
+  // Release old back buffers (T43: use runtime buffer count)
+  for (UINT i = 0; i < swapchainBufferCount_; i++) {
     renderTargets_[i].Reset();
   }
 
@@ -230,9 +235,9 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
     swapChain_->GetDesc1(&currentDesc);
   }
 
-  // Try to resize existing swapchain
+  // Try to resize existing swapchain (T43: use runtime buffer count)
   HRESULT hr = swapChain_->ResizeBuffers(
-      config_.maxFramesInFlight,
+      swapchainBufferCount_,
       width,
       height,
       currentDesc.Format ? currentDesc.Format : DXGI_FORMAT_B8G8R8A8_UNORM,
@@ -306,7 +311,7 @@ Result D3D12Context::recreateSwapChain(uint32_t width, uint32_t height) {
   newDesc.SampleDesc.Count = 1;
   newDesc.SampleDesc.Quality = 0;
   newDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-  newDesc.BufferCount = config_.maxFramesInFlight;
+  newDesc.BufferCount = swapchainBufferCount_;  // T43: use runtime buffer count
   newDesc.Scaling = DXGI_SCALING_STRETCH;
   newDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
   newDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
@@ -949,7 +954,7 @@ Result D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height)
   swapChainDesc.SampleDesc.Count = 1;
   swapChainDesc.SampleDesc.Quality = 0;
   swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-  swapChainDesc.BufferCount = kMaxFramesInFlight;
+  swapChainDesc.BufferCount = config_.maxFramesInFlight;  // T43: use configured buffer count
   swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
   swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
   swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
@@ -995,7 +1000,7 @@ Result D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height)
     legacy.SampleDesc.Count = 1;
     legacy.SampleDesc.Quality = 0;
     legacy.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    legacy.BufferCount = kMaxFramesInFlight;
+    legacy.BufferCount = config_.maxFramesInFlight;  // T43: use configured buffer count
     legacy.OutputWindow = hwnd;
     legacy.Windowed = TRUE;
     legacy.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
@@ -1053,12 +1058,28 @@ Result D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height)
   // A-010: Detect HDR capabilities now that swapchain is created
   detectHDRCapabilities();
 
+  // Query swapchain buffer count for dynamic frame management (T43)
+  DXGI_SWAP_CHAIN_DESC1 swapDesc = {};
+  hr = swapChain_->GetDesc1(&swapDesc);
+  if (FAILED(hr)) {
+    IGL_LOG_ERROR("D3D12Context: Failed to query swapchain description (HRESULT: 0x%08X)\n", static_cast<unsigned>(hr));
+    IGL_DEBUG_ASSERT(false);
+    return Result(Result::Code::RuntimeError, "Failed to query swapchain description");
+  }
+
+  swapchainBufferCount_ = swapDesc.BufferCount;
+  IGL_D3D12_LOG_VERBOSE("D3D12Context: Swapchain created with %u buffers\n", swapchainBufferCount_);
+
+  // Resize frame management arrays to match swapchain buffer count
+  renderTargets_.resize(swapchainBufferCount_);
+  frameContexts_.resize(swapchainBufferCount_);
+
   return Result();
 }
 
 Result D3D12Context::createRTVHeap() {
   D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-  heapDesc.NumDescriptors = kMaxFramesInFlight;
+  heapDesc.NumDescriptors = swapchainBufferCount_;  // Use queried buffer count
   heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
   heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
@@ -1078,7 +1099,7 @@ Result D3D12Context::createRTVHeap() {
 Result D3D12Context::createBackBuffers() {
   D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap_->GetCPUDescriptorHandleForHeapStart();
 
-  for (UINT i = 0; i < kMaxFramesInFlight; i++) {
+  for (UINT i = 0; i < swapchainBufferCount_; i++) {  // Use queried buffer count
     HRESULT hr = swapChain_->GetBuffer(i, IID_PPV_ARGS(renderTargets_[i].GetAddressOf()));
     if (FAILED(hr)) {
       IGL_LOG_ERROR("D3D12Context: Failed to get swapchain buffer %u (HRESULT: 0x%08X)\n", i, static_cast<unsigned>(hr));
@@ -1109,13 +1130,13 @@ Result D3D12Context::createDescriptorHeaps() {
   // Each frame gets its own isolated heaps to prevent descriptor conflicts between frames.
   // Use pre-allocation with fail-fast on exhaustion (Vulkan pattern, no dynamic growth).
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating per-frame descriptor heaps with fail-fast allocation...\n");
-  IGL_D3D12_LOG_VERBOSE("  Config: maxFramesInFlight=%u, samplerHeapSize=%u, "
+  IGL_D3D12_LOG_VERBOSE("  Config: bufferCount=%u, samplerHeapSize=%u, "
                "descriptorsPerPage=%u, maxHeapPages=%u, preAllocate=%s\n",
-               config_.maxFramesInFlight, config_.samplerHeapSize,
+               swapchainBufferCount_, config_.samplerHeapSize,
                config_.descriptorsPerPage, config_.maxHeapPages,
                config_.preAllocateDescriptorPages ? "true" : "false");
 
-  for (UINT i = 0; i < config_.maxFramesInFlight; i++) {
+  for (UINT i = 0; i < swapchainBufferCount_; i++) {
     // CBV/SRV/UAV heap: pre-allocate pages based on the configuration policy.
     // When preAllocateDescriptorPages is true, allocate all maxHeapPages upfront
     // to prevent mid-frame allocation and descriptor invalidation (Vulkan fail-fast pattern).
@@ -1176,9 +1197,9 @@ Result D3D12Context::createDescriptorHeaps() {
   const uint32_t pagesPerFrame = config_.preAllocateDescriptorPages ? config_.maxHeapPages : 1;
   const uint32_t cbvSrvUavDescriptors = config_.descriptorsPerPage * pagesPerFrame;
   const uint32_t totalDescriptorsPerFrame = cbvSrvUavDescriptors + config_.samplerHeapSize;
-  const uint32_t totalMemoryKB = (config_.maxFramesInFlight * totalDescriptorsPerFrame * 32) / 1024;
+  const uint32_t totalMemoryKB = (swapchainBufferCount_ * totalDescriptorsPerFrame * 32) / 1024;
   IGL_D3D12_LOG_VERBOSE("  Allocated memory: %u frames * (%u CBV/SRV/UAV + %u Samplers) * 32 bytes = %u KB\n",
-               config_.maxFramesInFlight, cbvSrvUavDescriptors,
+               swapchainBufferCount_, cbvSrvUavDescriptors,
                config_.samplerHeapSize, totalMemoryKB);
 
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Creating descriptor heap manager...\n");
@@ -1270,8 +1291,8 @@ uint32_t D3D12Context::getCurrentBackBufferIndex() const {
 
 ID3D12Resource* D3D12Context::getCurrentBackBuffer() const {
   uint32_t index = getCurrentBackBufferIndex();
-  if (index >= config_.maxFramesInFlight) {
-    IGL_LOG_ERROR("getCurrentBackBuffer(): index %u >= maxFramesInFlight %u\n", index, config_.maxFramesInFlight);
+  if (index >= swapchainBufferCount_) {
+    IGL_LOG_ERROR("getCurrentBackBuffer(): index %u >= swapchainBufferCount %u\n", index, swapchainBufferCount_);
     return nullptr;
   }
 
