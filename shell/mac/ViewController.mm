@@ -319,6 +319,10 @@ using namespace igl;
       devices = igl::vulkan::HWDevice::queryDevices(
           *context, igl::HWDeviceQueryDesc(igl::HWDeviceType::IntegratedGpu), nullptr);
     }
+    if (devices.empty()) {
+      devices = igl::vulkan::HWDevice::queryDevices(
+          *context, igl::HWDeviceQueryDesc(igl::HWDeviceType::SoftwareGpu), nullptr);
+    }
     auto device = igl::vulkan::HWDevice::create(
         std::move(context), devices[0], 0, 0, 0, nullptr, nullptr, "IGL Shell", nullptr);
 
