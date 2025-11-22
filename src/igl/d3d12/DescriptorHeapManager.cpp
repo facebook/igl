@@ -7,6 +7,8 @@
 
 #include <igl/d3d12/DescriptorHeapManager.h>
 
+#include <algorithm>
+
 namespace igl::d3d12 {
 
 Result DescriptorHeapManager::initialize(ID3D12Device* device, const Sizes& sizes) {
@@ -98,12 +100,6 @@ Result DescriptorHeapManager::initialize(ID3D12Device* device, const Sizes& size
     }
   }
 
-  // Initialize allocation tracking bitsets (all descriptors start as free)
-  allocatedRtvs_.resize(sizes_.rtvs, false);
-  allocatedDsvs_.resize(sizes_.dsvs, false);
-  allocatedCbvSrvUav_.resize(sizes_.cbvSrvUav, false);
-  allocatedSamplers_.resize(sizes_.samplers, false);
-
   return Result();
 }
 
@@ -117,10 +113,6 @@ uint32_t DescriptorHeapManager::allocateRTV() {
   }
   const uint32_t idx = freeRtvs_.back();
   freeRtvs_.pop_back();
-
-  // Mark as allocated
-  IGL_DEBUG_ASSERT(!allocatedRtvs_[idx], "Free list contained allocated descriptor!");
-  allocatedRtvs_[idx] = true;
 
   return idx;
 }
@@ -136,10 +128,6 @@ uint32_t DescriptorHeapManager::allocateDSV() {
   const uint32_t idx = freeDsvs_.back();
   freeDsvs_.pop_back();
 
-  // Mark as allocated
-  IGL_DEBUG_ASSERT(!allocatedDsvs_[idx], "Free list contained allocated descriptor!");
-  allocatedDsvs_[idx] = true;
-
   return idx;
 }
 
@@ -151,15 +139,15 @@ void DescriptorHeapManager::freeRTV(uint32_t index) {
     return;
   }
 
-  // CRITICAL: Detect double-free bugs
-  if (!allocatedRtvs_[index]) {
+  // CRITICAL: Detect double-free bugs by checking if index is already in free list
+  // Note: O(N) scan - acceptable for RTV heap (typically ~256 descriptors)
+  if (std::find(freeRtvs_.begin(), freeRtvs_.end(), index) != freeRtvs_.end()) {
     IGL_LOG_ERROR("DescriptorHeapManager: DOUBLE-FREE DETECTED - RTV index %u already freed!\n", index);
     IGL_DEBUG_ASSERT(false, "Double-free of RTV descriptor - caller bug detected");
     return;  // Prevent corruption even in release builds
   }
 
-  // Mark as free and add to free list
-  allocatedRtvs_[index] = false;
+  // Add to free list
   freeRtvs_.push_back(index);
 }
 
@@ -171,15 +159,15 @@ void DescriptorHeapManager::freeDSV(uint32_t index) {
     return;
   }
 
-  // CRITICAL: Detect double-free bugs
-  if (!allocatedDsvs_[index]) {
+  // CRITICAL: Detect double-free bugs by checking if index is already in free list
+  // Note: O(N) scan - acceptable for DSV heap (typically ~128 descriptors)
+  if (std::find(freeDsvs_.begin(), freeDsvs_.end(), index) != freeDsvs_.end()) {
     IGL_LOG_ERROR("DescriptorHeapManager: DOUBLE-FREE DETECTED - DSV index %u already freed!\n", index);
     IGL_DEBUG_ASSERT(false, "Double-free of DSV descriptor - caller bug detected");
     return;  // Prevent corruption even in release builds
   }
 
-  // Mark as free and add to free list
-  allocatedDsvs_[index] = false;
+  // Add to free list
   freeDsvs_.push_back(index);
 }
 
@@ -193,10 +181,6 @@ uint32_t DescriptorHeapManager::allocateCbvSrvUav() {
   }
   const uint32_t idx = freeCbvSrvUav_.back();
   freeCbvSrvUav_.pop_back();
-
-  // Mark as allocated
-  IGL_DEBUG_ASSERT(!allocatedCbvSrvUav_[idx], "Free list contained allocated descriptor!");
-  allocatedCbvSrvUav_[idx] = true;
 
   return idx;
 }
@@ -212,10 +196,6 @@ uint32_t DescriptorHeapManager::allocateSampler() {
   const uint32_t idx = freeSamplers_.back();
   freeSamplers_.pop_back();
 
-  // Mark as allocated
-  IGL_DEBUG_ASSERT(!allocatedSamplers_[idx], "Free list contained allocated descriptor!");
-  allocatedSamplers_[idx] = true;
-
   return idx;
 }
 
@@ -227,15 +207,18 @@ void DescriptorHeapManager::freeCbvSrvUav(uint32_t index) {
     return;
   }
 
-  // CRITICAL: Detect double-free bugs
-  if (!allocatedCbvSrvUav_[index]) {
+#if IGL_DEBUG
+  // CRITICAL: Detect double-free bugs by checking if index is already in free list
+  // Note: O(N) scan - can be expensive for large heaps (~4096 descriptors).
+  // Only enabled in debug builds to avoid overhead in production.
+  if (std::find(freeCbvSrvUav_.begin(), freeCbvSrvUav_.end(), index) != freeCbvSrvUav_.end()) {
     IGL_LOG_ERROR("DescriptorHeapManager: DOUBLE-FREE DETECTED - CBV/SRV/UAV index %u already freed!\n", index);
     IGL_DEBUG_ASSERT(false, "Double-free of CBV/SRV/UAV descriptor - caller bug detected");
-    return;  // Prevent corruption even in release builds
+    return;  // Prevent corruption even in debug builds
   }
+#endif
 
-  // Mark as free and add to free list
-  allocatedCbvSrvUav_[index] = false;
+  // Add to free list
   freeCbvSrvUav_.push_back(index);
 }
 
@@ -247,15 +230,18 @@ void DescriptorHeapManager::freeSampler(uint32_t index) {
     return;
   }
 
-  // CRITICAL: Detect double-free bugs
-  if (!allocatedSamplers_[index]) {
+#if IGL_DEBUG
+  // CRITICAL: Detect double-free bugs by checking if index is already in free list
+  // Note: O(N) scan - can be expensive for large heaps (~2048 descriptors).
+  // Only enabled in debug builds to avoid overhead in production.
+  if (std::find(freeSamplers_.begin(), freeSamplers_.end(), index) != freeSamplers_.end()) {
     IGL_LOG_ERROR("DescriptorHeapManager: DOUBLE-FREE DETECTED - Sampler index %u already freed!\n", index);
     IGL_DEBUG_ASSERT(false, "Double-free of Sampler descriptor - caller bug detected");
-    return;  // Prevent corruption even in release builds
+    return;  // Prevent corruption even in debug builds
   }
+#endif
 
-  // Mark as free and add to free list
-  allocatedSamplers_[index] = false;
+  // Add to free list
   freeSamplers_.push_back(index);
 }
 
@@ -291,7 +277,7 @@ bool DescriptorHeapManager::getRTVHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HA
   // Check if descriptor has been freed (use-after-free detection)
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (!allocatedRtvs_[index]) {
+    if (std::find(freeRtvs_.begin(), freeRtvs_.end(), index) != freeRtvs_.end()) {
       IGL_LOG_ERROR("DescriptorHeapManager::getRTVHandle: Descriptor index %u has been freed (use-after-free)\n", index);
       IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed RTV descriptor");
       return false;
@@ -339,7 +325,7 @@ bool DescriptorHeapManager::getDSVHandle(uint32_t index, D3D12_CPU_DESCRIPTOR_HA
   // Check if descriptor has been freed (use-after-free detection)
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (!allocatedDsvs_[index]) {
+    if (std::find(freeDsvs_.begin(), freeDsvs_.end(), index) != freeDsvs_.end()) {
       IGL_LOG_ERROR("DescriptorHeapManager::getDSVHandle: Descriptor index %u has been freed (use-after-free)\n", index);
       IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed DSV descriptor");
       return false;
@@ -378,15 +364,18 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getCbvSrvUavCpuHandle(uint32_
     return h;
   }
 
+#if IGL_DEBUG
   // Check if descriptor has been freed (use-after-free detection)
+  // Note: O(N) scan - only enabled in debug builds
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (!allocatedCbvSrvUav_[index]) {
+    if (std::find(freeCbvSrvUav_.begin(), freeCbvSrvUav_.end(), index) != freeCbvSrvUav_.end()) {
       IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavCpuHandle: Descriptor index %u has been freed (use-after-free)\n", index);
       IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed CBV/SRV/UAV descriptor");
       return h;
     }
   }
+#endif
 
   h = cbvSrvUavHeap_->GetCPUDescriptorHandleForHeapStart();
   h.ptr += index * cbvSrvUavDescriptorSize_;
@@ -420,15 +409,18 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getCbvSrvUavGpuHandle(uint32_
     return h;
   }
 
+#if IGL_DEBUG
   // Check if descriptor has been freed (use-after-free detection)
+  // Note: O(N) scan - only enabled in debug builds
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (!allocatedCbvSrvUav_[index]) {
+    if (std::find(freeCbvSrvUav_.begin(), freeCbvSrvUav_.end(), index) != freeCbvSrvUav_.end()) {
       IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavGpuHandle: Descriptor index %u has been freed (use-after-free)\n", index);
       IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed CBV/SRV/UAV descriptor");
       return h;
     }
   }
+#endif
 
   h = cbvSrvUavHeap_->GetGPUDescriptorHandleForHeapStart();
   h.ptr += index * cbvSrvUavDescriptorSize_;
@@ -462,15 +454,18 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getSamplerCpuHandle(uint32_t 
     return h;
   }
 
+#if IGL_DEBUG
   // Check if descriptor has been freed (use-after-free detection)
+  // Note: O(N) scan - only enabled in debug builds
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (!allocatedSamplers_[index]) {
+    if (std::find(freeSamplers_.begin(), freeSamplers_.end(), index) != freeSamplers_.end()) {
       IGL_LOG_ERROR("DescriptorHeapManager::getSamplerCpuHandle: Descriptor index %u has been freed (use-after-free)\n", index);
       IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed Sampler descriptor");
       return h;
     }
   }
+#endif
 
   h = samplerHeap_->GetCPUDescriptorHandleForHeapStart();
   h.ptr += index * samplerDescriptorSize_;
@@ -504,15 +499,18 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapManager::getSamplerGpuHandle(uint32_t 
     return h;
   }
 
+#if IGL_DEBUG
   // Check if descriptor has been freed (use-after-free detection)
+  // Note: O(N) scan - only enabled in debug builds
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (!allocatedSamplers_[index]) {
+    if (std::find(freeSamplers_.begin(), freeSamplers_.end(), index) != freeSamplers_.end()) {
       IGL_LOG_ERROR("DescriptorHeapManager::getSamplerGpuHandle: Descriptor index %u has been freed (use-after-free)\n", index);
       IGL_DEBUG_ASSERT(false, "Use-after-free: Accessing freed Sampler descriptor");
       return h;
     }
   }
+#endif
 
   h = samplerHeap_->GetGPUDescriptorHandleForHeapStart();
   h.ptr += index * samplerDescriptorSize_;
@@ -534,7 +532,12 @@ bool DescriptorHeapManager::isValidRTVIndex(uint32_t index) const {
   // Check if descriptor is currently allocated (not in free list)
   // This helps detect use-after-free bugs
   std::lock_guard<std::mutex> lock(mutex_);
-  return allocatedRtvs_[index];
+  for (const auto& freeIdx : freeRtvs_) {
+    if (freeIdx == index) {
+      return false;  // Index is in free list, so it's not allocated
+    }
+  }
+  return true;  // Not in free list, so it's allocated
 }
 
 bool DescriptorHeapManager::isValidDSVIndex(uint32_t index) const {
@@ -546,7 +549,12 @@ bool DescriptorHeapManager::isValidDSVIndex(uint32_t index) const {
   }
   // Check if descriptor is currently allocated
   std::lock_guard<std::mutex> lock(mutex_);
-  return allocatedDsvs_[index];
+  for (const auto& freeIdx : freeDsvs_) {
+    if (freeIdx == index) {
+      return false;  // Index is in free list, so it's not allocated
+    }
+  }
+  return true;  // Not in free list, so it's allocated
 }
 
 bool DescriptorHeapManager::isValidCbvSrvUavIndex(uint32_t index) const {
@@ -558,7 +566,12 @@ bool DescriptorHeapManager::isValidCbvSrvUavIndex(uint32_t index) const {
   }
   // Check if descriptor is currently allocated
   std::lock_guard<std::mutex> lock(mutex_);
-  return allocatedCbvSrvUav_[index];
+  for (const auto& freeIdx : freeCbvSrvUav_) {
+    if (freeIdx == index) {
+      return false;  // Index is in free list, so it's not allocated
+    }
+  }
+  return true;  // Not in free list, so it's allocated
 }
 
 bool DescriptorHeapManager::isValidSamplerIndex(uint32_t index) const {
@@ -570,7 +583,12 @@ bool DescriptorHeapManager::isValidSamplerIndex(uint32_t index) const {
   }
   // Check if descriptor is currently allocated
   std::lock_guard<std::mutex> lock(mutex_);
-  return allocatedSamplers_[index];
+  for (const auto& freeIdx : freeSamplers_) {
+    if (freeIdx == index) {
+      return false;  // Index is in free list, so it's not allocated
+    }
+  }
+  return true;  // Not in free list, so it's allocated
 }
 
 void DescriptorHeapManager::logUsageStats() const {
@@ -604,7 +622,7 @@ void DescriptorHeapManager::logUsageStats() const {
   IGL_D3D12_LOG_VERBOSE("========================================\n");
 }
 
-// T32: Explicit cleanup to release descriptor heaps before device destruction
+// Explicit cleanup to release descriptor heaps before device destruction
 void DescriptorHeapManager::cleanup() {
   std::lock_guard<std::mutex> lock(mutex_);
 
@@ -619,12 +637,6 @@ void DescriptorHeapManager::cleanup() {
   freeSamplers_.clear();
   freeRtvs_.clear();
   freeDsvs_.clear();
-
-  // Clear allocation tracking
-  allocatedCbvSrvUav_.clear();
-  allocatedSamplers_.clear();
-  allocatedRtvs_.clear();
-  allocatedDsvs_.clear();
 }
 
 void DescriptorHeapManager::validateAndClampSizes(ID3D12Device* device) {

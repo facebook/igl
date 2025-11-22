@@ -136,12 +136,6 @@ class DescriptorHeapManager {
   std::vector<uint32_t> freeCbvSrvUav_;
   std::vector<uint32_t> freeSamplers_;
 
-  // Allocation state tracking (prevents double-free)
-  std::vector<bool> allocatedRtvs_;
-  std::vector<bool> allocatedDsvs_;
-  std::vector<bool> allocatedCbvSrvUav_;
-  std::vector<bool> allocatedSamplers_;
-
   // Total sizes
   Sizes sizes_{};
 
