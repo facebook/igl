@@ -262,6 +262,13 @@ class ShaderStagesCreator {
       const IDevice& device,
       std::shared_ptr<IShaderModule> computeModule,
       Result* IGL_NULLABLE outResult);
+    
+  static std::unique_ptr<IShaderStages> fromMeshRenderModules(
+      const IDevice& device,
+      std::shared_ptr<IShaderModule> taskModule,
+      std::shared_ptr<IShaderModule> meshModule,
+      std::shared_ptr<IShaderModule> fragmentModule,
+      Result* IGL_NULLABLE outResult);
 };
 
 } // namespace igl

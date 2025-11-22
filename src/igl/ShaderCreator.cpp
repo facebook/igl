@@ -316,6 +316,16 @@ std::unique_ptr<IShaderStages> ShaderStagesCreator::fromComputeModule(
   return device.createShaderStages(desc, outResult);
 }
 
+std::unique_ptr<IShaderStages> ShaderStagesCreator::fromMeshRenderModules(
+    const IDevice& device,
+    std::shared_ptr<IShaderModule> taskModule,
+    std::shared_ptr<IShaderModule> meshModule,
+    std::shared_ptr<IShaderModule> fragmentModule,
+    Result* IGL_NULLABLE outResult) {
+  const auto desc = ShaderStagesDesc::fromMeshRenderModules(std::move(taskModule), std::move(meshModule), std::move(fragmentModule));
+  return device.createShaderStages(desc, outResult);
+}
+
 namespace {
 std::unique_ptr<IShaderStages> fromLibraryDesc(const IDevice& device,
                                                const ShaderLibraryDesc& libraryDesc,
