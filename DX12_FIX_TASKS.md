@@ -185,3 +185,81 @@ Each task below corresponds to a finding in `CODE_QUALITY_AUDIT.md`. Every task 
   - D3D12 debug layer and GPU‑based validation remain clean for these tests (no InfoQueue warnings about resource dimensions, subresource footprints, or copy regions).
   - `cmd /c mandatory_all_tests.bat` reports `Unit Tests: PASS` with the same D3D12 validation env vars used in this audit.
 
+---
+
+## Task V1 – Closed Command List API Usage (InfoQueue ID 547)
+
+- **Files / Lines (likely sources)**
+  - `src/igl/d3d12/CommandBuffer.cpp:413-448` (Reset/Close in `begin`/`end`)
+  - `src/igl/d3d12/CommandQueue.cpp:104-148` (submit, closes list then calls other helpers)
+  - `src/igl/d3d12/RenderCommandEncoder.cpp`, `src/igl/d3d12/ComputeCommandEncoder.cpp` (encoders using `commandList_` that is owned by `CommandBuffer`)
+- **Problem Summary**
+  - D3D12 InfoQueue reports `ID3D12GraphicsCommandList::*: This API cannot be called on a closed command list.` (ID 547) multiple times. This indicates at least one encoder or helper is calling D3D12 command‑list APIs after the underlying `ID3D12GraphicsCommandList` has been closed by `CommandBuffer::end()` or an immediate‑commands submit.
+- **Official Microsoft References**
+  - Command lists: `https://learn.microsoft.com/windows/win32/direct3d12/recording-command-lists`  
+  - HelloTriangle pattern: `DirectX-Graphics-Samples/Samples/Desktop/D3D12HelloWorld/src/HelloTriangle/D3D12HelloTriangle.cpp` (Reset → record → Close → Execute; no calls after Close).
+- **Minimal Patch Plan**
+  1. Add a simple `bool isRecording() const` helper to `CommandBuffer` that reflects the `recording_` flag.
+  2. In `RenderCommandEncoder` and `ComputeCommandEncoder` methods that issue D3D12 commands (e.g., draw, dispatch, resource transitions, debug markers), assert and early‑out if `commandBuffer_.isRecording()` is false or `commandBuffer_.getCommandList()` is null.
+  3. For immediate‑commands helpers and deferred copy paths, ensure the local command list (`D3D12ImmediateCommands`) is only used between `Reset` and `Close`; never call into it after `submit(true, ...)`.
+  4. Add targeted logging in the error path that includes encoder type, call site, and an indication that the command list was closed.
+- **Acceptance Checks**
+  - Run `cmd /c mandatory_all_tests.bat` with D3D12 validation enabled as before.
+  - Confirm that `artifacts/validation/D3D12_InfoQueue.log` contains **no** `ID=547` messages.
+  - All render sessions and unit tests still pass.
+
+---
+
+## Task V2 – Uninitialized Descriptor Tables (InfoQueue ID 646)
+
+- **Files / Lines (likely sources)**
+  - Graphics SRVs: `src/igl/d3d12/D3D12ResourcesBinder.cpp:360-420` (texture SRV table) and `src/igl/d3d12/RenderCommandEncoder.cpp:760-820` (bind SRVs/samplers, CBV tables).
+  - Graphics UAVs: `src/igl/d3d12/RenderCommandEncoder.cpp:1520-1665` (bindBindGroup buffer UAV/SRV and root param 6).
+  - Compute UAV tables: `src/igl/d3d12/ComputeCommandEncoder.cpp:380-460` (storage buffers) and root‑table bindings at indices 1/3 in `dispatchThreadGroups`.
+- **Problem Summary**
+  - InfoQueue reports `CGraphicsCommandList::SetGraphicsRootDescriptorTable` / `SetComputeRootDescriptorTable` with uninitialized descriptors for SRV/UAV tables (ID 646). This means:
+    - Some root descriptor tables are bound even though the corresponding descriptor slots have never been written.
+    - In particular, graphics SRV/UAV tables and compute UAV tables must not be set when their base GPU handle points to a region containing uninitialized descriptors.
+- **Official Microsoft References**
+  - Descriptor heaps and tables: `https://learn.microsoft.com/windows/win32/direct3d12/descriptor-heaps`  
+  - Debug‑layer requirement that static (non‑volatile) descriptor ranges be fully initialized before being bound.
+- **Minimal Patch Plan**
+  1. In `D3D12ResourcesBinder::updateTextureBindings` and `updateSamplerBindings`, ensure that:
+     - All descriptors in the range actually written by the binder are initialized (already true).
+     - The SRV table is only bound if `bindingsTextures_.count > 0` **and** `bindingsTextures_.handles[0].ptr != 0`.
+  2. In `RenderCommandEncoder::draw`:
+     - Guard `SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0])` and `SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0])` behind checks that `cachedTextureCount_` / `cachedSamplerCount_` are > 0 and that any descriptors up to those counts have been initialized (e.g., track a `texturesInitialized_` flag).
+     - For storage‑buffer SRVs/UAVs bound via `bindBindGroup(buffer)`, ensure that the code never binds a root descriptor table pointing to a single descriptor unless that descriptor was just created.
+  3. For compute UAV tables in `ComputeCommandEncoder::dispatchThreadGroups`:
+     - Only call `SetComputeRootDescriptorTable` with the UAV table handle when `boundUavCount_ > 0` and `cachedUavHandles_[0].ptr != 0`.
+     - Ensure that any slots in the UAV range not used are explicitly zeroed and that the descriptor allocation logic doesn’t reuse stale handles when bindings are cleared.
+  4. Add defensive debug assertions that verify GPU handles used for `Set*RootDescriptorTable` are non‑zero and were produced from `getCbvSrvUavGpuHandle` / `getSamplerGpuHandle` after descriptor creation in the current frame.
+- **Acceptance Checks**
+  - Run the full `mandatory_all_tests.bat` with validation enabled.
+  - Confirm that `artifacts/validation/D3D12_InfoQueue.log` contains **no** `ID=646` messages for either graphics or compute root descriptor tables.
+  - All tests and render sessions continue to pass.
+
+---
+
+## Task V3 – ClearRenderTargetView Clear‑Value Mismatch (InfoQueue ID 820)
+
+- **Files / Lines**
+  - `src/igl/d3d12/RenderCommandEncoder.cpp:200-260`, `260-320`
+- **Problem Summary**
+  - InfoQueue warning ID 820 states that `ClearRenderTargetView` clear values do not match those passed at resource creation, which can degrade performance. This typically occurs when RTVs are created without specifying an optimized clear value while calling `ClearRenderTargetView` with arbitrary colors.
+- **Official Microsoft References**
+  - Resource creation and clear values:  
+    `https://learn.microsoft.com/windows/win32/direct3d12/clearing-the-render-target`
+  - HelloTexture / HelloTriangle sample behavior around clear values.
+- **Minimal Patch Plan**
+  1. For swapchain back‑buffers:
+     - Keep the existing `ClearRenderTargetView` path but accept that optimized clear values are fixed at swapchain creation; this warning may be benign and can be documented as such if it persists.
+  2. For offscreen RTVs created in `RenderCommandEncoder::begin`:
+     - When creating the underlying `Texture` and RTVs (where possible), supply an optimized clear value that matches the common loadAction clear color (e.g., per attachment or using a default).
+     - Alternatively, add logic to skip the warning by only clearing offscreen RTVs with the color used at resource creation when one is available (or by documenting that a non‑optimized clear is acceptable in this engine).
+  3. If after aligning clear values there are still ID 820 messages, consider explicitly documenting/whitelisting them in the audit as performance, not correctness, warnings.
+- **Acceptance Checks**
+  - Re‑run `mandatory_all_tests.bat` and inspect `D3D12_InfoQueue.log`.
+  - Either:
+    - ID 820 messages are eliminated by matching clear values to creation values, or
+    - Remaining instances are explicitly justified and documented (with references) as acceptable performance warnings in the audit.

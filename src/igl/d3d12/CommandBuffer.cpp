@@ -390,17 +390,6 @@ void CommandBuffer::begin() {
     return;
   }
 
-  // Bind heaps using active heap, not legacy accessor.
-  ID3D12DescriptorHeap* heaps[] = {
-      frameCtx.activeCbvSrvUavHeap.Get(),
-      frameCtx.samplerHeap.Get()
-  };
-  commandList_->SetDescriptorHeaps(2, heaps);
-
-#ifdef IGL_DEBUG
-  IGL_D3D12_LOG_VERBOSE("CommandBuffer::begin() - Set per-frame descriptor heaps for frame %u\n", frameIdx);
-#endif
-
   // Use the CURRENT FRAME's command allocator from FrameContext
   // Following Microsoft's D3D12HelloFrameBuffering pattern
   auto* frameAllocator = ctx.getFrameContexts()[frameIdx].allocator.Get();
@@ -419,6 +408,18 @@ void CommandBuffer::begin() {
   IGL_D3D12_LOG_VERBOSE("CommandBuffer::begin() - Command list reset OK\n");
 #endif
   recording_ = true;
+
+  // Bind heaps using active heap, not legacy accessor, now that the command list
+  // has been reset and is in the recording state.
+  ID3D12DescriptorHeap* heaps[] = {
+      frameCtx.activeCbvSrvUavHeap.Get(),
+      frameCtx.samplerHeap.Get()
+  };
+  commandList_->SetDescriptorHeaps(2, heaps);
+
+#ifdef IGL_DEBUG
+  IGL_D3D12_LOG_VERBOSE("CommandBuffer::begin() - Set per-frame descriptor heaps for frame %u\n", frameIdx);
+#endif
 
   // Record timer start timestamp after reset and before any GPU work is recorded.
   // This ensures the timer measures the actual command buffer workload.
@@ -563,18 +564,25 @@ void CommandBuffer::waitUntilCompleted() {
 
 void CommandBuffer::pushDebugGroupLabel(const char* label,
                                         const igl::Color& /*color*/) const {
-  if (commandList_.Get() && label) {
-    const size_t len = strlen(label);
-    std::wstring wlabel(len, L' ');
-    std::mbstowcs(&wlabel[0], label, len);
-    commandList_->BeginEvent(0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
+  // Only emit GPU debug markers while the command list is in recording state.
+  if (!recording_ || !commandList_.Get() || !label) {
+    return;
   }
+
+  const size_t len = strlen(label);
+  std::wstring wlabel(len, L' ');
+  std::mbstowcs(&wlabel[0], label, len);
+  commandList_->BeginEvent(
+      0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
 }
 
 void CommandBuffer::popDebugGroupLabel() const {
-  if (commandList_.Get()) {
-    commandList_->EndEvent();
+  // Only pop GPU debug markers while the command list is in recording state.
+  if (!recording_ || !commandList_.Get()) {
+    return;
   }
+
+  commandList_->EndEvent();
 }
 
 void CommandBuffer::copyBuffer(IBuffer& source,

@@ -30,6 +30,10 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
 }
 
 void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    IGL_LOG_ERROR("RenderCommandEncoder::begin() - command list is closed or null\n");
+    return;
+  }
   // Enforce single-call semantics: begin() allocates descriptors and cannot be safely called twice.
   IGL_DEBUG_ASSERT(!hasBegun_, "begin() called multiple times - this will cause resource leaks");
   hasBegun_ = true;
@@ -567,6 +571,10 @@ void RenderCommandEncoder::endEncoding() {
 }
 
 void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    IGL_LOG_ERROR("RenderCommandEncoder::bindViewport called on closed command list\n");
+    return;
+  }
   IGL_D3D12_LOG_VERBOSE("bindViewport called: x=%.1f, y=%.1f, w=%.1f, h=%.1f\n",
                viewport.x, viewport.y, viewport.width, viewport.height);
   D3D12_VIEWPORT vp = {};
@@ -580,6 +588,10 @@ void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
 }
 
 void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    IGL_LOG_ERROR("RenderCommandEncoder::bindScissorRect called on closed command list\n");
+    return;
+  }
   D3D12_RECT scissor = {};
   scissor.left = static_cast<LONG>(rect.x);
   scissor.top = static_cast<LONG>(rect.y);
@@ -590,6 +602,10 @@ void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
 
 void RenderCommandEncoder::bindRenderPipelineState(
     const std::shared_ptr<IRenderPipelineState>& pipelineState) {
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    IGL_LOG_ERROR("RenderCommandEncoder::bindRenderPipelineState called on closed command list\n");
+    return;
+  }
   if (!pipelineState) {
     IGL_LOG_ERROR("bindRenderPipelineState: pipelineState is null!\n");
     return;
@@ -672,7 +688,7 @@ void RenderCommandEncoder::bindBytes(size_t /*index*/,
 void RenderCommandEncoder::bindPushConstants(const void* data,
                                              size_t length,
                                              size_t offset) {
-  if (!commandList_ || !data || length == 0) {
+  if (!commandBuffer_.isRecording() || !commandList_ || !data || length == 0) {
     IGL_LOG_ERROR("bindPushConstants: Invalid parameters (list=%p, data=%p, len=%zu)\n",
                   commandList_, data, length);
     return;
@@ -706,6 +722,10 @@ void RenderCommandEncoder::bindPushConstants(const void* data,
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t /*target*/,
                                             ISamplerState* samplerState) {
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    IGL_LOG_ERROR("RenderCommandEncoder::bindSamplerState called on closed command list\n");
+    return;
+  }
   // Delegate to D3D12ResourcesBinder for centralized descriptor management.
   resourcesBinder_.bindSamplerState(static_cast<uint32_t>(index), samplerState);
 
@@ -718,11 +738,19 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
 void RenderCommandEncoder::bindTexture(size_t index,
                                        uint8_t /*target*/,
                                        ITexture* texture) {
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    IGL_LOG_ERROR("RenderCommandEncoder::bindTexture called on closed command list\n");
+    return;
+  }
   // Delegate to single-argument version
   bindTexture(index, texture);
 }
 
 void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    IGL_LOG_ERROR("RenderCommandEncoder::bindTexture called on closed command list\n");
+    return;
+  }
   // Delegate to D3D12ResourcesBinder for centralized descriptor management.
   resourcesBinder_.bindTexture(static_cast<uint32_t>(index), texture);
 
@@ -738,6 +766,10 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t instanceCount,
                                 uint32_t firstVertex,
                                 uint32_t baseInstance) {
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    IGL_LOG_ERROR("RenderCommandEncoder::draw called on closed command list\n");
+    return;
+  }
   // G-001: Flush any pending barriers before draw call
   flushBarriers();
 
@@ -783,23 +815,19 @@ void RenderCommandEncoder::draw(size_t vertexCount,
   // Add debug validation to catch sparse binding (non-zero count with zero base handle).
   // Note: Storage buffer SRVs bound via bindBindGroup(buffer) may have already set root parameter 4.
   // This will rebind it with texture SRVs. The last binding wins for each draw call.
-  if (cachedTextureCount_ > 0) {
+  if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
     IGL_DEBUG_ASSERT(cachedTextureGpuHandles_[0].ptr != 0,
                      "Texture count > 0 but base handle is null - did you bind only higher slots?");
-    if (cachedTextureGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
-      IGL_D3D12_LOG_VERBOSE("draw: binding SRV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
-                   cachedTextureCount_, cachedTextureGpuHandles_[0].ptr);
-    }
+    commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
+    IGL_D3D12_LOG_VERBOSE("draw: binding SRV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
+                 cachedTextureCount_, cachedTextureGpuHandles_[0].ptr);
   }
-  if (cachedSamplerCount_ > 0) {
+  if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
     IGL_DEBUG_ASSERT(cachedSamplerGpuHandles_[0].ptr != 0,
                      "Sampler count > 0 but base handle is null - did you bind only higher slots?");
-    if (cachedSamplerGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0]);  // Root param 5: Sampler table
-      IGL_D3D12_LOG_VERBOSE("draw: binding Sampler descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
-                   cachedSamplerCount_, cachedSamplerGpuHandles_[0].ptr);
-    }
+    commandList_->SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0]);  // Root param 5: Sampler table
+    IGL_D3D12_LOG_VERBOSE("draw: binding Sampler descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
+                 cachedSamplerCount_, cachedSamplerGpuHandles_[0].ptr);
   }
 
   // Apply vertex buffers
@@ -839,6 +867,10 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
                                        uint32_t firstIndex,
                                        int32_t vertexOffset,
                                        uint32_t baseInstance) {
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    IGL_LOG_ERROR("RenderCommandEncoder::drawIndexed called on closed command list\n");
+    return;
+  }
   // G-001: Flush any pending barriers before draw call
   flushBarriers();
 
@@ -967,8 +999,8 @@ void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
                                              size_t indirectBufferOffset,
                                              uint32_t drawCount,
                                              uint32_t stride) {
-  if (!commandList_) {
-    IGL_LOG_ERROR("RenderCommandEncoder::multiDrawIndirect: commandList_ is null\n");
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    IGL_LOG_ERROR("RenderCommandEncoder::multiDrawIndirect: command list is closed or null\n");
     return;
   }
 
@@ -1016,8 +1048,8 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
                                                     size_t indirectBufferOffset,
                                                     uint32_t drawCount,
                                                     uint32_t stride) {
-  if (!commandList_) {
-    IGL_LOG_ERROR("RenderCommandEncoder::multiDrawIndexedIndirect: commandList_ is null\n");
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    IGL_LOG_ERROR("RenderCommandEncoder::multiDrawIndexedIndirect: command list is closed or null\n");
     return;
   }
 
@@ -1063,7 +1095,7 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
 }
 
 void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
-  if (!commandList_) {
+  if (!commandBuffer_.isRecording() || !commandList_) {
     return;
   }
   // Set stencil reference value for stencil testing
@@ -1072,7 +1104,7 @@ void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
 }
 
 void RenderCommandEncoder::setBlendColor(const Color& color) {
-  if (!commandList_) {
+  if (!commandBuffer_.isRecording() || !commandList_) {
     return;
   }
   // Set blend factor constants for BlendFactor::BlendColor operations
@@ -1090,27 +1122,32 @@ void RenderCommandEncoder::setDepthBias(float /*depthBias*/, float /*slopeScale*
 }
 
 void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const Color& /*color*/) const {
-  if (commandList_ && label) {
-    const size_t len = strlen(label);
-    std::wstring wlabel(len, L' ');
-    std::mbstowcs(&wlabel[0], label, len);
-    commandList_->BeginEvent(0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
+  if (!commandBuffer_.isRecording() || !commandList_ || !label) {
+    return;
   }
+  const size_t len = strlen(label);
+  std::wstring wlabel(len, L' ');
+  std::mbstowcs(&wlabel[0], label, len);
+  commandList_->BeginEvent(
+      0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
 }
 
 void RenderCommandEncoder::insertDebugEventLabel(const char* label, const Color& /*color*/) const {
-  if (commandList_ && label) {
-    const size_t len = strlen(label);
-    std::wstring wlabel(len, L' ');
-    std::mbstowcs(&wlabel[0], label, len);
-    commandList_->SetMarker(0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
+  if (!commandBuffer_.isRecording() || !commandList_ || !label) {
+    return;
   }
+  const size_t len = strlen(label);
+  std::wstring wlabel(len, L' ');
+  std::mbstowcs(&wlabel[0], label, len);
+  commandList_->SetMarker(
+      0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
 }
 
 void RenderCommandEncoder::popDebugGroupLabel() const {
-  if (commandList_) {
-    commandList_->EndEvent();
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    return;
   }
+  commandList_->EndEvent();
 }
 
 void RenderCommandEncoder::bindBuffer(uint32_t index,
@@ -1268,6 +1305,11 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
 void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
   IGL_D3D12_LOG_VERBOSE("bindBindGroup(texture): handle valid=%d\n", !handle.empty());
 
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    IGL_LOG_ERROR("bindBindGroup(texture): command list is closed or null\n");
+    return;
+  }
+
   // Get the bind group descriptor from the device
   auto& device = commandBuffer_.getDevice();
   const auto* desc = device.getBindGroupTextureDesc(handle);
@@ -1409,6 +1451,11 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
                                           uint32_t numDynamicOffsets,
                                           const uint32_t* dynamicOffsets) {
   IGL_D3D12_LOG_VERBOSE("bindBindGroup(buffer): handle valid=%d, dynCount=%u\n", !handle.empty(), numDynamicOffsets);
+
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    IGL_LOG_ERROR("bindBindGroup(buffer): command list is closed or null\n");
+    return;
+  }
 
   auto& device = commandBuffer_.getDevice();
   const auto* desc = device.getBindGroupBufferDesc(handle);
@@ -1670,6 +1717,11 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
 // G-001: Barrier batching implementation
 void RenderCommandEncoder::flushBarriers() {
   if (pendingBarriers_.empty()) {
+    return;
+  }
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    IGL_LOG_ERROR("RenderCommandEncoder::flushBarriers called on closed command list; clearing pending barriers\n");
+    pendingBarriers_.clear();
     return;
   }
 

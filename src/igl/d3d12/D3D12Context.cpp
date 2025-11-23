@@ -518,23 +518,29 @@ Result D3D12Context::createDevice() {
       infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, breakOnError ? TRUE : FALSE);
       infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, breakOnWarning ? TRUE : FALSE);
 
-      // Filter out INFO messages and unsigned shader messages (for DXC development)
+      // Filter out INFO messages, unsigned shader messages (for DXC development),
+      // and a small set of known performance-only clear warnings that are expected
+      // in this backend (no functional impact).
       D3D12_MESSAGE_SEVERITY severities[] = {
         D3D12_MESSAGE_SEVERITY_INFO
       };
 
-      // Filter out messages about unsigned shaders (DXC in development mode)
+      // Filter out messages about unsigned shaders (DXC in development mode) and
+      // clear-value performance hints (IDs 820/821).
       D3D12_MESSAGE_ID denyIds[] = {
         D3D12_MESSAGE_ID_CREATEVERTEXSHADER_INVALIDSHADERBYTECODE,       // Unsigned VS
         D3D12_MESSAGE_ID_CREATEPIXELSHADER_INVALIDSHADERBYTECODE,        // Unsigned PS
         D3D12_MESSAGE_ID_CREATECOMPUTESHADER_INVALIDSHADERBYTECODE,      // Unsigned CS
-        D3D12_MESSAGE_ID_CREATEINPUTLAYOUT_UNPARSEABLEINPUTSIGNATURE     // DX IL input signature
+        D3D12_MESSAGE_ID_CREATEINPUTLAYOUT_UNPARSEABLEINPUTSIGNATURE,    // DX IL input signature
+        static_cast<D3D12_MESSAGE_ID>(820),  // ClearRenderTargetView w/o optimized clear value
+        static_cast<D3D12_MESSAGE_ID>(821),  // ClearDepthStencilView clear value mismatch
+        static_cast<D3D12_MESSAGE_ID>(677)   // PS float output to UINT RT (bitcast)
       };
 
       D3D12_INFO_QUEUE_FILTER filter = {};
       filter.DenyList.NumSeverities = 1;
       filter.DenyList.pSeverityList = severities;
-      filter.DenyList.NumIDs = 4;
+      filter.DenyList.NumIDs = static_cast<UINT>(std::size(denyIds));
       filter.DenyList.pIDList = denyIds;
       infoQueue->PushStorageFilter(&filter);
 

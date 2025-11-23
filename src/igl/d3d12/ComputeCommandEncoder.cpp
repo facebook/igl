@@ -68,8 +68,8 @@ void ComputeCommandEncoder::bindComputePipelineState(
   currentPipeline_ = static_cast<const ComputePipelineState*>(pipelineState.get());
 
   auto* commandList = commandBuffer_.getCommandList();
-  if (!commandList) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindComputePipelineState - null command list\n");
+  if (!commandBuffer_.isRecording() || !commandList) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindComputePipelineState - command list is closed or null\n");
     return;
   }
 
@@ -89,8 +89,8 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   }
 
   auto* commandList = commandBuffer_.getCommandList();
-  if (!commandList) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::dispatchThreadGroups - null command list\n");
+  if (!commandBuffer_.isRecording() || !commandList) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::dispatchThreadGroups - command list is closed or null\n");
     return;
   }
 
@@ -311,8 +311,8 @@ void ComputeCommandEncoder::bindPushConstants(const void* data,
                                               size_t length,
                                               size_t offset) {
   auto* commandList = commandBuffer_.getCommandList();
-  if (!commandList || !data || length == 0) {
-    IGL_LOG_ERROR("ComputeCommandEncoder::bindPushConstants: Invalid parameters (list=%p, data=%p, len=%zu)\n",
+  if (!commandBuffer_.isRecording() || !commandList || !data || length == 0) {
+    IGL_LOG_ERROR("ComputeCommandEncoder::bindPushConstants: Invalid parameters or closed command list (list=%p, data=%p, len=%zu)\n",
                   commandList, data, length);
     return;
   }
@@ -636,30 +636,35 @@ void ComputeCommandEncoder::bindSamplerState(uint32_t index, ISamplerState* samp
 
 void ComputeCommandEncoder::pushDebugGroupLabel(const char* label, const Color& /*color*/) const {
   auto* commandList = commandBuffer_.getCommandList();
-  if (commandList) {
-    // PIX debug markers
-    const size_t len = strlen(label);
-    std::wstring wlabel(len, L' ');
-    std::mbstowcs(&wlabel[0], label, len);
-    commandList->BeginEvent(0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
+  if (!commandBuffer_.isRecording() || !commandList || !label) {
+    return;
   }
+  // PIX debug markers
+  const size_t len = strlen(label);
+  std::wstring wlabel(len, L' ');
+  std::mbstowcs(&wlabel[0], label, len);
+  commandList->BeginEvent(
+      0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
 }
 
 void ComputeCommandEncoder::insertDebugEventLabel(const char* label, const Color& /*color*/) const {
   auto* commandList = commandBuffer_.getCommandList();
-  if (commandList) {
-    const size_t len = strlen(label);
-    std::wstring wlabel(len, L' ');
-    std::mbstowcs(&wlabel[0], label, len);
-    commandList->SetMarker(0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
+  if (!commandBuffer_.isRecording() || !commandList || !label) {
+    return;
   }
+  const size_t len = strlen(label);
+  std::wstring wlabel(len, L' ');
+  std::mbstowcs(&wlabel[0], label, len);
+  commandList->SetMarker(
+      0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
 }
 
 void ComputeCommandEncoder::popDebugGroupLabel() const {
   auto* commandList = commandBuffer_.getCommandList();
-  if (commandList) {
-    commandList->EndEvent();
+  if (!commandBuffer_.isRecording() || !commandList) {
+    return;
   }
+  commandList->EndEvent();
 }
 
 } // namespace igl::d3d12

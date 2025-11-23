@@ -145,9 +145,13 @@ class D3D12SamplerCache {
     samplerDesc.AddressV = toD3D12Address(desc.addressModeV);
     samplerDesc.AddressW = toD3D12Address(desc.addressModeW);
     samplerDesc.MipLODBias = 0.0f;
+    // For comparison samplers, use the requested depth comparison function.
+    // For non-comparison samplers, set ComparisonFunc to NEVER so that the
+    // debug layer does not flag spurious D3D12_MESSAGE_ID 1361 warnings when
+    // Filter is not a comparison filter. The value is ignored in this case.
     samplerDesc.ComparisonFunc =
         useComparison ? toD3D12Compare(desc.depthCompareFunction)
-                      : D3D12_COMPARISON_FUNC_ALWAYS;
+                      : D3D12_COMPARISON_FUNC_NEVER;
     samplerDesc.BorderColor[0] = 0.0f;
     samplerDesc.BorderColor[1] = 0.0f;
     samplerDesc.BorderColor[2] = 0.0f;

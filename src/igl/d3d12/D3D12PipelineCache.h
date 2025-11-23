@@ -225,14 +225,18 @@ inline ComPtr<ID3D12RootSignature> D3D12PipelineCache::getOrCreateRootSignature(
           auto& dstRanges = rangesPerParam.back();
           dstRanges.resize(numRanges);
 
-          for (UINT j = 0; j < numRanges; ++j) {
+      for (UINT j = 0; j < numRanges; ++j) {
             const D3D12_DESCRIPTOR_RANGE& srcRange = srcRanges[j];
             D3D12_DESCRIPTOR_RANGE1 dstRange{};
             dstRange.RangeType = srcRange.RangeType;
             dstRange.NumDescriptors = srcRange.NumDescriptors;
             dstRange.BaseShaderRegister = srcRange.BaseShaderRegister;
             dstRange.RegisterSpace = srcRange.RegisterSpace;
-            dstRange.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
+            // Mark descriptor ranges as DESCRIPTORS_VOLATILE to match the dynamic
+            // per-draw descriptor update pattern used by D3D12ResourcesBinder.
+            // This avoids D3D12 WARNING/ERROR ID=646, which requires all descriptors
+            // in STATIC ranges to be initialized before binding the table.
+            dstRange.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
             dstRange.OffsetInDescriptorsFromTableStart =
                 srcRange.OffsetInDescriptorsFromTableStart;
             dstRanges[j] = dstRange;
