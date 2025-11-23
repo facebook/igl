@@ -80,8 +80,8 @@ std::unique_ptr<IDevice> createTestDevice(BackendType backendType, const TestDev
   }
   if (backendType == ::igl::BackendType::D3D12) {
 #if IGL_D3D12_SUPPORTED
-    IGL_LOG_INFO("[Tests] Creating D3D12 test device (debug layer: disabled)\n");
-    auto dev = d3d12::createTestDevice(false);
+    IGL_LOG_INFO("[Tests] Creating D3D12 test device (debug layer: enabled)\n");
+    auto dev = d3d12::createTestDevice(true);
     if (!dev) {
       IGL_LOG_ERROR("[Tests] D3D12 test device creation failed\n");
     } else {

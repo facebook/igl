@@ -1,25 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs:*)",
-      "Bash(cmake --build:*)",
-      "Bash(if [ -f build.bat ])",
-      "Bash(then echo 'build.bat exists')",
-      "Bash(fi)",
-      "Bash(if [ -f CMakeLists.txt ])",
-      "Bash(then echo 'CMakeLists.txt exists')",
-      "Bash(python create_tasks.py:*)",
-      "Bash(if [ -d build ])",
-      "Bash(then echo 'build exists')",
-      "Bash(else echo \"no build dir\")",
-      "Bash(msbuild:*)",
-      "Bash(cmd /c \"msbuild build\\IGL.sln /t:IGLLibrary_d3d12 /p:Configuration=Debug /verbosity:minimal 2>&1\")",
-      "Bash(cmd /c \"cd build && msbuild IGL.sln /t:IGLLibrary_d3d12 /p:Configuration=Debug /verbosity:minimal /nologo\")",
-      "Bash(cat:*)",
-      "Bash(cmd /c \"cd build\\src\\igl\\tests\\Debug && IGLTests.exe --gtest_brief=1 --gtest_filter=*D3D12* 2>&1\")",
-      "Bash(./IGLTests.exe:*)",
-      "Bash(./BasicFramebufferSession_d3d12.exe --run_for=5)",
-      "Bash(git add:*)"
+      "Bash(cmd /c C:Usersrudybsourcereposigligltest_all_unittests.bat)",
+      "Bash(git push)"
     ],
     "deny": [],
     "ask": []

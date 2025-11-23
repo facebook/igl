@@ -27,9 +27,13 @@
 #include <igl/Texture.h>
 #include <igl/Assert.h>  // For IGL_DEBUG_ASSERT in waitForUploadFence.
 #include <d3dcompiler.h>
+#include <d3d12sdklayers.h>
 #include <cstring>
 #include <vector>
 #include <mutex>   // For std::call_once.
+#include <fstream>
+#include <filesystem>
+#include <cstdlib>
 
 #pragma comment(lib, "d3dcompiler.lib")
 
@@ -39,6 +43,92 @@ namespace {
 // Import ComPtr for readability
 template<typename T>
 using ComPtr = igl::d3d12::ComPtr<T>;
+
+// Capture D3D12 InfoQueue messages (warnings/errors) into an artifacts log when enabled.
+void captureInfoQueueForDevice(ID3D12Device* device) {
+  const char* captureEnv = std::getenv("IGL_D3D12_CAPTURE_VALIDATION");
+  if (!captureEnv || (captureEnv[0] != '1' && captureEnv[0] != 'T' && captureEnv[0] != 't' &&
+                      captureEnv[0] != 'Y' && captureEnv[0] != 'y')) {
+    return;
+  }
+
+  if (!device) {
+    return;
+  }
+
+  ComPtr<ID3D12InfoQueue> infoQueue;
+  if (FAILED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
+    return;
+  }
+
+  const UINT64 numMessages = infoQueue->GetNumStoredMessages();
+  if (numMessages == 0) {
+    return;
+  }
+
+  namespace fs = std::filesystem;
+
+  fs::path root;
+  if (const char* rootEnv = std::getenv("IGL_ARTIFACT_ROOT");
+      rootEnv && *rootEnv != '\0') {
+    root = fs::path(rootEnv);
+  } else {
+    root = fs::current_path() / "artifacts";
+  }
+
+  fs::path logPath = root / "validation" / "D3D12_InfoQueue.log";
+  std::error_code ec;
+  fs::create_directories(logPath.parent_path(), ec);
+
+  std::ofstream out(logPath, std::ios::app);
+  if (!out) {
+    return;
+  }
+
+  out << "=== D3D12 InfoQueue Dump ===\n";
+
+  for (UINT64 i = 0; i < numMessages; ++i) {
+    SIZE_T messageLength = 0;
+    if (FAILED(infoQueue->GetMessage(i, nullptr, &messageLength)) ||
+        messageLength == 0) {
+      continue;
+    }
+
+    std::vector<uint8_t> buffer(messageLength);
+    auto* message =
+        reinterpret_cast<D3D12_MESSAGE*>(buffer.data());
+    if (FAILED(infoQueue->GetMessage(i, message, &messageLength))) {
+      continue;
+    }
+
+    // Skip informational messages; capture warnings, errors, and corruption.
+    if (message->Severity == D3D12_MESSAGE_SEVERITY_INFO ||
+        message->Severity == D3D12_MESSAGE_SEVERITY_MESSAGE) {
+      continue;
+    }
+
+    const char* severityStr = "UNKNOWN";
+    switch (message->Severity) {
+    case D3D12_MESSAGE_SEVERITY_CORRUPTION:
+      severityStr = "CORRUPTION";
+      break;
+    case D3D12_MESSAGE_SEVERITY_ERROR:
+      severityStr = "ERROR";
+      break;
+    case D3D12_MESSAGE_SEVERITY_WARNING:
+      severityStr = "WARNING";
+      break;
+    default:
+      break;
+    }
+
+    out << "[" << severityStr << "] ID=" << static_cast<unsigned>(message->ID)
+        << " : " << (message->pDescription ? message->pDescription : "")
+        << "\n";
+  }
+
+  infoQueue->ClearStoredMessages();
+}
 
 // Use std::hash<SamplerStateDesc> for deduplication (implemented in igl/SamplerState.cpp).
 } // namespace
@@ -242,6 +332,11 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
 }
 
 Device::~Device() {
+  // Capture D3D12 validation messages for this device if enabled via environment.
+  if (ctx_) {
+    captureInfoQueueForDevice(ctx_->getDevice());
+  }
+
   // No shared event to clean up; events are per-call in waitForUploadFence.
 
   // Ensure upload-related resources are released before destroying the device.

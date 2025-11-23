@@ -4,6 +4,7 @@
 
 #include <igl/d3d12/HeadlessContext.h>
 #include <igl/d3d12/DescriptorHeapManager.h>
+#include <string>
 
 namespace igl::d3d12 {
 
@@ -31,16 +32,85 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width, uint32_t height,
   IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Initialized with %u frame buffers (no swapchain)\n",
                         swapchainBufferCount_);
 
-  // Initialize DXGI factory flags for debug builds
+  // Initialize DXGI factory flags and debug configuration (mirrors windowed D3D12Context).
+  auto getEnvBool = [](const char* name, bool defaultValue) -> bool {
+    const char* value = std::getenv(name);
+    if (!value) {
+      return defaultValue;
+    }
+    return (std::string(value) == "1") || (std::string(value) == "true");
+  };
+
+  bool enableDebugLayer = getEnvBool("IGL_D3D12_DEBUG",
+#ifdef _DEBUG
+    true  // Default ON in debug builds
+#else
+    false // Default OFF in release builds
+#endif
+  );
+  bool enableGPUValidation = getEnvBool("IGL_D3D12_GPU_VALIDATION", false);
+  bool enableDRED = getEnvBool("IGL_D3D12_DRED",
+#ifdef _DEBUG
+    true  // Default ON in debug builds
+#else
+    false // Default OFF in release builds
+#endif
+  );
+  bool enableDXGIDebug = getEnvBool("IGL_DXGI_DEBUG",
+#ifdef _DEBUG
+    true  // Default ON in debug builds
+#else
+    false // Default OFF in release builds
+#endif
+  );
+
+  IGL_D3D12_LOG_VERBOSE("=== Headless D3D12 Debug Configuration ===\n");
+  IGL_D3D12_LOG_VERBOSE("  Debug Layer:       %s\n", enableDebugLayer ? "ENABLED" : "DISABLED");
+  IGL_D3D12_LOG_VERBOSE("  GPU Validation:    %s\n", enableGPUValidation ? "ENABLED" : "DISABLED");
+  IGL_D3D12_LOG_VERBOSE("  DRED:              %s\n", enableDRED ? "ENABLED" : "DISABLED");
+  IGL_D3D12_LOG_VERBOSE("  DXGI Debug:        %s\n", enableDXGIDebug ? "ENABLED" : "DISABLED");
+  IGL_D3D12_LOG_VERBOSE("=========================================\n");
+
   UINT dxgiFactoryFlags = 0;
 
-  // Try to enable debug layer if available (ignore failures)
-  {
+  // Enable debug layer (and GPU-based validation) if configured.
+  if (enableDebugLayer) {
     igl::d3d12::ComPtr<ID3D12Debug> debugController;
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf())))) {
       debugController->EnableDebugLayer();
-      IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Debug layer enabled\n");
+      IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Debug layer ENABLED\n");
 
+      if (enableDXGIDebug) {
+        dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+        IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: DXGI debug layer ENABLED\n");
+      }
+
+      if (enableGPUValidation) {
+        igl::d3d12::ComPtr<ID3D12Debug1> debugController1;
+        if (SUCCEEDED(debugController->QueryInterface(IID_PPV_ARGS(debugController1.GetAddressOf())))) {
+          debugController1->SetEnableGPUBasedValidation(TRUE);
+          IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: GPU-Based Validation ENABLED\n");
+        } else {
+          IGL_LOG_ERROR("HeadlessD3D12Context: Failed to enable GPU-Based Validation (requires ID3D12Debug1)\n");
+        }
+      }
+    } else {
+      IGL_LOG_ERROR("HeadlessD3D12Context: Failed to get D3D12 debug interface - Graphics Tools may not be installed\n");
+    }
+  } else {
+    IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: Debug layer DISABLED\n");
+  }
+
+  // Enable DRED if configured (Device Removed Extended Data for better crash diagnostics).
+  if (enableDRED) {
+    igl::d3d12::ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> dredSettings1;
+    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(dredSettings1.GetAddressOf())))) {
+      dredSettings1->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+      dredSettings1->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+      dredSettings1->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+      IGL_D3D12_LOG_VERBOSE("HeadlessD3D12Context: DRED 1.2 fully configured\n");
+    } else {
+      IGL_LOG_ERROR("HeadlessD3D12Context: Failed to configure DRED (requires Windows 10 19041+)\n");
     }
   }
 

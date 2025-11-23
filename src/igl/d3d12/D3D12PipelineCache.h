@@ -179,12 +179,146 @@ inline ComPtr<ID3D12RootSignature> D3D12PipelineCache::getOrCreateRootSignature(
   ComPtr<ID3DBlob> signature;
   ComPtr<ID3DBlob> error;
 
-  IGL_D3D12_LOG_VERBOSE("  Serializing root signature (version 1.0)...\n");
-  HRESULT hr = D3D12SerializeRootSignature(
-      &desc,
-      D3D_ROOT_SIGNATURE_VERSION_1,
-      signature.GetAddressOf(),
-      error.GetAddressOf());
+  // Query highest supported root signature version for this device.
+  D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData{};
+  featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+  HRESULT featureHr = d3dDevice->CheckFeatureSupport(
+      D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData));
+  D3D_ROOT_SIGNATURE_VERSION highestVersion =
+      SUCCEEDED(featureHr) ? featureData.HighestVersion : D3D_ROOT_SIGNATURE_VERSION_1_0;
+
+  HRESULT hr = E_FAIL;
+
+  if (highestVersion >= D3D_ROOT_SIGNATURE_VERSION_1_1) {
+    // Use versioned root signature (1.1) when available and preserve NumDescriptors
+    // as-is (Tier 2/3 unbounded ranges are expressed via UINT_MAX).
+    std::vector<D3D12_ROOT_PARAMETER1> params1;
+    std::vector<std::vector<D3D12_DESCRIPTOR_RANGE1>> rangesPerParam;
+    params1.reserve(desc.NumParameters);
+    rangesPerParam.reserve(desc.NumParameters);
+
+    for (UINT i = 0; i < desc.NumParameters; ++i) {
+      const D3D12_ROOT_PARAMETER& srcParam = desc.pParameters[i];
+      D3D12_ROOT_PARAMETER1 dstParam{};
+      dstParam.ParameterType = srcParam.ParameterType;
+      dstParam.ShaderVisibility = srcParam.ShaderVisibility;
+
+      switch (srcParam.ParameterType) {
+      case D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS:
+        dstParam.Constants.ShaderRegister = srcParam.Constants.ShaderRegister;
+        dstParam.Constants.RegisterSpace = srcParam.Constants.RegisterSpace;
+        dstParam.Constants.Num32BitValues = srcParam.Constants.Num32BitValues;
+        break;
+      case D3D12_ROOT_PARAMETER_TYPE_CBV:
+      case D3D12_ROOT_PARAMETER_TYPE_SRV:
+      case D3D12_ROOT_PARAMETER_TYPE_UAV:
+        dstParam.Descriptor.ShaderRegister = srcParam.Descriptor.ShaderRegister;
+        dstParam.Descriptor.RegisterSpace = srcParam.Descriptor.RegisterSpace;
+        dstParam.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
+        break;
+      case D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE: {
+        const UINT numRanges = srcParam.DescriptorTable.NumDescriptorRanges;
+        const D3D12_DESCRIPTOR_RANGE* srcRanges = srcParam.DescriptorTable.pDescriptorRanges;
+
+        if (numRanges > 0 && srcRanges) {
+          rangesPerParam.emplace_back();
+          auto& dstRanges = rangesPerParam.back();
+          dstRanges.resize(numRanges);
+
+          for (UINT j = 0; j < numRanges; ++j) {
+            const D3D12_DESCRIPTOR_RANGE& srcRange = srcRanges[j];
+            D3D12_DESCRIPTOR_RANGE1 dstRange{};
+            dstRange.RangeType = srcRange.RangeType;
+            dstRange.NumDescriptors = srcRange.NumDescriptors;
+            dstRange.BaseShaderRegister = srcRange.BaseShaderRegister;
+            dstRange.RegisterSpace = srcRange.RegisterSpace;
+            dstRange.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
+            dstRange.OffsetInDescriptorsFromTableStart =
+                srcRange.OffsetInDescriptorsFromTableStart;
+            dstRanges[j] = dstRange;
+          }
+
+          dstParam.DescriptorTable.NumDescriptorRanges = numRanges;
+          dstParam.DescriptorTable.pDescriptorRanges = dstRanges.data();
+        } else {
+          dstParam.DescriptorTable.NumDescriptorRanges = 0;
+          dstParam.DescriptorTable.pDescriptorRanges = nullptr;
+        }
+        break;
+      }
+      }
+
+      params1.push_back(dstParam);
+    }
+
+    D3D12_ROOT_SIGNATURE_DESC1 desc1{};
+    desc1.NumParameters = static_cast<UINT>(params1.size());
+    desc1.pParameters = params1.data();
+    desc1.NumStaticSamplers = desc.NumStaticSamplers;
+    desc1.pStaticSamplers = desc.pStaticSamplers;
+    desc1.Flags = desc.Flags;
+
+    D3D12_VERSIONED_ROOT_SIGNATURE_DESC versionedDesc{};
+    versionedDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
+    versionedDesc.Desc_1_1 = desc1;
+
+    IGL_D3D12_LOG_VERBOSE("  Serializing root signature (version 1.1)...\n");
+    hr = D3D12SerializeVersionedRootSignature(
+        &versionedDesc, signature.GetAddressOf(), error.GetAddressOf());
+  } else {
+    // Device only supports Root Signature 1.0. Clamp any unbounded descriptor ranges
+    // (NumDescriptors == UINT_MAX) to a large but finite conservative value so that
+    // the serialized root signature is portable across RS 1.0 implementations.
+    constexpr UINT kMaxDescriptorsFallback = 16384; // Sufficient for current heap sizes.
+
+    std::vector<D3D12_ROOT_PARAMETER> params;
+    std::vector<std::vector<D3D12_DESCRIPTOR_RANGE>> rangesPerParam;
+    params.reserve(desc.NumParameters);
+    rangesPerParam.reserve(desc.NumParameters);
+
+    for (UINT i = 0; i < desc.NumParameters; ++i) {
+      const D3D12_ROOT_PARAMETER& srcParam = desc.pParameters[i];
+      D3D12_ROOT_PARAMETER dstParam = srcParam;
+
+      if (srcParam.ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE &&
+          srcParam.DescriptorTable.NumDescriptorRanges > 0 &&
+          srcParam.DescriptorTable.pDescriptorRanges) {
+        const UINT numRanges = srcParam.DescriptorTable.NumDescriptorRanges;
+        const D3D12_DESCRIPTOR_RANGE* srcRanges = srcParam.DescriptorTable.pDescriptorRanges;
+
+        rangesPerParam.emplace_back();
+        auto& dstRanges = rangesPerParam.back();
+        dstRanges.resize(numRanges);
+
+        for (UINT j = 0; j < numRanges; ++j) {
+          dstRanges[j] = srcRanges[j];
+          if (dstRanges[j].NumDescriptors == UINT_MAX) {
+            dstRanges[j].NumDescriptors = kMaxDescriptorsFallback;
+          }
+        }
+
+        dstParam.DescriptorTable.NumDescriptorRanges = numRanges;
+        dstParam.DescriptorTable.pDescriptorRanges = dstRanges.data();
+      }
+
+      params.push_back(dstParam);
+    }
+
+    D3D12_ROOT_SIGNATURE_DESC adjustedDesc{};
+    adjustedDesc.NumParameters = static_cast<UINT>(params.size());
+    adjustedDesc.pParameters = params.data();
+    adjustedDesc.NumStaticSamplers = desc.NumStaticSamplers;
+    adjustedDesc.pStaticSamplers = desc.pStaticSamplers;
+    adjustedDesc.Flags = desc.Flags;
+
+    IGL_D3D12_LOG_VERBOSE("  Serializing root signature (version 1.0, bounded ranges)...\n");
+    hr = D3D12SerializeRootSignature(
+        &adjustedDesc,
+        D3D_ROOT_SIGNATURE_VERSION_1,
+        signature.GetAddressOf(),
+        error.GetAddressOf());
+  }
+
   if (FAILED(hr)) {
     if (error.Get()) {
       const char* errorMsg =

@@ -554,7 +554,14 @@ Result D3D12RootSignatureBuilder::build(ID3D12Device* device,
       std::vector<D3D12_DESCRIPTOR_RANGE> ranges;
       ranges.reserve(param.ranges.size());
       for (auto& r : param.ranges) {
-        ranges.push_back(r.range);
+        D3D12_DESCRIPTOR_RANGE range = r.range;
+        if (context) {
+          const UINT maxCount = getMaxDescriptorCount(context, range.RangeType);
+          if (range.NumDescriptors == UINT_MAX || range.NumDescriptors > maxCount) {
+            range.NumDescriptors = maxCount;
+          }
+        }
+        ranges.push_back(range);
       }
       allRanges.push_back(std::move(ranges));
 

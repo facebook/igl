@@ -4,6 +4,13 @@ setlocal enableextensions enabledelayedexpansion
 set LOG_DIR=artifacts\mandatory
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
 
+rem Enable D3D12 debug validation and capture for all sub-suites.
+set IGL_D3D12_DEBUG=1
+set IGL_D3D12_GPU_VALIDATION=1
+set IGL_D3D12_DRED=1
+set IGL_DXGI_DEBUG=1
+set IGL_D3D12_CAPTURE_VALIDATION=1
+
 echo Running render session suite...
 call test_all_sessions.bat > "%LOG_DIR%\render_sessions.log" 2>&1
 set SESS_RESULT=%ERRORLEVEL%

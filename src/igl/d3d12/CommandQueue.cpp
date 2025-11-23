@@ -36,9 +36,6 @@ void executeDeferredCopies(D3D12Context& ctx, Device& device, const CommandBuffe
                deferredCopies.size());
 #endif
 
-  // Wait for render commands to complete
-  ctx.waitForGPU();
-
   for (const auto& copy : deferredCopies) {
     auto* srcTex = static_cast<Texture*>(copy.source);
     auto* dstBuf = static_cast<Buffer*>(copy.destination);
