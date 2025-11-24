@@ -731,7 +731,7 @@ namespace igl::vulkan::functions {
 
 namespace {
 PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
-#if defined(FORCE_USE_STATIC_VULKAN_LOADER)
+#if defined(FORCE_USE_STATIC_VULKAN_LOADER) && !defined(FORCE_USE_STATIC_VULKAN_LOADER_DISABLED)
   return nullptr;
 #elif defined(_WIN32)
   HMODULE lib = LoadLibraryA("vulkan-1.dll");
