@@ -7,7 +7,8 @@
 
 #pragma once
 
-#import <Metal/Metal.h>
+@protocol MTLDevice;
+#import <Metal/MTLTypes.h>
 #include <igl/CommandEncoder.h>
 #include <igl/Device.h>
 #include <igl/metal/DeviceFeatureSet.h>
