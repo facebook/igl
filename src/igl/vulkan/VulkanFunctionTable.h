@@ -41,7 +41,7 @@ typedef struct _SECURITY_ATTRIBUTES SECURITY_ATTRIBUTES;
 #include <vulkan/vulkan_beta.h>
 #endif
 #else
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.h> // NOLINT(facebook-unused-include-check)
 #endif
 #endif
 
