@@ -6,6 +6,7 @@
  */
 
 #include <igl/d3d12/ShaderModule.h>
+#include <algorithm>
 #include <cstring>
 
 namespace igl::d3d12 {
@@ -35,6 +36,9 @@ void ShaderModule::extractShaderMetadata() {
                shaderDesc.InputParameters,
                shaderDesc.OutputParameters);
 
+  // Reset reflection info
+  reflectionInfo_ = ShaderReflectionInfo{};
+
   // Extract resource bindings (textures, buffers, samplers, UAVs)
   resourceBindings_.clear();
   for (UINT i = 0; i < shaderDesc.BoundResources; i++) {
@@ -53,6 +57,28 @@ void ShaderModule::extractShaderMetadata() {
     binding.space = bindDesc.Space;
 
     resourceBindings_.push_back(binding);
+
+    // Populate reflection info for root signature selection
+    if (bindDesc.Type == D3D_SIT_CBUFFER) {
+      reflectionInfo_.usedCBVSlots.push_back(bindDesc.BindPoint);
+      reflectionInfo_.maxCBVSlot = std::max(reflectionInfo_.maxCBVSlot, bindDesc.BindPoint);
+    } else if (bindDesc.Type == D3D_SIT_TEXTURE ||
+               bindDesc.Type == D3D_SIT_STRUCTURED ||
+               bindDesc.Type == D3D_SIT_BYTEADDRESS) {
+      reflectionInfo_.usedSRVSlots.push_back(bindDesc.BindPoint);
+      reflectionInfo_.maxSRVSlot = std::max(reflectionInfo_.maxSRVSlot, bindDesc.BindPoint);
+    } else if (bindDesc.Type == D3D_SIT_UAV_RWTYPED ||
+               bindDesc.Type == D3D_SIT_UAV_RWSTRUCTURED ||
+               bindDesc.Type == D3D_SIT_UAV_RWBYTEADDRESS ||
+               bindDesc.Type == D3D_SIT_UAV_APPEND_STRUCTURED ||
+               bindDesc.Type == D3D_SIT_UAV_CONSUME_STRUCTURED ||
+               bindDesc.Type == D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER) {
+      reflectionInfo_.usedUAVSlots.push_back(bindDesc.BindPoint);
+      reflectionInfo_.maxUAVSlot = std::max(reflectionInfo_.maxUAVSlot, bindDesc.BindPoint);
+    } else if (bindDesc.Type == D3D_SIT_SAMPLER) {
+      reflectionInfo_.usedSamplerSlots.push_back(bindDesc.BindPoint);
+      reflectionInfo_.maxSamplerSlot = std::max(reflectionInfo_.maxSamplerSlot, bindDesc.BindPoint);
+    }
 
     const char* typeStr = "Unknown";
     switch (bindDesc.Type) {
@@ -123,6 +149,35 @@ void ShaderModule::extractShaderMetadata() {
                         varDesc.Name,
                         varDesc.StartOffset,
                         varDesc.Size);
+        }
+      }
+    }
+  }
+
+  // Detect push constants: Find CBV bindings that could serve as push constants
+  // Push constants are typically small (<= 64 bytes = 16 DWORDs) and bound to a specific slot
+  // For now, we'll detect any CBV that matches the current convention (b2)
+  for (const auto& binding : resourceBindings_) {
+    if (binding.type == D3D_SIT_CBUFFER) {
+      // Find the corresponding constant buffer info to get size
+      for (const auto& cbInfo : constantBuffers_) {
+        if (cbInfo.name == binding.name) {
+          // Check if this CB is small enough to be push constants (<=64 bytes)
+          if (cbInfo.size <= 64) {
+            // This could be push constants - record it
+            // Prefer b2 if available, otherwise use the first small CBV found
+            if (!reflectionInfo_.hasPushConstants || binding.bindPoint == 2) {
+              reflectionInfo_.hasPushConstants = true;
+              reflectionInfo_.pushConstantSlot = binding.bindPoint;
+              reflectionInfo_.pushConstantSize = (cbInfo.size + 3) / 4; // Convert bytes to DWORDs
+              IGL_D3D12_LOG_VERBOSE("  Detected potential push constants: '%s' at b%u (%u DWORDs / %u bytes)\n",
+                           cbInfo.name.c_str(),
+                           binding.bindPoint,
+                           reflectionInfo_.pushConstantSize,
+                           cbInfo.size);
+            }
+          }
+          break;
         }
       }
     }

@@ -24,7 +24,8 @@
       "Bash(ComputeSession_d3d12.exe)",
       "Bash(cmd /c:*)",
       "Bash(where:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

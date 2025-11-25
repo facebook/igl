@@ -34,6 +34,26 @@ class ShaderModule final : public IShaderModule {
     UINT numVariables;
   };
 
+  // Shader resource usage summary for root signature selection
+  struct ShaderReflectionInfo {
+    // Push constants (inline root constants)
+    bool hasPushConstants = false;
+    UINT pushConstantSlot = UINT_MAX;  // Which b# register
+    UINT pushConstantSize = 0;         // Size in 32-bit values
+
+    // Resource slot usage (for conflict detection)
+    std::vector<UINT> usedCBVSlots;    // Constant buffer slots (b#)
+    std::vector<UINT> usedSRVSlots;    // Shader resource view slots (t#)
+    std::vector<UINT> usedUAVSlots;    // Unordered access view slots (u#)
+    std::vector<UINT> usedSamplerSlots; // Sampler slots (s#)
+
+    // Maximum slot indices used (for root signature sizing)
+    UINT maxCBVSlot = 0;
+    UINT maxSRVSlot = 0;
+    UINT maxUAVSlot = 0;
+    UINT maxSamplerSlot = 0;
+  };
+
   ShaderModule(ShaderModuleInfo info, std::vector<uint8_t> bytecode)
       : IShaderModule(info), bytecode_(std::move(bytecode)) {
     if (!validateBytecode()) {
@@ -48,6 +68,7 @@ class ShaderModule final : public IShaderModule {
   void setReflection(igl::d3d12::ComPtr<ID3D12ShaderReflection> reflection);
   const std::vector<ResourceBinding>& getResourceBindings() const { return resourceBindings_; }
   const std::vector<ConstantBufferInfo>& getConstantBuffers() const { return constantBuffers_; }
+  const ShaderReflectionInfo& getReflectionInfo() const { return reflectionInfo_; }
 
   bool hasResource(const std::string& name) const;
   UINT getResourceBindPoint(const std::string& name) const;
@@ -61,6 +82,7 @@ class ShaderModule final : public IShaderModule {
   igl::d3d12::ComPtr<ID3D12ShaderReflection> reflection_;
   std::vector<ResourceBinding> resourceBindings_;
   std::vector<ConstantBufferInfo> constantBuffers_;
+  ShaderReflectionInfo reflectionInfo_;
 
   void extractShaderMetadata();
 };
