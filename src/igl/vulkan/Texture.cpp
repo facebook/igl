@@ -552,13 +552,13 @@ void Texture::clearColorTexture(const igl::Color& rgba) {
   const igl::vulkan::VulkanImage& img = texture_->image_;
   IGL_DEBUG_ASSERT(img.valid());
 
-  const auto& wrapper = img.ctx_->stagingDevice_->immediate_->acquire();
+  const auto& wrapper = img.ctx_->stagingDevice_->immediate->acquire();
 
   // There is a memory barrier inserted in clearColorImage().
   // The memory barrier is necessary to ensure synchronized access.
   img.clearColorImage(wrapper.cmdBuf, rgba);
 
-  img.ctx_->stagingDevice_->immediate_->submit(wrapper);
+  img.ctx_->stagingDevice_->immediate->submit(wrapper);
 }
 
 } // namespace igl::vulkan

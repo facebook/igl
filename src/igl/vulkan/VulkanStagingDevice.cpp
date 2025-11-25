@@ -30,14 +30,14 @@ VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
   // Use value of 256MB (limited by some architectures), and clamp it to the max limits
   maxStagingBufferSize_ = std::min(limits.maxStorageBufferRange, 256u * 1024u * 1024u);
 
-  immediate_ = std::make_unique<VulkanImmediateCommands>(
+  immediate = std::make_unique<VulkanImmediateCommands>(
       ctx_.vf_,
       ctx_.getVkDevice(),
       ctx_.deviceQueues_.graphicsQueueFamilyIndex,
       ctx_.config_.exportableFences,
       ctx_.features_.has_VK_KHR_timeline_semaphore && ctx_.features_.has_VK_KHR_synchronization2,
       "VulkanStagingDevice::immediate_");
-  IGL_DEBUG_ASSERT(immediate_.get());
+  IGL_DEBUG_ASSERT(immediate.get());
 }
 
 void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
@@ -74,10 +74,10 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
     // do the transfer
     const VkBufferCopy copy = {memoryChunk.offset, chunkDstOffset, copySize};
 
-    const auto& wrapper = immediate_->acquire();
+    const auto& wrapper = immediate->acquire();
     ctx_.vf_.vkCmdCopyBuffer(
         wrapper.cmdBuf, stagingBuffer->getVkBuffer(), buffer.getVkBuffer(), 1, &copy);
-    memoryChunk.handle = immediate_->submit(wrapper); // store the submit handle with the allocation
+    memoryChunk.handle = immediate->submit(wrapper); // store the submit handle with the allocation
     regions_.push_back(memoryChunk);
 
     size -= copySize;
@@ -88,12 +88,12 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
 
 void VulkanStagingDevice::mergeRegionsAndFreeBuffers() {
   uint32_t regionIndex = 0;
-  while (regionIndex < regions_.size() && immediate_->isReady(regions_[regionIndex].handle)) {
+  while (regionIndex < regions_.size() && immediate->isReady(regions_[regionIndex].handle)) {
     auto& currRegion = regions_[regionIndex];
 
     // set empty handle for a region, if it has finished processing
     // so handle.empty() check can be done later
-    if (!currRegion.handle.empty() && immediate_->isReady(currRegion.handle)) {
+    if (!currRegion.handle.empty() && immediate->isReady(currRegion.handle)) {
       currRegion.handle = VulkanImmediateCommands::SubmitHandle();
       freeStagingBufferSize_ += currRegion.size;
     }
@@ -175,7 +175,7 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
   while (regionItr != regions_.end()) {
     // if requested size is available or if contiguous memory is not requested
     if ((regionItr->size >= requestedAlignedSize || !contiguous) &&
-        (immediate_->isReady(regionItr->handle))) {
+        (immediate->isReady(regionItr->handle))) {
       allocatedSize = std::min(regionItr->size, requestedAlignedSize);
       break;
     }
@@ -257,7 +257,7 @@ void VulkanStagingDevice::getBufferSubData(const VulkanBuffer& buffer,
     // do the transfer
     const VkBufferCopy copy = {chunkSrcOffset, memoryChunk.offset, copySize};
 
-    const auto& wrapper = immediate_->acquire();
+    const auto& wrapper = immediate->acquire();
 
     auto& stagingBuffer = stagingBuffers_[memoryChunk.stagingBufferIndex];
 
@@ -265,7 +265,7 @@ void VulkanStagingDevice::getBufferSubData(const VulkanBuffer& buffer,
         wrapper.cmdBuf, buffer.getVkBuffer(), stagingBuffer->getVkBuffer(), 1, &copy);
 
     // Wait for command to finish
-    immediate_->wait(immediate_->submit(wrapper), ctx_.config_.fenceTimeoutNanoseconds);
+    immediate->wait(immediate->submit(wrapper), ctx_.config_.fenceTimeoutNanoseconds);
 
     // Copy data into data
     const uint8_t* src = stagingBuffer->getMappedPtr() + memoryChunk.offset;
@@ -315,7 +315,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
   // 1. Copy the pixel data into the host visible staging buffer
   stagingBuffer->bufferSubData(memoryChunk.offset, storageSize, data);
 
-  const auto& wrapper = immediate_->acquire();
+  const auto& wrapper = immediate->acquire();
   const uint32_t initialLayer = getVkLayer(type, range.face, range.layer);
   const uint32_t numLayers = getVkLayer(type, range.numFaces, range.numLayers);
 
@@ -415,7 +415,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
     ivkCmdEndDebugUtilsLabel(&ctx_.vf_, wrapper.cmdBuf);
 
     // Store the allocated block with the SubmitHandle at the end of the deque
-    memoryChunk.handle = immediate_->submit(wrapper);
+    memoryChunk.handle = immediate->submit(wrapper);
     regions_.push_back(memoryChunk);
 
     return;
@@ -542,7 +542,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
   ivkCmdEndDebugUtilsLabel(&ctx_.vf_, wrapper.cmdBuf);
 
   // Store the allocated block with the SubmitHandle at the end of the deque
-  memoryChunk.handle = immediate_->submit(wrapper);
+  memoryChunk.handle = immediate->submit(wrapper);
   regions_.push_back(memoryChunk);
 }
 
@@ -580,7 +580,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   const MemoryRegion memoryChunk = nextFreeBlock(storageSize, true);
 
   IGL_DEBUG_ASSERT(memoryChunk.size >= storageSize);
-  const auto& wrapper1 = immediate_->acquire();
+  const auto& wrapper1 = immediate->acquire();
 
   // 1. Transition to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
   ivkImageMemoryBarrier(&ctx_.vf_,
@@ -611,7 +611,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                                   &copy);
 
   // Wait for command to finish
-  immediate_->wait(immediate_->submit(wrapper1), ctx_.config_.fenceTimeoutNanoseconds);
+  immediate->wait(immediate->submit(wrapper1), ctx_.config_.fenceTimeoutNanoseconds);
 
   // 3. Copy data from staging buffer into data
   if (!IGL_DEBUG_VERIFY(stagingBuffer->getMappedPtr())) {
@@ -635,7 +635,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   }
 
   // 4. Transition back to the initial image layout
-  const auto& wrapper2 = immediate_->acquire();
+  const auto& wrapper2 = immediate->acquire();
 
   ivkImageMemoryBarrier(&ctx_.vf_,
                         wrapper2.cmdBuf,
@@ -649,7 +649,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                         VkImageSubresourceRange{aspectFlags, level, 1, layer, 1});
 
   // the data should be available as we get out of this function
-  immediate_->wait(immediate_->submit(wrapper2), ctx_.config_.fenceTimeoutNanoseconds);
+  immediate->wait(immediate->submit(wrapper2), ctx_.config_.fenceTimeoutNanoseconds);
 
   regions_.push_back(memoryChunk);
   freeStagingBufferSize_ += memoryChunk.size;
@@ -664,7 +664,7 @@ void VulkanStagingDevice::waitAndReset() {
   IGL_PROFILER_FUNCTION();
 
   for (const auto region : regions_) {
-    immediate_->wait(region.handle, ctx_.config_.fenceTimeoutNanoseconds);
+    immediate->wait(region.handle, ctx_.config_.fenceTimeoutNanoseconds);
   }
 
   regions_.clear();

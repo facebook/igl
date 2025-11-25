@@ -38,7 +38,7 @@ class VulkanStagingDevice final {
   VulkanStagingDevice(const VulkanStagingDevice&) = delete;
   VulkanStagingDevice& operator=(const VulkanStagingDevice&) = delete;
 
-  std::unique_ptr<VulkanImmediateCommands> immediate_;
+  std::unique_ptr<VulkanImmediateCommands> immediate;
 
   /** @brief Uploads the data at location `data` with the provided size (in bytes) to the
    * VulkanBuffer object on the device at offset `dstOffset`. The upload operation is asynchronous
