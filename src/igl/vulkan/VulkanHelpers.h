@@ -237,7 +237,7 @@ VkImageCreateInfo ivkGetImageCreateInfo(VkImageType type,
                                         VkImageCreateFlags flags,
                                         VkSampleCountFlags samples);
 
-VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfo_Empty(void);
+VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfoEmpty(void);
 
 /// @brief Creates an empty VkPipelineVertexInputStateCreateInfo structure
 VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfo(
@@ -261,15 +261,15 @@ VkPipelineRasterizationStateCreateInfo ivkGetPipelineRasterizationStateCreateInf
     VkCullModeFlags cullMode);
 
 /// @brief Creates a VkPipelineMultisampleStateCreateInfo structure with default values
-VkPipelineMultisampleStateCreateInfo ivkGetPipelineMultisampleStateCreateInfo_Empty(void);
+VkPipelineMultisampleStateCreateInfo ivkGetPipelineMultisampleStateCreateInfoEmpty(void);
 
 /// @brief Creates a VkPipelineDepthStencilStateCreateInfo structure with depth test and write
 /// disabled
-VkPipelineDepthStencilStateCreateInfo ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests(
+VkPipelineDepthStencilStateCreateInfo ivkGetPipelineDepthStencilStateCreateInfoNoDepthStencilTests(
     void);
 
 /// @brief Creates a VkPipelineColorBlendAttachmentState structure with blending disabled
-VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentState_NoBlending(void);
+VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentStateNoBlending(void);
 
 VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentState(
     bool blendEnable,
@@ -293,17 +293,17 @@ VkPipelineViewportStateCreateInfo ivkGetPipelineViewportStateCreateInfo(const Vk
 /// @brief Creates a VkImageSubresourceRange structure for the first layer and mip level
 VkImageSubresourceRange ivkGetImageSubresourceRange(VkImageAspectFlags aspectMask);
 
-VkWriteDescriptorSet ivkGetWriteDescriptorSet_ImageInfo(VkDescriptorSet dstSet,
+VkWriteDescriptorSet ivkGetWriteDescriptorSetImageInfo(VkDescriptorSet dstSet,
+                                                       uint32_t dstBinding,
+                                                       VkDescriptorType descriptorType,
+                                                       uint32_t numDescriptors,
+                                                       const VkDescriptorImageInfo* pImageInfo);
+
+VkWriteDescriptorSet ivkGetWriteDescriptorSetBufferInfo(VkDescriptorSet dstSet,
                                                         uint32_t dstBinding,
                                                         VkDescriptorType descriptorType,
                                                         uint32_t numDescriptors,
-                                                        const VkDescriptorImageInfo* pImageInfo);
-
-VkWriteDescriptorSet ivkGetWriteDescriptorSet_BufferInfo(VkDescriptorSet dstSet,
-                                                         uint32_t dstBinding,
-                                                         VkDescriptorType descriptorType,
-                                                         uint32_t numDescriptors,
-                                                         const VkDescriptorBufferInfo* pBufferInfo);
+                                                        const VkDescriptorBufferInfo* pBufferInfo);
 
 VkPipelineLayoutCreateInfo ivkGetPipelineLayoutCreateInfo(uint32_t numLayouts,
                                                           const VkDescriptorSetLayout* layouts,

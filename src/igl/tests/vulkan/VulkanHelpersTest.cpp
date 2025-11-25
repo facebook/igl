@@ -360,13 +360,13 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
-// ivkGetPipelineVertexInputStateCreateInfo_Empty ***********************************************
+// ivkGetPipelineVertexInputStateCreateInfoEmpty ***********************************************
 
 class PipelineVertexInpusStateCreateInfoTestEmpty : public ::testing::Test {};
 
 TEST_F(PipelineVertexInpusStateCreateInfoTestEmpty, GetPipelineVertexInputStateCreateInfo_Empty) {
   const VkPipelineVertexInputStateCreateInfo pipelineVertexInputCreateInfo =
-      ivkGetPipelineVertexInputStateCreateInfo_Empty();
+      ivkGetPipelineVertexInputStateCreateInfoEmpty();
 
   EXPECT_EQ(pipelineVertexInputCreateInfo.sType,
             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
@@ -475,13 +475,13 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
-// ivkGetPipelineMultisampleStateCreateInfo_Empty ***********************************************
+// ivkGetPipelineMultisampleStateCreateInfoEmpty ***********************************************
 
 class GetPipelineMultisampleStateCreateInfoEmpty : public ::testing::Test {};
 
 TEST_F(GetPipelineMultisampleStateCreateInfoEmpty, GetPipelineMultisampleStateCreateInfo_Empty) {
   const VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo =
-      ivkGetPipelineMultisampleStateCreateInfo_Empty();
+      ivkGetPipelineMultisampleStateCreateInfoEmpty();
 
   EXPECT_EQ(pipelineMultisampleStateCreateInfo.sType,
             VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
@@ -494,14 +494,14 @@ TEST_F(GetPipelineMultisampleStateCreateInfoEmpty, GetPipelineMultisampleStateCr
   EXPECT_EQ(pipelineMultisampleStateCreateInfo.alphaToOneEnable, VK_FALSE);
 }
 
-// ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests *******************************
+// ivkGetPipelineDepthStencilStateCreateInfoNoDepthStencilTests *******************************
 
 class GetPipelineDepthStencilStateCreateInfoNoDepthStencilTestsTest : public ::testing::Test {};
 
 TEST_F(GetPipelineDepthStencilStateCreateInfoNoDepthStencilTestsTest,
        GetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests) {
   const VkPipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo =
-      ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests();
+      ivkGetPipelineDepthStencilStateCreateInfoNoDepthStencilTests();
 
   EXPECT_EQ(pipelineDepthStencilStateCreateInfo.sType,
             VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
@@ -532,14 +532,14 @@ TEST_F(GetPipelineDepthStencilStateCreateInfoNoDepthStencilTestsTest,
   EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.reference, 0);
 }
 
-// ivkGetPipelineColorBlendAttachmentState_NoBlending *******************************************
+// ivkGetPipelineColorBlendAttachmentStateNoBlending *******************************************
 
 class GetPipelineColorBlendAttachmentStateNoBlendingTest : public ::testing::Test {};
 
 TEST_F(GetPipelineColorBlendAttachmentStateNoBlendingTest,
        GetPipelineColorBlendAttachmentState_NoBlending) {
   const VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState =
-      ivkGetPipelineColorBlendAttachmentState_NoBlending();
+      ivkGetPipelineColorBlendAttachmentStateNoBlending();
 
   EXPECT_EQ(pipelineColorBlendAttachmentState.blendEnable, VK_FALSE);
   EXPECT_EQ(pipelineColorBlendAttachmentState.srcColorBlendFactor, VK_BLEND_FACTOR_ONE);
@@ -682,7 +682,7 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
-// ivkGetWriteDescriptorSet_ImageInfo *******************************
+// ivkGetWriteDescriptorSetImageInfo *******************************
 class GetWriteDescriptorSetImageInfoTest
   : public ::testing::TestWithParam<std::tuple<uint32_t, VkDescriptorType, uint32_t>> {};
 
@@ -696,8 +696,8 @@ TEST_P(GetWriteDescriptorSetImageInfoTest, GetWriteDescriptorSet_ImageInfo) {
       VkDescriptorImageInfo{VK_NULL_HANDLE, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED},
       VkDescriptorImageInfo{VK_NULL_HANDLE, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED}};
 
-  const VkWriteDescriptorSet imageDescSet = ivkGetWriteDescriptorSet_ImageInfo(
-      descSet, dstBinding, descType, numDescs, pImageInfo.data());
+  const VkWriteDescriptorSet imageDescSet =
+      ivkGetWriteDescriptorSetImageInfo(descSet, dstBinding, descType, numDescs, pImageInfo.data());
 
   EXPECT_EQ(imageDescSet.sType, VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
   EXPECT_EQ(imageDescSet.pNext, nullptr);
@@ -725,7 +725,7 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
-// ivkGetWriteDescriptorSet_BufferInfo *******************************
+// ivkGetWriteDescriptorSetBufferInfo *******************************
 class GetWriteDescriptorSetBufferInfoTest
   : public ::testing::TestWithParam<std::tuple<uint32_t, VkDescriptorType, uint32_t>> {};
 
@@ -739,7 +739,7 @@ TEST_P(GetWriteDescriptorSetBufferInfoTest, GetWriteDescriptorSet_BufferInfo) {
       VkDescriptorBufferInfo{VK_NULL_HANDLE, 0, VK_WHOLE_SIZE},
       VkDescriptorBufferInfo{VK_NULL_HANDLE, 0, VK_WHOLE_SIZE}};
 
-  const VkWriteDescriptorSet bufferDescSet = ivkGetWriteDescriptorSet_BufferInfo(
+  const VkWriteDescriptorSet bufferDescSet = ivkGetWriteDescriptorSetBufferInfo(
       descSet, dstBinding, descType, numDescs, pBufferInfo.data());
 
   EXPECT_EQ(bufferDescSet.sType, VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);

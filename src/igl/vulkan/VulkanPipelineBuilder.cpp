@@ -13,13 +13,13 @@ uint32_t VulkanPipelineBuilder::numPipelinesCreated = 0;
 uint32_t VulkanComputePipelineBuilder::numPipelinesCreated = 0;
 
 VulkanPipelineBuilder::VulkanPipelineBuilder() :
-  vertexInputState_(ivkGetPipelineVertexInputStateCreateInfo_Empty()),
+  vertexInputState_(ivkGetPipelineVertexInputStateCreateInfoEmpty()),
   inputAssembly_(
       ivkGetPipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE)),
   rasterizationState_(
       ivkGetPipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE)),
-  multisampleState_(ivkGetPipelineMultisampleStateCreateInfo_Empty()),
-  depthStencilState_(ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests()) {}
+  multisampleState_(ivkGetPipelineMultisampleStateCreateInfoEmpty()),
+  depthStencilState_(ivkGetPipelineDepthStencilStateCreateInfoNoDepthStencilTests()) {}
 
 VulkanPipelineBuilder& VulkanPipelineBuilder::depthBiasEnable(bool enable) {
   rasterizationState_.depthBiasEnable = enable ? VK_TRUE : VK_FALSE;

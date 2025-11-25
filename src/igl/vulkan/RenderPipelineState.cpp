@@ -296,7 +296,7 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
   const igl::vulkan::VertexInputState* vstate =
       static_cast<VertexInputState*>(desc_.vertexInputState.get());
 
-  vertexInputStateCreateInfo_ = ivkGetPipelineVertexInputStateCreateInfo_Empty();
+  vertexInputStateCreateInfo_ = ivkGetPipelineVertexInputStateCreateInfoEmpty();
 
   if (vstate) {
     std::array<bool, IGL_BUFFER_BINDINGS_MAX> bufferAlreadyBound{};
@@ -441,7 +441,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
           // In Vulkan color write bits are part of blending.
           if (!attachment.blendEnabled && attachment.colorWriteMask == igl::kColorWriteBitsAll) {
             colorBlendAttachmentStates.push_back(
-                ivkGetPipelineColorBlendAttachmentState_NoBlending());
+                ivkGetPipelineColorBlendAttachmentStateNoBlending());
           } else {
             checkDualSrcBlendFactor(attachment.srcRGBBlendFactor, dualSrcBlendSupported);
             checkDualSrcBlendFactor(attachment.dstRGBBlendFactor, dualSrcBlendSupported);

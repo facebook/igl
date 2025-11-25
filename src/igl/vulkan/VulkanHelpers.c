@@ -653,7 +653,7 @@ VkImageCreateInfo ivkGetImageCreateInfo(VkImageType type,
   return ci;
 }
 
-VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfo_Empty(void) {
+VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfoEmpty(void) {
   return ivkGetPipelineVertexInputStateCreateInfo(0, NULL, 0, NULL);
 }
 
@@ -728,7 +728,7 @@ VkPipelineRasterizationStateCreateInfo ivkGetPipelineRasterizationStateCreateInf
   return ci;
 }
 
-VkPipelineMultisampleStateCreateInfo ivkGetPipelineMultisampleStateCreateInfo_Empty(void) {
+VkPipelineMultisampleStateCreateInfo ivkGetPipelineMultisampleStateCreateInfoEmpty(void) {
   const VkPipelineMultisampleStateCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
       .pNext = NULL,
@@ -742,7 +742,7 @@ VkPipelineMultisampleStateCreateInfo ivkGetPipelineMultisampleStateCreateInfo_Em
   return ci;
 }
 
-VkPipelineDepthStencilStateCreateInfo ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests(
+VkPipelineDepthStencilStateCreateInfo ivkGetPipelineDepthStencilStateCreateInfoNoDepthStencilTests(
     void) {
   const VkPipelineDepthStencilStateCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
@@ -779,7 +779,7 @@ VkPipelineDepthStencilStateCreateInfo ivkGetPipelineDepthStencilStateCreateInfo_
   return ci;
 }
 
-VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentState_NoBlending(void) {
+VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentStateNoBlending(void) {
   const VkPipelineColorBlendAttachmentState state = {
       .blendEnable = VK_FALSE,
       .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
@@ -840,11 +840,11 @@ VkImageSubresourceRange ivkGetImageSubresourceRange(VkImageAspectFlags aspectMas
   return range;
 }
 
-VkWriteDescriptorSet ivkGetWriteDescriptorSet_ImageInfo(VkDescriptorSet dstSet,
-                                                        uint32_t dstBinding,
-                                                        VkDescriptorType descriptorType,
-                                                        uint32_t numDescriptors,
-                                                        const VkDescriptorImageInfo* pImageInfo) {
+VkWriteDescriptorSet ivkGetWriteDescriptorSetImageInfo(VkDescriptorSet dstSet,
+                                                       uint32_t dstBinding,
+                                                       VkDescriptorType descriptorType,
+                                                       uint32_t numDescriptors,
+                                                       const VkDescriptorImageInfo* pImageInfo) {
   const VkWriteDescriptorSet set = {
       .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
       .pNext = NULL,
@@ -860,12 +860,11 @@ VkWriteDescriptorSet ivkGetWriteDescriptorSet_ImageInfo(VkDescriptorSet dstSet,
   return set;
 }
 
-VkWriteDescriptorSet ivkGetWriteDescriptorSet_BufferInfo(
-    VkDescriptorSet dstSet,
-    uint32_t dstBinding,
-    VkDescriptorType descriptorType,
-    uint32_t numDescriptors,
-    const VkDescriptorBufferInfo* pBufferInfo) {
+VkWriteDescriptorSet ivkGetWriteDescriptorSetBufferInfo(VkDescriptorSet dstSet,
+                                                        uint32_t dstBinding,
+                                                        VkDescriptorType descriptorType,
+                                                        uint32_t numDescriptors,
+                                                        const VkDescriptorBufferInfo* pBufferInfo) {
   const VkWriteDescriptorSet set = {
       .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
       .pNext = NULL,

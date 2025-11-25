@@ -1535,30 +1535,30 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
   if (!infoSampledImages.empty()) {
     // use the same indexing for every texture type
     for (uint32_t i = kBinding_Texture2D; i != kBinding_TextureCube + 1; i++) {
-      write.push_back(ivkGetWriteDescriptorSet_ImageInfo(pimpl_->dsBindless,
-                                                         i,
-                                                         VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                                         (uint32_t)infoSampledImages.size(),
-                                                         infoSampledImages.data()));
+      write.push_back(ivkGetWriteDescriptorSetImageInfo(pimpl_->dsBindless,
+                                                        i,
+                                                        VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                                        (uint32_t)infoSampledImages.size(),
+                                                        infoSampledImages.data()));
     }
   };
 
   if (!infoSamplers.empty()) {
     for (uint32_t i = kBinding_Sampler; i != kBinding_SamplerShadow + 1; i++) {
-      write.push_back(ivkGetWriteDescriptorSet_ImageInfo(pimpl_->dsBindless,
-                                                         i,
-                                                         VK_DESCRIPTOR_TYPE_SAMPLER,
-                                                         (uint32_t)infoSamplers.size(),
-                                                         infoSamplers.data()));
+      write.push_back(ivkGetWriteDescriptorSetImageInfo(pimpl_->dsBindless,
+                                                        i,
+                                                        VK_DESCRIPTOR_TYPE_SAMPLER,
+                                                        (uint32_t)infoSamplers.size(),
+                                                        infoSamplers.data()));
     }
   }
 
   if (!infoStorageImages.empty()) {
-    write.push_back(ivkGetWriteDescriptorSet_ImageInfo(pimpl_->dsBindless,
-                                                       kBinding_StorageImages,
-                                                       VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                                       (uint32_t)infoStorageImages.size(),
-                                                       infoStorageImages.data()));
+    write.push_back(ivkGetWriteDescriptorSetImageInfo(pimpl_->dsBindless,
+                                                      kBinding_StorageImages,
+                                                      VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                      (uint32_t)infoStorageImages.size(),
+                                                      infoStorageImages.data()));
   };
 
   // do not switch to the next descriptor set if there is nothing to update
@@ -1795,7 +1795,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
       IGL_DEBUG_ASSERT(data.samplers[loc], "A sampler should be bound to every bound texture slot");
     }
     VkSampler sampler = data.samplers[loc] ? data.samplers[loc] : dummySampler;
-    writes[numWrites++] = ivkGetWriteDescriptorSet_ImageInfo(
+    writes[numWrites++] = ivkGetWriteDescriptorSetImageInfo(
         dset, loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &infoSampledImages[numImages]);
     infoSampledImages[numImages++] = VkDescriptorImageInfo{
         .sampler = hasTexture ? sampler : dummySampler,
@@ -1851,7 +1851,7 @@ void VulkanContext::updateBindingsStorageImages(
     const uint32_t loc = d.bindingLocation;
     IGL_DEBUG_ASSERT(loc < IGL_TEXTURE_SAMPLERS_MAX);
     VkImageView imageView = data.images[loc];
-    writes[numWrites++] = ivkGetWriteDescriptorSet_ImageInfo(
+    writes[numWrites++] = ivkGetWriteDescriptorSetImageInfo(
         dset, loc, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, &infoStorageImages[numStorageImages]);
     infoStorageImages[numStorageImages++] = VkDescriptorImageInfo{
         .sampler = VK_NULL_HANDLE,
@@ -1898,7 +1898,7 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
         IGL_FORMAT("Did you forget to call bindBuffer() for a buffer at the binding location {}?",
                    b.bindingLocation)
             .c_str());
-    writes[numWrites++] = ivkGetWriteDescriptorSet_BufferInfo(
+    writes[numWrites++] = ivkGetWriteDescriptorSetBufferInfo(
         dset,
         b.bindingLocation,
         b.isStorage ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -2190,7 +2190,7 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
       continue;
     }
 
-    writes[numWrites] = ivkGetWriteDescriptorSet_ImageInfo(
+    writes[numWrites] = ivkGetWriteDescriptorSetImageInfo(
         metadata.dset, loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &images[numWrites]);
     images[numWrites++] = {
         sampler.vkSampler,
@@ -2343,7 +2343,7 @@ igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferD
                                             : (isDynamic ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC
                                                          : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     writes[numWrites] =
-        ivkGetWriteDescriptorSet_BufferInfo(metadata.dset, loc, type, 1, &buffers[numWrites]);
+        ivkGetWriteDescriptorSetBufferInfo(metadata.dset, loc, type, 1, &buffers[numWrites]);
     buffers[numWrites++] = VkDescriptorBufferInfo{
         buf->getVkBuffer(),
         desc.offset[loc],
