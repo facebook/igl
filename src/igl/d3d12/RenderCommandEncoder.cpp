@@ -740,8 +740,18 @@ void RenderCommandEncoder::bindPushConstants(const void* data,
     return;
   }
 
-  // Root parameter 0 is reserved for push constants mapped to b2.
-  const UINT rootParamIndex = 0;
+  // Query pipeline for dynamic root parameter index (eliminates hardcoded assumptions)
+  if (!currentRenderPipelineState_) {
+    IGL_LOG_ERROR("bindPushConstants called without bound pipeline state\n");
+    return;
+  }
+
+  if (!currentRenderPipelineState_->hasPushConstants()) {
+    IGL_LOG_ERROR("bindPushConstants called but pipeline has no push constants\n");
+    return;
+  }
+
+  const UINT rootParamIndex = currentRenderPipelineState_->getPushConstantRootParameterIndex();
 
   // Offset and length are in bytes; convert to 32-bit units.
   const UINT offset32 = static_cast<UINT>(offset / sizeof(uint32_t));

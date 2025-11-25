@@ -23,6 +23,7 @@
 #include <igl/d3d12/D3D12ImmediateCommands.h>
 #include <igl/d3d12/D3D12StagingDevice.h>
 #include <igl/d3d12/D3D12FenceWaiter.h>
+#include <igl/d3d12/D3D12RootSignatureKey.h>
 #include <igl/VertexInputState.h>
 #include <igl/Texture.h>
 #include <igl/Assert.h>  // For IGL_DEBUG_ASSERT in waitForUploadFence.
@@ -1590,162 +1591,20 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   const auto& psBytecode = fragmentModule->getBytecode();
   IGL_D3D12_LOG_VERBOSE("  VS bytecode: %zu bytes, PS bytecode: %zu bytes\n", vsBytecode.size(), psBytecode.size());
 
-  // Create root signature with descriptor tables for textures and constant buffers
-  // Root signature layout:
-  // - Root parameter 0: Root Constants for b2 (Push Constants) - 16 DWORDs = 64 bytes max
-  // - Root parameter 1: Root CBV for b0 (legacy bindBuffer support)
-  // - Root parameter 2: Root CBV for b1 (legacy bindBuffer support)
-  // - Root parameter 3: Descriptor table for CBVs b3-b15 (bindBindGroup support)
-  // - Root parameter 4: Descriptor table with SRVs for textures t0-tN (unbounded)
-  // - Root parameter 5: Descriptor table with Samplers for s0-sN (unbounded)
-  // - Root parameter 6: Descriptor table with UAVs for u0-uN (storage buffers)
-  //
-  // This hybrid approach supports:
-  //   - Legacy sessions using bindBuffer(0/1) -> root CBVs at b0/b1
-  //   - New buffer bind groups using bindBindGroup() -> descriptor table at b3-b15
-  //   - Push constants at b2 (inline root constants, cannot overlap with CBV table)
+  // Extract shader reflection info for dynamic root signature creation
+  const auto& vsReflectionInfo = vertexModule->getReflectionInfo();
+  const auto& psReflectionInfo = fragmentModule->getReflectionInfo();
 
-  // Query root signature capabilities to determine descriptor range bounds.
-  // Tier 1 devices (integrated GPUs, WARP) require bounded descriptor ranges.
+  // Create root signature key from shader reflection
+  D3D12RootSignatureKey rootSigKey = D3D12RootSignatureKey::fromShaderReflection(&vsReflectionInfo, &psReflectionInfo);
+
+  // Query resource binding tier for descriptor range bounds
   const D3D12_RESOURCE_BINDING_TIER bindingTier = ctx_->getResourceBindingTier();
-  const bool needsBoundedRanges = (bindingTier == D3D12_RESOURCE_BINDING_TIER_1);
+  IGL_D3D12_LOG_VERBOSE("  Resource binding tier: %u\n", bindingTier);
 
-  // Conservative bounds for Tier 1 devices (based on actual usage in render sessions)
-  // These limits are sufficient for all current IGL usage patterns
-  const UINT srvBound = needsBoundedRanges ? 128 : UINT_MAX;
-  const UINT samplerBound = needsBoundedRanges ? 32 : UINT_MAX;
-
-  if (needsBoundedRanges) {
-    IGL_D3D12_LOG_VERBOSE("  Using bounded descriptor ranges (Tier 1): SRV=%u, Sampler=%u\n",
-                 srvBound, samplerBound);
-  } else {
-    IGL_D3D12_LOG_VERBOSE("  Using unbounded descriptor ranges (Tier %u)\n",
-                 bindingTier == D3D12_RESOURCE_BINDING_TIER_3 ? 3 : 2);
-  }
-
-  // Descriptor range for CBVs b3-b15 (buffer bind groups)
-  D3D12_DESCRIPTOR_RANGE cbvRange = {};
-  cbvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-  cbvRange.NumDescriptors = 13;  // b3 through b15
-  cbvRange.BaseShaderRegister = 3;  // Starting at b3
-  cbvRange.RegisterSpace = 0;
-  cbvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-  // Descriptor range for SRVs (textures)
-  // Use bounded ranges on Tier 1 hardware (integrated GPUs, WARP), unbounded on Tier 2+
-  D3D12_DESCRIPTOR_RANGE srvRange = {};
-  srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-  srvRange.NumDescriptors = srvBound;
-  srvRange.BaseShaderRegister = 0;  // Starting at t0
-  srvRange.RegisterSpace = 0;
-  srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-  // Descriptor range for Samplers
-  // Use bounded ranges on Tier 1 hardware (integrated GPUs, WARP), unbounded on Tier 2+
-  D3D12_DESCRIPTOR_RANGE samplerRange = {};
-  samplerRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-  samplerRange.NumDescriptors = samplerBound;
-  samplerRange.BaseShaderRegister = 0;  // Starting at s0
-  samplerRange.RegisterSpace = 0;
-  samplerRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-  // Descriptor range for UAVs (read-write storage buffers).
-  // Use bounded range for Tier 1, unbounded for Tier 2+.
-  const UINT uavBound = needsBoundedRanges ? 8 : UINT_MAX;  // Conservative: 8 UAVs for storage buffers
-  D3D12_DESCRIPTOR_RANGE uavRange = {};
-  uavRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-  uavRange.NumDescriptors = uavBound;
-  uavRange.BaseShaderRegister = 0;  // Starting at u0
-  uavRange.RegisterSpace = 0;
-  uavRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-  // Root parameters layout:
-  //   - Root constants at b2 (push constants)
-  //   - Root CBVs at b0/b1 (legacy bindBuffer support)
-  //   - CBV descriptor table for b3-b15 (buffer bind groups)
-  //   - SRV/Sampler/UAV descriptor tables
-  D3D12_ROOT_PARAMETER rootParams[7] = {};
-
-  // Parameter 0: Root constants for b2 (push constants)
-  rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-  rootParams[0].Constants.ShaderRegister = 2;  // b2
-  rootParams[0].Constants.RegisterSpace = 0;
-  rootParams[0].Constants.Num32BitValues = 16; // up to 64 bytes
-  rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-  // Parameter 1: Root CBV for b0 (legacy bindBuffer support)
-  rootParams[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-  rootParams[1].Descriptor.ShaderRegister = 0;  // b0
-  rootParams[1].Descriptor.RegisterSpace = 0;
-  rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-  // Parameter 2: Root CBV for b1 (legacy bindBuffer support)
-  rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-  rootParams[2].Descriptor.ShaderRegister = 1;  // b1
-  rootParams[2].Descriptor.RegisterSpace = 0;
-  rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-  // Parameter 3: Descriptor table for CBVs b3-b15 (buffer bind groups)
-  rootParams[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-  rootParams[3].DescriptorTable.NumDescriptorRanges = 1;
-  rootParams[3].DescriptorTable.pDescriptorRanges = &cbvRange;
-  rootParams[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-  // Parameter 4: Descriptor table for SRVs (textures)
-  rootParams[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-  rootParams[4].DescriptorTable.NumDescriptorRanges = 1;
-  rootParams[4].DescriptorTable.pDescriptorRanges = &srvRange;
-  // Enable texture access in all shader stages (vertex, pixel, etc.).
-  rootParams[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-  // Parameter 5: Descriptor table for Samplers.
-  rootParams[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-  rootParams[5].DescriptorTable.NumDescriptorRanges = 1;
-  rootParams[5].DescriptorTable.pDescriptorRanges = &samplerRange;
-  // Enable sampler access in all shader stages (vertex, pixel, etc.).
-  rootParams[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-  // Parameter 6: Descriptor table for UAVs (storage buffers).
-  rootParams[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-  rootParams[6].DescriptorTable.NumDescriptorRanges = 1;
-  rootParams[6].DescriptorTable.pDescriptorRanges = &uavRange;
-  rootParams[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-  D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
-  rootSigDesc.NumParameters = 7;
-  rootSigDesc.pParameters = rootParams;
-  rootSigDesc.NumStaticSamplers = 0;
-  rootSigDesc.pStaticSamplers = nullptr;
-  // Set root signature flags: allow input assembler and deny unused shader stages for optimization
-  rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
-                      D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
-                      D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-                      D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
-
-  // CRITICAL: Validate root signature cost (64 DWORD hardware limit).
-  IGL_D3D12_LOG_VERBOSE("  Validating render root signature cost:\n");
-  const uint32_t cost = calculateRootSignatureCost(rootSigDesc);
-  IGL_D3D12_LOG_VERBOSE("  Total cost: %u / 64 DWORDs (%.1f%%)\n", cost, 100.0f * cost / 64.0f);
-
-  // Warning threshold at 50% (32 DWORDs)
-  if (cost > 32) {
-    IGL_D3D12_LOG_VERBOSE("  WARNING: Root signature cost exceeds 50%% of limit: %u / 64 DWORDs\n", cost);
-  }
-
-  // Hard limit enforcement
-  IGL_DEBUG_ASSERT(cost <= 64, "Root signature exceeds 64 DWORD limit!");
-  if (cost > 64) {
-    IGL_LOG_ERROR("  ROOT SIGNATURE COST OVERFLOW: %u DWORDs (limit: 64)\n", cost);
-    Result::setResult(outResult, Result::Code::ArgumentOutOfRange,
-                      "Root signature cost exceeds 64 DWORD hardware limit");
-    return nullptr;
-  }
-
-  IGL_D3D12_LOG_VERBOSE("  Creating root signature with Push Constants (b2)/Root CBVs (b0,b1)/CBV Table (b3-b15)/SRVs/Samplers/UAVs\n");
-
-  // Get or create cached root signature.
+  // Create root signature dynamically based on shader requirements
   igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature =
-      pipelineCache_.getOrCreateRootSignature(ctx_->getDevice(), rootSigDesc, outResult);
+      pipelineCache_.createRootSignatureFromKey(ctx_->getDevice(), rootSigKey, bindingTier, outResult);
   if (!rootSignature.Get()) {
     return nullptr;
   }

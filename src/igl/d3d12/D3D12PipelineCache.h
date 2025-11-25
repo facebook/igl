@@ -34,6 +34,13 @@ class D3D12PipelineCache {
       const D3D12_ROOT_SIGNATURE_DESC& desc,
       Result* IGL_NULLABLE outResult) const;
 
+  // Create root signature from reflection-based key (for dynamic binding)
+  ComPtr<ID3D12RootSignature> createRootSignatureFromKey(
+      ID3D12Device* d3dDevice,
+      const struct D3D12RootSignatureKey& key,
+      D3D12_RESOURCE_BINDING_TIER bindingTier,
+      Result* IGL_NULLABLE outResult) const;
+
   size_t hashRenderPipelineDesc(const RenderPipelineDesc& desc) const;
   size_t hashComputePipelineDesc(const ComputePipelineDesc& desc) const;
 

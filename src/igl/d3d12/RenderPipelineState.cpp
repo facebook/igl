@@ -48,8 +48,10 @@ RenderPipelineState::RenderPipelineState(const RenderPipelineDesc& desc,
         shaderReflection_.hasPushConstants = true;
         shaderReflection_.pushConstantSlot = vsReflection.pushConstantSlot;
         shaderReflection_.pushConstantSize = vsReflection.pushConstantSize;
-        IGL_D3D12_LOG_VERBOSE("RenderPipelineState: VS push constants at b%u (%u DWORDs)\n",
-                     vsReflection.pushConstantSlot, vsReflection.pushConstantSize);
+        shaderReflection_.pushConstantRootParamIndex = 0;  // Push constants are always root parameter 0
+        IGL_D3D12_LOG_VERBOSE("RenderPipelineState: VS push constants at b%u (%u DWORDs, root param %u)\n",
+                     vsReflection.pushConstantSlot, vsReflection.pushConstantSize,
+                     shaderReflection_.pushConstantRootParamIndex);
       }
     }
 
@@ -60,8 +62,10 @@ RenderPipelineState::RenderPipelineState(const RenderPipelineDesc& desc,
         shaderReflection_.hasPushConstants = true;
         shaderReflection_.pushConstantSlot = psReflection.pushConstantSlot;
         shaderReflection_.pushConstantSize = psReflection.pushConstantSize;
-        IGL_D3D12_LOG_VERBOSE("RenderPipelineState: PS push constants at b%u (%u DWORDs)\n",
-                     psReflection.pushConstantSlot, psReflection.pushConstantSize);
+        shaderReflection_.pushConstantRootParamIndex = 0;  // Push constants are always root parameter 0
+        IGL_D3D12_LOG_VERBOSE("RenderPipelineState: PS push constants at b%u (%u DWORDs, root param %u)\n",
+                     psReflection.pushConstantSlot, psReflection.pushConstantSize,
+                     shaderReflection_.pushConstantRootParamIndex);
       }
     }
   }

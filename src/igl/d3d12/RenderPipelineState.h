@@ -93,6 +93,11 @@ class RenderPipelineState final : public IRenderPipelineState {
   uint32_t getVertexStride(size_t slot) const { return (slot < IGL_BUFFER_BINDINGS_MAX) ? vertexStrides_[slot] : 0; }
   D3D_PRIMITIVE_TOPOLOGY getPrimitiveTopology() const { return primitiveTopology_; }
 
+  // Query push constant binding info from shader reflection
+  bool hasPushConstants() const { return shaderReflection_.hasPushConstants; }
+  UINT getPushConstantSlot() const { return shaderReflection_.pushConstantSlot; }
+  UINT getPushConstantRootParameterIndex() const { return shaderReflection_.pushConstantRootParamIndex; }
+
  private:
   friend class Device;  // Device needs access to create PSO variants
 
@@ -113,11 +118,11 @@ class RenderPipelineState final : public IRenderPipelineState {
 
   // Shader reflection info for dynamic resource binding
   // Stores merged reflection data from vertex + fragment shaders
-  // Future: Used to determine root parameter indices for push constants
   struct {
     bool hasPushConstants = false;
     UINT pushConstantSlot = UINT_MAX;
     UINT pushConstantSize = 0;
+    UINT pushConstantRootParamIndex = 0;  // Root parameter index for push constants in root signature
   } shaderReflection_;
 };
 
