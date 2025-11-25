@@ -110,6 +110,15 @@ class RenderPipelineState final : public IRenderPipelineState {
                               igl::d3d12::ComPtr<ID3D12PipelineState>,
                               D3D12RenderPipelineDynamicState::HashFunction>
       psoVariants_;
+
+  // Shader reflection info for dynamic resource binding
+  // Stores merged reflection data from vertex + fragment shaders
+  // Future: Used to determine root parameter indices for push constants
+  struct {
+    bool hasPushConstants = false;
+    UINT pushConstantSlot = UINT_MAX;
+    UINT pushConstantSize = 0;
+  } shaderReflection_;
 };
 
 } // namespace igl::d3d12

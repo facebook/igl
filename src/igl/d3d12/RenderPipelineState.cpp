@@ -35,6 +35,37 @@ RenderPipelineState::RenderPipelineState(const RenderPipelineDesc& desc,
     rootSignature_->SetName((L"RootSig_" + wideName).c_str());
     IGL_D3D12_LOG_VERBOSE("RenderPipelineState: Set PIX root signature name 'RootSig_%s'\n", debugName.c_str());
   }
+
+  // Extract shader reflection info for future dynamic binding support
+  if (desc.shaderStages) {
+    auto* vertexModule = static_cast<const ShaderModule*>(desc.shaderStages->getVertexModule().get());
+    auto* fragmentModule = static_cast<const ShaderModule*>(desc.shaderStages->getFragmentModule().get());
+
+    // Prefer vertex shader for push constants if both define them
+    if (vertexModule) {
+      const auto& vsReflection = vertexModule->getReflectionInfo();
+      if (vsReflection.hasPushConstants) {
+        shaderReflection_.hasPushConstants = true;
+        shaderReflection_.pushConstantSlot = vsReflection.pushConstantSlot;
+        shaderReflection_.pushConstantSize = vsReflection.pushConstantSize;
+        IGL_D3D12_LOG_VERBOSE("RenderPipelineState: VS push constants at b%u (%u DWORDs)\n",
+                     vsReflection.pushConstantSlot, vsReflection.pushConstantSize);
+      }
+    }
+
+    // Use fragment shader push constants if vertex shader doesn't have them
+    if (!shaderReflection_.hasPushConstants && fragmentModule) {
+      const auto& psReflection = fragmentModule->getReflectionInfo();
+      if (psReflection.hasPushConstants) {
+        shaderReflection_.hasPushConstants = true;
+        shaderReflection_.pushConstantSlot = psReflection.pushConstantSlot;
+        shaderReflection_.pushConstantSize = psReflection.pushConstantSize;
+        IGL_D3D12_LOG_VERBOSE("RenderPipelineState: PS push constants at b%u (%u DWORDs)\n",
+                     psReflection.pushConstantSlot, psReflection.pushConstantSize);
+      }
+    }
+  }
+
   // Convert IGL primitive topology to D3D12 primitive topology
   switch (desc.topology) {
     case PrimitiveType::Point:
