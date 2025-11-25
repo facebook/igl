@@ -32,13 +32,13 @@ struct Half {
  private:
   uint16_t data_ = 0;
 
-  template<typename charT, typename traits>
-  friend std::basic_ostream<charT, traits>& operator<<(std::basic_ostream<charT, traits>& /*out*/,
+  template<typename CharT, typename Traits>
+  friend std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& /*out*/,
                                                        Half /*arg*/);
 };
 
-template<typename charT, typename traits>
-std::basic_ostream<charT, traits>& operator<<(std::basic_ostream<charT, traits>& out, Half arg) {
+template<typename CharT, typename Traits>
+std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& out, Half arg) {
   return out << glm::unpackHalf1x16(arg.data_);
 }
 
