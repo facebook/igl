@@ -395,31 +395,52 @@ Result D3D12Context::createDevice() {
     return (std::string(value) == "1") || (std::string(value) == "true");
   };
 
-  // A-007: Debug configuration from environment variables
+  // A-007: Debug configuration from environment variables.
+  // Defaults are tuned for aggressive validation in debug builds so that
+  // issues like PSO creation failures and binding mismatches are surfaced
+  // without requiring the user to set environment variables manually.
   bool enableDebugLayer = getEnvBool("IGL_D3D12_DEBUG",
 #ifdef _DEBUG
-    true  // Default ON in debug builds
+    true   // Default ON in debug builds
 #else
-    false // Default OFF in release builds
+    false  // Default OFF in release builds
 #endif
   );
-  bool enableGPUValidation = getEnvBool("IGL_D3D12_GPU_VALIDATION", false);
+  bool enableGPUValidation = getEnvBool("IGL_D3D12_GPU_VALIDATION",
+#ifdef _DEBUG
+    true   // Default ON in debug builds for better diagnostics
+#else
+    false  // Default OFF in release builds
+#endif
+  );
   bool enableDRED = getEnvBool("IGL_D3D12_DRED",
 #ifdef _DEBUG
-    true  // Default ON in debug builds
+    true   // Default ON in debug builds
 #else
-    false // Default OFF in release builds
+    false  // Default OFF in release builds
 #endif
   );
   bool enableDXGIDebug = getEnvBool("IGL_DXGI_DEBUG",
 #ifdef _DEBUG
-    true  // Default ON in debug builds
+    true   // Default ON in debug builds
 #else
-    false // Default OFF in release builds
+    false  // Default OFF in release builds
 #endif
   );
-  bool breakOnError = getEnvBool("IGL_D3D12_BREAK_ON_ERROR", false);  // OFF by default to avoid hangs
-  bool breakOnWarning = getEnvBool("IGL_D3D12_BREAK_ON_WARNING", false);
+  bool breakOnError = getEnvBool("IGL_D3D12_BREAK_ON_ERROR",
+#ifdef _DEBUG
+    true   // Default BREAK on error in debug builds
+#else
+    false  // Default LOG only in release builds
+#endif
+  );
+  bool breakOnWarning = getEnvBool("IGL_D3D12_BREAK_ON_WARNING",
+#ifdef _DEBUG
+    false  // Default LOG warnings in debug builds (can be overridden)
+#else
+    false
+#endif
+  );
 
   IGL_D3D12_LOG_VERBOSE("=== D3D12 Debug Configuration ===\n");
   IGL_D3D12_LOG_VERBOSE("  Debug Layer:       %s\n", enableDebugLayer ? "ENABLED" : "DISABLED");
@@ -518,20 +539,18 @@ Result D3D12Context::createDevice() {
       infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, breakOnError ? TRUE : FALSE);
       infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, breakOnWarning ? TRUE : FALSE);
 
-      // Filter out INFO messages, unsigned shader messages (for DXC development),
-      // and a small set of known performance-only clear warnings that are expected
-      // in this backend (no functional impact).
+      // Filter out INFO messages and a small set of known performance-only
+      // clear warnings that are expected in this backend (no functional
+      // impact). Do NOT filter invalid-shader-bytecode or signature messages so
+      // that pipeline creation problems surface clearly during debugging.
       D3D12_MESSAGE_SEVERITY severities[] = {
         D3D12_MESSAGE_SEVERITY_INFO
       };
 
-      // Filter out messages about unsigned shaders (DXC in development mode) and
-      // clear-value performance hints (IDs 820/821).
+      // Filter out only clear-value performance hints (IDs 820/821) and the
+      // known PS float-to-uint RT bitcast warning (677). All other message IDs
+      // (including invalid shader bytecode or unparseable signatures) are kept.
       D3D12_MESSAGE_ID denyIds[] = {
-        D3D12_MESSAGE_ID_CREATEVERTEXSHADER_INVALIDSHADERBYTECODE,       // Unsigned VS
-        D3D12_MESSAGE_ID_CREATEPIXELSHADER_INVALIDSHADERBYTECODE,        // Unsigned PS
-        D3D12_MESSAGE_ID_CREATECOMPUTESHADER_INVALIDSHADERBYTECODE,      // Unsigned CS
-        D3D12_MESSAGE_ID_CREATEINPUTLAYOUT_UNPARSEABLEINPUTSIGNATURE,    // DX IL input signature
         static_cast<D3D12_MESSAGE_ID>(820),  // ClearRenderTargetView w/o optimized clear value
         static_cast<D3D12_MESSAGE_ID>(821),  // ClearDepthStencilView clear value mismatch
         static_cast<D3D12_MESSAGE_ID>(677)   // PS float output to UINT RT (bitcast)

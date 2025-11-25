@@ -134,7 +134,7 @@ void main() {
 
 static const char* getD3D12VertexShaderSource() {
   return R"(
-cbuffer Uniforms : register(b0) {
+cbuffer Uniforms : register(b2) {
   float4x4 projectionMatrix;
 };
 
@@ -195,14 +195,12 @@ static std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevic
     break;
   }
   case igl::BackendType::D3D12: {
-    // Use precompiled FXC shaders for D3D12
-    return igl::ShaderStagesCreator::fromModuleBinaryInput(device,
-                                                           _tmp_imgui_vs_fxc_cso,
-                                                           _tmp_imgui_vs_fxc_cso_len,
+    // Use runtime compilation for D3D12 (precompiled shaders were out of date with register(b0) instead of b2)
+    return igl::ShaderStagesCreator::fromModuleStringInput(device,
+                                                           getD3D12VertexShaderSource(),
                                                            "main",
                                                            "Shader Module: imgui::vertex (D3D12)",
-                                                           _tmp_imgui_ps_fxc_cso,
-                                                           _tmp_imgui_ps_fxc_cso_len,
+                                                           getD3D12FragmentShaderSource(),
                                                            "main",
                                                            "Shader Module: imgui::fragment (D3D12)",
                                                            &result);

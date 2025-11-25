@@ -20,12 +20,12 @@ namespace igl::d3d12 {
 namespace {
 // Root signature layout constants
 // Graphics pipeline root signature (from Device::createRenderPipeline):
-// - Parameter 0: Root Constants b2 (push constants)
-// - Parameter 1: Root CBV b0 (legacy)
-// - Parameter 2: Root CBV b1 (legacy)
-// - Parameter 3: CBV descriptor table (b2-b15)
-// - Parameter 4: SRV descriptor table (textures t0-t15)
-// - Parameter 5: Sampler descriptor table (s0-s15)
+// - Parameter 0: Root Constants for b2 (Push Constants)
+// - Parameter 1: Root CBV b0 (legacy bindBuffer)
+// - Parameter 2: Root CBV b1 (legacy bindBuffer)
+// - Parameter 3: CBV descriptor table (b3-b15, bindBindGroup)
+// - Parameter 4: SRV descriptor table (textures t0-tN)
+// - Parameter 5: Sampler descriptor table (s0-sN)
 // - Parameter 6: UAV descriptor table (storage buffers u0-uN)
 constexpr uint32_t kGraphicsRootParam_PushConstants = 0;
 constexpr uint32_t kGraphicsRootParam_RootCBV0 = 1;
@@ -283,61 +283,69 @@ bool D3D12ResourcesBinder::updateTextureBindings(ID3D12GraphicsCommandList* cmdL
     return true; // Nothing to bind
   }
 
-  // Validate that bindings are dense starting from slot 0
-  if (bindingsTextures_.textures[0] == nullptr) {
-    IGL_LOG_ERROR("D3D12ResourcesBinder: Texture bindings are sparse (slot 0 not bound). "
-                  "D3D12 requires dense bindings starting at index 0.\n");
-    if (outResult) {
-      *outResult = Result{Result::Code::InvalidOperation,
-                          "Texture bindings must be dense starting at slot 0"};
-    }
-    return false;
-  }
-
   auto& context = commandBuffer_.getContext();
 
   // Allocate a contiguous range of descriptors for all textures on a single page
   // This ensures we can bind them as a single descriptor table
   uint32_t baseDescriptorIndex = 0;
-  Result allocResult = commandBuffer_.allocateCbvSrvUavRange(bindingsTextures_.count, &baseDescriptorIndex);
+  Result allocResult =
+      commandBuffer_.allocateCbvSrvUavRange(bindingsTextures_.count, &baseDescriptorIndex);
   if (!allocResult.isOk()) {
-    IGL_LOG_ERROR("D3D12ResourcesBinder: Failed to allocate contiguous SRV range (%u descriptors): %s\n",
-                  bindingsTextures_.count,
-                  allocResult.message.c_str());
+    IGL_LOG_ERROR(
+        "D3D12ResourcesBinder: Failed to allocate contiguous SRV range (%u descriptors): %s\n",
+        bindingsTextures_.count,
+        allocResult.message.c_str());
     if (outResult) {
       *outResult = allocResult;
     }
     return false;
   }
 
-  // Verify all textures are bound (dense binding requirement)
+  // Create SRV descriptors for all texture slots up to count. For unbound
+  // slots, emit a null SRV so that the descriptor table is fully
+  // initialized without imposing a dense-binding requirement on the API.
   for (uint32_t i = 0; i < bindingsTextures_.count; ++i) {
-    if (bindingsTextures_.textures[i] == nullptr) {
-      IGL_LOG_ERROR("D3D12ResourcesBinder: Sparse texture binding detected at slot %u\n", i);
-      if (outResult) {
-        *outResult = Result{Result::Code::InvalidOperation, "Texture bindings must be dense"};
-      }
-      return false;
-    }
-  }
+    const uint32_t descriptorIndex = baseDescriptorIndex + i;
+    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle =
+        context.getCbvSrvUavCpuHandle(descriptorIndex);
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle =
+        context.getCbvSrvUavGpuHandle(descriptorIndex);
 
-  // Create SRV descriptors for all bound textures
-  for (uint32_t i = 0; i < bindingsTextures_.count; ++i) {
     auto* texture = bindingsTextures_.textures[i];
+    if (!texture) {
+      // Create an explicit null SRV descriptor. D3D12 does not permit both
+      // the resource AND the descriptor pointer to be null, so we bind a
+      // well-formed descriptor with zeroed fields instead. This is treated as
+      // a null descriptor by the runtime.
+      D3D12_SHADER_RESOURCE_VIEW_DESC nullSrv = {};
+      nullSrv.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+      nullSrv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+      nullSrv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+      nullSrv.Texture2D.MipLevels = 1;
+      device->CreateShaderResourceView(nullptr, &nullSrv, cpuHandle);
+      D3D12Context::trackResourceCreation("SRV", 0);
+      bindingsTextures_.handles[i] = gpuHandle;
+      continue;
+    }
+
     auto* d3dTexture = static_cast<Texture*>(texture);
     ID3D12Resource* resource = d3dTexture->getResource();
+    if (!resource) {
+      D3D12_SHADER_RESOURCE_VIEW_DESC nullSrv = {};
+      nullSrv.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+      nullSrv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+      nullSrv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+      nullSrv.Texture2D.MipLevels = 1;
+      device->CreateShaderResourceView(nullptr, &nullSrv, cpuHandle);
+      D3D12Context::trackResourceCreation("SRV", 0);
+      bindingsTextures_.handles[i] = gpuHandle;
+      continue;
+    }
 
-    // Use contiguous descriptor index (baseDescriptorIndex + i)
-    const uint32_t descriptorIndex = baseDescriptorIndex + i;
-    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
-    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
-
-    // Create SRV descriptor
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Format = textureFormatToDXGIShaderResourceViewFormat(d3dTexture->getFormat());
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-    // Set view dimension based on texture type
     auto resourceDesc = resource->GetDesc();
     const bool isView = d3dTexture->isView();
     const uint32_t mostDetailedMip = isView ? d3dTexture->getMipLevelOffset() : 0;
@@ -354,17 +362,22 @@ bool D3D12ResourcesBinder::updateTextureBindings(ID3D12GraphicsCommandList* cmdL
           (isView && d3dTexture->getNumArraySlicesInView() > 0) ||
           (!isView && resourceDesc.DepthOrArraySize > 1);
 
-      if (textureType == TextureType::TwoDArray) {
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-        srvDesc.Texture2DArray.MostDetailedMip = mostDetailedMip;
-        srvDesc.Texture2DArray.MipLevels = mipLevels;
-        srvDesc.Texture2DArray.FirstArraySlice = isView ? d3dTexture->getArraySliceOffset() : 0;
-        srvDesc.Texture2DArray.ArraySize =
-            isView ? d3dTexture->getNumArraySlicesInView() : resourceDesc.DepthOrArraySize;
-      } else if (textureType == TextureType::Cube) {
+      // Prioritize cube textures so that cubemaps created as 2D arrays
+      // with 6 faces are exposed as TEXTURECUBE to shaders that declare
+      // TextureCube / samplerCube.
+      if (textureType == TextureType::Cube) {
         srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
         srvDesc.TextureCube.MostDetailedMip = mostDetailedMip;
         srvDesc.TextureCube.MipLevels = mipLevels;
+      } else if (textureType == TextureType::TwoDArray || isArrayTexture) {
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+        srvDesc.Texture2DArray.MostDetailedMip = mostDetailedMip;
+        srvDesc.Texture2DArray.MipLevels = mipLevels;
+        srvDesc.Texture2DArray.FirstArraySlice =
+            isView ? d3dTexture->getArraySliceOffset() : 0;
+        srvDesc.Texture2DArray.ArraySize =
+            isView ? d3dTexture->getNumArraySlicesInView()
+                   : resourceDesc.DepthOrArraySize;
       } else {
         srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
         srvDesc.Texture2D.MostDetailedMip = mostDetailedMip;
@@ -374,7 +387,8 @@ bool D3D12ResourcesBinder::updateTextureBindings(ID3D12GraphicsCommandList* cmdL
       IGL_LOG_ERROR("D3D12ResourcesBinder: Unsupported texture dimension %d\n",
                     resourceDesc.Dimension);
       if (outResult) {
-        *outResult = Result{Result::Code::Unsupported, "Unsupported texture dimension for SRV"};
+        *outResult =
+            Result{Result::Code::Unsupported, "Unsupported texture dimension for SRV"};
       }
       return false;
     }

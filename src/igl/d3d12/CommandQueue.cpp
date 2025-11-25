@@ -166,9 +166,11 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
                   deviceCheck.message.c_str());
   }
 
-  // Present if we have a swapchain
+  // Present only if this command buffer requested it (via present())
+  // and we have a swapchain. This avoids advancing the swapchain for
+  // intermediate offscreen passes that do not render to the back buffer.
   bool presentOk = true;
-  if (ctx.getSwapChain()) {
+  if (ctx.getSwapChain() && cmdBuffer.willPresent()) {
     PresentManager presentMgr(ctx);
     presentOk = presentMgr.present();
     if (!presentOk) {

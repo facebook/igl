@@ -480,9 +480,10 @@ std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncod
 }
 
 void CommandBuffer::present(const std::shared_ptr<ITexture>& /*surface*/) const {
-  // Note: Actual present happens in CommandQueue::submit()
-  // This is just a marker to indicate that this command buffer will present when submitted
-  // For D3D12, the present call must happen AFTER ExecuteCommandLists, so it's handled in submit()
+  // Note: Actual present happens in CommandQueue::submit(). This call serves
+  // as a marker indicating that this command buffer should trigger a swapchain
+  // Present when submitted.
+  willPresent_ = true;
 }
 
 void CommandBuffer::waitUntilScheduled() {

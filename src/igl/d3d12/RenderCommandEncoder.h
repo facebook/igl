@@ -11,6 +11,7 @@
 #include <igl/RenderPass.h>
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/D3D12ResourcesBinder.h>
+#include <igl/d3d12/RenderPipelineState.h>
 #include <cstdint>
 #include <vector>
 
@@ -191,6 +192,14 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
 
   // Queue a barrier for batched submission
   void queueBarrier(const D3D12_RESOURCE_BARRIER& barrier);
+
+  // Dynamic PSO selection (Vulkan-style pattern)
+  // Stores actual framebuffer formats captured in begin()
+  // Used to select correct PSO variant at draw time
+  D3D12RenderPipelineDynamicState dynamicState_;
+
+  // Cached render pipeline state for dynamic PSO variant selection
+  const RenderPipelineState* currentRenderPipelineState_ = nullptr;
 };
 
 } // namespace igl::d3d12

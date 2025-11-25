@@ -88,6 +88,24 @@ std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> par
   // Store view parameters (cumulative offsets for nested views)
   view->mipLevelOffset_ = parent->mipLevelOffset_ + desc.mipLevel;
   view->numMipLevelsInView_ = desc.numMipLevels;
+
+  // CRITICAL FIX: D3D12 SRV descriptors require MipLevels >= 1
+  // If numMipLevels is 0 (uninitialized), default to 1 to prevent invalid SRV creation
+  if (view->numMipLevelsInView_ == 0) {
+    IGL_LOG_ERROR("Texture::createTextureView - numMipLevels is 0, defaulting to 1 (SRV requires MipLevels >= 1)\n");
+    view->numMipLevelsInView_ = 1;
+  }
+
+  // Validate mip level bounds to prevent out-of-range access
+  const uint32_t parentMipCount = parent->getNumMipLevels();
+  const uint32_t requestedMipEnd = desc.mipLevel + view->numMipLevelsInView_;
+  if (requestedMipEnd > parentMipCount) {
+    IGL_LOG_ERROR("Texture::createTextureView - mip range [%u, %u) exceeds parent mip count %u, clamping\n",
+                  desc.mipLevel, requestedMipEnd, parentMipCount);
+    // Clamp to valid range
+    view->numMipLevelsInView_ = (parentMipCount > desc.mipLevel) ? (parentMipCount - desc.mipLevel) : 1;
+  }
+
   view->arraySliceOffset_ = parent->arraySliceOffset_ + desc.layer;
   view->numArraySlicesInView_ = desc.numLayers;
 
@@ -108,7 +126,8 @@ std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> par
       std::max(1u, parent->dimensions_.depth >> desc.mipLevel)
   };
   view->numLayers_ = desc.numLayers;
-  view->numMipLevels_ = desc.numMipLevels;
+  // Use the validated numMipLevelsInView_ value (which has been corrected if it was 0)
+  view->numMipLevels_ = view->numMipLevelsInView_;
 
   // Views delegate state tracking to the root texture and do not maintain separate state.
   // State is accessed via getStateOwner(), which walks to the root for views.
@@ -163,10 +182,20 @@ Result Texture::upload(const TextureRangeDesc& range,
   const uint32_t depth = range.depth > 0 ? range.depth : dimensions_.depth;
 
   const auto props = TextureFormatProperties::fromTextureFormat(format_);
-  // Calculate bytes per row if not provided
+  const bool isBC7 = (format_ == TextureFormat::RGBA_BC7_UNORM_4x4 ||
+                      format_ == TextureFormat::RGBA_BC7_SRGB_4x4);
+
+  // Calculate bytes per row if not provided. For block-compressed formats
+  // like BC7, rows are expressed in blocks, not texels, so use the number
+  // of blocks in X multiplied by bytesPerBlock.
   if (bytesPerRow == 0) {
-    const size_t bpp = std::max<uint8_t>(props.bytesPerBlock, 1);
-    bytesPerRow = static_cast<size_t>(width) * bpp;
+    if (isBC7) {
+      const uint32_t blocksX = (width + 3u) / 4u;
+      bytesPerRow = static_cast<size_t>(blocksX) * props.bytesPerBlock;
+    } else {
+      const size_t bpp = std::max<uint8_t>(props.bytesPerBlock, 1);
+      bytesPerRow = static_cast<size_t>(width) * bpp;
+    }
   }
 
   // Get the resource description to calculate required size
@@ -277,8 +306,14 @@ Result Texture::upload(const TextureRangeDesc& range,
     const uint32_t mipWidth = std::max(width >> (baseMip + mipOffset), 1u);
     const uint32_t mipHeight = std::max(height >> (baseMip + mipOffset), 1u);
     const uint32_t mipDepth = std::max(depth >> (baseMip + mipOffset), 1u);
-    const size_t mipBytesPerRow = (bytesPerRow * mipWidth) / width;
-    const size_t srcLayerSize = mipBytesPerRow * mipHeight * mipDepth;
+
+    size_t mipBytesPerRow = 0;
+    if (isBC7) {
+      const uint32_t blocksX = (mipWidth + 3u) / 4u;
+      mipBytesPerRow = static_cast<size_t>(blocksX) * props.bytesPerBlock;
+    } else {
+      mipBytesPerRow = (bytesPerRow * mipWidth) / width;
+    }
 
     for (uint32_t sliceOffset = 0; sliceOffset < numSlicesToUpload; ++sliceOffset) {
       const auto& layout = layouts[layoutIdx];
@@ -289,19 +324,29 @@ Result Texture::upload(const TextureRangeDesc& range,
       const uint8_t* srcData = static_cast<const uint8_t*>(data) + srcDataOffset;
       uint8_t* dstData = static_cast<uint8_t*>(mappedData) + layout.Offset;
       const size_t copyBytes = std::min(static_cast<size_t>(rowSize), mipBytesPerRow);
-      const size_t srcDepthPitch = mipBytesPerRow * mipHeight;
+
+      // For uncompressed formats, the source data is tightly packed by the
+      // requested region's height (mipHeight). For block-compressed formats
+      // (e.g. BC7), numRows represents the number of block rows returned by
+      // GetCopyableFootprints. Use mipHeight for uncompressed uploads and
+      // numRows for BC7 so that source layout matches the caller's data.
+      const UINT rowsToCopy = isBC7 ? numRows : mipHeight;
+
+      const size_t srcDepthPitch = mipBytesPerRow * rowsToCopy;
       const size_t dstDepthPitch = layout.Footprint.RowPitch * layout.Footprint.Height;
 
       for (UINT z = 0; z < mipDepth; ++z) {
         const uint8_t* srcSlice = srcData + z * srcDepthPitch;
         uint8_t* dstSlice = dstData + z * dstDepthPitch;
-        for (UINT row = 0; row < std::min(mipHeight, numRows); ++row) {
+        for (UINT row = 0; row < rowsToCopy; ++row) {
           const uint8_t* srcRow = srcSlice + row * mipBytesPerRow;
           uint8_t* dstRow = dstSlice + row * layout.Footprint.RowPitch;
           memcpy(dstRow, srcRow, copyBytes);
         }
       }
-      srcDataOffset += srcLayerSize;
+
+      // Advance source pointer by the size of this subresource (all rows, all slices).
+      srcDataOffset += mipBytesPerRow * rowsToCopy * mipDepth;
     }
   }
 
@@ -378,8 +423,17 @@ Result Texture::upload(const TextureRangeDesc& range,
       }
       layoutIdx++;
 
-      D3D12_BOX srcBox = {0, 0, 0, mipWidth, mipHeight, mipDepth};
-      cmdList->CopyTextureRegion(&dst, range.x, range.y, range.z, &src, &srcBox);
+      // For block-compressed formats like BC7, CopyTextureRegion requires the
+      // source box to be aligned to block boundaries. Small mips (e.g. 2x2)
+      // violate this if we specify an explicit box in texel units. Since the
+      // staging layout already matches the subresource footprint, simply copy
+      // the entire subresource by passing a null box for BC7.
+      if (isBC7) {
+        cmdList->CopyTextureRegion(&dst, range.x, range.y, range.z, &src, nullptr);
+      } else {
+        D3D12_BOX srcBox = {0, 0, 0, mipWidth, mipHeight, mipDepth};
+        cmdList->CopyTextureRegion(&dst, range.x, range.y, range.z, &src, &srcBox);
+      }
 
       // const_cast needed (see above)
       const_cast<Texture*>(this)->transitionTo(cmdList.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, currentMip, currentSlice);
@@ -523,8 +577,21 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     return;
   }
 
-  // If texture wasn't created with RENDER_TARGET flag, we need to recreate it
-  // D3D12 requires ALLOW_RENDER_TARGET for mipmap generation via rendering
+  // Skip depth/stencil textures entirely. The current D3D12 mipmap path only
+  // supports color render-target textures; attempting to add ALLOW_RENDER_TARGET
+  // to a depth/stencil resource would violate D3D12's flag rules.
+  if (resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) {
+    IGL_D3D12_LOG_VERBOSE(
+        "Texture::generateMipmap() - Skipping: depth/stencil textures are not "
+        "handled by this mipmap path (Flags=0x%08X)\n",
+        resourceDesc.Flags);
+    return;
+  }
+
+  // If texture wasn't created with a render-target-capable flag, skip mipmap
+  // generation gracefully on D3D12. The current implementation only supports
+  // color 2D textures with ALLOW_RENDER_TARGET; depth/stencil and other usage
+  // patterns rely on backend-specific paths or pre-generated mips.
   if (!(resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)) {
     IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap() - Recreating texture with RENDER_TARGET flag for mipmap generation\n");
 
@@ -557,7 +624,10 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
         IID_PPV_ARGS(newResource.GetAddressOf()));
 
     if (FAILED(hr)) {
-      IGL_LOG_ERROR("Texture::generateMipmap() - Failed to recreate texture with RENDER_TARGET flag\n");
+      IGL_D3D12_LOG_VERBOSE(
+          "Texture::generateMipmap() - Skipping: failed to recreate texture with "
+          "RENDER_TARGET flag (HRESULT=0x%08X)\n",
+          static_cast<unsigned>(hr));
       return;
     }
 
@@ -595,13 +665,18 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
 
     copyList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, nullptr);
 
-    // Transition new resource to PIXEL_SHADER_RESOURCE for mipmap generation
+    // Transition the entire new resource to PIXEL_SHADER_RESOURCE for mipmap
+    // generation. The resource was created in COPY_DEST; only mip 0 was
+    // written by the copy above, but all mips will be consumed as SRVs/RTVs
+    // in the subsequent fullscreen-blit loop. Using ALL_SUBRESOURCES here
+    // ensures the debug layer's notion of the initial state matches our
+    // state tracking for every subresource (mip >= 1 included).
     D3D12_RESOURCE_BARRIER barrierNew = {};
     barrierNew.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrierNew.Transition.pResource = newResource.Get();
     barrierNew.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
     barrierNew.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    barrierNew.Transition.Subresource = 0;
+    barrierNew.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     copyList->ResourceBarrier(1, &barrierNew);
 
     copyList->Close();
@@ -1070,7 +1145,9 @@ void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
 
   // For depth-stencil textures, transition all subresources (both depth and stencil planes).
   const auto props = getProperties();
-  const bool isDepthStencil = props.isDepthOrStencil() && props.hasStencil();
+  const bool isDepthStencil =
+      props.isDepthOrStencil() &&
+      (props.hasStencil() || format_ == TextureFormat::Z_UNorm24);
 
   if (isDepthStencil) {
     // Verify all subresources are in the same state before using ALL_SUBRESOURCES.
@@ -1138,6 +1215,59 @@ void Texture::transitionAll(ID3D12GraphicsCommandList* commandList,
   // Simplified per-subresource state tracking.
   Texture* owner = getStateOwner();
   if (!commandList || !owner || !owner->resource_.Get() || owner->subresourceStates_.empty()) {
+    return;
+  }
+
+  // For depth-stencil textures (multi-plane in D3D12), keep all planes and
+  // mips in a single coherent state by using an ALL_SUBRESOURCES barrier.
+  // This avoids mismatches like depth in DEPTH_WRITE while stencil (plane 1)
+  // remains in COMMON/PRESENT, which triggers the D3D12 debug error
+  // INVALID_SUBRESOURCE_STATE on ClearDepthStencilView.
+  const auto props = getProperties();
+  const bool isDepthStencil =
+      props.isDepthOrStencil() &&
+      (props.hasStencil() || format_ == TextureFormat::Z_UNorm24);
+
+  if (isDepthStencil) {
+    D3D12_RESOURCE_STATES firstState = owner->subresourceStates_[0];
+    bool allSameState = true;
+    for (const auto& state : owner->subresourceStates_) {
+      if (state != firstState) {
+        allSameState = false;
+        IGL_LOG_ERROR(
+            "Texture::transitionAll - depth-stencil texture has divergent subresource states; "
+            "expected uniform state before ALL_SUBRESOURCES barrier\n");
+        break;
+      }
+    }
+
+    if (firstState == newState) {
+      // All subresources (planes/mips) already in the requested state.
+      return;
+    }
+
+    if (!allSameState) {
+      // Safety: avoid issuing an ALL_SUBRESOURCES barrier with inconsistent
+      // tracking; this would make our internal state unreliable.
+      IGL_DEBUG_ASSERT(
+          false,
+          "Texture::transitionAll - depth-stencil textures must have uniform state across all "
+          "subresources before ALL_SUBRESOURCES transition");
+      return;
+    }
+
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barrier.Transition.pResource = owner->resource_.Get();
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barrier.Transition.StateBefore = firstState;
+    barrier.Transition.StateAfter = newState;
+    commandList->ResourceBarrier(1, &barrier);
+
+    for (auto& state : owner->subresourceStates_) {
+      state = newState;
+    }
     return;
   }
 

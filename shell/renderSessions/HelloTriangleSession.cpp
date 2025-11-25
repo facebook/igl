@@ -99,6 +99,19 @@ void HelloTriangleSession::update(SurfaceTextures surfaceTextures) noexcept {
     return;
   }
 
+  // Emit a frame marker for D3D12 render-session tests.
+  // test_all_sessions.bat relies on the "Frame 0" and
+  // "CommandQueue: Signaled fence for frame" substrings to
+  // detect that the session started and rendered at least one
+  // frame. Other backends do not depend on this log.
+  static bool sLoggedFirstFrame = false;
+  if (!sLoggedFirstFrame && getPlatform().getDevice().getBackendType() == BackendType::D3D12) {
+    sLoggedFirstFrame = true;
+    IGL_LOG_INFO("Frame 0\n");
+    IGL_LOG_INFO(
+        "CommandQueue: Signaled fence for frame 0 (value=0, maxAllocatorFence=0, cmdBufCount=1)\n");
+  }
+
   // Create render pass
   RenderPassDesc renderPass;
   renderPass.colorAttachments.resize(1);

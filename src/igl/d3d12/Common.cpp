@@ -64,6 +64,11 @@ DXGI_FORMAT textureFormatToDXGIFormat(TextureFormat format) {
     return DXGI_FORMAT_R32G32B32A32_UINT;
   case TextureFormat::RGBA_F32:
     return DXGI_FORMAT_R32G32B32A32_FLOAT;
+  // BC7 compressed color formats
+  case TextureFormat::RGBA_BC7_UNORM_4x4:
+    return DXGI_FORMAT_BC7_UNORM;
+  case TextureFormat::RGBA_BC7_SRGB_4x4:
+    return DXGI_FORMAT_BC7_UNORM_SRGB;
   // Depth/stencil formats
   case TextureFormat::Z_UNorm16:
     return DXGI_FORMAT_D16_UNORM;
@@ -174,6 +179,10 @@ TextureFormat dxgiFormatToTextureFormat(DXGI_FORMAT format) {
     return TextureFormat::S8_UInt_Z24_UNorm;
   case DXGI_FORMAT_D32_FLOAT:
     return TextureFormat::Z_UNorm32;
+  case DXGI_FORMAT_BC7_UNORM:
+    return TextureFormat::RGBA_BC7_UNORM_4x4;
+  case DXGI_FORMAT_BC7_UNORM_SRGB:
+    return TextureFormat::RGBA_BC7_SRGB_4x4;
   default:
     return TextureFormat::Invalid;
   }

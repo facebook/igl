@@ -117,6 +117,9 @@ class CommandBuffer final : public ICommandBuffer {
     return deferredTextureCopies_;
   }
 
+  // Whether this command buffer requested a swapchain present via present().
+  bool willPresent() const { return willPresent_; }
+
  private:
   Device& device_;
   igl::d3d12::ComPtr<ID3D12GraphicsCommandList> commandList_;
@@ -132,6 +135,10 @@ class CommandBuffer final : public ICommandBuffer {
 
   // Deferred copy operations to execute after command buffer submission
   std::vector<DeferredTextureCopy> deferredTextureCopies_;
+
+  // Tracks whether present(surface) was called on this command buffer.
+  // Mutable to allow modification from the logically-const present() override.
+  mutable bool willPresent_ = false;
 
   friend class CommandQueue; // Allow CommandQueue to signal scheduleFence_
 };

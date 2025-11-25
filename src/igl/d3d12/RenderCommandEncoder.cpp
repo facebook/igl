@@ -326,9 +326,11 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
         dsvDesc.Texture2D.MipSlice = renderPass.depthAttachment.mipLevel;
       }
 
-      const uint32_t depthMip = renderPass.depthAttachment.mipLevel;
-      const uint32_t depthLayer = renderPass.depthAttachment.layer;
-      depthTex->transitionTo(commandList_, D3D12_RESOURCE_STATE_DEPTH_WRITE, depthMip, depthLayer);
+      // Transition the entire depth resource to DEPTH_WRITE before clearing.
+      // Some render paths (e.g. mipmapped depth) may have touched multiple
+      // subresources; using transitionAll ensures the clear sees a valid state
+      // for every subresource referenced by this DSV.
+      depthTex->transitionAll(commandList_, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
       // Pre-creation validation.
       IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateDepthStencilView");
@@ -427,6 +429,45 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
       IGL_LOG_ERROR("RenderCommandEncoder: No back buffer available!\n");
     }
   }
+
+  // Capture actual framebuffer formats for dynamic PSO selection (Vulkan-style pattern)
+  // This enables PSO variants to be selected at draw time based on framebuffer formats
+  dynamicState_ = D3D12RenderPipelineDynamicState();  // Reset to UNKNOWN
+
+  // Capture RTV formats from actual framebuffer resources
+  // IMPORTANT: Use Texture::getFormat() not resource format - texture views may have different formats
+  if (framebuffer_) {
+    const size_t numColorAttachments = std::min<size_t>(
+        framebuffer_->getColorAttachmentIndices().size(),
+        D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT);
+    for (size_t i = 0; i < numColorAttachments; ++i) {
+      auto colorTex = std::static_pointer_cast<igl::d3d12::Texture>(
+          framebuffer_->getColorAttachment(i));
+      if (colorTex) {
+        // Use getFormat() which returns the view format, not the resource format
+        dynamicState_.rtvFormats[i] = textureFormatToDXGIFormat(colorTex->getFormat());
+      }
+    }
+
+    // Capture DSV format
+    auto depthTex = std::static_pointer_cast<igl::d3d12::Texture>(
+        framebuffer_->getDepthAttachment());
+    if (depthTex) {
+      // Use getFormat() which returns the view format, not the resource format
+      dynamicState_.dsvFormat = textureFormatToDXGIFormat(depthTex->getFormat());
+    }
+  } else {
+    // Fallback: swapchain back buffer
+    auto* backBuffer = context.getCurrentBackBuffer();
+    if (backBuffer) {
+      D3D12_RESOURCE_DESC bbDesc = backBuffer->GetDesc();
+      dynamicState_.rtvFormats[0] = bbDesc.Format;
+    }
+  }
+
+  IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder::begin() - Captured framebuffer formats: RTV[0]=%d, DSV=%d\n",
+                        static_cast<int>(dynamicState_.rtvFormats[0]),
+                        static_cast<int>(dynamicState_.dsvFormat));
   IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder::begin() - Complete!\n");
 }
 
@@ -613,8 +654,11 @@ void RenderCommandEncoder::bindRenderPipelineState(
 
   auto* d3dPipelineState = static_cast<const RenderPipelineState*>(pipelineState.get());
 
-  // Validate pointers before calling D3D12
-  auto* pso = d3dPipelineState->getPipelineState();
+  // Cache pipeline state for dynamic PSO variant selection at draw time
+  currentRenderPipelineState_ = d3dPipelineState;
+
+  // Get PSO variant matching actual framebuffer formats (Vulkan-style dynamic selection)
+  auto* pso = d3dPipelineState->getPipelineState(dynamicState_, commandBuffer_.getDevice());
   auto* rootSig = d3dPipelineState->getRootSignature();
 
   if (!pso) {
@@ -688,36 +732,31 @@ void RenderCommandEncoder::bindBytes(size_t /*index*/,
 void RenderCommandEncoder::bindPushConstants(const void* data,
                                              size_t length,
                                              size_t offset) {
-  if (!commandBuffer_.isRecording() || !commandList_ || !data || length == 0) {
-    IGL_LOG_ERROR("bindPushConstants: Invalid parameters (list=%p, data=%p, len=%zu)\n",
-                  commandList_, data, length);
+  if (!commandBuffer_.isRecording() || !commandList_) {
+    IGL_LOG_ERROR("RenderCommandEncoder::bindPushConstants called on closed command list\n");
+    return;
+  }
+  if (!data || length == 0) {
     return;
   }
 
-  // Root signature parameter 0 is declared as D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS (b2)
-  // with 16 DWORDs (64 bytes) capacity
-  constexpr size_t kMaxPushConstantBytes = 64;
+  // Root parameter 0 is reserved for push constants mapped to b2.
+  const UINT rootParamIndex = 0;
 
-  if (length + offset > kMaxPushConstantBytes) {
-    IGL_LOG_ERROR("bindPushConstants: size %zu + offset %zu exceeds maximum %zu bytes\n",
-                  length, offset, kMaxPushConstantBytes);
+  // Offset and length are in bytes; convert to 32-bit units.
+  const UINT offset32 = static_cast<UINT>(offset / sizeof(uint32_t));
+  const UINT num32 = static_cast<UINT>((length + sizeof(uint32_t) - 1) / sizeof(uint32_t));
+
+  // D3D12 permits up to 64 bytes (16 DWORDs) of root constants; enforce this
+  // conservatively to avoid exceeding the root signature declaration.
+  if (offset32 + num32 > 16) {
+    IGL_LOG_ERROR("bindPushConstants: push constant range (%u dwords at offset %u) exceeds 16 dword limit\n",
+                  num32,
+                  offset32);
     return;
   }
 
-  // Calculate number of 32-bit values and offset in DWORDs
-  const uint32_t num32BitValues = static_cast<uint32_t>((length + 3) / 4);  // Round up to DWORDs
-  const uint32_t destOffsetIn32BitValues = static_cast<uint32_t>(offset / 4);
-
-  // Use SetGraphicsRoot32BitConstants to directly write data to root constants
-  // Root parameter 0 = b2 (Push Constants), as declared in graphics root signature
-  commandList_->SetGraphicsRoot32BitConstants(
-      0,                          // Root parameter index (push constants at parameter 0)
-      num32BitValues,             // Number of 32-bit values to set
-      data,                       // Source data
-      destOffsetIn32BitValues);   // Destination offset in 32-bit values
-
-  IGL_D3D12_LOG_VERBOSE("bindPushConstants: Set %u DWORDs (%zu bytes) at offset %zu to root parameter 0 (b2)\n",
-               num32BitValues, length, offset);
+  commandList_->SetGraphicsRoot32BitConstants(rootParamIndex, num32, data, offset32);
 }
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t /*target*/,
@@ -786,29 +825,34 @@ void RenderCommandEncoder::draw(size_t vertexCount,
   }
 
   // D3D12 requires ALL root parameters to be bound before drawing
-  // Hybrid root signature layout:
-  // - Root parameter 0: Push constants at b2
+  // Hybrid render root signature layout (see Device::createRenderPipeline):
+  // - Root parameter 0: Root 32-bit constants for b2 (push constants)
   // - Root parameter 1: Root CBV for b0 (legacy bindBuffer)
   // - Root parameter 2: Root CBV for b1 (legacy bindBuffer)
-  // - Root parameter 3: CBV descriptor table for b3-b15 (bindBindGroup)
+  // - Root parameter 3: CBV descriptor table for b3-b15 (bindBindGroup buffer table)
   // - Root parameter 4: SRV descriptor table for t0-tN
-  // - Root parameter 5: Sampler descriptor table for s0-sN
+  // - Root parameter 5: Sampler descriptor table for s0-tN
+  // - Root parameter 6: UAV descriptor table for u0-uN (storage buffers)
 
-  // Bind root CBVs for b0 and b1 (legacy bindBuffer support)
+  // Bind root CBVs for b0 and b1 (legacy bindBuffer support; params 1 and 2)
   if (constantBufferBound_[0]) {
     commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[0]);  // Root param 1: b0
-    IGL_D3D12_LOG_VERBOSE("draw: binding root CBV for b0 (address 0x%llx)\n", cachedConstantBuffers_[0]);
+    IGL_D3D12_LOG_VERBOSE("draw: binding root CBV for b0 (address 0x%llx)\n",
+                          cachedConstantBuffers_[0]);
   }
   if (constantBufferBound_[1]) {
     commandList_->SetGraphicsRootConstantBufferView(2, cachedConstantBuffers_[1]);  // Root param 2: b1
-    IGL_D3D12_LOG_VERBOSE("draw: binding root CBV for b1 (address 0x%llx)\n", cachedConstantBuffers_[1]);
+    IGL_D3D12_LOG_VERBOSE("draw: binding root CBV for b1 (address 0x%llx)\n",
+                          cachedConstantBuffers_[1]);
   }
 
-  // Bind CBV descriptor table for b3-b15 (bindBindGroup support)
+  // Bind CBV descriptor table for b3-b15 (bindBindGroup buffer table)
   if (cbvTableCount_ > 0 && cachedCbvTableGpuHandles_[0].ptr != 0) {
-    commandList_->SetGraphicsRootDescriptorTable(3, cachedCbvTableGpuHandles_[0]);  // Root param 3: CBV table (b3-b15)
-    IGL_D3D12_LOG_VERBOSE("draw: binding CBV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
-                 cbvTableCount_, cachedCbvTableGpuHandles_[0].ptr);
+    commandList_->SetGraphicsRootDescriptorTable(3, cachedCbvTableGpuHandles_[0]);  // Root param 3: CBV table
+    IGL_D3D12_LOG_VERBOSE(
+        "draw: binding CBV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
+        cbvTableCount_,
+        cachedCbvTableGpuHandles_[0].ptr);
   }
 
   // Bind SRV and sampler descriptor tables (bindBindGroup support)
@@ -819,38 +863,69 @@ void RenderCommandEncoder::draw(size_t vertexCount,
     IGL_DEBUG_ASSERT(cachedTextureGpuHandles_[0].ptr != 0,
                      "Texture count > 0 but base handle is null - did you bind only higher slots?");
     commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
-    IGL_D3D12_LOG_VERBOSE("draw: binding SRV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
-                 cachedTextureCount_, cachedTextureGpuHandles_[0].ptr);
+    IGL_D3D12_LOG_VERBOSE(
+        "draw: binding SRV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
+        cachedTextureCount_,
+        cachedTextureGpuHandles_[0].ptr);
   }
   if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
     IGL_DEBUG_ASSERT(cachedSamplerGpuHandles_[0].ptr != 0,
                      "Sampler count > 0 but base handle is null - did you bind only higher slots?");
-    commandList_->SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0]);  // Root param 5: Sampler table
-    IGL_D3D12_LOG_VERBOSE("draw: binding Sampler descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
-                 cachedSamplerCount_, cachedSamplerGpuHandles_[0].ptr);
+    commandList_->SetGraphicsRootDescriptorTable(4, cachedSamplerGpuHandles_[0]);  // Root param 4: Sampler table
+    IGL_D3D12_LOG_VERBOSE(
+        "draw: binding Sampler descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
+        cachedSamplerCount_,
+        cachedSamplerGpuHandles_[0].ptr);
   }
 
-  // Apply vertex buffers
-  for (uint32_t i = 0; i < IGL_BUFFER_BINDINGS_MAX; ++i) {
-    if (cachedVertexBuffers_[i].bound) {
+  // Apply vertex buffers. If the bound pipeline has no vertex input state
+  // (no attributes/bindings), skip IASetVertexBuffers entirely so that
+  // fullscreen / skybox style passes using SV_VertexID do not trigger
+  // validation errors when a previous pass left a vertex buffer bound.
+  bool pipelineHasVertexInput = (currentVertexStride_ != 0);
+  if (!pipelineHasVertexInput) {
+    for (uint32_t i = 0; i < IGL_BUFFER_BINDINGS_MAX; ++i) {
+      if (vertexStrides_[i] != 0) {
+        pipelineHasVertexInput = true;
+        break;
+      }
+    }
+  }
+
+  if (pipelineHasVertexInput) {
+    for (uint32_t i = 0; i < IGL_BUFFER_BINDINGS_MAX; ++i) {
+      if (!cachedVertexBuffers_[i].bound) {
+        continue;
+      }
       UINT stride = vertexStrides_[i];
       if (stride == 0) {
-        // Assert in debug builds to catch misconfigured pipelines.
-        // Check both per-slot stride and fallback currentVertexStride_
-        IGL_DEBUG_ASSERT(vertexStrides_[i] != 0 || currentVertexStride_ != 0,
-                         "Vertex buffer bound but no stride from pipeline for this slot - check vertex input layout");
-        if (vertexStrides_[i] == 0 && currentVertexStride_ == 0) {
-          IGL_LOG_INFO_ONCE("Vertex buffer bound to slot %u but no stride from pipeline - using fallback stride of 32 bytes\n", i);
+        if (currentVertexStride_ == 0) {
+          IGL_LOG_INFO_ONCE(
+              "Vertex buffer bound to slot %u but pipeline reports no stride; "
+              "using conservative fallback stride of 32 bytes\n",
+              i);
+          stride = 32;
+        } else {
+          stride = currentVertexStride_;
         }
-        stride = currentVertexStride_ ? currentVertexStride_ : 32;
       }
       D3D12_VERTEX_BUFFER_VIEW vbView = {};
       vbView.BufferLocation = cachedVertexBuffers_[i].bufferLocation;
       vbView.SizeInBytes = cachedVertexBuffers_[i].sizeInBytes;
       vbView.StrideInBytes = stride;
-      IGL_D3D12_LOG_VERBOSE("draw: VB[%u] = GPU 0x%llx, size=%u, stride=%u\n", i, vbView.BufferLocation, vbView.SizeInBytes, vbView.StrideInBytes);
+      IGL_D3D12_LOG_VERBOSE(
+          "draw: VB[%u] = GPU 0x%llx, size=%u, stride=%u\n",
+          i,
+          vbView.BufferLocation,
+          vbView.SizeInBytes,
+          vbView.StrideInBytes);
       commandList_->IASetVertexBuffers(i, 1, &vbView);
     }
+  } else {
+    // No vertex input expected for this pipeline; skip IASetVertexBuffers
+    // even if a previous pass bound a vertex buffer.
+    IGL_D3D12_LOG_VERBOSE(
+        "draw: Pipeline has no vertex input layout; skipping IASetVertexBuffers for this draw\n");
   }
 
   commandBuffer_.incrementDrawCount();
@@ -887,15 +962,16 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   }
 
   // D3D12 requires ALL root parameters to be bound before drawing
-  // Hybrid root signature layout:
-  // - Root parameter 0: Push constants at b2
+  // Hybrid render root signature layout (see Device::createRenderPipeline):
+  // - Root parameter 0: Root 32-bit constants for b2 (push constants)
   // - Root parameter 1: Root CBV for b0 (legacy bindBuffer)
   // - Root parameter 2: Root CBV for b1 (legacy bindBuffer)
-  // - Root parameter 3: CBV descriptor table for b3-b15 (bindBindGroup)
+  // - Root parameter 3: CBV descriptor table for b3-b15 (bindBindGroup buffer table)
   // - Root parameter 4: SRV descriptor table for t0-tN
-  // - Root parameter 5: Sampler descriptor table for s0-sN
+  // - Root parameter 5: Sampler descriptor table for s0-tN
+  // - Root parameter 6: UAV descriptor table for u0-uN (storage buffers)
 
-  // Bind root CBVs for b0 and b1 (legacy bindBuffer support)
+  // Bind root CBVs for b0 and b1 (legacy bindBuffer support; params 1 and 2)
   if (constantBufferBound_[0]) {
     commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[0]);  // Root param 1: b0
   }
@@ -903,9 +979,9 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
     commandList_->SetGraphicsRootConstantBufferView(2, cachedConstantBuffers_[1]);  // Root param 2: b1
   }
 
-  // Bind CBV descriptor table for b3-b15 (bindBindGroup support)
+  // Bind CBV descriptor table for b3-b15 (bindBindGroup buffer table)
   if (cbvTableCount_ > 0 && cachedCbvTableGpuHandles_[0].ptr != 0) {
-    commandList_->SetGraphicsRootDescriptorTable(3, cachedCbvTableGpuHandles_[0]);  // Root param 3: CBV table (b3-b15)
+    commandList_->SetGraphicsRootDescriptorTable(3, cachedCbvTableGpuHandles_[0]);  // Root param 3: CBV table
   }
 
   // Bind SRV and sampler descriptor tables (bindBindGroup support)
@@ -927,19 +1003,36 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
     }
   }
 
-  // Apply cached vertex buffer bindings now that pipeline state is bound
-  for (uint32_t i = 0; i < IGL_BUFFER_BINDINGS_MAX; ++i) {
-    if (cachedVertexBuffers_[i].bound) {
+  // Apply cached vertex buffer bindings now that pipeline state is bound.
+  // If the current pipeline has no vertex input layout (no attributes or
+  // bindings), skip IASetVertexBuffers so that draws using SV_VertexID do
+  // not rely on stale vertex buffer state from previous passes.
+  bool pipelineHasVertexInput = (currentVertexStride_ != 0);
+  if (!pipelineHasVertexInput) {
+    for (uint32_t i = 0; i < IGL_BUFFER_BINDINGS_MAX; ++i) {
+      if (vertexStrides_[i] != 0) {
+        pipelineHasVertexInput = true;
+        break;
+      }
+    }
+  }
+
+  if (pipelineHasVertexInput) {
+    for (uint32_t i = 0; i < IGL_BUFFER_BINDINGS_MAX; ++i) {
+      if (!cachedVertexBuffers_[i].bound) {
+        continue;
+      }
       UINT stride = vertexStrides_[i];
       if (stride == 0) {
-        // Assert in debug builds to catch misconfigured pipelines.
-        // Check both per-slot stride and fallback currentVertexStride_
-        IGL_DEBUG_ASSERT(vertexStrides_[i] != 0 || currentVertexStride_ != 0,
-                         "Vertex buffer bound but no stride from pipeline for this slot - check vertex input layout");
-        if (vertexStrides_[i] == 0 && currentVertexStride_ == 0) {
-          IGL_LOG_INFO_ONCE("Vertex buffer bound to slot %u but no stride from pipeline - using fallback stride of 32 bytes\n", i);
+        if (currentVertexStride_ == 0) {
+          IGL_LOG_INFO_ONCE(
+              "Vertex buffer bound to slot %u but pipeline reports no stride; "
+              "using conservative fallback stride of 32 bytes\n",
+              i);
+          stride = 32;
+        } else {
+          stride = currentVertexStride_;
         }
-        stride = currentVertexStride_ ? currentVertexStride_ : 32;
       }
       D3D12_VERTEX_BUFFER_VIEW vbView = {};
       vbView.BufferLocation = cachedVertexBuffers_[i].bufferLocation;
@@ -947,6 +1040,9 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
       vbView.StrideInBytes = stride;
       commandList_->IASetVertexBuffers(i, 1, &vbView);
     }
+  } else {
+    IGL_D3D12_LOG_VERBOSE(
+        "drawIndexed: Pipeline has no vertex input layout; skipping IASetVertexBuffers for this draw\n");
   }
 
     // Apply cached index buffer binding
@@ -1218,8 +1314,8 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     IGL_D3D12_LOG_VERBOSE("bindBuffer: Created SRV at descriptor slot %u (FirstElement=%llu, NumElements=%u)\n",
                  descriptorIndex, srvDesc.Buffer.FirstElement, srvDesc.Buffer.NumElements);
 
-    // Cache GPU handle for descriptor table binding in draw calls
-    // SRVs are bound to root parameter 3 (render root signature)
+    // Cache GPU handle for descriptor table binding in draw calls.
+    // SRVs are bound to root parameter 4 (render root signature SRV table).
     cachedTextureGpuHandles_[index] = gpuHandle;
     cachedTextureCount_ = std::max(cachedTextureCount_, static_cast<size_t>(index + 1));
 
@@ -1318,133 +1414,18 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
     return;
   }
 
-  auto& context = commandBuffer_.getContext();
-  auto* d3dDevice = context.getDevice();
-  auto* cmd = commandList_;
-  if (!d3dDevice || !cmd) {
-    IGL_LOG_ERROR("bindBindGroup(texture): missing device or command list\n");
-    return;
-  }
-
-  // Compute dense counts for textures and samplers
-  uint32_t texCount = 0;
-  for (; texCount < IGL_TEXTURE_SAMPLERS_MAX; ++texCount) {
-    if (!desc->textures[texCount]) break;
-  }
-  uint32_t smpCount = 0;
-  for (; smpCount < IGL_TEXTURE_SAMPLERS_MAX; ++smpCount) {
-    if (!desc->samplers[smpCount]) break;
-  }
-
-  // Allocate contiguous slices from per-frame descriptor heaps
-  // Allocate descriptors one at a time (they may span pages).
-  const uint32_t srvBaseIndex = 0;  // Will use first allocated index
-  std::vector<uint32_t> srvIndices;
-  for (uint32_t i = 0; i < texCount; ++i) {
-    uint32_t descriptorIndex = 0;
-    Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
-    if (!allocResult.isOk()) {
-      IGL_LOG_ERROR("bindBindGroup: Failed to allocate SRV descriptor %u: %s\n", i, allocResult.message.c_str());
-      return;
+  // Delegate actual descriptor allocation and binding to D3D12ResourcesBinder
+  // so that bindBindGroup(texture) behaves like a grouped bindTexture/bindSamplerState.
+  for (uint32_t i = 0; i < IGL_TEXTURE_SAMPLERS_MAX; ++i) {
+    if (desc->textures[i]) {
+      resourcesBinder_.bindTexture(i, desc->textures[i].get());
     }
-    srvIndices.push_back(descriptorIndex);
   }
-  uint32_t& nextSmp = commandBuffer_.getNextSamplerDescriptor();
-  const uint32_t smpBaseIndex = nextSmp;
-  nextSmp += smpCount;
-
-  // Create SRVs into the allocated SRV slice
-  for (uint32_t i = 0; i < texCount; ++i) {
-    auto* tex = static_cast<Texture*>(desc->textures[i].get());
-    if (!tex || !tex->getResource()) {
-      IGL_LOG_ERROR("bindBindGroup(texture): null texture at index %u\n", i);
-      continue;
+  for (uint32_t i = 0; i < IGL_TEXTURE_SAMPLERS_MAX; ++i) {
+    if (desc->samplers[i]) {
+      resourcesBinder_.bindSamplerState(i, desc->samplers[i].get());
     }
-    tex->transitionAll(cmd, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-    // Build SRV description for the texture/view
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format = textureFormatToDXGIShaderResourceViewFormat(tex->getFormat());
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-    auto resourceDesc = tex->getResource()->GetDesc();
-    const bool isView = tex->isView();
-    const uint32_t mostDetailedMip = isView ? tex->getMipLevelOffset() : 0;
-    const uint32_t mipLevels = isView ? tex->getNumMipLevelsInView() : tex->getNumMipLevels();
-
-    if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
-      if (tex->getType() == TextureType::TwoDArray) {
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-        srvDesc.Texture2DArray.MostDetailedMip = mostDetailedMip;
-        srvDesc.Texture2DArray.MipLevels = mipLevels;
-        srvDesc.Texture2DArray.FirstArraySlice = isView ? tex->getArraySliceOffset() : 0;
-        srvDesc.Texture2DArray.ArraySize = isView ? tex->getNumArraySlicesInView() : resourceDesc.DepthOrArraySize;
-        srvDesc.Texture2DArray.PlaneSlice = 0;
-        srvDesc.Texture2DArray.ResourceMinLODClamp = 0.0f;
-      } else {
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-        srvDesc.Texture2D.MostDetailedMip = mostDetailedMip;
-        srvDesc.Texture2D.MipLevels = mipLevels;
-        srvDesc.Texture2D.PlaneSlice = 0;
-        srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-      }
-    } else if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D) {
-      srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
-      srvDesc.Texture3D.MostDetailedMip = mostDetailedMip;
-      srvDesc.Texture3D.MipLevels = mipLevels;
-      srvDesc.Texture3D.ResourceMinLODClamp = 0.0f;
-    } else if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE1D) {
-      srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
-      srvDesc.Texture1D.MostDetailedMip = mostDetailedMip;
-      srvDesc.Texture1D.MipLevels = mipLevels;
-      srvDesc.Texture1D.ResourceMinLODClamp = 0.0f;
-    } else {
-      // Fallback
-      srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-      srvDesc.Texture2D.MostDetailedMip = mostDetailedMip;
-      srvDesc.Texture2D.MipLevels = mipLevels;
-      srvDesc.Texture2D.PlaneSlice = 0;
-      srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-    }
-
-    // Use individually allocated descriptor indices (may span multiple pages).
-    const uint32_t dstIndex = srvIndices[i];
-    D3D12_CPU_DESCRIPTOR_HANDLE dstCpu = context.getCbvSrvUavCpuHandle(dstIndex);
-    // Pre-creation validation.
-    IGL_DEBUG_ASSERT(d3dDevice != nullptr, "Device is null before CreateShaderResourceView");
-    IGL_DEBUG_ASSERT(tex->getResource() != nullptr, "Texture resource is null");
-    IGL_DEBUG_ASSERT(dstCpu.ptr != 0, "SRV descriptor handle is invalid");
-
-    d3dDevice->CreateShaderResourceView(tex->getResource(), &srvDesc, dstCpu);
-    D3D12Context::trackResourceCreation("SRV", 0);
   }
-
-  // Create samplers into the allocated sampler slice
-  for (uint32_t i = 0; i < smpCount; ++i) {
-    auto* smp = static_cast<SamplerState*>(desc->samplers[i].get());
-    D3D12_SAMPLER_DESC samplerDesc = smp ? smp->getDesc() : D3D12_SAMPLER_DESC{};
-    D3D12_CPU_DESCRIPTOR_HANDLE dstCpu = context.getSamplerCpuHandle(smpBaseIndex + i);
-    // Pre-creation validation.
-    IGL_DEBUG_ASSERT(d3dDevice != nullptr, "Device is null before CreateSampler");
-    IGL_DEBUG_ASSERT(dstCpu.ptr != 0, "Sampler descriptor handle is invalid");
-
-    d3dDevice->CreateSampler(&samplerDesc, dstCpu);
-    D3D12Context::trackResourceCreation("Sampler", 0);
-  }
-
-  // Cache base GPU handles so draw() binds once per table.
-  // Use first allocated descriptor index (descriptors may span pages).
-  if (texCount > 0 && !srvIndices.empty()) {
-    cachedTextureGpuHandles_[0] = context.getCbvSrvUavGpuHandle(srvIndices[0]);
-    cachedTextureCount_ = texCount;
-  }
-  if (smpCount > 0) {
-    cachedSamplerGpuHandles_[0] = context.getSamplerGpuHandle(smpBaseIndex);
-    cachedSamplerCount_ = smpCount;
-  }
-
-  // Mark that bindBindGroup was used (vs storage buffer SRV or binder paths)
-  usedBindGroup_ = true;
 }
 
 void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
@@ -1631,7 +1612,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
 
         device->CreateUnorderedAccessView(resource, nullptr, &uavDesc, cpuHandle);
 
-        // Bind UAV descriptor table (Parameter 6 in graphics root signature)
+        // Bind UAV descriptor table (graphics root parameter 6: UAV table)
         commandList_->SetGraphicsRootDescriptorTable(6, gpuHandle);
 
         IGL_D3D12_LOG_VERBOSE("bindBindGroup(buffer): bound read-write storage buffer at slot %u (UAV u%u, GPU handle 0x%llx)\n",
@@ -1695,8 +1676,8 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
 
         device->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
 
-        // Bind SRV descriptor table (Parameter 4 in graphics root signature)
-        // Note: This shares the texture SRV table, storage buffers and textures will be bound together
+        // Bind SRV descriptor table (graphics root parameter 4: SRV table)
+        // Note: This shares the texture SRV table; storage buffers and textures will be bound together.
         // PRECEDENCE: Storage buffer SRVs bound here will override any previous texture SRVs bound via
         // the binder or bindBindGroup(texture) for root parameter 4. The last SetGraphicsRootDescriptorTable
         // call wins. This is intentional - storage buffer bindings via bindBindGroup(buffer) take precedence

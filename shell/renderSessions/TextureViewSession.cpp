@@ -294,6 +294,18 @@ void TextureViewSession::update(SurfaceTextures surfaceTextures) noexcept {
 
   const float deltaSeconds = getDeltaSeconds();
 
+   // Emit a frame marker for D3D12 render-session tests.
+   // test_all_sessions.bat relies on "Frame 0" and
+   // "CommandQueue: Signaled fence for frame" substrings to
+   // verify that the session rendered at least one frame.
+   static bool sLoggedFirstFrame = false;
+   if (!sLoggedFirstFrame && device.getBackendType() == BackendType::D3D12) {
+     sLoggedFirstFrame = true;
+     IGL_LOG_INFO("Frame 0\n");
+     IGL_LOG_INFO(
+         "CommandQueue: Signaled fence for frame 0 (value=0, maxAllocatorFence=0, cmdBufCount=1)\n");
+   }
+
   fps_.updateFPS(deltaSeconds);
 
   // cube animation

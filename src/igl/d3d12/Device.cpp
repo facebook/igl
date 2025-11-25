@@ -28,7 +28,9 @@
 #include <igl/Assert.h>  // For IGL_DEBUG_ASSERT in waitForUploadFence.
 #include <d3dcompiler.h>
 #include <d3d12sdklayers.h>
+#include <dxgidebug.h>
 #include <cstring>
+#include <cctype>
 #include <vector>
 #include <mutex>   // For std::call_once.
 #include <fstream>
@@ -140,6 +142,119 @@ void captureInfoQueueForDevice(ID3D12Device* device) {
   infoQueue->ClearStoredMessages();
 }
 
+// Log D3D12 and DXGI InfoQueue messages to the runtime log to aid debugging.
+// This is used in error paths such as PSO creation failures and device
+// removal checks. It is intentionally tolerant of missing debug components
+// (dxgidebug.dll, Graphics Tools, etc.) and will simply emit nothing if the
+// queues are unavailable.
+void logInfoQueuesForDevice(ID3D12Device* device, const char* context) {
+  if (!device) {
+    return;
+  }
+
+  // First, log any messages from the D3D12 device's InfoQueue.
+  ComPtr<ID3D12InfoQueue> infoQueue;
+  if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
+    const UINT64 numMessages = infoQueue->GetNumStoredMessages();
+    IGL_LOG_ERROR("  [%s] D3D12 Info Queue has %llu messages:\n",
+                  context,
+                  static_cast<unsigned long long>(numMessages));
+    for (UINT64 i = 0; i < numMessages; ++i) {
+      SIZE_T messageLength = 0;
+      if (FAILED(infoQueue->GetMessage(i, nullptr, &messageLength)) ||
+          messageLength == 0) {
+        continue;
+      }
+
+      std::vector<uint8_t> buffer(messageLength);
+      auto* message = reinterpret_cast<D3D12_MESSAGE*>(buffer.data());
+      if (FAILED(infoQueue->GetMessage(i, message, &messageLength))) {
+        continue;
+      }
+
+      const char* severityStr = "UNKNOWN";
+      switch (message->Severity) {
+      case D3D12_MESSAGE_SEVERITY_CORRUPTION: severityStr = "CORRUPTION"; break;
+      case D3D12_MESSAGE_SEVERITY_ERROR:      severityStr = "ERROR";      break;
+      case D3D12_MESSAGE_SEVERITY_WARNING:    severityStr = "WARNING";    break;
+      case D3D12_MESSAGE_SEVERITY_INFO:       severityStr = "INFO";       break;
+      case D3D12_MESSAGE_SEVERITY_MESSAGE:    severityStr = "MESSAGE";    break;
+      default: break;
+      }
+      IGL_LOG_ERROR("    [D3D12][%s] %s (ID=%u)\n",
+                    severityStr,
+                    message->pDescription ? message->pDescription : "<no description>",
+                    static_cast<unsigned>(message->ID));
+    }
+    infoQueue->ClearStoredMessages();
+  }
+
+  // Next, attempt to log messages from the global DXGI InfoQueue via
+  // dxgidebug.dll, if present. This can surface diagnostics that are not
+  // routed through the per-device D3D12 queue (e.g. swap-chain errors or
+  // certain shader validation issues).
+  HMODULE dxgiDebugModule = LoadLibraryA("dxgidebug.dll");
+  if (!dxgiDebugModule) {
+    return;
+  }
+
+  using PFN_DXGIGetDebugInterface = HRESULT(WINAPI *)(REFIID, void**);
+  auto dxgiGetDebugInterface =
+      reinterpret_cast<PFN_DXGIGetDebugInterface>(GetProcAddress(dxgiDebugModule, "DXGIGetDebugInterface"));
+
+  if (dxgiGetDebugInterface) {
+    ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
+    if (SUCCEEDED(dxgiGetDebugInterface(IID_PPV_ARGS(dxgiInfoQueue.GetAddressOf())))) {
+      const DXGI_DEBUG_ID producers[] = {DXGI_DEBUG_DXGI, DXGI_DEBUG_DX, DXGI_DEBUG_APP};
+      const char* producerNames[] = {"DXGI", "DX", "APP"};
+      for (size_t p = 0; p < std::size(producers); ++p) {
+        const DXGI_DEBUG_ID producer = producers[p];
+        const UINT64 numMessages = dxgiInfoQueue->GetNumStoredMessages(producer);
+        if (numMessages == 0) {
+          continue;
+        }
+        IGL_LOG_ERROR("  [%s] DXGI InfoQueue (%s) has %llu messages:\n",
+                      context,
+                      producerNames[p],
+                      static_cast<unsigned long long>(numMessages));
+        for (UINT64 i = 0; i < numMessages; ++i) {
+          SIZE_T messageLength = 0;
+          if (FAILED(dxgiInfoQueue->GetMessage(producer, i, nullptr, &messageLength)) ||
+              messageLength == 0) {
+            continue;
+          }
+          std::vector<uint8_t> buffer(messageLength);
+          auto* message =
+              reinterpret_cast<DXGI_INFO_QUEUE_MESSAGE*>(buffer.data());
+          if (FAILED(dxgiInfoQueue->GetMessage(producer, i, message, &messageLength))) {
+            continue;
+          }
+          const char* severityStr = "UNKNOWN";
+          switch (message->Severity) {
+          case DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION: severityStr = "CORRUPTION"; break;
+          case DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR:      severityStr = "ERROR";      break;
+          case DXGI_INFO_QUEUE_MESSAGE_SEVERITY_WARNING:    severityStr = "WARNING";    break;
+          case DXGI_INFO_QUEUE_MESSAGE_SEVERITY_INFO:       severityStr = "INFO";       break;
+          case DXGI_INFO_QUEUE_MESSAGE_SEVERITY_MESSAGE:    severityStr = "MESSAGE";    break;
+          default: break;
+          }
+          IGL_LOG_ERROR("    [DXGI/%s][%s] %s (ID=%u)\n",
+                        producerNames[p],
+                        severityStr,
+                        message->pDescription ? message->pDescription : "<no description>",
+                        static_cast<unsigned>(message->ID));
+        }
+        dxgiInfoQueue->ClearStoredMessages(producer);
+      }
+      // Also clear any remaining global messages so subsequent calls only
+      // report new diagnostics.
+      dxgiInfoQueue->ClearStoredMessages(DXGI_DEBUG_ALL);
+    }
+  }
+
+  FreeLibrary(dxgiDebugModule);
+}
+
 // Use std::hash<SamplerStateDesc> for deduplication (implemented in igl/SamplerState.cpp).
 } // namespace
 
@@ -203,6 +318,143 @@ static uint32_t calculateRootSignatureCost(const D3D12_ROOT_SIGNATURE_DESC& desc
   }
 
   return totalCost;
+}
+
+// Optional debug helper: validate that the shader input/output signatures are
+// consistent with the input layout and render target configuration we build
+// for a graphics PSO. This is intended purely for diagnostics and has no
+// effect on runtime behaviour.
+static void validateShaderBindingsAndLayout(const RenderPipelineDesc& desc,
+                                            const D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc,
+                                            const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputElements,
+                                            ID3D12ShaderReflection* IGL_NULLABLE vsRefl,
+                                            ID3D12ShaderReflection* IGL_NULLABLE psRefl) {
+  // Environment toggle: IGL_D3D12_VALIDATE_SHADER_BINDINGS=0 disables validation.
+  if (const char* env = std::getenv("IGL_D3D12_VALIDATE_SHADER_BINDINGS")) {
+    if (env[0] == '0') {
+      return;
+    }
+  }
+
+  if (!vsRefl) {
+    return;
+  }
+
+  D3D12_SHADER_DESC vsDesc = {};
+  if (FAILED(vsRefl->GetDesc(&vsDesc))) {
+    return;
+  }
+
+  bool hasErrors = false;
+
+  IGL_LOG_INFO("=== D3D12 VALIDATE_SHADER_BINDINGS (%s) ===\n", desc.debugName.c_str());
+
+  // Helper for case-insensitive string compare.
+  auto iequals = [](const char* a, const char* b) -> bool {
+    if (!a || !b) {
+      return false;
+    }
+    while (*a && *b) {
+      const int ca = std::tolower(static_cast<unsigned char>(*a));
+      const int cb = std::tolower(static_cast<unsigned char>(*b));
+      if (ca != cb) {
+        return false;
+      }
+      ++a;
+      ++b;
+    }
+    return *a == '\0' && *b == '\0';
+  };
+
+  // Validate vertex shader inputs against the input layout.
+  IGL_LOG_INFO("  [VS] InputParameters=%u, InputLayout.Elements=%u\n",
+               vsDesc.InputParameters,
+               static_cast<unsigned>(inputElements.size()));
+
+  for (UINT i = 0; i < vsDesc.InputParameters; ++i) {
+    D3D12_SIGNATURE_PARAMETER_DESC paramDesc = {};
+    if (FAILED(vsRefl->GetInputParameterDesc(i, &paramDesc))) {
+      continue;
+    }
+
+    // Skip system-value semantics (SV_*), which do not come from the input layout.
+    if (paramDesc.SemanticName &&
+        paramDesc.SemanticName[0] == 'S' && paramDesc.SemanticName[1] == 'V' &&
+        paramDesc.SemanticName[2] == '_') {
+      continue;
+    }
+
+    bool found = false;
+    for (const auto& elem : inputElements) {
+      if (elem.SemanticName &&
+          iequals(elem.SemanticName, paramDesc.SemanticName) &&
+          elem.SemanticIndex == paramDesc.SemanticIndex) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      hasErrors = true;
+      IGL_LOG_ERROR("  [VALIDATION] VS input '%s%u' has no matching input layout element "
+                    "(debugName='%s').\n",
+                    paramDesc.SemanticName ? paramDesc.SemanticName : "",
+                    paramDesc.SemanticIndex,
+                    desc.debugName.c_str());
+    }
+  }
+
+  // Validate pixel shader color outputs against NumRenderTargets / RTV formats.
+  if (psRefl) {
+    D3D12_SHADER_DESC psDesc = {};
+    if (SUCCEEDED(psRefl->GetDesc(&psDesc))) {
+      UINT colorOutputs = 0;
+      for (UINT i = 0; i < psDesc.OutputParameters; ++i) {
+        D3D12_SIGNATURE_PARAMETER_DESC paramDesc = {};
+        if (FAILED(psRefl->GetOutputParameterDesc(i, &paramDesc))) {
+          continue;
+        }
+        if (paramDesc.SemanticName && iequals(paramDesc.SemanticName, "SV_TARGET")) {
+          ++colorOutputs;
+        }
+      }
+
+      IGL_LOG_INFO("  [PS] ColorOutputs=%u, NumRenderTargets=%u, RTV[0]=%d, DSV=%d\n",
+                   colorOutputs,
+                   psoDesc.NumRenderTargets,
+                   psoDesc.NumRenderTargets > 0 ? static_cast<int>(psoDesc.RTVFormats[0])
+                                                : static_cast<int>(DXGI_FORMAT_UNKNOWN),
+                   static_cast<int>(psoDesc.DSVFormat));
+
+      if (colorOutputs == 0 && psoDesc.NumRenderTargets > 0) {
+        hasErrors = true;
+        IGL_LOG_ERROR("  [VALIDATION] PS writes no color outputs but PSO has "
+                      "NumRenderTargets=%u (debugName='%s').\n",
+                      psoDesc.NumRenderTargets,
+                      desc.debugName.c_str());
+      } else if (colorOutputs > 0 && psoDesc.NumRenderTargets == 0) {
+        hasErrors = true;
+        IGL_LOG_ERROR("  [VALIDATION] PS writes %u color outputs but PSO has "
+                      "NumRenderTargets=0 (debugName='%s').\n",
+                      colorOutputs,
+                      desc.debugName.c_str());
+      } else if (colorOutputs > psoDesc.NumRenderTargets) {
+        hasErrors = true;
+        IGL_LOG_ERROR("  [VALIDATION] PS writes %u color outputs but PSO only "
+                      "declares %u render targets (debugName='%s').\n",
+                      colorOutputs,
+                      psoDesc.NumRenderTargets,
+                      desc.debugName.c_str());
+      }
+    }
+  }
+
+  if (!hasErrors) {
+    IGL_D3D12_LOG_VERBOSE("  [VALIDATION] Shader inputs/outputs match input layout and "
+                          "render target configuration.\n");
+  }
+
+  IGL_LOG_INFO("=== END D3D12 VALIDATE_SHADER_BINDINGS ===\n");
 }
 
 Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
@@ -401,6 +653,10 @@ Result Device::checkDeviceRemoval() const {
     // Cache the reason and mark device as lost for diagnostics.
     deviceLostReason_ = reason;
     deviceLost_ = true;
+
+    // Emit any pending D3D12/DXGI debug layer messages to help pinpoint the
+    // invalid API sequence that caused device removal.
+    logInfoQueuesForDevice(device, "Device::checkDeviceRemoval");
 
     IGL_LOG_ERROR("D3D12 Device Removal Detected: %s (HRESULT=0x%08X)\n", reason, hr);
     IGL_DEBUG_ASSERT(false);
@@ -898,18 +1154,39 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
   resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-  // Set resource flags based on usage
+  // Set resource flags based on usage.
+  // IMPORTANT: D3D12 forbids combining ALLOW_DEPTH_STENCIL with
+  // ALLOW_RENDER_TARGET, ALLOW_UNORDERED_ACCESS or ALLOW_SIMULTANEOUS_ACCESS.
+  // We therefore do not allow "Storage" usage on depth/stencil formats and
+  // never set both DEPTH_STENCIL and RENDER_TARGET on the same resource.
+  const bool isDepthStencilFormat =
+      (desc.format >= TextureFormat::Z_UNorm16 && desc.format <= TextureFormat::S_UInt8);
+
   if (desc.usage & TextureDesc::TextureUsageBits::Sampled) {
     // Shader resource - no special flags needed
   }
-  if (desc.usage & TextureDesc::TextureUsageBits::Storage) {
-    resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-  }
+
+  // Attachment usage becomes either a color render target or a depth/stencil
+  // target depending on the texture format.
   if (desc.usage & TextureDesc::TextureUsageBits::Attachment) {
-    if (desc.format >= TextureFormat::Z_UNorm16 && desc.format <= TextureFormat::S_UInt8) {
+    if (isDepthStencilFormat) {
       resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     } else {
       resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+    }
+  }
+
+  // Storage (unordered access) is only supported for non-depth/stencil
+  // formats. If requested on a depth/stencil texture, log and ignore it.
+  if (desc.usage & TextureDesc::TextureUsageBits::Storage) {
+    if (isDepthStencilFormat) {
+      IGL_LOG_ERROR(
+          "Device::createTexture: Storage usage (UAV) requested for depth/stencil "
+          "format (format=%d). D3D12 does not allow ALLOW_DEPTH_STENCIL together "
+          "with ALLOW_UNORDERED_ACCESS; ignoring Storage flag for this texture.\n",
+          static_cast<int>(desc.format));
+    } else {
+      resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
   }
 
@@ -1233,32 +1510,9 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   if (FAILED(hr)) {
     IGL_LOG_ERROR("  CreateComputePipelineState FAILED: 0x%08X\n", static_cast<unsigned>(hr));
 
-    // Print debug layer messages if available
-    igl::d3d12::ComPtr<ID3D12InfoQueue> infoQueue;
-    if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
-      UINT64 numMessages = infoQueue->GetNumStoredMessages();
-      IGL_LOG_ERROR("  D3D12 Info Queue has %llu messages:\n", numMessages);
-      for (UINT64 i = 0; i < numMessages; ++i) {
-        SIZE_T messageLength = 0;
-        infoQueue->GetMessage(i, nullptr, &messageLength);
-        if (messageLength > 0) {
-          auto message = (D3D12_MESSAGE*)malloc(messageLength);
-          if (message && SUCCEEDED(infoQueue->GetMessage(i, message, &messageLength))) {
-            const char* severityStr = "UNKNOWN";
-            switch (message->Severity) {
-              case D3D12_MESSAGE_SEVERITY_CORRUPTION: severityStr = "CORRUPTION"; break;
-              case D3D12_MESSAGE_SEVERITY_ERROR: severityStr = "ERROR"; break;
-              case D3D12_MESSAGE_SEVERITY_WARNING: severityStr = "WARNING"; break;
-              case D3D12_MESSAGE_SEVERITY_INFO: severityStr = "INFO"; break;
-              case D3D12_MESSAGE_SEVERITY_MESSAGE: severityStr = "MESSAGE"; break;
-            }
-            IGL_LOG_ERROR("    [%s] %s\n", severityStr, message->pDescription);
-          }
-          free(message);
-        }
-      }
-      infoQueue->ClearStoredMessages();
-    }
+    // Dump D3D12 + DXGI debug messages, if available, to help identify the
+    // invalid PSO configuration (shader bytecode, root signature, etc.).
+    logInfoQueuesForDevice(device, "CreateComputePipelineState");
 
     Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create compute pipeline state");
     return nullptr;
@@ -1344,6 +1598,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   // - Root parameter 3: Descriptor table for CBVs b3-b15 (bindBindGroup support)
   // - Root parameter 4: Descriptor table with SRVs for textures t0-tN (unbounded)
   // - Root parameter 5: Descriptor table with Samplers for s0-sN (unbounded)
+  // - Root parameter 6: Descriptor table with UAVs for u0-uN (storage buffers)
   //
   // This hybrid approach supports:
   //   - Legacy sessions using bindBuffer(0/1) -> root CBVs at b0/b1
@@ -1372,7 +1627,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   D3D12_DESCRIPTOR_RANGE cbvRange = {};
   cbvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
   cbvRange.NumDescriptors = 13;  // b3 through b15
-  cbvRange.BaseShaderRegister = 3;  // Starting at b3 (b2 reserved for push constants)
+  cbvRange.BaseShaderRegister = 3;  // Starting at b3
   cbvRange.RegisterSpace = 0;
   cbvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
@@ -1404,15 +1659,18 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   uavRange.RegisterSpace = 0;
   uavRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-  // Root parameters (increased to 7 to add UAV support).
+  // Root parameters layout:
+  //   - Root constants at b2 (push constants)
+  //   - Root CBVs at b0/b1 (legacy bindBuffer support)
+  //   - CBV descriptor table for b3-b15 (buffer bind groups)
+  //   - SRV/Sampler/UAV descriptor tables
   D3D12_ROOT_PARAMETER rootParams[7] = {};
 
-  // Parameter 0: Root Constants for b2 (Push Constants)
-  //  Increased from 16 to 32 DWORDs (64→128 bytes) to match Vulkan
+  // Parameter 0: Root constants for b2 (push constants)
   rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
   rootParams[0].Constants.ShaderRegister = 2;  // b2
   rootParams[0].Constants.RegisterSpace = 0;
-  rootParams[0].Constants.Num32BitValues = 32;  // 32 DWORDs = 128 bytes (matches Vulkan)
+  rootParams[0].Constants.Num32BitValues = 16; // up to 64 bytes
   rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
   // Parameter 1: Root CBV for b0 (legacy bindBuffer support)
@@ -1427,7 +1685,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   rootParams[2].Descriptor.RegisterSpace = 0;
   rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-  // Parameter 3: Descriptor table for CBVs b2-b15 (buffer bind groups)
+  // Parameter 3: Descriptor table for CBVs b3-b15 (buffer bind groups)
   rootParams[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
   rootParams[3].DescriptorTable.NumDescriptorRanges = 1;
   rootParams[3].DescriptorTable.pDescriptorRanges = &cbvRange;
@@ -1454,12 +1712,15 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   rootParams[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
   D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
-  // Updated to 7 parameters (added UAV support).
   rootSigDesc.NumParameters = 7;
   rootSigDesc.pParameters = rootParams;
   rootSigDesc.NumStaticSamplers = 0;
   rootSigDesc.pStaticSamplers = nullptr;
-  rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+  // Set root signature flags: allow input assembler and deny unused shader stages for optimization
+  rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+                      D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+                      D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+                      D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 
   // CRITICAL: Validate root signature cost (64 DWORD hardware limit).
   IGL_D3D12_LOG_VERBOSE("  Validating render root signature cost:\n");
@@ -1831,8 +2092,49 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
         case VertexAttributeFormat::UByte4Norm:
           element.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
           break;
+        case VertexAttributeFormat::HalfFloat1:
+          element.Format = DXGI_FORMAT_R16_FLOAT;
+          break;
+        case VertexAttributeFormat::HalfFloat2:
+          element.Format = DXGI_FORMAT_R16G16_FLOAT;
+          break;
+        case VertexAttributeFormat::HalfFloat3:
+          // D3D12 doesn't have RGB16_FLOAT, use RGBA16_FLOAT
+          element.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+          break;
+        case VertexAttributeFormat::HalfFloat4:
+          element.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+          break;
+        case VertexAttributeFormat::Int1:
+          element.Format = DXGI_FORMAT_R32_SINT;
+          break;
+        case VertexAttributeFormat::Int2:
+          element.Format = DXGI_FORMAT_R32G32_SINT;
+          break;
+        case VertexAttributeFormat::Int3:
+          element.Format = DXGI_FORMAT_R32G32B32_SINT;
+          break;
+        case VertexAttributeFormat::Int4:
+          element.Format = DXGI_FORMAT_R32G32B32A32_SINT;
+          break;
+        case VertexAttributeFormat::UInt1:
+          element.Format = DXGI_FORMAT_R32_UINT;
+          break;
+        case VertexAttributeFormat::UInt2:
+          element.Format = DXGI_FORMAT_R32G32_UINT;
+          break;
+        case VertexAttributeFormat::UInt3:
+          element.Format = DXGI_FORMAT_R32G32B32_UINT;
+          break;
+        case VertexAttributeFormat::UInt4:
+          element.Format = DXGI_FORMAT_R32G32B32A32_UINT;
+          break;
+        case VertexAttributeFormat::Int_2_10_10_10_REV:
+          element.Format = DXGI_FORMAT_R10G10B10A2_UNORM;
+          break;
         default:
           element.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; // fallback
+          IGL_LOG_ERROR("  Unsupported vertex attribute format: %d (using fallback RGBA32_FLOAT)\n", static_cast<int>(attr.format));
           break;
       }
 
@@ -1907,46 +2209,70 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   IGL_D3D12_LOG_VERBOSE("  [PSO CACHE MISS] Hash=0x%zx\n", psoHash);
 
   IGL_D3D12_LOG_VERBOSE("  Creating pipeline state (this may take a moment)...\n");
-  hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
-  if (FAILED(hr)) {
-    // Print debug layer messages if available
-    igl::d3d12::ComPtr<ID3D12InfoQueue> infoQueue;
-    if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
-      UINT64 numMessages = infoQueue->GetNumStoredMessages();
-      IGL_D3D12_LOG_VERBOSE("  D3D12 Info Queue has %llu messages:\n", numMessages);
-      for (UINT64 i = 0; i < numMessages; ++i) {
-        SIZE_T messageLength = 0;
-        infoQueue->GetMessage(i, nullptr, &messageLength);
-        if (messageLength > 0) {
-          auto message = (D3D12_MESSAGE*)malloc(messageLength);
-          if (message && SUCCEEDED(infoQueue->GetMessage(i, message, &messageLength))) {
-            const char* severityStr = "UNKNOWN";
-            switch (message->Severity) {
-              case D3D12_MESSAGE_SEVERITY_CORRUPTION: severityStr = "CORRUPTION"; break;
-              case D3D12_MESSAGE_SEVERITY_ERROR: severityStr = "ERROR"; break;
-              case D3D12_MESSAGE_SEVERITY_WARNING: severityStr = "WARNING"; break;
-              case D3D12_MESSAGE_SEVERITY_INFO: severityStr = "INFO"; break;
-              case D3D12_MESSAGE_SEVERITY_MESSAGE: severityStr = "MESSAGE"; break;
-            }
-            IGL_D3D12_LOG_VERBOSE("    [%s] %s\n", severityStr, message->pDescription);
-          }
-          free(message);
-        }
-      }
-      infoQueue->ClearStoredMessages();
+
+  // DIAGNOSTIC: Check root signature compatibility with shader resources
+  IGL_LOG_ERROR("=== SHADER RESOURCE ANALYSIS ===\n");
+  igl::d3d12::ComPtr<ID3D12ShaderReflection> vsRefl, psRefl;
+  if (SUCCEEDED(D3DReflect(vsBytecode.data(), vsBytecode.size(), IID_PPV_ARGS(vsRefl.GetAddressOf())))) {
+    D3D12_SHADER_DESC vsDesc = {};
+    vsRefl->GetDesc(&vsDesc);
+    IGL_LOG_ERROR("VS expects %u resources:\n", vsDesc.BoundResources);
+    for (UINT i = 0; i < vsDesc.BoundResources; ++i) {
+      D3D12_SHADER_INPUT_BIND_DESC bindDesc = {};
+      vsRefl->GetResourceBindingDesc(i, &bindDesc);
+      const char* regType = bindDesc.Type == D3D_SIT_CBUFFER ? "b" :
+                            (bindDesc.Type == D3D_SIT_TEXTURE || bindDesc.Type == D3D_SIT_STRUCTURED) ? "t" :
+                            bindDesc.Type == D3D_SIT_SAMPLER ? "s" : "u";
+      IGL_LOG_ERROR("  %s at %s%u\n", bindDesc.Name, regType, bindDesc.BindPoint);
     }
+  }
+  if (SUCCEEDED(D3DReflect(psBytecode.data(), psBytecode.size(), IID_PPV_ARGS(psRefl.GetAddressOf())))) {
+    D3D12_SHADER_DESC psDesc = {};
+    psRefl->GetDesc(&psDesc);
+    IGL_LOG_ERROR("PS expects %u resources:\n", psDesc.BoundResources);
+    for (UINT i = 0; i < psDesc.BoundResources; ++i) {
+      D3D12_SHADER_INPUT_BIND_DESC bindDesc = {};
+      psRefl->GetResourceBindingDesc(i, &bindDesc);
+      const char* regType = bindDesc.Type == D3D_SIT_CBUFFER ? "b" :
+                            (bindDesc.Type == D3D_SIT_TEXTURE || bindDesc.Type == D3D_SIT_STRUCTURED) ? "t" :
+                            bindDesc.Type == D3D_SIT_SAMPLER ? "s" : "u";
+      IGL_LOG_ERROR("  %s at %s%u\n", bindDesc.Name, regType, bindDesc.BindPoint);
+    }
+  }
+  IGL_LOG_ERROR("Root signature provides:\n");
+  IGL_LOG_ERROR("  Root CBVs at b0/b1, CBV table b2-b15, SRV/Sampler/UAV tables\n");
+  IGL_LOG_ERROR("================================\n");
+
+  // Run a more detailed validation pass that cross-checks shader signatures
+  // against the input layout and render target configuration. This is intended
+  // for diagnostics and can be disabled via IGL_D3D12_VALIDATE_SHADER_BINDINGS=0.
+  validateShaderBindingsAndLayout(desc, psoDesc, inputElements, vsRefl.Get(), psRefl.Get());
+
+  hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
+    if (FAILED(hr)) {
+      // Dump D3D12 + DXGI debug messages if available so that any invalid
+      // PSO configuration (bytecode/root signature/RT formats) is visible.
+      logInfoQueuesForDevice(device, "CreateGraphicsPipelineState");
 
     char errorMsg[512];
-    snprintf(errorMsg, sizeof(errorMsg),
+    snprintf(errorMsg,
+             sizeof(errorMsg),
              "Failed to create pipeline state. HRESULT: 0x%08X\n"
              "  VS size: %zu, PS size: %zu\n"
              "  Input elements: %u\n"
-             "  RT format: %d\n",
+             "  NumRenderTargets: %u, RTV[0]: %d, DSV: %d\n"
+             "  SampleDesc: Count=%u, Quality=%u\n"
+             "  PrimitiveTopologyType: %d\n",
              static_cast<unsigned>(hr),
              psoDesc.VS.BytecodeLength,
              psoDesc.PS.BytecodeLength,
              psoDesc.InputLayout.NumElements,
-             static_cast<int>(psoDesc.RTVFormats[0]));
+             psoDesc.NumRenderTargets,
+             static_cast<int>(psoDesc.RTVFormats[0]),
+             static_cast<int>(psoDesc.DSVFormat),
+             psoDesc.SampleDesc.Count,
+             psoDesc.SampleDesc.Quality,
+             static_cast<int>(psoDesc.PrimitiveTopologyType));
     IGL_LOG_ERROR(errorMsg);
     Result::setResult(outResult, Result::Code::RuntimeError, errorMsg);
     return nullptr;
@@ -1995,6 +2321,306 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
                pipelineState.Get(), rootSignature.Get(), psoHash);
   Result::setOk(outResult);
   return std::make_shared<RenderPipelineState>(desc, std::move(pipelineState), std::move(rootSignature));
+}
+
+// D3D12-specific: Create PSO variant with substituted render target formats
+// This is called by RenderPipelineState::getPipelineState() for Vulkan-style dynamic PSO selection
+igl::d3d12::ComPtr<ID3D12PipelineState> Device::createPipelineStateVariant(
+    const RenderPipelineDesc& desc,
+    ID3D12RootSignature* rootSignature,
+    Result* IGL_NULLABLE outResult) const {
+  IGL_D3D12_LOG_VERBOSE("Device::createPipelineStateVariant() - Creating PSO variant for framebuffer formats\n");
+
+  auto* device = ctx_->getDevice();
+  if (!device || !rootSignature) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Invalid device or root signature");
+    return nullptr;
+  }
+
+  if (!desc.shaderStages) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader stages required");
+    return nullptr;
+  }
+
+  // Get shader bytecode
+  auto* vertexModule = static_cast<const ShaderModule*>(desc.shaderStages->getVertexModule().get());
+  auto* fragmentModule = static_cast<const ShaderModule*>(desc.shaderStages->getFragmentModule().get());
+
+  if (!vertexModule || !fragmentModule) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Vertex and fragment shaders required");
+    return nullptr;
+  }
+
+  const auto& vsBytecode = vertexModule->getBytecode();
+  const auto& psBytecode = fragmentModule->getBytecode();
+
+  // Build D3D12_GRAPHICS_PIPELINE_STATE_DESC from RenderPipelineDesc
+  // This mirrors the logic in createRenderPipeline() but without caching
+  D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+  psoDesc.pRootSignature = rootSignature;
+
+  // Shader bytecode
+  psoDesc.VS = {vsBytecode.data(), vsBytecode.size()};
+  psoDesc.PS = {psBytecode.data(), psBytecode.size()};
+  psoDesc.DS = {nullptr, 0};
+  psoDesc.HS = {nullptr, 0};
+  psoDesc.GS = {nullptr, 0};
+
+  // Rasterizer state
+  psoDesc.RasterizerState.FillMode = (desc.polygonFillMode == PolygonFillMode::Line)
+      ? D3D12_FILL_MODE_WIREFRAME : D3D12_FILL_MODE_SOLID;
+
+  switch (desc.cullMode) {
+    case CullMode::Back:
+      psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+      break;
+    case CullMode::Front:
+      psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
+      break;
+    case CullMode::Disabled:
+    default:
+      psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+      break;
+  }
+
+  psoDesc.RasterizerState.FrontCounterClockwise =
+      (desc.frontFaceWinding == WindingMode::CounterClockwise) ? TRUE : FALSE;
+  psoDesc.RasterizerState.DepthBias = 0;
+  psoDesc.RasterizerState.DepthBiasClamp = 0.0f;
+  psoDesc.RasterizerState.SlopeScaledDepthBias = 0.0f;
+  psoDesc.RasterizerState.DepthClipEnable = TRUE;
+  psoDesc.RasterizerState.MultisampleEnable = (desc.sampleCount > 1) ? TRUE : FALSE;
+  psoDesc.RasterizerState.AntialiasedLineEnable = FALSE;
+  psoDesc.RasterizerState.ForcedSampleCount = 0;
+  psoDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+
+  // Blend state
+  psoDesc.BlendState.AlphaToCoverageEnable = FALSE;
+  const size_t numColorAttachments = desc.targetDesc.colorAttachments.size();
+  psoDesc.BlendState.IndependentBlendEnable = numColorAttachments > 1 ? TRUE : FALSE;
+
+  auto toD3D12Blend = [](BlendFactor f) {
+    switch (f) {
+      case BlendFactor::Zero: return D3D12_BLEND_ZERO;
+      case BlendFactor::One: return D3D12_BLEND_ONE;
+      case BlendFactor::SrcColor: return D3D12_BLEND_SRC_COLOR;
+      case BlendFactor::OneMinusSrcColor: return D3D12_BLEND_INV_SRC_COLOR;
+      case BlendFactor::SrcAlpha: return D3D12_BLEND_SRC_ALPHA;
+      case BlendFactor::OneMinusSrcAlpha: return D3D12_BLEND_INV_SRC_ALPHA;
+      case BlendFactor::DstColor: return D3D12_BLEND_DEST_COLOR;
+      case BlendFactor::OneMinusDstColor: return D3D12_BLEND_INV_DEST_COLOR;
+      case BlendFactor::DstAlpha: return D3D12_BLEND_DEST_ALPHA;
+      case BlendFactor::OneMinusDstAlpha: return D3D12_BLEND_INV_DEST_ALPHA;
+      case BlendFactor::SrcAlphaSaturated: return D3D12_BLEND_SRC_ALPHA_SAT;
+      case BlendFactor::BlendColor: return D3D12_BLEND_BLEND_FACTOR;
+      case BlendFactor::OneMinusBlendColor: return D3D12_BLEND_INV_BLEND_FACTOR;
+      case BlendFactor::BlendAlpha: return D3D12_BLEND_BLEND_FACTOR;
+      case BlendFactor::OneMinusBlendAlpha: return D3D12_BLEND_INV_BLEND_FACTOR;
+      case BlendFactor::Src1Color: return D3D12_BLEND_SRC1_COLOR;
+      case BlendFactor::OneMinusSrc1Color: return D3D12_BLEND_INV_SRC1_COLOR;
+      case BlendFactor::Src1Alpha: return D3D12_BLEND_SRC1_ALPHA;
+      case BlendFactor::OneMinusSrc1Alpha: return D3D12_BLEND_INV_SRC1_ALPHA;
+      default: return D3D12_BLEND_ONE;
+    }
+  };
+
+  auto toD3D12BlendOp = [](BlendOp op) {
+    switch (op) {
+      case BlendOp::Add: return D3D12_BLEND_OP_ADD;
+      case BlendOp::Subtract: return D3D12_BLEND_OP_SUBTRACT;
+      case BlendOp::ReverseSubtract: return D3D12_BLEND_OP_REV_SUBTRACT;
+      case BlendOp::Min: return D3D12_BLEND_OP_MIN;
+      case BlendOp::Max: return D3D12_BLEND_OP_MAX;
+      default: return D3D12_BLEND_OP_ADD;
+    }
+  };
+
+  for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i) {
+    if (i < desc.targetDesc.colorAttachments.size()) {
+      const auto& att = desc.targetDesc.colorAttachments[i];
+      psoDesc.BlendState.RenderTarget[i].BlendEnable = att.blendEnabled ? TRUE : FALSE;
+      psoDesc.BlendState.RenderTarget[i].SrcBlend = toD3D12Blend(att.srcRGBBlendFactor);
+      psoDesc.BlendState.RenderTarget[i].DestBlend = toD3D12Blend(att.dstRGBBlendFactor);
+      psoDesc.BlendState.RenderTarget[i].BlendOp = toD3D12BlendOp(att.rgbBlendOp);
+      psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = toD3D12Blend(att.srcAlphaBlendFactor);
+      psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = toD3D12Blend(att.dstAlphaBlendFactor);
+      psoDesc.BlendState.RenderTarget[i].BlendOpAlpha = toD3D12BlendOp(att.alphaBlendOp);
+
+      UINT8 writeMask = 0;
+      if (att.colorWriteMask & ColorWriteBitsRed)   writeMask |= D3D12_COLOR_WRITE_ENABLE_RED;
+      if (att.colorWriteMask & ColorWriteBitsGreen) writeMask |= D3D12_COLOR_WRITE_ENABLE_GREEN;
+      if (att.colorWriteMask & ColorWriteBitsBlue)  writeMask |= D3D12_COLOR_WRITE_ENABLE_BLUE;
+      if (att.colorWriteMask & ColorWriteBitsAlpha) writeMask |= D3D12_COLOR_WRITE_ENABLE_ALPHA;
+      psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = writeMask;
+    } else {
+      psoDesc.BlendState.RenderTarget[i].BlendEnable = FALSE;
+      psoDesc.BlendState.RenderTarget[i].SrcBlend = D3D12_BLEND_ONE;
+      psoDesc.BlendState.RenderTarget[i].DestBlend = D3D12_BLEND_ZERO;
+      psoDesc.BlendState.RenderTarget[i].BlendOp = D3D12_BLEND_OP_ADD;
+      psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = D3D12_BLEND_ONE;
+      psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = D3D12_BLEND_ZERO;
+      psoDesc.BlendState.RenderTarget[i].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+      psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+    }
+    psoDesc.BlendState.RenderTarget[i].LogicOpEnable = FALSE;
+    psoDesc.BlendState.RenderTarget[i].LogicOp = D3D12_LOGIC_OP_NOOP;
+  }
+
+  // Depth-stencil state
+  const bool hasDepth = (desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid);
+  const bool hasStencil = (desc.targetDesc.stencilAttachmentFormat != TextureFormat::Invalid);
+
+  if (hasDepth) {
+    psoDesc.DepthStencilState.DepthEnable = TRUE;
+    psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+    psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+  } else {
+    psoDesc.DepthStencilState.DepthEnable = FALSE;
+    psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+    psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+  }
+
+  if (hasStencil) {
+    psoDesc.DepthStencilState.StencilEnable = FALSE;
+    psoDesc.DepthStencilState.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
+    psoDesc.DepthStencilState.StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK;
+    psoDesc.DepthStencilState.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+    psoDesc.DepthStencilState.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+    psoDesc.DepthStencilState.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+    psoDesc.DepthStencilState.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+    psoDesc.DepthStencilState.BackFace = psoDesc.DepthStencilState.FrontFace;
+  } else {
+    psoDesc.DepthStencilState.StencilEnable = FALSE;
+  }
+
+  // Render target formats - use the modified formats from desc
+  if (!desc.targetDesc.colorAttachments.empty()) {
+    const UINT n = static_cast<UINT>(std::min<size_t>(desc.targetDesc.colorAttachments.size(), D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT));
+    psoDesc.NumRenderTargets = n;
+    for (UINT i = 0; i < n; ++i) {
+      const auto textureFormat = desc.targetDesc.colorAttachments[i].textureFormat;
+      psoDesc.RTVFormats[i] = textureFormatToDXGIFormat(textureFormat);
+      IGL_D3D12_LOG_VERBOSE("  PSO Variant RTVFormats[%u] = %d (IGL format %d)\n", i, psoDesc.RTVFormats[i], textureFormat);
+    }
+  } else {
+    psoDesc.NumRenderTargets = 0;
+    for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i) {
+      psoDesc.RTVFormats[i] = DXGI_FORMAT_UNKNOWN;
+    }
+  }
+
+  if (desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid) {
+    psoDesc.DSVFormat = textureFormatToDXGIFormat(desc.targetDesc.depthAttachmentFormat);
+  } else {
+    psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+  }
+
+  // Sample settings
+  psoDesc.SampleMask = UINT_MAX;
+  psoDesc.SampleDesc.Count = 1;
+  psoDesc.SampleDesc.Quality = 0;
+
+  // Primitive topology
+  if (desc.topology == igl::PrimitiveType::Point) {
+    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+  } else if (desc.topology == igl::PrimitiveType::Line ||
+             desc.topology == igl::PrimitiveType::LineStrip) {
+    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+  } else {
+    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+  }
+  psoDesc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
+
+  psoDesc.NodeMask = 0;
+  psoDesc.CachedPSO.pCachedBlob = nullptr;
+  psoDesc.CachedPSO.CachedBlobSizeInBytes = 0;
+  psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+
+  // Input layout
+  std::vector<D3D12_INPUT_ELEMENT_DESC> inputElements;
+  std::vector<std::string> semanticNames;
+
+  if (desc.vertexInputState) {
+    auto* d3d12VertexInput = static_cast<const VertexInputState*>(desc.vertexInputState.get());
+    const auto& vertexDesc = d3d12VertexInput->getDesc();
+    semanticNames.reserve(vertexDesc.numAttributes);
+
+    for (size_t i = 0; i < vertexDesc.numAttributes; ++i) {
+      const auto& attr = vertexDesc.attributes[i];
+      std::string semanticName;
+      auto toLower = [](std::string s){ for (auto& c : s) c = static_cast<char>(tolower(c)); return s; };
+      const std::string nlow = toLower(attr.name);
+      auto startsWith = [&](const char* p){ return nlow.rfind(p, 0) == 0; };
+      auto contains = [&](const char* p){ return nlow.find(p) != std::string::npos; };
+
+      if (startsWith("pos") || startsWith("position") || contains("position")) {
+        semanticName = "POSITION";
+      } else if (startsWith("col") || startsWith("color")) {
+        semanticName = "COLOR";
+      } else if (startsWith("st") || startsWith("uv") || startsWith("tex") || contains("texcoord") || startsWith("offset")) {
+        semanticName = "TEXCOORD";
+      } else if (startsWith("norm") || startsWith("normal")) {
+        semanticName = "NORMAL";
+      } else if (startsWith("tangent")) {
+        semanticName = "TANGENT";
+      } else {
+        if (i == 0) semanticName = "POSITION";
+        else if (i == 1) semanticName = "TEXCOORD";
+        else semanticName = "COLOR";
+      }
+      semanticNames.push_back(semanticName);
+
+      D3D12_INPUT_ELEMENT_DESC element = {};
+      element.SemanticName = semanticNames.back().c_str();
+      element.SemanticIndex = 0;
+      element.AlignedByteOffset = static_cast<UINT>(attr.offset);
+      element.InputSlot = attr.bufferIndex;
+
+      bool isPerInstance = false;
+      if (attr.bufferIndex < vertexDesc.numInputBindings) {
+        isPerInstance = (vertexDesc.inputBindings[attr.bufferIndex].sampleFunction == igl::VertexSampleFunction::Instance);
+      }
+      element.InputSlotClass = isPerInstance ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+      element.InstanceDataStepRate = isPerInstance ? 1 : 0;
+
+      auto toD3D12Format = [](VertexAttributeFormat fmt) -> DXGI_FORMAT {
+        switch (fmt) {
+          case VertexAttributeFormat::Float1: return DXGI_FORMAT_R32_FLOAT;
+          case VertexAttributeFormat::Float2: return DXGI_FORMAT_R32G32_FLOAT;
+          case VertexAttributeFormat::Float3: return DXGI_FORMAT_R32G32B32_FLOAT;
+          case VertexAttributeFormat::Float4: return DXGI_FORMAT_R32G32B32A32_FLOAT;
+          case VertexAttributeFormat::Byte1: return DXGI_FORMAT_R8_SINT;
+          case VertexAttributeFormat::Byte2: return DXGI_FORMAT_R8G8_SINT;
+          case VertexAttributeFormat::Byte4: return DXGI_FORMAT_R8G8B8A8_SINT;
+          case VertexAttributeFormat::UByte4Norm: return DXGI_FORMAT_R8G8B8A8_UNORM;
+          default: return DXGI_FORMAT_UNKNOWN;
+        }
+      };
+      element.Format = toD3D12Format(attr.format);
+      inputElements.push_back(element);
+    }
+  }
+  psoDesc.InputLayout = {inputElements.data(), static_cast<UINT>(inputElements.size())};
+
+  // Create the pipeline state
+  igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState;
+  HRESULT hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
+  if (FAILED(hr)) {
+    logInfoQueuesForDevice(device, "CreateGraphicsPipelineState (variant)");
+    char errorMsg[256];
+    snprintf(errorMsg, sizeof(errorMsg),
+             "Failed to create PSO variant. HRESULT: 0x%08X, RTV[0]: %d, DSV: %d",
+             static_cast<unsigned>(hr),
+             static_cast<int>(psoDesc.RTVFormats[0]),
+             static_cast<int>(psoDesc.DSVFormat));
+    IGL_LOG_ERROR(errorMsg);
+    Result::setResult(outResult, Result::Code::RuntimeError, errorMsg);
+    return nullptr;
+  }
+
+  IGL_D3D12_LOG_VERBOSE("Device::createPipelineStateVariant() SUCCESS - PSO=%p\n", pipelineState.Get());
+  Result::setOk(outResult);
+  return pipelineState;
 }
 
   // Shader library and modules.
@@ -2317,8 +2943,9 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
   auto module = std::make_shared<ShaderModule>(desc.info, std::move(bytecode));
 
   // Create shader reflection from DXIL bytecode.
-  // This allows runtime queries of shader resources, bindings, and constant buffers
-  IGL_D3D12_LOG_VERBOSE("  Attempting to create shader reflection (bytecode size=%zu)...\n", module->getBytecode().size());
+  // This allows runtime queries of shader resources, bindings, and constant buffers.
+  IGL_D3D12_LOG_VERBOSE("  Attempting to create shader reflection (bytecode size=%zu)...\n",
+                        module->getBytecode().size());
   if (!module->getBytecode().empty()) {
     // Create IDxcUtils for reflection
     igl::d3d12::ComPtr<IDxcUtils> dxcUtils;
@@ -2340,6 +2967,131 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
       if (SUCCEEDED(hr)) {
         module->setReflection(reflection);
         IGL_D3D12_LOG_VERBOSE("  Shader reflection created successfully (DXIL reflection)\n");
+
+        // Emit a concise reflection dump by default to help diagnose
+        // resource-binding issues. This is intentionally always enabled
+        // (in debug builds) so that D3D12 binding problems are visible
+        // without extra flags.
+        D3D12_SHADER_DESC shaderDesc = {};
+        if (SUCCEEDED(reflection->GetDesc(&shaderDesc))) {
+          const char* stageStr = "UNKNOWN";
+          switch (desc.info.stage) {
+          case ShaderStage::Vertex:
+            stageStr = "VERTEX";
+            break;
+          case ShaderStage::Fragment:
+            stageStr = "FRAGMENT/PIXEL";
+            break;
+          case ShaderStage::Compute:
+            stageStr = "COMPUTE";
+            break;
+          default:
+            break;
+          }
+
+          IGL_LOG_INFO("\n=== SHADER REFLECTION (%s - %s) ===\n",
+                       stageStr,
+                       desc.info.entryPoint.c_str());
+          IGL_LOG_INFO("  Bound Resources: %u\n", shaderDesc.BoundResources);
+          for (UINT i = 0; i < shaderDesc.BoundResources; ++i) {
+            D3D12_SHADER_INPUT_BIND_DESC bindDesc = {};
+            if (SUCCEEDED(reflection->GetResourceBindingDesc(i, &bindDesc))) {
+              const char* typeStr = "Unknown";
+              const char* registerPrefix = "?";
+              switch (bindDesc.Type) {
+              case D3D_SIT_CBUFFER:
+                typeStr = "ConstantBuffer";
+                registerPrefix = "b";
+                break;
+              case D3D_SIT_TBUFFER:
+                typeStr = "TextureBuffer";
+                registerPrefix = "t";
+                break;
+              case D3D_SIT_TEXTURE:
+                typeStr = "Texture";
+                registerPrefix = "t";
+                break;
+              case D3D_SIT_SAMPLER:
+                typeStr = "Sampler";
+                registerPrefix = "s";
+                break;
+              case D3D_SIT_UAV_RWTYPED:
+                typeStr = "RWTexture";
+                registerPrefix = "u";
+                break;
+              case D3D_SIT_STRUCTURED:
+                typeStr = "StructuredBuffer";
+                registerPrefix = "t";
+                break;
+              case D3D_SIT_UAV_RWSTRUCTURED:
+                typeStr = "RWStructuredBuffer";
+                registerPrefix = "u";
+                break;
+              case D3D_SIT_BYTEADDRESS:
+                typeStr = "ByteAddressBuffer";
+                registerPrefix = "t";
+                break;
+              case D3D_SIT_UAV_RWBYTEADDRESS:
+                typeStr = "RWByteAddressBuffer";
+                registerPrefix = "u";
+                break;
+              default:
+                break;
+              }
+
+              IGL_LOG_INFO("    [%u] %s '%s' at %s%u (space %u)\n",
+                           i,
+                           typeStr,
+                           bindDesc.Name,
+                           registerPrefix,
+                           bindDesc.BindPoint,
+                           bindDesc.Space);
+            }
+          }
+
+          IGL_LOG_INFO("  Constant Buffers: %u\n", shaderDesc.ConstantBuffers);
+          for (UINT i = 0; i < shaderDesc.ConstantBuffers; ++i) {
+            ID3D12ShaderReflectionConstantBuffer* cb =
+                reflection->GetConstantBufferByIndex(i);
+            D3D12_SHADER_BUFFER_DESC cbDesc = {};
+            if (cb && SUCCEEDED(cb->GetDesc(&cbDesc))) {
+              IGL_LOG_INFO("    [%u] %s: %u bytes, %u variables\n",
+                           i,
+                           cbDesc.Name,
+                           cbDesc.Size,
+                           cbDesc.Variables);
+            }
+          }
+
+          // Log input and output signature parameters to help diagnose
+          // pipeline state creation issues (semantic/mask mismatches).
+          IGL_LOG_INFO("  Input Parameters: %u\n", shaderDesc.InputParameters);
+          for (UINT i = 0; i < shaderDesc.InputParameters; ++i) {
+            D3D12_SIGNATURE_PARAMETER_DESC p = {};
+            if (SUCCEEDED(reflection->GetInputParameterDesc(i, &p))) {
+              IGL_LOG_INFO("    [In %u] %s%u: reg=%u, mask=0x%02X\n",
+                           i,
+                           p.SemanticName ? p.SemanticName : "",
+                           p.SemanticIndex,
+                           p.Register,
+                           p.Mask);
+            }
+          }
+
+          IGL_LOG_INFO("  Output Parameters: %u\n", shaderDesc.OutputParameters);
+          for (UINT i = 0; i < shaderDesc.OutputParameters; ++i) {
+            D3D12_SIGNATURE_PARAMETER_DESC p = {};
+            if (SUCCEEDED(reflection->GetOutputParameterDesc(i, &p))) {
+              IGL_LOG_INFO("    [Out %u] %s%u: reg=%u, mask=0x%02X\n",
+                           i,
+                           p.SemanticName ? p.SemanticName : "",
+                           p.SemanticIndex,
+                           p.Register,
+                           p.Mask);
+            }
+          }
+          IGL_LOG_INFO("================================\n\n");
+        }
       } else {
         IGL_D3D12_LOG_VERBOSE("  Failed to create shader reflection: 0x%08X (non-fatal)\n", hr);
       }
@@ -2910,4 +3662,3 @@ size_t Device::getShaderCompilationCount() const {
 }
 
 } // namespace igl::d3d12
-

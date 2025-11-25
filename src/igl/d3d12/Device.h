@@ -102,6 +102,13 @@ class Device final : public IDevice, public IFenceProvider {
       const RenderPipelineDesc& desc,
       Result* IGL_NULLABLE outResult) const override;
 
+  // D3D12-specific: Create PSO variant with substituted formats (for dynamic PSO selection)
+  // Called by RenderPipelineState::getPipelineState() to create format variants
+  [[nodiscard]] igl::d3d12::ComPtr<ID3D12PipelineState> createPipelineStateVariant(
+      const RenderPipelineDesc& desc,
+      ID3D12RootSignature* rootSignature,
+      Result* IGL_NULLABLE outResult) const;
+
   // Shader library and modules
   [[nodiscard]] std::unique_ptr<IShaderLibrary> createShaderLibrary(
       const ShaderLibraryDesc& desc,

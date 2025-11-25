@@ -6,6 +6,8 @@
  */
 
 #include <igl/d3d12/RenderPipelineState.h>
+#include <igl/d3d12/Device.h>
+#include <igl/d3d12/Common.h>
 #include <igl/RenderPipelineReflection.h>
 #include <igl/NameHandle.h>
 #include <igl/d3d12/VertexInputState.h>
@@ -211,6 +213,91 @@ int RenderPipelineState::getIndexByName(const igl::NameHandle& /*name*/,
 int RenderPipelineState::getIndexByName(const std::string& /*name*/,
                                         ShaderStage /*stage*/) const {
   return -1;
+}
+
+ID3D12PipelineState* RenderPipelineState::getPipelineState(
+    const D3D12RenderPipelineDynamicState& dynamicState,
+    Device& device) const {
+  // Fast path: Check if dynamic state matches base PSO
+  // This happens when pipeline was created with same formats as framebuffer
+  const auto& desc = getRenderPipelineDesc();
+  bool matchesBasePSO = true;
+
+  // Check render target formats
+  const UINT numRTs = static_cast<UINT>(
+      std::min<size_t>(desc.targetDesc.colorAttachments.size(),
+                      D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT));
+  for (UINT i = 0; i < numRTs; ++i) {
+    if (dynamicState.rtvFormats[i] !=
+        textureFormatToDXGIFormat(desc.targetDesc.colorAttachments[i].textureFormat)) {
+      matchesBasePSO = false;
+      break;
+    }
+  }
+
+  // Check depth-stencil format
+  if (matchesBasePSO) {
+    const DXGI_FORMAT baseDSVFormat =
+        (desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid)
+            ? textureFormatToDXGIFormat(desc.targetDesc.depthAttachmentFormat)
+            : DXGI_FORMAT_UNKNOWN;
+    if (dynamicState.dsvFormat != baseDSVFormat) {
+      matchesBasePSO = false;
+    }
+  }
+
+  // Return base PSO if formats match
+  if (matchesBasePSO) {
+    return pipelineState_.Get();
+  }
+
+  // Check variant cache
+  auto it = psoVariants_.find(dynamicState);
+  if (it != psoVariants_.end()) {
+    return it->second.Get();
+  }
+
+  // Create PSO variant with substituted formats (Vulkan-style on-demand creation)
+  IGL_LOG_INFO("Creating PSO variant: RTV[0]=%d (base) -> %d (framebuffer)\n",
+                textureFormatToDXGIFormat(desc.targetDesc.colorAttachments[0].textureFormat),
+                dynamicState.rtvFormats[0]);
+
+  // Following Vulkan's approach: create modified RenderPipelineDesc with substituted formats
+  // Create a modified descriptor with framebuffer formats substituted
+  RenderPipelineDesc variantDesc = desc;  // Copy all state
+
+  // Substitute RT formats from actual framebuffer
+  for (UINT i = 0; i < numRTs; ++i) {
+    if (dynamicState.rtvFormats[i] != DXGI_FORMAT_UNKNOWN) {
+      // Convert DXGI format back to IGL TextureFormat
+      variantDesc.targetDesc.colorAttachments[i].textureFormat =
+          dxgiFormatToTextureFormat(dynamicState.rtvFormats[i]);
+      IGL_LOG_INFO("  RTV[%u]: substituted format %d\n", i, dynamicState.rtvFormats[i]);
+    }
+  }
+
+  // Substitute DSV format if present
+  if (dynamicState.dsvFormat != DXGI_FORMAT_UNKNOWN) {
+    variantDesc.targetDesc.depthAttachmentFormat =
+        dxgiFormatToTextureFormat(dynamicState.dsvFormat);
+  }
+
+  // Call Device::createPipelineStateVariant() to create PSO with modified formats
+  Result variantResult;
+  auto variantPSO = device.createPipelineStateVariant(
+      variantDesc, rootSignature_.Get(), &variantResult);
+
+  if (!variantPSO.Get()) {
+    IGL_LOG_ERROR("PSO variant creation failed: %s\n", variantResult.message.c_str());
+    IGL_LOG_ERROR("Falling back to base PSO (this will cause D3D12 validation errors!)\n");
+    return pipelineState_.Get();  // Fallback to base PSO
+  }
+
+  // Cache the variant for future use
+  psoVariants_[dynamicState] = variantPSO;
+  IGL_LOG_INFO("PSO variant created and cached successfully: PSO=%p\n", variantPSO.Get());
+
+  return variantPSO.Get();
 }
 
 } // namespace igl::d3d12

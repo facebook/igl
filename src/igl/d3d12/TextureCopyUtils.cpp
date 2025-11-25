@@ -97,19 +97,13 @@ Result executeCopyTextureToBuffer(D3D12Context& ctx,
     return Result{Result::Code::RuntimeError, "Failed to begin immediate command list"};
   }
 
-  // Get current texture state
-  D3D12_RESOURCE_STATES srcStateBefore = srcTex.getSubresourceState(mipLevel, layer);
+  // Get current texture state (for restoration after the copy)
+  const D3D12_RESOURCE_STATES srcStateBefore = srcTex.getSubresourceState(mipLevel, layer);
 
-  // Transition texture to COPY_SOURCE if needed
-  if (srcStateBefore != D3D12_RESOURCE_STATE_COPY_SOURCE) {
-    D3D12_RESOURCE_BARRIER barrier = {};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = srcRes;
-    barrier.Transition.Subresource = subresource;
-    barrier.Transition.StateBefore = srcStateBefore;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
-    cmdList->ResourceBarrier(1, &barrier);
-  }
+  // Transition texture to COPY_SOURCE using centralized state tracking so
+  // that subsequent transitions observe a consistent state across all
+  // command lists and avoid BEFORE/AFTER mismatches.
+  srcTex.transitionTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE, mipLevel, layer);
 
   // Setup source texture copy location
   D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
@@ -126,16 +120,8 @@ Result executeCopyTextureToBuffer(D3D12Context& ctx,
   // Perform the copy
   cmdList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
 
-  // Transition texture back to original state
-  if (srcStateBefore != D3D12_RESOURCE_STATE_COPY_SOURCE) {
-    D3D12_RESOURCE_BARRIER barrier = {};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = srcRes;
-    barrier.Transition.Subresource = subresource;
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
-    barrier.Transition.StateAfter = srcStateBefore;
-    cmdList->ResourceBarrier(1, &barrier);
-  }
+  // Transition texture back to original state using the same tracking path.
+  srcTex.transitionTo(cmdList, srcStateBefore, mipLevel, layer);
 
   // Submit via immediate commands with synchronous wait.
   Result submitResult;
