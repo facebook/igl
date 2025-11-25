@@ -15,14 +15,18 @@
 #import <Foundation/Foundation.h>
 
 @interface GLView () {
-  CVDisplayLinkRef displayLink; // display link for managing rendering thread
+  CVDisplayLinkRef displayLink; // display link for managing rendering thread //
+                                // NOLINT(readability-identifier-naming)
 }
 @property (weak) ViewController* viewController;
 @end
 
 @implementation GLView {
-  NSTrackingArea* trackingArea; // needed for mouseMoved: events
+  NSTrackingArea* trackingArea; // needed for mouseMoved: events //
+                                // NOLINT(readability-identifier-naming)
 }
+
+@synthesize viewController = viewController;
 
 - (id)initWithFrame:(NSRect)frame {
   if (self = [super initWithFrame:frame]) {
