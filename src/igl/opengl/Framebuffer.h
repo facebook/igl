@@ -83,13 +83,19 @@ class Framebuffer : public WithContext, public IFramebuffer {
   GLuint frameBufferID_ = 0;
 
   struct CachedState {
-    FramebufferMode mode_ = igl::FramebufferMode::Mono;
-    uint8_t layer_ = 0;
-    uint8_t face_ = 0;
-    uint8_t mipLevel_ = 0;
+    FramebufferMode mode = igl::FramebufferMode::Mono;
+    uint8_t layer = 0;
+    uint8_t face = 0;
+    uint8_t mipLevel = 0;
 
-    bool needsUpdate(FramebufferMode mode, uint8_t layer, uint8_t face, uint8_t mipLevel);
-    void updateCache(FramebufferMode mode, uint8_t layer, uint8_t face, uint8_t mipLevel);
+    bool needsUpdate(FramebufferMode newMode,
+                     uint8_t newLayer,
+                     uint8_t newFace,
+                     uint8_t newMipLevel);
+    void updateCache(FramebufferMode newMode,
+                     uint8_t newLayer,
+                     uint8_t newFace,
+                     uint8_t newMipLevel);
   };
 
   constexpr static auto kNumCachedStates = 8; // We allow up to 8 color attachments

@@ -393,24 +393,24 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& /*cmdQueue*/,
 }
 
 // NOLINTBEGIN(bugprone-easily-swappable-parameters)
-bool Framebuffer::CachedState::needsUpdate(FramebufferMode mode,
-                                           uint8_t layer,
-                                           uint8_t face,
-                                           uint8_t mipLevel) {
+bool Framebuffer::CachedState::needsUpdate(FramebufferMode newMode,
+                                           uint8_t newLayer,
+                                           uint8_t newFace,
+                                           uint8_t newMipLevel) {
   // NOLINTEND(bugprone-easily-swappable-parameters)
-  return mode_ != mode || layer_ != layer || face_ != face || mipLevel_ != mipLevel;
+  return mode != newMode || layer != newLayer || face != newFace || mipLevel != newMipLevel;
 }
 
 // NOLINTBEGIN(bugprone-easily-swappable-parameters)
-void Framebuffer::CachedState::updateCache(FramebufferMode mode,
-                                           uint8_t layer,
-                                           uint8_t face,
-                                           uint8_t mipLevel) {
+void Framebuffer::CachedState::updateCache(FramebufferMode newMode,
+                                           uint8_t newLayer,
+                                           uint8_t newFace,
+                                           uint8_t newMipLevel) {
   // NOLINTEND(bugprone-easily-swappable-parameters)
-  mode_ = mode;
-  layer_ = layer;
-  face_ = face;
-  mipLevel_ = mipLevel;
+  mode = newMode;
+  layer = newLayer;
+  face = newFace;
+  mipLevel = newMipLevel;
 }
 
 ///--------------------------------------
