@@ -41,10 +41,14 @@ struct D3D12RootSignatureKey {
   std::vector<UINT> usedUAVSlots;
   std::vector<UINT> usedSamplerSlots;
 
-  // Maximum slot indices (for determining descriptor table sizes)
+  // Minimum / maximum slot indices (for determining descriptor table windows)
+  UINT minCBVSlot = 0;
   UINT maxCBVSlot = 0;
+  UINT minSRVSlot = 0;
   UINT maxSRVSlot = 0;
+  UINT minUAVSlot = 0;
   UINT maxUAVSlot = 0;
+  UINT minSamplerSlot = 0;
   UINT maxSamplerSlot = 0;
 
   // Root signature flags
@@ -74,9 +78,13 @@ struct D3D12RootSignatureKey {
            usedSRVSlots == other.usedSRVSlots &&
            usedUAVSlots == other.usedUAVSlots &&
            usedSamplerSlots == other.usedSamplerSlots &&
+           minCBVSlot == other.minCBVSlot &&
            maxCBVSlot == other.maxCBVSlot &&
+           minSRVSlot == other.minSRVSlot &&
            maxSRVSlot == other.maxSRVSlot &&
+           minUAVSlot == other.minUAVSlot &&
            maxUAVSlot == other.maxUAVSlot &&
+           minSamplerSlot == other.minSamplerSlot &&
            maxSamplerSlot == other.maxSamplerSlot &&
            flags == other.flags;
   }
@@ -104,10 +112,14 @@ struct D3D12RootSignatureKey {
         hashCombine(hash, static_cast<size_t>(slot));
       }
 
-      // Hash max slots
+      // Hash min/max slots
+      hashCombine(hash, static_cast<size_t>(key.minCBVSlot));
       hashCombine(hash, static_cast<size_t>(key.maxCBVSlot));
+      hashCombine(hash, static_cast<size_t>(key.minSRVSlot));
       hashCombine(hash, static_cast<size_t>(key.maxSRVSlot));
+      hashCombine(hash, static_cast<size_t>(key.minUAVSlot));
       hashCombine(hash, static_cast<size_t>(key.maxUAVSlot));
+      hashCombine(hash, static_cast<size_t>(key.minSamplerSlot));
       hashCombine(hash, static_cast<size_t>(key.maxSamplerSlot));
 
       // Hash flags
@@ -147,6 +159,10 @@ inline D3D12RootSignatureKey D3D12RootSignatureKey::fromShaderReflection(
   }
 
   // Merge resource slots
+  // IMPORTANT: Exclude push constant slot from CBV descriptor table
+  // Push constants use inline root constants (D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS),
+  // not a CBV descriptor. Including the push constant slot in usedCBVSlots would cause
+  // a root signature overlap error.
   if (vsReflection && psReflection) {
     key.usedCBVSlots = mergeAndSort(vsReflection->usedCBVSlots, psReflection->usedCBVSlots);
     key.usedSRVSlots = mergeAndSort(vsReflection->usedSRVSlots, psReflection->usedSRVSlots);
@@ -162,6 +178,23 @@ inline D3D12RootSignatureKey D3D12RootSignatureKey::fromShaderReflection(
     key.usedSRVSlots = vsReflection->usedSRVSlots;
     key.usedUAVSlots = vsReflection->usedUAVSlots;
     key.usedSamplerSlots = vsReflection->usedSamplerSlots;
+
+    std::sort(key.usedCBVSlots.begin(), key.usedCBVSlots.end());
+    key.usedCBVSlots.erase(std::unique(key.usedCBVSlots.begin(), key.usedCBVSlots.end()),
+                           key.usedCBVSlots.end());
+
+    std::sort(key.usedSRVSlots.begin(), key.usedSRVSlots.end());
+    key.usedSRVSlots.erase(std::unique(key.usedSRVSlots.begin(), key.usedSRVSlots.end()),
+                           key.usedSRVSlots.end());
+
+    std::sort(key.usedUAVSlots.begin(), key.usedUAVSlots.end());
+    key.usedUAVSlots.erase(std::unique(key.usedUAVSlots.begin(), key.usedUAVSlots.end()),
+                           key.usedUAVSlots.end());
+
+    std::sort(key.usedSamplerSlots.begin(), key.usedSamplerSlots.end());
+    key.usedSamplerSlots.erase(std::unique(key.usedSamplerSlots.begin(), key.usedSamplerSlots.end()),
+                               key.usedSamplerSlots.end());
+
     key.maxCBVSlot = vsReflection->maxCBVSlot;
     key.maxSRVSlot = vsReflection->maxSRVSlot;
     key.maxUAVSlot = vsReflection->maxUAVSlot;
@@ -171,10 +204,49 @@ inline D3D12RootSignatureKey D3D12RootSignatureKey::fromShaderReflection(
     key.usedSRVSlots = psReflection->usedSRVSlots;
     key.usedUAVSlots = psReflection->usedUAVSlots;
     key.usedSamplerSlots = psReflection->usedSamplerSlots;
+
+    std::sort(key.usedCBVSlots.begin(), key.usedCBVSlots.end());
+    key.usedCBVSlots.erase(std::unique(key.usedCBVSlots.begin(), key.usedCBVSlots.end()),
+                           key.usedCBVSlots.end());
+
+    std::sort(key.usedSRVSlots.begin(), key.usedSRVSlots.end());
+    key.usedSRVSlots.erase(std::unique(key.usedSRVSlots.begin(), key.usedSRVSlots.end()),
+                           key.usedSRVSlots.end());
+
+    std::sort(key.usedUAVSlots.begin(), key.usedUAVSlots.end());
+    key.usedUAVSlots.erase(std::unique(key.usedUAVSlots.begin(), key.usedUAVSlots.end()),
+                           key.usedUAVSlots.end());
+
+    std::sort(key.usedSamplerSlots.begin(), key.usedSamplerSlots.end());
+    key.usedSamplerSlots.erase(std::unique(key.usedSamplerSlots.begin(), key.usedSamplerSlots.end()),
+                               key.usedSamplerSlots.end());
+
     key.maxCBVSlot = psReflection->maxCBVSlot;
     key.maxSRVSlot = psReflection->maxSRVSlot;
     key.maxUAVSlot = psReflection->maxUAVSlot;
     key.maxSamplerSlot = psReflection->maxSamplerSlot;
+  }
+
+  // Compute min slots (if any resources are present)
+  if (!key.usedCBVSlots.empty()) {
+    key.minCBVSlot = key.usedCBVSlots.front();
+  }
+  if (!key.usedSRVSlots.empty()) {
+    key.minSRVSlot = key.usedSRVSlots.front();
+  }
+  if (!key.usedUAVSlots.empty()) {
+    key.minUAVSlot = key.usedUAVSlots.front();
+  }
+  if (!key.usedSamplerSlots.empty()) {
+    key.minSamplerSlot = key.usedSamplerSlots.front();
+  }
+
+  // Remove push constant slot from CBV slots (if present)
+  // Push constants are bound via root constants, not CBV descriptor table
+  if (key.hasPushConstants) {
+    key.usedCBVSlots.erase(
+        std::remove(key.usedCBVSlots.begin(), key.usedCBVSlots.end(), key.pushConstantSlot),
+        key.usedCBVSlots.end());
   }
 
   return key;
@@ -200,10 +272,49 @@ inline D3D12RootSignatureKey D3D12RootSignatureKey::fromShaderReflection(
   key.usedUAVSlots = csReflection->usedUAVSlots;
   key.usedSamplerSlots = csReflection->usedSamplerSlots;
 
+   // Ensure resource slot lists are sorted and unique for stable hashing / min/max tracking
+  std::sort(key.usedCBVSlots.begin(), key.usedCBVSlots.end());
+  key.usedCBVSlots.erase(std::unique(key.usedCBVSlots.begin(), key.usedCBVSlots.end()),
+                         key.usedCBVSlots.end());
+
+  std::sort(key.usedSRVSlots.begin(), key.usedSRVSlots.end());
+  key.usedSRVSlots.erase(std::unique(key.usedSRVSlots.begin(), key.usedSRVSlots.end()),
+                         key.usedSRVSlots.end());
+
+  std::sort(key.usedUAVSlots.begin(), key.usedUAVSlots.end());
+  key.usedUAVSlots.erase(std::unique(key.usedUAVSlots.begin(), key.usedUAVSlots.end()),
+                         key.usedUAVSlots.end());
+
+  std::sort(key.usedSamplerSlots.begin(), key.usedSamplerSlots.end());
+  key.usedSamplerSlots.erase(std::unique(key.usedSamplerSlots.begin(), key.usedSamplerSlots.end()),
+                             key.usedSamplerSlots.end());
+
   key.maxCBVSlot = csReflection->maxCBVSlot;
   key.maxSRVSlot = csReflection->maxSRVSlot;
   key.maxUAVSlot = csReflection->maxUAVSlot;
   key.maxSamplerSlot = csReflection->maxSamplerSlot;
+
+  // Remove push constant slot from CBV slots (if present)
+  // Push constants are bound via root constants, not CBV descriptor table
+  if (key.hasPushConstants) {
+    key.usedCBVSlots.erase(
+        std::remove(key.usedCBVSlots.begin(), key.usedCBVSlots.end(), key.pushConstantSlot),
+        key.usedCBVSlots.end());
+  }
+
+  // Compute min slots (if any resources are present)
+  if (!key.usedCBVSlots.empty()) {
+    key.minCBVSlot = key.usedCBVSlots.front();
+  }
+  if (!key.usedSRVSlots.empty()) {
+    key.minSRVSlot = key.usedSRVSlots.front();
+  }
+  if (!key.usedUAVSlots.empty()) {
+    key.minUAVSlot = key.usedUAVSlots.front();
+  }
+  if (!key.usedSamplerSlots.empty()) {
+    key.minSamplerSlot = key.usedSamplerSlots.front();
+  }
 
   // Compute shaders don't need input assembler
   key.flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;

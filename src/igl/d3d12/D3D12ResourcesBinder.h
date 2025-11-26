@@ -233,12 +233,15 @@ class D3D12ResourcesBinder final {
    *
    * This should be called before draw/dispatch commands to ensure all bindings are active.
    *
+   * @param renderPipeline For graphics pipelines: current pipeline to query reflection-based root parameter indices.
+   *                       For compute pipelines: pass nullptr (uses hardcoded layout).
    * @param outResult Optional result for error reporting (e.g., descriptor heap overflow).
    *                  If nullptr, caller receives only success/fail boolean. If non-null,
    *                  all failure paths populate both error code and diagnostic message.
    * @return true if bindings applied successfully, false on error
    */
-  [[nodiscard]] bool updateBindings(Result* outResult = nullptr);
+  [[nodiscard]] bool updateBindings(const class RenderPipelineState* renderPipeline = nullptr,
+                                     Result* outResult = nullptr);
 
   /**
    * @brief Reset all bindings and dirty flags
@@ -271,11 +274,13 @@ class D3D12ResourcesBinder final {
    *
    * @param cmdList Command list to update
    * @param device D3D12 device for descriptor creation
+   * @param renderPipeline Pipeline to query reflection-based root parameter indices (graphics only)
    * @param outResult Optional result for error reporting
    * @return true on success, false on error
    */
   [[nodiscard]] bool updateTextureBindings(ID3D12GraphicsCommandList* cmdList,
                                            ID3D12Device* device,
+                                           const class RenderPipelineState* renderPipeline,
                                            Result* outResult);
 
   /**
@@ -286,30 +291,34 @@ class D3D12ResourcesBinder final {
    *
    * @param cmdList Command list to update
    * @param device D3D12 device for descriptor creation
+   * @param renderPipeline Pipeline to query reflection-based root parameter indices (graphics only)
    * @param outResult Optional result for error reporting
    * @return true on success, false on error
    */
   [[nodiscard]] bool updateSamplerBindings(ID3D12GraphicsCommandList* cmdList,
                                            ID3D12Device* device,
+                                           const class RenderPipelineState* renderPipeline,
                                            Result* outResult);
 
   /**
-   * @brief Update buffer bindings (root CBVs or CBV descriptor table)
+   * @brief Update buffer bindings (CBV descriptor table)
    *
    * For graphics pipelines:
-   * - Sets root CBVs for b0-b1 (legacy/frequent bindings)
-   * - Creates CBV descriptor table for b2+ (less frequent bindings)
+   * - Creates CBV descriptor table for all bound CBVs
+   * - Queries pipeline for reflection-based root parameter index
    *
    * For compute pipelines:
-   * - Creates CBV descriptor table for all bindings
+   * - Creates CBV descriptor table for all bindings (hardcoded root parameter)
    *
    * @param cmdList Command list to update
    * @param device D3D12 device for descriptor creation
+   * @param renderPipeline Pipeline to query reflection-based root parameter indices (graphics only)
    * @param outResult Optional result for error reporting
    * @return true on success, false on error
    */
   [[nodiscard]] bool updateBufferBindings(ID3D12GraphicsCommandList* cmdList,
                                           ID3D12Device* device,
+                                          const class RenderPipelineState* renderPipeline,
                                           Result* outResult);
 
   /**

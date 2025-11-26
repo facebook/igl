@@ -1,4 +1,4 @@
-cbuffer Uniforms : register(b2) {
+cbuffer PushConstants : register(b2) {
   float4x4 projectionMatrix;
 };
 

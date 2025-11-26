@@ -295,8 +295,8 @@ void main() {
 
   case igl::BackendType::D3D12: {
     static const char* kVS = R"(
-cbuffer UniformsPerFrame : register(b3) { float4x4 proj; float4x4 view; };
-cbuffer UniformsPerObject : register(b4) { float4x4 model; };
+cbuffer UniformsPerFrame : register(b0) { float4x4 proj; float4x4 view; };
+cbuffer UniformsPerObject : register(b1) { float4x4 model; };
 struct VSInput { float3 pos:POSITION; float3 col:COLOR; float2 st:TEXCOORD0; };
 struct PSInput { float4 position:SV_POSITION; float3 color:COLOR; float2 uv:TEXCOORD0; };
 PSInput main(VSInput input){ PSInput o; float4 p = mul(model, float4(input.pos,1)); p=mul(view,p); o.position=mul(proj,p); o.color=input.col; o.uv=input.st; return o; }

@@ -12,44 +12,25 @@
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/D3D12Context.h>
 #include <igl/d3d12/Device.h>
+#include <igl/d3d12/RenderPipelineState.h>
 #include <igl/d3d12/SamplerState.h>
 #include <igl/d3d12/Texture.h>
 
 namespace igl::d3d12 {
 
 namespace {
-// Root signature layout constants
-// Graphics pipeline root signature (from Device::createRenderPipeline):
-// - Parameter 0: Root Constants for b2 (Push Constants)
-// - Parameter 1: Root CBV b0 (legacy bindBuffer)
-// - Parameter 2: Root CBV b1 (legacy bindBuffer)
-// - Parameter 3: CBV descriptor table (b3-b15, bindBindGroup)
-// - Parameter 4: SRV descriptor table (textures t0-tN)
-// - Parameter 5: Sampler descriptor table (s0-sN)
-// - Parameter 6: UAV descriptor table (storage buffers u0-uN)
-constexpr uint32_t kGraphicsRootParam_PushConstants = 0;
-constexpr uint32_t kGraphicsRootParam_RootCBV0 = 1;
-constexpr uint32_t kGraphicsRootParam_RootCBV1 = 2;
-constexpr uint32_t kGraphicsRootParam_CBVTable = 3;
-constexpr uint32_t kGraphicsRootParam_SRVTable = 4;
-constexpr uint32_t kGraphicsRootParam_SamplerTable = 5;
-constexpr uint32_t kGraphicsRootParam_UAVTable = 6;
+// D3D12 alignment requirement for constant buffer views
+constexpr size_t kConstantBufferAlignment = 256;
+constexpr size_t kMaxCBVSize = 65536; // 64 KB (D3D12 spec limit)
 
-// Compute pipeline root signature (from Device::createComputePipeline):
-// - Parameter 0: Root Constants b0 (push constants)
-// - Parameter 1: UAV table (u0-uN storage buffers)
-// - Parameter 2: SRV table (t0-tN textures)
-// - Parameter 3: CBV table (b1-bN uniform buffers)
-// - Parameter 4: Sampler table (s0-sN)
+// Compute pipeline hardcoded root parameter layout
+// Note: Graphics pipelines use pure reflection-based layout queried from RenderPipelineState
+// Compute pipelines still use this hardcoded layout (should be migrated to reflection)
 constexpr uint32_t kComputeRootParam_PushConstants = 0;
 constexpr uint32_t kComputeRootParam_UAVTable = 1;
 constexpr uint32_t kComputeRootParam_SRVTable = 2;
 constexpr uint32_t kComputeRootParam_CBVTable = 3;
 constexpr uint32_t kComputeRootParam_SamplerTable = 4;
-
-// D3D12 alignment requirement for constant buffer views
-constexpr size_t kConstantBufferAlignment = 256;
-constexpr size_t kMaxCBVSize = 65536; // 64 KB (D3D12 spec limit)
 
 } // namespace
 
@@ -191,8 +172,6 @@ void D3D12ResourcesBinder::bindBuffer(uint32_t index,
     return;
   }
 
-  D3D12_GPU_VIRTUAL_ADDRESS gpuAddress = resource->GetGPUVirtualAddress() + offset;
-
   if (isUAV) {
     // Storage buffer (UAV) - store buffer pointer, offset, and element stride for descriptor creation
     if (elementStride == 0) {
@@ -207,9 +186,13 @@ void D3D12ResourcesBinder::bindBuffer(uint32_t index,
       bindingsUAVs_.count = index + 1;
     }
   } else {
-    // Uniform buffer (CBV) - store buffer pointer and GPU address
+    // Uniform buffer (CBV) - D3D12 requires 256-byte alignment for CBV addresses
+    // Compute base address (must be 256-byte aligned)
+    D3D12_GPU_VIRTUAL_ADDRESS baseAddress = resource->GetGPUVirtualAddress();
+    D3D12_GPU_VIRTUAL_ADDRESS alignedAddress = (baseAddress + offset) & ~(kConstantBufferAlignment - 1);
+
     bindingsBuffers_.buffers[index] = buffer;
-    bindingsBuffers_.addresses[index] = gpuAddress;
+    bindingsBuffers_.addresses[index] = alignedAddress;
     bindingsBuffers_.offsets[index] = offset;
     bindingsBuffers_.sizes[index] = size;
     dirtyFlags_ |= DirtyFlagBits_Buffers;
@@ -219,7 +202,7 @@ void D3D12ResourcesBinder::bindBuffer(uint32_t index,
   }
 }
 
-bool D3D12ResourcesBinder::updateBindings(Result* outResult) {
+bool D3D12ResourcesBinder::updateBindings(const RenderPipelineState* renderPipeline, Result* outResult) {
   auto* commandList = commandBuffer_.getCommandList();
   auto& context = commandBuffer_.getContext();
   auto* device = context.getDevice();
@@ -235,21 +218,21 @@ bool D3D12ResourcesBinder::updateBindings(Result* outResult) {
 
   // Update textures (SRV table)
   if (dirtyFlags_ & DirtyFlagBits_Textures) {
-    if (!updateTextureBindings(commandList, device, outResult)) {
+    if (!updateTextureBindings(commandList, device, renderPipeline, outResult)) {
       success = false;
     }
   }
 
   // Update samplers (sampler table)
   if (dirtyFlags_ & DirtyFlagBits_Samplers) {
-    if (!updateSamplerBindings(commandList, device, outResult)) {
+    if (!updateSamplerBindings(commandList, device, renderPipeline, outResult)) {
       success = false;
     }
   }
 
-  // Update buffers (root CBVs or CBV table)
+  // Update buffers (CBV table)
   if (dirtyFlags_ & DirtyFlagBits_Buffers) {
-    if (!updateBufferBindings(commandList, device, outResult)) {
+    if (!updateBufferBindings(commandList, device, renderPipeline, outResult)) {
       success = false;
     }
   }
@@ -278,6 +261,7 @@ void D3D12ResourcesBinder::reset() {
 
 bool D3D12ResourcesBinder::updateTextureBindings(ID3D12GraphicsCommandList* cmdList,
                                                  ID3D12Device* device,
+                                                 const RenderPipelineState* renderPipeline,
                                                  Result* outResult) {
   if (bindingsTextures_.count == 0) {
     return true; // Nothing to bind
@@ -285,15 +269,30 @@ bool D3D12ResourcesBinder::updateTextureBindings(ID3D12GraphicsCommandList* cmdL
 
   auto& context = commandBuffer_.getContext();
 
+  // Determine how many descriptors to allocate based on pipeline's root signature
+  // For graphics: Use pipeline's declared SRV range (0 to maxSRVSlot inclusive)
+  // For compute: Use bindingsTextures_.count (legacy sparse allocation)
+  uint32_t descriptorRangeSize = bindingsTextures_.count;
+
+  if (!isCompute_ && renderPipeline) {
+    // Graphics pipeline: Match root signature's SRV descriptor range exactly
+    const UINT pipelineSRVCount = renderPipeline->getSRVDescriptorCount();
+    if (pipelineSRVCount > 0) {
+      descriptorRangeSize = pipelineSRVCount;
+      IGL_D3D12_LOG_VERBOSE("updateTextureBindings: Using pipeline SRV range size=%u (bound=%u)\n",
+                   descriptorRangeSize, bindingsTextures_.count);
+    }
+  }
+
   // Allocate a contiguous range of descriptors for all textures on a single page
   // This ensures we can bind them as a single descriptor table
   uint32_t baseDescriptorIndex = 0;
   Result allocResult =
-      commandBuffer_.allocateCbvSrvUavRange(bindingsTextures_.count, &baseDescriptorIndex);
+      commandBuffer_.allocateCbvSrvUavRange(descriptorRangeSize, &baseDescriptorIndex);
   if (!allocResult.isOk()) {
     IGL_LOG_ERROR(
         "D3D12ResourcesBinder: Failed to allocate contiguous SRV range (%u descriptors): %s\n",
-        bindingsTextures_.count,
+        descriptorRangeSize,
         allocResult.message.c_str());
     if (outResult) {
       *outResult = allocResult;
@@ -301,17 +300,18 @@ bool D3D12ResourcesBinder::updateTextureBindings(ID3D12GraphicsCommandList* cmdL
     return false;
   }
 
-  // Create SRV descriptors for all texture slots up to count. For unbound
-  // slots, emit a null SRV so that the descriptor table is fully
-  // initialized without imposing a dense-binding requirement on the API.
-  for (uint32_t i = 0; i < bindingsTextures_.count; ++i) {
+  // Create SRV descriptors for all texture slots from 0 to descriptorRangeSize-1.
+  // For unbound slots, emit a null SRV so that the descriptor table is fully
+  // initialized and matches the root signature descriptor range exactly.
+  for (uint32_t i = 0; i < descriptorRangeSize; ++i) {
     const uint32_t descriptorIndex = baseDescriptorIndex + i;
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle =
         context.getCbvSrvUavCpuHandle(descriptorIndex);
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle =
         context.getCbvSrvUavGpuHandle(descriptorIndex);
 
-    auto* texture = bindingsTextures_.textures[i];
+    // Check if this slot is bound (may be null if beyond bindingsTextures_.count)
+    auto* texture = (i < bindingsTextures_.count) ? bindingsTextures_.textures[i] : nullptr;
     if (!texture) {
       // Create an explicit null SRV descriptor. D3D12 does not permit both
       // the resource AND the descriptor pointer to be null, so we bind a
@@ -324,7 +324,10 @@ bool D3D12ResourcesBinder::updateTextureBindings(ID3D12GraphicsCommandList* cmdL
       nullSrv.Texture2D.MipLevels = 1;
       device->CreateShaderResourceView(nullptr, &nullSrv, cpuHandle);
       D3D12Context::trackResourceCreation("SRV", 0);
-      bindingsTextures_.handles[i] = gpuHandle;
+      // Only cache handle if within bounds (avoid out-of-bounds write)
+      if (i < IGL_TEXTURE_SAMPLERS_MAX) {
+        bindingsTextures_.handles[i] = gpuHandle;
+      }
       continue;
     }
 
@@ -338,7 +341,10 @@ bool D3D12ResourcesBinder::updateTextureBindings(ID3D12GraphicsCommandList* cmdL
       nullSrv.Texture2D.MipLevels = 1;
       device->CreateShaderResourceView(nullptr, &nullSrv, cpuHandle);
       D3D12Context::trackResourceCreation("SRV", 0);
-      bindingsTextures_.handles[i] = gpuHandle;
+      // Only cache handle if within bounds (avoid out-of-bounds write)
+      if (i < IGL_TEXTURE_SAMPLERS_MAX) {
+        bindingsTextures_.handles[i] = gpuHandle;
+      }
       continue;
     }
 
@@ -396,18 +402,33 @@ bool D3D12ResourcesBinder::updateTextureBindings(ID3D12GraphicsCommandList* cmdL
     device->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
     D3D12Context::trackResourceCreation("SRV", 0);
 
-    // Cache the GPU handle
-    bindingsTextures_.handles[i] = gpuHandle;
+    // Cache the GPU handle (only if within bounds)
+    if (i < IGL_TEXTURE_SAMPLERS_MAX) {
+      bindingsTextures_.handles[i] = gpuHandle;
+    }
   }
 
   // Bind the SRV table to the appropriate root parameter
-  // Use the first descriptor's GPU handle as the base
-  uint32_t rootParamIndex = isCompute_ ? kComputeRootParam_SRVTable : kGraphicsRootParam_SRVTable;
+  // Use the first descriptor in the allocated range (baseDescriptorIndex)
+  D3D12_GPU_DESCRIPTOR_HANDLE tableBaseHandle = context.getCbvSrvUavGpuHandle(baseDescriptorIndex);
 
   if (isCompute_) {
-    cmdList->SetComputeRootDescriptorTable(rootParamIndex, bindingsTextures_.handles[0]);
+    cmdList->SetComputeRootDescriptorTable(kComputeRootParam_SRVTable, tableBaseHandle);
   } else {
-    cmdList->SetGraphicsRootDescriptorTable(rootParamIndex, bindingsTextures_.handles[0]);
+    // Graphics pipeline: Query reflection-based root parameter index from pipeline
+    if (!renderPipeline) {
+      IGL_LOG_ERROR("updateTextureBindings: renderPipeline is NULL, cannot bind SRV table\n");
+    } else {
+      const UINT srvTableIndex = renderPipeline->getSRVTableRootParameterIndex();
+      IGL_D3D12_LOG_VERBOSE("updateTextureBindings: srvTableIndex=%u (UINT_MAX=%u)\n", srvTableIndex, UINT_MAX);
+      if (srvTableIndex != UINT_MAX) {
+        cmdList->SetGraphicsRootDescriptorTable(srvTableIndex, tableBaseHandle);
+        IGL_D3D12_LOG_VERBOSE("updateTextureBindings: Bound SRV table to root param %u (range size %u)\n",
+                     srvTableIndex, descriptorRangeSize);
+      } else {
+        IGL_LOG_ERROR("updateTextureBindings: srvTableIndex is UINT_MAX, shader doesn't use SRVs?\n");
+      }
+    }
   }
 
   return true;
@@ -415,51 +436,71 @@ bool D3D12ResourcesBinder::updateTextureBindings(ID3D12GraphicsCommandList* cmdL
 
 bool D3D12ResourcesBinder::updateSamplerBindings(ID3D12GraphicsCommandList* cmdList,
                                                  ID3D12Device* device,
+                                                 const RenderPipelineState* renderPipeline,
                                                  Result* outResult) {
   if (bindingsSamplers_.count == 0) {
     return true; // Nothing to bind
   }
 
-  // Validate dense bindings starting from slot 0
-  if (bindingsSamplers_.samplers[0] == nullptr) {
-    IGL_LOG_ERROR("D3D12ResourcesBinder: Sampler bindings are sparse (slot 0 not bound). "
-                  "D3D12 requires dense bindings starting at index 0.\n");
-    if (outResult) {
-      *outResult = Result{Result::Code::InvalidOperation,
-                          "Sampler bindings must be dense starting at slot 0"};
-    }
-    return false;
-  }
-
   auto& context = commandBuffer_.getContext();
 
-  // Allocate sampler descriptors for all samplers
-  for (uint32_t i = 0; i < bindingsSamplers_.count; ++i) {
-    if (bindingsSamplers_.samplers[i] == nullptr) {
-      IGL_LOG_ERROR("D3D12ResourcesBinder: Sparse sampler binding detected at slot %u\n", i);
-      if (outResult) {
-        *outResult = Result{Result::Code::InvalidOperation, "Sampler bindings must be dense"};
-      }
-      return false;
-    }
+  // Determine how many descriptors to allocate based on pipeline's root signature
+  // For graphics: Use pipeline's declared sampler range (0 to maxSamplerSlot inclusive)
+  // For compute: Use bindingsSamplers_.count (legacy behavior)
+  uint32_t descriptorRangeSize = bindingsSamplers_.count;
 
-    auto* samplerState = bindingsSamplers_.samplers[i];
-    uint32_t& descriptorIndex = commandBuffer_.getNextSamplerDescriptor();
+  if (!isCompute_ && renderPipeline) {
+    // Graphics pipeline: Match root signature's sampler descriptor range exactly
+    const UINT pipelineSamplerCount = renderPipeline->getSamplerDescriptorCount();
+    if (pipelineSamplerCount > 0) {
+      descriptorRangeSize = pipelineSamplerCount;
+      IGL_D3D12_LOG_VERBOSE("updateSamplerBindings: Using pipeline sampler range size=%u (bound=%u)\n",
+                   descriptorRangeSize, bindingsSamplers_.count);
+    }
+  }
+
+  // Get base sampler descriptor index for contiguous allocation
+  uint32_t baseSamplerIndex = commandBuffer_.getNextSamplerDescriptor();
+
+  // Create sampler descriptors for all slots from 0 to descriptorRangeSize-1
+  // For unbound slots, create a default sampler to fill the table
+  for (uint32_t i = 0; i < descriptorRangeSize; ++i) {
+    const uint32_t descriptorIndex = baseSamplerIndex + i;
 
     // Get descriptor handles
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getSamplerCpuHandle(descriptorIndex);
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getSamplerGpuHandle(descriptorIndex);
 
+    // Check if this slot is bound (may be null if beyond bindingsSamplers_.count)
+    auto* samplerState = (i < bindingsSamplers_.count) ? bindingsSamplers_.samplers[i] : nullptr;
+
     // Create sampler descriptor
     D3D12_SAMPLER_DESC samplerDesc = {};
-    if (auto* d3dSampler = dynamic_cast<SamplerState*>(samplerState)) {
-      samplerDesc = d3dSampler->getDesc();
+    if (samplerState) {
+      if (auto* d3dSampler = dynamic_cast<SamplerState*>(samplerState)) {
+        samplerDesc = d3dSampler->getDesc();
+      } else {
+        // Fallback for bound but invalid sampler
+        samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        samplerDesc.MipLODBias = 0.0f;
+        samplerDesc.MaxAnisotropy = 1;
+        samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+        samplerDesc.BorderColor[0] = 0.0f;
+        samplerDesc.BorderColor[1] = 0.0f;
+        samplerDesc.BorderColor[2] = 0.0f;
+        samplerDesc.BorderColor[3] = 0.0f;
+        samplerDesc.MinLOD = 0.0f;
+        samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+      }
     } else {
-      // Fallback sampler desc
+      // Unbound slot: Create default sampler for unused descriptor table entries
       samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-      samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-      samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-      samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+      samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+      samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+      samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
       samplerDesc.MipLODBias = 0.0f;
       samplerDesc.MaxAnisotropy = 1;
       samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
@@ -474,21 +515,35 @@ bool D3D12ResourcesBinder::updateSamplerBindings(ID3D12GraphicsCommandList* cmdL
     device->CreateSampler(&samplerDesc, cpuHandle);
     D3D12Context::trackResourceCreation("Sampler", 0);
 
-    // Cache the GPU handle
-    bindingsSamplers_.handles[i] = gpuHandle;
-
-    // Increment sampler descriptor counter
-    descriptorIndex++;
+    // Cache the GPU handle (only if within bounds)
+    if (i < IGL_TEXTURE_SAMPLERS_MAX) {
+      bindingsSamplers_.handles[i] = gpuHandle;
+    }
   }
 
-  // Bind the sampler table to the appropriate root parameter
-  uint32_t rootParamIndex =
-      isCompute_ ? kComputeRootParam_SamplerTable : kGraphicsRootParam_SamplerTable;
+  // Update sampler descriptor counter to reserve the allocated range
+  commandBuffer_.getNextSamplerDescriptor() = baseSamplerIndex + descriptorRangeSize;
 
+  // Bind the sampler table to the appropriate root parameter
+  // Use the first descriptor in the allocated range
+  D3D12_GPU_DESCRIPTOR_HANDLE tableBaseHandle = context.getSamplerGpuHandle(baseSamplerIndex);
   if (isCompute_) {
-    cmdList->SetComputeRootDescriptorTable(rootParamIndex, bindingsSamplers_.handles[0]);
+    cmdList->SetComputeRootDescriptorTable(kComputeRootParam_SamplerTable, tableBaseHandle);
   } else {
-    cmdList->SetGraphicsRootDescriptorTable(rootParamIndex, bindingsSamplers_.handles[0]);
+    // Graphics pipeline: Query reflection-based root parameter index from pipeline
+    if (!renderPipeline) {
+      IGL_LOG_ERROR("updateSamplerBindings: renderPipeline is NULL, cannot bind sampler table\n");
+    } else {
+      const UINT samplerTableIndex = renderPipeline->getSamplerTableRootParameterIndex();
+      IGL_D3D12_LOG_VERBOSE("updateSamplerBindings: samplerTableIndex=%u (UINT_MAX=%u)\n", samplerTableIndex, UINT_MAX);
+      if (samplerTableIndex != UINT_MAX) {
+        cmdList->SetGraphicsRootDescriptorTable(samplerTableIndex, tableBaseHandle);
+        IGL_D3D12_LOG_VERBOSE("updateSamplerBindings: Bound sampler table to root param %u (range size %u)\n",
+                     samplerTableIndex, descriptorRangeSize);
+      } else {
+        IGL_LOG_ERROR("updateSamplerBindings: samplerTableIndex is UINT_MAX, shader doesn't use samplers?\n");
+      }
+    }
   }
 
   return true;
@@ -496,6 +551,7 @@ bool D3D12ResourcesBinder::updateSamplerBindings(ID3D12GraphicsCommandList* cmdL
 
 bool D3D12ResourcesBinder::updateBufferBindings(ID3D12GraphicsCommandList* cmdList,
                                                 ID3D12Device* device,
+                                                const RenderPipelineState* renderPipeline,
                                                 Result* outResult) {
   if (bindingsBuffers_.count == 0) {
     return true; // Nothing to bind
@@ -622,25 +678,119 @@ bool D3D12ResourcesBinder::updateBufferBindings(ID3D12GraphicsCommandList* cmdLi
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(baseDescriptorIndex);
     cmdList->SetComputeRootDescriptorTable(kComputeRootParam_CBVTable, gpuHandle);
   } else {
-    // Graphics pipeline: b0 and b1 are root CBVs, b2+ would use descriptor table
-    // For now, we only support b0 and b1 as root CBVs (legacy behavior)
+    // Graphics pipeline: Reflection-based CBV descriptor table binding
+    auto& context = commandBuffer_.getContext();
 
-    // Bind b0 (root parameter 1)
-    if (bindingsBuffers_.count > 0 && bindingsBuffers_.addresses[0] != 0) {
-      cmdList->SetGraphicsRootConstantBufferView(kGraphicsRootParam_RootCBV0,
-                                                  bindingsBuffers_.addresses[0]);
+    // Count bound CBVs
+    uint32_t boundCbvCount = 0;
+    for (uint32_t i = 0; i < bindingsBuffers_.count; ++i) {
+      if (bindingsBuffers_.addresses[i] != 0) {
+        boundCbvCount++;
+      }
     }
 
-    // Bind b1 (root parameter 2)
-    if (bindingsBuffers_.count > 1 && bindingsBuffers_.addresses[1] != 0) {
-      cmdList->SetGraphicsRootConstantBufferView(kGraphicsRootParam_RootCBV1,
-                                                  bindingsBuffers_.addresses[1]);
+    if (boundCbvCount == 0) {
+      return true; // No CBVs to bind
     }
 
-    // Note: b2+ would require descriptor table support, which is not implemented yet
-    if (bindingsBuffers_.count > 2) {
-      IGL_LOG_ERROR("D3D12ResourcesBinder: Graphics pipeline only supports b0-b1 currently. "
-                    "b2+ bindings are not yet implemented.\n");
+    // Determine how many descriptors to allocate based on pipeline's root signature
+    // Use pipeline's declared CBV range (0 to maxCBVSlot inclusive) to match root signature
+    uint32_t descriptorRangeSize = bindingsBuffers_.count;
+
+    if (renderPipeline) {
+      const UINT pipelineCBVCount = renderPipeline->getCBVDescriptorCount();
+      if (pipelineCBVCount > 0) {
+        descriptorRangeSize = pipelineCBVCount;
+      }
+    }
+
+    // Allocate a contiguous range of descriptors from 0 to descriptorRangeSize-1
+    uint32_t baseDescriptorIndex = 0;
+    Result allocResult = commandBuffer_.allocateCbvSrvUavRange(descriptorRangeSize, &baseDescriptorIndex);
+    if (!allocResult.isOk()) {
+      IGL_LOG_ERROR("D3D12ResourcesBinder: Failed to allocate CBV range (%u descriptors): %s\n",
+                    descriptorRangeSize,
+                    allocResult.message.c_str());
+      if (outResult) {
+        *outResult = allocResult;
+      }
+      return false;
+    }
+
+    IGL_D3D12_LOG_VERBOSE("updateBufferBindings: Graphics CBV binding - range b0-b%u, %u descriptors\n",
+                 descriptorRangeSize - 1, descriptorRangeSize);
+
+    // Create CBV descriptors for all slots from 0 to descriptorRangeSize-1
+    // For unbound slots, create null descriptors to match the root signature range
+    for (uint32_t slotIndex = 0; slotIndex < descriptorRangeSize; ++slotIndex) {
+      const uint32_t descriptorIndex = baseDescriptorIndex + slotIndex;
+      D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
+
+      // Check if this slot is bound (may be null if beyond bindingsBuffers_.count)
+      const bool isSlotBound = (slotIndex < bindingsBuffers_.count) &&
+                               (bindingsBuffers_.addresses[slotIndex] != 0);
+
+      if (isSlotBound) {
+        // Bound slot: Create valid CBV descriptor
+        // Validate address alignment (D3D12 requires 256-byte alignment)
+        if (bindingsBuffers_.addresses[slotIndex] % kConstantBufferAlignment != 0) {
+          IGL_LOG_ERROR("D3D12ResourcesBinder: Constant buffer %u address 0x%llx is not 256-byte aligned\n",
+                        slotIndex, bindingsBuffers_.addresses[slotIndex]);
+          if (outResult) {
+            *outResult = Result{Result::Code::ArgumentInvalid,
+                                "Constant buffer address must be 256-byte aligned"};
+          }
+          return false;
+        }
+
+        // Validate size
+        size_t size = bindingsBuffers_.sizes[slotIndex];
+        if (size > kMaxCBVSize) {
+          IGL_LOG_ERROR("D3D12ResourcesBinder: Constant buffer %u size (%zu bytes) exceeds 64 KB limit\n",
+                        slotIndex, size);
+          if (outResult) {
+            *outResult = Result{Result::Code::ArgumentOutOfRange,
+                                "Constant buffer size exceeds 64 KB D3D12 limit"};
+          }
+          return false;
+        }
+
+        // Align size to 256-byte boundary
+        const size_t alignedSize = (size + kConstantBufferAlignment - 1) & ~(kConstantBufferAlignment - 1);
+
+        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+        cbvDesc.BufferLocation = bindingsBuffers_.addresses[slotIndex];
+        cbvDesc.SizeInBytes = static_cast<UINT>(alignedSize);
+
+        device->CreateConstantBufferView(&cbvDesc, cpuHandle);
+        IGL_D3D12_LOG_VERBOSE("D3D12ResourcesBinder: Created CBV descriptor for b%u (address=0x%llx, size=%u)\n",
+                     slotIndex, cbvDesc.BufferLocation, cbvDesc.SizeInBytes);
+      } else {
+        // Unbound slot: Create NULL descriptor to fill the root signature descriptor range
+        D3D12_CONSTANT_BUFFER_VIEW_DESC nullCbvDesc = {};
+        nullCbvDesc.BufferLocation = 0;  // NULL CBV
+        nullCbvDesc.SizeInBytes = D3D12_REQ_CONSTANT_BUFFER_ELEMENT_COUNT * 16;  // Minimum valid size
+
+        device->CreateConstantBufferView(&nullCbvDesc, cpuHandle);
+        IGL_D3D12_LOG_VERBOSE("D3D12ResourcesBinder: Created NULL CBV descriptor for b%u\n", slotIndex);
+      }
+    }
+
+    // Query pipeline for reflection-based CBV table root parameter index
+    if (!renderPipeline) {
+      IGL_LOG_ERROR("updateBufferBindings: renderPipeline is NULL, cannot bind CBV table\n");
+      if (outResult) {
+        *outResult = Result{Result::Code::ArgumentInvalid, "renderPipeline is required for graphics CBV binding"};
+      }
+      return false;
+    }
+
+    const UINT cbvTableIndex = renderPipeline->getCBVTableRootParameterIndex();
+
+    if (cbvTableIndex != UINT_MAX) {
+      // Bind the CBV descriptor table to the reflection-based root parameter
+      D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(baseDescriptorIndex);
+      cmdList->SetGraphicsRootDescriptorTable(cbvTableIndex, gpuHandle);
     }
   }
 

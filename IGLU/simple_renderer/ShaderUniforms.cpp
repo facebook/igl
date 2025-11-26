@@ -88,6 +88,9 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
     } else if (device_.getBackendType() == igl::BackendType::Metal) {
       // On Metal, need to create buffers only when data > 4kb
       createBuffer = !hasBindBytesFeature || length > bindBytesLimit;
+    } else if (device_.getBackendType() == igl::BackendType::D3D12) {
+      // D3D12 does not support bindBytes, always create buffers
+      createBuffer = true;
     }
 
     std::shared_ptr<igl::IBuffer> buffer = nullptr;
@@ -99,7 +102,8 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
       desc.type = igl::BufferDesc::BufferTypeBits::Uniform;
       desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
       if (device_.getBackendType() == igl::BackendType::Metal ||
-          device_.getBackendType() == igl::BackendType::Vulkan) {
+          device_.getBackendType() == igl::BackendType::Vulkan ||
+          device_.getBackendType() == igl::BackendType::D3D12) {
         desc.hint |= igl::BufferDesc::BufferAPIHintBits::Ring;
       }
       buffer = device.createBuffer(desc, nullptr);

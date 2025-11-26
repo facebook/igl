@@ -98,6 +98,18 @@ class RenderPipelineState final : public IRenderPipelineState {
   UINT getPushConstantSlot() const { return shaderReflection_.pushConstantSlot; }
   UINT getPushConstantRootParameterIndex() const { return shaderReflection_.pushConstantRootParamIndex; }
 
+  // Query root parameter layout (dynamic based on shader reflection)
+  UINT getCBVTableRootParameterIndex() const { return rootParamLayout_.cbvTableIndex; }
+  UINT getSRVTableRootParameterIndex() const { return rootParamLayout_.srvTableIndex; }
+  UINT getSamplerTableRootParameterIndex() const { return rootParamLayout_.samplerTableIndex; }
+  UINT getUAVTableRootParameterIndex() const { return rootParamLayout_.uavTableIndex; }
+
+  // Query descriptor range sizes (how many descriptors the root signature expects)
+  UINT getCBVDescriptorCount() const { return rootParamLayout_.cbvDescriptorCount; }
+  UINT getSRVDescriptorCount() const { return rootParamLayout_.srvDescriptorCount; }
+  UINT getSamplerDescriptorCount() const { return rootParamLayout_.samplerDescriptorCount; }
+  UINT getUAVDescriptorCount() const { return rootParamLayout_.uavDescriptorCount; }
+
  private:
   friend class Device;  // Device needs access to create PSO variants
 
@@ -124,6 +136,24 @@ class RenderPipelineState final : public IRenderPipelineState {
     UINT pushConstantSize = 0;
     UINT pushConstantRootParamIndex = 0;  // Root parameter index for push constants in root signature
   } shaderReflection_;
+
+  // Root parameter layout (dynamically computed from shader reflection)
+  // These indices tell encoders which root parameter to use for each resource type
+  // Pure reflection-based approach - no hardcoded assumptions
+  struct {
+    UINT cbvTableIndex = UINT_MAX;  // CBV descriptor table
+    UINT srvTableIndex = UINT_MAX;  // SRV descriptor table
+    UINT samplerTableIndex = UINT_MAX;  // Sampler descriptor table
+    UINT uavTableIndex = UINT_MAX;  // UAV descriptor table
+
+    // Descriptor range sizes (from root signature, 0 to maxSlot inclusive)
+    // These define how many descriptors the root signature expects in each table
+    // ResourcesBinder must allocate exactly these counts to match the root signature
+    UINT cbvDescriptorCount = 0;   // Number of CBV descriptors (0 to maxCBVSlot)
+    UINT srvDescriptorCount = 0;   // Number of SRV descriptors (0 to maxSRVSlot)
+    UINT samplerDescriptorCount = 0;  // Number of sampler descriptors (0 to maxSamplerSlot)
+    UINT uavDescriptorCount = 0;   // Number of UAV descriptors (0 to maxUAVSlot)
+  } rootParamLayout_;
 };
 
 } // namespace igl::d3d12

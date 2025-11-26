@@ -10,12 +10,6 @@
 #include <shell/shared/renderSession/RenderSession.h>
 #include <igl/IGL.h>
 
-// Forward declarations for D3D12 headless context
-namespace igl::d3d12 {
-class HeadlessD3D12Context;
-class Device;
-}
-
 namespace igl::shell {
 
 class PassthroughSession : public RenderSession {
@@ -25,10 +19,6 @@ class PassthroughSession : public RenderSession {
   void update(SurfaceTextures surfaceTextures) noexcept override;
 
  private:
-  void renderWindowed(SurfaceTextures surfaceTextures);
-  void renderHeadless();
-
-  // Windowed rendering (original)
   IDevice* device_ = nullptr;
   std::shared_ptr<IBuffer> vertexBuffer_;
   std::shared_ptr<IBuffer> uvBuffer_;
@@ -39,20 +29,6 @@ class PassthroughSession : public RenderSession {
   std::shared_ptr<IVertexInputState> vertexInputState_;
   std::shared_ptr<IRenderPipelineState> pipelineState_;
   bool validationDone_ = false;
-
-  // Headless rendering (for comparison)
-  std::unique_ptr<igl::d3d12::HeadlessD3D12Context> headlessContext_;
-  std::unique_ptr<igl::d3d12::Device> headlessDevice_;
-  std::shared_ptr<ICommandQueue> headlessCommandQueue_;
-  std::shared_ptr<IBuffer> headlessVertexBuffer_;
-  std::shared_ptr<IBuffer> headlessUvBuffer_;
-  std::shared_ptr<IBuffer> headlessIndexBuffer_;
-  std::shared_ptr<ITexture> headlessInputTexture_;
-  std::shared_ptr<ITexture> headlessOffscreenTexture_;
-  std::shared_ptr<ISamplerState> headlessSampler_;
-  std::shared_ptr<IVertexInputState> headlessVertexInputState_;
-  std::shared_ptr<IRenderPipelineState> headlessPipelineState_;
-  bool headlessValidationDone_ = false;
 };
 
 } // namespace igl::shell

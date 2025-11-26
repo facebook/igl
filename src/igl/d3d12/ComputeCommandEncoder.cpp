@@ -142,8 +142,9 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   }
 
   // Apply all resource bindings (textures, samplers, buffers, UAVs) before dispatch.
+  // For compute pipelines, pass nullptr since there's no RenderPipelineState
   Result bindResult;
-  if (!resourcesBinder_.updateBindings(&bindResult)) {
+  if (!resourcesBinder_.updateBindings(nullptr, &bindResult)) {
     IGL_LOG_ERROR("dispatchThreadGroups: Failed to update resource bindings: %s\n", bindResult.message.c_str());
     return;
   }

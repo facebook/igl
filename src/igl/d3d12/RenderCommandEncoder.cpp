@@ -823,12 +823,11 @@ void RenderCommandEncoder::draw(size_t vertexCount,
   flushBarriers();
 
   // Apply all resource bindings (textures, samplers, buffers) before draw.
-  // Skip ResourcesBinder if bindBindGroup was explicitly used
-  // Note: cachedTextureCount_/cachedSamplerCount_ may also be set by storage buffer SRV path,
-  // so we use dedicated usedBindGroup_ flag to distinguish bindBindGroup from other paths
-  if (!usedBindGroup_) {
+  // Even when bindBindGroup() is used for CBV tables, textures/samplers may still be
+  // managed by D3D12ResourcesBinder, so always update bindings here.
+  {
     Result bindResult;
-    if (!resourcesBinder_.updateBindings(&bindResult)) {
+    if (!resourcesBinder_.updateBindings(currentRenderPipelineState_, &bindResult)) {
       IGL_LOG_ERROR("draw: Failed to update resource bindings: %s\n", bindResult.message.c_str());
       return;
     }
@@ -844,49 +843,8 @@ void RenderCommandEncoder::draw(size_t vertexCount,
   // - Root parameter 5: Sampler descriptor table for s0-tN
   // - Root parameter 6: UAV descriptor table for u0-uN (storage buffers)
 
-  // Bind root CBVs for b0 and b1 (legacy bindBuffer support; params 1 and 2)
-  if (constantBufferBound_[0]) {
-    commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[0]);  // Root param 1: b0
-    IGL_D3D12_LOG_VERBOSE("draw: binding root CBV for b0 (address 0x%llx)\n",
-                          cachedConstantBuffers_[0]);
-  }
-  if (constantBufferBound_[1]) {
-    commandList_->SetGraphicsRootConstantBufferView(2, cachedConstantBuffers_[1]);  // Root param 2: b1
-    IGL_D3D12_LOG_VERBOSE("draw: binding root CBV for b1 (address 0x%llx)\n",
-                          cachedConstantBuffers_[1]);
-  }
-
-  // Bind CBV descriptor table for b3-b15 (bindBindGroup buffer table)
-  if (cbvTableCount_ > 0 && cachedCbvTableGpuHandles_[0].ptr != 0) {
-    commandList_->SetGraphicsRootDescriptorTable(3, cachedCbvTableGpuHandles_[0]);  // Root param 3: CBV table
-    IGL_D3D12_LOG_VERBOSE(
-        "draw: binding CBV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
-        cbvTableCount_,
-        cachedCbvTableGpuHandles_[0].ptr);
-  }
-
-  // Bind SRV and sampler descriptor tables (bindBindGroup support)
-  // Add debug validation to catch sparse binding (non-zero count with zero base handle).
-  // Note: Storage buffer SRVs bound via bindBindGroup(buffer) may have already set root parameter 4.
-  // This will rebind it with texture SRVs. The last binding wins for each draw call.
-  if (cachedTextureCount_ > 0 && cachedTextureGpuHandles_[0].ptr != 0) {
-    IGL_DEBUG_ASSERT(cachedTextureGpuHandles_[0].ptr != 0,
-                     "Texture count > 0 but base handle is null - did you bind only higher slots?");
-    commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
-    IGL_D3D12_LOG_VERBOSE(
-        "draw: binding SRV descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
-        cachedTextureCount_,
-        cachedTextureGpuHandles_[0].ptr);
-  }
-  if (cachedSamplerCount_ > 0 && cachedSamplerGpuHandles_[0].ptr != 0) {
-    IGL_DEBUG_ASSERT(cachedSamplerGpuHandles_[0].ptr != 0,
-                     "Sampler count > 0 but base handle is null - did you bind only higher slots?");
-    commandList_->SetGraphicsRootDescriptorTable(4, cachedSamplerGpuHandles_[0]);  // Root param 4: Sampler table
-    IGL_D3D12_LOG_VERBOSE(
-        "draw: binding Sampler descriptor table with %zu descriptors (GPU handle 0x%llx)\n",
-        cachedSamplerCount_,
-        cachedSamplerGpuHandles_[0].ptr);
-  }
+  // Bind descriptor tables using dynamic root parameter indices from pipeline reflection
+  // The indices are computed based on which resources the shader actually uses
 
   // Apply vertex buffers. If the bound pipeline has no vertex input state
   // (no attributes/bindings), skip IASetVertexBuffers entirely so that
@@ -960,12 +918,11 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   flushBarriers();
 
   // Apply all resource bindings (textures, samplers, buffers) before draw.
-  // Skip ResourcesBinder if bindBindGroup was explicitly used
-  // Note: cachedTextureCount_/cachedSamplerCount_ may also be set by storage buffer SRV path,
-  // so we use dedicated usedBindGroup_ flag to distinguish bindBindGroup from other paths
-  if (!usedBindGroup_) {
+  // Even when bindBindGroup() is used for CBV tables, textures/samplers may still be
+  // managed by D3D12ResourcesBinder, so always update bindings here.
+  {
     Result bindResult;
-    if (!resourcesBinder_.updateBindings(&bindResult)) {
+    if (!resourcesBinder_.updateBindings(currentRenderPipelineState_, &bindResult)) {
       IGL_LOG_ERROR("drawIndexed: Failed to update resource bindings: %s\n", bindResult.message.c_str());
       return;
     }
@@ -981,37 +938,11 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   // - Root parameter 5: Sampler descriptor table for s0-tN
   // - Root parameter 6: UAV descriptor table for u0-uN (storage buffers)
 
-  // Bind root CBVs for b0 and b1 (legacy bindBuffer support; params 1 and 2)
-  if (constantBufferBound_[0]) {
-    commandList_->SetGraphicsRootConstantBufferView(1, cachedConstantBuffers_[0]);  // Root param 1: b0
-  }
-  if (constantBufferBound_[1]) {
-    commandList_->SetGraphicsRootConstantBufferView(2, cachedConstantBuffers_[1]);  // Root param 2: b1
-  }
+  // Bind descriptor tables using dynamic root parameter indices from pipeline reflection
 
-  // Bind CBV descriptor table for b3-b15 (bindBindGroup buffer table)
-  if (cbvTableCount_ > 0 && cachedCbvTableGpuHandles_[0].ptr != 0) {
-    commandList_->SetGraphicsRootDescriptorTable(3, cachedCbvTableGpuHandles_[0]);  // Root param 3: CBV table
-  }
-
-  // Bind SRV and sampler descriptor tables (bindBindGroup support)
-  // Add debug validation to catch sparse binding (non-zero count with zero base handle).
-  // Note: Storage buffer SRVs bound via bindBindGroup(buffer) may have already set root parameter 4.
-  // This will rebind it with texture SRVs. The last binding wins for each draw call.
-  if (cachedTextureCount_ > 0) {
-    IGL_DEBUG_ASSERT(cachedTextureGpuHandles_[0].ptr != 0,
-                     "Texture count > 0 but base handle is null - did you bind only higher slots?");
-    if (cachedTextureGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(4, cachedTextureGpuHandles_[0]);  // Root param 4: SRV table
-    }
-  }
-  if (cachedSamplerCount_ > 0) {
-    IGL_DEBUG_ASSERT(cachedSamplerGpuHandles_[0].ptr != 0,
-                     "Sampler count > 0 but base handle is null - did you bind only higher slots?");
-    if (cachedSamplerGpuHandles_[0].ptr != 0) {
-      commandList_->SetGraphicsRootDescriptorTable(5, cachedSamplerGpuHandles_[0]);  // Root param 5: Sampler table
-    }
-  }
+  // Descriptor tables (CBV/SRV/Sampler/UAV) are bound by D3D12ResourcesBinder::updateBindings()
+  // based on the current pipeline's reflection. No additional descriptor table binding is
+  // required here.
 
   // Apply cached vertex buffer bindings now that pipeline state is bound.
   // If the current pipeline has no vertex input layout (no attributes or
@@ -1259,7 +1190,7 @@ void RenderCommandEncoder::popDebugGroupLabel() const {
 void RenderCommandEncoder::bindBuffer(uint32_t index,
                                        IBuffer* buffer,
                                        size_t offset,
-                                       size_t /*bufferSize*/) {
+                                       size_t bufferSize) {
   IGL_D3D12_LOG_VERBOSE("bindBuffer START: index=%u\n", index);
   if (!buffer) {
     IGL_D3D12_LOG_VERBOSE("bindBuffer: null buffer, returning\n");
@@ -1329,6 +1260,26 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     cachedTextureGpuHandles_[index] = gpuHandle;
     cachedTextureCount_ = std::max(cachedTextureCount_, static_cast<size_t>(index + 1));
 
+    // For pipelines that declare SRVs but do not use the generic texture binding path
+    // (e.g., ComputeSession visualization using ByteAddressBuffer at t0), bind the SRV
+    // descriptor table directly to the SRV root parameter. This does not conflict with
+    // D3D12ResourcesBinder because updateTextureBindings() is a no-op when no textures
+    // are bound via bindTexture().
+    if (currentRenderPipelineState_ && commandList_) {
+      const UINT srvTableIndex =
+          currentRenderPipelineState_->getSRVTableRootParameterIndex();
+      if (srvTableIndex != UINT_MAX) {
+        commandList_->SetGraphicsRootDescriptorTable(srvTableIndex, gpuHandle);
+        IGL_D3D12_LOG_VERBOSE(
+            "bindBuffer: Bound storage buffer SRV at slot %u (t%u) to SRV table root param %u "
+            "(GPU handle 0x%llx)\n",
+            index,
+            index,
+            srvTableIndex,
+            gpuHandle.ptr);
+      }
+    }
+
     IGL_D3D12_LOG_VERBOSE("bindBuffer: Storage buffer SRV binding complete\n");
 
     // CRITICAL: Track the Buffer OBJECT (not just resource) to keep it alive until GPU finishes
@@ -1345,65 +1296,36 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
       IGL_D3D12_LOG_VERBOSE("bindBuffer: Buffer not shared_ptr-managed, tracking resource only\n");
     }
   } else {
-    // Constant buffer - use CBV binding (existing path)
-    IGL_D3D12_LOG_VERBOSE("bindBuffer: Constant buffer at index %u\n", index);
+    // Constant buffer (CBV) - delegate to resourcesBinder for reflection-based binding
+    IGL_D3D12_LOG_VERBOSE("bindBuffer: Constant buffer at index %u - delegating to resourcesBinder\n", index);
 
     // D3D12 requires constant buffer addresses to be 256-byte aligned
-    // (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
     if ((offset & 255) != 0) {
-      IGL_LOG_ERROR("bindBuffer: ERROR - CBV offset %zu is not 256-byte aligned (required by D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT). "
+      IGL_LOG_ERROR("bindBuffer: ERROR - CBV offset %zu is not 256-byte aligned (required by D3D12). "
                     "Constant buffers must be created at aligned offsets. Ignoring bind request.\n", offset);
       return;
     }
 
-    D3D12_GPU_VIRTUAL_ADDRESS bufferAddress = d3dBuffer->gpuAddress(offset);
-    IGL_D3D12_LOG_VERBOSE("bindBuffer: CBV address=0x%llx\n", bufferAddress);
-
-    if (!commandList_) {
-      IGL_LOG_ERROR("bindBuffer: commandList_ is NULL!\n");
-      return;
-    }
-
     // CRITICAL: Track the Buffer OBJECT (not just resource) to keep it alive until GPU finishes
-    // This prevents the Buffer destructor from releasing the resource while GPU commands reference it
-    // Use weak_from_this().lock() instead of shared_from_this() to avoid exception
     std::shared_ptr<IBuffer> sharedBuffer = d3dBuffer->weak_from_this().lock();
     if (sharedBuffer) {
       static_cast<CommandBuffer&>(commandBuffer_).trackTransientBuffer(std::move(sharedBuffer));
       IGL_D3D12_LOG_VERBOSE("bindBuffer: Tracking Buffer object (shared_ptr) for lifetime management\n");
     } else {
-      // Buffer not managed by shared_ptr (e.g., persistent buffer from member variable)
-      // Fall back to tracking just the resource (AddRef on ID3D12Resource)
       static_cast<CommandBuffer&>(commandBuffer_).trackTransientResource(d3dBuffer->getResource());
       IGL_D3D12_LOG_VERBOSE("bindBuffer: Buffer not shared_ptr-managed, tracking resource only\n");
     }
 
-    // Cache CBV for draw calls (b0, b1) - bind to root CBVs
-    if (index <= 1) {
-      cachedConstantBuffers_[index] = bufferAddress;
-      constantBufferBound_[index] = true;
-      IGL_D3D12_LOG_VERBOSE("bindBuffer: Cached CBV at index %u with address 0x%llx\n", index, bufferAddress);
-    } else if (index == 2) {
-      // b2 maps to push constants (root parameter 0)
-      void* bufferData = nullptr;
-      HRESULT hr = d3dBuffer->getResource()->Map(0, nullptr, &bufferData);
-      if (SUCCEEDED(hr) && bufferData) {
-        const size_t bufferSize = d3dBuffer->getSizeInBytes();
-        const size_t clampedSize = std::min(bufferSize, static_cast<size_t>(256));
+    // Use bufferSize if provided; otherwise, bind the remaining bytes from offset.
+    // This matches the cross-backend contract: bufferSize == 0 means "remaining size".
+    const size_t fullSize = buffer->getSizeInBytes();
+    const size_t size = (bufferSize != 0 && bufferSize <= fullSize)
+                            ? bufferSize
+                            : (offset < fullSize ? (fullSize - offset) : 0);
 
-        const uint32_t num32BitValues = static_cast<uint32_t>((clampedSize + 3) / 4);
-        commandList_->SetGraphicsRoot32BitConstants(
-            0,  // Root parameter index (push constants at b2)
-            num32BitValues,
-            static_cast<const uint8_t*>(bufferData) + offset,
-            0);
-
-        d3dBuffer->getResource()->Unmap(0, nullptr);
-        IGL_D3D12_LOG_VERBOSE("bindBuffer: Bound index 2 (b2) as push constants (%zu bytes)\n", clampedSize);
-      } else {
-        IGL_LOG_ERROR("bindBuffer: Failed to map buffer for index 2 (b2) push constants\n");
-      }
-    }
+    // Delegate to resourcesBinder which caches the binding and marks dirty flag
+    // The actual binding will happen in resourcesBinder_.updateBindings()
+    resourcesBinder_.bindBuffer(index, buffer, offset, size, false, 0);
   }
 
   IGL_D3D12_LOG_VERBOSE("bindBuffer END\n");
@@ -1455,19 +1377,126 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
     return;
   }
 
+  // NEW PATH:
+  // Delegate all buffer bindings to D3D12ResourcesBinder so that CBVs/SRVs/UAVs are created and
+  // bound through a single, reflection-aware path. BindGroup slots map directly to shader
+  // registers (bN / tN / uN), just like Vulkan bindings.
+  {
+    uint32_t dynIdx = 0;
+    for (uint32_t slot = 0; slot < IGL_UNIFORM_BLOCKS_BINDING_MAX; ++slot) {
+      auto& bufferHandle = desc->buffers[slot];
+      size_t baseOffset = desc->offset[slot];
+      size_t size = desc->size[slot];
+
+      if ((desc->isDynamicBufferMask & (1u << slot)) != 0) {
+        if (dynIdx < numDynamicOffsets && dynamicOffsets) {
+          baseOffset = dynamicOffsets[dynIdx++];
+        }
+      }
+
+      if (!bufferHandle) {
+        // Unbind any previous buffer/UAV at this slot.
+        resourcesBinder_.bindBuffer(slot, nullptr, 0, 0, false, 0);
+        continue;
+      }
+
+      auto* buf = static_cast<Buffer*>(bufferHandle.get());
+      const bool isUniform =
+          (buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0;
+      const bool isStorage =
+          (buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0;
+
+      // Track resource so its lifetime is tied to the command buffer.
+      commandBuffer_.trackTransientResource(buf->getResource());
+
+      if (isUniform) {
+        // For CBVs, size == 0 means "remaining bytes from offset". Respect explicit sizes when provided.
+        resourcesBinder_.bindBuffer(slot, buf, baseOffset, size, false, 0);
+      } else if (isStorage) {
+        // Storage buffer: delegate to UAV/SRV binding path in D3D12ResourcesBinder.
+        // Use the buffer's storage element stride when available; default to 4 bytes.
+        size_t elementStride = buf->getStorageElementStride();
+        if (elementStride == 0) {
+          elementStride = 4;
+        }
+        resourcesBinder_.bindBuffer(slot, buf, baseOffset, size, true, elementStride);
+      } else {
+        IGL_LOG_ERROR(
+            "bindBindGroup(buffer): Buffer at slot %u is neither Uniform nor Storage\n", slot);
+      }
+    }
+    usedBindGroup_ = true;
+    return;
+  }
+
   auto* cmd = commandList_;
   if (!cmd) {
     IGL_LOG_ERROR("bindBindGroup(buffer): null command list\n");
     return;
   }
 
-  // Emulate Vulkan dynamic offsets for uniform buffers by binding to root CBVs (b0,b1) when possible.
-  // Note: Current RS exposes two root CBVs (params 1 and 2). Additional CBVs and storage buffers should
-  // be promoted to SRV/UAV tables in a future RS update.
-  uint32_t dynIdx = 0;
-
+  // CRITICAL: D3D12 descriptor tables MUST be contiguous in the descriptor heap.
+  // SetGraphicsRootDescriptorTable passes a GPU handle to the START of a contiguous block.
+  // D3D12 accesses descriptors using: baseHandle + tableOffset.
+  //
+  // Example: If BindGroupBufferDesc has buffers at slots 3-6:
+  //   - We need descriptors at heap indices [base+0] through [base+6]
+  //   - Slots 0-2 get NULL CBVs, slots 3-6 get real CBVs
+  //   - SetGraphicsRootDescriptorTable receives handle to heap[base+0]
+  //   - Shader accessing b3 reads from heap[base+3]
+  //
+  // First pass: Determine highest slot index to calculate total descriptor count
+  uint32_t maxSlotUsed = 0;
   for (uint32_t slot = 0; slot < IGL_UNIFORM_BLOCKS_BINDING_MAX; ++slot) {
-    if (!desc->buffers[slot]) continue; // Skip empty slots
+    if (desc->buffers[slot]) {
+      auto* buf = static_cast<Buffer*>(desc->buffers[slot].get());
+      const bool isUniform = (buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0;
+      if (isUniform) {
+        maxSlotUsed = slot;
+      }
+    }
+  }
+
+  if (maxSlotUsed == 0 && !desc->buffers[0]) {
+    // No uniform buffers to bind
+    return;
+  }
+
+  cbvTableCount_ = maxSlotUsed + 1;
+
+  // Allocate a CONTIGUOUS block of descriptors for the entire descriptor table
+  uint32_t baseDescriptorIndex = 0;
+  Result allocResult = commandBuffer_.allocateCbvSrvUavRange(static_cast<uint32_t>(cbvTableCount_), &baseDescriptorIndex);
+  if (!allocResult.isOk()) {
+    IGL_LOG_ERROR("bindBindGroup(buffer): Failed to allocate contiguous CBV descriptor range (%zu descriptors): %s\n",
+                 cbvTableCount_, allocResult.message.c_str());
+    return;
+  }
+
+  auto& context = commandBuffer_.getContext();
+  auto* d3d12Device = context.getDevice();
+
+  IGL_D3D12_LOG_VERBOSE("bindBindGroup(buffer): Allocated contiguous CBV descriptor block: base=%u, count=%zu\n",
+               baseDescriptorIndex, cbvTableCount_);
+
+  // Second pass: Create CBV descriptors in the contiguous block
+  uint32_t dynIdx = 0;
+  for (uint32_t slot = 0; slot < cbvTableCount_; ++slot) {
+    // Calculate descriptor index within the contiguous block
+    uint32_t descriptorIndex = baseDescriptorIndex + slot;
+    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
+
+    if (!desc->buffers[slot]) {
+      // Create NULL CBV for empty slots
+      D3D12_CONSTANT_BUFFER_VIEW_DESC nullCbvDesc = {};
+      nullCbvDesc.BufferLocation = 0;
+      nullCbvDesc.SizeInBytes = 256;  // Minimum CBV alignment
+      d3d12Device->CreateConstantBufferView(&nullCbvDesc, cpuHandle);
+
+      IGL_D3D12_LOG_VERBOSE("bindBindGroup(buffer): Created NULL CBV at heap[%u] for empty slot %u\n",
+                   descriptorIndex, slot);
+      continue;
+    }
 
     auto* buf = static_cast<Buffer*>(desc->buffers[slot].get());
     const bool isUniform = (buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0;
@@ -1488,29 +1517,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
       const size_t aligned = (baseOffset + 255) & ~size_t(255);
       D3D12_GPU_VIRTUAL_ADDRESS addr = buf->gpuAddress(aligned);
 
-      // Map BindGroupBufferDesc slot index to descriptor table index
-      // BindGroupBufferDesc slots 0,1,2,... map to descriptor table b3,b4,b5,...
-      // This allows cross-platform bind group code to use indices starting from 0
-      const uint32_t tableIndex = slot;  // slot 0 -> b3, slot 1 -> b4, etc.
-
-      if (tableIndex < IGL_BUFFER_BINDINGS_MAX) {
-        // Allocate descriptor from per-frame heap
-        // Uses Result-based allocation with dynamic heap growth.
-        uint32_t descriptorIndex = 0;
-        Result allocResult = commandBuffer_.getNextCbvSrvUavDescriptor(&descriptorIndex);
-        if (!allocResult.isOk()) {
-          IGL_LOG_ERROR("bindBindGroup(buffer): Failed to allocate CBV descriptor: %s\n", allocResult.message.c_str());
-          continue;
-        }
-
-        // Get context and device
-        auto& context = commandBuffer_.getContext();
-        auto* device = context.getDevice();
-
-        // Get CPU/GPU descriptor handles for this slot
-        D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = context.getCbvSrvUavCpuHandle(descriptorIndex);
-        D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = context.getCbvSrvUavGpuHandle(descriptorIndex);
-
+      if (slot < IGL_BUFFER_BINDINGS_MAX) {
         // Respect requested buffer size and enforce the 64 KB limit.
         // If size[slot] is 0, use remaining buffer size from offset
         size_t requestedSize = desc->size[slot];
@@ -1526,34 +1533,28 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
           continue;  // Skip this binding
         }
 
-        // Create CBV descriptor
+        // Create CBV descriptor in the contiguous block
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
         cbvDesc.BufferLocation = addr;
         cbvDesc.SizeInBytes = static_cast<UINT>((requestedSize + 255) & ~255);  // Must be 256-byte aligned
 
         // Pre-creation validation.
-        IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateConstantBufferView");
+        IGL_DEBUG_ASSERT(d3d12Device != nullptr, "Device is null before CreateConstantBufferView");
         IGL_DEBUG_ASSERT(addr != 0, "Buffer GPU address is null");
         IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "CBV descriptor handle is invalid");
         IGL_DEBUG_ASSERT(cbvDesc.SizeInBytes <= kMaxCBVSize, "CBV size exceeds 64 KB after alignment");
 
-        device->CreateConstantBufferView(&cbvDesc, cpuHandle);
+        d3d12Device->CreateConstantBufferView(&cbvDesc, cpuHandle);
 
-        // Cache the GPU handle for the descriptor table
-        // BindGroupBufferDesc index 0 -> table index 0 (b3), index 1 -> table index 1 (b4), etc.
-        cachedCbvTableGpuHandles_[tableIndex] = gpuHandle;
-        cbvTableBound_[tableIndex] = true;
-        cbvTableCount_ = std::max(cbvTableCount_, static_cast<size_t>(tableIndex + 1));
-
-        IGL_D3D12_LOG_VERBOSE("bindBindGroup(buffer): bound uniform buffer at BindGroupBufferDesc[%u] to b%u (descriptor table index %u, GPU handle 0x%llx)\n",
-                     slot, slot + 3, tableIndex, gpuHandle.ptr);
+        IGL_D3D12_LOG_VERBOSE("bindBindGroup(buffer): Created CBV at heap[%u] for slot %u (addr=0x%llx, size=%u)\n",
+                     descriptorIndex, slot, addr, cbvDesc.SizeInBytes);
       } else {
         IGL_LOG_ERROR("bindBindGroup(buffer): BindGroupBufferDesc slot %u exceeds maximum (%u)\n", slot, IGL_BUFFER_BINDINGS_MAX);
       }
     } else if (isStorage) {
       // Implement storage buffer binding via UAV/SRV descriptors.
-      auto& context = commandBuffer_.getContext();
-      auto* device = context.getDevice();
+      auto& storageContext = commandBuffer_.getContext();
+      auto* d3dDevice = storageContext.getDevice();
       ID3D12Resource* resource = buf->getResource();
 
       // Determine if buffer is read-write (UAV) or read-only (SRV)
@@ -1616,17 +1617,21 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
         uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 
         // Pre-creation validation.
-        IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateUnorderedAccessView");
+        IGL_DEBUG_ASSERT(d3dDevice != nullptr, "Device is null before CreateUnorderedAccessView");
         IGL_DEBUG_ASSERT(resource != nullptr, "Buffer resource is null");
         IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "UAV descriptor handle is invalid");
 
-        device->CreateUnorderedAccessView(resource, nullptr, &uavDesc, cpuHandle);
+        d3dDevice->CreateUnorderedAccessView(resource, nullptr, &uavDesc, cpuHandle);
 
-        // Bind UAV descriptor table (graphics root parameter 6: UAV table)
-        commandList_->SetGraphicsRootDescriptorTable(6, gpuHandle);
-
-        IGL_D3D12_LOG_VERBOSE("bindBindGroup(buffer): bound read-write storage buffer at slot %u (UAV u%u, GPU handle 0x%llx)\n",
-                     slot, slot, gpuHandle.ptr);
+        // Bind UAV descriptor table using dynamic root parameter index from pipeline
+        const UINT uavTableIndex = currentRenderPipelineState_->getUAVTableRootParameterIndex();
+        if (uavTableIndex != UINT_MAX) {
+          commandList_->SetGraphicsRootDescriptorTable(uavTableIndex, gpuHandle);
+          IGL_D3D12_LOG_VERBOSE("bindBindGroup(buffer): bound read-write storage buffer at slot %u (UAV u%u, root param %u, GPU handle 0x%llx)\n",
+                       slot, slot, uavTableIndex, gpuHandle.ptr);
+        } else {
+          IGL_LOG_ERROR("bindBindGroup(buffer): Pipeline has no UAV table root parameter for storage buffer binding\n");
+        }
       } else {
         // Create SRV for read-only storage buffer
         // Uses Result-based allocation with dynamic heap growth.
@@ -1680,26 +1685,38 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
         srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
         // Pre-creation validation.
-        IGL_DEBUG_ASSERT(device != nullptr, "Device is null before CreateShaderResourceView");
+        IGL_DEBUG_ASSERT(d3dDevice != nullptr, "Device is null before CreateShaderResourceView");
         IGL_DEBUG_ASSERT(resource != nullptr, "Buffer resource is null");
         IGL_DEBUG_ASSERT(cpuHandle.ptr != 0, "SRV descriptor handle is invalid");
 
-        device->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
+        d3dDevice->CreateShaderResourceView(resource, &srvDesc, cpuHandle);
 
         // Bind SRV descriptor table (graphics root parameter 4: SRV table)
         // Note: This shares the texture SRV table; storage buffers and textures will be bound together.
         // PRECEDENCE: Storage buffer SRVs bound here will override any previous texture SRVs bound via
-        // the binder or bindBindGroup(texture) for root parameter 4. The last SetGraphicsRootDescriptorTable
-        // call wins. This is intentional - storage buffer bindings via bindBindGroup(buffer) take precedence
-        // over texture bindings. If both storage buffers and textures are needed, they should be coordinated
-        // at the application level to ensure correct binding order.
-        commandList_->SetGraphicsRootDescriptorTable(4, gpuHandle);
-
-        IGL_D3D12_LOG_VERBOSE("bindBindGroup(buffer): bound read-only storage buffer at slot %u (SRV t%u, GPU handle 0x%llx)\n",
-                     slot, slot, gpuHandle.ptr);
+        // Bind SRV descriptor table using dynamic root parameter index from pipeline
+        // This may rebind the SRV table that was previously set by bindBindGroup(texture). The last
+        // SetGraphicsRootDescriptorTable call wins - storage buffer bindings take precedence.
+        const UINT srvTableIndex = currentRenderPipelineState_->getSRVTableRootParameterIndex();
+        if (srvTableIndex != UINT_MAX) {
+          commandList_->SetGraphicsRootDescriptorTable(srvTableIndex, gpuHandle);
+          IGL_D3D12_LOG_VERBOSE("bindBindGroup(buffer): bound read-only storage buffer at slot %u (SRV t%u, root param %u, GPU handle 0x%llx)\n",
+                       slot, slot, srvTableIndex, gpuHandle.ptr);
+        } else {
+          IGL_LOG_ERROR("bindBindGroup(buffer): Pipeline has no SRV table root parameter for storage buffer binding\n");
+        }
       }
     }
   }
+
+  // Store the GPU handle of the FIRST descriptor in the contiguous block.
+  // SetGraphicsRootDescriptorTable will use this handle, and D3D12 will access
+  // subsequent descriptors using: baseHandle + tableOffset.
+  D3D12_GPU_DESCRIPTOR_HANDLE baseGpuHandle = context.getCbvSrvUavGpuHandle(baseDescriptorIndex);
+  cachedCbvTableGpuHandles_[0] = baseGpuHandle;
+
+  IGL_D3D12_LOG_VERBOSE("bindBindGroup(buffer): Stored base GPU handle 0x%llx for CBV table (spans heap[%u] to heap[%u])\n",
+               baseGpuHandle.ptr, baseDescriptorIndex, baseDescriptorIndex + cbvTableCount_ - 1);
 
   // Mark that bindBindGroup was used (vs storage buffer SRV or binder paths).
   usedBindGroup_ = true;

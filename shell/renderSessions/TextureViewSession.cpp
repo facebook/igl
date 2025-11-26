@@ -148,7 +148,7 @@ std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& devi
                                                            nullptr);
   case igl::BackendType::D3D12: {
     static const char* kVS = R"(
-      cbuffer VertexUniforms : register(b1) { float4x4 mvpMatrix; };
+      cbuffer PushConstants : register(b2) { float4x4 mvpMatrix; };
       struct VSIn { float3 position : POSITION; float2 uv : TEXCOORD0; };
       struct VSOut { float4 position : SV_POSITION; float2 uv : TEXCOORD0; };
       VSOut main(VSIn v) {

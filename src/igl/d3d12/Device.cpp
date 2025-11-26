@@ -2060,7 +2060,36 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
       Result::setOk(outResult);
       // Create a copy of the root signature for the returned object
       igl::d3d12::ComPtr<ID3D12RootSignature> rootSigCopy = rootSignature;
-      return std::make_shared<RenderPipelineState>(desc, std::move(pipelineState), std::move(rootSigCopy));
+      auto renderPipeline = std::make_shared<RenderPipelineState>(desc, std::move(pipelineState), std::move(rootSigCopy));
+
+      // Compute root parameter layout from shader reflection key (same as cache miss path)
+      UINT paramIndex = 0;
+
+      if (rootSigKey.hasPushConstants) {
+        renderPipeline->shaderReflection_.pushConstantRootParamIndex = paramIndex++;
+      }
+
+      if (!rootSigKey.usedCBVSlots.empty()) {
+        renderPipeline->rootParamLayout_.cbvTableIndex = paramIndex++;
+        renderPipeline->rootParamLayout_.cbvDescriptorCount = rootSigKey.maxCBVSlot + 1;
+      }
+
+      if (!rootSigKey.usedSRVSlots.empty()) {
+        renderPipeline->rootParamLayout_.srvTableIndex = paramIndex++;
+        renderPipeline->rootParamLayout_.srvDescriptorCount = rootSigKey.maxSRVSlot + 1;
+      }
+
+      if (!rootSigKey.usedSamplerSlots.empty()) {
+        renderPipeline->rootParamLayout_.samplerTableIndex = paramIndex++;
+        renderPipeline->rootParamLayout_.samplerDescriptorCount = rootSigKey.maxSamplerSlot + 1;
+      }
+
+      if (!rootSigKey.usedUAVSlots.empty()) {
+        renderPipeline->rootParamLayout_.uavTableIndex = paramIndex++;
+        renderPipeline->rootParamLayout_.uavDescriptorCount = rootSigKey.maxUAVSlot + 1;
+      }
+
+      return renderPipeline;
     }
   }
 
@@ -2069,43 +2098,10 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
 
   IGL_D3D12_LOG_VERBOSE("  Creating pipeline state (this may take a moment)...\n");
 
-  // DIAGNOSTIC: Check root signature compatibility with shader resources
-  IGL_LOG_ERROR("=== SHADER RESOURCE ANALYSIS ===\n");
-  igl::d3d12::ComPtr<ID3D12ShaderReflection> vsRefl, psRefl;
-  if (SUCCEEDED(D3DReflect(vsBytecode.data(), vsBytecode.size(), IID_PPV_ARGS(vsRefl.GetAddressOf())))) {
-    D3D12_SHADER_DESC vsDesc = {};
-    vsRefl->GetDesc(&vsDesc);
-    IGL_LOG_ERROR("VS expects %u resources:\n", vsDesc.BoundResources);
-    for (UINT i = 0; i < vsDesc.BoundResources; ++i) {
-      D3D12_SHADER_INPUT_BIND_DESC bindDesc = {};
-      vsRefl->GetResourceBindingDesc(i, &bindDesc);
-      const char* regType = bindDesc.Type == D3D_SIT_CBUFFER ? "b" :
-                            (bindDesc.Type == D3D_SIT_TEXTURE || bindDesc.Type == D3D_SIT_STRUCTURED) ? "t" :
-                            bindDesc.Type == D3D_SIT_SAMPLER ? "s" : "u";
-      IGL_LOG_ERROR("  %s at %s%u\n", bindDesc.Name, regType, bindDesc.BindPoint);
-    }
-  }
-  if (SUCCEEDED(D3DReflect(psBytecode.data(), psBytecode.size(), IID_PPV_ARGS(psRefl.GetAddressOf())))) {
-    D3D12_SHADER_DESC psDesc = {};
-    psRefl->GetDesc(&psDesc);
-    IGL_LOG_ERROR("PS expects %u resources:\n", psDesc.BoundResources);
-    for (UINT i = 0; i < psDesc.BoundResources; ++i) {
-      D3D12_SHADER_INPUT_BIND_DESC bindDesc = {};
-      psRefl->GetResourceBindingDesc(i, &bindDesc);
-      const char* regType = bindDesc.Type == D3D_SIT_CBUFFER ? "b" :
-                            (bindDesc.Type == D3D_SIT_TEXTURE || bindDesc.Type == D3D_SIT_STRUCTURED) ? "t" :
-                            bindDesc.Type == D3D_SIT_SAMPLER ? "s" : "u";
-      IGL_LOG_ERROR("  %s at %s%u\n", bindDesc.Name, regType, bindDesc.BindPoint);
-    }
-  }
-  IGL_LOG_ERROR("Root signature provides:\n");
-  IGL_LOG_ERROR("  Root CBVs at b0/b1, CBV table b2-b15, SRV/Sampler/UAV tables\n");
-  IGL_LOG_ERROR("================================\n");
-
-  // Run a more detailed validation pass that cross-checks shader signatures
-  // against the input layout and render target configuration. This is intended
-  // for diagnostics and can be disabled via IGL_D3D12_VALIDATE_SHADER_BINDINGS=0.
-  validateShaderBindingsAndLayout(desc, psoDesc, inputElements, vsRefl.Get(), psRefl.Get());
+  // Optional: a more detailed validation pass (validateShaderBindingsAndLayout) can be
+  // re-enabled here if needed for diagnostics. It was previously wired to shader reflection
+  // and emitted verbose logs on every cache miss; for normal runs we rely on the D3D12
+  // debug layer instead.
 
   hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
     if (FAILED(hr)) {
@@ -2178,8 +2174,45 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
 
   IGL_D3D12_LOG_VERBOSE("Device::createRenderPipeline() SUCCESS - PSO=%p, RootSig=%p (hash=0x%zx)\n",
                pipelineState.Get(), rootSignature.Get(), psoHash);
+
+  // Create the pipeline state object
+  auto renderPipeline = std::make_shared<RenderPipelineState>(desc, std::move(pipelineState), std::move(rootSignature));
+
+  // Compute root parameter layout from shader reflection key
+  // The layout order matches createRootSignatureFromKey():
+  //   1. Push constants (if present)
+  //   2. CBV table (if shader uses CBVs)
+  //   3. SRV table (if shader uses SRVs)
+  //   4. Sampler table (if shader uses samplers)
+  //   5. UAV table (if shader uses UAVs)
+  UINT paramIndex = 0;
+
+  if (rootSigKey.hasPushConstants) {
+    renderPipeline->shaderReflection_.pushConstantRootParamIndex = paramIndex++;
+  }
+
+  if (!rootSigKey.usedCBVSlots.empty()) {
+    renderPipeline->rootParamLayout_.cbvTableIndex = paramIndex++;
+    renderPipeline->rootParamLayout_.cbvDescriptorCount = rootSigKey.maxCBVSlot + 1;
+  }
+
+  if (!rootSigKey.usedSRVSlots.empty()) {
+    renderPipeline->rootParamLayout_.srvTableIndex = paramIndex++;
+    renderPipeline->rootParamLayout_.srvDescriptorCount = rootSigKey.maxSRVSlot + 1;
+  }
+
+  if (!rootSigKey.usedSamplerSlots.empty()) {
+    renderPipeline->rootParamLayout_.samplerTableIndex = paramIndex++;
+    renderPipeline->rootParamLayout_.samplerDescriptorCount = rootSigKey.maxSamplerSlot + 1;
+  }
+
+  if (!rootSigKey.usedUAVSlots.empty()) {
+    renderPipeline->rootParamLayout_.uavTableIndex = paramIndex++;
+    renderPipeline->rootParamLayout_.uavDescriptorCount = rootSigKey.maxUAVSlot + 1;
+  }
+
   Result::setOk(outResult);
-  return std::make_shared<RenderPipelineState>(desc, std::move(pipelineState), std::move(rootSignature));
+  return renderPipeline;
 }
 
 // D3D12-specific: Create PSO variant with substituted render target formats
@@ -2952,7 +2985,82 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
           IGL_LOG_INFO("================================\n\n");
         }
       } else {
-        IGL_D3D12_LOG_VERBOSE("  Failed to create shader reflection: 0x%08X (non-fatal)\n", hr);
+        IGL_D3D12_LOG_VERBOSE("  Failed to create DXIL reflection: 0x%08X, trying D3DReflect for DXBC bytecode...\n", hr);
+
+        // Fallback to D3DReflect for DXBC bytecode (FXC-compiled shaders)
+        hr = D3DReflect(module->getBytecode().data(), module->getBytecode().size(),
+                        IID_PPV_ARGS(reflection.GetAddressOf()));
+
+        if (SUCCEEDED(hr)) {
+          module->setReflection(reflection);
+          IGL_D3D12_LOG_VERBOSE("  Shader reflection created successfully (DXBC reflection)\n");
+
+          // Emit reflection dump for DXBC shaders as well
+          D3D12_SHADER_DESC shaderDesc = {};
+          if (SUCCEEDED(reflection->GetDesc(&shaderDesc))) {
+            const char* stageStr = "UNKNOWN";
+            switch (desc.info.stage) {
+            case ShaderStage::Vertex:
+              stageStr = "VERTEX";
+              break;
+            case ShaderStage::Fragment:
+              stageStr = "FRAGMENT/PIXEL";
+              break;
+            case ShaderStage::Compute:
+              stageStr = "COMPUTE";
+              break;
+            default:
+              break;
+            }
+
+            IGL_LOG_INFO("\n=== SHADER REFLECTION (%s - %s) [DXBC] ===\n",
+                         stageStr,
+                         desc.info.entryPoint.c_str());
+            IGL_LOG_INFO("  Bound Resources: %u\n", shaderDesc.BoundResources);
+            for (UINT i = 0; i < shaderDesc.BoundResources; ++i) {
+              D3D12_SHADER_INPUT_BIND_DESC bindDesc = {};
+              if (SUCCEEDED(reflection->GetResourceBindingDesc(i, &bindDesc))) {
+                const char* typeStr = "Unknown";
+                const char* registerPrefix = "?";
+                switch (bindDesc.Type) {
+                case D3D_SIT_CBUFFER:
+                  typeStr = "ConstantBuffer";
+                  registerPrefix = "b";
+                  break;
+                case D3D_SIT_TBUFFER:
+                  typeStr = "TextureBuffer";
+                  registerPrefix = "t";
+                  break;
+                case D3D_SIT_TEXTURE:
+                  typeStr = "Texture";
+                  registerPrefix = "t";
+                  break;
+                case D3D_SIT_SAMPLER:
+                  typeStr = "Sampler";
+                  registerPrefix = "s";
+                  break;
+                case D3D_SIT_UAV_RWTYPED:
+                  typeStr = "RWTexture/UAV";
+                  registerPrefix = "u";
+                  break;
+                default:
+                  break;
+                }
+
+                IGL_LOG_INFO("    [%u] %s '%s' at %s%u (space %u)\n",
+                             i,
+                             typeStr,
+                             bindDesc.Name,
+                             registerPrefix,
+                             bindDesc.BindPoint,
+                             bindDesc.Space);
+              }
+            }
+            IGL_LOG_INFO("================================\n\n");
+          }
+        } else {
+          IGL_D3D12_LOG_VERBOSE("  Failed to create reflection with both DXC and D3DReflect: 0x%08X (non-fatal)\n", hr);
+        }
       }
     } else {
       IGL_D3D12_LOG_VERBOSE("  Failed to create DXC utils for reflection: 0x%08X (non-fatal)\n", hr);
