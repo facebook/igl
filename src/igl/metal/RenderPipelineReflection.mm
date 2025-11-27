@@ -8,9 +8,15 @@
 #include "RenderPipelineReflection.h"
 
 #include <Foundation/Foundation.h>
-#include <lang/switch.h>
 #include <igl/Common.h>
 #include <igl/metal/Texture.h>
+
+#if !defined(IGL_CMAKE_BUILD)
+#include <lang/switch.h>
+#else
+#define NON_EXHAUSTIVE_SWITCH_BEGIN
+#define NON_EXHAUSTIVE_SWITCH_END
+#endif // !defined(IGL_CMAKE_BUILD)
 
 using namespace igl;
 
