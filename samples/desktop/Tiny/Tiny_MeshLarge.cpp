@@ -257,7 +257,6 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID) {
   // Luminance per https://www.w3.org/TR/AERT/#color-contrast
   float luminance = dot(color, float4(0.299f, 0.587f, 0.114f, 0.0f));
   float gray = saturate(luminance);
-
   texFullScreen[coord] = float4(gray, gray, gray, color.a);
 }
 )";
@@ -465,9 +464,6 @@ float computeShadow(Texture2D shadowTex, SamplerComparisonState shadowSamp, floa
 
 float4 main(PSInput input) : SV_TARGET {
   float3 n = normalize(input.normal);
-  if (perFrame.bDrawNormals != 0) {
-    return float4(0.5f * (n + float3(1.0f, 1.0f, 1.0f)), 1.0f);
-  }
 
   // Alpha cutout using the bound alpha texture.
   float4 alphaSample = texAlpha.Sample(samplerLinear, input.uv);
@@ -504,9 +500,17 @@ float4 main(PSInput input) : SV_TARGET {
   float texelSize = 1.0f / float(shadowWidth);
   float shadowTerm = computeShadow(texShadow, samplerShadow, texelSize, input.shadowCoords);
 
-  // Match the GLSL path more closely: apply the shadow term directly
-  // to the diffuse contribution without additional NdotL scaling.
-  float3 color =  diffuse * shadowTerm;
+  // Debug modes controlled via perFrame.bDrawNormals:
+  // 0 = regular shading, 1 = visualize normals, 2 = visualize shadow term only.
+  if (perFrame.bDrawNormals == 1) {
+    return float4(0.5f * (n + float3(1.0f, 1.0f, 1.0f)), 1.0f);
+  }
+  if (perFrame.bDrawNormals == 2) {
+    return float4(shadowTerm.xxx, 1.0f);
+  }
+
+  // Regular shading: apply the shadow term directly to the diffuse contribution.
+  float3 color = diffuse * shadowTerm;
 
   return float4(color, 1.0f);
 }
@@ -901,7 +905,6 @@ void main() {
   vec4 Ka = mtl.ambient * texture(texAmbient, vtx.uv);
   vec4 Kd = mtl.diffuse * texture(texDiffuse, vtx.uv);
 #endif
-  bool drawNormals = perFrame.bDrawNormals > 0;
   if (Kd.a < 0.5)
     discard;
   vec3 n = normalize(vtx.normal);
@@ -911,9 +914,17 @@ void main() {
   // IBL diffuse
   const vec4 f0 = vec4(0.04);
   vec4 diffuse = texture(texSkyboxIrradiance, n) * Kd * (vec4(1.0) - f0);
-  out_FragColor = drawNormals ?
-    vec4(0.5 * (n+vec3(1.0)), 1.0) :
-     diffuse ;
+
+  // Debug modes controlled via perFrame.bDrawNormals:
+  // 0 = regular shading, 1 = visualize normals, 2 = visualize shadow term only.
+  if (perFrame.bDrawNormals == 1) {
+    out_FragColor = vec4(0.5 * (n + vec3(1.0)), 1.0);
+  } else if (perFrame.bDrawNormals == 2) {
+    float s = shadow(vtx.shadowCoords);
+    out_FragColor = vec4(vec3(s), 1.0);
+  } else {
+    out_FragColor = diffuse;
+  }
 };
 )";
 
@@ -1296,7 +1307,8 @@ static GLFWwindow* initIGL(bool isHeadless) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
       }
       if (key == GLFW_KEY_N && pressed) {
-        perFrame_.bDrawNormals = (perFrame_.bDrawNormals + 1) % 2;
+        // 0 = normal shading, 1 = visualize normals, 2 = visualize shadow/occlusion term
+        perFrame_.bDrawNormals = (perFrame_.bDrawNormals + 1) % 3;
       }
       if (key == GLFW_KEY_C && pressed) {
         enableComputePass_ = !enableComputePass_;
