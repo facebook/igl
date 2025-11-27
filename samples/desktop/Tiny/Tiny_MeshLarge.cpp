@@ -403,16 +403,31 @@ struct UniformsPerFrame {
 
 cbuffer PerFrame : register(b0) { UniformsPerFrame perFrame; };
 
+// Per-material multipliers for D3D12 mesh pipeline, bound as a CBV array
+// at b2 via commands->bindBuffer(2, ...) and indexed by PSInput.mtlIndex.
+struct MaterialParams {
+  float4 ambient;
+  float4 diffuse;
+};
+
+// NOTE: This constant must be large enough to hold all materials in the scene.
+// The CPU side asserts that materials_.size() does not exceed this limit.
+static const uint MATERIAL_COUNT = 132;
+
+cbuffer MeshMaterials : register(b2) {
+  MaterialParams materials[MATERIAL_COUNT];
+};
+
 // Texture layout mirrors the OpenGL path:
 //   t0: shadow map
 //   t1: ambient texture
 //   t2: diffuse texture
 //   t3: alpha texture
 //   t4: skybox irradiance cubemap
-Texture2D  texShadow           : register(t0);
-Texture2D  texAmbient          : register(t1);
-Texture2D  texDiffuse          : register(t2);
-Texture2D  texAlpha            : register(t3);
+Texture2D  texShadow            : register(t0);
+Texture2D  texAmbient           : register(t1);
+Texture2D  texDiffuse           : register(t2);
+Texture2D  texAlpha             : register(t3);
 TextureCube texSkyboxIrradiance : register(t4);
 
 // Sampler layout:
@@ -426,8 +441,8 @@ struct PSInput {
   float3 normal       : NORMAL;
   float2 uv           : TEXCOORD0;
   float4 shadowCoords : TEXCOORD2;
-  // TEXCOORD1 (mtlIndex) is provided by the vertex shader but is not
-  // currently used in the D3D12 fragment shader; textures are bound
+  // TEXCOORD1 (mtlIndex) is provided by the vertex shader and is used
+  // to index the MeshMaterials CBV array (b2). Textures are still bound
   // per-draw based on the material of the current shape.
   nointerpolation uint mtlIndex : TEXCOORD1;
 };
@@ -465,6 +480,14 @@ float computeShadow(Texture2D shadowTex, SamplerComparisonState shadowSamp, floa
 float4 main(PSInput input) : SV_TARGET {
   float3 n = normalize(input.normal);
 
+  // Fetch material parameters from the b2 CBV array using the flat
+  // material index coming from the vertex shader.
+  uint materialIndex = input.mtlIndex;
+  if (materialIndex >= MATERIAL_COUNT) {
+    materialIndex = MATERIAL_COUNT - 1;
+  }
+  MaterialParams m = materials[materialIndex];
+
   // Alpha cutout using the bound alpha texture.
   float4 alphaSample = texAlpha.Sample(samplerLinear, input.uv);
   // Mirror the GLSL path's check that skips dummy 1x1 textures.
@@ -474,9 +497,10 @@ float4 main(PSInput input) : SV_TARGET {
     discard;
   }
 
-  // Ambient and diffuse terms from material textures.
-  float4 Ka = texAmbient.Sample(samplerLinear, input.uv);
-  float4 Kd = texDiffuse.Sample(samplerLinear, input.uv);
+  // Ambient and diffuse terms from material textures, modulated by
+  // per-material multipliers from the MeshMaterials CBV.
+  float4 Ka = m.ambient * texAmbient.Sample(samplerLinear, input.uv);
+  float4 Kd = m.diffuse * texDiffuse.Sample(samplerLinear, input.uv);
 
   // Discard surfaces with low diffuse alpha, matching GLSL sample.
   if (Kd.a < 0.5f) {
@@ -509,8 +533,8 @@ float4 main(PSInput input) : SV_TARGET {
     return float4(shadowTerm.xxx, 1.0f);
   }
 
-  // Regular shading: apply the shadow term directly to the diffuse contribution.
-  float3 color = diffuse * shadowTerm;
+  // Regular shading: ambient term plus shadowed diffuse contribution.
+  float3 color = Ka.rgb + diffuse * shadowTerm;
 
   return float4(color, 1.0f);
 }
@@ -923,7 +947,7 @@ void main() {
     float s = shadow(vtx.shadowCoords);
     out_FragColor = vec4(vec3(s), 1.0);
   } else {
-    out_FragColor = diffuse;
+    out_FragColor = Ka + diffuse * shadow(vtx.shadowCoords);
   }
 };
 )";
@@ -1090,6 +1114,11 @@ std::shared_ptr<IRenderPipelineState> renderPipelineState_Fullscreen_;
 std::shared_ptr<IBuffer> vb0_, ib0_; // buffers for vertices and indices
 std::shared_ptr<IBuffer> sbMaterials_; // storage buffer for materials
 std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerFrameShadow_, ubPerObject_;
+#if USE_D3D12_BACKEND
+// D3D12-only per-material CBV array (b2) used by the mesh fragment shader.
+// Each element stores ambient/diffuse multipliers for one material; indexed by mtlIndex.
+std::vector<std::shared_ptr<IBuffer>> ubMaterials_;
+#endif
 std::shared_ptr<IVertexInputState> vertexInput0_;
 std::shared_ptr<IVertexInputState> vertexInputShadows_;
 std::shared_ptr<IVertexInputState> vertexInputNone_;
@@ -1159,6 +1188,14 @@ struct GPUMaterial {
 };
 
 static_assert(sizeof(GPUMaterial) % 16 == 0);
+
+// D3D12-only per-material parameters used in a CBV array
+// bound at b2 in the mesh fragment shader.
+struct MaterialParams {
+  glm::vec4 ambient;
+  glm::vec4 diffuse;
+};
+static_assert(sizeof(MaterialParams) == 2 * sizeof(glm::vec4), "MaterialParams must be 32 bytes");
 
 std::vector<CachedMaterial> cachedMaterials_;
 std::vector<GPUMaterial> materials_;
@@ -1700,7 +1737,7 @@ void initModel(int numSamplesMSAA) {
     const auto bufType = BufferDesc::BufferTypeBits::Uniform;
     const auto hint = 0;
 #endif
-    // create an Uniform buffers to store uniforms for 2 objects
+    // create Uniform buffers to store uniforms for 2 objects
     for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
       ubPerFrame_.push_back(
           device_->createBuffer(BufferDesc(bufType,
@@ -1891,6 +1928,33 @@ void initModel(int numSamplesMSAA) {
                                             "Buffer: index"),
                                  nullptr);
   }
+
+#if USE_D3D12_BACKEND
+  // Initialize the D3D12 per-material CBV array (b2) used by the mesh shader.
+  // Each entry stores ambient/diffuse multipliers for a single material.
+  if (!materials_.empty()) {
+    // Sanity check: ensure we don't exceed the HLSL MATERIAL_COUNT constant.
+    const size_t materialCount = materials_.size();
+    IGL_DEBUG_ASSERT(materialCount <= 132, "D3D12 Mesh: materials_.size() (%zu) exceeds MATERIAL_COUNT (132)", materialCount);
+
+    std::vector<MaterialParams> materialParams(materialCount);
+    for (size_t i = 0; i < materialCount; ++i) {
+      materialParams[i].ambient = glm::vec4(materials_[i].ambient);
+      materialParams[i].diffuse = glm::vec4(materials_[i].diffuse);
+    }
+
+    for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
+      ubMaterials_.push_back(
+          device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
+                                           materialParams.data(),
+                                           materialParams.size() * sizeof(MaterialParams),
+                                           ResourceStorage::Shared,
+                                           0,
+                                           "Buffer: uniforms (materials) " + std::to_string(i)),
+                                nullptr));
+    }
+  }
+#endif
 }
 
 void createComputePipeline() {
@@ -2475,14 +2539,26 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
 
     const int sbIdx =
         glPipelineState->getUniformBlockBindingPoint(IGL_NAMEHANDLE(("MeshMaterials")));
+    commands->bindBuffer(ubPerFrameIdx, ubPerFrame_[frameIndex].get());
+    commands->bindBuffer(ubPerObjectIdx, ubPerObject_[frameIndex].get());
+    commands->bindBuffer(sbIdx, sbMaterials_.get());
+#elif USE_D3D12_BACKEND
+    const int ubPerFrameIdx = 0;
+    const int ubPerObjectIdx = 1;
+    const int ubMaterialsIdx = 2;
+    commands->bindBuffer(ubPerFrameIdx, ubPerFrame_[frameIndex].get());
+    commands->bindBuffer(ubPerObjectIdx, ubPerObject_[frameIndex].get());
+    if (frameIndex < ubMaterials_.size()) {
+      commands->bindBuffer(ubMaterialsIdx, ubMaterials_[frameIndex].get());
+    }
 #else
     const int ubPerFrameIdx = 0;
     const int ubPerObjectIdx = 1;
     const int sbIdx = 2;
-#endif
     commands->bindBuffer(ubPerFrameIdx, ubPerFrame_[frameIndex].get());
     commands->bindBuffer(ubPerObjectIdx, ubPerObject_[frameIndex].get());
     commands->bindBuffer(sbIdx, sbMaterials_.get());
+#endif
     // Shadow map (t0) and irradiance cubemap (t4); the material textures
     // are bound per-draw below at t1/t2/t3.
     commands->bindTexture(0, igl::BindTarget::kFragment, fbShadowMap_->getDepthAttachment().get());
@@ -2521,7 +2597,6 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
                                              ? textureDummyWhite_
                                          : textures_[imageIdx].alpha ? textures_[imageIdx].alpha
                                                                      : textureDummyBlack_;
-
       commands->bindTexture(1, igl::BindTarget::kFragment, ambientTextureReference.get());
       commands->bindTexture(2, igl::BindTarget::kFragment, diffuseTextureReference.get());
       commands->bindTexture(3, igl::BindTarget::kFragment, alphaTextureReference.get());
@@ -2599,13 +2674,13 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
     ITexture* tex = numSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0).get()
                                        : fbOffscreen_->getColorAttachment(0).get();
 #if USE_D3D12_BACKEND
-    // D3D12 compute shader uses RWTexture2D bound as UAV at u0.
+    // D3D12 grayscale compute shader operates directly on the color texture as RWTexture2D.
     commands->bindImageTexture(0, tex, tex->getFormat());
 #else
-#if !USE_OPENGL_BACKEND
+  #if !USE_OPENGL_BACKEND
     const uint32_t textureId = tex->getTextureId();
     commands->bindPushConstants(&textureId, sizeof(textureId));
-#endif
+  #endif
     commands->bindTexture(0, tex);
 #endif
     commands->dispatchThreadGroups(igl::Dimensions(width_, height_, 1), igl::Dimensions());
@@ -3258,6 +3333,9 @@ int main(int argc, char* argv[]) {
   ubPerFrame_.clear();
   ubPerFrameShadow_.clear();
   ubPerObject_.clear();
+#if USE_D3D12_BACKEND
+  ubMaterials_.clear();
+#endif
   renderPipelineState_Mesh_ = nullptr;
   renderPipelineState_MeshWireframe_ = nullptr;
   renderPipelineState_Shadow_ = nullptr;
