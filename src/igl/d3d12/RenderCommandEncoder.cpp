@@ -400,20 +400,79 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
     }
   }
 
-  // Set a default full-screen viewport/scissor if caller forgets. Prefer framebuffer attachment size.
+  // Set a default full-screen viewport/scissor if caller forgets. Prefer framebuffer attachments.
   IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Setting default viewport...\n");
-  if (framebuffer_ && framebuffer_->getColorAttachment(0)) {
-    IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Using framebuffer color attachment\n");
+  if (framebuffer_) {
+    // Prefer color attachment if present; otherwise fall back to depth attachment.
     auto colorTex = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(0));
+    auto depthTex = std::static_pointer_cast<Texture>(framebuffer_->getDepthAttachment());
+
+    Dimensions dims{};
     if (colorTex && colorTex->getResource()) {
-      auto dims = colorTex->getDimensions();
-      IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Framebuffer dimensions: %ux%u\n", dims.width, dims.height);
-      D3D12_VIEWPORT vp{}; vp.TopLeftX=0; vp.TopLeftY=0; vp.Width=(float)dims.width; vp.Height=(float)dims.height; vp.MinDepth=0; vp.MaxDepth=1;
+      dims = colorTex->getDimensions();
+      IGL_D3D12_LOG_VERBOSE(
+          "RenderCommandEncoder: Using framebuffer color attachment dimensions: %ux%u\n",
+          dims.width,
+          dims.height);
+    } else if (depthTex && depthTex->getResource()) {
+      dims = depthTex->getDimensions();
+      IGL_D3D12_LOG_VERBOSE(
+          "RenderCommandEncoder: Using framebuffer depth attachment dimensions: %ux%u\n",
+          dims.width,
+          dims.height);
+    }
+
+    if (dims.width > 0 && dims.height > 0) {
+      D3D12_VIEWPORT vp{};
+      vp.TopLeftX = 0;
+      vp.TopLeftY = 0;
+      vp.Width = static_cast<FLOAT>(dims.width);
+      vp.Height = static_cast<FLOAT>(dims.height);
+      vp.MinDepth = 0.0f;
+      vp.MaxDepth = 1.0f;
       commandList_->RSSetViewports(1, &vp);
-      D3D12_RECT sc{}; sc.left=0; sc.top=0; sc.right=(LONG)dims.width; sc.bottom=(LONG)dims.height; commandList_->RSSetScissorRects(1, &sc);
-      IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Set default viewport/scissor to %ux%u\n", dims.width, dims.height);
+
+      D3D12_RECT sc{};
+      sc.left = 0;
+      sc.top = 0;
+      sc.right = static_cast<LONG>(dims.width);
+      sc.bottom = static_cast<LONG>(dims.height);
+      commandList_->RSSetScissorRects(1, &sc);
+
+      IGL_D3D12_LOG_VERBOSE(
+          "RenderCommandEncoder: Set default viewport/scissor to %ux%u\n",
+          dims.width,
+          dims.height);
     } else {
-      IGL_LOG_ERROR("RenderCommandEncoder: Color texture is null or has no resource!\n");
+      IGL_LOG_ERROR(
+          "RenderCommandEncoder: Framebuffer has no valid color or depth attachment dimensions; "
+          "falling back to back buffer viewport.\n");
+      auto* backBufferRes = context.getCurrentBackBuffer();
+      if (backBufferRes) {
+        D3D12_RESOURCE_DESC bbDesc = backBufferRes->GetDesc();
+        D3D12_VIEWPORT vp{};
+        vp.TopLeftX = 0;
+        vp.TopLeftY = 0;
+        vp.Width = static_cast<FLOAT>(bbDesc.Width);
+        vp.Height = static_cast<FLOAT>(bbDesc.Height);
+        vp.MinDepth = 0.0f;
+        vp.MaxDepth = 1.0f;
+        commandList_->RSSetViewports(1, &vp);
+
+        D3D12_RECT scissor{};
+        scissor.left = 0;
+        scissor.top = 0;
+        scissor.right = static_cast<LONG>(bbDesc.Width);
+        scissor.bottom = static_cast<LONG>(bbDesc.Height);
+        commandList_->RSSetScissorRects(1, &scissor);
+
+        IGL_D3D12_LOG_VERBOSE(
+            "RenderCommandEncoder: Fallback viewport/scissor to back buffer %llux%u\n",
+            bbDesc.Width,
+            bbDesc.Height);
+      } else {
+        IGL_LOG_ERROR("RenderCommandEncoder: No back buffer available!\n");
+      }
     }
   } else {
     IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Using back buffer\n");

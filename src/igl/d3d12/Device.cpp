@@ -1989,7 +1989,8 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
           element.Format = DXGI_FORMAT_R32G32B32A32_UINT;
           break;
         case VertexAttributeFormat::Int_2_10_10_10_REV:
-          element.Format = DXGI_FORMAT_R10G10B10A2_UNORM;
+          // Use an unsigned 10:10:10:2 format and decode SNORM manually in the shader.
+          element.Format = DXGI_FORMAT_R10G10B10A2_UINT;
           break;
         default:
           element.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; // fallback

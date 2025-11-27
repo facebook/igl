@@ -168,21 +168,20 @@ constexpr bool kEnableCompression = false;
 // avoid any BC7 layout/toolchain discrepancies in this sample.
 constexpr bool kEnableCompression = false;
 #else
-constexpr bool kEnableCompression = true;
+// For the Vulkan path in this sample, also prefer uncompressed RGBA textures
+// to avoid any asset/cache mismatch between compressed and uncompressed data.
+constexpr bool kEnableCompression = false;
 constexpr bool kPreferIntegratedGPU = false;
 #if defined(NDEBUG)
 constexpr bool kEnableValidationLayers = false;
 #else
-constexpr bool kEnableValidationLayers = true;
+constexpr bool kEnableValidationLayers = false;
 #endif // NDEBUG
 #endif // USE_OPENGL_BACKEND
 
 std::string contentRootFolder;
 
 #if IGL_WITH_IGLU
-// ImGui overlay is not yet fully wired for the D3D12 Tiny_MeshLarge path.
-// For now, the ImGui session is only instantiated and used on non-D3D12
-// backends so that D3D12 debugging focuses on the main scene pipelines.
 igl::shell::InputDispatcher inputDispatcher_;
 std::unique_ptr<iglu::imgui::Session> imguiSession_;
 #endif // IGL_WITH_IGLU
@@ -239,11 +238,29 @@ void loadKtxTexture(const igl::IDevice& device,
 #endif // USE_TEXTURE_LOADER
 
 #if USE_D3D12_BACKEND
-// D3D12 does not consume the GLSL compute shader; the Tiny_MeshLarge
-// sample does not currently implement the post-process compute pass
-// for D3D12. The grayscale compute pipeline is compiled only for
-// OpenGL/Vulkan below.
-const char* kCodeComputeTest = R"()";
+// D3D12 compute shader for grayscale post-processing.
+// Operates in-place on the offscreen color texture bound as UAV u0.
+const char* kCodeComputeTest = R"(
+RWTexture2D<float4> texFullScreen : register(u0);
+
+[numthreads(1, 1, 1)]
+void main(uint3 dispatchThreadID : SV_DispatchThreadID) {
+  uint width, height;
+  texFullScreen.GetDimensions(width, height);
+
+  uint2 coord = dispatchThreadID.xy;
+  if (coord.x >= width || coord.y >= height) {
+    return;
+  }
+
+  float4 color = texFullScreen[coord];
+  // Luminance per https://www.w3.org/TR/AERT/#color-contrast
+  float luminance = dot(color, float4(0.299f, 0.587f, 0.114f, 0.0f));
+  float gray = saturate(luminance);
+
+  texFullScreen[coord] = float4(gray, gray, gray, color.a);
+}
+)";
 
 // Fullscreen triangle (D3D12 HLSL)
 const char* kCodeFullscreenVS = R"(
@@ -295,7 +312,10 @@ cbuffer PerObject : register(b1) { UniformsPerObject perObject; };
 
 struct VSInput {
   float3 pos      : POSITION;
-  float4 normal   : NORMAL;    // Packed as R10G10B10A2_UNORM, auto-converted to float4
+  // Int_2_10_10_10_REV is stored as a packed 10:10:10:2 integer and
+  // mapped to DXGI_FORMAT_R10G10B10A2_UINT; the GPU expands this as
+  // four unsigned components, one per channel.
+  uint4  normal   : NORMAL;
   float2 uv       : TEXCOORD0;  // HalfFloat2
   uint   mtlIndex : COLOR0;     // UInt1
 };
@@ -314,9 +334,18 @@ VSOutput main(VSInput input) {
   float4 worldPos = mul(perFrame.view, modelPos);
   o.position = mul(perFrame.proj, worldPos);
 
-  // Decode packed normal: R10G10B10A2_UNORM gives [0,1] range, convert back to [-1,1]
-  float3 decodedNormal = input.normal.xyz * 2.0f - 1.0f;
-
+  // The vertex buffer stores normals as Int_2_10_10_10_REV (SNORM) using
+  // glm::packSnorm3x10_1x2. Each 10-bit field arrives as an unsigned
+  // integer in normal.xyz; decode them back to signed [-1, 1].
+  const uint3 packed = input.normal.xyz;
+  const int sx = (packed.x > 511u) ? int(packed.x) - 1024 : int(packed.x);
+  const int sy = (packed.y > 511u) ? int(packed.y) - 1024 : int(packed.y);
+  const int sz = (packed.z > 511u) ? int(packed.z) - 1024 : int(packed.z);
+  const float scale = 1.0f / 511.0f;        // 2^(10-1) - 1
+  float3 decodedNormal = float3(
+      clamp(float(sx) * scale, -1.0f, 1.0f),
+      clamp(float(sy) * scale, -1.0f, 1.0f),
+      clamp(float(sz) * scale, -1.0f, 1.0f));
   float3x3 normMat = (float3x3)perObject.model;
   o.normal = normalize(mul(normMat, decodedNormal));
   o.uv = input.uv;
@@ -376,7 +405,7 @@ struct UniformsPerFrame {
 cbuffer PerFrame : register(b0) { UniformsPerFrame perFrame; };
 
 // Texture layout mirrors the OpenGL path:
-//   t0: shadow map (currently unused in D3D12 shader)
+//   t0: shadow map
 //   t1: ambient texture
 //   t2: diffuse texture
 //   t3: alpha texture
@@ -387,7 +416,11 @@ Texture2D  texDiffuse          : register(t2);
 Texture2D  texAlpha            : register(t3);
 TextureCube texSkyboxIrradiance : register(t4);
 
-SamplerState samplerLinear : register(s0);
+// Sampler layout:
+//   s0: shadow sampler (clamp, no MIP, comparison mode)
+//   s1: linear sampler for material and IBL textures
+SamplerComparisonState samplerShadow : register(s0);
+SamplerState           samplerLinear : register(s1);
 
 struct PSInput {
   float4 position     : SV_POSITION;
@@ -401,26 +434,30 @@ struct PSInput {
 };
 
 // Shadow sampling helpers (PCF 3x3 around projected coordinate).
-float PCF3(Texture2D shadowTex, SamplerState samp, float texelSize, float3 uvw) {
+// Uses hardware depth comparison, matching the Vulkan sampler2DShadow path.
+float PCF3(Texture2D shadowTex, SamplerComparisonState shadowSamp, float texelSize, float3 uvw) {
   float shadowAccum = 0.0f;
   [unroll]
   for (int v = -1; v <= 1; ++v) {
     [unroll]
     for (int u = -1; u <= 1; ++u) {
       float2 offset = float2(u, v) * texelSize;
-      float depth = shadowTex.Sample(samp, uvw.xy + offset).r;
-      shadowAccum += (uvw.z <= depth) ? 1.0f : 0.0f;
+      shadowAccum += shadowTex.SampleCmpLevelZero(shadowSamp, uvw.xy + offset, uvw.z);
     }
   }
   return shadowAccum / 9.0f;
 }
 
-float computeShadow(Texture2D shadowTex, SamplerState samp, float texelSize, float4 s) {
+float computeShadow(Texture2D shadowTex, SamplerComparisonState shadowSamp, float texelSize, float4 s) {
   s /= s.w;
   if (s.z > -1.0f && s.z < 1.0f) {
     const float depthBias = -0.00005f;
-    float3 uvw = float3(s.x, s.y, s.z + depthBias);
-    float shadowSample = PCF3(shadowTex, samp, texelSize, uvw);
+    // Match Vulkan GLSL path: flip Y after projection to account for
+    // texture coordinate conventions when sampling the shadow map.
+    float yFlipped = 1.0f - s.y;
+    float2 uv = saturate(float2(s.x, yFlipped));
+    float3 uvw = float3(uv, s.z + depthBias);
+    float shadowSample = PCF3(shadowTex, shadowSamp, texelSize, uvw);
     return lerp(0.3f, 1.0f, shadowSample);
   }
   return 1.0f;
@@ -465,11 +502,11 @@ float4 main(PSInput input) : SV_TARGET {
   uint shadowWidth, shadowHeight, shadowLevels;
   texShadow.GetDimensions(0, shadowWidth, shadowHeight, shadowLevels);
   float texelSize = 1.0f / float(shadowWidth);
-  float shadowTerm = computeShadow(texShadow, samplerLinear, texelSize, input.shadowCoords);
+  float shadowTerm = computeShadow(texShadow, samplerShadow, texelSize, input.shadowCoords);
 
   // Match the GLSL path more closely: apply the shadow term directly
   // to the diffuse contribution without additional NdotL scaling.
-  float3 color = Ka.rgb + diffuse * shadowTerm;
+  float3 color =  diffuse * shadowTerm;
 
   return float4(color, 1.0f);
 }
@@ -552,10 +589,12 @@ VSOutput main(uint vertexID : SV_VertexID) {
   VSOutput o;
   float3 pos = positions[indices[vertexID]];
 
-  float4 worldPos = float4(pos, 1.0f);
-  float4 viewPos  = mul(perFrame.view, worldPos);
-  float4 clipPos  = mul(perFrame.proj, viewPos);
-  o.position      = clipPos;
+  // Match the GLSL/Vulkan skybox path:
+  // - Use only the rotational part of the view matrix (ignore translation)
+  // - Project and then set z = w so the skybox is always at depth 1.0
+  float3 viewDir   = mul((float3x3)perFrame.view, pos);
+  float4 clipPos   = mul(perFrame.proj, float4(viewDir, 1.0f));
+  o.position       = float4(clipPos.xy, clipPos.w, clipPos.w);
   o.textureCoords = pos;
   return o;
 }
@@ -874,7 +913,7 @@ void main() {
   vec4 diffuse = texture(texSkyboxIrradiance, n) * Kd * (vec4(1.0) - f0);
   out_FragColor = drawNormals ?
     vec4(0.5 * (n+vec3(1.0)), 1.0) :
-    Ka + diffuse * shadow(vtx.shadowCoords);
+     diffuse ;
 };
 )";
 
@@ -1843,17 +1882,20 @@ void initModel(int numSamplesMSAA) {
 }
 
 void createComputePipeline() {
-#if USE_D3D12_BACKEND
-  // The grayscale compute post-process is currently implemented only for
-  // OpenGL/Vulkan. For D3D12 we rely on the main render passes.
-  computePipelineState_Grayscale_ = nullptr;
-#else
   if (computePipelineState_Grayscale_) {
     return;
   }
 
   ComputePipelineDesc desc;
-#if USE_OPENGL_BACKEND
+#if USE_D3D12_BACKEND
+  // D3D12: grayscale post-process compute shader (HLSL) operating on RWTexture2D u0.
+  desc.shaderStages = ShaderStagesCreator::fromModuleStringInput(
+      *device_,
+      kCodeComputeTest,
+      "main",
+      "Shader Module: grayscale (comp)",
+      nullptr);
+#elif USE_OPENGL_BACKEND
   std::string computeCode = std::string("#version 460") + kCodeComputeTest;
   kCodeComputeTest = computeCode.c_str();
 #endif
@@ -1861,7 +1903,6 @@ void createComputePipeline() {
       *device_, kCodeComputeTest, "main", "Shader Module: grayscale (comp)", nullptr);
 
   computePipelineState_Grayscale_ = device_->createComputePipeline(desc, nullptr);
-#endif
 }
 
 void createRenderPipelines(int numSamplesMSAA) {
@@ -2436,8 +2477,11 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
     commands->bindTexture(4, igl::BindTarget::kFragment, skyboxTextureIrradiance_.get());
 
 #if USE_D3D12_BACKEND
-    // D3D12 mesh HLSL uses a single sampler at s0 for all textures.
-    commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
+    // D3D12 mesh HLSL uses:
+    //   samplerShadow at s0 for the shadow map
+    //   samplerLinear at s1 for material and IBL textures.
+    commands->bindSamplerState(0, igl::BindTarget::kFragment, samplerShadow_.get());
+    commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
 #else
     // OpenGL/Vulkan keep the original sampler layout: s0 is used for the
     // shadow map, s1+ for color textures and IBL.
@@ -2502,8 +2546,12 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
     commands->bindRenderPipelineState(renderPipelineState_Skybox_);
 #if USE_D3D12_BACKEND
     // D3D12 skybox HLSL uses:
+    //   cbuffer PerFrame          : register(b0);
     //   TextureCube texSkybox     : register(t0);
     //   SamplerState samplerLinear: register(s0);
+    //
+    // Bind the shared per-frame uniform buffer at slot 0 to satisfy the PerFrame cbuffer.
+    commands->bindBuffer(0, ubPerFrame_[frameIndex].get());
     commands->bindTexture(0, igl::BindTarget::kFragment, skyboxTextureReference_.get());
     commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
 #else
@@ -2538,11 +2586,16 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
     commands->bindComputePipelineState(computePipelineState_Grayscale_);
     ITexture* tex = numSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0).get()
                                        : fbOffscreen_->getColorAttachment(0).get();
+#if USE_D3D12_BACKEND
+    // D3D12 compute shader uses RWTexture2D bound as UAV at u0.
+    commands->bindImageTexture(0, tex, tex->getFormat());
+#else
 #if !USE_OPENGL_BACKEND
     const uint32_t textureId = tex->getTextureId();
     commands->bindPushConstants(&textureId, sizeof(textureId));
 #endif
     commands->bindTexture(0, tex);
+#endif
     commands->dispatchThreadGroups(igl::Dimensions(width_, height_, 1), igl::Dimensions());
     commands->endEncoding();
 
@@ -2566,11 +2619,11 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
     commands->draw(3);
     commands->popDebugGroupLabel();
 
-#if IGL_WITH_IGLU && !USE_D3D12_BACKEND
+#if IGL_WITH_IGLU
     if (imguiSession_) {
       imguiSession_->endFrame(*device_, *commands);
     }
-#endif // IGL_WITH_IGLU && !USE_D3D12_BACKEND
+#endif // IGL_WITH_IGLU
 
     commands->endEncoding();
 
@@ -3116,9 +3169,9 @@ int main(int argc, char* argv[]) {
   createRenderPipelineSkybox(kNumSamplesMSAA);
   createComputePipeline();
 
-#if IGL_WITH_IGLU && !USE_D3D12_BACKEND
+#if IGL_WITH_IGLU
   imguiSession_ = std::make_unique<iglu::imgui::Session>(*device_, inputDispatcher_);
-#endif // IGL_WITH_IGLU && !USE_D3D12_BACKEND
+#endif // IGL_WITH_IGLU
 
   double prevTime = glfwGetTime();
 
@@ -3130,7 +3183,7 @@ int main(int argc, char* argv[]) {
       FramebufferDesc framebufferDesc;
       framebufferDesc.colorAttachments[0].texture = getNativeDrawable();
       framebufferDesc.depthAttachment.texture = getNativeDepthDrawable();
-#if IGL_WITH_IGLU && !USE_D3D12_BACKEND
+#if IGL_WITH_IGLU
       imguiSession_->beginFrame(framebufferDesc, 1.0f);
       ImGui::ShowDemoWindow();
 
@@ -3159,7 +3212,7 @@ int main(int argc, char* argv[]) {
       }
 
       imguiSession_->drawFPS(fps_.getAverageFPS());
-#endif // IGL_WITH_IGLU && !USE_D3D12_BACKEND
+#endif // IGL_WITH_IGLU
     }
 
     processLoadedMaterials();
@@ -3183,9 +3236,9 @@ int main(int argc, char* argv[]) {
 
   loaderShouldExit_.store(true, std::memory_order_release);
 
-#if IGL_WITH_IGLU && !USE_D3D12_BACKEND
+#if IGL_WITH_IGLU
   imguiSession_ = nullptr;
-#endif // IGL_WITH_IGLU && !USE_D3D12_BACKEND
+#endif // IGL_WITH_IGLU
   // destroy all the Vulkan stuff before closing the window
   vb0_ = nullptr;
   ib0_ = nullptr;

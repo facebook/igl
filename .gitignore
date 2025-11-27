@@ -1,6 +1,7 @@
 .idea
 .vscode
 /build/
+/build_vk/
 /shell/csharp/IGL.Bindings/bin
 /shell/csharp/IGL.Bindings/obj
 /shell/csharp/ThreeCubes/bin/Debug
