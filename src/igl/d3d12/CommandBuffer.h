@@ -46,9 +46,9 @@ class CommandBuffer final : public ICommandBuffer {
                            IBuffer& destination,
                            uint64_t destinationOffset,
                            uint32_t mipLevel,
-                           uint32_t layer) override;
+                            uint32_t layer) override;
 
-  void begin();
+  Result begin();
   void end();
   bool isRecording() const { return recording_; }
 

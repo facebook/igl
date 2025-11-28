@@ -358,9 +358,9 @@ void CommandBuffer::trackTransientResource(ID3D12Resource* resource) {
 #endif
 }
 
-void CommandBuffer::begin() {
+Result CommandBuffer::begin() {
   if (recording_) {
-    return;
+    return Result();
   }
 
   // NOTE: Transient buffers are now stored in FrameContext and cleared when advancing frames
@@ -379,15 +379,17 @@ void CommandBuffer::begin() {
 
   // Initialize active heap to current page at frame start.
   if (frameCtx.cbvSrvUavHeapPages.empty()) {
-    IGL_LOG_ERROR("CommandBuffer::begin() - No CBV/SRV/UAV heap pages available for frame %u\n", frameIdx);
-    return;
+    const char* msg = "No CBV/SRV/UAV heap pages available";
+    IGL_LOG_ERROR("CommandBuffer::begin() - %s for frame %u\n", msg, frameIdx);
+    return Result(Result::Code::RuntimeError, msg);
   }
 
   frameCtx.activeCbvSrvUavHeap = frameCtx.cbvSrvUavHeapPages[frameCtx.currentCbvSrvUavPageIndex].heap;
 
   if (!frameCtx.activeCbvSrvUavHeap.Get()) {
-    IGL_LOG_ERROR("CommandBuffer::begin() - No CBV/SRV/UAV heap available for frame %u\n", frameIdx);
-    return;
+    const char* msg = "No CBV/SRV/UAV heap available";
+    IGL_LOG_ERROR("CommandBuffer::begin() - %s for frame %u\n", msg, frameIdx);
+    return Result(Result::Code::RuntimeError, msg);
   }
 
   // Use the CURRENT FRAME's command allocator from FrameContext
@@ -402,7 +404,7 @@ void CommandBuffer::begin() {
   HRESULT hr = commandList_->Reset(frameAllocator, nullptr);
   if (FAILED(hr)) {
     IGL_LOG_ERROR("CommandBuffer::begin() - Reset command list FAILED: 0x%08X\n", static_cast<unsigned>(hr));
-    return;
+    return getResultFromHRESULT(hr);
   }
 #ifdef IGL_DEBUG
   IGL_D3D12_LOG_VERBOSE("CommandBuffer::begin() - Command list reset OK\n");
@@ -427,6 +429,8 @@ void CommandBuffer::begin() {
     auto* timer = static_cast<Timer*>(desc.timer.get());
     timer->begin(commandList_.Get());
   }
+
+  return Result();
 }
 
 void CommandBuffer::end() {
@@ -457,24 +461,28 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
     const std::shared_ptr<IFramebuffer>& framebuffer,
     const Dependencies& /*dependencies*/,
     Result* IGL_NULLABLE outResult) {
-  Result::setOk(outResult);
-
   // Begin command buffer if not already begun
-  begin();
+  Result beginResult = begin();
+  if (!beginResult.isOk()) {
+    Result::setResult(outResult, std::move(beginResult));
+    return nullptr;
+  }
 
   // Create encoder with lightweight constructor, then initialize with render pass
-  // NOTE: begin() may encounter D3D12 errors (descriptor allocation, resource transitions, etc.)
-  // but currently only logs failures and does not propagate errors to outResult.
-  // Callers should rely on D3D12 debug layer and logging for error detection.
-  // TODO: Consider propagating errors from begin() to outResult for better error handling.
   auto encoder = std::make_unique<RenderCommandEncoder>(*this, framebuffer);
   encoder->begin(renderPass);
+  Result::setOk(outResult);
   return encoder;
 }
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {
   // Begin command buffer if not already begun
-  begin();
+  Result beginResult = begin();
+  if (!beginResult.isOk()) {
+    IGL_LOG_ERROR("CommandBuffer::createComputeCommandEncoder() - begin() failed: %s\n",
+                  beginResult.message.c_str());
+    return nullptr;
+  }
 
   return std::make_unique<ComputeCommandEncoder>(*this);
 }

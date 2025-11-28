@@ -320,6 +320,9 @@ class D3D12Context {
   const HDRCapabilities& getHDRCapabilities() const { return hdrCapabilities_; }
   bool isHDRSupported() const { return hdrCapabilities_.hdrSupported; }
 
+  // Accessor for configuration (sizes, frame buffering, etc.).
+  const D3D12ContextConfig& getConfig() const { return config_; }
+
  protected:
   [[nodiscard]] Result createDevice();
   [[nodiscard]] Result createCommandQueue();

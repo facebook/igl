@@ -35,9 +35,10 @@ void D3D12AllocatorPool::initialize(D3D12Context& ctx, IFenceProvider* fenceProv
         "D3D12AllocatorPool::initialize: Upload fence created successfully\n");
   }
 
-  constexpr uint64_t kUploadRingBufferSize = 128ull * 1024ull * 1024ull;
+  // Use upload ring buffer size from D3D12ContextConfig instead of hardcoding.
+  const uint64_t uploadRingBufferSize = ctx.getConfig().uploadRingBufferSize;
   uploadRingBuffer_ =
-      std::make_unique<UploadRingBuffer>(device, kUploadRingBufferSize);
+      std::make_unique<UploadRingBuffer>(device, uploadRingBufferSize);
 
   auto* commandQueue = ctx.getCommandQueue();
   if (commandQueue && uploadFence_.Get() && fenceProvider) {

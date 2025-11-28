@@ -356,3 +356,27 @@ Style divergence is not technically fatal but hurts maintainability and cross‑
 
 ---
 
+## Open TODOs / Follow‑up Tasks
+
+These are concrete, code‑level TODOs currently left in the D3D12 backend. They are not correctness blockers, but should be tracked explicitly.
+
+1. **Stencil‑only texture support (S_UInt8)**  
+   - **File:** `src/igl/d3d12/Common.cpp:80–92` (inside `textureFormatToDXGIFormat`)  
+   - **Current behavior:** Logs an error and returns `DXGI_FORMAT_UNKNOWN` for `TextureFormat::S_UInt8`, noting that stencil‑only formats are not natively supported.  
+   - **TODO:** Implement stencil‑only views using typed subresource formats:
+     - `DXGI_FORMAT_X24_TYPELESS_G8_UINT` for resources backed by `DXGI_FORMAT_D24_UNORM_S8_UINT`.  
+     - `DXGI_FORMAT_X32_TYPELESS_G8X24_UINT` for resources backed by `DXGI_FORMAT_D32_FLOAT_S8X24_UINT`.  
+   - **Task:** Design a small helper that creates appropriate stencil SRVs/DSVs for `S_UInt8` using these typed views, and wire it into texture creation and view creation paths.
+
+2. **Error propagation from `CommandBuffer::begin()`**  
+   - **File:** `src/igl/d3d12/CommandBuffer.cpp:452–467` (`createRenderCommandEncoder`)  
+   - **Current behavior:** `begin()` logs failures (e.g., descriptor allocation problems) but does not propagate a `Result` back to the caller; `outResult` is set to Ok unconditionally.  
+   - **TODO:** “Consider propagating errors from begin() to outResult for better error handling.”  
+   - **Task:** Refactor `begin()` to return a `Result` (or set one via an output parameter), and have `createRenderCommandEncoder`/`createComputeCommandEncoder` pass that through to their `outResult`. Update call sites to check this in the same way other backends do.
+
+3. **Wire `D3D12ContextConfig::uploadRingBufferSize` into `UploadRingBuffer` call sites**  
+   - **File:** `src/igl/d3d12/UploadRingBuffer.h:32–53` (class comment and ctor)  
+   - **Current behavior:** `UploadRingBuffer` has a default size of 128 MB and a TODO that notes it should be driven by `D3D12ContextConfig::uploadRingBufferSize`. Some call sites likely still hard‑code the default.  
+   - **TODO:** “Wire D3D12ContextConfig::uploadRingBufferSize into call sites for automatic configuration.”  
+   - **Task:** Identify all places where `UploadRingBuffer` is constructed (e.g., in `Device` or `D3D12Context`), and pass the size from the active `D3D12ContextConfig`. Ensure the default config still chooses 128 MB so behavior doesn’t regress for callers that don’t override the config.
+
