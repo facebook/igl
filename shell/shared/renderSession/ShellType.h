@@ -11,7 +11,7 @@ namespace igl::shell {
 
 enum class ShellType {
   Mac,
-  iOS,
+  iOS, // NOLINT(readability-identifier-naming)
   Android,
   OpenXR,
   Windows,
