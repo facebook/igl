@@ -44,7 +44,7 @@ NativeHWTextureBuffer::~NativeHWTextureBuffer() {
     }
   }
 
-  auto context = std::static_pointer_cast<AHardwareBufferContext>(hwBufferHelper_);
+  auto* context = static_cast<AHardwareBufferContext*>(hwBufferHelper_.get());
   if (context) {
     eglDestroyImageKHR(context->display, context->elgImage);
     if (hwBuffer_) {
@@ -132,7 +132,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* buffer) {
   std::shared_ptr<AHardwareBufferContext> hwBufferCtx = std::make_shared<AHardwareBufferContext>();
   hwBufferCtx->display = display;
   hwBufferCtx->elgImage = eglImage;
-  hwBufferHelper_ = std::static_pointer_cast<AHardwareBufferHelper>(hwBufferCtx);
+  hwBufferHelper_ = hwBufferCtx; // Implicit upcast
 
   textureDesc_ = desc;
 
@@ -141,7 +141,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* buffer) {
 
 void NativeHWTextureBuffer::bind() {
   getContext().bindTexture(getTarget(), getId());
-  auto context = std::static_pointer_cast<AHardwareBufferContext>(hwBufferHelper_);
+  auto* context = static_cast<AHardwareBufferContext*>(hwBufferHelper_.get());
 
   getContext().checkForErrors(__FUNCTION__, __LINE__);
 
