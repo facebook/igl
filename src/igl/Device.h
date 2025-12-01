@@ -235,8 +235,10 @@ class IDevice : public ICapabilities {
    * the actual underlying device, then null is returned.
    * @return Pointer to the underlying platform-specific device.
    */
-  template<typename T, typename = std::enable_if_t<std::is_base_of<IPlatformDevice, T>::value>>
+  template<typename T>
   T* IGL_NULLABLE getPlatformDevice() noexcept {
+    static_assert(std::is_base_of<IPlatformDevice, T>::value,
+                  "getPlatformDevice() requires T to be derived from IPlatformDevice");
     return const_cast<T*>(static_cast<const IDevice*>(this)->getPlatformDevice<T>());
   }
 
@@ -245,8 +247,10 @@ class IDevice : public ICapabilities {
    * the actual underlying device, then null is returned.
    * @return Pointer to the underlying platform-specific device.
    */
-  template<typename T, typename = std::enable_if_t<std::is_base_of<IPlatformDevice, T>::value>>
+  template<typename T>
   const T* IGL_NULLABLE getPlatformDevice() const noexcept {
+    static_assert(std::is_base_of<IPlatformDevice, T>::value,
+                  "getPlatformDevice() requires T to be derived from IPlatformDevice");
     const IPlatformDevice& platformDevice = getPlatformDevice();
     if (platformDevice.isType(T::kType)) {
       return static_cast<const T*>(&platformDevice);
