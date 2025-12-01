@@ -85,6 +85,7 @@ struct VulkanFunctionTable {
   PFN_vkCmdDrawIndexed vkCmdDrawIndexed;
   PFN_vkCmdDrawIndexedIndirect vkCmdDrawIndexedIndirect;
   PFN_vkCmdDrawIndirect vkCmdDrawIndirect;
+  PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasksEXT;
   PFN_vkCmdEndQuery vkCmdEndQuery;
   PFN_vkCmdEndRenderPass vkCmdEndRenderPass;
   PFN_vkCmdExecuteCommands vkCmdExecuteCommands;
@@ -1121,7 +1122,7 @@ struct VulkanFunctionTable {
 
 #ifdef __cplusplus
 /* IGL_GENERATE_SIZE_CHECK */
-static_assert(sizeof(VulkanFunctionTable) == 543 * sizeof(PFN_vkVoidFunction));
+static_assert(sizeof(VulkanFunctionTable) == 544 * sizeof(PFN_vkVoidFunction));
 /* IGL_GENERATE_SIZE_CHECK */
 #endif
 

@@ -278,7 +278,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipelineInternal(
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
     return nullptr;
   }
-  if (!IGL_DEBUG_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Render)) {
+  if (!IGL_DEBUG_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Render || desc.shaderStages->getType() == ShaderStagesType::MeshRender)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader stages not for render");
     return nullptr;
   }
@@ -291,8 +291,13 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipelineInternal(
     return nullptr;
   }
 
-  if (!IGL_DEBUG_VERIFY(desc.shaderStages->getVertexModule())) {
+  if (desc.shaderStages->getType() == ShaderStagesType::Render && !IGL_DEBUG_VERIFY(desc.shaderStages->getVertexModule())) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing vertex shader");
+    return nullptr;
+  }
+
+  if (desc.shaderStages->getType() == ShaderStagesType::MeshRender && !IGL_DEBUG_VERIFY(desc.shaderStages->getMeshModule())) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing mesh shader");
     return nullptr;
   }
 
@@ -471,7 +476,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
 
   glslang_resource_t glslangResource = {};
   glslangGetDefaultResource(&glslangResource);
-  ivkUpdateGlslangResource(&glslangResource, &ctx_->getVkPhysicalDeviceProperties());
+  ivkUpdateGlslangResource(&glslangResource, &ctx_->getVkPhysicalDeviceProperties(), &ctx_->getvkPhysicalDeviceMeshShaderPropertiesEXT());
 
   std::vector<uint32_t> spirv;
   const Result result = glslang::compileShader(stage, source, spirv, &glslangResource);
@@ -600,7 +605,7 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
   case DeviceFeatures::MapBufferRange:
     return true;
   case DeviceFeatures::MeshShaders:
-    return false;
+    return ctx_->features_.has_VK_EXT_mesh_shader;
   case DeviceFeatures::MultipleRenderTargets:
     return deviceProperties.limits.maxColorAttachments > 1;
   case DeviceFeatures::StandardDerivative:

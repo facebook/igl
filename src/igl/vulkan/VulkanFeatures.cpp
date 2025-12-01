@@ -119,6 +119,11 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM,
       .multiviewPerViewViewports = VK_TRUE,
   }),
+  featuresMeshShader({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT, 
+      .taskShader = VK_TRUE,
+      .meshShader = VK_TRUE,
+  }),
   config_(config) {
   extensions_.resize(kNumberOfExtensionTypes);
   enabledExtensions_.resize(kNumberOfExtensionTypes);
@@ -267,6 +272,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   featuresFragmentDensityMap.pNext = nullptr;
   features8BitStorage.pNext = nullptr;
   featuresUniformBufferStandardLayout.pNext = nullptr;
+  featuresMeshShader.pNext = nullptr;
 
   // Add the required and optional features to the VkPhysicalDeviceFetaures2_
   ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresSamplerYcbcrConversion);
@@ -310,6 +316,9 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
     } else {
       IGL_LOG_ERROR("VK_QCOM_multiview_per_view_viewports extension not supported\n");
     }
+  }
+  if (hasExtension(VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresMeshShader);
   }
 }
 
@@ -528,6 +537,8 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
     IGL_SOFT_ASSERT(has_VK_QCOM_multiview_per_view_viewports,
                     "VK_QCOM_multiview_per_view_viewports is not supported");
   }
+
+  has_VK_EXT_mesh_shader = enable(VK_EXT_MESH_SHADER_EXTENSION_NAME, ExtensionType::Device);
 }
 
 bool VulkanFeatures::enabled(const char* extensionName) const {

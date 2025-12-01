@@ -369,7 +369,11 @@ void RenderCommandEncoder::bindRenderPipelineState(
 
   const RenderPipelineDesc& desc = rps_->getRenderPipelineDesc();
 
-  ensureShaderModule(desc.shaderStages->getVertexModule().get());
+  if (desc.shaderStages->getType() == igl::ShaderStagesType::Render) {
+    ensureShaderModule(desc.shaderStages->getVertexModule().get());
+  } else {
+    ensureShaderModule(desc.shaderStages->getMeshModule().get());
+  }
   ensureShaderModule(desc.shaderStages->getFragmentModule().get());
 
   const bool hasDepthAttachment = desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid;
@@ -663,11 +667,17 @@ void RenderCommandEncoder::drawMeshTasks(const Dimensions& threadgroupsPerGrid,
   IGL_PROFILER_ZONE_GPU_COLOR_VK(
       "drawMeshTasks()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
 
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
-
   (void)threadgroupsPerGrid;
   (void)threadsPerTaskThreadgroup;
   (void)threadsPerMeshThreadgroup;
+
+  ctx_.drawCallCount_ += drawCallCountEnabled_;
+
+  IGL_DEBUG_ASSERT(rps_, "Did you forget to call bindRenderPipelineState()?");
+
+  flushDynamicState();
+
+  ctx_.vf_.vkCmdDrawMeshTasksEXT(cmdBuffer_, threadgroupsPerGrid.width, threadgroupsPerGrid.height, threadgroupsPerGrid.depth);
 }
 
 void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,

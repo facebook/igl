@@ -66,6 +66,7 @@ class VulkanFeatures final {
   VkPhysicalDevice8BitStorageFeaturesKHR features8BitStorage{};
   VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR featuresUniformBufferStandardLayout{};
   VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM featuresMultiviewPerViewViewports{};
+  VkPhysicalDeviceMeshShaderFeaturesEXT featuresMeshShader{};
 
   // We need to reassemble the feature chain because of the pNext pointers
   VulkanFeatures& operator=(const VulkanFeatures& other) noexcept;
@@ -121,6 +122,7 @@ class VulkanFeatures final {
   bool has_VK_KHR_uniform_buffer_standard_layout = false; // promoted to Vulkan 1.2
   bool has_VK_KHR_vulkan_memory_model = false; // promoted to Vulkan 1.2
   bool has_VK_QCOM_multiview_per_view_viewports = false;
+  bool has_VK_EXT_mesh_shader = false;
   // NOLINTEND(readability-identifier-naming)
 
  private:
