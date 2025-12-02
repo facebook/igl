@@ -258,6 +258,35 @@ void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
 }
 
 void RenderCommandEncoder::bindBuffer(uint32_t index,
+                                      uint8_t bindTarget,
+                                      IBuffer* buffer,
+                                      size_t offset,
+                                      size_t bufferSize) {
+  (void)bufferSize;
+
+  IGL_DEBUG_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX);
+
+  auto iglBuffer = static_cast<Buffer*>(buffer);
+  auto metalBuffer = iglBuffer ? iglBuffer->get() : nil;
+
+  if ((bindTarget & BindTarget::kVertex) != 0) {
+    [encoder_ setVertexBuffer:metalBuffer offset:offset atIndex:index];
+  }
+  if ((bindTarget & BindTarget::kFragment) != 0) {
+    [encoder_ setFragmentBuffer:metalBuffer offset:offset atIndex:index];
+  }
+  if (@available(iOS 16, *)) {
+    if ((bindTarget & BindTarget::kTask) != 0) {
+      [encoder_ setObjectBuffer:metalBuffer offset:offset atIndex:index];
+    }
+    if ((bindTarget & BindTarget::kMesh) != 0) {
+      [encoder_ setMeshBuffer:metalBuffer offset:offset atIndex:index];
+    }
+  }
+}
+
+void RenderCommandEncoder::bindBuffer(uint32_t index,
                                       IBuffer* buffer,
                                       size_t offset,
                                       size_t bufferSize) {
@@ -299,6 +328,7 @@ void RenderCommandEncoder::bindBytes(size_t index,
                                      size_t length) {
   IGL_DEBUG_ASSERT(encoder_);
   IGL_DEBUG_ASSERT(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
+                       bindTarget == BindTarget::kTask || bindTarget == BindTarget::kMesh ||
                        bindTarget == BindTarget::kAllGraphics,
                    "Bind target is not valid: %d",
                    bindTarget);
@@ -314,6 +344,14 @@ void RenderCommandEncoder::bindBytes(size_t index,
     if ((bindTarget & BindTarget::kFragment) != 0) {
       [encoder_ setFragmentBytes:data length:length atIndex:index];
     }
+    if (@available(iOS 16, *)) {
+      if ((bindTarget & BindTarget::kTask) != 0) {
+        [encoder_ setObjectBytes:data length:length atIndex:index];
+      }
+      if ((bindTarget & BindTarget::kMesh) != 0) {
+        [encoder_ setMeshBytes:data length:length atIndex:index];
+      }
+    }
   }
 }
 
@@ -326,6 +364,7 @@ void RenderCommandEncoder::bindPushConstants(const void* /*data*/,
 void RenderCommandEncoder::bindTexture(size_t index, uint8_t bindTarget, ITexture* texture) {
   IGL_DEBUG_ASSERT(encoder_);
   IGL_DEBUG_ASSERT(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
+                       bindTarget == BindTarget::kTask || bindTarget == BindTarget::kMesh ||
                        bindTarget == BindTarget::kAllGraphics,
                    "Bind target is not valid: %d",
                    bindTarget);
@@ -338,6 +377,14 @@ void RenderCommandEncoder::bindTexture(size_t index, uint8_t bindTarget, ITextur
   }
   if ((bindTarget & BindTarget::kFragment) != 0) {
     [encoder_ setFragmentTexture:metalTexture atIndex:index];
+  }
+  if (@available(iOS 16, *)) {
+    if ((bindTarget & BindTarget::kTask) != 0) {
+      [encoder_ setObjectTexture:metalTexture atIndex:index];
+    }
+    if ((bindTarget & BindTarget::kMesh) != 0) {
+      [encoder_ setMeshTexture:metalTexture atIndex:index];
+    }
   }
 }
 
@@ -356,6 +403,7 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
                                             ISamplerState* samplerState) {
   IGL_DEBUG_ASSERT(encoder_);
   IGL_DEBUG_ASSERT(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
+                       bindTarget == BindTarget::kTask || bindTarget == BindTarget::kMesh ||
                        bindTarget == BindTarget::kAllGraphics,
                    "Bind target is not valid: %d",
                    bindTarget);
@@ -368,6 +416,14 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
   }
   if ((bindTarget & BindTarget::kFragment) != 0) {
     [encoder_ setFragmentSamplerState:metalSamplerState atIndex:index];
+  }
+  if (@available(iOS 16, *)) {
+    if ((bindTarget & BindTarget::kTask) != 0) {
+      [encoder_ setObjectSamplerState:metalSamplerState atIndex:index];
+    }
+    if ((bindTarget & BindTarget::kMesh) != 0) {
+      [encoder_ setMeshSamplerState:metalSamplerState atIndex:index];
+    }
   }
 }
 
@@ -450,6 +506,44 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
     }
   }
 #endif // IGL_PLATFORM_IOS
+}
+
+void RenderCommandEncoder::drawMeshTasks(const Dimensions& threadgroupsPerGrid,
+                                         const Dimensions& threadsPerTaskThreadgroup,
+                                         const Dimensions& threadsPerMeshThreadgroup) {
+  IGL_DEBUG_ASSERT(encoder_);
+
+  if (@available(iOS 16, macOS 13, *)) {
+    // Check if the device supports mesh shaders
+    // Mesh shaders require Apple GPU Family 7 or higher (A14/M1 and later)
+    id<MTLDevice> device = [encoder_ device];
+    if (![device supportsFamily:MTLGPUFamilyApple7]) {
+      IGL_DEBUG_ASSERT(false,
+                       "Mesh shaders require Apple GPU Family 7 or higher (A14/M1 and later)");
+      return;
+    }
+
+    MTLSize tgg;
+    tgg.width = threadgroupsPerGrid.width;
+    tgg.height = threadgroupsPerGrid.height;
+    tgg.depth = threadgroupsPerGrid.depth;
+
+    MTLSize tgt;
+    tgt.width = threadsPerTaskThreadgroup.width;
+    tgt.height = threadsPerTaskThreadgroup.height;
+    tgt.depth = threadsPerTaskThreadgroup.depth;
+
+    MTLSize tgm;
+    tgm.width = threadsPerMeshThreadgroup.width;
+    tgm.height = threadsPerMeshThreadgroup.height;
+    tgm.depth = threadsPerMeshThreadgroup.depth;
+
+    [encoder_ drawMeshThreadgroups:tgg
+        threadsPerObjectThreadgroup:tgt
+          threadsPerMeshThreadgroup:tgm];
+  } else {
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  }
 }
 
 void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,

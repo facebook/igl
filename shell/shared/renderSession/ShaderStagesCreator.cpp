@@ -20,6 +20,10 @@ const char* getEntryPointName(ShaderStage stage, BackendType backendType) {
       return "fragmentMain";
     case igl::ShaderStage::Compute:
       return "computeMain";
+    case igl::ShaderStage::Task:
+      return "taskMain";
+    case igl::ShaderStage::Mesh:
+      return "meshMain";
     }
   case igl::BackendType::Vulkan:
     return "main";

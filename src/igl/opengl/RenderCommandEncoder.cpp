@@ -268,6 +268,14 @@ void RenderCommandEncoder::bindUniform(const UniformDesc& uniformDesc, const voi
 }
 
 void RenderCommandEncoder::bindBuffer(uint32_t index,
+                                      uint8_t bindTarget,
+                                      IBuffer* buffer,
+                                      size_t offset,
+                                      size_t bufferSize) {
+  bindBuffer(index, buffer, offset, bufferSize);
+}
+
+void RenderCommandEncoder::bindBuffer(uint32_t index,
                                       IBuffer* buffer,
                                       size_t offset,
                                       size_t bufferSize) {
@@ -399,6 +407,16 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
           mode, (GLsizei)indexCount, indexType_, (uint8_t*)indexBufferOffset_ + indexOffsetBytes);
     }
   }
+}
+
+void RenderCommandEncoder::drawMeshTasks(const Dimensions& threadgroupsPerGrid,
+                                         const Dimensions& threadsPerTaskThreadgroup,
+                                         const Dimensions& threadsPerMeshThreadgroup) {
+  (void)threadgroupsPerGrid;
+  (void)threadsPerTaskThreadgroup;
+  (void)threadsPerMeshThreadgroup;
+
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 }
 
 // NOLINTBEGIN(bugprone-easily-swappable-parameters)

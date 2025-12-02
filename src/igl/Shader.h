@@ -23,7 +23,11 @@ enum class ShaderStage : uint8_t {
   /** @brief Fragment shader. */
   Fragment,
   /** @brief Compute shader. */
-  Compute
+  Compute,
+  /** @brief Task shader. */
+  Task,
+  /** @brief Mesh shader. */
+  Mesh,
 };
 
 /**
@@ -236,6 +240,8 @@ enum class ShaderStagesType : uint8_t {
   Render,
   /** @brief Compute shader stages. */
   Compute,
+  /** @brief Mesh render shader stages. */
+  MeshRender
 };
 
 /**
@@ -252,6 +258,16 @@ struct ShaderStagesDesc {
                                             std::shared_ptr<IShaderModule> fragmentModule);
 
   /**
+   * @brief Constructs a ShaderStagesDesc for mesh render shader stages.
+   * @param taskModule The task shader module.
+   * @param meshModule The mesh shader module.
+   * @param fragmentModule The vertex shader module.
+   */
+  static ShaderStagesDesc fromMeshRenderModules(std::shared_ptr<IShaderModule> taskModule,
+                                                std::shared_ptr<IShaderModule> meshModule,
+                                                std::shared_ptr<IShaderModule> fragmentModule);
+
+  /**
    * @brief Constructs a ShaderStagesDesc for compute shader stages.
    * @param computeModule The compute shader module.
    */
@@ -263,6 +279,10 @@ struct ShaderStagesDesc {
   std::shared_ptr<IShaderModule> fragmentModule;
   /** @brief The fragment shader module to be used in a compute pipeline state. */
   std::shared_ptr<IShaderModule> computeModule;
+  /** @brief The task shader module to be used in a mesh render pipeline state. */
+  std::shared_ptr<IShaderModule> taskModule;
+  /** @brief The mesh shader module to be used in a mesh render pipeline state. */
+  std::shared_ptr<IShaderModule> meshModule;
   /** @brief The type of shader stages: render or compute. */
   ShaderStagesType type = ShaderStagesType::Render;
 
@@ -300,6 +320,18 @@ class IShaderStages : public ITrackedResource<IShaderStages> {
    * @return Compute shader module.
    */
   [[nodiscard]] const std::shared_ptr<IShaderModule>& getComputeModule() const noexcept;
+
+  /**
+   * @brief The task shader in this set of shader stages.
+   * @return Task shader module.
+   */
+  [[nodiscard]] const std::shared_ptr<IShaderModule>& getTaskModule() const noexcept;
+
+  /**
+   * @brief The mesh shader in this set of shader stages.
+   * @return Mesh shader module.
+   */
+  [[nodiscard]] const std::shared_ptr<IShaderModule>& getMeshModule() const noexcept;
 
   /**
    * @brief Checks if the IShaderStages object is valid.

@@ -130,6 +130,14 @@ class Device : public IDevice {
   std::unique_ptr<IBuffer> createBufferNoCopy(const BufferDesc& desc,
                                               Result* IGL_NULLABLE outResult) const;
 
+  std::shared_ptr<IRenderPipelineState> createTraditionalRenderPipeline(
+      const RenderPipelineDesc& desc,
+      Result* IGL_NULLABLE outResult) const;
+
+  std::shared_ptr<IRenderPipelineState> createMeshRenderPipeline(const RenderPipelineDesc& desc,
+                                                                 Result* IGL_NULLABLE
+                                                                     outResult) const;
+
   id<MTLDevice> IGL_NONNULL device_;
   PlatformDevice platformDevice_;
 

@@ -412,6 +412,15 @@ void RenderCommandEncoder::bindDepthStencilState(
 }
 
 void RenderCommandEncoder::bindBuffer(uint32_t index,
+                                      uint8_t target,
+                                      IBuffer* buffer,
+                                      size_t bufferOffset,
+                                      size_t bufferSize) {
+  (void)target;
+  bindBuffer(index, buffer, bufferOffset, bufferSize);
+}
+
+void RenderCommandEncoder::bindBuffer(uint32_t index,
                                       IBuffer* buffer,
                                       size_t bufferOffset,
                                       size_t bufferSize) {
@@ -645,6 +654,20 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
 #endif // IGL_VULKAN_PRINT_COMMANDS
   ctx_.vf_.vkCmdDrawIndexed(
       cmdBuffer_, (uint32_t)indexCount, instanceCount, firstIndex, vertexOffset, baseInstance);
+}
+
+void RenderCommandEncoder::drawMeshTasks(const Dimensions& threadgroupsPerGrid,
+                                         const Dimensions& threadsPerTaskThreadgroup,
+                                         const Dimensions& threadsPerMeshThreadgroup) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
+  IGL_PROFILER_ZONE_GPU_COLOR_VK(
+      "drawMeshTasks()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
+
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+
+  (void)threadgroupsPerGrid;
+  (void)threadsPerTaskThreadgroup;
+  (void)threadsPerMeshThreadgroup;
 }
 
 void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,

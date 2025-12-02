@@ -212,6 +212,21 @@ ShaderStagesDesc ShaderStagesDesc::fromRenderModules(
   return desc;
 }
 
+ShaderStagesDesc ShaderStagesDesc::fromMeshRenderModules(
+    std::shared_ptr<IShaderModule> taskModule,
+    std::shared_ptr<IShaderModule> meshModule,
+    std::shared_ptr<IShaderModule> fragmentModule) {
+  ShaderStagesDesc desc;
+  desc.debugName = (taskModule ? taskModule->info().debugName : std::string()) + ", " +
+                   (meshModule ? meshModule->info().debugName : std::string()) + ", " +
+                   (fragmentModule ? fragmentModule->info().debugName : std::string());
+  desc.type = ShaderStagesType::MeshRender;
+  desc.taskModule = std::move(taskModule);
+  desc.meshModule = std::move(meshModule);
+  desc.fragmentModule = std::move(fragmentModule);
+  return desc;
+}
+
 ShaderStagesDesc ShaderStagesDesc::fromComputeModule(std::shared_ptr<IShaderModule> computeModule) {
   ShaderStagesDesc desc;
   desc.debugName = computeModule ? computeModule->info().debugName : "igl/Shader.cpp";
@@ -238,11 +253,21 @@ const std::shared_ptr<IShaderModule>& IShaderStages::getComputeModule() const no
   return desc_.computeModule;
 }
 
+const std::shared_ptr<IShaderModule>& IShaderStages::getTaskModule() const noexcept {
+  return desc_.taskModule;
+}
+
+const std::shared_ptr<IShaderModule>& IShaderStages::getMeshModule() const noexcept {
+  return desc_.meshModule;
+}
+
 bool IShaderStages::isValid() const noexcept {
   if (desc_.type == ShaderStagesType::Render) {
     return desc_.vertexModule && desc_.fragmentModule && !desc_.computeModule;
   } else if (desc_.type == ShaderStagesType::Compute) {
     return desc_.computeModule && !desc_.vertexModule && !desc_.fragmentModule;
+  } else if (desc_.type == ShaderStagesType::MeshRender) {
+    return desc_.meshModule && desc_.fragmentModule && !desc_.computeModule && !desc_.vertexModule;
   }
 
   return false;

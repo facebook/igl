@@ -63,6 +63,10 @@ VkShaderStageFlagBits shaderStageToVkShaderStage(igl::ShaderStage stage) {
     return VK_SHADER_STAGE_FRAGMENT_BIT;
   case igl::ShaderStage::Compute:
     return VK_SHADER_STAGE_COMPUTE_BIT;
+  case igl::ShaderStage::Task:
+    return VK_SHADER_STAGE_TASK_BIT_EXT;
+  case igl::ShaderStage::Mesh:
+    return VK_SHADER_STAGE_MESH_BIT_EXT;
   };
   return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
 }
