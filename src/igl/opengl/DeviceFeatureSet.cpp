@@ -281,6 +281,9 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
            hasDesktopExtension(*this, "GL_ARB_map_buffer_range") ||
            hasExtension(Extensions::MapBufferRange);
 
+  case DeviceFeatures::MeshShaders:
+    return false;
+
   case DeviceFeatures::MultipleRenderTargets:
     return hasDesktopOrESVersionOrExtension(
         *this, GLVersion::v2_0, GLVersion::v3_0_ES, "GL_EXT_draw_buffers");

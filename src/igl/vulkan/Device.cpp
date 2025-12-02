@@ -599,6 +599,8 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
     return deviceProperties.limits.maxSamplerAnisotropy > 1;
   case DeviceFeatures::MapBufferRange:
     return true;
+  case DeviceFeatures::MeshShaders:
+    return false;
   case DeviceFeatures::MultipleRenderTargets:
     return deviceProperties.limits.maxColorAttachments > 1;
   case DeviceFeatures::StandardDerivative:

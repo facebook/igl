@@ -88,6 +88,7 @@ enum class DeviceFeatures {
   ExternalMemoryObjects,
   Indices8Bit,
   MapBufferRange,
+  MeshShaders,
   MinMaxBlend,
   MultipleRenderTargets,
   MultiSample,

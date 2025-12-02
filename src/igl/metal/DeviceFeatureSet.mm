@@ -142,6 +142,14 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::DrawFirstIndexFirstVertex:
   case DeviceFeatures::DrawIndexedIndirect:
     return true;
+  case DeviceFeatures::MeshShaders:
+    if (@available(iOS 16, macOS 13, *)) {
+      // check if the device supports mesh shaders
+      // mesh shaders require Apple GPU Family 7 or higher (A14/M1 and later)
+      return gpuFamily_ >= 7;
+    } else {
+      return false;
+    }
   case DeviceFeatures::DrawInstanced:
     return gpuFamily_ >= 3;
   case DeviceFeatures::CopyBuffer:

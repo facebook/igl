@@ -111,6 +111,11 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
 void MeshShaderTriangleSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
+  if (!device.hasFeature(DeviceFeatures::MeshShaders)) {
+    IGL_DEBUG_ABORT("Mesh shaders are not supported.\n");
+    return;
+  };
+
   shaderStages_ = getShaderStagesForBackend(device);
   IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
 
