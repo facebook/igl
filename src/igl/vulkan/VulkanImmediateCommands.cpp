@@ -305,7 +305,7 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
                                              numWaitSemaphores,
                                              waitSemaphores,
                                              waitStageMasks,
-                                             &wrapper.semaphore.vkSemaphore_);
+                                             &wrapper.semaphore.vkSemaphore);
     // @lint-ignore CLANGTIDY
     const VkFence vkFence = wrapper.fence.vkFence_;
     IGL_PROFILER_ZONE("vkQueueSubmit()", IGL_PROFILER_COLOR_SUBMIT);
@@ -316,7 +316,7 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
     IGL_PROFILER_ZONE_END();
   }
 
-  lastSubmitSemaphore_.semaphore = wrapper.semaphore.vkSemaphore_;
+  lastSubmitSemaphore_.semaphore = wrapper.semaphore.vkSemaphore;
   lastSubmitHandle_ = wrapper.handle;
   waitSemaphore_.semaphore = VK_NULL_HANDLE;
   signalSemaphore_.semaphore = VK_NULL_HANDLE;
