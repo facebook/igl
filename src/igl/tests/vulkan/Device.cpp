@@ -232,12 +232,12 @@ TEST_F(DeviceVulkanTest, UpdateGlslangResource) {
   const igl::vulkan::VulkanContext& ctx =
       static_cast<const igl::vulkan::Device*>(iglDev_.get())->getVulkanContext();
 
-  ivkUpdateGlslangResource(nullptr, nullptr);
+  ivkUpdateGlslangResource(nullptr, nullptr, nullptr);
 
   glslang_resource_t res = {};
   const VkPhysicalDeviceProperties& props = ctx.getVkPhysicalDeviceProperties();
 
-  ivkUpdateGlslangResource(&res, &props);
+  ivkUpdateGlslangResource(&res, &props, nullptr);
 
   ASSERT_EQ(res.max_vertex_attribs, (int)props.limits.maxVertexInputAttributes);
   ASSERT_EQ(res.max_clip_distances, (int)props.limits.maxClipDistances);

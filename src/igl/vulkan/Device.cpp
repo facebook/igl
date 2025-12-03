@@ -471,7 +471,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
 
   glslang_resource_t glslangResource = {};
   glslangGetDefaultResource(&glslangResource);
-  ivkUpdateGlslangResource(&glslangResource, &ctx_->getVkPhysicalDeviceProperties());
+  ivkUpdateGlslangResource(&glslangResource, &ctx_->getVkPhysicalDeviceProperties(), &ctx_->getvkPhysicalDeviceMeshShaderPropertiesEXT());
 
   std::vector<uint32_t> spirv;
   const Result result = glslang::compileShader(stage, source, spirv, &glslangResource);

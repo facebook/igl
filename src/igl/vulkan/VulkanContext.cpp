@@ -415,9 +415,13 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
                              void* IGL_NULLABLE window,
                              void* IGL_NULLABLE display) :
   tableImpl_(std::make_unique<VulkanFunctionTable>()),
+  vkPhysicalDeviceMeshShaderPropertiesEXT_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT,
+      .pNext = nullptr,
+  }),
   vkPhysicalDeviceDescriptorIndexingProperties_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES_EXT,
-      .pNext = nullptr,
+      .pNext = &vkPhysicalDeviceMeshShaderPropertiesEXT_,
   }),
   vkPhysicalDeviceDriverProperties_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES_KHR,
