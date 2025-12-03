@@ -528,6 +528,8 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
     IGL_SOFT_ASSERT(has_VK_QCOM_multiview_per_view_viewports,
                     "VK_QCOM_multiview_per_view_viewports is not supported");
   }
+
+  has_VK_EXT_mesh_shader = enable(VK_EXT_MESH_SHADER_EXTENSION_NAME, ExtensionType::Device);
 }
 
 bool VulkanFeatures::enabled(const char* extensionName) const {

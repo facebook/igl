@@ -600,7 +600,7 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
   case DeviceFeatures::MapBufferRange:
     return true;
   case DeviceFeatures::MeshShaders:
-    return false;
+    return ctx_->features_.has_VK_EXT_mesh_shader;
   case DeviceFeatures::MultipleRenderTargets:
     return deviceProperties.limits.maxColorAttachments > 1;
   case DeviceFeatures::StandardDerivative:
