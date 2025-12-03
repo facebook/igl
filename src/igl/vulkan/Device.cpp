@@ -278,7 +278,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipelineInternal(
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
     return nullptr;
   }
-  if (!IGL_DEBUG_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Render)) {
+  if (!IGL_DEBUG_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Render || desc.shaderStages->getType() == ShaderStagesType::MeshRender)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader stages not for render");
     return nullptr;
   }
@@ -291,8 +291,13 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipelineInternal(
     return nullptr;
   }
 
-  if (!IGL_DEBUG_VERIFY(desc.shaderStages->getVertexModule())) {
+  if (desc.shaderStages->getType() == ShaderStagesType::Render && !IGL_DEBUG_VERIFY(desc.shaderStages->getVertexModule())) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing vertex shader");
+    return nullptr;
+  }
+
+  if (desc.shaderStages->getType() == ShaderStagesType::MeshRender && !IGL_DEBUG_VERIFY(desc.shaderStages->getMeshModule())) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing mesh shader");
     return nullptr;
   }
 
