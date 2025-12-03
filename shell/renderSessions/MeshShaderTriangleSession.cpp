@@ -98,7 +98,7 @@ std::string getVulkanMeshShaderSource() {
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
-layout(set = 1, binding = 1, std140)uniform UniformBlock {
+layout(set = 1, binding = 1, std140) uniform UniformBlock {
   mat4 mvpMatrix;
 };
 
@@ -112,7 +112,7 @@ const vec4 colorData[3]  = {{1.0, 0.0, 0.0, 1.0}, {0.0, 1.0, 0.0, 1.0}, {0.0, 0.
 void main(){
   SetMeshOutputsEXT(3, 1);
 
-  for (int i = 0; i != 3; ++i){
+  for (int i = 0; i != 3; ++i) {
     gl_MeshVerticesEXT[i].gl_Position = mvpMatrix * vertexData[i];
     v_out[i].color = colorData[i];
   }
