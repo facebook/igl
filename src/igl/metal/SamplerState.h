@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <Metal/Metal.h>
+#include <Metal/MTLSampler.h>
 #include <igl/SamplerState.h>
 
 namespace igl::metal {
