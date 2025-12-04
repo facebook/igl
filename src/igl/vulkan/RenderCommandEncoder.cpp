@@ -659,6 +659,11 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
 void RenderCommandEncoder::drawMeshTasks(const Dimensions& threadgroupsPerGrid,
                                          const Dimensions& /*threadsPerTaskThreadgroup*/,
                                          const Dimensions& /*threadsPerMeshThreadgroup*/) {
+  if (!ctx_.features().has_VK_EXT_mesh_shader){
+    IGL_DEBUG_ASSERT(false, "Mesh shaders require VK_EXT_mesh_shader extention.");
+    return;
+  }
+
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
   IGL_PROFILER_ZONE_GPU_COLOR_VK(
       "drawMeshTasks()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
