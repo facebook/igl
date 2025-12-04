@@ -371,7 +371,7 @@ void RenderCommandEncoder::bindRenderPipelineState(
 
   if (desc.shaderStages->getType() == igl::ShaderStagesType::Render) {
     ensureShaderModule(desc.shaderStages->getVertexModule().get());
-  } else {
+  } else if (desc.shaderStages->getType() == igl::ShaderStagesType::MeshRender){
     ensureShaderModule(desc.shaderStages->getMeshModule().get());
   }
   ensureShaderModule(desc.shaderStages->getFragmentModule().get());
