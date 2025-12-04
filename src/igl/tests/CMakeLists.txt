@@ -191,14 +191,13 @@ endif()
 
 # Copy dxil.dll for D3D12 tests (required for DXIL signing)
 if(IGL_WITH_D3D12 AND WIN32 AND MSVC)
+  # Try to locate dxil.dll from the Windows SDK without relying on machine-specific SDK versions
   find_file(DXIL_DLL_FOR_TESTS
     NAMES dxil.dll
-    PATHS
-      "C:/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64"
-      "C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64"
-      "C:/Program Files (x86)/Windows Kits/10/bin/10.0.19041.0/x64"
-      "$ENV{WindowsSdkBinPath}/x64"
-    NO_DEFAULT_PATH
+    HINTS
+      "$ENV{WindowsSdkBinPath}"
+      "$ENV{WindowsSdkDir}/bin"
+    PATH_SUFFIXES x64
   )
   if(DXIL_DLL_FOR_TESTS)
     add_custom_command(TARGET IGLTests POST_BUILD

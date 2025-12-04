@@ -27,7 +27,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: 18
+          java-version: 21
           distribution: 'oracle'
 
       - name: Assemble APK debug

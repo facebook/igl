@@ -15,7 +15,7 @@ option(IGL_WITH_OPENGLES  "Enable IGL/OpenGL ES"              OFF)
 option(IGL_WITH_VULKAN    "Enable IGL/Vulkan"                  ON)
 option(IGL_WITH_METAL     "Enable IGL/Metal"                   ON)
 option(IGL_WITH_WEBGL     "Enable IGL/WebGL"                  OFF)
-option(IGL_WITH_D3D12     "Enable IGL/DirectX 12"             OFF)
+option(IGL_WITH_D3D12     "Enable IGL/DirectX 12"             ON)
 
 option(IGL_WITH_IGLU      "Enable IGLU utils"                  ON)
 option(IGL_WITH_SHELL     "Enable Shell utils"                 ON)
