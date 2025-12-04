@@ -806,7 +806,7 @@ std::string convertFileName(std::string fileName) {
   }
 }
 
-static GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
+GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
   if (!glfwInit()) {
     printf("glfwInit() failed");
     return nullptr;
