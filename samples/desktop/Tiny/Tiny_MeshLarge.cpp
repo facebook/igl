@@ -32,7 +32,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
 #include <ktx.h>
-#include <math.h>
 #include <meshoptimizer.h>
 #include <mutex>
 #include <shared/Camera.h>
