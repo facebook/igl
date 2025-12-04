@@ -14,10 +14,8 @@
 #import <Foundation/Foundation.h> // IWYU pragma: keep
 
 @interface HeadlessView () {
-  CVDisplayLinkRef displayLink_; // display link for managing rendering thread //
-                                 // NOLINT(readability-identifier-naming)
-  NSTrackingArea* trackingArea_; // needed for mouseMoved: events //
-                                 // NOLINT(readability-identifier-naming)
+  CVDisplayLinkRef displayLink; // display link for managing rendering thread
+  NSTrackingArea* trackingArea; // needed for mouseMoved: events
 }
 @property (weak) ViewController* viewController;
 @end
@@ -25,7 +23,7 @@
 @implementation HeadlessView
 
 - (void)dealloc {
-  CVDisplayLinkRelease(displayLink_);
+  CVDisplayLinkRelease(displayLink);
 }
 
 - (void)prepareHeadless {
@@ -42,7 +40,7 @@
   [self startTimer];
 }
 
-static CVReturn DisplayLinkCallback(
+static CVReturn displayLinkCallback(
     CVDisplayLinkRef /*displayLink*/, // NOLINT(readability-identifier-naming)
     const CVTimeStamp* /*now*/,
     const CVTimeStamp* /*outputTime*/,
@@ -59,32 +57,32 @@ static CVReturn DisplayLinkCallback(
 
 - (void)initTimer {
   // Create a display link capable of being used with all active displays
-  CVDisplayLinkCreateWithActiveCGDisplays(&displayLink_);
+  CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
 
   // Set the renderer output callback function
-  CVDisplayLinkSetOutputCallback(displayLink_, &DisplayLinkCallback, (__bridge void*)self);
+  CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, (__bridge void*)self);
 }
 
 - (void)startTimer {
-  CVDisplayLinkStart(displayLink_);
+  CVDisplayLinkStart(displayLink);
 }
 
 - (void)stopTimer {
-  CVDisplayLinkStop(displayLink_);
+  CVDisplayLinkStop(displayLink);
 }
 
 - (void)addFullScreenTrackingArea {
-  trackingArea_ =
+  trackingArea =
       [[NSTrackingArea alloc] initWithRect:self.bounds
                                    options:NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved |
                                            NSTrackingActiveInKeyWindow
                                      owner:self
                                   userInfo:nil];
-  [self addTrackingArea:trackingArea_];
+  [self addTrackingArea:trackingArea];
 }
 
 - (void)updateTrackingAreas {
-  [self removeTrackingArea:trackingArea_];
+  [self removeTrackingArea:trackingArea];
   [self addFullScreenTrackingArea];
 }
 
