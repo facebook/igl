@@ -585,26 +585,29 @@ void GPUStressSession::createCubes() {
       BufferDesc::BufferTypeBits::Index, indexData_.data(), sizeof(uint16_t) * indexData_.size());
   ib0_ = device.createBuffer(ibDesc, nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 3;
-  inputDesc.attributes[0].format = VertexAttributeFormat::Float3;
-  inputDesc.attributes[0].offset = offsetof(VertexPosUvw, position);
-  inputDesc.attributes[0].bufferIndex = 0;
-  inputDesc.attributes[0].name = "position";
-  inputDesc.attributes[0].location = 0;
-  inputDesc.attributes[1].format = VertexAttributeFormat::Float4;
-  inputDesc.attributes[1].offset = offsetof(VertexPosUvw, uvw);
-  inputDesc.attributes[1].bufferIndex = 0;
-  inputDesc.attributes[1].name = "uvw_in";
-  inputDesc.attributes[1].location = 1;
-  inputDesc.numInputBindings = 1;
-  inputDesc.attributes[2].format = VertexAttributeFormat::Float4;
-  inputDesc.attributes[2].offset = offsetof(VertexPosUvw, base_color);
-  inputDesc.attributes[2].bufferIndex = 0;
-  inputDesc.attributes[2].name = "base_color";
-  inputDesc.attributes[2].location = 2;
-  inputDesc.numInputBindings = 1;
-  inputDesc.inputBindings[0].stride = sizeof(VertexPosUvw);
+  VertexInputStateDesc inputDesc = {
+      .numAttributes = 3,
+      .attributes =
+          {
+              {.bufferIndex = 0,
+               .format = VertexAttributeFormat::Float3,
+               .offset = offsetof(VertexPosUvw, position),
+               .name = "position",
+               .location = 0},
+              {.bufferIndex = 0,
+               .format = VertexAttributeFormat::Float4,
+               .offset = offsetof(VertexPosUvw, uvw),
+               .name = "uvw_in",
+               .location = 1},
+              {.bufferIndex = 0,
+               .format = VertexAttributeFormat::Float4,
+               .offset = offsetof(VertexPosUvw, base_color),
+               .name = "base_color",
+               .location = 2},
+          },
+      .numInputBindings = 1,
+      .inputBindings = {{.stride = sizeof(VertexPosUvw)}},
+  };
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
 }
 
@@ -828,27 +831,28 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
 
   constexpr uint32_t textureUnit = 0;
   if (pipelineState_ == nullptr) {
-    // Graphics pipeline: state batch that fully configures GPU for rendering
-
-    RenderPipelineDesc graphicsDesc;
-    graphicsDesc.vertexInputState = vertexInput0_;
-    graphicsDesc.shaderStages = shaderStages_;
-    graphicsDesc.targetDesc.colorAttachments.resize(1);
-    graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
-        framebuffer_->getColorAttachment(0)->getProperties().format;
+    RenderPipelineDesc graphicsDesc = {
+        .vertexInputState = vertexInput0_,
+        .shaderStages = shaderStages_,
+        .targetDesc =
+            {
+                .colorAttachments = {{
+                    .textureFormat = framebuffer_->getColorAttachment(0)->getProperties().format,
+                    .blendEnabled = enableBlending_,
+                    .rgbBlendOp = BlendOp::Add,
+                    .alphaBlendOp = BlendOp::Add,
+                    .srcRGBBlendFactor = BlendFactor::SrcAlpha,
+                    .srcAlphaBlendFactor = BlendFactor::SrcAlpha,
+                    .dstRGBBlendFactor = BlendFactor::OneMinusSrcAlpha,
+                    .dstAlphaBlendFactor = BlendFactor::OneMinusSrcAlpha,
+                }},
+                .depthAttachmentFormat = framebuffer_->getDepthAttachment()->getProperties().format,
+            },
+        .cullMode = igl::CullMode::Back,
+        .frontFaceWinding = igl::WindingMode::Clockwise,
+        .fragmentUnitSamplerMap = {{textureUnit, IGL_NAMEHANDLE("inputImage")}},
+    };
     graphicsDesc.sampleCount = useMSAA_ ? kMsaaSamples : 1;
-    graphicsDesc.targetDesc.depthAttachmentFormat =
-        framebuffer_->getDepthAttachment()->getProperties().format;
-    graphicsDesc.fragmentUnitSamplerMap[textureUnit] = IGL_NAMEHANDLE("inputImage");
-    graphicsDesc.cullMode = igl::CullMode::Back;
-    graphicsDesc.frontFaceWinding = igl::WindingMode::Clockwise;
-    graphicsDesc.targetDesc.colorAttachments[0].blendEnabled = enableBlending_;
-    graphicsDesc.targetDesc.colorAttachments[0].rgbBlendOp = BlendOp::Add;
-    graphicsDesc.targetDesc.colorAttachments[0].alphaBlendOp = BlendOp::Add;
-    graphicsDesc.targetDesc.colorAttachments[0].srcRGBBlendFactor = BlendFactor::SrcAlpha;
-    graphicsDesc.targetDesc.colorAttachments[0].srcAlphaBlendFactor = BlendFactor::SrcAlpha;
-    graphicsDesc.targetDesc.colorAttachments[0].dstRGBBlendFactor = BlendFactor::OneMinusSrcAlpha;
-    graphicsDesc.targetDesc.colorAttachments[0].dstAlphaBlendFactor = BlendFactor::OneMinusSrcAlpha;
 
     pipelineState_ = getPlatform().getDevice().createRenderPipeline(graphicsDesc, nullptr);
   }
