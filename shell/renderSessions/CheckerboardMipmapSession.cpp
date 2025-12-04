@@ -279,7 +279,6 @@ void CheckerboardMipmapSession::initialize() noexcept {
                   .location = 0,
               },
               {
-
                   .bufferIndex = vertexBufferIndex,
                   .format = VertexAttributeFormat::Float2,
                   .offset = offsetof(VertexPosUv, uv),
@@ -308,7 +307,7 @@ void CheckerboardMipmapSession::initialize() noexcept {
   {
     Result result;
 
-    auto tempCommandQueue = device.createCommandQueue({}, &result);
+    const auto tempCommandQueue = device.createCommandQueue({}, &result);
     IGL_DEBUG_ASSERT(result.isOk(), "Error %d: %s", result.code, result.message.c_str());
     IGL_DEBUG_ASSERT(tempCommandQueue);
     if (tex0_->isRequiredGenerateMipmap()) {
@@ -320,8 +319,7 @@ void CheckerboardMipmapSession::initialize() noexcept {
   IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
 
   // Command queue: backed by different types of GPU HW queues
-  const CommandQueueDesc desc{};
-  commandQueue_ = device.createCommandQueue(desc, nullptr);
+  commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 
   renderPass_.colorAttachments.resize(1);
@@ -350,28 +348,28 @@ void CheckerboardMipmapSession::update(SurfaceTextures surfaceTextures) noexcept
 
   // Graphics pipeline: state batch that fully configures GPU for rendering
   if (pipelineState_ == nullptr) {
-    RenderPipelineDesc graphicsDesc;
-    graphicsDesc.vertexInputState = vertexInput0_;
-    graphicsDesc.shaderStages = shaderStages_;
-    graphicsDesc.targetDesc.colorAttachments.resize(1);
-    graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
-        framebuffer_->getColorAttachment(0)->getProperties().format;
-    graphicsDesc.targetDesc.depthAttachmentFormat =
-        framebuffer_->getDepthAttachment()->getProperties().format;
-    graphicsDesc.fragmentUnitSamplerMap[textureUnit] = IGL_NAMEHANDLE("inputImage");
-    graphicsDesc.cullMode = igl::CullMode::Disabled;
-    graphicsDesc.frontFaceWinding = igl::WindingMode::Clockwise;
+    const RenderPipelineDesc graphicsDesc = {
+        .vertexInputState = vertexInput0_,
+        .shaderStages = shaderStages_,
+        .targetDesc =
+            {
+                .colorAttachments = {{
+                    {.textureFormat = framebuffer_->getColorAttachment(0)->getProperties().format},
+                }},
+                .depthAttachmentFormat = framebuffer_->getDepthAttachment()->getProperties().format,
+            },
+        .cullMode = igl::CullMode::Disabled,
+        .frontFaceWinding = igl::WindingMode::Clockwise,
+        .fragmentUnitSamplerMap = {{textureUnit, IGL_NAMEHANDLE("inputImage")}},
+    };
     pipelineState_ = getPlatform().getDevice().createRenderPipeline(graphicsDesc, nullptr);
     IGL_DEBUG_ASSERT(pipelineState_ != nullptr);
   }
 
   // Create uniform buffer for platforms that need it (Metal, Vulkan, etc.)
   if (getPlatform().getDevice().hasFeature(DeviceFeatures::UniformBlocks) && !mvpUniformBuffer_) {
-    BufferDesc bufDesc;
-    bufDesc.type = BufferDesc::BufferTypeBits::Uniform;
-    bufDesc.data = nullptr;
-    bufDesc.length = sizeof(glm::mat4);
-    bufDesc.storage = ResourceStorage::Shared;
+    const BufferDesc bufDesc = BufferDesc(
+        BufferDesc::BufferTypeBits::Uniform, nullptr, sizeof(glm::mat4), ResourceStorage::Shared);
     mvpUniformBuffer_ = getPlatform().getDevice().createBuffer(bufDesc, &ret);
     IGL_DEBUG_ASSERT(mvpUniformBuffer_ != nullptr);
   }
@@ -388,8 +386,7 @@ void CheckerboardMipmapSession::update(SurfaceTextures surfaceTextures) noexcept
       glm::rotate(staticViewProjection, planeAngle_, glm::vec3(0.0, 1.f, 0.0));
 
   // Command buffer: create, submit and forget
-  const CommandBufferDesc cbDesc;
-  auto buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
   auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_DEBUG_ASSERT(commands != nullptr);
