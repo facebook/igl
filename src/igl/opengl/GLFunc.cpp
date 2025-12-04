@@ -32,13 +32,18 @@
 extern "C" void glQueryCounterEXT(GLuint, GLenum) {}
 #endif
 #endif
+#if defined(__clang__) && defined(ENABLE_ROAI)
+#define ROAI __attribute__((annotate("ro_after_init")))
+#else
+#define ROAI
+#endif
 
 #define GLEXTENSION_DIRECT_CALL(funcName, funcType, ...) funcName(__VA_ARGS__);
 #define GLEXTENSION_DIRECT_CALL_WITH_RETURN(funcName, funcType, returnOnError, ...) \
   return funcName(__VA_ARGS__);
 
 #define GLEXTENSION_LOAD_AND_CALL(funcName, funcType, ...)         \
-  static funcType funcAddr = nullptr;                              \
+  static ROAI funcType funcAddr = nullptr;                         \
   if (funcAddr == nullptr) {                                       \
     funcAddr = (funcType)IGL_GET_PROC_ADDRESS(#funcName);          \
   }                                                                \
@@ -48,7 +53,7 @@ extern "C" void glQueryCounterEXT(GLuint, GLenum) {}
     IGL_DEBUG_ABORT("Extension function " #funcName " not found"); \
   }
 #define GLEXTENSION_LOAD_AND_CALL_WITH_RETURN(funcName, funcType, returnOnError, ...) \
-  static funcType funcAddr = nullptr;                                                 \
+  static ROAI funcType funcAddr = nullptr;                                            \
   if (funcAddr == nullptr) {                                                          \
     funcAddr = (funcType)IGL_GET_PROC_ADDRESS(#funcName);                             \
   }                                                                                   \
