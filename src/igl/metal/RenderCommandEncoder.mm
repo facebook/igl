@@ -276,12 +276,14 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
   if ((bindTarget & BindTarget::kFragment) != 0) {
     [encoder_ setFragmentBuffer:metalBuffer offset:offset atIndex:index];
   }
-  if (device_.hasFeature(DeviceFeatures::MeshShaders)) {
-    if ((bindTarget & BindTarget::kTask) != 0) {
-      [encoder_ setObjectBuffer:metalBuffer offset:offset atIndex:index];
-    }
-    if ((bindTarget & BindTarget::kMesh) != 0) {
-      [encoder_ setMeshBuffer:metalBuffer offset:offset atIndex:index];
+  if (@available(iOS 16, macOS 13, *)) {
+    if (device_.hasFeature(DeviceFeatures::MeshShaders)) {
+      if ((bindTarget & BindTarget::kTask) != 0) {
+        [encoder_ setObjectBuffer:metalBuffer offset:offset atIndex:index];
+      }
+      if ((bindTarget & BindTarget::kMesh) != 0) {
+        [encoder_ setMeshBuffer:metalBuffer offset:offset atIndex:index];
+      }
     }
   }
 }
@@ -344,12 +346,14 @@ void RenderCommandEncoder::bindBytes(size_t index,
     if ((bindTarget & BindTarget::kFragment) != 0) {
       [encoder_ setFragmentBytes:data length:length atIndex:index];
     }
-    if (device_.hasFeature(DeviceFeatures::MeshShaders)) {
-      if ((bindTarget & BindTarget::kTask) != 0) {
-        [encoder_ setObjectBytes:data length:length atIndex:index];
-      }
-      if ((bindTarget & BindTarget::kMesh) != 0) {
-        [encoder_ setMeshBytes:data length:length atIndex:index];
+    if (@available(iOS 16, macOS 13, *)) {
+      if (device_.hasFeature(DeviceFeatures::MeshShaders)) {
+        if ((bindTarget & BindTarget::kTask) != 0) {
+          [encoder_ setObjectBytes:data length:length atIndex:index];
+        }
+        if ((bindTarget & BindTarget::kMesh) != 0) {
+          [encoder_ setMeshBytes:data length:length atIndex:index];
+        }
       }
     }
   }
@@ -378,12 +382,14 @@ void RenderCommandEncoder::bindTexture(size_t index, uint8_t bindTarget, ITextur
   if ((bindTarget & BindTarget::kFragment) != 0) {
     [encoder_ setFragmentTexture:metalTexture atIndex:index];
   }
-  if (@available(iOS 16, *)) {
-    if ((bindTarget & BindTarget::kTask) != 0) {
-      [encoder_ setObjectTexture:metalTexture atIndex:index];
-    }
-    if ((bindTarget & BindTarget::kMesh) != 0) {
-      [encoder_ setMeshTexture:metalTexture atIndex:index];
+  if (@available(iOS 16, macOS 13, *)) {
+    if (device_.hasFeature(DeviceFeatures::MeshShaders)) {
+      if ((bindTarget & BindTarget::kTask) != 0) {
+        [encoder_ setObjectTexture:metalTexture atIndex:index];
+      }
+      if ((bindTarget & BindTarget::kMesh) != 0) {
+        [encoder_ setMeshTexture:metalTexture atIndex:index];
+      }
     }
   }
 }
@@ -417,12 +423,14 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
   if ((bindTarget & BindTarget::kFragment) != 0) {
     [encoder_ setFragmentSamplerState:metalSamplerState atIndex:index];
   }
-  if (device_.hasFeature(DeviceFeatures::MeshShaders)) {
-    if ((bindTarget & BindTarget::kTask) != 0) {
-      [encoder_ setObjectSamplerState:metalSamplerState atIndex:index];
-    }
-    if ((bindTarget & BindTarget::kMesh) != 0) {
-      [encoder_ setMeshSamplerState:metalSamplerState atIndex:index];
+  if (@available(iOS 16, macOS 13, *)) {
+    if (device_.hasFeature(DeviceFeatures::MeshShaders)) {
+      if ((bindTarget & BindTarget::kTask) != 0) {
+        [encoder_ setObjectSamplerState:metalSamplerState atIndex:index];
+      }
+      if ((bindTarget & BindTarget::kMesh) != 0) {
+        [encoder_ setMeshSamplerState:metalSamplerState atIndex:index];
+      }
     }
   }
 }
@@ -518,22 +526,26 @@ void RenderCommandEncoder::drawMeshTasks(const Dimensions& threadgroupsPerGrid,
     return;
   }
 
-  MTLSize tgg;
-  tgg.width = threadgroupsPerGrid.width;
-  tgg.height = threadgroupsPerGrid.height;
-  tgg.depth = threadgroupsPerGrid.depth;
+  if (@available(iOS 16, macOS 13, *)) {
+    MTLSize tgg;
+    tgg.width = threadgroupsPerGrid.width;
+    tgg.height = threadgroupsPerGrid.height;
+    tgg.depth = threadgroupsPerGrid.depth;
 
-  MTLSize tgt;
-  tgt.width = threadsPerTaskThreadgroup.width;
-  tgt.height = threadsPerTaskThreadgroup.height;
-  tgt.depth = threadsPerTaskThreadgroup.depth;
+    MTLSize tgt;
+    tgt.width = threadsPerTaskThreadgroup.width;
+    tgt.height = threadsPerTaskThreadgroup.height;
+    tgt.depth = threadsPerTaskThreadgroup.depth;
 
-  MTLSize tgm;
-  tgm.width = threadsPerMeshThreadgroup.width;
-  tgm.height = threadsPerMeshThreadgroup.height;
-  tgm.depth = threadsPerMeshThreadgroup.depth;
+    MTLSize tgm;
+    tgm.width = threadsPerMeshThreadgroup.width;
+    tgm.height = threadsPerMeshThreadgroup.height;
+    tgm.depth = threadsPerMeshThreadgroup.depth;
 
-  [encoder_ drawMeshThreadgroups:tgg threadsPerObjectThreadgroup:tgt threadsPerMeshThreadgroup:tgm];
+    [encoder_ drawMeshThreadgroups:tgg
+        threadsPerObjectThreadgroup:tgt
+          threadsPerMeshThreadgroup:tgm];
+  }
 }
 
 void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
