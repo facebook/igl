@@ -202,31 +202,51 @@ void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
   IGL_DEBUG_ASSERT(framebuffer_);
 
   if (!renderPipelineStateTriangle_) {
-    VertexInputStateDesc inputDesc;
-    inputDesc.numAttributes = 1;
-    inputDesc.attributes[0] = VertexAttribute{1, VertexAttributeFormat::Float2, 0, "offset", 0};
-    inputDesc.numInputBindings = 1;
-    inputDesc.inputBindings[1].stride = sizeof(float) * 2;
-    inputDesc.inputBindings[1].sampleFunction = igl::VertexSampleFunction::Instance;
+    const VertexInputStateDesc inputDesc = {
+        .numAttributes = 1,
+        .attributes =
+            {
+                {
+                    .bufferIndex = 1,
+                    .format = VertexAttributeFormat::Float2,
+                    .offset = 0,
+                    .name = "offset",
+                    .location = 0,
+                },
+            },
+        .numInputBindings = 1,
+        .inputBindings =
+            {
+                {},
+                {
+                    .stride = sizeof(float) * 2,
+                    .sampleFunction = igl::VertexSampleFunction::Instance,
+                },
+            },
+    };
     auto vertexInput0 = getPlatform().getDevice().createVertexInputState(inputDesc, nullptr);
     IGL_DEBUG_ASSERT(vertexInput0 != nullptr);
 
-    RenderPipelineDesc desc;
-    desc.vertexInputState = vertexInput0;
-
-    desc.targetDesc.colorAttachments.resize(1);
-
-    if (framebuffer_->getColorAttachment(0)) {
-      desc.targetDesc.colorAttachments[0].textureFormat =
-          framebuffer_->getColorAttachment(0)->getProperties().format;
-    }
-
-    if (framebuffer_->getDepthAttachment()) {
-      desc.targetDesc.depthAttachmentFormat =
-          framebuffer_->getDepthAttachment()->getProperties().format;
-    }
-
-    desc.shaderStages = getShaderStagesForBackend(getPlatform().getDevice());
+    const RenderPipelineDesc desc = {
+        .vertexInputState = vertexInput0,
+        .shaderStages = getShaderStagesForBackend(getPlatform().getDevice()),
+        .targetDesc =
+            {
+                .colorAttachments =
+                    {
+                        {
+                            .textureFormat =
+                                framebuffer_->getColorAttachment(0)
+                                    ? framebuffer_->getColorAttachment(0)->getProperties().format
+                                    : TextureFormat::Invalid,
+                        },
+                    },
+                .depthAttachmentFormat =
+                    framebuffer_->getDepthAttachment()
+                        ? framebuffer_->getDepthAttachment()->getProperties().format
+                        : TextureFormat::Invalid,
+            },
+    };
     renderPipelineStateTriangle_ = getPlatform().getDevice().createRenderPipeline(desc, nullptr);
     IGL_DEBUG_ASSERT(renderPipelineStateTriangle_);
   }
