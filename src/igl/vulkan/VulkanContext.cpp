@@ -421,7 +421,7 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
   }),
   vkPhysicalDeviceDescriptorIndexingProperties_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES_EXT,
-      .pNext = &vkPhysicalDeviceMeshShaderPropertiesEXT_,
+      .pNext = nullptr,
   }),
   vkPhysicalDeviceDriverProperties_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES_KHR,
@@ -822,6 +822,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     }
   }
 
+  features_.enumerate(vf_, vkPhysicalDevice_);
+
+  if (features_.available(VK_EXT_MESH_SHADER_EXTENSION_NAME, VulkanFeatures::ExtensionType::Device)) {
+    vkPhysicalDeviceDescriptorIndexingProperties_.pNext = &vkPhysicalDeviceMeshShaderPropertiesEXT_;
+  }
+
   vf_.vkGetPhysicalDeviceProperties2(vkPhysicalDevice_, &vkPhysicalDeviceProperties2_);
 
   const uint32_t apiVersion = vkPhysicalDeviceProperties2_.properties.apiVersion;
@@ -839,8 +845,6 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                  vkPhysicalDeviceDriverProperties_.driverName,
                  vkPhysicalDeviceDriverProperties_.driverInfo);
   }
-
-  features_.enumerate(vf_, vkPhysicalDevice_);
 
 #if IGL_LOGGING_ENABLED
   if (config_.enableExtraLogs) {
