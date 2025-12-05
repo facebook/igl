@@ -209,18 +209,6 @@ VkSubmitInfo ivkGetSubmitInfo(const VkCommandBuffer* buffer,
                               const VkPipelineStageFlags* waitStageMasks,
                               const VkSemaphore* releaseSemaphore);
 
-/// @brief Creates a VkAttachmentDescription2 structure with load and store operations for the
-/// stencil attachment as "Don't Care"
-VkAttachmentDescription2 ivkGetAttachmentDescriptionColor(VkFormat format,
-                                                          VkAttachmentLoadOp loadOp,
-                                                          VkAttachmentStoreOp storeOp,
-                                                          VkImageLayout initialLayout,
-                                                          VkImageLayout finalLayout);
-
-/// @brief Creates a VkAttachmentReference2 structure with its layout set to
-/// `Vk_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL`
-VkAttachmentReference2 ivkGetAttachmentReferenceColor(uint32_t idx);
-
 VkClearValue ivkGetClearDepthStencilValue(float depth, uint32_t stencil);
 VkClearValue ivkGetClearColorValue(float r, float g, float b, float a);
 

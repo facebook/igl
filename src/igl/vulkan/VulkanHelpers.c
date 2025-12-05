@@ -475,35 +475,6 @@ VkResult ivkCreateFramebuffer(const struct VulkanFunctionTable* vt,
   return vt->vkCreateFramebuffer(device, &ci, NULL, outFramebuffer);
 }
 
-VkAttachmentDescription2 ivkGetAttachmentDescriptionColor(VkFormat format,
-                                                          VkAttachmentLoadOp loadOp,
-                                                          VkAttachmentStoreOp storeOp,
-                                                          VkImageLayout initialLayout,
-                                                          VkImageLayout finalLayout) {
-  const VkAttachmentDescription2 desc = {
-      .sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2,
-      .format = format,
-      .samples = VK_SAMPLE_COUNT_1_BIT,
-      .loadOp = loadOp,
-      .storeOp = storeOp,
-      .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-      .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-      .initialLayout = initialLayout,
-      .finalLayout = finalLayout,
-  };
-  return desc;
-}
-
-VkAttachmentReference2 ivkGetAttachmentReferenceColor(uint32_t idx) {
-  const VkAttachmentReference2 ref = {
-      .sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2,
-      .attachment = idx,
-      .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-      .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-  };
-  return ref;
-}
-
 VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding,
                                                               VkDescriptorType descriptorType,
                                                               uint32_t descriptorCount,

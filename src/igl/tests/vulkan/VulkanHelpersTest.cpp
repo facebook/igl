@@ -124,62 +124,6 @@ TEST_F(GetVulkanResultString, VulkanHelpersTest) {
                      "VK_OPERATION_NOT_DEFERRED_KHR") == 0); // VK_KHR_deferred_host_operations
 }
 
-// ivkGetAttachmentDescriptionColor **************************************************************
-class AttachmentDescriptionColorTest
-  : public ::testing::TestWithParam<
-        std::tuple<VkFormat, VkAttachmentLoadOp, VkAttachmentStoreOp, VkImageLayout>> {};
-
-TEST_P(AttachmentDescriptionColorTest, GetAttachmentDescriptionColor) {
-  const VkFormat format = std::get<0>(GetParam());
-  const VkAttachmentLoadOp loadOp = std::get<1>(GetParam());
-  const VkAttachmentStoreOp storeOp = std::get<2>(GetParam());
-  const VkImageLayout initialLayout = std::get<3>(GetParam());
-  const auto finalLayout = static_cast<VkImageLayout>(initialLayout + 1);
-
-  const auto attachmentDescriptionColor =
-      ivkGetAttachmentDescriptionColor(format, loadOp, storeOp, initialLayout, finalLayout);
-
-  EXPECT_EQ(attachmentDescriptionColor.sType, VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2);
-  EXPECT_EQ(attachmentDescriptionColor.format, format);
-  EXPECT_EQ(attachmentDescriptionColor.samples, VK_SAMPLE_COUNT_1_BIT);
-  EXPECT_EQ(attachmentDescriptionColor.loadOp, loadOp);
-  EXPECT_EQ(attachmentDescriptionColor.storeOp, storeOp);
-  EXPECT_EQ(attachmentDescriptionColor.stencilLoadOp, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
-  EXPECT_EQ(attachmentDescriptionColor.stencilStoreOp, VK_ATTACHMENT_STORE_OP_DONT_CARE);
-  EXPECT_EQ(attachmentDescriptionColor.initialLayout, initialLayout);
-  EXPECT_EQ(attachmentDescriptionColor.finalLayout, finalLayout);
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    AllCombinations,
-    AttachmentDescriptionColorTest,
-    ::testing::Combine(
-        ::testing::Values(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_SRGB),
-        ::testing::Values(VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_LOAD_OP_LOAD),
-        ::testing::Values(VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_STORE),
-        ::testing::Values(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)),
-    [](const testing::TestParamInfo<AttachmentDescriptionColorTest::ParamType>& info) {
-      const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
-                               std::to_string(std::get<1>(info.param)) + "_" +
-                               std::to_string(std::get<2>(info.param)) + "_" +
-                               std::to_string(std::get<3>(info.param));
-      return name;
-    });
-
-// ivkGetAttachmentReferenceColor **************************************************************
-class AttachmentReferenceColorTest : public ::testing::Test {};
-
-TEST_F(AttachmentReferenceColorTest, GetAttachmentReferenceColor) {
-  for (uint32_t i = 0; i < 2; ++i) {
-    const auto attachmentRef = ivkGetAttachmentReferenceColor(i);
-    EXPECT_EQ(attachmentRef.sType, VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2);
-    EXPECT_EQ(attachmentRef.pNext, nullptr);
-    EXPECT_EQ(attachmentRef.attachment, i);
-    EXPECT_EQ(attachmentRef.layout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    EXPECT_EQ(attachmentRef.aspectMask, VK_IMAGE_ASPECT_COLOR_BIT);
-  }
-}
-
 // ivkGetDescriptorSetLayoutBinding **************************************************************
 class DescriptorSetLayoutTest
   : public ::testing::TestWithParam<std::tuple<uint32_t, VkDescriptorType, uint32_t>> {};
