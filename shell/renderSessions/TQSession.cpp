@@ -240,19 +240,27 @@ void TQSession::initialize() noexcept {
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
   auto vertexBufferIndex = getVertexBufferIndex(getPlatform().getDevice());
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 2;
-  inputDesc.attributes[0] = VertexAttribute{.bufferIndex = vertexBufferIndex,
-                                            .format = VertexAttributeFormat::Float3,
-                                            .offset = offsetof(VertexPosUv, position),
-                                            .name = "position",
-                                            .location = 0};
-  inputDesc.attributes[1] = VertexAttribute{.bufferIndex = vertexBufferIndex,
-                                            .format = VertexAttributeFormat::Float2,
-                                            .offset = offsetof(VertexPosUv, uv),
-                                            .name = "uv_in",
-                                            .location = 1};
-  inputDesc.numInputBindings = 1;
+  VertexInputStateDesc inputDesc = {
+      .numAttributes = 2,
+      .attributes =
+          {
+              {
+                  .bufferIndex = vertexBufferIndex,
+                  .format = VertexAttributeFormat::Float3,
+                  .offset = offsetof(VertexPosUv, position),
+                  .name = "position",
+                  .location = 0,
+              },
+              {
+                  .bufferIndex = vertexBufferIndex,
+                  .format = VertexAttributeFormat::Float2,
+                  .offset = offsetof(VertexPosUv, uv),
+                  .name = "uv_in",
+                  .location = 1,
+              },
+          },
+      .numInputBindings = 1,
+  };
   inputDesc.inputBindings[vertexBufferIndex].stride = sizeof(VertexPosUv);
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
   IGL_DEBUG_ASSERT(vertexInput0_ != nullptr);
