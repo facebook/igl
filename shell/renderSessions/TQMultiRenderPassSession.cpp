@@ -183,53 +183,82 @@ void TQMultiRenderPassSession::initialize() noexcept {
       BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
   ib0_ = device.createBuffer(ibDesc, nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 2;
-  inputDesc.attributes[0] = VertexAttribute{
-      0, VertexAttributeFormat::Float3, offsetof(VertexPosUv, position), "position", 0};
-  inputDesc.attributes[1] =
-      VertexAttribute{0, VertexAttributeFormat::Float2, offsetof(VertexPosUv, uv), "uv_in", 1};
-  inputDesc.numInputBindings = 1;
-  inputDesc.inputBindings[0].stride = sizeof(VertexPosUv);
+  const VertexInputStateDesc inputDesc = {
+      .numAttributes = 2,
+      .attributes =
+          {
+              {
+                  .bufferIndex = 0,
+                  .format = VertexAttributeFormat::Float3,
+                  .offset = offsetof(VertexPosUv, position),
+                  .name = "position",
+                  .location = 0,
+              },
+              {
+                  .bufferIndex = 0,
+                  .format = VertexAttributeFormat::Float2,
+                  .offset = offsetof(VertexPosUv, uv),
+                  .name = "uv_in",
+                  .location = 1,
+              },
+          },
+      .numInputBindings = 1,
+      .inputBindings =
+          {
+              {
+                  .stride = sizeof(VertexPosUv),
+              },
+          },
+  };
   vertexInputState_ = device.createVertexInputState(inputDesc, nullptr);
 
   // Sampler & Texture
-  SamplerStateDesc samplerDesc;
-  samplerDesc.minFilter = samplerDesc.magFilter = SamplerMinMagFilter::Linear;
-  samplerDesc.debugName = "Sampler: linear";
-  samplerState_ = device.createSamplerState(samplerDesc, nullptr);
+  samplerState_ = device.createSamplerState(
+      SamplerStateDesc{
+          .minFilter = SamplerMinMagFilter::Linear,
+          .magFilter = SamplerMinMagFilter::Linear,
+          .debugName = "Sampler: linear",
+      },
+      nullptr);
   tex0_ = getPlatform().loadTexture("igl.png");
 
   shaderStages_ = getShaderStagesForBackend(device);
 
   // Command queue
-  const CommandQueueDesc desc{};
-  commandQueue_ = device.createCommandQueue(desc, nullptr);
+  commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
 
-  renderPass0_.colorAttachments.resize(1);
-  renderPass0_.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass0_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass0_.colorAttachments[0].clearColor = getPreferredClearColor();
-  renderPass0_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPass0_.depthAttachment.clearDepth = 1.0;
+  renderPass0_ = {
+      .colorAttachments =
+          {
+              {
+                  .loadAction = LoadAction::Clear,
+                  .storeAction = StoreAction::Store,
+                  .clearColor = getPreferredClearColor(),
+              },
+          },
+      .depthAttachment = {.loadAction = LoadAction::Clear, .clearDepth = 1.0},
+  };
 
-  renderPass1_.colorAttachments.resize(1);
-  renderPass1_.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass1_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass1_.colorAttachments[0].clearColor = getPreferredClearColor();
-  renderPass1_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPass1_.depthAttachment.clearDepth = 1.0;
+  renderPass1_ = {
+      .colorAttachments =
+          {
+              {
+                  .loadAction = LoadAction::Clear,
+                  .storeAction = StoreAction::Store,
+                  .clearColor = getPreferredClearColor(),
+              },
+          },
+      .depthAttachment = {.loadAction = LoadAction::Clear, .clearDepth = 1.0},
+  };
 
   // init uniforms
   fragmentParameters_ = FragmentFormat{{1.0f, 1.0f, 1.0f}};
 
-  BufferDesc fpDesc;
-  fpDesc.type = BufferDesc::BufferTypeBits::Uniform;
-  fpDesc.data = &fragmentParameters_;
-  fpDesc.length = sizeof(fragmentParameters_);
-  fpDesc.storage = ResourceStorage::Shared;
-
-  fragmentParamBuffer_ = device.createBuffer(fpDesc, nullptr);
+  fragmentParamBuffer_ = device.createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
+                                                        &fragmentParameters_,
+                                                        sizeof(fragmentParameters_),
+                                                        ResourceStorage::Shared),
+                                             nullptr);
 }
 
 void TQMultiRenderPassSession::update(SurfaceTextures surfaceTextures) noexcept {
@@ -244,27 +273,35 @@ void TQMultiRenderPassSession::update(SurfaceTextures surfaceTextures) noexcept 
                                     igl::TextureDesc::TextureUsageBits::Attachment);
     tex1_ = getPlatform().getDevice().createTexture(desc1, nullptr);
 
-    FramebufferDesc framebufferDesc;
-    framebufferDesc.colorAttachments[0].texture = tex1_;
-
-    TextureDesc desc = igl::TextureDesc::new2D(igl::TextureFormat::Z_UNorm24,
-                                               dimensions.width,
-                                               dimensions.height,
-                                               igl::TextureDesc::TextureUsageBits::Attachment);
-    desc.storage = igl::ResourceStorage::Private;
-    framebufferDesc.depthAttachment.texture = getPlatform().getDevice().createTexture(desc, &ret);
-
-    framebuffer0_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
+    framebuffer0_ = getPlatform().getDevice().createFramebuffer(
+        FramebufferDesc{
+            .colorAttachments = {{.texture = tex1_}},
+            .depthAttachment =
+                {
+                    .texture = getPlatform().getDevice().createTexture(
+                        TextureDesc{
+                            .width = dimensions.width,
+                            .height = dimensions.height,
+                            .usage = igl::TextureDesc::TextureUsageBits::Attachment,
+                            .type = TextureType::TwoD,
+                            .format = igl::TextureFormat::Z_UNorm24,
+                            .storage = igl::ResourceStorage::Private,
+                        },
+                        &ret),
+                },
+        },
+        &ret);
     IGL_DEBUG_ASSERT(ret.isOk());
     IGL_DEBUG_ASSERT(framebuffer0_ != nullptr);
   }
 
   if (framebuffer1_ == nullptr) {
-    FramebufferDesc framebufferDesc;
-    framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
-    framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
-
-    framebuffer1_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
+    framebuffer1_ = getPlatform().getDevice().createFramebuffer(
+        FramebufferDesc{
+            .colorAttachments = {{.texture = surfaceTextures.color}},
+            .depthAttachment = {.texture = surfaceTextures.depth},
+        },
+        &ret);
     IGL_DEBUG_ASSERT(ret.isOk());
     IGL_DEBUG_ASSERT(framebuffer1_ != nullptr);
   }
@@ -272,25 +309,48 @@ void TQMultiRenderPassSession::update(SurfaceTextures surfaceTextures) noexcept 
 
   // Graphics pipeline
   if (pipelineState0_ == nullptr) {
-    RenderPipelineDesc graphicsDesc;
-    graphicsDesc.vertexInputState = vertexInputState_;
-    graphicsDesc.shaderStages = shaderStages_;
-    graphicsDesc.targetDesc.colorAttachments.resize(1);
-    graphicsDesc.targetDesc.colorAttachments[0].textureFormat = tex1_->getProperties().format;
-    graphicsDesc.targetDesc.depthAttachmentFormat =
-        framebuffer0_->getDepthAttachment()->getProperties().format;
-    graphicsDesc.fragmentUnitSamplerMap[textureUnit] = IGL_NAMEHANDLE("inputImage");
-    graphicsDesc.cullMode = igl::CullMode::Back;
-    graphicsDesc.frontFaceWinding = igl::WindingMode::Clockwise;
+    pipelineState0_ = getPlatform().getDevice().createRenderPipeline(
+        RenderPipelineDesc{
+            .vertexInputState = vertexInputState_,
+            .shaderStages = shaderStages_,
+            .targetDesc =
+                {
+                    .colorAttachments =
+                        {
+                            {
+                                .textureFormat = tex1_->getProperties().format,
+                            },
+                        },
+                    .depthAttachmentFormat =
+                        framebuffer0_->getDepthAttachment()->getProperties().format,
+                },
+            .cullMode = igl::CullMode::Back,
+            .frontFaceWinding = igl::WindingMode::Clockwise,
+            .fragmentUnitSamplerMap = {{textureUnit, IGL_NAMEHANDLE("inputImage")}},
+        },
+        nullptr);
 
-    pipelineState0_ = getPlatform().getDevice().createRenderPipeline(graphicsDesc, nullptr);
-
-    graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
-        framebuffer1_->getColorAttachment(0)->getProperties().format;
-    graphicsDesc.targetDesc.depthAttachmentFormat =
-        framebuffer1_->getDepthAttachment()->getProperties().format;
-
-    pipelineState1_ = getPlatform().getDevice().createRenderPipeline(graphicsDesc, nullptr);
+    pipelineState1_ = getPlatform().getDevice().createRenderPipeline(
+        RenderPipelineDesc{
+            .vertexInputState = vertexInputState_,
+            .shaderStages = shaderStages_,
+            .targetDesc =
+                {
+                    .colorAttachments =
+                        {
+                            {
+                                .textureFormat =
+                                    framebuffer1_->getColorAttachment(0)->getProperties().format,
+                            },
+                        },
+                    .depthAttachmentFormat =
+                        framebuffer1_->getDepthAttachment()->getProperties().format,
+                },
+            .cullMode = igl::CullMode::Back,
+            .frontFaceWinding = igl::WindingMode::Clockwise,
+            .fragmentUnitSamplerMap = {{textureUnit, IGL_NAMEHANDLE("inputImage")}},
+        },
+        nullptr);
 
     // Set up uniformdescriptors
     fragmentUniformDescriptors_.emplace_back();
