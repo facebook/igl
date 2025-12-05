@@ -144,14 +144,34 @@ void YUVColorSession::initialize() noexcept {
       BufferDesc(BufferDesc::BufferTypeBits::Index, kIndexData, sizeof(kIndexData)), nullptr);
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 2;
-  inputDesc.attributes[0] = VertexAttribute{
-      1, VertexAttributeFormat::Float3, offsetof(VertexPosUv, position), "position", 0};
-  inputDesc.attributes[1] =
-      VertexAttribute{1, VertexAttributeFormat::Float2, offsetof(VertexPosUv, uv), "uv_in", 1};
-  inputDesc.numInputBindings = 1;
-  inputDesc.inputBindings[1].stride = sizeof(VertexPosUv);
+  const VertexInputStateDesc inputDesc = {
+      .numAttributes = 2,
+      .attributes =
+          {
+              {
+                  .bufferIndex = 1,
+                  .format = VertexAttributeFormat::Float3,
+                  .offset = offsetof(VertexPosUv, position),
+                  .name = "position",
+                  .location = 0,
+              },
+              {
+                  .bufferIndex = 1,
+                  .format = VertexAttributeFormat::Float2,
+                  .offset = offsetof(VertexPosUv, uv),
+                  .name = "uv_in",
+                  .location = 1,
+              },
+          },
+      .numInputBindings = 1,
+      .inputBindings =
+          {
+              {},
+              {
+                  .stride = sizeof(VertexPosUv),
+              },
+          },
+  };
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
   IGL_DEBUG_ASSERT(vertexInput0_ != nullptr);
 
@@ -187,7 +207,7 @@ void YUVColorSession::initialize() noexcept {
   IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
 
   // Command queue
-  commandQueue_ = device.createCommandQueue({}, nullptr);
+  commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 
   renderPass_ = {
@@ -222,8 +242,12 @@ void YUVColorSession::update(SurfaceTextures surfaceTextures) noexcept {
         .targetDesc =
             {
                 .colorAttachments =
-                    {{.textureFormat =
-                          framebuffer_->getColorAttachment(0)->getProperties().format}},
+                    {
+                        {
+                            .textureFormat =
+                                framebuffer_->getColorAttachment(0)->getProperties().format,
+                        },
+                    },
                 .depthAttachmentFormat = framebuffer_->getDepthAttachment()->getProperties().format,
             },
         .cullMode = igl::CullMode::Back,
@@ -236,7 +260,7 @@ void YUVColorSession::update(SurfaceTextures surfaceTextures) noexcept {
   }
 
   // Command Buffers
-  auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
+  auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
   auto drawableSurface = framebuffer_->getColorAttachment(0);
 
