@@ -42,7 +42,7 @@ void ImguiSession::update(SurfaceTextures surfaceTextures) noexcept {
       .colorAttachments = {{
           .loadAction = igl::LoadAction::Clear,
           .storeAction = igl::StoreAction::Store,
-          .clearColor = getPreferredClearColor(),
+          .clearColor = {0.2f, 0.2f, 0.2f, 1.0f},  // Dark gray instead of yellow
       }},
   };
   auto encoder = cmdBuffer->createRenderCommandEncoder(renderPassDesc, outputFramebuffer_);

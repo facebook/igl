@@ -97,15 +97,15 @@ class VulkanFeatures final {
   /// @param extensionType The type of the extensions
   /// @param validationEnabled Flag that informs the class whether the Validation Layer is
   /// enabled or not.
-  void enableCommonInstanceExtensions(const VulkanContextConfig& contextConfig);
-  void enableCommonDeviceExtensions(const VulkanContextConfig& contextConfig);
+  void enableCommonInstanceExtensions(const VulkanContextConfig& config);
+  void enableCommonDeviceExtensions(const VulkanContextConfig& config);
 
  public:
   friend class Device;
   friend class VulkanContext;
 
   // A copy of the config used by the VulkanContext
-  VulkanContextConfig config{};
+  VulkanContextConfig config_{};
 
   // NOLINTBEGIN(readability-identifier-naming)
   bool has_VK_EXT_descriptor_indexing = false; // promoted to Vulkan 1.2
@@ -139,7 +139,7 @@ class VulkanFeatures final {
 
   /// @brief Assembles the feature chain for the VkPhysicalDeviceFeatures2 structure by connecting
   /// the existing/required feature structures and their pNext chain.
-  void assembleFeatureChain(const VulkanContextConfig& contextConfig) noexcept;
+  void assembleFeatureChain(const VulkanContextConfig& config) noexcept;
   bool hasExtension(const char* ext) const;
 
   /// @brief Enables the extension with name `extensionName` of the type `extensionType` if the

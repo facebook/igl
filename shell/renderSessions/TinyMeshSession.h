@@ -10,10 +10,10 @@
 #pragma once
 
 #include <IGLU/imgui/Session.h>
-#include <shell/shared/platform/Platform.h>
-#include <shell/shared/renderSession/RenderSession.h>
 #include <igl/FPSCounter.h>
 #include <igl/IGL.h>
+#include <shell/shared/platform/Platform.h>
+#include <shell/shared/renderSession/RenderSession.h>
 
 namespace igl::shell {
 
@@ -21,15 +21,16 @@ class TinyMeshSession : public RenderSession {
  public:
   explicit TinyMeshSession(std::shared_ptr<Platform> platform);
   void initialize() noexcept override;
-  void update(SurfaceTextures surfaceTextures) noexcept override;
+  void update(igl::SurfaceTextures surfaceTextures) noexcept override;
   std::shared_ptr<ITexture> getVulkanNativeDepth();
 
  private:
   IDevice* device_{};
+  std::shared_ptr<ICommandQueue> commandQueue_;
   RenderPassDesc renderPass_;
   FramebufferDesc framebufferDesc_;
   std::shared_ptr<IFramebuffer> framebuffer_;
-  std::shared_ptr<IRenderPipelineState> renderPipelineStateMesh_;
+  std::shared_ptr<IRenderPipelineState> renderPipelineState_Mesh_;
   std::shared_ptr<IBuffer> vb0_, ib0_; // buffers for vertices and indices
   std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerObject_;
   std::shared_ptr<IVertexInputState> vertexInput0_;
@@ -40,18 +41,16 @@ class TinyMeshSession : public RenderSession {
 
   std::unique_ptr<iglu::imgui::Session> imguiSession_;
 
-  struct Listener : public IKeyListener {
+  struct Listener : public igl::shell::IKeyListener {
     explicit Listener(TinyMeshSession& session) : session(session) {}
-    bool process(const KeyEvent& event) override {
-      return false;
-    }
+    bool process(const KeyEvent& event) override;
     bool process(const CharEvent& event) override;
     TinyMeshSession& session;
   };
 
   std::shared_ptr<Listener> listener_;
 
-  FPSCounter fps_;
+  igl::FPSCounter fps_;
   double currentTime_ = 0;
 };
 

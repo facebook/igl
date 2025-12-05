@@ -12,6 +12,15 @@
 #include <numeric>
 #include <igl/vulkan/util/TextureFormat.h>
 
+#if !IGL_BACKEND_VULKAN
+// Provide a fallback when Vulkan support is not compiled in.
+namespace igl::vulkan::util {
+inline igl::TextureFormat vkTextureFormatToTextureFormat(int32_t /*vkFormat*/) {
+  return igl::TextureFormat::Invalid;
+}
+} // namespace igl::vulkan::util
+#endif
+
 // @fb-only
 // @fb-only
 // @fb-only

@@ -15,6 +15,7 @@ option(IGL_WITH_OPENGLES  "Enable IGL/OpenGL ES"              OFF)
 option(IGL_WITH_VULKAN    "Enable IGL/Vulkan"                  ON)
 option(IGL_WITH_METAL     "Enable IGL/Metal"                   ON)
 option(IGL_WITH_WEBGL     "Enable IGL/WebGL"                  OFF)
+option(IGL_WITH_D3D12     "Enable IGL/DirectX 12"             OFF)
 
 option(IGL_WITH_IGLU      "Enable IGLU utils"                  ON)
 option(IGL_WITH_SHELL     "Enable Shell utils"                 ON)
@@ -47,6 +48,10 @@ endif()
 
 if(NOT APPLE)
   set(IGL_WITH_METAL OFF)
+endif()
+
+if(NOT WIN32)
+  set(IGL_WITH_D3D12 OFF)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -100,6 +105,7 @@ message(STATUS "IGL_WITH_OPENGLES  = ${IGL_WITH_OPENGLES}")
 message(STATUS "IGL_WITH_VULKAN    = ${IGL_WITH_VULKAN}")
 message(STATUS "IGL_WITH_METAL     = ${IGL_WITH_METAL}")
 message(STATUS "IGL_WITH_WEBGL     = ${IGL_WITH_WEBGL}")
+message(STATUS "IGL_WITH_D3D12     = ${IGL_WITH_D3D12}")
 
 message(STATUS "IGL_WITH_IGLU      = ${IGL_WITH_IGLU}")
 message(STATUS "IGL_WITH_SHELL     = ${IGL_WITH_SHELL}")
@@ -120,8 +126,8 @@ if(APPLE)
     message(FATAL_ERROR "At least one rendering backend should be defined (OpenGL, Vulkan or Metal).")
   endif()
 else()
-  if(NOT (IGL_WITH_OPENGL OR IGL_WITH_VULKAN OR IGL_WITH_OPENGLES OR IGL_WITH_WEBGL))
-    message(FATAL_ERROR "At least one rendering backend should be defined (OpenGL or Vulkan).")
+  if(NOT (IGL_WITH_OPENGL OR IGL_WITH_VULKAN OR IGL_WITH_OPENGLES OR IGL_WITH_WEBGL OR IGL_WITH_D3D12))
+    message(FATAL_ERROR "At least one rendering backend should be defined (OpenGL, Vulkan, or DirectX 12).")
   endif()
 endif()
 
@@ -193,6 +199,16 @@ if(IGL_WITH_OPENXR)
   igl_set_folder(openxr_loader "third-party/OpenXR")
 endif()
 
+if(WIN32 AND IGL_WITH_D3D12)
+  set(DIRECTX_HEADERS_ROOT "${IGL_ROOT_DIR}/third-party/deps/src/DirectX-Headers")
+  if(EXISTS "${DIRECTX_HEADERS_ROOT}/CMakeLists.txt")
+    add_subdirectory("${DIRECTX_HEADERS_ROOT}" "${CMAKE_BINARY_DIR}/DirectX-Headers")
+    set(DIRECTX_HEADERS_INCLUDE_DIR "${DIRECTX_HEADERS_ROOT}/include/directx")
+  else()
+    message(FATAL_ERROR "DirectX-Headers dependency not found. Run deploy_deps.py to download third-party/deps/src/DirectX-Headers.")
+  endif()
+endif()
+
 add_subdirectory(src/igl)
 
 if(IGL_WITH_TRACY)
@@ -234,10 +250,19 @@ endif()
 if(APPLE AND IGL_WITH_METAL)
   target_compile_definitions(IGLLibrary PUBLIC "IGL_BACKEND_ENABLE_METAL=1")
 endif()
+if(WIN32 AND IGL_WITH_D3D12)
+  target_compile_definitions(IGLLibrary PUBLIC "IGL_BACKEND_ENABLE_D3D12=1")
+endif()
 
 target_compile_definitions(IGLLibrary PUBLIC "IGL_CMAKE_BUILD=1")
 
 include_directories(.)
+
+# Enable CTest at top-level when tests are requested so `ctest` can discover tests
+if(IGL_WITH_TESTS)
+  include(CTest)
+  enable_testing()
+endif()
 
 if(IGL_WITH_IGLU OR IGL_WITH_SAMPLES)
   add_library(IGLstb third-party/deps/patches/stb_impl/stb_image.c third-party/deps/patches/stb_impl/stb_image_resize.c

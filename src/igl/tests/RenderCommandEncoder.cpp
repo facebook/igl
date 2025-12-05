@@ -684,8 +684,9 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStrip) {
 }
 
 TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStripCopyTextureToBuffer) {
-  if (iglDev_->getBackendType() != igl::BackendType::Vulkan) {
-    GTEST_SKIP() << "Not implemented for non-Vulkan backends";
+  if (iglDev_->getBackendType() != igl::BackendType::Vulkan &&
+      iglDev_->getBackendType() != igl::BackendType::D3D12) {
+    GTEST_SKIP() << "Not implemented for this backend";
     return;
   }
 
@@ -865,8 +866,9 @@ TEST_F(RenderCommandEncoderTest, DepthBiasShouldDrawAPoint) {
 }
 
 TEST_F(RenderCommandEncoderTest, drawUsingBindPushConstants) {
-  if (iglDev_->getBackendType() != igl::BackendType::Vulkan) {
-    GTEST_SKIP() << "Push constants are only supported in Vulkan";
+  if (iglDev_->getBackendType() != igl::BackendType::Vulkan &&
+      iglDev_->getBackendType() != igl::BackendType::D3D12) {
+    GTEST_SKIP() << "Push constants are only supported in Vulkan and D3D12";
     return;
   }
 
@@ -878,12 +880,21 @@ TEST_F(RenderCommandEncoderTest, drawUsingBindPushConstants) {
 
   // Create new shader stages with push constant shaders
   std::unique_ptr<IShaderStages> pushConstantStages;
-  igl::tests::util::createShaderStages(iglDev_,
-                                       data::shader::kVulkanPushConstantVertShader,
-                                       igl::tests::data::shader::kShaderFunc,
-                                       data::shader::kVulkanPushConstantFragShader,
-                                       igl::tests::data::shader::kShaderFunc,
-                                       pushConstantStages);
+  if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
+    igl::tests::util::createShaderStages(iglDev_,
+                                         data::shader::kD3D12PushConstantVertShader,
+                                         std::string("main"),
+                                         data::shader::kD3D12PushConstantFragShader,
+                                         std::string("main"),
+                                         pushConstantStages);
+  } else {
+    igl::tests::util::createShaderStages(iglDev_,
+                                         data::shader::kVulkanPushConstantVertShader,
+                                         igl::tests::data::shader::kShaderFunc,
+                                         data::shader::kVulkanPushConstantFragShader,
+                                         igl::tests::data::shader::kShaderFunc,
+                                         pushConstantStages);
+  }
   ASSERT_TRUE(pushConstantStages);
   shaderStages_ = std::move(pushConstantStages);
 
