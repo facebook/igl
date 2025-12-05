@@ -1107,7 +1107,7 @@ bool loadAndCache(const char* cacheFileName) {
     std::vector<VertexData> remappedVertices;
     indexData_.resize(indexCount);
     remappedVertices.resize(vertexCount);
-    meshopt_remapIndexBuffer(indexData_.data(), nullptr, indexCount, &remap[0]);
+    meshopt_remapIndexBuffer(indexData_.data(), nullptr, indexCount, remap.data());
     meshopt_remapVertexBuffer(
         remappedVertices.data(), vertexData_.data(), indexCount, sizeof(VertexData), remap.data());
     vertexData_ = remappedVertices;
