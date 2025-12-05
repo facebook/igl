@@ -186,12 +186,15 @@ constexpr uint16_t kIndexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 
 
 void HelloOpenXRSession::createSamplerAndTextures(const igl::IDevice& device) {
   // Sampler & Texture
-  SamplerStateDesc samplerDesc;
-  samplerDesc.minFilter = samplerDesc.magFilter = SamplerMinMagFilter::Linear;
-  samplerDesc.addressModeU = SamplerAddressMode::MirrorRepeat;
-  samplerDesc.addressModeV = SamplerAddressMode::MirrorRepeat;
-  samplerDesc.addressModeW = SamplerAddressMode::MirrorRepeat;
-  samp0_ = device.createSamplerState(samplerDesc, nullptr);
+  samp0_ = device.createSamplerState(
+      SamplerStateDesc{
+          .minFilter = SamplerMinMagFilter::Linear,
+          .magFilter = SamplerMinMagFilter::Linear,
+          .addressModeU = SamplerAddressMode::MirrorRepeat,
+          .addressModeV = SamplerAddressMode::MirrorRepeat,
+          .addressModeW = SamplerAddressMode::MirrorRepeat,
+      },
+      nullptr);
 
   tex0_ = getPlatform().loadTexture("macbeth.png");
 }
@@ -209,20 +212,24 @@ void HelloOpenXRSession::initialize() noexcept {
       BufferDesc(BufferDesc::BufferTypeBits::Index, kIndexData, sizeof(kIndexData));
   ib0_ = device.createBuffer(ibDesc, nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 2;
-  inputDesc.attributes[0].format = VertexAttributeFormat::Float3;
-  inputDesc.attributes[0].offset = offsetof(VertexPosUvw, position);
-  inputDesc.attributes[0].bufferIndex = 0;
-  inputDesc.attributes[0].name = "position";
-  inputDesc.attributes[0].location = 0;
-  inputDesc.attributes[1].format = VertexAttributeFormat::Float3;
-  inputDesc.attributes[1].offset = offsetof(VertexPosUvw, uvw);
-  inputDesc.attributes[1].bufferIndex = 0;
-  inputDesc.attributes[1].name = "uvw_in";
-  inputDesc.attributes[1].location = 1;
-  inputDesc.numInputBindings = 1;
-  inputDesc.inputBindings[0].stride = sizeof(VertexPosUvw);
+  const VertexInputStateDesc inputDesc = {
+      .numAttributes = 2,
+      .attributes =
+          {
+              {.bufferIndex = 0,
+               .format = VertexAttributeFormat::Float3,
+               .offset = offsetof(VertexPosUvw, position),
+               .name = "position",
+               .location = 0},
+              {.bufferIndex = 0,
+               .format = VertexAttributeFormat::Float3,
+               .offset = offsetof(VertexPosUvw, uvw),
+               .name = "uvw_in",
+               .location = 1},
+          },
+      .numInputBindings = 1,
+      .inputBindings = {{.stride = sizeof(VertexPosUvw)}},
+  };
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
 
   const bool stereoRendering = shellParams().viewParams.size() > 1;
@@ -232,22 +239,26 @@ void HelloOpenXRSession::initialize() noexcept {
   shaderStages_ = getShaderStagesForBackend(device, shaderCross, stereoRendering);
 
   // Command queue: backed by different types of GPU HW queues
-  const CommandQueueDesc desc{};
-  commandQueue_ = device.createCommandQueue(desc, nullptr);
+  commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
 
   // Set up vertex uniform data
   ub_.scaleZ = 1.0f;
 
-  renderPass_.colorAttachments.resize(1);
-  renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
+  renderPass_ = {
+      .colorAttachments =
+          {
+              {
+                  .loadAction = LoadAction::Clear,
+                  .storeAction = StoreAction::Store,
 #if defined(IGL_OPENXR_MR_MODE)
-  renderPass_.colorAttachments[0].clearColor = {0.0, 0.0, 1.0, 0.0f};
+                  .clearColor = {0.0, 0.0, 1.0, 0.0f},
 #else
-  renderPass_.colorAttachments[0].clearColor = {0.0, 0.0, 1.0, 1.0f};
+                  .clearColor = {0.0, 0.0, 1.0, 1.0f},
 #endif
-  renderPass_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPass_.depthAttachment.clearDepth = 1.0;
+              },
+          },
+      .depthAttachment = {.loadAction = LoadAction::Clear, .clearDepth = 1.0},
+  };
 }
 
 void HelloOpenXRSession::updateUniformBlock() {
@@ -289,14 +300,16 @@ void HelloOpenXRSession::update(SurfaceTextures surfaceTextures) noexcept {
 
   Result ret;
   if (framebuffer_[viewIndex] == nullptr) {
-    FramebufferDesc framebufferDesc;
-    framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
-    framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
+    const FramebufferMode mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
+                                                                           : FramebufferMode::Mono;
 
-    framebufferDesc.mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
-                                                                     : FramebufferMode::Mono;
-
-    framebuffer_[viewIndex] = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
+    framebuffer_[viewIndex] = getPlatform().getDevice().createFramebuffer(
+        FramebufferDesc{
+            .colorAttachments = {{.texture = surfaceTextures.color}},
+            .depthAttachment = {.texture = surfaceTextures.depth},
+            .mode = mode,
+        },
+        &ret);
     IGL_DEBUG_ASSERT(ret.isOk());
     IGL_DEBUG_ASSERT(framebuffer_[viewIndex] != nullptr);
   } else {
@@ -307,18 +320,29 @@ void HelloOpenXRSession::update(SurfaceTextures surfaceTextures) noexcept {
   if (pipelineState_ == nullptr) {
     // Graphics pipeline: state batch that fully configures GPU for rendering
 
-    RenderPipelineDesc graphicsDesc;
-    graphicsDesc.vertexInputState = vertexInput0_;
-    graphicsDesc.shaderStages = shaderStages_;
-    graphicsDesc.targetDesc.colorAttachments.resize(1);
-    graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
-        framebuffer_[viewIndex]->getColorAttachment(0)->getProperties().format;
-    graphicsDesc.targetDesc.depthAttachmentFormat =
-        framebuffer_[viewIndex]->getDepthAttachment()->getProperties().format;
-    graphicsDesc.fragmentUnitSamplerMap[textureUnit] = IGL_NAMEHANDLE("inputImage");
-    graphicsDesc.cullMode = igl::CullMode::Back;
-    graphicsDesc.frontFaceWinding = igl::WindingMode::CounterClockwise;
-    pipelineState_ = getPlatform().getDevice().createRenderPipeline(graphicsDesc, nullptr);
+    pipelineState_ = getPlatform().getDevice().createRenderPipeline(
+        RenderPipelineDesc{
+            .vertexInputState = vertexInput0_,
+            .shaderStages = shaderStages_,
+            .targetDesc =
+                {
+                    .colorAttachments =
+                        {
+                            {
+                                .textureFormat = framebuffer_[viewIndex]
+                                                     ->getColorAttachment(0)
+                                                     ->getProperties()
+                                                     .format,
+                            },
+                        },
+                    .depthAttachmentFormat =
+                        framebuffer_[viewIndex]->getDepthAttachment()->getProperties().format,
+                },
+            .cullMode = igl::CullMode::Back,
+            .frontFaceWinding = igl::WindingMode::CounterClockwise,
+            .fragmentUnitSamplerMap = {{textureUnit, IGL_NAMEHANDLE("inputImage")}},
+        },
+        nullptr);
   }
 
   // Command buffers (1-N per thread): create, submit and forget
@@ -329,36 +353,45 @@ void HelloOpenXRSession::update(SurfaceTextures surfaceTextures) noexcept {
 
   commands->bindVertexBuffer(0, *vb0_);
 
-  iglu::ManagedUniformBufferInfo info;
-  info.index = 1;
-  info.length = sizeof(UniformBlock);
-  info.uniforms = std::vector<UniformDesc>{
-      UniformDesc{
-          "modelMatrix", -1, igl::UniformType::Mat4x4, 1, offsetof(UniformBlock, modelMatrix), 0},
-      UniformDesc{
-          "viewProjectionMatrix",
-          -1,
-          igl::UniformType::Mat4x4,
-          2,
-          offsetof(UniformBlock, viewProjectionMatrix),
-          sizeof(glm::mat4),
-      },
-      UniformDesc{
-          "scaleZ",
-          -1,
-          igl::UniformType::Float,
-          1,
-          offsetof(UniformBlock, scaleZ),
-          0,
-      },
-      UniformDesc{
-          "viewId",
-          -1,
-          igl::UniformType::Int,
-          1,
-          offsetof(UniformBlock, viewId),
-          0,
-      }};
+  const iglu::ManagedUniformBufferInfo info = {
+      .index = 1,
+      .length = sizeof(UniformBlock),
+      .uniforms =
+          {
+              {
+                  .name = "modelMatrix",
+                  .location = -1,
+                  .type = igl::UniformType::Mat4x4,
+                  .numElements = 1,
+                  .offset = offsetof(UniformBlock, modelMatrix),
+                  .elementStride = 0,
+              },
+              {
+                  .name = "viewProjectionMatrix",
+                  .location = -1,
+                  .type = igl::UniformType::Mat4x4,
+                  .numElements = 2,
+                  .offset = offsetof(UniformBlock, viewProjectionMatrix),
+                  .elementStride = sizeof(glm::mat4),
+              },
+              {
+                  .name = "scaleZ",
+                  .location = -1,
+                  .type = igl::UniformType::Float,
+                  .numElements = 1,
+                  .offset = offsetof(UniformBlock, scaleZ),
+                  .elementStride = 0,
+              },
+              {
+                  .name = "viewId",
+                  .location = -1,
+                  .type = igl::UniformType::Int,
+                  .numElements = 1,
+                  .offset = offsetof(UniformBlock, viewId),
+                  .elementStride = 0,
+              },
+          },
+  };
 
   const auto ubo = std::make_shared<iglu::ShaderCrossUniformBuffer>(device, "perFrame", info);
   IGL_DEBUG_ASSERT(ubo->result.isOk());
