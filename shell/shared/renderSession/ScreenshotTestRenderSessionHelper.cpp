@@ -12,7 +12,7 @@
 
 namespace igl::shell {
 
-void SaveFrameBufferToPng(const char* absoluteFilename,
+void saveFrameBufferToPng(const char* absoluteFilename,
                           const std::shared_ptr<IFramebuffer>& framebuffer,
                           Platform& platform) {
   auto drawableSurface = framebuffer->getColorAttachment(0);

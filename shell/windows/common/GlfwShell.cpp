@@ -256,7 +256,7 @@ void GlfwShell::run() noexcept {
       IGL_LOG_INFO("\nWe are running screenshot test - breaking after %u frame\n",
                    (uint32_t)frameNumber);
       if (!session_->shellParams().screenshotFileName.empty()) {
-        SaveFrameBufferToPng(session_->shellParams().screenshotFileName.c_str(),
+        saveFrameBufferToPng(session_->shellParams().screenshotFileName.c_str(),
                              platform_->getDevice().createFramebuffer(
                                  {.colorAttachments = {{.texture = colorTexture}}}, nullptr),
                              *platform_);
