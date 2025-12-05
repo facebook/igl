@@ -82,6 +82,7 @@ if(IGL_WITH_OPENXR)
   add_subdirectory(openxr)
 endif()
 
+
 macro(ADD_SHELL_SESSION target libs)
   set(shell_srcs apps/SessionApp.cpp renderSessions/${target}.cpp renderSessions/${target}.h)
   add_shell_session_with_srcs(${target} "${shell_srcs}" "${libs}")
