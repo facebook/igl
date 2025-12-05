@@ -220,8 +220,8 @@ enum class TextureFormat : uint8_t {
 };
 
 inline TextureFormat sRGBToLinear(TextureFormat format) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wswitch-enum"
+  FOLLY_PUSH_WARNING
+  FOLLY_CLANG_DISABLE_WARNING("-Wswitch-enum")
   switch (format) {
   case TextureFormat::RGBA_SRGB:
     return TextureFormat::RGBA_UNorm8;
@@ -234,13 +234,13 @@ inline TextureFormat sRGBToLinear(TextureFormat format) {
   default:
     break;
   }
-#pragma clang diagnostic pop
+  FOLLY_POP_WARNING
   IGL_UNREACHABLE_RETURN(TextureFormat::RGBA_UNorm8)
 }
 
 inline TextureFormat linearTosRGB(TextureFormat format) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wswitch-enum"
+  FOLLY_PUSH_WARNING
+  FOLLY_CLANG_DISABLE_WARNING("-Wswitch-enum")
   switch (format) {
   case TextureFormat::RGBA_UNorm8:
     return TextureFormat::RGBA_SRGB;
@@ -253,7 +253,7 @@ inline TextureFormat linearTosRGB(TextureFormat format) {
   default:
     break;
   }
-#pragma clang diagnostic pop
+  FOLLY_POP_WARNING
   IGL_UNREACHABLE_RETURN(TextureFormat::RGBA_SRGB)
 }
 
