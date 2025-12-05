@@ -227,30 +227,34 @@ void HandsOpenXRSession::initialize() noexcept {
       BufferDesc::BufferTypeBits::Index, indices.data(), sizeof(uint16_t) * indices.size());
   ib0_ = device.createBuffer(ibDesc, nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 4;
-  inputDesc.attributes[0].format = VertexAttributeFormat::Float3;
-  inputDesc.attributes[0].offset = offsetof(Vertex, position);
-  inputDesc.attributes[0].bufferIndex = 0;
-  inputDesc.attributes[0].name = "position";
-  inputDesc.attributes[0].location = 0;
-  inputDesc.attributes[1].format = VertexAttributeFormat::Float3;
-  inputDesc.attributes[1].offset = offsetof(Vertex, normal);
-  inputDesc.attributes[1].bufferIndex = 0;
-  inputDesc.attributes[1].name = "normal";
-  inputDesc.attributes[1].location = 1;
-  inputDesc.attributes[2].format = VertexAttributeFormat::Float4;
-  inputDesc.attributes[2].offset = offsetof(Vertex, weight);
-  inputDesc.attributes[2].bufferIndex = 0;
-  inputDesc.attributes[2].name = "weight";
-  inputDesc.attributes[2].location = 2;
-  inputDesc.attributes[3].format = VertexAttributeFormat::Float4;
-  inputDesc.attributes[3].offset = offsetof(Vertex, joint);
-  inputDesc.attributes[3].bufferIndex = 0;
-  inputDesc.attributes[3].name = "joint";
-  inputDesc.attributes[3].location = 3;
-  inputDesc.numInputBindings = 1;
-  inputDesc.inputBindings[0].stride = sizeof(Vertex);
+  const VertexInputStateDesc inputDesc = {
+      .numAttributes = 4,
+      .attributes =
+          {
+              {.bufferIndex = 0,
+               .format = VertexAttributeFormat::Float3,
+               .offset = offsetof(Vertex, position),
+               .name = "position",
+               .location = 0},
+              {.bufferIndex = 0,
+               .format = VertexAttributeFormat::Float3,
+               .offset = offsetof(Vertex, normal),
+               .name = "normal",
+               .location = 1},
+              {.bufferIndex = 0,
+               .format = VertexAttributeFormat::Float4,
+               .offset = offsetof(Vertex, weight),
+               .name = "weight",
+               .location = 2},
+              {.bufferIndex = 0,
+               .format = VertexAttributeFormat::Float4,
+               .offset = offsetof(Vertex, joint),
+               .name = "joint",
+               .location = 3},
+          },
+      .numInputBindings = 1,
+      .inputBindings = {{.stride = sizeof(Vertex)}},
+  };
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
 
   const iglu::ShaderCross shaderCross(device);
@@ -312,16 +316,26 @@ void HandsOpenXRSession::update(SurfaceTextures surfaceTextures) noexcept {
   }
 
   if (pipelineState_ == nullptr) {
-    RenderPipelineDesc graphicsDesc;
-    graphicsDesc.vertexInputState = vertexInput0_;
-    graphicsDesc.shaderStages = shaderStages_;
-    graphicsDesc.targetDesc.colorAttachments.resize(1);
-    graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
-        framebuffer_[viewIndex]->getColorAttachment(0)->getProperties().format;
-    graphicsDesc.targetDesc.depthAttachmentFormat =
-        framebuffer_[viewIndex]->getDepthAttachment()->getProperties().format;
-    graphicsDesc.cullMode = igl::CullMode::Back;
-    graphicsDesc.frontFaceWinding = igl::WindingMode::CounterClockwise;
+    const RenderPipelineDesc graphicsDesc = {
+        .vertexInputState = vertexInput0_,
+        .shaderStages = shaderStages_,
+        .targetDesc =
+            {
+                .colorAttachments =
+                    {
+                        {
+                            .textureFormat = framebuffer_[viewIndex]
+                                                 ->getColorAttachment(0)
+                                                 ->getProperties()
+                                                 .format,
+                        },
+                    },
+                .depthAttachmentFormat =
+                    framebuffer_[viewIndex]->getDepthAttachment()->getProperties().format,
+            },
+        .cullMode = igl::CullMode::Back,
+        .frontFaceWinding = igl::WindingMode::CounterClockwise,
+    };
     pipelineState_ = getPlatform().getDevice().createRenderPipeline(graphicsDesc, nullptr);
   }
 
