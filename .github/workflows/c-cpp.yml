@@ -19,6 +19,14 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Free up disk space
+        run: |
+          df -h
+          sudo rm -rf /usr/share/dotnet /opt/ghc
+          sudo docker system prune --all --force --volumes
+          sudo apt-get clean -y
+          df -h
+
       - name: Set up NDK
         uses: nttld/setup-ndk@v1
         with:
@@ -200,6 +208,9 @@ jobs:
 
         - name: Get the number of CPU cores
           uses: SimenB/github-actions-cpu-cores@v2
+
+        - name: Check disk space
+          run: df -h
 
         - name: Build
           shell: bash
