@@ -124,12 +124,12 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .taskShader = VK_TRUE,
       .meshShader = VK_TRUE,
   }),
-  config(config) {
+  config_(config) {
   extensions_.resize(kNumberOfExtensionTypes);
   enabledExtensions_.resize(kNumberOfExtensionTypes);
 
   // All the above get assembled into a feature chain
-  assembleFeatureChain(config);
+  assembleFeatureChain(config_);
 }
 
 void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
@@ -185,7 +185,7 @@ Result VulkanFeatures::checkSelectedFeatures(
 
 #define ENABLE_FEATURE_1_1_EXT(requestedFeatureStruct, availableFeatureStruct, feature) \
   ENABLE_VULKAN_FEATURE(requestedFeatureStruct, availableFeatureStruct, feature, "1.1 EXT")
-  if (config.enableDescriptorIndexing) {
+  if (config_.enableDescriptorIndexing) {
     ENABLE_FEATURE_1_1_EXT(featuresDescriptorIndexing,
                            availableFeatures.featuresDescriptorIndexing,
                            shaderSampledImageArrayNonUniformIndexing)
@@ -250,7 +250,7 @@ Result VulkanFeatures::checkSelectedFeatures(
   return Result{};
 }
 
-void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& contextConfig) noexcept {
+void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noexcept {
   // Versions 1.0 and 1.1 are always present
 
   // Reset all pNext pointers. We might be copying the chain from another VulkanFeatures object,
@@ -310,7 +310,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& contextConf
   if (hasExtension(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)) {
     ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresUniformBufferStandardLayout);
   }
-  if (contextConfig.enableMultiviewPerViewViewports) {
+  if (config_.enableMultiviewPerViewViewports) {
     if (hasExtension(VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME)) {
       ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresMultiviewPerViewViewports);
     } else {
@@ -328,7 +328,7 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   }
 
   const bool sameConfiguration =
-      config.enableDescriptorIndexing == other.config.enableDescriptorIndexing;
+      config_.enableDescriptorIndexing == other.config_.enableDescriptorIndexing;
   if (!sameConfiguration) {
     return *this;
   }
@@ -357,7 +357,7 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   enabledExtensions_ = other.enabledExtensions_;
   extensionProps_ = other.extensionProps_;
 
-  assembleFeatureChain(config);
+  assembleFeatureChain(config_);
 
   return *this;
 }
@@ -422,7 +422,7 @@ bool VulkanFeatures::enable(const char* extensionName, ExtensionType extensionTy
   return false;
 }
 
-void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& contextConfig) {
+void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& config) {
   enable(VK_KHR_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
   enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, ExtensionType::Instance);
 #if IGL_PLATFORM_WINDOWS
@@ -443,7 +443,7 @@ void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& c
 #endif // IGL_PLATFORM_MACOSX
 
 #if !IGL_PLATFORM_ANDROID
-  if (contextConfig.enableValidation) {
+  if (config.enableValidation) {
     enable(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, ExtensionType::Instance);
   }
 #endif // !IGL_PLATFORM_ANDROID
@@ -454,12 +454,12 @@ void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& c
   has_VK_EXT_headless_surface =
       enable(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
 
-  if (contextConfig.headless) {
+  if (config.headless) {
     if (!has_VK_EXT_headless_surface) {
       IGL_LOG_ERROR("VK_EXT_headless_surface extension not supported\n");
     }
   }
-  if (contextConfig.swapChainColorSpace != igl::ColorSpace::SRGB_NONLINEAR) {
+  if (config.swapChainColorSpace != igl::ColorSpace::SRGB_NONLINEAR) {
     const bool enabledExtension =
         enable(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME, ExtensionType::Instance);
     if (!enabledExtension) {
@@ -468,7 +468,7 @@ void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& c
   }
 }
 
-void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& contextConfig) {
+void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& config) {
   enable(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME, ExtensionType::Device);
   enable(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME, ExtensionType::Device);
   enable(VK_KHR_SWAPCHAIN_EXTENSION_NAME, ExtensionType::Device);
@@ -531,7 +531,7 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
   has_VK_EXT_fragment_density_map =
       enable(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME, ExtensionType::Device);
 
-  if (contextConfig.enableMultiviewPerViewViewports) {
+  if (config_.enableMultiviewPerViewViewports) {
     has_VK_QCOM_multiview_per_view_viewports =
         enable(VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME, ExtensionType::Device);
     IGL_SOFT_ASSERT(has_VK_QCOM_multiview_per_view_viewports,

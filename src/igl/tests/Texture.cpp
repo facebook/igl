@@ -86,7 +86,9 @@ TEST_F(TextureTest, Passthrough) {
   cmds->bindRenderPipelineState(pipelineState);
 
   cmds->bindTexture(textureUnit_, BindTarget::kFragment, inputTexture_.get());
+  IGL_LOG_INFO("TEST: About to bind sampler: textureUnit_=%zu, samp_=%p\n", textureUnit_, samp_.get());
   cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
+  IGL_LOG_INFO("TEST: After bind sampler\n");
 
   cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
   cmds->drawIndexed(6);
