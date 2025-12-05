@@ -408,7 +408,9 @@ VkResult ivkVmaCreateAllocator(const struct VulkanFunctionTable* vt,
                                VkDeviceSize preferredLargeHeapBlockSize,
                                VmaAllocator* outVma);
 
-void ivkUpdateGlslangResource(glslang_resource_t* res, const VkPhysicalDeviceProperties* props);
+void ivkUpdateGlslangResource(glslang_resource_t* res,
+                              const VkPhysicalDeviceProperties* props,
+                              const VkPhysicalDeviceMeshShaderPropertiesEXT* meshShaderProps);
 
 #ifdef __cplusplus
 }

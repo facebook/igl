@@ -415,6 +415,7 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
                              void* IGL_NULLABLE window,
                              void* IGL_NULLABLE display) :
   tableImpl_(std::make_unique<VulkanFunctionTable>()),
+  // NOLINTBEGIN(clang-diagnostic-missing-designated-field-initializers)
   vkPhysicalDeviceDescriptorIndexingProperties_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES_EXT,
       .pNext = nullptr,
@@ -427,6 +428,11 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
       .pNext = &vkPhysicalDeviceDriverProperties_,
   }),
+  vkPhysicalDeviceMeshShaderPropertiesEXT_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT,
+      .pNext = nullptr,
+  }),
+  // NOLINTEND(clang-diagnostic-missing-designated-field-initializers)
   features_(config),
   vf_(*tableImpl_),
   config_(config) {
@@ -816,6 +822,11 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     if (!featureCheckResult.isOk()) {
       return featureCheckResult;
     }
+  }
+
+  if (features_.available(VK_EXT_MESH_SHADER_EXTENSION_NAME,
+                          VulkanFeatures::ExtensionType::Device)) {
+    vkPhysicalDeviceDescriptorIndexingProperties_.pNext = &vkPhysicalDeviceMeshShaderPropertiesEXT_;
   }
 
   vf_.vkGetPhysicalDeviceProperties2(vkPhysicalDevice_, &vkPhysicalDeviceProperties2_);

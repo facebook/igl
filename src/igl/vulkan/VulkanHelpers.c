@@ -1280,7 +1280,9 @@ VkResult ivkVmaCreateAllocator(const struct VulkanFunctionTable* vt,
   return vmaCreateAllocator(&ci, outVma);
 }
 
-void ivkUpdateGlslangResource(glslang_resource_t* res, const VkPhysicalDeviceProperties* props) {
+void ivkUpdateGlslangResource(glslang_resource_t* res,
+                              const VkPhysicalDeviceProperties* props,
+                              const VkPhysicalDeviceMeshShaderPropertiesEXT* meshShaderProps) {
   const VkPhysicalDeviceLimits* limits = props ? &props->limits : NULL;
   if (!limits || !res) {
     return;
@@ -1310,4 +1312,16 @@ void ivkUpdateGlslangResource(glslang_resource_t* res, const VkPhysicalDevicePro
   res->max_viewports = (int)limits->maxViewports;
   res->max_cull_distances = (int)limits->maxCullDistances;
   res->max_combined_clip_and_cull_distances = (int)limits->maxCombinedClipAndCullDistances;
+
+  if (meshShaderProps) {
+    res->max_mesh_output_vertices_ext = meshShaderProps->maxMeshOutputVertices;
+    res->max_mesh_output_primitives_ext = meshShaderProps->maxMeshOutputPrimitives;
+    res->max_mesh_work_group_size_x_ext = meshShaderProps->maxMeshWorkGroupSize[0];
+    res->max_mesh_work_group_size_y_ext = meshShaderProps->maxMeshWorkGroupSize[1];
+    res->max_mesh_work_group_size_z_ext = meshShaderProps->maxMeshWorkGroupSize[2];
+    res->max_task_work_group_size_x_ext = meshShaderProps->maxTaskWorkGroupSize[0];
+    res->max_task_work_group_size_y_ext = meshShaderProps->maxTaskWorkGroupSize[1];
+    res->max_task_work_group_size_z_ext = meshShaderProps->maxTaskWorkGroupSize[2];
+    res->max_mesh_view_count_ext = meshShaderProps->maxMeshMultiviewViewCount;
+  }
 }
