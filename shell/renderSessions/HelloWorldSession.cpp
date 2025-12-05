@@ -166,81 +166,102 @@ void HelloWorldSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
   // Vertex & Index buffer
-  const BufferDesc vbDesc =
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData));
-  vb0_ = device.createBuffer(vbDesc, nullptr);
+  vb0_ = device.createBuffer(
+      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData)), nullptr);
   IGL_DEBUG_ASSERT(vb0_ != nullptr);
-  const BufferDesc ibDesc =
-      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
-  ib0_ = device.createBuffer(ibDesc, nullptr);
+  ib0_ = device.createBuffer(
+      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)), nullptr);
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 2;
-  inputDesc.attributes[0] = VertexAttribute{
-      1, VertexAttributeFormat::Float3, offsetof(VertexPosColor, position), "position", 0};
-  inputDesc.attributes[1] = VertexAttribute{
-      1, VertexAttributeFormat::Float4, offsetof(VertexPosColor, color), "color_in", 1};
-  inputDesc.numInputBindings = 1;
-  inputDesc.inputBindings[1].stride = sizeof(VertexPosColor);
-  vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
+  vertexInput0_ = device.createVertexInputState(
+      VertexInputStateDesc{
+          .numAttributes = 2,
+          .attributes =
+              {
+                  VertexAttribute{.bufferIndex = 1,
+                                  .format = VertexAttributeFormat::Float3,
+                                  .offset = offsetof(VertexPosColor, position),
+                                  .name = "position",
+                                  .location = 0},
+                  VertexAttribute{.bufferIndex = 1,
+                                  .format = VertexAttributeFormat::Float4,
+                                  .offset = offsetof(VertexPosColor, color),
+                                  .name = "color_in",
+                                  .location = 1},
+              },
+          .numInputBindings = 1,
+          .inputBindings = {{}, {.stride = sizeof(VertexPosColor)}},
+      },
+      nullptr);
   IGL_DEBUG_ASSERT(vertexInput0_ != nullptr);
 
   shaderStages_ = getShaderStagesForBackend(device);
   IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
 
   // Command queue
-  const CommandQueueDesc desc{};
-  commandQueue_ = device.createCommandQueue(desc, nullptr);
+  commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 
-  renderPass_.colorAttachments.resize(1);
-  renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass_.colorAttachments[0].clearColor = getPreferredClearColor();
-  renderPass_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPass_.depthAttachment.clearDepth = 1.0;
+  renderPass_ = {
+      .colorAttachments =
+          {
+              {
+                  .loadAction = LoadAction::Clear,
+                  .storeAction = StoreAction::Store,
+                  .clearColor = getPreferredClearColor(),
+              },
+          },
+      .depthAttachment =
+          {
+              .loadAction = LoadAction::Clear,
+              .clearDepth = 1.0,
+          },
+  };
 }
 
-void HelloWorldSession::update(SurfaceTextures surfaceTextures) noexcept {
+void HelloWorldSession::update(SurfaceTextures textures) noexcept {
   Result ret;
   if (framebuffer_ == nullptr) {
-    FramebufferDesc framebufferDesc;
-    framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
-    framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
-    if (surfaceTextures.depth && surfaceTextures.depth->getProperties().hasStencil()) {
-      framebufferDesc.stencilAttachment.texture = surfaceTextures.depth;
-    }
-    IGL_DEBUG_ASSERT(ret.isOk());
-    framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
+    framebuffer_ = getPlatform().getDevice().createFramebuffer(
+        FramebufferDesc{
+            .colorAttachments = {{.texture = textures.color}},
+            .depthAttachment = {.texture = textures.depth},
+            .stencilAttachment = textures.depth && textures.depth->getProperties().hasStencil()
+                                     ? FramebufferDesc::AttachmentDesc{.texture = textures.depth}
+                                     : FramebufferDesc::AttachmentDesc{},
+        },
+        &ret);
     IGL_DEBUG_ASSERT(ret.isOk());
     IGL_DEBUG_ASSERT(framebuffer_ != nullptr);
   } else {
-    framebuffer_->updateDrawable(surfaceTextures);
+    framebuffer_->updateDrawable(textures);
   }
 
   // Graphics pipeline
   if (pipelineState_ == nullptr) {
-    RenderPipelineDesc graphicsDesc;
-    graphicsDesc.vertexInputState = vertexInput0_;
-    graphicsDesc.shaderStages = shaderStages_;
-    graphicsDesc.targetDesc.colorAttachments.resize(1);
-    graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
-        framebuffer_->getColorAttachment(0)->getFormat();
-    graphicsDesc.targetDesc.depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat();
-    graphicsDesc.targetDesc.stencilAttachmentFormat =
-        framebuffer_->getStencilAttachment() ? framebuffer_->getStencilAttachment()->getFormat()
-                                             : igl::TextureFormat::Invalid;
-    graphicsDesc.cullMode = igl::CullMode::Back;
-    graphicsDesc.frontFaceWinding = igl::WindingMode::Clockwise;
-
-    pipelineState_ = getPlatform().getDevice().createRenderPipeline(graphicsDesc, nullptr);
+    pipelineState_ = getPlatform().getDevice().createRenderPipeline(
+        RenderPipelineDesc{
+            .vertexInputState = vertexInput0_,
+            .shaderStages = shaderStages_,
+            .targetDesc =
+                {
+                    .colorAttachments = {{.textureFormat =
+                                              framebuffer_->getColorAttachment(0)->getFormat()}},
+                    .depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat(),
+                    .stencilAttachmentFormat =
+                        framebuffer_->getStencilAttachment()
+                            ? framebuffer_->getStencilAttachment()->getFormat()
+                            : igl::TextureFormat::Invalid,
+                },
+            .cullMode = igl::CullMode::Back,
+            .frontFaceWinding = igl::WindingMode::Clockwise,
+        },
+        nullptr);
     IGL_DEBUG_ASSERT(pipelineState_ != nullptr);
   }
 
   // Command Buffers
-  const CommandBufferDesc cbDesc;
-  auto buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
   auto drawableSurface = framebuffer_->getColorAttachment(0);
 
@@ -264,7 +285,7 @@ void HelloWorldSession::update(SurfaceTextures surfaceTextures) noexcept {
 
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
   commandQueue_->submit(*buffer);
-  RenderSession::update(surfaceTextures);
+  RenderSession::update(textures);
 }
 
 } // namespace igl::shell
