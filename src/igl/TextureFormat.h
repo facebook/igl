@@ -219,21 +219,41 @@ enum class TextureFormat : uint8_t {
   // @fb-only
 };
 
-inline TextureFormat sRGBToUNorm(TextureFormat format) {
-  if (format == TextureFormat::RGBA_SRGB) {
+inline TextureFormat sRGBToLinear(TextureFormat format) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch-enum"
+  switch (format) {
+  case TextureFormat::RGBA_SRGB:
     return TextureFormat::RGBA_UNorm8;
-  } else if (format == TextureFormat::BGRA_SRGB) {
+  case TextureFormat::BGRA_SRGB:
     return TextureFormat::BGRA_UNorm8;
+  // @fb-only
+    // @fb-only
+  // @fb-only
+    // @fb-only
+  default:
+    break;
   }
+#pragma clang diagnostic pop
   IGL_UNREACHABLE_RETURN(TextureFormat::RGBA_UNorm8)
 }
 
-inline TextureFormat UNormTosRGB(TextureFormat format) {
-  if (format == TextureFormat::RGBA_UNorm8) {
+inline TextureFormat linearTosRGB(TextureFormat format) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch-enum"
+  switch (format) {
+  case TextureFormat::RGBA_UNorm8:
     return TextureFormat::RGBA_SRGB;
-  } else if (format == TextureFormat::BGRA_UNorm8) {
+  case TextureFormat::BGRA_UNorm8:
     return TextureFormat::BGRA_SRGB;
+  // @fb-only
+    // @fb-only
+  // @fb-only
+    // @fb-only
+  default:
+    break;
   }
+#pragma clang diagnostic pop
   IGL_UNREACHABLE_RETURN(TextureFormat::RGBA_SRGB)
 }
 
