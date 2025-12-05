@@ -131,6 +131,35 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
                                                            "",
                                                            nullptr);
     return nullptr;
+  case igl::BackendType::D3D12: {
+    // D3D12 instanced drawing shader
+    // Note: D3D12 clip space Y is flipped vs Vulkan, so we negate Y to match Vulkan behavior
+    static const char* kVS = R"(
+      static const float2 pos[6] = {
+        float2(-0.05f,  0.05f), float2( 0.05f, -0.05f), float2(-0.05f, -0.05f),
+        float2(-0.05f,  0.05f), float2( 0.05f, -0.05f), float2( 0.05f,  0.05f)
+      };
+      static const float3 col[6] = {
+        float3(1.0, 0.0, 0.0), float3(0.0, 1.0, 0.0), float3(0.0, 0.0, 1.0),
+        float3(1.0, 0.0, 0.0), float3(0.0, 1.0, 0.0), float3(0.0, 0.0, 1.0)
+      };
+      struct VSIn { float2 offset : TEXCOORD0; };
+      struct VSOut { float4 position : SV_POSITION; float3 color : TEXCOORD0; };
+      VSOut main(VSIn v, uint vid : SV_VertexID) {
+        VSOut o;
+        float2 p = pos[vid] + v.offset;
+        o.position = float4(p.x, -p.y, 0.0, 1.0);  // Flip Y for D3D12 clip space
+        o.color = col[vid];
+        return o;
+      }
+    )";
+    static const char* kPS = R"(
+      struct PSIn { float4 position : SV_POSITION; float3 color : TEXCOORD0; };
+      float4 main(PSIn i) : SV_TARGET { return float4(i.color, 1.0); }
+    )";
+    return igl::ShaderStagesCreator::fromModuleStringInput(
+        device, kVS, "main", "", kPS, "main", "", nullptr);
+  }
   // @fb-only
     // @fb-only
     // @fb-only

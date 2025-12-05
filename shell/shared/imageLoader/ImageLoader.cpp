@@ -104,7 +104,7 @@ ImageData ImageLoader::loadImageDataFromMemory(
     const uint8_t* data,
     uint32_t length,
     std::optional<TextureFormat> preferredFormat) noexcept {
-  if (IGL_DEBUG_VERIFY_NOT(data == nullptr)) {
+  if (data == nullptr) {
     return {};
   }
 

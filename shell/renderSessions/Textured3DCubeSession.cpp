@@ -168,6 +168,25 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
                                                            "main",
                                                            "",
                                                            nullptr);
+  case igl::BackendType::D3D12: {
+    static const char* kVS = R"(
+      cbuffer VertexUniforms : register(b1) { float4x4 mvpMatrix; float scaleZ; };
+      struct VSIn { float3 position : POSITION; float3 uvw : TEXCOORD0; };
+      struct VSOut { float4 position : SV_POSITION; float3 uvw : TEXCOORD0; };
+      VSOut main(VSIn v) {
+        VSOut o; o.position = mul(mvpMatrix, float4(v.position,1.0));
+        o.uvw = float3(v.uvw.x, v.uvw.y, (v.uvw.z - 0.5f)*scaleZ + 0.5f);
+        return o; }
+    )";
+    static const char* kPS = R"(
+      Texture3D<float4> inputVolume : register(t0);
+      SamplerState linearSampler : register(s0);
+      struct PSIn { float4 position : SV_POSITION; float3 uvw : TEXCOORD0; };
+      float4 main(PSIn i) : SV_TARGET { return inputVolume.Sample(linearSampler, i.uvw); }
+    )";
+    return igl::ShaderStagesCreator::fromModuleStringInput(
+        device, kVS, "main", "", kPS, "main", "", nullptr);
+  }
   case igl::BackendType::Custom:
     IGL_DEBUG_ABORT("IGLSamples not set up for Custom");
     return nullptr;
