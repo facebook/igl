@@ -375,7 +375,11 @@ void RenderCommandEncoder::bindRenderPipelineState(
 
   const RenderPipelineDesc& desc = rps_->getRenderPipelineDesc();
 
-  ensureShaderModule(desc.shaderStages->getVertexModule().get());
+  if (desc.shaderStages->getType() == igl::ShaderStagesType::Render) {
+    ensureShaderModule(desc.shaderStages->getVertexModule().get());
+  } else if (desc.shaderStages->getType() == igl::ShaderStagesType::RenderMeshShader) {
+    ensureShaderModule(desc.shaderStages->getMeshModule().get());
+  }
   ensureShaderModule(desc.shaderStages->getFragmentModule().get());
 
   const bool hasDepthAttachment = desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid;
