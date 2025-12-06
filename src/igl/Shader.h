@@ -241,7 +241,7 @@ enum class ShaderStagesType : uint8_t {
   /** @brief Compute shader stages. */
   Compute,
   /** @brief Mesh render shader stages. */
-  MeshRender
+  RenderMeshShader
 };
 
 /**

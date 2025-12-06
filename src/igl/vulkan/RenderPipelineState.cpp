@@ -461,8 +461,36 @@ VkPipeline RenderPipelineState::getVkPipeline(
         }
       });
 
-  const auto& vertexModule = desc_.shaderStages->getVertexModule();
+  std::vector<VkPipelineShaderStageCreateInfo> stages;
+
+  if (desc_.shaderStages->getType() == igl::ShaderStagesType::Render) {
+    const auto& vertexModule = desc_.shaderStages->getVertexModule();
+    stages.emplace_back(ivkGetPipelineShaderStageCreateInfo(
+        VK_SHADER_STAGE_VERTEX_BIT,
+        igl::vulkan::ShaderModule::getVkShaderModule(vertexModule),
+        vertexModule->info().entryPoint.c_str()));
+  } else {
+    const auto& taskModule = desc_.shaderStages->getTaskModule();
+    if (taskModule) {
+      stages.emplace_back(ivkGetPipelineShaderStageCreateInfo(
+          VK_SHADER_STAGE_TASK_BIT_EXT,
+          igl::vulkan::ShaderModule::getVkShaderModule(taskModule),
+          taskModule->info().entryPoint.c_str()));
+    }
+
+    const auto& meshModule = desc_.shaderStages->getMeshModule();
+    stages.emplace_back(ivkGetPipelineShaderStageCreateInfo(
+        VK_SHADER_STAGE_MESH_BIT_EXT,
+        igl::vulkan::ShaderModule::getVkShaderModule(meshModule),
+        meshModule->info().entryPoint.c_str()));
+  }
+
   const auto& fragmentModule = desc_.shaderStages->getFragmentModule();
+  stages.emplace_back(ivkGetPipelineShaderStageCreateInfo(
+      VK_SHADER_STAGE_FRAGMENT_BIT,
+      igl::vulkan::ShaderModule::getVkShaderModule(fragmentModule),
+      fragmentModule->info().entryPoint.c_str()));
+
   VK_ASSERT_RETURN_NULL_HANDLE(
       igl::vulkan::VulkanPipelineBuilder()
           .dynamicStates({
@@ -491,16 +519,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
                            dynamicState.getStencilStatePassOp(false),
                            dynamicState.getStencilStateDepthFailOp(false),
                            dynamicState.getStencilStateCompareOp(false))
-          .shaderStages({
-              ivkGetPipelineShaderStageCreateInfo(
-                  VK_SHADER_STAGE_VERTEX_BIT,
-                  igl::vulkan::ShaderModule::getVkShaderModule(vertexModule),
-                  vertexModule->info().entryPoint.c_str()),
-              ivkGetPipelineShaderStageCreateInfo(
-                  VK_SHADER_STAGE_FRAGMENT_BIT,
-                  igl::vulkan::ShaderModule::getVkShaderModule(fragmentModule),
-                  fragmentModule->info().entryPoint.c_str()),
-          })
+          .shaderStages(stages)
           .cullMode(cullModeToVkCullMode(desc_.cullMode))
           .frontFace(windingModeToVkFrontFace(desc_.frontFaceWinding))
           .vertexInputState(vertexInputStateCreateInfo_)

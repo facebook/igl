@@ -220,7 +220,7 @@ ShaderStagesDesc ShaderStagesDesc::fromMeshRenderModules(
   desc.debugName = (taskModule ? taskModule->info().debugName : std::string()) + ", " +
                    (meshModule ? meshModule->info().debugName : std::string()) + ", " +
                    (fragmentModule ? fragmentModule->info().debugName : std::string());
-  desc.type = ShaderStagesType::MeshRender;
+  desc.type = ShaderStagesType::RenderMeshShader;
   desc.taskModule = std::move(taskModule);
   desc.meshModule = std::move(meshModule);
   desc.fragmentModule = std::move(fragmentModule);
@@ -266,7 +266,7 @@ bool IShaderStages::isValid() const noexcept {
     return desc_.vertexModule && desc_.fragmentModule && !desc_.computeModule;
   } else if (desc_.type == ShaderStagesType::Compute) {
     return desc_.computeModule && !desc_.vertexModule && !desc_.fragmentModule;
-  } else if (desc_.type == ShaderStagesType::MeshRender) {
+  } else if (desc_.type == ShaderStagesType::RenderMeshShader) {
     return desc_.meshModule && desc_.fragmentModule && !desc_.computeModule && !desc_.vertexModule;
   }
 

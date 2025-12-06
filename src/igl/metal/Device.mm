@@ -397,7 +397,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
 
   if (desc.shaderStages->getType() == ShaderStagesType::Render) {
     return createTraditionalRenderPipeline(desc, outResult);
-  } else if (desc.shaderStages->getType() == ShaderStagesType::MeshRender) {
+  } else if (desc.shaderStages->getType() == ShaderStagesType::RenderMeshShader) {
     return createMeshRenderPipeline(desc, outResult);
   } else {
     IGL_DEBUG_ASSERT_NOT_REACHED();
@@ -528,7 +528,7 @@ std::shared_ptr<IRenderPipelineState> Device::createMeshRenderPipeline(
           outResult, Result::Code::RuntimeError, "RenderPipeline requires shader stages");
       return nullptr;
     }
-    if (!IGL_DEBUG_VERIFY(desc.shaderStages->getType() == ShaderStagesType::MeshRender)) {
+    if (!IGL_DEBUG_VERIFY(desc.shaderStages->getType() == ShaderStagesType::RenderMeshShader)) {
       Result::setResult(
           outResult, Result::Code::ArgumentInvalid, "Shader stages not for mesh render");
       return nullptr;

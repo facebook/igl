@@ -58,7 +58,7 @@ void PipelineState::initializeSpvModuleInfoFromShaderStages(const VulkanContext&
 
     stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
   } break;
-  case igl::ShaderStagesType::MeshRender: {
+  case igl::ShaderStagesType::RenderMeshShader: {
     auto* smTask = static_cast<ShaderModule*>(stages->getTaskModule().get());
     auto* smMesh = static_cast<ShaderModule*>(stages->getMeshModule().get());
     auto* smFrag = static_cast<ShaderModule*>(stages->getFragmentModule().get());
