@@ -307,8 +307,12 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
       const VkFormat format = vertexAttributeFormatToVkFormat(attr.format);
       const size_t bufferIndex = attr.bufferIndex;
 
-      vkAttributes_[i] = ivkGetVertexInputAttributeDescription(
-          (uint32_t)attr.location, (uint32_t)bufferIndex, format, (uint32_t)attr.offset);
+      vkAttributes_[i] = VkVertexInputAttributeDescription{
+          .location = (uint32_t)attr.location,
+          .binding = (uint32_t)bufferIndex,
+          .format = format,
+          .offset = (uint32_t)attr.offset,
+      };
 
       if (!bufferAlreadyBound[bufferIndex]) {
         bufferAlreadyBound[bufferIndex] = true;
@@ -317,8 +321,11 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
         const VkVertexInputRate rate = (binding.sampleFunction == VertexSampleFunction::PerVertex)
                                            ? VK_VERTEX_INPUT_RATE_VERTEX
                                            : VK_VERTEX_INPUT_RATE_INSTANCE;
-        vkBindings_.emplace_back(ivkGetVertexInputBindingDescription(
-            (uint32_t)bufferIndex, (uint32_t)binding.stride, rate));
+        vkBindings_.emplace_back(VkVertexInputBindingDescription{
+            .binding = (uint32_t)bufferIndex,
+            .stride = (uint32_t)binding.stride,
+            .inputRate = rate,
+        });
       }
     }
 
