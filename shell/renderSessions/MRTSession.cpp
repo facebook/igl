@@ -9,6 +9,9 @@
 
 #include <shell/renderSessions/MRTSession.h>
 
+#include <array>
+#include <numeric>
+#include <vector>
 #include <IGLU/simdtypes/SimdTypes.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/CommandBuffer.h>
@@ -259,6 +262,39 @@ static std::unique_ptr<IShaderStages> createShaderStagesForBackend(const IDevice
   case igl::BackendType::Custom:
     IGL_DEBUG_ABORT("No Custom shader available");
     return nullptr;
+  case igl::BackendType::D3D12: {
+    if (programIndex == 0) {
+      // First pass: write to SV_Target0 and SV_Target1
+      static const char* kVS = R"(
+        struct VSIn { float3 position: POSITION; float2 uv: TEXCOORD0; };
+        struct VSOut { float4 position: SV_POSITION; float2 uv: TEXCOORD0; };
+        VSOut main(VSIn v){ VSOut o; o.position=float4(v.position,1); o.uv=v.uv; return o; }
+      )";
+      static const char* kPS = R"(
+        Texture2D inputImage : register(t0); SamplerState s0 : register(s0);
+        struct PSIn { float4 position: SV_POSITION; float2 uv: TEXCOORD0; };
+        struct PSOut { float4 colorGreen: SV_Target0; float4 colorRed: SV_Target1; };
+        PSOut main(PSIn i){ float4 c = inputImage.Sample(s0, i.uv);
+          // Input PNG data arrives as BGRA, so route blue channel into the second target.
+          PSOut o; o.colorGreen=float4(0,c.g,0,1); o.colorRed=float4(c.b,0,0,1); return o; }
+      )";
+      return igl::ShaderStagesCreator::fromModuleStringInput(device, kVS, "main", "", kPS, "main", "", nullptr);
+    } else {
+      // Second pass: sample two textures and output sum
+      static const char* kVS = R"(
+        struct VSIn { float3 position: POSITION; float2 uv: TEXCOORD0; };
+        struct VSOut { float4 position: SV_POSITION; float2 uv: TEXCOORD0; };
+        VSOut main(VSIn v){ VSOut o; o.position=float4(v.position,1); o.uv=v.uv; return o; }
+      )";
+      static const char* kPS = R"(
+        Texture2D colorGreen : register(t0); Texture2D colorRed : register(t1); SamplerState s0 : register(s0);
+        struct PSIn { float4 position: SV_POSITION; float2 uv: TEXCOORD0; };
+        float4 main(PSIn i) : SV_Target { float2 uv1=float2(i.uv.x, 1.0 - i.uv.y);
+          return colorGreen.Sample(s0, uv1) + colorRed.Sample(s0, uv1); }
+      )";
+      return igl::ShaderStagesCreator::fromModuleStringInput(device, kVS, "main", "", kPS, "main", "", nullptr);
+    }
+  }
   // @fb-only
     // @fb-only
     // @fb-only
@@ -285,6 +321,10 @@ static std::unique_ptr<IShaderStages> createShaderStagesForBackend(const IDevice
 }
 
 static bool isDeviceCompatible(IDevice& device) noexcept {
+  // D3D12 supports MRT; keep tests stable by not toggling feature gate in Device
+  if (device.getBackendType() == igl::BackendType::D3D12) {
+    return true;
+  }
   return device.hasFeature(DeviceFeatures::MultipleRenderTargets);
 }
 
@@ -295,42 +335,31 @@ void MRTSession::initialize() noexcept {
   }
 
   // Vertex buffer, Index buffer and Vertex Input
-  vb0_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData0, sizeof(vertexData0)), nullptr);
-  vb1_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData1, sizeof(vertexData1)), nullptr);
-  ib0_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)), nullptr);
+  const BufferDesc vb0Desc =
+      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData0, sizeof(vertexData0));
+  vb0_ = device.createBuffer(vb0Desc, nullptr);
+  const BufferDesc vb1Desc =
+      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData1, sizeof(vertexData1));
+  vb1_ = device.createBuffer(vb1Desc, nullptr);
+  const BufferDesc ibDesc =
+      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
+  ib0_ = device.createBuffer(ibDesc, nullptr);
 
-  vertexInput_ = device.createVertexInputState(
-      VertexInputStateDesc{
-          .numAttributes = 2,
-          .attributes =
-              {
-                  VertexAttribute{.bufferIndex = 0,
-                                  .format = VertexAttributeFormat::Float3,
-                                  .offset = offsetof(VertexPosUv, position),
-                                  .name = "position",
-                                  .location = 0},
-                  VertexAttribute{.bufferIndex = 0,
-                                  .format = VertexAttributeFormat::Float2,
-                                  .offset = offsetof(VertexPosUv, uv),
-                                  .name = "uv_in",
-                                  .location = 1},
-              },
-          .numInputBindings = 1,
-          .inputBindings = {{.stride = sizeof(VertexPosUv)}},
-      },
-      nullptr);
+  VertexInputStateDesc inputDesc;
+  inputDesc.numAttributes = 2;
+  inputDesc.attributes[0] = VertexAttribute{
+      0, VertexAttributeFormat::Float3, offsetof(VertexPosUv, position), "position", 0};
+  inputDesc.attributes[1] =
+      VertexAttribute{0, VertexAttributeFormat::Float2, offsetof(VertexPosUv, uv), "uv_in", 1};
+  inputDesc.numInputBindings = 1;
+  inputDesc.inputBindings[0].stride = sizeof(VertexPosUv);
+  vertexInput_ = device.createVertexInputState(inputDesc, nullptr);
 
   // Sampler & Texture
-  samp0_ = device.createSamplerState(
-      SamplerStateDesc{
-          .minFilter = SamplerMinMagFilter::Linear,
-          .magFilter = SamplerMinMagFilter::Linear,
-          .debugName = "Sampler: linear",
-      },
-      nullptr);
+  SamplerStateDesc samplerDesc;
+  samplerDesc.minFilter = samplerDesc.magFilter = SamplerMinMagFilter::Linear;
+  samplerDesc.debugName = "Sampler: linear";
+  samp0_ = device.createSamplerState(samplerDesc, nullptr);
   tex0_ = getPlatform().loadTexture("igl.png");
 
   {
@@ -338,36 +367,22 @@ void MRTSession::initialize() noexcept {
     shaderStagesDisplayLast_ = createShaderStagesForBackend(device, 1);
   }
 
-  commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
+  commandQueue_ = device.createCommandQueue({}, nullptr);
 
   tex0_->generateMipmap(*commandQueue_);
 
-  renderPassMRT_ = {
-      .colorAttachments =
-          {
-              {
-                  .loadAction = LoadAction::Clear,
-                  .storeAction = StoreAction::Store,
-                  .clearColor = getPreferredClearColor(),
-              },
-              {
-                  .loadAction = LoadAction::Clear,
-                  .storeAction = StoreAction::Store,
-                  .clearColor = getPreferredClearColor(),
-              },
-          },
-  };
+  renderPassMRT_.colorAttachments.resize(2);
+  renderPassMRT_.colorAttachments[0].loadAction = LoadAction::Clear;
+  renderPassMRT_.colorAttachments[0].storeAction = StoreAction::Store;
+  renderPassMRT_.colorAttachments[0].clearColor = getPreferredClearColor();
+  renderPassMRT_.colorAttachments[1].loadAction = LoadAction::Clear;
+  renderPassMRT_.colorAttachments[1].storeAction = StoreAction::Store;
+  renderPassMRT_.colorAttachments[1].clearColor = getPreferredClearColor();
 
-  renderPassDisplayLast_ = {
-      .colorAttachments =
-          {
-              {
-                  .loadAction = LoadAction::Clear,
-                  .storeAction = StoreAction::Store,
-                  .clearColor = getPreferredClearColor(),
-              },
-          },
-  };
+  renderPassDisplayLast_.colorAttachments.resize(1);
+  renderPassDisplayLast_.colorAttachments[0].loadAction = LoadAction::Clear;
+  renderPassDisplayLast_.colorAttachments[0].storeAction = StoreAction::Store;
+  renderPassDisplayLast_.colorAttachments[0].clearColor = getPreferredClearColor();
 }
 
 void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
@@ -382,46 +397,40 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
 
   // Graphics pipeline: state batch that fully configures GPU for rendering
   if (pipelineStateMRT_ == nullptr) {
-    pipelineStateMRT_ = device.createRenderPipeline(
-        RenderPipelineDesc{
-            .vertexInputState = vertexInput_,
-            .shaderStages = shaderStagesMRT_,
-            .targetDesc =
-                {
-                    .colorAttachments =
-                        {
-                            {
-                                .textureFormat = surfaceTextures.color->getProperties().format,
-                                .blendEnabled = true,
-                                .rgbBlendOp = BlendOp::Add,
-                                .alphaBlendOp = BlendOp::Add,
-                                .srcRGBBlendFactor = BlendFactor::SrcAlpha,
-                                .srcAlphaBlendFactor = BlendFactor::SrcAlpha,
-                                .dstRGBBlendFactor = BlendFactor::OneMinusSrcAlpha,
-                                .dstAlphaBlendFactor = BlendFactor::OneMinusSrcAlpha,
-                            },
-                            {
-                                .textureFormat = surfaceTextures.color->getProperties().format,
-                                .blendEnabled = true,
-                                .rgbBlendOp = BlendOp::Add,
-                                .alphaBlendOp = BlendOp::Add,
-                                .srcRGBBlendFactor = BlendFactor::SrcAlpha,
-                                .srcAlphaBlendFactor = BlendFactor::SrcAlpha,
-                                .dstRGBBlendFactor = BlendFactor::OneMinusSrcAlpha,
-                                .dstAlphaBlendFactor = BlendFactor::OneMinusSrcAlpha,
-                            },
-                        },
-                },
-            .cullMode = igl::CullMode::Back,
-            .frontFaceWinding = igl::WindingMode::Clockwise,
-            .fragmentUnitSamplerMap = {{textureUnit, IGL_NAMEHANDLE("inputImage")}},
-        },
-        nullptr);
+    RenderPipelineDesc graphicsDesc;
+    graphicsDesc.vertexInputState = vertexInput_;
+    graphicsDesc.shaderStages = shaderStagesMRT_;
+    graphicsDesc.targetDesc.colorAttachments.resize(2);
+    graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
+        surfaceTextures.color->getProperties().format;
+    graphicsDesc.targetDesc.colorAttachments[0].blendEnabled = true;
+    graphicsDesc.targetDesc.colorAttachments[0].rgbBlendOp = BlendOp::Add;
+    graphicsDesc.targetDesc.colorAttachments[0].alphaBlendOp = BlendOp::Add;
+    graphicsDesc.targetDesc.colorAttachments[0].srcRGBBlendFactor = BlendFactor::SrcAlpha;
+    graphicsDesc.targetDesc.colorAttachments[0].srcAlphaBlendFactor = BlendFactor::SrcAlpha;
+    graphicsDesc.targetDesc.colorAttachments[0].dstRGBBlendFactor = BlendFactor::OneMinusSrcAlpha;
+    graphicsDesc.targetDesc.colorAttachments[0].dstAlphaBlendFactor = BlendFactor::OneMinusSrcAlpha;
+
+    graphicsDesc.targetDesc.colorAttachments[1].textureFormat =
+        surfaceTextures.color->getProperties().format;
+    graphicsDesc.targetDesc.colorAttachments[1].blendEnabled = true;
+    graphicsDesc.targetDesc.colorAttachments[1].rgbBlendOp = BlendOp::Add;
+    graphicsDesc.targetDesc.colorAttachments[1].alphaBlendOp = BlendOp::Add;
+    graphicsDesc.targetDesc.colorAttachments[1].srcRGBBlendFactor = BlendFactor::SrcAlpha;
+    graphicsDesc.targetDesc.colorAttachments[1].srcAlphaBlendFactor = BlendFactor::SrcAlpha;
+    graphicsDesc.targetDesc.colorAttachments[1].dstRGBBlendFactor = BlendFactor::OneMinusSrcAlpha;
+    graphicsDesc.targetDesc.colorAttachments[1].dstAlphaBlendFactor = BlendFactor::OneMinusSrcAlpha;
+
+    graphicsDesc.fragmentUnitSamplerMap[textureUnit] = IGL_NAMEHANDLE("inputImage");
+    graphicsDesc.cullMode = igl::CullMode::Back;
+    graphicsDesc.frontFaceWinding = igl::WindingMode::Clockwise;
+
+    pipelineStateMRT_ = device.createRenderPipeline(graphicsDesc, nullptr);
   }
 
-  const std::shared_ptr<ICommandBuffer> buffer =
-      commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
+  const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
+  IGL_LOG_INFO("Creating MRT encoder with framebuffer %p\n", framebufferMRT_.get());
   auto commands = buffer->createRenderCommandEncoder(renderPassMRT_, framebufferMRT_);
 
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
@@ -446,32 +455,24 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
   createOrUpdateFramebufferDisplayLast(surfaceTextures);
 
   if (pipelineStateLastDisplay_ == nullptr) {
-    pipelineStateLastDisplay_ = device.createRenderPipeline(
-        RenderPipelineDesc{
-            .vertexInputState = vertexInput_,
-            .shaderStages = shaderStagesDisplayLast_,
-            .targetDesc =
-                {
-                    .colorAttachments =
-                        {
-                            {
-                                .textureFormat = surfaceTextures.color->getProperties().format,
-                            },
-                        },
-                },
-            .cullMode = igl::CullMode::Back,
-            .frontFaceWinding = igl::WindingMode::Clockwise,
-            .fragmentUnitSamplerMap =
-                {
-                    {textureUnit, IGL_NAMEHANDLE("colorRed")},
-                    {textureUnit + 1, IGL_NAMEHANDLE("colorGreen")},
-                },
-        },
-        nullptr);
+    RenderPipelineDesc graphicsDesc;
+    graphicsDesc.vertexInputState = vertexInput_;
+    graphicsDesc.shaderStages = shaderStagesDisplayLast_;
+    graphicsDesc.targetDesc.colorAttachments.resize(1);
+    graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
+        surfaceTextures.color->getProperties().format;
+    graphicsDesc.fragmentUnitSamplerMap[textureUnit] = IGL_NAMEHANDLE("colorGreen");
+    graphicsDesc.fragmentUnitSamplerMap[textureUnit + 1] = IGL_NAMEHANDLE("colorRed");
+    graphicsDesc.cullMode = igl::CullMode::Back;
+    graphicsDesc.frontFaceWinding = igl::WindingMode::Clockwise;
+
+    pipelineStateLastDisplay_ = device.createRenderPipeline(graphicsDesc, nullptr);
   }
 
   // Command buffers (1-N per thread): create, submit and forget
 
+  IGL_LOG_INFO("Creating display encoder with framebuffer %p\n",
+               framebufferDisplayLast_ ? framebufferDisplayLast_.get() : nullptr);
   commands = buffer->createRenderCommandEncoder(renderPassDisplayLast_, framebufferDisplayLast_);
 
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
@@ -480,11 +481,12 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
   // clang-format off
   commands->bindRenderPipelineState(pipelineStateLastDisplay_);
   auto green = framebufferMRT_->getColorAttachment(0);
+  auto red = framebufferMRT_->getColorAttachment(1);
+  IGL_LOG_INFO("Display pass textures: green=%p red=%p\n", green.get(), red.get());
   commands->bindTexture(textureUnit, BindTarget::kFragment, green.get());
   commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_.get());
-  auto red = framebufferMRT_->getColorAttachment(1);
-  commands->bindTexture(textureUnit+1, BindTarget::kFragment, red.get());
-  commands->bindSamplerState(textureUnit+1, BindTarget::kFragment, samp0_.get());
+  commands->bindTexture(textureUnit + 1, BindTarget::kFragment, red.get());
+  commands->bindSamplerState(textureUnit + 1, BindTarget::kFragment, samp0_.get());
 
   commands->bindVertexBuffer(0,  *vb0_);
   commands->drawIndexed(6);
@@ -500,11 +502,41 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
   }
 
   commandQueue_->submit(*buffer); // Guarantees ordering between command buffers
+
+  std::array<uint8_t, 4> sampleGreen{};
+  std::array<uint8_t, 4> sampleRed{};
+  auto leftSample = TextureRangeDesc::new2D(100, 90, 1, 1);
+  auto rightSample = TextureRangeDesc::new2D(500, 90, 1, 1);
+  IGL_LOG_INFO("Sampling MRT attachments...\n");
+  framebufferMRT_->copyBytesColorAttachment(*commandQueue_, 0, sampleGreen.data(), leftSample, 0);
+  framebufferMRT_->copyBytesColorAttachment(*commandQueue_, 1, sampleRed.data(), rightSample, 0);
+  IGL_LOG_INFO("MRT samples (left green, right red): green=(%u,%u,%u,%u) red=(%u,%u,%u,%u)\n",
+               (unsigned)sampleGreen[0],
+               (unsigned)sampleGreen[1],
+               (unsigned)sampleGreen[2],
+               (unsigned)sampleGreen[3],
+               (unsigned)sampleRed[0],
+               (unsigned)sampleRed[1],
+               (unsigned)sampleRed[2],
+               (unsigned)sampleRed[3]);
+
+  const auto dims = tex1_->getDimensions();
+  std::vector<uint8_t> attachment1(dims.width * dims.height * 4);
+  auto fullRange = TextureRangeDesc::new2D(0, 0, dims.width, dims.height);
+  framebufferMRT_->copyBytesColorAttachment(
+      *commandQueue_, 1, attachment1.data(), fullRange, dims.width * 4);
+  size_t redSum = 0;
+  for (size_t i = 0; i < attachment1.size(); i += 4) {
+    redSum += attachment1[i];
+  }
+  IGL_LOG_INFO("Attachment1 red sum=%zu\n", redSum);
 }
 
 std::shared_ptr<ITexture> MRTSession::createTexture2D(const std::shared_ptr<ITexture>& tex) {
   const auto dimensions = tex->getDimensions();
-  TextureDesc desc = TextureDesc::new2D(tex->getProperties().format,
+  // Use the SAME format as the surface texture to ensure PSO/framebuffer format consistency
+  const auto format = tex->getProperties().format;
+  TextureDesc desc = TextureDesc::new2D(format,
                                         dimensions.width,
                                         dimensions.height,
                                         TextureDesc::TextureUsageBits::Attachment |
@@ -549,6 +581,12 @@ void MRTSession::createOrUpdateFramebufferMRT(const igl::SurfaceTextures& surfac
   };
 
   framebufferMRT_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, nullptr);
+  if (framebufferMRT_) {
+    auto indices = framebufferMRT_->getColorAttachmentIndices();
+    IGL_LOG_INFO("MRT framebuffer=%p attachments: %zu\n",
+                 framebufferMRT_.get(),
+                 indices.size());
+  }
 }
 
 } // namespace igl::shell

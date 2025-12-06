@@ -52,8 +52,10 @@ class ComputeCommandEncoderTest : public ::testing::Test {
         BufferDesc::BufferTypeBits::Storage, dataIn.data(), sizeof(float) * dataIn.size());
     bufferIn_ = iglDev_->createBuffer(vbInDesc, nullptr);
     ASSERT_TRUE(bufferIn_ != nullptr);
+    // Use ResourceStorage::Shared for output buffers so they can be mapped for reading
     const BufferDesc bufferOutDesc =
-        BufferDesc(BufferDesc::BufferTypeBits::Storage, nullptr, sizeof(float) * dataIn.size());
+        BufferDesc(BufferDesc::BufferTypeBits::Storage, nullptr, sizeof(float) * dataIn.size(),
+                   ResourceStorage::Shared);
     bufferOut0_ = iglDev_->createBuffer(bufferOutDesc, nullptr);
     ASSERT_TRUE(bufferOut0_ != nullptr);
     bufferOut1_ = iglDev_->createBuffer(bufferOutDesc, nullptr);
@@ -72,6 +74,9 @@ class ComputeCommandEncoderTest : public ::testing::Test {
         entryName = "main"; // entry point is not pipelined. Hardcoding to main for now.
       } else if (iglDev_->getBackendType() == igl::BackendType::Metal) {
         source = igl::tests::data::shader::kMtlSimpleComputeShader;
+        entryName = igl::tests::data::shader::kSimpleComputeFunc;
+      } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
+        source = igl::tests::data::shader::kD3D12SimpleComputeShader;
         entryName = igl::tests::data::shader::kSimpleComputeFunc;
       } else {
         IGL_DEBUG_ASSERT_NOT_REACHED();

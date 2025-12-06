@@ -27,6 +27,7 @@ enum class PlatformDeviceType {
   OpenGLMacOS,
   OpenGLWebGL,
   Vulkan,
+  D3D12,
   // @fb-only
 };
 

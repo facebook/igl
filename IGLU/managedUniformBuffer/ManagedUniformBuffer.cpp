@@ -141,7 +141,14 @@ void ManagedUniformBuffer::bind(const igl::IDevice& device,
       // Need to ensure the latest data is present in the buffer
       // TODO: Have callers handle this when data has changed.
       void* data = data_;
-      if (buffer_->acceptedApiHints() & igl::BufferDesc::BufferAPIHintBits::NoCopy) {
+      const bool hasNoCopy = (buffer_->acceptedApiHints() & igl::BufferDesc::BufferAPIHintBits::NoCopy) != 0;
+      static int bindCount = 0;
+      if (bindCount < 3) {
+        IGL_LOG_INFO("[ManagedUniformBuffer::bind] #%d: hasNoCopy=%d, useBindBytes=%d\n",
+                     bindCount + 1, hasNoCopy, useBindBytes_);
+        bindCount++;
+      }
+      if (hasNoCopy) {
         data = nullptr;
       }
       buffer_->upload(data, {buffer_->getSizeInBytes(), 0});
