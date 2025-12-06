@@ -142,7 +142,11 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
 // @fb-only
 #if IGL_BACKEND_VULKAN
       {
+#if IGL_USE_STATIC_LAVAPIPE
+          .displayName = "Vulkan (Lavapipe)",
+#else
           .displayName = "Vulkan",
+#endif
           .backendVersion = {.flavor = igl::BackendFlavor::Vulkan,
                              .majorVersion = 1,
                              .minorVersion = 1},
