@@ -452,17 +452,19 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
           VkImageSubresourceLayers{
               aspectMask, static_cast<uint32_t>(mipLevel), initialLayer, numLayers}));
     } else {
-      copyRegions.emplace_back(ivkGetBufferImageCopy3D(
-          memoryChunk.offset + offset,
-          texelsPerRow,
-          VkOffset3D{static_cast<int32_t>(mipRange.x),
-                     static_cast<int32_t>(mipRange.y),
-                     static_cast<int32_t>(mipRange.z)},
-          VkExtent3D{static_cast<uint32_t>(mipRange.width),
-                     static_cast<uint32_t>(mipRange.height),
-                     static_cast<uint32_t>(mipRange.depth)},
-          VkImageSubresourceLayers{
-              aspectMask, static_cast<uint32_t>(mipLevel), initialLayer, numLayers}));
+      copyRegions.emplace_back(VkBufferImageCopy{
+          .bufferOffset = memoryChunk.offset + offset,
+          .bufferRowLength = texelsPerRow,
+          .bufferImageHeight = 0,
+          .imageSubresource =
+              VkImageSubresourceLayers{
+                  aspectMask, static_cast<uint32_t>(mipLevel), initialLayer, numLayers},
+          .imageOffset = VkOffset3D{static_cast<int32_t>(mipRange.x),
+                                    static_cast<int32_t>(mipRange.y),
+                                    static_cast<int32_t>(mipRange.z)},
+          .imageExtent = VkExtent3D{static_cast<uint32_t>(mipRange.width),
+                                    static_cast<uint32_t>(mipRange.height),
+                                    static_cast<uint32_t>(mipRange.depth)}});
     }
   }
 
