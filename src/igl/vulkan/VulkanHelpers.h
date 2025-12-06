@@ -307,11 +307,6 @@ VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset,
                                           uint32_t bufferRowLength,
                                           VkRect2D imageRegion,
                                           VkImageSubresourceLayers imageSubresource);
-VkBufferImageCopy ivkGetBufferImageCopy3D(uint32_t bufferOffset,
-                                          uint32_t bufferRowLength,
-                                          VkOffset3D offset,
-                                          VkExtent3D extent,
-                                          VkImageSubresourceLayers imageSubresource);
 
 void ivkImageMemoryBarrier(const struct VulkanFunctionTable* vt,
                            VkCommandBuffer buffer,

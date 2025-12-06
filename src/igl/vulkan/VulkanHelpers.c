@@ -1177,22 +1177,6 @@ VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset,
   return copy;
 }
 
-VkBufferImageCopy ivkGetBufferImageCopy3D(uint32_t bufferOffset,
-                                          uint32_t bufferRowLength,
-                                          const VkOffset3D offset,
-                                          const VkExtent3D extent,
-                                          VkImageSubresourceLayers imageSubresource) {
-  const VkBufferImageCopy copy = {
-      .bufferOffset = bufferOffset,
-      .bufferRowLength = bufferRowLength,
-      .bufferImageHeight = 0,
-      .imageSubresource = imageSubresource,
-      .imageOffset = offset,
-      .imageExtent = extent,
-  };
-  return copy;
-}
-
 VkResult ivkVmaCreateAllocator(const struct VulkanFunctionTable* vt,
                                VkPhysicalDevice physDev,
                                VkDevice device,
