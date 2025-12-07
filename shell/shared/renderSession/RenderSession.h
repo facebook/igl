@@ -10,6 +10,7 @@
 #include <memory>
 #include <optional>
 #include <shell/shared/platform/Platform.h>
+#include <shell/shared/renderSession/BenchmarkTracker.h>
 
 namespace igl::shell {
 struct AppParams;
@@ -17,12 +18,29 @@ struct ShellParams;
 
 class RenderSession {
  public:
-  explicit RenderSession(std::shared_ptr<Platform> platform);
+  RenderSession(std::shared_ptr<Platform> platform);
   virtual ~RenderSession() noexcept = default;
+
+  // Enable move operations (unique_ptr requires explicit declaration)
+  RenderSession(RenderSession&&) noexcept = default;
+  RenderSession& operator=(RenderSession&&) noexcept = default;
+
+  // Disable copy operations
+  RenderSession(const RenderSession&) = delete;
+  RenderSession& operator=(const RenderSession&) = delete;
 
   virtual void initialize() noexcept {}
   // NOLINTNEXTLINE(performance-unnecessary-value-param)
   virtual void update(IGL_MAYBE_UNUSED SurfaceTextures surfaceTextures) noexcept {}
+
+  /// @brief Wrapper around update() that automatically handles benchmark timing
+  /// Platform code should call this instead of update() directly when benchmark
+  /// tracking is desired. This method:
+  /// 1. Measures the time taken by update()
+  /// 2. Records the frame time for benchmarking
+  /// 3. Checks for periodic reporting
+  /// 4. Checks for benchmark expiration and sets exitRequested if needed
+  void runUpdate(SurfaceTextures surfaceTextures) noexcept;
   virtual void teardown() noexcept {}
 
   void updateDisplayScale(float scale) noexcept;
@@ -66,13 +84,39 @@ class RenderSession {
   void setPreferredClearColor(const igl::Color& color) noexcept;
   Color getPreferredClearColor() noexcept;
 
+  /// @brief Initializes the benchmark tracker based on shell params
+  /// Call this after shellParams_ is set to enable benchmark tracking
+  void initBenchmarkTracker() noexcept;
+
+  /// @brief Records a frame's render time for benchmarking
+  /// @param renderTimeMs The time in milliseconds for the update call
+  void recordBenchmarkFrame(double renderTimeMs) noexcept;
+
+  /// @brief Checks and handles periodic benchmark reporting
+  /// Logs stats every minute if benchmark mode is enabled
+  void checkBenchmarkPeriodicReport() noexcept;
+
+  /// @brief Checks if the benchmark has expired and should trigger app exit
+  /// @return true if benchmark duration exceeded
+  [[nodiscard]] bool isBenchmarkExpired() const noexcept;
+
+  /// @brief Generates and logs the final benchmark report
+  /// @param wasTimeout true if the benchmark ended due to timeout
+  void logFinalBenchmarkReport(bool wasTimeout) noexcept;
+
+  /// @brief Gets the benchmark tracker (may be nullptr if not in benchmark mode)
+  [[nodiscard]] BenchmarkTracker* getBenchmarkTracker() noexcept {
+    return benchmarkTracker_.get();
+  }
+
+  /// @brief Returns mutable reference to AppParams (for benchmark to request exit)
+  [[nodiscard]] AppParams& appParamsRef() noexcept;
+
  protected:
   Platform& getPlatform() noexcept;
   [[nodiscard]] const Platform& getPlatform() const noexcept;
 
   [[nodiscard]] const std::shared_ptr<Platform>& platform() const noexcept;
-
-  AppParams& appParamsRef() noexcept;
 
   std::shared_ptr<IFramebuffer> framebuffer_;
   std::shared_ptr<ICommandQueue> commandQueue_;
@@ -84,6 +128,9 @@ class RenderSession {
   std::shared_ptr<AppParams> appParams_;
   std::optional<Color> preferredClearColor_;
   const ShellParams* shellParams_ = nullptr;
+  std::unique_ptr<BenchmarkTracker> benchmarkTracker_;
+  bool benchmarkExpiredLogged_ = false;
+  bool loggedMissingParams_ = false;
 };
 
 } // namespace igl::shell

@@ -56,7 +56,7 @@ public class SampleLib {
 
   public static native void surfaceChanged(Surface surface, int width, int height);
 
-  public static native void render(float displayScale);
+  public static native boolean render(float displayScale);
 
   public static native void touchEvent(boolean isDown, float x, float y, float dx, float dy);
 

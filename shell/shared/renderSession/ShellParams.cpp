@@ -54,6 +54,34 @@ std::optional<BenchmarkRenderSessionParams> parseBenchmarkRenderSessionParams(
     else if (arg == "--benchmark" || arg == "-b") {
       benchmarkParamsFound = true;
     }
+    // Check for benchmark duration (time of run) parameter
+    else if (arg == "--benchmark-duration" || arg == "--run-time") {
+      if (i + 1 < args.size()) {
+        benchmarkParams.benchmarkDurationMs = std::stoul(args[++i]);
+        benchmarkParamsFound = true;
+      }
+    }
+    // Check for report interval parameter
+    else if (arg == "--report-interval") {
+      if (i + 1 < args.size()) {
+        benchmarkParams.reportIntervalMs = std::stoul(args[++i]);
+        benchmarkParamsFound = true;
+      }
+    }
+    // Check for hiccup multiplier parameter
+    else if (arg == "--hiccup-multiplier") {
+      if (i + 1 < args.size()) {
+        benchmarkParams.hiccupMultiplier = std::stod(args[++i]);
+        benchmarkParamsFound = true;
+      }
+    }
+    // Check for render time buffer size parameter
+    else if (arg == "--render-buffer-size") {
+      if (i + 1 < args.size()) {
+        benchmarkParams.renderTimeBufferSize = std::stoul(args[++i]);
+        benchmarkParamsFound = true;
+      }
+    }
     // Check for custom parameters in the form --key value
     else if (arg.rfind("--", 0) == 0) {
       std::string key = arg.substr(2); // Remove "--" prefix

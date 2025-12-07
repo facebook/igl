@@ -187,9 +187,9 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_surfaceChanged(JNIE
                                                                             jobject surface,
                                                                             jint width,
                                                                             jint height);
-JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_render(JNIEnv* env,
-                                                                    jobject obj,
-                                                                    jfloat displayScale);
+JNIEXPORT jboolean JNICALL Java_com_facebook_igl_shell_SampleLib_render(JNIEnv* env,
+                                                                        jobject obj,
+                                                                        jfloat displayScale);
 JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_surfaceDestroyed(JNIEnv* env,
                                                                               jobject obj,
                                                                               jobject surface);
@@ -373,7 +373,7 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
       value = "null";
     }
 
-    // Add the key as a command-line argument (with -- prefix)
+    // Add the key as a command-line argument
     extras.emplace_back(key);
     // Add the value as a separate argument if it's not empty and not "null"
     if (!value.empty() && value != "null") {
@@ -476,15 +476,16 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_surfaceChanged(JNIE
       surface ? ANativeWindow_fromSurface(env, surface) : nullptr, width, height);
 }
 
-JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_render(JNIEnv* /*env*/,
-                                                                    jobject /*obj*/,
-                                                                    jfloat displayScale) {
+JNIEXPORT jboolean JNICALL Java_com_facebook_igl_shell_SampleLib_render(JNIEnv* /*env*/,
+                                                                        jobject /*obj*/,
+                                                                        jfloat displayScale) {
   const auto activeRendererIndex = findRendererIndex(activeBackendVersion);
   if (!activeRendererIndex) {
-    return;
+    return JNI_FALSE;
   }
 
-  renderers[*activeRendererIndex]->render(displayScale);
+  bool shouldExit = renderers[*activeRendererIndex]->render(displayScale);
+  return shouldExit ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_surfaceDestroyed(JNIEnv* env,

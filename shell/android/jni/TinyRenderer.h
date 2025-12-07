@@ -29,7 +29,12 @@ class TinyRenderer final {
             TextureFormat swapchainColorTextureFormat,
             const std::vector<std::string>& args = {});
   void recreateSwapchain(ANativeWindow* nativeWindow, bool createSurface); // only for Vulkan
-  void render(float displayScale);
+
+  /// @brief Renders a frame
+  /// @param displayScale The display scale factor
+  /// @return true if the application should exit (e.g., benchmark timeout)
+  bool render(float displayScale);
+
   void onSurfacesChanged(ANativeWindow* nativeWindow, int width, int height);
   void touchEvent(bool isDown, float x, float y, float dx, float dy);
   void setClearColorValue(float r, float g, float b, float a);

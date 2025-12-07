@@ -26,6 +26,20 @@ struct BenchmarkRenderSessionParams {
   bool logReporter = false;
   bool offscreenRenderingOnly = false;
   std::vector<std::pair<std::string, std::string>> customParams;
+
+  /// @brief Duration for the benchmark run in milliseconds (default: 30 minutes)
+  /// When this time elapses, the benchmark will complete and generate a final report.
+  /// Set to 0 for no time limit.
+  size_t benchmarkDurationMs = 30 * 60 * 1000;
+
+  /// @brief Interval between periodic FPS reports in milliseconds (default: 1 minute)
+  size_t reportIntervalMs = 2 * 1000;
+
+  /// @brief Multiplier for hiccup detection: frame time > avgFrameTime * multiplier = hiccup
+  double hiccupMultiplier = 3.0;
+
+  /// @brief Size of the circular buffer for storing render times
+  size_t renderTimeBufferSize = 1000;
 };
 
 struct ShellParams {

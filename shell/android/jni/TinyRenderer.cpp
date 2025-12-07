@@ -19,6 +19,7 @@
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #include <shell/shared/input/InputDispatcher.h>
 #include <shell/shared/platform/DisplayContext.h>
+#include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #if IGL_BACKEND_VULKAN
@@ -130,6 +131,27 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
   auto offscreenOnly = getAndroidSystemPropertyBool((prefixStr + "offscreen-only").c_str());
   auto benchmark = getAndroidSystemPropertyBool((prefixStr + "benchmark").c_str());
 
+  // Read new benchmark parameters
+  auto benchmarkDuration =
+      getAndroidSystemPropertySizeT((prefixStr + "benchmark-duration").c_str());
+  auto reportInterval = getAndroidSystemPropertySizeT((prefixStr + "report-interval").c_str());
+  auto hiccupMultiplier = getAndroidSystemProperty((prefixStr + "hiccup-multiplier").c_str());
+  auto renderBufferSize = getAndroidSystemPropertySizeT((prefixStr + "render-buffer-size").c_str());
+
+  // Debug: Log what benchmark properties were found
+  if (benchmark.has_value() || benchmarkDuration.has_value() || reportInterval.has_value()) {
+    __android_log_print(
+        ANDROID_LOG_INFO, "igl", "[IGL Benchmark] System props prefix: %s\n", prefixStr.c_str());
+    __android_log_print(
+        ANDROID_LOG_INFO,
+        "igl",
+        "[IGL Benchmark] benchmark=%s, duration=%s, interval=%s\n",
+        benchmark.has_value() ? (benchmark.value() ? "true" : "false") : "not set",
+        benchmarkDuration.has_value() ? std::to_string(benchmarkDuration.value()).c_str()
+                                      : "not set",
+        reportInterval.has_value() ? std::to_string(reportInterval.value()).c_str() : "not set");
+  }
+
   // Read custom parameters using __system_property_foreach (API 26+)
   // Custom parameters are any properties under the prefix that are not standard params
   std::vector<std::pair<std::string, std::string>> customParams;
@@ -145,7 +167,12 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
                                                                  "sessions",
                                                                  "log-reporter",
                                                                  "offscreen-only",
-                                                                 "benchmark"};
+                                                                 "benchmark",
+                                                                 "benchmark-duration",
+                                                                 "run-time",
+                                                                 "report-interval",
+                                                                 "hiccup-multiplier",
+                                                                 "render-buffer-size"};
 
   struct CallbackData {
     const std::string& prefix;
@@ -180,7 +207,9 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
 
   // If any benchmark parameter is set (including custom params), create the benchmark params
   if (timeout.has_value() || sessions.has_value() || logReporter.has_value() ||
-      offscreenOnly.has_value() || benchmark.has_value() || !customParams.empty()) {
+      offscreenOnly.has_value() || benchmark.has_value() || benchmarkDuration.has_value() ||
+      reportInterval.has_value() || hiccupMultiplier.has_value() || renderBufferSize.has_value() ||
+      !customParams.empty()) {
     if (!shellParams.benchmarkParams.has_value()) {
       shellParams.benchmarkParams = igl::shell::BenchmarkRenderSessionParams();
     }
@@ -196,6 +225,24 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
     }
     if (offscreenOnly.has_value()) {
       shellParams.benchmarkParams->offscreenRenderingOnly = offscreenOnly.value();
+    }
+
+    // Apply new benchmark parameters
+    if (benchmarkDuration.has_value()) {
+      shellParams.benchmarkParams->benchmarkDurationMs = benchmarkDuration.value();
+    }
+    if (reportInterval.has_value()) {
+      shellParams.benchmarkParams->reportIntervalMs = reportInterval.value();
+    }
+    if (hiccupMultiplier.has_value()) {
+      try {
+        shellParams.benchmarkParams->hiccupMultiplier = std::stod(hiccupMultiplier.value());
+      } catch (...) {
+        // Ignore parse errors, keep default
+      }
+    }
+    if (renderBufferSize.has_value()) {
+      shellParams.benchmarkParams->renderTimeBufferSize = renderBufferSize.value();
     }
 
     // Add custom parameters
@@ -262,8 +309,31 @@ void TinyRenderer::init(AAssetManager* mgr,
   // Read shell params from Android system properties first
   readShellParamsFromAndroidProps(shellParams_, factory.getAndroidSystemPropsPrefix());
 
+  // Debug: Log if benchmark params were set
+  if (shellParams_.benchmarkParams.has_value()) {
+    __android_log_print(ANDROID_LOG_INFO,
+                        "igl",
+                        "[IGL Benchmark] benchmarkParams SET after reading props: duration=%zu, "
+                        "interval=%zu\n",
+                        shellParams_.benchmarkParams->benchmarkDurationMs,
+                        shellParams_.benchmarkParams->reportIntervalMs);
+  } else {
+    __android_log_print(
+        ANDROID_LOG_INFO, "igl", "[IGL Benchmark] benchmarkParams NOT SET after reading props\n");
+  }
+
   // Parse shell params from command line (overrides properties)
   shell::parseShellParams(args, shellParams_);
+
+  // Debug: Log after command line parsing
+  if (shellParams_.benchmarkParams.has_value()) {
+    __android_log_print(ANDROID_LOG_INFO,
+                        "igl",
+                        "[IGL Benchmark] benchmarkParams SET after parseShellParams: duration=%zu, "
+                        "interval=%zu\n",
+                        shellParams_.benchmarkParams->benchmarkDurationMs,
+                        shellParams_.benchmarkParams->reportIntervalMs);
+  }
 
   switch (backendVersion_.flavor) {
 #if IGL_BACKEND_OPENGL
@@ -381,7 +451,7 @@ void TinyRenderer::recreateSwapchain(ANativeWindow* nativeWindow, bool createSur
 #endif
 }
 
-void TinyRenderer::render(float displayScale) {
+bool TinyRenderer::render(float displayScale) {
   // process user input
   IGL_DEBUG_ASSERT(platform_ != nullptr);
   platform_->getInputDispatcher().processEvents();
@@ -458,7 +528,10 @@ void TinyRenderer::render(float displayScale) {
 
   platform_->getDevice().setCurrentThread();
   session_->setPixelsPerPoint(displayScale);
-  session_->update(std::move(surfaceTextures));
+  session_->runUpdate(std::move(surfaceTextures));
+
+  // Return true if the application should exit (e.g., benchmark timeout)
+  return session_->appParams().exitRequested;
 }
 
 void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int height) {

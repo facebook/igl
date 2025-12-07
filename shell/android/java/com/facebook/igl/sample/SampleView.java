@@ -265,7 +265,19 @@ public class SampleView extends GLSurfaceView {
     }
 
     public void onDrawFrame(GL10 gl) {
-      SampleLib.render(mContext.getResources().getDisplayMetrics().density);
+      boolean shouldExit = SampleLib.render(mContext.getResources().getDisplayMetrics().density);
+      if (shouldExit) {
+        android.util.Log.i(
+            "igl", "[IGL Benchmark] Java: Benchmark complete, waiting for logs to flush...");
+        // Give logcat time to flush the final report before killing the process
+        try {
+          Thread.sleep(2000);
+        } catch (InterruptedException e) {
+          // Ignore
+        }
+        android.util.Log.i("igl", "[IGL Benchmark] Java: Exiting process");
+        System.exit(0);
+      }
     }
   }
 }
