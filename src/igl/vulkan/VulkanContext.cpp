@@ -824,11 +824,6 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     }
   }
 
-  if (features_.available(VK_EXT_MESH_SHADER_EXTENSION_NAME,
-                          VulkanFeatures::ExtensionType::Device)) {
-    vkPhysicalDeviceDescriptorIndexingProperties_.pNext = &vkPhysicalDeviceMeshShaderPropertiesEXT_;
-  }
-
   vf_.vkGetPhysicalDeviceProperties2(vkPhysicalDevice_, &vkPhysicalDeviceProperties2_);
 
   const uint32_t apiVersion = vkPhysicalDeviceProperties2_.properties.apiVersion;
@@ -864,6 +859,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   // Enable extra device extensions
   for (size_t i = 0; i < numExtraDeviceExtensions; i++) {
     features_.enable(extraDeviceExtensions[i], VulkanFeatures::ExtensionType::Device);
+  }
+
+  if (features_.available(VK_EXT_MESH_SHADER_EXTENSION_NAME,
+                          VulkanFeatures::ExtensionType::Device)) {
+    vkPhysicalDeviceDescriptorIndexingProperties_.pNext = &vkPhysicalDeviceMeshShaderPropertiesEXT_;
+    vf_.vkGetPhysicalDeviceProperties2(vkPhysicalDevice_, &vkPhysicalDeviceProperties2_);
   }
 
   VulkanQueuePool queuePool(vf_, vkPhysicalDevice_);

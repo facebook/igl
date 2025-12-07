@@ -78,23 +78,111 @@ fragment float4 fragmentMain(FS_IN in [[stage_in]]) {
 )";
 }
 
+std::string getVulkanTaskShaderSource() {
+  return R"(
+#version 460
+#extension GL_EXT_mesh_shader : enable
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+void main(){
+  EmitMeshTasksEXT(1,1,1);
+}
+)";
+}
+
+std::string getVulkanMeshShaderSource() {
+  return R"(
+#version 460
+#extension GL_EXT_mesh_shader : enable
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(set = 1, binding = 1, std140) uniform UniformBlock {
+  mat4 mvpMatrix;
+};
+
+layout(location = 0) out PerVertexData {vec4 color; } v_out[];
+
+layout(triangles, max_vertices = 3, max_primitives = 1) out;
+
+const vec4 vertexData[3] = {{-0.6f, -0.4f, 0.0, 1.0}, {0.6f, -0.4f, 0.0, 1.0}, {0.0f, 0.6f, 0.0, 1.0}};
+const vec4 colorData[3]  = {{1.0, 0.0, 0.0, 1.0}, {0.0, 1.0, 0.0, 1.0}, {0.0, 0.0, 1.0, 1.0}};
+
+void main(){
+  SetMeshOutputsEXT(3, 1);
+
+  for (int i = 0; i != 3; ++i) {
+    gl_MeshVerticesEXT[i].gl_Position = mvpMatrix * vertexData[i];
+    v_out[i].color = colorData[i];
+  }
+
+  gl_PrimitiveTriangleIndicesEXT[0] = uvec3(0, 1, 2);
+}
+)";
+}
+
+std::string getVulkanFragmentShaderSource() {
+  return R"(
+#version 460
+
+layout(location = 0) in vec4 color;
+layout(location = 0) out vec4 out_FragColor;
+
+void main() {
+  out_FragColor = color;
+}
+)";
+}
+
 std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
+  std::string taskShader, meshShader, fragmentShader;
+  std::string taskShaderEntryPoint, meshShaderEntryPoint, fragmentShaderEntryPoint;
+
+  switch (device.getBackendType()) {
+  case igl::BackendType::Metal:
+    taskShader = getMetalTaskShaderSource();
+    meshShader = getMetalMeshShaderSource();
+    fragmentShader = getMetalFragmentShaderSource();
+    taskShaderEntryPoint = "taskMain";
+    meshShaderEntryPoint = "meshMain";
+    fragmentShaderEntryPoint = "fragmentMain";
+    break;
+
+  case igl::BackendType::Vulkan:
+    taskShader = getVulkanTaskShaderSource();
+    meshShader = getVulkanMeshShaderSource();
+    fragmentShader = getVulkanFragmentShaderSource();
+    taskShaderEntryPoint = "main";
+    meshShaderEntryPoint = "main";
+    fragmentShaderEntryPoint = "main";
+    break;
+
+  default:
+    break;
+  }
+
+  if (taskShader.empty() || meshShader.empty() || fragmentShader.empty()) {
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+    return nullptr;
+  }
+
   auto taskModule = igl::ShaderModuleCreator::fromStringInput(
       device,
-      getMetalTaskShaderSource().c_str(),
-      {.stage = igl::ShaderStage::Task, .entryPoint = "taskMain"},
+      taskShader.c_str(),
+      {.stage = igl::ShaderStage::Task, .entryPoint = taskShaderEntryPoint},
       "task shader",
       nullptr);
   auto meshModule = igl::ShaderModuleCreator::fromStringInput(
       device,
-      getMetalMeshShaderSource().c_str(),
-      {.stage = igl::ShaderStage::Mesh, .entryPoint = "meshMain"},
+      meshShader.c_str(),
+      {.stage = igl::ShaderStage::Mesh, .entryPoint = meshShaderEntryPoint},
       "mesh shader",
       nullptr);
   auto fragmentModule = igl::ShaderModuleCreator::fromStringInput(
       device,
-      getMetalFragmentShaderSource().c_str(),
-      {.stage = igl::ShaderStage::Fragment, .entryPoint = "fragmentMain"},
+      fragmentShader.c_str(),
+      {.stage = igl::ShaderStage::Fragment, .entryPoint = fragmentShaderEntryPoint},
       "fragment shader",
       nullptr);
 
