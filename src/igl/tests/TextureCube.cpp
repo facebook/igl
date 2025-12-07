@@ -129,6 +129,13 @@ class TextureCubeTest : public ::testing::Test {
                                igl::tests::data::shader::kVulkanSimpleFragShaderCube,
                                igl::tests::data::shader::kShaderFunc,
                                stages);
+    } else if (iglDev_->getBackendType() == BackendType::D3D12) {
+      util::createShaderStages(iglDev_,
+                               igl::tests::data::shader::kD3D12SimpleVertShaderCube,
+                               igl::tests::data::shader::kShaderFunc,
+                               igl::tests::data::shader::kD3D12SimpleFragShaderCube,
+                               igl::tests::data::shader::kShaderFunc,
+                               stages);
     } else {
       ASSERT_TRUE(false);
     }

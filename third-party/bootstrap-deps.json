@@ -120,6 +120,14 @@
     }
 },
 {
+    "name": "DirectX-Headers",
+    "source": {
+        "type": "git",
+        "url": "https://github.com/microsoft/DirectX-Headers.git",
+        "revision": "v1.614.0"
+    }
+},
+{
     "name": "vma",
     "source": {
         "type": "git",

@@ -22,6 +22,7 @@ namespace igl::tests::util {
 constexpr std::string_view kBackendOgl("ogl");
 constexpr std::string_view kBackendMtl("metal");
 constexpr std::string_view kBackendVul("vulkan");
+constexpr std::string_view kBackendD3D12("d3d12");
 
 // Creates an IGL device and a command queue
 void createDeviceAndQueue(std::shared_ptr<IDevice>& dev, std::shared_ptr<ICommandQueue>& cq);
