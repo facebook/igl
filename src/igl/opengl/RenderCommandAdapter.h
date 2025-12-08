@@ -10,7 +10,6 @@
 #include <array>
 #include <bitset>
 #include <functional>
-#include <igl/Buffer.h>
 #include <igl/Common.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/UnbindPolicy.h>
