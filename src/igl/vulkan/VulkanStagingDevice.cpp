@@ -341,7 +341,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
     copyRegions.emplace_back(
         ivkGetBufferImageCopy2D(memoryChunk.offset,
                                 0,
-                                ivkGetRect2D(0, 0, w, h),
+                                VkRect2D{.offset = {0, 0}, .extent = {w, h}},
                                 VkImageSubresourceLayers{VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 1}));
     // Chrominance (in 1 or 2 planes, 420 subsampled)
     const VkDeviceSize planeSize0 = static_cast<VkDeviceSize>(w) * static_cast<VkDeviceSize>(h);
@@ -351,19 +351,19 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
       copyRegions.emplace_back(
           ivkGetBufferImageCopy2D(memoryChunk.offset + planeSize0,
                                   0,
-                                  ivkGetRect2D(0, 0, w / 2, h / 2),
+                                  VkRect2D{.offset = {0, 0}, .extent = {w / 2, h / 2}},
                                   VkImageSubresourceLayers{VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 0, 1}));
     } else if (image.imageFormat_ == VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM) {
       imageAspect |= VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
       copyRegions.emplace_back(
           ivkGetBufferImageCopy2D(memoryChunk.offset + planeSize0,
                                   0,
-                                  ivkGetRect2D(0, 0, w / 2, h / 2),
+                                  VkRect2D{.offset = {0, 0}, .extent = {w / 2, h / 2}},
                                   VkImageSubresourceLayers{VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 0, 1}));
       copyRegions.emplace_back(
           ivkGetBufferImageCopy2D(memoryChunk.offset + planeSize0 + planeSize1,
                                   0,
-                                  ivkGetRect2D(0, 0, w / 2, h / 2),
+                                  VkRect2D{.offset = {0, 0}, .extent = {w / 2, h / 2}},
                                   VkImageSubresourceLayers{VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 0, 1}));
 
     } else {
@@ -441,10 +441,10 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
     const uint32_t texelsPerRow = bytesPerRow / static_cast<uint32_t>(properties.bytesPerBlock);
 
     if (image.type_ == VK_IMAGE_TYPE_2D) {
-      const VkRect2D region = ivkGetRect2D(static_cast<int32_t>(mipRange.x),
-                                           static_cast<int32_t>(mipRange.y),
-                                           static_cast<uint32_t>(mipRange.width),
-                                           static_cast<uint32_t>(mipRange.height));
+      const VkRect2D region = {
+          .offset = {static_cast<int32_t>(mipRange.x), static_cast<int32_t>(mipRange.y)},
+          .extent = {static_cast<uint32_t>(mipRange.width),
+                     static_cast<uint32_t>(mipRange.height)}};
       copyRegions.emplace_back(ivkGetBufferImageCopy2D(
           memoryChunk.offset + offset,
           texelsPerRow,
