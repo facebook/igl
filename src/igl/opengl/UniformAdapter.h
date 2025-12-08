@@ -19,7 +19,7 @@ class IContext;
 class UniformAdapter {
  public:
   // Feel like this can be placed somewhere better
-  enum PipelineType {
+  enum class PipelineType {
     Render = 1,
     Compute = 2,
   };

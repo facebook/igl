@@ -19,7 +19,7 @@ UniformAdapter::UniformAdapter(const IContext& context, PipelineType type) : pip
   uniforms_.reserve(kLikelyMaximumNumUniforms);
 
   const auto& deviceFeatures = context.deviceFeatures();
-  if (pipelineType_ == Render) {
+  if (pipelineType_ == PipelineType::Render) {
     maxUniforms_ = deviceFeatures.getMaxVertexUniforms() + deviceFeatures.getMaxFragmentUniforms();
   } else {
     maxUniforms_ = deviceFeatures.getMaxComputeUniforms();
