@@ -8,6 +8,7 @@
 #include "../data/ShaderData.h"
 #include "../util/Common.h"
 
+#include <igl/Buffer.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/VertexInputState.h>
 

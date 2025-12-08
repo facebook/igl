@@ -7,6 +7,7 @@
 
 #include "util/Common.h"
 
+#include <igl/Buffer.h>
 #include <igl/DepthStencilState.h>
 #include <igl/RenderPipelineState.h>
 

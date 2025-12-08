@@ -7,9 +7,8 @@
 
 #pragma once
 
-#include <map>
+#include <string>
 #include <vector>
-#include <igl/Buffer.h>
 #include <igl/NameHandle.h>
 #include <igl/Shader.h>
 #include <igl/Texture.h>
