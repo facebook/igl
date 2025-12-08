@@ -567,20 +567,6 @@ VkSubmitInfo ivkGetSubmitInfo(const VkCommandBuffer* buffer,
   return si;
 }
 
-VkClearValue ivkGetClearColorValue(float r, float g, float b, float a) {
-  const VkClearValue value = {
-      .color = {.float32 = {r, g, b, a}},
-  };
-  return value;
-}
-
-VkClearValue ivkGetClearDepthStencilValue(float depth, uint32_t stencil) {
-  const VkClearValue value = {
-      .depthStencil = {.depth = depth, .stencil = stencil},
-  };
-  return value;
-}
-
 VkBufferCreateInfo ivkGetBufferCreateInfo(uint64_t size, VkBufferUsageFlags usage) {
   const VkBufferCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -800,17 +786,6 @@ VkPipelineColorBlendStateCreateInfo ivkGetPipelineColorBlendStateCreateInfo(
   return ci;
 }
 
-VkImageSubresourceRange ivkGetImageSubresourceRange(VkImageAspectFlags aspectMask) {
-  const VkImageSubresourceRange range = {
-      .aspectMask = aspectMask,
-      .baseMipLevel = 0,
-      .levelCount = 1,
-      .baseArrayLayer = 0,
-      .layerCount = 1,
-  };
-  return range;
-}
-
 VkWriteDescriptorSet ivkGetWriteDescriptorSetImageInfo(VkDescriptorSet dstSet,
                                                        uint32_t dstBinding,
                                                        VkDescriptorType descriptorType,
@@ -876,14 +851,6 @@ VkPipelineShaderStageCreateInfo ivkGetPipelineShaderStageCreateInfo(VkShaderStag
       .pSpecializationInfo = NULL,
   };
   return ci;
-}
-
-VkRect2D ivkGetRect2D(int32_t x, int32_t y, uint32_t width, uint32_t height) {
-  const VkRect2D rect = {
-      .offset = {.x = x, .y = y},
-      .extent = {.width = width, .height = height},
-  };
-  return rect;
 }
 
 VkResult ivkCreateGraphicsPipeline(const struct VulkanFunctionTable* vt,

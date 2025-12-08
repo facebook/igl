@@ -209,9 +209,6 @@ VkSubmitInfo ivkGetSubmitInfo(const VkCommandBuffer* buffer,
                               const VkPipelineStageFlags* waitStageMasks,
                               const VkSemaphore* releaseSemaphore);
 
-VkClearValue ivkGetClearDepthStencilValue(float depth, uint32_t stencil);
-VkClearValue ivkGetClearColorValue(float r, float g, float b, float a);
-
 VkBufferCreateInfo ivkGetBufferCreateInfo(uint64_t size, VkBufferUsageFlags usage);
 
 /// @brief Creates a VkImageCreateInfo structure with its layout set to `VK_IMAGE_LAYOUT_UNDEFINED`
@@ -278,9 +275,6 @@ VkPipelineColorBlendStateCreateInfo ivkGetPipelineColorBlendStateCreateInfo(
 VkPipelineViewportStateCreateInfo ivkGetPipelineViewportStateCreateInfo(const VkViewport* viewport,
                                                                         const VkRect2D* scissor);
 
-/// @brief Creates a VkImageSubresourceRange structure for the first layer and mip level
-VkImageSubresourceRange ivkGetImageSubresourceRange(VkImageAspectFlags aspectMask);
-
 VkWriteDescriptorSet ivkGetWriteDescriptorSetImageInfo(VkDescriptorSet dstSet,
                                                        uint32_t dstBinding,
                                                        VkDescriptorType descriptorType,
@@ -296,8 +290,6 @@ VkWriteDescriptorSet ivkGetWriteDescriptorSetBufferInfo(VkDescriptorSet dstSet,
 VkPipelineLayoutCreateInfo ivkGetPipelineLayoutCreateInfo(uint32_t numLayouts,
                                                           const VkDescriptorSetLayout* layouts,
                                                           const VkPushConstantRange* range);
-
-VkRect2D ivkGetRect2D(int32_t x, int32_t y, uint32_t width, uint32_t height);
 
 VkPipelineShaderStageCreateInfo ivkGetPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,
                                                                     VkShaderModule shaderModule,

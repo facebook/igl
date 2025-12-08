@@ -162,48 +162,6 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
-// ivkGetClearColorValue ***************************************************
-
-class ClearColorValueTest
-  : public ::testing::TestWithParam<std::tuple<float, float, float, float>> {};
-
-TEST_P(ClearColorValueTest, GetClearColorValue) {
-  const float r = std::get<0>(GetParam());
-  const float g = std::get<1>(GetParam());
-  const float b = std::get<2>(GetParam());
-  const float a = std::get<3>(GetParam());
-
-  const auto clearValue = ivkGetClearColorValue(r, g, b, a);
-  EXPECT_EQ(clearValue.color.float32[0], r);
-  EXPECT_EQ(clearValue.color.float32[1], g);
-  EXPECT_EQ(clearValue.color.float32[2], b);
-  EXPECT_EQ(clearValue.color.float32[3], a);
-}
-
-INSTANTIATE_TEST_SUITE_P(AllCombinations,
-                         ClearColorValueTest,
-                         ::testing::Combine(::testing::Values(0.f, 1.0f),
-                                            ::testing::Values(0.f, 1.0f),
-                                            ::testing::Values(0.f, 1.0f),
-                                            ::testing::Values(0.f, 1.0f)));
-
-// ivkGetClearDepthStencilValue ***************************************************
-
-class ClearDepthStencilValueTest : public ::testing::TestWithParam<std::tuple<float, uint32_t>> {};
-
-TEST_P(ClearDepthStencilValueTest, GetClearDepthStencilValue) {
-  const float depth = std::get<0>(GetParam());
-  const uint32_t stencil = std::get<1>(GetParam());
-
-  const auto clearValue = ivkGetClearDepthStencilValue(depth, stencil);
-  EXPECT_EQ(clearValue.depthStencil.depth, depth);
-  EXPECT_EQ(clearValue.depthStencil.stencil, stencil);
-}
-
-INSTANTIATE_TEST_SUITE_P(AllCombinations,
-                         ClearDepthStencilValueTest,
-                         ::testing::Combine(::testing::Values(0.f, 1.0f), ::testing::Values(0, 1)));
-
 // ivkGetBufferCreateInfo ***************************************************
 
 class BufferCreateInfoTest
@@ -597,35 +555,6 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
-// ivkGetImageSubresourceRange *******************************
-
-// Parameters:
-//   bool: true if viewport is nullptr
-//   bool: true if scissor is nullptr
-class GetImageSubresourceRangeTest
-  : public ::testing::TestWithParam<std::tuple<VkImageAspectFlags>> {};
-
-TEST_P(GetImageSubresourceRangeTest, GetImageSubresourceRange) {
-  const VkImageAspectFlags aspectFlag = std::get<0>(GetParam());
-
-  const VkImageSubresourceRange imageSubresourceRange = ivkGetImageSubresourceRange(aspectFlag);
-
-  EXPECT_EQ(imageSubresourceRange.aspectMask, aspectFlag);
-  EXPECT_EQ(imageSubresourceRange.baseMipLevel, 0);
-  EXPECT_EQ(imageSubresourceRange.levelCount, 1);
-  EXPECT_EQ(imageSubresourceRange.baseArrayLayer, 0);
-  EXPECT_EQ(imageSubresourceRange.layerCount, 1);
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    AllCombinations,
-    GetImageSubresourceRangeTest,
-    ::testing::Combine(::testing::Values(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_ASPECT_DEPTH_BIT)),
-    [](const testing::TestParamInfo<GetImageSubresourceRangeTest::ParamType>& info) {
-      const std::string name = std::to_string(std::get<0>(info.param));
-      return name;
-    });
-
 // ivkGetWriteDescriptorSetImageInfo *******************************
 class GetWriteDescriptorSetImageInfoTest
   : public ::testing::TestWithParam<std::tuple<uint32_t, VkDescriptorType, uint32_t>> {};
@@ -752,39 +681,7 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
-// ivkGetRect2D *******************************
-class GetRect2DTest
-  : public ::testing::TestWithParam<std::tuple<uint32_t, uint32_t, uint32_t, uint32_t>> {};
-
-TEST_P(GetRect2DTest, GetRect2D) {
-  const uint32_t x = std::get<0>(GetParam());
-  const uint32_t y = std::get<1>(GetParam());
-  const uint32_t width = std::get<2>(GetParam());
-  const uint32_t height = std::get<3>(GetParam());
-
-  const VkRect2D rect = ivkGetRect2D(x, y, width, height);
-
-  EXPECT_EQ(rect.offset.x, x);
-  EXPECT_EQ(rect.offset.y, y);
-  EXPECT_EQ(rect.extent.width, width);
-  EXPECT_EQ(rect.extent.height, height);
-}
-
-INSTANTIATE_TEST_SUITE_P(AllCombinations,
-                         GetRect2DTest,
-                         ::testing::Combine(::testing::Values(0, 50),
-                                            ::testing::Values(0, 50),
-                                            ::testing::Values(100, 500),
-                                            ::testing::Values(100, 500)),
-                         [](const testing::TestParamInfo<GetRect2DTest::ParamType>& info) {
-                           const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
-                                                    std::to_string(std::get<1>(info.param)) + "_" +
-                                                    std::to_string(std::get<2>(info.param)) + "_" +
-                                                    std::to_string(std::get<3>(info.param));
-                           return name;
-                         });
-
-// ivkGetPipelineShaderStageCreateInfo *******************************
+// ivkGetBufferImageCopy2D *******************************
 class GetPipelineShaderStageCreateInfoTest
   : public ::testing::TestWithParam<std::tuple<VkShaderStageFlagBits, bool>> {};
 
