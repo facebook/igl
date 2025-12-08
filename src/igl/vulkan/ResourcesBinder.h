@@ -83,10 +83,10 @@ class ResourcesBinder final {
   /*
    * @brief Bitwise flags for dirty descriptor sets (per each supported resource type)
    */
-  enum DirtyFlagBits : uint8_t {
-    DirtyFlagBits_Textures = 1 << 0,
-    DirtyFlagBits_Buffers = 1 << 1,
-    DirtyFlagBits_StorageImages = 1 << 2,
+  enum DirtyFlagBits : uint8_t { // NOLINT
+    DirtyFlagBits_Textures = 1 << 0, // NOLINT
+    DirtyFlagBits_Buffers = 1 << 1, // NOLINT
+    DirtyFlagBits_StorageImages = 1 << 2, // NOLINT
   };
 
  private:
