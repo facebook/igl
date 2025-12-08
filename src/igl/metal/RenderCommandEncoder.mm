@@ -267,7 +267,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
   IGL_DEBUG_ASSERT(encoder_);
   IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX);
 
-  auto iglBuffer = static_cast<Buffer*>(buffer);
+  auto* iglBuffer = static_cast<Buffer*>(buffer);
   auto metalBuffer = iglBuffer ? iglBuffer->get() : nil;
 
   if ((bindTarget & BindTarget::kVertex) != 0) {
