@@ -71,7 +71,7 @@ class GPUStressSession : public RenderSession {
   struct VertexPosUvw {
     glm::vec3 position;
     glm::vec4 uvw;
-    glm::vec4 base_color;
+    glm::vec4 baseColor;
   };
 
   [[nodiscard]] std::string getLightingCalc() const;
