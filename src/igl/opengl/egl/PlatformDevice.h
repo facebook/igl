@@ -9,7 +9,6 @@
 
 #include <EGL/egl.h>
 #include <igl/Texture.h>
-#include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/PlatformDevice.h>
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
