@@ -16,22 +16,22 @@ void saveFrameBufferToPng(const char* absoluteFilename,
                           const std::shared_ptr<IFramebuffer>& framebuffer,
                           Platform& platform) {
   auto drawableSurface = framebuffer->getColorAttachment(0);
-  auto frameBuffersize = drawableSurface->getDimensions();
+  auto frameBufferSize = drawableSurface->getDimensions();
   const int bytesPerPixel = 4;
   const auto rangeDesc =
-      TextureRangeDesc::new2D(0, 0, frameBuffersize.width, frameBuffersize.height);
+      TextureRangeDesc::new2D(0, 0, frameBufferSize.width, frameBufferSize.height);
   ImageData imageData;
   imageData.desc.format = drawableSurface->getFormat();
-  imageData.desc.width = frameBuffersize.width;
-  imageData.desc.height = frameBuffersize.height;
+  imageData.desc.width = frameBufferSize.width;
+  imageData.desc.height = frameBufferSize.height;
   auto buffer =
-      std::make_unique<uint8_t[]>(frameBuffersize.width * frameBuffersize.height * bytesPerPixel);
+      std::make_unique<uint8_t[]>(frameBufferSize.width * frameBufferSize.height * bytesPerPixel);
 
   const CommandQueueDesc desc{};
   auto commandQueue = platform.getDevice().createCommandQueue(desc, nullptr);
   framebuffer->copyBytesColorAttachment(*commandQueue, 0, buffer.get(), rangeDesc);
 
-  const size_t numPixels = frameBuffersize.width * frameBuffersize.height * bytesPerPixel;
+  const size_t numPixels = frameBufferSize.width * frameBufferSize.height * bytesPerPixel;
 
 #if IGL_PLATFORM_WINDOWS
   if (imageData.desc.format == TextureFormat::BGRA_UNorm8) {
