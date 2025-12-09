@@ -197,21 +197,21 @@ GLVersion getGLVersion(const char* version, bool constrain) {
 #if IGL_LOGGING_ENABLED
     if (constrainedMajorVersion != majorVersion || constrainedMinorVersion != minorVersion) {
 #if IGL_OPENGL_ES
-      static constexpr std::string_view gl = "OpenGL ES";
+      static constexpr std::string_view kGl = "OpenGL ES";
 #else
-      static constexpr std::string_view gl = "OpenGL";
+      static constexpr std::string_view kGl = "OpenGL";
 #endif
       IGL_LOG_INFO(
           "Context supports %s %d.%d, but IGL was only compiled with support for %s "
           "%d.%d\n",
-          gl.data(),
+          kGl.data(),
           majorVersion,
           minorVersion,
-          gl.data(),
+          kGl.data(),
           constrainedMajorVersion,
           constrainedMinorVersion);
       IGL_LOG_INFO("Constraining supported version to %s %d.%d\n",
-                   gl.data(),
+                   kGl.data(),
                    constrainedMajorVersion,
                    constrainedMinorVersion);
     }
