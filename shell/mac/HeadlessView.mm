@@ -22,6 +22,8 @@
 
 @implementation HeadlessView
 
+@synthesize viewController = viewController;
+
 - (void)dealloc {
   CVDisplayLinkRelease(displayLink);
 }
