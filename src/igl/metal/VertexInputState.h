@@ -26,6 +26,7 @@ class VertexInputState final : public IVertexInputState {
   static MTLVertexFormat convertAttributeFormat(VertexAttributeFormat value);
   static MTLVertexStepFunction convertSampleFunction(VertexSampleFunction value);
 
+ private:
   MTLVertexDescriptor* value_;
 };
 
