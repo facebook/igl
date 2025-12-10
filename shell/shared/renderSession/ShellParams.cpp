@@ -111,7 +111,11 @@ std::vector<std::string> convertArgvToParams(int argc, char** argv) {
 
 void parseShellParams(const std::vector<std::string>& args, ShellParams& shellParams) {
   // Parse benchmark parameters using existing function
-  shellParams.benchmarkParams = parseBenchmarkRenderSessionParams(args);
+  // Only override benchmarkParams if command line args specify benchmark parameters
+  auto parsedBenchmarkParams = parseBenchmarkRenderSessionParams(args);
+  if (parsedBenchmarkParams.has_value()) {
+    shellParams.benchmarkParams = parsedBenchmarkParams;
+  }
 
   // Parse other shell parameters
   for (size_t i = 0; i < args.size(); i++) {
