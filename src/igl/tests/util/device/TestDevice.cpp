@@ -27,6 +27,9 @@
 #if IGL_VULKAN_SUPPORTED
 #include <igl/tests/util/device/vulkan/TestDevice.h>
 #endif
+#if IGL_D3D12_SUPPORTED
+#include <igl/tests/util/device/d3d12/TestDevice.h>
+#endif
 // @fb-only
 // @fb-only
 // @fb-only
@@ -45,6 +48,8 @@ bool isBackendTypeSupported(BackendType backendType) {
     return IGL_OPENGL_SUPPORTED;
   case ::igl::BackendType::Vulkan:
     return IGL_VULKAN_SUPPORTED;
+  case ::igl::BackendType::D3D12:
+    return IGL_D3D12_SUPPORTED;
   // @fb-only
     // @fb-only
   }
@@ -69,6 +74,20 @@ std::unique_ptr<IDevice> createTestDevice(BackendType backendType, const TestDev
   if (backendType == ::igl::BackendType::Vulkan) {
 #if IGL_VULKAN_SUPPORTED
     return vulkan::createTestDevice(config.enableVulkanValidationLayers);
+#else
+    return nullptr;
+#endif
+  }
+  if (backendType == ::igl::BackendType::D3D12) {
+#if IGL_D3D12_SUPPORTED
+    IGL_LOG_INFO("[Tests] Creating D3D12 test device (debug layer: enabled)\n");
+    auto dev = d3d12::createTestDevice(true);
+    if (!dev) {
+      IGL_LOG_ERROR("[Tests] D3D12 test device creation failed\n");
+    } else {
+      IGL_LOG_INFO("[Tests] D3D12 test device created OK\n");
+    }
+    return dev;
 #else
     return nullptr;
 #endif

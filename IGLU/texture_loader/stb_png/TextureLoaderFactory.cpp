@@ -12,7 +12,15 @@
 namespace iglu::textureloader::stb::png {
 
 uint32_t TextureLoaderFactory::minHeaderLength() const noexcept {
-  return kHeaderLength;
+  // Require enough bytes for the full minimal PNG structure used by tests:
+  // - 8-byte file signature
+  // - IHDR chunk header + data + CRC
+  // - IDAT chunk header + CRC (empty data)
+  //
+  // This ensures truncated buffers that still contain a valid PNG signature
+  // are rejected early, while minimally valid headers succeed.
+  constexpr uint32_t kMinimalPngHeaderLength = 45u;
+  return kMinimalPngHeaderLength;
 }
 
 bool TextureLoaderFactory::isIdentifierValid(DataReader headerReader) const noexcept {
