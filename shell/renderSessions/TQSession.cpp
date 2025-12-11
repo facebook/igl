@@ -266,10 +266,13 @@ void TQSession::initialize() noexcept {
   IGL_DEBUG_ASSERT(vertexInput0_ != nullptr);
 
   // Sampler & Texture
-  SamplerStateDesc samplerDesc;
-  samplerDesc.minFilter = samplerDesc.magFilter = SamplerMinMagFilter::Linear;
-  samplerDesc.debugName = "Sampler: linear";
-  samp0_ = device.createSamplerState(samplerDesc, nullptr);
+  samp0_ = device.createSamplerState(
+      SamplerStateDesc{
+          .minFilter = SamplerMinMagFilter::Linear,
+          .magFilter = SamplerMinMagFilter::Linear,
+          .debugName = "Sampler: linear",
+      },
+      nullptr);
   IGL_DEBUG_ASSERT(samp0_ != nullptr);
   tex0_ = getPlatform().loadTexture("igl.png");
 
@@ -277,8 +280,7 @@ void TQSession::initialize() noexcept {
   IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
 
   // Command queue
-  const CommandQueueDesc desc{};
-  commandQueue_ = device.createCommandQueue(desc, nullptr);
+  commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 
   renderPass_.colorAttachments = {
@@ -296,11 +298,10 @@ void TQSession::initialize() noexcept {
   // init uniforms
   fragmentParameters_ = FragmentFormat{{1.0f, 1.0f, 1.0f}};
 
-  BufferDesc fpDesc;
-  fpDesc.type = BufferDesc::BufferTypeBits::Uniform;
-  fpDesc.data = &fragmentParameters_;
-  fpDesc.length = sizeof(fragmentParameters_);
-  fpDesc.storage = ResourceStorage::Shared;
+  const BufferDesc fpDesc(BufferDesc::BufferTypeBits::Uniform,
+                          &fragmentParameters_,
+                          sizeof(fragmentParameters_),
+                          ResourceStorage::Shared);
 
   fragmentParamBuffer_ = device.createBuffer(fpDesc, nullptr);
   IGL_DEBUG_ASSERT(fragmentParamBuffer_ != nullptr);
@@ -309,9 +310,10 @@ void TQSession::initialize() noexcept {
 void TQSession::update(SurfaceTextures surfaceTextures) noexcept {
   Result ret;
   if (framebuffer_ == nullptr) {
-    FramebufferDesc framebufferDesc;
-    framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
-    framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
+    FramebufferDesc framebufferDesc{
+        .colorAttachments = {{.texture = surfaceTextures.color}},
+        .depthAttachment = {.texture = surfaceTextures.depth},
+    };
     if (surfaceTextures.depth && surfaceTextures.depth->getProperties().hasStencil()) {
       framebufferDesc.stencilAttachment.texture = surfaceTextures.depth;
     }
@@ -355,8 +357,7 @@ void TQSession::update(SurfaceTextures surfaceTextures) noexcept {
   }
 
   // Command Buffers
-  const CommandBufferDesc cbDesc;
-  auto buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
   auto drawableSurface = framebuffer_->getColorAttachment(0);
 
