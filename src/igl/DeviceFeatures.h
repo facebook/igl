@@ -35,6 +35,7 @@ namespace igl {
  * ExplicitBindingExt,        Supports uniforms block explicit binding in shaders via an extension
  * ExternalMemoryObjects,     Supports accessing external memory objects, including by POSIX file descriptor
  * MapBufferRange             Supports mapping buffer data into client address space
+ * MeshShaders                Supports task/mesh shaders
  * MinMaxBlend                Supports Min and Max blend operations
  * MultipleRenderTargets      Supports MRT - Multiple Render Targets
  * MultiSample                Supports multisample textures
