@@ -18,7 +18,7 @@ struct ShellParams;
 
 class RenderSession {
  public:
-  RenderSession(std::shared_ptr<Platform> platform);
+  explicit RenderSession(std::shared_ptr<Platform> platform);
   virtual ~RenderSession() noexcept = default;
 
   // Enable move operations (unique_ptr requires explicit declaration)
