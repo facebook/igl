@@ -51,6 +51,8 @@ TEST_F(ShaderLibraryTest, CreateFromSource) {
     source = data::shader::kMtlSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
     source = data::shader::kVulkanSimpleVertShader.data();
+  } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
+    source = data::shader::kD3D12SimpleShader.data();
   } else {
     IGL_DEBUG_ASSERT_NOT_REACHED();
   }
@@ -96,6 +98,8 @@ TEST_F(ShaderLibraryTest, CreateFromSourceMultipleModules) {
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
     GTEST_SKIP() << "Vulkan does not support multiple modules from the same source code.";
     return;
+  } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
+    source = data::shader::kD3D12SimpleShader.data();
   }
 
   // Check if source is null before passing it to fromStringInput
@@ -135,6 +139,8 @@ TEST_F(ShaderLibraryTest, CreateFromSourceNoResult) {
     source = data::shader::kMtlSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
     source = data::shader::kVulkanSimpleVertShader.data();
+  } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
+    source = data::shader::kD3D12SimpleShader.data();
   } else {
     IGL_DEBUG_ASSERT_NOT_REACHED();
   }
