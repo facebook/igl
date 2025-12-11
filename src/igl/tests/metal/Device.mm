@@ -46,8 +46,8 @@ TEST_F(DeviceMetalTest, GetMostRecentCommandQueue) {
   ASSERT_EQ(initialCmdQueue, nullptr);
 
   // Create a command queue
-  igl::Result result;
-  igl::CommandQueueDesc desc{};
+  Result result;
+  CommandQueueDesc desc{};
   auto cmdQueue1 = iglDev_->createCommandQueue(desc, &result);
   ASSERT_EQ(result.code, igl::Result::Code::Ok);
   ASSERT_NE(cmdQueue1, nullptr);
