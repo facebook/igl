@@ -483,7 +483,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
     return;
   }
 
-  const BindGroupTextureDesc* desc = getContext().bindGroupTexturesPool_.get(handle);
+  const BindGroupTextureDesc* desc = getContext().bindGroupTexturesPool.get(handle);
 
   for (uint32_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
     if (desc->textures[i]) {
@@ -501,7 +501,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
     return;
   }
 
-  const BindGroupBufferDesc* desc = getContext().bindGroupBuffersPool_.get(handle);
+  const BindGroupBufferDesc* desc = getContext().bindGroupBuffersPool.get(handle);
 
   uint32_t dynamicOffset = 0;
 

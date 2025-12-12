@@ -572,8 +572,8 @@ class IContext {
   Result getLastError() const;
 
  public:
-  mutable Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
-  mutable Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
+  mutable Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool;
+  mutable Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool;
 
  protected:
   static std::unordered_map<void* IGL_NULLABLE, IContext*>& getExistingContexts();
@@ -780,7 +780,7 @@ class IContext {
   UnbindPolicy unbindPolicy_ = UnbindPolicy::Default;
 
   void getGLMajorAndMinorVersions(GLint& majorVersion, GLint& minorVersion) const;
-  void getGLMajorAndMinorVersions_(GLint& majorVersion, GLint& minorVersion) const;
+  void getGlMajorAndMinorVersions(GLint& majorVersion, GLint& minorVersion) const;
   friend class DestructionGuard;
   std::vector<std::unique_ptr<RenderCommandAdapter>> renderAdapterPool_;
   std::vector<std::unique_ptr<ComputeCommandAdapter>> computeAdapterPool_;

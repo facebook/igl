@@ -361,7 +361,7 @@ Holder<BindGroupTextureHandle> Device::createBindGroup(
 
   BindGroupTextureDesc description(desc);
 
-  const auto handle = context_->bindGroupTexturesPool_.create(std::move(description));
+  const auto handle = context_->bindGroupTexturesPool.create(std::move(description));
 
   Result::setResult(outResult,
                     handle.empty() ? Result(Result::Code::RuntimeError, "Cannot create bind group")
@@ -377,7 +377,7 @@ Holder<BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc&
 
   BindGroupBufferDesc description(desc);
 
-  const auto handle = context_->bindGroupBuffersPool_.create(std::move(description));
+  const auto handle = context_->bindGroupBuffersPool.create(std::move(description));
 
   Result::setResult(outResult,
                     handle.empty() ? Result(Result::Code::RuntimeError, "Cannot create bind group")
@@ -403,7 +403,7 @@ void Device::destroy(BindGroupTextureHandle handle) {
 
   IGL_DEBUG_ASSERT(context_);
 
-  context_->bindGroupTexturesPool_.destroy(handle);
+  context_->bindGroupTexturesPool.destroy(handle);
 }
 
 void Device::destroy(BindGroupBufferHandle handle) {
@@ -413,7 +413,7 @@ void Device::destroy(BindGroupBufferHandle handle) {
 
   IGL_DEBUG_ASSERT(context_);
 
-  context_->bindGroupBuffersPool_.destroy(handle);
+  context_->bindGroupBuffersPool.destroy(handle);
 }
 
 void Device::destroy(SamplerHandle handle) {
