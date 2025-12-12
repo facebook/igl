@@ -399,21 +399,19 @@ VkPipeline RenderPipelineState::getVkPipeline(
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   if (!pipelineLayout) {
-    // NOLINTBEGIN(readability-identifier-naming)
     // NOLINTNEXTLINE(modernize-avoid-c-arrays)
-    const VkDescriptorSetLayout DSLs[] = {
+    const VkDescriptorSetLayout dsls[] = {
         dslCombinedImageSamplers->getVkDescriptorSetLayout(),
         dslBuffers->getVkDescriptorSetLayout(),
         dslStorageImages->getVkDescriptorSetLayout(),
         ctx.getBindlessVkDescriptorSetLayout(),
     };
-    // NOLINTEND(readability-identifier-naming)
 
     const VkPipelineLayoutCreateInfo ci = ivkGetPipelineLayoutCreateInfo(
         static_cast<uint32_t>(ctx.config_.enableDescriptorIndexing
-                                  ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
-                                  : IGL_ARRAY_NUM_ELEMENTS(DSLs) - 1u),
-        DSLs,
+                                  ? IGL_ARRAY_NUM_ELEMENTS(dsls)
+                                  : IGL_ARRAY_NUM_ELEMENTS(dsls) - 1u),
+        dsls,
         info.hasPushConstants ? &pushConstantRange : nullptr);
 
     VkDevice device = ctx.getVkDevice();
