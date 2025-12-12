@@ -101,10 +101,10 @@ namespace igl::vulkan {
 
 // The color definitions below are used by debugging utility functions, such as the ones provided by
 // VK_EXT_debug_utils
-#define kColorGenerateMipmaps igl::Color(1.f, 0.75f, 0.f)
-#define kColorUploadImage igl::Color(1.f, 0.2f, 0.78f)
-#define kColorDebugLines igl::Color(0.f, 1.f, 1.f)
-#define kColorCommandBufferSubmissionWithFence igl::Color(0.878f, 0.69f, 1.0f) // Mauve
+#define K_COLOR_GENERATE_MIPMAPS igl::Color(1.f, 0.75f, 0.f)
+#define K_COLOR_UPLOAD_IMAGE igl::Color(1.f, 0.2f, 0.78f)
+#define K_COLOR_DEBUG_LINES igl::Color(0.f, 1.f, 1.f)
+#define K_COLOR_COMMAND_BUFFER_SUBMISSION_WITH_FENCE igl::Color(0.878f, 0.69f, 1.0f) // Mauve
 
 // The VulkanContextConfig provides a way to override some of the the default behaviors of the
 // VulkanContext
@@ -224,15 +224,15 @@ void ensureShaderModule(IShaderModule* sm);
 
 /// @brief Implements the igl::IDepthStencilState interface
 struct DepthStencilState final : public IDepthStencilState {
-  explicit DepthStencilState(DepthStencilStateDesc desc) : desc_(std::move(desc)) {}
-  const DepthStencilStateDesc desc_;
+  explicit DepthStencilState(DepthStencilStateDesc desc) : desc(std::move(desc)) {}
+  const DepthStencilStateDesc desc;
 };
 
 /// @brief Implements the igl::IVertexInputState interface
 struct VertexInputState final : public IVertexInputState {
  public:
-  explicit VertexInputState(VertexInputStateDesc desc) : desc_(std::move(desc)) {}
-  const VertexInputStateDesc desc_;
+  explicit VertexInputState(VertexInputStateDesc desc) : desc(std::move(desc)) {}
+  const VertexInputStateDesc desc;
 };
 
 } // namespace igl::vulkan

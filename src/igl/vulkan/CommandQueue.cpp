@@ -67,7 +67,7 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& cmdBuffer, bool /* endOf
   ivkCmdInsertDebugUtilsLabel(&ctx.vf_,
                               vkCmdBuffer->getVkCommandBuffer(),
                               labelName,
-                              kColorCommandBufferSubmissionWithFence.toFloatPtr());
+                              K_COLOR_COMMAND_BUFFER_SUBMISSION_WITH_FENCE.toFloatPtr());
 #endif // IGL_COMMAND_QUEUE_DEBUG_FENCES
 
   const bool presentIfNotDebugging = ctx.enhancedShaderDebuggingStore_ == nullptr;

@@ -334,7 +334,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
     ivkCmdBeginDebugUtilsLabel(&ctx_.vf_,
                                wrapper.cmdBuf,
                                "VulkanStagingDevice::imageData (upload YUV image data)",
-                               kColorUploadImage.toFloatPtr());
+                               K_COLOR_UPLOAD_IMAGE.toFloatPtr());
     VkImageAspectFlags imageAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
 
     // Luminance (1 plane)
@@ -432,7 +432,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
   ivkCmdBeginDebugUtilsLabel(&ctx_.vf_,
                              wrapper.cmdBuf,
                              "VulkanStagingDevice::imageData (upload image data)",
-                             kColorUploadImage.toFloatPtr());
+                             K_COLOR_UPLOAD_IMAGE.toFloatPtr());
 
   for (auto mipLevel = range.mipLevel; mipLevel < range.mipLevel + range.numMipLevels; ++mipLevel) {
     const auto mipRange = range.atMipLevel(mipLevel);

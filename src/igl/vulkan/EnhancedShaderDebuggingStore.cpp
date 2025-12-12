@@ -391,7 +391,7 @@ void EnhancedShaderDebuggingStore::enhancedShaderDebuggingPass(CommandQueue& que
                                    sizeof(EnhancedShaderDebuggingStore::Header),
                                    0);
 
-    cmdEncoder->pushDebugGroupLabel("Render Debug Lines", kColorDebugLines);
+    cmdEncoder->pushDebugGroupLabel("Render Debug Lines", K_COLOR_DEBUG_LINES);
     cmdEncoder->bindDepthStencilState(depthStencilState());
 
     // Disable incrementing the draw call count

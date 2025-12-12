@@ -1145,7 +1145,7 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
   const VkImageAspectFlags imageAspectFlags = getImageAspectFlags();
 
   ivkCmdBeginDebugUtilsLabel(
-      &ctx_->vf_, commandBuffer, "Generate mipmaps", kColorGenerateMipmaps.toFloatPtr());
+      &ctx_->vf_, commandBuffer, "Generate mipmaps", K_COLOR_GENERATE_MIPMAPS.toFloatPtr());
 
   IGL_SCOPE_EXIT {
     ivkCmdEndDebugUtilsLabel(&ctx_->vf_, commandBuffer);

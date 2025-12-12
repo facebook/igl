@@ -402,7 +402,7 @@ void RenderCommandEncoder::bindDepthStencilState(
   const igl::vulkan::DepthStencilState* state =
       static_cast<DepthStencilState*>(depthStencilState.get());
 
-  const igl::DepthStencilStateDesc& desc = state->desc_;
+  const igl::DepthStencilStateDesc& desc = state->desc;
 
   dynamicState_.depthWriteEnable = desc.isDepthWriteEnabled;
   dynamicState_.setDepthCompareOp(compareFunctionToVkCompareOp(desc.compareFunction));
@@ -867,7 +867,7 @@ void RenderCommandEncoder::ensureVertexBuffers() {
     return;
   }
 
-  const VertexInputStateDesc& desc = vi->desc_;
+  const VertexInputStateDesc& desc = vi->desc;
 
   IGL_DEBUG_ASSERT(desc.numInputBindings <= IGL_ARRAY_NUM_ELEMENTS(isVertexBufferBound_));
 
