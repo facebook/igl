@@ -266,7 +266,7 @@ void VulkanSwapchain::lazyAllocateDepthBuffer() const {
 }
 
 VkSemaphore VulkanSwapchain::getSemaphore() const noexcept {
-  return acquireSemaphores[currentSemaphoreIndex_].vkSemaphore;
+  return acquireSemaphores[currentSemaphoreIndex_].vkSemaphore_;
 }
 
 VulkanSwapchain::~VulkanSwapchain() {
@@ -286,7 +286,7 @@ Result VulkanSwapchain::acquireNextImage() {
     const VkSemaphoreWaitInfo waitInfo = {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
         .semaphoreCount = 1,
-        .pSemaphores = &ctx_.timelineSemaphore_->vkSemaphore,
+        .pSemaphores = &ctx_.timelineSemaphore_->vkSemaphore_,
         .pValues = &timelineWaitValues[currentImageIndex_],
     };
     VK_ASSERT(ctx_.vf_.vkWaitSemaphoresKHR(ctx_.getVkDevice(), &waitInfo, UINT64_MAX));
@@ -324,7 +324,7 @@ Result VulkanSwapchain::acquireNextImage() {
         ctx_.vf_.vkAcquireNextImageKHR(ctx_.getVkDevice(),
                                        swapchain_,
                                        UINT64_MAX,
-                                       acquireSemaphores[currentImageIndex_].vkSemaphore,
+                                       acquireSemaphores[currentImageIndex_].vkSemaphore_,
                                        acquireFences[currentImageIndex_].vkFence_,
                                        &currentImageIndex_);
   }

@@ -20,15 +20,15 @@ namespace igl::vulkan {
  */
 class VulkanSemaphore final {
  public:
-  explicit VulkanSemaphore(const VulkanFunctionTable& vfIn,
-                           VkDevice deviceIn,
-                           bool exportableIn = false,
+  explicit VulkanSemaphore(const VulkanFunctionTable& vf,
+                           VkDevice device,
+                           bool exportable = false,
                            const char* debugName = nullptr);
   /// Create a timeline semaphore
-  explicit VulkanSemaphore(const VulkanFunctionTable& vfIn,
-                           VkDevice deviceIn,
+  explicit VulkanSemaphore(const VulkanFunctionTable& vf,
+                           VkDevice device,
                            uint64_t initialValue,
-                           bool exportableIn = false,
+                           bool exportable = false,
                            const char* debugName = nullptr);
   ~VulkanSemaphore();
 
@@ -46,10 +46,12 @@ class VulkanSemaphore final {
   // FIXME_DEPRECATED_COVERAGE_EXCLUDE_END
 
  public:
-  const VulkanFunctionTable* vf{};
-  VkDevice device = VK_NULL_HANDLE;
-  VkSemaphore vkSemaphore = VK_NULL_HANDLE;
-  bool exportable = false;
+  // NOLINTBEGIN(readability-identifier-naming)
+  const VulkanFunctionTable* vf_{};
+  VkDevice device_ = VK_NULL_HANDLE;
+  VkSemaphore vkSemaphore_ = VK_NULL_HANDLE;
+  bool exportable_ = false;
+  // NOLINTEND(readability-identifier-naming)
 };
 
 } // namespace igl::vulkan
