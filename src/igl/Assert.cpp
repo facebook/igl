@@ -17,11 +17,11 @@ IGLErrorHandlerFunc& getDebugAbortListener() {
 }
 } // namespace
 
-IGL_API void IGLSetDebugAbortListener(IGLErrorHandlerFunc listener) {
+IGL_API void iglSetDebugAbortListener(IGLErrorHandlerFunc listener) {
   getDebugAbortListener() = listener;
 }
 
-IGL_API IGLErrorHandlerFunc IGLGetDebugAbortListener(void) {
+IGL_API IGLErrorHandlerFunc iglGetDebugAbortListener(void) {
   return getDebugAbortListener();
 }
 
@@ -52,7 +52,7 @@ void setDebugBreakEnabled(bool enabled) {
 #include <igl/Log.h>
 #endif
 
-void _IGLDebugBreak() {
+void iglDebugBreak() {
 #if IGL_DEBUG_BREAK_ENABLED
   if (igl::isDebugBreakEnabled()) {
 #ifdef IGL_DEBUGGER_SIGTRAP
@@ -79,10 +79,10 @@ IGLErrorHandlerFunc& getSoftErrorHandler() {
 }
 } // namespace
 
-IGL_API void IGLSetSoftErrorHandler(IGLErrorHandlerFunc handler) {
+IGL_API void iglSetSoftErrorHandler(IGLErrorHandlerFunc handler) {
   getSoftErrorHandler() = handler;
 }
 
-IGL_API IGLErrorHandlerFunc IGLGetSoftErrorHandler(void) {
+IGL_API IGLErrorHandlerFunc iglGetSoftErrorHandler(void) {
   return getSoftErrorHandler();
 }

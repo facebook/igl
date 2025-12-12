@@ -11,14 +11,14 @@
 
 igl::tests::util::TestErrorGuard::TestErrorGuard() {
 #if IGL_SOFT_ERROR_ENABLED
-  savedErrorHandler_ = IGLGetSoftErrorHandler();
-  IGLSetSoftErrorHandler(reportErrorHandler);
+  savedErrorHandler_ = iglGetSoftErrorHandler();
+  iglSetSoftErrorHandler(reportErrorHandler);
 #endif
 }
 
 igl::tests::util::TestErrorGuard::~TestErrorGuard() {
 #if IGL_SOFT_ERROR_ENABLED
-  IGLSetSoftErrorHandler(savedErrorHandler_);
+  iglSetSoftErrorHandler(savedErrorHandler_);
 #endif
 }
 

@@ -23,14 +23,14 @@ class AssertTest : public ::testing::Test {
  public:
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
-    IGLSetDebugAbortListener([](const char* /*category*/,
+    iglSetDebugAbortListener([](const char* /*category*/,
                                 const char* /*reason*/,
                                 const char* /*file*/,
                                 const char* /*func*/,
                                 int /*line*/,
                                 const char* /*format*/,
                                 va_list /*ap*/) { sAbort = true; });
-    IGLSetSoftErrorHandler([](const char* /*category*/,
+    iglSetSoftErrorHandler([](const char* /*category*/,
                               const char* /*reason*/,
                               const char* /*file*/,
                               const char* /*func*/,
@@ -40,8 +40,8 @@ class AssertTest : public ::testing::Test {
   }
 
   void TearDown() override {
-    IGLSetDebugAbortListener(nullptr);
-    IGLSetSoftErrorHandler(nullptr);
+    iglSetDebugAbortListener(nullptr);
+    iglSetSoftErrorHandler(nullptr);
   }
 };
 
