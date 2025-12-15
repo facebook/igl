@@ -355,8 +355,8 @@ void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
 
 void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
   const VkRect2D scissor = {
-      VkOffset2D{(int32_t)rect.x, (int32_t)rect.y},
-      VkExtent2D{rect.width, rect.height},
+      .offset = {.x = static_cast<int32_t>(rect.x), .y = static_cast<int32_t>(rect.y)},
+      .extent = {.width = rect.width, .height = rect.height},
   };
   ctx_.vf_.vkCmdSetScissor(cmdBuffer_, 0, 1, &scissor);
 }
@@ -890,18 +890,18 @@ void RenderCommandEncoder::blitColorImage(const igl::vulkan::VulkanImage& srcIma
                                           const igl::TextureRangeDesc& srcRange,
                                           const igl::TextureRangeDesc& destRange) {
   const VkImageSubresourceRange srcResourceRange = {
-      srcImage.getImageAspectFlags(),
-      srcRange.mipLevel,
-      srcRange.numMipLevels,
-      srcRange.layer,
-      srcRange.numLayers,
+      .aspectMask = srcImage.getImageAspectFlags(),
+      .baseMipLevel = srcRange.mipLevel,
+      .levelCount = srcRange.numMipLevels,
+      .baseArrayLayer = srcRange.layer,
+      .layerCount = srcRange.numLayers,
   };
   const VkImageSubresourceRange destSubresourceRange = {
-      destImage.getImageAspectFlags(),
-      destRange.mipLevel,
-      destRange.numMipLevels,
-      destRange.layer,
-      destRange.numLayers,
+      .aspectMask = destImage.getImageAspectFlags(),
+      .baseMipLevel = destRange.mipLevel,
+      .levelCount = destRange.numMipLevels,
+      .baseArrayLayer = destRange.layer,
+      .layerCount = destRange.numLayers,
   };
   srcImage.transitionLayout(cmdBuffer_,
                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -915,16 +915,18 @@ void RenderCommandEncoder::blitColorImage(const igl::vulkan::VulkanImage& srcIma
                              VK_PIPELINE_STAGE_TRANSFER_BIT,
                              destSubresourceRange);
 
-  const std::array<VkOffset3D, 2> srcOffsets = {
-      {{static_cast<int32_t>(srcRange.x), static_cast<int32_t>(srcRange.y), 0},
-       {static_cast<int32_t>(srcRange.width + srcRange.x),
-        static_cast<int32_t>(srcRange.height + srcRange.y),
-        1}}};
-  const std::array<VkOffset3D, 2> dstOffsets = {
-      {{static_cast<int32_t>(destRange.x), static_cast<int32_t>(destRange.y), 0},
-       {static_cast<int32_t>(destRange.width + destRange.x),
-        static_cast<int32_t>(destRange.height + destRange.y),
-        1}}};
+  const std::array<VkOffset3D, 2> srcOffsets = {{
+      {.x = static_cast<int32_t>(srcRange.x), .y = static_cast<int32_t>(srcRange.y), .z = 0},
+      {.x = static_cast<int32_t>(srcRange.width + srcRange.x),
+       .y = static_cast<int32_t>(srcRange.height + srcRange.y),
+       .z = 1},
+  }};
+  const std::array<VkOffset3D, 2> dstOffsets = {{
+      {.x = static_cast<int32_t>(destRange.x), .y = static_cast<int32_t>(destRange.y), .z = 0},
+      {.x = static_cast<int32_t>(destRange.width + destRange.x),
+       .y = static_cast<int32_t>(destRange.height + destRange.y),
+       .z = 1},
+  }};
   ivkCmdBlitImage(&ctx_.vf_,
                   cmdBuffer_,
                   srcImage.getVkImage(),
@@ -933,8 +935,18 @@ void RenderCommandEncoder::blitColorImage(const igl::vulkan::VulkanImage& srcIma
                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                   srcOffsets.data(),
                   dstOffsets.data(),
-                  VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, srcRange.mipLevel, 0, 1},
-                  VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+                  VkImageSubresourceLayers{
+                      .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                      .mipLevel = srcRange.mipLevel,
+                      .baseArrayLayer = 0,
+                      .layerCount = 1,
+                  },
+                  VkImageSubresourceLayers{
+                      .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                      .mipLevel = 0,
+                      .baseArrayLayer = 0,
+                      .layerCount = 1,
+                  },
                   VK_FILTER_LINEAR);
 
   const bool isSampled = (destImage.getVkImageUsageFlags() & VK_IMAGE_USAGE_SAMPLED_BIT) != 0;
