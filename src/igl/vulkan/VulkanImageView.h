@@ -68,7 +68,7 @@ class VulkanImageView final {
    * @brief Returns Vulkan's opaque handle to the imageView object
    */
   [[nodiscard]] VkImageView getVkImageView() const {
-    return vkImageView_;
+    return vkImageView;
   }
   /**
    * @brief Returns true if the object is valid
@@ -78,13 +78,13 @@ class VulkanImageView final {
    * @brief Returns the VkImageAspectFlags used to create the imageView
    */
   [[nodiscard]] VkImageAspectFlags getVkImageAspectFlags() const {
-    return aspectMask_;
+    return aspectMask;
   }
 
  public:
-  const VulkanContext* ctx_ = nullptr;
-  VkImageView vkImageView_ = VK_NULL_HANDLE;
-  VkImageAspectFlags aspectMask_ = 0;
+  const VulkanContext* ctx = nullptr;
+  VkImageView vkImageView = VK_NULL_HANDLE;
+  VkImageAspectFlags aspectMask = 0;
 
  private:
   void destroy();

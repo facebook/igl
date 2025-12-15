@@ -36,7 +36,7 @@ VulkanImageView::~VulkanImageView() {
 VulkanImageView::VulkanImageView(const VulkanContext& ctx,
                                  const VkImageViewCreateInfo& ci,
                                  const char* debugName) :
-  ctx_(&ctx), aspectMask_(ci.subresourceRange.aspectMask) {
+  ctx(&ctx), aspectMask(ci.subresourceRange.aspectMask) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   VkImageViewCreateInfo ciCopy(ci);
@@ -48,26 +48,26 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
     ciCopy.pNext = &info;
   }
 
-  VkDevice device = ctx_->getVkDevice();
-  VK_ASSERT(ctx_->vf_.vkCreateImageView(device, &ci, nullptr, &vkImageView_));
+  VkDevice device = this->ctx->getVkDevice();
+  VK_ASSERT(this->ctx->vf_.vkCreateImageView(device, &ci, nullptr, &vkImageView));
 
   VK_ASSERT(ivkSetDebugObjectName(
-      &ctx_->vf_, device, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vkImageView_, debugName));
+      &this->ctx->vf_, device, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vkImageView, debugName));
 }
 
 VulkanImageView& VulkanImageView::operator=(VulkanImageView&& other) noexcept {
   destroy();
-  ctx_ = other.ctx_;
-  vkImageView_ = other.vkImageView_;
-  aspectMask_ = other.aspectMask_;
-  other.ctx_ = nullptr;
-  other.vkImageView_ = VK_NULL_HANDLE;
-  other.aspectMask_ = 0;
+  ctx = other.ctx;
+  vkImageView = other.vkImageView;
+  aspectMask = other.aspectMask;
+  other.ctx = nullptr;
+  other.vkImageView = VK_NULL_HANDLE;
+  other.aspectMask = 0;
   return *this;
 }
 
 [[nodiscard]] bool VulkanImageView::valid() const {
-  return ctx_ != nullptr;
+  return ctx != nullptr;
 }
 
 void VulkanImageView::destroy() {
@@ -75,15 +75,15 @@ void VulkanImageView::destroy() {
     return;
   }
 
-  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx);
 
-  ctx_->deferredTask(std::packaged_task<void()>(
-      [vf = &ctx_->vf_, device = ctx_->getVkDevice(), imageView = vkImageView_]() {
+  ctx->deferredTask(std::packaged_task<void()>(
+      [vf = &ctx->vf_, device = ctx->getVkDevice(), imageView = vkImageView]() {
         vf->vkDestroyImageView(device, imageView, nullptr);
       }));
 
-  vkImageView_ = VK_NULL_HANDLE;
-  ctx_ = nullptr;
+  vkImageView = VK_NULL_HANDLE;
+  ctx = nullptr;
 }
 
 } // namespace igl::vulkan

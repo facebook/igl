@@ -134,7 +134,7 @@ void ResourcesBinder::bindTexture(uint32_t index, Texture* tex) {
       ((newTexture->image_.samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
   const bool isSampledImage = isTextureAvailable && newTexture->image_.isSampledImage();
 
-  VkImageView imageView = isSampledImage ? newTexture->imageView_.vkImageView_ : VK_NULL_HANDLE;
+  VkImageView imageView = isSampledImage ? newTexture->imageView_.vkImageView : VK_NULL_HANDLE;
 
   if (bindingsTextures_.textures[index] != imageView) {
     bindingsTextures_.textures[index] = imageView;
@@ -180,7 +180,7 @@ void ResourcesBinder::bindStorageImage(uint32_t index, Texture* tex) {
       ((newTexture->image_.samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
   const bool isStorageImage = isTextureAvailable && newTexture->image_.isStorageImage();
 
-  VkImageView imageView = isStorageImage ? newTexture->imageView_.vkImageView_ : VK_NULL_HANDLE;
+  VkImageView imageView = isStorageImage ? newTexture->imageView_.vkImageView : VK_NULL_HANDLE;
 
   if (bindingsStorageImages_.images[index] != imageView) {
     bindingsStorageImages_.images[index] = imageView;

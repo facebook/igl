@@ -337,7 +337,7 @@ Result Texture::createView(const Texture& baseTexture, const TextureViewDesc& de
                                                           : textureFormatToVkFormat(desc.format),
           .components = componentMappingToVkComponentMapping(desc.swizzle),
           .subresourceRange = {.aspectMask = aspectToVkAspectFlags(
-                                   vulkanTexture.imageView_.aspectMask_, desc.aspect),
+                                   vulkanTexture.imageView_.aspectMask, desc.aspect),
                                .baseMipLevel = desc.mipLevel,
                                .levelCount = desc.numMipLevels,
                                .baseArrayLayer = desc.layer,
@@ -485,7 +485,7 @@ uint64_t Texture::getTextureId() const {
 }
 
 VkImageView Texture::getVkImageView() const {
-  return texture_ ? texture_->imageView_.vkImageView_ : VK_NULL_HANDLE;
+  return texture_ ? texture_->imageView_.vkImageView : VK_NULL_HANDLE;
 }
 
 VkImageView Texture::getVkImageViewForFramebuffer(uint32_t mipLevel,
@@ -520,7 +520,7 @@ VkImageView Texture::getVkImageViewForFramebuffer(uint32_t mipLevel,
       isStereo ? VK_REMAINING_ARRAY_LAYERS : 1u,
       "Image View: igl/vulkan/Texture.cpp: Texture::getVkImageViewForFramebuffer()");
 
-  return imageViews[index].vkImageView_;
+  return imageViews[index].vkImageView;
 }
 
 VkImage Texture::getVkImage() const {
