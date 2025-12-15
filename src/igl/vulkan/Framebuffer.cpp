@@ -79,8 +79,8 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
   const auto& vkTex = static_cast<Texture&>(
       itexture->getSamples() == 1 ? *itexture : *getResolveColorAttachment(index));
   const VkRect2D imageRegion = {
-      VkOffset2D{static_cast<int32_t>(range.x), static_cast<int32_t>(range.y)},
-      VkExtent2D{range.width, range.height},
+      .offset = {.x = static_cast<int32_t>(range.x), .y = static_cast<int32_t>(range.y)},
+      .extent = {.width = range.width, .height = range.height},
   };
 
   if (bytesPerRow == 0) {
@@ -399,17 +399,19 @@ VkRenderPassBeginInfo Framebuffer::getRenderPassBeginInfo(VkRenderPass renderPas
                                                           const VkClearValue* clearValues) const {
   IGL_PROFILER_FUNCTION();
 
-  VkRenderPassBeginInfo bi = {};
-  bi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-  bi.pNext = nullptr;
-  bi.renderPass = renderPass;
-  bi.framebuffer = getVkFramebuffer(mipLevel, layer, renderPass);
-  bi.renderArea =
-      VkRect2D{VkOffset2D{0, 0},
-               VkExtent2D{std::max(width_ >> mipLevel, 1u), std::max(height_ >> mipLevel, 1u)}};
-  bi.clearValueCount = numClearValues;
-  bi.pClearValues = clearValues;
-  return bi;
+  return VkRenderPassBeginInfo{
+      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+      .renderPass = renderPass,
+      .framebuffer = getVkFramebuffer(mipLevel, layer, renderPass),
+      .renderArea =
+          {
+              .offset = {.x = 0, .y = 0},
+              .extent = {.width = std::max(width_ >> mipLevel, 1u),
+                         .height = std::max(height_ >> mipLevel, 1u)},
+          },
+      .clearValueCount = numClearValues,
+      .pClearValues = clearValues,
+  };
 }
 
 FramebufferMode Framebuffer::getMode() const {
