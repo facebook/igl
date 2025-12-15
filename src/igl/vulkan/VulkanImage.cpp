@@ -201,12 +201,10 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
     // create a disjoint image - TODO: merge it with the VMA code path above
     VK_ASSERT(ctx_->vf_.vkCreateImage(device_, &ci, nullptr, &vkImage_));
 
-    // Ignore clang-diagnostic-missing-field-initializers
-    // @lint-ignore CLANGTIDY
     VkMemoryRequirements2 memRequirements[3] = {
-        {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2},
-        {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2},
-        {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2},
+        {.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2},
+        {.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2},
+        {.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2},
     };
 
     // back the image with some memory
@@ -243,9 +241,12 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       }
       // NOLINTNEXTLINE(modernize-avoid-c-arrays)
       const VkBindImagePlaneMemoryInfo bindImagePlaneMemoryInfo[kMaxImagePlanes] = {
-          {VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, nullptr, VK_IMAGE_ASPECT_PLANE_0_BIT},
-          {VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, nullptr, VK_IMAGE_ASPECT_PLANE_1_BIT},
-          {VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, nullptr, VK_IMAGE_ASPECT_PLANE_2_BIT},
+          {.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO,
+           .planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT},
+          {.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO,
+           .planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT},
+          {.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO,
+           .planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT},
       };
       // NOLINTNEXTLINE(modernize-avoid-c-arrays)
       const VkBindImageMemoryInfo bindInfo[kMaxImagePlanes] = {
@@ -571,9 +572,11 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       &ctx_->vf_, device_, VK_OBJECT_TYPE_IMAGE, (uint64_t)vkImage_, debugName));
 
   const VkImageMemoryRequirementsInfo2 memoryRequirementInfo = {
-      VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, nullptr, vkImage_};
+      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+      .image = vkImage_,
+  };
 
-  VkMemoryRequirements2 memoryRequirements = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
+  VkMemoryRequirements2 memoryRequirements = {.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
   ctx_->vf_.vkGetImageMemoryRequirements2(device_, &memoryRequirementInfo, &memoryRequirements);
 
   const VkImportMemoryWin32HandleInfoKHR handleInfo = {
@@ -777,7 +780,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
         .image = vkImage_,
     };
 
-    VkMemoryRequirements2 memoryRequirements = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, nullptr};
+    VkMemoryRequirements2 memoryRequirements = {.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
     ctx_->vf_.vkGetImageMemoryRequirements2(
         device_, &imageMemoryRequirementInfo, &memoryRequirements);
 
@@ -1319,12 +1322,11 @@ void VulkanImage::flushMappedMemory() const {
   if (vmaAllocation_) {
     vmaFlushAllocation((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, 0, VK_WHOLE_SIZE);
   } else {
-    const VkMappedMemoryRange memoryRange{
-        VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
-        nullptr,
-        vkMemory_[0],
-        0,
-        VK_WHOLE_SIZE,
+    const VkMappedMemoryRange memoryRange = {
+        .sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+        .memory = vkMemory_[0],
+        .offset = 0,
+        .size = VK_WHOLE_SIZE,
     };
     ctx_->vf_.vkFlushMappedMemoryRanges(device_, 1, &memoryRange);
   }
