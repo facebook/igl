@@ -523,6 +523,33 @@ constexpr std::string_view kVulkanPushConstantFragShader =
         out_FragColor = tex * pushConstants.colorMultiplier;
       });
 
+// D3D12 HLSL push constant shaders
+constexpr const char* kD3D12PushConstantVertShader = R"(
+struct VSIn { float4 position_in : POSITION; float2 uv_in : TEXCOORD0; };
+struct PSIn { float4 position : SV_POSITION; float2 uv : TEXCOORD0; };
+PSIn main(VSIn i) {
+  PSIn o;
+  o.position = i.position_in;
+  o.uv = i.uv_in;
+  return o;
+}
+)";
+
+constexpr const char* kD3D12PushConstantFragShader = R"(
+Texture2D inputImage : register(t0);
+SamplerState samp0 : register(s0);
+
+cbuffer PushConstants : register(b2) {
+  float4 colorMultiplier;
+};
+
+struct PSIn { float4 position : SV_POSITION; float2 uv : TEXCOORD0; };
+float4 main(PSIn i) : SV_TARGET {
+  float4 tex = inputImage.Sample(samp0, i.uv);
+  return tex * colorMultiplier;
+}
+)";
+
 constexpr std::string_view kVulkanSimpleVertShaderTex2dArray =
 IGL_TO_STRING(
     layout(location = 0) in vec4 position_in;
@@ -637,5 +664,218 @@ constexpr std::string_view kVulkanSimpleComputeShader =
 
             fOut[id] = fIn[id] * 2.0f;
         });
+// clang-format on
+//-----------------------------------------------------------------------------
+// D3D12/HLSL Shaders
+//-----------------------------------------------------------------------------
+
+// Simple D3D12 Shader with separate vertex and fragment functions
+// This is used for ShaderLibrary tests where multiple entry points are in the same source
+constexpr std::string_view kD3D12SimpleShader =
+    IGL_TO_STRING(
+      struct VSIn {
+        float4 position_in : POSITION;
+        float2 uv_in : TEXCOORD0;
+      };
+
+      struct VSOut {
+        float4 position : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
+
+      VSOut vertexShader(VSIn input) {
+        VSOut output;
+        output.position = input.position_in;
+        output.uv = input.uv_in;
+        return output;
+      }
+
+      Texture2D inputImage : register(t0);
+      SamplerState linearSampler : register(s0);
+
+      float4 fragmentShader(VSOut input) : SV_TARGET {
+        return inputImage.Sample(linearSampler, input.uv);
+      }
+    );
+
+// Simple D3D12 Vertex shader (standalone)
+constexpr std::string_view kD3D12SimpleVertShader =
+    IGL_TO_STRING(
+      struct VSIn {
+        float4 position_in : POSITION;
+        float2 uv_in : TEXCOORD0;
+      };
+
+      struct VSOut {
+        float4 position : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
+
+      VSOut main(VSIn input) {
+        VSOut output;
+        output.position = input.position_in;
+        output.uv = input.uv_in;
+        return output;
+      }
+    );
+
+// Simple D3D12 Fragment shader (standalone)
+constexpr std::string_view kD3D12SimpleFragShader =
+    IGL_TO_STRING(
+      struct PSIn {
+        float4 position : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
+
+      Texture2D inputImage : register(t0);
+      SamplerState linearSampler : register(s0);
+
+      float4 main(PSIn input) : SV_TARGET {
+        return inputImage.Sample(linearSampler, input.uv);
+      }
+    );
+
+// Simple D3D12 Compute shader
+constexpr std::string_view kD3D12SimpleComputeShader =
+    IGL_TO_STRING(
+      RWStructuredBuffer<float> floatsIn : register(u0);
+      RWStructuredBuffer<float> floatsOut : register(u1);
+
+      [numthreads(6, 1, 1)]
+      void doubleKernel(uint3 threadID : SV_DispatchThreadID) {
+        uint id = threadID.x;
+        floatsOut[id] = floatsIn[id] * 2.0;
+      }
+    );
+
+// D3D12 Texture2DArray Vertex shader
+constexpr std::string_view kD3D12SimpleVertShaderTexArray =
+    IGL_TO_STRING(
+      cbuffer VertexUniforms : register(b2) {
+        int layer;
+      };
+
+      struct VSIn {
+        float4 position_in : POSITION;
+        float2 uv_in : TEXCOORD0;
+      };
+
+      struct VSOut {
+        float4 position : SV_POSITION;
+        float2 uv : TEXCOORD0;
+        nointerpolation uint layerOut : TEXCOORD1;
+      };
+
+      VSOut main(VSIn input) {
+        VSOut output;
+        output.position = input.position_in;
+        output.uv = input.uv_in;
+        output.layerOut = layer;
+        return output;
+      }
+    );
+
+// D3D12 Texture2DArray Fragment shader
+constexpr std::string_view kD3D12SimpleFragShaderTexArray =
+    IGL_TO_STRING(
+      Texture2DArray inputImage : register(t0);
+      SamplerState inputSampler : register(s0);
+
+      struct PSIn {
+        float4 position : SV_POSITION;
+        float2 uv : TEXCOORD0;
+        nointerpolation uint layerIn : TEXCOORD1;
+      };
+
+      float4 main(PSIn input) : SV_TARGET {
+        return inputImage.Sample(inputSampler, float3(input.uv, input.layerIn));
+      }
+    );
+
+// D3D12 TextureCube Vertex shader
+constexpr std::string_view kD3D12SimpleVertShaderCube =
+    IGL_TO_STRING(
+      cbuffer VertexUniforms : register(b1) {
+        float4 view;
+      };
+
+      struct VSIn {
+        float4 position_in : POSITION;
+        float2 uv_in : TEXCOORD0;
+      };
+
+      struct VSOut {
+        float4 position : SV_POSITION;
+        float3 viewDir : TEXCOORD0;
+      };
+
+      VSOut main(VSIn input) {
+        VSOut output;
+        output.position = input.position_in;
+        output.viewDir = view.xyz;
+        return output;
+      }
+    );
+
+// D3D12 TextureCube Fragment shader
+constexpr std::string_view kD3D12SimpleFragShaderCube =
+    IGL_TO_STRING(
+      TextureCube inputImage : register(t0);
+      SamplerState inputSampler : register(s0);
+
+      struct PSIn {
+        float4 position : SV_POSITION;
+        float3 viewDir : TEXCOORD0;
+      };
+
+      float4 main(PSIn input) : SV_TARGET {
+        return inputImage.Sample(inputSampler, input.viewDir);
+      }
+    );
+
+// D3D12 Texture2DArray Vertex shader
+constexpr std::string_view kD3D12SimpleVertShaderTex2dArray =
+    IGL_TO_STRING(
+      cbuffer VertexUniforms : register(b2) {
+        int layer;
+      };
+
+      struct VSIn {
+        float4 position_in : POSITION;
+        float2 uv_in : TEXCOORD0;
+      };
+
+      struct VSOut {
+        float4 position : SV_POSITION;
+        float2 uv : TEXCOORD0;
+        uint layer : TEXCOORD1;
+      };
+
+      VSOut main(VSIn input) {
+        VSOut output;
+        output.position = input.position_in;
+        output.uv = input.uv_in;
+        output.layer = uint(layer);
+        return output;
+      }
+    );
+
+// D3D12 Texture2DArray Fragment shader
+constexpr std::string_view kD3D12SimpleFragShaderTex2dArray =
+    IGL_TO_STRING(
+      Texture2DArray<float4> inputImage : register(t0);
+      SamplerState inputSampler : register(s0);
+
+      struct PSIn {
+        float4 position : SV_POSITION;
+        float2 uv : TEXCOORD0;
+        uint layer : TEXCOORD1;
+      };
+
+      float4 main(PSIn input) : SV_TARGET {
+        return inputImage.Sample(inputSampler, float3(input.uv, input.layer));
+      }
+    );
+
 // clang-format on
 } // namespace igl::tests::data::shader

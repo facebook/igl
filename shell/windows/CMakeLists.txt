@@ -41,6 +41,12 @@ endif()
 if(IGL_WITH_OPENGLES)
   add_shell_app(opengles)
 endif()
+# Only add D3D12 shell app if the sources are present (removed in this branch)
+set(IGL_D3D12_APP_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/../windows/d3d12/App.cpp")
+if(IGL_WITH_D3D12 AND EXISTS "${IGL_D3D12_APP_SOURCE}")
+  add_shell_app(d3d12)
+  target_link_libraries(IGLShellApp_d3d12 PUBLIC IGLD3D12)
+endif()
 
 function(ADD_SHELL_SESSION_BACKEND targetApp backend srcs libs)
   set(target ${targetApp}_${backend})
@@ -50,6 +56,27 @@ function(ADD_SHELL_SESSION_BACKEND targetApp backend srcs libs)
   target_compile_definitions(${target} PRIVATE "IGL_SHELL_SESSION=${targetApp}")
   target_link_libraries(${target} PUBLIC ${libs})
   target_link_libraries(${target} PUBLIC IGLShellApp_${backend})
+
+  # Copy dxil.dll for D3D12 executables (required for DXIL signing)
+  if(backend STREQUAL "d3d12" AND WIN32 AND MSVC)
+    find_file(DXIL_DLL_FOR_${target}
+      NAMES dxil.dll
+      PATHS
+        "C:/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64"
+        "C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64"
+        "C:/Program Files (x86)/Windows Kits/10/bin/10.0.19041.0/x64"
+        "$ENV{WindowsSdkBinPath}/x64"
+      NO_DEFAULT_PATH
+    )
+    if(DXIL_DLL_FOR_${target})
+      add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          "${DXIL_DLL_FOR_${target}}"
+          "$<TARGET_FILE_DIR:${target}>/"
+        COMMENT "Copying dxil.dll for ${target}"
+      )
+    endif()
+  endif()
 endfunction()
 
 function(ADD_SHELL_SESSION_BACKEND_OPENXR_SIM targetApp backend srcs libs compileDefs)
@@ -71,5 +98,8 @@ macro(ADD_SHELL_SESSION_WITH_SRCS target srcs libs)
   endif()
   if(IGL_WITH_OPENGLES)
     add_shell_session_backend(${target} opengles "${srcs}" "${libs}")
+  endif()
+  if(IGL_WITH_D3D12 AND TARGET IGLShellApp_d3d12)
+    add_shell_session_backend(${target} d3d12 "${srcs}" "${libs}")
   endif()
 endmacro()
