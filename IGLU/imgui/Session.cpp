@@ -143,7 +143,6 @@ static std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevic
                                                            "main",
                                                            "Shader Module: imgui::fragment",
                                                            &result);
-    break;
   }
   // @fb-only
     // @fb-only
@@ -154,7 +153,6 @@ static std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevic
   case igl::BackendType::Metal: {
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, metalShaderStr(), "vertex_main", "fragment_main", "", &result);
-    break;
   }
   case igl::BackendType::OpenGL: {
     auto shaderVersion = device.getShaderVersion();
@@ -162,7 +160,6 @@ static std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevic
     const std::string fragmentStr = getOpenGLFragmentShaderSource(shaderVersion);
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device, vertexStr.c_str(), "main", "", fragmentStr.c_str(), "main", "", &result);
-    break;
   }
   }
   IGL_UNREACHABLE_RETURN(nullptr)
