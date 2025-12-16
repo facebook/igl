@@ -135,17 +135,14 @@ GLint SamplerState::convertMinMipFilter(SamplerMinMagFilter minFilter, SamplerMi
   switch (mipFilter) {
   case SamplerMipFilter::Disabled:
     return (minFilter == SamplerMinMagFilter::Nearest) ? GL_NEAREST : GL_LINEAR;
-    break;
 
   case SamplerMipFilter::Nearest:
     return (minFilter == SamplerMinMagFilter::Nearest) ? GL_NEAREST_MIPMAP_NEAREST
                                                        : GL_LINEAR_MIPMAP_NEAREST;
-    break;
 
   case SamplerMipFilter::Linear:
     return (minFilter == SamplerMinMagFilter::Nearest) ? GL_NEAREST_MIPMAP_LINEAR
                                                        : GL_LINEAR_MIPMAP_LINEAR;
-    break;
   }
 
   return 0;
@@ -185,17 +182,14 @@ SamplerMipFilter SamplerState::convertGLMipFilter(GLint glMinFilter) {
   case GL_NEAREST:
   case GL_LINEAR:
     return SamplerMipFilter::Disabled;
-    break;
 
   case GL_NEAREST_MIPMAP_NEAREST:
   case GL_LINEAR_MIPMAP_NEAREST:
     return SamplerMipFilter::Nearest;
-    break;
 
   case GL_NEAREST_MIPMAP_LINEAR:
   case GL_LINEAR_MIPMAP_LINEAR:
     return SamplerMipFilter::Linear;
-    break;
 
   default:
     IGL_DEBUG_ASSERT_NOT_REACHED();
@@ -209,15 +203,12 @@ GLint SamplerState::convertAddressMode(SamplerAddressMode addressMode) {
   switch (addressMode) {
   case SamplerAddressMode::Repeat:
     return GL_REPEAT;
-    break;
 
   case SamplerAddressMode::Clamp:
     return GL_CLAMP_TO_EDGE;
-    break;
 
   case SamplerAddressMode::MirrorRepeat:
     return GL_MIRRORED_REPEAT;
-    break;
   }
 
   return 0;
@@ -227,19 +218,15 @@ SamplerAddressMode SamplerState::convertGLAddressMode(GLint glAddressMode) {
   switch (glAddressMode) {
   case GL_REPEAT:
     return SamplerAddressMode::Repeat;
-    break;
 
   case GL_CLAMP_TO_EDGE:
     return SamplerAddressMode::Clamp;
-    break;
 
   case GL_MIRRORED_REPEAT:
     return SamplerAddressMode::MirrorRepeat;
-    break;
 
   default:
     return SamplerAddressMode::Repeat;
-    break;
   }
 
   return SamplerAddressMode::Repeat;
