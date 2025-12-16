@@ -140,6 +140,7 @@ enum class TextureFormat : uint8_t {
   RGB_F16,
 
   // 64 bpp
+  RGBA_UNorm16,
   RGBA_F16,
   RG_F32,
 

@@ -537,6 +537,12 @@ bool Texture::toFormatDescGL(const IContext& ctx,
     type = GL_UNSIGNED_SHORT;
     return true;
 
+  case TextureFormat::RGBA_UNorm16:
+    internalFormat = GL_RGBA16;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_SHORT;
+    return true;
+
   case TextureFormat::RGBA_UInt32:
     internalFormat = GL_RGBA32UI;
     format = GL_RGBA_INTEGER;

@@ -31,6 +31,7 @@ namespace igl::vulkan::util {
 #define VK_FORMAT_R16G16_UNORM 77
 #define VK_FORMAT_R16G16_SFLOAT 83
 #define VK_FORMAT_R16G16_UINT 81
+#define VK_FORMAT_R16G16B16A16_UNORM 91
 #define VK_FORMAT_A2R10G10B10_UNORM_PACK32 58
 #define VK_FORMAT_A2R10G10B10_UINT_PACK32 62
 #define VK_FORMAT_A2B10G10R10_UNORM_PACK32 64
@@ -132,6 +133,8 @@ TextureFormat vkTextureFormatToTextureFormat(int32_t vkFormat) {
     return TextureFormat::RG_F16;
   case VK_FORMAT_R16G16_UINT:
     return TextureFormat::RG_UInt16;
+  case VK_FORMAT_R16G16B16A16_UNORM:
+    return TextureFormat::RGBA_UNorm16;
   case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
     return TextureFormat::RGB10_A2_UNorm_Rev;
   case VK_FORMAT_A2R10G10B10_UINT_PACK32:

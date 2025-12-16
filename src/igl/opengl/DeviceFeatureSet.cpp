@@ -587,6 +587,10 @@ bool DeviceFeatureSet::isTextureFeatureSupported(TextureFeatures feature) const 
     return hasDesktopVersionOrExtension(*this, GLVersion::v3_0, "GL_ARB_texture_rg") ||
            hasESExtension(*this, "GL_EXT_texture_norm16");
 
+  case TextureFeatures::ColorFormatRgbaUNorm16:
+    return hasDesktopVersion(*this, GLVersion::v3_0) ||
+           hasESExtension(*this, "GL_EXT_texture_norm16");
+
   case TextureFeatures::ColorRenderbuffer16f:
     return hasDesktopOrESVersionOrExtension(
                *this, GLVersion::v3_0, GLVersion::v3_2_ES, "GL_EXT_color_buffer_half_float") ||
@@ -1348,6 +1352,11 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
   case TextureFormat::R_UNorm16:
   case TextureFormat::RG_UNorm16:
     if (hasTextureFeature(TextureFeatures::ColorFormatRgUNorm16)) {
+      capabilities |= all;
+    }
+    break;
+  case TextureFormat::RGBA_UNorm16:
+    if (hasTextureFeature(TextureFeatures::ColorFormatRgbaUNorm16)) {
       capabilities |= all;
     }
     break;

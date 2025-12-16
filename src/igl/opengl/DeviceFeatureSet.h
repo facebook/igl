@@ -99,6 +99,7 @@ enum class TextureFeatures {
   ColorFormatRgb10A2UI,         // RGB10_A2UI is supported as an internal format
   ColorFormatRgInt,             // Integer R and RG textures are supported
   ColorFormatRgUNorm16,         // UNorm 16 R and RG textures are supported
+  ColorFormatRgbaUNorm16,       // UNorm 16 RGBA textures are supported
   ColorRenderbuffer16f,         // RenderbufferStorage supports XXX16F for color targets
   ColorRenderbuffer32f,         // RenderbufferStorage supports XXX32F for color targets
   ColorRenderbufferRg16f,       // RenderbufferStorage supports Rg16F for color targets
