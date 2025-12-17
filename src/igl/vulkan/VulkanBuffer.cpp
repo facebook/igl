@@ -32,7 +32,9 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
   const VkBufferCreateInfo ci = ivkGetBufferCreateInfo(bufferSize, usageFlags);
 
   if (IGL_VULKAN_USE_VMA) {
-    VmaAllocationCreateInfo ciAlloc = {};
+    VmaAllocationCreateInfo ciAlloc = {
+        .usage = VMA_MEMORY_USAGE_AUTO,
+    };
 
     // Initialize VmaAllocation Info
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
@@ -54,8 +56,6 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
         isCoherentMemory_ = true;
       }
     }
-
-    ciAlloc.usage = VMA_MEMORY_USAGE_AUTO;
 
     vmaCreateBuffer(
         (VmaAllocator)ctx_.getVmaAllocator(), &ci, &ciAlloc, &vkBuffer_, &vmaAllocation_, nullptr);
@@ -114,7 +114,9 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
   // handle shader access
   if (usageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR) {
     const VkBufferDeviceAddressInfo ai = {
-        VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR, nullptr, vkBuffer_};
+        .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR,
+        .buffer = vkBuffer_,
+    };
     vkDeviceAddress_ = ctx_.vf_.vkGetBufferDeviceAddressKHR(device_, &ai);
     IGL_DEBUG_ASSERT(vkDeviceAddress_);
   }
@@ -153,12 +155,11 @@ void VulkanBuffer::flushMappedMemory(VkDeviceSize offset, VkDeviceSize size) con
   if (IGL_VULKAN_USE_VMA) {
     vmaFlushAllocation((VmaAllocator)ctx_.getVmaAllocator(), vmaAllocation_, offset, size);
   } else {
-    const VkMappedMemoryRange memoryRange{
-        VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
-        nullptr,
-        vkMemory_,
-        offset,
-        size,
+    const VkMappedMemoryRange memoryRange = {
+        .sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+        .memory = vkMemory_,
+        .offset = offset,
+        .size = size,
     };
     ctx_.vf_.vkFlushMappedMemoryRanges(device_, 1, &memoryRange);
   }
@@ -174,11 +175,10 @@ void VulkanBuffer::invalidateMappedMemory(VkDeviceSize offset, VkDeviceSize size
         static_cast<VmaAllocator>(ctx_.getVmaAllocator()), vmaAllocation_, offset, size);
   } else {
     const VkMappedMemoryRange memoryRange = {
-        VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
-        nullptr,
-        vkMemory_,
-        offset,
-        size,
+        .sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+        .memory = vkMemory_,
+        .offset = offset,
+        .size = size,
     };
     ctx_.vf_.vkInvalidateMappedMemoryRanges(device_, 1, &memoryRange);
   }
