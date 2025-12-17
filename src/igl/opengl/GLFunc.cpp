@@ -32,7 +32,7 @@
 extern "C" void glQueryCounterEXT(GLuint, GLenum) {}
 #endif
 #endif
-#if defined(__clang__) && defined(ENABLE_ROAI)
+#if defined(__clang__)
 #define ROAI __attribute__((annotate("ro_after_init")))
 #else
 #define ROAI
