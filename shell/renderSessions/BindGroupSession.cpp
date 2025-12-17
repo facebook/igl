@@ -294,12 +294,10 @@ void BindGroupSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
   // Vertex buffer, Index buffer and Vertex Input
-  const BufferDesc vb0Desc =
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, kVertexData0, sizeof(kVertexData0));
-  vb0_ = device.createBuffer(vb0Desc, nullptr);
-  const BufferDesc ibDesc =
-      BufferDesc(BufferDesc::BufferTypeBits::Index, kIndexData, sizeof(kIndexData));
-  ib0_ = device.createBuffer(ibDesc, nullptr);
+  vb0_ = device.createBuffer(
+      BufferDesc(BufferDesc::BufferTypeBits::Vertex, kVertexData0, sizeof(kVertexData0)), nullptr);
+  ib0_ = device.createBuffer(
+      BufferDesc(BufferDesc::BufferTypeBits::Index, kIndexData, sizeof(kIndexData)), nullptr);
 
   const VertexInputStateDesc inputDesc = {
       .numAttributes = 3,
@@ -329,13 +327,19 @@ void BindGroupSession::initialize() noexcept {
   // Command queue: backed by different types of GPU HW queues
   commandQueue_ = device.createCommandQueue({}, nullptr);
 
-  renderPass_.colorAttachments.resize(1);
-  renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass_.colorAttachments[0].clearColor = getPreferredClearColor();
-  renderPass_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPass_.depthAttachment.storeAction = StoreAction::DontCare;
-  renderPass_.depthAttachment.clearDepth = 1.0;
+  renderPass_ = {
+      .colorAttachments = {{
+          .loadAction = LoadAction::Clear,
+          .storeAction = StoreAction::Store,
+          .clearColor = getPreferredClearColor(),
+      }},
+      .depthAttachment =
+          {
+              .loadAction = LoadAction::Clear,
+              .storeAction = StoreAction::DontCare,
+              .clearDepth = 1.0,
+          },
+  };
 }
 
 void BindGroupSession::update(SurfaceTextures surfaceTextures) noexcept {
@@ -366,33 +370,40 @@ void BindGroupSession::update(SurfaceTextures surfaceTextures) noexcept {
   }
 
   if (pipelineState_ == nullptr) {
-    RenderPipelineDesc desc;
-    desc.vertexInputState = vertexInput0_;
-    desc.shaderStages = shaderStages_;
-    desc.targetDesc.colorAttachments.resize(1);
-    desc.targetDesc.colorAttachments[0].textureFormat =
-        framebuffer_->getColorAttachment(0)->getProperties().format;
-    desc.targetDesc.depthAttachmentFormat =
-        framebuffer_->getDepthAttachment()->getProperties().format;
-    desc.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE("input2D");
-    desc.fragmentUnitSamplerMap[1] = IGL_NAMEHANDLE("inputXOR");
-    desc.cullMode = igl::CullMode::Back;
-    desc.frontFaceWinding = igl::WindingMode::Clockwise;
-    pipelineState_ = device.createRenderPipeline(desc, &ret);
+    pipelineState_ = device.createRenderPipeline(
+        RenderPipelineDesc{
+            .vertexInputState = vertexInput0_,
+            .shaderStages = shaderStages_,
+            .targetDesc =
+                {
+                    .colorAttachments = {{
+                        .textureFormat =
+                            framebuffer_->getColorAttachment(0)->getProperties().format,
+                    }},
+                    .depthAttachmentFormat =
+                        framebuffer_->getDepthAttachment()->getProperties().format,
+                },
+            .cullMode = igl::CullMode::Back,
+            .frontFaceWinding = igl::WindingMode::Clockwise,
+            .fragmentUnitSamplerMap = {{0, IGL_NAMEHANDLE("input2D")},
+                                       {1, IGL_NAMEHANDLE("inputXOR")}},
+        },
+        &ret);
     IGL_DEBUG_ASSERT(ret.isOk());
   }
 
-  auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
+  const auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
   const std::shared_ptr<IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
-  // Bind Vertex Uniform Data
-  iglu::ManagedUniformBufferInfo info;
-  info.index = 1;
-  info.length = sizeof(VertexFormat);
-  info.uniforms = std::vector<UniformDesc>{UniformDesc{
-      "mvpMatrix", -1, igl::UniformType::Mat4x4, 1, offsetof(VertexFormat, mvpMatrix), 0}};
+  iglu::ManagedUniformBufferInfo info = {
+      .index = 1,
+      .length = sizeof(VertexFormat),
+      .uniforms = {{.name = "mvpMatrix",
+                    .type = igl::UniformType::Mat4x4,
+                    .offset = offsetof(VertexFormat, mvpMatrix)}},
+  };
 
   const std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer =
       std::make_shared<iglu::ManagedUniformBuffer>(device, info);
