@@ -37,7 +37,7 @@ jobs:
     - name: Get output time
       run: echo "The time was ${{ steps.build.outputs.time }}"
     - name: Deploy
-      uses: JamesIves/github-pages-deploy-action@releases/v4
+      uses: JamesIves/github-pages-deploy-action@v4
       with:
         BRANCH: gh-pages # The branch the action should deploy to
         FOLDER: ./docs/build/html # The folder the action should deploy
