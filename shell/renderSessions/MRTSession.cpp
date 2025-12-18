@@ -338,7 +338,7 @@ void MRTSession::initialize() noexcept {
     shaderStagesDisplayLast_ = createShaderStagesForBackend(device, 1);
   }
 
-  commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
+  commandQueue_ = device.createCommandQueue({}, nullptr);
 
   tex0_->generateMipmap(*commandQueue_);
 
@@ -419,8 +419,7 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
         nullptr);
   }
 
-  const std::shared_ptr<ICommandBuffer> buffer =
-      commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
+  const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
   auto commands = buffer->createRenderCommandEncoder(renderPassMRT_, framebufferMRT_);
 
