@@ -10,6 +10,7 @@
 package com.facebook.igl.shell;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.os.Handler;
 import android.os.Looper;
@@ -31,9 +32,13 @@ public class VulkanView extends SurfaceView
   RenderThread mRenderThread;
   private final SampleLib.BackendVersion mBackendVersion;
   private final int mSwapchainColorTextureFormat;
+  private Intent mIntent;
 
   public VulkanView(
-      Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat) {
+      Context context,
+      SampleLib.BackendVersion backendVersion,
+      int swapchainColorTextureFormat,
+      Intent intent) {
 
     super(context);
 
@@ -44,6 +49,7 @@ public class VulkanView extends SurfaceView
     mContext = context;
     mBackendVersion = backendVersion;
     mSwapchainColorTextureFormat = swapchainColorTextureFormat;
+    mIntent = intent;
   }
 
   @Override
@@ -195,7 +201,8 @@ public class VulkanView extends SurfaceView
     public void surfaceCreated() {
       Log.d(TAG, "SurfaceCreated");
       Surface surface = mSurfaceHolder.getSurface();
-      SampleLib.init(mBackendVersion, mSwapchainColorTextureFormat, mContext.getAssets(), surface);
+      SampleLib.init(
+          mBackendVersion, mSwapchainColorTextureFormat, mContext.getAssets(), surface, mIntent);
     }
 
     public void surfaceChanged(int width, int height) {
@@ -219,7 +226,19 @@ public class VulkanView extends SurfaceView
         return;
       }
 
-      SampleLib.render(mContext.getResources().getDisplayMetrics().density);
+      boolean shouldExit = SampleLib.render(mContext.getResources().getDisplayMetrics().density);
+      if (shouldExit) {
+        android.util.Log.i(
+            "igl", "[IGL Benchmark] Java: Benchmark complete, waiting for logs to flush...");
+        // Give logcat time to flush the final report before killing the process
+        try {
+          Thread.sleep(2000);
+        } catch (InterruptedException e) {
+          // Ignore
+        }
+        android.util.Log.i("igl", "[IGL Benchmark] Java: Exiting process");
+        System.exit(0);
+      }
     }
 
     private void shutdown() {

@@ -9,6 +9,7 @@
 
 package com.facebook.igl.shell;
 
+import android.content.Intent;
 import android.content.res.AssetManager;
 import android.view.Surface;
 
@@ -16,7 +17,7 @@ import android.view.Surface;
 public class SampleLib {
 
   static {
-    System.loadLibrary("ColorSession");
+    System.loadLibrary("sampleJni");
   }
 
   // Must match igl/Common.h
@@ -48,13 +49,14 @@ public class SampleLib {
       BackendVersion backendVersion,
       int swapchainColorTextureFormat,
       AssetManager assetManager,
-      Surface surface);
+      Surface surface,
+      Intent intent);
 
   public static native void setActiveBackendVersion(BackendVersion backendVersion);
 
   public static native void surfaceChanged(Surface surface, int width, int height);
 
-  public static native void render(float displayScale);
+  public static native boolean render(float displayScale);
 
   public static native void touchEvent(boolean isDown, float x, float y, float dx, float dy);
 
