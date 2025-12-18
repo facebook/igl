@@ -184,21 +184,15 @@ void DrawInstancedSession::initialize() noexcept {
 
   // Create Index Buffer
   const int16_t indexes[6] = {0, 1, 2, 3, 4, 5};
-
-  BufferDesc bufferDesc;
-  bufferDesc.type = BufferDesc::BufferTypeBits::Index;
-  bufferDesc.length = sizeof(indexes);
-  bufferDesc.data = &indexes;
-  indexBuffer_ = getPlatform().getDevice().createBuffer(bufferDesc, nullptr);
+  indexBuffer_ = getPlatform().getDevice().createBuffer(
+      BufferDesc{BufferDesc::BufferTypeBits::Index, &indexes, sizeof(indexes)}, nullptr);
   IGL_DEBUG_ASSERT(indexBuffer_);
 }
 
 void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
-
   const auto dimensions = surfaceTextures.color->getDimensions();
-  framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, nullptr);
+  framebuffer_ = getPlatform().getDevice().createFramebuffer(
+      FramebufferDesc{.colorAttachments = {{.texture = surfaceTextures.color}}}, nullptr);
   IGL_DEBUG_ASSERT(framebuffer_);
 
   if (!renderPipelineStateTriangle_) {
@@ -264,11 +258,9 @@ void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
       }
     }
 
-    BufferDesc desc;
-    desc.type = BufferDesc::BufferTypeBits::Vertex;
-    desc.length = sizeof(glm::vec2) * 100;
-    desc.data = translations;
-    vertexBuffer_ = getPlatform().getDevice().createBuffer(desc, nullptr);
+    vertexBuffer_ = getPlatform().getDevice().createBuffer(
+        BufferDesc{BufferDesc::BufferTypeBits::Vertex, translations, sizeof(glm::vec2) * 100},
+        nullptr);
     IGL_DEBUG_ASSERT(vertexBuffer_);
   }
 
