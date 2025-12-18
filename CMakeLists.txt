@@ -235,6 +235,10 @@ if(APPLE AND IGL_WITH_METAL)
   target_compile_definitions(IGLLibrary PUBLIC "IGL_BACKEND_ENABLE_METAL=1")
 endif()
 
+if(NOT IGL_WITH_VULKAN)
+  target_sources(IGLLibrary PRIVATE "src/igl/vulkan/util/TextureFormat.cpp")
+endif()
+
 target_compile_definitions(IGLLibrary PUBLIC "IGL_CMAKE_BUILD=1")
 
 include_directories(.)
