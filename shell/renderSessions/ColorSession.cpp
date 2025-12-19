@@ -178,7 +178,7 @@ std::string getMetalShaderSourceGradient() {
                   } else {
                     uvX = floor((1.0-IN.uv.x)*numSteps+0.5)/numSteps;
                   }
-                  return float4(uvX, uvX, uvX, 1.0); 
+                  return float4(uvX, uvX, uvX, 1.0);
               }
     )";
 }
@@ -219,14 +219,14 @@ std::string getOpenGLFragmentShaderSource() {
 }
 
 std::string getOpenGLFragmentShaderSourceGradient() {
-  return getVersion() + R"(    
+  return getVersion() + R"(
                 precision highp float;
                 uniform vec3 color;
                 uniform mat4 mvp;
                 uniform sampler2D inputImage;
                 varying vec3 vColor;
                 varying vec2 uv;
-                
+
                 void main() {
                   float numSteps = 20.0;
                   float uvX;
@@ -238,7 +238,7 @@ std::string getOpenGLFragmentShaderSourceGradient() {
                    uvX = 1.0-uv.x;
                   } else {
                    uvX = floor((1.0-uv.x)*numSteps+0.5)/numSteps;
-                  } 
+                  }
                   gl_FragColor = vec4(vec3(uvX), 1.0);
                 }
                 )";
@@ -295,7 +295,7 @@ std::string getVulkanFragmentShaderSourceGradient() {
                    uvX = 1.0-uv.x;
                   } else {
                    uvX = floor((1.0-uv.x)*numSteps+0.5)/numSteps;
-                  } 
+                  }
                   out_FragColor = vec4(vec3(uvX), 1.0);
                 }
                 )";
@@ -369,57 +369,57 @@ std::unique_ptr<IShaderStages> ColorSession::getShaderStagesForBackend(IDevice& 
 }
 
 void ColorSession::initialize() noexcept {
-  glm::dvec3 linearOrangeColor = glm::dvec3{1.0, 0.5, 0.0};
-  if (swapchainColorTextureformat_ == igl::TextureFormat::RGBA_SRGB &&
-      getPlatform().getDevice().hasFeature(DeviceFeatures::SRGB)) {
-    linearOrangeColor = glm::convertSRGBToLinear(linearOrangeColor);
-  }
-  const glm::vec3 fLinearOrangeColor = glm::vec3(linearOrangeColor);
+  IDevice& device = getPlatform().getDevice();
+  const glm::vec3 fLinearOrangeColor =
+      (swapchainColorTextureformat_ == igl::TextureFormat::RGBA_SRGB &&
+       device.hasFeature(DeviceFeatures::SRGB))
+          ? glm::vec3(glm::convertSRGBToLinear(glm::dvec3{1.0, 0.5, 0.0}))
+          : glm::vec3{1.0f, 0.5f, 0.0f};
   const iglu::simdtypes::float3 gpuLinearOrangeColor = {
       fLinearOrangeColor.x, fLinearOrangeColor.y, fLinearOrangeColor.z};
 
-  auto& device = getPlatform().getDevice();
-
   // Vertex & Index buffer
-  const BufferDesc vbDesc = getVertexBufferDesc(device);
-  vb0_ = device.createBuffer(vbDesc, nullptr);
+  vb0_ = device.createBuffer(getVertexBufferDesc(device), nullptr);
   IGL_DEBUG_ASSERT(vb0_ != nullptr);
-  const BufferDesc ibDesc = BufferDesc(BufferDesc::BufferTypeBits::Index,
-                                       kIndexData,
-                                       sizeof(kIndexData),
-                                       getIndexBufferResourceStorage(device),
-                                       0,
-                                       "index");
-  ib0_ = device.createBuffer(ibDesc, nullptr);
+  ib0_ = device.createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Index,
+                                        kIndexData,
+                                        sizeof(kIndexData),
+                                        getIndexBufferResourceStorage(device),
+                                        0,
+                                        "index"),
+                             nullptr);
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
-  const auto vertexBufferIndex = getVertexBufferIndex(getPlatform().getDevice());
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 2;
-  inputDesc.attributes[0] = VertexAttribute{.bufferIndex = vertexBufferIndex,
-                                            .format = VertexAttributeFormat::Float3,
-                                            .offset = offsetof(VertexPosUv, position),
-                                            .name = "position",
-                                            .location = 0};
-  inputDesc.attributes[1] = VertexAttribute{
-      .bufferIndex = vertexBufferIndex,
-      .format = VertexAttributeFormat::Float2,
-      .offset = offsetof(VertexPosUv, uv),
-      .name = "uv_in",
-      .location = 1,
+  const uint32_t vertexBufferIndex = getVertexBufferIndex(device);
+  VertexInputStateDesc inputDesc = {
+      .numAttributes = 2,
+      .attributes =
+          {
+              {.bufferIndex = vertexBufferIndex,
+               .format = VertexAttributeFormat::Float3,
+               .offset = offsetof(VertexPosUv, position),
+               .name = "position",
+               .location = 0},
+              {.bufferIndex = vertexBufferIndex,
+               .format = VertexAttributeFormat::Float2,
+               .offset = offsetof(VertexPosUv, uv),
+               .name = "uv_in",
+               .location = 1},
+          },
+      .numInputBindings = 1,
   };
-  inputDesc.numInputBindings = 1;
   inputDesc.inputBindings[vertexBufferIndex].stride = sizeof(VertexPosUv);
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
   IGL_DEBUG_ASSERT(vertexInput0_ != nullptr);
 
   // Sampler & Texture
-  SamplerStateDesc samplerDesc = {
-      .minFilter = SamplerMinMagFilter::Linear,
-      .magFilter = SamplerMinMagFilter::Linear,
-      .debugName = "Sampler: linear",
-  };
-  samp0_ = device.createSamplerState(samplerDesc, nullptr);
+  samp0_ = device.createSamplerState(
+      SamplerStateDesc{
+          .minFilter = SamplerMinMagFilter::Linear,
+          .magFilter = SamplerMinMagFilter::Linear,
+          .debugName = "Sampler: linear",
+      },
+      nullptr);
   IGL_DEBUG_ASSERT(samp0_ != nullptr);
 
   if (colorTestModes_ == ColorTestModes::MacbethTexture) {
@@ -441,46 +441,46 @@ void ColorSession::initialize() noexcept {
   IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
 
   // Command queue
-  const CommandQueueDesc desc{};
-  commandQueue_ = device.createCommandQueue(desc, nullptr);
+  commandQueue_ = device.createCommandQueue({}, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 
-  renderPass_.colorAttachments.resize(1);
-  renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass_.colorAttachments[0].clearColor = getPreferredClearColor();
-  renderPass_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPass_.depthAttachment.clearDepth = 1.0;
+  renderPass_ = {
+      .colorAttachments = {{
+          .loadAction = LoadAction::Clear,
+          .storeAction = StoreAction::Store,
+          .clearColor = getPreferredClearColor(),
+      }},
+      .depthAttachment = {.loadAction = LoadAction::Clear, .clearDepth = 1.0},
+  };
 
   // init uniforms
-  glm::mat4x4 mvp(1.0f);
+  const glm::mat4x4 mvp(1.0f);
   memcpy(&fragmentParameters_.mvp, &mvp, sizeof(mvp));
   fragmentParameters_.color = (colorTestModes_ == ColorTestModes::OrangeClear)
                                   ? gpuLinearOrangeColor
                                   : iglu::simdtypes::float3{1.0f, 1.0f, 1.0f};
 
-  BufferDesc fpDesc;
-  fpDesc.type = BufferDesc::BufferTypeBits::Uniform;
-  fpDesc.data = &fragmentParameters_;
-  fpDesc.length = sizeof(fragmentParameters_);
-  fpDesc.storage = ResourceStorage::Shared;
-  fpDesc.debugName = "uniforms";
-
-  fragmentParamBuffer_ = device.createBuffer(fpDesc, nullptr);
+  fragmentParamBuffer_ = device.createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
+                                                        &fragmentParameters_,
+                                                        sizeof(fragmentParameters_),
+                                                        ResourceStorage::Shared,
+                                                        0,
+                                                        "uniforms"),
+                                             nullptr);
   IGL_DEBUG_ASSERT(fragmentParamBuffer_ != nullptr);
 }
 
 void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
-  Result ret;
   if (framebuffer_ == nullptr) {
-    FramebufferDesc framebufferDesc = {
-        .mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
-                                                          : FramebufferMode::Mono,
-    };
-    framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
-    framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
-    IGL_DEBUG_ASSERT(ret.isOk());
-    framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
+    Result ret;
+    framebuffer_ = getPlatform().getDevice().createFramebuffer(
+        FramebufferDesc{
+            .colorAttachments = {{.texture = surfaceTextures.color}},
+            .depthAttachment = {.texture = surfaceTextures.depth},
+            .mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
+                                                              : FramebufferMode::Mono,
+        },
+        &ret);
     IGL_DEBUG_ASSERT(ret.isOk());
     IGL_DEBUG_ASSERT(framebuffer_ != nullptr);
   } else {
@@ -491,33 +491,36 @@ void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
 
   // Graphics pipeline
   if (pipelineState_ == nullptr) {
-    RenderPipelineDesc graphicsDesc = {
-        .vertexInputState = vertexInput0_,
-        .shaderStages = shaderStages_,
-        .cullMode = igl::CullMode::Back,
-        .frontFaceWinding = igl::WindingMode::Clockwise,
-    };
-    graphicsDesc.targetDesc.colorAttachments.resize(1);
-    graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
-        framebuffer_->getColorAttachment(0)->getProperties().format;
-    graphicsDesc.targetDesc.depthAttachmentFormat =
-        framebuffer_->getDepthAttachment()->getProperties().format;
-    graphicsDesc.fragmentUnitSamplerMap[textureUnit] = IGL_NAMEHANDLE("inputImage");
-    graphicsDesc.targetDesc.colorAttachments[0].blendEnabled = true;
-    graphicsDesc.targetDesc.colorAttachments[0].rgbBlendOp = BlendOp::Add;
-    graphicsDesc.targetDesc.colorAttachments[0].alphaBlendOp = BlendOp::Add;
-    graphicsDesc.targetDesc.colorAttachments[0].srcRGBBlendFactor = BlendFactor::SrcAlpha;
-    graphicsDesc.targetDesc.colorAttachments[0].srcAlphaBlendFactor = BlendFactor::SrcAlpha;
-    graphicsDesc.targetDesc.colorAttachments[0].dstRGBBlendFactor = BlendFactor::OneMinusSrcAlpha;
-    graphicsDesc.targetDesc.colorAttachments[0].dstAlphaBlendFactor = BlendFactor::OneMinusSrcAlpha;
-
-    pipelineState_ = getPlatform().getDevice().createRenderPipeline(graphicsDesc, nullptr);
+    pipelineState_ = getPlatform().getDevice().createRenderPipeline(
+        RenderPipelineDesc{
+            .vertexInputState = vertexInput0_,
+            .shaderStages = shaderStages_,
+            .targetDesc =
+                {
+                    .colorAttachments = {{
+                        .textureFormat =
+                            framebuffer_->getColorAttachment(0)->getProperties().format,
+                        .blendEnabled = true,
+                        .rgbBlendOp = BlendOp::Add,
+                        .alphaBlendOp = BlendOp::Add,
+                        .srcRGBBlendFactor = BlendFactor::SrcAlpha,
+                        .srcAlphaBlendFactor = BlendFactor::SrcAlpha,
+                        .dstRGBBlendFactor = BlendFactor::OneMinusSrcAlpha,
+                        .dstAlphaBlendFactor = BlendFactor::OneMinusSrcAlpha,
+                    }},
+                    .depthAttachmentFormat =
+                        framebuffer_->getDepthAttachment()->getProperties().format,
+                },
+            .cullMode = igl::CullMode::Back,
+            .frontFaceWinding = igl::WindingMode::Clockwise,
+            .fragmentUnitSamplerMap = {{textureUnit, IGL_NAMEHANDLE("inputImage")}},
+        },
+        nullptr);
     IGL_DEBUG_ASSERT(pipelineState_ != nullptr);
   }
 
   // Command Buffers
-  const CommandBufferDesc cbDesc;
-  const auto buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  const auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
   const auto drawableSurface = framebuffer_->getColorAttachment(0);
 
