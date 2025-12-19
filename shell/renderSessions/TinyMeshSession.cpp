@@ -248,14 +248,14 @@ void main() {
 
 #if IGL_BACKEND_OPENGL
   case igl::BackendType::OpenGL: {
-    auto glVersion =
+    const auto glVersion =
         static_cast<igl::opengl::Device&>(device).getContext().deviceFeatures().getGLVersion();
 
     if (glVersion > igl::opengl::GLVersion::v2_1) {
       const std::string codeVS1 =
           stringReplaceAll(getVulkanVertexShaderSource(), "gl_VertexIndex", "gl_VertexID");
-      auto codeVS2 = "#version 460\n" + codeVS1;
-      auto codeFS = "#version 460\n" + std::string(getVulkanFragmentShaderSource());
+      const auto codeVS2 = "#version 460\n" + codeVS1;
+      const auto codeFS = "#version 460\n" + std::string(getVulkanFragmentShaderSource());
 
       return igl::ShaderStagesCreator::fromModuleStringInput(
           device, codeVS2.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
@@ -320,35 +320,38 @@ void TinyMeshSession::initialize() noexcept {
                               nullptr));
   }
 
-  {
-    VertexInputStateDesc desc;
-    desc.numAttributes = 3;
-    desc.attributes[0].format = VertexAttributeFormat::Float3;
-    desc.attributes[0].offset = offsetof(VertexPosUvw, position);
-    desc.attributes[0].name = "pos";
-    desc.attributes[0].bufferIndex = 0;
-    desc.attributes[0].location = 0;
-    desc.attributes[1].format = VertexAttributeFormat::Float3;
-    desc.attributes[1].offset = offsetof(VertexPosUvw, color);
-    desc.attributes[1].name = "col";
-    desc.attributes[1].bufferIndex = 0;
-    desc.attributes[1].location = 1;
-    desc.attributes[2].format = VertexAttributeFormat::Float2;
-    desc.attributes[2].offset = offsetof(VertexPosUvw, uv);
-    desc.attributes[2].name = "st";
-    desc.attributes[2].bufferIndex = 0;
-    desc.attributes[2].location = 2;
-    desc.numInputBindings = 1;
-    desc.inputBindings[0].stride = sizeof(VertexPosUvw);
-    vertexInput0_ = device_->createVertexInputState(desc, nullptr);
-  }
+  vertexInput0_ = device_->createVertexInputState(
+      VertexInputStateDesc{
+          .numAttributes = 3,
+          .attributes =
+              {
+                  {.bufferIndex = 0,
+                   .format = VertexAttributeFormat::Float3,
+                   .offset = offsetof(VertexPosUvw, position),
+                   .name = "pos",
+                   .location = 0},
+                  {.bufferIndex = 0,
+                   .format = VertexAttributeFormat::Float3,
+                   .offset = offsetof(VertexPosUvw, color),
+                   .name = "col",
+                   .location = 1},
+                  {.bufferIndex = 0,
+                   .format = VertexAttributeFormat::Float2,
+                   .offset = offsetof(VertexPosUvw, uv),
+                   .name = "st",
+                   .location = 2},
+              },
+          .numInputBindings = 1,
+          .inputBindings = {{.stride = sizeof(VertexPosUvw)}},
+      },
+      nullptr);
 
-  {
-    DepthStencilStateDesc desc;
-    desc.isDepthWriteEnabled = true;
-    desc.compareFunction = igl::CompareFunction::Less;
-    depthStencilState_ = device_->createDepthStencilState(desc, nullptr);
-  }
+  depthStencilState_ = device_->createDepthStencilState(
+      DepthStencilStateDesc{
+          .compareFunction = igl::CompareFunction::Less,
+          .isDepthWriteEnabled = true,
+      },
+      nullptr);
 
   {
     const uint32_t texWidth = 256;
@@ -399,30 +402,34 @@ void TinyMeshSession::initialize() noexcept {
     texture1_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels);
     stbi_image_free(pixels);
   }
-  {
-    SamplerStateDesc desc = igl::SamplerStateDesc::newLinear();
-    desc.addressModeU = igl::SamplerAddressMode::Repeat;
-    desc.addressModeV = igl::SamplerAddressMode::Repeat;
-    desc.debugName = "Sampler: linear";
-    sampler_ = device_->createSamplerState(desc, nullptr);
-  }
+  sampler_ = device_->createSamplerState(
+      SamplerStateDesc{
+          .minFilter = SamplerMinMagFilter::Linear,
+          .magFilter = SamplerMinMagFilter::Linear,
+          .addressModeU = igl::SamplerAddressMode::Repeat,
+          .addressModeV = igl::SamplerAddressMode::Repeat,
+          .debugName = "Sampler: linear",
+      },
+      nullptr);
 
   // Command queue: backed by different types of GPU HW queues
   commandQueue_ = device_->createCommandQueue({}, nullptr);
 
-  renderPass_.colorAttachments.emplace_back();
-  renderPass_.colorAttachments.back().loadAction = LoadAction::Clear;
-  renderPass_.colorAttachments.back().storeAction = StoreAction::Store;
-  renderPass_.colorAttachments.back().clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
+  renderPass_ = {
+      .colorAttachments = {{
+          .loadAction = LoadAction::Clear,
+          .storeAction = StoreAction::Store,
+          .clearColor = {1.0f, 0.0f, 0.0f, 1.0f},
+      }},
 #if TINY_TEST_USE_DEPTH_BUFFER
-  renderPass_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPass_.depthAttachment.clearDepth = 1.0;
+      .depthAttachment = {.loadAction = LoadAction::Clear, .clearDepth = 1.0},
 #else
-  renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
+      .depthAttachment = {.loadAction = LoadAction::DontCare},
 #endif // TINY_TEST_USE_DEPTH_BUFFER
+  };
 
   // initialize random rotation axes for all cubes
-  for (auto& axi : axis) {
+  for (glm::vec3& axi : axis) {
     axi = glm::sphericalRand(1.0f);
   }
 }
@@ -465,29 +472,30 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
     framebuffer_ = device_->createFramebuffer(framebufferDesc_, nullptr);
     IGL_DEBUG_ASSERT(framebuffer_);
 
-    RenderPipelineDesc desc;
-
-    desc.targetDesc.colorAttachments.resize(1);
-    desc.targetDesc.colorAttachments[0].textureFormat =
-        framebuffer_->getColorAttachment(0)->getProperties().format;
-
-    if (framebuffer_->getDepthAttachment()) {
-      desc.targetDesc.depthAttachmentFormat =
-          framebuffer_->getDepthAttachment()->getProperties().format;
-    }
-
-    desc.vertexInputState = vertexInput0_;
-    desc.shaderStages = getShaderStagesForBackend(*device_);
-
+    const TextureFormat depthFormat =
+        framebuffer_->getDepthAttachment()
+            ? framebuffer_->getDepthAttachment()->getProperties().format
+            : TextureFormat::Invalid;
+    renderPipelineStateMesh_ = device_->createRenderPipeline(
+        RenderPipelineDesc{
+            .vertexInputState = vertexInput0_,
+            .shaderStages = getShaderStagesForBackend(*device_),
+            .targetDesc =
+                {
+                    .colorAttachments = {{
+                        .textureFormat =
+                            framebuffer_->getColorAttachment(0)->getProperties().format,
+                    }},
+                    .depthAttachmentFormat = depthFormat,
+                },
 #if !TINY_TEST_USE_DEPTH_BUFFER
-    desc.cullMode = igl::CullMode::Back;
+            .cullMode = igl::CullMode::Back,
 #endif // TINY_TEST_USE_DEPTH_BUFFER
-
-    desc.frontFaceWinding = igl::WindingMode::Clockwise;
-    desc.debugName = igl::genNameHandle("Pipeline: mesh");
-    desc.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE("uTex0");
-    desc.fragmentUnitSamplerMap[1] = IGL_NAMEHANDLE("uTex1");
-    renderPipelineStateMesh_ = device_->createRenderPipeline(desc, nullptr);
+            .frontFaceWinding = igl::WindingMode::Clockwise,
+            .fragmentUnitSamplerMap = {{0, IGL_NAMEHANDLE("uTex0")}, {1, IGL_NAMEHANDLE("uTex1")}},
+            .debugName = igl::genNameHandle("Pipeline: mesh"),
+        },
+        nullptr);
   }
 
   framebuffer_->updateDrawable(surfaceTextures.color);
