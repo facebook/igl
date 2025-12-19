@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.view.Gravity;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -38,6 +39,9 @@ public class SampleActivity extends Activity implements View.OnClickListener {
   @Override
   protected void onCreate(Bundle icicle) {
     super.onCreate(icicle);
+
+    // Keep screen on during benchmark - prevents the activity from going to sleep
+    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
     // configure the mainview
     mMainView = new LinearLayout(this);
@@ -67,14 +71,18 @@ public class SampleActivity extends Activity implements View.OnClickListener {
       if (mConfigs[i].version.flavor == SampleLib.BackendFlavor.Vulkan) {
         backendView =
             new VulkanView(
-                getApplication(), mConfigs[i].version, mConfigs[i].swapchainColorTextureFormat);
+                getApplication(),
+                mConfigs[i].version,
+                mConfigs[i].swapchainColorTextureFormat,
+                getIntent());
       } else if (mConfigs[i].version.flavor == SampleLib.BackendFlavor.OpenGL_ES) {
         backendView =
             new SampleView(
                 getApplication(),
                 mConfigs[i].version,
                 mConfigs[i].swapchainColorTextureFormat,
-                mEnableStencilBuffer);
+                mEnableStencilBuffer,
+                getIntent());
         ((SampleView) backendView).onPause();
       }
 

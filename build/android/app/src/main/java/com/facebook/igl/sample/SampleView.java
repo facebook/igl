@@ -10,11 +10,13 @@
 package com.facebook.igl.shell;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.opengl.EGL15;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
 import android.view.MotionEvent;
+import java.util.concurrent.CountDownLatch;
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
@@ -27,30 +29,38 @@ public class SampleView extends GLSurfaceView {
   private static String TAG = "SampleView";
   private float lastTouchX = 0.0f;
   private float lastTouchY = 0.0f;
+  private CountDownLatch renderSessionInitLatch = new CountDownLatch(1);
+  private Intent mIntent;
 
   public SampleView(
       Context context,
       SampleLib.BackendVersion backendVersion,
       int swapchainColorTextureFormat,
-      boolean enableStencilBuffer) {
+      boolean enableStencilBuffer,
+      Intent intent) {
     super(context);
-    init(context, backendVersion, swapchainColorTextureFormat, enableStencilBuffer);
+    init(context, backendVersion, swapchainColorTextureFormat, enableStencilBuffer, intent);
   }
 
   public SampleView(
-      Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat) {
+      Context context,
+      SampleLib.BackendVersion backendVersion,
+      int swapchainColorTextureFormat,
+      Intent intent) {
     super(context);
-    init(context, backendVersion, swapchainColorTextureFormat, false);
+    init(context, backendVersion, swapchainColorTextureFormat, false, intent);
   }
 
   private void init(
       Context context,
       SampleLib.BackendVersion backendVersion,
       int swapchainColorTextureFormat,
-      boolean enableStencilBuffer) {
+      boolean enableStencilBuffer,
+      Intent intent) {
 
     // Uncomment to attach debugging
     // android.os.Debug.waitForDebugger();
+    mIntent = intent;
 
     setEGLContextFactory(new ContextFactory(backendVersion));
 
@@ -62,7 +72,17 @@ public class SampleView extends GLSurfaceView {
 
     setEGLConfigChooser(new ConfigChooser(backendVersion, enableStencilBuffer));
 
-    setRenderer(new Renderer(context, backendVersion, swapchainColorTextureFormat));
+    setRenderer(
+        new Renderer(
+            context, backendVersion, swapchainColorTextureFormat, renderSessionInitLatch, mIntent));
+  }
+
+  public boolean isRenderSessionInitialized() {
+    return renderSessionInitLatch.getCount() == 0;
+  }
+
+  public void awaitRenderSessionInitialization() throws InterruptedException {
+    renderSessionInitLatch.await();
   }
 
   @Override
@@ -214,18 +234,30 @@ public class SampleView extends GLSurfaceView {
   /// Renderer: This class communicates with our JNI library to implement the OpenGL rendering.
   private static class Renderer implements GLSurfaceView.Renderer {
     private final Context mContext;
+    private final Intent mIntent;
     private final SampleLib.BackendVersion mBackendVersion;
     private final int mSwapchainColorTextureFormat;
+    private CountDownLatch mRenderSessionInitLatch;
 
     Renderer(
-        Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat) {
+        Context context,
+        SampleLib.BackendVersion backendVersion,
+        int swapchainColorTextureFormat,
+        CountDownLatch renderSessionInitLatch,
+        Intent intent) {
       mContext = context;
+      mIntent = intent;
       mBackendVersion = backendVersion;
       mSwapchainColorTextureFormat = swapchainColorTextureFormat;
+      mRenderSessionInitLatch = renderSessionInitLatch;
     }
 
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-      SampleLib.init(mBackendVersion, mSwapchainColorTextureFormat, mContext.getAssets(), null);
+      SampleLib.init(
+          mBackendVersion, mSwapchainColorTextureFormat, mContext.getAssets(), null, mIntent);
+
+      // Signal that application has being started.
+      mRenderSessionInitLatch.countDown();
     }
 
     public void onSurfaceChanged(GL10 gl, int width, int height) {
@@ -233,7 +265,19 @@ public class SampleView extends GLSurfaceView {
     }
 
     public void onDrawFrame(GL10 gl) {
-      SampleLib.render(mContext.getResources().getDisplayMetrics().density);
+      boolean shouldExit = SampleLib.render(mContext.getResources().getDisplayMetrics().density);
+      if (shouldExit) {
+        android.util.Log.i(
+            "igl", "[IGL Benchmark] Java: Benchmark complete, waiting for logs to flush...");
+        // Give logcat time to flush the final report before killing the process
+        try {
+          Thread.sleep(2000);
+        } catch (InterruptedException e) {
+          // Ignore
+        }
+        android.util.Log.i("igl", "[IGL Benchmark] Java: Exiting process");
+        System.exit(0);
+      }
     }
   }
 }
