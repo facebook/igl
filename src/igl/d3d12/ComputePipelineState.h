@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+#pragma once
+
+#include <igl/ComputePipelineState.h>
+#include <igl/d3d12/Common.h>
+
+namespace igl::d3d12 {
+
+class ComputePipelineState final : public IComputePipelineState {
+ public:
+  ComputePipelineState(const ComputePipelineDesc& desc,
+                       igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState,
+                       igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature);
+  ~ComputePipelineState() override = default;
+
+  std::shared_ptr<IComputePipelineReflection> computePipelineReflection() override;
+
+  // D3D12-specific accessors
+  ID3D12PipelineState* getPipelineState() const {
+    return pipelineState_.Get();
+  }
+  ID3D12RootSignature* getRootSignature() const {
+    return rootSignature_.Get();
+  }
+
+ private:
+  ComputePipelineDesc desc_;
+  igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState_;
+  igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature_;
+  std::shared_ptr<IComputePipelineReflection> reflection_;
+};
+
+} // namespace igl::d3d12
