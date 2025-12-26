@@ -32,6 +32,12 @@
 #define IGL_VULKAN_SUPPORTED 0
 #endif
 
+#if IGL_PLATFORM_WINDOWS && defined(IGL_BACKEND_ENABLE_D3D12) && !defined(IGL_UNIT_TESTS_NO_D3D12)
+#define IGL_D3D12_SUPPORTED 1
+#else
+#define IGL_D3D12_SUPPORTED 0
+#endif
+
 namespace igl::tests::util::device {
 
 struct TestDeviceConfig {
@@ -44,7 +50,9 @@ struct TestDeviceConfig {
  */
 bool isBackendTypeSupported(BackendType backendType);
 
-#if IGL_OPENGL_SUPPORTED
+#if IGL_D3D12_SUPPORTED
+constexpr BackendType kDefaultBackendType = BackendType::D3D12;
+#elif IGL_OPENGL_SUPPORTED
 constexpr BackendType kDefaultBackendType = BackendType::OpenGL;
 #elif IGL_VULKAN_SUPPORTED
 constexpr BackendType kDefaultBackendType = BackendType::Vulkan;

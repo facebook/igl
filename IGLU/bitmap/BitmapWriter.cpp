@@ -13,6 +13,11 @@
 
 namespace igl::iglu {
 namespace {
+
+#if defined(_MSC_VER)
+#pragma pack(push, 1)
+#endif
+
 struct BMPHeader {
   // Bitmap file header
   uint16_t signature = 0x4D42; // Signature ("BM" in ASCII), default value 0x4D42 for BMP format
@@ -33,7 +38,15 @@ struct BMPHeader {
   int32_t verticalResolution = 0; // Vertical resolution in pixels per meter
   uint32_t numColors = 0; // Number of colors in the color palette
   uint32_t importantColors = 0; // Number of important colors used
-} __attribute__((packed));
+}
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((packed))
+#endif
+;
+
+#if defined(_MSC_VER)
+#pragma pack(pop)
+#endif
 
 struct BufferOffsets {
   size_t r;

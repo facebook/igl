@@ -293,6 +293,25 @@ void main() {
   }
 #endif // IGL_BACKEND_OPENGL
 
+  case igl::BackendType::D3D12: {
+    static const char* kVS = R"(
+cbuffer UniformsPerFrame : register(b0) { float4x4 proj; float4x4 view; };
+cbuffer UniformsPerObject : register(b1) { float4x4 model; };
+struct VSInput { float3 pos:POSITION; float3 col:COLOR; float2 st:TEXCOORD0; };
+struct PSInput { float4 position:SV_POSITION; float3 color:COLOR; float2 uv:TEXCOORD0; };
+PSInput main(VSInput input){ PSInput o; float4 p = mul(model, float4(input.pos,1)); p=mul(view,p); o.position=mul(proj,p); o.color=input.col; o.uv=input.st; return o; }
+)";
+
+    static const char* kPS = R"(
+Texture2D uTex0:register(t0); Texture2D uTex1:register(t1); SamplerState s0:register(s0); SamplerState s1:register(s1);
+struct PSInput { float4 position:SV_POSITION; float3 color:COLOR; float2 uv:TEXCOORD0; };
+float4 main(PSInput input):SV_TARGET{ float3 t0=uTex0.Sample(s0,input.uv*2).rgb; float3 t1=uTex1.Sample(s1,input.uv).rgb; return float4(2.0*input.color*(t0*t1),1.0); }
+)";
+
+    return igl::ShaderStagesCreator::fromModuleStringInput(
+        device, kVS, "main", "", kPS, "main", "", nullptr);
+  }
+
   default:
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return nullptr;

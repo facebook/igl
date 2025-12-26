@@ -790,6 +790,34 @@ bool Device::getFeatureLimitsInternal(DeviceFeatureLimits featureLimits, size_t&
   case DeviceFeatureLimits::MaxBindBytesBytes:
     result = 0;
     return true;
+  case DeviceFeatureLimits::MaxTextureDimension3D:
+    result = limits.maxImageDimension3D;
+    return true;
+  case DeviceFeatureLimits::MaxComputeWorkGroupSizeX:
+    result = limits.maxComputeWorkGroupSize[0];
+    return true;
+  case DeviceFeatureLimits::MaxComputeWorkGroupSizeY:
+    result = limits.maxComputeWorkGroupSize[1];
+    return true;
+  case DeviceFeatureLimits::MaxComputeWorkGroupSizeZ:
+    result = limits.maxComputeWorkGroupSize[2];
+    return true;
+  case DeviceFeatureLimits::MaxComputeWorkGroupInvocations:
+    result = limits.maxComputeWorkGroupInvocations;
+    return true;
+  case DeviceFeatureLimits::MaxVertexInputAttributes:
+    result = limits.maxVertexInputAttributes;
+    return true;
+  case DeviceFeatureLimits::MaxColorAttachments:
+    result = limits.maxColorAttachments;
+    return true;
+  // D3D12-specific descriptor heap limits - not applicable to Vulkan
+  case DeviceFeatureLimits::MaxDescriptorHeapCbvSrvUav:
+  case DeviceFeatureLimits::MaxDescriptorHeapSamplers:
+  case DeviceFeatureLimits::MaxDescriptorHeapRtvs:
+  case DeviceFeatureLimits::MaxDescriptorHeapDsvs:
+    result = 0;
+    return false;
   }
 
   IGL_DEBUG_ABORT("DeviceFeatureLimits value not handled: %d", (int)featureLimits);

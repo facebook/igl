@@ -80,6 +80,21 @@ struct BufferDesc {
   /** @brief Identifier used for debugging */
   std::string debugName;
 
+  /**
+   * @brief Element stride in bytes for storage buffers.
+   *
+   * For buffers created with BufferTypeBits::Storage, this describes the size of a single
+   * structured element when the buffer is viewed as a StructuredBuffer / RWStructuredBuffer.
+   *
+   * Backends that create structured SRV/UAV views (such as D3D12) use this value to populate
+   * D3D12_BUFFER_SRV / D3D12_BUFFER_UAV StructureByteStride and to compute NumElements.
+   *
+   * A value of 0 means "unknown/unspecified" and backends may fall back to a default
+   * element size (typically 4 bytes) for compatibility with existing code that assumes
+   * float / uint elements.
+   */
+  size_t storageStride = 0;
+
   BufferDesc(BufferType type = 0,
              const void* IGL_NULLABLE data = nullptr,
              size_t length = 0,

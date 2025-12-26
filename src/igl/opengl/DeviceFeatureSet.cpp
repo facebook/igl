@@ -1137,6 +1137,59 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
   case DeviceFeatureLimits::MaxBindBytesBytes:
     result = 0;
     return true;
+  case DeviceFeatureLimits::MaxTextureDimension3D:
+    glContext_.getIntegerv(GL_MAX_3D_TEXTURE_SIZE, &tsize);
+    result = (size_t)tsize;
+    return true;
+  case DeviceFeatureLimits::MaxComputeWorkGroupSizeX:
+    if (hasFeature(DeviceFeatures::Compute)) {
+      // OpenGL ES 3.1+ and OpenGL 4.3+: use conservative value
+      result = 64;
+    } else {
+      result = 0;
+    }
+    return true;
+  case DeviceFeatureLimits::MaxComputeWorkGroupSizeY:
+    if (hasFeature(DeviceFeatures::Compute)) {
+      // OpenGL ES 3.1+ and OpenGL 4.3+: use conservative value
+      result = 64;
+    } else {
+      result = 0;
+    }
+    return true;
+  case DeviceFeatureLimits::MaxComputeWorkGroupSizeZ:
+    if (hasFeature(DeviceFeatures::Compute)) {
+      // OpenGL ES 3.1+ and OpenGL 4.3+: use conservative value
+      result = 64;
+    } else {
+      result = 0;
+    }
+    return true;
+  case DeviceFeatureLimits::MaxComputeWorkGroupInvocations:
+    if (hasFeature(DeviceFeatures::Compute)) {
+#if defined(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS)
+      glContext_.getIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &tsize);
+      result = (size_t)tsize;
+#endif
+    } else {
+      result = 0;
+    }
+    return true;
+  // D3D12-specific descriptor heap limits - not applicable to OpenGL
+  case DeviceFeatureLimits::MaxDescriptorHeapCbvSrvUav:
+  case DeviceFeatureLimits::MaxDescriptorHeapSamplers:
+  case DeviceFeatureLimits::MaxDescriptorHeapRtvs:
+  case DeviceFeatureLimits::MaxDescriptorHeapDsvs:
+    result = 0;
+    return false;
+  case DeviceFeatureLimits::MaxVertexInputAttributes:
+    glContext_.getIntegerv(GL_MAX_VERTEX_ATTRIBS, &tsize);
+    result = (size_t)tsize;
+    return true;
+  case DeviceFeatureLimits::MaxColorAttachments:
+    glContext_.getIntegerv(GL_MAX_COLOR_ATTACHMENTS, &tsize);
+    result = (size_t)tsize;
+    return true;
   default:
     IGL_DEBUG_ABORT(
         "invalid feature limit query: feature limit query is not implemented or does "

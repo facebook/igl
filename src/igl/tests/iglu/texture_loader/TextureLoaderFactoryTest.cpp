@@ -32,6 +32,13 @@ class TextureLoaderFactoryTest : public ::testing::Test {
     ASSERT_TRUE(cmdQueue_ != nullptr);
   }
 
+  void TearDown() override {
+    // T32: Explicitly release device and command queue to prevent D3D12 resource accumulation
+    // across many tests. This ensures D3D12 resources are freed before the next test starts.
+    cmdQueue_.reset();
+    iglDev_.reset();
+  }
+
   static std::vector<std::unique_ptr<iglu::textureloader::ITextureLoaderFactory>>
   createLoaderFactories() {
     std::vector<std::unique_ptr<iglu::textureloader::ITextureLoaderFactory>> factories;

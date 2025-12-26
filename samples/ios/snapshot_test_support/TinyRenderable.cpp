@@ -112,6 +112,9 @@ std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& devi
   case igl::BackendType::Custom:
     IGL_DEBUG_ABORT("IGLSamples not set up for Custom");
     return nullptr;
+  case igl::BackendType::D3D12:
+    IGL_DEBUG_ABORT("IGLSamples not set up for D3D12");
+    return nullptr;
   // @fb-only
     // @fb-only
     // @fb-only

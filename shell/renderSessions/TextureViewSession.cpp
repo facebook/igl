@@ -147,6 +147,27 @@ std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& devi
                                                            "main",
                                                            "",
                                                            nullptr);
+  case igl::BackendType::D3D12: {
+    static const char* kVS = R"(
+      cbuffer PushConstants : register(b2) { float4x4 mvpMatrix; };
+      struct VSIn { float3 position : POSITION; float2 uv : TEXCOORD0; };
+      struct VSOut { float4 position : SV_POSITION; float2 uv : TEXCOORD0; };
+      VSOut main(VSIn v) {
+        VSOut o;
+        o.position = mul(mvpMatrix, float4(v.position, 1.0));
+        o.uv = v.uv;
+        return o;
+      }
+    )";
+    static const char* kPS = R"(
+      Texture2D<float4> input2D : register(t0);
+      SamplerState linearSampler : register(s0);
+      struct PSIn { float4 position : SV_POSITION; float2 uv : TEXCOORD0; };
+      float4 main(PSIn i) : SV_TARGET { return input2D.Sample(linearSampler, i.uv); }
+    )";
+    return igl::ShaderStagesCreator::fromModuleStringInput(
+        device, kVS, "main", "", kPS, "main", "", nullptr);
+  }
   case igl::BackendType::Custom:
     IGL_DEBUG_ABORT("IGLSamples not set up for Custom");
     return nullptr;
@@ -347,6 +368,8 @@ void TextureViewSession::update(SurfaceTextures surfaceTextures) noexcept {
     commands->bindPushConstants(&mvpMatrix, sizeof(mvpMatrix));
   } else if (device.getBackendType() == BackendType::Metal) {
     commands->bindBytes(0, BindTarget::kVertex, &mvpMatrix, sizeof(mvpMatrix));
+  } else if (device.getBackendType() == BackendType::D3D12) {
+    commands->bindPushConstants(&mvpMatrix, sizeof(mvpMatrix));
   } else {
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   }

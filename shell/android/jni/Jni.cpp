@@ -42,6 +42,9 @@ namespace {
   case BackendFlavor::Vulkan:
     str = "Vulkan";
     break;
+  case BackendFlavor::D3D12:
+    str = "D3D12";
+    break;
   // @fb-only
     // @fb-only
     // @fb-only

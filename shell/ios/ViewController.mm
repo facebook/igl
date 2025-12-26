@@ -217,6 +217,9 @@
   case igl::BackendFlavor::Vulkan:
     IGL_DEBUG_ABORT("IGL Samples not set up for Vulkan backend");
     break;
+  case igl::BackendFlavor::D3D12:
+    IGL_DEBUG_ABORT("IGL Samples not set up for D3D12 backend");
+    break;
   // @fb-only
     // @fb-only
     // @fb-only

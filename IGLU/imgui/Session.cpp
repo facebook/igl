@@ -13,6 +13,10 @@
 #include <IGLU/simple_renderer/Material.h>
 #include <igl/ShaderCreator.h>
 
+// D3D12 FXC precompiled shaders
+#include "imgui_ps_d3d12_fxc.h"
+#include "imgui_vs_d3d12_fxc.h"
+
 namespace iglu::imgui {
 
 /* internal renderer -- based on imgui_impl_metal.mm */
@@ -128,6 +132,55 @@ void main() {
 })";
 }
 
+// Note: D3D12 shader source functions are kept for reference but not used.
+// The D3D12 backend uses pre-compiled binary shaders.
+#if IGL_PLATFORM_WINDOWS
+static const char* getD3D12VertexShaderSource() {
+  return R"(
+cbuffer Uniforms : register(b0) {
+  float4x4 projectionMatrix;
+};
+
+struct VSInput {
+  float2 position : POSITION;
+  float2 uv : TEXCOORD0;
+  float4 color : COLOR;
+};
+
+struct PSInput {
+  float4 position : SV_Position;
+  float4 color : COLOR;
+  float2 uv : TEXCOORD0;
+};
+
+PSInput main(VSInput input) {
+  PSInput output;
+  // Column-major multiplication to match the CPU-side matrix format
+  // In HLSL: mul(vector, matrix) treats matrix as column-major
+  output.position = mul(float4(input.position.xy, 0, 1), projectionMatrix);
+  output.color = input.color;
+  output.uv = input.uv;
+  return output;
+})";
+}
+
+static const char* getD3D12FragmentShaderSource() {
+  return R"(
+struct PSInput {
+  float4 position : SV_Position;
+  float4 color : COLOR;
+  float2 uv : TEXCOORD0;
+};
+
+Texture2D tex : register(t0);
+SamplerState uSampler : register(s0);
+
+float4 main(PSInput input) : SV_Target {
+  return input.color * tex.Sample(uSampler, input.uv);
+})";
+}
+#endif
+
 static std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   igl::Result result;
   switch (device.getBackendType()) {
@@ -160,6 +213,19 @@ static std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevic
     const std::string fragmentStr = getOpenGLFragmentShaderSource(shaderVersion);
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device, vertexStr.c_str(), "main", "", fragmentStr.c_str(), "main", "", &result);
+  }
+  case igl::BackendType::D3D12: {
+    return igl::ShaderStagesCreator::fromModuleBinaryInput(device,
+                                                           _tmp_imgui_vs_fxc_cso,
+                                                           _tmp_imgui_vs_fxc_cso_len,
+                                                           "main",
+                                                           "Shader Module: imgui::vertex (D3D12)",
+                                                           _tmp_imgui_ps_fxc_cso,
+                                                           _tmp_imgui_ps_fxc_cso_len,
+                                                           "main",
+                                                           "Shader Module: imgui::fragment (D3D12)",
+                                                           &result);
+    break;
   }
   }
   IGL_UNREACHABLE_RETURN(nullptr)
@@ -293,7 +359,10 @@ Session::Renderer::Renderer(igl::IDevice& device) {
     material_->blendMode = iglu::material::BlendMode::Translucent();
 
     // @fb-only
-    if (device.getBackendType() != igl::BackendType::Vulkan) {
+    // D3D12 and Vulkan use direct slot binding, OpenGL/Metal use named binding
+    const bool usesDirectBinding = (device.getBackendType() == igl::BackendType::Vulkan ||
+                                    device.getBackendType() == igl::BackendType::D3D12);
+    if (!usesDirectBinding) {
       material_->shaderUniforms().setTexture("texture", fontTexture_.get(), linearSampler_);
     }
   }
@@ -326,7 +395,22 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
   // framebuffer coordinates)
   const int fbWidth = (int)(drawData->DisplaySize.x * drawData->FramebufferScale.x);
   const int fbHeight = (int)(drawData->DisplaySize.y * drawData->FramebufferScale.y);
+
+  IGL_LOG_INFO(
+      "ImGui renderDrawData: DisplaySize=(%.1f,%.1f), FramebufferScale=(%.1f,%.1f), fb=(%d,%d), "
+      "CmdLists=%d, TotalVtx=%d, TotalIdx=%d\n",
+      drawData->DisplaySize.x,
+      drawData->DisplaySize.y,
+      drawData->FramebufferScale.x,
+      drawData->FramebufferScale.y,
+      fbWidth,
+      fbHeight,
+      drawData->CmdListsCount,
+      drawData->TotalVtxCount,
+      drawData->TotalIdxCount);
+
   if (fbWidth <= 0 || fbHeight <= 0 || drawData->CmdListsCount == 0) {
+    IGL_LOG_INFO("ImGui renderDrawData: Early return (invalid dimensions or no command lists)\n");
     return;
   }
 
@@ -352,7 +436,10 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
     orthoProjection.columns[1] = float4{0.0f, 2.0f / (t - b), 0.0f, 0.0f};
     orthoProjection.columns[2] = float4{0.0f, 0.0f, -1.0f, 0.0f};
     orthoProjection.columns[3] = float4{(r + l) / (l - r), (t + b) / (b - t), 0.0f, 1.0f};
-    if (device.getBackendType() != igl::BackendType::Vulkan) {
+    // D3D12 and Vulkan use direct slot binding, OpenGL/Metal use named binding
+    const bool usesDirectBinding = (device.getBackendType() == igl::BackendType::Vulkan ||
+                                    device.getBackendType() == igl::BackendType::D3D12);
+    if (!usesDirectBinding) {
       material_->shaderUniforms().setFloat4x4(igl::genNameHandle("projectionMatrix"),
                                               orthoProjection);
     }
@@ -368,6 +455,8 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
 
   const bool isOpenGL = device.getBackendType() == igl::BackendType::OpenGL;
   const bool isVulkan = device.getBackendType() == igl::BackendType::Vulkan;
+  const bool isD3D12 = device.getBackendType() == igl::BackendType::D3D12;
+  const bool usesDirectBinding = isVulkan || isD3D12;
 
   ImTextureID lastBoundTextureId = nullptr;
 
@@ -410,7 +499,8 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
       if (cmd.TextureId != lastBoundTextureId) {
         lastBoundTextureId = cmd.TextureId;
         auto* tex = reinterpret_cast<igl::ITexture*>(cmd.TextureId);
-        if (isVulkan) {
+        if (usesDirectBinding) {
+          // D3D12 and Vulkan use direct slot binding
           // @fb-only
           // Add Vulkan support for texture reflection info in ShaderUniforms so we don't need to
           // bind the texture directly
@@ -428,7 +518,7 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
       drawableData.drawable->draw(device,
                                   cmdEncoder,
                                   renderPipelineDesc_,
-                                  isVulkan ? sizeof(orthoProjection) : 0,
+                                  usesDirectBinding ? sizeof(orthoProjection) : 0,
                                   &orthoProjection);
     }
   }

@@ -28,6 +28,8 @@ std::string BackendTypeToString(BackendType backendType) {
     return "Metal";
   case BackendType::Vulkan:
     return "Vulkan";
+  case BackendType::D3D12:
+    return "D3D12";
   // @fb-only
     // @fb-only
   case BackendType::Custom:

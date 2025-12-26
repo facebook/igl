@@ -155,18 +155,30 @@ enum class DeviceRequirement {
  * @brief DeviceFeatureLimits provides specific limitations on certain features supported on the
  * device
  *
- * BufferAlignment              Required byte alignment for buffer data
- * BufferNoCopyAlignment        Required byte alignment for no copy buffer data
- * MaxBindBytesBytes            Maximum number of bytes that can be bound with bindBytes
- * MaxCubeMapDimension          Maximum cube map dimensions
- * MaxFragmentUniformVectors    Maximum fragment uniform vectors
- * MaxMultisampleCount          Maximum number of samples
- * MaxPushConstantBytes         Maximum number of bytes for Push Constants
- * MaxTextureDimension1D2D      Maximum texture dimensions
- * MaxUniformBufferBytes        Maximum number of bytes for a uniform buffer
- * MaxStorageBufferBytes        Maximum number of bytes for storage buffers
- * MaxVertexUniformVectors      Maximum vertex uniform vectors
- * PushConstantsAlignment       Required byte alignment for push constants data
+ * BufferAlignment                      Required byte alignment for buffer data
+ * BufferNoCopyAlignment                Required byte alignment for no copy buffer data
+ * MaxBindBytesBytes                    Maximum number of bytes that can be bound with bindBytes
+ * MaxCubeMapDimension                  Maximum cube map dimensions
+ * MaxFragmentUniformVectors            Maximum fragment uniform vectors
+ * MaxMultisampleCount                  Maximum number of samples
+ * MaxPushConstantBytes                 Maximum number of bytes for Push Constants
+ * MaxTextureDimension1D2D              Maximum texture dimensions for 1D and 2D textures
+ * MaxTextureDimension3D                Maximum texture dimensions for 3D textures
+ * MaxStorageBufferBytes                Maximum number of bytes for storage buffers
+ * MaxUniformBufferBytes                Maximum number of bytes for a uniform buffer
+ * MaxVertexUniformVectors              Maximum vertex uniform vectors
+ * PushConstantsAlignment               Required byte alignment for push constants data
+ * ShaderStorageBufferOffsetAlignment   Required byte alignment for shader storage buffer offset
+ * MaxComputeWorkGroupSizeX             Maximum compute work group size in X dimension
+ * MaxComputeWorkGroupSizeY             Maximum compute work group size in Y dimension
+ * MaxComputeWorkGroupSizeZ             Maximum compute work group size in Z dimension
+ * MaxComputeWorkGroupInvocations       Maximum total compute work group invocations
+ * MaxVertexInputAttributes             Maximum number of vertex input attributes
+ * MaxColorAttachments                  Maximum number of color attachments (render targets)
+ * MaxDescriptorHeapCbvSrvUav           Maximum CBV/SRV/UAV descriptors in shader-visible heap
+ * (I-005) MaxDescriptorHeapSamplers            Maximum sampler descriptors in shader-visible heap
+ * (I-005) MaxDescriptorHeapRtvs                Maximum RTV descriptors in CPU-visible heap (I-005)
+ * MaxDescriptorHeapDsvs                Maximum DSV descriptors in CPU-visible heap (I-005)
  */
 enum class DeviceFeatureLimits {
   BufferAlignment = 0,
@@ -177,11 +189,23 @@ enum class DeviceFeatureLimits {
   MaxMultisampleCount,
   MaxPushConstantBytes,
   MaxTextureDimension1D2D,
+  MaxTextureDimension3D,
   MaxStorageBufferBytes,
   MaxUniformBufferBytes,
   MaxVertexUniformVectors,
   PushConstantsAlignment,
   ShaderStorageBufferOffsetAlignment,
+  MaxComputeWorkGroupSizeX,
+  MaxComputeWorkGroupSizeY,
+  MaxComputeWorkGroupSizeZ,
+  MaxComputeWorkGroupInvocations,
+  MaxVertexInputAttributes,
+  MaxColorAttachments,
+  // I-005: Descriptor heap size limits for cross-platform compatibility
+  MaxDescriptorHeapCbvSrvUav,
+  MaxDescriptorHeapSamplers,
+  MaxDescriptorHeapRtvs,
+  MaxDescriptorHeapDsvs,
 };
 
 /**
@@ -193,7 +217,7 @@ enum class DeviceFeatureLimits {
  * Metal         Metal API (macOS, iOS, etc.)
  * SpirV         Standard Portable Intermediate Representation open standard format
  */
-enum class ShaderFamily : uint8_t { Unknown, Glsl, GlslEs, Metal, SpirV };
+enum class ShaderFamily : uint8_t { Unknown, Glsl, GlslEs, Metal, SpirV, Hlsl };
 
 /**
  * @brief ShaderVersion provides information on the shader family type and version

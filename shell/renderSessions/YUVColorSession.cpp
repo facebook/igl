@@ -96,6 +96,7 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Metal:
   case igl::BackendType::Custom:
+  case igl::BackendType::D3D12: // D3D12 YUV shaders not yet implemented
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
   case igl::BackendType::Vulkan:

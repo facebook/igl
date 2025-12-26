@@ -286,6 +286,27 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
   case DeviceFeatureLimits::MaxBindBytesBytes:
     result = 4096;
     return true;
+  case DeviceFeatureLimits::MaxTextureDimension3D:
+#if IGL_PLATFORM_IOS
+    result = (gpuFamily_ <= 2) ? 2048 : 2048;
+#else
+    result = 2048;
+#endif
+    return true;
+  case DeviceFeatureLimits::MaxComputeWorkGroupSizeX:
+  case DeviceFeatureLimits::MaxComputeWorkGroupSizeY:
+  case DeviceFeatureLimits::MaxComputeWorkGroupSizeZ:
+    result = 1024;
+    return true;
+  case DeviceFeatureLimits::MaxComputeWorkGroupInvocations:
+    result = 1024;
+    return true;
+  case DeviceFeatureLimits::MaxVertexInputAttributes:
+    result = 31;
+    return true;
+  case DeviceFeatureLimits::MaxColorAttachments:
+    result = 8;
+    return true;
   default:
     IGL_DEBUG_ABORT(
         "invalid feature limit query: feature limit query is not implemented or does not exist\n");

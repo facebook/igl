@@ -50,6 +50,8 @@ Color IDevice::backendDebugColor() const noexcept {
     return {1.f, 0.f, 1.f, 1.f};
   case BackendType::Vulkan:
     return {0.f, 1.f, 1.f, 1.f};
+  case BackendType::D3D12:
+    return {0.f, 1.f, 1.f, 1.f}; // Match Vulkan for parity testing
   // @fb-only
     // @fb-only
   case BackendType::Custom:

@@ -28,6 +28,7 @@ using Deleter = void (*)(void* IGL_NULLABLE);
 
 /// Device Capabilities or Metal Features
 constexpr uint32_t IGL_TEXTURE_SAMPLERS_MAX = 16;
+
 constexpr uint32_t IGL_VERTEX_ATTRIBUTES_MAX = 24;
 
 // maximum number of buffers that can be bound to a shader stage
@@ -136,6 +137,7 @@ enum class BackendType {
   OpenGL,
   Metal,
   Vulkan,
+  D3D12,
   // @fb-only
   Custom,
 };
@@ -146,6 +148,7 @@ enum class BackendFlavor : uint8_t {
   OpenGL_ES,
   Metal,
   Vulkan,
+  D3D12,
   // @fb-only
 };
 

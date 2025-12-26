@@ -190,6 +190,12 @@
 #define IGL_BACKEND_VULKAN 0
 #endif
 
+#if defined(IGL_BACKEND_ENABLE_D3D12)
+#define IGL_BACKEND_D3D12 1
+#else
+#define IGL_BACKEND_D3D12 0
+#endif
+
 // @fb-only
 // @fb-only
 // @fb-only

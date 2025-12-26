@@ -77,36 +77,65 @@ TEST_F(ShaderModuleTest, CompileShaderModule) {
   Result ret;
 
   const char* source = nullptr;
-  if (backend_ == util::kBackendOgl) {
+
+  const auto be = iglDev_->getBackendType();
+  if (be == BackendType::OpenGL) {
     source = data::shader::kOglSimpleVertShader.data();
-  } else if (backend_ == util::kBackendMtl) {
+  } else if (be == BackendType::Metal) {
     source = data::shader::kMtlSimpleShader.data();
-  } else if (backend_ == util::kBackendVul) {
+  } else if (be == BackendType::Vulkan) {
     source = data::shader::kVulkanSimpleVertShader.data();
+  } else if (be == BackendType::D3D12) {
+    // Minimal HLSL vertex shader for D3D12 backend
+    source = R"(
+struct VSIn { float4 position_in : POSITION; float2 uv_in : TEXCOORD0; };
+struct VSOut { float4 position : SV_POSITION; float2 uv : TEXCOORD0; };
+VSOut vertexShader(VSIn i) { VSOut o; o.position = i.position_in; o.uv = i.uv_in; return o; }
+VSOut main(VSIn i) { return vertexShader(i); }
+)";
   } else {
     ASSERT_TRUE(0);
   }
 
   auto shaderModule = ShaderModuleCreator::fromStringInput(
-      *iglDev_, source, {ShaderStage::Vertex, "vertexShader"}, "test", &ret);
+      *iglDev_,
+      source,
+      {ShaderStage::Vertex,
+       (be == BackendType::D3D12) ? std::string("main") : std::string("vertexShader")},
+      "test",
+      &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(shaderModule != nullptr);
 }
 
 TEST_F(ShaderModuleTest, CompileShaderModuleNoResult) {
   const char* source = nullptr;
-  if (backend_ == util::kBackendOgl) {
+  const auto be2 = iglDev_->getBackendType();
+  if (be2 == BackendType::OpenGL) {
     source = data::shader::kOglSimpleVertShader.data();
-  } else if (backend_ == util::kBackendMtl) {
+  } else if (be2 == BackendType::Metal) {
     source = data::shader::kMtlSimpleShader.data();
-  } else if (backend_ == util::kBackendVul) {
+  } else if (be2 == BackendType::Vulkan) {
     source = data::shader::kVulkanSimpleVertShader.data();
+  } else if (be2 == BackendType::D3D12) {
+    // Minimal HLSL vertex shader for D3D12 backend
+    source = R"(
+struct VSIn { float4 position_in : POSITION; float2 uv_in : TEXCOORD0; };
+struct VSOut { float4 position : SV_POSITION; float2 uv : TEXCOORD0; };
+VSOut vertexShader(VSIn i) { VSOut o; o.position = i.position_in; o.uv = i.uv_in; return o; }
+VSOut main(VSIn i) { return vertexShader(i); }
+)";
   } else {
     ASSERT_TRUE(0);
   }
 
   auto shaderModule = ShaderModuleCreator::fromStringInput(
-      *iglDev_, source, {ShaderStage::Vertex, "vertexShader"}, "test", nullptr);
+      *iglDev_,
+      source,
+      {ShaderStage::Vertex,
+       (be2 == BackendType::D3D12) ? std::string("main") : std::string("vertexShader")},
+      "test",
+      nullptr);
   ASSERT_TRUE(shaderModule != nullptr);
 }
 } // namespace igl::tests

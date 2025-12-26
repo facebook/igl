@@ -9,6 +9,10 @@
 #include "data/VertexIndexData.h"
 #include "util/Common.h"
 
+#if IGL_PLATFORM_WINDOWS
+#include <windows.h>
+#endif
+
 #include <string>
 #include <igl/CommandBuffer.h>
 #include <igl/RenderPass.h>
@@ -31,7 +35,23 @@ namespace igl::tests {
 class DeviceTest : public ::testing::Test {
  public:
   DeviceTest() = default;
-  ~DeviceTest() override = default;
+  ~DeviceTest() override {
+    // [Alexey] TODO: Somehow D3D12 is sensitive to the order of destruction
+    // of resources and D3D debug layer report leaks
+    // I suspect that might be the actual issue, but it requires deeper D3D12 backend investigation
+    // first Release all GPU resources before destroying the device Resources must be released in
+    // reverse order of creation and before the device is destroyed to avoid VMA cleanup issues
+    if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
+      ib_.reset();
+      vertexInputState_.reset();
+      shaderStages_.reset();
+      framebuffer_.reset();
+      offscreenTexture_.reset();
+      cmdBuf_.reset();
+      cmdQueue_.reset();
+      iglDev_.reset();
+    }
+  }
 
   // Set up common resources. This will create a device and a command queue
   void SetUp() override {
@@ -205,8 +225,9 @@ TEST_F(DeviceTest, GetBackendType) {
     ASSERT_EQ(backend_, util::kBackendOgl);
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
     ASSERT_EQ(backend_, util::kBackendVul);
+  } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
+    ASSERT_EQ(backend_, util::kBackendD3D12);
   } else {
-    // Unknow backend. Please add to this test.
     ASSERT_TRUE(0);
   }
 }

@@ -190,7 +190,7 @@ static GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
 #if IGL_PLATFORM_WINDOWS
     auto ctx = std::make_unique<igl::opengl::wgl::Context>(GetDC(glfwGetWin32Window(window)),
                                                            glfwGetWGLContext(window));
-    device_ = std::make_unique<igl::opengl::wgl::Device>(std::move(ctx));
+    device = std::make_unique<igl::opengl::wgl::Device>(std::move(ctx));
 #elif IGL_PLATFORM_LINUX
     auto ctx = std::make_unique<igl::opengl::glx::Context>(
         nullptr,
@@ -198,7 +198,7 @@ static GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
         (igl::opengl::glx::GLXDrawable)glfwGetX11Window(window),
         (igl::opengl::glx::GLXContext)glfwGetGLXContext(window));
 
-    device_ = std::make_unique<igl::opengl::glx::Device>(std::move(ctx));
+    device = std::make_unique<igl::opengl::glx::Device>(std::move(ctx));
 #endif
 #else
     const igl::vulkan::VulkanContextConfig cfg{
@@ -298,13 +298,13 @@ static std::shared_ptr<ITexture> getNativeDrawable() {
   std::shared_ptr<ITexture> drawable;
 #if USE_OPENGL_BACKEND
 #if IGL_PLATFORM_WINDOWS
-  const auto& platformDevice = device_->getPlatformDevice<opengl::wgl::PlatformDevice>();
+  const auto& platformDevice = device->getPlatformDevice<opengl::wgl::PlatformDevice>();
   IGL_DEBUG_ASSERT(platformDevice != nullptr);
   drawable = platformDevice->createTextureFromNativeDrawable(&ret);
 #elif IGL_PLATFORM_LINUX
-  const auto& platformDevice = device_->getPlatformDevice<opengl::glx::PlatformDevice>();
+  const auto& platformDevice = device->getPlatformDevice<opengl::glx::PlatformDevice>();
   IGL_DEBUG_ASSERT(platformDevice != nullptr);
-  drawable = platformDevice->createTextureFromNativeDrawable(width_, height_, &ret);
+  drawable = platformDevice->createTextureFromNativeDrawable(width, height, &ret);
 #endif
 #else
   const auto& platformDevice = device->getPlatformDevice<igl::vulkan::PlatformDevice>();

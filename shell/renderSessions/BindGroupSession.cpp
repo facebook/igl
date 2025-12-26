@@ -208,6 +208,56 @@ std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& devi
                                                            "",
                                                            nullptr);
     return nullptr;
+  case igl::BackendType::D3D12: {
+    // D3D12 HLSL shaders using register bindings
+    static const char* kVS = R"(
+      cbuffer PerFrame : register(b1) {
+        float4x4 mvpMatrix;
+      };
+
+      struct VSInput {
+        float3 position : POSITION;
+        float2 uvw : TEXCOORD0;
+        float3 color_in : COLOR0;
+      };
+
+      struct VSOutput {
+        float4 position : SV_POSITION;
+        float2 uv : TEXCOORD0;
+        float4 color : COLOR0;
+      };
+
+      VSOutput main(VSInput input) {
+        VSOutput output;
+        output.position = mul(mvpMatrix, float4(input.position, 1.0));
+        output.uv = input.uvw;
+        output.color = float4(input.color_in, 1.0);
+        return output;
+      }
+    )";
+
+    static const char* kPS = R"(
+      Texture2D in_texture0 : register(t0);
+      Texture2D in_texture1 : register(t1);
+      SamplerState sampler0 : register(s0);
+      SamplerState sampler1 : register(s1);
+
+      struct PSInput {
+        float4 position : SV_POSITION;
+        float2 uv : TEXCOORD0;
+        float4 color : COLOR0;
+      };
+
+      float4 main(PSInput input) : SV_Target {
+        float4 tex0 = in_texture0.Sample(sampler0, input.uv);
+        float4 tex1 = in_texture1.Sample(sampler1, input.uv);
+        return tex0 * tex1 * input.color;
+      }
+    )";
+
+    return igl::ShaderStagesCreator::fromModuleStringInput(
+        device, kVS, "main", "", kPS, "main", "", nullptr);
+  }
   case igl::BackendType::Custom:
     IGL_DEBUG_ABORT("IGLSamples not set up for Custom");
     return nullptr;
@@ -247,10 +297,9 @@ void BindGroupSession::createSamplerAndTextures(const igl::IDevice& device) {
                                                imageData.desc.width,
                                                imageData.desc.height,
                                                igl::TextureDesc::TextureUsageBits::Sampled |
-                                                   TextureDesc::TextureUsageBits::Storage,
+                                                   igl::TextureDesc::TextureUsageBits::Attachment,
                                                "igl.png");
-    desc.numMipLevels =
-        igl::TextureDesc::calcNumMipLevels(imageData.desc.width, imageData.desc.height);
+    desc.numMipLevels = TextureDesc::calcNumMipLevels(imageData.desc.width, imageData.desc.height);
     tex0 = device.createTexture(desc, nullptr);
     tex0->upload(tex0->getFullRange(), imageData.data->data());
     tex0->generateMipmap(*commandQueue_);
@@ -262,9 +311,10 @@ void BindGroupSession::createSamplerAndTextures(const igl::IDevice& device) {
     TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::BGRA_UNorm8,
                                           texWidth,
                                           texHeight,
-                                          TextureDesc::TextureUsageBits::Sampled,
+                                          TextureDesc::TextureUsageBits::Sampled |
+                                              TextureDesc::TextureUsageBits::Attachment,
                                           "XOR pattern");
-    desc.numMipLevels = igl::TextureDesc::calcNumMipLevels(texWidth, texHeight);
+    desc.numMipLevels = TextureDesc::calcNumMipLevels(texWidth, texHeight);
     tex1 = getPlatform().getDevice().createTexture(desc, nullptr);
     std::vector<uint32_t> pixels(static_cast<size_t>(texWidth * texHeight));
     for (uint32_t y = 0; y != texHeight; y++) {

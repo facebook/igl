@@ -10,6 +10,7 @@
 #include <shell/renderSessions/TQSession.h>
 
 #include <IGLU/simdtypes/SimdTypes.h>
+#include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
@@ -61,8 +62,57 @@ std::string getMetalShaderSource() {
                 return float4(color->color.r, color->color.g, color->color.b, 1.0) *
                       tex;
               }
-    )";
+              )";
 }
+
+std::string getD3D12VertexShaderSource() {
+  return R"(
+                struct UniformsPerObject {
+                  float3 color;
+                };
+
+                cbuffer PerObject : register(b0) {
+                  UniformsPerObject perObject;
+                };
+
+                struct VSInput {
+                  float3 position : POSITION;
+                  float2 uv_in : TEXCOORD0;
+                };
+
+                struct VSOutput {
+                  float4 position : SV_POSITION;
+                  float2 uv : TEXCOORD0;
+                  float3 color : COLOR0;
+                };
+
+                VSOutput main(VSInput input) {
+                  VSOutput output;
+                  output.position = float4(input.position, 1.0);
+                  output.uv = input.uv_in;
+                  output.color = perObject.color;
+                  return output;
+                }
+                )";
+}
+
+std::string getD3D12FragmentShaderSource() {
+  return R"(
+                Texture2D in_texture : register(t0);
+                SamplerState in_sampler : register(s0);
+
+                struct PSInput {
+                  float4 position : SV_POSITION;
+                  float2 uv : TEXCOORD0;
+                  float3 color : COLOR0;
+                };
+
+                float4 main(PSInput input) : SV_Target {
+                  return float4(input.color, 1.0) * in_texture.Sample(in_sampler, input.uv);
+                }
+                )";
+}
+// @fb-only
 
 std::string getOpenGLVertexShaderSource() {
   return getVersion() + R"(
@@ -164,6 +214,15 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
                                                            "main",
                                                            "",
                                                            getOpenGLFragmentShaderSource().c_str(),
+                                                           "main",
+                                                           "",
+                                                           nullptr);
+  case igl::BackendType::D3D12:
+    return igl::ShaderStagesCreator::fromModuleStringInput(device,
+                                                           getD3D12VertexShaderSource().c_str(),
+                                                           "main",
+                                                           "",
+                                                           getD3D12FragmentShaderSource().c_str(),
                                                            "main",
                                                            "",
                                                            nullptr);
@@ -282,6 +341,11 @@ void TQSession::initialize() noexcept {
   // Command queue
   commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
+
+  // Generate mipmaps for texture for D3D12
+  if (device.getBackendType() == igl::BackendType::D3D12) {
+    tex0_->generateMipmap(*commandQueue_);
+  }
 
   renderPass_.colorAttachments = {
       {
