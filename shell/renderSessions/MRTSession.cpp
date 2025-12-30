@@ -331,11 +331,11 @@ void MRTSession::initialize() noexcept {
 
   // Vertex buffer, Index buffer and Vertex Input
   vb0_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData0, sizeof(vertexData0)), nullptr);
+      BufferDesc{BufferDesc::BufferTypeBits::Vertex, vertexData0, sizeof(vertexData0)}, nullptr);
   vb1_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData1, sizeof(vertexData1)), nullptr);
+      BufferDesc{BufferDesc::BufferTypeBits::Vertex, vertexData1, sizeof(vertexData1)}, nullptr);
   ib0_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)), nullptr);
+      BufferDesc{BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)}, nullptr);
 
   vertexInput_ = device.createVertexInputState(
       VertexInputStateDesc{
@@ -368,10 +368,8 @@ void MRTSession::initialize() noexcept {
       nullptr);
   tex0_ = getPlatform().loadTexture("igl.png");
 
-  {
-    shaderStagesMRT_ = createShaderStagesForBackend(device, 0);
-    shaderStagesDisplayLast_ = createShaderStagesForBackend(device, 1);
-  }
+  shaderStagesMRT_ = createShaderStagesForBackend(device, 0);
+  shaderStagesDisplayLast_ = createShaderStagesForBackend(device, 1);
 
   commandQueue_ = device.createCommandQueue({}, nullptr);
 
