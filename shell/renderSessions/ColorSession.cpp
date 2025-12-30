@@ -490,12 +490,12 @@ void ColorSession::initialize() noexcept {
   // Vertex & Index buffer
   vb0_ = device.createBuffer(getVertexBufferDesc(device), nullptr);
   IGL_DEBUG_ASSERT(vb0_ != nullptr);
-  ib0_ = device.createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Index,
+  ib0_ = device.createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Index,
                                         kIndexData,
                                         sizeof(kIndexData),
                                         getIndexBufferResourceStorage(device),
                                         0,
-                                        "index"),
+                                        "index"},
                              nullptr);
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
@@ -569,12 +569,12 @@ void ColorSession::initialize() noexcept {
                                   ? gpuLinearOrangeColor
                                   : iglu::simdtypes::float3{1.0f, 1.0f, 1.0f};
 
-  fragmentParamBuffer_ = device.createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
+  fragmentParamBuffer_ = device.createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Uniform,
                                                         &fragmentParameters_,
                                                         sizeof(fragmentParameters_),
                                                         ResourceStorage::Shared,
                                                         0,
-                                                        "uniforms"),
+                                                        "uniforms"},
                                              nullptr);
   IGL_DEBUG_ASSERT(fragmentParamBuffer_ != nullptr);
 }
