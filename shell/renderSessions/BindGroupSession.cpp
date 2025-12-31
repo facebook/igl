@@ -345,9 +345,9 @@ void BindGroupSession::initialize() noexcept {
 
   // Vertex buffer, Index buffer and Vertex Input
   vb0_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, kVertexData0, sizeof(kVertexData0)), nullptr);
+      BufferDesc{BufferDesc::BufferTypeBits::Vertex, kVertexData0, sizeof(kVertexData0)}, nullptr);
   ib0_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Index, kIndexData, sizeof(kIndexData)), nullptr);
+      BufferDesc{BufferDesc::BufferTypeBits::Index, kIndexData, sizeof(kIndexData)}, nullptr);
 
   const VertexInputStateDesc inputDesc = {
       .numAttributes = 3,
@@ -447,7 +447,7 @@ void BindGroupSession::update(SurfaceTextures surfaceTextures) noexcept {
   const std::shared_ptr<IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
-  iglu::ManagedUniformBufferInfo info = {
+  const iglu::ManagedUniformBufferInfo info = {
       .index = 1,
       .length = sizeof(VertexFormat),
       .uniforms = {{.name = "mvpMatrix",
