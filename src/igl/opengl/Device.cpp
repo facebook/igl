@@ -69,6 +69,7 @@ template<class Ptr, class Desc, class... Params>
 Ptr createResource(const Desc& desc, Result* outResult, Params&&... constructorParams) {
   // Create the object type and a smart pointer to hold it.
   using T = typename Ptr::element_type;
+  // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
   Ptr resource(new T(std::forward<Params>(constructorParams)...));
 
   // Create the resource using desc.

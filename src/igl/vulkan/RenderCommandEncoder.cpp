@@ -245,6 +245,7 @@ std::unique_ptr<RenderCommandEncoder> RenderCommandEncoder::create(
 
   Result ret;
 
+  // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
   std::unique_ptr<RenderCommandEncoder> encoder(new RenderCommandEncoder(commandBuffer, ctx));
   encoder->initialize(renderPass, framebuffer, dependencies, ret);
 

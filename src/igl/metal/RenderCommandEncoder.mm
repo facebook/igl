@@ -133,6 +133,7 @@ std::unique_ptr<RenderCommandEncoder> RenderCommandEncoder::create(
     const RenderPassDesc& renderPass,
     const std::shared_ptr<IFramebuffer>& framebuffer,
     Result* outResult) {
+  // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
   std::unique_ptr<RenderCommandEncoder> encoder(new RenderCommandEncoder(commandBuffer));
   encoder->initialize(commandBuffer, renderPass, framebuffer, outResult);
   return encoder;
