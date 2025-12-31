@@ -224,15 +224,12 @@ void TQMultiRenderPassSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
   // Vertex buffer, Index buffer and Vertex Input
-  const BufferDesc vb0Desc =
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData0, sizeof(vertexData0));
-  vb0_ = device.createBuffer(vb0Desc, nullptr);
-  const BufferDesc vb1Desc =
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData1, sizeof(vertexData1));
-  vb1_ = device.createBuffer(vb1Desc, nullptr);
-  const BufferDesc ibDesc =
-      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
-  ib0_ = device.createBuffer(ibDesc, nullptr);
+  vb0_ = device.createBuffer(
+      BufferDesc{BufferDesc::BufferTypeBits::Vertex, vertexData0, sizeof(vertexData0)}, nullptr);
+  vb1_ = device.createBuffer(
+      BufferDesc{BufferDesc::BufferTypeBits::Vertex, vertexData1, sizeof(vertexData1)}, nullptr);
+  ib0_ = device.createBuffer(
+      BufferDesc{BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)}, nullptr);
 
   const VertexInputStateDesc inputDesc = {
       .numAttributes = 2,
@@ -410,8 +407,7 @@ void TQMultiRenderPassSession::update(SurfaceTextures surfaceTextures) noexcept 
   }
 
   // Command buffer
-  const CommandBufferDesc cbDesc;
-  auto buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
   // Draw render pass 0
   auto drawableSurface = framebuffer1_->getColorAttachment(0);
