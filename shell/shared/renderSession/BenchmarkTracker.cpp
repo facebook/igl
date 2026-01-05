@@ -230,7 +230,7 @@ std::string formatBenchmarkStats(const RenderTimeStats& stats, const char* prefi
            stats.maxRenderTimeMs,
            stats.totalSamples,
            stats.hasHiccup ? " [HICCUP DETECTED]" : "");
-  return std::string(buffer);
+  return {buffer};
 }
 
 std::string generateFinalBenchmarkReport(const BenchmarkTracker& tracker, bool wasTimeout) {
