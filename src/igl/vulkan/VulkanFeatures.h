@@ -91,13 +91,12 @@ class VulkanFeatures final {
   /// @param extensionType The type of the extensions to return
   bool available(const char* extensionName, ExtensionType extensionType) const;
 
-  /// @brief Enables the common extensions used in IGL for a particular type. The
-  /// `validationEnabled` parameter helps the method enable certain extensions that depend on the
-  /// validation layer being enabled or not
-  /// @param extensionType The type of the extensions
-  /// @param validationEnabled Flag that informs the class whether the Validation Layer is
-  /// enabled or not.
+  /// @brief Enables the common instance extensions used in IGL.
+  /// @param contextConfig The VulkanContextConfig used to create the VulkanContext
   void enableCommonInstanceExtensions(const VulkanContextConfig& contextConfig);
+
+  /// @brief Enables the common device extensions used in IGL.
+  /// @param contextConfig The VulkanContextConfig used to create the VulkanContext
   void enableCommonDeviceExtensions(const VulkanContextConfig& contextConfig);
 
  public:
