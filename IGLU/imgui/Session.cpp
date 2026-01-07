@@ -371,7 +371,7 @@ Session::Renderer::Renderer(igl::IDevice& device) {
 Session::Renderer::~Renderer() {
   const ImGuiIO& io = ImGui::GetIO();
   fontTexture_ = nullptr;
-  io.Fonts->TexID = nullptr;
+  io.Fonts->TexID = 0;
 }
 
 void Session::Renderer::newFrame(const igl::FramebufferDesc& desc) {
@@ -498,7 +498,7 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
 
       if (cmd.TextureId != lastBoundTextureId) {
         lastBoundTextureId = cmd.TextureId;
-        auto* tex = reinterpret_cast<igl::ITexture*>(cmd.TextureId);
+        auto* tex = reinterpret_cast<igl::ITexture*>((ImTextureID)(intptr_t)cmd.TextureId);
         if (usesDirectBinding) {
           // D3D12 and Vulkan use direct slot binding
           // @fb-only
