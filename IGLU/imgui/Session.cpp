@@ -371,7 +371,7 @@ Session::Renderer::Renderer(igl::IDevice& device) {
 Session::Renderer::~Renderer() {
   const ImGuiIO& io = ImGui::GetIO();
   fontTexture_ = nullptr;
-  io.Fonts->TexID = 0;
+  io.Fonts->TexID = nullptr;
 }
 
 void Session::Renderer::newFrame(const igl::FramebufferDesc& desc) {
