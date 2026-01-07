@@ -8,6 +8,9 @@
 #include <igl/opengl/IContext.h>
 
 #include <cstring>
+#if IGL_DEBUG
+#include <mutex>
+#endif
 #include <string>
 #include <igl/DeviceFeatures.h>
 #include <igl/opengl/GLFunc.h>
@@ -1476,6 +1479,16 @@ std::string IContext::boundBuffersByIndex(bool ssbos, bool ubos) const {
 }
 #endif // IGL_API_LOG
 
+#if IGL_DEBUG
+namespace {
+// The map can be accessed from multiple threads during context creation/destruction.
+std::mutex& getMutex() {
+  static std::mutex mutex;
+  return mutex;
+}
+} // namespace
+#endif
+
 // Creates a global map to ensure multiple IContexts are not created for a single glContext
 std::unordered_map<void* IGL_NULLABLE, IContext*>& IContext::getExistingContexts() {
   static auto& map = *(new std::unordered_map<void* IGL_NULLABLE, IContext*>());
@@ -1484,6 +1497,7 @@ std::unordered_map<void* IGL_NULLABLE, IContext*>& IContext::getExistingContexts
 
 void IContext::registerContext(void* IGL_NULLABLE glContext, IContext* context) {
 #if IGL_DEBUG
+  std::lock_guard<std::mutex> lock(getMutex());
   auto result = IContext::getExistingContexts().find(glContext);
   if (result != IContext::getExistingContexts().end()) {
     const char* errorMessage =
@@ -1514,6 +1528,7 @@ void IContext::willDestroy(void* IGL_NULLABLE glContext) {
 
 void IContext::unregisterContext(void* IGL_NULLABLE glContext) {
 #if IGL_DEBUG
+  std::lock_guard<std::mutex> lock(getMutex());
   IContext::getExistingContexts().erase(glContext);
 #endif
 }
