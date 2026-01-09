@@ -316,7 +316,7 @@ Session::Renderer::Renderer(igl::IDevice& device) {
     fontTexture_ = device.createTexture(desc, nullptr);
     fontTexture_->upload(igl::TextureRangeDesc::new2D(0, 0, width, height), pixels);
 
-    io.Fonts->TexID = reinterpret_cast<void*>(fontTexture_.get());
+    io.Fonts->TexID = reinterpret_cast<ImTextureID>(fontTexture_.get());
   }
 
   {
@@ -371,7 +371,7 @@ Session::Renderer::Renderer(igl::IDevice& device) {
 Session::Renderer::~Renderer() {
   const ImGuiIO& io = ImGui::GetIO();
   fontTexture_ = nullptr;
-  io.Fonts->TexID = nullptr;
+  io.Fonts->TexID = 0;
 }
 
 void Session::Renderer::newFrame(const igl::FramebufferDesc& desc) {
@@ -458,7 +458,7 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
   const bool isD3D12 = device.getBackendType() == igl::BackendType::D3D12;
   const bool usesDirectBinding = isVulkan || isD3D12;
 
-  ImTextureID lastBoundTextureId = nullptr;
+  ImTextureID lastBoundTextureId = 0;
 
   for (int n = 0; n < drawData->CmdListsCount; n++) {
     const ImDrawList* cmdList = drawData->CmdLists[n];
