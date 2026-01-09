@@ -23,14 +23,11 @@
 #endif // _USE_MATH_DEFINES
 #include <Compress.h>
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
-#include <fstream>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
-#include <glm/gtc/random.hpp>
 #include <ktx.h>
 #include <meshoptimizer.h>
 #include <mutex>
@@ -69,8 +66,6 @@
 #define IGL_FORMAT fmt::format
 #endif // __cpp_lib_format
 
-#include <igl/IGL.h>
-
 // clang-format off
 #if USE_OPENGL_BACKEND
   #include <igl/RenderCommandEncoder.h>
@@ -92,8 +87,6 @@
   #include <igl/vulkan/Device.h>
   #include <igl/vulkan/HWDevice.h>
   #include <igl/vulkan/PlatformDevice.h>
-  #include <igl/vulkan/Texture.h>
-  #include <igl/vulkan/VulkanImageView.h>
   #include <igl/vulkan/VulkanContext.h>
 #endif
 // clang-format on
