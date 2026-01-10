@@ -12,7 +12,6 @@
 #include <igl/Device.h>
 #include <igl/tests/util/TestDevice.h>
 #include <igl/tests/util/TextureValidationHelpers.h>
-#include <igl/vulkan/Device.h>
 
 namespace igl::tests {
 
