@@ -249,7 +249,12 @@ class DescriptorPoolsArena final {
     if (!numRemainingDSetsInPool_) {
       switchToNewDescriptorPool(ic, nextSubmitHandle);
     }
-    VK_ASSERT(ivkAllocateDescriptorSet(&ctx_.vf_, device_, pool_, dsl_, &dset));
+    if (isNewPool_) {
+      VK_ASSERT(ivkAllocateDescriptorSet(&ctx_.vf_, device_, pool_, dsl_, &dset));
+      allocedDSet_.emplace_back(dset);
+    } else {
+      dset = allocedDSet_[dsetCursor_++];
+    }
     numRemainingDSetsInPool_--;
     return dset;
   }
@@ -260,7 +265,7 @@ class DescriptorPoolsArena final {
     numRemainingDSetsInPool_ = kNumDSetsPerPool;
 
     if (pool_ != VK_NULL_HANDLE) {
-      extinct_.push_back({pool_, nextSubmitHandle});
+      extinct_.push_back({pool_, nextSubmitHandle, allocedDSet_});
     }
     // first, let's try to reuse the oldest extinct pool (never reuse pools that are tagged with the
     // same SubmitHandle because they have not yet been submitted)
@@ -268,8 +273,10 @@ class DescriptorPoolsArena final {
       const ExtinctDescriptorPool p = extinct_.front();
       if (ic.isReady(p.handle)) {
         pool_ = p.pool;
+        allocedDSet_ = p.allocedDSet;
+        dsetCursor_ = 0;
+        isNewPool_ = false;
         extinct_.pop_front();
-        VK_ASSERT(ctx_.vf_.vkResetDescriptorPool(device_, pool_, VkDescriptorPoolResetFlags{}));
         return;
       }
     }
@@ -288,6 +295,9 @@ class DescriptorPoolsArena final {
                                       &pool_));
     VK_ASSERT(ivkSetDebugObjectName(
         &ctx_.vf_, device_, VK_OBJECT_TYPE_DESCRIPTOR_POOL, (uint64_t)pool_, dpDebugName_.c_str()));
+    allocedDSet_.clear();
+    dsetCursor_ = 0;
+    isNewPool_ = true;
   }
 
  private:
@@ -296,6 +306,9 @@ class DescriptorPoolsArena final {
   const VulkanContext& ctx_;
   VkDevice device_ = VK_NULL_HANDLE;
   VkDescriptorPool pool_ = VK_NULL_HANDLE;
+  uint32_t dsetCursor_ = 0;
+  std::vector<VkDescriptorSet> allocedDSet_;
+  bool isNewPool_ = true; //is a new created pool or an old cached pool
   const uint32_t numTypes_ = 0;
   VkDescriptorType types_[2] = {VK_DESCRIPTOR_TYPE_MAX_ENUM, VK_DESCRIPTOR_TYPE_MAX_ENUM};
   const uint32_t numDescriptorsPerDSet_ = 0;
@@ -307,6 +320,7 @@ class DescriptorPoolsArena final {
   struct ExtinctDescriptorPool {
     VkDescriptorPool pool = VK_NULL_HANDLE;
     VulkanImmediateCommands::SubmitHandle handle = {};
+    std::vector<VkDescriptorSet> allocedDSet;
   };
 
   std::deque<ExtinctDescriptorPool> extinct_;
