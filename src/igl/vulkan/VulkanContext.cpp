@@ -29,6 +29,7 @@
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/EnhancedShaderDebuggingStore.h>
 #include <igl/vulkan/RenderPipelineState.h>
+#include <igl/vulkan/ResourcesBinder.h>
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanBuffer.h>

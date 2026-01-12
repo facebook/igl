@@ -9,14 +9,15 @@
 
 #pragma once
 
-#include <glm/glm.hpp>
+#include <glm/ext/matrix_float4x4.hpp>
+#include <glm/ext/vector_float4.hpp>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <igl/Buffer.h>
 #include <igl/RenderPass.h>
+#include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/ResourcesBinder.h>
 
 namespace igl {
 
