@@ -17,7 +17,7 @@
 namespace igl::shell {
 struct VertexPosUv {
   iglu::simdtypes::float3 position; // SIMD 128b aligned
-  iglu::simdtypes::float2 uv;       // SIMD 128b aligned
+  iglu::simdtypes::float2 uv;  // SIMD 128b aligned
 };
 static VertexPosUv vertexData0[] = {
     {{-1.0f, 1.0f, 0.0}, {0.0, 1.0}},
