@@ -208,8 +208,6 @@ static void render(std::shared_ptr<ICommandBuffer>& buffer,
     if (fragmentParamBuffer) {
         commands->bindBuffer(0, fragmentParamBuffer.get());
     }
-}
-
   } else {
     // Bind non block uniforms
     for (const auto& uniformDesc : fragmentUniformDescriptors) {
