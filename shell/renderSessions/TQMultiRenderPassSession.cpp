@@ -205,10 +205,11 @@ static void render(std::shared_ptr<ICommandBuffer>& buffer,
   commands->bindRenderPipelineState(pipelineState);
 
   if (backend != igl::BackendType::OpenGL) {
-    // FIX: Explicitly check pointer validity to prevent potential RCE-like use of invalid uniform buffer
     if (fragmentParamBuffer) {
-      commands->bindBuffer(0, fragmentParamBuffer.get());
+        commands->bindBuffer(0, fragmentParamBuffer.get());
     }
+}
+
   } else {
     // Bind non block uniforms
     for (const auto& uniformDesc : fragmentUniformDescriptors) {
