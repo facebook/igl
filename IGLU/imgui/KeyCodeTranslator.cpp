@@ -21,26 +21,55 @@ enum KeyModifiers {
   kVK_Shift = 0x38,
   kVK_Option = 0x3A,
   kVK_Control = 0x3B,
+  kVK_RightArrow = 0x7C,
+  kVK_LeftArrow = 0x7B,
+  kVK_DownArrow = 0x7D,
+  kVK_UpArrow = 0x7E,
+  kVK_ForwardDelete = 0x75,
+  kVK_Home = 0x73,
+  kVK_End = 0x77,
+  kVK_PageUp = 0x74,
+  kVK_PageDown = 0x79,
 };
 
 [[maybe_unused]] ImGuiKey keyFromShellKeyEventApple(igl::shell::KeyEvent event) {
-  KeyModifiers keyCode = (KeyModifiers)event.key;
+  int keyCode = event.key;
 
   switch (keyCode) {
-  case KeyModifiers::kVK_Return:
+  case kVK_Return:
     return ImGuiKey_Enter;
-  case KeyModifiers::kVK_Tab:
+  case kVK_Tab:
     return ImGuiKey_Tab;
-  case KeyModifiers::kVK_Delete:
+  case kVK_Delete:
     return ImGuiKey_Backspace;
-  case KeyModifiers::kVK_Escape:
+  case kVK_ForwardDelete:
+    return ImGuiKey_Delete;
+  case kVK_Escape:
     return ImGuiKey_Escape;
-  case KeyModifiers::kVK_Shift:
+  case kVK_Shift:
     return ImGuiKey_LeftShift;
-  case KeyModifiers::kVK_Option:
+  case kVK_Option:
     return ImGuiKey_LeftAlt;
+  case kVK_Control:
+    return ImGuiKey_LeftCtrl;
+  case kVK_LeftArrow:
+    return ImGuiKey_LeftArrow;
+  case kVK_RightArrow:
+    return ImGuiKey_RightArrow;
+  case kVK_UpArrow:
+    return ImGuiKey_UpArrow;
+  case kVK_DownArrow:
+    return ImGuiKey_DownArrow;
+  case kVK_Home:
+    return ImGuiKey_Home;
+  case kVK_End:
+    return ImGuiKey_End;
+  case kVK_PageUp:
+    return ImGuiKey_PageUp;
+  case kVK_PageDown:
+    return ImGuiKey_PageDown;
   default:
-    return (ImGuiKey)keyCode;
+    return ImGuiKey_None;
   }
 }
 } // namespace
@@ -50,7 +79,10 @@ namespace iglu::imgui {
 ImGuiKey keyFromShellKeyEvent(igl::shell::KeyEvent event) {
 #if IGL_PLATFORM_APPLE
   return keyFromShellKeyEventApple(event);
+#else
+  // For non-Apple platforms, return ImGuiKey_None for unmapped keys
+  // to avoid passing invalid key codes to ImGui
+  return ImGuiKey_None;
 #endif
-  return (ImGuiKey)event.key;
 }
 } // namespace iglu::imgui

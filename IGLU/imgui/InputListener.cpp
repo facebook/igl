@@ -71,8 +71,10 @@ bool InputListener::process(const igl::shell::KeyEvent& event) {
   makeCurrentContext();
 
   ImGuiIO& io = ImGui::GetIO();
-  // support IsKeyPressed
-  io.KeysData[keyFromShellKeyEvent(event)].Down = event.isDown;
+  ImGuiKey key = keyFromShellKeyEvent(event);
+  if (key != ImGuiKey_None) {
+    io.AddKeyEvent(key, event.isDown);
+  }
   return io.WantCaptureKeyboard;
 }
 
