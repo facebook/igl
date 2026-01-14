@@ -36,7 +36,7 @@
 #include <stb/stb_image.h>
 #include <stb/stb_image_resize.h>
 #include <stb/stb_image_write.h>
-#include <taskflow/taskflow.hpp>
+#include <taskflow/core/async.hpp>
 #include <thread>
 #include <tiny_obj_loader.h>
 #include <igl/FPSCounter.h>
