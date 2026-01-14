@@ -225,7 +225,6 @@ static std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevic
                                                            "main",
                                                            "Shader Module: imgui::fragment (D3D12)",
                                                            &result);
-    break;
   }
   }
   IGL_UNREACHABLE_RETURN(nullptr)
