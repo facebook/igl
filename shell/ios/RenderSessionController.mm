@@ -23,7 +23,6 @@
 #import <igl/metal/HWDevice.h>
 #endif
 #if IGL_BACKEND_OPENGL
-#include <igl/opengl/ios/Context.h>
 #include <igl/opengl/ios/HWDevice.h>
 #endif
 // @fb-only
