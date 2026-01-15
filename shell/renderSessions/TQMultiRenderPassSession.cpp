@@ -19,26 +19,21 @@ struct VertexPosUv {
   iglu::simdtypes::float3 position; // SIMD 128b aligned
   iglu::simdtypes::float2 uv; // SIMD 128b aligned
 };
-static VertexPosUv vertexData0[] = {
-    {{-1.0f, 1.0f, 0.0}, {0.0, 1.0}},
-    {{1.0f, 1.0f, 0.0}, {1.0, 1.0}},
-    {{-1.0f, -1.0, 0.0}, {0.0, 0.0}},
-    {{1.0f, -1.0f, 0.0}, {1.0, 0.0}},
+// clang-format off
+static const VertexPosUv vertexData0[] = {
+    {.position = {-1.0f,  1.0f, 0.0f}, .uv = {0.0f, 1.0f}},
+    {.position = { 1.0f,  1.0f, 0.0f}, .uv = {1.0f, 1.0f}},
+    {.position = {-1.0f, -1.0f, 0.0f}, .uv = {0.0f, 0.0f}},
+    {.position = { 1.0f, -1.0f, 0.0f}, .uv = {1.0f, 0.0f}},
 };
-static VertexPosUv vertexData1[] = {
-    {{-0.8f, 0.8f, 0.0}, {0.0, 1.0}},
-    {{0.8f, 0.8f, 0.0}, {1.0, 1.0}},
-    {{-0.8f, -0.8f, 0.0}, {0.0, 0.0}},
-    {{0.8f, -0.8f, 0.0}, {1.0, 0.0}},
+static const VertexPosUv vertexData1[] = {
+    {.position = {-0.8f,  0.8f, 0.0f}, .uv = {0.0f, 1.0f}},
+    {.position = { 0.8f,  0.8f, 0.0f}, .uv = {1.0f, 1.0f}},
+    {.position = {-0.8f, -0.8f, 0.0f}, .uv = {0.0f, 0.0f}},
+    {.position = { 0.8f, -0.8f, 0.0f}, .uv = {1.0f, 0.0f}},
 };
-static uint16_t indexData[] = {
-    0,
-    1,
-    2,
-    1,
-    3,
-    2,
-};
+static const uint16_t indexData[] = {0, 1, 2, 1, 3, 2};
+// clang-format on
 
 static std::string getMetalShaderSource() {
   return R"(
@@ -205,7 +200,9 @@ static void render(std::shared_ptr<ICommandBuffer>& buffer,
   commands->bindRenderPipelineState(pipelineState);
 
   if (backend != igl::BackendType::OpenGL) {
-    commands->bindBuffer(0, fragmentParamBuffer.get());
+    if (fragmentParamBuffer) {
+      commands->bindBuffer(0, fragmentParamBuffer.get());
+    }
   } else {
     // Bind non block uniforms
     for (const auto& uniformDesc : fragmentUniformDescriptors) {
@@ -402,7 +399,7 @@ void TQMultiRenderPassSession::update(SurfaceTextures surfaceTextures) noexcept 
         },
         nullptr);
 
-    // Set up uniformdescriptors
+    // Set up uniform descriptors
     fragmentUniformDescriptors_.emplace_back();
   }
 
