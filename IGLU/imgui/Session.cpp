@@ -286,6 +286,8 @@ class Session::Renderer {
                       igl::IRenderCommandEncoder& cmdEncoder,
                       ImDrawData* drawData);
 
+  bool dumpRenderDrawDataInfo{false};
+
  private:
   std::shared_ptr<igl::IVertexInputState> vertexInputState_;
   std::shared_ptr<iglu::material::Material> material_;
@@ -395,18 +397,21 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
   const int fbWidth = (int)(drawData->DisplaySize.x * drawData->FramebufferScale.x);
   const int fbHeight = (int)(drawData->DisplaySize.y * drawData->FramebufferScale.y);
 
-  IGL_LOG_INFO(
-      "ImGui renderDrawData: DisplaySize=(%.1f,%.1f), FramebufferScale=(%.1f,%.1f), fb=(%d,%d), "
-      "CmdLists=%d, TotalVtx=%d, TotalIdx=%d\n",
-      drawData->DisplaySize.x,
-      drawData->DisplaySize.y,
-      drawData->FramebufferScale.x,
-      drawData->FramebufferScale.y,
-      fbWidth,
-      fbHeight,
-      drawData->CmdListsCount,
-      drawData->TotalVtxCount,
-      drawData->TotalIdxCount);
+  if (dumpRenderDrawDataInfo) {
+    // throttle or turn off due to swamping other messages
+    IGL_LOG_INFO(
+        "ImGui renderDrawData: DisplaySize=(%.1f,%.1f), FramebufferScale=(%.1f,%.1f), fb=(%d,%d), "
+        "CmdLists=%d, TotalVtx=%d, TotalIdx=%d\n",
+        drawData->DisplaySize.x,
+        drawData->DisplaySize.y,
+        drawData->FramebufferScale.x,
+        drawData->FramebufferScale.y,
+        fbWidth,
+        fbHeight,
+        drawData->CmdListsCount,
+        drawData->TotalVtxCount,
+        drawData->TotalIdxCount);
+  }
 
   if (fbWidth <= 0 || fbHeight <= 0 || drawData->CmdListsCount == 0) {
     IGL_LOG_INFO("ImGui renderDrawData: Early return (invalid dimensions or no command lists)\n");
