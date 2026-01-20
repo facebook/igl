@@ -43,6 +43,11 @@ namespace igl::tests::util::device {
 struct TestDeviceConfig {
   std::optional<BackendVersion> requestedOpenGLBackendVersion{};
   bool enableVulkanValidationLayers = true;
+
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
 };
 
 /**
