@@ -410,7 +410,7 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
     auto renderer = std::make_unique<TinyRenderer>();
     auto cmdLine = extractIntentExtras(env, intent);
     IGL_LOG_INFO("init: creating backend renderer cmd line: %d\n", cmdLine.size());
-    for (const auto& cmd : cmdLine) {
+    for ([[maybe_unused]] const auto& cmd : cmdLine) {
       IGL_LOG_INFO("Param: %s\n", cmd.c_str());
     }
     renderer->init(AAssetManager_fromJava(env, javaAssetManager),
