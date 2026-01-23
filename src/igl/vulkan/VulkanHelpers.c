@@ -282,6 +282,7 @@ VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
       .depthBiasClamp = supported ? supported->features.depthBiasClamp : VK_TRUE,
       .fillModeNonSolid = supported ? supported->features.fillModeNonSolid : VK_TRUE,
       .shaderInt16 = supported ? supported->features.shaderInt16 : VK_TRUE,
+      .samplerAnisotropy = supported ? supported->features.samplerAnisotropy : VK_TRUE,
   };
   VkDeviceCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
