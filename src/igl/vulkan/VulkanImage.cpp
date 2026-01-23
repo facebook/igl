@@ -170,25 +170,52 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
     const VkResult result = vmaCreateImage(
         (VmaAllocator)ctx_->getVmaAllocator(), &ci, &ciAlloc, &vkImage_, &vmaAllocation_, nullptr);
 
-    if (!IGL_DEBUG_VERIFY(result == VK_SUCCESS)) {
-      IGL_LOG_ERROR("failed: error result: %d, memflags: %d,  imageformat: %d\n",
-                    result,
-                    memFlags,
-                    imageFormat_);
-    }
+    if (result != VK_SUCCESS || vmaAllocation_ == nullptr) {
+      IGL_LOG_INFO(
+          "vmaCreateImage failed: error result: %d, memflags: %d, imageformat: %d. Retrying after "
+          "draining deferred tasks.\n",
+          result,
+          memFlags,
+          imageFormat_);
+      // Allocation failed - possibly due to memory pressure from deferred tasks not being
+      // processed. Drain deferred tasks queue to free memory and retry.
+      const_cast<VulkanContext&>(*ctx_).waitDeferredTasks();
 
-    VkMemoryRequirements memRequirements;
-    ctx_->vf_.vkGetImageMemoryRequirements(device_, vkImage_, &memRequirements);
+      const VkResult retryResult = vmaCreateImage((VmaAllocator)ctx_->getVmaAllocator(),
+                                                  &ci,
+                                                  &ciAlloc,
+                                                  &vkImage_,
+                                                  &vmaAllocation_,
+                                                  nullptr);
 
-    // handle memory-mapped buffers
-    if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-      vmaMapMemory((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, &mappedPtr_);
-      if (memRequirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
-        isCoherentMemory_ = true;
+      if (retryResult != VK_SUCCESS || vmaAllocation_ == nullptr) {
+        IGL_LOG_INFO(
+            "vmaCreateImage retry failed: error result: %d, memflags: %d, imageformat: %d. "
+            "Continuing with null allocation.\n",
+            retryResult,
+            memFlags,
+            imageFormat_);
+      } else {
+        IGL_LOG_INFO(
+            "vmaCreateImage retry succeeded: memflags: %d, imageformat: %d after draining "
+            "deferred tasks.\n",
+            memFlags,
+            imageFormat_);
       }
     }
 
     if (vmaAllocation_) {
+      VkMemoryRequirements memRequirements;
+      ctx_->vf_.vkGetImageMemoryRequirements(device_, vkImage_, &memRequirements);
+
+      // handle memory-mapped buffers
+      if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+        vmaMapMemory((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, &mappedPtr_);
+        if (memRequirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+          isCoherentMemory_ = true;
+        }
+      }
+
       vmaSetAllocationName((VmaAllocator)ctx_->getVmaAllocator(),
                            vmaAllocation_,
                            IGL_FORMAT("VMA Allocation: {}", debugName).c_str());
