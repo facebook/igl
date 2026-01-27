@@ -7,7 +7,7 @@
 
 #pragma once
 
-#define IGL_VULKAN_HAS_LEGACY_RENDERPASS 1
+#define IGL_VULKAN_HAS_LEGACY_RENDERPASS 0
 
 #include <vector>
 #include <igl/vulkan/Common.h>
