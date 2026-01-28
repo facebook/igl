@@ -246,9 +246,12 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       };
       // NOLINTNEXTLINE(modernize-avoid-c-arrays)
       const VkImageMemoryRequirementsInfo2 imgRequirements[kMaxImagePlanes] = {
-          ivkGetImageMemoryRequirementsInfo2(numPlanes > 0 ? &planes[0] : nullptr, vkImage_),
-          ivkGetImageMemoryRequirementsInfo2(numPlanes > 1 ? &planes[1] : nullptr, vkImage_),
-          ivkGetImageMemoryRequirementsInfo2(numPlanes > 2 ? &planes[2] : nullptr, vkImage_),
+          ivkGetImageMemoryRequirementsInfo2(isDisjoint && numPlanes > 0 ? &planes[0] : nullptr,
+                                             vkImage_),
+          ivkGetImageMemoryRequirementsInfo2(isDisjoint && numPlanes > 1 ? &planes[1] : nullptr,
+                                             vkImage_),
+          ivkGetImageMemoryRequirementsInfo2(isDisjoint && numPlanes > 2 ? &planes[2] : nullptr,
+                                             vkImage_),
       };
       for (uint32_t p = 0; p != numPlanes; p++) {
         ctx_->vf_.vkGetImageMemoryRequirements2(device_, &imgRequirements[p], &memRequirements[p]);
