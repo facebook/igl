@@ -431,8 +431,10 @@ void TinyRenderer::init(AAssetManager* mgr,
 void TinyRenderer::recreateSwapchain(ANativeWindow* nativeWindow, bool createSurface) {
 #if IGL_BACKEND_VULKAN
   nativeWindow_ = nativeWindow;
-  width_ = static_cast<uint32_t>(ANativeWindow_getWidth(nativeWindow));
-  height_ = static_cast<uint32_t>(ANativeWindow_getHeight(nativeWindow));
+  if (!shellParams_.isHeadless) {
+    width_ = static_cast<uint32_t>(ANativeWindow_getWidth(nativeWindow));
+    height_ = static_cast<uint32_t>(ANativeWindow_getHeight(nativeWindow));
+  }
 
   auto* platformDevice = platform_->getDevice().getPlatformDevice<igl::vulkan::PlatformDevice>();
   // need clear the cached textures before recreate swap chain.
@@ -535,6 +537,9 @@ bool TinyRenderer::render(float displayScale) {
 }
 
 void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int height) {
+  if (shellParams_.isHeadless) {
+    return;
+  }
   width_ = static_cast<uint32_t>(width);
   height_ = static_cast<uint32_t>(height);
 #if IGL_BACKEND_OPENGL
