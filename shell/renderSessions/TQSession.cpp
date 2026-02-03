@@ -16,6 +16,7 @@
 // @fb-only
 // @fb-only
 // @fb-only
+// @fb-only
 
 namespace igl::shell {
 namespace {
@@ -111,7 +112,6 @@ std::string getD3D12FragmentShaderSource() {
                 }
                 )";
 }
-// @fb-only
 
 std::string getOpenGLVertexShaderSource() {
   return getVersion() + R"(
@@ -177,7 +177,6 @@ std::string getVulkanFragmentShaderSource() {
                 }
                 )";
 }
-// @fb-only
 
 std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
