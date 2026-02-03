@@ -62,12 +62,12 @@ class Platform {
    * @return template <typename E>*
    */
   // E is the Extension type. Requirements on E
-  // 1. The static method `const char* E::Name() noexcept` must exist
+  // 1. The static method `const char* E::name() noexcept` must exist
   // 2. E must subclass from igl::shell::Extension
   template<typename E>
   E* createAndInitialize() noexcept {
     // TODO static_assert() to enforce subclass
-    return static_cast<E*>(createAndInitializeExtension(E::Name()));
+    return static_cast<E*>(createAndInitializeExtension(E::name()));
   }
 
  private:

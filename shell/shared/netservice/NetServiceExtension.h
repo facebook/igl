@@ -17,7 +17,7 @@ namespace igl::shell::netservice {
 
 class NetServiceExtension : public Extension {
  public:
-  static const char* Name() noexcept;
+  static const char* name() noexcept;
 
   // Return true to keep searching or false to stop searching.
   using DidFindService = std::function<

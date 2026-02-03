@@ -9,7 +9,7 @@
 
 namespace igl::shell::netservice {
 
-const char* NetServiceExtension::Name() noexcept {
+const char* NetServiceExtension::name() noexcept {
   return "IglShellNetService";
 }
 
