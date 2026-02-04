@@ -10,14 +10,12 @@
 #import "AppDelegate.h"
 
 #include "RenderSessionFactoryAdapterInternal.hpp"
-#import "RenderSessionFactoryProvider.h"
 #import "ViewController.h"
 
 #include <igl/Macros.h>
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/GLIncludes.h>
 #endif
-#include <shell/shared/renderSession/RenderSessionConfig.h>
 
 @interface AppDelegate () {
   RenderSessionFactoryProvider* factoryProvider;
