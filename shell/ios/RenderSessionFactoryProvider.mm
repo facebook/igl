@@ -15,8 +15,8 @@
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 
 @interface RenderSessionFactoryProvider () {
-  std::unique_ptr<igl::shell::IRenderSessionFactory> factory;
-  RenderSessionFactoryAdapter adapter;
+  std::unique_ptr<igl::shell::IRenderSessionFactory> _factory;
+  RenderSessionFactoryAdapter _adapter;
 }
 @end
 
@@ -24,15 +24,15 @@
 
 - (instancetype)init {
   if (self = [super init]) {
-    factory = igl::shell::createDefaultRenderSessionFactory();
-    adapter.factory = factory.get();
+    _factory = igl::shell::createDefaultRenderSessionFactory();
+    _adapter.factory = _factory.get();
   }
   return self;
 }
 
 // @protocol RenderSessionFactoryAdapter
 - (RenderSessionFactoryAdapterPtr)adapter {
-  return &adapter;
+  return &_adapter;
 }
 
 @end
