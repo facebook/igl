@@ -43,21 +43,21 @@ TextureDesc IDevice::sanitize(const TextureDesc& desc) const {
 Color IDevice::backendDebugColor() const noexcept {
   switch (getBackendType()) {
   case BackendType::Invalid:
-    return {0.f, 0.f, 0.f, 0.f};
+    return {0.f, 0.f, 0.f, 0.f}; // Clear
   case BackendType::OpenGL:
-    return {1.f, 1.f, 0.f, 1.f};
+    return {1.f, 1.f, 0.f, 1.f}; // Yellow
   case BackendType::Metal:
-    return {1.f, 0.f, 1.f, 1.f};
+    return {1.f, 0.f, 1.f, 1.f}; // Magenta
   case BackendType::Vulkan:
-    return {0.f, 1.f, 1.f, 1.f};
+    return {0.f, 1.f, 1.f, 1.f}; // Cyan
   case BackendType::D3D12:
     return {0.f, 1.f, 1.f, 1.f}; // Match Vulkan for parity testing
   // @fb-only
-    // @fb-only
+    return {0.f, 1.f, 0.f, 1.f}; // Green @fb-only
   case BackendType::Custom:
-    return {0.f, 0.f, 1.f, 1.f};
+    return {0.f, 0.f, 1.f, 1.f}; // Blue
   }
-  IGL_UNREACHABLE_RETURN(Color(0.f, 0.f, 0.f, 0.f))
+  IGL_UNREACHABLE_RETURN(Color(0.f, 0.f, 0.f, 0.f)) // Clear
 }
 
 DeviceScope::DeviceScope(IDevice& device) : device_(device) {
