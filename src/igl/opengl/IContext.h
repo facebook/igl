@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
@@ -586,8 +587,8 @@ class IContext {
   bool alwaysCheckError_ = false; // TRUE to check error after each OGL call
   mutable GLenum lastError_ = GL_NO_ERROR;
   mutable unsigned int callCounter_ = 0;
-  unsigned int drawCallCount_ = 0;
-  unsigned int shaderCompilationCount_ = 0;
+  std::atomic<unsigned int> drawCallCount_{0};
+  std::atomic<unsigned int> shaderCompilationCount_{0};
   int lockCount_ = 0; // used by DestructionGuard
   int refCount_ = 0; // used by addRef/releaseRef
   bool shouldValidateShaders_ = false;

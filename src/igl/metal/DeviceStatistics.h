@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 
@@ -23,8 +24,8 @@ class DeviceStatistics {
   void incrementDrawCount(uint32_t newDrawCount) noexcept;
   void incrementShaderCompilationCount() noexcept;
 
-  size_t currentDrawCount_ = 0;
-  size_t shaderCompilationCount_ = 0;
+  std::atomic<size_t> currentDrawCount_{0};
+  std::atomic<size_t> shaderCompilationCount_{0};
 };
 
 } // namespace igl::metal

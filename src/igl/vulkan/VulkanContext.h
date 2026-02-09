@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <deque>
 #include <future>
 #include <memory>
@@ -340,8 +341,8 @@ class VulkanContext final {
   // a texture/sampler was created since the last descriptor set update
   mutable bool awaitingCreation_ = false;
 
-  mutable size_t drawCallCount_ = 0;
-  mutable size_t shaderCompilationCount_ = 0;
+  mutable std::atomic<size_t> drawCallCount_{0};
+  mutable std::atomic<size_t> shaderCompilationCount_{0};
 
   // stores an index into renderPasses_
   mutable std::
