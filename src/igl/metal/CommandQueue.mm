@@ -59,10 +59,10 @@ SubmitHandle CommandQueue::submit(const igl::ICommandBuffer& commandBuffer, bool
   const auto& metalCommandBuffer = static_cast<const CommandBuffer&>(commandBuffer);
   std::shared_ptr<ITimer> timer = metalCommandBuffer.desc.timer;
   if (timer) {
-    uint64_t startTime = clock_gettime_nsec_np(CLOCK_MONOTONIC);
     [metalCommandBuffer.get() addCompletedHandler:^(id<MTLCommandBuffer> cb) {
+      CFTimeInterval gpuDuration = cb.GPUEndTime - cb.GPUStartTime;
       static_cast<Timer&>(*timer).executionTime_ =
-          clock_gettime_nsec_np(CLOCK_MONOTONIC) - startTime;
+          static_cast<uint64_t>(gpuDuration * 1e9); // Convert to nanoseconds
     }];
   }
 
