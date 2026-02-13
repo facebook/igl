@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <utility>
+#include <igl/Framebuffer.h>
 
 namespace igl {
 
@@ -66,6 +67,124 @@ DeviceScope::DeviceScope(IDevice& device) : device_(device) {
 
 DeviceScope::~DeviceScope() {
   device_.endScope();
+}
+
+std::shared_ptr<IFramebuffer> IDevice::createFramebufferFromBaseDesc(
+    const base::FramebufferInteropDesc& desc) {
+  auto makeTextureDesc = [](const base::AttachmentInteropDesc& attachment) -> TextureDesc {
+    return TextureDesc{
+        .width = attachment.width,
+        .height = attachment.height,
+        .depth = attachment.depth,
+        .numLayers = attachment.numLayers,
+        .numSamples = attachment.numSamples,
+        .usage = static_cast<TextureDesc::TextureUsage>(
+            attachment.isSampled ? (TextureDesc::TextureUsageBits::Attachment |
+                                    TextureDesc::TextureUsageBits::Sampled)
+                                 : TextureDesc::TextureUsageBits::Attachment),
+        .numMipLevels = attachment.numMipLevels,
+        .type = attachment.type,
+        .format = attachment.format,
+        .storage = ResourceStorage::Private,
+    };
+  };
+
+  FramebufferDesc fbDesc;
+
+  for (size_t i = 0; i < base::kMaxColorAttachments; ++i) {
+    const auto* attachmentDesc = desc.colorAttachments[i];
+    if (attachmentDesc && attachmentDesc->format != TextureFormat::Invalid) {
+      Result result;
+      TextureDesc textureDesc = makeTextureDesc(*attachmentDesc);
+      if (attachmentDesc->numLayers == 2) {
+        fbDesc.mode = FramebufferMode::Stereo;
+      }
+
+      if (attachmentDesc->numSamples > 1) {
+        TextureDesc resolveTextureDesc = textureDesc;
+        textureDesc.usage =
+            static_cast<TextureDesc::TextureUsage>(TextureDesc::TextureUsageBits::Attachment);
+        resolveTextureDesc.numSamples = 1;
+
+        auto resolveTexture = createTexture(resolveTextureDesc, &result);
+        if (resolveTexture && result.isOk()) {
+          fbDesc.colorAttachments[i].resolveTexture = std::move(resolveTexture);
+        } else {
+          return nullptr;
+        }
+      }
+
+      auto texture = createTexture(textureDesc, &result);
+      if (texture && result.isOk()) {
+        fbDesc.colorAttachments[i].texture = std::move(texture);
+      } else {
+        return nullptr;
+      }
+    }
+  }
+
+  if (desc.depthAttachment && desc.depthAttachment->format != TextureFormat::Invalid) {
+    Result result;
+    TextureDesc textureDesc = makeTextureDesc(*desc.depthAttachment);
+    if (desc.depthAttachment->numLayers == 2) {
+      fbDesc.mode = FramebufferMode::Stereo;
+    }
+
+    if (desc.depthAttachment->numSamples > 1) {
+      TextureDesc resolveTextureDesc = textureDesc;
+      textureDesc.usage =
+          static_cast<TextureDesc::TextureUsage>(TextureDesc::TextureUsageBits::Attachment);
+      resolveTextureDesc.numSamples = 1;
+
+      auto resolveTexture = createTexture(resolveTextureDesc, &result);
+      if (resolveTexture && result.isOk()) {
+        fbDesc.depthAttachment.resolveTexture = std::move(resolveTexture);
+      } else {
+        return nullptr;
+      }
+    }
+
+    auto texture = createTexture(textureDesc, &result);
+    if (texture && result.isOk()) {
+      fbDesc.depthAttachment.texture = std::move(texture);
+    } else {
+      return nullptr;
+    }
+  }
+
+  if (desc.depthAttachment == desc.stencilAttachment) {
+    fbDesc.stencilAttachment = fbDesc.depthAttachment;
+  } else if (desc.stencilAttachment && desc.stencilAttachment->format != TextureFormat::Invalid) {
+    Result result;
+    TextureDesc textureDesc = makeTextureDesc(*desc.stencilAttachment);
+    if (desc.stencilAttachment->numLayers == 2) {
+      fbDesc.mode = FramebufferMode::Stereo;
+    }
+
+    if (desc.stencilAttachment->numSamples > 1) {
+      TextureDesc resolveTextureDesc = textureDesc;
+      textureDesc.usage =
+          static_cast<TextureDesc::TextureUsage>(TextureDesc::TextureUsageBits::Attachment);
+      resolveTextureDesc.numSamples = 1;
+
+      auto resolveTexture = createTexture(resolveTextureDesc, &result);
+      if (resolveTexture && result.isOk()) {
+        fbDesc.stencilAttachment.resolveTexture = std::move(resolveTexture);
+      } else {
+        return nullptr;
+      }
+    }
+
+    auto texture = createTexture(textureDesc, &result);
+    if (texture && result.isOk()) {
+      fbDesc.stencilAttachment.texture = std::move(texture);
+    } else {
+      return nullptr;
+    }
+  }
+
+  Result result;
+  return createFramebuffer(fbDesc, &result);
 }
 
 } // namespace igl

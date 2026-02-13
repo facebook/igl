@@ -92,6 +92,10 @@ class Device final : public IDevice {
                                                                 Result* IGL_NULLABLE
                                                                     outResult) override;
 
+  // base::IDeviceBase
+  [[nodiscard]] base::IFramebufferInterop* IGL_NULLABLE
+  createFramebufferInterop(const base::FramebufferInteropDesc& desc) override;
+
   // Platform-specific extensions
   [[nodiscard]] const PlatformDevice& getPlatformDevice() const noexcept override;
 
@@ -115,6 +119,10 @@ class Device final : public IDevice {
   }
   [[nodiscard]] const VulkanContext& getVulkanContext() const {
     return *ctx_;
+  }
+
+  [[nodiscard]] void* IGL_NULLABLE getNativeDevice() const override {
+    return ctx_->getVkDevice();
   }
 
  private:

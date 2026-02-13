@@ -90,6 +90,9 @@ class Device final : public igl::IDevice {
   [[nodiscard]] std::unique_ptr<igl::IShaderStages> createShaderStages(
       const igl::ShaderStagesDesc& desc,
       igl::Result* IGL_NULLABLE outResult) const final;
+  [[nodiscard]] void* IGL_NULLABLE getNativeDevice() const override {
+    return nullptr;
+  }
 
  private:
   PlatformDevice platformDevice_;

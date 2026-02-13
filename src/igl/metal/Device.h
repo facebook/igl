@@ -89,6 +89,10 @@ class Device : public IDevice {
     return device_;
   }
 
+  [[nodiscard]] void* IGL_NULLABLE getNativeDevice() const override {
+    return (__bridge void*)device_;
+  }
+
   // ICapabilities
   [[nodiscard]] bool isAppleGpu() const;
   [[nodiscard]] bool hasFeature(DeviceFeatures feature) const override;
@@ -109,6 +113,9 @@ class Device : public IDevice {
   [[nodiscard]] BackendType getBackendType() const override {
     return BackendType::Metal;
   }
+
+  [[nodiscard]] base::IFramebufferInterop* IGL_NULLABLE
+  createFramebufferInterop(const base::FramebufferInteropDesc& desc) override;
 
   [[nodiscard]] NormalizedZRange getNormalizedZRange() const override {
     return NormalizedZRange::ZeroToOne;

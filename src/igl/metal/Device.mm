@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 #include <sstream>
 #include <unordered_set>
+#include <igl/FramebufferWrapper.h>
 #include <igl/metal/Buffer.h>
 #include <igl/metal/BufferSynchronizationManager.h>
 #include <igl/metal/CommandQueue.h>
@@ -938,6 +939,15 @@ void Device::destroy(BindGroupBufferHandle handle) {
 void Device::destroy(SamplerHandle handle) {
   (void)handle;
   // IGL/Metal is not using sampler handles
+}
+
+base::IFramebufferInterop* IGL_NULLABLE
+Device::createFramebufferInterop(const base::FramebufferInteropDesc& desc) {
+  auto framebuffer = createFramebufferFromBaseDesc(desc);
+  if (!framebuffer) {
+    return nullptr;
+  }
+  return new (std::nothrow) FramebufferWrapper(std::move(framebuffer));
 }
 
 } // namespace igl::metal

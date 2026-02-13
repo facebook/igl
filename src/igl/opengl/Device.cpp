@@ -14,6 +14,7 @@
 #include <igl/opengl/DepthStencilState.h>
 #include <igl/opengl/DeviceFeatureSet.h>
 #include <igl/opengl/Framebuffer.h>
+#include <igl/opengl/FramebufferWrapper.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/RenderPipelineState.h>
 #include <igl/opengl/SamplerState.h>
@@ -280,6 +281,15 @@ std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& d
                                                         Result* outResult) noexcept {
   IGL_DEBUG_ASSERT(deviceFeatureSet_.hasInternalFeature(InternalFeatures::FramebufferObject));
   return getPlatformDevice().createFramebuffer(desc, outResult);
+}
+
+base::IFramebufferInterop* IGL_NULLABLE
+Device::createFramebufferInterop(const base::FramebufferInteropDesc& desc) {
+  auto framebuffer = createFramebufferFromBaseDesc(desc);
+  if (!framebuffer) {
+    return nullptr;
+  }
+  return new (std::nothrow) FramebufferWrapper(std::move(framebuffer));
 }
 
 bool Device::hasFeature(DeviceFeatures capability) const {

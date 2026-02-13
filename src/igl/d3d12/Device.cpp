@@ -18,6 +18,7 @@
 #include <mutex> // For std::call_once.
 #include <vector>
 #include <igl/Assert.h> // For IGL_DEBUG_ASSERT in waitForUploadFence.
+#include <igl/FramebufferWrapper.h>
 #include <igl/Texture.h>
 #include <igl/VertexInputState.h>
 #include <igl/d3d12/Buffer.h>
@@ -3400,6 +3401,15 @@ std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& d
                                                         Result* IGL_NULLABLE outResult) {
   Result::setOk(outResult);
   return std::make_shared<Framebuffer>(desc);
+}
+
+base::IFramebufferInterop* IGL_NULLABLE
+Device::createFramebufferInterop(const base::FramebufferInteropDesc& desc) {
+  auto framebuffer = createFramebufferFromBaseDesc(desc);
+  if (!framebuffer) {
+    return nullptr;
+  }
+  return new (std::nothrow) FramebufferWrapper(std::move(framebuffer));
 }
 
 // Capabilities

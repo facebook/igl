@@ -45,6 +45,11 @@ class Device : public IDevice {
     return BackendType::OpenGL;
   }
 
+  // OpenGL doesn't have a single native device handle
+  [[nodiscard]] void* IGL_NULLABLE getNativeDevice() const override {
+    return nullptr;
+  }
+
   // Resources
   std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
                                         Result* IGL_NULLABLE outResult) const noexcept override;
@@ -85,6 +90,9 @@ class Device : public IDevice {
 
   std::shared_ptr<IFramebuffer> createFramebuffer(const FramebufferDesc& desc,
                                                   Result* IGL_NULLABLE outResult) noexcept override;
+
+  [[nodiscard]] base::IFramebufferInterop* IGL_NULLABLE
+  createFramebufferInterop(const base::FramebufferInteropDesc& desc) override;
 
   // Timers
   std::shared_ptr<ITimer> createTimer(Result* IGL_NULLABLE outResult) const noexcept override;

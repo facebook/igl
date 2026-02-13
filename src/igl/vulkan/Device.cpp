@@ -8,6 +8,7 @@
 #include <igl/vulkan/Device.h>
 
 #include <cstring>
+#include <igl/FramebufferWrapper.h>
 #include <igl/glslang/GlslCompiler.h>
 #include <igl/glslang/GlslangHelpers.h>
 #include <igl/vulkan/Buffer.h>
@@ -531,6 +532,15 @@ std::shared_ptr<IFramebuffer> Device::createFramebufferInternal(const Framebuffe
   }
 
   return resource;
+}
+
+base::IFramebufferInterop* IGL_NULLABLE
+Device::createFramebufferInterop(const base::FramebufferInteropDesc& desc) {
+  auto framebuffer = createFramebufferFromBaseDesc(desc);
+  if (!framebuffer) {
+    return nullptr;
+  }
+  return new (std::nothrow) FramebufferWrapper(std::move(framebuffer));
 }
 
 const PlatformDevice& Device::getPlatformDeviceInternal() const noexcept {

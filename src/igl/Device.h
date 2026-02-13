@@ -13,6 +13,7 @@
 #include <igl/IResourceTracker.h>
 #include <igl/PlatformDevice.h>
 #include <igl/Texture.h>
+#include <igl/base/IDeviceBase.h>
 
 namespace igl {
 
@@ -66,7 +67,7 @@ enum class InDevelopementFeatures : uint8_t {
 /**
  * @brief Interface to a GPU that is used to draw graphics or do parallel computation.
  */
-class IDevice : public ICapabilities {
+class IDevice : public ICapabilities, public base::IDeviceBase {
  public:
   ~IDevice() override = default;
 
@@ -284,10 +285,35 @@ class IDevice : public ICapabilities {
   }
 
   /**
-   * @brief Returns the actual graphics API backing this IGL device (Metal, OpenGL, etc).
-   * @return The type of the underlying backend.
+   * @brief Get access to the staging buffer.
+   * @return Pointer to the staging buffer interface, or nullptr if not available.
    */
-  [[nodiscard]] virtual BackendType getBackendType() const = 0;
+  [[nodiscard]] base::IStagingBufferInterop* IGL_NULLABLE getStagingBufferInterop() override {
+    return nullptr;
+  }
+
+  /**
+   * @brief Returns the backend type.
+   * @return The backend type enum value.
+   */
+  [[nodiscard]] BackendType getBackendType() const override = 0;
+
+  /**
+   * @brief Returns raw pointer to native device handle.
+   * @return Platform-specific device handle.
+   */
+  [[nodiscard]] void* IGL_NULLABLE getNativeDevice() const override = 0;
+
+  /**
+   * @brief Create a framebuffer from base descriptor.
+   * @param desc The framebuffer descriptor.
+   * @return Pointer to created framebuffer, or nullptr if not supported.
+   */
+  [[nodiscard]] base::IFramebufferInterop* IGL_NULLABLE
+  createFramebufferInterop(const base::FramebufferInteropDesc& desc) override {
+    (void)desc;
+    return nullptr;
+  }
 
   /**
    * @brief Returns the range of Z values in normalized device coordinates considered to be within
@@ -435,6 +461,12 @@ class IDevice : public ICapabilities {
   }
   [[nodiscard]] TextureDesc sanitize(const TextureDesc& desc) const;
   IDevice() = default;
+
+  /// @brief Helper to create framebuffer from base descriptor
+  /// @param desc The base framebuffer descriptor
+  /// @return Shared pointer to the created framebuffer, or nullptr on failure
+  [[nodiscard]] std::shared_ptr<IFramebuffer> createFramebufferFromBaseDesc(
+      const base::FramebufferInteropDesc& desc);
 
   uint64_t inDevelopmentFlags_ = 0;
 

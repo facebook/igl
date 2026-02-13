@@ -135,10 +135,17 @@ class Device final : public IDevice, public IFenceProvider {
   [[nodiscard]] ShaderVersion getShaderVersion() const override;
   [[nodiscard]] BackendVersion getBackendVersion() const override;
 
-  [[nodiscard]] BackendType getBackendType() const override;
-
   [[nodiscard]] size_t getCurrentDrawCount() const override;
   [[nodiscard]] size_t getShaderCompilationCount() const override;
+
+  [[nodiscard]] BackendType getBackendType() const override;
+
+  [[nodiscard]] void* IGL_NULLABLE getNativeDevice() const override {
+    return ctx_->getDevice();
+  }
+
+  [[nodiscard]] base::IFramebufferInterop* IGL_NULLABLE
+  createFramebufferInterop(const base::FramebufferInteropDesc& desc) override;
 
   void incrementDrawCount(size_t n) {
     telemetry_.incrementDrawCount(n);
