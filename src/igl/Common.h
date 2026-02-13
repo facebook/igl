@@ -18,10 +18,16 @@
 #include <vector>
 #include <igl/Color.h>
 #include <igl/Core.h>
+#include <igl/base/Common.h>
 
 #define IGL_ARRAY_NUM_ELEMENTS(x) (sizeof(x) / sizeof((x)[0]))
 
 namespace igl {
+
+// Re-export types from base namespace for backward compatibility
+using base::BackendType;
+using base::TextureFormat;
+using base::TextureType;
 
 // Callback to delete and/or release a pointer
 using Deleter = void (*)(void* IGL_NULLABLE);
@@ -130,16 +136,6 @@ struct Result {
       outResult->message = std::string();
     }
   }
-};
-
-enum class BackendType {
-  Invalid,
-  OpenGL,
-  Metal,
-  Vulkan,
-  D3D12,
-  // @fb-only
-  Custom,
 };
 
 enum class BackendFlavor : uint8_t {
