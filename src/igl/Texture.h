@@ -12,6 +12,7 @@
 #include <igl/Common.h>
 #include <igl/ITrackedResource.h>
 #include <igl/TextureFormat.h>
+#include <igl/base/IAttachmentInterop.h>
 
 namespace igl {
 
@@ -783,7 +784,7 @@ struct TextureDesc {
  * This should only be used for the purpose of getting information about the texture using the
  * gettor methods defined below.
  */
-class ITexture : public ITrackedResource<ITexture> {
+class ITexture : public ITrackedResource<ITexture>, public base::IAttachmentInterop {
  public:
   explicit ITexture(TextureFormat format) :
     properties_(TextureFormatProperties::fromTextureFormat(format)) {}

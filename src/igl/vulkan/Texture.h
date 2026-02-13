@@ -58,6 +58,11 @@ class Texture : public ITexture {
 
   VkImageView getVkImageView() const;
 
+  // IAttachmentInterop interface
+  [[nodiscard]] void* IGL_NULLABLE getNativeImage() const override;
+  [[nodiscard]] void* IGL_NULLABLE getNativeImageView() const override;
+  [[nodiscard]] const base::AttachmentInteropDesc& getDesc() const override;
+
   /// @brief Specialization of `getVkImageView()` that returns an image view specific to a mip level
   /// and layer of an image. Used to retrieve image views to be used with framebuffers
   VkImageView getVkImageViewForFramebuffer(uint32_t mipLevel,
@@ -85,6 +90,7 @@ class Texture : public ITexture {
  protected:
   Device& device_;
   TextureDesc desc_;
+  mutable base::AttachmentInteropDesc attachmentDesc_; // Cached for IAttachmentInterop::getDesc()
 
   std::shared_ptr<VulkanTexture> texture_;
   mutable std::vector<VulkanImageView> imageViewsForFramebufferMono_;

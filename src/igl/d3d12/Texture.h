@@ -56,6 +56,11 @@ class Texture final : public ITexture {
   void generateMipmap(ICommandBuffer& cmdBuffer,
                       const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
 
+  // IAttachmentInterop interface
+  [[nodiscard]] void* IGL_NULLABLE getNativeImage() const override;
+  [[nodiscard]] void* IGL_NULLABLE getNativeImageView() const override;
+  [[nodiscard]] const base::AttachmentInteropDesc& getDesc() const override;
+
   // D3D12-specific accessors (not part of ITexture interface)
   TextureFormat getFormat() const;
   ID3D12Resource* getResource() const {
@@ -146,6 +151,8 @@ class Texture final : public ITexture {
   std::vector<uint32_t> rtvIndices_; // RTV descriptors (one per mip level)
   std::vector<uint32_t> dsvIndices_; // DSV descriptors (for depth/stencil textures)
   uint32_t srvIndex_ = UINT32_MAX; // SRV descriptor (UINT32_MAX = not allocated)
+
+  mutable base::AttachmentInteropDesc attachmentDesc_; // Cached for IAttachmentInterop::getDesc()
 };
 
 } // namespace igl::d3d12

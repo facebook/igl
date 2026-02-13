@@ -1456,4 +1456,28 @@ D3D12_RESOURCE_STATES Texture::getSubresourceState(uint32_t mipLevel, uint32_t l
   return owner->subresourceStates_[index];
 }
 
+// IAttachmentInterop interface implementation
+void* Texture::getNativeImage() const {
+  return resource_.Get();
+}
+
+void* Texture::getNativeImageView() const {
+  // RTV are transient objects in the current implementation.
+  return nullptr;
+}
+
+const base::AttachmentInteropDesc& Texture::getDesc() const {
+  // Update cached attachment descriptor
+  attachmentDesc_.width = dimensions_.width;
+  attachmentDesc_.height = dimensions_.height;
+  attachmentDesc_.depth = dimensions_.depth;
+  attachmentDesc_.numLayers = static_cast<uint32_t>(numLayers_);
+  attachmentDesc_.numSamples = static_cast<uint32_t>(samples_);
+  attachmentDesc_.numMipLevels = static_cast<uint32_t>(numMipLevels_);
+  attachmentDesc_.type = type_;
+  attachmentDesc_.format = format_;
+  attachmentDesc_.isSampled = (usage_ & TextureDesc::TextureUsageBits::Sampled) != 0;
+  return attachmentDesc_;
+}
+
 } // namespace igl::d3d12

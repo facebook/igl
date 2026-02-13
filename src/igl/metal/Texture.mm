@@ -957,4 +957,30 @@ TextureRangeDesc Texture::atMetalSlice(TextureType type,
                                    : range.atLayer(static_cast<uint32_t>(metalSlice));
 }
 
+// IAttachmentInterop interface implementation
+void* Texture::getNativeImage() const {
+  return (__bridge void*)get();
+}
+
+void* Texture::getNativeImageView() const {
+  // Metal doesn't have a separate image view concept
+  return nullptr;
+}
+
+const base::AttachmentInteropDesc& Texture::getDesc() const {
+  id<MTLTexture> tex = get();
+  // Update cached attachment descriptor
+  attachmentDesc_.width = static_cast<uint32_t>(tex.width);
+  attachmentDesc_.height = static_cast<uint32_t>(tex.height);
+  attachmentDesc_.depth = static_cast<uint32_t>(tex.depth);
+  attachmentDesc_.numLayers = static_cast<uint32_t>(tex.arrayLength);
+  attachmentDesc_.numSamples = static_cast<uint32_t>(tex.sampleCount);
+  attachmentDesc_.numMipLevels = static_cast<uint32_t>(tex.mipmapLevelCount);
+  attachmentDesc_.type = static_cast<base::TextureType>(convertType(tex.textureType));
+  attachmentDesc_.format =
+      static_cast<base::TextureFormat>(mtlPixelFormatToTextureFormat(tex.pixelFormat));
+  attachmentDesc_.isSampled = (tex.usage & MTLTextureUsageShaderRead) != 0;
+  return attachmentDesc_;
+}
+
 } // namespace igl::metal

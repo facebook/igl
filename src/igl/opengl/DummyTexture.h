@@ -57,7 +57,28 @@ class DummyTexture : public ITexture {
     return 0;
   }
 
+  // IAttachmentInterop interface
+  [[nodiscard]] void* IGL_NULLABLE getNativeImage() const override {
+    return nullptr;
+  }
+  [[nodiscard]] void* IGL_NULLABLE getNativeImageView() const override {
+    return nullptr;
+  }
+  [[nodiscard]] const base::AttachmentInteropDesc& getDesc() const override {
+    attachmentDesc_.width = static_cast<uint32_t>(size_.width);
+    attachmentDesc_.height = static_cast<uint32_t>(size_.height);
+    attachmentDesc_.depth = 1;
+    attachmentDesc_.numLayers = 1;
+    attachmentDesc_.numSamples = 1;
+    attachmentDesc_.numMipLevels = 1;
+    attachmentDesc_.type = base::TextureType::TwoD;
+    attachmentDesc_.format = static_cast<base::TextureFormat>(getFormat());
+    attachmentDesc_.isSampled = false;
+    return attachmentDesc_;
+  }
+
  private:
   Size size_;
+  mutable base::AttachmentInteropDesc attachmentDesc_;
 };
 } // namespace igl::opengl

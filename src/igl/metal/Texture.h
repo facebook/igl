@@ -65,6 +65,11 @@ class Texture final : public ITexture {
     return drawable_;
   }
 
+  // IAttachmentInterop interface
+  [[nodiscard]] void* IGL_NULLABLE getNativeImage() const override;
+  [[nodiscard]] void* IGL_NULLABLE getNativeImageView() const override;
+  [[nodiscard]] const base::AttachmentInteropDesc& getDesc() const override;
+
   static TextureDesc::TextureUsage toTextureUsage(MTLTextureUsage usage);
   static MTLTextureUsage toMTLTextureUsage(TextureDesc::TextureUsage usage);
 
@@ -100,6 +105,8 @@ class Texture final : public ITexture {
   /// @brief To record whether mipmaps are available and uploaded to the GPU. This is used by the
   /// `isRequiredGenerateMipmap()` function
   mutable bool mipmapsAreAvailableAndUploaded_ = false;
+
+  mutable base::AttachmentInteropDesc attachmentDesc_; // Cached for IAttachmentInterop::getDesc()
 };
 
 } // namespace igl::metal

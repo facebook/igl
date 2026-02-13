@@ -956,4 +956,32 @@ bool Texture::toFormatDescGL(const IContext& ctx,
   return false;
 }
 
+// IAttachmentInterop interface implementation
+void* Texture::getNativeImage() const {
+  // OpenGL uses integer handles to identify textures. If someone needs to return
+  // it as a pointer, it might be implemented.
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  return nullptr;
+}
+
+void* Texture::getNativeImageView() const {
+  // OpenGL doesn't have a separate image view concept
+  return nullptr;
+}
+
+const base::AttachmentInteropDesc& Texture::getDesc() const {
+  // Update cached attachment descriptor
+  const auto dims = getDimensions();
+  attachmentDesc_.width = dims.width;
+  attachmentDesc_.height = dims.height;
+  attachmentDesc_.depth = dims.depth;
+  attachmentDesc_.numLayers = numLayers_;
+  attachmentDesc_.numSamples = numSamples_;
+  attachmentDesc_.numMipLevels = numMipLevels_;
+  attachmentDesc_.type = type_;
+  attachmentDesc_.format = getFormat();
+  attachmentDesc_.isSampled = true; // OpenGL textures are generally sampled
+  return attachmentDesc_;
+}
+
 } // namespace igl::opengl

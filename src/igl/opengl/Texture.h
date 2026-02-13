@@ -77,6 +77,11 @@ class Texture : public WithContext, public ITexture {
   // @fb-only
   [[nodiscard]] virtual GLuint getId() const = 0;
 
+  // IAttachmentInterop interface
+  [[nodiscard]] void* IGL_NULLABLE getNativeImage() const override;
+  [[nodiscard]] void* IGL_NULLABLE getNativeImageView() const override;
+  [[nodiscard]] const base::AttachmentInteropDesc& getDesc() const override;
+
   /// @brief Calculates a value for GL_PACK_ALIGNMENT or GL_UNPACK_ALIGNMENT for the given byte
   /// stride.
   /// @param stride The byte stride of a row of data in the texture data source or destination.
@@ -150,6 +155,7 @@ class Texture : public WithContext, public ITexture {
   GLsizei numLayers_ = 1;
   uint32_t numSamples_ = 1;
   bool isCreated_ = false;
+  mutable base::AttachmentInteropDesc attachmentDesc_; // Cached for IAttachmentInterop::getDesc()
 };
 
 } // namespace opengl

@@ -562,4 +562,27 @@ void Texture::clearColorTexture(const igl::Color& rgba) {
   img.ctx_->stagingDevice_->immediate->submit(wrapper);
 }
 
+// IAttachmentInterop interface implementation
+void* Texture::getNativeImage() const {
+  return reinterpret_cast<void*>(getVkImage());
+}
+
+void* Texture::getNativeImageView() const {
+  return reinterpret_cast<void*>(getVkImageView());
+}
+
+const base::AttachmentInteropDesc& Texture::getDesc() const {
+  // Update cached attachment descriptor from IGL TextureDesc
+  attachmentDesc_.width = desc_.width;
+  attachmentDesc_.height = desc_.height;
+  attachmentDesc_.depth = desc_.depth;
+  attachmentDesc_.numLayers = desc_.numLayers;
+  attachmentDesc_.numSamples = desc_.numSamples;
+  attachmentDesc_.numMipLevels = desc_.numMipLevels;
+  attachmentDesc_.type = desc_.type;
+  attachmentDesc_.format = desc_.format;
+  attachmentDesc_.isSampled = (desc_.usage & TextureDesc::TextureUsageBits::Sampled) != 0;
+  return attachmentDesc_;
+}
+
 } // namespace igl::vulkan
