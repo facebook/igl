@@ -200,6 +200,25 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                             initialLayout,
                             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                             depthTexture.getVulkanTexture().image_.samples_);
+
+    // handle MSAA
+    if (renderPass.depthAttachment.storeAction == StoreAction::MsaaResolve) {
+      IGL_DEBUG_ASSERT(framebuffer->getResolveDepthAttachment(),
+                       "Framebuffer attachment should contain a resolve depth texture");
+      const auto& depthResolveTexture =
+          static_cast<Texture&>(*framebuffer->getResolveDepthAttachment());
+      builder.addDepthStencilResolve(depthResolveTexture.getVkFormat(),
+                                     VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                     VK_ATTACHMENT_STORE_OP_STORE,
+                                     VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                     VK_ATTACHMENT_STORE_OP_STORE,
+                                     initialLayout,
+                                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+      clearValues.push_back(VkClearValue{.depthStencil = {
+                                             .depth = descDepth.clearDepth,
+                                             .stencil = descStencil.clearStencil,
+                                         }});
+    }
   }
 
   const auto& fb = static_cast<Framebuffer&>(*framebuffer);
