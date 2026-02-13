@@ -79,6 +79,10 @@ class Context final : public IContext {
   /// Mark this context as belonging to a sharegroup with another context.
   void markSharegroup(Context& context);
 
+  /// Add an external EGL context handle to this context's sharegroup
+  /// so that isCurrentSharegroup() recognizes it.
+  bool markSharegroup(EGLContext sharedContextHandle);
+
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
   void imageTargetTexture(EGLImageKHR eglImage, GLenum target) const;
   EGLImageKHR createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) const;

@@ -463,6 +463,21 @@ EGLConfig Context::getConfig() const {
   return config_;
 }
 
+bool Context::markSharegroup(EGLContext sharedContextHandle) {
+  if (sharedContextHandle == EGL_NO_CONTEXT) {
+    return false;
+  }
+  if (!sharegroup_) {
+    sharegroup_ = std::make_shared<std::vector<EGLContext>>();
+    sharegroup_->emplace_back(context_);
+  }
+  if (std::find(sharegroup_->begin(), sharegroup_->end(), sharedContextHandle) ==
+      sharegroup_->end()) {
+    sharegroup_->emplace_back(sharedContextHandle);
+  }
+  return true;
+}
+
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 EGLImageKHR Context::createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) const {
   EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(hwb);
