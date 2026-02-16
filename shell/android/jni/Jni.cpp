@@ -15,7 +15,6 @@
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
 #include <igl/Common.h>
-#include <igl/TextureFormat.h>
 
 namespace igl::samples {
 

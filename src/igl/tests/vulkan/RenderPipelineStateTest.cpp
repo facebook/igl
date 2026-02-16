@@ -11,7 +11,6 @@
 
 #include <igl/Common.h>
 #include <igl/ShaderCreator.h>
-#include <igl/TextureFormat.h>
 #include <igl/VertexInputState.h>
 #include <igl/tests/util/device/TestDevice.h>
 #include <igl/vulkan/Device.h>
