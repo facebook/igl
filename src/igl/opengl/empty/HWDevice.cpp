@@ -24,6 +24,7 @@ std::unique_ptr<IContext> HWDevice::createContext(BackendVersion /*backendVersio
   return std::make_unique<Context>();
 }
 
+// @fb-only
 std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<IContext> context,
                                                             Result* outResult) const {
   Result::setOk(outResult);
@@ -31,6 +32,7 @@ std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<ICon
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "context is null");
     return nullptr;
   }
+  // @fb-only
   return std::make_unique<opengl::empty::Device>(std::move(context));
 }
 
