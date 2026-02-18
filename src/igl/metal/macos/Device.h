@@ -12,6 +12,7 @@
 
 namespace igl::metal::macos {
 
+// @fb-only
 class Device final : public ::igl::metal::Device {
  public:
   explicit Device(id<MTLDevice> device);
