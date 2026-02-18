@@ -24,6 +24,7 @@ namespace egl {
 class Device;
 class Context;
 
+// @fb-only
 class PlatformDevice : public opengl::PlatformDevice {
  public:
   static constexpr igl::PlatformDeviceType kType = igl::PlatformDeviceType::OpenGLEgl;
