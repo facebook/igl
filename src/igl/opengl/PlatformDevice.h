@@ -10,7 +10,7 @@
 #include <igl/Common.h>
 #include <igl/PlatformDevice.h>
 #include <igl/Texture.h>
-#include <igl/opengl/GLIncludes.h>
+#include <igl/opengl/GLIncludes.h> // IWYU pragma: keep
 
 namespace igl {
 
