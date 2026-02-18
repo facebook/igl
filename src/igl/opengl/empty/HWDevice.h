@@ -11,6 +11,7 @@
 
 namespace igl::opengl::empty {
 
+// @fb-only
 class HWDevice final : public ::igl::opengl::HWDevice {
  public:
   ///--------------------------------------
@@ -21,8 +22,8 @@ class HWDevice final : public ::igl::opengl::HWDevice {
                                           EGLNativeWindowType nativeWindow,
                                           Result* outResult) const override;
 
-  std::unique_ptr<opengl::Device> createWithContext(std::unique_ptr<IContext> context,
-                                                    Result* outResult) const override;
+  std::unique_ptr<Device> createWithContext(std::unique_ptr<IContext> context,
+                                            Result* outResult) const override;
 };
 
 } // namespace igl::opengl::empty
