@@ -13,6 +13,7 @@
 
 namespace igl::metal::macos {
 
+// @fb-only
 Framebuffer::Framebuffer(const FramebufferDesc& value) : metal::Framebuffer(value) {}
 
 /// This function assumes the input texture has the content. For example,
