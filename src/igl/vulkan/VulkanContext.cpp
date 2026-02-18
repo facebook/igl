@@ -341,11 +341,10 @@ struct VulkanContextImpl final {
   // Vulkan Memory Allocator
   VmaAllocator vma = VK_NULL_HANDLE;
   // :)
-  std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<igl::vulkan::DescriptorPoolsArena>>
+  std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<DescriptorPoolsArena>>
       arenaCombinedImageSamplers;
-  std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<igl::vulkan::DescriptorPoolsArena>>
-      arenaBuffers;
-  std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<igl::vulkan::DescriptorPoolsArena>>
+  std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<DescriptorPoolsArena>> arenaBuffers;
+  std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<DescriptorPoolsArena>>
       arenaStorageImages;
   std::unique_ptr<VulkanDescriptorSetLayout> dslBindless; // everything
   VkDescriptorPool dpBindless = VK_NULL_HANDLE;
@@ -360,10 +359,9 @@ struct VulkanContextImpl final {
   TextureHandle dummyTexture = {};
 
   // NOLINTBEGIN(readability-identifier-naming)
-  igl::vulkan::DescriptorPoolsArena& getOrCreateArena_CombinedImageSamplers(
-      const VulkanContext& ctx,
-      VkDescriptorSetLayout dsl,
-      uint32_t numBindings)
+  DescriptorPoolsArena& getOrCreateArena_CombinedImageSamplers(const VulkanContext& ctx,
+                                                               VkDescriptorSetLayout dsl,
+                                                               uint32_t numBindings)
   // NOLINTEND(readability-identifier-naming)
   {
     auto it = arenaCombinedImageSamplers.find(dsl);
@@ -379,9 +377,9 @@ struct VulkanContextImpl final {
     return *arenaCombinedImageSamplers[dsl].get();
   }
   // NOLINTBEGIN(readability-identifier-naming)
-  igl::vulkan::DescriptorPoolsArena& getOrCreateArena_StorageImages(const VulkanContext& ctx,
-                                                                    VkDescriptorSetLayout dsl,
-                                                                    uint32_t numBindings)
+  DescriptorPoolsArena& getOrCreateArena_StorageImages(const VulkanContext& ctx,
+                                                       VkDescriptorSetLayout dsl,
+                                                       uint32_t numBindings)
   // NOLINTEND(readability-identifier-naming)
   {
     auto it = arenaStorageImages.find(dsl);
@@ -393,9 +391,9 @@ struct VulkanContextImpl final {
     return *arenaStorageImages[dsl].get();
   }
   // NOLINTBEGIN(readability-identifier-naming)
-  igl::vulkan::DescriptorPoolsArena& getOrCreateArena_Buffers(const VulkanContext& ctx,
-                                                              VkDescriptorSetLayout dsl,
-                                                              uint32_t numBindings)
+  DescriptorPoolsArena& getOrCreateArena_Buffers(const VulkanContext& ctx,
+                                                 VkDescriptorSetLayout dsl,
+                                                 uint32_t numBindings)
   // NOLINTEND(readability-identifier-naming)
   {
     auto it = arenaBuffers.find(dsl);
@@ -729,8 +727,8 @@ void VulkanContext::createSurface(void* IGL_NULLABLE window, void* IGL_NULLABLE 
   VK_ASSERT(ivkCreateSurface(&vf_, vkInstance_, window, display, layer, &vkSurface_));
 }
 
-igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
-                                        std::vector<HWDeviceDesc>& outDevices) {
+Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
+                                   std::vector<HWDeviceDesc>& outDevices) {
   outDevices.clear();
 
   // Physical devices
@@ -787,11 +785,11 @@ igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
   return Result();
 }
 
-igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
-                                       size_t numExtraDeviceExtensions,
-                                       const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions,
-                                       const VulkanFeatures* IGL_NULLABLE requestedFeatures,
-                                       const char* IGL_NULLABLE debugName) {
+Result VulkanContext::initContext(const HWDeviceDesc& desc,
+                                  size_t numExtraDeviceExtensions,
+                                  const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions,
+                                  const VulkanFeatures* IGL_NULLABLE requestedFeatures,
+                                  const char* IGL_NULLABLE debugName) {
   IGL_DEBUG_ASSERT(vkDevice_ == VK_NULL_HANDLE);
 
   if (desc.guid == 0UL) {
@@ -997,7 +995,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   // The staging device will use VMA to allocate a buffer, so this needs
   // to happen after VMA has been initialized.
-  stagingDevice_ = std::make_unique<igl::vulkan::VulkanStagingDevice>(*this);
+  stagingDevice_ = std::make_unique<VulkanStagingDevice>(*this);
 
   // Unextended Vulkan 1.1 does not allow sparse (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT)
   // bindings. Our descriptor set layout emulates OpenGL binding slots but we cannot put
@@ -1268,7 +1266,7 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
                                   "Descriptor Set: dsBindless_"));
 }
 
-igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
+Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
   IGL_PROFILER_FUNCTION();
 
   if (!vkDevice_ || !immediate_) {
@@ -1285,7 +1283,7 @@ igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
     return Result();
   }
 
-  swapchain_ = std::make_unique<igl::vulkan::VulkanSwapchain>(*this, width, height);
+  swapchain_ = std::make_unique<VulkanSwapchain>(*this, width, height);
 
   if (features_.has_VK_KHR_timeline_semaphore && features_.has_VK_KHR_synchronization2) {
     timelineSemaphore_ = std::make_unique<VulkanSemaphore>(
@@ -1320,7 +1318,7 @@ Result VulkanContext::present() const {
 std::unique_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSize,
                                                           VkBufferUsageFlags usageFlags,
                                                           VkMemoryPropertyFlags memFlags,
-                                                          igl::Result* IGL_NULLABLE outResult,
+                                                          Result* IGL_NULLABLE outResult,
                                                           const char* IGL_NULLABLE
                                                               debugName) const {
   IGL_PROFILER_FUNCTION();
@@ -1357,7 +1355,7 @@ VulkanImage VulkanContext::createImage(VkImageType imageType,
                                        VkMemoryPropertyFlags memFlags,
                                        VkImageCreateFlags flags,
                                        VkSampleCountFlagBits samples,
-                                       igl::Result* IGL_NULLABLE outResult,
+                                       Result* IGL_NULLABLE outResult,
                                        const char* IGL_NULLABLE debugName) const {
   IGL_PROFILER_FUNCTION();
 
@@ -1427,7 +1425,7 @@ std::unique_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
     VkImageUsageFlags usageFlags,
     VkImageCreateFlags flags,
     VkSampleCountFlagBits samples,
-    igl::Result* IGL_NULLABLE outResult,
+    Result* IGL_NULLABLE outResult,
     const char* IGL_NULLABLE debugName) const {
   if (!validateImageLimits(
           imageType, samples, extent, getVkPhysicalDeviceProperties().limits, outResult)) {
@@ -1622,7 +1620,7 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTextureFromVkImage(
 
 SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
                                            VkFormat yuvVkFormat,
-                                           igl::Result* IGL_NULLABLE outResult,
+                                           Result* IGL_NULLABLE outResult,
                                            const char* IGL_NULLABLE debugName) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
@@ -1701,7 +1699,7 @@ void VulkanContext::querySurfaceCapabilities() {
   }
 }
 
-VkFormat VulkanContext::getClosestDepthStencilFormat(igl::TextureFormat desiredFormat) const {
+VkFormat VulkanContext::getClosestDepthStencilFormat(TextureFormat desiredFormat) const {
   IGL_DEBUG_ASSERT(!deviceDepthFormats_.empty());
   // get a list of compatible depth formats for a given desired format
   // The list will contain depth format that are ordered from most to least closest
@@ -1974,6 +1972,7 @@ void VulkanContext::waitDeferredTasks() {
   deferredTasks.clear();
 }
 
+// @fb-only
 VkFence VulkanContext::getVkFenceFromSubmitHandle(igl::SubmitHandle handle) const noexcept {
   if (handle == 0) {
     IGL_LOG_ERROR("Invalid submit handle passed to getVkFenceFromSubmitHandle");
@@ -1986,6 +1985,7 @@ VkFence VulkanContext::getVkFenceFromSubmitHandle(igl::SubmitHandle handle) cons
   return vkFence;
 }
 
+// @fb-only
 int VulkanContext::getFenceFdFromSubmitHandle(igl::SubmitHandle handle) const noexcept {
   int fenceFd = -1;
 #if defined(IGL_PLATFORM_ANDROID) && defined(VK_KHR_external_fence_fd)
@@ -2104,10 +2104,10 @@ void VulkanContext::freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout ds
   pimpl_->arenaStorageImages.erase(dsl);
 }
 
-igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc& desc,
-                                                           const IRenderPipelineState* IGL_NULLABLE
-                                                               compatiblePipeline,
-                                                           Result* IGL_NULLABLE outResult) {
+BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc& desc,
+                                                      const IRenderPipelineState* IGL_NULLABLE
+                                                          compatiblePipeline,
+                                                      Result* IGL_NULLABLE outResult) {
   VkDevice device = getVkDevice();
 
   BindGroupMetadataTextures metadata{desc};
@@ -2189,12 +2189,11 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
       continue;
     }
     const igl::vulkan::VulkanTexture& texture =
-        desc.textures[loc]
-            ? static_cast<igl::vulkan::Texture*>(desc.textures[loc].get())->getVulkanTexture()
-            : *textures_.objects_[0].obj_; // use a dummy texture when necessary
+        desc.textures[loc] ? static_cast<Texture*>(desc.textures[loc].get())->getVulkanTexture()
+                           : *textures_.objects_[0].obj_; // use a dummy texture when necessary
     const igl::vulkan::VulkanSampler& sampler =
         desc.samplers[loc]
-            ? *samplers_.get(static_cast<igl::vulkan::SamplerState&>(*desc.samplers[loc]).sampler_)
+            ? *samplers_.get(static_cast<SamplerState&>(*desc.samplers[loc]).sampler_)
             : samplers_.objects_[0].obj_; // use a dummy sampler when necessary
 
     // multisampled images cannot be directly accessed from shaders
@@ -2235,8 +2234,8 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
   return pimpl_->bindGroupTexturesPool.create(std::move(metadata));
 }
 
-igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferDesc& desc,
-                                                          Result* outResult) {
+BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferDesc& desc,
+                                                     Result* outResult) {
   VkDevice device = getVkDevice();
 
   BindGroupMetadataBuffers metadata{desc};
@@ -2259,7 +2258,7 @@ igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferD
     if (!desc.buffers[loc]) {
       continue;
     }
-    auto* buf = static_cast<igl::vulkan::Buffer*>(desc.buffers[loc].get());
+    auto* buf = static_cast<Buffer*>(desc.buffers[loc].get());
     const bool isDynamic = (desc.isDynamicBufferMask & (1ul << loc)) != 0;
     const bool isUniform = ((buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0);
     const VkDescriptorType type =
@@ -2352,7 +2351,7 @@ igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferD
     if (!desc.buffers[loc]) {
       continue;
     }
-    auto* buf = static_cast<igl::vulkan::Buffer*>(desc.buffers[loc].get());
+    auto* buf = static_cast<Buffer*>(desc.buffers[loc].get());
     const bool isDynamic = (desc.isDynamicBufferMask & (1ul << loc)) != 0;
     const bool isUniform = ((buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0);
     const VkDescriptorType type = isUniform ? (isDynamic ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
@@ -2387,7 +2386,7 @@ igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferD
   return pimpl_->bindGroupBuffersPool.create(std::move(metadata));
 }
 
-void VulkanContext::destroy(igl::BindGroupTextureHandle handle) {
+void VulkanContext::destroy(BindGroupTextureHandle handle) {
   if (handle.empty()) {
     return;
   }
@@ -2400,7 +2399,7 @@ void VulkanContext::destroy(igl::BindGroupTextureHandle handle) {
   pimpl_->bindGroupTexturesPool.destroy(handle);
 }
 
-void VulkanContext::destroy(igl::BindGroupBufferHandle handle) {
+void VulkanContext::destroy(BindGroupBufferHandle handle) {
   if (handle.empty()) {
     return;
   }
@@ -2413,7 +2412,7 @@ void VulkanContext::destroy(igl::BindGroupBufferHandle handle) {
   pimpl_->bindGroupBuffersPool.destroy(handle);
 }
 
-void VulkanContext::destroy(igl::SamplerHandle handle) {
+void VulkanContext::destroy(SamplerHandle handle) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
   if (handle.empty()) {
@@ -2428,7 +2427,7 @@ void VulkanContext::destroy(igl::SamplerHandle handle) {
   samplers_.destroy(handle);
 }
 
-void VulkanContext::destroy(igl::TextureHandle handle) {
+void VulkanContext::destroy(TextureHandle handle) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
   if (handle.empty()) {
@@ -2438,19 +2437,19 @@ void VulkanContext::destroy(igl::TextureHandle handle) {
   textures_.destroy(handle);
 }
 
-VkDescriptorSet VulkanContext::getBindGroupDescriptorSet(igl::BindGroupTextureHandle handle) const {
+VkDescriptorSet VulkanContext::getBindGroupDescriptorSet(BindGroupTextureHandle handle) const {
   return handle.valid() ? pimpl_->bindGroupTexturesPool.get(handle)->dset : VK_NULL_HANDLE;
 }
 
-uint32_t VulkanContext::getBindGroupUsageMask(igl::BindGroupTextureHandle handle) const {
+uint32_t VulkanContext::getBindGroupUsageMask(BindGroupTextureHandle handle) const {
   return handle.valid() ? pimpl_->bindGroupTexturesPool.get(handle)->usageMask : 0;
 }
 
-VkDescriptorSet VulkanContext::getBindGroupDescriptorSet(igl::BindGroupBufferHandle handle) const {
+VkDescriptorSet VulkanContext::getBindGroupDescriptorSet(BindGroupBufferHandle handle) const {
   return handle.valid() ? pimpl_->bindGroupBuffersPool.get(handle)->dset : VK_NULL_HANDLE;
 }
 
-uint32_t VulkanContext::getBindGroupUsageMask(igl::BindGroupBufferHandle handle) const {
+uint32_t VulkanContext::getBindGroupUsageMask(BindGroupBufferHandle handle) const {
   return handle.valid() ? pimpl_->bindGroupBuffersPool.get(handle)->usageMask : 0;
 }
 
