@@ -13,6 +13,7 @@
 namespace igl::opengl {
 
 /// @brief OpenGL-specific FramebufferWrapper that returns the GL framebuffer ID
+// @fb-only
 class FramebufferWrapper final : public igl::FramebufferWrapper {
  public:
   using igl::FramebufferWrapper::FramebufferWrapper;
