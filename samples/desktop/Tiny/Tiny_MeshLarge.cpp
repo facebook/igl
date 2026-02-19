@@ -668,8 +668,8 @@ std::shared_ptr<IVertexInputState> vertexInput0_;
 std::shared_ptr<IVertexInputState> vertexInputShadows_;
 std::shared_ptr<IDepthStencilState> depthStencilState_;
 std::shared_ptr<IDepthStencilState> depthStencilStateLEqual_;
-std::shared_ptr<ISamplerState> sampler_;
-std::shared_ptr<ISamplerState> samplerShadow_;
+std::shared_ptr<ISamplerState> sampler;
+std::shared_ptr<ISamplerState> samplerShadow;
 std::shared_ptr<ITexture> textureDummyWhite_;
 #if USE_OPENGL_BACKEND
 std::shared_ptr<ITexture> textureDummyBlack_;
@@ -1346,7 +1346,7 @@ void initModel(int numSamplesMSAA) {
     desc.addressModeV = igl::SamplerAddressMode::Repeat;
     desc.mipFilter = igl::SamplerMipFilter::Linear;
     desc.debugName = "Sampler: linear";
-    sampler_ = device_->createSamplerState(desc, nullptr);
+    sampler = device_->createSamplerState(desc, nullptr);
 
     desc.addressModeU = igl::SamplerAddressMode::Clamp;
     desc.addressModeV = igl::SamplerAddressMode::Clamp;
@@ -1354,7 +1354,7 @@ void initModel(int numSamplesMSAA) {
     desc.debugName = "Sampler: shadow";
     desc.depthCompareEnabled = true;
     desc.depthCompareFunction = igl::CompareFunction::LessEqual;
-    samplerShadow_ = device_->createSamplerState(desc, nullptr);
+    samplerShadow = device_->createSamplerState(desc, nullptr);
   }
 
   commandQueue_ = device_->createCommandQueue({}, nullptr);
@@ -1994,11 +1994,11 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
     commands->bindBuffer(sbIdx, sbMaterials_.get());
     commands->bindTexture(0, igl::BindTarget::kFragment, fbShadowMap_->getDepthAttachment().get());
     commands->bindTexture(4, igl::BindTarget::kFragment, skyboxTextureIrradiance_.get());
-    commands->bindSamplerState(0, igl::BindTarget::kFragment, samplerShadow_.get());
-    commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
-    commands->bindSamplerState(2, igl::BindTarget::kFragment, sampler_.get());
-    commands->bindSamplerState(3, igl::BindTarget::kFragment, sampler_.get());
-    commands->bindSamplerState(4, igl::BindTarget::kFragment, sampler_.get());
+    commands->bindSamplerState(0, igl::BindTarget::kFragment, samplerShadow.get());
+    commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler.get());
+    commands->bindSamplerState(2, igl::BindTarget::kFragment, sampler.get());
+    commands->bindSamplerState(3, igl::BindTarget::kFragment, sampler.get());
+    commands->bindSamplerState(4, igl::BindTarget::kFragment, sampler.get());
 
 #if USE_OPENGL_BACKEND
     commands->bindVertexBuffer(0, *vb0_);
@@ -2037,8 +2037,8 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
 #else
     commands->bindTexture(0, igl::BindTarget::kFragment, fbShadowMap_->getDepthAttachment().get());
     commands->bindTexture(1, igl::BindTarget::kFragment, skyboxTextureIrradiance_.get());
-    commands->bindSamplerState(0, igl::BindTarget::kFragment, samplerShadow_.get());
-    commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
+    commands->bindSamplerState(0, igl::BindTarget::kFragment, samplerShadow.get());
+    commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler.get());
     commands->bindIndexBuffer(*ib0_, IndexFormat::UInt32);
     commands->drawIndexed(indexData_.size());
     if (enableWireframe_) {
@@ -2051,7 +2051,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
     // Skybox
     commands->bindRenderPipelineState(renderPipelineState_Skybox_);
     commands->bindTexture(1, igl::BindTarget::kFragment, skyboxTextureReference_.get());
-    commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
+    commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler.get());
     commands->pushDebugGroupLabel("Render Skybox", igl::Color(0, 1, 0));
     commands->bindDepthStencilState(depthStencilStateLEqual_);
     commands->draw(3u * 6u * 2u);
@@ -2102,7 +2102,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
                           igl::BindTarget::kFragment,
                           numSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0).get()
                                              : fbOffscreen_->getColorAttachment(0).get());
-    commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
+    commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler.get());
     commands->draw(3);
     commands->popDebugGroupLabel();
 
@@ -2775,8 +2775,8 @@ int main(int argc, char* argv[]) {
   skyboxTextureIrradiance_ = nullptr;
   textures_.clear();
   texturesCache_.clear();
-  sampler_ = nullptr;
-  samplerShadow_ = nullptr;
+  sampler = nullptr;
+  samplerShadow = nullptr;
   fbMain_ = nullptr;
   fbShadowMap_ = nullptr;
   fbOffscreen_ = nullptr;
