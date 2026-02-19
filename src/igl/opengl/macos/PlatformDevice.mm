@@ -28,6 +28,7 @@ namespace igl::opengl::macos {
 
 ///--------------------------------------
 /// MARK: - PlatformDevice
+// @fb-only
 PlatformDevice::PlatformDevice(Device& owner) : opengl::PlatformDevice(owner) {}
 
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result* outResult) {
