@@ -12,6 +12,7 @@
 
 namespace igl::opengl::ios {
 
+// @fb-only
 class Device final : public opengl::Device {
  public:
   explicit Device(std::unique_ptr<IContext> context);
