@@ -10,7 +10,7 @@
 #pragma once
 
 #include <IGLU/imgui/Session.h>
-#include <glm/glm.hpp>
+#include <glm/ext/matrix_float4x4.hpp>
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <igl/FPSCounter.h>
