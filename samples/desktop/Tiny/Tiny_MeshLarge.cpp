@@ -149,7 +149,7 @@ std::string contentRootFolder;
 
 #if IGL_WITH_IGLU
 std::unique_ptr<iglu::imgui::Session> imguiSession;
-igl::shell::InputDispatcher inputDispatcher_;
+igl::shell::InputDispatcher inputDispatcher;
 #endif // IGL_WITH_IGLU
 
 #if USE_TEXTURE_LOADER
@@ -847,7 +847,7 @@ GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
       glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
       mousePos_ = vec2(x / fbWidth, 1.0f - y / fbHeight);
 #if IGL_WITH_IGLU
-      inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
+      inputDispatcher.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
 #endif // IGL_WITH_IGLU
     });
 
@@ -870,7 +870,7 @@ GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
           (button == GLFW_MOUSE_BUTTON_LEFT)
               ? MouseButton::Left
               : (button == GLFW_MOUSE_BUTTON_RIGHT ? MouseButton::Right : MouseButton::Middle);
-      inputDispatcher_.queueEvent(
+      inputDispatcher.queueEvent(
           igl::shell::MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
 #endif // IGL_WITH_IGLU
     });
@@ -2649,7 +2649,7 @@ int main(int argc, char* argv[]) {
   createComputePipeline();
 
 #if IGL_WITH_IGLU
-  imguiSession = std::make_unique<iglu::imgui::Session>(*device_, inputDispatcher_);
+  imguiSession = std::make_unique<iglu::imgui::Session>(*device_, inputDispatcher);
 #endif // IGL_WITH_IGLU
 
   // In headless mode, wait for all textures to be loaded before rendering
@@ -2712,7 +2712,7 @@ int main(int argc, char* argv[]) {
     positioner_.update(delta, mousePos_, mousePressed_);
     prevTime = newTime;
 #if IGL_WITH_IGLU
-    inputDispatcher_.processEvents();
+    inputDispatcher.processEvents();
 #endif // IGL_WITH_IGLU
     render(getNativeDrawable(), frameIndex, kNumSamplesMSAA);
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
