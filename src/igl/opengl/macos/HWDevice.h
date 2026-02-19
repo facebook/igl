@@ -11,6 +11,7 @@
 
 namespace igl::opengl::macos {
 
+// @fb-only
 class HWDevice final : public ::igl::opengl::HWDevice {
  public:
   ///--------------------------------------
@@ -20,6 +21,7 @@ class HWDevice final : public ::igl::opengl::HWDevice {
   std::unique_ptr<IContext> createContext(BackendVersion backendVersion,
                                           EGLNativeWindowType nativeWindow,
                                           Result* outResult) const override;
+  // @fb-only
   std::unique_ptr<opengl::Device> createWithContext(std::unique_ptr<IContext> context,
                                                     Result* outResult) const override;
 };
