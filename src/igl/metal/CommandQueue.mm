@@ -77,7 +77,7 @@ SubmitHandle CommandQueue::submit(const igl::ICommandBuffer& commandBuffer, bool
     if ((currentCommandBuffer + 1) == kIGLMetalBeginCommandBufferToCapture) {
       // Start capturing one command buffer earlier
       startCapture(value_);
-    } else if (currentCommandBuffer >= static_cast<int64_t>(kIGLMetalEndCommandBufferToCapture)) {
+    } else if (currentCommandBuffer >= kIGLMetalEndCommandBufferToCapture) {
       stopCapture();
     }
     ++currentCommandBuffer;
