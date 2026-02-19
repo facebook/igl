@@ -11,7 +11,9 @@
 
 #include <IGLU/imgui/Session.h>
 #include <atomic>
-#include <glm/glm.hpp>
+#include <glm/ext/matrix_float4x4.hpp>
+#include <glm/ext/vector_float3.hpp>
+#include <glm/ext/vector_float4.hpp>
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <igl/FPSCounter.h>
