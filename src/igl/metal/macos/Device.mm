@@ -11,6 +11,7 @@
 
 namespace igl::metal::macos {
 
+// @fb-only
 Device::Device(id<MTLDevice> device) : metal::Device(device) {}
 
 std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& desc,
