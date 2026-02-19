@@ -279,45 +279,46 @@ bool IShaderStages::isValid() const noexcept {
 } // namespace igl
 
 namespace std {
+// @fb-only
 
-size_t std::hash<igl::ShaderCompilerOptions>::operator()(
-    const igl::ShaderCompilerOptions& key) const {
-  const size_t result = hash<bool>()(key.fastMathEnabled);
+size_t hash<igl::ShaderCompilerOptions>::operator()(const igl::ShaderCompilerOptions& key) const {
+  const size_t result = std::hash<bool>()(key.fastMathEnabled);
   return result;
 }
 
-size_t std::hash<igl::ShaderModuleInfo>::operator()(const igl::ShaderModuleInfo& key) const {
+size_t hash<igl::ShaderModuleInfo>::operator()(const igl::ShaderModuleInfo& key) const {
   static_assert(std::is_same_v<uint8_t, std::underlying_type<igl::ShaderStage>::type>);
-  size_t result = hash<uint8_t>()(static_cast<uint8_t>(key.stage));
-  result ^= hash<string>()(key.entryPoint);
+  size_t result = std::hash<uint8_t>()(static_cast<uint8_t>(key.stage));
+  result ^= std::hash<string>()(key.entryPoint);
   return result;
 }
 
-size_t std::hash<igl::ShaderInput>::operator()(const igl::ShaderInput& key) const {
+size_t hash<igl::ShaderInput>::operator()(const igl::ShaderInput& key) const {
   static_assert(std::is_same_v<uint8_t, std::underlying_type<igl::ShaderInputType>::type>);
   size_t result = safeCStrHash(key.source);
   result ^= safeDataHash(key.data, key.length);
-  result ^= hash<uint8_t>()(EnumToValue(key.type));
+  result ^= std::hash<uint8_t>()(EnumToValue(key.type));
   return result;
 }
 
-size_t std::hash<igl::ShaderModuleDesc>::operator()(const igl::ShaderModuleDesc& key) const {
+size_t hash<igl::ShaderModuleDesc>::operator()(const igl::ShaderModuleDesc& key) const {
   static_assert(std::is_same_v<uint8_t, std::underlying_type<igl::ShaderInputType>::type>);
-  size_t result = hash<igl::ShaderModuleInfo>()(key.info);
-  result ^= hash<igl::ShaderInput>()(key.input);
-  result ^= hash<string>()(key.debugName);
+  size_t result = std::hash<igl::ShaderModuleInfo>()(key.info);
+  result ^= std::hash<igl::ShaderInput>()(key.input);
+  result ^= std::hash<string>()(key.debugName);
   return result;
 }
 
-size_t std::hash<igl::ShaderLibraryDesc>::operator()(const igl::ShaderLibraryDesc& key) const {
+size_t hash<igl::ShaderLibraryDesc>::operator()(const igl::ShaderLibraryDesc& key) const {
   static_assert(std::is_same_v<uint8_t, std::underlying_type<igl::ShaderInputType>::type>);
-  size_t result = hash<size_t>()(key.moduleInfo.size());
+  size_t result = std::hash<size_t>()(key.moduleInfo.size());
   for (const auto& info : key.moduleInfo) {
-    result ^= hash<igl::ShaderModuleInfo>()(info);
+    result ^= std::hash<igl::ShaderModuleInfo>()(info);
   }
-  result ^= hash<igl::ShaderInput>()(key.input);
-  result ^= hash<string>()(key.debugName);
+  result ^= std::hash<igl::ShaderInput>()(key.input);
+  result ^= std::hash<string>()(key.debugName);
   return result;
 }
 
+// @fb-only
 } // namespace std
