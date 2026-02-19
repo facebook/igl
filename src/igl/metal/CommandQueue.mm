@@ -8,6 +8,7 @@
 #include <igl/metal/CommandQueue.h>
 
 #include <Foundation/Foundation.h>
+#include <igl/IGLFolly.h>
 #include <igl/metal/BufferSynchronizationManager.h>
 #include <igl/metal/CommandBuffer.h>
 #include <igl/metal/DeviceStatistics.h>
@@ -77,7 +78,12 @@ SubmitHandle CommandQueue::submit(const igl::ICommandBuffer& commandBuffer, bool
     if ((currentCommandBuffer + 1) == kIGLMetalBeginCommandBufferToCapture) {
       // Start capturing one command buffer earlier
       startCapture(value_);
+      FOLLY_PUSH_WARNING
+      FOLLY_CLANG_DISABLE_WARNING("-Wtautological-compare")
+      // Disable warning; local debug builds may set kIGLMetalEndCommandBufferToCapture to a
+      // non-zero value
     } else if (currentCommandBuffer >= kIGLMetalEndCommandBufferToCapture) {
+      FOLLY_POP_WARNING
       stopCapture();
     }
     ++currentCommandBuffer;
