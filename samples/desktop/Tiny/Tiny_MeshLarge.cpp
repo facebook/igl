@@ -148,7 +148,7 @@ constexpr bool kPreferIntegratedGPU = false;
 std::string contentRootFolder;
 
 #if IGL_WITH_IGLU
-std::unique_ptr<iglu::imgui::Session> imguiSession_;
+std::unique_ptr<iglu::imgui::Session> imguiSession;
 igl::shell::InputDispatcher inputDispatcher_;
 #endif // IGL_WITH_IGLU
 
@@ -2107,7 +2107,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
     commands->popDebugGroupLabel();
 
 #if IGL_WITH_IGLU
-    imguiSession_->endFrame(*device_, *commands);
+    imguiSession->endFrame(*device_, *commands);
 #endif // IGL_WITH_IGLU
 
     commands->endEncoding();
@@ -2649,7 +2649,7 @@ int main(int argc, char* argv[]) {
   createComputePipeline();
 
 #if IGL_WITH_IGLU
-  imguiSession_ = std::make_unique<iglu::imgui::Session>(*device_, inputDispatcher_);
+  imguiSession = std::make_unique<iglu::imgui::Session>(*device_, inputDispatcher_);
 #endif // IGL_WITH_IGLU
 
   // In headless mode, wait for all textures to be loaded before rendering
@@ -2673,7 +2673,7 @@ int main(int argc, char* argv[]) {
       framebufferDesc.colorAttachments[0].texture = getNativeDrawable();
       framebufferDesc.depthAttachment.texture = getNativeDepthDrawable();
 #if IGL_WITH_IGLU
-      imguiSession_->beginFrame(framebufferDesc, 1.0f);
+      imguiSession->beginFrame(framebufferDesc, 1.0f);
       ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
       ImGui::ShowDemoWindow();
 
@@ -2701,7 +2701,7 @@ int main(int argc, char* argv[]) {
         ImGui::End();
       }
 
-      imguiSession_->drawFPS(fps_.getAverageFPS());
+      imguiSession->drawFPS(fps_.getAverageFPS());
 #endif // IGL_WITH_IGLU
     }
 
@@ -2752,7 +2752,7 @@ int main(int argc, char* argv[]) {
   loaderShouldExit_.store(true, std::memory_order_release);
 
 #if IGL_WITH_IGLU
-  imguiSession_ = nullptr;
+  imguiSession = nullptr;
 #endif // IGL_WITH_IGLU
   // destroy all the Vulkan stuff before closing the window
   vb0_ = nullptr;
