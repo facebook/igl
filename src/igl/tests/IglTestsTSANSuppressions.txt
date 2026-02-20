@@ -5,7 +5,7 @@
 race:igl::vulkan::Device::~Device()
 
 # libvulkan_lvp.so (LLVMpipe Vulkan driver)
-race:pthread_mutex_init
-race:pthread_mutex_destroy
-race:pthread_cond_destroy
-race:free
+# Lavapipe has internal data races between render and worker threads
+# (e.g. realloc vs memcpy, pthread_mutex ops). Suppress all races in
+# the lavapipe shared library since we cannot fix third-party code.
+race:libvulkan_lvp.so
