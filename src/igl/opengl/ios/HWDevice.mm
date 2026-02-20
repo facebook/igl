@@ -26,6 +26,7 @@ std::unique_ptr<IContext> HWDevice::createContext(BackendVersion backendVersion,
   return std::make_unique<Context>(backendVersion, outResult);
 }
 
+// @fb-only
 std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<IContext> context,
                                                             Result* outResult) const {
   Result::setOk(outResult);
