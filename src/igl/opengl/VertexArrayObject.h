@@ -8,7 +8,6 @@
 #pragma once
 
 #include <igl/Common.h>
-#include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
 
 namespace igl {
