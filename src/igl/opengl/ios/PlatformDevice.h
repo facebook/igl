@@ -24,6 +24,7 @@ namespace igl::opengl::ios {
 
 class Device;
 
+// @fb-only
 class PlatformDevice final : public opengl::PlatformDevice {
  public:
   static constexpr igl::PlatformDeviceType kType = igl::PlatformDeviceType::OpenGLIOS;
