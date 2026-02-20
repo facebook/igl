@@ -162,7 +162,15 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     return nullptr;
   }
 
-  if (static_cast<uint64_t>(x) * static_cast<uint64_t>(y) > std::numeric_limits<uint32_t>::max()) {
+  // Ensure the raw decompressed data size won't overflow signed int range when stb_image computes
+  // it internally. PNG depth can be up to 16 bits, making the worst-case raw data size
+  // approximately 2 * x * y * comp + y bytes. stb_image passes this value as int to
+  // stbi_zlib_decode_malloc_guesssize_headerflag, so it must fit within INT_MAX to avoid
+  // sign-extension to a huge size_t in malloc.
+  const auto rawSizeEstimate =
+      static_cast<uint64_t>(x) * static_cast<uint64_t>(y) * static_cast<uint64_t>(comp) * 2 +
+      static_cast<uint64_t>(y);
+  if (rawSizeEstimate > static_cast<uint64_t>(std::numeric_limits<int>::max())) {
     igl::Result::setResult(outResult, igl::Result::Code::InvalidOperation, "Image is too large.");
     return nullptr;
   }
