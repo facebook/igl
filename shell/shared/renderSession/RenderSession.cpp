@@ -8,6 +8,8 @@
 #include <shell/shared/renderSession/RenderSession.h>
 
 #include <chrono>
+#include <cstdlib>
+#include <thread>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/ShellParams.h>
@@ -186,6 +188,11 @@ void RenderSession::logFinalBenchmarkReport(bool wasTimeout) noexcept {
 }
 
 void RenderSession::runUpdate(SurfaceTextures surfaceTextures) noexcept {
+  // Check if frozen (frame gate)
+  if (frozen_) {
+    return;
+  }
+
   // Initialize benchmark tracker on first call if not already done
   if (shellParams_ && shellParams_->benchmarkParams.has_value() && !benchmarkTracker_) {
     initBenchmarkTracker();
@@ -203,6 +210,14 @@ void RenderSession::runUpdate(SurfaceTextures surfaceTextures) noexcept {
           "debug.iglshell.renderSession.benchmark=true\n");
     }
     loggedMissingParams_ = true;
+  }
+
+  // Check freeze-at-frame gate
+  if (shellParams_ && shellParams_->freezeAtFrame != ~0u &&
+      frameCount_ >= shellParams_->freezeAtFrame) {
+    frozen_ = true;
+    IGL_LOG_INFO("[IGL Shell] Frozen at frame %u\n", shellParams_->freezeAtFrame);
+    return;
   }
 
   // Measure render time for benchmarking
@@ -228,6 +243,22 @@ void RenderSession::runUpdate(SurfaceTextures surfaceTextures) noexcept {
       benchmarkExpiredLogged_ = true;
     }
   }
+
+  // FPS throttling
+  if (shellParams_ && shellParams_->fpsThrottleMs > 0) {
+    const double endTime = getSeconds();
+    const double frameTimeMs = (endTime - startTime) * 1000.0;
+    const double targetMs =
+        shellParams_->fpsThrottleRandom
+            ? static_cast<double>(1 + (std::rand() % shellParams_->fpsThrottleMs))
+            : static_cast<double>(shellParams_->fpsThrottleMs);
+    if (frameTimeMs < targetMs) {
+      std::this_thread::sleep_for(
+          std::chrono::milliseconds(static_cast<int>(targetMs - frameTimeMs)));
+    }
+  }
+
+  frameCount_++;
 }
 
 } // namespace igl::shell

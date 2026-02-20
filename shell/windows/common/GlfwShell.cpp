@@ -10,11 +10,14 @@
 #include <shell/windows/common/GlfwShell.h>
 
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
+#include <thread>
 #include <shell/shared/input/InputDispatcher.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
+#include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ScreenshotTestRenderSessionHelper.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/Framebuffer.h>
@@ -239,8 +242,17 @@ bool GlfwShell::initialize(int argc,
 
 void GlfwShell::run() noexcept {
   uint64_t frameNumber = 0;
+  bool frozen = false;
   while ((!window_ || !glfwWindowShouldClose(window_.get())) &&
          !session_->appParams().exitRequested) {
+    if (frozen) {
+      if (window_) {
+        glfwPollEvents();
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(16));
+      continue;
+    }
+
     willTick();
     auto surfaceTextures = createSurfaceTextures();
     IGL_DEBUG_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
@@ -248,7 +260,29 @@ void GlfwShell::run() noexcept {
     std::shared_ptr<ITexture> colorTexture = surfaceTextures.color;
 
     platform_->getInputDispatcher().processEvents();
+
+    const auto& params = session_->shellParams();
+    if (params.freezeAtFrame != ~0u && frameNumber >= params.freezeAtFrame) {
+      frozen = true;
+      IGL_LOG_INFO("[IGL Shell] Frozen at frame %u\n", params.freezeAtFrame);
+      continue;
+    }
+
+    const double startTime = RenderSession::getSeconds();
     session_->update(std::move(surfaceTextures));
+
+    if (params.fpsThrottleMs > 0) {
+      const double endTime = RenderSession::getSeconds();
+      const double frameTimeMs = (endTime - startTime) * 1000.0;
+      const double targetMs = params.fpsThrottleRandom
+                                  ? static_cast<double>(1 + (std::rand() % params.fpsThrottleMs))
+                                  : static_cast<double>(params.fpsThrottleMs);
+      if (frameTimeMs < targetMs) {
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(static_cast<int>(targetMs - frameTimeMs)));
+      }
+    }
+
     if (window_) {
       glfwPollEvents();
     }

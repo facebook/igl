@@ -124,6 +124,22 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
     }
   }
 
+  auto fpsThrottle = getAndroidSystemPropertyInt((prefixStr + "fps-throttle").c_str());
+  if (fpsThrottle.has_value()) {
+    shellParams.fpsThrottleMs = static_cast<uint32_t>(fpsThrottle.value());
+  }
+
+  auto fpsThrottleRandom =
+      getAndroidSystemPropertyBool((prefixStr + "fps-throttle-random").c_str());
+  if (fpsThrottleRandom.has_value()) {
+    shellParams.fpsThrottleRandom = fpsThrottleRandom.value();
+  }
+
+  auto freezeAtFrame = getAndroidSystemPropertyInt((prefixStr + "freeze-at-frame").c_str());
+  if (freezeAtFrame.has_value()) {
+    shellParams.freezeAtFrame = static_cast<uint32_t>(freezeAtFrame.value());
+  }
+
   // Read BenchmarkRenderSessionParams - always try to read them
   auto timeout = getAndroidSystemPropertySizeT((prefixStr + "timeout").c_str());
   auto sessions = getAndroidSystemPropertySizeT((prefixStr + "sessions").c_str());
@@ -163,6 +179,9 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
                                                                  "screenshot-file",
                                                                  "screenshot-number",
                                                                  "viewport-size",
+                                                                 "fps-throttle",
+                                                                 "fps-throttle-random",
+                                                                 "freeze-at-frame",
                                                                  "timeout",
                                                                  "sessions",
                                                                  "log-reporter",
@@ -342,6 +361,11 @@ void TinyRenderer::init(AAssetManager* mgr,
     // Decide which backend api to use, default as GLES3
     d = hwDevice.create(backendVersion_, &result);
     shellParams_.shouldPresent = false;
+
+    if (shellParams_.isHeadless) {
+      width_ = static_cast<uint32_t>(shellParams_.viewportSize.x);
+      height_ = static_cast<uint32_t>(shellParams_.viewportSize.y);
+    }
 
     if (swapchainColorTextureFormat == TextureFormat::Invalid) {
       swapchainColorTextureFormat_ = TextureFormat::RGBA_SRGB;

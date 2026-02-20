@@ -129,8 +129,10 @@ class RenderSession {
   std::optional<Color> preferredClearColor_;
   const ShellParams* shellParams_ = nullptr;
   std::unique_ptr<BenchmarkTracker> benchmarkTracker_;
+  uint32_t frameCount_ = 0;
   bool benchmarkExpiredLogged_ = false;
   bool loggedMissingParams_ = false;
+  bool frozen_ = false;
 };
 
 } // namespace igl::shell

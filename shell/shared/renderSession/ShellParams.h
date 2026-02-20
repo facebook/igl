@@ -62,6 +62,7 @@ struct ShellParams {
 
   // FPS throttling for testing race conditions
   uint32_t fpsThrottleMs = 0; // 0 = disabled, >0 = delay in milliseconds per frame
+  uint32_t freezeAtFrame = ~0u; // frame number to freeze at (~0u = disabled)
   bool fpsThrottleRandom = false; // if true, throttle is random in range [1, fpsThrottleMs]
 };
 
