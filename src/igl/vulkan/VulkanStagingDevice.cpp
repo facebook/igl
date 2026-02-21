@@ -72,7 +72,11 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
     stagingBuffer->bufferSubData(memoryChunk.offset, copySize, copyData);
 
     // do the transfer
-    const VkBufferCopy copy = {memoryChunk.offset, chunkDstOffset, copySize};
+    const VkBufferCopy copy = {
+        .srcOffset = memoryChunk.offset,
+        .dstOffset = chunkDstOffset,
+        .size = copySize,
+    };
 
     const auto& wrapper = immediate->acquire();
     ctx_.vf_.vkCmdCopyBuffer(
@@ -108,11 +112,13 @@ void VulkanStagingDevice::mergeRegionsAndFreeBuffers() {
                                      (nextRegion.size + nextRegion.offset) == currRegion.offset;
 
         if (adjacentRegions) {
-          const MemoryRegion newRegion = {std::min(currRegion.offset, nextRegion.offset),
-                                          currRegion.size + nextRegion.size,
-                                          currRegion.alignedSize,
-                                          VulkanImmediateCommands::SubmitHandle(),
-                                          currRegion.stagingBufferIndex};
+          const MemoryRegion newRegion = {
+              .offset = std::min(currRegion.offset, nextRegion.offset),
+              .size = currRegion.size + nextRegion.size,
+              .alignedSize = currRegion.alignedSize,
+              .handle = VulkanImmediateCommands::SubmitHandle(),
+              .stagingBufferIndex = currRegion.stagingBufferIndex,
+          };
           nextRegion = newRegion;
           regions_.erase(regions_.begin() + regionIndex);
           continue;
@@ -189,20 +195,24 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
     const uint32_t newOffset = regionItr->offset + allocatedSize;
     const uint32_t stagingBufferIndex = regionItr->stagingBufferIndex;
 
-    const MemoryRegion allocatedRegion = {regionItr->offset,
-                                          allocatedSize,
-                                          regionItr->alignedSize,
-                                          VulkanImmediateCommands::SubmitHandle(),
-                                          stagingBufferIndex};
+    const MemoryRegion allocatedRegion = {
+        .offset = regionItr->offset,
+        .size = allocatedSize,
+        .alignedSize = regionItr->alignedSize,
+        .handle = VulkanImmediateCommands::SubmitHandle(),
+        .stagingBufferIndex = stagingBufferIndex,
+    };
 
     // Return this region and add the remaining unused size to the regions_ deque
     IGL_SCOPE_EXIT {
       if (newSize > 0) {
-        *regionItr = {newOffset,
-                      newSize,
-                      regionItr->alignedSize,
-                      VulkanImmediateCommands::SubmitHandle(),
-                      stagingBufferIndex};
+        *regionItr = {
+            .offset = newOffset,
+            .size = newSize,
+            .alignedSize = regionItr->alignedSize,
+            .handle = VulkanImmediateCommands::SubmitHandle(),
+            .stagingBufferIndex = stagingBufferIndex,
+        };
       } else {
         regions_.erase(regionItr);
       }
@@ -255,7 +265,11 @@ void VulkanStagingDevice::getBufferSubData(const VulkanBuffer& buffer,
     const VkDeviceSize copySize = std::min(static_cast<VkDeviceSize>(size), memoryChunk.size);
 
     // do the transfer
-    const VkBufferCopy copy = {chunkSrcOffset, memoryChunk.offset, copySize};
+    const VkBufferCopy copy = {
+        .srcOffset = chunkSrcOffset,
+        .dstOffset = memoryChunk.offset,
+        .size = copySize,
+    };
 
     const auto& wrapper = immediate->acquire();
 
@@ -338,11 +352,15 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
     VkImageAspectFlags imageAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
 
     // Luminance (1 plane)
-    copyRegions.emplace_back(
-        ivkGetBufferImageCopy2D(memoryChunk.offset,
-                                0,
-                                VkRect2D{.offset = {0, 0}, .extent = {w, h}},
-                                VkImageSubresourceLayers{VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 1}));
+    copyRegions.emplace_back(ivkGetBufferImageCopy2D(memoryChunk.offset,
+                                                     0,
+                                                     VkRect2D{.offset = {0, 0}, .extent = {w, h}},
+                                                     VkImageSubresourceLayers{
+                                                         .aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT,
+                                                         .mipLevel = 0,
+                                                         .baseArrayLayer = 0,
+                                                         .layerCount = 1,
+                                                     }));
     // Chrominance (in 1 or 2 planes, 420 subsampled)
     const VkDeviceSize planeSize0 = static_cast<VkDeviceSize>(w) * static_cast<VkDeviceSize>(h);
     const VkDeviceSize planeSize1 = planeSize0 / 4; // subsampled
@@ -352,19 +370,34 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
           ivkGetBufferImageCopy2D(memoryChunk.offset + planeSize0,
                                   0,
                                   VkRect2D{.offset = {0, 0}, .extent = {w / 2, h / 2}},
-                                  VkImageSubresourceLayers{VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 0, 1}));
+                                  VkImageSubresourceLayers{
+                                      .aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT,
+                                      .mipLevel = 0,
+                                      .baseArrayLayer = 0,
+                                      .layerCount = 1,
+                                  }));
     } else if (image.imageFormat_ == VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM) {
       imageAspect |= VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
       copyRegions.emplace_back(
           ivkGetBufferImageCopy2D(memoryChunk.offset + planeSize0,
                                   0,
                                   VkRect2D{.offset = {0, 0}, .extent = {w / 2, h / 2}},
-                                  VkImageSubresourceLayers{VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 0, 1}));
+                                  VkImageSubresourceLayers{
+                                      .aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT,
+                                      .mipLevel = 0,
+                                      .baseArrayLayer = 0,
+                                      .layerCount = 1,
+                                  }));
       copyRegions.emplace_back(
           ivkGetBufferImageCopy2D(memoryChunk.offset + planeSize0 + planeSize1,
                                   0,
                                   VkRect2D{.offset = {0, 0}, .extent = {w / 2, h / 2}},
-                                  VkImageSubresourceLayers{VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 0, 1}));
+                                  VkImageSubresourceLayers{
+                                      .aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT,
+                                      .mipLevel = 0,
+                                      .baseArrayLayer = 0,
+                                      .layerCount = 1,
+                                  }));
 
     } else {
       IGL_DEBUG_ABORT("Unimplemented multiplanar image format");
@@ -372,7 +405,12 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
     }
 
     const VkImageSubresourceRange subresourceRange = {
-        imageAspect, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
+        .aspectMask = imageAspect,
+        .baseMipLevel = 0,
+        .levelCount = VK_REMAINING_MIP_LEVELS,
+        .baseArrayLayer = 0,
+        .layerCount = VK_REMAINING_ARRAY_LAYERS,
+    };
     // 1. Transition initial image layout into TRANSFER_DST_OPTIMAL
     ivkImageMemoryBarrier(&ctx_.vf_,
                           wrapper.cmdBuf,
@@ -445,36 +483,44 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
           .offset = {static_cast<int32_t>(mipRange.x), static_cast<int32_t>(mipRange.y)},
           .extent = {static_cast<uint32_t>(mipRange.width),
                      static_cast<uint32_t>(mipRange.height)}};
-      copyRegions.emplace_back(ivkGetBufferImageCopy2D(
-          memoryChunk.offset + offset,
-          texelsPerRow,
-          region,
-          VkImageSubresourceLayers{
-              aspectMask, static_cast<uint32_t>(mipLevel), initialLayer, numLayers}));
+      copyRegions.emplace_back(
+          ivkGetBufferImageCopy2D(memoryChunk.offset + offset,
+                                  texelsPerRow,
+                                  region,
+                                  VkImageSubresourceLayers{
+                                      .aspectMask = aspectMask,
+                                      .mipLevel = static_cast<uint32_t>(mipLevel),
+                                      .baseArrayLayer = initialLayer,
+                                      .layerCount = numLayers,
+                                  }));
     } else {
-      copyRegions.emplace_back(VkBufferImageCopy{
-          .bufferOffset = memoryChunk.offset + offset,
-          .bufferRowLength = texelsPerRow,
-          .bufferImageHeight = 0,
-          .imageSubresource =
-              VkImageSubresourceLayers{
-                  aspectMask, static_cast<uint32_t>(mipLevel), initialLayer, numLayers},
-          .imageOffset = VkOffset3D{static_cast<int32_t>(mipRange.x),
-                                    static_cast<int32_t>(mipRange.y),
-                                    static_cast<int32_t>(mipRange.z)},
-          .imageExtent = VkExtent3D{static_cast<uint32_t>(mipRange.width),
-                                    static_cast<uint32_t>(mipRange.height),
-                                    static_cast<uint32_t>(mipRange.depth)}});
+      copyRegions.emplace_back(
+          VkBufferImageCopy{.bufferOffset = memoryChunk.offset + offset,
+                            .bufferRowLength = texelsPerRow,
+                            .bufferImageHeight = 0,
+                            .imageSubresource =
+                                VkImageSubresourceLayers{
+                                    .aspectMask = aspectMask,
+                                    .mipLevel = static_cast<uint32_t>(mipLevel),
+                                    .baseArrayLayer = initialLayer,
+                                    .layerCount = numLayers,
+                                },
+                            .imageOffset = VkOffset3D{static_cast<int32_t>(mipRange.x),
+                                                      static_cast<int32_t>(mipRange.y),
+                                                      static_cast<int32_t>(mipRange.z)},
+                            .imageExtent = VkExtent3D{static_cast<uint32_t>(mipRange.width),
+                                                      static_cast<uint32_t>(mipRange.height),
+                                                      static_cast<uint32_t>(mipRange.depth)}});
     }
   }
 
   // image memory barriers should have combined image aspect flags (depth/stencil)
   const VkImageSubresourceRange subresourceRange = {
-      aspectFlags,
-      static_cast<uint32_t>(0u),
-      static_cast<uint32_t>(VK_REMAINING_MIP_LEVELS),
-      initialLayer,
-      numLayers,
+      .aspectMask = aspectFlags,
+      .baseMipLevel = 0,
+      .levelCount = VK_REMAINING_MIP_LEVELS,
+      .baseArrayLayer = initialLayer,
+      .layerCount = numLayers,
   };
   // 1. Transition initial image layout into TRANSFER_DST_OPTIMAL
   ivkImageMemoryBarrier(&ctx_.vf_,
@@ -594,7 +640,13 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                         VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // wait for any previous operation
                         VK_PIPELINE_STAGE_TRANSFER_BIT, // dstStageMask
-                        VkImageSubresourceRange{aspectFlags, level, 1, layer, 1});
+                        VkImageSubresourceRange{
+                            .aspectMask = aspectFlags,
+                            .baseMipLevel = level,
+                            .levelCount = 1,
+                            .baseArrayLayer = layer,
+                            .layerCount = 1,
+                        });
 
   auto& stagingBuffer = stagingBuffers_[memoryChunk.stagingBufferIndex];
 
@@ -604,7 +656,12 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
       mustRepack ? 0
                  : bytesPerRow / static_cast<uint32_t>(properties.bytesPerBlock), // bufferRowLength
       imageRegion,
-      VkImageSubresourceLayers{aspectFlags, level, layer, 1});
+      VkImageSubresourceLayers{
+          .aspectMask = aspectFlags,
+          .mipLevel = level,
+          .baseArrayLayer = layer,
+          .layerCount = 1,
+      });
   ctx_.vf_.vkCmdCopyImageToBuffer(wrapper1.cmdBuf,
                                   srcImage,
                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -648,7 +705,13 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                         layout,
                         VK_PIPELINE_STAGE_TRANSFER_BIT, // srcStageMask
                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // dstStageMask
-                        VkImageSubresourceRange{aspectFlags, level, 1, layer, 1});
+                        VkImageSubresourceRange{
+                            .aspectMask = aspectFlags,
+                            .baseMipLevel = level,
+                            .levelCount = 1,
+                            .baseArrayLayer = layer,
+                            .layerCount = 1,
+                        });
 
   // the data should be available as we get out of this function
   immediate->wait(immediate->submit(wrapper2), ctx_.config_.fenceTimeoutNanoseconds);
@@ -733,11 +796,13 @@ void VulkanStagingDevice::allocateStagingBuffer(VkDeviceSize minimumSize) {
   IGL_DEBUG_ASSERT(stagingBuffers_.back().get());
 
   // Add region that represents the entire buffer
-  regions_.push_front({0,
-                       stagingBufferSize,
-                       stagingBufferSize,
-                       VulkanImmediateCommands::SubmitHandle(),
-                       static_cast<uint32_t>(stagingBuffers_.size()) - 1});
+  regions_.push_front({
+      .offset = 0,
+      .size = stagingBufferSize,
+      .alignedSize = stagingBufferSize,
+      .handle = VulkanImmediateCommands::SubmitHandle(),
+      .stagingBufferIndex = static_cast<uint32_t>(stagingBuffers_.size()) - 1,
+  });
 
   freeStagingBufferSize_ += stagingBufferSize;
 }
