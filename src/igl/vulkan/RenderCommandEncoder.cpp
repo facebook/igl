@@ -344,12 +344,12 @@ void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
   More details: https://www.saschawillems.de/blog/2019/03/29/flipping-the-vulkan-viewport/
   **/
   const VkViewport vp = {
-      viewport.x, // float x;
-      viewport.height - viewport.y, // float y;
-      viewport.width, // float width;
-      -viewport.height, // float height;
-      viewport.minDepth, // float minDepth;
-      viewport.maxDepth, // float maxDepth;
+      .x = viewport.x,
+      .y = viewport.height - viewport.y,
+      .width = viewport.width,
+      .height = -viewport.height,
+      .minDepth = viewport.minDepth,
+      .maxDepth = viewport.maxDepth,
   };
   ctx_.vf_.vkCmdSetViewport(cmdBuffer_, 0, 1, &vp);
 }
