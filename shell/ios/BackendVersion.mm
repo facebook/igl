@@ -10,9 +10,9 @@
 #import "BackendVersion.h"
 
 @interface BackendVersion () {
-  BackendFlavor flavor;
-  UInt8 majorVersion;
-  UInt8 minorVersion;
+  BackendFlavor _flavor;
+  UInt8 _majorVersion;
+  UInt8 _minorVersion;
 }
 @end
 
@@ -22,23 +22,23 @@
         majorVersion:(UInt8)majorVersion
         minorVersion:(UInt8)minorVersion {
   if (self = [super init]) {
-    self->flavor = flavor;
-    self->majorVersion = majorVersion;
-    self->minorVersion = minorVersion;
+    self->_flavor = flavor;
+    self->_majorVersion = majorVersion;
+    self->_minorVersion = minorVersion;
   }
   return self;
 }
 
 - (BackendFlavor)flavor {
-  return flavor;
+  return _flavor;
 }
 
 - (UInt8)majorVersion {
-  return majorVersion;
+  return _majorVersion;
 }
 
 - (UInt8)minorVersion {
-  return minorVersion;
+  return _minorVersion;
 }
 
 @end
