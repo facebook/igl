@@ -14,18 +14,18 @@
 #import <Foundation/Foundation.h> // IWYU pragma: keep
 
 @interface HeadlessView () {
-  CVDisplayLinkRef displayLink; // display link for managing rendering thread
-  NSTrackingArea* trackingArea; // needed for mouseMoved: events
+  CVDisplayLinkRef _displayLink; // display link for managing rendering thread
+  NSTrackingArea* _trackingArea; // needed for mouseMoved: events
 }
 @property (weak) ViewController* viewController;
 @end
 
 @implementation HeadlessView
 
-@synthesize viewController = viewController;
+@synthesize viewController = _viewController;
 
 - (void)dealloc {
-  CVDisplayLinkRelease(displayLink);
+  CVDisplayLinkRelease(_displayLink);
 }
 
 - (void)prepareHeadless {
@@ -59,32 +59,32 @@ static CVReturn displayLinkCallback(
 
 - (void)initTimer {
   // Create a display link capable of being used with all active displays
-  CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
+  CVDisplayLinkCreateWithActiveCGDisplays(&_displayLink);
 
   // Set the renderer output callback function
-  CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, (__bridge void*)self);
+  CVDisplayLinkSetOutputCallback(_displayLink, &displayLinkCallback, (__bridge void*)self);
 }
 
 - (void)startTimer {
-  CVDisplayLinkStart(displayLink);
+  CVDisplayLinkStart(_displayLink);
 }
 
 - (void)stopTimer {
-  CVDisplayLinkStop(displayLink);
+  CVDisplayLinkStop(_displayLink);
 }
 
 - (void)addFullScreenTrackingArea {
-  trackingArea =
+  _trackingArea =
       [[NSTrackingArea alloc] initWithRect:self.bounds
                                    options:NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved |
                                            NSTrackingActiveInKeyWindow
                                      owner:self
                                   userInfo:nil];
-  [self addTrackingArea:trackingArea];
+  [self addTrackingArea:_trackingArea];
 }
 
 - (void)updateTrackingAreas {
-  [self removeTrackingArea:trackingArea];
+  [self removeTrackingArea:_trackingArea];
   [self addFullScreenTrackingArea];
 }
 

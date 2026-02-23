@@ -15,18 +15,16 @@
 #import <Foundation/Foundation.h>
 
 @interface GLView () {
-  CVDisplayLinkRef displayLink; // display link for managing rendering thread //
-                                // NOLINT(readability-identifier-naming)
+  CVDisplayLinkRef _displayLink; // display link for managing rendering thread
 }
 @property (weak) ViewController* viewController;
 @end
 
 @implementation GLView {
-  NSTrackingArea* trackingArea; // needed for mouseMoved: events //
-                                // NOLINT(readability-identifier-naming)
+  NSTrackingArea* _trackingArea; // needed for mouseMoved: events
 }
 
-@synthesize viewController = viewController;
+@synthesize viewController = _viewController;
 
 - (id)initWithFrame:(NSRect)frame {
   if (self = [super initWithFrame:frame]) {
@@ -36,22 +34,22 @@
 }
 
 - (void)addFullScreenTrackingArea {
-  trackingArea =
+  _trackingArea =
       [[NSTrackingArea alloc] initWithRect:self.bounds
                                    options:NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved |
                                            NSTrackingActiveInKeyWindow
                                      owner:self
                                   userInfo:nil];
-  [self addTrackingArea:trackingArea];
+  [self addTrackingArea:_trackingArea];
 }
 
 - (void)updateTrackingAreas {
-  [self removeTrackingArea:trackingArea];
+  [self removeTrackingArea:_trackingArea];
   [self addFullScreenTrackingArea];
 }
 
 - (void)dealloc {
-  CVDisplayLinkRelease(displayLink);
+  CVDisplayLinkRelease(_displayLink);
 }
 
 - (void)prepareOpenGL {
@@ -90,24 +88,24 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef /*displayLink*/,
   [[self openGLContext] setValues:&swapInt forParameter:NSOpenGLContextParameterSwapInterval];
 
   // Create a display link capable of being used with all active displays
-  CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
+  CVDisplayLinkCreateWithActiveCGDisplays(&_displayLink);
 
   // Set the renderer output callback function
-  CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, (__bridge void*)self);
+  CVDisplayLinkSetOutputCallback(_displayLink, &displayLinkCallback, (__bridge void*)self);
 
   // Set the display link for the current renderer
   NSOpenGLContext* glContext = [self openGLContext];
   CGLContextObj cglContext = [glContext CGLContextObj];
   CGLPixelFormatObj cglPixelFormat = [[glContext pixelFormat] CGLPixelFormatObj];
-  CVDisplayLinkSetCurrentCGDisplayFromOpenGLContext(displayLink, cglContext, cglPixelFormat);
+  CVDisplayLinkSetCurrentCGDisplayFromOpenGLContext(_displayLink, cglContext, cglPixelFormat);
 }
 
 - (void)startTimer {
-  CVDisplayLinkStart(displayLink);
+  CVDisplayLinkStart(_displayLink);
 }
 
 - (void)stopTimer {
-  CVDisplayLinkStop(displayLink);
+  CVDisplayLinkStop(_displayLink);
 }
 
 - (void)invalidateFrame {

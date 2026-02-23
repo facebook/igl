@@ -10,8 +10,8 @@
 #import "MetalView.h"
 
 @implementation MetalView {
-  NSTrackingArea* trackingArea; // needed for mouseMoved: events
-  IBOutlet NSViewController* viewController;
+  NSTrackingArea* _trackingArea; // needed for mouseMoved: events
+  IBOutlet NSViewController* _viewController;
 }
 
 - (id)initWithFrame:(NSRect)frame device:(nullable id<MTLDevice>)device {
@@ -22,37 +22,37 @@
 }
 
 - (void)setViewController:(NSViewController*)newController {
-  if (viewController) {
-    NSResponder* _Nullable controllerNextResponder = [viewController nextResponder];
+  if (_viewController) {
+    NSResponder* _Nullable controllerNextResponder = [_viewController nextResponder];
     [super setNextResponder:controllerNextResponder];
-    [viewController setNextResponder:nil];
+    [_viewController setNextResponder:nil];
   }
-  viewController = newController;
+  _viewController = newController;
   if (newController) {
     NSResponder* _Nullable ownNextResponder = [self nextResponder];
-    [super setNextResponder:viewController];
-    [viewController setNextResponder:ownNextResponder];
+    [super setNextResponder:_viewController];
+    [_viewController setNextResponder:ownNextResponder];
   }
 }
 
 - (void)addFullScreenTrackingArea {
-  trackingArea =
+  _trackingArea =
       [[NSTrackingArea alloc] initWithRect:self.bounds
                                    options:NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved |
                                            NSTrackingActiveInKeyWindow
                                      owner:self
                                   userInfo:nil];
-  [self addTrackingArea:trackingArea];
+  [self addTrackingArea:_trackingArea];
 }
 
 - (void)updateTrackingAreas {
-  [self removeTrackingArea:trackingArea];
+  [self removeTrackingArea:_trackingArea];
   [self addFullScreenTrackingArea];
 }
 
 - (void)setNextResponder:(NSResponder*)newNextResponder {
-  if (viewController) {
-    [viewController setNextResponder:newNextResponder];
+  if (_viewController) {
+    [_viewController setNextResponder:newNextResponder];
     return;
   }
   [super setNextResponder:newNextResponder];
@@ -63,14 +63,14 @@
 }
 
 - (void)keyUp:(NSEvent*)event {
-  if (viewController) {
-    [viewController keyUp:event];
+  if (_viewController) {
+    [_viewController keyUp:event];
   }
 }
 
 - (void)keyDown:(NSEvent*)event {
-  if (viewController) {
-    [viewController keyDown:event];
+  if (_viewController) {
+    [_viewController keyDown:event];
   }
 }
 
