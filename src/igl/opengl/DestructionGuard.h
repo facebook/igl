@@ -22,8 +22,8 @@ class DestructionGuard final {
  public:
   /*implicit*/ DestructionGuard(std::shared_ptr<IContext> context);
   ~DestructionGuard();
-  DestructionGuard(DestructionGuard&& context) = default;
-  DestructionGuard& operator=(DestructionGuard&&) = default;
+  DestructionGuard(DestructionGuard&& context) noexcept = default;
+  DestructionGuard& operator=(DestructionGuard&&) noexcept = default;
   DestructionGuard(const DestructionGuard&) = delete;
   DestructionGuard& operator=(const DestructionGuard&) = delete;
 
