@@ -23,8 +23,8 @@ class FramebufferWrapper : public base::IFramebufferInterop {
   // Non-copyable but movable
   FramebufferWrapper(const FramebufferWrapper&) = delete;
   FramebufferWrapper& operator=(const FramebufferWrapper&) = delete;
-  FramebufferWrapper(FramebufferWrapper&&) = default;
-  FramebufferWrapper& operator=(FramebufferWrapper&&) = default;
+  FramebufferWrapper(FramebufferWrapper&&) noexcept = default;
+  FramebufferWrapper& operator=(FramebufferWrapper&&) noexcept = default;
 
   /// @brief Get the underlying IFramebuffer
   [[nodiscard]] const std::shared_ptr<IFramebuffer>& getFramebuffer() const {
