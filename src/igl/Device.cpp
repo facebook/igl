@@ -8,7 +8,6 @@
 #include <igl/Device.h>
 
 #include <algorithm>
-#include <utility>
 #include <igl/Framebuffer.h>
 
 namespace igl {
