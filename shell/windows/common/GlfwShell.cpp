@@ -11,7 +11,6 @@
 
 #include <cmath>
 #include <cstdlib>
-#include <cstring>
 #include <thread>
 #include <shell/shared/input/InputDispatcher.h>
 #include <shell/shared/renderSession/AppParams.h>
