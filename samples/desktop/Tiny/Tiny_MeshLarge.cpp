@@ -106,6 +106,7 @@
 #else
 #error Unsupported OS
 #endif
+// NOLINTNEXTLINE(facebook-unused-include-check)
 #include <GLFW/glfw3native.h>
 
 // @fb-only

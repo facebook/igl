@@ -26,6 +26,7 @@
 #error Unsupported OS
 #endif
 
+// NOLINTNEXTLINE(facebook-unused-include-check)
 #include <GLFW/glfw3native.h>
 #include <cstdio>
 #include <stb/stb_image_write.h>

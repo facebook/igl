@@ -33,6 +33,7 @@
 #else
 #error Unsupported OS
 #endif
+// NOLINTNEXTLINE(facebook-unused-include-check)
 #include <GLFW/glfw3native.h>
 #include <glm/ext.hpp>
 #include <glm/gtc/random.hpp>
