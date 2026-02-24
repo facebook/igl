@@ -7,9 +7,6 @@
 
 #include <igl/RenderPipelineState.h>
 
-#include <string>
-#include <unordered_map>
-
 using namespace igl;
 
 ///
