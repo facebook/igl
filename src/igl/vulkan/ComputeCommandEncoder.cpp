@@ -53,11 +53,13 @@ void ComputeCommandEncoder::endEncoding() {
                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
                                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                            VkImageSubresourceRange{restoreLayoutAspectFlags_[i],
-                                                    0,
-                                                    VK_REMAINING_MIP_LEVELS,
-                                                    0,
-                                                    VK_REMAINING_ARRAY_LAYERS});
+                            VkImageSubresourceRange{
+                                .aspectMask = restoreLayoutAspectFlags_[i],
+                                .baseMipLevel = 0,
+                                .levelCount = VK_REMAINING_MIP_LEVELS,
+                                .baseArrayLayer = 0,
+                                .layerCount = VK_REMAINING_ARRAY_LAYERS,
+                            });
     }
   }
   restoreLayout_.clear();
