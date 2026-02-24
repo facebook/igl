@@ -11,6 +11,7 @@
 #include <cstdlib>
 
 // clang-format off
+// NOLINTBEGIN(facebook-unused-include-check)
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
   #ifndef WIN32_LEAN_AND_MEAN
     #define WIN32_LEAN_AND_MEAN
@@ -19,6 +20,7 @@
 #else
   #include <dlfcn.h>
 #endif
+// NOLINTEND(facebook-unused-include-check)
 // clang-format on
 
 #include <igl/vulkan/ShaderModule.h>
