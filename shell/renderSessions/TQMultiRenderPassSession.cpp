@@ -32,7 +32,7 @@ static const VertexPosUv vertexData1[] = {
     {.position = {-0.8f, -0.8f, 0.0f}, .uv = {0.0f, 0.0f}},
     {.position = { 0.8f, -0.8f, 0.0f}, .uv = {1.0f, 0.0f}},
 };
-static const uint16_t indexData[] = {0, 1, 2, 1, 3, 2};
+static constexpr uint16_t indexData[] = {0, 1, 2, 1, 3, 2};
 // clang-format on
 
 static std::string getMetalShaderSource() {
