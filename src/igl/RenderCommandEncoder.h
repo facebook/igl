@@ -19,11 +19,11 @@ class IRenderPipelineState;
 class ISamplerState;
 
 namespace BindTarget {
-const uint8_t kVertex = 0x0001;
-const uint8_t kFragment = 0x0002;
-const uint8_t kAllGraphics = 0x0003;
-const uint8_t kTask = 0x0004;
-const uint8_t kMesh = 0x0008;
+constexpr uint8_t kVertex = 0x0001;
+constexpr uint8_t kFragment = 0x0002;
+constexpr uint8_t kAllGraphics = 0x0003;
+constexpr uint8_t kTask = 0x0004;
+constexpr uint8_t kMesh = 0x0008;
 } // namespace BindTarget
 
 class IRenderCommandEncoder : public ICommandEncoder {
