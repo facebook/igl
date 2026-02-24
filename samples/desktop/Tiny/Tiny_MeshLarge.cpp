@@ -680,7 +680,7 @@ std::shared_ptr<ITexture> skyboxTextureIrradiance_;
 
 // scene navigation
 CameraPositioner_FirstPerson positioner_(vec3(-100, 40, -47), vec3(0, 35, 0), vec3(0, 1, 0));
-Camera camera_(positioner_);
+Camera camera(positioner_);
 glm::vec2 mousePos_ = glm::vec2(0.0f);
 bool mousePressed_ = false;
 bool enableComputePass_ = false;
@@ -1892,7 +1892,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
 #endif
 
   perFrame_.proj = glm::perspective(fov, aspectRatio, 0.5f, 500.0f);
-  perFrame_.view = camera_.getViewMatrix();
+  perFrame_.view = camera.getViewMatrix();
   perFrame_.light = scaleBias * shadowProj * shadowView;
 
   ubPerFrame_[frameIndex]->upload(&perFrame_, igl::BufferRange(sizeof(perFrame_), 0));
