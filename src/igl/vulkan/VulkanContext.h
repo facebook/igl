@@ -72,7 +72,7 @@ enum {
 // NOLINTEND(readability-identifier-naming)
 
 struct DeviceQueues {
-  const static uint32_t kInvalid = 0xFFFFFFFF;
+  static constexpr uint32_t kInvalid = 0xFFFFFFFF;
   uint32_t graphicsQueueFamilyIndex = kInvalid;
   uint32_t computeQueueFamilyIndex = kInvalid;
 
