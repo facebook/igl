@@ -11,18 +11,6 @@
 
 using namespace igl;
 
-bool StencilStateDesc::operator!=(const StencilStateDesc& other) const {
-  return !(*this == other);
-}
-
-bool StencilStateDesc::operator==(const StencilStateDesc& other) const {
-  return stencilCompareFunction == other.stencilCompareFunction && writeMask == other.writeMask &&
-         readMask == other.readMask &&
-         depthStencilPassOperation == other.depthStencilPassOperation &&
-         depthFailureOperation == other.depthFailureOperation &&
-         stencilFailureOperation == other.stencilFailureOperation;
-}
-
 size_t std::hash<igl::StencilStateDesc>::operator()(const igl::StencilStateDesc& key) const {
   size_t hash = std::hash<int>()(static_cast<int>(EnumToValue(key.stencilCompareFunction)));
   hash ^= std::hash<int>()(static_cast<int>(key.writeMask));

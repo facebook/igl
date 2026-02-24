@@ -101,13 +101,8 @@ struct StencilStateDesc {
    *
    * Returns true if all descriptor properties are identical.
    */
-  bool operator==(const StencilStateDesc& other) const;
-  /**
-   * @brief Compares two StencilStateDesc objects for inequality.
-   *
-   * Returns true if any descriptor properties differ.
-   */
-  bool operator!=(const StencilStateDesc& other) const;
+  bool operator==(const StencilStateDesc& other) const = default;
+  bool operator!=(const StencilStateDesc& other) const = default;
 };
 
 /**
