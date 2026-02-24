@@ -7,10 +7,6 @@
 
 #include <igl/NameHandle.h>
 
-#include <functional>
-#include <string>
-#include <igl/Macros.h>
-
 namespace igl {
 namespace {
 #if !defined(__cpp_constexpr)
