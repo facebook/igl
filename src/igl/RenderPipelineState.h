@@ -144,8 +144,8 @@ struct RenderPipelineDesc {
       BlendFactor srcAlphaBlendFactor = BlendFactor::One;
       BlendFactor dstRGBBlendFactor = BlendFactor::Zero;
       BlendFactor dstAlphaBlendFactor = BlendFactor::Zero;
-      bool operator==(const ColorAttachment& other) const;
-      bool operator!=(const ColorAttachment& other) const;
+      bool operator==(const ColorAttachment& other) const = default;
+      bool operator!=(const ColorAttachment& other) const = default;
     };
 
     /*
@@ -160,8 +160,8 @@ struct RenderPipelineDesc {
      * @brief Pixel format of the attachment that stores stencil data
      */
     TextureFormat stencilAttachmentFormat = TextureFormat::Invalid;
-    bool operator==(const TargetDesc& other) const;
-    bool operator!=(const TargetDesc& other) const;
+    bool operator==(const TargetDesc& other) const = default;
+    bool operator!=(const TargetDesc& other) const = default;
   };
 
   /*
