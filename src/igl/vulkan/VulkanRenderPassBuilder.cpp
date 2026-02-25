@@ -72,8 +72,19 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
   };
 #endif // IGL_VULKAN_HAS_LEGACY_RENDERPASS
 
+  const bool hasDepthStencilResolve = refDepthResolve2_.layout != VK_IMAGE_LAYOUT_UNDEFINED;
+
+  const VkSubpassDescriptionDepthStencilResolve depthStencilResolve = {
+      .sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE,
+      .pNext = nullptr,
+      .depthResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT,
+      .stencilResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT,
+      .pDepthStencilResolveAttachment = hasDepthStencilResolve ? &refDepthResolve2_ : nullptr,
+  };
+
   const VkSubpassDescription2 subpass2 = {
       .sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2,
+      .pNext = hasDepthStencilResolve ? &depthStencilResolve : nullptr,
       .flags = 0,
       .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
       .viewMask = viewMask_,
