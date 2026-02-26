@@ -85,7 +85,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
   VK_ASSERT(ctx.vf_.vkGetAndroidHardwareBufferPropertiesANDROID(device, hwBuffer, &ahb_props));
 
   VkExternalFormatANDROID external_format = {
-      VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
+      .sType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
   };
 
   if (ahb_format_props.format == VK_FORMAT_UNDEFINED) {
