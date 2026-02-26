@@ -107,10 +107,10 @@ std::shared_ptr<IBuffer> EnhancedShaderDebuggingStore::vertexBuffer() const {
     constexpr size_t bufferSizeBytes = lineStructureSizeBytes * kNumberOfLines;
     Header bufferHeader(kNumberOfLines,
                         VkDrawIndirectCommand{
-                            2, /* vertex count */
-                            0, /* instances */
-                            0, /* first_vertex */
-                            0, /* first_instance */
+                            .vertexCount = 2,
+                            .instanceCount = 0,
+                            .firstVertex = 0,
+                            .firstInstance = 0,
                         });
 
     vertexBuffer_ = device_->createBuffer(
