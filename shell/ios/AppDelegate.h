@@ -7,7 +7,10 @@
 
 // @fb-only
 
-#import <UIKit/UIKit.h>
+#import <UIKit/UIApplication.h> // IWYU pragma: export
+#import <UIKit/UIResponder.h> // IWYU pragma: export
+#import <UIKit/UITabBarController.h> // IWYU pragma: export
+#import <UIKit/UIWindow.h> // IWYU pragma: export
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate, UITabBarControllerDelegate>
 

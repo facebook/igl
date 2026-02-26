@@ -10,7 +10,7 @@
 #import "VulkanView.h"
 
 #import "AppDelegate.h"
-#import "ViewController.h"
+#import "ViewController.h" // IWYU pragma: keep
 
 #import <Foundation/Foundation.h>
 
