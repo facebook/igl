@@ -63,7 +63,11 @@ void ResourcesBinder::bindBuffer(uint32_t index,
   VkDescriptorBufferInfo& slot = bindingsBuffers_.buffers[index];
 
   if (slot.buffer != buf || slot.offset != bufferOffset) {
-    slot = {buf, bufferOffset, bufferSize ? bufferSize : VK_WHOLE_SIZE};
+    slot = {
+        .buffer = buf,
+        .offset = bufferOffset,
+        .range = bufferSize ? bufferSize : VK_WHOLE_SIZE,
+    };
     isDirtyFlags_ |= DirtyFlagBits_Buffers;
   }
 }
