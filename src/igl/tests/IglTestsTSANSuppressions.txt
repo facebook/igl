@@ -9,3 +9,9 @@ race:igl::vulkan::Device::~Device()
 # (e.g. realloc vs memcpy, pthread_mutex ops). Suppress all races in
 # the lavapipe shared library since we cannot fix third-party code.
 race:libvulkan_lvp.so
+
+# libLLVM.so (LLVM library used by Lavapipe)
+# Lavapipe uses LLVM for JIT compilation, and LLVM has internal data races
+# in StringMap operations between llvmpipe worker threads during shader
+# compilation. This is third-party code we cannot fix.
+race:libLLVM.so
