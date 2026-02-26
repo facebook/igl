@@ -22,10 +22,11 @@ std::set<VulkanQueueDescriptor> enumerateQueues(const VulkanFunctionTable& vf,
   std::set<VulkanQueueDescriptor> descriptors;
   for (uint32_t i = 0; i != properties.size(); i++) {
     for (uint32_t j = 0; j != properties[i].queueCount; j++) {
-      VulkanQueueDescriptor descriptor;
-      descriptor.queueIndex = j;
-      descriptor.familyIndex = i;
-      descriptor.queueFlags = properties[i].queueFlags;
+      const VulkanQueueDescriptor descriptor = {
+          .queueFlags = properties[i].queueFlags,
+          .queueIndex = j,
+          .familyIndex = i,
+      };
       descriptors.insert(descriptor);
     }
   }
