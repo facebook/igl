@@ -403,6 +403,7 @@ void MRTSession::initialize() noexcept {
   };
 }
 
+// NOLINTNEXTLINE(facebook-hte-ConstantArgumentPassByValue)
 void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
   auto& device = getPlatform().getDevice();
   if (!isDeviceCompatible(device)) {
