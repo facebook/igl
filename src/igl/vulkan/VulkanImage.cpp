@@ -150,15 +150,20 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
   const bool isDisjoint = (createFlags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0;
 
-  const VkImageCreateInfo ci = ivkGetImageCreateInfo(type,
-                                                     imageFormat_,
-                                                     tiling,
-                                                     usageFlags,
-                                                     extent_,
-                                                     mipLevels_,
-                                                     arrayLayers_,
-                                                     createFlags,
-                                                     samples);
+  const VkImageCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+      .flags = createFlags,
+      .imageType = type,
+      .format = imageFormat_,
+      .extent = extent_,
+      .mipLevels = mipLevels_,
+      .arrayLayers = arrayLayers_,
+      .samples = samples,
+      .tiling = tiling,
+      .usage = usageFlags,
+      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+  };
 
   if (IGL_VULKAN_USE_VMA && !isDisjoint) {
     const VmaAllocationCreateInfo ciAlloc = {
@@ -240,18 +245,24 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       IGL_DEBUG_ASSERT(numPlanes > 0 && numPlanes <= kMaxImagePlanes);
       // NOLINTNEXTLINE(modernize-avoid-c-arrays)
       const VkImagePlaneMemoryRequirementsInfo planes[kMaxImagePlanes] = {
-          ivkGetImagePlaneMemoryRequirementsInfo(VK_IMAGE_ASPECT_PLANE_0_BIT),
-          ivkGetImagePlaneMemoryRequirementsInfo(VK_IMAGE_ASPECT_PLANE_1_BIT),
-          ivkGetImagePlaneMemoryRequirementsInfo(VK_IMAGE_ASPECT_PLANE_2_BIT),
+          {.sType = VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO,
+           .planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT},
+          {.sType = VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO,
+           .planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT},
+          {.sType = VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO,
+           .planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT},
       };
       // NOLINTNEXTLINE(modernize-avoid-c-arrays)
       const VkImageMemoryRequirementsInfo2 imgRequirements[kMaxImagePlanes] = {
-          ivkGetImageMemoryRequirementsInfo2(isDisjoint && numPlanes > 0 ? &planes[0] : nullptr,
-                                             vkImage_),
-          ivkGetImageMemoryRequirementsInfo2(isDisjoint && numPlanes > 1 ? &planes[1] : nullptr,
-                                             vkImage_),
-          ivkGetImageMemoryRequirementsInfo2(isDisjoint && numPlanes > 2 ? &planes[2] : nullptr,
-                                             vkImage_),
+          {.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+           .pNext = isDisjoint && numPlanes > 0 ? &planes[0] : nullptr,
+           .image = vkImage_},
+          {.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+           .pNext = isDisjoint && numPlanes > 1 ? &planes[1] : nullptr,
+           .image = vkImage_},
+          {.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+           .pNext = isDisjoint && numPlanes > 2 ? &planes[2] : nullptr,
+           .image = vkImage_},
       };
       for (uint32_t p = 0; p != numPlanes; p++) {
         ctx_->vf_.vkGetImageMemoryRequirements2(device_, &imgRequirements[p], &memRequirements[p]);
@@ -280,10 +291,18 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       };
       // NOLINTNEXTLINE(modernize-avoid-c-arrays)
       const VkBindImageMemoryInfo bindInfo[kMaxImagePlanes] = {
-          ivkGetBindImageMemoryInfo(
-              isDisjoint ? &bindImagePlaneMemoryInfo[0] : nullptr, vkImage_, vkMemory_[0]),
-          ivkGetBindImageMemoryInfo(&bindImagePlaneMemoryInfo[1], vkImage_, vkMemory_[1]),
-          ivkGetBindImageMemoryInfo(&bindImagePlaneMemoryInfo[2], vkImage_, vkMemory_[2]),
+          {.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
+           .pNext = isDisjoint ? &bindImagePlaneMemoryInfo[0] : nullptr,
+           .image = vkImage_,
+           .memory = vkMemory_[0]},
+          {.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
+           .pNext = &bindImagePlaneMemoryInfo[1],
+           .image = vkImage_,
+           .memory = vkMemory_[1]},
+          {.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
+           .pNext = &bindImagePlaneMemoryInfo[2],
+           .image = vkImage_,
+           .memory = vkMemory_[2]},
       };
       VK_ASSERT(ctx_->vf_.vkBindImageMemory2(device_, numPlanes, bindInfo));
 
@@ -349,21 +368,25 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
   setName(debugName);
 
-  VkImageCreateInfo ci = ivkGetImageCreateInfo(type,
-                                               imageFormat_,
-                                               tiling,
-                                               usageFlags,
-                                               extent_,
-                                               mipLevels_,
-                                               arrayLayers_,
-                                               createFlags,
-                                               samples);
-
   const VkExternalMemoryImageCreateInfo extImgMem = {
       .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
       .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID};
 
-  ci.pNext = &extImgMem;
+  const VkImageCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+      .pNext = &extImgMem,
+      .flags = createFlags,
+      .imageType = type,
+      .format = imageFormat_,
+      .extent = extent_,
+      .mipLevels = mipLevels_,
+      .arrayLayers = arrayLayers_,
+      .samples = samples,
+      .tiling = tiling,
+      .usage = usageFlags,
+      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+  };
 
   VK_ASSERT(ctx_->vf_.vkCreateImage(device_, &ci, nullptr, &vkImage_));
   VK_ASSERT(ivkSetDebugObjectName(
@@ -450,22 +473,26 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
   setName(debugName);
 
-  VkImageCreateInfo ci = ivkGetImageCreateInfo(type,
-                                               imageFormat_,
-                                               tiling,
-                                               usageFlags,
-                                               extent_,
-                                               mipLevels_,
-                                               arrayLayers_,
-                                               createFlags,
-                                               samples);
-
   VkExternalMemoryImageCreateInfo extImgMem = {
       .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
       .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT,
   };
 
-  ci.pNext = &extImgMem;
+  const VkImageCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+      .pNext = &extImgMem,
+      .flags = createFlags,
+      .imageType = type,
+      .format = imageFormat_,
+      .extent = extent_,
+      .mipLevels = mipLevels_,
+      .arrayLayers = arrayLayers_,
+      .samples = samples,
+      .tiling = tiling,
+      .usage = usageFlags,
+      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+  };
 
   // create image.. importing external memory cannot use VMA
   VK_ASSERT(ctx_->vf_.vkCreateImage(device_, &ci, nullptr, &vkImage_));
@@ -579,22 +606,26 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   IGL_DEBUG_ASSERT(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
   IGL_DEBUG_ASSERT(samples_ > 0, "The image must contain at least one sample");
 
-  VkImageCreateInfo ci = ivkGetImageCreateInfo(type,
-                                               imageFormat_,
-                                               tiling,
-                                               usageFlags,
-                                               extent_,
-                                               mipLevels_,
-                                               arrayLayers_,
-                                               createFlags,
-                                               samples);
-
   const VkExternalMemoryImageCreateInfo extImgMem = {
       .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
       .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT,
   };
 
-  ci.pNext = &extImgMem;
+  const VkImageCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+      .pNext = &extImgMem,
+      .flags = createFlags,
+      .imageType = type,
+      .format = imageFormat_,
+      .extent = extent_,
+      .mipLevels = mipLevels_,
+      .arrayLayers = arrayLayers_,
+      .samples = samples,
+      .tiling = tiling,
+      .usage = usageFlags,
+      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+  };
 
   // create image. importing external memory cannot use VMA
   VK_ASSERT(ctx_->vf_.vkCreateImage(device_, &ci, nullptr, &vkImage_));
@@ -760,17 +791,21 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       .handleTypes = compatibleHandleTypes,
   };
 
-  VkImageCreateInfo ci = ivkGetImageCreateInfo(type,
-                                               imageFormat_,
-                                               tiling,
-                                               usageFlags,
-                                               extent_,
-                                               mipLevels_,
-                                               arrayLayers_,
-                                               createFlags,
-                                               samples);
-
-  ci.pNext = &externalImageCreateInfo;
+  const VkImageCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+      .pNext = &externalImageCreateInfo,
+      .flags = createFlags,
+      .imageType = type,
+      .format = imageFormat_,
+      .extent = extent_,
+      .mipLevels = mipLevels_,
+      .arrayLayers = arrayLayers_,
+      .samples = samples,
+      .tiling = tiling,
+      .usage = usageFlags,
+      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+  };
 
   // create VkImage importing external memory cannot use VMA
   VK_ASSERT(ctx_->vf_.vkCreateImage(device_, &ci, nullptr, &vkImage_));
@@ -801,8 +836,10 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   const uint32_t numPlanes = igl::vulkan::getNumImagePlanes(format);
   IGL_DEBUG_ASSERT(numPlanes > 0 && numPlanes <= kMaxImagePlanes);
   for (uint32_t p = 0; p != numPlanes; p++) {
-    auto imagePlaneMemoryRequirementsInfo = ivkGetImagePlaneMemoryRequirementsInfo(
-        (VkImageAspectFlagBits)(VK_IMAGE_ASPECT_PLANE_0_BIT << p));
+    auto imagePlaneMemoryRequirementsInfo = VkImagePlaneMemoryRequirementsInfo{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO,
+        .planeAspect = (VkImageAspectFlagBits)(VK_IMAGE_ASPECT_PLANE_0_BIT << p),
+    };
 
     const VkImageMemoryRequirementsInfo2 imageMemoryRequirementInfo = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
@@ -840,8 +877,12 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
         .sType = VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO,
         .planeAspect = (VkImageAspectFlagBits)(VK_IMAGE_ASPECT_PLANE_0_BIT << p),
     };
-    bindInfo[p] = ivkGetBindImageMemoryInfo(
-        numPlanes > 1 ? &bindImagePlaneMemoryInfo[p] : nullptr, vkImage_, vkMemory_[p]);
+    bindInfo[p] = VkBindImageMemoryInfo{
+        .sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
+        .pNext = numPlanes > 1 ? &bindImagePlaneMemoryInfo[p] : nullptr,
+        .image = vkImage_,
+        .memory = vkMemory_[p],
+    };
   }
   VK_ASSERT(ctx_->vf_.vkBindImageMemory2(device_, numPlanes, bindInfo.data()));
 
