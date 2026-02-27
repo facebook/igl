@@ -89,9 +89,10 @@ class LRUStatePool : public IStatePool<TDescriptor, TStateObject> {
                                                           igl::Result* outResult) = 0;
 
   void deleteLastUsed() {
-    auto last = stateList_.back();
+    auto& last = stateList_.back();
+    auto key = last.first;
     stateList_.pop_back();
-    stateMap_.erase(last.first);
+    stateMap_.erase(key);
   }
 
   // Queue to store the values
