@@ -120,44 +120,46 @@ ShaderVersion DeviceFeatureSet::getShaderVersion() const {
 BackendVersion DeviceFeatureSet::getBackendVersion() const {
   switch (version_) {
   case GLVersion::v1_1:
-    return {BackendFlavor::OpenGL, 1, 1};
+    return {.flavor = BackendFlavor::OpenGL, .majorVersion = 1, .minorVersion = 1};
   case GLVersion::v2_0:
-    return {BackendFlavor::OpenGL, 2, 0};
+    return {.flavor = BackendFlavor::OpenGL, .majorVersion = 2, .minorVersion = 0};
   case GLVersion::v2_1:
-    return {BackendFlavor::OpenGL, 2, 1};
+    return {.flavor = BackendFlavor::OpenGL, .majorVersion = 2, .minorVersion = 1};
   case GLVersion::v3_0:
-    return {BackendFlavor::OpenGL, 3, 0};
+    return {.flavor = BackendFlavor::OpenGL, .majorVersion = 3, .minorVersion = 0};
   case GLVersion::v3_1:
-    return {BackendFlavor::OpenGL, 3, 1};
+    return {.flavor = BackendFlavor::OpenGL, .majorVersion = 3, .minorVersion = 1};
   case GLVersion::v3_2:
-    return {BackendFlavor::OpenGL, 3, 2};
+    return {.flavor = BackendFlavor::OpenGL, .majorVersion = 3, .minorVersion = 2};
   case GLVersion::v3_3:
-    return {BackendFlavor::OpenGL, 3, 3};
+    return {.flavor = BackendFlavor::OpenGL, .majorVersion = 3, .minorVersion = 3};
   case GLVersion::v4_0:
-    return {BackendFlavor::OpenGL, 4, 0};
+    return {.flavor = BackendFlavor::OpenGL, .majorVersion = 4, .minorVersion = 0};
   case GLVersion::v4_1:
-    return {BackendFlavor::OpenGL, 4, 1};
+    return {.flavor = BackendFlavor::OpenGL, .majorVersion = 4, .minorVersion = 1};
   case GLVersion::v4_2:
-    return {BackendFlavor::OpenGL, 4, 2};
+    return {.flavor = BackendFlavor::OpenGL, .majorVersion = 4, .minorVersion = 2};
   case GLVersion::v4_3:
-    return {BackendFlavor::OpenGL, 4, 3};
+    return {.flavor = BackendFlavor::OpenGL, .majorVersion = 4, .minorVersion = 3};
   case GLVersion::v4_4:
-    return {BackendFlavor::OpenGL, 4, 4};
+    return {.flavor = BackendFlavor::OpenGL, .majorVersion = 4, .minorVersion = 4};
   case GLVersion::v4_5:
-    return {BackendFlavor::OpenGL, 4, 5};
+    return {.flavor = BackendFlavor::OpenGL, .majorVersion = 4, .minorVersion = 5};
   case GLVersion::v4_6:
-    return {BackendFlavor::OpenGL, 4, 6};
+    return {.flavor = BackendFlavor::OpenGL, .majorVersion = 4, .minorVersion = 6};
   case GLVersion::v2_0_ES:
-    return {BackendFlavor::OpenGL_ES, 2, 0};
+    return {.flavor = BackendFlavor::OpenGL_ES, .majorVersion = 2, .minorVersion = 0};
   case GLVersion::v3_0_ES:
-    return {BackendFlavor::OpenGL_ES, 3, 0};
+    return {.flavor = BackendFlavor::OpenGL_ES, .majorVersion = 3, .minorVersion = 0};
   case GLVersion::v3_1_ES:
-    return {BackendFlavor::OpenGL_ES, 3, 1};
+    return {.flavor = BackendFlavor::OpenGL_ES, .majorVersion = 3, .minorVersion = 1};
   case GLVersion::v3_2_ES:
-    return {BackendFlavor::OpenGL_ES, 3, 2};
+    return {.flavor = BackendFlavor::OpenGL_ES, .majorVersion = 3, .minorVersion = 2};
   case GLVersion::NotAvailable:
     IGL_DEBUG_ASSERT_NOT_REACHED();
-    return {usesOpenGLES() ? BackendFlavor::OpenGL_ES : BackendFlavor::OpenGL, 2, 0};
+    return {.flavor = usesOpenGLES() ? BackendFlavor::OpenGL_ES : BackendFlavor::OpenGL,
+            .majorVersion = 2,
+            .minorVersion = 0};
   }
   IGL_UNREACHABLE_RETURN({});
 }
