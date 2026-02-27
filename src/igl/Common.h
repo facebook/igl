@@ -133,7 +133,7 @@ struct Result {
   static void setOk(Result* IGL_NULLABLE outResult) {
     if (outResult != nullptr) {
       outResult->code = Code::Ok;
-      outResult->message = std::string();
+      outResult->message.clear();
     }
   }
 };
