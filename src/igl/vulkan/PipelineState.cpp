@@ -136,8 +136,12 @@ PipelineState::PipelineState(
     bindings.reserve(info.textures.size());
     for (const auto& t : info.textures) {
       const uint32_t loc = t.bindingLocation;
-      bindings.emplace_back(ivkGetDescriptorSetLayoutBinding(
-          loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, stageFlags));
+      bindings.emplace_back(VkDescriptorSetLayoutBinding{
+          .binding = loc,
+          .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+          .descriptorCount = 1,
+          .stageFlags = stageFlags,
+      });
       if (loc < IGL_TEXTURE_SAMPLERS_MAX && immutableSamplers && immutableSamplers[loc]) {
         auto* sampler = static_cast<SamplerState*>(immutableSamplers[loc].get());
         bindings.back().pImmutableSamplers = &ctx.samplers_.get(sampler->sampler_)->vkSampler;
@@ -163,8 +167,12 @@ PipelineState::PipelineState(
                                                      : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
                                         : (isDynamic ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
                                                      : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-      bindings.emplace_back(
-          ivkGetDescriptorSetLayoutBinding(b.bindingLocation, type, 1, stageFlags));
+      bindings.emplace_back(VkDescriptorSetLayoutBinding{
+          .binding = b.bindingLocation,
+          .descriptorType = type,
+          .descriptorCount = 1,
+          .stageFlags = stageFlags,
+      });
     }
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
     dslBuffers = std::make_unique<VulkanDescriptorSetLayout>(
@@ -183,8 +191,12 @@ PipelineState::PipelineState(
     bindings.reserve(info.images.size());
     for (const auto& t : info.images) {
       const uint32_t loc = t.bindingLocation;
-      bindings.emplace_back(
-          ivkGetDescriptorSetLayoutBinding(loc, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, stageFlags));
+      bindings.emplace_back(VkDescriptorSetLayoutBinding{
+          .binding = loc,
+          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+          .descriptorCount = 1,
+          .stageFlags = stageFlags,
+      });
     }
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
     dslStorageImages = std::make_unique<VulkanDescriptorSetLayout>(
