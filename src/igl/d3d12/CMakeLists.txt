@@ -26,6 +26,8 @@ target_link_libraries(IGLD3D12 PUBLIC
   d3dcompiler.lib
 )
 
+target_compile_definitions(IGLD3D12 PUBLIC "NOMINMAX")
+
 # DirectX headers (fetched via bootstrap-deps)
 if(NOT DIRECTX_HEADERS_INCLUDE_DIR)
   set(DIRECTX_HEADERS_INCLUDE_DIR "${IGL_ROOT_DIR}/third-party/deps/src/DirectX-Headers/include/directx")

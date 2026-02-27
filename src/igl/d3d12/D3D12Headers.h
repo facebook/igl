@@ -33,14 +33,14 @@
 // Manually include only the d3dx12 headers we need (excluding incompatible ones)
 // These headers are vendored from Microsoft's DirectX-Headers repository
 #include <d3d12.h>
-#include <d3dx12/d3dx12_barriers.h>
-#include <d3dx12/d3dx12_core.h>
-#include <d3dx12/d3dx12_default.h>
-#include <d3dx12/d3dx12_pipeline_state_stream.h>
-#include <d3dx12/d3dx12_render_pass.h>
+#include <d3dx12_barriers.h>
+#include <d3dx12_core.h>
+#include <d3dx12_default.h>
+#include <d3dx12_pipeline_state_stream.h>
+#include <d3dx12_render_pass.h>
 // Excluded: d3dx12_resource_helpers.h (requires property_format_table.h which needs newer SDK)
 // Excluded: d3dx12_property_format_table.h (requires newer SDK)
-#include <d3dx12/d3dx12_root_signature.h>
+#include <d3dx12_root_signature.h>
 
 // ComPtr for COM object management
 // IGL's minimal ComPtr-like smart pointer implementing the subset of Microsoft::WRL::ComPtr
