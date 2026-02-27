@@ -34,6 +34,7 @@ Framebuffer::~Framebuffer() {
 
 std::vector<size_t> Framebuffer::getColorAttachmentIndices() const {
   std::vector<size_t> indices;
+  indices.reserve(IGL_COLOR_ATTACHMENTS_MAX);
   for (size_t i = 0; i < IGL_COLOR_ATTACHMENTS_MAX; ++i) {
     if (desc_.colorAttachments[i].texture) {
       indices.push_back(i);
