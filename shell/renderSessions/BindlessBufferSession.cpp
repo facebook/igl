@@ -1,0 +1,388 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+// @fb-only
+
+#include <shell/renderSessions/BindlessBufferSession.h>
+
+#include <shell/shared/renderSession/ShellParams.h>
+#include <igl/NameHandle.h>
+#include <igl/ShaderCreator.h>
+
+namespace igl::shell {
+
+namespace {
+
+struct VertexPosColor {
+  iglu::simdtypes::float3 position;
+  iglu::simdtypes::float4 color;
+};
+
+// A simple colored triangle, same as HelloWorldSession.
+VertexPosColor vertexData[] = {
+    {.position = {-0.6f, -0.4f, 0.0}, .color = {1.0, 0.0, 0.0, 1.0}},
+    {.position = {0.6f, -0.4f, 0.0}, .color = {0.0, 1.0, 0.0, 1.0}},
+    {.position = {0.0f, 0.6f, 0.0}, .color = {0.0, 0.0, 1.0, 1.0}},
+};
+
+uint16_t indexData[] = {
+    0,
+    1,
+    2,
+};
+
+// Push constant data: holds a GPU buffer address (uint64_t) plus padding.
+struct PushConstantData {
+  uint64_t vertexBufferAddress;
+  uint32_t pad0;
+  uint32_t pad1;
+};
+
+std::string getVersion() {
+  return {"#version 100"};
+}
+
+std::string getMetalShaderSource() {
+  return R"(
+              using namespace metal;
+
+              typedef struct {
+                float3 position [[attribute(0)]];
+                float4 color [[attribute(1)]];
+              } VertexIn;
+
+              typedef struct {
+                float4 position [[position]];
+                float4 color;
+              } VertexOut;
+
+              vertex VertexOut vertexShader(
+                  uint vid [[vertex_id]], constant VertexIn * vertices [[buffer(1)]]) {
+                VertexOut out;
+                out.position = float4(vertices[vid].position, 1.0);
+                out.color = vertices[vid].color;
+                return out;
+              }
+
+              fragment float4 fragmentShader(
+                  VertexOut IN [[stage_in]]) {
+                  return IN.color;
+              }
+    )";
+}
+
+std::string getOpenGLVertexShaderSource() {
+  return getVersion() + R"(
+                precision highp float;
+                attribute vec3 position;
+                attribute vec4 color_in;
+
+                varying vec4 vColor;
+
+                void main() {
+                  gl_Position = vec4(position, 1.0);
+                  vColor = color_in;
+                })";
+}
+
+std::string getOpenGLFragmentShaderSource() {
+  return getVersion() + std::string(R"(
+                precision highp float;
+
+                varying vec4 vColor;
+
+                void main() {
+                  gl_FragColor = vColor;
+                })");
+}
+
+// Vulkan vertex shader using buffer_reference to access vertex data via a GPU address
+// passed through push constants. This demonstrates bindless buffer access.
+std::string getVulkanBindlessVertexShaderSource() {
+  return R"(
+                #version 450
+                #extension GL_EXT_buffer_reference : require
+                #extension GL_EXT_buffer_reference2 : require
+
+                layout(buffer_reference, std430, buffer_reference_align = 4) readonly buffer VertexBuffer {
+                  float data[];
+                };
+
+                layout(push_constant) uniform PushConstants {
+                  VertexBuffer vertexBufferAddress;
+                } pc;
+
+                layout(location = 0) out vec4 color;
+
+                void main() {
+                  // Each vertex has 8 floats: 4 for position (float3 padded to float4) + 4 for color
+                  // Note: iglu::simdtypes::float3 is padded to 16 bytes (same as float4)
+                  int base = gl_VertexIndex * 8;
+                  vec3 position = vec3(
+                    pc.vertexBufferAddress.data[base + 0],
+                    pc.vertexBufferAddress.data[base + 1],
+                    pc.vertexBufferAddress.data[base + 2]);
+                  // Skip base+3 (padding)
+                  color = vec4(
+                    pc.vertexBufferAddress.data[base + 4],
+                    pc.vertexBufferAddress.data[base + 5],
+                    pc.vertexBufferAddress.data[base + 6],
+                    pc.vertexBufferAddress.data[base + 7]);
+                  gl_Position = vec4(position, 1.0);
+                }
+                )";
+}
+
+// Standard Vulkan vertex shader using regular vertex attributes (fallback).
+std::string getVulkanStandardVertexShaderSource() {
+  return R"(
+                layout(location = 0) in vec3 position;
+                layout(location = 1) in vec4 color_in;
+                layout(location = 0) out vec4 color;
+
+                void main() {
+                  gl_Position = vec4(position, 1.0);
+                  color = color_in;
+                }
+                )";
+}
+
+std::string getVulkanFragmentShaderSource() {
+  return R"(
+                layout(location = 0) in vec4 color;
+                layout(location = 0) out vec4 out_FragColor;
+
+                void main() {
+                  out_FragColor = color;
+                }
+                )";
+}
+
+std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device, bool useBindlessShader) {
+  switch (device.getBackendType()) {
+  case igl::BackendType::Invalid:
+  case igl::BackendType::Custom:
+    IGL_DEBUG_ASSERT_NOT_REACHED();
+    return nullptr;
+  case igl::BackendType::Vulkan: {
+    const auto& vsSource = useBindlessShader ? getVulkanBindlessVertexShaderSource()
+                                             : getVulkanStandardVertexShaderSource();
+    return igl::ShaderStagesCreator::fromModuleStringInput(device,
+                                                           vsSource.c_str(),
+                                                           "main",
+                                                           "",
+                                                           getVulkanFragmentShaderSource().c_str(),
+                                                           "main",
+                                                           "",
+                                                           nullptr);
+  }
+  // @fb-only
+    // @fb-only
+    // @fb-only
+  case igl::BackendType::Metal:
+    return igl::ShaderStagesCreator::fromLibraryStringInput(
+        device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
+  case igl::BackendType::OpenGL:
+    return igl::ShaderStagesCreator::fromModuleStringInput(device,
+                                                           getOpenGLVertexShaderSource().c_str(),
+                                                           "main",
+                                                           "",
+                                                           getOpenGLFragmentShaderSource().c_str(),
+                                                           "main",
+                                                           "",
+                                                           nullptr);
+  case igl::BackendType::D3D12: {
+    static const char* kVS = R"(
+      struct VSIn { float3 position : POSITION; float4 color : COLOR; };
+      struct VSOut { float4 position : SV_POSITION; float4 color : COLOR; };
+      VSOut main(VSIn v) {
+        VSOut o; o.position = float4(v.position, 1.0); o.color = v.color; return o; }
+    )";
+    static const char* kPS = R"(
+      struct PSIn { float4 position : SV_POSITION; float4 color : COLOR; };
+      float4 main(PSIn i) : SV_TARGET { return i.color; }
+    )";
+    return igl::ShaderStagesCreator::fromModuleStringInput(
+        device, kVS, "main", "", kPS, "main", "", nullptr);
+  }
+  }
+  IGL_UNREACHABLE_RETURN(nullptr)
+}
+
+} // namespace
+
+void BindlessBufferSession::initialize() noexcept {
+  auto& device = getPlatform().getDevice();
+
+  // Check if buffer device address (bindless buffers) is supported.
+  isBindlessSupported_ = device.hasFeature(DeviceFeatures::BufferDeviceAddress) &&
+                         device.getBackendType() == igl::BackendType::Vulkan;
+
+  if (isBindlessSupported_) {
+    IGL_LOG_INFO(
+        "BindlessBufferSession: Buffer device address is supported. "
+        "Using bindless rendering path.\n");
+  } else {
+    IGL_LOG_INFO(
+        "BindlessBufferSession: Buffer device address is NOT supported. "
+        "Falling back to standard vertex attribute binding.\n");
+  }
+
+  // Create vertex and index buffers.
+  vertexBuffer_ = device.createBuffer(
+      BufferDesc(BufferDesc::BufferTypeBits::Vertex | BufferDesc::BufferTypeBits::Storage,
+                 vertexData,
+                 sizeof(vertexData)),
+      nullptr);
+  IGL_DEBUG_ASSERT(vertexBuffer_ != nullptr);
+
+  indexBuffer_ = device.createBuffer(
+      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)), nullptr);
+  IGL_DEBUG_ASSERT(indexBuffer_ != nullptr);
+
+  // When buffer device address is used, vertex data is fetched via buffer_reference
+  // (programmable vertex pulling), so we do not need a vertex input state.
+  // Otherwise, we use the standard vertex input layout.
+  if (!isBindlessSupported_) {
+    vertexInputState_ = device.createVertexInputState(
+        VertexInputStateDesc{
+            .numAttributes = 2,
+            .attributes =
+                {
+                    VertexAttribute{.bufferIndex = 1,
+                                    .format = VertexAttributeFormat::Float3,
+                                    .offset = offsetof(VertexPosColor, position),
+                                    .name = "position",
+                                    .location = 0},
+                    VertexAttribute{.bufferIndex = 1,
+                                    .format = VertexAttributeFormat::Float4,
+                                    .offset = offsetof(VertexPosColor, color),
+                                    .name = "color_in",
+                                    .location = 1},
+                },
+            .numInputBindings = 1,
+            .inputBindings = {{}, {.stride = sizeof(VertexPosColor)}},
+        },
+        nullptr);
+    IGL_DEBUG_ASSERT(vertexInputState_ != nullptr);
+  }
+
+  if (isBindlessSupported_) {
+    // Log the GPU address of the vertex buffer.
+    const uint64_t gpuAddr = vertexBuffer_->gpuAddress(0);
+    IGL_LOG_INFO("BindlessBufferSession: Vertex buffer GPU address = 0x%llx\n",
+                 (unsigned long long)gpuAddr);
+  }
+
+  shaderStages_ = getShaderStagesForBackend(device, isBindlessSupported_);
+  IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
+
+  // Command queue
+  commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
+  IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
+
+  renderPass_ = {
+      .colorAttachments =
+          {
+              {
+                  .loadAction = LoadAction::Clear,
+                  .storeAction = StoreAction::Store,
+                  .clearColor = getPreferredClearColor(),
+              },
+          },
+      .depthAttachment =
+          {
+              .loadAction = LoadAction::Clear,
+              .clearDepth = 1.0,
+          },
+  };
+}
+
+void BindlessBufferSession::update(SurfaceTextures textures) noexcept {
+  Result ret;
+
+  // Create or update framebuffer.
+  if (framebuffer_ == nullptr) {
+    framebuffer_ = getPlatform().getDevice().createFramebuffer(
+        FramebufferDesc{
+            .colorAttachments = {{.texture = textures.color}},
+            .depthAttachment = {.texture = textures.depth},
+            .stencilAttachment = textures.depth && textures.depth->getProperties().hasStencil()
+                                     ? FramebufferDesc::AttachmentDesc{.texture = textures.depth}
+                                     : FramebufferDesc::AttachmentDesc{},
+        },
+        &ret);
+    IGL_DEBUG_ASSERT(ret.isOk());
+    IGL_DEBUG_ASSERT(framebuffer_ != nullptr);
+  } else {
+    framebuffer_->updateDrawable(textures);
+  }
+
+  // Create graphics pipeline (cached).
+  if (pipelineState_ == nullptr) {
+    pipelineState_ = getPlatform().getDevice().createRenderPipeline(
+        RenderPipelineDesc{
+            .vertexInputState = vertexInputState_,
+            .shaderStages = shaderStages_,
+            .targetDesc =
+                {
+                    .colorAttachments = {{.textureFormat =
+                                              framebuffer_->getColorAttachment(0)->getFormat()}},
+                    .depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat(),
+                    .stencilAttachmentFormat =
+                        framebuffer_->getStencilAttachment()
+                            ? framebuffer_->getStencilAttachment()->getFormat()
+                            : igl::TextureFormat::Invalid,
+                },
+            .cullMode = igl::CullMode::Disabled,
+            .frontFaceWinding = igl::WindingMode::CounterClockwise,
+        },
+        nullptr);
+    IGL_DEBUG_ASSERT(pipelineState_ != nullptr);
+  }
+
+  // Create command buffer.
+  auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
+  IGL_DEBUG_ASSERT(buffer != nullptr);
+  auto drawableSurface = framebuffer_->getColorAttachment(0);
+
+  // Encode render commands.
+  const std::shared_ptr<IRenderCommandEncoder> commands =
+      buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+  IGL_DEBUG_ASSERT(commands != nullptr);
+  if (commands) {
+    commands->bindRenderPipelineState(pipelineState_);
+
+    if (isBindlessSupported_) {
+      // Bindless path: pass the vertex buffer GPU address via push constants.
+      // The shader reads vertex data directly from the buffer address.
+      PushConstantData pc = {};
+      pc.vertexBufferAddress = vertexBuffer_->gpuAddress(0);
+      commands->bindPushConstants(&pc, sizeof(pc), 0);
+      commands->bindIndexBuffer(*indexBuffer_, IndexFormat::UInt16);
+      commands->drawIndexed(3);
+    } else {
+      // Standard path: bind vertex buffer using traditional vertex attributes.
+      commands->bindVertexBuffer(1, *vertexBuffer_);
+      commands->bindIndexBuffer(*indexBuffer_, IndexFormat::UInt16);
+      commands->drawIndexed(3);
+    }
+
+    commands->endEncoding();
+  }
+
+  IGL_DEBUG_ASSERT(buffer != nullptr);
+  if (shellParams().shouldPresent) {
+    buffer->present(drawableSurface);
+  }
+
+  IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
+  commandQueue_->submit(*buffer);
+  RenderSession::update(textures);
+}
+
+} // namespace igl::shell
