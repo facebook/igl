@@ -15,12 +15,14 @@
 #import <Foundation/Foundation.h>
 
 @interface GLView () {
+  // NOLINTNEXTLINE(readability-identifier-naming)
   CVDisplayLinkRef _displayLink; // display link for managing rendering thread
 }
 @property (weak) ViewController* viewController;
 @end
 
 @implementation GLView {
+  // NOLINTNEXTLINE(readability-identifier-naming)
   NSTrackingArea* _trackingArea; // needed for mouseMoved: events
 }
 
