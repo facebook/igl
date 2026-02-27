@@ -29,7 +29,12 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
   IGL_DEBUG_ASSERT(bufferSize > 0);
 
   // Initialize Buffer Info
-  const VkBufferCreateInfo ci = ivkGetBufferCreateInfo(bufferSize, usageFlags);
+  const VkBufferCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+      .size = bufferSize,
+      .usage = usageFlags,
+      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+  };
 
   if (IGL_VULKAN_USE_VMA) {
     VmaAllocationCreateInfo ciAlloc = {
