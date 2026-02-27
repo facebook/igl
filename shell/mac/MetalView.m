@@ -9,10 +9,12 @@
 
 #import "MetalView.h"
 
+// NOLINTBEGIN(readability-identifier-naming)
 @implementation MetalView {
   NSTrackingArea* _trackingArea; // needed for mouseMoved: events
   IBOutlet NSViewController* _viewController;
 }
+// NOLINTEND(readability-identifier-naming)
 
 - (id)initWithFrame:(NSRect)frame device:(nullable id<MTLDevice>)device {
   if (self = [super initWithFrame:frame device:device]) {
