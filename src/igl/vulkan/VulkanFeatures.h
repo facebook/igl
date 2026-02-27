@@ -67,6 +67,7 @@ class VulkanFeatures final {
   VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR featuresUniformBufferStandardLayout{};
   VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM featuresMultiviewPerViewViewports{};
   VkPhysicalDeviceMeshShaderFeaturesEXT featuresMeshShader{};
+  VkPhysicalDeviceFragmentShadingRateFeaturesKHR featuresFragmentShadingRate{};
 
   // We need to reassemble the feature chain because of the pNext pointers
   VulkanFeatures& operator=(const VulkanFeatures& other) noexcept;

@@ -124,6 +124,12 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .taskShader = VK_TRUE,
       .meshShader = VK_TRUE,
   }),
+  featuresFragmentShadingRate({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR,
+      .pipelineFragmentShadingRate = VK_FALSE,
+      .primitiveFragmentShadingRate = VK_FALSE,
+      .attachmentFragmentShadingRate = VK_FALSE,
+  }),
   config(config) {
   extensions_.resize(kNumberOfExtensionTypes);
   enabledExtensions_.resize(kNumberOfExtensionTypes);
@@ -273,6 +279,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& contextConf
   features8BitStorage.pNext = nullptr;
   featuresUniformBufferStandardLayout.pNext = nullptr;
   featuresMeshShader.pNext = nullptr;
+  featuresFragmentShadingRate.pNext = nullptr;
 
   // Add the required and optional features to the VkPhysicalDeviceFetaures2_
   ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresSamplerYcbcrConversion);
@@ -317,6 +324,11 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& contextConf
       IGL_LOG_ERROR("VK_QCOM_multiview_per_view_viewports extension not supported\n");
     }
   }
+  // Fragment shading rate must be added before mesh shader to ensure the dependency is properly
+  // handled when primitiveFragmentShadingRateMeshShader requires primitiveFragmentShadingRate
+  if (hasExtension(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)) {
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresFragmentShadingRate);
+  }
   if (hasExtension(VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
     ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresMeshShader);
   }
@@ -352,6 +364,8 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   features8BitStorage = other.features8BitStorage;
   featuresUniformBufferStandardLayout = other.featuresUniformBufferStandardLayout;
   featuresMultiviewPerViewViewports = other.featuresMultiviewPerViewViewports;
+  featuresMeshShader = other.featuresMeshShader;
+  featuresFragmentShadingRate = other.featuresFragmentShadingRate;
 
   extensions_ = other.extensions_;
   enabledExtensions_ = other.enabledExtensions_;
@@ -539,6 +553,10 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
   }
 
   has_VK_EXT_mesh_shader = enable(VK_EXT_MESH_SHADER_EXTENSION_NAME, ExtensionType::Device);
+
+  // Enable fragment shading rate extension (required when primitiveFragmentShadingRateMeshShader is
+  // used)
+  enable(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME, ExtensionType::Device);
 }
 
 bool VulkanFeatures::enabled(const char* extensionName) const {
