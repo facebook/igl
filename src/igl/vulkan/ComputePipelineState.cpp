@@ -83,12 +83,15 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
   };
   // NOLINTEND(readability-identifier-naming)
 
-  const VkPipelineLayoutCreateInfo ci =
-      ivkGetPipelineLayoutCreateInfo(static_cast<uint32_t>(ctx.config_.enableDescriptorIndexing
-                                                               ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
-                                                               : IGL_ARRAY_NUM_ELEMENTS(DSLs) - 1u),
-                                     DSLs,
-                                     info.hasPushConstants ? &pushConstantRange : nullptr);
+  const VkPipelineLayoutCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+      .setLayoutCount = static_cast<uint32_t>(ctx.config_.enableDescriptorIndexing
+                                                  ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
+                                                  : IGL_ARRAY_NUM_ELEMENTS(DSLs) - 1u),
+      .pSetLayouts = DSLs,
+      .pushConstantRangeCount = info.hasPushConstants ? 1u : 0u,
+      .pPushConstantRanges = info.hasPushConstants ? &pushConstantRange : nullptr,
+  };
 
   VkDevice device = ctx.getVkDevice();
   VK_ASSERT(ctx.vf_.vkCreatePipelineLayout(device, &ci, nullptr, &pipelineLayout));
@@ -102,10 +105,12 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
   const auto& shaderModule = desc_.shaderStages->getComputeModule();
 
   VulkanComputePipelineBuilder()
-      .shaderStage(ivkGetPipelineShaderStageCreateInfo(
-          VK_SHADER_STAGE_COMPUTE_BIT,
-          igl::vulkan::ShaderModule::getVkShaderModule(shaderModule),
-          shaderModule->info().entryPoint.c_str()))
+      .shaderStage(VkPipelineShaderStageCreateInfo{
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+          .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+          .module = igl::vulkan::ShaderModule::getVkShaderModule(shaderModule),
+          .pName = shaderModule->info().entryPoint.c_str(),
+      })
       .build(
           ctx.vf_, device, ctx.pipelineCache_, pipelineLayout, &pipeline_, desc_.debugName.c_str());
 
