@@ -227,39 +227,39 @@ ShaderVersion getShaderVersion(GLVersion version) {
   // TODO: Return proper GLSL ES versions
   switch (version) {
   case GLVersion::v2_0_ES:
-    return {ShaderFamily::GlslEs, 1, 0};
+    return {.family = ShaderFamily::GlslEs, .majorVersion = 1, .minorVersion = 0};
   case GLVersion::v3_0_ES:
-    return {ShaderFamily::GlslEs, 3, 0};
+    return {.family = ShaderFamily::GlslEs, .majorVersion = 3, .minorVersion = 0};
   case GLVersion::v3_1_ES:
-    return {ShaderFamily::GlslEs, 3, 10};
+    return {.family = ShaderFamily::GlslEs, .majorVersion = 3, .minorVersion = 10};
   case GLVersion::v3_2_ES:
-    return {ShaderFamily::GlslEs, 3, 20};
+    return {.family = ShaderFamily::GlslEs, .majorVersion = 3, .minorVersion = 20};
   case GLVersion::v2_0:
-    return {ShaderFamily::Glsl, 1, 10};
+    return {.family = ShaderFamily::Glsl, .majorVersion = 1, .minorVersion = 10};
   case GLVersion::v2_1:
-    return {ShaderFamily::Glsl, 1, 20};
+    return {.family = ShaderFamily::Glsl, .majorVersion = 1, .minorVersion = 20};
   case GLVersion::v3_0:
-    return {ShaderFamily::Glsl, 1, 30};
+    return {.family = ShaderFamily::Glsl, .majorVersion = 1, .minorVersion = 30};
   case GLVersion::v3_1:
-    return {ShaderFamily::Glsl, 1, 40};
+    return {.family = ShaderFamily::Glsl, .majorVersion = 1, .minorVersion = 40};
   case GLVersion::v3_2:
-    return {ShaderFamily::Glsl, 1, 50};
+    return {.family = ShaderFamily::Glsl, .majorVersion = 1, .minorVersion = 50};
   case GLVersion::v3_3:
-    return {ShaderFamily::Glsl, 3, 30};
+    return {.family = ShaderFamily::Glsl, .majorVersion = 3, .minorVersion = 30};
   case GLVersion::v4_0:
-    return {ShaderFamily::Glsl, 4, 0};
+    return {.family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 0};
   case GLVersion::v4_1:
-    return {ShaderFamily::Glsl, 4, 10};
+    return {.family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 10};
   case GLVersion::v4_2:
-    return {ShaderFamily::Glsl, 4, 20};
+    return {.family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 20};
   case GLVersion::v4_3:
-    return {ShaderFamily::Glsl, 4, 30};
+    return {.family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 30};
   case GLVersion::v4_4:
-    return {ShaderFamily::Glsl, 4, 40};
+    return {.family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 40};
   case GLVersion::v4_5:
-    return {ShaderFamily::Glsl, 4, 50};
+    return {.family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 50};
   case GLVersion::v4_6:
-    return {ShaderFamily::Glsl, 4, 60};
+    return {.family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 60};
   case GLVersion::v1_1:
   case GLVersion::NotAvailable:
   default:
