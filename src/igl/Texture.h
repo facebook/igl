@@ -184,8 +184,8 @@ struct TextureRangeDesc {
    */
   [[nodiscard]] Result validate() const noexcept;
 
-  bool operator==(const TextureRangeDesc& rhs) const noexcept;
-  bool operator!=(const TextureRangeDesc& rhs) const noexcept;
+  bool operator==(const TextureRangeDesc& rhs) const noexcept = default;
+  bool operator!=(const TextureRangeDesc& rhs) const noexcept = default;
 };
 
 /**
