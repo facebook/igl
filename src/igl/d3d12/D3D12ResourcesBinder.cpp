@@ -486,24 +486,8 @@ bool D3D12ResourcesBinder::updateSamplerBindings(ID3D12GraphicsCommandList* cmdL
     // Create sampler descriptor
     D3D12_SAMPLER_DESC samplerDesc = {};
     if (samplerState) {
-      if (auto* d3dSampler = dynamic_cast<SamplerState*>(samplerState)) {
-        samplerDesc = d3dSampler->getDesc();
-      } else {
-        // Fallback for bound but invalid sampler
-        samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-        samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        samplerDesc.MipLODBias = 0.0f;
-        samplerDesc.MaxAnisotropy = 1;
-        samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-        samplerDesc.BorderColor[0] = 0.0f;
-        samplerDesc.BorderColor[1] = 0.0f;
-        samplerDesc.BorderColor[2] = 0.0f;
-        samplerDesc.BorderColor[3] = 0.0f;
-        samplerDesc.MinLOD = 0.0f;
-        samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
-      }
+      auto* d3dSampler = static_cast<SamplerState*>(samplerState);
+      samplerDesc = d3dSampler->getDesc();
     } else {
       // Unbound slot: Create default sampler for unused descriptor table entries
       samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
