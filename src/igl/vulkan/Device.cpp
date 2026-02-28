@@ -891,14 +891,16 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilitiesInt
 }
 
 ShaderVersion Device::getShaderVersionInternal() const {
-  return {ShaderFamily::SpirV, 1, 5, 0};
+  return {.family = ShaderFamily::SpirV, .majorVersion = 1, .minorVersion = 5, .extra = 0};
 }
 
 BackendVersion Device::getBackendVersionInternal() const {
   const uint32_t apiVersion = ctx_->vkPhysicalDeviceProperties2_.properties.apiVersion;
-  return {BackendFlavor::Vulkan,
-          static_cast<uint8_t>(VK_API_VERSION_MAJOR(apiVersion)),
-          static_cast<uint8_t>(VK_API_VERSION_MINOR(apiVersion))};
+  return {
+      .flavor = BackendFlavor::Vulkan,
+      .majorVersion = static_cast<uint8_t>(VK_API_VERSION_MAJOR(apiVersion)),
+      .minorVersion = static_cast<uint8_t>(VK_API_VERSION_MINOR(apiVersion)),
+  };
 }
 
 Holder<BindGroupTextureHandle> Device::createBindGroupInternal(
