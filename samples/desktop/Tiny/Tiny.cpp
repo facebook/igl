@@ -40,6 +40,7 @@
 #define USE_OPENGL_BACKEND 1
 #endif
 
+// NOLINTBEGIN(facebook-unused-include-check)
 // clang-format off
 #if USE_OPENGL_BACKEND
   #if IGL_PLATFORM_WINDOWS
@@ -61,6 +62,7 @@
   #include <igl/vulkan/VulkanContext.h>
 #endif // USE_OPENGL_BACKEND
 // clang-format on
+// NOLINTEND(facebook-unused-include-check)
 
 #define ENABLE_MULTIPLE_COLOR_ATTACHMENTS 0
 
@@ -70,6 +72,7 @@ static const uint32_t kNumColorAttachments = 4;
 static const uint32_t kNumColorAttachments = 1;
 #endif
 
+// NOLINTBEGIN(facebook-unused-include-check)
 #if defined(__cpp_lib_format) && !IGL_PLATFORM_APPLE
 #include <format>
 #define IGL_FORMAT std::format
@@ -77,6 +80,7 @@ static const uint32_t kNumColorAttachments = 1;
 #include <fmt/core.h>
 #define IGL_FORMAT fmt::format
 #endif // __cpp_lib_format
+// NOLINTEND(facebook-unused-include-check)
 
 static std::string codeVS = R"(
 #version 460

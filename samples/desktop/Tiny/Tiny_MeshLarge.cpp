@@ -66,6 +66,7 @@
 #define IGL_FORMAT fmt::format
 #endif // __cpp_lib_format
 
+// NOLINTBEGIN(facebook-unused-include-check)
 // clang-format off
 #if USE_OPENGL_BACKEND
   #include <igl/RenderCommandEncoder.h>
@@ -90,9 +91,11 @@
   #include <igl/vulkan/VulkanContext.h>
 #endif
 // clang-format on
+// NOLINTEND(facebook-unused-include-check)
 
 #include <GLFW/glfw3.h>
 
+// NOLINTBEGIN(facebook-unused-include-check)
 #if defined(_XLESS_GLFW_)
 // do nothing
 #elif defined(_WIN32)
@@ -106,8 +109,8 @@
 #else
 #error Unsupported OS
 #endif
-// NOLINTNEXTLINE(facebook-unused-include-check)
 #include <GLFW/glfw3native.h>
+// NOLINTEND(facebook-unused-include-check)
 
 // @fb-only
 
