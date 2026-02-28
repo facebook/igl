@@ -234,14 +234,18 @@ VkImageView VulkanSwapchain::getDepthVkImageView() const {
 void VulkanSwapchain::lazyAllocateDepthBuffer() const {
   IGL_DEBUG_ASSERT(!depthTexture_);
 
-  // Use the device's supported depth-stencil format via the context's fallback logic.
-  // This properly handles devices like AMD GPUs that don't support D24_UNORM_S8_UINT.
   const VkFormat depthFormat =
-      ctx_.getClosestDepthStencilFormat(igl::TextureFormat::S8_UInt_Z24_UNorm);
-
+#if IGL_PLATFORM_APPLE
+      VK_FORMAT_D32_SFLOAT;
+#else
+      VK_FORMAT_D24_UNORM_S8_UINT;
+#endif
   const VkImageAspectFlags aspectMask =
-      (hasStencil(depthFormat) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0) |
-      (hasDepth(depthFormat) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0);
+#if IGL_PLATFORM_APPLE
+      VK_IMAGE_ASPECT_DEPTH_BIT;
+#else
+      VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+#endif
 
   auto depthImage = VulkanImage(ctx_,
                                 VkExtent3D{width_, height_, 1},
