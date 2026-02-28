@@ -107,8 +107,8 @@ struct VertexAttribute {
   std::string name; // GLES Only
   int location = -1; // Metal only
 
-  bool operator==(const VertexAttribute& other) const;
-  bool operator!=(const VertexAttribute& other) const;
+  bool operator==(const VertexAttribute& other) const = default;
+  bool operator!=(const VertexAttribute& other) const = default;
 };
 
 /**
@@ -119,8 +119,8 @@ struct VertexInputBinding {
   VertexSampleFunction sampleFunction = VertexSampleFunction::PerVertex;
   size_t sampleRate = 1;
 
-  bool operator==(const VertexInputBinding& other) const;
-  bool operator!=(const VertexInputBinding& other) const;
+  bool operator==(const VertexInputBinding& other) const = default;
+  bool operator!=(const VertexInputBinding& other) const = default;
 };
 
 /**

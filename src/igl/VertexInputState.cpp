@@ -118,25 +118,12 @@ size_t VertexInputStateDesc::sizeForVertexAttributeFormat(VertexAttributeFormat 
   IGL_UNREACHABLE_RETURN(0)
 }
 
-bool VertexInputBinding::operator!=(const VertexInputBinding& other) const {
-  return !(*this == other);
-}
-
-bool VertexInputBinding::operator==(const VertexInputBinding& other) const {
-  return other.sampleRate == sampleRate && other.sampleFunction == sampleFunction &&
-         other.stride == stride;
-}
-
 size_t std::hash<VertexInputBinding>::operator()(const VertexInputBinding& key) const {
   size_t hash = 0;
   hash ^= std::hash<int>()(static_cast<int>(key.sampleRate));
   hash ^= std::hash<int>()(EnumToValue(key.sampleFunction));
   hash ^= std::hash<int>()(static_cast<int>(key.stride));
   return hash;
-}
-
-bool VertexAttribute::operator!=(const VertexAttribute& other) const {
-  return !(*this == other);
 }
 
 size_t std::hash<VertexAttribute>::operator()(const VertexAttribute& key) const {
@@ -147,11 +134,6 @@ size_t std::hash<VertexAttribute>::operator()(const VertexAttribute& key) const 
   hash ^= std::hash<size_t>()(key.bufferIndex);
   hash ^= std::hash<int>()(static_cast<int>(EnumToValue(key.format)));
   return hash;
-}
-
-bool VertexAttribute::operator==(const VertexAttribute& other) const {
-  return other.name == name && other.location == location && other.bufferIndex == bufferIndex &&
-         other.format == format && other.offset == offset;
 }
 
 bool VertexInputStateDesc::operator==(const VertexInputStateDesc& other) const {
