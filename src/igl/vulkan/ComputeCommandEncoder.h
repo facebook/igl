@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <array>
 #include <igl/Common.h>
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/vulkan/CommandBuffer.h>
@@ -88,8 +89,9 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
 
   ResourcesBinder binder_;
 
-  std::vector<const igl::vulkan::VulkanImage*> restoreLayout_;
-  std::vector<VkImageAspectFlags> restoreLayoutAspectFlags_;
+  std::array<const igl::vulkan::VulkanImage*, IGL_TEXTURE_SAMPLERS_MAX> restoreLayout_{};
+  std::array<VkImageAspectFlags, IGL_TEXTURE_SAMPLERS_MAX> restoreLayoutAspectFlags_{};
+  uint32_t numRestoreLayouts_ = 0;
 
   const igl::vulkan::ComputePipelineState* cps_ = nullptr;
 };
