@@ -12,7 +12,6 @@
 #include <igl/CommandBuffer.h>
 #include <igl/RenderPass.h>
 #include <igl/opengl/Device.h>
-#include <igl/opengl/DeviceFeatureSet.h>
 #include <igl/opengl/IContext.h>
 
 namespace igl::tests {
