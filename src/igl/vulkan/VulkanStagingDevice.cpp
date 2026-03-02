@@ -352,52 +352,61 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
     VkImageAspectFlags imageAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
 
     // Luminance (1 plane)
-    copyRegions.emplace_back(ivkGetBufferImageCopy2D(memoryChunk.offset,
-                                                     0,
-                                                     VkRect2D{.offset = {0, 0}, .extent = {w, h}},
-                                                     VkImageSubresourceLayers{
-                                                         .aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT,
-                                                         .mipLevel = 0,
-                                                         .baseArrayLayer = 0,
-                                                         .layerCount = 1,
-                                                     }));
+    copyRegions.emplace_back(VkBufferImageCopy{
+        .bufferOffset = memoryChunk.offset,
+        .imageSubresource =
+            VkImageSubresourceLayers{
+                .aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = 1,
+            },
+        .imageOffset = {0, 0, 0},
+        .imageExtent = {w, h, 1u},
+    });
     // Chrominance (in 1 or 2 planes, 420 subsampled)
     const VkDeviceSize planeSize0 = static_cast<VkDeviceSize>(w) * static_cast<VkDeviceSize>(h);
     const VkDeviceSize planeSize1 = planeSize0 / 4; // subsampled
     if (image.imageFormat_ == VK_FORMAT_G8_B8R8_2PLANE_420_UNORM) {
       imageAspect |= VK_IMAGE_ASPECT_PLANE_1_BIT;
-      copyRegions.emplace_back(
-          ivkGetBufferImageCopy2D(memoryChunk.offset + planeSize0,
-                                  0,
-                                  VkRect2D{.offset = {0, 0}, .extent = {w / 2, h / 2}},
-                                  VkImageSubresourceLayers{
-                                      .aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT,
-                                      .mipLevel = 0,
-                                      .baseArrayLayer = 0,
-                                      .layerCount = 1,
-                                  }));
+      copyRegions.emplace_back(VkBufferImageCopy{
+          .bufferOffset = memoryChunk.offset + planeSize0,
+          .imageSubresource =
+              VkImageSubresourceLayers{
+                  .aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT,
+                  .mipLevel = 0,
+                  .baseArrayLayer = 0,
+                  .layerCount = 1,
+              },
+          .imageOffset = {0, 0, 0},
+          .imageExtent = {w / 2, h / 2, 1u},
+      });
     } else if (image.imageFormat_ == VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM) {
       imageAspect |= VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
-      copyRegions.emplace_back(
-          ivkGetBufferImageCopy2D(memoryChunk.offset + planeSize0,
-                                  0,
-                                  VkRect2D{.offset = {0, 0}, .extent = {w / 2, h / 2}},
-                                  VkImageSubresourceLayers{
-                                      .aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT,
-                                      .mipLevel = 0,
-                                      .baseArrayLayer = 0,
-                                      .layerCount = 1,
-                                  }));
-      copyRegions.emplace_back(
-          ivkGetBufferImageCopy2D(memoryChunk.offset + planeSize0 + planeSize1,
-                                  0,
-                                  VkRect2D{.offset = {0, 0}, .extent = {w / 2, h / 2}},
-                                  VkImageSubresourceLayers{
-                                      .aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT,
-                                      .mipLevel = 0,
-                                      .baseArrayLayer = 0,
-                                      .layerCount = 1,
-                                  }));
+      copyRegions.emplace_back(VkBufferImageCopy{
+          .bufferOffset = memoryChunk.offset + planeSize0,
+          .imageSubresource =
+              VkImageSubresourceLayers{
+                  .aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT,
+                  .mipLevel = 0,
+                  .baseArrayLayer = 0,
+                  .layerCount = 1,
+              },
+          .imageOffset = {0, 0, 0},
+          .imageExtent = {w / 2, h / 2, 1u},
+      });
+      copyRegions.emplace_back(VkBufferImageCopy{
+          .bufferOffset = memoryChunk.offset + planeSize0 + planeSize1,
+          .imageSubresource =
+              VkImageSubresourceLayers{
+                  .aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT,
+                  .mipLevel = 0,
+                  .baseArrayLayer = 0,
+                  .layerCount = 1,
+              },
+          .imageOffset = {0, 0, 0},
+          .imageExtent = {w / 2, h / 2, 1u},
+      });
 
     } else {
       IGL_DEBUG_ABORT("Unimplemented multiplanar image format");
@@ -479,20 +488,21 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
     const uint32_t texelsPerRow = bytesPerRow / static_cast<uint32_t>(properties.bytesPerBlock);
 
     if (image.type_ == VK_IMAGE_TYPE_2D) {
-      const VkRect2D region = {
-          .offset = {static_cast<int32_t>(mipRange.x), static_cast<int32_t>(mipRange.y)},
-          .extent = {static_cast<uint32_t>(mipRange.width),
-                     static_cast<uint32_t>(mipRange.height)}};
-      copyRegions.emplace_back(
-          ivkGetBufferImageCopy2D(memoryChunk.offset + offset,
-                                  texelsPerRow,
-                                  region,
-                                  VkImageSubresourceLayers{
-                                      .aspectMask = aspectMask,
-                                      .mipLevel = static_cast<uint32_t>(mipLevel),
-                                      .baseArrayLayer = initialLayer,
-                                      .layerCount = numLayers,
-                                  }));
+      copyRegions.emplace_back(VkBufferImageCopy{
+          .bufferOffset = memoryChunk.offset + offset,
+          .bufferRowLength = texelsPerRow,
+          .imageSubresource =
+              VkImageSubresourceLayers{
+                  .aspectMask = aspectMask,
+                  .mipLevel = static_cast<uint32_t>(mipLevel),
+                  .baseArrayLayer = initialLayer,
+                  .layerCount = numLayers,
+              },
+          .imageOffset = {static_cast<int32_t>(mipRange.x), static_cast<int32_t>(mipRange.y), 0},
+          .imageExtent = {static_cast<uint32_t>(mipRange.width),
+                          static_cast<uint32_t>(mipRange.height),
+                          1u},
+      });
     } else {
       copyRegions.emplace_back(
           VkBufferImageCopy{.bufferOffset = memoryChunk.offset + offset,
@@ -651,17 +661,20 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   auto& stagingBuffer = stagingBuffers_[memoryChunk.stagingBufferIndex];
 
   // 2.  Copy the pixel data from the image into the staging buffer
-  const VkBufferImageCopy copy = ivkGetBufferImageCopy2D(
-      memoryChunk.offset,
-      mustRepack ? 0
-                 : bytesPerRow / static_cast<uint32_t>(properties.bytesPerBlock), // bufferRowLength
-      imageRegion,
-      VkImageSubresourceLayers{
-          .aspectMask = aspectFlags,
-          .mipLevel = level,
-          .baseArrayLayer = layer,
-          .layerCount = 1,
-      });
+  const VkBufferImageCopy copy = {
+      .bufferOffset = memoryChunk.offset,
+      .bufferRowLength = mustRepack ? 0
+                                    : bytesPerRow / static_cast<uint32_t>(properties.bytesPerBlock),
+      .imageSubresource =
+          VkImageSubresourceLayers{
+              .aspectMask = aspectFlags,
+              .mipLevel = level,
+              .baseArrayLayer = layer,
+              .layerCount = 1,
+          },
+      .imageOffset = {imageRegion.offset.x, imageRegion.offset.y, 0},
+      .imageExtent = {imageRegion.extent.width, imageRegion.extent.height, 1u},
+  };
   ctx_.vf_.vkCmdCopyImageToBuffer(wrapper1.cmdBuf,
                                   srcImage,
                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
