@@ -15,6 +15,7 @@
 // ----------------------------------------------------------------------------
 
 @interface IGLShellStreamDelegateAdapter : NSObject <NSStreamDelegate> {
+  // NOLINTNEXTLINE(readability-identifier-naming)
   igl::shell::netservice::StreamAdapterApple* _owner; // weak ref
 }
 @end

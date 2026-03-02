@@ -14,6 +14,7 @@
 // ----------------------------------------------------------------------------
 
 @interface IGLShellNetServiceDelegateAdapter : NSObject <NSNetServiceDelegate> {
+  // NOLINTNEXTLINE(readability-identifier-naming)
   igl::shell::netservice::NetServiceApple* _owner; // weak ref
 }
 @end
