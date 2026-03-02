@@ -10,7 +10,6 @@
 #include "../data/ShaderData.h"
 #include "../util/Common.h"
 
-#include <igl/CommandBuffer.h>
 #include <igl/ComputePipelineState.h>
 #include <igl/Shader.h>
 #include <igl/opengl/ComputePipelineState.h>
