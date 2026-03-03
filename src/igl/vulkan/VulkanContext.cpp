@@ -1190,34 +1190,48 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
   constexpr VkShaderStageFlags stageFlags =
       VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
   const std::array<VkDescriptorSetLayoutBinding, kNumBindings> bindings = {
-      ivkGetDescriptorSetLayoutBinding(kBinding_Texture2D,
-                                       VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                       pimpl_->currentMaxBindlessTextures,
-                                       stageFlags),
-      ivkGetDescriptorSetLayoutBinding(kBinding_Texture2DArray,
-                                       VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                       pimpl_->currentMaxBindlessTextures,
-                                       stageFlags),
-      ivkGetDescriptorSetLayoutBinding(kBinding_Texture3D,
-                                       VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                       pimpl_->currentMaxBindlessTextures,
-                                       stageFlags),
-      ivkGetDescriptorSetLayoutBinding(kBinding_TextureCube,
-                                       VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                       pimpl_->currentMaxBindlessTextures,
-                                       stageFlags),
-      ivkGetDescriptorSetLayoutBinding(kBinding_Sampler,
-                                       VK_DESCRIPTOR_TYPE_SAMPLER,
-                                       pimpl_->currentMaxBindlessSamplers,
-                                       stageFlags),
-      ivkGetDescriptorSetLayoutBinding(kBinding_SamplerShadow,
-                                       VK_DESCRIPTOR_TYPE_SAMPLER,
-                                       pimpl_->currentMaxBindlessSamplers,
-                                       stageFlags),
-      ivkGetDescriptorSetLayoutBinding(kBinding_StorageImages,
-                                       VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                       pimpl_->currentMaxBindlessTextures,
-                                       stageFlags),
+      VkDescriptorSetLayoutBinding{
+          .binding = kBinding_Texture2D,
+          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+          .descriptorCount = pimpl_->currentMaxBindlessTextures,
+          .stageFlags = stageFlags,
+      },
+      VkDescriptorSetLayoutBinding{
+          .binding = kBinding_Texture2DArray,
+          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+          .descriptorCount = pimpl_->currentMaxBindlessTextures,
+          .stageFlags = stageFlags,
+      },
+      VkDescriptorSetLayoutBinding{
+          .binding = kBinding_Texture3D,
+          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+          .descriptorCount = pimpl_->currentMaxBindlessTextures,
+          .stageFlags = stageFlags,
+      },
+      VkDescriptorSetLayoutBinding{
+          .binding = kBinding_TextureCube,
+          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+          .descriptorCount = pimpl_->currentMaxBindlessTextures,
+          .stageFlags = stageFlags,
+      },
+      VkDescriptorSetLayoutBinding{
+          .binding = kBinding_Sampler,
+          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+          .descriptorCount = pimpl_->currentMaxBindlessSamplers,
+          .stageFlags = stageFlags,
+      },
+      VkDescriptorSetLayoutBinding{
+          .binding = kBinding_SamplerShadow,
+          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+          .descriptorCount = pimpl_->currentMaxBindlessSamplers,
+          .stageFlags = stageFlags,
+      },
+      VkDescriptorSetLayoutBinding{
+          .binding = kBinding_StorageImages,
+          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+          .descriptorCount = pimpl_->currentMaxBindlessTextures,
+          .stageFlags = stageFlags,
+      },
   };
   const uint32_t flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
                          VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
@@ -2128,8 +2142,12 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
     const bool isInPipeline = (usageMaskPipeline & (1ul << loc)) != 0;
     if (compatiblePipeline ? isInPipeline : desc.samplers[loc] != nullptr) {
       IGL_DEBUG_ASSERT(compatiblePipeline || desc.samplers[loc]);
-      bindings[numBindings++] = ivkGetDescriptorSetLayoutBinding(
-          loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, stageFlags);
+      bindings[numBindings++] = VkDescriptorSetLayoutBinding{
+          .binding = loc,
+          .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+          .descriptorCount = 1,
+          .stageFlags = stageFlags,
+      };
       metadata.usageMask |= 1ul << loc;
     }
   }
@@ -2288,7 +2306,12 @@ BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferDesc& 
             alignment);
       }
     }
-    bindings[numBindings++] = ivkGetDescriptorSetLayoutBinding(loc, type, 1, stageFlags);
+    bindings[numBindings++] = VkDescriptorSetLayoutBinding{
+        .binding = loc,
+        .descriptorType = type,
+        .descriptorCount = 1,
+        .stageFlags = stageFlags,
+    };
     metadata.usageMask |= 1ul << loc;
   }
 
