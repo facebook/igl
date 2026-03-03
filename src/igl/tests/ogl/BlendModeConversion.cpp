@@ -7,9 +7,6 @@
 
 #include <gtest/gtest.h>
 
-#include "../data/ShaderData.h"
-#include "../util/Common.h"
-
 #include <utility>
 #include <vector>
 #include <igl/opengl/RenderPipelineState.h>
