@@ -454,7 +454,9 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           targetLayout,
                           VK_PIPELINE_STAGE_TRANSFER_BIT,
-                          VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                              VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                              VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           subresourceRange);
 
     image.imageLayout_ = targetLayout;
@@ -583,6 +585,22 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
                                                    ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
                                                    : 0)));
 
+  // Priority ordering mirrors the targetLayout/dstAccessMask cascades above: when multiple usage
+  // bits are set (e.g. SAMPLED | STORAGE), isSampled wins and the layout becomes
+  // SHADER_READ_ONLY_OPTIMAL. The image will require a subsequent transition before use as an
+  // attachment or storage, so covering only the shader stages is correct for the post-upload case.
+  const VkPipelineStageFlags dstStageMask =
+      isSampled
+          ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+          : (isStorage
+                 ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                 : (isColorAttachment
+                        ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+                        : (isDepthStencilAttachment ? VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                                          VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
+                                                    : VK_PIPELINE_STAGE_ALL_COMMANDS_BIT)));
+
   // 3. Transition TRANSFER_DST_OPTIMAL into `targetLayout`
   ivkImageMemoryBarrier(&ctx_.vf_,
                         wrapper.cmdBuf,
@@ -592,7 +610,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                         targetLayout,
                         VK_PIPELINE_STAGE_TRANSFER_BIT,
-                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        dstStageMask,
                         subresourceRange);
 
   image.imageLayout_ = targetLayout;
