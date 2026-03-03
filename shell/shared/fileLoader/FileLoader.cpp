@@ -31,7 +31,7 @@ FileLoader::FileData FileLoader::loadBinaryDataInternal(const std::string& fileP
   }
   const uintmax_t length = std::filesystem::file_size(filePath);
 
-  if (IGL_DEBUG_VERIFY_NOT(length > std::numeric_limits<uint32_t>::max())) {
+  if (IGL_DEBUG_VERIFY_NOT(length > std::numeric_limits<uint64_t>::max())) {
     return {};
   }
 
@@ -49,7 +49,7 @@ FileLoader::FileData FileLoader::loadBinaryDataInternal(const std::string& fileP
     return {};
   }
 
-  return {std::move(data), static_cast<uint32_t>(length)};
+  return {std::move(data), static_cast<uint64_t>(length)};
 }
 
 std::unique_ptr<FileLoader> createFileLoader() {

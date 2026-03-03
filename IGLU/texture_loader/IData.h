@@ -22,19 +22,19 @@ class IData {
   virtual ~IData() = default;
 
   static std::unique_ptr<IData> tryCreate(std::unique_ptr<uint8_t[]> data,
-                                          uint32_t size,
+                                          uint64_t size,
                                           igl::Result* IGL_NULLABLE outResult);
 
   /// @returns a read-only pointer to the data. May be nullptr.
   [[nodiscard]] virtual const uint8_t* IGL_NONNULL data() const noexcept = 0;
   /// @returns the size of the data in bytes.
-  [[nodiscard]] virtual uint32_t size() const noexcept = 0;
+  [[nodiscard]] virtual uint64_t size() const noexcept = 0;
 
   struct ExtractedData {
     /// Pointer to data. May be nullptr.
     const void* data = nullptr;
     /// Size in bytes of the data.
-    uint32_t size = 0u;
+    uint64_t size = 0u;
     /// A deleter that can be use to free data. May be nullptr.
     void (*deleter)(void*) = nullptr;
   };

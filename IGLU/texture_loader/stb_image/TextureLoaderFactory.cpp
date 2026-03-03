@@ -25,19 +25,19 @@ struct StbImageDeleter {
 namespace {
 class StbImageData : public IData {
  public:
-  StbImageData(uint8_t* data, uint32_t size);
+  StbImageData(uint8_t* data, uint64_t size);
 
   [[nodiscard]] const uint8_t* IGL_NONNULL data() const noexcept final;
-  [[nodiscard]] uint32_t size() const noexcept final;
+  [[nodiscard]] uint64_t size() const noexcept final;
 
   [[nodiscard]] ExtractedData extractData() noexcept final;
 
  private:
   std::unique_ptr<uint8_t, StbImageDeleter> data_;
-  uint32_t size_;
+  uint64_t size_;
 };
 
-StbImageData::StbImageData(uint8_t* data, uint32_t size) :
+StbImageData::StbImageData(uint8_t* data, uint64_t size) :
   data_(std::unique_ptr<uint8_t, StbImageDeleter>(data)), size_(size) {}
 
 [[nodiscard]] const uint8_t* IGL_NONNULL StbImageData::data() const noexcept {
@@ -45,7 +45,7 @@ StbImageData::StbImageData(uint8_t* data, uint32_t size) :
   return data_.get();
 }
 
-[[nodiscard]] uint32_t StbImageData::size() const noexcept {
+[[nodiscard]] uint64_t StbImageData::size() const noexcept {
   return size_;
 }
 

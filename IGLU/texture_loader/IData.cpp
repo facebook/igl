@@ -11,21 +11,21 @@ namespace iglu::textureloader {
 namespace {
 class ByteData final : public IData {
  public:
-  ByteData(std::unique_ptr<uint8_t[]> data, size_t size) noexcept;
+  ByteData(std::unique_ptr<uint8_t[]> data, uint64_t size) noexcept;
 
   ~ByteData() final = default;
 
   [[nodiscard]] const uint8_t* IGL_NONNULL data() const noexcept final;
-  [[nodiscard]] uint32_t size() const noexcept final;
+  [[nodiscard]] uint64_t size() const noexcept final;
 
   [[nodiscard]] ExtractedData extractData() noexcept final;
 
  private:
   std::unique_ptr<uint8_t[]> data_;
-  uint32_t size_ = 0;
+  uint64_t size_ = 0;
 };
 
-ByteData::ByteData(std::unique_ptr<uint8_t[]> data, size_t size) noexcept :
+ByteData::ByteData(std::unique_ptr<uint8_t[]> data, uint64_t size) noexcept :
   data_(std::move(data)), size_(size) {}
 
 const uint8_t* IGL_NONNULL ByteData::data() const noexcept {
@@ -33,7 +33,7 @@ const uint8_t* IGL_NONNULL ByteData::data() const noexcept {
   return data_.get();
 }
 
-uint32_t ByteData::size() const noexcept {
+uint64_t ByteData::size() const noexcept {
   return size_;
 }
 
@@ -47,7 +47,7 @@ IData::ExtractedData ByteData::extractData() noexcept {
 } // namespace
 
 std::unique_ptr<IData> IData::tryCreate(std::unique_ptr<uint8_t[]> data,
-                                        uint32_t size,
+                                        uint64_t size,
                                         igl::Result* IGL_NULLABLE outResult) {
   if (data == nullptr) {
     igl::Result::setResult(outResult, igl::Result::Code::ArgumentNull, "data is nullptr");
