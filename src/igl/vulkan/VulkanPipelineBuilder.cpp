@@ -13,13 +13,43 @@ uint32_t VulkanPipelineBuilder::numPipelinesCreated = 0;
 uint32_t VulkanComputePipelineBuilder::numPipelinesCreated = 0;
 
 VulkanPipelineBuilder::VulkanPipelineBuilder() :
-  vertexInputState_(ivkGetPipelineVertexInputStateCreateInfoEmpty()),
-  inputAssembly_(
-      ivkGetPipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE)),
-  rasterizationState_(
-      ivkGetPipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE)),
-  multisampleState_(ivkGetPipelineMultisampleStateCreateInfoEmpty()),
-  depthStencilState_(ivkGetPipelineDepthStencilStateCreateInfoNoDepthStencilTests()) {}
+  vertexInputState_({.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO}),
+  inputAssembly_({
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+      .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      .primitiveRestartEnable = VK_FALSE,
+  }),
+  rasterizationState_({
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+      .polygonMode = VK_POLYGON_MODE_FILL,
+      .cullMode = VK_CULL_MODE_NONE,
+      .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+      .lineWidth = 1.0f,
+  }),
+  multisampleState_({
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+      .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+      .minSampleShading = 1.0f,
+  }),
+  depthStencilState_({
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+      .depthCompareOp = VK_COMPARE_OP_LESS,
+      .front =
+          {
+              .failOp = VK_STENCIL_OP_KEEP,
+              .passOp = VK_STENCIL_OP_KEEP,
+              .depthFailOp = VK_STENCIL_OP_KEEP,
+              .compareOp = VK_COMPARE_OP_NEVER,
+          },
+      .back =
+          {
+              .failOp = VK_STENCIL_OP_KEEP,
+              .passOp = VK_STENCIL_OP_KEEP,
+              .depthFailOp = VK_STENCIL_OP_KEEP,
+              .compareOp = VK_COMPARE_OP_NEVER,
+          },
+      .maxDepthBounds = 1.0f,
+  }) {}
 
 VulkanPipelineBuilder& VulkanPipelineBuilder::depthBiasEnable(bool enable) {
   rasterizationState_.depthBiasEnable = enable ? VK_TRUE : VK_FALSE;
@@ -132,14 +162,22 @@ VkResult VulkanPipelineBuilder::build(const VulkanFunctionTable& vf,
                                       VkRenderPass renderPass,
                                       VkPipeline* outPipeline,
                                       const char* debugName) noexcept {
-  const VkPipelineDynamicStateCreateInfo dynamicState =
-      ivkGetPipelineDynamicStateCreateInfo((uint32_t)dynamicStates_.size(), dynamicStates_.data());
+  const VkPipelineDynamicStateCreateInfo dynamicState = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+      .dynamicStateCount = (uint32_t)dynamicStates_.size(),
+      .pDynamicStates = dynamicStates_.data(),
+  };
   // viewport and scissor are always dynamic
-  const VkPipelineViewportStateCreateInfo viewportState =
-      ivkGetPipelineViewportStateCreateInfo(nullptr, nullptr);
-  const VkPipelineColorBlendStateCreateInfo colorBlendState =
-      ivkGetPipelineColorBlendStateCreateInfo(uint32_t(colorBlendAttachmentStates_.size()),
-                                              colorBlendAttachmentStates_.data());
+  const VkPipelineViewportStateCreateInfo viewportState = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+      .viewportCount = 1,
+      .scissorCount = 1,
+  };
+  const VkPipelineColorBlendStateCreateInfo colorBlendState = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+      .attachmentCount = uint32_t(colorBlendAttachmentStates_.size()),
+      .pAttachments = colorBlendAttachmentStates_.data(),
+  };
 
   const auto result = ivkCreateGraphicsPipeline(&vf,
                                                 device,
