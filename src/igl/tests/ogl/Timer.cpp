@@ -12,7 +12,6 @@
 #include "../util/Common.h"
 
 #include <igl/opengl/Device.h>
-#include <igl/opengl/DeviceFeatureSet.h>
 #include <igl/opengl/IContext.h>
 
 namespace igl::tests {
