@@ -166,10 +166,18 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   };
 
   if (IGL_VULKAN_USE_VMA && !isDisjoint) {
+    const bool isHostVisible = (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0;
+    const bool isLazilyAllocated = (memFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) != 0;
     const VmaAllocationCreateInfo ciAlloc = {
         .flags = 0,
-        .usage = memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT ? VMA_MEMORY_USAGE_CPU_TO_GPU
-                                                                : VMA_MEMORY_USAGE_AUTO,
+        .usage = isHostVisible ? VMA_MEMORY_USAGE_CPU_TO_GPU : VMA_MEMORY_USAGE_AUTO,
+        // For lazily allocated (memoryless) images, require the flag so VMA picks GMEM-backed
+        // memory on TBDR GPUs. For other non-host-visible cases, pass memFlags as a preference
+        // to guide VMA without causing hard allocation failures.
+        .requiredFlags = isLazilyAllocated ? memFlags : static_cast<VkMemoryPropertyFlags>(0),
+        .preferredFlags = (!isHostVisible && !isLazilyAllocated)
+                              ? memFlags
+                              : static_cast<VkMemoryPropertyFlags>(0),
     };
 
     const VkResult result = vmaCreateImage(
