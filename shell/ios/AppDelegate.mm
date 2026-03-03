@@ -10,8 +10,19 @@
 #import "AppDelegate.h"
 
 #include "RenderSessionFactoryAdapterInternal.hpp"
-#import "ViewController.h"
+#import "RenderSessionFactoryProvider.h" // @donotremove
+#import "ViewController.h" // @donotremove
 
+#import <Foundation/NSArray.h>
+#import <Foundation/NSDictionary.h>
+#import <Foundation/NSString.h>
+#import <UIKit/UIColor.h>
+#import <UIKit/UIScreen.h>
+#import <UIKit/UITabBarItem.h>
+#import <UIKit/UIViewController.h>
+#include <vector>
+#include <shell/shared/renderSession/RenderSessionConfig.h>
+#include <shell/shared/renderSession/ShellType.h>
 #include <igl/Macros.h>
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/GLIncludes.h>

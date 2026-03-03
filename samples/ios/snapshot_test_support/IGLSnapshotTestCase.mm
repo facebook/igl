@@ -11,7 +11,7 @@
 #import "TinyRenderable.hpp"
 
 #import <FBServerSnapshotTestCase/FBServerSnapshotTestCase.h>
-#import <FBServerSnapshotTestCase/FBServerSnapshotTestData.h>
+#import <FBServerSnapshotTestCase/FBServerSnapshotTestData.h> // IWYU pragma: keep
 #import <FBServerSnapshotTestCase/FBServerSnapshotTestRecorder.h>
 #import <iglu/kit/Renderable.hpp>
 #import <igl/DebugMacros.h> // IWYU pragma: keep
