@@ -60,7 +60,8 @@ TEST_F(DestructionGuardOGLTest, InitiallyAllowed) {
 //
 TEST_F(DestructionGuardOGLTest, GuardPreventsDestruction) {
   auto& device = static_cast<opengl::Device&>(*iglDev_);
-  auto& platformDevice = static_cast<const opengl::PlatformDevice&>(device.getPlatformDevice());
+  const auto& platformDevice =
+      static_cast<const opengl::PlatformDevice&>(device.getPlatformDevice());
 
   {
     auto guard = platformDevice.getDestructionGuard();
@@ -75,7 +76,8 @@ TEST_F(DestructionGuardOGLTest, GuardPreventsDestruction) {
 //
 TEST_F(DestructionGuardOGLTest, GuardScopeRestore) {
   auto& device = static_cast<opengl::Device&>(*iglDev_);
-  auto& platformDevice = static_cast<const opengl::PlatformDevice&>(device.getPlatformDevice());
+  const auto& platformDevice =
+      static_cast<const opengl::PlatformDevice&>(device.getPlatformDevice());
 
   {
     auto guard = platformDevice.getDestructionGuard();
@@ -93,7 +95,8 @@ TEST_F(DestructionGuardOGLTest, GuardScopeRestore) {
 //
 TEST_F(DestructionGuardOGLTest, NestedGuards) {
   auto& device = static_cast<opengl::Device&>(*iglDev_);
-  auto& platformDevice = static_cast<const opengl::PlatformDevice&>(device.getPlatformDevice());
+  const auto& platformDevice =
+      static_cast<const opengl::PlatformDevice&>(device.getPlatformDevice());
 
   {
     auto outerGuard = platformDevice.getDestructionGuard();

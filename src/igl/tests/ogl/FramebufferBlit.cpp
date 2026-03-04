@@ -128,7 +128,8 @@ TEST_F(FramebufferBlitOGLTest, ColorBlit) {
 
   // Blit from source to destination
   auto& device = static_cast<opengl::Device&>(*iglDev_);
-  auto& platformDevice = static_cast<const opengl::PlatformDevice&>(device.getPlatformDevice());
+  const auto& platformDevice =
+      static_cast<const opengl::PlatformDevice&>(device.getPlatformDevice());
 
   platformDevice.blitFramebuffer(srcFramebuffer,
                                  0,
