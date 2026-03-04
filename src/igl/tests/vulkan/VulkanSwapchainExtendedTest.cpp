@@ -14,8 +14,6 @@
 #include <cstddef>
 #include <memory>
 #include <igl/tests/util/device/vulkan/TestDevice.h>
-#include <igl/vulkan/Device.h>
-#include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 
 namespace igl::tests {
