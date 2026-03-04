@@ -9,16 +9,11 @@
 
 #import "BackendVersion.h"
 
-// NOLINTBEGIN(readability-identifier-naming)
-@interface BackendVersion () {
+@implementation BackendVersion {
   BackendFlavor _flavor;
   UInt8 _majorVersion;
   UInt8 _minorVersion;
 }
-@end
-// NOLINTEND(readability-identifier-naming)
-
-@implementation BackendVersion
 
 - (instancetype)init:(BackendFlavor)flavor
         majorVersion:(UInt8)majorVersion
