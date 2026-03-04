@@ -784,34 +784,36 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
     if (useMSAA_) {
       const auto dimensions = surfaceTextures.color->getDimensions();
 
-      const TextureDesc fbTexDesc = {
-          dimensions.width,
-          dimensions.height,
-          1,
-          surfaceTextures.color->getNumLayers(),
-          kMsaaSamples,
-          TextureDesc::TextureUsageBits::Attachment,
-          1,
-          surfaceTextures.color->getNumLayers() > 1 ? TextureType::TwoDArray : TextureType::TwoD,
-          surfaceTextures.color->getFormat(),
-          igl::ResourceStorage::Private};
+      const TextureDesc fbTexDesc = {.width = dimensions.width,
+                                     .height = dimensions.height,
+                                     .depth = 1,
+                                     .numLayers = surfaceTextures.color->getNumLayers(),
+                                     .numSamples = kMsaaSamples,
+                                     .usage = TextureDesc::TextureUsageBits::Attachment,
+                                     .numMipLevels = 1,
+                                     .type = surfaceTextures.color->getNumLayers() > 1
+                                                 ? TextureType::TwoDArray
+                                                 : TextureType::TwoD,
+                                     .format = surfaceTextures.color->getFormat(),
+                                     .storage = igl::ResourceStorage::Private};
 
       framebufferDesc.colorAttachments[0].texture =
           getPlatform().getDevice().createTexture(fbTexDesc, nullptr);
 
       framebufferDesc.colorAttachments[0].resolveTexture = surfaceTextures.color;
 
-      const igl::TextureDesc depthDesc = {
-          dimensions.width,
-          dimensions.height,
-          1,
-          surfaceTextures.depth->getNumLayers(),
-          kMsaaSamples,
-          TextureDesc::TextureUsageBits::Attachment,
-          1,
-          surfaceTextures.depth->getNumLayers() > 1 ? TextureType::TwoDArray : TextureType::TwoD,
-          surfaceTextures.depth->getFormat(),
-          igl::ResourceStorage::Private};
+      const igl::TextureDesc depthDesc = {.width = dimensions.width,
+                                          .height = dimensions.height,
+                                          .depth = 1,
+                                          .numLayers = surfaceTextures.depth->getNumLayers(),
+                                          .numSamples = kMsaaSamples,
+                                          .usage = TextureDesc::TextureUsageBits::Attachment,
+                                          .numMipLevels = 1,
+                                          .type = surfaceTextures.depth->getNumLayers() > 1
+                                                      ? TextureType::TwoDArray
+                                                      : TextureType::TwoD,
+                                          .format = surfaceTextures.depth->getFormat(),
+                                          .storage = igl::ResourceStorage::Private};
 
       framebufferDesc.depthAttachment.texture =
           getPlatform().getDevice().createTexture(depthDesc, nullptr);
@@ -925,20 +927,24 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
           info.index = 1;
           info.length = sizeof(VertexFormat);
           info.uniforms = std::vector<UniformDesc>{
-              UniformDesc{"projectionMatrix",
-                          -1,
-                          igl::UniformType::Mat4x4,
-                          1,
-                          offsetof(VertexFormat, projectionMatrix),
-                          0},
-              UniformDesc{"modelViewMatrix",
-                          -1,
-                          igl::UniformType::Mat4x4,
-                          1,
-                          offsetof(VertexFormat, modelViewMatrix),
-                          0},
-              UniformDesc{
-                  "scaleZ", -1, igl::UniformType::Float, 1, offsetof(VertexFormat, scaleZ), 0}};
+              UniformDesc{.name = "projectionMatrix",
+                          .location = -1,
+                          .type = igl::UniformType::Mat4x4,
+                          .numElements = 1,
+                          .offset = offsetof(VertexFormat, projectionMatrix),
+                          .elementStride = 0},
+              UniformDesc{.name = "modelViewMatrix",
+                          .location = -1,
+                          .type = igl::UniformType::Mat4x4,
+                          .numElements = 1,
+                          .offset = offsetof(VertexFormat, modelViewMatrix),
+                          .elementStride = 0},
+              UniformDesc{.name = "scaleZ",
+                          .location = -1,
+                          .type = igl::UniformType::Float,
+                          .numElements = 1,
+                          .offset = offsetof(VertexFormat, scaleZ),
+                          .elementStride = 0}};
 
           vertUniformBuffer = std::make_shared<iglu::ManagedUniformBuffer>(device, info);
           IGL_DEBUG_ASSERT(vertUniformBuffer->result.isOk());

@@ -299,9 +299,14 @@ void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
   // Command buffers (1-N per thread): create, submit and forget
   const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
-  const igl::Viewport viewport = {
-      0.0f, 0.0f, (float)dimensions.width, (float)dimensions.height, 0.0f, +1.0f};
-  const igl::ScissorRect scissor = {0, 0, (uint32_t)dimensions.width, (uint32_t)dimensions.height};
+  const igl::Viewport viewport = {.x = 0.0f,
+                                  .y = 0.0f,
+                                  .width = (float)dimensions.width,
+                                  .height = (float)dimensions.height,
+                                  .minDepth = 0.0f,
+                                  .maxDepth = +1.0f};
+  const igl::ScissorRect scissor = {
+      .x = 0, .y = 0, .width = (uint32_t)dimensions.width, .height = (uint32_t)dimensions.height};
 
   // This will clear the framebuffer
   auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);

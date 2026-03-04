@@ -361,28 +361,29 @@ void HandsOpenXRSession::update(SurfaceTextures surfaceTextures) noexcept {
   iglu::ManagedUniformBufferInfo info;
   info.index = 1;
   info.length = sizeof(UniformBlock);
-  info.uniforms = std::vector<UniformDesc>{UniformDesc{
-                                               "jointMatrices",
-                                               -1,
-                                               igl::UniformType::Mat4x4,
-                                               kMaxJoints,
-                                               offsetof(UniformBlock, jointMatrices),
-                                               sizeof(glm::mat4),
-                                           },
-                                           UniformDesc{"viewProjectionMatrix",
-                                                       -1,
-                                                       igl::UniformType::Mat4x4,
-                                                       2,
-                                                       offsetof(UniformBlock, viewProjectionMatrix),
-                                                       sizeof(glm::mat4)},
-                                           UniformDesc{
-                                               "viewId",
-                                               -1,
-                                               igl::UniformType::Int,
-                                               1,
-                                               offsetof(UniformBlock, viewId),
-                                               0,
-                                           }};
+  info.uniforms =
+      std::vector<UniformDesc>{UniformDesc{
+                                   .name = "jointMatrices",
+                                   .location = -1,
+                                   .type = igl::UniformType::Mat4x4,
+                                   .numElements = kMaxJoints,
+                                   .offset = offsetof(UniformBlock, jointMatrices),
+                                   .elementStride = sizeof(glm::mat4),
+                               },
+                               UniformDesc{.name = "viewProjectionMatrix",
+                                           .location = -1,
+                                           .type = igl::UniformType::Mat4x4,
+                                           .numElements = 2,
+                                           .offset = offsetof(UniformBlock, viewProjectionMatrix),
+                                           .elementStride = sizeof(glm::mat4)},
+                               UniformDesc{
+                                   .name = "viewId",
+                                   .location = -1,
+                                   .type = igl::UniformType::Int,
+                                   .numElements = 1,
+                                   .offset = offsetof(UniformBlock, viewId),
+                                   .elementStride = 0,
+                               }};
 
   std::shared_ptr<iglu::ShaderCrossUniformBuffer> ubos[2];
   for (int i = 0; i < 2; ++i) {

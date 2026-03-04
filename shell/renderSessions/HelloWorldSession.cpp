@@ -21,9 +21,9 @@ struct VertexPosColor {
   iglu::simdtypes::float4 color;
 };
 VertexPosColor vertexData[] = {
-    {{-0.6f, -0.4f, 0.0}, {1.0, 0.0, 0.0, 1.0}},
-    {{0.6f, -0.4f, 0.0}, {0.0, 1.0, 0.0, 1.0}},
-    {{0.0f, 0.6f, 0.0}, {0.0, 0.0, 1.0, 1.0}},
+    {.position = {-0.6f, -0.4f, 0.0}, .color = {1.0, 0.0, 0.0, 1.0}},
+    {.position = {0.6f, -0.4f, 0.0}, .color = {0.0, 1.0, 0.0, 1.0}},
+    {.position = {0.0f, 0.6f, 0.0}, .color = {0.0, 0.0, 1.0, 1.0}},
 };
 uint16_t indexData[] = {
     2,

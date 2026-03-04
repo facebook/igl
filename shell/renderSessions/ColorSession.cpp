@@ -30,10 +30,10 @@ struct VertexPosUv {
   iglu::simdtypes::float2 uv;
 };
 const VertexPosUv kVertexData[] = {
-    {{-1.f, 1.f, 0.0}, {0.0, 0.0}},
-    {{1.f, 1.f, 0.0}, {1.0, 0.0}},
-    {{-1.f, -1.f, 0.0}, {0.0, 1.0}},
-    {{1.f, -1.f, 0.0}, {1.0, 1.0}},
+    {.position = {-1.f, 1.f, 0.0}, .uv = {0.0, 0.0}},
+    {.position = {1.f, 1.f, 0.0}, .uv = {1.0, 0.0}},
+    {.position = {-1.f, -1.f, 0.0}, .uv = {0.0, 1.0}},
+    {.position = {1.f, -1.f, 0.0}, .uv = {1.0, 1.0}},
 };
 const uint16_t kIndexData[] = {0, 1, 2, 1, 3, 2};
 

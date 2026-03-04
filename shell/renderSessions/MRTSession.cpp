@@ -27,16 +27,16 @@ struct VertexPosUv {
   iglu::simdtypes::float2 uv; // SIMD 128b aligned
 };
 static VertexPosUv vertexData0[] = {
-    {{-0.9f, 0.9f, 0.0}, {0.0, 1.0}},
-    {{-0.05f, 0.9f, 0.0}, {1.0, 1.0}},
-    {{-0.9f, -0.9f, 0.0}, {0.0, 0.0}},
-    {{-0.05f, -0.9f, 0.0}, {1.0, 0.0}},
+    {.position = {-0.9f, 0.9f, 0.0}, .uv = {0.0, 1.0}},
+    {.position = {-0.05f, 0.9f, 0.0}, .uv = {1.0, 1.0}},
+    {.position = {-0.9f, -0.9f, 0.0}, .uv = {0.0, 0.0}},
+    {.position = {-0.05f, -0.9f, 0.0}, .uv = {1.0, 0.0}},
 };
 static VertexPosUv vertexData1[] = {
-    {{0.05f, 0.9f, 0.0}, {0.0, 1.0}},
-    {{0.90f, 0.9f, 0.0}, {1.0, 1.0}},
-    {{0.05f, -0.9f, 0.0}, {0.0, 0.0}},
-    {{0.90f, -0.9f, 0.0}, {1.0, 0.0}},
+    {.position = {0.05f, 0.9f, 0.0}, .uv = {0.0, 1.0}},
+    {.position = {0.90f, 0.9f, 0.0}, .uv = {1.0, 1.0}},
+    {.position = {0.05f, -0.9f, 0.0}, .uv = {0.0, 0.0}},
+    {.position = {0.90f, -0.9f, 0.0}, .uv = {1.0, 0.0}},
 };
 static uint16_t indexData[] = {
     0,

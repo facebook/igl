@@ -33,35 +33,35 @@ const float kHalf = 1.0f;
 // UV-mapped cube with indices: 24 vertices, 36 indices
 const VertexPosUvw kVertexData0[] = {
     // top
-    {{-kHalf, -kHalf, +kHalf}, {0.5, 0.5, 1.0}, {0, 0}}, // 0
-    {{+kHalf, -kHalf, +kHalf}, {1.0, 0.0, 1.0}, {1, 0}}, // 1
-    {{+kHalf, +kHalf, +kHalf}, {1.0, 1.0, 1.0}, {1, 1}}, // 2
-    {{-kHalf, +kHalf, +kHalf}, {0.5, 1.0, 1.0}, {0, 1}}, // 3
+    {.position = {-kHalf, -kHalf, +kHalf}, .color = {0.5, 0.5, 1.0}, .uv = {0, 0}}, // 0
+    {.position = {+kHalf, -kHalf, +kHalf}, .color = {1.0, 0.0, 1.0}, .uv = {1, 0}}, // 1
+    {.position = {+kHalf, +kHalf, +kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {1, 1}}, // 2
+    {.position = {-kHalf, +kHalf, +kHalf}, .color = {0.5, 1.0, 1.0}, .uv = {0, 1}}, // 3
     // bottom
-    {{-kHalf, -kHalf, -kHalf}, {1.0, 1.0, 1.0}, {0, 0}}, // 4
-    {{-kHalf, +kHalf, -kHalf}, {0.5, 1.0, 0.5}, {0, 1}}, // 5
-    {{+kHalf, +kHalf, -kHalf}, {1.0, 1.0, 0.5}, {1, 1}}, // 6
-    {{+kHalf, -kHalf, -kHalf}, {1.0, 0.5, 0.5}, {1, 0}}, // 7
+    {.position = {-kHalf, -kHalf, -kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {0, 0}}, // 4
+    {.position = {-kHalf, +kHalf, -kHalf}, .color = {0.5, 1.0, 0.5}, .uv = {0, 1}}, // 5
+    {.position = {+kHalf, +kHalf, -kHalf}, .color = {1.0, 1.0, 0.5}, .uv = {1, 1}}, // 6
+    {.position = {+kHalf, -kHalf, -kHalf}, .color = {1.0, 0.5, 0.5}, .uv = {1, 0}}, // 7
     // left
-    {{+kHalf, +kHalf, -kHalf}, {1.0, 1.0, 0.5}, {1, 0}}, // 8
-    {{-kHalf, +kHalf, -kHalf}, {0.5, 1.0, 0.5}, {0, 0}}, // 9
-    {{-kHalf, +kHalf, +kHalf}, {0.5, 1.0, 1.0}, {0, 1}}, // 10
-    {{+kHalf, +kHalf, +kHalf}, {1.0, 1.0, 1.0}, {1, 1}}, // 11
+    {.position = {+kHalf, +kHalf, -kHalf}, .color = {1.0, 1.0, 0.5}, .uv = {1, 0}}, // 8
+    {.position = {-kHalf, +kHalf, -kHalf}, .color = {0.5, 1.0, 0.5}, .uv = {0, 0}}, // 9
+    {.position = {-kHalf, +kHalf, +kHalf}, .color = {0.5, 1.0, 1.0}, .uv = {0, 1}}, // 10
+    {.position = {+kHalf, +kHalf, +kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {1, 1}}, // 11
     // right
-    {{-kHalf, -kHalf, -kHalf}, {1.0, 1.0, 1.0}, {0, 0}}, // 12
-    {{+kHalf, -kHalf, -kHalf}, {1.0, 0.5, 0.5}, {1, 0}}, // 13
-    {{+kHalf, -kHalf, +kHalf}, {1.0, 0.5, 1.0}, {1, 1}}, // 14
-    {{-kHalf, -kHalf, +kHalf}, {0.5, 0.5, 1.0}, {0, 1}}, // 15
+    {.position = {-kHalf, -kHalf, -kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {0, 0}}, // 12
+    {.position = {+kHalf, -kHalf, -kHalf}, .color = {1.0, 0.5, 0.5}, .uv = {1, 0}}, // 13
+    {.position = {+kHalf, -kHalf, +kHalf}, .color = {1.0, 0.5, 1.0}, .uv = {1, 1}}, // 14
+    {.position = {-kHalf, -kHalf, +kHalf}, .color = {0.5, 0.5, 1.0}, .uv = {0, 1}}, // 15
     // front
-    {{+kHalf, -kHalf, -kHalf}, {1.0, 0.5, 0.5}, {0, 0}}, // 16
-    {{+kHalf, +kHalf, -kHalf}, {1.0, 1.0, 0.5}, {1, 0}}, // 17
-    {{+kHalf, +kHalf, +kHalf}, {1.0, 1.0, 1.0}, {1, 1}}, // 18
-    {{+kHalf, -kHalf, +kHalf}, {1.0, 0.5, 1.0}, {0, 1}}, // 19
+    {.position = {+kHalf, -kHalf, -kHalf}, .color = {1.0, 0.5, 0.5}, .uv = {0, 0}}, // 16
+    {.position = {+kHalf, +kHalf, -kHalf}, .color = {1.0, 1.0, 0.5}, .uv = {1, 0}}, // 17
+    {.position = {+kHalf, +kHalf, +kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {1, 1}}, // 18
+    {.position = {+kHalf, -kHalf, +kHalf}, .color = {1.0, 0.5, 1.0}, .uv = {0, 1}}, // 19
     // back
-    {{-kHalf, +kHalf, -kHalf}, {0.5, 1.0, 0.5}, {1, 0}}, // 20
-    {{-kHalf, -kHalf, -kHalf}, {1.0, 1.0, 1.0}, {0, 0}}, // 21
-    {{-kHalf, -kHalf, +kHalf}, {0.5, 0.5, 1.0}, {0, 1}}, // 22
-    {{-kHalf, +kHalf, +kHalf}, {0.5, 1.0, 1.0}, {1, 1}}, // 23
+    {.position = {-kHalf, +kHalf, -kHalf}, .color = {0.5, 1.0, 0.5}, .uv = {1, 0}}, // 20
+    {.position = {-kHalf, -kHalf, -kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {0, 0}}, // 21
+    {.position = {-kHalf, -kHalf, +kHalf}, .color = {0.5, 0.5, 1.0}, .uv = {0, 1}}, // 22
+    {.position = {-kHalf, +kHalf, +kHalf}, .color = {0.5, 1.0, 1.0}, .uv = {1, 1}}, // 23
 };
 
 const uint16_t kIndexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
@@ -328,9 +328,9 @@ void BindGroupSession::createSamplerAndTextures(const igl::IDevice& device) {
   }
 
   bindGroupTextures_ = getPlatform().getDevice().createBindGroup(BindGroupTextureDesc{
-      {tex0, tex1},
-      {sampler, sampler},
-      "bindGroupTextures_",
+      .textures = {tex0, tex1},
+      .samplers = {sampler, sampler},
+      .debugName = "bindGroupTextures_",
   });
 }
 

@@ -54,10 +54,10 @@ std::shared_ptr<VertexData> create(igl::IDevice& device,
   // |    |
   // 1 -- 3
   const std::array vertexData{
-      VertexPosUv{{posMin[0], posMax[1], 0.0}, {uvMin[0], uvMax[1]}},
-      VertexPosUv{{posMin[0], posMin[1], 0.0}, {uvMin[0], uvMin[1]}},
-      VertexPosUv{{posMax[0], posMax[1], 0.0}, {uvMax[0], uvMax[1]}},
-      VertexPosUv{{posMax[0], posMin[1], 0.0}, {uvMax[0], uvMin[1]}},
+      VertexPosUv{.position = {posMin[0], posMax[1], 0.0}, .uv = {uvMin[0], uvMax[1]}},
+      VertexPosUv{.position = {posMin[0], posMin[1], 0.0}, .uv = {uvMin[0], uvMin[1]}},
+      VertexPosUv{.position = {posMax[0], posMax[1], 0.0}, .uv = {uvMax[0], uvMax[1]}},
+      VertexPosUv{.position = {posMax[0], posMin[1], 0.0}, .uv = {uvMax[0], uvMin[1]}},
   };
   const std::array indexData{uint16_t{0}, uint16_t{1}, uint16_t{2}, uint16_t{3}};
 

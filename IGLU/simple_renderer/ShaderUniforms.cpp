@@ -138,7 +138,7 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
 
     for (int i = 0; i < static_cast<int>(iglDesc.members.size()); ++i) {
       const auto& uniformDesc = iglDesc.members[i];
-      const UniformDesc uniform{uniformDesc, bufferDesc};
+      const UniformDesc uniform{.iglMemberDesc = uniformDesc, .buffer = bufferDesc};
       allUniformsByName_.insert({uniformDesc.name, uniform});
       bufferDesc->uniforms.push_back(uniform);
       bufferDesc->memberIndices[uniformDesc.name] = i;
@@ -149,7 +149,7 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
 
   for (const igl::TextureArgDesc& iglDesc : reflection.allTextures()) {
     textureDescs_.push_back(iglDesc);
-    allTexturesByName_[iglDesc.name] = TextureSlot{nullptr, nullptr};
+    allTexturesByName_[iglDesc.name] = TextureSlot{.texture = nullptr, .rawTexture = nullptr};
   }
 }
 
@@ -792,8 +792,8 @@ void ShaderUniforms::setTexture(const std::string& name,
     IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid texture name: %s\n", name.c_str());
     return;
   }
-  allTexturesByName_[name] = TextureSlot{value, value.get()};
-  allSamplersByName_[name] = SamplerSlot{sampler, sampler.get()};
+  allTexturesByName_[name] = TextureSlot{.texture = value, .rawTexture = value.get()};
+  allSamplersByName_[name] = SamplerSlot{.sampler = sampler, .rawSampler = sampler.get()};
 }
 
 void ShaderUniforms::setTexture(const std::string& name,
@@ -804,8 +804,8 @@ void ShaderUniforms::setTexture(const std::string& name,
     IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid texture name: %s\n", name.c_str());
     return;
   }
-  allTexturesByName_[name] = TextureSlot{nullptr, value}; // non-owning
-  allSamplersByName_[name] = SamplerSlot{sampler, sampler.get()}; // owning
+  allTexturesByName_[name] = TextureSlot{.texture = nullptr, .rawTexture = value}; // non-owning
+  allSamplersByName_[name] = SamplerSlot{.sampler = sampler, .rawSampler = sampler.get()}; // owning
 }
 
 void ShaderUniforms::setTexture(const std::string& name,
@@ -816,8 +816,8 @@ void ShaderUniforms::setTexture(const std::string& name,
     IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid texture name: %s\n", name.c_str());
     return;
   }
-  allTexturesByName_[name] = TextureSlot{nullptr, value}; // non-owning
-  allSamplersByName_[name] = SamplerSlot{nullptr, sampler}; // non-owning
+  allTexturesByName_[name] = TextureSlot{.texture = nullptr, .rawTexture = value}; // non-owning
+  allSamplersByName_[name] = SamplerSlot{.sampler = nullptr, .rawSampler = sampler}; // non-owning
 }
 
 #if IGL_BACKEND_OPENGL

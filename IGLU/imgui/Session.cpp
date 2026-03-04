@@ -421,10 +421,10 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
   cmdEncoder.pushDebugGroupLabel("ImGui Rendering", igl::Color(0, 1, 0));
 
   const igl::Viewport viewport = {
-      /*.x = */ 0.0,
-      /*.y = */ 0.0,
-      /*.width = */ (drawData->DisplaySize.x * drawData->FramebufferScale.x),
-      /*.height = */ (drawData->DisplaySize.y * drawData->FramebufferScale.y),
+      /*.x = */ .x = 0.0,
+      /*.y = */ .y = 0.0,
+      /*.width = */ .width = (drawData->DisplaySize.x * drawData->FramebufferScale.x),
+      /*.height = */ .height = (drawData->DisplaySize.y * drawData->FramebufferScale.y),
   };
   cmdEncoder.bindViewport(viewport);
 
@@ -493,11 +493,11 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
 
       // OpenGL Y-axis goes up (Vulkan and Metal are good)
       // https://www.saschawillems.de/blog/2019/03/29/flipping-the-vulkan-viewport/
-      const igl::ScissorRect rect{uint32_t(clipMin.x),
-                                  isOpenGL ? uint32_t(viewport.height - clipMax.y)
-                                           : uint32_t(clipMin.y),
-                                  uint32_t(clipMax.x - clipMin.x),
-                                  uint32_t(clipMax.y - clipMin.y)};
+      const igl::ScissorRect rect{.x = uint32_t(clipMin.x),
+                                  .y = isOpenGL ? uint32_t(viewport.height - clipMax.y)
+                                                : uint32_t(clipMin.y),
+                                  .width = uint32_t(clipMax.x - clipMin.x),
+                                  .height = uint32_t(clipMax.y - clipMin.y)};
       cmdEncoder.bindScissorRect(rect);
 
       if (cmd.TextureId != lastBoundTextureId) {

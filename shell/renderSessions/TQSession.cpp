@@ -280,10 +280,10 @@ void TQSession::initialize() noexcept {
 
   // Vertex & Index buffer
   const VertexPosUv vertexData[] = {
-      {{-0.8f, 0.8f, 0.0}, {0.0, 0.0}},
-      {{0.8f, 0.8f, 0.0}, {uvScale_, 0.0}},
-      {{-0.8f, -0.8f, 0.0}, {0.0, uvScale_}},
-      {{0.8f, -0.8f, 0.0}, {uvScale_, uvScale_}},
+      {.position = {-0.8f, 0.8f, 0.0}, .uv = {0.0, 0.0}},
+      {.position = {0.8f, 0.8f, 0.0}, .uv = {uvScale_, 0.0}},
+      {.position = {-0.8f, -0.8f, 0.0}, .uv = {0.0, uvScale_}},
+      {.position = {0.8f, -0.8f, 0.0}, .uv = {uvScale_, uvScale_}},
   };
   const BufferDesc vbDesc = getVertexBufferDesc(device, &vertexData[0]);
   vb0_ = device.createBuffer(vbDesc, nullptr);

@@ -1405,7 +1405,10 @@ void initModel(int numSamplesMSAA) {
 #endif
 
   for (const auto& mtl : cachedMaterials_) {
-    materials_.push_back(GPUMaterial{vec4(mtl.ambient, 1.0f), vec4(mtl.diffuse, 1.0f), id, id});
+    materials_.push_back(GPUMaterial{.ambient = vec4(mtl.ambient, 1.0f),
+                                     .diffuse = vec4(mtl.diffuse, 1.0f),
+                                     .texAmbient = id,
+                                     .texDiffuse = id});
   }
 
   {
@@ -2075,8 +2078,8 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
 
   // Pass 3: compute shader post-processing
   if (enableComputePass_) {
-    const std::shared_ptr<ICommandBuffer> buffer =
-        commandQueue_->createCommandBuffer(CommandBufferDesc{"computeBuffer"}, nullptr);
+    const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer(
+        CommandBufferDesc{.debugName = "computeBuffer"}, nullptr);
 
     auto commands = buffer->createComputeCommandEncoder();
     commands->bindComputePipelineState(computePipelineState_Grayscale_);
@@ -2253,7 +2256,7 @@ void loadMaterial(size_t i) {
 
 #undef LOAD_TEX
 
-  const LoadedMaterial mtl{i, ambient, diffuse, alpha};
+  const LoadedMaterial mtl{.idx = i, .ambient = ambient, .diffuse = diffuse, .alpha = alpha};
 
   if (!mtl.ambient.pixels && !mtl.diffuse.pixels) {
     // skip missing textures
