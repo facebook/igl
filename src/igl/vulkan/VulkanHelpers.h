@@ -131,17 +131,6 @@ VkResult ivkAllocateMemory2(const struct VulkanFunctionTable* vt,
                             bool enableBufferDeviceAddress,
                             VkDeviceMemory* outMemory);
 
-VkImagePlaneMemoryRequirementsInfo ivkGetImagePlaneMemoryRequirementsInfo(
-    VkImageAspectFlagBits plane);
-
-VkImageMemoryRequirementsInfo2 ivkGetImageMemoryRequirementsInfo2(
-    const VkImagePlaneMemoryRequirementsInfo* next,
-    VkImage image);
-
-VkBindImageMemoryInfo ivkGetBindImageMemoryInfo(const VkBindImagePlaneMemoryInfo* next,
-                                                VkImage image,
-                                                VkDeviceMemory memory);
-
 bool ivkIsHostVisibleSingleHeapMemory(const VkPhysicalDeviceMemoryProperties* memProps);
 
 uint32_t ivkFindMemoryType(const VkPhysicalDeviceMemoryProperties* memProps,
@@ -181,12 +170,6 @@ VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,
                                       const VkDescriptorBindingFlags* bindingFlags,
                                       VkDescriptorSetLayout* outLayout);
 
-/// @brief Creates a VkDescriptorSetLayoutBinding structure
-VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding,
-                                                              VkDescriptorType descriptorType,
-                                                              uint32_t descriptorCount,
-                                                              VkShaderStageFlags stageFlags);
-
 VkResult ivkAllocateDescriptorSet(const struct VulkanFunctionTable* vt,
                                   VkDevice device,
                                   VkDescriptorPool pool,
@@ -209,72 +192,6 @@ VkSubmitInfo ivkGetSubmitInfo(const VkCommandBuffer* buffer,
                               const VkPipelineStageFlags* waitStageMasks,
                               const VkSemaphore* releaseSemaphore);
 
-VkBufferCreateInfo ivkGetBufferCreateInfo(uint64_t size, VkBufferUsageFlags usage);
-
-/// @brief Creates a VkImageCreateInfo structure with its layout set to `VK_IMAGE_LAYOUT_UNDEFINED`
-VkImageCreateInfo ivkGetImageCreateInfo(VkImageType type,
-                                        VkFormat imageFormat,
-                                        VkImageTiling tiling,
-                                        VkImageUsageFlags usage,
-                                        VkExtent3D extent,
-                                        uint32_t mipLevels,
-                                        uint32_t arrayLayers,
-                                        VkImageCreateFlags flags,
-                                        VkSampleCountFlags samples);
-
-VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfoEmpty(void);
-
-/// @brief Creates an empty VkPipelineVertexInputStateCreateInfo structure
-VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfo(
-    uint32_t vbCount,
-    const VkVertexInputBindingDescription* bindings,
-    uint32_t vaCount,
-    const VkVertexInputAttributeDescription* attributes);
-
-VkPipelineInputAssemblyStateCreateInfo ivkGetPipelineInputAssemblyStateCreateInfo(
-    VkPrimitiveTopology topology,
-    VkBool32 enablePrimitiveRestart);
-
-VkPipelineDynamicStateCreateInfo ivkGetPipelineDynamicStateCreateInfo(
-    uint32_t numDynamicStates,
-    const VkDynamicState* dynamicStates);
-
-/// @brief Creates a VkPipelineRasterizationStateCreateInfo structure with default values, except
-/// for polygon mode and cull mode flags
-VkPipelineRasterizationStateCreateInfo ivkGetPipelineRasterizationStateCreateInfo(
-    VkPolygonMode polygonMode,
-    VkCullModeFlags cullMode);
-
-/// @brief Creates a VkPipelineMultisampleStateCreateInfo structure with default values
-VkPipelineMultisampleStateCreateInfo ivkGetPipelineMultisampleStateCreateInfoEmpty(void);
-
-/// @brief Creates a VkPipelineDepthStencilStateCreateInfo structure with depth test and write
-/// disabled
-VkPipelineDepthStencilStateCreateInfo ivkGetPipelineDepthStencilStateCreateInfoNoDepthStencilTests(
-    void);
-
-/// @brief Creates a VkPipelineColorBlendAttachmentState structure with blending disabled
-VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentStateNoBlending(void);
-
-VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentState(
-    bool blendEnable,
-    VkBlendFactor srcColorBlendFactor,
-    VkBlendFactor dstColorBlendFactor,
-    VkBlendOp colorBlendOp,
-    VkBlendFactor srcAlphaBlendFactor,
-    VkBlendFactor dstAlphaBlendFactor,
-    VkBlendOp alphaBlendOp,
-    VkColorComponentFlags colorWriteMask);
-
-VkPipelineColorBlendStateCreateInfo ivkGetPipelineColorBlendStateCreateInfo(
-    uint32_t numAttachments,
-    const VkPipelineColorBlendAttachmentState* colorBlendAttachmentStates);
-
-/// @brief Creates a VkPipelineViewportStateCreateInfo structure. If the viewport state is dyanamoc,
-/// the parameters `viewport` and `scissor` may be NULL
-VkPipelineViewportStateCreateInfo ivkGetPipelineViewportStateCreateInfo(const VkViewport* viewport,
-                                                                        const VkRect2D* scissor);
-
 VkWriteDescriptorSet ivkGetWriteDescriptorSetImageInfo(VkDescriptorSet dstSet,
                                                        uint32_t dstBinding,
                                                        VkDescriptorType descriptorType,
@@ -286,19 +203,6 @@ VkWriteDescriptorSet ivkGetWriteDescriptorSetBufferInfo(VkDescriptorSet dstSet,
                                                         VkDescriptorType descriptorType,
                                                         uint32_t numDescriptors,
                                                         const VkDescriptorBufferInfo* pBufferInfo);
-
-VkPipelineLayoutCreateInfo ivkGetPipelineLayoutCreateInfo(uint32_t numLayouts,
-                                                          const VkDescriptorSetLayout* layouts,
-                                                          const VkPushConstantRange* range);
-
-VkPipelineShaderStageCreateInfo ivkGetPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,
-                                                                    VkShaderModule shaderModule,
-                                                                    const char* entryPoint);
-
-VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset,
-                                          uint32_t bufferRowLength,
-                                          VkRect2D imageRegion,
-                                          VkImageSubresourceLayers imageSubresource);
 
 void ivkImageMemoryBarrier(const struct VulkanFunctionTable* vt,
                            VkCommandBuffer buffer,

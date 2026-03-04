@@ -186,40 +186,6 @@ VkResult ivkAllocateMemory2(const struct VulkanFunctionTable* vt,
   return vt->vkAllocateMemory(device, &ai, NULL, outMemory);
 }
 
-VkImagePlaneMemoryRequirementsInfo ivkGetImagePlaneMemoryRequirementsInfo(
-    VkImageAspectFlagBits plane) {
-  const VkImagePlaneMemoryRequirementsInfo info = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO,
-      .pNext = NULL,
-      .planeAspect = plane,
-  };
-  return info;
-}
-
-VkImageMemoryRequirementsInfo2 ivkGetImageMemoryRequirementsInfo2(
-    const VkImagePlaneMemoryRequirementsInfo* next,
-    VkImage image) {
-  const VkImageMemoryRequirementsInfo2 info = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
-      .pNext = next,
-      .image = image,
-  };
-  return info;
-}
-
-VkBindImageMemoryInfo ivkGetBindImageMemoryInfo(const VkBindImagePlaneMemoryInfo* next,
-                                                VkImage image,
-                                                VkDeviceMemory memory) {
-  const VkBindImageMemoryInfo info = {
-      .sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
-      .pNext = next,
-      .image = image,
-      .memory = memory,
-      .memoryOffset = 0,
-  };
-  return info;
-}
-
 bool ivkIsHostVisibleSingleHeapMemory(const VkPhysicalDeviceMemoryProperties* memProps) {
   if (memProps->memoryHeapCount != 1) {
     return false;
@@ -476,20 +442,6 @@ VkResult ivkCreateFramebuffer(const struct VulkanFunctionTable* vt,
   return vt->vkCreateFramebuffer(device, &ci, NULL, outFramebuffer);
 }
 
-VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding,
-                                                              VkDescriptorType descriptorType,
-                                                              uint32_t descriptorCount,
-                                                              VkShaderStageFlags stageFlags) {
-  const VkDescriptorSetLayoutBinding bind = {
-      .binding = binding,
-      .descriptorType = descriptorType,
-      .descriptorCount = descriptorCount,
-      .stageFlags = stageFlags,
-      .pImmutableSamplers = NULL,
-  };
-  return bind;
-}
-
 VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,
                                       VkDevice device,
                                       VkDescriptorSetLayoutCreateFlags flags,
@@ -568,225 +520,6 @@ VkSubmitInfo ivkGetSubmitInfo(const VkCommandBuffer* buffer,
   return si;
 }
 
-VkBufferCreateInfo ivkGetBufferCreateInfo(uint64_t size, VkBufferUsageFlags usage) {
-  const VkBufferCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-      .pNext = NULL,
-      .flags = 0,
-      .size = size,
-      .usage = usage,
-      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-      .queueFamilyIndexCount = 0,
-      .pQueueFamilyIndices = NULL,
-  };
-  return ci;
-}
-
-VkImageCreateInfo ivkGetImageCreateInfo(VkImageType type,
-                                        VkFormat imageFormat,
-                                        VkImageTiling tiling,
-                                        VkImageUsageFlags usage,
-                                        VkExtent3D extent,
-                                        uint32_t mipLevels,
-                                        uint32_t arrayLayers,
-                                        VkImageCreateFlags flags,
-                                        VkSampleCountFlags samples) {
-  const VkImageCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-      .pNext = NULL,
-      .flags = flags,
-      .imageType = type,
-      .format = imageFormat,
-      .extent = extent,
-      .mipLevels = mipLevels,
-      .arrayLayers = arrayLayers,
-      .samples = samples,
-      .tiling = tiling,
-      .usage = usage,
-      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-      .queueFamilyIndexCount = 0,
-      .pQueueFamilyIndices = NULL,
-      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-  };
-  return ci;
-}
-
-VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfoEmpty(void) {
-  return ivkGetPipelineVertexInputStateCreateInfo(0, NULL, 0, NULL);
-}
-
-VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfo(
-    uint32_t vbCount,
-    const VkVertexInputBindingDescription* bindings,
-    uint32_t vaCount,
-    const VkVertexInputAttributeDescription* attributes) {
-  const VkPipelineVertexInputStateCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-      .vertexBindingDescriptionCount = vbCount,
-      .pVertexBindingDescriptions = bindings,
-      .vertexAttributeDescriptionCount = vaCount,
-      .pVertexAttributeDescriptions = attributes};
-  return ci;
-}
-
-VkPipelineInputAssemblyStateCreateInfo ivkGetPipelineInputAssemblyStateCreateInfo(
-    VkPrimitiveTopology topology,
-    VkBool32 enablePrimitiveRestart) {
-  const VkPipelineInputAssemblyStateCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-      .flags = 0,
-      .topology = topology,
-      .primitiveRestartEnable = enablePrimitiveRestart,
-  };
-  return ci;
-}
-
-VkPipelineDynamicStateCreateInfo ivkGetPipelineDynamicStateCreateInfo(
-    uint32_t numDynamicStates,
-    const VkDynamicState* dynamicStates) {
-  const VkPipelineDynamicStateCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-      .dynamicStateCount = numDynamicStates,
-      .pDynamicStates = dynamicStates,
-  };
-  return ci;
-}
-
-VkPipelineViewportStateCreateInfo ivkGetPipelineViewportStateCreateInfo(const VkViewport* viewport,
-                                                                        const VkRect2D* scissor) {
-  // viewport and scissor can be NULL if the viewport state is dynamic
-  // https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/VkPipelineViewportStateCreateInfo.html
-  const VkPipelineViewportStateCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-      .viewportCount = 1,
-      .pViewports = viewport,
-      .scissorCount = 1,
-      .pScissors = scissor,
-  };
-  return ci;
-}
-
-VkPipelineRasterizationStateCreateInfo ivkGetPipelineRasterizationStateCreateInfo(
-    VkPolygonMode polygonMode,
-    VkCullModeFlags cullModeFlags) {
-  const VkPipelineRasterizationStateCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-      .flags = 0,
-      .depthClampEnable = VK_FALSE,
-      .rasterizerDiscardEnable = VK_FALSE,
-      .polygonMode = polygonMode,
-      .cullMode = cullModeFlags,
-      .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
-      .depthBiasEnable = VK_FALSE,
-      .depthBiasConstantFactor = 0.0f,
-      .depthBiasClamp = 0.0f,
-      .depthBiasSlopeFactor = 0.0f,
-      .lineWidth = 1.0f,
-  };
-  return ci;
-}
-
-VkPipelineMultisampleStateCreateInfo ivkGetPipelineMultisampleStateCreateInfoEmpty(void) {
-  const VkPipelineMultisampleStateCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-      .pNext = NULL,
-      .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
-      .sampleShadingEnable = VK_FALSE,
-      .minSampleShading = 1.0f,
-      .pSampleMask = NULL,
-      .alphaToCoverageEnable = VK_FALSE,
-      .alphaToOneEnable = VK_FALSE,
-  };
-  return ci;
-}
-
-VkPipelineDepthStencilStateCreateInfo ivkGetPipelineDepthStencilStateCreateInfoNoDepthStencilTests(
-    void) {
-  const VkPipelineDepthStencilStateCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-      .pNext = NULL,
-      .flags = 0,
-      .depthTestEnable = VK_FALSE,
-      .depthWriteEnable = VK_FALSE,
-      .depthCompareOp = VK_COMPARE_OP_LESS,
-      .depthBoundsTestEnable = VK_FALSE,
-      .stencilTestEnable = VK_FALSE,
-      .front =
-          {
-              .failOp = VK_STENCIL_OP_KEEP,
-              .passOp = VK_STENCIL_OP_KEEP,
-              .depthFailOp = VK_STENCIL_OP_KEEP,
-              .compareOp = VK_COMPARE_OP_NEVER,
-              .compareMask = 0,
-              .writeMask = 0,
-              .reference = 0,
-          },
-      .back =
-          {
-              .failOp = VK_STENCIL_OP_KEEP,
-              .passOp = VK_STENCIL_OP_KEEP,
-              .depthFailOp = VK_STENCIL_OP_KEEP,
-              .compareOp = VK_COMPARE_OP_NEVER,
-              .compareMask = 0,
-              .writeMask = 0,
-              .reference = 0,
-          },
-      .minDepthBounds = 0.0f,
-      .maxDepthBounds = 1.0f,
-  };
-  return ci;
-}
-
-VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentStateNoBlending(void) {
-  const VkPipelineColorBlendAttachmentState state = {
-      .blendEnable = VK_FALSE,
-      .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
-      .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
-      .colorBlendOp = VK_BLEND_OP_ADD,
-      .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-      .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
-      .alphaBlendOp = VK_BLEND_OP_ADD,
-      .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                        VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-  };
-  return state;
-}
-
-VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentState(
-    bool blendEnable,
-    VkBlendFactor srcColorBlendFactor,
-    VkBlendFactor dstColorBlendFactor,
-    VkBlendOp colorBlendOp,
-    VkBlendFactor srcAlphaBlendFactor,
-    VkBlendFactor dstAlphaBlendFactor,
-    VkBlendOp alphaBlendOp,
-    VkColorComponentFlags colorWriteMask) {
-  const VkPipelineColorBlendAttachmentState state = {
-      .blendEnable = blendEnable,
-      .srcColorBlendFactor = srcColorBlendFactor,
-      .dstColorBlendFactor = dstColorBlendFactor,
-      .colorBlendOp = colorBlendOp,
-      .srcAlphaBlendFactor = srcAlphaBlendFactor,
-      .dstAlphaBlendFactor = dstAlphaBlendFactor,
-      .alphaBlendOp = alphaBlendOp,
-      .colorWriteMask = colorWriteMask,
-  };
-  return state;
-}
-
-VkPipelineColorBlendStateCreateInfo ivkGetPipelineColorBlendStateCreateInfo(
-    uint32_t numAttachments,
-    const VkPipelineColorBlendAttachmentState* colorBlendAttachmentStates) {
-  const VkPipelineColorBlendStateCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-      .logicOpEnable = VK_FALSE,
-      .logicOp = VK_LOGIC_OP_COPY,
-      .attachmentCount = numAttachments,
-      .pAttachments = colorBlendAttachmentStates,
-  };
-  return ci;
-}
-
 VkWriteDescriptorSet ivkGetWriteDescriptorSetImageInfo(VkDescriptorSet dstSet,
                                                        uint32_t dstBinding,
                                                        VkDescriptorType descriptorType,
@@ -825,33 +558,6 @@ VkWriteDescriptorSet ivkGetWriteDescriptorSetBufferInfo(VkDescriptorSet dstSet,
       .pTexelBufferView = NULL,
   };
   return set;
-}
-
-VkPipelineLayoutCreateInfo ivkGetPipelineLayoutCreateInfo(uint32_t numLayouts,
-                                                          const VkDescriptorSetLayout* layouts,
-                                                          const VkPushConstantRange* range) {
-  const VkPipelineLayoutCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-      .setLayoutCount = numLayouts,
-      .pSetLayouts = layouts,
-      .pushConstantRangeCount = range ? 1u : 0u,
-      .pPushConstantRanges = range,
-  };
-  return ci;
-}
-
-VkPipelineShaderStageCreateInfo ivkGetPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,
-                                                                    VkShaderModule shaderModule,
-                                                                    const char* entryPoint) {
-  const VkPipelineShaderStageCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-      .flags = 0,
-      .stage = stage,
-      .module = shaderModule,
-      .pName = entryPoint ? entryPoint : "main",
-      .pSpecializationInfo = NULL,
-  };
-  return ci;
 }
 
 VkResult ivkCreateGraphicsPipeline(const struct VulkanFunctionTable* vt,
@@ -1126,23 +832,6 @@ VkVertexInputAttributeDescription ivkGetVertexInputAttributeDescription(uint32_t
       .offset = offset,
   };
   return desc;
-}
-
-VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset,
-                                          uint32_t bufferRowLength,
-                                          const VkRect2D imageRegion,
-                                          VkImageSubresourceLayers imageSubresource) {
-  const VkBufferImageCopy copy = {
-      .bufferOffset = bufferOffset,
-      .bufferRowLength = bufferRowLength,
-      .bufferImageHeight = 0,
-      .imageSubresource = imageSubresource,
-      .imageOffset = {.x = imageRegion.offset.x, .y = imageRegion.offset.y, .z = 0},
-      .imageExtent = {.width = imageRegion.extent.width,
-                      .height = imageRegion.extent.height,
-                      .depth = 1u},
-  };
-  return copy;
 }
 
 VkResult ivkVmaCreateAllocator(const struct VulkanFunctionTable* vt,
