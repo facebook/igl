@@ -58,8 +58,12 @@ TEST_F(ShaderModuleTest, CompileShaderModuleReturnNull) {
     return;
   }
 
-  auto shaderModule = ShaderModuleCreator::fromStringInput(
-      *iglDev_, "hello world", {ShaderStage::Vertex, "Mordor"}, "test", &ret);
+  auto shaderModule =
+      ShaderModuleCreator::fromStringInput(*iglDev_,
+                                           "hello world",
+                                           {.stage = ShaderStage::Vertex, .entryPoint = "Mordor"},
+                                           "test",
+                                           &ret);
   ASSERT_TRUE(!ret.isOk());
   ASSERT_TRUE(shaderModule == nullptr);
 }
@@ -67,8 +71,8 @@ TEST_F(ShaderModuleTest, CompileShaderModuleReturnNull) {
 TEST_F(ShaderModuleTest, CompileShaderModuleReturnNullWithEmptyInput) {
   Result ret;
 
-  auto shaderModule =
-      ShaderModuleCreator::fromStringInput(*iglDev_, "", {ShaderStage::Vertex, ""}, "test", &ret);
+  auto shaderModule = ShaderModuleCreator::fromStringInput(
+      *iglDev_, "", {.stage = ShaderStage::Vertex, .entryPoint = ""}, "test", &ret);
   ASSERT_TRUE(!ret.isOk());
   ASSERT_TRUE(shaderModule == nullptr);
 }
@@ -100,8 +104,9 @@ VSOut main(VSIn i) { return vertexShader(i); }
   auto shaderModule = ShaderModuleCreator::fromStringInput(
       *iglDev_,
       source,
-      {ShaderStage::Vertex,
-       (be == BackendType::D3D12) ? std::string("main") : std::string("vertexShader")},
+      {.stage = ShaderStage::Vertex,
+       .entryPoint = (be == BackendType::D3D12) ? std::string("main")
+                                                : std::string("vertexShader")},
       "test",
       &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -132,8 +137,9 @@ VSOut main(VSIn i) { return vertexShader(i); }
   auto shaderModule = ShaderModuleCreator::fromStringInput(
       *iglDev_,
       source,
-      {ShaderStage::Vertex,
-       (be2 == BackendType::D3D12) ? std::string("main") : std::string("vertexShader")},
+      {.stage = ShaderStage::Vertex,
+       .entryPoint = (be2 == BackendType::D3D12) ? std::string("main")
+                                                 : std::string("vertexShader")},
       "test",
       nullptr);
   ASSERT_TRUE(shaderModule != nullptr);

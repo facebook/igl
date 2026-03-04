@@ -40,11 +40,17 @@ class MultiviewTest : public ::testing::Test {
     std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer = nullptr;
 
     const iglu::ManagedUniformBufferInfo ubInfo = {
-        1,
-        sizeof(Colors),
-        {
-            {"colors", -1, igl::UniformType::Float4, 2, 0, sizeof(glm::vec4)},
-        },
+        .index = 1,
+        .length = sizeof(Colors),
+        .uniforms =
+            {
+                {.name = "colors",
+                 .location = -1,
+                 .type = igl::UniformType::Float4,
+                 .numElements = 2,
+                 .offset = 0,
+                 .elementStride = sizeof(glm::vec4)},
+            },
     };
 
     vertUniformBuffer = std::make_shared<iglu::ManagedUniformBuffer>(device, ubInfo);

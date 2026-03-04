@@ -202,7 +202,10 @@ class RenderCommandEncoderTest : public ::testing::Test {
     ASSERT_TRUE(depthStencilState_ != nullptr);
 
     bindGroupTexture_ = iglDev_->createBindGroup(
-        BindGroupTextureDesc{{texture_}, {samp_}, "Offscreen texture test"}, nullptr, &ret);
+        BindGroupTextureDesc{
+            .textures = {texture_}, .samplers = {samp_}, .debugName = "Offscreen texture test"},
+        nullptr,
+        &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   }
 
@@ -235,10 +238,16 @@ class RenderCommandEncoderTest : public ::testing::Test {
       encoder->bindIndexBuffer(*ib_, IndexFormat::UInt32);
     }
 
-    const igl::Viewport viewport = {
-        0.0f, 0.0f, (float)OFFSCREEN_RT_WIDTH, (float)OFFSCREEN_RT_HEIGHT, 0.0f, +1.0f};
-    const igl::ScissorRect scissor = {
-        0, 0, (uint32_t)OFFSCREEN_RT_WIDTH, (uint32_t)OFFSCREEN_RT_HEIGHT};
+    const igl::Viewport viewport = {.x = 0.0f,
+                                    .y = 0.0f,
+                                    .width = (float)OFFSCREEN_RT_WIDTH,
+                                    .height = (float)OFFSCREEN_RT_HEIGHT,
+                                    .minDepth = 0.0f,
+                                    .maxDepth = +1.0f};
+    const igl::ScissorRect scissor = {.x = 0,
+                                      .y = 0,
+                                      .width = (uint32_t)OFFSCREEN_RT_WIDTH,
+                                      .height = (uint32_t)OFFSCREEN_RT_HEIGHT};
     encoder->bindViewport(viewport);
     encoder->bindScissorRect(scissor);
 
@@ -732,9 +741,16 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStripCopyTextureToBuffer) {
 
   encoder->bindDepthStencilState(depthStencilState_);
 
-  encoder->bindViewport(
-      {0.0f, 0.0f, (float)OFFSCREEN_RT_WIDTH, (float)OFFSCREEN_RT_HEIGHT, 0.0f, +1.0f});
-  encoder->bindScissorRect({0, 0, (uint32_t)OFFSCREEN_RT_WIDTH, (uint32_t)OFFSCREEN_RT_HEIGHT});
+  encoder->bindViewport({.x = 0.0f,
+                         .y = 0.0f,
+                         .width = (float)OFFSCREEN_RT_WIDTH,
+                         .height = (float)OFFSCREEN_RT_HEIGHT,
+                         .minDepth = 0.0f,
+                         .maxDepth = +1.0f});
+  encoder->bindScissorRect({.x = 0,
+                            .y = 0,
+                            .width = (uint32_t)OFFSCREEN_RT_WIDTH,
+                            .height = (uint32_t)OFFSCREEN_RT_HEIGHT});
 
   encoder->insertDebugEventLabel("Rendering a triangle strip...");
   encoder->bindRenderPipelineState(renderPipelineStateTriangleStrip_);

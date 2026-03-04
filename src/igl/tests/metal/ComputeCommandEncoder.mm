@@ -73,12 +73,13 @@ TEST_F(MetalComputeCommandEncoderTest, DispatchNoError) {
 
   // Create compute shader module
   const auto computeSource = std::string(data::shader::kMtlSimpleComputeShader);
-  auto computeModule = device_->createShaderModule(
-      ShaderModuleDesc::fromStringInput(
-          computeSource.c_str(),
-          {ShaderStage::Compute, std::string(data::shader::kSimpleComputeFunc)},
-          "computeModule"),
-      &res);
+  auto computeModule =
+      device_->createShaderModule(ShaderModuleDesc::fromStringInput(
+                                      computeSource.c_str(),
+                                      {.stage = ShaderStage::Compute,
+                                       .entryPoint = std::string(data::shader::kSimpleComputeFunc)},
+                                      "computeModule"),
+                                  &res);
   ASSERT_TRUE(res.isOk()) << res.message;
 
   auto stagesDesc = ShaderStagesDesc::fromComputeModule(std::move(computeModule));

@@ -44,7 +44,7 @@ TEST(CommonTest, ResultTest) {
 TEST(CommonTest, RectTest) {
   const ScissorRect testRect;
   ASSERT_TRUE(testRect.isNull());
-  const ScissorRect testRect2{0, 0, 1, 1};
+  const ScissorRect testRect2{.x = 0, .y = 0, .width = 1, .height = 1};
   ASSERT_FALSE(testRect2.isNull());
 }
 

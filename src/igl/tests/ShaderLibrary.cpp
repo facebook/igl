@@ -64,7 +64,7 @@ TEST_F(ShaderLibraryTest, CreateFromSource) {
   }
 
   auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
-      *iglDev_, source, {{ShaderStage::Vertex, "vertexShader"}}, "", &ret);
+      *iglDev_, source, {{.stage = ShaderStage::Vertex, .entryPoint = "vertexShader"}}, "", &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(shaderLibrary != nullptr);
 
@@ -79,8 +79,8 @@ TEST_F(ShaderLibraryTest, CreateFromSingleModuleReturnNullWithEmptyInput) {
     return;
   }
 
-  auto shaderLibrary =
-      ShaderLibraryCreator::fromStringInput(*iglDev_, "", {{ShaderStage::Vertex, ""}}, "", &ret);
+  auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
+      *iglDev_, "", {{.stage = ShaderStage::Vertex, .entryPoint = ""}}, "", &ret);
   ASSERT_TRUE(!ret.isOk());
   ASSERT_TRUE(shaderLibrary == nullptr);
 }
@@ -108,15 +108,15 @@ TEST_F(ShaderLibraryTest, CreateFromSourceMultipleModules) {
     return;
   }
 
-  auto shaderLibrary =
-      ShaderLibraryCreator::fromStringInput(*iglDev_,
-                                            source,
-                                            {
-                                                {ShaderStage::Vertex, "vertexShader"},
-                                                {ShaderStage::Fragment, "fragmentShader"},
-                                            },
-                                            "",
-                                            &ret);
+  auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
+      *iglDev_,
+      source,
+      {
+          {.stage = ShaderStage::Vertex, .entryPoint = "vertexShader"},
+          {.stage = ShaderStage::Fragment, .entryPoint = "fragmentShader"},
+      },
+      "",
+      &ret);
 
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(shaderLibrary != nullptr);
@@ -152,7 +152,11 @@ TEST_F(ShaderLibraryTest, CreateFromSourceNoResult) {
   }
 
   auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
-      *iglDev_, source, {{ShaderStage::Vertex, "vertexShader"}}, "", nullptr);
+      *iglDev_,
+      source,
+      {{.stage = ShaderStage::Vertex, .entryPoint = "vertexShader"}},
+      "",
+      nullptr);
   ASSERT_TRUE(shaderLibrary != nullptr);
 
   auto vertShaderModule = shaderLibrary->getShaderModule("vertexShader");

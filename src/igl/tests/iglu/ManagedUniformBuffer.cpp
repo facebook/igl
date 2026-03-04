@@ -39,7 +39,7 @@ class ManagedUniformBufferTest : public ::testing::Test {
 };
 
 TEST_F(ManagedUniformBufferTest, Construction) {
-  iglu::ManagedUniformBuffer buffer(*iglDev_, {0, 10});
+  iglu::ManagedUniformBuffer buffer(*iglDev_, {.index = 0, .length = 10});
   EXPECT_TRUE(buffer.getData() != nullptr);
 }
 
@@ -47,7 +47,14 @@ TEST_F(ManagedUniformBufferTest, UpdateData) {
   // Using LUT to update data
   {
     iglu::ManagedUniformBuffer buffer(*iglDev_,
-                                      {0, 10, {{"myUniform", 0, UniformType::Float, 1, 0, 0}}});
+                                      {.index = 0,
+                                       .length = 10,
+                                       .uniforms = {{.name = "myUniform",
+                                                     .location = 0,
+                                                     .type = UniformType::Float,
+                                                     .numElements = 1,
+                                                     .offset = 0,
+                                                     .elementStride = 0}}});
     float data = 1000.0f;
 
     buffer.buildUniformLUT();
@@ -58,7 +65,14 @@ TEST_F(ManagedUniformBufferTest, UpdateData) {
   // Not using LUT to update data
   {
     iglu::ManagedUniformBuffer buffer(*iglDev_,
-                                      {0, 10, {{"myUniform", 0, UniformType::Float, 1, 0, 0}}});
+                                      {.index = 0,
+                                       .length = 10,
+                                       .uniforms = {{.name = "myUniform",
+                                                     .location = 0,
+                                                     .type = UniformType::Float,
+                                                     .numElements = 1,
+                                                     .offset = 0,
+                                                     .elementStride = 0}}});
     float data = 1000.0f;
 
     buffer.updateData("myUniform", &data, sizeof(float));
@@ -68,7 +82,14 @@ TEST_F(ManagedUniformBufferTest, UpdateData) {
   // Capped data size
   {
     iglu::ManagedUniformBuffer buffer(*iglDev_,
-                                      {0, 10, {{"myUniform", 0, UniformType::Float, 1, 0, 0}}});
+                                      {.index = 0,
+                                       .length = 10,
+                                       .uniforms = {{.name = "myUniform",
+                                                     .location = 0,
+                                                     .type = UniformType::Float,
+                                                     .numElements = 1,
+                                                     .offset = 0,
+                                                     .elementStride = 0}}});
     float data[2] = {1000.0f, 1.0f};
 
     buffer.updateData("myUniform", &data, 2 * sizeof(float));
@@ -77,8 +98,15 @@ TEST_F(ManagedUniformBufferTest, UpdateData) {
 
   // Wrong index
   {
-    iglu::ManagedUniformBuffer buffer(
-        *iglDev_, {0, 10, {{"nonExistingUniform", -1, UniformType::Float, 1, 0, 0}}});
+    iglu::ManagedUniformBuffer buffer(*iglDev_,
+                                      {.index = 0,
+                                       .length = 10,
+                                       .uniforms = {{.name = "nonExistingUniform",
+                                                     .location = -1,
+                                                     .type = UniformType::Float,
+                                                     .numElements = 1,
+                                                     .offset = 0,
+                                                     .elementStride = 0}}});
     float data = 1000.0f;
 
     EXPECT_FALSE(buffer.updateData("myUniform", &data, sizeof(float)));
@@ -87,7 +115,14 @@ TEST_F(ManagedUniformBufferTest, UpdateData) {
 
 TEST_F(ManagedUniformBufferTest, GetUniformDataSize) {
   iglu::ManagedUniformBuffer buffer(*iglDev_,
-                                    {0, 10, {{"myUniform", 0, UniformType::Float, 1, 0, 0}}});
+                                    {.index = 0,
+                                     .length = 10,
+                                     .uniforms = {{.name = "myUniform",
+                                                   .location = 0,
+                                                   .type = UniformType::Float,
+                                                   .numElements = 1,
+                                                   .offset = 0,
+                                                   .elementStride = 0}}});
   EXPECT_EQ(buffer.getUniformDataSize("myUniform"), sizeof(float));
   EXPECT_EQ(buffer.getUniformDataSize("nonExistingUniform"), 0);
 }

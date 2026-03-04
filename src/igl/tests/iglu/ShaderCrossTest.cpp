@@ -131,8 +131,16 @@ TEST_F(ShaderCrossTest, CrossCompile) {
 }
 
 TEST_F(ShaderCrossTest, ShaderCrossUniformBuffer) {
-  iglu::ShaderCrossUniformBuffer buffer(
-      *iglDev_, "perFrame", {0, 10, {{"myUniform", 0, UniformType::Float, 1, 0, 0}}});
+  iglu::ShaderCrossUniformBuffer buffer(*iglDev_,
+                                        "perFrame",
+                                        {.index = 0,
+                                         .length = 10,
+                                         .uniforms = {{.name = "myUniform",
+                                                       .location = 0,
+                                                       .type = UniformType::Float,
+                                                       .numElements = 1,
+                                                       .offset = 0,
+                                                       .elementStride = 0}}});
   EXPECT_EQ(buffer.uniformInfo.uniforms.size(), 1);
   EXPECT_EQ(buffer.uniformInfo.uniforms[0].name, "perFrame.myUniform");
 }
