@@ -356,7 +356,7 @@ class VulkanImage final {
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
 
   // No-op in all builds except DEBUG
-  void setName(const std::string& name) noexcept;
+  void setName(std::string name) noexcept;
 
   void destroy();
 };

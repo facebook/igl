@@ -1337,9 +1337,9 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
   imageLayout_ = originalImageLayout;
 }
 
-void VulkanImage::setName(const std::string& name) noexcept { // NOLINT(bugprone-exception-escape)
+void VulkanImage::setName(std::string name) noexcept { // NOLINT(bugprone-exception-escape)
 #if IGL_DEBUG
-  name_ = name;
+  name_ = std::move(name);
 #else
   (void)name;
 #endif
