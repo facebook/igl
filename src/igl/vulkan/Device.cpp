@@ -719,6 +719,8 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
     return true;
   case DeviceFeatures::Timers:
     return false;
+  case DeviceFeatures::TimestampQueries:
+    return false;
   }
 
   IGL_DEBUG_ABORT("DeviceFeatures value not handled: %d", (int)feature);

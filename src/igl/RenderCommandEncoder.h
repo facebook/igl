@@ -17,6 +17,7 @@ namespace igl {
 class IDepthStencilState;
 class IRenderPipelineState;
 class ISamplerState;
+class ITimestampQueries;
 
 namespace BindTarget {
 constexpr uint8_t kVertex = 0x0001;
@@ -110,6 +111,13 @@ class IRenderCommandEncoder : public ICommandEncoder {
   virtual void setStencilReferenceValue(uint32_t value) = 0;
   virtual void setBlendColor(const Color& color) = 0;
   virtual void setDepthBias(float depthBias, float slopeScale, float clamp) = 0;
+
+  /**
+   * @brief Write a GPU timestamp at the current point in the render pass.
+   * Default implementation does nothing (for backends that don't support it).
+   * On Metal, calls sampleCountersInBuffer: on the active render encoder.
+   */
+  virtual void writeTimestamp(ITimestampQueries& /*queries*/) {}
 };
 
 } // namespace igl

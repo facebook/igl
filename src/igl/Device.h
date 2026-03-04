@@ -40,6 +40,7 @@ class IShaderLibrary;
 class IShaderModule;
 class IShaderStages;
 class ITimer;
+class ITimestampQueries;
 class IVertexInputState;
 
 /**
@@ -171,6 +172,19 @@ class IDevice : public ICapabilities, public base::IDeviceBase {
    * @return Shared pointer to the created timer.
    */
   virtual std::shared_ptr<ITimer> createTimer(Result* IGL_NULLABLE outResult) const noexcept = 0;
+
+  /**
+   * @brief Create a timestamp queries object that can hold up to maxTimestamps entries.
+   * Returns nullptr if not supported on this backend/device.
+   */
+  virtual std::shared_ptr<ITimestampQueries> createTimestampQueries(uint32_t maxTimestamps,
+                                                                    Result* IGL_NULLABLE
+                                                                        outResult) const noexcept {
+    Result::setResult(
+        outResult, Result::Code::Unsupported, "TimestampQueries not supported on this backend");
+    (void)maxTimestamps;
+    return nullptr;
+  }
 
   /**
    * @brief Creates a vertex input state.

@@ -17,6 +17,7 @@ namespace igl {
 class IComputeCommandEncoder;
 class ISamplerState;
 class ITimer;
+class ITimestampQueries;
 struct RenderPassDesc;
 
 /**
@@ -25,6 +26,7 @@ struct RenderPassDesc;
 struct CommandBufferDesc {
   std::string debugName;
   std::shared_ptr<ITimer> timer;
+  std::shared_ptr<ITimestampQueries> timestampQueries;
 };
 
 /**
@@ -135,6 +137,12 @@ class ICommandBuffer {
                                    uint64_t dstOffset,
                                    uint32_t level = 0,
                                    uint32_t layer = 0) = 0;
+
+  /**
+   * @brief Write a GPU timestamp at the current point in the command stream.
+   * Default implementation does nothing (for backends that don't support it).
+   */
+  virtual void writeTimestamp(ITimestampQueries& /*queries*/) {}
 
   /**
    * @returns the number of draw operations tracked by this CommandBuffer. This is tracked manually

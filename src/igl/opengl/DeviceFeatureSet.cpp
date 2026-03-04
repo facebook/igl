@@ -451,6 +451,9 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
   case DeviceFeatures::Indices8Bit:
     return true;
 
+  case DeviceFeatures::TimestampQueries:
+    return hasExtension(Extensions::TimerQuery);
+
   case DeviceFeatures::Timers:
     return hasExtension(Extensions::TimerQuery);
   }

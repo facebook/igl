@@ -216,6 +216,8 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
     return false;
   case DeviceFeatures::Timers:
     return true;
+  case DeviceFeatures::TimestampQueries:
+    return false;
   }
   return false;
 }
@@ -531,6 +533,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
   // @fb-only
     return unsupported;
   }
+  return unsupported;
 }
 
 } // namespace igl::metal

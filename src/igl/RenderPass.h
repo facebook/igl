@@ -7,10 +7,13 @@
 
 #pragma once
 
+#include <memory>
 #include <vector>
 #include <igl/Common.h> // IWYU pragma: keep
 
 namespace igl {
+
+class ITimestampQueries;
 
 /**
  * @brief LoadAction determines the loading time action of the various components of a
@@ -77,6 +80,18 @@ struct RenderPassDesc {
    */
   AttachmentDesc stencilAttachment = {.loadAction = LoadAction::Clear,
                                       .storeAction = StoreAction::DontCare};
+
+  /// Per-render-pass GPU timestamp query attachment.
+  /// When set, the Metal backend configures sampleBufferAttachments on the
+  /// MTLRenderPassDescriptor for automatic sampling at vertex start and fragment end.
+  /// The startIndex and endIndex are sample buffer indices allocated by GPUTimingCollector.
+  struct TimestampQueryDesc {
+    std::shared_ptr<ITimestampQueries> queries;
+    uint32_t startIndex = 0; ///< Vertex-start sample index
+    uint32_t endIndex = 0; ///< Fragment-end sample index
+  };
+  /// Optional per-render-pass timestamp query. Null queries pointer means disabled.
+  TimestampQueryDesc timestampQuery;
 };
 
 } // namespace igl
