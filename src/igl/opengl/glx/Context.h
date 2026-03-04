@@ -16,6 +16,7 @@
 namespace igl::opengl::glx {
 
 using GLXDrawable = XID;
+// NOLINTNEXTLINE(facebook-unused-forward-decls)
 using GLXContext = struct __GLXcontext*; // NOLINT(bugprone-reserved-identifier)
 struct GLXSharedModule;
 

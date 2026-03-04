@@ -31,6 +31,7 @@ namespace igl::opengl::glx {
 #define GLX_PBUFFER_WIDTH 0x8041
 
 using GLXPbuffer = XID;
+// NOLINTNEXTLINE(facebook-unused-forward-decls)
 using GLXFBConfig = struct __GLXFBConfig*;
 using __GLXextproc = void (*)();
 
