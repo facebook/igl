@@ -7,16 +7,15 @@
 
 #include <gtest/gtest.h>
 
-#include "../data/ShaderData.h"
-#include "../data/VertexIndexData.h"
 #include "../util/Common.h"
 
 #include <cstring>
 #include <igl/CommandBuffer.h>
+#include <igl/Framebuffer.h>
 #include <igl/RenderPass.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/DeviceFeatureSet.h>
-#include <igl/opengl/Framebuffer.h>
+#include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/PlatformDevice.h>
 
