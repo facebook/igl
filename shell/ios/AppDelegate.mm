@@ -29,7 +29,6 @@
 #endif
 
 @interface AppDelegate () {
-  // NOLINTNEXTLINE(readability-identifier-naming)
   RenderSessionFactoryProvider* _factoryProvider;
 }
 - (void)addTab:(igl::shell::RenderSessionConfig)config
