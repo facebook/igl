@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// NOLINTBEGIN(readability-identifier-naming)
-
 // @fb-only
 
 #import "RenderSessionController.h"
@@ -167,5 +165,3 @@
 }
 
 @end
-
-// NOLINTEND(readability-identifier-naming)
