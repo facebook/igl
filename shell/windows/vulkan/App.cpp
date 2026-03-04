@@ -88,7 +88,7 @@ SurfaceTextures VulkanShell::createSurfaceTextures() noexcept {
       shellParams().viewportSize.x, shellParams().viewportSize.y, &ret);
   IGL_DEBUG_ASSERT(ret.isOk());
 
-  return SurfaceTextures{std::move(color), std::move(depth)};
+  return SurfaceTextures{.color = std::move(color), .depth = std::move(depth)};
 }
 } // namespace
 

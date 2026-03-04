@@ -27,10 +27,10 @@ struct VertexPosUv {
 namespace {
 
 constexpr VertexPosUv kVertexData[] = {
-    {{-1.f, 1.f, 0.0}, {0.0, 0.0}},
-    {{1.f, 1.f, 0.0}, {1.0, 0.0}},
-    {{-1.f, -1.f, 0.0}, {0.0, 1.0}},
-    {{1.f, -1.f, 0.0}, {1.0, 1.0}},
+    {.position = {-1.f, 1.f, 0.0}, .uv = {0.0, 0.0}},
+    {.position = {1.f, 1.f, 0.0}, .uv = {1.0, 0.0}},
+    {.position = {-1.f, -1.f, 0.0}, .uv = {0.0, 1.0}},
+    {.position = {1.f, -1.f, 0.0}, .uv = {1.0, 1.0}},
 };
 constexpr uint16_t kIndexData[] = {0, 1, 2, 1, 3, 2};
 
@@ -196,9 +196,11 @@ void YUVColorSession::initialize() noexcept {
         IGL_DEBUG_ASSERT(width * height + width * height / 2 == fileData.length);
         auto texture = device.createTexture(textureDesc, nullptr);
         IGL_DEBUG_ASSERT(texture);
-        texture->upload(TextureRangeDesc{0, 0, 0, width, height}, fileData.data.get());
+        texture->upload(TextureRangeDesc{.x = 0, .y = 0, .z = 0, .width = width, .height = height},
+                        fileData.data.get());
 
-        this->yuvFormatDemos_.push_back(YUVFormatDemo{demoName, sampler, texture, nullptr});
+        this->yuvFormatDemos_.push_back(YUVFormatDemo{
+            .name = demoName, .sampler = sampler, .texture = texture, .pipelineState = nullptr});
       };
 
   createYUVDemo(device, "YUV 420p", igl::TextureFormat::YUV_420p, "output_frame_900.420p.yuv");

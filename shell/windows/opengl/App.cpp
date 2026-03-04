@@ -60,15 +60,15 @@ SurfaceTextures OpenGlShell::createSurfaceTextures() noexcept {
     auto& oglDevice = static_cast<igl::opengl::Device&>(device);
     oglDevice.getContext().setCurrent();
     TextureDesc desc = {
-        static_cast<uint32_t>(shellParams().viewportSize.x),
-        static_cast<uint32_t>(shellParams().viewportSize.y),
-        1,
-        1,
-        1,
-        TextureDesc::TextureUsageBits::Attachment,
-        1,
-        TextureType::TwoD,
-        sessionConfig().swapchainColorTextureFormat,
+        .width = static_cast<uint32_t>(shellParams().viewportSize.x),
+        .height = static_cast<uint32_t>(shellParams().viewportSize.y),
+        .depth = 1,
+        .numLayers = 1,
+        .numSamples = 1,
+        .usage = TextureDesc::TextureUsageBits::Attachment,
+        .numMipLevels = 1,
+        .type = TextureType::TwoD,
+        .format = sessionConfig().swapchainColorTextureFormat,
     };
     auto color =
         std::make_shared<igl::opengl::ViewTextureTarget>(oglDevice.getContext(), desc.format);
@@ -77,7 +77,7 @@ SurfaceTextures OpenGlShell::createSurfaceTextures() noexcept {
     auto depth =
         std::make_shared<igl::opengl::ViewTextureTarget>(oglDevice.getContext(), desc.format);
     depth->create(desc, true);
-    return SurfaceTextures{std::move(color), std::move(depth)};
+    return SurfaceTextures{.color = std::move(color), .depth = std::move(depth)};
   }
 
   return SurfaceTextures{};

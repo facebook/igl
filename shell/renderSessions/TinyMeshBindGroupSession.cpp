@@ -105,35 +105,35 @@ const float kHalf = 1.0f;
 // UV-mapped cube with indices: 24 vertices, 36 indices
 const VertexPosUvw kVertexData0[] = {
     // top
-    {{-kHalf, -kHalf, +kHalf}, {0.0, 0.0, 1.0}, {0, 0}}, // 0
-    {{+kHalf, -kHalf, +kHalf}, {1.0, 0.0, 1.0}, {1, 0}}, // 1
-    {{+kHalf, +kHalf, +kHalf}, {1.0, 1.0, 1.0}, {1, 1}}, // 2
-    {{-kHalf, +kHalf, +kHalf}, {0.0, 1.0, 1.0}, {0, 1}}, // 3
+    {.position = {-kHalf, -kHalf, +kHalf}, .color = {0.0, 0.0, 1.0}, .uv = {0, 0}}, // 0
+    {.position = {+kHalf, -kHalf, +kHalf}, .color = {1.0, 0.0, 1.0}, .uv = {1, 0}}, // 1
+    {.position = {+kHalf, +kHalf, +kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {1, 1}}, // 2
+    {.position = {-kHalf, +kHalf, +kHalf}, .color = {0.0, 1.0, 1.0}, .uv = {0, 1}}, // 3
     // bottom
-    {{-kHalf, -kHalf, -kHalf}, {1.0, 1.0, 1.0}, {0, 0}}, // 4
-    {{-kHalf, +kHalf, -kHalf}, {0.0, 1.0, 0.0}, {0, 1}}, // 5
-    {{+kHalf, +kHalf, -kHalf}, {1.0, 1.0, 0.0}, {1, 1}}, // 6
-    {{+kHalf, -kHalf, -kHalf}, {1.0, 0.0, 0.0}, {1, 0}}, // 7
+    {.position = {-kHalf, -kHalf, -kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {0, 0}}, // 4
+    {.position = {-kHalf, +kHalf, -kHalf}, .color = {0.0, 1.0, 0.0}, .uv = {0, 1}}, // 5
+    {.position = {+kHalf, +kHalf, -kHalf}, .color = {1.0, 1.0, 0.0}, .uv = {1, 1}}, // 6
+    {.position = {+kHalf, -kHalf, -kHalf}, .color = {1.0, 0.0, 0.0}, .uv = {1, 0}}, // 7
     // left
-    {{+kHalf, +kHalf, -kHalf}, {1.0, 1.0, 0.0}, {1, 0}}, // 8
-    {{-kHalf, +kHalf, -kHalf}, {0.0, 1.0, 0.0}, {0, 0}}, // 9
-    {{-kHalf, +kHalf, +kHalf}, {0.0, 1.0, 1.0}, {0, 1}}, // 10
-    {{+kHalf, +kHalf, +kHalf}, {1.0, 1.0, 1.0}, {1, 1}}, // 11
+    {.position = {+kHalf, +kHalf, -kHalf}, .color = {1.0, 1.0, 0.0}, .uv = {1, 0}}, // 8
+    {.position = {-kHalf, +kHalf, -kHalf}, .color = {0.0, 1.0, 0.0}, .uv = {0, 0}}, // 9
+    {.position = {-kHalf, +kHalf, +kHalf}, .color = {0.0, 1.0, 1.0}, .uv = {0, 1}}, // 10
+    {.position = {+kHalf, +kHalf, +kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {1, 1}}, // 11
     // right
-    {{-kHalf, -kHalf, -kHalf}, {1.0, 1.0, 1.0}, {0, 0}}, // 12
-    {{+kHalf, -kHalf, -kHalf}, {1.0, 0.0, 0.0}, {1, 0}}, // 13
-    {{+kHalf, -kHalf, +kHalf}, {1.0, 0.0, 1.0}, {1, 1}}, // 14
-    {{-kHalf, -kHalf, +kHalf}, {0.0, 0.0, 1.0}, {0, 1}}, // 15
+    {.position = {-kHalf, -kHalf, -kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {0, 0}}, // 12
+    {.position = {+kHalf, -kHalf, -kHalf}, .color = {1.0, 0.0, 0.0}, .uv = {1, 0}}, // 13
+    {.position = {+kHalf, -kHalf, +kHalf}, .color = {1.0, 0.0, 1.0}, .uv = {1, 1}}, // 14
+    {.position = {-kHalf, -kHalf, +kHalf}, .color = {0.0, 0.0, 1.0}, .uv = {0, 1}}, // 15
     // front
-    {{+kHalf, -kHalf, -kHalf}, {1.0, 0.0, 0.0}, {0, 0}}, // 16
-    {{+kHalf, +kHalf, -kHalf}, {1.0, 1.0, 0.0}, {1, 0}}, // 17
-    {{+kHalf, +kHalf, +kHalf}, {1.0, 1.0, 1.0}, {1, 1}}, // 18
-    {{+kHalf, -kHalf, +kHalf}, {1.0, 0.0, 1.0}, {0, 1}}, // 19
+    {.position = {+kHalf, -kHalf, -kHalf}, .color = {1.0, 0.0, 0.0}, .uv = {0, 0}}, // 16
+    {.position = {+kHalf, +kHalf, -kHalf}, .color = {1.0, 1.0, 0.0}, .uv = {1, 0}}, // 17
+    {.position = {+kHalf, +kHalf, +kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {1, 1}}, // 18
+    {.position = {+kHalf, -kHalf, +kHalf}, .color = {1.0, 0.0, 1.0}, .uv = {0, 1}}, // 19
     // back
-    {{-kHalf, +kHalf, -kHalf}, {0.0, 1.0, 0.0}, {1, 0}}, // 20
-    {{-kHalf, -kHalf, -kHalf}, {1.0, 1.0, 1.0}, {0, 0}}, // 21
-    {{-kHalf, -kHalf, +kHalf}, {0.0, 0.0, 1.0}, {0, 1}}, // 22
-    {{-kHalf, +kHalf, +kHalf}, {0.0, 1.0, 1.0}, {1, 1}}, // 23
+    {.position = {-kHalf, +kHalf, -kHalf}, .color = {0.0, 1.0, 0.0}, .uv = {1, 0}}, // 20
+    {.position = {-kHalf, -kHalf, -kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {0, 0}}, // 21
+    {.position = {-kHalf, -kHalf, +kHalf}, .color = {0.0, 0.0, 1.0}, .uv = {0, 1}}, // 22
+    {.position = {-kHalf, +kHalf, +kHalf}, .color = {0.0, 1.0, 1.0}, .uv = {1, 1}}, // 23
 };
 
 uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,  8,  9,  10, 10, 11, 8,
@@ -596,8 +596,14 @@ void TinyMeshBindGroupSession::update(SurfaceTextures surfaceTextures) noexcept 
   // Command buffers (1-N per thread): create, submit and forget
   const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
-  const igl::Viewport viewport = {0.0f, 0.0f, (float)width, (float)height, 0.0f, +1.0f};
-  const igl::ScissorRect scissor = {0, 0, (uint32_t)width, (uint32_t)height};
+  const igl::Viewport viewport = {.x = 0.0f,
+                                  .y = 0.0f,
+                                  .width = (float)width,
+                                  .height = (float)height,
+                                  .minDepth = 0.0f,
+                                  .maxDepth = +1.0f};
+  const igl::ScissorRect scissor = {
+      .x = 0, .y = 0, .width = (uint32_t)width, .height = (uint32_t)height};
 
   // This will clear the framebuffer
   auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);

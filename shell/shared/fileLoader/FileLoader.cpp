@@ -49,7 +49,7 @@ FileLoader::FileData FileLoader::loadBinaryDataInternal(const std::string& fileP
     return {};
   }
 
-  return {std::move(data), static_cast<uint64_t>(length)};
+  return {.data = std::move(data), .length = static_cast<uint64_t>(length)};
 }
 
 std::unique_ptr<FileLoader> createFileLoader() {

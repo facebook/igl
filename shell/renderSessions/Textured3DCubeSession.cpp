@@ -27,14 +27,14 @@ struct VertexPosUvw {
 
 const float kHalf = 1.0f;
 VertexPosUvw vertexData0[] = {
-    {{-kHalf, kHalf, -kHalf}, {0.0, 1.0, 0.0}},
-    {{kHalf, kHalf, -kHalf}, {1.0, 1.0, 0.0}},
-    {{-kHalf, -kHalf, -kHalf}, {0.0, 0.0, 0.0}},
-    {{kHalf, -kHalf, -kHalf}, {1.0, 0.0, 0.0}},
-    {{kHalf, kHalf, kHalf}, {1.0, 1.0, 1.0}},
-    {{-kHalf, kHalf, kHalf}, {0.0, 1.0, 1.0}},
-    {{kHalf, -kHalf, kHalf}, {1.0, 0.0, 1.0}},
-    {{-kHalf, -kHalf, kHalf}, {0.0, 0.0, 1.0}},
+    {.position = {-kHalf, kHalf, -kHalf}, .uvw = {0.0, 1.0, 0.0}},
+    {.position = {kHalf, kHalf, -kHalf}, .uvw = {1.0, 1.0, 0.0}},
+    {.position = {-kHalf, -kHalf, -kHalf}, .uvw = {0.0, 0.0, 0.0}},
+    {.position = {kHalf, -kHalf, -kHalf}, .uvw = {1.0, 0.0, 0.0}},
+    {.position = {kHalf, kHalf, kHalf}, .uvw = {1.0, 1.0, 1.0}},
+    {.position = {-kHalf, kHalf, kHalf}, .uvw = {0.0, 1.0, 1.0}},
+    {.position = {kHalf, -kHalf, kHalf}, .uvw = {1.0, 0.0, 1.0}},
+    {.position = {-kHalf, -kHalf, kHalf}, .uvw = {0.0, 0.0, 1.0}},
 };
 uint16_t indexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
                         5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7};

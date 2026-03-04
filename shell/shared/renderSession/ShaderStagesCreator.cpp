@@ -33,7 +33,7 @@ const char* getEntryPointName(ShaderStage stage, BackendType backendType) {
 }
 
 ShaderModuleInfo getShaderModuleInfo(ShaderStage stage, BackendType backendType) {
-  return {stage, getEntryPointName(stage, backendType)};
+  return {.stage = stage, .entryPoint = getEntryPointName(stage, backendType)};
 }
 } // namespace
 
