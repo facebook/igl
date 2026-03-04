@@ -10,4 +10,5 @@
 // NOTE: This is a pure Obj-C compatible header (no C++) to simplify bridging with Swift
 
 // Opaque wrapper around C++ type
+// NOLINTNEXTLINE(facebook-unused-forward-decls)
 typedef struct IglShellPlatformAdapter* IglShellPlatformAdapterPtr;
