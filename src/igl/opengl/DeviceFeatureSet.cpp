@@ -485,6 +485,10 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
     return hasDesktopOrESVersionOrExtension(
         *this, GLVersion::v4_0, GLVersion::v3_1_ES, "GL_ARB_draw_indirect");
 
+  case InternalFeatures::MultiDrawIndirect:
+    return hasDesktopVersionOrExtension(*this, GLVersion::v4_3, "GL_ARB_multi_draw_indirect") ||
+           hasESExtension(*this, "GL_EXT_multi_draw_indirect");
+
   case InternalFeatures::FramebufferBlit:
     // TODO: Add support for GL_ANGLE_framebuffer_blit
     return hasDesktopOrESVersionOrExtension(

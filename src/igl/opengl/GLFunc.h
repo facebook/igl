@@ -107,6 +107,12 @@ using PFNIGLDISPATCHCOMPUTEPROC = void (*)(GLuint numGroupsX, GLuint numGroupsY,
 using PFNIGLDRAWBUFFERSPROC = void (*)(GLsizei, const GLenum*);
 using PFNIGLDRAWELEMENTSINDIRECTPROC = void (*)(GLenum mode, GLenum type, const GLvoid* indirect);
 using PFNIGLDRAWARRAYSINDIRECTPROC = void (*)(GLenum mode, const GLvoid* indirect);
+using PFNIGLMULTIDRAWARRAYSINDIRECTPROC = void (*)(GLenum mode,
+                                                   const void* indirect,
+                                                   GLsizei drawcount,
+                                                   GLsizei stride);
+using PFNIGLMULTIDRAWELEMENTSINDIRECTPROC =
+    void (*)(GLenum mode, GLenum type, const void* indirect, GLsizei drawcount, GLsizei stride);
 using PFNIGLENDQUERYPROC = void (*)(GLenum target);
 using PFNIGLFENCESYNCPROC = GLsync (*)(GLenum condition, GLbitfield flags);
 using PFNIGLFRAMEBUFFERRENDERBUFFERPROC = void (*)(GLenum target,
@@ -406,6 +412,20 @@ void iglDispatchCompute(GLuint numGroupsX, GLuint numGroupsY, GLuint numGroupsZ)
 void iglDrawElementsIndirect(GLenum mode, GLenum type, const GLvoid* indirect);
 
 void iglDrawArraysIndirect(GLenum mode, const GLvoid* indirect);
+
+///--------------------------------------
+/// MARK: - GL_ARB_multi_draw_indirect
+
+void iglMultiDrawArraysIndirect(GLenum mode,
+                                const void* indirect,
+                                GLsizei drawcount,
+                                GLsizei stride);
+
+void iglMultiDrawElementsIndirect(GLenum mode,
+                                  GLenum type,
+                                  const void* indirect,
+                                  GLsizei drawcount,
+                                  GLsizei stride);
 
 ///--------------------------------------
 /// MARK: - GL_ARB_ES2_compatibility

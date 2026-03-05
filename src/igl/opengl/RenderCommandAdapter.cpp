@@ -319,6 +319,39 @@ void RenderCommandAdapter::drawElementsIndirect(GLenum mode,
   didDraw();
 }
 
+void RenderCommandAdapter::multiDrawArraysIndirect(GLenum mode,
+                                                   Buffer& indirectBuffer,
+                                                   const GLvoid* indirectBufferOffset,
+                                                   GLsizei drawcount,
+                                                   GLsizei stride) {
+  willDraw();
+  if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::MultiDrawIndirect)) {
+    bindBufferWithShaderStorageBufferOverride(indirectBuffer, GL_DRAW_INDIRECT_BUFFER);
+    getContext().multiDrawArraysIndirect(
+        toMockWireframeMode(mode), indirectBufferOffset, drawcount, stride);
+  } else {
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  }
+  didDraw();
+}
+
+void RenderCommandAdapter::multiDrawElementsIndirect(GLenum mode,
+                                                     GLenum indexType,
+                                                     Buffer& indirectBuffer,
+                                                     const GLvoid* indirectBufferOffset,
+                                                     GLsizei drawcount,
+                                                     GLsizei stride) {
+  willDraw();
+  if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::MultiDrawIndirect)) {
+    bindBufferWithShaderStorageBufferOverride(indirectBuffer, GL_DRAW_INDIRECT_BUFFER);
+    getContext().multiDrawElementsIndirect(
+        toMockWireframeMode(mode), indexType, indirectBufferOffset, drawcount, stride);
+  } else {
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  }
+  didDraw();
+}
+
 void RenderCommandAdapter::endEncoding() {
   // Some minimal cleanup needs to occur in order. Otherwise, OpenGL can end in a bad state
   // with complex rendering.

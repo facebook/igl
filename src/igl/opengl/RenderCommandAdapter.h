@@ -98,6 +98,17 @@ class RenderCommandAdapter final : public WithContext {
                             GLenum indexType,
                             Buffer& indirectBuffer,
                             const GLvoid* indirectBufferOffset);
+  void multiDrawArraysIndirect(GLenum mode,
+                               Buffer& indirectBuffer,
+                               const GLvoid* indirectBufferOffset,
+                               GLsizei drawcount,
+                               GLsizei stride);
+  void multiDrawElementsIndirect(GLenum mode,
+                                 GLenum indexType,
+                                 Buffer& indirectBuffer,
+                                 const GLvoid* indirectBufferOffset,
+                                 GLsizei drawcount,
+                                 GLsizei stride);
 
   void endEncoding();
 

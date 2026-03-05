@@ -2563,6 +2563,52 @@ void IContext::drawElementsIndirect(GLenum mode, GLenum type, const GLvoid* indi
   APILOG_DEC_DRAW_COUNT();
 }
 
+void IContext::multiDrawArraysIndirect(GLenum mode,
+                                       const void* indirect,
+                                       GLsizei drawcount,
+                                       GLsizei stride) {
+#if IGL_API_LOG
+  lastCommandWasCompute_ = false;
+#endif
+  drawCallCount_ += drawcount;
+
+  IGL_PROFILER_ZONE_GPU_COLOR_OGL("multiDrawArraysIndirect()", IGL_PROFILER_COLOR_DRAW);
+
+  APILOG("glMultiDrawArraysIndirect(%s, %p, %d, %d)\n",
+         GL_ENUM_TO_STRING(mode),
+         indirect,
+         drawcount,
+         stride);
+  IGL_DEBUG_ASSERT(indirect);
+  IGLCALL(MultiDrawArraysIndirect)(mode, indirect, drawcount, stride);
+  GLCHECK_ERRORS();
+  APILOG_DEC_DRAW_COUNT();
+}
+
+void IContext::multiDrawElementsIndirect(GLenum mode,
+                                         GLenum type,
+                                         const void* indirect,
+                                         GLsizei drawcount,
+                                         GLsizei stride) {
+#if IGL_API_LOG
+  lastCommandWasCompute_ = false;
+#endif
+  drawCallCount_ += drawcount;
+
+  IGL_PROFILER_ZONE_GPU_COLOR_OGL("multiDrawElementsIndirect()", IGL_PROFILER_COLOR_DRAW);
+
+  APILOG("glMultiDrawElementsIndirect(%s, %s, %p, %d, %d)\n",
+         GL_ENUM_TO_STRING(mode),
+         GL_ENUM_TO_STRING(type),
+         indirect,
+         drawcount,
+         stride);
+  IGL_DEBUG_ASSERT(indirect);
+  IGLCALL(MultiDrawElementsIndirect)(mode, type, indirect, drawcount, stride);
+  GLCHECK_ERRORS();
+  APILOG_DEC_DRAW_COUNT();
+}
+
 void IContext::enable(GLenum cap) {
   APILOG("glEnable(%s)\n", GL_ENUM_TO_STRING(cap));
   GLCALL(Enable)(cap);

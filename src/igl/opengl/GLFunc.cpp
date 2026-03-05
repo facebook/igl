@@ -584,6 +584,45 @@ void iglDrawArraysIndirect(GLenum mode, const GLvoid* indirect) {
 }
 
 ///--------------------------------------
+/// MARK: - GL_ARB_multi_draw_indirect
+
+#if defined(GL_VERSION_4_3) || defined(GL_ARB_multi_draw_indirect)
+#define CAN_CALL_glMultiDrawArraysIndirect CAN_CALL
+#define CAN_CALL_glMultiDrawElementsIndirect CAN_CALL
+#else
+#define CAN_CALL_glMultiDrawArraysIndirect 0
+#define CAN_CALL_glMultiDrawElementsIndirect 0
+#endif
+
+void iglMultiDrawArraysIndirect(GLenum mode,
+                                const void* indirect,
+                                GLsizei drawcount,
+                                GLsizei stride) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glMultiDrawArraysIndirect,
+                          glMultiDrawArraysIndirect,
+                          PFNIGLMULTIDRAWARRAYSINDIRECTPROC,
+                          mode,
+                          indirect,
+                          drawcount,
+                          stride);
+}
+
+void iglMultiDrawElementsIndirect(GLenum mode,
+                                  GLenum type,
+                                  const void* indirect,
+                                  GLsizei drawcount,
+                                  GLsizei stride) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glMultiDrawElementsIndirect,
+                          glMultiDrawElementsIndirect,
+                          PFNIGLMULTIDRAWELEMENTSINDIRECTPROC,
+                          mode,
+                          type,
+                          indirect,
+                          drawcount,
+                          stride);
+}
+
+///--------------------------------------
 /// MARK: - GL_ARB_ES2_compatibility
 
 #if IGL_OPENGL_ES || defined(GL_VERSION_4_1) || defined(GL_ARB_ES2_compatibility)

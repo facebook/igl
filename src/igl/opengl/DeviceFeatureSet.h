@@ -71,6 +71,7 @@ enum class InternalFeatures {
   DebugMessage,              // Debug messages and group markers are supported
   DebugMessageCallback,      // Debug message callbacks are supported
   DrawArraysIndirect,        // glDrawArraysIndirect is supported
+  MultiDrawIndirect,         // glMultiDrawArraysIndirect is supported
   FramebufferBlit,           // BlitFramebuffer is supported
   FramebufferObject,         // Framebuffer objects are supported
   GetStringi,                // GetStringi is supported

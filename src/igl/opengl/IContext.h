@@ -190,6 +190,15 @@ class IContext {
                              const GLvoid* IGL_NULLABLE indices,
                              GLsizei instancecount);
   void drawElementsIndirect(GLenum mode, GLenum type, const GLvoid* IGL_NULLABLE indirect);
+  void multiDrawArraysIndirect(GLenum mode,
+                               const void* IGL_NULLABLE indirect,
+                               GLsizei drawcount,
+                               GLsizei stride);
+  void multiDrawElementsIndirect(GLenum mode,
+                                 GLenum type,
+                                 const void* IGL_NULLABLE indirect,
+                                 GLsizei drawcount,
+                                 GLsizei stride);
   virtual void enable(GLenum cap);
   void enableVertexAttribArray(GLuint index);
   GLsync IGL_NULLABLE fenceSync(GLenum condition, GLbitfield flags);
