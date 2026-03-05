@@ -11,7 +11,6 @@
 
 #import <QuartzCore/CAMetalLayer.h>
 
-// NOLINTBEGIN(readability-identifier-naming)
 @implementation BaseView {
   id<TouchDelegate> __weak _delegate;
 }
@@ -40,9 +39,7 @@
 }
 
 @end
-// NOLINTEND(readability-identifier-naming)
 
-// NOLINTBEGIN(readability-identifier-naming)
 @implementation MetalView {
   id<TouchDelegate> __weak _touchDelegate;
 }
@@ -79,7 +76,6 @@
 }
 
 @end
-// NOLINTEND(readability-identifier-naming)
 
 @implementation OpenGLView
 @synthesize viewSizeChangeDelegate = _viewSizeChangeDelegate;
