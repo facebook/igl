@@ -77,6 +77,76 @@ TEST_F(VulkanSwapchainExtendedTest, ImageCount) {
 #endif
 }
 
+TEST_F(VulkanSwapchainExtendedTest, InitialState) {
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID
+  GTEST_SKIP() << "Headless surface not supported on this platform.";
+#else
+  auto swapchain = std::make_unique<igl::vulkan::VulkanSwapchain>(*context_, kWidth, kHeight);
+  ASSERT_NE(swapchain, nullptr);
+
+  EXPECT_EQ(swapchain->getWidth(), kWidth);
+  EXPECT_EQ(swapchain->getHeight(), kHeight);
+
+  const VkExtent2D extent = swapchain->getExtent();
+  EXPECT_EQ(extent.width, kWidth);
+  EXPECT_EQ(extent.height, kHeight);
+
+  EXPECT_EQ(swapchain->getCurrentImageIndex(), 0u);
+
+  const uint32_t numImages = swapchain->getNumSwapchainImages();
+  EXPECT_EQ(swapchain->getFrameNumber(), numImages);
+  EXPECT_EQ(swapchain->acquireSemaphores.size(), numImages);
+  EXPECT_EQ(swapchain->timelineWaitValues.size(), numImages);
+
+  EXPECT_NE(swapchain->getSemaphore(), VK_NULL_HANDLE);
+#endif
+}
+
+TEST_F(VulkanSwapchainExtendedTest, CurrentVulkanTexture) {
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID
+  GTEST_SKIP() << "Headless surface not supported on this platform.";
+#else
+  auto swapchain = std::make_unique<igl::vulkan::VulkanSwapchain>(*context_, kWidth, kHeight);
+  ASSERT_NE(swapchain, nullptr);
+
+  auto texture = swapchain->getCurrentVulkanTexture();
+  ASSERT_NE(texture, nullptr);
+
+  EXPECT_EQ(texture->image_.getVkImage(), swapchain->getCurrentVkImage());
+  EXPECT_EQ(texture->imageView_.getVkImageView(), swapchain->getCurrentVkImageView());
+#endif
+}
+
+TEST_F(VulkanSwapchainExtendedTest, DepthBufferLazyAllocation) {
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID
+  GTEST_SKIP() << "Headless surface not supported on this platform.";
+#else
+  auto swapchain = std::make_unique<igl::vulkan::VulkanSwapchain>(*context_, kWidth, kHeight);
+  ASSERT_NE(swapchain, nullptr);
+
+  auto depthTexture = swapchain->getCurrentDepthTexture();
+  ASSERT_NE(depthTexture, nullptr);
+
+  EXPECT_EQ(depthTexture->image_.getVkImage(), swapchain->getDepthVkImage());
+  EXPECT_EQ(depthTexture->imageView_.getVkImageView(), swapchain->getDepthVkImageView());
+
+  auto depthTextureAgain = swapchain->getCurrentDepthTexture();
+  EXPECT_EQ(depthTexture, depthTextureAgain);
+#endif
+}
+
+TEST_F(VulkanSwapchainExtendedTest, AcquireNextImage) {
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID
+  GTEST_SKIP() << "Headless surface not supported on this platform.";
+#else
+  auto swapchain = std::make_unique<igl::vulkan::VulkanSwapchain>(*context_, kWidth, kHeight);
+  ASSERT_NE(swapchain, nullptr);
+
+  igl::Result result = swapchain->acquireNextImage();
+  EXPECT_TRUE(result.isOk()) << result.message.c_str();
+#endif
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
