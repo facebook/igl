@@ -208,7 +208,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
 }
 
 void Framebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
-  updateDrawableInternal({std::move(texture), nullptr}, false);
+  updateDrawableInternal({.color = std::move(texture), .depth = nullptr}, false);
 }
 
 void Framebuffer::updateDrawable(SurfaceTextures surfaceTextures) {

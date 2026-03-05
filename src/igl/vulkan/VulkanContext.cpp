@@ -1733,7 +1733,7 @@ VkFormat VulkanContext::getClosestDepthStencilFormat(TextureFormat desiredFormat
 }
 
 VulkanContext::RenderPassHandle VulkanContext::getRenderPass(uint8_t index) const {
-  return RenderPassHandle{renderPasses_[index], index};
+  return RenderPassHandle{.pass = renderPasses_[index], .index = index};
 }
 
 VulkanContext::RenderPassHandle VulkanContext::findRenderPass(
@@ -1743,7 +1743,7 @@ VulkanContext::RenderPassHandle VulkanContext::findRenderPass(
   auto it = renderPassesHash_.find(builder);
 
   if (it != renderPassesHash_.end()) {
-    return RenderPassHandle{renderPasses_[it->second], it->second};
+    return RenderPassHandle{.pass = renderPasses_[it->second], .index = it->second};
   }
 
   VkRenderPass pass = VK_NULL_HANDLE;
@@ -1758,7 +1758,7 @@ VulkanContext::RenderPassHandle VulkanContext::findRenderPass(
   // @lint-ignore CLANGTIDY
   renderPasses_.push_back(pass);
 
-  return RenderPassHandle{pass, uint8_t(index)};
+  return RenderPassHandle{.pass = pass, .index = uint8_t(index)};
 }
 
 std::vector<uint8_t> VulkanContext::getPipelineCacheData() const {
@@ -2124,7 +2124,7 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
                                                       Result* IGL_NULLABLE outResult) {
   VkDevice device = getVkDevice();
 
-  BindGroupMetadataTextures metadata{desc};
+  BindGroupMetadataTextures metadata{.desc = desc};
 
   // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkDescriptorSetLayoutBinding bindings[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
@@ -2227,9 +2227,9 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
     writes[numWrites] = ivkGetWriteDescriptorSetImageInfo(
         metadata.dset, loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &images[numWrites]);
     images[numWrites++] = {
-        sampler.vkSampler,
-        isSampledImage ? texture.imageView_.getVkImageView() : dummyImageView,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        .sampler = sampler.vkSampler,
+        .imageView = isSampledImage ? texture.imageView_.getVkImageView() : dummyImageView,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
     };
   }
 
@@ -2256,7 +2256,7 @@ BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferDesc& 
                                                      Result* outResult) {
   VkDevice device = getVkDevice();
 
-  BindGroupMetadataBuffers metadata{desc};
+  BindGroupMetadataBuffers metadata{.desc = desc};
 
   // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkDescriptorSetLayoutBinding bindings[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized

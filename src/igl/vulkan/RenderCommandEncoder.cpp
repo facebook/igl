@@ -235,8 +235,13 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
 
   const uint32_t width = std::max(fb.getWidth() >> mipLevel, 1u);
   const uint32_t height = std::max(fb.getHeight() >> mipLevel, 1u);
-  const igl::Viewport viewport = {0.0f, 0.0f, (float)width, (float)height, 0.0f, +1.0f};
-  const igl::ScissorRect scissor = {0, 0, width, height};
+  const igl::Viewport viewport = {.x = 0.0f,
+                                  .y = 0.0f,
+                                  .width = (float)width,
+                                  .height = (float)height,
+                                  .minDepth = 0.0f,
+                                  .maxDepth = +1.0f};
+  const igl::ScissorRect scissor = {.x = 0, .y = 0, .width = width, .height = height};
 
   bindViewport(viewport);
   bindScissorRect(scissor);
