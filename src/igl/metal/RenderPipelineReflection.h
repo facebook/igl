@@ -9,7 +9,7 @@
 
 #include <Metal/MTLArgument.h>
 #include <Metal/MTLRenderPipeline.h>
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <igl/RenderPipelineReflection.h>
 #include <igl/Shader.h>
@@ -41,10 +41,11 @@ class RenderPipelineReflection final : public IRenderPipelineReflection {
   };
 
   bool createArgDesc(MTLArgument* arg, ShaderStage sh);
-  [[nodiscard]] const std::map<std::string, ArgIndex>& getDictionary(ShaderStage sh) const;
+  [[nodiscard]] const std::unordered_map<std::string, ArgIndex>& getDictionary(
+      ShaderStage sh) const;
 
-  std::map<std::string, ArgIndex> vertexArgDictionary_;
-  std::map<std::string, ArgIndex> fragmentArgDictionary_;
+  std::unordered_map<std::string, ArgIndex> vertexArgDictionary_;
+  std::unordered_map<std::string, ArgIndex> fragmentArgDictionary_;
 
   std::vector<BufferArgDesc> bufferArguments_;
   std::vector<SamplerArgDesc> samplerArguments_;

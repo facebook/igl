@@ -149,7 +149,7 @@ bool RenderPipelineReflection::createArgDesc(MTLArgument* arg, ShaderStage sh) {
 }
 
 int RenderPipelineReflection::getIndexByName(const std::string& name, ShaderStage sh) const {
-  const std::map<std::string, ArgIndex>& dictionary =
+  const std::unordered_map<std::string, ArgIndex>& dictionary =
       (sh == ShaderStage::Vertex) ? vertexArgDictionary_ : fragmentArgDictionary_;
 
   auto it = dictionary.find(name);
@@ -161,7 +161,7 @@ int RenderPipelineReflection::getIndexByName(const std::string& name, ShaderStag
   return -1;
 }
 
-const std::map<std::string, RenderPipelineReflection::ArgIndex>&
+const std::unordered_map<std::string, RenderPipelineReflection::ArgIndex>&
 RenderPipelineReflection::getDictionary(ShaderStage sh) const {
   return (sh == ShaderStage::Vertex) ? vertexArgDictionary_ : fragmentArgDictionary_;
 }
