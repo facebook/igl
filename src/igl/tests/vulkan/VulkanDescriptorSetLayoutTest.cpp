@@ -11,6 +11,7 @@
 
 #include "../util/TestDevice.h"
 
+#include <array>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
 
@@ -51,8 +52,9 @@ TEST_F(VulkanDescriptorSetLayoutTest, SingleBinding) {
   binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
   binding.pImmutableSamplers = nullptr;
 
+  VkDescriptorBindingFlags bindingFlags = 0;
   auto layout = std::make_unique<igl::vulkan::VulkanDescriptorSetLayout>(
-      ctx, 0, 1, &binding, nullptr, "testSingleBinding");
+      ctx, 0, 1, &binding, &bindingFlags, "testSingleBinding");
 
   ASSERT_NE(layout, nullptr);
   EXPECT_NE(layout->getVkDescriptorSetLayout(), VK_NULL_HANDLE);
@@ -79,8 +81,9 @@ TEST_F(VulkanDescriptorSetLayoutTest, MultipleBindings) {
   bindings[2].descriptorCount = 1;
   bindings[2].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
+  std::array<VkDescriptorBindingFlags, 3> bindingFlags = {};
   auto layout = std::make_unique<igl::vulkan::VulkanDescriptorSetLayout>(
-      ctx, 0, 3, bindings.data(), nullptr, "testMultipleBindings");
+      ctx, 0, 3, bindings.data(), bindingFlags.data(), "testMultipleBindings");
 
   ASSERT_NE(layout, nullptr);
   EXPECT_NE(layout->getVkDescriptorSetLayout(), VK_NULL_HANDLE);
@@ -116,8 +119,9 @@ TEST_F(VulkanDescriptorSetLayoutTest, DestructorCleanup) {
   binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
   {
+    VkDescriptorBindingFlags bindingFlags = 0;
     auto layout = std::make_unique<igl::vulkan::VulkanDescriptorSetLayout>(
-        ctx, 0, 1, &binding, nullptr, "testDestructor");
+        ctx, 0, 1, &binding, &bindingFlags, "testDestructor");
 
     ASSERT_NE(layout, nullptr);
     EXPECT_NE(layout->getVkDescriptorSetLayout(), VK_NULL_HANDLE);

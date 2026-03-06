@@ -462,7 +462,7 @@ VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,
   const VkDescriptorSetLayoutCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 #if !IGL_PLATFORM_ANDROID
-      .pNext = &setLayoutBindingFlagsCI,
+      .pNext = bindingFlags ? &setLayoutBindingFlagsCI : NULL,
       .flags = flags,
 #endif
       .bindingCount = numBindings,
