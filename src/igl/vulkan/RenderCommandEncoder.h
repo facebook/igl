@@ -117,7 +117,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
 
   /// @brief Enables or disables the draw call count. If enabled, it will increment the draw call,
   /// otherwise it won't. This is used to disable the draw call count when we are doing auxiliary
-  /// draw calls such as shader debugging.
+  /// draw calls.
   bool setDrawCallCountEnabled(bool value);
 
   void blitColorImage(const igl::vulkan::VulkanImage& srcImage,
@@ -151,7 +151,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   RenderPipelineDynamicState dynamicState_;
 
   /* Used to increment the draw call count. Should either be 0 or 1
-   *  0: When draw call count is disabled during auxiliary draw calls (shader debugging)
+   *  0: When draw call count is disabled during auxiliary draw calls
    *  1: All other times */
   uint32_t drawCallCountEnabled_ = 1u;
 

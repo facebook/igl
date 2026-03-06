@@ -18,9 +18,6 @@ class CommandBuffer;
 /** @brief Implements the igl::ICommandQueue interface for Vulkan. Currently, this class only
  * supports one command buffer active at a time, tracked by an internal flag set to true in
  * `createCommandBuffer()` and reset in `endCommandBuffer()` (automatically called from `submit()`).
- * This class also implements shader debugging facilities, which are executed after a command buffer
- * is submitted. This extra pass is only executed if the context provides additional information for
- * rendering. It is disabled by default.
  */
 class CommandQueue final : public ICommandQueue {
  public:
@@ -40,11 +37,7 @@ class CommandQueue final : public ICommandQueue {
   std::shared_ptr<ICommandBuffer> createCommandBuffer(const CommandBufferDesc& desc,
                                                       Result* outResult) override;
 
-  /// @brief Submits the `commandBuffer` for execution on the GPU. If the enhanced shader debugging
-  /// is enabled (stored data is available in the context), this function will install barriers
-  /// before the command buffer is executed. It will also execute the shader debugging render pass
-  /// by calling `enhancedShaderDebuggingPass()`. If the enhanced shader debugging is enabled,
-  /// presenting the image is disabled.
+  /// @brief Submits the `commandBuffer` for execution on the GPU.
   /// @param cmdBuffer The command buffer to be submitted.
   /// @param endOfFrame Not used
   SubmitHandle submit(const ICommandBuffer& cmdBuffer, bool endOfFrame = false) override;

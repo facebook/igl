@@ -27,7 +27,6 @@
 #include <igl/SamplerState.h>
 #include <igl/glslang/GlslCompiler.h>
 #include <igl/vulkan/Buffer.h>
-#include <igl/vulkan/EnhancedShaderDebuggingStore.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/ResourcesBinder.h>
 #include <igl/vulkan/SamplerState.h>
@@ -476,8 +475,6 @@ VulkanContext::~VulkanContext() {
     vf_.vkDestroyCommandPool(vkDevice_, profilingCommandPool_, nullptr);
   }
 #endif
-
-  enhancedShaderDebuggingStore_.reset(nullptr);
 
   dummyStorageBuffer_.reset();
   dummyUniformBuffer_.reset();
@@ -1137,11 +1134,6 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   IGL_DEBUG_ASSERT(tracyCtx_, "Failed to create Tracy GPU profiling context");
 #endif // IGL_WITH_TRACY_GPU
-
-  // enables/disables enhanced shader debugging
-  if (config_.enhancedShaderDebugging) {
-    enhancedShaderDebuggingStore_ = std::make_unique<EnhancedShaderDebuggingStore>();
-  }
 
   return Result();
 }

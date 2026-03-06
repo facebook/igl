@@ -10,7 +10,6 @@
 #include <igl/Framebuffer.h>
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/ComputeCommandEncoder.h>
-#include <igl/vulkan/EnhancedShaderDebuggingStore.h>
 #include <igl/vulkan/RenderCommandEncoder.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
@@ -65,14 +64,6 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
 
   auto encoder = RenderCommandEncoder::create(
       shared_from_this(), ctx_, renderPass, framebuffer, dependencies, outResult);
-
-  if (encoder && ctx_.enhancedShaderDebuggingStore_) {
-    encoder->binder().bindBuffer(
-        EnhancedShaderDebuggingStore::kBufferIndex,
-        static_cast<Buffer*>(ctx_.enhancedShaderDebuggingStore_->vertexBuffer().get()),
-        0,
-        0);
-  }
 
   return encoder;
 }

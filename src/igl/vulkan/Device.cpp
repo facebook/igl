@@ -15,7 +15,6 @@
 #include <igl/vulkan/CommandQueue.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/ComputePipelineState.h>
-#include <igl/vulkan/EnhancedShaderDebuggingStore.h>
 #include <igl/vulkan/Framebuffer.h>
 #include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/RenderPipelineState.h>
@@ -76,11 +75,7 @@ VkShaderStageFlagBits shaderStageToVkShaderStage(igl::ShaderStage stage) {
 
 namespace igl::vulkan {
 
-Device::Device(std::unique_ptr<VulkanContext> ctx) : ctx_(std::move(ctx)), platformDevice_(*this) {
-  if (ctx_->enhancedShaderDebuggingStore_) {
-    ctx_->enhancedShaderDebuggingStore_->initialize(this);
-  }
-}
+Device::Device(std::unique_ptr<VulkanContext> ctx) : ctx_(std::move(ctx)), platformDevice_(*this) {}
 
 std::shared_ptr<ICommandQueue> Device::createCommandQueueInternal(const CommandQueueDesc& desc,
                                                                   Result* IGL_NULLABLE outResult) {
@@ -435,10 +430,6 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       extraExtensions += "#extension GL_EXT_debug_printf : enable\n";
     }
 
-    const std::string enhancedShaderDebuggingCode =
-        EnhancedShaderDebuggingStore::recordLineShaderCode(
-            ctx_->enhancedShaderDebuggingStore_ != nullptr, ctx_->features_);
-
     if (ctx_->features_.featuresShaderFloat16Int8.shaderFloat16 == VK_TRUE) {
       extraExtensions += "#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require\n";
     }
@@ -465,14 +456,13 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
     if (vkStage == VK_SHADER_STAGE_VERTEX_BIT || vkStage == VK_SHADER_STAGE_COMPUTE_BIT) {
       sourcePatched += R"(
       #version 460
-      )" + extraExtensions +
-                       enhancedShaderDebuggingCode;
+      )" + extraExtensions;
     }
     if (vkStage == VK_SHADER_STAGE_FRAGMENT_BIT) {
       sourcePatched += R"(
       #version 460
       )" + extraExtensions +
-                       bindlessTexturesSource + enhancedShaderDebuggingCode;
+                       bindlessTexturesSource;
     }
     sourcePatched += source;
     source = sourcePatched.c_str();

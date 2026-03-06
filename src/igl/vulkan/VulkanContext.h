@@ -37,7 +37,6 @@ namespace util {
 struct SpvModuleInfo;
 } // namespace util
 
-class EnhancedShaderDebuggingStore;
 class CommandQueue;
 class ComputeCommandEncoder;
 class RenderCommandEncoder;
@@ -352,8 +351,6 @@ class VulkanContext final {
 
   VulkanContextConfig config_;
 
-  // Enhanced shader debug: line drawing
-  std::unique_ptr<EnhancedShaderDebuggingStore> enhancedShaderDebuggingStore_;
   // NOLINTEND(readability-identifier-naming)
 
   void updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,

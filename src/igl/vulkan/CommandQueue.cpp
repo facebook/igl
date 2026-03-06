@@ -8,7 +8,6 @@
 #include <igl/vulkan/CommandQueue.h>
 
 #include <igl/vulkan/CommandBuffer.h>
-#include <igl/vulkan/EnhancedShaderDebuggingStore.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 
@@ -35,10 +34,6 @@ std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandB
 SubmitHandle CommandQueue::submit(const ICommandBuffer& cmdBuffer, bool /* endOfFrame */) {
   IGL_PROFILER_FUNCTION();
   VulkanContext& ctx = device_.getVulkanContext();
-
-  if (ctx.enhancedShaderDebuggingStore_) {
-    ctx.enhancedShaderDebuggingStore_->installBufferBarrier(cmdBuffer);
-  }
 
   incrementDrawCount(cmdBuffer.getCurrentDrawCount());
 
@@ -70,12 +65,7 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& cmdBuffer, bool /* endOf
                               K_COLOR_COMMAND_BUFFER_SUBMISSION_WITH_FENCE.toFloatPtr());
 #endif // IGL_COMMAND_QUEUE_DEBUG_FENCES
 
-  const bool presentIfNotDebugging = ctx.enhancedShaderDebuggingStore_ == nullptr;
-  auto submitHandle = endCommandBuffer(ctx, vkCmdBuffer, presentIfNotDebugging);
-
-  if (ctx.enhancedShaderDebuggingStore_) {
-    ctx.enhancedShaderDebuggingStore_->enhancedShaderDebuggingPass(*this, vkCmdBuffer);
-  }
+  auto submitHandle = endCommandBuffer(ctx, vkCmdBuffer, true);
 
   return submitHandle;
 }

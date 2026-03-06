@@ -952,7 +952,6 @@ GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
 #else
       const igl::vulkan::VulkanContextConfig cfg = {
           .terminateOnValidationError = false,
-          .enhancedShaderDebugging = false,
           .enableValidation = enableVulkanValidationLayers,
           .enableDescriptorIndexing = true,
           .headless = isHeadless,

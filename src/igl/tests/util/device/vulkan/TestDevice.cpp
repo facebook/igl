@@ -30,7 +30,6 @@ namespace igl::tests::util::device::vulkan {
 
 igl::vulkan::VulkanContextConfig getContextConfig(bool enableValidation) {
   igl::vulkan::VulkanContextConfig config;
-  config.enhancedShaderDebugging = false; // This causes issues for MoltenVK
   config.enableValidation = enableValidation;
   config.enableGPUAssistedValidation = enableValidation;
 

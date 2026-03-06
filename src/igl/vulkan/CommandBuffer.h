@@ -33,9 +33,7 @@ class CommandBuffer final : public ICommandBuffer,
    * `dependencies` parameter to a shader read only layout. It also transitions all images
    * referenced by the `framebuffer` parameter to their optimal layout: color and resolve
    * attachments are transitioned to color attachment optimal layouts; the depth/stencil is
-   * transitioned to depth/stencil attachment optimal layout. Once the RenderCommandEncoder has been
-   * created, and if there is an enhanced shader debugging store object defined in the contest, this
-   * function also binds an extra storage buffer used by the shader debugging functionality. Returns
+   * transitioned to depth/stencil attachment optimal layout. Returns
    * a RenderCommandEncoder object.
    */
   std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
@@ -44,10 +42,8 @@ class CommandBuffer final : public ICommandBuffer,
       const Dependencies& dependencies,
       Result* outResult) override;
 
-  /** @brief Caches the texture passed in to the function for presentation later. Due to the
-   * enhanced shader debugging functionality, the image cannot be presented here. It can only be
-   * presented after the command buffer has been submitted, processed and then used by the enhanced
-   * shader debugging functionality. If the texture belongs to a swapchain, this function
+  /** @brief Caches the texture passed in to the function for presentation later. If the texture
+   * belongs to a swapchain, this function
    * transitions the texture to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR layout. Otherwise it transitions the
    * texture to the VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL layout if the texture's samples is
    * equal to 1 (it's non multi-sampled).

@@ -481,10 +481,6 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
   if (!IGL_DEBUG_VERIFY(isUniformOrStorageBuffer, "Must be a uniform or a storage buffer")) {
     return;
   }
-  if (ctx_.enhancedShaderDebuggingStore_) {
-    IGL_DEBUG_ASSERT(index < (IGL_UNIFORM_BLOCKS_BINDING_MAX - 1),
-                     "The last buffer index is reserved for enhanced debugging features");
-  }
   binder_.bindBuffer(index, buf, bufferOffset, bufferSize);
 }
 

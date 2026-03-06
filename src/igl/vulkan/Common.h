@@ -103,16 +103,12 @@ namespace igl::vulkan {
 // VK_EXT_debug_utils
 #define K_COLOR_GENERATE_MIPMAPS igl::Color(1.f, 0.75f, 0.f)
 #define K_COLOR_UPLOAD_IMAGE igl::Color(1.f, 0.2f, 0.78f)
-#define K_COLOR_DEBUG_LINES igl::Color(0.f, 1.f, 1.f)
 #define K_COLOR_COMMAND_BUFFER_SUBMISSION_WITH_FENCE igl::Color(0.878f, 0.69f, 1.0f) // Mauve
 
 // The VulkanContextConfig provides a way to override some of the the default behaviors of the
 // VulkanContext
 struct VulkanContextConfig {
   bool terminateOnValidationError = false; // invoke std::terminate() on any validation error
-
-  // enable/disable enhanced shader debugging capabilities (line drawing)
-  bool enhancedShaderDebugging = false;
 
   bool enableConcurrentVkDevicesSupport = false;
 
