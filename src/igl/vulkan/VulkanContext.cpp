@@ -643,9 +643,9 @@ void VulkanContext::createInstance() {
 #if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
       .pNext = config_.enableValidation ? &features : nullptr,
 #endif
-#if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST
-      .flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
-#endif
+      .flags = features_.has_VK_KHR_portability_enumeration
+                   ? VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR
+                   : (VkInstanceCreateFlags)0,
       .pApplicationInfo = &appInfo,
       .enabledLayerCount = static_cast<uint32_t>(layers.size()),
       .ppEnabledLayerNames = !layers.empty() ? layers.data() : nullptr,

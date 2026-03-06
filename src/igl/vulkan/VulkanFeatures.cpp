@@ -449,12 +449,9 @@ void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& c
   enable(VK_EXT_METAL_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
 #endif
 
-#if IGL_PLATFORM_MACOSX
   // https://vulkan.lunarg.com/doc/sdk/1.3.216.0/mac/getting_started.html
-  if (!enable(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, ExtensionType::Instance)) {
-    IGL_LOG_ERROR("VK_KHR_portability_enumeration extension not supported\n");
-  }
-#endif // IGL_PLATFORM_MACOSX
+  has_VK_KHR_portability_enumeration =
+      enable(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, ExtensionType::Instance);
 
 #if !IGL_PLATFORM_ANDROID
   if (contextConfig.enableValidation) {
@@ -499,10 +496,11 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
       enable(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, ExtensionType::Device);
 #endif // !IGL_DEBUG
 
-// We should not use the Portability Subset extension with Lavapipe
-#if IGL_PLATFORM_MACOSX && !defined(IGL_USE_STATIC_LAVAPIPE)
-  std::ignore = IGL_DEBUG_VERIFY(enable("VK_KHR_portability_subset", ExtensionType::Device));
-#endif // IGL_PLATFORM_MACOSX
+  // Enable the Portability Subset extension when available (e.g. MoltenVK).
+  // Reset the flag if the extension is not available.
+  if (has_VK_KHR_portability_enumeration) {
+    has_VK_KHR_portability_enumeration = enable("VK_KHR_portability_subset", ExtensionType::Device);
+  }
 
 #if IGL_PLATFORM_WINDOWS
   enable(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME, ExtensionType::Device);

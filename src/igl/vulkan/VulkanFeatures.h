@@ -112,17 +112,18 @@ class VulkanFeatures final {
   bool has_VK_EXT_fragment_density_map = false;
   bool has_VK_EXT_headless_surface = false;
   bool has_VK_EXT_index_type_uint8 = false; // promoted to Vulkan 1.4
+  bool has_VK_EXT_mesh_shader = false;
   bool has_VK_EXT_queue_family_foreign = false;
   bool has_VK_KHR_8bit_storage = false; // promoted to Vulkan 1.2
   bool has_VK_KHR_buffer_device_address = false; // promoted to Vulkan 1.2
   bool has_VK_KHR_get_surface_capabilities2 = false;
+  bool has_VK_KHR_portability_enumeration = false;
   bool has_VK_KHR_shader_non_semantic_info = false; // promoted to Vulkan 1.3
   bool has_VK_KHR_synchronization2 = false; // promoted to Vulkan 1.3
   bool has_VK_KHR_timeline_semaphore = false; // promoted to Vulkan 1.2
   bool has_VK_KHR_uniform_buffer_standard_layout = false; // promoted to Vulkan 1.2
   bool has_VK_KHR_vulkan_memory_model = false; // promoted to Vulkan 1.2
   bool has_VK_QCOM_multiview_per_view_viewports = false;
-  bool has_VK_EXT_mesh_shader = false;
   // NOLINTEND(readability-identifier-naming)
 
  private:
