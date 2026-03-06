@@ -113,6 +113,64 @@ VSOut main(VSIn i) { return vertexShader(i); }
   ASSERT_TRUE(shaderModule != nullptr);
 }
 
+TEST_F(ShaderModuleTest, ShaderCompilerOptionsEquality) {
+  ShaderCompilerOptions options1;
+  ShaderCompilerOptions options2;
+
+  // Default values should be equal
+  EXPECT_TRUE(options1 == options2);
+  EXPECT_FALSE(options1 != options2);
+
+  // Modify one and they should be unequal
+  options2.fastMathEnabled = false;
+  EXPECT_FALSE(options1 == options2);
+  EXPECT_TRUE(options1 != options2);
+
+  // Make them equal again
+  options1.fastMathEnabled = false;
+  EXPECT_TRUE(options1 == options2);
+  EXPECT_FALSE(options1 != options2);
+}
+
+TEST_F(ShaderModuleTest, ShaderModuleDescEquality) {
+  ShaderModuleDesc desc1 = ShaderModuleDesc::fromStringInput(
+      "test source", {.stage = ShaderStage::Vertex, .entryPoint = "main"}, "debugName");
+  ShaderModuleDesc desc2 = ShaderModuleDesc::fromStringInput(
+      "test source", {.stage = ShaderStage::Vertex, .entryPoint = "main"}, "debugName");
+
+  // Same content should be equal
+  EXPECT_TRUE(desc1 == desc2);
+  EXPECT_FALSE(desc1 != desc2);
+
+  // Different debug name should be unequal
+  ShaderModuleDesc desc3 = ShaderModuleDesc::fromStringInput(
+      "test source", {.stage = ShaderStage::Vertex, .entryPoint = "main"}, "differentDebugName");
+  EXPECT_FALSE(desc1 == desc3);
+  EXPECT_TRUE(desc1 != desc3);
+}
+
+TEST_F(ShaderModuleTest, ShaderLibraryDescEquality) {
+  std::vector<ShaderModuleInfo> moduleInfo1 = {
+      {.stage = ShaderStage::Vertex, .entryPoint = "vertMain"}};
+  std::vector<ShaderModuleInfo> moduleInfo2 = {
+      {.stage = ShaderStage::Vertex, .entryPoint = "vertMain"}};
+
+  ShaderLibraryDesc desc1 =
+      ShaderLibraryDesc::fromStringInput("test source", moduleInfo1, "debugName");
+  ShaderLibraryDesc desc2 =
+      ShaderLibraryDesc::fromStringInput("test source", moduleInfo2, "debugName");
+
+  // Same content should be equal
+  EXPECT_TRUE(desc1 == desc2);
+  EXPECT_FALSE(desc1 != desc2);
+
+  // Different debug name should be unequal
+  ShaderLibraryDesc desc3 =
+      ShaderLibraryDesc::fromStringInput("test source", moduleInfo1, "differentDebugName");
+  EXPECT_FALSE(desc1 == desc3);
+  EXPECT_TRUE(desc1 != desc3);
+}
+
 TEST_F(ShaderModuleTest, CompileShaderModuleNoResult) {
   const char* source = nullptr;
   const auto be2 = iglDev_->getBackendType();
