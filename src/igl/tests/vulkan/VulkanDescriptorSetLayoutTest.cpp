@@ -127,7 +127,7 @@ TEST_F(VulkanDescriptorSetLayoutTest, DestructorCleanup) {
     EXPECT_NE(layout->getVkDescriptorSetLayout(), VK_NULL_HANDLE);
   }
 
-  ctx.waitIdle();
+  ctx.waitDeferredTasks();
 }
 
 } // namespace igl::tests
