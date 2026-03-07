@@ -243,6 +243,9 @@ void ResourcesBinder::bindPipeline(VkPipeline pipeline, const util::SpvModuleInf
     if (!info->textures.empty()) {
       isDirtyFlags_ |= DirtyFlagBits_Textures;
     }
+    if (!info->images.empty()) {
+      isDirtyFlags_ |= DirtyFlagBits_StorageImages;
+    }
   }
 
   lastPipelineBound_ = pipeline;
