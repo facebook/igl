@@ -82,13 +82,13 @@ struct RenderPassDesc {
                                       .storeAction = StoreAction::DontCare};
 
   /// Per-render-pass GPU timestamp query attachment.
-  /// When set, the Metal backend configures sampleBufferAttachments on the
-  /// MTLRenderPassDescriptor for automatic sampling at vertex start and fragment end.
-  /// The startIndex and endIndex are sample buffer indices allocated by GPUTimingCollector.
+  /// When set, the backend measures GPU execution time for this render pass.
+  /// slotIndex is a logical timing slot allocated by GPUTimingCollector.
+  /// Metal maps it to two sampleBufferAttachments indices (slot*2, slot*2+1).
+  /// OpenGL uses it as the GL_TIME_ELAPSED query index.
   struct TimestampQueryDesc {
     std::shared_ptr<ITimestampQueries> queries;
-    uint32_t startIndex = 0; ///< Vertex-start sample index
-    uint32_t endIndex = 0; ///< Fragment-end sample index
+    uint32_t slotIndex = 0; ///< Logical timing slot from GPUTimingCollector
   };
   /// Optional per-render-pass timestamp query. Null queries pointer means disabled.
   TimestampQueryDesc timestampQuery;

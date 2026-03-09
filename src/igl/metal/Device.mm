@@ -24,6 +24,7 @@
 #include <igl/metal/Shader.h>
 #include <igl/metal/Texture.h>
 #include <igl/metal/Timer.h>
+#include <igl/metal/TimestampQueries.h>
 #include <igl/metal/VertexInputState.h>
 
 namespace igl::metal {
@@ -237,6 +238,50 @@ std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) cons
     Result::setOk(outResult);
   }
   return std::make_shared<Timer>();
+}
+
+std::shared_ptr<ITimestampQueries> Device::createTimestampQueries(uint32_t maxTimestamps,
+                                                                  Result* IGL_NULLABLE
+                                                                      outResult) const noexcept {
+  if (@available(macOS 10.15, iOS 14.0, *)) {
+    // Find the timestamp counter set
+    id<MTLCounterSet> timestampCounterSet = nil;
+    for (id<MTLCounterSet> counterSet in device_.counterSets) {
+      if ([counterSet.name isEqualToString:MTLCommonCounterSetTimestamp]) {
+        timestampCounterSet = counterSet;
+        break;
+      }
+    }
+    if (!timestampCounterSet) {
+      Result::setResult(
+          outResult, Result::Code::Unsupported, "Device does not support timestamp counters");
+      return nullptr;
+    }
+
+    MTLCounterSampleBufferDescriptor* descriptor = [[MTLCounterSampleBufferDescriptor alloc] init];
+    descriptor.counterSet = timestampCounterSet;
+    descriptor.sampleCount = maxTimestamps;
+    descriptor.storageMode = MTLStorageModeShared;
+    descriptor.label = @"IGL TimestampQueries";
+
+    NSError* error = nil;
+    id<MTLCounterSampleBuffer> csb = [device_ newCounterSampleBufferWithDescriptor:descriptor
+                                                                             error:&error];
+    if (!csb || error) {
+      Result::setResult(outResult,
+                        Result::Code::RuntimeError,
+                        error ? [error.localizedDescription UTF8String]
+                              : "Failed to create counter sample buffer");
+      return nullptr;
+    }
+
+    Result::setOk(outResult);
+    return std::make_shared<metal::TimestampQueries>(csb, maxTimestamps);
+  } else {
+    Result::setResult(
+        outResult, Result::Code::Unsupported, "TimestampQueries require macOS 10.15+ or iOS 14+");
+    return nullptr;
+  }
 }
 
 std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexInputStateDesc& desc,

@@ -112,6 +112,15 @@ DeviceFeatureSet::DeviceFeatureSet(id<MTLDevice> device) {
     // this API became available as of iOS 14 and macOS 11
     supports32BitFloatFiltering_ = device.supports32BitFloatFiltering;
   }
+
+  if (@available(macOS 10.15, iOS 14.0, *)) {
+    for (id<MTLCounterSet> counterSet in device.counterSets) {
+      if ([counterSet.name isEqualToString:MTLCommonCounterSetTimestamp]) {
+        supportsTimestampQueries_ = true;
+        break;
+      }
+    }
+  }
 }
 
 bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
@@ -217,7 +226,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::Timers:
     return true;
   case DeviceFeatures::TimestampQueries:
-    return false;
+    return supportsTimestampQueries_;
   }
   return false;
 }

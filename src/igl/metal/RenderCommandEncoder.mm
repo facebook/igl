@@ -20,6 +20,7 @@
 #include <igl/metal/RenderPipelineState.h>
 #include <igl/metal/SamplerState.h>
 #include <igl/metal/Texture.h>
+#include <igl/metal/TimestampQueries.h>
 
 namespace igl::metal {
 RenderCommandEncoder::RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer) :
@@ -122,6 +123,39 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
         renderPass.stencilAttachment.storeAction == igl::StoreAction::MsaaResolve) {
       metalRenderPassDesc.stencilAttachment.resolveTexture =
           static_cast<Texture&>(*desc.stencilAttachment.resolveTexture).get();
+    }
+  }
+
+  // Attach counter sample buffer for GPU timestamp queries.
+  // Configure sampleBufferAttachments with sample indices for descriptor-based
+  // sampling (Tracy/Dawn pattern). Metal auto-samples at vertex start and fragment
+  // end.
+  // This is the ONLY approach that works on Apple GPUs (A-series, M-series).
+  if (@available(macOS 11.0, iOS 14.0, *)) {
+    if (renderPass.timestampQuery.queries) {
+      auto metalTsQueries =
+          std::static_pointer_cast<TimestampQueries>(renderPass.timestampQuery.queries);
+      if (metalTsQueries && metalTsQueries->sampleBuffer_ != nil) {
+        uint32_t startSampleIdx = renderPass.timestampQuery.slotIndex * 2;
+        uint32_t endSampleIdx = renderPass.timestampQuery.slotIndex * 2 + 1;
+        metalRenderPassDesc.sampleBufferAttachments[0].sampleBuffer = metalTsQueries->sampleBuffer_;
+        metalRenderPassDesc.sampleBufferAttachments[0].startOfVertexSampleIndex = startSampleIdx;
+        metalRenderPassDesc.sampleBufferAttachments[0].endOfVertexSampleIndex =
+            MTLCounterDontSample;
+        metalRenderPassDesc.sampleBufferAttachments[0].startOfFragmentSampleIndex =
+            MTLCounterDontSample;
+        metalRenderPassDesc.sampleBufferAttachments[0].endOfFragmentSampleIndex = endSampleIdx;
+
+        // Advance currentIndex_ so resolveTimestamps knows how many samples to resolve.
+        uint32_t requiredCount = endSampleIdx + 1;
+        uint32_t current = metalTsQueries->currentIndex_.load(std::memory_order_relaxed);
+        while (current < requiredCount) {
+          if (metalTsQueries->currentIndex_.compare_exchange_weak(
+                  current, requiredCount, std::memory_order_relaxed)) {
+            break;
+          }
+        }
+      }
     }
   }
 
@@ -691,6 +725,10 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
   }
 
   IGL_DEBUG_ASSERT(dynamicOffset == numDynamicOffsets, "Not all dynamic offsets were consumed");
+}
+
+void RenderCommandEncoder::writeTimestamp(ITimestampQueries& queries) {
+  static_cast<TimestampQueries&>(queries).sampleTimestampOnEncoder(encoder_);
 }
 
 } // namespace igl::metal

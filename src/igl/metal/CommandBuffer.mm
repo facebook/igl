@@ -13,7 +13,6 @@
 #include <igl/metal/ComputeCommandEncoder.h>
 #include <igl/metal/RenderCommandEncoder.h>
 #include <igl/metal/Texture.h>
-
 namespace igl::metal {
 
 CommandBuffer::CommandBuffer(Device& device, id<MTLCommandBuffer> value, CommandBufferDesc desc) :

@@ -59,6 +59,10 @@ class Device : public IDevice {
 
   std::shared_ptr<ITimer> createTimer(Result* IGL_NULLABLE outResult) const noexcept override;
 
+  std::shared_ptr<ITimestampQueries> createTimestampQueries(uint32_t maxTimestamps,
+                                                            Result* IGL_NULLABLE
+                                                                outResult) const noexcept override;
+
   std::shared_ptr<IVertexInputState> createVertexInputState(const VertexInputStateDesc& desc,
                                                             Result* IGL_NULLABLE
                                                                 outResult) const override;
