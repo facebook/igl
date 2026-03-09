@@ -27,7 +27,7 @@ static void* kAssociatedRenderBufferHolderKey = &kAssociatedRenderBufferHolderKe
 /// Object used to hold onto a renderBuffer so we can attach it as an associated object
 @interface _IGLRenderBufferHolder : NSObject {
  @public
-  std::weak_ptr<igl::opengl::TextureTarget> renderBuffer;
+  std::weak_ptr<igl::opengl::TextureTarget> _renderBuffer;
 }
 @end
 
@@ -68,7 +68,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
 
   _IGLRenderBufferHolder* renderBufferHolder = getAssociatedRenderBufferHolder(nativeDrawable);
 
-  const auto renderBuffer = renderBufferHolder->renderBuffer.lock();
+  const auto renderBuffer = renderBufferHolder->_renderBuffer.lock();
 
   if (renderBuffer != nullptr && renderBuffer->getSize().width == resolution.size.width &&
       renderBuffer->getSize().height == resolution.size.height) {
@@ -132,7 +132,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
       }
     }
 
-    renderBufferHolder->renderBuffer = texture;
+    renderBufferHolder->_renderBuffer = texture;
     if (auto resourceTracker = owner_.getResourceTracker()) {
       texture->initResourceTracker(resourceTracker);
     }
