@@ -19,9 +19,7 @@
 #import <CoreVideo/CVDisplayLink.h>
 
 @interface HeadlessView () {
-  // NOLINTNEXTLINE(readability-identifier-naming)
   CVDisplayLinkRef _displayLink; // display link for managing rendering thread
-  // NOLINTNEXTLINE(readability-identifier-naming)
   NSTrackingArea* _trackingArea; // needed for mouseMoved: events
 }
 @property (weak) ViewController* viewController;
