@@ -22,6 +22,7 @@
 #include <igl/opengl/TextureBuffer.h>
 #include <igl/opengl/TextureTarget.h>
 #include <igl/opengl/Timer.h>
+#include <igl/opengl/TimestampQueries.h>
 #include <igl/opengl/UniformBuffer.h>
 #include <igl/opengl/VertexInputState.h>
 
@@ -404,6 +405,18 @@ std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) cons
   }
   Result::setResult(
       outResult, Result::Code::Unsupported, "Timers are not supported on this device");
+  return nullptr;
+}
+
+std::shared_ptr<ITimestampQueries> Device::createTimestampQueries(uint32_t maxTimestamps,
+                                                                  Result* IGL_NULLABLE
+                                                                      outResult) const noexcept {
+  if (deviceFeatureSet_.hasExtension(Extensions::TimerQuery)) {
+    Result::setOk(outResult);
+    return std::make_shared<TimestampQueries>(getContext(), maxTimestamps);
+  }
+  Result::setResult(
+      outResult, Result::Code::Unsupported, "TimestampQueries are not supported on this device");
   return nullptr;
 }
 

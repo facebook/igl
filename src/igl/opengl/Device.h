@@ -97,6 +97,11 @@ class Device : public IDevice {
   // Timers
   std::shared_ptr<ITimer> createTimer(Result* IGL_NULLABLE outResult) const noexcept override;
 
+  // Timestamp Queries
+  std::shared_ptr<ITimestampQueries> createTimestampQueries(uint32_t maxTimestamps,
+                                                            Result* IGL_NULLABLE
+                                                                outResult) const noexcept override;
+
   // debug markers useful in GPU captures
   void pushMarker(int len, const char* IGL_NULLABLE name);
   void popMarker();

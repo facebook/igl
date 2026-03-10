@@ -146,6 +146,7 @@ using PFNIGLGENERATEMIPMAPPROC = void (*)(GLenum target);
 using PFNIGLGENFRAMEBUFFERSPROC = void (*)(GLsizei n, GLuint* framebuffers);
 using PFNIGLGENRENDERBUFFERSPROC = void (*)(GLsizei n, GLuint* renderbuffers);
 using PFNIGLGENQUERIESPROC = void (*)(GLsizei n, GLuint* queries);
+using PFNIGLQUERYCOUNTERPROC = void (*)(GLuint id, GLenum target);
 using PFNIGLGENVERTEXARRAYSPROC = void (*)(GLsizei n, GLuint* vertexArrays);
 using PFNIGLGETACTIVEUNIFORMSIVPROC = void (*)(GLuint program,
                                                GLsizei uniformCount,
@@ -835,5 +836,6 @@ void iglEndQuery(GLenum target);
 void iglDeleteQueries(GLsizei n, GLuint* queries);
 void iglGetQueryObjectui64v(GLuint id, GLenum pname, GLuint64* params);
 void iglGetQueryObjectiv(GLuint id, GLenum pname, GLint* params);
+void iglQueryCounter(GLuint id, GLenum target);
 
 IGL_EXTERN_END
