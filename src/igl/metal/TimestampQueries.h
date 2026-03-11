@@ -7,9 +7,12 @@
 
 #pragma once
 
-#import <Metal/Metal.h>
+@protocol MTLCommandBuffer;
+@protocol MTLCounterSampleBuffer;
+@protocol MTLRenderCommandEncoder;
 #include <atomic>
 #include <mutex>
+#import <objc/objc.h>
 #include <vector>
 #include <igl/TimestampQueries.h>
 

@@ -7,6 +7,12 @@
 
 #include <igl/metal/TimestampQueries.h>
 
+#import <Foundation/NSData.h>
+#import <Foundation/NSException.h>
+#import <Foundation/NSRange.h>
+#import <Metal/MTLCommandBuffer.h> // @donotremove
+#import <Metal/MTLCounters.h>
+#import <Metal/MTLRenderCommandEncoder.h>
 #include <algorithm>
 
 namespace igl::metal {
