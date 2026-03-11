@@ -11,7 +11,6 @@
 #include "../util/TestDevice.h"
 
 #include <igl/IGL.h>
-#include <igl/metal/Device.h>
 
 namespace igl::tests {
 

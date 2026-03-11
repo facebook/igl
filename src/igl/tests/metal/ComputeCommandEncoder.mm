@@ -15,7 +15,6 @@
 
 #include <igl/IGL.h>
 #include <igl/metal/CommandBuffer.h>
-#include <igl/metal/Device.h>
 
 namespace igl::tests {
 

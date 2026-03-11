@@ -11,12 +11,13 @@
 #include <fstream>
 #include <iterator>
 #include <string>
-#include <igl/Core.h>
+#include <igl/Config.h>
 // @fb-only
 // @fb-only
 // @fb-only
 #if IGL_PLATFORM_WINDOWS
 #include <windows.h>
+#include <igl/Common.h>
 #endif
 
 namespace {
