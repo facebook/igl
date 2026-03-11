@@ -135,8 +135,12 @@ TEST_P(GetWriteDescriptorSetImageInfoTest, GetWriteDescriptorSet_ImageInfo) {
   const uint32_t numDescs = std::get<2>(GetParam());
 
   const std::array<VkDescriptorImageInfo, 2> pImageInfo = {
-      VkDescriptorImageInfo{VK_NULL_HANDLE, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED},
-      VkDescriptorImageInfo{VK_NULL_HANDLE, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED}};
+      VkDescriptorImageInfo{.sampler = VK_NULL_HANDLE,
+                            .imageView = VK_NULL_HANDLE,
+                            .imageLayout = VK_IMAGE_LAYOUT_UNDEFINED},
+      VkDescriptorImageInfo{.sampler = VK_NULL_HANDLE,
+                            .imageView = VK_NULL_HANDLE,
+                            .imageLayout = VK_IMAGE_LAYOUT_UNDEFINED}};
 
   const VkWriteDescriptorSet imageDescSet =
       ivkGetWriteDescriptorSetImageInfo(descSet, dstBinding, descType, numDescs, pImageInfo.data());
@@ -178,8 +182,8 @@ TEST_P(GetWriteDescriptorSetBufferInfoTest, GetWriteDescriptorSet_BufferInfo) {
   const uint32_t numDescs = std::get<2>(GetParam());
 
   const std::array<VkDescriptorBufferInfo, 2> pBufferInfo = {
-      VkDescriptorBufferInfo{VK_NULL_HANDLE, 0, VK_WHOLE_SIZE},
-      VkDescriptorBufferInfo{VK_NULL_HANDLE, 0, VK_WHOLE_SIZE}};
+      VkDescriptorBufferInfo{.buffer = VK_NULL_HANDLE, .offset = 0, .range = VK_WHOLE_SIZE},
+      VkDescriptorBufferInfo{.buffer = VK_NULL_HANDLE, .offset = 0, .range = VK_WHOLE_SIZE}};
 
   const VkWriteDescriptorSet bufferDescSet = ivkGetWriteDescriptorSetBufferInfo(
       descSet, dstBinding, descType, numDescs, pBufferInfo.data());
