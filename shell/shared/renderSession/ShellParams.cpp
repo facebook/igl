@@ -156,6 +156,8 @@ void parseShellParams(const std::vector<std::string>& args, ShellParams& shellPa
       if (i + 1 < args.size()) {
         shellParams.freezeAtFrame = static_cast<uint32_t>(std::stoi(args[++i]));
       }
+    } else if (arg == "--use-timer-rendering") {
+      shellParams.useTimerRendering = true;
     }
   }
 }

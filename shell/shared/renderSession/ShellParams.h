@@ -64,6 +64,7 @@ struct ShellParams {
   uint32_t fpsThrottleMs = 0; // 0 = disabled, >0 = delay in milliseconds per frame
   uint32_t freezeAtFrame = ~0u; // frame number to freeze at (~0u = disabled)
   bool fpsThrottleRandom = false; // if true, throttle is random in range [1, fpsThrottleMs]
+  bool useTimerRendering = false; // use external display link for rendering (macOS Metal)
 };
 
 std::vector<std::string> convertArgvToParams(int argc, char** argv);

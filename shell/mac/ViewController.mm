@@ -60,7 +60,7 @@ using namespace igl;
   igl::shell::RenderSessionConfig _config;
   igl::shell::ShellParams _shellParams;
   CGRect _frame;
-  CVDisplayLinkRef _displayLink; // For OpenGL only
+  CVDisplayLinkRef _displayLink; // For OpenGL (via GLView) and opt-in Metal timer rendering
   id<CAMetalDrawable> _currentDrawable;
   id<MTLTexture> _depthStencilTexture;
   std::shared_ptr<igl::shell::Platform> _shellPlatform;
@@ -374,14 +374,48 @@ using namespace igl;
       shell::convertArgvToParams(igl::shell::Platform::argc(), igl::shell::Platform::argv());
   shell::parseShellParams(args, _shellParams);
 
+  // When timer rendering is opted in, configure the Metal view for external
+  // CVDisplayLink-driven rendering instead of MTKView's internal display link
+  // (which may not fire for non-frontmost apps on macOS).
+  if (_shellParams.useTimerRendering && [self.view isKindOfClass:[MetalView class]]) {
+    MetalView* metalView = (MetalView*)self.view;
+    metalView.enableSetNeedsDisplay = YES;
+    metalView.paused = YES;
+  }
+
   _session->setShellParams(_shellParams);
   _session->initialize();
 }
 
+static CVReturn metalDisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
+                                         const CVTimeStamp* /*now*/,
+                                         const CVTimeStamp* /*outputTime*/,
+                                         CVOptionFlags /*flagsIn*/,
+                                         CVOptionFlags* /*flagsOut*/,
+                                         void* userdata) {
+  [(__bridge ViewController*)userdata performSelectorOnMainThread:@selector(triggerMetalRender)
+                                                       withObject:nil
+                                                    waitUntilDone:NO];
+  return kCVReturnSuccess;
+}
+
+- (void)triggerMetalRender {
+  [self.view setNeedsDisplay:YES];
+}
+
 - (void)viewDidAppear {
   if ([self.view isKindOfClass:[MetalView class]]) {
-    MetalView* v = (MetalView*)self.view;
-    v.paused = NO;
+    if (_shellParams.useTimerRendering) {
+      // Use a CVDisplayLink to drive Metal rendering, synced to the display refresh
+      // rate. MTKView's internal CVDisplayLink may not fire for non-frontmost apps
+      // (e.g., when launched from automated tools for screenshot capture).
+      CVDisplayLinkCreateWithActiveCGDisplays(&_displayLink);
+      CVDisplayLinkSetOutputCallback(_displayLink, &metalDisplayLinkCallback, (__bridge void*)self);
+      CVDisplayLinkStart(_displayLink);
+    } else {
+      MetalView* v = (MetalView*)self.view;
+      v.paused = NO;
+    }
   } else if ([self.view isKindOfClass:[GLView class]]) {
     GLView* v = (GLView*)self.view;
     [v startTimer];
@@ -391,8 +425,14 @@ using namespace igl;
 
 - (void)viewWillDisappear {
   if ([self.view isKindOfClass:[MetalView class]]) {
-    MetalView* v = (MetalView*)self.view;
-    v.paused = YES;
+    if (_shellParams.useTimerRendering) {
+      CVDisplayLinkStop(_displayLink);
+      CVDisplayLinkRelease(_displayLink);
+      _displayLink = NULL;
+    } else {
+      MetalView* v = (MetalView*)self.view;
+      v.paused = YES;
+    }
   } else if ([self.view isKindOfClass:[GLView class]]) {
     GLView* v = (GLView*)self.view;
     [v stopTimer];
