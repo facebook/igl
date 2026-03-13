@@ -14,6 +14,7 @@ namespace iglu::textureloader::xtc1 {
 
 using Tag = std::array<uint8_t, 4>;
 
+// NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init)
 struct Header {
   static constexpr uint32_t kMaxMips = 12;
   static constexpr uint32_t kVersion = 0x00010002;
