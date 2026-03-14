@@ -113,11 +113,13 @@ TEST_F(BufferTest, createWithDebugLabel) {
       3,
       2,
   };
-  BufferDesc bufferDesc = BufferDesc{BufferDesc::BufferTypeBits::Index,
-                                     kIndexData.data(),
-                                     sizeof(kIndexData),
-                                     ResourceStorage::Shared};
-  bufferDesc.debugName = "test";
+  const BufferDesc bufferDesc{
+      .type = BufferDesc::BufferTypeBits::Index,
+      .data = kIndexData.data(),
+      .length = sizeof(kIndexData),
+      .storage = ResourceStorage::Shared,
+      .debugName = "test",
+  };
 
   const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
@@ -139,8 +141,12 @@ TEST_F(BufferTest, mapIndexBuffer) {
       3,
       2,
   };
-  const BufferDesc bufferDesc = BufferDesc{
-      BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData), ResourceStorage::Shared};
+  const BufferDesc bufferDesc{
+      .type = BufferDesc::BufferTypeBits::Index,
+      .data = indexData,
+      .length = sizeof(indexData),
+      .storage = ResourceStorage::Shared,
+  };
   const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -175,8 +181,12 @@ TEST_F(BufferTest, mapBufferRangeIndexBuffer) {
       3,
       2,
   };
-  const BufferDesc bufferDesc = BufferDesc{
-      BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData), ResourceStorage::Shared};
+  const BufferDesc bufferDesc{
+      .type = BufferDesc::BufferTypeBits::Index,
+      .data = indexData,
+      .length = sizeof(indexData),
+      .storage = ResourceStorage::Shared,
+  };
   const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -215,8 +225,12 @@ TEST_F(BufferTest, copyBytesErrorsIndexBuffer) {
       3,
       2,
   };
-  const BufferDesc bufferDesc = BufferDesc{
-      BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData), ResourceStorage::Shared};
+  const BufferDesc bufferDesc{
+      .type = BufferDesc::BufferTypeBits::Index,
+      .data = indexData,
+      .length = sizeof(indexData),
+      .storage = ResourceStorage::Shared,
+  };
   const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
