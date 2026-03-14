@@ -144,6 +144,25 @@ TEST_F(VulkanBufferTest, HostVisibleBufferSubData) {
   }
 }
 
+TEST_F(VulkanBufferTest, CreateBufferWithInvalidStorageConvertsToPrivate) {
+  Result ret;
+  auto buffer = iglDev_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                                                 .data = nullptr,
+                                                 .length = 256,
+                                                 .storage = ResourceStorage::Invalid},
+                                      &ret);
+
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(buffer, nullptr);
+
+  auto& ctx = getVulkanContext();
+  if (ctx.useStagingForBuffers_) {
+    EXPECT_EQ(buffer->storage(), ResourceStorage::Private);
+  } else {
+    EXPECT_EQ(buffer->storage(), ResourceStorage::Shared);
+  }
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
