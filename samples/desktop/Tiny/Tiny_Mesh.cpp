@@ -308,43 +308,43 @@ GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
   }
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
-  vb0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Vertex,
+  vb0_ = device_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Vertex,
                                           vertexData0,
                                           sizeof(vertexData0),
                                           ResourceStorage::Private,
                                           0,
-                                          "Buffer: vertex"),
+                                          "Buffer: vertex"},
                                nullptr);
-  ib0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Index,
+  ib0_ = device_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Index,
                                           indexData,
                                           sizeof(indexData),
                                           ResourceStorage::Private,
                                           0,
-                                          "Buffer: index"),
+                                          "Buffer: index"},
                                nullptr);
-  screenCopy_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Storage,
+  screenCopy_ = device_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Storage,
                                                  nullptr,
                                                  width_ * height_ * sizeof(uint32_t),
                                                  ResourceStorage::Shared,
                                                  0,
-                                                 "Buffer: screen copy"),
+                                                 "Buffer: screen copy"},
                                       nullptr);
 
   // create an Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
-    ubPerFrame_.push_back(device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
+    ubPerFrame_.push_back(device_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Uniform,
                                                            &perFrame,
                                                            sizeof(UniformsPerFrame),
                                                            ResourceStorage::Shared,
                                                            0,
-                                                           "Buffer: uniforms (per frame)"),
+                                                           "Buffer: uniforms (per frame)"},
                                                 nullptr));
-    ubPerObject_.push_back(device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
+    ubPerObject_.push_back(device_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Uniform,
                                                             perObject,
                                                             kNumCubes * sizeof(UniformsPerObject),
                                                             ResourceStorage::Shared,
                                                             0,
-                                                            "Buffer: uniforms (per object)"),
+                                                            "Buffer: uniforms (per object)"},
                                                  nullptr));
   }
 

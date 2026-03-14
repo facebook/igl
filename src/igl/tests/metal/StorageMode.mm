@@ -46,8 +46,10 @@ class MetalStorageModeTest : public ::testing::Test {
 TEST_F(MetalStorageModeTest, PrivateStorage) {
   Result res;
 
-  BufferDesc desc(BufferDesc::BufferTypeBits::Uniform, nullptr, 256, ResourceStorage::Private);
-  desc.debugName = "privateBuffer";
+  const BufferDesc desc{.type = BufferDesc::BufferTypeBits::Uniform,
+                        .length = 256,
+                        .storage = ResourceStorage::Private,
+                        .debugName = "privateBuffer"};
 
   auto buffer = device_->createBuffer(desc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
@@ -63,8 +65,10 @@ TEST_F(MetalStorageModeTest, PrivateStorage) {
 TEST_F(MetalStorageModeTest, SharedStorage) {
   Result res;
 
-  BufferDesc desc(BufferDesc::BufferTypeBits::Uniform, nullptr, 256, ResourceStorage::Shared);
-  desc.debugName = "sharedBuffer";
+  const BufferDesc desc{.type = BufferDesc::BufferTypeBits::Uniform,
+                        .length = 256,
+                        .storage = ResourceStorage::Shared,
+                        .debugName = "sharedBuffer"};
 
   auto buffer = device_->createBuffer(desc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;

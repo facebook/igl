@@ -205,11 +205,12 @@ void HelloOpenXRSession::initialize() noexcept {
     return;
   }
   // Vertex buffer, Index buffer and Vertex Input
-  const BufferDesc vb0Desc =
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, kVertexData0, sizeof(kVertexData0));
+  const BufferDesc vb0Desc{.type = BufferDesc::BufferTypeBits::Vertex,
+                           .data = kVertexData0,
+                           .length = sizeof(kVertexData0)};
   vb0_ = device.createBuffer(vb0Desc, nullptr);
-  const BufferDesc ibDesc =
-      BufferDesc(BufferDesc::BufferTypeBits::Index, kIndexData, sizeof(kIndexData));
+  const BufferDesc ibDesc{
+      .type = BufferDesc::BufferTypeBits::Index, .data = kIndexData, .length = sizeof(kIndexData)};
   ib0_ = device.createBuffer(ibDesc, nullptr);
 
   const VertexInputStateDesc inputDesc = {

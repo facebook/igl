@@ -209,13 +209,17 @@ void MultiDrawIndexedIndirectSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
   // Vertex buffer (all shapes share one buffer)
-  vertexBuffer_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData)), nullptr);
+  vertexBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                                 .data = vertexData,
+                                                 .length = sizeof(vertexData)},
+                                      nullptr);
   IGL_DEBUG_ASSERT(vertexBuffer_ != nullptr);
 
   // Index buffer (indices for all shapes consecutively)
-  indexBuffer_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)), nullptr);
+  indexBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                                .data = indexData,
+                                                .length = sizeof(indexData)},
+                                     nullptr);
   IGL_DEBUG_ASSERT(indexBuffer_ != nullptr);
 
   // Indirect buffer with 3 DrawElementsIndirectCommand entries

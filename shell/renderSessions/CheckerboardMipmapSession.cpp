@@ -70,14 +70,16 @@ BufferDesc getVertexBufferDesc(const igl::IDevice& device) {
                                     // @fb-only
                                     // @fb-only
                                     // @fb-only
-    // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
+    return BufferDesc{// @fb-only
+                      // @fb-only
+                      // @fb-only
+                      // @fb-only
+                      // @fb-only
   // @fb-only
 // @fb-only
-  return {BufferDesc::BufferTypeBits::Vertex, kVertexData, sizeof(kVertexData)};
+  return {.type = BufferDesc::BufferTypeBits::Vertex,
+          .data = kVertexData,
+          .length = sizeof(kVertexData)};
 }
 
 uint32_t getVertexBufferIndex(const igl::IDevice& device) {
@@ -95,7 +97,7 @@ ResourceStorage getIndexBufferResourceStorage(const igl::IDevice& device) {
     // @fb-only
   // @fb-only
 // @fb-only
-  return igl::ResourceStorage::Invalid;
+  return igl::BufferDesc{}.storage;
 }
 
 std::string getVersion() {
@@ -257,12 +259,11 @@ void CheckerboardMipmapSession::initialize() noexcept {
   vb0_ = device.createBuffer(vb0Desc, nullptr);
   IGL_DEBUG_ASSERT(vb0_ != nullptr);
 
-  const BufferDesc ibDesc = BufferDesc(BufferDesc::BufferTypeBits::Index,
-                                       kIndexData,
-                                       sizeof(kIndexData),
-                                       getIndexBufferResourceStorage(device),
-                                       0,
-                                       "index");
+  const BufferDesc ibDesc{.type = BufferDesc::BufferTypeBits::Index,
+                          .data = kIndexData,
+                          .length = sizeof(kIndexData),
+                          .storage = getIndexBufferResourceStorage(device),
+                          .debugName = "index"};
   ib0_ = device.createBuffer(ibDesc, nullptr);
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
@@ -368,8 +369,9 @@ void CheckerboardMipmapSession::update(SurfaceTextures surfaceTextures) noexcept
 
   // Create uniform buffer for platforms that need it (Metal, Vulkan, etc.)
   if (getPlatform().getDevice().hasFeature(DeviceFeatures::UniformBlocks) && !mvpUniformBuffer_) {
-    const BufferDesc bufDesc = BufferDesc(
-        BufferDesc::BufferTypeBits::Uniform, nullptr, sizeof(glm::mat4), ResourceStorage::Shared);
+    const BufferDesc bufDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                             .length = sizeof(glm::mat4),
+                             .storage = ResourceStorage::Shared};
     mvpUniformBuffer_ = getPlatform().getDevice().createBuffer(bufDesc, &ret);
     IGL_DEBUG_ASSERT(mvpUniformBuffer_ != nullptr);
   }

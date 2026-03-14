@@ -215,7 +215,9 @@ void DrawInstancedSession::initialize() noexcept {
   // Create Index Buffer
   const int16_t indexes[6] = {0, 1, 2, 3, 4, 5};
   indexBuffer_ = getPlatform().getDevice().createBuffer(
-      BufferDesc{BufferDesc::BufferTypeBits::Index, &indexes, sizeof(indexes)}, nullptr);
+      BufferDesc{
+          .type = BufferDesc::BufferTypeBits::Index, .data = &indexes, .length = sizeof(indexes)},
+      nullptr);
   IGL_DEBUG_ASSERT(indexBuffer_);
 }
 
@@ -289,7 +291,9 @@ void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
     }
 
     vertexBuffer_ = getPlatform().getDevice().createBuffer(
-        BufferDesc{BufferDesc::BufferTypeBits::Vertex, translations, sizeof(glm::vec2) * 100},
+        BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                   .data = translations,
+                   .length = sizeof(glm::vec2) * 100},
         nullptr);
     IGL_DEBUG_ASSERT(vertexBuffer_);
   }

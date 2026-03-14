@@ -244,18 +244,18 @@ struct DrawableData {
     const size_t kMaxVertexBufferSize = kMaxVertices * sizeof(ImDrawVert);
     const size_t kMaxIndexBufferSize = kMaxVertices * sizeof(ImDrawIdx);
 
-    const igl::BufferDesc vbDesc(igl::BufferDesc::BufferTypeBits::Vertex,
-                                 nullptr,
-                                 kMaxVertexBufferSize,
-                                 igl::ResourceStorage::Shared,
-                                 0,
-                                 "vertex (" + material->name + ")");
-    const igl::BufferDesc ibDesc(igl::BufferDesc::BufferTypeBits::Index,
-                                 nullptr,
-                                 kMaxIndexBufferSize,
-                                 igl::ResourceStorage::Shared,
-                                 0,
-                                 "index (" + material->name + ")");
+    const igl::BufferDesc vbDesc{.type = igl::BufferDesc::BufferTypeBits::Vertex,
+                                 .data = nullptr,
+                                 .length = kMaxVertexBufferSize,
+                                 .storage = igl::ResourceStorage::Shared,
+                                 .hint = 0,
+                                 .debugName = "vertex (" + material->name + ")"};
+    const igl::BufferDesc ibDesc{.type = igl::BufferDesc::BufferTypeBits::Index,
+                                 .data = nullptr,
+                                 .length = kMaxIndexBufferSize,
+                                 .storage = igl::ResourceStorage::Shared,
+                                 .hint = 0,
+                                 .debugName = "index (" + material->name + ")"};
 
     iglu::vertexdata::PrimitiveDesc primitiveDesc;
     primitiveDesc.numEntries = 0;

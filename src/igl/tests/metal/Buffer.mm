@@ -51,8 +51,11 @@ TEST_F(MetalBufferTest, CreateBufferWithData) {
   const float data[] = {1.0f, 2.0f, 3.0f, 4.0f};
   const size_t dataSize = sizeof(data);
 
-  BufferDesc desc(BufferDesc::BufferTypeBits::Uniform, data, dataSize, ResourceStorage::Shared);
-  desc.debugName = "testBufferWithData";
+  const BufferDesc desc{.type = BufferDesc::BufferTypeBits::Uniform,
+                        .data = data,
+                        .length = dataSize,
+                        .storage = ResourceStorage::Shared,
+                        .debugName = "testBufferWithData"};
 
   Result res;
   auto buffer = device_->createBuffer(desc, &res);
@@ -81,9 +84,10 @@ TEST_F(MetalBufferTest, CreateBufferWithData) {
 TEST_F(MetalBufferTest, CreateBufferEmpty) {
   const size_t bufferSize = 256;
 
-  BufferDesc desc(
-      BufferDesc::BufferTypeBits::Uniform, nullptr, bufferSize, ResourceStorage::Shared);
-  desc.debugName = "testBufferEmpty";
+  const BufferDesc desc{.type = BufferDesc::BufferTypeBits::Uniform,
+                        .length = bufferSize,
+                        .storage = ResourceStorage::Shared,
+                        .debugName = "testBufferEmpty"};
 
   Result res;
   auto buffer = device_->createBuffer(desc, &res);
@@ -100,9 +104,10 @@ TEST_F(MetalBufferTest, CreateBufferEmpty) {
 TEST_F(MetalBufferTest, BufferUploadAndVerify) {
   const size_t bufferSize = 4 * sizeof(float);
 
-  BufferDesc desc(
-      BufferDesc::BufferTypeBits::Uniform, nullptr, bufferSize, ResourceStorage::Shared);
-  desc.debugName = "testBufferUpload";
+  const BufferDesc desc{.type = BufferDesc::BufferTypeBits::Uniform,
+                        .length = bufferSize,
+                        .storage = ResourceStorage::Shared,
+                        .debugName = "testBufferUpload"};
 
   Result res;
   auto buffer = device_->createBuffer(desc, &res);
@@ -132,9 +137,10 @@ TEST_F(MetalBufferTest, BufferUploadAndVerify) {
 TEST_F(MetalBufferTest, BufferMapUnmap) {
   const size_t bufferSize = 4 * sizeof(float);
 
-  BufferDesc desc(
-      BufferDesc::BufferTypeBits::Uniform, nullptr, bufferSize, ResourceStorage::Shared);
-  desc.debugName = "testMapUnmap";
+  const BufferDesc desc{.type = BufferDesc::BufferTypeBits::Uniform,
+                        .length = bufferSize,
+                        .storage = ResourceStorage::Shared,
+                        .debugName = "testMapUnmap"};
 
   Result res;
   auto buffer = device_->createBuffer(desc, &res);
@@ -171,9 +177,10 @@ TEST_F(MetalBufferTest, BufferMapUnmap) {
 TEST_F(MetalBufferTest, StorageModeShared) {
   const size_t bufferSize = 64;
 
-  BufferDesc desc(
-      BufferDesc::BufferTypeBits::Uniform, nullptr, bufferSize, ResourceStorage::Shared);
-  desc.debugName = "testSharedStorage";
+  const BufferDesc desc{.type = BufferDesc::BufferTypeBits::Uniform,
+                        .length = bufferSize,
+                        .storage = ResourceStorage::Shared,
+                        .debugName = "testSharedStorage"};
 
   Result res;
   auto buffer = device_->createBuffer(desc, &res);
@@ -190,10 +197,11 @@ TEST_F(MetalBufferTest, StorageModeShared) {
 TEST_F(MetalBufferTest, RingBufferCreation) {
   const size_t bufferSize = 256;
 
-  BufferDesc desc(
-      BufferDesc::BufferTypeBits::Uniform, nullptr, bufferSize, ResourceStorage::Shared);
-  desc.hint = BufferDesc::BufferAPIHintBits::Ring;
-  desc.debugName = "testRingBuffer";
+  const BufferDesc desc{.type = BufferDesc::BufferTypeBits::Uniform,
+                        .length = bufferSize,
+                        .storage = ResourceStorage::Shared,
+                        .hint = BufferDesc::BufferAPIHintBits::Ring,
+                        .debugName = "testRingBuffer"};
 
   Result res;
   auto buffer = device_->createBuffer(desc, &res);

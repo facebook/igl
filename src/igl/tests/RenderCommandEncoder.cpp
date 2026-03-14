@@ -718,12 +718,12 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStripCopyTextureToBuffer) {
   Result ret;
 
   std ::shared_ptr<IBuffer> screenCopy =
-      iglDev_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Storage,
+      iglDev_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Storage,
                                        nullptr,
                                        OFFSCREEN_RT_WIDTH * OFFSCREEN_RT_HEIGHT * sizeof(uint32_t),
                                        ResourceStorage::Shared,
                                        0,
-                                       "Buffer: screen copy"),
+                                       "Buffer: screen copy"},
                             &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 

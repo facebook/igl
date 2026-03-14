@@ -89,19 +89,19 @@ TEST_F(ResourceOGLTest, UniformBufferInitialize) {
   // Test dynamic draw setup.
   char data[100];
   BufferDesc desc =
-      BufferDesc(BufferDesc::BufferTypeBits::Uniform, &data, sizeof(data), ResourceStorage::Shared);
+      BufferDesc{BufferDesc::BufferTypeBits::Uniform, &data, sizeof(data), ResourceStorage::Shared};
   Result res;
   auto framebuffer = ResourceOGLTest::iglDev_->createBuffer(desc, &res);
   ASSERT_EQ(res.code, Result::Code::Ok);
   ASSERT_EQ(framebuffer->getSizeInBytes(), sizeof(data));
 
   // Test dynamic draw setup.
-  desc = BufferDesc(BufferDesc::BufferTypeBits::Uniform, &data, 0, ResourceStorage::Shared);
+  desc = BufferDesc{BufferDesc::BufferTypeBits::Uniform, &data, 0, ResourceStorage::Shared};
   framebuffer = ResourceOGLTest::iglDev_->createBuffer(desc, &res);
   ASSERT_EQ(res.code, Result::Code::ArgumentOutOfRange);
   ASSERT_EQ(framebuffer->getSizeInBytes(), 0);
 
-  desc = BufferDesc(BufferDesc::BufferTypeBits::Uniform, nullptr, 0, ResourceStorage::Shared);
+  desc = BufferDesc{BufferDesc::BufferTypeBits::Uniform, nullptr, 0, ResourceStorage::Shared};
   framebuffer = ResourceOGLTest::iglDev_->createBuffer(desc, &res);
   ASSERT_EQ(res.code, Result::Code::ArgumentNull);
   ASSERT_EQ(framebuffer->getSizeInBytes(), 0);
@@ -120,7 +120,7 @@ TEST_F(ResourceOGLTest, UniformBufferUpload) {
   Result res;
   char data[150];
   const BufferDesc desc =
-      BufferDesc(BufferDesc::BufferTypeBits::Uniform, &data, sizeof(data), ResourceStorage::Shared);
+      BufferDesc{BufferDesc::BufferTypeBits::Uniform, &data, sizeof(data), ResourceStorage::Shared};
   auto framebuffer = ResourceOGLTest::iglDev_->createBuffer(desc, &res);
 
   char newData[100];
@@ -147,7 +147,7 @@ TEST_F(ResourceOGLTest, UniformBufferUpload) {
 TEST_F(ResourceOGLTest, ArrayBufferInitialize) {
   // Test dynamic draw setup.
   BufferDesc desc =
-      BufferDesc(BufferDesc::BufferTypeBits::Index, nullptr, 0, ResourceStorage::Shared);
+      BufferDesc{BufferDesc::BufferTypeBits::Index, nullptr, 0, ResourceStorage::Shared};
   Result res;
   auto framebuffer = ResourceOGLTest::iglDev_->createBuffer(desc, &res);
   ASSERT_EQ(res.code, Result::Code::Ok);
@@ -155,13 +155,13 @@ TEST_F(ResourceOGLTest, ArrayBufferInitialize) {
 
   // Test static draw setup.
   char data[100];
-  desc = BufferDesc(BufferDesc::BufferTypeBits::Index, &data, 0, ResourceStorage::Managed);
+  desc = BufferDesc{BufferDesc::BufferTypeBits::Index, &data, 0, ResourceStorage::Managed};
   framebuffer = ResourceOGLTest::iglDev_->createBuffer(desc, &res);
   ASSERT_EQ(res.code, Result::Code::Ok);
   ASSERT_EQ(framebuffer->getSizeInBytes(), 0);
 
   // Test static draw setup with null ptr to the data.
-  desc = BufferDesc(BufferDesc::BufferTypeBits::Index, nullptr, 0, ResourceStorage::Managed);
+  desc = BufferDesc{BufferDesc::BufferTypeBits::Index, nullptr, 0, ResourceStorage::Managed};
   framebuffer = ResourceOGLTest::iglDev_->createBuffer(desc, &res);
   ASSERT_EQ(res.code, Result::Code::ArgumentNull);
   ASSERT_EQ(framebuffer->getSizeInBytes(), 0);
@@ -179,14 +179,14 @@ TEST_F(ResourceOGLTest, ArrayBufferUpload) {
   // Test dynamic draw upload.
   char data[100];
   BufferDesc desc =
-      BufferDesc(BufferDesc::BufferTypeBits::Index, &data, sizeof(data), ResourceStorage::Managed);
+      BufferDesc{BufferDesc::BufferTypeBits::Index, &data, sizeof(data), ResourceStorage::Managed};
   Result res;
   auto framebuffer = ResourceOGLTest::iglDev_->createBuffer(desc, &res);
   res = framebuffer->upload(&data, BufferRange(sizeof(data), 1));
   ASSERT_EQ(res.code, Result::Code::InvalidOperation);
 
   // Test normal static draw upload.
-  desc = BufferDesc(BufferDesc::BufferTypeBits::Index, nullptr, 0, ResourceStorage::Shared);
+  desc = BufferDesc{BufferDesc::BufferTypeBits::Index, nullptr, 0, ResourceStorage::Shared};
   framebuffer = ResourceOGLTest::iglDev_->createBuffer(desc, &res);
   res = framebuffer->upload(&data, BufferRange(0L, 0L));
   ASSERT_EQ(res.code, Result::Code::Ok);

@@ -234,14 +234,16 @@ void BindlessBufferSession::initialize() noexcept {
 
   // Create vertex and index buffers.
   vertexBuffer_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex | BufferDesc::BufferTypeBits::Storage,
-                 vertexData,
-                 sizeof(vertexData)),
+      BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex | BufferDesc::BufferTypeBits::Storage,
+                 .data = vertexData,
+                 .length = sizeof(vertexData)},
       nullptr);
   IGL_DEBUG_ASSERT(vertexBuffer_ != nullptr);
 
-  indexBuffer_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)), nullptr);
+  indexBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                                .data = indexData,
+                                                .length = sizeof(indexData)},
+                                     nullptr);
   IGL_DEBUG_ASSERT(indexBuffer_ != nullptr);
 
   // When buffer device address is used, vertex data is fetched via buffer_reference

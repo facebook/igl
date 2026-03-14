@@ -166,11 +166,15 @@ void HelloWorldSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
   // Vertex & Index buffer
-  vb0_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData)), nullptr);
+  vb0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                        .data = vertexData,
+                                        .length = sizeof(vertexData)},
+                             nullptr);
   IGL_DEBUG_ASSERT(vb0_ != nullptr);
-  ib0_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)), nullptr);
+  ib0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                        .data = indexData,
+                                        .length = sizeof(indexData)},
+                             nullptr);
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
   vertexInput0_ = device.createVertexInputState(

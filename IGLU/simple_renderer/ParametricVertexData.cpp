@@ -61,12 +61,12 @@ std::shared_ptr<VertexData> create(igl::IDevice& device,
   };
   const std::array indexData{uint16_t{0}, uint16_t{1}, uint16_t{2}, uint16_t{3}};
 
-  const igl::BufferDesc vbDesc(igl::BufferDesc::BufferTypeBits::Vertex,
-                               vertexData.data(),
-                               sizeof(VertexPosUv) * vertexData.size());
-  const igl::BufferDesc ibDesc(igl::BufferDesc::BufferTypeBits::Index,
-                               indexData.data(),
-                               sizeof(uint16_t) * indexData.size());
+  const igl::BufferDesc vbDesc{.type = igl::BufferDesc::BufferTypeBits::Vertex,
+                               .data = vertexData.data(),
+                               .length = sizeof(VertexPosUv) * vertexData.size()};
+  const igl::BufferDesc ibDesc{.type = igl::BufferDesc::BufferTypeBits::Index,
+                               .data = indexData.data(),
+                               .length = sizeof(uint16_t) * indexData.size()};
 
   const igl::VertexInputStateDesc inputDesc = inputStateDesc();
   const std::shared_ptr<igl::IVertexInputState> vertexInput =

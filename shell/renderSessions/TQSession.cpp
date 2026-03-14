@@ -246,14 +246,16 @@ BufferDesc getVertexBufferDesc(const igl::IDevice& device, const VertexPosUv* ve
                                     // @fb-only
                                     // @fb-only
                                     // @fb-only
-    // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
+    return BufferDesc{// @fb-only
+                      // @fb-only
+                      // @fb-only
+                      // @fb-only
+                      // @fb-only
   // @fb-only
 // @fb-only
-  return {BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(VertexPosUv) * 4};
+  return {.type = BufferDesc::BufferTypeBits::Vertex,
+          .data = vertexData,
+          .length = sizeof(VertexPosUv) * 4};
 }
 
 uint32_t getVertexBufferIndex(const igl::IDevice& device) {
@@ -271,7 +273,7 @@ ResourceStorage getIndexBufferResourceStorage(const igl::IDevice& device) {
     // @fb-only
   // @fb-only
 // @fb-only
-  return igl::ResourceStorage::Invalid;
+  return igl::BufferDesc{}.storage;
 }
 } // namespace
 
@@ -289,10 +291,10 @@ void TQSession::initialize() noexcept {
   vb0_ = device.createBuffer(vbDesc, nullptr);
   IGL_DEBUG_ASSERT(vb0_ != nullptr);
   const uint16_t indexData[] = {0, 1, 2, 1, 3, 2};
-  const BufferDesc ibDesc = BufferDesc(BufferDesc::BufferTypeBits::Index,
-                                       indexData,
-                                       sizeof(indexData),
-                                       getIndexBufferResourceStorage(device));
+  const BufferDesc ibDesc{.type = BufferDesc::BufferTypeBits::Index,
+                          .data = indexData,
+                          .length = sizeof(indexData),
+                          .storage = getIndexBufferResourceStorage(device)};
   ib0_ = device.createBuffer(ibDesc, nullptr);
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
@@ -360,10 +362,12 @@ void TQSession::initialize() noexcept {
   // init uniforms
   fragmentParameters_ = FragmentFormat{{1.0f, 1.0f, 1.0f}};
 
-  const BufferDesc fpDesc(BufferDesc::BufferTypeBits::Uniform,
-                          &fragmentParameters_,
-                          sizeof(fragmentParameters_),
-                          ResourceStorage::Shared);
+  const BufferDesc fpDesc{
+      .type = BufferDesc::BufferTypeBits::Uniform,
+      .data = &fragmentParameters_,
+      .length = sizeof(fragmentParameters_),
+      .storage = ResourceStorage::Shared,
+  };
 
   fragmentParamBuffer_ = device.createBuffer(fpDesc, nullptr);
   IGL_DEBUG_ASSERT(fragmentParamBuffer_ != nullptr);

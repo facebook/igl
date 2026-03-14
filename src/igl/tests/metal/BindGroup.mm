@@ -76,8 +76,10 @@ TEST_F(MetalBindGroupTest, CreateBufferBindGroup) {
 
   // Create a buffer
   const float data[] = {1.0f, 2.0f, 3.0f, 4.0f};
-  BufferDesc bufDesc(
-      BufferDesc::BufferTypeBits::Uniform, data, sizeof(data), ResourceStorage::Shared);
+  const BufferDesc bufDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                           .data = data,
+                           .length = sizeof(data),
+                           .storage = ResourceStorage::Shared};
   auto buffer = device_->createBuffer(bufDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
 

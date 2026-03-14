@@ -56,19 +56,17 @@ BufferDesc getVertexBufferDesc(const igl::IDevice& device) {
                                     // @fb-only
                                     // @fb-only
                                     // @fb-only
-    // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
+    return BufferDesc{// @fb-only
+                      // @fb-only
+                      // @fb-only
+                      // @fb-only
+                      // @fb-only
   // @fb-only
 // @fb-only
-  return {BufferDesc::BufferTypeBits::Vertex,
-          kVertexData,
-          sizeof(kVertexData),
-          ResourceStorage::Invalid,
-          0,
-          "vertex"};
+  return {.type = BufferDesc::BufferTypeBits::Vertex,
+          .data = kVertexData,
+          .length = sizeof(kVertexData),
+          .debugName = "vertex"};
 }
 
 uint32_t getVertexBufferIndex(const igl::IDevice& device) {
@@ -86,7 +84,7 @@ ResourceStorage getIndexBufferResourceStorage(const igl::IDevice& device) {
     // @fb-only
   // @fb-only
 // @fb-only
-  return igl::ResourceStorage::Invalid;
+  return igl::BufferDesc{}.storage;
 }
 } // namespace
 
@@ -490,12 +488,11 @@ void ColorSession::initialize() noexcept {
   // Vertex & Index buffer
   vb0_ = device.createBuffer(getVertexBufferDesc(device), nullptr);
   IGL_DEBUG_ASSERT(vb0_ != nullptr);
-  ib0_ = device.createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Index,
-                                        kIndexData,
-                                        sizeof(kIndexData),
-                                        getIndexBufferResourceStorage(device),
-                                        0,
-                                        "index"},
+  ib0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                        .data = kIndexData,
+                                        .length = sizeof(kIndexData),
+                                        .storage = getIndexBufferResourceStorage(device),
+                                        .debugName = "index"},
                              nullptr);
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
@@ -569,12 +566,11 @@ void ColorSession::initialize() noexcept {
                                   ? gpuLinearOrangeColor
                                   : iglu::simdtypes::float3{1.0f, 1.0f, 1.0f};
 
-  fragmentParamBuffer_ = device.createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Uniform,
-                                                        &fragmentParameters_,
-                                                        sizeof(fragmentParameters_),
-                                                        ResourceStorage::Shared,
-                                                        0,
-                                                        "uniforms"},
+  fragmentParamBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                                                        .data = &fragmentParameters_,
+                                                        .length = sizeof(fragmentParameters_),
+                                                        .storage = ResourceStorage::Shared,
+                                                        .debugName = "uniforms"},
                                              nullptr);
   IGL_DEBUG_ASSERT(fragmentParamBuffer_ != nullptr);
 }

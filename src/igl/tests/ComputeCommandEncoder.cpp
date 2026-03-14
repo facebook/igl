@@ -48,15 +48,18 @@ class ComputeCommandEncoderTest : public ::testing::Test {
       return;
     }
 
-    const BufferDesc vbInDesc = BufferDesc(
-        BufferDesc::BufferTypeBits::Storage, dataIn.data(), sizeof(float) * dataIn.size());
+    const BufferDesc vbInDesc{.type = BufferDesc::BufferTypeBits::Storage,
+                              .data = dataIn.data(),
+                              .length = sizeof(float) * dataIn.size()};
     bufferIn_ = iglDev_->createBuffer(vbInDesc, nullptr);
     ASSERT_TRUE(bufferIn_ != nullptr);
     // Use ResourceStorage::Shared for output buffers so they can be mapped for reading
-    const BufferDesc bufferOutDesc = BufferDesc(BufferDesc::BufferTypeBits::Storage,
-                                                nullptr,
-                                                sizeof(float) * dataIn.size(),
-                                                ResourceStorage::Shared);
+    const BufferDesc bufferOutDesc = BufferDesc{
+        .type = BufferDesc::BufferTypeBits::Storage,
+        .data = nullptr,
+        .length = sizeof(float) * dataIn.size(),
+        .storage = ResourceStorage::Shared,
+    };
     bufferOut0_ = iglDev_->createBuffer(bufferOutDesc, nullptr);
     ASSERT_TRUE(bufferOut0_ != nullptr);
     bufferOut1_ = iglDev_->createBuffer(bufferOutDesc, nullptr);
@@ -267,20 +270,20 @@ TEST_F(ComputeCommandEncoderTest, copyBuffer) {
 
   std::vector<uint8_t> dataIn2 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 10};
 
-  auto bufferSrc = iglDev_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Storage,
-                                                    dataIn2.data(),
-                                                    dataIn2.size(),
-                                                    ResourceStorage::Private,
-                                                    0,
-                                                    "bufferSrc"),
+  auto bufferSrc = iglDev_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Storage,
+                                                    .data = dataIn2.data(),
+                                                    .length = dataIn2.size(),
+                                                    .storage = ResourceStorage::Private,
+                                                    .hint = 0,
+                                                    .debugName = "bufferSrc"},
                                          nullptr);
 
-  auto bufferDst = iglDev_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Storage,
-                                                    nullptr,
-                                                    dataIn2.size(),
-                                                    ResourceStorage::Shared,
-                                                    0,
-                                                    "bufferDst"),
+  auto bufferDst = iglDev_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Storage,
+                                                    .data = nullptr,
+                                                    .length = dataIn2.size(),
+                                                    .storage = ResourceStorage::Shared,
+                                                    .hint = 0,
+                                                    .debugName = "bufferDst"},
                                          nullptr);
 
   {

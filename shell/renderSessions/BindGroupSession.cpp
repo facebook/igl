@@ -344,10 +344,14 @@ void BindGroupSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
   // Vertex buffer, Index buffer and Vertex Input
-  vb0_ = device.createBuffer(
-      BufferDesc{BufferDesc::BufferTypeBits::Vertex, kVertexData0, sizeof(kVertexData0)}, nullptr);
-  ib0_ = device.createBuffer(
-      BufferDesc{BufferDesc::BufferTypeBits::Index, kIndexData, sizeof(kIndexData)}, nullptr);
+  vb0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                        .data = kVertexData0,
+                                        .length = sizeof(kVertexData0)},
+                             nullptr);
+  ib0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                        .data = kIndexData,
+                                        .length = sizeof(kIndexData)},
+                             nullptr);
 
   const VertexInputStateDesc inputDesc = {
       .numAttributes = 3,

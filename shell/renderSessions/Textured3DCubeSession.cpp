@@ -298,10 +298,14 @@ void Textured3DCubeSession::initialize() noexcept {
     return;
   }
   // Vertex buffer, Index buffer and Vertex Input
-  vb0_ = device.createBuffer(
-      BufferDesc{BufferDesc::BufferTypeBits::Vertex, vertexData0, sizeof(vertexData0)}, nullptr);
-  ib0_ = device.createBuffer(
-      BufferDesc{BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)}, nullptr);
+  vb0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                        .data = vertexData0,
+                                        .length = sizeof(vertexData0)},
+                             nullptr);
+  ib0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                        .data = indexData,
+                                        .length = sizeof(indexData)},
+                             nullptr);
 
   const VertexInputStateDesc inputDesc = {
       .numAttributes = 2,

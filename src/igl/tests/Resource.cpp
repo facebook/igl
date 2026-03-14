@@ -92,7 +92,7 @@ TEST_F(ResourceTest, VertexBuffer) {
   Result ret;
   float vertexData[] = {1.0};
   const BufferDesc bufferDesc =
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData));
+      BufferDesc{BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData)};
   const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -108,8 +108,8 @@ TEST_F(ResourceTest, UninitializedVertexBuffer) {
   Result ret;
 
   const int bufferLength = 64;
-  const BufferDesc bufferDesc = BufferDesc(
-      BufferDesc::BufferTypeBits::Vertex, nullptr, bufferLength, ResourceStorage::Shared);
+  const BufferDesc bufferDesc = BufferDesc{
+      BufferDesc::BufferTypeBits::Vertex, nullptr, bufferLength, ResourceStorage::Shared};
   const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -133,7 +133,7 @@ TEST_F(ResourceTest, IndexBuffer) {
       2,
   };
   const BufferDesc bufferDesc =
-      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
+      BufferDesc{BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)};
   const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);

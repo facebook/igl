@@ -93,12 +93,12 @@ void TinyRenderer::init() {
     };
 
     const BufferDesc vertexBufferDesc =
-        BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData));
+        BufferDesc{BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData)};
     vertexBuffer_ = device_->createBuffer(vertexBufferDesc, &result);
     throwOnBadResult(result);
 
     const BufferDesc indexBufferDesc =
-        BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
+        BufferDesc{BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)};
     indexBuffer_ = device_->createBuffer(indexBufferDesc, &result);
     throwOnBadResult(result);
 

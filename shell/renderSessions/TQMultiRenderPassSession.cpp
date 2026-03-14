@@ -221,12 +221,18 @@ void TQMultiRenderPassSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
   // Vertex buffer, Index buffer and Vertex Input
-  vb0_ = device.createBuffer(
-      BufferDesc{BufferDesc::BufferTypeBits::Vertex, vertexData0, sizeof(vertexData0)}, nullptr);
-  vb1_ = device.createBuffer(
-      BufferDesc{BufferDesc::BufferTypeBits::Vertex, vertexData1, sizeof(vertexData1)}, nullptr);
-  ib0_ = device.createBuffer(
-      BufferDesc{BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)}, nullptr);
+  vb0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                        .data = vertexData0,
+                                        .length = sizeof(vertexData0)},
+                             nullptr);
+  vb1_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                        .data = vertexData1,
+                                        .length = sizeof(vertexData1)},
+                             nullptr);
+  ib0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                        .data = indexData,
+                                        .length = sizeof(indexData)},
+                             nullptr);
 
   const VertexInputStateDesc inputDesc = {
       .numAttributes = 2,
@@ -299,10 +305,10 @@ void TQMultiRenderPassSession::initialize() noexcept {
   // init uniforms
   fragmentParameters_ = FragmentFormat{{1.0f, 1.0f, 1.0f}};
 
-  fragmentParamBuffer_ = device.createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
-                                                        &fragmentParameters_,
-                                                        sizeof(fragmentParameters_),
-                                                        ResourceStorage::Shared),
+  fragmentParamBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                                                        .data = &fragmentParameters_,
+                                                        .length = sizeof(fragmentParameters_),
+                                                        .storage = ResourceStorage::Shared},
                                              nullptr);
 }
 

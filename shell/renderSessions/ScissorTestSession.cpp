@@ -202,20 +202,28 @@ void ScissorTestSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
   // Create 4 vertex buffers, one for each colored quad
-  redVertexBuffer_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, redQuadData, sizeof(redQuadData)), nullptr);
-  greenVertexBuffer_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, greenQuadData, sizeof(greenQuadData)),
-      nullptr);
-  blueVertexBuffer_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, blueQuadData, sizeof(blueQuadData)), nullptr);
-  yellowVertexBuffer_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, yellowQuadData, sizeof(yellowQuadData)),
-      nullptr);
+  redVertexBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                                    .data = redQuadData,
+                                                    .length = sizeof(redQuadData)},
+                                         nullptr);
+  greenVertexBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                                      .data = greenQuadData,
+                                                      .length = sizeof(greenQuadData)},
+                                           nullptr);
+  blueVertexBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                                     .data = blueQuadData,
+                                                     .length = sizeof(blueQuadData)},
+                                          nullptr);
+  yellowVertexBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                                       .data = yellowQuadData,
+                                                       .length = sizeof(yellowQuadData)},
+                                            nullptr);
 
   // Shared index buffer for all quads
-  indexBuffer_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Index, quadIndices, sizeof(quadIndices)), nullptr);
+  indexBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                                .data = quadIndices,
+                                                .length = sizeof(quadIndices)},
+                                     nullptr);
   IGL_DEBUG_ASSERT(indexBuffer_ != nullptr);
 
   vertexInputState_ = device.createVertexInputState(

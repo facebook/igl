@@ -55,6 +55,13 @@ struct BufferDesc {
   };
 
   using BufferAPIHint = uint8_t;
+
+  /**
+   * @brief A bit mask of BufferTypeBits. All usage types must be specified.
+   * @See  igl::BufferType
+   */
+  BufferType type = 0;
+
   /** @brief Data to upload at the time of creation. Can be nullptr. */
   const void* IGL_NULLABLE data = nullptr;
 
@@ -65,17 +72,16 @@ struct BufferDesc {
    * @brief Storage mode.
    * @See igl::ResourceStorage
    */
-  ResourceStorage storage = ResourceStorage::Invalid;
+#if IGL_PLATFORM_MACOSX
+  ResourceStorage storage = ResourceStorage::Managed;
+#else
+  ResourceStorage storage = ResourceStorage::Shared;
+#endif
   /**
    * @brief Backend API hint flags.
    *
    */
   BufferAPIHint hint = 0;
-  /**
-   * @brief A bit mask of BufferTypeBits. All usage types must be specified.
-   * @See  igl::BufferType
-   */
-  BufferType type = 0;
 
   /** @brief Identifier used for debugging */
   std::string debugName;
@@ -94,28 +100,6 @@ struct BufferDesc {
    * float / uint elements.
    */
   size_t storageStride = 0;
-
-  BufferDesc(BufferType type = 0,
-             const void* IGL_NULLABLE data = nullptr,
-             size_t length = 0,
-             ResourceStorage storageIn = ResourceStorage::Invalid,
-             BufferAPIHint hint = 0,
-             std::string debugName = std::string()) :
-    data(data),
-    length(length),
-    storage(storageIn),
-    hint(hint),
-    type(type),
-    debugName(std::move(debugName)) {
-    if (storage == ResourceStorage::Invalid) {
-#if IGL_PLATFORM_MACOSX
-      storage = ResourceStorage::Managed;
-#else
-      storage = ResourceStorage::Shared;
-#endif
-    }
-    // We fallback to the old UniformBuffer for OpenGL by default
-  }
 };
 
 class IBuffer : public ITrackedResource<IBuffer> {

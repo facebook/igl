@@ -165,16 +165,17 @@ void BufferMappingSession::initialize() noexcept {
   // Vertex buffer: use ResourceStorage::Shared so it can be mapped for CPU writes each frame.
   // Unlike HelloWorldSession which uploads static data at creation time, we pass nullptr here
   // and will fill the buffer via map()/unmap() every frame.
-  vertexBuffer_ = device.createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Vertex,
-                                                 nullptr,
-                                                 sizeof(VertexPosColor) * 3,
-                                                 ResourceStorage::Shared),
+  vertexBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                                 .length = sizeof(VertexPosColor) * 3,
+                                                 .storage = ResourceStorage::Shared},
                                       nullptr);
   IGL_DEBUG_ASSERT(vertexBuffer_ != nullptr);
 
   // Index buffer (static, does not need mapping)
-  indexBuffer_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)), nullptr);
+  indexBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                                .data = indexData,
+                                                .length = sizeof(indexData)},
+                                     nullptr);
   IGL_DEBUG_ASSERT(indexBuffer_ != nullptr);
 
   vertexInputState_ = device.createVertexInputState(

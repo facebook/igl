@@ -279,7 +279,7 @@ TEST_F(DeviceVulkanTest, BufferDeviceAddress) {
   Result ret;
 
   auto buffer = iglDev_->createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Uniform, nullptr, 256, ResourceStorage::Shared), &ret);
+      BufferDesc{BufferDesc::BufferTypeBits::Uniform, nullptr, 256, ResourceStorage::Shared}, &ret);
 
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(buffer, nullptr);

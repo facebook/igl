@@ -577,12 +577,13 @@ void GPUStressSession::createCubes() {
   }
 
   auto& device = getPlatform().getDevice();
-  const BufferDesc vb0Desc = BufferDesc(BufferDesc::BufferTypeBits::Vertex,
-                                        vertexData_.data(),
-                                        sizeof(VertexPosUvw) * vertexData_.size());
+  const BufferDesc vb0Desc{.type = BufferDesc::BufferTypeBits::Vertex,
+                           .data = vertexData_.data(),
+                           .length = sizeof(VertexPosUvw) * vertexData_.size()};
   vb0_ = device.createBuffer(vb0Desc, nullptr);
-  const BufferDesc ibDesc = BufferDesc(
-      BufferDesc::BufferTypeBits::Index, indexData_.data(), sizeof(uint16_t) * indexData_.size());
+  const BufferDesc ibDesc{.type = BufferDesc::BufferTypeBits::Index,
+                          .data = indexData_.data(),
+                          .length = sizeof(uint16_t) * indexData_.size()};
   ib0_ = device.createBuffer(ibDesc, nullptr);
 
   VertexInputStateDesc inputDesc = {

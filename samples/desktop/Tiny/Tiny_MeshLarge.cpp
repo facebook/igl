@@ -1260,28 +1260,28 @@ void initModel(int numSamplesMSAA) {
     // create an Uniform buffers to store uniforms for 2 objects
     for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
       ubPerFrame_.push_back(
-          device_->createBuffer(BufferDesc(bufType,
+          device_->createBuffer(BufferDesc{bufType,
                                            nullptr,
                                            sizeof(UniformsPerFrame),
                                            ResourceStorage::Shared,
                                            hint,
-                                           "uniforms (per frame) " + std::to_string(i)),
+                                           "uniforms (per frame) " + std::to_string(i)},
                                 nullptr));
       ubPerFrameShadow_.push_back(
-          device_->createBuffer(BufferDesc(bufType,
+          device_->createBuffer(BufferDesc{bufType,
                                            nullptr,
                                            sizeof(UniformsPerFrame),
                                            ResourceStorage::Shared,
                                            hint,
-                                           "uniforms (per frame shadow) " + std::to_string(i)),
+                                           "uniforms (per frame shadow) " + std::to_string(i)},
                                 nullptr));
       ubPerObject_.push_back(
-          device_->createBuffer(BufferDesc(bufType,
+          device_->createBuffer(BufferDesc{bufType,
                                            nullptr,
                                            sizeof(UniformsPerObject),
                                            ResourceStorage::Shared,
                                            hint,
-                                           "uniforms (per object) " + std::to_string(i)),
+                                           "uniforms (per object) " + std::to_string(i)},
                                 nullptr));
     }
   }
@@ -1418,27 +1418,27 @@ void initModel(int numSamplesMSAA) {
     const auto bufType = BufferDesc::BufferTypeBits::Storage;
     const auto hint = 0;
 #endif
-    sbMaterials_ = device_->createBuffer(BufferDesc(bufType,
+    sbMaterials_ = device_->createBuffer(BufferDesc{bufType,
                                                     materials_.data(),
                                                     sizeof(GPUMaterial) * materials_.size(),
                                                     ResourceStorage::Private,
                                                     hint,
-                                                    "materials"),
+                                                    "materials"},
                                          nullptr);
 
-    vb0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Vertex,
+    vb0_ = device_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Vertex,
                                             vertexData_.data(),
                                             sizeof(VertexData) * vertexData_.size(),
                                             ResourceStorage::Private,
                                             hint,
-                                            "vertex"),
+                                            "vertex"},
                                  nullptr);
-    ib0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Index,
+    ib0_ = device_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Index,
                                             indexData_.data(),
                                             sizeof(uint32_t) * indexData_.size(),
                                             ResourceStorage::Private,
                                             hint,
-                                            "index"),
+                                            "index"},
                                  nullptr);
   }
 }

@@ -202,10 +202,14 @@ void TextureViewSession::initialize() noexcept {
     std::terminate();
   }
 
-  vb_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, kVertexData, sizeof(kVertexData)), nullptr);
-  ib_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Index, kIndexData, sizeof(kIndexData)), nullptr);
+  vb_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                       .data = kVertexData,
+                                       .length = sizeof(kVertexData)},
+                            nullptr);
+  ib_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                       .data = kIndexData,
+                                       .length = sizeof(kIndexData)},
+                            nullptr);
 
   const VertexInputStateDesc inputDesc = {
       .numAttributes = 2,

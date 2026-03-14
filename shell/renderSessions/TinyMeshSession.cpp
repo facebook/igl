@@ -286,37 +286,35 @@ void TinyMeshSession::initialize() noexcept {
   device_ = &getPlatform().getDevice();
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
-  vb0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Vertex,
-                                          kVertexData0,
-                                          sizeof(kVertexData0),
-                                          ResourceStorage::Private,
-                                          0,
-                                          "Buffer: vertex"),
+  vb0_ = device_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                          .data = kVertexData0,
+                                          .length = sizeof(kVertexData0),
+                                          .storage = ResourceStorage::Private,
+                                          .debugName = "Buffer: vertex"},
                                nullptr);
-  ib0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Index,
-                                          kIndexData,
-                                          sizeof(kIndexData),
-                                          ResourceStorage::Private,
-                                          0,
-                                          "Buffer: index"),
+  ib0_ = device_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                          .data = kIndexData,
+                                          .length = sizeof(kIndexData),
+                                          .storage = ResourceStorage::Private,
+                                          .debugName = "Buffer: index"},
                                nullptr);
   // create an Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
     ubPerFrame_.push_back(
-        device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
-                                         &perFrame,
-                                         sizeof(UniformsPerFrame),
-                                         ResourceStorage::Shared,
-                                         BufferDesc::BufferAPIHintBits::UniformBlock,
-                                         "Buffer: uniforms (per frame)"),
+        device_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                                         .data = &perFrame,
+                                         .length = sizeof(UniformsPerFrame),
+                                         .storage = ResourceStorage::Shared,
+                                         .hint = BufferDesc::BufferAPIHintBits::UniformBlock,
+                                         .debugName = "Buffer: uniforms (per frame)"},
                               nullptr));
     ubPerObject_.push_back(
-        device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
-                                         perObject,
-                                         kNumCubes * sizeof(UniformsPerObject),
-                                         ResourceStorage::Shared,
-                                         BufferDesc::BufferAPIHintBits::UniformBlock,
-                                         "Buffer: uniforms (per object)"),
+        device_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                                         .data = perObject,
+                                         .length = kNumCubes * sizeof(UniformsPerObject),
+                                         .storage = ResourceStorage::Shared,
+                                         .hint = BufferDesc::BufferAPIHintBits::UniformBlock,
+                                         .debugName = "Buffer: uniforms (per object)"},
                               nullptr));
   }
 

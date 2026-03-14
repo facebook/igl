@@ -138,11 +138,15 @@ void YUVColorSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
   // Vertex & Index buffer
-  vb0_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, kVertexData, sizeof(kVertexData)), nullptr);
+  vb0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                        .data = kVertexData,
+                                        .length = sizeof(kVertexData)},
+                             nullptr);
   IGL_DEBUG_ASSERT(vb0_ != nullptr);
-  ib0_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Index, kIndexData, sizeof(kIndexData)), nullptr);
+  ib0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                        .data = kIndexData,
+                                        .length = sizeof(kIndexData)},
+                             nullptr);
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
   const VertexInputStateDesc inputDesc = {

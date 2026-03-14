@@ -168,18 +168,24 @@ void CopyOperationsSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
   // Create source vertex buffer with vertex data
-  srcVertexBuffer_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData)), nullptr);
+  srcVertexBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                                    .data = vertexData,
+                                                    .length = sizeof(vertexData)},
+                                         nullptr);
   IGL_DEBUG_ASSERT(srcVertexBuffer_ != nullptr);
 
   // Create destination vertex buffer (same size, no initial data)
-  dstVertexBuffer_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Vertex, nullptr, sizeof(vertexData)), nullptr);
+  dstVertexBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                                    .data = nullptr,
+                                                    .length = sizeof(vertexData)},
+                                         nullptr);
   IGL_DEBUG_ASSERT(dstVertexBuffer_ != nullptr);
 
   // Index buffer
-  indexBuffer_ = device.createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData)), nullptr);
+  indexBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                                .data = indexData,
+                                                .length = sizeof(indexData)},
+                                     nullptr);
   IGL_DEBUG_ASSERT(indexBuffer_ != nullptr);
 
   vertexInputState_ = device.createVertexInputState(
