@@ -37,7 +37,6 @@ const VertexPosUv kVertexData[] = {
 };
 const uint16_t kIndexData[] = {0, 1, 2, 1, 3, 2};
 
-namespace {
 // @fb-only
 // @fb-only
   // @fb-only
@@ -56,8 +55,7 @@ BufferDesc getVertexBufferDesc(const igl::IDevice& device) {
                                     // @fb-only
                                     // @fb-only
                                     // @fb-only
-    return BufferDesc{// @fb-only
-                      // @fb-only
+    // @fb-only
                       // @fb-only
                       // @fb-only
                       // @fb-only
@@ -86,7 +84,6 @@ ResourceStorage getIndexBufferResourceStorage(const igl::IDevice& device) {
 // @fb-only
   return igl::BufferDesc{}.storage;
 }
-} // namespace
 
 std::string getVersion() {
   return "#version 100";

@@ -70,8 +70,7 @@ BufferDesc getVertexBufferDesc(const igl::IDevice& device) {
                                     // @fb-only
                                     // @fb-only
                                     // @fb-only
-    return BufferDesc{// @fb-only
-                      // @fb-only
+    // @fb-only
                       // @fb-only
                       // @fb-only
                       // @fb-only

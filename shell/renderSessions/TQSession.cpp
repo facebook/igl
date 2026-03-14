@@ -246,8 +246,7 @@ BufferDesc getVertexBufferDesc(const igl::IDevice& device, const VertexPosUv* ve
                                     // @fb-only
                                     // @fb-only
                                     // @fb-only
-    return BufferDesc{// @fb-only
-                      // @fb-only
+    // @fb-only
                       // @fb-only
                       // @fb-only
                       // @fb-only
