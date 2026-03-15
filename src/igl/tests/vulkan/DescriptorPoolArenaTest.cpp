@@ -158,27 +158,36 @@ class DescriptorPoolArenaTest : public ::testing::Test {
     // Vertex buffer (single triangle: 3 vertices x Float4)
     const float verts[] = {
         0.0f, 0.5f, 0.0f, 1.0f, -0.5f, -0.5f, 0.0f, 1.0f, 0.5f, -0.5f, 0.0f, 1.0f};
-    vb_ = iglDev_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
-                                           .data = verts,
-                                           .length = sizeof(verts)},
-                                &ret);
+    vb_ = iglDev_->createBuffer(
+        BufferDesc{
+            .type = BufferDesc::BufferTypeBits::Vertex,
+            .data = verts,
+            .length = sizeof(verts),
+        },
+        &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_NE(vb_, nullptr);
 
     // UV buffer (3 vertices x Float2)
     const float uvs[] = {0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f};
     uv_ = iglDev_->createBuffer(
-        BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex, .data = uvs, .length = sizeof(uvs)},
+        BufferDesc{
+            .type = BufferDesc::BufferTypeBits::Vertex,
+            .data = uvs,
+            .length = sizeof(uvs),
+        },
         &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_NE(uv_, nullptr);
 
     // Uniform buffer (256 bytes, for buffer binding test)
-    uniformBuf_ = iglDev_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
-                                                   .data = nullptr,
-                                                   .length = 256,
-                                                   .storage = ResourceStorage::Shared},
-                                        &ret);
+    uniformBuf_ = iglDev_->createBuffer(
+        BufferDesc{
+            .type = BufferDesc::BufferTypeBits::Uniform,
+            .length = 256,
+            .storage = ResourceStorage::Shared,
+        },
+        &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_NE(uniformBuf_, nullptr);
     const std::vector<float> uniformData(64, 1.0f);
