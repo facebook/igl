@@ -468,6 +468,7 @@ std::unique_ptr<IShaderStages> FireworksSession::getShaderStagesForBackend(IDevi
                                                            "",
                                                            nullptr);
   case igl::BackendType::OpenGL: {
+#if IGL_BACKEND_OPENGL
     auto glVersion =
         static_cast<igl::opengl::Device&>(device).getContext().deviceFeatures().getGLVersion();
 
@@ -528,6 +529,9 @@ void main() {
 
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device, codeVS.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
+#else
+    return nullptr;
+#endif // IGL_BACKEND_OPENGL
   }
   }
   IGL_UNREACHABLE_RETURN(nullptr)
