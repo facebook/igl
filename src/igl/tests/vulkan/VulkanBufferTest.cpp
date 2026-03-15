@@ -90,11 +90,13 @@ TEST_F(VulkanBufferTest, BufferDeviceAddress) {
 
   Result ret;
 
-  auto buffer = iglDev_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
-                                                 .data = nullptr,
-                                                 .length = 256,
-                                                 .storage = ResourceStorage::Shared},
-                                      &ret);
+  auto buffer = iglDev_->createBuffer(
+      BufferDesc{
+          .type = BufferDesc::BufferTypeBits::Uniform,
+          .length = 256,
+          .storage = ResourceStorage::Shared,
+      },
+      &ret);
 
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(buffer, nullptr);
@@ -146,11 +148,13 @@ TEST_F(VulkanBufferTest, HostVisibleBufferSubData) {
 
 TEST_F(VulkanBufferTest, CreateBufferWithInvalidStorageConvertsToPrivate) {
   Result ret;
-  auto buffer = iglDev_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
-                                                 .data = nullptr,
-                                                 .length = 256,
-                                                 .storage = ResourceStorage::Invalid},
-                                      &ret);
+  auto buffer = iglDev_->createBuffer(
+      BufferDesc{
+          .type = BufferDesc::BufferTypeBits::Uniform,
+          .length = 256,
+          .storage = ResourceStorage::Invalid,
+      },
+      &ret);
 
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(buffer, nullptr);
