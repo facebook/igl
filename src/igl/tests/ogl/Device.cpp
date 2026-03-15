@@ -211,8 +211,11 @@ TEST_F(DeviceOGLTest, DeletionTest) {
     const DeviceScope scope1(*iglDev_);
 
     // deleteBuffers
-    const BufferDesc desc =
-        BufferDesc{BufferDesc::BufferTypeBits::Vertex, nullptr, 0, ResourceStorage::Shared};
+    const BufferDesc desc{
+        .type = BufferDesc::BufferTypeBits::Vertex,
+        .length = 0,
+        .storage = ResourceStorage::Shared,
+    };
     Result res;
     buffer = iglDev_->createBuffer(desc, &res);
     ASSERT_EQ(res.code, Result::Code::Ok);
