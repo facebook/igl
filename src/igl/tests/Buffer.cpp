@@ -254,11 +254,11 @@ TEST_F(BufferTest, mapUniformBuffer) {
   Result ret;
 
   Color color = {1.0f, 5.0f, 7.0f, 1.0f};
-  BufferDesc bufferDesc;
-  bufferDesc.type = BufferDesc::BufferTypeBits::Uniform;
-  bufferDesc.data = &color;
-  bufferDesc.length = sizeof(color);
-
+  const BufferDesc bufferDesc{
+      .type = BufferDesc::BufferTypeBits::Uniform,
+      .data = &color,
+      .length = sizeof(color),
+  };
   const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
