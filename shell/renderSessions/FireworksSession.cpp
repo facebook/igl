@@ -585,13 +585,16 @@ void FireworksSession::initialize() noexcept {
 
   // Uniform buffer
   const Uniforms uniforms{glm::mat4(1.0f)};
-  uniformBuffer_ = device.createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Uniform,
-                                                  &uniforms,
-                                                  sizeof(Uniforms),
-                                                  ResourceStorage::Shared,
-                                                  BufferDesc::BufferAPIHintBits::UniformBlock,
-                                                  "fireworks_uniforms"},
-                                       nullptr);
+  uniformBuffer_ = device.createBuffer(
+      {
+          .type = BufferDesc::BufferTypeBits::Uniform,
+          .data = &uniforms,
+          .length = sizeof(Uniforms),
+          .storage = ResourceStorage::Shared,
+          .hint = BufferDesc::BufferAPIHintBits::UniformBlock,
+          .debugName = "fireworks_uniforms",
+      },
+      nullptr);
   IGL_DEBUG_ASSERT(uniformBuffer_ != nullptr);
 
   // Pre-allocate vertex buffer for max particles * 4 vertices
@@ -607,13 +610,14 @@ void FireworksSession::initialize() noexcept {
   const size_t vertexStride = sizeof(InterleavedVertex);
   const auto ibStorage = ResourceStorage::Shared;
 // @fb-only
-  vertexBuffer_ = device.createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Vertex,
-                                                 nullptr,
-                                                 maxVerts * vertexStride,
-                                                 vbStorage,
-                                                 0,
-                                                 "fireworks_vertices"},
-                                      nullptr);
+  vertexBuffer_ = device.createBuffer(
+      {
+          .type = BufferDesc::BufferTypeBits::Vertex,
+          .length = maxVerts * vertexStride,
+          .storage = vbStorage,
+          .debugName = "fireworks_vertices",
+      },
+      nullptr);
   IGL_DEBUG_ASSERT(vertexBuffer_ != nullptr);
 
 // @fb-only
@@ -635,13 +639,15 @@ void FireworksSession::initialize() noexcept {
     indices[idx + 4] = base + 3;
     indices[idx + 5] = base + 2;
   }
-  indexBuffer_ = device.createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Index,
-                                                indices.data(),
-                                                maxIndices * sizeof(uint16_t),
-                                                ibStorage,
-                                                0,
-                                                "fireworks_indices"},
-                                     nullptr);
+  indexBuffer_ = device.createBuffer(
+      {
+          .type = BufferDesc::BufferTypeBits::Index,
+          .data = indices.data(),
+          .length = maxIndices * sizeof(uint16_t),
+          .storage = ibStorage,
+          .debugName = "fireworks_indices",
+      },
+      nullptr);
   IGL_DEBUG_ASSERT(indexBuffer_ != nullptr);
 
   gpuVertices_.reserve(static_cast<size_t>(kMaxParticles));
