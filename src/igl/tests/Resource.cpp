@@ -158,11 +158,11 @@ TEST_F(ResourceTest, UniformBuffer) {
   Result ret;
 
   fragmentParameters_.color = {1.0f, 1.0f, 1.0f};
-  BufferDesc bufferDesc;
-  bufferDesc.type = BufferDesc::BufferTypeBits::Uniform;
-  bufferDesc.data = &fragmentParameters_;
-  bufferDesc.length = sizeof(fragmentParameters_);
-
+  const BufferDesc bufferDesc{
+      .type = BufferDesc::BufferTypeBits::Uniform,
+      .data = &fragmentParameters_,
+      .length = sizeof(fragmentParameters_),
+  };
   const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
