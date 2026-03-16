@@ -468,6 +468,7 @@ std::unique_ptr<IShaderStages> FireworksSession::getShaderStagesForBackend(IDevi
                                                            "",
                                                            nullptr);
   case igl::BackendType::OpenGL: {
+#if IGL_BACKEND_OPENGL
     auto glVersion =
         static_cast<igl::opengl::Device&>(device).getContext().deviceFeatures().getGLVersion();
 
@@ -528,6 +529,9 @@ void main() {
 
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device, codeVS.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
+#else
+    return nullptr;
+#endif // IGL_BACKEND_OPENGL
   }
   }
   IGL_UNREACHABLE_RETURN(nullptr)
@@ -802,13 +806,14 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
     // @fb-only
     // @fb-only
     // @fb-only
-    const glm::vec2 cornerUV[4] = {
-        // @fb-only
+    // clang-format off
+    // @fb-only
         // @fb-only
         // @fb-only
         // @fb-only
         // @fb-only
     // @fb-only
+    // clang-format on
     // @fb-only
       // @fb-only
           // @fb-only
@@ -816,7 +821,6 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
       // @fb-only
           // @fb-only
           // @fb-only
-    // @fb-only
     // @fb-only
     // @fb-only
     // @fb-only
@@ -861,7 +865,7 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
     // @fb-only
   // @fb-only
 // @fb-only
-  // @fb-only
+  {
     // Collect alive particles into GPU vertex data
     gpuVertices_.clear();
     for (int32_t i = 0; i < kMaxParticles; i++) {
@@ -894,15 +898,15 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
       vertexBuffer_->upload(interleavedVerts.data(),
                             BufferRange(interleavedVerts.size() * sizeof(InterleavedVertex), 0));
     }
-  // @fb-only
+  }
 
 // @fb-only
   // @fb-only
   // @fb-only
 // @fb-only
-  // @fb-only
+  {
     uniformBuffer_->upload(&uniforms, BufferRange(sizeof(Uniforms), 0));
-  // @fb-only
+  }
 
   // Render
   const auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
@@ -937,7 +941,7 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
       // @fb-only
     // @fb-only
 // @fb-only
-    // @fb-only
+    {
       commands->bindVertexBuffer(1, *vertexBuffer_);
       if (device.hasFeature(DeviceFeatures::UniformBlocks)) {
         commands->bindBuffer(0, uniformBuffer_.get());
@@ -949,7 +953,7 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
         };
         commands->bindUniform(mvpDesc, &uniforms);
       }
-    // @fb-only
+    }
 
     commands->bindTexture(0, BindTarget::kFragment, particleTexture_.get());
     commands->bindSamplerState(0, BindTarget::kFragment, sampler_.get());
