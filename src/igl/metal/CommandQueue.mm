@@ -68,20 +68,22 @@ SubmitHandle CommandQueue::submit(const igl::ICommandBuffer& commandBuffer, bool
     }];
   }
 
-  std::shared_ptr<ITimestampQueries> tsQueries = metalCommandBuffer.desc.timestampQueries;
-  if (tsQueries) {
-    auto metalTsQueries = std::static_pointer_cast<TimestampQueries>(tsQueries);
-    id<MTLCounterSampleBuffer> csb = metalTsQueries->sampleBuffer_;
-    uint64_t gen = metalTsQueries->generation_.load(std::memory_order_seq_cst);
-    [metalCommandBuffer.get() addCompletedHandler:^(id<MTLCommandBuffer> /*cb*/) {
-      @try {
-        if (metalTsQueries->generation_.load(std::memory_order_acquire) == gen) {
-          metalTsQueries->resolveTimestamps(csb);
+  if (@available(macOS 10.15, iOS 14.0, *)) {
+    std::shared_ptr<ITimestampQueries> tsQueries = metalCommandBuffer.desc.timestampQueries;
+    if (tsQueries) {
+      auto metalTsQueries = std::static_pointer_cast<TimestampQueries>(tsQueries);
+      id<MTLCounterSampleBuffer> csb = metalTsQueries->sampleBuffer_;
+      uint64_t gen = metalTsQueries->generation_.load(std::memory_order_seq_cst);
+      [metalCommandBuffer.get() addCompletedHandler:^(id<MTLCommandBuffer> /*cb*/) {
+        @try {
+          if (metalTsQueries->generation_.load(std::memory_order_acquire) == gen) {
+            metalTsQueries->resolveTimestamps(csb);
+          }
+        } @catch (NSException*) {
+          // GPU reset or counter sample buffer invalidated -- silently skip.
         }
-      } @catch (NSException*) {
-        // GPU reset or counter sample buffer invalidated -- silently skip.
-      }
-    }];
+      }];
+    }
   }
 
   [metalCommandBuffer.get() commit];

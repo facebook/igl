@@ -12,7 +12,6 @@
 #import <Foundation/NSRange.h>
 #import <Metal/MTLCommandBuffer.h> // @donotremove
 #import <Metal/MTLCounters.h>
-#import <Metal/MTLRenderCommandEncoder.h>
 #include <algorithm>
 
 namespace igl::metal {
@@ -37,7 +36,7 @@ uint32_t TimestampQueries::count() const {
 }
 
 void TimestampQueries::reset() {
-  generation_.fetch_add(1, std::memory_order_seq_cst);
+  generation_.fetch_add(1, std::memory_order_release);
   currentIndex_.store(0, std::memory_order_release);
   resolved_.store(false, std::memory_order_release);
 }
@@ -72,7 +71,12 @@ void TimestampQueries::resolveTimestamps(id<MTLCounterSampleBuffer> csb) {
     return;
   }
 
-  NSData* data = [csb resolveCounterRange:NSMakeRange(0, n)];
+  NSData* data = nil;
+  @try {
+    data = [csb resolveCounterRange:NSMakeRange(0, n)];
+  } @catch (NSException*) {
+    return; // GPU reset or counter sample buffer invalidated — skip this frame
+  }
   if (!data || data.length < n * sizeof(MTLCounterResultTimestamp)) {
     return;
   }
@@ -88,14 +92,6 @@ void TimestampQueries::resolveTimestamps(id<MTLCounterSampleBuffer> csb) {
   resolved_.store(true, std::memory_order_release);
 }
 
-void TimestampQueries::sampleTimestampOnEncoder(id<MTLRenderCommandEncoder> encoder) {
-  uint32_t idx = currentIndex_.fetch_add(1, std::memory_order_relaxed);
-  if (idx >= maxTimestamps_) {
-    return;
-  }
-  [encoder sampleCountersInBuffer:sampleBuffer_ atSampleIndex:idx withBarrier:YES];
-}
-
 void TimestampQueries::attachResolveHandler(id<MTLCommandBuffer> cmdBuffer,
                                             std::shared_ptr<TimestampQueries> queries) {
   if (!queries || !cmdBuffer) {
@@ -104,7 +100,7 @@ void TimestampQueries::attachResolveHandler(id<MTLCommandBuffer> cmdBuffer,
   // Capture by value: shared_ptr extends lifetime, csb retains the ObjC object,
   // gen snapshots the current generation for staleness detection.
   id<MTLCounterSampleBuffer> csb = queries->sampleBuffer_;
-  uint64_t gen = queries->generation_.load(std::memory_order_seq_cst);
+  uint64_t gen = queries->generation_.load(std::memory_order_acquire);
   [cmdBuffer addCompletedHandler:^(id<MTLCommandBuffer> /*cb*/) {
     @try {
       if (queries->generation_.load(std::memory_order_acquire) == gen) {

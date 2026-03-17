@@ -9,7 +9,6 @@
 
 @protocol MTLCommandBuffer;
 @protocol MTLCounterSampleBuffer;
-@protocol MTLRenderCommandEncoder;
 #include <atomic>
 #include <mutex>
 #import <objc/objc.h>
@@ -30,10 +29,6 @@ class TimestampQueries : public ITimestampQueries {
   void reset() override;
   bool resultsAvailable() const override;
   uint64_t getElapsedNanos(uint32_t slotIndex) const override;
-
-  /// Called from RenderCommandEncoder::writeTimestamp() -- samples on active render encoder.
-  /// No blit encoder created. Safe to call when a render encoder is active.
-  void sampleTimestampOnEncoder(id<MTLRenderCommandEncoder> encoder);
 
   /// Called from CommandQueue completion handler -- resolves counter data
   void resolveTimestamps(id<MTLCounterSampleBuffer> csb);

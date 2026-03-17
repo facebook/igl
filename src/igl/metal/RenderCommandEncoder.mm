@@ -727,8 +727,4 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
   IGL_DEBUG_ASSERT(dynamicOffset == numDynamicOffsets, "Not all dynamic offsets were consumed");
 }
 
-void RenderCommandEncoder::writeTimestamp(ITimestampQueries& queries) {
-  static_cast<TimestampQueries&>(queries).sampleTimestampOnEncoder(encoder_);
-}
-
 } // namespace igl::metal

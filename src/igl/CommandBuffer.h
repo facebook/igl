@@ -139,12 +139,6 @@ class ICommandBuffer {
                                    uint32_t layer = 0) = 0;
 
   /**
-   * @brief Write a GPU timestamp at the current point in the command stream.
-   * Default implementation does nothing (for backends that don't support it).
-   */
-  virtual void writeTimestamp(ITimestampQueries& /*queries*/) {}
-
-  /**
    * @returns the number of draw operations tracked by this CommandBuffer. This is tracked manually
    * via calls to incrementCurrentDrawCount().
    */
