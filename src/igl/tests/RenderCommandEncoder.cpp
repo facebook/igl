@@ -311,41 +311,36 @@ class RenderCommandEncoderTest : public ::testing::Test {
   void initializeBuffers(const std::vector<float>& verts,
                          const std::vector<float>& uvs,
                          const std::vector<uint32_t>& indices = {}) {
-    BufferDesc bufDesc;
-
-    bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
-    bufDesc.data = verts.data();
-    bufDesc.length = sizeof(float) * verts.size();
-
     Result ret;
-    vb_ = iglDev_->createBuffer(bufDesc, &ret);
+    vb_ = iglDev_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                           .data = verts.data(),
+                                           .length = sizeof(float) * verts.size()},
+                                &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(vb_ != nullptr);
 
-    bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
-    bufDesc.data = uvs.data();
-    bufDesc.length = sizeof(float) * uvs.size();
-
-    uv_ = iglDev_->createBuffer(bufDesc, &ret);
+    uv_ = iglDev_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                           .data = uvs.data(),
+                                           .length = sizeof(float) * uvs.size()},
+                                &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(uv_ != nullptr);
 
     if (!indices.empty()) {
-      bufDesc.type = BufferDesc::BufferTypeBits::Index;
-      bufDesc.data = indices.data();
-      bufDesc.length = sizeof(uint32_t) * indices.size();
-      ib_ = iglDev_->createBuffer(bufDesc, &ret);
+      ib_ = iglDev_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                             .data = indices.data(),
+                                             .length = sizeof(uint32_t) * indices.size()},
+                                  &ret);
       ASSERT_TRUE(ret.isOk());
       ASSERT_TRUE(ib_ != nullptr);
     }
   }
   void initialize8BitIndices(const std::vector<uint8_t>& indices) {
-    BufferDesc desc;
-    desc.type = BufferDesc::BufferTypeBits::Index;
-    desc.data = indices.data();
-    desc.length = sizeof(uint8_t) * indices.size();
     Result ret;
-    ib_ = iglDev_->createBuffer(desc, &ret);
+    ib_ = iglDev_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                           .data = indices.data(),
+                                           .length = sizeof(uint8_t) * indices.size()},
+                                &ret);
     ASSERT_TRUE(ret.isOk());
     ASSERT_TRUE(ib_ != nullptr);
   }
