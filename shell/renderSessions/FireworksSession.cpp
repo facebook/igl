@@ -1014,12 +1014,12 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
     interleavedVerts.reserve(numParticles * 4);
     for (size_t i = 0; i < numParticles; i++) {
       const auto& gv = gpuVertices_[i];
-      for (size_t c = 0; c < 4; c++) {
+      for (auto kCornerOffset : kCornerOffsets) {
         interleavedVerts.push_back({
             .pos = gv.pos,
             .color = gv.color,
             .flare = gv.flare,
-            .corner = kCornerOffsets[c],
+            .corner = kCornerOffset,
         });
       }
     }
