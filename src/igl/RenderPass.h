@@ -90,7 +90,7 @@ struct RenderPassDesc {
     std::shared_ptr<ITimestampQueries> queries;
     uint32_t slotIndex = 0; ///< Logical timing slot from GPUTimingCollector
   };
-  /// Optional per-render-pass timestamp query. Null queries pointer means disabled.
+  /// Optional per-render-pass GPU timing. Null queries pointer means disabled.
   TimestampQueryDesc timestampQuery;
 };
 
