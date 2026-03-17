@@ -10,6 +10,7 @@
 namespace igl::opengl::glx {
 
 Device::Device(std::unique_ptr<IContext> context) :
+  // @fb-only
   opengl::Device(std::move(context)), platformDevice_(*this) {}
 
 const PlatformDevice& Device::getPlatformDevice() const noexcept {
