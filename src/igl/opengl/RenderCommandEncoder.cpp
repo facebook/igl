@@ -16,6 +16,7 @@
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/PlatformDevice.h>
 #include <igl/opengl/RenderCommandAdapter.h>
+#include <igl/opengl/TimestampQueries.h>
 #include <igl/opengl/UniformAdapter.h>
 
 namespace igl::opengl {
@@ -124,6 +125,15 @@ void RenderCommandEncoder::beginEncoding(const RenderPassDesc& renderPass,
   }
   framebuffer_ = std::static_pointer_cast<Framebuffer>(framebuffer);
   resolveFramebuffer_ = framebuffer_->getResolveFramebuffer();
+
+  // GPU timing: if the render pass descriptor contains a timestamp query,
+  // start a GL_TIME_ELAPSED query to measure this render pass's GPU time.
+  if (renderPass.timestampQuery.queries) {
+    timestampQueries_ = renderPass.timestampQuery.queries;
+    static_cast<TimestampQueries&>(*timestampQueries_)
+        .beginElapsedQuery(renderPass.timestampQuery.slotIndex);
+  }
+
   Result::setOk(outResult);
 }
 
@@ -138,6 +148,12 @@ void RenderCommandEncoder::endEncoding() {
 
     adapter_->endEncoding();
     getContext().getAdapterPool().push_back(std::move(adapter_));
+
+    // GPU timing: end the GL_TIME_ELAPSED query after all draw calls.
+    if (timestampQueries_) {
+      static_cast<TimestampQueries&>(*timestampQueries_).endElapsedQuery();
+      timestampQueries_ = nullptr;
+    }
 
     if (resolveFramebuffer_) {
       Result outResult;

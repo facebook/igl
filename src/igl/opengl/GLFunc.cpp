@@ -2039,7 +2039,7 @@ void iglGenVertexArraysOES(GLsizei n, GLuint* vertexArrays) {
 ///--------------------------------------
 /// MARK: - GL_EXT_timer_query
 
-#if defined(GL_EXT_timer_query)
+#if defined(GL_EXT_timer_query) || defined(GL_EXT_disjoint_timer_query)
 #define CAN_CALL_glBeginQuery OPENGL_OR_CAN_CALL
 #define CAN_CALL_glDeleteQueries OPENGL_OR_CAN_CALL
 #define CAN_CALL_glEndQuery OPENGL_OR_CAN_CALL
@@ -2058,43 +2058,83 @@ void iglGenVertexArraysOES(GLsizei n, GLuint* vertexArrays) {
 #endif
 
 void iglBeginQuery(GLenum target, GLuint id) {
+#if IGL_OPENGL_ES
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glBeginQuery, glBeginQueryEXT, PFNIGLBEGINQUERYPROC, target, id);
+#else
   GLEXTENSION_METHOD_BODY(CAN_CALL_glBeginQuery, glBeginQuery, PFNIGLBEGINQUERYPROC, target, id);
+#endif
 }
 
 void iglDeleteQueries(GLsizei n, GLuint* queries) {
+#if IGL_OPENGL_ES
+  GLEXTENSION_METHOD_BODY(
+      CAN_CALL_glDeleteQueries, glDeleteQueriesEXT, PFNIGLDELETEQUERIESPROC, n, queries);
+#else
   GLEXTENSION_METHOD_BODY(
       CAN_CALL_glDeleteQueries, glDeleteQueries, PFNIGLDELETEQUERIESPROC, n, queries);
+#endif
 }
 
 void iglEndQuery(GLenum target) {
+#if IGL_OPENGL_ES
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glEndQuery, glEndQueryEXT, PFNIGLENDQUERYPROC, target);
+#else
   GLEXTENSION_METHOD_BODY(CAN_CALL_glEndQuery, glEndQuery, PFNIGLENDQUERYPROC, target);
+#endif
 }
 
 void iglGenQueries(GLsizei n, GLuint* queries) {
+#if IGL_OPENGL_ES
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glGenQueries, glGenQueriesEXT, PFNIGLGENQUERIESPROC, n, queries);
+#else
   GLEXTENSION_METHOD_BODY(CAN_CALL_glGenQueries, glGenQueries, PFNIGLGENQUERIESPROC, n, queries);
+#endif
 }
 
 void iglGetQueryObjectiv(GLuint id, GLenum pname, GLint* params) {
+#if IGL_OPENGL_ES
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glGetQueryObjectiv,
+                          glGetQueryObjectivEXT,
+                          PFNIGLGETQUERYOBJECTIVPROC,
+                          id,
+                          pname,
+                          params);
+#else
   GLEXTENSION_METHOD_BODY(CAN_CALL_glGetQueryObjectiv,
                           glGetQueryObjectiv,
                           PFNIGLGETQUERYOBJECTIVPROC,
                           id,
                           pname,
                           params);
+#endif
 }
 
 void iglGetQueryObjectui64v(GLuint id, GLenum pname, GLuint64* params) {
+#if IGL_OPENGL_ES
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glGetQueryObjectui64v,
+                          glGetQueryObjectui64vEXT,
+                          PFNIGLGETQUERYOBJECTUI64VPROC,
+                          id,
+                          pname,
+                          params);
+#else
   GLEXTENSION_METHOD_BODY(CAN_CALL_glGetQueryObjectui64v,
                           glGetQueryObjectui64v,
                           PFNIGLGETQUERYOBJECTUI64VPROC,
                           id,
                           pname,
                           params);
+#endif
 }
 
 void iglQueryCounter(GLuint id, GLenum target) {
+#if IGL_OPENGL_ES
+  GLEXTENSION_METHOD_BODY(
+      CAN_CALL_glQueryCounter, glQueryCounterEXT, PFNIGLQUERYCOUNTERPROC, id, target);
+#else
   GLEXTENSION_METHOD_BODY(
       CAN_CALL_glQueryCounter, glQueryCounter, PFNIGLQUERYCOUNTERPROC, id, target);
+#endif
 }
 IGL_EXTERN_END
 

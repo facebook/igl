@@ -9,6 +9,7 @@
 
 #include <igl/Common.h>
 #include <igl/RenderCommandEncoder.h>
+#include <igl/TimestampQueries.h>
 #include <igl/opengl/Framebuffer.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
@@ -107,6 +108,11 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
   void* indexBufferOffset_ = nullptr;
   std::shared_ptr<Framebuffer> resolveFramebuffer_;
   std::shared_ptr<Framebuffer> framebuffer_;
+
+  /// GPU timing: descriptor-based elapsed query from RenderPassDesc.
+  /// When set, GL_TIME_ELAPSED query is started in beginEncoding()
+  /// and ended in endEncoding().
+  std::shared_ptr<ITimestampQueries> timestampQueries_;
 };
 
 } // namespace opengl

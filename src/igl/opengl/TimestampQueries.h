@@ -30,10 +30,11 @@ class TimestampQueries : public ITimestampQueries, public WithContext {
   [[nodiscard]] bool resultsAvailable() const override;
   [[nodiscard]] uint64_t getElapsedNanos(uint32_t slotIndex) const override;
 
-  /// Begin a GL_TIME_ELAPSED query for the given timing slot
+  /// Start a GL_TIME_ELAPSED query for the given timing slot.
+  /// Must be paired with endElapsedQuery(). Cannot be nested.
   void beginElapsedQuery(uint32_t slotIndex);
 
-  /// End the active GL_TIME_ELAPSED query
+  /// End the active GL_TIME_ELAPSED query.
   void endElapsedQuery();
 
  private:
