@@ -52,11 +52,11 @@ TEST_F(VulkanStagingDeviceTest, BufferSubDataSmallUpload) {
   ASSERT_NE(ctx.stagingDevice_, nullptr);
 
   Result ret;
-  BufferDesc bufferDesc;
-  bufferDesc.type = BufferDesc::BufferTypeBits::Storage;
-  bufferDesc.storage = ResourceStorage::Private;
-  bufferDesc.length = 256;
-
+  const BufferDesc bufferDesc{
+      .type = BufferDesc::BufferTypeBits::Storage,
+      .length = 256,
+      .storage = ResourceStorage::Private,
+  };
   auto buffer = iglDev_->createBuffer(bufferDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(buffer, nullptr);
@@ -95,11 +95,11 @@ TEST_F(VulkanStagingDeviceTest, BufferSubDataLargerThanStaging) {
   }
 
   Result ret;
-  BufferDesc bufferDesc;
-  bufferDesc.type = BufferDesc::BufferTypeBits::Storage;
-  bufferDesc.storage = ResourceStorage::Private;
-  bufferDesc.length = desiredSize;
-
+  const BufferDesc bufferDesc{
+      .type = BufferDesc::BufferTypeBits::Storage,
+      .length = static_cast<size_t>(desiredSize),
+      .storage = ResourceStorage::Private,
+  };
   auto buffer = iglDev_->createBuffer(bufferDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(buffer, nullptr);
@@ -184,11 +184,11 @@ TEST_F(VulkanStagingDeviceTest, GetImageData2D) {
 TEST_F(VulkanStagingDeviceTest, PartialBufferUpdate) {
   Result ret;
 
-  BufferDesc bufferDesc;
-  bufferDesc.type = BufferDesc::BufferTypeBits::Storage;
-  bufferDesc.storage = ResourceStorage::Private;
-  bufferDesc.length = 256;
-
+  const BufferDesc bufferDesc{
+      .type = BufferDesc::BufferTypeBits::Storage,
+      .length = 256,
+      .storage = ResourceStorage::Private,
+  };
   auto buffer = iglDev_->createBuffer(bufferDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(buffer, nullptr);
