@@ -13,8 +13,10 @@
 
 namespace igl::opengl::ios {
 
+// @fb-only
 class TextureBuffer final : public opengl::TextureBuffer {
   using Super = opengl::TextureBuffer;
+  // @fb-only
 
  public:
   /// @param pixelBuffer The backing CVPixelBufferRef source
