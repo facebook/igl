@@ -16,6 +16,8 @@
 #include <cmath>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <shell/shared/renderSession/AppParams.h>
+#include <shell/shared/renderSession/Fov.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
@@ -32,10 +34,41 @@ namespace igl::shell {
 
 namespace {
 
-// Uniforms: projection * view matrix
+// Uniforms: projection * view matrix (2 entries for single-pass stereo)
 struct Uniforms {
-  glm::mat4 mvp;
+  glm::mat4 mvp[2];
 };
+
+[[maybe_unused]] glm::mat4 perspectiveAsymmetricFovRH(const igl::shell::Fov& fov,
+                                                      float nearZ,
+                                                      float farZ) {
+  const float tanLeft = tanf(fov.angleLeft);
+  const float tanRight = tanf(fov.angleRight);
+  const float tanDown = tanf(fov.angleDown);
+  const float tanUp = tanf(fov.angleUp);
+
+  const float tanWidth = tanRight - tanLeft;
+  const float tanHeight = tanUp - tanDown;
+
+  glm::mat4 mat;
+  mat[0][0] = 2.0f / tanWidth;
+  mat[1][0] = 0.0f;
+  mat[2][0] = (tanRight + tanLeft) / tanWidth;
+  mat[3][0] = 0.0f;
+  mat[0][1] = 0.0f;
+  mat[1][1] = 2.0f / tanHeight;
+  mat[2][1] = (tanUp + tanDown) / tanHeight;
+  mat[3][1] = 0.0f;
+  mat[0][2] = 0.0f;
+  mat[1][2] = 0.0f;
+  mat[2][2] = -(farZ + nearZ) / (farZ - nearZ);
+  mat[3][2] = -2.0f * farZ * nearZ / (farZ - nearZ);
+  mat[0][3] = 0.0f;
+  mat[1][3] = 0.0f;
+  mat[2][3] = -1.0f;
+  mat[3][3] = 0.0f;
+  return mat;
+}
 
 [[maybe_unused]] void stringReplaceAll(std::string& s,
                                        const std::string& searchString,
@@ -113,22 +146,30 @@ struct Uniforms {
 // Each particle is a billboarded quad: 4 vertices, 6 indices.
 // The vertex shader expands particle center + corner offset into a screen-aligned quad.
 
-const char* getVulkanVertexShaderSource() {
-  return R"(#version 460
+[[nodiscard]] std::string getVulkanVertexShaderSource(bool stereoRendering) {
+  const std::string prolog = stereoRendering ? R"(#version 460
+#extension GL_OVR_multiview2 : require
+layout(num_views = 2) in;
+#define VIEW_ID int(gl_ViewID_OVR)
+)"
+                                             : R"(#version 460
+#define VIEW_ID 0
+)";
+  return prolog + R"(
 layout (location=0) in vec3 pos;
 layout (location=1) in vec3 color;
 layout (location=2) in float flare;
 layout (location=3) in vec2 corner;
 
 layout (set = 1, binding = 0, std140) uniform UniformBlock {
-  mat4 mvp;
+  mat4 mvp[2];
 } ub;
 
 layout (location=0) out vec3 vColor;
 layout (location=1) out vec2 vUV;
 
 void main() {
-  vec4 center = ub.mvp * vec4(pos, 1.0);
+  vec4 center = ub.mvp[VIEW_ID] * vec4(pos, 1.0);
 
   vec2 size = flare > 0.5 ? vec2(0.05, 0.25) : vec2(0.15, 0.15);
   vec3 col = flare > 0.5 ? 0.5 * color : color;
@@ -166,7 +207,7 @@ const char* getMetalShaderSource() {
 using namespace metal;
 
 struct Uniforms {
-  float4x4 mvp;
+  float4x4 mvp[2];
 };
 
 struct VertexIn {
@@ -193,7 +234,7 @@ vertex VertexOut vertexShader(
   float3 col = float3(v.color);
   float2 crn = float2(v.corner);
 
-  float4 center = ub.mvp * float4(pos, 1.0);
+  float4 center = ub.mvp[0] * float4(pos, 1.0);
 
   float2 size = v.flare > 0.5 ? float2(0.05, 0.25) : float2(0.15, 0.15);
   float3 color = v.flare > 0.5 ? 0.5 * col : col;
@@ -218,7 +259,7 @@ fragment float4 fragmentShader(
 const char* getD3D12VertexShaderSource() {
   return R"(
 cbuffer UniformBlock : register(b0) {
-  float4x4 mvp;
+  float4x4 mvp[2];
 };
 
 struct VSInput {
@@ -236,7 +277,7 @@ struct VSOutput {
 
 VSOutput main(VSInput input) {
   VSOutput output;
-  float4 center = mul(mvp, float4(input.pos, 1.0));
+  float4 center = mul(mvp[0], float4(input.pos, 1.0));
 
   float2 size = input.flare > 0.5 ? float2(0.05, 0.25) : float2(0.15, 0.15);
   float3 color = input.flare > 0.5 ? 0.5 * input.color : input.color;
@@ -305,7 +346,9 @@ FireworksSession::ParticleStateMessage FireworksSession::Particle::step(const gl
 
 // --- ParticleSystem ---
 
-void FireworksSession::ParticleSystem::nextFrame(const glm::vec3& gravity, std::mt19937& rng) {
+void FireworksSession::ParticleSystem::nextFrame(const glm::vec3& gravity,
+                                                 const glm::vec3& viewerPos,
+                                                 std::mt19937& rng) {
   std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
   int32_t processedParticles = 0;
 
@@ -318,7 +361,7 @@ void FireworksSession::ParticleSystem::nextFrame(const glm::vec3& gravity, std::
         break;
       case ParticleStateMessage::Kill:
         if (particles[i].spawnExplosion) {
-          addExplosion(particles[i].pos, rng);
+          addExplosion(particles[i].pos, viewerPos, rng);
         }
         particles[i].alive = false;
         totalParticles--;
@@ -352,12 +395,29 @@ void FireworksSession::ParticleSystem::addParticle(const Particle& particle) {
   }
 }
 
-void FireworksSession::ParticleSystem::addExplosion(const glm::vec3& pos, std::mt19937& rng) {
+void FireworksSession::ParticleSystem::addExplosion(const glm::vec3& pos,
+                                                    const glm::vec3& viewerPos,
+                                                    std::mt19937& rng) {
   const glm::vec3 palette[3] = {
       {0.15f, 0.2f, 1.0f},
       {1.0f, 0.15f, 0.2f},
       {0.1f, 1.0f, 0.15f},
   };
+
+  // Build an orthonormal basis for the explosion plane perpendicular to the view direction
+  const glm::vec3 toViewer = viewerPos - pos;
+  const float dist = glm::length(toViewer);
+  // Fallback axes if viewer is at the explosion center
+  glm::vec3 right(1.0f, 0.0f, 0.0f);
+  glm::vec3 up(0.0f, 1.0f, 0.0f);
+  if (dist > 0.001f) {
+    const glm::vec3 viewDir = toViewer / dist;
+    // Choose a reference vector that isn't parallel to viewDir
+    const glm::vec3 ref = fabsf(viewDir.y) < 0.99f ? glm::vec3(0.0f, 1.0f, 0.0f)
+                                                   : glm::vec3(1.0f, 0.0f, 0.0f);
+    right = glm::normalize(glm::cross(ref, viewDir));
+    up = glm::cross(viewDir, right);
+  }
 
   std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
   std::uniform_int_distribution<int32_t> palDist(0, 2);
@@ -366,8 +426,11 @@ void FireworksSession::ParticleSystem::addExplosion(const glm::vec3& pos, std::m
   for (int32_t i = 0; i < 300; i++) {
     const float radius = dist01(rng) / 10.0f;
     const float angle = dist01(rng) * 2.0f * static_cast<float>(M_PI);
-    const glm::vec3 vel(
-        radius * cosf(angle), radius * sinf(angle), (dist01(rng) * 100.0f - 50.0f) / 5000.0f);
+    const float depthSpread = (dist01(rng) * 100.0f - 50.0f) / 5000.0f;
+    const glm::vec3 vel =
+        radius * cosf(angle) * right + radius * sinf(angle) * up +
+        depthSpread *
+            glm::normalize(toViewer.length() > 0.001f ? toViewer : glm::vec3(0.0f, 0.0f, 1.0f));
     const glm::vec3 color = palette[paletteIndex] +
                             glm::vec3(dist01(rng) / 5.0f, dist01(rng) / 5.0f, dist01(rng) / 5.0f);
 
@@ -425,21 +488,18 @@ void FireworksSession::generateParticleTexture(std::vector<uint8_t>& image) {
   }
 }
 
-std::unique_ptr<IShaderStages> FireworksSession::getShaderStagesForBackend(IDevice& device) {
+std::unique_ptr<IShaderStages> FireworksSession::getShaderStagesForBackend(IDevice& device,
+                                                                           bool stereoRendering) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Custom:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
-  case igl::BackendType::Vulkan:
-    return igl::ShaderStagesCreator::fromModuleStringInput(device,
-                                                           getVulkanVertexShaderSource(),
-                                                           "main",
-                                                           "",
-                                                           getVulkanFragmentShaderSource(),
-                                                           "main",
-                                                           "",
-                                                           nullptr);
+  case igl::BackendType::Vulkan: {
+    const std::string vsSource = getVulkanVertexShaderSource(stereoRendering);
+    return igl::ShaderStagesCreator::fromModuleStringInput(
+        device, vsSource.c_str(), "main", "", getVulkanFragmentShaderSource(), "main", "", nullptr);
+  }
   // @fb-only
 // @fb-only
     // @fb-only
@@ -480,13 +540,13 @@ attribute vec3 color;
 attribute float flare;
 attribute vec2 corner;
 
-uniform mat4 mvp;
+uniform mat4 mvp[2];
 
 varying vec3 vColor;
 varying vec2 vUV;
 
 void main() {
-  vec4 center = mvp * vec4(pos, 1.0);
+  vec4 center = mvp[0] * vec4(pos, 1.0);
 
   vec2 size = flare > 0.5 ? vec2(0.05, 0.25) : vec2(0.15, 0.15);
   vec3 col = flare > 0.5 ? 0.5 * color : color;
@@ -515,7 +575,7 @@ void main() {
 
     auto usesOpenGLES = igl::opengl::DeviceFeatureSet::usesOpenGLES();
 
-    std::string codeVS(getVulkanVertexShaderSource());
+    std::string codeVS(getVulkanVertexShaderSource(false));
     stringReplaceAll(codeVS, "gl_VertexIndex", "gl_VertexID");
     stringReplaceAll(codeVS, "#version 460", usesOpenGLES ? "#version 300 es" : "#version 410");
     stringReplaceAll(codeVS,
@@ -539,6 +599,9 @@ void main() {
 
 void FireworksSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
+
+  // Enable passthrough so the background is transparent
+  appParamsRef().passthroughGetter = []() { return true; };
 
   // Allocate particle system on the heap
   particleSystem_ = std::make_unique<ParticleSystem>();
@@ -584,7 +647,7 @@ void FireworksSession::initialize() noexcept {
   IGL_DEBUG_ASSERT(sampler_ != nullptr);
 
   // Uniform buffer
-  const Uniforms uniforms{glm::mat4(1.0f)};
+  const Uniforms uniforms{.mvp = {glm::mat4(1.0f), glm::mat4(1.0f)}};
   uniformBuffer_ = device.createBuffer(
       {
           .type = BufferDesc::BufferTypeBits::Uniform,
@@ -654,14 +717,24 @@ void FireworksSession::initialize() noexcept {
 }
 
 void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
+  if (!surfaceTextures.color) {
+    return;
+  }
   auto& device = getPlatform().getDevice();
   const auto dimensions = surfaceTextures.color->getDimensions();
 
+  // Detect single-pass stereo: viewParams has 2 entries and surface texture is a 2-layer array
+  const bool useStereo = shellParams().shellControlsViewParams &&
+                         shellParams().viewParams.size() > 1 &&
+                         surfaceTextures.color->getNumLayers() > 1;
+
   // Create/update framebuffer
   if (framebuffer_ == nullptr) {
+    const auto mode = useStereo ? FramebufferMode::Stereo : FramebufferMode::Mono;
     framebuffer_ = device.createFramebuffer(
         FramebufferDesc{
             .colorAttachments = {{.texture = surfaceTextures.color}},
+            .mode = mode,
         },
         nullptr);
     IGL_DEBUG_ASSERT(framebuffer_ != nullptr);
@@ -671,7 +744,7 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
 
   // Create pipeline on first use
   if (!renderPipelineState_) {
-    auto shaderStages = getShaderStagesForBackend(device);
+    auto shaderStages = getShaderStagesForBackend(device, useStereo);
     if (!shaderStages) {
       return;
     }
@@ -754,44 +827,95 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
     IGL_DEBUG_ASSERT(renderPipelineState_ != nullptr);
   }
 
-  // Simulate particles
-  const float deltaSeconds = getDeltaSeconds();
-  const glm::vec3 gravity(0.0f, -0.001f, 0.0f);
+  // Update uniforms: build per-eye MVP matrices
+  const float aspectRatio =
+      static_cast<float>(dimensions.width) / static_cast<float>(dimensions.height);
+  // Scene offset: place particle origin 8m in front of the viewer
+  const glm::mat4 sceneOffset = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -8.0f));
+  const glm::mat4 monoProj = glm::perspective(glm::radians(90.0f), aspectRatio, 0.1f, 100.0f);
 
-  accTime_ += deltaSeconds;
+  Uniforms uniforms{};
+  if (useStereo) {
+    // Anchor the scene in world space on the first stereo frame:
+    // compute a model matrix that places the fireworks 8m in front of the initial head pose.
+    if (!sceneAnchored_) {
+      const glm::mat4 headPose = glm::inverse(shellParams().viewParams[0].viewMatrix);
+      sceneModelMatrix_ = headPose * sceneOffset;
+      sceneAnchored_ = true;
+    }
+    // Single-pass stereo: fill both MVP matrices from shell-provided view params
+    for (size_t i = 0; i < std::min(shellParams().viewParams.size(), size_t(2)); ++i) {
+      const auto viewIdx = shellParams().viewParams[i].viewIndex;
+      const glm::mat4 proj =
+          perspectiveAsymmetricFovRH(shellParams().viewParams[i].fov, 0.1f, 100.0f);
+      uniforms.mvp[viewIdx] = proj * shellParams().viewParams[i].viewMatrix * sceneModelMatrix_;
+    }
+  } else {
+    uniforms.mvp[0] = monoProj * sceneOffset;
+    uniforms.mvp[1] = uniforms.mvp[0];
+  }
 
-  while (accTime_ >= kTimeQuantum) {
-    accTime_ -= kTimeQuantum;
-    particleSystem_->nextFrame(gravity, rng_);
-
-    // Randomly shoot new fireworks
-    std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
-    if (dist01(rng_) * 150.0f <= 1.0f) {
-      const glm::vec3 baseColor(0.8f, 0.9f, 1.0f);
-      particleSystem_->addParticle({
-          .pos = glm::vec3((dist01(rng_) * 100.0f - 50.0f) / 10.0f, -5.0f, 0.0f),
-          .velocity = glm::vec3((dist01(rng_) * 100.0f - 50.0f) / 500.0f,
-                                0.25f + dist01(rng_) * 0.4f,
-                                (dist01(rng_) * 100.0f - 50.0f) / 500.0f),
-          .baseColor = baseColor,
-          .currentColor = baseColor,
-          .ttl = 20,
-          .initialLifetime = 20,
-          .alive = true,
-          .flare = true,
-          .spawnExplosion = true,
-      });
+  // Compute head position and forward direction in scene-local space so
+  // new rockets launch in front of wherever the user is currently looking,
+  // and explosions orient toward the viewer.
+  // In scene-local space, the initial head is at (0, 0, 8) looking toward -Z.
+  // Fireworks originally launch 8 units ahead at (spreadX, -5, 0).
+  glm::vec3 viewerLocalPos(0.0f, 0.0f, 8.0f); // default: initial head position
+  glm::vec2 launchCenter(0.0f, 0.0f); // XZ center of launch area
+  glm::vec2 launchPerp(1.0f, 0.0f); // perpendicular spread direction
+  if (useStereo && sceneAnchored_) {
+    const glm::mat4 invScene = glm::inverse(sceneModelMatrix_);
+    const glm::mat4 headPose = glm::inverse(shellParams().viewParams[0].viewMatrix);
+    // Head position in scene-local space
+    viewerLocalPos = glm::vec3(invScene * headPose[3]);
+    // Head forward direction in scene-local XZ plane
+    const glm::vec3 fwd3 = glm::vec3(invScene * headPose * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));
+    const glm::vec2 fwd(fwd3.x, fwd3.z);
+    const float fwdLen = glm::length(fwd);
+    if (fwdLen > 0.001f) {
+      const glm::vec2 fwdNorm = fwd / fwdLen;
+      // Launch center: 8 units ahead of head in XZ
+      launchCenter = glm::vec2(viewerLocalPos.x, viewerLocalPos.z) + fwdNorm * 8.0f;
+      // Spread direction: perpendicular to forward in XZ
+      launchPerp = glm::vec2(-fwdNorm.y, fwdNorm.x);
     }
   }
 
-  // Update uniforms
-  const float aspectRatio =
-      static_cast<float>(dimensions.width) / static_cast<float>(dimensions.height);
-  const glm::mat4 proj = glm::perspective(glm::radians(90.0f), aspectRatio, 0.1f, 100.0f);
-  const glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -8.0f));
-  const Uniforms uniforms{proj * view};
+  // Simulate particles (single-pass: update() called once per frame)
+  {
+    const float deltaSeconds = getDeltaSeconds();
+    const glm::vec3 gravity(0.0f, -0.001f, 0.0f);
 
-  // Build vertex data (4 vertices per particle)
+    accTime_ += deltaSeconds;
+
+    while (accTime_ >= kTimeQuantum) {
+      accTime_ -= kTimeQuantum;
+      particleSystem_->nextFrame(gravity, viewerLocalPos, rng_);
+
+      // Randomly shoot new fireworks in front of the user
+      std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
+      if (dist01(rng_) * 150.0f <= 1.0f) {
+        const glm::vec3 baseColor(0.8f, 0.9f, 1.0f);
+        const float spread = (dist01(rng_) * 100.0f - 50.0f) / 10.0f;
+        const glm::vec2 launchXZ = launchCenter + launchPerp * spread;
+        particleSystem_->addParticle({
+            .pos = glm::vec3(launchXZ.x, -5.0f, launchXZ.y),
+            .velocity = glm::vec3((dist01(rng_) * 100.0f - 50.0f) / 500.0f,
+                                  0.25f + dist01(rng_) * 0.4f,
+                                  (dist01(rng_) * 100.0f - 50.0f) / 500.0f),
+            .baseColor = baseColor,
+            .currentColor = baseColor,
+            .ttl = 20,
+            .initialLifetime = 20,
+            .alive = true,
+            .flare = true,
+            .spawnExplosion = true,
+        });
+      }
+    }
+  }
+
+  // Build vertex data (4 vertices per particle).
   size_t numParticles = 0;
 
 // @fb-only
@@ -914,6 +1038,12 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
     uniformBuffer_->upload(&uniforms, BufferRange(sizeof(Uniforms), 0));
   }
 
+  // Use shell-provided clear color (transparent for passthrough, black otherwise)
+  if (shellParams().clearColorValue.has_value()) {
+    const auto& c = shellParams().clearColorValue.value();
+    renderPass_.colorAttachments[0].clearColor = {c.r, c.g, c.b, c.a};
+  }
+
   // Render
   const auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
@@ -955,6 +1085,7 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
         const UniformDesc mvpDesc = {
             .location = renderPipelineState_->getIndexByName("mvp", ShaderStage::Vertex),
             .type = UniformType::Mat4x4,
+            .numElements = 2,
             .offset = offsetof(Uniforms, mvp),
         };
         commands->bindUniform(mvpDesc, &uniforms);

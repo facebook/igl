@@ -68,9 +68,9 @@ class FireworksSession : public RenderSession {
 
     ParticleSystem() : particles(kMaxParticles), particlesStack(kMaxParticles) {}
 
-    void nextFrame(const glm::vec3& gravity, std::mt19937& rng);
+    void nextFrame(const glm::vec3& gravity, const glm::vec3& viewerPos, std::mt19937& rng);
     void addParticle(const Particle& particle);
-    void addExplosion(const glm::vec3& pos, std::mt19937& rng);
+    void addExplosion(const glm::vec3& pos, const glm::vec3& viewerPos, std::mt19937& rng);
   };
 
   struct GpuVertex {
@@ -79,7 +79,7 @@ class FireworksSession : public RenderSession {
     float flare{0.0f};
   };
 
-  std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device);
+  std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device, bool stereoRendering);
   void generateParticleTexture(std::vector<uint8_t>& image);
 
   RenderPassDesc renderPass_;
@@ -98,6 +98,8 @@ class FireworksSession : public RenderSession {
 // @fb-only
   std::mt19937 rng_{42};
   double accTime_{0.0};
+  glm::mat4 sceneModelMatrix_{1.0f};
+  bool sceneAnchored_{false};
   static constexpr float kTimeQuantum = 0.02f;
 };
 
