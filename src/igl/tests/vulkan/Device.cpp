@@ -142,10 +142,6 @@ TEST_F(DeviceVulkanTest, StagingDeviceLargeBufferTest) {
 
   // create a GPU device-local storage buffer large enough to force Vulkan staging device to upload
   // it in multiple chunks
-  BufferDesc bufferDesc;
-  bufferDesc.type = BufferDesc::BufferTypeBits::Storage;
-  bufferDesc.storage = ResourceStorage::Private;
-
   igl::vulkan::VulkanContext& ctx =
       static_cast<igl::vulkan::Device*>(iglDev_.get())->getVulkanContext();
 
@@ -157,11 +153,16 @@ TEST_F(DeviceVulkanTest, StagingDeviceLargeBufferTest) {
   size_t maxBufferLength = 0;
   iglDev_->getFeatureLimits(DeviceFeatureLimits::MaxStorageBufferBytes, maxBufferLength);
 
-  for (auto kDesiredBufferSize : kDesiredBufferSizes) {
-    bufferDesc.length = std::min<VkDeviceSize>(kDesiredBufferSize, maxBufferLength);
+  for (const auto kDesiredBufferSize : kDesiredBufferSizes) {
+    const auto length = std::min<VkDeviceSize>(kDesiredBufferSize, maxBufferLength);
 
-    ASSERT_TRUE(bufferDesc.length % 2 == 0);
+    ASSERT_TRUE(length % 2 == 0);
 
+    const BufferDesc bufferDesc{
+        .type = BufferDesc::BufferTypeBits::Storage,
+        .length = static_cast<size_t>(length),
+        .storage = ResourceStorage::Private,
+    };
     const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
     ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -169,27 +170,26 @@ TEST_F(DeviceVulkanTest, StagingDeviceLargeBufferTest) {
 
     // upload
     {
-      std::vector<uint16_t> bufferData(bufferDesc.length / 2);
+      std::vector<uint16_t> bufferData(length / 2);
 
       uint16_t* data = bufferData.data();
 
-      for (size_t i = 0; i != bufferDesc.length / 2; i++) {
+      for (size_t i = 0; i != length / 2; i++) {
         data[i] = uint16_t(i & 0xffff);
       }
 
-      ret = buffer->upload(data, BufferRange(bufferDesc.length, 0));
+      ret = buffer->upload(data, BufferRange(length, 0));
 
       ASSERT_EQ(ret.code, Result::Code::Ok);
     }
     // download
     {
       // map() will create a CPU-copy of data
-      const auto* data =
-          static_cast<uint16_t*>(buffer->map(BufferRange(bufferDesc.length, 0), &ret));
+      const auto* data = static_cast<uint16_t*>(buffer->map(BufferRange(length, 0), &ret));
 
       ASSERT_EQ(ret.code, Result::Code::Ok);
 
-      for (size_t i = 0; i != bufferDesc.length / 2; i++) {
+      for (size_t i = 0; i != length / 2; i++) {
         ASSERT_EQ(data[i], uint16_t(i & 0xffff));
       }
 
@@ -390,13 +390,12 @@ TEST_F(DeviceVulkanTest, UniformBlockRingBufferTest) {
 
   // Create uniform buffer with ring buffer hint
   const size_t bufferSize = 256;
-  BufferDesc bufferDesc;
-  bufferDesc.type = BufferDesc::BufferTypeBits::Uniform;
-  bufferDesc.length = bufferSize;
-  bufferDesc.storage = ResourceStorage::Shared;
-  bufferDesc.hint =
-      BufferDesc::BufferAPIHintBits::Ring | BufferDesc::BufferAPIHintBits::UniformBlock;
-
+  const BufferDesc bufferDesc{
+      .type = BufferDesc::BufferTypeBits::Uniform,
+      .length = bufferSize,
+      .storage = ResourceStorage::Shared,
+      .hint = BufferDesc::BufferAPIHintBits::Ring | BufferDesc::BufferAPIHintBits::UniformBlock,
+  };
   auto buffer = iglDev_->createBuffer(bufferDesc, &ret);
   ASSERT_TRUE(ret.isOk());
   ASSERT_NE(buffer, nullptr);
