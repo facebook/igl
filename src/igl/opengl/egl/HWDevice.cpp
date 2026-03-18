@@ -36,6 +36,7 @@ std::unique_ptr<IContext> HWDevice::createOffscreenContext(size_t width,
   return std::make_unique<Context>(width, height);
 }
 
+// @fb-only
 std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<IContext> context,
                                                             Result* outResult) const {
   Result::setOk(outResult);
@@ -43,9 +44,10 @@ std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<ICon
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "context is null");
     return nullptr;
   }
-  return std::make_unique<opengl::egl::Device>(std::move(context));
+  return std::make_unique<Device>(std::move(context));
 }
 
+// @fb-only
 std::unique_ptr<opengl::Device> HWDevice::create(EGLNativeWindowType nativeWindow,
                                                  Result* outResult) const {
   auto context = createContext(nativeWindow, outResult);
