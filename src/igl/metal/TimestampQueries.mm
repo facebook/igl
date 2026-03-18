@@ -81,8 +81,7 @@ void TimestampQueries::resolveTimestamps(id<MTLCounterSampleBuffer> csb) {
     return;
   }
 
-  const MTLCounterResultTimestamp* timestamps =
-      static_cast<const MTLCounterResultTimestamp*>(data.bytes);
+  const auto* timestamps = static_cast<const MTLCounterResultTimestamp*>(data.bytes);
 
   std::lock_guard<std::mutex> lock(resolveMutex_);
   resolvedTimestamps_.resize(n);
