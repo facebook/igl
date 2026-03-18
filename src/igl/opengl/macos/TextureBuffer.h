@@ -13,8 +13,10 @@
 
 namespace igl::opengl::macos {
 
+// @fb-only
 class TextureBuffer final : public opengl::TextureBuffer {
   using Super = opengl::TextureBuffer;
+  // @fb-only
 
  public:
   TextureBuffer(IContext& context,
