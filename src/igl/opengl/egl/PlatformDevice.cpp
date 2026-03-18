@@ -18,6 +18,7 @@
 
 namespace igl::opengl::egl {
 
+// @fb-only
 PlatformDevice::PlatformDevice(Device& owner) : opengl::PlatformDevice(owner) {}
 
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
