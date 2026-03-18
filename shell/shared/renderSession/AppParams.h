@@ -21,5 +21,6 @@ struct AppParams {
   float sizeY = 1.f;
   QuadLayerParamsGetter quadLayerParamsGetter;
   PassthroughGetter passthroughGetter;
+  float passthroughOpacity = 1.0f;
 };
 } // namespace igl::shell

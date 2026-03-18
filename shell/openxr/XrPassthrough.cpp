@@ -96,6 +96,22 @@ bool XrPassthrough::initialize() noexcept {
   return true;
 }
 
+void XrPassthrough::setOpacity(float opacity) noexcept {
+  IGL_DEBUG_ASSERT(opacity >= 0.0f && opacity <= 1.0f);
+
+  if (passthroughLayer_ == XR_NULL_HANDLE || opacity_ == opacity) {
+    return;
+  }
+  opacity_ = opacity;
+  const XrPassthroughStyleFB style{
+      .type = XR_TYPE_PASSTHROUGH_STYLE_FB,
+      .next = nullptr,
+      .textureOpacityFactor = opacity,
+      .edgeColor = {0.0f, 0.0f, 0.0f, 0.0f},
+  };
+  XR_CHECK(xrPassthroughLayerSetStyleFB_(passthroughLayer_, &style));
+}
+
 void XrPassthrough::setEnabled(bool enabled) noexcept {
   if (enabled_ == enabled) {
     return;

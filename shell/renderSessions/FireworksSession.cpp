@@ -600,8 +600,9 @@ void main() {
 void FireworksSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
-  // Enable passthrough so the background is transparent
+  // Enable passthrough so the background is transparent, dimmed to 0.2
   appParamsRef().passthroughGetter = []() { return true; };
+  appParamsRef().passthroughOpacity = 0.2f;
 
   // Allocate particle system on the heap
   particleSystem_ = std::make_unique<ParticleSystem>();

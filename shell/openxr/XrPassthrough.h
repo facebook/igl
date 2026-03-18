@@ -27,6 +27,8 @@ class XrPassthrough final {
 
   void setEnabled(bool enabled) noexcept;
 
+  void setOpacity(float opacity) noexcept;
+
   void injectLayer(std::vector<const XrCompositionLayerBaseHeader*>& layers) noexcept;
 
  private:
@@ -47,6 +49,7 @@ class XrPassthrough final {
   XrCompositionLayerPassthroughFB compositionLayer_{XR_TYPE_COMPOSITION_LAYER_PASSTHROUGH_FB};
 
   bool enabled_ = false;
+  float opacity_ = 1.0f;
 };
 
 } // namespace igl::shell::openxr

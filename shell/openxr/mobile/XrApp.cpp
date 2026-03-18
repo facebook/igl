@@ -696,7 +696,11 @@ void XrApp::handleSessionStateChanges(XrSessionState state) {
 
 XrFrameState XrApp::beginFrame() {
   if (passthrough_) {
-    passthrough_->setEnabled(passthroughEnabled());
+    const bool ptEnabled = passthroughEnabled();
+    passthrough_->setEnabled(ptEnabled);
+    if (ptEnabled) {
+      passthrough_->setOpacity(renderSession_->appParams().passthroughOpacity);
+    }
   }
 
   if (useQuadLayerComposition_) {
