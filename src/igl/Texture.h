@@ -570,20 +570,14 @@ struct TextureDesc {
                            uint32_t height,
                            TextureUsage usage,
                            const char* IGL_NULLABLE debugName = nullptr) {
-    return TextureDesc{width,
-                       height,
-                       1,
-                       1,
-                       1,
-                       usage,
-                       1,
-                       TextureType::TwoD,
-                       format,
-                       ResourceStorage::Invalid,
-                       TextureTiling::Optimal,
-                       TextureExportability::NoExport,
-                       TextureMipmapGeneration::Manual,
-                       debugName ? debugName : ""};
+    return TextureDesc{
+        .width = width,
+        .height = height,
+        .usage = usage,
+        .type = TextureType::TwoD,
+        .format = format,
+        .debugName = debugName ? debugName : "",
+    };
   }
 
   /**
@@ -604,20 +598,13 @@ struct TextureDesc {
                                 TextureUsage usage,
                                 const char* IGL_NULLABLE debugName = nullptr) {
     return TextureDesc{
-        width,
-        height,
-        1,
-        numLayers,
-        1,
-        usage,
-        1,
-        TextureType::TwoDArray,
-        format,
-        ResourceStorage::Invalid,
-        TextureTiling::Optimal,
-        TextureExportability::NoExport,
-        TextureMipmapGeneration::Manual,
-        debugName ? debugName : "",
+        .width = width,
+        .height = height,
+        .numLayers = numLayers,
+        .usage = usage,
+        .type = TextureType::TwoDArray,
+        .format = format,
+        .debugName = debugName ? debugName : "",
     };
   }
 
@@ -636,20 +623,14 @@ struct TextureDesc {
                              uint32_t height,
                              TextureUsage usage,
                              const char* IGL_NULLABLE debugName = nullptr) {
-    return TextureDesc{width,
-                       height,
-                       1,
-                       1,
-                       1,
-                       usage,
-                       1,
-                       TextureType::Cube,
-                       format,
-                       ResourceStorage::Invalid,
-                       TextureTiling::Optimal,
-                       TextureExportability::NoExport,
-                       TextureMipmapGeneration::Manual,
-                       debugName ? debugName : ""};
+    return TextureDesc{
+        .width = width,
+        .height = height,
+        .usage = usage,
+        .type = TextureType::Cube,
+        .format = format,
+        .debugName = debugName ? debugName : "",
+    };
   }
 
   /**
@@ -669,20 +650,15 @@ struct TextureDesc {
                            uint32_t depth,
                            TextureUsage usage,
                            const char* IGL_NULLABLE debugName = nullptr) {
-    return TextureDesc{width,
-                       height,
-                       depth,
-                       1,
-                       1,
-                       usage,
-                       1,
-                       TextureType::ThreeD,
-                       format,
-                       ResourceStorage::Invalid,
-                       TextureTiling::Optimal,
-                       TextureExportability::NoExport,
-                       TextureMipmapGeneration::Manual,
-                       debugName ? debugName : ""};
+    return TextureDesc{
+        .width = width,
+        .height = height,
+        .depth = depth,
+        .usage = usage,
+        .type = TextureType::ThreeD,
+        .format = format,
+        .debugName = debugName ? debugName : "",
+    };
   }
 
   /**
@@ -699,20 +675,14 @@ struct TextureDesc {
                                       uint32_t height,
                                       TextureUsage usage,
                                       const char* IGL_NULLABLE debugName = nullptr) {
-    return TextureDesc{width,
-                       height,
-                       1,
-                       1,
-                       1,
-                       usage,
-                       1,
-                       TextureType::ExternalImage,
-                       format,
-                       ResourceStorage::Invalid,
-                       TextureTiling::Optimal,
-                       TextureExportability::NoExport,
-                       TextureMipmapGeneration::Manual,
-                       debugName ? debugName : ""};
+    return TextureDesc{
+        .width = width,
+        .height = height,
+        .usage = usage,
+        .type = TextureType::ExternalImage,
+        .format = format,
+        .debugName = debugName ? debugName : "",
+    };
   }
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
@@ -731,20 +701,15 @@ struct TextureDesc {
                                             uint32_t width,
                                             uint32_t height,
                                             const char* IGL_NULLABLE debugName = nullptr) {
-    return TextureDesc{width,
-                       height,
-                       1,
-                       1,
-                       1,
-                       usage,
-                       1,
-                       TextureType::TwoD,
-                       format,
-                       ResourceStorage::Shared,
-                       TextureTiling::Optimal,
-                       TextureExportability::NoExport,
-                       TextureMipmapGeneration::Manual,
-                       debugName ? debugName : ""};
+    return TextureDesc{
+        .width = width,
+        .height = height,
+        .usage = usage,
+        .type = TextureType::TwoD,
+        .format = format,
+        .storage = ResourceStorage::Shared,
+        .debugName = debugName ? debugName : "",
+    };
   }
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
