@@ -11,6 +11,7 @@
 
 namespace igl::metal::ios {
 
+// @fb-only
 Framebuffer::Framebuffer(const FramebufferDesc& value) : metal::Framebuffer(value) {}
 
 bool Framebuffer::canCopy(ICommandQueue& /* unused */,
