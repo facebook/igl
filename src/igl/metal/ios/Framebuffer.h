@@ -12,6 +12,7 @@
 
 namespace igl::metal::ios {
 
+// @fb-only
 class Framebuffer final : public ::igl::metal::Framebuffer {
  public:
   explicit Framebuffer(const FramebufferDesc& value);
