@@ -470,8 +470,7 @@ TextureFormat glTextureFormatToTextureFormat(int32_t glInternalFormat,
   default:
     return TextureFormat::Invalid;
   }
-
-  return TextureFormat::Invalid;
+  IGL_UNREACHABLE_RETURN(TextureFormat::Invalid)
 }
 
 } // namespace igl::opengl::util

@@ -195,8 +195,7 @@ SamplerMipFilter SamplerState::convertGLMipFilter(GLint glMinFilter) {
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return SamplerMipFilter::Disabled;
   }
-
-  return SamplerMipFilter::Disabled;
+  IGL_UNREACHABLE_RETURN(SamplerMipFilter::Disabled)
 }
 
 GLint SamplerState::convertAddressMode(SamplerAddressMode addressMode) {
@@ -228,8 +227,7 @@ SamplerAddressMode SamplerState::convertGLAddressMode(GLint glAddressMode) {
   default:
     return SamplerAddressMode::Repeat;
   }
-
-  return SamplerAddressMode::Repeat;
+  IGL_UNREACHABLE_RETURN(SamplerAddressMode::Repeat)
 }
 
 bool SamplerState::isYUV() const noexcept {
