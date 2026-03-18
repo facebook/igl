@@ -20,9 +20,10 @@ namespace igl::opengl::glx {
 
 class Device;
 
+// @fb-only
 class PlatformDevice : public opengl::PlatformDevice {
  public:
-  static constexpr igl::PlatformDeviceType kType = igl::PlatformDeviceType::OpenGLx;
+  static constexpr PlatformDeviceType kType = PlatformDeviceType::OpenGLx;
 
   explicit PlatformDevice(Device& owner);
   ~PlatformDevice() override = default;
