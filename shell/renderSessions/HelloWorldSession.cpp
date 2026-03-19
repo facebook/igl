@@ -20,12 +20,12 @@ struct VertexPosColor {
   iglu::simdtypes::float3 position;
   iglu::simdtypes::float4 color;
 };
-VertexPosColor vertexData[] = {
+const VertexPosColor kVertexData[] = {
     {.position = {-0.6f, -0.4f, 0.0}, .color = {1.0, 0.0, 0.0, 1.0}},
     {.position = {0.6f, -0.4f, 0.0}, .color = {0.0, 1.0, 0.0, 1.0}},
     {.position = {0.0f, 0.6f, 0.0}, .color = {0.0, 0.0, 1.0, 1.0}},
 };
-uint16_t indexData[] = {
+const uint16_t kIndexData[] = {
     2,
     1,
     0,
@@ -167,13 +167,13 @@ void HelloWorldSession::initialize() noexcept {
 
   // Vertex & Index buffer
   vb0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
-                                        .data = vertexData,
-                                        .length = sizeof(vertexData)},
+                                        .data = kVertexData,
+                                        .length = sizeof(kVertexData)},
                              nullptr);
   IGL_DEBUG_ASSERT(vb0_ != nullptr);
   ib0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
-                                        .data = indexData,
-                                        .length = sizeof(indexData)},
+                                        .data = kIndexData,
+                                        .length = sizeof(kIndexData)},
                              nullptr);
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
@@ -265,9 +265,9 @@ void HelloWorldSession::update(SurfaceTextures textures) noexcept {
   }
 
   // Command Buffers
-  auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
+  const auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
-  auto drawableSurface = framebuffer_->getColorAttachment(0);
+  const auto drawableSurface = framebuffer_->getColorAttachment(0);
 
   // Submit commands
   const std::shared_ptr<IRenderCommandEncoder> commands =
