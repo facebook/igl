@@ -96,20 +96,19 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
 
     std::shared_ptr<igl::IBuffer> buffer = nullptr;
     if (createBuffer) {
-      igl::BufferDesc desc;
-      desc.length = bufferAllocationLength;
-      desc.data = nullptr;
-      desc.storage = igl::ResourceStorage::Shared;
-      desc.type = igl::BufferDesc::BufferTypeBits::Uniform;
-      desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
-      if (device_.getBackendType() == igl::BackendType::Metal ||
-          device_.getBackendType() == igl::BackendType::Vulkan ||
-          device_.getBackendType() == igl::BackendType::D3D12) {
-        desc.hint |= igl::BufferDesc::BufferAPIHintBits::Ring;
-      }
+      const auto backendType = device_.getBackendType();
+      const igl::BufferDesc desc{
+          .type = igl::BufferDesc::BufferTypeBits::Uniform,
+          .length = bufferAllocationLength,
+          .storage = igl::ResourceStorage::Shared,
+          .hint = static_cast<igl::BufferDesc::BufferAPIHint>(
+              igl::BufferDesc::BufferAPIHintBits::UniformBlock |
+              ((backendType == igl::BackendType::Metal || backendType == igl::BackendType::Vulkan ||
+                backendType == igl::BackendType::D3D12)
+                   ? igl::BufferDesc::BufferAPIHintBits::Ring
+                   : 0)),
+      };
       buffer = device.createBuffer(desc, nullptr);
-    } else {
-      buffer = nullptr;
     }
 
     // All uniform updates will be made to this malloc'ed data block,
