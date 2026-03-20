@@ -26,7 +26,7 @@ struct VertexPosUvw {
 };
 
 const float kHalf = 1.0f;
-VertexPosUvw vertexData0[] = {
+const VertexPosUvw kVertexData0[] = {
     {.position = {-kHalf, kHalf, -kHalf}, .uvw = {0.0, 1.0, 0.0}},
     {.position = {kHalf, kHalf, -kHalf}, .uvw = {1.0, 1.0, 0.0}},
     {.position = {-kHalf, -kHalf, -kHalf}, .uvw = {0.0, 0.0, 0.0}},
@@ -36,8 +36,8 @@ VertexPosUvw vertexData0[] = {
     {.position = {kHalf, -kHalf, kHalf}, .uvw = {1.0, 0.0, 1.0}},
     {.position = {-kHalf, -kHalf, kHalf}, .uvw = {0.0, 0.0, 1.0}},
 };
-uint16_t indexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
-                        5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7};
+const uint16_t kIndexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
+                               5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7};
 
 std::string getProlog(IDevice& device) {
 #if IGL_BACKEND_OPENGL
@@ -299,12 +299,12 @@ void Textured3DCubeSession::initialize() noexcept {
   }
   // Vertex buffer, Index buffer and Vertex Input
   vb0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
-                                        .data = vertexData0,
-                                        .length = sizeof(vertexData0)},
+                                        .data = kVertexData0,
+                                        .length = sizeof(kVertexData0)},
                              nullptr);
   ib0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
-                                        .data = indexData,
-                                        .length = sizeof(indexData)},
+                                        .data = kIndexData,
+                                        .length = sizeof(kIndexData)},
                              nullptr);
 
   const VertexInputStateDesc inputDesc = {
@@ -396,7 +396,7 @@ void Textured3DCubeSession::update(SurfaceTextures surfaceTextures) noexcept {
   if (pipelineState_ == nullptr) {
     // Graphics pipeline: state batch that fully configures GPU for rendering
 
-    RenderPipelineDesc graphicsDesc = {
+    const RenderPipelineDesc graphicsDesc = {
         .vertexInputState = vertexInput0_,
         .shaderStages = shaderStages_,
         .targetDesc = {.colorAttachments =
@@ -412,7 +412,7 @@ void Textured3DCubeSession::update(SurfaceTextures surfaceTextures) noexcept {
   }
 
   // Command buffers (1-N per thread): create, submit and forget
-  auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
+  const auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
   const std::shared_ptr<IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
