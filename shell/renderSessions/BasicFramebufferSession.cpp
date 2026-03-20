@@ -20,34 +20,32 @@ void BasicFramebufferSession::initialize() noexcept {
   commandQueue_ = getPlatform().getDevice().createCommandQueue({}, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 
-  // Initialize render pass
-  renderPass_.colorAttachments = {{
-      .loadAction = igl::LoadAction::Clear,
-      .storeAction = igl::StoreAction::Store,
-      .clearColor = getPreferredClearColor(),
-  }};
+  renderPass_ = {
+      .colorAttachments = {{
+          .loadAction = igl::LoadAction::Clear,
+          .storeAction = igl::StoreAction::Store,
+          .clearColor = getPreferredClearColor(),
+      }},
+  };
 }
 
 void BasicFramebufferSession::update(SurfaceTextures surfaceTextures) noexcept {
-  Result ret;
   // Create/update framebuffer
   if (framebuffer_ == nullptr) {
     framebuffer_ = getPlatform().getDevice().createFramebuffer(
         {
             .colorAttachments = {{.texture = surfaceTextures.color}},
         },
-        &ret);
-    IGL_DEBUG_ASSERT(ret.isOk());
+        nullptr);
     IGL_DEBUG_ASSERT(framebuffer_ != nullptr);
   } else {
     framebuffer_->updateDrawable(surfaceTextures.color);
   }
 
   // Create/submit command buffer
-  auto buffer = commandQueue_->createCommandBuffer({}, &ret);
+  const auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
-  IGL_DEBUG_ASSERT(ret.isOk());
-  auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+  const auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_DEBUG_ASSERT(commands != nullptr);
   commands->endEncoding();
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
