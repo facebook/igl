@@ -26,19 +26,19 @@ struct VertexPosUv {
   iglu::simdtypes::float3 position; // SIMD 128b aligned
   iglu::simdtypes::float2 uv; // SIMD 128b aligned
 };
-static VertexPosUv vertexData0[] = {
+static const VertexPosUv kVertexData0[] = {
     {.position = {-0.9f, 0.9f, 0.0}, .uv = {0.0, 1.0}},
     {.position = {-0.05f, 0.9f, 0.0}, .uv = {1.0, 1.0}},
     {.position = {-0.9f, -0.9f, 0.0}, .uv = {0.0, 0.0}},
     {.position = {-0.05f, -0.9f, 0.0}, .uv = {1.0, 0.0}},
 };
-static VertexPosUv vertexData1[] = {
+static const VertexPosUv kVertexData1[] = {
     {.position = {0.05f, 0.9f, 0.0}, .uv = {0.0, 1.0}},
     {.position = {0.90f, 0.9f, 0.0}, .uv = {1.0, 1.0}},
     {.position = {0.05f, -0.9f, 0.0}, .uv = {0.0, 0.0}},
     {.position = {0.90f, -0.9f, 0.0}, .uv = {1.0, 0.0}},
 };
-static uint16_t indexData[] = {
+static const uint16_t kIndexData[] = {
     0,
     1,
     2,
@@ -331,16 +331,16 @@ void MRTSession::initialize() noexcept {
 
   // Vertex buffer, Index buffer and Vertex Input
   vb0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
-                                        .data = vertexData0,
-                                        .length = sizeof(vertexData0)},
+                                        .data = kVertexData0,
+                                        .length = sizeof(kVertexData0)},
                              nullptr);
   vb1_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
-                                        .data = vertexData1,
-                                        .length = sizeof(vertexData1)},
+                                        .data = kVertexData1,
+                                        .length = sizeof(kVertexData1)},
                              nullptr);
   ib0_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
-                                        .data = indexData,
-                                        .length = sizeof(indexData)},
+                                        .data = kIndexData,
+                                        .length = sizeof(kIndexData)},
                              nullptr);
 
   vertexInput_ = device.createVertexInputState(
@@ -382,30 +382,28 @@ void MRTSession::initialize() noexcept {
   tex0_->generateMipmap(*commandQueue_);
 
   renderPassMRT_ = {
-      .colorAttachments =
+      .colorAttachments = {{
           {
-              {
-                  .loadAction = LoadAction::Clear,
-                  .storeAction = StoreAction::Store,
-                  .clearColor = getPreferredClearColor(),
-              },
-              {
-                  .loadAction = LoadAction::Clear,
-                  .storeAction = StoreAction::Store,
-                  .clearColor = getPreferredClearColor(),
-              },
+              .loadAction = LoadAction::Clear,
+              .storeAction = StoreAction::Store,
+              .clearColor = getPreferredClearColor(),
           },
+          {
+              .loadAction = LoadAction::Clear,
+              .storeAction = StoreAction::Store,
+              .clearColor = getPreferredClearColor(),
+          },
+      }},
   };
 
   renderPassDisplayLast_ = {
-      .colorAttachments =
+      .colorAttachments = {{
           {
-              {
-                  .loadAction = LoadAction::Clear,
-                  .storeAction = StoreAction::Store,
-                  .clearColor = getPreferredClearColor(),
-              },
+              .loadAction = LoadAction::Clear,
+              .storeAction = StoreAction::Store,
+              .clearColor = getPreferredClearColor(),
           },
+      }},
   };
 }
 
@@ -518,10 +516,10 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
   // Draw call 0
   // clang-format off
   commands->bindRenderPipelineState(pipelineStateLastDisplay_);
-  auto green = framebufferMRT_->getColorAttachment(0);
+  const auto green = framebufferMRT_->getColorAttachment(0);
   commands->bindTexture(textureUnit, BindTarget::kFragment, green.get());
   commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_.get());
-  auto red = framebufferMRT_->getColorAttachment(1);
+  const auto red = framebufferMRT_->getColorAttachment(1);
   commands->bindTexture(textureUnit+1, BindTarget::kFragment, red.get());
   commands->bindSamplerState(textureUnit+1, BindTarget::kFragment, samp0_.get());
 
