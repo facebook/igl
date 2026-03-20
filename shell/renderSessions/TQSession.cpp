@@ -297,7 +297,7 @@ void TQSession::initialize() noexcept {
   ib0_ = device.createBuffer(ibDesc, nullptr);
   IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
-  auto vertexBufferIndex = getVertexBufferIndex(getPlatform().getDevice());
+  const auto vertexBufferIndex = getVertexBufferIndex(getPlatform().getDevice());
   VertexInputStateDesc inputDesc = {
       .numAttributes = 2,
       .attributes =
@@ -346,16 +346,13 @@ void TQSession::initialize() noexcept {
     tex0_->generateMipmap(*commandQueue_);
   }
 
-  renderPass_.colorAttachments = {
-      {
+  renderPass_ = {
+      .colorAttachments = {{
           .loadAction = LoadAction::Clear,
           .storeAction = StoreAction::Store,
           .clearColor = getPreferredClearColor(),
-      },
-  };
-  renderPass_.depthAttachment = {
-      .loadAction = LoadAction::Clear,
-      .clearDepth = 1.0,
+      }},
+      .depthAttachment = {.loadAction = LoadAction::Clear, .clearDepth = 1.0},
   };
 
   // init uniforms
@@ -422,9 +419,9 @@ void TQSession::update(SurfaceTextures surfaceTextures) noexcept {
   }
 
   // Command Buffers
-  auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
+  const auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
-  auto drawableSurface = framebuffer_->getColorAttachment(0);
+  const auto drawableSurface = framebuffer_->getColorAttachment(0);
 
   // Uniform: "color"
   if (!fragmentUniformDescriptors_.empty()) {
