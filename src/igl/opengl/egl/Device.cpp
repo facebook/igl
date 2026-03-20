@@ -14,6 +14,7 @@
 namespace igl::opengl::egl {
 
 Device::Device(std::unique_ptr<IContext> context) :
+  // @fb-only
   opengl::Device(std::move(context)), platformDevice_(*this) {}
 
 const PlatformDevice& Device::getPlatformDevice() const noexcept {
@@ -21,7 +22,7 @@ const PlatformDevice& Device::getPlatformDevice() const noexcept {
 }
 
 void Device::updateSurface(void* nativeWindowType) {
-  std::static_pointer_cast<opengl::egl::Context>(getSharedContext())
+  std::static_pointer_cast<Context>(getSharedContext())
       ->updateSurface((NativeWindowType)nativeWindowType);
 }
 
