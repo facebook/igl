@@ -114,7 +114,7 @@ DeviceFeatureSet::DeviceFeatureSet(id<MTLDevice> device) {
   }
 
   if (@available(macOS 10.15, iOS 14.0, *)) {
-    for (id<MTLCounterSet> counterSet in device.counterSets) {
+    for (id<MTLCounterSet> counterSet = nullptr in device.counterSets) {
       if ([counterSet.name isEqualToString:MTLCommonCounterSetTimestamp]) {
         supportsTimestampQueries_ = true;
         break;

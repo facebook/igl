@@ -246,7 +246,7 @@ std::shared_ptr<ITimestampQueries> Device::createTimestampQueries(uint32_t maxTi
   if (@available(macOS 10.15, iOS 14.0, *)) {
     // Find the timestamp counter set
     id<MTLCounterSet> timestampCounterSet = nil;
-    for (id<MTLCounterSet> counterSet in device_.counterSets) {
+    for (id<MTLCounterSet> counterSet = nullptr in device_.counterSets) {
       if ([counterSet.name isEqualToString:MTLCommonCounterSetTimestamp]) {
         timestampCounterSet = counterSet;
         break;
