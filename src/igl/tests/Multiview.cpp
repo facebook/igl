@@ -81,7 +81,6 @@ class MultiviewTest : public ::testing::Test {
 
     if (!iglDev_->hasFeature(DeviceFeatures::Multiview)) {
       GTEST_SKIP() << "Multiview is unsupported for this platform.";
-      return;
     }
 #if IGL_PLATFORM_WINDOWS || (IGL_PLATFORM_LINUX && !IGL_PLATFORM_LINUX_USE_EGL)
     if (iglDev_->getBackendType() == igl::BackendType::OpenGL) {
@@ -224,7 +223,6 @@ TEST_F(MultiviewTest, FramebufferMode) {
 TEST_F(MultiviewTest, SinglePassStereo) {
   if (!iglDev_->hasFeature(DeviceFeatures::Multiview)) {
     GTEST_SKIP() << "Multiview is unsupported for this platform.";
-    return;
   }
 
   std::unique_ptr<IShaderStages> stages;
