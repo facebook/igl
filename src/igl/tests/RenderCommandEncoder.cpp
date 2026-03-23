@@ -501,7 +501,6 @@ TEST_F(RenderCommandEncoderTest, shouldDrawLineStrip) {
 TEST_F(RenderCommandEncoderTest, drawIndexedFirstIndex) {
   if (!iglDev_->hasFeature(igl::DeviceFeatures::DrawFirstIndexFirstVertex)) {
     GTEST_SKIP();
-    return;
   }
   initializeBuffers(
       // clang-format off
@@ -543,7 +542,6 @@ TEST_F(RenderCommandEncoderTest, drawIndexedFirstIndex) {
 TEST_F(RenderCommandEncoderTest, drawIndexed8Bit) {
   if (!iglDev_->hasFeature(igl::DeviceFeatures::Indices8Bit)) {
     GTEST_SKIP();
-    return;
   }
   initializeBuffers(
       // clang-format off
@@ -584,7 +582,6 @@ TEST_F(RenderCommandEncoderTest, drawIndexed8Bit) {
 TEST_F(RenderCommandEncoderTest, drawInstanced) {
   if (!iglDev_->hasFeature(igl::DeviceFeatures::DrawFirstIndexFirstVertex)) {
     GTEST_SKIP();
-    return;
   }
   initializeBuffers(
       // clang-format off
@@ -691,7 +688,6 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStripCopyTextureToBuffer) {
   if (iglDev_->getBackendType() != igl::BackendType::Vulkan &&
       iglDev_->getBackendType() != igl::BackendType::D3D12) {
     GTEST_SKIP() << "Not implemented for this backend";
-    return;
   }
 
   initializeBuffers(
@@ -812,7 +808,6 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangleBindGroup) {
   if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
     // @fb-only
     GTEST_SKIP() << "Broken on macOS arm64";
-    return;
   }
 #endif
 
@@ -880,7 +875,6 @@ TEST_F(RenderCommandEncoderTest, drawUsingBindPushConstants) {
   if (iglDev_->getBackendType() != igl::BackendType::Vulkan &&
       iglDev_->getBackendType() != igl::BackendType::D3D12) {
     GTEST_SKIP() << "Push constants are only supported in Vulkan and D3D12";
-    return;
   }
 
   initializeBuffers(
