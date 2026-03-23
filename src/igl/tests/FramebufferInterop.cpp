@@ -248,7 +248,6 @@ TEST_F(FramebufferInteropTest, StereoFramebuffer) {
   if (device_->getBackendType() == igl::BackendType::OpenGL &&
       device_->getBackendVersion().majorVersion < 3) {
     GTEST_SKIP() << "Stereo rendering is not supported in OpenGL ES 2.0";
-    return;
   }
 
   base::AttachmentInteropDesc colorDesc{
