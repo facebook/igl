@@ -13,7 +13,7 @@
 namespace igl::metal::ios {
 
 // @fb-only
-class Device final : public ::igl::metal::Device {
+class Device final : public metal::Device {
  public:
   explicit Device(id<MTLDevice> device);
   ~Device() override = default;
