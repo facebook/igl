@@ -320,6 +320,49 @@ TEST_F(DescriptorPoolArenaTest, StressPoolExhaustion) {
   renderFrame(200);
 }
 
+// Test 9: Exactly 64 draws — fills pool to capacity without triggering a switch.
+TEST_F(DescriptorPoolArenaTest, ExactPoolCapacityBoundary) {
+  renderFrame(64);
+}
+
+// Test 10: Exhaust pool 1 in frame 0, then exhaust pool 2 in frame 1 which recycles pool 1
+// via the cached reuse path (isNewPool_=false, allocatedDSet_[dsetCursor_++]).
+TEST_F(DescriptorPoolArenaTest, FullPoolReuseCycle) {
+  renderFrame(65);
+  renderFrame(64);
+}
+
+// Test 11: 8 frames of pool exhaustion+recycling. Verifies dsetCursor_ resets and
+// isNewPool_ toggles correctly across many reuse cycles.
+TEST_F(DescriptorPoolArenaTest, RepeatedFullReuseCycles) {
+  for (int frame = 0; frame < 8; frame++) {
+    renderFrame(65);
+  }
+}
+
+// Test 12: Texture+buffer binding with pool exhaustion — both CombinedImageSamplers
+// and Buffers arenas go through the extinct→reuse cycle.
+TEST_F(DescriptorPoolArenaTest, ExhaustMultipleArenas) {
+  for (int frame = 0; frame < 4; frame++) {
+    renderFrame(70, /*bindBuffer=*/true);
+  }
+}
+
+// Test 13: 130 draws exhaust 2 pools in one frame (same handle prevents reuse),
+// then frame 2 recycles the oldest extinct pool.
+TEST_F(DescriptorPoolArenaTest, TwoPoolsExhaustedSameFrameThenRecycled) {
+  renderFrame(130);
+  renderFrame(65);
+}
+
+// Test 14: Pool allocated→exhausted→recycled→re-exhausted→re-recycled.
+// Verifies allocatedDSet_ survives multiple save/restore rounds through ExtinctDescriptorPool.
+TEST_F(DescriptorPoolArenaTest, ReusedPoolReExhausted) {
+  renderFrame(65);
+  renderFrame(128);
+  renderFrame(65);
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
