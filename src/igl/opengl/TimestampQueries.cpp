@@ -27,6 +27,20 @@ TimestampQueries::TimestampQueries(IContext& context, uint32_t maxSlots) :
   WithContext(context), maxSlots_(maxSlots) {
   queryIds_.resize(maxSlots);
   iglGenQueries(maxSlots, queryIds_.data());
+
+  // Validate: broken Mali budget GPU drivers silently fail iglGenQueries,
+  // leaving query IDs as 0. Any zero ID means the driver is broken - disable all.
+  bool anyZero = false;
+  for (uint32_t i = 0; i < maxSlots; ++i) {
+    if (queryIds_[i] == 0) {
+      anyZero = true;
+      break;
+    }
+  }
+  if (maxSlots > 0 && anyZero) {
+    queryIds_.clear();
+    valid_ = false;
+  }
 }
 
 TimestampQueries::~TimestampQueries() {
@@ -47,8 +61,15 @@ void TimestampQueries::reset() {
   currentIndex_ = 0;
 }
 
+bool TimestampQueries::isValid() const {
+  return valid_;
+}
+
 bool TimestampQueries::resultsAvailable() const {
-  if (currentIndex_ == 0) {
+  if (!valid_ || currentIndex_ == 0) {
+    return false;
+  }
+  if (queryIds_[currentIndex_ - 1] == 0) {
     return false;
   }
   GLint available = 0;
@@ -57,7 +78,10 @@ bool TimestampQueries::resultsAvailable() const {
 }
 
 uint64_t TimestampQueries::getElapsedNanos(uint32_t slotIndex) const {
-  if (slotIndex >= currentIndex_) {
+  if (!valid_ || slotIndex >= currentIndex_) {
+    return 0;
+  }
+  if (queryIds_[slotIndex] == 0) {
     return 0;
   }
 
@@ -73,8 +97,11 @@ uint64_t TimestampQueries::getElapsedNanos(uint32_t slotIndex) const {
 }
 
 void TimestampQueries::beginElapsedQuery(uint32_t slotIndex) {
-  if (slotIndex >= maxSlots_) {
+  if (!valid_ || slotIndex >= maxSlots_) {
     return;
+  }
+  if (queryIds_[slotIndex] == 0) {
+    return; // guard against zero query ID - invalid per GL spec
   }
   iglBeginQuery(GL_TIME_ELAPSED, queryIds_[slotIndex]);
   if (slotIndex >= currentIndex_) {
@@ -83,6 +110,9 @@ void TimestampQueries::beginElapsedQuery(uint32_t slotIndex) {
 }
 
 void TimestampQueries::endElapsedQuery() {
+  if (!valid_) {
+    return;
+  }
   iglEndQuery(GL_TIME_ELAPSED);
 }
 

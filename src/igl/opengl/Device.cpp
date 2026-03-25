@@ -412,8 +412,18 @@ std::shared_ptr<ITimestampQueries> Device::createTimestampQueries(uint32_t maxTi
                                                                   Result* IGL_NULLABLE
                                                                       outResult) const noexcept {
   if (deviceFeatureSet_.hasExtension(Extensions::TimerQuery)) {
+    auto queries = std::make_shared<TimestampQueries>(getContext(), maxTimestamps);
+    if (!queries->isValid()) {
+      // Driver reports timer query support but iglGenQueries silently failed
+      // (e.g. broken Mali budget GPU drivers). Return nullptr so
+      // GPUTimingCollector::isEnabled() returns false.
+      Result::setResult(outResult,
+                        Result::Code::RuntimeError,
+                        "TimestampQueries: iglGenQueries failed (query IDs are zero)");
+      return nullptr;
+    }
     Result::setOk(outResult);
-    return std::make_shared<TimestampQueries>(getContext(), maxTimestamps);
+    return queries;
   }
   Result::setResult(
       outResult, Result::Code::Unsupported, "TimestampQueries are not supported on this device");

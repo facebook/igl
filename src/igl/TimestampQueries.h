@@ -36,6 +36,13 @@ class ITimestampQueries : public ITrackedResource<ITimestampQueries> {
     return 0;
   }
 
+  /// Whether this queries object was successfully initialized and is usable.
+  /// Returns true by default; backends override to return false if
+  /// hardware/driver initialization failed silently.
+  [[nodiscard]] virtual bool isValid() const {
+    return true;
+  }
+
  protected:
   ITimestampQueries() = default;
 };

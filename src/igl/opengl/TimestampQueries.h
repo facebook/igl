@@ -30,6 +30,8 @@ class TimestampQueries : public ITimestampQueries, public WithContext {
   [[nodiscard]] bool resultsAvailable() const override;
   [[nodiscard]] uint64_t getElapsedNanos(uint32_t slotIndex) const override;
 
+  [[nodiscard]] bool isValid() const override;
+
   /// Start a GL_TIME_ELAPSED query for the given timing slot.
   /// Must be paired with endElapsedQuery(). Cannot be nested.
   void beginElapsedQuery(uint32_t slotIndex);
@@ -40,7 +42,8 @@ class TimestampQueries : public ITimestampQueries, public WithContext {
  private:
   std::vector<GLuint> queryIds_;
   uint32_t maxSlots_ = 0;
-  uint32_t currentIndex_ = 0; // not atomic — GL is single-threaded
+  uint32_t currentIndex_ = 0;
+  bool valid_ = true; // set once in constructor
 };
 
 } // namespace igl::opengl
