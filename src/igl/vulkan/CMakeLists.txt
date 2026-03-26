@@ -32,9 +32,16 @@ target_link_libraries(IGLVulkan PRIVATE IGLLibrary IGLGlslang)
 igl_set_cxxstd(IGLVulkan 20)
 igl_set_folder(IGLVulkan "IGL")
 
-find_package(Vulkan REQUIRED)
+find_package(Vulkan)
 
-target_link_libraries(IGLVulkan PUBLIC Vulkan::Vulkan)
+if(TARGET Vulkan::Vulkan)
+  target_link_libraries(IGLVulkan PUBLIC Vulkan::Vulkan)
+elseif(DEFINED ENV{VULKAN_SDK})
+  # Vulkan-Headers-only SDK: use headers from VULKAN_SDK, volk handles dynamic loading
+  target_include_directories(IGLVulkan PUBLIC "$ENV{VULKAN_SDK}/include")
+else()
+  message(FATAL_ERROR "Vulkan SDK not found. Set VULKAN_SDK or install Vulkan development packages.")
+endif()
 target_link_libraries(IGLVulkan PUBLIC fmt)
 
 target_include_directories(IGLVulkan PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/fmt/include")
