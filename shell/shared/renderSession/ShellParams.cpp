@@ -82,6 +82,10 @@ std::optional<BenchmarkRenderSessionParams> parseBenchmarkRenderSessionParams(
         benchmarkParamsFound = true;
       }
     }
+    // Skip flags handled by parseShellParams
+    else if (arg == "--force-multiview") {
+      // handled in parseShellParams; skip here
+    }
     // Check for custom parameters in the form --key value
     else if (arg.rfind("--", 0) == 0) {
       std::string key = arg.substr(2); // Remove "--" prefix
@@ -158,6 +162,15 @@ void parseShellParams(const std::vector<std::string>& args, ShellParams& shellPa
       }
     } else if (arg == "--use-timer-rendering") {
       shellParams.useTimerRendering = true;
+    } else if (arg == "--force-multiview") {
+      shellParams.forceMultiview = true;
+      shellParams.renderMode = RenderMode::SinglePassStereo;
+      // Two identical views — duplicate mono camera, only viewIndex differs
+      shellParams.viewParams.resize(2);
+      shellParams.viewParams[0].viewIndex = 0;
+      shellParams.viewParams[1].viewIndex = 1;
+      // Note: shouldPresent is NOT set here — it's set by the shell when multiview
+      // textures are actually created, so fallback-to-mono still presents correctly.
     }
   }
 }

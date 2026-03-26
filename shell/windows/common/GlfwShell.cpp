@@ -269,6 +269,7 @@ void GlfwShell::run() noexcept {
 
     const double startTime = RenderSession::getSeconds();
     session_->update(std::move(surfaceTextures));
+    postUpdate();
 
     if (params.fpsThrottleMs > 0) {
       const double endTime = RenderSession::getSeconds();

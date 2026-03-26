@@ -63,6 +63,7 @@ struct ShellParams {
   uint32_t freezeAtFrame = ~0u; // frame number to freeze at (~0u = disabled)
   bool fpsThrottleRandom = false; // if true, throttle is random in range [1, fpsThrottleMs]
   bool useTimerRendering = false; // use external display link for rendering (macOS Metal)
+  bool forceMultiview = false; // force multiview rendering on desktop (Vulkan only)
 };
 
 std::vector<std::string> convertArgvToParams(int argc, char** argv);

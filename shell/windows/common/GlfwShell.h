@@ -70,6 +70,7 @@ class GlfwShell {
   virtual void didCreateWindow() noexcept {}
 
   virtual void willTick() noexcept {}
+  virtual void postUpdate() noexcept {}
 
  private:
   bool createWindow() noexcept;

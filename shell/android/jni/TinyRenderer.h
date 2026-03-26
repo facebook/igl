@@ -57,6 +57,18 @@ class TinyRenderer final {
   // Offscreen textures for headless rendering
   std::shared_ptr<ITexture> offscreenColorTexture_;
   std::shared_ptr<ITexture> offscreenDepthTexture_;
+
+  // Multiview stereo present resources (Vulkan only, used with --force-multiview)
+  std::shared_ptr<ITexture> multiviewColor_;
+  std::shared_ptr<ITexture> multiviewDepth_;
+  std::shared_ptr<ITexture> swapchainColor_;
+  std::shared_ptr<ICommandQueue> presentQueue_;
+  std::shared_ptr<IRenderPipelineState> presentPipeline_;
+  std::shared_ptr<ISamplerState> presentSampler_;
+  bool stereoPresentInitialized_ = false;
+
+  void initStereoPresent(IDevice& device);
+  void stereoPresent(IDevice& device);
 };
 
 } // namespace igl::samples

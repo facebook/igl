@@ -23,8 +23,10 @@
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #if IGL_BACKEND_VULKAN
+#include <igl/ShaderCreator.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
+#include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 #endif
 #include <memory>
@@ -140,6 +142,15 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
     shellParams.freezeAtFrame = static_cast<uint32_t>(freezeAtFrame.value());
   }
 
+  auto forceMultiview = getAndroidSystemPropertyBool((prefixStr + "force-multiview").c_str());
+  if (forceMultiview.has_value() && forceMultiview.value()) {
+    shellParams.forceMultiview = true;
+    shellParams.renderMode = igl::shell::RenderMode::SinglePassStereo;
+    shellParams.viewParams.resize(2);
+    shellParams.viewParams[0].viewIndex = 0;
+    shellParams.viewParams[1].viewIndex = 1;
+  }
+
   // Read BenchmarkRenderSessionParams - always try to read them
   auto timeout = getAndroidSystemPropertySizeT((prefixStr + "timeout").c_str());
   auto sessions = getAndroidSystemPropertySizeT((prefixStr + "sessions").c_str());
@@ -191,7 +202,8 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
                                                                  "run-time",
                                                                  "report-interval",
                                                                  "hiccup-multiplier",
-                                                                 "render-buffer-size"};
+                                                                 "render-buffer-size",
+                                                                 "force-multiview"};
 
   struct CallbackData {
     const std::string& prefix;
@@ -438,9 +450,28 @@ void TinyRenderer::init(AAssetManager* mgr,
   // We want to catch failed device creation instead of letting implicitly fail
   IGL_SOFT_ASSERT(result.isOk());
   if (d) {
+    // Verify multiview support — if unsupported, report and run as usual
+    if (shellParams_.forceMultiview && !d->hasFeature(DeviceFeatures::Multiview)) {
+      __android_log_print(
+          ANDROID_LOG_WARN,
+          "igl",
+          "[IGL Shell] --force-multiview: multiview is not supported by this device. "
+          "Running in normal mono mode.\n");
+      shellParams_.forceMultiview = false;
+      shellParams_.renderMode = igl::shell::RenderMode::Mono;
+      shellParams_.viewParams.clear();
+      shellParams_.shouldPresent = true;
+    }
+
     platform_ = std::make_shared<igl::shell::PlatformAndroid>(std::move(d));
     IGL_DEBUG_ASSERT(platform_ != nullptr);
     static_cast<igl::shell::FileLoaderAndroid&>(platform_->getFileLoader()).setAssetManager(mgr);
+
+    // Sync surface dimensions to ShellParams for multiview
+    if (shellParams_.forceMultiview) {
+      shellParams_.viewportSize = glm::vec2(width_, height_);
+      shellParams_.nativeSurfaceDimensions = glm::ivec2(width_, height_);
+    }
 
     const ContextGuard guard(platform_->getDevice()); // wrap 'session_' operations
 
@@ -474,6 +505,128 @@ void TinyRenderer::recreateSwapchain(ANativeWindow* nativeWindow, bool createSur
 
   // need release frame buffer when recreate swap chain
   session_->releaseFramebuffer();
+#endif
+}
+
+#if IGL_BACKEND_VULKAN
+namespace {
+// Fullscreen triangle vertex shader for stereo side-by-side present
+const char* kStereoPresentVS = R"(
+#version 460
+layout(location = 0) out vec2 uv;
+out gl_PerVertex { vec4 gl_Position; };
+void main() {
+    vec2 pos = vec2((gl_VertexIndex << 1) & 2, gl_VertexIndex & 2);
+    uv = pos;
+    gl_Position = vec4(pos * 2.0 - 1.0, 0.0, 1.0);
+}
+)";
+
+// Fragment shader: left half = layer 0, right half = layer 1
+const char* kStereoPresentFS = R"(
+#version 460
+layout(location = 0) in vec2 uv;
+layout(location = 0) out vec4 outColor;
+layout(set = 0, binding = 0) uniform sampler2DArray stereoTex;
+void main() {
+    float layer = uv.x < 0.5 ? 0.0 : 1.0;
+    vec2 texCoord = vec2(uv.x < 0.5 ? uv.x * 2.0 : (uv.x - 0.5) * 2.0, uv.y);
+    outColor = texture(stereoTex, vec3(texCoord, layer));
+}
+)";
+} // namespace
+#endif
+
+void TinyRenderer::initStereoPresent(IDevice& device) {
+#if IGL_BACKEND_VULKAN
+  if (stereoPresentInitialized_) {
+    return;
+  }
+
+  const CommandQueueDesc queueDesc{};
+  presentQueue_ = device.createCommandQueue(queueDesc, nullptr);
+
+  const SamplerStateDesc samplerDesc = {
+      .minFilter = SamplerMinMagFilter::Linear,
+      .magFilter = SamplerMinMagFilter::Linear,
+      .addressModeU = SamplerAddressMode::Clamp,
+      .addressModeV = SamplerAddressMode::Clamp,
+  };
+  presentSampler_ = device.createSamplerState(samplerDesc, nullptr);
+
+  auto shaderStages = igl::ShaderStagesCreator::fromModuleStringInput(
+      device, kStereoPresentVS, "main", "", kStereoPresentFS, "main", "", nullptr);
+
+  const RenderPipelineDesc pipelineDesc = {
+      .shaderStages = std::move(shaderStages),
+      .targetDesc = {.colorAttachments = {{.textureFormat = swapchainColor_->getFormat()}}},
+  };
+  presentPipeline_ = device.createRenderPipeline(pipelineDesc, nullptr);
+
+  stereoPresentInitialized_ = true;
+  __android_log_print(
+      ANDROID_LOG_INFO, "igl", "[IGL Shell] Stereo present initialized for --force-multiview\n");
+#endif
+}
+
+void TinyRenderer::stereoPresent(IDevice& device) {
+#if IGL_BACKEND_VULKAN
+  if (!swapchainColor_ || !multiviewColor_) {
+    return;
+  }
+
+  if (!stereoPresentInitialized_) {
+    initStereoPresent(device);
+  }
+
+  const FramebufferDesc fbDesc = {
+      .colorAttachments = {{.texture = swapchainColor_}},
+  };
+  Result ret;
+  const auto framebuffer = device.createFramebuffer(fbDesc, &ret);
+  if (!ret.isOk()) {
+    return;
+  }
+
+  auto cmdBuf = presentQueue_->createCommandBuffer({}, nullptr);
+
+  const RenderPassDesc renderPass = {
+      .colorAttachments = {{
+          .loadAction = LoadAction::Clear,
+          .storeAction = StoreAction::Store,
+          .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
+      }},
+  };
+
+  auto encoder = cmdBuf->createRenderCommandEncoder(renderPass, framebuffer);
+
+  // Set viewport to match swapchain dimensions exactly
+  const auto swapDims = swapchainColor_->getDimensions();
+  const Viewport viewport = {
+      .x = 0.0f,
+      .y = 0.0f,
+      .width = static_cast<float>(swapDims.width),
+      .height = static_cast<float>(swapDims.height),
+      .minDepth = 0.0f,
+      .maxDepth = 1.0f,
+  };
+  encoder->bindViewport(viewport);
+  const ScissorRect scissor = {
+      .x = 0,
+      .y = 0,
+      .width = swapDims.width,
+      .height = swapDims.height,
+  };
+  encoder->bindScissorRect(scissor);
+
+  encoder->bindRenderPipelineState(presentPipeline_);
+  encoder->bindTexture(0, BindTarget::kFragment, multiviewColor_.get());
+  encoder->bindSamplerState(0, BindTarget::kFragment, presentSampler_.get());
+  encoder->draw(3);
+  encoder->endEncoding();
+
+  cmdBuf->present(swapchainColor_);
+  presentQueue_->submit(*cmdBuf);
 #endif
 }
 
@@ -538,6 +691,57 @@ bool TinyRenderer::render(float displayScale) {
       surfaceTextures.color = platformDevice->createTextureFromNativeDrawable(&result);
       surfaceTextures.depth =
           platformDevice->createTextureFromNativeDepth(width_, height_, &result);
+
+      // Force multiview: create 2-layer array textures for multiview rendering.
+      // stereoPresent() blits both layers side-by-side to the swapchain after update.
+      if (shellParams_.forceMultiview && !shellParams_.isHeadless &&
+          platform_->getDevice().hasFeature(DeviceFeatures::Multiview)) {
+        shellParams_.shouldPresent = false;
+        swapchainColor_ = std::move(surfaceTextures.color);
+        const auto dimensions = swapchainColor_->getDimensions();
+        const auto colorFormat = swapchainColor_->getFormat();
+        const auto depthFormat = surfaceTextures.depth->getFormat();
+
+        if (!multiviewColor_ || multiviewColor_->getDimensions() != dimensions) {
+          const TextureDesc colorDesc = {
+              .width = dimensions.width,
+              .height = dimensions.height,
+              .depth = 1,
+              .numLayers = 2,
+              .numSamples = 1,
+              .usage = TextureDesc::TextureUsageBits::Attachment |
+                       TextureDesc::TextureUsageBits::Sampled,
+              .numMipLevels = 1,
+              .type = TextureType::TwoDArray,
+              .format = colorFormat,
+              .storage = ResourceStorage::Private,
+          };
+          multiviewColor_ = platform_->getDevice().createTexture(colorDesc, &result);
+
+          const TextureDesc depthDesc = {
+              .width = dimensions.width,
+              .height = dimensions.height,
+              .depth = 1,
+              .numLayers = 2,
+              .numSamples = 1,
+              .usage = TextureDesc::TextureUsageBits::Attachment,
+              .numMipLevels = 1,
+              .type = TextureType::TwoDArray,
+              .format = depthFormat,
+              .storage = ResourceStorage::Private,
+          };
+          multiviewDepth_ = platform_->getDevice().createTexture(depthDesc, &result);
+
+          __android_log_print(ANDROID_LOG_INFO,
+                              "igl",
+                              "[IGL Shell] Created multiview textures: %ux%u, 2 layers\n",
+                              dimensions.width,
+                              dimensions.height);
+        }
+
+        surfaceTextures.color = multiviewColor_;
+        surfaceTextures.depth = multiviewDepth_;
+      }
       break;
     }
 #endif
@@ -555,6 +759,12 @@ bool TinyRenderer::render(float displayScale) {
   platform_->getDevice().setCurrentThread();
   session_->setPixelsPerPoint(displayScale);
   session_->runUpdate(std::move(surfaceTextures));
+
+#if IGL_BACKEND_VULKAN
+  if (shellParams_.forceMultiview && swapchainColor_) {
+    stereoPresent(platform_->getDevice());
+  }
+#endif
 
   // Return true if the application should exit (e.g., benchmark timeout)
   return session_->appParams().exitRequested;
