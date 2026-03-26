@@ -43,6 +43,13 @@ class ITimestampQueries : public ITrackedResource<ITimestampQueries> {
     return true;
   }
 
+  /// Read and clear the GPU disjoint flag. Returns true if a disjoint event
+  /// (DVFS, context switch) occurred since the last read. Read-and-clear per spec.
+  /// Default returns false; override in backends that support EXT_disjoint_timer_query.
+  [[nodiscard]] virtual bool readAndClearDisjoint() {
+    return false;
+  }
+
  protected:
   ITimestampQueries() = default;
 };

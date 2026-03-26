@@ -29,6 +29,7 @@ class TimestampQueries : public ITimestampQueries, public WithContext {
   void reset() override;
   [[nodiscard]] bool resultsAvailable() const override;
   [[nodiscard]] uint64_t getElapsedNanos(uint32_t slotIndex) const override;
+  [[nodiscard]] bool readAndClearDisjoint() override;
 
   [[nodiscard]] bool isValid() const override;
 

@@ -7,6 +7,7 @@
 
 #include <igl/opengl/TimestampQueries.h>
 
+#include <igl/opengl/DeviceFeatureSet.h>
 #include <igl/opengl/GLFunc.h>
 
 #ifndef GL_TIME_ELAPSED
@@ -19,6 +20,10 @@
 
 #ifndef GL_QUERY_RESULT
 #define GL_QUERY_RESULT 0x8866
+#endif
+
+#ifndef GL_GPU_DISJOINT_EXT
+#define GL_GPU_DISJOINT_EXT 0x8FBB
 #endif
 
 namespace igl::opengl {
@@ -94,6 +99,15 @@ uint64_t TimestampQueries::getElapsedNanos(uint32_t slotIndex) const {
   GLuint64 result = 0;
   iglGetQueryObjectui64v(queryIds_[slotIndex], GL_QUERY_RESULT, &result);
   return result;
+}
+
+bool TimestampQueries::readAndClearDisjoint() {
+  if (!getContext().deviceFeatures().hasExtension(Extensions::TimerQuery)) {
+    return false;
+  }
+  GLint disjoint = 0;
+  getContext().getIntegerv(GL_GPU_DISJOINT_EXT, &disjoint);
+  return disjoint != 0;
 }
 
 void TimestampQueries::beginElapsedQuery(uint32_t slotIndex) {
