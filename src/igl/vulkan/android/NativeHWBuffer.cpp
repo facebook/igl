@@ -105,22 +105,22 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
 
   VkImage vk_image;
 
-  VkImageCreateInfo vk_image_info = {.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                     .pNext = &external_memory_image_info,
-                                     .flags = create_flags,
-                                     .imageType = VK_IMAGE_TYPE_2D,
-                                     .format = ahb_format_props.format,
-                                     .extent =
-                                         VkExtent3D{(uint32_t)desc.width, (uint32_t)desc.height, 1},
-                                     .mipLevels = 1,
-                                     .arrayLayers = 1,
-                                     .samples = VK_SAMPLE_COUNT_1_BIT,
-                                     .tiling = VK_IMAGE_TILING_OPTIMAL,
-                                     .usage = usage_flags,
-                                     .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-                                     .queueFamilyIndexCount = 0,
-                                     .pQueueFamilyIndices = nullptr,
-                                     .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED};
+  VkImageCreateInfo vk_image_info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+      .pNext = &external_memory_image_info,
+      .flags = create_flags,
+      .imageType = VK_IMAGE_TYPE_2D,
+      .format = ahb_format_props.format,
+      .extent = {.width = (uint32_t)desc.width, .height = (uint32_t)desc.height, .depth = 1},
+      .mipLevels = 1,
+      .arrayLayers = 1,
+      .samples = VK_SAMPLE_COUNT_1_BIT,
+      .tiling = VK_IMAGE_TILING_OPTIMAL,
+      .usage = usage_flags,
+      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .queueFamilyIndexCount = 0,
+      .pQueueFamilyIndices = nullptr,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED};
   // Create Vk Image.
   VK_ASSERT(ctx.vf_.vkCreateImage(device, &vk_image_info, nullptr, &vk_image));
 
@@ -228,10 +228,10 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
         .ycbcrRange = ahb_format_props.suggestedYcbcrRange,
         .components =
             {
-                VK_COMPONENT_SWIZZLE_IDENTITY,
-                VK_COMPONENT_SWIZZLE_IDENTITY,
-                VK_COMPONENT_SWIZZLE_IDENTITY,
-                VK_COMPONENT_SWIZZLE_IDENTITY,
+                .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                .a = VK_COMPONENT_SWIZZLE_IDENTITY,
             },
         .xChromaOffset = ahb_format_props.suggestedXChromaOffset,
         .yChromaOffset = ahb_format_props.suggestedYChromaOffset,
