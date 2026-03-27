@@ -16,7 +16,7 @@ class TestErrorGuard final {
  public:
   TestErrorGuard();
 
-  virtual ~TestErrorGuard();
+  ~TestErrorGuard();
 
   static void reportErrorHandler(const char* category,
                                  const char* reason,
