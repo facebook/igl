@@ -12,6 +12,10 @@
 #include <windows.h>
 #endif
 
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+#include <X11/Xlib.h>
+#endif
+
 #include "VulkanHelpers.h"
 
 #include <assert.h>
