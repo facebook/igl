@@ -180,8 +180,12 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                               : static_cast<VkMemoryPropertyFlags>(0),
     };
 
-    const VkResult result = vmaCreateImage(
-        (VmaAllocator)ctx_->getVmaAllocator(), &ci, &ciAlloc, &vkImage_, &vmaAllocation_, nullptr);
+    const VkResult result = vmaCreateImage(static_cast<VmaAllocator>(ctx_->getVmaAllocator()),
+                                           &ci,
+                                           &ciAlloc,
+                                           &vkImage_,
+                                           &vmaAllocation_,
+                                           nullptr);
 
     if (result != VK_SUCCESS || vmaAllocation_ == nullptr) {
       IGL_LOG_INFO(
@@ -194,12 +198,13 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       // processed. Drain deferred tasks queue to free memory and retry.
       const_cast<VulkanContext&>(*ctx_).waitDeferredTasks();
 
-      const VkResult retryResult = vmaCreateImage((VmaAllocator)ctx_->getVmaAllocator(),
-                                                  &ci,
-                                                  &ciAlloc,
-                                                  &vkImage_,
-                                                  &vmaAllocation_,
-                                                  nullptr);
+      const VkResult retryResult =
+          vmaCreateImage(static_cast<VmaAllocator>(ctx_->getVmaAllocator()),
+                         &ci,
+                         &ciAlloc,
+                         &vkImage_,
+                         &vmaAllocation_,
+                         nullptr);
 
       if (retryResult != VK_SUCCESS || vmaAllocation_ == nullptr) {
         IGL_LOG_INFO(
@@ -223,18 +228,20 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
       // handle memory-mapped buffers
       if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-        vmaMapMemory((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, &mappedPtr_);
+        vmaMapMemory(
+            static_cast<VmaAllocator>(ctx_->getVmaAllocator()), vmaAllocation_, &mappedPtr_);
         if (memRequirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
           isCoherentMemory_ = true;
         }
       }
 
-      vmaSetAllocationName((VmaAllocator)ctx_->getVmaAllocator(),
+      vmaSetAllocationName(static_cast<VmaAllocator>(ctx_->getVmaAllocator()),
                            vmaAllocation_,
                            IGL_FORMAT("VMA Allocation: {}", debugName).c_str());
 
       VmaAllocationInfo allocationInfo;
-      vmaGetAllocationInfo((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, &allocationInfo);
+      vmaGetAllocationInfo(
+          static_cast<VmaAllocator>(ctx_->getVmaAllocator()), vmaAllocation_, &allocationInfo);
       allocatedSize = allocationInfo.size;
     }
   } else {
@@ -408,7 +415,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       .buffer = hwBuffer,
   };
 
-  VkMemoryDedicatedAllocateInfo dedicatedAllocateInfo = {
+  const VkMemoryDedicatedAllocateInfo dedicatedAllocateInfo = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
       .pNext = &hwBufferInfo,
       .image = vkImage_,
@@ -481,7 +488,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
   setName(debugName);
 
-  VkExternalMemoryImageCreateInfo extImgMem = {
+  const VkExternalMemoryImageCreateInfo extImgMem = {
       .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
       .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT,
   };
@@ -536,7 +543,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   // TODO_VULKAN: Verify the following from the spec:
   // the memory from which fd was exported must have been created on the same physical device
   // as device.
-  VkImportMemoryFdInfoKHR fdInfo = {
+  const VkImportMemoryFdInfoKHR fdInfo = {
       .sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR,
       .handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT,
       .fd = importedFd,
@@ -738,11 +745,8 @@ VulkanImage VulkanImage::createWithExportMemory(const VulkanContext& ctx,
     return VulkanImage();
   }
 
-  VkExternalMemoryHandleTypeFlags compatibleHandleTypes =
-      VK_EXTERNAL_MEMORY_HANDLE_TYPE_FLAG_BITS_MAX_ENUM;
-
   IGL_DEBUG_ASSERT(externalFormatProperties.compatibleHandleTypes & kHandleType);
-  compatibleHandleTypes = kHandleType;
+  const VkExternalMemoryHandleTypeFlags compatibleHandleTypes = kHandleType;
 
   return {ctx,
           extent,
@@ -823,7 +827,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   // For Android we need a dedicated allocation for exporting the image, otherwise
   // the exported handle is not generated properly.
 #if IGL_PLATFORM_ANDROID
-  VkMemoryDedicatedAllocateInfo dedicatedAllocateInfo = {
+  const VkMemoryDedicatedAllocateInfo dedicatedAllocateInfo = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
       .pNext = nullptr,
       .image = vkImage_,
@@ -844,9 +848,9 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   const uint32_t numPlanes = igl::vulkan::getNumImagePlanes(format);
   IGL_DEBUG_ASSERT(numPlanes > 0 && numPlanes <= kMaxImagePlanes);
   for (uint32_t p = 0; p != numPlanes; p++) {
-    auto imagePlaneMemoryRequirementsInfo = VkImagePlaneMemoryRequirementsInfo{
+    const auto imagePlaneMemoryRequirementsInfo = VkImagePlaneMemoryRequirementsInfo{
         .sType = VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO,
-        .planeAspect = (VkImageAspectFlagBits)(VK_IMAGE_ASPECT_PLANE_0_BIT << p),
+        .planeAspect = static_cast<VkImageAspectFlagBits>(VK_IMAGE_ASPECT_PLANE_0_BIT << p),
     };
 
     const VkImageMemoryRequirementsInfo2 imageMemoryRequirementInfo = {
@@ -883,7 +887,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
     bindImagePlaneMemoryInfo[p] = VkBindImagePlaneMemoryInfo{
         .sType = VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO,
-        .planeAspect = (VkImageAspectFlagBits)(VK_IMAGE_ASPECT_PLANE_0_BIT << p),
+        .planeAspect = static_cast<VkImageAspectFlagBits>(VK_IMAGE_ASPECT_PLANE_0_BIT << p),
     };
     bindInfo[p] = VkBindImageMemoryInfo{
         .sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
@@ -930,11 +934,11 @@ void VulkanImage::destroy() {
     if (vkMemory_[1] == VK_NULL_HANDLE) {
       if (vmaAllocation_) {
         if (mappedPtr_) {
-          vmaUnmapMemory((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_);
+          vmaUnmapMemory(static_cast<VmaAllocator>(ctx_->getVmaAllocator()), vmaAllocation_);
         }
         ctx_->deferredTask(std::packaged_task<void()>(
             [vma = ctx_->getVmaAllocator(), image = vkImage_, allocation = vmaAllocation_]() {
-              vmaDestroyImage((VmaAllocator)vma, image, allocation);
+              vmaDestroyImage(static_cast<VmaAllocator>(vma), image, allocation);
             }));
       } else {
         if (mappedPtr_) {
@@ -1254,8 +1258,10 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
        ++arrayLayer) {
     for (uint32_t face = range.face; face < (range.face + range.numFaces); ++face) {
       const uint32_t layer = arrayLayer * multiplier + face;
-      int32_t mipWidth = extent_.width > 1 ? (int32_t)extent_.width >> (range.mipLevel) : 1;
-      int32_t mipHeight = extent_.height > 1 ? (int32_t)extent_.height >> (range.mipLevel) : 1;
+      int32_t mipWidth = extent_.width > 1 ? static_cast<int32_t>(extent_.width) >> (range.mipLevel)
+                                           : 1;
+      int32_t mipHeight =
+          extent_.height > 1 ? static_cast<int32_t>(extent_.height) >> (range.mipLevel) : 1;
 
       for (uint32_t i = (range.mipLevel + 1); i < (range.mipLevel + range.numMipLevels); ++i) {
         // 1: Transition the i-th level to VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
@@ -1399,7 +1405,8 @@ void VulkanImage::flushMappedMemory() const {
   }
 
   if (vmaAllocation_) {
-    vmaFlushAllocation((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, 0, VK_WHOLE_SIZE);
+    vmaFlushAllocation(
+        static_cast<VmaAllocator>(ctx_->getVmaAllocator()), vmaAllocation_, 0, VK_WHOLE_SIZE);
   } else {
     const VkMappedMemoryRange memoryRange = {
         .sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
