@@ -62,14 +62,18 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
       }
     }
 
-    const VkResult result = vmaCreateBuffer(
-        (VmaAllocator)ctx_.getVmaAllocator(), &ci, &ciAlloc, &vkBuffer_, &vmaAllocation_, nullptr);
+    const VkResult result = vmaCreateBuffer(static_cast<VmaAllocator>(ctx_.getVmaAllocator()),
+                                            &ci,
+                                            &ciAlloc,
+                                            &vkBuffer_,
+                                            &vmaAllocation_,
+                                            nullptr);
 
     if (result != VK_SUCCESS || vmaAllocation_ == nullptr) {
       // Allocation failed - possibly due to memory pressure from deferred tasks not being
       // processed. Drain deferred tasks queue to free memory.
       const_cast<VulkanContext&>(ctx_).waitDeferredTasks();
-      VK_ASSERT(vmaCreateBuffer((VmaAllocator)ctx_.getVmaAllocator(),
+      VK_ASSERT(vmaCreateBuffer(static_cast<VmaAllocator>(ctx_.getVmaAllocator()),
                                 &ci,
                                 &ciAlloc,
                                 &vkBuffer_,
@@ -80,13 +84,14 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
     IGL_DEBUG_ASSERT(vmaAllocation_ != nullptr);
 
     if (vmaAllocation_) {
-      vmaSetAllocationName((VmaAllocator)ctx_.getVmaAllocator(),
+      vmaSetAllocationName(static_cast<VmaAllocator>(ctx_.getVmaAllocator()),
                            vmaAllocation_,
                            IGL_FORMAT("VMA Allocation: {}", debugName).c_str());
 
       // handle memory-mapped buffers
       if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-        vmaMapMemory((VmaAllocator)ctx_.getVmaAllocator(), vmaAllocation_, &mappedPtr_);
+        vmaMapMemory(
+            static_cast<VmaAllocator>(ctx_.getVmaAllocator()), vmaAllocation_, &mappedPtr_);
       }
     }
   } else {
@@ -147,11 +152,11 @@ VulkanBuffer::~VulkanBuffer() {
 
   if (IGL_VULKAN_USE_VMA) {
     if (mappedPtr_) {
-      vmaUnmapMemory((VmaAllocator)ctx_.getVmaAllocator(), vmaAllocation_);
+      vmaUnmapMemory(static_cast<VmaAllocator>(ctx_.getVmaAllocator()), vmaAllocation_);
     }
     ctx_.deferredTask(std::packaged_task<void()>(
         [vma = ctx_.getVmaAllocator(), buffer = vkBuffer_, allocation = vmaAllocation_]() {
-          vmaDestroyBuffer((VmaAllocator)vma, buffer, allocation);
+          vmaDestroyBuffer(static_cast<VmaAllocator>(vma), buffer, allocation);
         }));
   } else {
     if (mappedPtr_) {
@@ -171,7 +176,8 @@ void VulkanBuffer::flushMappedMemory(VkDeviceSize offset, VkDeviceSize size) con
   }
 
   if (IGL_VULKAN_USE_VMA) {
-    vmaFlushAllocation((VmaAllocator)ctx_.getVmaAllocator(), vmaAllocation_, offset, size);
+    vmaFlushAllocation(
+        static_cast<VmaAllocator>(ctx_.getVmaAllocator()), vmaAllocation_, offset, size);
   } else {
     const VkMappedMemoryRange memoryRange = {
         .sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
@@ -239,9 +245,9 @@ void VulkanBuffer::bufferSubData(size_t offset, size_t size, const void* data) {
   IGL_DEBUG_ASSERT(offset + size <= bufferSize_);
 
   if (data) {
-    checked_memcpy((uint8_t*)mappedPtr_ + offset, bufferSize_ - offset, data, size);
+    checked_memcpy(static_cast<uint8_t*>(mappedPtr_) + offset, bufferSize_ - offset, data, size);
   } else {
-    memset((uint8_t*)mappedPtr_ + offset, 0, size);
+    memset(static_cast<uint8_t*>(mappedPtr_) + offset, 0, size);
   }
   if (!isCoherentMemory_) {
     flushMappedMemory(offset, size);
