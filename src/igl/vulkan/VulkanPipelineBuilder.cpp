@@ -164,7 +164,7 @@ VkResult VulkanPipelineBuilder::build(const VulkanFunctionTable& vf,
                                       const char* debugName) noexcept {
   const VkPipelineDynamicStateCreateInfo dynamicState = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-      .dynamicStateCount = (uint32_t)dynamicStates_.size(),
+      .dynamicStateCount = static_cast<uint32_t>(dynamicStates_.size()),
       .pDynamicStates = dynamicStates_.data(),
   };
   // viewport and scissor are always dynamic
@@ -175,14 +175,14 @@ VkResult VulkanPipelineBuilder::build(const VulkanFunctionTable& vf,
   };
   const VkPipelineColorBlendStateCreateInfo colorBlendState = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-      .attachmentCount = uint32_t(colorBlendAttachmentStates_.size()),
+      .attachmentCount = static_cast<uint32_t>(colorBlendAttachmentStates_.size()),
       .pAttachments = colorBlendAttachmentStates_.data(),
   };
 
   const auto result = ivkCreateGraphicsPipeline(&vf,
                                                 device,
                                                 pipelineCache,
-                                                (uint32_t)shaderStages_.size(),
+                                                static_cast<uint32_t>(shaderStages_.size()),
                                                 shaderStages_.data(),
                                                 &vertexInputState_,
                                                 &inputAssembly_,
