@@ -175,7 +175,7 @@ VkResult VulkanImmediateCommands::wait(const SubmitHandle handle, uint64_t timeo
   if (fenceResult != VK_SUCCESS) {
     IGL_LOG_ERROR_ONCE(
         "VulkanImmediateCommands::wait - Waiting for command buffer fence failed with error %i",
-        int(fenceResult));
+        static_cast<int>(fenceResult));
     // Intentional fallthrough: we must purge so that we can release command buffers.
   }
 
