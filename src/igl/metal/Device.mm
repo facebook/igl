@@ -260,7 +260,7 @@ std::shared_ptr<ITimestampQueries> Device::createTimestampQueries(uint32_t maxTi
 
     MTLCounterSampleBufferDescriptor* descriptor = [[MTLCounterSampleBufferDescriptor alloc] init];
     descriptor.counterSet = timestampCounterSet;
-    descriptor.sampleCount = maxTimestamps;
+    descriptor.sampleCount = maxTimestamps * 2;
     descriptor.storageMode = MTLStorageModeShared;
     descriptor.label = @"IGL TimestampQueries";
 

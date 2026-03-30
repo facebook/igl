@@ -138,21 +138,24 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
       if (metalTsQueries && metalTsQueries->sampleBuffer_ != nil) {
         uint32_t startSampleIdx = renderPass.timestampQuery.slotIndex * 2;
         uint32_t endSampleIdx = renderPass.timestampQuery.slotIndex * 2 + 1;
-        metalRenderPassDesc.sampleBufferAttachments[0].sampleBuffer = metalTsQueries->sampleBuffer_;
-        metalRenderPassDesc.sampleBufferAttachments[0].startOfVertexSampleIndex = startSampleIdx;
-        metalRenderPassDesc.sampleBufferAttachments[0].endOfVertexSampleIndex =
-            MTLCounterDontSample;
-        metalRenderPassDesc.sampleBufferAttachments[0].startOfFragmentSampleIndex =
-            MTLCounterDontSample;
-        metalRenderPassDesc.sampleBufferAttachments[0].endOfFragmentSampleIndex = endSampleIdx;
+        if (endSampleIdx < metalTsQueries->maxTimestamps_ * 2) {
+          metalRenderPassDesc.sampleBufferAttachments[0].sampleBuffer =
+              metalTsQueries->sampleBuffer_;
+          metalRenderPassDesc.sampleBufferAttachments[0].startOfVertexSampleIndex = startSampleIdx;
+          metalRenderPassDesc.sampleBufferAttachments[0].endOfVertexSampleIndex =
+              MTLCounterDontSample;
+          metalRenderPassDesc.sampleBufferAttachments[0].startOfFragmentSampleIndex =
+              MTLCounterDontSample;
+          metalRenderPassDesc.sampleBufferAttachments[0].endOfFragmentSampleIndex = endSampleIdx;
 
-        // Advance currentIndex_ so resolveTimestamps knows how many samples to resolve.
-        uint32_t requiredCount = endSampleIdx + 1;
-        uint32_t current = metalTsQueries->currentIndex_.load(std::memory_order_relaxed);
-        while (current < requiredCount) {
-          if (metalTsQueries->currentIndex_.compare_exchange_weak(
-                  current, requiredCount, std::memory_order_relaxed)) {
-            break;
+          // Advance currentIndex_ so resolveTimestamps knows how many samples to resolve.
+          uint32_t requiredCount = endSampleIdx + 1;
+          uint32_t current = metalTsQueries->currentIndex_.load(std::memory_order_relaxed);
+          while (current < requiredCount) {
+            if (metalTsQueries->currentIndex_.compare_exchange_weak(
+                    current, requiredCount, std::memory_order_relaxed)) {
+              break;
+            }
           }
         }
       }

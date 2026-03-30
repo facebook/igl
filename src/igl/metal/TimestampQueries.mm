@@ -32,7 +32,7 @@ uint32_t TimestampQueries::capacity() const {
 }
 
 uint32_t TimestampQueries::count() const {
-  return std::min(currentIndex_.load(std::memory_order_relaxed), maxTimestamps_);
+  return std::min(currentIndex_.load(std::memory_order_relaxed), maxTimestamps_ * 2);
 }
 
 void TimestampQueries::reset() {
@@ -64,9 +64,9 @@ uint64_t TimestampQueries::getElapsedNanos(uint32_t slotIndex) const {
 }
 
 void TimestampQueries::resolveTimestamps(id<MTLCounterSampleBuffer> csb) {
-  // Clamp to maxTimestamps_ to prevent out-of-bounds access on the counter sample buffer
-  // in case sampleTimestamp was called more times than capacity allows (fetch_add overflow).
-  uint32_t n = std::min(currentIndex_.load(std::memory_order_acquire), maxTimestamps_);
+  // Clamp to maxTimestamps_ * 2 because each timing slot uses two counter samples
+  // (vertex-start and fragment-end), so the buffer has maxTimestamps_ * 2 entries.
+  uint32_t n = std::min(currentIndex_.load(std::memory_order_acquire), maxTimestamps_ * 2);
   if (n == 0) {
     return;
   }
