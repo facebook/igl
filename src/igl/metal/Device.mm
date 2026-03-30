@@ -529,6 +529,11 @@ std::shared_ptr<IRenderPipelineState> Device::createTraditionalRenderPipeline(
   metalDesc.stencilAttachmentPixelFormat =
       Texture::textureFormatToMTLPixelFormat(desc.targetDesc.stencilAttachmentFormat);
 
+  if (!device_) {
+    Result::setResult(outResult, Result::Code::RuntimeError, "Metal device is null");
+    return nullptr;
+  }
+
   MTLRenderPipelineReflection* reflection = nil;
 
   // Create reflection for use later in binding, etc.
@@ -541,6 +546,12 @@ std::shared_ptr<IRenderPipelineState> Device::createTraditionalRenderPipeline(
   setResultFrom(outResult, error);
   if (error != nil) {
     IGL_LOG_ERROR("%s\n", [error.localizedDescription UTF8String]);
+    return nullptr;
+  }
+  if (!metalObject) {
+    Result::setResult(outResult,
+                      Result::Code::RuntimeError,
+                      "Metal pipeline state creation returned nil without error");
     return nullptr;
   }
 
