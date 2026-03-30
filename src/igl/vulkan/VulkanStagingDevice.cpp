@@ -85,7 +85,7 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
     regions_.push_back(memoryChunk);
 
     size -= copySize;
-    copyData = (uint8_t*)copyData + copySize;
+    copyData = static_cast<uint8_t*>(copyData) + copySize;
     chunkDstOffset += copySize;
   }
 }
@@ -286,7 +286,7 @@ void VulkanStagingDevice::getBufferSubData(const VulkanBuffer& buffer,
     checked_memcpy(dstData, bufferSize - chunkSrcOffset, src, copySize);
 
     size -= copySize;
-    dstData = (uint8_t*)dstData + copySize;
+    dstData += copySize;
     chunkSrcOffset += copySize;
 
     regions_.push_back(memoryChunk);
