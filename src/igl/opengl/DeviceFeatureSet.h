@@ -187,6 +187,19 @@ enum class InternalRequirement {
   VertexAttribDivisorExtReq,
 };
 
+/// GPU timer query tier. Underlying values are max query-slot counts,
+/// usable directly via static_cast<uint32_t>(tier).
+enum class GpuTimerTier : uint32_t {
+  Disabled = 0,
+  Conservative = 32,
+  Full = 64,
+};
+
+/// Classify GPU timer tier from raw GL_RENDERER / GL_VENDOR strings.
+/// Exposed as a free function for unit testing without a GL context.
+[[nodiscard]] GpuTimerTier classifyGpuTimerTier(const char* IGL_NULLABLE renderer,
+                                                const char* IGL_NULLABLE vendor);
+
 class DeviceFeatureSet final {
  public:
   explicit DeviceFeatureSet(IContext& glContext);
@@ -213,6 +226,12 @@ class DeviceFeatureSet final {
   bool hasInternalRequirement(InternalRequirement requirement) const;
 
   bool getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const;
+
+  /// Returns the GPU timer tier based on GL_RENDERER / GL_VENDOR.
+  [[nodiscard]] GpuTimerTier getGpuTimerTier() const;
+
+  /// Convenience: static_cast<uint32_t>(getGpuTimerTier()).
+  [[nodiscard]] uint32_t getTimerQueryMaxSlots() const;
 
   ICapabilities::TextureFormatCapabilities getTextureFormatCapabilities(TextureFormat format) const;
 

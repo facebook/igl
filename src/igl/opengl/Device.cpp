@@ -411,23 +411,29 @@ std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) cons
 std::shared_ptr<ITimestampQueries> Device::createTimestampQueries(uint32_t maxTimestamps,
                                                                   Result* IGL_NULLABLE
                                                                       outResult) const noexcept {
-  if (deviceFeatureSet_.hasExtension(Extensions::TimerQuery)) {
-    auto queries = std::make_shared<TimestampQueries>(getContext(), maxTimestamps);
-    if (!queries->isValid()) {
-      // Driver reports timer query support but iglGenQueries silently failed
-      // (e.g. broken Mali budget GPU drivers). Return nullptr so
-      // GPUTimingCollector::isEnabled() returns false.
-      Result::setResult(outResult,
-                        Result::Code::RuntimeError,
-                        "TimestampQueries: iglGenQueries failed (query IDs are zero)");
-      return nullptr;
-    }
-    Result::setOk(outResult);
-    return queries;
+  // Tier-based limit from GL_RENDERER / GL_VENDOR classification.
+  const GpuTimerTier tier = deviceFeatureSet_.getGpuTimerTier();
+  if (tier == GpuTimerTier::Disabled) {
+    Result::setResult(outResult,
+                      Result::Code::Unsupported,
+                      "TimestampQueries disabled (no extension or blocked GPU tier)");
+    return nullptr;
   }
-  Result::setResult(
-      outResult, Result::Code::Unsupported, "TimestampQueries are not supported on this device");
-  return nullptr;
+  const uint32_t tierMax = static_cast<uint32_t>(tier);
+
+  const uint32_t cappedMax = std::min(maxTimestamps, tierMax);
+  auto queries = std::make_shared<TimestampQueries>(getContext(), cappedMax);
+  if (!queries->isValid()) {
+    // Driver reports timer query support but iglGenQueries silently failed
+    // (e.g. broken Mali budget GPU drivers). Return nullptr so
+    // GPUTimingCollector::isEnabled() returns false.
+    Result::setResult(outResult,
+                      Result::Code::RuntimeError,
+                      "TimestampQueries: iglGenQueries failed (query IDs are zero)");
+    return nullptr;
+  }
+  Result::setOk(outResult);
+  return queries;
 }
 
 void Device::destroy(BindGroupTextureHandle handle) {

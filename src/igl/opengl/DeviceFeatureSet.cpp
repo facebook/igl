@@ -7,6 +7,8 @@
 
 #include <igl/opengl/DeviceFeatureSet.h>
 
+#include <cstdio>
+#include <cstring>
 #include <igl/Common.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
@@ -88,6 +90,54 @@ bool hasDesktopOrESExtension(const DeviceFeatureSet& dfs, const char* extension)
   return hasDesktopOrESExtension(dfs, extension, extension);
 }
 } // namespace
+
+GpuTimerTier classifyGpuTimerTier(const char* renderer, const char* vendor) {
+  if (renderer == nullptr) {
+    return GpuTimerTier::Disabled;
+  }
+
+  // Adreno (Qualcomm): vendor cross-check + numeric range parsing.
+  // Handles both "Adreno (TM) NNN" and newer "Adreno NNN" formats.
+  int adrenoNumber = 0;
+  if (vendor != nullptr && std::strcmp(vendor, "Qualcomm") == 0 &&
+      (std::sscanf(renderer, "Adreno (TM) %d", &adrenoNumber) == 1 ||
+       std::sscanf(renderer, "Adreno %d", &adrenoNumber) == 1)) {
+    if (adrenoNumber < 620) {
+      return GpuTimerTier::Disabled; // 3xx–619: 0 slots
+    }
+    if (adrenoNumber < 640) {
+      return GpuTimerTier::Conservative; // 620, 630: 32 slots
+    }
+    return GpuTimerTier::Full; // 640+: 64 slots
+  }
+
+  // Mali (ARM): vendor cross-check + numeric range.
+  int maliNumber = 0;
+  if (vendor != nullptr && std::strcmp(vendor, "ARM") == 0 &&
+      std::sscanf(renderer, "Mali-G%d", &maliNumber) == 1) {
+    if (maliNumber <= 68) {
+      return GpuTimerTier::Disabled; // G31–G68: 0 slots
+    }
+    if (maliNumber <= 76) {
+      return GpuTimerTier::Conservative; // G72, G76: 32 slots
+    }
+    return GpuTimerTier::Full; // G77+: 64 slots
+  }
+
+  // PowerVR (Imagination Technologies): vendor cross-check + prefix match.
+  if (vendor != nullptr && std::strcmp(vendor, "Imagination Technologies") == 0 &&
+      std::strncmp(renderer, "PowerVR Rogue GE8", 17) == 0) {
+    return GpuTimerTier::Disabled;
+  }
+
+  // Samsung Xclipse (RDNA2): vendor cross-check.
+  if (vendor != nullptr && std::strcmp(vendor, "Samsung") == 0 &&
+      std::strstr(renderer, "Xclipse") != nullptr) {
+    return GpuTimerTier::Conservative;
+  }
+
+  return GpuTimerTier::Full;
+}
 
 bool DeviceFeatureSet::usesOpenGLES() noexcept {
 #if IGL_OPENGL_ES
@@ -257,6 +307,19 @@ bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
     return hasESExtension(*this, "GL_NV_instanced_arrays");
   }
   IGL_UNREACHABLE_RETURN(false)
+}
+
+GpuTimerTier DeviceFeatureSet::getGpuTimerTier() const {
+  if (!hasExtension(Extensions::TimerQuery)) {
+    return GpuTimerTier::Disabled;
+  }
+  const auto* renderer = reinterpret_cast<const char*>(glContext_.getString(GL_RENDERER));
+  const auto* vendor = reinterpret_cast<const char*>(glContext_.getString(GL_VENDOR));
+  return classifyGpuTimerTier(renderer, vendor);
+}
+
+uint32_t DeviceFeatureSet::getTimerQueryMaxSlots() const {
+  return static_cast<uint32_t>(getGpuTimerTier());
 }
 
 bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
@@ -452,7 +515,7 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
     return true;
 
   case DeviceFeatures::TimestampQueries:
-    return hasExtension(Extensions::TimerQuery);
+    return getGpuTimerTier() != GpuTimerTier::Disabled;
 
   case DeviceFeatures::Timers:
     return hasExtension(Extensions::TimerQuery);
