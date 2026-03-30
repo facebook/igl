@@ -430,7 +430,7 @@ void FireworksSession::ParticleSystem::addExplosion(const glm::vec3& pos,
     const glm::vec3 vel =
         radius * cosf(angle) * right + radius * sinf(angle) * up +
         depthSpread *
-            glm::normalize(toViewer.length() > 0.001f ? toViewer : glm::vec3(0.0f, 0.0f, 1.0f));
+            glm::normalize(glm::vec3::length() > 0.001f ? toViewer : glm::vec3(0.0f, 0.0f, 1.0f));
     const glm::vec3 color = palette[paletteIndex] +
                             glm::vec3(dist01(rng) / 5.0f, dist01(rng) / 5.0f, dist01(rng) / 5.0f);
 
