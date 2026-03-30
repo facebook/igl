@@ -12,8 +12,6 @@
 #include <shell/shared/platform/win/PlatformWin.h>
 #include <igl/Core.h>
 #include <igl/IGL.h>
-#include <igl/ShaderCreator.h>
-#include <igl/vulkan/Common.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/VulkanContext.h>
