@@ -37,7 +37,7 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
   const VkSubpassDescription subpass = {
       .flags = 0,
       .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-      .colorAttachmentCount = (uint32_t)refsColor_.size(),
+      .colorAttachmentCount = static_cast<uint32_t>(refsColor_.size()),
       .pColorAttachments = refsColor_.data(),
       .pResolveAttachments = refsColorResolve_.data(),
       .pDepthStencilAttachment = hasDepthStencilAttachment ? &refDepth_ : nullptr,
@@ -63,7 +63,7 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
   const VkRenderPassCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
       .pNext = viewMask_ ? &renderPassMultiview : nullptr,
-      .attachmentCount = (uint32_t)attachments_.size(),
+      .attachmentCount = static_cast<uint32_t>(attachments_.size()),
       .pAttachments = attachments_.data(),
       .subpassCount = 1,
       .pSubpasses = &subpass,
@@ -88,7 +88,7 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
       .flags = 0,
       .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
       .viewMask = viewMask_,
-      .colorAttachmentCount = (uint32_t)refsColor2_.size(),
+      .colorAttachmentCount = static_cast<uint32_t>(refsColor2_.size()),
       .pColorAttachments = refsColor2_.data(),
       .pResolveAttachments = refsColorResolve2_.data(),
       .pDepthStencilAttachment = hasDepthStencilAttachment ? &refDepth2_ : nullptr,
@@ -109,7 +109,7 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
   const VkRenderPassCreateInfo2 ci2 = {
       .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2,
       .flags = 0,
-      .attachmentCount = (uint32_t)attachments2_.size(),
+      .attachmentCount = static_cast<uint32_t>(attachments2_.size()),
       .pAttachments = attachments2_.data(),
       .subpassCount = 1,
       .pSubpasses = &subpass2,
@@ -150,7 +150,7 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addColor(VkFormat format,
 
 #if IGL_VULKAN_HAS_LEGACY_RENDERPASS
   refsColor_.push_back(VkAttachmentReference{
-      .attachment = (uint32_t)attachments_.size(),
+      .attachment = static_cast<uint32_t>(attachments_.size()),
       .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
   });
   attachments_.push_back(VkAttachmentDescription{
@@ -167,7 +167,7 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addColor(VkFormat format,
 #endif // IGL_VULKAN_HAS_LEGACY_RENDERPASS
   refsColor2_.push_back(VkAttachmentReference2{
       .sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2,
-      .attachment = (uint32_t)attachments2_.size(),
+      .attachment = static_cast<uint32_t>(attachments2_.size()),
       .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
       .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
   });
@@ -197,7 +197,7 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addColorResolve(VkFormat forma
 
 #if IGL_VULKAN_HAS_LEGACY_RENDERPASS
   refsColorResolve_.push_back(VkAttachmentReference{
-      .attachment = (uint32_t)attachments_.size(),
+      .attachment = static_cast<uint32_t>(attachments_.size()),
       .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
   });
   attachments_.push_back(VkAttachmentDescription{
@@ -215,7 +215,7 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addColorResolve(VkFormat forma
 
   refsColorResolve2_.push_back(VkAttachmentReference2{
       .sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2,
-      .attachment = (uint32_t)attachments2_.size(),
+      .attachment = static_cast<uint32_t>(attachments2_.size()),
       .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
       .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
   });
@@ -256,7 +256,7 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthStencil(
 
 #if IGL_VULKAN_HAS_LEGACY_RENDERPASS
   refDepth_ = VkAttachmentReference{
-      .attachment = (uint32_t)attachments_.size(),
+      .attachment = static_cast<uint32_t>(attachments_.size()),
       .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
   };
 
@@ -275,7 +275,7 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthStencil(
 
   refDepth2_ = VkAttachmentReference2{
       .sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2,
-      .attachment = (uint32_t)attachments2_.size(),
+      .attachment = static_cast<uint32_t>(attachments2_.size()),
       .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
       .aspectMask = (hasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VkImageAspectFlags(0)) |
                     (hasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : VkImageAspectFlags(0)),
@@ -310,7 +310,7 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthStencilResolve(
   IGL_DEBUG_ASSERT(format != VK_FORMAT_UNDEFINED, "Invalid depth resolve attachment format");
 #if IGL_VULKAN_HAS_LEGACY_RENDERPASS
   refDepthResolve_ = VkAttachmentReference{
-      .attachment = (uint32_t)attachments_.size(),
+      .attachment = static_cast<uint32_t>(attachments_.size()),
       .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
   };
 
@@ -329,7 +329,7 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthStencilResolve(
 
   refDepthResolve2_ = VkAttachmentReference2{
       .sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2,
-      .attachment = (uint32_t)attachments2_.size(),
+      .attachment = static_cast<uint32_t>(attachments2_.size()),
       .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
       .aspectMask = (hasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VkImageAspectFlags(0)) |
                     (hasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : VkImageAspectFlags(0)),
