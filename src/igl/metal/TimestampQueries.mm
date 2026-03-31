@@ -20,7 +20,7 @@ TimestampQueries::TimestampQueries(id<MTLCounterSampleBuffer> sampleBuffer,
                                    uint32_t maxTimestamps) :
   sampleBuffer_(sampleBuffer), maxTimestamps_(maxTimestamps) {
   // Each timing slot uses two internal counter samples (vertex-start + fragment-end).
-  resolvedTimestamps_.reserve(maxTimestamps * 2);
+  resolvedTimestamps_.reserve(maxTimestamps * kSamplesPerTimingSlot);
 }
 
 TimestampQueries::~TimestampQueries() {
@@ -32,7 +32,8 @@ uint32_t TimestampQueries::capacity() const {
 }
 
 uint32_t TimestampQueries::count() const {
-  return std::min(currentIndex_.load(std::memory_order_relaxed), maxTimestamps_ * 2);
+  return std::min(currentIndex_.load(std::memory_order_relaxed) / kSamplesPerTimingSlot,
+                  maxTimestamps_);
 }
 
 void TimestampQueries::reset() {
@@ -50,8 +51,8 @@ uint64_t TimestampQueries::getElapsedNanos(uint32_t slotIndex) const {
     return 0;
   }
   std::lock_guard<std::mutex> lock(resolveMutex_);
-  uint32_t startIdx = slotIndex * 2;
-  uint32_t endIdx = slotIndex * 2 + 1;
+  const uint32_t startIdx = slotIndex * kSamplesPerTimingSlot;
+  const uint32_t endIdx = startIdx + 1;
   if (endIdx >= resolvedTimestamps_.size()) {
     return 0;
   }
@@ -66,7 +67,8 @@ uint64_t TimestampQueries::getElapsedNanos(uint32_t slotIndex) const {
 void TimestampQueries::resolveTimestamps(id<MTLCounterSampleBuffer> csb) {
   // Clamp to maxTimestamps_ * 2 because each timing slot uses two counter samples
   // (vertex-start and fragment-end), so the buffer has maxTimestamps_ * 2 entries.
-  uint32_t n = std::min(currentIndex_.load(std::memory_order_acquire), maxTimestamps_ * 2);
+  const uint32_t n = std::min(currentIndex_.load(std::memory_order_acquire),
+                              maxTimestamps_ * kSamplesPerTimingSlot);
   if (n == 0) {
     return;
   }

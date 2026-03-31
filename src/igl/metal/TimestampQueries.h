@@ -21,6 +21,9 @@ class CommandQueue;
 
 class TimestampQueries : public ITimestampQueries {
  public:
+  /// Each timing slot uses two counter samples: vertex-start and fragment-end.
+  static constexpr uint32_t kSamplesPerTimingSlot = 2;
+
   TimestampQueries(id<MTLCounterSampleBuffer> sampleBuffer, uint32_t maxTimestamps);
   ~TimestampQueries() override;
 

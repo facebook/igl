@@ -136,9 +136,12 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
       auto metalTsQueries =
           std::static_pointer_cast<TimestampQueries>(renderPass.timestampQuery.queries);
       if (metalTsQueries && metalTsQueries->sampleBuffer_ != nil) {
-        uint32_t startSampleIdx = renderPass.timestampQuery.slotIndex * 2;
-        uint32_t endSampleIdx = renderPass.timestampQuery.slotIndex * 2 + 1;
-        if (endSampleIdx < metalTsQueries->maxTimestamps_ * 2) {
+        const uint32_t startSampleIdx =
+            renderPass.timestampQuery.slotIndex * TimestampQueries::kSamplesPerTimingSlot;
+        const uint32_t endSampleIdx = startSampleIdx + 1;
+        const uint32_t bufferSize =
+            metalTsQueries->maxTimestamps_ * TimestampQueries::kSamplesPerTimingSlot;
+        if (endSampleIdx < bufferSize) {
           metalRenderPassDesc.sampleBufferAttachments[0].sampleBuffer =
               metalTsQueries->sampleBuffer_;
           metalRenderPassDesc.sampleBufferAttachments[0].startOfVertexSampleIndex = startSampleIdx;
