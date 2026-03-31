@@ -205,6 +205,75 @@
 #define IGL_PROFILER_THREAD(name) tracy::SetThreadName(name)
 #define IGL_PROFILER_FRAME(name) FrameMarkNamed(name)
 
+#elif defined(IGL_WITH_PERFETTO) && defined(__cplusplus)
+// Perfetto backend for standalone Android capture (barebone perfetto CLI).
+// On Android: uses ATrace NDK — no category registration needed in Macros.h itself,
+//   events appear in Perfetto via the ftrace/atrace data source automatically.
+// On non-Android (Linux/Mac/Windows): no-ops so cross-platform builds are unaffected.
+// TUs needing Perfetto SDK counter/instant tracks include IglPerfetto.h directly.
+
+#define IGL_PROFILER_COLOR_WAIT 0xff0000
+#define IGL_PROFILER_COLOR_SUBMIT 0x0000ff
+#define IGL_PROFILER_COLOR_PRESENT 0x00ff00
+#define IGL_PROFILER_COLOR_CREATE 0xff6600
+#define IGL_PROFILER_COLOR_DESTROY 0xffa500
+#define IGL_PROFILER_COLOR_TRANSITION 0xffffff
+#define IGL_PROFILER_COLOR_UPDATE 0xffa500
+#define IGL_PROFILER_COLOR_DRAW 0x00ff00
+
+#define IGL_PROFILER_ZONE_GPU_OGL(name)
+#define IGL_PROFILER_ZONE_GPU_COLOR_OGL(name, color)
+#define IGL_PROFILER_ZONE_GPU_VK(name, profilingContext, cmdBuffer)
+#define IGL_PROFILER_ZONE_GPU_COLOR_VK(name, profilingContext, cmdBuffer, color)
+#define IGL_PROFILER_ZONE_TRANSIENT_GPU_OGL(varname, name)
+#define IGL_PROFILER_ZONE_TRANSIENT_GPU_VK(profilingContext, varname, cmdBuffer, name)
+#define IGL_PROFILER_ZONE_GPU_END()
+
+#if defined(__ANDROID__)
+#include <android/trace.h>
+
+// Token-paste helpers for unique RAII variable names
+#define IGL_DETAIL_CONCAT_(a, b) a##b
+#define IGL_DETAIL_CONCAT(a, b) IGL_DETAIL_CONCAT_(a, b)
+
+// RAII ATrace scope guard — inline, no extra dependencies
+namespace igl::detail {
+struct ATraceGuard {
+  explicit ATraceGuard(const char* name) noexcept {
+    ATrace_beginSection(name);
+  }
+  ~ATraceGuard() noexcept {
+    ATrace_endSection();
+  }
+  ATraceGuard(const ATraceGuard&) = delete;
+  ATraceGuard& operator=(const ATraceGuard&) = delete;
+};
+} // namespace igl::detail
+
+#define IGL_PROFILER_FUNCTION() \
+  ::igl::detail::ATraceGuard IGL_DETAIL_CONCAT(igl_atrace_, __LINE__)(__PRETTY_FUNCTION__)
+#define IGL_PROFILER_FUNCTION_COLOR(color) IGL_PROFILER_FUNCTION()
+#define IGL_PROFILER_ZONE(name, color) \
+  {                                    \
+    ::igl::detail::ATraceGuard IGL_DETAIL_CONCAT(igl_atrace_zone_, __LINE__)((name));
+#define IGL_PROFILER_ZONE_END() }
+#define IGL_PROFILER_THREAD(name)
+#define IGL_PROFILER_FRAME(name) \
+  do {                           \
+    ATrace_beginSection(name);   \
+    ATrace_endSection();         \
+  } while (0)
+
+#else // !__ANDROID__ — no-ops for Linux/Mac/Windows builds
+
+#define IGL_PROFILER_FUNCTION()
+#define IGL_PROFILER_FUNCTION_COLOR(color)
+#define IGL_PROFILER_ZONE(name, color) {
+#define IGL_PROFILER_ZONE_END() }
+#define IGL_PROFILER_THREAD(name)
+#define IGL_PROFILER_FRAME(name)
+
+#endif // __ANDROID__
 #else
 #define IGL_PROFILER_ZONE_GPU_OGL(name)
 #define IGL_PROFILER_ZONE_GPU_COLOR_OGL(name, color)
