@@ -9,6 +9,10 @@
 
 #include "TinyRenderer.h"
 
+#ifdef IGL_WITH_PERFETTO
+#include <shell/shared/profiling/IglPerfetto.h>
+#endif
+
 #include <EGL/egl.h>
 #include <android/log.h>
 #include <android/native_window.h>
@@ -339,6 +343,17 @@ void TinyRenderer::init(AAssetManager* mgr,
 
   // Read shell params from Android system properties first
   readShellParamsFromAndroidProps(shellParams_, factory.getAndroidSystemPropsPrefix());
+
+#ifdef IGL_WITH_PERFETTO
+  {
+    // Opt-in: adb shell setprop debug.iglshell.<session>.perfetto true
+    std::string perfettoProp = std::string(factory.getAndroidSystemPropsPrefix()) + ".perfetto";
+    auto perfettoEnabled = getAndroidSystemPropertyBool(perfettoProp.c_str());
+    if (perfettoEnabled.value_or(false)) {
+      igl::shell::profiling::initPerfetto();
+    }
+  }
+#endif // IGL_WITH_PERFETTO
 
   // Debug: Log if benchmark params were set
   if (shellParams_.benchmarkParams.has_value()) {
