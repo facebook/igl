@@ -155,13 +155,6 @@ VkResult ivkCreateGraphicsPipeline(const struct VulkanFunctionTable* vt,
                                    VkRenderPass renderPass,
                                    VkPipeline* outPipeline);
 
-VkResult ivkCreateComputePipeline(const struct VulkanFunctionTable* vt,
-                                  VkDevice device,
-                                  VkPipelineCache pipelineCache,
-                                  const VkPipelineShaderStageCreateInfo* shaderStage,
-                                  VkPipelineLayout pipelineLayout,
-                                  VkPipeline* outPipeline);
-
 VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,
                                       VkDevice device,
                                       VkDescriptorSetLayoutCreateFlags flags,

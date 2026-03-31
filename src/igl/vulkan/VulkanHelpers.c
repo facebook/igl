@@ -587,24 +587,6 @@ VkResult ivkCreateGraphicsPipeline(const struct VulkanFunctionTable* vt,
   return vt->vkCreateGraphicsPipelines(device, pipelineCache, 1, &ci, NULL, outPipeline);
 }
 
-VkResult ivkCreateComputePipeline(const struct VulkanFunctionTable* vt,
-                                  VkDevice device,
-                                  VkPipelineCache pipelineCache,
-                                  const VkPipelineShaderStageCreateInfo* shaderStage,
-                                  VkPipelineLayout pipelineLayout,
-                                  VkPipeline* outPipeline) {
-  const VkComputePipelineCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-      .pNext = NULL,
-      .flags = 0,
-      .stage = *shaderStage,
-      .layout = pipelineLayout,
-      .basePipelineHandle = VK_NULL_HANDLE,
-      .basePipelineIndex = -1,
-  };
-  return vt->vkCreateComputePipelines(device, pipelineCache, 1, &ci, NULL, outPipeline);
-}
-
 void ivkImageMemoryBarrier(const struct VulkanFunctionTable* vt,
                            VkCommandBuffer buffer,
                            VkImage image,

@@ -220,8 +220,13 @@ VkResult VulkanComputePipelineBuilder::build(const VulkanFunctionTable& vf,
                                              VkPipelineLayout pipelineLayout,
                                              VkPipeline* outPipeline,
                                              const char* debugName) noexcept {
-  const VkResult result = ivkCreateComputePipeline(
-      &vf, device, pipelineCache, &shaderStage_, pipelineLayout, outPipeline);
+  const VkComputePipelineCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .stage = shaderStage_,
+      .layout = pipelineLayout,
+  };
+  const VkResult result =
+      vf.vkCreateComputePipelines(device, pipelineCache, 1, &ci, nullptr, outPipeline);
 
   if (!IGL_DEBUG_VERIFY(result == VK_SUCCESS)) {
     return result;
