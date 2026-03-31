@@ -225,7 +225,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
 
   const auto& fb = static_cast<Framebuffer&>(*framebuffer);
 
-  auto renderPassHandle = ctx_.findRenderPass(builder);
+  const auto renderPassHandle = ctx_.findRenderPass(builder);
 
   dynamicState_.renderPassIndex = renderPassHandle.index;
   dynamicState_.depthBiasEnable = false;
