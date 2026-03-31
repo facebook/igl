@@ -506,24 +506,6 @@ VkResult ivkCreateDescriptorPool(const struct VulkanFunctionTable* vt,
   return vt->vkCreateDescriptorPool(device, &ci, NULL, outDescriptorPool);
 }
 
-VkSubmitInfo ivkGetSubmitInfo(const VkCommandBuffer* buffer,
-                              uint32_t numWaitSemaphores,
-                              const VkSemaphore* waitSemaphores,
-                              const VkPipelineStageFlags* waitStageMasks,
-                              const VkSemaphore* releaseSemaphore) {
-  const VkSubmitInfo si = {
-      .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-      .waitSemaphoreCount = numWaitSemaphores,
-      .pWaitSemaphores = numWaitSemaphores ? waitSemaphores : NULL,
-      .pWaitDstStageMask = waitStageMasks,
-      .commandBufferCount = 1,
-      .pCommandBuffers = buffer,
-      .signalSemaphoreCount = releaseSemaphore ? 1 : 0,
-      .pSignalSemaphores = releaseSemaphore,
-  };
-  return si;
-}
-
 VkWriteDescriptorSet ivkGetWriteDescriptorSetImageInfo(VkDescriptorSet dstSet,
                                                        uint32_t dstBinding,
                                                        VkDescriptorType descriptorType,

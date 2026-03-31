@@ -301,11 +301,16 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
       waitSemaphores[numWaitSemaphores++] = lastSubmitSemaphore_.semaphore;
     }
 
-    const VkSubmitInfo si = ivkGetSubmitInfo(&wrapper.cmdBuf,
-                                             numWaitSemaphores,
-                                             waitSemaphores,
-                                             waitStageMasks,
-                                             &wrapper.semaphore.vkSemaphore_);
+    const VkSubmitInfo si = {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .waitSemaphoreCount = numWaitSemaphores,
+        .pWaitSemaphores = numWaitSemaphores ? waitSemaphores : nullptr,
+        .pWaitDstStageMask = waitStageMasks,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &wrapper.cmdBuf,
+        .signalSemaphoreCount = 1u,
+        .pSignalSemaphores = &wrapper.semaphore.vkSemaphore_,
+    };
     // @lint-ignore CLANGTIDY
     const VkFence vkFence = wrapper.fence.vkFence_;
     IGL_PROFILER_ZONE("vkQueueSubmit()", IGL_PROFILER_COLOR_SUBMIT);

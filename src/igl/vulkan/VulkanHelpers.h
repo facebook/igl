@@ -184,14 +184,6 @@ VkResult ivkCreateDescriptorPool(const struct VulkanFunctionTable* vt,
                                  const VkDescriptorPoolSize* poolSizes,
                                  VkDescriptorPool* outDescriptorPool);
 
-/// @brief Creates a VkSubmitInfo structure with an optional semaphore, used to signal when the
-/// command buffer for this batch have completed execution
-VkSubmitInfo ivkGetSubmitInfo(const VkCommandBuffer* buffer,
-                              uint32_t numWaitSemaphores,
-                              const VkSemaphore* waitSemaphores,
-                              const VkPipelineStageFlags* waitStageMasks,
-                              const VkSemaphore* releaseSemaphore);
-
 VkWriteDescriptorSet ivkGetWriteDescriptorSetImageInfo(VkDescriptorSet dstSet,
                                                        uint32_t dstBinding,
                                                        VkDescriptorType descriptorType,
