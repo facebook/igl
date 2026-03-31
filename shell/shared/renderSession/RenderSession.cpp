@@ -14,6 +14,10 @@
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/Common.h>
+#include <igl/Macros.h>
+#ifdef IGL_WITH_PERFETTO
+#include <shell/shared/profiling/IglPerfetto.h>
+#endif
 
 namespace igl::shell {
 
@@ -223,8 +227,19 @@ void RenderSession::runUpdate(SurfaceTextures surfaceTextures) noexcept {
   // Measure render time for benchmarking
   const double startTime = getSeconds();
 
-  // Call the actual update implementation
-  update(std::move(surfaceTextures));
+  // Emit frame boundary marker visible in Tracy and Perfetto
+  IGL_PROFILER_FRAME("IGL::Frame");
+#ifdef IGL_WITH_PERFETTO
+  // Also bump the dedicated frame counter track in Perfetto for frame-aligned analysis
+  ::igl::shell::profiling::markFrame("IGL::Frame");
+#endif
+  {
+    // Scoped zone covering the full session update
+    IGL_PROFILER_ZONE("IGL::RenderSession::update", IGL_PROFILER_COLOR_UPDATE);
+    // Call the actual update implementation
+    update(std::move(surfaceTextures));
+    IGL_PROFILER_ZONE_END();
+  }
 
   // Record benchmark frame timing if tracker is active
   if (benchmarkTracker_) {
