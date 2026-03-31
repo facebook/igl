@@ -624,7 +624,7 @@ void VulkanContext::createInstance() {
   }
   const VkValidationFeaturesEXT features = {
       .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
-      .enabledValidationFeatureCount = (uint32_t)valFeatures.size(),
+      .enabledValidationFeatureCount = static_cast<uint32_t>(valFeatures.size()),
       .pEnabledValidationFeatures = valFeatures.empty() ? nullptr : valFeatures.data(),
   };
 #endif // !IGL_PLATFORM_ANDROID
@@ -649,7 +649,7 @@ void VulkanContext::createInstance() {
       .pApplicationInfo = &appInfo,
       .enabledLayerCount = static_cast<uint32_t>(layers.size()),
       .ppEnabledLayerNames = !layers.empty() ? layers.data() : nullptr,
-      .enabledExtensionCount = (uint32_t)instanceExtensions.size(),
+      .enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size()),
       .ppEnabledExtensionNames = instanceExtensions.data(),
   };
 
@@ -1459,7 +1459,7 @@ void VulkanContext::pruneTextures() {
 
   // textures
   {
-    for (uint32_t i = 1; i < (uint32_t)textures_.objects_.size(); i++) {
+    for (uint32_t i = 1; i < static_cast<uint32_t>(textures_.objects_.size()); i++) {
       if (textures_.objects_[i].obj_ && textures_.objects_[i].obj_.use_count() == 1) {
         textures_.destroy(i);
       }
@@ -1552,11 +1552,12 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
   if (!infoSampledImages.empty()) {
     // use the same indexing for every texture type
     for (uint32_t i = kBinding_Texture2D; i != kBinding_TextureCube + 1; i++) {
-      write.push_back(ivkGetWriteDescriptorSetImageInfo(pimpl_->dsBindless,
-                                                        i,
-                                                        VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                                        (uint32_t)infoSampledImages.size(),
-                                                        infoSampledImages.data()));
+      write.push_back(
+          ivkGetWriteDescriptorSetImageInfo(pimpl_->dsBindless,
+                                            i,
+                                            VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            static_cast<uint32_t>(infoSampledImages.size()),
+                                            infoSampledImages.data()));
     }
   };
 
@@ -1565,17 +1566,18 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
       write.push_back(ivkGetWriteDescriptorSetImageInfo(pimpl_->dsBindless,
                                                         i,
                                                         VK_DESCRIPTOR_TYPE_SAMPLER,
-                                                        (uint32_t)infoSamplers.size(),
+                                                        static_cast<uint32_t>(infoSamplers.size()),
                                                         infoSamplers.data()));
     }
   }
 
   if (!infoStorageImages.empty()) {
-    write.push_back(ivkGetWriteDescriptorSetImageInfo(pimpl_->dsBindless,
-                                                      kBinding_StorageImages,
-                                                      VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                                      (uint32_t)infoStorageImages.size(),
-                                                      infoStorageImages.data()));
+    write.push_back(
+        ivkGetWriteDescriptorSetImageInfo(pimpl_->dsBindless,
+                                          kBinding_StorageImages,
+                                          VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                          static_cast<uint32_t>(infoStorageImages.size()),
+                                          infoStorageImages.data()));
   };
 
   // do not switch to the next descriptor set if there is nothing to update
