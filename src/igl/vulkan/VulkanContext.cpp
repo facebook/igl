@@ -603,7 +603,7 @@ void VulkanContext::createInstance() {
                      VulkanFeatures::ExtensionType::Instance);
   }
   // NOLINTEND(readability-identifier-naming)
-  auto instanceExtensions = features_.allEnabled(VulkanFeatures::ExtensionType::Instance);
+  const auto instanceExtensions = features_.allEnabled(VulkanFeatures::ExtensionType::Instance);
 
   std::vector<const char*> layers;
   // @fb-only
@@ -866,8 +866,8 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
   VulkanQueuePool queuePool(vf_, vkPhysicalDevice_);
 
   // Reserve IGL Vulkan queues
-  auto graphicsQueueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_GRAPHICS_BIT);
-  auto computeQueueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_COMPUTE_BIT);
+  const auto graphicsQueueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_GRAPHICS_BIT);
+  const auto computeQueueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_COMPUTE_BIT);
 
   if (!graphicsQueueDescriptor.isValid()) {
     IGL_LOG_ERROR("VK_QUEUE_GRAPHICS_BIT is not supported");
@@ -1987,10 +1987,7 @@ VkFence VulkanContext::getVkFenceFromSubmitHandle(igl::SubmitHandle handle) cons
     return VK_NULL_HANDLE;
   }
 
-  VkFence vkFence =
-      immediate_->getVkFenceFromSubmitHandle(VulkanImmediateCommands::SubmitHandle(handle));
-
-  return vkFence;
+  return immediate_->getVkFenceFromSubmitHandle(VulkanImmediateCommands::SubmitHandle(handle));
 }
 
 // @fb-only
