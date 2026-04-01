@@ -77,6 +77,17 @@ class PlatformDevice final : public IPlatformDevice {
                                                                size_t planeIndex,
                                                                Result* outResult);
 
+  /// Creates a texture from a native PixelBuffer with auto-detected format.
+  /// The texture format is inferred from the CVPixelBuffer's pixel format type and plane index,
+  /// matching the OpenGL backend's behavior of automatic format detection.
+  /// @param sourceImage source image
+  /// @param planeIndex the plane index to generate the texture
+  /// @param outResult optional result
+  /// @return pointer to generated Texture or nullptr
+  std::unique_ptr<ITexture> createTextureFromNativePixelBuffer(CVImageBufferRef sourceImage,
+                                                               size_t planeIndex,
+                                                               Result* outResult);
+
   /// Creates a texture from a native PixelBuffer
   /// @param sourceImage source image
   /// @param format the format of the source texture

@@ -19,6 +19,54 @@
 
 namespace igl::metal {
 
+namespace {
+// Infer the IGL TextureFormat from a CVPixelBuffer's pixel format type and plane index.
+// This mirrors the automatic format inference that the OpenGL iOS backend performs
+// in its TextureBuffer (opengl/ios/TextureBuffer.mm), making the Metal path support
+// the same createTextureFromNativePixelBuffer overload without an explicit format.
+// The conversion from CVPixelFormatType to igl::TextureFormat is inferred from CVPixelBuffer.h
+TextureFormat convertToTextureFormat(OSType pixelFormat, size_t planeIndex) {
+  switch (pixelFormat) {
+  case kCVPixelFormatType_32BGRA:
+    return TextureFormat::BGRA_UNorm8;
+
+  case kCVPixelFormatType_32RGBA:
+    return TextureFormat::RGBA_UNorm8;
+
+  case kCVPixelFormatType_64RGBAHalf:
+    return TextureFormat::RGBA_F16;
+
+  case kCVPixelFormatType_OneComponent8:
+    return TextureFormat::R_UNorm8;
+
+  // TODO: There are explicit YUV formats in TextureFormat that are not supported by IGL Metal
+  // backend. Once those are properly supported, we can add the conversion here as well.
+  case kCVPixelFormatType_420YpCbCr8BiPlanarFullRange:
+  case kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange:
+    if (planeIndex == 0) {
+      return TextureFormat::R_UNorm8;
+    } else if (planeIndex == 1) {
+      return TextureFormat::RG_UNorm8;
+    } else {
+      return TextureFormat::Invalid;
+    }
+
+  case kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange:
+  case kCVPixelFormatType_420YpCbCr10BiPlanarFullRange:
+    if (planeIndex == 0) {
+      return TextureFormat::R_UInt16;
+    } else if (planeIndex == 1) {
+      return TextureFormat::RG_UInt16;
+    } else {
+      return TextureFormat::Invalid;
+    }
+
+  default:
+    return TextureFormat::Invalid;
+  }
+}
+} // namespace
+
 PlatformDevice::PlatformDevice(Device& device) : device_(device) {}
 
 PlatformDevice::~PlatformDevice() {
@@ -133,6 +181,16 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBuffer(
                                   : CVPixelBufferGetHeight(sourceImage));
   return PlatformDevice::createTextureFromNativePixelBufferWithSize(
       sourceImage, format, width, height, planeIndex, outResult);
+}
+
+std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBuffer(
+    CVImageBufferRef sourceImage,
+    size_t planeIndex,
+    Result* outResult) {
+  const TextureFormat format =
+      convertToTextureFormat(CVPixelBufferGetPixelFormatType(sourceImage), planeIndex);
+  return PlatformDevice::createTextureFromNativePixelBuffer(
+      sourceImage, format, planeIndex, outResult);
 }
 
 std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWithSize(
