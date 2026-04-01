@@ -384,7 +384,7 @@ void VulkanFeatures::enumerate(const VulkanFunctionTable& vf) {
 
   VK_ASSERT(vf.vkEnumerateInstanceExtensionProperties(nullptr, &count, allExtensions.data()));
 
-  constexpr size_t vectorIndex = (size_t)ExtensionType::Instance;
+  constexpr size_t vectorIndex = static_cast<size_t>(ExtensionType::Instance);
   std::transform(allExtensions.cbegin(),
                  allExtensions.cend(),
                  std::back_inserter(extensions_[vectorIndex]),
@@ -401,7 +401,7 @@ void VulkanFeatures::enumerate(const VulkanFunctionTable& vf, VkPhysicalDevice d
 
   VK_ASSERT(vf.vkEnumerateDeviceExtensionProperties(device, nullptr, &count, allExtensions.data()));
 
-  constexpr size_t vectorIndex = (size_t)ExtensionType::Device;
+  constexpr size_t vectorIndex = static_cast<size_t>(ExtensionType::Device);
   std::transform(allExtensions.cbegin(),
                  allExtensions.cend(),
                  std::back_inserter(extensions_[vectorIndex]),
@@ -412,12 +412,12 @@ void VulkanFeatures::enumerate(const VulkanFunctionTable& vf, VkPhysicalDevice d
 
 const std::vector<std::string>& VulkanFeatures::allAvailableExtensions(
     ExtensionType extensionType) const {
-  const size_t vectorIndex = (size_t)extensionType;
+  const size_t vectorIndex = static_cast<size_t>(extensionType);
   return extensions_[vectorIndex];
 }
 
 bool VulkanFeatures::available(const char* extensionName, ExtensionType extensionType) const {
-  const size_t vectorIndex = (size_t)extensionType;
+  const size_t vectorIndex = static_cast<size_t>(extensionType);
   const std::string extensionNameStr(extensionName);
   auto result = std::find_if(
       extensions_[vectorIndex].begin(),
@@ -428,7 +428,7 @@ bool VulkanFeatures::available(const char* extensionName, ExtensionType extensio
 }
 
 bool VulkanFeatures::enable(const char* extensionName, ExtensionType extensionType) {
-  const size_t vectorIndex = (size_t)extensionType;
+  const size_t vectorIndex = static_cast<size_t>(extensionType);
   if (available(extensionName, extensionType)) {
     enabledExtensions_[vectorIndex].insert(extensionName);
     return true;
@@ -558,12 +558,13 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
 }
 
 bool VulkanFeatures::enabled(const char* extensionName) const {
-  return (enabledExtensions_[(size_t)ExtensionType::Instance].count(extensionName) > 0) ||
-         (enabledExtensions_[(size_t)ExtensionType::Device].count(extensionName) > 0);
+  return (enabledExtensions_[static_cast<size_t>(ExtensionType::Instance)].count(extensionName) >
+          0) ||
+         (enabledExtensions_[static_cast<size_t>(ExtensionType::Device)].count(extensionName) > 0);
 }
 
 std::vector<const char*> VulkanFeatures::allEnabled(ExtensionType extensionType) const {
-  const size_t vectorIndex = (size_t)extensionType;
+  const size_t vectorIndex = static_cast<size_t>(extensionType);
   std::vector<const char*> returnList;
   for (const auto& extension : enabledExtensions_[vectorIndex]) {
     returnList.emplace_back(extension.c_str());
