@@ -31,6 +31,7 @@ class ColorSession : public RenderSession {
     MacbethTexture,
     MacbethTextureKtx,
     MacbethTextureKtx2,
+    // @fb-only
     OrangeTexture,
     OrangeClear,
     Gradient,
