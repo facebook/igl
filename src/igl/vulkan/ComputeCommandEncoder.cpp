@@ -78,7 +78,7 @@ void ComputeCommandEncoder::bindComputePipelineState(
   binder_.bindPipeline(cps_->getVkPipeline(), &cps_->getSpvModuleInfo());
 
   if (ctx_.config_.enableDescriptorIndexing) {
-    VkDescriptorSet dset = ctx_.getBindlessVkDescriptorSet();
+    const VkDescriptorSet dset = ctx_.getBindlessVkDescriptorSet();
 
 #if IGL_VULKAN_PRINT_COMMANDS
     IGL_LOG_INFO("%p vkCmdBindDescriptorSets(COMPUTE) - bindless\n", cmdBuffer_);
