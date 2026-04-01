@@ -57,7 +57,6 @@ class XrComposition {
  protected:
   impl::XrAppImpl& appImpl_;
   std::shared_ptr<Platform> platform_;
-  // NOLINTNEXTLINE(misc-misplaced-const)
   const XrSession session_;
 
   std::array<impl::SwapchainImageInfo, kNumViews> swapchainImageInfo_;

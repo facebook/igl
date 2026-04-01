@@ -45,7 +45,6 @@ class XrRefreshRate final {
   void queryCurrentRefreshRate() noexcept;
   void querySupportedRefreshRates() noexcept;
 
-  // NOLINTNEXTLINE(misc-misplaced-const)
   const XrSession session_;
 
   // API
