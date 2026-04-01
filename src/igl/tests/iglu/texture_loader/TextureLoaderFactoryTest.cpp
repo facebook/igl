@@ -11,6 +11,9 @@
 
 #include "../../util/Common.h"
 
+// @fb-only
+// @fb-only
+// @fb-only
 #include <IGLU/texture_loader/ktx1/TextureLoaderFactory.h>
 #include <IGLU/texture_loader/ktx2/TextureLoaderFactory.h>
 #include <IGLU/texture_loader/stb_hdr/TextureLoaderFactory.h>
@@ -42,11 +45,15 @@ class TextureLoaderFactoryTest : public ::testing::Test {
   static std::vector<std::unique_ptr<iglu::textureloader::ITextureLoaderFactory>>
   createLoaderFactories() {
     std::vector<std::unique_ptr<iglu::textureloader::ITextureLoaderFactory>> factories;
-    factories.reserve(5);
+    factories.reserve(6);
     factories.emplace_back(std::make_unique<iglu::textureloader::stb::hdr::TextureLoaderFactory>());
     factories.emplace_back(
         std::make_unique<iglu::textureloader::stb::jpeg::TextureLoaderFactory>());
     factories.emplace_back(std::make_unique<iglu::textureloader::stb::png::TextureLoaderFactory>());
+// @fb-only
+    // @fb-only
+        // @fb-only
+// @fb-only
     factories.emplace_back(std::make_unique<iglu::textureloader::ktx1::TextureLoaderFactory>());
     factories.emplace_back(std::make_unique<iglu::textureloader::ktx2::TextureLoaderFactory>());
 
