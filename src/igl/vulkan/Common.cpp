@@ -376,7 +376,7 @@ VkCompareOp compareFunctionToVkCompareOp(CompareFunction func) {
   case igl::CompareFunction::AlwaysPass:
     return VK_COMPARE_OP_ALWAYS;
   }
-  IGL_DEBUG_ABORT("CompareFunction value not handled: %d", (int)func);
+  IGL_DEBUG_ABORT("CompareFunction value not handled: %d", static_cast<int>(func));
   return VK_COMPARE_OP_ALWAYS;
 }
 
