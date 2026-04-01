@@ -18,7 +18,7 @@ VkFilter samplerMinMagFilterToVkFilter(igl::SamplerMinMagFilter filter) {
   case igl::SamplerMinMagFilter::Linear:
     return VK_FILTER_LINEAR;
   }
-  IGL_DEBUG_ABORT("SamplerMinMagFilter value not handled: %d", (int)filter);
+  IGL_DEBUG_ABORT("SamplerMinMagFilter value not handled: %d", static_cast<int>(filter));
   return VK_FILTER_LINEAR;
 }
 
@@ -30,7 +30,7 @@ VkSamplerMipmapMode samplerMipFilterToVkSamplerMipmapMode(igl::SamplerMipFilter 
   case igl::SamplerMipFilter::Linear:
     return VK_SAMPLER_MIPMAP_MODE_LINEAR;
   }
-  IGL_DEBUG_ABORT("SamplerMipFilter value not handled: %d", (int)filter);
+  IGL_DEBUG_ABORT("SamplerMipFilter value not handled: %d", static_cast<int>(filter));
   return VK_SAMPLER_MIPMAP_MODE_NEAREST;
 }
 
@@ -43,7 +43,7 @@ VkSamplerAddressMode samplerAddressModeToVkSamplerAddressMode(igl::SamplerAddres
   case igl::SamplerAddressMode::MirrorRepeat:
     return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
   }
-  IGL_DEBUG_ABORT("SamplerAddressMode value not handled: %d", (int)mode);
+  IGL_DEBUG_ABORT("SamplerAddressMode value not handled: %d", static_cast<int>(mode));
   return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
 
@@ -51,8 +51,8 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
                                                           const VkPhysicalDeviceLimits& limits) {
   IGL_DEBUG_ASSERT(desc.mipLodMax >= desc.mipLodMin,
                    "mipLodMax (%d) must be greater than or equal to mipLodMin (%d)",
-                   (int)desc.mipLodMax,
-                   (int)desc.mipLodMin);
+                   static_cast<int>(desc.mipLodMax),
+                   static_cast<int>(desc.mipLodMin));
 
   VkSamplerCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -91,7 +91,8 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
           "%.0f",
           static_cast<double>(limits.maxSamplerAnisotropy));
     }
-    ci.maxAnisotropy = std::min((float)limits.maxSamplerAnisotropy, (float)desc.maxAnisotropic);
+    ci.maxAnisotropy = std::min(static_cast<float>(limits.maxSamplerAnisotropy),
+                                static_cast<float>(desc.maxAnisotropic));
   }
 
   return ci;
