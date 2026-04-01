@@ -150,6 +150,10 @@
   #define IGL_ANDROID_HWBUFFER_SUPPORTED
 #endif // __ANDROID_MIN_SDK_VERSION__ >= 26
 
+// @fb-only
+  // @fb-only
+// @fb-only
+
 // IGL_PLATFORM_XR is for extended reality platforms like OpenXR
 #if !defined(IGL_PLATFORM_XR)
   #define IGL_PLATFORM_XR 0
