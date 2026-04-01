@@ -289,8 +289,8 @@ void ComputeCommandEncoder::bindPushConstants(const void* data, size_t length, s
   ctx_.vf_.vkCmdPushConstants(cmdBuffer_,
                               cps_->getVkPipelineLayout(),
                               VK_SHADER_STAGE_COMPUTE_BIT,
-                              (uint32_t)offset,
-                              (uint32_t)length,
+                              static_cast<uint32_t>(offset),
+                              static_cast<uint32_t>(length),
                               data);
 }
 
