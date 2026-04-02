@@ -597,7 +597,7 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibraryInternal(const Shader
 bool Device::hasFeatureInternal(DeviceFeatures feature) const {
   IGL_PROFILER_FUNCTION();
 
-  VkPhysicalDevice physicalDevice = ctx_->vkPhysicalDevice_;
+  const VkPhysicalDevice physicalDevice = ctx_->vkPhysicalDevice_;
   IGL_DEBUG_ASSERT(physicalDevice != VK_NULL_HANDLE);
   const VkPhysicalDeviceProperties& deviceProperties = ctx_->getVkPhysicalDeviceProperties();
 
