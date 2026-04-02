@@ -39,14 +39,22 @@
 
 namespace {
 
-// Helper functions to read Android system properties
+// Helper functions to read Android system properties.
+// Uses __system_property_find + __system_property_read_callback to support
+// property names longer than 31 characters (the __system_property_get limit).
 std::optional<std::string> getAndroidSystemProperty(const char* keyName) noexcept {
-  std::array<char, PROP_VALUE_MAX> value{};
-  int len = __system_property_get(keyName, value.data());
-  if (len > 0) {
-    return std::string(value.data());
+  const prop_info* pi = __system_property_find(keyName);
+  if (!pi) {
+    return std::nullopt;
   }
-  return std::nullopt;
+  std::string result;
+  __system_property_read_callback(
+      pi,
+      [](void* cookie, const char* /*name*/, const char* value, uint32_t /*serial*/) {
+        *static_cast<std::string*>(cookie) = value;
+      },
+      &result);
+  return result.empty() ? std::nullopt : std::make_optional(std::move(result));
 }
 
 std::optional<bool> getAndroidSystemPropertyBool(const char* keyName) noexcept {
@@ -88,9 +96,13 @@ std::optional<size_t> getAndroidSystemPropertySizeT(const char* keyName) noexcep
   }
 }
 
-// Read shell parameters from Android system properties
+// Read shell parameters from Android system properties.
+// perfettoEnabled is set via the __system_property_foreach iteration which handles
+// property names longer than 31 characters (the __system_property_get limit).
 void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
-                                     const char* prefix) noexcept {
+                                     const char* prefix,
+                                     bool& perfettoEnabled) noexcept {
+  perfettoEnabled = false;
   std::string prefixStr(prefix);
   prefixStr += ".";
 
@@ -98,8 +110,11 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
   auto headless = getAndroidSystemPropertyBool((prefixStr + "headless").c_str());
   if (headless.has_value()) {
     shellParams.isHeadless = headless.value();
-    if (shellParams.isHeadless && shellParams.screenshotNumber == ~0u) {
-      shellParams.screenshotNumber = 0;
+    if (shellParams.isHeadless) {
+      shellParams.shouldPresent = false;
+      if (shellParams.screenshotNumber == ~0u) {
+        shellParams.screenshotNumber = 0;
+      }
     }
   }
 
@@ -207,33 +222,44 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
                                                                  "report-interval",
                                                                  "hiccup-multiplier",
                                                                  "render-buffer-size",
-                                                                 "force-multiview"};
+                                                                 "force-multiview",
+                                                                 "perfetto"};
 
   struct CallbackData {
     const std::string& prefix;
     const std::unordered_set<std::string>& standardParams;
     std::vector<std::pair<std::string, std::string>>* customParams;
+    bool* perfettoEnabled;
   };
 
-  CallbackData callbackData{prefixStr, standardParams, &customParams};
+  CallbackData callbackData{prefixStr, standardParams, &customParams, &perfettoEnabled};
 
   __system_property_foreach(
       [](const prop_info* pi, void* cookie) {
         auto* data = reinterpret_cast<CallbackData*>(cookie);
 
-        // Get property name
-        char name[PROP_NAME_MAX];
-        char value[PROP_VALUE_MAX];
-        __system_property_read(pi, name, value);
+        // Use __system_property_read_callback to handle property names > 31 chars
+        // (__system_property_read truncates names at PROP_NAME_MAX-1 = 31 chars)
+        struct ReadResult {
+          std::string name;
+          std::string value;
+        } readResult;
+        __system_property_read_callback(
+            pi,
+            [](void* ctx, const char* n, const char* v, uint32_t /*serial*/) {
+              auto* r = static_cast<ReadResult*>(ctx);
+              r->name = n;
+              r->value = v;
+            },
+            &readResult);
 
-        std::string propName(name);
         // Check if property starts with our prefix
-        if (propName.rfind(data->prefix, 0) == 0) {
-          // Extract the key (remove prefix)
-          std::string key = propName.substr(data->prefix.length());
-          // Only add if not empty and not a standard parameter
-          if (!key.empty() && data->standardParams.find(key) == data->standardParams.end()) {
-            data->customParams->emplace_back(key, std::string(value));
+        if (readResult.name.rfind(data->prefix, 0) == 0) {
+          const std::string key = readResult.name.substr(data->prefix.length());
+          if (key == "perfetto") {
+            *data->perfettoEnabled = (readResult.value == "true" || readResult.value == "1");
+          } else if (!key.empty() && data->standardParams.find(key) == data->standardParams.end()) {
+            data->customParams->emplace_back(key, readResult.value);
           }
         }
       },
@@ -341,18 +367,19 @@ void TinyRenderer::init(AAssetManager* mgr,
   const igl::HWDeviceQueryDesc queryDesc(HWDeviceType::IntegratedGpu);
   std::unique_ptr<IDevice> d;
 
-  // Read shell params from Android system properties first
-  readShellParamsFromAndroidProps(shellParams_, factory.getAndroidSystemPropsPrefix());
+  // Read shell params from Android system properties.
+  // perfettoEnabled is read via __system_property_foreach which handles
+  // property names > 31 chars (the __system_property_get limit).
+  bool perfettoEnabled = false;
+  readShellParamsFromAndroidProps(
+      shellParams_, factory.getAndroidSystemPropsPrefix(), perfettoEnabled);
 
 #ifdef IGL_WITH_PERFETTO
-  {
-    // Opt-in: adb shell setprop debug.iglshell.<session>.perfetto true
-    std::string perfettoProp = std::string(factory.getAndroidSystemPropsPrefix()) + ".perfetto";
-    auto perfettoEnabled = getAndroidSystemPropertyBool(perfettoProp.c_str());
-    if (perfettoEnabled.value_or(false)) {
-      igl::shell::profiling::initPerfetto();
-    }
+  if (perfettoEnabled) {
+    igl::shell::profiling::initPerfetto();
   }
+#else
+  (void)perfettoEnabled;
 #endif // IGL_WITH_PERFETTO
 
   // Debug: Log if benchmark params were set

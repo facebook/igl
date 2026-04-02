@@ -52,6 +52,7 @@
 #endif
 #import <cmath>
 #import <simd/simd.h>
+#include <thread>
 
 using namespace igl;
 
@@ -66,6 +67,12 @@ using namespace igl;
   std::shared_ptr<igl::shell::Platform> _shellPlatform;
   std::unique_ptr<igl::shell::RenderSession> _session;
   float _kMouseSpeed;
+  // Offscreen textures for headless rendering (bypass drawable/vsync)
+  std::shared_ptr<igl::ITexture> _offscreenColor;
+  std::shared_ptr<igl::ITexture> _offscreenDepth;
+  // Headless render thread
+  std::thread _headlessThread;
+  BOOL _headlessRunning;
 }
 @end
 
@@ -114,10 +121,12 @@ using namespace igl;
     return;
   }
 
-  const NSRect contentRect = self.view.frame;
-
-  _shellParams.viewportSize = glm::vec2(contentRect.size.width, contentRect.size.height);
-  _shellParams.viewportScale = self.view.window.backingScaleFactor;
+  if (!_shellParams.isHeadless) {
+    // Only access AppKit view properties from the main thread
+    const NSRect contentRect = self.view.frame;
+    _shellParams.viewportSize = glm::vec2(contentRect.size.width, contentRect.size.height);
+    _shellParams.viewportScale = self.view.window.backingScaleFactor;
+  }
   _session->setShellParams(_shellParams);
   // process user input
   _shellPlatform->getInputDispatcher().processEvents();
@@ -125,19 +134,47 @@ using namespace igl;
   igl::SurfaceTextures surfaceTextures;
   if (_config.backendVersion.flavor != igl::BackendFlavor::Invalid &&
       _shellPlatform->getDevicePtr() != nullptr) {
+    if (_shellParams.isHeadless) {
+      // Headless mode: create offscreen textures to bypass drawable/vsync blocking.
+      // This allows the render loop to run at unrestricted FPS.
+      auto& device = _shellPlatform->getDevice();
+      const uint32_t w = static_cast<uint32_t>(_shellParams.viewportSize.x);
+      const uint32_t h = static_cast<uint32_t>(_shellParams.viewportSize.y);
+
+      if (!_offscreenColor || _offscreenColor->getSize().width != w ||
+          _offscreenColor->getSize().height != h) {
+        _offscreenColor = device.createTexture(
+            igl::TextureDesc::new2D(igl::TextureFormat::BGRA_SRGB,
+                                    w,
+                                    h,
+                                    igl::TextureDesc::TextureUsageBits::Attachment |
+                                        igl::TextureDesc::TextureUsageBits::Sampled),
+            nullptr);
+        _offscreenDepth = device.createTexture(
+            igl::TextureDesc::new2D(igl::TextureFormat::Z_UNorm24,
+                                    w,
+                                    h,
+                                    igl::TextureDesc::TextureUsageBits::Attachment),
+            nullptr);
+      }
+
+      surfaceTextures.color = _offscreenColor;
+      surfaceTextures.depth = _offscreenDepth;
+    } else {
 // @fb-only
-    // @fb-only
-    // @fb-only
       // @fb-only
-          // @fb-only
       // @fb-only
-                               // @fb-only
-    // @fb-only
+        // @fb-only
+            // @fb-only
+        // @fb-only
+                                 // @fb-only
+      // @fb-only
 // @fb-only
 
-    // surface textures
-    surfaceTextures = igl::SurfaceTextures{.color = [self createTextureFromNativeDrawable],
-                                           .depth = [self createTextureFromNativeDepth]};
+      // surface textures
+      surfaceTextures = igl::SurfaceTextures{.color = [self createTextureFromNativeDrawable],
+                                             .depth = [self createTextureFromNativeDepth]};
+    }
     IGL_DEBUG_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
     const auto& dims = surfaceTextures.color->getDimensions();
     _shellParams.nativeSurfaceDimensions = glm::ivec2{dims.width, dims.height};
@@ -148,7 +185,9 @@ using namespace igl;
 // @fb-only
     // @fb-only
     // @fb-only
-        // @fb-only
+      // @fb-only
+          // @fb-only
+      // @fb-only
     // @fb-only
 // @fb-only
   }
@@ -157,7 +196,9 @@ using namespace igl;
   _session->runUpdate(std::move(surfaceTextures));
 
   if (_session->appParams().exitRequested) {
-    [[NSApplication sharedApplication] terminate:nil];
+    dispatch_async(dispatch_get_main_queue(), ^{
+      [[NSApplication sharedApplication] terminate:nil];
+    });
   }
 }
 
@@ -404,7 +445,23 @@ static CVReturn metalDisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
 }
 
 - (void)viewDidAppear {
-  if ([self.view isKindOfClass:[MetalView class]]) {
+  if (_shellParams.isHeadless) {
+    // Headless mode: pause the MTKView display link and use a dedicated
+    // render thread with offscreen textures for unrestricted FPS.
+    if ([self.view isKindOfClass:[MetalView class]]) {
+      MetalView* v = (MetalView*)self.view;
+      v.paused = YES;
+    }
+    _headlessRunning = YES;
+    _headlessThread = std::thread([self]() {
+      pthread_setname_np("IGL Headless Render");
+      while (self->_headlessRunning) {
+        @autoreleasepool {
+          [self render];
+        }
+      }
+    });
+  } else if ([self.view isKindOfClass:[MetalView class]]) {
     if (_shellParams.useTimerRendering) {
       // Use a CVDisplayLink to drive Metal rendering, synced to the display refresh
       // rate. MTKView's internal CVDisplayLink may not fire for non-frontmost apps
@@ -424,6 +481,13 @@ static CVReturn metalDisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
 }
 
 - (void)viewWillDisappear {
+  if (_headlessRunning) {
+    _headlessRunning = NO;
+    if (_headlessThread.joinable()) {
+      _headlessThread.join();
+    }
+    return;
+  }
   if ([self.view isKindOfClass:[MetalView class]]) {
     if (_shellParams.useTimerRendering) {
       CVDisplayLinkStop(_displayLink);

@@ -224,8 +224,30 @@ void RenderSession::runUpdate(SurfaceTextures surfaceTextures) noexcept {
     return;
   }
 
-  // Measure render time for benchmarking
+  // Measure wall-clock frame-to-frame interval for accurate FPS reporting.
+  // This captures vsync waits, throttle sleeps, and OS scheduling overhead
+  // that occur between consecutive calls to runUpdate().
   const double startTime = getSeconds();
+
+  // Record benchmark frame using wall-clock interval since previous frame
+  if (benchmarkTracker_) {
+    if (prevFrameStartTime_ > 0.0) {
+      const double frameIntervalMs = (startTime - prevFrameStartTime_) * 1000.0;
+      recordBenchmarkFrame(frameIntervalMs);
+    }
+    prevFrameStartTime_ = startTime;
+
+    // Check for periodic benchmark reporting
+    checkBenchmarkPeriodicReport();
+
+    // Check if benchmark has expired (only log once)
+    if (benchmarkTracker_->hasBenchmarkExpired() && !benchmarkExpiredLogged_) {
+      IGL_LOG_INFO("[IGL Benchmark] Benchmark duration expired, requesting exit\n");
+      logFinalBenchmarkReport(true);
+      appParamsRef().exitRequested = true;
+      benchmarkExpiredLogged_ = true;
+    }
+  }
 
   // Emit frame boundary marker visible in Tracy and Perfetto
   IGL_PROFILER_FRAME("IGL::Frame");
@@ -241,25 +263,7 @@ void RenderSession::runUpdate(SurfaceTextures surfaceTextures) noexcept {
     IGL_PROFILER_ZONE_END();
   }
 
-  // Record benchmark frame timing if tracker is active
-  if (benchmarkTracker_) {
-    const double endTime = getSeconds();
-    const double renderTimeMs = (endTime - startTime) * 1000.0;
-    recordBenchmarkFrame(renderTimeMs);
-
-    // Check for periodic benchmark reporting
-    checkBenchmarkPeriodicReport();
-
-    // Check if benchmark has expired (only log once)
-    if (benchmarkTracker_->hasBenchmarkExpired() && !benchmarkExpiredLogged_) {
-      IGL_LOG_INFO("[IGL Benchmark] Benchmark duration expired, requesting exit\n");
-      logFinalBenchmarkReport(true);
-      appParamsRef().exitRequested = true;
-      benchmarkExpiredLogged_ = true;
-    }
-  }
-
-  // FPS throttling
+  // FPS throttling — sleep is captured in the NEXT frame's wall-clock interval
   if (shellParams_ && shellParams_->fpsThrottleMs > 0) {
     const double endTime = getSeconds();
     const double frameTimeMs = (endTime - startTime) * 1000.0;

@@ -265,11 +265,26 @@ public class SampleView extends GLSurfaceView {
     }
 
     public void onDrawFrame(GL10 gl) {
-      boolean shouldExit = SampleLib.render(mContext.getResources().getDisplayMetrics().density);
+      if (SampleLib.isHeadless()) {
+        // Headless mode: run an unrestricted render loop directly on the GL thread.
+        // This prevents GLSurfaceView from calling eglSwapBuffers (which blocks on vsync)
+        // between frames, allowing maximum throughput for benchmarks.
+        android.util.Log.i("igl", "Starting unrestricted render loop (headless GLES mode)");
+        float density = mContext.getResources().getDisplayMetrics().density;
+        while (true) {
+          if (renderAndCheckExit(density)) {
+            return;
+          }
+        }
+      }
+      renderAndCheckExit(mContext.getResources().getDisplayMetrics().density);
+    }
+
+    private boolean renderAndCheckExit(float density) {
+      boolean shouldExit = SampleLib.render(density);
       if (shouldExit) {
         android.util.Log.i(
             "igl", "[IGL Benchmark] Java: Benchmark complete, waiting for logs to flush...");
-        // Give logcat time to flush the final report before killing the process
         try {
           Thread.sleep(2000);
         } catch (InterruptedException e) {
@@ -278,6 +293,7 @@ public class SampleView extends GLSurfaceView {
         android.util.Log.i("igl", "[IGL Benchmark] Java: Exiting process");
         System.exit(0);
       }
+      return shouldExit;
     }
   }
 }

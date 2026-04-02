@@ -133,6 +133,7 @@ class RenderSession {
   bool benchmarkExpiredLogged_ = false;
   bool loggedMissingParams_ = false;
   bool frozen_ = false;
+  double prevFrameStartTime_ = 0.0;
 };
 
 } // namespace igl::shell

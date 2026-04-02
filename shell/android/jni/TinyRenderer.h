@@ -39,6 +39,10 @@ class TinyRenderer final {
   void touchEvent(bool isDown, float x, float y, float dx, float dy);
   void setClearColorValue(float r, float g, float b, float a);
 
+  [[nodiscard]] bool isHeadless() const noexcept {
+    return shellParams_.isHeadless;
+  }
+
   [[nodiscard]] const BackendVersion& backendVersion() const noexcept {
     return backendVersion_;
   }

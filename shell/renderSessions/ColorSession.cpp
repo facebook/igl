@@ -702,7 +702,9 @@ void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
   }
 
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
-  commandQueue_->submit(*buffer, true);
+  // Use async submission in headless mode to avoid vsync-locked waitUntilCompleted
+  const bool waitForCompletion = !shellParams().isHeadless;
+  commandQueue_->submit(*buffer, waitForCompletion);
   RenderSession::update(surfaceTextures);
 }
 

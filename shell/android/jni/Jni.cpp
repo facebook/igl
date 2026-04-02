@@ -212,6 +212,8 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_setClearColorValue(
 JNIEXPORT bool JNICALL Java_com_facebook_igl_shell_SampleLib_isSRGBTextureFormat(JNIEnv* env,
                                                                                  jobject obj,
                                                                                  int textureFormat);
+JNIEXPORT jboolean JNICALL Java_com_facebook_igl_shell_SampleLib_isHeadless(JNIEnv* env,
+                                                                            jobject obj);
 };
 
 JNIEXPORT jobjectArray JNICALL
@@ -493,6 +495,15 @@ JNIEXPORT jboolean JNICALL Java_com_facebook_igl_shell_SampleLib_render(JNIEnv* 
 JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_surfaceDestroyed(JNIEnv* env,
                                                                               jobject /*obj*/,
                                                                               jobject surface) {}
+
+JNIEXPORT jboolean JNICALL Java_com_facebook_igl_shell_SampleLib_isHeadless(JNIEnv* /*env*/,
+                                                                            jobject /*obj*/) {
+  const auto activeRendererIndex = findRendererIndex(activeBackendVersion);
+  if (!activeRendererIndex) {
+    return JNI_FALSE;
+  }
+  return renderers[*activeRendererIndex]->isHeadless() ? JNI_TRUE : JNI_FALSE;
+}
 
 JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_touchEvent(JNIEnv* /*env*/,
                                                                         jobject /*obj*/,

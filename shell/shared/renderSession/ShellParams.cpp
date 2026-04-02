@@ -10,98 +10,80 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace igl::shell {
 namespace {
+
+// Returns true if arg matches any of the given flags.
+bool matchArg(const std::string& arg, std::initializer_list<std::string_view> flags) {
+  for (auto f : flags) {
+    if (arg == f) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Tries to consume the next argument as a value. Returns true on success.
+bool tryConsumeNext(const std::vector<std::string>& args, size_t& i) {
+  if (i + 1 < args.size()) {
+    ++i;
+    return true;
+  }
+  return false;
+}
+
 std::optional<BenchmarkRenderSessionParams> parseBenchmarkRenderSessionParams(
     const std::vector<std::string>& args) {
-  // Flag to track if any benchmark-related parameters were found
-  bool benchmarkParamsFound = false;
+  bool found = false;
+  BenchmarkRenderSessionParams p;
 
-  // Create a params struct with default values
-  BenchmarkRenderSessionParams benchmarkParams;
-
-  // Parse command line arguments
   for (size_t i = 0; i < args.size(); i++) {
     const std::string& arg = args[i];
 
-    // Check for timeout parameter
-    if (arg == "--timeout" || arg == "-t") {
-      if (i + 1 < args.size()) {
-        benchmarkParams.renderSessionTimeoutMs = std::stoul(args[++i]);
-        benchmarkParamsFound = true;
-      }
-    }
-    // Check for number of sessions parameter
-    else if (arg == "--sessions" || arg == "-s") {
-      if (i + 1 < args.size()) {
-        benchmarkParams.numSessionsToRun = std::stoul(args[++i]);
-        benchmarkParamsFound = true;
-      }
-    }
-    // Check for log reporter flag
-    else if (arg == "--log-reporter" || arg == "-l") {
-      benchmarkParams.logReporter = true;
-      benchmarkParamsFound = true;
-    }
-    // Check for offscreen rendering flag
-    else if (arg == "--offscreen-only" || arg == "-o") {
-      benchmarkParams.offscreenRenderingOnly = true;
-      benchmarkParamsFound = true;
-    }
-    // Check for benchmark mode flag (enables benchmark mode without specific params)
-    else if (arg == "--benchmark" || arg == "-b") {
-      benchmarkParamsFound = true;
-    }
-    // Check for benchmark duration (time of run) parameter
-    else if (arg == "--benchmark-duration" || arg == "--run-time") {
-      if (i + 1 < args.size()) {
-        benchmarkParams.benchmarkDurationMs = std::stoul(args[++i]);
-        benchmarkParamsFound = true;
-      }
-    }
-    // Check for report interval parameter
-    else if (arg == "--report-interval") {
-      if (i + 1 < args.size()) {
-        benchmarkParams.reportIntervalMs = std::stoul(args[++i]);
-        benchmarkParamsFound = true;
-      }
-    }
-    // Check for hiccup multiplier parameter
-    else if (arg == "--hiccup-multiplier") {
-      if (i + 1 < args.size()) {
-        benchmarkParams.hiccupMultiplier = std::stod(args[++i]);
-        benchmarkParamsFound = true;
-      }
-    }
-    // Check for render time buffer size parameter
-    else if (arg == "--render-buffer-size") {
-      if (i + 1 < args.size()) {
-        benchmarkParams.renderTimeBufferSize = std::stoul(args[++i]);
-        benchmarkParamsFound = true;
-      }
-    }
-    // Skip flags handled by parseShellParams
-    else if (arg == "--force-multiview") {
+    if (matchArg(arg, {"--benchmark", "-b"})) {
+      found = true;
+    } else if (matchArg(arg, {"--timeout", "-t"}) && tryConsumeNext(args, i)) {
+      p.renderSessionTimeoutMs = std::stoul(args[i]);
+      found = true;
+    } else if (matchArg(arg, {"--sessions", "-s"}) && tryConsumeNext(args, i)) {
+      p.numSessionsToRun = std::stoul(args[i]);
+      found = true;
+    } else if (matchArg(arg, {"--log-reporter", "-l"})) {
+      p.logReporter = true;
+      found = true;
+    } else if (matchArg(arg, {"--offscreen-only", "-o"})) {
+      p.offscreenRenderingOnly = true;
+      found = true;
+    } else if (matchArg(arg, {"--benchmark-duration", "--run-time"}) && tryConsumeNext(args, i)) {
+      p.benchmarkDurationMs = std::stoul(args[i]);
+      found = true;
+    } else if (arg == "--report-interval" && tryConsumeNext(args, i)) {
+      p.reportIntervalMs = std::stoul(args[i]);
+      found = true;
+    } else if (arg == "--hiccup-multiplier" && tryConsumeNext(args, i)) {
+      p.hiccupMultiplier = std::stod(args[i]);
+      found = true;
+    } else if (arg == "--render-buffer-size" && tryConsumeNext(args, i)) {
+      p.renderTimeBufferSize = std::stoul(args[i]);
+      found = true;
+    } else if (arg == "--force-multiview") {
       // handled in parseShellParams; skip here
-    }
-    // Check for custom parameters in the form --key value
-    else if (arg.rfind("--", 0) == 0) {
-      std::string key = arg.substr(2); // Remove "--" prefix
+    } else if (arg.rfind("--", 0) == 0) {
+      std::string key = arg.substr(2);
       std::string value;
       if (i + 1 < args.size() && args[i + 1].rfind("--", 0) != 0) {
-        // Next argument is the value (not another flag)
         value = args[++i];
       }
-      benchmarkParams.customParams.emplace_back(key, value);
+      p.customParams.emplace_back(key, value);
     }
   }
 
-  // Return the params if any benchmark-related parameters were found, otherwise return nullopt
-  return benchmarkParamsFound ? std::optional<BenchmarkRenderSessionParams>(benchmarkParams)
-                              : std::nullopt;
+  return found ? std::optional<BenchmarkRenderSessionParams>(p) : std::nullopt;
 }
+
 } // namespace
 
 std::vector<std::string> convertArgvToParams(int argc, char** argv) {
@@ -114,63 +96,48 @@ std::vector<std::string> convertArgvToParams(int argc, char** argv) {
 }
 
 void parseShellParams(const std::vector<std::string>& args, ShellParams& shellParams) {
-  // Parse benchmark parameters using existing function
-  // Only override benchmarkParams if command line args specify benchmark parameters
   auto parsedBenchmarkParams = parseBenchmarkRenderSessionParams(args);
   if (parsedBenchmarkParams.has_value()) {
     shellParams.benchmarkParams = parsedBenchmarkParams;
+    if (parsedBenchmarkParams->offscreenRenderingOnly) {
+      shellParams.shouldPresent = false;
+    }
   }
 
-  // Parse other shell parameters
   for (size_t i = 0; i < args.size(); i++) {
     const std::string& arg = args[i];
 
     if (arg == "--headless") {
       shellParams.isHeadless = true;
+      shellParams.shouldPresent = false;
       shellParams.screenshotNumber =
-          shellParams.screenshotNumber != ~0 ? shellParams.screenshotNumber : 0;
+          shellParams.screenshotNumber != ~0u ? shellParams.screenshotNumber : 0;
     } else if (arg == "--disable-vulkan-validation-layers") {
       shellParams.enableVulkanValidationLayers = false;
-    } else if (arg == "--screenshot-file") {
-      if (i + 1 < args.size()) {
-        shellParams.screenshotFileName = args[++i];
+    } else if (arg == "--screenshot-file" && tryConsumeNext(args, i)) {
+      shellParams.screenshotFileName = args[i];
+    } else if (arg == "--screenshot-number" && tryConsumeNext(args, i)) {
+      shellParams.screenshotNumber = static_cast<uint32_t>(std::stoi(args[i]));
+    } else if (arg == "--viewport-size" && tryConsumeNext(args, i)) {
+      unsigned int w = 0;
+      unsigned int h = 0;
+      if (sscanf(args[i].c_str(), "%ux%u", &w, &h) == 2 && w && h) {
+        shellParams.viewportSize = glm::vec2(w, h);
       }
-    } else if (arg == "--screenshot-number") {
-      if (i + 1 < args.size()) {
-        shellParams.screenshotNumber = static_cast<uint32_t>(std::stoi(args[++i]));
-      }
-    } else if (arg == "--viewport-size") {
-      if (i + 1 < args.size()) {
-        const std::string& value = args[++i];
-        unsigned int w = 0;
-        unsigned int h = 0;
-        if (sscanf(value.c_str(), "%ux%u", &w, &h) == 2) {
-          if (w && h) {
-            shellParams.viewportSize = glm::vec2(w, h);
-          }
-        }
-      }
-    } else if (arg == "--fps-throttle") {
-      if (i + 1 < args.size()) {
-        shellParams.fpsThrottleMs = static_cast<uint32_t>(std::stoi(args[++i]));
-      }
+    } else if (arg == "--fps-throttle" && tryConsumeNext(args, i)) {
+      shellParams.fpsThrottleMs = static_cast<uint32_t>(std::stoi(args[i]));
     } else if (arg == "--fps-throttle-random") {
       shellParams.fpsThrottleRandom = true;
-    } else if (arg == "--freeze-at-frame") {
-      if (i + 1 < args.size()) {
-        shellParams.freezeAtFrame = static_cast<uint32_t>(std::stoi(args[++i]));
-      }
+    } else if (arg == "--freeze-at-frame" && tryConsumeNext(args, i)) {
+      shellParams.freezeAtFrame = static_cast<uint32_t>(std::stoi(args[i]));
     } else if (arg == "--use-timer-rendering") {
       shellParams.useTimerRendering = true;
     } else if (arg == "--force-multiview") {
       shellParams.forceMultiview = true;
       shellParams.renderMode = RenderMode::SinglePassStereo;
-      // Two identical views — duplicate mono camera, only viewIndex differs
       shellParams.viewParams.resize(2);
       shellParams.viewParams[0].viewIndex = 0;
       shellParams.viewParams[1].viewIndex = 1;
-      // Note: shouldPresent is NOT set here — it's set by the shell when multiview
-      // textures are actually created, so fallback-to-mono still presents correctly.
     }
   }
 }
