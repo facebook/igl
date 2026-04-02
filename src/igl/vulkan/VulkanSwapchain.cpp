@@ -291,7 +291,7 @@ Result VulkanSwapchain::acquireNextImage() {
     };
     VK_ASSERT(ctx_.vf_.vkWaitSemaphoresKHR(ctx_.getVkDevice(), &waitInfo, UINT64_MAX));
 
-    VkSemaphore acquireSemaphore = acquireSemaphores[currentImageIndex_].getVkSemaphore();
+    const VkSemaphore acquireSemaphore = acquireSemaphores[currentImageIndex_].getVkSemaphore();
     // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
     acquireResult = ctx_.vf_.vkAcquireNextImageKHR(ctx_.getVkDevice(),
                                                    swapchain_,
