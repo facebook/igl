@@ -96,6 +96,10 @@ struct Result {
 
     /// Something bad happened internally but we don't know what
     RuntimeError,
+
+    /// GPU device was lost — connection to the hardware was severed (e.g. hardware disconnect).
+    /// After this, all GPU operations will fail until the device is recreated.
+    DeviceLost,
   };
 
   Code code = Code::Ok;

@@ -313,6 +313,16 @@ class IDevice : public ICapabilities, public base::IDeviceBase {
   [[nodiscard]] BackendType getBackendType() const override = 0;
 
   /**
+   * @brief Returns whether the GPU device has been lost (e.g. due to a hardware disconnect or
+   * driver error). After device lost, all GPU operations should be skipped until the device is
+   * recreated. Default implementation returns false (most backends are always valid).
+   * @return true if the device is lost and cannot accept GPU commands.
+   */
+  [[nodiscard]] virtual bool isDeviceLost() const noexcept {
+    return false;
+  }
+
+  /**
    * @brief Returns raw pointer to native device handle.
    * @return Platform-specific device handle.
    */
