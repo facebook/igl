@@ -30,7 +30,7 @@ VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const VulkanContext& ctx,
   VK_ASSERT(ivkSetDebugObjectName(&ctx.vf_,
                                   ctx.getVkDevice(),
                                   VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
-                                  (uint64_t)vkDescriptorSetLayout,
+                                  reinterpret_cast<uint64_t>(vkDescriptorSetLayout),
                                   debugName));
 }
 
