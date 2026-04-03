@@ -138,7 +138,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                                                                descColor.clearColor.b,
                                                                descColor.clearColor.a,
                                                            }}};
-    const auto colorLayer = getVkLayer(colorTexture.getType(), descColor.face, descColor.layer);
+    const uint32_t colorLayer = getVkLayer(colorTexture.getType(), descColor.face, descColor.layer);
     if (mipLevel) {
       IGL_DEBUG_ASSERT(descColor.mipLevel == mipLevel,
                        "All color attachments should have the same mip-level");
@@ -784,7 +784,7 @@ void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float
 bool RenderCommandEncoder::setDrawCallCountEnabled(bool value) {
   IGL_PROFILER_FUNCTION();
 
-  const auto returnVal = drawCallCountEnabled_ > 0;
+  const bool returnVal = drawCallCountEnabled_ > 0;
   drawCallCountEnabled_ = static_cast<uint32_t>(value);
   return returnVal;
 }
