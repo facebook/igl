@@ -29,7 +29,7 @@ VulkanSemaphore::VulkanSemaphore(const VulkanFunctionTable& vf,
   };
   VK_ASSERT(vf_->vkCreateSemaphore(device_, &ci, nullptr, &vkSemaphore_));
   VK_ASSERT(ivkSetDebugObjectName(
-      vf_, device_, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)vkSemaphore_, debugName));
+      vf_, device_, VK_OBJECT_TYPE_SEMAPHORE, reinterpret_cast<uint64_t>(vkSemaphore_), debugName));
 }
 
 VulkanSemaphore::VulkanSemaphore(const VulkanFunctionTable& vf,
@@ -57,7 +57,7 @@ VulkanSemaphore::VulkanSemaphore(const VulkanFunctionTable& vf,
   };
   VK_ASSERT(vf_->vkCreateSemaphore(device_, &ci, nullptr, &vkSemaphore_));
   VK_ASSERT(ivkSetDebugObjectName(
-      vf_, device_, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)vkSemaphore_, debugName));
+      vf_, device_, VK_OBJECT_TYPE_SEMAPHORE, reinterpret_cast<uint64_t>(vkSemaphore_), debugName));
 }
 
 VulkanSemaphore ::~VulkanSemaphore() {
