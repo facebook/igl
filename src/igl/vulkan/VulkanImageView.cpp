@@ -48,11 +48,14 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
     ciCopy.pNext = &info;
   }
 
-  VkDevice device = this->ctx->getVkDevice();
+  const VkDevice device = this->ctx->getVkDevice();
   VK_ASSERT(this->ctx->vf_.vkCreateImageView(device, &ci, nullptr, &vkImageView));
 
-  VK_ASSERT(ivkSetDebugObjectName(
-      &this->ctx->vf_, device, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vkImageView, debugName));
+  VK_ASSERT(ivkSetDebugObjectName(&this->ctx->vf_,
+                                  device,
+                                  VK_OBJECT_TYPE_IMAGE_VIEW,
+                                  reinterpret_cast<uint64_t>(vkImageView),
+                                  debugName));
 }
 
 VulkanImageView& VulkanImageView::operator=(VulkanImageView&& other) noexcept {
