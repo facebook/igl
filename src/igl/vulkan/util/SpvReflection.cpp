@@ -226,17 +226,22 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
 
       switch (SpvOp(opCode)) {
       case SpvOpTypeStruct:
-        info.buffers.push_back({id.binding, id.dset, isStorage});
+        info.buffers.push_back(
+            {.bindingLocation = id.binding, .descriptorSet = id.dset, .isStorage = isStorage});
         break;
       case SpvOpTypeImage: {
         const TextureType tt = ids[ids[id.typeId].typeId].type; // dimension
         IGL_DEBUG_ASSERT(tt != TextureType::Invalid);
         const bool isStorageImage = ids[ids[id.typeId].typeId].isStorageImage;
         if (isStorageImage) {
-          uint32_t imgFmt = ids[ids[id.typeId].typeId].imageFormat;
-          info.images.push_back({id.binding, id.dset, tt, imgFmt});
+          const uint32_t imgFmt = ids[ids[id.typeId].typeId].imageFormat;
+          info.images.push_back({.bindingLocation = id.binding,
+                                 .descriptorSet = id.dset,
+                                 .type = tt,
+                                 .imageFormat = imgFmt});
         } else {
-          info.textures.push_back({id.binding, id.dset, tt});
+          info.textures.push_back(
+              {.bindingLocation = id.binding, .descriptorSet = id.dset, .type = tt});
         }
         break;
       }
@@ -247,7 +252,8 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
         IGL_DEBUG_ASSERT(ids[ids[ids[id.typeId].typeId].typeId].opCode == SpvOpTypeImage);
         const TextureType tt = ids[ids[ids[id.typeId].typeId].typeId].type;
         IGL_DEBUG_ASSERT(tt != TextureType::Invalid);
-        info.textures.push_back({id.binding, id.dset, tt});
+        info.textures.push_back(
+            {.bindingLocation = id.binding, .descriptorSet = id.dset, .type = tt});
         break;
       }
       default:
