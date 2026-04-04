@@ -53,7 +53,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
     // existing textures increases
     if (lastBindlessVkDescriptorSetLayout != ctx.getBindlessVkDescriptorSetLayout()) {
       // there's a new descriptor set layout - drop the previous Vulkan pipeline
-      VkDevice device = ctx.getVkDevice();
+      const VkDevice device = ctx.getVkDevice();
       if (pipeline_ != VK_NULL_HANDLE) {
         ctx.deferredTask(std::packaged_task<void()>(
             [vf = &ctx.vf_, device, pipeline = pipeline_, layout = pipelineLayout]() {
@@ -93,13 +93,13 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
       .pPushConstantRanges = info.hasPushConstants ? &pushConstantRange : nullptr,
   };
 
-  VkDevice device = ctx.getVkDevice();
+  const VkDevice device = ctx.getVkDevice();
   VK_ASSERT(ctx.vf_.vkCreatePipelineLayout(device, &ci, nullptr, &pipelineLayout));
   VK_ASSERT(
       ivkSetDebugObjectName(&ctx.vf_,
                             device,
                             VK_OBJECT_TYPE_PIPELINE_LAYOUT,
-                            (uint64_t)pipelineLayout,
+                            reinterpret_cast<uint64_t>(pipelineLayout),
                             IGL_FORMAT("Pipeline Layout: {}", desc_.debugName.c_str()).c_str()));
 
   const auto& shaderModule = desc_.shaderStages->getComputeModule();
