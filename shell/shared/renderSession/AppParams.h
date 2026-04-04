@@ -22,5 +22,6 @@ struct AppParams {
   QuadLayerParamsGetter quadLayerParamsGetter;
   PassthroughGetter passthroughGetter;
   float passthroughOpacity = 1.0f;
+  bool useMaxRenderResolution = false;
 };
 } // namespace igl::shell

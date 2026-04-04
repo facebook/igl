@@ -17,6 +17,7 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <shell/shared/input/RayListener.h>
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
@@ -90,6 +91,7 @@ class XrApp {
   void createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManager* assetMgr);
 
   void createSpaces();
+  void createActions();
   XrFrameState beginFrame();
   void render();
   void endFrame(XrFrameState frameState);
@@ -168,5 +170,9 @@ class XrApp {
 
   igl::shell::RenderSessionConfig sessionConfig_;
   std::unique_ptr<igl::shell::ShellParams> shellParams_;
+
+  // OpenXR controller input
+  XrActionSet actionSet_ = XR_NULL_HANDLE;
+  std::array<XrAction, static_cast<int>(igl::shell::Button::Count)> buttonActions_{};
 };
 } // namespace igl::shell::openxr

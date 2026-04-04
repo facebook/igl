@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <cstdio>
 #include <string>
 
 #if IGL_PLATFORM_ANDROID
@@ -465,6 +466,8 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
     }
   }
 
+  createActions();
+
   if (hands_) {
     hands_->updateMeshes(shellParams_->handMeshes);
   }
@@ -478,14 +481,26 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
     compositionLayers_.emplace_back(std::make_unique<XrCompositionProjection>(
         *impl_, platform_, session_, useSinglePassStereo_));
 
+    // Resolution controlled by the render session via AppParams.
+    // When useMaxRenderResolution is true, use maximum hardware resolution.
+    // Otherwise, use the runtime's recommended resolution.
+    const bool useMax = renderSession_ && renderSession_->appParams().useMaxRenderResolution;
+
+    auto getWidth = [useMax](const XrViewConfigurationView& v) -> uint32_t {
+      return useMax ? v.maxImageRectWidth : v.recommendedImageRectWidth;
+    };
+    auto getHeight = [useMax](const XrViewConfigurationView& v) -> uint32_t {
+      return useMax ? v.maxImageRectHeight : v.recommendedImageRectHeight;
+    };
+
     compositionLayers_.back()->updateSwapchainImageInfo(
         {impl::SwapchainImageInfo{
-             .imageWidth = viewports_[0].recommendedImageRectWidth,
-             .imageHeight = viewports_[0].recommendedImageRectHeight,
+             .imageWidth = getWidth(viewports_[0]),
+             .imageHeight = getHeight(viewports_[0]),
          },
          impl::SwapchainImageInfo{
-             .imageWidth = viewports_[1].recommendedImageRectWidth,
-             .imageHeight = viewports_[1].recommendedImageRectHeight,
+             .imageWidth = getWidth(viewports_[1]),
+             .imageHeight = getHeight(viewports_[1]),
          }});
   }
 
@@ -591,6 +606,143 @@ void XrApp::createSpaces() {
                                                             : XR_REFERENCE_SPACE_TYPE_LOCAL;
 #endif
   XR_CHECK(xrCreateReferenceSpace(session_, &spaceCreateInfo, &currentSpace_));
+}
+
+void XrApp::createActions() {
+  // Create action set
+  XrActionSetCreateInfo actionSetInfo = {XR_TYPE_ACTION_SET_CREATE_INFO};
+  snprintf(actionSetInfo.actionSetName, sizeof(actionSetInfo.actionSetName), "%s", "gameplay");
+  snprintf(actionSetInfo.localizedActionSetName,
+           sizeof(actionSetInfo.localizedActionSetName),
+           "%s",
+           "Gameplay");
+  XrResult res = xrCreateActionSet(instance_, &actionSetInfo, &actionSet_);
+  if (res != XR_SUCCESS) {
+    IGL_LOG_ERROR("Failed to create action set: %d\n", res);
+    return;
+  }
+
+  XrPath leftHandPath = 0, rightHandPath = 0;
+  xrStringToPath(instance_, "/user/hand/left", &leftHandPath);
+  xrStringToPath(instance_, "/user/hand/right", &rightHandPath);
+
+  // Button definitions
+  struct ButtonDef {
+    const char* name;
+    const char* localizedName;
+    XrPath* subactionPaths;
+    Button id;
+    XrActionType type;
+    uint32_t subactionCount;
+  };
+
+  using igl::shell::Button;
+
+  ButtonDef buttonDefs[] = {
+      {.name = "left_trigger",
+       .localizedName = "Left Trigger",
+       .subactionPaths = &leftHandPath,
+       .id = Button::LeftTrigger,
+       .type = XR_ACTION_TYPE_FLOAT_INPUT,
+       .subactionCount = 1},
+      {.name = "right_trigger",
+       .localizedName = "Right Trigger",
+       .subactionPaths = &rightHandPath,
+       .id = Button::RightTrigger,
+       .type = XR_ACTION_TYPE_FLOAT_INPUT,
+       .subactionCount = 1},
+      {.name = "a_button",
+       .localizedName = "A Button",
+       .subactionPaths = &rightHandPath,
+       .id = Button::A,
+       .type = XR_ACTION_TYPE_BOOLEAN_INPUT,
+       .subactionCount = 1},
+      {.name = "b_button",
+       .localizedName = "B Button",
+       .subactionPaths = &rightHandPath,
+       .id = Button::B,
+       .type = XR_ACTION_TYPE_BOOLEAN_INPUT,
+       .subactionCount = 1},
+      {.name = "x_button",
+       .localizedName = "X Button",
+       .subactionPaths = &leftHandPath,
+       .id = Button::X,
+       .type = XR_ACTION_TYPE_BOOLEAN_INPUT,
+       .subactionCount = 1},
+      {.name = "y_button",
+       .localizedName = "Y Button",
+       .subactionPaths = &leftHandPath,
+       .id = Button::Y,
+       .type = XR_ACTION_TYPE_BOOLEAN_INPUT,
+       .subactionCount = 1},
+  };
+
+  for (const auto& def : buttonDefs) {
+    XrActionCreateInfo actionInfo = {XR_TYPE_ACTION_CREATE_INFO};
+    actionInfo.actionType = def.type;
+    snprintf(actionInfo.actionName, sizeof(actionInfo.actionName), "%s", def.name);
+    snprintf(actionInfo.localizedActionName,
+             sizeof(actionInfo.localizedActionName),
+             "%s",
+             def.localizedName);
+    actionInfo.countSubactionPaths = def.subactionCount;
+    actionInfo.subactionPaths = def.subactionPaths;
+    res = xrCreateAction(actionSet_, &actionInfo, &buttonActions_[static_cast<int>(def.id)]);
+    if (res != XR_SUCCESS) {
+      IGL_LOG_ERROR("Failed to create action '%s': %d\n", def.name, res);
+      return;
+    }
+  }
+
+  // Binding paths for Oculus Touch controllers
+  struct BindingDef {
+    Button id;
+    const char* path;
+  };
+
+  BindingDef bindingDefs[] = {
+      {.id = Button::LeftTrigger, .path = "/user/hand/left/input/trigger/value"},
+      {.id = Button::RightTrigger, .path = "/user/hand/right/input/trigger/value"},
+      {.id = Button::A, .path = "/user/hand/right/input/a/click"},
+      {.id = Button::B, .path = "/user/hand/right/input/b/click"},
+      {.id = Button::X, .path = "/user/hand/left/input/x/click"},
+      {.id = Button::Y, .path = "/user/hand/left/input/y/click"},
+  };
+
+  constexpr size_t kNumBindings = sizeof(bindingDefs) / sizeof(bindingDefs[0]);
+  XrActionSuggestedBinding bindings[kNumBindings];
+  for (size_t i = 0; i < kNumBindings; ++i) {
+    XrPath bindingPath = 0;
+    xrStringToPath(instance_, bindingDefs[i].path, &bindingPath);
+    bindings[i] = {.action = buttonActions_[static_cast<int>(bindingDefs[i].id)],
+                   .binding = bindingPath};
+  }
+
+  XrPath profilePath = 0;
+  xrStringToPath(instance_, "/interaction_profiles/oculus/touch_controller", &profilePath);
+
+  XrInteractionProfileSuggestedBinding suggestedBindings = {
+      .type = XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING,
+      .interactionProfile = profilePath,
+      .countSuggestedBindings = kNumBindings,
+      .suggestedBindings = bindings,
+  };
+  res = xrSuggestInteractionProfileBindings(instance_, &suggestedBindings);
+  if (res != XR_SUCCESS) {
+    IGL_LOG_ERROR("Failed to suggest interaction profile bindings: %d\n", res);
+    return;
+  }
+
+  // Attach action set to session
+  XrSessionActionSetsAttachInfo attachInfo = {
+      .type = XR_TYPE_SESSION_ACTION_SETS_ATTACH_INFO,
+      .countActionSets = 1,
+      .actionSets = &actionSet_,
+  };
+  res = xrAttachSessionActionSets(session_, &attachInfo);
+  if (res != XR_SUCCESS) {
+    IGL_LOG_ERROR("Failed to attach action sets: %d\n", res);
+  }
 }
 
 void XrApp::handleXrEvents() {
@@ -823,6 +975,45 @@ void XrApp::endFrame(XrFrameState frameState) {
 void XrApp::update() {
   if (!initialized_ || !resumed_ || !sessionActive_) {
     return;
+  }
+
+  // Sync and poll controller input
+  if (actionSet_ != XR_NULL_HANDLE && platform_ != nullptr) {
+    XrActiveActionSet activeActionSet = {actionSet_, XR_NULL_PATH};
+    XrActionsSyncInfo syncInfo = {
+        .type = XR_TYPE_ACTIONS_SYNC_INFO,
+        .countActiveActionSets = 1,
+        .activeActionSets = &activeActionSet,
+    };
+    if (xrSyncActions(session_, &syncInfo) == XR_SUCCESS) {
+      constexpr int numButtons = static_cast<int>(Button::Count);
+      for (int i = 0; i < numButtons; ++i) {
+        if (buttonActions_[i] == XR_NULL_HANDLE) {
+          continue;
+        }
+        auto buttonId = static_cast<Button>(i);
+        RayEvent rayEvent;
+        rayEvent.button = buttonId;
+        XrActionStateGetInfo getInfo = {
+            .type = XR_TYPE_ACTION_STATE_GET_INFO,
+            .action = buttonActions_[i],
+        };
+
+        if (buttonId == Button::LeftTrigger || buttonId == Button::RightTrigger) {
+          XrActionStateFloat state = {.type = XR_TYPE_ACTION_STATE_FLOAT};
+          if (xrGetActionStateFloat(session_, &getInfo, &state) == XR_SUCCESS && state.isActive) {
+            rayEvent.buttonPressed = state.currentState > 0.5f;
+            platform_->getInputDispatcher().queueEvent(rayEvent);
+          }
+        } else {
+          XrActionStateBoolean state = {.type = XR_TYPE_ACTION_STATE_BOOLEAN};
+          if (xrGetActionStateBoolean(session_, &getInfo, &state) == XR_SUCCESS && state.isActive) {
+            rayEvent.buttonPressed = (state.currentState != 0u);
+            platform_->getInputDispatcher().queueEvent(rayEvent);
+          }
+        }
+      }
+    }
   }
 
   if (platform_ != nullptr) {
