@@ -483,7 +483,8 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
                              "VulkanStagingDevice::imageData (upload image data)",
                              K_COLOR_UPLOAD_IMAGE.toFloatPtr());
 
-  for (auto mipLevel = range.mipLevel; mipLevel < range.mipLevel + range.numMipLevels; ++mipLevel) {
+  for (uint32_t mipLevel = range.mipLevel; mipLevel < range.mipLevel + range.numMipLevels;
+       ++mipLevel) {
     const auto mipRange = range.atMipLevel(mipLevel);
     const uint32_t offset =
         static_cast<uint32_t>(properties.getSubRangeByteOffset(range, mipRange, bytesPerRow));
@@ -810,7 +811,7 @@ void VulkanStagingDevice::allocateStagingBuffer(VkDeviceSize minimumSize) {
   IGL_LOG_INFO("Allocating a new staging buffer of size %u bytes\n", minimumSize);
 #endif
 
-  const auto stagingBufferSize = minimumSize;
+  const VkDeviceSize stagingBufferSize = minimumSize;
 
   // Increment the id used for naming the staging buffer
   ++stagingBufferCounter_;
