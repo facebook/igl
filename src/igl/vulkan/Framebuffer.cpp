@@ -368,14 +368,15 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel,
   const uint32_t fbWidth = std::max(width_ >> mipLevel, 1u);
   const uint32_t fbHeight = std::max(height_ >> mipLevel, 1u);
 
-  auto fb = std::make_shared<VulkanFramebuffer>(ctx,
-                                                ctx.getVkDevice(),
-                                                fbWidth,
-                                                fbHeight,
-                                                pass,
-                                                (uint32_t)attachments.attachments.size(),
-                                                attachments.attachments.data(),
-                                                desc_.debugName.c_str());
+  auto fb =
+      std::make_shared<VulkanFramebuffer>(ctx,
+                                          ctx.getVkDevice(),
+                                          fbWidth,
+                                          fbHeight,
+                                          pass,
+                                          static_cast<uint32_t>(attachments.attachments.size()),
+                                          attachments.attachments.data(),
+                                          desc_.debugName.c_str());
 
   framebuffers_[attachments] = fb;
 
