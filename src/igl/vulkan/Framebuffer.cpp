@@ -89,7 +89,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
   // Vulkan uses array layer to represent either cube face or array layer. IGL's TextureRangeDesc
   // represents these separately. This gets the correct vulkan array layer for the either the
   // range's cube face or array layer.
-  const auto layer = getVkLayer(itexture->getType(), range.face, range.layer);
+  const uint32_t layer = getVkLayer(itexture->getType(), range.face, range.layer);
 
   const VulkanContext& ctx = device_.getVulkanContext();
   ctx.stagingDevice_->getImageData2D(vkTex.getVkImage(),
