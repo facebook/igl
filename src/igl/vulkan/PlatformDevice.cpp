@@ -97,14 +97,14 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
     return nullptr;
   }
 
-  const size_t width = (size_t)swapChain->getWidth();
-  const size_t height = (size_t)swapChain->getHeight();
+  const size_t width = static_cast<size_t>(swapChain->getWidth());
+  const size_t height = static_cast<size_t>(swapChain->getHeight());
   const uint32_t currentImageIndex = swapChain->getCurrentImageIndex();
 
   // resize nativeDrawableTextures_ pushing null pointers
   // null pointers will be allocated later as needed
   if (currentImageIndex >= nativeDrawableTextures_.size()) {
-    nativeDrawableTextures_.resize((size_t)currentImageIndex + 1, nullptr);
+    nativeDrawableTextures_.resize(static_cast<size_t>(currentImageIndex) + 1, nullptr);
   }
 
   const auto result = nativeDrawableTextures_[currentImageIndex];
