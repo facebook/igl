@@ -229,7 +229,7 @@ class DescriptorPoolsArena final {
   DescriptorPoolsArena(DescriptorPoolsArena&&) = delete;
   DescriptorPoolsArena& operator=(DescriptorPoolsArena&&) = delete;
   ~DescriptorPoolsArena() {
-    extinct_.push_back({pool_, {}});
+    extinct_.push_back({.pool = pool_, .handle = {}});
     ctx_.deferredTask(std::packaged_task<void()>(
         [extinct = std::move(extinct_), vf = ctx_.vf_, device = device_]() {
           for (const auto& p : extinct) {
@@ -260,7 +260,7 @@ class DescriptorPoolsArena final {
     numRemainingDSetsInPool_ = kNumDSetsPerPool;
 
     if (pool_ != VK_NULL_HANDLE) {
-      extinct_.push_back({pool_, nextSubmitHandle});
+      extinct_.push_back({.pool = pool_, .handle = nextSubmitHandle});
     }
     // first, let's try to reuse the oldest extinct pool (never reuse pools that are tagged with the
     // same SubmitHandle because they have not yet been submitted)
@@ -1520,18 +1520,20 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
       const bool isSampledImage = isTextureAvailable && texture->image_.isSampledImage();
       const bool isStorageImage = isTextureAvailable && texture->image_.isStorageImage();
       infoSampledImages.push_back(
-          {dummySampler,
-           isSampledImage ? texture->imageView_.getVkImageView() : dummyImageView,
-           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+          {.sampler = dummySampler,
+           .imageView = isSampledImage ? texture->imageView_.getVkImageView() : dummyImageView,
+           .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
       infoStorageImages.push_back(VkDescriptorImageInfo{
-          VK_NULL_HANDLE,
-          isStorageImage ? texture->imageView_.getVkImageView() : dummyImageView,
-          VK_IMAGE_LAYOUT_GENERAL});
+          .sampler = VK_NULL_HANDLE,
+          .imageView = isStorageImage ? texture->imageView_.getVkImageView() : dummyImageView,
+          .imageLayout = VK_IMAGE_LAYOUT_GENERAL});
     } else {
-      infoSampledImages.push_back(
-          {dummySampler, dummyImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
-      infoStorageImages.push_back(
-          VkDescriptorImageInfo{VK_NULL_HANDLE, dummyImageView, VK_IMAGE_LAYOUT_GENERAL});
+      infoSampledImages.push_back({.sampler = dummySampler,
+                                   .imageView = dummyImageView,
+                                   .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+      infoStorageImages.push_back(VkDescriptorImageInfo{.sampler = VK_NULL_HANDLE,
+                                                        .imageView = dummyImageView,
+                                                        .imageLayout = VK_IMAGE_LAYOUT_GENERAL});
     }
     IGL_DEBUG_ASSERT(infoSampledImages.back().imageView != VK_NULL_HANDLE);
     IGL_DEBUG_ASSERT(infoStorageImages.back().imageView != VK_NULL_HANDLE);
@@ -1543,8 +1545,9 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
 
   for (const auto& entry : samplers_.objects_) {
     const VulkanSampler* sampler = &entry.obj_;
-    infoSamplers.push_back(
-        {sampler ? sampler->vkSampler : dummySampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED});
+    infoSamplers.push_back({.sampler = sampler ? sampler->vkSampler : dummySampler,
+                            .imageView = VK_NULL_HANDLE,
+                            .imageLayout = VK_IMAGE_LAYOUT_UNDEFINED});
   }
 
   std::vector<VkWriteDescriptorSet> write;
