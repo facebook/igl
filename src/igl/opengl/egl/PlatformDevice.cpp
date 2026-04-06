@@ -42,16 +42,16 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
   }
 
   const TextureDesc desc = {
-      dimensions.first < 0 ? 0 : static_cast<uint32_t>(dimensions.first),
-      dimensions.second < 0 ? 0 : static_cast<uint32_t>(dimensions.second),
-      1, // depth
-      1, // numLayers
-      1, // numSamples
-      TextureDesc::TextureUsageBits::Attachment,
-      1, // numMipLevels
-      TextureType::TwoD,
-      colorTextureFormat,
-      ResourceStorage::Private,
+      .width = dimensions.first < 0 ? 0 : static_cast<uint32_t>(dimensions.first),
+      .height = dimensions.second < 0 ? 0 : static_cast<uint32_t>(dimensions.second),
+      .depth = 1,
+      .numLayers = 1,
+      .numSamples = 1,
+      .usage = TextureDesc::TextureUsageBits::Attachment,
+      .numMipLevels = 1,
+      .type = TextureType::TwoD,
+      .format = colorTextureFormat,
+      .storage = ResourceStorage::Private,
   };
   auto texture = std::make_shared<ViewTextureTarget>(getContext(), desc.format);
   subResult = texture->create(desc, true);
@@ -84,16 +84,16 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
   }
 
   const TextureDesc desc = {
-      static_cast<uint32_t>(width),
-      static_cast<uint32_t>(height),
-      1, // depth
-      1, // numLayers
-      1, // numSamples
-      TextureDesc::TextureUsageBits::Attachment,
-      1, // numMipLevels
-      TextureType::TwoD,
-      colorTextureFormat,
-      ResourceStorage::Private,
+      .width = static_cast<uint32_t>(width),
+      .height = static_cast<uint32_t>(height),
+      .depth = 1,
+      .numLayers = 1,
+      .numSamples = 1,
+      .usage = TextureDesc::TextureUsageBits::Attachment,
+      .numMipLevels = 1,
+      .type = TextureType::TwoD,
+      .format = colorTextureFormat,
+      .storage = ResourceStorage::Private,
   };
   auto texture = std::make_shared<ViewTextureTarget>(getContext(), desc.format);
   const Result subResult = texture->create(desc, true);
@@ -126,16 +126,16 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(
   }
 
   const TextureDesc desc = {
-      dimensions.first < 0 ? 0 : static_cast<uint32_t>(dimensions.first),
-      dimensions.second < 0 ? 0 : static_cast<uint32_t>(dimensions.second),
-      1, // depth
-      1, // numLayers
-      1, // numSamples
-      TextureDesc::TextureUsageBits::Attachment,
-      1, // numMipLevels
-      TextureType::TwoD,
-      depthTextureFormat,
-      ResourceStorage::Private,
+      .width = dimensions.first < 0 ? 0 : static_cast<uint32_t>(dimensions.first),
+      .height = dimensions.second < 0 ? 0 : static_cast<uint32_t>(dimensions.second),
+      .depth = 1,
+      .numLayers = 1,
+      .numSamples = 1,
+      .usage = TextureDesc::TextureUsageBits::Attachment,
+      .numMipLevels = 1,
+      .type = TextureType::TwoD,
+      .format = depthTextureFormat,
+      .storage = ResourceStorage::Private,
   };
   auto texture = std::make_shared<ViewTextureTarget>(getContext(), desc.format);
   subResult = texture->create(desc, true);
