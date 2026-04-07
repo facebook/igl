@@ -44,6 +44,7 @@ _IGLRenderBufferHolder* getAssociatedRenderBufferHolder(CAEAGLLayer* nativeDrawa
 
 namespace igl::opengl::ios {
 
+// @fb-only
 PlatformDevice::PlatformDevice(Device& owner) : opengl::PlatformDevice(owner) {}
 
 PlatformDevice::~PlatformDevice() {
