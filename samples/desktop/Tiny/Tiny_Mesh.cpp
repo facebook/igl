@@ -123,28 +123,28 @@ using glm::vec4;
 
 vec3 axis_[kNumCubes];
 
-GLFWwindow* window_ = nullptr;
+GLFWwindow* window = nullptr;
 int width_ = 1024;
 int height_ = 768;
 igl::FPSCounter fps_;
 bool saveScreenshot_ = false;
-[[maybe_unused]] igl::SubmitHandle screenshotSubmitHandle_ = {};
+[[maybe_unused]] igl::SubmitHandle screenshotSubmitHandle = {};
 
 constexpr uint32_t kNumBufferedFrames = 3;
 
-std::unique_ptr<IDevice> device_;
+std::unique_ptr<IDevice> device;
 std::shared_ptr<ICommandQueue> commandQueue_;
 RenderPassDesc renderPass_;
 FramebufferDesc framebufferDesc_;
-std::shared_ptr<IFramebuffer> framebuffer_;
+std::shared_ptr<IFramebuffer> framebuffer;
 std::shared_ptr<IRenderPipelineState> renderPipelineState_Mesh_;
 std::shared_ptr<IBuffer> vb0_, ib0_; // buffers for vertices and indices
 std::shared_ptr<IBuffer> screenCopy_;
-std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerObject_;
+std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerObject;
 std::shared_ptr<IVertexInputState> vertexInput0_;
 std::shared_ptr<IDepthStencilState> depthStencilState_;
 std::shared_ptr<ITexture> texture0_, texture1_;
-std::shared_ptr<ISamplerState> sampler_;
+std::shared_ptr<ISamplerState> sampler;
 
 struct VertexPosUvw {
   vec3 position;
@@ -160,40 +160,40 @@ struct UniformsPerObject {
   mat4 model;
 };
 
-const float half = 1.0f;
+const float kHalf = 1.0f;
 
 // UV-mapped cube with indices: 24 vertices, 36 indices
 const VertexPosUvw vertexData0[] = {
     // top
-    {.position = {-half, -half, +half}, .color = {0.0, 0.0, 1.0}, .uv = {0, 0}}, // 0
-    {.position = {+half, -half, +half}, .color = {1.0, 0.0, 1.0}, .uv = {1, 0}}, // 1
-    {.position = {+half, +half, +half}, .color = {1.0, 1.0, 1.0}, .uv = {1, 1}}, // 2
-    {.position = {-half, +half, +half}, .color = {0.0, 1.0, 1.0}, .uv = {0, 1}}, // 3
+    {.position = {-kHalf, -kHalf, +kHalf}, .color = {0.0, 0.0, 1.0}, .uv = {0, 0}}, // 0
+    {.position = {+kHalf, -kHalf, +kHalf}, .color = {1.0, 0.0, 1.0}, .uv = {1, 0}}, // 1
+    {.position = {+kHalf, +kHalf, +kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {1, 1}}, // 2
+    {.position = {-kHalf, +kHalf, +kHalf}, .color = {0.0, 1.0, 1.0}, .uv = {0, 1}}, // 3
     // bottom
-    {.position = {-half, -half, -half}, .color = {1.0, 1.0, 1.0}, .uv = {0, 0}}, // 4
-    {.position = {-half, +half, -half}, .color = {0.0, 1.0, 0.0}, .uv = {0, 1}}, // 5
-    {.position = {+half, +half, -half}, .color = {1.0, 1.0, 0.0}, .uv = {1, 1}}, // 6
-    {.position = {+half, -half, -half}, .color = {1.0, 0.0, 0.0}, .uv = {1, 0}}, // 7
+    {.position = {-kHalf, -kHalf, -kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {0, 0}}, // 4
+    {.position = {-kHalf, +kHalf, -kHalf}, .color = {0.0, 1.0, 0.0}, .uv = {0, 1}}, // 5
+    {.position = {+kHalf, +kHalf, -kHalf}, .color = {1.0, 1.0, 0.0}, .uv = {1, 1}}, // 6
+    {.position = {+kHalf, -kHalf, -kHalf}, .color = {1.0, 0.0, 0.0}, .uv = {1, 0}}, // 7
     // left
-    {.position = {+half, +half, -half}, .color = {1.0, 1.0, 0.0}, .uv = {1, 0}}, // 8
-    {.position = {-half, +half, -half}, .color = {0.0, 1.0, 0.0}, .uv = {0, 0}}, // 9
-    {.position = {-half, +half, +half}, .color = {0.0, 1.0, 1.0}, .uv = {0, 1}}, // 10
-    {.position = {+half, +half, +half}, .color = {1.0, 1.0, 1.0}, .uv = {1, 1}}, // 11
+    {.position = {+kHalf, +kHalf, -kHalf}, .color = {1.0, 1.0, 0.0}, .uv = {1, 0}}, // 8
+    {.position = {-kHalf, +kHalf, -kHalf}, .color = {0.0, 1.0, 0.0}, .uv = {0, 0}}, // 9
+    {.position = {-kHalf, +kHalf, +kHalf}, .color = {0.0, 1.0, 1.0}, .uv = {0, 1}}, // 10
+    {.position = {+kHalf, +kHalf, +kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {1, 1}}, // 11
     // right
-    {.position = {-half, -half, -half}, .color = {1.0, 1.0, 1.0}, .uv = {0, 0}}, // 12
-    {.position = {+half, -half, -half}, .color = {1.0, 0.0, 0.0}, .uv = {1, 0}}, // 13
-    {.position = {+half, -half, +half}, .color = {1.0, 0.0, 1.0}, .uv = {1, 1}}, // 14
-    {.position = {-half, -half, +half}, .color = {0.0, 0.0, 1.0}, .uv = {0, 1}}, // 15
+    {.position = {-kHalf, -kHalf, -kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {0, 0}}, // 12
+    {.position = {+kHalf, -kHalf, -kHalf}, .color = {1.0, 0.0, 0.0}, .uv = {1, 0}}, // 13
+    {.position = {+kHalf, -kHalf, +kHalf}, .color = {1.0, 0.0, 1.0}, .uv = {1, 1}}, // 14
+    {.position = {-kHalf, -kHalf, +kHalf}, .color = {0.0, 0.0, 1.0}, .uv = {0, 1}}, // 15
     // front
-    {.position = {+half, -half, -half}, .color = {1.0, 0.0, 0.0}, .uv = {0, 0}}, // 16
-    {.position = {+half, +half, -half}, .color = {1.0, 1.0, 0.0}, .uv = {1, 0}}, // 17
-    {.position = {+half, +half, +half}, .color = {1.0, 1.0, 1.0}, .uv = {1, 1}}, // 18
-    {.position = {+half, -half, +half}, .color = {1.0, 0.0, 1.0}, .uv = {0, 1}}, // 19
+    {.position = {+kHalf, -kHalf, -kHalf}, .color = {1.0, 0.0, 0.0}, .uv = {0, 0}}, // 16
+    {.position = {+kHalf, +kHalf, -kHalf}, .color = {1.0, 1.0, 0.0}, .uv = {1, 0}}, // 17
+    {.position = {+kHalf, +kHalf, +kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {1, 1}}, // 18
+    {.position = {+kHalf, -kHalf, +kHalf}, .color = {1.0, 0.0, 1.0}, .uv = {0, 1}}, // 19
     // back
-    {.position = {-half, +half, -half}, .color = {0.0, 1.0, 0.0}, .uv = {1, 0}}, // 20
-    {.position = {-half, -half, -half}, .color = {1.0, 1.0, 1.0}, .uv = {0, 0}}, // 21
-    {.position = {-half, -half, +half}, .color = {0.0, 0.0, 1.0}, .uv = {0, 1}}, // 22
-    {.position = {-half, +half, +half}, .color = {0.0, 1.0, 1.0}, .uv = {1, 1}}, // 23
+    {.position = {-kHalf, +kHalf, -kHalf}, .color = {0.0, 1.0, 0.0}, .uv = {1, 0}}, // 20
+    {.position = {-kHalf, -kHalf, -kHalf}, .color = {1.0, 1.0, 1.0}, .uv = {0, 0}}, // 21
+    {.position = {-kHalf, -kHalf, +kHalf}, .color = {0.0, 0.0, 1.0}, .uv = {0, 1}}, // 22
+    {.position = {-kHalf, +kHalf, +kHalf}, .color = {0.0, 1.0, 1.0}, .uv = {1, 1}}, // 23
 };
 
 const uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
@@ -242,7 +242,7 @@ GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
       width_ = width;
       height_ = height;
 #if !USE_OPENGL_BACKEND
-      auto* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
+      auto* vulkanDevice = static_cast<vulkan::Device*>(device.get());
       auto& ctx = vulkanDevice->getVulkanContext();
       ctx.initSwapchain(width_, height_);
 #endif
@@ -302,50 +302,50 @@ GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
       devices = vulkan::HWDevice::queryDevices(
           *ctx, HWDeviceQueryDesc(HWDeviceType::SoftwareGpu), nullptr);
     }
-    device_ =
+    device =
         vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
-    IGL_DEBUG_ASSERT(device_);
+    IGL_DEBUG_ASSERT(device);
   }
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
-  vb0_ = device_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Vertex,
-                                          vertexData0,
-                                          sizeof(vertexData0),
-                                          ResourceStorage::Private,
-                                          0,
-                                          "Buffer: vertex"},
-                               nullptr);
-  ib0_ = device_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Index,
-                                          indexData,
-                                          sizeof(indexData),
-                                          ResourceStorage::Private,
-                                          0,
-                                          "Buffer: index"},
-                               nullptr);
-  screenCopy_ = device_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Storage,
-                                                 nullptr,
-                                                 width_ * height_ * sizeof(uint32_t),
-                                                 ResourceStorage::Shared,
-                                                 0,
-                                                 "Buffer: screen copy"},
-                                      nullptr);
+  vb0_ = device->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Vertex,
+                                         vertexData0,
+                                         sizeof(vertexData0),
+                                         ResourceStorage::Private,
+                                         0,
+                                         "Buffer: vertex"},
+                              nullptr);
+  ib0_ = device->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Index,
+                                         indexData,
+                                         sizeof(indexData),
+                                         ResourceStorage::Private,
+                                         0,
+                                         "Buffer: index"},
+                              nullptr);
+  screenCopy_ = device->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Storage,
+                                                nullptr,
+                                                width_ * height_ * sizeof(uint32_t),
+                                                ResourceStorage::Shared,
+                                                0,
+                                                "Buffer: screen copy"},
+                                     nullptr);
 
   // create an Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
-    ubPerFrame_.push_back(device_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Uniform,
-                                                           &perFrame,
-                                                           sizeof(UniformsPerFrame),
-                                                           ResourceStorage::Shared,
-                                                           0,
-                                                           "Buffer: uniforms (per frame)"},
-                                                nullptr));
-    ubPerObject_.push_back(device_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Uniform,
-                                                            perObject,
-                                                            kNumCubes * sizeof(UniformsPerObject),
-                                                            ResourceStorage::Shared,
-                                                            0,
-                                                            "Buffer: uniforms (per object)"},
-                                                 nullptr));
+    ubPerFrame_.push_back(device->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Uniform,
+                                                          &perFrame,
+                                                          sizeof(UniformsPerFrame),
+                                                          ResourceStorage::Shared,
+                                                          0,
+                                                          "Buffer: uniforms (per frame)"},
+                                               nullptr));
+    ubPerObject.push_back(device->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Uniform,
+                                                          perObject,
+                                                          kNumCubes * sizeof(UniformsPerObject),
+                                                          ResourceStorage::Shared,
+                                                          0,
+                                                          "Buffer: uniforms (per object)"},
+                                               nullptr));
   }
 
   {
@@ -365,14 +365,14 @@ GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
     desc.attributes[2].location = 2;
     desc.numInputBindings = 1;
     desc.inputBindings[0].stride = sizeof(VertexPosUvw);
-    vertexInput0_ = device_->createVertexInputState(desc, nullptr);
+    vertexInput0_ = device->createVertexInputState(desc, nullptr);
   }
 
   {
     DepthStencilStateDesc desc;
     desc.isDepthWriteEnabled = true;
     desc.compareFunction = igl::CompareFunction::Less;
-    depthStencilState_ = device_->createDepthStencilState(desc, nullptr);
+    depthStencilState_ = device->createDepthStencilState(desc, nullptr);
   }
 
   {
@@ -383,7 +383,7 @@ GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
                                                 texHeight,
                                                 TextureDesc::TextureUsageBits::Sampled,
                                                 "XOR pattern");
-    texture0_ = device_->createTexture(desc, nullptr);
+    texture0_ = device->createTexture(desc, nullptr);
     std::vector<uint32_t> pixels(texWidth * texHeight);
     for (uint32_t y = 0; y != texHeight; y++) {
       for (uint32_t x = 0; x != texWidth; x++) {
@@ -421,7 +421,7 @@ GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
                                                 texHeight,
                                                 TextureDesc::TextureUsageBits::Sampled,
                                                 "wood_polished_01_diff.png");
-    texture1_ = device_->createTexture(desc, nullptr);
+    texture1_ = device->createTexture(desc, nullptr);
     texture1_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels);
     stbi_image_free(pixels);
   }
@@ -430,12 +430,12 @@ GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
     desc.addressModeU = igl::SamplerAddressMode::Repeat;
     desc.addressModeV = igl::SamplerAddressMode::Repeat;
     desc.debugName = "Sampler: linear";
-    sampler_ = device_->createSamplerState(desc, nullptr);
+    sampler = device->createSamplerState(desc, nullptr);
   }
 
   // Command queue: backed by different types of GPU HW queues
   CommandQueueDesc desc{};
-  commandQueue_ = device_->createCommandQueue(desc, nullptr);
+  commandQueue_ = device->createCommandQueue(desc, nullptr);
 
   renderPass_.colorAttachments.push_back({
       .loadAction = LoadAction::Clear,
@@ -467,21 +467,21 @@ void createRenderPipeline() {
     return;
   }
 
-  IGL_DEBUG_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer);
 
   RenderPipelineDesc desc;
 
   desc.targetDesc.colorAttachments.resize(1);
   desc.targetDesc.colorAttachments[0].textureFormat =
-      framebuffer_->getColorAttachment(0)->getFormat();
+      framebuffer->getColorAttachment(0)->getFormat();
 
-  if (framebuffer_->getDepthAttachment()) {
-    desc.targetDesc.depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat();
+  if (framebuffer->getDepthAttachment()) {
+    desc.targetDesc.depthAttachmentFormat = framebuffer->getDepthAttachment()->getFormat();
   }
 
   desc.vertexInputState = vertexInput0_;
   desc.shaderStages = ShaderStagesCreator::fromModuleStringInput(
-      *device_, codeVS, "main", "", codeFS, "main", "", nullptr);
+      *device, codeVS, "main", "", codeFS, "main", "", nullptr);
 
 #if !TINY_TEST_USE_DEPTH_BUFFER
   desc.cullMode = igl::CullMode::Back;
@@ -489,11 +489,11 @@ void createRenderPipeline() {
 
   desc.frontFaceWinding = igl::WindingMode::Clockwise;
   desc.debugName = igl::genNameHandle("Pipeline: mesh");
-  renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
+  renderPipelineState_Mesh_ = device->createRenderPipeline(desc, nullptr);
 }
 
 std::shared_ptr<ITexture> getVulkanNativeDrawable() {
-  const auto& vkPlatformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
+  const auto& vkPlatformDevice = device->getPlatformDevice<igl::vulkan::PlatformDevice>();
 
   IGL_DEBUG_ASSERT(vkPlatformDevice != nullptr);
 
@@ -505,7 +505,7 @@ std::shared_ptr<ITexture> getVulkanNativeDrawable() {
 }
 
 std::shared_ptr<ITexture> getVulkanNativeDepth() {
-  const auto& vkPlatformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
+  const auto& vkPlatformDevice = device->getPlatformDevice<igl::vulkan::PlatformDevice>();
 
   IGL_DEBUG_ASSERT(vkPlatformDevice != nullptr);
 
@@ -524,8 +524,8 @@ void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   framebufferDesc_.depthAttachment.texture = getVulkanNativeDepth();
 #endif // TINY_TEST_USE_DEPTH_BUFFER
 
-  framebuffer_ = device_->createFramebuffer(framebufferDesc_, nullptr);
-  IGL_DEBUG_ASSERT(framebuffer_);
+  framebuffer = device->createFramebuffer(framebufferDesc_, nullptr);
+  IGL_DEBUG_ASSERT(framebuffer);
 }
 
 void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {
@@ -545,11 +545,11 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
   inputDispatcher_.processEvents();
 #endif // IGL_WITH_IGLU
 
-  const auto size = framebuffer_->getColorAttachment(0)->getSize();
+  const auto size = framebuffer->getColorAttachment(0)->getSize();
   if (size.width != width_ || size.height != height_) {
     createFramebuffer(nativeDrawable);
   } else {
-    framebuffer_->updateDrawable(nativeDrawable);
+    framebuffer->updateDrawable(nativeDrawable);
   }
 
   // from igl/shell/renderSessions/Textured3DCubeSession.cpp
@@ -558,7 +558,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
   perFrame.proj = glm::perspectiveLH(fov, aspectRatio, 0.1f, 500.0f);
   // place a "camera" behind the cubes, the distance depends on the total number of cubes
   perFrame.view =
-      glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, sqrtf(kNumCubes / 16) * 20.0f * half));
+      glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, sqrtf(kNumCubes / 16) * 20.0f * kHalf));
   ubPerFrame_[frameIndex]->upload(&perFrame, igl::BufferRange(sizeof(perFrame)));
 
   // rotate cubes around random axes
@@ -572,7 +572,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
         glm::rotate(glm::translate(mat4(1.0f), offset), direction * (float)glfwGetTime(), axis_[i]);
   }
 
-  ubPerObject_[frameIndex]->upload(&perObject, igl::BufferRange(sizeof(perObject)));
+  ubPerObject[frameIndex]->upload(&perObject, igl::BufferRange(sizeof(perObject)));
 
   // Command buffers (1-N per thread): create, submit and forget
   CommandBufferDesc cbDesc;
@@ -588,7 +588,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
       .x = 0, .y = 0, .width = (uint32_t)width_, .height = (uint32_t)height_};
 
   // This will clear the framebuffer
-  auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+  auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer);
 
   commands->bindRenderPipelineState(renderPipelineState_Mesh_);
   commands->bindViewport(viewport);
@@ -599,18 +599,18 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
   commands->bindBuffer(0, ubPerFrame_[frameIndex].get());
   commands->bindTexture(0, igl::BindTarget::kFragment, texture0_.get());
   commands->bindTexture(1, igl::BindTarget::kFragment, texture1_.get());
-  commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
-  commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
+  commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler.get());
+  commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler.get());
   // Draw 2 cubes: we use uniform buffer to update matrices
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
   for (uint32_t i = 0; i != kNumCubes; i++) {
-    commands->bindBuffer(1, ubPerObject_[frameIndex].get(), i * sizeof(UniformsPerObject));
+    commands->bindBuffer(1, ubPerObject[frameIndex].get(), i * sizeof(UniformsPerObject));
     commands->drawIndexed(3u * 6u * 2u);
   }
   commands->popDebugGroupLabel();
 #if IGL_WITH_IGLU
   imguiSession_->drawFPS(fps_.getAverageFPS());
-  imguiSession_->endFrame(*device_, *commands);
+  imguiSession_->endFrame(*device, *commands);
 #endif // IGL_WITH_IGLU
   commands->endEncoding();
   if (saveScreenshot_) {
@@ -620,7 +620,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
   auto submitHandle = commandQueue_->submit(*buffer);
 
-  if (auto* pd = device_->getPlatformDevice<igl::vulkan::PlatformDevice>(); saveScreenshot_) {
+  if (auto* pd = device->getPlatformDevice<igl::vulkan::PlatformDevice>(); saveScreenshot_) {
     saveScreenshot_ = false;
 #if TINY_TEST_USE_ASYNC_SCREENSHOTS
     pd->deferredTask(std::packaged_task<void()>([]() {
@@ -633,13 +633,13 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
                      submitHandle);
 #else
     // store the submit handle from which we want to capture a screenshot
-    screenshotSubmitHandle_ = submitHandle;
-  } else if (screenshotSubmitHandle_ && // we poll the submit handle every frame until it's ready
-             pd->waitOnSubmitHandle(screenshotSubmitHandle_, 0)) {
+    screenshotSubmitHandle = submitHandle;
+  } else if (screenshotSubmitHandle && // we poll the submit handle every frame until it's ready
+             pd->waitOnSubmitHandle(screenshotSubmitHandle, 0)) {
     void* data = screenCopy_->map(BufferRange(screenCopy_->getSizeInBytes()), nullptr);
     stbi_write_bmp("screenshot.bmp", width_, height_, 4, data);
     screenCopy_->unmap();
-    screenshotSubmitHandle_ = {};
+    screenshotSubmitHandle = {};
     IGL_LOG_INFO("Screenshot saved.\n");
 #endif // TINY_TEST_USE_ASYNC_SCREENSHOTS
   }
@@ -659,13 +659,13 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  window_ = initIGL(isHeadless, enableVulkanValidationLayers);
+  window = initIGL(isHeadless, enableVulkanValidationLayers);
 
   createFramebuffer(getVulkanNativeDrawable());
   createRenderPipeline();
 
 #if IGL_WITH_IGLU
-  imguiSession_ = std::make_unique<iglu::imgui::Session>(*device_, inputDispatcher_);
+  imguiSession_ = std::make_unique<iglu::imgui::Session>(*device, inputDispatcher_);
 #endif // IGL_WITH_IGLU
 
   double prevTime = glfwGetTime();
@@ -673,24 +673,24 @@ int main(int argc, char* argv[]) {
   uint32_t frameIndex = 0;
 
   // Main loop
-  while (!window_ || !glfwWindowShouldClose(window_)) {
+  while (!window || !glfwWindowShouldClose(window)) {
     const double newTime = glfwGetTime();
     fps_.updateFPS(newTime - prevTime);
     prevTime = newTime;
     render(getVulkanNativeDrawable(), frameIndex);
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
-    if (window_) {
+    if (window) {
       glfwPollEvents();
     } else {
       printf("We are running headless - breaking after 1 frame\n");
-      std::shared_ptr<ITexture> texture = framebuffer_->getColorAttachment(0);
+      std::shared_ptr<ITexture> texture = framebuffer->getColorAttachment(0);
       const Dimensions dim = texture->getDimensions();
       std::vector<uint8_t> pixelsRGBA(dim.width * dim.height * 4);
       std::vector<uint8_t> pixelsRGB(dim.width * dim.height * 3);
-      framebuffer_->copyBytesColorAttachment(*commandQueue_,
-                                             0,
-                                             pixelsRGBA.data(),
-                                             TextureRangeDesc::new2D(0, 0, dim.width, dim.height));
+      framebuffer->copyBytesColorAttachment(*commandQueue_,
+                                            0,
+                                            pixelsRGBA.data(),
+                                            TextureRangeDesc::new2D(0, 0, dim.width, dim.height));
       if (texture->getFormat() == igl::TextureFormat::BGRA_UNorm8 ||
           texture->getFormat() == igl::TextureFormat::BGRA_SRGB) {
         // swap R-B
@@ -721,16 +721,16 @@ int main(int argc, char* argv[]) {
   ib0_ = nullptr;
   screenCopy_ = nullptr;
   ubPerFrame_.clear();
-  ubPerObject_.clear();
+  ubPerObject.clear();
   renderPipelineState_Mesh_ = nullptr;
   texture0_ = nullptr;
   texture1_ = nullptr;
-  sampler_ = nullptr;
+  sampler = nullptr;
   framebufferDesc_ = {};
-  framebuffer_ = nullptr;
-  device_.reset(nullptr);
+  framebuffer = nullptr;
+  device.reset(nullptr);
 
-  glfwDestroyWindow(window_);
+  glfwDestroyWindow(window);
   glfwTerminate();
 
   return 0;
