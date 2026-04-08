@@ -1273,6 +1273,12 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
     }
   }
 
+  // Mipmapped color textures need ALLOW_RENDER_TARGET for mipmap generation
+  // via the fullscreen-blit path, even without explicit Attachment usage.
+  if (desc.numMipLevels > 1 && !isDepthStencilFormat) {
+    resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+  }
+
   // Storage (unordered access) is only supported for non-depth/stencil
   // formats. If requested on a depth/stencil texture, log and ignore it.
   if (desc.usage & TextureDesc::TextureUsageBits::Storage) {

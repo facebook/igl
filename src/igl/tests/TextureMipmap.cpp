@@ -216,11 +216,8 @@ void testGenerateMipmap(IDevice& device, ICommandQueue& cmdQueue, bool withComma
   //---------------------------------------------------------------------
   // Create texture with mip levels
   //---------------------------------------------------------------------
-  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           kTexWidth,
-                                           kTexWidth,
-                                           TextureDesc::TextureUsageBits::Sampled |
-                                               TextureDesc::TextureUsageBits::Attachment);
+  TextureDesc texDesc = TextureDesc::new2D(
+      TextureFormat::RGBA_UNorm8, kTexWidth, kTexWidth, TextureDesc::TextureUsageBits::Sampled);
   texDesc.numMipLevels = kNumMipLevels;
   auto tex = device.createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
