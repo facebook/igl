@@ -237,8 +237,8 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   const uint32_t height = std::max(fb.getHeight() >> mipLevel, 1u);
   const igl::Viewport viewport = {.x = 0.0f,
                                   .y = 0.0f,
-                                  .width = (float)width,
-                                  .height = (float)height,
+                                  .width = static_cast<float>(width),
+                                  .height = static_cast<float>(height),
                                   .minDepth = 0.0f,
                                   .maxDepth = +1.0f};
   const igl::ScissorRect scissor = {.x = 0, .y = 0, .width = width, .height = height};
@@ -465,7 +465,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
   IGL_PROFILER_ZONE_GPU_VK("bindBuffer()", ctx_.tracyCtx_, cmdBuffer_);
 
 #if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p  bindBuffer(%u, %u)\n", cmdBuffer_, index, (uint32_t)bufferOffset);
+  IGL_LOG_INFO("%p  bindBuffer(%u, %u)\n", cmdBuffer_, index, static_cast<uint32_t>(bufferOffset));
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
   if (!IGL_DEBUG_VERIFY(buffer != nullptr)) {
@@ -489,8 +489,11 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, siz
   IGL_PROFILER_ZONE_GPU_VK("bindVertexBuffer()", ctx_.tracyCtx_, cmdBuffer_);
 
 #if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO(
-      "%p  bindVertexBuffer(%u, %p, %u)\n", cmdBuffer_, index, &buffer, (uint32_t)bufferOffset);
+  IGL_LOG_INFO("%p  bindVertexBuffer(%u, %p, %u)\n",
+               cmdBuffer_,
+               index,
+               &buffer,
+               static_cast<uint32_t>(bufferOffset));
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
   const bool isVertexBuffer = (buffer.getBufferType() & BufferDesc::BufferTypeBits::Vertex) != 0;
@@ -565,8 +568,8 @@ void RenderCommandEncoder::bindPushConstants(const void* data, size_t length, si
   ctx_.vf_.vkCmdPushConstants(cmdBuffer_,
                               rps_->getVkPipelineLayout(),
                               rps_->pushConstantRange.stageFlags,
-                              (uint32_t)offset,
-                              (uint32_t)length,
+                              static_cast<uint32_t>(offset),
+                              static_cast<uint32_t>(length),
                               data);
 }
 
@@ -576,7 +579,10 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
   IGL_PROFILER_FUNCTION();
 
 #if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p  bindSamplerState(%u, %u)\n", cmdBuffer_, (uint32_t)index, (uint32_t)target);
+  IGL_LOG_INFO("%p  bindSamplerState(%u, %u)\n",
+               cmdBuffer_,
+               static_cast<uint32_t>(index),
+               static_cast<uint32_t>(target));
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
   if (!IGL_DEBUG_VERIFY(target == igl::BindTarget::kFragment ||
@@ -597,7 +603,10 @@ void RenderCommandEncoder::bindTexture(size_t index, uint8_t target, ITexture* t
                    "individual textures again only after a draw call.");
 
 #if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p  bindTexture(%u, %u)\n", cmdBuffer_, (uint32_t)index, (uint32_t)target);
+  IGL_LOG_INFO("%p  bindTexture(%u, %u)\n",
+               cmdBuffer_,
+               static_cast<uint32_t>(index),
+               static_cast<uint32_t>(target));
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
   if (!IGL_DEBUG_VERIFY(target == igl::BindTarget::kFragment ||
@@ -644,13 +653,14 @@ void RenderCommandEncoder::draw(size_t vertexCount,
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkCmdDraw(%u, %u, %u, %u)\n",
                cmdBuffer_,
-               (uint32_t)vertexCount,
+               static_cast<uint32_t>(vertexCount),
                instanceCount,
                firstVertex,
                baseInstance);
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
-  ctx_.vf_.vkCmdDraw(cmdBuffer_, (uint32_t)vertexCount, instanceCount, firstVertex, baseInstance);
+  ctx_.vf_.vkCmdDraw(
+      cmdBuffer_, static_cast<uint32_t>(vertexCount), instanceCount, firstVertex, baseInstance);
 }
 
 void RenderCommandEncoder::drawIndexed(size_t indexCount,
@@ -679,14 +689,18 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkCmdDrawIndexed(%u, %u, %u, %i, %u)\n",
                cmdBuffer_,
-               (uint32_t)indexCount,
+               static_cast<uint32_t>(indexCount),
                instanceCount,
                firstIndex,
                vertexOffset,
                baseInstance);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-  ctx_.vf_.vkCmdDrawIndexed(
-      cmdBuffer_, (uint32_t)indexCount, instanceCount, firstIndex, vertexOffset, baseInstance);
+  ctx_.vf_.vkCmdDrawIndexed(cmdBuffer_,
+                            static_cast<uint32_t>(indexCount),
+                            instanceCount,
+                            firstIndex,
+                            vertexOffset,
+                            baseInstance);
 }
 
 void RenderCommandEncoder::drawMeshTasks(const Dimensions& threadgroupsPerGrid,
