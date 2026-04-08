@@ -283,6 +283,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBuffer(
 }
 
 bool PlatformDevice::isType(PlatformDeviceType t) const noexcept {
+  // @fb-only
   return t == kType || opengl::PlatformDevice::isType(t);
 }
 
