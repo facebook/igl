@@ -41,6 +41,11 @@ MTLSamplerAddressMode SamplerState::convertAddressMode(SamplerAddressMode value)
     return MTLSamplerAddressModeClampToEdge;
   case SamplerAddressMode::MirrorRepeat:
     return MTLSamplerAddressModeMirrorRepeat;
+  case SamplerAddressMode::ClampToBorder:
+    if (@available(macOS 10.12, iOS 14.0, *)) {
+      return MTLSamplerAddressModeClampToBorderColor;
+    }
+    return MTLSamplerAddressModeClampToZero;
   }
 }
 

@@ -85,6 +85,7 @@ enum class InternalFeatures {
   ShaderImageLoadStore,      // Shader image load/store is supported
   Sync,                      // Sync objects are supported
   TexStorage,                // glTexStorage* is available
+  TextureClampToBorder,      // GL_CLAMP_TO_BORDER is supported (GL 1.3+, ES 3.2+, or extension)
   TextureCompare,            // GL_TEXTURE_COMPARE_MODE and GL_TEXTURE_COMPARE_FUNC are supported
   UnmapBuffer,               // glUnmapBuffer is supported
   UnpackRowLength,           // GL_UNPACK_ROW_LENGTH is supported with glPixelStorei

@@ -607,6 +607,13 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
            hasDesktopExtension(*this, "GL_ARB_shader_image_load_store") ||
            hasExtension(Extensions::ShaderImageLoadStore);
 
+  case InternalFeatures::TextureClampToBorder:
+    return hasDesktopOrESVersionOrExtension(*this,
+                                            GLVersion::v2_0,
+                                            GLVersion::v3_2_ES,
+                                            "GL_ARB_texture_border_clamp",
+                                            "GL_EXT_texture_border_clamp");
+
   case InternalFeatures::TextureCompare:
     return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
            hasESExtension(*this, "GL_EXT_shadow_samplers");

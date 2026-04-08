@@ -61,6 +61,13 @@ TEST_F(SamplerStateMTLTest, ConvertAddressMode) {
 
   res = igl::metal::SamplerState::convertAddressMode(SamplerAddressMode::MirrorRepeat);
   ASSERT_EQ(res, MTLSamplerAddressModeMirrorRepeat);
+
+  res = igl::metal::SamplerState::convertAddressMode(SamplerAddressMode::ClampToBorder);
+  if (@available(macOS 10.12, iOS 14.0, *)) {
+    ASSERT_EQ(res, MTLSamplerAddressModeClampToBorderColor);
+  } else {
+    ASSERT_EQ(res, MTLSamplerAddressModeClampToZero);
+  }
 }
 
 } // namespace igl::tests

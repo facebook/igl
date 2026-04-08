@@ -40,9 +40,9 @@ size_t std::hash<igl::SamplerStateDesc>::operator()(const igl::SamplerStateDesc&
   const size_t hash = igl::EnumToValue(key.minFilter) |         // 0,1: 1 bit field
                 igl::EnumToValue(key.magFilter) << 1 |    // 0,1: 1 bit field
                 igl::EnumToValue(key.mipFilter) << 2 |    // 0,1: 1 bit field
-                igl::EnumToValue(key.addressModeU) << 4 | // 0,1,2: 2 bit field
-                igl::EnumToValue(key.addressModeV) << 6 | // 0,1,2: 2 bit field
-                igl::EnumToValue(key.addressModeW) << 8 | // 0,1,2: 2 bit field
+                igl::EnumToValue(key.addressModeU) << 4 | // 0,1,2,3: 2 bit field
+                igl::EnumToValue(key.addressModeV) << 6 | // 0,1,2,3: 2 bit field
+                igl::EnumToValue(key.addressModeW) << 8 | // 0,1,2,3: 2 bit field
                 (key.maxAnisotropic - 1) << 10 | // subtract 1 so it fits 4 bits
                 key.mipLodMin << 14 |                     // [0, 15]: 4 bit field
                 key.mipLodMax << 18 |                     // [0, 15]: 4 bit field

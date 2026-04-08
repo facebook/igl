@@ -69,6 +69,8 @@ class D3D12SamplerCache {
         return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
       case SamplerAddressMode::Clamp:
         return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+      case SamplerAddressMode::ClampToBorder:
+        return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
       default:
         return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
       }

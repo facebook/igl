@@ -42,6 +42,8 @@ VkSamplerAddressMode samplerAddressModeToVkSamplerAddressMode(igl::SamplerAddres
     return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
   case igl::SamplerAddressMode::MirrorRepeat:
     return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+  case igl::SamplerAddressMode::ClampToBorder:
+    return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
   }
   IGL_DEBUG_ABORT("SamplerAddressMode value not handled: %d", static_cast<int>(mode));
   return VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -75,7 +77,11 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
       .maxLod = desc.mipFilter == igl::SamplerMipFilter::Disabled
                     ? 0.0f
                     : static_cast<float>(desc.mipLodMax),
-      .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+      .borderColor = (desc.addressModeU == igl::SamplerAddressMode::ClampToBorder ||
+                      desc.addressModeV == igl::SamplerAddressMode::ClampToBorder ||
+                      desc.addressModeW == igl::SamplerAddressMode::ClampToBorder)
+                         ? VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK
+                         : VK_BORDER_COLOR_INT_OPAQUE_BLACK,
       .unnormalizedCoordinates = VK_FALSE,
   };
 

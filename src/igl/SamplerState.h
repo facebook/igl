@@ -41,8 +41,9 @@ enum class SamplerMipFilter : uint8_t { Disabled = 0, Nearest, Linear };
  * Clamp        : Sampling locations < 0 are clamped to 0. Sampling locations > 1 are clamped to 1.
  * MirrorRepeat : The texture repeats outside the range [0, 1]. Every other repetition is a mirror
  *                image.
+ * ClampToBorder : Sampling locations outside [0, 1] return the border color (default: 0, 0, 0, 0).
  */
-enum class SamplerAddressMode : uint8_t { Repeat = 0, Clamp, MirrorRepeat };
+enum class SamplerAddressMode : uint8_t { Repeat = 0, Clamp, MirrorRepeat, ClampToBorder };
 
 /**
  * @brief Describes the texture sampling configuration for a texture.

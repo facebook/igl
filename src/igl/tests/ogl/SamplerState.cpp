@@ -143,7 +143,7 @@ TEST_F(SamplerStateOGLTest, SamplerStateConvertGLAddressMode) {
   ASSERT_EQ(dummySamplerState->convertGLAddressMode(GL_MIRRORED_REPEAT),
             SamplerAddressMode::MirrorRepeat);
   ASSERT_EQ(dummySamplerState->convertGLAddressMode(GL_CLAMP_TO_BORDER),
-            SamplerAddressMode::Repeat);
+            SamplerAddressMode::ClampToBorder);
 }
 
 //
@@ -159,6 +159,8 @@ TEST_F(SamplerStateOGLTest, SamplerStateConvertAddressMode) {
   ASSERT_EQ(dummySamplerState->convertAddressMode(SamplerAddressMode::Clamp), GL_CLAMP_TO_EDGE);
   ASSERT_EQ(dummySamplerState->convertAddressMode(SamplerAddressMode::MirrorRepeat),
             GL_MIRRORED_REPEAT);
+  ASSERT_EQ(dummySamplerState->convertAddressMode(SamplerAddressMode::ClampToBorder),
+            GL_CLAMP_TO_BORDER);
 }
 
 TEST_F(SamplerStateOGLTest, BindNullTexture) {

@@ -111,22 +111,38 @@ void SamplerState::bind(ITexture* t) {
     getContext().texParameteri(target, GL_TEXTURE_COMPARE_FUNC, depthCompareFunction_);
   }
 
+  // Fall back to GL_CLAMP_TO_EDGE when GL_CLAMP_TO_BORDER is not supported
+  GLint wrapS = addressU_;
+  GLint wrapT = addressV_;
+  GLint wrapR = addressW_;
+  if (!deviceFeatures.hasInternalFeature(InternalFeatures::TextureClampToBorder)) {
+    if (wrapS == GL_CLAMP_TO_BORDER) {
+      wrapS = GL_CLAMP_TO_EDGE;
+    }
+    if (wrapT == GL_CLAMP_TO_BORDER) {
+      wrapT = GL_CLAMP_TO_EDGE;
+    }
+    if (wrapR == GL_CLAMP_TO_BORDER) {
+      wrapR = GL_CLAMP_TO_EDGE;
+    }
+  }
+
   if (!deviceFeatures.hasFeature(DeviceFeatures::TextureNotPot)) {
     const auto dimensions = texture->getDimensions();
     if (!isPowerOfTwo(dimensions.width) || !isPowerOfTwo(dimensions.height)) {
       getContext().texParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
       getContext().texParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     } else {
-      getContext().texParameteri(target, GL_TEXTURE_WRAP_S, addressU_);
-      getContext().texParameteri(target, GL_TEXTURE_WRAP_T, addressV_);
+      getContext().texParameteri(target, GL_TEXTURE_WRAP_S, wrapS);
+      getContext().texParameteri(target, GL_TEXTURE_WRAP_T, wrapT);
     }
   } else {
-    getContext().texParameteri(target, GL_TEXTURE_WRAP_S, addressU_);
-    getContext().texParameteri(target, GL_TEXTURE_WRAP_T, addressV_);
+    getContext().texParameteri(target, GL_TEXTURE_WRAP_S, wrapS);
+    getContext().texParameteri(target, GL_TEXTURE_WRAP_T, wrapT);
   }
 
   if (type == TextureType::TwoDArray || type == TextureType::ThreeD) {
-    getContext().texParameteri(target, GL_TEXTURE_WRAP_R, addressW_);
+    getContext().texParameteri(target, GL_TEXTURE_WRAP_R, wrapR);
   }
 }
 
@@ -208,6 +224,9 @@ GLint SamplerState::convertAddressMode(SamplerAddressMode addressMode) {
 
   case SamplerAddressMode::MirrorRepeat:
     return GL_MIRRORED_REPEAT;
+
+  case SamplerAddressMode::ClampToBorder:
+    return GL_CLAMP_TO_BORDER;
   }
 
   return 0;
@@ -223,6 +242,9 @@ SamplerAddressMode SamplerState::convertGLAddressMode(GLint glAddressMode) {
 
   case GL_MIRRORED_REPEAT:
     return SamplerAddressMode::MirrorRepeat;
+
+  case GL_CLAMP_TO_BORDER:
+    return SamplerAddressMode::ClampToBorder;
 
   default:
     return SamplerAddressMode::Repeat;
