@@ -323,6 +323,13 @@ class IDevice : public ICapabilities, public base::IDeviceBase {
   }
 
   /**
+   * @brief Transitions device state from Lost to RecoveryArmed.
+   * Called when the transport layer (e.g. Intralink) signals reconnect.
+   * Default no-op for backends that do not support device loss recovery.
+   */
+  virtual void markRecoveryArmed() noexcept {}
+
+  /**
    * @brief Returns raw pointer to native device handle.
    * @return Platform-specific device handle.
    */
