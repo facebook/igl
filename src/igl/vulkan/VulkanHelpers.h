@@ -95,15 +95,6 @@ VkResult ivkCreateSwapchain(const struct VulkanFunctionTable* vt,
                             uint32_t height,
                             VkSwapchainKHR* outSwapchain);
 
-VkResult ivkCreateFramebuffer(const struct VulkanFunctionTable* vt,
-                              VkDevice device,
-                              uint32_t width,
-                              uint32_t height,
-                              VkRenderPass renderPass,
-                              size_t numAttachments,
-                              const VkImageView* attachments,
-                              VkFramebuffer* outFramebuffer);
-
 VkResult ivkCreateCommandPool(const struct VulkanFunctionTable* vt,
                               VkDevice device,
                               VkCommandPoolCreateFlags flags,

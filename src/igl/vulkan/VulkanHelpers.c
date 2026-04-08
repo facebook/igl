@@ -426,26 +426,6 @@ VkResult ivkCreateSwapchain(const struct VulkanFunctionTable* vt,
   return vt->vkCreateSwapchainKHR(device, &ci, NULL, outSwapchain);
 }
 
-VkResult ivkCreateFramebuffer(const struct VulkanFunctionTable* vt,
-                              VkDevice device,
-                              uint32_t width,
-                              uint32_t height,
-                              VkRenderPass renderPass,
-                              size_t numAttachments,
-                              const VkImageView* attachments,
-                              VkFramebuffer* outFramebuffer) {
-  const VkFramebufferCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-      .renderPass = renderPass,
-      .attachmentCount = (uint32_t)numAttachments,
-      .pAttachments = attachments,
-      .width = width,
-      .height = height,
-      .layers = 1,
-  };
-  return vt->vkCreateFramebuffer(device, &ci, NULL, outFramebuffer);
-}
-
 VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,
                                       VkDevice device,
                                       VkDescriptorSetLayoutCreateFlags flags,

@@ -28,8 +28,16 @@ VulkanFramebuffer::VulkanFramebuffer(const VulkanContext& ctx,
     return;
   }
 
-  VK_ASSERT(ivkCreateFramebuffer(
-      &ctx.vf_, vkDevice, width, height, renderPass, numAttachments, attachments, &vkFramebuffer));
+  const VkFramebufferCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+      .renderPass = renderPass,
+      .attachmentCount = static_cast<uint32_t>(numAttachments),
+      .pAttachments = attachments,
+      .width = width,
+      .height = height,
+      .layers = 1,
+  };
+  VK_ASSERT(ctx.vf_.vkCreateFramebuffer(vkDevice, &ci, nullptr, &vkFramebuffer));
   VK_ASSERT(ivkSetDebugObjectName(
       &ctx.vf_, vkDevice, VK_OBJECT_TYPE_FRAMEBUFFER, (uint64_t)vkFramebuffer, debugName));
 }
