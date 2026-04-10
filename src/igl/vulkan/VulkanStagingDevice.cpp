@@ -50,6 +50,22 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
     return;
   }
 
+  // Use vkCmdUpdateBuffer() for small buffers (up to 64KB) when alignment requirements are met.
+  // Per Vulkan spec: dstOffset and dataSize must be multiples of 4, and dataSize <= 65536.
+  // This avoids staging buffer allocation and an extra memcpy for small uploads.
+  constexpr size_t kMaxUpdateBufferSize = 65536;
+  if (data && size <= kMaxUpdateBufferSize && (dstOffset % 4 == 0) && (size % 4 == 0)) {
+    IGL_DEBUG_ASSERT(buffer.getBufferUsageFlags() & VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    const auto& wrapper = immediate->acquire();
+    ctx_.vf_.vkCmdUpdateBuffer(wrapper.cmdBuf,
+                               buffer.getVkBuffer(),
+                               static_cast<VkDeviceSize>(dstOffset),
+                               static_cast<VkDeviceSize>(size),
+                               data);
+    immediate->submit(wrapper);
+    return;
+  }
+
   uint32_t chunkDstOffset = dstOffset;
   void* copyData = const_cast<void*>(data);
 
