@@ -203,12 +203,13 @@ Result RenderPipelineState::create() {
       mFramebufferDesc.colorAttachments[0].blendEnabled) {
     blendEnabled_ = true;
     // GL equation sets blending equation for both RGB and alpha
-    blendMode_ = {convertBlendOp(mFramebufferDesc.colorAttachments[0].rgbBlendOp),
-                  convertBlendOp(mFramebufferDesc.colorAttachments[0].alphaBlendOp),
-                  convertBlendFactor(mFramebufferDesc.colorAttachments[0].srcRGBBlendFactor),
-                  convertBlendFactor(mFramebufferDesc.colorAttachments[0].dstRGBBlendFactor),
-                  convertBlendFactor(mFramebufferDesc.colorAttachments[0].srcAlphaBlendFactor),
-                  convertBlendFactor(mFramebufferDesc.colorAttachments[0].dstAlphaBlendFactor)};
+    blendMode_ = {
+        .blendOpColor = convertBlendOp(mFramebufferDesc.colorAttachments[0].rgbBlendOp),
+        .blendOpAlpha = convertBlendOp(mFramebufferDesc.colorAttachments[0].alphaBlendOp),
+        .srcColor = convertBlendFactor(mFramebufferDesc.colorAttachments[0].srcRGBBlendFactor),
+        .dstColor = convertBlendFactor(mFramebufferDesc.colorAttachments[0].dstRGBBlendFactor),
+        .srcAlpha = convertBlendFactor(mFramebufferDesc.colorAttachments[0].srcAlphaBlendFactor),
+        .dstAlpha = convertBlendFactor(mFramebufferDesc.colorAttachments[0].dstAlphaBlendFactor)};
   } else {
     blendEnabled_ = false;
   }

@@ -117,7 +117,7 @@ void RenderCommandAdapter::setVertexBuffer(Buffer& buffer,
   IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX,
                    "Buffer index is beyond max, may want to increase limit");
   if (index < IGL_BUFFER_BINDINGS_MAX) {
-    vertexBuffers_[index] = {&buffer, offset};
+    vertexBuffers_[index] = {.resource = &buffer, .offset = offset};
     SET_DIRTY(vertexBuffersDirty_, index);
     Result::setOk(outResult);
   } else {

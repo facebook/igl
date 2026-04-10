@@ -93,7 +93,12 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
   std::array<GLboolean, 4> colorMask_ = {GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE};
   std::vector<int> prevPipelineStateAttributesLocations_;
   std::vector<int> activeAttributesLocations_;
-  BlendMode blendMode_ = {GL_FUNC_ADD, GL_FUNC_ADD, GL_ONE, GL_ZERO, GL_ONE, GL_ZERO};
+  BlendMode blendMode_ = {.blendOpColor = GL_FUNC_ADD,
+                          .blendOpAlpha = GL_FUNC_ADD,
+                          .srcColor = GL_ONE,
+                          .dstColor = GL_ZERO,
+                          .srcAlpha = GL_ONE,
+                          .dstAlpha = GL_ZERO};
   bool blendEnabled_ = false;
   bool uniformBlockBindingPointSet_ = false;
 };

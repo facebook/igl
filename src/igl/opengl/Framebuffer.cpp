@@ -463,7 +463,7 @@ FramebufferMode CustomFramebuffer::getMode() const {
 }
 
 void CustomFramebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
-  updateDrawableInternal({std::move(texture), nullptr}, false);
+  updateDrawableInternal({.color = std::move(texture), .depth = nullptr}, false);
 }
 
 void CustomFramebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
@@ -675,12 +675,12 @@ Viewport CustomFramebuffer::getViewport() const {
 
   if (texture == nullptr) {
     IGL_DEBUG_ABORT("No color/depth attachments in CustomFrameBuffer at index 0");
-    return {0, 0, 0, 0};
+    return {.x = 0, .y = 0, .width = 0, .height = 0};
   }
 
   // By default, we set viewport to dimensions of framebuffer
   const auto size = texture->getSize();
-  return {0, 0, size.width, size.height};
+  return {.x = 0, .y = 0, .width = size.width, .height = size.height};
 }
 
 void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {

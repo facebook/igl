@@ -1049,14 +1049,16 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
   const auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
 
-  const igl::Viewport viewport = {0.0f,
-                                  0.0f,
-                                  static_cast<float>(dimensions.width),
-                                  static_cast<float>(dimensions.height),
-                                  0.0f,
-                                  +1.0f};
-  const igl::ScissorRect scissor = {
-      0, 0, static_cast<uint32_t>(dimensions.width), static_cast<uint32_t>(dimensions.height)};
+  const igl::Viewport viewport = {.x = 0.0f,
+                                  .y = 0.0f,
+                                  .width = static_cast<float>(dimensions.width),
+                                  .height = static_cast<float>(dimensions.height),
+                                  .minDepth = 0.0f,
+                                  .maxDepth = +1.0f};
+  const igl::ScissorRect scissor = {.x = 0,
+                                    .y = 0,
+                                    .width = static_cast<uint32_t>(dimensions.width),
+                                    .height = static_cast<uint32_t>(dimensions.height)};
 
   auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_DEBUG_ASSERT(commands != nullptr);

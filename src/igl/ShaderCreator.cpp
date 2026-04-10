@@ -77,8 +77,8 @@ std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromStringInput(
   const auto libraryDesc = igl::ShaderLibraryDesc::fromStringInput(
       librarySource,
       {
-          {igl::ShaderStage::Vertex, std::move(vertexEntryPoint)},
-          {igl::ShaderStage::Fragment, std::move(fragmentEntryPoint)},
+          {.stage = igl::ShaderStage::Vertex, .entryPoint = std::move(vertexEntryPoint)},
+          {.stage = igl::ShaderStage::Fragment, .entryPoint = std::move(fragmentEntryPoint)},
       },
       std::move(libraryDebugName));
 
@@ -102,8 +102,8 @@ std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromBinaryInput(
       libraryData,
       libraryDataLength,
       {
-          {igl::ShaderStage::Vertex, std::move(vertexEntryPoint)},
-          {igl::ShaderStage::Fragment, std::move(fragmentEntryPoint)},
+          {.stage = igl::ShaderStage::Vertex, .entryPoint = std::move(vertexEntryPoint)},
+          {.stage = igl::ShaderStage::Fragment, .entryPoint = std::move(fragmentEntryPoint)},
       },
       std::move(libraryDebugName));
 
@@ -160,19 +160,19 @@ std::unique_ptr<IShaderStages> ShaderStagesCreator::fromModuleStringInput(
   IGL_DEBUG_ASSERT(result);
 
   std::shared_ptr<IShaderModule> vertexModule, fragmentModule;
-  vertexModule =
-      ShaderModuleCreator::fromStringInput(device,
-                                           vertexSource,
-                                           {ShaderStage::Vertex, std::move(vertexEntryPoint)},
-                                           std::move(vertexDebugName),
-                                           result);
+  vertexModule = ShaderModuleCreator::fromStringInput(
+      device,
+      vertexSource,
+      {.stage = ShaderStage::Vertex, .entryPoint = std::move(vertexEntryPoint)},
+      std::move(vertexDebugName),
+      result);
   if (result->isOk()) {
-    fragmentModule =
-        ShaderModuleCreator::fromStringInput(device,
-                                             fragmentSource,
-                                             {ShaderStage::Fragment, std::move(fragmentEntryPoint)},
-                                             std::move(fragmentDebugName),
-                                             result);
+    fragmentModule = ShaderModuleCreator::fromStringInput(
+        device,
+        fragmentSource,
+        {.stage = ShaderStage::Fragment, .entryPoint = std::move(fragmentEntryPoint)},
+        std::move(fragmentDebugName),
+        result);
   }
 
   return (result && result->isOk())
@@ -196,21 +196,21 @@ std::unique_ptr<IShaderStages> ShaderStagesCreator::fromModuleBinaryInput(
   IGL_DEBUG_ASSERT(result);
 
   std::shared_ptr<IShaderModule> vertexModule, fragmentModule;
-  vertexModule =
-      ShaderModuleCreator::fromBinaryInput(device,
-                                           vertexData,
-                                           vertexDataLength,
-                                           {ShaderStage::Vertex, std::move(vertexEntryPoint)},
-                                           std::move(vertexDebugName),
-                                           result);
+  vertexModule = ShaderModuleCreator::fromBinaryInput(
+      device,
+      vertexData,
+      vertexDataLength,
+      {.stage = ShaderStage::Vertex, .entryPoint = std::move(vertexEntryPoint)},
+      std::move(vertexDebugName),
+      result);
   if (result->isOk()) {
-    fragmentModule =
-        ShaderModuleCreator::fromBinaryInput(device,
-                                             fragmentData,
-                                             fragmentDataLength,
-                                             {ShaderStage::Fragment, std::move(fragmentEntryPoint)},
-                                             std::move(fragmentDebugName),
-                                             result);
+    fragmentModule = ShaderModuleCreator::fromBinaryInput(
+        device,
+        fragmentData,
+        fragmentDataLength,
+        {.stage = ShaderStage::Fragment, .entryPoint = std::move(fragmentEntryPoint)},
+        std::move(fragmentDebugName),
+        result);
   }
 
   return (result && result->isOk())
@@ -225,13 +225,13 @@ std::unique_ptr<IShaderStages> ShaderStagesCreator::fromLibraryStringInput(
     std::string fragmentEntryPoint,
     std::string libraryDebugName,
     Result* IGL_NULLABLE outResult) {
-  const auto libraryDesc =
-      ShaderLibraryDesc::fromStringInput(librarySource,
-                                         {
-                                             {ShaderStage::Vertex, std::move(vertexEntryPoint)},
-                                             {ShaderStage::Fragment, std::move(fragmentEntryPoint)},
-                                         },
-                                         std::move(libraryDebugName));
+  const auto libraryDesc = ShaderLibraryDesc::fromStringInput(
+      librarySource,
+      {
+          {.stage = ShaderStage::Vertex, .entryPoint = std::move(vertexEntryPoint)},
+          {.stage = ShaderStage::Fragment, .entryPoint = std::move(fragmentEntryPoint)},
+      },
+      std::move(libraryDebugName));
 
   return fromLibraryDesc(device, libraryDesc, outResult);
 }
@@ -244,14 +244,14 @@ std::unique_ptr<IShaderStages> ShaderStagesCreator::fromLibraryBinaryInput(
     std::string fragmentEntryPoint,
     std::string libraryDebugName,
     Result* IGL_NULLABLE outResult) {
-  const auto libraryDesc =
-      ShaderLibraryDesc::fromBinaryInput(libraryData,
-                                         libraryDataLength,
-                                         {
-                                             {ShaderStage::Vertex, std::move(vertexEntryPoint)},
-                                             {ShaderStage::Fragment, std::move(fragmentEntryPoint)},
-                                         },
-                                         std::move(libraryDebugName));
+  const auto libraryDesc = ShaderLibraryDesc::fromBinaryInput(
+      libraryData,
+      libraryDataLength,
+      {
+          {.stage = ShaderStage::Vertex, .entryPoint = std::move(vertexEntryPoint)},
+          {.stage = ShaderStage::Fragment, .entryPoint = std::move(fragmentEntryPoint)},
+      },
+      std::move(libraryDebugName));
 
   return fromLibraryDesc(device, libraryDesc, outResult);
 }
@@ -266,12 +266,12 @@ std::unique_ptr<IShaderStages> ShaderStagesCreator::fromModuleStringInput(
   Result* result = outResult ? outResult : &localResult;
   IGL_DEBUG_ASSERT(result);
 
-  auto computeModule =
-      ShaderModuleCreator::fromStringInput(device,
-                                           computeSource,
-                                           {ShaderStage::Compute, std::move(computeEntryPoint)},
-                                           std::move(computeDebugName),
-                                           result);
+  auto computeModule = ShaderModuleCreator::fromStringInput(
+      device,
+      computeSource,
+      {.stage = ShaderStage::Compute, .entryPoint = std::move(computeEntryPoint)},
+      std::move(computeDebugName),
+      result);
   return (result && result->isOk()) ? fromComputeModule(device, std::move(computeModule), result)
                                     : nullptr;
 }
@@ -287,13 +287,13 @@ std::unique_ptr<IShaderStages> ShaderStagesCreator::fromModuleBinaryInput(
   Result* result = outResult ? outResult : &localResult;
   IGL_DEBUG_ASSERT(result);
 
-  auto computeModule =
-      ShaderModuleCreator::fromBinaryInput(device,
-                                           computeData,
-                                           computeDataLength,
-                                           {ShaderStage::Compute, std::move(computeEntryPoint)},
-                                           std::move(computeDebugName),
-                                           result);
+  auto computeModule = ShaderModuleCreator::fromBinaryInput(
+      device,
+      computeData,
+      computeDataLength,
+      {.stage = ShaderStage::Compute, .entryPoint = std::move(computeEntryPoint)},
+      std::move(computeDebugName),
+      result);
   return (result && result->isOk()) ? fromComputeModule(device, std::move(computeModule), result)
                                     : nullptr;
 }

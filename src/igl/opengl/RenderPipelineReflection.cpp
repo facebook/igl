@@ -350,10 +350,10 @@ void RenderPipelineReflection::cacheDescriptors() {
       bufferDesc.shaderStage = igl::ShaderStage::Fragment;
 
       igl::BufferArgDesc::BufferMemberDesc iglMemberDesc{
-          entry.first,
-          uniformType,
-          0,
-          (size_t)glDesc.size,
+          .name = entry.first,
+          .type = uniformType,
+          .offset = 0,
+          .arrayLength = (size_t)glDesc.size,
       };
       bufferDesc.members.push_back(std::move(iglMemberDesc));
 
@@ -394,10 +394,10 @@ void RenderPipelineReflection::cacheDescriptors() {
       const igl::UniformType uniformType = toIGLUniformType(uniformDesc.type);
 
       igl::BufferArgDesc::BufferMemberDesc iglMemberDesc{
-          uniformEntry.first,
-          uniformType,
-          static_cast<size_t>(uniformDesc.offset),
-          static_cast<size_t>(uniformDesc.size),
+          .name = uniformEntry.first,
+          .type = uniformType,
+          .offset = static_cast<size_t>(uniformDesc.offset),
+          .arrayLength = static_cast<size_t>(uniformDesc.size),
       };
       bufferDesc.members.push_back(std::move(iglMemberDesc));
     }

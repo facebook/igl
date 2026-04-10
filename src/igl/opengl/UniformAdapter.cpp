@@ -138,7 +138,7 @@ void UniformAdapter::setUniformBuffer(IBuffer* buffer,
                    IGL_UNIFORM_BLOCKS_BINDING_MAX);
   IGL_DEBUG_ASSERT(buffer, "invalid buffer passed to setUniformBuffer");
   if (bindingIndex < IGL_UNIFORM_BLOCKS_BINDING_MAX && buffer) {
-    uniformBufferBindingMap_[bindingIndex] = {buffer, offset, size};
+    uniformBufferBindingMap_[bindingIndex] = {.buffer = buffer, .offset = offset, .size = size};
     uniformBuffersDirtyMask_ |= 1 << bindingIndex;
     Result::setOk(outResult);
   } else {

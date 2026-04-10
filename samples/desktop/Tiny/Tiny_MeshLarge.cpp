@@ -1259,30 +1259,30 @@ void initModel(int numSamplesMSAA) {
 #endif
     // create an Uniform buffers to store uniforms for 2 objects
     for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
-      ubPerFrame_.push_back(
-          device_->createBuffer(BufferDesc{bufType,
-                                           nullptr,
-                                           sizeof(UniformsPerFrame),
-                                           ResourceStorage::Shared,
-                                           hint,
-                                           "uniforms (per frame) " + std::to_string(i)},
-                                nullptr));
-      ubPerFrameShadow_.push_back(
-          device_->createBuffer(BufferDesc{bufType,
-                                           nullptr,
-                                           sizeof(UniformsPerFrame),
-                                           ResourceStorage::Shared,
-                                           hint,
-                                           "uniforms (per frame shadow) " + std::to_string(i)},
-                                nullptr));
-      ubPerObject_.push_back(
-          device_->createBuffer(BufferDesc{bufType,
-                                           nullptr,
-                                           sizeof(UniformsPerObject),
-                                           ResourceStorage::Shared,
-                                           hint,
-                                           "uniforms (per object) " + std::to_string(i)},
-                                nullptr));
+      ubPerFrame_.push_back(device_->createBuffer(
+          BufferDesc{.type = bufType,
+                     .data = nullptr,
+                     .length = sizeof(UniformsPerFrame),
+                     .storage = ResourceStorage::Shared,
+                     .hint = hint,
+                     .debugName = "uniforms (per frame) " + std::to_string(i)},
+          nullptr));
+      ubPerFrameShadow_.push_back(device_->createBuffer(
+          BufferDesc{.type = bufType,
+                     .data = nullptr,
+                     .length = sizeof(UniformsPerFrame),
+                     .storage = ResourceStorage::Shared,
+                     .hint = hint,
+                     .debugName = "uniforms (per frame shadow) " + std::to_string(i)},
+          nullptr));
+      ubPerObject_.push_back(device_->createBuffer(
+          BufferDesc{.type = bufType,
+                     .data = nullptr,
+                     .length = sizeof(UniformsPerObject),
+                     .storage = ResourceStorage::Shared,
+                     .hint = hint,
+                     .debugName = "uniforms (per object) " + std::to_string(i)},
+          nullptr));
     }
   }
 
@@ -1418,27 +1418,28 @@ void initModel(int numSamplesMSAA) {
     const auto bufType = BufferDesc::BufferTypeBits::Storage;
     const auto hint = 0;
 #endif
-    sbMaterials_ = device_->createBuffer(BufferDesc{bufType,
-                                                    materials_.data(),
-                                                    sizeof(GPUMaterial) * materials_.size(),
-                                                    ResourceStorage::Private,
-                                                    hint,
-                                                    "materials"},
-                                         nullptr);
+    sbMaterials_ =
+        device_->createBuffer(BufferDesc{.type = bufType,
+                                         .data = materials_.data(),
+                                         .length = sizeof(GPUMaterial) * materials_.size(),
+                                         .storage = ResourceStorage::Private,
+                                         .hint = hint,
+                                         .debugName = "materials"},
+                              nullptr);
 
-    vb0_ = device_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Vertex,
-                                            vertexData_.data(),
-                                            sizeof(VertexData) * vertexData_.size(),
-                                            ResourceStorage::Private,
-                                            hint,
-                                            "vertex"},
+    vb0_ = device_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                            .data = vertexData_.data(),
+                                            .length = sizeof(VertexData) * vertexData_.size(),
+                                            .storage = ResourceStorage::Private,
+                                            .hint = hint,
+                                            .debugName = "vertex"},
                                  nullptr);
-    ib0_ = device_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Index,
-                                            indexData_.data(),
-                                            sizeof(uint32_t) * indexData_.size(),
-                                            ResourceStorage::Private,
-                                            hint,
-                                            "index"},
+    ib0_ = device_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                            .data = indexData_.data(),
+                                            .length = sizeof(uint32_t) * indexData_.size(),
+                                            .storage = ResourceStorage::Private,
+                                            .hint = hint,
+                                            .debugName = "index"},
                                  nullptr);
   }
 }

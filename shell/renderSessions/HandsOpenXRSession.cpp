@@ -220,11 +220,13 @@ void HandsOpenXRSession::initialize() noexcept {
     }
   }
 
-  const BufferDesc vb0Desc = BufferDesc{
-      BufferDesc::BufferTypeBits::Vertex, vertexData.data(), sizeof(Vertex) * vertexData.size()};
+  const BufferDesc vb0Desc = BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                                        .data = vertexData.data(),
+                                        .length = sizeof(Vertex) * vertexData.size()};
   vb0_ = device.createBuffer(vb0Desc, nullptr);
-  const BufferDesc ibDesc = BufferDesc{
-      BufferDesc::BufferTypeBits::Index, indices.data(), sizeof(uint16_t) * indices.size()};
+  const BufferDesc ibDesc = BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                       .data = indices.data(),
+                                       .length = sizeof(uint16_t) * indices.size()};
   ib0_ = device.createBuffer(ibDesc, nullptr);
 
   const VertexInputStateDesc inputDesc = {

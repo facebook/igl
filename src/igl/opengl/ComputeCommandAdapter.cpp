@@ -40,7 +40,7 @@ void ComputeCommandAdapter::setBuffer(Buffer* buffer, size_t offset, uint32_t in
   IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX,
                    "Buffer index is beyond max, may want to increase limit");
   if (index < uniformAdapter_.getMaxUniforms() && buffer) {
-    buffers_[index] = {buffer, offset};
+    buffers_[index] = {.resource = buffer, .offset = offset};
     SET_DIRTY(buffersDirty_, index);
   }
 }
