@@ -82,7 +82,7 @@ VulkanSemaphore& VulkanSemaphore::operator=(VulkanSemaphore&& other) noexcept {
   std::swap(vf_, tmp.vf_);
   std::swap(device_, tmp.device_);
   std::swap(vkSemaphore_, tmp.vkSemaphore_);
-  std::swap(exportable_, other.exportable_);
+  std::swap(exportable_, tmp.exportable_);
   return *this;
 }
 
