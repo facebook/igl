@@ -19,27 +19,27 @@ namespace igl {
  *
  */
 enum class ColorSpace : uint8_t {
-  SRGB_LINEAR,
-  SRGB_NONLINEAR,
-  DISPLAY_P3_NONLINEAR,
-  EXTENDED_SRGB_LINEAR,
-  DISPLAY_P3_LINEAR,
-  DCI_P3_NONLINEAR,
-  BT709_LINEAR,
-  BT709_NONLINEAR,
-  BT2020_LINEAR,
-  HDR10_ST2084,
-  DOLBYVISION,
-  HDR10_HLG,
-  ADOBERGB_LINEAR,
-  ADOBERGB_NONLINEAR,
-  PASS_THROUGH,
-  EXTENDED_SRGB_NONLINEAR,
-  DISPLAY_NATIVE_AMD,
-  BT601_NONLINEAR,
-  BT2020_NONLINEAR,
-  BT2100_HLG_NONLINEAR,
-  BT2100_PQ_NONLINEAR
+  SRGBLinear,
+  SRGBNonlinear,
+  DisplayP3Nonlinear,
+  ExtendedSRGBLinear,
+  DisplayP3Linear,
+  DCIP3Nonlinear,
+  BT709Linear,
+  BT709Nonlinear,
+  BT2020Linear,
+  HDR10St2084,
+  DolbyVision,
+  HDR10HLG,
+  AdobeRGBLinear,
+  AdobeRGBNonlinear,
+  PassThrough,
+  ExtendedSRGBNonlinear,
+  DisplayNativeAMD,
+  BT601Nonlinear,
+  BT2020Nonlinear,
+  BT2100HLGNonlinear,
+  BT2100PQNonlinear
 };
 
 /**
@@ -50,27 +50,27 @@ enum class ColorSpace : uint8_t {
  */
 inline const char* IGL_NONNULL colorSpaceToString(ColorSpace colorSpace) {
   switch (colorSpace) {
-    IGL_ENUM_TO_STRING(ColorSpace, SRGB_LINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, SRGB_NONLINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, DISPLAY_P3_NONLINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, EXTENDED_SRGB_LINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, DISPLAY_P3_LINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, DCI_P3_NONLINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, BT709_LINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, BT709_NONLINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, BT2020_LINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, HDR10_ST2084)
-    IGL_ENUM_TO_STRING(ColorSpace, DOLBYVISION)
-    IGL_ENUM_TO_STRING(ColorSpace, HDR10_HLG)
-    IGL_ENUM_TO_STRING(ColorSpace, ADOBERGB_LINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, ADOBERGB_NONLINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, PASS_THROUGH)
-    IGL_ENUM_TO_STRING(ColorSpace, EXTENDED_SRGB_NONLINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, DISPLAY_NATIVE_AMD)
-    IGL_ENUM_TO_STRING(ColorSpace, BT601_NONLINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, BT2020_NONLINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, BT2100_HLG_NONLINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, BT2100_PQ_NONLINEAR)
+    IGL_ENUM_TO_STRING(ColorSpace, SRGBLinear)
+    IGL_ENUM_TO_STRING(ColorSpace, SRGBNonlinear)
+    IGL_ENUM_TO_STRING(ColorSpace, DisplayP3Nonlinear)
+    IGL_ENUM_TO_STRING(ColorSpace, ExtendedSRGBLinear)
+    IGL_ENUM_TO_STRING(ColorSpace, DisplayP3Linear)
+    IGL_ENUM_TO_STRING(ColorSpace, DCIP3Nonlinear)
+    IGL_ENUM_TO_STRING(ColorSpace, BT709Linear)
+    IGL_ENUM_TO_STRING(ColorSpace, BT709Nonlinear)
+    IGL_ENUM_TO_STRING(ColorSpace, BT2020Linear)
+    IGL_ENUM_TO_STRING(ColorSpace, HDR10St2084)
+    IGL_ENUM_TO_STRING(ColorSpace, DolbyVision)
+    IGL_ENUM_TO_STRING(ColorSpace, HDR10HLG)
+    IGL_ENUM_TO_STRING(ColorSpace, AdobeRGBLinear)
+    IGL_ENUM_TO_STRING(ColorSpace, AdobeRGBNonlinear)
+    IGL_ENUM_TO_STRING(ColorSpace, PassThrough)
+    IGL_ENUM_TO_STRING(ColorSpace, ExtendedSRGBNonlinear)
+    IGL_ENUM_TO_STRING(ColorSpace, DisplayNativeAMD)
+    IGL_ENUM_TO_STRING(ColorSpace, BT601Nonlinear)
+    IGL_ENUM_TO_STRING(ColorSpace, BT2020Nonlinear)
+    IGL_ENUM_TO_STRING(ColorSpace, BT2100HLGNonlinear)
+    IGL_ENUM_TO_STRING(ColorSpace, BT2100PQNonlinear)
   default:
     break;
   }

@@ -123,7 +123,7 @@ struct VulkanContextConfig {
   bool enableGfxReconstruct = false;
   bool enableMultiviewPerViewViewports = false;
 
-  ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
+  ColorSpace swapChainColorSpace = igl::ColorSpace::SRGBNonlinear;
   TextureFormat requestedSwapChainTextureFormat = igl::TextureFormat::RGBA_UNorm8;
 
   // the number of resources to support BufferAPIHintBits::Ring

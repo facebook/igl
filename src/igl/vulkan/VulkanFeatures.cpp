@@ -470,7 +470,7 @@ void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& c
       IGL_LOG_ERROR("VK_EXT_headless_surface extension not supported\n");
     }
   }
-  if (contextConfig.swapChainColorSpace != igl::ColorSpace::SRGB_NONLINEAR) {
+  if (contextConfig.swapChainColorSpace != igl::ColorSpace::SRGBNonlinear) {
     const bool enabledExtension =
         enable(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME, ExtensionType::Instance);
     if (!enabledExtension) {

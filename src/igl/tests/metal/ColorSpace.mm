@@ -12,69 +12,69 @@
 namespace igl::metal::tests {
 TEST(ColorSpaceTest, colorSpaceToCGColorSpace) {
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceLinearSRGB),
-            colorSpaceToCGColorSpace(ColorSpace::SRGB_LINEAR));
+            colorSpaceToCGColorSpace(ColorSpace::SRGBLinear));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceSRGB),
-            colorSpaceToCGColorSpace(ColorSpace::SRGB_NONLINEAR));
+            colorSpaceToCGColorSpace(ColorSpace::SRGBNonlinear));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceDisplayP3),
-            colorSpaceToCGColorSpace(ColorSpace::DISPLAY_P3_NONLINEAR));
+            colorSpaceToCGColorSpace(ColorSpace::DisplayP3Nonlinear));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceExtendedLinearSRGB),
-            colorSpaceToCGColorSpace(ColorSpace::EXTENDED_SRGB_LINEAR));
+            colorSpaceToCGColorSpace(ColorSpace::ExtendedSRGBLinear));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceDCIP3),
-            colorSpaceToCGColorSpace(ColorSpace::DCI_P3_NONLINEAR));
+            colorSpaceToCGColorSpace(ColorSpace::DCIP3Nonlinear));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceLinearSRGB),
-            colorSpaceToCGColorSpace(ColorSpace::BT709_LINEAR));
+            colorSpaceToCGColorSpace(ColorSpace::BT709Linear));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceITUR_709),
-            colorSpaceToCGColorSpace(ColorSpace::BT709_NONLINEAR));
+            colorSpaceToCGColorSpace(ColorSpace::BT709Nonlinear));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceAdobeRGB1998),
-            colorSpaceToCGColorSpace(ColorSpace::ADOBERGB_LINEAR));
+            colorSpaceToCGColorSpace(ColorSpace::AdobeRGBLinear));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceAdobeRGB1998),
-            colorSpaceToCGColorSpace(ColorSpace::ADOBERGB_NONLINEAR));
+            colorSpaceToCGColorSpace(ColorSpace::AdobeRGBNonlinear));
 
-  ASSERT_EQ(nil, colorSpaceToCGColorSpace(ColorSpace::PASS_THROUGH));
+  ASSERT_EQ(nil, colorSpaceToCGColorSpace(ColorSpace::PassThrough));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB),
-            colorSpaceToCGColorSpace(ColorSpace::EXTENDED_SRGB_NONLINEAR));
+            colorSpaceToCGColorSpace(ColorSpace::ExtendedSRGBNonlinear));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceITUR_2020),
-            colorSpaceToCGColorSpace(ColorSpace::BT2020_NONLINEAR));
+            colorSpaceToCGColorSpace(ColorSpace::BT2020Nonlinear));
 
   if (@available(macOS 12.0, iOS 15.0, *)) {
     ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceLinearDisplayP3),
-              colorSpaceToCGColorSpace(ColorSpace::DISPLAY_P3_LINEAR));
+              colorSpaceToCGColorSpace(ColorSpace::DisplayP3Linear));
 
     ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceLinearITUR_2020),
-              colorSpaceToCGColorSpace(ColorSpace::BT2020_LINEAR));
+              colorSpaceToCGColorSpace(ColorSpace::BT2020Linear));
   }
 
   // can't test unsupported cases
   /*ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceSRGB),
-            colorSpaceToCGColorSpace(ColorSpace::HDR10_ST2084));
+            colorSpaceToCGColorSpace(ColorSpace::HDR10St2084));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceSRGB),
-            colorSpaceToCGColorSpace(ColorSpace::DOLBYVISION));
+            colorSpaceToCGColorSpace(ColorSpace::DolbyVision));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceSRGB),
-            colorSpaceToCGColorSpace(ColorSpace::HDR10_HLG));
+            colorSpaceToCGColorSpace(ColorSpace::HDR10HLG));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceSRGB),
-            colorSpaceToCGColorSpace(ColorSpace::DISPLAY_NATIVE_AMD));
+            colorSpaceToCGColorSpace(ColorSpace::DisplayNativeAMD));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceSRGB),
-            colorSpaceToCGColorSpace(ColorSpace::BT601_NONLINEAR));
+            colorSpaceToCGColorSpace(ColorSpace::BT601Nonlinear));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceSRGB),
-            colorSpaceToCGColorSpace(ColorSpace::BT2100_HLG_NONLINEAR));
+            colorSpaceToCGColorSpace(ColorSpace::BT2100HLGNonlinear));
 
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceSRGB),
-            colorSpaceToCGColorSpace(ColorSpace::BT2100_PQ_NONLINEAR));*/
+            colorSpaceToCGColorSpace(ColorSpace::BT2100PQNonlinear));*/
 }
 
 } // namespace igl::metal::tests

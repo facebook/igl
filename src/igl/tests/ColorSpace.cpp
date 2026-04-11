@@ -12,27 +12,27 @@
 namespace igl::tests {
 
 TEST(ColorSpaceTest, colorSpaceToString) {
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::SRGB_LINEAR), "SRGB_LINEAR");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::SRGB_NONLINEAR), "SRGB_NONLINEAR");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::DISPLAY_P3_NONLINEAR), "DISPLAY_P3_NONLINEAR");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::EXTENDED_SRGB_LINEAR), "EXTENDED_SRGB_LINEAR");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::DISPLAY_P3_LINEAR), "DISPLAY_P3_LINEAR");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::DCI_P3_NONLINEAR), "DCI_P3_NONLINEAR");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::BT709_LINEAR), "BT709_LINEAR");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::BT709_NONLINEAR), "BT709_NONLINEAR");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::BT2020_LINEAR), "BT2020_LINEAR");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::HDR10_ST2084), "HDR10_ST2084");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::DOLBYVISION), "DOLBYVISION");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::HDR10_HLG), "HDR10_HLG");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::ADOBERGB_LINEAR), "ADOBERGB_LINEAR");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::ADOBERGB_NONLINEAR), "ADOBERGB_NONLINEAR");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::PASS_THROUGH), "PASS_THROUGH");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::EXTENDED_SRGB_NONLINEAR), "EXTENDED_SRGB_NONLINEAR");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::DISPLAY_NATIVE_AMD), "DISPLAY_NATIVE_AMD");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::BT601_NONLINEAR), "BT601_NONLINEAR");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::BT2020_NONLINEAR), "BT2020_NONLINEAR");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::BT2100_HLG_NONLINEAR), "BT2100_HLG_NONLINEAR");
-  ASSERT_STREQ(colorSpaceToString(ColorSpace::BT2100_PQ_NONLINEAR), "BT2100_PQ_NONLINEAR");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::SRGBLinear), "SRGBLinear");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::SRGBNonlinear), "SRGBNonlinear");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::DisplayP3Nonlinear), "DisplayP3Nonlinear");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::ExtendedSRGBLinear), "ExtendedSRGBLinear");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::DisplayP3Linear), "DisplayP3Linear");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::DCIP3Nonlinear), "DCIP3Nonlinear");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::BT709Linear), "BT709Linear");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::BT709Nonlinear), "BT709Nonlinear");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::BT2020Linear), "BT2020Linear");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::HDR10St2084), "HDR10St2084");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::DolbyVision), "DolbyVision");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::HDR10HLG), "HDR10HLG");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::AdobeRGBLinear), "AdobeRGBLinear");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::AdobeRGBNonlinear), "AdobeRGBNonlinear");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::PassThrough), "PassThrough");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::ExtendedSRGBNonlinear), "ExtendedSRGBNonlinear");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::DisplayNativeAMD), "DisplayNativeAMD");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::BT601Nonlinear), "BT601Nonlinear");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::BT2020Nonlinear), "BT2020Nonlinear");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::BT2100HLGNonlinear), "BT2100HLGNonlinear");
+  ASSERT_STREQ(colorSpaceToString(ColorSpace::BT2100PQNonlinear), "BT2100PQNonlinear");
 }
 
 } // namespace igl::tests

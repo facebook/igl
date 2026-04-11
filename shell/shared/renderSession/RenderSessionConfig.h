@@ -17,7 +17,7 @@ struct RenderSessionConfig {
   BackendVersion backendVersion;
   TextureFormat swapchainColorTextureFormat = igl::TextureFormat::BGRA_UNorm8;
   TextureFormat depthTextureFormat = igl::TextureFormat::Z_UNorm16;
-  ColorSpace swapchainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
+  ColorSpace swapchainColorSpace = igl::ColorSpace::SRGBNonlinear;
 };
 
 } // namespace igl::shell

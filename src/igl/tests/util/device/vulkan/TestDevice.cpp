@@ -45,7 +45,7 @@ igl::vulkan::VulkanContextConfig getContextConfig(bool enableValidation) {
   config.enableValidation = false;
   config.terminateOnValidationError = false;
 #endif
-  config.swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
+  config.swapChainColorSpace = igl::ColorSpace::SRGBNonlinear;
   config.enableExtraLogs = enableValidation;
 
   return config;

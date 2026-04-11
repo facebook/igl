@@ -10,47 +10,47 @@
 namespace igl::metal {
 CGColorSpaceRef colorSpaceToCGColorSpace(ColorSpace colorSpace) {
   switch (colorSpace) {
-  case ColorSpace::SRGB_LINEAR:
+  case ColorSpace::SRGBLinear:
     return CGColorSpaceCreateWithName(kCGColorSpaceLinearSRGB);
-  case ColorSpace::SRGB_NONLINEAR:
+  case ColorSpace::SRGBNonlinear:
     return CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
-  case ColorSpace::DISPLAY_P3_NONLINEAR:
+  case ColorSpace::DisplayP3Nonlinear:
     return CGColorSpaceCreateWithName(kCGColorSpaceDisplayP3);
-  case ColorSpace::EXTENDED_SRGB_LINEAR:
+  case ColorSpace::ExtendedSRGBLinear:
     return CGColorSpaceCreateWithName(kCGColorSpaceExtendedLinearSRGB);
-  case ColorSpace::DCI_P3_NONLINEAR:
+  case ColorSpace::DCIP3Nonlinear:
     return CGColorSpaceCreateWithName(kCGColorSpaceDCIP3);
-  case ColorSpace::BT709_LINEAR:
+  case ColorSpace::BT709Linear:
     return CGColorSpaceCreateWithName(kCGColorSpaceLinearSRGB);
-  case ColorSpace::BT709_NONLINEAR:
+  case ColorSpace::BT709Nonlinear:
     return CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
-  case ColorSpace::ADOBERGB_LINEAR:
+  case ColorSpace::AdobeRGBLinear:
     return CGColorSpaceCreateWithName(kCGColorSpaceAdobeRGB1998);
-  case ColorSpace::ADOBERGB_NONLINEAR:
+  case ColorSpace::AdobeRGBNonlinear:
     return CGColorSpaceCreateWithName(kCGColorSpaceAdobeRGB1998);
-  case ColorSpace::PASS_THROUGH:
+  case ColorSpace::PassThrough:
     return nil;
-  case ColorSpace::EXTENDED_SRGB_NONLINEAR:
+  case ColorSpace::ExtendedSRGBNonlinear:
     return CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
-  case ColorSpace::BT2020_NONLINEAR:
+  case ColorSpace::BT2020Nonlinear:
     return CGColorSpaceCreateWithName(kCGColorSpaceITUR_2020);
-  case ColorSpace::DISPLAY_P3_LINEAR:
+  case ColorSpace::DisplayP3Linear:
     if (@available(macOS 12.0, iOS 15.0, *)) {
       return CGColorSpaceCreateWithName(kCGColorSpaceLinearDisplayP3);
     }
     [[fallthrough]];
-  case ColorSpace::BT2020_LINEAR:
+  case ColorSpace::BT2020Linear:
     if (@available(macOS 12.0, iOS 15.0, *)) {
       return CGColorSpaceCreateWithName(kCGColorSpaceLinearITUR_2020);
     }
     [[fallthrough]];
-  case ColorSpace::HDR10_ST2084:
-  case ColorSpace::DOLBYVISION:
-  case ColorSpace::HDR10_HLG:
-  case ColorSpace::DISPLAY_NATIVE_AMD:
-  case ColorSpace::BT601_NONLINEAR:
-  case ColorSpace::BT2100_HLG_NONLINEAR:
-  case ColorSpace::BT2100_PQ_NONLINEAR:
+  case ColorSpace::HDR10St2084:
+  case ColorSpace::DolbyVision:
+  case ColorSpace::HDR10HLG:
+  case ColorSpace::DisplayNativeAMD:
+  case ColorSpace::BT601Nonlinear:
+  case ColorSpace::BT2100HLGNonlinear:
+  case ColorSpace::BT2100PQNonlinear:
   default:
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return CGColorSpaceCreateWithName(kCGColorSpaceSRGB);

@@ -382,44 +382,44 @@ VkCompareOp compareFunctionToVkCompareOp(CompareFunction func) {
 
 VkColorSpaceKHR colorSpaceToVkColorSpace(ColorSpace colorSpace) {
   switch (colorSpace) {
-  case ColorSpace::SRGB_LINEAR:
+  case ColorSpace::SRGBLinear:
     return VkColorSpaceKHR::VK_COLOR_SPACE_BT709_LINEAR_EXT; // closest thing to linear srgb
-  case ColorSpace::SRGB_NONLINEAR:
+  case ColorSpace::SRGBNonlinear:
     return VkColorSpaceKHR::VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-  case ColorSpace::DISPLAY_P3_NONLINEAR:
+  case ColorSpace::DisplayP3Nonlinear:
     return VkColorSpaceKHR::VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT;
-  case ColorSpace::DISPLAY_P3_LINEAR:
+  case ColorSpace::DisplayP3Linear:
     return VkColorSpaceKHR::VK_COLOR_SPACE_DISPLAY_P3_LINEAR_EXT;
-  case ColorSpace::EXTENDED_SRGB_LINEAR:
+  case ColorSpace::ExtendedSRGBLinear:
     return VkColorSpaceKHR::VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT;
-  case ColorSpace::DCI_P3_NONLINEAR:
+  case ColorSpace::DCIP3Nonlinear:
     return VkColorSpaceKHR::VK_COLOR_SPACE_DCI_P3_NONLINEAR_EXT;
-  case ColorSpace::BT709_LINEAR:
+  case ColorSpace::BT709Linear:
     return VkColorSpaceKHR::VK_COLOR_SPACE_BT709_LINEAR_EXT;
-  case ColorSpace::BT709_NONLINEAR:
+  case ColorSpace::BT709Nonlinear:
     return VkColorSpaceKHR::VK_COLOR_SPACE_BT709_NONLINEAR_EXT;
-  case ColorSpace::BT2020_LINEAR:
+  case ColorSpace::BT2020Linear:
     return VkColorSpaceKHR::VK_COLOR_SPACE_BT2020_LINEAR_EXT;
-  case ColorSpace::HDR10_ST2084:
+  case ColorSpace::HDR10St2084:
     return VkColorSpaceKHR::VK_COLOR_SPACE_HDR10_ST2084_EXT;
-  case ColorSpace::DOLBYVISION:
+  case ColorSpace::DolbyVision:
     return VkColorSpaceKHR::VK_COLOR_SPACE_DOLBYVISION_EXT;
-  case ColorSpace::HDR10_HLG:
+  case ColorSpace::HDR10HLG:
     return VkColorSpaceKHR::VK_COLOR_SPACE_HDR10_HLG_EXT;
-  case ColorSpace::ADOBERGB_LINEAR:
+  case ColorSpace::AdobeRGBLinear:
     return VkColorSpaceKHR::VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT;
-  case ColorSpace::ADOBERGB_NONLINEAR:
+  case ColorSpace::AdobeRGBNonlinear:
     return VkColorSpaceKHR::VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT;
-  case ColorSpace::PASS_THROUGH:
+  case ColorSpace::PassThrough:
     return VkColorSpaceKHR::VK_COLOR_SPACE_PASS_THROUGH_EXT;
-  case ColorSpace::EXTENDED_SRGB_NONLINEAR:
+  case ColorSpace::ExtendedSRGBNonlinear:
     return VkColorSpaceKHR::VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT;
-  case ColorSpace::DISPLAY_NATIVE_AMD:
+  case ColorSpace::DisplayNativeAMD:
     return VkColorSpaceKHR::VK_COLOR_SPACE_DISPLAY_NATIVE_AMD;
-  case ColorSpace::BT2020_NONLINEAR:
-  case ColorSpace::BT601_NONLINEAR:
-  case ColorSpace::BT2100_HLG_NONLINEAR:
-  case ColorSpace::BT2100_PQ_NONLINEAR:
+  case ColorSpace::BT2020Nonlinear:
+  case ColorSpace::BT601Nonlinear:
+  case ColorSpace::BT2100HLGNonlinear:
+  case ColorSpace::BT2100PQNonlinear:
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return VkColorSpaceKHR::VK_COLOR_SPACE_BT709_NONLINEAR_EXT;
   }
@@ -429,40 +429,40 @@ VkColorSpaceKHR colorSpaceToVkColorSpace(ColorSpace colorSpace) {
 ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace) {
   switch (colorSpace) {
   case VK_COLOR_SPACE_SRGB_NONLINEAR_KHR:
-    return ColorSpace::SRGB_NONLINEAR;
+    return ColorSpace::SRGBNonlinear;
   case VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT:
-    return ColorSpace::DISPLAY_P3_NONLINEAR;
+    return ColorSpace::DisplayP3Nonlinear;
   case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT:
-    return ColorSpace::EXTENDED_SRGB_LINEAR;
+    return ColorSpace::ExtendedSRGBLinear;
   case VK_COLOR_SPACE_DISPLAY_P3_LINEAR_EXT:
-    return ColorSpace::DISPLAY_P3_LINEAR;
+    return ColorSpace::DisplayP3Linear;
   case VK_COLOR_SPACE_DCI_P3_NONLINEAR_EXT:
-    return ColorSpace::DCI_P3_NONLINEAR;
+    return ColorSpace::DCIP3Nonlinear;
   case VK_COLOR_SPACE_BT709_LINEAR_EXT:
-    return ColorSpace::BT709_LINEAR;
+    return ColorSpace::BT709Linear;
   case VK_COLOR_SPACE_BT709_NONLINEAR_EXT:
-    return ColorSpace::BT709_NONLINEAR;
+    return ColorSpace::BT709Nonlinear;
   case VK_COLOR_SPACE_BT2020_LINEAR_EXT:
-    return ColorSpace::BT2020_LINEAR;
+    return ColorSpace::BT2020Linear;
   case VK_COLOR_SPACE_HDR10_ST2084_EXT:
-    return ColorSpace::HDR10_ST2084;
+    return ColorSpace::HDR10St2084;
   case VK_COLOR_SPACE_DOLBYVISION_EXT:
-    return ColorSpace::DOLBYVISION;
+    return ColorSpace::DolbyVision;
   case VK_COLOR_SPACE_HDR10_HLG_EXT:
-    return ColorSpace::HDR10_HLG;
+    return ColorSpace::HDR10HLG;
   case VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT:
-    return ColorSpace::ADOBERGB_LINEAR;
+    return ColorSpace::AdobeRGBLinear;
   case VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT:
-    return ColorSpace::ADOBERGB_NONLINEAR;
+    return ColorSpace::AdobeRGBNonlinear;
   case VK_COLOR_SPACE_PASS_THROUGH_EXT:
-    return ColorSpace::PASS_THROUGH;
+    return ColorSpace::PassThrough;
   case VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT:
-    return ColorSpace::EXTENDED_SRGB_NONLINEAR;
+    return ColorSpace::ExtendedSRGBNonlinear;
   case VK_COLOR_SPACE_DISPLAY_NATIVE_AMD:
-    return ColorSpace::DISPLAY_NATIVE_AMD;
+    return ColorSpace::DisplayNativeAMD;
   default:
     IGL_DEBUG_ASSERT_NOT_REACHED();
-    return ColorSpace::SRGB_NONLINEAR;
+    return ColorSpace::SRGBNonlinear;
   }
 }
 
