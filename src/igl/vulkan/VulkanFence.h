@@ -30,7 +30,7 @@ class VulkanFence final {
   VulkanFence& operator=(VulkanFence&& other) noexcept;
 
   VulkanFence(const VulkanFence&) = delete;
-  VulkanFence operator=(const VulkanFence&) = delete;
+  VulkanFence& operator=(const VulkanFence&) = delete;
 
   bool reset() noexcept;
   bool wait(uint64_t timeoutNs = UINT64_MAX) noexcept;
