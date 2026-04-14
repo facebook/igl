@@ -162,7 +162,6 @@ TEST_F(RenderPipelineReflectionTest, UniformBlocks) {
 #endif
   if (!useBlocks) {
     GTEST_SKIP() << "Uniform blocks not supported";
-    return;
   }
 
   if (!isGles3) {

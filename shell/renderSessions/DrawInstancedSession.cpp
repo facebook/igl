@@ -130,7 +130,6 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
                                                            "main",
                                                            "",
                                                            nullptr);
-    return nullptr;
   // @fb-only
     // @fb-only
     // @fb-only

@@ -89,7 +89,6 @@ class TextureArrayTest : public ::testing::Test {
 
     if (!iglDev_->hasFeature(DeviceFeatures::Texture2DArray)) {
       GTEST_SKIP() << "2D array texture is unsupported for this platform.";
-      return;
     }
 
     // Create an offscreen texture to render to

@@ -290,12 +290,11 @@ int setCurrentThreadAffinityMask(int mask) {
     IGL_LOG_ERROR("Set thread affinity failed. with mask 0x%x and error 0x%x\n", mask, err);
     return err;
   }
+  return 0;
 #else
   IGL_LOG_ERROR("Set thread affinity not supported on this platorm");
   return -1;
 #endif
-
-  return 0;
 }
 
 double calcPi(int numberOfDivisions, int core) {

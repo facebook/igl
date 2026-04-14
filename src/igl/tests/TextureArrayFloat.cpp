@@ -103,7 +103,6 @@ class TextureArrayFloatTest : public ::testing::Test {
     if (!iglDev_->hasFeature(DeviceFeatures::TextureHalfFloat) ||
         !iglDev_->hasFeature(DeviceFeatures::Texture2DArray)) {
       GTEST_SKIP() << "2D float texture array is unsupported for this platform.";
-      return;
     }
 
     // Create an offscreen texture to render to
@@ -158,7 +157,6 @@ class TextureArrayFloatTest : public ::testing::Test {
                                    stages);
         } else {
           GTEST_SKIP() << "Texture array is unsupported for this platform.";
-          return;
         }
       }
 #if defined(IGL_PLATFORM_LINUX) && IGL_PLATFORM_LINUX

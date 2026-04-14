@@ -190,7 +190,6 @@ class TextureHalfFloatTest : public ::testing::Test {
 
     if (!iglDev_->hasFeature(DeviceFeatures::TextureHalfFloat)) {
       GTEST_SKIP() << "2D half float texture is unsupported for this platform.";
-      return;
     }
 
     Result ret;

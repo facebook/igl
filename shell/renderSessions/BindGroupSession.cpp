@@ -207,7 +207,6 @@ std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& devi
                                                            "main",
                                                            "",
                                                            nullptr);
-    return nullptr;
   case igl::BackendType::D3D12: {
     // D3D12 HLSL shaders using register bindings
     static const char* kVS = R"(

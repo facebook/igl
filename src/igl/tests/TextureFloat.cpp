@@ -178,7 +178,6 @@ class TextureFloatTest : public ::testing::Test {
     if (!iglDev_->hasFeature(DeviceFeatures::TextureFloat) &&
         !iglDev_->hasFeature(DeviceFeatures::Texture2DArray)) {
       GTEST_SKIP() << "2D float texture array is unsupported for this platform.";
-      return;
     }
 
 // Those tests just crash on macos but run fine on android opengles

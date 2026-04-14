@@ -43,7 +43,6 @@ TEST_F(ShaderLibraryTest, CreateFromSource) {
   Result ret;
   if (!iglDev_->hasFeature(DeviceFeatures::ShaderLibrary)) {
     GTEST_SKIP() << "Shader Libraries are unsupported for this platform.";
-    return;
   }
 
   const char* source = nullptr;
@@ -60,7 +59,6 @@ TEST_F(ShaderLibraryTest, CreateFromSource) {
   // Check if source is null before passing it to fromStringInput
   if (source == nullptr) {
     GTEST_SKIP() << "No shader source available for this backend.";
-    return;
   }
 
   auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
@@ -76,7 +74,6 @@ TEST_F(ShaderLibraryTest, CreateFromSingleModuleReturnNullWithEmptyInput) {
   Result ret;
   if (!iglDev_->hasFeature(DeviceFeatures::ShaderLibrary)) {
     GTEST_SKIP() << "Shader Libraries are unsupported for this platform.";
-    return;
   }
 
   auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
@@ -89,7 +86,6 @@ TEST_F(ShaderLibraryTest, CreateFromSourceMultipleModules) {
   Result ret;
   if (!iglDev_->hasFeature(DeviceFeatures::ShaderLibrary)) {
     GTEST_SKIP() << "Shader Libraries are unsupported for this platform.";
-    return;
   }
 
   const char* source = nullptr;
@@ -97,7 +93,6 @@ TEST_F(ShaderLibraryTest, CreateFromSourceMultipleModules) {
     source = data::shader::kMtlSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
     GTEST_SKIP() << "Vulkan does not support multiple modules from the same source code.";
-    return;
   } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
     source = data::shader::kD3D12SimpleShader.data();
   }
@@ -105,7 +100,6 @@ TEST_F(ShaderLibraryTest, CreateFromSourceMultipleModules) {
   // Check if source is null before passing it to fromStringInput
   if (source == nullptr) {
     GTEST_SKIP() << "No shader source available for this backend.";
-    return;
   }
 
   auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
@@ -131,7 +125,6 @@ TEST_F(ShaderLibraryTest, CreateFromSourceMultipleModules) {
 TEST_F(ShaderLibraryTest, CreateFromSourceNoResult) {
   if (!iglDev_->hasFeature(DeviceFeatures::ShaderLibrary)) {
     GTEST_SKIP() << "Shader Libraries are unsupported for this platform.";
-    return;
   }
 
   const char* source = nullptr;
@@ -148,7 +141,6 @@ TEST_F(ShaderLibraryTest, CreateFromSourceNoResult) {
   // Check if source is null before passing it to fromStringInput
   if (source == nullptr) {
     GTEST_SKIP() << "No shader source available for this backend.";
-    return;
   }
 
   auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
