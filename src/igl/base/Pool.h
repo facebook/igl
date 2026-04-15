@@ -9,7 +9,7 @@
 
 #include <cstdint>
 #include <vector>
-#include <igl/handle/Handle.h>
+#include <igl/base/Handle.h>
 
 #ifndef IGL_DEBUG_ASSERT
 #define IGL_DEBUG_ASSERT(...)

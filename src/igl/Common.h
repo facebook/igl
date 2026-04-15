@@ -19,8 +19,8 @@
 #include <igl/Color.h>
 #include <igl/Core.h>
 #include <igl/base/Common.h>
-#include <igl/handle/Handle.h>
-#include <igl/handle/Pool.h>
+#include <igl/base/Handle.h>
+#include <igl/base/Pool.h>
 
 #define IGL_ARRAY_NUM_ELEMENTS(x) (sizeof(x) / sizeof((x)[0]))
 
