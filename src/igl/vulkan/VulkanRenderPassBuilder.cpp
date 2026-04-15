@@ -122,7 +122,8 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
 
 #if IGL_VULKAN_HAS_LEGACY_RENDERPASS
       vf.vkCreateRenderPass2 ? vf.vkCreateRenderPass2(device, &ci2, nullptr, outRenderPass)
-                             : vf.vkCreateRenderPass(device, &ci, nullptr, outRenderPass);
+                             : (vf.vkCreateRenderPass2KHR ? vf.vkCreateRenderPass2KHR(device, &ci2, nullptr, outRenderPass)
+                             : vf.vkCreateRenderPass(device, &ci, nullptr, outRenderPass));
 #else
       vf.vkCreateRenderPass2(device, &ci2, nullptr, outRenderPass);
 #endif // IGL_VULKAN_HAS_LEGACY_RENDERPASS
