@@ -968,6 +968,18 @@ void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
   table->vkCmdNextSubpass2KHR = (PFN_vkCmdNextSubpass2KHR)load(context, "vkCmdNextSubpass2KHR");
   table->vkCreateRenderPass2KHR =
       (PFN_vkCreateRenderPass2KHR)load(context, "vkCreateRenderPass2KHR");
+  if (!table->vkCmdBeginRenderPass2 && table->vkCmdBeginRenderPass2KHR) {
+    table->vkCmdBeginRenderPass2 = table->vkCmdBeginRenderPass2KHR;
+  }
+  if (!table->vkCmdEndRenderPass2 && table->vkCmdEndRenderPass2KHR) {
+    table->vkCmdEndRenderPass2 = table->vkCmdEndRenderPass2KHR;
+  }
+  if (!table->vkCmdNextSubpass2 && table->vkCmdNextSubpass2KHR) {
+    table->vkCmdNextSubpass2 = table->vkCmdNextSubpass2KHR;
+  }
+  if (!table->vkCreateRenderPass2 && table->vkCreateRenderPass2KHR) {
+    table->vkCreateRenderPass2 = table->vkCreateRenderPass2KHR;
+  }
 #endif /* defined(VK_KHR_create_renderpass2) */
 #if defined(VK_KHR_deferred_host_operations)
   table->vkCreateDeferredOperationKHR =
