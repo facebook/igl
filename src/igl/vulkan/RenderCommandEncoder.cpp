@@ -336,7 +336,10 @@ void RenderCommandEncoder::endEncoding() {
   // VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL (check VulkanRenderPassBuilder.cpp)
   overrideImageLayout(desc.depthAttachment.texture.get(),
                       VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+  overrideImageLayout(desc.depthAttachment.resolveTexture.get(),
+                      VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
   transitionToShaderReadOnly(cmdBuffer_, desc.depthAttachment.texture.get());
+  transitionToShaderReadOnly(cmdBuffer_, desc.depthAttachment.resolveTexture.get());
 
 #if defined(IGL_WITH_TRACY_GPU)
   TracyVkCollect(ctx_.tracyCtx_, cmdBuffer_);
