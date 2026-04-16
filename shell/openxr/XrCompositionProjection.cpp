@@ -29,34 +29,39 @@ void XrCompositionProjection::doComposition(
     const auto subImageIndex = useSinglePassStereo_ ? static_cast<uint32_t>(view) : 0u;
     const auto swapchainProviderIndex = useSinglePassStereo_ ? 0u : static_cast<uint32_t>(view);
 
-    const XrRect2Di imageRect = {{0, 0},
-                                 {
-                                     static_cast<int32_t>(swapchainImageInfo_[view].imageWidth),
-                                     static_cast<int32_t>(swapchainImageInfo_[view].imageHeight),
-                                 }};
+    const XrRect2Di imageRect = {
+        .offset = {.x = 0, .y = 0},
+        .extent =
+            {
+                .width = static_cast<int32_t>(swapchainImageInfo_[view].imageWidth),
+                .height = static_cast<int32_t>(swapchainImageInfo_[view].imageHeight),
+            },
+    };
 
-    depthInfos_[view] = {.type = XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR,
-                         .next = nullptr,
-                         .subImage =
-                             {
-                                 swapchainProviders_[swapchainProviderIndex]->depthSwapchain(),
-                                 imageRect,
-                                 subImageIndex,
-                             },
-                         .minDepth = depthParams.minDepth,
-                         .maxDepth = depthParams.maxDepth,
-                         .nearZ = depthParams.nearZ,
-                         .farZ = depthParams.farZ};
+    depthInfos_[view] = {
+        .type = XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR,
+        .next = nullptr,
+        .subImage =
+            {
+                .swapchain = swapchainProviders_[swapchainProviderIndex]->depthSwapchain(),
+                .imageRect = imageRect,
+                .imageArrayIndex = subImageIndex,
+            },
+        .minDepth = depthParams.minDepth,
+        .maxDepth = depthParams.maxDepth,
+        .nearZ = depthParams.nearZ,
+        .farZ = depthParams.farZ};
 
-    projectionViews_[view] = {.type = XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW,
-                              .next = &depthInfos_[view],
-                              .pose = viewStagePoses[view],
-                              .fov = views[view].fov,
-                              .subImage = {
-                                  swapchainProviders_[swapchainProviderIndex]->colorSwapchain(),
-                                  imageRect,
-                                  subImageIndex,
-                              }};
+    projectionViews_[view] = {
+        .type = XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW,
+        .next = &depthInfos_[view],
+        .pose = viewStagePoses[view],
+        .fov = views[view].fov,
+        .subImage = {
+            .swapchain = swapchainProviders_[swapchainProviderIndex]->colorSwapchain(),
+            .imageRect = imageRect,
+            .imageArrayIndex = subImageIndex,
+        }};
   }
 
   projectionLayer_ = {
