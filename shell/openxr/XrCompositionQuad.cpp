@@ -77,11 +77,14 @@ void XrCompositionQuad::doComposition(
     const auto subImageIndex = useSinglePassStereo_ ? static_cast<uint32_t>(view) : 0u;
     const auto swapchainProviderIndex = useSinglePassStereo_ ? 0u : static_cast<uint32_t>(view);
 
-    const XrRect2Di imageRect = {{0, 0},
-                                 {
-                                     static_cast<int32_t>(swapchainImageInfo_[view].imageWidth),
-                                     static_cast<int32_t>(swapchainImageInfo_[view].imageHeight),
-                                 }};
+    const XrRect2Di imageRect = {
+        .offset = {.x = 0, .y = 0},
+        .extent =
+            {
+                .width = static_cast<int32_t>(swapchainImageInfo_[view].imageWidth),
+                .height = static_cast<int32_t>(swapchainImageInfo_[view].imageHeight),
+            },
+    };
 
     quadLayers_[view] = {
         .type = XR_TYPE_COMPOSITION_LAYER_QUAD,
@@ -98,13 +101,16 @@ void XrCompositionQuad::doComposition(
         .eyeVisibility = (view == 0) ? XR_EYE_VISIBILITY_LEFT : XR_EYE_VISIBILITY_RIGHT,
         .subImage =
             {
-                swapchainProviders_[swapchainProviderIndex]->colorSwapchain(),
-                imageRect,
-                subImageIndex,
+                .swapchain = swapchainProviders_[swapchainProviderIndex]->colorSwapchain(),
+                .imageRect = imageRect,
+                .imageArrayIndex = subImageIndex,
             },
-        .pose = {.orientation = {0.f, 0.f, 0.f, 1.f},
-                 .position = {info_.position.x, info_.position.y, info_.position.z}},
-        .size = {info_.size.x, info_.size.y},
+        .pose =
+            {
+                .orientation = {.x = 0.f, .y = 0.f, .z = 0.f, .w = 1.f},
+                .position = {.x = info_.position.x, .y = info_.position.y, .z = info_.position.z},
+            },
+        .size = {.width = info_.size.x, .height = info_.size.y},
     };
 
     layers.push_back(reinterpret_cast<const XrCompositionLayerBaseHeader*>(&quadLayers_[view]));
