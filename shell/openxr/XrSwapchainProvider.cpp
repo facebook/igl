@@ -119,7 +119,7 @@ SurfaceTextures XrSwapchainProvider::getSurfaceTextures() const noexcept {
 }
 
 void XrSwapchainProvider::releaseSwapchainImages() const noexcept {
-  const XrSwapchainImageReleaseInfo releaseInfo = {XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
+  const XrSwapchainImageReleaseInfo releaseInfo = {.type = XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
   XR_CHECK(xrReleaseSwapchainImage(colorSwapchain_, &releaseInfo));
   XR_CHECK(xrReleaseSwapchainImage(depthSwapchain_, &releaseInfo));
 }
