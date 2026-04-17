@@ -10,7 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
-#include <igl/Texture.h>
+#include <igl/Common.h>
 
 namespace igl::vulkan::util {
 
