@@ -140,14 +140,14 @@ XrSession XrAppImplVulkan::initXrSession(XrInstance instance,
   const auto& vkDevice = static_cast<igl::vulkan::Device&>(device); // Downcast is safe here
 
   // Bind Vulkan to XR session
-  XrGraphicsBindingVulkanKHR graphicsBinding = {
-      XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR,
-      nullptr,
-      vkDevice.getVulkanContext().getVkInstance(),
-      vkDevice.getVulkanContext().getVkPhysicalDevice(),
-      vkDevice.getVulkanContext().getVkDevice(),
-      vkDevice.getVulkanContext().deviceQueues_.graphicsQueueFamilyIndex,
-      0,
+  const XrGraphicsBindingVulkanKHR graphicsBinding = {
+      .type = XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR,
+      .next = nullptr,
+      .instance = vkDevice.getVulkanContext().getVkInstance(),
+      .physicalDevice = vkDevice.getVulkanContext().getVkPhysicalDevice(),
+      .device = vkDevice.getVulkanContext().getVkDevice(),
+      .queueFamilyIndex = vkDevice.getVulkanContext().deviceQueues_.graphicsQueueFamilyIndex,
+      .queueIndex = 0,
   };
 
   const XrSessionCreateInfo sessionCreateInfo = {
