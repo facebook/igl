@@ -82,7 +82,7 @@ bool XrPassthrough::initialize() noexcept {
   const XrPassthroughStyleFB style{.type = XR_TYPE_PASSTHROUGH_STYLE_FB,
                                    .next = nullptr,
                                    .textureOpacityFactor = 1.0f,
-                                   .edgeColor = {0.0f, 0.0f, 0.0f, 0.0f}};
+                                   .edgeColor = {.r = 0.0f, .g = 0.0f, .b = 0.0f, .a = 0.0f}};
 
   XR_CHECK(result = xrPassthroughLayerSetStyleFB_(passthroughLayer_, &style));
   if (result != XR_SUCCESS) {
@@ -107,7 +107,7 @@ void XrPassthrough::setOpacity(float opacity) noexcept {
       .type = XR_TYPE_PASSTHROUGH_STYLE_FB,
       .next = nullptr,
       .textureOpacityFactor = opacity,
-      .edgeColor = {0.0f, 0.0f, 0.0f, 0.0f},
+      .edgeColor = {.r = 0.0f, .g = 0.0f, .b = 0.0f, .a = 0.0f},
   };
   XR_CHECK(xrPassthroughLayerSetStyleFB_(passthroughLayer_, &style));
 }
