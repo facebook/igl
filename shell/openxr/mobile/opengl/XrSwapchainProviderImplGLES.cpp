@@ -56,11 +56,17 @@ std::shared_ptr<ITexture> getSurfaceTexture(IDevice& device,
                                             TextureFormat externalTextureFormat,
                                             std::vector<std::shared_ptr<ITexture>>& inOutTextures) {
   uint32_t imageIndex = 0;
-  const XrSwapchainImageAcquireInfo acquireInfo{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
+  const XrSwapchainImageAcquireInfo acquireInfo{
+      .type = XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO,
+      .next = nullptr,
+  };
   XR_CHECK(xrAcquireSwapchainImage(swapchain, &acquireInfo, &imageIndex));
 
-  XrSwapchainImageWaitInfo waitInfo{XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};
-  waitInfo.timeout = XR_INFINITE_DURATION;
+  const XrSwapchainImageWaitInfo waitInfo{
+      .type = XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO,
+      .next = nullptr,
+      .timeout = XR_INFINITE_DURATION,
+  };
   XR_CHECK(xrWaitSwapchainImage(swapchain, &waitInfo));
 
   const auto glTexture = images[imageIndex];
