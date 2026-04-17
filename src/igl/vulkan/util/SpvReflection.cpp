@@ -7,6 +7,7 @@
 
 #include <igl/vulkan/util/SpvReflection.h>
 
+#include <algorithm>
 #include <spirv/unified1/spirv.h>
 
 #define IGL_COMMON_SKIP_CHECK
