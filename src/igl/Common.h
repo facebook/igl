@@ -108,7 +108,7 @@ struct Result {
   std::string message;
   explicit Result() = default;
   explicit Result(Code code, const char* IGL_NULLABLE message = "") :
-    code(code), message(message) {}
+    code(code), message(message ? static_cast<const char*>(message) : "") {}
   explicit Result(Code code, std::string message) : code(code), message(std::move(message)) {}
 
   [[nodiscard]] bool isOk() const {

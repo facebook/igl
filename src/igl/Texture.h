@@ -576,7 +576,8 @@ struct TextureDesc {
         .usage = usage,
         .type = TextureType::TwoD,
         .format = format,
-        .debugName = debugName ? debugName : "",
+        .debugName = debugName != nullptr ? std::string(static_cast<const char*>(debugName))
+                                          : std::string(),
     };
   }
 
@@ -604,7 +605,8 @@ struct TextureDesc {
         .usage = usage,
         .type = TextureType::TwoDArray,
         .format = format,
-        .debugName = debugName ? debugName : "",
+        .debugName = debugName != nullptr ? std::string(static_cast<const char*>(debugName))
+                                          : std::string(),
     };
   }
 
@@ -629,7 +631,8 @@ struct TextureDesc {
         .usage = usage,
         .type = TextureType::Cube,
         .format = format,
-        .debugName = debugName ? debugName : "",
+        .debugName = debugName != nullptr ? std::string(static_cast<const char*>(debugName))
+                                          : std::string(),
     };
   }
 
@@ -657,7 +660,8 @@ struct TextureDesc {
         .usage = usage,
         .type = TextureType::ThreeD,
         .format = format,
-        .debugName = debugName ? debugName : "",
+        .debugName = debugName != nullptr ? std::string(static_cast<const char*>(debugName))
+                                          : std::string(),
     };
   }
 
@@ -681,7 +685,8 @@ struct TextureDesc {
         .usage = usage,
         .type = TextureType::ExternalImage,
         .format = format,
-        .debugName = debugName ? debugName : "",
+        .debugName = debugName != nullptr ? std::string(static_cast<const char*>(debugName))
+                                          : std::string(),
     };
   }
 
@@ -708,7 +713,8 @@ struct TextureDesc {
         .type = TextureType::TwoD,
         .format = format,
         .storage = ResourceStorage::Shared,
-        .debugName = debugName ? debugName : "",
+        .debugName = debugName != nullptr ? std::string(static_cast<const char*>(debugName))
+                                          : std::string(),
     };
   }
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
