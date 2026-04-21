@@ -61,7 +61,7 @@ TEST_F(ComputePipelineStateOGLTest, CreateAndBind) {
   auto shaderModule = iglDev_->createShaderModule(
       ShaderModuleDesc::fromStringInput(
           computeSource.c_str(),
-          {ShaderStage::Compute, std::string(data::shader::kShaderFunc)},
+          {.stage = ShaderStage::Compute, .entryPoint = std::string(data::shader::kShaderFunc)},
           ""),
       &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -103,7 +103,7 @@ TEST_F(ComputePipelineStateOGLTest, GetIndexByName) {
   auto shaderModule = iglDev_->createShaderModule(
       ShaderModuleDesc::fromStringInput(
           computeSource.c_str(),
-          {ShaderStage::Compute, std::string(data::shader::kShaderFunc)},
+          {.stage = ShaderStage::Compute, .entryPoint = std::string(data::shader::kShaderFunc)},
           ""),
       &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -144,7 +144,7 @@ TEST_F(ComputePipelineStateOGLTest, SSBODetection) {
   auto shaderModule = iglDev_->createShaderModule(
       ShaderModuleDesc::fromStringInput(
           computeSource.c_str(),
-          {ShaderStage::Compute, std::string(data::shader::kShaderFunc)},
+          {.stage = ShaderStage::Compute, .entryPoint = std::string(data::shader::kShaderFunc)},
           ""),
       &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
