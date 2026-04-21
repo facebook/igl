@@ -329,6 +329,11 @@ class IDevice : public ICapabilities, public base::IDeviceBase {
    */
   virtual void markRecoveryArmed() noexcept {}
 
+  /// Mark the device healthy after successful recovery from device-lost state.
+  /// Default is no-op; backends that track device-lost state override this to
+  /// transition their internal state machine back to the healthy state.
+  virtual void markHealthy() noexcept {}
+
   /**
    * @brief Returns raw pointer to native device handle.
    * @return Platform-specific device handle.
