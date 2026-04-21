@@ -1041,15 +1041,17 @@ bool XrApp::handTrackingSupported() const noexcept { // NOLINT(bugprone-exceptio
 #if IGL_PLATFORM_ANDROID
   return supportedOptionalXrExtensions_.count(XR_EXT_HAND_TRACKING_EXTENSION_NAME) != 0 &&
          handTrackingSystemProps_.supportsHandTracking != 0u;
-#endif // IGL_PLATFORM_ANDROID
+#else
   return false;
+#endif // IGL_PLATFORM_ANDROID
 }
 
 bool XrApp::handTrackingMeshSupported() const noexcept { // NOLINT(bugprone-exception-escape)
 #if IGL_PLATFORM_ANDROID
   return supportedOptionalXrExtensions_.count(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME) != 0;
-#endif // IGL_PLATFORM_ANDROID
+#else
   return false;
+#endif // IGL_PLATFORM_ANDROID
 }
 
 bool XrApp::refreshRateExtensionSupported() const noexcept { // NOLINT(bugprone-exception-escape)
@@ -1060,16 +1062,18 @@ bool XrApp::instanceCreateInfoAndroidSupported()
     const noexcept { // NOLINT(bugprone-exception-escape)
 #if IGL_PLATFORM_ANDROID
   return supportedOptionalXrExtensions_.count(XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME) != 0;
-#endif // IGL_PLATFORM_ANDROID
+#else
   return false;
+#endif // IGL_PLATFORM_ANDROID
 }
 
 bool XrApp::alphaBlendCompositionSupported() const noexcept { // NOLINT(bugprone-exception-escape)
 #ifdef XR_FB_composition_layer_alpha_blend
   return supportedOptionalXrExtensions_.count(XR_FB_COMPOSITION_LAYER_ALPHA_BLEND_EXTENSION_NAME) !=
          0;
-#endif // XR_FB_composition_layer_alpha_blend
+#else
   return false;
+#endif // XR_FB_composition_layer_alpha_blend
 }
 
 } // namespace igl::shell::openxr
