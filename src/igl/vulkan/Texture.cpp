@@ -24,6 +24,8 @@ Texture::Texture(Device& device, TextureFormat format) : ITexture(format), devic
 }
 
 Result Texture::create(const TextureDesc& desc) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   desc_ = desc;
 
   const VulkanContext& ctx = device_.getVulkanContext();
@@ -249,6 +251,8 @@ Result Texture::create(const TextureDesc& desc) {
 }
 
 Result Texture::createView(const Texture& baseTexture, const TextureViewDesc& desc) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   if (!IGL_DEBUG_VERIFY(baseTexture.texture_)) {
     return Result(Result::Code::InvalidOperation, "Cannot create a view from an empty texture");
   }
