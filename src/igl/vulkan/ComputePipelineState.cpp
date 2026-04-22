@@ -24,7 +24,9 @@ ComputePipelineState::ComputePipelineState(const igl::vulkan::Device& device,
                 0,
                 desc.debugName.c_str()),
   device_(device),
-  desc_(std::move(desc)) {}
+  desc_(std::move(desc)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+}
 
 ComputePipelineState ::~ComputePipelineState() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
