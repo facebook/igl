@@ -7,15 +7,21 @@
 
 #include <igl/vulkan/VulkanShaderModule.h>
 
+#include <igl/vulkan/Common.h>
+
 namespace igl::vulkan {
 
 VulkanShaderModule::VulkanShaderModule(const VulkanFunctionTable& vf,
                                        VkDevice device,
                                        VkShaderModule shaderModule,
                                        util::SpvModuleInfo&& moduleInfo) :
-  vf_(vf), device_(device), vkShaderModule_(shaderModule), moduleInfo_(std::move(moduleInfo)) {}
+  vf_(vf), device_(device), vkShaderModule_(shaderModule), moduleInfo_(std::move(moduleInfo)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+}
 
 VulkanShaderModule::~VulkanShaderModule() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+
   vf_.vkDestroyShaderModule(device_, vkShaderModule_, nullptr);
 }
 
