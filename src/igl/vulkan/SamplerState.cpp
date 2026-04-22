@@ -111,7 +111,7 @@ namespace igl::vulkan {
 SamplerState::SamplerState(Device& device) : device_(device) {}
 
 Result SamplerState::create(const SamplerStateDesc& desc) {
-  IGL_PROFILER_FUNCTION();
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   desc_ = desc;
 
