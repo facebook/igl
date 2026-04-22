@@ -372,6 +372,7 @@ MTLPixelFormat Texture::textureFormatToMTLPixelFormat(TextureFormat value) {
 #else
     return MTLPixelFormatBGR5A1Unorm;
 #endif
+  case TextureFormat::R5G6B5_UNorm:
   case TextureFormat::B5G6R5_UNorm:
 #if IGL_PLATFORM_MACOSX || IGL_PLATFORM_IOS_SIMULATOR
     return MTLPixelFormatInvalid;

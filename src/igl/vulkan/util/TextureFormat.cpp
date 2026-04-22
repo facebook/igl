@@ -15,6 +15,7 @@ namespace igl::vulkan::util {
 // NOLINTBEGIN(readability-identifier-naming)
 // Vulkan Defines
 #define VK_FORMAT_UNDEFINED 0
+#define VK_FORMAT_R5G6B5_UNORM_PACK16 4
 #define VK_FORMAT_R8_UNORM 9
 #define VK_FORMAT_R16_UNORM 70
 #define VK_FORMAT_R16_SFLOAT 76
@@ -119,6 +120,8 @@ TextureFormat vkTextureFormatToTextureFormat(int32_t vkFormat) {
     return TextureFormat::RG_UNorm8;
   case VK_FORMAT_R5G5B5A1_UNORM_PACK16:
     return TextureFormat::R5G5B5A1_UNorm;
+  case VK_FORMAT_R5G6B5_UNORM_PACK16:
+    return TextureFormat::R5G6B5_UNorm;
   case VK_FORMAT_B8G8R8A8_UNORM:
     return TextureFormat::BGRA_UNorm8;
   case VK_FORMAT_R8G8B8A8_UNORM:

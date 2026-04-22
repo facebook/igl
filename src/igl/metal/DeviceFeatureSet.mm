@@ -358,6 +358,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
 #else
     return sampled | attachment | sampledAttachment;
 #endif
+  case TextureFormat::R5G6B5_UNorm:
   case TextureFormat::B5G6R5_UNorm:
 #if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST || IGL_PLATFORM_IOS_SIMULATOR
     return unsupported;

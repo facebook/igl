@@ -150,6 +150,8 @@ VkFormat textureFormatToVkFormat(TextureFormat format) {
     return VK_FORMAT_UNDEFINED;
   case TextureFormat::R5G5B5A1_UNorm:
     return VK_FORMAT_R5G5B5A1_UNORM_PACK16;
+  case TextureFormat::R5G6B5_UNorm:
+    return VK_FORMAT_R5G6B5_UNORM_PACK16;
   case TextureFormat::BGRA_UNorm8:
     return VK_FORMAT_B8G8R8A8_UNORM;
   case TextureFormat::BGRA_UNorm8_Rev:

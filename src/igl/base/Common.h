@@ -132,6 +132,7 @@ enum class TextureFormat : uint8_t {
   R4G2B2_UNorm_Apple,
   R4G2B2_UNorm_Rev_Apple,
   R5G5B5A1_UNorm,
+  R5G6B5_UNorm,
 
   // 24 bpp
   RGBX_UNorm8,
