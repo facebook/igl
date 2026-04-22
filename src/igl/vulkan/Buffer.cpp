@@ -18,9 +18,13 @@
 
 namespace igl::vulkan {
 
-Buffer::Buffer(const igl::vulkan::Device& device) : device_(device) {}
+Buffer::Buffer(const igl::vulkan::Device& device) : device_(device) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+}
 
 Result Buffer::create(const BufferDesc& desc) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   desc_ = desc;
 
   if (desc_.storage == igl::ResourceStorage::Invalid) {
