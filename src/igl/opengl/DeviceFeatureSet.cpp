@@ -1572,7 +1572,6 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
     capabilities |= all;
     break;
   case TextureFormat::B5G6R5_UNorm:
-    // capabilities |= sampled | sampledFiltered;
     // Unsupported
     break;
   case TextureFormat::Z_UNorm16:
