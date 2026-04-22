@@ -31,11 +31,13 @@ namespace igl::opengl::glx {
 #define GLX_PBUFFER_WIDTH 0x8041
 
 using GLXPbuffer = XID;
+// NOLINTBEGIN(bugprone-reserved-identifier)
 // NOLINTNEXTLINE(facebook-unused-forward-decls)
 using GLXFBConfig = struct __GLXFBConfig*;
 using __GLXextproc = void (*)();
 
 using PFNGLXGETPROCADDRESSPROC = __GLXextproc (*)(const GLubyte* procName);
+// NOLINTEND(bugprone-reserved-identifier)
 
 using PFNXOPENDISPLAY = Display* (*)(const char*);
 using PFNXCLOSEDISPLAY = int (*)(Display*);
