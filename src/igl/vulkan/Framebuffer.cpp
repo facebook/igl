@@ -134,8 +134,8 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   // Extract the underlying VkCommandBuffer
   const CommandBufferDesc cbDesc;
   const std::shared_ptr<ICommandBuffer> buffer = cmdQueue.createCommandBuffer(cbDesc, nullptr);
-  const auto& vulkanBuffer = static_cast<CommandBuffer&>(*buffer);
-  VkCommandBuffer cmdBuf = vulkanBuffer.getVkCommandBuffer();
+  const auto& vulkanBuffer = static_cast<const CommandBuffer&>(*buffer);
+  const VkCommandBuffer cmdBuf = vulkanBuffer.getVkCommandBuffer();
 
   const std::shared_ptr<ITexture>& srcTexture = getColorAttachment(index);
   if (!IGL_DEBUG_VERIFY(srcTexture)) {
@@ -257,6 +257,7 @@ void Framebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures, bool u
 
 Framebuffer::Framebuffer(const Device& device, FramebufferDesc desc) :
   device_(device), desc_(std::move(desc)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   validateAttachments();
 }
 
