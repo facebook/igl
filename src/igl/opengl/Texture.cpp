@@ -484,6 +484,14 @@ bool Texture::toFormatDescGL(const IContext& ctx,
   case TextureFormat::B5G6R5_UNorm:
     return false;
 
+  case TextureFormat::R5G6B5_UNorm:
+    format = GL_RGB;
+    type = GL_UNSIGNED_SHORT_5_6_5;
+    if (texImage) {
+      internalFormat = GL_RGB565;
+    }
+    return true;
+
   case TextureFormat::LA_UNorm8:
     format = GL_LUMINANCE_ALPHA;
     type = GL_UNSIGNED_BYTE;

@@ -232,6 +232,8 @@ enum class TextureFormat : uint8_t {
   // @fb-only
   // @fb-only
   // @fb-only
+
+  R5G6B5_UNorm,
 };
 // NOLINTEND(readability-identifier-naming)
 
