@@ -438,6 +438,8 @@ VkPipeline RenderPipelineState::getVkPipeline(
 
   VkPipeline pipeline = VK_NULL_HANDLE;
 
+  VkPipelineCreateFlags flags = ctx.features().has_VK_EXT_descriptor_buffer ? VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT : VkPipelineCreateFlags{};
+
   // Not all attachments are valid. We need to create color blend attachments only for active
   // attachments
   std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates;
@@ -553,6 +555,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
           .colorBlendAttachmentStates(colorBlendAttachmentStates)
           .build(ctx.vf_,
                  ctx.getVkDevice(),
+                 flags,
                  ctx.pipelineCache_,
                  pipelineLayout,
                  renderPass,

@@ -128,6 +128,8 @@ PipelineState::PipelineState(
 
   initializeSpvModuleInfoFromShaderStages(ctx, stages);
 
+  VkDescriptorSetLayoutCreateFlagBits flag = ctx.features().has_VK_EXT_descriptor_buffer ? VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT : VkDescriptorSetLayoutCreateFlagBits{};
+
   // Create all Vulkan descriptor set layouts for this pipeline
 
   // 0. Combined image samplers
@@ -150,7 +152,7 @@ PipelineState::PipelineState(
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
     dslCombinedImageSamplers = std::make_unique<VulkanDescriptorSetLayout>(
         ctx,
-        VkDescriptorSetLayoutCreateFlags{},
+        flag,
         static_cast<uint32_t>(bindings.size()),
         bindings.data(),
         bindingFlags.data(),
@@ -177,7 +179,7 @@ PipelineState::PipelineState(
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
     dslBuffers = std::make_unique<VulkanDescriptorSetLayout>(
         ctx,
-        VkDescriptorSetLayoutCreateFlags{},
+        flag,
         static_cast<uint32_t>(bindings.size()),
         bindings.data(),
         bindingFlags.data(),
@@ -201,7 +203,7 @@ PipelineState::PipelineState(
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
     dslStorageImages = std::make_unique<VulkanDescriptorSetLayout>(
         ctx,
-        VkDescriptorSetLayoutCreateFlags{},
+        flag,
         static_cast<uint32_t>(bindings.size()),
         bindings.data(),
         bindingFlags.data(),
