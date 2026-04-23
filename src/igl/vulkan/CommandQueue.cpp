@@ -26,14 +26,19 @@ std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandB
                                                                   Result* /*outResult*/) {
   IGL_PROFILER_FUNCTION();
 
+  VulkanContext& ctx = device_.getVulkanContext();
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx);
+
   ++numBuffersLeftToSubmit_;
 
-  return std::make_shared<CommandBuffer>(device_.getVulkanContext(), desc);
+  return std::make_shared<CommandBuffer>(ctx, desc);
 }
 
 SubmitHandle CommandQueue::submit(const ICommandBuffer& cmdBuffer, bool /* endOfFrame */) {
-  IGL_PROFILER_FUNCTION();
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
+
   VulkanContext& ctx = device_.getVulkanContext();
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx);
 
   incrementDrawCount(cmdBuffer.getCurrentDrawCount());
 
@@ -73,7 +78,8 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& cmdBuffer, bool /* endOf
 SubmitHandle CommandQueue::endCommandBuffer(VulkanContext& ctx,
                                             CommandBuffer* cmdBuffer,
                                             bool present) {
-  IGL_PROFILER_FUNCTION();
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx);
 
   // Submit to the graphics queue.
   const bool shouldPresent = ctx.hasSwapchain() && cmdBuffer->isFromSwapchain() && present;
