@@ -301,6 +301,8 @@ class VulkanContext final {
   VkPhysicalDeviceProperties2 vkPhysicalDeviceProperties2_{};
   // Provided by VK_EXT_mesh_shader
   VkPhysicalDeviceMeshShaderPropertiesEXT vkPhysicalDeviceMeshShaderPropertiesEXT_{};
+  // Provided by VK_EXT_descriptor_buffer
+  VkPhysicalDeviceDescriptorBufferPropertiesEXT vkPhysicalDeviceDescriptorBufferProperties_{};
 
   std::vector<VkFormat> deviceDepthFormats_;
   std::vector<VkSurfaceFormatKHR> deviceSurfaceFormats_;
