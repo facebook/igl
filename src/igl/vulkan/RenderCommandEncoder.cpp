@@ -508,7 +508,7 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, siz
   if (IGL_DEBUG_VERIFY(index < IGL_ARRAY_NUM_ELEMENTS(isVertexBufferBound_))) {
     isVertexBufferBound_[index] = true;
   }
-  VkBuffer vkBuf = static_cast<Buffer&>(buffer).getVkBuffer();
+  const VkBuffer vkBuf = static_cast<Buffer&>(buffer).getVkBuffer();
   const VkDeviceSize offset = bufferOffset;
   ctx_.vf_.vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
 }

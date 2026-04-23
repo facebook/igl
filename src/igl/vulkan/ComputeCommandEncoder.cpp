@@ -45,7 +45,7 @@ void ComputeCommandEncoder::endEncoding() {
   isEncoding_ = false;
 
   for (size_t i = 0; i < numRestoreLayouts_; ++i) {
-    const VulkanImage* img = restoreLayout_[i];
+    const VulkanImage* const img = restoreLayout_[i];
     if (img->isSampledImage()) {
       // only sampled images can be transitioned to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
       img->transitionLayout(cmdBuffer_,
