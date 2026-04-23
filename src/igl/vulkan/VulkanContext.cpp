@@ -312,6 +312,67 @@ class DescriptorPoolsArena final {
   std::deque<ExtinctDescriptorPool> extinct_;
 };
 
+inline size_t alignUp(size_t value, size_t alignment) {
+  return (value + alignment - 1) & ~(alignment - 1);
+}
+
+class DescriptorBuffersArena final {
+ public:
+  DescriptorBuffersArena(const VulkanContext& ctx) : ctx_(ctx) {
+    buffer_ = createNewBuffer();
+  }
+
+  DescriptorBuffer& getDescriptorBuffer(size_t require_size,
+                                        size_t alignment,
+                                        VulkanImmediateCommands& ic,
+                                        VulkanImmediateCommands::SubmitHandle nextSubmitHandle) {
+    IGL_DEBUG_ASSERT(require_size && alignment);
+    IGL_DEBUG_ASSERT(require_size <= kBufferSize);
+    buffer_.offset = alignUp(buffer_.offset, alignment);
+    if ((buffer_.offset + require_size) <= kBufferSize) {
+      return buffer_;
+    }
+
+    buffer_.handle = nextSubmitHandle;
+    extinct_.push_back(buffer_);
+
+    if (extinct_.size() > 1 && extinct_.front().handle != nextSubmitHandle) {
+      DescriptorBuffer p = extinct_.front();
+      if (ic.isReady(p.handle)) {
+        buffer_ = p;
+        buffer_.offset = 0;
+        buffer_.bindCmdBuffer = VK_NULL_HANDLE;
+        extinct_.pop_front();
+        return buffer_;
+      }
+    }
+
+    buffer_ = createNewBuffer();
+    return buffer_;
+  }
+
+ private:
+  DescriptorBuffer createNewBuffer() const {
+    DescriptorBuffer buffer;
+    buffer.buffer = ctx_.createBuffer(kBufferSize,
+                                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                                          VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
+                                          VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
+                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                      nullptr,
+                                      "DescriptorBuffer");
+    buffer.mappedPtr = buffer.buffer->getMappedPtr();
+    return buffer;
+  }
+
+ private:
+  static constexpr uint32_t kBufferSize = 512 * 1024;
+  const VulkanContext& ctx_;
+  DescriptorBuffer buffer_;
+  std::deque<DescriptorBuffer> extinct_;
+};
+
 namespace {
 
 struct BindGroupMetadataTextures {
@@ -346,6 +407,7 @@ struct VulkanContextImpl final {
   std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<DescriptorPoolsArena>>
       arenaStorageImages;
   std::unique_ptr<VulkanDescriptorSetLayout> dslBindless; // everything
+  std::unique_ptr<DescriptorBuffersArena> descriptorBuffersArena;
   VkDescriptorPool dpBindless = VK_NULL_HANDLE;
   VkDescriptorSet dsBindless = VK_NULL_HANDLE;
   uint32_t currentMaxBindlessTextures = 8;
@@ -414,9 +476,13 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
                              void* IGL_NULLABLE display) :
   tableImpl_(std::make_unique<VulkanFunctionTable>()),
   // NOLINTBEGIN(clang-diagnostic-missing-designated-field-initializers)
+  vkPhysicalDeviceDescriptorBufferProperties_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT,
+      .pNext = nullptr,
+  }),
   vkPhysicalDeviceDescriptorIndexingProperties_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES_EXT,
-      .pNext = nullptr,
+      .pNext = &vkPhysicalDeviceDescriptorBufferProperties_,
   }),
   vkPhysicalDeviceDriverProperties_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES_KHR,
@@ -478,6 +544,7 @@ VulkanContext::~VulkanContext() {
 
   dummyStorageBuffer_.reset();
   dummyUniformBuffer_.reset();
+  pimpl_->descriptorBuffersArena.reset(nullptr);
 
 #if IGL_DEBUG_ABORT_ENABLED
   for (const auto& t : pimpl_->bindGroupTexturesPool.objects_) {
@@ -1057,6 +1124,10 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
         0,
         imageAspectFlags,
         &pixel);
+  }
+
+  if (features_.has_VK_EXT_descriptor_buffer) {
+    pimpl_->descriptorBuffersArena = std::make_unique<DescriptorBuffersArena>(*this);
   }
 
   // default sampler
@@ -1939,6 +2010,228 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
     vf_.vkCmdBindDescriptorSets(
         cmdBuf, bindPoint, layout, kBindPoint_Buffers, 1, &dset, 0, nullptr);
   }
+}
+
+void VulkanContext::updateBindingsTexturesByDescriptorBuffer(
+    VkCommandBuffer IGL_NONNULL cmdBuf,
+    VkPipelineLayout layout,
+    VkPipelineBindPoint bindPoint,
+    VulkanImmediateCommands::SubmitHandle nextSubmitHandle,
+    const BindingsTextures& data,
+    const VulkanDescriptorSetLayout& dsl,
+    const util::SpvModuleInfo& info) const {
+  if (info.textures.empty())
+    return;
+
+  // make sure the guard value is always there
+  IGL_DEBUG_ASSERT(!textures_.objects_.empty());
+  IGL_DEBUG_ASSERT(!samplers_.objects_.empty());
+
+  // use the dummy texture/sampler to avoid sparse array
+  VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
+  VkSampler dummySampler = samplers_.objects_[0].obj_.vkSampler;
+
+  const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+  auto combinedSize =
+      vkPhysicalDeviceDescriptorBufferProperties_.combinedImageSamplerDescriptorSize;
+  auto alignment = vkPhysicalDeviceDescriptorBufferProperties_.descriptorBufferOffsetAlignment;
+  auto layoutSize = dsl.layoutSize;
+
+  auto& descriptorBuffer = pimpl_->descriptorBuffersArena->getDescriptorBuffer(
+      layoutSize, alignment, *immediate_, nextSubmitHandle);
+
+  void* mappedPtr = descriptorBuffer.mappedPtr;
+  auto originOffset = descriptorBuffer.offset;
+  descriptorBuffer.offset += layoutSize;
+
+  for (const util::TextureDescription& d : info.textures) {
+    IGL_DEBUG_ASSERT(d.descriptorSet == kBindPoint_CombinedImageSamplers);
+    const uint32_t loc = d.bindingLocation;
+    IGL_DEBUG_ASSERT(loc < IGL_TEXTURE_SAMPLERS_MAX);
+    VkImageView texture = data.textures[loc];
+    const bool hasTexture = texture != VK_NULL_HANDLE;
+    if (hasTexture && isGraphics) {
+      IGL_DEBUG_ASSERT(data.samplers[loc], "A sampler should be bound to every bound texture slot");
+    }
+    VkSampler sampler = data.samplers[loc] ? data.samplers[loc] : dummySampler;
+    VkDescriptorImageInfo imageInfo{
+        .sampler = hasTexture ? sampler : dummySampler,
+        .imageView = hasTexture ? texture : dummyImageView,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
+
+    VkDeviceSize bindingOffset;
+    vf_.vkGetDescriptorSetLayoutBindingOffsetEXT(
+        getVkDevice(), dsl.getVkDescriptorSetLayout(), loc, &bindingOffset);
+
+    VkDescriptorGetInfoEXT getInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
+        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .data = {.pCombinedImageSampler = &imageInfo},
+    };
+
+    vf_.vkGetDescriptorEXT(
+        getVkDevice(), &getInfo, combinedSize, (char*)mappedPtr + originOffset + bindingOffset);
+  }
+
+  if (descriptorBuffer.bindCmdBuffer != cmdBuf) {
+    VkDescriptorBufferBindingInfoEXT bindingInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT,
+        .address = descriptorBuffer.buffer->getVkDeviceAddress(),
+        .usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
+                 VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
+    };
+    vf_.vkCmdBindDescriptorBuffersEXT(cmdBuf, 1, &bindingInfo);
+    descriptorBuffer.bindCmdBuffer = cmdBuf;
+  }
+
+  uint32_t bufferIndex = 0;
+  VkDeviceSize offsets = originOffset;
+  vf_.vkCmdSetDescriptorBufferOffsetsEXT(
+      cmdBuf, bindPoint, layout, kBindPoint_CombinedImageSamplers, 1, &bufferIndex, &offsets);
+}
+
+void VulkanContext::updateBindingsStorageImagesByDescriptorBuffer(
+    VkCommandBuffer IGL_NONNULL cmdBuf,
+    VkPipelineLayout layout,
+    VkPipelineBindPoint bindPoint,
+    VulkanImmediateCommands::SubmitHandle nextSubmitHandle,
+    const BindingsStorageImages& data,
+    const VulkanDescriptorSetLayout& dsl,
+    const util::SpvModuleInfo& info) const {
+  if (info.images.empty())
+    return;
+
+  // make sure the guard value is always there
+  IGL_DEBUG_ASSERT(!textures_.objects_.empty());
+
+  // use the dummy texture to avoid sparse array
+  VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
+
+  auto combinedSize =
+      vkPhysicalDeviceDescriptorBufferProperties_.combinedImageSamplerDescriptorSize;
+  auto alignment = vkPhysicalDeviceDescriptorBufferProperties_.descriptorBufferOffsetAlignment;
+  auto layoutSize = dsl.layoutSize;
+
+  auto& descriptorBuffer = pimpl_->descriptorBuffersArena->getDescriptorBuffer(
+      layoutSize, alignment, *immediate_, nextSubmitHandle);
+
+  void* mappedPtr = descriptorBuffer.mappedPtr;
+  auto originOffset = descriptorBuffer.offset;
+  descriptorBuffer.offset += layoutSize;
+
+  for (const util::TextureDescription& d : info.textures) {
+    IGL_DEBUG_ASSERT(d.descriptorSet == kBindPoint_StorageImages);
+    const uint32_t loc = d.bindingLocation;
+    IGL_DEBUG_ASSERT(loc < IGL_TEXTURE_SAMPLERS_MAX);
+    VkImageView imageView = data.images[loc];
+
+    VkDescriptorImageInfo imageInfo{
+        .sampler = VK_NULL_HANDLE,
+        .imageView = imageView ? imageView : dummyImageView,
+        .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+    };
+
+    VkDeviceSize bindingOffset;
+    vf_.vkGetDescriptorSetLayoutBindingOffsetEXT(
+        getVkDevice(), dsl.getVkDescriptorSetLayout(), loc, &bindingOffset);
+
+    VkDescriptorGetInfoEXT getInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
+        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .data = {.pCombinedImageSampler = &imageInfo},
+    };
+
+    vf_.vkGetDescriptorEXT(
+        getVkDevice(), &getInfo, combinedSize, (char*)mappedPtr + originOffset + bindingOffset);
+  }
+
+  if (descriptorBuffer.bindCmdBuffer != cmdBuf) {
+    VkDescriptorBufferBindingInfoEXT bindingInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT,
+        .address = descriptorBuffer.buffer->getVkDeviceAddress(),
+        .usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
+                 VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
+    };
+    vf_.vkCmdBindDescriptorBuffersEXT(cmdBuf, 1, &bindingInfo);
+    descriptorBuffer.bindCmdBuffer = cmdBuf;
+  }
+
+  uint32_t bufferIndex = 0;
+  VkDeviceSize offsets = originOffset;
+  vf_.vkCmdSetDescriptorBufferOffsetsEXT(
+      cmdBuf, bindPoint, layout, kBindPoint_StorageImages, 1, &bufferIndex, &offsets);
+}
+
+void VulkanContext::updateBindingsBuffersByDescriptorBuffer(
+    VkCommandBuffer IGL_NONNULL cmdBuf,
+    VkPipelineLayout layout,
+    VkPipelineBindPoint bindPoint,
+    VulkanImmediateCommands::SubmitHandle nextSubmitHandle,
+    BindingsBuffers& data,
+    const VulkanDescriptorSetLayout& dsl,
+    const util::SpvModuleInfo& info) {
+  IGL_PROFILER_FUNCTION();
+  if (info.buffers.empty())
+    return;
+
+  auto uniformBufferDescriptorSize =
+      vkPhysicalDeviceDescriptorBufferProperties_.uniformBufferDescriptorSize;
+  auto alignment = vkPhysicalDeviceDescriptorBufferProperties_.descriptorBufferOffsetAlignment;
+  auto layoutSize = dsl.layoutSize;
+
+  auto& descriptorBuffer = pimpl_->descriptorBuffersArena->getDescriptorBuffer(
+      layoutSize, alignment, *immediate_, nextSubmitHandle);
+
+  void* mappedPtr = descriptorBuffer.mappedPtr;
+  auto originOffset = descriptorBuffer.offset;
+  descriptorBuffer.offset += layoutSize;
+
+  for (const util::BufferDescription& b : info.buffers) {
+    IGL_DEBUG_ASSERT(b.descriptorSet == kBindPoint_Buffers);
+    IGL_DEBUG_ASSERT(
+        data.buffers[b.bindingLocation].buffer != VK_NULL_HANDLE,
+        IGL_FORMAT("Did you forget to call bindBuffer() for a buffer at the binding location {}?",
+                   b.bindingLocation)
+            .c_str());
+
+    VkDeviceSize bindingOffset;
+    vf_.vkGetDescriptorSetLayoutBindingOffsetEXT(
+        getVkDevice(), dsl.getVkDescriptorSetLayout(), b.bindingLocation, &bindingOffset);
+
+    VkDescriptorAddressInfoEXT addressInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
+        .address = data.addresses[b.bindingLocation],
+        .range = data.buffers[b.bindingLocation].range,
+    };
+
+    VkDescriptorGetInfoEXT getInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
+        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .data = {.pUniformBuffer = &addressInfo},
+    };
+
+    vf_.vkGetDescriptorEXT(getVkDevice(),
+                           &getInfo,
+                           uniformBufferDescriptorSize,
+                           (char*)mappedPtr + originOffset + bindingOffset);
+  }
+
+  if (descriptorBuffer.bindCmdBuffer != cmdBuf) {
+    VkDescriptorBufferBindingInfoEXT bindingInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT,
+        .address = descriptorBuffer.buffer->getVkDeviceAddress(),
+        .usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
+                 VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT};
+    vf_.vkCmdBindDescriptorBuffersEXT(cmdBuf, 1, &bindingInfo);
+    descriptorBuffer.bindCmdBuffer = cmdBuf;
+  }
+
+  uint32_t bufferIndex = 0;
+  VkDeviceSize offsets = originOffset;
+  vf_.vkCmdSetDescriptorBufferOffsetsEXT(
+      cmdBuf, bindPoint, layout, kBindPoint_Buffers, 1, &bufferIndex, &offsets);
 }
 
 void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) const {

@@ -69,6 +69,8 @@ class VulkanFeatures final {
   VkPhysicalDeviceMeshShaderFeaturesEXT featuresMeshShader{};
   VkPhysicalDeviceFragmentShadingRateFeaturesKHR featuresFragmentShadingRate{};
 
+  VkPhysicalDeviceDescriptorBufferFeaturesEXT featuresDescriptorBuffer{};
+
   // We need to reassemble the feature chain because of the pNext pointers
   VulkanFeatures& operator=(const VulkanFeatures& other) noexcept;
 
@@ -108,6 +110,7 @@ class VulkanFeatures final {
   VulkanContextConfig config{};
 
   // NOLINTBEGIN(readability-identifier-naming)
+  bool has_VK_EXT_descriptor_buffer = false;
   bool has_VK_EXT_descriptor_indexing = false; // promoted to Vulkan 1.2
   bool has_VK_EXT_fragment_density_map = false;
   bool has_VK_EXT_headless_surface = false;

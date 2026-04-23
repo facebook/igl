@@ -25,6 +25,7 @@ class Texture;
 
 struct BindingsBuffers {
   VkDescriptorBufferInfo buffers[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
+  VkDeviceAddress addresses[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
 };
 
 struct BindingsTextures {
@@ -71,6 +72,10 @@ class ResourcesBinder final {
   /// @brief If the pipeline passed in as a parameter is different than the last pipeline bound
   /// through this class, binds it and cache it as the last pipeline bound. Does nothing otherwise
   void bindPipeline(VkPipeline pipeline, const util::SpvModuleInfo* info);
+
+private:
+  void updateBindingsByDescriptorSet(VkPipelineLayout layout, const vulkan::PipelineState& state);
+  void updateBindingsByDescriptorBuffer(VkPipelineLayout layout, const vulkan::PipelineState& state);
 
  private:
   friend class VulkanContext;
