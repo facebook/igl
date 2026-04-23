@@ -25,9 +25,11 @@ PlatformDevice::PlatformDevice(Device& device) : device_(device) {}
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t width,
                                                                        uint32_t height,
                                                                        Result* outResult) {
-  IGL_PROFILER_FUNCTION();
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   const auto& ctx = device_.getVulkanContext();
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx);
+
   const auto& swapChain = ctx.swapchain_;
 
   if (!ctx.hasSwapchain()) {
@@ -70,9 +72,10 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t 
 }
 
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result* outResult) {
-  IGL_PROFILER_FUNCTION();
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   const auto& ctx = device_.getVulkanContext();
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx);
 
   if (!ctx.hasSwapchain()) {
     nativeDrawableTextures_.clear();
