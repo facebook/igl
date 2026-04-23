@@ -29,6 +29,7 @@ class ColorSession : public RenderSession {
 
   enum class ColorTestModes {
     MacbethTexture,
+    MacbethTexture720,
     MacbethTextureKtx,
     MacbethTextureKtx2,
     // @fb-only

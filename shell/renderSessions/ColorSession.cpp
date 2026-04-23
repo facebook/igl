@@ -527,6 +527,8 @@ void ColorSession::initialize() noexcept {
 
   if (colorTestModes_ == ColorTestModes::MacbethTexture) {
     tex0_ = getPlatform().loadTexture("macbeth.png", true, swapchainColorTextureformat_);
+  } else if (colorTestModes_ == ColorTestModes::MacbethTexture720) {
+    tex0_ = getPlatform().loadTexture("macbeth720.png", true, swapchainColorTextureformat_);
   } else if (colorTestModes_ == ColorTestModes::MacbethTextureKtx) {
     tex0_ = getPlatform().loadTexture("macbeth.ktx", true, swapchainColorTextureformat_);
   } else if (colorTestModes_ == ColorTestModes::MacbethTextureKtx2) {
