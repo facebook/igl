@@ -364,6 +364,7 @@ RenderPipelineState::~RenderPipelineState() {
 VkPipeline RenderPipelineState::getVkPipeline(
     const RenderPipelineDynamicState& dynamicState) const {
   const VulkanContext& ctx = device_.getVulkanContext();
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx);
 
   if (ctx.config_.enableDescriptorIndexing) {
     // the bindless descriptor set layout can be changed in VulkanContext when the number of
