@@ -96,7 +96,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
       .pPushConstantRanges = info.hasPushConstants ? &pushConstantRange : nullptr,
   };
 
-  VkPipelineCreateFlags flags = ctx.features().has_VK_EXT_descriptor_buffer ? VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT : VkPipelineCreateFlags{};
+  const VkPipelineCreateFlags flags = ctx.features().has_VK_EXT_descriptor_buffer ? VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT : VkPipelineCreateFlags{};
   const VkDevice device = ctx.getVkDevice();
   VK_ASSERT(ctx.vf_.vkCreatePipelineLayout(device, &ci, nullptr, &pipelineLayout));
   VK_ASSERT(
