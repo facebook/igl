@@ -69,9 +69,9 @@ TEST_F(ExtensionDetectionOGLTest, HasExtensionReturnsValue) {
   bool mapBuffer2 = features.hasExtension(opengl::Extensions::MapBuffer);
   ASSERT_EQ(mapBuffer1, mapBuffer2);
 
-  bool depth24_1 = features.hasExtension(opengl::Extensions::Depth24);
-  bool depth24_2 = features.hasExtension(opengl::Extensions::Depth24);
-  ASSERT_EQ(depth24_1, depth24_2);
+  bool depth241 = features.hasExtension(opengl::Extensions::Depth24);
+  bool depth242 = features.hasExtension(opengl::Extensions::Depth24);
+  ASSERT_EQ(depth241, depth242);
 }
 
 } // namespace igl::tests
