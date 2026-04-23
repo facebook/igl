@@ -20,10 +20,12 @@ namespace igl::vulkan {
 
 CommandBuffer::CommandBuffer(VulkanContext& ctx, CommandBufferDesc desc) :
   ICommandBuffer(std::move(desc)), ctx_(ctx), wrapper_(ctx_.immediate_->acquire()) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_DEBUG_ASSERT(wrapper_.cmdBuf != VK_NULL_HANDLE);
 }
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return std::make_unique<ComputeCommandEncoder>(shared_from_this(), ctx_);
 }
 
@@ -131,8 +133,8 @@ void CommandBuffer::copyBuffer(IBuffer& src,
                                uint64_t size) {
   IGL_PROFILER_FUNCTION();
 
-  auto& bufSrc = static_cast<Buffer&>(src);
-  auto& bufDst = static_cast<Buffer&>(dst);
+  const auto& bufSrc = static_cast<Buffer&>(src);
+  const auto& bufDst = static_cast<Buffer&>(dst);
 
   ivkBufferBarrier(&ctx_.vf_,
                    wrapper_.cmdBuf,
@@ -174,8 +176,10 @@ void CommandBuffer::copyTextureToBuffer(ITexture& src,
                                         uint64_t dstOffset,
                                         uint32_t level,
                                         uint32_t layer) {
-  auto& texSrc = static_cast<Texture&>(src);
-  auto& bufDst = static_cast<Buffer&>(dst);
+  IGL_PROFILER_FUNCTION();
+
+  const auto& texSrc = static_cast<Texture&>(src);
+  const auto& bufDst = static_cast<Buffer&>(dst);
 
   VulkanImage& image = texSrc.getVulkanTexture().image_;
 
