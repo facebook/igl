@@ -15,6 +15,9 @@
 #include <IGLU/texture_loader/stb_hdr/TextureLoaderFactory.h>
 #include <IGLU/texture_loader/stb_jpeg/TextureLoaderFactory.h>
 #include <IGLU/texture_loader/stb_png/TextureLoaderFactory.h>
+// @fb-only
+// @fb-only
+// @fb-only
 #include <IGLU/texture_loader/xtc1/TextureLoaderFactory.h>
 #include <array>
 #include <shell/shared/fileLoader/FileLoader.h>
@@ -23,11 +26,15 @@ namespace igl::shell {
 namespace {
 std::vector<std::unique_ptr<iglu::textureloader::ITextureLoaderFactory>> createLoaderFactories() {
   std::vector<std::unique_ptr<iglu::textureloader::ITextureLoaderFactory>> factories;
-  factories.reserve(7);
+  factories.reserve(8);
   factories.emplace_back(std::make_unique<iglu::textureloader::stb::hdr::TextureLoaderFactory>());
   factories.emplace_back(std::make_unique<iglu::textureloader::stb::jpeg::TextureLoaderFactory>());
   factories.emplace_back(std::make_unique<iglu::textureloader::stb::png::TextureLoaderFactory>());
   // @fb-only
+// @fb-only
+  // @fb-only
+      // @fb-only
+// @fb-only
 // @fb-only
   // @fb-only
       // @fb-only
