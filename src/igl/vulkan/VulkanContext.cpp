@@ -346,6 +346,7 @@ struct VulkanContextImpl final {
   std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<DescriptorPoolsArena>>
       arenaStorageImages;
   std::unique_ptr<VulkanDescriptorSetLayout> dslBindless; // everything
+  std::unique_ptr<DescriptorBuffersArena> descriptorBuffersArena;
   VkDescriptorPool dpBindless = VK_NULL_HANDLE;
   VkDescriptorSet dsBindless = VK_NULL_HANDLE;
   uint32_t currentMaxBindlessTextures = 8;
@@ -478,6 +479,7 @@ VulkanContext::~VulkanContext() {
 
   dummyStorageBuffer_.reset();
   dummyUniformBuffer_.reset();
+  pimpl_->descriptorBuffersArena.reset(nullptr);
 
 #if IGL_DEBUG_ABORT_ENABLED
   for (const auto& t : pimpl_->bindGroupTexturesPool.objects_) {
@@ -1057,6 +1059,10 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
         0,
         imageAspectFlags,
         &pixel);
+  }
+
+  if (features_.has_VK_EXT_descriptor_buffer) {
+    pimpl_->descriptorBuffersArena = std::make_unique<DescriptorBuffersArena>(*this);
   }
 
   // default sampler
