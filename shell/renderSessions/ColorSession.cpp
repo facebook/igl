@@ -536,6 +536,8 @@ void ColorSession::initialize() noexcept {
   // @fb-only
     // @fb-only
         // @fb-only
+  } else if (colorTestModes_ == ColorTestModes::EyeChartTexture720) {
+    tex0_ = getPlatform().loadTexture("eyechart720.png", true, swapchainColorTextureformat_);
   } else if (colorTestModes_ == ColorTestModes::OrangeTexture) {
     tex0_ = getPlatform().loadTexture("orange.png", true, swapchainColorTextureformat_);
   } else if (colorTestModes_ == ColorTestModes::OrangeClear) {
