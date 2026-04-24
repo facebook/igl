@@ -707,6 +707,36 @@ void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
   table->vkDebugMarkerSetObjectTagEXT =
       (PFN_vkDebugMarkerSetObjectTagEXT)load(context, "vkDebugMarkerSetObjectTagEXT");
 #endif /* defined(VK_EXT_debug_marker) */
+#if defined(VK_EXT_descriptor_buffer)
+  table->vkGetDescriptorSetLayoutSizeEXT =
+      (PFN_vkGetDescriptorSetLayoutSizeEXT)load(context, "vkGetDescriptorSetLayoutSizeEXT");
+  table->vkGetDescriptorSetLayoutBindingOffsetEXT =
+      (PFN_vkGetDescriptorSetLayoutBindingOffsetEXT)load(
+          context, "vkGetDescriptorSetLayoutBindingOffsetEXT");
+  table->vkGetDescriptorEXT = (PFN_vkGetDescriptorEXT)load(context, "vkGetDescriptorEXT");
+  table->vkCmdBindDescriptorBuffersEXT =
+      (PFN_vkCmdBindDescriptorBuffersEXT)load(context, "vkCmdBindDescriptorBuffersEXT");
+  table->vkCmdSetDescriptorBufferOffsetsEXT =
+      (PFN_vkCmdSetDescriptorBufferOffsetsEXT)load(context, "vkCmdSetDescriptorBufferOffsetsEXT");
+  table->vkCmdBindDescriptorBufferEmbeddedSamplersEXT =
+      (PFN_vkCmdBindDescriptorBufferEmbeddedSamplersEXT)load(
+          context, "vkCmdBindDescriptorBufferEmbeddedSamplersEXT");
+  table->vkGetBufferOpaqueCaptureDescriptorDataEXT =
+      (PFN_vkGetBufferOpaqueCaptureDescriptorDataEXT)load(
+          context, "vkGetBufferOpaqueCaptureDescriptorDataEXT");
+  table->vkGetImageOpaqueCaptureDescriptorDataEXT =
+      (PFN_vkGetImageOpaqueCaptureDescriptorDataEXT)load(
+          context, "vkGetImageOpaqueCaptureDescriptorDataEXT");
+  table->vkGetImageViewOpaqueCaptureDescriptorDataEXT =
+      (PFN_vkGetImageViewOpaqueCaptureDescriptorDataEXT)load(
+          context, "vkGetImageViewOpaqueCaptureDescriptorDataEXT");
+  table->vkGetSamplerOpaqueCaptureDescriptorDataEXT =
+      (PFN_vkGetSamplerOpaqueCaptureDescriptorDataEXT)load(
+          context, "vkGetSamplerOpaqueCaptureDescriptorDataEXT");
+  table->vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT =
+      (PFN_vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT)load(
+          context, "vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT");
+#endif /* defined(VK_EXT_descriptor_buffer) */
 #if defined(VK_EXT_discard_rectangles)
   table->vkCmdSetDiscardRectangleEXT =
       (PFN_vkCmdSetDiscardRectangleEXT)load(context, "vkCmdSetDiscardRectangleEXT");
