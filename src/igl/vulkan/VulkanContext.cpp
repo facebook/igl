@@ -1970,7 +1970,7 @@ void VulkanContext::updateBindingsTexturesByDescriptorBuffer(
   auto& descriptorBuffer = pimpl_->descriptorBuffersArena->getDescriptorBuffer(
       layoutSize, alignment, *immediate_, nextSubmitHandle);
 
-  void* mappedPtr = descriptorBuffer.mappedPtr;
+  void* mappedPtr = descriptorBuffer.buffer->getMappedPtr();
   auto originOffset = descriptorBuffer.offset;
   descriptorBuffer.offset += layoutSize;
 
@@ -2046,7 +2046,7 @@ void VulkanContext::updateBindingsStorageImagesByDescriptorBuffer(
   auto& descriptorBuffer = pimpl_->descriptorBuffersArena->getDescriptorBuffer(
       layoutSize, alignment, *immediate_, nextSubmitHandle);
 
-  void* mappedPtr = descriptorBuffer.mappedPtr;
+  void* mappedPtr = descriptorBuffer.buffer->getMappedPtr();
   auto originOffset = descriptorBuffer.offset;
   descriptorBuffer.offset += layoutSize;
 
@@ -2113,7 +2113,7 @@ void VulkanContext::updateBindingsBuffersByDescriptorBuffer(
   auto& descriptorBuffer = pimpl_->descriptorBuffersArena->getDescriptorBuffer(
       layoutSize, alignment, *immediate_, nextSubmitHandle);
 
-  void* mappedPtr = descriptorBuffer.mappedPtr;
+  void* mappedPtr = descriptorBuffer.buffer->getMappedPtr();
   auto originOffset = descriptorBuffer.offset;
   descriptorBuffer.offset += layoutSize;
 
