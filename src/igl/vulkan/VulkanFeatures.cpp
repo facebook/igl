@@ -130,6 +130,10 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .primitiveFragmentShadingRate = VK_FALSE,
       .attachmentFragmentShadingRate = VK_FALSE,
   }),
+  featuresDescriptorBuffer({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT,
+      .descriptorBuffer = VK_TRUE,
+  }),
   config(config) {
   extensions_.resize(kNumberOfExtensionTypes);
   enabledExtensions_.resize(kNumberOfExtensionTypes);
@@ -280,6 +284,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& contextConf
   featuresUniformBufferStandardLayout.pNext = nullptr;
   featuresMeshShader.pNext = nullptr;
   featuresFragmentShadingRate.pNext = nullptr;
+  featuresDescriptorBuffer.pNext = nullptr;
 
   // Add the required and optional features to the VkPhysicalDeviceFetaures2_
   ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresSamplerYcbcrConversion);
@@ -324,6 +329,9 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& contextConf
       IGL_LOG_ERROR("VK_QCOM_multiview_per_view_viewports extension not supported\n");
     }
   }
+  if (hasExtension(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)) {
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresDescriptorBuffer);
+  }
   // Fragment shading rate must be added before mesh shader to ensure the dependency is properly
   // handled when primitiveFragmentShadingRateMeshShader requires primitiveFragmentShadingRate
   if (hasExtension(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)) {
@@ -366,6 +374,7 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   featuresMultiviewPerViewViewports = other.featuresMultiviewPerViewViewports;
   featuresMeshShader = other.featuresMeshShader;
   featuresFragmentShadingRate = other.featuresFragmentShadingRate;
+  featuresDescriptorBuffer = other.featuresDescriptorBuffer;
 
   extensions_ = other.extensions_;
   enabledExtensions_ = other.enabledExtensions_;
@@ -536,6 +545,9 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
 
   has_VK_KHR_vulkan_memory_model =
       enable(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME, ExtensionType::Device);
+
+  has_VK_EXT_descriptor_buffer =
+      enable(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME, ExtensionType::Device);
 
   has_VK_EXT_descriptor_indexing =
       enable(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, ExtensionType::Device);
