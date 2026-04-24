@@ -113,9 +113,10 @@ SamplerState::SamplerState(Device& device) : device_(device) {}
 Result SamplerState::create(const SamplerStateDesc& desc) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  desc_ = desc;
-
   const VulkanContext& ctx = device_.getVulkanContext();
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx);
+
+  desc_ = desc;
 
   Result result;
   sampler_ =
