@@ -81,7 +81,6 @@ struct DeviceQueues {
 
 struct DescriptorBuffer {
   std::shared_ptr<VulkanBuffer> buffer;
-  void* mappedPtr = nullptr;
   size_t offset = 0;
   VulkanImmediateCommands::SubmitHandle handle = {};
   VkCommandBuffer bindCmdBuffer = VK_NULL_HANDLE;

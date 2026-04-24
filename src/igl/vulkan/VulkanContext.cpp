@@ -353,17 +353,15 @@ class DescriptorBuffersArena final {
 
  private:
   DescriptorBuffer createNewBuffer() const {
-    DescriptorBuffer buffer;
-    buffer.buffer = ctx_.createBuffer(kBufferSize,
-                                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                                          VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
-                                          VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
-                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                      nullptr,
-                                      "DescriptorBuffer");
-    buffer.mappedPtr = buffer.buffer->getMappedPtr();
-    return buffer;
+    return DescriptorBuffer{
+        .buffer = ctx_.createBuffer(kBufferSize,
+                                    VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                                        VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
+                                        VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
+                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                    nullptr,
+                                    "DescriptorBuffer")};
   }
 
  private:
