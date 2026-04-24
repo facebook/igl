@@ -41,6 +41,7 @@ class VulkanPipelineBuilder final {
 
   [[nodiscard]] VkResult build(const VulkanFunctionTable& vf,
                                VkDevice device,
+                               VkPipelineCreateFlags flags,
                                VkPipelineCache pipelineCache,
                                VkPipelineLayout pipelineLayout,
                                VkRenderPass renderPass,
@@ -72,6 +73,7 @@ class VulkanComputePipelineBuilder final {
 
   VkResult build(const VulkanFunctionTable& vf,
                  VkDevice device,
+                 VkPipelineCreateFlags flags,
                  VkPipelineCache pipelineCache,
                  VkPipelineLayout pipelineLayout,
                  VkPipeline* outPipeline,
