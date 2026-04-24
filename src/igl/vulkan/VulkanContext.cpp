@@ -312,6 +312,65 @@ class DescriptorPoolsArena final {
   std::deque<ExtinctDescriptorPool> extinct_;
 };
 
+inline size_t alignUp(size_t value, size_t alignment) {
+  return (value + alignment - 1) & ~(alignment - 1);
+}
+
+class DescriptorBuffersArena final {
+ public:
+  DescriptorBuffersArena(const VulkanContext& ctx) : ctx_(ctx) {
+    buffer_ = createNewBuffer();
+  }
+
+  DescriptorBuffer& getDescriptorBuffer(size_t require_size,
+                                        size_t alignment,
+                                        VulkanImmediateCommands& ic,
+                                        VulkanImmediateCommands::SubmitHandle nextSubmitHandle) {
+    IGL_DEBUG_ASSERT(require_size && alignment);
+    IGL_DEBUG_ASSERT(require_size <= kBufferSize);
+    buffer_.offset = alignUp(buffer_.offset, alignment);
+    if ((buffer_.offset + require_size) <= kBufferSize) {
+      return buffer_;
+    }
+
+    buffer_.handle = nextSubmitHandle;
+    extinct_.push_back(buffer_);
+
+    if (extinct_.size() > 1 && extinct_.front().handle != nextSubmitHandle) {
+      DescriptorBuffer p = extinct_.front();
+      if (ic.isReady(p.handle)) {
+        buffer_ = p;
+        buffer_.offset = 0;
+        buffer_.bindCmdBuffer = VK_NULL_HANDLE;
+        extinct_.pop_front();
+        return buffer_;
+      }
+    }
+
+    buffer_ = createNewBuffer();
+    return buffer_;
+  }
+
+ private:
+  DescriptorBuffer createNewBuffer() const {
+    return DescriptorBuffer{
+        .buffer = ctx_.createBuffer(kBufferSize,
+                                    VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                                        VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
+                                        VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
+                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                    nullptr,
+                                    "DescriptorBuffer")};
+  }
+
+ private:
+  static constexpr uint32_t kBufferSize = 512 * 1024;
+  const VulkanContext& ctx_;
+  DescriptorBuffer buffer_;
+  std::deque<DescriptorBuffer> extinct_;
+};
+
 namespace {
 
 struct BindGroupMetadataTextures {
