@@ -32,6 +32,10 @@ VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const VulkanContext& ctx,
                                   VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
                                   reinterpret_cast<uint64_t>(vkDescriptorSetLayout),
                                   debugName));
+
+  if (ctx.features().has_VK_EXT_descriptor_buffer) {
+    ctx.vf_.vkGetDescriptorSetLayoutSizeEXT(ctx.getVkDevice(), vkDescriptorSetLayout, &layoutSize);
+  }
 }
 
 VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout() {
