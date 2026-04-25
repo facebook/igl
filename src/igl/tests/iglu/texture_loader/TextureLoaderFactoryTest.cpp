@@ -11,9 +11,9 @@
 
 #include "../../util/Common.h"
 
-// @fb-only
-// @fb-only
-// @fb-only
+#if !defined(IGL_CMAKE_BUILD)
+#include <IGLU/src/texture_loader/heic/TextureLoaderFactory.h>
+#endif
 #include <IGLU/texture_loader/ktx1/TextureLoaderFactory.h>
 #include <IGLU/texture_loader/ktx2/TextureLoaderFactory.h>
 #include <IGLU/texture_loader/stb_hdr/TextureLoaderFactory.h>
@@ -50,10 +50,9 @@ class TextureLoaderFactoryTest : public ::testing::Test {
     factories.emplace_back(
         std::make_unique<iglu::textureloader::stb::jpeg::TextureLoaderFactory>());
     factories.emplace_back(std::make_unique<iglu::textureloader::stb::png::TextureLoaderFactory>());
-// @fb-only
-    // @fb-only
-        // @fb-only
-// @fb-only
+#if !defined(IGL_CMAKE_BUILD)
+    factories.emplace_back(std::make_unique<iglu::textureloader::heic::TextureLoaderFactory>());
+#endif
     factories.emplace_back(std::make_unique<iglu::textureloader::ktx1::TextureLoaderFactory>());
     factories.emplace_back(std::make_unique<iglu::textureloader::ktx2::TextureLoaderFactory>());
 
