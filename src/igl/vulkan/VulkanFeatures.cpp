@@ -329,7 +329,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& contextConf
       IGL_LOG_ERROR("VK_QCOM_multiview_per_view_viewports extension not supported\n");
     }
   }
-  if (hasExtension(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)) {
+  if (enabled(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)) {
     ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresDescriptorBuffer);
   }
   // Fragment shading rate must be added before mesh shader to ensure the dependency is properly
@@ -546,11 +546,10 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
   has_VK_KHR_vulkan_memory_model =
       enable(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME, ExtensionType::Device);
 
-  has_VK_EXT_descriptor_buffer =
-      enable(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME, ExtensionType::Device);
+  // disabled until full VK_EXT_descriptor_buffer support is implemented
+  has_VK_EXT_descriptor_buffer = false; // enable(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME, ExtensionType::Device);
 
-  has_VK_EXT_descriptor_indexing =
-      enable(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, ExtensionType::Device);
+  has_VK_EXT_descriptor_indexing = enable(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, ExtensionType::Device);
 
   has_VK_EXT_fragment_density_map =
       enable(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME, ExtensionType::Device);

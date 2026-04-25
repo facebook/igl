@@ -861,8 +861,7 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
     features_.enable(extraDeviceExtensions[i], VulkanFeatures::ExtensionType::Device);
   }
 
-  if (features_.available(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
-                          VulkanFeatures::ExtensionType::Device)) {
+  if (features_.enabled(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)) {
     vkPhysicalDeviceDescriptorBufferProperties_.pNext = vkPhysicalDeviceProperties2_.pNext;
     vkPhysicalDeviceProperties2_.pNext = &vkPhysicalDeviceDescriptorBufferProperties_;
     vf_.vkGetPhysicalDeviceProperties2(vkPhysicalDevice_, &vkPhysicalDeviceProperties2_);
