@@ -72,6 +72,10 @@ class ResourcesBinder final {
   /// through this class, binds it and cache it as the last pipeline bound. Does nothing otherwise
   void bindPipeline(VkPipeline pipeline, const util::SpvModuleInfo* info);
 
+private:
+  void updateBindingsByDescriptorSet(VkPipelineLayout layout, const vulkan::PipelineState& state);
+  void updateBindingsByDescriptorBuffer(VkPipelineLayout layout, const vulkan::PipelineState& state);
+
  private:
   friend class VulkanContext;
   friend class RenderCommandEncoder;

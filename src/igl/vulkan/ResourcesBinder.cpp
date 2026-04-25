@@ -193,6 +193,52 @@ void ResourcesBinder::bindStorageImage(uint32_t index, Texture* tex) {
 }
 
 void ResourcesBinder::updateBindings(VkPipelineLayout layout, const vulkan::PipelineState& state) {
+  if (ctx_.features().has_VK_EXT_descriptor_buffer) {
+    updateBindingsByDescriptorBuffer(layout, state);
+  } else {
+    updateBindingsByDescriptorSet(layout, state);
+  }
+}
+
+void ResourcesBinder::updateBindingsByDescriptorBuffer(VkPipelineLayout layout,
+                                                       const vulkan::PipelineState& state) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_UPDATE);
+
+  IGL_DEBUG_ASSERT(layout != VK_NULL_HANDLE);
+
+  if (isDirtyFlags_ & DirtyFlagBits_Textures) {
+    ctx_.updateBindingsTexturesByDescriptorBuffer(cmdBuffer_,
+                                                  layout,
+                                                  bindPoint_,
+                                                  nextSubmitHandle_,
+                                                  bindingsTextures_,
+                                                  *state.dslCombinedImageSamplers,
+                                                  state.info);
+  }
+  if (isDirtyFlags_ & DirtyFlagBits_Buffers) {
+    ctx_.updateBindingsBuffersByDescriptorBuffer(cmdBuffer_,
+                                                 layout,
+                                                 bindPoint_,
+                                                 nextSubmitHandle_,
+                                                 bindingsBuffers_,
+                                                 *state.dslBuffers,
+                                                 state.info);
+  }
+  if (isDirtyFlags_ & DirtyFlagBits_StorageImages) {
+    ctx_.updateBindingsStorageImagesByDescriptorBuffer(cmdBuffer_,
+                                                       layout,
+                                                       bindPoint_,
+                                                       nextSubmitHandle_,
+                                                       bindingsStorageImages_,
+                                                       *state.dslStorageImages,
+                                                       state.info);
+  }
+
+  isDirtyFlags_ = 0;
+}
+
+void ResourcesBinder::updateBindingsByDescriptorSet(VkPipelineLayout layout,
+                                                    const vulkan::PipelineState& state) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_UPDATE);
 
   IGL_DEBUG_ASSERT(layout != VK_NULL_HANDLE);
