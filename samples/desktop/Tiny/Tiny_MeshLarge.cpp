@@ -595,28 +595,6 @@ void main() {
 
   // skybox
   textureCoords = pos;
-#ifdef VULKAN
-  // Draws the skybox edges. One color per edge
-  const bool drawDebugLines = perFrame.bDebugLines > 0;
-  if (drawDebugLines) {
-      const int[12][2] edgeIndices = {
-          {0,1}, {1,2}, {2,3}, {3,0}, {4,5}, {5,6}, {6,7}, {7,4}, {0,4}, {1,5}, {2,6}, {3,7}
-      };
-
-      const vec4 edgeColors[12] = vec4[12](
-        vec4(  1,   0,   0, 1), vec4(  1,   1,   0, 1), vec4(  0,   1,   0, 1), vec4(  0,   1, 1, 1),
-        vec4(  1,   0,   1, 1), vec4(  0,   0,   1, 1), vec4(  1,   1,   1, 1), vec4(  0,   0, 0, 1),
-        vec4(0.5, 0.7, 0.8, 1), vec4(0.4, 0.4, 0.4, 1), vec4(  1, 0.3, 0.6, 1), vec4(  1, 0.8, 0, 1)
-      );
-
-      uint index = gl_VertexIndex / 3;
-      drawLine(positions[edgeIndices[index][0]],
-                positions[edgeIndices[index][1]],
-                edgeColors[index],
-                edgeColors[index],
-                transform);
-  }
-#endif
 }
 
 )";
