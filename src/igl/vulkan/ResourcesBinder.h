@@ -25,6 +25,7 @@ class Texture;
 
 struct BindingsBuffers {
   VkDescriptorBufferInfo buffers[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
+  VkDeviceAddress addresses[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
 };
 
 struct BindingsTextures {

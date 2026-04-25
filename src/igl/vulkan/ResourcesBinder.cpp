@@ -66,8 +66,10 @@ void ResourcesBinder::bindBuffer(uint32_t index,
     slot = {
         .buffer = buf,
         .offset = bufferOffset,
-        .range = bufferSize ? bufferSize : VK_WHOLE_SIZE,
+        .range = bufferSize ? bufferSize : buffer->getSizeInBytes(),
     };
+    bindingsBuffers_.addresses[index] = buffer ? buffer->gpuAddress(bufferOffset)
+                                               : ctx_.dummyUniformBuffer_->getVkDeviceAddress();
     isDirtyFlags_ |= DirtyFlagBits_Buffers;
   }
 }
