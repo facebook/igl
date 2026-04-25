@@ -5,14 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only
-
-// @fb-only
+#if !defined(IGL_CMAKE_BUILD)
 
 #include <IGLU/texture_loader/webp/TextureLoaderFactory.h>
 
 #include <IGLU/texture_loader/webp/Header.h>
-// @fb-only
+#include <webp/decode.h>
 
 namespace iglu::textureloader::webp {
 namespace {
@@ -130,4 +128,4 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
 
 } // namespace iglu::textureloader::webp
 
-// @fb-only
+#endif // !defined(IGL_CMAKE_BUILD)

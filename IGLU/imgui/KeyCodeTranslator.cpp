@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only
+// @MARK:COVERAGE_EXCLUDE_FILE
 
 #include "KeyCodeTranslator.h"
 

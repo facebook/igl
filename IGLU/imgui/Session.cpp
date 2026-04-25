@@ -359,7 +359,6 @@ Session::Renderer::Renderer(igl::IDevice& device) {
     material_->cullMode = igl::CullMode::Disabled;
     material_->blendMode = iglu::material::BlendMode::Translucent();
 
-    // @fb-only
     // D3D12 and Vulkan use direct slot binding, OpenGL/Metal use named binding
     const bool usesDirectBinding = (device.getBackendType() == igl::BackendType::Vulkan ||
                                     device.getBackendType() == igl::BackendType::D3D12);
@@ -505,7 +504,6 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
         auto* tex = reinterpret_cast<igl::ITexture*>((ImTextureID)(intptr_t)cmd.TextureId);
         if (usesDirectBinding) {
           // D3D12 and Vulkan use direct slot binding
-          // @fb-only
           // Add Vulkan support for texture reflection info in ShaderUniforms so we don't need to
           // bind the texture directly
           cmdEncoder.bindTexture(0, igl::BindTarget::kFragment, tex);

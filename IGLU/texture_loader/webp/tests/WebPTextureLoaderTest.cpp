@@ -5,17 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only
-
-// @fb-only
+#if !defined(IGL_CMAKE_BUILD)
 
 #include <gtest/gtest.h>
 
-// @fb-only
-// @fb-only
+#include <IGLU/texture_loader/webp/Header.h>
+#include <IGLU/texture_loader/webp/TextureLoaderFactory.h>
 #include <cstring>
 #include <vector>
-// @fb-only
+#include <webp/encode.h>
 
 namespace iglu::textureloader::webp::tests {
 
@@ -257,4 +255,4 @@ TEST_F(WebPTextureLoaderTest, HeaderTagValidation) {
 
 } // namespace iglu::textureloader::webp::tests
 
-// @fb-only
+#endif // !defined(IGL_CMAKE_BUILD)
