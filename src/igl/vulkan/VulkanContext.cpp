@@ -414,6 +414,10 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
                              void* IGL_NULLABLE display) :
   tableImpl_(std::make_unique<VulkanFunctionTable>()),
   // NOLINTBEGIN(clang-diagnostic-missing-designated-field-initializers)
+  vkPhysicalDeviceDescriptorBufferProperties_({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT,
+      .pNext = nullptr,
+  }),
   vkPhysicalDeviceDescriptorIndexingProperties_({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES_EXT,
       .pNext = nullptr,
@@ -855,6 +859,13 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
   // Enable extra device extensions
   for (size_t i = 0; i < numExtraDeviceExtensions; i++) {
     features_.enable(extraDeviceExtensions[i], VulkanFeatures::ExtensionType::Device);
+  }
+
+  if (features_.available(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
+                          VulkanFeatures::ExtensionType::Device)) {
+    vkPhysicalDeviceDescriptorBufferProperties_.pNext = vkPhysicalDeviceProperties2_.pNext;
+    vkPhysicalDeviceProperties2_.pNext = &vkPhysicalDeviceDescriptorBufferProperties_;
+    vf_.vkGetPhysicalDeviceProperties2(vkPhysicalDevice_, &vkPhysicalDeviceProperties2_);
   }
 
   if (features_.available(VK_EXT_MESH_SHADER_EXTENSION_NAME,

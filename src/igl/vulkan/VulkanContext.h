@@ -294,6 +294,8 @@ class VulkanContext final {
   VkDebugUtilsMessengerEXT vkDebugUtilsMessenger_ = VK_NULL_HANDLE;
   VkSurfaceKHR vkSurface_ = VK_NULL_HANDLE;
   VkPhysicalDevice IGL_NULLABLE vkPhysicalDevice_ = VK_NULL_HANDLE;
+  // Provided by VK_EXT_descriptor_buffer
+  VkPhysicalDeviceDescriptorBufferPropertiesEXT vkPhysicalDeviceDescriptorBufferProperties_{};
   VkPhysicalDeviceDescriptorIndexingPropertiesEXT vkPhysicalDeviceDescriptorIndexingProperties_{};
   // Provided by VK_KHR_driver_properties
   VkPhysicalDeviceDriverPropertiesKHR vkPhysicalDeviceDriverProperties_{};
