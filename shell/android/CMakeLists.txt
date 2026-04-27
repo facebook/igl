@@ -37,4 +37,6 @@ function(ADD_SHELL_SESSION_WITH_SRCS target srcs libs)
   target_link_libraries(${target} PUBLIC IGLShellPlatform)
   target_link_libraries(${target} PUBLIC ${log-lib})
   target_link_libraries(${target} PUBLIC ${android-lib})
+
+  igl_set_cxxstd(${target} 20)
 endfunction()

@@ -38,6 +38,20 @@ jobs:
           java-version: 21
           distribution: 'oracle'
 
+      - name: Install CMake 4.0.0
+        shell: bash
+        run: |
+          sudo apt remove cmake -y || true
+          sudo pip install --break-system-packages cmake==4.0.0
+          cmake --version
+
+      - name: Point AGP at the pip-installed CMake
+        shell: bash
+        run: |
+          CMAKE_DATA_DIR=$(python3 -c 'import cmake, os; print(os.path.dirname(cmake.__file__) + "/data")')
+          echo "cmake.dir=$CMAKE_DATA_DIR" >> build/android/local.properties
+          cat build/android/local.properties
+
       - name: Assemble APK debug
         run: |
           cd build/android
