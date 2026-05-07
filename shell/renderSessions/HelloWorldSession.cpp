@@ -11,6 +11,7 @@
 
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/NameHandle.h>
+#include <igl/Shader.h>
 #include <igl/ShaderCreator.h>
 
 namespace igl::shell {
@@ -25,11 +26,27 @@ const VertexPosColor kVertexData[] = {
     {.position = {0.6f, -0.4f, 0.0}, .color = {0.0, 1.0, 0.0, 1.0}},
     {.position = {0.0f, 0.6f, 0.0}, .color = {0.0, 0.0, 1.0, 1.0}},
 };
-const uint16_t kIndexData[] = {
-    2,
-    1,
-    0,
+const uint16_t kIndexData[] = {2, 1, 0};
+
+// Demonstration of Metal's specialization-constants API: nine Float1 constants (function
+// constant indices 0..8) carry the RGB triplets for the three triangle vertices, baked
+// into the vertex shader at pipeline-build time via MTLFunctionConstantValues. The other
+// backends source the same colors from the per-vertex `color_in` attribute instead.
+constexpr float kVertexColors[3][3] = {
+    {1.0f, 0.0f, 0.0f}, // vertex 0: red
+    {0.0f, 1.0f, 0.0f}, // vertex 1: green
+    {0.0f, 0.0f, 1.0f}, // vertex 2: blue
 };
+
+igl::FunctionConstantValues getVertexSpecConstants() {
+  igl::FunctionConstantValues fcv;
+  for (uint8_t v = 0; v < 3; ++v) {
+    for (uint8_t c = 0; c < 3; ++c) {
+      fcv.setConstantValue(v * 3 + c, igl::ConstantValueType::Float1, &kVertexColors[v][c]);
+    }
+  }
+  return fcv;
+}
 
 std::string getVersion() {
   return {"#version 100"};
@@ -49,11 +66,28 @@ std::string getMetalShaderSource() {
                 float4 color;
               } VertexOut;
 
+              // Specialization constants — values supplied at pipeline build time
+              // through MTLFunctionConstantValues (see getVertexSpecConstants()).
+              constant float kV0R [[function_constant(0)]];
+              constant float kV0G [[function_constant(1)]];
+              constant float kV0B [[function_constant(2)]];
+              constant float kV1R [[function_constant(3)]];
+              constant float kV1G [[function_constant(4)]];
+              constant float kV1B [[function_constant(5)]];
+              constant float kV2R [[function_constant(6)]];
+              constant float kV2G [[function_constant(7)]];
+              constant float kV2B [[function_constant(8)]];
+
               vertex VertexOut vertexShader(
                   uint vid [[vertex_id]], constant VertexIn * vertices [[buffer(1)]]) {
+                const float3 colors[3] = {
+                    float3(kV0R, kV0G, kV0B),
+                    float3(kV1R, kV1G, kV1B),
+                    float3(kV2R, kV2G, kV2B),
+                };
                 VertexOut out;
                 out.position = float4(vertices[vid].position, 1.0);
-                out.color = vertices[vid].color;
+                out.color = float4(colors[vid], 1.0);
                 return out;
               }
 
@@ -114,7 +148,31 @@ std::string getVulkanFragmentShaderSource() {
 }
 
 std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
-  switch (device.getBackendType()) {
+  // Build the Metal vertex/fragment modules with FunctionConstantValues up-front so the
+  // Metal case statement remains a simple single-statement return.
+  // ShaderStagesCreator::fromLibraryStringInput() does not expose FunctionConstantValues,
+  // so we go through ShaderLibraryCreator and feed the resulting modules into
+  // fromRenderModules() below.
+  const igl::BackendType backend = device.getBackendType();
+  std::shared_ptr<IShaderModule> metalVertexModule;
+  std::shared_ptr<IShaderModule> metalFragmentModule;
+  if (backend == igl::BackendType::Metal) {
+    auto metalLibrary = igl::ShaderLibraryCreator::fromStringInput(
+        device,
+        getMetalShaderSource().c_str(),
+        {{.stage = igl::ShaderStage::Vertex,
+          .entryPoint = "vertexShader",
+          .functionConstantValues = getVertexSpecConstants()},
+         {.stage = igl::ShaderStage::Fragment, .entryPoint = "fragmentShader"}},
+        "",
+        nullptr);
+    if (metalLibrary) {
+      metalVertexModule = metalLibrary->getShaderModule("vertexShader");
+      metalFragmentModule = metalLibrary->getShaderModule("fragmentShader");
+    }
+  }
+
+  switch (backend) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Custom:
     IGL_DEBUG_ASSERT_NOT_REACHED();
@@ -132,8 +190,10 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
     // @fb-only
     // @fb-only
   case igl::BackendType::Metal:
-    return igl::ShaderStagesCreator::fromLibraryStringInput(
-        device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
+    return igl::ShaderStagesCreator::fromRenderModules(device,
+                                                       std::move(metalVertexModule),
+                                                       std::move(metalFragmentModule),
+                                                       nullptr);
   case igl::BackendType::OpenGL:
     return igl::ShaderStagesCreator::fromModuleStringInput(device,
                                                            getOpenGLVertexShaderSource().c_str(),
