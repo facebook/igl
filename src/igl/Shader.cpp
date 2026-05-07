@@ -107,7 +107,7 @@ bool ShaderCompilerOptions::operator!=(const ShaderCompilerOptions& other) const
 
 FunctionConstantValues& FunctionConstantValues::setConstantValue(uint8_t index,
                                                                  ConstantValueType type,
-                                                                 void* IGL_NONNULL value) {
+                                                                 const void* IGL_NONNULL value) {
   IGL_DEBUG_ASSERT(type != ConstantValueType::Invalid);
   IGL_DEBUG_ASSERT(value);
   const size_t dataSize = getConstantValueSize(type);
