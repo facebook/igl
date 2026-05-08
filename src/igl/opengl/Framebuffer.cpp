@@ -543,6 +543,7 @@ bool CustomFramebuffer::hasImplicitColorAttachment() const {
          static_cast<Texture&>(*colorAttachment0.texture).isImplicitStorage();
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 void CustomFramebuffer::initialize(const FramebufferDesc& desc, Result* outResult) {
   if (IGL_DEBUG_VERIFY_NOT(isInitialized())) {
     Result::setResult(outResult, Result::Code::RuntimeError, "Framebuffer already initialized.");
@@ -562,6 +563,7 @@ void CustomFramebuffer::initialize(const FramebufferDesc& desc, Result* outResul
   }
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 void CustomFramebuffer::prepareResource(const std::string& debugName, Result* outResult) {
   // create a new frame buffer if we don't already have one
   getContext().genFramebuffers(1, &frameBufferID_);
