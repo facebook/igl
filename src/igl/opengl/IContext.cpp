@@ -1483,7 +1483,7 @@ std::string IContext::boundBuffersByIndex(bool ssbos, bool ubos) const {
 namespace {
 // The map can be accessed from multiple threads during context creation/destruction.
 std::mutex& getMutex() {
-  static std::mutex mutex;
+  static std::mutex mutex; // NOLINT(facebook-static-object-destructor-check)
   return mutex;
 }
 } // namespace
@@ -2711,6 +2711,7 @@ void IContext::framebufferTexture2D(GLenum target,
   GLCHECK_ERRORS();
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 void IContext::framebufferTexture2DMultisample(GLenum target,
                                                GLenum attachment,
                                                GLenum textarget,
@@ -3047,6 +3048,7 @@ GLenum IContext::getError() const {
   return glGetError();
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 GLuint IContext::getDebugMessageLog(GLuint count,
                                     GLsizei bufSize,
                                     GLenum* sources,
@@ -3109,6 +3111,7 @@ void IContext::getFramebufferAttachmentParameteriv(GLenum target,
   GLCHECK_ERRORS();
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 void IContext::getIntegerv(GLenum pname, GLint* params) const {
   GLCALL(GetIntegerv)(pname, params);
   // NOTE: Must log after call due to return value
@@ -4488,6 +4491,7 @@ Result IContext::getLastError() const {
   return GL_ERROR_TO_RESULT(lastError_);
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 GLenum IContext::checkForErrors(IGL_MAYBE_UNUSED const char* callerName,
                                 IGL_MAYBE_UNUSED size_t lineNum) const {
   lastError_ = getError();
