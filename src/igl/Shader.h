@@ -78,7 +78,7 @@ struct FunctionConstantValues {
   };
 
   /**
-   * @brief Set the contant value of function in shader.
+   * @brief Set the constant value of function in shader.
    * Metal:MTLFunctionConstantValues.
    * Vulkan:SpecializationInfo.
    * @param index  constant_id
