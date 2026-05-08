@@ -465,7 +465,7 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
   const bool isD3D12 = device.getBackendType() == igl::BackendType::D3D12;
   const bool usesDirectBinding = isVulkan || isD3D12;
 
-  ImTextureID lastBoundTextureId = (ImTextureID)0;
+  auto lastBoundTextureId = (ImTextureID)0;
 
   for (int n = 0; n < drawData->CmdListsCount; n++) {
     const ImDrawList* cmdList = drawData->CmdLists[n];
