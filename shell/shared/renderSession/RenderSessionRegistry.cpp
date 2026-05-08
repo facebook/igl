@@ -29,6 +29,7 @@ RenderSessionLoader& RenderSessionRegistry::findLoader(const std::string& loader
     return it->second;
   }
   IGL_LOG_ERROR("Could not find RenderSessionLoader for (%s)\n", loaderName.c_str());
+  // NOLINTNEXTLINE(facebook-static-object-destructor-check)
   static RenderSessionLoader sSentinelLoader;
   return sSentinelLoader;
 }
