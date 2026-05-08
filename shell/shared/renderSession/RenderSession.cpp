@@ -36,7 +36,9 @@ void RenderSession::setPixelsPerPoint(float scale) noexcept {
   platform_->getDisplayContext().pixelsPerPoint = scale;
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 const ShellParams& RenderSession::shellParams() const noexcept {
+  // NOLINTNEXTLINE(facebook-static-object-destructor-check)
   static const ShellParams kSentinelParams = {};
   return shellParams_ ? *shellParams_ : kSentinelParams;
 }
@@ -81,6 +83,7 @@ Color RenderSession::getPreferredClearColor() noexcept {
                                           : platform()->getDevice().backendDebugColor();
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 void RenderSession::initBenchmarkTracker() noexcept {
   if (!shellParams_ || !shellParams_->benchmarkParams.has_value()) {
     return;
@@ -269,6 +272,7 @@ void RenderSession::runUpdate(SurfaceTextures surfaceTextures) noexcept {
     const double frameTimeMs = (endTime - startTime) * 1000.0;
     const double targetMs =
         shellParams_->fpsThrottleRandom
+            // NOLINTNEXTLINE(cert-msc50-cpp, clang-analyzer-security.insecureAPI.rand)
             ? static_cast<double>(1 + (std::rand() % shellParams_->fpsThrottleMs))
             : static_cast<double>(shellParams_->fpsThrottleMs);
     if (frameTimeMs < targetMs) {
