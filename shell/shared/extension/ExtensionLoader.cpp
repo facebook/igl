@@ -19,6 +19,7 @@ ExtensionLoader::ExtensionLoader() : ExtensionLoader(kDefaultPrefix) {}
 
 ExtensionLoader::ExtensionLoader(std::string prefix) : prefix_(std::move(prefix)) {}
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 Extension* ExtensionLoader::create(const std::string& name) noexcept {
   IGL_DEBUG_ASSERT(name.length() > 0);
 
