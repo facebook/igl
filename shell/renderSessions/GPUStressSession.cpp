@@ -30,6 +30,7 @@
 
 namespace {
 uint32_t customArc4random() {
+  // NOLINTNEXTLINE(cert-msc50-cpp)
   return static_cast<uint32_t>(rand()) * (0xffffffff / RAND_MAX);
 }
 } // namespace
@@ -282,7 +283,7 @@ bool isDeviceCompatible(IDevice& device) noexcept {
 
 int setCurrentThreadAffinityMask(int mask) {
 #if IGL_PLATFORM_ANDROID
-  int err, syscallres;
+  int err = 0, syscallres = 0;
   const pid_t pid = gettid();
   syscallres = syscall(__NR_sched_setaffinity, pid, sizeof(mask), &mask);
   if (syscallres) {
@@ -314,6 +315,7 @@ double calcPi(int numberOfDivisions, int core) {
 }
 } // namespace
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 void GPUStressSession::thrashCPU() noexcept {
   static std::vector<std::future<double>> futures;
   static unsigned int threadSpawnId = 0;
@@ -399,6 +401,7 @@ void GPUStressSession::allocateMemory() {
   }
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 void GPUStressSession::thrashMemory() noexcept {
   if (!thrashMemory_) {
     return;
@@ -452,7 +455,9 @@ void GPUStressSession::getOffset(int counter, float& x, float& y, float& z) {
   const int igrid = (int)grid;
   // const float fgrid = static_cast<float>(igrid);
   x = static_cast<float>((counter % igrid) - grid / 2);
+  // NOLINTNEXTLINE(bugprone-integer-division)
   z = (static_cast<float>(counter / (igrid * igrid)) - grid / 2.f);
+  // NOLINTNEXTLINE(bugprone-integer-division)
   y = (static_cast<float>((counter % (igrid * igrid)) / igrid) - grid / 2.f);
 }
 
@@ -667,6 +672,7 @@ void GPUStressSession::processCustomParameter(const std::string& key, const std:
   }
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 void GPUStressSession::initialize() noexcept {
   pipelineState_ = nullptr;
   vertexInput0_ = nullptr;
@@ -684,6 +690,7 @@ void GPUStressSession::initialize() noexcept {
   appParamsRef().sizeY = .5f;
   // Process custom parameters from ShellParams
   if (shellParams().benchmarkParams.has_value()) {
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     const auto& benchmarkParams = shellParams().benchmarkParams.value();
     const auto& customParams = benchmarkParams.customParams;
     for (const auto& [key, value] : customParams) {
@@ -958,6 +965,7 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
   }
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 void GPUStressSession::update(SurfaceTextures surfaceTextures) noexcept {
   auto& device = getPlatform().getDevice();
   if (!isDeviceCompatible(device)) {
