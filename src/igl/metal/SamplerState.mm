@@ -7,8 +7,6 @@
 
 #include <igl/metal/SamplerState.h>
 
-using namespace igl;
-
 namespace igl::metal {
 
 SamplerState::SamplerState(id<MTLSamplerState> value) : value_(value) {}
