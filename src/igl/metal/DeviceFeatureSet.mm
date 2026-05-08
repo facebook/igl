@@ -9,9 +9,11 @@
 
 #include <vector>
 
+namespace {
+
 // get the GPU family from the device
 // a return value of 0 indicates an error or lack of a supported GPU
-static size_t getGPUFamily(id<MTLDevice> device) {
+size_t getGPUFamily(id<MTLDevice> device) {
   // the new supportsFamily API is applicable to both iOS and macOS
   if (@available(macOS 10.15, iOS 13.0, *)) {
     using GPUFamilyPair = std::pair<MTLGPUFamily, size_t>;
@@ -89,6 +91,8 @@ static size_t getGPUFamily(id<MTLDevice> device) {
   IGL_LOG_INFO("No supported GPU family available");
   return 0;
 }
+
+} // namespace
 
 namespace igl::metal {
 
