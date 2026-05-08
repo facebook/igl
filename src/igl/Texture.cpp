@@ -674,6 +674,8 @@ void ITexture::repackData(const TextureFormatProperties& properties,
                                                                     : originalDataBytesPerRow;
     const auto repackedDataIncrement = repackedBytesPerRow == 0 ? rangeBytesPerRow
                                                                 : repackedBytesPerRow;
+    const uint32_t numRows =
+        properties.getRows(TextureRangeDesc::new2D(0, 0, mipRange.width, mipRange.height));
     const auto totalNumLayers = mipRange.numLayers * mipRange.numFaces * mipRange.depth;
     for (size_t layer = 0; layer < totalNumLayers; ++layer) {
       uint8_t* repackedDataPtr = repackedData;
@@ -681,9 +683,9 @@ void ITexture::repackData(const TextureFormatProperties& properties,
                                                     : repackedDataIncrement;
       // Start at the end
       if (flipVertical) {
-        repackedDataPtr += repackedDataIncrement * (mipRange.height - 1);
+        repackedDataPtr += repackedDataIncrement * (numRows - 1);
       }
-      for (size_t y = 0; y < mipRange.height; ++y) {
+      for (uint32_t y = 0; y < numRows; ++y) {
         checked_memcpy_robust(repackedDataPtr,
                               repackedDataIncrement,
                               originalData,
@@ -692,7 +694,7 @@ void ITexture::repackData(const TextureFormatProperties& properties,
         repackedDataPtr += increment;
         originalData += originalDataIncrement;
       }
-      repackedData += repackedDataIncrement * mipRange.height;
+      repackedData += repackedDataIncrement * numRows;
     }
   }
 }

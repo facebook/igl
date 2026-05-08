@@ -454,6 +454,32 @@ TEST_F(TextureTest, RepackData) {
   }
 }
 
+TEST_F(TextureTest, RepackDataCompressedFlipVertical) {
+  const auto properties = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_ASTC_4x4);
+  const uint32_t width = 17;
+  const uint32_t height = 17;
+  const auto range = TextureRangeDesc::new2D(0, 0, width, height);
+
+  const uint32_t numBlockRows = properties.getRows(range);
+  const uint32_t bytesPerRow = properties.getBytesPerRow(range);
+  const size_t totalBytes = static_cast<size_t>(numBlockRows) * bytesPerRow;
+
+  std::vector<uint8_t> src(totalBytes);
+  for (size_t i = 0; i < totalBytes; ++i) {
+    src[i] = static_cast<uint8_t>(i & 0xFF);
+  }
+  std::vector<uint8_t> dst(totalBytes, 0);
+
+  ITexture::repackData(properties, range, src.data(), 0, dst.data(), 0, true);
+
+  for (uint32_t row = 0; row < numBlockRows; ++row) {
+    const uint32_t flippedRow = numBlockRows - 1 - row;
+    for (uint32_t col = 0; col < bytesPerRow; ++col) {
+      EXPECT_EQ(dst[row * bytesPerRow + col], src[flippedRow * bytesPerRow + col]);
+    }
+  }
+}
+
 //
 // Pixel upload alignment test
 //
