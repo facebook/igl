@@ -407,19 +407,19 @@ void runUploadTest(IDevice& device,
 }
 } // namespace
 
-TEST_F(TextureArrayTest, Upload_SingleUpload) {
+TEST_F(TextureArrayTest, UploadSingleUpload) {
   runUploadTest(*iglDev_, *cmdQueue_, true, false);
 }
 
-TEST_F(TextureArrayTest, Upload_LayerByLayer) {
+TEST_F(TextureArrayTest, UploadLayerByLayer) {
   runUploadTest(*iglDev_, *cmdQueue_, false, false);
 }
 
-TEST_F(TextureArrayTest, Upload_SingleUpload_ModifySubTexture) {
+TEST_F(TextureArrayTest, UploadSingleUploadModifySubTexture) {
   runUploadTest(*iglDev_, *cmdQueue_, true, true);
 }
 
-TEST_F(TextureArrayTest, Upload_LayerByLayer_ModifySubTexture) {
+TEST_F(TextureArrayTest, UploadLayerByLayerModifySubTexture) {
   runUploadTest(*iglDev_, *cmdQueue_, false, true);
 }
 
@@ -482,11 +482,11 @@ void runUploadToMipTest(IDevice& device, ICommandQueue& cmdQueue, bool singleUpl
 }
 } // namespace
 
-TEST_F(TextureArrayTest, UploadToMip_SingleUpload) {
+TEST_F(TextureArrayTest, UploadToMipSingleUpload) {
   runUploadToMipTest(*iglDev_, *cmdQueue_, true);
 }
 
-TEST_F(TextureArrayTest, UploadToMip_LayerByLayer) {
+TEST_F(TextureArrayTest, UploadToMipLayerByLayer) {
 #if defined(IGL_PLATFORM_LINUX) && IGL_PLATFORM_LINUX
   GTEST_SKIP() << "Temporarily disabled.";
 #else
@@ -500,7 +500,7 @@ TEST_F(TextureArrayTest, UploadToMip_LayerByLayer) {
 // This test uses a simple shader to copy a layer of the input array texture to an
 // a output texture that matches the size of the input texture layer
 //
-TEST_F(TextureArrayTest, Passthrough_SampleFromArray) {
+TEST_F(TextureArrayTest, PassthroughSampleFromArray) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
@@ -586,7 +586,7 @@ TEST_F(TextureArrayTest, Passthrough_SampleFromArray) {
 // a single layer of the array output texture. The size of the input texture matches the size of a
 // single layer in the output texture.
 //
-TEST_F(TextureArrayTest, Passthrough_RenderToArray) {
+TEST_F(TextureArrayTest, PassthroughRenderToArray) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
