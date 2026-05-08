@@ -293,11 +293,9 @@ struct ATraceGuard {
 #define IGL_PROFILER_FRAME(name)
 #endif // IGL_WITH_TRACY
 
-#if !defined(IGL_ENUM_TO_STRING)
 #define IGL_ENUM_TO_STRING(enum, res) \
   case enum ::res:                    \
     return IGL_TO_STRING(res);
-#endif // IGL_ENUM_TO_STRING
 
 // Define this to 1 to enable shader dumping. Currently only the Vulkan Device supports it.
 // It will dump the SPIR-V code into files in the specified path below in
