@@ -31,6 +31,8 @@ IGL_API int IGLAppleLogDefaultHandler(IGLLogLevel logLevel,
   case IGLLogInfo:
     os_log_info(OS_LOG_DEFAULT, "[IGL] %{public}s", buf);
     break;
+  default:
+    break;
   }
 
   return result;
