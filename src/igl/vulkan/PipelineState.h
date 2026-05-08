@@ -11,10 +11,6 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/util/SpvReflection.h>
 
-namespace igl {
-class IShaderStages;
-} // namespace igl
-
 namespace igl::vulkan {
 
 class VulkanContext;
