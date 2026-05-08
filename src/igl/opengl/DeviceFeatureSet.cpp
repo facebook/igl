@@ -343,6 +343,7 @@ uint32_t DeviceFeatureSet::getTimerQueryMaxSlots() const {
   return static_cast<uint32_t>(getGpuTimerTier());
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
   switch (feature) {
   case DeviceFeatures::CopyBuffer:
@@ -664,6 +665,7 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
   return false;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::isTextureFeatureSupported(TextureFeatures feature) const {
   switch (feature) {
   case TextureFeatures::ColorFilterable16f:
@@ -978,6 +980,7 @@ bool DeviceFeatureSet::hasExtension(Extensions extension) const {
   return (extensionCache_ & extensionBit) != 0;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   const uint64_t featureIndex = static_cast<uint64_t>(feature);
   IGL_DEBUG_ASSERT(featureIndex < 64);
@@ -1006,6 +1009,7 @@ bool DeviceFeatureSet::hasInternalFeature(InternalFeatures feature) const {
   return (internalFeatureCache_ & featureBit) != 0;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::hasTextureFeature(TextureFeatures feature) const {
   const uint64_t featureIndex = static_cast<uint64_t>(feature);
   IGL_DEBUG_ASSERT(featureIndex < 64);
@@ -1064,6 +1068,7 @@ bool DeviceFeatureSet::hasRequirement(DeviceRequirement requirement) const {
   return false;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::hasInternalRequirement(InternalRequirement requirement) const {
   switch (requirement) {
   case InternalRequirement::ColorTexImageRgb5A1Unsized:
