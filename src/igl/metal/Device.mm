@@ -302,6 +302,24 @@ std::shared_ptr<ITimestampQueries> Device::createTimestampQueries(uint32_t maxTi
   }
 }
 
+/**
+ * @brief Creates a Metal vertex input state from a descriptor.
+ *
+ * Validates the descriptor's attributes and input bindings,
+ * ensuring counts are within limits, buffer indices and attribute
+ * locations are in range, buffer indices match the binding count,
+ * and attribute locations are unique. On success, populates a
+ * MTLVertexDescriptor with attribute formats, buffer layouts,
+ * and step functions, and wraps it in a VertexInputState.
+ *
+ * @param[in] desc Vertex input state descriptor specifying
+ *        attributes, bindings, strides, and sample functions.
+ * @param[out] outResult Receives the result status. Set to an
+ *        error code (ArgumentOutOfRange, ArgumentInvalid, or
+ *        RuntimeError) on failure, or OK on success.
+ * @return Shared pointer to the created VertexInputState, or
+ *         nullptr on validation or creation failure.
+ */
 std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexInputStateDesc& desc,
                                                                   Result* outResult) const {
   // Avoid buffer overrun in numAttributes.
