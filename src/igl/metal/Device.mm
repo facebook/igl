@@ -724,7 +724,8 @@ std::shared_ptr<IRenderPipelineState> Device::createMeshRenderPipeline(
   }
 }
 
-static MTLDataType convertConstantValueType(ConstantValueType type) {
+namespace {
+MTLDataType convertConstantValueType(ConstantValueType type) {
   switch (type) {
   case ConstantValueType::Invalid:
     return MTLDataTypeNone;
@@ -762,6 +763,7 @@ static MTLDataType convertConstantValueType(ConstantValueType type) {
     return MTLDataTypeNone;
   }
 }
+} // namespace
 
 std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& desc,
                                                             Result* outResult) const {
