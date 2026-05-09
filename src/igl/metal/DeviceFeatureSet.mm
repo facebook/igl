@@ -232,6 +232,9 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
     return true;
   case DeviceFeatures::TimestampQueries:
     return supportsTimestampQueries_;
+  default:
+    IGL_DEBUG_ABORT("unhandled DeviceFeatures value");
+    break;
   }
   return false;
 }
@@ -244,6 +247,9 @@ bool DeviceFeatureSet::hasRequirement(DeviceRequirement requirement) const {
   case DeviceRequirement::TextureFormatRGExtReq:
   case DeviceRequirement::ShaderTextureLodExtReq:
     return false;
+  default:
+    IGL_DEBUG_ABORT("unhandled DeviceRequirement value");
+    break;
   }
   return true;
 }
