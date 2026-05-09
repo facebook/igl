@@ -7,8 +7,6 @@
 
 #include <igl/vulkan/util/TextureFormat.h>
 
-#define IGL_COMMON_SKIP_CHECK
-
 namespace igl::vulkan::util {
 
 // @fb-only

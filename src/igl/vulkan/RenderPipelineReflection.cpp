@@ -7,8 +7,6 @@
 
 #include "RenderPipelineReflection.h"
 
-#include <cstring>
-
 namespace igl::vulkan {
 
 RenderPipelineReflection::RenderPipelineReflection() = default;
