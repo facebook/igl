@@ -9,28 +9,11 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <string>
 #include <igl/RenderPass.h>
 #include <igl/opengl/DeviceFeatureSet.h>
 #include <igl/opengl/DummyTexture.h>
 #include <igl/opengl/GLIncludes.h>
-#if !IGL_PLATFORM_ANDROID
-#include <string>
-#else
-#include <sstream>
-
-namespace std {
-
-// TODO: Remove once STL in Android NDK supports std::to_string
-template<typename T>
-string to_string(const T& t) {
-  ostringstream os;
-  os << t;
-  return os.str();
-}
-
-} // namespace std
-
-#endif
 
 namespace igl::opengl {
 
