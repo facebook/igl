@@ -79,12 +79,7 @@ if(WIN32)
     if(TARGET gtest_main)
       target_compile_options(gtest_main PRIVATE /UUNICODE /U_UNICODE)
     endif()
-    if(TARGET gmock)
-      target_compile_options(gmock PRIVATE /UUNICODE /U_UNICODE)
-    endif()
-    if(TARGET gmock_main)
-      target_compile_options(gmock_main PRIVATE /UUNICODE /U_UNICODE)
-    endif()
+    # gmock targets intentionally omitted: BUILD_GMOCK is OFF (no IGL test uses gmock).
   endif()
   target_include_directories(IGLTests PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/glew/include")
   # IGL tests use EGL, here's a stub for Windows
@@ -166,7 +161,7 @@ elseif(IGL_WITH_OPENGL OR IGL_WITH_OPENGLES)
   target_compile_definitions(IGLTests PUBLIC -DIGL_BACKEND_TYPE="ogl")
 endif()
 
-# Ensure gtest/gmock are linked statically
+# Ensure gtest is linked statically
 target_compile_definitions(IGLTests PRIVATE GTEST_LINKED_AS_SHARED_LIBRARY=0 GTEST_CREATE_SHARED_LIBRARY=0)
 
 if(UNIX)
