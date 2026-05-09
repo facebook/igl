@@ -7,7 +7,7 @@
 
 #include <igl/metal/Texture.h>
 
-#include <vector>
+#include <utility>
 #include <igl/metal/CommandBuffer.h>
 #include <igl/metal/CommandQueue.h>
 

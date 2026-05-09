@@ -7,7 +7,6 @@
 
 #pragma once
 
-#import <Metal/MTLCommandQueue.h>
 #include <igl/metal/Framebuffer.h>
 
 namespace igl::metal::ios {

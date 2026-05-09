@@ -11,7 +11,6 @@
 #import <Metal/Metal.h>
 #include <igl/metal/Buffer.h>
 #include <igl/metal/ComputePipelineState.h>
-#include <igl/metal/Framebuffer.h>
 #include <igl/metal/SamplerState.h>
 #include <igl/metal/Texture.h>
 
