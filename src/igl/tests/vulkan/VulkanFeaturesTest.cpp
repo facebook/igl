@@ -62,7 +62,7 @@ TEST_F(VulkanFeaturesTest, EnableDefaultFeatures) {
   EXPECT_TRUE(features.vkPhysicalDeviceFeatures2.features.multiDrawIndirect);
   EXPECT_TRUE(features.vkPhysicalDeviceFeatures2.features.drawIndirectFirstInstance);
   EXPECT_TRUE(features.vkPhysicalDeviceFeatures2.features.depthBiasClamp);
-#ifdef IGL_PLATFORM_ANDROID
+#if IGL_PLATFORM_ANDROID
   // fillModeNonSolid is not well supported on Android, only enable by default when it's not Android
   EXPECT_FALSE(features.vkPhysicalDeviceFeatures2.features.fillModeNonSolid);
 #else
