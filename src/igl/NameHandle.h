@@ -59,7 +59,6 @@ namespace igl {
       0xCDD70693, 0x54DE5729, 0x23D967BF, 0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94, \
       0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D}
 
-#if defined(__cpp_constexpr)
 constexpr CRC_TABLE;
 
 /**
@@ -84,7 +83,6 @@ constexpr uint32_t iglCrc32ConstExpr(std::string_view sv) {
   }
   return ~crc;
 }
-#endif
 
 /**
  * @brief Calculates CRC32 for the incoming character array.
@@ -204,7 +202,6 @@ inline NameHandle genNameHandle(const std::string& name) {
 }
 } // namespace igl
 
-#if defined(__cpp_constexpr)
 /// @def IGL_DEFINE_NAMEHANDLE_CONST(name, str)
 /// @brief Declares and assigns a named igl::NameHandle variable.
 /// @param name The name of the NameHandle variable.
@@ -218,20 +215,6 @@ inline NameHandle genNameHandle(const std::string& name) {
 /// @param str The name the handle represents (e.g., uniform name). Must be a const char*.
 #define IGL_NAMEHANDLE(str) \
   igl::NameHandle(str, std::integral_constant<uint32_t, igl::iglCrc32ConstExpr(str)>::value)
-
-#else
-// To avoid stlib include, this function is trivial
-inline size_t iglStringlength(const char* str) {
-  size_t r = 0;
-  while (*str++) {
-    r++;
-  }
-  return r;
-}
-#define IGL_DEFINE_NAMEHANDLE_CONST(name, str) \
-  const igl::NameHandle name(str, igl::iglCrc32(str, iglStringlength(str)))
-#define IGL_NAMEHANDLE(str) igl::NameHandle(str, igl::iglCrc32(str, iglStringlength(str)))
-#endif
 
 /// @def IGL_NAMEHANDLE_ACCESSOR(name)
 /// @brief Declares a function returning a const igl::NameHandle& instance.

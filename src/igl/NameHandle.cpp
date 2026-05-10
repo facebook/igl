@@ -9,24 +9,9 @@
 
 namespace igl {
 namespace {
-#if !defined(__cpp_constexpr)
-static const CRC_TABLE;
-uint32_t iglCrc32Fallback(const char* p) {
-  uint32_t crc = ~0u;
-  while (*p) {
-    auto v = (uint8_t)*p++;
-    crc = (crc >> 8) ^ kCrcTable[(crc & 0xFF) ^ v];
-  }
-  return ~crc;
-}
-#endif
 
 uint32_t iglCrc32Impl(const char* p) {
-#if defined(__cpp_constexpr)
   return iglCrc32ConstExpr(p);
-#else
-  return iglCrc32Fallback(p);
-#endif
 }
 
 } // namespace
