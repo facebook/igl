@@ -34,16 +34,10 @@ bool isRemovable(id<MTLDevice> device) {
 }
 #endif
 
-} // namespace
-
-HWDeviceType getDeviceType(id<MTLDevice> device);
-
+#if !IGL_PLATFORM_IOS
 HWDeviceType getDeviceType(id<MTLDevice> device) {
   IGL_DEBUG_ASSERT(device != nullptr);
 
-#if IGL_PLATFORM_IOS
-  return HWDeviceType::DiscreteGpu;
-#else
   if (device.lowPower) {
     return HWDeviceType::IntegratedGpu;
   } else if (isRemovable(device)) {
@@ -51,8 +45,10 @@ HWDeviceType getDeviceType(id<MTLDevice> device) {
   } else {
     return HWDeviceType::DiscreteGpu;
   }
-#endif
 }
+#endif
+
+} // namespace
 
 std::vector<HWDeviceDesc> HWDevice::queryDevices(IGL_MAYBE_UNUSED const HWDeviceQueryDesc& desc,
                                                  Result* outResult) {
