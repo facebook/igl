@@ -97,6 +97,7 @@ TEST_F(MetalRenderPassTest, ColorAndDepth) {
   GTEST_SKIP() << "Depth textures not supported on iOS Simulator";
 #endif
 
+  // NOLINTNEXTLINE(clang-diagnostic-unreachable-code)
   Result res;
 
   // Check which depth format is supported before attempting to create texture
