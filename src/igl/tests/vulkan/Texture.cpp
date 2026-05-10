@@ -9,6 +9,7 @@
 
 #include <igl/vulkan/Texture.h>
 
+#include <array>
 #include <igl/Device.h>
 #include <igl/tests/util/TestDevice.h>
 #include <igl/tests/util/TextureValidationHelpers.h>

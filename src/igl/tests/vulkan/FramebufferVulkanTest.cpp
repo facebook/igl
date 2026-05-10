@@ -9,6 +9,7 @@
 
 #include "../util/TestDevice.h"
 
+#include <array>
 #include <igl/CommandBuffer.h>
 #include <igl/Device.h>
 #include <igl/Framebuffer.h>

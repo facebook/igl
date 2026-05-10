@@ -9,7 +9,6 @@
 
 #include <cstddef>
 #include <limits>
-#include <utility>
 #include <igl/IGLSafeC.h>
 
 size_t std::hash<igl::TextureFormat>::operator()(const igl::TextureFormat& key) const {

@@ -11,6 +11,7 @@
 
 #include "../util/TestDevice.h"
 
+#include <array>
 #include <cstring>
 #include <vector>
 #include <igl/Buffer.h>

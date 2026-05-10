@@ -9,6 +9,7 @@
 
 #include "../util/TestDevice.h"
 
+#include <array>
 #include <igl/CommandBuffer.h>
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
 #include <igl/vulkan/Buffer.h>

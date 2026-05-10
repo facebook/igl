@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <array>
 #include <string>
 #include <igl/Common.h>
 #include <igl/ITrackedResource.h>

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <IGLU/uniform/Trait.h>
+#include <array>
 #include <glm/glm.hpp>
 #include <memory>
 #include <igl/Buffer.h>

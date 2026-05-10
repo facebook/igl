@@ -9,6 +9,7 @@
 
 #include "util/Common.h"
 
+#include <array>
 #include <string>
 #include <igl/Uniform.h>
 

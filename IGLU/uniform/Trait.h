@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <array>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <igl/Buffer.h> // IWYU pragma: keep
