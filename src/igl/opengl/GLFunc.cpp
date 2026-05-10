@@ -1043,7 +1043,6 @@ void iglGetSynciv(GLsync sync, GLenum pname, GLsizei bufSize, GLsizei* length, G
 /// MARK: - GL_ARB_texture_storage
 
 #if defined(GL_VERSION_4_2) || defined(GL_ES_VERSION_3_0) || defined(GL_ARB_texture_storage)
-#define CAN_CALL_glTexStorage1D CAN_CALL_OPENGL
 #define CAN_CALL_glTexStorage2D CAN_CALL
 #if defined(GL_VERSION_2_0) || defined(GL_ES_VERSION_3_0) || defined(GL_OES_texture_3D)
 #define CAN_CALL_glTexStorage3D CAN_CALL
@@ -1051,20 +1050,9 @@ void iglGetSynciv(GLsync sync, GLenum pname, GLsizei bufSize, GLsizei* length, G
 #define CAN_CALL_glTexStorage3D 0
 #endif
 #else
-#define CAN_CALL_glTexStorage1D 0
 #define CAN_CALL_glTexStorage2D 0
 #define CAN_CALL_glTexStorage3D 0
 #endif
-
-void iglTexStorage1D(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width) {
-  GLEXTENSION_METHOD_BODY(CAN_CALL_glTexStorage1D,
-                          glTexStorage1D,
-                          PFNIGLTEXSTORAGE1DPROC,
-                          target,
-                          levels,
-                          internalformat,
-                          width);
-}
 
 void iglTexStorage2D(GLenum target,
                      GLsizei levels,
@@ -1563,7 +1551,6 @@ void iglMemoryBarrierEXT(GLbitfield barriers) {
 /// MARK: - GL_EXT_texture_storage
 
 #if defined(GL_EXT_texture_storage)
-#define CAN_CALL_glTexStorage1DEXT CAN_CALL_OPENGL
 #define CAN_CALL_glTexStorage2DEXT CAN_CALL
 #if defined(GL_VERSION_2_0) || defined(GL_OES_texture_3D)
 #define CAN_CALL_glTexStorage3DEXT CAN_CALL
@@ -1571,20 +1558,9 @@ void iglMemoryBarrierEXT(GLbitfield barriers) {
 #define CAN_CALL_glTexStorage3DEXT 0
 #endif
 #else
-#define CAN_CALL_glTexStorage1DEXT 0
 #define CAN_CALL_glTexStorage2DEXT 0
 #define CAN_CALL_glTexStorage3DEXT 0
 #endif
-
-void iglTexStorage1DEXT(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width) {
-  GLEXTENSION_METHOD_BODY(CAN_CALL_glTexStorage1DEXT,
-                          glTexStorage1DEXT,
-                          PFNIGLTEXSTORAGE1DPROC,
-                          target,
-                          levels,
-                          internalformat,
-                          width)
-}
 
 void iglTexStorage2DEXT(GLenum target,
                         GLsizei levels,

@@ -7,6 +7,7 @@
 
 #include <igl/opengl/IContext.h>
 
+#include <algorithm>
 #include <cstring>
 #if IGL_DEBUG
 #include <mutex>

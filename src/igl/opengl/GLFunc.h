@@ -259,10 +259,6 @@ using PFNIGLTEXSUBIMAGE3DPROC = void (*)(GLenum target,
                                          GLenum format,
                                          GLenum type,
                                          const GLvoid* data);
-using PFNIGLTEXSTORAGE1DPROC = void (*)(GLenum target,
-                                        GLsizei levels,
-                                        GLenum internalformat,
-                                        GLsizei width);
 using PFNIGLTEXSTORAGE2DPROC =
     void (*)(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height);
 using PFNIGLTEXSTORAGE3DPROC = void (*)(GLenum target,
@@ -534,7 +530,6 @@ void iglGetSynciv(GLsync sync, GLenum pname, GLsizei bufSize, GLsizei* length, G
 ///--------------------------------------
 /// MARK: - GL_ARB_texture_storage
 
-void iglTexStorage1D(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width);
 void iglTexStorage2D(GLenum target,
                      GLsizei levels,
                      GLenum internalformat,
@@ -687,7 +682,6 @@ void iglMemoryBarrierEXT(GLbitfield barriers);
 ///--------------------------------------
 /// MARK: - GL_EXT_texture_storage
 
-void iglTexStorage1DEXT(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width);
 void iglTexStorage2DEXT(GLenum target,
                         GLsizei levels,
                         GLenum internalformat,

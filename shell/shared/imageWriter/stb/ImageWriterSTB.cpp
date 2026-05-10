@@ -7,6 +7,7 @@
 
 #include <shell/shared/imageWriter/stb/ImageWriterSTB.h>
 
+#include <algorithm>
 #include <limits>
 #include <string>
 #include <shell/shared/imageLoader/ImageLoader.h>
