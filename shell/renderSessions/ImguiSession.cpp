@@ -26,6 +26,11 @@ void ImguiSession::initialize() noexcept {
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 void ImguiSession::update(SurfaceTextures surfaceTextures) noexcept {
+  // Per IGL guidelines, surfaceTextures.color may be null on some platforms
+  // before the surface is ready (e.g., during window resize on Android/iOS).
+  if (!surfaceTextures.color) {
+    return;
+  }
   const igl::DeviceScope deviceScope(getPlatform().getDevice());
 
   auto cmdBuffer = commandQueue_->createCommandBuffer({}, nullptr);
