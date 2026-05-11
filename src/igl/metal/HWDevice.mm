@@ -58,6 +58,7 @@ std::vector<HWDeviceDesc> HWDevice::queryDevices(IGL_MAYBE_UNUSED const HWDevice
   id<MTLDevice> metalDevice = MTLCreateSystemDefaultDevice();
   if (metalDevice) {
     // We don't need __bridge_retained here as iOS always provides the same ptr
+    // NOLINTNEXTLINE(bugprone-casting-through-void)
     HWDeviceDesc deviceDesc((uintptr_t)(__bridge void*)metalDevice,
                             HWDeviceType::DiscreteGpu,
                             0,
@@ -136,6 +137,7 @@ std::unique_ptr<IDevice> HWDevice::create(const HWDeviceDesc& desc, Result* outR
   }
 
   return createWithMTLDevice(
+      // NOLINTNEXTLINE(bugprone-casting-through-void)
       (__bridge id<MTLDevice>)(void*)desc.guid, // NOLINT(performance-no-int-to-ptr)
       outResult);
 }
