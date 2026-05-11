@@ -1,5 +1,9 @@
 # IGL Project Instructions
 
+## Source Control Rules
+
+- **NEVER** commit, amend, or submit diffs unless explicitly asked to do so.
+
 ## Diff Formatting
 
 - Use Markdown formatting in diff summaries, titles, and test plans.
