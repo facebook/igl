@@ -257,6 +257,7 @@ std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) cons
   return std::make_shared<Timer>();
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 std::shared_ptr<ITimestampQueries> Device::createTimestampQueries(uint32_t maxTimestamps,
                                                                   Result* IGL_NULLABLE
                                                                       outResult) const noexcept {
