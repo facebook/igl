@@ -12,6 +12,7 @@
 #include "data/ShaderData.h"
 #include "util/Common.h"
 
+#include <array>
 #include <memory>
 #include <vector>
 #include <igl/Buffer.h>
@@ -23,7 +24,7 @@
 namespace igl::tests {
 
 namespace {
-std::vector<float> dataIn = {1.0, 2.0, 3.0, 4.0, 5.0f, 6.0f};
+constexpr std::array<float, 6> dataIn = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
 } // namespace
 
 /**
