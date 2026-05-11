@@ -66,6 +66,7 @@ bool Texture::needsRepacking(const TextureRangeDesc& range, size_t bytesPerRow) 
   return bytesPerRow % getProperties().bytesPerBlock != 0;
 }
 
+/// Uploads pixel data to the Metal texture via replaceRegion for each mip level and slice.
 Result Texture::uploadInternal(TextureType type,
                                const TextureRangeDesc& range,
                                const void* IGL_NULLABLE data,
