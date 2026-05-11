@@ -47,11 +47,11 @@ class MetalTextureDataRoundtripTest : public ::testing::Test {
 };
 
 //
-// UploadAndReadback_RGBA
+// UploadAndReadbackRGBA
 //
 // Upload RGBA data to a texture, read it back via framebuffer copyBytes, and verify match.
 //
-TEST_F(MetalTextureDataRoundtripTest, UploadAndReadback_RGBA) {
+TEST_F(MetalTextureDataRoundtripTest, UploadAndReadbackRGBA) {
   Result res;
 
   TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
