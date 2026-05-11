@@ -419,19 +419,19 @@ void runUploadTest(IDevice& device,
 }
 } // namespace
 
-TEST_F(TextureArrayFloatTest, Upload_SingleUpload) {
+TEST_F(TextureArrayFloatTest, UploadSingleUpload) {
   runUploadTest(*iglDev_, *cmdQueue_, true, false);
 }
 
-TEST_F(TextureArrayFloatTest, Upload_LayerByLayer) {
+TEST_F(TextureArrayFloatTest, UploadLayerByLayer) {
   runUploadTest(*iglDev_, *cmdQueue_, false, false);
 }
 
-TEST_F(TextureArrayFloatTest, Upload_SingleUpload_ModifySubTexture) {
+TEST_F(TextureArrayFloatTest, UploadSingleUploadModifySubTexture) {
   runUploadTest(*iglDev_, *cmdQueue_, true, true);
 }
 
-TEST_F(TextureArrayFloatTest, Upload_LayerByLayer_ModifySubTexture) {
+TEST_F(TextureArrayFloatTest, UploadLayerByLayerModifySubTexture) {
   runUploadTest(*iglDev_, *cmdQueue_, false, true);
 }
 
@@ -490,11 +490,11 @@ void runUploadToMipTest(IDevice& device, ICommandQueue& cmdQueue, bool singleUpl
 }
 } // namespace
 
-TEST_F(TextureArrayFloatTest, UploadToMip_SingleUpload) {
+TEST_F(TextureArrayFloatTest, UploadToMipSingleUpload) {
   runUploadToMipTest(*iglDev_, *cmdQueue_, true);
 }
 
-TEST_F(TextureArrayFloatTest, UploadToMip_LayerByLayer) {
+TEST_F(TextureArrayFloatTest, UploadToMipLayerByLayer) {
   runUploadToMipTest(*iglDev_, *cmdQueue_, false);
 }
 
@@ -504,7 +504,7 @@ TEST_F(TextureArrayFloatTest, UploadToMip_LayerByLayer) {
 // This test uses a simple shader to copy a layer of the input array texture to an
 // a output texture that matches the size of the input texture layer
 //
-TEST_F(TextureArrayFloatTest, Passthrough_SampleFromArray) {
+TEST_F(TextureArrayFloatTest, PassthroughSampleFromArray) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
@@ -590,7 +590,7 @@ TEST_F(TextureArrayFloatTest, Passthrough_SampleFromArray) {
 // a single layer of the array output texture. The size of the input texture matches the size of a
 // single layer in the output texture.
 //
-TEST_F(TextureArrayFloatTest, Passthrough_RenderToArray) {
+TEST_F(TextureArrayFloatTest, PassthroughRenderToArray) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
