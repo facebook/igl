@@ -128,7 +128,7 @@ TEST_F(GetVulkanResultString, VulkanHelpersTest) {
 class GetWriteDescriptorSetImageInfoTest
   : public ::testing::TestWithParam<std::tuple<uint32_t, VkDescriptorType, uint32_t>> {};
 
-TEST_P(GetWriteDescriptorSetImageInfoTest, GetWriteDescriptorSet_ImageInfo) {
+TEST_P(GetWriteDescriptorSetImageInfoTest, GetWriteDescriptorSetImageInfo) {
   constexpr VkDescriptorSet descSet = VK_NULL_HANDLE;
   const uint32_t dstBinding = std::get<0>(GetParam());
   const VkDescriptorType descType = std::get<1>(GetParam());
@@ -175,7 +175,7 @@ INSTANTIATE_TEST_SUITE_P(
 class GetWriteDescriptorSetBufferInfoTest
   : public ::testing::TestWithParam<std::tuple<uint32_t, VkDescriptorType, uint32_t>> {};
 
-TEST_P(GetWriteDescriptorSetBufferInfoTest, GetWriteDescriptorSet_BufferInfo) {
+TEST_P(GetWriteDescriptorSetBufferInfoTest, GetWriteDescriptorSetBufferInfo) {
   constexpr VkDescriptorSet descSet = VK_NULL_HANDLE;
   const uint32_t dstBinding = std::get<0>(GetParam());
   const VkDescriptorType descType = std::get<1>(GetParam());
