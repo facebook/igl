@@ -454,6 +454,12 @@ std::shared_ptr<ITexture> TinyMeshSession::getVulkanNativeDepth() {
 }
 
 void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
+  // Per IGL guidelines, surfaceTextures.color may be null on some platforms
+  // before the surface is ready (e.g., during window resize on Android/iOS).
+  if (!surfaceTextures.color) {
+    return;
+  }
+
   width = surfaceTextures.color->getSize().width;
   height = surfaceTextures.color->getSize().height;
 
