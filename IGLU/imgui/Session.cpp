@@ -505,6 +505,7 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
 
       if (cmd.GetTexID() != lastBoundTextureId) {
         lastBoundTextureId = cmd.GetTexID();
+        // NOLINTNEXTLINE(performance-no-int-to-ptr)
         auto* tex = reinterpret_cast<igl::ITexture*>((ImTextureID)(intptr_t)cmd.GetTexID());
         if (usesDirectBinding) {
           // D3D12 and Vulkan use direct slot binding
