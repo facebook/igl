@@ -333,6 +333,11 @@ void CheckerboardMipmapSession::initialize() noexcept {
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 void CheckerboardMipmapSession::update(SurfaceTextures surfaceTextures) noexcept {
+  // Per IGL guidelines, surfaceTextures.color may be null on some platforms
+  // before the surface is ready (e.g., during window resize on Android/iOS).
+  if (!surfaceTextures.color) {
+    return;
+  }
   Result ret;
   if (framebuffer_ == nullptr) {
     FramebufferDesc framebufferDesc;
