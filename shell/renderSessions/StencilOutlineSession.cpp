@@ -431,6 +431,11 @@ void StencilOutlineSession::initialize() noexcept {
 }
 
 void StencilOutlineSession::update(SurfaceTextures textures) noexcept {
+  // Per IGL guidelines, textures.color may be null on some platforms
+  // before the surface is ready (e.g., during window resize on Android/iOS).
+  if (!textures.color) {
+    return;
+  }
   Result ret;
 
   // Create or update framebuffer (with stencil attachment if depth texture has stencil)
