@@ -306,6 +306,11 @@ void MultiDrawIndexedIndirectSession::initialize() noexcept {
 }
 
 void MultiDrawIndexedIndirectSession::update(SurfaceTextures textures) noexcept {
+  // Per IGL guidelines, textures.color may be null on some platforms
+  // before the surface is ready (e.g., during window resize on Android/iOS).
+  if (!textures.color) {
+    return;
+  }
   Result ret;
 
   // Create/update framebuffer
