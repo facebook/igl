@@ -19,6 +19,7 @@
 
 namespace igl::shell {
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 void ImageWriterSTB::writeImage(const std::string& imageAbsolutePath,
                                 const ImageData& imageData,
                                 bool flipY) const noexcept {
