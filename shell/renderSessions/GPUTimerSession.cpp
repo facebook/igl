@@ -231,6 +231,11 @@ void GPUTimerSession::initialize() noexcept {
 }
 
 void GPUTimerSession::update(SurfaceTextures textures) noexcept {
+  // Per IGL guidelines, textures.color may be null on some platforms
+  // before the surface is ready (e.g., during window resize on Android/iOS).
+  if (!textures.color) {
+    return;
+  }
   Result ret;
   if (framebuffer_ == nullptr) {
     framebuffer_ = getPlatform().getDevice().createFramebuffer(
