@@ -374,6 +374,7 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
   IGL_UNREACHABLE_RETURN(TextureFormatProperties{})
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 uint32_t TextureFormatProperties::getRows(TextureRangeDesc range) const noexcept {
   if (range.numMipLevels == 1) {
     const uint32_t texHeight = std::max(range.height, 1u);
