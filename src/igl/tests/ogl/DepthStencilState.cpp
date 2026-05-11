@@ -185,14 +185,14 @@ TEST_F(DepthStencilStateTest, CompareFunctionToOGL) {
   };
 
   const std::vector<CompareFuncConversion> conversions{
-      CompareFuncConversion{igl::CompareFunction::Never, GL_NEVER},
-      CompareFuncConversion{igl::CompareFunction::Less, GL_LESS},
-      CompareFuncConversion{igl::CompareFunction::Equal, GL_EQUAL},
-      CompareFuncConversion{igl::CompareFunction::LessEqual, GL_LEQUAL},
-      CompareFuncConversion{igl::CompareFunction::Greater, GL_GREATER},
-      CompareFuncConversion{igl::CompareFunction::NotEqual, GL_NOTEQUAL},
-      CompareFuncConversion{igl::CompareFunction::GreaterEqual, GL_GEQUAL},
-      CompareFuncConversion{igl::CompareFunction::AlwaysPass, GL_ALWAYS},
+      CompareFuncConversion{.igl = igl::CompareFunction::Never, .ogl = GL_NEVER},
+      CompareFuncConversion{.igl = igl::CompareFunction::Less, .ogl = GL_LESS},
+      CompareFuncConversion{.igl = igl::CompareFunction::Equal, .ogl = GL_EQUAL},
+      CompareFuncConversion{.igl = igl::CompareFunction::LessEqual, .ogl = GL_LEQUAL},
+      CompareFuncConversion{.igl = igl::CompareFunction::Greater, .ogl = GL_GREATER},
+      CompareFuncConversion{.igl = igl::CompareFunction::NotEqual, .ogl = GL_NOTEQUAL},
+      CompareFuncConversion{.igl = igl::CompareFunction::GreaterEqual, .ogl = GL_GEQUAL},
+      CompareFuncConversion{.igl = igl::CompareFunction::AlwaysPass, .ogl = GL_ALWAYS},
   };
 
   for (auto data : conversions) {
@@ -213,14 +213,14 @@ TEST_F(DepthStencilStateTest, StencilOperationToOGL) {
   };
 
   const std::vector<StencilOpConversion> conversions{
-      StencilOpConversion{igl::StencilOperation::Keep, GL_KEEP},
-      StencilOpConversion{igl::StencilOperation::Zero, GL_ZERO},
-      StencilOpConversion{igl::StencilOperation::Replace, GL_REPLACE},
-      StencilOpConversion{igl::StencilOperation::IncrementClamp, GL_INCR},
-      StencilOpConversion{igl::StencilOperation::DecrementClamp, GL_DECR},
-      StencilOpConversion{igl::StencilOperation::Invert, GL_INVERT},
-      StencilOpConversion{igl::StencilOperation::IncrementWrap, GL_INCR_WRAP},
-      StencilOpConversion{igl::StencilOperation::DecrementWrap, GL_DECR_WRAP},
+      StencilOpConversion{.igl = igl::StencilOperation::Keep, .ogl = GL_KEEP},
+      StencilOpConversion{.igl = igl::StencilOperation::Zero, .ogl = GL_ZERO},
+      StencilOpConversion{.igl = igl::StencilOperation::Replace, .ogl = GL_REPLACE},
+      StencilOpConversion{.igl = igl::StencilOperation::IncrementClamp, .ogl = GL_INCR},
+      StencilOpConversion{.igl = igl::StencilOperation::DecrementClamp, .ogl = GL_DECR},
+      StencilOpConversion{.igl = igl::StencilOperation::Invert, .ogl = GL_INVERT},
+      StencilOpConversion{.igl = igl::StencilOperation::IncrementWrap, .ogl = GL_INCR_WRAP},
+      StencilOpConversion{.igl = igl::StencilOperation::DecrementWrap, .ogl = GL_DECR_WRAP},
   };
 
   for (auto data : conversions) {
