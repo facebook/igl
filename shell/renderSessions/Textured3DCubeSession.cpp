@@ -372,6 +372,11 @@ void Textured3DCubeSession::setVertexParams(float aspectRatio) {
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 void Textured3DCubeSession::update(SurfaceTextures surfaceTextures) noexcept {
+  // Per IGL guidelines, surfaceTextures.color may be null on some platforms
+  // before the surface is ready (e.g., during window resize on Android/iOS).
+  if (!surfaceTextures.color) {
+    return;
+  }
   auto& device = getPlatform().getDevice();
   if (!isDeviceCompatible(device)) {
     return;
