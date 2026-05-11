@@ -141,11 +141,11 @@ TEST_F(DeviceFeatureSetFullOGLTest, HasInternalFeature) {
 }
 
 //
-// GetFeatureLimits_MaxTextureSize
+// GetFeatureLimitsMaxTextureSize
 //
 // Verify getFeatureLimits returns a sensible value for MaxTextureSize.
 //
-TEST_F(DeviceFeatureSetFullOGLTest, GetFeatureLimits_MaxTextureSize) {
+TEST_F(DeviceFeatureSetFullOGLTest, GetFeatureLimitsMaxTextureSize) {
   size_t maxTextureSize = 0;
   bool hasLimit =
       iglDev_->getFeatureLimits(DeviceFeatureLimits::MaxTextureDimension1D2D, maxTextureSize);
