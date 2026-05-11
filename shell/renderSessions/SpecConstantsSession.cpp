@@ -39,8 +39,8 @@ float kVertexColors[3][3] = {
     {0.0f, 0.0f, 1.0f}, // vertex 2: blue
 };
 
-igl::FunctionConstantValues getVertexSpecConstants() {
-  igl::FunctionConstantValues fcv;
+FunctionConstantValues getVertexSpecConstants() {
+  FunctionConstantValues fcv;
   for (uint8_t v = 0; v < 3; ++v) {
     for (uint8_t c = 0; c < 3; ++c) {
       fcv.setConstantValue(v * 3 + c, igl::ConstantValueType::Float1, &kVertexColors[v][c]);
