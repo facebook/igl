@@ -281,6 +281,11 @@ void HandsOpenXRSession::initialize() noexcept {
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 void HandsOpenXRSession::update(SurfaceTextures surfaceTextures) noexcept {
+  // Per IGL guidelines, surfaceTextures.color may be null on some platforms
+  // before the surface is ready (e.g., during window resize on Android/iOS).
+  if (!surfaceTextures.color) {
+    return;
+  }
   auto& device = getPlatform().getDevice();
   if (!isDeviceCompatible(device)) {
     return;
