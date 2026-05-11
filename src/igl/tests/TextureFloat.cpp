@@ -404,11 +404,11 @@ void runUploadTest(IDevice& device,
 }
 } // namespace
 
-TEST_F(TextureFloatTest, Upload_RGBA32) {
+TEST_F(TextureFloatTest, UploadRGBA32) {
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RGBA_F32, kTextureDataRGBA.data());
 }
 
-TEST_F(TextureFloatTest, Upload_RGB32) {
+TEST_F(TextureFloatTest, UploadRGB32) {
   if (iglDev_->getBackendType() == BackendType::Vulkan ||
       iglDev_->getBackendType() == BackendType::Metal ||
       iglDev_->getBackendVersion().flavor == BackendFlavor::OpenGL_ES) {
@@ -417,11 +417,11 @@ TEST_F(TextureFloatTest, Upload_RGB32) {
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RGB_F32, kTextureDataRGB.data());
 }
 
-TEST_F(TextureFloatTest, Upload_RG32) {
+TEST_F(TextureFloatTest, UploadRG32) {
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RG_F32, kTextureDataRG.data());
 }
 
-TEST_F(TextureFloatTest, Upload_R32) {
+TEST_F(TextureFloatTest, UploadR32) {
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::R_F32, kTextureDataR.data());
 }
 
@@ -431,11 +431,11 @@ TEST_F(TextureFloatTest, Upload_R32) {
 // This test uses a simple shader to copy a layer of the input array texture to an
 // a output texture that matches the size of the input texture layer
 //
-TEST_F(TextureFloatTest, Passthrough_SampleRGBA32) {
+TEST_F(TextureFloatTest, PassthroughSampleRGBA32) {
   runPassthroughFormat(igl::TextureFormat::RGBA_F32, kTextureDataRGBA.data());
 }
 
-TEST_F(TextureFloatTest, Passthrough_SampleRGB32) {
+TEST_F(TextureFloatTest, PassthroughSampleRGB32) {
 #if IGL_PLATFORM_WINDOWS && !IGL_ANGLE
   GTEST_SKIP() << "Skipping due to known issue on Windows without angle";
 #endif
@@ -447,11 +447,11 @@ TEST_F(TextureFloatTest, Passthrough_SampleRGB32) {
   runPassthroughFormat(igl::TextureFormat::RGB_F32, kTextureDataRGB.data());
 }
 
-TEST_F(TextureFloatTest, Passthrough_SampleRG32) {
+TEST_F(TextureFloatTest, PassthroughSampleRG32) {
   runPassthroughFormat(igl::TextureFormat::RG_F32, kTextureDataRG.data());
 }
 
-TEST_F(TextureFloatTest, Passthrough_SampleR32) {
+TEST_F(TextureFloatTest, PassthroughSampleR32) {
   runPassthroughFormat(igl::TextureFormat::R_F32, kTextureDataR.data());
 }
 
