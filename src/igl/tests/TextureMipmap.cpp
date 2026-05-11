@@ -188,11 +188,11 @@ void testUploadToMip(IDevice& device, ICommandQueue& cmdQueue, bool singleUpload
 }
 } // namespace
 
-TEST_F(TextureTest, UploadToMip_LevelByLevel) {
+TEST_F(TextureTest, UploadToMipLevelByLevel) {
   testUploadToMip(*iglDev_, *cmdQueue_, false);
 }
 
-TEST_F(TextureTest, UploadToMip_SingleUpload) {
+TEST_F(TextureTest, UploadToMipSingleUpload) {
   testUploadToMip(*iglDev_, *cmdQueue_, true);
 }
 
