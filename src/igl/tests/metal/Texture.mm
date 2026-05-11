@@ -321,12 +321,12 @@ TEST_F(TextureMTLTest, ToMTLTextureType) {
   }
 }
 
-static std::shared_ptr<ITexture> createCVPixelBufferTextureWithSize(
-    TextureFormat format,
-    const size_t width,
-    const size_t height,
-    const std::shared_ptr<IDevice>& device,
-    Result& outResult) {
+namespace {
+std::shared_ptr<ITexture> createCVPixelBufferTextureWithSize(TextureFormat format,
+                                                             const size_t width,
+                                                             const size_t height,
+                                                             const std::shared_ptr<IDevice>& device,
+                                                             Result& outResult) {
   const igl::BackendType backend = device->getBackendType();
   CVPixelBufferRef pixelBuffer = nullptr;
   NSDictionary* bufferAttributes = @{
@@ -362,6 +362,7 @@ static std::shared_ptr<ITexture> createCVPixelBufferTextureWithSize(
   Result::setOk(&outResult);
   return texture;
 }
+} // namespace
 
 TEST_F(TextureFormatMTLTest, createTextureFromNativePixelBufferSuccess) {
   Result result;
