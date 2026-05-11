@@ -197,6 +197,11 @@ void ComputeSession::createOrUpdateDefaultFramebuffer(const igl::SurfaceTextures
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 void ComputeSession::update(SurfaceTextures surfaceTextures) noexcept {
+  // Per IGL guidelines, surfaceTextures.color may be null on some platforms
+  // before the surface is ready (e.g., during window resize on Android/iOS).
+  if (!surfaceTextures.color) {
+    return;
+  }
   if (!isSupported_) {
     return;
   }
