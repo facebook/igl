@@ -223,6 +223,11 @@ void DrawInstancedSession::initialize() noexcept {
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
+  // Per IGL guidelines, surfaceTextures.color may be null on some platforms
+  // before the surface is ready (e.g., during window resize on Android/iOS).
+  if (!surfaceTextures.color) {
+    return;
+  }
   const auto dimensions = surfaceTextures.color->getDimensions();
   framebuffer_ = getPlatform().getDevice().createFramebuffer(
       FramebufferDesc{.colorAttachments = {{.texture = surfaceTextures.color}}}, nullptr);
