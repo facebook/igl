@@ -20,6 +20,7 @@ bool ITextureLoaderFactory::canCreate(const uint8_t* IGL_NONNULL headerData,
   return canCreate(*maybeReader, outResult);
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 bool ITextureLoaderFactory::canCreate(DataReader headerReader,
                                       igl::Result* IGL_NULLABLE outResult) const noexcept {
   if (headerReader.data() == nullptr) {
