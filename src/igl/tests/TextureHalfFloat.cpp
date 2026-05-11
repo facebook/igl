@@ -408,11 +408,11 @@ void runUploadTest(IDevice& device,
   util::validateUploadedTextureRange(device, cmdQueue, tex, tex->getLayerRange(0), data, layerStr);
 }
 } // namespace
-TEST_F(TextureHalfFloatTest, Upload_RGBA16) {
+TEST_F(TextureHalfFloatTest, UploadRGBA16) {
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RGBA_F16, kTextureDataRGBAHalf.data());
 }
 
-TEST_F(TextureHalfFloatTest, Upload_RGB16) {
+TEST_F(TextureHalfFloatTest, UploadRGB16) {
   if (iglDev_->getBackendType() == BackendType::Vulkan ||
       iglDev_->getBackendType() == BackendType::Metal ||
       iglDev_->getBackendVersion().flavor == BackendFlavor::OpenGL_ES) {
@@ -421,11 +421,11 @@ TEST_F(TextureHalfFloatTest, Upload_RGB16) {
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RGB_F16, kTextureDataRGBHalf.data());
 }
 
-TEST_F(TextureHalfFloatTest, Upload_RG16) {
+TEST_F(TextureHalfFloatTest, UploadRG16) {
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RG_F16, kTextureDataRGHalf.data());
 }
 
-TEST_F(TextureHalfFloatTest, Upload_R16) {
+TEST_F(TextureHalfFloatTest, UploadR16) {
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::R_F16, kTextureDataRHalf.data());
 }
 
@@ -436,11 +436,11 @@ TEST_F(TextureHalfFloatTest, Upload_R16) {
 // a output texture that matches the size of the input texture layer
 //
 
-TEST_F(TextureHalfFloatTest, Passthrough_SampleRGBA16) {
+TEST_F(TextureHalfFloatTest, PassthroughSampleRGBA16) {
   runPassthroughFormat(igl::TextureFormat::RGBA_F16, kTextureDataRGBAHalf.data());
 }
 
-TEST_F(TextureHalfFloatTest, Passthrough_SampleRGB16) {
+TEST_F(TextureHalfFloatTest, PassthroughSampleRGB16) {
 #if IGL_PLATFORM_WINDOWS && !IGL_ANGLE
   GTEST_SKIP() << "Skipping due to known issue on Windows without angle";
 #endif
@@ -456,7 +456,7 @@ TEST_F(TextureHalfFloatTest, Passthrough_SampleRGB16) {
   runPassthroughFormat(igl::TextureFormat::RGB_F16, kTextureDataRGBHalf.data());
 }
 
-TEST_F(TextureHalfFloatTest, Passthrough_SampleRG16) {
+TEST_F(TextureHalfFloatTest, PassthroughSampleRG16) {
 #if IGL_PLATFORM_MACOSX
   if (iglDev_->getBackendType() == BackendType::OpenGL) {
     GTEST_SKIP() << "Skip due to lack of support for RG on mac OpenGL";
@@ -465,7 +465,7 @@ TEST_F(TextureHalfFloatTest, Passthrough_SampleRG16) {
   runPassthroughFormat(igl::TextureFormat::RG_F16, kTextureDataRGHalf.data());
 }
 
-TEST_F(TextureHalfFloatTest, Passthrough_SampleR16) {
+TEST_F(TextureHalfFloatTest, PassthroughSampleR16) {
 #if IGL_PLATFORM_MACOSX
   if (iglDev_->getBackendType() == BackendType::OpenGL) {
     GTEST_SKIP() << "Skip due to lack of support for RG on mac OpenGL";
