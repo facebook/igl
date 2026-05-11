@@ -52,6 +52,7 @@ bool DataReader::tryAdvance(uint32_t bytesToAdvance, igl::Result* IGL_NULLABLE o
   return true;
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 bool DataReader::ensureLength(uint32_t requestedLength,
                               uint32_t offset,
                               igl::Result* IGL_NULLABLE outResult) const noexcept {
