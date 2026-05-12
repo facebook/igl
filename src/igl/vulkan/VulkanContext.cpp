@@ -657,6 +657,8 @@ VulkanContext::~VulkanContext() {
 }
 
 void VulkanContext::createInstance() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   IGL_DEBUG_ASSERT(vkInstance_ == VK_NULL_HANDLE, "createInstance() is not reentrant");
 
   // Enumerate all instance extensions
