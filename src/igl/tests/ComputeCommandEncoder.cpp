@@ -24,7 +24,7 @@
 namespace igl::tests {
 
 namespace {
-constexpr std::array<float, 6> dataIn = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
+constexpr std::array<float, 6> kDataIn = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
 } // namespace
 
 /**
@@ -53,15 +53,15 @@ class ComputeCommandEncoderTest : public ::testing::Test {
 
     const BufferDesc vbInDesc{
         .type = BufferDesc::BufferTypeBits::Storage,
-        .data = dataIn.data(),
-        .length = sizeof(float) * dataIn.size(),
+        .data = kDataIn.data(),
+        .length = sizeof(float) * kDataIn.size(),
     };
     bufferIn_ = iglDev_->createBuffer(vbInDesc, nullptr);
     ASSERT_TRUE(bufferIn_ != nullptr);
     // Use ResourceStorage::Shared for output buffers so they can be mapped for reading
     const BufferDesc bufferOutDesc{
         .type = BufferDesc::BufferTypeBits::Storage,
-        .length = sizeof(float) * dataIn.size(),
+        .length = sizeof(float) * kDataIn.size(),
         .storage = ResourceStorage::Shared,
     };
     bufferOut0_ = iglDev_->createBuffer(bufferOutDesc, nullptr);
@@ -126,7 +126,7 @@ class ComputeCommandEncoderTest : public ::testing::Test {
     computeEncoder->bindBuffer(igl::tests::data::shader::kSimpleComputeOutputIndex,
                                bufferOut.get());
 
-    const Dimensions threadgroupSize(dataIn.size(), 1, 1);
+    const Dimensions threadgroupSize(kDataIn.size(), 1, 1);
     const Dimensions threadgroupCount(1, 1, 1);
     computeEncoder->dispatchThreadGroups(
         threadgroupCount, threadgroupSize, {.buffers = {bufferIn.get()}});
@@ -167,16 +167,16 @@ TEST_F(ComputeCommandEncoderTest, canEncodeBasicBufferOperation) {
 
   cmdBuffer->waitUntilCompleted();
 
-  std::vector<float> bytes(dataIn.size());
-  auto range = BufferRange(sizeof(float) * dataIn.size(), 0);
+  std::vector<float> bytes(kDataIn.size());
+  auto range = BufferRange(sizeof(float) * kDataIn.size(), 0);
   Result ret;
   auto* data = bufferOut0_->map(range, &ret);
   ASSERT_TRUE(data != nullptr);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
-  memcpy(bytes.data(), data, sizeof(float) * dataIn.size());
-  ASSERT_EQ(dataIn.size() > 0, true);
-  for (int i = 0; i < dataIn.size(); i++) {
-    ASSERT_EQ(dataIn[i] * 2.0f, bytes[i]);
+  memcpy(bytes.data(), data, sizeof(float) * kDataIn.size());
+  ASSERT_EQ(kDataIn.size() > 0, true);
+  for (int i = 0; i < kDataIn.size(); i++) {
+    ASSERT_EQ(kDataIn[i] * 2.0f, bytes[i]);
   }
   bufferOut0_->unmap();
 }
@@ -235,17 +235,17 @@ TEST_F(ComputeCommandEncoderTest, canUseOutputBufferFromOnePassAsInputToNext) {
     cmdBuffer->waitUntilCompleted();
   }
 
-  std::vector<float> bytes(dataIn.size());
-  auto range = BufferRange(sizeof(float) * dataIn.size(), 0);
+  std::vector<float> bytes(kDataIn.size());
+  auto range = BufferRange(sizeof(float) * kDataIn.size(), 0);
   Result ret;
   auto* data = bufferOut2_->map(range, &ret);
   ASSERT_TRUE(data != nullptr);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
-  memcpy(bytes.data(), data, sizeof(float) * dataIn.size());
-  ASSERT_EQ(dataIn.size() > 0, true);
-  for (int i = 0; i < dataIn.size(); i++) {
+  memcpy(bytes.data(), data, sizeof(float) * kDataIn.size());
+  ASSERT_EQ(kDataIn.size() > 0, true);
+  for (int i = 0; i < kDataIn.size(); i++) {
     // Compute pass ran 3 times
-    ASSERT_EQ(dataIn[i] * 2.0f * 2.0f * 2.0f, bytes[i]);
+    ASSERT_EQ(kDataIn[i] * 2.0f * 2.0f * 2.0f, bytes[i]);
   }
   bufferOut2_->unmap();
 }
