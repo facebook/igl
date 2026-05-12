@@ -234,6 +234,8 @@ VkImageView VulkanSwapchain::getDepthVkImageView() const {
 }
 
 void VulkanSwapchain::lazyAllocateDepthBuffer() const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   IGL_DEBUG_ASSERT(!depthTexture_);
 
   const VkFormat depthFormat =
