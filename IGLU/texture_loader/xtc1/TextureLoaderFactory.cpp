@@ -37,6 +37,7 @@ igl::TextureFormat getXTC1Format(uint32_t numChannels) {
 
 class TextureLoader final : public ITextureLoader {
  public:
+  // NOLINTNEXTLINE(bugprone-exception-escape)
   explicit TextureLoader(DataReader reader) noexcept : ITextureLoader(reader) {
     const Header* header = this->reader().as<Header>();
 
@@ -77,6 +78,7 @@ uint32_t TextureLoaderFactory::minHeaderLength() const noexcept {
   return kHeaderLength;
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
                                              igl::Result* IGL_NULLABLE outResult) const noexcept {
   if (headerReader.size() < kHeaderLength) {
@@ -96,6 +98,7 @@ bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
   return isValid;
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     DataReader reader,
     igl::TextureFormat preferredFormat,
