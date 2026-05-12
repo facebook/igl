@@ -786,6 +786,8 @@ void VulkanContext::createHeadlessSurface() {
 }
 
 void VulkanContext::createSurface(void* IGL_NULLABLE window, void* IGL_NULLABLE display) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   [[maybe_unused]] void* layer = nullptr;
 #if IGL_PLATFORM_APPLE
   layer = igl::vulkan::getCAMetalLayer(window);
