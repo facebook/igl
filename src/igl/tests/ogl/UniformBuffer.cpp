@@ -619,7 +619,7 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
       pipelineState->getIndexByName(igl::genNameHandle("testVec2"), igl::ShaderStage::Fragment);
   fragmentUniformDescriptors.back().type = UniformType::Float2;
   fragmentUniformDescriptors.back().offset = offsetof(FragmentParameters, testVec2);
-  fragmentParameters.testVec2 = {0.2f, 0.2f};
+  fragmentParameters.testVec2 = {.x = 0.2f, .y = 0.2f};
 
   // "testVec3"
   fragmentUniformDescriptors.emplace_back();
@@ -627,7 +627,7 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
       pipelineState->getIndexByName(igl::genNameHandle("testVec3"), igl::ShaderStage::Fragment);
   fragmentUniformDescriptors.back().type = UniformType::Float3;
   fragmentUniformDescriptors.back().offset = offsetof(FragmentParameters, testVec3);
-  fragmentParameters.testVec3 = {0.3f, 0.3f, 0.3f};
+  fragmentParameters.testVec3 = {.x = 0.3f, .y = 0.3f, .z = 0.3f};
 
   // "testVec4"
   fragmentUniformDescriptors.emplace_back();
@@ -635,7 +635,7 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
       pipelineState->getIndexByName(igl::genNameHandle("testVec4"), igl::ShaderStage::Fragment);
   fragmentUniformDescriptors.back().type = UniformType::Float4;
   fragmentUniformDescriptors.back().offset = offsetof(FragmentParameters, testVec4);
-  fragmentParameters.testVec4 = {0.4f, 0.4f, 0.4f, 0.4f};
+  fragmentParameters.testVec4 = {.x = 0.4f, .y = 0.4f, .z = 0.4f, .w = 0.4f};
 
   // "testBool"
   fragmentUniformDescriptors.emplace_back();
@@ -659,7 +659,7 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
       pipelineState->getIndexByName(igl::genNameHandle("testiVec2"), igl::ShaderStage::Fragment);
   fragmentUniformDescriptors.back().type = UniformType::Int2;
   fragmentUniformDescriptors.back().offset = offsetof(FragmentParameters, testiVec2);
-  fragmentParameters.testiVec2 = {2, 2};
+  fragmentParameters.testiVec2 = {.x = 2, .y = 2};
 
   // "testiVec3"
   fragmentUniformDescriptors.emplace_back();
@@ -667,7 +667,7 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
       pipelineState->getIndexByName(igl::genNameHandle("testiVec3"), igl::ShaderStage::Fragment);
   fragmentUniformDescriptors.back().type = UniformType::Int3;
   fragmentUniformDescriptors.back().offset = offsetof(FragmentParameters, testiVec3);
-  fragmentParameters.testiVec3 = {3, 3, 3};
+  fragmentParameters.testiVec3 = {.x = 3, .y = 3, .z = 3};
 
   // "testiVec4"
   fragmentUniformDescriptors.emplace_back();
@@ -675,7 +675,7 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
       pipelineState->getIndexByName(igl::genNameHandle("testiVec4"), igl::ShaderStage::Fragment);
   fragmentUniformDescriptors.back().type = UniformType::Int4;
   fragmentUniformDescriptors.back().offset = offsetof(FragmentParameters, testiVec4);
-  fragmentParameters.testiVec4 = {4, 4, 4, 4};
+  fragmentParameters.testiVec4 = {.x = 4, .y = 4, .z = 4, .w = 4};
 
   // "testMat2"
   fragmentUniformDescriptors.emplace_back();
