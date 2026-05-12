@@ -35,9 +35,9 @@ class RenderPipelineStateMTLTest : public ::testing::Test {
     // Initialize vertex Shader
     auto shaderLibrary =
         ShaderLibraryCreator::fromStringInput(*iglDev_,
-                                              data::shader::kMtlSimpleShader.data(),
-                                              data::shader::kSimpleVertFunc.data(),
-                                              data::shader::kSimpleFragFunc.data(),
+                                              std::string(data::shader::kMtlSimpleShader).c_str(),
+                                              std::string(data::shader::kSimpleVertFunc),
+                                              std::string(data::shader::kSimpleFragFunc),
                                               "",
                                               &ret);
 
