@@ -675,6 +675,12 @@ void XrApp::createActions() {
        .id = Button::Y,
        .type = XR_ACTION_TYPE_BOOLEAN_INPUT,
        .subactionCount = 1},
+      {.name = "right_grip",
+       .localizedName = "Right Grip",
+       .subactionPaths = &rightHandPath,
+       .id = Button::RightGrip,
+       .type = XR_ACTION_TYPE_FLOAT_INPUT,
+       .subactionCount = 1},
   };
 
   for (const auto& def : buttonDefs) {
@@ -725,6 +731,7 @@ void XrApp::createActions() {
       {.id = Button::B, .path = "/user/hand/right/input/b/click"},
       {.id = Button::X, .path = "/user/hand/left/input/x/click"},
       {.id = Button::Y, .path = "/user/hand/left/input/y/click"},
+      {.id = Button::RightGrip, .path = "/user/hand/right/input/squeeze/value"},
   };
 
   constexpr size_t kNumBindings = sizeof(bindingDefs) / sizeof(bindingDefs[0]);
@@ -1025,7 +1032,8 @@ void XrApp::update() {
             .action = buttonActions_[i],
         };
 
-        if (buttonId == Button::LeftTrigger || buttonId == Button::RightTrigger) {
+        if (buttonId == Button::LeftTrigger || buttonId == Button::RightTrigger ||
+            buttonId == Button::RightGrip) {
           XrActionStateFloat state = {.type = XR_TYPE_ACTION_STATE_FLOAT};
           if (xrGetActionStateFloat(session_, &getInfo, &state) == XR_SUCCESS && state.isActive) {
             rayEvent.buttonPressed = state.currentState > 0.5f;
@@ -1057,6 +1065,16 @@ void XrApp::update() {
           rightEvent.button = Button::RightThumbstickRight;
           rightEvent.buttonPressed = state.currentState.x > 0.5f;
           platform_->getInputDispatcher().queueEvent(rightEvent);
+
+          RayEvent upEvent;
+          upEvent.button = Button::RightThumbstickUp;
+          upEvent.buttonPressed = state.currentState.y > 0.5f;
+          platform_->getInputDispatcher().queueEvent(upEvent);
+
+          RayEvent downEvent;
+          downEvent.button = Button::RightThumbstickDown;
+          downEvent.buttonPressed = state.currentState.y < -0.5f;
+          platform_->getInputDispatcher().queueEvent(downEvent);
         }
       }
     }

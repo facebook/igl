@@ -21,7 +21,10 @@ enum class Button : int {
   Y = 5,
   RightThumbstickLeft = 6,
   RightThumbstickRight = 7,
-  Count = 8,
+  RightThumbstickUp = 8,
+  RightThumbstickDown = 9,
+  RightGrip = 10,
+  Count = 11,
 };
 
 struct RayEvent {
