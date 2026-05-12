@@ -69,6 +69,7 @@ class TextureLoader : public ITextureLoader {
     return 0;
   }
 
+  // NOLINTNEXTLINE(bugprone-exception-escape)
   [[nodiscard]] std::vector<uint32_t> mipLevelBytes() const noexcept override {
     std::vector<uint32_t> mipLevelBytes;
     mipLevelBytes.reserve(descriptor().numMipLevels);
@@ -122,6 +123,7 @@ bool TextureLoader::shouldGenerateMipmaps() const noexcept {
   return texture_->generateMipmaps;
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 void TextureLoader::uploadInternal(igl::ITexture& texture,
                                    igl::Result* IGL_NULLABLE outResult) const noexcept {
   const auto& desc = descriptor();
@@ -143,6 +145,7 @@ void TextureLoader::uploadInternal(igl::ITexture& texture,
   igl::Result::setOk(outResult);
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 void TextureLoader::loadToExternalMemoryInternal(uint8_t* IGL_NONNULL data,
                                                  uint32_t length,
                                                  igl::Result* IGL_NULLABLE
@@ -203,6 +206,7 @@ void TextureLoader::loadToExternalMemoryInternal(uint8_t* IGL_NONNULL data,
 }
 } // namespace
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     DataReader reader,
     igl::TextureFormat /*preferredFormat*/,
