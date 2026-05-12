@@ -106,6 +106,7 @@ bool TextureLoader::shouldGenerateMipmaps() const noexcept {
   return descriptor().numMipLevels > 1;
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 std::unique_ptr<IData> TextureLoader::loadInternal(
     igl::Result* IGL_NULLABLE outResult) const noexcept {
   const auto r = reader();
@@ -132,6 +133,7 @@ std::unique_ptr<IData> TextureLoader::loadInternal(
 TextureLoaderFactory::TextureLoaderFactory(bool isFloatFormat) noexcept :
   isFloatFormat_(isFloatFormat) {}
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
                                              igl::Result* IGL_NULLABLE outResult) const noexcept {
   if (!isIdentifierValid(headerReader)) {
@@ -142,6 +144,7 @@ bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
   return true;
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     DataReader reader,
     igl::TextureFormat preferredFormat,
