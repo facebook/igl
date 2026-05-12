@@ -17,6 +17,7 @@ uint32_t TextureLoaderFactory::minHeaderLength() const noexcept {
   return kHeaderLength;
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
                                              igl::Result* IGL_NULLABLE outResult) const noexcept {
   if (headerReader.data() == nullptr) {
@@ -59,6 +60,7 @@ igl::TextureRangeDesc TextureLoaderFactory::textureRange(DataReader reader) cons
   return range;
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 bool TextureLoaderFactory::validate(DataReader reader,
                                     const igl::TextureRangeDesc& range,
                                     igl::Result* IGL_NULLABLE outResult) const noexcept {
