@@ -12,11 +12,12 @@
 #include <igl/Macros.h>
 
 namespace igl::vulkan {
-IGL_MAYBE_UNUSED static std::ostream& operator<<(std::ostream& os,
-                                                 const VulkanQueueDescriptor& queue) {
+namespace {
+IGL_MAYBE_UNUSED std::ostream& operator<<(std::ostream& os, const VulkanQueueDescriptor& queue) {
   return os << "VulkanQueueDescriptor" << "\n\tQueue Index        : " << queue.queueIndex
             << "\n\tQueue Family Index : " << queue.familyIndex;
 }
+} // namespace
 } // namespace igl::vulkan
 
 namespace igl::tests {
