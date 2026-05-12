@@ -774,6 +774,8 @@ void VulkanContext::createInstance() {
 }
 
 void VulkanContext::createHeadlessSurface() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   const VkHeadlessSurfaceCreateInfoEXT ci = {
       .sType = VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT,
       .pNext = nullptr,
