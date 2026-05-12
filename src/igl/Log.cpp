@@ -47,7 +47,9 @@ IGL_API int IGLLog(IGLLogLevel logLevel, const char* IGL_RESTRICT format, ...) {
 }
 
 IGL_API int IGLLogOnce(IGLLogLevel logLevel, const char* IGL_RESTRICT format, ...) {
+  // NOLINTNEXTLINE(facebook-static-object-destructor-check)
   static std::mutex sLoggedMessagesMutex;
+  // NOLINTNEXTLINE(facebook-static-object-destructor-check)
   static std::unordered_set<std::string> sLoggedMessages;
 
   // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
