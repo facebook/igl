@@ -23,14 +23,15 @@
 
 namespace igl::tests {
 
+namespace {
 /// Helper to create just any render pipeline in a valid way
-static std::shared_ptr<IRenderPipelineState> createRenderPipeline(
-    const std::shared_ptr<IDevice>& device,
-    Result* result);
+std::shared_ptr<IRenderPipelineState> createRenderPipeline(const std::shared_ptr<IDevice>& device,
+                                                           Result* result);
 
 /// Just creates any shader
-static std::shared_ptr<IShaderModule> createShaderModule(const std::shared_ptr<IDevice>& device,
-                                                         Result* result);
+std::shared_ptr<IShaderModule> createShaderModule(const std::shared_ptr<IDevice>& device,
+                                                  Result* result);
+} // namespace
 
 class DeviceOGLTest : public ::testing::Test {
  public:
@@ -163,7 +164,7 @@ TEST_F(DeviceOGLTest, EndScope) {
 #endif // IGL_BACKEND_OPENGL
 }
 
-TEST_F(DeviceOGLTest, EndScope_ClearContext) {
+TEST_F(DeviceOGLTest, EndScopeClearContext) {
   context_->setUnbindPolicy(opengl::UnbindPolicy::ClearContext);
 
   { // Clear current context, one level deep
@@ -291,6 +292,7 @@ TEST_F(DeviceOGLTest, DeletionTest) {
   }
 }
 
+namespace {
 std::shared_ptr<IRenderPipelineState> createRenderPipeline(const std::shared_ptr<IDevice>& device,
                                                            Result* outResult) {
   Result ret;
@@ -350,6 +352,7 @@ std::shared_ptr<IShaderModule> createShaderModule(const std::shared_ptr<IDevice>
 
   return vertShader;
 }
+} // namespace
 
 TEST_F(DeviceOGLTest, CreateShaderModuleUnknownTypeFails) {
   Result ret;
