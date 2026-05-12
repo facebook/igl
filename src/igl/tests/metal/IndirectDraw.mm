@@ -119,7 +119,8 @@ TEST_F(MetalIndirectDrawTest, MultiDrawIndirect) {
     uint32_t vertexStart;
     uint32_t baseInstance;
   };
-  DrawIndirectArgs args = {3, 1, 0, 0};
+  const DrawIndirectArgs args = {
+      .vertexCount = 3, .instanceCount = 1, .vertexStart = 0, .baseInstance = 0};
   BufferDesc indirectDesc(
       BufferDesc::BufferTypeBits::Indirect, &args, sizeof(args), ResourceStorage::Shared);
   auto indirectBuffer = device_->createBuffer(indirectDesc, &res);
