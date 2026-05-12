@@ -329,6 +329,10 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
   case DeviceFeatureLimits::MaxColorAttachments:
     result = 8;
     return true;
+  case DeviceFeatureLimits::MaxDescriptorHeapCbvSrvUav:
+  case DeviceFeatureLimits::MaxDescriptorHeapSamplers:
+  case DeviceFeatureLimits::MaxDescriptorHeapRtvs:
+  case DeviceFeatureLimits::MaxDescriptorHeapDsvs:
   default:
     IGL_DEBUG_ABORT(
         "invalid feature limit query: feature limit query is not implemented or does not exist\n");
