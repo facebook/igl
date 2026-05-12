@@ -81,7 +81,12 @@ TEST_F(MetalRenderEncoderStateTest, BindViewport) {
   auto encoder = commandBuffer_->createRenderCommandEncoder(rpDesc, framebuffer_);
   ASSERT_NE(encoder, nullptr);
 
-  Viewport viewport = {0.0f, 0.0f, (float)ENCODER_TEX_WIDTH, (float)ENCODER_TEX_HEIGHT, 0.0f, 1.0f};
+  const Viewport viewport = {.x = 0.0f,
+                             .y = 0.0f,
+                             .width = (float)ENCODER_TEX_WIDTH,
+                             .height = (float)ENCODER_TEX_HEIGHT,
+                             .minDepth = 0.0f,
+                             .maxDepth = 1.0f};
   encoder->bindViewport(viewport);
   encoder->endEncoding();
 }
@@ -100,7 +105,8 @@ TEST_F(MetalRenderEncoderStateTest, BindScissorRect) {
   auto encoder = commandBuffer_->createRenderCommandEncoder(rpDesc, framebuffer_);
   ASSERT_NE(encoder, nullptr);
 
-  ScissorRect scissor = {0, 0, ENCODER_TEX_WIDTH, ENCODER_TEX_HEIGHT};
+  const ScissorRect scissor = {
+      .x = 0, .y = 0, .width = ENCODER_TEX_WIDTH, .height = ENCODER_TEX_HEIGHT};
   encoder->bindScissorRect(scissor);
   encoder->endEncoding();
 }
