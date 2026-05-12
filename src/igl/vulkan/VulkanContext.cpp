@@ -2394,6 +2394,18 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
   };
   vf_.vkCreateSamplerYcbcrConversion(getVkDevice(), &ciYcbcr, nullptr, &info.conversion);
 
+  // Per IGL Vulkan rules, every Vk* handle (including YCbCr conversions) must
+  // get a debug name immediately after creation so it shows up in RenderDoc /
+  // validation output.
+  VK_ASSERT(ivkSetDebugObjectName(
+      &vf_,
+      getVkDevice(),
+      VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION,
+      (uint64_t)info.conversion,
+      IGL_FORMAT("YCbCr Conversion: VulkanContext::getOrCreateYcbcrConversionInfo() format={}",
+                 (int)format)
+          .c_str()));
+
   // check properties
   VkSamplerYcbcrConversionImageFormatProperties samplerYcbcrConversionImageFormatProps = {
       .sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES,
