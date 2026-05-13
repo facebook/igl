@@ -196,10 +196,20 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
     IGL_DEBUG_ASSERT(false, "A texture should be Sampled or Storage");
   }
 
-  IGL_DEBUG_ASSERT(numRestoreLayouts_ < IGL_TEXTURE_SAMPLERS_MAX);
-  restoreLayout_[numRestoreLayouts_] = vkImage;
-  restoreLayoutAspectFlags_[numRestoreLayouts_] = vkTex.imageView_.getVkImageAspectFlags();
-  numRestoreLayouts_++;
+  const bool alreadyTracked = [this, vkImage]() {
+    for (uint32_t i = 0; i < numRestoreLayouts_; ++i) {
+      if (restoreLayout_[i] == vkImage) {
+        return true;
+      }
+    }
+    return false;
+  }();
+  if (!alreadyTracked) {
+    IGL_DEBUG_ASSERT(numRestoreLayouts_ < IGL_TEXTURE_SAMPLERS_MAX);
+    restoreLayout_[numRestoreLayouts_] = vkImage;
+    restoreLayoutAspectFlags_[numRestoreLayouts_] = vkTex.imageView_.getVkImageAspectFlags();
+    numRestoreLayouts_++;
+  }
 }
 
 void ComputeCommandEncoder::bindImageTexture(uint32_t index,
@@ -223,11 +233,21 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index,
 
   igl::vulkan::transitionToGeneral(cmdBuffer_, texture);
 
-  IGL_DEBUG_ASSERT(numRestoreLayouts_ < IGL_TEXTURE_SAMPLERS_MAX);
-  restoreLayout_[numRestoreLayouts_] = vkImage;
-  restoreLayoutAspectFlags_[numRestoreLayouts_] =
-      tex ? tex->getVulkanTexture().imageView_.getVkImageAspectFlags() : VK_IMAGE_ASPECT_NONE;
-  numRestoreLayouts_++;
+  const bool alreadyTracked = [this, vkImage]() {
+    for (uint32_t i = 0; i < numRestoreLayouts_; ++i) {
+      if (restoreLayout_[i] == vkImage) {
+        return true;
+      }
+    }
+    return false;
+  }();
+  if (!alreadyTracked) {
+    IGL_DEBUG_ASSERT(numRestoreLayouts_ < IGL_TEXTURE_SAMPLERS_MAX);
+    restoreLayout_[numRestoreLayouts_] = vkImage;
+    restoreLayoutAspectFlags_[numRestoreLayouts_] =
+        tex ? tex->getVulkanTexture().imageView_.getVkImageAspectFlags() : VK_IMAGE_ASPECT_NONE;
+    numRestoreLayouts_++;
+  }
 
   binder_.bindStorageImage(index, tex);
 }
