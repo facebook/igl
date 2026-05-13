@@ -90,6 +90,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   isStencilFormat_(hasStencil(imageFormat)), // NOLINT(readability-identifier-naming)
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
   isImported_(isImported) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   setName(debugName);
   VK_ASSERT(ivkSetDebugObjectName(
       &ctx_->vf_, device_, VK_OBJECT_TYPE_IMAGE, (uint64_t)vkImage_, debugName));
