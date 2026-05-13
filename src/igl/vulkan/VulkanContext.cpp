@@ -859,6 +859,8 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                   const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions,
                                   const VulkanFeatures* IGL_NULLABLE requestedFeatures,
                                   const char* IGL_NULLABLE debugName) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   IGL_DEBUG_ASSERT(vkDevice_ == VK_NULL_HANDLE);
 
   if (desc.guid == 0UL) {
