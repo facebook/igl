@@ -30,9 +30,14 @@ OpenGLTextureAccessor::OpenGLTextureAccessor(std::shared_ptr<igl::ITexture> text
                                              igl::IDevice& device) :
   ITextureAccessor(std::move(texture)) {
   // glReadPixels requires a that the texture be attached to a framebuffer
+  // Per IGL Error Handling rule #24, every resource creation call must pass a
+  // Result* and check it; passing nullptr silently swallows errors.
+  igl::Result result;
   igl::FramebufferDesc framebufferDesc;
   framebufferDesc.colorAttachments[0].texture = texture_;
-  frameBuffer_ = device.createFramebuffer(framebufferDesc, nullptr);
+  frameBuffer_ = device.createFramebuffer(framebufferDesc, &result);
+  IGL_DEBUG_ASSERT(result.isOk(), "createFramebuffer() failed: %s", result.message.c_str());
+  IGL_DEBUG_ASSERT(frameBuffer_ != nullptr);
 
   auto& oglTexture = static_cast<igl::opengl::Texture&>(*texture_);
   const auto dimensions = oglTexture.getDimensions();
