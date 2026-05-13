@@ -108,7 +108,9 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
 
 namespace igl::vulkan {
 
-SamplerState::SamplerState(Device& device) : device_(device) {}
+SamplerState::SamplerState(Device& device) : device_(device) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+}
 
 Result SamplerState::create(const SamplerStateDesc& desc) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
