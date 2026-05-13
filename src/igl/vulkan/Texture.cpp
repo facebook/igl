@@ -20,6 +20,8 @@
 namespace igl::vulkan {
 
 Texture::Texture(Device& device, TextureFormat format) : ITexture(format), device_(device) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   IGL_DEBUG_ASSERT(format != TextureFormat::Invalid);
 }
 
