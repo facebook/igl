@@ -29,7 +29,13 @@ void Drawable::draw(igl::IDevice& device,
     vertexData_->populatePipelineDescriptor(mutablePipelineDesc);
     material_->populatePipelineDescriptor(mutablePipelineDesc);
 
-    pipelineState_ = device.createRenderPipeline(mutablePipelineDesc, nullptr);
+    igl::Result result;
+    pipelineState_ = device.createRenderPipeline(mutablePipelineDesc, &result);
+    IGL_DEBUG_ASSERT(result.isOk(), "createRenderPipeline() failed: %s", result.message.c_str());
+    IGL_DEBUG_ASSERT(pipelineState_ != nullptr);
+    if (!result.isOk() || !pipelineState_) {
+      return;
+    }
     lastPipelineDescHash_ = pipelineDescHash;
   }
 
