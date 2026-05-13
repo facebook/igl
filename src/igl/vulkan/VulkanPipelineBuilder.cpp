@@ -49,7 +49,9 @@ VulkanPipelineBuilder::VulkanPipelineBuilder() :
               .compareOp = VK_COMPARE_OP_NEVER,
           },
       .maxDepthBounds = 1.0f,
-  }) {}
+  }) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+}
 
 VulkanPipelineBuilder& VulkanPipelineBuilder::depthBiasEnable(bool enable) {
   rasterizationState_.depthBiasEnable = enable ? VK_TRUE : VK_FALSE;
