@@ -809,21 +809,26 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
 
       framebufferDesc.colorAttachments[0].resolveTexture = surfaceTextures.color;
 
-      const igl::TextureDesc depthDesc = {.width = dimensions.width,
-                                          .height = dimensions.height,
-                                          .depth = 1,
-                                          .numLayers = surfaceTextures.depth->getNumLayers(),
-                                          .numSamples = kMsaaSamples,
-                                          .usage = TextureDesc::TextureUsageBits::Attachment,
-                                          .numMipLevels = 1,
-                                          .type = surfaceTextures.depth->getNumLayers() > 1
-                                                      ? TextureType::TwoDArray
-                                                      : TextureType::TwoD,
-                                          .format = surfaceTextures.depth->getFormat(),
-                                          .storage = igl::ResourceStorage::Private};
+      // Per IGL guidelines, surfaceTextures.depth may be null on configurations
+      // without a depth buffer (e.g., 2D overlay sessions). Only build the MSAA
+      // depth attachment if the platform actually provided a depth surface.
+      if (surfaceTextures.depth) {
+        const igl::TextureDesc depthDesc = {.width = dimensions.width,
+                                            .height = dimensions.height,
+                                            .depth = 1,
+                                            .numLayers = surfaceTextures.depth->getNumLayers(),
+                                            .numSamples = kMsaaSamples,
+                                            .usage = TextureDesc::TextureUsageBits::Attachment,
+                                            .numMipLevels = 1,
+                                            .type = surfaceTextures.depth->getNumLayers() > 1
+                                                        ? TextureType::TwoDArray
+                                                        : TextureType::TwoD,
+                                            .format = surfaceTextures.depth->getFormat(),
+                                            .storage = igl::ResourceStorage::Private};
 
-      framebufferDesc.depthAttachment.texture =
-          getPlatform().getDevice().createTexture(depthDesc, nullptr);
+        framebufferDesc.depthAttachment.texture =
+            getPlatform().getDevice().createTexture(depthDesc, nullptr);
+      }
     }
 
     framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
