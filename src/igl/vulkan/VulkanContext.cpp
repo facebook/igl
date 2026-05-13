@@ -798,6 +798,8 @@ void VulkanContext::createSurface(void* IGL_NULLABLE window, void* IGL_NULLABLE 
 
 Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
                                    std::vector<HWDeviceDesc>& outDevices) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   outDevices.clear();
 
   // Physical devices
@@ -1754,6 +1756,8 @@ SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
 }
 
 void VulkanContext::querySurfaceCapabilities() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   // This is not an exhaustive list. It's only formats that we are using.
   // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   const VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT,
