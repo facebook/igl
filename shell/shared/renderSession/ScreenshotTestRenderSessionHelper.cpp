@@ -27,8 +27,12 @@ void saveFrameBufferToPng(const char* absoluteFilename,
   auto buffer =
       std::make_unique<uint8_t[]>(frameBufferSize.width * frameBufferSize.height * bytesPerPixel);
 
-  const CommandQueueDesc desc{};
-  auto commandQueue = platform.getDevice().createCommandQueue(desc, nullptr);
+  // Per IGL Error Handling rule #24, every resource creation call must pass a
+  // Result* and check it; passing nullptr silently swallows errors.
+  igl::Result result;
+  auto commandQueue = platform.getDevice().createCommandQueue(CommandQueueDesc{}, &result);
+  IGL_DEBUG_ASSERT(result.isOk(), "createCommandQueue() failed: %s", result.message.c_str());
+  IGL_DEBUG_ASSERT(commandQueue != nullptr);
   framebuffer->copyBytesColorAttachment(*commandQueue, 0, buffer.get(), rangeDesc);
 
   const size_t numPixels = frameBufferSize.width * frameBufferSize.height * bytesPerPixel;
