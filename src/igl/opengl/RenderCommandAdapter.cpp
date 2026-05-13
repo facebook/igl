@@ -147,6 +147,15 @@ void RenderCommandAdapter::setUniformBuffer(Buffer* IGL_NULLABLE buffer,
   uniformAdapter_.setUniformBuffer(buffer, offset, size, index, outResult);
 }
 
+void RenderCommandAdapter::setStorageBuffer(Buffer* buffer, size_t offset, uint32_t index) {
+  IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX,
+                   "Buffer index is beyond max, may want to increase limit");
+  if (index < IGL_BUFFER_BINDINGS_MAX) {
+    storageBuffers_[index] = {.resource = buffer, .offset = offset};
+    SET_DIRTY(storageBuffersDirty_, index);
+  }
+}
+
 void RenderCommandAdapter::clearVertexTexture() {
   vertexTextureStates_ = TextureStates();
   vertexTextureStatesDirty_.reset();
@@ -427,6 +436,17 @@ void RenderCommandAdapter::willDraw() {
   if (pipelineState) {
     // Bind uniforms to be used for render
     uniformAdapter_.bindToPipeline(getContext());
+    // Bind storage buffers
+    for (size_t bufferIndex = 0; bufferIndex < IGL_BUFFER_BINDINGS_MAX; ++bufferIndex) {
+      if (IS_DIRTY(storageBuffersDirty_, bufferIndex)) {
+        auto& bufferState = storageBuffers_[bufferIndex];
+        auto& arrayBuffer = static_cast<ArrayBuffer&>(*bufferState.resource);
+        Result result;
+        arrayBuffer.bindBase(bufferIndex, &result);
+        IGL_DEBUG_ASSERT(result.isOk());
+        CLEAR_DIRTY(storageBuffersDirty_, bufferIndex);
+      }
+    }
     for (size_t index = 0; index < kVertexTextureStatesSize; index++) {
       if (!IS_DIRTY(vertexTextureStatesDirty_, index)) {
         continue;

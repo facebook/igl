@@ -74,6 +74,7 @@ class RenderCommandAdapter final : public WithContext {
   void setUniform(const UniformDesc& uniformDesc,
                   const void* IGL_NONNULL data,
                   Result* IGL_NULLABLE outResult = nullptr);
+  void setStorageBuffer(Buffer* IGL_NULLABLE buffer, size_t offset, uint32_t index);
 
   void clearVertexTexture();
   void setVertexTexture(ITexture* IGL_NULLABLE texture,
@@ -164,6 +165,8 @@ class RenderCommandAdapter final : public WithContext {
  private:
   std::array<BufferState, IGL_BUFFER_BINDINGS_MAX> vertexBuffers_;
   std::bitset<IGL_BUFFER_BINDINGS_MAX> vertexBuffersDirty_;
+  std::array<BufferState, IGL_BUFFER_BINDINGS_MAX> storageBuffers_;
+  std::bitset<IGL_BUFFER_BINDINGS_MAX> storageBuffersDirty_;
   std::bitset<IGL_TEXTURE_SAMPLERS_MAX> vertexTextureStatesDirty_;
   std::bitset<IGL_TEXTURE_SAMPLERS_MAX> fragmentTextureStatesDirty_;
   TextureStates vertexTextureStates_;
