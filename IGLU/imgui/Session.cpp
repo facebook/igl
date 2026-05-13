@@ -264,10 +264,20 @@ struct DrawableData {
     iglu::vertexdata::PrimitiveDesc primitiveDesc;
     primitiveDesc.numEntries = 0;
 
+    // Per IGL Error Handling rule #24, every resource creation call must pass
+    // a Result* and check it; passing nullptr silently swallows errors.
+    igl::Result result;
+    auto vb = device.createBuffer(vbDesc, &result);
+    IGL_DEBUG_ASSERT(result.isOk(), "createBuffer(vertex) failed: %s", result.message.c_str());
+    IGL_DEBUG_ASSERT(vb != nullptr);
+    auto ib = device.createBuffer(ibDesc, &result);
+    IGL_DEBUG_ASSERT(result.isOk(), "createBuffer(index) failed: %s", result.message.c_str());
+    IGL_DEBUG_ASSERT(ib != nullptr);
+
     vertexData = std::make_shared<iglu::vertexdata::VertexData>(
         inputState,
-        device.createBuffer(vbDesc, nullptr),
-        device.createBuffer(ibDesc, nullptr),
+        std::move(vb),
+        std::move(ib),
         sizeof(ImDrawIdx) == sizeof(uint16_t) ? igl::IndexFormat::UInt16 : igl::IndexFormat::UInt32,
         primitiveDesc);
 
