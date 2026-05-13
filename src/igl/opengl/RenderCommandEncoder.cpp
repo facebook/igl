@@ -319,7 +319,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     } else if (bufferType == Buffer::Type::UniformBlock) {
       adapter_->setUniformBuffer(glBuffer, offset, bufferSize, index);
     } else {
-      adapter_->setBuffer(glBuffer, offset, index);
+      adapter_->setStorageBuffer(glBuffer, offset, index);
     }
   }
 }

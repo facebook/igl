@@ -74,7 +74,7 @@ class RenderCommandAdapter final : public WithContext {
   void setUniform(const UniformDesc& uniformDesc,
                   const void* IGL_NONNULL data,
                   Result* IGL_NULLABLE outResult = nullptr);
-  void setBuffer(Buffer* buffer, size_t offset, uint32_t index);
+  void setStorageBuffer(Buffer* buffer, size_t offset, uint32_t index);
 
   void clearVertexTexture();
   void setVertexTexture(ITexture* IGL_NULLABLE texture,

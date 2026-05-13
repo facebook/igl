@@ -147,7 +147,7 @@ void RenderCommandAdapter::setUniformBuffer(Buffer* IGL_NULLABLE buffer,
   uniformAdapter_.setUniformBuffer(buffer, offset, size, index, outResult);
 }
 
-void RenderCommandAdapter::setBuffer(Buffer* buffer, size_t offset, uint32_t index) {
+void RenderCommandAdapter::setStorageBuffer(Buffer* buffer, size_t offset, uint32_t index) {
   IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX,
                    "Buffer index is beyond max, may want to increase limit");
 
