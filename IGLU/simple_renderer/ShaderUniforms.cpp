@@ -96,6 +96,9 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
 
     std::shared_ptr<igl::IBuffer> buffer = nullptr;
     if (createBuffer) {
+      // Per IGL Error Handling rule #24, every resource creation call must
+      // pass a Result* and check it; passing nullptr silently swallows errors.
+      igl::Result result;
       const auto backendType = device_.getBackendType();
       const igl::BufferDesc desc{
           .type = igl::BufferDesc::BufferTypeBits::Uniform,
@@ -108,7 +111,9 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
                    ? igl::BufferDesc::BufferAPIHintBits::Ring
                    : 0)),
       };
-      buffer = device.createBuffer(desc, nullptr);
+      buffer = device.createBuffer(desc, &result);
+      IGL_DEBUG_ASSERT(result.isOk(), "createBuffer(uniform) failed: %s", result.message.c_str());
+      IGL_DEBUG_ASSERT(buffer != nullptr);
     }
 
     // All uniform updates will be made to this malloc'ed data block,
