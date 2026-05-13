@@ -136,6 +136,8 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .descriptorBuffer = VK_TRUE,
   }),
   config(config) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   extensions_.resize(kNumberOfExtensionTypes);
   enabledExtensions_.resize(kNumberOfExtensionTypes);
 
