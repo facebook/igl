@@ -124,6 +124,8 @@ PipelineState::PipelineState(
     std::shared_ptr<ISamplerState> immutableSamplers[IGL_TEXTURE_SAMPLERS_MAX],
     uint32_t isDynamicBufferMask,
     const char* debugName) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   IGL_DEBUG_ASSERT(stages);
 
   initializeSpvModuleInfoFromShaderStages(ctx, stages);
