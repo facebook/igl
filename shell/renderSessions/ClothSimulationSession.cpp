@@ -404,6 +404,12 @@ void ClothSimulationSession::update(SurfaceTextures surfaceTextures) noexcept {
   }
 
   if (clothRenderPipelineState_ == nullptr) {
+    // Per IGL guidelines, surfaceTextures.depth may be null on configurations
+    // without a depth buffer; fall back to TextureFormat::Invalid in that case
+    // (matches what the framebuffer reports for a missing depth attachment).
+    const TextureFormat depthFormat = surfaceTextures.depth
+                                          ? surfaceTextures.depth->getProperties().format
+                                          : TextureFormat::Invalid;
     const RenderPipelineDesc graphicsDesc = {
         .vertexInputState = clothVertexInput_,
         .shaderStages = clothShaderStages_,
@@ -411,7 +417,7 @@ void ClothSimulationSession::update(SurfaceTextures surfaceTextures) noexcept {
             {
                 .colorAttachments = {{.textureFormat =
                                           surfaceTextures.color->getProperties().format}},
-                .depthAttachmentFormat = surfaceTextures.depth->getProperties().format,
+                .depthAttachmentFormat = depthFormat,
             },
         .cullMode = igl::CullMode::Disabled,
         .frontFaceWinding = igl::WindingMode::Clockwise,
@@ -422,6 +428,9 @@ void ClothSimulationSession::update(SurfaceTextures surfaceTextures) noexcept {
   }
 
   if (obstacleRenderPipelineState_ == nullptr) {
+    const TextureFormat depthFormat = surfaceTextures.depth
+                                          ? surfaceTextures.depth->getProperties().format
+                                          : TextureFormat::Invalid;
     const RenderPipelineDesc graphicsDesc = {
         .vertexInputState = obstacleVertexInput_,
         .shaderStages = obstacleShaderStages_,
@@ -429,7 +438,7 @@ void ClothSimulationSession::update(SurfaceTextures surfaceTextures) noexcept {
             {
                 .colorAttachments = {{.textureFormat =
                                           surfaceTextures.color->getProperties().format}},
-                .depthAttachmentFormat = surfaceTextures.depth->getProperties().format,
+                .depthAttachmentFormat = depthFormat,
             },
         .cullMode = igl::CullMode::Disabled,
         .frontFaceWinding = igl::WindingMode::Clockwise,
