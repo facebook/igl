@@ -498,6 +498,7 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
   features_(config),
   vf_(*tableImpl_),
   config_(config) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_PROFILER_THREAD("MainThread");
 
   pimpl_ = std::make_unique<VulkanContextImpl>();
