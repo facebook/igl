@@ -307,7 +307,12 @@ Session::Renderer::Renderer(igl::IDevice& device) {
   ImGuiIO& io = ImGui::GetIO();
   io.BackendRendererName = "imgui_impl_igl";
 
-  linearSampler_ = device.createSamplerState(igl::SamplerStateDesc::newLinear(), nullptr);
+  // Per IGL Error Handling rule #24, every resource creation call must pass a
+  // Result* and check it; passing nullptr silently swallows errors.
+  igl::Result result;
+  linearSampler_ = device.createSamplerState(igl::SamplerStateDesc::newLinear(), &result);
+  IGL_DEBUG_ASSERT(result.isOk(), "createSamplerState() failed: %s", result.message.c_str());
+  IGL_DEBUG_ASSERT(linearSampler_ != nullptr);
 
   { // init fonts
     unsigned char* pixels = nullptr;
@@ -318,7 +323,12 @@ Session::Renderer::Renderer(igl::IDevice& device) {
                                                     height,
                                                     igl::TextureDesc::TextureUsageBits::Sampled);
     desc.debugName = "IGLU/imgui/Session.cpp:Session::Renderer::_fontTexture";
-    fontTexture_ = device.createTexture(desc, nullptr);
+    fontTexture_ = device.createTexture(desc, &result);
+    IGL_DEBUG_ASSERT(result.isOk(), "createTexture() failed: %s", result.message.c_str());
+    IGL_DEBUG_ASSERT(fontTexture_ != nullptr);
+    if (!fontTexture_) {
+      return;
+    }
     fontTexture_->upload(igl::TextureRangeDesc::new2D(0, 0, width, height), pixels);
 
     io.Fonts->TexID = reinterpret_cast<ImTextureID>(fontTexture_.get());
@@ -350,7 +360,9 @@ Session::Renderer::Renderer(igl::IDevice& device) {
     };
     inputDesc.numInputBindings = 1;
     inputDesc.inputBindings[0].stride = sizeof(ImDrawVert);
-    vertexInputState_ = device.createVertexInputState(inputDesc, nullptr);
+    vertexInputState_ = device.createVertexInputState(inputDesc, &result);
+    IGL_DEBUG_ASSERT(result.isOk(), "createVertexInputState() failed: %s", result.message.c_str());
+    IGL_DEBUG_ASSERT(vertexInputState_ != nullptr);
   }
 
   {
