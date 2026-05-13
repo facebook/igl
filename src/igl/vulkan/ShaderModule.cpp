@@ -28,9 +28,13 @@ VkShaderModule ShaderModule::getVkShaderModule(const std::shared_ptr<IShaderModu
   return sm ? sm->module_->getVkShaderModule() : VK_NULL_HANDLE;
 }
 
-ShaderStages::ShaderStages(ShaderStagesDesc desc) : IShaderStages(std::move(desc)) {}
+ShaderStages::ShaderStages(ShaderStagesDesc desc) : IShaderStages(std::move(desc)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+}
 
 ShaderLibrary::ShaderLibrary(std::vector<std::shared_ptr<IShaderModule>> modules) :
-  IShaderLibrary(std::move(modules)) {}
+  IShaderLibrary(std::move(modules)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+}
 
 } // namespace igl::vulkan
