@@ -353,6 +353,18 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
   }
 }
 
+/**
+ * @brief Returns Metal capability flags for a texture format.
+ *
+ * Capability results may vary by platform (iOS, macOS,
+ * simulator) and GPU family. Formats requiring 32-bit float
+ * filtering include SampledFiltered only when the device
+ * supports it.
+ *
+ * @param[in] format The texture format to query.
+ * @return A bitmask of TextureFormatCapabilityBits, or
+ *         Unsupported if the format is not available.
+ */
 ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapabilities(
     TextureFormat format) const {
   const auto all = ICapabilities::TextureFormatCapabilityBits::All;
