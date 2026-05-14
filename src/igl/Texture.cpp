@@ -249,6 +249,16 @@ Result TextureRangeDesc::validate() const noexcept {
 #define MULTIPLANAR(fmt, cpp, bpb, planes) \
   PROPERTIES(fmt, cpp, 0, 1, 1, 1, 1, 1, 1, Flags::Compressed, planes)
 
+/**
+ * @brief Returns the properties for a given texture format.
+ *
+ * Maps each TextureFormat enum value to a TextureFormatProperties
+ * struct containing format metadata such as block dimensions,
+ * bytes per block, components per pixel, and format flags.
+ *
+ * @param[in] format The texture format to look up.
+ * @return A populated TextureFormatProperties for the format.
+ */
 TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat format) {
   switch (format) {
     // NOLINTBEGIN(readability-identifier-naming)
