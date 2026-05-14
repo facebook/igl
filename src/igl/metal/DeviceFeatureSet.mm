@@ -128,6 +128,19 @@ DeviceFeatureSet::DeviceFeatureSet(id<MTLDevice> device) {
   }
 }
 
+/**
+ * @brief Queries whether a device feature is supported on the
+ *        current Metal device.
+ *
+ * Basic features are universally available on Metal (iOS 9.0+).
+ * Advanced features depend on the Apple GPU family and OS
+ * version.
+ *
+ * @param[in] feature The device feature to query.
+ * @return True if the feature is supported, false otherwise.
+ *
+ * @see https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+ */
 bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   // Metal supports all the basic features on iOS9.0+
   // see reference https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
