@@ -1545,6 +1545,8 @@ std::unique_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
 }
 
 void VulkanContext::pruneTextures() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+
   // here we remove deleted textures - everything which has only 1 reference is owned by this
   // context and can be released safely
 
@@ -1715,6 +1717,8 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTextureFromVkImage(
     VulkanImageCreateInfo imageCreateInfo,
     VulkanImageViewCreateInfo imageViewCreateInfo,
     const char* IGL_NULLABLE debugName) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   auto iglImage = VulkanImage(*this, vkImage, imageCreateInfo, debugName);
   auto imageView = iglImage.createImageView(imageViewCreateInfo, debugName);
   return createTexture(std::move(iglImage), std::move(imageView), debugName);
@@ -2353,6 +2357,8 @@ VkDescriptorSet VulkanContext::getBindlessVkDescriptorSet() const {
 }
 
 VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFormat format) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   auto it = ycbcrConversionInfos_.find(format);
 
   if (it != ycbcrConversionInfos_.end()) {
