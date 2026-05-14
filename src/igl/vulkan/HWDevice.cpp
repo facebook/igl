@@ -23,6 +23,8 @@ std::unique_ptr<VulkanContext> HWDevice::createContext(const VulkanContextConfig
 std::vector<HWDeviceDesc> HWDevice::queryDevices(VulkanContext& ctx,
                                                  const HWDeviceQueryDesc& desc,
                                                  Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   std::vector<HWDeviceDesc> outDevices;
 
   Result::setResult(outResult, ctx.queryDevices(desc, outDevices));
@@ -40,6 +42,8 @@ std::unique_ptr<Device> HWDevice::create(std::unique_ptr<VulkanContext> ctx,
                                          const igl::vulkan::VulkanFeatures* IGL_NULLABLE features,
                                          const char* IGL_NULLABLE debugName,
                                          Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   IGL_DEBUG_ASSERT(ctx);
 
   auto result =
