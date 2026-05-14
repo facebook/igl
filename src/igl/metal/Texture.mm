@@ -797,6 +797,18 @@ MTLPixelFormat Texture::textureFormatToMTLPixelFormat(TextureFormat value) {
   }
 }
 
+/**
+ * @brief Converts a Metal pixel format to an IGL texture format.
+ *
+ * Performs the reverse mapping of textureFormatToMTLPixelFormat().
+ * Some mappings are platform-conditional (e.g., ASTC and PVRTC
+ * formats are only available on non-macOS, while BC7 formats
+ * are macOS-only).
+ *
+ * @param[in] value The Metal pixel format to convert.
+ * @return The corresponding TextureFormat, or
+ *         TextureFormat::Invalid if unsupported.
+ */
 TextureFormat Texture::mtlPixelFormatToTextureFormat(MTLPixelFormat value) {
 // Some fbsource targets don't allow enum default, this makes sure all of them compile
 #pragma clang diagnostic push
