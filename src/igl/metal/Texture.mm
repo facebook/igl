@@ -358,6 +358,18 @@ TextureType Texture::convertType(MTLTextureType value) {
   }
 }
 
+/**
+ * @brief Converts an IGL TextureFormat to a Metal MTLPixelFormat.
+ *
+ * Format availability is platform-dependent: ASTC, PVRTC,
+ * and ETC formats are unavailable on macOS; BC7 is only
+ * available on macOS/Mac Catalyst. All depth formats
+ * (Z_UNorm16/24/32) map to MTLPixelFormatDepth32Float.
+ *
+ * @param[in] value The IGL texture format to convert.
+ * @return The corresponding MTLPixelFormat, or
+ *         MTLPixelFormatInvalid if unsupported.
+ */
 MTLPixelFormat Texture::textureFormatToMTLPixelFormat(TextureFormat value) {
   switch (value) {
   case TextureFormat::Invalid:
