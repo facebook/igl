@@ -306,7 +306,7 @@ void TQMultiRenderPassSession::initialize() noexcept {
   };
 
   // init uniforms
-  fragmentParameters_ = FragmentFormat{{1.0f, 1.0f, 1.0f}};
+  fragmentParameters_ = FragmentFormat{.color = {1.0f, 1.0f, 1.0f}};
 
   fragmentParamBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
                                                         .data = &fragmentParameters_,
