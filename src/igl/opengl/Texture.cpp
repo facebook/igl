@@ -970,7 +970,7 @@ void* Texture::getNativeImage() const {
   return nullptr;
 }
 
-void* Texture::getNativeImageView() const {
+void* FOLLY_NULLABLE Texture::getNativeImageView() const {
   // OpenGL doesn't have a separate image view concept
   return nullptr;
 }

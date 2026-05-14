@@ -134,7 +134,7 @@ Result ArrayBuffer::upload(const void* data, const BufferRange& range) {
   return Result();
 }
 
-void* ArrayBuffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
+void* FOLLY_NULLABLE ArrayBuffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
   if ((range.size + range.offset) > getSizeInBytes()) {
     Result::setResult(
         outResult, Result::Code::ArgumentOutOfRange, "map() size + offset must be <= buffer size");

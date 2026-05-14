@@ -84,7 +84,7 @@ Result UniformBuffer::upload(const void* data, const BufferRange& range) {
   return Result();
 }
 
-void* UniformBuffer::map(const BufferRange& range, Result* outResult) {
+void* FOLLY_NULLABLE UniformBuffer::map(const BufferRange& range, Result* outResult) {
   if (getSizeInBytes() < (range.size + range.offset)) {
     Result::setResult(outResult,
                       Result::Code::ArgumentOutOfRange,
