@@ -260,6 +260,8 @@ VkBufferUsageFlags Buffer::getBufferUsageFlags() const {
 }
 
 void* Buffer::map(const BufferRange& range, Result* outResult) {
+  IGL_PROFILER_FUNCTION();
+
   IGL_DEBUG_ASSERT(!isRingBuffer_, "Buffer::map() operation not supported for ring buffer");
 
   // Sanity check
@@ -294,6 +296,8 @@ void* Buffer::map(const BufferRange& range, Result* outResult) {
 }
 
 void Buffer::unmap() {
+  IGL_PROFILER_FUNCTION();
+
   IGL_DEBUG_ASSERT(!isRingBuffer_, "Buffer::unmap() operation not supported for ring buffer");
   IGL_DEBUG_ASSERT(mappedRange_.size, "Called Buffer::unmap() without Buffer::map()");
 
