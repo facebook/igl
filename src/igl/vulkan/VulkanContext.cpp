@@ -2457,6 +2457,8 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
                                                       const IRenderPipelineState* IGL_NULLABLE
                                                           compatiblePipeline,
                                                       Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   VkDevice device = getVkDevice();
 
   BindGroupMetadataTextures metadata{.desc = desc};
@@ -2589,6 +2591,8 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
 
 BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferDesc& desc,
                                                      Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   VkDevice device = getVkDevice();
 
   BindGroupMetadataBuffers metadata{.desc = desc};
