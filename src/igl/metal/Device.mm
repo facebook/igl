@@ -614,6 +614,22 @@ std::shared_ptr<IRenderPipelineState> Device::createTraditionalRenderPipeline(
   return std::make_shared<RenderPipelineState>(metalObject, reflection, desc);
 }
 
+/**
+ * @brief Creates a Metal render pipeline state using mesh shaders.
+ *
+ * Builds an MTLMeshRenderPipelineDescriptor from the provided
+ * descriptor. Requires iOS 16+/macOS 13+ and Apple GPU Family 7
+ * (A14/M1 or later). The mesh shader module is required; task
+ * (object) and fragment shader modules are optional. Configures
+ * color attachments, blending, and depth/stencil formats from
+ * the descriptor's target description.
+ *
+ * @param[in] desc Pipeline configuration including shader
+ *        stages, attachment formats, sample count, and blending.
+ * @param[out] outResult Receives the error code on failure, or
+ *        OK on success. May be null.
+ * @return The created pipeline state, or nullptr on failure.
+ */
 std::shared_ptr<IRenderPipelineState> Device::createMeshRenderPipeline(
     const RenderPipelineDesc& desc,
     Result* outResult) const {
