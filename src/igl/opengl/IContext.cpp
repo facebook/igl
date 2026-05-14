@@ -4577,6 +4577,20 @@ void IContext::setUnbindPolicy(UnbindPolicy newValue) {
   unbindPolicy_ = newValue;
 }
 
+/**
+ * @brief Initializes the OpenGL context by detecting the GL
+ *        version, collecting extensions, and configuring the
+ *        device feature set.
+ *
+ * Called by platform-specific context subclasses after creating
+ * the native OpenGL context. Sets the context as current,
+ * queries GL_VERSION and GL_EXTENSIONS, initializes the device
+ * feature set, and enables seamless cube map if supported.
+ *
+ * @param[out] result Optional output for reporting errors such
+ *        as failure to set the current context or to determine
+ *        the GL version.
+ */
 void IContext::initialize(Result* result) {
   setCurrent();
   if (!isCurrentContext()) {
