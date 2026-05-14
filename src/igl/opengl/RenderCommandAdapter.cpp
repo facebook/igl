@@ -387,6 +387,15 @@ void RenderCommandAdapter::endEncoding() {
   dirtyStateBits_ = EnumToValue(StateMask::NONE);
 }
 
+/**
+ * @brief Binds all dirty OpenGL state before issuing a draw call.
+ *
+ * Prepares the rendering pipeline by flushing pending state changes:
+ * dirty vertex buffers and their attributes, the render pipeline
+ * state, depth/stencil state with stencil reference values, queued
+ * uniforms, and dirty vertex/fragment texture-sampler pairs. Also
+ * validates shader stages when shader validation is enabled.
+ */
 void RenderCommandAdapter::willDraw() {
   Result ret;
   auto* pipelineState = static_cast<RenderPipelineState*>(pipelineState_.get());
