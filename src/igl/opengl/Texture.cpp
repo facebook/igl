@@ -198,6 +198,27 @@ bool Texture::toFormatDescGL(TextureFormat textureFormat,
                              FormatDescGL& outFormatGL) const {
   return toFormatDescGL(getContext(), textureFormat, usage, outFormatGL);
 }
+/**
+ * @brief Converts an IGL texture format and usage into
+ *        OpenGL format parameters.
+ *
+ * Applies device-capability-based fallbacks for unsupported
+ * depth/stencil formats, validates that the requested usage
+ * is supported, and selects the appropriate GL internal format
+ * variant (sized vs unsized) based on whether the texture is
+ * used as a renderbuffer, tex storage, or tex image.
+ *
+ * @param[in] ctx OpenGL context providing device feature
+ *        queries for format and extension support.
+ * @param[in] textureFormat IGL texture format to convert.
+ * @param[in] usage Bitmask of TextureUsageBits (Sampled,
+ *        Attachment, Storage) controlling format selection.
+ * @param[out] outFormatGL Populated with the GL
+ *        internalFormat, format, and type on success.
+ * @return True if conversion succeeded, false if the format
+ *         is unsupported or the device lacks required
+ *         capabilities.
+ */
 bool Texture::toFormatDescGL(const IContext& ctx,
                              TextureFormat textureFormat,
                              TextureDesc::TextureUsage usage,
