@@ -22,6 +22,9 @@ on:
 env:
   GIT_CLONE_PROTECTION_ACTIVE: false
 
+permissions:
+  contents: read
+
 jobs:
   install-test:
     strategy:
