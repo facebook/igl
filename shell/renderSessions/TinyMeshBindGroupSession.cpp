@@ -578,7 +578,7 @@ void TinyMeshBindGroupSession::update(SurfaceTextures surfaceTextures) noexcept 
 
   // from igl/shell/renderSessions/Textured3DCubeSession.cpp
   const float fov = float(45.0f * (M_PI / 180.0f));
-  const float aspectRatio = (float)width / (float)height;
+  const float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
   perFrame.proj = glm::perspectiveLH(fov, aspectRatio, 0.1f, 500.0f);
   // place a "camera" behind the cubes, the distance depends on the total number of cubes
   perFrame.view =
@@ -587,8 +587,8 @@ void TinyMeshBindGroupSession::update(SurfaceTextures surfaceTextures) noexcept 
 
   // rotate cubes around random axes
   for (uint32_t i = 0; i != kNumCubes; i++) {
-    const float direction = powf(-1, (float)(i + 1));
-    const uint32_t cubesInLine = (uint32_t)sqrt(kNumCubes);
+    const float direction = powf(-1, static_cast<float>(i + 1));
+    const uint32_t cubesInLine = static_cast<uint32_t>(sqrt(kNumCubes));
     const vec3 offset =
         vec3(-1.5f * sqrt(kNumCubes) + 4.0f * static_cast<float>(i % cubesInLine),
              -1.5f * sqrt(kNumCubes) + 4.0f * std::floor(static_cast<float>(i) / cubesInLine),
@@ -604,12 +604,14 @@ void TinyMeshBindGroupSession::update(SurfaceTextures surfaceTextures) noexcept 
 
   const igl::Viewport viewport = {.x = 0.0f,
                                   .y = 0.0f,
-                                  .width = (float)width,
-                                  .height = (float)height,
+                                  .width = static_cast<float>(width),
+                                  .height = static_cast<float>(height),
                                   .minDepth = 0.0f,
                                   .maxDepth = +1.0f};
-  const igl::ScissorRect scissor = {
-      .x = 0, .y = 0, .width = (uint32_t)width, .height = (uint32_t)height};
+  const igl::ScissorRect scissor = {.x = 0,
+                                    .y = 0,
+                                    .width = static_cast<uint32_t>(width),
+                                    .height = static_cast<uint32_t>(height)};
 
   // This will clear the framebuffer
   auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
