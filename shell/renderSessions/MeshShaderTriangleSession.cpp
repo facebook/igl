@@ -208,10 +208,11 @@ void MeshShaderTriangleSession::initialize() noexcept {
   shaderStages_ = getShaderStagesForBackend(device);
   IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
 
-  BufferDesc uboDesc;
-  uboDesc.type = igl::BufferDesc::BufferTypeBits::Uniform;
-  uboDesc.storage = igl::ResourceStorage::Shared;
-  uboDesc.length = sizeof(glm::mat4);
+  const BufferDesc uboDesc{
+      .type = igl::BufferDesc::BufferTypeBits::Uniform,
+      .length = sizeof(glm::mat4),
+      .storage = igl::ResourceStorage::Shared,
+  };
   ubo_ = device.createBuffer(uboDesc, nullptr);
   IGL_DEBUG_ASSERT(ubo_ != nullptr);
 
