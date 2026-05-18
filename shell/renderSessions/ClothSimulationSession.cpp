@@ -48,7 +48,7 @@ struct ObstacleVertex {
 
 std::vector<ClothVertex> getClothVertexData() {
   std::vector<ClothVertex> vertices(static_cast<size_t>(kN * kN));
-  const float cellSize = 1.0f / (float)kN;
+  const float cellSize = 1.0f / static_cast<float>(kN);
   for (int i = 0; i < kN; ++i) {
     for (int j = 0; j < kN; ++j) {
       const int index = i * kN + j;
@@ -127,7 +127,7 @@ UBO getUniformBuffer(float aspectRatio) {
   ubo.aspectRatio = aspectRatio;
 
   ubo.n = kN;
-  ubo.cellSize = 1.f / (float)kN;
+  ubo.cellSize = 1.f / static_cast<float>(kN);
 
   ubo.view = glm::lookAt(glm::vec3(ubo.eye.x, ubo.eye.y, ubo.eye.z),
                          glm::vec3(ubo.ballCenter.x, ubo.ballCenter.y, ubo.ballCenter.z),
