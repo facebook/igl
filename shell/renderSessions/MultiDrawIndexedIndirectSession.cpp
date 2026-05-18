@@ -247,11 +247,11 @@ void MultiDrawIndexedIndirectSession::initialize() noexcept {
     indirectCommands[2].baseVertex = 0;
     indirectCommands[2].reservedMustBeZero = 0;
 
-    BufferDesc indirectBufDesc;
-    indirectBufDesc.type =
-        BufferDesc::BufferTypeBits::Storage | BufferDesc::BufferTypeBits::Indirect;
-    indirectBufDesc.data = indirectCommands;
-    indirectBufDesc.length = sizeof(indirectCommands);
+    const BufferDesc indirectBufDesc{
+        .type = BufferDesc::BufferTypeBits::Storage | BufferDesc::BufferTypeBits::Indirect,
+        .data = indirectCommands,
+        .length = sizeof(indirectCommands),
+    };
     indirectBuffer_ = device.createBuffer(indirectBufDesc, nullptr);
     IGL_DEBUG_ASSERT(indirectBuffer_ != nullptr);
   }
