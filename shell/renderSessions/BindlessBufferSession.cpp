@@ -353,7 +353,7 @@ void BindlessBufferSession::update(SurfaceTextures textures) noexcept {
   }
 
   // Create command buffer.
-  auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
+  const auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
   auto drawableSurface = framebuffer_->getColorAttachment(0);
 
