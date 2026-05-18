@@ -452,7 +452,7 @@ void GPUStressSession::getOffset(int counter, float& x, float& y, float& z) {
     return;
   }
   const float grid = std::ceil(std::pow(cubeCount_, 1.0f / 3.0f));
-  const int igrid = (int)grid;
+  const int igrid = static_cast<int>(grid);
   // const float fgrid = static_cast<float>(igrid);
   x = static_cast<float>((counter % igrid) - grid / 2);
   // NOLINTNEXTLINE(bugprone-integer-division)
@@ -474,7 +474,8 @@ glm::vec3 GPUStressSession::animateCube(int counter,
   static std::vector<AnimationInfo> animations;
   if (animations.size() < counter) {
     AnimationInfo info;
-    info.velocity = glm::vec3(1.f * (counter % 2 ? 1.0 : -1.0), 1.f - (float)(counter % 3), 0.f);
+    info.velocity =
+        glm::vec3(1.f * (counter % 2 ? 1.0 : -1.0), 1.f - static_cast<float>(counter % 3), 0.f);
     info.lastPos = glm::vec3(x, y, 0);
     animations.push_back(info);
   }
@@ -483,7 +484,7 @@ glm::vec3 GPUStressSession::animateCube(int counter,
   if (dropFrameX_ && (frameCount % dropFrameX_) < dropFrameCount_) {
     velocityScale = 0.f;
   } else if (dropFrameX_ && (frameCount % dropFrameX_) == dropFrameCount_) {
-    velocityScale = 1.f + (float)dropFrameCount_;
+    velocityScale = 1.f + static_cast<float>(dropFrameCount_);
   }
   const glm::vec3 pos =
       animations[counter].lastPos + animations[counter].velocity * velocityScale * scale * .005f;
