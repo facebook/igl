@@ -283,7 +283,7 @@ void MeshShaderTriangleSession::update(SurfaceTextures surfaceTextures) noexcept
   auto drawableSurface = framebuffer_->getColorAttachment(0);
 
   frameNum_ = (++frameNum_) % 360;
-  const float angle = (float)frameNum_ * M_PI / 180.0f;
+  const float angle = static_cast<float>(frameNum_) * M_PI / 180.0f;
   const glm::mat4 matrix = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 0.0f, 1.0f));
   ubo_->upload(&matrix, {sizeof(matrix)});
 
