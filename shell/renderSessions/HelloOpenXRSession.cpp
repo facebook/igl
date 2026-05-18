@@ -354,7 +354,7 @@ void HelloOpenXRSession::update(SurfaceTextures surfaceTextures) noexcept {
   }
 
   // Command buffers (1-N per thread): create, submit and forget
-  auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
+  const auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
   const std::shared_ptr<IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_[viewIndex]);
   commands->pushDebugGroupLabel("HelloOpenXRSession Commands", Color(0.0f, 1.0f, 0.0f));
