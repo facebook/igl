@@ -340,11 +340,13 @@ void CheckerboardMipmapSession::update(SurfaceTextures surfaceTextures) noexcept
   }
   Result ret;
   if (framebuffer_ == nullptr) {
-    FramebufferDesc framebufferDesc;
-    framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
-    framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
-    IGL_DEBUG_ASSERT(framebufferDesc.depthAttachment.texture != nullptr);
-    framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
+    IGL_DEBUG_ASSERT(surfaceTextures.depth != nullptr);
+    framebuffer_ = getPlatform().getDevice().createFramebuffer(
+        FramebufferDesc{
+            .colorAttachments = {{.texture = surfaceTextures.color}},
+            .depthAttachment = {.texture = surfaceTextures.depth},
+        },
+        &ret);
     IGL_DEBUG_ASSERT(ret.isOk());
     IGL_DEBUG_ASSERT(framebuffer_ != nullptr);
   } else {
