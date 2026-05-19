@@ -556,7 +556,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
   // from igl/shell/renderSessions/Textured3DCubeSession.cpp
   const float fov = float(45.0f * (M_PI / 180.0f));
-  const float aspectRatio = (float)width_ / (float)height_;
+  const float aspectRatio = static_cast<float>(width_) / static_cast<float>(height_);
   perFrame.proj = glm::perspectiveLH(fov, aspectRatio, 0.1f, 500.0f);
   // place a "camera" behind the cubes, the distance depends on the total number of cubes
   perFrame.view =
@@ -565,13 +565,14 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
   // rotate cubes around random axes
   for (uint32_t i = 0; i != kNumCubes; i++) {
-    const float direction = powf(-1, (float)(i + 1));
-    const uint32_t cubesInLine = (uint32_t)sqrt(kNumCubes);
+    const float direction = powf(-1, static_cast<float>(i + 1));
+    const uint32_t cubesInLine = static_cast<uint32_t>(sqrt(kNumCubes));
     const vec3 offset = vec3(-1.5f * sqrt(kNumCubes) + 4.0f * (i % cubesInLine),
                              -1.5f * sqrt(kNumCubes) + 4.0f * (i / cubesInLine),
                              0);
-    perObject[i].model =
-        glm::rotate(glm::translate(mat4(1.0f), offset), direction * (float)glfwGetTime(), axis_[i]);
+    perObject[i].model = glm::rotate(glm::translate(mat4(1.0f), offset),
+                                     direction * static_cast<float>(glfwGetTime()),
+                                     axis_[i]);
   }
 
   ubPerObject[frameIndex]->upload(&perObject, igl::BufferRange(sizeof(perObject)));
@@ -582,12 +583,14 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
   const igl::Viewport viewport = {.x = 0.0f,
                                   .y = 0.0f,
-                                  .width = (float)width_,
-                                  .height = (float)height_,
+                                  .width = static_cast<float>(width_),
+                                  .height = static_cast<float>(height_),
                                   .minDepth = 0.0f,
                                   .maxDepth = +1.0f};
-  const igl::ScissorRect scissor = {
-      .x = 0, .y = 0, .width = (uint32_t)width_, .height = (uint32_t)height_};
+  const igl::ScissorRect scissor = {.x = 0,
+                                    .y = 0,
+                                    .width = static_cast<uint32_t>(width_),
+                                    .height = static_cast<uint32_t>(height_)};
 
   // This will clear the framebuffer
   auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer);
@@ -709,7 +712,12 @@ int main(int argc, char* argv[]) {
       const char* fileName = "TinyMesh.png";
       IGLLog(IGLLogInfo, "Writing screenshot to: '%s'\n", fileName);
       stbi_flip_vertically_on_write(1);
-      stbi_write_png(fileName, (int)dim.width, (int)dim.height, 3, pixelsRGB.data(), 0);
+      stbi_write_png(fileName,
+                     static_cast<int>(dim.width),
+                     static_cast<int>(dim.height),
+                     3,
+                     pixelsRGB.data(),
+                     0);
       break;
     }
   }
