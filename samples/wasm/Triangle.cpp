@@ -198,8 +198,10 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
   CommandBufferDesc cbDesc;
   std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
 
-  const igl::Viewport viewport = {0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f};
-  const igl::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
+  const igl::Viewport viewport = {
+      0.0f, 0.0f, static_cast<float>(width_), static_cast<float>(height_), 0.0f, +1.0f};
+  const igl::ScissorRect scissor = {
+      0, 0, static_cast<uint32_t>(width_), static_cast<uint32_t>(height_)};
 
   // This will clear the framebuffer
   auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
