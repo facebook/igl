@@ -238,8 +238,8 @@ static GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
           *ctx, HWDeviceQueryDesc(HWDeviceType::SoftwareGpu), nullptr);
     }
 
-    device =
-        vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width, (uint32_t)height);
+    device = vulkan::HWDevice::create(
+        std::move(ctx), devices[0], static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 #endif
     IGL_DEBUG_ASSERT(device);
   }
@@ -360,12 +360,14 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
 
   const igl::Viewport viewport = {.x = 0.0f,
                                   .y = 0.0f,
-                                  .width = (float)width,
-                                  .height = (float)height,
+                                  .width = static_cast<float>(width),
+                                  .height = static_cast<float>(height),
                                   .minDepth = 0.0f,
                                   .maxDepth = +1.0f};
-  const igl::ScissorRect scissor = {
-      .x = 0, .y = 0, .width = (uint32_t)width, .height = (uint32_t)height};
+  const igl::ScissorRect scissor = {.x = 0,
+                                    .y = 0,
+                                    .width = static_cast<uint32_t>(width),
+                                    .height = static_cast<uint32_t>(height)};
 
   // This will clear the framebuffer
   auto commands = buffer->createRenderCommandEncoder(renderPass, framebuffer);
@@ -431,7 +433,12 @@ int main(int argc, char* argv[]) {
       const char* fileName = "Tiny.png";
       IGLLog(IGLLogInfo, "Writing screenshot to: '%s'\n", fileName);
       stbi_flip_vertically_on_write(1);
-      stbi_write_png(fileName, (int)dim.width, (int)dim.height, 3, pixelsRGB.data(), 0);
+      stbi_write_png(fileName,
+                     static_cast<int>(dim.width),
+                     static_cast<int>(dim.height),
+                     3,
+                     pixelsRGB.data(),
+                     0);
       break;
     }
   }
