@@ -85,7 +85,8 @@ void initIGL() {
   auto ctx = vulkan::HWDevice::createContext(ctxConfig, window);
   std::vector<HWDeviceDesc> devices =
       vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
-  device = vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width, (uint32_t)height);
+  device = vulkan::HWDevice::create(
+      std::move(ctx), devices[0], static_cast<uint32_t>(width), static_cast<uint32_t>(height));
   IGL_DEBUG_ASSERT(device);
 
   // Command queue: backed by different types of GPU HW queues
@@ -100,8 +101,9 @@ void initIGL() {
 }
 
 void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = nativeDrawable;
+  const FramebufferDesc framebufferDesc{
+      .colorAttachments = {{.texture = nativeDrawable}},
+  };
   framebuffer = device->createFramebuffer(framebufferDesc, nullptr);
   IGL_DEBUG_ASSERT(framebuffer);
 }
@@ -155,12 +157,14 @@ void render() {
 
   const igl::Viewport viewport = {.x = 0.0f,
                                   .y = 0.0f,
-                                  .width = (float)width,
-                                  .height = (float)height,
+                                  .width = static_cast<float>(width),
+                                  .height = static_cast<float>(height),
                                   .minDepth = 0.0f,
                                   .maxDepth = +1.0f};
-  const igl::ScissorRect scissor = {
-      .x = 0, .y = 0, .width = (uint32_t)width, .height = (uint32_t)height};
+  const igl::ScissorRect scissor = {.x = 0,
+                                    .y = 0,
+                                    .width = static_cast<uint32_t>(width),
+                                    .height = static_cast<uint32_t>(height)};
 
   // This will clear the framebuffer
   auto commands = buffer->createRenderCommandEncoder(renderPass, framebuffer);
