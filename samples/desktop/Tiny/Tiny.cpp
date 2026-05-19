@@ -249,7 +249,7 @@ static GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
   renderPass.colorAttachments.resize(kNumColorAttachments);
 
   // first color attachment
-  for (auto i = 0; i < kNumColorAttachments; ++i) {
+  for (uint32_t i = 0; i < kNumColorAttachments; ++i) {
     // Generate sparse color attachments by skipping alternate slots
     if (i & 0x1) {
       continue;
@@ -276,8 +276,8 @@ static void createRenderPipeline() {
 
   desc.targetDesc.colorAttachments.resize(kNumColorAttachments);
 
-  for (auto i = 0; i < kNumColorAttachments; ++i) {
-    // @fb-only
+  for (uint32_t i = 0; i < kNumColorAttachments; ++i) {
+    // color attachment can be sparse
     if (framebuffer->getColorAttachment(i)) {
       desc.targetDesc.colorAttachments[i].textureFormat =
           framebuffer->getColorAttachment(i)->getFormat();
@@ -324,7 +324,7 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   FramebufferDesc framebufferDesc;
   framebufferDesc.colorAttachments[0].texture = nativeDrawable;
 
-  for (auto i = 1; i < kNumColorAttachments; ++i) {
+  for (uint32_t i = 1; i < kNumColorAttachments; ++i) {
     // Generate sparse color attachments by skipping alternate slots
     if (i & 0x1) {
       continue;
