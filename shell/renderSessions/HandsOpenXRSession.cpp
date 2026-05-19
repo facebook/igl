@@ -310,14 +310,14 @@ void HandsOpenXRSession::update(SurfaceTextures surfaceTextures) noexcept {
 
   Result ret;
   if (framebuffer_[viewIndex] == nullptr) {
-    FramebufferDesc framebufferDesc;
-    framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
-    framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
-
-    framebufferDesc.mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
-                                                                     : FramebufferMode::Mono;
-
-    framebuffer_[viewIndex] = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
+    framebuffer_[viewIndex] = getPlatform().getDevice().createFramebuffer(
+        FramebufferDesc{
+            .colorAttachments = {{.texture = surfaceTextures.color}},
+            .depthAttachment = {.texture = surfaceTextures.depth},
+            .mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
+                                                              : FramebufferMode::Mono,
+        },
+        &ret);
     IGL_DEBUG_ASSERT(ret.isOk());
     IGL_DEBUG_ASSERT(framebuffer_[viewIndex] != nullptr);
   } else {
