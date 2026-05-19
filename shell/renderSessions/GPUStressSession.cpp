@@ -726,12 +726,18 @@ void GPUStressSession::initialize() noexcept {
   // Set up vertex uniform data
   vertexParameters_.scaleZ = 1.0f;
 
-  renderPass_.colorAttachments.resize(1);
-  renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass_.colorAttachments[0].clearColor = {0.0, 0.0, 0.0f, 0.0f};
-  renderPass_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPass_.depthAttachment.clearDepth = 1.0;
+  renderPass_ = {
+      .colorAttachments = {{
+          .loadAction = LoadAction::Clear,
+          .storeAction = StoreAction::Store,
+          .clearColor = {0.0, 0.0, 0.0f, 0.0f},
+      }},
+      .depthAttachment =
+          {
+              .loadAction = LoadAction::Clear,
+              .clearDepth = 1.0,
+          },
+  };
 
   if (useMSAA_) {
     renderPass_.colorAttachments[0].storeAction = igl::StoreAction::MsaaResolve;
