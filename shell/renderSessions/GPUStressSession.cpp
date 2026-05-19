@@ -510,11 +510,13 @@ glm::vec3 GPUStressSession::animateCube(int counter,
 
 void GPUStressSession::createSamplerAndTextures(const igl::IDevice& device) {
   // Sampler & Texture
-  SamplerStateDesc samplerDesc;
-  samplerDesc.minFilter = samplerDesc.magFilter = SamplerMinMagFilter::Linear;
-  samplerDesc.addressModeU = SamplerAddressMode::MirrorRepeat;
-  samplerDesc.addressModeV = SamplerAddressMode::MirrorRepeat;
-  samplerDesc.addressModeW = SamplerAddressMode::MirrorRepeat;
+  const SamplerStateDesc samplerDesc{
+      .minFilter = SamplerMinMagFilter::Linear,
+      .magFilter = SamplerMinMagFilter::Linear,
+      .addressModeU = SamplerAddressMode::MirrorRepeat,
+      .addressModeV = SamplerAddressMode::MirrorRepeat,
+      .addressModeW = SamplerAddressMode::MirrorRepeat,
+  };
   samp0_ = device.createSamplerState(samplerDesc, nullptr);
   samp1_ = device.createSamplerState(samplerDesc, nullptr);
 
