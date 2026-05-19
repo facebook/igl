@@ -323,12 +323,18 @@ void CheckerboardMipmapSession::initialize() noexcept {
   commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 
-  renderPass_.colorAttachments.resize(1);
-  renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass_.colorAttachments[0].clearColor = getPreferredClearColor();
-  renderPass_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPass_.depthAttachment.clearDepth = 1.0;
+  renderPass_ = {
+      .colorAttachments = {{
+          .loadAction = LoadAction::Clear,
+          .storeAction = StoreAction::Store,
+          .clearColor = getPreferredClearColor(),
+      }},
+      .depthAttachment =
+          {
+              .loadAction = LoadAction::Clear,
+              .clearDepth = 1.0,
+          },
+  };
 }
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
