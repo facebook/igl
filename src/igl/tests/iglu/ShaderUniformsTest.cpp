@@ -132,4 +132,142 @@ TEST_F(ShaderUniformsTest, SettersCoverage) {
   shaderUniforms.setTexture("test", nullptr, nullptr);
 }
 
+// Test construction with vertex-stage uniform buffer
+TEST_F(ShaderUniformsTest, ConstructWithVertexStageBuffer) {
+  BufferArgDesc vertexBuffer{
+      .name = igl::genNameHandle("vertexUniforms"),
+      .bufferDataSize = 64,
+      .bufferIndex = 0,
+      .shaderStage = ShaderStage::Vertex,
+      .isUniformBlock = true,
+      .members = {{.name = igl::genNameHandle("modelMatrix"),
+                   .type = UniformType::Mat4x4,
+                   .offset = 0,
+                   .arrayLength = 1}},
+  };
+
+  TestRenderPipelineReflection reflection{
+      std::vector<BufferArgDesc>{vertexBuffer},
+      std::vector<SamplerArgDesc>{},
+      std::vector<TextureArgDesc>{},
+  };
+
+  iglu::material::ShaderUniforms shaderUniforms(*iglDev_, reflection);
+
+  // Verify uniform was registered and is accessible
+  const iglu::simdtypes::float4 col = {1.0f, 0.0f, 0.0f, 0.0f};
+  const iglu::simdtypes::float4x4 identity(col, col, col, col);
+  shaderUniforms.setFloat4x4(igl::genNameHandle("modelMatrix"), identity);
+}
+
+// Test construction with fragment-stage uniform buffer
+TEST_F(ShaderUniformsTest, ConstructWithFragmentStageBuffer) {
+  BufferArgDesc fragmentBuffer{
+      .name = igl::genNameHandle("fragmentUniforms"),
+      .bufferDataSize = 16,
+      .bufferIndex = 1,
+      .shaderStage = ShaderStage::Fragment,
+      .isUniformBlock = true,
+      .members = {{.name = igl::genNameHandle("color"),
+                   .type = UniformType::Float4,
+                   .offset = 0,
+                   .arrayLength = 1}},
+  };
+
+  TestRenderPipelineReflection reflection{
+      std::vector<BufferArgDesc>{fragmentBuffer},
+      std::vector<SamplerArgDesc>{},
+      std::vector<TextureArgDesc>{},
+  };
+
+  iglu::material::ShaderUniforms shaderUniforms(*iglDev_, reflection);
+
+  // Verify uniform was registered and is accessible
+  const iglu::simdtypes::float4 redColor = {1.0f, 0.0f, 0.0f, 1.0f};
+  shaderUniforms.setFloat4(igl::genNameHandle("color"), redColor);
+}
+
+// Test construction with both vertex and fragment stage buffers
+TEST_F(ShaderUniformsTest, ConstructWithMixedStageBuffers) {
+  BufferArgDesc vertexBuffer{
+      .name = igl::genNameHandle("vertexUniforms"),
+      .bufferDataSize = 64,
+      .bufferIndex = 0,
+      .shaderStage = ShaderStage::Vertex,
+      .isUniformBlock = true,
+      .members = {{.name = igl::genNameHandle("mvpMatrix"),
+                   .type = UniformType::Mat4x4,
+                   .offset = 0,
+                   .arrayLength = 1}},
+  };
+
+  BufferArgDesc fragmentBuffer{
+      .name = igl::genNameHandle("fragmentUniforms"),
+      .bufferDataSize = 20,
+      .bufferIndex = 1,
+      .shaderStage = ShaderStage::Fragment,
+      .isUniformBlock = true,
+      .members = {{.name = igl::genNameHandle("baseColor"),
+                   .type = UniformType::Float4,
+                   .offset = 0,
+                   .arrayLength = 1},
+                  {.name = igl::genNameHandle("roughness"),
+                   .type = UniformType::Float,
+                   .offset = 16,
+                   .arrayLength = 1}},
+  };
+
+  TestRenderPipelineReflection reflection{
+      std::vector<BufferArgDesc>{vertexBuffer, fragmentBuffer},
+      std::vector<SamplerArgDesc>{},
+      std::vector<TextureArgDesc>{},
+  };
+
+  iglu::material::ShaderUniforms shaderUniforms(*iglDev_, reflection);
+
+  // Verify both stages' uniforms are accessible
+  const iglu::simdtypes::float4 col = {1.0f, 0.0f, 0.0f, 0.0f};
+  const iglu::simdtypes::float4x4 matrix(col, col, col, col);
+  shaderUniforms.setFloat4x4(igl::genNameHandle("mvpMatrix"), matrix);
+
+  const iglu::simdtypes::float4 color = {0.5f, 0.5f, 0.5f, 1.0f};
+  shaderUniforms.setFloat4(igl::genNameHandle("baseColor"), color);
+
+  const iglu::simdtypes::float1 roughness = 0.8f;
+  shaderUniforms.setFloat(igl::genNameHandle("roughness"), roughness);
+}
+
+// Test construction with multiple members in a single buffer
+TEST_F(ShaderUniformsTest, ConstructWithMultiMemberBuffer) {
+  BufferArgDesc buffer{
+      .name = igl::genNameHandle("perFrameUniforms"),
+      .bufferDataSize = 128,
+      .bufferIndex = 0,
+      .shaderStage = ShaderStage::Vertex,
+      .isUniformBlock = true,
+      .members = {{.name = igl::genNameHandle("modelMatrix"),
+                   .type = UniformType::Mat4x4,
+                   .offset = 0,
+                   .arrayLength = 1},
+                  {.name = igl::genNameHandle("viewMatrix"),
+                   .type = UniformType::Mat4x4,
+                   .offset = 64,
+                   .arrayLength = 1}},
+  };
+
+  TestRenderPipelineReflection reflection{
+      std::vector<BufferArgDesc>{buffer},
+      std::vector<SamplerArgDesc>{},
+      std::vector<TextureArgDesc>{},
+  };
+
+  iglu::material::ShaderUniforms shaderUniforms(*iglDev_, reflection);
+
+  // Both members should be settable
+  const iglu::simdtypes::float4 col = {1.0f, 0.0f, 0.0f, 0.0f};
+  const iglu::simdtypes::float4x4 identity(col, col, col, col);
+  shaderUniforms.setFloat4x4(igl::genNameHandle("modelMatrix"), identity);
+  shaderUniforms.setFloat4x4(igl::genNameHandle("viewMatrix"), identity);
+}
+
 } // namespace igl::tests
