@@ -354,7 +354,7 @@ void TextureViewSession::update(SurfaceTextures surfaceTextures) noexcept {
     IGL_DEBUG_ASSERT(ret.isOk());
   }
 
-  auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
+  const auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
   const igl::RenderPassDesc renderPass{
       .colorAttachments = {{
