@@ -66,6 +66,10 @@ public class SampleLib {
 
   public static native void surfaceDestroyed(Surface surface);
 
+  /// @brief Returns true if the active renderer is in headless mode.
+  /// Must be called after init().
+  public static native boolean isHeadless();
+
   public static class RenderSessionConfig {
     String displayName;
     BackendVersion version;
