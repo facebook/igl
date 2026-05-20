@@ -645,7 +645,7 @@ void Session::drawFPS(float fps) const {
   ImGui::SetNextWindowBgAlpha(0.30f);
   ImGui::SetNextWindowSize(ImVec2(ImGui::CalcTextSize("FPS : _______").x, 0));
   if (ImGui::Begin("##FPS", nullptr, flags)) {
-    ImGui::Text("FPS : %i", (int)fps);
+    ImGui::Text("FPS : %i", static_cast<int>(fps));
     ImGui::Text("Ms  : %.1f", 1000.0 / fps);
   }
   ImGui::End();
