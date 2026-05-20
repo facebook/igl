@@ -39,12 +39,14 @@ void ForwardRenderPass::begin(std::shared_ptr<igl::IFramebuffer> target,
   renderPipelineDesc_.targetDesc.stencilAttachmentFormat =
       stencilAttachment ? stencilAttachment->getFormat() : igl::TextureFormat::Invalid;
 
-  igl::RenderPassDesc defaultRenderPassDesc;
-  defaultRenderPassDesc.colorAttachments.resize(1);
-  defaultRenderPassDesc.colorAttachments[0].loadAction = igl::LoadAction::Clear;
-  defaultRenderPassDesc.colorAttachments[0].storeAction = igl::StoreAction::Store;
-  defaultRenderPassDesc.colorAttachments[0].clearColor = {0.0, 0.0, 0.0, 1.0};
-  defaultRenderPassDesc.depthAttachment.clearDepth = 1.0f;
+  const igl::RenderPassDesc defaultRenderPassDesc{
+      .colorAttachments = {{
+          .loadAction = igl::LoadAction::Clear,
+          .storeAction = igl::StoreAction::Store,
+          .clearColor = {0.0, 0.0, 0.0, 1.0},
+      }},
+      .depthAttachment = {.clearDepth = 1.0f},
+  };
   const igl::RenderPassDesc* finalDesc = renderPassDescOverride ? renderPassDescOverride
                                                                 : &defaultRenderPassDesc;
 
