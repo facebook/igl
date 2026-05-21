@@ -26,6 +26,27 @@ namespace igl::metal {
 RenderCommandEncoder::RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer) :
   IRenderCommandEncoder::IRenderCommandEncoder(commandBuffer), device_(commandBuffer->device()) {}
 
+/**
+ * @brief Builds a Metal render pass descriptor from IGL
+ *        abstractions and creates the render command encoder.
+ *
+ * Translates the IGL RenderPassDesc and IFramebuffer into a
+ * MTLRenderPassDescriptor, configuring color, depth, and stencil
+ * attachments with load/store actions, clear values, MSAA resolve
+ * textures, and slice/mip levels. On macOS 11.0+/iOS 14.0+, also
+ * configures GPU timestamp query sample buffer attachments.
+ * Stores the resulting encoder in the encoder_ member.
+ *
+ * @param[in] commandBuffer Metal command buffer from which the
+ *        render command encoder is created.
+ * @param[in] renderPass Specifies per-attachment load/store
+ *        actions, clear values, and timestamp query configuration.
+ * @param[in] framebuffer Provides color, depth, and stencil
+ *        texture attachments; cast internally to metal::Framebuffer.
+ * @param[out] outResult Set to OK on success, ArgumentNull if
+ *        framebuffer is null, ArgumentInvalid on attachment count
+ *        mismatch, or RuntimeError if descriptor creation fails.
+ */
 void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& commandBuffer,
                                       const RenderPassDesc& renderPass,
                                       const std::shared_ptr<IFramebuffer>& framebuffer,
