@@ -10,6 +10,7 @@
 #ifdef IGL_WITH_PERFETTO
 
 #include <perfetto.h>
+#include <string>
 
 // Category definitions live here so every TU that includes this header can
 // call TRACE_EVENT / TRACE_EVENT_INSTANT etc. directly.
@@ -23,13 +24,37 @@ PERFETTO_USE_CATEGORIES_FROM_NAMESPACE(igl::shell::profiling);
 
 namespace igl::shell::profiling {
 
-/// Initialize Perfetto tracing with kSystemBackend.
-/// Call once at app startup before any IGL_PROFILER_* macros fire.
+/// Initialize Perfetto tracing.
+/// Backend is chosen at compile time:
+///   - Android: kSystemBackend (capture via on-device traced daemon).
+///   - Other platforms: kInProcessBackend (self-contained capture, written to
+///     a file by stopTrace() — no traced daemon required).
+/// Idempotent; only the first call configures the SDK.
+/// Safe to call regardless of whether a trace session will be started.
 void initPerfetto() noexcept;
 
 /// Bump the IGL::FrameIndex counter track and emit a frame-boundary instant.
 /// Called automatically from RenderSession::runUpdate() when perfetto is enabled.
 void markFrame(const char* name) noexcept;
+
+/// Start an in-process Perfetto trace session that captures every registered
+/// TrackEvent category. The buffer is held in memory and flushed to
+/// `outputPath` on stopTrace(). At most one session may be active at a time;
+/// a second start while one is running is a no-op.
+///
+/// The session runs until stopTrace() is called. Callers are responsible for
+/// their own timing (e.g. a background thread that sleeps for a duration,
+/// or a shutdown notification).
+///
+/// Available on platforms using kInProcessBackend (i.e. non-Android).
+void startTraceToFile(std::string outputPath) noexcept;
+
+/// Stop the active in-process session, flush the buffer, and write it to the
+/// path passed to startTraceToFile(). Idempotent — calling without a matching
+/// start, or calling twice, is a no-op. Safe to call from a shutdown
+/// notification (e.g. `std::atexit`). Not async-signal-safe — do not call
+/// from a POSIX signal handler.
+void stopTrace() noexcept;
 
 } // namespace igl::shell::profiling
 
