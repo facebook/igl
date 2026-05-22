@@ -8,6 +8,7 @@
 #include "VulkanImage.h"
 
 #include <array>
+// NOLINTNEXTLINE(facebook-unused-include-check)
 #include <cinttypes>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
