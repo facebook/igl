@@ -1432,7 +1432,6 @@ std::unique_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSiz
 
   const VkPhysicalDeviceLimits& limits = getVkPhysicalDeviceProperties().limits;
 
-  ENSURE_BUFFER_SIZE(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, limits.maxUniformBufferRange);
   // any buffer
   ENSURE_BUFFER_SIZE(VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM, limits.maxStorageBufferRange);
 #undef ENSURE_BUFFER_SIZE
