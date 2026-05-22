@@ -33,6 +33,7 @@ class ColorSession : public RenderSession {
     MacbethTextureKtx,
     MacbethTextureKtx2,
     // @fb-only
+    // @fb-only
     EyeChartTexture720,
     OrangeTexture,
     OrangeClear,
