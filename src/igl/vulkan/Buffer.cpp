@@ -259,7 +259,7 @@ VkBufferUsageFlags Buffer::getBufferUsageFlags() const {
   return currentVulkanBuffer()->getBufferUsageFlags();
 }
 
-void* Buffer::map(const BufferRange& range, Result* outResult) {
+void* FOLLY_NULLABLE Buffer::map(const BufferRange& range, Result* outResult) {
   IGL_PROFILER_FUNCTION();
 
   IGL_DEBUG_ASSERT(!isRingBuffer_, "Buffer::map() operation not supported for ring buffer");

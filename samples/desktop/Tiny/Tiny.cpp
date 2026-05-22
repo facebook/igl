@@ -135,7 +135,7 @@ static RenderPassDesc renderPass;
 static std::shared_ptr<IFramebuffer> framebuffer;
 static std::shared_ptr<IRenderPipelineState> renderPipelineStateTriangle;
 
-static GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
+static GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
   if (!glfwInit()) {
     printf("glfwInit() failed");
     return nullptr;
