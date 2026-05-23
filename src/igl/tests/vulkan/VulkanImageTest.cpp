@@ -65,6 +65,9 @@ TEST_F(VulkanImageTest, CreateImageWithExportedMemory) {
       "Image: vulkan export memory");
   ASSERT_NE(vulkanImage.valid(), false);
   EXPECT_TRUE(vulkanImage.isExported_);
+  // The exported memory's size must be populated for consumers (e.g.
+  // RemoteVulkanIglSwapchain) that forward it to importers via IPC.
+  EXPECT_GT(vulkanImage.allocatedSize, 0u);
 #if IGL_PLATFORM_WINDOWS
   EXPECT_NE(vulkanImage.exportedMemoryHandle_, nullptr);
   EXPECT_NE(vulkanImage.getVkImage(), static_cast<VkImage_T*>(VK_NULL_HANDLE));

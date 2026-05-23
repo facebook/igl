@@ -881,6 +881,9 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                  memoryAllocateInfo.memoryTypeIndex);
 
     VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_[p]));
+    // Record allocation size so consumers (e.g. test framework swapchains)
+    // can advertise it to memory importers.
+    allocatedSize += memoryRequirements.memoryRequirements.size;
 
     VK_ASSERT(ivkSetDebugObjectName(&ctx_->vf_,
                                     device_,
