@@ -349,9 +349,10 @@ void HandsOpenXRSession::update(SurfaceTextures surfaceTextures) noexcept {
   }
 
   if (depthStencilState_ == nullptr) {
-    DepthStencilStateDesc depthStencilDesc;
-    depthStencilDesc.isDepthWriteEnabled = true;
-    depthStencilDesc.compareFunction = CompareFunction::LessEqual;
+    const DepthStencilStateDesc depthStencilDesc{
+        .compareFunction = CompareFunction::LessEqual,
+        .isDepthWriteEnabled = true,
+    };
     depthStencilState_ =
         getPlatform().getDevice().createDepthStencilState(depthStencilDesc, nullptr);
   }
