@@ -273,9 +273,10 @@ bool initialize() {
   }
 
   {
-    DepthStencilStateDesc desc;
-    desc.isDepthWriteEnabled = true;
-    desc.compareFunction = igl::CompareFunction::Less;
+    const DepthStencilStateDesc desc{
+        .compareFunction = igl::CompareFunction::Less,
+        .isDepthWriteEnabled = true,
+    };
     depthStencilState_ = device_->createDepthStencilState(desc, nullptr);
   }
 
