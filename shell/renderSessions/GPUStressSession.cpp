@@ -743,9 +743,10 @@ void GPUStressSession::initialize() noexcept {
     renderPass_.colorAttachments[0].storeAction = igl::StoreAction::MsaaResolve;
   }
 
-  DepthStencilStateDesc depthDesc;
-  depthDesc.isDepthWriteEnabled = true;
-  depthDesc.compareFunction = igl::CompareFunction::Less;
+  const DepthStencilStateDesc depthDesc{
+      .compareFunction = igl::CompareFunction::Less,
+      .isDepthWriteEnabled = true,
+  };
   depthStencilState_ = device.createDepthStencilState(depthDesc, nullptr);
 }
 
