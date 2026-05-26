@@ -371,9 +371,10 @@ GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationL
   }
 
   {
-    DepthStencilStateDesc desc;
-    desc.isDepthWriteEnabled = true;
-    desc.compareFunction = igl::CompareFunction::Less;
+    const DepthStencilStateDesc desc{
+        .compareFunction = igl::CompareFunction::Less,
+        .isDepthWriteEnabled = true,
+    };
     depthStencilState_ = device->createDepthStencilState(desc, nullptr);
   }
 
