@@ -485,9 +485,10 @@ void DepthBiasSession::initialize() noexcept {
 
   // Depth stencil state: depth testing and depth writes enabled
   {
-    DepthStencilStateDesc desc;
-    desc.compareFunction = CompareFunction::Less;
-    desc.isDepthWriteEnabled = true;
+    const DepthStencilStateDesc desc{
+        .compareFunction = CompareFunction::Less,
+        .isDepthWriteEnabled = true,
+    };
     depthStencilState_ = device.createDepthStencilState(desc, nullptr);
     IGL_DEBUG_ASSERT(depthStencilState_ != nullptr);
   }
