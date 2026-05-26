@@ -12,7 +12,9 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImageView.h>
 
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 struct AHardwareBuffer;
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 namespace igl::vulkan {
 
