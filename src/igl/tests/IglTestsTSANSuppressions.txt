@@ -15,3 +15,8 @@ race:libvulkan_lvp.so
 # in StringMap operations between llvmpipe worker threads during shader
 # compilation. This is third-party code we cannot fix.
 race:libLLVM.so
+
+# SwiftShader OpaqueFdExternalMemory uses an unsynchronized static counter
+# for generating unique memfd names in allocateBuffer(). Benign race we cannot
+# fix in third-party code.
+race:OpaqueFdExternalMemory::allocateBuffer
