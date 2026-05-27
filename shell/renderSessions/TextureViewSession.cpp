@@ -289,7 +289,7 @@ void TextureViewSession::initialize() noexcept {
             .clearColor = kColors[i % kColors.size()],
         }},
     };
-    auto commands = buffer->createRenderCommandEncoder(pass, fb);
+    const auto commands = buffer->createRenderCommandEncoder(pass, fb);
     commands->endEncoding();
   }
   commandQueue_->submit(*buffer);
