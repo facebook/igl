@@ -241,7 +241,7 @@ void HelloOpenXRSession::initialize() noexcept {
   shaderStages_ = getShaderStagesForBackend(device, shaderCross, stereoRendering);
 
   // Command queue: backed by different types of GPU HW queues
-  commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
+  commandQueue_ = device.createCommandQueue({}, nullptr);
 
   // Set up vertex uniform data
   ub_.scaleZ = 1.0f;
