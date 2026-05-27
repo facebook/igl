@@ -321,7 +321,7 @@ void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
                                     .height = static_cast<uint32_t>(dimensions.height)};
 
   // This will clear the framebuffer
-  auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+  const auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
   commands->bindRenderPipelineState(renderPipelineStateTriangle_);
   commands->bindViewport(viewport);
