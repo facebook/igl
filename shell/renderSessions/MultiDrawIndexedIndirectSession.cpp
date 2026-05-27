@@ -354,7 +354,7 @@ void MultiDrawIndexedIndirectSession::update(SurfaceTextures textures) noexcept 
   }
 
   // Command buffer
-  auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
+  const auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
   auto drawableSurface = framebuffer_->getColorAttachment(0);
 
