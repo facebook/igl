@@ -717,8 +717,7 @@ void GPUStressSession::initialize() noexcept {
   shaderStages_ = getShaderStagesForBackend(device);
 
   // Command queue: backed by different types of GPU HW queues
-  const CommandQueueDesc desc{};
-  commandQueue_ = device.createCommandQueue(desc, nullptr);
+  commandQueue_ = device.createCommandQueue({}, nullptr);
 
   tex0_->generateMipmap(*commandQueue_);
   tex1_->generateMipmap(*commandQueue_);
