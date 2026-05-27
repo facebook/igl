@@ -362,7 +362,7 @@ void StencilOutlineSession::initialize() noexcept {
   IGL_DEBUG_ASSERT(outlineShaderStages_ != nullptr);
 
   // Command queue
-  commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
+  commandQueue_ = device.createCommandQueue({}, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 
   // Depth/stencil state for the first pass: always pass stencil test, write reference value
