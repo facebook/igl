@@ -351,22 +351,23 @@ GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationL
   }
 
   {
-    VertexInputStateDesc desc;
-    desc.numAttributes = 3;
-    desc.attributes[0].format = VertexAttributeFormat::Float3;
-    desc.attributes[0].offset = offsetof(VertexPosUvw, position);
-    desc.attributes[0].bufferIndex = 0;
-    desc.attributes[0].location = 0;
-    desc.attributes[1].format = VertexAttributeFormat::Float3;
-    desc.attributes[1].offset = offsetof(VertexPosUvw, color);
-    desc.attributes[1].bufferIndex = 0;
-    desc.attributes[1].location = 1;
-    desc.attributes[2].format = VertexAttributeFormat::Float2;
-    desc.attributes[2].offset = offsetof(VertexPosUvw, uv);
-    desc.attributes[2].bufferIndex = 0;
-    desc.attributes[2].location = 2;
-    desc.numInputBindings = 1;
-    desc.inputBindings[0].stride = sizeof(VertexPosUvw);
+    const VertexInputStateDesc desc = {
+        .numAttributes = 3,
+        .attributes = {{.bufferIndex = 0,
+                        .format = VertexAttributeFormat::Float3,
+                        .offset = offsetof(VertexPosUvw, position),
+                        .location = 0},
+                       {.bufferIndex = 0,
+                        .format = VertexAttributeFormat::Float3,
+                        .offset = offsetof(VertexPosUvw, color),
+                        .location = 1},
+                       {.bufferIndex = 0,
+                        .format = VertexAttributeFormat::Float2,
+                        .offset = offsetof(VertexPosUvw, uv),
+                        .location = 2}},
+        .numInputBindings = 1,
+        .inputBindings = {{.stride = sizeof(VertexPosUvw)}},
+    };
     vertexInput0_ = device->createVertexInputState(desc, nullptr);
   }
 
