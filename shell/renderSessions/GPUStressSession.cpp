@@ -1006,7 +1006,7 @@ void GPUStressSession::update(SurfaceTextures surfaceTextures) noexcept {
   initState(surfaceTextures);
 
   // Command buffers (1-N per thread): create, submit and forget
-  auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
+  const auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
   const std::shared_ptr<IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
