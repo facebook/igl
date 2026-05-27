@@ -362,6 +362,18 @@ TEST_F(GpuTimerTierTest, AdrenoVendorCrossCheck) {
   EXPECT_EQ(opengl::classifyGpuTimerTier("Adreno (TM) 505", "ARM"), opengl::GpuTimerTier::Full);
 }
 
+TEST_F(GpuTimerTierTest, AdrenoVendorVariants) {
+  // Qualcomm GL drivers report at least three vendor string variants — all
+  // must match so budget Adreno devices land in Disabled (not Full default).
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Adreno (TM) 505", "Qualcomm Technologies, Inc."),
+            opengl::GpuTimerTier::Disabled);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Adreno (TM) 505", "QUALCOMM"),
+            opengl::GpuTimerTier::Disabled);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Adreno (TM) 630", "Qualcomm Technologies, Inc."),
+            opengl::GpuTimerTier::Conservative);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Adreno 730", "QUALCOMM"), opengl::GpuTimerTier::Full);
+}
+
 TEST_F(GpuTimerTierTest, MaliBudget) {
   EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G31", "ARM"), opengl::GpuTimerTier::Disabled);
   EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G52", "ARM"), opengl::GpuTimerTier::Disabled);
@@ -380,6 +392,16 @@ TEST_F(GpuTimerTierTest, MaliFull) {
 
 TEST_F(GpuTimerTierTest, MaliVendorCrossCheck) {
   EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G52", "Qualcomm"), opengl::GpuTimerTier::Full);
+}
+
+TEST_F(GpuTimerTierTest, MaliVendorVariants) {
+  // ARM ships at least three vendor string variants in Android GL drivers —
+  // same set as the Mali-T branch. Mali-G70+ on some Samsung Exynos builds
+  // reports "ARM Limited"; verify all variants land in their intended tier.
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G52", "ARM Limited"),
+            opengl::GpuTimerTier::Disabled);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G76", "Arm"), opengl::GpuTimerTier::Conservative);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G710", "ARM Limited"), opengl::GpuTimerTier::Full);
 }
 
 TEST_F(GpuTimerTierTest, MaliTBudget) {

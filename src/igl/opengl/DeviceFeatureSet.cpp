@@ -97,9 +97,17 @@ GpuTimerTier classifyGpuTimerTier(const char* renderer, const char* vendor) {
   }
 
   // Adreno (Qualcomm): vendor cross-check + numeric range parsing.
-  // Handles both "Adreno (TM) NNN" and newer "Adreno NNN" formats.
+  // Handles both "Adreno (TM) NNN" and newer "Adreno NNN" formats. Qualcomm
+  // ships at least three vendor string variants in Android GL drivers —
+  // "Qualcomm", "Qualcomm Technologies, Inc." (newer drivers), "QUALCOMM"
+  // (older / some OEM-tuned builds) — accept all three. Exact `strcmp`
+  // here previously fell any non-"Qualcomm" variant through to the
+  // default `Full` tier.
   int adrenoNumber = 0;
-  if (vendor != nullptr && std::strcmp(vendor, "Qualcomm") == 0 &&
+  if (vendor != nullptr &&
+      (std::strcmp(vendor, "Qualcomm") == 0 ||
+       std::strcmp(vendor, "Qualcomm Technologies, Inc.") == 0 ||
+       std::strcmp(vendor, "QUALCOMM") == 0) &&
       (std::sscanf(renderer, "Adreno (TM) %d", &adrenoNumber) == 1 ||
        std::sscanf(renderer, "Adreno %d", &adrenoNumber) == 1)) {
     if (adrenoNumber < 620) {
@@ -111,9 +119,16 @@ GpuTimerTier classifyGpuTimerTier(const char* renderer, const char* vendor) {
     return GpuTimerTier::Full; // 640+: 64 slots
   }
 
-  // Mali (ARM): vendor cross-check + numeric range.
+  // Mali-G (ARM): vendor cross-check + numeric range. Accepts the same three
+  // ARM vendor string variants documented on the Mali-T branch below
+  // ("ARM", "ARM Limited", "Arm") — Mali-G70+ devices on some Samsung
+  // builds report vendor as "ARM Limited" and would otherwise fall through
+  // to the default `Full` tier, the same failure mode that has crashed
+  // Mali-T drivers in production.
   int maliNumber = 0;
-  if (vendor != nullptr && std::strcmp(vendor, "ARM") == 0 &&
+  if (vendor != nullptr &&
+      (std::strcmp(vendor, "ARM") == 0 || std::strcmp(vendor, "ARM Limited") == 0 ||
+       std::strcmp(vendor, "Arm") == 0) &&
       std::sscanf(renderer, "Mali-G%d", &maliNumber) == 1) {
     if (maliNumber <= 68) {
       return GpuTimerTier::Disabled; // G31–G68: 0 slots
