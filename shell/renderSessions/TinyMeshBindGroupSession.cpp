@@ -366,25 +366,26 @@ void TinyMeshBindGroupSession::initialize() noexcept {
   }
 
   {
-    VertexInputStateDesc desc;
-    desc.numAttributes = 3;
-    desc.attributes[0].format = VertexAttributeFormat::Float3;
-    desc.attributes[0].offset = offsetof(VertexPosUvw, position);
-    desc.attributes[0].name = "pos";
-    desc.attributes[0].bufferIndex = 0;
-    desc.attributes[0].location = 0;
-    desc.attributes[1].format = VertexAttributeFormat::Float3;
-    desc.attributes[1].offset = offsetof(VertexPosUvw, color);
-    desc.attributes[1].name = "col";
-    desc.attributes[1].bufferIndex = 0;
-    desc.attributes[1].location = 1;
-    desc.attributes[2].format = VertexAttributeFormat::Float2;
-    desc.attributes[2].offset = offsetof(VertexPosUvw, uv);
-    desc.attributes[2].name = "st";
-    desc.attributes[2].bufferIndex = 0;
-    desc.attributes[2].location = 2;
-    desc.numInputBindings = 1;
-    desc.inputBindings[0].stride = sizeof(VertexPosUvw);
+    const VertexInputStateDesc desc = {
+        .numAttributes = 3,
+        .attributes = {{.bufferIndex = 0,
+                        .format = VertexAttributeFormat::Float3,
+                        .offset = offsetof(VertexPosUvw, position),
+                        .name = "pos",
+                        .location = 0},
+                       {.bufferIndex = 0,
+                        .format = VertexAttributeFormat::Float3,
+                        .offset = offsetof(VertexPosUvw, color),
+                        .name = "col",
+                        .location = 1},
+                       {.bufferIndex = 0,
+                        .format = VertexAttributeFormat::Float2,
+                        .offset = offsetof(VertexPosUvw, uv),
+                        .name = "st",
+                        .location = 2}},
+        .numInputBindings = 1,
+        .inputBindings = {{.stride = sizeof(VertexPosUvw)}},
+    };
     vertexInput0_ = device_->createVertexInputState(desc, nullptr);
   }
 
