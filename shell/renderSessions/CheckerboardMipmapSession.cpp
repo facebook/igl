@@ -404,7 +404,7 @@ void CheckerboardMipmapSession::update(SurfaceTextures surfaceTextures) noexcept
   // Command buffer: create, submit and forget
   const auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
-  auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+  const auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_DEBUG_ASSERT(commands != nullptr);
 
   if (commands) {
