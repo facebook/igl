@@ -24,8 +24,10 @@ class VulkanTexture final {
 
  public:
   VulkanImage image;
+  // NOLINTNEXTLINE(readability-identifier-naming)
   VulkanImageView imageView_;
   // an index into VulkanContext::textures_
+  // NOLINTNEXTLINE(readability-identifier-naming)
   uint32_t textureId_ = 0;
 };
 
