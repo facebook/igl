@@ -167,7 +167,7 @@ void render() {
                                     .height = static_cast<uint32_t>(height)};
 
   // This will clear the framebuffer
-  auto commands = buffer->createRenderCommandEncoder(renderPass, framebuffer);
+  const auto commands = buffer->createRenderCommandEncoder(renderPass, framebuffer);
 
   commands->bindRenderPipelineState(renderPipelineStateTriangle);
   commands->bindViewport(viewport);
