@@ -20,3 +20,10 @@ race:libLLVM.so
 # for generating unique memfd names in allocateBuffer(). Benign race we cannot
 # fix in third-party code.
 race:OpaqueFdExternalMemory::allocateBuffer
+
+# Vulkan-Loader (statically linked) races on its ICD-device linked list when
+# one thread calls vkCreateDevice() while another thread on a previously-created
+# device is in a loader trampoline (e.g. vkSetDebugUtilsObjectNameEXT()). Cannot
+# fix in third-party loader; affects any IGL test that creates >1 VkDevice.
+race:loader_add_logical_device
+race:loader_get_icd_and_device
