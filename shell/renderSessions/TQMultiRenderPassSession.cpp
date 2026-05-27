@@ -279,7 +279,7 @@ void TQMultiRenderPassSession::initialize() noexcept {
   shaderStages_ = getShaderStagesForBackend(device);
 
   // Command queue
-  commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
+  commandQueue_ = device.createCommandQueue({}, nullptr);
 
   renderPass0_ = {
       .colorAttachments =
