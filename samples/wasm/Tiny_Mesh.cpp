@@ -400,7 +400,7 @@ void onDraw(void*) {
       0, 0, static_cast<uint32_t>(width_), static_cast<uint32_t>(height_)};
 
   // This will clear the framebuffer
-  auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+  const auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
   commands->bindRenderPipelineState(renderPipelineState_Mesh_);
   commands->bindViewport(viewport);
