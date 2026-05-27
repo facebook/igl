@@ -277,7 +277,7 @@ void MeshShaderTriangleSession::update(SurfaceTextures surfaceTextures) noexcept
   }
 
   // Command Buffers
-  auto buffer = commandQueue_->createCommandBuffer({}, &ret);
+  const auto buffer = commandQueue_->createCommandBuffer({}, &ret);
   IGL_DEBUG_ASSERT(ret.isOk());
   IGL_DEBUG_ASSERT(buffer != nullptr);
   auto drawableSurface = framebuffer_->getColorAttachment(0);
