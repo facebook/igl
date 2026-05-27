@@ -277,7 +277,7 @@ void GPUTimerSession::update(SurfaceTextures textures) noexcept {
   }
 
   // Command Buffer with GPU timer attached
-  auto buffer = commandQueue_->createCommandBuffer(
+  const auto buffer = commandQueue_->createCommandBuffer(
       CommandBufferDesc{.debugName = "GPUTimerSession", .timer = timer_}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
   auto drawableSurface = framebuffer_->getColorAttachment(0);
