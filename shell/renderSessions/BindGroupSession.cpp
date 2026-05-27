@@ -286,7 +286,7 @@ namespace igl::shell {
 
 void BindGroupSession::createSamplerAndTextures(const igl::IDevice& device) {
   // Sampler & Texture
-  auto sampler = device.createSamplerState(SamplerStateDesc::newLinearMipmapped(), nullptr);
+  const auto sampler = device.createSamplerState(SamplerStateDesc::newLinearMipmapped(), nullptr);
 
   std::shared_ptr<ITexture> tex0, tex1;
 
