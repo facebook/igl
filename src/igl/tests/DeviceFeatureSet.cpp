@@ -461,13 +461,40 @@ TEST_F(GpuTimerTierTest, PowerVRNonImaginationVendorFallsThrough) {
   EXPECT_EQ(opengl::classifyGpuTimerTier("PowerVR SGX 540", "ARM"), opengl::GpuTimerTier::Full);
 }
 
-TEST_F(GpuTimerTierTest, XclipseConservative) {
+TEST_F(GpuTimerTierTest, XclipseDisabled) {
+  // SEV S647462 follow-up: Conservative (32 slots) was insufficient for
+  // Xclipse drivers — all variants treated as Disabled, matching Mali-T.
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Samsung Xclipse 530", "Samsung"),
+            opengl::GpuTimerTier::Disabled);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Samsung Xclipse 540", "Samsung"),
+            opengl::GpuTimerTier::Disabled);
   EXPECT_EQ(opengl::classifyGpuTimerTier("Samsung Xclipse 920", "Samsung"),
-            opengl::GpuTimerTier::Conservative);
+            opengl::GpuTimerTier::Disabled);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Samsung Xclipse 940", "Samsung"),
+            opengl::GpuTimerTier::Disabled);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Samsung Xclipse 960", "Samsung"),
+            opengl::GpuTimerTier::Disabled);
+}
+
+TEST_F(GpuTimerTierTest, XclipseVendorVariants) {
+  // Samsung ships at least three vendor string variants; all must match via
+  // the substring check on "Samsung". A bare-renderer "Xclipse N" without the
+  // "Samsung" prefix is also accepted in case future driver versions drop it.
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Samsung Xclipse 940", "Samsung Electronics Co., Ltd."),
+            opengl::GpuTimerTier::Disabled);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Samsung Xclipse 940", "Samsung Mobile"),
+            opengl::GpuTimerTier::Disabled);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Samsung Xclipse 940", "Samsung Electronics"),
+            opengl::GpuTimerTier::Disabled);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Xclipse 940", "Samsung"), opengl::GpuTimerTier::Disabled);
 }
 
 TEST_F(GpuTimerTierTest, XclipseVendorCrossCheck) {
+  // Non-Samsung vendor must not match Xclipse — defense against a future GPU
+  // sharing the renderer substring.
   EXPECT_EQ(opengl::classifyGpuTimerTier("Samsung Xclipse 920", "ARM"), opengl::GpuTimerTier::Full);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Samsung Xclipse 920", "Qualcomm"),
+            opengl::GpuTimerTier::Full);
 }
 
 TEST_F(GpuTimerTierTest, DesktopAndUnknown) {

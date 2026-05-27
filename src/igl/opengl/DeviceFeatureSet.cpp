@@ -151,10 +151,13 @@ GpuTimerTier classifyGpuTimerTier(const char* renderer, const char* vendor) {
     return GpuTimerTier::Disabled;
   }
 
-  // Samsung Xclipse (RDNA2): vendor cross-check.
-  if (vendor != nullptr && std::strcmp(vendor, "Samsung") == 0 &&
+  // Samsung Xclipse (RDNA): SEV S647462 — Conservative (32 slots) was
+  // insufficient; must be Disabled. Vendor substring covers Samsung's
+  // multiple vendor string variants ("Samsung", "Samsung Electronics Co.,
+  // Ltd.", "Samsung Mobile").
+  if (vendor != nullptr && std::strstr(vendor, "Samsung") != nullptr &&
       std::strstr(renderer, "Xclipse") != nullptr) {
-    return GpuTimerTier::Conservative;
+    return GpuTimerTier::Disabled;
   }
 
   return GpuTimerTier::Full;
