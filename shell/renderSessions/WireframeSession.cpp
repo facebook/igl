@@ -372,7 +372,7 @@ void WireframeSession::initialize() noexcept {
   IGL_DEBUG_ASSERT(wireframeShaderStages_ != nullptr);
 
   // Command queue
-  commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
+  commandQueue_ = device.createCommandQueue({}, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 
   // Depth stencil state
