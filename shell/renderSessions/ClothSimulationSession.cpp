@@ -270,7 +270,7 @@ void ClothSimulationSession::initialize() noexcept {
   IGL_DEBUG_ASSERT(updateNormalStages_ != nullptr);
 
   // Command queue: backed by different types of GPU HW queues
-  commandQueue_ = device.createCommandQueue(CommandQueueDesc{}, nullptr);
+  commandQueue_ = device.createCommandQueue({}, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 
   depthStencilState_ = device.createDepthStencilState(
