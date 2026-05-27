@@ -264,7 +264,7 @@ void TextureViewSession::initialize() noexcept {
           .colorAttachments = {{.texture = texture_}},
       },
       nullptr);
-  auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
+  const auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
   const std::array<Color, 10> kColors = {
       Color{1, 0, 0},
       Color{0, 1, 0},
