@@ -176,9 +176,7 @@ void TinyRenderer::render() {
   }
 
   // Create and submit command buffers
-  const CommandBufferDesc commandBufferDesc;
-  const std::shared_ptr<ICommandBuffer> buffer =
-      commandQueue_->createCommandBuffer(commandBufferDesc, &result);
+  const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, &result);
   throwOnBadResult(result);
 
   auto cmds = buffer->createRenderCommandEncoder(renderPassDesc_, framebuffer_);
