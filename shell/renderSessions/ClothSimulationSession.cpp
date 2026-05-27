@@ -338,8 +338,7 @@ void ClothSimulationSession::update(SurfaceTextures surfaceTextures) noexcept {
 
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 
-  const CommandBufferDesc cbDesc;
-  auto buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  const auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
   if (!buffer) {
     return;
