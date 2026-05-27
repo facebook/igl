@@ -595,7 +595,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
                                     .height = static_cast<uint32_t>(height_)};
 
   // This will clear the framebuffer
-  auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer);
+  const auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer);
 
   commands->bindRenderPipelineState(renderPipelineState_Mesh_);
   commands->bindViewport(viewport);
