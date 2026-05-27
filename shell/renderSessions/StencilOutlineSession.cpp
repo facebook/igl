@@ -367,42 +367,40 @@ void StencilOutlineSession::initialize() noexcept {
 
   // Depth/stencil state for the first pass: always pass stencil test, write reference value
   {
-    DepthStencilStateDesc desc;
-    desc.compareFunction = CompareFunction::AlwaysPass;
-    desc.isDepthWriteEnabled = true;
-
-    StencilStateDesc stencilWrite;
-    stencilWrite.stencilCompareFunction = CompareFunction::AlwaysPass;
-    stencilWrite.stencilFailureOperation = StencilOperation::Keep;
-    stencilWrite.depthFailureOperation = StencilOperation::Keep;
-    stencilWrite.depthStencilPassOperation = StencilOperation::Replace;
-    stencilWrite.readMask = 0xFF;
-    stencilWrite.writeMask = 0xFF;
-
-    desc.frontFaceStencil = stencilWrite;
-    desc.backFaceStencil = stencilWrite;
-
+    const StencilStateDesc stencilWrite{
+        .stencilFailureOperation = StencilOperation::Keep,
+        .depthFailureOperation = StencilOperation::Keep,
+        .depthStencilPassOperation = StencilOperation::Replace,
+        .stencilCompareFunction = CompareFunction::AlwaysPass,
+        .readMask = 0xFF,
+        .writeMask = 0xFF,
+    };
+    const DepthStencilStateDesc desc{
+        .compareFunction = CompareFunction::AlwaysPass,
+        .isDepthWriteEnabled = true,
+        .backFaceStencil = stencilWrite,
+        .frontFaceStencil = stencilWrite,
+    };
     depthStencilStateWrite_ = device.createDepthStencilState(desc, nullptr);
     IGL_DEBUG_ASSERT(depthStencilStateWrite_ != nullptr);
   }
 
   // Depth/stencil state for the outline pass: draw only where stencil != reference value
   {
-    DepthStencilStateDesc desc;
-    desc.compareFunction = CompareFunction::AlwaysPass;
-    desc.isDepthWriteEnabled = false;
-
-    StencilStateDesc stencilOutline;
-    stencilOutline.stencilCompareFunction = CompareFunction::NotEqual;
-    stencilOutline.stencilFailureOperation = StencilOperation::Keep;
-    stencilOutline.depthFailureOperation = StencilOperation::Keep;
-    stencilOutline.depthStencilPassOperation = StencilOperation::Keep;
-    stencilOutline.readMask = 0xFF;
-    stencilOutline.writeMask = 0x00;
-
-    desc.frontFaceStencil = stencilOutline;
-    desc.backFaceStencil = stencilOutline;
-
+    const StencilStateDesc stencilOutline{
+        .stencilFailureOperation = StencilOperation::Keep,
+        .depthFailureOperation = StencilOperation::Keep,
+        .depthStencilPassOperation = StencilOperation::Keep,
+        .stencilCompareFunction = CompareFunction::NotEqual,
+        .readMask = 0xFF,
+        .writeMask = 0x00,
+    };
+    const DepthStencilStateDesc desc{
+        .compareFunction = CompareFunction::AlwaysPass,
+        .isDepthWriteEnabled = false,
+        .backFaceStencil = stencilOutline,
+        .frontFaceStencil = stencilOutline,
+    };
     depthStencilStateOutline_ = device.createDepthStencilState(desc, nullptr);
     IGL_DEBUG_ASSERT(depthStencilStateOutline_ != nullptr);
   }
