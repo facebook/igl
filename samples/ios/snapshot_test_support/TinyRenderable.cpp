@@ -217,11 +217,12 @@ void TinyRenderable::initialize(igl::IDevice& device, const igl::IFramebuffer& f
   IGL_DEBUG_ASSERT(result.isOk(), "create vertex state failed: %s\n", result.message.c_str());
 
   // Sampler & Texture
-  igl::SamplerStateDesc samplerDesc;
-  samplerDesc.addressModeU = igl::SamplerAddressMode::Repeat;
-  samplerDesc.addressModeV = igl::SamplerAddressMode::Repeat;
-  samplerDesc.minFilter = samplerDesc.magFilter = igl::SamplerMinMagFilter::Nearest;
-  samplerDesc.magFilter = samplerDesc.magFilter = igl::SamplerMinMagFilter::Nearest;
+  const igl::SamplerStateDesc samplerDesc{
+      .minFilter = igl::SamplerMinMagFilter::Nearest,
+      .magFilter = igl::SamplerMinMagFilter::Nearest,
+      .addressModeU = igl::SamplerAddressMode::Repeat,
+      .addressModeV = igl::SamplerAddressMode::Repeat,
+  };
   sampler_ = device.createSamplerState(samplerDesc, nullptr);
   texture_ = createCheckerboardTexture(device);
 
