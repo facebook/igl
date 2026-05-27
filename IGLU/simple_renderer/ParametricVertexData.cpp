@@ -20,25 +20,21 @@ static const std::pair<const char*, int> kSAttrUv("a_uv", 1);
 namespace Quad {
 
 igl::VertexInputStateDesc inputStateDesc() {
-  igl::VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 2;
-  inputDesc.attributes[0] =
-      {
-          .bufferIndex = 0,
-          .format = igl::VertexAttributeFormat::Float3,
-          .offset = offsetof(VertexPosUv, position),
-          .name = kSAttrPosition.first,
-          .location = kSAttrPosition.second,
-      },
-  inputDesc.attributes[1] = {
-      .bufferIndex = 0,
-      .format = igl::VertexAttributeFormat::Float2,
-      .offset = offsetof(VertexPosUv, uv),
-      .name = kSAttrUv.first,
-      .location = kSAttrUv.second,
+  const igl::VertexInputStateDesc inputDesc = {
+      .numAttributes = 2,
+      .attributes = {{.bufferIndex = 0,
+                      .format = igl::VertexAttributeFormat::Float3,
+                      .offset = offsetof(VertexPosUv, position),
+                      .name = kSAttrPosition.first,
+                      .location = kSAttrPosition.second},
+                     {.bufferIndex = 0,
+                      .format = igl::VertexAttributeFormat::Float2,
+                      .offset = offsetof(VertexPosUv, uv),
+                      .name = kSAttrUv.first,
+                      .location = kSAttrUv.second}},
+      .numInputBindings = 1,
+      .inputBindings = {{.stride = sizeof(VertexPosUv)}},
   };
-  inputDesc.numInputBindings = 1;
-  inputDesc.inputBindings[0].stride = sizeof(VertexPosUv);
   return inputDesc;
 }
 
