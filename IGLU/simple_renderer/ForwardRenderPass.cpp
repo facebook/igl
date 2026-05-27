@@ -50,8 +50,7 @@ void ForwardRenderPass::begin(std::shared_ptr<igl::IFramebuffer> target,
   const igl::RenderPassDesc* finalDesc = renderPassDescOverride ? renderPassDescOverride
                                                                 : &defaultRenderPassDesc;
 
-  const igl::CommandBufferDesc cbDesc;
-  commandBuffer_ = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  commandBuffer_ = commandQueue_->createCommandBuffer({}, nullptr);
   commandEncoder_ =
       commandBuffer_->createRenderCommandEncoder(*finalDesc, framebuffer_, {}, nullptr);
 }
