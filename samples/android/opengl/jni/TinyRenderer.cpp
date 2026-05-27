@@ -184,7 +184,7 @@ void TinyRenderer::render() {
   const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, &result);
   throwOnBadResult(result);
 
-  auto cmds = buffer->createRenderCommandEncoder(renderPassDesc_, framebuffer_);
+  const auto cmds = buffer->createRenderCommandEncoder(renderPassDesc_, framebuffer_);
 
   cmds->bindVertexBuffer(0, *vertexBuffer_);
   cmds->bindIndexBuffer(*indexBuffer_, IndexFormat::UInt16);
