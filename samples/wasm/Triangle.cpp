@@ -204,7 +204,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
       0, 0, static_cast<uint32_t>(width_), static_cast<uint32_t>(height_)};
 
   // This will clear the framebuffer
-  auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+  const auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
   commands->bindRenderPipelineState(renderPipelineState_Triangle_);
   commands->bindViewport(viewport);
