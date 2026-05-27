@@ -1063,7 +1063,7 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
                                     .width = static_cast<uint32_t>(dimensions.width),
                                     .height = static_cast<uint32_t>(dimensions.height)};
 
-  auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+  const auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_DEBUG_ASSERT(commands != nullptr);
   if (commands) {
     commands->bindRenderPipelineState(renderPipelineState_);
