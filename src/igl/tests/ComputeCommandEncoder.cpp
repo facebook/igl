@@ -92,7 +92,7 @@ class ComputeCommandEncoderTest : public ::testing::Test {
 
       Result ret;
       computeStages_ = ShaderStagesCreator::fromModuleStringInput(
-          *iglDev_, source.data(), std::string(entryName), "", &ret);
+          *iglDev_, std::string(source).c_str(), std::string(entryName), "", &ret);
       ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
       ASSERT_TRUE(computeStages_ != nullptr);
     }
