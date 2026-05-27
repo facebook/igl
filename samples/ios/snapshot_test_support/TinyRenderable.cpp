@@ -198,14 +198,21 @@ void TinyRenderable::initialize(igl::IDevice& device, const igl::IFramebuffer& f
   IGL_DEBUG_ASSERT(result.isOk(), "create buffer failed: %s\n", result.message.c_str());
 
   // Vertex input state
-  igl::VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 2;
-  inputDesc.attributes[0] = igl::VertexAttribute(
-      0, igl::VertexAttributeFormat::Float3, offsetof(VertexPosUv, position), "position", 0);
-  inputDesc.attributes[1] = igl::VertexAttribute(
-      0, igl::VertexAttributeFormat::Float2, offsetof(VertexPosUv, uv), "uv_in", 1);
-  inputDesc.numInputBindings = 1;
-  inputDesc.inputBindings[0].stride = sizeof(VertexPosUv);
+  const igl::VertexInputStateDesc inputDesc = {
+      .numAttributes = 2,
+      .attributes = {{.bufferIndex = 0,
+                      .format = igl::VertexAttributeFormat::Float3,
+                      .offset = offsetof(VertexPosUv, position),
+                      .name = "position",
+                      .location = 0},
+                     {.bufferIndex = 0,
+                      .format = igl::VertexAttributeFormat::Float2,
+                      .offset = offsetof(VertexPosUv, uv),
+                      .name = "uv_in",
+                      .location = 1}},
+      .numInputBindings = 1,
+      .inputBindings = {{.stride = sizeof(VertexPosUv)}},
+  };
   vertexInput_ = device.createVertexInputState(inputDesc, &result);
   IGL_DEBUG_ASSERT(result.isOk(), "create vertex state failed: %s\n", result.message.c_str());
 
