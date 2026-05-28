@@ -159,4 +159,38 @@ TEST_F(VulkanFeaturesTest, EnableDefaultFeatures) {
   }
 }
 
+TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_MissingCoreFeature) {
+  igl::setDebugBreakEnabled(false);
+
+  const igl::vulkan::VulkanContextConfig config;
+
+  const igl::vulkan::VulkanFeatures requested(config);
+  igl::vulkan::VulkanFeatures available(config);
+  available.vkPhysicalDeviceFeatures2.features.dualSrcBlend = VK_FALSE;
+
+  const igl::Result result = requested.checkSelectedFeatures(available);
+#if IGL_PLATFORM_APPLE
+  EXPECT_TRUE(result.isOk());
+#else
+  EXPECT_FALSE(result.isOk());
+#endif
+}
+
+TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_MissingMultiview) {
+  igl::setDebugBreakEnabled(false);
+
+  const igl::vulkan::VulkanContextConfig config;
+
+  const igl::vulkan::VulkanFeatures requested(config);
+  igl::vulkan::VulkanFeatures available(config);
+  available.featuresMultiview.multiview = VK_FALSE;
+
+  const igl::Result result = requested.checkSelectedFeatures(available);
+#if IGL_PLATFORM_APPLE
+  EXPECT_TRUE(result.isOk());
+#else
+  EXPECT_FALSE(result.isOk());
+#endif
+}
+
 } // namespace igl::tests
