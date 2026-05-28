@@ -165,6 +165,64 @@ TEST(CommonTest, AtVkLayerTest) {
   }
 }
 
+// invertRedAndBlue **************************************************************************
+TEST(CommonTest, InvertRedAndBlueTest) {
+  EXPECT_EQ(igl::vulkan::invertRedAndBlue(VK_FORMAT_B8G8R8A8_UNORM), VK_FORMAT_R8G8B8A8_UNORM);
+  EXPECT_EQ(igl::vulkan::invertRedAndBlue(VK_FORMAT_R8G8B8A8_UNORM), VK_FORMAT_B8G8R8A8_UNORM);
+  EXPECT_EQ(igl::vulkan::invertRedAndBlue(VK_FORMAT_R8G8B8A8_SRGB), VK_FORMAT_B8G8R8A8_SRGB);
+  EXPECT_EQ(igl::vulkan::invertRedAndBlue(VK_FORMAT_B8G8R8A8_SRGB), VK_FORMAT_R8G8B8A8_SRGB);
+  EXPECT_EQ(igl::vulkan::invertRedAndBlue(VK_FORMAT_A2R10G10B10_UNORM_PACK32),
+            VK_FORMAT_A2B10G10R10_UNORM_PACK32);
+  EXPECT_EQ(igl::vulkan::invertRedAndBlue(VK_FORMAT_A2B10G10R10_UNORM_PACK32),
+            VK_FORMAT_A2R10G10B10_UNORM_PACK32);
+}
+
+// isTextureFormatRGB / isTextureFormatBGR ***************************************************
+TEST(CommonTest, IsTextureFormatRGBTest) {
+  EXPECT_TRUE(igl::vulkan::isTextureFormatRGB(VK_FORMAT_R8G8B8A8_UNORM));
+  EXPECT_TRUE(igl::vulkan::isTextureFormatRGB(VK_FORMAT_R8G8B8A8_SRGB));
+  EXPECT_TRUE(igl::vulkan::isTextureFormatRGB(VK_FORMAT_A2R10G10B10_UNORM_PACK32));
+  EXPECT_FALSE(igl::vulkan::isTextureFormatRGB(VK_FORMAT_B8G8R8A8_UNORM));
+  EXPECT_FALSE(igl::vulkan::isTextureFormatRGB(VK_FORMAT_B8G8R8A8_SRGB));
+  EXPECT_FALSE(igl::vulkan::isTextureFormatRGB(VK_FORMAT_R16G16B16A16_SFLOAT));
+}
+
+TEST(CommonTest, IsTextureFormatBGRTest) {
+  EXPECT_TRUE(igl::vulkan::isTextureFormatBGR(VK_FORMAT_B8G8R8A8_UNORM));
+  EXPECT_TRUE(igl::vulkan::isTextureFormatBGR(VK_FORMAT_B8G8R8A8_SRGB));
+  EXPECT_TRUE(igl::vulkan::isTextureFormatBGR(VK_FORMAT_A2B10G10R10_UNORM_PACK32));
+  EXPECT_FALSE(igl::vulkan::isTextureFormatBGR(VK_FORMAT_R8G8B8A8_UNORM));
+  EXPECT_FALSE(igl::vulkan::isTextureFormatBGR(VK_FORMAT_R8G8B8A8_SRGB));
+  EXPECT_FALSE(igl::vulkan::isTextureFormatBGR(VK_FORMAT_R16G16B16A16_SFLOAT));
+}
+
+// hasDepth / hasStencil *********************************************************************
+TEST(CommonTest, HasDepthTest) {
+  EXPECT_TRUE(igl::vulkan::hasDepth(VK_FORMAT_D16_UNORM));
+  EXPECT_TRUE(igl::vulkan::hasDepth(VK_FORMAT_D32_SFLOAT));
+  EXPECT_TRUE(igl::vulkan::hasDepth(VK_FORMAT_D24_UNORM_S8_UINT));
+  EXPECT_TRUE(igl::vulkan::hasDepth(VK_FORMAT_D32_SFLOAT_S8_UINT));
+  EXPECT_FALSE(igl::vulkan::hasDepth(VK_FORMAT_S8_UINT));
+  EXPECT_FALSE(igl::vulkan::hasDepth(VK_FORMAT_R8G8B8A8_UNORM));
+}
+
+TEST(CommonTest, HasStencilTest) {
+  EXPECT_TRUE(igl::vulkan::hasStencil(VK_FORMAT_S8_UINT));
+  EXPECT_TRUE(igl::vulkan::hasStencil(VK_FORMAT_D24_UNORM_S8_UINT));
+  EXPECT_TRUE(igl::vulkan::hasStencil(VK_FORMAT_D32_SFLOAT_S8_UINT));
+  EXPECT_FALSE(igl::vulkan::hasStencil(VK_FORMAT_D16_UNORM));
+  EXPECT_FALSE(igl::vulkan::hasStencil(VK_FORMAT_D32_SFLOAT));
+  EXPECT_FALSE(igl::vulkan::hasStencil(VK_FORMAT_R8G8B8A8_UNORM));
+}
+
+// getVkLayer ********************************************************************************
+TEST(CommonTest, GetVkLayerTest) {
+  EXPECT_EQ(igl::vulkan::getVkLayer(TextureType::Cube, 3, 0), 3);
+  EXPECT_EQ(igl::vulkan::getVkLayer(TextureType::TwoD, 0, 5), 5);
+  EXPECT_EQ(igl::vulkan::getVkLayer(TextureType::TwoDArray, 0, 7), 7);
+  EXPECT_EQ(igl::vulkan::getVkLayer(TextureType::ThreeD, 0, 2), 2);
+}
+
 // getNumImagePlanes ************************************************************************
 TEST(CommonTest, GetNumImagePlanesTest) {
   EXPECT_EQ(igl::vulkan::getNumImagePlanes(VK_FORMAT_UNDEFINED), 0);
