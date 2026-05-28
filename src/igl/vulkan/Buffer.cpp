@@ -226,7 +226,7 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
       currentVulkanBuffer()->bufferSubData(range.offset, range.size, data);
     } else {
       // update local data copy
-      checked_memcpy(localData_.get() + range.offset, range.size, (void*)data, range.size);
+      checked_memcpy(localData_.get() + range.offset, range.size, data, range.size);
       // use staging to upload data to device-local buffers
       ctx.stagingDevice_->bufferSubData(*currentVulkanBuffer(),
                                         currentUpdateRange.offset,
