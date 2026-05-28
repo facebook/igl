@@ -54,6 +54,20 @@ TEST(SamplerStateDescTest, InequalityOpDifferentMipLodMax) {
   EXPECT_NE(a, b);
 }
 
+TEST(SamplerStateDescTest, InequalityOpDifferentAddressMode) {
+  SamplerStateDesc a;
+  SamplerStateDesc b;
+  b.addressModeU = SamplerAddressMode::Clamp;
+  EXPECT_NE(a, b);
+}
+
+TEST(SamplerStateDescTest, InequalityOpDifferentDepthCompareEnabled) {
+  SamplerStateDesc a;
+  SamplerStateDesc b;
+  b.depthCompareEnabled = true;
+  EXPECT_NE(a, b);
+}
+
 TEST(SamplerStateDescTest, DebugNameIgnoredInEquality) {
   SamplerStateDesc a;
   SamplerStateDesc b;
