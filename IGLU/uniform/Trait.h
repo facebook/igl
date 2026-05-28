@@ -103,6 +103,7 @@ struct Trait<glm::mat3> {
     for (int i = 0; i < 3; i++) {
       auto* outRow = static_cast<float*>(glm::value_ptr(outData[i]));
       for (int j = 0; j < 3; j++) {
+        // NOLINTNEXTLINE(clang-analyzer-security.ArrayBound)
         *outRow++ = *srcMatrix++;
       }
     }
