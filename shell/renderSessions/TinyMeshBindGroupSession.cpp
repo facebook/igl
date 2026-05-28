@@ -497,10 +497,14 @@ void TinyMeshBindGroupSession::createRenderPipeline() {
     stbi_image_free(pixels);
   }
   {
-    SamplerStateDesc samplerDesc = igl::SamplerStateDesc::newLinear();
-    samplerDesc.addressModeU = igl::SamplerAddressMode::Repeat;
-    samplerDesc.addressModeV = igl::SamplerAddressMode::Repeat;
-    samplerDesc.debugName = "Sampler: linear";
+    const SamplerStateDesc samplerDesc = {
+        .minFilter = igl::SamplerMinMagFilter::Linear,
+        .magFilter = igl::SamplerMinMagFilter::Linear,
+        .mipFilter = igl::SamplerMipFilter::Disabled,
+        .addressModeU = igl::SamplerAddressMode::Repeat,
+        .addressModeV = igl::SamplerAddressMode::Repeat,
+        .debugName = "Sampler: linear",
+    };
     sampler_ = device_->createSamplerState(samplerDesc, nullptr);
   }
 
