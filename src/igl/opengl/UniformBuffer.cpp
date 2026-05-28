@@ -114,7 +114,8 @@ void UniformBuffer::printUniforms(GLint program) {
   IGL_LOG_DEBUG("Active Uniforms: %d\n", count);
 
   for (i = 0; i < count; i++) {
-    getContext().getActiveUniform(program, (GLuint)i, bufSize, &length, &size, &type, name);
+    getContext().getActiveUniform(
+        program, static_cast<GLuint>(i), bufSize, &length, &size, &type, name);
 
     IGL_LOG_DEBUG("Uniform #%d Type: %u Name: %s\n", i, type, name);
   }
@@ -129,8 +130,8 @@ void UniformBuffer::bindUniform(IContext& context,
     // If a glerror is hit within and of the getContext().uniform*** methods,
     // renderCommandEncoder->bindBuffer()'s index parameter likely does not map to the correct
     // location in the shader
-    auto* uniformFloats = (GLfloat*)(start);
-    auto* uniformInts = (GLint*)(start);
+    const auto* uniformFloats = reinterpret_cast<const GLfloat*>(start);
+    const auto* uniformInts = reinterpret_cast<const GLint*>(start);
     auto count = static_cast<GLsizei>(stCount);
     switch (uniformType) {
     case UniformType::Int:
@@ -259,8 +260,11 @@ void UniformBuffer::bindUniformArray(IContext& context,
         packedIntArray[i] = static_cast<int>(!(*(start) == 0u));
         start += stride;
       }
-      UniformBuffer::bindUniform(
-          context, shaderLocation, UniformType::Int, (uint8_t*)packedIntArray.get(), numElements);
+      UniformBuffer::bindUniform(context,
+                                 shaderLocation,
+                                 UniformType::Int,
+                                 reinterpret_cast<const uint8_t*>(packedIntArray.get()),
+                                 numElements);
       break;
     }
     case UniformBaseType::Int: {
@@ -270,8 +274,11 @@ void UniformBuffer::bindUniformArray(IContext& context,
             &packedIntArray[i * primitivesPerElement], start, primitivesPerElement * sizeof(GLint));
         start += stride;
       }
-      UniformBuffer::bindUniform(
-          context, shaderLocation, uniformType, (uint8_t*)packedIntArray.get(), numElements);
+      UniformBuffer::bindUniform(context,
+                                 shaderLocation,
+                                 uniformType,
+                                 reinterpret_cast<const uint8_t*>(packedIntArray.get()),
+                                 numElements);
       break;
     }
     case UniformBaseType::Float: {
@@ -282,8 +289,11 @@ void UniformBuffer::bindUniformArray(IContext& context,
                         primitivesPerElement * sizeof(GLfloat));
         start += stride;
       }
-      UniformBuffer::bindUniform(
-          context, shaderLocation, uniformType, (uint8_t*)packedFloatArray.get(), numElements);
+      UniformBuffer::bindUniform(context,
+                                 shaderLocation,
+                                 uniformType,
+                                 reinterpret_cast<const uint8_t*>(packedFloatArray.get()),
+                                 numElements);
       break;
     }
     case UniformBaseType::FloatMatrix: {
@@ -299,8 +309,11 @@ void UniformBuffer::bindUniformArray(IContext& context,
           start += (stride / primitivesPerElement);
         }
       }
-      UniformBuffer::bindUniform(
-          context, shaderLocation, uniformType, (uint8_t*)packedFloatArray.get(), numElements);
+      UniformBuffer::bindUniform(context,
+                                 shaderLocation,
+                                 uniformType,
+                                 reinterpret_cast<const uint8_t*>(packedFloatArray.get()),
+                                 numElements);
     } break;
     case UniformBaseType::Invalid:
     default:
