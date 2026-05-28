@@ -172,6 +172,63 @@ TEST_F(VulkanRenderPassBuilderTest, EqualityOperator) {
   EXPECT_FALSE(builder1 == builder3);
 }
 
+TEST_F(VulkanRenderPassBuilderTest, HashInequalityDepthStencil) {
+  igl::vulkan::VulkanRenderPassBuilder builder1;
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder1.addDepthStencil(
+      VK_FORMAT_D24_UNORM_S8_UINT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  igl::vulkan::VulkanRenderPassBuilder builder2;
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder2.addDepthStencil(
+      VK_FORMAT_D32_SFLOAT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  igl::vulkan::VulkanRenderPassBuilder::HashFunction hasher;
+  EXPECT_NE(hasher(builder1), hasher(builder2));
+}
+
+TEST_F(VulkanRenderPassBuilderTest, EqualityDepthStencil) {
+  igl::vulkan::VulkanRenderPassBuilder builder1;
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder1.addDepthStencil(
+      VK_FORMAT_D24_UNORM_S8_UINT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  igl::vulkan::VulkanRenderPassBuilder builder2;
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder2.addDepthStencil(
+      VK_FORMAT_D24_UNORM_S8_UINT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  EXPECT_TRUE(builder1 == builder2);
+
+  igl::vulkan::VulkanRenderPassBuilder builder3;
+  builder3.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder3.addDepthStencil(
+      VK_FORMAT_D32_SFLOAT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  EXPECT_FALSE(builder1 == builder3);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, DepthStencilWithExplicitStencilOps) {
+  auto& ctx = getVulkanContext();
+
+  igl::vulkan::VulkanRenderPassBuilder builder;
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder.addDepthStencil(VK_FORMAT_D24_UNORM_S8_UINT,
+                          VK_ATTACHMENT_LOAD_OP_CLEAR,
+                          VK_ATTACHMENT_STORE_OP_STORE,
+                          VK_ATTACHMENT_LOAD_OP_CLEAR,
+                          VK_ATTACHMENT_STORE_OP_STORE);
+
+  auto rp = ctx.findRenderPass(builder);
+  EXPECT_NE(rp.pass, VK_NULL_HANDLE);
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
