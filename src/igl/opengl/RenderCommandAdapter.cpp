@@ -72,8 +72,10 @@ void RenderCommandAdapter::initialize(const RenderPassDesc& renderPass,
 }
 
 void RenderCommandAdapter::setViewport(const Viewport& viewport) {
-  getContext().viewport(
-      (GLint)viewport.x, (GLint)viewport.y, (GLint)viewport.width, (GLint)viewport.height);
+  getContext().viewport(static_cast<GLint>(viewport.x),
+                        static_cast<GLint>(viewport.y),
+                        static_cast<GLint>(viewport.width),
+                        static_cast<GLint>(viewport.height));
 }
 
 void RenderCommandAdapter::setScissorRect(const ScissorRect& rect) {
