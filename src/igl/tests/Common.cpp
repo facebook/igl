@@ -121,6 +121,43 @@ TEST(CommonTest, OptimizedMemCopyTest) {
             *(reinterpret_cast<uint64_t*>(buffer2) + 3));
 }
 
+TEST(CommonTest, ResultSetOk) {
+  Result result(Result::Code::ArgumentInvalid, "some error");
+  ASSERT_FALSE(result.isOk());
+  ASSERT_FALSE(result.message.empty());
+
+  Result::setOk(&result);
+  ASSERT_TRUE(result.isOk());
+  ASSERT_TRUE(result.message.empty());
+}
+
+TEST(CommonTest, ResultSetOkNullSafe) {
+  Result::setOk(nullptr);
+}
+
+TEST(CommonTest, ResultSetResultNullSafe) {
+  Result::setResult(nullptr, Result::Code::RuntimeError, "should not crash");
+  const Result src(Result::Code::Unsupported, "src");
+  Result::setResult(nullptr, src);
+  Result::setResult(nullptr, Result(Result::Code::Unimplemented, "tmp"));
+}
+
+TEST(CommonTest, ResultErrorCodes) {
+  const Result r1(Result::Code::ArgumentNull, "null arg");
+  ASSERT_FALSE(r1.isOk());
+  ASSERT_EQ(r1.code, Result::Code::ArgumentNull);
+
+  const Result r2(Result::Code::ArgumentOutOfRange);
+  ASSERT_FALSE(r2.isOk());
+  ASSERT_EQ(r2.code, Result::Code::ArgumentOutOfRange);
+
+  const Result r3(Result::Code::Unsupported, "not supported");
+  ASSERT_EQ(r3.code, Result::Code::Unsupported);
+
+  const Result r4(Result::Code::DeviceLost, "gpu gone");
+  ASSERT_EQ(r4.code, Result::Code::DeviceLost);
+}
+
 TEST(CommonTest, HandleTest) {
   const Holder<BindGroupTextureHandle> bindGroupHandle;
   const Holder<BindGroupBufferHandle> bindGroupBufferHandle;
