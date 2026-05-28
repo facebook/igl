@@ -159,7 +159,7 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
               module_->glXCreateContextAttribsARB(display_, fbc[0], nullptr, True, contextAttribs);
 
           contextHandle_ != nullptr) {
-        IContext::registerContext((void*)contextHandle_, this);
+        IContext::registerContext(contextHandle_, this);
       } else {
         IGL_DEBUG_ABORT("[IGL] Failed to create GLX context");
       }
@@ -204,7 +204,7 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
     module_ = std::make_shared<GLXSharedModule>();
   }
 
-  IContext::registerContext((void*)contextHandle_, this);
+  IContext::registerContext(contextHandle_, this);
 
   // Set current, since creation doesn't really mean it's current yet.
   setCurrent();
