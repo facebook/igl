@@ -32,11 +32,11 @@ uint32_t iglCrc32ImplARM8(const char* s, size_t length) {
   }
 
   for (; length >= 8; s += 8, length -= 8) {
-    crc = __crc32d(crc, *(const uint64_t*)(s));
+    crc = __crc32d(crc, *reinterpret_cast<const uint64_t*>(s));
   }
 
   for (; length >= 4; s += 4, length -= 4) {
-    crc = __crc32w(crc, *(const uint32_t*)(s));
+    crc = __crc32w(crc, *reinterpret_cast<const uint32_t*>(s));
   }
 
   for (; length > 0; s++, length--) {
