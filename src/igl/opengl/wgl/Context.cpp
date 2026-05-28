@@ -97,7 +97,7 @@ Context::Context() : contextOwned_(true) {
                     GetLastError());
   }
 
-  IContext::registerContext((void*)renderContext_, this);
+  IContext::registerContext(renderContext_, this);
 
   // Set current, since creation doesn't really mean it's current yet.
   setCurrent();
@@ -113,7 +113,7 @@ Context::Context() : contextOwned_(true) {
 
 Context::Context(HDC deviceContext, HGLRC renderContext) :
   contextOwned_(false), deviceContext_(deviceContext), renderContext_(renderContext) {
-  IContext::registerContext((void*)renderContext_, this);
+  IContext::registerContext(renderContext_, this);
 
   // Set current, since creation doesn't really mean it's current yet.
   setCurrent();
@@ -132,7 +132,7 @@ Context::Context(HDC deviceContext, HGLRC renderContext, std::vector<HGLRC> shar
   deviceContext_(deviceContext),
   renderContext_(renderContext),
   sharegroup_(shareContexts) {
-  IContext::registerContext((void*)renderContext_, this);
+  IContext::registerContext(renderContext_, this);
 
   // Set current, since creation doesn't really mean it's current yet.
   setCurrent();
