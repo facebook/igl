@@ -1523,7 +1523,7 @@ void IContext::willDestroy(void* IGL_NULLABLE glContext) {
   getComputeAdapterPool().clear();
   // Unregister context
   if (glContext != nullptr) {
-    IContext::unregisterContext((void*)glContext);
+    IContext::unregisterContext(glContext);
   }
 }
 
@@ -4600,7 +4600,7 @@ void IContext::initialize(Result* result) {
 
   GLVersion glVersion = GLVersion::NotAvailable;
 
-  const char* version = (char*)getString(GL_VERSION);
+  const char* version = reinterpret_cast<const char*>(getString(GL_VERSION));
   if (version == nullptr) {
     IGL_LOG_ERROR("Unable to get GL version string\n");
     Result::setResult(result, Result::Code::RuntimeError, "Unable to get GL version string\n");
@@ -4621,7 +4621,7 @@ void IContext::initialize(Result* result) {
 
     // If setCurrent() fails, then extensions may be nullptr.
     if (extensionStr) {
-      extensions = std::string((char*)extensionStr);
+      extensions = std::string(reinterpret_cast<const char*>(extensionStr));
     }
   } else {
     GLint n = 0;
@@ -4639,9 +4639,9 @@ void IContext::initialize(Result* result) {
 #if IGL_LOGGING_ENABLED
   IGL_LOG_INFO("GL Context Initialized: %p\n", this);
   IGL_LOG_INFO("GL Version: %s\n", version);
-  const char* vendor = (char*)getString(GL_VENDOR);
+  const char* vendor = reinterpret_cast<const char*>(getString(GL_VENDOR));
   IGL_LOG_INFO("GL Vendor: %s\n", (vendor != nullptr) ? vendor : "(null)");
-  const char* renderer = (char*)getString(GL_RENDERER);
+  const char* renderer = reinterpret_cast<const char*>(getString(GL_RENDERER));
   IGL_LOG_INFO("GL Renderer: %s\n", (renderer != nullptr) ? renderer : "(null)");
   if (!extensions.empty() || supportedExtensions.empty()) {
     IGL_LOG_INFO("GL Extensions: %s\n", extensions.c_str());

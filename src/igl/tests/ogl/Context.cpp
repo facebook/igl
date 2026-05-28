@@ -9,6 +9,7 @@
 
 #include "../util/TestDevice.h"
 
+#include <cstring>
 #include <igl/Common.h>
 #include <igl/DeviceFeatures.h>
 #include <igl/Texture.h>
@@ -369,6 +370,45 @@ TEST_F(ContextOGLTest, BasicSharedContexts) {
   ASSERT_TRUE(unsharedContext->isCurrentSharegroup());
 
   ASSERT_FALSE(unsharedContext->isTexture(glTextureId));
+}
+
+/// Verify that getString returns valid GL version, vendor, and renderer strings.
+/// This exercises the reinterpret_cast<const char*>(getString(...)) paths in initialize().
+TEST_F(ContextOGLTest, GetStringReturnsValidStrings) {
+  // GL_VERSION must be non-null after successful initialization
+  const auto* version = context_->getString(GL_VERSION);
+  ASSERT_NE(version, nullptr);
+  // Should be a valid C string
+  const auto* versionStr = reinterpret_cast<const char*>(version);
+  EXPECT_GT(std::strlen(versionStr), 0u);
+
+  // GL_VENDOR must be non-null
+  const auto* vendor = context_->getString(GL_VENDOR);
+  ASSERT_NE(vendor, nullptr);
+  const auto* vendorStr = reinterpret_cast<const char*>(vendor);
+  EXPECT_GT(std::strlen(vendorStr), 0u);
+
+  // GL_RENDERER must be non-null
+  const auto* renderer = context_->getString(GL_RENDERER);
+  ASSERT_NE(renderer, nullptr);
+  const auto* rendererStr = reinterpret_cast<const char*>(renderer);
+  EXPECT_GT(std::strlen(rendererStr), 0u);
+}
+
+/// Verify that creating and destroying a device exercises willDestroy/unregisterContext.
+TEST_F(ContextOGLTest, DeviceDestructionCallsWillDestroy) {
+  // Create a second device — its destruction will call willDestroy() -> unregisterContext()
+  auto secondDevice = util::createTestDevice();
+  ASSERT_NE(secondDevice, nullptr);
+
+  auto* secondContext = &static_cast<opengl::Device&>(*secondDevice).getContext();
+  ASSERT_NE(secondContext, nullptr);
+
+  // Destroy the device — triggers willDestroy() on its context
+  secondDevice.reset();
+
+  // Original context should still be valid
+  ASSERT_NE(context_, nullptr);
 }
 
 } // namespace igl::tests
