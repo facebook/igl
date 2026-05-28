@@ -454,4 +454,87 @@ TEST(TextureFormatProperties, getSubRangeByteOffset) {
   }
 }
 
+TEST(TextureFormatProperties, InvalidFormat) {
+  const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::Invalid);
+  EXPECT_FALSE(props.isValid());
+}
+
+TEST(TextureFormatProperties, ColorFormatFlags) {
+  const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
+  EXPECT_TRUE(props.isValid());
+  EXPECT_FALSE(props.isCompressed());
+  EXPECT_FALSE(props.isInteger());
+  EXPECT_FALSE(props.isSRGB());
+  EXPECT_FALSE(props.isHDR());
+  EXPECT_FALSE(props.hasDepth());
+  EXPECT_FALSE(props.hasStencil());
+  EXPECT_TRUE(props.hasColor());
+  EXPECT_FALSE(props.isDepthOnly());
+  EXPECT_FALSE(props.isDepthOrDepthStencil());
+  EXPECT_FALSE(props.isStencilOnly());
+  EXPECT_FALSE(props.isDepthOrStencil());
+  EXPECT_FALSE(props.isVariableLength());
+}
+
+TEST(TextureFormatProperties, SrgbFormatFlags) {
+  const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_SRGB);
+  EXPECT_TRUE(props.isSRGB());
+  EXPECT_FALSE(props.isCompressed());
+  EXPECT_TRUE(props.hasColor());
+}
+
+TEST(TextureFormatProperties, HdrFormatFlags) {
+  const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_F16);
+  EXPECT_TRUE(props.isHDR());
+  EXPECT_FALSE(props.isInteger());
+  EXPECT_TRUE(props.hasColor());
+}
+
+TEST(TextureFormatProperties, IntegerFormatFlags) {
+  const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UInt32);
+  EXPECT_TRUE(props.isInteger());
+  EXPECT_TRUE(props.isHDR());
+  EXPECT_TRUE(props.hasColor());
+}
+
+TEST(TextureFormatProperties, CompressedFormatFlags) {
+  const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_ASTC_4x4);
+  EXPECT_TRUE(props.isCompressed());
+  EXPECT_FALSE(props.isSRGB());
+  EXPECT_TRUE(props.hasColor());
+}
+
+TEST(TextureFormatProperties, DepthOnlyFormatFlags) {
+  const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::Z_UNorm24);
+  EXPECT_TRUE(props.hasDepth());
+  EXPECT_FALSE(props.hasStencil());
+  EXPECT_FALSE(props.hasColor());
+  EXPECT_TRUE(props.isDepthOnly());
+  EXPECT_TRUE(props.isDepthOrDepthStencil());
+  EXPECT_FALSE(props.isStencilOnly());
+  EXPECT_TRUE(props.isDepthOrStencil());
+}
+
+TEST(TextureFormatProperties, DepthStencilFormatFlags) {
+  const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::S8_UInt_Z24_UNorm);
+  EXPECT_TRUE(props.hasDepth());
+  EXPECT_TRUE(props.hasStencil());
+  EXPECT_FALSE(props.hasColor());
+  EXPECT_FALSE(props.isDepthOnly());
+  EXPECT_TRUE(props.isDepthOrDepthStencil());
+  EXPECT_FALSE(props.isStencilOnly());
+  EXPECT_TRUE(props.isDepthOrStencil());
+}
+
+TEST(TextureFormatProperties, StencilOnlyFormatFlags) {
+  const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::S_UInt8);
+  EXPECT_FALSE(props.hasDepth());
+  EXPECT_TRUE(props.hasStencil());
+  EXPECT_FALSE(props.hasColor());
+  EXPECT_FALSE(props.isDepthOnly());
+  EXPECT_FALSE(props.isDepthOrDepthStencil());
+  EXPECT_TRUE(props.isStencilOnly());
+  EXPECT_TRUE(props.isDepthOrStencil());
+}
+
 } // namespace igl::tests
