@@ -93,15 +93,11 @@ public class VulkanView extends SurfaceView
 
     RenderHandler rh = mRenderThread.getHandler();
     if (rh != null) {
+      // Send surface created — the RenderThread will call init() and then decide
+      // whether to enter headless (unrestricted) or vsync (Choreographer) mode.
+      // We cannot check isHeadless() here because init() runs asynchronously on
+      // the RenderThread and hasn't read shell params yet.
       rh.sendSurfaceCreated();
-      if (SampleLib.isHeadless()) {
-        // Headless mode: run an unrestricted render loop on the render thread
-        // instead of vsync-driven Choreographer callbacks
-        rh.sendStartUnrestrictedLoop();
-      } else {
-        // Normal mode: use Choreographer for vsync-driven rendering
-        Choreographer.getInstance().postFrameCallback(this);
-      }
     }
   }
 
@@ -209,6 +205,21 @@ public class VulkanView extends SurfaceView
       Surface surface = mSurfaceHolder.getSurface();
       SampleLib.init(
           mBackendVersion, mSwapchainColorTextureFormat, mContext.getAssets(), surface, mIntent);
+
+      // Now that init() has completed and shell params are read, decide render mode.
+      if (SampleLib.isHeadless()) {
+        // Headless: enter unrestricted render loop directly on this thread
+        startUnrestrictedLoop();
+      } else {
+        // Normal: kick off vsync-driven rendering via Choreographer on the UI thread
+        new Handler(Looper.getMainLooper())
+            .post(
+                () -> {
+                  if (mRenderThread != null) {
+                    Choreographer.getInstance().postFrameCallback(VulkanView.this);
+                  }
+                });
+      }
     }
 
     public void surfaceChanged(int width, int height) {
@@ -284,7 +295,6 @@ public class VulkanView extends SurfaceView
     private static final int MSG_SURFACE_CHANGED = 1;
     private static final int MSG_DO_FRAME = 2;
     private static final int MSG_SHUTDOWN = 3;
-    private static final int MSG_START_UNRESTRICTED_LOOP = 4;
 
     private RenderThread mRenderThread;
 
@@ -311,10 +321,6 @@ public class VulkanView extends SurfaceView
       sendMessage(obtainMessage(RenderHandler.MSG_SHUTDOWN));
     }
 
-    public void sendStartUnrestrictedLoop() {
-      sendMessage(obtainMessage(RenderHandler.MSG_START_UNRESTRICTED_LOOP));
-    }
-
     @Override // runs on RenderThread
     public void handleMessage(Message msg) {
       int what = msg.what;
@@ -338,9 +344,6 @@ public class VulkanView extends SurfaceView
           break;
         case MSG_SHUTDOWN:
           mRenderThread.shutdown();
-          break;
-        case MSG_START_UNRESTRICTED_LOOP:
-          mRenderThread.startUnrestrictedLoop();
           break;
         default:
           throw new RuntimeException("unknown message " + what);
