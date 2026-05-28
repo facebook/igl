@@ -279,4 +279,70 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
+// ivkIsHostVisibleSingleHeapMemory *******************************
+class IsHostVisibleSingleHeapMemoryTest : public ::testing::Test {};
+
+TEST_F(IsHostVisibleSingleHeapMemoryTest, MultipleHeapsReturnsFalse) {
+  VkPhysicalDeviceMemoryProperties memProps = {};
+  memProps.memoryHeapCount = 2;
+  memProps.memoryTypeCount = 1;
+  memProps.memoryTypes[0].propertyFlags =
+      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+  EXPECT_FALSE(ivkIsHostVisibleSingleHeapMemory(&memProps));
+}
+
+TEST_F(IsHostVisibleSingleHeapMemoryTest, SingleHeapHostVisibleDeviceLocalReturnsTrue) {
+  VkPhysicalDeviceMemoryProperties memProps = {};
+  memProps.memoryHeapCount = 1;
+  memProps.memoryTypeCount = 1;
+  memProps.memoryTypes[0].propertyFlags =
+      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+  EXPECT_TRUE(ivkIsHostVisibleSingleHeapMemory(&memProps));
+}
+
+TEST_F(IsHostVisibleSingleHeapMemoryTest, SingleHeapNoDeviceLocalReturnsFalse) {
+  VkPhysicalDeviceMemoryProperties memProps = {};
+  memProps.memoryHeapCount = 1;
+  memProps.memoryTypeCount = 1;
+  memProps.memoryTypes[0].propertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+  EXPECT_FALSE(ivkIsHostVisibleSingleHeapMemory(&memProps));
+}
+
+// ivkFindMemoryType *******************************
+class FindMemoryTypeTest : public ::testing::Test {};
+
+TEST_F(FindMemoryTypeTest, FindsFirstMatchingType) {
+  VkPhysicalDeviceMemoryProperties memProps = {};
+  memProps.memoryTypeCount = 2;
+  memProps.memoryTypes[0].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+  memProps.memoryTypes[1].propertyFlags =
+      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+  const uint32_t result = ivkFindMemoryType(&memProps, 0b11, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+  EXPECT_EQ(result, 1u);
+}
+
+TEST_F(FindMemoryTypeTest, RespectsMemoryTypeBitsMask) {
+  VkPhysicalDeviceMemoryProperties memProps = {};
+  memProps.memoryTypeCount = 3;
+  memProps.memoryTypes[0].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+  memProps.memoryTypes[1].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+  memProps.memoryTypes[2].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+  const uint32_t result = ivkFindMemoryType(&memProps, 0b100, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+  EXPECT_EQ(result, 2u);
+}
+
+TEST_F(FindMemoryTypeTest, MatchesExactPropertyFlags) {
+  VkPhysicalDeviceMemoryProperties memProps = {};
+  memProps.memoryTypeCount = 2;
+  memProps.memoryTypes[0].propertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+  memProps.memoryTypes[1].propertyFlags =
+      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+  const uint32_t result = ivkFindMemoryType(
+      &memProps, 0b11, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+  EXPECT_EQ(result, 1u);
+}
+
 } // namespace igl::tests
