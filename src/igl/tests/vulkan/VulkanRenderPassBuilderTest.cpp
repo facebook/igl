@@ -133,6 +133,27 @@ TEST_F(VulkanRenderPassBuilderTest, HashInequality) {
   EXPECT_NE(hasher(builder1), hasher(builder2));
 }
 
+TEST_F(VulkanRenderPassBuilderTest, WithDepthStencilResolveAttachment) {
+  auto& ctx = getVulkanContext();
+
+  igl::vulkan::VulkanRenderPassBuilder builder;
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder.addDepthStencil(VK_FORMAT_D24_UNORM_S8_UINT,
+                          VK_ATTACHMENT_LOAD_OP_CLEAR,
+                          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                          VK_IMAGE_LAYOUT_UNDEFINED,
+                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                          VK_SAMPLE_COUNT_4_BIT);
+  builder.addDepthStencilResolve(
+      VK_FORMAT_D24_UNORM_S8_UINT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_STORE);
+
+  auto rp = ctx.findRenderPass(builder);
+  EXPECT_NE(rp.pass, VK_NULL_HANDLE);
+}
+
 TEST_F(VulkanRenderPassBuilderTest, EqualityOperator) {
   igl::vulkan::VulkanRenderPassBuilder builder1;
   builder1.addColor(
