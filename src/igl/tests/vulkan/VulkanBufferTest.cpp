@@ -11,6 +11,7 @@
 
 #include "../util/TestDevice.h"
 
+#include <array>
 #include <igl/Buffer.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
@@ -144,6 +145,86 @@ TEST_F(VulkanBufferTest, HostVisibleBufferSubData) {
   for (size_t i = 0; i < 64; ++i) {
     EXPECT_EQ(dstData[i], 0xDEADBEEF);
   }
+}
+
+TEST_F(VulkanBufferTest, GetBufferUsageFlags) {
+  auto& ctx = getVulkanContext();
+
+  Result ret;
+  const VkBufferUsageFlags expectedFlags =
+      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+  auto buffer = ctx.createBuffer(
+      64, expectedFlags, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &ret, "testUsageFlags");
+
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(buffer, nullptr);
+
+  EXPECT_TRUE(buffer->getBufferUsageFlags() & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+  EXPECT_TRUE(buffer->getBufferUsageFlags() & VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+}
+
+TEST_F(VulkanBufferTest, DeviceLocalBufferIsNotMapped) {
+  auto& ctx = getVulkanContext();
+
+  Result ret;
+  auto buffer = ctx.createBuffer(128,
+                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                 &ret,
+                                 "testDeviceLocalNotMapped");
+
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(buffer, nullptr);
+
+  EXPECT_FALSE(buffer->isMapped());
+  EXPECT_EQ(buffer->getMappedPtr(), nullptr);
+}
+
+TEST_F(VulkanBufferTest, GetSizeMatchesRequested) {
+  auto& ctx = getVulkanContext();
+
+  const VkDeviceSize sizes[] = {1, 64, 1024, 65536};
+
+  for (const VkDeviceSize size : sizes) {
+    Result ret;
+    auto buffer = ctx.createBuffer(size,
+                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                   &ret,
+                                   "testGetSize");
+
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+    ASSERT_NE(buffer, nullptr);
+    EXPECT_EQ(buffer->getSize(), size);
+  }
+}
+
+TEST_F(VulkanBufferTest, BufferSubDataWithOffset) {
+  auto& ctx = getVulkanContext();
+
+  Result ret;
+  auto buffer =
+      ctx.createBuffer(256,
+                       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                       &ret,
+                       "testSubDataOffset");
+
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(buffer, nullptr);
+  ASSERT_TRUE(buffer->isMapped());
+
+  const std::array<uint32_t, 4> srcData = {0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD};
+  const size_t offset = 64;
+  buffer->bufferSubData(offset, srcData.size() * sizeof(uint32_t), srcData.data());
+
+  std::array<uint32_t, 4> dstData = {};
+  buffer->getBufferSubData(offset, dstData.size() * sizeof(uint32_t), dstData.data());
+
+  EXPECT_EQ(dstData[0], 0xAAAAAAAA);
+  EXPECT_EQ(dstData[1], 0xBBBBBBBB);
+  EXPECT_EQ(dstData[2], 0xCCCCCCCC);
+  EXPECT_EQ(dstData[3], 0xDDDDDDDD);
 }
 
 TEST_F(VulkanBufferTest, CreateBufferWithInvalidStorageConvertsToPrivate) {
