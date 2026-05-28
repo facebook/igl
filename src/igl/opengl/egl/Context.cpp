@@ -247,7 +247,7 @@ Context::Context(BackendVersion backendVersion,
   contextOwned_ = true;
   display_ = contextDisplay.first;
   context_ = contextDisplay.second;
-  IContext::registerContext((void*)context_, this);
+  IContext::registerContext(context_, this);
   if (!window) {
     if (offscreen) {
       std::array pbufferAttribs{EGLint{EGL_WIDTH},
@@ -306,7 +306,7 @@ Context::Context(EGLDisplay display,
   drawSurface_(drawSurface),
   config_(config),
   backendVersion_(kDefaultEGLBackendVersion) {
-  IContext::registerContext((void*)context_, this);
+  IContext::registerContext(context_, this);
   initialize();
   sharegroup_ = std::make_shared<std::vector<EGLContext>>();
   sharegroup_->emplace_back(context_);
@@ -322,8 +322,8 @@ void Context::updateSurface(NativeWindowType window) {
 }
 
 Context::~Context() {
-  willDestroy((void*)context_);
-  IContext::unregisterContext((void*)context_);
+  willDestroy(context_);
+  IContext::unregisterContext(context_);
   if (surfacesOwned_) {
     if (surface_ != nullptr) {
       eglDestroySurface(display_, surface_);
