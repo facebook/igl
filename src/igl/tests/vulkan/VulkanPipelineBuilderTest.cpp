@@ -122,6 +122,30 @@ TEST_F(VulkanPipelineBuilderTest, DepthCompareOp) {
   EXPECT_EQ(&result, &builder);
 }
 
+TEST_F(VulkanPipelineBuilderTest, DepthWriteEnable) {
+  igl::vulkan::VulkanPipelineBuilder builder;
+  auto& result = builder.depthWriteEnable(true);
+  EXPECT_EQ(&result, &builder);
+}
+
+TEST_F(VulkanPipelineBuilderTest, FrontFace) {
+  igl::vulkan::VulkanPipelineBuilder builder;
+  auto& result = builder.frontFace(VK_FRONT_FACE_CLOCKWISE);
+  EXPECT_EQ(&result, &builder);
+}
+
+TEST_F(VulkanPipelineBuilderTest, RasterizationSamples) {
+  igl::vulkan::VulkanPipelineBuilder builder;
+  auto& result = builder.rasterizationSamples(VK_SAMPLE_COUNT_4_BIT);
+  EXPECT_EQ(&result, &builder);
+}
+
+TEST_F(VulkanPipelineBuilderTest, DynamicStateSingle) {
+  igl::vulkan::VulkanPipelineBuilder builder;
+  auto& result = builder.dynamicState(VK_DYNAMIC_STATE_VIEWPORT);
+  EXPECT_EQ(&result, &builder);
+}
+
 TEST_F(VulkanPipelineBuilderTest, ComputePipelineBasic) {
   igl::vulkan::VulkanComputePipelineBuilder builder{};
   (void)builder; // Verify construction succeeds
