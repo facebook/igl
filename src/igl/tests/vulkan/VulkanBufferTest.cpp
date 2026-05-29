@@ -227,6 +227,35 @@ TEST_F(VulkanBufferTest, BufferSubDataWithOffset) {
   EXPECT_EQ(dstData[3], 0xDDDDDDDD);
 }
 
+TEST_F(VulkanBufferTest, CoherentMemoryFlag) {
+  auto& ctx = getVulkanContext();
+
+  Result ret;
+  auto coherentBuffer =
+      ctx.createBuffer(128,
+                       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                       &ret,
+                       "testCoherentBuffer");
+
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(coherentBuffer, nullptr);
+
+  if (!coherentBuffer->isCoherentMemory()) {
+    GTEST_SKIP() << "Allocated memory type does not have VK_MEMORY_PROPERTY_HOST_COHERENT_BIT.";
+  }
+
+  auto deviceLocalBuffer = ctx.createBuffer(128,
+                                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                            &ret,
+                                            "testDeviceLocalBuffer");
+
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(deviceLocalBuffer, nullptr);
+  EXPECT_FALSE(deviceLocalBuffer->isCoherentMemory());
+}
+
 TEST_F(VulkanBufferTest, CreateBufferWithInvalidStorageConvertsToPrivate) {
   Result ret;
   auto buffer = iglDev_->createBuffer(
