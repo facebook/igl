@@ -9,6 +9,8 @@
 
 #include <igl/VertexInputState.h>
 
+#include <functional>
+
 namespace igl::tests {
 
 //
@@ -249,6 +251,50 @@ TEST_F(VertexInputStateTest, VertexInputStateDescEquality) {
   ASSERT_NE(desc1, desc2);
   desc1.inputBindings[0].stride = desc2.inputBindings[0].stride;
   ASSERT_EQ(desc1, desc2);
+}
+
+TEST_F(VertexInputStateTest, VertexInputStateDescHashConsistency) {
+  const VertexInputStateDesc desc;
+  const std::hash<VertexInputStateDesc> hasher;
+  EXPECT_EQ(hasher(desc), hasher(desc));
+}
+
+TEST_F(VertexInputStateTest, VertexInputStateDescHashEqualObjectsHaveSameHash) {
+  const VertexInputStateDesc a{
+      .numAttributes = 1,
+      .attributes = {{.format = VertexAttributeFormat::Float3, .offset = 0}},
+      .numInputBindings = 1,
+      .inputBindings = {{.stride = 12}},
+  };
+  const VertexInputStateDesc b{
+      .numAttributes = 1,
+      .attributes = {{.format = VertexAttributeFormat::Float3, .offset = 0}},
+      .numInputBindings = 1,
+      .inputBindings = {{.stride = 12}},
+  };
+
+  const std::hash<VertexInputStateDesc> hasher;
+  EXPECT_EQ(a, b);
+  EXPECT_EQ(hasher(a), hasher(b));
+}
+
+TEST_F(VertexInputStateTest, VertexInputStateDescHashDifferentObjectsHaveDifferentHash) {
+  const VertexInputStateDesc a{
+      .numAttributes = 1,
+      .attributes = {{.format = VertexAttributeFormat::Float3}},
+      .numInputBindings = 1,
+      .inputBindings = {{.stride = 12}},
+  };
+  const VertexInputStateDesc b{
+      .numAttributes = 1,
+      .attributes = {{.format = VertexAttributeFormat::Float4}},
+      .numInputBindings = 1,
+      .inputBindings = {{.stride = 16}},
+  };
+
+  const std::hash<VertexInputStateDesc> hasher;
+  EXPECT_NE(a, b);
+  EXPECT_NE(hasher(a), hasher(b));
 }
 
 } // namespace igl::tests
