@@ -585,8 +585,7 @@ void TinyRenderer::initStereoPresent(IDevice& device) {
     return;
   }
 
-  const CommandQueueDesc queueDesc{};
-  presentQueue_ = device.createCommandQueue(queueDesc, nullptr);
+  presentQueue_ = device.createCommandQueue({}, nullptr);
 
   const SamplerStateDesc samplerDesc = {
       .minFilter = SamplerMinMagFilter::Linear,
