@@ -129,8 +129,7 @@ void VulkanShell::initStereoPresent(IDevice& device) {
   }
 
   // Create command queue for stereo present pass
-  const CommandQueueDesc queueDesc{};
-  presentQueue_ = device.createCommandQueue(queueDesc, nullptr);
+  presentQueue_ = device.createCommandQueue({}, nullptr);
 
   // Create sampler
   const SamplerStateDesc samplerDesc = {
