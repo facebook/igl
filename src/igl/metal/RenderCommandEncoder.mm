@@ -399,7 +399,7 @@ void RenderCommandEncoder::bindBytes(size_t index,
                    "Bind target is not valid: %d",
                    bindTarget);
   if (data) {
-    if (length > MAX_RECOMMENDED_BYTES) {
+    if (length > kMaxRecommendedBytes) {
       IGL_LOG_INFO(
           "It is recommended to use bindBuffer instead of bindBytes when binding > 4kb: %u",
           length);

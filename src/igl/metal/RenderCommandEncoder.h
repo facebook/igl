@@ -107,7 +107,7 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   MTLIndexType indexType_ = MTLIndexTypeUInt32;
   size_t indexBufferOffset_ = 0;
   // 4 KB - page aligned memory for metal managed resource
-  static constexpr uint32_t MAX_RECOMMENDED_BYTES = 4 * 1024;
+  static constexpr uint32_t kMaxRecommendedBytes = 4 * 1024;
 
   MTLPrimitiveType metalPrimitive_ = MTLPrimitiveTypeTriangle;
 
