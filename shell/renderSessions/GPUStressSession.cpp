@@ -593,7 +593,7 @@ void GPUStressSession::createCubes() {
                           .length = sizeof(uint16_t) * indexData_.size()};
   ib0_ = device.createBuffer(ibDesc, nullptr);
 
-  VertexInputStateDesc inputDesc = {
+  const VertexInputStateDesc inputDesc = {
       .numAttributes = 3,
       .attributes =
           {
