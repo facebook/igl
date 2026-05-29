@@ -281,8 +281,8 @@ void main() {
     if (glVersion > igl::opengl::GLVersion::v2_1) {
       const std::string codeVS1 =
           stringReplaceAll(getVulkanVertexShaderSource(), "gl_VertexIndex", "gl_VertexID");
-      auto codeVS2 = "#version 460\n" + codeVS1;
-      auto codeFS = "#version 460\n" + std::string(getVulkanFragmentShaderSource());
+      const std::string codeVS2 = std::string("#version 460\n") + codeVS1;
+      const std::string codeFS = std::string("#version 460\n") + getVulkanFragmentShaderSource();
 
       return igl::ShaderStagesCreator::fromModuleStringInput(
           device, codeVS2.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
