@@ -50,6 +50,82 @@ class VulkanImageTest : public ::testing::Test {
   vulkan::VulkanContext* context_ = nullptr;
 };
 
+TEST_F(VulkanImageTest, DefaultConstructedIsInvalid) {
+  const vulkan::VulkanImage image;
+
+  EXPECT_FALSE(image.valid());
+  EXPECT_EQ(image.getVkImage(), VK_NULL_HANDLE);
+  EXPECT_EQ(image.getVkImageUsageFlags(), 0u);
+  EXPECT_FALSE(image.isSampledImage());
+  EXPECT_FALSE(image.isStorageImage());
+}
+
+TEST_F(VulkanImageTest, CreateBasicImage) {
+  vulkan::VulkanImage image(*context_,
+                            VkExtent3D{.width = kWidth, .height = kHeight, .depth = 1},
+                            VK_IMAGE_TYPE_2D,
+                            kFormat,
+                            1, /* mipLevels */
+                            1, /* arrayLayers */
+                            VK_IMAGE_TILING_OPTIMAL,
+                            VK_IMAGE_USAGE_SAMPLED_BIT,
+                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, /* memFlags */
+                            0, /* createFlags */
+                            VK_SAMPLE_COUNT_1_BIT,
+                            "Test Basic Image");
+
+  EXPECT_TRUE(image.valid());
+  EXPECT_NE(image.getVkImage(), VK_NULL_HANDLE);
+  EXPECT_EQ(image.extent_.width, kWidth);
+  EXPECT_EQ(image.extent_.height, kHeight);
+  EXPECT_EQ(image.extent_.depth, 1u);
+  EXPECT_EQ(image.imageFormat_, kFormat);
+  EXPECT_EQ(image.mipLevels_, 1u);
+  EXPECT_EQ(image.arrayLayers_, 1u);
+  EXPECT_EQ(image.samples_, VK_SAMPLE_COUNT_1_BIT);
+  EXPECT_FALSE(image.isExternallyManaged_);
+  EXPECT_FALSE(image.isImported_);
+  EXPECT_FALSE(image.isExported_);
+}
+
+TEST_F(VulkanImageTest, UsageFlagQueries) {
+  const vulkan::VulkanImage sampledImage(*context_,
+                                         VkExtent3D{.width = kWidth, .height = kHeight, .depth = 1},
+                                         VK_IMAGE_TYPE_2D,
+                                         kFormat,
+                                         1, /* mipLevels */
+                                         1, /* arrayLayers */
+                                         VK_IMAGE_TILING_OPTIMAL,
+                                         VK_IMAGE_USAGE_SAMPLED_BIT,
+                                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, /* memFlags */
+                                         0, /* createFlags */
+                                         VK_SAMPLE_COUNT_1_BIT,
+                                         "Sampled Image");
+
+  EXPECT_TRUE(sampledImage.isSampledImage());
+  EXPECT_FALSE(sampledImage.isStorageImage());
+  EXPECT_EQ(sampledImage.getVkImageUsageFlags() & VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_USAGE_SAMPLED_BIT);
+
+  const vulkan::VulkanImage storageImage(*context_,
+                                         VkExtent3D{.width = kWidth, .height = kHeight, .depth = 1},
+                                         VK_IMAGE_TYPE_2D,
+                                         kFormat,
+                                         1, /* mipLevels */
+                                         1, /* arrayLayers */
+                                         VK_IMAGE_TILING_OPTIMAL,
+                                         VK_IMAGE_USAGE_STORAGE_BIT,
+                                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, /* memFlags */
+                                         0, /* createFlags */
+                                         VK_SAMPLE_COUNT_1_BIT,
+                                         "Storage Image");
+
+  EXPECT_FALSE(storageImage.isSampledImage());
+  EXPECT_TRUE(storageImage.isStorageImage());
+  EXPECT_EQ(storageImage.getVkImageUsageFlags() & VK_IMAGE_USAGE_STORAGE_BIT,
+            VK_IMAGE_USAGE_STORAGE_BIT);
+}
+
 TEST_F(VulkanImageTest, CreateImageWithExportedMemory) {
   auto vulkanImage = igl::vulkan::VulkanImage::createWithExportMemory(
       *context_,
