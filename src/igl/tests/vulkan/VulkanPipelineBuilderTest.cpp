@@ -146,10 +146,49 @@ TEST_F(VulkanPipelineBuilderTest, DynamicStateSingle) {
   EXPECT_EQ(&result, &builder);
 }
 
+TEST_F(VulkanPipelineBuilderTest, ShaderStage) {
+  igl::vulkan::VulkanPipelineBuilder builder;
+  VkPipelineShaderStageCreateInfo stage = {};
+  stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  stage.stage = VK_SHADER_STAGE_VERTEX_BIT;
+  auto& result = builder.shaderStage(stage);
+  EXPECT_EQ(&result, &builder);
+}
+
+TEST_F(VulkanPipelineBuilderTest, ShaderStages) {
+  igl::vulkan::VulkanPipelineBuilder builder;
+  std::vector<VkPipelineShaderStageCreateInfo> stages(2);
+  stages[0] = {};
+  stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+  stages[1] = {};
+  stages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+  auto& result = builder.shaderStages(stages);
+  EXPECT_EQ(&result, &builder);
+}
+
+TEST_F(VulkanPipelineBuilderTest, VertexInputState) {
+  igl::vulkan::VulkanPipelineBuilder builder;
+  VkPipelineVertexInputStateCreateInfo vertexInput = {};
+  vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+  auto& result = builder.vertexInputState(vertexInput);
+  EXPECT_EQ(&result, &builder);
+}
+
 TEST_F(VulkanPipelineBuilderTest, ComputePipelineBasic) {
   igl::vulkan::VulkanComputePipelineBuilder builder{};
   (void)builder; // Verify construction succeeds
   EXPECT_GE(igl::vulkan::VulkanComputePipelineBuilder::getNumPipelinesCreated(), 0u);
+}
+
+TEST_F(VulkanPipelineBuilderTest, ComputePipelineShaderStage) {
+  igl::vulkan::VulkanComputePipelineBuilder builder{};
+  VkPipelineShaderStageCreateInfo stage = {};
+  stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+  auto& result = builder.shaderStage(stage);
+  EXPECT_EQ(&result, &builder);
 }
 
 } // namespace igl::tests
