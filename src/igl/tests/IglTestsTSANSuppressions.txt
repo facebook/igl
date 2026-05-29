@@ -21,9 +21,18 @@ race:libLLVM.so
 # fix in third-party code.
 race:OpaqueFdExternalMemory::allocateBuffer
 
-# Vulkan-Loader (statically linked) races on its ICD-device linked list when
-# one thread calls vkCreateDevice() while another thread on a previously-created
-# device is in a loader trampoline (e.g. vkSetDebugUtilsObjectNameEXT()). Cannot
-# fix in third-party loader; affects any IGL test that creates >1 VkDevice.
+# Khronos Vulkan-Loader (third-party, statically linked) has an unsynchronized
+# read/write race on its process-global ICD device linked list when a new
+# VkDevice is created on one thread while another thread is using a previously
+# created VkDevice from the same ICD. This is benign at the application level
+# (the two devices are independent) but TSAN flags loader.c:1681 (write in
+# loader_add_logical_device) racing against loader.c:1639 (read in
+# loader_get_icd_and_device). It surfaces in integration tests that create a
+# client-side VkDevice (XrInstanceMock) while the server-side render thread is
+# already issuing Vulkan calls on its own VkDevice. The unfixed race in the
+# Khronos loader exits the process with signal 66 after the test passes,
+# masking the test result as a fatal. Suppress here since we cannot patch
+# third-party Vulkan-Loader code.
 race:loader_add_logical_device
 race:loader_get_icd_and_device
+race:loader_remove_logical_device
