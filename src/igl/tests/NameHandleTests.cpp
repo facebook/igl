@@ -141,6 +141,31 @@ TEST(NameHandleTests, accessor_macros) {
   EXPECT_EQ(h1.toString(), "myTestStr");
   EXPECT_EQ(h1.getCrc32(), IGL_NAMEHANDLE("myTestStr").getCrc32());
 }
+
+TEST(NameHandleTests, string_view_constructor) {
+  constexpr std::string_view sv = "viewTest";
+  const NameHandle h(sv, iglCrc32ConstExpr(sv));
+  EXPECT_EQ(h.toString(), "viewTest");
+  EXPECT_EQ(h.getCrc32(), iglCrc32ConstExpr("viewTest"));
+}
+
+TEST(NameHandleTests, vector_hash) {
+  const std::hash<std::vector<NameHandle>> hasher;
+  const std::vector<NameHandle> key1 = {a, b};
+  const std::vector<NameHandle> key1Copy = {a, b};
+  const std::vector<NameHandle> key3 = {a, c};
+
+  EXPECT_EQ(hasher(key1), hasher(key1Copy));
+  EXPECT_NE(hasher(key1), hasher(key3));
+
+  std::unordered_map<std::vector<NameHandle>, int> m;
+  m[key1] = 10;
+  m[key3] = 30;
+  EXPECT_EQ(m.at(key1), 10);
+  EXPECT_EQ(m.at(key3), 30);
+  EXPECT_EQ(m.at(key1Copy), 10);
+  EXPECT_EQ(m.size(), 2u);
+}
 // NOLINTEND(google-readability-avoid-underscore-in-googletest-name)
 
 } // namespace igl::tests
