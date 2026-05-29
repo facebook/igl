@@ -345,4 +345,39 @@ TEST_F(FindMemoryTypeTest, MatchesExactPropertyFlags) {
   EXPECT_EQ(result, 1u);
 }
 
+// ivkAddNext *******************************
+class AddNextTest : public ::testing::Test {};
+
+TEST_F(AddNextTest, AppendToEmptyChain) {
+  VkBaseOutStructure node = {.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO, .pNext = nullptr};
+  VkBaseOutStructure next = {.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, .pNext = nullptr};
+
+  ivkAddNext(&node, &next);
+
+  EXPECT_EQ(node.pNext, &next);
+  EXPECT_EQ(next.pNext, nullptr);
+}
+
+TEST_F(AddNextTest, AppendToExistingChain) {
+  VkBaseOutStructure second = {.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, .pNext = nullptr};
+  VkBaseOutStructure first = {.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO, .pNext = &second};
+  VkBaseOutStructure appended = {.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, .pNext = nullptr};
+
+  ivkAddNext(&first, &appended);
+
+  EXPECT_EQ(first.pNext, &second);
+  EXPECT_EQ(second.pNext, &appended);
+  EXPECT_EQ(appended.pNext, nullptr);
+}
+
+TEST_F(AddNextTest, NullArgumentsAreNoop) {
+  VkBaseOutStructure node = {.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO, .pNext = nullptr};
+
+  ivkAddNext(nullptr, &node);
+  EXPECT_EQ(node.pNext, nullptr);
+
+  ivkAddNext(&node, nullptr);
+  EXPECT_EQ(node.pNext, nullptr);
+}
+
 } // namespace igl::tests
