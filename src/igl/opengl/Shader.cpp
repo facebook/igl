@@ -244,7 +244,7 @@ Result ShaderModule::create(const ShaderModuleDesc& desc) {
   }
 
   // compile the shader
-  const GLchar* src = (GLchar*)desc.input.source;
+  const GLchar* src = desc.input.source;
 
 #if IGL_SHADER_DUMP
   auto hash = std::hash<const GLchar*>()(src);
