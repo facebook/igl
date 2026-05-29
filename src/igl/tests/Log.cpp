@@ -14,6 +14,42 @@
 
 namespace igl::tests {
 
+namespace {
+int testHandlerCallCount = 0;
+IGLLogLevel testHandlerLastLevel = IGLLogInfo;
+
+int testLogHandler(IGLLogLevel logLevel, const char* IGL_RESTRICT /*format*/, va_list /*ap*/) {
+  ++testHandlerCallCount;
+  testHandlerLastLevel = logLevel;
+  return 0;
+}
+} // namespace
+
+TEST(LogTest, GetDefaultHandlerReturnsNonNull) {
+  EXPECT_NE(IGLLogGetHandler(), nullptr);
+}
+
+TEST(LogTest, SetAndGetCustomHandler) {
+  const auto originalHandler = IGLLogGetHandler();
+  IGLLogSetHandler(testLogHandler);
+  EXPECT_EQ(IGLLogGetHandler(), testLogHandler);
+  IGLLogSetHandler(originalHandler);
+  EXPECT_EQ(IGLLogGetHandler(), originalHandler);
+}
+
+TEST(LogTest, CustomHandlerReceivesMessages) {
+  const auto originalHandler = IGLLogGetHandler();
+  testHandlerCallCount = 0;
+  IGLLogSetHandler(testLogHandler);
+
+  IGLLog(IGLLogWarning, "test message %d", 42);
+
+  EXPECT_EQ(testHandlerCallCount, 1);
+  EXPECT_EQ(testHandlerLastLevel, IGLLogWarning);
+
+  IGLLogSetHandler(originalHandler);
+}
+
 TEST(LogTest, LogOnceRaceCondition) {
   auto logSomethingUniqueManyTimes = []() {
     std::default_random_engine generator;
