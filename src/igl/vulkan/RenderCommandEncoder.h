@@ -31,6 +31,11 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
       const Dependencies& dependencies,
       Result* outResult);
 
+  RenderCommandEncoder(const RenderCommandEncoder&) = delete;
+  RenderCommandEncoder(RenderCommandEncoder&&) = delete;
+  RenderCommandEncoder& operator=(const RenderCommandEncoder&) = delete;
+  RenderCommandEncoder& operator=(RenderCommandEncoder&&) = delete;
+
   ~RenderCommandEncoder() override {
     IGL_DEBUG_ASSERT(!isEncoding_); // did you forget to call endEncoding()?
     endEncoding();
