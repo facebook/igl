@@ -188,6 +188,73 @@ TEST_F(VulkanImageTest, CreateImageWithImportedMemoryWin32) {
 }
 #endif // IGL_PLATFORM_WINDOWS
 
+TEST_F(VulkanImageTest, CreateInfoDefaultValues) {
+  const vulkan::VulkanImageCreateInfo ci;
+
+  EXPECT_EQ(ci.usageFlags, 0u);
+  EXPECT_TRUE(ci.isExternallyManaged);
+  EXPECT_EQ(ci.extent.width, 0u);
+  EXPECT_EQ(ci.extent.height, 0u);
+  EXPECT_EQ(ci.extent.depth, 0u);
+  EXPECT_EQ(ci.type, VK_IMAGE_TYPE_MAX_ENUM);
+  EXPECT_EQ(ci.imageFormat, VK_FORMAT_UNDEFINED);
+  EXPECT_EQ(ci.mipLevels, 1u);
+  EXPECT_EQ(ci.arrayLayers, 1u);
+  EXPECT_EQ(ci.samples, VK_SAMPLE_COUNT_1_BIT);
+  EXPECT_FALSE(ci.isImported);
+}
+
+TEST_F(VulkanImageTest, GetImageAspectFlagsColor) {
+  vulkan::VulkanImage image(*context_,
+                            VkExtent3D{.width = kWidth, .height = kHeight, .depth = 1},
+                            VK_IMAGE_TYPE_2D,
+                            kFormat,
+                            1,
+                            1,
+                            VK_IMAGE_TILING_OPTIMAL,
+                            VK_IMAGE_USAGE_SAMPLED_BIT,
+                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                            0,
+                            VK_SAMPLE_COUNT_1_BIT,
+                            "Color Aspect Image");
+  ASSERT_TRUE(image.valid());
+
+  EXPECT_EQ(image.getImageAspectFlags(), VK_IMAGE_ASPECT_COLOR_BIT);
+  EXPECT_FALSE(image.isDepthFormat_);
+  EXPECT_FALSE(image.isStencilFormat_);
+  EXPECT_FALSE(image.isDepthOrStencilFormat_);
+}
+
+TEST_F(VulkanImageTest, MoveConstruction) {
+  vulkan::VulkanImage source(*context_,
+                             VkExtent3D{.width = kWidth, .height = kHeight, .depth = 1},
+                             VK_IMAGE_TYPE_2D,
+                             kFormat,
+                             1,
+                             1,
+                             VK_IMAGE_TILING_OPTIMAL,
+                             VK_IMAGE_USAGE_SAMPLED_BIT,
+                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                             0,
+                             VK_SAMPLE_COUNT_1_BIT,
+                             "Move Source Image");
+  ASSERT_TRUE(source.valid());
+  const VkImage sourceHandle = source.getVkImage();
+
+  vulkan::VulkanImage dest(std::move(source));
+
+  EXPECT_TRUE(dest.valid());
+  EXPECT_EQ(dest.getVkImage(), sourceHandle);
+  EXPECT_EQ(dest.extent_.width, kWidth);
+  EXPECT_EQ(dest.extent_.height, kHeight);
+  EXPECT_EQ(dest.imageFormat_, kFormat);
+
+  // NOLINTNEXTLINE(bugprone-use-after-move)
+  EXPECT_FALSE(source.valid());
+  // NOLINTNEXTLINE(bugprone-use-after-move)
+  EXPECT_EQ(source.getVkImage(), VK_NULL_HANDLE);
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
