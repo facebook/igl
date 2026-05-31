@@ -256,6 +256,65 @@ TEST_F(VulkanBufferTest, CoherentMemoryFlag) {
   EXPECT_FALSE(deviceLocalBuffer->isCoherentMemory());
 }
 
+TEST_F(VulkanBufferTest, BufferSubDataWithNullDataZerosMemory) {
+  auto& ctx = getVulkanContext();
+
+  Result ret;
+  auto buffer =
+      ctx.createBuffer(256,
+                       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                       &ret,
+                       "testNullDataZeros");
+
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(buffer, nullptr);
+  ASSERT_TRUE(buffer->isMapped());
+
+  const std::array<uint32_t, 4> srcData = {0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD};
+  buffer->bufferSubData(0, srcData.size() * sizeof(uint32_t), srcData.data());
+
+  buffer->bufferSubData(0, srcData.size() * sizeof(uint32_t), nullptr);
+
+  std::array<uint32_t, 4> dstData = {};
+  dstData.fill(0xFF);
+  buffer->getBufferSubData(0, dstData.size() * sizeof(uint32_t), dstData.data());
+
+  for (const uint32_t val : dstData) {
+    EXPECT_EQ(val, 0u);
+  }
+}
+
+TEST_F(VulkanBufferTest, FlushAndInvalidateMappedMemory) {
+  auto& ctx = getVulkanContext();
+
+  Result ret;
+  auto buffer =
+      ctx.createBuffer(256,
+                       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                       &ret,
+                       "testFlushInvalidate");
+
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(buffer, nullptr);
+  ASSERT_TRUE(buffer->isMapped());
+
+  const std::array<uint32_t, 4> srcData = {1, 2, 3, 4};
+  buffer->bufferSubData(0, srcData.size() * sizeof(uint32_t), srcData.data());
+
+  buffer->flushMappedMemory(0, srcData.size() * sizeof(uint32_t));
+  buffer->invalidateMappedMemory(0, srcData.size() * sizeof(uint32_t));
+
+  std::array<uint32_t, 4> dstData = {};
+  buffer->getBufferSubData(0, dstData.size() * sizeof(uint32_t), dstData.data());
+
+  EXPECT_EQ(dstData[0], 1u);
+  EXPECT_EQ(dstData[1], 2u);
+  EXPECT_EQ(dstData[2], 3u);
+  EXPECT_EQ(dstData[3], 4u);
+}
+
 TEST_F(VulkanBufferTest, CreateBufferWithInvalidStorageConvertsToPrivate) {
   Result ret;
   auto buffer = iglDev_->createBuffer(
