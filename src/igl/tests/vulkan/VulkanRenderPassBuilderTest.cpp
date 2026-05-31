@@ -229,6 +229,45 @@ TEST_F(VulkanRenderPassBuilderTest, DepthStencilWithExplicitStencilOps) {
   EXPECT_NE(rp.pass, VK_NULL_HANDLE);
 }
 
+TEST_F(VulkanRenderPassBuilderTest, EqualityMultiview) {
+  igl::vulkan::VulkanRenderPassBuilder builder1;
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder1.setMultiviewMasks(0x3, 0x3);
+
+  igl::vulkan::VulkanRenderPassBuilder builder2;
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder2.setMultiviewMasks(0x3, 0x3);
+
+  EXPECT_TRUE(builder1 == builder2);
+
+  igl::vulkan::VulkanRenderPassBuilder builder3;
+  builder3.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder3.setMultiviewMasks(0xF, 0xF);
+
+  EXPECT_FALSE(builder1 == builder3);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, RenderPassCaching) {
+  auto& ctx = getVulkanContext();
+
+  igl::vulkan::VulkanRenderPassBuilder builder1;
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  igl::vulkan::VulkanRenderPassBuilder builder2;
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  const auto rp1 = ctx.findRenderPass(builder1);
+  const auto rp2 = ctx.findRenderPass(builder2);
+
+  EXPECT_NE(rp1.pass, VK_NULL_HANDLE);
+  EXPECT_EQ(rp1.pass, rp2.pass);
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
