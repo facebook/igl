@@ -168,4 +168,81 @@ TEST(CommonTest, HandleTest) {
 TEST(CommonTest, PoolTest) {
   Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool;
 }
+
+TEST(HolderTest, DefaultConstructedIsEmptyAndInvalid) {
+  const Holder<BindGroupTextureHandle> holder;
+  EXPECT_TRUE(holder.empty());
+  EXPECT_FALSE(holder.valid());
+}
+
+TEST(HolderTest, DefaultConstructedIndexAndGenAreZero) {
+  const Holder<TextureHandle> holder;
+  EXPECT_EQ(holder.index(), 0u);
+  EXPECT_EQ(holder.gen(), 0u);
+}
+
+TEST(HolderTest, MoveConstructionTransfersState) {
+  Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
+  const BindGroupBufferHandle handle = pool.create(BindGroupBufferDesc{});
+
+  Holder<BindGroupBufferHandle> original(nullptr, handle);
+  EXPECT_FALSE(original.empty());
+  EXPECT_TRUE(original.valid());
+
+  Holder<BindGroupBufferHandle> moved(std::move(original));
+  EXPECT_FALSE(moved.empty());
+  EXPECT_TRUE(moved.valid());
+  EXPECT_TRUE(original.empty()); // NOLINT(bugprone-use-after-move)
+}
+
+TEST(HolderTest, MoveAssignmentTransfersState) {
+  Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
+  const BindGroupBufferHandle handle = pool.create(BindGroupBufferDesc{});
+
+  Holder<BindGroupBufferHandle> a(nullptr, handle);
+  Holder<BindGroupBufferHandle> b;
+  EXPECT_FALSE(a.empty());
+  EXPECT_TRUE(b.empty());
+
+  b = std::move(a);
+  EXPECT_FALSE(b.empty());
+  EXPECT_TRUE(a.empty()); // NOLINT(bugprone-use-after-move)
+}
+
+TEST(HolderTest, AssignNullptrResetsHolder) {
+  Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
+  const BindGroupBufferHandle handle = pool.create(BindGroupBufferDesc{});
+
+  Holder<BindGroupBufferHandle> holder(nullptr, handle);
+  EXPECT_FALSE(holder.empty());
+
+  holder = nullptr;
+  EXPECT_TRUE(holder.empty());
+  EXPECT_FALSE(holder.valid());
+}
+
+TEST(HolderTest, ReleaseReturnsHandleAndEmptiesHolder) {
+  Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
+  const BindGroupBufferHandle handle = pool.create(BindGroupBufferDesc{});
+
+  Holder<BindGroupBufferHandle> holder(nullptr, handle);
+  EXPECT_FALSE(holder.empty());
+
+  const BindGroupBufferHandle released = holder.release();
+  EXPECT_FALSE(released.empty());
+  EXPECT_TRUE(holder.empty());
+}
+
+TEST(HolderTest, ResetEmptiesHolder) {
+  Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
+  const BindGroupBufferHandle handle = pool.create(BindGroupBufferDesc{});
+
+  Holder<BindGroupBufferHandle> holder(nullptr, handle);
+  EXPECT_FALSE(holder.empty());
+
+  holder.reset();
+  EXPECT_TRUE(holder.empty());
+  EXPECT_FALSE(holder.valid());
+}
+
 } // namespace igl::tests
