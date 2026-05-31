@@ -98,6 +98,35 @@ TEST_F(VulkanFenceTest, MoveConstruction) {
   // After move, original is in a valid but unspecified state - don't access it
 }
 
+TEST_F(VulkanFenceTest, SignalWithNullQueue) {
+  auto& ctx = getVulkanContext();
+  igl::vulkan::VulkanFence fence(ctx.vf_, ctx.getVkDevice(), 0, false, "testSignalNull");
+
+  ASSERT_NE(fence.vkFence_, VK_NULL_HANDLE);
+  EXPECT_FALSE(fence.signal(VK_NULL_HANDLE));
+}
+
+TEST_F(VulkanFenceTest, SignalAndWait) {
+  auto& ctx = getVulkanContext();
+  igl::vulkan::VulkanFence fence(ctx.vf_, ctx.getVkDevice(), 0, false, "testSignalAndWait");
+
+  ASSERT_NE(fence.vkFence_, VK_NULL_HANDLE);
+
+  const VkQueue graphicsQueue = ctx.deviceQueues_.graphicsQueue;
+  ASSERT_NE(graphicsQueue, VK_NULL_HANDLE);
+
+  ASSERT_TRUE(fence.signal(graphicsQueue));
+  ASSERT_TRUE(fence.wait());
+}
+
+TEST_F(VulkanFenceTest, WaitUnsignaledTimesOut) {
+  auto& ctx = getVulkanContext();
+  igl::vulkan::VulkanFence fence(ctx.vf_, ctx.getVkDevice(), 0, false, "testWaitTimeout");
+
+  ASSERT_NE(fence.vkFence_, VK_NULL_HANDLE);
+  EXPECT_FALSE(fence.wait(0));
+}
+
 TEST_F(VulkanFenceTest, MoveAssignment) {
   auto& ctx = getVulkanContext();
   igl::vulkan::VulkanFence original(
