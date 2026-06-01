@@ -281,6 +281,52 @@ TEST(CommonTest, ColorSpaceRoundTripTest) {
   }
 }
 
+// resourceStorageToVkMemoryPropertyFlags *******************************************************
+TEST(CommonTest, ResourceStoragePrivateReturnsDeviceLocal) {
+  const VkMemoryPropertyFlags flags =
+      igl::vulkan::resourceStorageToVkMemoryPropertyFlags(ResourceStorage::Private);
+  EXPECT_EQ(flags, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+}
+
+TEST(CommonTest, ResourceStorageSharedReturnsHostVisibleCoherent) {
+  const VkMemoryPropertyFlags flags =
+      igl::vulkan::resourceStorageToVkMemoryPropertyFlags(ResourceStorage::Shared);
+  EXPECT_EQ(flags, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+}
+
+TEST(CommonTest, ResourceStorageManagedReturnsHostVisibleCoherent) {
+  const VkMemoryPropertyFlags flags =
+      igl::vulkan::resourceStorageToVkMemoryPropertyFlags(ResourceStorage::Managed);
+  EXPECT_EQ(flags, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+}
+
+TEST(CommonTest, ResourceStorageMemorylessWithoutPropertiesReturnsDeviceLocal) {
+  const VkMemoryPropertyFlags flags =
+      igl::vulkan::resourceStorageToVkMemoryPropertyFlags(ResourceStorage::Memoryless, nullptr);
+  EXPECT_EQ(flags, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+}
+
+TEST(CommonTest, ResourceStorageMemorylessWithLazilyAllocated) {
+  VkPhysicalDeviceMemoryProperties memProps = {};
+  memProps.memoryTypeCount = 1;
+  memProps.memoryTypes[0].propertyFlags =
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+
+  const VkMemoryPropertyFlags flags =
+      igl::vulkan::resourceStorageToVkMemoryPropertyFlags(ResourceStorage::Memoryless, &memProps);
+  EXPECT_EQ(flags, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT);
+}
+
+TEST(CommonTest, ResourceStorageMemorylessWithoutLazilyAllocated) {
+  VkPhysicalDeviceMemoryProperties memProps = {};
+  memProps.memoryTypeCount = 1;
+  memProps.memoryTypes[0].propertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+
+  const VkMemoryPropertyFlags flags =
+      igl::vulkan::resourceStorageToVkMemoryPropertyFlags(ResourceStorage::Memoryless, &memProps);
+  EXPECT_EQ(flags, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+}
+
 // componentMappingToVkComponentMapping *******************************************************
 TEST(CommonTest, ComponentMappingToVkComponentMappingTest) {
   const ComponentMapping identity{};
