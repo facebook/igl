@@ -49,4 +49,16 @@ TEST(TextureFormatUtilsTest, RgbaToBgra) {
   EXPECT_EQ(BgraToRgba(igl::TextureFormat::BGRA_SRGB), igl::TextureFormat::RGBA_SRGB);
 }
 
+TEST(TextureFormatUtilsTest, BgraToRgbaPassthrough) {
+  EXPECT_EQ(BgraToRgba(igl::TextureFormat::RGBA_UNorm8), igl::TextureFormat::RGBA_UNorm8);
+  EXPECT_EQ(BgraToRgba(igl::TextureFormat::R_UNorm8), igl::TextureFormat::R_UNorm8);
+  EXPECT_EQ(BgraToRgba(igl::TextureFormat::RGBA_SRGB), igl::TextureFormat::RGBA_SRGB);
+}
+
+TEST(TextureFormatUtilsTest, RgbaToBgraPassthrough) {
+  EXPECT_EQ(RgbaToBgra(igl::TextureFormat::BGRA_UNorm8), igl::TextureFormat::BGRA_UNorm8);
+  EXPECT_EQ(RgbaToBgra(igl::TextureFormat::R_UNorm8), igl::TextureFormat::R_UNorm8);
+  EXPECT_EQ(RgbaToBgra(igl::TextureFormat::BGRA_SRGB), igl::TextureFormat::BGRA_SRGB);
+}
+
 } // namespace igl::tests
