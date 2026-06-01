@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <limits>
+#include <system_error>
 #include <igl/Common.h>
 
 #if IGL_PLATFORM_ANDROID
@@ -25,11 +26,29 @@
 namespace igl::shell {
 
 FileLoader::FileData FileLoader::loadBinaryDataInternal(const std::string& filePath) {
-  if (IGL_DEBUG_VERIFY_NOT(
-          !std::filesystem::exists(filePath), "Couldn't find file: %s", filePath.c_str())) {
+  // Use non-throwing overloads to avoid std::terminate in noexcept contexts.
+  // The throwing variants call std::filesystem::status() which can throw
+  // filesystem_error on EINTR (interrupted system call) under signal pressure.
+  std::error_code ec;
+  const bool exists = std::filesystem::exists(filePath, ec);
+  if (ec) {
+    IGL_LOG_INFO_ONCE("FileLoader::loadBinaryDataInternal exists failed for %s: %d (%s)\n",
+                      filePath.c_str(),
+                      ec.value(),
+                      ec.message().c_str());
     return {};
   }
-  const uintmax_t length = std::filesystem::file_size(filePath);
+  if (IGL_DEBUG_VERIFY_NOT(!exists, "Couldn't find file: %s", filePath.c_str())) {
+    return {};
+  }
+  const uintmax_t length = std::filesystem::file_size(filePath, ec);
+  if (ec) {
+    IGL_LOG_INFO_ONCE("FileLoader::loadBinaryDataInternal file_size failed for %s: %d (%s)\n",
+                      filePath.c_str(),
+                      ec.value(),
+                      ec.message().c_str());
+    return {};
+  }
 
   if (IGL_DEBUG_VERIFY_NOT(length > std::numeric_limits<uint64_t>::max())) {
     return {};
