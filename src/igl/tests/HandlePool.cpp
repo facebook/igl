@@ -188,4 +188,45 @@ TEST(PoolTest, IndexAsVoidRoundTrips) {
   EXPECT_EQ(static_cast<uint32_t>(roundTripped), h.index());
 }
 
+TEST(PoolTest, DestroyByIndexRecyclesSlot) {
+  Pool<Foo, FooImpl> pool;
+  (void)pool.create(FooImpl{.value = 1});
+  const Handle<Foo> h2 = pool.create(FooImpl{.value = 2});
+  (void)pool.create(FooImpl{.value = 3});
+  EXPECT_EQ(pool.numObjects(), 3u);
+
+  const uint32_t idx = h2.index();
+  pool.destroy(idx);
+  EXPECT_EQ(pool.numObjects(), 2u);
+  EXPECT_EQ(pool.objects_[idx].obj_, FooImpl{});
+
+  const Handle<Foo> h4 = pool.create(FooImpl{.value = 4});
+  EXPECT_EQ(h4.index(), idx);
+  EXPECT_GT(h4.gen(), h2.gen());
+  EXPECT_EQ(pool.numObjects(), 3u);
+}
+
+TEST(PoolTest, MutableGetAllowsModification) {
+  Pool<Foo, FooImpl> pool;
+  const Handle<Foo> h = pool.create(FooImpl{.value = 10});
+
+  FooImpl* obj = pool.get(h);
+  ASSERT_NE(obj, nullptr);
+  EXPECT_EQ(obj->value, 10);
+
+  obj->value = 42;
+
+  const FooImpl* constObj = pool.get(h);
+  ASSERT_NE(constObj, nullptr);
+  EXPECT_EQ(constObj->value, 42);
+}
+
+TEST(PoolTest, MutableGetEmptyHandleReturnsNull) {
+  Pool<Foo, FooImpl> pool;
+  (void)pool.create(FooImpl{.value = 1});
+  const Handle<Foo> empty;
+  FooImpl* obj = pool.get(empty);
+  EXPECT_EQ(obj, nullptr);
+}
+
 } // namespace igl::tests
