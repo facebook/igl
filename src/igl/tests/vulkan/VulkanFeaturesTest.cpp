@@ -193,4 +193,33 @@ TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_MissingMultiview) {
 #endif
 }
 
+TEST_F(VulkanFeaturesTest, ConfigDisablesDualSrcBlend) {
+  igl::vulkan::VulkanContextConfig config;
+  config.enableDualSrcBlend = false;
+
+  const igl::vulkan::VulkanFeatures features(config);
+
+  EXPECT_FALSE(features.vkPhysicalDeviceFeatures2.features.dualSrcBlend);
+}
+
+TEST_F(VulkanFeaturesTest, ConfigDisablesShaderInt16) {
+  igl::vulkan::VulkanContextConfig config;
+  config.enableShaderInt16 = false;
+
+  const igl::vulkan::VulkanFeatures features(config);
+
+  EXPECT_FALSE(features.vkPhysicalDeviceFeatures2.features.shaderInt16);
+}
+
+TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_DescriptorIndexingEnabled_AllPresent) {
+  igl::vulkan::VulkanContextConfig config;
+  config.enableDescriptorIndexing = true;
+
+  const igl::vulkan::VulkanFeatures requested(config);
+  const igl::vulkan::VulkanFeatures available(config);
+
+  const igl::Result result = requested.checkSelectedFeatures(available);
+  EXPECT_TRUE(result.isOk());
+}
+
 } // namespace igl::tests
