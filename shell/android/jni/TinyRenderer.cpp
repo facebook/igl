@@ -33,6 +33,8 @@
 #include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 #endif
+#include <algorithm>
+#include <array>
 #include <memory>
 #include <sys/system_properties.h>
 #include <unordered_set>
@@ -96,17 +98,10 @@ std::optional<size_t> getAndroidSystemPropertySizeT(const char* keyName) noexcep
   }
 }
 
-// Read shell parameters from Android system properties.
-// perfettoEnabled is set via the __system_property_foreach iteration which handles
-// property names longer than 31 characters (the __system_property_get limit).
-void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
-                                     const char* prefix,
-                                     bool& perfettoEnabled) noexcept {
-  perfettoEnabled = false;
-  std::string prefixStr(prefix);
-  prefixStr += ".";
-
-  // Read ShellParams
+// Read basic shell parameters (headless, screenshot, viewport, fps, multiview) from Android
+// system properties.
+void readBasicShellParams(igl::shell::ShellParams& shellParams,
+                          const std::string& prefixStr) noexcept {
   auto headless = getAndroidSystemPropertyBool((prefixStr + "headless").c_str());
   if (headless.has_value()) {
     shellParams.isHeadless = headless.value();
@@ -169,6 +164,91 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
     shellParams.viewParams[0].viewIndex = 0;
     shellParams.viewParams[1].viewIndex = 1;
   }
+}
+
+// Apply benchmark parameters to shellParams. Uses an early return if no benchmark
+// parameter is present, avoiding a long compound condition.
+void applyBenchmarkParamsToShellParams(
+    igl::shell::ShellParams& shellParams,
+    std::optional<size_t> timeout,
+    std::optional<size_t> sessions,
+    std::optional<bool> logReporter,
+    std::optional<bool> offscreenOnly,
+    std::optional<bool> benchmark,
+    std::optional<size_t> benchmarkDuration,
+    std::optional<size_t> reportInterval,
+    const std::optional<std::string>& hiccupMultiplier,
+    std::optional<size_t> renderBufferSize,
+    const std::vector<std::pair<std::string, std::string>>& customParams) noexcept {
+  // Check if any benchmark parameter is set using std::any_of to avoid a long || chain
+  const std::array<bool, 9> benchmarkParamFlags = {timeout.has_value(),
+                                                   sessions.has_value(),
+                                                   logReporter.has_value(),
+                                                   offscreenOnly.has_value(),
+                                                   benchmark.has_value(),
+                                                   benchmarkDuration.has_value(),
+                                                   reportInterval.has_value(),
+                                                   hiccupMultiplier.has_value(),
+                                                   renderBufferSize.has_value()};
+  const bool hasAnyBenchmarkParam =
+      std::any_of(benchmarkParamFlags.begin(), benchmarkParamFlags.end(), [](bool v) { return v; });
+  if (!hasAnyBenchmarkParam && customParams.empty()) {
+    return;
+  }
+
+  if (!shellParams.benchmarkParams.has_value()) {
+    shellParams.benchmarkParams = igl::shell::BenchmarkRenderSessionParams();
+  }
+
+  if (timeout.has_value()) {
+    shellParams.benchmarkParams->renderSessionTimeoutMs = timeout.value();
+  }
+  if (sessions.has_value()) {
+    shellParams.benchmarkParams->numSessionsToRun = sessions.value();
+  }
+  if (logReporter.has_value()) {
+    shellParams.benchmarkParams->logReporter = logReporter.value();
+  }
+  if (offscreenOnly.has_value()) {
+    shellParams.benchmarkParams->offscreenRenderingOnly = offscreenOnly.value();
+  }
+
+  // Apply new benchmark parameters
+  if (benchmarkDuration.has_value()) {
+    shellParams.benchmarkParams->benchmarkDurationMs = benchmarkDuration.value();
+  }
+  if (reportInterval.has_value()) {
+    shellParams.benchmarkParams->reportIntervalMs = reportInterval.value();
+  }
+  if (hiccupMultiplier.has_value()) {
+    try {
+      shellParams.benchmarkParams->hiccupMultiplier = std::stod(hiccupMultiplier.value());
+    } catch (...) {
+      // Ignore parse errors, keep default
+    }
+  }
+  if (renderBufferSize.has_value()) {
+    shellParams.benchmarkParams->renderTimeBufferSize = renderBufferSize.value();
+  }
+
+  // Add custom parameters
+  for (const auto& [key, value] : customParams) {
+    shellParams.benchmarkParams->customParams.emplace_back(key, value);
+  }
+}
+
+// Read shell parameters from Android system properties.
+// perfettoEnabled is set via the __system_property_foreach iteration which handles
+// property names longer than 31 characters (the __system_property_get limit).
+void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
+                                     const char* prefix,
+                                     bool& perfettoEnabled) noexcept {
+  perfettoEnabled = false;
+  std::string prefixStr(prefix);
+  prefixStr += ".";
+
+  // Read basic ShellParams (headless, screenshot, viewport, fps, multiview)
+  readBasicShellParams(shellParams, prefixStr);
 
   // Read BenchmarkRenderSessionParams - always try to read them
   auto timeout = getAndroidSystemPropertySizeT((prefixStr + "timeout").c_str());
@@ -267,50 +347,17 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
 #endif
 
   // If any benchmark parameter is set (including custom params), create the benchmark params
-  if (timeout.has_value() || sessions.has_value() || logReporter.has_value() ||
-      offscreenOnly.has_value() || benchmark.has_value() || benchmarkDuration.has_value() ||
-      reportInterval.has_value() || hiccupMultiplier.has_value() || renderBufferSize.has_value() ||
-      !customParams.empty()) {
-    if (!shellParams.benchmarkParams.has_value()) {
-      shellParams.benchmarkParams = igl::shell::BenchmarkRenderSessionParams();
-    }
-
-    if (timeout.has_value()) {
-      shellParams.benchmarkParams->renderSessionTimeoutMs = timeout.value();
-    }
-    if (sessions.has_value()) {
-      shellParams.benchmarkParams->numSessionsToRun = sessions.value();
-    }
-    if (logReporter.has_value()) {
-      shellParams.benchmarkParams->logReporter = logReporter.value();
-    }
-    if (offscreenOnly.has_value()) {
-      shellParams.benchmarkParams->offscreenRenderingOnly = offscreenOnly.value();
-    }
-
-    // Apply new benchmark parameters
-    if (benchmarkDuration.has_value()) {
-      shellParams.benchmarkParams->benchmarkDurationMs = benchmarkDuration.value();
-    }
-    if (reportInterval.has_value()) {
-      shellParams.benchmarkParams->reportIntervalMs = reportInterval.value();
-    }
-    if (hiccupMultiplier.has_value()) {
-      try {
-        shellParams.benchmarkParams->hiccupMultiplier = std::stod(hiccupMultiplier.value());
-      } catch (...) {
-        // Ignore parse errors, keep default
-      }
-    }
-    if (renderBufferSize.has_value()) {
-      shellParams.benchmarkParams->renderTimeBufferSize = renderBufferSize.value();
-    }
-
-    // Add custom parameters
-    for (const auto& [key, value] : customParams) {
-      shellParams.benchmarkParams->customParams.emplace_back(key, value);
-    }
-  }
+  applyBenchmarkParamsToShellParams(shellParams,
+                                    timeout,
+                                    sessions,
+                                    logReporter,
+                                    offscreenOnly,
+                                    benchmark,
+                                    benchmarkDuration,
+                                    reportInterval,
+                                    hiccupMultiplier,
+                                    renderBufferSize,
+                                    customParams);
 }
 
 // Stores the current EGL context when created, and restores it when destroyed.
