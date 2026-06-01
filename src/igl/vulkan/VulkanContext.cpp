@@ -591,6 +591,10 @@ VulkanContext::~VulkanContext() {
 
   swapchain_.reset(nullptr); // Swapchain has to be destroyed prior to Surface
 
+  pimpl_->arenaCombinedImageSamplers.clear();
+  pimpl_->arenaStorageImages.clear();
+  pimpl_->arenaBuffers.clear();
+
   waitDeferredTasks();
 
   immediate_.reset(nullptr);
@@ -605,9 +609,6 @@ VulkanContext::~VulkanContext() {
         vf_.vkDestroySamplerYcbcrConversion(vkDevice_, p.second.conversion, nullptr);
       }
     }
-    pimpl_->arenaCombinedImageSamplers.clear();
-    pimpl_->arenaStorageImages.clear();
-    pimpl_->arenaBuffers.clear();
     vf_.vkDestroyPipelineCache(vkDevice_, pipelineCache_, nullptr);
   }
 
