@@ -14,7 +14,7 @@ add_library(IGLGlslang ${SRC_FILES} ${HEADER_FILES})
 
 target_link_libraries(IGLGlslang PRIVATE IGLLibrary)
 
-igl_set_cxxstd(IGLGlslang 17)
+igl_set_cxxstd(IGLGlslang 20)
 igl_set_folder(IGLGlslang "IGL")
 
 # glslang
