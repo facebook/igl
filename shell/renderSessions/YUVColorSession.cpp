@@ -197,7 +197,7 @@ void YUVColorSession::initialize() noexcept {
         const igl::TextureDesc textureDesc = igl::TextureDesc::new2D(
             yuvFormat, width, height, TextureDesc::TextureUsageBits::Sampled, "YUV texture");
         IGL_DEBUG_ASSERT(width * height + width * height / 2 == fileData.length);
-        auto texture = device.createTexture(textureDesc, nullptr);
+        const auto texture = device.createTexture(textureDesc, nullptr);
         IGL_DEBUG_ASSERT(texture);
         texture->upload(TextureRangeDesc{.x = 0, .y = 0, .z = 0, .width = width, .height = height},
                         fileData.data.get());
