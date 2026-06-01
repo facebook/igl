@@ -234,6 +234,70 @@ TEST(CommonTest, GetNumImagePlanesTest) {
   EXPECT_EQ(igl::vulkan::getNumImagePlanes(VK_FORMAT_R8G8B8A8_UINT), 1);
 }
 
+// textureFormatToVkFormat / vkFormatToTextureFormat *******************************************
+TEST(CommonTest, TextureFormatRoundTripTest) {
+  const std::pair<TextureFormat, VkFormat> formats[] = {
+      {TextureFormat::RGBA_UNorm8, VK_FORMAT_R8G8B8A8_UNORM},
+      {TextureFormat::BGRA_UNorm8, VK_FORMAT_B8G8R8A8_UNORM},
+      {TextureFormat::R_UNorm8, VK_FORMAT_R8_UNORM},
+      {TextureFormat::RG_UNorm8, VK_FORMAT_R8G8_UNORM},
+      {TextureFormat::RGBA_F16, VK_FORMAT_R16G16B16A16_SFLOAT},
+      {TextureFormat::R_F32, VK_FORMAT_R32_SFLOAT},
+      {TextureFormat::RGBA_F32, VK_FORMAT_R32G32B32A32_SFLOAT},
+      {TextureFormat::RGBA_SRGB, VK_FORMAT_R8G8B8A8_SRGB},
+      {TextureFormat::BGRA_SRGB, VK_FORMAT_B8G8R8A8_SRGB},
+      {TextureFormat::Z_UNorm16, VK_FORMAT_D16_UNORM},
+      {TextureFormat::Z_UNorm32, VK_FORMAT_D32_SFLOAT},
+      {TextureFormat::S_UInt8, VK_FORMAT_S8_UINT},
+  };
+  for (const auto& [iglFormat, vkFormat] : formats) {
+    EXPECT_EQ(igl::vulkan::textureFormatToVkFormat(iglFormat), vkFormat);
+    EXPECT_EQ(igl::vulkan::vkFormatToTextureFormat(vkFormat), iglFormat);
+  }
+  EXPECT_EQ(igl::vulkan::textureFormatToVkFormat(TextureFormat::Invalid), VK_FORMAT_UNDEFINED);
+}
+
+// colorSpaceToVkColorSpace / vkColorSpaceToColorSpace ****************************************
+TEST(CommonTest, ColorSpaceRoundTripTest) {
+  const std::pair<ColorSpace, VkColorSpaceKHR> spaces[] = {
+      {ColorSpace::SRGBNonlinear, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
+      {ColorSpace::DisplayP3Nonlinear, VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT},
+      {ColorSpace::DisplayP3Linear, VK_COLOR_SPACE_DISPLAY_P3_LINEAR_EXT},
+      {ColorSpace::ExtendedSRGBLinear, VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT},
+      {ColorSpace::BT709Nonlinear, VK_COLOR_SPACE_BT709_NONLINEAR_EXT},
+      {ColorSpace::BT2020Linear, VK_COLOR_SPACE_BT2020_LINEAR_EXT},
+      {ColorSpace::HDR10St2084, VK_COLOR_SPACE_HDR10_ST2084_EXT},
+      {ColorSpace::DolbyVision, VK_COLOR_SPACE_DOLBYVISION_EXT},
+      {ColorSpace::HDR10HLG, VK_COLOR_SPACE_HDR10_HLG_EXT},
+      {ColorSpace::AdobeRGBLinear, VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT},
+      {ColorSpace::AdobeRGBNonlinear, VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT},
+      {ColorSpace::PassThrough, VK_COLOR_SPACE_PASS_THROUGH_EXT},
+      {ColorSpace::ExtendedSRGBNonlinear, VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT},
+      {ColorSpace::DisplayNativeAMD, VK_COLOR_SPACE_DISPLAY_NATIVE_AMD},
+  };
+  for (const auto& [iglSpace, vkSpace] : spaces) {
+    EXPECT_EQ(igl::vulkan::colorSpaceToVkColorSpace(iglSpace), vkSpace);
+    EXPECT_EQ(igl::vulkan::vkColorSpaceToColorSpace(vkSpace), iglSpace);
+  }
+}
+
+// componentMappingToVkComponentMapping *******************************************************
+TEST(CommonTest, ComponentMappingToVkComponentMappingTest) {
+  const ComponentMapping identity{};
+  const VkComponentMapping vkIdentity = igl::vulkan::componentMappingToVkComponentMapping(identity);
+  EXPECT_EQ(vkIdentity.r, VK_COMPONENT_SWIZZLE_IDENTITY);
+  EXPECT_EQ(vkIdentity.g, VK_COMPONENT_SWIZZLE_IDENTITY);
+  EXPECT_EQ(vkIdentity.b, VK_COMPONENT_SWIZZLE_IDENTITY);
+  EXPECT_EQ(vkIdentity.a, VK_COMPONENT_SWIZZLE_IDENTITY);
+
+  const ComponentMapping swizzled{.r = Swizzle_0, .g = Swizzle_1, .b = Swizzle_A, .a = Swizzle_R};
+  const VkComponentMapping vkSwizzled = igl::vulkan::componentMappingToVkComponentMapping(swizzled);
+  EXPECT_EQ(vkSwizzled.r, VK_COMPONENT_SWIZZLE_ZERO);
+  EXPECT_EQ(vkSwizzled.g, VK_COMPONENT_SWIZZLE_ONE);
+  EXPECT_EQ(vkSwizzled.b, VK_COMPONENT_SWIZZLE_A);
+  EXPECT_EQ(vkSwizzled.a, VK_COMPONENT_SWIZZLE_R);
+}
+
 class CommonWithDeviceTest : public ::testing::Test {
  public:
   // Set up common resources.
