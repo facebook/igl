@@ -225,6 +225,38 @@ TEST(VulkanQueuePoolTest, ReturnSingleQueueCreationInfoForSameQueueFamily) {
   EXPECT_EQ(qcis[0].queueCount, 2);
 }
 
+TEST(VulkanQueueDescriptorTest, DefaultConstructedIsInvalid) {
+  const VulkanQueueDescriptor desc;
+  EXPECT_FALSE(desc.isValid());
+  EXPECT_EQ(desc.queueIndex, VulkanQueueDescriptor::kInvalid);
+  EXPECT_EQ(desc.familyIndex, VulkanQueueDescriptor::kInvalid);
+  EXPECT_EQ(desc.queueFlags, 0u);
+}
+
+TEST(VulkanQueueDescriptorTest, LessThanOrdering) {
+  const VulkanQueueDescriptor a{
+      .queueFlags = VK_QUEUE_GRAPHICS_BIT, .queueIndex = 0, .familyIndex = 1};
+  const VulkanQueueDescriptor b{
+      .queueFlags = VK_QUEUE_COMPUTE_BIT, .queueIndex = 0, .familyIndex = 2};
+  const VulkanQueueDescriptor c{
+      .queueFlags = VK_QUEUE_GRAPHICS_BIT, .queueIndex = 1, .familyIndex = 1};
+
+  EXPECT_TRUE(a < b);
+  EXPECT_FALSE(b < a);
+  EXPECT_TRUE(a < c);
+  EXPECT_FALSE(c < a);
+  EXPECT_FALSE(a < a);
+}
+
+TEST(VulkanQueuePoolTest, FindQueueDescriptorReturnsInvalidWhenNoMatch) {
+  const VulkanQueueDescriptor graphicsOnly{
+      .queueFlags = VK_QUEUE_GRAPHICS_BIT, .queueIndex = 0, .familyIndex = 1};
+  const VulkanQueuePool queuePool({graphicsOnly});
+
+  const auto result = queuePool.findQueueDescriptor(VK_QUEUE_COMPUTE_BIT);
+  EXPECT_FALSE(result.isValid());
+}
+
 TEST(VulkanQueuePoolTest, ReturnMultipleQueueCreationInfosForDifferentQueueFamilies) {
   // Given 2 queues from different families
   const VulkanQueueDescriptor graphicsQueueDescriptor1{
