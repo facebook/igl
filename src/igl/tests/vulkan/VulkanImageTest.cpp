@@ -255,6 +255,62 @@ TEST_F(VulkanImageTest, MoveConstruction) {
   EXPECT_EQ(source.getVkImage(), VK_NULL_HANDLE);
 }
 
+TEST_F(VulkanImageTest, MoveAssignment) {
+  vulkan::VulkanImage source(*context_,
+                             VkExtent3D{.width = kWidth, .height = kHeight, .depth = 1},
+                             VK_IMAGE_TYPE_2D,
+                             kFormat,
+                             1,
+                             1,
+                             VK_IMAGE_TILING_OPTIMAL,
+                             VK_IMAGE_USAGE_SAMPLED_BIT,
+                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                             0,
+                             VK_SAMPLE_COUNT_1_BIT,
+                             "Move Assign Source");
+  ASSERT_TRUE(source.valid());
+  const VkImage sourceHandle = source.getVkImage();
+
+  vulkan::VulkanImage dest;
+  ASSERT_FALSE(dest.valid());
+
+  dest = std::move(source);
+
+  EXPECT_TRUE(dest.valid());
+  EXPECT_EQ(dest.getVkImage(), sourceHandle);
+  EXPECT_EQ(dest.extent_.width, kWidth);
+  EXPECT_EQ(dest.extent_.height, kHeight);
+  EXPECT_EQ(dest.imageFormat_, kFormat);
+
+  // NOLINTNEXTLINE(bugprone-use-after-move)
+  EXPECT_FALSE(source.valid());
+  // NOLINTNEXTLINE(bugprone-use-after-move)
+  EXPECT_EQ(source.getVkImage(), VK_NULL_HANDLE);
+}
+
+TEST_F(VulkanImageTest, CreateImageViewBasic) {
+  vulkan::VulkanImage image(*context_,
+                            VkExtent3D{.width = kWidth, .height = kHeight, .depth = 1},
+                            VK_IMAGE_TYPE_2D,
+                            kFormat,
+                            1,
+                            1,
+                            VK_IMAGE_TILING_OPTIMAL,
+                            VK_IMAGE_USAGE_SAMPLED_BIT,
+                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                            0,
+                            VK_SAMPLE_COUNT_1_BIT,
+                            "ImageView Source");
+  ASSERT_TRUE(image.valid());
+
+  auto imageView = image.createImageView(
+      VK_IMAGE_VIEW_TYPE_2D, kFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1, "Test ImageView");
+
+  EXPECT_TRUE(imageView.valid());
+  EXPECT_NE(imageView.getVkImageView(), VK_NULL_HANDLE);
+  EXPECT_EQ(imageView.getVkImageAspectFlags(), VK_IMAGE_ASPECT_COLOR_BIT);
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
