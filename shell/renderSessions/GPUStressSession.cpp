@@ -854,7 +854,7 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
 
   constexpr uint32_t textureUnit = 0;
   if (pipelineState_ == nullptr) {
-    RenderPipelineDesc graphicsDesc = {
+    const RenderPipelineDesc graphicsDesc = {
         .vertexInputState = vertexInput0_,
         .shaderStages = shaderStages_,
         .targetDesc =
@@ -874,8 +874,8 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
         .cullMode = igl::CullMode::Back,
         .frontFaceWinding = igl::WindingMode::Clockwise,
         .fragmentUnitSamplerMap = {{textureUnit, IGL_NAMEHANDLE("inputImage")}},
+        .sampleCount = useMSAA_ ? kMsaaSamples : 1u,
     };
-    graphicsDesc.sampleCount = useMSAA_ ? kMsaaSamples : 1;
 
     pipelineState_ = getPlatform().getDevice().createRenderPipeline(graphicsDesc, nullptr);
   }
