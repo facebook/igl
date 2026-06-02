@@ -232,7 +232,7 @@ void TinyRenderable::initialize(igl::IDevice& device, const igl::IFramebuffer& f
   auto indices = framebuffer.getColorAttachmentIndices();
   IGL_DEBUG_ASSERT(!indices.empty());
   graphicsDesc.targetDesc.colorAttachments.resize(1);
-  auto textureFormat = framebuffer.getColorAttachment(indices[0])->getProperties().format;
+  const auto textureFormat = framebuffer.getColorAttachment(indices[0])->getProperties().format;
   graphicsDesc.targetDesc.colorAttachments[0].textureFormat = textureFormat;
   graphicsDesc.targetDesc.colorAttachments[0].blendEnabled = true;
   graphicsDesc.targetDesc.colorAttachments[0].rgbBlendOp = igl::BlendOp::Add;
