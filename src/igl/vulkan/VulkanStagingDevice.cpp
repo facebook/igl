@@ -679,11 +679,12 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   ivkImageMemoryBarrier(&ctx_.vf_,
                         wrapper1.cmdBuf,
                         srcImage,
-                        0, // srcAccessMask
+                        VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT |
+                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, // srcAccessMask
                         VK_ACCESS_TRANSFER_READ_BIT, // dstAccessMask
                         layout,
                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // wait for any previous operation
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // wait for any previous operation
                         VK_PIPELINE_STAGE_TRANSFER_BIT, // dstStageMask
                         VkImageSubresourceRange{
                             .aspectMask = aspectFlags,
