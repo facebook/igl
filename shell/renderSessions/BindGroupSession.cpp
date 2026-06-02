@@ -291,7 +291,7 @@ void BindGroupSession::createSamplerAndTextures(const igl::IDevice& device) {
   std::shared_ptr<ITexture> tex0, tex1;
 
   {
-    auto imageData = getPlatform().getImageLoader().loadImageData("igl.png");
+    const auto imageData = getPlatform().getImageLoader().loadImageData("igl.png");
     TextureDesc desc = igl::TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
                                                imageData.desc.width,
                                                imageData.desc.height,
