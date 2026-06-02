@@ -447,23 +447,8 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
   enumerateReferenceSpaces();
   enumerateBlendModes();
   createSpaces();
-  if (passthroughSupported()) {
-    passthrough_ = std::make_unique<XrPassthrough>(instance_, session_);
-    if (!passthrough_->initialize()) {
-      return false;
-    }
-  }
-  if (handTrackingSupported()) {
-    hands_ = std::make_unique<XrHands>(instance_, session_, handTrackingMeshSupported());
-    if (!hands_->initialize()) {
-      return false;
-    }
-  }
-  if (refreshRateExtensionSupported()) {
-    refreshRate_ = std::make_unique<XrRefreshRate>(instance_, session_);
-    if (!refreshRate_->initialize(params.refreshRateParams)) {
-      return false;
-    }
+  if (!initializeOptionalFeatures(params)) {
+    return false;
   }
 
   createActions();
@@ -506,6 +491,28 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
 
   initialized_ = true;
   return initialized_;
+}
+
+bool XrApp::initializeOptionalFeatures(const InitParams& params) {
+  if (passthroughSupported()) {
+    passthrough_ = std::make_unique<XrPassthrough>(instance_, session_);
+    if (!passthrough_->initialize()) {
+      return false;
+    }
+  }
+  if (handTrackingSupported()) {
+    hands_ = std::make_unique<XrHands>(instance_, session_, handTrackingMeshSupported());
+    if (!hands_->initialize()) {
+      return false;
+    }
+  }
+  if (refreshRateExtensionSupported()) {
+    refreshRate_ = std::make_unique<XrRefreshRate>(instance_, session_);
+    if (!refreshRate_->initialize(params.refreshRateParams)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
@@ -1019,64 +1026,7 @@ void XrApp::update() {
         .activeActionSets = &activeActionSet,
     };
     if (xrSyncActions(session_, &syncInfo) == XR_SUCCESS) {
-      constexpr int numButtons = static_cast<int>(Button::Count);
-      for (int i = 0; i < numButtons; ++i) {
-        if (buttonActions_[i] == XR_NULL_HANDLE) {
-          continue;
-        }
-        auto buttonId = static_cast<Button>(i);
-        RayEvent rayEvent;
-        rayEvent.button = buttonId;
-        XrActionStateGetInfo getInfo = {
-            .type = XR_TYPE_ACTION_STATE_GET_INFO,
-            .action = buttonActions_[i],
-        };
-
-        if (buttonId == Button::LeftTrigger || buttonId == Button::RightTrigger ||
-            buttonId == Button::RightGrip) {
-          XrActionStateFloat state = {.type = XR_TYPE_ACTION_STATE_FLOAT};
-          if (xrGetActionStateFloat(session_, &getInfo, &state) == XR_SUCCESS && state.isActive) {
-            rayEvent.buttonPressed = state.currentState > 0.5f;
-            platform_->getInputDispatcher().queueEvent(rayEvent);
-          }
-        } else {
-          XrActionStateBoolean state = {.type = XR_TYPE_ACTION_STATE_BOOLEAN};
-          if (xrGetActionStateBoolean(session_, &getInfo, &state) == XR_SUCCESS && state.isActive) {
-            rayEvent.buttonPressed = (state.currentState != 0u);
-            platform_->getInputDispatcher().queueEvent(rayEvent);
-          }
-        }
-      }
-
-      // Right thumbstick → virtual left/right buttons
-      if (rightThumbstickAction_ != XR_NULL_HANDLE) {
-        XrActionStateGetInfo getInfo = {
-            .type = XR_TYPE_ACTION_STATE_GET_INFO,
-            .action = rightThumbstickAction_,
-        };
-        XrActionStateVector2f state = {.type = XR_TYPE_ACTION_STATE_VECTOR2F};
-        if (xrGetActionStateVector2f(session_, &getInfo, &state) == XR_SUCCESS && state.isActive) {
-          RayEvent leftEvent;
-          leftEvent.button = Button::RightThumbstickLeft;
-          leftEvent.buttonPressed = state.currentState.x < -0.5f;
-          platform_->getInputDispatcher().queueEvent(leftEvent);
-
-          RayEvent rightEvent;
-          rightEvent.button = Button::RightThumbstickRight;
-          rightEvent.buttonPressed = state.currentState.x > 0.5f;
-          platform_->getInputDispatcher().queueEvent(rightEvent);
-
-          RayEvent upEvent;
-          upEvent.button = Button::RightThumbstickUp;
-          upEvent.buttonPressed = state.currentState.y > 0.5f;
-          platform_->getInputDispatcher().queueEvent(upEvent);
-
-          RayEvent downEvent;
-          downEvent.button = Button::RightThumbstickDown;
-          downEvent.buttonPressed = state.currentState.y < -0.5f;
-          platform_->getInputDispatcher().queueEvent(downEvent);
-        }
-      }
+      pollActions();
     }
   }
 
@@ -1087,6 +1037,67 @@ void XrApp::update() {
   auto frameState = beginFrame();
   render();
   endFrame(frameState);
+}
+
+void XrApp::pollActions() {
+  constexpr int numButtons = static_cast<int>(Button::Count);
+  for (int i = 0; i < numButtons; ++i) {
+    if (buttonActions_[i] == XR_NULL_HANDLE) {
+      continue;
+    }
+    auto buttonId = static_cast<Button>(i);
+    RayEvent rayEvent;
+    rayEvent.button = buttonId;
+    XrActionStateGetInfo getInfo = {
+        .type = XR_TYPE_ACTION_STATE_GET_INFO,
+        .action = buttonActions_[i],
+    };
+
+    if (buttonId == Button::LeftTrigger || buttonId == Button::RightTrigger ||
+        buttonId == Button::RightGrip) {
+      XrActionStateFloat state = {.type = XR_TYPE_ACTION_STATE_FLOAT};
+      if (xrGetActionStateFloat(session_, &getInfo, &state) == XR_SUCCESS && state.isActive) {
+        rayEvent.buttonPressed = state.currentState > 0.5f;
+        platform_->getInputDispatcher().queueEvent(rayEvent);
+      }
+    } else {
+      XrActionStateBoolean state = {.type = XR_TYPE_ACTION_STATE_BOOLEAN};
+      if (xrGetActionStateBoolean(session_, &getInfo, &state) == XR_SUCCESS && state.isActive) {
+        rayEvent.buttonPressed = (state.currentState != 0u);
+        platform_->getInputDispatcher().queueEvent(rayEvent);
+      }
+    }
+  }
+
+  // Right thumbstick → virtual left/right buttons
+  if (rightThumbstickAction_ != XR_NULL_HANDLE) {
+    XrActionStateGetInfo getInfo = {
+        .type = XR_TYPE_ACTION_STATE_GET_INFO,
+        .action = rightThumbstickAction_,
+    };
+    XrActionStateVector2f state = {.type = XR_TYPE_ACTION_STATE_VECTOR2F};
+    if (xrGetActionStateVector2f(session_, &getInfo, &state) == XR_SUCCESS && state.isActive) {
+      RayEvent leftEvent;
+      leftEvent.button = Button::RightThumbstickLeft;
+      leftEvent.buttonPressed = state.currentState.x < -0.5f;
+      platform_->getInputDispatcher().queueEvent(leftEvent);
+
+      RayEvent rightEvent;
+      rightEvent.button = Button::RightThumbstickRight;
+      rightEvent.buttonPressed = state.currentState.x > 0.5f;
+      platform_->getInputDispatcher().queueEvent(rightEvent);
+
+      RayEvent upEvent;
+      upEvent.button = Button::RightThumbstickUp;
+      upEvent.buttonPressed = state.currentState.y > 0.5f;
+      platform_->getInputDispatcher().queueEvent(upEvent);
+
+      RayEvent downEvent;
+      downEvent.button = Button::RightThumbstickDown;
+      downEvent.buttonPressed = state.currentState.y < -0.5f;
+      platform_->getInputDispatcher().queueEvent(downEvent);
+    }
+  }
 }
 
 bool XrApp::passthroughSupported() const noexcept { // NOLINT(bugprone-exception-escape)
