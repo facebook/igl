@@ -8,6 +8,7 @@
 #include <IGLU/texture_loader/xtc1/TextureLoaderFactory.h>
 
 #include <IGLU/texture_loader/xtc1/Header.h>
+#include <algorithm>
 #include <cstring>
 #include <memory>
 #if defined(IGL_CMAKE_BUILD)
@@ -35,6 +36,15 @@ igl::TextureFormat getXTC1Format(uint32_t numChannels) {
   }
 }
 
+// Header::numMips is a 4-bit field (max value 15) but Header::mipSizes is
+// fixed at kMaxMips=12 entries. A malformed/truncated header that encodes
+// 13..15 mips would index past the array. Returns 0 for legacy headers
+// that did not populate numMips (so callers can fall back to mip-0-only
+// behavior), and otherwise clamps to kMaxMips.
+[[nodiscard]] constexpr uint32_t clampedNumMips(uint32_t rawNumMips) noexcept {
+  return std::min(rawNumMips, Header::kMaxMips);
+}
+
 class TextureLoader final : public ITextureLoader {
  public:
   // NOLINTNEXTLINE(bugprone-exception-escape)
@@ -46,8 +56,39 @@ class TextureLoader final : public ITextureLoader {
 
     igl::TextureDesc desc = igl::TextureDesc::new2D(
         format, header->width, header->height, igl::TextureDesc::TextureUsageBits::Sampled);
+    // Honor the pre-baked mip chain so downstream texture creation uploads
+    // each mip directly instead of regenerating from the base mip at runtime.
+    // Legacy headers leave numMips==0; keep desc.numMipLevels at its default
+    // of 1 so the mip chain is generated at runtime as it was previously.
+    const uint32_t numMips = clampedNumMips(header->numMips);
+    if (numMips > 0) {
+      desc.numMipLevels = numMips;
+    }
 
     mutableDescriptor() = desc;
+  }
+
+  // NOLINTNEXTLINE(bugprone-exception-escape)
+  [[nodiscard]] std::vector<uint32_t> mipLevelBytes() const noexcept override {
+    const Header* header = this->reader().as<Header>();
+    const uint32_t numMips = clampedNumMips(header->numMips);
+    // Legacy headers without a pre-baked chain match the base class behavior
+    // (empty result) so consumers using mipLevelBytes().empty() as a signal
+    // to generate mips at runtime keep working.
+    std::vector<uint32_t> result;
+    result.reserve(numMips);
+    for (uint32_t i = 0; i < numMips; ++i) {
+      result.push_back(header->mipSizes[i]);
+    }
+    return result;
+  }
+
+  // Override the base class heuristic. The base returns true whenever
+  // numMipLevels > 1, which would tell the renderer to regenerate the chain
+  // from mip 0 and skip the pre-baked uploads. We only want runtime
+  // generation when the source file omits the chain (legacy numMips==0).
+  [[nodiscard]] bool shouldGenerateMipmaps() const noexcept override {
+    return clampedNumMips(this->reader().as<Header>()->numMips) == 0;
   }
 
  protected:
@@ -88,14 +129,19 @@ bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
   }
 
   const Header* header = headerReader.as<Header>();
-  const bool isValid = header->tagIsValid();
-
-  if (!isValid) {
+  if (!header->tagIsValid()) {
     igl::Result::setResult(
         outResult, igl::Result::Code::ArgumentInvalid, "Invalid XTC1 texture header");
+    return false;
   }
-
-  return isValid;
+  // numMips is 4-bit (max 15) but mipSizes[] has only kMaxMips=12 slots.
+  // Reject malformed headers that claim more mips than the array can hold.
+  if (header->numMips > Header::kMaxMips) {
+    igl::Result::setResult(
+        outResult, igl::Result::Code::ArgumentInvalid, "XTC1 header numMips exceeds kMaxMips");
+    return false;
+  }
+  return true;
 }
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
@@ -106,6 +152,23 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
   if (reader.size() < kHeaderLength) {
     igl::Result::setResult(
         outResult, igl::Result::Code::ArgumentInvalid, "Data too small for XTC1 texture");
+    return nullptr;
+  }
+
+  // Reject corrupted files where the declared per-mip byte sizes do not fit
+  // in the payload that follows the header. Without this check, downstream
+  // consumers walk past the buffer when they treat mipSizes as sequential
+  // offsets into the data blob.
+  const Header* header = reader.as<Header>();
+  const uint32_t numMips = clampedNumMips(header->numMips);
+  uint64_t totalMipBytes = 0;
+  for (uint32_t i = 0; i < numMips; ++i) {
+    totalMipBytes += header->mipSizes[i];
+  }
+  const uint64_t payloadSize = static_cast<uint64_t>(reader.size()) - kHeaderLength;
+  if (totalMipBytes > payloadSize) {
+    igl::Result::setResult(
+        outResult, igl::Result::Code::ArgumentInvalid, "XTC1 mipSizes sum exceeds payload size");
     return nullptr;
   }
 
