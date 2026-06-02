@@ -109,6 +109,35 @@ TEST_F(VulkanDescriptorSetLayoutTest, WithBindingFlags) {
   EXPECT_EQ(layout->numBindings, 1u);
 }
 
+TEST_F(VulkanDescriptorSetLayoutTest, ZeroBindings) {
+  auto& ctx = getVulkanContext();
+
+  auto layout = std::make_unique<igl::vulkan::VulkanDescriptorSetLayout>(
+      ctx, 0, 0, nullptr, nullptr, "testZeroBindings");
+
+  ASSERT_NE(layout, nullptr);
+  EXPECT_NE(layout->getVkDescriptorSetLayout(), VK_NULL_HANDLE);
+  EXPECT_EQ(layout->numBindings, 0u);
+}
+
+TEST_F(VulkanDescriptorSetLayoutTest, NullDebugName) {
+  auto& ctx = getVulkanContext();
+
+  VkDescriptorSetLayoutBinding binding = {};
+  binding.binding = 0;
+  binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  binding.descriptorCount = 1;
+  binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+  VkDescriptorBindingFlags bindingFlags = 0;
+  auto layout =
+      std::make_unique<igl::vulkan::VulkanDescriptorSetLayout>(ctx, 0, 1, &binding, &bindingFlags);
+
+  ASSERT_NE(layout, nullptr);
+  EXPECT_NE(layout->getVkDescriptorSetLayout(), VK_NULL_HANDLE);
+  EXPECT_EQ(layout->numBindings, 1u);
+}
+
 TEST_F(VulkanDescriptorSetLayoutTest, DestructorCleanup) {
   auto& ctx = getVulkanContext();
 
