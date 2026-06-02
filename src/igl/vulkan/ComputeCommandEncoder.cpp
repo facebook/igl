@@ -120,14 +120,25 @@ void ComputeCommandEncoder::processDependencies(const Dependencies& dependencies
           break;
         }
         const auto* vkBuf = static_cast<Buffer*>(buf);
+        const VkBufferUsageFlags flags = vkBuf->getBufferUsageFlags();
+        VkPipelineStageFlags dstStageFlags = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        // Indirect-dispatch arg buffers are read at the DRAW_INDIRECT stage,
+        // not at COMPUTE_SHADER. If a compute pass produced this buffer and
+        // a subsequent dispatchThreadGroupsIndirect() consumes it, the
+        // barrier must cover that stage too, otherwise the dispatch races
+        // against the producing write and reads stale (typically zero)
+        // group counts. Mirrors RenderCommandEncoder::processDependencies().
+        if (flags & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
+          dstStageFlags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+        }
         ivkBufferBarrier(&ctx_.vf_,
                          cmdBuffer_,
                          vkBuf->getVkBuffer(),
-                         vkBuf->getBufferUsageFlags(),
+                         flags,
                          VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
                              VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+                         dstStageFlags);
       }
       deps = deps->next;
     }
@@ -152,6 +163,34 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   // threadgroupSize is controlled inside compute shaders
   ctx_.vf_.vkCmdDispatch(
       cmdBuffer_, threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
+}
+
+void ComputeCommandEncoder::dispatchThreadGroupsIndirect(IBuffer& indirectBuffer,
+                                                         size_t indirectBufferOffset,
+                                                         const Dimensions& /*threadgroupSize*/,
+                                                         const Dependencies& dependencies) {
+  IGL_PROFILER_FUNCTION();
+
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
+
+  if (!cps_) {
+    IGL_DEBUG_ABORT("Did you forget to call bindComputePipelineState()?");
+    return;
+  }
+
+  processDependencies(dependencies);
+
+  binder_.updateBindings(cps_->getVkPipelineLayout(), *cps_);
+
+  const auto* bufIndirect = static_cast<const igl::vulkan::Buffer*>(&indirectBuffer);
+  // Spec: bufIndirect must have been created with VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
+  // (i.e. BufferDesc::BufferTypeBits::Indirect) and the producer pass must already have
+  // released its writes via the encoder boundary.
+  IGL_DEBUG_ASSERT((bufIndirect->getBufferUsageFlags() & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) != 0,
+                   "indirectBuffer must be created with BufferTypeBits::Indirect");
+  IGL_DEBUG_ASSERT(indirectBufferOffset % 4 == 0,
+                   "indirectBufferOffset must be 4-byte aligned (Vulkan spec)");
+  ctx_.vf_.vkCmdDispatchIndirect(cmdBuffer_, bufIndirect->getVkBuffer(), indirectBufferOffset);
 }
 
 void ComputeCommandEncoder::pushDebugGroupLabel(const char* label, const igl::Color& color) const {

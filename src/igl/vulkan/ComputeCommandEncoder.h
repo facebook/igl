@@ -42,6 +42,10 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
   void dispatchThreadGroups(const Dimensions& threadgroupCount,
                             const Dimensions& threadgroupSize,
                             const Dependencies& dependencies) override;
+  void dispatchThreadGroupsIndirect(IBuffer& indirectBuffer,
+                                    size_t indirectBufferOffset,
+                                    const Dimensions& threadgroupSize,
+                                    const Dependencies& dependencies) override;
 
   /// @brief Ends encoding for compute commands and transitions all images bound to this encoder
   /// back to `VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL`

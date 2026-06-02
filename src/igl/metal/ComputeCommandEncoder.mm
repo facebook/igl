@@ -69,6 +69,27 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   [encoder_ dispatchThreadgroups:tgc threadsPerThreadgroup:tgs];
 }
 
+void ComputeCommandEncoder::dispatchThreadGroupsIndirect(IBuffer& indirectBuffer,
+                                                         size_t indirectBufferOffset,
+                                                         const Dimensions& threadgroupSize,
+                                                         const Dependencies& /*dependencies*/) {
+  IGL_DEBUG_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT((indirectBuffer.getBufferType() & BufferDesc::BufferTypeBits::Indirect) != 0,
+                   "indirectBuffer must be created with BufferTypeBits::Indirect");
+  IGL_DEBUG_ASSERT(indirectBufferOffset % 4 == 0, "indirectBufferOffset must be 4-byte aligned");
+
+  const MTLSize tgs{
+      .width = threadgroupSize.width,
+      .height = threadgroupSize.height,
+      .depth = threadgroupSize.depth,
+  };
+
+  auto& iglBuffer = static_cast<Buffer&>(indirectBuffer);
+  [encoder_ dispatchThreadgroupsWithIndirectBuffer:iglBuffer.get()
+                              indirectBufferOffset:indirectBufferOffset
+                             threadsPerThreadgroup:tgs];
+}
+
 void ComputeCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, const void* /*data*/) {
   // DO NOT IMPLEMENT!
   // This is only for backends that MUST use single uniforms in some situations.

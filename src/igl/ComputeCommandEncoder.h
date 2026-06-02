@@ -114,6 +114,32 @@ class IComputeCommandEncoder : public ICommandEncoder {
   virtual void dispatchThreadGroups(const Dimensions& threadgroupCount,
                                     const Dimensions& threadgroupSize,
                                     const Dependencies& dependencies = Dependencies()) = 0;
+
+  /**
+   * @brief Encodes a compute command whose thread-group count is sourced from a GPU buffer at
+   * dispatch time, allowing the GPU to drive its own dispatch sizes without a CPU readback. The
+   * indirect arguments occupy 12 bytes at `indirectBufferOffset` and have the layout
+   * `struct { uint32_t groupCountX, groupCountY, groupCountZ; }` (matches
+   * `VkDispatchIndirectCommand` and `MTLDispatchThreadgroupsIndirectArguments`).
+   *
+   * Backend requirements:
+   *   - The buffer must have been created with `BufferDesc::BufferTypeBits::Indirect`.
+   *   - On Vulkan, pass `indirectBuffer` in the `dependencies` argument of this
+   *     `dispatchThreadGroupsIndirect()` call so that `processDependencies()` inserts a
+   *     COMPUTE->DRAW_INDIRECT barrier before the indirect read. On Metal the resource is
+   *     tracked by the encoder automatically.
+   *
+   * @param indirectBuffer Buffer holding the dispatch arguments.
+   * @param indirectBufferOffset Byte offset to the start of the dispatch-args triple.
+   * @param threadgroupSize Threads per workgroup in each dimension. Mirrors the parameter on
+   *        `dispatchThreadGroups()`; required by Metal which takes it at the call site, ignored by
+   *        Vulkan/D3D12/OpenGL where the size is baked into the compute shader.
+   * @param dependencies Any textures or buffers accessed in this dispatch.
+   */
+  virtual void dispatchThreadGroupsIndirect(IBuffer& indirectBuffer,
+                                            size_t indirectBufferOffset,
+                                            const Dimensions& threadgroupSize,
+                                            const Dependencies& dependencies = Dependencies()) = 0;
 };
 
 } // namespace igl

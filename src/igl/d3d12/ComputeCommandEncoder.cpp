@@ -339,6 +339,19 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   }
 }
 
+void ComputeCommandEncoder::dispatchThreadGroupsIndirect(IBuffer& /*indirectBuffer*/,
+                                                         size_t /*indirectBufferOffset*/,
+                                                         const Dimensions& /*threadgroupSize*/,
+                                                         const Dependencies& /*dependencies*/) {
+  // D3D12 needs an ID3D12CommandSignature created with a single
+  // D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH argument, then ExecuteIndirect()
+  // with that signature. The signature is per-device, not per-encoder, and
+  // would need to be cached on D3D12Context. Out of scope for now; callers
+  // needing GPU-driven dispatch sizes on D3D12 should use
+  // dispatchThreadGroups() with CPU-known sizes.
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+}
+
 void ComputeCommandEncoder::bindPushConstants(const void* data, size_t length, size_t offset) {
   auto* commandList = commandBuffer_.getCommandList();
   if (!commandBuffer_.isRecording() || !commandList || !data || length == 0) {

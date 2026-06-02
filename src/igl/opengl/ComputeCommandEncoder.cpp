@@ -56,6 +56,18 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   }
 }
 
+void ComputeCommandEncoder::dispatchThreadGroupsIndirect(IBuffer& /*indirectBuffer*/,
+                                                         size_t /*indirectBufferOffset*/,
+                                                         const Dimensions& /*threadgroupSize*/,
+                                                         const Dependencies& /*dependencies*/) {
+  // glDispatchComputeIndirect() is GL 4.3 / GLES 3.1+. Wiring it through the
+  // ComputeCommandAdapter and IContext layers (binding the indirect buffer to
+  // GL_DISPATCH_INDIRECT_BUFFER, exposing the entry point on IContext) is left
+  // as a follow-up; callers that need GPU-driven dispatch sizes on OpenGL
+  // should fall back to dispatchThreadGroups() for now.
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+}
+
 void ComputeCommandEncoder::pushDebugGroupLabel(const char* label,
                                                 const igl::Color& /*color*/) const {
   IGL_DEBUG_ASSERT(label != nullptr && *label);

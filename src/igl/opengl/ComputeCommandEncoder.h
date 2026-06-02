@@ -33,6 +33,10 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder, public WithCo
   void dispatchThreadGroups(const Dimensions& threadgroupCount,
                             const Dimensions& threadgroupSize,
                             const Dependencies& dependencies) override;
+  void dispatchThreadGroupsIndirect(IBuffer& indirectBuffer,
+                                    size_t indirectBufferOffset,
+                                    const Dimensions& threadgroupSize,
+                                    const Dependencies& dependencies) override;
   void endEncoding() override;
 
   void pushDebugGroupLabel(const char* label, const igl::Color& color) const override;

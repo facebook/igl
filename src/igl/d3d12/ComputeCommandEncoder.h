@@ -28,6 +28,10 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
   void dispatchThreadGroups(const Dimensions& threadgroupCount,
                             const Dimensions& threadgroupSize,
                             const Dependencies& dependencies = {}) override;
+  void dispatchThreadGroupsIndirect(IBuffer& indirectBuffer,
+                                    size_t indirectBufferOffset,
+                                    const Dimensions& threadgroupSize,
+                                    const Dependencies& dependencies = {}) override;
   void bindPushConstants(const void* data, size_t length, size_t offset = 0) override;
   void bindTexture(uint32_t index, ITexture* texture) override;
 
