@@ -674,11 +674,39 @@ void VulkanContext::createInstance() {
   // NOLINTEND(readability-identifier-naming)
   const auto instanceExtensions = features_.allEnabled(VulkanFeatures::ExtensionType::Instance);
 
+  // Enumerate available instance layers before requesting them
+  uint32_t layerCount = 0;
+  vf_.vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+  std::vector<VkLayerProperties> availableLayers(layerCount);
+  vf_.vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+  IGL_LOG_INFO("Found %u Vulkan instance layers\n", layerCount);
+  for ([[maybe_unused]] const auto& layer : availableLayers) {
+    IGL_LOG_INFO("\t%s - %u.%u.%u.%u, %u\n",
+                 layer.layerName,
+                 VK_API_VERSION_MAJOR(layer.specVersion),
+                 VK_API_VERSION_MINOR(layer.specVersion),
+                 VK_API_VERSION_VARIANT(layer.specVersion),
+                 VK_API_VERSION_PATCH(layer.specVersion),
+                 layer.implementationVersion);
+  }
+
   std::vector<const char*> layers;
   // @fb-only
 #if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
   if (config_.enableValidation) {
-    layers.emplace_back(kValidationLayerName);
+    const auto hasLayer = [&availableLayers](const char* name) {
+      return std::any_of(availableLayers.begin(), availableLayers.end(), [name](const auto& layer) {
+        return strcmp(layer.layerName, name) == 0;
+      });
+    };
+    if (hasLayer(kValidationLayerName)) {
+      layers.emplace_back(kValidationLayerName);
+    } else {
+      IGL_LOG_INFO("Validation layers requested but %s not available — skipping\n",
+                   kValidationLayerName);
+      config_.enableValidation = false;
+    }
   }
 #endif
   if (config_.enableGfxReconstruct) {
@@ -722,29 +750,7 @@ void VulkanContext::createInstance() {
       .ppEnabledExtensionNames = instanceExtensions.data(),
   };
 
-  {
-    // Prints information about available instance layers
-    uint32_t count = 0;
-    vf_.vkEnumerateInstanceLayerProperties(&count, nullptr);
-    std::vector<VkLayerProperties> layerProperties(count);
-    vf_.vkEnumerateInstanceLayerProperties(&count, layerProperties.data());
-
-    IGL_LOG_INFO("Found %u Vulkan instance layers\n", count);
-    for ([[maybe_unused]] const auto& layer : layerProperties) {
-      IGL_LOG_INFO("\t%s - %u.%u.%u.%u, %u\n",
-                   layer.layerName,
-                   VK_API_VERSION_MAJOR(layer.specVersion),
-                   VK_API_VERSION_MINOR(layer.specVersion),
-                   VK_API_VERSION_VARIANT(layer.specVersion),
-                   VK_API_VERSION_PATCH(layer.specVersion),
-                   layer.implementationVersion);
-    }
-  }
-
   const VkResult result = vf_.vkCreateInstance(&ci, nullptr, &vkInstance_);
-
-  IGL_DEBUG_ASSERT(result != VK_ERROR_LAYER_NOT_PRESENT,
-                   "vkCreateInstance() failed. Did you forget to install the Vulkan SDK?");
 
   VK_ASSERT(result);
 
