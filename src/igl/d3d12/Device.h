@@ -208,7 +208,7 @@ class Device final : public IDevice, public IFenceProvider {
   [[nodiscard]] Result checkDeviceRemoval() const;
 
   // Query if device has been lost.
-  [[nodiscard]] bool isDeviceLost() const noexcept {
+  [[nodiscard]] bool isDeviceLost() const noexcept override {
     return deviceLost_;
   }
 
