@@ -624,11 +624,11 @@ VulkanContext::~VulkanContext() {
   if (vkDevice_) {
     vf_.vkDestroyDevice(vkDevice_, nullptr); // Device has to be destroyed prior to Instance
   }
-#if !IGL_PLATFORM_ANDROID
+#if !IGL_PLATFORM_APPLE
   if (vf_.vkDestroyDebugUtilsMessengerEXT != nullptr) {
     vf_.vkDestroyDebugUtilsMessengerEXT(vkInstance_, vkDebugUtilsMessenger_, nullptr);
   }
-#endif // !IGL_PLATFORM_ANDROID
+#endif // !IGL_PLATFORM_APPLE
   if (vf_.vkDestroyInstance != nullptr) {
     vf_.vkDestroyInstance(vkInstance_, nullptr);
   }
