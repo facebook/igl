@@ -34,8 +34,8 @@ struct ComputePipelineDesc {
   /*
    * OpenGL only
    */
-  std::unordered_map<size_t, igl::NameHandle> imagesMap;
-  std::unordered_map<size_t, igl::NameHandle> buffersMap;
+  std::unordered_map<size_t, NameHandle> imagesMap;
+  std::unordered_map<size_t, NameHandle> buffersMap;
 
   /*
    * @brief The compute kernel the pipeline calls.
