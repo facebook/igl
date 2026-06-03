@@ -222,4 +222,39 @@ TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_DescriptorIndexingEnabled_AllPr
   EXPECT_TRUE(result.isOk());
 }
 
+TEST_F(VulkanFeaturesTest, ConfigDisablesShaderDrawParameters) {
+  igl::vulkan::VulkanContextConfig config;
+  config.enableShaderDrawParameters = false;
+
+  const igl::vulkan::VulkanFeatures features(config);
+
+  EXPECT_FALSE(features.featuresShaderDrawParameters.shaderDrawParameters);
+}
+
+TEST_F(VulkanFeaturesTest, ConfigDisables16BitStorageAccess) {
+  igl::vulkan::VulkanContextConfig config;
+  config.enableStorageBuffer16BitAccess = false;
+
+  const igl::vulkan::VulkanFeatures features(config);
+
+  EXPECT_FALSE(features.features16BitStorage.storageBuffer16BitAccess);
+}
+
+TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_MissingShaderDrawParameters) {
+  igl::setDebugBreakEnabled(false);
+
+  const igl::vulkan::VulkanContextConfig config;
+
+  const igl::vulkan::VulkanFeatures requested(config);
+  igl::vulkan::VulkanFeatures available(config);
+  available.featuresShaderDrawParameters.shaderDrawParameters = VK_FALSE;
+
+  const igl::Result result = requested.checkSelectedFeatures(available);
+#if IGL_PLATFORM_APPLE
+  EXPECT_TRUE(result.isOk());
+#else
+  EXPECT_FALSE(result.isOk());
+#endif
+}
+
 } // namespace igl::tests
