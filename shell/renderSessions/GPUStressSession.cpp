@@ -1009,9 +1009,10 @@ void GPUStressSession::update(SurfaceTextures surfaceTextures) noexcept {
   const std::shared_ptr<IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = framebuffer_->getColorAttachment(0);
-  framebufferDesc.depthAttachment.texture = framebuffer_->getDepthAttachment();
+  const FramebufferDesc framebufferDesc{
+      .colorAttachments = {{.texture = framebuffer_->getColorAttachment(0)}},
+      .depthAttachment = {.texture = framebuffer_->getDepthAttachment()},
+  };
 
   // setup UI
   const ImGuiViewport* v = ImGui::GetMainViewport();
