@@ -424,29 +424,28 @@ void TinyMeshBindGroupSession::createRenderPipeline() {
 
   IGL_DEBUG_ASSERT(framebuffer_);
 
-  RenderPipelineDesc desc;
-
-  desc.targetDesc.colorAttachments.resize(1);
-  desc.targetDesc.colorAttachments[0].textureFormat =
-      framebuffer_->getColorAttachment(0)->getProperties().format;
-
-  if (framebuffer_->getDepthAttachment()) {
-    desc.targetDesc.depthAttachmentFormat =
-        framebuffer_->getDepthAttachment()->getProperties().format;
-  }
-
-  desc.vertexInputState = vertexInput0_;
-  desc.shaderStages = getShaderStagesForBackend(*device_);
-
+  const igl::TextureFormat depthFormat =
+      framebuffer_->getDepthAttachment()
+          ? framebuffer_->getDepthAttachment()->getProperties().format
+          : igl::TextureFormat::Invalid;
+  const RenderPipelineDesc desc{
+      .vertexInputState = vertexInput0_,
+      .shaderStages = getShaderStagesForBackend(*device_),
+      .targetDesc =
+          {
+              .colorAttachments = {{
+                  .textureFormat = framebuffer_->getColorAttachment(0)->getProperties().format,
+              }},
+              .depthAttachmentFormat = depthFormat,
+          },
 #if !TINY_TEST_USE_DEPTH_BUFFER
-  desc.cullMode = igl::CullMode::Back;
+      .cullMode = igl::CullMode::Back,
 #endif // TINY_TEST_USE_DEPTH_BUFFER
-
-  desc.frontFaceWinding = igl::WindingMode::Clockwise;
-  desc.isDynamicBufferMask = kDynamicBufferMask;
-  desc.debugName = igl::genNameHandle("Pipeline: mesh");
-  desc.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE("uTex0");
-  desc.fragmentUnitSamplerMap[1] = IGL_NAMEHANDLE("uTex1");
+      .frontFaceWinding = igl::WindingMode::Clockwise,
+      .fragmentUnitSamplerMap = {{0, IGL_NAMEHANDLE("uTex0")}, {1, IGL_NAMEHANDLE("uTex1")}},
+      .isDynamicBufferMask = kDynamicBufferMask,
+      .debugName = igl::genNameHandle("Pipeline: mesh"),
+  };
   renderPipelineStateMesh_ = device_->createRenderPipeline(desc, nullptr);
 
   {
