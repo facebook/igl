@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <memory>
+#include <utility>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
