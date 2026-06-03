@@ -250,6 +250,31 @@ TEST_F(VulkanRenderPassBuilderTest, EqualityMultiview) {
   EXPECT_FALSE(builder1 == builder3);
 }
 
+TEST_F(VulkanRenderPassBuilderTest, DefaultBuilderEquality) {
+  const igl::vulkan::VulkanRenderPassBuilder a;
+  const igl::vulkan::VulkanRenderPassBuilder b;
+
+  EXPECT_TRUE(a == b);
+
+  igl::vulkan::VulkanRenderPassBuilder::HashFunction hasher;
+  EXPECT_EQ(hasher(a), hasher(b));
+}
+
+TEST_F(VulkanRenderPassBuilderTest, HashInequalityMultiview) {
+  igl::vulkan::VulkanRenderPassBuilder builder1;
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder1.setMultiviewMasks(0x3, 0x3);
+
+  igl::vulkan::VulkanRenderPassBuilder builder2;
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder2.setMultiviewMasks(0xF, 0xF);
+
+  igl::vulkan::VulkanRenderPassBuilder::HashFunction hasher;
+  EXPECT_NE(hasher(builder1), hasher(builder2));
+}
+
 TEST_F(VulkanRenderPassBuilderTest, RenderPassCaching) {
   auto& ctx = getVulkanContext();
 

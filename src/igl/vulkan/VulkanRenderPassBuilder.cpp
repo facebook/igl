@@ -396,8 +396,8 @@ uint64_t VulkanRenderPassBuilder::HashFunction::operator()(
   hash ^= std::hash<uint32_t>()(builder.refDepthResolve2_.attachment);
   hash ^= std::hash<uint32_t>()(builder.refDepthResolve2_.layout);
   hash ^= std::hash<uint32_t>()(builder.refDepthResolve2_.aspectMask);
-  hash ^= std::hash<uint32_t>()(builder.viewMask_);
-  hash ^= std::hash<uint32_t>()(builder.correlationMask_);
+  hash ^= std::hash<uint32_t>()(builder.viewMask_) * 31;
+  hash ^= std::hash<uint32_t>()(builder.correlationMask_) * 37;
   return hash;
 }
 
