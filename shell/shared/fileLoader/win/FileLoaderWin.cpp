@@ -52,7 +52,7 @@ namespace igl::shell {
 FileLoaderWin::FileLoaderWin() {
 #if IGL_PLATFORM_WINDOWS
   wchar_t path[MAX_PATH] = {0};
-  if (IGL_DEBUG_VERIFY(GetModuleFileNameW(NULL, path, MAX_PATH) != 0)) {
+  if (IGL_DEBUG_VERIFY(GetModuleFileNameW(nullptr, path, MAX_PATH) != 0)) {
     basePath_ = std::filesystem::path(path).parent_path().string();
   }
 #endif

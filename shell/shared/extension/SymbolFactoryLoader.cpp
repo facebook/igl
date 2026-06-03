@@ -40,7 +40,7 @@ IGLShellSymbol_NewCFunction SymbolFactoryLoader::find(const char* name) noexcept
 #if IGL_DL_UNIX
   auto factoryFunc = (IGLShellSymbol_NewCFunction)dlsym(RTLD_DEFAULT, name);
 #elif IGL_DL_DLL
-  auto factoryFunc = (IGLShellSymbol_NewCFunction)GetProcAddress(GetModuleHandle(NULL), name);
+  auto factoryFunc = (IGLShellSymbol_NewCFunction)GetProcAddress(GetModuleHandle(nullptr), name);
 #else
   IGL_LOG_ERROR("IGL WARNING: Runtime symbol lookup *not* supported on this platform\n");
   auto factoryFunc = (IGLShellSymbol_NewCFunction) nullptr;

@@ -33,7 +33,7 @@ struct WGLDevice final : public igl::opengl::Device {
   void endScope() override {
     Device::endScope();
     if (!verifyScope()) {
-      wglMakeCurrent(NULL, NULL);
+      wglMakeCurrent(nullptr, nullptr);
     }
   }
 
