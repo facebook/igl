@@ -63,4 +63,38 @@ TEST_F(ImageLoaderTest, WhiteDataIsAllWhite) {
   EXPECT_EQ(firstPixel, 0xFFFFFFFFu);
 }
 
+TEST_F(ImageLoaderTest, CheckerboardDescriptorFields) {
+  auto imageData = ImageLoader::checkerboard();
+
+  EXPECT_EQ(imageData.desc.format, TextureFormat::RGBA_UNorm8);
+  EXPECT_EQ(imageData.desc.numMipLevels, TextureDesc::calcNumMipLevels(8u, 8u));
+  EXPECT_NE(imageData.desc.usage & TextureDesc::TextureUsageBits::Sampled, 0);
+}
+
+TEST_F(ImageLoaderTest, WhiteDescriptorFields) {
+  auto imageData = ImageLoader::white();
+
+  EXPECT_EQ(imageData.desc.format, TextureFormat::RGBA_UNorm8);
+  EXPECT_EQ(imageData.desc.numMipLevels, TextureDesc::calcNumMipLevels(8u, 8u));
+  EXPECT_NE(imageData.desc.usage & TextureDesc::TextureUsageBits::Sampled, 0);
+}
+
+TEST_F(ImageLoaderTest, CheckerboardHasAlternatingPattern) {
+  auto imageData = ImageLoader::checkerboard();
+
+  ASSERT_NE(imageData.data, nullptr);
+  ASSERT_GE(imageData.data->size(), 3u * sizeof(uint32_t));
+  const uint8_t* dataPtr = imageData.data->data();
+  ASSERT_NE(dataPtr, nullptr);
+
+  // The checkerboard alternates black/white in 2-pixel runs, so the third pixel
+  // is white while the first is black.
+  uint32_t firstPixel = 0;
+  uint32_t thirdPixel = 0;
+  std::memcpy(&firstPixel, dataPtr, sizeof(uint32_t));
+  std::memcpy(&thirdPixel, dataPtr + 2 * sizeof(uint32_t), sizeof(uint32_t));
+  EXPECT_EQ(firstPixel, 0xFF000000u);
+  EXPECT_EQ(thirdPixel, 0xFFFFFFFFu);
+}
+
 } // namespace igl::shell::tests
