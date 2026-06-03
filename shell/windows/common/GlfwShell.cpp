@@ -133,13 +133,13 @@ bool GlfwShell::createWindow() noexcept {
   glfwSetCursorPosCallback(windowHandle, [](GLFWwindow* window, double xpos, double ypos) {
     auto* shell = static_cast<GlfwShell*>(glfwGetWindowUserPointer(window));
     shell->platform_->getInputDispatcher().queueEvent(
-        MouseMotionEvent((float)xpos, (float)ypos, 0, 0));
+        MouseMotionEvent(static_cast<float>(xpos), static_cast<float>(ypos), 0, 0));
   });
 
   glfwSetScrollCallback(windowHandle, [](GLFWwindow* window, double xoffset, double yoffset) {
     auto* shell = static_cast<GlfwShell*>(glfwGetWindowUserPointer(window));
     shell->platform_->getInputDispatcher().queueEvent(
-        MouseWheelEvent((float)xoffset, (float)yoffset));
+        MouseWheelEvent(static_cast<float>(xoffset), static_cast<float>(yoffset)));
   });
 
   glfwSetMouseButtonCallback(
@@ -148,8 +148,8 @@ bool GlfwShell::createWindow() noexcept {
         MouseButton iglButton = getIGLMouseButton(button);
         double xpos = NAN, ypos = NAN;
         glfwGetCursorPos(window, &xpos, &ypos);
-        shell->platform_->getInputDispatcher().queueEvent(
-            MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
+        shell->platform_->getInputDispatcher().queueEvent(MouseButtonEvent(
+            iglButton, action == GLFW_PRESS, static_cast<float>(xpos), static_cast<float>(ypos)));
       });
 
   glfwSetKeyCallback(windowHandle, [](GLFWwindow* window, int key, int, int action, int mods) {
@@ -288,7 +288,7 @@ void GlfwShell::run() noexcept {
     }
     if (frameNumber == session_->shellParams().screenshotNumber) {
       IGL_LOG_INFO("\nWe are running screenshot test - breaking after %u frame\n",
-                   (uint32_t)frameNumber);
+                   static_cast<uint32_t>(frameNumber));
       if (!session_->shellParams().screenshotFileName.empty()) {
         saveFrameBufferToPng(session_->shellParams().screenshotFileName.c_str(),
                              platform_->getDevice().createFramebuffer(
