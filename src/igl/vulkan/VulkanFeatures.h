@@ -27,6 +27,7 @@ class VulkanContext;
 /// modifying the internal storage of the object, checking if an extension has been enabled for an
 /// object and, finally, a method to return a list of all enabled extensions of a type as `const
 /// char *`, which is accepted by the Vulkan API
+// NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
 class VulkanFeatures final {
  public:
   /// @brief Helper enumeration to determine which extension is being used. It's converted to a
