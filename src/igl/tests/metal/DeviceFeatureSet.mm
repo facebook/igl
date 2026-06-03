@@ -83,4 +83,31 @@ TEST_F(DeviceFeatureSetMTLTest, HasRequirementTest) {
   ASSERT_EQ(mtlDeviceFeatureSet.hasRequirement(DeviceRequirement::ShaderTextureLodExtReq), false);
 }
 
+TEST_F(DeviceFeatureSetMTLTest, GetFeatureLimitsTest) {
+  const auto mtlDeviceFeatureSet = metal::DeviceFeatureSet(mtlDevice_);
+
+  // These limits are reported with the same value on every Metal platform, so the
+  // expected results are deterministic regardless of GPU family or OS version.
+  size_t result = 0;
+
+  ASSERT_TRUE(
+      mtlDeviceFeatureSet.getFeatureLimits(DeviceFeatureLimits::MaxColorAttachments, result));
+  ASSERT_EQ(result, 8u);
+
+  result = 0;
+  ASSERT_TRUE(
+      mtlDeviceFeatureSet.getFeatureLimits(DeviceFeatureLimits::MaxPushConstantBytes, result));
+  ASSERT_EQ(result, 4096u);
+
+  result = 0;
+  ASSERT_TRUE(
+      mtlDeviceFeatureSet.getFeatureLimits(DeviceFeatureLimits::MaxVertexInputAttributes, result));
+  ASSERT_EQ(result, 31u);
+
+  result = 0;
+  ASSERT_TRUE(
+      mtlDeviceFeatureSet.getFeatureLimits(DeviceFeatureLimits::MaxTextureDimension3D, result));
+  ASSERT_EQ(result, 2048u);
+}
+
 } // namespace igl::tests
