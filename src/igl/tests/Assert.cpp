@@ -192,4 +192,57 @@ TEST_F(AssertTest, SoftError) {
   EXPECT_TRUE(sSoftError);
 }
 
+TEST_F(AssertTest, DebugAssertPassDoesNotAbort) {
+  sAbort = false;
+  IGL_DEBUG_ASSERT(true);
+  EXPECT_FALSE(sAbort);
+
+  IGL_DEBUG_ASSERT(true, "Should not fire");
+  EXPECT_FALSE(sAbort);
+
+  IGL_DEBUG_ASSERT(true, "Should not fire %d", 1);
+  EXPECT_FALSE(sAbort);
+}
+
+TEST_F(AssertTest, DebugVerifyReturnValues) {
+  sAbort = false;
+  EXPECT_TRUE(IGL_DEBUG_VERIFY(true));
+  EXPECT_FALSE(sAbort);
+
+  EXPECT_TRUE(IGL_DEBUG_VERIFY(true, "pass msg"));
+  EXPECT_FALSE(sAbort);
+
+  EXPECT_FALSE(IGL_DEBUG_VERIFY(false));
+  sAbort = false;
+
+  EXPECT_FALSE(IGL_DEBUG_VERIFY_NOT(false));
+  EXPECT_FALSE(sAbort);
+
+  EXPECT_FALSE(IGL_DEBUG_VERIFY_NOT(false, "pass msg"));
+  EXPECT_FALSE(sAbort);
+
+  EXPECT_TRUE(IGL_DEBUG_VERIFY_NOT(true));
+  sAbort = false;
+}
+
+TEST_F(AssertTest, SoftAssertPassDoesNotFire) {
+  sAbort = false;
+  sSoftError = false;
+  IGL_SOFT_ASSERT(true);
+  EXPECT_FALSE(sAbort);
+  EXPECT_FALSE(sSoftError);
+
+  IGL_SOFT_ASSERT(true, "Should not fire");
+  EXPECT_FALSE(sAbort);
+  EXPECT_FALSE(sSoftError);
+
+  EXPECT_TRUE(IGL_SOFT_VERIFY(true));
+  EXPECT_FALSE(sAbort);
+  EXPECT_FALSE(sSoftError);
+
+  EXPECT_FALSE(IGL_SOFT_VERIFY_NOT(false));
+  EXPECT_FALSE(sAbort);
+  EXPECT_FALSE(sSoftError);
+}
+
 } // namespace igl::tests
