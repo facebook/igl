@@ -39,6 +39,8 @@ class VulkanImmediateCommands final {
   ~VulkanImmediateCommands();
   VulkanImmediateCommands(const VulkanImmediateCommands&) = delete;
   VulkanImmediateCommands& operator=(const VulkanImmediateCommands&) = delete;
+  VulkanImmediateCommands(VulkanImmediateCommands&&) = delete;
+  VulkanImmediateCommands& operator=(VulkanImmediateCommands&&) = delete;
 
   /** @brief A structure that encapsulates synchronization information about command buffers and
    * that is used by the `VulkanImmediateCommands` class to manage command buffer acquisition and
