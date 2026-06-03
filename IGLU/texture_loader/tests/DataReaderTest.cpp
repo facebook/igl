@@ -227,6 +227,86 @@ TEST(DataReaderTest, MultipleAdvancesConsumeDataCorrectly) {
   EXPECT_EQ(reader->size(), 3u);
 }
 
+// ============================================================================
+// tryAsAt - bounds-checked typed access at offset
+// ============================================================================
+
+TEST(DataReaderTest, TryAsAtWithValidOffsetReturnsTypedPointer) {
+  // [uint16_t A] [uint16_t B] [uint32_t C]
+  const std::array<uint8_t, 8> buffer = {0x01, 0x00, 0x02, 0x00, 0x78, 0x56, 0x34, 0x12};
+  igl::Result result;
+  auto reader = DataReader::tryCreate(buffer.data(), buffer.size(), &result);
+  ASSERT_TRUE(reader.has_value());
+
+  const uint32_t* value = reader->tryAsAt<uint32_t>(4, &result);
+
+  ASSERT_NE(value, nullptr);
+  EXPECT_TRUE(result.isOk());
+  EXPECT_EQ(*value, 0x12345678u);
+}
+
+TEST(DataReaderTest, TryAsAtWithInsufficientRemainingSpaceReturnsNull) {
+  const std::array<uint8_t, 6> buffer = {0, 1, 2, 3, 4, 5};
+  igl::Result result;
+  auto reader = DataReader::tryCreate(buffer.data(), buffer.size(), &result);
+  ASSERT_TRUE(reader.has_value());
+
+  // Offset 4 leaves only 2 bytes, not enough for a uint32_t
+  const uint32_t* value = reader->tryAsAt<uint32_t>(4, &result);
+
+  EXPECT_EQ(value, nullptr);
+  EXPECT_EQ(result.code, igl::Result::Code::InvalidOperation);
+}
+
+// ============================================================================
+// tryReadAt - bounds-checked typed read with copy at offset
+// ============================================================================
+
+TEST(DataReaderTest, TryReadAtCopiesValueAtOffset) {
+  const std::array<uint8_t, 8> buffer = {0xFF, 0xFF, 0xFF, 0xFF, 0x78, 0x56, 0x34, 0x12};
+  igl::Result result;
+  auto reader = DataReader::tryCreate(buffer.data(), buffer.size(), &result);
+  ASSERT_TRUE(reader.has_value());
+
+  uint32_t value = 0;
+  bool success = reader->tryReadAt(4, value, &result);
+
+  EXPECT_TRUE(success);
+  EXPECT_TRUE(result.isOk());
+  EXPECT_EQ(value, 0x12345678u);
+}
+
+TEST(DataReaderTest, TryReadAtFailsWhenOffsetPlusTypeSizeExceedsBuffer) {
+  const std::array<uint8_t, 4> buffer = {0, 1, 2, 3};
+  igl::Result result;
+  auto reader = DataReader::tryCreate(buffer.data(), buffer.size(), &result);
+  ASSERT_TRUE(reader.has_value());
+
+  uint32_t value = 0;
+  bool success = reader->tryReadAt(2, value, &result);
+
+  EXPECT_FALSE(success);
+  EXPECT_EQ(result.code, igl::Result::Code::InvalidOperation);
+}
+
+// ============================================================================
+// tryAdvance<T> - templated advance by sizeof(T)
+// ============================================================================
+
+TEST(DataReaderTest, TryAdvanceTemplatedAdvancesBySizeofType) {
+  const std::array<uint8_t, 8> buffer = {10, 20, 30, 40, 50, 60, 70, 80};
+  igl::Result result;
+  auto reader = DataReader::tryCreate(buffer.data(), buffer.size(), &result);
+  ASSERT_TRUE(reader.has_value());
+
+  bool advanced = reader->tryAdvance<uint32_t>(&result);
+
+  EXPECT_TRUE(advanced);
+  EXPECT_TRUE(result.isOk());
+  EXPECT_EQ(reader->size(), 4u);
+  EXPECT_EQ(*reader->data(), 50);
+}
+
 } // namespace iglu::textureloader::tests
 
 #endif // __has_include(<gtest/gtest.h>)
