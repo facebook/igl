@@ -71,6 +71,7 @@ void optimizedMemcpy(void* IGL_NULLABLE dst, const void* IGL_NULLABLE src, size_
     *((uint64_t*)(dst) + 1) = *((const uint64_t*)(src) + 1);
     break;
   default:
+    // NOLINTNEXTLINE(facebook-security-vulnerable-memcpy)
     memcpy(dst, src, size);
   }
 }
