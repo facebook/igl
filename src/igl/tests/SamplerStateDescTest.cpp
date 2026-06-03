@@ -68,6 +68,27 @@ TEST(SamplerStateDescTest, InequalityOpDifferentDepthCompareEnabled) {
   EXPECT_NE(a, b);
 }
 
+TEST(SamplerStateDescTest, InequalityOpDifferentMagFilter) {
+  SamplerStateDesc a;
+  SamplerStateDesc b;
+  b.magFilter = SamplerMinMagFilter::Linear;
+  EXPECT_NE(a, b);
+}
+
+TEST(SamplerStateDescTest, InequalityOpDifferentMaxAnisotropic) {
+  SamplerStateDesc a;
+  SamplerStateDesc b;
+  b.maxAnisotropic = 8;
+  EXPECT_NE(a, b);
+}
+
+TEST(SamplerStateDescTest, InequalityOpDifferentYuvFormat) {
+  SamplerStateDesc a;
+  SamplerStateDesc b;
+  b.yuvFormat = TextureFormat::YUV_NV12;
+  EXPECT_NE(a, b);
+}
+
 TEST(SamplerStateDescTest, DebugNameIgnoredInEquality) {
   SamplerStateDesc a;
   SamplerStateDesc b;
