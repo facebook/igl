@@ -49,7 +49,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t 
   IGL_DEBUG_ASSERT(vkTex->image.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid image format");
 
   const auto iglFormat = vkFormatToTextureFormat(vkTex->image.imageFormat_);
-  if (!IGL_DEBUG_VERIFY(iglFormat != igl::TextureFormat::Invalid)) {
+  if (!IGL_DEBUG_VERIFY(iglFormat != TextureFormat::Invalid)) {
     Result::setResult(outResult, Result::Code::RuntimeError, "Invalid surface depth format");
     return nullptr;
   }
@@ -96,8 +96,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
 
   IGL_DEBUG_ASSERT(vkTex->image.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid image format");
 
-  const igl::TextureFormat iglFormat = vkFormatToTextureFormat(vkTex->image.imageFormat_);
-  if (!IGL_DEBUG_VERIFY(iglFormat != igl::TextureFormat::Invalid)) {
+  const TextureFormat iglFormat = vkFormatToTextureFormat(vkTex->image.imageFormat_);
+  if (!IGL_DEBUG_VERIFY(iglFormat != TextureFormat::Invalid)) {
     Result::setResult(outResult, Result::Code::RuntimeError, "Invalid surface color format");
     return nullptr;
   }
@@ -136,8 +136,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const Te
                                                                             outResult) const {
   Result subResult;
 
-  auto texture =
-      std::make_shared<igl::vulkan::android::NativeHWTextureBuffer>(device_, desc.format);
+  auto texture = std::make_shared<android::NativeHWTextureBuffer>(device_, desc.format);
   subResult = texture->createHWBuffer(desc, false, false);
   Result::setResult(outResult, subResult.code, subResult.message);
   if (!subResult.isOk()) {
@@ -155,7 +154,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(
   AHardwareBuffer_Desc hwbDesc;
   AHardwareBuffer_describe(buffer, &hwbDesc);
 
-  auto texture = std::make_shared<igl::vulkan::android::NativeHWTextureBuffer>(
+  auto texture = std::make_shared<android::NativeHWTextureBuffer>(
       device_, igl::android::getIglFormat(hwbDesc.format));
   subResult = texture->createWithHWBuffer(buffer);
   Result::setResult(outResult, subResult.code, subResult.message);
