@@ -392,6 +392,78 @@ TEST_F(CommonWithDeviceTest, TransitionToGeneralTest) {
 
   EXPECT_EQ(img.imageLayout_, VK_IMAGE_LAYOUT_GENERAL);
 }
+
+// transitionToColorAttachment ********************************************************
+TEST_F(CommonWithDeviceTest, TransitionToColorAttachmentTest) {
+  Result result;
+
+  const CommandQueueDesc queueDesc{};
+  auto commandQueue = device_->createCommandQueue(queueDesc, &result);
+  EXPECT_TRUE(result.isOk());
+
+  const CommandBufferDesc cmdBufferDesc{};
+  const auto cmdBuffer = commandQueue->createCommandBuffer(cmdBufferDesc, &result);
+  EXPECT_TRUE(result.isOk());
+
+  const TextureDesc texDesc = TextureDesc::new2D(
+      TextureFormat::RGBA_UNorm8, 1, 1, TextureDesc::TextureUsageBits::Attachment);
+  const auto texture = device_->createTexture(texDesc, &result);
+  EXPECT_TRUE(result.isOk());
+
+  igl::vulkan::transitionToColorAttachment(
+      static_cast<const igl::vulkan::CommandBuffer*>(cmdBuffer.get())->getVkCommandBuffer(),
+      texture.get());
+
+  const igl::vulkan::Texture& tex = static_cast<igl::vulkan::Texture&>(*texture);
+  const vulkan::VulkanImage& img = tex.getVulkanTexture().image;
+
+  EXPECT_EQ(img.imageLayout_, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+}
+
+// transitionToShaderReadOnly ********************************************************
+TEST_F(CommonWithDeviceTest, TransitionToShaderReadOnlyTest) {
+  Result result;
+
+  const CommandQueueDesc queueDesc{};
+  auto commandQueue = device_->createCommandQueue(queueDesc, &result);
+  EXPECT_TRUE(result.isOk());
+
+  const CommandBufferDesc cmdBufferDesc{};
+  const auto cmdBuffer = commandQueue->createCommandBuffer(cmdBufferDesc, &result);
+  EXPECT_TRUE(result.isOk());
+
+  const TextureDesc texDesc =
+      TextureDesc::new2D(TextureFormat::RGBA_UNorm8, 1, 1, TextureDesc::TextureUsageBits::Sampled);
+  const auto texture = device_->createTexture(texDesc, &result);
+  EXPECT_TRUE(result.isOk());
+
+  igl::vulkan::transitionToShaderReadOnly(
+      static_cast<const igl::vulkan::CommandBuffer*>(cmdBuffer.get())->getVkCommandBuffer(),
+      texture.get());
+
+  const igl::vulkan::Texture& tex = static_cast<igl::vulkan::Texture&>(*texture);
+  const vulkan::VulkanImage& img = tex.getVulkanTexture().image;
+
+  EXPECT_EQ(img.imageLayout_, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+// overrideImageLayout ********************************************************
+TEST_F(CommonWithDeviceTest, OverrideImageLayoutTest) {
+  Result result;
+
+  const TextureDesc texDesc =
+      TextureDesc::new2D(TextureFormat::RGBA_UNorm8, 1, 1, TextureDesc::TextureUsageBits::Sampled);
+  const auto texture = device_->createTexture(texDesc, &result);
+  EXPECT_TRUE(result.isOk());
+
+  igl::vulkan::overrideImageLayout(texture.get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+  const igl::vulkan::Texture& tex = static_cast<igl::vulkan::Texture&>(*texture);
+  const vulkan::VulkanImage& img = tex.getVulkanTexture().image;
+
+  EXPECT_EQ(img.imageLayout_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+}
+
 } // namespace igl::tests
 
 #endif
