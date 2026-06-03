@@ -202,9 +202,9 @@ bool XrApp::checkExtensions() {
 
 bool XrApp::createInstance() {
   XrApplicationInfo appInfo = {};
-  strcpy(appInfo.applicationName, kAppName);
+  snprintf(appInfo.applicationName, sizeof(appInfo.applicationName), "%s", kAppName);
   appInfo.applicationVersion = 0;
-  strcpy(appInfo.engineName, kEngineName);
+  snprintf(appInfo.engineName, sizeof(appInfo.engineName), "%s", kEngineName);
   appInfo.engineVersion = 0;
   appInfo.apiVersion = XR_MAKE_VERSION(1, 0, 34);
 
