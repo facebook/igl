@@ -492,7 +492,7 @@ static CVReturn metalDisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
     if (_shellParams.useTimerRendering) {
       CVDisplayLinkStop(_displayLink);
       CVDisplayLinkRelease(_displayLink);
-      _displayLink = NULL;
+      _displayLink = nullptr;
     } else {
       MetalView* v = (MetalView*)self.view;
       v.paused = YES;
