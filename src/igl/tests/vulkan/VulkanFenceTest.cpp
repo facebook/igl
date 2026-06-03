@@ -18,6 +18,10 @@
 
 namespace igl::tests {
 
+// Bounded timeout for GPU-signaled fence waits so a missing signal (driver bug, resource
+// exhaustion) fails the test cleanly instead of hanging the runner on the default UINT64_MAX wait.
+constexpr uint64_t kFenceWaitTimeoutNs = 5'000'000'000; // 5 seconds
+
 class VulkanFenceTest : public ::testing::Test {
  public:
   VulkanFenceTest() = default;
@@ -69,6 +73,9 @@ TEST_F(VulkanFenceTest, ResetFence) {
   EXPECT_TRUE(fence.wait(0));
 
   EXPECT_TRUE(fence.reset());
+
+  // After reset the fence is unsignaled: an immediate wait times out.
+  EXPECT_FALSE(fence.wait(0));
 }
 
 TEST_F(VulkanFenceTest, ExportableFence) {
@@ -95,6 +102,8 @@ TEST_F(VulkanFenceTest, MoveConstruction) {
   igl::vulkan::VulkanFence moved(std::move(original));
 
   EXPECT_EQ(moved.vkFence_, originalHandle);
+  // The signaled state transfers with the move, not just the handle: an immediate wait succeeds.
+  EXPECT_TRUE(moved.wait(0));
   // After move, original is in a valid but unspecified state - don't access it
 }
 
@@ -113,10 +122,15 @@ TEST_F(VulkanFenceTest, SignalAndWait) {
   ASSERT_NE(fence.vkFence_, VK_NULL_HANDLE);
 
   const VkQueue graphicsQueue = ctx.deviceQueues_.graphicsQueue;
-  ASSERT_NE(graphicsQueue, VK_NULL_HANDLE);
+  // Use a boolean expression rather than ASSERT_NE(graphicsQueue, VK_NULL_HANDLE). VkQueue is a
+  // dispatchable handle (a pointer on every ABI), but on 32-bit ABIs (VK_USE_64_BIT_PTR_DEFINES==0)
+  // VK_NULL_HANDLE expands to the integer literal 0ULL, so gtest's two-type comparison macro fails
+  // to compile (pointer vs integer). The boolean form lets the standard null-pointer conversion
+  // apply instead.
+  ASSERT_TRUE(graphicsQueue != VK_NULL_HANDLE);
 
   ASSERT_TRUE(fence.signal(graphicsQueue));
-  ASSERT_TRUE(fence.wait());
+  EXPECT_TRUE(fence.wait(kFenceWaitTimeoutNs));
 }
 
 TEST_F(VulkanFenceTest, WaitUnsignaledTimesOut) {
@@ -140,6 +154,34 @@ TEST_F(VulkanFenceTest, MoveAssignment) {
 
   EXPECT_EQ(target.vkFence_, originalHandle);
   // After move, original is in a valid but unspecified state - don't access it
+}
+
+// Verifies the common reuse cycle: signal on the GPU, wait, reset, then signal again. This is the
+// pattern callers rely on when recycling a single fence across frames.
+TEST_F(VulkanFenceTest, SignalResetSignalCycle) {
+  auto& ctx = getVulkanContext();
+  const VkQueue queue = ctx.deviceQueues_.graphicsQueue;
+  // Use a boolean expression rather than ASSERT_NE(queue, VK_NULL_HANDLE). VkQueue is a
+  // dispatchable handle (a pointer on every ABI), but on 32-bit ABIs (VK_USE_64_BIT_PTR_DEFINES==0)
+  // VK_NULL_HANDLE expands to the integer literal 0ULL, so gtest's two-type comparison macro fails
+  // to compile (pointer vs integer). The boolean form lets the standard null-pointer conversion
+  // apply instead.
+  ASSERT_TRUE(queue != VK_NULL_HANDLE);
+
+  igl::vulkan::VulkanFence fence(ctx.vf_, ctx.getVkDevice(), 0, false, "testSignalResetCycle");
+  ASSERT_NE(fence.vkFence_, VK_NULL_HANDLE);
+
+  // First cycle.
+  ASSERT_TRUE(fence.signal(queue));
+  ASSERT_TRUE(fence.wait(kFenceWaitTimeoutNs));
+
+  // Reset back to unsignaled and confirm.
+  ASSERT_TRUE(fence.reset());
+  EXPECT_FALSE(fence.wait(0));
+
+  // Second cycle reuses the same fence object.
+  ASSERT_TRUE(fence.signal(queue));
+  EXPECT_TRUE(fence.wait(kFenceWaitTimeoutNs));
 }
 
 } // namespace igl::tests
