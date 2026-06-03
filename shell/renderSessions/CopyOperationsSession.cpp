@@ -284,7 +284,7 @@ void CopyOperationsSession::update(SurfaceTextures textures) noexcept {
   }
 
   // Create command buffer
-  const auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
+  const auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
 
   // Step 1: Buffer-to-buffer copy (once)
