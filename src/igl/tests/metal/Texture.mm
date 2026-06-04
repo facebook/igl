@@ -532,4 +532,35 @@ TEST_F(TextureMTLTest, ConvertTextureFormats) {
   }
 }
 
+// Test conversion from IGL TextureUsage bits to MTLTextureUsage
+TEST_F(TextureMTLTest, ToMTLTextureUsage) {
+  EXPECT_EQ(igl::metal::Texture::toMTLTextureUsage(0), MTLTextureUsageUnknown);
+  EXPECT_EQ(igl::metal::Texture::toMTLTextureUsage(TextureDesc::TextureUsageBits::Sampled),
+            MTLTextureUsageShaderRead);
+  EXPECT_EQ(igl::metal::Texture::toMTLTextureUsage(TextureDesc::TextureUsageBits::Storage),
+            MTLTextureUsageShaderWrite);
+  EXPECT_EQ(igl::metal::Texture::toMTLTextureUsage(TextureDesc::TextureUsageBits::Attachment),
+            MTLTextureUsageRenderTarget);
+  EXPECT_EQ(igl::metal::Texture::toMTLTextureUsage(TextureDesc::TextureUsageBits::Sampled |
+                                                   TextureDesc::TextureUsageBits::Storage |
+                                                   TextureDesc::TextureUsageBits::Attachment),
+            MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite | MTLTextureUsageRenderTarget);
+}
+
+// Test conversion from MTLTextureUsage to IGL TextureUsage bits
+TEST_F(TextureMTLTest, ToTextureUsage) {
+  EXPECT_EQ(igl::metal::Texture::toTextureUsage(MTLTextureUsageUnknown), 0);
+  EXPECT_EQ(igl::metal::Texture::toTextureUsage(MTLTextureUsageShaderRead),
+            TextureDesc::TextureUsageBits::Sampled);
+  EXPECT_EQ(igl::metal::Texture::toTextureUsage(MTLTextureUsageShaderWrite),
+            TextureDesc::TextureUsageBits::Storage);
+  EXPECT_EQ(igl::metal::Texture::toTextureUsage(MTLTextureUsageRenderTarget),
+            TextureDesc::TextureUsageBits::Attachment);
+  EXPECT_EQ(
+      igl::metal::Texture::toTextureUsage(MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite |
+                                          MTLTextureUsageRenderTarget),
+      TextureDesc::TextureUsageBits::Sampled | TextureDesc::TextureUsageBits::Storage |
+          TextureDesc::TextureUsageBits::Attachment);
+}
+
 } // namespace igl::tests
