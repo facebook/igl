@@ -297,4 +297,76 @@ TEST_F(VertexInputStateTest, VertexInputStateDescHashDifferentObjectsHaveDiffere
   EXPECT_NE(hasher(a), hasher(b));
 }
 
+TEST_F(VertexInputStateTest, VertexInputBindingHashEqualObjectsHaveSameHash) {
+  const VertexInputBinding a{
+      .stride = 16,
+      .sampleFunction = VertexSampleFunction::PerVertex,
+      .sampleRate = 1,
+  };
+  const VertexInputBinding b{
+      .stride = 16,
+      .sampleFunction = VertexSampleFunction::PerVertex,
+      .sampleRate = 1,
+  };
+
+  const std::hash<VertexInputBinding> hasher;
+  EXPECT_EQ(a, b);
+  EXPECT_EQ(hasher(a), hasher(b));
+}
+
+TEST_F(VertexInputStateTest, VertexInputBindingHashDifferentObjectsHaveDifferentHash) {
+  const VertexInputBinding a{
+      .stride = 16,
+      .sampleFunction = VertexSampleFunction::PerVertex,
+      .sampleRate = 1,
+  };
+  const VertexInputBinding b{
+      .stride = 32,
+      .sampleFunction = VertexSampleFunction::Instance,
+      .sampleRate = 2,
+  };
+
+  const std::hash<VertexInputBinding> hasher;
+  EXPECT_NE(a, b);
+  EXPECT_NE(hasher(a), hasher(b));
+}
+
+TEST_F(VertexInputStateTest, VertexAttributeHashEqualObjectsHaveSameHash) {
+  const VertexAttribute a{
+      .bufferIndex = 1,
+      .format = VertexAttributeFormat::Float3,
+      .offset = 12,
+      .name = "position",
+      .location = 0,
+  };
+  const VertexAttribute b{
+      .bufferIndex = 1,
+      .format = VertexAttributeFormat::Float3,
+      .offset = 12,
+      .name = "position",
+      .location = 0,
+  };
+
+  const std::hash<VertexAttribute> hasher;
+  EXPECT_EQ(a, b);
+  EXPECT_EQ(hasher(a), hasher(b));
+}
+
+TEST_F(VertexInputStateTest, VertexAttributeHashDifferentObjectsHaveDifferentHash) {
+  const VertexAttribute a{
+      .bufferIndex = 0,
+      .format = VertexAttributeFormat::Float3,
+      .offset = 0,
+  };
+  const VertexAttribute b{
+      .bufferIndex = 0,
+      .format = VertexAttributeFormat::Float4,
+      .offset = 0,
+  };
+
+  const std::hash<VertexAttribute> hasher;
+  EXPECT_NE(a, b);
+  EXPECT_NE(hasher(a), hasher(b));
+}
+
 } // namespace igl::tests
