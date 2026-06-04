@@ -61,6 +61,7 @@ class Handle final {
   uint32_t gen_ = 0; // the generation of this handle to prevent the ABA Problem
 };
 
+// NOLINTNEXTLINE(facebook-unused-forward-decls)
 static_assert(sizeof(Handle<class Foo>) == sizeof(uint64_t));
 
 } // namespace igl
