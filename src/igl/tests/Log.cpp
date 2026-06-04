@@ -23,6 +23,25 @@ int testLogHandler(IGLLogLevel logLevel, const char* IGL_RESTRICT /*format*/, va
   testHandlerLastLevel = logLevel;
   return 0;
 }
+
+int sentinelReturnValue = 0;
+
+int returningLogHandler(IGLLogLevel /*logLevel*/,
+                        const char* IGL_RESTRICT /*format*/,
+                        va_list /*ap*/) {
+  return sentinelReturnValue;
+}
+
+// Trampoline that packages variadic arguments into a va_list so IGLLogV() can be
+// exercised directly (it is otherwise only reachable through IGLLog()).
+int callLogV(IGLLogLevel logLevel, const char* IGL_RESTRICT format, ...) {
+  // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
+  va_list ap;
+  va_start(ap, format);
+  const int result = IGLLogV(logLevel, format, ap);
+  va_end(ap);
+  return result;
+}
 } // namespace
 
 TEST(LogTest, GetDefaultHandlerReturnsNonNull) {
@@ -46,6 +65,48 @@ TEST(LogTest, CustomHandlerReceivesMessages) {
 
   EXPECT_EQ(testHandlerCallCount, 1);
   EXPECT_EQ(testHandlerLastLevel, IGLLogWarning);
+
+  IGLLogSetHandler(originalHandler);
+}
+
+TEST(LogTest, LogReturnsHandlerReturnValue) {
+  const auto originalHandler = IGLLogGetHandler();
+  sentinelReturnValue = 123;
+  IGLLogSetHandler(returningLogHandler);
+
+  // IGLLog() forwards to IGLLogV(), which returns whatever the handler returns.
+  EXPECT_EQ(IGLLog(IGLLogInfo, "ignored"), 123);
+
+  IGLLogSetHandler(originalHandler);
+}
+
+TEST(LogTest, LogVForwardsToHandler) {
+  const auto originalHandler = IGLLogGetHandler();
+  testHandlerCallCount = 0;
+  IGLLogSetHandler(testLogHandler);
+
+  callLogV(IGLLogError, "value %d", 7);
+
+  EXPECT_EQ(testHandlerCallCount, 1);
+  EXPECT_EQ(testHandlerLastLevel, IGLLogError);
+
+  IGLLogSetHandler(originalHandler);
+}
+
+TEST(LogTest, LogOnceSuppressesDuplicateMessages) {
+  const auto originalHandler = IGLLogGetHandler();
+  testHandlerCallCount = 0;
+  IGLLogSetHandler(testLogHandler);
+
+  // The first occurrence of a unique message reaches the handler; an identical
+  // message logged again is suppressed and must not invoke the handler.
+  IGLLogOnce(IGLLogInfo, "igl-log-once-unique-marker-A");
+  IGLLogOnce(IGLLogInfo, "igl-log-once-unique-marker-A");
+  EXPECT_EQ(testHandlerCallCount, 1);
+
+  // A distinct message is logged independently.
+  IGLLogOnce(IGLLogInfo, "igl-log-once-unique-marker-B");
+  EXPECT_EQ(testHandlerCallCount, 2);
 
   IGLLogSetHandler(originalHandler);
 }
