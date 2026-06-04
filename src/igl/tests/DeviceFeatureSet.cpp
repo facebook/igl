@@ -319,6 +319,99 @@ TEST_F(DeviceFeatureSetTest, getTextureFormatCapabilities) {
   EXPECT_TRUE(contains(capability, ICapabilities::TextureFormatCapabilityBits::Sampled));
 }
 
+//
+// ShaderVersion / BackendVersion value semantics
+//
+// ShaderVersion and BackendVersion are plain value types with defaulted fields
+// and hand-written equality operators. They require no device, so the tests use
+// a bare fixture and verify the default-constructed state plus that operator== /
+// operator!= compare every field independently.
+//
+
+TEST(ShaderVersionTest, DefaultValues) {
+  const ShaderVersion version;
+  EXPECT_EQ(version.family, ShaderFamily::Unknown);
+  EXPECT_EQ(version.majorVersion, 0);
+  EXPECT_EQ(version.minorVersion, 0);
+  EXPECT_EQ(version.extra, 0);
+}
+
+TEST(ShaderVersionTest, Equality) {
+  const ShaderVersion versionA{
+      .family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 6, .extra = 0};
+  const ShaderVersion versionB{
+      .family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 6, .extra = 0};
+  EXPECT_TRUE(versionA == versionB);
+  EXPECT_FALSE(versionA != versionB);
+}
+
+TEST(ShaderVersionTest, InequalityPerField) {
+  const ShaderVersion base{
+      .family = ShaderFamily::Metal, .majorVersion = 2, .minorVersion = 4, .extra = 1};
+  {
+    ShaderVersion other = base;
+    other.family = ShaderFamily::SpirV;
+    EXPECT_FALSE(base == other);
+    EXPECT_TRUE(base != other);
+  }
+  {
+    ShaderVersion other = base;
+    other.majorVersion = 3;
+    EXPECT_FALSE(base == other);
+    EXPECT_TRUE(base != other);
+  }
+  {
+    ShaderVersion other = base;
+    other.minorVersion = 5;
+    EXPECT_FALSE(base == other);
+    EXPECT_TRUE(base != other);
+  }
+  {
+    ShaderVersion other = base;
+    other.extra = 2;
+    EXPECT_FALSE(base == other);
+    EXPECT_TRUE(base != other);
+  }
+}
+
+TEST(BackendVersionTest, DefaultValues) {
+  const BackendVersion version;
+  EXPECT_EQ(version.flavor, BackendFlavor::Invalid);
+  EXPECT_EQ(version.majorVersion, 0);
+  EXPECT_EQ(version.minorVersion, 0);
+}
+
+TEST(BackendVersionTest, Equality) {
+  const BackendVersion versionA{
+      .flavor = BackendFlavor::Vulkan, .majorVersion = 1, .minorVersion = 3};
+  const BackendVersion versionB{
+      .flavor = BackendFlavor::Vulkan, .majorVersion = 1, .minorVersion = 3};
+  EXPECT_TRUE(versionA == versionB);
+  EXPECT_FALSE(versionA != versionB);
+}
+
+TEST(BackendVersionTest, InequalityPerField) {
+  const BackendVersion base{.flavor = BackendFlavor::Metal, .majorVersion = 3, .minorVersion = 0};
+  {
+    BackendVersion other = base;
+    other.flavor = BackendFlavor::OpenGL;
+    EXPECT_FALSE(base == other);
+    EXPECT_TRUE(base != other);
+  }
+  {
+    BackendVersion other = base;
+    other.majorVersion = 2;
+    EXPECT_FALSE(base == other);
+    EXPECT_TRUE(base != other);
+  }
+  {
+    BackendVersion other = base;
+    other.minorVersion = 1;
+    EXPECT_FALSE(base == other);
+    EXPECT_TRUE(base != other);
+  }
+}
+
 #if IGL_BACKEND_OPENGL
 // classifyGpuTimerTier — pure function tests (no GL context needed)
 class GpuTimerTierTest : public ::testing::Test {};
