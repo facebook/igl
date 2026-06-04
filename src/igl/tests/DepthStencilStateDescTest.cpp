@@ -177,6 +177,33 @@ TEST(DepthStencilStateDescTest, HashDifferentObjectsHaveDifferentHash) {
   EXPECT_NE(hasher(a), hasher(b));
 }
 
+TEST(DepthStencilStateDescTest, HashDiffersOnIsDepthWriteEnabled) {
+  DepthStencilStateDesc a;
+  DepthStencilStateDesc b;
+  b.isDepthWriteEnabled = true;
+  const std::hash<DepthStencilStateDesc> hasher;
+  EXPECT_NE(a, b);
+  EXPECT_NE(hasher(a), hasher(b));
+}
+
+TEST(DepthStencilStateDescTest, HashDiffersOnFrontFaceStencil) {
+  DepthStencilStateDesc a;
+  DepthStencilStateDesc b;
+  b.frontFaceStencil.stencilFailureOperation = StencilOperation::Replace;
+  const std::hash<DepthStencilStateDesc> hasher;
+  EXPECT_NE(a, b);
+  EXPECT_NE(hasher(a), hasher(b));
+}
+
+TEST(DepthStencilStateDescTest, HashDiffersOnBackFaceStencil) {
+  DepthStencilStateDesc a;
+  DepthStencilStateDesc b;
+  b.backFaceStencil.readMask = 0x0Fu;
+  const std::hash<DepthStencilStateDesc> hasher;
+  EXPECT_NE(a, b);
+  EXPECT_NE(hasher(a), hasher(b));
+}
+
 TEST(CompareFunctionTest, EnumSpotChecks) {
   EXPECT_EQ(static_cast<int>(CompareFunction::Never), 0);
   EXPECT_EQ(static_cast<int>(CompareFunction::AlwaysPass), 7);
