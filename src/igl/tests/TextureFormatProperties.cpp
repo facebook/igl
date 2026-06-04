@@ -454,6 +454,36 @@ TEST(TextureFormatProperties, getSubRangeByteOffset) {
   }
 }
 
+TEST(TextureFormatProperties, GetNumMipLevels) {
+  {
+    const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
+    // 4x4 RGBA_UNorm8 mip chain:
+    // Level 0: 4 pixels x 4 pixels = 64 bytes (cumulative 64)
+    // Level 1: 2 pixels x 2 pixels = 16 bytes (cumulative 80)
+    // Level 2: 1 pixel  x 1 pixel  =  4 bytes (cumulative 84)
+    EXPECT_EQ(props.getNumMipLevels(4, 4, 64), 1);
+    EXPECT_EQ(props.getNumMipLevels(4, 4, 80), 2);
+    EXPECT_EQ(props.getNumMipLevels(4, 4, 84), 3);
+  }
+  {
+    const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
+    // 10x10 RGBA_UNorm8 mip chain:
+    // Level 0: 10 pixels x 10 pixels = 400 bytes (cumulative 400)
+    // Level 1:  5 pixels x  5 pixels = 100 bytes (cumulative 500)
+    // Level 2:  2 pixels x  2 pixels =  16 bytes (cumulative 516)
+    // Level 3:  1 pixel  x  1 pixel  =   4 bytes (cumulative 520)
+    EXPECT_EQ(props.getNumMipLevels(10, 10, 400), 1);
+    EXPECT_EQ(props.getNumMipLevels(10, 10, 500), 2);
+    EXPECT_EQ(props.getNumMipLevels(10, 10, 516), 3);
+    EXPECT_EQ(props.getNumMipLevels(10, 10, 520), 4);
+
+    // Not enough bytes for even the base mip level yields zero.
+    EXPECT_EQ(props.getNumMipLevels(10, 10, 399), 0);
+    // A partially-filled second mip level does not count.
+    EXPECT_EQ(props.getNumMipLevels(10, 10, 450), 1);
+  }
+}
+
 TEST(TextureFormatProperties, InvalidFormat) {
   const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::Invalid);
   EXPECT_FALSE(props.isValid());
