@@ -61,4 +61,21 @@ TEST(sRGBColorTest, fromRGBA32) {
   ASSERT_EQ(testColor.b, 0);
   ASSERT_EQ(testColor.a, 255);
 }
+
+TEST(sRGBColorTest, toRGBA32DistinctChannels) {
+  // Use a distinct value in every byte, including a non-default alpha, so a
+  // channel swap or incorrect shift in toRGBA32() is observable.
+  const util::SRgbColor testColor(0x12, 0x34, 0x56, 0x78);
+  EXPECT_EQ(testColor.toRGBA32(), 0x12345678);
+}
+
+TEST(sRGBColorTest, fromRGBA32DistinctChannels) {
+  // Use a distinct value in every byte, including a non-default alpha, so a
+  // channel swap or missing mask in fromRGBA32() is observable.
+  const util::SRgbColor testColor(0x12345678);
+  EXPECT_EQ(testColor.r, 0x12);
+  EXPECT_EQ(testColor.g, 0x34);
+  EXPECT_EQ(testColor.b, 0x56);
+  EXPECT_EQ(testColor.a, 0x78);
+}
 } // namespace igl::tests
