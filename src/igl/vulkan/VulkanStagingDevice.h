@@ -30,6 +30,7 @@ class VulkanImage;
  * and 256 MB. Some architectures limit the size of staging buffers to 256MB (buffers that are both
  * host and device visible).
  */
+// NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
 class VulkanStagingDevice final {
  public:
   explicit VulkanStagingDevice(VulkanContext& ctx);
