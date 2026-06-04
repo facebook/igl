@@ -10,6 +10,7 @@
 
 #include <string>
 #include <igl/CommandBuffer.h>
+#include <igl/ComputePipelineState.h>
 #include <igl/DepthStencilState.h>
 #include <igl/NameHandle.h>
 #include <igl/RenderPipelineState.h>
@@ -238,6 +239,77 @@ TEST_F(HashTest, DepthStencilState1) {
   descTwo.backFaceStencil.depthStencilPassOperation = StencilOperation::Replace;
   ASSERT_EQ(std::hash<DepthStencilStateDesc>()(descOne),
             std::hash<DepthStencilStateDesc>()(descTwo));
+}
+
+//
+// ComputePipeline1
+//
+// Test hashing correctness in the ComputePipelineDesc structure
+//
+TEST_F(HashTest, ComputePipeline1) {
+  ComputePipelineDesc descOne, descTwo;
+
+  // Should have the same hash
+  ASSERT_EQ(std::hash<ComputePipelineDesc>()(descOne), std::hash<ComputePipelineDesc>()(descTwo));
+
+  // Modify and restore debugName
+  descTwo.debugName = "computePipeline";
+  ASSERT_NE(std::hash<ComputePipelineDesc>()(descOne), std::hash<ComputePipelineDesc>()(descTwo));
+  descTwo.debugName = descOne.debugName;
+  ASSERT_EQ(std::hash<ComputePipelineDesc>()(descOne), std::hash<ComputePipelineDesc>()(descTwo));
+
+  // Modify and restore buffersMap
+  descTwo.buffersMap[0] = IGL_NAMEHANDLE("buffer");
+  ASSERT_NE(std::hash<ComputePipelineDesc>()(descOne), std::hash<ComputePipelineDesc>()(descTwo));
+  descTwo.buffersMap.clear();
+  ASSERT_EQ(std::hash<ComputePipelineDesc>()(descOne), std::hash<ComputePipelineDesc>()(descTwo));
+
+  // Modify and restore imagesMap
+  descTwo.imagesMap[0] = IGL_NAMEHANDLE("image");
+  ASSERT_NE(std::hash<ComputePipelineDesc>()(descOne), std::hash<ComputePipelineDesc>()(descTwo));
+  descTwo.imagesMap.clear();
+  ASSERT_EQ(std::hash<ComputePipelineDesc>()(descOne), std::hash<ComputePipelineDesc>()(descTwo));
+
+  // Modify shaderStages
+  descTwo.shaderStages = std::make_shared<TestShaderStages>();
+  ASSERT_NE(std::hash<ComputePipelineDesc>()(descOne), std::hash<ComputePipelineDesc>()(descTwo));
+  descTwo.shaderStages = descOne.shaderStages;
+}
+
+//
+// ComputePipeline2
+//
+// This test checks the "==" operator, which is a necessary complement to
+// hashing, since this is how unordered_map uses in case of collision.
+//
+TEST_F(HashTest, ComputePipeline2) {
+  ComputePipelineDesc descOne, descTwo;
+
+  ASSERT_TRUE(descOne == descTwo);
+
+  // Change and restore debugName
+  descTwo.debugName = "computePipeline";
+  ASSERT_TRUE(descOne != descTwo);
+  descTwo.debugName = descOne.debugName;
+  ASSERT_TRUE(descOne == descTwo);
+
+  // Change and restore buffersMap
+  descTwo.buffersMap[0] = IGL_NAMEHANDLE("buffer");
+  ASSERT_TRUE(descOne != descTwo);
+  descTwo.buffersMap.clear();
+  ASSERT_TRUE(descOne == descTwo);
+
+  // Change and restore imagesMap
+  descTwo.imagesMap[0] = IGL_NAMEHANDLE("image");
+  ASSERT_TRUE(descOne != descTwo);
+  descTwo.imagesMap.clear();
+  ASSERT_TRUE(descOne == descTwo);
+
+  // Change and restore shaderStages
+  descTwo.shaderStages = shaderStages_;
+  ASSERT_TRUE(descOne != descTwo);
+  descTwo.shaderStages = descOne.shaderStages;
+  ASSERT_TRUE(descOne == descTwo);
 }
 
 } // namespace igl::tests
