@@ -341,6 +341,24 @@ TEST(TextureFormatProperties, getBytesPerRange) {
   }
 }
 
+TEST(TextureFormatProperties, getNumMipLevels) {
+  const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
+  // 4x4 RGBA_UNorm8 mip chain:
+  //   Level 0: 4x4 x 4 bytes = 64 bytes
+  //   Level 1: 2x2 x 4 bytes = 16 bytes
+  //   Level 2: 1x1 x 4 bytes =  4 bytes
+  // Full chain = 84 bytes
+
+  // Fewer bytes than the base level holds no complete mip level.
+  EXPECT_EQ(props.getNumMipLevels(4, 4, 63), 0);
+  // Exactly enough for the base level.
+  EXPECT_EQ(props.getNumMipLevels(4, 4, 64), 1);
+  // Enough for the base level plus the first mip level.
+  EXPECT_EQ(props.getNumMipLevels(4, 4, 80), 2);
+  // Enough for the full mip chain.
+  EXPECT_EQ(props.getNumMipLevels(4, 4, 84), 3);
+}
+
 TEST(TextureFormatProperties, getSubRangeByteOffset) {
   {
     const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
