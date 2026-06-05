@@ -175,6 +175,17 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
   for (const auto& sessionConfig : requestedSessionConfigs) {
     [self addTab:requestedWindowConfig sessionConfig:sessionConfig frame:frame];
   }
+
+#if IGL_USE_STATIC_LAVAPIPE || IGL_USE_STATIC_KOSMICKRISP
+  // A static Vulkan driver (Lavapipe or KosmicKrisp) is explicitly enabled, so default to the
+  // Vulkan tab. (When neither is enabled, the first tab — typically Metal — stays selected.)
+  for (NSInteger i = 0; i < self.tabViewController.tabViewItems.count; ++i) {
+    if ([self.tabViewController.tabViewItems[i].label hasPrefix:@"Vulkan"]) {
+      self.tabViewController.selectedTabViewItemIndex = i;
+      break;
+    }
+  }
+#endif
 }
 
 - (void)addTab:(igl::shell::RenderSessionWindowConfig)windowConfig
