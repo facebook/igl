@@ -46,6 +46,34 @@ class BufferTest : public ::testing::Test {
 };
 
 //
+// BufferRangeDefaultValues
+//
+// Pin the default-argument contract of BufferRange's constructor: a
+// default-constructed range covers an empty region at the start of the buffer.
+//
+TEST(BufferRangeTest, DefaultValues) {
+  const BufferRange range;
+  EXPECT_EQ(range.size, 0u);
+  EXPECT_EQ(range.offset, 0u);
+}
+
+//
+// BufferRangeConstruction
+//
+// Verify the size/offset arguments are assigned to the correct members (and not
+// swapped), including the single-argument form which must leave offset at 0.
+//
+TEST(BufferRangeTest, Construction) {
+  const BufferRange sizeOnly(128);
+  EXPECT_EQ(sizeOnly.size, 128u);
+  EXPECT_EQ(sizeOnly.offset, 0u);
+
+  const BufferRange sizeAndOffset(128, 64);
+  EXPECT_EQ(sizeAndOffset.size, 128u);
+  EXPECT_EQ(sizeAndOffset.offset, 64u);
+}
+
+//
 // sizeForUniformElementType
 //
 // Make sure Buffer::sizeForUniformElementType() returns the expected value
