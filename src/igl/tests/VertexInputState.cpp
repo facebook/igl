@@ -369,4 +369,140 @@ TEST_F(VertexInputStateTest, VertexAttributeHashDifferentObjectsHaveDifferentHas
   EXPECT_NE(hasher(a), hasher(b));
 }
 
+//
+// VertexAttributeHash
+//
+// Exercises the std::hash<VertexAttribute> specialization: hashing is
+// deterministic, equal attributes hash equally, and attributes differing in any
+// field hash differently.
+//
+TEST_F(VertexInputStateTest, VertexAttributeHash) {
+  const std::hash<VertexAttribute> hasher;
+
+  const VertexAttribute a{
+      .bufferIndex = 1,
+      .format = VertexAttributeFormat::Float3,
+      .offset = 12,
+      .name = "pos",
+      .location = 0,
+  };
+  // Distinct object with identical field values.
+  const VertexAttribute b{
+      .bufferIndex = 1,
+      .format = VertexAttributeFormat::Float3,
+      .offset = 12,
+      .name = "pos",
+      .location = 0,
+  };
+
+  EXPECT_EQ(hasher(a), hasher(a));
+  EXPECT_EQ(a, b);
+  EXPECT_EQ(hasher(a), hasher(b));
+
+  // Each variant differs from `a` in exactly one hashed field, so a regression
+  // that drops any single field from the hash combine surfaces here.
+  const VertexAttribute differsInBufferIndex{
+      .bufferIndex = 2,
+      .format = VertexAttributeFormat::Float3,
+      .offset = 12,
+      .name = "pos",
+      .location = 0,
+  };
+  EXPECT_NE(a, differsInBufferIndex);
+  EXPECT_NE(hasher(a), hasher(differsInBufferIndex));
+
+  const VertexAttribute differsInFormat{
+      .bufferIndex = 1,
+      .format = VertexAttributeFormat::Float4,
+      .offset = 12,
+      .name = "pos",
+      .location = 0,
+  };
+  EXPECT_NE(a, differsInFormat);
+  EXPECT_NE(hasher(a), hasher(differsInFormat));
+
+  const VertexAttribute differsInOffset{
+      .bufferIndex = 1,
+      .format = VertexAttributeFormat::Float3,
+      .offset = 16,
+      .name = "pos",
+      .location = 0,
+  };
+  EXPECT_NE(a, differsInOffset);
+  EXPECT_NE(hasher(a), hasher(differsInOffset));
+
+  const VertexAttribute differsInName{
+      .bufferIndex = 1,
+      .format = VertexAttributeFormat::Float3,
+      .offset = 12,
+      .name = "normal",
+      .location = 0,
+  };
+  EXPECT_NE(a, differsInName);
+  EXPECT_NE(hasher(a), hasher(differsInName));
+
+  const VertexAttribute differsInLocation{
+      .bufferIndex = 1,
+      .format = VertexAttributeFormat::Float3,
+      .offset = 12,
+      .name = "pos",
+      .location = 1,
+  };
+  EXPECT_NE(a, differsInLocation);
+  EXPECT_NE(hasher(a), hasher(differsInLocation));
+}
+
+//
+// VertexInputBindingHash
+//
+// Exercises the std::hash<VertexInputBinding> specialization: hashing is
+// deterministic, equal bindings hash equally, and bindings differing in any
+// field hash differently.
+//
+TEST_F(VertexInputStateTest, VertexInputBindingHash) {
+  const std::hash<VertexInputBinding> hasher;
+
+  const VertexInputBinding a{
+      .stride = 16,
+      .sampleFunction = VertexSampleFunction::PerVertex,
+      .sampleRate = 1,
+  };
+  // Distinct object with identical field values.
+  const VertexInputBinding b{
+      .stride = 16,
+      .sampleFunction = VertexSampleFunction::PerVertex,
+      .sampleRate = 1,
+  };
+
+  EXPECT_EQ(hasher(a), hasher(a));
+  EXPECT_EQ(a, b);
+  EXPECT_EQ(hasher(a), hasher(b));
+
+  // Each variant differs from `a` in exactly one hashed field, so a regression
+  // that drops any single field from the hash combine surfaces here.
+  const VertexInputBinding differsInStride{
+      .stride = 32,
+      .sampleFunction = VertexSampleFunction::PerVertex,
+      .sampleRate = 1,
+  };
+  EXPECT_NE(a, differsInStride);
+  EXPECT_NE(hasher(a), hasher(differsInStride));
+
+  const VertexInputBinding differsInSampleFunction{
+      .stride = 16,
+      .sampleFunction = VertexSampleFunction::Instance,
+      .sampleRate = 1,
+  };
+  EXPECT_NE(a, differsInSampleFunction);
+  EXPECT_NE(hasher(a), hasher(differsInSampleFunction));
+
+  const VertexInputBinding differsInSampleRate{
+      .stride = 16,
+      .sampleFunction = VertexSampleFunction::PerVertex,
+      .sampleRate = 4,
+  };
+  EXPECT_NE(a, differsInSampleRate);
+  EXPECT_NE(hasher(a), hasher(differsInSampleRate));
+}
+
 } // namespace igl::tests
