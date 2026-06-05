@@ -68,6 +68,24 @@ TEST(PoolTest, GetReturnsCreatedObject) {
   EXPECT_EQ(obj->value, 7);
 }
 
+TEST(PoolTest, ConstGetReturnsCreatedObject) {
+  Pool<Foo, FooImpl> pool;
+  const Handle<Foo> h = pool.create(FooImpl{.value = 7});
+  const Pool<Foo, FooImpl>& constPool = pool;
+  const FooImpl* obj = constPool.get(h);
+  ASSERT_NE(obj, nullptr);
+  EXPECT_EQ(obj->value, 7);
+}
+
+TEST(PoolTest, ConstGetEmptyHandleReturnsNull) {
+  Pool<Foo, FooImpl> pool;
+  (void)pool.create(FooImpl{.value = 99});
+  const Pool<Foo, FooImpl>& constPool = pool;
+  const Handle<Foo> empty;
+  const FooImpl* obj = constPool.get(empty);
+  EXPECT_EQ(obj, nullptr);
+}
+
 TEST(PoolTest, NumObjectsTrackCount) {
   Pool<Foo, FooImpl> pool;
   EXPECT_EQ(pool.numObjects(), 0u);
