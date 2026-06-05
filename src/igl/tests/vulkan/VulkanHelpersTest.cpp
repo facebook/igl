@@ -380,4 +380,67 @@ TEST_F(AddNextTest, NullArgumentsAreNoop) {
   EXPECT_EQ(node.pNext, nullptr);
 }
 
+// ivkUpdateGlslangResource *******************************
+class UpdateGlslangResourceTest : public ::testing::Test {};
+
+TEST_F(UpdateGlslangResourceTest, CopiesDeviceLimits) {
+  VkPhysicalDeviceProperties props = {};
+  props.limits.maxVertexInputAttributes = 16;
+  props.limits.maxClipDistances = 8;
+  props.limits.maxComputeWorkGroupCount[0] = 65535;
+  props.limits.maxComputeWorkGroupCount[1] = 65534;
+  props.limits.maxComputeWorkGroupCount[2] = 65533;
+  props.limits.maxComputeWorkGroupSize[0] = 1024;
+  props.limits.maxViewports = 16;
+  props.limits.maxCullDistances = 8;
+
+  glslang_resource_t res = {};
+  ivkUpdateGlslangResource(&res, &props, nullptr);
+
+  EXPECT_EQ(res.max_vertex_attribs, 16);
+  EXPECT_EQ(res.max_clip_distances, 8);
+  EXPECT_EQ(res.max_compute_work_group_count_x, 65535);
+  EXPECT_EQ(res.max_compute_work_group_count_y, 65534);
+  EXPECT_EQ(res.max_compute_work_group_count_z, 65533);
+  EXPECT_EQ(res.max_compute_work_group_size_x, 1024);
+  EXPECT_EQ(res.max_viewports, 16);
+  EXPECT_EQ(res.max_cull_distances, 8);
+  // Mesh shader fields stay zero-initialized when no mesh shader props are passed.
+  EXPECT_EQ(res.max_mesh_output_vertices_ext, 0);
+  EXPECT_EQ(res.max_task_work_group_size_x_ext, 0);
+}
+
+TEST_F(UpdateGlslangResourceTest, CopiesMeshShaderProps) {
+  VkPhysicalDeviceProperties props = {};
+  VkPhysicalDeviceMeshShaderPropertiesEXT meshProps = {};
+  meshProps.maxMeshOutputVertices = 256;
+  meshProps.maxMeshOutputPrimitives = 512;
+  meshProps.maxMeshWorkGroupSize[0] = 128;
+  meshProps.maxTaskWorkGroupSize[0] = 64;
+  meshProps.maxMeshMultiviewViewCount = 4;
+
+  glslang_resource_t res = {};
+  ivkUpdateGlslangResource(&res, &props, &meshProps);
+
+  EXPECT_EQ(res.max_mesh_output_vertices_ext, 256);
+  EXPECT_EQ(res.max_mesh_output_primitives_ext, 512);
+  EXPECT_EQ(res.max_mesh_work_group_size_x_ext, 128);
+  EXPECT_EQ(res.max_task_work_group_size_x_ext, 64);
+  EXPECT_EQ(res.max_mesh_view_count_ext, 4);
+}
+
+TEST_F(UpdateGlslangResourceTest, NullArgumentsAreNoop) {
+  VkPhysicalDeviceProperties props = {};
+  props.limits.maxVertexInputAttributes = 16;
+
+  // Null resource: must not dereference, must not crash.
+  ivkUpdateGlslangResource(nullptr, &props, nullptr);
+
+  // Null properties: resource is left untouched.
+  glslang_resource_t res = {};
+  res.max_vertex_attribs = 7;
+  ivkUpdateGlslangResource(&res, nullptr, nullptr);
+  EXPECT_EQ(res.max_vertex_attribs, 7);
+}
+
 } // namespace igl::tests
