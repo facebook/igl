@@ -186,6 +186,40 @@ TEST(CommonTest, OptimizedMemCopyTest) {
             *(reinterpret_cast<uint64_t*>(buffer2) + 3));
 }
 
+TEST(CommonTest, OptimizedMemCopySize12) {
+  // Exercises the dedicated 12-byte copy path (case 12 in optimizedMemcpy()), which performs an
+  // 8-byte store followed by a 4-byte store. The general OptimizedMemCopyTest covers 4/8/16/32 but
+  // not 12.
+  alignas(4) const uint8_t src[12] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+  alignas(4) uint8_t dst[12] = {0};
+
+  optimizedMemcpy(dst, src, sizeof(src));
+
+  for (size_t i = 0; i < sizeof(src); ++i) {
+    EXPECT_EQ(dst[i], src[i]);
+  }
+}
+
+TEST(CommonTest, OptimizedMemCopyMisalignedFallsBackToMemcpy) {
+  // When dst or src is not 4-byte aligned, optimizedMemcpy() must fall back to the generic memcpy()
+  // path instead of issuing aligned word stores. Offsetting by one byte guarantees misalignment of
+  // an otherwise 4-byte copy.
+  alignas(4) uint8_t srcStorage[8] = {0};
+  alignas(4) uint8_t dstStorage[8] = {0};
+
+  uint8_t* const src = srcStorage + 1;
+  uint8_t* const dst = dstStorage + 1;
+  for (uint8_t i = 0; i < 4; ++i) {
+    src[i] = static_cast<uint8_t>(i + 1);
+  }
+
+  optimizedMemcpy(dst, src, 4);
+
+  for (size_t i = 0; i < 4; ++i) {
+    EXPECT_EQ(dst[i], src[i]);
+  }
+}
+
 TEST(CommonTest, ResultSetOk) {
   Result result(Result::Code::ArgumentInvalid, "some error");
   ASSERT_FALSE(result.isOk());
