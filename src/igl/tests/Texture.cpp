@@ -934,4 +934,106 @@ TEST_F(TextureTest, ExportableTexture) {
 #endif
 }
 
+//
+// TextureDesc factory methods
+//
+// Verifies that the static convenience constructors populate the descriptor
+// fields (type, format, dimensions, usage, layer count) correctly. These are
+// pure helpers that do not require a device.
+//
+TEST(TextureDescTest, Factories) {
+  {
+    const auto desc = TextureDesc::new2D(
+        TextureFormat::RGBA_UNorm8, 16, 32, TextureDesc::TextureUsageBits::Sampled, "tex2D");
+    EXPECT_EQ(desc.type, TextureType::TwoD);
+    EXPECT_EQ(desc.format, TextureFormat::RGBA_UNorm8);
+    EXPECT_EQ(desc.width, 16u);
+    EXPECT_EQ(desc.height, 32u);
+    EXPECT_EQ(desc.depth, 1u);
+    EXPECT_EQ(desc.numLayers, 1u);
+    EXPECT_EQ(desc.usage, TextureDesc::TextureUsageBits::Sampled);
+    EXPECT_EQ(desc.debugName, "tex2D");
+  }
+  {
+    const auto desc = TextureDesc::new2DArray(
+        TextureFormat::RGBA_UNorm8, 16, 32, 4, TextureDesc::TextureUsageBits::Sampled);
+    EXPECT_EQ(desc.type, TextureType::TwoDArray);
+    EXPECT_EQ(desc.width, 16u);
+    EXPECT_EQ(desc.height, 32u);
+    EXPECT_EQ(desc.numLayers, 4u);
+    // A null debugName must yield an empty string, not a crash.
+    EXPECT_TRUE(desc.debugName.empty());
+  }
+  {
+    const auto desc = TextureDesc::newCube(
+        TextureFormat::RGBA_UNorm8, 8, 8, TextureDesc::TextureUsageBits::Sampled);
+    EXPECT_EQ(desc.type, TextureType::Cube);
+  }
+  {
+    const auto desc = TextureDesc::new3D(
+        TextureFormat::RGBA_UNorm8, 8, 8, 8, TextureDesc::TextureUsageBits::Sampled);
+    EXPECT_EQ(desc.type, TextureType::ThreeD);
+    EXPECT_EQ(desc.depth, 8u);
+  }
+}
+
+//
+// TextureDesc equality
+//
+// operator== compares every meaningful field; mutating any one in isolation
+// must make two otherwise-identical descriptors compare non-equal.
+//
+TEST(TextureDescTest, Equality) {
+  const auto base = TextureDesc::new2D(
+      TextureFormat::RGBA_UNorm8, 16, 32, TextureDesc::TextureUsageBits::Sampled, "tex");
+  {
+    const auto same = TextureDesc::new2D(
+        TextureFormat::RGBA_UNorm8, 16, 32, TextureDesc::TextureUsageBits::Sampled, "tex");
+    EXPECT_TRUE(base == same);
+    EXPECT_FALSE(base != same);
+  }
+  {
+    auto other = base;
+    other.width = 8;
+    EXPECT_FALSE(base == other);
+    EXPECT_TRUE(base != other);
+  }
+  {
+    auto other = base;
+    other.format = TextureFormat::BGRA_UNorm8;
+    EXPECT_TRUE(base != other);
+  }
+  {
+    auto other = base;
+    other.debugName = "different";
+    EXPECT_TRUE(base != other);
+  }
+}
+
+//
+// TextureDesc::asRange
+//
+// asRange() builds a full-texture range from the descriptor. Cube descriptors
+// must expand to six faces; everything else stays at a single face.
+//
+TEST(TextureDescTest, AsRange) {
+  {
+    const auto desc = TextureDesc::new2DArray(
+        TextureFormat::RGBA_UNorm8, 16, 32, 4, TextureDesc::TextureUsageBits::Sampled);
+    const auto range = desc.asRange();
+    EXPECT_EQ(range.width, 16u);
+    EXPECT_EQ(range.height, 32u);
+    EXPECT_EQ(range.depth, 1u);
+    EXPECT_EQ(range.numLayers, 4u);
+    EXPECT_EQ(range.numFaces, 1u);
+    EXPECT_EQ(range.numMipLevels, 1u);
+  }
+  {
+    const auto desc = TextureDesc::newCube(
+        TextureFormat::RGBA_UNorm8, 8, 8, TextureDesc::TextureUsageBits::Sampled);
+    const auto range = desc.asRange();
+    EXPECT_EQ(range.numFaces, 6u);
+  }
+}
+
 } // namespace igl::tests
