@@ -9,7 +9,12 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <igl/base/IAttachmentInterop.h>
+
+namespace igl {
+class ITexture;
+} // namespace igl
 
 namespace igl::base {
 
@@ -40,6 +45,26 @@ class IFramebufferInterop {
   /// @brief Get native framebuffer handle (backend-specific)
   /// @return Platform-specific framebuffer handle if applicable, otherwise nullptr
   [[nodiscard]] virtual void* getNativeFramebuffer() const = 0;
+
+  /// @brief Get the owning IGL texture for the color attachment at `index`.
+  ///
+  /// Returns the same shared_ptr the underlying IFramebuffer owns, so callers
+  /// can keep the GPU resource alive independently of this interop pointer.
+  /// Default implementation returns nullptr — overrides should provide the
+  /// texture when the interop is backed by a real IFramebuffer. Implementations
+  /// built from foreign native handles (no IFramebuffer behind them) should
+  /// leave the default.
+  [[nodiscard]] virtual std::shared_ptr<ITexture> getColorAttachmentTexture(
+      size_t /*index*/) const noexcept {
+    return nullptr;
+  }
+
+  /// @brief Get the owning IGL texture for the depth attachment.
+  /// Returns nullptr when there is no depth attachment or when the interop is
+  /// not backed by a real IFramebuffer. See getColorAttachmentTexture().
+  [[nodiscard]] virtual std::shared_ptr<ITexture> getDepthAttachmentTexture() const noexcept {
+    return nullptr;
+  }
 };
 
 } // namespace igl::base

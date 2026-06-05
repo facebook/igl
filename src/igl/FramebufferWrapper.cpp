@@ -31,4 +31,19 @@ void* IGL_NULLABLE FramebufferWrapper::getNativeFramebuffer() const {
   return nullptr;
 }
 
+std::shared_ptr<ITexture> FramebufferWrapper::getColorAttachmentTexture(
+    size_t index) const noexcept {
+  if (!framebuffer_) {
+    return nullptr;
+  }
+  return framebuffer_->getColorAttachment(index);
+}
+
+std::shared_ptr<ITexture> FramebufferWrapper::getDepthAttachmentTexture() const noexcept {
+  if (!framebuffer_) {
+    return nullptr;
+  }
+  return framebuffer_->getDepthAttachment();
+}
+
 } // namespace igl

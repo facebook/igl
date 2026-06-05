@@ -36,6 +36,9 @@ class FramebufferWrapper : public base::IFramebufferInterop {
   getColorAttachment(size_t index) const override;
   [[nodiscard]] base::IAttachmentInterop* IGL_NULLABLE getDepthAttachment() const override;
   [[nodiscard]] void* IGL_NULLABLE getNativeFramebuffer() const override;
+  [[nodiscard]] std::shared_ptr<ITexture> getColorAttachmentTexture(
+      size_t index) const noexcept override;
+  [[nodiscard]] std::shared_ptr<ITexture> getDepthAttachmentTexture() const noexcept override;
 
  private:
   std::shared_ptr<IFramebuffer> framebuffer_;

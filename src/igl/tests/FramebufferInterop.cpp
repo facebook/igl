@@ -15,6 +15,8 @@
 #include <igl/CommandQueue.h>
 #include <igl/Common.h>
 #include <igl/Device.h>
+#include <igl/FramebufferWrapper.h>
+#include <igl/Texture.h>
 #include <igl/base/IFramebufferInterop.h>
 
 namespace igl::tests {
@@ -307,6 +309,103 @@ TEST_F(FramebufferInteropTest, MultipleFramebuffers) {
     EXPECT_NE(framebuffers[i]->getColorAttachment(0), nullptr)
         << "Framebuffer " << i << " has null color attachment";
   }
+}
+
+TEST_F(FramebufferInteropTest, GetColorAttachmentTexture) {
+  base::AttachmentInteropDesc colorDesc{
+      .width = 256,
+      .height = 256,
+      .depth = 1,
+      .numLayers = 1,
+      .numSamples = 1,
+      .numMipLevels = 1,
+      .type = base::TextureType::TwoD,
+      .format = base::TextureFormat::RGBA_SRGB,
+      .isSampled = true,
+  };
+
+  base::FramebufferInteropDesc fbDesc{};
+  fbDesc.colorAttachments[0] = &colorDesc;
+
+  std::unique_ptr<base::IFramebufferInterop> fbInterop(device_->createFramebufferInterop(fbDesc));
+  ASSERT_NE(fbInterop, nullptr);
+
+  std::shared_ptr<ITexture> colorTexture = fbInterop->getColorAttachmentTexture(0);
+  ASSERT_NE(colorTexture, nullptr);
+  EXPECT_EQ(colorTexture.get(), fbInterop->getColorAttachment(0));
+}
+
+TEST_F(FramebufferInteropTest, GetDepthAttachmentTexture) {
+  base::AttachmentInteropDesc colorDesc{
+      .width = 256,
+      .height = 256,
+      .depth = 1,
+      .numLayers = 1,
+      .numSamples = 1,
+      .numMipLevels = 1,
+      .type = base::TextureType::TwoD,
+      .format = base::TextureFormat::RGBA_SRGB,
+      .isSampled = true,
+  };
+
+  auto depthFormat = base::TextureFormat::S8_UInt_Z32_UNorm;
+  if (backend_ == util::kBackendVul) {
+    depthFormat = base::TextureFormat::S8_UInt_Z24_UNorm;
+  }
+
+  base::AttachmentInteropDesc depthDesc{
+      .width = 256,
+      .height = 256,
+      .depth = 1,
+      .numLayers = 1,
+      .numSamples = 1,
+      .numMipLevels = 1,
+      .type = base::TextureType::TwoD,
+      .format = depthFormat,
+      .isSampled = false,
+  };
+
+  base::FramebufferInteropDesc fbDesc{};
+  fbDesc.colorAttachments[0] = &colorDesc;
+  fbDesc.depthAttachment = &depthDesc;
+
+  std::unique_ptr<base::IFramebufferInterop> fbInterop(device_->createFramebufferInterop(fbDesc));
+  ASSERT_NE(fbInterop, nullptr);
+
+  std::shared_ptr<ITexture> depthTexture = fbInterop->getDepthAttachmentTexture();
+  ASSERT_NE(depthTexture, nullptr);
+  EXPECT_EQ(depthTexture.get(), fbInterop->getDepthAttachment());
+}
+
+TEST_F(FramebufferInteropTest, GetDepthAttachmentTextureWithoutDepth) {
+  base::AttachmentInteropDesc colorDesc{
+      .width = 256,
+      .height = 256,
+      .depth = 1,
+      .numLayers = 1,
+      .numSamples = 1,
+      .numMipLevels = 1,
+      .type = base::TextureType::TwoD,
+      .format = base::TextureFormat::RGBA_SRGB,
+      .isSampled = true,
+  };
+
+  base::FramebufferInteropDesc fbDesc{};
+  fbDesc.colorAttachments[0] = &colorDesc;
+
+  std::unique_ptr<base::IFramebufferInterop> fbInterop(device_->createFramebufferInterop(fbDesc));
+  ASSERT_NE(fbInterop, nullptr);
+
+  EXPECT_EQ(fbInterop->getDepthAttachmentTexture(), nullptr);
+}
+
+TEST_F(FramebufferInteropTest, FramebufferWrapperNullFramebuffer) {
+  FramebufferWrapper wrapper(nullptr);
+  EXPECT_EQ(wrapper.getColorAttachment(0), nullptr);
+  EXPECT_EQ(wrapper.getDepthAttachment(), nullptr);
+  EXPECT_EQ(wrapper.getNativeFramebuffer(), nullptr);
+  EXPECT_EQ(wrapper.getColorAttachmentTexture(0), nullptr);
+  EXPECT_EQ(wrapper.getDepthAttachmentTexture(), nullptr);
 }
 
 } // namespace igl::tests
