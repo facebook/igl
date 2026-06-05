@@ -245,4 +245,51 @@ TEST_F(AssertTest, SoftAssertPassDoesNotFire) {
   EXPECT_FALSE(sSoftError);
 }
 
+TEST_F(AssertTest, DebugBreakEnabledRoundTrip) {
+  // SetUp() disables debug break, so the getter should reflect that initially.
+  EXPECT_FALSE(igl::isDebugBreakEnabled());
+
+  igl::setDebugBreakEnabled(true);
+  EXPECT_TRUE(igl::isDebugBreakEnabled());
+
+  igl::setDebugBreakEnabled(false);
+  EXPECT_FALSE(igl::isDebugBreakEnabled());
+}
+
+TEST_F(AssertTest, SoftErrorHandlerRoundTrip) {
+  // SetUp() installs a non-null soft error handler.
+  EXPECT_NE(iglGetSoftErrorHandler(), nullptr);
+
+  const IGLErrorHandlerFunc handler = [](const char* /*category*/,
+                                         const char* /*reason*/,
+                                         const char* /*file*/,
+                                         const char* /*func*/,
+                                         int /*line*/,
+                                         const char* /*format*/,
+                                         va_list /*ap*/) {};
+  iglSetSoftErrorHandler(handler);
+  EXPECT_EQ(iglGetSoftErrorHandler(), handler);
+
+  iglSetSoftErrorHandler(nullptr);
+  EXPECT_EQ(iglGetSoftErrorHandler(), nullptr);
+}
+
+TEST_F(AssertTest, DebugAbortListenerRoundTrip) {
+  // SetUp() installs a non-null debug abort listener.
+  EXPECT_NE(iglGetDebugAbortListener(), nullptr);
+
+  const IGLErrorHandlerFunc listener = [](const char* /*category*/,
+                                          const char* /*reason*/,
+                                          const char* /*file*/,
+                                          const char* /*func*/,
+                                          int /*line*/,
+                                          const char* /*format*/,
+                                          va_list /*ap*/) {};
+  iglSetDebugAbortListener(listener);
+  EXPECT_EQ(iglGetDebugAbortListener(), listener);
+
+  iglSetDebugAbortListener(nullptr);
+  EXPECT_EQ(iglGetDebugAbortListener(), nullptr);
+}
+
 } // namespace igl::tests
