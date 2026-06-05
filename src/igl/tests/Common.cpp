@@ -85,6 +85,71 @@ TEST(CommonTest, ViewportTest) {
   ASSERT_TRUE(viewport == viewport2);
 }
 
+TEST(CommonTest, ViewportDefaultValues) {
+  // The default viewport covers a unit region: width/height default to 1.0f (not
+  // 0.0f) so a freshly constructed Viewport is immediately usable.
+  const Viewport viewport;
+  EXPECT_FLOAT_EQ(viewport.x, 0.0f);
+  EXPECT_FLOAT_EQ(viewport.y, 0.0f);
+  EXPECT_FLOAT_EQ(viewport.width, 1.0f);
+  EXPECT_FLOAT_EQ(viewport.height, 1.0f);
+  EXPECT_FLOAT_EQ(viewport.minDepth, 0.0f);
+  EXPECT_FLOAT_EQ(viewport.maxDepth, 1.0f);
+}
+
+TEST(CommonTest, InvalidViewportValues) {
+  // kInvalidViewport is the sentinel used by `!= kInvalidViewport` checks; every
+  // field must be -1.0f so it can never be confused with a valid viewport.
+  EXPECT_FLOAT_EQ(kInvalidViewport.x, -1.0f);
+  EXPECT_FLOAT_EQ(kInvalidViewport.y, -1.0f);
+  EXPECT_FLOAT_EQ(kInvalidViewport.width, -1.0f);
+  EXPECT_FLOAT_EQ(kInvalidViewport.height, -1.0f);
+  EXPECT_FLOAT_EQ(kInvalidViewport.minDepth, -1.0f);
+  EXPECT_FLOAT_EQ(kInvalidViewport.maxDepth, -1.0f);
+}
+
+TEST(CommonTest, ViewportInequalityPerField) {
+  // operator== must compare every field; mutating each one in isolation should
+  // make the viewports compare non-equal.
+  const Viewport base;
+  {
+    Viewport other = base;
+    other.x = 5.0f;
+    EXPECT_TRUE(base != other);
+    EXPECT_FALSE(base == other);
+  }
+  {
+    Viewport other = base;
+    other.y = 5.0f;
+    EXPECT_TRUE(base != other);
+    EXPECT_FALSE(base == other);
+  }
+  {
+    Viewport other = base;
+    other.width = 5.0f;
+    EXPECT_TRUE(base != other);
+    EXPECT_FALSE(base == other);
+  }
+  {
+    Viewport other = base;
+    other.height = 5.0f;
+    EXPECT_TRUE(base != other);
+    EXPECT_FALSE(base == other);
+  }
+  {
+    Viewport other = base;
+    other.minDepth = 0.5f;
+    EXPECT_TRUE(base != other);
+    EXPECT_FALSE(base == other);
+  }
+  {
+    Viewport other = base;
+    other.maxDepth = 0.5f;
+    EXPECT_TRUE(base != other);
+    EXPECT_FALSE(base == other);
+  }
+}
+
 TEST(CommonTest, EnumToValueTest) {
   auto val = EnumToValue(BackendType::Vulkan);
   ASSERT_EQ(val, 3);
