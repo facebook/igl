@@ -69,7 +69,12 @@ void ResourcesBinder::bindBuffer(uint32_t index,
     slot = {
         .buffer = buf,
         .offset = bufferOffset,
-        .range = bufferSize ? bufferSize : (buffer ? buffer->getSizeInBytes() : VK_WHOLE_SIZE),
+        // When no explicit size is given, bind the rest of the buffer starting at `bufferOffset`.
+        // Using the full buffer size here would make `offset + range` exceed the buffer when a
+        // non-zero offset is used (e.g. binding a sub-range of a uniform buffer).
+        .range = bufferSize ? bufferSize
+                 : buffer   ? (buffer->getSizeInBytes() - bufferOffset)
+                            : VK_WHOLE_SIZE,
     };
     if (ctx_.features().has_VK_KHR_buffer_device_address) {
       bindingsBuffers_.addresses[index] = buffer ? buffer->gpuAddress(bufferOffset)
