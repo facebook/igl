@@ -115,4 +115,69 @@ TEST_F(BaseTextureLoaderTest, UploadTexture) {
   loader.loadToExternalMemory(&data, 0, &result);
   ASSERT_FALSE(result.isOk());
 }
+
+TEST_F(BaseTextureLoaderTest, MemorySizeInBytes) {
+  Result result;
+  auto dataReader = iglu::textureloader::DataReader::tryCreate(
+      reinterpret_cast<const uint8_t*>(data::texture::kTexRgba2x2.data()),
+      sizeof(data::texture::kTexRgba2x2),
+      &result);
+  ASSERT_TRUE(result.isOk());
+  ASSERT_TRUE(dataReader.has_value());
+
+  TestTextureLoader loader(*dataReader, TextureDesc::TextureUsageBits::Sampled);
+  loader.descriptorRef().type = TextureType::TwoD;
+  loader.descriptorRef().format = TextureFormat::RGBA_UNorm8;
+  loader.descriptorRef().width = 2;
+  loader.descriptorRef().height = 2;
+
+  // 2x2 RGBA_UNorm8 => 4 texels * 4 bytes/texel = 16 bytes.
+  EXPECT_EQ(loader.memorySizeInBytes(), 16u);
+
+  // The base loader exposes no per-mip byte breakdown.
+  EXPECT_TRUE(loader.mipLevelBytes().empty());
+}
+
+TEST_F(BaseTextureLoaderTest, Load) {
+  Result result;
+  auto dataReader = iglu::textureloader::DataReader::tryCreate(
+      reinterpret_cast<const uint8_t*>(data::texture::kTexRgba2x2.data()),
+      sizeof(data::texture::kTexRgba2x2),
+      &result);
+  ASSERT_TRUE(result.isOk());
+  ASSERT_TRUE(dataReader.has_value());
+
+  TestTextureLoader loader(*dataReader, TextureDesc::TextureUsageBits::Sampled);
+  loader.descriptorRef().type = TextureType::TwoD;
+  loader.descriptorRef().format = TextureFormat::RGBA_UNorm8;
+  loader.descriptorRef().width = 2;
+  loader.descriptorRef().height = 2;
+
+  auto data = loader.load(&result);
+  ASSERT_TRUE(result.isOk());
+  ASSERT_TRUE(data != nullptr);
+
+  // The base loader copies the source bytes verbatim into the loaded IData.
+  ASSERT_EQ(data->size(), sizeof(data::texture::kTexRgba2x2));
+  const auto* loaded = reinterpret_cast<const uint32_t*>(data->data());
+  for (size_t i = 0; i < data::texture::kTexRgba2x2.size(); ++i) {
+    EXPECT_EQ(loaded[i], data::texture::kTexRgba2x2[i]);
+  }
+}
+
+TEST_F(BaseTextureLoaderTest, IsSupportedWithExplicitUsage) {
+  Result result;
+  auto dataReader = iglu::textureloader::DataReader::tryCreate(
+      reinterpret_cast<const uint8_t*>(data::texture::kTexRgba2x2.data()),
+      sizeof(data::texture::kTexRgba2x2),
+      &result);
+  ASSERT_TRUE(result.isOk());
+  ASSERT_TRUE(dataReader.has_value());
+
+  TestTextureLoader loader(*dataReader, TextureDesc::TextureUsageBits::Sampled);
+  loader.descriptorRef().format = TextureFormat::RGBA_UNorm8;
+
+  // RGBA_UNorm8 is universally sampleable; the explicit-usage overload agrees.
+  EXPECT_TRUE(loader.isSupported(*iglDev_, TextureDesc::TextureUsageBits::Sampled));
+}
 } // namespace igl::tests
