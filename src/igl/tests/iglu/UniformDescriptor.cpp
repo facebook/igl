@@ -268,4 +268,50 @@ TEST_F(UniformDescriptorTest, DescriptorVector) {
   testUniformData(mat4Vector, mat4Uniform);
 }
 
+//
+// Type Test
+//
+// getType() reports the UniformType deduced from the template parameter for both
+// the single-value and vector descriptors.
+//
+TEST_F(UniformDescriptorTest, DescriptorType) {
+  EXPECT_EQ(uniform::DescriptorValue<int>().getType(), igl::UniformType::Int);
+  EXPECT_EQ(uniform::DescriptorValue<float>().getType(), igl::UniformType::Float);
+  EXPECT_EQ(uniform::DescriptorValue<glm::vec4>().getType(), igl::UniformType::Float4);
+  EXPECT_EQ(uniform::DescriptorValue<glm::mat3>().getType(), igl::UniformType::Mat3x3);
+
+  EXPECT_EQ(uniform::DescriptorVector<int>().getType(), igl::UniformType::Int);
+  EXPECT_EQ(uniform::DescriptorVector<glm::vec3>().getType(), igl::UniformType::Float3);
+}
+
+//
+// Indices Test
+//
+// getIndices() / setIndices() operate on the whole per-stage index array and stay
+// consistent with the per-stage getIndex() / setIndex() accessors.
+//
+TEST_F(UniformDescriptorTest, DescriptorIndices) {
+  uniform::DescriptorValue<glm::vec4> uniform(glm::vec4(1.f));
+
+  // Indices default to -1 for every shader stage.
+  for (const int index : uniform.getIndices()) {
+    EXPECT_EQ(index, -1);
+  }
+
+  // setIndices() updates the whole array; getIndices() and the per-stage
+  // getIndex() report the same values.
+  uniform::Descriptor::Indices indices{};
+  indices[igl::EnumToValue(igl::ShaderStage::Vertex)] = kVertexIndex;
+  indices[igl::EnumToValue(igl::ShaderStage::Fragment)] = kFragmentIndex;
+  uniform.setIndices(indices);
+
+  EXPECT_EQ(uniform.getIndices(), indices);
+  EXPECT_EQ(uniform.getIndex(igl::ShaderStage::Vertex), kVertexIndex);
+  EXPECT_EQ(uniform.getIndex(igl::ShaderStage::Fragment), kFragmentIndex);
+
+  // setIndex() on a single stage is reflected back through getIndices().
+  uniform.setIndex(igl::ShaderStage::Vertex, kFragmentIndex);
+  EXPECT_EQ(uniform.getIndices()[igl::EnumToValue(igl::ShaderStage::Vertex)], kFragmentIndex);
+}
+
 } // namespace iglu::tests
