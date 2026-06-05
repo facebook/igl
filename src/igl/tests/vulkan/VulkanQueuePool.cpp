@@ -248,6 +248,34 @@ TEST(VulkanQueueDescriptorTest, LessThanOrdering) {
   EXPECT_FALSE(a < a);
 }
 
+TEST(VulkanQueueDescriptorTest, EqualityIgnoresQueueFlags) {
+  // operator== considers two descriptors equal when familyIndex and queueIndex
+  // match, regardless of queueFlags (see the uniqueness comment on the struct).
+  const VulkanQueueDescriptor graphics{
+      .queueFlags = VK_QUEUE_GRAPHICS_BIT, .queueIndex = 0, .familyIndex = 1};
+  const VulkanQueueDescriptor compute{
+      .queueFlags = VK_QUEUE_COMPUTE_BIT, .queueIndex = 0, .familyIndex = 1};
+
+  EXPECT_TRUE(graphics == compute);
+
+  // Differing queueIndex makes the descriptors unequal even with identical flags.
+  const VulkanQueueDescriptor graphicsOtherIndex{
+      .queueFlags = VK_QUEUE_GRAPHICS_BIT, .queueIndex = 1, .familyIndex = 1};
+  EXPECT_FALSE(graphics == graphicsOtherIndex);
+}
+
+TEST(VulkanQueueDescriptorTest, OrderingIgnoresQueueFlags) {
+  // Descriptors sharing familyIndex and queueIndex are equivalent under
+  // operator<, so a std::set treats them as the same element regardless of flags.
+  const VulkanQueueDescriptor graphics{
+      .queueFlags = VK_QUEUE_GRAPHICS_BIT, .queueIndex = 0, .familyIndex = 1};
+  const VulkanQueueDescriptor compute{
+      .queueFlags = VK_QUEUE_COMPUTE_BIT, .queueIndex = 0, .familyIndex = 1};
+
+  EXPECT_FALSE(graphics < compute);
+  EXPECT_FALSE(compute < graphics);
+}
+
 TEST(VulkanQueuePoolTest, FindQueueDescriptorReturnsInvalidWhenNoMatch) {
   const VulkanQueueDescriptor graphicsOnly{
       .queueFlags = VK_QUEUE_GRAPHICS_BIT, .queueIndex = 0, .familyIndex = 1};
