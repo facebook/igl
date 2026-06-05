@@ -83,4 +83,47 @@ TEST_F(IDataTest, ExtractDataReturnsValidData) {
   }
 }
 
+TEST_F(IDataTest, ExtractDataPreservesContents) {
+  constexpr uint64_t kSize = 16;
+  auto buffer = std::make_unique<uint8_t[]>(kSize);
+  for (uint64_t i = 0; i < kSize; ++i) {
+    buffer[i] = static_cast<uint8_t>(i);
+  }
+
+  Result result;
+  auto data = iglu::textureloader::IData::tryCreate(std::move(buffer), kSize, &result);
+  ASSERT_NE(data, nullptr);
+
+  auto extracted = data->extractData();
+  ASSERT_NE(extracted.data, nullptr);
+  ASSERT_EQ(extracted.size, kSize);
+
+  const auto* bytes = static_cast<const uint8_t*>(extracted.data);
+  for (uint64_t i = 0; i < kSize; ++i) {
+    EXPECT_EQ(bytes[i], static_cast<uint8_t>(i));
+  }
+
+  if (extracted.deleter != nullptr) {
+    extracted.deleter(const_cast<void*>(extracted.data));
+  }
+}
+
+TEST_F(IDataTest, TryCreateValidDataNullResultSucceeds) {
+  // outResult is IGL_NULLABLE: passing nullptr on the success path must not crash.
+  constexpr uint64_t kSize = 32;
+  auto buffer = std::make_unique<uint8_t[]>(kSize);
+  buffer[0] = 0x42;
+
+  auto data = iglu::textureloader::IData::tryCreate(std::move(buffer), kSize, nullptr);
+  ASSERT_NE(data, nullptr);
+  EXPECT_EQ(data->size(), kSize);
+  EXPECT_EQ(data->data()[0], 0x42);
+}
+
+TEST_F(IDataTest, TryCreateNullDataNullResultReturnsNull) {
+  // outResult is IGL_NULLABLE: the error path must tolerate a null result pointer.
+  auto data = iglu::textureloader::IData::tryCreate(nullptr, 100, nullptr);
+  EXPECT_EQ(data, nullptr);
+}
+
 } // namespace igl::tests
