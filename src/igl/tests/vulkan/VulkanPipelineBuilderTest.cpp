@@ -140,6 +140,16 @@ TEST_F(VulkanPipelineBuilderTest, RasterizationSamples) {
   EXPECT_EQ(&result, &builder);
 }
 
+TEST_F(VulkanPipelineBuilderTest, AlphaToCoverageEnable) {
+  igl::vulkan::VulkanPipelineBuilder builder1;
+  auto& r1 = builder1.alphaToCoverageEnable(true);
+  EXPECT_EQ(&r1, &builder1);
+
+  igl::vulkan::VulkanPipelineBuilder builder2;
+  auto& r2 = builder2.alphaToCoverageEnable(false);
+  EXPECT_EQ(&r2, &builder2);
+}
+
 TEST_F(VulkanPipelineBuilderTest, DynamicStateSingle) {
   igl::vulkan::VulkanPipelineBuilder builder;
   auto& result = builder.dynamicState(VK_DYNAMIC_STATE_VIEWPORT);

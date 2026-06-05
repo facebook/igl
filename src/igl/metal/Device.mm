@@ -522,6 +522,7 @@ std::shared_ptr<IRenderPipelineState> Device::createTraditionalRenderPipeline(
   metalDesc.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
 
   metalDesc.sampleCount = desc.sampleCount;
+  metalDesc.alphaToCoverageEnabled = desc.alphaToCoverageEnabled ? YES : NO;
 
   // (optional, can be null) Vertex input
   auto vertexInput = desc.vertexInputState;
@@ -651,6 +652,7 @@ std::shared_ptr<IRenderPipelineState> Device::createMeshRenderPipeline(
     metalDesc.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
 
     metalDesc.rasterSampleCount = desc.sampleCount;
+    metalDesc.alphaToCoverageEnabled = desc.alphaToCoverageEnabled ? YES : NO;
 
     if (!IGL_DEBUG_VERIFY(desc.shaderStages)) {
       Result::setResult(

@@ -202,6 +202,17 @@ struct RenderPipelineDesc {
 
   uint32_t sampleCount = 1u; // MSAA
 
+  /*
+   * @brief When enabled, the GPU computes a fragment's coverage from its alpha value,
+   * AND-ed with the geometric sample mask. This is a fixed-function alternative to
+   * shader-side `discard` for alpha-tested geometry. It does not break Early-Z because
+   * the decision happens in hardware after the fragment shader, not inside it.
+   *
+   * Requires `sampleCount > 1` (MSAA must be enabled) to take effect; otherwise the
+   * driver silently ignores it.
+   */
+  bool alphaToCoverageEnabled = false;
+
   // Vulkan only: specify if buffer binding locations correspond to Vulkan dynamic buffers
   uint32_t isDynamicBufferMask = 0; // one bit per each buffer binding slot
 

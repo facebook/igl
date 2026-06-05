@@ -129,4 +129,55 @@ TEST_F(MetalRenderPipelineCreationTest, CreatePipelineWithDepthFormat) {
   ASSERT_NE(pipeline, nullptr);
 }
 
+//
+// CreatePipelineWithAlphaToCoverage
+//
+// Test creating a render pipeline with alpha-to-coverage enabled.
+// A2C is meaningful only when MSAA is active, so we set sampleCount = 4.
+//
+TEST_F(MetalRenderPipelineCreationTest, CreatePipelineWithAlphaToCoverage) {
+  Result res;
+
+  std::unique_ptr<IShaderStages> stages;
+  util::createSimpleShaderStages(device_, stages);
+  ASSERT_NE(stages, nullptr);
+
+  const RenderPipelineDesc pipelineDesc{
+      .shaderStages = std::move(stages),
+      .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}}},
+      .sampleCount = 4,
+      .alphaToCoverageEnabled = true,
+  };
+
+  auto pipeline = device_->createRenderPipeline(pipelineDesc, &res);
+  ASSERT_TRUE(res.isOk()) << res.message;
+  ASSERT_NE(pipeline, nullptr);
+}
+
+//
+// CreatePipelineAlphaToCoverageDefaultsOff
+//
+// Test that alpha-to-coverage is disabled by default and a pipeline created
+// without explicitly enabling it still creates successfully.
+//
+TEST_F(MetalRenderPipelineCreationTest, CreatePipelineAlphaToCoverageDefaultsOff) {
+  Result res;
+
+  std::unique_ptr<IShaderStages> stages;
+  util::createSimpleShaderStages(device_, stages);
+  ASSERT_NE(stages, nullptr);
+
+  const RenderPipelineDesc pipelineDesc{
+      .shaderStages = std::move(stages),
+      .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}}},
+  };
+
+  // The default value should be false; verify here so the default is locked down.
+  ASSERT_FALSE(pipelineDesc.alphaToCoverageEnabled);
+
+  auto pipeline = device_->createRenderPipeline(pipelineDesc, &res);
+  ASSERT_TRUE(res.isOk()) << res.message;
+  ASSERT_NE(pipeline, nullptr);
+}
+
 } // namespace igl::tests

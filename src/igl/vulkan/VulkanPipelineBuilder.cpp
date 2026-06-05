@@ -92,6 +92,11 @@ VulkanPipelineBuilder& VulkanPipelineBuilder::rasterizationSamples(VkSampleCount
   return *this;
 }
 
+VulkanPipelineBuilder& VulkanPipelineBuilder::alphaToCoverageEnable(bool enable) {
+  multisampleState_.alphaToCoverageEnable = enable ? VK_TRUE : VK_FALSE;
+  return *this;
+}
+
 VulkanPipelineBuilder& VulkanPipelineBuilder::cullMode(VkCullModeFlags mode) {
   rasterizationState_.cullMode = mode;
   return *this;

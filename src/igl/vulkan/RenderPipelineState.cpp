@@ -557,6 +557,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
           .depthCompareOp(dynamicState.getDepthCompareOp(), dynamicState.depthWriteEnable)
           .depthWriteEnable(dynamicState.depthWriteEnable)
           .rasterizationSamples(getVulkanSampleCountFlags(desc_.sampleCount))
+          .alphaToCoverageEnable(desc_.alphaToCoverageEnabled)
           .polygonMode(polygonFillModeToVkPolygonMode(desc_.polygonFillMode))
           .stencilStateOps(VK_STENCIL_FACE_FRONT_BIT,
                            dynamicState.getStencilStateFailOp(true),

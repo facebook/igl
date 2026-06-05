@@ -25,6 +25,7 @@ class VulkanPipelineBuilder final {
   VulkanPipelineBuilder& dynamicStates(const std::vector<VkDynamicState>& states);
   VulkanPipelineBuilder& primitiveTopology(VkPrimitiveTopology topology);
   VulkanPipelineBuilder& rasterizationSamples(VkSampleCountFlagBits samples);
+  VulkanPipelineBuilder& alphaToCoverageEnable(bool enable);
   VulkanPipelineBuilder& shaderStage(VkPipelineShaderStageCreateInfo stage);
   VulkanPipelineBuilder& shaderStages(const std::vector<VkPipelineShaderStageCreateInfo>& stages);
   VulkanPipelineBuilder& stencilStateOps(VkStencilFaceFlags faceMask,
