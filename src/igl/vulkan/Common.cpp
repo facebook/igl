@@ -33,6 +33,13 @@
 #include <igl/vulkan/util/SpvReflection.h>
 #include <igl/vulkan/util/TextureFormat.h>
 
+#if defined(IGL_USE_STATIC_KOSMICKRISP)
+// KosmicKrisp (Mesa Vulkan-to-Metal driver) is statically linked on macOS and exposes its
+// loader through kk_GetInstanceProcAddr instead of the standard vkGetInstanceProcAddr symbol.
+extern "C" VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL kk_GetInstanceProcAddr(VkInstance instance,
+                                                                           const char* pName);
+#endif
+
 namespace igl::vulkan {
 
 Result getResultFromVkResult(VkResult result) {
@@ -765,7 +772,11 @@ namespace igl::vulkan::functions {
 
 namespace {
 PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
-#if defined(FORCE_USE_STATIC_VULKAN_LOADER) && !defined(FORCE_USE_STATIC_VULKAN_LOADER_DISABLED)
+#if defined(IGL_USE_STATIC_KOSMICKRISP)
+  // KosmicKrisp is statically linked — no dlopen, no ICD, no Vulkan loader. Route every
+  // entry point through the driver's own kk_GetInstanceProcAddr (mirrors LVK's KK path).
+  return reinterpret_cast<PFN_vkGetInstanceProcAddr>(&kk_GetInstanceProcAddr);
+#elif defined(FORCE_USE_STATIC_VULKAN_LOADER) && !defined(FORCE_USE_STATIC_VULKAN_LOADER_DISABLED)
   return nullptr;
 #elif defined(_WIN32)
   HMODULE lib = LoadLibraryA("vulkan-1.dll");

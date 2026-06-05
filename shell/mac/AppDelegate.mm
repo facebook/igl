@@ -144,6 +144,8 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
       {
 #if IGL_USE_STATIC_LAVAPIPE
           .displayName = "Vulkan (Lavapipe)",
+#elif IGL_USE_STATIC_KOSMICKRISP
+          .displayName = "Vulkan (KosmicKrisp)",
 #else
           .displayName = "Vulkan",
 #endif

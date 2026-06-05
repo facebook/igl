@@ -53,7 +53,8 @@ igl::vulkan::VulkanContextConfig getContextConfig(bool enableValidation) {
 
 std::unique_ptr<igl::vulkan::Device> createTestDevice(
     const igl::vulkan::VulkanContextConfig& config) {
-#if IGL_PLATFORM_MACOSX
+#if IGL_PLATFORM_MACOSX && !defined(IGL_USE_STATIC_KOSMICKRISP)
+  // KosmicKrisp is statically linked; there is no Vulkan loader to point at a MoltenVK ICD.
   ::igl::vulkan::setupMoltenVKEnvironment();
 #endif
 
