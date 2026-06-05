@@ -27,6 +27,19 @@ TEST(UniformTest, sizeForUniformType) {
   EXPECT_EQ(sizeForUniformType(UniformType::Mat4x4), sizeof(float[4][4]));
 }
 
+TEST(UniformTest, UniformDescDefaults) {
+  // Consumers rely on these defaults: location defaults to the -1 "unset"
+  // sentinel, type defaults to Invalid, and numElements defaults to 1 (a single,
+  // non-array uniform). Lock them down so they cannot regress silently.
+  const UniformDesc desc;
+  EXPECT_TRUE(desc.name.empty());
+  EXPECT_EQ(desc.location, -1);
+  EXPECT_EQ(desc.type, UniformType::Invalid);
+  EXPECT_EQ(desc.numElements, 1u);
+  EXPECT_EQ(desc.offset, 0u);
+  EXPECT_EQ(desc.elementStride, 0u);
+}
+
 TEST(UniformTest, sizeForUniformElementType) {
   EXPECT_EQ(sizeForUniformElementType(UniformType::Invalid), 0u);
   EXPECT_EQ(sizeForUniformElementType(UniformType::Float), sizeof(float));
