@@ -48,6 +48,18 @@ TEST(CommonTest, RectTest) {
   ASSERT_FALSE(testRect2.isNull());
 }
 
+TEST(CommonTest, ScissorRectIsNullSemantics) {
+  // isNull() is true only when BOTH width and height are zero; a non-zero extent
+  // in either dimension makes the rect non-null (guards against an accidental
+  // || instead of &&).
+  EXPECT_FALSE((ScissorRect{.width = 1, .height = 0}).isNull());
+  EXPECT_FALSE((ScissorRect{.width = 0, .height = 1}).isNull());
+
+  // x/y are not part of the emptiness test: a zero-extent rect is null
+  // regardless of its origin.
+  EXPECT_TRUE((ScissorRect{.x = 10, .y = 20, .width = 0, .height = 0}).isNull());
+}
+
 TEST(CommonTest, SizeTest) {
   Size size;
   ASSERT_EQ(size.height, 0.0f);
@@ -60,6 +72,22 @@ TEST(CommonTest, SizeTest) {
   ASSERT_TRUE(size2 == size2);
   ASSERT_FALSE(size == size2);
   ASSERT_FALSE(size2 != size2);
+}
+
+TEST(CommonTest, SizeInequalityPerField) {
+  // operator== must compare both fields; mutating each one in isolation should
+  // make the sizes compare non-equal.
+  const Size base(4.0f, 8.0f);
+  {
+    const Size other(5.0f, 8.0f);
+    EXPECT_TRUE(base != other);
+    EXPECT_FALSE(base == other);
+  }
+  {
+    const Size other(4.0f, 9.0f);
+    EXPECT_TRUE(base != other);
+    EXPECT_FALSE(base == other);
+  }
 }
 
 TEST(CommonTest, DimensionTest) {
@@ -76,6 +104,30 @@ TEST(CommonTest, DimensionTest) {
   ASSERT_TRUE(dimension2 == dimension2);
   ASSERT_FALSE(dimension == dimension2);
   ASSERT_FALSE(dimension2 != dimension2);
+}
+
+TEST(CommonTest, DimensionInequalityPerField) {
+  // operator== must compare width, height and depth; mutating each one in
+  // isolation should make the dimensions compare non-equal.
+  const Dimensions base(2, 3, 4);
+  {
+    Dimensions other = base;
+    other.width = 20;
+    EXPECT_TRUE(base != other);
+    EXPECT_FALSE(base == other);
+  }
+  {
+    Dimensions other = base;
+    other.height = 30;
+    EXPECT_TRUE(base != other);
+    EXPECT_FALSE(base == other);
+  }
+  {
+    Dimensions other = base;
+    other.depth = 40;
+    EXPECT_TRUE(base != other);
+    EXPECT_FALSE(base == other);
+  }
 }
 
 TEST(CommonTest, ViewportTest) {
