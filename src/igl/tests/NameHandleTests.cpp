@@ -9,6 +9,7 @@
 
 #include <set>
 #include <unordered_map>
+#include <utility>
 #include <igl/NameHandle.h>
 
 // NOLINTBEGIN(misc-use-internal-linkage,facebook-static-object-destructor-check)
@@ -100,6 +101,23 @@ TEST(NameHandleTests, copy_assignment) {
   NameHandle a2 = IGL_NAMEHANDLE("a");
   h = a2;
   EXPECT_EQ(h.getCrc32(), a.getCrc32());
+}
+
+TEST(NameHandleTests, move_constructor) {
+  NameHandle src = IGL_NAMEHANDLE("moveSource");
+  const uint32_t crc = src.getCrc32();
+  const NameHandle dst(std::move(src));
+  EXPECT_EQ(dst.getCrc32(), crc);
+  EXPECT_EQ(dst.toString(), "moveSource");
+}
+
+TEST(NameHandleTests, move_assignment) {
+  NameHandle src = IGL_NAMEHANDLE("moveAssign");
+  const uint32_t crc = src.getCrc32();
+  NameHandle dst;
+  dst = std::move(src);
+  EXPECT_EQ(dst.getCrc32(), crc);
+  EXPECT_EQ(dst.toString(), "moveAssign");
 }
 
 TEST(NameHandleTests, genNameHandle_runtimeConsistency) {
