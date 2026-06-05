@@ -83,4 +83,62 @@ TEST_F(BitmapWriterTest, WriteFile) {
   ASSERT_EQ(memcmp(fileData, kExpectedData, sizeof(kExpectedData)), 0);
 }
 
+// Only the formats that have a defined RGB byte layout in the writer are
+// reported as supported; everything else (single-channel, float, compressed,
+// or invalid) must be rejected.
+TEST(BitmapWriterFormatTest, IsSupportedBitmapTextureFormat) {
+  EXPECT_TRUE(igl::iglu::isSupportedBitmapTextureFormat(TextureFormat::RGBA_UNorm8));
+  EXPECT_TRUE(igl::iglu::isSupportedBitmapTextureFormat(TextureFormat::RGBX_UNorm8));
+  EXPECT_TRUE(igl::iglu::isSupportedBitmapTextureFormat(TextureFormat::RGBA_SRGB));
+  EXPECT_TRUE(igl::iglu::isSupportedBitmapTextureFormat(TextureFormat::BGRA_UNorm8));
+  EXPECT_TRUE(igl::iglu::isSupportedBitmapTextureFormat(TextureFormat::BGRA_SRGB));
+
+  EXPECT_FALSE(igl::iglu::isSupportedBitmapTextureFormat(TextureFormat::Invalid));
+  EXPECT_FALSE(igl::iglu::isSupportedBitmapTextureFormat(TextureFormat::R_UNorm8));
+  EXPECT_FALSE(igl::iglu::isSupportedBitmapTextureFormat(TextureFormat::BGRA_UNorm8_Rev));
+  EXPECT_FALSE(igl::iglu::isSupportedBitmapTextureFormat(TextureFormat::RGB_F16));
+  EXPECT_FALSE(igl::iglu::isSupportedBitmapTextureFormat(TextureFormat::RGBA_F32));
+}
+
+// The raw-byte overload prepends a 54-byte BMP header and copies the supplied
+// pixel data verbatim (no swizzling) to the stream.
+TEST(BitmapWriterRawTest, WriteBitmapRawBytes) {
+  // Three BGR pixels forming a 3x1 image.
+  const uint8_t pixels[] = {0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90};
+  constexpr uint32_t kWidth = 3;
+  constexpr uint32_t kHeight = 1;
+  constexpr uint32_t kImageSize = kWidth * kHeight * 3;
+  constexpr size_t kHeaderSize = 54; // sizeof(BMPHeader)
+
+  std::stringstream ss;
+  igl::iglu::writeBitmap(ss, pixels, kWidth, kHeight);
+  const std::string s = ss.str();
+
+  ASSERT_EQ(s.size(), kHeaderSize + kImageSize);
+
+  const uint8_t* out = reinterpret_cast<const uint8_t*>(s.data());
+
+  // "BM" signature.
+  EXPECT_EQ(out[0], 'B');
+  EXPECT_EQ(out[1], 'M');
+
+  // Reads a little-endian uint32 at a byte offset into the BMP header.
+  const auto readU32 = [out](size_t offset) {
+    return static_cast<uint32_t>(out[offset]) | (static_cast<uint32_t>(out[offset + 1]) << 8) |
+           (static_cast<uint32_t>(out[offset + 2]) << 16) |
+           (static_cast<uint32_t>(out[offset + 3]) << 24);
+  };
+
+  EXPECT_EQ(readU32(2), kHeaderSize + kImageSize); // fileSize
+  EXPECT_EQ(readU32(10), kHeaderSize); // dataOffset to pixel array
+  EXPECT_EQ(readU32(14), 40u); // DIB header size
+  EXPECT_EQ(readU32(18), kWidth); // imageWidth
+  EXPECT_EQ(readU32(22), kHeight); // imageHeight
+  EXPECT_EQ(out[28], 24); // bitsPerPixel
+  EXPECT_EQ(readU32(34), kImageSize); // imageSizeBytes
+
+  // Pixel payload is copied verbatim, unmodified.
+  EXPECT_EQ(memcmp(out + kHeaderSize, pixels, kImageSize), 0);
+}
+
 } // namespace igl::tests::bitmap_writer
