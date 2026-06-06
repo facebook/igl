@@ -123,7 +123,7 @@ uint64_t D3D12ImmediateCommands::submit(bool wait, Result* outResult) {
   // Move current allocator to in-flight list
   {
     std::lock_guard<std::mutex> lock(poolMutex_);
-    inFlightAllocators_.push_back({currentAllocator_, fenceValue});
+    inFlightAllocators_.push_back({.allocator = currentAllocator_, .fenceValue = fenceValue});
     currentAllocator_.Reset();
   }
 
@@ -172,7 +172,7 @@ void D3D12ImmediateCommands::reclaimCompletedAllocators() {
   auto it = inFlightAllocators_.begin();
   while (it != inFlightAllocators_.end()) {
     if (it->fenceValue <= completedValue) {
-      availableAllocators_.push_back({it->allocator, 0});
+      availableAllocators_.push_back({.allocator = it->allocator, .fenceValue = 0});
       it = inFlightAllocators_.erase(it);
     } else {
       ++it;
