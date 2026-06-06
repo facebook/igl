@@ -130,6 +130,19 @@ TEST_F(SamplerStateOGLTest, SamplerStateConvertGLMagFilter) {
 }
 
 //
+// convertMagFilter tests
+//
+// This test checks the conversion from IGL Mag filter enums to their
+// corresponding OpenGL equivalent.
+//
+TEST_F(SamplerStateOGLTest, SamplerStateConvertMagFilter) {
+  auto dummySamplerState =
+      std::make_unique<igl::opengl::SamplerState>(*context_, SamplerStateDesc::newLinear());
+  ASSERT_EQ(dummySamplerState->convertMagFilter(SamplerMinMagFilter::Nearest), GL_NEAREST);
+  ASSERT_EQ(dummySamplerState->convertMagFilter(SamplerMinMagFilter::Linear), GL_LINEAR);
+}
+
+//
 // convertGLAddressMode tests
 //
 // This test checks the conversion from OpenGL Address Mode enums to their
