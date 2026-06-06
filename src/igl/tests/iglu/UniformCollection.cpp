@@ -11,7 +11,9 @@
 
 #include <IGLU/uniform/Collection.h>
 #include <IGLU/uniform/Descriptor.h>
+#include <algorithm>
 #include <string>
+#include <vector>
 #include <igl/NameHandle.h>
 
 namespace iglu::tests {
@@ -341,6 +343,99 @@ TEST_F(UniformCollectionTest, DescriptorVector) {
   auto mat4UniformNameHandle = igl::genNameHandle("mat4Uniform");
   c.set(mat4UniformNameHandle, mat4Vector);
   testUniformData(mat4Vector, c.getOrCreate<std::vector<glm::mat4>>(mat4UniformNameHandle));
+}
+
+// ----------------------------------------------------------------------------
+// contains() reports presence; clear() removes both the descriptor and its name.
+TEST_F(UniformCollectionTest, ContainsAndClear) {
+  uniform::Collection c;
+  const auto name = igl::genNameHandle("intUniform");
+
+  EXPECT_FALSE(c.contains(name));
+
+  c.set(name, 42);
+  EXPECT_TRUE(c.contains(name));
+  EXPECT_EQ(c.names().size(), 1u);
+
+  c.clear(name);
+  EXPECT_FALSE(c.contains(name));
+  EXPECT_TRUE(c.names().empty());
+}
+
+// ----------------------------------------------------------------------------
+// names() preserves insertion order; getNames() returns the same set (unordered).
+TEST_F(UniformCollectionTest, Names) {
+  uniform::Collection c;
+  const auto a = igl::genNameHandle("a");
+  const auto b = igl::genNameHandle("b");
+  const auto cName = igl::genNameHandle("c");
+
+  c.set(a, 1);
+  c.set(b, 2);
+  c.set(cName, 3);
+
+  const std::vector<igl::NameHandle> expected = {a, b, cName};
+  EXPECT_EQ(c.names(), expected);
+
+  const std::vector<igl::NameHandle> deprecatedNames = c.getNames();
+  EXPECT_EQ(deprecatedNames.size(), 3u);
+  for (const auto& name : expected) {
+    EXPECT_NE(std::find(deprecatedNames.begin(), deprecatedNames.end(), name),
+              deprecatedNames.end());
+  }
+}
+
+// ----------------------------------------------------------------------------
+// get() returns the stored descriptor; the const overload exposes the type and
+// the non-const overload a mutable reference whose value can be read back.
+TEST_F(UniformCollectionTest, Get) {
+  uniform::Collection c;
+  const auto name = igl::genNameHandle("intUniform");
+  c.set(name, 42);
+
+  const uniform::Collection& constCollection = c;
+  EXPECT_EQ(constCollection.get(name).getType(), igl::UniformType::Int);
+
+  auto& descriptor = static_cast<uniform::DescriptorValue<int>&>(c.get(name));
+  EXPECT_EQ(*descriptor, 42);
+}
+
+// ----------------------------------------------------------------------------
+// update() overwrites the value of an existing uniform while preserving the
+// shader-stage indices that were previously assigned to it.
+TEST_F(UniformCollectionTest, UpdatePreservesIndices) {
+  uniform::Collection target;
+  const auto name = igl::genNameHandle("intUniform");
+  target.set(name, 1);
+
+  constexpr int kStageIndex = 7;
+  target.get(name).setIndex(igl::ShaderStage::Vertex, kStageIndex);
+
+  uniform::Collection changes;
+  changes.set(name, 2);
+
+  target.update(changes);
+
+  auto& descriptor = static_cast<uniform::DescriptorValue<int>&>(target.get(name));
+  EXPECT_EQ(*descriptor, 2);
+  EXPECT_EQ(target.get(name).getIndex(igl::ShaderStage::Vertex), kStageIndex);
+}
+
+// ----------------------------------------------------------------------------
+// Equality compares the underlying descriptor pointers: a copy shares them and
+// compares equal, while an independently populated collection does not.
+TEST_F(UniformCollectionTest, Equality) {
+  uniform::Collection c;
+  c.set(igl::genNameHandle("intUniform"), 1);
+
+  const uniform::Collection copy = c;
+  EXPECT_TRUE(c == copy);
+  EXPECT_FALSE(c != copy);
+
+  uniform::Collection other;
+  other.set(igl::genNameHandle("otherUniform"), 1);
+  EXPECT_TRUE(c != other);
+  EXPECT_FALSE(c == other);
 }
 
 } // namespace iglu::tests
