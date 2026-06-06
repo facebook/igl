@@ -171,14 +171,14 @@ D3D12GraphicsPipelineBuilder::D3D12GraphicsPipelineBuilder() {
 D3D12GraphicsPipelineBuilder& D3D12GraphicsPipelineBuilder::vertexShader(
     const std::vector<uint8_t>& bytecode) {
   vsBytecode_ = bytecode;
-  psoDesc_.VS = {vsBytecode_.data(), vsBytecode_.size()};
+  psoDesc_.VS = {.pShaderBytecode = vsBytecode_.data(), .BytecodeLength = vsBytecode_.size()};
   return *this;
 }
 
 D3D12GraphicsPipelineBuilder& D3D12GraphicsPipelineBuilder::pixelShader(
     const std::vector<uint8_t>& bytecode) {
   psBytecode_ = bytecode;
-  psoDesc_.PS = {psBytecode_.data(), psBytecode_.size()};
+  psoDesc_.PS = {.pShaderBytecode = psBytecode_.data(), .BytecodeLength = psBytecode_.size()};
   return *this;
 }
 
@@ -191,7 +191,8 @@ D3D12GraphicsPipelineBuilder& D3D12GraphicsPipelineBuilder::shaderBytecode(
 D3D12GraphicsPipelineBuilder& D3D12GraphicsPipelineBuilder::vertexInputLayout(
     const std::vector<D3D12_INPUT_ELEMENT_DESC>& elements) {
   inputElements_ = elements;
-  psoDesc_.InputLayout = {inputElements_.data(), static_cast<UINT>(inputElements_.size())};
+  psoDesc_.InputLayout = {.pInputElementDescs = inputElements_.data(),
+                          .NumElements = static_cast<UINT>(inputElements_.size())};
   return *this;
 }
 
