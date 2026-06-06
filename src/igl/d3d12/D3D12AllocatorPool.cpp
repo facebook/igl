@@ -75,7 +75,7 @@ void D3D12AllocatorPool::trackUploadBuffer(ComPtr<ID3D12Resource> buffer, UINT64
   }
 
   std::lock_guard<std::mutex> lock(pendingUploadsMutex_);
-  pendingUploads_.push_back(PendingUpload{fenceValue, std::move(buffer)});
+  pendingUploads_.push_back(PendingUpload{.fenceValue = fenceValue, .resource = std::move(buffer)});
 }
 
 ComPtr<ID3D12CommandAllocator> D3D12AllocatorPool::getUploadCommandAllocator(D3D12Context& ctx) {
