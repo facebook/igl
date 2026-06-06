@@ -185,6 +185,14 @@
     }
 },
 {
+    "name": "ldrutils",
+    "source": {
+        "type": "git",
+        "url": "https://github.com/corporateshark/ldrutils",
+        "revision": "913b8b353bb4914a71b19e61b7abdf6767a39af8"
+    }
+},
+{
     "name": "openxr-sdk",
     "source": {
         "type": "git",
