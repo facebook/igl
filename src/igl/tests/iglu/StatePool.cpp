@@ -10,6 +10,7 @@
 #include "../data/ShaderData.h"
 #include "../util/Common.h"
 
+#include <IGLU/state_pool/DepthStencilStatePool.h>
 #include <IGLU/state_pool/RenderPipelineStatePool.h>
 #include <string>
 #include <igl/CommandBuffer.h>
@@ -202,6 +203,94 @@ TEST_F(StatePoolTest, renderPipelineDescCachingLRU1) {
 
   renderPipelineDesc2_.cullMode = renderPipelineDesc1_.cullMode; // restore change
   renderPipelineDesc3_.cullMode = renderPipelineDesc1_.cullMode; // restore change
+}
+
+//
+// depthStencilStateCaching Test
+//
+// Tests that DepthStencilStatePool returns the same cached object for identical
+// descriptors and distinct objects for differing descriptors.
+//
+TEST_F(StatePoolTest, depthStencilStateCaching) {
+  Result ret;
+  iglu::state_pool::DepthStencilStatePool pool;
+
+  DepthStencilStateDesc descA;
+  descA.compareFunction = CompareFunction::Less;
+  descA.isDepthWriteEnabled = true;
+
+  // Identical to descA - should map to the same cached state object
+  const DepthStencilStateDesc descB = descA;
+
+  DepthStencilStateDesc descC;
+  descC.compareFunction = CompareFunction::Greater;
+  descC.isDepthWriteEnabled = false;
+
+  //------------------------------------------------------------
+  // Identical descriptors should return the same cached object
+  //------------------------------------------------------------
+  std::shared_ptr<IDepthStencilState> s1 = pool.getOrCreate(*iglDev_, descA, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(s1 != nullptr);
+
+  std::shared_ptr<IDepthStencilState> s2 = pool.getOrCreate(*iglDev_, descB, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(s2 != nullptr);
+
+  ASSERT_TRUE(s1 == s2);
+
+  //------------------------------------------------------------
+  // A different descriptor should return a different object
+  //------------------------------------------------------------
+  std::shared_ptr<IDepthStencilState> s3 = pool.getOrCreate(*iglDev_, descC, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(s3 != nullptr);
+
+  ASSERT_TRUE(s1 != s3);
+}
+
+//
+// depthStencilStateCachingLRU Test
+//
+// Tests that DepthStencilStatePool evicts the least-recently-used entry once the
+// cache is full, so re-fetching an evicted descriptor produces a fresh object.
+//
+TEST_F(StatePoolTest, depthStencilStateCachingLRU) {
+  Result ret;
+  iglu::state_pool::DepthStencilStatePool pool;
+  pool.setCacheSize(2);
+
+  DepthStencilStateDesc descA;
+  descA.compareFunction = CompareFunction::Less;
+  DepthStencilStateDesc descB;
+  descB.compareFunction = CompareFunction::Greater;
+  DepthStencilStateDesc descC;
+  descC.compareFunction = CompareFunction::Equal;
+
+  // Insert A, then confirm a second lookup hits the cache (same object)
+  std::shared_ptr<IDepthStencilState> a1 = pool.getOrCreate(*iglDev_, descA, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(a1 != nullptr);
+
+  std::shared_ptr<IDepthStencilState> a2 = pool.getOrCreate(*iglDev_, descA, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(a1 == a2);
+
+  // Cache holds {A}. Insert B -> cache holds {B, A}.
+  std::shared_ptr<IDepthStencilState> b1 = pool.getOrCreate(*iglDev_, descB, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(b1 != nullptr);
+
+  // Cache is full (size 2). Inserting C evicts the least-recently-used entry (A).
+  std::shared_ptr<IDepthStencilState> c1 = pool.getOrCreate(*iglDev_, descC, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(c1 != nullptr);
+
+  // A was evicted, so re-fetching it must produce a fresh object.
+  std::shared_ptr<IDepthStencilState> a3 = pool.getOrCreate(*iglDev_, descA, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(a3 != nullptr);
+  ASSERT_TRUE(a1 != a3);
 }
 
 } // namespace igl::tests
