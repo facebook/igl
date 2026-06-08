@@ -244,8 +244,44 @@ class DeviceFeatureSet final {
   ICapabilities::TextureFormatCapabilities getCompressedTextureCapabilities() const;
   bool isExtensionSupported(Extensions extension) const;
   bool isFeatureSupported(DeviceFeatures feature) const;
+  bool isFeatureSupportedTextureGroup(DeviceFeatures feature) const;
+  bool isFeatureSupportedMiscGroup(DeviceFeatures feature) const;
   bool isInternalFeatureSupported(InternalFeatures feature) const;
+  bool isInternalFeatureSupportedBufferGroup(InternalFeatures feature) const;
+  bool isInternalFeatureSupportedTextureGroup(InternalFeatures feature) const;
   bool isTextureFeatureSupported(TextureFeatures feature) const;
+  bool isColorFilterableFeatureSupported(TextureFeatures feature) const;
+  bool isColorRenderbufferFeatureSupported(TextureFeatures feature) const;
+  bool isColorTexImageFeatureSupported(TextureFeatures feature) const;
+  bool isColorTexStorageFeatureSupported(TextureFeatures feature) const;
+  bool isColorTexStorageFloatFeatureSupported(TextureFeatures feature) const;
+  bool isColorTexStorageOtherFeatureSupported(TextureFeatures feature) const;
+  bool isDepthFeatureSupported(TextureFeatures feature) const;
+  bool isDepthRenderbufferFeatureSupported(TextureFeatures feature) const;
+  bool isDepthTexImageFeatureSupported(TextureFeatures feature) const;
+  bool isCompressionFeatureSupported(TextureFeatures feature) const;
+  bool hasInternalRequirementColorGroup(InternalRequirement requirement) const;
+  bool hasInternalRequirementMiscGroup(InternalRequirement requirement) const;
+  ICapabilities::TextureFormatCapabilities getColorUNorm8BasicTextureFormatCapabilities(
+      TextureFormat format) const;
+  ICapabilities::TextureFormatCapabilities getColorUNorm8BgraSrgbTextureFormatCapabilities(
+      TextureFormat format) const;
+  ICapabilities::TextureFormatCapabilities getColorUNormWideTextureFormatCapabilities(
+      TextureFormat format) const;
+  ICapabilities::TextureFormatCapabilities getColorF16TextureFormatCapabilities(
+      TextureFormat format) const;
+  ICapabilities::TextureFormatCapabilities getColorF32TextureFormatCapabilities(
+      TextureFormat format) const;
+  ICapabilities::TextureFormatCapabilities getSpecialColorTextureFormatCapabilities(
+      TextureFormat format) const;
+  ICapabilities::TextureFormatCapabilities getDepthUNorm16UNorm32TextureFormatCapabilities(
+      TextureFormat format) const;
+  ICapabilities::TextureFormatCapabilities getDepthUNorm24TextureFormatCapabilities(
+      TextureFormat format) const;
+  ICapabilities::TextureFormatCapabilities getStencilTextureFormatCapabilities(
+      TextureFormat format) const;
+  ICapabilities::TextureFormatCapabilities getCompressedTextureFormatCapabilities(
+      TextureFormat format) const;
 
   std::unordered_set<std::string> supportedExtensions_;
   std::string extensions_;

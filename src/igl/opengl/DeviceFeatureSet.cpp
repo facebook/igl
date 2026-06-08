@@ -9,6 +9,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <optional>
 #include <igl/Common.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
@@ -89,6 +90,104 @@ bool hasDesktopOrESExtension(const DeviceFeatureSet& dfs,
 bool hasDesktopOrESExtension(const DeviceFeatureSet& dfs, const char* extension) {
   return hasDesktopOrESExtension(dfs, extension, extension);
 }
+
+// Returns true if vendor matches any of the Qualcomm vendor string variants.
+bool isQualcommVendor(const char* vendor) {
+  return std::strcmp(vendor, "Qualcomm") == 0 ||
+         std::strcmp(vendor, "Qualcomm Technologies, Inc.") == 0 ||
+         std::strcmp(vendor, "QUALCOMM") == 0;
+}
+
+// Returns true if vendor matches any of the ARM vendor string variants.
+bool isArmVendor(const char* vendor) {
+  return std::strcmp(vendor, "ARM") == 0 || std::strcmp(vendor, "ARM Limited") == 0 ||
+         std::strcmp(vendor, "Arm") == 0;
+}
+
+// Returns true if vendor matches any of the Imagination Technologies vendor string variants.
+bool isImaginationVendor(const char* vendor) {
+  return std::strcmp(vendor, "Imagination Technologies") == 0 ||
+         std::strcmp(vendor, "Imagination") == 0;
+}
+// Returns true if renderer string matches a known broken PowerVR variant.
+bool isBrokenPowerVrRenderer(const char* renderer) {
+  return std::strncmp(renderer, "PowerVR Rogue GE8", 17) == 0 ||
+         std::strncmp(renderer, "PowerVR Rogue GX", 16) == 0 ||
+         std::strncmp(renderer, "PowerVR SGX", 11) == 0;
+}
+
+// Classify Adreno (Qualcomm) timer tier from renderer string.
+// Returns nullopt if renderer is not a recognized Adreno string.
+// Handles both "Adreno (TM) NNN" and newer "Adreno NNN" formats. Qualcomm
+// ships at least three vendor string variants in Android GL drivers —
+// "Qualcomm", "Qualcomm Technologies, Inc." (newer drivers), "QUALCOMM"
+// (older / some OEM-tuned builds) — accept all three. Exact `strcmp`
+// here previously fell any non-"Qualcomm" variant through to the
+// default `Full` tier.
+std::optional<GpuTimerTier> classifyAdrenoTimerTier(const char* renderer, const char* vendor) {
+  if (vendor == nullptr || !isQualcommVendor(vendor)) {
+    return std::nullopt;
+  }
+  int adrenoNumber = 0;
+  if (std::sscanf(renderer, "Adreno (TM) %d", &adrenoNumber) != 1 &&
+      std::sscanf(renderer, "Adreno %d", &adrenoNumber) != 1) {
+    return std::nullopt;
+  }
+  if (adrenoNumber < 620) {
+    return GpuTimerTier::Disabled; // 3xx–619: 0 slots
+  }
+  if (adrenoNumber < 640) {
+    return GpuTimerTier::Conservative; // 620, 630: 32 slots
+  }
+  return GpuTimerTier::Full; // 640+: 64 slots
+}
+
+// Classify Mali (ARM) timer tier from renderer string.
+// Returns nullopt if renderer is not a recognized Mali string.
+// Accepts the same three ARM vendor string variants ("ARM", "ARM Limited", "Arm") —
+// Mali-G70+ devices on some Samsung builds report vendor as "ARM Limited" and
+// would otherwise fall through to the default `Full` tier, the same failure mode
+// that has crashed Mali-T drivers in production.
+std::optional<GpuTimerTier> classifyMaliTimerTier(const char* renderer, const char* vendor) {
+  if (vendor == nullptr || !isArmVendor(vendor)) {
+    return std::nullopt;
+  }
+  // Mali-T series: all are budget GPUs with broken timer query implementations.
+  // Common models: T720, T760, T820, T830, T860, T880.
+  // SEV S647462: these were not covered by the Mali-G pattern and fell through
+  // to the Full tier default, causing SIGSEGV on driver-internal resource overflow.
+  int maliTNumber = 0;
+  if (std::sscanf(renderer, "Mali-T%d", &maliTNumber) == 1) {
+    return GpuTimerTier::Disabled;
+  }
+  // Mali-G series: numeric range determines tier.
+  int maliGNumber = 0;
+  if (std::sscanf(renderer, "Mali-G%d", &maliGNumber) != 1) {
+    return std::nullopt;
+  }
+  if (maliGNumber <= 68) {
+    return GpuTimerTier::Disabled; // G31–G68: 0 slots
+  }
+  if (maliGNumber <= 76) {
+    return GpuTimerTier::Conservative; // G72, G76: 32 slots
+  }
+  return GpuTimerTier::Full; // G77+: 64 slots
+}
+
+// Classify PowerVR (Imagination Technologies) timer tier from renderer string.
+// Returns nullopt if renderer is not a recognized PowerVR string.
+// Covers GE8 (Rogue, broken), Rogue GX (older, worse), and SGX (legacy, no
+// hardware timer support). Newer Android drivers report vendor as
+// "Imagination" (without "Technologies") — accept both spellings.
+std::optional<GpuTimerTier> classifyPowerVrTimerTier(const char* renderer, const char* vendor) {
+  if (vendor == nullptr || !isImaginationVendor(vendor)) {
+    return std::nullopt;
+  }
+  if (!isBrokenPowerVrRenderer(renderer)) {
+    return std::nullopt;
+  }
+  return GpuTimerTier::Disabled;
+}
 } // namespace
 
 GpuTimerTier classifyGpuTimerTier(const char* renderer, const char* vendor) {
@@ -96,74 +195,14 @@ GpuTimerTier classifyGpuTimerTier(const char* renderer, const char* vendor) {
     return GpuTimerTier::Disabled;
   }
 
-  // Adreno (Qualcomm): vendor cross-check + numeric range parsing.
-  // Handles both "Adreno (TM) NNN" and newer "Adreno NNN" formats. Qualcomm
-  // ships at least three vendor string variants in Android GL drivers —
-  // "Qualcomm", "Qualcomm Technologies, Inc." (newer drivers), "QUALCOMM"
-  // (older / some OEM-tuned builds) — accept all three. Exact `strcmp`
-  // here previously fell any non-"Qualcomm" variant through to the
-  // default `Full` tier.
-  int adrenoNumber = 0;
-  if (vendor != nullptr &&
-      (std::strcmp(vendor, "Qualcomm") == 0 ||
-       std::strcmp(vendor, "Qualcomm Technologies, Inc.") == 0 ||
-       std::strcmp(vendor, "QUALCOMM") == 0) &&
-      (std::sscanf(renderer, "Adreno (TM) %d", &adrenoNumber) == 1 ||
-       std::sscanf(renderer, "Adreno %d", &adrenoNumber) == 1)) {
-    if (adrenoNumber < 620) {
-      return GpuTimerTier::Disabled; // 3xx–619: 0 slots
-    }
-    if (adrenoNumber < 640) {
-      return GpuTimerTier::Conservative; // 620, 630: 32 slots
-    }
-    return GpuTimerTier::Full; // 640+: 64 slots
+  if (const auto tier = classifyAdrenoTimerTier(renderer, vendor)) {
+    return *tier;
   }
-
-  // Mali-G (ARM): vendor cross-check + numeric range. Accepts the same three
-  // ARM vendor string variants documented on the Mali-T branch below
-  // ("ARM", "ARM Limited", "Arm") — Mali-G70+ devices on some Samsung
-  // builds report vendor as "ARM Limited" and would otherwise fall through
-  // to the default `Full` tier, the same failure mode that has crashed
-  // Mali-T drivers in production.
-  int maliNumber = 0;
-  if (vendor != nullptr &&
-      (std::strcmp(vendor, "ARM") == 0 || std::strcmp(vendor, "ARM Limited") == 0 ||
-       std::strcmp(vendor, "Arm") == 0) &&
-      std::sscanf(renderer, "Mali-G%d", &maliNumber) == 1) {
-    if (maliNumber <= 68) {
-      return GpuTimerTier::Disabled; // G31–G68: 0 slots
-    }
-    if (maliNumber <= 76) {
-      return GpuTimerTier::Conservative; // G72, G76: 32 slots
-    }
-    return GpuTimerTier::Full; // G77+: 64 slots
+  if (const auto tier = classifyMaliTimerTier(renderer, vendor)) {
+    return *tier;
   }
-
-  // Mali-T series: all are budget GPUs with broken timer query implementations.
-  // Common models: T720, T760, T820, T830, T860, T880.
-  // SEV S647462: these were not covered by the Mali-G pattern and fell through
-  // to the Full tier default, causing SIGSEGV on driver-internal resource overflow.
-  // ARM ships at least three vendor string variants ("ARM", "ARM Limited" on some
-  // Samsung devices, "Arm" with newer branding) — accept all three.
-  int maliTNumber = 0;
-  if (vendor != nullptr &&
-      (std::strcmp(vendor, "ARM") == 0 || std::strcmp(vendor, "ARM Limited") == 0 ||
-       std::strcmp(vendor, "Arm") == 0) &&
-      std::sscanf(renderer, "Mali-T%d", &maliTNumber) == 1) {
-    return GpuTimerTier::Disabled;
-  }
-
-  // PowerVR (Imagination Technologies): vendor cross-check + prefix match.
-  // Covers GE8 (Rogue, broken), Rogue GX (older, worse), and SGX (legacy, no
-  // hardware timer support). Newer Android drivers report vendor as
-  // "Imagination" (without "Technologies") — accept both spellings.
-  if (vendor != nullptr &&
-      (std::strcmp(vendor, "Imagination Technologies") == 0 ||
-       std::strcmp(vendor, "Imagination") == 0) &&
-      (std::strncmp(renderer, "PowerVR Rogue GE8", 17) == 0 ||
-       std::strncmp(renderer, "PowerVR Rogue GX", 16) == 0 ||
-       std::strncmp(renderer, "PowerVR SGX", 11) == 0)) {
-    return GpuTimerTier::Disabled;
+  if (const auto tier = classifyPowerVrTimerTier(renderer, vendor)) {
+    return *tier;
   }
 
   // Samsung Xclipse (RDNA): SEV S647462 — Conservative (32 slots) was
@@ -362,43 +401,12 @@ uint32_t DeviceFeatureSet::getTimerQueryMaxSlots() const {
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
+bool DeviceFeatureSet::isFeatureSupportedTextureGroup(DeviceFeatures feature) const {
   switch (feature) {
-  case DeviceFeatures::CopyBuffer:
-    return false;
-
-  case DeviceFeatures::MultiSample:
-    return hasDesktopVersion(*this, GLVersion::v3_0) ||
-           hasExtension(Extensions::FramebufferObject) || hasESVersion(*this, GLVersion::v3_0_ES) ||
-           hasExtension(Extensions::MultiSampleApple) || hasExtension(Extensions::MultiSampleExt) ||
-           hasExtension(Extensions::MultiSampleImg);
-
-  case DeviceFeatures::MultiSampleResolve:
-    return false;
-
   case DeviceFeatures::TextureFilterAnisotropic:
     return hasDesktopVersion(*this, GLVersion::v4_6) ||
            hasDesktopOrESExtension(*this, "GL_EXT_texture_filter_anisotropic") ||
            hasDesktopExtension(*this, "GL_ARB_texture_filter_anisotropic");
-
-  case DeviceFeatures::MapBufferRange:
-    return hasDesktopOrESVersion(*this, GLVersion::v3_0, GLVersion::v3_0_ES) ||
-           hasDesktopExtension(*this, "GL_ARB_map_buffer_range") ||
-           hasExtension(Extensions::MapBufferRange);
-
-  case DeviceFeatures::MeshShaders:
-    return false;
-
-  case DeviceFeatures::MultipleRenderTargets:
-    return hasDesktopOrESVersionOrExtension(
-        *this, GLVersion::v2_0, GLVersion::v3_0_ES, "GL_EXT_draw_buffers");
-
-  case DeviceFeatures::StandardDerivative:
-    return hasDesktopOrESVersionOrExtension(
-        *this, GLVersion::v2_0, GLVersion::v3_0_ES, "GL_OES_standard_derivatives");
-
-  case DeviceFeatures::StandardDerivativeExt:
-    return hasESExtension(*this, "GL_OES_standard_derivatives");
 
   case DeviceFeatures::TextureFormatRG:
     return hasDesktopOrESVersion(*this, GLVersion::v3_0, GLVersion::v3_0_ES) ||
@@ -407,18 +415,9 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
   case DeviceFeatures::TextureFormatRGB:
     return true;
 
-  case DeviceFeatures::ReadWriteFramebuffer:
-    return hasDesktopOrESVersion(*this, GLVersion::v3_0, GLVersion::v3_0_ES) ||
-           hasExtension(Extensions::FramebufferObject) ||
-           hasESExtension(*this, "GL_APPLE_framebuffer_multisample");
-
   case DeviceFeatures::TextureNotPot:
     return hasDesktopOrESVersionOrExtension(
         *this, GLVersion::v2_0, GLVersion::v3_0_ES, "GL_OES_texture_npot");
-
-  case DeviceFeatures::UniformBlocks:
-    return hasDesktopOrESVersionOrExtension(
-        *this, GLVersion::v3_1, GLVersion::v3_0_ES, "GL_ARB_uniform_buffer_object");
 
   case DeviceFeatures::TextureHalfFloat:
     return hasDesktopOrESVersion(*this, GLVersion::v3_0, GLVersion::v3_0_ES) ||
@@ -451,6 +450,70 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
   case DeviceFeatures::ShaderTextureLodExt:
     return hasDesktopOrESExtension(*this, "GL_ARB_shader_texture_lod", "GL_EXT_shader_texture_lod");
 
+  case DeviceFeatures::TextureExternalImage:
+    return hasESVersionOrExtension(*this, GLVersion::v3_0_ES, "GL_OES_EGL_image_external_essl3") ||
+           hasESExtension(*this, "GL_OES_EGL_image_external");
+
+  case DeviceFeatures::TextureBindless:
+    return hasDesktopExtension(*this, "GL_ARB_bindless_texture");
+
+  case DeviceFeatures::TextureViews:
+    return false;
+
+  case DeviceFeatures::TexturePartialMipChain:
+    return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
+           hasESExtension(*this, "GL_APPLE_texture_max_level");
+
+  case DeviceFeatures::SRGB:
+    return hasDesktopOrESVersionOrExtension(
+        *this, GLVersion::v2_1, GLVersion::v3_0_ES, "GL_EXT_texture_sRGB", "GL_EXT_sRGB");
+  case DeviceFeatures::SRGBSwapchain:
+    return glContext_.eglSupportssRGB() && hasFeature(DeviceFeatures::SRGB);
+  case DeviceFeatures::SRGBWriteControl:
+    return hasDesktopVersion(*this, GLVersion::v3_0) ||
+           hasDesktopExtension(*this, "GL_ARB_framebuffer_sRGB") ||
+           hasDesktopExtension(*this, "GL_EXT_framebuffer_sRGB") ||
+           hasESExtension(*this, "GL_EXT_sRGB_write_control");
+
+  default:
+    return false;
+  }
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+bool DeviceFeatureSet::isFeatureSupportedMiscGroup(DeviceFeatures feature) const {
+  switch (feature) {
+  case DeviceFeatures::MultiSample:
+    return hasDesktopVersion(*this, GLVersion::v3_0) ||
+           hasExtension(Extensions::FramebufferObject) || hasESVersion(*this, GLVersion::v3_0_ES) ||
+           hasExtension(Extensions::MultiSampleApple) || hasExtension(Extensions::MultiSampleExt) ||
+           hasExtension(Extensions::MultiSampleImg);
+
+  case DeviceFeatures::MapBufferRange:
+    return hasDesktopOrESVersion(*this, GLVersion::v3_0, GLVersion::v3_0_ES) ||
+           hasDesktopExtension(*this, "GL_ARB_map_buffer_range") ||
+           hasExtension(Extensions::MapBufferRange);
+
+  case DeviceFeatures::MultipleRenderTargets:
+    return hasDesktopOrESVersionOrExtension(
+        *this, GLVersion::v2_0, GLVersion::v3_0_ES, "GL_EXT_draw_buffers");
+
+  case DeviceFeatures::StandardDerivative:
+    return hasDesktopOrESVersionOrExtension(
+        *this, GLVersion::v2_0, GLVersion::v3_0_ES, "GL_OES_standard_derivatives");
+
+  case DeviceFeatures::StandardDerivativeExt:
+    return hasESExtension(*this, "GL_OES_standard_derivatives");
+
+  case DeviceFeatures::ReadWriteFramebuffer:
+    return hasDesktopOrESVersion(*this, GLVersion::v3_0, GLVersion::v3_0_ES) ||
+           hasExtension(Extensions::FramebufferObject) ||
+           hasESExtension(*this, "GL_APPLE_framebuffer_multisample");
+
+  case DeviceFeatures::UniformBlocks:
+    return hasDesktopOrESVersionOrExtension(
+        *this, GLVersion::v3_1, GLVersion::v3_0_ES, "GL_ARB_uniform_buffer_object");
+
   case DeviceFeatures::DepthShaderRead:
     // Currently it is unclear if Depth Shader Read is the same as ARB_depth_texture extension so
     // we are using v2.1 because we know it works on the Mac.
@@ -463,18 +526,11 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
     return hasDesktopOrESVersionOrExtension(
         *this, GLVersion::v2_0, GLVersion::v3_0_ES, "GL_EXT_blend_minmax");
 
-  case DeviceFeatures::TextureExternalImage:
-    return hasESVersionOrExtension(*this, GLVersion::v3_0_ES, "GL_OES_EGL_image_external_essl3") ||
-           hasESExtension(*this, "GL_OES_EGL_image_external");
-
   case DeviceFeatures::Compute:
     return hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_1_ES) ||
            (hasDesktopExtension(*this, "GL_ARB_compute_shader") &&
             hasInternalFeature(InternalFeatures::ProgramInterfaceQuery) &&
             hasInternalFeature(InternalFeatures::ShaderImageLoadStore));
-
-  case DeviceFeatures::TextureBindless:
-    return hasDesktopExtension(*this, "GL_ARB_bindless_texture");
 
   case DeviceFeatures::ExplicitBinding:
     return hasDesktopOrESVersionOrExtension(
@@ -487,15 +543,6 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
     return hasDesktopOrESExtension(*this, "GL_EXT_memory_object") &&
            hasDesktopOrESExtension(*this, "GL_EXT_memory_object_fd");
 
-  case DeviceFeatures::TextureViews:
-    return false;
-
-  case DeviceFeatures::PushConstants:
-    return false;
-
-  case DeviceFeatures::BufferDeviceAddress:
-    return false;
-
   case DeviceFeatures::Multiview:
     return hasDesktopOrESVersion(*this, GLVersion::v3_0, GLVersion::v3_0_ES) &&
            isSupported("GL_OVR_multiview2");
@@ -503,35 +550,9 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
   case DeviceFeatures::MultiViewMultisample:
     return hasExtension(Extensions::MultiViewMultiSample);
 
-  case DeviceFeatures::TexturePartialMipChain:
-    return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
-           hasESExtension(*this, "GL_APPLE_texture_max_level");
-
-  case DeviceFeatures::BindUniform:
-    return true;
-  case DeviceFeatures::BufferRing:
-    return false;
-  case DeviceFeatures::BufferNoCopy:
-    return false;
-  case DeviceFeatures::ShaderLibrary:
-    return false;
-
   case DeviceFeatures::StorageBuffers:
     return hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_1_ES) ||
            hasDesktopExtension(*this, "GL_ARB_shader_storage_buffer_object");
-
-  case DeviceFeatures::BindBytes:
-    return false;
-  case DeviceFeatures::SRGB:
-    return hasDesktopOrESVersionOrExtension(
-        *this, GLVersion::v2_1, GLVersion::v3_0_ES, "GL_EXT_texture_sRGB", "GL_EXT_sRGB");
-  case DeviceFeatures::SRGBSwapchain:
-    return glContext_.eglSupportssRGB() && hasFeature(DeviceFeatures::SRGB);
-  case DeviceFeatures::SRGBWriteControl:
-    return hasDesktopVersion(*this, GLVersion::v3_0) ||
-           hasDesktopExtension(*this, "GL_ARB_framebuffer_sRGB") ||
-           hasDesktopExtension(*this, "GL_EXT_framebuffer_sRGB") ||
-           hasESExtension(*this, "GL_EXT_sRGB_write_control");
 
   case DeviceFeatures::SamplerMinMaxLod:
     return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES);
@@ -548,20 +569,136 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
     return hasDesktopOrESVersionOrExtension(
         *this, GLVersion::v3_1, GLVersion::v3_0_ES, "GL_ARB_draw_indirect");
 
-  case DeviceFeatures::ValidationLayersEnabled:
-    return false;
-
-  case DeviceFeatures::Indices8Bit:
-    return true;
-
   case DeviceFeatures::TimestampQueries:
     return getGpuTimerTier() != GpuTimerTier::Disabled;
 
   case DeviceFeatures::Timers:
     return hasExtension(Extensions::TimerQuery);
-  }
 
-  return false;
+  default:
+    return false;
+  }
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
+  switch (feature) {
+  case DeviceFeatures::CopyBuffer:
+  case DeviceFeatures::MultiSampleResolve:
+  case DeviceFeatures::MeshShaders:
+  case DeviceFeatures::TextureViews:
+  case DeviceFeatures::PushConstants:
+  case DeviceFeatures::BufferDeviceAddress:
+  case DeviceFeatures::BufferRing:
+  case DeviceFeatures::BufferNoCopy:
+  case DeviceFeatures::ShaderLibrary:
+  case DeviceFeatures::BindBytes:
+  case DeviceFeatures::ValidationLayersEnabled:
+    return false;
+
+  case DeviceFeatures::BindUniform:
+  case DeviceFeatures::Indices8Bit:
+    return true;
+
+  case DeviceFeatures::TextureFilterAnisotropic:
+  case DeviceFeatures::TextureFormatRG:
+  case DeviceFeatures::TextureFormatRGB:
+  case DeviceFeatures::TextureNotPot:
+  case DeviceFeatures::TextureHalfFloat:
+  case DeviceFeatures::TextureFloat:
+  case DeviceFeatures::Texture2DArray:
+  case DeviceFeatures::Texture3D:
+  case DeviceFeatures::TextureArrayExt:
+  case DeviceFeatures::ShaderTextureLod:
+  case DeviceFeatures::ShaderTextureLodExt:
+  case DeviceFeatures::TextureExternalImage:
+  case DeviceFeatures::TextureBindless:
+  case DeviceFeatures::TexturePartialMipChain:
+  case DeviceFeatures::SRGB:
+  case DeviceFeatures::SRGBSwapchain:
+  case DeviceFeatures::SRGBWriteControl:
+    return isFeatureSupportedTextureGroup(feature);
+
+  default:
+    return isFeatureSupportedMiscGroup(feature);
+  }
+}
+
+bool DeviceFeatureSet::isInternalFeatureSupportedBufferGroup(InternalFeatures feature) const {
+  switch (feature) {
+  case InternalFeatures::DrawArraysIndirect:
+    return hasDesktopOrESVersionOrExtension(
+        *this, GLVersion::v4_0, GLVersion::v3_1_ES, "GL_ARB_draw_indirect");
+
+  case InternalFeatures::MultiDrawIndirect:
+    return hasDesktopVersionOrExtension(*this, GLVersion::v4_3, "GL_ARB_multi_draw_indirect") ||
+           hasESExtension(*this, "GL_EXT_multi_draw_indirect");
+
+  case InternalFeatures::MapBuffer:
+    return hasDesktopVersion(*this, GLVersion::v2_0) || hasExtension(Extensions::MapBuffer);
+
+  case InternalFeatures::PackRowLength:
+    return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES);
+
+  case InternalFeatures::PixelBufferObject:
+    return hasDesktopOrESVersionOrExtension(*this,
+                                            GLVersion::v2_1,
+                                            GLVersion::v3_0_ES,
+                                            "GL_ARB_pixel_buffer_object",
+                                            "GL_NV_pixel_buffer_object");
+
+  case InternalFeatures::UnmapBuffer:
+    return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
+           hasExtension(Extensions::MapBuffer) || hasExtension(Extensions::MapBufferRange);
+
+  case InternalFeatures::UnpackRowLength:
+    return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
+           hasESExtension(*this, "GL_EXT_unpack_subimage");
+
+  case InternalFeatures::VertexArrayObject:
+    // We've had issues with VertexArrayObject support on mobile so this is disabled for OpenGL ES.
+    // Previously it was enabled specifically for Quest 2 on OpenGLES by checking if
+    // GL_VENDOR == "Qualcomm" and GL_RENDERER == "Adreno (TM) 650".
+    // However, Galaxy S20 also matched that and VAO support caused issues.
+    // @fb-only
+    // @fb-only
+    return hasDesktopVersionOrExtension(*this, GLVersion::v3_0, "GL_ARB_vertex_array_object");
+
+  case InternalFeatures::VertexAttribDivisor:
+    return hasDesktopOrESVersion(*this, GLVersion::v3_3, GLVersion::v3_0_ES) ||
+           hasExtension(Extensions::VertexAttribDivisor);
+
+  default:
+    return false;
+  }
+}
+
+bool DeviceFeatureSet::isInternalFeatureSupportedTextureGroup(InternalFeatures feature) const {
+  switch (feature) {
+  case InternalFeatures::TexStorage:
+    return hasDesktopOrESVersionOrExtension(
+               *this, GLVersion::v4_2, GLVersion::v3_0_ES, "GL_ARB_texture_storage") ||
+           hasExtension(Extensions::TexStorage);
+
+  case InternalFeatures::ShaderImageLoadStore:
+    return hasDesktopOrESVersion(*this, GLVersion::v4_2, GLVersion::v3_1_ES) ||
+           hasDesktopExtension(*this, "GL_ARB_shader_image_load_store") ||
+           hasExtension(Extensions::ShaderImageLoadStore);
+
+  case InternalFeatures::TextureClampToBorder:
+    return hasDesktopOrESVersionOrExtension(*this,
+                                            GLVersion::v2_0,
+                                            GLVersion::v3_2_ES,
+                                            "GL_ARB_texture_border_clamp",
+                                            "GL_EXT_texture_border_clamp");
+
+  case InternalFeatures::TextureCompare:
+    return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
+           hasESExtension(*this, "GL_EXT_shadow_samplers");
+
+  default:
+    return false;
+  }
 }
 
 bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) const {
@@ -584,14 +721,6 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
     return hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES) ||
            hasExtension(Extensions::Debug);
 
-  case InternalFeatures::DrawArraysIndirect:
-    return hasDesktopOrESVersionOrExtension(
-        *this, GLVersion::v4_0, GLVersion::v3_1_ES, "GL_ARB_draw_indirect");
-
-  case InternalFeatures::MultiDrawIndirect:
-    return hasDesktopVersionOrExtension(*this, GLVersion::v4_3, "GL_ARB_multi_draw_indirect") ||
-           hasESExtension(*this, "GL_EXT_multi_draw_indirect");
-
   case InternalFeatures::FramebufferBlit:
     // TODO: Add support for GL_ANGLE_framebuffer_blit
     return hasDesktopOrESVersionOrExtension(
@@ -610,19 +739,6 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
            hasExtension(Extensions::InvalidateSubdata) ||
            hasExtension(Extensions::DiscardFramebuffer);
 
-  case InternalFeatures::MapBuffer:
-    return hasDesktopVersion(*this, GLVersion::v2_0) || hasExtension(Extensions::MapBuffer);
-
-  case InternalFeatures::PackRowLength:
-    return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES);
-
-  case InternalFeatures::PixelBufferObject:
-    return hasDesktopOrESVersionOrExtension(*this,
-                                            GLVersion::v2_1,
-                                            GLVersion::v3_0_ES,
-                                            "GL_ARB_pixel_buffer_object",
-                                            "GL_NV_pixel_buffer_object");
-
   case InternalFeatures::PolygonFillMode:
     return hasDesktopVersion(*this, GLVersion::v2_0);
 
@@ -637,54 +753,29 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
     return hasDesktopOrESVersion(*this, GLVersion::v3_2, GLVersion::v3_0_ES) ||
            hasDesktopExtension(*this, "GL_ARB_sync") || hasExtension(Extensions::Sync);
 
-  case InternalFeatures::TexStorage:
-    return hasDesktopOrESVersionOrExtension(
-               *this, GLVersion::v4_2, GLVersion::v3_0_ES, "GL_ARB_texture_storage") ||
-           hasExtension(Extensions::TexStorage);
-
-  case InternalFeatures::ShaderImageLoadStore:
-    return hasDesktopOrESVersion(*this, GLVersion::v4_2, GLVersion::v3_1_ES) ||
-           hasDesktopExtension(*this, "GL_ARB_shader_image_load_store") ||
-           hasExtension(Extensions::ShaderImageLoadStore);
-
-  case InternalFeatures::TextureClampToBorder:
-    return hasDesktopOrESVersionOrExtension(*this,
-                                            GLVersion::v2_0,
-                                            GLVersion::v3_2_ES,
-                                            "GL_ARB_texture_border_clamp",
-                                            "GL_EXT_texture_border_clamp");
-
-  case InternalFeatures::TextureCompare:
-    return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
-           hasESExtension(*this, "GL_EXT_shadow_samplers");
-
+  case InternalFeatures::DrawArraysIndirect:
+  case InternalFeatures::MultiDrawIndirect:
+  case InternalFeatures::MapBuffer:
+  case InternalFeatures::PackRowLength:
+  case InternalFeatures::PixelBufferObject:
   case InternalFeatures::UnmapBuffer:
-    return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
-           hasExtension(Extensions::MapBuffer) || hasExtension(Extensions::MapBufferRange);
-
   case InternalFeatures::UnpackRowLength:
-    return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
-           hasESExtension(*this, "GL_EXT_unpack_subimage");
-
   case InternalFeatures::VertexArrayObject:
-    // We've had issues with VertexArrayObject support on mobile so this is disabled for OpenGL ES.
-    // Previously it was enabled specifically for Quest 2 on OpenGLES by checking if
-    // GL_VENDOR == "Qualcomm" and GL_RENDERER == "Adreno (TM) 650".
-    // However, Galaxy S20 also matched that and VAO support caused issues.
-    // @fb-only
-    // @fb-only
-    return hasDesktopVersionOrExtension(*this, GLVersion::v3_0, "GL_ARB_vertex_array_object");
-
   case InternalFeatures::VertexAttribDivisor:
-    return hasDesktopOrESVersion(*this, GLVersion::v3_3, GLVersion::v3_0_ES) ||
-           hasExtension(Extensions::VertexAttribDivisor);
+    return isInternalFeatureSupportedBufferGroup(feature);
+
+  case InternalFeatures::TexStorage:
+  case InternalFeatures::ShaderImageLoadStore:
+  case InternalFeatures::TextureClampToBorder:
+  case InternalFeatures::TextureCompare:
+    return isInternalFeatureSupportedTextureGroup(feature);
   }
 
   return false;
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-bool DeviceFeatureSet::isTextureFeatureSupported(TextureFeatures feature) const {
+bool DeviceFeatureSet::isColorFilterableFeatureSupported(TextureFeatures feature) const {
   switch (feature) {
   case TextureFeatures::ColorFilterable16f:
     return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
@@ -711,6 +802,14 @@ bool DeviceFeatureSet::isTextureFeatureSupported(TextureFeatures feature) const 
     return hasDesktopVersion(*this, GLVersion::v3_0) ||
            hasESExtension(*this, "GL_EXT_texture_norm16");
 
+  default:
+    return false;
+  }
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+bool DeviceFeatureSet::isColorRenderbufferFeatureSupported(TextureFeatures feature) const {
+  switch (feature) {
   case TextureFeatures::ColorRenderbuffer16f:
     return hasDesktopOrESVersionOrExtension(
                *this, GLVersion::v3_0, GLVersion::v3_2_ES, "GL_EXT_color_buffer_half_float") ||
@@ -753,6 +852,14 @@ bool DeviceFeatureSet::isTextureFeatureSupported(TextureFeatures feature) const 
     return hasDesktopOrESVersion(*this, GLVersion::v2_1, GLVersion::v3_0_ES) ||
            hasExtension(Extensions::Srgb);
 
+  default:
+    return false;
+  }
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+bool DeviceFeatureSet::isColorTexImageFeatureSupported(TextureFeatures feature) const {
+  switch (feature) {
   case TextureFeatures::ColorTexImage16f:
     return hasDesktopOrESVersion(*this, GLVersion::v3_0, GLVersion::v3_0_ES) ||
            hasExtension(Extensions::TextureFloat);
@@ -821,6 +928,14 @@ bool DeviceFeatureSet::isTextureFeatureSupported(TextureFeatures feature) const 
     return hasDesktopOrESVersion(*this, GLVersion::v2_1, GLVersion::v3_0_ES) ||
            hasExtension(Extensions::TextureSrgb);
 
+  default:
+    return false;
+  }
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+bool DeviceFeatureSet::isColorTexStorageFloatFeatureSupported(TextureFeatures feature) const {
+  switch (feature) {
   case TextureFeatures::ColorTexStorage16f:
     return hasDesktopOrESVersion(*this, GLVersion::v4_2, GLVersion::v3_0_ES) ||
            ((hasFeature(DeviceFeatures::TextureHalfFloat) ||
@@ -833,6 +948,14 @@ bool DeviceFeatureSet::isTextureFeatureSupported(TextureFeatures feature) const 
              hasTextureFeature(TextureFeatures::ColorRenderbuffer32f)) &&
             hasInternalFeature(InternalFeatures::TexStorage));
 
+  default:
+    return false;
+  }
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+bool DeviceFeatureSet::isColorTexStorageOtherFeatureSupported(TextureFeatures feature) const {
+  switch (feature) {
   case TextureFeatures::ColorTexStorageA8:
     // Sized alpha texture were available on Desktop OpenGL prior to deprecation in
     // Version 3.0. For later versions of OpenGL, we create GL_R8 textures and use texture
@@ -873,6 +996,34 @@ bool DeviceFeatureSet::isTextureFeatureSupported(TextureFeatures feature) const 
            !(hasInternalRequirement(InternalRequirement::TexStorageExtReq) &&
              hasExtension(Extensions::TexStorage));
 
+  default:
+    return false;
+  }
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+bool DeviceFeatureSet::isColorTexStorageFeatureSupported(TextureFeatures feature) const {
+  switch (feature) {
+  case TextureFeatures::ColorTexStorage16f:
+  case TextureFeatures::ColorTexStorage32f:
+    return isColorTexStorageFloatFeatureSupported(feature);
+
+  case TextureFeatures::ColorTexStorageA8:
+  case TextureFeatures::ColorTexStorageBgra8:
+  case TextureFeatures::ColorTexStorageLa8:
+  case TextureFeatures::ColorTexStorageRg8:
+  case TextureFeatures::ColorTexStorageRgb10A2:
+  case TextureFeatures::ColorTexStorageRgba8:
+  case TextureFeatures::ColorTexStorageSrgba8:
+    return isColorTexStorageOtherFeatureSupported(feature);
+
+  default:
+    return false;
+  }
+}
+
+bool DeviceFeatureSet::isDepthRenderbufferFeatureSupported(TextureFeatures feature) const {
+  switch (feature) {
   case TextureFeatures::DepthFilterable:
     return hasDesktopVersion(*this, GLVersion::v2_0);
 
@@ -901,6 +1052,21 @@ bool DeviceFeatureSet::isTextureFeatureSupported(TextureFeatures feature) const 
     return hasDesktopOrESVersionOrExtension(
         *this, GLVersion::v3_0, GLVersion::v3_0_ES, "GL_ARB_depth_buffer_float");
 
+  case TextureFeatures::StencilTexture8:
+    return hasDesktopOrESVersionOrExtension(*this,
+                                            GLVersion::v4_4,
+                                            GLVersion::v3_2_ES,
+                                            "GL_ARB_texture_stencil8",
+                                            "GL_OES_texture_stencil8");
+
+  default:
+    return false;
+  }
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+bool DeviceFeatureSet::isDepthTexImageFeatureSupported(TextureFeatures feature) const {
+  switch (feature) {
   case TextureFeatures::DepthTexImage:
     return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
            hasExtension(Extensions::DepthTexture);
@@ -934,13 +1100,39 @@ bool DeviceFeatureSet::isTextureFeatureSupported(TextureFeatures feature) const 
     return hasDesktopVersion(*this, GLVersion::v4_2) ||
            (hasExtension(Extensions::DepthTexture) && hasExtension(Extensions::TexStorage));
 
-  case TextureFeatures::StencilTexture8:
-    return hasDesktopOrESVersionOrExtension(*this,
-                                            GLVersion::v4_4,
-                                            GLVersion::v3_2_ES,
-                                            "GL_ARB_texture_stencil8",
-                                            "GL_OES_texture_stencil8");
+  default:
+    return false;
+  }
+}
 
+// NOLINTNEXTLINE(misc-no-recursion)
+bool DeviceFeatureSet::isDepthFeatureSupported(TextureFeatures feature) const {
+  switch (feature) {
+  case TextureFeatures::DepthFilterable:
+  case TextureFeatures::DepthRenderbuffer16:
+  case TextureFeatures::DepthRenderbuffer24:
+  case TextureFeatures::DepthRenderbuffer32:
+  case TextureFeatures::Depth24Stencil8:
+  case TextureFeatures::Depth32FStencil8:
+  case TextureFeatures::StencilTexture8:
+    return isDepthRenderbufferFeatureSupported(feature);
+
+  case TextureFeatures::DepthTexImage:
+  case TextureFeatures::DepthTexImage16:
+  case TextureFeatures::DepthTexImage24:
+  case TextureFeatures::DepthTexImage32:
+  case TextureFeatures::DepthTexStorage16:
+  case TextureFeatures::DepthTexStorage24:
+  case TextureFeatures::DepthTexStorage32:
+    return isDepthTexImageFeatureSupported(feature);
+
+  default:
+    return false;
+  }
+}
+
+bool DeviceFeatureSet::isCompressionFeatureSupported(TextureFeatures feature) const {
+  switch (feature) {
   case TextureFeatures::TextureCompressionAstc:
     return hasESVersion(*this, GLVersion::v3_2_ES) ||
            hasDesktopOrESExtension(*this, "GL_KHR_texture_compression_astc_hdr") ||
@@ -979,6 +1171,87 @@ bool DeviceFeatureSet::isTextureFeatureSupported(TextureFeatures feature) const 
 
   case TextureFeatures::TextureTypeUInt8888Rev:
     return hasDesktopVersion(*this, GLVersion::v2_0);
+
+  default:
+    return false;
+  }
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+bool DeviceFeatureSet::isTextureFeatureSupported(TextureFeatures feature) const {
+  switch (feature) {
+  case TextureFeatures::ColorFilterable16f:
+  case TextureFeatures::ColorFilterable32f:
+  case TextureFeatures::ColorFormatRgb10A2UI:
+  case TextureFeatures::ColorFormatRgInt:
+  case TextureFeatures::ColorFormatRgUNorm16:
+  case TextureFeatures::ColorFormatRgbaUNorm16:
+    return isColorFilterableFeatureSupported(feature);
+
+  case TextureFeatures::ColorRenderbuffer16f:
+  case TextureFeatures::ColorRenderbuffer32f:
+  case TextureFeatures::ColorRenderbufferRg16f:
+  case TextureFeatures::ColorRenderbufferRg32f:
+  case TextureFeatures::ColorRenderbufferRg8:
+  case TextureFeatures::ColorRenderbufferRgb10A2:
+  case TextureFeatures::ColorRenderbufferRgb16f:
+  case TextureFeatures::ColorRenderbufferRgba8:
+  case TextureFeatures::ColorRenderbufferSrgba8:
+    return isColorRenderbufferFeatureSupported(feature);
+
+  case TextureFeatures::ColorTexImage16f:
+  case TextureFeatures::ColorTexImage32f:
+  case TextureFeatures::ColorTexImageA8:
+  case TextureFeatures::ColorTexImageBgr10A2:
+  case TextureFeatures::ColorTexImageBgr5A1:
+  case TextureFeatures::ColorTexImageBgra:
+  case TextureFeatures::ColorTexImageBgraRgba8:
+  case TextureFeatures::ColorTexImageBgraSrgba:
+  case TextureFeatures::ColorTexImageLa:
+  case TextureFeatures::ColorTexImageLa8:
+  case TextureFeatures::ColorTexImageRg8:
+  case TextureFeatures::ColorTexImageRgb10A2:
+  case TextureFeatures::ColorTexImageRgba8:
+  case TextureFeatures::ColorTexImageSrgba8:
+    return isColorTexImageFeatureSupported(feature);
+
+  case TextureFeatures::ColorTexStorage16f:
+  case TextureFeatures::ColorTexStorage32f:
+  case TextureFeatures::ColorTexStorageA8:
+  case TextureFeatures::ColorTexStorageBgra8:
+  case TextureFeatures::ColorTexStorageLa8:
+  case TextureFeatures::ColorTexStorageRg8:
+  case TextureFeatures::ColorTexStorageRgb10A2:
+  case TextureFeatures::ColorTexStorageRgba8:
+  case TextureFeatures::ColorTexStorageSrgba8:
+    return isColorTexStorageFeatureSupported(feature);
+
+  case TextureFeatures::DepthFilterable:
+  case TextureFeatures::DepthRenderbuffer16:
+  case TextureFeatures::DepthRenderbuffer24:
+  case TextureFeatures::DepthRenderbuffer32:
+  case TextureFeatures::Depth24Stencil8:
+  case TextureFeatures::Depth32FStencil8:
+  case TextureFeatures::DepthTexImage:
+  case TextureFeatures::DepthTexImage16:
+  case TextureFeatures::DepthTexImage24:
+  case TextureFeatures::DepthTexImage32:
+  case TextureFeatures::DepthTexStorage16:
+  case TextureFeatures::DepthTexStorage24:
+  case TextureFeatures::DepthTexStorage32:
+  case TextureFeatures::StencilTexture8:
+    return isDepthFeatureSupported(feature);
+
+  case TextureFeatures::TextureCompressionAstc:
+  case TextureFeatures::TextureCompressionBptc:
+  case TextureFeatures::TextureCompressionEtc1:
+  case TextureFeatures::TextureCompressionEtc2Eac:
+  case TextureFeatures::TextureCompressionPvrtc:
+  case TextureFeatures::TextureCompressionTexImage:
+  case TextureFeatures::TextureCompressionTexStorage:
+  case TextureFeatures::TextureInteger:
+  case TextureFeatures::TextureTypeUInt8888Rev:
+    return isCompressionFeatureSupported(feature);
   }
 
   return false;
@@ -1086,8 +1359,7 @@ bool DeviceFeatureSet::hasRequirement(DeviceRequirement requirement) const {
   return false;
 }
 
-// NOLINTNEXTLINE(misc-no-recursion)
-bool DeviceFeatureSet::hasInternalRequirement(InternalRequirement requirement) const {
+bool DeviceFeatureSet::hasInternalRequirementColorGroup(InternalRequirement requirement) const {
   switch (requirement) {
   case InternalRequirement::ColorTexImageRgb5A1Unsized:
     return usesOpenGLES() && !hasESVersion(*this, GLVersion::v3_0_ES);
@@ -1103,20 +1375,13 @@ bool DeviceFeatureSet::hasInternalRequirement(InternalRequirement requirement) c
   case InternalRequirement::ColorTexImageRgbApple422Unsized:
     return usesOpenGLES() && !hasESVersion(*this, GLVersion::v3_0_ES);
 
-  case InternalRequirement::DebugMessageExtReq:
-    return !hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES);
+  default:
+    return false;
+  }
+}
 
-  case InternalRequirement::DebugMessageCallbackExtReq:
-    return !hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES);
-
-  case InternalRequirement::DebugLabelExtEnumsReq:
-    // GL_EXT_debug_label requires extension-specific enums for some object types
-    return hasInternalRequirement(InternalRequirement::DebugLabelExtReq) &&
-           !hasExtension(Extensions::Debug);
-
-  case InternalRequirement::DebugLabelExtReq:
-    return !hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES);
-
+bool DeviceFeatureSet::hasInternalRequirementMiscGroup(InternalRequirement requirement) const {
+  switch (requirement) {
   case InternalRequirement::DrawBuffersExtReq:
     return usesOpenGLES() && !hasESVersion(*this, GLVersion::v3_0_ES);
 
@@ -1183,8 +1448,38 @@ bool DeviceFeatureSet::hasInternalRequirement(InternalRequirement requirement) c
 
   case InternalRequirement::VertexAttribDivisorExtReq:
     return !hasDesktopOrESVersion(*this, GLVersion::v3_3, GLVersion::v3_0_ES);
+
+  default:
+    return false;
   }
-  return false;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+bool DeviceFeatureSet::hasInternalRequirement(InternalRequirement requirement) const {
+  switch (requirement) {
+  case InternalRequirement::DebugMessageExtReq:
+    return !hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES);
+
+  case InternalRequirement::DebugMessageCallbackExtReq:
+    return !hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES);
+
+  case InternalRequirement::DebugLabelExtEnumsReq:
+    // GL_EXT_debug_label requires extension-specific enums for some object types
+    return hasInternalRequirement(InternalRequirement::DebugLabelExtReq) &&
+           !hasExtension(Extensions::Debug);
+
+  case InternalRequirement::DebugLabelExtReq:
+    return !hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES);
+
+  case InternalRequirement::ColorTexImageRgb5A1Unsized:
+  case InternalRequirement::ColorTexImageRgb10A2Unsized:
+  case InternalRequirement::ColorTexImageRgba4Unsized:
+  case InternalRequirement::ColorTexImageRgbApple422Unsized:
+    return hasInternalRequirementColorGroup(requirement);
+
+  default:
+    return hasInternalRequirementMiscGroup(requirement);
+  }
 }
 
 bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const {
@@ -1321,22 +1616,10 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
   }
 }
 
-///
-/// Returns the supported capabilities of the selected format.
-/// @param format: The texture format to query
-/// @return a combination of TextureFormatCapabilities flags
-ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapabilities(
-    TextureFormat format) const {
-  // TODO: Remove this fallback once devices can properly provide a supported format
-  if (format == TextureFormat::S8_UInt_Z32_UNorm &&
-      !hasTextureFeature(TextureFeatures::Depth32FStencil8)) {
-    format = TextureFormat::S8_UInt_Z24_UNorm;
-  }
-  const auto it = textureCapabilityCache_.find(format);
-  if (it != textureCapabilityCache_.end()) {
-    return it->second;
-  }
-
+// NOLINTNEXTLINE(misc-no-recursion)
+// NOLINTNEXTLINE(misc-no-recursion)
+ICapabilities::TextureFormatCapabilities
+DeviceFeatureSet::getColorUNorm8BasicTextureFormatCapabilities(TextureFormat format) const {
   const auto sampled = ICapabilities::TextureFormatCapabilityBits::Sampled;
   const auto attachment = ICapabilities::TextureFormatCapabilityBits::Attachment;
   const auto storage = hasInternalFeature(InternalFeatures::TexStorage)
@@ -1345,17 +1628,8 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
   const auto sampledFiltered = ICapabilities::TextureFormatCapabilityBits::SampledFiltered;
   const auto sampledAttachment = ICapabilities::TextureFormatCapabilityBits::SampledAttachment;
   const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
-  const auto compressed = ICapabilities::TextureFormatCapabilityBits::Sampled |
-                          (hasTextureFeature(TextureFeatures::TextureCompressionTexStorage)
-                               ? ICapabilities::TextureFormatCapabilityBits::Storage
-                               : 0);
-
-  // Need to define here to properly include storage support.
-  const auto all = sampled | sampledFiltered | storage | attachment | sampledAttachment;
 
   ICapabilities::TextureFormatCapabilities capabilities = unsupported;
-
-  // First check common formats
   switch (format) {
   case TextureFormat::LA_UNorm8:
   case TextureFormat::L_UNorm8:
@@ -1400,6 +1674,26 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
       }
     }
     break;
+  default:
+    break;
+  }
+  return capabilities;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+ICapabilities::TextureFormatCapabilities
+DeviceFeatureSet::getColorUNorm8BgraSrgbTextureFormatCapabilities(TextureFormat format) const {
+  const auto sampled = ICapabilities::TextureFormatCapabilityBits::Sampled;
+  const auto attachment = ICapabilities::TextureFormatCapabilityBits::Attachment;
+  const auto storage = hasInternalFeature(InternalFeatures::TexStorage)
+                           ? ICapabilities::TextureFormatCapabilityBits::Storage
+                           : 0;
+  const auto sampledFiltered = ICapabilities::TextureFormatCapabilityBits::SampledFiltered;
+  const auto sampledAttachment = ICapabilities::TextureFormatCapabilityBits::SampledAttachment;
+  const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
+
+  ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  switch (format) {
   case TextureFormat::BGRA_UNorm8:
     // EXT_texture_format_BGRA8888 adds support for GL_BGRA as a Renderbuffer format, but this was
     // in a later revision of the extension. It is not supported on our test devices.
@@ -1433,6 +1727,57 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
       capabilities |= sampled | sampledFiltered;
     }
     break;
+  default:
+    break;
+  }
+  return capabilities;
+}
+
+ICapabilities::TextureFormatCapabilities
+DeviceFeatureSet::getColorUNormWideTextureFormatCapabilities(TextureFormat format) const {
+  const auto sampled = ICapabilities::TextureFormatCapabilityBits::Sampled;
+  const auto attachment = ICapabilities::TextureFormatCapabilityBits::Attachment;
+  const auto storage = hasInternalFeature(InternalFeatures::TexStorage)
+                           ? ICapabilities::TextureFormatCapabilityBits::Storage
+                           : 0;
+  const auto sampledFiltered = ICapabilities::TextureFormatCapabilityBits::SampledFiltered;
+  const auto sampledAttachment = ICapabilities::TextureFormatCapabilityBits::SampledAttachment;
+  const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
+  const auto all = sampled | sampledFiltered | storage | attachment | sampledAttachment;
+
+  ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  switch (format) {
+  case TextureFormat::R_UNorm16:
+  case TextureFormat::RG_UNorm16:
+    if (hasTextureFeature(TextureFeatures::ColorFormatRgUNorm16)) {
+      capabilities |= all;
+    }
+    break;
+  case TextureFormat::RGBA_UNorm16:
+    if (hasTextureFeature(TextureFeatures::ColorFormatRgbaUNorm16)) {
+      capabilities |= all;
+    }
+    break;
+  default:
+    break;
+  }
+  return capabilities;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getColorF16TextureFormatCapabilities(
+    TextureFormat format) const {
+  const auto sampled = ICapabilities::TextureFormatCapabilityBits::Sampled;
+  const auto attachment = ICapabilities::TextureFormatCapabilityBits::Attachment;
+  const auto storage = hasInternalFeature(InternalFeatures::TexStorage)
+                           ? ICapabilities::TextureFormatCapabilityBits::Storage
+                           : 0;
+  const auto sampledFiltered = ICapabilities::TextureFormatCapabilityBits::SampledFiltered;
+  const auto sampledAttachment = ICapabilities::TextureFormatCapabilityBits::SampledAttachment;
+  const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
+
+  ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  switch (format) {
   case TextureFormat::RGBA_F16:
     if (hasFeature(DeviceFeatures::TextureHalfFloat)) {
       capabilities |= sampled;
@@ -1482,6 +1827,26 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
       }
     }
     break;
+  default:
+    break;
+  }
+  return capabilities;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getColorF32TextureFormatCapabilities(
+    TextureFormat format) const {
+  const auto sampled = ICapabilities::TextureFormatCapabilityBits::Sampled;
+  const auto attachment = ICapabilities::TextureFormatCapabilityBits::Attachment;
+  const auto storage = hasInternalFeature(InternalFeatures::TexStorage)
+                           ? ICapabilities::TextureFormatCapabilityBits::Storage
+                           : 0;
+  const auto sampledFiltered = ICapabilities::TextureFormatCapabilityBits::SampledFiltered;
+  const auto sampledAttachment = ICapabilities::TextureFormatCapabilityBits::SampledAttachment;
+  const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
+
+  ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  switch (format) {
   case TextureFormat::RGBA_F32:
     if (hasFeature(DeviceFeatures::TextureFloat)) {
       capabilities |= sampled;
@@ -1525,17 +1890,27 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
       }
     }
     break;
-  case TextureFormat::R_UNorm16:
-  case TextureFormat::RG_UNorm16:
-    if (hasTextureFeature(TextureFeatures::ColorFormatRgUNorm16)) {
-      capabilities |= all;
-    }
+  default:
     break;
-  case TextureFormat::RGBA_UNorm16:
-    if (hasTextureFeature(TextureFeatures::ColorFormatRgbaUNorm16)) {
-      capabilities |= all;
-    }
-    break;
+  }
+  return capabilities;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getSpecialColorTextureFormatCapabilities(
+    TextureFormat format) const {
+  const auto sampled = ICapabilities::TextureFormatCapabilityBits::Sampled;
+  const auto attachment = ICapabilities::TextureFormatCapabilityBits::Attachment;
+  const auto storage = hasInternalFeature(InternalFeatures::TexStorage)
+                           ? ICapabilities::TextureFormatCapabilityBits::Storage
+                           : 0;
+  const auto sampledFiltered = ICapabilities::TextureFormatCapabilityBits::SampledFiltered;
+  const auto sampledAttachment = ICapabilities::TextureFormatCapabilityBits::SampledAttachment;
+  const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
+  const auto all = sampled | sampledFiltered | storage | attachment | sampledAttachment;
+
+  ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  switch (format) {
   case TextureFormat::R_UInt16:
   case TextureFormat::RG_UInt16:
     if (hasTextureFeature(TextureFeatures::ColorFormatRgInt)) {
@@ -1618,6 +1993,25 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
   case TextureFormat::B5G6R5_UNorm:
     // Unsupported
     break;
+  default:
+    break;
+  }
+  return capabilities;
+}
+
+ICapabilities::TextureFormatCapabilities
+DeviceFeatureSet::getDepthUNorm16UNorm32TextureFormatCapabilities(TextureFormat format) const {
+  const auto sampled = ICapabilities::TextureFormatCapabilityBits::Sampled;
+  const auto attachment = ICapabilities::TextureFormatCapabilityBits::Attachment;
+  const auto storage = hasInternalFeature(InternalFeatures::TexStorage)
+                           ? ICapabilities::TextureFormatCapabilityBits::Storage
+                           : 0;
+  const auto sampledFiltered = ICapabilities::TextureFormatCapabilityBits::SampledFiltered;
+  const auto sampledAttachment = ICapabilities::TextureFormatCapabilityBits::SampledAttachment;
+  const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
+
+  ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  switch (format) {
   case TextureFormat::Z_UNorm16:
     if (hasTextureFeature(TextureFeatures::DepthTexImage)) {
       capabilities |= sampled;
@@ -1629,34 +2023,6 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
       capabilities |= storage;
     }
     if (hasTextureFeature(TextureFeatures::DepthRenderbuffer16)) {
-      capabilities |= attachment;
-    }
-    if (hasTextureFeature(TextureFeatures::DepthFilterable)) {
-      capabilities |= sampledFiltered;
-    }
-    break;
-  case TextureFormat::Z_UNorm24:
-    if (hasTextureFeature(TextureFeatures::DepthTexImage24)) {
-      capabilities |= sampled | sampledAttachment;
-    }
-    if (hasTextureFeature(TextureFeatures::DepthTexStorage24)) {
-      capabilities |= storage;
-    }
-    if (hasTextureFeature(TextureFeatures::DepthRenderbuffer24)) {
-      capabilities |= attachment;
-    }
-    if (hasTextureFeature(TextureFeatures::DepthFilterable)) {
-      capabilities |= sampledFiltered;
-    }
-
-    // TODO: Remove these fallback once devices can properly provide a supported format
-    if (hasTextureFeature(TextureFeatures::DepthTexImage32)) {
-      capabilities |= sampled | sampledAttachment;
-    }
-    if (hasTextureFeature(TextureFeatures::DepthTexStorage32)) {
-      capabilities |= storage;
-    }
-    if (hasTextureFeature(TextureFeatures::DepthRenderbuffer32)) {
       capabilities |= attachment;
     }
     if (hasTextureFeature(TextureFeatures::DepthFilterable)) {
@@ -1677,6 +2043,65 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
       capabilities |= sampledFiltered;
     }
     break;
+  default:
+    break;
+  }
+  return capabilities;
+}
+
+ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getDepthUNorm24TextureFormatCapabilities(
+    TextureFormat /*format*/) const {
+  const auto sampled = ICapabilities::TextureFormatCapabilityBits::Sampled;
+  const auto attachment = ICapabilities::TextureFormatCapabilityBits::Attachment;
+  const auto storage = hasInternalFeature(InternalFeatures::TexStorage)
+                           ? ICapabilities::TextureFormatCapabilityBits::Storage
+                           : 0;
+  const auto sampledFiltered = ICapabilities::TextureFormatCapabilityBits::SampledFiltered;
+  const auto sampledAttachment = ICapabilities::TextureFormatCapabilityBits::SampledAttachment;
+  const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
+
+  ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  if (hasTextureFeature(TextureFeatures::DepthTexImage24)) {
+    capabilities |= sampled | sampledAttachment;
+  }
+  if (hasTextureFeature(TextureFeatures::DepthTexStorage24)) {
+    capabilities |= storage;
+  }
+  if (hasTextureFeature(TextureFeatures::DepthRenderbuffer24)) {
+    capabilities |= attachment;
+  }
+  if (hasTextureFeature(TextureFeatures::DepthFilterable)) {
+    capabilities |= sampledFiltered;
+  }
+
+  // TODO: Remove these fallback once devices can properly provide a supported format
+  if (hasTextureFeature(TextureFeatures::DepthTexImage32)) {
+    capabilities |= sampled | sampledAttachment;
+  }
+  if (hasTextureFeature(TextureFeatures::DepthTexStorage32)) {
+    capabilities |= storage;
+  }
+  if (hasTextureFeature(TextureFeatures::DepthRenderbuffer32)) {
+    capabilities |= attachment;
+  }
+  if (hasTextureFeature(TextureFeatures::DepthFilterable)) {
+    capabilities |= sampledFiltered;
+  }
+  return capabilities;
+}
+
+ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getStencilTextureFormatCapabilities(
+    TextureFormat format) const {
+  const auto sampled = ICapabilities::TextureFormatCapabilityBits::Sampled;
+  const auto attachment = ICapabilities::TextureFormatCapabilityBits::Attachment;
+  const auto storage = hasInternalFeature(InternalFeatures::TexStorage)
+                           ? ICapabilities::TextureFormatCapabilityBits::Storage
+                           : 0;
+  const auto sampledAttachment = ICapabilities::TextureFormatCapabilityBits::SampledAttachment;
+  const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
+
+  ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  switch (format) {
   case TextureFormat::S8_UInt_Z24_UNorm:
     if (hasTextureFeature(TextureFeatures::Depth24Stencil8)) {
       capabilities |= sampled | attachment | sampledAttachment;
@@ -1699,7 +2124,22 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
     }
     capabilities |= attachment;
     break;
+  default:
+    break;
+  }
+  return capabilities;
+}
 
+ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getCompressedTextureFormatCapabilities(
+    TextureFormat format) const {
+  const auto compressed = ICapabilities::TextureFormatCapabilityBits::Sampled |
+                          (hasTextureFeature(TextureFeatures::TextureCompressionTexStorage)
+                               ? ICapabilities::TextureFormatCapabilityBits::Storage
+                               : 0);
+  const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
+
+  ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  switch (format) {
   case TextureFormat::RGBA_ASTC_4x4:
   case TextureFormat::SRGB8_A8_ASTC_4x4:
   case TextureFormat::RGBA_ASTC_5x4:
@@ -1764,6 +2204,149 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
     if (hasTextureFeature(TextureFeatures::TextureCompressionEtc2Eac)) {
       capabilities |= compressed;
     }
+    break;
+  default:
+    break;
+  }
+  return capabilities;
+}
+
+///
+/// Returns the supported capabilities of the selected format.
+/// @param format: The texture format to query
+/// @return a combination of TextureFormatCapabilities flags
+ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapabilities(
+    TextureFormat format) const {
+  // TODO: Remove this fallback once devices can properly provide a supported format
+  if (format == TextureFormat::S8_UInt_Z32_UNorm &&
+      !hasTextureFeature(TextureFeatures::Depth32FStencil8)) {
+    format = TextureFormat::S8_UInt_Z24_UNorm;
+  }
+  const auto it = textureCapabilityCache_.find(format);
+  if (it != textureCapabilityCache_.end()) {
+    return it->second;
+  }
+
+  const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
+  ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+
+  // First check common formats
+  switch (format) {
+  case TextureFormat::LA_UNorm8:
+  case TextureFormat::L_UNorm8:
+  case TextureFormat::A_UNorm8:
+  case TextureFormat::RGBA_UNorm8:
+  case TextureFormat::RGBX_UNorm8:
+  case TextureFormat::RG_UNorm8:
+  case TextureFormat::R_UNorm8:
+    capabilities = getColorUNorm8BasicTextureFormatCapabilities(format);
+    break;
+
+  case TextureFormat::BGRA_UNorm8:
+  case TextureFormat::RGBA_SRGB:
+  case TextureFormat::BGRA_SRGB:
+    capabilities = getColorUNorm8BgraSrgbTextureFormatCapabilities(format);
+    break;
+
+  case TextureFormat::R_UNorm16:
+  case TextureFormat::RG_UNorm16:
+  case TextureFormat::RGBA_UNorm16:
+    capabilities = getColorUNormWideTextureFormatCapabilities(format);
+    break;
+
+  case TextureFormat::RGBA_F16:
+  case TextureFormat::RGB_F16:
+  case TextureFormat::RG_F16:
+  case TextureFormat::R_F16:
+    capabilities = getColorF16TextureFormatCapabilities(format);
+    break;
+
+  case TextureFormat::RGBA_F32:
+  case TextureFormat::RGB_F32:
+  case TextureFormat::RG_F32:
+  case TextureFormat::R_F32:
+    capabilities = getColorF32TextureFormatCapabilities(format);
+    break;
+
+  case TextureFormat::R_UInt16:
+  case TextureFormat::RG_UInt16:
+  case TextureFormat::R_UInt32:
+  case TextureFormat::RGBA_UInt32:
+  case TextureFormat::B5G5R5A1_UNorm:
+  case TextureFormat::ABGR_UNorm4:
+  case TextureFormat::R4G2B2_UNorm_Apple:
+  case TextureFormat::R4G2B2_UNorm_Rev_Apple:
+  case TextureFormat::R5G5B5A1_UNorm:
+  case TextureFormat::BGR10_A2_Unorm:
+  case TextureFormat::RGB10_A2_UNorm_Rev:
+  case TextureFormat::RGB10_A2_Uint_Rev:
+  case TextureFormat::BGRA_UNorm8_Rev:
+  case TextureFormat::R5G6B5_UNorm:
+  case TextureFormat::B5G6R5_UNorm:
+    capabilities = getSpecialColorTextureFormatCapabilities(format);
+    break;
+
+  case TextureFormat::Z_UNorm16:
+  case TextureFormat::Z_UNorm32:
+    capabilities = getDepthUNorm16UNorm32TextureFormatCapabilities(format);
+    break;
+
+  case TextureFormat::Z_UNorm24:
+    capabilities = getDepthUNorm24TextureFormatCapabilities(format);
+    break;
+
+  case TextureFormat::S8_UInt_Z24_UNorm:
+  case TextureFormat::S8_UInt_Z32_UNorm:
+  case TextureFormat::S_UInt8:
+    capabilities = getStencilTextureFormatCapabilities(format);
+    break;
+
+  case TextureFormat::RGBA_ASTC_4x4:
+  case TextureFormat::SRGB8_A8_ASTC_4x4:
+  case TextureFormat::RGBA_ASTC_5x4:
+  case TextureFormat::SRGB8_A8_ASTC_5x4:
+  case TextureFormat::RGBA_ASTC_5x5:
+  case TextureFormat::SRGB8_A8_ASTC_5x5:
+  case TextureFormat::RGBA_ASTC_6x5:
+  case TextureFormat::SRGB8_A8_ASTC_6x5:
+  case TextureFormat::RGBA_ASTC_6x6:
+  case TextureFormat::SRGB8_A8_ASTC_6x6:
+  case TextureFormat::RGBA_ASTC_8x5:
+  case TextureFormat::SRGB8_A8_ASTC_8x5:
+  case TextureFormat::RGBA_ASTC_8x6:
+  case TextureFormat::SRGB8_A8_ASTC_8x6:
+  case TextureFormat::RGBA_ASTC_8x8:
+  case TextureFormat::SRGB8_A8_ASTC_8x8:
+  case TextureFormat::RGBA_ASTC_10x5:
+  case TextureFormat::SRGB8_A8_ASTC_10x5:
+  case TextureFormat::RGBA_ASTC_10x6:
+  case TextureFormat::SRGB8_A8_ASTC_10x6:
+  case TextureFormat::RGBA_ASTC_10x8:
+  case TextureFormat::SRGB8_A8_ASTC_10x8:
+  case TextureFormat::RGBA_ASTC_10x10:
+  case TextureFormat::SRGB8_A8_ASTC_10x10:
+  case TextureFormat::RGBA_ASTC_12x10:
+  case TextureFormat::SRGB8_A8_ASTC_12x10:
+  case TextureFormat::RGBA_ASTC_12x12:
+  case TextureFormat::SRGB8_A8_ASTC_12x12:
+  case TextureFormat::RGBA_BC7_UNORM_4x4:
+  case TextureFormat::RGBA_BC7_SRGB_4x4:
+  case TextureFormat::RGBA_PVRTC_2BPPV1:
+  case TextureFormat::RGB_PVRTC_2BPPV1:
+  case TextureFormat::RGBA_PVRTC_4BPPV1:
+  case TextureFormat::RGB_PVRTC_4BPPV1:
+  case TextureFormat::RGB8_ETC1:
+  case TextureFormat::RGB8_ETC2:
+  case TextureFormat::SRGB8_ETC2:
+  case TextureFormat::RGB8_Punchthrough_A1_ETC2:
+  case TextureFormat::SRGB8_Punchthrough_A1_ETC2:
+  case TextureFormat::RGBA8_EAC_ETC2:
+  case TextureFormat::SRGB8_A8_EAC_ETC2:
+  case TextureFormat::RG_EAC_UNorm:
+  case TextureFormat::RG_EAC_SNorm:
+  case TextureFormat::R_EAC_UNorm:
+  case TextureFormat::R_EAC_SNorm:
+    capabilities = getCompressedTextureFormatCapabilities(format);
     break;
 
   case TextureFormat::Invalid:
