@@ -60,6 +60,21 @@ TEST(CommonTest, ScissorRectIsNullSemantics) {
   EXPECT_TRUE((ScissorRect{.x = 10, .y = 20, .width = 0, .height = 0}).isNull());
 }
 
+TEST(CommonTest, ScissorRectIsNullIgnoresOrigin) {
+  // isNull() depends only on width/height, never on x/y — a zero-sized rect at a
+  // non-zero origin is still considered null.
+  const ScissorRect rect{.x = 10, .y = 20, .width = 0, .height = 0};
+  EXPECT_TRUE(rect.isNull());
+}
+
+TEST(CommonTest, ScissorRectIsNullRequiresBothDimensionsZero) {
+  // A rect with either dimension non-zero is not null.
+  const ScissorRect wideOnly{.x = 0, .y = 0, .width = 5, .height = 0};
+  EXPECT_FALSE(wideOnly.isNull());
+  const ScissorRect tallOnly{.x = 0, .y = 0, .width = 0, .height = 5};
+  EXPECT_FALSE(tallOnly.isNull());
+}
+
 TEST(CommonTest, SizeTest) {
   Size size;
   ASSERT_EQ(size.height, 0.0f);
