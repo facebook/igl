@@ -2167,7 +2167,7 @@ void VulkanContext::updateBindingsStorageImagesByDescriptorBuffer(
         .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
     };
 
-    VkDeviceSize bindingOffset;
+    VkDeviceSize bindingOffset = 0;
     vf_.vkGetDescriptorSetLayoutBindingOffsetEXT(
         getVkDevice(), dsl.getVkDescriptorSetLayout(), loc, &bindingOffset);
 
@@ -2234,7 +2234,7 @@ void VulkanContext::updateBindingsBuffersByDescriptorBuffer(
                    b.bindingLocation)
             .c_str());
 
-    VkDeviceSize bindingOffset;
+    VkDeviceSize bindingOffset = 0;
     vf_.vkGetDescriptorSetLayoutBindingOffsetEXT(
         getVkDevice(), dsl.getVkDescriptorSetLayout(), b.bindingLocation, &bindingOffset);
 
