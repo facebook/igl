@@ -56,6 +56,11 @@ void startTraceToFile(std::string outputPath) noexcept;
 /// from a POSIX signal handler.
 void stopTrace() noexcept;
 
+/// True iff startTraceToFile() has been called and stopTrace() hasn't yet
+/// completed. Always false under the Android system backend (no in-process
+/// session to query). Thread-safe.
+bool isTracing() noexcept;
+
 } // namespace igl::shell::profiling
 
 #endif // IGL_WITH_PERFETTO

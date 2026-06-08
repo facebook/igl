@@ -138,6 +138,12 @@ void stopTrace() noexcept {
   state.outputPath.clear();
 }
 
+bool isTracing() noexcept {
+  auto& state = sessionState();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  return state.session != nullptr;
+}
+
 #else // __ANDROID__
 
 void startTraceToFile(std::string /*outputPath*/) noexcept {
@@ -147,6 +153,11 @@ void startTraceToFile(std::string /*outputPath*/) noexcept {
 
 void stopTrace() noexcept {
   // Same as above — no-op under the system backend.
+}
+
+bool isTracing() noexcept {
+  // System backend has no in-process session to inspect.
+  return false;
 }
 
 #endif // __ANDROID__
