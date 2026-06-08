@@ -108,6 +108,27 @@ TEST_F(SamplerStateOGLTest, SamplerStateConvertMinMipFilter) {
 }
 
 //
+// convertMinMipFilter (Linear min filter) tests
+//
+// The SamplerStateConvertMinMipFilter test above only exercises the Nearest
+// minFilter branch. This test covers the Linear minFilter branch of
+// convertMinMipFilter() across all three mip filter modes.
+//
+TEST_F(SamplerStateOGLTest, SamplerStateConvertMinMipFilterLinear) {
+  auto dummySamplerState =
+      std::make_unique<igl::opengl::SamplerState>(*context_, SamplerStateDesc::newLinear());
+  ASSERT_EQ(dummySamplerState->convertMinMipFilter(SamplerMinMagFilter::Linear,
+                                                   SamplerMipFilter::Disabled),
+            GL_LINEAR);
+  ASSERT_EQ(dummySamplerState->convertMinMipFilter(SamplerMinMagFilter::Linear,
+                                                   SamplerMipFilter::Nearest),
+            GL_LINEAR_MIPMAP_NEAREST);
+  ASSERT_EQ(
+      dummySamplerState->convertMinMipFilter(SamplerMinMagFilter::Linear, SamplerMipFilter::Linear),
+      GL_LINEAR_MIPMAP_LINEAR);
+}
+
+//
 // convertGLMagFilter tests
 //
 // This test checks the conversion from OpenGL Min/Mag filter enums to their
