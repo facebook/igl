@@ -411,4 +411,30 @@ TEST(HolderTest, ResetEmptiesHolder) {
   EXPECT_FALSE(holder.valid());
 }
 
+TEST(HolderTest, ConvertsToUnderlyingHandle) {
+  Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
+  const BindGroupBufferHandle handle = pool.create(BindGroupBufferDesc{});
+
+  const Holder<BindGroupBufferHandle> holder(nullptr, handle);
+
+  // The implicit conversion to the underlying handle type must yield a handle
+  // equal to the one the holder wraps (same index and gen), so a Holder can be
+  // passed wherever the raw handle is expected.
+  const BindGroupBufferHandle converted = holder;
+  EXPECT_EQ(converted, handle);
+  EXPECT_EQ(holder.index(), handle.index());
+  EXPECT_EQ(holder.gen(), handle.gen());
+}
+
+TEST(HolderTest, IndexAsVoidMatchesHandle) {
+  Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
+  const BindGroupBufferHandle handle = pool.create(BindGroupBufferDesc{});
+
+  const Holder<BindGroupBufferHandle> holder(nullptr, handle);
+
+  // indexAsVoid() encodes the integer index as an opaque void* (no real
+  // pointer dereference); it must match the wrapped handle's own encoding.
+  EXPECT_EQ(holder.indexAsVoid(), handle.indexAsVoid());
+}
+
 } // namespace igl::tests
