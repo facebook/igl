@@ -32,6 +32,20 @@ TEST(DataReaderTest, TryCreateWithValidDataReturnsReader) {
   EXPECT_EQ(reader->size(), buffer.size());
 }
 
+TEST(DataReaderTest, TryCreateWithZeroSizeReturnsEmptyReader) {
+  // A non-null pointer with size 0 is valid: the reader is created but reports
+  // no remaining bytes. Only a null data pointer is rejected.
+  const std::array<uint8_t, 4> buffer = {0, 1, 2, 3};
+  igl::Result result;
+
+  auto reader = DataReader::tryCreate(buffer.data(), 0, &result);
+
+  ASSERT_TRUE(reader.has_value());
+  EXPECT_TRUE(result.isOk());
+  EXPECT_EQ(reader->size(), 0u);
+  EXPECT_EQ(reader->data(), buffer.data());
+}
+
 // ============================================================================
 // tryAt - bounds-checked pointer access at offset
 // ============================================================================
@@ -134,6 +148,22 @@ TEST(DataReaderTest, AdvanceMovesDataPointerAndReducesSize) {
   EXPECT_EQ(reader->size(), 4u);
   EXPECT_EQ(reader->data(), buffer.data() + 2);
   EXPECT_EQ(*reader->data(), 0xCC);
+}
+
+TEST(DataReaderTest, AdvanceTemplatedAdvancesBySizeofType) {
+  // The templated advance<T>() forwards to advance(sizeof(T)) without a bounds
+  // check, mirroring tryAdvance<T>() but for callers that have already verified
+  // the size.
+  const std::array<uint8_t, 8> buffer = {10, 20, 30, 40, 50, 60, 70, 80};
+  igl::Result result;
+  auto reader = DataReader::tryCreate(buffer.data(), buffer.size(), &result);
+  ASSERT_TRUE(reader.has_value());
+
+  reader->advance<uint32_t>();
+
+  EXPECT_EQ(reader->size(), 4u);
+  EXPECT_EQ(reader->data(), buffer.data() + 4);
+  EXPECT_EQ(*reader->data(), 50);
 }
 
 // ============================================================================
