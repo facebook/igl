@@ -110,6 +110,23 @@ TEST_F(VulkanContextExtendedTest, CurrentSyncIndex) {
   EXPECT_LT(ctx.currentSyncIndex(), ctx.config_.maxResourceCount);
 }
 
+TEST_F(VulkanContextExtendedTest, FeaturesAccessor) {
+  auto& ctx = getVulkanContext();
+  const auto& features = ctx.features();
+
+  EXPECT_EQ(features.vkPhysicalDeviceFeatures2.sType, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2);
+}
+
+TEST_F(VulkanContextExtendedTest, HasSwapchainWithoutInit) {
+  auto& ctx = getVulkanContext();
+  EXPECT_FALSE(ctx.hasSwapchain());
+}
+
+TEST_F(VulkanContextExtendedTest, GetFrameNumber) {
+  auto& ctx = getVulkanContext();
+  EXPECT_EQ(ctx.getFrameNumber(), 0u);
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
