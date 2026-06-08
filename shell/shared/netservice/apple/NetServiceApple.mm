@@ -165,7 +165,8 @@ std::shared_ptr<OutputStream> NetServiceApple::getOutputStream() const noexcept 
 }
 
 std::string NetServiceApple::getName() const noexcept { // NOLINT(bugprone-exception-escape)
-  return {[[netService_ name] UTF8String]};
+  const char* name = [[netService_ name] UTF8String];
+  return name != nullptr ? std::string{name} : std::string{};
 }
 
 } // namespace igl::shell::netservice
