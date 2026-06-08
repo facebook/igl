@@ -67,6 +67,62 @@ TEST_F(VersionOGLTest, GetGLVersionEnum) {
 #endif
 }
 
+TEST_F(VersionOGLTest, ParseVersionString) {
+#if IGL_OPENGL_ES
+  {
+    const auto version = opengl::parseVersionString("OpenGL ES 2.0");
+    EXPECT_EQ(version.first, 2u);
+    EXPECT_EQ(version.second, 0u);
+  }
+  {
+    const auto version = opengl::parseVersionString("OpenGL ES 3.2");
+    EXPECT_EQ(version.first, 3u);
+    EXPECT_EQ(version.second, 2u);
+  }
+  {
+    // Real driver strings carry a vendor suffix after the version numbers.
+    const auto version = opengl::parseVersionString("OpenGL ES 3.2 V@0.0 (GIT@abcdef)");
+    EXPECT_EQ(version.first, 3u);
+    EXPECT_EQ(version.second, 2u);
+  }
+  {
+    // Unparseable string falls back to 2.0.
+    const auto version = opengl::parseVersionString("not a version");
+    EXPECT_EQ(version.first, 2u);
+    EXPECT_EQ(version.second, 0u);
+  }
+#else
+  {
+    const auto version = opengl::parseVersionString("2.0");
+    EXPECT_EQ(version.first, 2u);
+    EXPECT_EQ(version.second, 0u);
+  }
+  {
+    const auto version = opengl::parseVersionString("4.6");
+    EXPECT_EQ(version.first, 4u);
+    EXPECT_EQ(version.second, 6u);
+  }
+  {
+    // Real driver strings carry a vendor suffix after the version numbers.
+    const auto version = opengl::parseVersionString("4.6.0 NVIDIA 535.86.05");
+    EXPECT_EQ(version.first, 4u);
+    EXPECT_EQ(version.second, 6u);
+  }
+  {
+    // Unparseable string falls back to 2.0.
+    const auto version = opengl::parseVersionString("not a version");
+    EXPECT_EQ(version.first, 2u);
+    EXPECT_EQ(version.second, 0u);
+  }
+#endif
+  {
+    // A null version string falls back to 2.0 on every platform.
+    const auto version = opengl::parseVersionString(nullptr);
+    EXPECT_EQ(version.first, 2u);
+    EXPECT_EQ(version.second, 0u);
+  }
+}
+
 TEST_F(VersionOGLTest, GetShaderVersion) {
   {
     const auto version = opengl::getShaderVersion(opengl::GLVersion::v2_0_ES);
