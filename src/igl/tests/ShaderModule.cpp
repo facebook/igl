@@ -171,6 +171,130 @@ TEST_F(ShaderModuleTest, ShaderLibraryDescEquality) {
   EXPECT_TRUE(desc1 != desc3);
 }
 
+TEST(ShaderInputTest, IsValidStringInput) {
+  const char* source = "some shader source";
+  const ShaderInput input{.source = source, .type = ShaderInputType::String};
+  EXPECT_TRUE(input.isValid());
+
+  // A string input without a source is invalid.
+  const ShaderInput noSource{.type = ShaderInputType::String};
+  EXPECT_FALSE(noSource.isValid());
+
+  // A string input that also carries binary data is invalid.
+  const uint32_t blob = 0xDEADBEEF;
+  const ShaderInput mixed{
+      .source = source, .data = &blob, .length = sizeof(blob), .type = ShaderInputType::String};
+  EXPECT_FALSE(mixed.isValid());
+}
+
+TEST(ShaderInputTest, IsValidBinaryInput) {
+  const uint32_t blob = 0xDEADBEEF;
+  const ShaderInput input{.data = &blob, .length = sizeof(blob), .type = ShaderInputType::Binary};
+  EXPECT_TRUE(input.isValid());
+
+  // A binary input without data is invalid.
+  const ShaderInput noData{.length = sizeof(blob), .type = ShaderInputType::Binary};
+  EXPECT_FALSE(noData.isValid());
+
+  // A binary input with zero length is invalid.
+  const ShaderInput zeroLength{.data = &blob, .length = 0, .type = ShaderInputType::Binary};
+  EXPECT_FALSE(zeroLength.isValid());
+
+  // A binary input that also carries a source is invalid.
+  const ShaderInput mixed{
+      .source = "src", .data = &blob, .length = sizeof(blob), .type = ShaderInputType::Binary};
+  EXPECT_FALSE(mixed.isValid());
+}
+
+TEST(ShaderInputTest, EqualityStringInput) {
+  const char* source = "shader source";
+  const ShaderInput a{.source = source, .type = ShaderInputType::String};
+  const ShaderInput b{.source = source, .type = ShaderInputType::String};
+  EXPECT_TRUE(a == b);
+  EXPECT_FALSE(a != b);
+
+  // Equality compares string content, not pointer identity.
+  const std::string copy = source;
+  const ShaderInput c{.source = copy.c_str(), .type = ShaderInputType::String};
+  EXPECT_TRUE(a == c);
+
+  // Different source content compares unequal.
+  const ShaderInput d{.source = "other source", .type = ShaderInputType::String};
+  EXPECT_FALSE(a == d);
+  EXPECT_TRUE(a != d);
+}
+
+TEST(ShaderInputTest, EqualityBinaryInput) {
+  const uint32_t blobA = 0xAABBCCDD;
+  const uint32_t blobB = 0xAABBCCDD; // identical bytes, distinct storage
+  const uint32_t blobC = 0x11223344;
+  const ShaderInput a{.data = &blobA, .length = sizeof(blobA), .type = ShaderInputType::Binary};
+  const ShaderInput b{.data = &blobB, .length = sizeof(blobB), .type = ShaderInputType::Binary};
+  const ShaderInput c{.data = &blobC, .length = sizeof(blobC), .type = ShaderInputType::Binary};
+
+  // Equality compares the data bytes, not pointer identity.
+  EXPECT_TRUE(a == b);
+  EXPECT_FALSE(a == c);
+  EXPECT_TRUE(a != c);
+}
+
+TEST(ShaderInputTest, EqualityDiffersByType) {
+  const uint32_t blob = 0x12345678;
+  const ShaderInput str{.source = "src", .type = ShaderInputType::String};
+  const ShaderInput bin{.data = &blob, .length = sizeof(blob), .type = ShaderInputType::Binary};
+  EXPECT_FALSE(str == bin);
+  EXPECT_TRUE(str != bin);
+}
+
+TEST(ShaderInputTest, EqualityDiffersByOptions) {
+  const char* source = "src";
+  const ShaderInput a{.source = source, .type = ShaderInputType::String};
+  ShaderInput b{.source = source, .type = ShaderInputType::String};
+  b.options.fastMathEnabled = !b.options.fastMathEnabled;
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
+}
+
+TEST(ShaderModuleInfoTest, Equality) {
+  const ShaderModuleInfo a{.stage = ShaderStage::Vertex, .entryPoint = "main"};
+  const ShaderModuleInfo b{.stage = ShaderStage::Vertex, .entryPoint = "main"};
+  EXPECT_TRUE(a == b);
+  EXPECT_FALSE(a != b);
+}
+
+TEST(ShaderModuleInfoTest, InequalityByStage) {
+  const ShaderModuleInfo a{.stage = ShaderStage::Vertex, .entryPoint = "main"};
+  const ShaderModuleInfo b{.stage = ShaderStage::Fragment, .entryPoint = "main"};
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
+}
+
+TEST(ShaderModuleInfoTest, InequalityByEntryPoint) {
+  const ShaderModuleInfo a{.stage = ShaderStage::Vertex, .entryPoint = "main"};
+  const ShaderModuleInfo b{.stage = ShaderStage::Vertex, .entryPoint = "other"};
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
+}
+
+TEST(ShaderModuleInfoTest, InequalityByFunctionConstantValues) {
+  const float value = 1.0f;
+  const ShaderModuleInfo a{.stage = ShaderStage::Vertex, .entryPoint = "main"};
+  ShaderModuleInfo b{.stage = ShaderStage::Vertex, .entryPoint = "main"};
+  b.functionConstantValues.setConstantValue(0, ConstantValueType::Float1, &value);
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
+}
+
+TEST(ShaderModuleInfoTest, EqualityIgnoresDebugName) {
+  const ShaderModuleInfo a{
+      .stage = ShaderStage::Vertex, .entryPoint = "main", .debugName = "nameA"};
+  const ShaderModuleInfo b{
+      .stage = ShaderStage::Vertex, .entryPoint = "main", .debugName = "nameB"};
+  // debugName is intentionally excluded from ShaderModuleInfo equality.
+  EXPECT_TRUE(a == b);
+  EXPECT_FALSE(a != b);
+}
+
 TEST_F(ShaderModuleTest, CompileShaderModuleNoResult) {
   const char* source = nullptr;
   const auto be2 = iglDev_->getBackendType();
