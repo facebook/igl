@@ -11,6 +11,7 @@
 
 #include <igl/DepthStencilState.h>
 #include <igl/Device.h>
+#include <igl/Shader.h>
 
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
 
@@ -91,6 +92,35 @@ TEST_F(DeviceExtendedVulkanTest, GetFeatureLimitsMaxTextureDimension) {
   bool result = iglDev_->getFeatureLimits(DeviceFeatureLimits::MaxTextureDimension1D2D, maxDim);
   EXPECT_TRUE(result);
   EXPECT_GT(maxDim, 0u);
+}
+
+TEST_F(DeviceExtendedVulkanTest, CreateShaderModuleNullBinaryDataReturnsArgumentInvalid) {
+  ShaderModuleDesc desc;
+  desc.info = {.stage = ShaderStage::Vertex, .entryPoint = "main"};
+  desc.input.type = ShaderInputType::Binary;
+  desc.input.data = nullptr;
+  desc.input.length = 16;
+  desc.debugName = "nullData";
+
+  Result ret;
+  auto module = iglDev_->createShaderModule(desc, &ret);
+  EXPECT_EQ(module, nullptr);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST_F(DeviceExtendedVulkanTest, CreateShaderModuleZeroLengthBinaryDataReturnsArgumentInvalid) {
+  const uint32_t dummy = 0;
+  ShaderModuleDesc desc;
+  desc.info = {.stage = ShaderStage::Vertex, .entryPoint = "main"};
+  desc.input.type = ShaderInputType::Binary;
+  desc.input.data = &dummy;
+  desc.input.length = 0;
+  desc.debugName = "zeroLength";
+
+  Result ret;
+  auto module = iglDev_->createShaderModule(desc, &ret);
+  EXPECT_EQ(module, nullptr);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
 }
 
 } // namespace igl::tests

@@ -362,6 +362,11 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* IGL_N
 
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
+  if (!data || length == 0) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader data is null or empty");
+    return nullptr;
+  }
+
 #if IGL_SHADER_DUMP && IGL_DEBUG
   uint64_t hash = 0;
   IGL_DEBUG_ASSERT(length % sizeof(uint32_t) == 0);
@@ -643,7 +648,10 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
   IGL_PROFILER_FUNCTION();
 
   const VkPhysicalDevice physicalDevice = ctx_->vkPhysicalDevice_;
-  IGL_DEBUG_ASSERT(physicalDevice != VK_NULL_HANDLE);
+  if (physicalDevice == VK_NULL_HANDLE) {
+    IGL_SOFT_ERROR("VkPhysicalDevice is null");
+    return false;
+  }
   const VkPhysicalDeviceProperties& deviceProperties = ctx_->getVkPhysicalDeviceProperties();
 
   switch (feature) {
