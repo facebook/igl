@@ -91,13 +91,13 @@ void markFrame(const char* name) noexcept {
 
 #if !defined(__ANDROID__)
 
-void startTraceToFile(std::string outputPath) noexcept {
+bool startTraceToFile(std::string outputPath) noexcept {
   auto& state = sessionState();
   std::lock_guard<std::mutex> lock(state.mutex);
   if (state.session) {
     fprintf(stderr,
             "[perfetto] startTraceToFile called while a session is already active — ignoring\n");
-    return;
+    return false;
   }
 
   // Capture every registered TrackEvent category — no allowlist. Categories
@@ -115,7 +115,7 @@ void startTraceToFile(std::string outputPath) noexcept {
     fprintf(stderr,
             "[perfetto] Tracing::NewTrace() returned null — "
             "was initPerfetto() called?\n");
-    return;
+    return false;
   }
   state.session->Setup(cfg);
   state.session->StartBlocking();
@@ -124,6 +124,7 @@ void startTraceToFile(std::string outputPath) noexcept {
   // writable (TCC, disk full, …) and we don't want to mislead the caller —
   // drainSessionToFile() prints the authoritative success/failure line.
   fprintf(stderr, "[perfetto] tracing started\n");
+  return true;
 }
 
 void stopTrace() noexcept {
@@ -146,9 +147,10 @@ bool isTracing() noexcept {
 
 #else // __ANDROID__
 
-void startTraceToFile(std::string /*outputPath*/) noexcept {
+bool startTraceToFile(std::string /*outputPath*/) noexcept {
   // System backend — capture is driven externally via the on-device perfetto
   // CLI / traced daemon; no in-process session to start.
+  return false;
 }
 
 void stopTrace() noexcept {

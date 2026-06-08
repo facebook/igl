@@ -40,14 +40,20 @@ void markFrame(const char* name) noexcept;
 /// Start an in-process Perfetto trace session that captures every registered
 /// TrackEvent category. The buffer is held in memory and flushed to
 /// `outputPath` on stopTrace(). At most one session may be active at a time;
-/// a second start while one is running is a no-op.
+/// a second start while one is running is rejected.
 ///
 /// The session runs until stopTrace() is called. Callers are responsible for
 /// their own timing (e.g. a background thread that sleeps for a duration,
 /// or a shutdown notification).
 ///
+/// Returns `true` iff a new session was started and is now active. Returns
+/// `false` on every failure path (already-active session, internal SDK
+/// rejection, etc.); diagnostics are also logged to stderr. Always returns
+/// `false` under the Android system backend, where there is no in-process
+/// session to start.
+///
 /// Available on platforms using kInProcessBackend (i.e. non-Android).
-void startTraceToFile(std::string outputPath) noexcept;
+bool startTraceToFile(std::string outputPath) noexcept;
 
 /// Stop the active in-process session, flush the buffer, and write it to the
 /// path passed to startTraceToFile(). Idempotent — calling without a matching
