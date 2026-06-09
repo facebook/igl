@@ -9,7 +9,6 @@
 
 #include <igl/Framebuffer.h>
 #include <igl/RenderPass.h>
-#include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/Texture.h>
 
