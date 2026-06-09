@@ -761,8 +761,8 @@ void CommandBuffer::copyBuffer(IBuffer& source,
 
     // Map readback and copy into the UPLOAD buffer
     void* rbPtr = nullptr;
-    D3D12_RANGE readRange{static_cast<SIZE_T>(destinationOffset),
-                          static_cast<SIZE_T>(destinationOffset + size)};
+    const D3D12_RANGE readRange{.Begin = static_cast<SIZE_T>(destinationOffset),
+                                .End = static_cast<SIZE_T>(destinationOffset + size)};
     if (SUCCEEDED(readback->Map(0, &readRange, &rbPtr)) && rbPtr) {
       // Map destination upload buffer
       Result r1;
@@ -811,7 +811,11 @@ void CommandBuffer::copyTextureToBuffer(ITexture& source,
       "copyTextureToBuffer: Recording deferred copy operation (will execute in "
       "CommandQueue::submit)\n");
 
-  deferredTextureCopies_.push_back({&source, &destination, destinationOffset, mipLevel, layer});
+  deferredTextureCopies_.push_back({.source = &source,
+                                    .destination = &destination,
+                                    .destinationOffset = destinationOffset,
+                                    .mipLevel = mipLevel,
+                                    .layer = layer});
 }
 
 } // namespace igl::d3d12

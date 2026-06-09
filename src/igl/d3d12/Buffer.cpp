@@ -95,7 +95,7 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
   // For UPLOAD heap, map, copy, unmap
   if (storage_ == ResourceStorage::Shared) {
     void* mappedData = nullptr;
-    D3D12_RANGE readRange = {0, 0}; // Not reading from GPU
+    const D3D12_RANGE readRange = {.Begin = 0, .End = 0}; // Not reading from GPU
 
     HRESULT hr = resource_->Map(0, &readRange, &mappedData);
     if (FAILED(hr)) {
@@ -105,7 +105,7 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
     uint8_t* dest = static_cast<uint8_t*>(mappedData) + range.offset;
     std::memcpy(dest, data, range.size);
 
-    D3D12_RANGE writtenRange = {range.offset, range.offset + range.size};
+    const D3D12_RANGE writtenRange = {.Begin = range.offset, .End = range.offset + range.size};
     resource_->Unmap(0, &writtenRange);
 
     return Result(Result::Code::Ok);
@@ -164,7 +164,7 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
     }
 
     void* mapped = nullptr;
-    D3D12_RANGE rr = {0, 0};
+    const D3D12_RANGE rr = {.Begin = 0, .End = 0};
     hr = uploadBuffer->Map(0, &rr, &mapped);
     if (FAILED(hr) || mapped == nullptr) {
       return Result(Result::Code::RuntimeError, "Failed to map upload buffer");
@@ -499,8 +499,8 @@ void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
     device_->returnUploadCommandAllocator(allocator, 0);
 
     // Map the READBACK staging buffer
-    D3D12_RANGE readRange = {static_cast<SIZE_T>(range.offset),
-                             static_cast<SIZE_T>(range.offset + range.size)};
+    const D3D12_RANGE readRange = {.Begin = static_cast<SIZE_T>(range.offset),
+                                   .End = static_cast<SIZE_T>(range.offset + range.size)};
     HRESULT hr = readbackStagingBuffer_->Map(0, &readRange, &mappedPtr_);
 
     if (FAILED(hr)) {
@@ -527,7 +527,7 @@ void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
     return static_cast<uint8_t*>(mappedPtr_) + range.offset;
   }
 
-  D3D12_RANGE readRange = {0, 0}; // Not reading from GPU
+  const D3D12_RANGE readRange = {.Begin = 0, .End = 0}; // Not reading from GPU
   HRESULT hr = resource_->Map(0, &readRange, &mappedPtr_);
 
   if (FAILED(hr)) {
