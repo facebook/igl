@@ -88,6 +88,13 @@ TEST_F(HashTest, GraphicsPipeline1) {
 
   ASSERT_NE(std::hash<RenderPipelineDesc>()(descOne), std::hash<RenderPipelineDesc>()(descTwo));
   descTwo.shaderStages = descOne.shaderStages;
+
+  // Modify alphaToCoverageEnabled
+  descTwo.alphaToCoverageEnabled = true;
+
+  ASSERT_NE(std::hash<RenderPipelineDesc>()(descOne), std::hash<RenderPipelineDesc>()(descTwo));
+  descTwo.alphaToCoverageEnabled = descOne.alphaToCoverageEnabled;
+  ASSERT_EQ(std::hash<RenderPipelineDesc>()(descOne), std::hash<RenderPipelineDesc>()(descTwo));
 }
 
 //
@@ -108,9 +115,9 @@ TEST_F(HashTest, GraphicsPipeline2) {
     return;
   }
 
-  // 64 is the size without unitSamplerMaps, colorAttachments, and debugName as those fields may
+  // 72 is the size without unitSamplerMaps, colorAttachments, and debugName as those fields may
   // vary between compilers and machines
-  const size_t expectedSize = 64 + 2 * sizeof(std::unordered_map<size_t, std::string>) +
+  const size_t expectedSize = 72 + 2 * sizeof(std::unordered_map<size_t, std::string>) +
                               sizeof(std::unordered_map<size_t, NameHandle>) +
                               sizeof(std::vector<RenderPipelineDesc::TargetDesc::ColorAttachment>) +
                               sizeof(NameHandle) +
@@ -158,6 +165,12 @@ TEST_F(HashTest, GraphicsPipeline3) {
   descTwo.shaderStages = shaderStages_;
   ASSERT_TRUE(descOne != descTwo);
   descTwo.shaderStages = descOne.shaderStages;
+  ASSERT_TRUE(descOne == descTwo);
+
+  // Change and restore alphaToCoverageEnabled
+  descTwo.alphaToCoverageEnabled = true;
+  ASSERT_TRUE(descOne != descTwo);
+  descTwo.alphaToCoverageEnabled = descOne.alphaToCoverageEnabled;
   ASSERT_TRUE(descOne == descTwo);
 }
 

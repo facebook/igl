@@ -1799,7 +1799,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
   psoDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
   // Blend state - configure per render target based on pipeline descriptor
-  psoDesc.BlendState.AlphaToCoverageEnable = FALSE;
+  psoDesc.BlendState.AlphaToCoverageEnable = desc.alphaToCoverageEnabled ? TRUE : FALSE;
   const size_t numColorAttachments = desc.targetDesc.colorAttachments.size();
   psoDesc.BlendState.IndependentBlendEnable = numColorAttachments > 1 ? TRUE : FALSE;
 
@@ -2541,7 +2541,7 @@ igl::d3d12::ComPtr<ID3D12PipelineState> Device::createPipelineStateVariant(
   psoDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
   // Blend state
-  psoDesc.BlendState.AlphaToCoverageEnable = FALSE;
+  psoDesc.BlendState.AlphaToCoverageEnable = desc.alphaToCoverageEnabled ? TRUE : FALSE;
   const size_t numColorAttachments = desc.targetDesc.colorAttachments.size();
   psoDesc.BlendState.IndependentBlendEnable = numColorAttachments > 1 ? TRUE : FALSE;
 

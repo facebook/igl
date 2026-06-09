@@ -209,6 +209,17 @@ struct RenderPipelineDesc {
   // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   std::shared_ptr<ISamplerState> immutableSamplers[IGL_TEXTURE_SAMPLERS_MAX] = {};
 
+  /*
+   * @brief When enabled, the GPU computes a fragment's coverage from its alpha value,
+   * AND-ed with the geometric sample mask. This is a fixed-function alternative to
+   * shader-side `discard` for alpha-tested geometry. It does not break Early-Z because
+   * the decision happens in hardware after the fragment shader, not inside it.
+   *
+   * Requires `sampleCount > 1` (MSAA must be enabled) to take effect; otherwise the
+   * driver silently ignores it.
+   */
+  bool alphaToCoverageEnabled = false;
+
   NameHandle debugName;
 
   bool operator==(const RenderPipelineDesc& other) const;

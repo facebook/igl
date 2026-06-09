@@ -52,6 +52,10 @@ bool RenderPipelineDesc::operator==(const RenderPipelineDesc& other) const {
     return false;
   }
 
+  if (alphaToCoverageEnabled != other.alphaToCoverageEnabled) {
+    return false;
+  }
+
   for (size_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
     if (immutableSamplers[i] != other.immutableSamplers[i]) {
       return false;
@@ -77,6 +81,7 @@ size_t std::hash<RenderPipelineDesc>::operator()(const RenderPipelineDesc& key) 
   hash ^= std::hash<RenderPipelineDesc::TargetDesc>()(key.targetDesc);
   hash ^= std::hash<int>()(EnumToValue(key.cullMode));
   hash ^= std::hash<uint32_t>()(key.sampleCount);
+  hash ^= std::hash<bool>()(key.alphaToCoverageEnabled);
   hash ^= std::hash<int>()(EnumToValue(key.frontFaceWinding));
   hash ^= std::hash<int>()(EnumToValue(key.polygonFillMode));
   hash ^= std::hash<uint32_t>()(key.isDynamicBufferMask);

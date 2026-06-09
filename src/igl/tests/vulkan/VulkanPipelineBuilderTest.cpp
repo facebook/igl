@@ -11,7 +11,9 @@
 
 #include "../util/TestDevice.h"
 
+#include <igl/ShaderCreator.h>
 #include <igl/vulkan/Device.h>
+#include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/VulkanContext.h>
 
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
@@ -138,6 +140,275 @@ TEST_F(VulkanPipelineBuilderTest, RasterizationSamples) {
   igl::vulkan::VulkanPipelineBuilder builder;
   auto& result = builder.rasterizationSamples(VK_SAMPLE_COUNT_4_BIT);
   EXPECT_EQ(&result, &builder);
+
+  // Verify the rasterization samples state is actually applied by building a pipeline.
+  // The pipeline creation will fail if the multisample state is invalid.
+  auto& ctx = getVulkanContext();
+  VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+  VkPipeline pipeline = VK_NULL_HANDLE;
+  VkRenderPass renderPass = VK_NULL_HANDLE;
+
+  // Create a minimal pipeline layout
+  VkPipelineLayoutCreateInfo layoutInfo = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+  };
+  VkResult res =
+      ctx.vf_.vkCreatePipelineLayout(ctx.getVkDevice(), &layoutInfo, nullptr, &pipelineLayout);
+  ASSERT_EQ(res, VK_SUCCESS);
+
+  // Create a minimal render pass with 4x MSAA
+  const VkAttachmentDescription colorAttachment = {
+      .format = VK_FORMAT_B8G8R8A8_UNORM,
+      .samples = VK_SAMPLE_COUNT_4_BIT,
+      .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+      .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+      .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+  };
+
+  const VkAttachmentReference colorAttachmentRef = {
+      .attachment = 0,
+      .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+  };
+
+  const VkSubpassDescription subpass = {
+      .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+      .colorAttachmentCount = 1,
+      .pColorAttachments = &colorAttachmentRef,
+  };
+
+  const VkRenderPassCreateInfo renderPassInfo = {
+      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+      .attachmentCount = 1,
+      .pAttachments = &colorAttachment,
+      .subpassCount = 1,
+      .pSubpasses = &subpass,
+  };
+
+  res = ctx.vf_.vkCreateRenderPass(ctx.getVkDevice(), &renderPassInfo, nullptr, &renderPass);
+  ASSERT_EQ(res, VK_SUCCESS);
+
+  // Create minimal shader modules
+  Result ret;
+  const std::string vertSource = R"(
+    #version 450
+    void main() {
+      gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+    }
+  )";
+  auto vertModule =
+      ShaderModuleCreator::fromStringInput(*iglDev_,
+                                           vertSource.c_str(),
+                                           {.stage = ShaderStage::Vertex, .entryPoint = "main"},
+                                           "TestVert",
+                                           &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(vertModule, nullptr);
+
+  const std::string fragSource = R"(
+    #version 450
+    layout(location = 0) out vec4 outColor;
+    void main() {
+      outColor = vec4(1.0, 0.0, 0.0, 1.0);
+    }
+  )";
+  auto fragModule =
+      ShaderModuleCreator::fromStringInput(*iglDev_,
+                                           fragSource.c_str(),
+                                           {.stage = ShaderStage::Fragment, .entryPoint = "main"},
+                                           "TestFrag",
+                                           &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(fragModule, nullptr);
+
+  // Add shader stages to builder
+  const VkPipelineShaderStageCreateInfo vertStage = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_VERTEX_BIT,
+      .module = igl::vulkan::ShaderModule::getVkShaderModule(vertModule),
+      .pName = "main",
+  };
+
+  const VkPipelineShaderStageCreateInfo fragStage = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+      .module = igl::vulkan::ShaderModule::getVkShaderModule(fragModule),
+      .pName = "main",
+  };
+
+  builder.shaderStage(vertStage);
+  builder.shaderStage(fragStage);
+
+  // Build pipeline with 4x MSAA - should succeed if rasterizationSamples is properly applied
+  res = builder.build(ctx.vf_,
+                      ctx.getVkDevice(),
+                      0,
+                      VK_NULL_HANDLE,
+                      pipelineLayout,
+                      renderPass,
+                      &pipeline,
+                      "TestRasterizationSamples");
+  EXPECT_EQ(res, VK_SUCCESS);
+  EXPECT_NE(pipeline, VK_NULL_HANDLE);
+
+  // Cleanup
+  if (pipeline != VK_NULL_HANDLE) {
+    ctx.vf_.vkDestroyPipeline(ctx.getVkDevice(), pipeline, nullptr);
+  }
+  if (renderPass != VK_NULL_HANDLE) {
+    ctx.vf_.vkDestroyRenderPass(ctx.getVkDevice(), renderPass, nullptr);
+  }
+  if (pipelineLayout != VK_NULL_HANDLE) {
+    ctx.vf_.vkDestroyPipelineLayout(ctx.getVkDevice(), pipelineLayout, nullptr);
+  }
+}
+
+TEST_F(VulkanPipelineBuilderTest, AlphaToCoverageEnable) {
+  igl::vulkan::VulkanPipelineBuilder builder1;
+  auto& r1 = builder1.alphaToCoverageEnable(true);
+  EXPECT_EQ(&r1, &builder1);
+
+  igl::vulkan::VulkanPipelineBuilder builder2;
+  auto& r2 = builder2.alphaToCoverageEnable(false);
+  EXPECT_EQ(&r2, &builder2);
+
+  // Verify alpha-to-coverage state is actually applied by building pipelines.
+  // The pipeline creation will fail if the multisample state is invalid.
+  auto& ctx = getVulkanContext();
+  VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+  VkPipeline pipeline1 = VK_NULL_HANDLE;
+  VkPipeline pipeline2 = VK_NULL_HANDLE;
+  VkRenderPass renderPass = VK_NULL_HANDLE;
+
+  // Create a minimal pipeline layout
+  VkPipelineLayoutCreateInfo layoutInfo = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+  };
+  VkResult res =
+      ctx.vf_.vkCreatePipelineLayout(ctx.getVkDevice(), &layoutInfo, nullptr, &pipelineLayout);
+  ASSERT_EQ(res, VK_SUCCESS);
+
+  // Create a minimal render pass
+  const VkAttachmentDescription colorAttachment = {
+      .format = VK_FORMAT_B8G8R8A8_UNORM,
+      .samples = VK_SAMPLE_COUNT_1_BIT,
+      .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+      .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+      .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+  };
+
+  const VkAttachmentReference colorAttachmentRef = {
+      .attachment = 0,
+      .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+  };
+
+  const VkSubpassDescription subpass = {
+      .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+      .colorAttachmentCount = 1,
+      .pColorAttachments = &colorAttachmentRef,
+  };
+
+  const VkRenderPassCreateInfo renderPassInfo = {
+      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+      .attachmentCount = 1,
+      .pAttachments = &colorAttachment,
+      .subpassCount = 1,
+      .pSubpasses = &subpass,
+  };
+
+  res = ctx.vf_.vkCreateRenderPass(ctx.getVkDevice(), &renderPassInfo, nullptr, &renderPass);
+  ASSERT_EQ(res, VK_SUCCESS);
+
+  // Create minimal shader modules
+  Result ret;
+  const std::string vertSource = R"(
+    #version 450
+    void main() {
+      gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+    }
+  )";
+  auto vertModule =
+      ShaderModuleCreator::fromStringInput(*iglDev_,
+                                           vertSource.c_str(),
+                                           {.stage = ShaderStage::Vertex, .entryPoint = "main"},
+                                           "TestVert",
+                                           &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(vertModule, nullptr);
+
+  const std::string fragSource = R"(
+    #version 450
+    layout(location = 0) out vec4 outColor;
+    void main() {
+      outColor = vec4(1.0, 0.0, 0.0, 1.0);
+    }
+  )";
+  auto fragModule =
+      ShaderModuleCreator::fromStringInput(*iglDev_,
+                                           fragSource.c_str(),
+                                           {.stage = ShaderStage::Fragment, .entryPoint = "main"},
+                                           "TestFrag",
+                                           &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(fragModule, nullptr);
+
+  const VkPipelineShaderStageCreateInfo vertStage = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_VERTEX_BIT,
+      .module = igl::vulkan::ShaderModule::getVkShaderModule(vertModule),
+      .pName = "main",
+  };
+
+  const VkPipelineShaderStageCreateInfo fragStage = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+      .module = igl::vulkan::ShaderModule::getVkShaderModule(fragModule),
+      .pName = "main",
+  };
+
+  builder1.shaderStage(vertStage);
+  builder1.shaderStage(fragStage);
+  builder2.shaderStage(vertStage);
+  builder2.shaderStage(fragStage);
+
+  // Build pipeline with alpha-to-coverage enabled - should succeed
+  res = builder1.build(ctx.vf_,
+                       ctx.getVkDevice(),
+                       0,
+                       VK_NULL_HANDLE,
+                       pipelineLayout,
+                       renderPass,
+                       &pipeline1,
+                       "TestAlphaToCoverageEnabled");
+  EXPECT_EQ(res, VK_SUCCESS);
+  EXPECT_NE(pipeline1, VK_NULL_HANDLE);
+
+  // Build pipeline with alpha-to-coverage disabled - should also succeed
+  res = builder2.build(ctx.vf_,
+                       ctx.getVkDevice(),
+                       0,
+                       VK_NULL_HANDLE,
+                       pipelineLayout,
+                       renderPass,
+                       &pipeline2,
+                       "TestAlphaToCoverageDisabled");
+  EXPECT_EQ(res, VK_SUCCESS);
+  EXPECT_NE(pipeline2, VK_NULL_HANDLE);
+
+  // Cleanup
+  if (pipeline1 != VK_NULL_HANDLE) {
+    ctx.vf_.vkDestroyPipeline(ctx.getVkDevice(), pipeline1, nullptr);
+  }
+  if (pipeline2 != VK_NULL_HANDLE) {
+    ctx.vf_.vkDestroyPipeline(ctx.getVkDevice(), pipeline2, nullptr);
+  }
+  if (renderPass != VK_NULL_HANDLE) {
+    ctx.vf_.vkDestroyRenderPass(ctx.getVkDevice(), renderPass, nullptr);
+  }
+  if (pipelineLayout != VK_NULL_HANDLE) {
+    ctx.vf_.vkDestroyPipelineLayout(ctx.getVkDevice(), pipelineLayout, nullptr);
+  }
 }
 
 TEST_F(VulkanPipelineBuilderTest, DynamicStateSingle) {

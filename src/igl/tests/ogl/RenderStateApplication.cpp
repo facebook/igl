@@ -129,6 +129,33 @@ class RenderStateApplicationOGLTest : public ::testing::Test {
     cmdQueue_->submit(*cmdBuf);
   }
 
+  // Helper that creates and binds a pipeline with alpha-to-coverage configured.
+  void bindPipelineWithAlphaToCoverage(bool alphaToCoverageEnabled) {
+    const RenderPipelineDesc desc{
+        .vertexInputState = vertexInputState_,
+        .shaderStages = shaderStages_,
+        .targetDesc = {.colorAttachments = {{.textureFormat = offscreenTexture_->getFormat()}}},
+        .cullMode = CullMode::Disabled,
+        .alphaToCoverageEnabled = alphaToCoverageEnabled,
+    };
+
+    Result ret;
+    auto pipelineState = iglDev_->createRenderPipeline(desc, &ret);
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+    ASSERT_NE(pipelineState, nullptr);
+
+    CommandBufferDesc cbDesc;
+    auto cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &ret);
+    ASSERT_EQ(ret.code, Result::Code::Ok);
+
+    auto cmdEncoder = cmdBuf->createRenderCommandEncoder(renderPass_, framebuffer_);
+    cmdEncoder->bindRenderPipelineState(pipelineState);
+    cmdEncoder->bindIndexBuffer(*ib_, IndexFormat::UInt16);
+    cmdEncoder->drawIndexed(0);
+    cmdEncoder->endEncoding();
+    cmdQueue_->submit(*cmdBuf);
+  }
+
  protected:
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
@@ -225,6 +252,63 @@ TEST_F(RenderStateApplicationOGLTest, PolygonFillLine) {
   // but validate no GL errors occurred
   ASSERT_EQ(context_->checkForErrors(__FILE__, __LINE__), GL_NO_ERROR);
 #endif
+}
+
+//
+// AlphaToCoverageEnabled
+//
+// Verify that GL_SAMPLE_ALPHA_TO_COVERAGE is enabled after binding a pipeline
+// with alphaToCoverageEnabled = true.
+//
+TEST_F(RenderStateApplicationOGLTest, AlphaToCoverageEnabled) {
+  bindPipelineWithAlphaToCoverage(true);
+
+  GLboolean a2cEnabled = GL_FALSE;
+  context_->getBooleanv(GL_SAMPLE_ALPHA_TO_COVERAGE, &a2cEnabled);
+  ASSERT_EQ(a2cEnabled, GL_TRUE);
+  ASSERT_EQ(context_->checkForErrors(__FILE__, __LINE__), GL_NO_ERROR);
+}
+
+//
+// AlphaToCoverageDisabled
+//
+// Verify that GL_SAMPLE_ALPHA_TO_COVERAGE is disabled after binding a pipeline
+// with alphaToCoverageEnabled = false (the default).
+//
+TEST_F(RenderStateApplicationOGLTest, AlphaToCoverageDisabled) {
+  bindPipelineWithAlphaToCoverage(false);
+
+  GLboolean a2cEnabled = GL_TRUE;
+  context_->getBooleanv(GL_SAMPLE_ALPHA_TO_COVERAGE, &a2cEnabled);
+  ASSERT_EQ(a2cEnabled, GL_FALSE);
+  ASSERT_EQ(context_->checkForErrors(__FILE__, __LINE__), GL_NO_ERROR);
+}
+
+//
+// AlphaToCoverageToggle
+//
+// Verify that GL_SAMPLE_ALPHA_TO_COVERAGE follows the most recently bound
+// pipeline. This is the actual production scenario: pipelines are switched
+// between draw calls and the GL state must track each one.
+//
+TEST_F(RenderStateApplicationOGLTest, AlphaToCoverageToggle) {
+  // Start by enabling A2C.
+  bindPipelineWithAlphaToCoverage(true);
+  GLboolean a2cEnabled = GL_FALSE;
+  context_->getBooleanv(GL_SAMPLE_ALPHA_TO_COVERAGE, &a2cEnabled);
+  ASSERT_EQ(a2cEnabled, GL_TRUE);
+
+  // Bind a different pipeline that disables A2C; the GL state must follow.
+  bindPipelineWithAlphaToCoverage(false);
+  context_->getBooleanv(GL_SAMPLE_ALPHA_TO_COVERAGE, &a2cEnabled);
+  ASSERT_EQ(a2cEnabled, GL_FALSE);
+
+  // And back on again.
+  bindPipelineWithAlphaToCoverage(true);
+  context_->getBooleanv(GL_SAMPLE_ALPHA_TO_COVERAGE, &a2cEnabled);
+  ASSERT_EQ(a2cEnabled, GL_TRUE);
+
+  ASSERT_EQ(context_->checkForErrors(__FILE__, __LINE__), GL_NO_ERROR);
 }
 
 } // namespace igl::tests
