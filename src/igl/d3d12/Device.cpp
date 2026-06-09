@@ -3402,8 +3402,21 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
         }
       }
     } else {
-      IGL_D3D12_LOG_VERBOSE("  Failed to create DXC utils for reflection: 0x%08X (non-fatal)\n",
-                            hr);
+      IGL_D3D12_LOG_VERBOSE("  Failed to create DXC utils for reflection: 0x%08X\n", hr);
+      IGL_D3D12_LOG_VERBOSE("  Trying D3DReflect for DXBC bytecode...\n");
+
+      igl::d3d12::ComPtr<ID3D12ShaderReflection> reflection;
+      hr = D3DReflect(module->getBytecode().data(),
+                      module->getBytecode().size(),
+                      IID_PPV_ARGS(reflection.GetAddressOf()));
+
+      if (SUCCEEDED(hr)) {
+        module->setReflection(reflection);
+        IGL_D3D12_LOG_VERBOSE("  Shader reflection created successfully (DXBC reflection)\n");
+      } else {
+        IGL_D3D12_LOG_VERBOSE("  Failed to create reflection with D3DReflect: 0x%08X (non-fatal)\n",
+                              hr);
+      }
     }
   }
 
