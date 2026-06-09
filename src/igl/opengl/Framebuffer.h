@@ -152,6 +152,8 @@ class CustomFramebuffer final : public Framebuffer {
  private:
   void prepareResource(const std::string& debugName, Result* outResult);
   void updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepthStencil);
+  void applyClearMask(int targetCount) const;
+  void setupResolveFramebuffer(Result* outResult);
 
   bool initialized_ = false;
 
