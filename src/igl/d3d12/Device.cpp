@@ -2927,9 +2927,10 @@ Result compileShaderFXC(const char* source,
 
   // D3DCompile is the legacy FXC compiler API
   // It's always available on Windows 10+ (via d3dcompiler_47.dll)
+  const char* sourceName = (debugName && debugName[0]) ? debugName : nullptr;
   HRESULT hr = D3DCompile(source,
                           sourceLength,
-                          debugName, // Source name (for error messages)
+                          sourceName,
                           nullptr, // Defines
                           D3D_COMPILE_STANDARD_FILE_INCLUDE,
                           entryPoint,
@@ -2940,12 +2941,16 @@ Result compileShaderFXC(const char* source,
                           errors.GetAddressOf());
 
   if (FAILED(hr)) {
-    std::string errorMsg = "FXC compilation failed";
+    char hrBuf[32];
+    snprintf(hrBuf, sizeof(hrBuf), "0x%08lX", static_cast<unsigned long>(hr));
+    std::string errorMsg = std::string("FXC compilation failed (HRESULT ") + hrBuf + ")";
     if (errors.Get() && errors->GetBufferSize() > 0) {
       outErrors = std::string(static_cast<const char*>(errors->GetBufferPointer()),
                               errors->GetBufferSize());
       errorMsg += ": " + outErrors;
       IGL_LOG_ERROR("FXC: %s\n", outErrors.c_str());
+    } else {
+      IGL_LOG_ERROR("FXC: compilation failed with HRESULT %s (no error output)\n", hrBuf);
     }
     return Result(Result::Code::RuntimeError, errorMsg);
   }
