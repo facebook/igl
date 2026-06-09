@@ -9,7 +9,6 @@
 
 #include <vector>
 #include <igl/TimestampQueries.h>
-#include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/WithContext.h>
 
