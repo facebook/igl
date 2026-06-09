@@ -1359,6 +1359,7 @@ bool DeviceFeatureSet::hasRequirement(DeviceRequirement requirement) const {
   return false;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::hasInternalRequirementColorGroup(InternalRequirement requirement) const {
   switch (requirement) {
   case InternalRequirement::ColorTexImageRgb5A1Unsized:
