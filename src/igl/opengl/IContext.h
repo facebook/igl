@@ -593,6 +593,10 @@ class IContext {
   void willDestroy(void* IGL_NULLABLE glContext);
 
  private:
+  GLVersion initializeGLVersion(Result* IGL_NULLABLE result);
+  void loadExtensions(std::string& extensions,
+                      std::unordered_set<std::string>& supportedExtensions);
+
   bool alwaysCheckError_ = false; // TRUE to check error after each OGL call
   mutable GLenum lastError_ = GL_NO_ERROR;
   mutable unsigned int callCounter_ = 0;
@@ -698,6 +702,7 @@ class IContext {
   std::string identifierLabel(GLuint identifier, GLuint name) const;
 
   std::string affectedMemoryBarrierObjects(GLbitfield bits) const;
+  std::string boundPixelBufferObjects() const;
 #endif
 
   PFNIGLBINDIMAGETEXTUREPROC IGL_NULLABLE bindImageTexturerProc_ = nullptr;
