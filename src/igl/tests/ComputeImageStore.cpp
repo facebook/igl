@@ -87,10 +87,10 @@ constexpr std::string_view kVulkanImageStoreShader =
 
 constexpr std::string_view kD3D12ImageStoreShader =
   "RWTexture2D<float4> destImage : register(u0);\n"
-  "cbuffer colorBuf : register(b1) { float4 color; };\n"
+  "RWStructuredBuffer<float4> colorBuf : register(u1);\n"
   "[numthreads(1, 1, 1)]\n"
   "void imageStoreOrange(uint3 gid : SV_DispatchThreadID) {\n"
-  "  destImage[gid.xy] = color;\n"
+  "  destImage[gid.xy] = colorBuf[0];\n"
   "}\n";
 
 constexpr std::string_view kImageStoreFunc = "imageStoreOrange";
@@ -159,6 +159,7 @@ void ComputeImageStoreTest::runImageStoreTest(TextureFormat format) {
       .type = BufferDesc::BufferTypeBits::Storage,
       .data = colorData,
       .length = sizeof(colorData),
+      .storageStride = sizeof(colorData),
   };
   auto colorBuffer = iglDev_->createBuffer(colorBufDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
