@@ -171,7 +171,8 @@ void D3D12StagingDevice::reclaimCompletedBuffers() {
   auto it = inFlightBuffers_.begin();
   while (it != inFlightBuffers_.end()) {
     if (it->fenceValue <= completedValue) {
-      availableBuffers_.push_back({it->buffer, it->size, 0, it->isReadback});
+      availableBuffers_.push_back(
+          {.buffer = it->buffer, .size = it->size, .fenceValue = 0, .isReadback = it->isReadback});
       it = inFlightBuffers_.erase(it);
     } else {
       ++it;
