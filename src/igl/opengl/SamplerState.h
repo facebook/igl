@@ -8,7 +8,6 @@
 #pragma once
 
 #include <igl/SamplerState.h>
-#include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
 
 namespace igl::opengl {
