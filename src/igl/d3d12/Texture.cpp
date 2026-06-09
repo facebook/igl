@@ -230,7 +230,11 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
       baseMip,
       numMipsToUpload);
 
-  // Calculate total staging buffer size for ALL subresources
+  // Calculate total staging buffer size for ALL subresources.
+  // Each subresource's placed footprint offset must be aligned to
+  // D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT (512 bytes). GetCopyableFootprints uses BaseOffset
+  // directly as the layout offset, so we must pass an aligned value for each subresource.
+  constexpr UINT64 kPlacementAlignment = D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT;
   UINT64 totalStagingSize = 0;
   std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts;
   std::vector<UINT> numRowsArray;
@@ -244,10 +248,12 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
       UINT numRows = 0;
       UINT64 rowSize = 0;
       UINT64 subresSize = 0;
+      const UINT64 alignedBaseOffset =
+          (totalStagingSize + kPlacementAlignment - 1) & ~(kPlacementAlignment - 1);
       device_->GetCopyableFootprints(&resourceDesc,
                                      subresource,
                                      1,
-                                     totalStagingSize,
+                                     alignedBaseOffset,
                                      &layout,
                                      &numRows,
                                      &rowSize,
@@ -255,7 +261,7 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
       layouts.push_back(layout);
       numRowsArray.push_back(numRows);
       rowSizesArray.push_back(rowSize);
-      totalStagingSize += subresSize;
+      totalStagingSize = alignedBaseOffset + subresSize;
     }
   }
 
@@ -483,7 +489,13 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
     }
   }
 
-  cmdList->Close();
+  hr = cmdList->Close();
+  if (FAILED(hr)) {
+    if (iglDevice_) {
+      iglDevice_->returnUploadCommandAllocator(cmdAlloc, 0);
+    }
+    return Result(Result::Code::RuntimeError, "Failed to close command list for texture upload");
+  }
 
   // Execute once and wait once
   ID3D12CommandList* cmdLists[] = {cmdList.Get()};
