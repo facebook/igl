@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <array>
 #include <unordered_map>
 #include <vector>
 #include <igl/Buffer.h>
