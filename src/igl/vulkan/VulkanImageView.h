@@ -8,7 +8,6 @@
 #pragma once
 
 #include <utility>
-#include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
 namespace igl::vulkan {
