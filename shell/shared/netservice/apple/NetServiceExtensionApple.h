@@ -7,7 +7,7 @@
 
 #pragma once
 
-#import <Foundation/Foundation.h>
+#import <Foundation/NSNetServices.h>
 #include <shell/shared/netservice/NetServiceExtension.h>
 #include <igl/Common.h>
 
