@@ -53,6 +53,10 @@ class Platform {
   // command line arguments for the application.
   static void initializeCommandLineArgs(int argc, char** argv);
 
+  // Returns whether initializeCommandLineArgs() has already been called, so independent entry
+  // points can avoid double-initializing in a shared process.
+  [[nodiscard]] static bool areCommandLineArgsInitialized();
+
  public:
   Extension* createAndInitializeExtension(const char* name) noexcept;
 

@@ -108,4 +108,8 @@ void Platform::initializeCommandLineArgs(int argc, char** argv) {
   gArgsInitialized = true;
 }
 
+bool Platform::areCommandLineArgsInitialized() {
+  return gArgsInitialized;
+}
+
 } // namespace igl::shell
