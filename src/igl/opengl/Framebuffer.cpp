@@ -20,14 +20,14 @@ namespace igl::opengl {
 namespace {
 
 /// Read pixels for half-float texture formats (RGBA_F16, RGB_F16, RG_F16, R_F16).
-static void readPixelsByFormatHalfFloat(IContext& context,
-                                        TextureFormat textureFormat,
-                                        GLint x,
-                                        GLint y,
-                                        GLsizei width,
-                                        GLsizei height,
-                                        void* pixelBytes,
-                                        GLenum halfFloatFormat) {
+void readPixelsByFormatHalfFloat(IContext& context,
+                                 TextureFormat textureFormat,
+                                 GLint x,
+                                 GLint y,
+                                 GLsizei width,
+                                 GLsizei height,
+                                 void* pixelBytes,
+                                 GLenum halfFloatFormat) {
   if (textureFormat == TextureFormat::RGBA_F16) {
     if (IGL_DEBUG_VERIFY(context.deviceFeatures().hasFeature(DeviceFeatures::TextureHalfFloat))) {
       context.readPixels(x, y, width, height, GL_RGBA, halfFloatFormat, pixelBytes);
@@ -50,13 +50,13 @@ static void readPixelsByFormatHalfFloat(IContext& context,
 }
 
 /// Read pixels for float texture formats (RGBA_F32, RGB_F32, RG_F32, R_F32).
-static void readPixelsByFormatFloat(IContext& context,
-                                    TextureFormat textureFormat,
-                                    GLint x,
-                                    GLint y,
-                                    GLsizei width,
-                                    GLsizei height,
-                                    void* pixelBytes) {
+void readPixelsByFormatFloat(IContext& context,
+                             TextureFormat textureFormat,
+                             GLint x,
+                             GLint y,
+                             GLsizei width,
+                             GLsizei height,
+                             void* pixelBytes) {
   if (textureFormat == TextureFormat::RGBA_F32) {
     if (IGL_DEBUG_VERIFY(context.deviceFeatures().hasFeature(DeviceFeatures::TextureFloat))) {
       context.readPixels(x, y, width, height, GL_RGBA, GL_FLOAT, pixelBytes);
@@ -79,14 +79,14 @@ static void readPixelsByFormatFloat(IContext& context,
 }
 
 /// Dispatch readPixels() based on textureFormat. See copyBytesColorAttachment() for context.
-static void readPixelsByFormat(IContext& context,
-                               TextureFormat textureFormat,
-                               GLint x,
-                               GLint y,
-                               GLsizei width,
-                               GLsizei height,
-                               void* pixelBytes,
-                               GLenum halfFloatFormat) {
+void readPixelsByFormat(IContext& context,
+                        TextureFormat textureFormat,
+                        GLint x,
+                        GLint y,
+                        GLsizei width,
+                        GLsizei height,
+                        void* pixelBytes,
+                        GLenum halfFloatFormat) {
   if (textureFormat == TextureFormat::RGBA_UInt32) {
     if (IGL_DEBUG_VERIFY(
             context.deviceFeatures().hasTextureFeature(TextureFeatures::TextureInteger))) {
