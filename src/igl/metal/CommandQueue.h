@@ -41,6 +41,9 @@ class CommandQueue final : public ICommandQueue {
   std::shared_ptr<BufferSynchronizationManager> bufferSyncManager_;
   DeviceStatistics& deviceStatistics_;
   Device& device_;
+  // Set when a frame is submitted with endOfFrame; the triple-buffering wait is then performed
+  // at the start of the next frame (in createCommandBuffer) instead of at frame end.
+  bool frameBoundaryPending_ = false;
 };
 
 } // namespace igl::metal
