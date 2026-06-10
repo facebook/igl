@@ -193,6 +193,7 @@ TEST_F(VulkanImmediateCommandsTest, GetVkFenceFromSubmitHandle) {
 
   const auto& wrapper = ctx.immediate_->acquire();
   auto handle = ctx.immediate_->submit(wrapper);
+  ASSERT_FALSE(handle.empty());
 
   VkFence fence = ctx.immediate_->getVkFenceFromSubmitHandle(handle);
   EXPECT_NE(fence, VK_NULL_HANDLE);
@@ -228,6 +229,34 @@ TEST_F(VulkanImmediateCommandsTest, AcquireLastSubmitSemaphore) {
 
   VkSemaphore secondCall = ctx.immediate_->acquireLastSubmitSemaphore();
   EXPECT_EQ(secondCall, VK_NULL_HANDLE);
+}
+
+TEST_F(VulkanImmediateCommandsTest, CachedFDDefaultIsNegativeOne) {
+  auto& ctx = getVulkanContext();
+  ASSERT_NE(ctx.immediate_, nullptr);
+
+  const auto& wrapper = ctx.immediate_->acquire();
+  auto handle = ctx.immediate_->submit(wrapper);
+  ASSERT_FALSE(handle.empty());
+
+  EXPECT_EQ(ctx.immediate_->cachedFDFromSubmitHandle(handle), -1);
+
+  ctx.immediate_->wait(handle);
+}
+
+TEST_F(VulkanImmediateCommandsTest, StoreFDAndCachedFDRoundTrip) {
+  auto& ctx = getVulkanContext();
+  ASSERT_NE(ctx.immediate_, nullptr);
+
+  const auto& wrapper = ctx.immediate_->acquire();
+  auto handle = ctx.immediate_->submit(wrapper);
+  ASSERT_FALSE(handle.empty());
+
+  constexpr int kTestFD = 42;
+  ctx.immediate_->storeFDInSubmitHandle(handle, kTestFD);
+  EXPECT_EQ(ctx.immediate_->cachedFDFromSubmitHandle(handle), kTestFD);
+
+  ctx.immediate_->wait(handle);
 }
 
 } // namespace igl::tests
