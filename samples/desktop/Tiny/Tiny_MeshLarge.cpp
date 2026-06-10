@@ -2594,6 +2594,11 @@ int main(int argc, char* argv[]) {
 
 #if defined(IGL_USE_STATIC_LAVAPIPE)
   const int kNumSamplesMSAA = 1;
+#elif defined(IGL_USE_STATIC_KOSMICKRISP)
+  // KosmicKrisp maps Vulkan MSAA onto Metal. Apple GPUs support at most 4x MSAA, so requesting
+  // 8x triggers an MTLTextureDescriptor validation assertion ("sampleCount (8) is not supported
+  // by device"). Cap MSAA at 4x on KosmicKrisp.
+  const int kNumSamplesMSAA = isHeadless ? 1 : 4;
 #else
   const int kNumSamplesMSAA = isHeadless ? 1 : 8;
 #endif
@@ -2608,7 +2613,15 @@ int main(int argc, char* argv[]) {
       dir = dir.parent_path();
     }
     if (!exists(dir / subdir)) {
-      printf("Cannot find the content directory. Run `deploy_content.py` before running this app.");
+      // Use stderr (unbuffered) + trailing newline + explicit flush so the message survives the
+      // immediate process termination below. A buffered stdout printf without a newline is lost
+      // when IGL_DEBUG_ASSERT_NOT_REACHED() aborts (or the early return exits) before the C
+      // runtime flushes stdout, which makes the failure look like a silent crash.
+      fprintf(stderr,
+              "Cannot find the content directory '%s'. Run `deploy_content.py` before running this "
+              "app, and launch it from the repository root.\n",
+              subdir.string().c_str());
+      fflush(stderr);
       IGL_DEBUG_ASSERT_NOT_REACHED();
       return EXIT_FAILURE;
     }
