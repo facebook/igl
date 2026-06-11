@@ -527,6 +527,25 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
   }
 }
 
+static bool compileDXC(DXCCompiler& compiler,
+                       const char* src,
+                       const char* entry,
+                       const char* target,
+                       const char* debugName,
+                       std::vector<uint8_t>& outBytecode) {
+  std::string errors;
+  const Result result =
+      compiler.compile(src, strlen(src), entry, target, debugName, 0, outBytecode, errors);
+  if (!result.isOk()) {
+    IGL_LOG_ERROR("Failed to compile mipmap shader '%s': %s\n%s\n",
+                  debugName,
+                  result.message.c_str(),
+                  errors.c_str());
+    return false;
+  }
+  return true;
+}
+
 void Device::precompileMipmapShaders(ID3D12Device* IGL_NONNULL device) {
   static const char* kVS = R"(
 struct VSOut { float4 pos: SV_POSITION; float2 uv: TEXCOORD0; };
@@ -554,34 +573,22 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
   const std::string vsTarget = getShaderTarget(shaderModel, ShaderStage::Vertex);
   const std::string psTarget = getShaderTarget(shaderModel, ShaderStage::Fragment);
 
-  std::string vsErrors;
-  const Result vsResult = dxcCompiler.compile(kVS,
-                                              strlen(kVS),
-                                              "main",
-                                              vsTarget.c_str(),
-                                              "MipmapGenerationVS",
-                                              0,
-                                              pipelineCache_.mipmapVSBytecode_,
-                                              vsErrors);
-  if (!vsResult.isOk()) {
-    IGL_LOG_ERROR(
-        "Failed to pre-compile mipmap VS: %s\n%s\n", vsResult.message.c_str(), vsErrors.c_str());
+  if (!compileDXC(dxcCompiler,
+                  kVS,
+                  "main",
+                  vsTarget.c_str(),
+                  "MipmapGenerationVS",
+                  pipelineCache_.mipmapVSBytecode_)) {
     pipelineCache_.mipmapVSBytecode_.clear();
     return;
   }
 
-  std::string psErrors;
-  const Result psResult = dxcCompiler.compile(kPS,
-                                              strlen(kPS),
-                                              "main",
-                                              psTarget.c_str(),
-                                              "MipmapGenerationPS",
-                                              0,
-                                              pipelineCache_.mipmapPSBytecode_,
-                                              psErrors);
-  if (!psResult.isOk()) {
-    IGL_LOG_ERROR(
-        "Failed to pre-compile mipmap PS: %s\n%s\n", psResult.message.c_str(), psErrors.c_str());
+  if (!compileDXC(dxcCompiler,
+                  kPS,
+                  "main",
+                  psTarget.c_str(),
+                  "MipmapGenerationPS",
+                  pipelineCache_.mipmapPSBytecode_)) {
     pipelineCache_.mipmapPSBytecode_.clear();
     pipelineCache_.mipmapVSBytecode_.clear();
     return;
