@@ -527,6 +527,35 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
   }
 }
 
+static bool compileFXC(const char* src,
+                       const char* entry,
+                       const char* target,
+                       std::vector<uint8_t>& outBytecode) {
+  igl::d3d12::ComPtr<ID3DBlob> blob;
+  igl::d3d12::ComPtr<ID3DBlob> errors;
+  const HRESULT hr = D3DCompile(src,
+                                strlen(src),
+                                nullptr,
+                                nullptr,
+                                nullptr,
+                                entry,
+                                target,
+                                D3DCOMPILE_ENABLE_STRICTNESS,
+                                0,
+                                blob.GetAddressOf(),
+                                errors.GetAddressOf());
+  if (FAILED(hr)) {
+    if (errors && errors->GetBufferSize() > 0) {
+      IGL_LOG_ERROR("FXC mipmap shader: %s\n",
+                    static_cast<const char*>(errors->GetBufferPointer()));
+    }
+    return false;
+  }
+  const auto* data = static_cast<const uint8_t*>(blob->GetBufferPointer());
+  outBytecode.assign(data, data + blob->GetBufferSize());
+  return true;
+}
+
 static bool compileDXC(DXCCompiler& compiler,
                        const char* src,
                        const char* entry,
@@ -560,38 +589,53 @@ SamplerState smp : register(s0);
 float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return tex0.SampleLevel(smp, uv, 0); }
 )";
 
+  // Try DXC first, fall back to FXC if unavailable or compilation fails.
+  // D3D12 PSOs require all stages to use the same bytecode format (DXIL vs
+  // DXBC), so both shaders use the same compiler — all-or-nothing.
   DXCCompiler dxcCompiler;
   const Result initResult = dxcCompiler.initialize();
-  if (!initResult.isOk()) {
-    IGL_LOG_ERROR("Failed to initialize DXC for mipmap shader compilation: %s\n",
-                  initResult.message.c_str());
-    IGL_LOG_ERROR("  Mipmap generation will be unavailable\n");
-    return;
+  const bool dxcAvailable = initResult.isOk();
+  bool useDXC = dxcAvailable;
+
+  if (!dxcAvailable) {
+    IGL_D3D12_LOG_VERBOSE("DXC unavailable for mipmap shaders, falling back to FXC\n");
   }
 
-  const D3D_SHADER_MODEL shaderModel = ctx_->getMaxShaderModel();
-  const std::string vsTarget = getShaderTarget(shaderModel, ShaderStage::Vertex);
-  const std::string psTarget = getShaderTarget(shaderModel, ShaderStage::Fragment);
+  if (dxcAvailable) {
+    const D3D_SHADER_MODEL shaderModel = ctx_->getMaxShaderModel();
+    const std::string vsTarget = getShaderTarget(shaderModel, ShaderStage::Vertex);
+    const std::string psTarget = getShaderTarget(shaderModel, ShaderStage::Fragment);
 
-  if (!compileDXC(dxcCompiler,
-                  kVS,
-                  "main",
-                  vsTarget.c_str(),
-                  "MipmapGenerationVS",
-                  pipelineCache_.mipmapVSBytecode_)) {
-    pipelineCache_.mipmapVSBytecode_.clear();
-    return;
+    const bool vsOk = compileDXC(dxcCompiler,
+                                 kVS,
+                                 "main",
+                                 vsTarget.c_str(),
+                                 "MipmapGenerationVS",
+                                 pipelineCache_.mipmapVSBytecode_);
+    const bool psOk = compileDXC(dxcCompiler,
+                                 kPS,
+                                 "main",
+                                 psTarget.c_str(),
+                                 "MipmapGenerationPS",
+                                 pipelineCache_.mipmapPSBytecode_);
+
+    if (!vsOk || !psOk) {
+      pipelineCache_.mipmapVSBytecode_.clear();
+      pipelineCache_.mipmapPSBytecode_.clear();
+      useDXC = false;
+    }
   }
 
-  if (!compileDXC(dxcCompiler,
-                  kPS,
-                  "main",
-                  psTarget.c_str(),
-                  "MipmapGenerationPS",
-                  pipelineCache_.mipmapPSBytecode_)) {
-    pipelineCache_.mipmapPSBytecode_.clear();
-    pipelineCache_.mipmapVSBytecode_.clear();
-    return;
+  if (!useDXC) {
+    if (!compileFXC(kVS, "main", "vs_5_1", pipelineCache_.mipmapVSBytecode_)) {
+      pipelineCache_.mipmapVSBytecode_.clear();
+      return;
+    }
+    if (!compileFXC(kPS, "main", "ps_5_1", pipelineCache_.mipmapPSBytecode_)) {
+      pipelineCache_.mipmapVSBytecode_.clear();
+      pipelineCache_.mipmapPSBytecode_.clear();
+      return;
+    }
   }
 
   // Create root signature for mipmap generation
