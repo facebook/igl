@@ -227,6 +227,8 @@ class Device final : public IDevice, public IFenceProvider {
                                 Result* IGL_NULLABLE outResult) const;
   bool validateBufferAlignment(size_t bufferSize, bool isUniform) const;
 
+  void precompileMipmapShaders(ID3D12Device* IGL_NONNULL device);
+
   // Alignment constants.
   static constexpr size_t MSAA_ALIGNMENT = 65536; // 64KB for MSAA textures
   static constexpr size_t BUFFER_ALIGNMENT = 256; // 256 bytes for constant buffers
