@@ -72,4 +72,24 @@ TEST(UniformTraitTest, Mat3ToAligned) {
   }
 }
 
+// toAligned() copies exactly three floats per row and must not write the fourth
+// (padding) float. Seeding the padding slot with a sentinel proves the copy
+// leaves it untouched rather than merely happening to keep a zero from init.
+TEST(UniformTraitTest, Mat3ToAlignedPreservesPadding) {
+  const glm::mat3 src(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f);
+
+  Trait<glm::mat3>::Aligned aligned{};
+  for (auto& row : aligned) {
+    row.w = -1.0f; // sentinel in the padding slot
+  }
+  Trait<glm::mat3>::toAligned(aligned, src);
+
+  for (int row = 0; row < 3; ++row) {
+    EXPECT_FLOAT_EQ(aligned[row].x, static_cast<float>(row * 3 + 1));
+    EXPECT_FLOAT_EQ(aligned[row].y, static_cast<float>(row * 3 + 2));
+    EXPECT_FLOAT_EQ(aligned[row].z, static_cast<float>(row * 3 + 3));
+    EXPECT_FLOAT_EQ(aligned[row].w, -1.0f); // padding preserved by toAligned()
+  }
+}
+
 } // namespace iglu::tests
