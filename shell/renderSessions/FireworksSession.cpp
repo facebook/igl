@@ -482,6 +482,8 @@ void FireworksSession::generateParticleTexture(std::vector<uint8_t>& image) {
       // @fb-only
 // @fb-only
       {
+        // image is resized to numPixels above and pixel < numPixels by loop bounds
+        // NOLINTNEXTLINE(facebook-hte-ParameterUncheckedArrayBounds)
         image[pixel] = value;
       }
     }
