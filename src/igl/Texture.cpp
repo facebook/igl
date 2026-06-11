@@ -224,18 +224,18 @@ Result TextureRangeDesc::validate() const noexcept {
 
 #define PROPERTIES(fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs, planes) \
   case TextureFormat::fmt:                                                 \
-    return TextureFormatProperties{IGL_TO_STRING(fmt),                     \
-                                   TextureFormat::fmt,                     \
-                                   cpp,                                    \
-                                   bpb,                                    \
-                                   bw,                                     \
-                                   bh,                                     \
-                                   bd,                                     \
-                                   mbx,                                    \
-                                   mby,                                    \
-                                   mbz,                                    \
-                                   planes,                                 \
-                                   flgs};
+    return TextureFormatProperties{.name = IGL_TO_STRING(fmt),             \
+                                   .format = TextureFormat::fmt,           \
+                                   .componentsPerPixel = cpp,              \
+                                   .bytesPerBlock = bpb,                   \
+                                   .blockWidth = bw,                       \
+                                   .blockHeight = bh,                      \
+                                   .blockDepth = bd,                       \
+                                   .minBlocksX = mbx,                      \
+                                   .minBlocksY = mby,                      \
+                                   .minBlocksZ = mbz,                      \
+                                   .numPlanes = planes,                    \
+                                   .flags = flgs};
 
 #define INVALID(fmt) PROPERTIES(fmt, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0)
 #define COLOR(fmt, cpp, bpb, flgs) PROPERTIES(fmt, cpp, bpb, 1, 1, 1, 1, 1, 1, flgs, 1)
