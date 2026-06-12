@@ -187,7 +187,7 @@ void TextureFormatTestBase::render(std::shared_ptr<ITexture> sampledTexture,
   //-------
   // Render
   //-------
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc{}, &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
   ASSERT_TRUE(cmdBuf != nullptr);
 
@@ -357,7 +357,7 @@ void TextureFormatTestBase::testUpload(std::shared_ptr<ITexture> texture) {
   ASSERT_TRUE(result.isOk()) << texture->getProperties().name;
   // flush upload
   Result ret;
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc{}, &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   cmdQueue_->submit(*cmdBuf);
   cmdBuf->waitUntilCompleted();
 }
