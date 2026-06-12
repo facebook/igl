@@ -79,7 +79,7 @@ void InputDispatcher::addMouseListener(const std::shared_ptr<IMouseListener>& li
 
 void InputDispatcher::removeMouseListener(const std::shared_ptr<IMouseListener>& listener) {
   const std::lock_guard guard(mutex_);
-  for (int i = mouseListeners_.size() - 1; i >= 0; --i) {
+  for (size_t i = mouseListeners_.size(); i-- > 0;) {
     if (listener.get() == mouseListeners_[i].get()) {
       mouseListeners_.erase(mouseListeners_.begin() + i);
     }
@@ -93,7 +93,7 @@ void InputDispatcher::addTouchListener(const std::shared_ptr<ITouchListener>& li
 
 void InputDispatcher::removeTouchListener(const std::shared_ptr<ITouchListener>& listener) {
   const std::lock_guard guard(mutex_);
-  for (int i = touchListeners_.size() - 1; i >= 0; --i) {
+  for (size_t i = touchListeners_.size(); i-- > 0;) {
     if (listener.get() == touchListeners_[i].get()) {
       touchListeners_.erase(touchListeners_.begin() + i);
     }
@@ -107,7 +107,7 @@ void InputDispatcher::addKeyListener(const std::shared_ptr<IKeyListener>& listen
 
 void InputDispatcher::removeKeyListener(const std::shared_ptr<IKeyListener>& listener) {
   const std::lock_guard guard(mutex_);
-  for (int i = keyListeners_.size() - 1; i >= 0; --i) {
+  for (size_t i = keyListeners_.size(); i-- > 0;) {
     if (listener.get() == keyListeners_[i].get()) {
       keyListeners_.erase(keyListeners_.begin() + i);
     }
@@ -121,7 +121,7 @@ void InputDispatcher::addRayListener(const std::shared_ptr<IRayListener>& listen
 
 void InputDispatcher::removeRayListener(const std::shared_ptr<IRayListener>& listener) {
   const std::lock_guard guard(mutex_);
-  for (int i = rayListeners_.size() - 1; i >= 0; --i) {
+  for (size_t i = rayListeners_.size(); i-- > 0;) {
     if (listener.get() == rayListeners_[i].get()) {
       rayListeners_.erase(rayListeners_.begin() + i);
     }
@@ -135,7 +135,7 @@ void InputDispatcher::addIntentListener(const std::shared_ptr<IIntentListener>& 
 
 void InputDispatcher::removeIntentListener(const std::shared_ptr<IIntentListener>& listener) {
   const std::lock_guard guard(mutex_);
-  for (int i = rayListeners_.size() - 1; i >= 0; --i) {
+  for (size_t i = intentListeners_.size(); i-- > 0;) {
     if (listener.get() == intentListeners_[i].get()) {
       intentListeners_.erase(intentListeners_.begin() + i);
     }
