@@ -1899,8 +1899,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
 
   // Pass 1: shadows
   if (isShadowMapDirty_) {
-    const std::shared_ptr<ICommandBuffer> buffer =
-        commandQueue_->createCommandBuffer(CommandBufferDesc(), nullptr);
+    const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
     auto commands = buffer->createRenderCommandEncoder(renderPassShadow_, fbShadowMap_);
 
@@ -1947,8 +1946,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
 
   // Pass 2: mesh
   {
-    const std::shared_ptr<ICommandBuffer> buffer =
-        commandQueue_->createCommandBuffer(CommandBufferDesc(), nullptr);
+    const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
     // This will clear the framebuffer
     auto commands = buffer->createRenderCommandEncoder(renderPassOffscreen_, fbOffscreen_);
@@ -2076,8 +2074,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
 
   // Pass 4: render into the swapchain image
   {
-    const std::shared_ptr<ICommandBuffer> buffer =
-        commandQueue_->createCommandBuffer(CommandBufferDesc(), nullptr);
+    const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
     // This will clear the framebuffer
     auto commands = buffer->createRenderCommandEncoder(renderPassMain_, fbMain_);
