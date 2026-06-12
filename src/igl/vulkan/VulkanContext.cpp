@@ -582,7 +582,7 @@ VulkanContext::~VulkanContext() {
   stagingDevice_.reset(nullptr);
 
   if (vkDevice_) {
-    for (auto r : renderPasses_) {
+    for (VkRenderPass r : renderPasses_) {
       vf_.vkDestroyRenderPass(vkDevice_, r, nullptr);
     }
   }
@@ -1404,7 +1404,7 @@ VkExtent2D VulkanContext::getSwapchainExtent() const {
 Result VulkanContext::waitIdle() const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
 
-  for (auto queue : {deviceQueues_.graphicsQueue, deviceQueues_.computeQueue}) {
+  for (VkQueue queue : {deviceQueues_.graphicsQueue, deviceQueues_.computeQueue}) {
     VK_ASSERT_RETURN(vf_.vkQueueWaitIdle(queue));
   }
 
