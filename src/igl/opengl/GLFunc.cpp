@@ -157,8 +157,10 @@ IGL_EXTERN_BEGIN
 #endif
 #if IGL_OPENGL || defined(GL_ES_VERSION_3_0)
 #define CAN_CALL_glDrawBuffers OPENGL_OR_CAN_CALL
+#define CAN_CALL_glReadBuffer OPENGL_OR_CAN_CALL
 #else
 #define CAN_CALL_glDrawBuffers 0
+#define CAN_CALL_glReadBuffer 0
 #endif
 #if IGL_OPENGL || defined(GL_ES_VERSION_3_0)
 #define CAN_CALL_glCompressedTexImage3D OPENGL_OR_CAN_CALL
@@ -297,6 +299,10 @@ void iglCompressedTexSubImage3D(GLenum target,
 
 void iglDrawBuffers(GLsizei n, const GLenum* bufs) {
   GLEXTENSION_METHOD_BODY(CAN_CALL_glDrawBuffers, glDrawBuffers, PFNIGLDRAWBUFFERSPROC, n, bufs);
+}
+
+void iglReadBuffer(GLenum src) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glReadBuffer, glReadBuffer, PFNIGLREADBUFFERPROC, src);
 }
 
 GLuint iglGetDebugMessageLog(GLuint count,

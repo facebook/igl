@@ -3520,6 +3520,22 @@ void IContext::popDebugGroup() {
   }
 }
 
+void IContext::readBuffer(GLenum src) {
+  if (readBufferProc_ == nullptr) {
+    if (deviceFeatureSet_.hasFeature(DeviceFeatures::ReadWriteFramebuffer)) {
+      readBufferProc_ = iglReadBuffer;
+    }
+    IGL_DEBUG_ASSERT(readBufferProc_, "No supported function for glReadBuffer\n");
+  }
+  IGL_PROFILER_ZONE_GPU_COLOR_OGL("readBuffer()", IGL_PROFILER_COLOR_DRAW);
+
+  APILOG("glReadBuffer(%s) read (framebuffer: %u)\n",
+         GL_ENUM_TO_STRING(src),
+         boundFramebuffer(GL_READ_FRAMEBUFFER));
+  GLCALL_PROC(readBufferProc_, src);
+  GLCHECK_ERRORS();
+}
+
 void IContext::readPixels(GLint x,
                           GLint y,
                           GLsizei width,

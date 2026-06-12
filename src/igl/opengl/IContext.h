@@ -335,6 +335,7 @@ class IContext {
   void polygonOffsetClamp(GLfloat factor, GLfloat units, float clamp);
   void popDebugGroup();
   void pushDebugGroup(GLenum source, GLuint id, GLsizei length, const GLchar* IGL_NULLABLE message);
+  void readBuffer(GLenum src);
   void readPixels(GLint x,
                   GLint y,
                   GLsizei width,
@@ -732,6 +733,7 @@ class IContext {
   PFNIGLOBJECTLABELPROC IGL_NULLABLE objectLabelProc_ = nullptr;
   PFNIGLPOPDEBUGGROUPPROC IGL_NULLABLE popDebugGroupProc_ = nullptr;
   PFNIGLPUSHDEBUGGROUPPROC IGL_NULLABLE pushDebugGroupProc_ = nullptr;
+  PFNIGLREADBUFFERPROC IGL_NULLABLE readBufferProc_ = nullptr;
   PFNIGLRENDERBUFFERSTORAGEMULTISAMPLEPROC IGL_NULLABLE renderbufferStorageMultisampleProc_ =
       nullptr;
   PFNIGLTEXIMAGE3DPROC IGL_NULLABLE texImage3DProc_ = nullptr;

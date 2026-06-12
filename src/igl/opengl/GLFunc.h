@@ -232,6 +232,7 @@ using PFNIGLPUSHDEBUGGROUPPROC = void (*)(GLenum source,
                                           GLsizei length,
                                           const GLchar* message);
 using PFNIGLPUSHGROUPMARKERPROC = void (*)(GLsizei length, const GLchar* marker);
+using PFNIGLREADBUFFERPROC = void (*)(GLenum src);
 using PFNIGLRENDERBUFFERSTORAGEPROC = void (*)(GLenum target,
                                                GLenum internalformat,
                                                GLsizei width,
@@ -346,6 +347,7 @@ void* iglMapBuffer(GLenum target, GLbitfield access);
 void iglObjectLabel(GLenum identifier, GLuint name, GLsizei length, const char* label);
 void iglPopDebugGroup();
 void iglPushDebugGroup(GLenum source, GLuint id, GLsizei length, const GLchar* message);
+void iglReadBuffer(GLenum src);
 void iglTexImage3D(GLenum target,
                    GLint level,
                    GLint internalformat,
