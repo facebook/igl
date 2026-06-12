@@ -852,8 +852,8 @@ GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
           (button == GLFW_MOUSE_BUTTON_LEFT)
               ? MouseButton::Left
               : (button == GLFW_MOUSE_BUTTON_RIGHT ? MouseButton::Right : MouseButton::Middle);
-      inputDispatcher.queueEvent(
-          igl::shell::MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
+      inputDispatcher.queueEvent(igl::shell::MouseButtonEvent(
+          iglButton, action == GLFW_PRESS, static_cast<float>(xpos), static_cast<float>(ypos)));
 #endif // IGL_WITH_IGLU
     });
 
@@ -967,8 +967,10 @@ GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
             *ctx, HWDeviceQueryDesc(HWDeviceType::SoftwareGpu), nullptr);
       }
       IGL_DEBUG_ASSERT(!devices.empty(), "GPU is not found");
-      device_ =
-          vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
+      device_ = vulkan::HWDevice::create(std::move(ctx),
+                                         devices[0],
+                                         static_cast<uint32_t>(width_),
+                                         static_cast<uint32_t>(height_));
 #endif
       IGL_DEBUG_ASSERT(device_);
     }
@@ -1053,11 +1055,11 @@ bool loadAndCache(const char* cacheFileName) {
         vertexData_.push_back({pos,
                                glm::packSnorm3x10_1x2(vec4(normal, 0)),
                                glm::packHalf2x16(uv),
-                               (uint32_t)mtlIndex});
+                               static_cast<uint32_t>(mtlIndex)});
         shapeData.push_back({pos,
                              glm::packSnorm3x10_1x2(vec4(normal, 0)),
                              glm::packHalf2x16(uv),
-                             (uint32_t)mtlIndex});
+                             static_cast<uint32_t>(mtlIndex)});
       }
       index_offset += 3;
     }
@@ -1067,7 +1069,7 @@ bool loadAndCache(const char* cacheFileName) {
   shapeData.clear();
   for (auto shape : resplitShapes) {
     shapeData.insert(shapeData.end(), shape.begin(), shape.end());
-    shapeVertexCnt_.emplace_back((uint32_t)shape.size());
+    shapeVertexCnt_.emplace_back(static_cast<uint32_t>(shape.size()));
   }
 
   // repack the mesh as described in https://github.com/zeux/meshoptimizer
@@ -1127,9 +1129,9 @@ bool loadAndCache(const char* cacheFileName) {
   if (!cacheFile) {
     return false;
   }
-  const uint32_t numMaterials = (uint32_t)cachedMaterials_.size();
-  const uint32_t numVertices = (uint32_t)vertexData_.size();
-  const uint32_t numIndices = (uint32_t)indexData_.size();
+  const uint32_t numMaterials = static_cast<uint32_t>(cachedMaterials_.size());
+  const uint32_t numVertices = static_cast<uint32_t>(vertexData_.size());
+  const uint32_t numIndices = static_cast<uint32_t>(indexData_.size());
   fwrite(&kMeshCacheVersion, sizeof(kMeshCacheVersion), 1, cacheFile);
   fwrite(&numMaterials, sizeof(numMaterials), 1, cacheFile);
   fwrite(&numVertices, sizeof(numVertices), 1, cacheFile);
@@ -1137,10 +1139,10 @@ bool loadAndCache(const char* cacheFileName) {
   fwrite(cachedMaterials_.data(), sizeof(CachedMaterial), numMaterials, cacheFile);
   fwrite(vertexData_.data(), sizeof(VertexData), numVertices, cacheFile);
   fwrite(indexData_.data(), sizeof(uint32_t), numIndices, cacheFile);
-  const uint32_t numShapes = (uint32_t)shapeData.size();
+  const uint32_t numShapes = static_cast<uint32_t>(shapeData.size());
   fwrite(&numShapes, sizeof(numShapes), 1, cacheFile);
   fwrite(shapeData.data(), sizeof(VertexData), numShapes, cacheFile);
-  const uint32_t numShapeVertices = (uint32_t)shapeVertexCnt_.size();
+  const uint32_t numShapeVertices = static_cast<uint32_t>(shapeVertexCnt_.size());
   fwrite(&numShapeVertices, sizeof(numShapeVertices), 1, cacheFile);
   fwrite(shapeVertexCnt_.data(), sizeof(uint32_t), numShapeVertices, cacheFile);
 #if USE_OPENGL_BACKEND
@@ -1378,7 +1380,7 @@ void initModel(int numSamplesMSAA) {
 #if USE_OPENGL_BACKEND
   const uint32_t id = 0;
 #else
-  const uint32_t id = (uint32_t)textureDummyWhite_->getTextureId();
+  const uint32_t id = static_cast<uint32_t>(textureDummyWhite_->getTextureId());
 #endif
 
   for (const auto& mtl : cachedMaterials_) {
@@ -1860,7 +1862,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
 
   // from igl/shell/renderSessions/Textured3DCubeSession.cpp
   const float fov = float(45.0f * (M_PI / 180.0f));
-  const float aspectRatio = (float)width_ / (float)height_;
+  const float aspectRatio = static_cast<float>(width_) / static_cast<float>(height_);
 
   const mat4 shadowProj = glm::perspective(float(60.0f * (M_PI / 180.0f)), 1.0f, 10.0f, 4000.0f);
   const mat4 shadowView = mat4(vec4(0.772608519f, 0.532385886f, -0.345892131f, 0),
@@ -1987,7 +1989,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable,
     commands->bindVertexBuffer(0, *vb0_);
     int shapeStart = 0;
     for (auto numVertices : shapeVertexCnt_) {
-      const uint32_t imageIdx = (uint32_t)vertexData_[shapeStart].mtlIndex;
+      const uint32_t imageIdx = static_cast<uint32_t>(vertexData_[shapeStart].mtlIndex);
       const auto ambientTextureReference =
           strstr(cachedMaterials_[imageIdx].name, "MASTER_Glass_") ? textureDummyWhite_
           : textures_[imageIdx].ambient                            ? textures_[imageIdx].ambient
@@ -2143,14 +2145,14 @@ void generateCompressedTexture(const LoadedImage& img) {
 
     // resize
     stbir_resize_uint8((const unsigned char*)img.pixels,
-                       (int)img.w,
-                       (int)img.h,
+                       static_cast<int>(img.w),
+                       static_cast<int>(img.h),
                        0,
                        (unsigned char*)destPixels.data(),
                        w,
                        h,
                        0,
-                       (int)img.channels);
+                       static_cast<int>(img.channels));
     // compress
     auto packedImage16 = Compress::getCompressedImage(
         destPixels.data(), w, h, img.channels, false, &loaderShouldExit_);
@@ -2248,7 +2250,7 @@ void loadMaterials(bool isHeadless) {
 
   textures_.resize(cachedMaterials_.size());
 
-  remainingMaterialsToLoad_ = (uint32_t)cachedMaterials_.size();
+  remainingMaterialsToLoad_ = static_cast<uint32_t>(cachedMaterials_.size());
 
   for (size_t i = 0; i != cachedMaterials_.size(); i++) {
     loaderPool_->silent_async([i]() { loadMaterial(i); });
@@ -2562,9 +2564,11 @@ void processLoadedMaterials() {
     // update GPU materials
     textures_[mtl.idx] = tex;
 #if !USE_OPENGL_BACKEND
-    materials_[mtl.idx].texAmbient = tex.ambient ? (uint32_t)tex.ambient->getTextureId() : 0;
-    materials_[mtl.idx].texDiffuse = tex.diffuse ? (uint32_t)tex.diffuse->getTextureId() : 0;
-    materials_[mtl.idx].texAlpha = tex.alpha ? (uint32_t)tex.alpha->getTextureId() : 0;
+    materials_[mtl.idx].texAmbient =
+        tex.ambient ? static_cast<uint32_t>(tex.ambient->getTextureId()) : 0;
+    materials_[mtl.idx].texDiffuse =
+        tex.diffuse ? static_cast<uint32_t>(tex.diffuse->getTextureId()) : 0;
+    materials_[mtl.idx].texAlpha = tex.alpha ? static_cast<uint32_t>(tex.alpha->getTextureId()) : 0;
     IGL_DEBUG_ASSERT(materials_[mtl.idx].texAmbient >= 0);
     IGL_DEBUG_ASSERT(materials_[mtl.idx].texDiffuse >= 0);
     IGL_DEBUG_ASSERT(materials_[mtl.idx].texAlpha >= 0);
@@ -2739,7 +2743,12 @@ int main(int argc, char* argv[]) {
       const char* fileName = "TinyMeshLarge.png";
       IGLLog(IGLLogInfo, "Writing screenshot to: '%s'\n", fileName);
       stbi_flip_vertically_on_write(1);
-      stbi_write_png(fileName, (int)dim.width, (int)dim.height, 3, pixelsRGB.data(), 0);
+      stbi_write_png(fileName,
+                     static_cast<int>(dim.width),
+                     static_cast<int>(dim.height),
+                     3,
+                     pixelsRGB.data(),
+                     0);
       break;
     }
   }
