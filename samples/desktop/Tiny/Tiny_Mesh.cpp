@@ -260,8 +260,8 @@ GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationL
           (button == GLFW_MOUSE_BUTTON_LEFT)
               ? MouseButton::Left
               : (button == GLFW_MOUSE_BUTTON_RIGHT ? MouseButton::Right : MouseButton::Middle);
-      inputDispatcher_.queueEvent(
-          igl::shell::MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
+      inputDispatcher_.queueEvent(igl::shell::MouseButtonEvent(
+          iglButton, action == GLFW_PRESS, static_cast<float>(xpos), static_cast<float>(ypos)));
     });
 #endif // IGL_WITH_IGLU
 
@@ -302,8 +302,8 @@ GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationL
       devices = vulkan::HWDevice::queryDevices(
           *ctx, HWDeviceQueryDesc(HWDeviceType::SoftwareGpu), nullptr);
     }
-    device =
-        vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
+    device = vulkan::HWDevice::create(
+        std::move(ctx), devices[0], static_cast<uint32_t>(width_), static_cast<uint32_t>(height_));
     IGL_DEBUG_ASSERT(device);
   }
 
