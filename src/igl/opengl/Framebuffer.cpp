@@ -816,14 +816,19 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
 }
 
 void CustomFramebuffer::unbind() const {
-  // discard the depthStencil if we don't need to store its contents
-  GLenum attachments[3];
+  // Discard attachments whose store action is not Store. For MRT, iterate all
+  // color attachments so any of them tagged DontCare/Invalidate get released
+  // (otherwise the driver must preserve their contents, costing bandwidth on
+  // tilers).
+  GLenum attachments[IGL_COLOR_ATTACHMENTS_MAX + 2];
   GLsizei numAttachments = 0;
-  const auto& colorAttachment0 = renderTarget_.colorAttachments[0];
 
-  if (colorAttachment0.texture != nullptr &&
-      renderPass_.colorAttachments[0].storeAction != StoreAction::Store) {
-    attachments[numAttachments++] = GL_COLOR_ATTACHMENT0;
+  for (size_t i = 0; i < IGL_COLOR_ATTACHMENTS_MAX; ++i) {
+    const auto& colorAttachment = renderTarget_.colorAttachments[i];
+    if (colorAttachment.texture != nullptr &&
+        renderPass_.colorAttachments[i].storeAction != StoreAction::Store) {
+      attachments[numAttachments++] = static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + i);
+    }
   }
   if (renderTarget_.depthAttachment.texture != nullptr) {
     if (renderPass_.depthAttachment.storeAction != StoreAction::Store) {
