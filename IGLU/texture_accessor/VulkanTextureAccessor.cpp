@@ -86,7 +86,7 @@ size_t VulkanTextureAccessor::copyBytes(unsigned char* ptr, size_t length) {
       vkImageLayout_,
       VK_IMAGE_ASPECT_COLOR_BIT,
       ptr,
-      bytesPerRow_,
+      static_cast<uint32_t>(bytesPerRow_),
       false);
 #endif
   return numBytesRequired_;
