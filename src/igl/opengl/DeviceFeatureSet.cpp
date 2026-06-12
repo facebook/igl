@@ -340,6 +340,8 @@ bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
     return hasESExtension(*this, "GL_APPLE_framebuffer_multisample");
   case Extensions::MultiSampleExt:
     return hasESExtension(*this, "GL_EXT_multisampled_render_to_texture");
+  case Extensions::MultiSampleExt2:
+    return hasESExtension(*this, "GL_EXT_multisampled_render_to_texture2");
   case Extensions::MultiSampleImg:
     return hasESExtension(*this, "GL_IMG_multisampled_render_to_texture");
   case Extensions::MultiViewMultiSample:

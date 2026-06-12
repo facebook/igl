@@ -76,11 +76,13 @@ void TextureBufferBase::attach(GLenum attachment,
   const auto numLayers = getNumLayers();
 
   if (numSamples > 1) {
-    IGL_DEBUG_ASSERT(
-        attachment == GL_COLOR_ATTACHMENT0 || attachment == GL_DEPTH_ATTACHMENT ||
-            attachment == GL_STENCIL_ATTACHMENT,
-        "Multisample framebuffer can only use GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT "
-        "or GL_STENCIL_ATTACHMENT");
+    if (!deviceFeatures.hasExtension(Extensions::MultiSampleExt2)) {
+      IGL_DEBUG_ASSERT(
+          attachment == GL_COLOR_ATTACHMENT0 || attachment == GL_DEPTH_ATTACHMENT ||
+              attachment == GL_STENCIL_ATTACHMENT,
+          "Multisample framebuffer can only use GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT "
+          "or GL_STENCIL_ATTACHMENT");
+    }
     if (params.stereo) {
       getContext().framebufferTextureMultisampleMultiview(framebufferTarget,
                                                           attachment,

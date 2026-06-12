@@ -39,6 +39,7 @@ enum class Extensions {
   MapBufferRange,             // GL_EXT_map_buffer_range is supported
   MultiSampleApple,           // GL_APPLE_framebuffer_multisample is supported
   MultiSampleExt,             // GL_EXT_multisampled_render_to_texture is supported
+  MultiSampleExt2,            // GL_EXT_multisampled_render_to_texture2 is supported
   MultiSampleImg,             // GL_IMG_multisampled_render_to_texture is supported
   MultiViewMultiSample,       // GL_OVR_multiview_multisampled_render_to_texture is supported
   PolygonOffsetClamp,         // GL_ARB_polygon_offset_clamp is supported
