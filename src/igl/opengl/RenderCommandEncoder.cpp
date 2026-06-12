@@ -221,6 +221,81 @@ void RenderCommandEncoder::endEncoding() {
                                                      mask,
                                                      getContext(),
                                                      &outResult);
+
+        bool hasMRT = false;
+        for (size_t i = 1; i < IGL_COLOR_ATTACHMENTS_MAX && !hasMRT; ++i) {
+          if (!framebuffer_->getColorAttachment(i) || !resolveFramebuffer_->getColorAttachment(i)) {
+            continue;
+          }
+          hasMRT = true;
+        }
+
+        if (hasMRT) {
+          const FramebufferBindingGuard g(getContext());
+          const GLuint readFboId = static_cast<Framebuffer&>(*framebuffer_).getId();
+          const GLuint drawFboId = static_cast<Framebuffer&>(*resolveFramebuffer_).getId();
+
+          getContext().bindFramebuffer(GL_READ_FRAMEBUFFER, readFboId);
+          getContext().bindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFboId);
+
+          for (size_t i = 1; i < IGL_COLOR_ATTACHMENTS_MAX; ++i) {
+            if (!framebuffer_->getColorAttachment(i) ||
+                !resolveFramebuffer_->getColorAttachment(i)) {
+              continue;
+            }
+
+            const GLenum attachment = static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + i);
+            getContext().readBuffer(attachment);
+
+            // Note on glDrawBuffers semantics (GLES 3.0+): the i-th entry in bufs
+            // must be either GL_COLOR_ATTACHMENTi or GL_NONE. We can NOT pass
+            // {GL_COLOR_ATTACHMENT1} with n=1 to enable only attachment 1 — that
+            // places ATTACHMENT1 at index 0 and triggers GL_INVALID_OPERATION.
+            // Instead, pad with GL_NONE so the desired attachment lives at its
+            // own index, e.g. {GL_NONE, ATTACHMENT1}.
+            GLenum dbs[IGL_COLOR_ATTACHMENTS_MAX] = {};
+            for (size_t k = 0; k < i; ++k) {
+              dbs[k] = GL_NONE;
+            }
+            dbs[i] = attachment;
+            getContext().drawBuffers(static_cast<GLsizei>(i + 1), dbs);
+            igl::opengl::PlatformDevice::blitFramebuffer(framebuffer_,
+                                                         0,
+                                                         0,
+                                                         width,
+                                                         height,
+                                                         resolveFramebuffer_,
+                                                         0,
+                                                         0,
+                                                         width,
+                                                         height,
+                                                         GL_COLOR_BUFFER_BIT,
+                                                         getContext(),
+                                                         &outResult);
+            if (!outResult.isOk()) {
+              break;
+            }
+          }
+
+          // Restore per-FBO READ_BUFFER / DRAW_BUFFERS so subsequent passes
+          // that reuse these framebuffers (especially resolveFramebuffer_ as
+          // an MRT render target) see all attachments enabled again.
+          getContext().readBuffer(GL_COLOR_ATTACHMENT0);
+          GLenum dbs[IGL_COLOR_ATTACHMENTS_MAX] = {};
+          GLsizei dbCount = 0;
+          for (size_t i = 0; i < IGL_COLOR_ATTACHMENTS_MAX; ++i) {
+            if (resolveFramebuffer_->getColorAttachment(i)) {
+              dbs[i] = static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + i);
+              dbCount = static_cast<GLsizei>(i + 1);
+            } else {
+              dbs[i] = GL_NONE;
+            }
+          }
+          if (dbCount > 0) {
+            getContext().drawBuffers(dbCount, dbs);
+          }
+        }
+
       } else {
         IGL_DEBUG_ASSERT_NOT_REACHED();
       }
