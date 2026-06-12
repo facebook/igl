@@ -208,19 +208,113 @@ void RenderCommandEncoder::endEncoding() {
       IGL_DEBUG_ASSERT(mask != 0);
 
       if (sizeMatch) {
-        igl::opengl::PlatformDevice::blitFramebuffer(framebuffer_,
-                                                     0,
-                                                     0,
-                                                     width,
-                                                     height,
-                                                     resolveFramebuffer_,
-                                                     0,
-                                                     0,
-                                                     width,
-                                                     height,
-                                                     mask,
-                                                     getContext(),
-                                                     &outResult);
+        auto& ctx = getContext();
+        const GLuint readFboId = static_cast<Framebuffer&>(*framebuffer_).getId();
+        const GLuint drawFboId = static_cast<Framebuffer&>(*resolveFramebuffer_).getId();
+
+        // Isolate a single color attachment on both src (READ_BUFFER) and dst
+        // (DRAW_BUFFERS). These selections are stored per-FBO, so we only need
+        // GL to be bound to readFboId/drawFboId while issuing the calls; the
+        // FramebufferBindingGuard will restore the previous binding afterwards
+        // but the per-FBO selection persists, which is exactly what we want
+        // for the immediately following blit.
+        //
+        // Note on glDrawBuffers semantics (GLES 3.0+): the i-th entry in bufs
+        // must be either GL_COLOR_ATTACHMENTi or GL_NONE. We can NOT pass
+        // {GL_COLOR_ATTACHMENT1} with n=1 to enable only attachment 1 — that
+        // places ATTACHMENT1 at index 0 and triggers GL_INVALID_OPERATION.
+        // Instead, pad with GL_NONE so the desired attachment lives at its
+        // own index, e.g. {GL_NONE, ATTACHMENT1}.
+        auto selectAttachment = [&](size_t i) {
+          const FramebufferBindingGuard g(ctx);
+          ctx.bindFramebuffer(GL_READ_FRAMEBUFFER, readFboId);
+          ctx.bindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFboId);
+          const GLenum attachment = static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + i);
+          ctx.readBuffer(attachment);
+
+          GLenum dbs[IGL_COLOR_ATTACHMENTS_MAX] = {};
+          for (size_t k = 0; k < i; ++k) {
+            dbs[k] = GL_NONE;
+          }
+          dbs[i] = attachment;
+          ctx.drawBuffers(static_cast<GLsizei>(i + 1), dbs);
+        };
+
+        const GLbitfield colorMask = mask & GL_COLOR_BUFFER_BIT;
+        const GLbitfield dsMask = mask & (GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+        // 1) Blit each color attachment in isolation. Doing them one-by-one
+        //    avoids GL_INVALID_OPERATION when MRT attachments have different
+        //    internal formats (the dst FBO's DRAW_BUFFERS would otherwise
+        //    expose all attachments at once and require format match across
+        //    all of them against src's READ_BUFFER).
+        if (colorMask) {
+          for (size_t i = 0; i < IGL_COLOR_ATTACHMENTS_MAX; ++i) {
+            if (!framebuffer_->getColorAttachment(i) ||
+                !resolveFramebuffer_->getColorAttachment(i)) {
+              continue;
+            }
+            selectAttachment(i);
+            igl::opengl::PlatformDevice::blitFramebuffer(framebuffer_,
+                                                         0,
+                                                         0,
+                                                         width,
+                                                         height,
+                                                         resolveFramebuffer_,
+                                                         0,
+                                                         0,
+                                                         width,
+                                                         height,
+                                                         GL_COLOR_BUFFER_BIT,
+                                                         ctx,
+                                                         &outResult);
+            if (!outResult.isOk()) {
+              break;
+            }
+          }
+        }
+
+        // 2) Depth / stencil resolve (independent of read/draw buffer state).
+        if (dsMask && outResult.isOk()) {
+          igl::opengl::PlatformDevice::blitFramebuffer(framebuffer_,
+                                                       0,
+                                                       0,
+                                                       width,
+                                                       height,
+                                                       resolveFramebuffer_,
+                                                       0,
+                                                       0,
+                                                       width,
+                                                       height,
+                                                       dsMask,
+                                                       ctx,
+                                                       &outResult);
+        }
+
+        // 3) Restore per-FBO READ_BUFFER / DRAW_BUFFERS so subsequent passes
+        //    that reuse these framebuffers (especially resolveFramebuffer_ as
+        //    an MRT render target) see all attachments enabled again.
+        if (colorMask) {
+          const FramebufferBindingGuard g(ctx);
+
+          ctx.bindFramebuffer(GL_READ_FRAMEBUFFER, readFboId);
+          ctx.readBuffer(GL_COLOR_ATTACHMENT0);
+
+          ctx.bindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFboId);
+          GLenum dbs[IGL_COLOR_ATTACHMENTS_MAX] = {};
+          GLsizei dbCount = 0;
+          for (size_t i = 0; i < IGL_COLOR_ATTACHMENTS_MAX; ++i) {
+            if (resolveFramebuffer_->getColorAttachment(i)) {
+              dbs[i] = static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + i);
+              dbCount = static_cast<GLsizei>(i + 1);
+            } else {
+              dbs[i] = GL_NONE;
+            }
+          }
+          if (dbCount > 0) {
+            ctx.drawBuffers(dbCount, dbs);
+          }
+        }
       } else {
         IGL_DEBUG_ASSERT_NOT_REACHED();
       }
