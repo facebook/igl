@@ -270,6 +270,83 @@ TEST_F(VulkanStagingDeviceTest, MergeRegionsRecoversFreeSpace) {
   EXPECT_TRUE(ret.isOk()) << ret.message.c_str();
 }
 
+TEST_F(VulkanStagingDeviceTest, MultipleSequentialUploads) {
+  Result ret;
+
+  const BufferDesc bufferDesc{
+      .type = BufferDesc::BufferTypeBits::Storage,
+      .length = 512,
+      .storage = ResourceStorage::Private,
+  };
+  auto buffer = iglDev_->createBuffer(bufferDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(buffer, nullptr);
+
+  for (uint8_t round = 0; round < 3; ++round) {
+    std::vector<uint8_t> srcData(512, round * 50);
+    ret = buffer->upload(srcData.data(), BufferRange(512, 0));
+    ASSERT_TRUE(ret.isOk()) << "Upload failed on round " << static_cast<int>(round);
+
+    const auto* downloaded = static_cast<uint8_t*>(buffer->map(BufferRange(512, 0), &ret));
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+    for (size_t i = 0; i < 512; ++i) {
+      EXPECT_EQ(downloaded[i], round * 50)
+          << "Mismatch on round " << static_cast<int>(round) << " at index " << i;
+    }
+    buffer->unmap();
+  }
+}
+
+TEST_F(VulkanStagingDeviceTest, ImageDataUploadWithMipLevel) {
+  Result ret;
+
+  const uint32_t width = 8;
+  const uint32_t height = 8;
+  const uint32_t numMipLevels = 4;
+
+  TextureDesc texDesc = TextureDesc::new2D(
+      TextureFormat::RGBA_UNorm8, width, height, TextureDesc::TextureUsageBits::Sampled);
+  texDesc.numMipLevels = numMipLevels;
+  auto texture = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(texture, nullptr);
+
+  for (uint32_t mip = 0; mip < numMipLevels; ++mip) {
+    const uint32_t mipWidth = std::max(1u, width >> mip);
+    const uint32_t mipHeight = std::max(1u, height >> mip);
+    const size_t dataSize = mipWidth * mipHeight * 4;
+    const std::vector<uint8_t> pixelData(dataSize, static_cast<uint8_t>(mip * 60));
+
+    ret = texture->upload(texture->getFullRange(mip), pixelData.data());
+    EXPECT_TRUE(ret.isOk()) << "Upload failed for mip level " << mip << ": " << ret.message.c_str();
+  }
+}
+
+TEST_F(VulkanStagingDeviceTest, BufferSubDataZeroOffset) {
+  Result ret;
+
+  const BufferDesc bufferDesc{
+      .type = BufferDesc::BufferTypeBits::Storage,
+      .length = 128,
+      .storage = ResourceStorage::Private,
+  };
+  auto buffer = iglDev_->createBuffer(bufferDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  const std::vector<uint8_t> srcData(128, 0xFF);
+  ret = buffer->upload(srcData.data(), BufferRange(128, 0));
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  const auto* downloaded = static_cast<uint8_t*>(buffer->map(BufferRange(128, 0), &ret));
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  for (size_t i = 0; i < 128; ++i) {
+    EXPECT_EQ(downloaded[i], 0xFF);
+  }
+  buffer->unmap();
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
