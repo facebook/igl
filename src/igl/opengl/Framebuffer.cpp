@@ -292,8 +292,9 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
   auto& texture = static_cast<Texture&>(*itexture);
 
   Result ret;
-  FramebufferDesc desc;
-  desc.colorAttachments[0].texture = itexture;
+  const FramebufferDesc desc{
+      .colorAttachments = {{.texture = itexture}},
+  };
   extraFramebuffer.initialize(desc, &ret);
   IGL_DEBUG_ASSERT(ret.isOk(), ret.message.c_str());
 
