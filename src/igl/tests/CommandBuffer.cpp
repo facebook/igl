@@ -63,4 +63,24 @@ TEST_F(CommandBufferTest, debugName) {
   ASSERT_EQ(cmdBuf_->desc.debugName, kDebugName);
 }
 
+TEST_F(CommandBufferTest, SubmitEmptyCommandBuffer) {
+  cmdQueue_->submit(*cmdBuf_);
+}
+
+TEST_F(CommandBufferTest, CreateMultipleCommandBuffers) {
+  Result result;
+
+  const CommandBufferDesc desc1{.debugName = "CmdBuf1"};
+  auto cmdBuf1 = cmdQueue_->createCommandBuffer(desc1, &result);
+  ASSERT_EQ(result.code, Result::Code::Ok);
+  ASSERT_NE(cmdBuf1, nullptr);
+  EXPECT_EQ(cmdBuf1->desc.debugName, "CmdBuf1");
+
+  const CommandBufferDesc desc2{.debugName = "CmdBuf2"};
+  auto cmdBuf2 = cmdQueue_->createCommandBuffer(desc2, &result);
+  ASSERT_EQ(result.code, Result::Code::Ok);
+  ASSERT_NE(cmdBuf2, nullptr);
+  EXPECT_EQ(cmdBuf2->desc.debugName, "CmdBuf2");
+}
+
 } // namespace igl::tests
