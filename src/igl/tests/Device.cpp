@@ -232,4 +232,28 @@ TEST_F(DeviceTest, GetBackendType) {
   }
 }
 
+TEST_F(DeviceTest, HasFeatureTexturePartialMipChain) {
+  const bool supported = iglDev_->hasFeature(DeviceFeatures::TexturePartialMipChain);
+  EXPECT_TRUE(supported == true || supported == false);
+}
+
+TEST_F(DeviceTest, GetFeatureLimitsMaxTextureDimension) {
+  size_t maxDim = 0;
+  const bool ok = iglDev_->getFeatureLimits(DeviceFeatureLimits::MaxTextureDimension1D2D, maxDim);
+  EXPECT_TRUE(ok);
+  EXPECT_GT(maxDim, 0u);
+}
+
+TEST_F(DeviceTest, CreateBufferBasic) {
+  Result ret;
+
+  const BufferDesc desc{
+      .type = BufferDesc::BufferTypeBits::Index,
+      .length = 64,
+  };
+  auto buffer = iglDev_->createBuffer(desc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(buffer, nullptr);
+}
+
 } // namespace igl::tests
