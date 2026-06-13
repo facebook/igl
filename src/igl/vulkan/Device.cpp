@@ -21,6 +21,7 @@
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/Texture.h>
+#include <igl/vulkan/TimestampQueries.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanShaderModule.h>
 
@@ -562,6 +563,31 @@ std::shared_ptr<IFramebuffer> Device::createFramebufferInternal(const Framebuffe
   return resource;
 }
 
+std::shared_ptr<ITimestampQueries> Device::createTimestampQueriesInternal(
+    uint32_t maxTimestamps,
+    Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
+
+  if (!hasFeatureInternal(DeviceFeatures::TimestampQueries)) {
+    Result::setResult(
+        outResult, Result::Code::Unsupported, "TimestampQueries unsupported by this Vulkan device");
+    return nullptr;
+  }
+
+  auto queries = std::make_shared<TimestampQueries>(*ctx_, maxTimestamps);
+  if (!queries->isValid()) {
+    Result::setResult(outResult,
+                      Result::Code::RuntimeError,
+                      "TimestampQueries: failed to create Vulkan query pool");
+    return nullptr;
+  }
+
+  Result::setOk(outResult);
+  return queries;
+}
+
 base::IFramebufferInterop* IGL_NULLABLE
 Device::createFramebufferInterop(const base::FramebufferInteropDesc& desc) {
   auto framebuffer = createFramebufferFromBaseDesc(desc);
@@ -763,7 +789,8 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
   case DeviceFeatures::Timers:
     return false;
   case DeviceFeatures::TimestampQueries:
-    return false;
+    return deviceProperties.limits.timestampPeriod > 0.0f &&
+           (deviceProperties.limits.timestampComputeAndGraphics == VK_TRUE);
   }
 
   IGL_DEBUG_ABORT("DeviceFeatures value not handled: %d", (int)feature);

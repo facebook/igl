@@ -67,6 +67,10 @@ class Device final : public IDevice {
 
   std::shared_ptr<ITimer> createTimer(Result* IGL_NULLABLE outResult) const noexcept override;
 
+  std::shared_ptr<ITimestampQueries> createTimestampQueries(uint32_t maxTimestamps,
+                                                            Result* IGL_NULLABLE
+                                                                outResult) const noexcept override;
+
   [[nodiscard]] std::shared_ptr<IVertexInputState> createVertexInputState(
       const VertexInputStateDesc& desc,
       Result* IGL_NULLABLE outResult) const override;
@@ -186,6 +190,10 @@ class Device final : public IDevice {
 
   std::shared_ptr<IFramebuffer> createFramebufferInternal(const FramebufferDesc& desc,
                                                           Result* IGL_NULLABLE outResult);
+
+  std::shared_ptr<ITimestampQueries> createTimestampQueriesInternal(uint32_t maxTimestamps,
+                                                                    Result* IGL_NULLABLE
+                                                                        outResult) const noexcept;
 
   // Platform-specific extensions
   [[nodiscard]] const PlatformDevice& getPlatformDeviceInternal() const noexcept;
@@ -307,6 +315,12 @@ void inline Device::destroy(SamplerHandle handle) {
     const FramebufferDesc& desc,
     Result* IGL_NULLABLE outResult) {
   return createFramebufferInternal(desc, outResult);
+}
+
+inline std::shared_ptr<ITimestampQueries> Device::createTimestampQueries(
+    uint32_t maxTimestamps,
+    Result* IGL_NULLABLE outResult) const noexcept {
+  return createTimestampQueriesInternal(maxTimestamps, outResult);
 }
 
 // Platform-specific extensions

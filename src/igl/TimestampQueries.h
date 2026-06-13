@@ -36,6 +36,13 @@ class ITimestampQueries : public ITrackedResource<ITimestampQueries> {
     return 0;
   }
 
+  /// Get the label associated with a timing slot, if the backend records one.
+  /// Returns a stable C string owned by the queries object (valid until reset()
+  /// or destruction); empty string if the backend records no label.
+  [[nodiscard]] virtual const char* getLabel(uint32_t /*slotIndex*/) const {
+    return "";
+  }
+
   /// Whether this queries object was successfully initialized and is usable.
   /// Returns true by default; backends override to return false if
   /// hardware/driver initialization failed silently.
