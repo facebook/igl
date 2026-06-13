@@ -39,6 +39,8 @@ uint8_t bindTargetForShaderStage(igl::ShaderStage stage) {
   case igl::ShaderStage::Fragment:
     return igl::BindTarget::kFragment;
   case igl::ShaderStage::Compute:
+  case igl::ShaderStage::Task:
+  case igl::ShaderStage::Mesh:
   default:
     IGL_DEBUG_ABORT("invalid shader stage for rendering: %d", static_cast<int>(stage));
     return 0;
