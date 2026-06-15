@@ -48,7 +48,7 @@ class LRUStatePool : public IStatePool<TDescriptor, TStateObject> {
     }
   }
 
-  // Implememnts LRU Cache https://www.geeksforgeeks.org/lru-cache-implementation/
+  // Implements LRU Cache https://www.geeksforgeeks.org/lru-cache-implementation/
   // Gets or creates a state object and moves the strong reference to it to the beginning of the
   // pool's queue so it remains in cache longer if frequently used
   std::shared_ptr<TStateObject> getOrCreate(igl::IDevice& dev,
@@ -98,7 +98,7 @@ class LRUStatePool : public IStatePool<TDescriptor, TStateObject> {
   // Queue to store the values
   std::list<TStateItem> stateList_;
 
-  // Map to check existance
+  // Map to check existence
   std::unordered_map<TDescriptor, typename std::list<TStateItem>::iterator> stateMap_;
 
   uint32_t maxCacheSize_ = 1024; // maximum capacity of cache
