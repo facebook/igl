@@ -174,6 +174,85 @@ TEST_F(ImageLayoutTransitionTest, TransitionToGeneral) {
   waitForGpu();
 }
 
+TEST_F(ImageLayoutTransitionTest, UploadThenRenderPass) {
+  Result ret;
+
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 4,
+                                                 4,
+                                                 TextureDesc::TextureUsageBits::Attachment |
+                                                     TextureDesc::TextureUsageBits::Sampled);
+  auto texture = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(texture, nullptr);
+
+  const std::vector<uint32_t> pixels(16, 0xFF00FF00);
+  ret = texture->upload(texture->getFullRange(0), pixels.data());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  FramebufferDesc fbDesc;
+  fbDesc.colorAttachments[0].texture = texture;
+  auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(fb, nullptr);
+
+  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(cmdBuf, nullptr);
+
+  RenderPassDesc rpDesc;
+  rpDesc.colorAttachments.resize(1);
+  rpDesc.colorAttachments[0].loadAction = LoadAction::Load;
+  rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
+
+  auto encoder = cmdBuf->createRenderCommandEncoder(rpDesc, fb, {}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(encoder, nullptr);
+
+  encoder->endEncoding();
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
+}
+
+TEST_F(ImageLayoutTransitionTest, MultipleRenderPassesOnSameTexture) {
+  Result ret;
+
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 4,
+                                                 4,
+                                                 TextureDesc::TextureUsageBits::Attachment |
+                                                     TextureDesc::TextureUsageBits::Sampled);
+  auto texture = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(texture, nullptr);
+
+  FramebufferDesc fbDesc;
+  fbDesc.colorAttachments[0].texture = texture;
+  auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(fb, nullptr);
+
+  for (int i = 0; i < 3; ++i) {
+    auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+    ASSERT_NE(cmdBuf, nullptr);
+
+    RenderPassDesc rpDesc;
+    rpDesc.colorAttachments.resize(1);
+    rpDesc.colorAttachments[0].loadAction = (i == 0) ? LoadAction::Clear : LoadAction::Load;
+    rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
+    rpDesc.colorAttachments[0].clearColor = {0, 0, 0, 1};
+
+    auto encoder = cmdBuf->createRenderCommandEncoder(rpDesc, fb, {}, &ret);
+    ASSERT_TRUE(ret.isOk()) << "Failed on pass " << i;
+    ASSERT_NE(encoder, nullptr);
+
+    encoder->endEncoding();
+    cmdQueue_->submit(*cmdBuf);
+    cmdBuf->waitUntilCompleted();
+  }
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
