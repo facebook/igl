@@ -24,7 +24,6 @@ uint32_t getNativeHWFormat(TextureFormat iglFormat) {
     return AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
 
   case TextureFormat::R5G6B5_UNorm:
-  case TextureFormat::B5G6R5_UNorm:
     return AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM;
 
   case TextureFormat::RGBA_F16:
@@ -87,7 +86,7 @@ TextureFormat getIglFormat(uint32_t nativeFormat) {
     return TextureFormat::RGBA_UNorm8;
 
   case AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM:
-    return TextureFormat::B5G6R5_UNorm;
+    return TextureFormat::R5G6B5_UNorm;
 
   case AHARDWAREBUFFER_FORMAT_R16G16B16A16_FLOAT:
     return TextureFormat::RGBA_F16;
