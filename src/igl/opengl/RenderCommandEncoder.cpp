@@ -300,6 +300,7 @@ void RenderCommandEncoder::endEncoding() {
         IGL_DEBUG_ASSERT_NOT_REACHED();
       }
     }
+    framebuffer_->unbind();
   }
 }
 

@@ -613,9 +613,9 @@ TEST_F(RenderCommandEncoderTest, drawInstanced) {
   // clang-format off
   const std::vector<uint32_t> expectedPixels {
     kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
-    kBackgroundColorHex, kBackgroundColorHex, grayColor,          grayColor,
-    kBackgroundColorHex, grayColor,          grayColor,          grayColor,
-    grayColor,          grayColor,          grayColor,          grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, grayColor,           grayColor,
+    kBackgroundColorHex, grayColor,           grayColor,           grayColor,
+    grayColor,           grayColor,           grayColor,           grayColor,
   };
   // clang-format on
 
@@ -626,9 +626,9 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangle) {
   initializeBuffers(
       // clang-format off
       {
-        -1.0f - kQuarterPixel, -1.0f,                0.0f, 1.0f,
-         1.0f,                -1.0f,                0.0f, 1.0f,
-         1.0f,                 1.0f + kQuarterPixel, 0.0f, 1.0f,
+        -1.0f - kQuarterPixel, -1.0f,                 0.0f, 1.0f,
+         1.0f,                 -1.0f,                 0.0f, 1.0f,
+         1.0f,                  1.0f + kQuarterPixel, 0.0f, 1.0f,
       },
       {
         0.0f, 0.0f,
@@ -646,10 +646,52 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangle) {
   // clang-format off
   std::vector<uint32_t> const expectedPixels {
     kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
-    kBackgroundColorHex, kBackgroundColorHex, grayColor,          grayColor,
-    kBackgroundColorHex, grayColor,          grayColor,          grayColor,
-    grayColor,          grayColor,          grayColor,          grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, grayColor,           grayColor,
+    kBackgroundColorHex, grayColor,           grayColor,           grayColor,
+    grayColor,           grayColor,           grayColor,           grayColor,
+  }; // clang-format on
+
+  verifyFrameBuffer(expectedPixels);
+}
+
+// Exercises the framebuffer unbind() that endEncoding() performs after a render
+// pass (see opengl/RenderCommandEncoder.cpp). unbind() calls
+// glInvalidateFramebuffer() for any attachment whose storeAction is not
+// StoreAction::Store. Here the depth/stencil attachments use StoreAction::DontCare
+// so they get discarded, while the color attachment uses StoreAction::Store and
+// must still contain the rendered triangle, with no GL errors raised.
+TEST_F(RenderCommandEncoderTest, shouldDrawATriangleWithDontCareDepthStencil) {
+  renderPass_.depthAttachment.storeAction = StoreAction::DontCare;
+  renderPass_.stencilAttachment.storeAction = StoreAction::DontCare;
+
+  initializeBuffers(
+      // clang-format off
+      {
+        -1.0f - kQuarterPixel, -1.0f,                 0.0f, 1.0f,
+         1.0f,                 -1.0f,                 0.0f, 1.0f,
+         1.0f,                  1.0f + kQuarterPixel, 0.0f, 1.0f,
+      },
+      {
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f,
+      } // clang-format on
+  );
+
+  encodeAndSubmit([this](const std::unique_ptr<IRenderCommandEncoder>& encoder) {
+    encoder->bindRenderPipelineState(renderPipelineStateTriangle_);
+    encoder->draw(3);
+  });
+
+  const auto grayColor = data::texture::kTexRgbaGray4x4[0];
+  // clang-format off
+  const std::vector<uint32_t> expectedPixels {
+    kBackgroundColorHex, kBackgroundColorHex, kBackgroundColorHex, grayColor,
+    kBackgroundColorHex, kBackgroundColorHex, grayColor,           grayColor,
+    kBackgroundColorHex, grayColor,           grayColor,           grayColor,
+    grayColor,           grayColor,           grayColor,           grayColor,
   };
+  // clang-format on
 
   verifyFrameBuffer(expectedPixels);
 }
