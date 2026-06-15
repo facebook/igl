@@ -158,6 +158,90 @@ TEST_F(ResourcesBinderTest, BindTextureAndSamplerAndDraw) {
   cmdBuf->waitUntilCompleted();
 }
 
+TEST_F(ResourcesBinderTest, BindMultipleBuffers) {
+  Result ret;
+
+  const BufferDesc bufDesc{
+      .type = BufferDesc::BufferTypeBits::Uniform,
+      .length = 128,
+      .storage = ResourceStorage::Shared,
+  };
+
+  auto buffer0 = iglDev_->createBuffer(bufDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(buffer0, nullptr);
+
+  auto buffer1 = iglDev_->createBuffer(bufDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(buffer1, nullptr);
+
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 4,
+                                                 4,
+                                                 TextureDesc::TextureUsageBits::Attachment |
+                                                     TextureDesc::TextureUsageBits::Sampled);
+  auto colorTex = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  FramebufferDesc fbDesc;
+  fbDesc.colorAttachments[0].texture = colorTex;
+  auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  RenderPassDesc rpDesc;
+  rpDesc.colorAttachments.resize(1);
+  rpDesc.colorAttachments[0].loadAction = LoadAction::Clear;
+  rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
+
+  auto encoder = cmdBuf->createRenderCommandEncoder(rpDesc, fb, {}, &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(encoder, nullptr);
+
+  encoder->bindBuffer(0, buffer0.get(), 0, 128);
+  encoder->bindBuffer(1, buffer1.get(), 0, 128);
+
+  encoder->endEncoding();
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
+}
+
+TEST_F(ResourcesBinderTest, CreateEncoderWithClearColor) {
+  Result ret;
+
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 8,
+                                                 8,
+                                                 TextureDesc::TextureUsageBits::Attachment |
+                                                     TextureDesc::TextureUsageBits::Sampled);
+  auto colorTex = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  FramebufferDesc fbDesc;
+  fbDesc.colorAttachments[0].texture = colorTex;
+  auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  RenderPassDesc rpDesc;
+  rpDesc.colorAttachments.resize(1);
+  rpDesc.colorAttachments[0].loadAction = LoadAction::Clear;
+  rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
+  rpDesc.colorAttachments[0].clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
+
+  auto encoder = cmdBuf->createRenderCommandEncoder(rpDesc, fb, {}, &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(encoder, nullptr);
+
+  encoder->endEncoding();
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
