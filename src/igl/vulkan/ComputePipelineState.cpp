@@ -109,6 +109,9 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
                             IGL_FORMAT("Pipeline Layout: {}", desc_.debugName.c_str()).c_str()));
 
   const auto& shaderModule = desc_.shaderStages->getComputeModule();
+  if (!IGL_DEBUG_VERIFY(shaderModule)) {
+    return VK_NULL_HANDLE;
+  }
   std::vector<VkSpecializationMapEntry> specEntries;
   const VkSpecializationInfo specInfo =
       buildSpecializationInfo(shaderModule->info().functionConstantValues, specEntries);
