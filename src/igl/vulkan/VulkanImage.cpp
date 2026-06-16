@@ -63,6 +63,65 @@ constexpr auto kHandleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
 namespace igl::vulkan {
 
+namespace {
+
+/// @brief Attempts VMA image allocation, retrying once after draining deferred tasks on failure.
+/// Returns true if the allocation succeeded.
+bool tryAllocateImageVma(const VulkanContext& ctx,
+                         const VkImageCreateInfo& ci,
+                         const VmaAllocationCreateInfo& ciAlloc,
+                         VkImage* outImage,
+                         VmaAllocation* outAllocation,
+                         VkFormat imageFormat,
+                         VkMemoryPropertyFlags memFlags) {
+  const VkResult result = vmaCreateImage(static_cast<VmaAllocator>(ctx.getVmaAllocator()),
+                                         &ci,
+                                         &ciAlloc,
+                                         outImage,
+                                         outAllocation,
+                                         nullptr);
+
+  if (result == VK_SUCCESS && *outAllocation != nullptr) {
+    return true;
+  }
+
+  IGL_LOG_INFO(
+      "vmaCreateImage failed: error result: %d, memflags: %d, imageformat: %d. Retrying after "
+      "draining deferred tasks.\n",
+      result,
+      memFlags,
+      imageFormat);
+  // Allocation failed - possibly due to memory pressure from deferred tasks not being
+  // processed. Drain deferred tasks queue to free memory and retry.
+  const_cast<VulkanContext&>(ctx).waitDeferredTasks();
+
+  const VkResult retryResult = vmaCreateImage(static_cast<VmaAllocator>(ctx.getVmaAllocator()),
+                                              &ci,
+                                              &ciAlloc,
+                                              outImage,
+                                              outAllocation,
+                                              nullptr);
+
+  if (retryResult != VK_SUCCESS || *outAllocation == nullptr) {
+    IGL_LOG_INFO(
+        "vmaCreateImage retry failed: error result: %d, memflags: %d, imageformat: %d. "
+        "Continuing with null allocation.\n",
+        retryResult,
+        memFlags,
+        imageFormat);
+    return false;
+  }
+
+  IGL_LOG_INFO(
+      "vmaCreateImage retry succeeded: memflags: %d, imageformat: %d after draining "
+      "deferred tasks.\n",
+      memFlags,
+      imageFormat);
+  return true;
+}
+
+} // namespace
+
 VulkanImage::VulkanImage(const VulkanContext& ctx,
                          VkImage image,
                          const char* debugName,
@@ -183,47 +242,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                               : static_cast<VkMemoryPropertyFlags>(0),
     };
 
-    const VkResult result = vmaCreateImage(static_cast<VmaAllocator>(ctx_->getVmaAllocator()),
-                                           &ci,
-                                           &ciAlloc,
-                                           &vkImage_,
-                                           &vmaAllocation_,
-                                           nullptr);
-
-    if (result != VK_SUCCESS || vmaAllocation_ == nullptr) {
-      IGL_LOG_INFO(
-          "vmaCreateImage failed: error result: %d, memflags: %d, imageformat: %d. Retrying after "
-          "draining deferred tasks.\n",
-          result,
-          memFlags,
-          imageFormat_);
-      // Allocation failed - possibly due to memory pressure from deferred tasks not being
-      // processed. Drain deferred tasks queue to free memory and retry.
-      const_cast<VulkanContext&>(*ctx_).waitDeferredTasks();
-
-      const VkResult retryResult =
-          vmaCreateImage(static_cast<VmaAllocator>(ctx_->getVmaAllocator()),
-                         &ci,
-                         &ciAlloc,
-                         &vkImage_,
-                         &vmaAllocation_,
-                         nullptr);
-
-      if (retryResult != VK_SUCCESS || vmaAllocation_ == nullptr) {
-        IGL_LOG_INFO(
-            "vmaCreateImage retry failed: error result: %d, memflags: %d, imageformat: %d. "
-            "Continuing with null allocation.\n",
-            retryResult,
-            memFlags,
-            imageFormat_);
-      } else {
-        IGL_LOG_INFO(
-            "vmaCreateImage retry succeeded: memflags: %d, imageformat: %d after draining "
-            "deferred tasks.\n",
-            memFlags,
-            imageFormat_);
-      }
-    }
+    tryAllocateImageVma(*ctx_, ci, ciAlloc, &vkImage_, &vmaAllocation_, imageFormat_, memFlags);
 
     if (vmaAllocation_) {
       VkMemoryRequirements memRequirements;
