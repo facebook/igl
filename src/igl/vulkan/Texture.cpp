@@ -454,10 +454,11 @@ uint32_t Texture::getNumMipLevels() const {
 
 void Texture::generateMipmap(ICommandQueue& /* unused */,
                              const TextureRangeDesc* IGL_NULLABLE range) const {
-  IGL_DEBUG_ASSERT(texture_);
-
-  if (texture_ && desc_.numMipLevels > 1) {
+  if (IGL_DEBUG_VERIFY(texture_) && desc_.numMipLevels > 1) {
     const auto& ctx = device_.getVulkanContext();
+    if (!IGL_DEBUG_VERIFY(ctx.immediate_)) {
+      return;
+    }
     const auto& wrapper = ctx.immediate_->acquire();
     texture_->image.generateMipmap(wrapper.cmdBuf, range ? *range : desc_.asRange());
     ctx.immediate_->submit(wrapper);
@@ -465,7 +466,9 @@ void Texture::generateMipmap(ICommandQueue& /* unused */,
 }
 
 void Texture::generateMipmap(ICommandBuffer& cmdBuffer, const TextureRangeDesc* range) const {
-  IGL_DEBUG_ASSERT(texture_);
+  if (!IGL_DEBUG_VERIFY(texture_)) {
+    return;
+  }
 
   auto& vkCmdBuffer = static_cast<CommandBuffer&>(cmdBuffer);
   texture_->image.generateMipmap(vkCmdBuffer.getVkCommandBuffer(),
