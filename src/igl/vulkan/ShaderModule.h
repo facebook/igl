@@ -9,7 +9,7 @@
 
 #include <vector>
 #include <igl/Shader.h>
-#include <igl/vulkan/Common.h>
+#include <igl/vulkan/VulkanFunctionTable.h>
 
 namespace igl::vulkan {
 
