@@ -633,6 +633,10 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibraryInternal(const Shader
       Result::setResult(outResult, Result::Code::Unsupported);
       return nullptr;
     }
+    if (!IGL_DEBUG_VERIFY(!desc.moduleInfo.empty())) {
+      Result::setResult(outResult, Result::Code::ArgumentInvalid, "moduleInfo is empty");
+      return nullptr;
+    }
     vulkanShaderModule = createShaderModule(
         desc.moduleInfo.front().stage, desc.input.source, desc.debugName, &result);
   }
