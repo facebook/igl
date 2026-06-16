@@ -168,6 +168,9 @@ class RenderPipelineState final : public IRenderPipelineState, public PipelineSt
  private:
   friend class Device;
 
+  /// @brief Defers destruction of all cached pipelines and the pipeline layout
+  void deferDestroyPipelinesAndLayout(const VulkanContext& ctx) const;
+
   int getIndexByName(const igl::NameHandle& name, ShaderStage stage) const override;
   int getIndexByName(const std::string& name, ShaderStage stage) const override;
 
