@@ -452,6 +452,10 @@ uint32_t Texture::getNumMipLevels() const {
   return desc_.numMipLevels;
 }
 
+// The texture_ and immediate_ dereferences below are guarded by release-effective
+// IGL_DEBUG_VERIFY early-returns; clang-tidy cannot model the macro, so the
+// nullable-dereference findings in these two overloads are false positives.
+// NOLINTBEGIN(facebook-hte-NullableDereference)
 void Texture::generateMipmap(ICommandQueue& /* unused */,
                              const TextureRangeDesc* IGL_NULLABLE range) const {
   if (IGL_DEBUG_VERIFY(texture_) && desc_.numMipLevels > 1) {
@@ -474,6 +478,7 @@ void Texture::generateMipmap(ICommandBuffer& cmdBuffer, const TextureRangeDesc* 
   texture_->image.generateMipmap(vkCmdBuffer.getVkCommandBuffer(),
                                  range ? *range : desc_.asRange());
 }
+// NOLINTEND(facebook-hte-NullableDereference)
 
 bool Texture::isRequiredGenerateMipmap() const {
   if (mipmapsAreAvailableAndUploaded_) {
