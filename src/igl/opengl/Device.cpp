@@ -151,6 +151,11 @@ std::unique_ptr<IBuffer> Device::createBuffer( // NOLINT(bugprone-exception-esca
 std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
     const DepthStencilStateDesc& desc,
     Result* outResult) const {
+  // `outResult` is a null-safe Result* out-param: it is only ever touched via
+  // Result::setResult()/setOk(), which null-check it. clang-tidy cannot see through the
+  // resource-creation helper templates, so the nullable-dereference findings below are
+  // false positives.
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   return createSharedResource<DepthStencilState>(desc, outResult, getContext());
 }
 
@@ -231,6 +236,7 @@ std::shared_ptr<ITexture> Device::createTextureView( // NOLINT(bugprone-exceptio
 
 std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexInputStateDesc& desc,
                                                                   Result* outResult) const {
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   return createSharedResource<VertexInputState>(desc, outResult);
 }
 
@@ -239,12 +245,14 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
                                                                    Result* outResult) const {
   Result res;
   auto resource = std::make_shared<RenderPipelineState>(getContext(), desc, &res);
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   return verifyResult(std::move(resource), res, outResult);
 }
 
 std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     const ComputePipelineDesc& desc,
     Result* outResult) const {
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   return createSharedResource<ComputePipelineState>(desc, outResult, getContext());
 }
 
@@ -259,6 +267,7 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
 
 std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,
                                                           Result* outResult) const {
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   auto sm = createSharedResource<ShaderModule>(desc, outResult, getContext(), desc.info);
   if (auto resourceTracker = getResourceTracker(); sm && resourceTracker) {
     sm->initResourceTracker(resourceTracker, desc.debugName);
@@ -271,6 +280,7 @@ std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc
   // Need to pass desc twice.
   // The first instance is for the createUniqueResource pattern.
   // The second instance is so it also gets passed to the ShaderStages constructor.
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   auto stages = createUniqueResource<ShaderStages>(desc, outResult, desc, getContext());
   if (auto resourceTracker = getResourceTracker(); stages && resourceTracker) {
     stages->initResourceTracker(std::move(resourceTracker), desc.debugName);
@@ -281,6 +291,7 @@ std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc
 std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& desc,
                                                         Result* outResult) noexcept {
   IGL_DEBUG_ASSERT(deviceFeatureSet_.hasInternalFeature(InternalFeatures::FramebufferObject));
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   return getPlatformDevice().createFramebuffer(desc, outResult);
 }
 
