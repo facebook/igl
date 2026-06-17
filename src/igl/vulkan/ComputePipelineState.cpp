@@ -116,6 +116,9 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
   const VkSpecializationInfo specInfo =
       buildSpecializationInfo(shaderModule->info().functionConstantValues, specEntries);
 
+  // `device` comes from ctx.getVkDevice(), which is annotated IGL_NULLABLE but is non-null by
+  // construction whenever a pipeline is being created; this is a false positive.
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   VulkanComputePipelineBuilder()
       .shaderStage(VkPipelineShaderStageCreateInfo{
           .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
