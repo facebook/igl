@@ -195,12 +195,18 @@ GpuTimerTier classifyGpuTimerTier(const char* renderer, const char* vendor) {
     return GpuTimerTier::Disabled;
   }
 
+  // Each classify*TimerTier() helper begins with `if (vendor == nullptr || ...) return nullopt;`,
+  // so a null `vendor` is handled before any dereference; these call-site findings are false
+  // positives.
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   if (const auto tier = classifyAdrenoTimerTier(renderer, vendor)) {
     return *tier;
   }
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   if (const auto tier = classifyMaliTimerTier(renderer, vendor)) {
     return *tier;
   }
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   if (const auto tier = classifyPowerVrTimerTier(renderer, vendor)) {
     return *tier;
   }
