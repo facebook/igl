@@ -10,8 +10,15 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+// Do not load Vulkan function prototypes, as the IGL Vulkan backend loads
+// functions dynamically using Volk. Including <vulkan/vulkan_core.h> with
+// prototypes enabled would conflict with the function-pointer declarations
+// pulled in transitively from volk.h.
+#if !defined(VK_NO_PROTOTYPES)
+#define VK_NO_PROTOTYPES
+#endif // !defined(VK_NO_PROTOTYPES)
+#include <vulkan/vulkan_core.h>
 #include <igl/TimestampQueries.h>
-#include <igl/vulkan/VulkanFunctionTable.h>
 
 namespace igl::vulkan {
 
