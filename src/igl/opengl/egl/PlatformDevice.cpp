@@ -222,6 +222,9 @@ void PlatformDevice::updateSurfaces(EGLSurface readSurface,
   context->updateSurfaces(readSurface, drawSurface);
 
   if (drawableTexture_ != nullptr) {
+    // `outResult` is the null-safe Result* out-param, written only via Result::setResult()/setOk()
+    // inside getDrawSurfaceDimensions(); this is a false positive.
+    // NOLINTNEXTLINE(facebook-hte-NullableDereference)
     auto dimensions = context->getDrawSurfaceDimensions(outResult);
 
     drawableTexture_->setTextureProperties(dimensions.first, dimensions.second);
