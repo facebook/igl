@@ -199,12 +199,14 @@ NSOpenGLContext* Context::getNSContext() {
 
 CVOpenGLTextureCacheRef Context::createTextureCache() {
   CVOpenGLTextureCacheRef textureCache = nullptr;
-  const CVReturn result = CVOpenGLTextureCacheCreate(kCFAllocatorDefault,
-                                                     nullptr,
-                                                     context_.CGLContextObj,
-                                                     context_.pixelFormat.CGLPixelFormatObj,
-                                                     nullptr,
-                                                     &textureCache);
+  CGLContextObj cglContext = context_.CGLContextObj;
+  CGLPixelFormatObj cglPixelFormat = context_.pixelFormat.CGLPixelFormatObj;
+  if (cglContext == nullptr || cglPixelFormat == nullptr) {
+    IGL_DEBUG_ABORT("CGLContextObj or CGLPixelFormatObj is null");
+    return nullptr;
+  }
+  const CVReturn result = CVOpenGLTextureCacheCreate(
+      kCFAllocatorDefault, nullptr, cglContext, cglPixelFormat, nullptr, &textureCache);
   if (result != kCVReturnSuccess) {
     IGL_DEBUG_ABORT("CVOpenGLTextureCacheCreate failed to create texture cache");
   }
