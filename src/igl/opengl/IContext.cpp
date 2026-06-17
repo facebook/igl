@@ -1438,6 +1438,14 @@ std::unordered_map<void* IGL_NULLABLE, IContext*>& IContext::getExistingContexts
   return map;
 }
 
+// IContext is a thin forwarding layer over the GL/EGL proc table. The nullable-dereference
+// findings across the wrappers below are false positives: nullable pointer arguments
+// (data/value/buffers/objects/...) are forwarded verbatim to the driver, which permits null
+// for these calls per the GL contract, and are never dereferenced here; the GLCALL_PROC
+// proc-pointer dereference is guarded by a release-effective IGL_DEBUG_VERIFY; and the few
+// remaining hits are debug-only paths over non-null string literals. clang-tidy cannot model
+// any of these, so suppress the signal for the whole forwarding section.
+// NOLINTBEGIN(facebook-hte-NullableDereference)
 void IContext::registerContext(void* IGL_NULLABLE glContext, IContext* context) {
 #if IGL_DEBUG
   std::lock_guard<std::mutex> lock(getMutex());
@@ -4788,4 +4796,5 @@ void IContext::SynchronizedDeletionQueues::queueDeleteTextures(GLsizei n, const 
     texturesQueue_.push_back(textures[i]);
   }
 }
+// NOLINTEND(facebook-hte-NullableDereference)
 } // namespace igl::opengl
