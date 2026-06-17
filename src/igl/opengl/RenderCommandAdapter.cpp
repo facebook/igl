@@ -138,6 +138,9 @@ void RenderCommandAdapter::clearUniformBuffers() {
 void RenderCommandAdapter::setUniform(const UniformDesc& uniformDesc,
                                       const void* IGL_NONNULL data,
                                       Result* IGL_NULLABLE outResult) {
+  // `outResult` is forwarded to UniformAdapter::setUniform(), which null-checks it via
+  // Result::setResult()/setOk(); the dereference is guarded, so this is a false positive.
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   uniformAdapter_.setUniform(uniformDesc, data, outResult);
 }
 
@@ -146,6 +149,9 @@ void RenderCommandAdapter::setUniformBuffer(Buffer* IGL_NULLABLE buffer,
                                             size_t size,
                                             uint32_t index,
                                             Result* IGL_NULLABLE outResult) {
+  // `buffer` and `outResult` are forwarded to UniformAdapter::setUniformBuffer(), which guards
+  // both (`if (... && buffer)` and Result::setResult()/setOk()); these are false positives.
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   uniformAdapter_.setUniformBuffer(buffer, offset, size, index, outResult);
 }
 
