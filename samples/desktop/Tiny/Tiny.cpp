@@ -447,6 +447,9 @@ int main(int argc, char* argv[]) {
   framebuffer = nullptr;
   device.reset(nullptr);
 
+  // glfwDestroyWindow() is documented to do nothing when passed NULL, so a nullable `window` here
+  // is safe; this is a false positive.
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   glfwDestroyWindow(window);
   glfwTerminate();
 
