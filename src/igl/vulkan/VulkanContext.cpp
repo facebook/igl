@@ -1726,6 +1726,9 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTextureFromVkImage(
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   auto iglImage = VulkanImage(*this, vkImage, imageCreateInfo, debugName);
+  // `debugName` is an optional (IGL_NULLABLE) debug label forwarded to createImageView(), which
+  // passes it through to ivkSetDebugObjectName() where null is handled; this is a false positive.
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   auto imageView = iglImage.createImageView(imageViewCreateInfo, debugName);
   return createTexture(std::move(iglImage), std::move(imageView), debugName);
 }
@@ -2475,11 +2478,16 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
 
   const VkShaderStageFlags stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
+  // The `*compatiblePipeline` dereference is inside the `compatiblePipeline ? ... : 0ul` ternary,
+  // so it only runs when the pointer is non-null; clang-tidy does not credit the multi-line
+  // ternary guard, so these are false positives.
+  // NOLINTBEGIN(facebook-hte-NullableDereference)
   const uint32_t usageMaskPipeline =
       compatiblePipeline ? static_cast<const igl::vulkan::RenderPipelineState&>(*compatiblePipeline)
                                .getSpvModuleInfo()
                                .usageMaskTextures
                          : 0ul;
+  // NOLINTEND(facebook-hte-NullableDereference)
 
   for (uint32_t loc = 0; loc != IGL_ARRAY_NUM_ELEMENTS(desc.textures); loc++) {
     const bool isInPipeline = (usageMaskPipeline & (1ul << loc)) != 0;
