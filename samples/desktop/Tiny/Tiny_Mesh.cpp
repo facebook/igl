@@ -627,7 +627,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
   auto submitHandle = commandQueue_->submit(*buffer);
 
-  if (auto* pd = device->getPlatformDevice<igl::vulkan::PlatformDevice>(); saveScreenshot_) {
+  if (auto* pd = device->getPlatformDevice<igl::vulkan::PlatformDevice>(); pd && saveScreenshot_) {
     saveScreenshot_ = false;
 #if TINY_TEST_USE_ASYNC_SCREENSHOTS
     pd->deferredTask(std::packaged_task<void()>([]() {
@@ -742,6 +742,9 @@ int main(int argc, char* argv[]) {
   framebuffer = nullptr;
   device.reset(nullptr);
 
+  // glfwDestroyWindow() is documented to do nothing when passed NULL, so a nullable `window` here
+  // is safe; this is a false positive.
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   glfwDestroyWindow(window);
   glfwTerminate();
 
