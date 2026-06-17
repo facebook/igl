@@ -311,6 +311,90 @@ TEST_F(VulkanImageTest, CreateImageViewBasic) {
   EXPECT_EQ(imageView.getVkImageAspectFlags(), VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
+TEST_F(VulkanImageTest, IsStorageImage) {
+  auto& ctx = *context_;
+
+  const VkImageUsageFlags storageUsage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+
+  igl::vulkan::VulkanImage image(ctx,
+                                 VkExtent3D{.width = 4, .height = 4, .depth = 1},
+                                 VK_IMAGE_TYPE_2D,
+                                 kFormat,
+                                 1,
+                                 1,
+                                 VK_IMAGE_TILING_OPTIMAL,
+                                 storageUsage,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                 0,
+                                 VK_SAMPLE_COUNT_1_BIT,
+                                 "Storage Image");
+  ASSERT_TRUE(image.valid());
+
+  EXPECT_TRUE(image.isStorageImage());
+  EXPECT_TRUE(image.isSampledImage());
+}
+
+TEST_F(VulkanImageTest, CreateImageMultipleMipLevels) {
+  auto& ctx = *context_;
+
+  const uint32_t kMipLevels = 4;
+
+  igl::vulkan::VulkanImage image(ctx,
+                                 VkExtent3D{.width = 16, .height = 16, .depth = 1},
+                                 VK_IMAGE_TYPE_2D,
+                                 kFormat,
+                                 kMipLevels,
+                                 1,
+                                 VK_IMAGE_TILING_OPTIMAL,
+                                 VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                 0,
+                                 VK_SAMPLE_COUNT_1_BIT,
+                                 "Multi Mip Image");
+  ASSERT_TRUE(image.valid());
+  EXPECT_NE(image.getVkImage(), VK_NULL_HANDLE);
+  EXPECT_EQ(image.mipLevels_, kMipLevels);
+}
+
+TEST_F(VulkanImageTest, CreateImageViewWithMipLevelSubset) {
+  auto& ctx = *context_;
+
+  const uint32_t kMipLevels = 4;
+
+  igl::vulkan::VulkanImage image(ctx,
+                                 VkExtent3D{.width = 16, .height = 16, .depth = 1},
+                                 VK_IMAGE_TYPE_2D,
+                                 kFormat,
+                                 kMipLevels,
+                                 1,
+                                 VK_IMAGE_TILING_OPTIMAL,
+                                 VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                 0,
+                                 VK_SAMPLE_COUNT_1_BIT,
+                                 "Mip Subset Source");
+  ASSERT_TRUE(image.valid());
+  EXPECT_EQ(image.mipLevels_, kMipLevels);
+
+  auto viewAllMips = image.createImageView(VK_IMAGE_VIEW_TYPE_2D,
+                                           kFormat,
+                                           VK_IMAGE_ASPECT_COLOR_BIT,
+                                           0,
+                                           kMipLevels,
+                                           0,
+                                           1,
+                                           "View All Mips");
+  EXPECT_TRUE(viewAllMips.valid());
+  EXPECT_NE(viewAllMips.getVkImageView(), VK_NULL_HANDLE);
+  EXPECT_EQ(viewAllMips.getVkImageAspectFlags(), VK_IMAGE_ASPECT_COLOR_BIT);
+
+  auto viewSingleMip = image.createImageView(
+      VK_IMAGE_VIEW_TYPE_2D, kFormat, VK_IMAGE_ASPECT_COLOR_BIT, 2, 1, 0, 1, "View Mip 2");
+  EXPECT_TRUE(viewSingleMip.valid());
+  EXPECT_NE(viewSingleMip.getVkImageView(), VK_NULL_HANDLE);
+  EXPECT_EQ(viewSingleMip.getVkImageAspectFlags(), VK_IMAGE_ASPECT_COLOR_BIT);
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
