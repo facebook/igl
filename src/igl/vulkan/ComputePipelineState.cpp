@@ -47,6 +47,7 @@ ComputePipelineState ::~ComputePipelineState() {
   }
 }
 
+// NOLINTNEXTLINE(facebook-hte-NullableReturn)
 VkPipeline ComputePipelineState::getVkPipeline() const {
   const VulkanContext& ctx = device_.getVulkanContext();
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx);

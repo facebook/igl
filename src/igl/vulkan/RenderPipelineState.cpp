@@ -361,6 +361,7 @@ RenderPipelineState::~RenderPipelineState() {
   deferDestroyPipelinesAndLayout(device_.getVulkanContext());
 }
 
+// NOLINTNEXTLINE(facebook-hte-NullableReturn)
 VkPipeline RenderPipelineState::getVkPipeline(
     const RenderPipelineDynamicState& dynamicState) const {
   const VulkanContext& ctx = device_.getVulkanContext();

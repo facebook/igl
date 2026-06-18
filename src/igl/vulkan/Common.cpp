@@ -771,6 +771,7 @@ VkSpecializationInfo buildSpecializationInfo(const FunctionConstantValues& const
 namespace igl::vulkan::functions {
 
 namespace {
+// NOLINTNEXTLINE(facebook-hte-NullableReturn)
 PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
 #if defined(IGL_USE_STATIC_KOSMICKRISP)
   // KosmicKrisp is statically linked — no dlopen, no ICD, no Vulkan loader. Route every
