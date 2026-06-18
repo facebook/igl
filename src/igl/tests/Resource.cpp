@@ -8,8 +8,10 @@
 #include "util/Common.h"
 
 #include <igl/Buffer.h>
+#include <igl/ComputePipelineState.h>
 #include <igl/DepthStencilState.h>
 #include <igl/RenderPipelineState.h>
+#include <igl/SamplerState.h>
 
 namespace igl::tests {
 
@@ -167,6 +169,42 @@ TEST_F(ResourceTest, UniformBuffer) {
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(buffer != nullptr);
+}
+
+TEST_F(ResourceTest, SamplerStateCreateWithLinearFilters) {
+  Result ret;
+
+  const SamplerStateDesc desc{
+      .minFilter = SamplerMinMagFilter::Linear,
+      .magFilter = SamplerMinMagFilter::Linear,
+      .mipFilter = SamplerMipFilter::Linear,
+      .addressModeU = SamplerAddressMode::Clamp,
+      .addressModeV = SamplerAddressMode::Clamp,
+  };
+  const auto sampler = iglDev_->createSamplerState(desc, &ret);
+
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(sampler, nullptr);
+}
+
+TEST_F(ResourceTest, CreateComputePipelineReturnNull) {
+  if (!iglDev_->hasFeature(DeviceFeatures::Compute)) {
+    GTEST_SKIP() << "Compute not supported on this backend";
+  }
+
+  Result ret;
+
+  const ComputePipelineDesc desc;
+  const auto cps = iglDev_->createComputePipeline(desc, &ret);
+
+  ASSERT_FALSE(ret.isOk());
+  ASSERT_EQ(cps, nullptr);
+}
+
+TEST_F(ResourceTest, GetNormalizedZRange) {
+  const NormalizedZRange range = iglDev_->getNormalizedZRange();
+
+  EXPECT_TRUE(range == NormalizedZRange::NegOneToOne || range == NormalizedZRange::ZeroToOne);
 }
 
 } // namespace igl::tests
