@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 
 #include <functional>
+#include <igl/ComputePipelineState.h>
 #include <igl/RenderPipelineState.h>
 
 namespace igl::tests {
@@ -264,6 +265,73 @@ TEST(RenderPipelineDescTest, HashEqualObjectsHaveSameHash) {
   const RenderPipelineDesc a;
   const RenderPipelineDesc b;
   const std::hash<RenderPipelineDesc> hasher;
+  EXPECT_EQ(a, b);
+  EXPECT_EQ(hasher(a), hasher(b));
+}
+
+// -------------------------------------------------------------------------
+// ComputePipelineDesc
+// -------------------------------------------------------------------------
+
+TEST(ComputePipelineDescTest, DefaultConstruction) {
+  const ComputePipelineDesc desc;
+  EXPECT_EQ(desc.shaderStages, nullptr);
+  EXPECT_TRUE(desc.imagesMap.empty());
+  EXPECT_TRUE(desc.buffersMap.empty());
+  EXPECT_TRUE(desc.debugName.empty());
+}
+
+TEST(ComputePipelineDescTest, EqualityOpReflexive) {
+  const ComputePipelineDesc desc;
+  EXPECT_EQ(desc, desc);
+}
+
+TEST(ComputePipelineDescTest, EqualityOpSameValues) {
+  const ComputePipelineDesc a;
+  const ComputePipelineDesc b;
+  EXPECT_EQ(a, b);
+}
+
+TEST(ComputePipelineDescTest, InequalityOpDifferentShaderStages) {
+  ComputePipelineDesc a;
+  ComputePipelineDesc b;
+  static int sentinel = 0;
+  b.shaderStages = std::shared_ptr<IShaderStages>(reinterpret_cast<IShaderStages*>(&sentinel),
+                                                  [](IShaderStages*) {});
+  EXPECT_NE(a, b);
+}
+
+TEST(ComputePipelineDescTest, InequalityOpDifferentDebugName) {
+  ComputePipelineDesc a;
+  ComputePipelineDesc b;
+  b.debugName = "compute_pass";
+  EXPECT_NE(a, b);
+}
+
+TEST(ComputePipelineDescTest, InequalityOpDifferentBuffersMap) {
+  ComputePipelineDesc a;
+  ComputePipelineDesc b;
+  b.buffersMap[0] = IGL_NAMEHANDLE("input");
+  EXPECT_NE(a, b);
+}
+
+TEST(ComputePipelineDescTest, InequalityOpDifferentImagesMap) {
+  ComputePipelineDesc a;
+  ComputePipelineDesc b;
+  b.imagesMap[0] = IGL_NAMEHANDLE("storageImage");
+  EXPECT_NE(a, b);
+}
+
+TEST(ComputePipelineDescTest, HashConsistency) {
+  const ComputePipelineDesc desc;
+  const std::hash<ComputePipelineDesc> hasher;
+  EXPECT_EQ(hasher(desc), hasher(desc));
+}
+
+TEST(ComputePipelineDescTest, HashEqualObjectsHaveSameHash) {
+  const ComputePipelineDesc a;
+  const ComputePipelineDesc b;
+  const std::hash<ComputePipelineDesc> hasher;
   EXPECT_EQ(a, b);
   EXPECT_EQ(hasher(a), hasher(b));
 }
