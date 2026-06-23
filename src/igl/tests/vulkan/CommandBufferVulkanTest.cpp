@@ -10,6 +10,10 @@
 #include "../util/TestDevice.h"
 
 #include <igl/ComputeCommandEncoder.h>
+#include <igl/Framebuffer.h>
+#include <igl/RenderCommandEncoder.h>
+#include <igl/RenderPass.h>
+#include <igl/Texture.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
@@ -137,6 +141,66 @@ TEST_F(CommandBufferVulkanTest, GetNextSubmitHandle) {
   EXPECT_FALSE(handle.empty());
 
   cmdQueue_->submit(*cmdBuf);
+}
+
+TEST_F(CommandBufferVulkanTest, CreateRenderCommandEncoder) {
+  Result ret;
+
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 4,
+                                                 4,
+                                                 TextureDesc::TextureUsageBits::Attachment |
+                                                     TextureDesc::TextureUsageBits::Sampled);
+  const auto colorTex = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(colorTex, nullptr);
+
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTex}}};
+  const auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(fb, nullptr);
+
+  const auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(cmdBuf, nullptr);
+
+  const RenderPassDesc rpDesc{
+      .colorAttachments = {{.loadAction = LoadAction::Clear, .storeAction = StoreAction::Store}}};
+
+  const auto encoder = cmdBuf->createRenderCommandEncoder(rpDesc, fb, {}, &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(encoder, nullptr);
+  encoder->endEncoding();
+
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
+}
+
+TEST_F(CommandBufferVulkanTest, MultipleSequentialSubmits) {
+  for (int i = 0; i < 3; ++i) {
+    Result ret;
+    const auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+    ASSERT_TRUE(ret.isOk()) << "Failed on iteration " << i;
+    ASSERT_NE(cmdBuf, nullptr);
+
+    cmdQueue_->submit(*cmdBuf);
+    cmdBuf->waitUntilCompleted();
+  }
+}
+
+TEST_F(CommandBufferVulkanTest, NestedDebugGroupLabels) {
+  Result ret;
+  const auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(cmdBuf, nullptr);
+
+  cmdBuf->pushDebugGroupLabel("Outer", Color(1.0f, 0.0f, 0.0f, 1.0f));
+  cmdBuf->pushDebugGroupLabel("Inner", Color(0.0f, 1.0f, 0.0f, 1.0f));
+  cmdBuf->popDebugGroupLabel();
+  cmdBuf->popDebugGroupLabel();
+
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
 }
 
 } // namespace igl::tests
