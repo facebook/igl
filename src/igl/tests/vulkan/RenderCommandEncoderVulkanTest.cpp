@@ -9,6 +9,7 @@
 
 #include "../util/TestDevice.h"
 
+#include <array>
 #include <igl/CommandBuffer.h>
 #include <igl/Device.h>
 #include <igl/Framebuffer.h>
@@ -136,6 +137,59 @@ TEST_F(RenderCommandEncoderVulkanTest, SetDepthBias) {
 
   encoder->endEncoding();
   cmdQueue_->submit(*cmdBuf);
+}
+
+TEST_F(RenderCommandEncoderVulkanTest, DebugGroupLabels) {
+  std::shared_ptr<ICommandBuffer> cmdBuf;
+  auto encoder = createEncoder(cmdBuf);
+  ASSERT_NE(encoder, nullptr);
+
+  encoder->pushDebugGroupLabel("RenderGroup", Color(1.0f, 0.0f, 0.0f, 1.0f));
+  encoder->insertDebugEventLabel("DrawCall", Color(0.0f, 1.0f, 0.0f, 1.0f));
+  encoder->popDebugGroupLabel();
+
+  encoder->endEncoding();
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
+}
+
+TEST_F(RenderCommandEncoderVulkanTest, MultipleEncodersSequentially) {
+  for (int i = 0; i < 3; ++i) {
+    std::shared_ptr<ICommandBuffer> cmdBuf;
+    auto encoder = createEncoder(cmdBuf);
+    ASSERT_NE(encoder, nullptr) << "Failed on iteration " << i;
+
+    encoder->endEncoding();
+    cmdQueue_->submit(*cmdBuf);
+    cmdBuf->waitUntilCompleted();
+  }
+}
+
+TEST_F(RenderCommandEncoderVulkanTest, ClearColorRenderPass) {
+  Result ret;
+  const auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  RenderPassDesc rpDesc;
+  rpDesc.colorAttachments.resize(1);
+  rpDesc.colorAttachments[0].loadAction = LoadAction::Clear;
+  rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
+  rpDesc.colorAttachments[0].clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
+
+  auto encoder = cmdBuf->createRenderCommandEncoder(rpDesc, fb_, {}, &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(encoder, nullptr);
+
+  encoder->endEncoding();
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
+
+  std::array<uint32_t, 16> pixels = {};
+  fb_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), colorTex_->getFullRange(0));
+
+  for (const uint32_t pixel : pixels) {
+    EXPECT_EQ(pixel, 0xFF0000FF);
+  }
 }
 
 } // namespace igl::tests
