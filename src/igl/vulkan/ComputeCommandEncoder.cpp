@@ -104,7 +104,7 @@ void ComputeCommandEncoder::processDependencies(const Dependencies& dependencies
         if (!tex) {
           break;
         }
-        igl::vulkan::transitionToGeneral(cmdBuffer_, tex);
+        transitionToGeneral(cmdBuffer_, tex);
       }
       deps = deps->next;
     }
@@ -219,17 +219,17 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
 
   IGL_DEBUG_ASSERT(texture);
 
-  const igl::vulkan::Texture* tex = static_cast<Texture*>(texture);
-  const igl::vulkan::VulkanTexture& vkTex = tex->getVulkanTexture();
-  const igl::vulkan::VulkanImage* vkImage = &vkTex.image;
+  const Texture* tex = static_cast<Texture*>(texture);
+  const VulkanTexture& vkTex = tex->getVulkanTexture();
+  const VulkanImage* vkImage = &vkTex.image;
 
   IGL_DEBUG_ASSERT(vkImage);
 
   if (vkImage->isSampledImage()) {
-    igl::vulkan::transitionToShaderReadOnly(cmdBuffer_, texture);
+    transitionToShaderReadOnly(cmdBuffer_, texture);
     binder_.bindTexture(index, static_cast<Texture*>(texture));
   } else if (vkImage->isStorageImage()) {
-    igl::vulkan::transitionToGeneral(cmdBuffer_, texture);
+    transitionToGeneral(cmdBuffer_, texture);
     binder_.bindStorageImage(index, static_cast<Texture*>(texture));
   } else {
     IGL_DEBUG_ASSERT(false, "A texture should be Sampled or Storage");
@@ -270,7 +270,7 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index,
     return;
   }
 
-  igl::vulkan::transitionToGeneral(cmdBuffer_, texture);
+  transitionToGeneral(cmdBuffer_, texture);
 
   const bool alreadyTracked = [this, vkImage]() {
     for (uint32_t i = 0; i < numRestoreLayouts_; ++i) {
