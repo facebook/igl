@@ -247,9 +247,15 @@ TEST_F(DeviceTest, GetFeatureLimitsMaxTextureDimension) {
 TEST_F(DeviceTest, CreateBufferBasic) {
   Result ret;
 
+  // Provide initial data on creation. The default BufferDesc::storage is
+  // platform-dependent (Managed on macOS, Shared elsewhere), and the OpenGL
+  // backend requires data for non-dynamic (static) buffers. Supplying data
+  // keeps this test valid across all backends and storage defaults.
+  const uint16_t indexData[] = {0, 1, 2, 0, 2, 3};
   const BufferDesc desc{
       .type = BufferDesc::BufferTypeBits::Index,
-      .length = 64,
+      .data = indexData,
+      .length = sizeof(indexData),
   };
   auto buffer = iglDev_->createBuffer(desc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
