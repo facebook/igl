@@ -596,7 +596,7 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
     return;
   }
 
-  binder_.bindSamplerState(index, static_cast<SamplerState*>(samplerState));
+  binder_.bindSamplerState(static_cast<uint32_t>(index), static_cast<SamplerState*>(samplerState));
 }
 
 void RenderCommandEncoder::bindTexture(size_t index, uint8_t target, ITexture* texture) {
@@ -620,7 +620,7 @@ void RenderCommandEncoder::bindTexture(size_t index, uint8_t target, ITexture* t
     return;
   }
 
-  binder_.bindTexture(index, static_cast<Texture*>(texture));
+  binder_.bindTexture(static_cast<uint32_t>(index), static_cast<Texture*>(texture));
 }
 
 void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
