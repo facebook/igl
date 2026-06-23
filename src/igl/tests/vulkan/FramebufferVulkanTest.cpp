@@ -186,6 +186,102 @@ TEST_F(FramebufferVulkanTest, MultipleColorAttachments) {
   EXPECT_NE(fb->getColorAttachment(1), nullptr);
 }
 
+TEST_F(FramebufferVulkanTest, DefaultModeIsMono) {
+  Result ret;
+
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 4,
+                                                 4,
+                                                 TextureDesc::TextureUsageBits::Attachment |
+                                                     TextureDesc::TextureUsageBits::Sampled);
+  const auto colorTex = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  FramebufferDesc fbDesc;
+  fbDesc.colorAttachments[0].texture = colorTex;
+  const auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  EXPECT_EQ(fb->getMode(), FramebufferMode::Mono);
+  EXPECT_FALSE(fb->isSwapchainBound());
+}
+
+TEST_F(FramebufferVulkanTest, UpdateDrawableWithNull) {
+  Result ret;
+
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 4,
+                                                 4,
+                                                 TextureDesc::TextureUsageBits::Attachment |
+                                                     TextureDesc::TextureUsageBits::Sampled);
+  const auto colorTex = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  FramebufferDesc fbDesc;
+  fbDesc.colorAttachments[0].texture = colorTex;
+  const auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(fb->getColorAttachment(0), nullptr);
+
+  fb->updateDrawable(nullptr);
+  EXPECT_EQ(fb->getColorAttachment(0), nullptr);
+  EXPECT_TRUE(fb->getColorAttachmentIndices().empty());
+}
+
+TEST_F(FramebufferVulkanTest, UpdateDrawableWithSurfaceTextures) {
+  Result ret;
+
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 4,
+                                                 4,
+                                                 TextureDesc::TextureUsageBits::Attachment |
+                                                     TextureDesc::TextureUsageBits::Sampled);
+  const auto colorTex = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  TextureDesc depthDesc =
+      TextureDesc::new2D(TextureFormat::Z_UNorm24, 4, 4, TextureDesc::TextureUsageBits::Attachment);
+  depthDesc.storage = ResourceStorage::Private;
+  auto depthTex = iglDev_->createTexture(depthDesc, &ret);
+  if (!ret.isOk()) {
+    depthDesc.format = TextureFormat::Z_UNorm16;
+    depthTex = iglDev_->createTexture(depthDesc, &ret);
+  }
+  ASSERT_TRUE(ret.isOk());
+
+  FramebufferDesc fbDesc;
+  fbDesc.colorAttachments[0].texture = colorTex;
+  const auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  fb->updateDrawable(SurfaceTextures{.color = colorTex, .depth = depthTex});
+  EXPECT_NE(fb->getColorAttachment(0), nullptr);
+  EXPECT_NE(fb->getDepthAttachment(), nullptr);
+
+  fb->updateDrawable(SurfaceTextures{.color = colorTex, .depth = nullptr});
+  EXPECT_NE(fb->getColorAttachment(0), nullptr);
+  EXPECT_EQ(fb->getDepthAttachment(), nullptr);
+}
+
+TEST_F(FramebufferVulkanTest, StorageTextureAttachment) {
+  Result ret;
+
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 4,
+                                                 4,
+                                                 TextureDesc::TextureUsageBits::Attachment |
+                                                     TextureDesc::TextureUsageBits::Storage);
+  const auto storageTex = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  FramebufferDesc fbDesc;
+  fbDesc.colorAttachments[0].texture = storageTex;
+  const auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(fb, nullptr);
+  EXPECT_NE(fb->getColorAttachment(0), nullptr);
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
