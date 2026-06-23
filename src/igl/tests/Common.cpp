@@ -9,6 +9,7 @@
 
 #include <igl/Common.h>
 
+#include <ldrutils/lutils/Pool.h>
 #include <igl/CommandEncoder.h>
 
 namespace igl::tests {
@@ -332,7 +333,7 @@ TEST(CommonTest, HandleTest) {
 }
 
 TEST(CommonTest, PoolTest) {
-  Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool;
+  ldr::Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool;
 }
 
 TEST(HolderTest, DefaultConstructedIsEmptyAndInvalid) {
@@ -348,7 +349,7 @@ TEST(HolderTest, DefaultConstructedIndexAndGenAreZero) {
 }
 
 TEST(HolderTest, MoveConstructionTransfersState) {
-  Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
+  ldr::Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
   const BindGroupBufferHandle handle = pool.create(BindGroupBufferDesc{});
 
   Holder<BindGroupBufferHandle> original(nullptr, handle);
@@ -362,7 +363,7 @@ TEST(HolderTest, MoveConstructionTransfersState) {
 }
 
 TEST(HolderTest, MoveAssignmentTransfersState) {
-  Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
+  ldr::Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
   const BindGroupBufferHandle handle = pool.create(BindGroupBufferDesc{});
 
   Holder<BindGroupBufferHandle> a(nullptr, handle);
@@ -376,7 +377,7 @@ TEST(HolderTest, MoveAssignmentTransfersState) {
 }
 
 TEST(HolderTest, AssignNullptrResetsHolder) {
-  Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
+  ldr::Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
   const BindGroupBufferHandle handle = pool.create(BindGroupBufferDesc{});
 
   Holder<BindGroupBufferHandle> holder(nullptr, handle);
@@ -388,7 +389,7 @@ TEST(HolderTest, AssignNullptrResetsHolder) {
 }
 
 TEST(HolderTest, ReleaseReturnsHandleAndEmptiesHolder) {
-  Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
+  ldr::Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
   const BindGroupBufferHandle handle = pool.create(BindGroupBufferDesc{});
 
   Holder<BindGroupBufferHandle> holder(nullptr, handle);
@@ -400,7 +401,7 @@ TEST(HolderTest, ReleaseReturnsHandleAndEmptiesHolder) {
 }
 
 TEST(HolderTest, ResetEmptiesHolder) {
-  Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
+  ldr::Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
   const BindGroupBufferHandle handle = pool.create(BindGroupBufferDesc{});
 
   Holder<BindGroupBufferHandle> holder(nullptr, handle);
@@ -412,7 +413,7 @@ TEST(HolderTest, ResetEmptiesHolder) {
 }
 
 TEST(HolderTest, ConvertsToUnderlyingHandle) {
-  Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
+  ldr::Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
   const BindGroupBufferHandle handle = pool.create(BindGroupBufferDesc{});
 
   const Holder<BindGroupBufferHandle> holder(nullptr, handle);
@@ -427,7 +428,7 @@ TEST(HolderTest, ConvertsToUnderlyingHandle) {
 }
 
 TEST(HolderTest, IndexAsVoidMatchesHandle) {
-  Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
+  ldr::Pool<BindGroupBufferTag, BindGroupBufferDesc> pool;
   const BindGroupBufferHandle handle = pool.create(BindGroupBufferDesc{});
 
   const Holder<BindGroupBufferHandle> holder(nullptr, handle);

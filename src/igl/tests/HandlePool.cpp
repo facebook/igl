@@ -7,8 +7,8 @@
 
 #include <gtest/gtest.h>
 
-#include <igl/base/Handle.h>
-#include <igl/base/Pool.h>
+#include <ldrutils/lutils/Handle.h>
+#include <ldrutils/lutils/Pool.h>
 
 namespace igl::tests {
 
@@ -24,29 +24,29 @@ struct FooImpl {
 // --- HandleTest ---
 
 TEST(HandleTest, DefaultConstructedIsEmptyAndInvalid) {
-  const Handle<Foo> h;
+  const ldr::Handle<Foo> h;
   EXPECT_TRUE(h.empty());
   EXPECT_FALSE(h.valid());
   EXPECT_FALSE(static_cast<bool>(h));
 }
 
 TEST(HandleTest, DefaultConstructedIndexAndGenAreZero) {
-  const Handle<Foo> h;
+  const ldr::Handle<Foo> h;
   EXPECT_EQ(h.index(), 0u);
   EXPECT_EQ(h.gen(), 0u);
 }
 
 TEST(HandleTest, EqualityOperator) {
-  const Handle<Foo> a;
-  const Handle<Foo> b;
+  const ldr::Handle<Foo> a;
+  const ldr::Handle<Foo> b;
   EXPECT_TRUE(a == b);
   EXPECT_FALSE(a != b);
 }
 
 TEST(HandleTest, InequalityOperator) {
-  Pool<Foo, FooImpl> pool;
-  const Handle<Foo> a = pool.create(FooImpl{.value = 1});
-  const Handle<Foo> b = pool.create(FooImpl{.value = 2});
+  ldr::Pool<Foo, FooImpl> pool;
+  const ldr::Handle<Foo> a = pool.create(FooImpl{.value = 1});
+  const ldr::Handle<Foo> b = pool.create(FooImpl{.value = 2});
   EXPECT_TRUE(a != b);
   EXPECT_FALSE(a == b);
 }
@@ -54,44 +54,44 @@ TEST(HandleTest, InequalityOperator) {
 // --- PoolTest ---
 
 TEST(PoolTest, CreateReturnsValidHandle) {
-  Pool<Foo, FooImpl> pool;
-  const Handle<Foo> h = pool.create(FooImpl{.value = 42});
+  ldr::Pool<Foo, FooImpl> pool;
+  const ldr::Handle<Foo> h = pool.create(FooImpl{.value = 42});
   EXPECT_TRUE(h.valid());
   EXPECT_FALSE(h.empty());
 }
 
 TEST(PoolTest, GetReturnsCreatedObject) {
-  Pool<Foo, FooImpl> pool;
-  const Handle<Foo> h = pool.create(FooImpl{.value = 7});
+  ldr::Pool<Foo, FooImpl> pool;
+  const ldr::Handle<Foo> h = pool.create(FooImpl{.value = 7});
   const FooImpl* obj = pool.get(h);
   ASSERT_NE(obj, nullptr);
   EXPECT_EQ(obj->value, 7);
 }
 
 TEST(PoolTest, ConstGetReturnsCreatedObject) {
-  Pool<Foo, FooImpl> pool;
-  const Handle<Foo> h = pool.create(FooImpl{.value = 7});
-  const Pool<Foo, FooImpl>& constPool = pool;
+  ldr::Pool<Foo, FooImpl> pool;
+  const ldr::Handle<Foo> h = pool.create(FooImpl{.value = 7});
+  const ldr::Pool<Foo, FooImpl>& constPool = pool;
   const FooImpl* obj = constPool.get(h);
   ASSERT_NE(obj, nullptr);
   EXPECT_EQ(obj->value, 7);
 }
 
 TEST(PoolTest, ConstGetEmptyHandleReturnsNull) {
-  Pool<Foo, FooImpl> pool;
+  ldr::Pool<Foo, FooImpl> pool;
   (void)pool.create(FooImpl{.value = 99});
-  const Pool<Foo, FooImpl>& constPool = pool;
-  const Handle<Foo> empty;
+  const ldr::Pool<Foo, FooImpl>& constPool = pool;
+  const ldr::Handle<Foo> empty;
   const FooImpl* obj = constPool.get(empty);
   EXPECT_EQ(obj, nullptr);
 }
 
 TEST(PoolTest, NumObjectsTrackCount) {
-  Pool<Foo, FooImpl> pool;
+  ldr::Pool<Foo, FooImpl> pool;
   EXPECT_EQ(pool.numObjects(), 0u);
-  const Handle<Foo> h1 = pool.create(FooImpl{.value = 1});
+  const ldr::Handle<Foo> h1 = pool.create(FooImpl{.value = 1});
   EXPECT_EQ(pool.numObjects(), 1u);
-  const Handle<Foo> h2 = pool.create(FooImpl{.value = 2});
+  const ldr::Handle<Foo> h2 = pool.create(FooImpl{.value = 2});
   EXPECT_EQ(pool.numObjects(), 2u);
   pool.destroy(h1);
   EXPECT_EQ(pool.numObjects(), 1u);
@@ -100,41 +100,41 @@ TEST(PoolTest, NumObjectsTrackCount) {
 }
 
 TEST(PoolTest, GetEmptyHandleReturnsNull) {
-  Pool<Foo, FooImpl> pool;
+  ldr::Pool<Foo, FooImpl> pool;
   (void)pool.create(FooImpl{.value = 99});
-  const Handle<Foo> empty;
+  const ldr::Handle<Foo> empty;
   const FooImpl* obj = pool.get(empty);
   EXPECT_EQ(obj, nullptr);
 }
 
 TEST(PoolTest, DestroyResetsObjectToDefault) {
-  Pool<Foo, FooImpl> pool;
-  const Handle<Foo> h = pool.create(FooImpl{.value = 99});
+  ldr::Pool<Foo, FooImpl> pool;
+  const ldr::Handle<Foo> h = pool.create(FooImpl{.value = 99});
   pool.destroy(h);
-  EXPECT_EQ(pool.objects_[h.index()].obj_, FooImpl{});
+  EXPECT_EQ(pool.objects_[h.index()], FooImpl{});
 }
 
 TEST(PoolTest, DestroySlotRecycledNewHandleDiffersInGen) {
-  Pool<Foo, FooImpl> pool;
-  const Handle<Foo> h1 = pool.create(FooImpl{.value = 1});
+  ldr::Pool<Foo, FooImpl> pool;
+  const ldr::Handle<Foo> h1 = pool.create(FooImpl{.value = 1});
   const uint32_t oldGen = h1.gen();
   const uint32_t oldIndex = h1.index();
   pool.destroy(h1);
-  const Handle<Foo> h2 = pool.create(FooImpl{.value = 2});
+  const ldr::Handle<Foo> h2 = pool.create(FooImpl{.value = 2});
   EXPECT_EQ(h2.index(), oldIndex);
   EXPECT_GT(h2.gen(), oldGen);
 }
 
 TEST(PoolTest, DestroyEmptyHandleIsNoOp) {
-  Pool<Foo, FooImpl> pool;
+  ldr::Pool<Foo, FooImpl> pool;
   (void)pool.create(FooImpl{.value = 1});
-  const Handle<Foo> empty;
+  const ldr::Handle<Foo> empty;
   pool.destroy(empty);
   EXPECT_EQ(pool.numObjects(), 1u);
 }
 
 TEST(PoolTest, ClearResetsPool) {
-  Pool<Foo, FooImpl> pool;
+  ldr::Pool<Foo, FooImpl> pool;
   (void)pool.create(FooImpl{.value = 1});
   (void)pool.create(FooImpl{.value = 2});
   pool.clear();
@@ -143,44 +143,44 @@ TEST(PoolTest, ClearResetsPool) {
 }
 
 TEST(PoolTest, FindObjectReturnsCorrectHandle) {
-  Pool<Foo, FooImpl> pool;
+  ldr::Pool<Foo, FooImpl> pool;
   (void)pool.create(FooImpl{.value = 10});
-  const Handle<Foo> h2 = pool.create(FooImpl{.value = 20});
+  const ldr::Handle<Foo> h2 = pool.create(FooImpl{.value = 20});
   (void)pool.create(FooImpl{.value = 30});
   const FooImpl needle{.value = 20};
-  const Handle<Foo> found = pool.findObject(&needle);
+  const ldr::Handle<Foo> found = pool.findObject(&needle);
   EXPECT_TRUE(found.valid());
   EXPECT_EQ(found.index(), h2.index());
   EXPECT_EQ(found.gen(), h2.gen());
 }
 
 TEST(PoolTest, FindObjectNullptrReturnsEmpty) {
-  Pool<Foo, FooImpl> pool;
+  ldr::Pool<Foo, FooImpl> pool;
   (void)pool.create(FooImpl{.value = 1});
-  const Handle<Foo> found = pool.findObject(nullptr);
+  const ldr::Handle<Foo> found = pool.findObject(nullptr);
   EXPECT_TRUE(found.empty());
 }
 
 TEST(PoolTest, FindObjectNotInPoolReturnsEmpty) {
-  Pool<Foo, FooImpl> pool;
+  ldr::Pool<Foo, FooImpl> pool;
   (void)pool.create(FooImpl{.value = 1});
   const FooImpl needle{.value = 999};
-  const Handle<Foo> found = pool.findObject(&needle);
+  const ldr::Handle<Foo> found = pool.findObject(&needle);
   EXPECT_TRUE(found.empty());
 }
 
 TEST(PoolTest, MultipleCreateDestroy) {
-  Pool<Foo, FooImpl> pool;
-  const Handle<Foo> h1 = pool.create(FooImpl{.value = 1});
-  const Handle<Foo> h2 = pool.create(FooImpl{.value = 2});
-  const Handle<Foo> h3 = pool.create(FooImpl{.value = 3});
+  ldr::Pool<Foo, FooImpl> pool;
+  const ldr::Handle<Foo> h1 = pool.create(FooImpl{.value = 1});
+  const ldr::Handle<Foo> h2 = pool.create(FooImpl{.value = 2});
+  const ldr::Handle<Foo> h3 = pool.create(FooImpl{.value = 3});
   EXPECT_EQ(pool.numObjects(), 3u);
 
   const uint32_t midIndex = h2.index();
   pool.destroy(h2);
   EXPECT_EQ(pool.numObjects(), 2u);
 
-  const Handle<Foo> h4 = pool.create(FooImpl{.value = 4});
+  const ldr::Handle<Foo> h4 = pool.create(FooImpl{.value = 4});
   EXPECT_EQ(h4.index(), midIndex);
   EXPECT_GT(h4.gen(), h2.gen());
   EXPECT_EQ(pool.numObjects(), 3u);
@@ -199,34 +199,34 @@ TEST(PoolTest, MultipleCreateDestroy) {
 }
 
 TEST(PoolTest, IndexAsVoidRoundTrips) {
-  Pool<Foo, FooImpl> pool;
-  const Handle<Foo> h = pool.create(FooImpl{.value = 5});
+  ldr::Pool<Foo, FooImpl> pool;
+  const ldr::Handle<Foo> h = pool.create(FooImpl{.value = 5});
   void* ptr = h.indexAsVoid();
   const auto roundTripped = reinterpret_cast<ptrdiff_t>(ptr);
   EXPECT_EQ(static_cast<uint32_t>(roundTripped), h.index());
 }
 
-TEST(PoolTest, DestroyByIndexRecyclesSlot) {
-  Pool<Foo, FooImpl> pool;
+TEST(PoolTest, DestroyByHandleFromIndexRecyclesSlot) {
+  ldr::Pool<Foo, FooImpl> pool;
   (void)pool.create(FooImpl{.value = 1});
-  const Handle<Foo> h2 = pool.create(FooImpl{.value = 2});
+  const ldr::Handle<Foo> h2 = pool.create(FooImpl{.value = 2});
   (void)pool.create(FooImpl{.value = 3});
   EXPECT_EQ(pool.numObjects(), 3u);
 
   const uint32_t idx = h2.index();
-  pool.destroy(idx);
+  pool.destroy(pool.getHandle(idx));
   EXPECT_EQ(pool.numObjects(), 2u);
-  EXPECT_EQ(pool.objects_[idx].obj_, FooImpl{});
+  EXPECT_EQ(pool.objects_[idx], FooImpl{});
 
-  const Handle<Foo> h4 = pool.create(FooImpl{.value = 4});
+  const ldr::Handle<Foo> h4 = pool.create(FooImpl{.value = 4});
   EXPECT_EQ(h4.index(), idx);
   EXPECT_GT(h4.gen(), h2.gen());
   EXPECT_EQ(pool.numObjects(), 3u);
 }
 
 TEST(PoolTest, MutableGetAllowsModification) {
-  Pool<Foo, FooImpl> pool;
-  const Handle<Foo> h = pool.create(FooImpl{.value = 10});
+  ldr::Pool<Foo, FooImpl> pool;
+  const ldr::Handle<Foo> h = pool.create(FooImpl{.value = 10});
 
   FooImpl* obj = pool.get(h);
   ASSERT_NE(obj, nullptr);
@@ -240,9 +240,9 @@ TEST(PoolTest, MutableGetAllowsModification) {
 }
 
 TEST(PoolTest, MutableGetEmptyHandleReturnsNull) {
-  Pool<Foo, FooImpl> pool;
+  ldr::Pool<Foo, FooImpl> pool;
   (void)pool.create(FooImpl{.value = 1});
-  const Handle<Foo> empty;
+  const ldr::Handle<Foo> empty;
   FooImpl* obj = pool.get(empty);
   EXPECT_EQ(obj, nullptr);
 }

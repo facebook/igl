@@ -12,6 +12,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <ldrutils/lutils/Handle.h>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -19,8 +20,6 @@
 #include <igl/Color.h>
 #include <igl/Core.h>
 #include <igl/base/Common.h>
-#include <igl/base/Handle.h>
-#include <igl/base/Pool.h>
 
 #define IGL_ARRAY_NUM_ELEMENTS(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -282,11 +281,11 @@ void optimizedMemcpy(void* IGL_NULLABLE dst, const void* IGL_NULLABLE src, size_
 /// MARK: - Handle
 
 // specialized with dummy structs for type safety
-using BindGroupTextureHandle = Handle<struct BindGroupTextureTag>;
-using BindGroupBufferHandle = Handle<struct BindGroupBufferTag>;
-using TextureHandle = Handle<struct TextureTag>;
-using SamplerHandle = Handle<struct SamplerTag>;
-using DepthStencilStateHandle = Handle<struct DepthStencilStateTag>;
+using BindGroupTextureHandle = ldr::Handle<struct BindGroupTextureTag>;
+using BindGroupBufferHandle = ldr::Handle<struct BindGroupBufferTag>;
+using TextureHandle = ldr::Handle<struct TextureTag>;
+using SamplerHandle = ldr::Handle<struct SamplerTag>;
+using DepthStencilStateHandle = ldr::Handle<struct DepthStencilStateTag>;
 
 class IDevice;
 

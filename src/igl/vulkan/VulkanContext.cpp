@@ -429,8 +429,8 @@ struct VulkanContextImpl final {
   uint32_t currentMaxBindlessTextures = 8;
   uint32_t currentMaxBindlessSamplers = 8;
 
-  Pool<BindGroupBufferTag, BindGroupMetadataBuffers> bindGroupBuffersPool;
-  Pool<BindGroupTextureTag, BindGroupMetadataTextures> bindGroupTexturesPool;
+  ldr::Pool<BindGroupBufferTag, BindGroupMetadataBuffers> bindGroupBuffersPool;
+  ldr::Pool<BindGroupTextureTag, BindGroupMetadataTextures> bindGroupTexturesPool;
 
   SamplerHandle dummySampler = {};
   TextureHandle dummyTexture = {};
@@ -565,13 +565,13 @@ VulkanContext::~VulkanContext() {
 
 #if IGL_DEBUG_ABORT_ENABLED
   for (const auto& t : pimpl_->bindGroupTexturesPool.objects_) {
-    if (t.obj_.dset != VK_NULL_HANDLE) {
-      IGL_DEBUG_ABORT("Leaked texture bind group detected! %s", t.obj_.desc.debugName.c_str());
+    if (t.dset != VK_NULL_HANDLE) {
+      IGL_DEBUG_ABORT("Leaked texture bind group detected! %s", t.desc.debugName.c_str());
     }
   }
   for (const auto& t : pimpl_->bindGroupBuffersPool.objects_) {
-    if (t.obj_.dset != VK_NULL_HANDLE) {
-      IGL_DEBUG_ABORT("Leaked buffer bind group detected! %s", t.obj_.desc.debugName.c_str());
+    if (t.dset != VK_NULL_HANDLE) {
+      IGL_DEBUG_ABORT("Leaked buffer bind group detected! %s", t.desc.debugName.c_str());
     }
   }
 #endif // IGL_DEBUG_ABORT_ENABLED
@@ -1577,8 +1577,8 @@ void VulkanContext::pruneTextures() {
   // textures
   {
     for (uint32_t i = 1; i < static_cast<uint32_t>(textures_.objects_.size()); i++) {
-      if (textures_.objects_[i].obj_ && textures_.objects_[i].obj_.use_count() == 1) {
-        textures_.destroy(i);
+      if (textures_.objects_[i] && textures_.objects_[i].use_count() == 1) {
+        textures_.destroy(textures_.getHandle(i));
       }
     }
   }
@@ -1625,11 +1625,11 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
   infoStorageImages.reserve(textures_.objects_.size());
 
   // use the dummy texture/sampler to avoid sparse array
-  VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
-  VkSampler dummySampler = samplers_.objects_[0].obj_.vkSampler;
+  VkImageView dummyImageView = textures_.objects_[0]->imageView_.getVkImageView();
+  VkSampler dummySampler = samplers_.objects_[0].vkSampler;
 
   for (const auto& entry : textures_.objects_) {
-    const VulkanTexture* texture = entry.obj_.get();
+    const VulkanTexture* texture = entry.get();
     if (texture) {
       // multisampled images cannot be directly accessed from shaders
       const bool isTextureAvailable =
@@ -1661,7 +1661,7 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
   infoSamplers.reserve(samplers_.objects_.size());
 
   for (const auto& entry : samplers_.objects_) {
-    const VulkanSampler* sampler = &entry.obj_;
+    const VulkanSampler* sampler = &entry;
     infoSamplers.push_back({.sampler = sampler ? sampler->vkSampler : dummySampler,
                             .imageView = VK_NULL_HANDLE,
                             .imageLayout = VK_IMAGE_LAYOUT_UNDEFINED});
@@ -1926,8 +1926,8 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
   IGL_DEBUG_ASSERT(!samplers_.objects_.empty());
 
   // use the dummy texture/sampler to avoid sparse array
-  VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
-  VkSampler dummySampler = samplers_.objects_[0].obj_.vkSampler;
+  VkImageView dummyImageView = textures_.objects_[0]->imageView_.getVkImageView();
+  VkSampler dummySampler = samplers_.objects_[0].vkSampler;
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
@@ -1990,7 +1990,7 @@ void VulkanContext::updateBindingsStorageImages(
   IGL_DEBUG_ASSERT(!textures_.objects_.empty());
 
   // use the dummy texture to avoid sparse array
-  VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
+  VkImageView dummyImageView = textures_.objects_[0]->imageView_.getVkImageView();
 
   for (const util::ImageDescription& d : info.images) {
     IGL_DEBUG_ASSERT(d.descriptorSet == kBindPoint_StorageImages);
@@ -2082,8 +2082,8 @@ void VulkanContext::updateBindingsTexturesByDescriptorBuffer(
   IGL_DEBUG_ASSERT(!samplers_.objects_.empty());
 
   // use the dummy texture/sampler to avoid sparse array
-  VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
-  VkSampler dummySampler = samplers_.objects_[0].obj_.vkSampler;
+  VkImageView dummyImageView = textures_.objects_[0]->imageView_.getVkImageView();
+  VkSampler dummySampler = samplers_.objects_[0].vkSampler;
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
@@ -2163,7 +2163,7 @@ void VulkanContext::updateBindingsStorageImagesByDescriptorBuffer(
   IGL_DEBUG_ASSERT(!textures_.objects_.empty());
 
   // use the dummy texture to avoid sparse array
-  VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
+  VkImageView dummyImageView = textures_.objects_[0]->imageView_.getVkImageView();
 
   auto storageImageSize = vkPhysicalDeviceDescriptorBufferProperties_.storageImageDescriptorSize;
   auto alignment = vkPhysicalDeviceDescriptorBufferProperties_.descriptorBufferOffsetAlignment;
@@ -2562,7 +2562,7 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
   IGL_DEBUG_ASSERT(!textures_.objects_.empty());
   IGL_DEBUG_ASSERT(!samplers_.objects_.empty());
   // use the dummy texture to ensure pipeline compatibility
-  VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
+  VkImageView dummyImageView = textures_.objects_[0]->imageView_.getVkImageView();
 
   // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   VkDescriptorImageInfo images[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
@@ -2577,11 +2577,11 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
     }
     const igl::vulkan::VulkanTexture& texture =
         desc.textures[loc] ? static_cast<Texture*>(desc.textures[loc].get())->getVulkanTexture()
-                           : *textures_.objects_[0].obj_; // use a dummy texture when necessary
+                           : *textures_.objects_[0]; // use a dummy texture when necessary
     const igl::vulkan::VulkanSampler& sampler =
         desc.samplers[loc]
             ? *samplers_.get(static_cast<SamplerState&>(*desc.samplers[loc]).sampler_)
-            : samplers_.objects_[0].obj_; // use a dummy sampler when necessary
+            : samplers_.objects_[0]; // use a dummy sampler when necessary
 
     // multisampled images cannot be directly accessed from shaders
     const bool isTextureAvailable =

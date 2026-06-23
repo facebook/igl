@@ -9,6 +9,7 @@
 
 @protocol MTLDevice;
 #import <Metal/MTLTypes.h>
+#include <ldrutils/lutils/Pool.h>
 #include <igl/CommandEncoder.h>
 #include <igl/Device.h>
 #include <igl/metal/DeviceFeatureSet.h>
@@ -131,8 +132,8 @@ class Device : public IDevice {
   std::shared_ptr<ICommandQueue> getMostRecentCommandQueue() const noexcept;
 
  public:
-  Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool;
-  Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool;
+  ldr::Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool;
+  ldr::Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool;
 
  private:
   std::unique_ptr<IBuffer> createRingBuffer(const BufferDesc& desc,

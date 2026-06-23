@@ -10,6 +10,7 @@
 #include <atomic>
 #include <deque>
 #include <future>
+#include <ldrutils/lutils/Pool.h>
 #include <memory>
 #include <unordered_map>
 #include <igl/CommandEncoder.h>
@@ -346,8 +347,8 @@ class VulkanContext final {
   // delete the underlying VulkanTexture but instead informs the context that it should be
   // deallocated. The context deallocates textures in a deferred way when it is safe to do so.
   // 2. Descriptor sets can be updated when they are not in use.
-  mutable Pool<TextureTag, std::shared_ptr<VulkanTexture>> textures_;
-  mutable Pool<SamplerTag, VulkanSampler> samplers_;
+  mutable ldr::Pool<TextureTag, std::shared_ptr<VulkanTexture>> textures_;
+  mutable ldr::Pool<SamplerTag, VulkanSampler> samplers_;
   // a texture/sampler was created since the last descriptor set update
   mutable bool awaitingCreation_ = false;
 

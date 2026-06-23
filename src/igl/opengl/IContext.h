@@ -8,6 +8,7 @@
 #pragma once
 
 #include <atomic>
+#include <ldrutils/lutils/Pool.h>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
@@ -583,8 +584,8 @@ class IContext {
   Result getLastError() const;
 
  public:
-  mutable Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool;
-  mutable Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool;
+  mutable ldr::Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool;
+  mutable ldr::Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool;
 
  protected:
   static std::unordered_map<void* IGL_NULLABLE, IContext*>& getExistingContexts();

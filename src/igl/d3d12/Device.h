@@ -8,6 +8,7 @@
 #pragma once
 
 #include <atomic>
+#include <ldrutils/lutils/Pool.h>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
@@ -241,8 +242,8 @@ class Device final : public IDevice, public IFenceProvider {
   D3D12Telemetry telemetry_;
 
   // Bind group pools
-  Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
-  Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
+  ldr::Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
+  ldr::Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
 
   // Upload tracking state (non-mutable, mutated only from non-const paths).
   // Modified by createBufferImpl, Buffer::upload, Texture::upload via non-const Device references
