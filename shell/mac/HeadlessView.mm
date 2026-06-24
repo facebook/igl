@@ -9,14 +9,17 @@
 
 #import "HeadlessView.h"
 
-#import "ViewController.h"
+#import "ViewController.h" // IWYU pragma: keep
 
 #import <AppKit/NSApplication.h>
 #import <AppKit/NSTabViewController.h>
 #import <AppKit/NSTabViewItem.h>
 #import <AppKit/NSTrackingArea.h>
+#import <AppKit/NSView.h>
 #import <AppKit/NSWindow.h>
 #import <CoreVideo/CVDisplayLink.h>
+#import <Foundation/NSArray.h>
+#import <Foundation/NSThread.h>
 
 @interface HeadlessView () {
   CVDisplayLinkRef _displayLink; // display link for managing rendering thread

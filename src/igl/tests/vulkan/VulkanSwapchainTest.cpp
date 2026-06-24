@@ -14,7 +14,7 @@
 #include <memory>
 #include <igl/tests/util/device/vulkan/TestDevice.h> // IWYU pragma: export
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanSwapchain.h>
+#include <igl/vulkan/VulkanSwapchain.h> // IWYU pragma: keep
 
 namespace igl::tests {
 
