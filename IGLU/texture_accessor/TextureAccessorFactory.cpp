@@ -25,6 +25,7 @@ std::unique_ptr<ITextureAccessor> TextureAccessorFactory::createTextureAccessor(
     igl::BackendType backendType,
     const std::shared_ptr<igl::ITexture>& texture,
     igl::IDevice& device) {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (backendType) {
 #if IGL_BACKEND_OPENGL
   case igl::BackendType::OpenGL:

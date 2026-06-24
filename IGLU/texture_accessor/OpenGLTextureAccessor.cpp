@@ -95,11 +95,13 @@ void OpenGLTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
       textureAttached_ = true;
     }
     const auto& properties = glTexture.getProperties();
+    // NOLINTNEXTLINE(clang-diagnostic-shorten-64-to-32)
     context.pixelStorei(GL_PACK_ALIGNMENT,
                         glTexture.getAlignment(properties.getBytesPerRow(textureWidth_)));
 
     // Start transferring from framebuffer -> PBO
     context.bindBuffer(GL_PIXEL_PACK_BUFFER, pboId_);
+    // NOLINTNEXTLINE(clang-diagnostic-shorten-64-to-32)
     context.readPixels(0, 0, textureWidth_, textureHeight_, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     context.bindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
@@ -110,6 +112,7 @@ void OpenGLTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
   }
 
   // Async readback not supported
+  // NOLINTNEXTLINE(clang-diagnostic-shorten-64-to-32)
   const auto range = igl::TextureRangeDesc::new2D(0, 0, textureWidth_, textureHeight_);
   frameBuffer_->copyBytesColorAttachment(commandQueue, 0, latestBytesRead_.data(), range);
 
