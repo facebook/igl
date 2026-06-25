@@ -178,6 +178,103 @@ TEST_F(ComputeCommandEncoderVulkanTest, DispatchThreadGroupsIndirect) {
   }
 }
 
+TEST_F(ComputeCommandEncoderVulkanTest, DirectDispatch) {
+  Result ret;
+
+  const std::string computeSource(data::shader::kVulkanSimpleComputeShader);
+  auto computeModule =
+      ShaderModuleCreator::fromStringInput(*iglDev_,
+                                           computeSource.c_str(),
+                                           {.stage = ShaderStage::Compute, .entryPoint = "main"},
+                                           "TestDirectDispatch",
+                                           &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  auto stages = ShaderStagesCreator::fromComputeModule(*iglDev_, computeModule, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  const ComputePipelineDesc pipelineDesc{
+      .buffersMap =
+          {
+              {data::shader::kSimpleComputeInputIndex,
+               IGL_NAMEHANDLE(data::shader::kSimpleComputeInput)},
+              {data::shader::kSimpleComputeOutputIndex,
+               IGL_NAMEHANDLE(data::shader::kSimpleComputeOutput)},
+          },
+      .shaderStages = std::move(stages),
+      .debugName = "TestDirectDispatch",
+  };
+
+  auto pipeline = iglDev_->createComputePipeline(pipelineDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(pipeline, nullptr);
+
+  const std::vector<float> inputData = {10.0f, 20.0f, 30.0f, 40.0f};
+  const BufferDesc inputBufferDesc{
+      .type = BufferDesc::BufferTypeBits::Storage,
+      .data = inputData.data(),
+      .length = inputData.size() * sizeof(float),
+      .storage = ResourceStorage::Shared,
+  };
+  auto inputBuffer = iglDev_->createBuffer(inputBufferDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  const BufferDesc outputBufferDesc{
+      .type = BufferDesc::BufferTypeBits::Storage,
+      .length = inputData.size() * sizeof(float),
+      .storage = ResourceStorage::Shared,
+  };
+  auto outputBuffer = iglDev_->createBuffer(outputBufferDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  auto cmdBuffer = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  auto computeEncoder = cmdBuffer->createComputeCommandEncoder();
+  ASSERT_NE(computeEncoder, nullptr);
+
+  computeEncoder->bindComputePipelineState(pipeline);
+  computeEncoder->bindBuffer(data::shader::kSimpleComputeInputIndex, inputBuffer.get());
+  computeEncoder->bindBuffer(data::shader::kSimpleComputeOutputIndex, outputBuffer.get());
+
+  computeEncoder->dispatchThreadGroups(Dimensions(1, 1, 1), Dimensions(4, 1, 1));
+  computeEncoder->endEncoding();
+
+  cmdQueue_->submit(*cmdBuffer);
+  cmdBuffer->waitUntilCompleted();
+
+  const auto range = BufferRange(inputData.size() * sizeof(float), 0);
+  auto* data = outputBuffer->map(range, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(data, nullptr);
+
+  std::vector<float> outputData(inputData.size());
+  std::memcpy(outputData.data(), data, inputData.size() * sizeof(float));
+  outputBuffer->unmap();
+
+  for (size_t i = 0; i < inputData.size(); i++) {
+    EXPECT_FLOAT_EQ(outputData[i], inputData[i] * 2.0f);
+  }
+}
+
+TEST_F(ComputeCommandEncoderVulkanTest, NestedDebugGroupLabels) {
+  Result ret;
+  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  auto encoder = cmdBuf->createComputeCommandEncoder();
+  ASSERT_NE(encoder, nullptr);
+
+  encoder->pushDebugGroupLabel("Outer", Color(1.0f, 0.0f, 0.0f, 1.0f));
+  encoder->pushDebugGroupLabel("Inner", Color(0.0f, 1.0f, 0.0f, 1.0f));
+  encoder->popDebugGroupLabel();
+  encoder->popDebugGroupLabel();
+
+  encoder->endEncoding();
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
