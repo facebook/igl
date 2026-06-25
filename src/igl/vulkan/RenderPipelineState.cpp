@@ -198,6 +198,7 @@ VkBlendOp blendOpToVkBlendOp(igl::BlendOp value) {
 
 VkBool32 checkDualSrcBlendFactor(igl::BlendFactor value, VkBool32 dualSrcBlendSupported) {
   if (!dualSrcBlendSupported) {
+    // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
     switch (value) {
     case igl::BlendFactor::Src1Color:
     case igl::BlendFactor::OneMinusSrc1Color:
