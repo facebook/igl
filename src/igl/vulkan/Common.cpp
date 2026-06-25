@@ -49,6 +49,7 @@ Result getResultFromVkResult(VkResult result) {
 
   Result res(Result::Code::RuntimeError, ivkGetVulkanResultString(result));
 
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (result) {
   case VK_ERROR_LAYER_NOT_PRESENT:
   case VK_ERROR_EXTENSION_NOT_PRESENT:
@@ -80,6 +81,7 @@ void setResultFrom(Result* IGL_NULLABLE outResult, VkResult result) {
 }
 
 VkFormat invertRedAndBlue(VkFormat format) {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (format) {
   case VK_FORMAT_B8G8R8A8_UNORM:
     return VK_FORMAT_R8G8B8A8_UNORM;
@@ -437,6 +439,7 @@ VkColorSpaceKHR colorSpaceToVkColorSpace(ColorSpace colorSpace) {
 }
 
 ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace) {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (colorSpace) {
   case VK_COLOR_SPACE_SRGB_NONLINEAR_KHR:
     return ColorSpace::SRGBNonlinear;
@@ -716,6 +719,7 @@ VkComponentMapping componentMappingToVkComponentMapping(const ComponentMapping& 
 }
 
 uint32_t getNumImagePlanes(VkFormat format) {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (format) {
   case VK_FORMAT_UNDEFINED:
     return 0;
