@@ -93,4 +93,30 @@ TEST(SpvConstantSpecializationExtendedTest, NoSpecConstants) {
   EXPECT_EQ(spv[54], originalVal1);
 }
 
+TEST(SpvConstantSpecializationExtendedTest, PartialSpecialization) {
+  using namespace vulkan::util;
+
+  auto spv = getTestSpv();
+
+  const uint32_t originalVal1 = spv[54];
+
+  const std::vector<uint32_t> values = {intToWord(42), vulkan::util::kNoValue};
+  specializeConstants(spv.data(), spv.size() * sizeof(uint32_t), values);
+
+  EXPECT_EQ(spv[50], intToWord(42));
+  EXPECT_EQ(spv[54], originalVal1);
+}
+
+TEST(SpvConstantSpecializationExtendedTest, BoundaryValues) {
+  using namespace vulkan::util;
+
+  auto spv = getTestSpv();
+
+  const std::vector<uint32_t> values = {0u, 0xFFFFFFFEu};
+  specializeConstants(spv.data(), spv.size() * sizeof(uint32_t), values);
+
+  EXPECT_EQ(spv[50], 0u);
+  EXPECT_EQ(spv[54], 0xFFFFFFFEu);
+}
+
 } // namespace igl::tests
