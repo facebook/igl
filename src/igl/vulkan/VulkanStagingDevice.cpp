@@ -66,7 +66,7 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
     return;
   }
 
-  uint32_t chunkDstOffset = dstOffset;
+  VkDeviceSize chunkDstOffset = dstOffset;
   void* copyData = const_cast<void*>(data);
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
@@ -207,8 +207,8 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
   IGL_DEBUG_ASSERT(allocatedSize);
 
   if (allocatedSize) {
-    const uint32_t newSize = regionItr->size - allocatedSize;
-    const uint32_t newOffset = regionItr->offset + allocatedSize;
+    const VkDeviceSize newSize = regionItr->size - allocatedSize;
+    const VkDeviceSize newOffset = regionItr->offset + allocatedSize;
     const uint32_t stagingBufferIndex = regionItr->stagingBufferIndex;
 
     const MemoryRegion allocatedRegion = {
