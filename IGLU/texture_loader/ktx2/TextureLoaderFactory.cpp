@@ -122,14 +122,41 @@ bool TextureLoaderFactory::validate(DataReader reader,
         outResult, igl::Result::Code::InvalidOperation, "Length is too short for the level index.");
     return false;
   }
+
+  // Upper bound on a single level's uncompressed size.
+  // Reject when a level's uncompressedByteLength exceeds what its dimensions can hold.
+  // The product is accumulated with an explicit overflow check: with attacker-controlled
+  // dimensions each near 2^32-1, a naive chained uint64_t multiply would wrap and could
+  // yield a bound large enough to let an over-large uncompressedByteLength through. Treat
+  // any overflow as absurd dimensions and reject.
+  constexpr uint64_t kMaxBytesPerTexel = 16u; // RGBA32F; >= any uncompressed format
+  uint64_t maxLevelBytes = kMaxBytesPerTexel;
+  for (const uint32_t dimension :
+       {range.width, range.height, range.depth, range.numLayers, std::max(range.numFaces, 1u)}) {
+    const uint64_t factor = static_cast<uint64_t>(dimension);
+    if (factor != 0u && maxLevelBytes > std::numeric_limits<uint64_t>::max() / factor) {
+      igl::Result::setResult(
+          outResult, igl::Result::Code::InvalidOperation, "Texture dimensions are too large.");
+      return false;
+    }
+    maxLevelBytes *= factor;
+  }
+
   for (uint32_t mipLevel = 0; mipLevel < range.numMipLevels; ++mipLevel) {
     const uint32_t levelOffset = kHeaderLength + mipLevel * 24u;
     const uint64_t levelByteOffset = reader.readAt<uint64_t>(levelOffset);
     const uint64_t levelByteLength = reader.readAt<uint64_t>(levelOffset + 8u);
+    const uint64_t levelUncompressedByteLength = reader.readAt<uint64_t>(levelOffset + 16u);
     if (levelByteOffset > static_cast<uint64_t>(length) ||
         levelByteLength > static_cast<uint64_t>(length) - levelByteOffset) {
       igl::Result::setResult(
           outResult, igl::Result::Code::InvalidOperation, "Level data exceeds the input length.");
+      return false;
+    }
+    if (levelUncompressedByteLength > maxLevelBytes) {
+      igl::Result::setResult(outResult,
+                             igl::Result::Code::InvalidOperation,
+                             "Uncompressed level data exceeds the texture dimensions.");
       return false;
     }
   }
