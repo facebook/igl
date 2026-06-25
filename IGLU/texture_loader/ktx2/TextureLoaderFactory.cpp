@@ -108,6 +108,32 @@ bool TextureLoaderFactory::validate(DataReader reader,
     return false;
   }
 
+  // Bound the level index against the actual input length for ALL formats. The
+  // vkFormat != 0 block below does stricter, format-aware checks, but a vkFormat == 0
+  // (Basis/non-Vulkan) header skips that block entirely, leaving the level index
+  // unvalidated; ktxTexture_CreateFromMemory(LOAD_IMAGE_DATA) then eagerly malloc()s
+  // the header-declared data size in ktxTexture2_LoadImageData, so a header declaring a
+  // byteLength larger than the file drives an out-of-memory. A valid file always stores its level
+  // data within the input, so this only rejects malformed headers.
+  const uint64_t levelIndexEnd =
+      static_cast<uint64_t>(kHeaderLength) + static_cast<uint64_t>(range.numMipLevels) * 24u;
+  if (levelIndexEnd > static_cast<uint64_t>(length)) {
+    igl::Result::setResult(
+        outResult, igl::Result::Code::InvalidOperation, "Length is too short for the level index.");
+    return false;
+  }
+  for (uint32_t mipLevel = 0; mipLevel < range.numMipLevels; ++mipLevel) {
+    const uint32_t levelOffset = kHeaderLength + mipLevel * 24u;
+    const uint64_t levelByteOffset = reader.readAt<uint64_t>(levelOffset);
+    const uint64_t levelByteLength = reader.readAt<uint64_t>(levelOffset + 8u);
+    if (levelByteOffset > static_cast<uint64_t>(length) ||
+        levelByteLength > static_cast<uint64_t>(length) - levelByteOffset) {
+      igl::Result::setResult(
+          outResult, igl::Result::Code::InvalidOperation, "Level data exceeds the input length.");
+      return false;
+    }
+  }
+
   if (header->vkFormat != 0u) {
     const auto format =
         igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(header->vkFormat));
