@@ -129,6 +129,7 @@ Result Texture::create(const TextureDesc& desc) {
   VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
   VkImageType imageType = VK_IMAGE_TYPE_2D;
   VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (desc_.type) {
   case TextureType::TwoD:
     imageViewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -185,7 +186,7 @@ Result Texture::create(const TextureDesc& desc) {
         &result,
         debugNameImage.c_str());
     if (!IGL_DEBUG_VERIFY(result.isOk())) {
-      return result;
+      return result; // NOLINT(clang-diagnostic-nrvo)
     }
   } else if (desc_.exportability == TextureDesc::TextureExportability::Exportable) {
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
@@ -322,6 +323,7 @@ Result Texture::createView(const Texture& baseTexture, const TextureViewDesc& de
   };
 
   auto textureTypeToVkImageViewType = [](TextureType type) -> VkImageViewType {
+    // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
     switch (type) {
     case TextureType::TwoD:
       return VK_IMAGE_VIEW_TYPE_2D;
@@ -389,6 +391,7 @@ Result Texture::uploadInternal(TextureType /*type*/,
   const VulkanContext& ctx = device_.getVulkanContext();
 
   const VkImageAspectFlags imageAspectFlags = texture_->imageView_.getVkImageAspectFlags();
+  // NOLINTNEXTLINE(clang-diagnostic-shorten-64-to-32)
   ctx.stagingDevice_->imageData(
       vulkanImage, desc_.type, range, getProperties(), bytesPerRow, imageAspectFlags, data);
 
