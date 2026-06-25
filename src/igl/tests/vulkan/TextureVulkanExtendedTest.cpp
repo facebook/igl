@@ -9,6 +9,7 @@
 
 #include "../util/TestDevice.h"
 
+#include <array>
 #include <igl/Device.h>
 #include <igl/Texture.h>
 #include <igl/vulkan/Texture.h>
@@ -121,6 +122,61 @@ TEST_F(TextureVulkanExtendedTest, TextureId) {
   auto* vulkanTexture = static_cast<igl::vulkan::Texture*>(texture.get());
   ASSERT_NE(vulkanTexture, nullptr);
   EXPECT_NE(vulkanTexture->getVulkanTexture().textureId_, 0u);
+}
+
+TEST_F(TextureVulkanExtendedTest, Upload2D) {
+  Result ret;
+  const TextureDesc desc =
+      TextureDesc::new2D(TextureFormat::RGBA_UNorm8, 2, 2, TextureDesc::TextureUsageBits::Sampled);
+  const auto texture = iglDev_->createTexture(desc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(texture, nullptr);
+
+  const std::array<uint32_t, 4> pixels = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFFFFFFFF};
+  ret = texture->upload(texture->getFullRange(0), pixels.data());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+}
+
+TEST_F(TextureVulkanExtendedTest, StorageTexture) {
+  Result ret;
+  const TextureDesc desc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                              4,
+                                              4,
+                                              TextureDesc::TextureUsageBits::Storage |
+                                                  TextureDesc::TextureUsageBits::Sampled);
+  const auto texture = iglDev_->createTexture(desc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(texture, nullptr);
+  EXPECT_EQ(texture->getType(), TextureType::TwoD);
+}
+
+TEST_F(TextureVulkanExtendedTest, TextureDimensions) {
+  Result ret;
+  const TextureDesc desc = TextureDesc::new2D(
+      TextureFormat::RGBA_UNorm8, 16, 32, TextureDesc::TextureUsageBits::Sampled);
+  const auto texture = iglDev_->createTexture(desc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(texture, nullptr);
+
+  const auto dims = texture->getDimensions();
+  EXPECT_EQ(dims.width, 16u);
+  EXPECT_EQ(dims.height, 32u);
+  EXPECT_EQ(dims.depth, 1u);
+}
+
+TEST_F(TextureVulkanExtendedTest, TextureFormatQuery) {
+  Result ret;
+  const TextureDesc desc =
+      TextureDesc::new2D(TextureFormat::RGBA_UNorm8, 4, 4, TextureDesc::TextureUsageBits::Sampled);
+  const auto texture = iglDev_->createTexture(desc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(texture, nullptr);
+
+  EXPECT_EQ(texture->getFormat(), TextureFormat::RGBA_UNorm8);
+  EXPECT_EQ(texture->getType(), TextureType::TwoD);
+  EXPECT_EQ(texture->getNumLayers(), 1u);
+  EXPECT_EQ(texture->getSamples(), 1u);
+  EXPECT_EQ(texture->getNumMipLevels(), 1u);
 }
 
 } // namespace igl::tests
