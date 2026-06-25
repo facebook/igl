@@ -68,4 +68,53 @@ TEST(TimestampQueryDescTest, DefaultConstruction) {
   EXPECT_EQ(tqd.slotIndex, 0u);
 }
 
+TEST(RenderPassDescTest, ColorAttachmentWithClearColor) {
+  RenderPassDesc desc;
+  desc.colorAttachments.resize(1);
+  desc.colorAttachments[0].loadAction = LoadAction::Clear;
+  desc.colorAttachments[0].storeAction = StoreAction::Store;
+  desc.colorAttachments[0].clearColor = {1.0f, 0.5f, 0.25f, 1.0f};
+
+  EXPECT_EQ(desc.colorAttachments.size(), 1u);
+  EXPECT_EQ(desc.colorAttachments[0].loadAction, LoadAction::Clear);
+  EXPECT_EQ(desc.colorAttachments[0].storeAction, StoreAction::Store);
+  EXPECT_FLOAT_EQ(desc.colorAttachments[0].clearColor.r, 1.0f);
+  EXPECT_FLOAT_EQ(desc.colorAttachments[0].clearColor.g, 0.5f);
+  EXPECT_FLOAT_EQ(desc.colorAttachments[0].clearColor.b, 0.25f);
+  EXPECT_FLOAT_EQ(desc.colorAttachments[0].clearColor.a, 1.0f);
+}
+
+TEST(RenderPassDescTest, MultipleColorAttachments) {
+  RenderPassDesc desc;
+  desc.colorAttachments.resize(2);
+  desc.colorAttachments[0].loadAction = LoadAction::Clear;
+  desc.colorAttachments[1].loadAction = LoadAction::Load;
+
+  EXPECT_EQ(desc.colorAttachments.size(), 2u);
+  EXPECT_EQ(desc.colorAttachments[0].loadAction, LoadAction::Clear);
+  EXPECT_EQ(desc.colorAttachments[1].loadAction, LoadAction::Load);
+}
+
+TEST(RenderPassDescTest, DepthClearValue) {
+  RenderPassDesc desc;
+  desc.depthAttachment.loadAction = LoadAction::Clear;
+  desc.depthAttachment.storeAction = StoreAction::Store;
+  desc.depthAttachment.clearDepth = 0.0f;
+
+  EXPECT_EQ(desc.depthAttachment.loadAction, LoadAction::Clear);
+  EXPECT_EQ(desc.depthAttachment.storeAction, StoreAction::Store);
+  EXPECT_FLOAT_EQ(desc.depthAttachment.clearDepth, 0.0f);
+}
+
+TEST(AttachmentDescTest, MipLevelAndLayer) {
+  RenderPassDesc::AttachmentDesc desc;
+  desc.mipLevel = 3;
+  desc.layer = 5;
+  desc.face = 2;
+
+  EXPECT_EQ(desc.mipLevel, 3u);
+  EXPECT_EQ(desc.layer, 5u);
+  EXPECT_EQ(desc.face, 2u);
+}
+
 } // namespace igl::tests
