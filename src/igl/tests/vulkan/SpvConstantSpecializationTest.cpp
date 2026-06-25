@@ -56,11 +56,11 @@ namespace {
 uint32_t getWord(int32_t val) {
   return *reinterpret_cast<uint32_t*>(&val);
 }
-} // namespace
 
-TEST(SpvConstantSpecializationTest, intSpecialization) {
-  using namespace vulkan::util;
-  std::vector<uint32_t> spv = {
+// Returns the SPIR-V module disassembled above, with spec constants
+// kConstant0 = 10 (word 50) and kConstant1 = 11 (word 54).
+std::vector<uint32_t> makeTestSpv() {
+  return {
       0x07230203, 0x00010300, 0xdeadbeef, 0x00000011, 0x00000000, 0x00020011, 0x00000001,
       0x0003000e, 0x00000000, 0x00000000, 0x0006000f, 0x00000004, 0x00000001, 0x6e69616d,
       0x00000000, 0x00000002, 0x00050005, 0x00000003, 0x6e6f436b, 0x6e617473, 0x00003074,
@@ -77,8 +77,13 @@ TEST(SpvConstantSpecializationTest, intSpecialization) {
       0x00000006, 0x0000000e, 0x00000003, 0x0004006f, 0x00000006, 0x0000000f, 0x00000004,
       0x00070050, 0x00000007, 0x00000010, 0x0000000e, 0x0000000f, 0x0000000b, 0x0000000c,
       0x0003003e, 0x00000002, 0x00000010, 0x000100fd, 0x00010038,
-
   };
+}
+} // namespace
+
+TEST(SpvConstantSpecializationTest, intSpecialization) {
+  using namespace vulkan::util;
+  std::vector<uint32_t> spv = makeTestSpv();
 
   // Specialize kConstant0 to 0 and kConstant1 to 1
   const std::vector<uint32_t> values = {getWord(0), getWord(1)};
@@ -90,6 +95,50 @@ TEST(SpvConstantSpecializationTest, intSpecialization) {
 
   EXPECT_EQ(spv[50], getWord(0));
   EXPECT_EQ(spv[54], getWord(1));
+}
+
+TEST(SpvConstantSpecializationTest, emptyValuesNoOp) {
+  using namespace vulkan::util;
+  std::vector<uint32_t> spv = makeTestSpv();
+
+  const std::vector<uint32_t> original = spv;
+  const std::vector<uint32_t> emptyValues;
+
+  specializeConstants(spv.data(), spv.size() * sizeof(uint32_t), emptyValues);
+
+  EXPECT_EQ(spv, original);
+}
+
+TEST(SpvConstantSpecializationTest, singleConstantSpecialization) {
+  using namespace vulkan::util;
+  std::vector<uint32_t> spv = makeTestSpv();
+
+  const std::vector<uint32_t> values = {getWord(42)};
+
+  EXPECT_EQ(spv[50], getWord(10));
+
+  specializeConstants(spv.data(), spv.size() * sizeof(uint32_t), values);
+
+  EXPECT_EQ(spv[50], getWord(42));
+  EXPECT_EQ(spv[54], getWord(11));
+}
+
+TEST(SpvConstantSpecializationTest, headerPreserved) {
+  using namespace vulkan::util;
+  std::vector<uint32_t> spv = makeTestSpv();
+
+  const std::vector<uint32_t> values = {getWord(99), getWord(100)};
+
+  specializeConstants(spv.data(), spv.size() * sizeof(uint32_t), values);
+
+  EXPECT_EQ(spv[0], 0x07230203u);
+  EXPECT_EQ(spv[1], 0x00010300u);
+  EXPECT_EQ(spv[2], 0xdeadbeefu);
+
+  // Verify the specialization actually happened, so an early-exit regression
+  // that leaves the header intact would still fail this test.
+  EXPECT_EQ(spv[50], getWord(99));
+  EXPECT_EQ(spv[54], getWord(100));
 }
 
 } // namespace igl::tests
