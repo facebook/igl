@@ -154,4 +154,64 @@ TEST_F(ShaderLibraryTest, CreateFromSourceNoResult) {
   auto vertShaderModule = shaderLibrary->getShaderModule("vertexShader");
   ASSERT_TRUE(vertShaderModule);
 }
+TEST_F(ShaderLibraryTest, GetNonExistentModuleReturnsNull) {
+  Result ret;
+  if (!iglDev_->hasFeature(DeviceFeatures::ShaderLibrary)) {
+    GTEST_SKIP() << "Shader Libraries are unsupported for this platform.";
+  }
+
+  const char* source = nullptr;
+  if (iglDev_->getBackendType() == igl::BackendType::Metal) {
+    source = data::shader::kMtlSimpleShader.data();
+  } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
+    source = data::shader::kVulkanSimpleVertShader.data();
+  } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
+    source = data::shader::kD3D12SimpleShader.data();
+  }
+
+  if (source == nullptr) {
+    GTEST_SKIP() << "No shader source available for this backend.";
+  }
+
+  auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
+      *iglDev_, source, {{.stage = ShaderStage::Vertex, .entryPoint = "vertexShader"}}, "", &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(shaderLibrary, nullptr);
+
+  auto nonExistent = shaderLibrary->getShaderModule("doesNotExist");
+  EXPECT_EQ(nonExistent, nullptr);
+}
+
+TEST_F(ShaderLibraryTest, CreateWithDebugName) {
+  Result ret;
+  if (!iglDev_->hasFeature(DeviceFeatures::ShaderLibrary)) {
+    GTEST_SKIP() << "Shader Libraries are unsupported for this platform.";
+  }
+
+  const char* source = nullptr;
+  if (iglDev_->getBackendType() == igl::BackendType::Metal) {
+    source = data::shader::kMtlSimpleShader.data();
+  } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
+    source = data::shader::kVulkanSimpleVertShader.data();
+  } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
+    source = data::shader::kD3D12SimpleShader.data();
+  }
+
+  if (source == nullptr) {
+    GTEST_SKIP() << "No shader source available for this backend.";
+  }
+
+  auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
+      *iglDev_,
+      source,
+      {{.stage = ShaderStage::Vertex, .entryPoint = "vertexShader"}},
+      "TestDebugName",
+      &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(shaderLibrary, nullptr);
+
+  auto vertModule = shaderLibrary->getShaderModule("vertexShader");
+  ASSERT_NE(vertModule, nullptr);
+}
+
 } // namespace igl::tests
