@@ -141,4 +141,52 @@ TEST(SpvReflectionTest, MergePushConstantsAndUsageMasks) {
   EXPECT_EQ(merged.usageMaskTextures, 0x04u);
 }
 
+TEST(SpvReflectionTest, MergeEmptyModules) {
+  using namespace vulkan::util;
+
+  const SpvModuleInfo empty1;
+  const SpvModuleInfo empty2;
+
+  const SpvModuleInfo merged = mergeReflectionData(empty1, empty2);
+
+  EXPECT_TRUE(merged.buffers.empty());
+  EXPECT_TRUE(merged.textures.empty());
+  EXPECT_FALSE(merged.hasPushConstants);
+  EXPECT_EQ(merged.usageMaskBuffers, 0u);
+  EXPECT_EQ(merged.usageMaskTextures, 0u);
+}
+
+TEST(SpvReflectionTest, MergePushConstantsPreservedFromEitherSide) {
+  using namespace vulkan::util;
+
+  SpvModuleInfo withPush;
+  withPush.hasPushConstants = true;
+
+  SpvModuleInfo noPush;
+  noPush.hasPushConstants = false;
+
+  const SpvModuleInfo merged1 = mergeReflectionData(withPush, noPush);
+  EXPECT_TRUE(merged1.hasPushConstants);
+
+  const SpvModuleInfo merged2 = mergeReflectionData(noPush, withPush);
+  EXPECT_TRUE(merged2.hasPushConstants);
+}
+
+TEST(SpvReflectionTest, UsageMasksMergeWithBitwiseOr) {
+  using namespace vulkan::util;
+
+  SpvModuleInfo info1;
+  info1.usageMaskBuffers = 0x0F;
+  info1.usageMaskTextures = 0xF0;
+
+  SpvModuleInfo info2;
+  info2.usageMaskBuffers = 0xF0;
+  info2.usageMaskTextures = 0x0F;
+
+  const SpvModuleInfo merged = mergeReflectionData(info1, info2);
+
+  EXPECT_EQ(merged.usageMaskBuffers, 0xFFu);
+  EXPECT_EQ(merged.usageMaskTextures, 0xFFu);
+}
+
 } // namespace igl::tests
