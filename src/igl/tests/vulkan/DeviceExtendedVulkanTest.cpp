@@ -7,11 +7,13 @@
 
 #include <gtest/gtest.h>
 
+#include "../data/ShaderData.h"
 #include "../util/TestDevice.h"
 
 #include <igl/DepthStencilState.h>
 #include <igl/Device.h>
 #include <igl/Shader.h>
+#include <igl/ShaderCreator.h>
 
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
 
@@ -121,6 +123,53 @@ TEST_F(DeviceExtendedVulkanTest, CreateShaderModuleZeroLengthBinaryDataReturnsAr
   auto module = iglDev_->createShaderModule(desc, &ret);
   EXPECT_EQ(module, nullptr);
   EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST_F(DeviceExtendedVulkanTest, HasFeatureCompute) {
+  EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::Compute));
+}
+
+TEST_F(DeviceExtendedVulkanTest, HasFeatureMultiview) {
+  // Multiview is an optional Vulkan capability (gated behind VK_KHR_multiview / the multiview
+  // feature bit), so the device may legitimately report either value depending on the underlying
+  // implementation. Verify only that the query executes without crashing.
+  const bool hasMultiview = iglDev_->hasFeature(DeviceFeatures::Multiview);
+  (void)hasMultiview;
+}
+
+TEST_F(DeviceExtendedVulkanTest, HasFeatureExplicitBinding) {
+  EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ExplicitBinding));
+}
+
+TEST_F(DeviceExtendedVulkanTest, TextureFormatCapabilitiesRGBA) {
+  const ICapabilities::TextureFormatCapabilities caps =
+      iglDev_->getTextureFormatCapabilities(TextureFormat::RGBA_UNorm8);
+  EXPECT_TRUE(contains(caps, ICapabilities::TextureFormatCapabilityBits::Sampled));
+  EXPECT_TRUE(contains(caps, ICapabilities::TextureFormatCapabilityBits::Attachment));
+  EXPECT_TRUE(contains(caps, ICapabilities::TextureFormatCapabilityBits::SampledFiltered));
+}
+
+TEST_F(DeviceExtendedVulkanTest, GetNormalizedZRange) {
+  EXPECT_EQ(iglDev_->getNormalizedZRange(), NormalizedZRange::NegOneToOne);
+}
+
+TEST_F(DeviceExtendedVulkanTest, GetShaderCompilationCount) {
+  // Don't assume a specific starting count: device setup may compile internal shaders. Instead
+  // verify the counter increases after we explicitly compile a shader.
+  const size_t countBefore = iglDev_->getShaderCompilationCount();
+
+  Result ret;
+  const std::string vertexSource(data::shader::kVulkanSimpleVertShader);
+  auto vertexModule =
+      ShaderModuleCreator::fromStringInput(*iglDev_,
+                                           vertexSource.c_str(),
+                                           {.stage = ShaderStage::Vertex, .entryPoint = "main"},
+                                           "GetShaderCompilationCount",
+                                           &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(vertexModule, nullptr);
+
+  EXPECT_GT(iglDev_->getShaderCompilationCount(), countBefore);
 }
 
 } // namespace igl::tests

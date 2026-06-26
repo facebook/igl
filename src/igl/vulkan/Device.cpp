@@ -330,6 +330,9 @@ std::shared_ptr<IShaderModule> Device::createShaderModuleInternal(const ShaderMo
     Result::setResult(outResult, std::move(result));
     return nullptr;
   }
+
+  ctx_->shaderCompilationCount_++;
+
   Result::setResult(outResult, std::move(result));
   auto shaderModule = std::make_shared<ShaderModule>(desc.info, std::move(vulkanShaderModule));
 
