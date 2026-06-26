@@ -566,6 +566,7 @@ std::shared_ptr<IFramebuffer> Device::createFramebufferInternal(const Framebuffe
   return resource;
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 std::shared_ptr<ITimestampQueries> Device::createTimestampQueriesInternal(
     uint32_t maxTimestamps,
     Result* IGL_NULLABLE outResult) const noexcept {
