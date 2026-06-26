@@ -257,4 +257,76 @@ TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_MissingShaderDrawParameters) {
 #endif
 }
 
+// allAvailableExtensions initial state ********************************************
+TEST_F(VulkanFeaturesTest, AllAvailableExtensionsInitiallyEmpty) {
+  const igl::vulkan::VulkanContextConfig config;
+  const igl::vulkan::VulkanFeatures features(config);
+
+  EXPECT_TRUE(features.allAvailableExtensions(igl::vulkan::VulkanFeatures::ExtensionType::Instance)
+                  .empty());
+  EXPECT_TRUE(
+      features.allAvailableExtensions(igl::vulkan::VulkanFeatures::ExtensionType::Device).empty());
+}
+
+// available initial state **********************************************************
+TEST_F(VulkanFeaturesTest, AvailableReturnsFalseWhenNoExtensionsEnumerated) {
+  const igl::vulkan::VulkanContextConfig config;
+  const igl::vulkan::VulkanFeatures features(config);
+
+  EXPECT_FALSE(
+      features.available("VK_KHR_swapchain", igl::vulkan::VulkanFeatures::ExtensionType::Device));
+  EXPECT_FALSE(features.available(VK_KHR_SURFACE_EXTENSION_NAME,
+                                  igl::vulkan::VulkanFeatures::ExtensionType::Instance));
+}
+
+// enableCommonInstanceExtensions without available extensions *********************
+TEST_F(VulkanFeaturesTest, EnableCommonInstanceExtensionsNoAvailableExtensions) {
+  const igl::vulkan::VulkanContextConfig config;
+  igl::vulkan::VulkanFeatures features(config);
+
+  // Without enumerate(), extensions_ is empty, so enable() is a no-op for all ext.
+  features.enableCommonInstanceExtensions(config);
+
+  EXPECT_FALSE(features.has_VK_KHR_portability_enumeration);
+  EXPECT_FALSE(features.has_VK_KHR_get_surface_capabilities2);
+  EXPECT_FALSE(features.has_VK_EXT_headless_surface);
+}
+
+// enableCommonDeviceExtensions without available extensions / descriptor buffer always off
+TEST_F(VulkanFeaturesTest, EnableCommonDeviceExtensionsNoAvailableExtensions) {
+  const igl::vulkan::VulkanContextConfig config;
+  igl::vulkan::VulkanFeatures features(config);
+
+  features.enableCommonDeviceExtensions(config);
+
+  EXPECT_FALSE(features.has_VK_EXT_index_type_uint8);
+  EXPECT_FALSE(features.has_VK_KHR_timeline_semaphore);
+  EXPECT_FALSE(features.has_VK_KHR_synchronization2);
+  EXPECT_FALSE(features.has_VK_KHR_8bit_storage);
+  EXPECT_FALSE(features.has_VK_KHR_buffer_device_address);
+  // Descriptor buffer is intentionally always disabled (hardcoded false in
+  // enableCommonDeviceExtensions).
+  EXPECT_FALSE(features.has_VK_EXT_descriptor_buffer);
+}
+
+// checkSelectedFeatures negative case with descriptor indexing enabled ***********
+TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesDescriptorIndexingEnabledMissingFeature) {
+  igl::setDebugBreakEnabled(false);
+
+  igl::vulkan::VulkanContextConfig config;
+  config.enableDescriptorIndexing = true;
+
+  const igl::vulkan::VulkanFeatures requested(config);
+  igl::vulkan::VulkanFeatures available(config);
+  // Remove one of the required descriptor-indexing features from "available"
+  available.featuresDescriptorIndexing.shaderSampledImageArrayNonUniformIndexing = VK_FALSE;
+
+  const igl::Result result = requested.checkSelectedFeatures(available);
+#if IGL_PLATFORM_APPLE
+  EXPECT_TRUE(result.isOk());
+#else
+  EXPECT_FALSE(result.isOk());
+#endif
+}
+
 } // namespace igl::tests
