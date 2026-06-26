@@ -127,6 +127,7 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
 #endif // !IGL_PLATFORM_ANDROID
 
 std::vector<VkFormat> getCompatibleDepthStencilFormats(igl::TextureFormat format) {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (format) {
   case igl::TextureFormat::Z_UNorm16:
     return {VK_FORMAT_D16_UNORM,
@@ -839,6 +840,7 @@ Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
   VK_ASSERT_RETURN(vf_.vkEnumeratePhysicalDevices(vkInstance_, &deviceCount, vkDevices.data()));
 
   auto convertVulkanDeviceTypeToIGL = [](VkPhysicalDeviceType vkDeviceType) -> HWDeviceType {
+    // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
     switch (vkDeviceType) {
     case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
       return HWDeviceType::IntegratedGpu;
@@ -1138,7 +1140,7 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
                              &result,
                              "Image: dummy 1x1");
     if (!IGL_DEBUG_VERIFY(result.isOk())) {
-      return result;
+      return result; // NOLINT(clang-diagnostic-nrvo)
     }
     if (!IGL_DEBUG_VERIFY(image.valid())) {
       return Result(Result::Code::InvalidOperation, "Cannot create VulkanImage");
@@ -1733,7 +1735,7 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
 
   awaitingCreation_ = true;
 
-  return texture;
+  return texture; // NOLINT(clang-diagnostic-nrvo)
 }
 
 std::shared_ptr<VulkanTexture> VulkanContext::createTextureFromVkImage(
