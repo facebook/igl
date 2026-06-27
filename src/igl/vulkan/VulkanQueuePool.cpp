@@ -63,16 +63,19 @@ VulkanQueueDescriptor VulkanQueuePool::findQueueDescriptor(VkQueueFlags flags) c
   // try to find a dedicated queue for compute
   queueDescriptor = findDedicatedQueue(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
   if (queueDescriptor.isValid()) {
+    // NOLINTNEXTLINE(clang-diagnostic-nrvo)
     return queueDescriptor;
   }
   // try to find a dedicated queue for transfer operations
   queueDescriptor = findDedicatedQueue(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT);
   if (queueDescriptor.isValid()) {
+    // NOLINTNEXTLINE(clang-diagnostic-nrvo)
     return queueDescriptor;
   }
   // any suitable queue
   queueDescriptor = findDedicatedQueue(flags, 0);
   if (queueDescriptor.isValid()) {
+    // NOLINTNEXTLINE(clang-diagnostic-nrvo)
     return queueDescriptor;
   }
 
@@ -82,11 +85,13 @@ VulkanQueueDescriptor VulkanQueuePool::findQueueDescriptor(VkQueueFlags flags) c
     const VkQueueFlags clearFlags = flags & ~VK_QUEUE_TRANSFER_BIT;
     queueDescriptor = findDedicatedQueue(clearFlags | VK_QUEUE_COMPUTE_BIT, 0);
     if (queueDescriptor.isValid()) {
+      // NOLINTNEXTLINE(clang-diagnostic-nrvo)
       return queueDescriptor;
     }
 
     queueDescriptor = findDedicatedQueue(clearFlags | VK_QUEUE_GRAPHICS_BIT, 0);
     if (queueDescriptor.isValid()) {
+      // NOLINTNEXTLINE(clang-diagnostic-nrvo)
       return queueDescriptor;
     }
   }
