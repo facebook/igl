@@ -289,6 +289,7 @@ std::shared_ptr<ITimestampQueries> Device::createTimestampQueries(uint32_t maxTi
     if (!csb || error) {
       Result::setResult(outResult,
                         Result::Code::RuntimeError,
+                        // NOLINTNEXTLINE(clang-analyzer-nullability.NullablePassedToNonnull)
                         error ? [error.localizedDescription UTF8String]
                               : "Failed to create counter sample buffer");
       return nullptr;
