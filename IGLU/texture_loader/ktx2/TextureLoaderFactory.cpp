@@ -130,6 +130,9 @@ bool TextureLoaderFactory::validate(DataReader reader,
   // yield a bound large enough to let an over-large uncompressedByteLength through. Treat
   // any overflow as absurd dimensions and reject.
   constexpr uint64_t kMaxBytesPerTexel = 16u; // RGBA32F; >= any uncompressed format
+  // Maximum plausible expansion ratio for a supercompressed (ZSTD/ZLIB) level. Real texture
+  // data never approaches this; a decompression bomb exceeds it by orders of magnitude.
+  constexpr uint64_t kMaxSupercompressionRatio = 1024u;
   uint64_t maxLevelBytes = kMaxBytesPerTexel;
   for (const uint32_t dimension :
        {range.width, range.height, range.depth, range.numLayers, std::max(range.numFaces, 1u)}) {
@@ -157,6 +160,20 @@ bool TextureLoaderFactory::validate(DataReader reader,
       igl::Result::setResult(outResult,
                              igl::Result::Code::InvalidOperation,
                              "Uncompressed level data exceeds the texture dimensions.");
+      return false;
+    }
+    // For supercompressed levels, uncompressedByteLength sizes the inflate destination
+    // (ktxTexture2_LoadImageData allocates inflatedDataCapacity, then ktxTexture2_inflate*Int
+    // spins filling it). The dimension bound above is attacker-influenced: a header declaring
+    // absurd dimensions (e.g. depth in the millions) inflates maxLevelBytes enough to admit a
+    // multi-gigabyte uncompressedByteLength, turning a ~1KB compressed payload into a
+    // multi-second decompression bomb. Independently cap the expansion ratio against the
+    // compressed size (levelByteLength is already bounded by the input length above).
+    if (header->supercompressionScheme != 0u &&
+        levelUncompressedByteLength > levelByteLength * kMaxSupercompressionRatio) {
+      igl::Result::setResult(outResult,
+                             igl::Result::Code::InvalidOperation,
+                             "Supercompressed level expansion ratio is implausible.");
       return false;
     }
   }
