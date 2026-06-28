@@ -147,8 +147,38 @@ TEST(ShaderVersionTest, InequalityDifferingExtra) {
 }
 
 // ---------------------------------------------------------------------------
+// DeviceRequirement
+// ---------------------------------------------------------------------------
+
+TEST(DeviceRequirementTest, EnumValues) {
+  EXPECT_EQ(static_cast<int>(DeviceRequirement::ExplicitBindingExtReq), 0);
+  EXPECT_EQ(static_cast<int>(DeviceRequirement::ShaderTextureLodExtReq), 1);
+  EXPECT_EQ(static_cast<int>(DeviceRequirement::StandardDerivativeExtReq), 2);
+  EXPECT_EQ(static_cast<int>(DeviceRequirement::TextureArrayExtReq), 3);
+  EXPECT_EQ(static_cast<int>(DeviceRequirement::TextureFormatRGExtReq), 4);
+}
+
+// ---------------------------------------------------------------------------
 // TextureFormatCapabilityBits
 // ---------------------------------------------------------------------------
+
+TEST(TextureFormatCapabilityBitsTest, BitValues) {
+  EXPECT_EQ(ICapabilities::TextureFormatCapabilityBits::Unsupported, 0u);
+  EXPECT_EQ(ICapabilities::TextureFormatCapabilityBits::Sampled, 1u);
+  EXPECT_EQ(ICapabilities::TextureFormatCapabilityBits::SampledFiltered, 2u);
+  EXPECT_EQ(ICapabilities::TextureFormatCapabilityBits::Storage, 4u);
+  EXPECT_EQ(ICapabilities::TextureFormatCapabilityBits::Attachment, 8u);
+  EXPECT_EQ(ICapabilities::TextureFormatCapabilityBits::SampledAttachment, 16u);
+}
+
+TEST(TextureFormatCapabilityBitsTest, AllIsUnionOfIndividualBits) {
+  const uint8_t expected = ICapabilities::TextureFormatCapabilityBits::Sampled |
+                           ICapabilities::TextureFormatCapabilityBits::SampledFiltered |
+                           ICapabilities::TextureFormatCapabilityBits::Storage |
+                           ICapabilities::TextureFormatCapabilityBits::Attachment |
+                           ICapabilities::TextureFormatCapabilityBits::SampledAttachment;
+  EXPECT_EQ(ICapabilities::TextureFormatCapabilityBits::All, expected);
+}
 
 TEST(TextureFormatCapabilityBitsTest, ContainsHelper) {
   const ICapabilities::TextureFormatCapabilities caps =
