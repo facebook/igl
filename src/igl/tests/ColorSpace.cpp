@@ -11,6 +11,30 @@
 
 namespace igl::tests {
 
+TEST(ColorSpaceTest, EnumValues) {
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::SRGBLinear), 0u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::SRGBNonlinear), 1u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::DisplayP3Nonlinear), 2u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::ExtendedSRGBLinear), 3u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::DisplayP3Linear), 4u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::DCIP3Nonlinear), 5u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::BT709Linear), 6u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::BT709Nonlinear), 7u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::BT2020Linear), 8u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::HDR10St2084), 9u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::DolbyVision), 10u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::HDR10HLG), 11u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::AdobeRGBLinear), 12u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::AdobeRGBNonlinear), 13u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::PassThrough), 14u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::ExtendedSRGBNonlinear), 15u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::DisplayNativeAMD), 16u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::BT601Nonlinear), 17u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::BT2020Nonlinear), 18u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::BT2100HLGNonlinear), 19u);
+  EXPECT_EQ(static_cast<uint8_t>(ColorSpace::BT2100PQNonlinear), 20u);
+}
+
 TEST(ColorSpaceTest, colorSpaceToString) {
   ASSERT_STREQ(colorSpaceToString(ColorSpace::SRGBLinear), "SRGBLinear");
   ASSERT_STREQ(colorSpaceToString(ColorSpace::SRGBNonlinear), "SRGBNonlinear");
