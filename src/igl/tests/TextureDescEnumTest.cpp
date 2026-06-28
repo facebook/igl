@@ -12,6 +12,60 @@
 namespace igl::tests {
 
 // ---------------------------------------------------------------------------
+// TextureType
+// ---------------------------------------------------------------------------
+
+TEST(TextureTypeTest, EnumValues) {
+  EXPECT_EQ(static_cast<uint8_t>(TextureType::Invalid), 0u);
+  EXPECT_EQ(static_cast<uint8_t>(TextureType::TwoD), 1u);
+  EXPECT_EQ(static_cast<uint8_t>(TextureType::TwoDArray), 2u);
+  EXPECT_EQ(static_cast<uint8_t>(TextureType::ThreeD), 3u);
+  EXPECT_EQ(static_cast<uint8_t>(TextureType::Cube), 4u);
+  EXPECT_EQ(static_cast<uint8_t>(TextureType::ExternalImage), 5u);
+}
+
+// ---------------------------------------------------------------------------
+// TextureCubeFace
+// ---------------------------------------------------------------------------
+
+TEST(TextureCubeFaceTest, EnumValues) {
+  EXPECT_EQ(static_cast<uint8_t>(TextureCubeFace::PosX), 0u);
+  EXPECT_EQ(static_cast<uint8_t>(TextureCubeFace::NegX), 1u);
+  EXPECT_EQ(static_cast<uint8_t>(TextureCubeFace::PosY), 2u);
+  EXPECT_EQ(static_cast<uint8_t>(TextureCubeFace::NegY), 3u);
+  EXPECT_EQ(static_cast<uint8_t>(TextureCubeFace::PosZ), 4u);
+  EXPECT_EQ(static_cast<uint8_t>(TextureCubeFace::NegZ), 5u);
+}
+
+// ---------------------------------------------------------------------------
+// TextureDesc::TextureUsageBits
+// ---------------------------------------------------------------------------
+
+TEST(TextureUsageBitsTest, BitValues) {
+  EXPECT_EQ(TextureDesc::TextureUsageBits::Sampled, 1u);
+  EXPECT_EQ(TextureDesc::TextureUsageBits::Storage, 2u);
+  EXPECT_EQ(TextureDesc::TextureUsageBits::Attachment, 4u);
+}
+
+TEST(TextureUsageBitsTest, BitsAreCombineable) {
+  const TextureDesc::TextureUsage combined =
+      TextureDesc::TextureUsageBits::Sampled | TextureDesc::TextureUsageBits::Attachment;
+  EXPECT_EQ(combined, 5u);
+  EXPECT_TRUE(combined & TextureDesc::TextureUsageBits::Sampled);
+  EXPECT_TRUE(combined & TextureDesc::TextureUsageBits::Attachment);
+  EXPECT_FALSE(combined & TextureDesc::TextureUsageBits::Storage);
+}
+
+// ---------------------------------------------------------------------------
+// TextureDesc::TextureTiling
+// ---------------------------------------------------------------------------
+
+TEST(TextureTilingTest, EnumValues) {
+  EXPECT_EQ(static_cast<uint8_t>(TextureDesc::TextureTiling::Optimal), 0u);
+  EXPECT_EQ(static_cast<uint8_t>(TextureDesc::TextureTiling::Linear), 1u);
+}
+
+// ---------------------------------------------------------------------------
 // TextureDesc::TextureExportability
 // ---------------------------------------------------------------------------
 
