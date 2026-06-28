@@ -209,9 +209,53 @@ TEST(CompareFunctionTest, EnumSpotChecks) {
   EXPECT_EQ(static_cast<int>(CompareFunction::AlwaysPass), 7);
 }
 
+TEST(CompareFunctionTest, EnumValues) {
+  EXPECT_EQ(static_cast<uint8_t>(CompareFunction::Never), 0u);
+  EXPECT_EQ(static_cast<uint8_t>(CompareFunction::Less), 1u);
+  EXPECT_EQ(static_cast<uint8_t>(CompareFunction::Equal), 2u);
+  EXPECT_EQ(static_cast<uint8_t>(CompareFunction::LessEqual), 3u);
+  EXPECT_EQ(static_cast<uint8_t>(CompareFunction::Greater), 4u);
+  EXPECT_EQ(static_cast<uint8_t>(CompareFunction::NotEqual), 5u);
+  EXPECT_EQ(static_cast<uint8_t>(CompareFunction::GreaterEqual), 6u);
+  EXPECT_EQ(static_cast<uint8_t>(CompareFunction::AlwaysPass), 7u);
+}
+
+TEST(CompareFunctionTest, AllValuesDistinct) {
+  EXPECT_NE(CompareFunction::Never, CompareFunction::Less);
+  EXPECT_NE(CompareFunction::Less, CompareFunction::Equal);
+  EXPECT_NE(CompareFunction::Equal, CompareFunction::LessEqual);
+  EXPECT_NE(CompareFunction::LessEqual, CompareFunction::Greater);
+  EXPECT_NE(CompareFunction::Greater, CompareFunction::NotEqual);
+  EXPECT_NE(CompareFunction::NotEqual, CompareFunction::GreaterEqual);
+  EXPECT_NE(CompareFunction::GreaterEqual, CompareFunction::AlwaysPass);
+  EXPECT_NE(CompareFunction::Never, CompareFunction::AlwaysPass);
+}
+
 TEST(StencilOperationTest, EnumSpotChecks) {
   EXPECT_EQ(static_cast<int>(StencilOperation::Keep), 0);
   EXPECT_EQ(static_cast<int>(StencilOperation::DecrementWrap), 7);
+}
+
+TEST(StencilOperationTest, EnumValues) {
+  EXPECT_EQ(static_cast<uint8_t>(StencilOperation::Keep), 0u);
+  EXPECT_EQ(static_cast<uint8_t>(StencilOperation::Zero), 1u);
+  EXPECT_EQ(static_cast<uint8_t>(StencilOperation::Replace), 2u);
+  EXPECT_EQ(static_cast<uint8_t>(StencilOperation::IncrementClamp), 3u);
+  EXPECT_EQ(static_cast<uint8_t>(StencilOperation::DecrementClamp), 4u);
+  EXPECT_EQ(static_cast<uint8_t>(StencilOperation::Invert), 5u);
+  EXPECT_EQ(static_cast<uint8_t>(StencilOperation::IncrementWrap), 6u);
+  EXPECT_EQ(static_cast<uint8_t>(StencilOperation::DecrementWrap), 7u);
+}
+
+TEST(StencilOperationTest, AllValuesDistinct) {
+  EXPECT_NE(StencilOperation::Keep, StencilOperation::Zero);
+  EXPECT_NE(StencilOperation::Zero, StencilOperation::Replace);
+  EXPECT_NE(StencilOperation::Replace, StencilOperation::IncrementClamp);
+  EXPECT_NE(StencilOperation::IncrementClamp, StencilOperation::DecrementClamp);
+  EXPECT_NE(StencilOperation::DecrementClamp, StencilOperation::Invert);
+  EXPECT_NE(StencilOperation::Invert, StencilOperation::IncrementWrap);
+  EXPECT_NE(StencilOperation::IncrementWrap, StencilOperation::DecrementWrap);
+  EXPECT_NE(StencilOperation::Keep, StencilOperation::DecrementWrap);
 }
 
 } // namespace igl::tests
