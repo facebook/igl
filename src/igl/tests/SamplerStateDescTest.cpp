@@ -144,4 +144,51 @@ TEST(SamplerStateDescTest, FactoryNewYUV) {
   EXPECT_EQ(desc.yuvFormat, TextureFormat::YUV_NV12);
 }
 
+// ---------------------------------------------------------------------------
+// SamplerMinMagFilter
+// ---------------------------------------------------------------------------
+
+TEST(SamplerMinMagFilterTest, EnumValues) {
+  EXPECT_EQ(static_cast<uint8_t>(SamplerMinMagFilter::Nearest), 0u);
+  EXPECT_EQ(static_cast<uint8_t>(SamplerMinMagFilter::Linear), 1u);
+}
+
+TEST(SamplerMinMagFilterTest, ValuesAreDistinct) {
+  EXPECT_NE(SamplerMinMagFilter::Nearest, SamplerMinMagFilter::Linear);
+}
+
+// ---------------------------------------------------------------------------
+// SamplerMipFilter
+// ---------------------------------------------------------------------------
+
+TEST(SamplerMipFilterTest, EnumValues) {
+  EXPECT_EQ(static_cast<uint8_t>(SamplerMipFilter::Disabled), 0u);
+  EXPECT_EQ(static_cast<uint8_t>(SamplerMipFilter::Nearest), 1u);
+  EXPECT_EQ(static_cast<uint8_t>(SamplerMipFilter::Linear), 2u);
+}
+
+TEST(SamplerMipFilterTest, AllValuesDistinct) {
+  EXPECT_NE(SamplerMipFilter::Disabled, SamplerMipFilter::Nearest);
+  EXPECT_NE(SamplerMipFilter::Nearest, SamplerMipFilter::Linear);
+  EXPECT_NE(SamplerMipFilter::Disabled, SamplerMipFilter::Linear);
+}
+
+// ---------------------------------------------------------------------------
+// SamplerAddressMode
+// ---------------------------------------------------------------------------
+
+TEST(SamplerAddressModeTest, EnumValues) {
+  EXPECT_EQ(static_cast<uint8_t>(SamplerAddressMode::Repeat), 0u);
+  EXPECT_EQ(static_cast<uint8_t>(SamplerAddressMode::Clamp), 1u);
+  EXPECT_EQ(static_cast<uint8_t>(SamplerAddressMode::MirrorRepeat), 2u);
+  EXPECT_EQ(static_cast<uint8_t>(SamplerAddressMode::ClampToBorder), 3u);
+}
+
+TEST(SamplerAddressModeTest, AllValuesDistinct) {
+  EXPECT_NE(SamplerAddressMode::Repeat, SamplerAddressMode::Clamp);
+  EXPECT_NE(SamplerAddressMode::Clamp, SamplerAddressMode::MirrorRepeat);
+  EXPECT_NE(SamplerAddressMode::MirrorRepeat, SamplerAddressMode::ClampToBorder);
+  EXPECT_NE(SamplerAddressMode::Repeat, SamplerAddressMode::ClampToBorder);
+}
+
 } // namespace igl::tests
