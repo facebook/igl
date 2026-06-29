@@ -37,6 +37,15 @@ TEST(TextureCubeFaceTest, EnumValues) {
   EXPECT_EQ(static_cast<uint8_t>(TextureCubeFace::NegZ), 5u);
 }
 
+TEST(TextureCubeFaceTest, AllValuesDistinct) {
+  EXPECT_NE(TextureCubeFace::PosX, TextureCubeFace::NegX);
+  EXPECT_NE(TextureCubeFace::PosY, TextureCubeFace::NegY);
+  EXPECT_NE(TextureCubeFace::PosZ, TextureCubeFace::NegZ);
+  EXPECT_NE(TextureCubeFace::PosX, TextureCubeFace::PosY);
+  EXPECT_NE(TextureCubeFace::PosX, TextureCubeFace::PosZ);
+  EXPECT_NE(TextureCubeFace::NegX, TextureCubeFace::NegZ);
+}
+
 // ---------------------------------------------------------------------------
 // TextureDesc::TextureUsageBits
 // ---------------------------------------------------------------------------
@@ -63,6 +72,10 @@ TEST(TextureUsageBitsTest, BitsAreCombineable) {
 TEST(TextureTilingTest, EnumValues) {
   EXPECT_EQ(static_cast<uint8_t>(TextureDesc::TextureTiling::Optimal), 0u);
   EXPECT_EQ(static_cast<uint8_t>(TextureDesc::TextureTiling::Linear), 1u);
+}
+
+TEST(TextureTilingTest, ValuesAreDistinct) {
+  EXPECT_NE(TextureDesc::TextureTiling::Optimal, TextureDesc::TextureTiling::Linear);
 }
 
 // ---------------------------------------------------------------------------
@@ -131,41 +144,6 @@ TEST(TextureDescTest, ExportabilityDefault) {
       TextureFormat::RGBA_UNorm8, 16, 16, TextureDesc::TextureUsageBits::Sampled);
   EXPECT_EQ(desc.exportability, TextureDesc::TextureExportability::NoExport);
   EXPECT_EQ(desc.mipmapGeneration, TextureDesc::TextureMipmapGeneration::Manual);
-}
-
-// ---------------------------------------------------------------------------
-// TextureCubeFace
-// ---------------------------------------------------------------------------
-
-TEST(TextureCubeFaceTest, EnumValues) {
-  EXPECT_EQ(static_cast<uint8_t>(TextureCubeFace::PosX), 0u);
-  EXPECT_EQ(static_cast<uint8_t>(TextureCubeFace::NegX), 1u);
-  EXPECT_EQ(static_cast<uint8_t>(TextureCubeFace::PosY), 2u);
-  EXPECT_EQ(static_cast<uint8_t>(TextureCubeFace::NegY), 3u);
-  EXPECT_EQ(static_cast<uint8_t>(TextureCubeFace::PosZ), 4u);
-  EXPECT_EQ(static_cast<uint8_t>(TextureCubeFace::NegZ), 5u);
-}
-
-TEST(TextureCubeFaceTest, AllValuesDistinct) {
-  EXPECT_NE(TextureCubeFace::PosX, TextureCubeFace::NegX);
-  EXPECT_NE(TextureCubeFace::PosY, TextureCubeFace::NegY);
-  EXPECT_NE(TextureCubeFace::PosZ, TextureCubeFace::NegZ);
-  EXPECT_NE(TextureCubeFace::PosX, TextureCubeFace::PosY);
-  EXPECT_NE(TextureCubeFace::PosX, TextureCubeFace::PosZ);
-  EXPECT_NE(TextureCubeFace::NegX, TextureCubeFace::NegZ);
-}
-
-// ---------------------------------------------------------------------------
-// TextureDesc::TextureTiling
-// ---------------------------------------------------------------------------
-
-TEST(TextureTilingTest, EnumValues) {
-  EXPECT_EQ(static_cast<uint8_t>(TextureDesc::TextureTiling::Optimal), 0u);
-  EXPECT_EQ(static_cast<uint8_t>(TextureDesc::TextureTiling::Linear), 1u);
-}
-
-TEST(TextureTilingTest, ValuesAreDistinct) {
-  EXPECT_NE(TextureDesc::TextureTiling::Optimal, TextureDesc::TextureTiling::Linear);
 }
 
 } // namespace igl::tests
