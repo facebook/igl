@@ -117,4 +117,53 @@ TEST(ResultCodeTest, AllCodesDistinct) {
   EXPECT_NE(Result::Code::RuntimeError, Result::Code::DeviceLost);
 }
 
+// ---------------------------------------------------------------------------
+// CullMode
+// ---------------------------------------------------------------------------
+
+TEST(CullModeTest, EnumValues) {
+  EXPECT_EQ(static_cast<uint8_t>(CullMode::Disabled), 0u);
+  EXPECT_EQ(static_cast<uint8_t>(CullMode::Front), 1u);
+  EXPECT_EQ(static_cast<uint8_t>(CullMode::Back), 2u);
+}
+
+TEST(CullModeTest, AllValuesDistinct) {
+  EXPECT_NE(CullMode::Disabled, CullMode::Front);
+  EXPECT_NE(CullMode::Disabled, CullMode::Back);
+  EXPECT_NE(CullMode::Front, CullMode::Back);
+}
+
+// ---------------------------------------------------------------------------
+// WindingMode
+// ---------------------------------------------------------------------------
+
+TEST(WindingModeTest, EnumValues) {
+  EXPECT_EQ(static_cast<uint8_t>(WindingMode::Clockwise), 0u);
+  EXPECT_EQ(static_cast<uint8_t>(WindingMode::CounterClockwise), 1u);
+}
+
+TEST(WindingModeTest, ValuesAreDistinct) {
+  EXPECT_NE(WindingMode::Clockwise, WindingMode::CounterClockwise);
+}
+
+// ---------------------------------------------------------------------------
+// PrimitiveType
+// ---------------------------------------------------------------------------
+
+TEST(PrimitiveTypeTest, EnumValues) {
+  EXPECT_EQ(static_cast<uint8_t>(PrimitiveType::Point), 0u);
+  EXPECT_EQ(static_cast<uint8_t>(PrimitiveType::Line), 1u);
+  EXPECT_EQ(static_cast<uint8_t>(PrimitiveType::LineStrip), 2u);
+  EXPECT_EQ(static_cast<uint8_t>(PrimitiveType::Triangle), 3u);
+  EXPECT_EQ(static_cast<uint8_t>(PrimitiveType::TriangleStrip), 4u);
+}
+
+TEST(PrimitiveTypeTest, AllValuesDistinct) {
+  EXPECT_NE(PrimitiveType::Point, PrimitiveType::Line);
+  EXPECT_NE(PrimitiveType::Line, PrimitiveType::LineStrip);
+  EXPECT_NE(PrimitiveType::LineStrip, PrimitiveType::Triangle);
+  EXPECT_NE(PrimitiveType::Triangle, PrimitiveType::TriangleStrip);
+  EXPECT_NE(PrimitiveType::Point, PrimitiveType::TriangleStrip);
+}
+
 } // namespace igl::tests
