@@ -2530,7 +2530,8 @@ void IContext::multiDrawArraysIndirect(GLenum mode,
          indirect,
          drawcount,
          stride);
-  IGL_DEBUG_ASSERT(indirect);
+  // `indirect` is a byte offset into the bound GL_DRAW_INDIRECT_BUFFER; offset 0
+  // (a null pointer) is valid, so do not assert it is non-null.
   IGLCALL(MultiDrawArraysIndirect)(mode, indirect, drawcount, stride);
   GLCHECK_ERRORS();
   APILOG_DEC_DRAW_COUNT();
@@ -2554,7 +2555,8 @@ void IContext::multiDrawElementsIndirect(GLenum mode,
          indirect,
          drawcount,
          stride);
-  IGL_DEBUG_ASSERT(indirect);
+  // `indirect` is a byte offset into the bound GL_DRAW_INDIRECT_BUFFER; offset 0
+  // (a null pointer) is valid, so do not assert it is non-null.
   IGLCALL(MultiDrawElementsIndirect)(mode, type, indirect, drawcount, stride);
   GLCHECK_ERRORS();
   APILOG_DEC_DRAW_COUNT();
