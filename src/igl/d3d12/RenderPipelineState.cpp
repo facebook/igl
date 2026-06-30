@@ -108,7 +108,9 @@ RenderPipelineState::RenderPipelineState(const RenderPipelineDesc& desc,
   const auto& vis = desc.vertexInputState;
   if (vis) {
     // Try backend downcast to extract VertexInputStateDesc
-    if (auto* d3dVis = dynamic_cast<const igl::d3d12::VertexInputState*>(vis.get())) {
+    // static_cast (not dynamic_cast) because IGL builds with -fno-rtti/`/GR-`; the
+    // d3d12 device only ever produces d3d12 backend impls.
+    if (auto* d3dVis = static_cast<const igl::d3d12::VertexInputState*>(vis.get())) {
       const auto& d = d3dVis->getDesc();
       if (d.numInputBindings > 0) {
         vertexStride_ = static_cast<uint32_t>(d.inputBindings[0].stride);
@@ -208,7 +210,8 @@ std::shared_ptr<IRenderPipelineReflection> RenderPipelineState::renderPipelineRe
   auto reflectShader = [&](const std::shared_ptr<IShaderModule>& mod, ShaderStage stage) {
     if (!mod)
       return;
-    auto* d3dMod = dynamic_cast<const igl::d3d12::ShaderModule*>(mod.get());
+    // static_cast (not dynamic_cast): IGL builds with -fno-rtti/`/GR-`.
+    auto* d3dMod = static_cast<const igl::d3d12::ShaderModule*>(mod.get());
     if (!d3dMod)
       return;
     const auto& bc = d3dMod->getBytecode();

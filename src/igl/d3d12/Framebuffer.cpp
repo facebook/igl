@@ -86,7 +86,8 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  auto* d3dQueueWrapper = dynamic_cast<CommandQueue*>(&cmdQueue);
+  // static_cast (not dynamic_cast): IGL builds with -fno-rtti/`/GR-`.
+  auto* d3dQueueWrapper = static_cast<CommandQueue*>(&cmdQueue);
   if (!d3dQueueWrapper) {
     return;
   }
@@ -293,7 +294,8 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  auto* d3dQueueWrapper = dynamic_cast<CommandQueue*>(&cmdQueue);
+  // static_cast (not dynamic_cast): IGL builds with -fno-rtti/`/GR-`.
+  auto* d3dQueueWrapper = static_cast<CommandQueue*>(&cmdQueue);
   if (!d3dQueueWrapper) {
     return;
   }
@@ -495,7 +497,8 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
-  auto* d3dQueueWrapper = dynamic_cast<CommandQueue*>(&cmdQueue);
+  // static_cast (not dynamic_cast): IGL builds with -fno-rtti/`/GR-`.
+  auto* d3dQueueWrapper = static_cast<CommandQueue*>(&cmdQueue);
   if (!d3dQueueWrapper) {
     return;
   }
@@ -700,7 +703,8 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   }
 
   // Get device and shared infrastructure directly (avoid transient CommandBuffer).
-  auto* d3dQueueWrapper = dynamic_cast<CommandQueue*>(&cmdQueue);
+  // static_cast (not dynamic_cast): IGL builds with -fno-rtti/`/GR-`.
+  auto* d3dQueueWrapper = static_cast<CommandQueue*>(&cmdQueue);
   if (!d3dQueueWrapper) {
     IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment - Invalid command queue\n");
     IGL_DEBUG_ASSERT(false, "D3D12 Framebuffer used with non-D3D12 command queue");

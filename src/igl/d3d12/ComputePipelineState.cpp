@@ -70,7 +70,8 @@ ComputePipelineState::computePipelineReflection() {
     return out;
   }
 
-  auto* d3dMod = dynamic_cast<const igl::d3d12::ShaderModule*>(computeModule.get());
+  // static_cast (not dynamic_cast): IGL builds with -fno-rtti/`/GR-`.
+  auto* d3dMod = static_cast<const igl::d3d12::ShaderModule*>(computeModule.get());
   if (!d3dMod) {
     return out;
   }
