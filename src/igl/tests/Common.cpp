@@ -20,6 +20,8 @@ TEST(CommonTest, BackendTypeToStringTest) {
   ASSERT_EQ(BackendTypeToString(BackendType::Metal), "Metal");
   ASSERT_EQ(BackendTypeToString(BackendType::Vulkan), "Vulkan");
   // @fb-only
+  ASSERT_EQ(BackendTypeToString(BackendType::D3D12), "D3D12");
+  ASSERT_EQ(BackendTypeToString(BackendType::Custom), "Custom");
 }
 
 TEST(CommonTest, ResultTest) {
@@ -229,6 +231,19 @@ TEST(CommonTest, ScopeGuardTest) {
     auto scopeGuard = ScopeGuardOnExit() + [&]() { ++testValue; };
   }
   ASSERT_EQ(testValue, 1);
+}
+
+TEST(CommonTest, ScopeExitMacro) {
+  int count = 0;
+  {
+    IGL_SCOPE_EXIT {
+      ++count;
+    };
+    IGL_SCOPE_EXIT {
+      ++count;
+    };
+  }
+  ASSERT_EQ(count, 2);
 }
 
 TEST(CommonTest, OptimizedMemCopyTest) {
