@@ -117,9 +117,10 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
   // allocate new drawable textures if its null or mismatches in size or format
   if (!result || width != result->getDimensions().width ||
       height != result->getDimensions().height || iglFormat != result->getFormat()) {
-    // NOLINTNEXTLINE(clang-diagnostic-shorten-64-to-32)
+    // NOLINTBEGIN(clang-diagnostic-shorten-64-to-32)
     const TextureDesc desc = TextureDesc::new2D(
         iglFormat, width, height, TextureDesc::TextureUsageBits::Attachment, "SwapChain Texture");
+    // NOLINTEND(clang-diagnostic-shorten-64-to-32)
     nativeDrawableTextures_[currentImageIndex] =
         std::make_shared<Texture>(device_, std::move(vkTex), desc);
   }
