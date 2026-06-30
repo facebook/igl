@@ -561,6 +561,19 @@ void iglDispatchCompute(GLuint numGroupsX, GLuint numGroupsY, GLuint numGroupsZ)
                           numGroupsZ);
 }
 
+#if defined(GL_VERSION_4_3) || defined(GL_ES_VERSION_3_1) || defined(GL_ARB_compute_shader)
+#define CAN_CALL_glDispatchComputeIndirect CAN_CALL
+#else
+#define CAN_CALL_glDispatchComputeIndirect 0
+#endif
+
+void iglDispatchComputeIndirect(GLintptr indirect) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glDispatchComputeIndirect,
+                          glDispatchComputeIndirect,
+                          PFNIGLDISPATCHCOMPUTEINDIRECTPROC,
+                          indirect);
+}
+
 ///--------------------------------------
 /// MARK: - GL_ARB_draw_indirect
 

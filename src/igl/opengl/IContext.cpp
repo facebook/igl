@@ -4394,6 +4394,19 @@ void IContext::dispatchCompute(GLuint numGroupsX, GLuint numGroupsY, GLuint numG
   GLCHECK_ERRORS();
 }
 
+void IContext::dispatchComputeIndirect(GLintptr indirect) {
+#if IGL_API_LOG
+  lastCommandWasCompute_ = true;
+#endif
+  APILOG("glDispatchComputeIndirect(%zd) (program: %u) %s %s\n",
+         static_cast<ptrdiff_t>(indirect),
+         boundProgram_,
+         boundImageTextures().c_str(),
+         boundBuffersByIndex().c_str());
+  IGLCALL(DispatchComputeIndirect)(indirect);
+  GLCHECK_ERRORS();
+}
+
 void IContext::memoryBarrier(GLbitfield barriers) {
   if (memoryBarrierProc_ == nullptr) {
     if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::ShaderImageLoadStoreExtReq)) {

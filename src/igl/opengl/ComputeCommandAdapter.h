@@ -58,6 +58,7 @@ class ComputeCommandAdapter final : public WithContext {
   void setPipelineState(const std::shared_ptr<IComputePipelineState>& newValue);
   void dispatchThreadGroups(const Dimensions& threadgroupCount,
                             const Dimensions& /*threadgroupSize*/);
+  void dispatchThreadGroupsIndirect(Buffer& indirectBuffer, size_t indirectBufferOffset);
 
   void endEncoding();
 

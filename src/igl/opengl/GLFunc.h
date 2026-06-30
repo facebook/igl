@@ -104,6 +104,7 @@ using PFNIGLDISCARDFRAMEBUFFERPROC = void (*)(GLenum target,
                                               GLsizei numAttachments,
                                               const GLenum* attachments);
 using PFNIGLDISPATCHCOMPUTEPROC = void (*)(GLuint numGroupsX, GLuint numGroupsY, GLuint numGroupsZ);
+using PFNIGLDISPATCHCOMPUTEINDIRECTPROC = void (*)(GLintptr indirect);
 using PFNIGLDRAWBUFFERSPROC = void (*)(GLsizei, const GLenum*);
 using PFNIGLDRAWELEMENTSINDIRECTPROC = void (*)(GLenum mode, GLenum type, const GLvoid* indirect);
 using PFNIGLDRAWARRAYSINDIRECTPROC = void (*)(GLenum mode, const GLvoid* indirect);
@@ -404,6 +405,7 @@ void iglMakeTextureHandleNonResidentARB(GLuint64 handle);
 /// MARK: - GL_ARB_compute_shader
 
 void iglDispatchCompute(GLuint numGroupsX, GLuint numGroupsY, GLuint numGroupsZ);
+void iglDispatchComputeIndirect(GLintptr indirect);
 
 ///--------------------------------------
 /// MARK: - GL_ARB_draw_indirect

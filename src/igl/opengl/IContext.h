@@ -483,6 +483,7 @@ class IContext {
   void viewport(GLint x, GLint y, GLsizei width, GLsizei height);
 
   void dispatchCompute(GLuint numGroupsX, GLuint numGroupsY, GLuint numGroupsZ);
+  void dispatchComputeIndirect(GLintptr indirect);
   void memoryBarrier(GLbitfield barriers);
   GLuint64 getTextureHandle(GLuint texture);
   void makeTextureHandleResident(GLuint64 handle);

@@ -72,6 +72,28 @@ void ComputeCommandAdapter::dispatchThreadGroups(const Dimensions& threadgroupCo
   didDispatch();
 }
 
+void ComputeCommandAdapter::dispatchThreadGroupsIndirect(Buffer& indirectBuffer,
+                                                         size_t indirectBufferOffset) {
+  willDispatch();
+  // glDispatchComputeIndirect reads the (x,y,z) group counts from whatever buffer
+  // is currently bound to GL_DISPATCH_INDIRECT_BUFFER, so rebind the given buffer
+  // to that target regardless of its original target_. Callers typically pass a
+  // BufferTypeBits::Indirect buffer (target_ == GL_DRAW_INDIRECT_BUFFER), though a
+  // Storage buffer works too -- both resolve to ArrayBuffer.
+  //
+  // Note the intentional asymmetry with
+  // RenderCommandAdapter::bindBufferWithShaderStorageBufferOverride, which only
+  // calls bindForTarget() when the buffer's native target is
+  // GL_SHADER_STORAGE_BUFFER and otherwise falls back to plain bind(). Here the
+  // rebind is unconditional because the dispatch path always needs the args on
+  // the dispatch-indirect target; do not "symmetrize" the two by adding a
+  // getTarget() guard here.
+  auto& arrayBuffer = static_cast<ArrayBuffer&>(indirectBuffer);
+  arrayBuffer.bindForTarget(GL_DISPATCH_INDIRECT_BUFFER);
+  getContext().dispatchComputeIndirect(static_cast<GLintptr>(indirectBufferOffset));
+  didDispatch();
+}
+
 void ComputeCommandAdapter::setPipelineState(
     const std::shared_ptr<IComputePipelineState>& newValue) {
   if (pipelineState_) {
@@ -143,7 +165,11 @@ void ComputeCommandAdapter::didDispatch() {
   }
   if (pipelineState->getIsUsingShaderStorageBuffers()) {
     getContext().memoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_ELEMENT_ARRAY_BARRIER_BIT |
-                               GL_SHADER_STORAGE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
+                               GL_SHADER_STORAGE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT |
+                               // Required so compute writes to buffers later read as
+                               // GL_DRAW_INDIRECT_BUFFER / GL_DISPATCH_INDIRECT_BUFFER
+                               // (indirect draw/dispatch) and GL_UNIFORM_BUFFER are visible.
+                               GL_COMMAND_BARRIER_BIT | GL_UNIFORM_BARRIER_BIT);
   }
 }
 

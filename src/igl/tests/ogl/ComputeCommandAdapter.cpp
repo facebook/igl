@@ -227,4 +227,91 @@ TEST_F(ComputeCommandAdapterOGLTest, DirtyStateTracking) {
   ASSERT_EQ(context_->checkForErrors(__FILE__, __LINE__), GL_NO_ERROR);
 }
 
+//
+// DispatchThreadGroupsIndirect
+//
+// Exercise the indirect compute dispatch path (glDispatchComputeIndirect): the
+// workgroup count is sourced from a GPU buffer bound to
+// GL_DISPATCH_INDIRECT_BUFFER rather than passed directly. Validates that the
+// entry point is loaded and the indirect buffer is bound without raising a GL
+// error. (Output-value correctness is covered by the higher-level splatter
+// tests, which also depend on the compute SSBO/UBO binding paths.)
+//
+TEST_F(ComputeCommandAdapterOGLTest, DispatchThreadGroupsIndirect) {
+  if (!iglDev_->hasFeature(DeviceFeatures::Compute)) {
+    GTEST_SKIP() << "Compute not supported";
+  }
+
+  Result ret;
+
+  const std::string computeSource(data::shader::kOglSimpleComputeShader);
+  auto shaderModule = iglDev_->createShaderModule(
+      ShaderModuleDesc::fromStringInput(
+          computeSource.c_str(),
+          {.stage = ShaderStage::Compute, .entryPoint = std::string(data::shader::kShaderFunc)},
+          ""),
+      &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  auto stages = iglDev_->createShaderStages(
+      ShaderStagesDesc::fromComputeModule(std::move(shaderModule)), &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  ComputePipelineDesc computeDesc;
+  computeDesc.shaderStages = std::move(stages);
+  auto computePipeline = iglDev_->createComputePipeline(computeDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(computePipeline, nullptr);
+
+  const float inputData[] = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
+  BufferDesc inputBufDesc;
+  inputBufDesc.type = BufferDesc::BufferTypeBits::Storage;
+  inputBufDesc.data = inputData;
+  inputBufDesc.length = sizeof(inputData);
+  auto inputBuffer = iglDev_->createBuffer(inputBufDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  float outputData[6] = {0.0f};
+  BufferDesc outputBufDesc;
+  outputBufDesc.type = BufferDesc::BufferTypeBits::Storage;
+  outputBufDesc.data = outputData;
+  outputBufDesc.length = sizeof(outputData);
+  auto outputBuffer = iglDev_->createBuffer(outputBufDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  // (groupCountX, groupCountY, groupCountZ) read by glDispatchComputeIndirect.
+  const uint32_t indirectArgs[3] = {1u, 1u, 1u};
+  BufferDesc indirectBufDesc;
+  indirectBufDesc.type = BufferDesc::BufferTypeBits::Indirect;
+  indirectBufDesc.data = indirectArgs;
+  indirectBufDesc.length = sizeof(indirectArgs);
+  auto indirectBuffer = iglDev_->createBuffer(indirectBufDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  CommandBufferDesc cbDesc;
+  auto cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+
+  auto computeEncoder = cmdBuf->createComputeCommandEncoder();
+  ASSERT_NE(computeEncoder, nullptr);
+
+  computeEncoder->bindComputePipelineState(computePipeline);
+  computeEncoder->bindBuffer(0, inputBuffer.get());
+  computeEncoder->bindBuffer(1, outputBuffer.get());
+
+  // The OpenGL backend currently ignores the Dependencies argument (see
+  // ComputeCommandEncoder::dispatchThreadGroupsIndirect), so this deps setup does
+  // not exercise barrier insertion -- it only documents the cross-backend call
+  // shape. GL synchronization relies on the post-dispatch memory barrier instead.
+  Dependencies deps{};
+  deps.buffers[0] = indirectBuffer.get();
+  computeEncoder->dispatchThreadGroupsIndirect(
+      *indirectBuffer, /*indirectBufferOffset=*/0, Dimensions(6, 1, 1), deps);
+  computeEncoder->endEncoding();
+
+  cmdQueue_->submit(*cmdBuf);
+
+  ASSERT_EQ(context_->checkForErrors(__FILE__, __LINE__), GL_NO_ERROR);
+}
+
 } // namespace igl::tests
