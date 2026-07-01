@@ -80,6 +80,15 @@ TEST(BlendFactorTest, EnumValues) {
   EXPECT_EQ(static_cast<uint8_t>(BlendFactor::OneMinusDstColor), 7u);
   EXPECT_EQ(static_cast<uint8_t>(BlendFactor::DstAlpha), 8u);
   EXPECT_EQ(static_cast<uint8_t>(BlendFactor::OneMinusDstAlpha), 9u);
+  EXPECT_EQ(static_cast<uint8_t>(BlendFactor::SrcAlphaSaturated), 10u);
+  EXPECT_EQ(static_cast<uint8_t>(BlendFactor::BlendColor), 11u);
+  EXPECT_EQ(static_cast<uint8_t>(BlendFactor::OneMinusBlendColor), 12u);
+  EXPECT_EQ(static_cast<uint8_t>(BlendFactor::BlendAlpha), 13u);
+  EXPECT_EQ(static_cast<uint8_t>(BlendFactor::OneMinusBlendAlpha), 14u);
+  EXPECT_EQ(static_cast<uint8_t>(BlendFactor::Src1Color), 15u);
+  EXPECT_EQ(static_cast<uint8_t>(BlendFactor::OneMinusSrc1Color), 16u);
+  EXPECT_EQ(static_cast<uint8_t>(BlendFactor::Src1Alpha), 17u);
+  EXPECT_EQ(static_cast<uint8_t>(BlendFactor::OneMinusSrc1Alpha), 18u);
 }
 
 // ---------------------------------------------------------------------------
@@ -96,10 +105,12 @@ TEST(PolygonFillModeTest, EnumValues) {
 // ---------------------------------------------------------------------------
 
 TEST(ColorWriteBitsTest, BitsAreDistinct) {
+  EXPECT_EQ(kColorWriteBitsDisabled, 0u);
   EXPECT_EQ(kColorWriteBitsRed, 1u << 0);
   EXPECT_EQ(kColorWriteBitsGreen, 1u << 1);
   EXPECT_EQ(kColorWriteBitsBlue, 1u << 2);
   EXPECT_EQ(kColorWriteBitsAlpha, 1u << 3);
+  EXPECT_EQ(kColorWriteBitsAll, 15u);
 }
 
 TEST(ColorWriteBitsTest, AllCombinesAllBits) {
