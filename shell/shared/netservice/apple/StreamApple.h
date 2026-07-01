@@ -9,7 +9,7 @@
 
 #pragma once
 
-#import <Foundation/Foundation.h>
+#import <Foundation/NSStream.h>
 #include <shell/shared/netservice/Stream.h>
 
 namespace igl::shell::netservice {

@@ -9,6 +9,9 @@
 
 #include <shell/shared/netservice/apple/NetServiceApple.h>
 
+#import <Foundation/NSKeyValueCoding.h>
+#import <Foundation/NSNetServices.h>
+#import <Foundation/NSString.h>
 #include <igl/Assert.h>
 
 // ----------------------------------------------------------------------------
