@@ -13,7 +13,6 @@
 #include <array>
 #include <cassert>
 #include <cstdio>
-#include <string>
 
 #if IGL_PLATFORM_ANDROID
 #include <android/asset_manager.h>
