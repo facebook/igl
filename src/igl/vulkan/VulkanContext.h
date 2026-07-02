@@ -193,6 +193,10 @@ class VulkanContext final {
     return vkPhysicalDeviceProperties2_.properties;
   }
 
+  const VkPhysicalDeviceDriverPropertiesKHR& getVkPhysicalDeviceDriverProperties() const {
+    return vkPhysicalDeviceDriverProperties_;
+  }
+
   const VkPhysicalDeviceMeshShaderPropertiesEXT& getvkPhysicalDeviceMeshShaderPropertiesEXT()
       const {
     return vkPhysicalDeviceMeshShaderPropertiesEXT_;
