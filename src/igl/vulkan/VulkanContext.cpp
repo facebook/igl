@@ -961,6 +961,13 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
   }
 
   if (features_.enabled(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)) {
+    // descriptorBuffer is the only enabled()-gated feature in the chain, and the extra opt-in
+    // device extensions are enabled after the chain was last assembled in
+    // populateWithAvailablePhysicalDeviceFeatures() -- so append just that struct rather than
+    // re-running assembleFeatureChain() (which would re-log unrelated warnings). It is not yet in
+    // the chain (gated on enabled(), false at the prior assemble) and its pNext is null. Does not
+    // touch has_VK_EXT_descriptor_buffer.
+    ivkAddNext(&features_.vkPhysicalDeviceFeatures2, &features_.featuresDescriptorBuffer);
     vkPhysicalDeviceDescriptorBufferProperties_.pNext = vkPhysicalDeviceProperties2_.pNext;
     vkPhysicalDeviceProperties2_.pNext = &vkPhysicalDeviceDescriptorBufferProperties_;
     vf_.vkGetPhysicalDeviceProperties2(vkPhysicalDevice_, &vkPhysicalDeviceProperties2_);
