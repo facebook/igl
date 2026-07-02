@@ -225,6 +225,12 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
 
   IGL_DEBUG_ASSERT(vkImage);
 
+  // bindTexture() writes a sampled descriptor (imageLayout =
+  // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL in VulkanContext::checkAndUpdateDescriptorSets()).
+  // For Sampled+Storage textures, prefer the sampled transition so the actual layout matches the
+  // descriptor write; transitioning to GENERAL here would trip VUID-vkCmdDispatch-None-08114 and
+  // VUID-VkDescriptorImageInfo-imageLayout-00344. Storage-only textures should be bound via
+  // bindImageTexture() instead; we keep the GENERAL fallback to preserve the prior behavior.
   if (vkImage->isSampledImage()) {
     transitionToShaderReadOnly(cmdBuffer_, texture);
     binder_.bindTexture(index, static_cast<Texture*>(texture));

@@ -10,14 +10,25 @@
 #include "../data/ShaderData.h"
 #include "../util/TestDevice.h"
 
+#include <array>
+#include <cstdint>
 #include <cstring>
+#include <string>
+#include <string_view>
 #include <vector>
 #include <igl/Buffer.h>
 #include <igl/CommandBuffer.h>
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/ComputePipelineState.h>
 #include <igl/Device.h>
+#include <igl/NameHandle.h>
+#include <igl/SamplerState.h>
+#include <igl/Shader.h>
 #include <igl/ShaderCreator.h>
+#include <igl/Texture.h>
+#include <igl/vulkan/Texture.h>
+#include <igl/vulkan/VulkanImage.h>
+#include <igl/vulkan/VulkanTexture.h>
 
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
 
@@ -65,6 +76,132 @@ TEST_F(ComputeCommandEncoderVulkanTest, BindPushConstants) {
   // just testing the encoder API, we skip this test. The push constants
   // functionality is tested through integration tests that have full pipelines.
   GTEST_SKIP() << "bindPushConstants requires a bound compute pipeline with a shader";
+}
+
+// bindTexture() on a Sampled+Storage texture must transition to
+// VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL (matching the sampled descriptor write hardcoded in
+// VulkanContext::updateBindingsTextures()), not VK_IMAGE_LAYOUT_GENERAL. Prior to the fix, the
+// storage-first branch in bindTexture() picked GENERAL for Sampled+Storage textures, which
+// produced VUID-vkCmdDispatch-None-08114 and VUID-VkDescriptorImageInfo-imageLayout-00344 on
+// every dispatch.
+//
+// The test wires up a real compute pipeline that samples from the Sampled+Storage texture and
+// writes the result into a storage buffer, then dispatches. This actually drives
+// `binder_.updateBindings()` (which writes the descriptor at SHADER_READ_ONLY_OPTIMAL) and
+// `vkCmdDispatch()` — the same code path that fires the validation errors when the layout is
+// wrong. The post-bind layout assertion is the deterministic regression signal even when the
+// build runs without validation layers (e.g., the fbcode lavapipe configuration), while the
+// dispatch + waitUntilCompleted ensures Windows / Android Vulkan validation layers will catch
+// any future regression that re-introduces the GENERAL transition.
+TEST_F(ComputeCommandEncoderVulkanTest, BindTextureSampledStorageTransitionsToShaderReadOnly) {
+  if (!iglDev_->hasFeature(DeviceFeatures::Compute)) {
+    GTEST_SKIP() << "Compute not supported on this device";
+  }
+
+  Result ret;
+
+  // Sampled+Storage input texture — the configuration that previously transitioned to GENERAL.
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 4,
+                                                 4,
+                                                 TextureDesc::TextureUsageBits::Sampled |
+                                                     TextureDesc::TextureUsageBits::Storage);
+  auto texture = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(texture, nullptr);
+
+  const auto* vkTexture = static_cast<igl::vulkan::Texture*>(texture.get());
+  const igl::vulkan::VulkanImage& vkImage = vkTexture->getVulkanTexture().image;
+  ASSERT_TRUE(vkImage.isSampledImage());
+  ASSERT_TRUE(vkImage.isStorageImage());
+
+  // Initialize the texture with deterministic pixel data so the sample isn't reading garbage.
+  constexpr std::array<uint32_t, 16> kPixels = {0xFF0000FFu,
+                                                0xFF0000FFu,
+                                                0xFF0000FFu,
+                                                0xFF0000FFu,
+                                                0xFF0000FFu,
+                                                0xFF0000FFu,
+                                                0xFF0000FFu,
+                                                0xFF0000FFu,
+                                                0xFF0000FFu,
+                                                0xFF0000FFu,
+                                                0xFF0000FFu,
+                                                0xFF0000FFu,
+                                                0xFF0000FFu,
+                                                0xFF0000FFu,
+                                                0xFF0000FFu,
+                                                0xFF0000FFu};
+  ret = texture->upload(texture->getFullRange(0), kPixels.data());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  // Storage output buffer that the compute shader will write to.
+  constexpr std::string_view kOutBufName = "outBuf";
+  constexpr size_t kOutBufIndex = 0;
+  const BufferDesc outBufDesc{
+      .type = BufferDesc::BufferTypeBits::Storage,
+      .length = sizeof(float) * 4,
+      .storage = ResourceStorage::Shared,
+  };
+  auto outBuffer = iglDev_->createBuffer(outBufDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(outBuffer, nullptr);
+
+  // Sampler for the combined image sampler binding.
+  auto sampler = iglDev_->createSamplerState(SamplerStateDesc{}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(sampler, nullptr);
+
+  // Vulkan compute shader: sample the input texture and write the texel into the SSBO.
+  // (set = 0, binding = 0) → combined image sampler (matches kBindPoint_CombinedImageSamplers).
+  // (set = 1, binding = 0) → storage buffer (matches kBindPoint_Buffers).
+  static constexpr std::string_view kShader =
+      "layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;\n"
+      "layout (set = 0, binding = 0) uniform sampler2D inputTex;\n"
+      "layout (std430, binding = 0, set = 1) writeonly buffer outBuf {\n"
+      "  vec4 fOut[];\n"
+      "};\n"
+      "void main() {\n"
+      "  fOut[0] = texture(inputTex, vec2(0.5, 0.5));\n"
+      "}\n";
+
+  auto computeStages =
+      ShaderStagesCreator::fromModuleStringInput(*iglDev_, kShader.data(), "main", "", &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(computeStages, nullptr);
+
+  ComputePipelineDesc computeDesc;
+  computeDesc.shaderStages = std::move(computeStages);
+  computeDesc.buffersMap[kOutBufIndex] = IGL_NAMEHANDLE(kOutBufName);
+  auto pipeline = iglDev_->createComputePipeline(computeDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(pipeline, nullptr);
+
+  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(cmdBuf, nullptr);
+
+  auto encoder = cmdBuf->createComputeCommandEncoder();
+  ASSERT_NE(encoder, nullptr);
+
+  encoder->bindComputePipelineState(pipeline);
+  encoder->bindTexture(0, texture.get());
+  encoder->bindSamplerState(0, sampler.get());
+  encoder->bindBuffer(kOutBufIndex, outBuffer.get());
+
+  // Deterministic regression signal: bindTexture() must have queued a transition to
+  // SHADER_READ_ONLY_OPTIMAL (matching the descriptor write), NOT GENERAL.
+  EXPECT_EQ(vkImage.imageLayout_, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+  EXPECT_NE(vkImage.imageLayout_, VK_IMAGE_LAYOUT_GENERAL);
+
+  // Drive the full descriptor write + vkCmdDispatch path so validation layers (when present)
+  // observe the layout/descriptor pairing. Without the fix, this dispatch fires
+  // VUID-vkCmdDispatch-None-08114 and VUID-VkDescriptorImageInfo-imageLayout-00344 on
+  // platforms with the Vulkan validation layer enabled.
+  encoder->dispatchThreadGroups(Dimensions(1, 1, 1), Dimensions(1, 1, 1), {});
+  encoder->endEncoding();
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
 }
 
 TEST_F(ComputeCommandEncoderVulkanTest, DebugGroupLabels) {
