@@ -13,7 +13,6 @@
 #import "ViewController.h"
 
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
-#include <shell/shared/renderSession/RenderSessionConfig.h>
 #import <igl/Common.h> // IWYU pragma: keep
 
 namespace {
