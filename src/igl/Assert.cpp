@@ -11,7 +11,7 @@
 // ----------------------------------------------------------------------------
 
 namespace {
-IGLErrorHandlerFunc& getDebugAbortListener() {
+IGLErrorHandlerFunc IGL_NULLABLE& getDebugAbortListener() {
   static IGLErrorHandlerFunc sListener = nullptr;
   return sListener;
 }
@@ -75,7 +75,7 @@ void iglDebugBreak() {
 // ----------------------------------------------------------------------------
 
 namespace {
-IGLErrorHandlerFunc& getSoftErrorHandler() {
+IGLErrorHandlerFunc IGL_NULLABLE& getSoftErrorHandler() {
   static IGLErrorHandlerFunc sHandler = nullptr;
   return sHandler;
 }
