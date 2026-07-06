@@ -16,7 +16,6 @@
 #import <AppKit/NSTabViewItem.h>
 #import <AppKit/NSTrackingArea.h>
 #import <AppKit/NSView.h>
-#import <AppKit/NSWindow.h>
 #import <CoreVideo/CVDisplayLink.h>
 #import <Foundation/NSArray.h>
 #import <Foundation/NSThread.h>
