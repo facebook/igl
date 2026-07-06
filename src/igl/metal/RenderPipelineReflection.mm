@@ -97,7 +97,8 @@ bool RenderPipelineReflection::createArgDesc(MTLArgument* arg, ShaderStage sh) {
             .name = igl::genNameHandle(uniform.name.UTF8String),
             .type = metalDataTypeToIGLUniformType(elementType),
             .offset = (size_t)uniform.offset,
-            .arrayLength = uniform.arrayType ? (size_t)uniform.arrayType.arrayLength : 1};
+            .arrayLength = uniform.arrayType ? (size_t)uniform.arrayType.arrayLength : 1,
+            .arrayStride = uniform.arrayType ? (size_t)uniform.arrayType.stride : 0};
         bufferDesc.members.push_back(std::move(iglMemberDesc));
       }
     } else {

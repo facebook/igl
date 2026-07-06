@@ -28,6 +28,11 @@ struct BufferArgDesc {
     UniformType type = igl::UniformType::Invalid; ///< The type of the member
     size_t offset = 0; ///< The offset from the beginning of the structure
     size_t arrayLength = 1; ///< The number of elements if the member is an array
+    size_t arrayStride = 0; ///< The per-element byte stride reported by the backend for an
+                            ///< array member. 0 means "not reported"; callers should derive a
+                            ///< tight stride from sizeForUniformType (correct for scalars and for
+                            ///< OpenGL/D3D12, which do not report it). Metal reports the real MSL
+                            ///< stride here (e.g. 16 for vec3[]/mat3[]).
   };
 
   NameHandle name; ///< The name of the buffer argument
