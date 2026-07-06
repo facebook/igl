@@ -9,7 +9,9 @@
 
 #include <shell/shared/netservice/apple/StreamApple.h>
 
-#import <Foundation/Foundation.h>
+#import <Foundation/NSObject.h>
+#import <Foundation/NSRunLoop.h>
+#import <Foundation/NSStream.h>
 #include <igl/Core.h>
 
 // ----------------------------------------------------------------------------
