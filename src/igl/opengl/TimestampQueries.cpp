@@ -70,6 +70,10 @@ bool TimestampQueries::isValid() const {
   return valid_;
 }
 
+bool TimestampQueries::requiresFramebufferRetention() const {
+  return true;
+}
+
 bool TimestampQueries::resultsAvailable() const {
   if (!valid_ || currentIndex_ == 0) {
     return false;

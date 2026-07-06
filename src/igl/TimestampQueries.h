@@ -57,6 +57,17 @@ class ITimestampQueries : public ITrackedResource<ITimestampQueries> {
     return false;
   }
 
+  /// Whether the caller must keep framebuffers alive until this object's timer-query results are
+  /// consumed. True only on backends whose driver internally references framebuffers that were
+  /// active during a timer query: ARM Mali's OpenGL driver does this, so freeing an FBO before its
+  /// query resolves is a use-after-free (SEV S638750). Metal, Vulkan, and other backends resolve
+  /// counters without referencing the FBO afterward, so they return false. Default false; the
+  /// OpenGL backend overrides to true. This lets timing collectors query the backend directly
+  /// rather than have each construction site coordinate retention.
+  [[nodiscard]] virtual bool requiresFramebufferRetention() const {
+    return false;
+  }
+
  protected:
   ITimestampQueries() = default;
 };

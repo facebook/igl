@@ -32,6 +32,11 @@ class TimestampQueries : public ITimestampQueries, public WithContext {
 
   [[nodiscard]] bool isValid() const override;
 
+  /// True: the Mali OpenGL driver internally references FBOs active during a GL_TIME_ELAPSED query,
+  /// so callers must retain them until results are consumed to avoid a use-after-free (SEV
+  /// S638750).
+  [[nodiscard]] bool requiresFramebufferRetention() const override;
+
   /// Start a GL_TIME_ELAPSED query for the given timing slot.
   /// Must be paired with endElapsedQuery(). Cannot be nested.
   void beginElapsedQuery(uint32_t slotIndex);
