@@ -14,11 +14,6 @@
 #include <igl/Common.h>
 #include <igl/Device.h>
 
-#if IGL_PLATFORM_IOS || IGL_PLATFORM_MACOSX
-#include "simd/simd.h"
-#else
-#include "simdstub.h"
-#endif
 namespace igl::tests::util {
 constexpr auto kTestPrecision = 0.0001f;
 
