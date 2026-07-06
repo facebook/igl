@@ -11,6 +11,8 @@
 #include <OpenGLES/EAGL.h>
 #include <QuartzCore/CAEAGLLayer.h>
 #import <objc/runtime.h>
+#include <sstream>
+#include <string>
 #include <igl/opengl/Texture.h>
 
 namespace igl::opengl::ios {
@@ -34,8 +36,9 @@ EAGLContext* createEAGLContext(BackendVersion backendVersion, EAGLSharegroup* sh
   }
 }
 
+const char kUniqueIdKey = 0;
+
 void* getOrGenerateContextUniqueID(EAGLContext* context) {
-  static const char kUniqueIdKey = 0;
   static uint64_t idCounter = 0;
   NSNumber* key = objc_getAssociatedObject(context, &kUniqueIdKey);
   uint64_t contextId = 0;
@@ -47,6 +50,10 @@ void* getOrGenerateContextUniqueID(EAGLContext* context) {
     contextId = key.integerValue;
   }
   return (void*)contextId; // NOLINT(performance-no-int-to-ptr)
+}
+
+bool contextIsIglRegistered(EAGLContext* context) {
+  return objc_getAssociatedObject(context, &kUniqueIdKey) != nullptr;
 }
 } // namespace
 
@@ -127,6 +134,24 @@ bool Context::isCurrentContext() const {
 
 bool Context::isCurrentSharegroup() const {
   return [EAGLContext currentContext].sharegroup == context_.sharegroup;
+}
+
+std::string Context::getCurrentContextDebugInfo() const {
+  EAGLContext* current = [EAGLContext currentContext];
+  std::ostringstream oss;
+  if (current == nil) {
+    oss << "currentEAGLContext=nil";
+  } else {
+    oss << "currentEAGLContext=" << (__bridge void*)current
+        << " currentSharegroup=" << (__bridge void*)current.sharegroup
+        << " currentIsKnownToIgl=" << (contextIsIglRegistered(current) ? "true" : "false")
+        << " currentApi=" << static_cast<int>(current.API);
+  }
+  oss << " storedEAGLContext=" << (__bridge void*)context_;
+  if (context_ != nil) {
+    oss << " storedSharegroup=" << (__bridge void*)context_.sharegroup;
+  }
+  return oss.str();
 }
 
 std::unique_ptr<IContext> Context::createShareContext(Result* outResult) {

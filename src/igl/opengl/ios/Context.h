@@ -28,6 +28,7 @@ class Context final : public IContext {
   void clearCurrentContext() const override;
   bool isCurrentContext() const override;
   bool isCurrentSharegroup() const override;
+  std::string getCurrentContextDebugInfo() const override;
   void present(std::shared_ptr<ITexture> surface) const override;
 
   /// Creates a shared context, matching format based on the current context.

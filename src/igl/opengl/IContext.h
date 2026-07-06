@@ -40,6 +40,9 @@ class IContext {
   virtual void clearCurrentContext() const = 0;
   virtual bool isCurrentContext() const = 0;
   virtual bool isCurrentSharegroup() const = 0;
+  virtual std::string getCurrentContextDebugInfo() const {
+    return {};
+  }
   virtual void present(std::shared_ptr<ITexture> surface) const = 0;
 
   virtual std::unique_ptr<IContext> createShareContext(Result* IGL_NULLABLE outResult) = 0;
