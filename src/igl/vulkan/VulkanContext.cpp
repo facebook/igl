@@ -412,6 +412,67 @@ struct BindGroupMetadataBuffers {
 
 } // namespace
 
+// Cache key for VkDescriptorSetLayout de-duplication.
+// Two VulkanDescriptorSetLayout constructions with identical bindings/flags will share the same
+// underlying VkDescriptorSetLayout handle, which in turn ensures they share a single
+// DescriptorPoolsArena entry (arenas are keyed by VkDescriptorSetLayout handle below).
+struct DescriptorSetLayoutCacheKey {
+  VkDescriptorSetLayoutCreateFlags flags = 0;
+  std::vector<VkDescriptorSetLayoutBinding> bindings;
+  std::vector<VkDescriptorBindingFlags> bindingFlags;
+
+  bool operator==(const DescriptorSetLayoutCacheKey& other) const noexcept {
+    if (flags != other.flags) {
+      return false;
+    }
+    if (bindings.size() != other.bindings.size()) {
+      return false;
+    }
+    if (bindingFlags.size() != other.bindingFlags.size()) {
+      return false;
+    }
+    for (size_t i = 0; i != bindings.size(); i++) {
+      const auto& a = bindings[i];
+      const auto& b = other.bindings[i];
+      if (a.binding != b.binding || a.descriptorType != b.descriptorType ||
+          a.descriptorCount != b.descriptorCount || a.stageFlags != b.stageFlags ||
+          a.pImmutableSamplers != b.pImmutableSamplers) {
+        return false;
+      }
+    }
+    for (size_t i = 0; i != bindingFlags.size(); i++) {
+      if (bindingFlags[i] != other.bindingFlags[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+};
+
+// Boost-style hash combiner. Mixes `v` into the accumulated seed `h` with a golden-ratio
+// constant plus a self-shift so that the seed's existing bits are re-distributed before each
+// new field is folded in.
+inline void hash_combine(size_t& h, size_t v) noexcept {
+  h ^= v + 0x9e3779b9 + (h << 6) + (h >> 2);
+}
+
+struct DescriptorSetLayoutCacheKeyHash {
+  size_t operator()(const DescriptorSetLayoutCacheKey& key) const noexcept {
+    size_t h = std::hash<uint32_t>{}(static_cast<uint32_t>(key.flags));
+    for (const auto& b : key.bindings) {
+      hash_combine(h, std::hash<uint32_t>{}(b.binding));
+      hash_combine(h, std::hash<uint32_t>{}(static_cast<uint32_t>(b.descriptorType)));
+      hash_combine(h, std::hash<uint32_t>{}(b.descriptorCount));
+      hash_combine(h, std::hash<uint32_t>{}(static_cast<uint32_t>(b.stageFlags)));
+      hash_combine(h, std::hash<const void*>{}(b.pImmutableSamplers));
+    }
+    for (const auto& f : key.bindingFlags) {
+      hash_combine(h, std::hash<uint32_t>{}(static_cast<uint32_t>(f)));
+    }
+    return h;
+  }
+};
+
 struct VulkanContextImpl final {
   std::thread::id contextThread = std::this_thread::get_id();
 
@@ -423,6 +484,15 @@ struct VulkanContextImpl final {
   std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<DescriptorPoolsArena>> arenaBuffers;
   std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<DescriptorPoolsArena>>
       arenaStorageImages;
+  // Cache of VkDescriptorSetLayout handles keyed by their descriptor bindings/flags. Since the
+  // engine only uses a handful of distinct binding layouts, this collapses per-pipeline dsl
+  // handles into a small set of shared handles, so that arenas above (keyed by handle) also
+  // become shared automatically. Owned by the context; entries live until the context is
+  // destroyed.
+  std::unordered_map<DescriptorSetLayoutCacheKey,
+                     VkDescriptorSetLayout,
+                     DescriptorSetLayoutCacheKeyHash>
+      dslCache;
   std::unique_ptr<VulkanDescriptorSetLayout> dslBindless; // everything
   std::unique_ptr<DescriptorBuffersArena> descriptorBuffersArena;
   VkDescriptorPool dpBindless = VK_NULL_HANDLE;
@@ -613,6 +683,17 @@ VulkanContext::~VulkanContext() {
   pimpl_->arenaCombinedImageSamplers.clear();
   pimpl_->arenaStorageImages.clear();
   pimpl_->arenaBuffers.clear();
+
+  // Destroy all cached VkDescriptorSetLayout handles owned by the context. VulkanDescriptorSetLayout
+  // instances only reference these handles through the cache and no longer own them.
+  if (vkDevice_) {
+    for (auto& kv : pimpl_->dslCache) {
+      if (kv.second != VK_NULL_HANDLE) {
+        vf_.vkDestroyDescriptorSetLayout(vkDevice_, kv.second, nullptr);
+      }
+    }
+  }
+  pimpl_->dslCache.clear();
 
   waitDeferredTasks();
 
@@ -2483,10 +2564,42 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
   return info;
 }
 
-void VulkanContext::freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout dsl) const {
-  pimpl_->arenaBuffers.erase(dsl);
-  pimpl_->arenaCombinedImageSamplers.erase(dsl);
-  pimpl_->arenaStorageImages.erase(dsl);
+void VulkanContext::freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout /*dsl*/) const {
+  // Deprecated: VkDescriptorSetLayout handles are now shared/de-duplicated through the
+  // dslCache in VulkanContextImpl and their arenas are shared per-handle. Freeing arenas by
+  // dsl handle at pipeline teardown is unsafe because other pipelines may still be using the
+  // same shared handle. Cached dsl handles and their arenas are cleaned up when the
+  // VulkanContext itself is destroyed.
+}
+
+VkDescriptorSetLayout VulkanContext::getOrCreateVkDescriptorSetLayout(
+    VkDescriptorSetLayoutCreateFlags flags,
+    uint32_t numBindings,
+    const VkDescriptorSetLayoutBinding* bindings,
+    const VkDescriptorBindingFlags* bindingFlags,
+    const char* debugName) const {
+  DescriptorSetLayoutCacheKey key;
+  key.flags = flags;
+  key.bindings.assign(bindings, bindings + numBindings);
+  if (bindingFlags) {
+    key.bindingFlags.assign(bindingFlags, bindingFlags + numBindings);
+  }
+
+  auto it = pimpl_->dslCache.find(key);
+  if (it != pimpl_->dslCache.end()) {
+    return it->second;
+  }
+
+  VkDescriptorSetLayout dsl = VK_NULL_HANDLE;
+  VK_ASSERT(ivkCreateDescriptorSetLayout(
+      &vf_, getVkDevice(), flags, numBindings, bindings, bindingFlags, &dsl));
+  VK_ASSERT(ivkSetDebugObjectName(&vf_,
+                                  getVkDevice(),
+                                  VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
+                                  reinterpret_cast<uint64_t>(dsl),
+                                  debugName));
+  pimpl_->dslCache.emplace(std::move(key), dsl);
+  return dsl;
 }
 
 BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc& desc,
