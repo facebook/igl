@@ -42,7 +42,7 @@ uint32_t ivkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memProps,
 NativeHWTextureBuffer::NativeHWTextureBuffer(igl::vulkan::Device& device, TextureFormat format) :
   Super(device, format) {}
 
-NativeHWTextureBuffer::~NativeHWTextureBuffer() {}
+NativeHWTextureBuffer::~NativeHWTextureBuffer() = default;
 
 Result NativeHWTextureBuffer::create(const TextureDesc& desc) {
   return createHWBuffer(desc, false, false);
