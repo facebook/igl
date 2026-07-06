@@ -11,7 +11,6 @@
 
 #include <igl/CommandQueue.h>
 #include <igl/Framebuffer.h>
-#include <igl/IGL.h>
 #include <igl/Texture.h>
 
 #if IGL_BACKEND_OPENGL
