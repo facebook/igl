@@ -173,7 +173,7 @@ INativeHWTextureBuffer::LockGuard::~LockGuard() {
 INativeHWTextureBuffer::LockGuard::LockGuard(const INativeHWTextureBuffer* hwBufferOwner) :
   hwBufferOwner_(hwBufferOwner) {}
 
-INativeHWTextureBuffer::LockGuard::LockGuard(INativeHWTextureBuffer::LockGuard&& g) {
+INativeHWTextureBuffer::LockGuard::LockGuard(INativeHWTextureBuffer::LockGuard&& g) noexcept {
   hwBufferOwner_ = g.hwBufferOwner_;
   g.hwBufferOwner_ = nullptr;
 }

@@ -38,7 +38,7 @@ class INativeHWTextureBuffer {
     ~LockGuard();
 
     LockGuard(const LockGuard&) = delete;
-    LockGuard(LockGuard&& g);
+    LockGuard(LockGuard&& g) noexcept;
 
    private:
     friend class INativeHWTextureBuffer;
