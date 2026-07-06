@@ -10,7 +10,10 @@
 // @fb-only
 // @fb-only
 
-#include <igl/Core.h>
+#include <cstddef>
+#include <cstdint>
+#include <igl/Config.h>
+#include <igl/IGLFolly.h>
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
