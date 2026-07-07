@@ -13,7 +13,6 @@
 #include <igl/opengl/GLIncludes.h>
 
 namespace igl {
-class ICommandBuffer;
 namespace opengl {
 
 // This structure stores OGL-specific attribute info. Location is specifically

@@ -16,8 +16,6 @@
 
 #include <igl/vulkan/Texture.h>
 
-struct AHardwareBuffer;
-
 namespace igl::vulkan::android {
 
 typedef void AHardwareBufferHelper;
