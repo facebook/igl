@@ -312,7 +312,10 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
     bool* perfettoEnabled;
   };
 
-  CallbackData callbackData{prefixStr, standardParams, &customParams, &perfettoEnabled};
+  CallbackData callbackData{.prefix = prefixStr,
+                            .standardParams = standardParams,
+                            .customParams = &customParams,
+                            .perfettoEnabled = &perfettoEnabled};
 
   __system_property_foreach(
       [](const prop_info* pi, void* cookie) {
