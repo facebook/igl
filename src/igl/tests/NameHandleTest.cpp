@@ -49,7 +49,7 @@ TEST(NameHandleTest, ConstructFromStringViewAndCrc) {
 
 TEST(NameHandleTest, CopyConstruction) {
   const NameHandle original = IGL_NAMEHANDLE("color");
-  const NameHandle copy(original);
+  const NameHandle& copy(original);
   EXPECT_EQ(copy, original);
   EXPECT_STREQ(copy.c_str(), "color");
   EXPECT_EQ(copy.getCrc32(), original.getCrc32());
