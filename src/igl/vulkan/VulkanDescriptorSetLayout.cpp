@@ -20,18 +20,11 @@ VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const VulkanContext& ctx,
   ctx(ctx), numBindings(numBindings) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  VK_ASSERT(ivkCreateDescriptorSetLayout(&ctx.vf_,
-                                         ctx.getVkDevice(),
-                                         flags,
-                                         numBindings,
-                                         bindings,
-                                         bindingFlags,
-                                         &vkDescriptorSetLayout));
-  VK_ASSERT(ivkSetDebugObjectName(&ctx.vf_,
-                                  ctx.getVkDevice(),
-                                  VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
-                                  reinterpret_cast<uint64_t>(vkDescriptorSetLayout),
-                                  debugName));
+  // The underlying VkDescriptorSetLayout is de-duplicated and owned by VulkanContext. Multiple
+  // VulkanDescriptorSetLayout instances with identical bindings/flags will therefore share the
+  // same handle, and consequently share the same DescriptorPoolsArena in VulkanContext.
+  vkDescriptorSetLayout =
+      ctx.getOrCreateVkDescriptorSetLayout(flags, numBindings, bindings, bindingFlags, debugName);
 
   if (ctx.features().has_VK_EXT_descriptor_buffer) {
     ctx.vf_.vkGetDescriptorSetLayoutSizeEXT(ctx.getVkDevice(), vkDescriptorSetLayout, &layoutSize);
@@ -40,11 +33,8 @@ VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const VulkanContext& ctx,
 
 VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
-  ctx.freeResourcesForDescriptorSetLayout(vkDescriptorSetLayout);
-  ctx.deferredTask(std::packaged_task<void()>(
-      [vf = &ctx.vf_, device = ctx.getVkDevice(), layout = vkDescriptorSetLayout] {
-        vf->vkDestroyDescriptorSetLayout(device, layout, nullptr);
-      }));
+  // The VkDescriptorSetLayout handle is owned and destroyed by VulkanContext (see dslCache in
+  // VulkanContextImpl). Nothing to do here.
 }
 
 } // namespace igl::vulkan

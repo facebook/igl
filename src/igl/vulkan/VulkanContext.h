@@ -243,6 +243,16 @@ class VulkanContext final {
 
   void freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout dsl) const;
 
+  // Returns a cached VkDescriptorSetLayout handle if an identical one has already been created
+  // (identical bindings/flags/immutable samplers), otherwise creates a new one and caches it.
+  // The returned handle is owned by the VulkanContext and destroyed when the context is destroyed.
+  [[nodiscard]] VkDescriptorSetLayout getOrCreateVkDescriptorSetLayout(
+      VkDescriptorSetLayoutCreateFlags flags,
+      uint32_t numBindings,
+      const VkDescriptorSetLayoutBinding* IGL_NULLABLE bindings,
+      const VkDescriptorBindingFlags* IGL_NULLABLE bindingFlags,
+      const char* IGL_NULLABLE debugName = nullptr) const;
+
   const VulkanFeatures& features() const noexcept;
 
   [[nodiscard]] const VkSurfaceCapabilitiesKHR& getSurfaceCapabilities() const noexcept {
