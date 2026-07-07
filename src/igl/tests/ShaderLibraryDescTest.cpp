@@ -7,9 +7,22 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
 #include <igl/Shader.h>
 
 namespace igl::tests {
+
+namespace {
+class TestShaderModule : public IShaderModule {
+ public:
+  explicit TestShaderModule(ShaderModuleInfo info) : IShaderModule(std::move(info)) {}
+};
+
+std::shared_ptr<TestShaderModule> makeTestModule(ShaderStage stage, std::string debugName) {
+  return std::make_shared<TestShaderModule>(
+      ShaderModuleInfo{.stage = stage, .debugName = std::move(debugName)});
+}
+} // namespace
 
 // ---------------------------------------------------------------------------
 // ShaderStagesType
@@ -104,6 +117,78 @@ TEST(ShaderStagesDescTest, DefaultConstruction) {
   EXPECT_EQ(desc.taskModule, nullptr);
   EXPECT_EQ(desc.meshModule, nullptr);
   EXPECT_EQ(desc.type, ShaderStagesType::Render);
+}
+
+TEST(ShaderStagesDescTest, FromRenderModulesNullModules) {
+  const auto desc = ShaderStagesDesc::fromRenderModules(nullptr, nullptr);
+  EXPECT_EQ(desc.type, ShaderStagesType::Render);
+  EXPECT_EQ(desc.vertexModule, nullptr);
+  EXPECT_EQ(desc.fragmentModule, nullptr);
+  EXPECT_EQ(desc.computeModule, nullptr);
+  EXPECT_EQ(desc.taskModule, nullptr);
+  EXPECT_EQ(desc.meshModule, nullptr);
+  EXPECT_EQ(desc.debugName, ", ");
+}
+
+TEST(ShaderStagesDescTest, FromRenderModulesWithModules) {
+  const auto vs = makeTestModule(ShaderStage::Vertex, "myVS");
+  const auto fs = makeTestModule(ShaderStage::Fragment, "myFS");
+  const auto desc = ShaderStagesDesc::fromRenderModules(vs, fs);
+  EXPECT_EQ(desc.type, ShaderStagesType::Render);
+  EXPECT_EQ(desc.vertexModule, vs);
+  EXPECT_EQ(desc.fragmentModule, fs);
+  EXPECT_EQ(desc.computeModule, nullptr);
+  EXPECT_EQ(desc.taskModule, nullptr);
+  EXPECT_EQ(desc.meshModule, nullptr);
+  EXPECT_EQ(desc.debugName, "myVS, myFS");
+}
+
+TEST(ShaderStagesDescTest, FromComputeModuleNullModule) {
+  const auto desc = ShaderStagesDesc::fromComputeModule(nullptr);
+  EXPECT_EQ(desc.type, ShaderStagesType::Compute);
+  EXPECT_EQ(desc.computeModule, nullptr);
+  EXPECT_EQ(desc.vertexModule, nullptr);
+  EXPECT_EQ(desc.fragmentModule, nullptr);
+  EXPECT_EQ(desc.taskModule, nullptr);
+  EXPECT_EQ(desc.meshModule, nullptr);
+  EXPECT_EQ(desc.debugName, "igl/Shader.cpp");
+}
+
+TEST(ShaderStagesDescTest, FromComputeModuleWithModule) {
+  const auto cs = makeTestModule(ShaderStage::Compute, "myCS");
+  const auto desc = ShaderStagesDesc::fromComputeModule(cs);
+  EXPECT_EQ(desc.type, ShaderStagesType::Compute);
+  EXPECT_EQ(desc.computeModule, cs);
+  EXPECT_EQ(desc.vertexModule, nullptr);
+  EXPECT_EQ(desc.fragmentModule, nullptr);
+  EXPECT_EQ(desc.taskModule, nullptr);
+  EXPECT_EQ(desc.meshModule, nullptr);
+  EXPECT_EQ(desc.debugName, "myCS");
+}
+
+TEST(ShaderStagesDescTest, FromMeshRenderModulesNullModules) {
+  const auto desc = ShaderStagesDesc::fromMeshRenderModules(nullptr, nullptr, nullptr);
+  EXPECT_EQ(desc.type, ShaderStagesType::RenderMeshShader);
+  EXPECT_EQ(desc.taskModule, nullptr);
+  EXPECT_EQ(desc.meshModule, nullptr);
+  EXPECT_EQ(desc.fragmentModule, nullptr);
+  EXPECT_EQ(desc.vertexModule, nullptr);
+  EXPECT_EQ(desc.computeModule, nullptr);
+  EXPECT_EQ(desc.debugName, ", , ");
+}
+
+TEST(ShaderStagesDescTest, FromMeshRenderModulesWithModules) {
+  const auto task = makeTestModule(ShaderStage::Task, "myTask");
+  const auto mesh = makeTestModule(ShaderStage::Mesh, "myMesh");
+  const auto fs = makeTestModule(ShaderStage::Fragment, "myFS");
+  const auto desc = ShaderStagesDesc::fromMeshRenderModules(task, mesh, fs);
+  EXPECT_EQ(desc.type, ShaderStagesType::RenderMeshShader);
+  EXPECT_EQ(desc.taskModule, task);
+  EXPECT_EQ(desc.meshModule, mesh);
+  EXPECT_EQ(desc.fragmentModule, fs);
+  EXPECT_EQ(desc.vertexModule, nullptr);
+  EXPECT_EQ(desc.computeModule, nullptr);
+  EXPECT_EQ(desc.debugName, "myTask, myMesh, myFS");
 }
 
 } // namespace igl::tests
