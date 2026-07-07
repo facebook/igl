@@ -607,13 +607,23 @@ void ivkBufferBarrier(const struct VulkanFunctionTable* vt,
       .size = VK_WHOLE_SIZE,
   };
 
+  // Each access bit must be supported by at least one stage in its
+  // corresponding stage mask, otherwise validation flags
+  // VUID-vkCmdPipelineBarrier-{p,Buffer,Image}MemoryBarriers-02818. In
+  // particular, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT and VK_ACCESS_INDEX_READ_BIT
+  // require VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, NOT just any stage that happens
+  // to read the buffer.
+  const VkPipelineStageFlags kShaderStages = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
   if (srcStageMask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) {
     barrier.srcAccessMask |= VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
   }
   if (srcStageMask & VK_PIPELINE_STAGE_TRANSFER_BIT) {
     barrier.srcAccessMask |= VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
   }
-  if (srcStageMask & VK_PIPELINE_STAGE_VERTEX_SHADER_BIT) {
+  if (srcStageMask & kShaderStages) {
     barrier.srcAccessMask |= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
   }
 
@@ -626,15 +636,19 @@ void ivkBufferBarrier(const struct VulkanFunctionTable* vt,
   if (dstStageMask & VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT) {
     barrier.dstAccessMask |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
   }
-  if (dstStageMask & VK_PIPELINE_STAGE_VERTEX_SHADER_BIT) {
+  if (dstStageMask & VK_PIPELINE_STAGE_VERTEX_INPUT_BIT) {
+    if (usageFlags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) {
+      barrier.dstAccessMask |= VK_ACCESS_INDEX_READ_BIT;
+    }
+    if (usageFlags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) {
+      barrier.dstAccessMask |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+    }
+  }
+  if (dstStageMask & kShaderStages) {
     barrier.dstAccessMask |= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-  }
-
-  if (usageFlags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) {
-    barrier.dstAccessMask |= VK_ACCESS_INDEX_READ_BIT;
-  }
-  if (usageFlags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) {
-    barrier.dstAccessMask |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+    if (usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
+      barrier.dstAccessMask |= VK_ACCESS_UNIFORM_READ_BIT;
+    }
   }
 
   vt->vkCmdPipelineBarrier(cmdBuffer, srcStageMask, dstStageMask, 0, 0, NULL, 1, &barrier, 0, NULL);
