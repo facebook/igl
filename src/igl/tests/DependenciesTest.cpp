@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 
 #include <igl/CommandEncoder.h>
+#include <igl/CommandQueue.h>
 
 namespace igl::tests {
 
@@ -33,6 +34,52 @@ TEST(DependenciesTest, DefaultConstructionBuffersNull) {
 TEST(DependenciesTest, DefaultConstructionNextNull) {
   const Dependencies deps;
   EXPECT_EQ(deps.next, nullptr);
+}
+
+TEST(DependenciesTest, ChainViaNext) {
+  Dependencies inner;
+  Dependencies outer;
+  outer.next = &inner;
+  EXPECT_EQ(outer.next, &inner);
+  EXPECT_EQ(inner.next, nullptr);
+}
+
+// ---------------------------------------------------------------------------
+// BindGroupTextureDesc
+// ---------------------------------------------------------------------------
+
+TEST(BindGroupTextureDescTest, DefaultConstruction) {
+  const BindGroupTextureDesc desc;
+  EXPECT_TRUE(desc.debugName.empty());
+  for (uint32_t i = 0; i < IGL_TEXTURE_SAMPLERS_MAX; ++i) {
+    EXPECT_EQ(desc.textures[i], nullptr);
+    EXPECT_EQ(desc.samplers[i], nullptr);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// BindGroupBufferDesc
+// ---------------------------------------------------------------------------
+
+TEST(BindGroupBufferDescTest, DefaultConstruction) {
+  const BindGroupBufferDesc desc;
+  EXPECT_TRUE(desc.debugName.empty());
+  EXPECT_EQ(desc.isDynamicBufferMask, 0u);
+  for (uint32_t i = 0; i < IGL_UNIFORM_BLOCKS_BINDING_MAX; ++i) {
+    EXPECT_EQ(desc.buffers[i], nullptr);
+    EXPECT_EQ(desc.offset[i], 0u);
+    EXPECT_EQ(desc.size[i], 0u);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// CommandQueueStatistics
+// ---------------------------------------------------------------------------
+
+TEST(CommandQueueStatisticsTest, DefaultConstruction) {
+  const CommandQueueStatistics stats;
+  EXPECT_EQ(stats.currentDrawCount, 0u);
+  EXPECT_EQ(stats.lastFrameDrawCount, 0u);
 }
 
 } // namespace igl::tests
