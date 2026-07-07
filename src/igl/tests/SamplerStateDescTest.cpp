@@ -89,6 +89,41 @@ TEST(SamplerStateDescTest, InequalityOpDifferentYuvFormat) {
   EXPECT_NE(a, b);
 }
 
+TEST(SamplerStateDescTest, InequalityOpDifferentMipFilter) {
+  SamplerStateDesc a;
+  SamplerStateDesc b;
+  b.mipFilter = SamplerMipFilter::Linear;
+  EXPECT_NE(a, b);
+}
+
+TEST(SamplerStateDescTest, InequalityOpDifferentAddressModeV) {
+  SamplerStateDesc a;
+  SamplerStateDesc b;
+  b.addressModeV = SamplerAddressMode::Clamp;
+  EXPECT_NE(a, b);
+}
+
+TEST(SamplerStateDescTest, InequalityOpDifferentAddressModeW) {
+  SamplerStateDesc a;
+  SamplerStateDesc b;
+  b.addressModeW = SamplerAddressMode::MirrorRepeat;
+  EXPECT_NE(a, b);
+}
+
+TEST(SamplerStateDescTest, InequalityOpDifferentDepthCompareFunction) {
+  SamplerStateDesc a;
+  SamplerStateDesc b;
+  b.depthCompareFunction = CompareFunction::Never;
+  EXPECT_NE(a, b);
+}
+
+TEST(SamplerStateDescTest, InequalityOpDifferentMipLodMin) {
+  SamplerStateDesc a;
+  SamplerStateDesc b;
+  b.mipLodMin = 5;
+  EXPECT_NE(a, b);
+}
+
 TEST(SamplerStateDescTest, DebugNameIgnoredInEquality) {
   SamplerStateDesc a;
   SamplerStateDesc b;
