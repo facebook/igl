@@ -31,6 +31,7 @@ std::shared_ptr<TestShaderModule> makeTestModule(ShaderStage stage, std::string 
 TEST(ShaderStagesTypeTest, EnumValues) {
   EXPECT_EQ(static_cast<uint8_t>(ShaderStagesType::Render), 0u);
   EXPECT_EQ(static_cast<uint8_t>(ShaderStagesType::Compute), 1u);
+  EXPECT_EQ(static_cast<uint8_t>(ShaderStagesType::RenderMeshShader), 2u);
 }
 
 // ---------------------------------------------------------------------------

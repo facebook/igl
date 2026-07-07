@@ -69,3 +69,17 @@ TEST(BlendModeTest, EqualityOperator) {
   EXPECT_NE(opaque,
             iglu::material::BlendMode(BF::One, BF::Zero, BO::Add, BF::One, BF::Zero, BO::Subtract));
 }
+
+TEST(DepthTestConfigTest, EnumValues) {
+  using iglu::material::DepthTestConfig;
+  EXPECT_EQ(static_cast<int>(DepthTestConfig::Disable), 0);
+  EXPECT_EQ(static_cast<int>(DepthTestConfig::Enable), 1);
+  EXPECT_EQ(static_cast<int>(DepthTestConfig::EnableNoWrite), 2);
+}
+
+TEST(DepthTestConfigTest, ValuesAreDistinct) {
+  using iglu::material::DepthTestConfig;
+  EXPECT_NE(DepthTestConfig::Disable, DepthTestConfig::Enable);
+  EXPECT_NE(DepthTestConfig::Disable, DepthTestConfig::EnableNoWrite);
+  EXPECT_NE(DepthTestConfig::Enable, DepthTestConfig::EnableNoWrite);
+}
