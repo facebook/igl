@@ -1011,6 +1011,57 @@ TEST(TextureDescTest, Equality) {
 }
 
 //
+// TextureDesc per-field equality
+//
+// The existing Equality test covers width, format, and debugName. This test
+// verifies the remaining eight fields that participate in operator==.
+//
+TEST(TextureDescTest, EqualityPerField) {
+  const auto base = TextureDesc::new2D(
+      TextureFormat::RGBA_UNorm8, 16, 32, TextureDesc::TextureUsageBits::Sampled, "tex");
+  {
+    auto other = base;
+    other.height = 64;
+    EXPECT_TRUE(base != other);
+  }
+  {
+    auto other = base;
+    other.depth = 2;
+    EXPECT_TRUE(base != other);
+  }
+  {
+    auto other = base;
+    other.numLayers = 4;
+    EXPECT_TRUE(base != other);
+  }
+  {
+    auto other = base;
+    other.numSamples = 4;
+    EXPECT_TRUE(base != other);
+  }
+  {
+    auto other = base;
+    other.usage = TextureDesc::TextureUsageBits::Attachment;
+    EXPECT_TRUE(base != other);
+  }
+  {
+    auto other = base;
+    other.numMipLevels = 4;
+    EXPECT_TRUE(base != other);
+  }
+  {
+    auto other = base;
+    other.type = TextureType::ThreeD;
+    EXPECT_TRUE(base != other);
+  }
+  {
+    auto other = base;
+    other.storage = ResourceStorage::Shared;
+    EXPECT_TRUE(base != other);
+  }
+}
+
+//
 // TextureDesc::asRange
 //
 // asRange() builds a full-texture range from the descriptor. Cube descriptors
