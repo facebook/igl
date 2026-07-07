@@ -68,7 +68,7 @@ const uint32_t kBinding_StorageImages = 6;
 #if !IGL_PLATFORM_APPLE
 VKAPI_ATTR VkBool32 VKAPI_CALL
 vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
-                    [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT msgType,
+                    VkDebugUtilsMessageTypeFlagsEXT msgType,
                     const VkDebugUtilsMessengerCallbackDataEXT* cbData,
                     void* userData) {
   if (msgSeverity < VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
@@ -76,6 +76,11 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
   }
 
   const bool isError = (msgSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0;
+  // Driver-emitted performance hints (e.g. Adreno's VKDBGUTILWARN###) are
+  // suggestions, not Vulkan spec violations. Some drivers emit them at ERROR
+  // severity; treat them as non-fatal regardless so they can't terminate the
+  // process when terminateOnValidationError is enabled.
+  const bool isPerformanceHint = (msgType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) != 0;
 
   auto* ctx = static_cast<igl::vulkan::VulkanContext*>(userData);
 
@@ -111,12 +116,18 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
     const bool isWarning = (msgSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0;
 
     if (isError || isWarning || ctx->config_.enableExtraLogs) {
-      IGL_LOG_INFO("%sValidation layer:\n%s\n", isError ? "\nERROR:\n" : "", cbData->pMessage);
+      const char* prefix = isError ? (isPerformanceHint ? "\nPERFORMANCE:\n" : "\nERROR:\n") : "";
+      const char* idName = cbData->pMessageIdName ? cbData->pMessageIdName : "<no id>";
+      IGL_LOG_INFO("%sValidation layer:\n[%s : %d] %s\n",
+                   prefix,
+                   idName,
+                   cbData->messageIdNumber,
+                   cbData->pMessage);
     }
   }
 #endif
 
-  if (ctx->config_.terminateOnValidationError) {
+  if (ctx->config_.terminateOnValidationError && !isPerformanceHint) {
     if (IGL_DEBUG_VERIFY_NOT(isError)) {
       std::terminate();
     }
