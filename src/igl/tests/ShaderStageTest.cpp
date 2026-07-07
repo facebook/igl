@@ -77,4 +77,36 @@ TEST(ConstantValueTypeTest, ScalarSizesAreConsistent) {
   EXPECT_EQ(getConstantValueSize(ConstantValueType::Float4), floatSize * 4);
 }
 
+// -------------------------------------------------------------------------
+// ShaderStagesDesc factory methods
+// -------------------------------------------------------------------------
+
+TEST(ShaderStagesDescTest, FromRenderModulesSetsType) {
+  const auto desc = ShaderStagesDesc::fromRenderModules(nullptr, nullptr);
+  EXPECT_EQ(desc.type, ShaderStagesType::Render);
+  EXPECT_EQ(desc.vertexModule, nullptr);
+  EXPECT_EQ(desc.fragmentModule, nullptr);
+  EXPECT_EQ(desc.computeModule, nullptr);
+  EXPECT_EQ(desc.taskModule, nullptr);
+  EXPECT_EQ(desc.meshModule, nullptr);
+}
+
+TEST(ShaderStagesDescTest, FromComputeModuleSetsType) {
+  const auto desc = ShaderStagesDesc::fromComputeModule(nullptr);
+  EXPECT_EQ(desc.type, ShaderStagesType::Compute);
+  EXPECT_EQ(desc.computeModule, nullptr);
+  EXPECT_EQ(desc.vertexModule, nullptr);
+  EXPECT_EQ(desc.fragmentModule, nullptr);
+}
+
+TEST(ShaderStagesDescTest, FromMeshRenderModulesSetsType) {
+  const auto desc = ShaderStagesDesc::fromMeshRenderModules(nullptr, nullptr, nullptr);
+  EXPECT_EQ(desc.type, ShaderStagesType::RenderMeshShader);
+  EXPECT_EQ(desc.taskModule, nullptr);
+  EXPECT_EQ(desc.meshModule, nullptr);
+  EXPECT_EQ(desc.fragmentModule, nullptr);
+  EXPECT_EQ(desc.vertexModule, nullptr);
+  EXPECT_EQ(desc.computeModule, nullptr);
+}
+
 } // namespace igl::tests
