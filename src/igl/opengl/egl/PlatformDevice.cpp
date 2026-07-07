@@ -231,8 +231,8 @@ void PlatformDevice::updateSurfaces(EGLSurface readSurface,
   }
 }
 
-EGLSurface PlatformDevice::createSurface(NativeWindowType nativeWindow,
-                                         Result* IGL_NULLABLE outResult) {
+EGLSurface IGL_NULLABLE PlatformDevice::createSurface(NativeWindowType nativeWindow,
+                                                      Result* IGL_NULLABLE outResult) {
   auto* context = static_cast<Context*>(getSharedContext().get());
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "No EGL context found!");
@@ -241,7 +241,7 @@ EGLSurface PlatformDevice::createSurface(NativeWindowType nativeWindow,
   return context->createSurface(nativeWindow);
 }
 
-EGLSurface PlatformDevice::getReadSurface(Result* IGL_NULLABLE outResult) {
+EGLSurface IGL_NULLABLE PlatformDevice::getReadSurface(Result* IGL_NULLABLE outResult) {
   auto* context = static_cast<Context*>(getSharedContext().get());
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "No EGL context found!");
