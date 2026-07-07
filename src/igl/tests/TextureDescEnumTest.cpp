@@ -146,4 +146,64 @@ TEST(TextureDescTest, ExportabilityDefault) {
   EXPECT_EQ(desc.mipmapGeneration, TextureDesc::TextureMipmapGeneration::Manual);
 }
 
+// ---------------------------------------------------------------------------
+// TextureDesc — default construction
+// ---------------------------------------------------------------------------
+
+TEST(TextureDescTest, DefaultConstruction) {
+  const TextureDesc desc;
+  EXPECT_EQ(desc.width, 1u);
+  EXPECT_EQ(desc.height, 1u);
+  EXPECT_EQ(desc.depth, 1u);
+  EXPECT_EQ(desc.numLayers, 1u);
+  EXPECT_EQ(desc.numSamples, 1u);
+  EXPECT_EQ(desc.usage, 0u);
+  EXPECT_EQ(desc.numMipLevels, 1u);
+  EXPECT_EQ(desc.type, TextureType::Invalid);
+  EXPECT_EQ(desc.format, TextureFormat::Invalid);
+  EXPECT_EQ(desc.storage, ResourceStorage::Invalid);
+  EXPECT_EQ(desc.tiling, TextureDesc::TextureTiling::Optimal);
+  EXPECT_EQ(desc.exportability, TextureDesc::TextureExportability::NoExport);
+  EXPECT_EQ(desc.mipmapGeneration, TextureDesc::TextureMipmapGeneration::Manual);
+  EXPECT_TRUE(desc.debugName.empty());
+}
+
+// ---------------------------------------------------------------------------
+// TextureDesc factory — newExternalImage
+// ---------------------------------------------------------------------------
+
+TEST(TextureDescTest, NewExternalImageFactory) {
+  const auto desc = TextureDesc::newExternalImage(
+      TextureFormat::RGBA_UNorm8, 128, 64, TextureDesc::TextureUsageBits::Sampled, "extImg");
+  EXPECT_EQ(desc.type, TextureType::ExternalImage);
+  EXPECT_EQ(desc.format, TextureFormat::RGBA_UNorm8);
+  EXPECT_EQ(desc.width, 128u);
+  EXPECT_EQ(desc.height, 64u);
+  EXPECT_EQ(desc.usage, TextureDesc::TextureUsageBits::Sampled);
+  EXPECT_EQ(desc.debugName, "extImg");
+}
+
+TEST(TextureDescTest, NewExternalImageNullDebugName) {
+  const auto desc = TextureDesc::newExternalImage(
+      TextureFormat::BGRA_UNorm8, 32, 32, TextureDesc::TextureUsageBits::Attachment);
+  EXPECT_EQ(desc.type, TextureType::ExternalImage);
+  EXPECT_TRUE(desc.debugName.empty());
+}
+
+// ---------------------------------------------------------------------------
+// TextureViewDesc — default construction
+// ---------------------------------------------------------------------------
+
+TEST(TextureViewDescTest, DefaultConstruction) {
+  const TextureViewDesc desc;
+  EXPECT_EQ(desc.type, TextureType::TwoD);
+  EXPECT_EQ(desc.format, TextureFormat::Invalid);
+  EXPECT_EQ(desc.aspect, ImageAspectBits_Invalid);
+  EXPECT_EQ(desc.layer, 0u);
+  EXPECT_EQ(desc.numLayers, 1u);
+  EXPECT_EQ(desc.mipLevel, 0u);
+  EXPECT_EQ(desc.numMipLevels, 1u);
+  EXPECT_TRUE(desc.debugName.empty());
+}
+
 } // namespace igl::tests
