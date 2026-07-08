@@ -315,7 +315,13 @@ class VulkanImage final {
   void* exportedMemoryHandle_ = nullptr; // windows handle
   int exportedFd_ = -1; // linux fd
   uint32_t extendedFormat_ = 0; // defined by VkAndroidHardwareBufferFormatPropertiesANDROID
+  // NOLINTNEXTLINE(readability-identifier-naming)
   VkSamplerYcbcrConversionCreateInfo samplerYcbcrConversionCreateInfo_ = {};
+  // Non-owning reference to a context-cached conversion for Android external-format AHB images.
+  // Consumers that create a VkSampler need the same conversion handle used by the image view.
+  // VK_NULL_HANDLE for non-AHB images and defined-multi-plane AHB imports.
+  // NOLINTNEXTLINE(readability-identifier-naming)
+  VkSamplerYcbcrConversion ycbcrConversion_ = VK_NULL_HANDLE;
 #if IGL_DEBUG
   std::string name_;
 #endif

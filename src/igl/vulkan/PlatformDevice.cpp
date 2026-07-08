@@ -156,8 +156,15 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(
   AHardwareBuffer_Desc hwbDesc;
   AHardwareBuffer_describe(buffer, &hwbDesc);
 
-  auto texture = std::make_shared<android::NativeHWTextureBuffer>(
-      device_, igl::android::getIglFormat(hwbDesc.format));
+  // Vendor-specific YCbCr AHB formats are valid Vulkan imports but may not map to IGL formats.
+  // Use YUV_NV12 only to satisfy Texture's non-invalid format assert before import overwrites
+  // desc_.
+  TextureFormat textureFormat = igl::android::getIglFormat(hwbDesc.format);
+  if (textureFormat == TextureFormat::Invalid) {
+    textureFormat = TextureFormat::YUV_NV12;
+  }
+
+  auto texture = std::make_shared<android::NativeHWTextureBuffer>(device_, textureFormat);
   subResult = texture->createWithHWBuffer(buffer);
   Result::setResult(outResult, subResult.code, subResult.message);
   if (!subResult.isOk()) {

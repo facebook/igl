@@ -44,6 +44,14 @@ NativeHWTextureBuffer::NativeHWTextureBuffer(igl::vulkan::Device& device, Textur
 
 NativeHWTextureBuffer::~NativeHWTextureBuffer() = default;
 
+VkSamplerYcbcrConversion NativeHWTextureBuffer::getVkSamplerYcbcrConversion() const noexcept {
+  // Null texture_ and null ycbcrConversion_ are both valid "not available" states.
+  if (texture_ == nullptr) {
+    return VK_NULL_HANDLE;
+  }
+  return texture_->image.ycbcrConversion_;
+}
+
 Result NativeHWTextureBuffer::create(const TextureDesc& desc) {
   return createHWBuffer(desc, false, false);
 }
@@ -226,39 +234,42 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
 
   if (ahb_format_props.format == VK_FORMAT_UNDEFINED && external_format.externalFormat) {
     viewInfo.pNext = &conversionInfo;
+    // Use the driver-reported raw-plane swizzle, with a legacy Qualcomm-Adreno correction for
+    // Camera2 YUV_420_888 streams whose reported IDENTITY mapping still swaps Cb/Cr.
+    // VK_KHR_driver_properties gives a narrow gate; zeroed pre-1.2 properties skip the workaround.
+    VkComponentMapping components = ahb_format_props.samplerYcbcrConversionComponents;
+    const VkPhysicalDeviceDriverPropertiesKHR& driverProps =
+        ctx.getVkPhysicalDeviceDriverProperties();
+    const bool isQualcommDriver = driverProps.driverID == VK_DRIVER_ID_QUALCOMM_PROPRIETARY;
+    const bool isLegacyConformance =
+        driverProps.conformanceVersion.major < 1 ||
+        (driverProps.conformanceVersion.major == 1 && driverProps.conformanceVersion.minor < 3);
+    if (isQualcommDriver && isLegacyConformance) {
+      components.r = VK_COMPONENT_SWIZZLE_B;
+      components.b = VK_COMPONENT_SWIZZLE_R;
+    }
     vulkanImage.samplerYcbcrConversionCreateInfo_ = {
         .sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
         .pNext = &external_format,
         .format = ahb_format_props.format,
         .ycbcrModel = ahb_format_props.suggestedYcbcrModel,
         .ycbcrRange = ahb_format_props.suggestedYcbcrRange,
-        .components =
-            {
-                .r = VK_COMPONENT_SWIZZLE_IDENTITY,
-                .g = VK_COMPONENT_SWIZZLE_IDENTITY,
-                .b = VK_COMPONENT_SWIZZLE_IDENTITY,
-                .a = VK_COMPONENT_SWIZZLE_IDENTITY,
-            },
+        .components = components,
         .xChromaOffset = ahb_format_props.suggestedXChromaOffset,
         .yChromaOffset = ahb_format_props.suggestedYChromaOffset,
         .chromaFilter = VK_FILTER_LINEAR,
         .forceExplicitReconstruction = VK_FALSE};
 
-    ctx.vf_.vkCreateSamplerYcbcrConversion(device,
-                                           &vulkanImage.samplerYcbcrConversionCreateInfo_,
-                                           nullptr,
-                                           &conversionInfo.conversion);
-    VK_ASSERT(ivkSetDebugObjectName(&ctx.vf_,
-                                    device,
-                                    VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION,
-                                    (uint64_t)conversionInfo.conversion,
-                                    "YCbCr Conversion: AHB NativeHWTextureBuffer"));
-    IGL_LOG_DEBUG("created sampler ycbcr conversion at %x with %d %d %d and %d",
-                  conversionInfo.conversion,
-                  ahb_format_props.suggestedYcbcrModel,
-                  ahb_format_props.suggestedYcbcrRange,
-                  ahb_format_props.suggestedXChromaOffset,
-                  ahb_format_props.suggestedYChromaOffset);
+    // Reuse the context-owned conversion so AImageReader pool slots share one handle.
+    // This avoids rebuilding immutable-sampler pipelines when the slot rotates.
+    conversionInfo.conversion =
+        ctx.getOrCreateExternalYcbcrConversion(vulkanImage.samplerYcbcrConversionCreateInfo_);
+    if (conversionInfo.conversion == VK_NULL_HANDLE) {
+      return Result(Result::Code::RuntimeError,
+                    "Failed to create external-format YCbCr conversion for AHB import");
+    }
+    // Expose the non-owning handle to consumers that need a matching VkSampler.
+    vulkanImage.ycbcrConversion_ = conversionInfo.conversion;
   } else if (igl::vulkan::getNumImagePlanes(ahb_format_props.format) > 1) {
     auto createInfo = ctx.getOrCreateYcbcrConversionInfo(VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
     conversionInfo.conversion = createInfo.conversion;

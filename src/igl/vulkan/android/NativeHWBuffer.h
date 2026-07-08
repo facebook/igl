@@ -29,6 +29,12 @@ class NativeHWTextureBuffer : public igl::android::INativeHWTextureBuffer, publi
   NativeHWTextureBuffer(igl::vulkan::Device& device, TextureFormat format);
   ~NativeHWTextureBuffer() override;
 
+  // Returns the context-owned conversion attached to this texture's image view, or VK_NULL_HANDLE
+  // when none was created (RGB AHBs and defined-multi-plane AHB imports).
+  // Callers must not destroy the returned handle, but still own their VkSampler lifetime.
+  // The sampler must use the same conversion handle that created the image view.
+  [[nodiscard]] VkSamplerYcbcrConversion getVkSamplerYcbcrConversion() const noexcept;
+
  protected:
   // Texture overrides
   Result create(const TextureDesc& desc) override;

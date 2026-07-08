@@ -996,6 +996,9 @@ void VulkanImage::destroy() {
     }
   }
 
+  // ycbcrConversion_ is context-owned; VulkanImage only clears its non-owning reference.
+  ycbcrConversion_ = VK_NULL_HANDLE;
+
   ctx_ = nullptr;
   vkImage_ = VK_NULL_HANDLE;
 }
@@ -1420,12 +1423,14 @@ VulkanImage& VulkanImage::operator=(VulkanImage&& other) noexcept {
   isCoherentMemory_ = other.isCoherentMemory_;
   extendedFormat_ = other.extendedFormat_;
   samplerYcbcrConversionCreateInfo_ = other.samplerYcbcrConversionCreateInfo_;
+  ycbcrConversion_ = other.ycbcrConversion_;
   for (size_t i = 0; i != IGL_ARRAY_NUM_ELEMENTS(vkMemory_); i++) {
     vkMemory_[i] = other.vkMemory_[i];
   }
 
   other.ctx_ = nullptr;
   other.vkImage_ = VK_NULL_HANDLE;
+  other.ycbcrConversion_ = VK_NULL_HANDLE;
 
   return *this;
 }

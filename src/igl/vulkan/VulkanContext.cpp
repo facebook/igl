@@ -725,6 +725,11 @@ VulkanContext::~VulkanContext() {
         vf_.vkDestroySamplerYcbcrConversion(vkDevice_, p.second.conversion, nullptr);
       }
     }
+    for (const auto& entry : externalYcbcrConversions_) {
+      if (entry.conversion != VK_NULL_HANDLE) {
+        vf_.vkDestroySamplerYcbcrConversion(vkDevice_, entry.conversion, nullptr);
+      }
+    }
     vf_.vkDestroyPipelineCache(vkDevice_, pipelineCache_, nullptr);
   }
 
@@ -2579,6 +2584,68 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
 
   return info;
 }
+
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
+VkSamplerYcbcrConversion VulkanContext::getOrCreateExternalYcbcrConversion(
+    const VkSamplerYcbcrConversionCreateInfo& info) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  // `info.pNext` must carry a non-zero VkExternalFormatANDROID.
+  uint64_t externalFormat = 0;
+  for (const auto* p = static_cast<const VkBaseInStructure*>(info.pNext); p != nullptr;
+       p = static_cast<const VkBaseInStructure*>(p->pNext)) {
+    if (p->sType == VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID) {
+      externalFormat = reinterpret_cast<const VkExternalFormatANDROID*>(p)->externalFormat;
+      break;
+    }
+  }
+  IGL_DEBUG_ASSERT(externalFormat != 0,
+                   "getOrCreateExternalYcbcrConversion called without VkExternalFormatANDROID "
+                   "in pNext");
+
+  // Compare every field that affects the conversion object.
+  for (const auto& entry : externalYcbcrConversions_) {
+    if (entry.externalFormat == externalFormat && entry.ycbcrModel == info.ycbcrModel &&
+        entry.ycbcrRange == info.ycbcrRange && entry.xChromaOffset == info.xChromaOffset &&
+        entry.yChromaOffset == info.yChromaOffset && entry.components.r == info.components.r &&
+        entry.components.g == info.components.g && entry.components.b == info.components.b &&
+        entry.components.a == info.components.a && entry.chromaFilter == info.chromaFilter &&
+        entry.forceExplicitReconstruction == info.forceExplicitReconstruction) {
+      return entry.conversion;
+    }
+  }
+
+  VkSamplerYcbcrConversion conversion = VK_NULL_HANDLE;
+  const VkResult result =
+      vf_.vkCreateSamplerYcbcrConversion(getVkDevice(), &info, nullptr, &conversion);
+  if (result != VK_SUCCESS || conversion == VK_NULL_HANDLE) {
+    IGL_LOG_ERROR(
+        "getOrCreateExternalYcbcrConversion(): vkCreateSamplerYcbcrConversion failed "
+        "(result=%d) for externalFormat=%llu\n",
+        (int)result,
+        (unsigned long long)externalFormat);
+    return VK_NULL_HANDLE;
+  }
+  VK_ASSERT(ivkSetDebugObjectName(
+      &vf_,
+      getVkDevice(),
+      VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION,
+      (uint64_t)conversion,
+      IGL_FORMAT("YCbCr Conversion (external): externalFormat={}", externalFormat).c_str()));
+
+  externalYcbcrConversions_.push_back(
+      {.externalFormat = externalFormat,
+       .ycbcrModel = info.ycbcrModel,
+       .ycbcrRange = info.ycbcrRange,
+       .xChromaOffset = info.xChromaOffset,
+       .yChromaOffset = info.yChromaOffset,
+       .components = info.components,
+       .chromaFilter = info.chromaFilter,
+       .forceExplicitReconstruction = info.forceExplicitReconstruction,
+       .conversion = conversion});
+  return conversion;
+}
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 void VulkanContext::freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout /*dsl*/) const {
   // Deprecated: VkDescriptorSetLayout handles are now shared/de-duplicated through the

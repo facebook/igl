@@ -193,6 +193,7 @@ class VulkanContext final {
     return vkPhysicalDeviceProperties2_.properties;
   }
 
+  // Driver metadata used for vendor and driver-generation workaround gates.
   const VkPhysicalDeviceDriverPropertiesKHR& getVkPhysicalDeviceDriverProperties() const {
     return vkPhysicalDeviceDriverProperties_;
   }
@@ -240,6 +241,15 @@ class VulkanContext final {
   void* IGL_NULLABLE getVmaAllocator() const;
 
   VkSamplerYcbcrConversionInfo getOrCreateYcbcrConversionInfo(VkFormat format) const;
+
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
+  // Get or create a context-owned conversion for external-format AHB imports.
+  // The cache key includes externalFormat and every conversion-affecting field.
+  // `info.format` must be VK_FORMAT_UNDEFINED and `info.pNext` must contain a non-zero
+  // VkExternalFormatANDROID. Callers must serialize access and must not destroy the handle.
+  VkSamplerYcbcrConversion getOrCreateExternalYcbcrConversion(
+      const VkSamplerYcbcrConversionCreateInfo& info) const;
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
   void freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout dsl) const;
 
@@ -355,6 +365,20 @@ class VulkanContext final {
   VkPipelineCache pipelineCache_ = VK_NULL_HANDLE;
 
   mutable std::unordered_map<VkFormat, VkSamplerYcbcrConversionInfo> ycbcrConversionInfos_;
+
+  // Context-owned cache for Android AHB external-format YCbCr conversions.
+  struct ExternalYcbcrConversionEntry {
+    uint64_t externalFormat = 0;
+    VkSamplerYcbcrModelConversion ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+    VkSamplerYcbcrRange ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+    VkChromaLocation xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    VkChromaLocation yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    VkComponentMapping components{}; // raw-plane swizzle from samplerYcbcrConversionComponents
+    VkFilter chromaFilter = VK_FILTER_LINEAR;
+    VkBool32 forceExplicitReconstruction = VK_FALSE;
+    VkSamplerYcbcrConversion conversion = VK_NULL_HANDLE;
+  };
+  mutable std::vector<ExternalYcbcrConversionEntry> externalYcbcrConversions_;
 
   // 1. Textures can be safely deleted once they are not in use by GPU, hence our Vulkan context
   // owns all allocated textures (images+image views). The IGL interface vulkan::Texture does not
