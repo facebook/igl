@@ -191,22 +191,12 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
   IGL_LOG_INFO("nextFreeBlock() with %u bytes, aligned %u bytes\n", size, requestedAlignedSize);
 #endif
 
-  VkDeviceSize allocatedSize = 0;
-  // at this point, there should be a free region that can fit the requested size
-  auto regionItr = regions_.begin();
-  while (regionItr != regions_.end()) {
-    // if requested size is available or if contiguous memory is not requested
-    if ((regionItr->size >= requestedAlignedSize || !contiguous) &&
-        (immediate->isReady(regionItr->handle))) {
-      allocatedSize = std::min(regionItr->size, requestedAlignedSize);
-      break;
-    }
-    regionItr++;
-  }
-
-  IGL_DEBUG_ASSERT(allocatedSize);
-
-  if (allocatedSize) {
+  // Splits `allocatedSize` bytes off the front of `*regionItr`, updates the bookkeeping, and
+  // returns the allocated block. Any remainder is written back into `regions_` so it can be reused,
+  // and a fully-consumed region is erased. This is the single point at which a region is handed
+  // out, so a returned block is never also left in `regions_` as a free region.
+  const auto splitAndReturn = [this](std::deque<MemoryRegion>::iterator regionItr,
+                                     VkDeviceSize allocatedSize) -> MemoryRegion {
     const VkDeviceSize newSize = regionItr->size - allocatedSize;
     const VkDeviceSize newOffset = regionItr->offset + allocatedSize;
     const uint32_t stagingBufferIndex = regionItr->stagingBufferIndex;
@@ -219,23 +209,31 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
         .stagingBufferIndex = stagingBufferIndex,
     };
 
-    // Return this region and add the remaining unused size to the regions_ deque
-    IGL_SCOPE_EXIT {
-      if (newSize > 0) {
-        *regionItr = {
-            .offset = newOffset,
-            .size = newSize,
-            .alignedSize = regionItr->alignedSize,
-            .handle = VulkanImmediateCommands::SubmitHandle(),
-            .stagingBufferIndex = stagingBufferIndex,
-        };
-      } else {
-        regions_.erase(regionItr);
-      }
-    };
+    if (newSize > 0) {
+      *regionItr = {
+          .offset = newOffset,
+          .size = newSize,
+          .alignedSize = regionItr->alignedSize,
+          .handle = VulkanImmediateCommands::SubmitHandle(),
+          .stagingBufferIndex = stagingBufferIndex,
+      };
+    } else {
+      regions_.erase(regionItr);
+    }
 
     freeStagingBufferSize_ -= allocatedSize;
     return allocatedRegion;
+  };
+
+  // at this point, there should be a free region that can fit the requested size
+  auto regionItr = regions_.begin();
+  while (regionItr != regions_.end()) {
+    // if requested size is available or if contiguous memory is not requested
+    if ((regionItr->size >= requestedAlignedSize || !contiguous) &&
+        (immediate->isReady(regionItr->handle))) {
+      return splitAndReturn(regionItr, std::min(regionItr->size, requestedAlignedSize));
+    }
+    regionItr++;
   }
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
@@ -249,13 +247,17 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
 
   // try to allocate a new staging buffer
   allocateStagingBuffer(nextSize(requestedAlignedSize));
-  IGL_DEBUG_ASSERT(!regions_.empty());
 
-  if (!regions_.empty()) { // if a valid region is available, return it
-    freeStagingBufferSize_ -= requestedAlignedSize;
-    return regions_.front();
+  if (!IGL_DEBUG_VERIFY(!regions_.empty())) {
+    return {};
   }
-  return {};
+
+  // After waitAndReset()/allocateStagingBuffer() the deque holds a single whole, ready region.
+  // Split it through the same path so the returned block is not also left behind in `regions_` as
+  // free. std::min() also covers a contiguous request larger than the maximum staging buffer size
+  // (only reachable via alignment padding), handing out the whole buffer instead of nothing.
+  regionItr = regions_.begin();
+  return splitAndReturn(regionItr, std::min(regionItr->size, requestedAlignedSize));
 }
 
 void VulkanStagingDevice::getBufferSubData(const VulkanBuffer& buffer,
