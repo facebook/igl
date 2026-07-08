@@ -305,6 +305,7 @@ SpvModuleInfo mergeReflectionData(const SpvModuleInfo& info1, const SpvModuleInf
 
   combineDescriptions(result.buffers, info1.buffers, info2.buffers);
   combineDescriptions(result.textures, info1.textures, info2.textures);
+  combineDescriptions(result.images, info1.images, info2.images);
 
   result.hasPushConstants = info1.hasPushConstants || info2.hasPushConstants;
   result.usageMaskBuffers = info1.usageMaskBuffers | info2.usageMaskBuffers;
