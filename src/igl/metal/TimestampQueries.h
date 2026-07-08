@@ -32,6 +32,9 @@ class TimestampQueries : public ITimestampQueries {
   void reset() override;
   bool resultsAvailable() const override;
   uint64_t getElapsedNanos(uint32_t slotIndex) const override;
+  uint64_t getStartNanos(uint32_t slotIndex) const override;
+  uint64_t getEndNanos(uint32_t slotIndex) const override;
+  uint64_t getFrameElapsedNanos() const override;
 
   /// Called from CommandQueue completion handler -- resolves counter data
   void resolveTimestamps(id<MTLCounterSampleBuffer> csb);

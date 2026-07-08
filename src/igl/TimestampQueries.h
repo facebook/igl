@@ -36,6 +36,36 @@ class ITimestampQueries : public ITrackedResource<ITimestampQueries> {
     return 0;
   }
 
+  /// Absolute GPU start timestamp for a timing slot, in nanoseconds.
+  /// Used by consumers that need to detect overlap between consecutive passes
+  /// (GPU pipelining): consecutive passes may have `getStartNanos(slot+1) <
+  /// getEndNanos(slot)` because the vertex stage of pass N+1 can start while
+  /// the fragment stage of pass N is still running. Default returns 0;
+  /// backends that record raw timestamps override it. The absolute reference
+  /// is backend-specific (GPU clock domain), so values are only meaningful
+  /// when subtracted from another timestamp from the same pool.
+  [[nodiscard]] virtual uint64_t getStartNanos(uint32_t /*slotIndex*/) const {
+    return 0;
+  }
+
+  /// Absolute GPU end timestamp for a timing slot, in nanoseconds. See
+  /// `getStartNanos` for the absolute-reference caveat.
+  [[nodiscard]] virtual uint64_t getEndNanos(uint32_t /*slotIndex*/) const {
+    return 0;
+  }
+
+  /// Wall-clock GPU time spanned by every recorded slot, in nanoseconds.
+  /// Computed as `max(end) - min(start)` across all slots; folds out the
+  /// overlap that summing per-slot elapsed durations would over-count
+  /// (consecutive passes pipeline on the GPU). Returns 0 when fewer than
+  /// one slot has been recorded, when results are not yet readable, or on
+  /// backends that don't override `getStartNanos`/`getEndNanos`. Cheaper than
+  /// iterating slots externally because backends can reuse a single fetch
+  /// of the raw timestamps.
+  [[nodiscard]] virtual uint64_t getFrameElapsedNanos() const {
+    return 0;
+  }
+
   /// Get the label associated with a timing slot, if the backend records one.
   /// Returns a stable C string owned by the queries object (valid until reset()
   /// or destruction); empty string if the backend records no label.
