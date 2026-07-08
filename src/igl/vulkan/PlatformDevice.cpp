@@ -117,9 +117,26 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
   // allocate new drawable textures if its null or mismatches in size or format
   if (!result || width != result->getDimensions().width ||
       height != result->getDimensions().height || iglFormat != result->getFormat()) {
+    // The swapchain VkImage may carry VK_IMAGE_USAGE_STORAGE_BIT when the
+    // surface + format support it (see VulkanSwapchain::chooseUsageFlags(), e.g.
+    // a UNORM swapchain that exposes VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT).
+    // Advertise Storage on the igl texture so consumers can bind the drawable as
+    // a storage image -- e.g. a compute shader that imageStore()s directly to the
+    // swapchain instead of round-tripping through a resolve pass.
+    //
+    // Hold Storage back for sRGB drawables even if the VkImage reports it: a
+    // compute imageStore() to an sRGB image is not consistent across drivers
+    // (most bypass the sRGB encode -- SPIR-V rgba8 stores are UNORM -- while
+    // MoltenVK applies it), so exposing it would be a cross-platform trap. UNORM
+    // swapchains (the recommended path) are unaffected.
+    TextureDesc::TextureUsage usage = TextureDesc::TextureUsageBits::Attachment;
+    if ((vkTex->image.usageFlags_ & VK_IMAGE_USAGE_STORAGE_BIT) != 0 &&
+        !TextureFormatProperties::fromTextureFormat(iglFormat).isSRGB()) {
+      usage |= TextureDesc::TextureUsageBits::Storage;
+    }
     // NOLINTBEGIN(clang-diagnostic-shorten-64-to-32)
-    const TextureDesc desc = TextureDesc::new2D(
-        iglFormat, width, height, TextureDesc::TextureUsageBits::Attachment, "SwapChain Texture");
+    const TextureDesc desc =
+        TextureDesc::new2D(iglFormat, width, height, usage, "SwapChain Texture");
     // NOLINTEND(clang-diagnostic-shorten-64-to-32)
     nativeDrawableTextures_[currentImageIndex] =
         std::make_shared<Texture>(device_, std::move(vkTex), desc);
