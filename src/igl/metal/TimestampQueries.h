@@ -35,6 +35,7 @@ class TimestampQueries : public ITimestampQueries {
   uint64_t getStartNanos(uint32_t slotIndex) const override;
   uint64_t getEndNanos(uint32_t slotIndex) const override;
   uint64_t getFrameElapsedNanos() const override;
+  bool supportsComputePassTimestamps() const override;
 
   /// Called from CommandQueue completion handler -- resolves counter data
   void resolveTimestamps(id<MTLCounterSampleBuffer> csb);
@@ -58,6 +59,7 @@ class TimestampQueries : public ITimestampQueries {
   mutable std::mutex resolveMutex_;
 
   friend class CommandQueue;
+  friend class ComputeCommandEncoder;
   friend class RenderCommandEncoder;
 };
 

@@ -9,12 +9,14 @@
 
 #include <Metal/Metal.h>
 #include <igl/ComputeCommandEncoder.h>
+#include <igl/ComputePass.h>
 
 namespace igl::metal {
 
 class ComputeCommandEncoder final : public IComputeCommandEncoder {
  public:
   explicit ComputeCommandEncoder(id<MTLCommandBuffer> buffer);
+  ComputeCommandEncoder(id<MTLCommandBuffer> buffer, const ComputePassDesc& computePass);
   ~ComputeCommandEncoder() override = default;
 
   void endEncoding() override;

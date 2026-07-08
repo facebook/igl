@@ -22,6 +22,11 @@ std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncod
   return std::make_unique<ComputeCommandEncoder>(value_);
 }
 
+std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder(
+    const ComputePassDesc& computePass) {
+  return std::make_unique<ComputeCommandEncoder>(value_, computePass);
+}
+
 std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder(
     const RenderPassDesc& renderPass,
     const std::shared_ptr<IFramebuffer>& framebuffer,

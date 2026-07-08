@@ -98,6 +98,14 @@ class ITimestampQueries : public ITrackedResource<ITimestampQueries> {
     return false;
   }
 
+  /// Whether this backend writes timestamps for compute passes into the same per-slot resolved
+  /// surface as render passes. Consumers gate the per-compute-node timer bracket on this so they
+  /// don't allocate slots for a backend that would silently report zero.
+  /// Default returns false; backends with end-to-end compute-pass wiring override to true.
+  [[nodiscard]] virtual bool supportsComputePassTimestamps() const {
+    return false;
+  }
+
  protected:
   ITimestampQueries() = default;
 };

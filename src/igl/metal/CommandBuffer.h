@@ -22,6 +22,8 @@ class CommandBuffer final : public ICommandBuffer,
   ~CommandBuffer() override = default;
 
   std::unique_ptr<IComputeCommandEncoder> createComputeCommandEncoder() override;
+  std::unique_ptr<IComputeCommandEncoder> createComputeCommandEncoder(
+      const ComputePassDesc& computePass) override;
 
   std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
       const RenderPassDesc& renderPass,

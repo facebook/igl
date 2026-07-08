@@ -47,6 +47,17 @@ bool TimestampQueries::resultsAvailable() const {
   return resolved_.load(std::memory_order_acquire);
 }
 
+bool TimestampQueries::supportsComputePassTimestamps() const {
+  // MTLComputePassDescriptor::sampleBufferAttachments is only available on macOS 11+ / iOS 14+;
+  // ComputeCommandEncoder falls back to the plain `computeCommandEncoder` (no descriptor) on older
+  // targets, which records no samples. Return true only under the same availability so callers
+  // don't allocate compute slots that would silently resolve to zero on older OSes.
+  if (@available(macOS 11.0, iOS 14.0, *)) {
+    return true;
+  }
+  return false;
+}
+
 uint64_t TimestampQueries::getElapsedNanos(uint32_t slotIndex) const {
   if (!resolved_.load(std::memory_order_acquire)) {
     return 0;

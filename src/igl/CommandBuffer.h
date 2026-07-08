@@ -9,12 +9,13 @@
 
 #include <igl/Buffer.h>
 #include <igl/Common.h>
+#include <igl/ComputeCommandEncoder.h>
+#include <igl/ComputePass.h>
 #include <igl/Framebuffer.h>
 #include <igl/RenderCommandEncoder.h>
 
 namespace igl {
 
-class IComputeCommandEncoder;
 class ISamplerState;
 class ITimer;
 class ITimestampQueries;
@@ -80,6 +81,20 @@ class ICommandBuffer {
    * @returns a pointer to the ComputeCommandEncoder
    */
   virtual std::unique_ptr<IComputeCommandEncoder> createComputeCommandEncoder() = 0;
+
+  /**
+   * @brief Create a ComputeCommandEncoder with per-pass attachments such as GPU timestamp queries.
+   *
+   * The default implementation discards `computePass` and forwards to the no-arg overload, so
+   * backends that don't (yet) support compute-pass attachments remain source-compatible. Metal
+   * overrides this to wire `MTLComputePassDescriptor::sampleBufferAttachments` to the supplied
+   * `TimestampQueries`, matching the existing render-pass timestamp path.
+   */
+  virtual std::unique_ptr<IComputeCommandEncoder> createComputeCommandEncoder(
+      const ComputePassDesc& computePass) {
+    (void)computePass;
+    return createComputeCommandEncoder();
+  }
 
   /**
    * @brief presents the results of the encoded GPU commands the screen as soon as possible (once
