@@ -184,6 +184,7 @@ TEST(RenderPipelineDescTest, DefaultConstruction) {
   EXPECT_EQ(desc.polygonFillMode, PolygonFillMode::Fill);
   EXPECT_EQ(desc.sampleCount, 1u);
   EXPECT_EQ(desc.isDynamicBufferMask, 0u);
+  EXPECT_FALSE(desc.alphaToCoverageEnabled);
   EXPECT_TRUE(desc.debugName.toString().empty());
 }
 
@@ -244,6 +245,34 @@ TEST(RenderPipelineDescTest, InequalityOpDifferentTargetDesc) {
   RenderPipelineDesc a;
   RenderPipelineDesc b;
   b.targetDesc.depthAttachmentFormat = TextureFormat::Z_UNorm16;
+  EXPECT_NE(a, b);
+}
+
+TEST(RenderPipelineDescTest, InequalityOpDifferentAlphaToCoverageEnabled) {
+  RenderPipelineDesc a;
+  RenderPipelineDesc b;
+  b.alphaToCoverageEnabled = true;
+  EXPECT_NE(a, b);
+}
+
+TEST(RenderPipelineDescTest, InequalityOpDifferentVertexUnitSamplerMap) {
+  RenderPipelineDesc a;
+  RenderPipelineDesc b;
+  b.vertexUnitSamplerMap[0] = IGL_NAMEHANDLE("vertSampler");
+  EXPECT_NE(a, b);
+}
+
+TEST(RenderPipelineDescTest, InequalityOpDifferentFragmentUnitSamplerMap) {
+  RenderPipelineDesc a;
+  RenderPipelineDesc b;
+  b.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE("fragSampler");
+  EXPECT_NE(a, b);
+}
+
+TEST(RenderPipelineDescTest, InequalityOpDifferentUniformBlockBindingMap) {
+  RenderPipelineDesc a;
+  RenderPipelineDesc b;
+  b.uniformBlockBindingMap[0] = {{IGL_NAMEHANDLE("block"), IGL_NAMEHANDLE("instance")}};
   EXPECT_NE(a, b);
 }
 
