@@ -22,11 +22,11 @@ typedef void AHardwareBufferHelper;
 
 // TextureBuffer encapsulates Vulkan textures
 class NativeHWTextureBuffer : public igl::android::INativeHWTextureBuffer, public Texture {
-  friend class igl::vulkan::PlatformDevice;
+  friend class PlatformDevice;
   using Super = Texture;
 
  public:
-  NativeHWTextureBuffer(igl::vulkan::Device& device, TextureFormat format);
+  NativeHWTextureBuffer(Device& device, TextureFormat format);
   ~NativeHWTextureBuffer() override;
 
   // Returns the context-owned conversion attached to this texture's image view, or VK_NULL_HANDLE
