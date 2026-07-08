@@ -9,6 +9,8 @@
 
 #include <igl/vulkan/Common.h>
 
+#include <cstdint>
+#include <cstring>
 #include <igl/tests/util/device/TestDevice.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/Device.h>
@@ -445,6 +447,79 @@ TEST_F(CommonWithDeviceTest, TransitionToShaderReadOnlyTest) {
   const vulkan::VulkanImage& img = tex.getVulkanTexture().image;
 
   EXPECT_EQ(img.imageLayout_, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+// buildSpecializationInfo ********************************************************
+TEST(CommonTest, BuildSpecializationInfoEmptyReturnsZero) {
+  const FunctionConstantValues fcv;
+  std::vector<VkSpecializationMapEntry> entries;
+  const VkSpecializationInfo info = igl::vulkan::buildSpecializationInfo(fcv, entries);
+  EXPECT_EQ(info.mapEntryCount, 0u);
+  EXPECT_EQ(info.dataSize, 0u);
+  EXPECT_TRUE(entries.empty());
+}
+
+TEST(CommonTest, BuildSpecializationInfoSingleFloat) {
+  FunctionConstantValues fcv;
+  const float val = 3.14f;
+  fcv.setConstantValue(0, ConstantValueType::Float1, &val);
+
+  std::vector<VkSpecializationMapEntry> entries;
+  const VkSpecializationInfo info = igl::vulkan::buildSpecializationInfo(fcv, entries);
+
+  ASSERT_EQ(info.mapEntryCount, 1u);
+  ASSERT_EQ(entries.size(), 1u);
+  EXPECT_EQ(entries[0].constantID, 0u);
+  EXPECT_EQ(entries[0].offset, 0u);
+  EXPECT_EQ(entries[0].size, sizeof(float));
+  EXPECT_EQ(info.dataSize, sizeof(float));
+  ASSERT_NE(info.pData, nullptr);
+  EXPECT_FLOAT_EQ(*static_cast<const float*>(info.pData), val);
+}
+
+TEST(CommonTest, BuildSpecializationInfoMultipleConstants) {
+  FunctionConstantValues fcv;
+  const float fVal = 1.0f;
+  const int32_t iVal = 42;
+  fcv.setConstantValue(0, ConstantValueType::Float1, &fVal);
+  fcv.setConstantValue(1, ConstantValueType::Int1, &iVal);
+
+  std::vector<VkSpecializationMapEntry> entries;
+  const VkSpecializationInfo info = igl::vulkan::buildSpecializationInfo(fcv, entries);
+
+  ASSERT_EQ(info.mapEntryCount, 2u);
+  ASSERT_EQ(entries.size(), 2u);
+  EXPECT_EQ(entries[0].constantID, 0u);
+  EXPECT_EQ(entries[0].offset, 0u);
+  EXPECT_EQ(entries[0].size, sizeof(float));
+  EXPECT_EQ(entries[1].constantID, 1u);
+  EXPECT_EQ(entries[1].offset, sizeof(float));
+  EXPECT_EQ(entries[1].size, sizeof(int32_t));
+  EXPECT_EQ(info.dataSize, sizeof(float) + sizeof(int32_t));
+  ASSERT_NE(info.pData, nullptr);
+  // Verify the packed byte contents at each entry's offset.
+  const auto* bytes = static_cast<const uint8_t*>(info.pData);
+  float packedFloat = 0.0f;
+  std::memcpy(&packedFloat, bytes + entries[0].offset, sizeof(float));
+  EXPECT_FLOAT_EQ(packedFloat, fVal);
+  int32_t packedInt = 0;
+  std::memcpy(&packedInt, bytes + entries[1].offset, sizeof(int32_t));
+  EXPECT_EQ(packedInt, iVal);
+}
+
+TEST(CommonTest, BuildSpecializationInfoSparseSkipsInvalid) {
+  FunctionConstantValues fcv;
+  const int32_t val = 7;
+  fcv.setConstantValue(2, ConstantValueType::Int1, &val);
+
+  std::vector<VkSpecializationMapEntry> entries;
+  const VkSpecializationInfo info = igl::vulkan::buildSpecializationInfo(fcv, entries);
+
+  ASSERT_EQ(info.mapEntryCount, 1u);
+  ASSERT_EQ(entries.size(), 1u);
+  EXPECT_EQ(entries[0].constantID, 2u);
+  EXPECT_EQ(entries[0].size, sizeof(int32_t));
+  EXPECT_EQ(info.dataSize, sizeof(int32_t));
 }
 
 // overrideImageLayout ********************************************************
