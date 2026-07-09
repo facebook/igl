@@ -81,7 +81,7 @@ SurfaceTextures OpenGlEsShell::createSurfaceTextures() noexcept {
       auto color = platformDevice->createTextureFromNativeDrawable(nullptr);
       auto depth =
           platformDevice->createTextureFromNativeDepth(igl::TextureFormat::Z_UNorm24, nullptr);
-      return igl::SurfaceTextures{std::move(color), std::move(depth)};
+      return igl::SurfaceTextures{.color = std::move(color), .depth = std::move(depth)};
     }
   }
 #endif // IGL_ANGLE
