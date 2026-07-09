@@ -95,13 +95,13 @@ TEST(FramebufferModeTest, AllValuesDistinct) {
 // FramebufferDesc
 // ---------------------------------------------------------------------------
 
-TEST(FramebufferDescTest, DefaultConstructionScalarFields) {
+TEST(FramebufferDescTest, DefaultScalarFieldValues) {
   const FramebufferDesc desc;
   EXPECT_EQ(desc.mode, FramebufferMode::Mono);
   EXPECT_TRUE(desc.debugName.empty());
 }
 
-TEST(FramebufferDescTest, DefaultConstructionAttachmentsNull) {
+TEST(FramebufferDescTest, DefaultAttachmentsAreNull) {
   const FramebufferDesc desc;
   for (const auto& attachment : desc.colorAttachments) {
     EXPECT_EQ(attachment.texture, nullptr);
