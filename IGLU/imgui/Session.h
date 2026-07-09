@@ -14,7 +14,6 @@
 #include <IGLU/imgui/InputListener.h>
 #include <memory>
 #include <shell/shared/input/InputDispatcher.h>
-#include <igl/CommandBuffer.h>
 #include <igl/Core.h>
 #include <igl/Device.h>
 #include <igl/Framebuffer.h>

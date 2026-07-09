@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <igl/CommandBuffer.h>
 #include <igl/Device.h>
 #include <igl/NameHandle.h>
 #include <igl/RenderPass.h>
