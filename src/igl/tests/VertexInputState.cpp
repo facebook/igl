@@ -505,4 +505,26 @@ TEST_F(VertexInputStateTest, VertexInputBindingHash) {
   EXPECT_NE(hasher(a), hasher(differsInSampleRate));
 }
 
+TEST_F(VertexInputStateTest, VertexAttributeDefaultConstruction) {
+  const VertexAttribute attr;
+  EXPECT_EQ(attr.bufferIndex, 0u);
+  EXPECT_EQ(attr.format, VertexAttributeFormat::Float1);
+  EXPECT_EQ(attr.offset, 0u);
+  EXPECT_TRUE(attr.name.empty());
+  EXPECT_EQ(attr.location, -1);
+}
+
+TEST_F(VertexInputStateTest, VertexInputBindingDefaultConstruction) {
+  const VertexInputBinding binding;
+  EXPECT_EQ(binding.stride, 0u);
+  EXPECT_EQ(binding.sampleFunction, VertexSampleFunction::PerVertex);
+  EXPECT_EQ(binding.sampleRate, 1u);
+}
+
+TEST_F(VertexInputStateTest, VertexInputStateDescDefaultConstruction) {
+  const VertexInputStateDesc desc;
+  EXPECT_EQ(desc.numAttributes, 0u);
+  EXPECT_EQ(desc.numInputBindings, 0u);
+}
+
 } // namespace igl::tests
