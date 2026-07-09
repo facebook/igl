@@ -117,4 +117,85 @@ TEST(AttachmentDescTest, MipLevelAndLayer) {
   EXPECT_EQ(desc.face, 2u);
 }
 
+TEST(LoadActionTest, AllValuesDistinct) {
+  EXPECT_NE(LoadAction::DontCare, LoadAction::Load);
+  EXPECT_NE(LoadAction::DontCare, LoadAction::Clear);
+  EXPECT_NE(LoadAction::Load, LoadAction::Clear);
+}
+
+TEST(StoreActionTest, AllValuesDistinct) {
+  EXPECT_NE(StoreAction::DontCare, StoreAction::Store);
+  EXPECT_NE(StoreAction::DontCare, StoreAction::MsaaResolve);
+  EXPECT_NE(StoreAction::Store, StoreAction::MsaaResolve);
+}
+
+TEST(AttachmentDescTest, DesignatedInitializer) {
+  const RenderPassDesc::AttachmentDesc desc{
+      .loadAction = LoadAction::Clear,
+      .storeAction = StoreAction::MsaaResolve,
+      .face = 2,
+      .mipLevel = 3,
+      .layer = 4,
+      .clearColor = {1.0f, 0.5f, 0.25f, 0.75f},
+      .clearDepth = 0.5f,
+      .clearStencil = 128,
+  };
+  EXPECT_EQ(desc.loadAction, LoadAction::Clear);
+  EXPECT_EQ(desc.storeAction, StoreAction::MsaaResolve);
+  EXPECT_EQ(desc.face, 2u);
+  EXPECT_EQ(desc.mipLevel, 3u);
+  EXPECT_EQ(desc.layer, 4u);
+  EXPECT_FLOAT_EQ(desc.clearColor.r, 1.0f);
+  EXPECT_FLOAT_EQ(desc.clearColor.g, 0.5f);
+  EXPECT_FLOAT_EQ(desc.clearColor.b, 0.25f);
+  EXPECT_FLOAT_EQ(desc.clearColor.a, 0.75f);
+  EXPECT_FLOAT_EQ(desc.clearDepth, 0.5f);
+  EXPECT_EQ(desc.clearStencil, 128u);
+}
+
+TEST(RenderPassDescTest, StencilClearValue) {
+  RenderPassDesc desc;
+  desc.stencilAttachment.loadAction = LoadAction::Clear;
+  desc.stencilAttachment.storeAction = StoreAction::Store;
+  desc.stencilAttachment.clearStencil = 255;
+
+  EXPECT_EQ(desc.stencilAttachment.loadAction, LoadAction::Clear);
+  EXPECT_EQ(desc.stencilAttachment.storeAction, StoreAction::Store);
+  EXPECT_EQ(desc.stencilAttachment.clearStencil, 255u);
+}
+
+TEST(RenderPassDescTest, ColorAttachmentDefaultsAfterResize) {
+  RenderPassDesc desc;
+  desc.colorAttachments.resize(3);
+  ASSERT_EQ(desc.colorAttachments.size(), 3u);
+
+  for (const auto& attachment : desc.colorAttachments) {
+    EXPECT_EQ(attachment.loadAction, LoadAction::DontCare);
+    EXPECT_EQ(attachment.storeAction, StoreAction::Store);
+    EXPECT_EQ(attachment.face, 0u);
+    EXPECT_EQ(attachment.mipLevel, 0u);
+    EXPECT_EQ(attachment.layer, 0u);
+    EXPECT_FLOAT_EQ(attachment.clearDepth, 1.0f);
+    EXPECT_EQ(attachment.clearStencil, 0u);
+  }
+}
+
+TEST(RenderPassDescTest, DepthAndStencilShareDefaults) {
+  const RenderPassDesc desc;
+  EXPECT_EQ(desc.depthAttachment.loadAction, desc.stencilAttachment.loadAction);
+  EXPECT_EQ(desc.depthAttachment.storeAction, desc.stencilAttachment.storeAction);
+  EXPECT_EQ(desc.depthAttachment.face, desc.stencilAttachment.face);
+  EXPECT_EQ(desc.depthAttachment.mipLevel, desc.stencilAttachment.mipLevel);
+  EXPECT_EQ(desc.depthAttachment.layer, desc.stencilAttachment.layer);
+  EXPECT_FLOAT_EQ(desc.depthAttachment.clearDepth, desc.stencilAttachment.clearDepth);
+  EXPECT_EQ(desc.depthAttachment.clearStencil, desc.stencilAttachment.clearStencil);
+}
+
+TEST(TimestampQueryDescTest, CustomSlotIndex) {
+  RenderPassDesc::TimestampQueryDesc tqd;
+  tqd.slotIndex = 42;
+  EXPECT_EQ(tqd.slotIndex, 42u);
+  EXPECT_EQ(tqd.queries, nullptr);
+}
+
 } // namespace igl::tests
