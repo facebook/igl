@@ -10,7 +10,6 @@
 #include <cstdlib>
 #include <unordered_map>
 #include <igl/Shader.h>
-#include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
 
 namespace igl {
