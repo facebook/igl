@@ -211,20 +211,20 @@ GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationL
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-  GLFWwindow* window = isHeadless ? nullptr
-                                  : glfwCreateWindow(1280, 1024, "Vulkan Mesh", nullptr, nullptr);
+  GLFWwindow* newWindow =
+      isHeadless ? nullptr : glfwCreateWindow(1280, 1024, "Vulkan Mesh", nullptr, nullptr);
 
-  if (!isHeadless && !window) {
+  if (!isHeadless && !newWindow) {
     glfwTerminate();
     return nullptr;
   }
 
-  if (window) {
+  if (newWindow) {
     glfwSetErrorCallback([](int error, const char* description) {
       printf("GLFW Error (%i): %s\n", error, description);
     });
 
-    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int) {
+    glfwSetKeyCallback(newWindow, [](GLFWwindow* window, int key, int, int action, int) {
       if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
       }
@@ -237,7 +237,7 @@ GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationL
     });
 
     // @lint-ignore CLANGTIDY
-    glfwSetWindowSizeCallback(window, [](GLFWwindow* /*window*/, int width, int height) {
+    glfwSetWindowSizeCallback(newWindow, [](GLFWwindow* /*window*/, int width, int height) {
       printf("Window resized! width=%d, height=%d\n", width, height);
       width_ = width;
       height_ = height;
@@ -249,10 +249,10 @@ GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationL
     });
 
 #if IGL_WITH_IGLU
-    glfwSetCursorPosCallback(window, [](auto* window, double x, double y) {
+    glfwSetCursorPosCallback(newWindow, [](auto* window, double x, double y) {
       inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
     });
-    glfwSetMouseButtonCallback(window, [](auto* window, int button, int action, int mods) {
+    glfwSetMouseButtonCallback(newWindow, [](auto* window, int button, int action, int mods) {
       double xpos = 0.0, ypos = 0.0;
       glfwGetCursorPos(window, &xpos, &ypos);
       using igl::shell::MouseButton;
@@ -265,7 +265,7 @@ GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationL
     });
 #endif // IGL_WITH_IGLU
 
-    glfwGetWindowSize(window, &width_, &height_);
+    glfwGetWindowSize(newWindow, &width_, &height_);
   }
 
   // create a device
@@ -276,17 +276,18 @@ GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationL
         .headless = isHeadless,
     };
 #ifdef _WIN32
-    auto ctx =
-        vulkan::HWDevice::createContext(cfg, window ? (void*)glfwGetWin32Window(window) : nullptr);
+    auto ctx = vulkan::HWDevice::createContext(
+        cfg, newWindow ? (void*)glfwGetWin32Window(newWindow) : nullptr);
 #elif IGL_PLATFORM_APPLE
-    auto ctx =
-        vulkan::HWDevice::createContext(cfg, window ? (void*)glfwGetCocoaWindow(window) : nullptr);
+    auto ctx = vulkan::HWDevice::createContext(
+        cfg, newWindow ? (void*)glfwGetCocoaWindow(newWindow) : nullptr);
 #elif defined(_XLESS_GLFW_)
     auto ctx = vulkan::HWDevice::createContext(cfg, nullptr, nullptr);
 #elif IGL_PLATFORM_LINUX
-    auto ctx = vulkan::HWDevice::createContext(cfg,
-                                               window ? (void*)glfwGetX11Window(window) : nullptr,
-                                               window ? (void*)glfwGetX11Display() : nullptr);
+    auto ctx =
+        vulkan::HWDevice::createContext(cfg,
+                                        newWindow ? (void*)glfwGetX11Window(newWindow) : nullptr,
+                                        newWindow ? (void*)glfwGetX11Display() : nullptr);
 #else
 #error Unsupported OS
 #endif
@@ -463,7 +464,7 @@ GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationL
     axi = glm::sphericalRand(1.0f);
   }
 
-  return window;
+  return newWindow;
 }
 
 void createRenderPipeline() {
