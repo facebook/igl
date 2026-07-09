@@ -276,7 +276,6 @@ void VulkanStagingDevice::getBufferSubData(const VulkanBuffer& buffer,
 
   size_t chunkSrcOffset = srcOffset;
   auto* dstData = static_cast<uint8_t*>(data);
-  const size_t bufferSize = size;
 
   while (size) {
     const MemoryRegion memoryChunk = nextFreeBlock(size, false);
@@ -299,15 +298,20 @@ void VulkanStagingDevice::getBufferSubData(const VulkanBuffer& buffer,
     // Wait for command to finish
     immediate->wait(immediate->submit(wrapper), ctx_.config_.fenceTimeoutNanoseconds);
 
-    // Copy data into data
+    // Copy data into data. `size` is the number of bytes still to be written into `data`, which is
+    // exactly the remaining capacity of `dstData` (it starts at the full requested size and is
+    // decremented by `copySize` each iteration). `copySize` is always <= `size`, so this bound is
+    // correct even when `srcOffset` is non-zero.
     const uint8_t* src = stagingBuffer->getMappedPtr() + memoryChunk.offset;
-    checked_memcpy(dstData, bufferSize - chunkSrcOffset, src, copySize);
+    checked_memcpy(dstData, size, src, copySize);
 
     size -= copySize;
     dstData += copySize;
     chunkSrcOffset += copySize;
 
+    // the transfer has completed above, so the staging block is free again
     regions_.push_back(memoryChunk);
+    freeStagingBufferSize_ += memoryChunk.size;
   }
 }
 
