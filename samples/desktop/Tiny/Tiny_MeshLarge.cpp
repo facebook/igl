@@ -781,7 +781,7 @@ std::string convertFileName(std::string fileName) {
   }
 }
 
-GLFWwindow* initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
+GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
   if (!glfwInit()) {
     printf("glfwInit() failed");
     return nullptr;
@@ -2312,7 +2312,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
 #endif // IGL_WITH_IGLU
 }
 
-ktxTexture2* bitmapToCube(Bitmap& bmp) {
+ktxTexture2* FOLLY_NULLABLE bitmapToCube(Bitmap& bmp) {
   IGL_DEBUG_ASSERT(bmp.comp_ == 3); // RGB
   IGL_DEBUG_ASSERT(bmp.type_ == eBitmapType_Cube);
   IGL_DEBUG_ASSERT(bmp.fmt_ == eBitmapFormat_Float);
