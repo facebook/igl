@@ -109,4 +109,55 @@ TEST(ShaderStagesDescTest, FromMeshRenderModulesSetsType) {
   EXPECT_EQ(desc.computeModule, nullptr);
 }
 
+// ---------------------------------------------------------------------------
+// ShaderInput — isValid()
+// ---------------------------------------------------------------------------
+
+TEST(ShaderInputValidationTest, ValidStringInput) {
+  const ShaderInput input{.source = "void main() {}", .type = ShaderInputType::String};
+  EXPECT_TRUE(input.isValid());
+}
+
+TEST(ShaderInputValidationTest, InvalidStringInputNullSource) {
+  const ShaderInput input{.source = nullptr, .type = ShaderInputType::String};
+  EXPECT_FALSE(input.isValid());
+}
+
+TEST(ShaderInputValidationTest, InvalidStringInputWithData) {
+  const uint8_t blob[] = {0x01};
+  const ShaderInput input{
+      .source = "void main() {}", .data = blob, .type = ShaderInputType::String};
+  EXPECT_FALSE(input.isValid());
+}
+
+TEST(ShaderInputValidationTest, InvalidStringInputWithLength) {
+  const ShaderInput input{
+      .source = "void main() {}", .length = 10, .type = ShaderInputType::String};
+  EXPECT_FALSE(input.isValid());
+}
+
+TEST(ShaderInputValidationTest, ValidBinaryInput) {
+  const uint8_t spirv[] = {0x03, 0x02, 0x23, 0x07};
+  const ShaderInput input{.data = spirv, .length = sizeof(spirv), .type = ShaderInputType::Binary};
+  EXPECT_TRUE(input.isValid());
+}
+
+TEST(ShaderInputValidationTest, InvalidBinaryInputNullData) {
+  const ShaderInput input{.length = 4, .type = ShaderInputType::Binary};
+  EXPECT_FALSE(input.isValid());
+}
+
+TEST(ShaderInputValidationTest, InvalidBinaryInputZeroLength) {
+  const uint8_t spirv[] = {0x03};
+  const ShaderInput input{.data = spirv, .length = 0, .type = ShaderInputType::Binary};
+  EXPECT_FALSE(input.isValid());
+}
+
+TEST(ShaderInputValidationTest, InvalidBinaryInputWithSource) {
+  const uint8_t spirv[] = {0x03, 0x02, 0x23, 0x07};
+  const ShaderInput input{
+      .source = "extra", .data = spirv, .length = sizeof(spirv), .type = ShaderInputType::Binary};
+  EXPECT_FALSE(input.isValid());
+}
+
 } // namespace igl::tests
