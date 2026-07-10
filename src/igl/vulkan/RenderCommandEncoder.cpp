@@ -792,6 +792,18 @@ void RenderCommandEncoder::setBlendColor(const Color& color) {
   ctx_.vf_.vkCmdSetBlendConstants(cmdBuffer_, color.toFloatPtr());
 }
 
+void RenderCommandEncoder::setCullMode(CullMode cullMode) {
+  IGL_PROFILER_FUNCTION();
+
+  if (ctx_.vf_.vkCmdSetCullMode) {
+    ctx_.vf_.vkCmdSetCullMode(cmdBuffer_, cullModeToVkCullMode(cullMode));
+  } else {
+    IGL_LOG_ERROR_ONCE(
+        "RenderCommandEncoder::setCullMode: vkCmdSetCullMode(EXT) not available; "
+        "cull mode change ignored. Enable VK_EXT_extended_dynamic_state or Vulkan 1.3.");
+  }
+}
+
 void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float clamp) {
   IGL_PROFILER_FUNCTION();
 
