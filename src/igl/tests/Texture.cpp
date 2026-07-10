@@ -1087,4 +1087,36 @@ TEST(TextureDescTest, AsRange) {
   }
 }
 
+TEST(TextureUsageBitsTest, BitsAreDistinct) {
+  EXPECT_EQ(TextureDesc::TextureUsageBits::Sampled, 1u << 0);
+  EXPECT_EQ(TextureDesc::TextureUsageBits::Storage, 1u << 1);
+  EXPECT_EQ(TextureDesc::TextureUsageBits::Attachment, 1u << 2);
+}
+
+TEST(TextureUsageBitsTest, BitsCanBeCombined) {
+  const auto combined =
+      TextureDesc::TextureUsageBits::Sampled | TextureDesc::TextureUsageBits::Attachment;
+  EXPECT_TRUE(combined & TextureDesc::TextureUsageBits::Sampled);
+  EXPECT_TRUE(combined & TextureDesc::TextureUsageBits::Attachment);
+  EXPECT_FALSE(combined & TextureDesc::TextureUsageBits::Storage);
+}
+
+TEST(TextureDescTest, New3DFactory) {
+  const auto desc = TextureDesc::new3D(
+      TextureFormat::RGBA_F16, 4, 8, 16, TextureDesc::TextureUsageBits::Storage, "vol");
+  EXPECT_EQ(desc.type, TextureType::ThreeD);
+  EXPECT_EQ(desc.format, TextureFormat::RGBA_F16);
+  EXPECT_EQ(desc.width, 4u);
+  EXPECT_EQ(desc.height, 8u);
+  EXPECT_EQ(desc.depth, 16u);
+  EXPECT_EQ(desc.usage, TextureDesc::TextureUsageBits::Storage);
+  EXPECT_EQ(desc.debugName, "vol");
+}
+
+TEST(TextureDescTest, EqualityReflexive) {
+  const auto desc = TextureDesc::new2D(
+      TextureFormat::RGBA_UNorm8, 64, 64, TextureDesc::TextureUsageBits::Sampled);
+  EXPECT_EQ(desc, desc);
+}
+
 } // namespace igl::tests
