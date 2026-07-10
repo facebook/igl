@@ -31,7 +31,12 @@ class VertexArrayObject;
 class RenderCommandAdapter final : public WithContext {
  public:
   using StateBits = uint32_t;
-  enum class StateMask : StateBits { NONE = 0, PIPELINE = 1 << 1, DepthStencil = 1 << 2 };
+  enum class StateMask : StateBits {
+    NONE = 0,
+    PIPELINE = 1 << 1,
+    DepthStencil = 1 << 2,
+    CullMode = 1 << 3,
+  };
 
  private:
   struct BufferState {
@@ -56,6 +61,7 @@ class RenderCommandAdapter final : public WithContext {
   void setDepthStencilState(const std::shared_ptr<IDepthStencilState>& newValue);
   void setStencilReferenceValue(uint32_t value);
   void setBlendColor(const Color& color);
+  void setCullMode(CullMode cullMode);
   void setDepthBias(float depthBias, float slopeScale, float clamp);
 
   void clearVertexBuffers();
@@ -178,6 +184,13 @@ class RenderCommandAdapter final : public WithContext {
   std::shared_ptr<VertexArrayObject> activeVAO_ = nullptr;
   uint32_t frontStencilReferenceValue_ = 0xFF;
   uint32_t backStencilReferenceValue_ = 0xFF;
+
+  // Effective cull mode for the next draw call. Written by both setCullMode()
+  // (explicit user override) and setPipelineState() (falls back to the pipeline
+  // descriptor's cull mode). Applied once per draw via willDraw() when
+  // StateMask::CullMode is dirty, so a single frame emits at most one GL call
+  // regardless of the setCullMode()/setPipelineState() ordering.
+  CullMode cullMode_ = CullMode::Disabled;
 
   bool useVAO_ = false;
 };

@@ -99,6 +99,7 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
 
   void setStencilReferenceValue(uint32_t value) override;
   void setBlendColor(const Color& color) override;
+  void setCullMode(CullMode cullMode) override;
   void setDepthBias(float depthBias, float slopeScale, float clamp) override;
 
  private:
