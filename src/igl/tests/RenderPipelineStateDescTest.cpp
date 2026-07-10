@@ -284,6 +284,33 @@ TEST(RenderPipelineDescTest, DebugNameIncludedInEquality) {
   EXPECT_NE(a, b);
 }
 
+TEST(RenderPipelineDescTest, AlphaToCoverageDefaultFalse) {
+  const RenderPipelineDesc desc;
+  EXPECT_FALSE(desc.alphaToCoverageEnabled);
+}
+
+TEST(RenderPipelineDescTest, InequalityOpDifferentAlphaToCoverage) {
+  RenderPipelineDesc a;
+  RenderPipelineDesc b;
+  b.alphaToCoverageEnabled = true;
+  EXPECT_NE(a, b);
+}
+
+TEST(RenderPipelineDescTest, ImmutableSamplersDefaultNull) {
+  const RenderPipelineDesc desc;
+  for (const auto& sampler : desc.immutableSamplers) {
+    EXPECT_EQ(sampler, nullptr);
+  }
+}
+
+TEST(RenderPipelineDescTest, DesignatedInitializerTargetDesc) {
+  const RenderPipelineDesc::TargetDesc td{.depthAttachmentFormat = TextureFormat::Z_UNorm16,
+                                          .stencilAttachmentFormat = TextureFormat::S_UInt8};
+  EXPECT_EQ(td.depthAttachmentFormat, TextureFormat::Z_UNorm16);
+  EXPECT_EQ(td.stencilAttachmentFormat, TextureFormat::S_UInt8);
+  EXPECT_TRUE(td.colorAttachments.empty());
+}
+
 TEST(RenderPipelineDescTest, HashConsistency) {
   const RenderPipelineDesc desc;
   const std::hash<RenderPipelineDesc> hasher;
