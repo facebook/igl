@@ -40,6 +40,12 @@ class NativeHWTextureBuffer : public igl::android::INativeHWTextureBuffer, publi
   Result create(const TextureDesc& desc) override;
 
   Result createTextureInternal(AHardwareBuffer* buffer) override;
+
+  Result uploadInternal(TextureType type,
+                        const TextureRangeDesc& range,
+                        const void* IGL_NULLABLE data,
+                        size_t bytesPerRow,
+                        const uint32_t* IGL_NULLABLE mipLevelBytes) const override;
 };
 
 } // namespace igl::vulkan::android

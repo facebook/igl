@@ -164,32 +164,11 @@ Result NativeHWTextureBuffer::uploadInternal(TextureType /*type*/,
                                              const void* IGL_NULLABLE data,
                                              size_t bytesPerRow,
                                              const uint32_t* IGL_NULLABLE /*mipLevelBytes*/) const {
-  // not optimal pass
-
-  std::byte* dst = nullptr;
-  INativeHWTextureBuffer::RangeDesc outRange;
-  Result outResult;
-  auto lockGuard
-      [[maybe_unused]] = lockHWBuffer(reinterpret_cast<std::byte**>(&dst), outRange, &outResult);
-  auto internalBpr = getProperties().getBytesPerRow(outRange.stride);
-  bytesPerRow = bytesPerRow ? bytesPerRow : getProperties().getBytesPerRow(range);
-
-  if (outResult.isOk() && dst != nullptr && bytesPerRow <= internalBpr &&
-      range.width == outRange.width && range.height == outRange.height) {
-    const std::byte* src = (const std::byte*)data;
-    uint32_t srcOffset = 0;
-    uint32_t dstOffset = 0;
-    for (int i = 0; i < outRange.height; ++i) {
-      memcpy((void*)(dst + dstOffset), (void*)(src + srcOffset), bytesPerRow);
-      dstOffset += internalBpr;
-      srcOffset += bytesPerRow;
-    }
-
-    return Result{};
+  auto result = uploadToHWBuffer(getProperties(), range, data, bytesPerRow);
+  if (!result.isOk()) {
+    IGL_DEBUG_ABORT("Cannot upload buffer for HW texture for Native Hardware Buffer Textures.");
   }
-
-  IGL_DEBUG_ABORT("Cannot upload buffer for HW texture for Native Hardware Buffer Textures.");
-  return Result{Result::Code::Unsupported, "NativeHWTextureBuffer upload not supported"};
+  return result;
 }
 
 bool NativeHWTextureBuffer::isValidFormat(TextureFormat format) {

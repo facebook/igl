@@ -296,6 +296,41 @@ TextureDesc INativeHWTextureBuffer::getTextureDesc() const {
   return textureDesc_;
 }
 
+Result INativeHWTextureBuffer::uploadToHWBuffer(const TextureFormatProperties& props,
+                                                const TextureRangeDesc& range,
+                                                const void* IGL_NULLABLE data,
+                                                size_t bytesPerRow) const {
+  if (hwBuffer_ == nullptr) {
+    return Result{Result::Code::RuntimeError,
+                  "INativeHWTextureBuffer: hardware buffer not initialized"};
+  }
+
+  std::byte* dst = nullptr;
+  RangeDesc outRange;
+  Result lockResult;
+  auto lockGuard [[maybe_unused]] =
+      lockHWBuffer(reinterpret_cast<std::byte**>(&dst), outRange, &lockResult);
+
+  const size_t internalBpr = props.getBytesPerRow(outRange.stride);
+  const size_t srcBpr = bytesPerRow ? bytesPerRow : props.getBytesPerRow(range);
+
+  if (lockResult.isOk() && dst != nullptr && data != nullptr && srcBpr <= internalBpr &&
+      range.width == outRange.width && range.height == outRange.height) {
+    const std::byte* src = static_cast<const std::byte*>(data);
+    size_t srcOffset = 0;
+    size_t dstOffset = 0;
+    for (uint32_t i = 0; i < outRange.height; ++i) {
+      memcpy(dst + dstOffset, src + srcOffset, srcBpr);
+      dstOffset += internalBpr;
+      srcOffset += srcBpr;
+    }
+    return Result{};
+  }
+
+  return Result{Result::Code::Unsupported,
+                "INativeHWTextureBuffer: upload preconditions not met"};
+}
+
 } // namespace igl::android
 
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)

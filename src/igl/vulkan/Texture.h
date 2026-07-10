@@ -77,17 +77,19 @@ class Texture : public ITexture {
  private:
   [[nodiscard]] bool needsRepacking(const TextureRangeDesc& range, size_t bytesPerRow) const final;
 
+  void clearColorTexture(const igl::Color& rgba);
+
+ protected:
   /// @brief Uploads the texture's data to the device using the staging device in the context. This
   /// function is not synchronous and the data may or may not be available to the GPU upon return.
+  /// Subclasses (e.g. AHardwareBuffer-backed texture) may override this to use a synchronous CPU
+  /// path instead of the staging device.
   Result uploadInternal(TextureType type,
                         const TextureRangeDesc& range,
                         const void* data,
                         size_t bytesPerRow,
-                        const uint32_t* IGL_NULLABLE mipLevelBytes) const final;
+                        const uint32_t* IGL_NULLABLE mipLevelBytes) const override;
 
-  void clearColorTexture(const igl::Color& rgba);
-
- protected:
   Device& device_;
   TextureDesc desc_;
   mutable base::AttachmentInteropDesc attachmentDesc_; // Cached for IAttachmentInterop::getDesc()
