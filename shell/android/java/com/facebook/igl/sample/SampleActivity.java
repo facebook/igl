@@ -56,6 +56,7 @@ public class SampleActivity extends Activity implements View.OnClickListener {
     // set up tab and cached sample view for different backend types
     mBackendViewFrame = new FrameLayout(this);
     mConfigs = SampleLib.getRenderSessionConfigs();
+    curConfig = 0;
     mTabViews = new SurfaceView[mConfigs.length];
     for (int i = 0; i < mConfigs.length; i++) {
       // configure and insert tab
