@@ -243,14 +243,6 @@ void RenderPipelineState::bind() {
     getContext().disable(GL_BLEND);
   }
 
-  // face cull mode
-  if (desc_.cullMode == CullMode::Disabled) {
-    getContext().disable(GL_CULL_FACE);
-  } else {
-    getContext().enable(GL_CULL_FACE);
-    getContext().cullFace(desc_.cullMode == CullMode::Front ? GL_FRONT : GL_BACK);
-  }
-
   // face winding mode
   getContext().frontFace((desc_.frontFaceWinding == WindingMode::Clockwise) ? GL_CW : GL_CCW);
 
