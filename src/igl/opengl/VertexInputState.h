@@ -12,8 +12,7 @@
 #include <igl/VertexInputState.h>
 #include <igl/opengl/GLIncludes.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 // This structure stores OGL-specific attribute info. Location is specifically
 // not included because it is shader-dependent
@@ -50,5 +49,4 @@ class VertexInputState final : public IVertexInputState {
   std::unordered_map<size_t, std::vector<OGLAttribute>> bufferOGLAttribMap_;
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl
