@@ -35,6 +35,15 @@ TEST(ShaderStagesTypeTest, EnumValues) {
 }
 
 // ---------------------------------------------------------------------------
+// ShaderInputType
+// ---------------------------------------------------------------------------
+
+TEST(ShaderLibraryInputTypeTest, EnumValues) {
+  EXPECT_EQ(static_cast<uint8_t>(ShaderInputType::String), 0u);
+  EXPECT_EQ(static_cast<uint8_t>(ShaderInputType::Binary), 1u);
+}
+
+// ---------------------------------------------------------------------------
 // ShaderLibraryDesc
 // ---------------------------------------------------------------------------
 
