@@ -17,6 +17,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
 #include <shell/shared/platform/DisplayContext.h>
+#include <igl/CommandBuffer.h>
 #include <igl/FPSCounter.h>
 
 #if IGL_BACKEND_OPENGL

@@ -25,6 +25,7 @@
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <igl/CommandBuffer.h>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
 
