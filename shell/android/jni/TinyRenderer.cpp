@@ -519,12 +519,23 @@ void TinyRenderer::init(AAssetManager* mgr,
     igl::vulkan::VulkanFeatures vulkanFeatures(config);
     vulkanFeatures.vkPhysicalDeviceFeatures2.features.dualSrcBlend = VK_FALSE;
 
+    // Opt-in: sessions may declare extra Vulkan device extensions via the factory.
+    // Default is empty -> behavior unchanged for sessions that declare nothing.
+    const std::vector<std::string> extraDeviceExtensions =
+        factory.requestedVulkanDeviceExtensions();
+    std::vector<const char*> extraDeviceExtensionPtrs;
+    extraDeviceExtensionPtrs.reserve(extraDeviceExtensions.size());
+    for (const auto& ext : extraDeviceExtensions) {
+      extraDeviceExtensionPtrs.push_back(ext.c_str());
+    }
+
     d = vulkan::HWDevice::create(std::move(ctx),
                                  devices[0],
                                  width_, // width
                                  height_, // height,,
-                                 0,
-                                 nullptr,
+                                 extraDeviceExtensionPtrs.size(),
+                                 extraDeviceExtensionPtrs.empty() ? nullptr
+                                                                  : extraDeviceExtensionPtrs.data(),
                                  &vulkanFeatures,
                                  "TinyRenderer",
                                  &result);

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
 #include <shell/shared/renderSession/RenderSessionWindowConfig.h>
@@ -49,6 +50,14 @@ class IRenderSessionFactory {
   // Used on Android to get the system properties prefix for reading shell params
   [[nodiscard]] virtual const char* getAndroidSystemPropsPrefix() const noexcept {
     return "debug.iglshell.renderSession";
+  }
+
+  /// @brief Optional list of additional Vulkan device extensions the session requires.
+  /// Names are appended to the IGL Vulkan device-creation call's `extraDeviceExtensions`
+  /// parameter on backends that wire this through (currently the Android shell).
+  /// Default = empty: existing shell consumers see no behavior change.
+  [[nodiscard]] virtual std::vector<std::string> requestedVulkanDeviceExtensions() const noexcept {
+    return {};
   }
 };
 
