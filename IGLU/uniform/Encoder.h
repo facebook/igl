@@ -8,13 +8,9 @@
 #pragma once
 
 #include <cstdint>
-#include <igl/CommandBuffer.h>
 #include <igl/Common.h>
-
-namespace igl {
-
-class IComputeCommandEncoder;
-} // namespace igl
+#include <igl/ComputeCommandEncoder.h>
+#include <igl/RenderCommandEncoder.h>
 
 namespace iglu::uniform {
 
