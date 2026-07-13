@@ -12,6 +12,16 @@
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
+// AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420 (0x23) was introduced in NDK r21 (API 30). Some build
+// configs still compile against older NDK sysroots that do not declare it, so define a
+// fallback when the header does not. It is a real NDK enumerator on newer sysroots, so this
+// must come after <android/hardware_buffer.h> (included via NativeHWBuffer.h above) —
+// defining it earlier would rewrite the enumerator token inside that header.
+#if !defined(AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420)
+// NOLINTNEXTLINE(readability-identifier-naming) - macro name must match the NDK enumerator
+#define AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420 0x23
+#endif
+
 namespace igl::android {
 
 uint32_t getNativeHWFormat(TextureFormat iglFormat) {
@@ -50,10 +60,8 @@ uint32_t getNativeHWFormat(TextureFormat iglFormat) {
   case TextureFormat::YUV_NV12:
     return AHARDWAREBUFFER_FORMAT_YCbCr_420_SP_VENUS;
 
-#if __ANDROID_MIN_SDK_VERSION__ >= 30
   case TextureFormat::YUV_420p:
     return AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420;
-#endif
 
   default:
     return 0;
@@ -113,10 +121,8 @@ TextureFormat getIglFormat(uint32_t nativeFormat) {
   case COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m:
     return TextureFormat::YUV_NV12;
 
-#if __ANDROID_MIN_SDK_VERSION__ >= 30
   case AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420:
     return TextureFormat::YUV_420p;
-#endif
 
   default:
     return TextureFormat::Invalid;

@@ -9,9 +9,14 @@
 
 package com.facebook.igl.shell;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.SurfaceView;
 import android.view.View;
@@ -21,6 +26,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public class SampleActivity extends Activity implements View.OnClickListener {
+  private static final String TAG = "SampleActivity";
+  private static final int REQUEST_CAMERA_PERMISSION = 1;
+
   // UI
   LinearLayout mMainView;
   LinearLayout mTabBar;
@@ -33,6 +41,7 @@ public class SampleActivity extends Activity implements View.OnClickListener {
 
   private final int selectedTabColor = Color.BLUE;
   private final int unSelectedTabColor = Color.GRAY;
+  private boolean mViewsInitialized = false;
 
   protected boolean mEnableStencilBuffer = false;
 
@@ -42,6 +51,20 @@ public class SampleActivity extends Activity implements View.OnClickListener {
 
     // Keep screen on during benchmark - prevents the activity from going to sleep
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+    if (shouldRequestCameraPermission()) {
+      requestPermissions(new String[] {Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
+      return;
+    }
+
+    initializeViews();
+  }
+
+  private void initializeViews() {
+    if (mViewsInitialized) {
+      return;
+    }
+    mViewsInitialized = true;
 
     // configure the mainview
     mMainView = new LinearLayout(this);
@@ -105,6 +128,49 @@ public class SampleActivity extends Activity implements View.OnClickListener {
     setContentView(mMainView);
   }
 
+  private boolean shouldRequestCameraPermission() {
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+        && isPermissionDeclared(Manifest.permission.CAMERA)
+        && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED;
+  }
+
+  private boolean isPermissionDeclared(String permission) {
+    try {
+      PackageInfo packageInfo =
+          getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_PERMISSIONS);
+      String[] requestedPermissions = packageInfo.requestedPermissions;
+      if (requestedPermissions == null) {
+        return false;
+      }
+      for (String requestedPermission : requestedPermissions) {
+        if (permission.equals(requestedPermission)) {
+          return true;
+        }
+      }
+    } catch (PackageManager.NameNotFoundException e) {
+      Log.w(TAG, "Could not inspect requested permissions for " + getPackageName(), e);
+    }
+    return false;
+  }
+
+  @Override
+  public void onRequestPermissionsResult(
+      int requestCode, String[] permissions, int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    if (requestCode == REQUEST_CAMERA_PERMISSION) {
+      if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+        // Camera input is optional: the demo still runs without it, so initialize
+        // the UI regardless of the user's choice.
+        Log.w(TAG, "CAMERA permission not granted; continuing without camera input.");
+      }
+      initializeViews();
+      // The permission result arrives after the activity's onResume() has already
+      // run (and early-returned while mViewsInitialized was false), so the freshly
+      // created OpenGL_ES view would stay paused. Resume it here.
+      resumeCurrentView();
+    }
+  }
+
   @Override
   public void onClick(View view) {
     int prevConfig = curConfig;
@@ -138,6 +204,9 @@ public class SampleActivity extends Activity implements View.OnClickListener {
   @Override
   protected void onPause() {
     super.onPause();
+    if (!mViewsInitialized) {
+      return;
+    }
     if (mConfigs[curConfig].version.flavor != SampleLib.BackendFlavor.Vulkan) {
       ((SampleView) mTabViews[curConfig]).onPause();
     }
@@ -146,6 +215,17 @@ public class SampleActivity extends Activity implements View.OnClickListener {
   @Override
   protected void onResume() {
     super.onResume();
+    resumeCurrentView();
+  }
+
+  // Resumes the current OpenGL_ES tab view. Vulkan views manage their own render
+  // thread and are not resumed here. Called both from the normal onResume()
+  // lifecycle and from onRequestPermissionsResult() (where onResume() has already
+  // run before the views existed); SampleView.onResume() is idempotent.
+  private void resumeCurrentView() {
+    if (!mViewsInitialized) {
+      return;
+    }
     if (mConfigs[curConfig].version.flavor != SampleLib.BackendFlavor.Vulkan) {
       ((SampleView) mTabViews[curConfig]).onResume();
     }

@@ -168,6 +168,12 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const Te
 std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(
     struct AHardwareBuffer* buffer,
     Result* IGL_NULLABLE outResult) const {
+  if (buffer == nullptr) {
+    IGL_LOG_ERROR("PlatformDevice::createTextureWithSharedMemory(): null AHardwareBuffer");
+    Result::setResult(outResult, Result::Code::ArgumentNull, "AHardwareBuffer is null");
+    return nullptr;
+  }
+
   Result subResult;
 
   AHardwareBuffer_Desc hwbDesc;
