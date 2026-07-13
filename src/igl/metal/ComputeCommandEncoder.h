@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <Metal/Metal.h>
+#import <Metal/MTLCommandBuffer.h> // @donotremove
+#import <Metal/MTLComputeCommandEncoder.h>
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/ComputePass.h>
 
