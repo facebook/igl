@@ -39,10 +39,14 @@ class TimestampQueries : public ITimestampQueries, public WithContext {
 
   /// Start a GL_TIME_ELAPSED query for the given timing slot.
   /// Must be paired with endElapsedQuery(). Cannot be nested.
-  void beginElapsedQuery(uint32_t slotIndex);
+  /// Virtual so a subclass can piggy-back additional GL_TIMESTAMP queries at
+  /// the same boundary the IGL OpenGL RenderCommandEncoder calls through
+  /// TimestampQueries& on.
+  virtual void beginElapsedQuery(uint32_t slotIndex);
 
   /// End the active GL_TIME_ELAPSED query.
-  void endElapsedQuery();
+  /// Virtual for the same reason as beginElapsedQuery() above.
+  virtual void endElapsedQuery();
 
  private:
   std::vector<GLuint> queryIds_;
