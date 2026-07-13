@@ -14,7 +14,7 @@
 #include <igl/vulkan/VulkanDescriptorSetLayout.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
 
-namespace {
+namespace igl::vulkan {
 
 VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(igl::PrimitiveType t) {
   switch (t) {
@@ -276,10 +276,6 @@ VkColorComponentFlags colorWriteMaskToVkColorComponentFlags(igl::ColorWriteMask 
   }
   return result;
 }
-
-} // namespace
-
-namespace igl::vulkan {
 
 RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
                                          RenderPipelineDesc desc) :

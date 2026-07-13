@@ -17,6 +17,10 @@ namespace igl::vulkan {
 
 class Device;
 
+VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(igl::PrimitiveType t);
+VkCullModeFlags cullModeToVkCullMode(igl::CullMode mode);
+VkFrontFace windingModeToVkFrontFace(igl::WindingMode mode);
+
 /// @brief This class stores all mutable pipeline parameters as member variables and serves as a
 /// hash key for the `RenderPipelineState` class
 class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
