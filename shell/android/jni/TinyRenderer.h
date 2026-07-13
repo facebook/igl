@@ -69,7 +69,9 @@ class TinyRenderer final {
   std::shared_ptr<ICommandQueue> presentQueue_;
   std::shared_ptr<IRenderPipelineState> presentPipeline_;
   std::shared_ptr<ISamplerState> presentSampler_;
+#if IGL_BACKEND_VULKAN
   bool stereoPresentInitialized_ = false;
+#endif
 
   void initStereoPresent(IDevice& device);
   void stereoPresent(IDevice& device);
