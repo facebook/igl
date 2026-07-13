@@ -12,6 +12,9 @@
 #include <android/asset_manager_jni.h>
 #include <android/native_window_jni.h>
 #include <memory>
+#include <string>
+#include <vector>
+#include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
 #include <igl/Common.h>
@@ -65,6 +68,22 @@ namespace {
 std::unique_ptr<shell::IRenderSessionFactory> factory;
 std::vector<std::unique_ptr<TinyRenderer>> renderers;
 std::optional<BackendVersion> activeBackendVersion;
+
+// Process-lifetime storage backing igl::shell::Platform::argc()/argv(). The IGL
+// Android shell has no main()-supplied argv; we synthesize one from the
+// argv-style `args` Intent extra (see extractArgsExtra() below) and stash the
+// strings here so the char* pointers handed to initializeCommandLineArgs()
+// stay valid for the lifetime of the process.
+std::vector<std::string> gPlatformArgvStorage;
+std::vector<char*> gPlatformArgv;
+constexpr const char* kPlatformArgv0 = "igl_android_shell";
+
+// Single Intent extra whose value (a whitespace-separated string) is forwarded
+// @fb-only
+// README.md for the adb command pattern. Other Intent extras are intentionally
+// @fb-only
+// ShellParams customParams path in extractIntentExtras() still consumes them).
+constexpr const char* kArgsExtraName = "args";
 
 constexpr auto* kBackendFlavorClassName = "com/facebook/igl/shell/SampleLib$BackendFlavor";
 constexpr auto* kBackendVersionClassName = "com/facebook/igl/shell/SampleLib$BackendVersion";
@@ -256,6 +275,59 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
   return toJava(env, requestedConfigs);
 }
 
+// Helper: read the value of a single Intent extra named `kArgsExtraName` and
+// tokenize it on ASCII whitespace into argv-style tokens. Returns an empty
+// vector when the intent is null, the extra is absent, or the value is empty.
+//
+// This is the narrow argv-style bridge for igl::shell::Platform::argv() (per
+// @fb-only
+// every Bundle key/value for downstream ShellParams customParams consumption.
+[[maybe_unused]] static std::vector<std::string> extractArgsExtra(JNIEnv* env, jobject intent) {
+  std::vector<std::string> tokens;
+  if (!intent) {
+    return tokens;
+  }
+
+  jclass intentClass = env->GetObjectClass(intent);
+  jmethodID getStringExtraMethod =
+      env->GetMethodID(intentClass, "getStringExtra", "(Ljava/lang/String;)Ljava/lang/String;");
+  if (!getStringExtraMethod) {
+    return tokens;
+  }
+
+  jstring keyJStr = env->NewStringUTF(kArgsExtraName);
+  auto* valueObj = env->CallObjectMethod(intent, getStringExtraMethod, keyJStr);
+  env->DeleteLocalRef(keyJStr);
+  if (!valueObj) {
+    return tokens;
+  }
+
+  auto* valueJStr = static_cast<jstring>(valueObj);
+  const char* valueChars = env->GetStringUTFChars(valueJStr, nullptr);
+  std::string value(valueChars);
+  env->ReleaseStringUTFChars(valueJStr, valueChars);
+  env->DeleteLocalRef(valueJStr);
+
+  // Plain whitespace split — Intent extras already round-trip arbitrary
+  // strings through `--es`, and argv-style flags don't typically contain
+  // embedded spaces, so we don't implement shell-style quoting here.
+  std::string current;
+  for (const char c : value) {
+    if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+      if (!current.empty()) {
+        tokens.emplace_back(std::move(current));
+        current.clear();
+      }
+    } else {
+      current.push_back(c);
+    }
+  }
+  if (!current.empty()) {
+    tokens.emplace_back(std::move(current));
+  }
+  return tokens;
+}
+
 // Helper function to extract all Intent extras as command-line style arguments
 [[maybe_unused]] static std::vector<std::string> extractIntentExtras(JNIEnv* env, jobject intent) {
   std::vector<std::string> extras;
@@ -414,6 +486,40 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
     for ([[maybe_unused]] const auto& cmd : cmdLine) {
       IGL_LOG_INFO("Param: %s\n", cmd.c_str());
     }
+
+    // Forward the argv-style `args` Intent extra (if present) to
+    // igl::shell::Platform::argc()/argv() so RenderSessions can consume CLI
+    // flags via the same shared parsers used on Mac/iOS/Windows. Other Intent
+    // extras stay in the broader cmdLine path above for ShellParams and are
+    // @fb-only
+    // bridge scoped to argv-style only). Storage is refreshed on every backend
+    // init so a tab switch with a different intent (rare but legal) picks up
+    // the new value.
+    const auto argsTokens = extractArgsExtra(env, intent);
+    if (argsTokens.empty()) {
+      // Preserve the historical Android argc=0/argv=null behavior so callers
+      // see "no args supplied" rather than a synthetic single-element argv.
+      gPlatformArgvStorage.clear();
+      gPlatformArgv.clear();
+      igl::shell::Platform::initializeCommandLineArgs(0, nullptr);
+    } else {
+      gPlatformArgvStorage.clear();
+      gPlatformArgv.clear();
+      gPlatformArgvStorage.reserve(argsTokens.size() + 1);
+      // Prepend a placeholder argv[0] so findCliFlag()-style parsers (which
+      // skip index 0 as the program name) see the real tokens at indices ≥ 1.
+      gPlatformArgvStorage.emplace_back(kPlatformArgv0);
+      for (const auto& tok : argsTokens) {
+        gPlatformArgvStorage.emplace_back(tok);
+      }
+      gPlatformArgv.reserve(gPlatformArgvStorage.size());
+      for (auto& s : gPlatformArgvStorage) {
+        gPlatformArgv.push_back(s.data());
+      }
+      igl::shell::Platform::initializeCommandLineArgs(static_cast<int>(gPlatformArgv.size()),
+                                                      gPlatformArgv.data());
+    }
+
     renderer->init(AAssetManager_fromJava(env, javaAssetManager),
                    surface ? ANativeWindow_fromSurface(env, surface) : nullptr,
                    *factory,

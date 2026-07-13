@@ -18,7 +18,13 @@ namespace {
 int gArgc = 0;
 char** gArgv = nullptr;
 #if IGL_PLATFORM_ANDROID
-bool gArgsInitialized = true; // Android has no argc/argv to initialize with
+// Android has no main()-supplied argc/argv. The IGL Android shell instead derives
+// argv from Intent extras and calls initializeCommandLineArgs() once per backend
+// init; mark args as initialized up front so accessing argc()/argv() before that
+// call returns zero/nullptr instead of asserting, and allow the JNI bridge to
+// re-call initializeCommandLineArgs() across backend tab switches with the same
+// Intent.
+bool gArgsInitialized = true;
 #else
 bool gArgsInitialized = false;
 #endif
@@ -102,7 +108,9 @@ char** Platform::argv() {
 }
 
 void Platform::initializeCommandLineArgs(int argc, char** argv) {
+#if !IGL_PLATFORM_ANDROID
   IGL_DEBUG_ASSERT(!gArgsInitialized, "Must not initialize command line arguments more than once.");
+#endif
   gArgc = argc;
   gArgv = argv;
   gArgsInitialized = true;
