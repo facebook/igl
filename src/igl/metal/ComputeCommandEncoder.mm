@@ -8,7 +8,8 @@
 #include <igl/metal/ComputeCommandEncoder.h>
 
 #import <Foundation/Foundation.h>
-#import <Metal/Metal.h>
+#import <Metal/MTLComputePass.h>
+#import <Metal/MTLTypes.h>
 #include <igl/metal/Buffer.h>
 #include <igl/metal/ComputePipelineState.h>
 #include <igl/metal/SamplerState.h>
