@@ -9,7 +9,9 @@
 
 #pragma once
 
-#include <cmath>
+#include <cmath> // IWYU pragma: keep
+#include <memory>
+#include <utility>
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <igl/IGL.h>
