@@ -76,11 +76,39 @@ void initializeCompiler() noexcept {
   glslang_initialize_process();
 }
 
+glslang_spv_options_t getSpvOptions(const ShaderCompilerOptions& options) noexcept {
+  // Map IGL's backend-agnostic optimization strategy onto glslang's SPIR-V knobs. Debug info is
+  // generated in every mode (this is a profiling demo, not a size-constrained ship build), and
+  // ShaderOptimization::Default reproduces IGL's historical behavior (optimizer on, biased toward
+  // size) so existing clients are byte-for-byte unchanged.
+  //
+  // Value-initialize so every field defaults to false/zero, then set only the non-defaults by name.
+  // This is robust to glslang adding fields to glslang_spv_options_t: a positional aggregate
+  // initializer silently drops new trailing fields and trips clang-diagnostic-missing-field-
+  // initializers, whereas value-init covers them automatically.
+  glslang_spv_options_t spvOptions{};
+  spvOptions.generate_debug_info = true;
+  spvOptions.validate = true;
+  switch (options.optimization) {
+  case ShaderOptimization::Default:
+    spvOptions.optimize_size = true; // historical default: optimizer on, biased toward size
+    break;
+  case ShaderOptimization::NoOpt:
+    spvOptions.disable_optimizer = true; // clean source-level stepping + reference numerics
+    break;
+  case ShaderOptimization::Performance:
+    // Optimizer on, tuned for runtime performance (optimize_size stays false).
+    break;
+  }
+  return spvOptions;
+}
+
 // NOLINTNEXTLINE(bugprone-exception-escape)
 Result compileShader(ShaderStage stage,
                      const char* code,
                      std::vector<uint32_t>& outSPIRV,
-                     const glslang_resource_t* glslLangResource) noexcept {
+                     const glslang_resource_t* glslLangResource,
+                     const ShaderCompilerOptions& options) noexcept {
   IGL_PROFILER_FUNCTION();
 
   glslang_input_t input{};
@@ -124,18 +152,8 @@ Result compileShader(ShaderStage stage,
     return Result(Result::Code::InvalidOperation, "glslang_program_link() failed");
   }
 
-  glslang_spv_options_t options = {
-      /* .generate_debug_info = */ true,
-      /* .strip_debug_info = */ false,
-      /* .disable_optimizer = */ false,
-      /* .optimize_size = */ true,
-      /* .disassemble = */ false,
-      /* .validate = */ true,
-      /* .emit_nonsemantic_shader_debug_info = */ false,
-      /* .emit_nonsemantic_shader_debug_source = */ false,
-  };
-
-  glslang_program_SPIRV_generate_with_options(program, input.stage, &options);
+  glslang_spv_options_t spvOptions = getSpvOptions(options);
+  glslang_program_SPIRV_generate_with_options(program, input.stage, &spvOptions);
 
   if (glslang_program_SPIRV_get_messages(program)) {
     IGL_LOG_ERROR("%s\n", glslang_program_SPIRV_get_messages(program));

@@ -322,8 +322,8 @@ std::shared_ptr<IShaderModule> Device::createShaderModuleInternal(const ShaderMo
     vulkanShaderModule =
         createShaderModule(desc.input.data, desc.input.length, desc.debugName, &result);
   } else {
-    vulkanShaderModule =
-        createShaderModule(desc.info.stage, desc.input.source, desc.debugName, &result);
+    vulkanShaderModule = createShaderModule(
+        desc.info.stage, desc.input.source, desc.input.options, desc.debugName, &result);
   }
 
   if (!result.isOk()) {
@@ -436,6 +436,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* IGL_N
  * @param[in] stage  Shader stage (Vertex, Fragment,
  *                   Compute, Task, or Mesh).
  * @param[in] source GLSL source code to compile.
+ * @param[in] options Shader compiler options selecting the optimization strategy.
  * @param[in] debugName Label assigned to the Vulkan
  *                      shader module for debug tooling.
  * @param[out] outResult Receives the compilation result.
@@ -444,6 +445,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* IGL_N
  */
 std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage,
                                                                const char* IGL_NULLABLE source,
+                                                               const ShaderCompilerOptions& options,
                                                                const std::string& debugName,
                                                                Result* IGL_NULLABLE
                                                                    outResult) const {
@@ -517,7 +519,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
                            &ctx_->getvkPhysicalDeviceMeshShaderPropertiesEXT());
 
   std::vector<uint32_t> spirv;
-  const Result result = glslang::compileShader(stage, source, spirv, &glslangResource);
+  const Result result = glslang::compileShader(stage, source, spirv, &glslangResource, options);
 
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
   const VkShaderModuleCreateInfo ci = {
@@ -642,8 +644,11 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibraryInternal(const Shader
       return nullptr;
     }
     // NOLINTNEXTLINE(facebook-hte-ParameterUncheckedArrayBounds)
-    vulkanShaderModule = createShaderModule(
-        desc.moduleInfo.front().stage, desc.input.source, desc.debugName, &result);
+    vulkanShaderModule = createShaderModule(desc.moduleInfo.front().stage,
+                                            desc.input.source,
+                                            desc.input.options,
+                                            desc.debugName,
+                                            &result);
   }
 
   if (!result.isOk()) {

@@ -10,7 +10,12 @@
 #include "../util/TestDevice.h"
 
 #include <array>
+#include <cstdint>
+#include <vector>
 #include <igl/CommandBuffer.h>
+#include <igl/Shader.h>
+#include <igl/glslang/GlslCompiler.h>
+#include <igl/glslang/GlslangHelpers.h>
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/Device.h>
@@ -267,6 +272,65 @@ TEST_F(DeviceVulkanTest, UpdateGlslangResource) {
   ASSERT_EQ(res.max_cull_distances, (int)props.limits.maxCullDistances);
   ASSERT_EQ(res.max_combined_clip_and_cull_distances,
             (int)props.limits.maxCombinedClipAndCullDistances);
+}
+
+// Diff-2 plumbing (unit): getSpvOptions() maps each ShaderOptimization onto the exact glslang
+// SPIR-V flags from the spec. Default reproduces IGL's historical hardcoded options byte-for-byte
+// (optimizer on, optimize-for-size) so existing clients are unaffected; the debug path disables the
+// optimizer; the release path optimizes for performance (not size). generate_debug_info stays true
+// in every mode, so debug info is retained for both debug and release builds. Pure mapping logic —
+// no glslang process or Vulkan device required.
+GTEST_TEST(GlslCompilerOptimization, SpvOptionsMapping) {
+  const glslang_spv_options_t defaultOpts =
+      glslang::getSpvOptions(ShaderCompilerOptions{.optimization = ShaderOptimization::Default});
+  EXPECT_TRUE(defaultOpts.generate_debug_info);
+  EXPECT_FALSE(defaultOpts.strip_debug_info);
+  EXPECT_FALSE(defaultOpts.disable_optimizer);
+  EXPECT_TRUE(defaultOpts.optimize_size);
+
+  const glslang_spv_options_t noOpt =
+      glslang::getSpvOptions(ShaderCompilerOptions{.optimization = ShaderOptimization::NoOpt});
+  EXPECT_TRUE(noOpt.generate_debug_info); // debug info retained in debug builds
+  EXPECT_TRUE(noOpt.disable_optimizer); // optimizer off for clean stepping + reference numerics
+
+  const glslang_spv_options_t performance = glslang::getSpvOptions(
+      ShaderCompilerOptions{.optimization = ShaderOptimization::Performance});
+  EXPECT_TRUE(performance.generate_debug_info); // debug info retained in release/profiling builds
+  EXPECT_FALSE(performance.disable_optimizer); // optimizer on
+  EXPECT_FALSE(performance.optimize_size); // optimize for performance, not size (PRIMARY goal)
+}
+
+// Diff-2 plumbing (integration): every ShaderOptimization compiles end-to-end through
+// glslang::compileShader() to valid, non-empty SPIR-V via the new options parameter. Whether the
+// SPIRV-Tools optimizer alters the bytes depends on the glslang build + debug-info config; the
+// release-vs-debug GPU perf delta is validated on-device per the diff test plan, not here.
+GTEST_TEST(GlslCompilerOptimization, CompilesValidSpirvForEachOption) {
+  igl::glslang::initializeCompiler();
+
+  glslang_resource_t resource = {};
+  glslangGetDefaultResource(&resource);
+
+  const char* source = R"(#version 460
+layout(location = 0) out vec4 outColor;
+void main() {
+  outColor = vec4(1.0, 0.5, 0.25, 1.0);
+}
+)";
+
+  constexpr uint32_t kSpirvMagic = 0x07230203;
+  for (const ShaderOptimization optimization :
+       {ShaderOptimization::Default, ShaderOptimization::NoOpt, ShaderOptimization::Performance}) {
+    ShaderCompilerOptions options;
+    options.optimization = optimization;
+    std::vector<uint32_t> spirv;
+    const Result result =
+        glslang::compileShader(ShaderStage::Fragment, source, spirv, &resource, options);
+    EXPECT_TRUE(result.isOk()) << result.message.c_str();
+    ASSERT_FALSE(spirv.empty());
+    EXPECT_EQ(spirv.front(), kSpirvMagic);
+  }
+
+  igl::glslang::finalizeCompiler();
 }
 
 TEST_F(DeviceVulkanTest, BufferDeviceAddress) {

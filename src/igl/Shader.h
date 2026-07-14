@@ -169,7 +169,7 @@ struct ShaderInput {
    */
   const char* IGL_NULLABLE source = nullptr;
   /**
-   * @brief Shader compiler configuration. Only used by Metal backends.
+   * @brief Shader compiler configuration. Consumed by the Metal and Vulkan/SPIR-V backends.
    * @remark Only used when type is ShaderInputType::String
    */
   ShaderCompilerOptions options;

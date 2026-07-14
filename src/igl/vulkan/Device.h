@@ -136,6 +136,7 @@ class Device final : public IDevice {
                                                          Result* IGL_NULLABLE outResult) const;
   std::shared_ptr<VulkanShaderModule> createShaderModule(ShaderStage stage,
                                                          const char* IGL_NULLABLE source,
+                                                         const ShaderCompilerOptions& options,
                                                          const std::string& debugName,
                                                          Result* IGL_NULLABLE outResult) const;
 
