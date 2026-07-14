@@ -3912,16 +3912,18 @@ ShaderVersion Device::getShaderVersion() const {
   }
 #endif
   if (dxcAvailable) {
-    return ShaderVersion{ShaderFamily::Hlsl, 6, 0, 0};
+    return ShaderVersion{
+        .family = ShaderFamily::Hlsl, .majorVersion = 6, .minorVersion = 0, .extra = 0};
   }
-  return ShaderVersion{ShaderFamily::Hlsl, 5, 0, 0};
+  return ShaderVersion{
+      .family = ShaderFamily::Hlsl, .majorVersion = 5, .minorVersion = 0, .extra = 0};
 }
 
 BackendVersion Device::getBackendVersion() const {
   // Query highest supported feature level to report backend version
   auto* dev = ctx_->getDevice();
   if (!dev) {
-    return BackendVersion{BackendFlavor::D3D12, 0, 0};
+    return BackendVersion{.flavor = BackendFlavor::D3D12, .majorVersion = 0, .minorVersion = 0};
   }
 
   static const D3D_FEATURE_LEVEL kLevels[] = {
@@ -3939,21 +3941,21 @@ BackendVersion Device::getBackendVersion() const {
   if (SUCCEEDED(dev->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS, &fls, sizeof(fls)))) {
     switch (fls.MaxSupportedFeatureLevel) {
     case D3D_FEATURE_LEVEL_12_2:
-      return BackendVersion{BackendFlavor::D3D12, 12, 2};
+      return BackendVersion{.flavor = BackendFlavor::D3D12, .majorVersion = 12, .minorVersion = 2};
     case D3D_FEATURE_LEVEL_12_1:
-      return BackendVersion{BackendFlavor::D3D12, 12, 1};
+      return BackendVersion{.flavor = BackendFlavor::D3D12, .majorVersion = 12, .minorVersion = 1};
     case D3D_FEATURE_LEVEL_12_0:
-      return BackendVersion{BackendFlavor::D3D12, 12, 0};
+      return BackendVersion{.flavor = BackendFlavor::D3D12, .majorVersion = 12, .minorVersion = 0};
     case D3D_FEATURE_LEVEL_11_1:
-      return BackendVersion{BackendFlavor::D3D12, 11, 1};
+      return BackendVersion{.flavor = BackendFlavor::D3D12, .majorVersion = 11, .minorVersion = 1};
     case D3D_FEATURE_LEVEL_11_0:
     default:
-      return BackendVersion{BackendFlavor::D3D12, 11, 0};
+      return BackendVersion{.flavor = BackendFlavor::D3D12, .majorVersion = 11, .minorVersion = 0};
     }
   }
 
   // Fallback if CheckFeatureSupport fails
-  return BackendVersion{BackendFlavor::D3D12, 11, 0};
+  return BackendVersion{.flavor = BackendFlavor::D3D12, .majorVersion = 11, .minorVersion = 0};
 }
 
 BackendType Device::getBackendType() const {
