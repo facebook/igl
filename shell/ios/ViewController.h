@@ -9,8 +9,8 @@
 
 #import "RenderSessionFactoryProvider.h"
 
-#import <MetalKit/MTKView.h>
-#import <UIKit/UIKit.h>
+#import <MetalKit/MTKView.h> // IWYU pragma: keep
+#import <UIKit/UIViewController.h> // IWYU pragma: keep
 #import <shell/shared/renderSession/RenderSessionConfig.h>
 
 @interface ViewController : UIViewController <MTKViewDelegate>
