@@ -584,7 +584,7 @@ bool DeviceFeatureSet::isFeatureSupportedMiscGroup(DeviceFeatures feature) const
     return hasExtension(Extensions::TimerQuery);
 
   case DeviceFeatures::DynamicSetCullMode:
-  case DeviceFeatures::DynamicSetFrontFace:
+  case DeviceFeatures::DynamicSetFrontFacingWinding:
     return true;
 
   default:

@@ -32,7 +32,7 @@ namespace igl {
  * DrawIndexedIndirect        Supports IRenderCommandEncoder::drawIndexedIndirect
  * DrawInstanced              Supports IRenderCommandEncoder::draw:instanceCount
  * DynamicSetCullMode         Supports setting cull mode dynamically at draw time 
- * DynamicSetFrontFace        Supports setting front face winding dynamically at draw time 
+ * DynamicSetFrontFacingWinding Supports setting front face winding dynamically at draw time 
  * ExplicitBinding,           Supports uniforms block explicit binding in shaders
  * ExplicitBindingExt,        Supports uniforms block explicit binding in shaders via an extension
  * ExternalMemoryObjects,     Supports accessing external memory objects, including by POSIX file descriptor
@@ -88,7 +88,7 @@ enum class DeviceFeatures {
   DrawIndexedIndirect,
   DrawInstanced,
   DynamicSetCullMode,
-  DynamicSetFrontFace,
+  DynamicSetFrontFacingWinding,
   ExplicitBinding,
   ExplicitBindingExt,
   ExternalMemoryObjects,
