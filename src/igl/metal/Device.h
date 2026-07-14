@@ -12,6 +12,7 @@
 #include <ldrutils/lutils/Pool.h>
 #include <igl/CommandEncoder.h>
 #include <igl/Device.h>
+#include <igl/Shader.h>
 #include <igl/metal/DeviceFeatureSet.h>
 #include <igl/metal/DeviceStatistics.h>
 #include <igl/metal/PlatformDevice.h>
@@ -158,5 +159,13 @@ class Device : public IDevice {
   mutable DeviceStatistics deviceStatistics_;
   std::shared_ptr<ICommandQueue> mostRecentCommandQueue_;
 };
+
+/// Resolves whether Metal fast math should be enabled for an MSL compile from IGL's
+/// backend-agnostic `ShaderCompilerOptions`. On Metal the build-mode lever is fast math rather than
+/// the optimization level: runtime `newLibraryWithSource:` exposes no true `-O0`, so debug builds
+/// disable fast math (reference numerics + clean source-level stepping) and release/profiling
+/// builds enable it. `ShaderOptimization::Default` preserves the caller's explicit
+/// `fastMathEnabled` flag so existing IGL clients are byte-for-byte unchanged.
+[[nodiscard]] bool shouldEnableFastMath(const ShaderCompilerOptions& options) noexcept;
 
 } // namespace igl::metal

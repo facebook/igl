@@ -116,4 +116,56 @@ TEST_F(MetalShaderLibraryTest, ShaderCompilationCountIncrements) {
   ASSERT_GT(countAfter, countBefore);
 }
 
+//
+// FastMathPolicy
+//
+// Diff-3 plumbing (unit): shouldEnableFastMath() maps each ShaderOptimization onto Metal's
+// fast-math lever. There is no true -O0 at runtime, so fast math is the debug/release lever:
+// Default preserves the caller's explicit fastMathEnabled flag (historical behavior, existing
+// clients unaffected), NoOpt (debug) forces it OFF for reference numerics, and Performance
+// (release) forces it ON. Pure mapping logic — no Metal device required.
+//
+TEST(MetalShaderCompilerOptions, FastMathPolicy) {
+  // Default honors the caller's explicit flag in both directions.
+  EXPECT_TRUE(igl::metal::shouldEnableFastMath(
+      ShaderCompilerOptions{.fastMathEnabled = true, .optimization = ShaderOptimization::Default}));
+  EXPECT_FALSE(igl::metal::shouldEnableFastMath(ShaderCompilerOptions{
+      .fastMathEnabled = false, .optimization = ShaderOptimization::Default}));
+
+  // NoOpt (debug) forces fast math OFF regardless of the explicit flag.
+  EXPECT_FALSE(igl::metal::shouldEnableFastMath(
+      ShaderCompilerOptions{.fastMathEnabled = true, .optimization = ShaderOptimization::NoOpt}));
+
+  // Performance (release) forces fast math ON regardless of the explicit flag.
+  EXPECT_TRUE(igl::metal::shouldEnableFastMath(ShaderCompilerOptions{
+      .fastMathEnabled = false, .optimization = ShaderOptimization::Performance}));
+}
+
+//
+// CompilesForEachOptimization
+//
+// Diff-3 plumbing (integration): every ShaderOptimization compiles end-to-end through Metal's
+// createShaderLibrary() via the options carried on ShaderInput. The release-vs-debug
+// numerics/timing delta is validated on-device per the diff test plan, not here.
+//
+TEST_F(MetalShaderLibraryTest, CompilesForEachOptimization) {
+  const auto shaderSource = std::string(data::shader::kMtlSimpleShader);
+  const std::vector<ShaderModuleInfo> moduleInfo = {
+      {ShaderStage::Vertex, std::string(data::shader::kSimpleVertFunc)},
+      {ShaderStage::Fragment, std::string(data::shader::kSimpleFragFunc)},
+  };
+
+  for (const ShaderOptimization optimization :
+       {ShaderOptimization::Default, ShaderOptimization::NoOpt, ShaderOptimization::Performance}) {
+    auto libraryDesc =
+        ShaderLibraryDesc::fromStringInput(shaderSource.c_str(), moduleInfo, "optTestLibrary");
+    libraryDesc.input.options.optimization = optimization;
+
+    Result res;
+    auto library = device_->createShaderLibrary(libraryDesc, &res);
+    EXPECT_TRUE(res.isOk()) << res.message;
+    EXPECT_NE(library, nullptr);
+  }
+}
+
 } // namespace igl::tests

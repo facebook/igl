@@ -785,6 +785,23 @@ MTLDataType convertConstantValueType(ConstantValueType type) {
 }
 } // namespace
 
+bool shouldEnableFastMath(const ShaderCompilerOptions& options) noexcept {
+  // Map IGL's backend-agnostic optimization strategy onto Metal's fast-math lever. There is no true
+  // -O0 at runtime (newLibraryWithSource: exposes only the .default / .size optimization levels),
+  // so on Metal the debug/release lever is fast math, not the optimization level. The historical
+  // default honors the caller's explicit flag, keeping existing clients byte-for-byte unchanged.
+  switch (options.optimization) {
+  case ShaderOptimization::Default:
+    return options.fastMathEnabled; // historical: honor the caller's explicit flag
+  case ShaderOptimization::NoOpt:
+    return false; // debug: reference numerics + clean source-level stepping
+  case ShaderOptimization::Performance:
+    return true; // release/profiling: real optimized GPU numbers
+  default:
+    return options.fastMathEnabled; // safe fallback for future strategies
+  }
+}
+
 std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& desc,
                                                             Result* outResult) const {
   if (IGL_DEBUG_VERIFY_NOT(desc.moduleInfo.empty())) {
@@ -814,7 +831,12 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
       return nullptr;
     }
     MTLCompileOptions* compileOpts = [MTLCompileOptions new];
-    compileOpts.fastMathEnabled = desc.input.options.fastMathEnabled;
+    // Fast math is the debug/release lever on Metal: runtime newLibraryWithSource: has no true -O0,
+    // and MTLCompileOptions.optimizationLevel already defaults to
+    // MTLLibraryOptimizationLevelDefault (the optimizing level; optimize-for-size is out of scope),
+    // so we leave it untouched — setting it would be a no-op and its setter is only available on
+    // macOS 13 / iOS 16+.
+    compileOpts.fastMathEnabled = shouldEnableFastMath(desc.input.options);
 
     NSString* shaderSource = [NSString stringWithUTF8String:desc.input.source];
     metalLibrary = [device_ newLibraryWithSource:shaderSource options:compileOpts error:&error];
