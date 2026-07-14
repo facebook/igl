@@ -291,7 +291,14 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
   jclass intentClass = env->GetObjectClass(intent);
   jmethodID getStringExtraMethod =
       env->GetMethodID(intentClass, "getStringExtra", "(Ljava/lang/String;)Ljava/lang/String;");
+  // intentClass is unused past GetMethodID(); release it here so every return
+  // below is leak-free (the local-ref table is small and fixed, and this path
+  // re-runs on each backend init).
+  env->DeleteLocalRef(intentClass);
   if (!getStringExtraMethod) {
+    // GetMethodID() may leave a pending exception on failure; clear it so it
+    // doesn't surface on the next JNI call.
+    env->ExceptionClear();
     return tokens;
   }
 
@@ -304,6 +311,12 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
 
   auto* valueJStr = static_cast<jstring>(valueObj);
   const char* valueChars = env->GetStringUTFChars(valueJStr, nullptr);
+  if (valueChars == nullptr) {
+    // GetStringUTFChars() can fail (e.g. JVM OOM); constructing std::string(nullptr)
+    // would be undefined behavior, so bail out with what we have.
+    env->DeleteLocalRef(valueJStr);
+    return tokens;
+  }
   std::string value(valueChars);
   env->ReleaseStringUTFChars(valueJStr, valueChars);
   env->DeleteLocalRef(valueJStr);
