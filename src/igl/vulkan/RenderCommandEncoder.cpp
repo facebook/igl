@@ -430,26 +430,15 @@ void RenderCommandEncoder::applyPipelineRasterizationDynamicState() {
     return;
   }
 
-  const auto& vkFeatures = ctx_.features();
   const bool isVulkan13 =
       ctx_.getVkPhysicalDeviceProperties().apiVersion >= VK_API_VERSION_1_3;
-  const bool useCoreEDS = isVulkan13;
-  const bool useExtEDS =
-      !isVulkan13 && vkFeatures.has_VK_EXT_extended_dynamic_state;
 
-  const RenderPipelineDesc& pipelineDesc = rps_->getRenderPipelineDesc();
-  const VkCullModeFlags cullMode = cullModeToVkCullMode(pipelineDesc.cullMode);
-  const VkFrontFace frontFace = windingModeToVkFrontFace(pipelineDesc.frontFaceWinding);
-  const VkPrimitiveTopology primitiveTopology = primitiveTypeToVkPrimitiveTopology(pipelineDesc.topology);
-
-  if (useCoreEDS) {
-    ctx_.vf_.vkCmdSetCullMode(cmdBuffer_, cullMode);
-    ctx_.vf_.vkCmdSetFrontFace(cmdBuffer_, frontFace);
-    ctx_.vf_.vkCmdSetPrimitiveTopology(cmdBuffer_, primitiveTopology);
-  } else if (useExtEDS) {
-    ctx_.vf_.vkCmdSetCullModeEXT(cmdBuffer_, cullMode);
-    ctx_.vf_.vkCmdSetFrontFaceEXT(cmdBuffer_, frontFace);
-    ctx_.vf_.vkCmdSetPrimitiveTopologyEXT(cmdBuffer_, primitiveTopology);
+  if (isVulkan13 || ctx_.features().has_VK_EXT_extended_dynamic_state) {
+    const RenderPipelineDesc& desc = rps_->getRenderPipelineDesc();
+    ctx_.vf_.vkCmdSetCullMode(cmdBuffer_, cullModeToVkCullMode(desc.cullMode));
+    ctx_.vf_.vkCmdSetFrontFace(cmdBuffer_, windingModeToVkFrontFace(desc.frontFaceWinding));
+    ctx_.vf_.vkCmdSetPrimitiveTopology(cmdBuffer_,
+                                       primitiveTypeToVkPrimitiveTopology(desc.topology));
   }
 }
 
