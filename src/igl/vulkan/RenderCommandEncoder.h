@@ -137,6 +137,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   /// assert at some point, the vertex buffer(s) is bound correctly.
   void ensureVertexBuffers();
   void flushDynamicState();
+  void flushDynamicDepthStencilState();
 
   void initialize(const RenderPassDesc& renderPass,
                   const std::shared_ptr<IFramebuffer>& framebuffer,

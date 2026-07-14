@@ -807,6 +807,70 @@ bool RenderCommandEncoder::setDrawCallCountEnabled(bool value) {
   return returnVal;
 }
 
+void RenderCommandEncoder::flushDynamicDepthStencilState() {
+  IGL_PROFILER_FUNCTION();
+
+  const auto& vkFeatures = ctx_.features();
+  const bool isVulkan13 =
+      ctx_.getVkPhysicalDeviceProperties().apiVersion >= VK_API_VERSION_1_3;
+  const bool useCoreEDS = isVulkan13;
+  const bool useExtEDS =
+      !isVulkan13 && vkFeatures.has_VK_EXT_extended_dynamic_state;
+  const bool useCoreEDS2 = isVulkan13;
+  const bool useExtEDS2 =
+      !isVulkan13 && vkFeatures.has_VK_EXT_extended_dynamic_state2;
+
+  if (useCoreEDS) {
+    ctx_.vf_.vkCmdSetDepthTestEnable(cmdBuffer_,
+                                     dynamicState_.depthWriteEnable ? VK_TRUE : VK_FALSE);
+    ctx_.vf_.vkCmdSetDepthWriteEnable(cmdBuffer_,
+                                      dynamicState_.depthWriteEnable ? VK_TRUE : VK_FALSE);
+    ctx_.vf_.vkCmdSetDepthCompareOp(cmdBuffer_, dynamicState_.getDepthCompareOp());
+
+    ctx_.vf_.vkCmdSetStencilTestEnable(cmdBuffer_, VK_TRUE);
+    ctx_.vf_.vkCmdSetStencilOp(cmdBuffer_,
+                               VK_STENCIL_FACE_FRONT_BIT,
+                               dynamicState_.getStencilStateFailOp(true),
+                               dynamicState_.getStencilStatePassOp(true),
+                               dynamicState_.getStencilStateDepthFailOp(true),
+                               dynamicState_.getStencilStateCompareOp(true));
+    ctx_.vf_.vkCmdSetStencilOp(cmdBuffer_,
+                               VK_STENCIL_FACE_BACK_BIT,
+                               dynamicState_.getStencilStateFailOp(false),
+                               dynamicState_.getStencilStatePassOp(false),
+                               dynamicState_.getStencilStateDepthFailOp(false),
+                               dynamicState_.getStencilStateCompareOp(false));
+  } else if (useExtEDS) {
+    ctx_.vf_.vkCmdSetDepthTestEnableEXT(cmdBuffer_,
+                                        dynamicState_.depthWriteEnable ? VK_TRUE : VK_FALSE);
+    ctx_.vf_.vkCmdSetDepthWriteEnableEXT(cmdBuffer_,
+                                         dynamicState_.depthWriteEnable ? VK_TRUE : VK_FALSE);
+    ctx_.vf_.vkCmdSetDepthCompareOpEXT(cmdBuffer_, dynamicState_.getDepthCompareOp());
+
+    ctx_.vf_.vkCmdSetStencilTestEnableEXT(cmdBuffer_, VK_TRUE);
+    ctx_.vf_.vkCmdSetStencilOpEXT(cmdBuffer_,
+                                  VK_STENCIL_FACE_FRONT_BIT,
+                                  dynamicState_.getStencilStateFailOp(true),
+                                  dynamicState_.getStencilStatePassOp(true),
+                                  dynamicState_.getStencilStateDepthFailOp(true),
+                                  dynamicState_.getStencilStateCompareOp(true));
+    ctx_.vf_.vkCmdSetStencilOpEXT(cmdBuffer_,
+                                  VK_STENCIL_FACE_BACK_BIT,
+                                  dynamicState_.getStencilStateFailOp(false),
+                                  dynamicState_.getStencilStatePassOp(false),
+                                  dynamicState_.getStencilStateDepthFailOp(false),
+                                  dynamicState_.getStencilStateCompareOp(false));
+  }
+
+  if (useCoreEDS2) {
+    ctx_.vf_.vkCmdSetDepthBiasEnable(cmdBuffer_,
+                                     dynamicState_.depthBiasEnable ? VK_TRUE : VK_FALSE);
+  } else if (useExtEDS2) {
+    ctx_.vf_.vkCmdSetDepthBiasEnableEXT(cmdBuffer_,
+                                        dynamicState_.depthBiasEnable ? VK_TRUE : VK_FALSE);
+  }
+}
+
 void RenderCommandEncoder::flushDynamicState() {
   IGL_PROFILER_FUNCTION();
 
