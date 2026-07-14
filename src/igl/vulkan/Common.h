@@ -249,7 +249,7 @@ void initialize(VulkanFunctionTable& table);
 void loadInstanceFunctions(VulkanFunctionTable& table,
                            VkInstance instance,
                            bool enableExtDebugUtils);
-void loadDeviceFunctions(VulkanFunctionTable& table, VkDevice device);
+void loadDeviceFunctions(VulkanFunctionTable& table, VkDevice device, uint32_t vulkanAPIVersion);
 
 } // namespace igl::vulkan::functions
 

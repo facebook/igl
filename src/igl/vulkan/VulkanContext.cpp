@@ -1130,7 +1130,7 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   // Table functions are always bound to a device. Project using enableConcurrentVkDevicesSupport
   // should use own copy of function table bound to a device.
-  vulkan::functions::loadDeviceFunctions(*tableImpl_, device);
+  vulkan::functions::loadDeviceFunctions(*tableImpl_, device, getVkPhysicalDeviceProperties().apiVersion);
 
   if (features_.has_VK_KHR_buffer_device_address && vf_.vkGetBufferDeviceAddressKHR == nullptr) {
     return Result(Result::Code::InvalidOperation, "Cannot initialize VK_KHR_buffer_device_address");

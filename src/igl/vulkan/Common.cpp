@@ -927,9 +927,9 @@ void loadInstanceFunctions(VulkanFunctionTable& table,
       &table, instance, table.vkGetInstanceProcAddr, enableExtDebugUtils ? VK_TRUE : VK_FALSE);
 }
 
-void loadDeviceFunctions(VulkanFunctionTable& table, VkDevice device) {
+void loadDeviceFunctions(VulkanFunctionTable& table, VkDevice device, uint32_t vulkanAPIVersion) {
   IGL_DEBUG_ASSERT(table.vkGetDeviceProcAddr != nullptr);
-  loadVulkanDeviceFunctions(&table, device, table.vkGetDeviceProcAddr);
+  loadVulkanDeviceFunctions(&table, device, table.vkGetDeviceProcAddr, vulkanAPIVersion);
 }
 
 } // namespace igl::vulkan::functions

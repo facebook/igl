@@ -392,7 +392,8 @@ void loadVulkanInstanceFunctions(struct VulkanFunctionTable* table,
 
 void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
                                VkDevice context,
-                               PFN_vkGetDeviceProcAddr load) {
+                               PFN_vkGetDeviceProcAddr load,
+                               uint32_t vulkanAPIVersion) {
   /* IGL_GENERATE_LOAD_DEVICE_TABLE */
   // VK_VERSION_1_0
   table->vkAllocateCommandBuffers =
@@ -773,40 +774,18 @@ void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
       (PFN_vkCmdSetStencilTestEnableEXT)load(context, "vkCmdSetStencilTestEnableEXT");
   table->vkCmdSetViewportWithCountEXT =
       (PFN_vkCmdSetViewportWithCountEXT)load(context, "vkCmdSetViewportWithCountEXT");
-  if (!table->vkCmdBindVertexBuffers2) {
+  if (vulkanAPIVersion < VK_API_VERSION_1_3) {
     table->vkCmdBindVertexBuffers2 = table->vkCmdBindVertexBuffers2EXT;
-  }
-  if (!table->vkCmdSetCullMode) {
     table->vkCmdSetCullMode = table->vkCmdSetCullModeEXT;
-  }
-  if (!table->vkCmdSetDepthBoundsTestEnable) {
     table->vkCmdSetDepthBoundsTestEnable = table->vkCmdSetDepthBoundsTestEnableEXT;
-  }
-  if (!table->vkCmdSetDepthCompareOp) {
     table->vkCmdSetDepthCompareOp = table->vkCmdSetDepthCompareOpEXT;
-  }
-  if (!table->vkCmdSetDepthTestEnable) {
     table->vkCmdSetDepthTestEnable = table->vkCmdSetDepthTestEnableEXT;
-  }
-  if (!table->vkCmdSetDepthWriteEnable) {
     table->vkCmdSetDepthWriteEnable = table->vkCmdSetDepthWriteEnableEXT;
-  }
-  if (!table->vkCmdSetFrontFace) {
     table->vkCmdSetFrontFace = table->vkCmdSetFrontFaceEXT;
-  }
-  if (!table->vkCmdSetPrimitiveTopology) {
     table->vkCmdSetPrimitiveTopology = table->vkCmdSetPrimitiveTopologyEXT;
-  }
-  if (!table->vkCmdSetScissorWithCount) {
     table->vkCmdSetScissorWithCount = table->vkCmdSetScissorWithCountEXT;
-  }
-  if (!table->vkCmdSetStencilOp) {
     table->vkCmdSetStencilOp = table->vkCmdSetStencilOpEXT;
-  }
-  if (!table->vkCmdSetStencilTestEnable) {
     table->vkCmdSetStencilTestEnable = table->vkCmdSetStencilTestEnableEXT;
-  }
-  if (!table->vkCmdSetViewportWithCount) {
     table->vkCmdSetViewportWithCount = table->vkCmdSetViewportWithCountEXT;
   }
 #endif /* defined(VK_EXT_extended_dynamic_state) */
@@ -820,13 +799,9 @@ void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
       (PFN_vkCmdSetPrimitiveRestartEnableEXT)load(context, "vkCmdSetPrimitiveRestartEnableEXT");
   table->vkCmdSetRasterizerDiscardEnableEXT =
       (PFN_vkCmdSetRasterizerDiscardEnableEXT)load(context, "vkCmdSetRasterizerDiscardEnableEXT");
-  if (!table->vkCmdSetDepthBiasEnable) {
+  if (vulkanAPIVersion < VK_API_VERSION_1_3) {
     table->vkCmdSetDepthBiasEnable = table->vkCmdSetDepthBiasEnableEXT;
-  }
-  if (!table->vkCmdSetPrimitiveRestartEnable) {
     table->vkCmdSetPrimitiveRestartEnable = table->vkCmdSetPrimitiveRestartEnableEXT;
-  }
-  if (!table->vkCmdSetRasterizerDiscardEnable) {
     table->vkCmdSetRasterizerDiscardEnable = table->vkCmdSetRasterizerDiscardEnableEXT;
   }
 #endif /* defined(VK_EXT_extended_dynamic_state2) */
