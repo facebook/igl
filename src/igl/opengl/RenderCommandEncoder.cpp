@@ -616,8 +616,10 @@ void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float
   }
 }
 
-void RenderCommandEncoder::setFrontFacingWinding(WindingMode /*frontFaceWinding*/) {
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+void RenderCommandEncoder::setFrontFacingWinding(WindingMode frontFaceWinding) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
+    adapter_->setFrontFacingWinding(frontFaceWinding);
+  }
 }
 
 void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
