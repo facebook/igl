@@ -794,6 +794,10 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
     return true;
   case DeviceFeatures::DrawInstanced:
     return true;
+  case DeviceFeatures::DynamicSetCullMode:
+  case DeviceFeatures::DynamicSetFrontFace:
+    return deviceProperties.apiVersion >= VK_API_VERSION_1_3 ||
+           ctx_->features_.has_VK_EXT_extended_dynamic_state;
   case DeviceFeatures::Indices8Bit:
     return ctx_->features_.has_VK_EXT_index_type_uint8;
   case DeviceFeatures::ValidationLayersEnabled:
