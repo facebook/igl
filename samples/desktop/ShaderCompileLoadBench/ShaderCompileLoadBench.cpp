@@ -193,10 +193,10 @@ struct BenchResult {
 
   stats.coldMs = samplesMs.front();
 
-  std::vector<double> warmSamples(samplesMs.begin() + 1, samplesMs.end());
-  if (warmSamples.empty()) {
-    warmSamples = samplesMs;
+  if (samplesMs.size() < 2) {
+    return stats; // only a cold sample; leave warmSamples == 0
   }
+  std::vector<double> warmSamples(samplesMs.begin() + 1, samplesMs.end());
   std::sort(warmSamples.begin(), warmSamples.end());
   stats.warmSamples = warmSamples.size();
   stats.warmMedianMs = medianOfSorted(warmSamples);
