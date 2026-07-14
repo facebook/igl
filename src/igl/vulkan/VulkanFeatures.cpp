@@ -135,6 +135,14 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT,
       .descriptorBuffer = VK_TRUE,
   }),
+  featuresExtendedDynamicState({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT,
+      .extendedDynamicState = VK_TRUE,
+  }),
+  featuresExtendedDynamicState2({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT,
+      .extendedDynamicState2 = VK_TRUE,
+  }),
   config(config) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
@@ -290,6 +298,8 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& contextConf
   featuresMeshShader.pNext = nullptr;
   featuresFragmentShadingRate.pNext = nullptr;
   featuresDescriptorBuffer.pNext = nullptr;
+  featuresExtendedDynamicState.pNext = nullptr;
+  featuresExtendedDynamicState2.pNext = nullptr;
 
   // Add the required and optional features to the VkPhysicalDeviceFetaures2_
   ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresSamplerYcbcrConversion);
@@ -345,6 +355,12 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& contextConf
   if (hasExtension(VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
     ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresMeshShader);
   }
+  if (hasExtension(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)) {
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresExtendedDynamicState);
+  }
+  if (hasExtension(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME)) {
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresExtendedDynamicState2);
+  }
 }
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
@@ -381,6 +397,8 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   featuresMeshShader = other.featuresMeshShader;
   featuresFragmentShadingRate = other.featuresFragmentShadingRate;
   featuresDescriptorBuffer = other.featuresDescriptorBuffer;
+  featuresExtendedDynamicState = other.featuresExtendedDynamicState;
+  featuresExtendedDynamicState2 = other.featuresExtendedDynamicState2;
 
   extensions_ = other.extensions_;
   enabledExtensions_ = other.enabledExtensions_;
@@ -570,6 +588,14 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
   }
 
   has_VK_EXT_mesh_shader = enable(VK_EXT_MESH_SHADER_EXTENSION_NAME, ExtensionType::Device);
+
+  // VK_EXT_extended_dynamic_state / _state2 (promoted to core in Vulkan 1.3).
+  // Only meaningful when device apiVersion < 1.3; on >= 1.3 core entry points are used
+  // directly. Enabling here as extensions also loads the *EXT-suffixed function pointers.
+  has_VK_EXT_extended_dynamic_state =
+      enable(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, ExtensionType::Device);
+  has_VK_EXT_extended_dynamic_state2 =
+      enable(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME, ExtensionType::Device);
 
   // Enable fragment shading rate extension (required when primitiveFragmentShadingRateMeshShader is
   // used)

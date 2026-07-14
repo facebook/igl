@@ -72,6 +72,11 @@ class VulkanFeatures final {
 
   VkPhysicalDeviceDescriptorBufferFeaturesEXT featuresDescriptorBuffer{};
 
+  // VK_EXT_extended_dynamic_state (promoted to Vulkan 1.3)
+  VkPhysicalDeviceExtendedDynamicStateFeaturesEXT featuresExtendedDynamicState{};
+  // VK_EXT_extended_dynamic_state2 (promoted to Vulkan 1.3)
+  VkPhysicalDeviceExtendedDynamicState2FeaturesEXT featuresExtendedDynamicState2{};
+
   // We need to reassemble the feature chain because of the pNext pointers
   VulkanFeatures& operator=(const VulkanFeatures& other) noexcept;
 
@@ -128,6 +133,8 @@ class VulkanFeatures final {
   bool has_VK_KHR_uniform_buffer_standard_layout = false; // promoted to Vulkan 1.2
   bool has_VK_KHR_vulkan_memory_model = false; // promoted to Vulkan 1.2
   bool has_VK_QCOM_multiview_per_view_viewports = false;
+  bool has_VK_EXT_extended_dynamic_state = false; // promoted to Vulkan 1.3
+  bool has_VK_EXT_extended_dynamic_state2 = false; // promoted to Vulkan 1.3
   // NOLINTEND(readability-identifier-naming)
 
  private:
