@@ -57,12 +57,33 @@ enum class ConstantValueType : uint8_t {
 [[nodiscard]] size_t getConstantValueSize(ConstantValueType type) noexcept;
 
 /**
+ * @brief Selects how aggressively backend shader compilers optimize generated code.
+ *
+ * `Default` preserves IGL's historical compile behavior (optimizer enabled, biased toward size)
+ * so existing clients are byte-for-byte unaffected. The remaining values are opt-in and consumed
+ * per backend (Vulkan/SPIR-V, Metal/MSL); backends without an optimization lever (e.g. OpenGL/ES)
+ * ignore this field.
+ */
+enum class ShaderOptimization : uint8_t {
+  /** @brief Preserve IGL's historical default (optimizer on, optimize for size). */
+  Default = 0,
+  /** @brief Disable the optimizer for clean source-level debugging and reference numerics. */
+  NoOpt,
+  /** @brief Optimize compiled shaders for runtime performance. */
+  Performance,
+};
+
+/**
  * @brief Configuration used when compiling a shader to toggle features such as fast math.
  */
 struct ShaderCompilerOptions {
   /** @brief Enable optimizations for floating-point arithmetic that may violate the IEEE 754
    * standard. */
   bool fastMathEnabled = true;
+
+  /** @brief Selects the shader optimization strategy. Defaults to `ShaderOptimization::Default`,
+   * which preserves IGL's historical behavior so existing clients are unaffected. */
+  ShaderOptimization optimization = ShaderOptimization::Default;
 
   bool operator==(const ShaderCompilerOptions& other) const;
   bool operator!=(const ShaderCompilerOptions& other) const;

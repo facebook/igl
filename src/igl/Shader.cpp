@@ -98,7 +98,7 @@ size_t getConstantValueSize(ConstantValueType type) noexcept {
 }
 
 bool ShaderCompilerOptions::operator==(const ShaderCompilerOptions& other) const {
-  return fastMathEnabled == other.fastMathEnabled;
+  return fastMathEnabled == other.fastMathEnabled && optimization == other.optimization;
 }
 
 bool ShaderCompilerOptions::operator!=(const ShaderCompilerOptions& other) const {
@@ -365,7 +365,9 @@ namespace std {
 // @fb-only
 
 size_t hash<igl::ShaderCompilerOptions>::operator()(const igl::ShaderCompilerOptions& key) const {
-  const size_t result = std::hash<bool>()(key.fastMathEnabled);
+  static_assert(std::is_same_v<uint8_t, std::underlying_type<igl::ShaderOptimization>::type>);
+  size_t result = std::hash<bool>()(key.fastMathEnabled);
+  result ^= std::hash<uint8_t>()(static_cast<uint8_t>(key.optimization));
   return result;
 }
 
@@ -404,6 +406,10 @@ size_t hash<igl::ShaderInput>::operator()(const igl::ShaderInput& key) const {
   size_t result = safeCStrHash(key.source);
   result ^= safeDataHash(key.data, key.length);
   result ^= std::hash<uint8_t>()(EnumToValue(key.type));
+  // Mix in the compiler options so the hash stays consistent with ShaderInput::operator==,
+  // which compares `options`. Without this, ShaderModuleDesc/ShaderLibraryDesc cache keys do
+  // not change when only ShaderOptimization changes, so debug/release shaders would collide.
+  result ^= std::hash<igl::ShaderCompilerOptions>()(key.options);
   return result;
 }
 
