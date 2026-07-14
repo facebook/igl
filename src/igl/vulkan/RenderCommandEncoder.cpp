@@ -423,6 +423,36 @@ void RenderCommandEncoder::bindRenderPipelineState(
   binder_.bindPipeline(VK_NULL_HANDLE, nullptr);
 }
 
+void RenderCommandEncoder::applyPipelineRasterizationDynamicState() {
+  IGL_PROFILER_FUNCTION();
+
+  if (!IGL_DEBUG_VERIFY(rps_)) {
+    return;
+  }
+
+  const auto& vkFeatures = ctx_.features();
+  const bool isVulkan13 =
+      ctx_.getVkPhysicalDeviceProperties().apiVersion >= VK_API_VERSION_1_3;
+  const bool useCoreEDS = isVulkan13;
+  const bool useExtEDS =
+      !isVulkan13 && vkFeatures.has_VK_EXT_extended_dynamic_state;
+
+  const RenderPipelineDesc& pipelineDesc = rps_->getRenderPipelineDesc();
+  const VkCullModeFlags cullMode = cullModeToVkCullMode(pipelineDesc.cullMode);
+  const VkFrontFace frontFace = windingModeToVkFrontFace(pipelineDesc.frontFaceWinding);
+  const VkPrimitiveTopology primitiveTopology = primitiveTypeToVkPrimitiveTopology(pipelineDesc.topology);
+
+  if (useCoreEDS) {
+    ctx_.vf_.vkCmdSetCullMode(cmdBuffer_, cullMode);
+    ctx_.vf_.vkCmdSetFrontFace(cmdBuffer_, frontFace);
+    ctx_.vf_.vkCmdSetPrimitiveTopology(cmdBuffer_, primitiveTopology);
+  } else if (useExtEDS) {
+    ctx_.vf_.vkCmdSetCullModeEXT(cmdBuffer_, cullMode);
+    ctx_.vf_.vkCmdSetFrontFaceEXT(cmdBuffer_, frontFace);
+    ctx_.vf_.vkCmdSetPrimitiveTopologyEXT(cmdBuffer_, primitiveTopology);
+  }
+}
+
 void RenderCommandEncoder::bindDepthStencilState(
     const std::shared_ptr<IDepthStencilState>& depthStencilState) {
   IGL_PROFILER_FUNCTION();

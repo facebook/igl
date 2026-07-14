@@ -133,6 +133,8 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
  private:
   RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer, VulkanContext& ctx);
 
+  void applyPipelineRasterizationDynamicState();
+
   /// @brief Ensures that the vertex buffers are bound by performing checks. If the function doesn't
   /// assert at some point, the vertex buffer(s) is bound correctly.
   void ensureVertexBuffers();
