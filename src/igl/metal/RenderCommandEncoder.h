@@ -99,7 +99,6 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
                   const std::shared_ptr<IFramebuffer>& framebuffer,
                   Result* outResult);
 
-  void bindFrontFacingWinding(const WindingMode& frontFaceWinding);
   void bindPolygonFillMode(const PolygonFillMode& polygonFillMode);
 
   id<MTLRenderCommandEncoder> encoder_ = nil;

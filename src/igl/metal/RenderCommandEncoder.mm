@@ -263,7 +263,7 @@ void RenderCommandEncoder::setCullMode(CullMode cullMode) {
   [encoder_ setCullMode:mode];
 }
 
-void RenderCommandEncoder::bindFrontFacingWinding(const WindingMode& frontFaceWinding) {
+void RenderCommandEncoder::setFrontFacingWinding(WindingMode frontFaceWinding) {
   IGL_DEBUG_ASSERT(encoder_);
   const MTLWinding mode = (frontFaceWinding == WindingMode::Clockwise) ? MTLWindingClockwise
                                                                        : MTLWindingCounterClockwise;
@@ -293,7 +293,7 @@ void RenderCommandEncoder::bindRenderPipelineState(
   [encoder_ setRenderPipelineState:metalPipelineState.get()];
 
   setCullMode(metalPipelineState.getCullMode());
-  bindFrontFacingWinding(metalPipelineState.getWindingMode());
+  setFrontFacingWinding(metalPipelineState.getWindingMode());
   bindPolygonFillMode(metalPipelineState.getPolygonFillMode());
 
   metalPrimitive_ = convertPrimitiveType(pipelineState->getRenderPipelineDesc().topology);
@@ -315,10 +315,6 @@ void RenderCommandEncoder::setBlendColor(const Color& color) {
 void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float clamp) {
   IGL_DEBUG_ASSERT(encoder_);
   [encoder_ setDepthBias:depthBias slopeScale:slopeScale clamp:clamp];
-}
-
-void RenderCommandEncoder::setFrontFacingWinding(WindingMode /*frontFaceWinding*/) {
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 }
 
 void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
