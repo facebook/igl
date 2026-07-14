@@ -16,6 +16,7 @@
 #include <vulkan/vulkan_android.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
+#include <igl/vulkan/VulkanEnumToString.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanTexture.h>
 
@@ -43,134 +44,60 @@ uint32_t ivkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memProps,
 }
 
 #if IGL_LOGGING_ENABLED
-const char* vkFormatName(const VkFormat format) noexcept {
-#define MP_VK_NAME(value) \
-  case value:             \
-    return #value
-  switch (format) {
-    MP_VK_NAME(VK_FORMAT_UNDEFINED);
-    MP_VK_NAME(VK_FORMAT_R8G8B8A8_UNORM);
-    MP_VK_NAME(VK_FORMAT_B8G8R8A8_UNORM);
-    MP_VK_NAME(VK_FORMAT_R8G8B8_UNORM);
-    MP_VK_NAME(VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
-    MP_VK_NAME(VK_FORMAT_G8_B8R8_2PLANE_420_UNORM);
-  default:
-    return "VK_FORMAT_UNKNOWN";
-  }
-#undef MP_VK_NAME
-}
-
-const char* vkComponentSwizzleName(const VkComponentSwizzle swizzle) noexcept {
-#define MP_VK_NAME(value) \
-  case value:             \
-    return #value
-  switch (swizzle) {
-    MP_VK_NAME(VK_COMPONENT_SWIZZLE_IDENTITY);
-    MP_VK_NAME(VK_COMPONENT_SWIZZLE_ZERO);
-    MP_VK_NAME(VK_COMPONENT_SWIZZLE_ONE);
-    MP_VK_NAME(VK_COMPONENT_SWIZZLE_R);
-    MP_VK_NAME(VK_COMPONENT_SWIZZLE_G);
-    MP_VK_NAME(VK_COMPONENT_SWIZZLE_B);
-    MP_VK_NAME(VK_COMPONENT_SWIZZLE_A);
-  default:
-    return "VK_COMPONENT_SWIZZLE_UNKNOWN";
-  }
-#undef MP_VK_NAME
-}
-
-const char* vkYcbcrModelName(const VkSamplerYcbcrModelConversion model) noexcept {
-#define MP_VK_NAME(value) \
-  case value:             \
-    return #value
-  switch (model) {
-    MP_VK_NAME(VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY);
-    MP_VK_NAME(VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_IDENTITY);
-    MP_VK_NAME(VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709);
-    MP_VK_NAME(VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_601);
-    MP_VK_NAME(VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_2020);
-  default:
-    return "VK_SAMPLER_YCBCR_MODEL_CONVERSION_UNKNOWN";
-  }
-#undef MP_VK_NAME
-}
-
-const char* vkYcbcrRangeName(const VkSamplerYcbcrRange range) noexcept {
-#define MP_VK_NAME(value) \
-  case value:             \
-    return #value
-  switch (range) {
-    MP_VK_NAME(VK_SAMPLER_YCBCR_RANGE_ITU_FULL);
-    MP_VK_NAME(VK_SAMPLER_YCBCR_RANGE_ITU_NARROW);
-  default:
-    return "VK_SAMPLER_YCBCR_RANGE_UNKNOWN";
-  }
-#undef MP_VK_NAME
-}
-
-const char* vkDriverIdName(const VkDriverId driverId) noexcept {
-#define MP_VK_NAME(value) \
-  case value:             \
-    return #value
-  switch (driverId) {
-    MP_VK_NAME(VK_DRIVER_ID_QUALCOMM_PROPRIETARY);
-    MP_VK_NAME(VK_DRIVER_ID_ARM_PROPRIETARY);
-    MP_VK_NAME(VK_DRIVER_ID_GOOGLE_SWIFTSHADER);
-    MP_VK_NAME(VK_DRIVER_ID_MESA_RADV);
-    MP_VK_NAME(VK_DRIVER_ID_MESA_LLVMPIPE);
-  default:
-    return "VK_DRIVER_ID_UNKNOWN";
-  }
-#undef MP_VK_NAME
-}
-
-void logFirstAhbVulkanDiagnostics(const VkAndroidHardwareBufferFormatPropertiesANDROID& formatProps,
+// Emits a one-time debug snapshot of the first imported AHB's Vulkan format and driver
+// properties. The std::call_once guard is owned here rather than on the texture-creation path,
+// so callers add a single line and the diagnostics never re-run per import.
+void logFirstAhbImportDiagnostics(const VkAndroidHardwareBufferFormatPropertiesANDROID& formatProps,
                                   const VkPhysicalDeviceDriverPropertiesKHR& driverProps) {
-  const VkComponentMapping& components = formatProps.samplerYcbcrConversionComponents;
-  if (formatProps.format == VK_FORMAT_UNDEFINED) {
+  static std::once_flag once;
+  std::call_once(once, [&formatProps, &driverProps]() {
+    const VkComponentMapping& components = formatProps.samplerYcbcrConversionComponents;
+    if (formatProps.format == VK_FORMAT_UNDEFINED) {
+      IGL_LOG_DEBUG(
+          "[vulkan][ahb][first_frame] Vulkan AHB import\n"
+          "  format=%s (%d) externalFormat=0x%llx\n"
+          "  components r=%s g=%s b=%s a=%s\n"
+          "  ycbcrModel=%s ycbcrRange=%s\n"
+          "  driverID=%s (%d) conformance=%u.%u.%u.%u\n",
+          vkFormatToString(formatProps.format),
+          static_cast<int>(formatProps.format),
+          static_cast<unsigned long long>(formatProps.externalFormat),
+          vkComponentSwizzleToString(components.r),
+          vkComponentSwizzleToString(components.g),
+          vkComponentSwizzleToString(components.b),
+          vkComponentSwizzleToString(components.a),
+          vkSamplerYcbcrModelConversionToString(formatProps.suggestedYcbcrModel),
+          vkSamplerYcbcrRangeToString(formatProps.suggestedYcbcrRange),
+          vkDriverIdToString(driverProps.driverID),
+          static_cast<int>(driverProps.driverID),
+          static_cast<unsigned>(driverProps.conformanceVersion.major),
+          static_cast<unsigned>(driverProps.conformanceVersion.minor),
+          static_cast<unsigned>(driverProps.conformanceVersion.subminor),
+          static_cast<unsigned>(driverProps.conformanceVersion.patch));
+      return;
+    }
+
     IGL_LOG_DEBUG(
         "[vulkan][ahb][first_frame] Vulkan AHB import\n"
-        "  format=%s (%d) externalFormat=0x%llx\n"
+        "  format=%s (%d)\n"
         "  components r=%s g=%s b=%s a=%s\n"
         "  ycbcrModel=%s ycbcrRange=%s\n"
         "  driverID=%s (%d) conformance=%u.%u.%u.%u\n",
-        vkFormatName(formatProps.format),
+        vkFormatToString(formatProps.format),
         static_cast<int>(formatProps.format),
-        static_cast<unsigned long long>(formatProps.externalFormat),
-        vkComponentSwizzleName(components.r),
-        vkComponentSwizzleName(components.g),
-        vkComponentSwizzleName(components.b),
-        vkComponentSwizzleName(components.a),
-        vkYcbcrModelName(formatProps.suggestedYcbcrModel),
-        vkYcbcrRangeName(formatProps.suggestedYcbcrRange),
-        vkDriverIdName(driverProps.driverID),
+        vkComponentSwizzleToString(components.r),
+        vkComponentSwizzleToString(components.g),
+        vkComponentSwizzleToString(components.b),
+        vkComponentSwizzleToString(components.a),
+        vkSamplerYcbcrModelConversionToString(formatProps.suggestedYcbcrModel),
+        vkSamplerYcbcrRangeToString(formatProps.suggestedYcbcrRange),
+        vkDriverIdToString(driverProps.driverID),
         static_cast<int>(driverProps.driverID),
         static_cast<unsigned>(driverProps.conformanceVersion.major),
         static_cast<unsigned>(driverProps.conformanceVersion.minor),
         static_cast<unsigned>(driverProps.conformanceVersion.subminor),
         static_cast<unsigned>(driverProps.conformanceVersion.patch));
-    return;
-  }
-
-  IGL_LOG_DEBUG(
-      "[vulkan][ahb][first_frame] Vulkan AHB import\n"
-      "  format=%s (%d)\n"
-      "  components r=%s g=%s b=%s a=%s\n"
-      "  ycbcrModel=%s ycbcrRange=%s\n"
-      "  driverID=%s (%d) conformance=%u.%u.%u.%u\n",
-      vkFormatName(formatProps.format),
-      static_cast<int>(formatProps.format),
-      vkComponentSwizzleName(components.r),
-      vkComponentSwizzleName(components.g),
-      vkComponentSwizzleName(components.b),
-      vkComponentSwizzleName(components.a),
-      vkYcbcrModelName(formatProps.suggestedYcbcrModel),
-      vkYcbcrRangeName(formatProps.suggestedYcbcrRange),
-      vkDriverIdName(driverProps.driverID),
-      static_cast<int>(driverProps.driverID),
-      static_cast<unsigned>(driverProps.conformanceVersion.major),
-      static_cast<unsigned>(driverProps.conformanceVersion.minor),
-      static_cast<unsigned>(driverProps.conformanceVersion.subminor),
-      static_cast<unsigned>(driverProps.conformanceVersion.patch));
+  });
 }
 #endif // IGL_LOGGING_ENABLED
 } // namespace
@@ -228,10 +155,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
   VK_ASSERT(ctx.vf_.vkGetAndroidHardwareBufferPropertiesANDROID(device, hwBuffer, &ahb_props));
 
 #if IGL_LOGGING_ENABLED
-  static std::once_flag firstAhbVulkanDiagnosticsOnce;
-  std::call_once(firstAhbVulkanDiagnosticsOnce, [&ctx, &ahb_format_props]() {
-    logFirstAhbVulkanDiagnostics(ahb_format_props, ctx.getVkPhysicalDeviceDriverProperties());
-  });
+  logFirstAhbImportDiagnostics(ahb_format_props, ctx.getVkPhysicalDeviceDriverProperties());
 #endif
 
   VkExternalFormatANDROID external_format = {
