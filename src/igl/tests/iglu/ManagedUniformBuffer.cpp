@@ -43,6 +43,25 @@ TEST_F(ManagedUniformBufferTest, Construction) {
   EXPECT_TRUE(buffer.getData() != nullptr);
 }
 
+TEST_F(ManagedUniformBufferTest, ConstructionWithBlockName) {
+  // When a block name is supplied, the uniforms are backed by an interface block. Construction must
+  // succeed on every backend and expose writable data; on OpenGL it also allocates a uniform-block
+  // buffer used by the native-UBO bind path (GLSL ES 3.x).
+  iglu::ManagedUniformBuffer buffer(*iglDev_,
+                                    {.index = 12,
+                                     .length = 16,
+                                     .uniforms = {{.name = "params.color",
+                                                   .location = 0,
+                                                   .type = UniformType::Float4,
+                                                   .numElements = 1,
+                                                   .offset = 0,
+                                                   .elementStride = 0}},
+                                     .blockName = "params"});
+  EXPECT_TRUE(buffer.result.isOk());
+  EXPECT_TRUE(buffer.getData() != nullptr);
+  EXPECT_EQ(buffer.uniformInfo.blockName, "params");
+}
+
 TEST_F(ManagedUniformBufferTest, UpdateData) {
   // Using LUT to update data
   {

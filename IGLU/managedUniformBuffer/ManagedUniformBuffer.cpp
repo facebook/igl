@@ -97,6 +97,23 @@ ManagedUniformBuffer::ManagedUniformBuffer(igl::IDevice& device,
       desc.type |= igl::BufferDesc::BufferAPIHintBits::NoCopy;
     }
     buffer_ = device.createBuffer(desc, &result);
+  } else if (device.getBackendType() == igl::BackendType::OpenGL && !info.blockName.empty() &&
+             device.hasFeature(igl::DeviceFeatures::UniformBlocks)) {
+    // The OpenGL path normally binds each uniform individually, because SPIRV-Cross flattens
+    // uniform blocks into plain uniforms. On GLSL ES 3.x the block is kept as a native UBO whose
+    // members are NOT addressable via glGetUniformLocation() -- they must be bound through a
+    // buffer. Create a uniform-block buffer so bind() can upload + bind the block as a UBO when the
+    // linked program exposes it natively. It is left unused (per-uniform binding is used instead)
+    // when the block was flattened. Gated on UniformBlocks so UBO-less contexts (e.g. GLES2) issue
+    // no GL_UNIFORM_BUFFER calls and use the per-uniform fallback in bind() instead.
+    const igl::BufferDesc uboBufferDesc{
+        .type = igl::BufferDesc::BufferTypeBits::Uniform,
+        .data = data_,
+        .length = info.length,
+        .storage = igl::ResourceStorage::Shared,
+        .hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock,
+    };
+    buffer_ = device.createBuffer(uboBufferDesc, &result);
   }
 }
 
@@ -113,6 +130,14 @@ ManagedUniformBuffer::~ManagedUniformBuffer() {
 #endif
 }
 
+bool ManagedUniformBuffer::bindOpenGLUniformBlock(int blockBindingPoint) {
+  if (blockBindingPoint < 0 || buffer_ == nullptr) {
+    return false;
+  }
+  buffer_->upload(data_, igl::BufferRange(buffer_->getSizeInBytes(), 0));
+  return true;
+}
+
 void ManagedUniformBuffer::bind(const igl::IDevice& device,
                                 const igl::IRenderPipelineState& pipelineState,
                                 igl::IRenderCommandEncoder& encoder) {
@@ -122,6 +147,19 @@ void ManagedUniformBuffer::bind(const igl::IDevice& device,
   }
   if (device.getBackendType() == igl::BackendType::OpenGL) {
 #if IGL_BACKEND_OPENGL && !IGL_PLATFORM_MACCATALYST
+    // When the linked program keeps `blockName` as a native uniform block (GLSL ES 3.x), its
+    // members have no individual glGetUniformLocation; upload + bind the whole block as a UBO.
+    // Otherwise (SPIRV-Cross flattened it to plain uniforms) fall through to per-uniform binding
+    // below.
+    const int blockBindingPoint =
+        uniformInfo.blockName.empty()
+            ? -1
+            : pipelineState.getIndexByName(igl::genNameHandle(uniformInfo.blockName),
+                                           igl::ShaderStage::Fragment);
+    if (bindOpenGLUniformBlock(blockBindingPoint)) {
+      encoder.bindBuffer(static_cast<uint32_t>(blockBindingPoint), buffer_.get());
+      return;
+    }
     for (auto& uniform : uniformInfo.uniforms) {
       // Since the backend is opengl, getIndexByName's igl::ShaderStage parameter is ignored and
       // will work when binding vertex/fragment
@@ -158,6 +196,16 @@ void ManagedUniformBuffer::bind(const igl::IDevice& device,
                                 const igl::IComputePipelineState& pipelineState,
                                 igl::IComputeCommandEncoder& encoder) {
   if (device.getBackendType() == igl::BackendType::OpenGL) {
+    // Bind a native uniform block (GLSL ES 3.x) as a UBO; otherwise bind per-uniform (see the
+    // render-stage bind() above for details).
+    const int blockBindingPoint =
+        uniformInfo.blockName.empty()
+            ? -1
+            : pipelineState.getIndexByName(igl::genNameHandle(uniformInfo.blockName));
+    if (bindOpenGLUniformBlock(blockBindingPoint)) {
+      encoder.bindBuffer(static_cast<uint32_t>(blockBindingPoint), buffer_.get());
+      return;
+    }
     for (auto& uniform : uniformInfo.uniforms) {
       uniform.location = pipelineState.getIndexByName(igl::genNameHandle(uniform.name));
       if (uniform.location >= 0) {

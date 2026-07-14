@@ -143,6 +143,10 @@ TEST_F(ShaderCrossTest, ShaderCrossUniformBuffer) {
                                                        .elementStride = 0}}});
   EXPECT_EQ(buffer.uniformInfo.uniforms.size(), 1);
   EXPECT_EQ(buffer.uniformInfo.uniforms[0].name, "perFrame.myUniform");
+  // The block name is recorded so the OpenGL bind path can fall back to a real UBO buffer binding
+  // when the program keeps the block native (GLSL ES 3.x) instead of flattening it to the
+  // "perFrame.myUniform" plain uniform above.
+  EXPECT_EQ(buffer.uniformInfo.blockName, "perFrame");
 }
 
 } // namespace igl::tests
