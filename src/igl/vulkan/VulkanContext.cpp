@@ -2555,7 +2555,7 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
       VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION,
       (uint64_t)info.conversion,
       IGL_FORMAT("YCbCr Conversion: VulkanContext::getOrCreateYcbcrConversionInfo() format={}",
-                 (int)format)
+                 static_cast<int>(format))
           .c_str()));
 
   // check properties
@@ -2623,8 +2623,8 @@ VkSamplerYcbcrConversion VulkanContext::getOrCreateExternalYcbcrConversion(
     IGL_LOG_ERROR(
         "getOrCreateExternalYcbcrConversion(): vkCreateSamplerYcbcrConversion failed "
         "(result=%d) for externalFormat=%llu\n",
-        (int)result,
-        (unsigned long long)externalFormat);
+        static_cast<int>(result),
+        static_cast<unsigned long long>(externalFormat));
     return VK_NULL_HANDLE;
   }
   VK_ASSERT(ivkSetDebugObjectName(

@@ -1242,7 +1242,7 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
       IGL_LOG_ERROR_ONCE(
           "VulkanImage::generateMipmap: skipping; image format %u does not support hardware blit "
           "downscaling (optimalTilingFeatures missing BLIT_SRC/BLIT_DST)\n",
-          uint32_t(imageFormat_));
+          static_cast<uint32_t>(imageFormat_));
       return;
     }
   }

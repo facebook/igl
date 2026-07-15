@@ -384,7 +384,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* IGL_N
   if (!std::filesystem::exists(filename)) {
     std::ofstream spirvFile;
     spirvFile.open(filename, std::ios::out | std::ios::binary);
-    for (int i = 0; i < length / (int)sizeof(uint32_t); i++) {
+    for (int i = 0; i < length / static_cast<int>(sizeof(uint32_t)); i++) {
       spirvFile.write(reinterpret_cast<const char*>(&words[i]), sizeof(uint32_t));
     }
     spirvFile.close();
@@ -807,7 +807,7 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
            (deviceProperties.limits.timestampComputeAndGraphics == VK_TRUE);
   }
 
-  IGL_DEBUG_ABORT("DeviceFeatures value not handled: %d", (int)feature);
+  IGL_DEBUG_ABORT("DeviceFeatures value not handled: %d", static_cast<int>(feature));
 
   return false;
 }
@@ -929,7 +929,7 @@ bool Device::getFeatureLimitsInternal(DeviceFeatureLimits featureLimits, size_t&
     return false;
   }
 
-  IGL_DEBUG_ABORT("DeviceFeatureLimits value not handled: %d", (int)featureLimits);
+  IGL_DEBUG_ABORT("DeviceFeatureLimits value not handled: %d", static_cast<int>(featureLimits));
   result = 0;
   return false;
 }
