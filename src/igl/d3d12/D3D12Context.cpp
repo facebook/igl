@@ -1510,16 +1510,16 @@ void D3D12Context::trackResourceDestruction(const char* type, size_t sizeBytes) 
 void D3D12Context::logResourceStats() {
   std::lock_guard<std::mutex> lock(resourceStatsMutex_);
   IGL_D3D12_LOG_VERBOSE("=== D3D12 Resource Statistics ===\n");
-  IGL_D3D12_LOG_VERBOSE(
-      "  Buffers: %zu created, %zu destroyed (leaked: %zd)\n",
-      resourceStats_.totalBuffersCreated,
-      resourceStats_.totalBuffersDestroyed,
-      (int64_t)resourceStats_.totalBuffersCreated - (int64_t)resourceStats_.totalBuffersDestroyed);
+  IGL_D3D12_LOG_VERBOSE("  Buffers: %zu created, %zu destroyed (leaked: %zd)\n",
+                        resourceStats_.totalBuffersCreated,
+                        resourceStats_.totalBuffersDestroyed,
+                        static_cast<int64_t>(resourceStats_.totalBuffersCreated) -
+                            static_cast<int64_t>(resourceStats_.totalBuffersDestroyed));
   IGL_D3D12_LOG_VERBOSE("  Textures: %zu created, %zu destroyed (leaked: %zd)\n",
                         resourceStats_.totalTexturesCreated,
                         resourceStats_.totalTexturesDestroyed,
-                        (int64_t)resourceStats_.totalTexturesCreated -
-                            (int64_t)resourceStats_.totalTexturesDestroyed);
+                        static_cast<int64_t>(resourceStats_.totalTexturesCreated) -
+                            static_cast<int64_t>(resourceStats_.totalTexturesDestroyed));
   IGL_D3D12_LOG_VERBOSE("  SRVs created: %zu\n", resourceStats_.totalSRVsCreated);
   IGL_D3D12_LOG_VERBOSE("  Samplers created: %zu\n", resourceStats_.totalSamplersCreated);
   IGL_D3D12_LOG_VERBOSE("  Buffer memory: %.2f MB\n",

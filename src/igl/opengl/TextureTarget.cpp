@@ -65,8 +65,10 @@ Result TextureTarget::createRenderBuffer(const TextureDesc& desc, bool hasStorag
       getContext().renderbufferStorageMultisample(
           GL_RENDERBUFFER, desc.numSamples, glInternalFormat_, getWidth(), getHeight());
     } else {
-      getContext().renderbufferStorage(
-          GL_RENDERBUFFER, glInternalFormat_, (GLsizei)getWidth(), (GLsizei)getHeight());
+      getContext().renderbufferStorage(GL_RENDERBUFFER,
+                                       glInternalFormat_,
+                                       static_cast<GLsizei>(getWidth()),
+                                       static_cast<GLsizei>(getHeight()));
     }
     if (!desc.debugName.empty() &&
         getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
