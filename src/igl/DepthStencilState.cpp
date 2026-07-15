@@ -13,8 +13,8 @@ using namespace igl;
 
 size_t std::hash<igl::StencilStateDesc>::operator()(const igl::StencilStateDesc& key) const {
   size_t hash = std::hash<int>()(static_cast<int>(EnumToValue(key.stencilCompareFunction)));
-  hash ^= std::hash<int>()(static_cast<int>(key.writeMask));
-  hash ^= std::hash<int>()(static_cast<int>(key.readMask));
+  hash ^= std::hash<uint32_t>()(key.writeMask);
+  hash ^= std::hash<uint32_t>()(key.readMask);
   hash ^= std::hash<int>()(static_cast<int>(EnumToValue(key.depthStencilPassOperation)));
   hash ^= std::hash<int>()(static_cast<int>(EnumToValue(key.depthFailureOperation)));
   hash ^= std::hash<int>()(static_cast<int>(EnumToValue(key.stencilFailureOperation)));
