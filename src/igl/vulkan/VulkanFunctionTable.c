@@ -392,7 +392,8 @@ void loadVulkanInstanceFunctions(struct VulkanFunctionTable* table,
 
 void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
                                VkDevice context,
-                               PFN_vkGetDeviceProcAddr load) {
+                               PFN_vkGetDeviceProcAddr load,
+                               uint32_t vulkanAPIVersion) {
   /* IGL_GENERATE_LOAD_DEVICE_TABLE */
   // VK_VERSION_1_0
   table->vkAllocateCommandBuffers =
@@ -773,6 +774,20 @@ void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
       (PFN_vkCmdSetStencilTestEnableEXT)load(context, "vkCmdSetStencilTestEnableEXT");
   table->vkCmdSetViewportWithCountEXT =
       (PFN_vkCmdSetViewportWithCountEXT)load(context, "vkCmdSetViewportWithCountEXT");
+  if (vulkanAPIVersion < VK_API_VERSION_1_3) {
+    table->vkCmdBindVertexBuffers2 = table->vkCmdBindVertexBuffers2EXT;
+    table->vkCmdSetCullMode = table->vkCmdSetCullModeEXT;
+    table->vkCmdSetDepthBoundsTestEnable = table->vkCmdSetDepthBoundsTestEnableEXT;
+    table->vkCmdSetDepthCompareOp = table->vkCmdSetDepthCompareOpEXT;
+    table->vkCmdSetDepthTestEnable = table->vkCmdSetDepthTestEnableEXT;
+    table->vkCmdSetDepthWriteEnable = table->vkCmdSetDepthWriteEnableEXT;
+    table->vkCmdSetFrontFace = table->vkCmdSetFrontFaceEXT;
+    table->vkCmdSetPrimitiveTopology = table->vkCmdSetPrimitiveTopologyEXT;
+    table->vkCmdSetScissorWithCount = table->vkCmdSetScissorWithCountEXT;
+    table->vkCmdSetStencilOp = table->vkCmdSetStencilOpEXT;
+    table->vkCmdSetStencilTestEnable = table->vkCmdSetStencilTestEnableEXT;
+    table->vkCmdSetViewportWithCount = table->vkCmdSetViewportWithCountEXT;
+  }
 #endif /* defined(VK_EXT_extended_dynamic_state) */
 #if defined(VK_EXT_extended_dynamic_state2)
   table->vkCmdSetDepthBiasEnableEXT =
@@ -784,6 +799,11 @@ void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
       (PFN_vkCmdSetPrimitiveRestartEnableEXT)load(context, "vkCmdSetPrimitiveRestartEnableEXT");
   table->vkCmdSetRasterizerDiscardEnableEXT =
       (PFN_vkCmdSetRasterizerDiscardEnableEXT)load(context, "vkCmdSetRasterizerDiscardEnableEXT");
+  if (vulkanAPIVersion < VK_API_VERSION_1_3) {
+    table->vkCmdSetDepthBiasEnable = table->vkCmdSetDepthBiasEnableEXT;
+    table->vkCmdSetPrimitiveRestartEnable = table->vkCmdSetPrimitiveRestartEnableEXT;
+    table->vkCmdSetRasterizerDiscardEnable = table->vkCmdSetRasterizerDiscardEnableEXT;
+  }
 #endif /* defined(VK_EXT_extended_dynamic_state2) */
 #if defined(VK_EXT_external_memory_host)
   table->vkGetMemoryHostPointerPropertiesEXT =

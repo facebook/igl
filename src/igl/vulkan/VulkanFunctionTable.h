@@ -1160,7 +1160,8 @@ void loadVulkanInstanceFunctions(struct VulkanFunctionTable* table,
 /// functions defined in the `VulkanFunctionTable` structure.
 void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
                                VkDevice context,
-                               PFN_vkGetDeviceProcAddr load);
+                               PFN_vkGetDeviceProcAddr load,
+                               uint32_t vulkanAPIVersion);
 
 #ifdef __cplusplus
 }
