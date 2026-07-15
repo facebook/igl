@@ -88,8 +88,8 @@ Result Texture::create(const TextureDesc& desc, bool hasStorageAlready) {
                       "can't read from an EAGLLayer backed renderbuffer)");
     }
 
-    width_ = (GLsizei)desc.width;
-    height_ = (GLsizei)desc.height;
+    width_ = static_cast<GLsizei>(desc.width);
+    height_ = static_cast<GLsizei>(desc.height);
     depth_ = desc.depth;
     type_ = desc.type;
     numLayers_ = desc.numLayers;

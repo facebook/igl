@@ -863,7 +863,7 @@ void VulkanContext::createInstance() {
 #endif
       .flags = features_.has_VK_KHR_portability_enumeration
                    ? VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR
-                   : (VkInstanceCreateFlags)0,
+                   : static_cast<VkInstanceCreateFlags>(0),
       .pApplicationInfo = &appInfo,
       .enabledLayerCount = static_cast<uint32_t>(layers.size()),
       .ppEnabledLayerNames = !layers.empty() ? layers.data() : nullptr,
@@ -1207,7 +1207,7 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
                               vkInstance_,
                               apiVersion > VK_API_VERSION_1_3 ? VK_API_VERSION_1_3 : apiVersion,
                               features_.has_VK_KHR_buffer_device_address,
-                              (VkDeviceSize)config_.vmaPreferredLargeHeapBlockSize,
+                              static_cast<VkDeviceSize>(config_.vmaPreferredLargeHeapBlockSize),
                               &pimpl_->vma));
   }
 
@@ -1986,12 +1986,12 @@ VulkanContext::RenderPassHandle VulkanContext::findRenderPass(
 
   IGL_DEBUG_ASSERT(index <= 255);
 
-  renderPassesHash_[builder] = uint8_t(index);
+  renderPassesHash_[builder] = static_cast<uint8_t>(index);
   // @fb-only
   // @lint-ignore CLANGTIDY
   renderPasses_.push_back(pass);
 
-  return RenderPassHandle{.pass = pass, .index = uint8_t(index)};
+  return RenderPassHandle{.pass = pass, .index = static_cast<uint8_t>(index)};
 }
 
 std::vector<uint8_t> VulkanContext::getPipelineCacheData() const {
