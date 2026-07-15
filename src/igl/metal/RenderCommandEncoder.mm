@@ -620,7 +620,7 @@ void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
                                              uint32_t stride) {
   IGL_DEBUG_ASSERT(encoder_);
   stride = stride ? stride : sizeof(MTLDrawPrimitivesIndirectArguments);
-  auto& indirectBufferRef = (Buffer&)(indirectBuffer);
+  auto& indirectBufferRef = static_cast<Buffer&>(indirectBuffer);
 
   for (uint32_t drawIndex = 0; drawIndex < drawCount; drawIndex++) {
     getCommandBuffer().incrementCurrentDrawCount();
@@ -642,7 +642,7 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
     return;
   }
   stride = stride ? stride : sizeof(MTLDrawIndexedPrimitivesIndirectArguments);
-  auto& indirectBufferRef = (Buffer&)(indirectBuffer);
+  auto& indirectBufferRef = static_cast<Buffer&>(indirectBuffer);
 
   for (uint32_t drawIndex = 0; drawIndex < drawCount; drawIndex++) {
     getCommandBuffer().incrementCurrentDrawCount();
