@@ -15,7 +15,6 @@
 #include <cstdio>
 
 #if IGL_PLATFORM_ANDROID
-#include <android/asset_manager.h>
 // Ignore unused-include-check
 // @lint-ignore CLANGTIDY
 #include <android_native_app_glue.h>
