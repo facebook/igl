@@ -195,7 +195,7 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
   // returns the allocated block. Any remainder is written back into `regions_` so it can be reused,
   // and a fully-consumed region is erased. This is the single point at which a region is handed
   // out, so a returned block is never also left in `regions_` as a free region.
-  const auto splitAndReturn = [this](std::deque<MemoryRegion>::iterator regionItr,
+  const auto splitAndReturn = [this](const std::deque<MemoryRegion>::iterator& regionItr,
                                      VkDeviceSize allocatedSize) -> MemoryRegion {
     const VkDeviceSize newSize = regionItr->size - allocatedSize;
     const VkDeviceSize newOffset = regionItr->offset + allocatedSize;
