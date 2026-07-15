@@ -10,6 +10,8 @@
 
 #include "NativeHWBuffer.h"
 
+#include <igl/IGLSafeC.h>
+
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 // AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420 (0x23) was introduced in NDK r21 (API 30). Some build
@@ -300,6 +302,73 @@ AHardwareBuffer* INativeHWTextureBuffer::getHardwareBuffer() const {
 
 TextureDesc INativeHWTextureBuffer::getTextureDesc() const {
   return textureDesc_;
+}
+
+Result INativeHWTextureBuffer::uploadToHWBuffer(const TextureFormatProperties& props,
+                                                const TextureRangeDesc& range,
+                                                const void* IGL_NULLABLE data,
+                                                size_t bytesPerRow) const {
+  if (hwBuffer_ == nullptr) {
+    return Result{Result::Code::RuntimeError,
+                  "INativeHWTextureBuffer: hardware buffer not initialized"};
+  }
+  if (data == nullptr) {
+    IGL_LOG_ERROR("INativeHWTextureBuffer: source data is null");
+    return Result{Result::Code::ArgumentInvalid, "INativeHWTextureBuffer: source data is null"};
+  }
+
+  std::byte* dst = nullptr;
+  RangeDesc outRange;
+  Result lockResult;
+  auto lockGuard
+      [[maybe_unused]] = lockHWBuffer(reinterpret_cast<std::byte**>(&dst), outRange, &lockResult);
+
+  if (!lockResult.isOk()) {
+    IGL_LOG_ERROR("INativeHWTextureBuffer: failed to lock hardware buffer: %s",
+                  lockResult.message.c_str());
+    return Result{Result::Code::RuntimeError,
+                  "INativeHWTextureBuffer: failed to lock hardware buffer"};
+  }
+  if (dst == nullptr) {
+    IGL_LOG_ERROR("INativeHWTextureBuffer: locked hardware buffer returned a null pointer");
+    return Result{Result::Code::RuntimeError,
+                  "INativeHWTextureBuffer: locked hardware buffer returned a null pointer"};
+  }
+
+  const size_t internalBpr = props.getBytesPerRow(outRange.stride);
+  const size_t srcBpr = bytesPerRow ? bytesPerRow : props.getBytesPerRow(range);
+
+  if (srcBpr > internalBpr) {
+    IGL_LOG_ERROR(
+        "INativeHWTextureBuffer: source bytes-per-row (%zu) exceeds hardware buffer "
+        "bytes-per-row (%zu)",
+        srcBpr,
+        internalBpr);
+    return Result{Result::Code::ArgumentInvalid,
+                  "INativeHWTextureBuffer: source bytes-per-row exceeds hardware buffer "
+                  "bytes-per-row"};
+  }
+  if (range.width != outRange.width || range.height != outRange.height) {
+    IGL_LOG_ERROR(
+        "INativeHWTextureBuffer: upload range (%zux%zu) does not match hardware buffer "
+        "range (%zux%zu)",
+        range.width,
+        range.height,
+        outRange.width,
+        outRange.height);
+    return Result{Result::Code::ArgumentInvalid,
+                  "INativeHWTextureBuffer: upload range does not match hardware buffer range"};
+  }
+
+  const std::byte* src = static_cast<const std::byte*>(data);
+  size_t srcOffset = 0;
+  size_t dstOffset = 0;
+  for (uint32_t i = 0; i < outRange.height; ++i) {
+    checked_memcpy(dst + dstOffset, internalBpr, src + srcOffset, srcBpr);
+    dstOffset += internalBpr;
+    srcOffset += srcBpr;
+  }
+  return Result{};
 }
 
 } // namespace igl::android

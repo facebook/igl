@@ -18,6 +18,7 @@
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanEnumToString.h>
 #include <igl/vulkan/VulkanImage.h>
+#include <igl/vulkan/VulkanImmediateCommands.h>
 #include <igl/vulkan/VulkanTexture.h>
 
 #if IGL_LOGGING_ENABLED
@@ -356,6 +357,56 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
   texture_ = std::move(vkTexture);
 
   return Result{Result::Code::Ok};
+}
+
+Result NativeHWTextureBuffer::uploadInternal(TextureType /*type*/,
+                                             const TextureRangeDesc& range,
+                                             const void* IGL_NULLABLE data,
+                                             size_t bytesPerRow,
+                                             const uint32_t* IGL_NULLABLE /*mipLevelBytes*/) const {
+  auto result = uploadToHWBuffer(getProperties(), range, data, bytesPerRow);
+  if (!result.isOk()) {
+    IGL_DEBUG_ABORT("Cannot upload buffer for HW texture (vulkan NativeHWTextureBuffer).");
+    return result;
+  }
+
+  // The underlying VkImage was created with VK_IMAGE_LAYOUT_UNDEFINED and the pixel
+  // upload above happens through the AHardwareBuffer CPU lock path (no GPU commands).
+  // Without an explicit layout transition, the image stays in UNDEFINED, which is
+  // not legal to sample from in shaders. Transition to SHADER_READ_ONLY_OPTIMAL via
+  // a one-shot immediate command buffer so subsequent draws can sample the texture.
+  if (texture_) {
+    const VkImageSubresourceRange subresourceRange = {
+        .aspectMask = [numPlanes = igl::vulkan::getNumImagePlanes(
+                           texture_->image.imageFormat_)]() -> VkImageAspectFlags {
+          if (numPlanes < 2) {
+            return VK_IMAGE_ASPECT_COLOR_BIT;
+          }
+          VkImageAspectFlags aspectMask = 0;
+          for (uint32_t p = 0; p < numPlanes; p++) {
+            aspectMask |= static_cast<VkImageAspectFlags>(VK_IMAGE_ASPECT_PLANE_0_BIT << p);
+          }
+          return aspectMask;
+        }(),
+        .baseMipLevel = 0,
+        .levelCount = VK_REMAINING_MIP_LEVELS,
+        .baseArrayLayer = 0,
+        .layerCount = VK_REMAINING_ARRAY_LAYERS,
+    };
+
+    auto& ctx = device_.getVulkanContext();
+    const auto& wrapper = ctx.immediate_->acquire();
+    texture_->image.transitionLayout(wrapper.cmdBuf,
+                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                     VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                         VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                     subresourceRange);
+    ctx.immediate_->submit(wrapper);
+  }
+
+  return result;
 }
 
 } // namespace igl::vulkan::android

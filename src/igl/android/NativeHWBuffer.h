@@ -75,6 +75,10 @@ class INativeHWTextureBuffer {
   [[nodiscard]] TextureDesc getTextureDesc() const;
 
  protected:
+  Result uploadToHWBuffer(const TextureFormatProperties& props,
+                          const TextureRangeDesc& range,
+                          const void* IGL_NULLABLE data,
+                          size_t bytesPerRow) const;
   virtual Result createTextureInternal(AHardwareBuffer* buffer) = 0;
   AHardwareBuffer* hwBuffer_ = nullptr;
   TextureDesc textureDesc_;
