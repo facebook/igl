@@ -17,6 +17,16 @@ namespace igl::vulkan {
 
 class Device;
 
+VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(PrimitiveType t);
+VkPolygonMode polygonFillModeToVkPolygonMode(PolygonFillMode mode);
+VkCullModeFlags cullModeToVkCullMode(CullMode mode);
+VkFrontFace windingModeToVkFrontFace(WindingMode mode);
+VkFormat vertexAttributeFormatToVkFormat(VertexAttributeFormat fmt);
+VkBlendOp blendOpToVkBlendOp(BlendOp value);
+VkBool32 checkDualSrcBlendFactor(BlendFactor value, VkBool32 dualSrcBlendSupported);
+VkBlendFactor blendFactorToVkBlendFactor(BlendFactor value);
+VkColorComponentFlags colorWriteMaskToVkColorComponentFlags(ColorWriteMask value);
+
 /// @brief This class stores all mutable pipeline parameters as member variables and serves as a
 /// hash key for the `RenderPipelineState` class
 class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {

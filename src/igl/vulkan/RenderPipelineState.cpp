@@ -14,9 +14,9 @@
 #include <igl/vulkan/VulkanDescriptorSetLayout.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
 
-namespace {
+namespace igl::vulkan {
 
-VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(igl::PrimitiveType t) {
+VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(PrimitiveType t) {
   switch (t) {
   case igl::PrimitiveType::Point:
     return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
@@ -33,7 +33,7 @@ VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(igl::PrimitiveType t) {
   return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 }
 
-VkPolygonMode polygonFillModeToVkPolygonMode(igl::PolygonFillMode mode) {
+VkPolygonMode polygonFillModeToVkPolygonMode(PolygonFillMode mode) {
   switch (mode) {
   case igl::PolygonFillMode::Fill:
     return VK_POLYGON_MODE_FILL;
@@ -44,7 +44,7 @@ VkPolygonMode polygonFillModeToVkPolygonMode(igl::PolygonFillMode mode) {
   return VK_POLYGON_MODE_FILL;
 }
 
-VkCullModeFlags cullModeToVkCullMode(igl::CullMode mode) {
+VkCullModeFlags cullModeToVkCullMode(CullMode mode) {
   switch (mode) {
   case igl::CullMode::Disabled:
     return VK_CULL_MODE_NONE;
@@ -57,7 +57,7 @@ VkCullModeFlags cullModeToVkCullMode(igl::CullMode mode) {
   return VK_CULL_MODE_NONE;
 }
 
-VkFrontFace windingModeToVkFrontFace(igl::WindingMode mode) {
+VkFrontFace windingModeToVkFrontFace(WindingMode mode) {
   switch (mode) {
   case igl::WindingMode::Clockwise:
     return VK_FRONT_FACE_CLOCKWISE;
@@ -68,7 +68,7 @@ VkFrontFace windingModeToVkFrontFace(igl::WindingMode mode) {
   return VK_FRONT_FACE_CLOCKWISE;
 }
 
-VkFormat vertexAttributeFormatToVkFormat(igl::VertexAttributeFormat fmt) {
+VkFormat vertexAttributeFormatToVkFormat(VertexAttributeFormat fmt) {
   using igl::VertexAttributeFormat;
   switch (fmt) {
   case VertexAttributeFormat::Float1:
@@ -177,7 +177,7 @@ VkFormat vertexAttributeFormatToVkFormat(igl::VertexAttributeFormat fmt) {
   return VK_FORMAT_UNDEFINED;
 }
 
-VkBlendOp blendOpToVkBlendOp(igl::BlendOp value) {
+VkBlendOp blendOpToVkBlendOp(BlendOp value) {
   using igl::BlendOp;
   switch (value) {
   case BlendOp::Add:
@@ -196,7 +196,7 @@ VkBlendOp blendOpToVkBlendOp(igl::BlendOp value) {
   return VK_BLEND_OP_ADD;
 }
 
-VkBool32 checkDualSrcBlendFactor(igl::BlendFactor value, VkBool32 dualSrcBlendSupported) {
+VkBool32 checkDualSrcBlendFactor(BlendFactor value, VkBool32 dualSrcBlendSupported) {
   if (!dualSrcBlendSupported) {
     // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
     switch (value) {
@@ -213,7 +213,7 @@ VkBool32 checkDualSrcBlendFactor(igl::BlendFactor value, VkBool32 dualSrcBlendSu
   return VK_TRUE;
 }
 
-VkBlendFactor blendFactorToVkBlendFactor(igl::BlendFactor value) {
+VkBlendFactor blendFactorToVkBlendFactor(BlendFactor value) {
   using igl::BlendFactor;
   switch (value) {
   case BlendFactor::Zero:
@@ -260,7 +260,7 @@ VkBlendFactor blendFactorToVkBlendFactor(igl::BlendFactor value) {
   }
 }
 
-VkColorComponentFlags colorWriteMaskToVkColorComponentFlags(igl::ColorWriteMask value) {
+VkColorComponentFlags colorWriteMaskToVkColorComponentFlags(ColorWriteMask value) {
   VkColorComponentFlags result = 0;
   if (value & igl::kColorWriteBitsRed) {
     result |= VK_COLOR_COMPONENT_R_BIT;
@@ -276,10 +276,6 @@ VkColorComponentFlags colorWriteMaskToVkColorComponentFlags(igl::ColorWriteMask 
   }
   return result;
 }
-
-} // namespace
-
-namespace igl::vulkan {
 
 RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
                                          RenderPipelineDesc desc) :
