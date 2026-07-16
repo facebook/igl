@@ -345,7 +345,7 @@ std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexIn
   // Verify that bufferIndex and location are in their respective ranges.
   std::unordered_set<int> bufferIndexSet;
   std::unordered_set<int> attributeLocationSet;
-  for (int i = 0; i < desc.numAttributes; ++i) {
+  for (size_t i = 0; i < desc.numAttributes; ++i) {
     size_t bufferIndex = desc.attributes[i].bufferIndex;
     if (bufferIndex >= IGL_BUFFER_BINDINGS_MAX) {
       Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "bufferIndex out of range");
@@ -396,7 +396,7 @@ std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexIn
   }
 
   // Validation completed. Populate the metal vertex descriptor.
-  for (int i = 0; i < desc.numAttributes; ++i) {
+  for (size_t i = 0; i < desc.numAttributes; ++i) {
     const size_t bufferIndex = desc.attributes[i].bufferIndex;
     const size_t dstAttribIndex = desc.attributes[i].location;
 
@@ -1023,11 +1023,11 @@ BackendVersion Device::getBackendVersion() const {
 #if TARGET_OS_OSX
 #if TARGET_CPU_ARM64
   if (@available(macOS 10.13, iOS 11.0, *)) {
-    return {BackendFlavor::Metal, 2, 0};
+    return {.flavor = BackendFlavor::Metal, .majorVersion = 2, .minorVersion = 0};
   }
 #else
   if (@available(macOS 11.0, iOS 11.0, *)) {
-    return {BackendFlavor::Metal, 2, 0};
+    return {.flavor = BackendFlavor::Metal, .majorVersion = 2, .minorVersion = 0};
   }
 #endif
 #endif

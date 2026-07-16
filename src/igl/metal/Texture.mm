@@ -14,9 +14,9 @@
 namespace {
 
 void bgrToRgb(unsigned char* dstImg, size_t width, size_t height, size_t bytesPerPixel) {
-  for (int i = 0; i < height; ++i) {
-    for (int j = 0; j < width; ++j) {
-      auto pixelIndex = i * width + j;
+  for (size_t i = 0; i < height; ++i) {
+    for (size_t j = 0; j < width; ++j) {
+      const size_t pixelIndex = i * width + j;
       std::swap(dstImg[pixelIndex * bytesPerPixel + 0], dstImg[pixelIndex * bytesPerPixel + 2]);
     }
   }

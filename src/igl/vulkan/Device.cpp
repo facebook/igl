@@ -375,7 +375,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* IGL_N
   uint64_t hash = 0;
   IGL_DEBUG_ASSERT(length % sizeof(uint32_t) == 0);
   auto words = reinterpret_cast<const uint32_t*>(data);
-  for (int i = 0; i < (length / sizeof(uint32_t)); i++) {
+  for (size_t i = 0; i < length / sizeof(uint32_t); i++) {
     hash ^= std::hash<uint32_t>()(words[i]);
   }
   const std::string filename = IGL_FORMAT(
@@ -384,7 +384,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* IGL_N
   if (!std::filesystem::exists(filename)) {
     std::ofstream spirvFile;
     spirvFile.open(filename, std::ios::out | std::ios::binary);
-    for (int i = 0; i < length / static_cast<int>(sizeof(uint32_t)); i++) {
+    for (size_t i = 0; i < length / sizeof(uint32_t); i++) {
       spirvFile.write(reinterpret_cast<const char*>(&words[i]), sizeof(uint32_t));
     }
     spirvFile.close();
