@@ -67,6 +67,9 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
   // Ignore modernize-use-default-member-init
   // @lint-ignore CLANGTIDY
   uint32_t depthWriteEnable : 1;
+  // Ignore modernize-use-default-member-init
+  // @lint-ignore CLANGTIDY
+  uint32_t stencilTestEnable : 1;
 
   RenderPipelineDynamicState() {
     // memset makes sure all padding bits are zero
@@ -85,6 +88,7 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
     renderPassIndex = 0;
     depthBiasEnable = false;
     depthWriteEnable = false;
+    stencilTestEnable = false;
   }
 
   [[nodiscard]] VkCompareOp getDepthCompareOp() const {
