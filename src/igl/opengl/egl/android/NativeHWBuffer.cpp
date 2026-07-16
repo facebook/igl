@@ -82,7 +82,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* buffer) {
   EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(buffer);
   EGLint attribs[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE, EGL_NONE, EGL_NONE};
 
-  EGLDisplay display = ((Context*)&getContext())->getDisplay();
+  EGLDisplay display = static_cast<Context*>(&getContext())->getDisplay();
   // eglCreateImageKHR will add a ref to the AHardwareBuffer
   EGLImageKHR eglImage =
       eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_ANDROID, clientBuffer, attribs);

@@ -39,8 +39,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
   CopyRect(&dimension_, &curDimension);
 
   const auto desc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                       (size_t)(dimension_.right - dimension_.left),
-                                       (size_t)(dimension_.bottom - dimension_.top),
+                                       static_cast<size_t>(dimension_.right - dimension_.left),
+                                       static_cast<size_t>(dimension_.bottom - dimension_.top),
                                        TextureDesc::TextureUsageBits::Attachment,
                                        "NativeDrawable");
   auto texture = std::make_shared<ViewTextureTarget>(getContext(), desc.format);

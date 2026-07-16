@@ -108,8 +108,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
       return nullptr;
     }
 
-    desc.width = (size_t)resolution.size.width;
-    desc.height = (size_t)resolution.size.height;
+    desc.width = static_cast<size_t>(resolution.size.width);
+    desc.height = static_cast<size_t>(resolution.size.height);
     desc.depth = 1;
     desc.numSamples = 1;
     desc.usage = TextureDesc::TextureUsageBits::Attachment;
@@ -186,7 +186,7 @@ Size PlatformDevice::getNativeDrawableSize(CAEAGLLayer* nativeDrawable, Result* 
                                      bounds.origin.y,
                                      bounds.size.width * screenScale,
                                      bounds.size.height * screenScale);
-  return {(float)resolution.size.width, (float)resolution.size.height};
+  return {static_cast<float>(resolution.size.width), static_cast<float>(resolution.size.height)};
 }
 
 TextureFormat PlatformDevice::getNativeDrawableTextureFormat(CAEAGLLayer* /*nativeDrawable*/,
