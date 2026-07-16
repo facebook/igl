@@ -266,7 +266,7 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
           // check
           int loadActionDbg = -1;
           if (i < renderPass.colorAttachments.size()) {
-            loadActionDbg = (int)renderPass.colorAttachments[i].loadAction;
+            loadActionDbg = static_cast<int>(renderPass.colorAttachments[i].loadAction);
           }
           IGL_D3D12_LOG_VERBOSE(
               "RenderCommandEncoder: NOT clearing MRT attachment %zu (loadAction=%d, "
@@ -535,16 +535,16 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
       D3D12_VIEWPORT vp = {};
       vp.TopLeftX = 0;
       vp.TopLeftY = 0;
-      vp.Width = (float)bbDesc.Width;
-      vp.Height = (float)bbDesc.Height;
+      vp.Width = static_cast<float>(bbDesc.Width);
+      vp.Height = static_cast<float>(bbDesc.Height);
       vp.MinDepth = 0;
       vp.MaxDepth = 1;
       commandList_->RSSetViewports(1, &vp);
       D3D12_RECT scissor = {};
       scissor.left = 0;
       scissor.top = 0;
-      scissor.right = (LONG)bbDesc.Width;
-      scissor.bottom = (LONG)bbDesc.Height;
+      scissor.right = static_cast<LONG>(bbDesc.Width);
+      scissor.bottom = static_cast<LONG>(bbDesc.Height);
       commandList_->RSSetScissorRects(1, &scissor);
       IGL_D3D12_LOG_VERBOSE(
           "RenderCommandEncoder: Set default viewport/scissor to back buffer %llux%u\n",
@@ -811,7 +811,8 @@ void RenderCommandEncoder::bindRenderPipelineState(
 
   // Set primitive topology from the pipeline state
   D3D_PRIMITIVE_TOPOLOGY topology = d3dPipelineState->getPrimitiveTopology();
-  IGL_D3D12_LOG_VERBOSE("bindRenderPipelineState: Setting topology=%d\n", (int)topology);
+  IGL_D3D12_LOG_VERBOSE("bindRenderPipelineState: Setting topology=%d\n",
+                        static_cast<int>(topology));
   commandList_->IASetPrimitiveTopology(topology);
 
   // Cache vertex stride from pipeline (used when binding vertex buffers)

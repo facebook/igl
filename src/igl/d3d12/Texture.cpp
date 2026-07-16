@@ -58,7 +58,7 @@ std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
   IGL_D3D12_LOG_VERBOSE("Texture::createFromResource - SUCCESS: %dx%d format=%d\n",
                         desc.width,
                         desc.height,
-                        (int)format);
+                        static_cast<int>(format));
 
   return texture;
 }
@@ -651,7 +651,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
   if (resourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
     IGL_D3D12_LOG_VERBOSE(
         "Texture::generateMipmap() - Skipping: only 2D textures supported (dimension=%d)\n",
-        (int)resourceDesc.Dimension);
+        static_cast<int>(resourceDesc.Dimension));
     return;
   }
 
@@ -848,10 +848,10 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
         list.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, mip + 1, 0);
 
     list->OMSetRenderTargets(1, &rtvCpu, FALSE, nullptr);
-    const UINT w = std::max<UINT>(1u, (UINT)(resourceDesc.Width >> (mip + 1)));
-    const UINT h = std::max<UINT>(1u, (UINT)(resourceDesc.Height >> (mip + 1)));
-    D3D12_VIEWPORT vp{0.0f, 0.0f, (FLOAT)w, (FLOAT)h, 0.0f, 1.0f};
-    D3D12_RECT sc{0, 0, (LONG)w, (LONG)h};
+    const UINT w = std::max<UINT>(1u, static_cast<UINT>(resourceDesc.Width >> (mip + 1)));
+    const UINT h = std::max<UINT>(1u, static_cast<UINT>(resourceDesc.Height >> (mip + 1)));
+    D3D12_VIEWPORT vp{0.0f, 0.0f, static_cast<FLOAT>(w), static_cast<FLOAT>(h), 0.0f, 1.0f};
+    D3D12_RECT sc{0, 0, static_cast<LONG>(w), static_cast<LONG>(h)};
     list->RSSetViewports(1, &vp);
     list->RSSetScissorRects(1, &sc);
 
@@ -1077,10 +1077,10 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/,
         list.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, mip + 1, 0);
 
     list->OMSetRenderTargets(1, &rtvCpu, FALSE, nullptr);
-    const UINT w = std::max<UINT>(1u, (UINT)(resourceDesc.Width >> (mip + 1)));
-    const UINT h = std::max<UINT>(1u, (UINT)(resourceDesc.Height >> (mip + 1)));
-    D3D12_VIEWPORT vp{0.0f, 0.0f, (FLOAT)w, (FLOAT)h, 0.0f, 1.0f};
-    D3D12_RECT sc{0, 0, (LONG)w, (LONG)h};
+    const UINT w = std::max<UINT>(1u, static_cast<UINT>(resourceDesc.Width >> (mip + 1)));
+    const UINT h = std::max<UINT>(1u, static_cast<UINT>(resourceDesc.Height >> (mip + 1)));
+    D3D12_VIEWPORT vp{0.0f, 0.0f, static_cast<FLOAT>(w), static_cast<FLOAT>(h), 0.0f, 1.0f};
+    D3D12_RECT sc{0, 0, static_cast<LONG>(w), static_cast<LONG>(h)};
     list->RSSetViewports(1, &vp);
     list->RSSetScissorRects(1, &sc);
     list->SetGraphicsRootDescriptorTable(0, srvGpu);

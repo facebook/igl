@@ -1183,8 +1183,8 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   // Convert IGL texture format to DXGI format
   DXGI_FORMAT dxgiFormat = textureFormatToDXGIFormat(desc.format);
   IGL_D3D12_LOG_VERBOSE("Device::createTexture: IGL format=%d -> DXGI format=%d\n",
-                        (int)desc.format,
-                        (int)dxgiFormat);
+                        static_cast<int>(desc.format),
+                        static_cast<int>(dxgiFormat));
   if (dxgiFormat == DXGI_FORMAT_UNKNOWN) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Unsupported texture format");
     return nullptr;
@@ -2045,7 +2045,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
     psoDesc.DepthStencilState.BackFace = psoDesc.DepthStencilState.FrontFace;
 
     IGL_D3D12_LOG_VERBOSE("  PSO Stencil configured: format=%d\n",
-                          (int)desc.targetDesc.stencilAttachmentFormat);
+                          static_cast<int>(desc.targetDesc.stencilAttachmentFormat));
   } else {
     psoDesc.DepthStencilState.StencilEnable = FALSE;
   }
@@ -2180,8 +2180,8 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
           "      bufferIndex=%u, isInstance=%d, sampleFunc=%d, InputSlotClass=%d, StepRate=%u\n",
           attr.bufferIndex,
           isInstanceData,
-          (int)vertexDesc.inputBindings[attr.bufferIndex].sampleFunction,
-          (int)element.InputSlotClass,
+          static_cast<int>(vertexDesc.inputBindings[attr.bufferIndex].sampleFunction),
+          static_cast<int>(element.InputSlotClass),
           element.InstanceDataStepRate);
 
       // Convert IGL vertex format to DXGI format

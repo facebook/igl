@@ -1095,7 +1095,7 @@ Result D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height)
 
   if (FAILED(hr)) {
     IGL_LOG_ERROR("CreateSwapChainForHwnd failed: 0x%08X, trying legacy CreateSwapChain\n",
-                  (unsigned)hr);
+                  static_cast<unsigned>(hr));
     // Fallback: legacy CreateSwapChain
     DXGI_SWAP_CHAIN_DESC legacy = {};
     legacy.BufferDesc.Width = width;
@@ -1117,15 +1117,16 @@ Result D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height)
         dxgiFactory_->CreateSwapChain(commandQueue_.Get(), &legacy, legacySwap.GetAddressOf());
     if (FAILED(hr2)) {
       IGL_LOG_ERROR("D3D12Context: Failed to create swapchain (hr=0x%08X / 0x%08X)\n",
-                    (unsigned)hr,
-                    (unsigned)hr2);
+                    static_cast<unsigned>(hr),
+                    static_cast<unsigned>(hr2));
       IGL_DEBUG_ASSERT(false);
       return Result(Result::Code::RuntimeError, "Failed to create swapchain");
     }
     // Try to QI to IDXGISwapChain3
     hr2 = legacySwap->QueryInterface(IID_PPV_ARGS(swapChain_.GetAddressOf()));
     if (FAILED(hr2)) {
-      IGL_LOG_ERROR("D3D12Context: Failed to query IDXGISwapChain3 (hr=0x%08X)\n", (unsigned)hr2);
+      IGL_LOG_ERROR("D3D12Context: Failed to query IDXGISwapChain3 (hr=0x%08X)\n",
+                    static_cast<unsigned>(hr2));
       IGL_DEBUG_ASSERT(false);
       return Result(Result::Code::RuntimeError, "Failed to query IDXGISwapChain3");
     }
