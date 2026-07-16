@@ -35,7 +35,7 @@
 
 namespace igl::tests {
 
-const auto kQuarterPixel = (float)(0.5 / OFFSCREEN_RT_WIDTH);
+const float kQuarterPixel = static_cast<float>(0.5 / OFFSCREEN_RT_WIDTH);
 const float kBackgroundColor = 0.501f;
 const uint32_t kBackgroundColorHex = 0x80808080;
 
@@ -240,14 +240,14 @@ class RenderCommandEncoderTest : public ::testing::Test {
 
     const igl::Viewport viewport = {.x = 0.0f,
                                     .y = 0.0f,
-                                    .width = (float)OFFSCREEN_RT_WIDTH,
-                                    .height = (float)OFFSCREEN_RT_HEIGHT,
+                                    .width = static_cast<float>(OFFSCREEN_RT_WIDTH),
+                                    .height = static_cast<float>(OFFSCREEN_RT_HEIGHT),
                                     .minDepth = 0.0f,
                                     .maxDepth = +1.0f};
     const igl::ScissorRect scissor = {.x = 0,
                                       .y = 0,
-                                      .width = (uint32_t)OFFSCREEN_RT_WIDTH,
-                                      .height = (uint32_t)OFFSCREEN_RT_HEIGHT};
+                                      .width = static_cast<uint32_t>(OFFSCREEN_RT_WIDTH),
+                                      .height = static_cast<uint32_t>(OFFSCREEN_RT_HEIGHT)};
     encoder->bindViewport(viewport);
     encoder->bindScissorRect(scissor);
 
@@ -776,14 +776,14 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStripCopyTextureToBuffer) {
 
   encoder->bindViewport({.x = 0.0f,
                          .y = 0.0f,
-                         .width = (float)OFFSCREEN_RT_WIDTH,
-                         .height = (float)OFFSCREEN_RT_HEIGHT,
+                         .width = static_cast<float>(OFFSCREEN_RT_WIDTH),
+                         .height = static_cast<float>(OFFSCREEN_RT_HEIGHT),
                          .minDepth = 0.0f,
                          .maxDepth = +1.0f});
   encoder->bindScissorRect({.x = 0,
                             .y = 0,
-                            .width = (uint32_t)OFFSCREEN_RT_WIDTH,
-                            .height = (uint32_t)OFFSCREEN_RT_HEIGHT});
+                            .width = static_cast<uint32_t>(OFFSCREEN_RT_WIDTH),
+                            .height = static_cast<uint32_t>(OFFSCREEN_RT_HEIGHT)});
 
   encoder->insertDebugEventLabel("Rendering a triangle strip...");
   encoder->bindRenderPipelineState(renderPipelineStateTriangleStrip_);

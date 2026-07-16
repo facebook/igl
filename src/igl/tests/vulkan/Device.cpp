@@ -245,33 +245,44 @@ TEST_F(DeviceVulkanTest, UpdateGlslangResource) {
 
   ivkUpdateGlslangResource(&res, &props, nullptr);
 
-  ASSERT_EQ(res.max_vertex_attribs, (int)props.limits.maxVertexInputAttributes);
-  ASSERT_EQ(res.max_clip_distances, (int)props.limits.maxClipDistances);
-  ASSERT_EQ(res.max_compute_work_group_count_x, (int)props.limits.maxComputeWorkGroupCount[0]);
-  ASSERT_EQ(res.max_compute_work_group_count_y, (int)props.limits.maxComputeWorkGroupCount[1]);
-  ASSERT_EQ(res.max_compute_work_group_count_z, (int)props.limits.maxComputeWorkGroupCount[2]);
-  ASSERT_EQ(res.max_compute_work_group_size_x, (int)props.limits.maxComputeWorkGroupSize[0]);
-  ASSERT_EQ(res.max_compute_work_group_size_y, (int)props.limits.maxComputeWorkGroupSize[1]);
-  ASSERT_EQ(res.max_compute_work_group_size_z, (int)props.limits.maxComputeWorkGroupSize[2]);
-  ASSERT_EQ(res.max_vertex_output_components, (int)props.limits.maxVertexOutputComponents);
-  ASSERT_EQ(res.max_geometry_input_components, (int)props.limits.maxGeometryInputComponents);
-  ASSERT_EQ(res.max_geometry_output_components, (int)props.limits.maxGeometryOutputComponents);
-  ASSERT_EQ(res.max_fragment_input_components, (int)props.limits.maxFragmentInputComponents);
-  ASSERT_EQ(res.max_geometry_output_vertices, (int)props.limits.maxGeometryOutputVertices);
+  ASSERT_EQ(res.max_vertex_attribs, static_cast<int>(props.limits.maxVertexInputAttributes));
+  ASSERT_EQ(res.max_clip_distances, static_cast<int>(props.limits.maxClipDistances));
+  ASSERT_EQ(res.max_compute_work_group_count_x,
+            static_cast<int>(props.limits.maxComputeWorkGroupCount[0]));
+  ASSERT_EQ(res.max_compute_work_group_count_y,
+            static_cast<int>(props.limits.maxComputeWorkGroupCount[1]));
+  ASSERT_EQ(res.max_compute_work_group_count_z,
+            static_cast<int>(props.limits.maxComputeWorkGroupCount[2]));
+  ASSERT_EQ(res.max_compute_work_group_size_x,
+            static_cast<int>(props.limits.maxComputeWorkGroupSize[0]));
+  ASSERT_EQ(res.max_compute_work_group_size_y,
+            static_cast<int>(props.limits.maxComputeWorkGroupSize[1]));
+  ASSERT_EQ(res.max_compute_work_group_size_z,
+            static_cast<int>(props.limits.maxComputeWorkGroupSize[2]));
+  ASSERT_EQ(res.max_vertex_output_components,
+            static_cast<int>(props.limits.maxVertexOutputComponents));
+  ASSERT_EQ(res.max_geometry_input_components,
+            static_cast<int>(props.limits.maxGeometryInputComponents));
+  ASSERT_EQ(res.max_geometry_output_components,
+            static_cast<int>(props.limits.maxGeometryOutputComponents));
+  ASSERT_EQ(res.max_fragment_input_components,
+            static_cast<int>(props.limits.maxFragmentInputComponents));
+  ASSERT_EQ(res.max_geometry_output_vertices,
+            static_cast<int>(props.limits.maxGeometryOutputVertices));
   ASSERT_EQ(res.max_geometry_total_output_components,
-            (int)props.limits.maxGeometryTotalOutputComponents);
+            static_cast<int>(props.limits.maxGeometryTotalOutputComponents));
   ASSERT_EQ(res.max_tess_control_input_components,
-            (int)props.limits.maxTessellationControlPerVertexInputComponents);
+            static_cast<int>(props.limits.maxTessellationControlPerVertexInputComponents));
   ASSERT_EQ(res.max_tess_control_output_components,
-            (int)props.limits.maxTessellationControlPerVertexOutputComponents);
+            static_cast<int>(props.limits.maxTessellationControlPerVertexOutputComponents));
   ASSERT_EQ(res.max_tess_evaluation_input_components,
-            (int)props.limits.maxTessellationEvaluationInputComponents);
+            static_cast<int>(props.limits.maxTessellationEvaluationInputComponents));
   ASSERT_EQ(res.max_tess_evaluation_output_components,
-            (int)props.limits.maxTessellationEvaluationOutputComponents);
-  ASSERT_EQ(res.max_viewports, (int)props.limits.maxViewports);
-  ASSERT_EQ(res.max_cull_distances, (int)props.limits.maxCullDistances);
+            static_cast<int>(props.limits.maxTessellationEvaluationOutputComponents));
+  ASSERT_EQ(res.max_viewports, static_cast<int>(props.limits.maxViewports));
+  ASSERT_EQ(res.max_cull_distances, static_cast<int>(props.limits.maxCullDistances));
   ASSERT_EQ(res.max_combined_clip_and_cull_distances,
-            (int)props.limits.maxCombinedClipAndCullDistances);
+            static_cast<int>(props.limits.maxCombinedClipAndCullDistances));
 }
 
 // Diff-2 plumbing (unit): getSpvOptions() maps each ShaderOptimization onto the exact glslang
