@@ -625,7 +625,7 @@ void ShaderUniforms::setFloat3x3Array(const igl::NameHandle& uniformName,
     const auto* paddedMatrixPtr = reinterpret_cast<const float*>(value);
     auto* packedMatrix = new float[9 * count];
     auto* packedMatrixPtr = packedMatrix;
-    for (int n = 0; n < count; n++) {
+    for (size_t n = 0; n < count; n++) {
       for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
           *packedMatrixPtr++ = *paddedMatrixPtr++;
