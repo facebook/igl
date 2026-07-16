@@ -262,7 +262,7 @@ INativeHWTextureBuffer::LockGuard INativeHWTextureBuffer::lockHWBuffer(std::byte
                                                                        Result* outResult) const {
   Result result = lockHWBuffer(dst, outRange);
   Result::setResult(outResult, result);
-  return INativeHWTextureBuffer::LockGuard(result.isOk() ? this : nullptr);
+  return {result.isOk() ? this : nullptr};
 }
 
 Result INativeHWTextureBuffer::lockHWBuffer(std::byte * IGL_NULLABLE * IGL_NONNULL dst,
