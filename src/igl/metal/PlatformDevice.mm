@@ -252,8 +252,8 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
 Size PlatformDevice::getNativeDrawableSize(CALayer* nativeDrawable, Result* outResult) {
 #if (!TARGET_OS_SIMULATOR || __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000)
   Result::setOk(outResult);
-  return {(float)CGRectGetWidth(nativeDrawable.bounds),
-          (float)CGRectGetHeight(nativeDrawable.bounds)};
+  return {static_cast<float>(CGRectGetWidth(nativeDrawable.bounds)),
+          static_cast<float>(CGRectGetHeight(nativeDrawable.bounds))};
 #else
   Result::setResult(outResult, Result::Code::Unsupported, "Metal not supported on iOS simulator.");
   return {};
