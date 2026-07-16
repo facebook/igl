@@ -286,7 +286,7 @@ TEST_F(DepthStencilStateTest, SetStencilReferenceValueAndCheck) {
   ctx->getBooleanv(GL_DEPTH_WRITEMASK, &origIsDepthWriteEnabled);
   ctx->getIntegerv(GL_DEPTH_FUNC, &origDepthFunVal);
 
-  ASSERT_TRUE((bool)origIsDepthWriteEnabled == dsDesc.isDepthWriteEnabled);
+  ASSERT_TRUE(static_cast<bool>(origIsDepthWriteEnabled) == dsDesc.isDepthWriteEnabled);
   ASSERT_TRUE(origDepthFunVal ==
               opengl::DepthStencilState::convertCompareFunction(dsDesc.compareFunction));
 
@@ -455,7 +455,7 @@ TEST_F(DepthStencilStateTest, SetStencilReferenceValueAndCheck) {
   ASSERT_TRUE(newDsDesc.frontFaceStencil.writeMask == newStencilWriteMask);
 
   ctx->getBooleanv(GL_DEPTH_WRITEMASK, &newIsDepthWriteEnabled);
-  ASSERT_TRUE((bool)newIsDepthWriteEnabled == newDsDesc.isDepthWriteEnabled);
+  ASSERT_TRUE(static_cast<bool>(newIsDepthWriteEnabled) == newDsDesc.isDepthWriteEnabled);
 
   ctx->getIntegerv(GL_DEPTH_FUNC, &newDepthFunVal);
   ASSERT_TRUE(newDepthFunVal ==
