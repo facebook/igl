@@ -230,7 +230,7 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
   IGL_D3D12_LOG_VERBOSE(
       "Texture::upload - type=%d, baseSlice=%u, numSlicesToUpload=%u, baseMip=%u, "
       "numMipsToUpload=%u\n",
-      (int)type_,
+      static_cast<int>(type_),
       baseSlice,
       numSlicesToUpload,
       baseMip,
@@ -1158,7 +1158,7 @@ uint32_t Texture::calcSubresourceIndex(uint32_t mipLevel, uint32_t layer) const 
     IGL_D3D12_LOG_VERBOSE(
         "calcSubresourceIndex (view): type=%d, mip=%u, layer=%u -> resource mip=%u, layer=%u -> "
         "subresource=%u\n",
-        (int)type_,
+        static_cast<int>(type_),
         mipLevel,
         layer,
         resourceMip,
