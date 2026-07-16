@@ -423,6 +423,24 @@ void RenderCommandEncoder::bindRenderPipelineState(
   binder_.bindPipeline(VK_NULL_HANDLE, nullptr);
 }
 
+void RenderCommandEncoder::applyPipelineRasterizationDynamicState() {
+  IGL_PROFILER_FUNCTION();
+
+  if (!IGL_DEBUG_VERIFY(rps_)) {
+    return;
+  }
+
+  const bool isVulkan13 = ctx_.getVkPhysicalDeviceProperties().apiVersion >= VK_API_VERSION_1_3;
+
+  if (isVulkan13 || ctx_.features().has_VK_EXT_extended_dynamic_state) {
+    const RenderPipelineDesc& desc = rps_->getRenderPipelineDesc();
+    ctx_.vf_.vkCmdSetCullMode(cmdBuffer_, cullModeToVkCullMode(desc.cullMode));
+    ctx_.vf_.vkCmdSetFrontFace(cmdBuffer_, windingModeToVkFrontFace(desc.frontFaceWinding));
+    ctx_.vf_.vkCmdSetPrimitiveTopology(cmdBuffer_,
+                                       primitiveTypeToVkPrimitiveTopology(desc.topology));
+  }
+}
+
 void RenderCommandEncoder::bindDepthStencilState(
     const std::shared_ptr<IDepthStencilState>& depthStencilState) {
   IGL_PROFILER_FUNCTION();
