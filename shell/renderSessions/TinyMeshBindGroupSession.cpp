@@ -583,7 +583,7 @@ void TinyMeshBindGroupSession::update(SurfaceTextures surfaceTextures) noexcept 
   framebuffer_->updateDrawable(surfaceTextures.color);
 
   // from igl/shell/renderSessions/Textured3DCubeSession.cpp
-  const float fov = float(45.0f * (M_PI / 180.0f));
+  const float fov = static_cast<float>(45.0f * (M_PI / 180.0f));
   const float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
   perFrame.proj = glm::perspectiveLH(fov, aspectRatio, 0.1f, 500.0f);
   // place a "camera" behind the cubes, the distance depends on the total number of cubes
@@ -599,8 +599,8 @@ void TinyMeshBindGroupSession::update(SurfaceTextures surfaceTextures) noexcept 
         vec3(-1.5f * sqrt(kNumCubes) + 4.0f * static_cast<float>(i % cubesInLine),
              -1.5f * sqrt(kNumCubes) + 4.0f * std::floor(static_cast<float>(i) / cubesInLine),
              0);
-    perObject[i].model =
-        glm::rotate(glm::translate(mat4(1.0f), offset), float(direction * currentTime_), axis[i]);
+    perObject[i].model = glm::rotate(
+        glm::translate(mat4(1.0f), offset), static_cast<float>(direction * currentTime_), axis[i]);
   }
 
   ubPerObject_[frameIndex_]->upload(&perObject, BufferRange(sizeof(perObject)));
