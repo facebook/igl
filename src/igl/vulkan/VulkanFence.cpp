@@ -32,8 +32,8 @@ VulkanFence::VulkanFence(const VulkanFunctionTable& vf,
   };
   VK_ASSERT(vf_->vkCreateFence(device_, &ci, nullptr, &vkFence_));
 
-  VK_ASSERT(ivkSetDebugObjectName(
-      vf_, device_, VK_OBJECT_TYPE_FENCE, reinterpret_cast<uint64_t>(vkFence_), debugName));
+  VK_ASSERT(
+      ivkSetDebugObjectName(vf_, device_, VK_OBJECT_TYPE_FENCE, (uint64_t)vkFence_, debugName));
 }
 
 VulkanFence ::~VulkanFence() {
@@ -68,6 +68,7 @@ bool VulkanFence::reset() noexcept {
 }
 
 bool VulkanFence::wait(uint64_t timeoutNs) noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
   const VkResult result = vf_->vkWaitForFences(device_, 1, &vkFence_, VK_TRUE, timeoutNs);
   return result == VK_SUCCESS;
 }
