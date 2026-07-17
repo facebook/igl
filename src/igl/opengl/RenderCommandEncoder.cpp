@@ -416,7 +416,7 @@ void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
   if (IGL_DEBUG_VERIFY(adapter_)) {
     indexType_ = toGlType(format);
     indexBufferOffset_ = reinterpret_cast<void*>(bufferOffset); // NOLINT(performance-no-int-to-ptr)
-    adapter_->setIndexBuffer((Buffer&)buffer);
+    adapter_->setIndexBuffer(static_cast<Buffer&>(buffer));
   }
 }
 
@@ -478,10 +478,13 @@ void RenderCommandEncoder::draw(size_t vertexCount,
     getCommandBuffer().incrementCurrentDrawCount();
     auto mode = toGlPrimitive(adapter_->pipelineState().getRenderPipelineDesc().topology);
     if (instanceCount > 1) {
-      adapter_->drawArraysInstanced(
-          mode, (GLsizei)firstVertex, (GLsizei)vertexCount, (GLsizei)instanceCount);
+      adapter_->drawArraysInstanced(mode,
+                                    static_cast<GLsizei>(firstVertex),
+                                    static_cast<GLsizei>(vertexCount),
+                                    static_cast<GLsizei>(instanceCount));
     } else {
-      adapter_->drawArrays(mode, (GLsizei)firstVertex, (GLsizei)vertexCount);
+      adapter_->drawArrays(
+          mode, static_cast<GLsizei>(firstVertex), static_cast<GLsizei>(vertexCount));
     }
   }
 }
@@ -507,13 +510,15 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
     auto mode = toGlPrimitive(adapter_->pipelineState().getRenderPipelineDesc().topology);
     if (instanceCount > 1) {
       adapter_->drawElementsInstanced(mode,
-                                      (GLsizei)indexCount,
+                                      static_cast<GLsizei>(indexCount),
                                       indexType_,
-                                      (uint8_t*)indexBufferOffset_ + indexOffsetBytes,
+                                      static_cast<uint8_t*>(indexBufferOffset_) + indexOffsetBytes,
                                       instanceCount);
     } else {
-      adapter_->drawElements(
-          mode, (GLsizei)indexCount, indexType_, (uint8_t*)indexBufferOffset_ + indexOffsetBytes);
+      adapter_->drawElements(mode,
+                             static_cast<GLsizei>(indexCount),
+                             indexType_,
+                             static_cast<uint8_t*>(indexBufferOffset_) + indexOffsetBytes);
     }
   }
 }
@@ -541,11 +546,15 @@ void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
         reinterpret_cast<uint8_t*>(indirectBufferOffset); // NOLINT(performance-no-int-to-ptr)
     const GLsizei effectiveStride = stride ? stride : 16u; // sizeof(DrawArraysIndirectCommand)
     if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::MultiDrawIndirect)) {
-      adapter_->multiDrawArraysIndirect(
-          mode, (Buffer&)indirectBuffer, indirectBufferOffsetPtr, drawCount, effectiveStride);
+      adapter_->multiDrawArraysIndirect(mode,
+                                        static_cast<Buffer&>(indirectBuffer),
+                                        indirectBufferOffsetPtr,
+                                        drawCount,
+                                        effectiveStride);
     } else {
       for (uint32_t i = 0; i != drawCount; i++) {
-        adapter_->drawArraysIndirect(mode, (Buffer&)indirectBuffer, indirectBufferOffsetPtr);
+        adapter_->drawArraysIndirect(
+            mode, static_cast<Buffer&>(indirectBuffer), indirectBufferOffsetPtr);
         indirectBufferOffsetPtr += effectiveStride;
       }
     }
@@ -569,14 +578,14 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
     if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::MultiDrawIndirect)) {
       adapter_->multiDrawElementsIndirect(mode,
                                           indexType_,
-                                          (Buffer&)indirectBuffer,
+                                          static_cast<Buffer&>(indirectBuffer),
                                           indirectBufferOffsetPtr,
                                           drawCount,
                                           effectiveStride);
     } else {
       for (uint32_t i = 0; i != drawCount; i++) {
         adapter_->drawElementsIndirect(
-            mode, indexType_, (Buffer&)indirectBuffer, indirectBufferOffsetPtr);
+            mode, indexType_, static_cast<Buffer&>(indirectBuffer), indirectBufferOffsetPtr);
         indirectBufferOffsetPtr += effectiveStride;
       }
     }
