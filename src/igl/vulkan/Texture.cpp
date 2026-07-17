@@ -391,9 +391,13 @@ Result Texture::uploadInternal(TextureType /*type*/,
   const VulkanContext& ctx = device_.getVulkanContext();
 
   const VkImageAspectFlags imageAspectFlags = texture_->imageView_.getVkImageAspectFlags();
-  // NOLINTNEXTLINE(clang-diagnostic-shorten-64-to-32)
-  ctx.stagingDevice_->imageData(
-      vulkanImage, desc_.type, range, getProperties(), bytesPerRow, imageAspectFlags, data);
+  ctx.stagingDevice_->imageData(vulkanImage,
+                                desc_.type,
+                                range,
+                                getProperties(),
+                                static_cast<uint32_t>(bytesPerRow),
+                                imageAspectFlags,
+                                data);
 
   // Generate mipmaps if requested by the user
   if (desc_.mipmapGeneration == TextureDesc::TextureMipmapGeneration::AutoGenerateOnUpload) {
