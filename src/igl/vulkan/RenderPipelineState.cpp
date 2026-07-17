@@ -29,7 +29,7 @@ VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(PrimitiveType t) {
   case igl::PrimitiveType::TriangleStrip:
     return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
   }
-  IGL_DEBUG_ABORT("Implement PrimitiveType = %u", (uint32_t)t);
+  IGL_DEBUG_ABORT("Implement PrimitiveType = %u", static_cast<uint32_t>(t));
   return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 }
 
@@ -306,10 +306,10 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
       const size_t bufferIndex = attr.bufferIndex;
 
       vkAttributes_[i] = VkVertexInputAttributeDescription{
-          .location = (uint32_t)attr.location,
-          .binding = (uint32_t)bufferIndex,
+          .location = static_cast<uint32_t>(attr.location),
+          .binding = static_cast<uint32_t>(bufferIndex),
           .format = format,
-          .offset = (uint32_t)attr.offset,
+          .offset = static_cast<uint32_t>(attr.offset),
       };
 
       if (!bufferAlreadyBound[bufferIndex]) {
@@ -320,8 +320,8 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
                                            ? VK_VERTEX_INPUT_RATE_VERTEX
                                            : VK_VERTEX_INPUT_RATE_INSTANCE;
         vkBindings_.emplace_back(VkVertexInputBindingDescription{
-            .binding = (uint32_t)bufferIndex,
-            .stride = (uint32_t)binding.stride,
+            .binding = static_cast<uint32_t>(bufferIndex),
+            .stride = static_cast<uint32_t>(binding.stride),
             .inputRate = rate,
         });
       }
