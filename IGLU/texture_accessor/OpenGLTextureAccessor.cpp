@@ -57,7 +57,7 @@ OpenGLTextureAccessor::OpenGLTextureAccessor(std::shared_ptr<igl::ITexture> text
 
   if (asyncReadbackSupported_) {
     // Create PBO and allocate size
-    context.genBuffers((GLsizei)1, &pboId_);
+    context.genBuffers(static_cast<GLsizei>(1), &pboId_);
     context.bindBuffer(GL_PIXEL_PACK_BUFFER, pboId_);
     context.bufferData(GL_PIXEL_PACK_BUFFER, textureBytesPerImage_, nullptr, GL_DYNAMIC_READ);
     context.bindBuffer(GL_PIXEL_PACK_BUFFER, 0);
