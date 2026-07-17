@@ -163,7 +163,7 @@ Result RenderPipelineState::create() {
           uniformBlockBindingMap_[blockIndex] = blockDescIt->second.bindingIndex;
         } else {
           uniformBlockBindingMap_[blockIndex] = bindingIndex;
-          blockDescIt->second.bindingIndex = bindingIndex;
+          blockDescIt->second.bindingIndex = static_cast<GLint>(bindingIndex);
         }
       }
     }
@@ -225,7 +225,9 @@ void RenderPipelineState::bind() {
       for (const auto& binding : uniformBlockBindingMap_) {
         const auto& blockIndex = binding.first;
         const auto& bindingIndex = binding.second;
-        getContext().uniformBlockBinding(shaderStages->getProgramID(), blockIndex, bindingIndex);
+        getContext().uniformBlockBinding(shaderStages->getProgramID(),
+                                         static_cast<GLuint>(blockIndex),
+                                         static_cast<GLuint>(bindingIndex));
       }
       uniformBlockBindingPointSet_ = true;
     }
@@ -321,7 +323,7 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
       if (attribute.sampleFunction == igl::VertexSampleFunction::PerVertex) {
         getContext().vertexAttribDivisor(location, 0);
       } else if (attribute.sampleFunction == igl::VertexSampleFunction::Instance) {
-        getContext().vertexAttribDivisor(location, attribute.sampleRate);
+        getContext().vertexAttribDivisor(location, static_cast<GLuint>(attribute.sampleRate));
       } else {
         getContext().vertexAttribDivisor(location, 0);
       }
