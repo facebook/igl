@@ -263,10 +263,11 @@ void ShaderUniforms::setUniformBytes(const UniformDesc& uniformDesc,
   const uintptr_t offset =
       uniformDesc.iglMemberDesc.offset + elementSize * arrayIndex + subAllocatedOffset;
 
-  auto err = try_checked_memcpy((uint8_t*)strongBuffer->allocation->ptr + offset, // destination
-                                strongBuffer->allocation->size - offset, // max destination size
-                                data, // source
-                                elementSize * count // num bytes to copy
+  auto err = try_checked_memcpy(
+      static_cast<uint8_t*>(strongBuffer->allocation->ptr) + offset, // destination
+      strongBuffer->allocation->size - offset, // max destination size
+      data, // source
+      elementSize * count // num bytes to copy
   );
   if (err != 0) {
     IGL_LOG_ERROR_ONCE("[IGL][Error] Failed to update uniform buffer\n");
@@ -890,8 +891,9 @@ void ShaderUniforms::bindBuffer(igl::IDevice& device,
         uploadSize = buffer->suballocationsSize;
       }
 
-      buffer->allocation->iglBuffer->upload((uint8_t*)buffer->allocation->ptr + subAllocatedOffset,
-                                            igl::BufferRange(uploadSize, subAllocatedOffset));
+      buffer->allocation->iglBuffer->upload(
+          static_cast<uint8_t*>(buffer->allocation->ptr) + subAllocatedOffset,
+          igl::BufferRange(uploadSize, subAllocatedOffset));
       encoder.bindBuffer(buffer->iglBufferDesc.bufferIndex,
                          buffer->allocation->iglBuffer.get(),
                          subAllocatedOffset);
