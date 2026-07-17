@@ -251,7 +251,7 @@ TextureFormat vkTextureFormatToTextureFormat(int32_t vkFormat) {
   case VK_FORMAT_D32_SFLOAT:
     return TextureFormat::Z_UNorm32;
   default:
-    IGL_DEBUG_ABORT("VkFormat value not handled: %d", (int)vkFormat);
+    IGL_DEBUG_ABORT("VkFormat value not handled: %d", static_cast<int>(vkFormat));
   }
 
   return TextureFormat::Invalid;
