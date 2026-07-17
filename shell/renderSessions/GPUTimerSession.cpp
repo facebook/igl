@@ -309,7 +309,7 @@ void GPUTimerSession::update(SurfaceTextures textures) noexcept {
     const double elapsedMs = static_cast<double>(elapsedNanos) / 1000000.0;
     IGL_LOG_INFO("GPU Timer: render pass took %.3f ms (%llu ns)\n",
                  elapsedMs,
-                 (unsigned long long)elapsedNanos);
+                 static_cast<unsigned long long>(elapsedNanos));
   }
 
   RenderSession::update(textures);

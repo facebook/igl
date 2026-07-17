@@ -110,7 +110,7 @@ TEST_F(BufferTest, sizeForUniformElementType) {
 TEST_F(BufferTest, sizeForUniformType) {
   // Invalid type has size of 0
   ASSERT_EQ(0, sizeForUniformType(UniformType::Invalid));
-  ASSERT_EQ(0, sizeForUniformType((UniformType)-1));
+  ASSERT_EQ(0, sizeForUniformType(static_cast<UniformType>(-1)));
 
   // Types with element of Float
   ASSERT_EQ(4, sizeForUniformType(UniformType::Float));
