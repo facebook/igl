@@ -69,7 +69,7 @@ constexpr CRC_TABLE;
 constexpr uint32_t iglCrc32ConstExpr(const char* p) {
   uint32_t crc = ~0u;
   for (; *p; ++p) {
-    uint8_t v = (uint8_t)*p;
+    const uint8_t v = static_cast<uint8_t>(*p);
     crc = (crc >> 8) ^ kCrcTable[(crc & 0xFF) ^ v];
   }
   return ~crc;
@@ -78,7 +78,7 @@ constexpr uint32_t iglCrc32ConstExpr(const char* p) {
 constexpr uint32_t iglCrc32ConstExpr(std::string_view sv) {
   uint32_t crc = ~0u;
   for (auto p : sv) {
-    uint8_t v = (uint8_t)p;
+    const uint8_t v = static_cast<uint8_t>(p);
     crc = (crc >> 8) ^ kCrcTable[(crc & 0xFF) ^ v];
   }
   return ~crc;

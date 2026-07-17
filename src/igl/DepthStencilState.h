@@ -89,12 +89,12 @@ struct StencilStateDesc {
   /**
    * @brief A bit mask that determines which stencil value bits are compared in the stencil test.
    */
-  uint32_t readMask = (uint32_t)~0;
+  uint32_t readMask = ~uint32_t{0};
   /**
    * @brief A bit mask that determines which stencil value bits are written to by stencil
    * operations.
    */
-  uint32_t writeMask = (uint32_t)~0;
+  uint32_t writeMask = ~uint32_t{0};
 
   /**
    * @brief Compares two StencilStateDesc objects for equality.
