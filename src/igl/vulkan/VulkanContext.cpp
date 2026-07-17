@@ -2244,8 +2244,10 @@ void VulkanContext::updateBindingsTexturesByDescriptorBuffer(
         .data = {.pCombinedImageSampler = &imageInfo},
     };
 
-    vf_.vkGetDescriptorEXT(
-        getVkDevice(), &getInfo, combinedSize, (char*)mappedPtr + originOffset + bindingOffset);
+    vf_.vkGetDescriptorEXT(getVkDevice(),
+                           &getInfo,
+                           combinedSize,
+                           static_cast<char*>(mappedPtr) + originOffset + bindingOffset);
   }
 
   if (descriptorBuffer.bindCmdBuffer != cmdBuf || descriptorBuffer.handle != nextSubmitHandle) {
@@ -2317,8 +2319,10 @@ void VulkanContext::updateBindingsStorageImagesByDescriptorBuffer(
         .data = {.pStorageImage = &imageInfo},
     };
 
-    vf_.vkGetDescriptorEXT(
-        getVkDevice(), &getInfo, storageImageSize, (char*)mappedPtr + originOffset + bindingOffset);
+    vf_.vkGetDescriptorEXT(getVkDevice(),
+                           &getInfo,
+                           storageImageSize,
+                           static_cast<char*>(mappedPtr) + originOffset + bindingOffset);
   }
 
   if (descriptorBuffer.bindCmdBuffer != cmdBuf || descriptorBuffer.handle != nextSubmitHandle) {
@@ -2393,7 +2397,7 @@ void VulkanContext::updateBindingsBuffersByDescriptorBuffer(
     vf_.vkGetDescriptorEXT(getVkDevice(),
                            &getInfo,
                            b.isStorage ? storageBufferDescriptorSize : uniformBufferDescriptorSize,
-                           (char*)mappedPtr + originOffset + bindingOffset);
+                           static_cast<char*>(mappedPtr) + originOffset + bindingOffset);
   }
 
   if (descriptorBuffer.bindCmdBuffer != cmdBuf || descriptorBuffer.handle != nextSubmitHandle) {
@@ -2904,8 +2908,8 @@ BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferDesc& 
         IGL_ARRAY_NUM_ELEMENTS(poolSizes),
         sizeof(VkDescriptorPoolSize),
         [](const void* a, const void* b) {
-          return ((VkDescriptorPoolSize*)a)->descriptorCount <
-                         ((VkDescriptorPoolSize*)b)->descriptorCount
+          return static_cast<const VkDescriptorPoolSize*>(a)->descriptorCount <
+                         static_cast<const VkDescriptorPoolSize*>(b)->descriptorCount
                      ? 1
                      : 0;
         });
