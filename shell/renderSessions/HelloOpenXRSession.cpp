@@ -277,7 +277,7 @@ void HelloOpenXRSession::updateUniformBlock() {
                            glm::rotate(glm::mat4(1.0f), -0.2f, glm::vec3(1.0f, 0.0f, 0.0f));
   ub_.modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.f, -8.0f)) * rotMat *
                     glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, scaleZ));
-  for (size_t i = 0; i < std::min(shellParams().viewParams.size(), size_t(2)); ++i) {
+  for (size_t i = 0; i < std::min(shellParams().viewParams.size(), static_cast<size_t>(2)); ++i) {
     const auto viewIndex = shellParams().viewParams[i].viewIndex;
 
     ub_.viewProjectionMatrix[viewIndex] =
