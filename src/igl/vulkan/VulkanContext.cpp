@@ -462,8 +462,6 @@ struct DescriptorSetLayoutCacheKey {
   }
 };
 
-} // namespace
-
 // Boost-style hash combiner. Mixes `v` into the accumulated seed `h` with a golden-ratio
 // constant plus a self-shift so that the seed's existing bits are re-distributed before each
 // new field is folded in.
@@ -479,7 +477,7 @@ struct DescriptorSetLayoutCacheKeyHash {
       hashCombine(h, std::hash<uint32_t>{}(static_cast<uint32_t>(b.descriptorType)));
       hashCombine(h, std::hash<uint32_t>{}(b.descriptorCount));
       hashCombine(h, std::hash<uint32_t>{}(static_cast<uint32_t>(b.stageFlags)));
-      hashCombine(h, std::hash<const void*>{}(b.pImmutableSamplers));
+      hashCombine(h, std::hash<const void*>{}(static_cast<const void*>(b.pImmutableSamplers)));
     }
     for (const auto& f : key.bindingFlags) {
       hashCombine(h, std::hash<uint32_t>{}(static_cast<uint32_t>(f)));
@@ -487,6 +485,8 @@ struct DescriptorSetLayoutCacheKeyHash {
     return h;
   }
 };
+
+} // namespace
 
 struct VulkanContextImpl final {
   std::thread::id contextThread = std::this_thread::get_id();
