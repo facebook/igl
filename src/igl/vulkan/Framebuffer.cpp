@@ -160,7 +160,11 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // Don't wait for anything
                         VK_PIPELINE_STAGE_TRANSFER_BIT,
-                        VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
+                        VkImageSubresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                .baseMipLevel = 0,
+                                                .levelCount = 1,
+                                                .baseArrayLayer = 0,
+                                                .layerCount = 1});
 
   // 2. Transition src into TRANSFER_SRC_OPTIMAL
   srcVkTex.getVulkanTexture().image.transitionLayout(
@@ -169,12 +173,22 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
       VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // Wait for all previous operation to
                                             // be done
       VK_PIPELINE_STAGE_TRANSFER_BIT,
-      VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
+      VkImageSubresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                              .baseMipLevel = 0,
+                              .levelCount = 1,
+                              .baseArrayLayer = 0,
+                              .layerCount = 1});
   // 3. Copy Image
   const VkImageCopy copy = {
-      .srcSubresource = VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+      .srcSubresource = VkImageSubresourceLayers{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                 .mipLevel = 0,
+                                                 .baseArrayLayer = 0,
+                                                 .layerCount = 1},
       .srcOffset = {.x = static_cast<int32_t>(range.x), .y = static_cast<int32_t>(range.y), .z = 0},
-      .dstSubresource = VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+      .dstSubresource = VkImageSubresourceLayers{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                 .mipLevel = 0,
+                                                 .baseArrayLayer = 0,
+                                                 .layerCount = 1},
       .dstOffset = {.x = static_cast<int32_t>(range.x), .y = static_cast<int32_t>(range.y), .z = 0},
       .extent = {.width = range.width, .height = range.height, .depth = 1u},
   };
@@ -194,7 +208,11 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
       VK_PIPELINE_STAGE_TRANSFER_BIT, // Wait for Copy to be done
       VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // Don't start anything until Copy is
                                          // done
-      VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
+      VkImageSubresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                              .baseMipLevel = 0,
+                              .levelCount = 1,
+                              .baseArrayLayer = 0,
+                              .layerCount = 1});
   dstVkTex.getVulkanTexture().image.transitionLayout(
       cmdBuf,
       dstVkTex.isSwapchainTexture() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
@@ -202,7 +220,11 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
       VK_PIPELINE_STAGE_TRANSFER_BIT, // Wait for vkCmdCopyImage()
       VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // Don't start anything until Copy is
                                          // done
-      VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
+      VkImageSubresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                              .baseMipLevel = 0,
+                              .levelCount = 1,
+                              .baseArrayLayer = 0,
+                              .layerCount = 1});
 
   cmdQueue.submit(*buffer);
 }

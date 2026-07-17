@@ -1280,13 +1280,15 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
   const uint32_t multiplier = isCubemap_ ? arrayLayers_ / 6u : 1u;
 
   // 0: Transition the first mip-level - all layers - to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-  transitionLayout(
-      commandBuffer,
-      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-      VK_PIPELINE_STAGE_TRANSFER_BIT,
-      VkImageSubresourceRange{
-          imageAspectFlags, range.mipLevel, range.numMipLevels, 0, VK_REMAINING_ARRAY_LAYERS});
+  transitionLayout(commandBuffer,
+                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                   VK_PIPELINE_STAGE_TRANSFER_BIT,
+                   VkImageSubresourceRange{.aspectMask = imageAspectFlags,
+                                           .baseMipLevel = range.mipLevel,
+                                           .levelCount = range.numMipLevels,
+                                           .baseArrayLayer = 0,
+                                           .layerCount = VK_REMAINING_ARRAY_LAYERS});
 
   for (uint32_t arrayLayer = range.layer; arrayLayer < (range.layer + range.numLayers);
        ++arrayLayer) {
@@ -1309,18 +1311,22 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, /* newImageLayout */
                               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, /* srcStageMask */
                               VK_PIPELINE_STAGE_TRANSFER_BIT, /* dstStageMask */
-                              VkImageSubresourceRange{imageAspectFlags, i, 1, layer, 1});
+                              VkImageSubresourceRange{.aspectMask = imageAspectFlags,
+                                                      .baseMipLevel = i,
+                                                      .levelCount = 1,
+                                                      .baseArrayLayer = layer,
+                                                      .layerCount = 1});
 
         const int32_t nextLevelWidth = mipWidth > 1 ? mipWidth / 2 : 1;
         const int32_t nextLevelHeight = mipHeight > 1 ? mipHeight / 2 : 1;
 
         const std::array<VkOffset3D, 2> srcOffsets = {
-            VkOffset3D{0, 0, 0},
-            VkOffset3D{mipWidth, mipHeight, 1},
+            VkOffset3D{.x = 0, .y = 0, .z = 0},
+            VkOffset3D{.x = mipWidth, .y = mipHeight, .z = 1},
         };
         const std::array<VkOffset3D, 2> dstOffsets = {
-            VkOffset3D{0, 0, 0},
-            VkOffset3D{nextLevelWidth, nextLevelHeight, 1},
+            VkOffset3D{.x = 0, .y = 0, .z = 0},
+            VkOffset3D{.x = nextLevelWidth, .y = nextLevelHeight, .z = 1},
         };
 
         // 2: Blit the image from the prev mip-level (i-1) (VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
@@ -1336,8 +1342,14 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                         srcOffsets.data(),
                         dstOffsets.data(),
-                        VkImageSubresourceLayers{imageAspectFlags, i - 1, layer, 1},
-                        VkImageSubresourceLayers{imageAspectFlags, i, layer, 1},
+                        VkImageSubresourceLayers{.aspectMask = imageAspectFlags,
+                                                 .mipLevel = i - 1,
+                                                 .baseArrayLayer = layer,
+                                                 .layerCount = 1},
+                        VkImageSubresourceLayers{.aspectMask = imageAspectFlags,
+                                                 .mipLevel = i,
+                                                 .baseArrayLayer = layer,
+                                                 .layerCount = 1},
                         blitFilter);
 
         // 3: Transition i-th level to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL as it will be read
@@ -1351,7 +1363,11 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, /* newImageLayout */
                               VK_PIPELINE_STAGE_TRANSFER_BIT, /* srcStageMask */
                               VK_PIPELINE_STAGE_TRANSFER_BIT /* dstStageMask */,
-                              VkImageSubresourceRange{imageAspectFlags, i, 1, layer, 1});
+                              VkImageSubresourceRange{.aspectMask = imageAspectFlags,
+                                                      .baseMipLevel = i,
+                                                      .levelCount = 1,
+                                                      .baseArrayLayer = layer,
+                                                      .layerCount = 1});
 
         // Compute the size of the next mip-level
         mipWidth = nextLevelWidth;
@@ -1361,18 +1377,20 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
   }
 
   // 4: Transition all levels and layers/faces to their final layout
-  ivkImageMemoryBarrier(
-      &ctx_->vf_,
-      commandBuffer,
-      vkImage_,
-      VK_ACCESS_TRANSFER_WRITE_BIT, // srcAccessMask
-      0, // dstAccessMask
-      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, // oldImageLayout
-      originalImageLayout, // newImageLayout
-      VK_PIPELINE_STAGE_TRANSFER_BIT, // srcStageMask
-      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // dstStageMask
-      VkImageSubresourceRange{
-          imageAspectFlags, range.mipLevel, range.numMipLevels, 0, VK_REMAINING_ARRAY_LAYERS});
+  ivkImageMemoryBarrier(&ctx_->vf_,
+                        commandBuffer,
+                        vkImage_,
+                        VK_ACCESS_TRANSFER_WRITE_BIT, // srcAccessMask
+                        0, // dstAccessMask
+                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, // oldImageLayout
+                        originalImageLayout, // newImageLayout
+                        VK_PIPELINE_STAGE_TRANSFER_BIT, // srcStageMask
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // dstStageMask
+                        VkImageSubresourceRange{.aspectMask = imageAspectFlags,
+                                                .baseMipLevel = range.mipLevel,
+                                                .levelCount = range.numMipLevels,
+                                                .baseArrayLayer = 0,
+                                                .layerCount = VK_REMAINING_ARRAY_LAYERS});
 
   imageLayout_ = originalImageLayout;
 }

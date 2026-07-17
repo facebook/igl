@@ -1468,13 +1468,20 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
       "Descriptor Set Layout: VulkanContext::dslBindless_");
   // create default descriptor pool and allocate 1 descriptor set
   const std::array<VkDescriptorPoolSize, kNumBindings> poolSizes = {
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, pimpl_->currentMaxBindlessTextures},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, pimpl_->currentMaxBindlessTextures},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, pimpl_->currentMaxBindlessTextures},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, pimpl_->currentMaxBindlessTextures},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, pimpl_->currentMaxBindlessSamplers},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, pimpl_->currentMaxBindlessSamplers},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, pimpl_->currentMaxBindlessTextures},
+      VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                           .descriptorCount = pimpl_->currentMaxBindlessTextures},
+      VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                           .descriptorCount = pimpl_->currentMaxBindlessTextures},
+      VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                           .descriptorCount = pimpl_->currentMaxBindlessTextures},
+      VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                           .descriptorCount = pimpl_->currentMaxBindlessTextures},
+      VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLER,
+                           .descriptorCount = pimpl_->currentMaxBindlessSamplers},
+      VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLER,
+                           .descriptorCount = pimpl_->currentMaxBindlessSamplers},
+      VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                           .descriptorCount = pimpl_->currentMaxBindlessTextures},
   };
   VK_ASSERT(ivkCreateDescriptorPool(&vf_,
                                     device,
@@ -1528,7 +1535,7 @@ Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
 }
 
 VkExtent2D VulkanContext::getSwapchainExtent() const {
-  return hasSwapchain() ? swapchain_->getExtent() : VkExtent2D{0, 0};
+  return hasSwapchain() ? swapchain_->getExtent() : VkExtent2D{.width = 0, .height = 0};
 }
 
 Result VulkanContext::waitIdle() const {
@@ -2748,8 +2755,8 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
         IGL_FORMAT("Descriptor Set Layout (COMBINED_IMAGE_SAMPLER): BindGroup = {}", desc.debugName)
             .c_str()));
 
-    const VkDescriptorPoolSize poolSize =
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, numBindings};
+    const VkDescriptorPoolSize poolSize = VkDescriptorPoolSize{
+        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .descriptorCount = numBindings};
 
     VK_ASSERT(ivkCreateDescriptorPool(
         &vf_, device, VkDescriptorPoolCreateFlags{}, 1u, 1u, &poolSize, &metadata.pool));
@@ -2961,9 +2968,9 @@ BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferDesc& 
     writes[numWrites] =
         ivkGetWriteDescriptorSetBufferInfo(metadata.dset, loc, type, 1, &buffers[numWrites]);
     buffers[numWrites++] = VkDescriptorBufferInfo{
-        buf->getVkBuffer(),
-        desc.offset[loc],
-        desc.size[loc] ? desc.size[loc] : VK_WHOLE_SIZE,
+        .buffer = buf->getVkBuffer(),
+        .offset = desc.offset[loc],
+        .range = desc.size[loc] ? desc.size[loc] : VK_WHOLE_SIZE,
     };
   }
 

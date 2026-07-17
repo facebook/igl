@@ -81,7 +81,7 @@ D3D12StagingDevice::StagingBuffer D3D12StagingDevice::allocateUpload(size_t size
 
   // Map the buffer
   void* mappedPtr = nullptr;
-  D3D12_RANGE readRange{0, 0}; // Not reading
+  D3D12_RANGE readRange{.Begin = 0, .End = 0}; // Not reading
   HRESULT hr = buffer->Map(0, &readRange, &mappedPtr);
   if (FAILED(hr) || !mappedPtr) {
     IGL_LOG_ERROR("D3D12StagingDevice: Failed to map upload buffer\n");
