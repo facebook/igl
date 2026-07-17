@@ -88,8 +88,8 @@ TextureLoader::TextureLoader(DataReader reader,
           ? preferredFormat
           : (isFloatFormat ? igl::TextureFormat::RGBA_F32 : igl::TextureFormat::RGBA_UNorm8);
   desc.numLayers = 1;
-  desc.width = static_cast<size_t>(width);
-  desc.height = static_cast<size_t>(height);
+  desc.width = static_cast<uint32_t>(width);
+  desc.height = static_cast<uint32_t>(height);
   desc.depth = 1;
   desc.type = igl::TextureType::TwoD;
 

@@ -99,7 +99,8 @@ bool TextureLoaderFactory::validate(DataReader reader,
     if (!reader.tryReadAt<uint32_t>(offset, imageSize, outResult)) {
       return false;
     }
-    const size_t expectedBytes = properties.getBytesPerRange(range.atMipLevel(mipLevel).atFace(0));
+    const size_t expectedBytes =
+        properties.getBytesPerRange(range.atMipLevel(static_cast<uint32_t>(mipLevel)).atFace(0));
     const size_t expectedCubeBytes = expectedBytes * static_cast<size_t>(6);
 
     if (imageSize != expectedBytes) {

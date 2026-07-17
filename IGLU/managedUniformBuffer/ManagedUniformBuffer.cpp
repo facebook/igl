@@ -198,10 +198,10 @@ void ManagedUniformBuffer::bind(const igl::IDevice& device,
   if (device.getBackendType() == igl::BackendType::OpenGL) {
     // Bind a native uniform block (GLSL ES 3.x) as a UBO; otherwise bind per-uniform (see the
     // render-stage bind() above for details).
-    const int blockBindingPoint =
-        uniformInfo.blockName.empty()
-            ? -1
-            : pipelineState.getIndexByName(igl::genNameHandle(uniformInfo.blockName));
+    const int blockBindingPoint = uniformInfo.blockName.empty()
+                                      ? -1
+                                      : static_cast<int>(pipelineState.getIndexByName(
+                                            igl::genNameHandle(uniformInfo.blockName)));
     if (bindOpenGLUniformBlock(blockBindingPoint)) {
       encoder.bindBuffer(static_cast<uint32_t>(blockBindingPoint), buffer_.get());
       return;
