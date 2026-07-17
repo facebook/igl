@@ -98,7 +98,8 @@
   // @fb-only
 // @fb-only
   default:
-    IGL_DEBUG_ABORT("IGL Samples not set up for backend(%d)", (int)_backendVersion.flavor);
+    IGL_DEBUG_ABORT("IGL Samples not set up for backend(%d)",
+                    static_cast<int>(_backendVersion.flavor));
     break;
   }
 
@@ -141,7 +142,7 @@
 
   // draw
   if (_backendVersion.flavor == igl::BackendFlavor::Metal) {
-    _session->setPixelsPerPoint((float)[UIScreen mainScreen].scale);
+    _session->setPixelsPerPoint(static_cast<float>([UIScreen mainScreen].scale));
   } else if (_backendVersion.flavor == igl::BackendFlavor::OpenGL) {
     _session->setPixelsPerPoint(1.0f);
   }

@@ -92,7 +92,7 @@ std::shared_ptr<ITexture> getSurfaceTexture(
   auto vulkanTexture = vulkanTextures[imageIndex];
 
   if (imageIndex >= inOutTextures.size()) {
-    inOutTextures.resize((size_t)imageIndex + 1, nullptr);
+    inOutTextures.resize(static_cast<size_t>(imageIndex) + 1, nullptr);
   }
 
   auto& actualDevice = static_cast<igl::vulkan::Device&>(device);
