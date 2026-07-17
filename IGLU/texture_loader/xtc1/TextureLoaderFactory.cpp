@@ -103,8 +103,8 @@ class TextureLoader final : public ITextureLoader {
 
     // Return the compressed data as-is without decompression
     auto data = std::make_unique<uint8_t[]>(compressedSize);
-    auto err =
-        try_checked_memcpy((uint8_t*)data.get(), compressedSize, compressedData, compressedSize);
+    auto err = try_checked_memcpy(
+        static_cast<uint8_t*>(data.get()), compressedSize, compressedData, compressedSize);
     if (err != 0) {
       IGL_LOG_ERROR_ONCE("[IGL][Error] Failed to update texture buffer\n");
     }
