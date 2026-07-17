@@ -99,8 +99,8 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
   const uint32_t* words = spirv + kSpvHeaderSize;
 
   while (words < spirv + size) {
-    const uint16_t instructionSize = uint16_t(words[0] >> SpvWordCountShift);
-    const uint16_t opCode = uint16_t(words[0] & SpvOpCodeMask);
+    const uint16_t instructionSize = static_cast<uint16_t>(words[0] >> SpvWordCountShift);
+    const uint16_t opCode = static_cast<uint16_t>(words[0] & SpvOpCodeMask);
 
     switch (opCode) {
     case SpvOpDecorate: {
