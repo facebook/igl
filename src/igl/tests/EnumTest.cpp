@@ -7,6 +7,7 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <igl/Common.h>
 #include <igl/RenderPipelineState.h>
 
@@ -16,6 +17,8 @@ namespace igl::tests {
 // CullMode
 // ---------------------------------------------------------------------------
 
+// CullMode feeds RenderPipelineDesc's hash via EnumToValue(); pin the ordinals
+// since a reorder would silently change hashes for in-flight pipeline cache keys.
 TEST(CullModeTest, EnumValues) {
   EXPECT_EQ(static_cast<uint8_t>(CullMode::Disabled), 0u);
   EXPECT_EQ(static_cast<uint8_t>(CullMode::Front), 1u);
@@ -26,6 +29,8 @@ TEST(CullModeTest, EnumValues) {
 // WindingMode
 // ---------------------------------------------------------------------------
 
+// WindingMode feeds RenderPipelineDesc's hash via EnumToValue(); pin the ordinals
+// since a reorder would silently change hashes for in-flight pipeline cache keys.
 TEST(WindingModeTest, EnumValues) {
   EXPECT_EQ(static_cast<uint8_t>(WindingMode::Clockwise), 0u);
   EXPECT_EQ(static_cast<uint8_t>(WindingMode::CounterClockwise), 1u);
@@ -35,18 +40,31 @@ TEST(WindingModeTest, EnumValues) {
 // PrimitiveType
 // ---------------------------------------------------------------------------
 
-TEST(PrimitiveTypeTest, EnumValues) {
-  EXPECT_EQ(static_cast<uint8_t>(PrimitiveType::Point), 0u);
-  EXPECT_EQ(static_cast<uint8_t>(PrimitiveType::Line), 1u);
-  EXPECT_EQ(static_cast<uint8_t>(PrimitiveType::LineStrip), 2u);
-  EXPECT_EQ(static_cast<uint8_t>(PrimitiveType::Triangle), 3u);
-  EXPECT_EQ(static_cast<uint8_t>(PrimitiveType::TriangleStrip), 4u);
+TEST(PrimitiveTypeTest, ValuesAreDistinct) {
+  // PrimitiveType is never cast to a raw integer for hashing or ABI purposes;
+  // every backend maps it through an explicit switch (e.g.
+  // primitiveTypeToVkPrimitiveTopology(), toGlPrimitive()), so its ordinals are
+  // not part of any contract. Verify distinctness rather than pinning integers.
+  const std::array values = {
+      PrimitiveType::Point,
+      PrimitiveType::Line,
+      PrimitiveType::LineStrip,
+      PrimitiveType::Triangle,
+      PrimitiveType::TriangleStrip,
+  };
+  for (size_t outer = 0; outer < values.size(); ++outer) {
+    for (size_t inner = outer + 1; inner < values.size(); ++inner) {
+      EXPECT_NE(values[outer], values[inner]);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
 // ResourceStorage
 // ---------------------------------------------------------------------------
 
+// ResourceStorage's ordinals aren't part of any hashing/serialization contract,
+// so verify distinctness rather than pinning integers (see PrimitiveType above).
 TEST(ResourceStorageTest, EnumValues) {
   EXPECT_NE(static_cast<int>(ResourceStorage::Private), static_cast<int>(ResourceStorage::Shared));
   EXPECT_NE(static_cast<int>(ResourceStorage::Shared), static_cast<int>(ResourceStorage::Managed));
@@ -57,6 +75,8 @@ TEST(ResourceStorageTest, EnumValues) {
 // BlendOp
 // ---------------------------------------------------------------------------
 
+// BlendOp feeds RenderPipelineDesc's hash via EnumToValue(); pin the ordinals
+// since a reorder would silently change hashes for in-flight pipeline cache keys.
 TEST(BlendOpTest, EnumValues) {
   EXPECT_EQ(static_cast<uint8_t>(BlendOp::Add), 0u);
   EXPECT_EQ(static_cast<uint8_t>(BlendOp::Subtract), 1u);
@@ -69,6 +89,8 @@ TEST(BlendOpTest, EnumValues) {
 // BlendFactor
 // ---------------------------------------------------------------------------
 
+// BlendFactor feeds RenderPipelineDesc's hash via EnumToValue(); pin the ordinals
+// since a reorder would silently change hashes for in-flight pipeline cache keys.
 TEST(BlendFactorTest, EnumValues) {
   EXPECT_EQ(static_cast<uint8_t>(BlendFactor::Zero), 0u);
   EXPECT_EQ(static_cast<uint8_t>(BlendFactor::One), 1u);
@@ -95,6 +117,9 @@ TEST(BlendFactorTest, EnumValues) {
 // PolygonFillMode
 // ---------------------------------------------------------------------------
 
+// PolygonFillMode feeds RenderPipelineDesc's hash via EnumToValue(); pin the
+// ordinals since a reorder would silently change hashes for in-flight pipeline
+// cache keys.
 TEST(PolygonFillModeTest, EnumValues) {
   EXPECT_EQ(static_cast<uint8_t>(PolygonFillMode::Fill), 0u);
   EXPECT_EQ(static_cast<uint8_t>(PolygonFillMode::Line), 1u);
