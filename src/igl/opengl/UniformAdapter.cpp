@@ -107,7 +107,9 @@ void UniformAdapter::setUniform(const UniformDesc& uniformDesc,
     uniformData_.resize(usedUniformDataBytes_);
   }
 
-  optimizedMemcpy(uniformData_.data() + dataOffset, (uint8_t*)data + uniformDesc.offset, length);
+  optimizedMemcpy(uniformData_.data() + dataOffset,
+                  static_cast<const uint8_t*>(data) + uniformDesc.offset,
+                  length);
 
 #if IGL_DEBUG
   // We don't catch duplicate uniforms set on a given location in production.
