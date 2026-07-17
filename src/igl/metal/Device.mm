@@ -573,12 +573,12 @@ std::shared_ptr<IRenderPipelineState> Device::createTraditionalRenderPipeline(
     dst.pixelFormat = Texture::textureFormatToMTLPixelFormat(src.textureFormat);
     dst.writeMask = RenderPipelineState::convertColorWriteMask(src.colorWriteMask);
     dst.blendingEnabled = src.blendEnabled;
-    dst.rgbBlendOperation = MTLBlendOperation(src.rgbBlendOp);
-    dst.alphaBlendOperation = MTLBlendOperation(src.alphaBlendOp);
-    dst.sourceRGBBlendFactor = MTLBlendFactor(src.srcRGBBlendFactor);
-    dst.sourceAlphaBlendFactor = MTLBlendFactor(src.srcAlphaBlendFactor);
-    dst.destinationRGBBlendFactor = MTLBlendFactor(src.dstRGBBlendFactor);
-    dst.destinationAlphaBlendFactor = MTLBlendFactor(src.dstAlphaBlendFactor);
+    dst.rgbBlendOperation = static_cast<MTLBlendOperation>(src.rgbBlendOp);
+    dst.alphaBlendOperation = static_cast<MTLBlendOperation>(src.alphaBlendOp);
+    dst.sourceRGBBlendFactor = static_cast<MTLBlendFactor>(src.srcRGBBlendFactor);
+    dst.sourceAlphaBlendFactor = static_cast<MTLBlendFactor>(src.srcAlphaBlendFactor);
+    dst.destinationRGBBlendFactor = static_cast<MTLBlendFactor>(src.dstRGBBlendFactor);
+    dst.destinationAlphaBlendFactor = static_cast<MTLBlendFactor>(src.dstAlphaBlendFactor);
   }
 
   // Depth and Stencil
@@ -708,12 +708,12 @@ std::shared_ptr<IRenderPipelineState> Device::createMeshRenderPipeline(
       dst.pixelFormat = Texture::textureFormatToMTLPixelFormat(src.textureFormat);
       dst.writeMask = RenderPipelineState::convertColorWriteMask(src.colorWriteMask);
       dst.blendingEnabled = src.blendEnabled;
-      dst.rgbBlendOperation = MTLBlendOperation(src.rgbBlendOp);
-      dst.alphaBlendOperation = MTLBlendOperation(src.alphaBlendOp);
-      dst.sourceRGBBlendFactor = MTLBlendFactor(src.srcRGBBlendFactor);
-      dst.sourceAlphaBlendFactor = MTLBlendFactor(src.srcAlphaBlendFactor);
-      dst.destinationRGBBlendFactor = MTLBlendFactor(src.dstRGBBlendFactor);
-      dst.destinationAlphaBlendFactor = MTLBlendFactor(src.dstAlphaBlendFactor);
+      dst.rgbBlendOperation = static_cast<MTLBlendOperation>(src.rgbBlendOp);
+      dst.alphaBlendOperation = static_cast<MTLBlendOperation>(src.alphaBlendOp);
+      dst.sourceRGBBlendFactor = static_cast<MTLBlendFactor>(src.srcRGBBlendFactor);
+      dst.sourceAlphaBlendFactor = static_cast<MTLBlendFactor>(src.srcAlphaBlendFactor);
+      dst.destinationRGBBlendFactor = static_cast<MTLBlendFactor>(src.dstRGBBlendFactor);
+      dst.destinationAlphaBlendFactor = static_cast<MTLBlendFactor>(src.dstAlphaBlendFactor);
     }
 
     // Depth and Stencil
