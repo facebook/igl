@@ -256,7 +256,7 @@ void UniformBuffer::bindUniformArray(IContext& context,
     switch (baseType) {
     case UniformBaseType::Boolean: {
       auto packedIntArray = IGL_MAYBE_STACK_ALLOC(GLint, numElements);
-      for (int i = 0; i < numElements; i++) {
+      for (size_t i = 0; i < numElements; i++) {
         packedIntArray[i] = static_cast<int>(!(*(start) == 0u));
         start += stride;
       }
@@ -269,7 +269,7 @@ void UniformBuffer::bindUniformArray(IContext& context,
     }
     case UniformBaseType::Int: {
       auto packedIntArray = IGL_MAYBE_STACK_ALLOC(GLint, primitivesPerElement * numElements);
-      for (int i = 0; i < numElements; i++) {
+      for (size_t i = 0; i < numElements; i++) {
         optimizedMemcpy(
             &packedIntArray[i * primitivesPerElement], start, primitivesPerElement * sizeof(GLint));
         start += stride;
@@ -283,7 +283,7 @@ void UniformBuffer::bindUniformArray(IContext& context,
     }
     case UniformBaseType::Float: {
       auto packedFloatArray = IGL_MAYBE_STACK_ALLOC(GLfloat, primitivesPerElement * numElements);
-      for (int i = 0; i < numElements; i++) {
+      for (size_t i = 0; i < numElements; i++) {
         optimizedMemcpy(&packedFloatArray[i * primitivesPerElement],
                         start,
                         primitivesPerElement * sizeof(GLfloat));
@@ -299,8 +299,8 @@ void UniformBuffer::bindUniformArray(IContext& context,
     case UniformBaseType::FloatMatrix: {
       auto packedFloatArray =
           IGL_MAYBE_STACK_ALLOC(GLfloat, primitivesPerElement * primitivesPerElement * numElements);
-      for (int i = 0; i < numElements; i++) {
-        for (int j = 0; j < primitivesPerElement; j++) {
+      for (size_t i = 0; i < numElements; i++) {
+        for (size_t j = 0; j < primitivesPerElement; j++) {
           const size_t bytesToCopy = primitivesPerElement * sizeof(GLfloat);
           memcpy(&packedFloatArray[i * primitivesPerElement * primitivesPerElement +
                                    j * primitivesPerElement],

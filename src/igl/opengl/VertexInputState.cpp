@@ -335,7 +335,7 @@ Result VertexInputState::create(const VertexInputStateDesc& desc) {
   if (desc.numInputBindings == 1) {
     // All the attributed should have the same bufferIndex
     const int bufferIndex = static_cast<int>(desc.attributes[0].bufferIndex);
-    for (int i = 1; i < desc.numAttributes; i++) {
+    for (size_t i = 1; i < desc.numAttributes; i++) {
       if (desc.attributes[i].bufferIndex != bufferIndex) {
         return Result{
             Result::Code::ArgumentInvalid,
