@@ -353,7 +353,7 @@ void RenderPipelineReflection::cacheDescriptors() {
           .name = entry.first,
           .type = uniformType,
           .offset = 0,
-          .arrayLength = (size_t)glDesc.size,
+          .arrayLength = static_cast<size_t>(glDesc.size),
       };
       bufferDesc.members.push_back(std::move(iglMemberDesc));
 

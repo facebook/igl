@@ -148,7 +148,8 @@ void TextureBufferBase::detachAsStencil(bool read) {
 
 void TextureBufferBase::setMaxMipLevel() const {
   if (getContext().deviceFeatures().hasFeature(DeviceFeatures::TexturePartialMipChain)) {
-    getContext().texParameteri(getTarget(), GL_TEXTURE_MAX_LEVEL, (GLint)(numMipLevels_ - 1));
+    getContext().texParameteri(
+        getTarget(), GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(numMipLevels_ - 1));
   }
 }
 

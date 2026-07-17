@@ -1496,12 +1496,12 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
   switch (featureLimits) {
   case DeviceFeatureLimits::MaxTextureDimension1D2D:
     glContext_.getIntegerv(GL_MAX_TEXTURE_SIZE, &tsize);
-    result = (size_t)tsize;
+    result = static_cast<size_t>(tsize);
     return true;
 
   case DeviceFeatureLimits::MaxCubeMapDimension:
     glContext_.getIntegerv(GL_MAX_CUBE_MAP_TEXTURE_SIZE, &tsize);
-    result = (size_t)tsize;
+    result = static_cast<size_t>(tsize);
     return true;
 
   case DeviceFeatureLimits::MaxVertexUniformVectors:
@@ -1522,7 +1522,7 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
         glContext_.getIntegerv(GL_MAX_SAMPLES, &tsize);
       }
     }
-    result = (size_t)tsize;
+    result = static_cast<size_t>(tsize);
     return true;
   case DeviceFeatureLimits::MaxPushConstantBytes:
     result = 0;
@@ -1537,7 +1537,7 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     if (hasFeature(DeviceFeatures::UniformBlocks)) {
       glContext_.getIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &tsize);
     }
-    result = (size_t)tsize;
+    result = static_cast<size_t>(tsize);
     return true;
   case DeviceFeatureLimits::PushConstantsAlignment:
     result = 0;
@@ -1547,14 +1547,14 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     if (hasFeature(DeviceFeatures::StorageBuffers)) {
       glContext_.getIntegerv(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT, &tsize);
     }
-    result = (size_t)tsize;
+    result = static_cast<size_t>(tsize);
     return true;
   case DeviceFeatureLimits::BufferAlignment:
     result = 16;
     if (hasFeature(DeviceFeatures::UniformBlocks)) {
       if (glContext_.isCurrentContext()) {
         glContext_.getIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &tsize);
-        result = std::max((size_t)tsize, result);
+        result = std::max(static_cast<size_t>(tsize), result);
       }
     }
     return true;
@@ -1566,7 +1566,7 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     return true;
   case DeviceFeatureLimits::MaxTextureDimension3D:
     glContext_.getIntegerv(GL_MAX_3D_TEXTURE_SIZE, &tsize);
-    result = (size_t)tsize;
+    result = static_cast<size_t>(tsize);
     return true;
   case DeviceFeatureLimits::MaxComputeWorkGroupSizeX:
     if (hasFeature(DeviceFeatures::Compute)) {
@@ -1596,7 +1596,7 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     if (hasFeature(DeviceFeatures::Compute)) {
 #if defined(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS)
       glContext_.getIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &tsize);
-      result = (size_t)tsize;
+      result = static_cast<size_t>(tsize);
 #endif
     } else {
       result = 0;
@@ -1611,11 +1611,11 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     return false;
   case DeviceFeatureLimits::MaxVertexInputAttributes:
     glContext_.getIntegerv(GL_MAX_VERTEX_ATTRIBS, &tsize);
-    result = (size_t)tsize;
+    result = static_cast<size_t>(tsize);
     return true;
   case DeviceFeatureLimits::MaxColorAttachments:
     glContext_.getIntegerv(GL_MAX_COLOR_ATTACHMENTS, &tsize);
-    result = (size_t)tsize;
+    result = static_cast<size_t>(tsize);
     return true;
   default:
     IGL_DEBUG_ABORT(
