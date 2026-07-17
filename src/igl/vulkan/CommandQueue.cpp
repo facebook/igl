@@ -53,7 +53,7 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& cmdBuffer, bool /* endOf
 #if IGL_COMMAND_QUEUE_DEBUG_FENCES
   // Create label with Fence handle and Fence FD, if available
   // A string such as "Submit command buffer (hex: 0x149b90a10, fd: 12345)" has 55 characters
-  char labelName[60];
+  char labelName[60] = {};
   if (vkCmdBuffer->wrapper_.fence_.exportable()) {
     std::snprintf(labelName,
                   sizeof(labelName),
@@ -73,7 +73,7 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& cmdBuffer, bool /* endOf
                               K_COLOR_COMMAND_BUFFER_SUBMISSION_WITH_FENCE.toFloatPtr());
 #endif // IGL_COMMAND_QUEUE_DEBUG_FENCES
 
-  auto submitHandle = endCommandBuffer(ctx, vkCmdBuffer, true);
+  const auto submitHandle = endCommandBuffer(ctx, vkCmdBuffer, true);
 
   return submitHandle;
 }
