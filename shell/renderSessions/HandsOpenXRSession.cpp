@@ -296,7 +296,7 @@ void HandsOpenXRSession::update(SurfaceTextures surfaceTextures) noexcept {
   }
 
   // Update uniforms.
-  for (size_t i = 0; i < std::min(shellParams().viewParams.size(), size_t(2)); ++i) {
+  for (size_t i = 0; i < std::min(shellParams().viewParams.size(), static_cast<size_t>(2)); ++i) {
     const auto currentViewId = shellParams().viewParams[i].viewIndex;
     ub_.viewProjectionMatrix[currentViewId] =
         perspectiveAsymmetricFovRH(shellParams().viewParams[i].fov, 0.1f, 100.0f) *

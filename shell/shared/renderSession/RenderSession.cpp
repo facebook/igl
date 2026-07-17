@@ -64,7 +64,7 @@ const std::shared_ptr<Platform>& RenderSession::platform() const noexcept {
 
 float RenderSession::getDeltaSeconds() noexcept {
   const double newTime = getSeconds();
-  const float deltaSeconds = float(newTime - lastTime_);
+  const float deltaSeconds = static_cast<float>(newTime - lastTime_);
   lastTime_ = newTime;
   return deltaSeconds;
 }

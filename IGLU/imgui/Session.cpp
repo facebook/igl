@@ -420,8 +420,8 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
                                        ImDrawData* drawData) {
   // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates !=
   // framebuffer coordinates)
-  const int fbWidth = (int)(drawData->DisplaySize.x * drawData->FramebufferScale.x);
-  const int fbHeight = (int)(drawData->DisplaySize.y * drawData->FramebufferScale.y);
+  const int fbWidth = static_cast<int>(drawData->DisplaySize.x * drawData->FramebufferScale.x);
+  const int fbHeight = static_cast<int>(drawData->DisplaySize.y * drawData->FramebufferScale.y);
 
   if (dumpRenderDrawDataInfo) {
     // throttle or turn off due to swamping other messages

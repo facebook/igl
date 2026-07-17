@@ -849,7 +849,7 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
       sceneAnchored_ = true;
     }
     // Single-pass stereo: fill both MVP matrices from shell-provided view params
-    for (size_t i = 0; i < std::min(shellParams().viewParams.size(), size_t(2)); ++i) {
+    for (size_t i = 0; i < std::min(shellParams().viewParams.size(), static_cast<size_t>(2)); ++i) {
       const auto viewIdx = shellParams().viewParams[i].viewIndex;
       const glm::mat4 proj =
           perspectiveAsymmetricFovRH(shellParams().viewParams[i].fov, 0.1f, 100.0f);
