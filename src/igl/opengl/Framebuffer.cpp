@@ -715,7 +715,7 @@ void CustomFramebuffer::applyClearMask(int targetCount) const {
           renderPass_.colorAttachments[index].loadAction == LoadAction::Clear) {
         auto clearColor = renderPass_.colorAttachments[index].clearColor;
         getContext().colorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        getContext().clearBufferfv(GL_COLOR, (GLint)index, clearColor.toFloatPtr());
+        getContext().clearBufferfv(GL_COLOR, static_cast<GLint>(index), clearColor.toFloatPtr());
       }
     }
   } else {
