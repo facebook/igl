@@ -172,19 +172,20 @@ Result Texture::create(const TextureDesc& desc) {
   VulkanImage image;
 
   if (desc_.exportability == TextureDesc::TextureExportability::NoExport) {
-    image = ctx.createImage(
-        imageType,
-        VkExtent3D{(uint32_t)desc_.width, (uint32_t)desc_.height, (uint32_t)desc_.depth},
-        vkFormat,
-        (uint32_t)desc_.numMipLevels,
-        arrayLayerCount,
-        tiling,
-        usageFlags,
-        memFlags,
-        createFlags,
-        samples,
-        &result,
-        debugNameImage.c_str());
+    image = ctx.createImage(imageType,
+                            VkExtent3D{static_cast<uint32_t>(desc_.width),
+                                       static_cast<uint32_t>(desc_.height),
+                                       static_cast<uint32_t>(desc_.depth)},
+                            vkFormat,
+                            static_cast<uint32_t>(desc_.numMipLevels),
+                            arrayLayerCount,
+                            tiling,
+                            usageFlags,
+                            memFlags,
+                            createFlags,
+                            samples,
+                            &result,
+                            debugNameImage.c_str());
     if (!IGL_DEBUG_VERIFY(result.isOk())) {
       return result; // NOLINT(clang-diagnostic-nrvo)
     }
@@ -193,12 +194,12 @@ Result Texture::create(const TextureDesc& desc) {
 
     image = igl::vulkan::VulkanImage::createWithExportMemory(
         ctx,
-        VkExtent3D{.width = (uint32_t)desc_.width,
-                   .height = (uint32_t)desc_.height,
-                   .depth = (uint32_t)desc_.depth},
+        VkExtent3D{.width = static_cast<uint32_t>(desc_.width),
+                   .height = static_cast<uint32_t>(desc_.height),
+                   .depth = static_cast<uint32_t>(desc_.depth)},
         imageType,
         vkFormat,
-        (uint32_t)desc_.numMipLevels,
+        static_cast<uint32_t>(desc_.numMipLevels),
         arrayLayerCount,
         tiling,
         usageFlags,
