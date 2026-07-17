@@ -334,7 +334,7 @@ Result VertexInputState::create(const VertexInputStateDesc& desc) {
 
   if (desc.numInputBindings == 1) {
     // All the attributed should have the same bufferIndex
-    const int bufferIndex = desc.attributes[0].bufferIndex;
+    const int bufferIndex = static_cast<int>(desc.attributes[0].bufferIndex);
     for (int i = 1; i < desc.numAttributes; i++) {
       if (desc.attributes[i].bufferIndex != bufferIndex) {
         return Result{
@@ -351,7 +351,7 @@ Result VertexInputState::create(const VertexInputStateDesc& desc) {
     const size_t bufferIndex = desc.attributes[i].bufferIndex;
 
     attribInfo.name = desc.attributes[i].name;
-    attribInfo.stride = desc.inputBindings[bufferIndex].stride;
+    attribInfo.stride = static_cast<GLsizei>(desc.inputBindings[bufferIndex].stride);
     attribInfo.bufferOffset = desc.attributes[i].offset;
 
     toOGLAttribute(desc.attributes[i],

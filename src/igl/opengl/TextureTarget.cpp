@@ -72,8 +72,10 @@ Result TextureTarget::createRenderBuffer(const TextureDesc& desc, bool hasStorag
     }
     if (!desc.debugName.empty() &&
         getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
-      getContext().objectLabel(
-          GL_RENDERBUFFER, renderBufferID_, desc.debugName.size(), desc.debugName.c_str());
+      getContext().objectLabel(GL_RENDERBUFFER,
+                               renderBufferID_,
+                               static_cast<GLsizei>(desc.debugName.size()),
+                               desc.debugName.c_str());
     }
 
     getContext().bindRenderbuffer(GL_RENDERBUFFER, 0);
