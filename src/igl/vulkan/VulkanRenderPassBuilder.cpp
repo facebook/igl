@@ -277,8 +277,9 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthStencil(
       .sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2,
       .attachment = static_cast<uint32_t>(attachments2_.size()),
       .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-      .aspectMask = (hasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VkImageAspectFlags(0)) |
-                    (hasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : VkImageAspectFlags(0)),
+      .aspectMask =
+          (hasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : static_cast<VkImageAspectFlags>(0)) |
+          (hasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : static_cast<VkImageAspectFlags>(0)),
   };
 
   attachments2_.push_back(VkAttachmentDescription2{
@@ -331,8 +332,9 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthStencilResolve(
       .sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2,
       .attachment = static_cast<uint32_t>(attachments2_.size()),
       .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-      .aspectMask = (hasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VkImageAspectFlags(0)) |
-                    (hasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : VkImageAspectFlags(0)),
+      .aspectMask =
+          (hasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : static_cast<VkImageAspectFlags>(0)) |
+          (hasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : static_cast<VkImageAspectFlags>(0)),
   };
 
   attachments2_.push_back(VkAttachmentDescription2{
