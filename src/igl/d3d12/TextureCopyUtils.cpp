@@ -127,8 +127,8 @@ Result executeCopyTextureToBuffer(D3D12Context& ctx,
   // Copy from readback staging buffer to final destination
   void* readbackData = nullptr;
   // Map the readback buffer region containing the texture data
-  D3D12_RANGE readRange{static_cast<SIZE_T>(layout.Offset),
-                        static_cast<SIZE_T>(layout.Offset + totalBytes)};
+  D3D12_RANGE readRange{.Begin = static_cast<SIZE_T>(layout.Offset),
+                        .End = static_cast<SIZE_T>(layout.Offset + totalBytes)};
 
   if (SUCCEEDED(readbackBuffer->Map(0, &readRange, &readbackData)) && readbackData) {
     // Check if destination buffer is in DEFAULT heap (Storage buffers)

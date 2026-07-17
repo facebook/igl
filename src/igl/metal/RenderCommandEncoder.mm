@@ -228,18 +228,19 @@ void RenderCommandEncoder::popDebugGroupLabel() const {
 
 void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
   IGL_DEBUG_ASSERT(encoder_);
-  const MTLViewport metalViewport = {viewport.x,
-                                     viewport.y,
-                                     viewport.width,
-                                     viewport.height,
-                                     viewport.minDepth,
-                                     viewport.maxDepth};
+  const MTLViewport metalViewport = {.originX = viewport.x,
+                                     .originY = viewport.y,
+                                     .width = viewport.width,
+                                     .height = viewport.height,
+                                     .znear = viewport.minDepth,
+                                     .zfar = viewport.maxDepth};
   [encoder_ setViewport:metalViewport];
 }
 
 void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
   IGL_DEBUG_ASSERT(encoder_);
-  const MTLScissorRect scissorRect = {rect.x, rect.y, rect.width, rect.height};
+  const MTLScissorRect scissorRect = {
+      .x = rect.x, .y = rect.y, .width = rect.width, .height = rect.height};
   [encoder_ setScissorRect:scissorRect];
 }
 

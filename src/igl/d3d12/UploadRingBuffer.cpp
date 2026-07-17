@@ -50,7 +50,7 @@ UploadRingBuffer::UploadRingBuffer(ID3D12Device* device, uint64_t size) :
   }
 
   // Map the entire buffer persistently
-  D3D12_RANGE readRange = {0, 0}; // Not reading from GPU
+  D3D12_RANGE readRange = {.Begin = 0, .End = 0}; // Not reading from GPU
   hr = uploadHeap_->Map(0, &readRange, &cpuBase_);
   if (FAILED(hr)) {
     IGL_LOG_ERROR("UploadRingBuffer: Failed to map upload heap (HRESULT=0x%08X)\n", hr);

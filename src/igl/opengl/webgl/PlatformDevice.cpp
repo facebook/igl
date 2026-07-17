@@ -29,15 +29,15 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(int wi
   auto context = static_cast<igl::opengl::webgl::Context*>(&getContext());
   context->setCanvasBufferSize(width, height);
 
-  TextureDesc desc = {static_cast<size_t>(width),
-                      static_cast<size_t>(height),
-                      1, // depth
-                      1, // numLayers
-                      1, // numSamples
-                      TextureDesc::TextureUsageBits::Attachment,
-                      1, // numMipLevels
-                      TextureType::TwoD,
-                      TextureFormat::RGBA_UNorm8};
+  const TextureDesc desc = {.width = static_cast<uint32_t>(width),
+                            .height = static_cast<uint32_t>(height),
+                            .depth = 1,
+                            .numLayers = 1,
+                            .numSamples = 1,
+                            .usage = TextureDesc::TextureUsageBits::Attachment,
+                            .numMipLevels = 1,
+                            .type = TextureType::TwoD,
+                            .format = TextureFormat::RGBA_UNorm8};
   drawableTexture_ = std::make_shared<ViewTextureTarget>(getContext(), desc.format);
 
   Result result = drawableTexture_->create(desc, true);
