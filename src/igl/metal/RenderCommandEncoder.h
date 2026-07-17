@@ -83,6 +83,7 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
 
   void setStencilReferenceValue(uint32_t value) override;
   void setBlendColor(const Color& color) override;
+  void setCullMode(CullMode cullMode) override {}
   void setDepthBias(float depthBias, float slopeScale, float clamp) override;
 
   static MTLPrimitiveType convertPrimitiveType(PrimitiveType value);
