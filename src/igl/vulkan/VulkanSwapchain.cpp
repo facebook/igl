@@ -53,7 +53,8 @@ VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>
     vulkanTextureFormat = igl::vulkan::invertRedAndBlue(vulkanTextureFormat);
   }
   const auto preferred =
-      VkSurfaceFormatKHR{vulkanTextureFormat, igl::vulkan::colorSpaceToVkColorSpace(colorSpace)};
+      VkSurfaceFormatKHR{.format = vulkanTextureFormat,
+                         .colorSpace = igl::vulkan::colorSpaceToVkColorSpace(colorSpace)};
 
   for (const auto& curFormat : formats) {
     if (curFormat.format == preferred.format && curFormat.colorSpace == preferred.colorSpace) {
@@ -252,7 +253,7 @@ void VulkanSwapchain::lazyAllocateDepthBuffer() const {
 #endif
 
   auto depthImage = VulkanImage(ctx_,
-                                VkExtent3D{width_, height_, 1},
+                                VkExtent3D{.width = width_, .height = height_, .depth = 1},
                                 VK_IMAGE_TYPE_2D,
                                 depthFormat,
                                 1,

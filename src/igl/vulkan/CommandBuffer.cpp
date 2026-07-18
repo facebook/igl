@@ -56,12 +56,16 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
     IGL_DEBUG_ASSERT(depthImg.imageFormat_ != VK_FORMAT_UNDEFINED,
                      "Invalid depth attachment format");
     const VkImageAspectFlags flags = vkDepthTex.getVulkanTexture().image.getImageAspectFlags();
-    depthImg.transitionLayout(
-        wrapper_.cmdBuf,
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-        VkImageSubresourceRange{flags, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+    depthImg.transitionLayout(wrapper_.cmdBuf,
+                              VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                              VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                              VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                  VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                              VkImageSubresourceRange{.aspectMask = flags,
+                                                      .baseMipLevel = 0,
+                                                      .levelCount = VK_REMAINING_MIP_LEVELS,
+                                                      .baseArrayLayer = 0,
+                                                      .layerCount = VK_REMAINING_ARRAY_LAYERS});
   }
 
   auto encoder = RenderCommandEncoder::create(
@@ -107,13 +111,17 @@ void CommandBuffer::present(const std::shared_ptr<ITexture>& surface) const {
                                               ? VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
                                               : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     // set the result of the previous render pass
-    img.transitionLayout(
-        wrapper_.cmdBuf,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        srcStage,
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for subsequent fragment/compute shaders
-        VkImageSubresourceRange{flags, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+    img.transitionLayout(wrapper_.cmdBuf,
+                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                         srcStage,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for subsequent
+                                                                   // fragment/compute shaders
+                         VkImageSubresourceRange{.aspectMask = flags,
+                                                 .baseMipLevel = 0,
+                                                 .levelCount = VK_REMAINING_MIP_LEVELS,
+                                                 .baseArrayLayer = 0,
+                                                 .layerCount = VK_REMAINING_ARRAY_LAYERS});
   }
 }
 

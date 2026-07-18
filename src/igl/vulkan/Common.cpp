@@ -535,11 +535,11 @@ void transitionToGeneral(VkCommandBuffer cmdBuf, ITexture* texture) {
                        VK_IMAGE_LAYOUT_GENERAL,
                        srcStage,
                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                       VkImageSubresourceRange{imgView.getVkImageAspectFlags(),
-                                               0,
-                                               VK_REMAINING_MIP_LEVELS,
-                                               0,
-                                               VK_REMAINING_ARRAY_LAYERS});
+                       VkImageSubresourceRange{.aspectMask = imgView.getVkImageAspectFlags(),
+                                               .baseMipLevel = 0,
+                                               .levelCount = VK_REMAINING_MIP_LEVELS,
+                                               .baseArrayLayer = 0,
+                                               .layerCount = VK_REMAINING_ARRAY_LAYERS});
 }
 
 void transitionToColorAttachment(VkCommandBuffer cmdBuf, ITexture* colorTex) {
@@ -564,15 +564,17 @@ void transitionToColorAttachment(VkCommandBuffer cmdBuf, ITexture* colorTex) {
   }
   if (img.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
     // transition to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-    img.transitionLayout(
-        cmdBuf,
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for all subsequent fragment/compute
-                                                  // shaders
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        VkImageSubresourceRange{
-            VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+    img.transitionLayout(cmdBuf,
+                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for all subsequent
+                                                                   // fragment/compute shaders
+                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                         VkImageSubresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                 .baseMipLevel = 0,
+                                                 .levelCount = VK_REMAINING_MIP_LEVELS,
+                                                 .baseArrayLayer = 0,
+                                                 .layerCount = VK_REMAINING_ARRAY_LAYERS});
   }
 }
 
@@ -604,15 +606,17 @@ void transitionToDepthStencilAttachment(VkCommandBuffer cmdBuf, ITexture* depthS
     if (img.isStencilFormat_) {
       aspectFlags |= VK_IMAGE_ASPECT_STENCIL_BIT;
     }
-    img.transitionLayout(
-        cmdBuf,
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for all subsequent fragment/compute
-                                                  // shaders
-        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-        VkImageSubresourceRange{
-            aspectFlags, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+    img.transitionLayout(cmdBuf,
+                         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for all subsequent
+                                                                   // fragment/compute shaders
+                         VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                         VkImageSubresourceRange{.aspectMask = aspectFlags,
+                                                 .baseMipLevel = 0,
+                                                 .levelCount = VK_REMAINING_MIP_LEVELS,
+                                                 .baseArrayLayer = 0,
+                                                 .layerCount = VK_REMAINING_ARRAY_LAYERS});
   }
 }
 
@@ -631,16 +635,18 @@ void transitionToShaderReadOnly(VkCommandBuffer cmdBuf, ITexture* texture) {
 
   if (img.usageFlags_ & VK_IMAGE_USAGE_SAMPLED_BIT) {
     // transition sampled images to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    img.transitionLayout(
-        cmdBuf,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        isColor ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-                : VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for subsequent
-                                                  // fragment/compute shaders
-        VkImageSubresourceRange{
-            img.getImageAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+    img.transitionLayout(cmdBuf,
+                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                         isColor ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+                                 : VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for subsequent
+                                                                   // fragment/compute shaders
+                         VkImageSubresourceRange{.aspectMask = img.getImageAspectFlags(),
+                                                 .baseMipLevel = 0,
+                                                 .levelCount = VK_REMAINING_MIP_LEVELS,
+                                                 .baseArrayLayer = 0,
+                                                 .layerCount = VK_REMAINING_ARRAY_LAYERS});
   }
 }
 
