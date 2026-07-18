@@ -32,13 +32,13 @@ class VulkanSwapchain final {
 
   Result acquireNextImage();
   Result present(VkSemaphore waitSemaphore);
-  VkImage getCurrentVkImage() const {
+  [[nodiscard]] VkImage getCurrentVkImage() const {
     if (IGL_DEBUG_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
       return swapchainTextures_[currentImageIndex_]->image.getVkImage();
     }
     return VK_NULL_HANDLE;
   }
-  VkImageView getCurrentVkImageView() const {
+  [[nodiscard]] VkImageView getCurrentVkImageView() const {
     if (IGL_DEBUG_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
       return swapchainTextures_[currentImageIndex_]->imageView_.getVkImageView();
     }
@@ -66,33 +66,33 @@ class VulkanSwapchain final {
     return nullptr;
   }
 
-  VkImage getDepthVkImage() const;
-  VkImageView getDepthVkImageView() const;
-  uint32_t getWidth() const {
+  [[nodiscard]] VkImage getDepthVkImage() const;
+  [[nodiscard]] VkImageView getDepthVkImageView() const;
+  [[nodiscard]] uint32_t getWidth() const {
     return width_;
   }
-  uint32_t getHeight() const {
+  [[nodiscard]] uint32_t getHeight() const {
     return height_;
   }
-  VkExtent2D getExtent() const {
+  [[nodiscard]] VkExtent2D getExtent() const {
     return VkExtent2D{width_, height_};
   }
 
-  VkFormat getFormatColor() const {
+  [[nodiscard]] VkFormat getFormatColor() const {
     return surfaceFormat_.format;
   }
 
-  uint32_t getNumSwapchainImages() const {
+  [[nodiscard]] uint32_t getNumSwapchainImages() const {
     return numSwapchainImages_;
   }
 
-  uint32_t getCurrentImageIndex() const {
+  [[nodiscard]] uint32_t getCurrentImageIndex() const {
     return currentImageIndex_;
   }
 
   [[nodiscard]] VkSemaphore getSemaphore() const noexcept;
 
-  uint64_t getFrameNumber() const {
+  [[nodiscard]] uint64_t getFrameNumber() const {
     return frameNumber_;
   }
 
