@@ -129,74 +129,75 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
 
   auto& ctx = device_.getVulkanContext();
   auto device = device_.getVulkanContext().getVkDevice();
-  VkImageCreateFlags create_flags = 0;
+  VkImageCreateFlags createFlags = 0;
   if (hwbDesc.usage & AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT) {
-    create_flags |= VK_IMAGE_CREATE_PROTECTED_BIT;
+    createFlags |= VK_IMAGE_CREATE_PROTECTED_BIT;
   }
-  VkImageUsageFlags usage_flags = 0;
+  VkImageUsageFlags usageFlags = 0;
   if (hwbDesc.usage & AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE) {
-    usage_flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+    usageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
   }
   if (hwbDesc.usage & AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT) {
-    usage_flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    usageFlags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
   }
   if (hwbDesc.usage & AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER) {
-    usage_flags |= VK_IMAGE_USAGE_STORAGE_BIT;
+    usageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
   }
 
-  VkAndroidHardwareBufferFormatPropertiesANDROID ahb_format_props = {
+  VkAndroidHardwareBufferFormatPropertiesANDROID ahbFormatProps = {
       .sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID,
       .pNext = nullptr,
   };
   VkAndroidHardwareBufferPropertiesANDROID ahb_props = {
       .sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID,
-      .pNext = &ahb_format_props,
+      .pNext = &ahbFormatProps,
   };
 
   VK_ASSERT(ctx.vf_.vkGetAndroidHardwareBufferPropertiesANDROID(device, hwBuffer, &ahb_props));
 
 #if IGL_LOGGING_ENABLED
-  logFirstAhbImportDiagnostics(ahb_format_props, ctx.getVkPhysicalDeviceDriverProperties());
+  logFirstAhbImportDiagnostics(ahbFormatProps, ctx.getVkPhysicalDeviceDriverProperties());
 #endif
 
   VkExternalFormatANDROID external_format = {
       .sType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
   };
 
-  if (ahb_format_props.format == VK_FORMAT_UNDEFINED) {
-    external_format.externalFormat = ahb_format_props.externalFormat;
+  if (ahbFormatProps.format == VK_FORMAT_UNDEFINED) {
+    external_format.externalFormat = ahbFormatProps.externalFormat;
   }
 
-  VkExternalMemoryImageCreateInfo external_memory_image_info = {
+  VkExternalMemoryImageCreateInfo externalMemoryImageInfo = {
       .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
       .pNext = &external_format,
       .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
   };
 
   auto desc = TextureDesc::newNativeHWBufferImage(
-      igl::vulkan::vkFormatToTextureFormat(ahb_format_props.format),
+      igl::vulkan::vkFormatToTextureFormat(ahbFormatProps.format),
       igl::android::getIglBufferUsage(hwbDesc.usage),
       hwbDesc.width,
       hwbDesc.height);
 
   VkImage vk_image;
 
-  VkImageCreateInfo vk_image_info = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-      .pNext = &external_memory_image_info,
-      .flags = create_flags,
-      .imageType = VK_IMAGE_TYPE_2D,
-      .format = ahb_format_props.format,
-      .extent = {.width = (uint32_t)desc.width, .height = (uint32_t)desc.height, .depth = 1},
-      .mipLevels = 1,
-      .arrayLayers = 1,
-      .samples = VK_SAMPLE_COUNT_1_BIT,
-      .tiling = VK_IMAGE_TILING_OPTIMAL,
-      .usage = usage_flags,
-      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-      .queueFamilyIndexCount = 0,
-      .pQueueFamilyIndices = nullptr,
-      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED};
+  VkImageCreateInfo vk_image_info = {.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                                     .pNext = &externalMemoryImageInfo,
+                                     .flags = createFlags,
+                                     .imageType = VK_IMAGE_TYPE_2D,
+                                     .format = ahbFormatProps.format,
+                                     .extent = {.width = static_cast<uint32_t>(desc.width),
+                                                .height = static_cast<uint32_t>(desc.height),
+                                                .depth = 1},
+                                     .mipLevels = 1,
+                                     .arrayLayers = 1,
+                                     .samples = VK_SAMPLE_COUNT_1_BIT,
+                                     .tiling = VK_IMAGE_TILING_OPTIMAL,
+                                     .usage = usageFlags,
+                                     .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+                                     .queueFamilyIndexCount = 0,
+                                     .pQueueFamilyIndices = nullptr,
+                                     .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED};
   // Create Vk Image.
   VK_ASSERT(ctx.vf_.vkCreateImage(device, &vk_image_info, nullptr, &vk_image));
 
@@ -262,7 +263,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
   auto vulkanImage = VulkanImage(ctx,
                                  vk_image,
                                  "Image: videoTexture",
-                                 usage_flags,
+                                 usageFlags,
                                  false,
                                  vk_image_info.extent,
                                  vk_image_info.imageType,
@@ -300,12 +301,12 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
       .conversion = VK_NULL_HANDLE,
   };
 
-  if (ahb_format_props.format == VK_FORMAT_UNDEFINED && external_format.externalFormat) {
+  if (ahbFormatProps.format == VK_FORMAT_UNDEFINED && external_format.externalFormat) {
     viewInfo.pNext = &conversionInfo;
     // Use the driver-reported raw-plane swizzle, with a legacy Qualcomm-Adreno correction for
     // Camera2 YUV_420_888 streams whose reported IDENTITY mapping still swaps Cb/Cr.
     // VK_KHR_driver_properties gives a narrow gate; zeroed pre-1.2 properties skip the workaround.
-    VkComponentMapping components = ahb_format_props.samplerYcbcrConversionComponents;
+    VkComponentMapping components = ahbFormatProps.samplerYcbcrConversionComponents;
     const VkPhysicalDeviceDriverPropertiesKHR& driverProps =
         ctx.getVkPhysicalDeviceDriverProperties();
     const bool isQualcommDriver = driverProps.driverID == VK_DRIVER_ID_QUALCOMM_PROPRIETARY;
@@ -319,12 +320,12 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
     vulkanImage.samplerYcbcrConversionCreateInfo_ = {
         .sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
         .pNext = &external_format,
-        .format = ahb_format_props.format,
-        .ycbcrModel = ahb_format_props.suggestedYcbcrModel,
-        .ycbcrRange = ahb_format_props.suggestedYcbcrRange,
+        .format = ahbFormatProps.format,
+        .ycbcrModel = ahbFormatProps.suggestedYcbcrModel,
+        .ycbcrRange = ahbFormatProps.suggestedYcbcrRange,
         .components = components,
-        .xChromaOffset = ahb_format_props.suggestedXChromaOffset,
-        .yChromaOffset = ahb_format_props.suggestedYChromaOffset,
+        .xChromaOffset = ahbFormatProps.suggestedXChromaOffset,
+        .yChromaOffset = ahbFormatProps.suggestedYChromaOffset,
         .chromaFilter = VK_FILTER_LINEAR,
         .forceExplicitReconstruction = VK_FALSE};
 
@@ -338,7 +339,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
     }
     // Expose the non-owning handle to consumers that need a matching VkSampler.
     vulkanImage.ycbcrConversion_ = conversionInfo.conversion;
-  } else if (igl::vulkan::getNumImagePlanes(ahb_format_props.format) > 1) {
+  } else if (igl::vulkan::getNumImagePlanes(ahbFormatProps.format) > 1) {
     auto createInfo = ctx.getOrCreateYcbcrConversionInfo(VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
     conversionInfo.conversion = createInfo.conversion;
   }
