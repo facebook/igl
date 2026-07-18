@@ -337,7 +337,7 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
 }
 
 void RenderPipelineState::deferDestroyPipelinesAndLayout(const VulkanContext& ctx) const {
-  VkDevice device = ctx.getVkDevice();
+  const VkDevice device = ctx.getVkDevice();
   for (const auto& p : pipelines_) {
     if (p.second != VK_NULL_HANDLE) {
       ctx.deferredTask(std::packaged_task<void()>([vf = &ctx.vf_, device, pipeline = p.second]() {
@@ -403,7 +403,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
         .pPushConstantRanges = info.hasPushConstants ? &pushConstantRange : nullptr,
     };
 
-    VkDevice device = ctx.getVkDevice();
+    const VkDevice device = ctx.getVkDevice();
     VK_ASSERT(ctx.vf_.vkCreatePipelineLayout(device, &ci, nullptr, &pipelineLayout));
     VK_ASSERT(
         ivkSetDebugObjectName(&ctx.vf_,
@@ -418,7 +418,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
       deviceFeatures.vkPhysicalDeviceFeatures2.features.dualSrcBlend;
 
   // build a new Vulkan pipeline
-  VkRenderPass renderPass = ctx.getRenderPass(dynamicState.renderPassIndex).pass;
+  const VkRenderPass renderPass = ctx.getRenderPass(dynamicState.renderPassIndex).pass;
 
   VkPipeline pipeline = VK_NULL_HANDLE;
 
