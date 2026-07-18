@@ -849,13 +849,21 @@ void VulkanContext::createInstance() {
   };
 #endif // !IGL_PLATFORM_ANDROID
 
+  // Request the highest API version the loader supports (>= 1.3 on modern loaders). We use core
+  // entry points that were promoted in Vulkan 1.3 (the dynamic-state setters vkCmdSetCullMode(),
+  // vkCmdSetDepthTestEnable(), etc.); if the app declares a lower apiVersion than those functions'
+  // core version, the loader returns null for them from vkGetDeviceProcAddr() even on a 1.3+
+  // device, causing a null-pointer crash at draw time.
+  uint32_t instanceApiVersion = VK_API_VERSION_1_2;
+  vf_.vkEnumerateInstanceVersion(&instanceApiVersion);
+
   const VkApplicationInfo appInfo = {
       .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
       .pApplicationName = config_.applicationName,
       .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
       .pEngineName = config_.engineName,
       .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-      .apiVersion = VK_API_VERSION_1_2,
+      .apiVersion = instanceApiVersion,
   };
 
   const VkInstanceCreateInfo ci = {
