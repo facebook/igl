@@ -207,7 +207,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
 
     // Map and read the readback buffer
     void* mapped = nullptr;
-    D3D12_RANGE readRange{0, totalBytes};
+    D3D12_RANGE readRange{.Begin = 0, .End = totalBytes};
     if (FAILED(stagingBuffer.buffer->Map(0, &readRange, &mapped))) {
       IGL_LOG_ERROR("Framebuffer::copyBytesColorAttachment - Failed to map readback buffer\n");
       stagingDevice->free(stagingBuffer, fenceValue);
@@ -417,7 +417,7 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
 
   // Map readback buffer and copy data
   void* mapped = nullptr;
-  D3D12_RANGE readRange{0, totalBytes};
+  D3D12_RANGE readRange{.Begin = 0, .End = totalBytes};
   if (FAILED(stagingBuffer.buffer->Map(0, &readRange, &mapped))) {
     IGL_LOG_ERROR("Framebuffer::copyBytesDepthAttachment - Failed to map readback buffer\n");
     stagingDevice->free(stagingBuffer, fenceValue);
@@ -638,7 +638,7 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
 
   // Map readback buffer and copy data
   void* mapped = nullptr;
-  D3D12_RANGE readRange{0, totalBytes};
+  D3D12_RANGE readRange{.Begin = 0, .End = totalBytes};
   if (FAILED(stagingBuffer.buffer->Map(0, &readRange, &mapped))) {
     IGL_LOG_ERROR("Framebuffer::copyBytesStencilAttachment - Failed to map readback buffer\n");
     stagingDevice->free(stagingBuffer, fenceValue);

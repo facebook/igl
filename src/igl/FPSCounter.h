@@ -40,7 +40,7 @@ class FPSCounter {
     time_ += seconds;
 
     if (time_ >= avgIntervalInSeconds_) {
-      avgFPS_ = float(frames_ / time_);
+      avgFPS_ = static_cast<float>(frames_ / time_);
 
       if (printToConsole_) {
         IGL_LOG_INFO("FPS: %.1f\n", avgFPS_);

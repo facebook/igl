@@ -230,7 +230,7 @@ Result INativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
                   desc.tiling, // 0 = Optimal
 
                   igl::android::getNativeHWFormat(desc.format),
-                  (int)hasStorageAlready,
+                  static_cast<int>(hasStorageAlready),
                   desc.storage // 2 = shared
     );
 
