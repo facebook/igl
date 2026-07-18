@@ -187,8 +187,7 @@ VkResult VulkanImmediateCommands::wait(const SubmitHandle handle, uint64_t timeo
 void VulkanImmediateCommands::waitAll() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
 
-  // @lint-ignore CLANGTIDY
-  VkFence fences[kMaxCommandBuffers];
+  VkFence fences[kMaxCommandBuffers] = {};
 
   uint32_t numFences = 0;
 
