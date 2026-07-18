@@ -465,9 +465,11 @@ struct DescriptorSetLayoutCacheKey {
 // Boost-style hash combiner. Mixes `v` into the accumulated seed `h` with a golden-ratio
 // constant plus a self-shift so that the seed's existing bits are re-distributed before each
 // new field is folded in.
+namespace {
 inline void hashCombine(size_t& h, size_t v) noexcept {
   h ^= v + 0x9e3779b9 + (h << 6) + (h >> 2);
 }
+} // namespace
 
 struct DescriptorSetLayoutCacheKeyHash {
   size_t operator()(const DescriptorSetLayoutCacheKey& key) const noexcept {
