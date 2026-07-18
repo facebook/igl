@@ -214,24 +214,24 @@ class VulkanImage final {
   }
   VulkanImage& operator=(VulkanImage&& other) noexcept;
 
-  VkImage getVkImage() const {
+  [[nodiscard]] VkImage getVkImage() const {
     return vkImage_;
   }
 
   /**
    * @brief Returns true if the object is valid
    */
-  bool valid() const;
+  [[nodiscard]] bool valid() const;
 
-  VkImageUsageFlags getVkImageUsageFlags() const {
+  [[nodiscard]] VkImageUsageFlags getVkImageUsageFlags() const {
     return usageFlags_;
   }
 
-  bool isSampledImage() const {
+  [[nodiscard]] bool isSampledImage() const {
     return (usageFlags_ & VK_IMAGE_USAGE_SAMPLED_BIT) > 0;
   }
 
-  bool isStorageImage() const {
+  [[nodiscard]] bool isStorageImage() const {
     return (usageFlags_ & VK_IMAGE_USAGE_STORAGE_BIT) > 0;
   }
 
@@ -270,13 +270,13 @@ class VulkanImage final {
                        const igl::Color& rgba,
                        const VkImageSubresourceRange* subresourceRange = nullptr) const;
 
-  VkImageAspectFlags getImageAspectFlags() const;
+  [[nodiscard]] VkImageAspectFlags getImageAspectFlags() const;
 
-  bool isMappedPtrAccessible() const {
+  [[nodiscard]] bool isMappedPtrAccessible() const {
     return (mappedPtr_ != nullptr) && ((tiling_ & VK_IMAGE_TILING_LINEAR) != 0);
   }
 
-  bool isCoherentMemory() const {
+  [[nodiscard]] bool isCoherentMemory() const {
     return isCoherentMemory_;
   }
 
