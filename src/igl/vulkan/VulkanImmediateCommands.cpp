@@ -363,6 +363,7 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::getNextSubmitHand
   return nextSubmitHandle_.empty() ? lastSubmitHandle_ : nextSubmitHandle_;
 }
 
+// @fb-only
 VkFence VulkanImmediateCommands::getVkFenceFromSubmitHandle(SubmitHandle handle) {
   IGL_DEBUG_ASSERT(handle.bufferIndex < buffers_.size());
 
