@@ -410,6 +410,7 @@ uint32_t DeviceFeatureSet::getTimerQueryMaxSlots() const {
 
 // NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::isFeatureSupportedTextureGroup(DeviceFeatures feature) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case DeviceFeatures::TextureFilterAnisotropic:
     return hasDesktopVersion(*this, GLVersion::v4_6) ||
@@ -490,6 +491,7 @@ bool DeviceFeatureSet::isFeatureSupportedTextureGroup(DeviceFeatures feature) co
 
 // NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::isFeatureSupportedMiscGroup(DeviceFeatures feature) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case DeviceFeatures::MultiSample:
     return hasDesktopVersion(*this, GLVersion::v3_0) ||
@@ -590,6 +592,7 @@ bool DeviceFeatureSet::isFeatureSupportedMiscGroup(DeviceFeatures feature) const
 
 // NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case DeviceFeatures::CopyBuffer:
   case DeviceFeatures::MultiSampleResolve:
@@ -633,6 +636,7 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
 }
 
 bool DeviceFeatureSet::isInternalFeatureSupportedBufferGroup(InternalFeatures feature) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case InternalFeatures::DrawArraysIndirect:
     return hasDesktopOrESVersionOrExtension(
@@ -682,6 +686,7 @@ bool DeviceFeatureSet::isInternalFeatureSupportedBufferGroup(InternalFeatures fe
 }
 
 bool DeviceFeatureSet::isInternalFeatureSupportedTextureGroup(InternalFeatures feature) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case InternalFeatures::TexStorage:
     return hasDesktopOrESVersionOrExtension(
@@ -784,6 +789,7 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
 
 // NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::isColorFilterableFeatureSupported(TextureFeatures feature) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case TextureFeatures::ColorFilterable16f:
     return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
@@ -817,6 +823,7 @@ bool DeviceFeatureSet::isColorFilterableFeatureSupported(TextureFeatures feature
 
 // NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::isColorRenderbufferFeatureSupported(TextureFeatures feature) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case TextureFeatures::ColorRenderbuffer16f:
     return hasDesktopOrESVersionOrExtension(
@@ -867,6 +874,7 @@ bool DeviceFeatureSet::isColorRenderbufferFeatureSupported(TextureFeatures featu
 
 // NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::isColorTexImageFeatureSupported(TextureFeatures feature) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case TextureFeatures::ColorTexImage16f:
     return hasDesktopOrESVersion(*this, GLVersion::v3_0, GLVersion::v3_0_ES) ||
@@ -943,6 +951,7 @@ bool DeviceFeatureSet::isColorTexImageFeatureSupported(TextureFeatures feature) 
 
 // NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::isColorTexStorageFloatFeatureSupported(TextureFeatures feature) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case TextureFeatures::ColorTexStorage16f:
     return hasDesktopOrESVersion(*this, GLVersion::v4_2, GLVersion::v3_0_ES) ||
@@ -963,6 +972,7 @@ bool DeviceFeatureSet::isColorTexStorageFloatFeatureSupported(TextureFeatures fe
 
 // NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::isColorTexStorageOtherFeatureSupported(TextureFeatures feature) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case TextureFeatures::ColorTexStorageA8:
     // Sized alpha texture were available on Desktop OpenGL prior to deprecation in
@@ -1011,6 +1021,7 @@ bool DeviceFeatureSet::isColorTexStorageOtherFeatureSupported(TextureFeatures fe
 
 // NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::isColorTexStorageFeatureSupported(TextureFeatures feature) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case TextureFeatures::ColorTexStorage16f:
   case TextureFeatures::ColorTexStorage32f:
@@ -1031,6 +1042,7 @@ bool DeviceFeatureSet::isColorTexStorageFeatureSupported(TextureFeatures feature
 }
 
 bool DeviceFeatureSet::isDepthRenderbufferFeatureSupported(TextureFeatures feature) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case TextureFeatures::DepthFilterable:
     return hasDesktopVersion(*this, GLVersion::v2_0);
@@ -1074,6 +1086,7 @@ bool DeviceFeatureSet::isDepthRenderbufferFeatureSupported(TextureFeatures featu
 
 // NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::isDepthTexImageFeatureSupported(TextureFeatures feature) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case TextureFeatures::DepthTexImage:
     return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
@@ -1115,6 +1128,7 @@ bool DeviceFeatureSet::isDepthTexImageFeatureSupported(TextureFeatures feature) 
 
 // NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::isDepthFeatureSupported(TextureFeatures feature) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case TextureFeatures::DepthFilterable:
   case TextureFeatures::DepthRenderbuffer16:
@@ -1140,6 +1154,7 @@ bool DeviceFeatureSet::isDepthFeatureSupported(TextureFeatures feature) const {
 }
 
 bool DeviceFeatureSet::isCompressionFeatureSupported(TextureFeatures feature) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case TextureFeatures::TextureCompressionAstc:
     return hasESVersion(*this, GLVersion::v3_2_ES) ||
@@ -1369,6 +1384,7 @@ bool DeviceFeatureSet::hasRequirement(DeviceRequirement requirement) const {
 
 // NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::hasInternalRequirementColorGroup(InternalRequirement requirement) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (requirement) {
   case InternalRequirement::ColorTexImageRgb5A1Unsized:
     return usesOpenGLES() && !hasESVersion(*this, GLVersion::v3_0_ES);
@@ -1390,6 +1406,7 @@ bool DeviceFeatureSet::hasInternalRequirementColorGroup(InternalRequirement requ
 }
 
 bool DeviceFeatureSet::hasInternalRequirementMiscGroup(InternalRequirement requirement) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (requirement) {
   case InternalRequirement::DrawBuffersExtReq:
     return usesOpenGLES() && !hasESVersion(*this, GLVersion::v3_0_ES);
@@ -1465,6 +1482,7 @@ bool DeviceFeatureSet::hasInternalRequirementMiscGroup(InternalRequirement requi
 
 // NOLINTNEXTLINE(misc-no-recursion)
 bool DeviceFeatureSet::hasInternalRequirement(InternalRequirement requirement) const {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (requirement) {
   case InternalRequirement::DebugMessageExtReq:
     return !hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES);
@@ -1639,6 +1657,7 @@ DeviceFeatureSet::getColorUNorm8BasicTextureFormatCapabilities(TextureFormat for
   const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
 
   ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (format) {
   case TextureFormat::LA_UNorm8:
   case TextureFormat::L_UNorm8:
@@ -1702,6 +1721,7 @@ DeviceFeatureSet::getColorUNorm8BgraSrgbTextureFormatCapabilities(TextureFormat 
   const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
 
   ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (format) {
   case TextureFormat::BGRA_UNorm8:
     // EXT_texture_format_BGRA8888 adds support for GL_BGRA as a Renderbuffer format, but this was
