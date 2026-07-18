@@ -215,7 +215,7 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
     words += instructionSize;
   }
 
-  for (auto& id : ids) {
+  for (const auto& id : ids) {
     const bool isStorage = id.storageClass == SpvStorageClassStorageBuffer;
     const bool isUniform = id.storageClass == SpvStorageClassUniform ||
                            id.storageClass == SpvStorageClassUniformConstant;
