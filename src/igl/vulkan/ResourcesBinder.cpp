@@ -62,7 +62,7 @@ void ResourcesBinder::bindBuffer(uint32_t index,
     }
   }
 
-  VkBuffer buf = buffer ? buffer->getVkBuffer() : ctx_.dummyUniformBuffer_->getVkBuffer();
+  const VkBuffer buf = buffer ? buffer->getVkBuffer() : ctx_.dummyUniformBuffer_->getVkBuffer();
   VkDescriptorBufferInfo& slot = bindingsBuffers_.buffers[index];
 
   if (slot.buffer != buf || slot.offset != bufferOffset) {
@@ -94,7 +94,7 @@ void ResourcesBinder::bindSamplerState(uint32_t index, SamplerState* samplerStat
 
   VulkanSampler* newSampler = samplerState ? ctx_.samplers_.get(samplerState->sampler_) : nullptr;
 
-  VkSampler sampler = newSampler ? newSampler->vkSampler : VK_NULL_HANDLE;
+  const VkSampler sampler = newSampler ? newSampler->vkSampler : VK_NULL_HANDLE;
 
   if (bindingsTextures_.samplers[index] != sampler) {
     bindingsTextures_.samplers[index] = sampler;
@@ -150,7 +150,8 @@ void ResourcesBinder::bindTexture(uint32_t index, Texture* tex) {
       ((newTexture->image.samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
   const bool isSampledImage = isTextureAvailable && newTexture->image.isSampledImage();
 
-  VkImageView imageView = isSampledImage ? newTexture->imageView_.vkImageView : VK_NULL_HANDLE;
+  const VkImageView imageView = isSampledImage ? newTexture->imageView_.vkImageView
+                                               : VK_NULL_HANDLE;
 
   if (bindingsTextures_.textures[index] != imageView) {
     bindingsTextures_.textures[index] = imageView;
@@ -196,7 +197,8 @@ void ResourcesBinder::bindStorageImage(uint32_t index, Texture* tex) {
       ((newTexture->image.samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
   const bool isStorageImage = isTextureAvailable && newTexture->image.isStorageImage();
 
-  VkImageView imageView = isStorageImage ? newTexture->imageView_.vkImageView : VK_NULL_HANDLE;
+  const VkImageView imageView = isStorageImage ? newTexture->imageView_.vkImageView
+                                               : VK_NULL_HANDLE;
 
   if (bindingsStorageImages_.images[index] != imageView) {
     bindingsStorageImages_.images[index] = imageView;
