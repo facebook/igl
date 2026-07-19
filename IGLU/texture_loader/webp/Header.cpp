@@ -8,6 +8,9 @@
 #include <IGLU/texture_loader/webp/Header.h>
 
 #include <cstring>
+#include <type_traits>
+
+static_assert(std::is_trivially_copyable_v<iglu::textureloader::webp::Header>);
 
 namespace iglu::textureloader::webp {
 namespace {

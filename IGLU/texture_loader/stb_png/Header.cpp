@@ -8,6 +8,9 @@
 #include <IGLU/texture_loader/stb_png/Header.h>
 
 #include <cstring>
+#include <type_traits>
+
+static_assert(std::is_trivially_copyable_v<iglu::textureloader::stb::png::Header>);
 
 namespace iglu::textureloader::stb::png {
 namespace {

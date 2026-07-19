@@ -8,6 +8,9 @@
 #include <IGLU/texture_loader/ktx2/Header.h>
 
 #include <cstring>
+#include <type_traits>
+
+static_assert(std::is_trivially_copyable_v<iglu::textureloader::ktx2::Header>);
 
 namespace iglu::textureloader::ktx2 {
 namespace {
