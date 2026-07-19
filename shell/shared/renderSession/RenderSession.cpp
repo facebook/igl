@@ -10,6 +10,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <thread>
+#include <type_traits>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/ShellParams.h>
@@ -20,6 +21,9 @@
 #endif
 
 namespace igl::shell {
+
+static_assert(sizeof(DepthParams) == 16);
+static_assert(std::is_trivially_copyable_v<DepthParams>);
 
 RenderSession::RenderSession(std::shared_ptr<Platform> platform) :
   platform_(std::move(platform)), appParams_(std::make_shared<AppParams>()) {}

@@ -11,9 +11,14 @@
 #include <cstring>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 namespace igl::shell {
+
+static_assert(sizeof(Fov) == 16);
+static_assert(std::is_trivially_copyable_v<Fov>);
+
 namespace {
 
 // Returns true if arg matches any of the given flags.
