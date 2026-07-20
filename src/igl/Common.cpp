@@ -17,6 +17,19 @@ namespace igl {
 // Make sure the structure igl::Color is tightly packed so it can be passed into APIs which expect
 // float[4] RGBA values
 static_assert(sizeof(Color) == 4 * sizeof(float));
+static_assert(std::is_trivially_copyable_v<Color>);
+
+static_assert(sizeof(ScissorRect) == 16);
+static_assert(std::is_trivially_copyable_v<ScissorRect>);
+
+static_assert(sizeof(Size) == 8);
+static_assert(std::is_trivially_copyable_v<Size>);
+
+static_assert(sizeof(Dimensions) == 12);
+static_assert(std::is_trivially_copyable_v<Dimensions>);
+
+static_assert(sizeof(Viewport) == 24);
+static_assert(std::is_trivially_copyable_v<Viewport>);
 
 std::string BackendTypeToString(BackendType backendType) {
   switch (backendType) {
