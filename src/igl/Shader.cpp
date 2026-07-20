@@ -8,7 +8,14 @@
 #include <igl/Shader.h>
 
 #include <cstring>
+#include <type_traits>
 #include <igl/IGLSafeC.h>
+
+static_assert(sizeof(igl::ShaderCompilerOptions) == 2);
+static_assert(std::is_trivially_copyable_v<igl::ShaderCompilerOptions>);
+
+static_assert(sizeof(igl::FunctionConstantValues::Entry) == 8);
+static_assert(std::is_trivially_copyable_v<igl::FunctionConstantValues::Entry>);
 
 namespace {
 
