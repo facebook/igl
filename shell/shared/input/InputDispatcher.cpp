@@ -9,10 +9,23 @@
 
 #include <shell/shared/input/InputDispatcher.h>
 
+#include <type_traits>
 #include <shell/shared/input/MouseListener.h>
 #include <shell/shared/input/TouchListener.h>
 
 namespace igl::shell {
+
+static_assert(std::is_trivially_copyable_v<MouseButtonEvent>);
+static_assert(sizeof(MouseMotionEvent) == 16);
+static_assert(std::is_trivially_copyable_v<MouseMotionEvent>);
+static_assert(sizeof(MouseWheelEvent) == 8);
+static_assert(std::is_trivially_copyable_v<MouseWheelEvent>);
+static_assert(sizeof(TouchEvent) == 20);
+static_assert(std::is_trivially_copyable_v<TouchEvent>);
+static_assert(sizeof(KeyEvent) == 12);
+static_assert(std::is_trivially_copyable_v<KeyEvent>);
+static_assert(sizeof(CharEvent) == 4);
+static_assert(std::is_trivially_copyable_v<CharEvent>);
 
 void InputDispatcher::processEvents() {
   const std::lock_guard guard(mutex_);
