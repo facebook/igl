@@ -244,7 +244,7 @@ void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
   [encoder_ setScissorRect:scissorRect];
 }
 
-void RenderCommandEncoder::bindCullMode(const CullMode& cullMode) {
+void RenderCommandEncoder::setCullMode(CullMode cullMode) {
   IGL_DEBUG_ASSERT(encoder_);
   MTLCullMode mode = MTLCullModeNone;
   switch (cullMode) {
@@ -292,7 +292,7 @@ void RenderCommandEncoder::bindRenderPipelineState(
 
   [encoder_ setRenderPipelineState:metalPipelineState.get()];
 
-  bindCullMode(metalPipelineState.getCullMode());
+  setCullMode(metalPipelineState.getCullMode());
   bindFrontFacingWinding(metalPipelineState.getWindingMode());
   bindPolygonFillMode(metalPipelineState.getPolygonFillMode());
 
