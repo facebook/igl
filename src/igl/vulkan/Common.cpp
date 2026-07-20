@@ -10,6 +10,7 @@
 // NOLINTNEXTLINE(facebook-unused-include-check) used on Linux (kPreloadLibs, libs arrays)
 #include <array>
 #include <cstdlib>
+#include <type_traits>
 
 // clang-format off
 // NOLINTBEGIN(facebook-unused-include-check)
@@ -41,6 +42,9 @@ extern "C" VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL kk_GetInstanceProcAddr(VkIns
 #endif
 
 namespace igl::vulkan {
+
+static_assert(std::is_trivially_copyable_v<VulkanContextConfig>);
+static_assert(std::is_trivially_copyable_v<VulkanSampler>);
 
 Result getResultFromVkResult(VkResult result) {
   if (result == VK_SUCCESS) {
