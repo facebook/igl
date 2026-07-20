@@ -8,6 +8,10 @@
 #include <igl/DepthStencilState.h>
 
 #include <functional>
+#include <type_traits>
+
+static_assert(sizeof(igl::StencilStateDesc) == 12);
+static_assert(std::is_trivially_copyable_v<igl::StencilStateDesc>);
 
 using namespace igl;
 
