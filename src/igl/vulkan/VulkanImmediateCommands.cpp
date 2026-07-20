@@ -7,10 +7,13 @@
 
 #include "VulkanImmediateCommands.h"
 
+#include <type_traits>
 #include <utility>
 #include <igl/vulkan/Common.h>
 
 namespace igl::vulkan {
+
+static_assert(std::is_trivially_copyable_v<VulkanImmediateCommands::SubmitHandle>);
 
 VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
                                                  VkDevice device,
