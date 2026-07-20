@@ -585,6 +585,10 @@ bool DeviceFeatureSet::isFeatureSupportedMiscGroup(DeviceFeatures feature) const
   case DeviceFeatures::Timers:
     return hasExtension(Extensions::TimerQuery);
 
+  case DeviceFeatures::DynamicCullMode:
+  case DeviceFeatures::DynamicFrontFacingWinding:
+    return true;
+
   default:
     return false;
   }
