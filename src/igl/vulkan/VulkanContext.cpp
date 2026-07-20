@@ -252,6 +252,7 @@ class DescriptorPoolsArena final {
   [[nodiscard]] VkDescriptorSetLayout getVkDescriptorSetLayout() const {
     return dsl_;
   }
+  // @fb-only
   [[nodiscard]] VkDescriptorSet getNextDescriptorSet(
       VulkanImmediateCommands& ic,
       VulkanImmediateCommands::SubmitHandle nextSubmitHandle) {
@@ -268,6 +269,7 @@ class DescriptorPoolsArena final {
       // Safe: allocatedDSet_.size() is always kNumDSetsPerPool because pools are only retired when
       // numRemainingDSetsInPool_ reaches 0, meaning all kNumDSetsPerPool sets were allocated.
       IGL_DEBUG_ASSERT(dsetCursor_ < allocatedDSet_.size());
+      // @fb-only
       dset = allocatedDSet_[dsetCursor_++];
     }
     numRemainingDSetsInPool_--;
@@ -479,6 +481,7 @@ struct DescriptorSetLayoutCacheKeyHash {
       hashCombine(h, std::hash<uint32_t>{}(static_cast<uint32_t>(b.descriptorType)));
       hashCombine(h, std::hash<uint32_t>{}(b.descriptorCount));
       hashCombine(h, std::hash<uint32_t>{}(static_cast<uint32_t>(b.stageFlags)));
+      // NOLINTNEXTLINE(bugprone-multi-level-implicit-pointer-conversion)
       hashCombine(h, std::hash<const void*>{}(static_cast<const void*>(b.pImmutableSamplers)));
     }
     for (const auto& f : key.bindingFlags) {
@@ -2677,6 +2680,7 @@ void VulkanContext::freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout /*
   // VulkanContext itself is destroyed.
 }
 
+// @fb-only
 VkDescriptorSetLayout VulkanContext::getOrCreateVkDescriptorSetLayout(
     VkDescriptorSetLayoutCreateFlags flags,
     uint32_t numBindings,
@@ -2685,6 +2689,8 @@ VkDescriptorSetLayout VulkanContext::getOrCreateVkDescriptorSetLayout(
     const char* debugName) const {
   DescriptorSetLayoutCacheKey key;
   key.flags = flags;
+  IGL_DEBUG_ASSERT(bindings != nullptr || numBindings == 0);
+  // @fb-only
   key.bindings.assign(bindings, bindings + numBindings);
   if (bindingFlags) {
     key.bindingFlags.assign(bindingFlags, bindingFlags + numBindings);
