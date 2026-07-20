@@ -7,6 +7,7 @@
 
 #include <igl/vulkan/ResourcesBinder.h>
 
+#include <type_traits>
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/PipelineState.h>
 #include <igl/vulkan/SamplerState.h>
@@ -17,6 +18,10 @@
 #include <igl/vulkan/VulkanTexture.h>
 
 namespace igl::vulkan {
+
+static_assert(std::is_trivially_copyable_v<BindingsBuffers>);
+static_assert(std::is_trivially_copyable_v<BindingsTextures>);
+static_assert(std::is_trivially_copyable_v<BindingsStorageImages>);
 
 ResourcesBinder::ResourcesBinder(const CommandBuffer* commandBuffer,
                                  VulkanContext& ctx,
