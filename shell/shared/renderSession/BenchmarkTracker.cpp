@@ -11,6 +11,10 @@
 #include <cstdio>
 #include <cstring>
 #include <sstream>
+#include <type_traits>
+
+static_assert(std::is_trivially_copyable_v<igl::shell::RenderTimeOverflowRecord>);
+static_assert(std::is_trivially_copyable_v<igl::shell::RenderTimeStats>);
 
 namespace igl::shell {
 
