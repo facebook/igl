@@ -49,7 +49,7 @@ class VulkanPipelineBuilder final {
                                VkPipeline* outPipeline,
                                const char* debugName = nullptr) noexcept;
 
-  static uint32_t getNumPipelinesCreated() {
+  [[nodiscard]] static uint32_t getNumPipelinesCreated() {
     return numPipelinesCreated;
   }
 
@@ -72,15 +72,15 @@ class VulkanComputePipelineBuilder final {
 
   VulkanComputePipelineBuilder& shaderStage(VkPipelineShaderStageCreateInfo stage);
 
-  VkResult build(const VulkanFunctionTable& vf,
-                 VkDevice device,
-                 VkPipelineCreateFlags flags,
-                 VkPipelineCache pipelineCache,
-                 VkPipelineLayout pipelineLayout,
-                 VkPipeline* outPipeline,
-                 const char* debugName = nullptr) noexcept;
+  [[nodiscard]] VkResult build(const VulkanFunctionTable& vf,
+                               VkDevice device,
+                               VkPipelineCreateFlags flags,
+                               VkPipelineCache pipelineCache,
+                               VkPipelineLayout pipelineLayout,
+                               VkPipeline* outPipeline,
+                               const char* debugName = nullptr) noexcept;
 
-  static uint32_t getNumPipelinesCreated() {
+  [[nodiscard]] static uint32_t getNumPipelinesCreated() {
     return numPipelinesCreated;
   }
 

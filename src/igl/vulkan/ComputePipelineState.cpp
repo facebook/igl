@@ -120,21 +120,21 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
   // `device` comes from ctx.getVkDevice(), which is annotated IGL_NULLABLE but is non-null by
   // construction whenever a pipeline is being created; this is a false positive.
   // NOLINTNEXTLINE(facebook-hte-NullableDereference)
-  VulkanComputePipelineBuilder()
-      .shaderStage(VkPipelineShaderStageCreateInfo{
-          .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-          .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-          .module = igl::vulkan::ShaderModule::getVkShaderModule(shaderModule),
-          .pName = shaderModule->info().entryPoint.c_str(),
-          .pSpecializationInfo = specInfo.mapEntryCount ? &specInfo : nullptr,
-      })
-      .build(ctx.vf_,
-             device,
-             flags,
-             ctx.pipelineCache_,
-             pipelineLayout,
-             &pipeline_,
-             desc_.debugName.c_str());
+  VK_ASSERT(VulkanComputePipelineBuilder()
+                .shaderStage(VkPipelineShaderStageCreateInfo{
+                    .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                    .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+                    .module = igl::vulkan::ShaderModule::getVkShaderModule(shaderModule),
+                    .pName = shaderModule->info().entryPoint.c_str(),
+                    .pSpecializationInfo = specInfo.mapEntryCount ? &specInfo : nullptr,
+                })
+                .build(ctx.vf_,
+                       device,
+                       flags,
+                       ctx.pipelineCache_,
+                       pipelineLayout,
+                       &pipeline_,
+                       desc_.debugName.c_str()));
 
   return pipeline_;
 }
