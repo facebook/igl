@@ -66,6 +66,7 @@ class VulkanFeatures final {
   VkPhysicalDeviceVulkanMemoryModelFeaturesKHR featuresVulkanMemoryModel{};
   VkPhysicalDevice8BitStorageFeaturesKHR features8BitStorage{};
   VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR featuresUniformBufferStandardLayout{};
+  VkPhysicalDeviceScalarBlockLayoutFeaturesEXT featuresScalarBlockLayout{};
   VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM featuresMultiviewPerViewViewports{};
   VkPhysicalDeviceMeshShaderFeaturesEXT featuresMeshShader{};
   VkPhysicalDeviceFragmentShadingRateFeaturesKHR featuresFragmentShadingRate{};
@@ -123,6 +124,7 @@ class VulkanFeatures final {
   bool has_VK_EXT_index_type_uint8 = false; // promoted to Vulkan 1.4
   bool has_VK_EXT_mesh_shader = false;
   bool has_VK_EXT_queue_family_foreign = false;
+  bool has_VK_EXT_scalar_block_layout = false; // promoted to Vulkan 1.2
   bool has_VK_KHR_8bit_storage = false; // promoted to Vulkan 1.2
   bool has_VK_KHR_buffer_device_address = false; // promoted to Vulkan 1.2
   bool has_VK_KHR_get_surface_capabilities2 = false;

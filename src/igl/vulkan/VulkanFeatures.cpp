@@ -116,6 +116,10 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES_KHR,
       .uniformBufferStandardLayout = VK_TRUE,
   }),
+  featuresScalarBlockLayout({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES_EXT,
+      .scalarBlockLayout = VK_TRUE,
+  }),
   featuresMultiviewPerViewViewports({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM,
       .multiviewPerViewViewports = VK_TRUE,
@@ -295,6 +299,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& contextConf
   featuresFragmentDensityMap.pNext = nullptr;
   features8BitStorage.pNext = nullptr;
   featuresUniformBufferStandardLayout.pNext = nullptr;
+  featuresScalarBlockLayout.pNext = nullptr;
   featuresMeshShader.pNext = nullptr;
   featuresFragmentShadingRate.pNext = nullptr;
   featuresDescriptorBuffer.pNext = nullptr;
@@ -336,6 +341,9 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& contextConf
   }
   if (hasExtension(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)) {
     ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresUniformBufferStandardLayout);
+  }
+  if (hasExtension(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME)) {
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresScalarBlockLayout);
   }
   if (contextConfig.enableMultiviewPerViewViewports) {
     if (hasExtension(VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME)) {
@@ -393,6 +401,7 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   featuresFragmentDensityMap = other.featuresFragmentDensityMap;
   features8BitStorage = other.features8BitStorage;
   featuresUniformBufferStandardLayout = other.featuresUniformBufferStandardLayout;
+  featuresScalarBlockLayout = other.featuresScalarBlockLayout;
   featuresMultiviewPerViewViewports = other.featuresMultiviewPerViewViewports;
   featuresMeshShader = other.featuresMeshShader;
   featuresFragmentShadingRate = other.featuresFragmentShadingRate;
@@ -558,6 +567,9 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
 
   has_VK_KHR_uniform_buffer_standard_layout =
       enable(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME, ExtensionType::Device);
+
+  has_VK_EXT_scalar_block_layout =
+      enable(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME, ExtensionType::Device);
 
   has_VK_KHR_synchronization2 =
       enable(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, ExtensionType::Device);
