@@ -984,7 +984,7 @@ Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
       continue;
     }
 
-    outDevices.emplace_back((uintptr_t)vkDevices[i],
+    outDevices.emplace_back(reinterpret_cast<uintptr_t>(vkDevices[i]),
                             deviceType,
                             deviceProperties.vendorID,
                             deviceProperties.deviceName,
@@ -1012,7 +1012,8 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
     return Result(Result::Code::Unsupported, "Vulkan is not supported");
   }
 
-  vkPhysicalDevice_ = (VkPhysicalDevice)desc.guid; // NOLINT(performance-no-int-to-ptr)
+  vkPhysicalDevice_ =
+      reinterpret_cast<VkPhysicalDevice>(desc.guid); // NOLINT(performance-no-int-to-ptr)
 
   // Caches the memory types
   vf_.vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice_, &memoryProperties);
