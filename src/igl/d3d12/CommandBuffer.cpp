@@ -7,6 +7,8 @@
 
 #include <igl/d3d12/CommandBuffer.h>
 
+#include <cstdio>
+#include <cstring>
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/ComputeCommandEncoder.h>
@@ -32,14 +34,14 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc) :
   HRESULT deviceRemovedReason = d3dDevice->GetDeviceRemovedReason();
   if (FAILED(deviceRemovedReason)) {
     char errorMsg[512];
-    snprintf(errorMsg,
-             sizeof(errorMsg),
-             "D3D12 device was removed before creating command buffer. Reason: 0x%08X\n"
-             "  0x887A0005 = DXGI_ERROR_DEVICE_REMOVED\n"
-             "  0x887A0006 = DXGI_ERROR_DEVICE_HUNG\n"
-             "  0x887A0007 = DXGI_ERROR_DEVICE_RESET\n"
-             "  0x887A0020 = DXGI_ERROR_DRIVER_INTERNAL_ERROR",
-             static_cast<unsigned>(deviceRemovedReason));
+    std::snprintf(errorMsg,
+                  sizeof(errorMsg),
+                  "D3D12 device was removed before creating command buffer. Reason: 0x%08X\n"
+                  "  0x887A0005 = DXGI_ERROR_DEVICE_REMOVED\n"
+                  "  0x887A0006 = DXGI_ERROR_DEVICE_HUNG\n"
+                  "  0x887A0007 = DXGI_ERROR_DEVICE_RESET\n"
+                  "  0x887A0020 = DXGI_ERROR_DRIVER_INTERNAL_ERROR",
+                  static_cast<unsigned>(deviceRemovedReason));
     IGL_LOG_ERROR(errorMsg);
     IGL_DEBUG_ASSERT(false, "Device removed - see error above");
     return; // Leave commandList_ null to indicate failure
@@ -60,10 +62,10 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc) :
 
   if (FAILED(hr)) {
     char errorMsg[256];
-    snprintf(errorMsg,
-             sizeof(errorMsg),
-             "Failed to create command list: HRESULT = 0x%08X",
-             static_cast<unsigned>(hr));
+    std::snprintf(errorMsg,
+                  sizeof(errorMsg),
+                  "Failed to create command list: HRESULT = 0x%08X",
+                  static_cast<unsigned>(hr));
     IGL_DEBUG_ASSERT(false, "%s", errorMsg);
     IGL_LOG_ERROR(errorMsg);
     return; // Leave commandList_ null to indicate failure
@@ -78,10 +80,10 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc) :
       d3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(scheduleFence_.GetAddressOf()));
   if (FAILED(hr)) {
     char errorMsg[256];
-    snprintf(errorMsg,
-             sizeof(errorMsg),
-             "Failed to create scheduling fence: HRESULT = 0x%08X",
-             static_cast<unsigned>(hr));
+    std::snprintf(errorMsg,
+                  sizeof(errorMsg),
+                  "Failed to create scheduling fence: HRESULT = 0x%08X",
+                  static_cast<unsigned>(hr));
     IGL_DEBUG_ASSERT(false, "%s", errorMsg);
     IGL_LOG_ERROR(errorMsg);
     return; // Leave fence null to indicate failure
@@ -130,16 +132,17 @@ Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
       for (const auto& page : pages) {
         totalCapacity += page.capacity;
       }
-      snprintf(errorMsg,
-               sizeof(errorMsg),
-               "CBV/SRV/UAV descriptor heap exhausted! Frame %u used all %zu pre-allocated pages "
-               "(%u descriptors total). "
-               "This frame requires more descriptors than available. "
-               "Increase D3D12ContextConfig::maxHeapPages or enable "
-               "preAllocateDescriptorPages=true, or optimize descriptor usage.",
-               frameIdx,
-               pages.size(),
-               totalCapacity);
+      std::snprintf(
+          errorMsg,
+          sizeof(errorMsg),
+          "CBV/SRV/UAV descriptor heap exhausted! Frame %u used all %zu pre-allocated pages "
+          "(%u descriptors total). "
+          "This frame requires more descriptors than available. "
+          "Increase D3D12ContextConfig::maxHeapPages or enable "
+          "preAllocateDescriptorPages=true, or optimize descriptor usage.",
+          frameIdx,
+          pages.size(),
+          totalCapacity);
       return Result{Result::Code::RuntimeError, errorMsg};
     }
 
@@ -226,11 +229,11 @@ Result CommandBuffer::allocateCbvSrvUavRange(uint32_t count, uint32_t* outBaseDe
     // Not enough space in current page - validate range and check for next page
     if (count > kDescriptorsPerPage) {
       char errorMsg[256];
-      snprintf(errorMsg,
-               sizeof(errorMsg),
-               "Requested descriptor range (%u) exceeds page capacity (%u)",
-               count,
-               kDescriptorsPerPage);
+      std::snprintf(errorMsg,
+                    sizeof(errorMsg),
+                    "Requested descriptor range (%u) exceeds page capacity (%u)",
+                    count,
+                    kDescriptorsPerPage);
       return Result{Result::Code::ArgumentOutOfRange, errorMsg};
     }
 
@@ -238,16 +241,17 @@ Result CommandBuffer::allocateCbvSrvUavRange(uint32_t count, uint32_t* outBaseDe
     const uint32_t nextPageIdx = currentPageIdx + 1;
     if (nextPageIdx >= pages.size()) {
       char errorMsg[512];
-      snprintf(errorMsg,
-               sizeof(errorMsg),
-               "CBV/SRV/UAV descriptor heap exhausted! Frame %u needs page %u for contiguous range "
-               "of %u descriptors, "
-               "but only %zu pages are pre-allocated. "
-               "Increase D3D12ContextConfig::maxHeapPages or optimize descriptor usage.",
-               frameIdx,
-               nextPageIdx,
-               count,
-               pages.size());
+      std::snprintf(
+          errorMsg,
+          sizeof(errorMsg),
+          "CBV/SRV/UAV descriptor heap exhausted! Frame %u needs page %u for contiguous range "
+          "of %u descriptors, "
+          "but only %zu pages are pre-allocated. "
+          "Increase D3D12ContextConfig::maxHeapPages or optimize descriptor usage.",
+          frameIdx,
+          nextPageIdx,
+          count,
+          pages.size());
       return Result{Result::Code::RuntimeError, errorMsg};
     }
 
@@ -638,7 +642,7 @@ void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& /*c
     return;
   }
 
-  const size_t len = strlen(label);
+  const size_t len = std::strlen(label);
   std::wstring wlabel(len, L' ');
   std::mbstowcs(&wlabel[0], label, len);
   commandList_->BeginEvent(
