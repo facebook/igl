@@ -17,7 +17,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <igl/Color.h>
+#include <igl/Color.h> // IWYU pragma: export
 #include <igl/Core.h>
 #include <igl/base/Common.h>
 
