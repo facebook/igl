@@ -8,6 +8,7 @@
 #include <igl/d3d12/Device.h>
 
 #include <cctype>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <d3d12sdklayers.h>
@@ -534,7 +535,7 @@ static bool compileFXC(const char* src,
   igl::d3d12::ComPtr<ID3DBlob> blob;
   igl::d3d12::ComPtr<ID3DBlob> errors;
   const HRESULT hr = D3DCompile(src,
-                                strlen(src),
+                                std::strlen(src),
                                 nullptr,
                                 nullptr,
                                 nullptr,
@@ -564,7 +565,7 @@ static bool compileDXC(DXCCompiler& compiler,
                        std::vector<uint8_t>& outBytecode) {
   std::string errors;
   const Result result =
-      compiler.compile(src, strlen(src), entry, target, debugName, 0, outBytecode, errors);
+      compiler.compile(src, std::strlen(src), entry, target, debugName, 0, outBytecode, errors);
   if (!result.isOk()) {
     IGL_LOG_ERROR("Failed to compile mipmap shader '%s': %s\n%s\n",
                   debugName,
@@ -1006,10 +1007,10 @@ std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
 
   if (FAILED(hr)) {
     char errorMsg[256];
-    snprintf(errorMsg,
-             sizeof(errorMsg),
-             "Failed to create buffer: HRESULT = 0x%08X",
-             static_cast<unsigned>(hr));
+    std::snprintf(errorMsg,
+                  sizeof(errorMsg),
+                  "Failed to create buffer: HRESULT = 0x%08X",
+                  static_cast<unsigned>(hr));
     Result::setResult(outResult, Result::Code::RuntimeError, errorMsg);
     return nullptr;
   }
@@ -1268,13 +1269,14 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
       const uint32_t maxSamples = getMaxMSAASamplesForFormat(desc.format);
 
       char errorMsg[512];
-      snprintf(errorMsg,
-               sizeof(errorMsg),
-               "Device::createTexture: Format %d does not support %u samples (max supported: %u). "
-               "Query DeviceFeatureLimits::MaxMultisampleCount before texture creation.",
-               static_cast<int>(dxgiFormat),
-               sampleCount,
-               maxSamples);
+      std::snprintf(
+          errorMsg,
+          sizeof(errorMsg),
+          "Device::createTexture: Format %d does not support %u samples (max supported: %u). "
+          "Query DeviceFeatureLimits::MaxMultisampleCount before texture creation.",
+          static_cast<int>(dxgiFormat),
+          sampleCount,
+          maxSamples);
       IGL_LOG_ERROR("%s\n", errorMsg);
       Result::setResult(outResult, Result::Code::Unsupported, errorMsg);
       return nullptr;
@@ -1381,17 +1383,17 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
     char errorMsg[512];
     if (hr == DXGI_ERROR_DEVICE_REMOVED) {
       HRESULT removedReason = device->GetDeviceRemovedReason();
-      snprintf(errorMsg,
-               sizeof(errorMsg),
-               "Failed to create texture resource. Device removed! HRESULT: 0x%08X, Removed "
-               "reason: 0x%08X",
-               static_cast<unsigned>(hr),
-               static_cast<unsigned>(removedReason));
+      std::snprintf(errorMsg,
+                    sizeof(errorMsg),
+                    "Failed to create texture resource. Device removed! HRESULT: 0x%08X, Removed "
+                    "reason: 0x%08X",
+                    static_cast<unsigned>(hr),
+                    static_cast<unsigned>(removedReason));
     } else {
-      snprintf(errorMsg,
-               sizeof(errorMsg),
-               "Failed to create texture resource. HRESULT: 0x%08X",
-               static_cast<unsigned>(hr));
+      std::snprintf(errorMsg,
+                    sizeof(errorMsg),
+                    "Failed to create texture resource. HRESULT: 0x%08X",
+                    static_cast<unsigned>(hr));
     }
     Result::setResult(outResult, Result::Code::RuntimeError, errorMsg);
     return nullptr;
@@ -2395,24 +2397,24 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
     logInfoQueuesForDevice(device, "CreateGraphicsPipelineState");
 
     char errorMsg[512];
-    snprintf(errorMsg,
-             sizeof(errorMsg),
-             "Failed to create pipeline state. HRESULT: 0x%08X\n"
-             "  VS size: %zu, PS size: %zu\n"
-             "  Input elements: %u\n"
-             "  NumRenderTargets: %u, RTV[0]: %d, DSV: %d\n"
-             "  SampleDesc: Count=%u, Quality=%u\n"
-             "  PrimitiveTopologyType: %d\n",
-             static_cast<unsigned>(hr),
-             psoDesc.VS.BytecodeLength,
-             psoDesc.PS.BytecodeLength,
-             psoDesc.InputLayout.NumElements,
-             psoDesc.NumRenderTargets,
-             static_cast<int>(psoDesc.RTVFormats[0]),
-             static_cast<int>(psoDesc.DSVFormat),
-             psoDesc.SampleDesc.Count,
-             psoDesc.SampleDesc.Quality,
-             static_cast<int>(psoDesc.PrimitiveTopologyType));
+    std::snprintf(errorMsg,
+                  sizeof(errorMsg),
+                  "Failed to create pipeline state. HRESULT: 0x%08X\n"
+                  "  VS size: %zu, PS size: %zu\n"
+                  "  Input elements: %u\n"
+                  "  NumRenderTargets: %u, RTV[0]: %d, DSV: %d\n"
+                  "  SampleDesc: Count=%u, Quality=%u\n"
+                  "  PrimitiveTopologyType: %d\n",
+                  static_cast<unsigned>(hr),
+                  psoDesc.VS.BytecodeLength,
+                  psoDesc.PS.BytecodeLength,
+                  psoDesc.InputLayout.NumElements,
+                  psoDesc.NumRenderTargets,
+                  static_cast<int>(psoDesc.RTVFormats[0]),
+                  static_cast<int>(psoDesc.DSVFormat),
+                  psoDesc.SampleDesc.Count,
+                  psoDesc.SampleDesc.Quality,
+                  static_cast<int>(psoDesc.PrimitiveTopologyType));
     IGL_LOG_ERROR(errorMsg);
     Result::setResult(outResult, Result::Code::RuntimeError, errorMsg);
     return nullptr;
@@ -2853,12 +2855,12 @@ igl::d3d12::ComPtr<ID3D12PipelineState> Device::createPipelineStateVariant(
   if (FAILED(hr)) {
     logInfoQueuesForDevice(device, "CreateGraphicsPipelineState (variant)");
     char errorMsg[256];
-    snprintf(errorMsg,
-             sizeof(errorMsg),
-             "Failed to create PSO variant. HRESULT: 0x%08X, RTV[0]: %d, DSV: %d",
-             static_cast<unsigned>(hr),
-             static_cast<int>(psoDesc.RTVFormats[0]),
-             static_cast<int>(psoDesc.DSVFormat));
+    std::snprintf(errorMsg,
+                  sizeof(errorMsg),
+                  "Failed to create PSO variant. HRESULT: 0x%08X, RTV[0]: %d, DSV: %d",
+                  static_cast<unsigned>(hr),
+                  static_cast<int>(psoDesc.RTVFormats[0]),
+                  static_cast<int>(psoDesc.DSVFormat));
     IGL_LOG_ERROR(errorMsg);
     Result::setResult(outResult, Result::Code::RuntimeError, errorMsg);
     return nullptr;
@@ -2983,7 +2985,7 @@ Result compileShaderFXC(const char* source,
 
   if (FAILED(hr)) {
     char hrBuf[32];
-    snprintf(hrBuf, sizeof(hrBuf), "0x%08lX", static_cast<unsigned long>(hr));
+    std::snprintf(hrBuf, sizeof(hrBuf), "0x%08lX", static_cast<unsigned long>(hr));
     std::string errorMsg = std::string("FXC compilation failed (HRESULT ") + hrBuf + ")";
     if (errors.Get() && errors->GetBufferSize() > 0) {
       outErrors = std::string(static_cast<const char*>(errors->GetBufferPointer()),
@@ -3046,7 +3048,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
       return nullptr;
     }
 
-    const size_t sourceLength = strlen(desc.input.source);
+    const size_t sourceLength = std::strlen(desc.input.source);
     IGL_D3D12_LOG_VERBOSE("  Compiling HLSL from string (%zu bytes) using DXC...\n", sourceLength);
 
     // Initialize DXC compiler thread-safely using std::call_once.
