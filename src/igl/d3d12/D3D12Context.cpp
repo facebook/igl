@@ -7,7 +7,9 @@
 
 #include <igl/d3d12/D3D12Context.h>
 
+#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 #include <igl/d3d12/D3D12FenceWaiter.h>
 #include <igl/d3d12/DescriptorHeapManager.h>
@@ -866,7 +868,7 @@ Result D3D12Context::enumerateAndSelectAdapter() {
   char adapterEnv[64] = {};
   DWORD envResult = GetEnvironmentVariableA("IGL_D3D12_ADAPTER", adapterEnv, sizeof(adapterEnv));
   if (envResult > 0 && envResult < sizeof(adapterEnv)) {
-    if (strcmp(adapterEnv, "WARP") == 0) {
+    if (std::strcmp(adapterEnv, "WARP") == 0) {
       // Find WARP adapter
       for (size_t i = 0; i < enumeratedAdapters_.size(); ++i) {
         if (enumeratedAdapters_[i].isWarp) {
@@ -1484,25 +1486,25 @@ void D3D12Context::waitForGPU() {
 
 void D3D12Context::trackResourceCreation(const char* type, size_t sizeBytes) {
   std::lock_guard<std::mutex> lock(resourceStatsMutex_);
-  if (strcmp(type, "Buffer") == 0) {
+  if (std::strcmp(type, "Buffer") == 0) {
     resourceStats_.totalBuffersCreated++;
     resourceStats_.bufferMemoryBytes += sizeBytes;
-  } else if (strcmp(type, "Texture") == 0) {
+  } else if (std::strcmp(type, "Texture") == 0) {
     resourceStats_.totalTexturesCreated++;
     resourceStats_.textureMemoryBytes += sizeBytes;
-  } else if (strcmp(type, "SRV") == 0) {
+  } else if (std::strcmp(type, "SRV") == 0) {
     resourceStats_.totalSRVsCreated++;
-  } else if (strcmp(type, "Sampler") == 0) {
+  } else if (std::strcmp(type, "Sampler") == 0) {
     resourceStats_.totalSamplersCreated++;
   }
 }
 
 void D3D12Context::trackResourceDestruction(const char* type, size_t sizeBytes) {
   std::lock_guard<std::mutex> lock(resourceStatsMutex_);
-  if (strcmp(type, "Buffer") == 0) {
+  if (std::strcmp(type, "Buffer") == 0) {
     resourceStats_.totalBuffersDestroyed++;
     resourceStats_.bufferMemoryBytes -= sizeBytes;
-  } else if (strcmp(type, "Texture") == 0) {
+  } else if (std::strcmp(type, "Texture") == 0) {
     resourceStats_.totalTexturesDestroyed++;
     resourceStats_.textureMemoryBytes -= sizeBytes;
   }
@@ -1547,12 +1549,13 @@ Result D3D12Context::allocateDescriptorHeapPage(D3D12_DESCRIPTOR_HEAP_TYPE type,
   HRESULT hr = device_->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(outHeap->GetAddressOf()));
   if (FAILED(hr)) {
     char errorMsg[256];
-    snprintf(errorMsg,
-             sizeof(errorMsg),
-             "Failed to create descriptor heap page (type=%d, numDescriptors=%u): HRESULT=0x%08X",
-             static_cast<int>(type),
-             numDescriptors,
-             static_cast<unsigned>(hr));
+    std::snprintf(
+        errorMsg,
+        sizeof(errorMsg),
+        "Failed to create descriptor heap page (type=%d, numDescriptors=%u): HRESULT=0x%08X",
+        static_cast<int>(type),
+        numDescriptors,
+        static_cast<unsigned>(hr));
     return Result{Result::Code::RuntimeError, errorMsg};
   }
 
