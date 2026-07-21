@@ -8,6 +8,7 @@
 #include <igl/d3d12/RenderCommandEncoder.h>
 
 #include <cstdlib>
+#include <cstring>
 #include <igl/RenderPass.h>
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/CommandBuffer.h>
@@ -1314,7 +1315,7 @@ void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const Color& /
   if (!commandBuffer_.isRecording() || !commandList_ || !label) {
     return;
   }
-  const size_t len = strlen(label);
+  const size_t len = std::strlen(label);
   std::wstring wlabel(len, L' ');
   std::mbstowcs(&wlabel[0], label, len);
   commandList_->BeginEvent(
@@ -1325,7 +1326,7 @@ void RenderCommandEncoder::insertDebugEventLabel(const char* label, const Color&
   if (!commandBuffer_.isRecording() || !commandList_ || !label) {
     return;
   }
-  const size_t len = strlen(label);
+  const size_t len = std::strlen(label);
   std::wstring wlabel(len, L' ');
   std::mbstowcs(&wlabel[0], label, len);
   commandList_->SetMarker(
