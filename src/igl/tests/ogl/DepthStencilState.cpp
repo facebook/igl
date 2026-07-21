@@ -13,6 +13,7 @@
 #include "../data/VertexIndexData.h"
 #include "../util/Common.h"
 
+#include <cstring>
 #include <string>
 #include <igl/CommandBuffer.h>
 #include <igl/RenderPass.h>
@@ -423,7 +424,7 @@ TEST_F(DepthStencilStateTest, SetStencilReferenceValueAndCheck) {
 
     // GLES stencil mask is limited to 8 bits (0xFF) on Adreno GPUs
     const GLubyte* renderer = ctx->getString(GL_RENDERER);
-    if (strncmp((char*)renderer, "Adreno", 6) == 0) {
+    if (std::strncmp((char*)renderer, "Adreno", 6) == 0) {
       origExpectedStencilValue = 0xff;
     }
 
