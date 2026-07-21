@@ -7,8 +7,13 @@
 
 #pragma once
 
-#import <Foundation/NSNetServices.h>
+#include <memory>
+#import <objc/objc.h>
+#include <string_view>
 #include <shell/shared/netservice/NetServiceExtension.h>
+
+@class NSNetServiceBrowser;
+@protocol NSNetServiceBrowserDelegate;
 
 namespace igl::shell::netservice {
 

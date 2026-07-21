@@ -9,6 +9,7 @@
 
 #include <shell/shared/netservice/apple/NetServiceExtensionApple.h>
 
+#import <Foundation/NSNetServices.h>
 #import <Foundation/NSString.h>
 #include <shell/shared/netservice/apple/NetServiceApple.h>
 
