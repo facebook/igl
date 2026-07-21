@@ -14,6 +14,7 @@
 
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 #include <array>
+#include <cstring>
 #include <glm/glm.hpp>
 #include <string>
 #include <igl/NameHandle.h>
@@ -706,7 +707,7 @@ TEST_F(TextureCubeTest, GetRange) {
                : TextureRangeDesc{};
   };
   auto rangesAreEqual = [&](const TextureRangeDesc& a, const TextureRangeDesc& b) -> bool {
-    return memcmp(&a, &b, sizeof(TextureRangeDesc)) == 0;
+    return std::memcmp(&a, &b, sizeof(TextureRangeDesc)) == 0;
   };
   const auto format = iglDev_->getBackendType() == BackendType::OpenGL
                           ? TextureFormat::R5G5B5A1_UNorm
