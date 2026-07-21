@@ -8,6 +8,7 @@
 #include <igl/d3d12/Texture.h>
 
 #include <algorithm>
+#include <cstring>
 #include <igl/d3d12/D3D12FenceWaiter.h>
 #include <igl/d3d12/DXCCompiler.h>
 #include <igl/d3d12/Device.h>
@@ -388,7 +389,7 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
         for (UINT row = 0; row < rowsToCopy; ++row) {
           const uint8_t* srcRow = srcSlice + row * mipBytesPerRow;
           uint8_t* dstRow = dstSlice + row * layout.Footprint.RowPitch;
-          memcpy(dstRow, srcRow, copyBytes);
+          std::memcpy(dstRow, srcRow, copyBytes);
         }
       }
 
