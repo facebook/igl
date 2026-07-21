@@ -569,7 +569,7 @@ void ColorSession::initialize() noexcept {
 
   // init uniforms
   const glm::mat4x4 mvp(1.0f);
-  memcpy(&fragmentParameters_.mvp, &mvp, sizeof(mvp));
+  std::memcpy(&fragmentParameters_.mvp, &mvp, sizeof(mvp));
   fragmentParameters_.color = (colorTestModes_ == ColorTestModes::OrangeClear)
                                   ? gpuLinearOrangeColor
                                   : iglu::simdtypes::float3{1.0f, 1.0f, 1.0f};
@@ -674,7 +674,7 @@ void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
   fragmentUniformDescriptors_.back().offset = offsetof(FragmentFormat, mvp);
 
   const auto& mvp = getPlatform().getDisplayContext().preRotationMatrix;
-  memcpy(&fragmentParameters_.mvp, &mvp, sizeof(mvp));
+  std::memcpy(&fragmentParameters_.mvp, &mvp, sizeof(mvp));
   fragmentParamBuffer_->upload(&fragmentParameters_, {sizeof(fragmentParameters_)});
 
   // Submit commands
