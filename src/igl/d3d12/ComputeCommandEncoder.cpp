@@ -7,6 +7,7 @@
 
 #include <igl/d3d12/ComputeCommandEncoder.h>
 
+#include <cstring>
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/CommandBuffer.h>
 #include <igl/d3d12/ComputePipelineState.h>
@@ -737,7 +738,7 @@ void ComputeCommandEncoder::pushDebugGroupLabel(const char* label, const Color& 
     return;
   }
   // PIX debug markers
-  const size_t len = strlen(label);
+  const size_t len = std::strlen(label);
   std::wstring wlabel(len, L' ');
   std::mbstowcs(&wlabel[0], label, len);
   commandList->BeginEvent(
@@ -749,7 +750,7 @@ void ComputeCommandEncoder::insertDebugEventLabel(const char* label, const Color
   if (!commandBuffer_.isRecording() || !commandList || !label) {
     return;
   }
-  const size_t len = strlen(label);
+  const size_t len = std::strlen(label);
   std::wstring wlabel(len, L' ');
   std::mbstowcs(&wlabel[0], label, len);
   commandList->SetMarker(
