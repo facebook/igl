@@ -51,12 +51,12 @@ class Texture : public ITexture {
   bool isRequiredGenerateMipmap() const override;
   uint64_t getTextureId() const override;
   bool isSwapchainTexture() const override;
-  TextureDesc::TextureMipmapGeneration getMipmapGeneration() const;
-  VkFormat getVkFormat() const;
-  uint32_t getVkExtendedFormat() const;
-  VkImageUsageFlags getVkUsageFlags() const;
+  [[nodiscard]] TextureDesc::TextureMipmapGeneration getMipmapGeneration() const;
+  [[nodiscard]] VkFormat getVkFormat() const;
+  [[nodiscard]] uint32_t getVkExtendedFormat() const;
+  [[nodiscard]] VkImageUsageFlags getVkUsageFlags() const;
 
-  VkImageView getVkImageView() const;
+  [[nodiscard]] VkImageView getVkImageView() const;
 
   // IAttachmentInterop interface
   [[nodiscard]] void* IGL_NULLABLE getNativeImage() const override;
@@ -65,14 +65,14 @@ class Texture : public ITexture {
 
   /// @brief Specialization of `getVkImageView()` that returns an image view specific to a mip level
   /// and layer of an image. Used to retrieve image views to be used with framebuffers
-  VkImageView getVkImageViewForFramebuffer(uint32_t mipLevel,
-                                           uint32_t layer,
-                                           FramebufferMode mode) const; // framebuffers can render
-                                                                        // only into 1 mip-level
-  VkImage getVkImage() const;
-  VulkanTexture& getVulkanTexture() const;
+  [[nodiscard]] VkImageView getVkImageViewForFramebuffer(
+      uint32_t mipLevel,
+      uint32_t layer,
+      FramebufferMode mode) const; // framebuffers can render only into 1 mip-level
+  [[nodiscard]] VkImage getVkImage() const;
+  [[nodiscard]] VulkanTexture& getVulkanTexture() const;
 
-  uint32_t getNumVkLayers() const;
+  [[nodiscard]] uint32_t getNumVkLayers() const;
 
  private:
   [[nodiscard]] bool needsRepacking(const TextureRangeDesc& range, size_t bytesPerRow) const final;
