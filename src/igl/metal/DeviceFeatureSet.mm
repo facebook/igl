@@ -7,6 +7,7 @@
 
 #include <igl/metal/DeviceFeatureSet.h>
 
+#import <TargetConditionals.h>
 #include <vector>
 
 namespace {
@@ -40,7 +41,22 @@ size_t getGPUFamily(id<MTLDevice> device) {
     using FeatureSetPair = std::pair<MTLFeatureSet, size_t>;
     std::vector<FeatureSetPair> featureSets;
 
-#if IGL_PLATFORM_IOS
+#if TARGET_OS_TV
+    if (@available(tvOS 12, *)) {
+      featureSets.emplace_back(MTLFeatureSet_tvOS_GPUFamily2_v2, 2);
+      featureSets.emplace_back(MTLFeatureSet_tvOS_GPUFamily1_v4, 1);
+    } else if (@available(tvOS 11, *)) {
+      featureSets.emplace_back(MTLFeatureSet_tvOS_GPUFamily2_v1, 2);
+      featureSets.emplace_back(MTLFeatureSet_tvOS_GPUFamily1_v3, 1);
+    } else if (@available(tvOS 10, *)) {
+      featureSets.emplace_back(MTLFeatureSet_tvOS_GPUFamily1_v2, 1);
+    } else if (@available(tvOS 9, *)) {
+      featureSets.emplace_back(MTLFeatureSet_tvOS_GPUFamily1_v1, 1);
+    } else {
+      IGL_DEBUG_ABORT("IGL tvOS deployment target is 9.0+");
+      return 0;
+    }
+#elif IGL_PLATFORM_IOS
     if (@available(iOS 12, *)) {
       featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily5_v1, 5);
       featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily4_v2, 4);
