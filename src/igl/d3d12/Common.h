@@ -11,6 +11,7 @@
 #define IGL_D3D12_COMMON_H
 
 #include <cassert>
+#include <cstdio>
 #include <utility>
 #include <igl/Common.h>
 #include <igl/Macros.h>
@@ -300,7 +301,7 @@ inline Result getResultFromHRESULT(HRESULT hr) {
   default: {
     // Include HRESULT code for better debugging of unexpected errors.
     char buf[64];
-    snprintf(buf, sizeof(buf), "D3D12 error (hr=0x%08X)", static_cast<unsigned>(hr));
+    std::snprintf(buf, sizeof(buf), "D3D12 error (hr=0x%08X)", static_cast<unsigned>(hr));
     return Result(Result::Code::RuntimeError, buf);
   }
   }
@@ -381,7 +382,7 @@ inline std::string getShaderTarget(D3D_SHADER_MODEL shaderModel, ShaderStage sta
 
   // Build target string (e.g., "vs_6_6", "ps_5_1", "cs_6_0")
   char target[16];
-  snprintf(target, sizeof(target), "%s_%d_%d", stagePrefix, major, minor);
+  std::snprintf(target, sizeof(target), "%s_%d_%d", stagePrefix, major, minor);
   return std::string(target);
 }
 
