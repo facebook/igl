@@ -10,6 +10,7 @@
 #include "../data/ShaderData.h"
 #include "../util/TestDevice.h"
 
+#include <cstring>
 #include <igl/CommandBuffer.h>
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/ComputePipelineState.h>
@@ -251,7 +252,7 @@ TEST_F(ComputePipelineStateVulkanTest, BindAndDispatch) {
   ASSERT_NE(data, nullptr);
 
   std::vector<float> outputData(inputData.size());
-  memcpy(outputData.data(), data, inputData.size() * sizeof(float));
+  std::memcpy(outputData.data(), data, inputData.size() * sizeof(float));
   outputBuffer->unmap();
 
   for (size_t i = 0; i < inputData.size(); i++) {
