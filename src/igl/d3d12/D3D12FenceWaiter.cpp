@@ -7,6 +7,8 @@
 
 #include <igl/d3d12/D3D12FenceWaiter.h>
 
+#include <cstdio>
+
 namespace igl::d3d12 {
 
 FenceWaiter::FenceWaiter(ID3D12Fence* fence, UINT64 targetValue) :
@@ -24,7 +26,7 @@ FenceWaiter::FenceWaiter(ID3D12Fence* fence, UINT64 targetValue) :
     IGL_LOG_ERROR("FenceWaiter: Failed to create event handle (LastError=0x%08X)\n", lastError);
     setupErrorCode_ = Result::Code::InvalidOperation;
     char buf[128];
-    snprintf(buf, sizeof(buf), "CreateEvent failed (OS error 0x%08X)", lastError);
+    std::snprintf(buf, sizeof(buf), "CreateEvent failed (OS error 0x%08X)", lastError);
     setupErrorMessage_ = buf;
     return;
   }
@@ -36,10 +38,10 @@ FenceWaiter::FenceWaiter(ID3D12Fence* fence, UINT64 targetValue) :
     event_ = nullptr;
     setupErrorCode_ = Result::Code::InvalidOperation;
     char buf[128];
-    snprintf(buf,
-             sizeof(buf),
-             "SetEventOnCompletion failed (HRESULT=0x%08X)",
-             static_cast<unsigned>(hr));
+    std::snprintf(buf,
+                  sizeof(buf),
+                  "SetEventOnCompletion failed (HRESULT=0x%08X)",
+                  static_cast<unsigned>(hr));
     setupErrorMessage_ = buf;
     return;
   }
@@ -112,11 +114,11 @@ Result FenceWaiter::wait(DWORD timeoutMs) {
     IGL_LOG_ERROR(
         "FenceWaiter: Wait failed with result 0x%08X (LastError=0x%08X)\n", waitResult, lastError);
     char buf[128];
-    snprintf(buf,
-             sizeof(buf),
-             "WaitForSingleObject failed (result=0x%08X, OS error=0x%08X)",
-             waitResult,
-             lastError);
+    std::snprintf(buf,
+                  sizeof(buf),
+                  "WaitForSingleObject failed (result=0x%08X, OS error=0x%08X)",
+                  waitResult,
+                  lastError);
     return Result(Result::Code::RuntimeError, buf);
   }
 }
