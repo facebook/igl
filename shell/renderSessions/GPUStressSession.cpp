@@ -252,7 +252,7 @@ void GPUStressSession::addNormalsToCube() {
       } else if (!normalSet[oldIndex]) {
         vertexData_.at(oldIndex).baseColor = glm::vec4(normal, 1.0);
         normalSet[oldIndex] = true;
-        indexremap.at(oldIndex) = oldIndex;
+        indexremap.at(oldIndex) = static_cast<int>(oldIndex);
       } else {
         auto vertex = vertexData0_.at(oldIndex);
         vertex.baseColor = glm::vec4(normal, 1.0);
@@ -260,7 +260,7 @@ void GPUStressSession::addNormalsToCube() {
         const size_t nextIndex = (vertexData_.size() - 1);
         indexData_.at(i) = nextIndex;
         normalSet[nextIndex] = true;
-        indexremap.at(oldIndex) = nextIndex;
+        indexremap.at(oldIndex) = static_cast<int>(nextIndex);
       }
     }
   }
@@ -337,7 +337,7 @@ void GPUStressSession::thrashCPU() noexcept {
       threadSpawnId++;
     }
 
-    for (int i = futures.size() - 1; i > -1; i--) {
+    for (int i = static_cast<int>(futures.size()) - 1; i > -1; i--) {
       auto& future = futures.at(i);
 
       // Use wait_for() with zero milliseconds to check thread status.
@@ -413,22 +413,29 @@ void GPUStressSession::thrashMemory() noexcept {
   const static size_t kCols = 1024;
 
   if (!threadCount_) {
-    memoryVal_.store(doReadWrite(memBlock_, kBlocks, kRows, kCols, -1));
+    memoryVal_.store(doReadWrite(memBlock_,
+                                 static_cast<int>(kBlocks),
+                                 static_cast<int>(kRows),
+                                 static_cast<int>(kCols),
+                                 -1));
   } else {
     static std::vector<std::future<float>> futures;
     static int memoryThreadId = 0;
 
     while (futures.size() < threadCount_) {
       auto future = std::async(std::launch::async, [this] {
-        return doReadWrite(
-            memBlock_, kBlocks, kRows, kCols, threadIds_[memoryThreadId % threadCount_]);
+        return doReadWrite(memBlock_,
+                           static_cast<int>(kBlocks),
+                           static_cast<int>(kRows),
+                           static_cast<int>(kCols),
+                           threadIds_[memoryThreadId % threadCount_]);
       });
 
       futures.push_back(std::move(future));
       memoryThreadId++;
     }
 
-    for (int i = futures.size() - 1; i > -1; i--) {
+    for (int i = static_cast<int>(futures.size()) - 1; i > -1; i--) {
       auto& future = futures.at(i);
 
       // Use wait_for() with zero milliseconds to check thread status.
@@ -535,8 +542,8 @@ void GPUStressSession::createCubes() {
 
   const float grid = std::ceil(std::pow(cubeCount_, 1.0f / 3.0f));
 
-  const int vertexCount = vertexData_.size();
-  const int indexCount = indexData_.size();
+  const int vertexCount = static_cast<int>(vertexData_.size());
+  const int indexCount = static_cast<int>(indexData_.size());
 
   std::mt19937 gen(0);
   std::uniform_real_distribution<> dis(0, 1.f);
