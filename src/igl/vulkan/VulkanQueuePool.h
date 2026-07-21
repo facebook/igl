@@ -25,11 +25,11 @@ struct VulkanQueueDescriptor {
   }
 
   /* familyIndex and queueIndex are sufficient to uniquely identify a VulkanQueueDescriptor. */
-  bool operator==(const VulkanQueueDescriptor& other) const {
+  [[nodiscard]] bool operator==(const VulkanQueueDescriptor& other) const {
     return (familyIndex == other.familyIndex && queueIndex == other.queueIndex);
   }
 
-  bool operator<(const VulkanQueueDescriptor& other) const {
+  [[nodiscard]] bool operator<(const VulkanQueueDescriptor& other) const {
     if (familyIndex == other.familyIndex) {
       return queueIndex < other.queueIndex;
     }
