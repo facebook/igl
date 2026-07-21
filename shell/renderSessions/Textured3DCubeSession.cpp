@@ -10,6 +10,7 @@
 #include <shell/renderSessions/Textured3DCubeSession.h>
 
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
+#include <cmath>
 #include <cstddef>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/NameHandle.h>
@@ -239,8 +240,8 @@ void Textured3DCubeSession::createSamplerAndTextures(const igl::IDevice& device)
     for (uint32_t j = 0; j < height; ++j) {
       for (uint32_t i = 0; i < width; ++i) {
         const uint32_t index = (i + width * j + width * height * k) * bytesPerPixel;
-        const float d = sqrtf((i - 128.0f) * (i - 128.0f) + (j - 128.0f) * (j - 128.0f) +
-                              (k - 128.0f) * (k - 128.0f)) /
+        const float d = std::sqrt((i - 128.0f) * (i - 128.0f) + (j - 128.0f) * (j - 128.0f) +
+                                  (k - 128.0f) * (k - 128.0f)) /
                         16.0f;
         if (d > 7.0f) {
           textureData[index + 0] = 148;
