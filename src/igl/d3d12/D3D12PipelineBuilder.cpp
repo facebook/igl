@@ -7,6 +7,8 @@
 
 #include <igl/d3d12/D3D12PipelineBuilder.h>
 
+#include <cstdio>
+#include <cstring>
 #include <igl/d3d12/D3D12Context.h>
 
 namespace igl::d3d12 {
@@ -396,16 +398,16 @@ Result D3D12GraphicsPipelineBuilder::build(ID3D12Device* device,
       device->CreateGraphicsPipelineState(&psoDesc_, IID_PPV_ARGS(pipelineState.GetAddressOf()));
   if (FAILED(hr)) {
     char errorMsg[512];
-    snprintf(errorMsg,
-             sizeof(errorMsg),
-             "Failed to create graphics pipeline state. HRESULT: 0x%08X",
-             static_cast<unsigned int>(hr));
+    std::snprintf(errorMsg,
+                  sizeof(errorMsg),
+                  "Failed to create graphics pipeline state. HRESULT: 0x%08X",
+                  static_cast<unsigned int>(hr));
     return Result(Result::Code::RuntimeError, errorMsg);
   }
 
   // Set debug name if provided
   if (debugName && debugName[0] != '\0') {
-    std::wstring wideName(debugName, debugName + strlen(debugName));
+    std::wstring wideName(debugName, debugName + std::strlen(debugName));
     pipelineState->SetName(wideName.c_str());
   }
 
@@ -466,16 +468,16 @@ Result D3D12ComputePipelineBuilder::build(ID3D12Device* device,
       device->CreateComputePipelineState(&psoDesc_, IID_PPV_ARGS(pipelineState.GetAddressOf()));
   if (FAILED(hr)) {
     char errorMsg[512];
-    snprintf(errorMsg,
-             sizeof(errorMsg),
-             "Failed to create compute pipeline state. HRESULT: 0x%08X",
-             static_cast<unsigned int>(hr));
+    std::snprintf(errorMsg,
+                  sizeof(errorMsg),
+                  "Failed to create compute pipeline state. HRESULT: 0x%08X",
+                  static_cast<unsigned int>(hr));
     return Result(Result::Code::RuntimeError, errorMsg);
   }
 
   // Set debug name if provided
   if (debugName && debugName[0] != '\0') {
-    std::wstring wideName(debugName, debugName + strlen(debugName));
+    std::wstring wideName(debugName, debugName + std::strlen(debugName));
     pipelineState->SetName(wideName.c_str());
   }
 
@@ -625,7 +627,7 @@ Result D3D12RootSignatureBuilder::build(ID3D12Device* device,
   const uint32_t size = getRootSignatureDwordSize(rootSigDesc);
   if (size > 64) {
     char errorMsg[256];
-    snprintf(
+    std::snprintf(
         errorMsg, sizeof(errorMsg), "Root signature size exceeds 64 DWORD limit: %u DWORDs", size);
     return Result(Result::Code::ArgumentOutOfRange, errorMsg);
   }
@@ -639,11 +641,11 @@ Result D3D12RootSignatureBuilder::build(ID3D12Device* device,
     const char* errorStr = error.Get() ? static_cast<const char*>(error->GetBufferPointer())
                                        : "Unknown error";
     char errorMsg[512];
-    snprintf(errorMsg,
-             sizeof(errorMsg),
-             "Failed to serialize root signature. HRESULT: 0x%08X, Error: %s",
-             static_cast<unsigned int>(hr),
-             errorStr);
+    std::snprintf(errorMsg,
+                  sizeof(errorMsg),
+                  "Failed to serialize root signature. HRESULT: 0x%08X, Error: %s",
+                  static_cast<unsigned int>(hr),
+                  errorStr);
     return Result(Result::Code::RuntimeError, errorMsg);
   }
 
@@ -655,10 +657,10 @@ Result D3D12RootSignatureBuilder::build(ID3D12Device* device,
                                    IID_PPV_ARGS(rootSignature.GetAddressOf()));
   if (FAILED(hr)) {
     char errorMsg[256];
-    snprintf(errorMsg,
-             sizeof(errorMsg),
-             "Failed to create root signature. HRESULT: 0x%08X",
-             static_cast<unsigned int>(hr));
+    std::snprintf(errorMsg,
+                  sizeof(errorMsg),
+                  "Failed to create root signature. HRESULT: 0x%08X",
+                  static_cast<unsigned int>(hr));
     return Result(Result::Code::RuntimeError, errorMsg);
   }
 
