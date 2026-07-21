@@ -119,23 +119,23 @@ std::string GPUStressSession::getLightingCalc() const {
   }
   for (int i = 0; i < lightCount_; ++i) {
     char tmp[256];
-    snprintf(tmp,
-             sizeof(tmp),
-             "const vec3 lightColor%d = vec3(%f, %f, %f);\n",
-             i,
-             i % 3 == 0 ? 1.0 : static_cast<float>(customArc4random() % 32) / 32.f,
-             i % 3 == 1 ? 1.0 : static_cast<float>(customArc4random() % 32) / 32.f,
-             i % 3 == 2 ? 1.0 : static_cast<float>(customArc4random() % 32) / 32.f);
+    std::snprintf(tmp,
+                  sizeof(tmp),
+                  "const vec3 lightColor%d = vec3(%f, %f, %f);\n",
+                  i,
+                  i % 3 == 0 ? 1.0 : static_cast<float>(customArc4random() % 32) / 32.f,
+                  i % 3 == 1 ? 1.0 : static_cast<float>(customArc4random() % 32) / 32.f,
+                  i % 3 == 2 ? 1.0 : static_cast<float>(customArc4random() % 32) / 32.f);
     params += tmp;
-    snprintf(tmp,
-             sizeof(tmp),
-             "const vec3 lightPos%d = vec3(%f, %f, %f);\n",
-             i,
-             -1.f + static_cast<float>(customArc4random() % 32) / 16.f,
-             -1.f + static_cast<float>(customArc4random() % 32) / 16.f,
-             -1.f + static_cast<float>(customArc4random() % 32) / 16.f);
+    std::snprintf(tmp,
+                  sizeof(tmp),
+                  "const vec3 lightPos%d = vec3(%f, %f, %f);\n",
+                  i,
+                  -1.f + static_cast<float>(customArc4random() % 32) / 16.f,
+                  -1.f + static_cast<float>(customArc4random() % 32) / 16.f,
+                  -1.f + static_cast<float>(customArc4random() % 32) / 16.f);
     params += tmp;
-    snprintf(
+    std::snprintf(
         tmp,
         sizeof(tmp),
         "lightFactor.xyz += calcLighting(-lightPos%d, lightPos%d, color.xyz, 1.0, lightColor%d);\n",
@@ -1187,21 +1187,21 @@ bool GPUStressSession::getRotateCubes() const {
 std::string GPUStressSession::getCurrentUsageString() const {
   char output[2048];
 
-  snprintf(output,
-           sizeof(output),
-           "cubes: %d, draws: %d, lights: %d, threads: %d,  cpu load: %d, memory reads: %lu , "
-           "memory writes: %lu, "
-           "msaa %s , blending %s, framerate: %.2f,",
-           cubeCount_.load(),
-           drawCount_.load(),
-           lightCount_.load(),
-           threadCount_.load(),
-           goSlowOnCpu_.load(),
-           memoryReads_.load() * (thrashMemory_ ? 1 : 0),
-           memoryWrites_.load() * (thrashMemory_ ? 1 : 0),
-           useMSAA_ ? "on" : "off",
-           enableBlending_ ? "on" : "off ",
-           fps_.getAverageFPS());
+  std::snprintf(output,
+                sizeof(output),
+                "cubes: %d, draws: %d, lights: %d, threads: %d,  cpu load: %d, memory reads: %lu , "
+                "memory writes: %lu, "
+                "msaa %s , blending %s, framerate: %.2f,",
+                cubeCount_.load(),
+                drawCount_.load(),
+                lightCount_.load(),
+                threadCount_.load(),
+                goSlowOnCpu_.load(),
+                memoryReads_.load() * (thrashMemory_ ? 1 : 0),
+                memoryWrites_.load() * (thrashMemory_ ? 1 : 0),
+                useMSAA_ ? "on" : "off",
+                enableBlending_ ? "on" : "off ",
+                fps_.getAverageFPS());
 
   return output;
 }
