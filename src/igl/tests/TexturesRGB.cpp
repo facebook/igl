@@ -13,6 +13,7 @@
 #include "util/Color.h"
 #include "util/Common.h"
 
+#include <cstdlib>
 #include <string>
 #include <igl/CommandBuffer.h>
 #include <igl/NameHandle.h>
@@ -311,10 +312,10 @@ TEST_F(TexturesRGBSmallTest, Passthrough) {
   for (size_t i = 0; i < offscreenTexWidth_ * offscreenTexHeight_; i++) {
     const util::SRgbColor currentColor(pixels[i]);
     const util::SRgbColor testColor(data::texture::kTexRgba2x2[i]);
-    ASSERT_LE(abs(currentColor.r - testColor.r), tolerance_);
-    ASSERT_LE(abs(currentColor.g - testColor.g), tolerance_);
-    ASSERT_LE(abs(currentColor.b - testColor.b), tolerance_);
-    ASSERT_LE(abs(currentColor.a - testColor.a), tolerance_);
+    ASSERT_LE(std::abs(currentColor.r - testColor.r), tolerance_);
+    ASSERT_LE(std::abs(currentColor.g - testColor.g), tolerance_);
+    ASSERT_LE(std::abs(currentColor.b - testColor.b), tolerance_);
+    ASSERT_LE(std::abs(currentColor.a - testColor.a), tolerance_);
   }
 }
 
@@ -395,10 +396,10 @@ TEST_F(TexturesRGBBigTest, Passthrough) {
   for (size_t i = 0; i < offscreenTexWidth_ * offscreenTexHeight_; i++) {
     const util::SRgbColor currentColor(pixels[i]);
     const util::SRgbColor testColor(allColorsBuffer[i]);
-    ASSERT_LE(abs(currentColor.r - testColor.r), tolerance_);
-    ASSERT_LE(abs(currentColor.g - testColor.g), tolerance_);
-    ASSERT_LE(abs(currentColor.b - testColor.b), tolerance_);
-    ASSERT_LE(abs(currentColor.a - testColor.a), tolerance_);
+    ASSERT_LE(std::abs(currentColor.r - testColor.r), tolerance_);
+    ASSERT_LE(std::abs(currentColor.g - testColor.g), tolerance_);
+    ASSERT_LE(std::abs(currentColor.b - testColor.b), tolerance_);
+    ASSERT_LE(std::abs(currentColor.a - testColor.a), tolerance_);
   }
 }
 
