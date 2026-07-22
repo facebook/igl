@@ -28,9 +28,9 @@ class ComputePipelineState final : public IComputePipelineState, public Pipeline
     return nullptr;
   }
 
-  VkPipeline getVkPipeline() const;
+  [[nodiscard]] VkPipeline getVkPipeline() const;
 
-  const ComputePipelineDesc& getComputePipelineDesc() const {
+  [[nodiscard]] const ComputePipelineDesc& getComputePipelineDesc() const {
     return desc_;
   }
 
