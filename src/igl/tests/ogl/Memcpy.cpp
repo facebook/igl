@@ -7,6 +7,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cstring>
 #include <igl/Common.h>
 
 namespace igl::tests {
@@ -51,16 +52,16 @@ TEST_F(MemcpyOGLTest, optimizedMemcpyAlignmentPermutation) {
     const unsigned len = sizeof(dst) - i;
 
     // Always clear the dst buffer before each optimizedMemcpy() call.
-    memcpy(dst, clr, sizeof(dst));
+    std::memcpy(dst, clr, sizeof(dst));
     igl::optimizedMemcpy(dst + di, src + i, len);
 
     // Verify optimizedMemcpy() has done the job correctly.
     // We divide the dst buffer into up to 3 sections,
     // then we copy into the middle section from src buffer,
     // in the end, we check all of them to have the correct content.
-    ASSERT_EQ(0, memcmp(dst, clr, di));
-    ASSERT_EQ(0, memcmp(dst + di, src + i, len));
-    ASSERT_EQ(0, memcmp(dst + di + len, clr + di + len, sizeof(dst) - di - len));
+    ASSERT_EQ(0, std::memcmp(dst, clr, di));
+    ASSERT_EQ(0, std::memcmp(dst + di, src + i, len));
+    ASSERT_EQ(0, std::memcmp(dst + di + len, clr + di + len, sizeof(dst) - di - len));
   }
 }
 
