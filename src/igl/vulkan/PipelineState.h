@@ -29,9 +29,9 @@ class PipelineState {
   PipelineState& operator=(const PipelineState&) = delete;
   PipelineState& operator=(PipelineState&&) = delete;
 
-  VkPipelineLayout getVkPipelineLayout() const;
+  [[nodiscard]] VkPipelineLayout getVkPipelineLayout() const;
 
-  const util::SpvModuleInfo& getSpvModuleInfo() const {
+  [[nodiscard]] const util::SpvModuleInfo& getSpvModuleInfo() const {
     return info;
   }
 
