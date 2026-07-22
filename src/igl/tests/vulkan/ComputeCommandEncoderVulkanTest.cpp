@@ -165,8 +165,12 @@ TEST_F(ComputeCommandEncoderVulkanTest, BindTextureSampledStorageTransitionsToSh
       "  fOut[0] = texture(inputTex, vec2(0.5, 0.5));\n"
       "}\n";
 
-  auto computeStages =
-      ShaderStagesCreator::fromModuleStringInput(*iglDev_, kShader.data(), "main", "", &ret);
+  auto computeStages = ShaderStagesCreator::fromModuleStringInput(
+      *iglDev_,
+      kShader.data(), // NOLINT(bugprone-suspicious-stringview-data-usage)
+      "main",
+      "",
+      &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(computeStages, nullptr);
 

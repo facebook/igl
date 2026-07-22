@@ -92,6 +92,7 @@ struct Vertex {
     IDevice& device,
     const iglu::ShaderCross& shaderCross,
     bool stereoRendering) noexcept {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (device.getBackendType()) {
   case igl::BackendType::Metal:
     IGL_DEBUG_ABORT("Metal is not supported");
