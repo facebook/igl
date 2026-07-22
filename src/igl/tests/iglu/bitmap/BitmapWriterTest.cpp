@@ -11,6 +11,7 @@
 
 #include "../../util/TestDevice.h"
 
+#include <cstring>
 #include <sstream>
 
 namespace {
@@ -80,7 +81,7 @@ TEST_F(BitmapWriterTest, WriteFile) {
   const uint8_t* fileData = reinterpret_cast<const uint8_t*>(s.c_str());
   ASSERT_NE(fileData, nullptr);
   ASSERT_EQ(s.size(), sizeof(kExpectedData));
-  ASSERT_EQ(memcmp(fileData, kExpectedData, sizeof(kExpectedData)), 0);
+  ASSERT_EQ(std::memcmp(fileData, kExpectedData, sizeof(kExpectedData)), 0);
 }
 
 // Only the formats that have a defined RGB byte layout in the writer are
@@ -138,7 +139,7 @@ TEST(BitmapWriterRawTest, WriteBitmapRawBytes) {
   EXPECT_EQ(readU32(34), kImageSize); // imageSizeBytes
 
   // Pixel payload is copied verbatim, unmodified.
-  EXPECT_EQ(memcmp(out + kHeaderSize, pixels, kImageSize), 0);
+  EXPECT_EQ(std::memcmp(out + kHeaderSize, pixels, kImageSize), 0);
 }
 
 } // namespace igl::tests::bitmap_writer
