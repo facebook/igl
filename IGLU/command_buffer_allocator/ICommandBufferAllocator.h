@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <string_view>
 #include <igl/CommandBuffer.h>
 
 namespace iglu::command_buffer_allocator {
@@ -24,7 +25,9 @@ class ICommandBufferAllocator {
     std::shared_ptr<igl::ITexture> presentTexture = nullptr;
     bool waitUntilScheduled = false;
     bool waitUntilCompleted = false;
-    std::string debugName = "<unknown>";
+    // Non-owning; consumed when the command buffer is created. Must reference storage that
+    // outlives the enclosing commandBufferScope() call. Empty means no debug name.
+    std::string_view debugName;
   };
 
   struct CommandBufferScope {
@@ -46,7 +49,7 @@ class ICommandBufferAllocator {
     igl::ICommandBuffer& commandBuffer_;
     bool shouldFinalizeCommandBuffer_ = false;
   };
-  virtual void createCommandBuffer(const std::string& debugName) noexcept = 0;
+  virtual void createCommandBuffer(std::string_view debugName) noexcept = 0;
   [[nodiscard]] virtual CommandBufferScope commandBufferScope() noexcept = 0;
   [[nodiscard]] virtual CommandBufferScope commandBufferScope(
       ICommandBufferAllocator& allocator,
