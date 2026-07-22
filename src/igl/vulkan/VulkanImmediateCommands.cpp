@@ -354,6 +354,11 @@ void VulkanImmediateCommands::signalSemaphore(VkSemaphore semaphore, uint64_t si
   signalSemaphore_.value = signalValue;
 }
 
+// The returned handle may be VK_NULL_HANDLE (std::exchange yields the prior value),
+// but VkSemaphore is a Vulkan non-dispatchable handle typedef that resolves to a
+// non-pointer uint64_t on 32-bit targets, so a _Nullable/IGL_NULLABLE annotation
+// cannot be applied portably. Suppress instead.
+// @fb-only
 VkSemaphore VulkanImmediateCommands::acquireLastSubmitSemaphore() {
   return std::exchange(lastSubmitSemaphore_.semaphore, VK_NULL_HANDLE);
 }
