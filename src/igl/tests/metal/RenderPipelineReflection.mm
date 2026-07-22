@@ -36,8 +36,10 @@ class RenderPipelineReflectionMTLTest : public ::testing::Test {
         *iglDev_,
         std::string(data::shader::kMtlSimpleShader).c_str(),
         {
-            {ShaderStage::Vertex, std::string(data::shader::kSimpleVertFunc)},
-            {ShaderStage::Fragment, std::string(data::shader::kSimpleFragFunc)},
+            {.stage = ShaderStage::Vertex,
+             .entryPoint = std::string(data::shader::kSimpleVertFunc)},
+            {.stage = ShaderStage::Fragment,
+             .entryPoint = std::string(data::shader::kSimpleFragFunc)},
         },
         "",
         &ret);
@@ -202,8 +204,10 @@ class RenderPipelineReflectionMTLArrayTest : public ::testing::Test {
         *iglDev_,
         kArrayShader,
         {
-            {ShaderStage::Vertex, std::string(data::shader::kSimpleVertFunc)},
-            {ShaderStage::Fragment, std::string(data::shader::kSimpleFragFunc)},
+            {.stage = ShaderStage::Vertex,
+             .entryPoint = std::string(data::shader::kSimpleVertFunc)},
+            {.stage = ShaderStage::Fragment,
+             .entryPoint = std::string(data::shader::kSimpleFragFunc)},
         },
         "",
         &ret);

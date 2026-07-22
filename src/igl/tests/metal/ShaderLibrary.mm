@@ -50,8 +50,8 @@ TEST_F(MetalShaderLibraryTest, CreateFromSource) {
   const auto shaderSource = std::string(data::shader::kMtlSimpleShader);
 
   std::vector<ShaderModuleInfo> moduleInfo = {
-      {ShaderStage::Vertex, std::string(data::shader::kSimpleVertFunc)},
-      {ShaderStage::Fragment, std::string(data::shader::kSimpleFragFunc)},
+      {.stage = ShaderStage::Vertex, .entryPoint = std::string(data::shader::kSimpleVertFunc)},
+      {.stage = ShaderStage::Fragment, .entryPoint = std::string(data::shader::kSimpleFragFunc)},
   };
 
   auto libraryDesc =
@@ -80,7 +80,7 @@ TEST_F(MetalShaderLibraryTest, InvalidSourceReturnsError) {
   const char* invalidSource = "this is not valid Metal shader code!!!";
 
   std::vector<ShaderModuleInfo> moduleInfo = {
-      {ShaderStage::Vertex, "nonExistentFunc"},
+      {.stage = ShaderStage::Vertex, .entryPoint = "nonExistentFunc"},
   };
 
   auto libraryDesc =
@@ -102,8 +102,8 @@ TEST_F(MetalShaderLibraryTest, ShaderCompilationCountIncrements) {
   const auto shaderSource = std::string(data::shader::kMtlSimpleShader);
 
   std::vector<ShaderModuleInfo> moduleInfo = {
-      {ShaderStage::Vertex, std::string(data::shader::kSimpleVertFunc)},
-      {ShaderStage::Fragment, std::string(data::shader::kSimpleFragFunc)},
+      {.stage = ShaderStage::Vertex, .entryPoint = std::string(data::shader::kSimpleVertFunc)},
+      {.stage = ShaderStage::Fragment, .entryPoint = std::string(data::shader::kSimpleFragFunc)},
   };
 
   auto libraryDesc =
@@ -151,8 +151,8 @@ TEST(MetalShaderCompilerOptions, FastMathPolicy) {
 TEST_F(MetalShaderLibraryTest, CompilesForEachOptimization) {
   const auto shaderSource = std::string(data::shader::kMtlSimpleShader);
   const std::vector<ShaderModuleInfo> moduleInfo = {
-      {ShaderStage::Vertex, std::string(data::shader::kSimpleVertFunc)},
-      {ShaderStage::Fragment, std::string(data::shader::kSimpleFragFunc)},
+      {.stage = ShaderStage::Vertex, .entryPoint = std::string(data::shader::kSimpleVertFunc)},
+      {.stage = ShaderStage::Fragment, .entryPoint = std::string(data::shader::kSimpleFragFunc)},
   };
 
   for (const ShaderOptimization optimization :
