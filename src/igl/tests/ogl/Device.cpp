@@ -344,7 +344,12 @@ std::shared_ptr<IShaderModule> createShaderModule(const std::shared_ptr<IDevice>
                                                   Result* outResult) {
   Result ret;
   auto vertShader = ShaderModuleCreator::fromStringInput(
-      *device, data::shader::kOglSimpleVertShader.data(), {ShaderStage::Vertex, "main"}, "", &ret);
+      *device,
+      data::shader::kOglSimpleVertShader
+          .data(), // NOLINT(bugprone-suspicious-stringview-data-usage)
+      {.stage = ShaderStage::Vertex, .entryPoint = "main"},
+      "",
+      &ret);
   if (!ret.isOk()) {
     Result::setResult(outResult, ret.code, ret.message);
     return nullptr;
@@ -356,11 +361,14 @@ std::shared_ptr<IShaderModule> createShaderModule(const std::shared_ptr<IDevice>
 
 TEST_F(DeviceOGLTest, CreateShaderModuleUnknownTypeFails) {
   Result ret;
-  auto vertShader = ShaderModuleCreator::fromStringInput(*iglDev_,
-                                                         data::shader::kOglSimpleVertShader.data(),
-                                                         {static_cast<ShaderStage>(99), "main"},
-                                                         "",
-                                                         &ret);
+  auto vertShader = ShaderModuleCreator::fromStringInput(
+      *iglDev_,
+      data::shader::kOglSimpleVertShader
+          .data(), // NOLINT(bugprone-suspicious-stringview-data-usage)
+      // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
+      {.stage = static_cast<ShaderStage>(99), .entryPoint = "main"},
+      "",
+      &ret);
   EXPECT_FALSE(ret.isOk()) << "invalid stage to compile should result in failure";
   EXPECT_TRUE(vertShader == nullptr) << "invalid stage to compile should result in null result";
 }
