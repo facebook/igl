@@ -9,6 +9,7 @@
 
 namespace iglu {
 namespace {
+// NOLINTNEXTLINE(bugprone-exception-escape)
 [[nodiscard]] ManagedUniformBufferInfo getSpirvCrossCompatibleManagedUniformBufferInfo(
     const std::string& uboBlockName,
     ManagedUniformBufferInfo info) noexcept {
