@@ -120,7 +120,7 @@ TEST_F(TextureBufferOGLTest, TextureMipmapGen) {
                                            TextureDesc::TextureUsageBits::Sampled);
 
   const size_t maxDim = std::max<size_t>(texDesc.width, texDesc.height);
-  const int targetlevel = std::floor(log2(maxDim)) + 1;
+  const int targetlevel = std::floor(std::log2(maxDim)) + 1;
 
   texDesc.numMipLevels = targetlevel; // log(16) + 1
   textureBuffer = std::make_unique<igl::opengl::TextureBuffer>(*context_, texDesc.format);
