@@ -2493,6 +2493,15 @@ int VulkanContext::getFenceFdFromSubmitHandle(igl::SubmitHandle handle) const no
     return -1;
   }
 
+  // Although the extension is present at compile time, software/emulated Vulkan
+  // ICDs (e.g. SwiftShader) may not implement VK_KHR_external_fence_fd at
+  // runtime, leaving vkGetFenceFdKHR() null. Return the no-fence sentinel (-1)
+  // rather than dereferencing a null function pointer.
+  if (vf_.vkGetFenceFdKHR == nullptr) {
+    IGL_LOG_ERROR_ONCE("VK_KHR_external_fence_fd not loaded; vkGetFenceFdKHR is null\n");
+    return -1;
+  }
+
   const VkFence vkFence = getVkFenceFromSubmitHandle(handle);
   IGL_DEBUG_ASSERT(vkFence != VK_NULL_HANDLE);
 
