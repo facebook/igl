@@ -3052,6 +3052,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
     IGL_D3D12_LOG_VERBOSE("  Compiling HLSL from string (%zu bytes) using DXC...\n", sourceLength);
 
     // Initialize DXC compiler thread-safely using std::call_once.
+    // @fb-only
     static DXCCompiler dxcCompiler;
     static std::once_flag dxcInitFlag;
     static bool dxcAvailable = false;
