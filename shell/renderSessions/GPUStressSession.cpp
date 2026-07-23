@@ -318,6 +318,7 @@ double calcPi(int numberOfDivisions, int core) {
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 void GPUStressSession::thrashCPU() noexcept {
+  // @fb-only
   static std::vector<std::future<double>> futures;
   static unsigned int threadSpawnId = 0;
   if (goSlowOnCpu_) {
@@ -419,6 +420,7 @@ void GPUStressSession::thrashMemory() noexcept {
                                  static_cast<int>(kCols),
                                  -1));
   } else {
+    // @fb-only
     static std::vector<std::future<float>> futures;
     static int memoryThreadId = 0;
 
@@ -479,6 +481,7 @@ glm::vec3 GPUStressSession::animateCube(int counter,
     glm::vec3 lastPos;
   };
 
+  // @fb-only
   static std::vector<AnimationInfo> animations;
   if (animations.size() < counter) {
     AnimationInfo info;
