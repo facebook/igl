@@ -140,7 +140,7 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
   }
 
   // comparison operator and hash function for std::unordered_map<>
-  bool operator==(const RenderPipelineDynamicState& other) const {
+  [[nodiscard]] bool operator==(const RenderPipelineDynamicState& other) const {
     return *(uint64_t*)this == *(uint64_t*)&other;
   }
 
@@ -177,7 +177,7 @@ class RenderPipelineState final : public IRenderPipelineState, public PipelineSt
    * mutable ones provided in the `dynamicState` parameter. If a pipeline layout change is detected,
    * all cached pipelines are discarded.
    */
-  VkPipeline getVkPipeline(const RenderPipelineDynamicState& dynamicState) const;
+  [[nodiscard]] VkPipeline getVkPipeline(const RenderPipelineDynamicState& dynamicState) const;
 
  private:
   friend class Device;
