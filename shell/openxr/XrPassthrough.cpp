@@ -16,23 +16,30 @@ namespace igl::shell::openxr {
 
 XrPassthrough::XrPassthrough(XrInstance instance, XrSession session) noexcept :
   instance_(instance), session_(session) {
-  XR_CHECK(xrGetInstanceProcAddr(
-      instance_, "xrCreatePassthroughFB", (PFN_xrVoidFunction*)(&xrCreatePassthroughFB_)));
-  XR_CHECK(xrGetInstanceProcAddr(
-      instance_, "xrDestroyPassthroughFB", (PFN_xrVoidFunction*)(&xrDestroyPassthroughFB_)));
-  XR_CHECK(xrGetInstanceProcAddr(
-      instance_, "xrPassthroughStartFB", (PFN_xrVoidFunction*)(&xrPassthroughStartFB_)));
-  XR_CHECK(xrGetInstanceProcAddr(
-      instance_, "xrPassthroughPauseFB", (PFN_xrVoidFunction*)(&xrPassthroughPauseFB_)));
   XR_CHECK(xrGetInstanceProcAddr(instance_,
-                                 "xrCreatePassthroughLayerFB",
-                                 (PFN_xrVoidFunction*)(&xrCreatePassthroughLayerFB_)));
+                                 "xrCreatePassthroughFB",
+                                 reinterpret_cast<PFN_xrVoidFunction*>(&xrCreatePassthroughFB_)));
   XR_CHECK(xrGetInstanceProcAddr(instance_,
-                                 "xrDestroyPassthroughLayerFB",
-                                 (PFN_xrVoidFunction*)(&xrDestroyPassthroughLayerFB_)));
+                                 "xrDestroyPassthroughFB",
+                                 reinterpret_cast<PFN_xrVoidFunction*>(&xrDestroyPassthroughFB_)));
   XR_CHECK(xrGetInstanceProcAddr(instance_,
-                                 "xrPassthroughLayerSetStyleFB",
-                                 (PFN_xrVoidFunction*)(&xrPassthroughLayerSetStyleFB_)));
+                                 "xrPassthroughStartFB",
+                                 reinterpret_cast<PFN_xrVoidFunction*>(&xrPassthroughStartFB_)));
+  XR_CHECK(xrGetInstanceProcAddr(instance_,
+                                 "xrPassthroughPauseFB",
+                                 reinterpret_cast<PFN_xrVoidFunction*>(&xrPassthroughPauseFB_)));
+  XR_CHECK(
+      xrGetInstanceProcAddr(instance_,
+                            "xrCreatePassthroughLayerFB",
+                            reinterpret_cast<PFN_xrVoidFunction*>(&xrCreatePassthroughLayerFB_)));
+  XR_CHECK(
+      xrGetInstanceProcAddr(instance_,
+                            "xrDestroyPassthroughLayerFB",
+                            reinterpret_cast<PFN_xrVoidFunction*>(&xrDestroyPassthroughLayerFB_)));
+  XR_CHECK(
+      xrGetInstanceProcAddr(instance_,
+                            "xrPassthroughLayerSetStyleFB",
+                            reinterpret_cast<PFN_xrVoidFunction*>(&xrPassthroughLayerSetStyleFB_)));
 }
 
 XrPassthrough::~XrPassthrough() noexcept {

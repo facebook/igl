@@ -52,19 +52,22 @@ inline int64_t currentTimeInNs() {
 
 XrHands::XrHands(XrInstance instance, XrSession session, bool handMeshSupported) noexcept :
   instance_(instance), session_(session), handMeshSupported_(handMeshSupported) {
-  XR_CHECK(xrGetInstanceProcAddr(
-      instance_, "xrCreateHandTrackerEXT", (PFN_xrVoidFunction*)(&xrCreateHandTrackerEXT_)));
+  XR_CHECK(xrGetInstanceProcAddr(instance_,
+                                 "xrCreateHandTrackerEXT",
+                                 reinterpret_cast<PFN_xrVoidFunction*>(&xrCreateHandTrackerEXT_)));
   IGL_DEBUG_ASSERT(xrCreateHandTrackerEXT_ != nullptr);
-  XR_CHECK(xrGetInstanceProcAddr(
-      instance_, "xrDestroyHandTrackerEXT", (PFN_xrVoidFunction*)(&xrDestroyHandTrackerEXT_)));
+  XR_CHECK(xrGetInstanceProcAddr(instance_,
+                                 "xrDestroyHandTrackerEXT",
+                                 reinterpret_cast<PFN_xrVoidFunction*>(&xrDestroyHandTrackerEXT_)));
   IGL_DEBUG_ASSERT(xrDestroyHandTrackerEXT_ != nullptr);
-  XR_CHECK(xrGetInstanceProcAddr(
-      instance_, "xrLocateHandJointsEXT", (PFN_xrVoidFunction*)(&xrLocateHandJointsEXT_)));
+  XR_CHECK(xrGetInstanceProcAddr(instance_,
+                                 "xrLocateHandJointsEXT",
+                                 reinterpret_cast<PFN_xrVoidFunction*>(&xrLocateHandJointsEXT_)));
   IGL_DEBUG_ASSERT(xrLocateHandJointsEXT_ != nullptr);
 
   if (handMeshSupported) {
     XR_CHECK(xrGetInstanceProcAddr(
-        instance_, "xrGetHandMeshFB", (PFN_xrVoidFunction*)(&xrGetHandMeshFB_)));
+        instance_, "xrGetHandMeshFB", reinterpret_cast<PFN_xrVoidFunction*>(&xrGetHandMeshFB_)));
     IGL_DEBUG_ASSERT(xrGetHandMeshFB_ != nullptr);
   }
 }

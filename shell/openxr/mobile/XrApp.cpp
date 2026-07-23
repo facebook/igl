@@ -100,10 +100,10 @@ XrSession XrApp::session() const {
 
 bool XrApp::checkExtensions() {
   PFN_xrEnumerateInstanceExtensionProperties xrEnumerateInstanceExtensionProperties = nullptr;
-  const XrResult result =
-      xrGetInstanceProcAddr(XR_NULL_HANDLE,
-                            "xrEnumerateInstanceExtensionProperties",
-                            (PFN_xrVoidFunction*)&xrEnumerateInstanceExtensionProperties);
+  const XrResult result = xrGetInstanceProcAddr(
+      XR_NULL_HANDLE,
+      "xrEnumerateInstanceExtensionProperties",
+      reinterpret_cast<PFN_xrVoidFunction*>(&xrEnumerateInstanceExtensionProperties));
   XR_CHECK(result);
   if (result != XR_SUCCESS) {
     IGL_LOG_ERROR("Failed to get xrEnumerateInstanceExtensionProperties function pointer.\n");
@@ -382,8 +382,9 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
 
 #if IGL_PLATFORM_ANDROID
   PFN_xrInitializeLoaderKHR xrInitializeLoaderKHR = nullptr;
-  XR_CHECK(xrGetInstanceProcAddr(
-      XR_NULL_HANDLE, "xrInitializeLoaderKHR", (PFN_xrVoidFunction*)&xrInitializeLoaderKHR));
+  XR_CHECK(xrGetInstanceProcAddr(XR_NULL_HANDLE,
+                                 "xrInitializeLoaderKHR",
+                                 reinterpret_cast<PFN_xrVoidFunction*>(&xrInitializeLoaderKHR)));
   if (xrInitializeLoaderKHR) {
     XrLoaderInitInfoAndroidKHR loaderInitializeInfoAndroid = {
         XR_TYPE_LOADER_INIT_INFO_ANDROID_KHR,
@@ -392,7 +393,8 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
         app->activity->clazz,
     };
 
-    XR_CHECK(xrInitializeLoaderKHR((XrLoaderInitInfoBaseHeaderKHR*)&loaderInitializeInfoAndroid));
+    XR_CHECK(xrInitializeLoaderKHR(
+        reinterpret_cast<XrLoaderInitInfoBaseHeaderKHR*>(&loaderInitializeInfoAndroid)));
   }
 
   instanceCreateInfoAndroid_.applicationVM = app->activity->vm;
@@ -788,7 +790,7 @@ void XrApp::handleXrEvents() {
 
   // Poll for events
   for (;;) {
-    auto* baseEventHeader = (XrEventDataBaseHeader*)(&eventDataBuffer);
+    auto* baseEventHeader = reinterpret_cast<XrEventDataBaseHeader*>(&eventDataBuffer);
     baseEventHeader->type = XR_TYPE_EVENT_DATA_BUFFER;
     baseEventHeader->next = nullptr;
     const XrResult res = xrPollEvent(instance_, &eventDataBuffer);
@@ -809,7 +811,7 @@ void XrApp::handleXrEvents() {
       break;
     case XR_TYPE_EVENT_DATA_PERF_SETTINGS_EXT: {
       const XrEventDataPerfSettingsEXT* perfSettingsEvent =
-          (XrEventDataPerfSettingsEXT*)(baseEventHeader);
+          reinterpret_cast<const XrEventDataPerfSettingsEXT*>(baseEventHeader);
       (void)perfSettingsEvent; // suppress unused warning
       IGL_LOG_INFO(
           "xrPollEvent: received XR_TYPE_EVENT_DATA_PERF_SETTINGS_EXT event: type %d subdomain %d "
@@ -825,12 +827,12 @@ void XrApp::handleXrEvents() {
       break;
     case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
       const XrEventDataSessionStateChanged* sessionStateChangedEvent =
-          (XrEventDataSessionStateChanged*)(baseEventHeader);
+          reinterpret_cast<const XrEventDataSessionStateChanged*>(baseEventHeader);
       IGL_LOG_INFO(
           "xrPollEvent: received XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: %d for session %p at "
           "time %lld\n",
           sessionStateChangedEvent->state,
-          (void*)sessionStateChangedEvent->session,
+          static_cast<const void*>(sessionStateChangedEvent->session),
           sessionStateChangedEvent->time);
 
       switch (sessionStateChangedEvent->state) {

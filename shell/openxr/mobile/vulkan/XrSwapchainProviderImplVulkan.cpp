@@ -35,8 +35,11 @@ void enumerateSwapchainImages(
 
   std::vector<XrSwapchainImageVulkanKHR> images(
       numImages, {.type = XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR, .next = nullptr});
-  XR_CHECK(xrEnumerateSwapchainImages(
-      swapchain, numImages, &numImages, (XrSwapchainImageBaseHeader*)images.data()));
+  XR_CHECK(
+      xrEnumerateSwapchainImages(swapchain,
+                                 numImages,
+                                 &numImages,
+                                 reinterpret_cast<XrSwapchainImageBaseHeader*>(images.data())));
 
   const auto& actualDevice = static_cast<igl::vulkan::Device&>(device);
   const auto& ctx = actualDevice.getVulkanContext();

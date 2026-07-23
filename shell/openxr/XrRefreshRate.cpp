@@ -16,16 +16,20 @@
 namespace igl::shell::openxr {
 
 XrRefreshRate::XrRefreshRate(XrInstance instance, XrSession session) noexcept : session_(session) {
-  XR_CHECK(xrGetInstanceProcAddr(
-      instance, "xrGetDisplayRefreshRateFB", (PFN_xrVoidFunction*)(&xrGetDisplayRefreshRateFB_)));
+  XR_CHECK(
+      xrGetInstanceProcAddr(instance,
+                            "xrGetDisplayRefreshRateFB",
+                            reinterpret_cast<PFN_xrVoidFunction*>(&xrGetDisplayRefreshRateFB_)));
   IGL_DEBUG_ASSERT(xrGetDisplayRefreshRateFB_ != nullptr);
-  XR_CHECK(xrGetInstanceProcAddr(instance,
-                                 "xrEnumerateDisplayRefreshRatesFB",
-                                 (PFN_xrVoidFunction*)(&xrEnumerateDisplayRefreshRatesFB_)));
+  XR_CHECK(xrGetInstanceProcAddr(
+      instance,
+      "xrEnumerateDisplayRefreshRatesFB",
+      reinterpret_cast<PFN_xrVoidFunction*>(&xrEnumerateDisplayRefreshRatesFB_)));
   IGL_DEBUG_ASSERT(xrEnumerateDisplayRefreshRatesFB_ != nullptr);
-  XR_CHECK(xrGetInstanceProcAddr(instance,
-                                 "xrRequestDisplayRefreshRateFB",
-                                 (PFN_xrVoidFunction*)(&xrRequestDisplayRefreshRateFB_)));
+  XR_CHECK(xrGetInstanceProcAddr(
+      instance,
+      "xrRequestDisplayRefreshRateFB",
+      reinterpret_cast<PFN_xrVoidFunction*>(&xrRequestDisplayRefreshRateFB_)));
   IGL_DEBUG_ASSERT(xrRequestDisplayRefreshRateFB_ != nullptr);
 }
 

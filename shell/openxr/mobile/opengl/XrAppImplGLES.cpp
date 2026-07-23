@@ -52,17 +52,19 @@ std::unique_ptr<IDevice> XrAppImplGLES::initIGL(XrInstance instance, XrSystemId 
   // if this function has not been called for the instance and systemId before xrCreateSession.
 #if IGL_WGL
   PFN_xrGetOpenGLGraphicsRequirementsKHR pfnGetOpenGLGraphicsRequirementsKHR = nullptr;
-  XR_CHECK(xrGetInstanceProcAddr(instance,
-                                 "xrGetOpenGLGraphicsRequirementsKHR",
-                                 (PFN_xrVoidFunction*)(&pfnGetOpenGLGraphicsRequirementsKHR)));
+  XR_CHECK(xrGetInstanceProcAddr(
+      instance,
+      "xrGetOpenGLGraphicsRequirementsKHR",
+      reinterpret_cast<PFN_xrVoidFunction*>(&pfnGetOpenGLGraphicsRequirementsKHR)));
   XR_CHECK(pfnGetOpenGLGraphicsRequirementsKHR(instance, systemId, &graphicsRequirements_));
 
   auto hwDevice = opengl::wgl::HWDevice();
 #else
   PFN_xrGetOpenGLESGraphicsRequirementsKHR pfnGetOpenGLESGraphicsRequirementsKHR = nullptr;
-  XR_CHECK(xrGetInstanceProcAddr(instance,
-                                 "xrGetOpenGLESGraphicsRequirementsKHR",
-                                 (PFN_xrVoidFunction*)(&pfnGetOpenGLESGraphicsRequirementsKHR)));
+  XR_CHECK(xrGetInstanceProcAddr(
+      instance,
+      "xrGetOpenGLESGraphicsRequirementsKHR",
+      reinterpret_cast<PFN_xrVoidFunction*>(&pfnGetOpenGLESGraphicsRequirementsKHR)));
   XR_CHECK(pfnGetOpenGLESGraphicsRequirementsKHR(instance, systemId, &graphicsRequirements_));
 
   auto hwDevice = opengl::egl::HWDevice();

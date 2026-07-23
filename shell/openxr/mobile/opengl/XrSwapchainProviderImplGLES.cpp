@@ -38,8 +38,11 @@ void enumerateSwapchainImages(XrSwapchain swapchain, std::vector<uint32_t>& outI
           .next = nullptr,
       });
 #endif // IGL_WGL
-  XR_CHECK(xrEnumerateSwapchainImages(
-      swapchain, numImages, &numImages, (XrSwapchainImageBaseHeader*)xrImages.data()));
+  XR_CHECK(
+      xrEnumerateSwapchainImages(swapchain,
+                                 numImages,
+                                 &numImages,
+                                 reinterpret_cast<XrSwapchainImageBaseHeader*>(xrImages.data())));
 
   outImages.resize(0);
   std::transform(xrImages.cbegin(),
