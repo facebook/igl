@@ -185,15 +185,17 @@ void TinyRenderable::initialize(igl::IDevice& device, const igl::IFramebuffer& f
       {.position = {0.9f, -0.9f, 0.0}, .uv = {kMax, 0.0}},
   };
 
-  const igl::BufferDesc vbDesc =
-      igl::BufferDesc{igl::BufferDesc::BufferTypeBits::Vertex, kVertexData, sizeof(kVertexData)};
+  const igl::BufferDesc vbDesc = igl::BufferDesc{.type = igl::BufferDesc::BufferTypeBits::Vertex,
+                                                 .data = kVertexData,
+                                                 .length = sizeof(kVertexData)};
   vertexBuffer_ = device.createBuffer(vbDesc, &result);
   IGL_DEBUG_ASSERT(result.isOk(), "create buffer failed: %s\n", result.message.c_str());
 
   // Index buffer
   const uint16_t kIndexData[] = {0, 1, 2, 1, 3, 2};
-  auto ibDesc =
-      igl::BufferDesc{igl::BufferDesc::BufferTypeBits::Index, kIndexData, sizeof(kIndexData)};
+  auto ibDesc = igl::BufferDesc{.type = igl::BufferDesc::BufferTypeBits::Index,
+                                .data = kIndexData,
+                                .length = sizeof(kIndexData)};
   indexBuffer_ = device.createBuffer(ibDesc, &result);
   IGL_DEBUG_ASSERT(result.isOk(), "create buffer failed: %s\n", result.message.c_str());
 
