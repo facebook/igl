@@ -71,21 +71,21 @@ class CommandBuffer final : public ICommandBuffer,
   /// @brief Not implemented
   void waitUntilScheduled() override;
 
-  VkCommandBuffer getVkCommandBuffer() const {
+  [[nodiscard]] VkCommandBuffer getVkCommandBuffer() const {
     return wrapper_.cmdBuf;
   }
 
-  VulkanImmediateCommands::SubmitHandle getNextSubmitHandle() const {
+  [[nodiscard]] VulkanImmediateCommands::SubmitHandle getNextSubmitHandle() const {
     return wrapper_.handle;
   }
 
-  bool isFromSwapchain() const {
+  [[nodiscard]] bool isFromSwapchain() const {
     return isFromSwapchain_;
   }
 
-  const std::shared_ptr<IFramebuffer>& getFramebuffer() const;
+  [[nodiscard]] const std::shared_ptr<IFramebuffer>& getFramebuffer() const;
 
-  const std::shared_ptr<ITexture>& getPresentedSurface() const;
+  [[nodiscard]] const std::shared_ptr<ITexture>& getPresentedSurface() const;
 
  private:
   friend class CommandQueue;
