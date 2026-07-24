@@ -145,10 +145,10 @@ struct Vertex {
                                                    float farZ) noexcept {
   glm::mat4 mat;
 
-  const float tanLeft = tanf(fov.angleLeft);
-  const float tanRight = tanf(fov.angleRight);
-  const float tanDown = tanf(fov.angleDown);
-  const float tanUp = tanf(fov.angleUp);
+  const float tanLeft = std::tan(fov.angleLeft);
+  const float tanRight = std::tan(fov.angleRight);
+  const float tanDown = std::tan(fov.angleDown);
+  const float tanUp = std::tan(fov.angleUp);
 
   const float tanWidth = tanRight - tanLeft;
   const float tanHeight = tanUp - tanDown;
