@@ -9,7 +9,10 @@
 
 #include "Material.h"
 
+#include <type_traits>
 #include <utility>
+
+static_assert(std::is_trivially_copyable_v<iglu::material::BlendMode>);
 
 namespace iglu::material {
 
