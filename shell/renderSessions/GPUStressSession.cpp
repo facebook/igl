@@ -31,7 +31,7 @@
 
 namespace {
 uint32_t customArc4random() {
-  // @fb-only
+  // NOLINTNEXTLINE(cert-msc50-cpp)
   return static_cast<uint32_t>(rand()) * (0xffffffff / RAND_MAX);
 }
 } // namespace
@@ -208,7 +208,6 @@ layout(push_constant) uniform PushConstants {
 std::unique_ptr<IShaderStages> GPUStressSession::getShaderStagesForBackend(
     IDevice& device) const noexcept {
   const bool multiView = device.hasFeature(DeviceFeatures::Multiview);
-  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (device.getBackendType()) {
   // @fb-only
     // @fb-only
@@ -371,8 +370,7 @@ float GPUStressSession::doReadWrite(std::vector<std::vector<std::vector<float>>>
     const int block = randBlocks(gen);
     const int row = randRows(gen);
     const int col = randCols(gen);
-    memBlock[block].at(row)[col] =
-        // @fb-only
+    memBlock[block].at(row)[col] = customArc4random();
   }
 
   for (int i = 0; i < memoryReads_; i++) {
