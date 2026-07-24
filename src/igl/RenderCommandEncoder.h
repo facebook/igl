@@ -109,6 +109,7 @@ class IRenderCommandEncoder : public ICommandEncoder {
 
   virtual void setStencilReferenceValue(uint32_t value) = 0;
   virtual void setBlendColor(const Color& color) = 0;
+  virtual void setCullMode(CullMode cullMode) = 0;
   virtual void setDepthBias(float depthBias, float slopeScale, float clamp) = 0;
 };
 
