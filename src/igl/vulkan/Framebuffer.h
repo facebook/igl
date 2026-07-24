@@ -84,29 +84,31 @@ class Framebuffer final : public IFramebuffer {
    * looks for an existing framebuffer and returns it, if it exists. Otherwise, it creates a new
    * framebuffer and stores it in the cache.
    */
-  VkFramebuffer getVkFramebuffer(uint32_t mipLevel, uint32_t layer, VkRenderPass pass) const;
+  [[nodiscard]] VkFramebuffer getVkFramebuffer(uint32_t mipLevel,
+                                               uint32_t layer,
+                                               VkRenderPass pass) const;
 
-  uint32_t getWidth() const {
+  [[nodiscard]] uint32_t getWidth() const {
     return width_;
   }
-  uint32_t getHeight() const {
+  [[nodiscard]] uint32_t getHeight() const {
     return height_;
   }
 
-  IGL_INLINE const FramebufferDesc& getDesc() const {
+  [[nodiscard]] IGL_INLINE const FramebufferDesc& getDesc() const {
     return desc_;
   }
 
-  VkRenderPassBeginInfo getRenderPassBeginInfo(VkRenderPass renderPass,
-                                               uint32_t mipLevel,
-                                               uint32_t layer,
-                                               uint32_t numClearValues,
-                                               const VkClearValue* clearValues) const;
+  [[nodiscard]] VkRenderPassBeginInfo getRenderPassBeginInfo(VkRenderPass renderPass,
+                                                             uint32_t mipLevel,
+                                                             uint32_t layer,
+                                                             uint32_t numClearValues,
+                                                             const VkClearValue* clearValues) const;
 
   /// @brief Structure used as key for unordered map based on all framebuffer attachments
   struct Attachments {
     std::vector<VkImageView> attachments;
-    bool operator==(const Attachments& other) const {
+    [[nodiscard]] bool operator==(const Attachments& other) const {
       return attachments == other.attachments;
     }
   };
