@@ -18,6 +18,9 @@ static_assert(std::is_trivially_copyable_v<igl::shell::RenderTimeStats>);
 
 namespace igl::shell {
 
+static_assert(std::is_trivially_copyable_v<RenderTimeOverflowRecord>);
+static_assert(std::is_trivially_copyable_v<RenderTimeStats>);
+
 BenchmarkTracker::BenchmarkTracker(size_t bufferSize) : bufferCapacity_(bufferSize) {
   circularBuffer_.resize(bufferCapacity_, 0.0);
   reset();
