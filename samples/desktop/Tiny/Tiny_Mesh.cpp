@@ -569,9 +569,9 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
   // rotate cubes around random axes
   for (uint32_t i = 0; i != kNumCubes; i++) {
     const float direction = powf(-1, static_cast<float>(i + 1));
-    const uint32_t cubesInLine = static_cast<uint32_t>(sqrt(kNumCubes));
-    const vec3 offset = vec3(-1.5f * sqrt(kNumCubes) + 4.0f * (i % cubesInLine),
-                             -1.5f * sqrt(kNumCubes) + 4.0f * (i / cubesInLine),
+    const uint32_t cubesInLine = static_cast<uint32_t>(std::sqrt(kNumCubes));
+    const vec3 offset = vec3(-1.5f * std::sqrt(kNumCubes) + 4.0f * (i % cubesInLine),
+                             -1.5f * std::sqrt(kNumCubes) + 4.0f * (i / cubesInLine),
                              0);
     perObject[i].model = glm::rotate(glm::translate(mat4(1.0f), offset),
                                      direction * static_cast<float>(glfwGetTime()),
