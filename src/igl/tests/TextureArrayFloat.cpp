@@ -23,7 +23,9 @@
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 #include <array>
 #include <cstring>
+#include <glm/common.hpp>
 #include <glm/gtc/color_space.hpp>
+#include <glm/vector_relational.hpp>
 #include <string>
 #include <igl/NameHandle.h>
 

@@ -14,6 +14,8 @@
 
 #include <array>
 #include <cstdint>
+#include <glm/common.hpp>
+#include <glm/vector_relational.hpp>
 #include <memory>
 #include <igl/Buffer.h>
 #include <igl/CommandBuffer.h>

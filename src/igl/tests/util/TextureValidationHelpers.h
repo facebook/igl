@@ -9,7 +9,10 @@
 
 #include <gtest/gtest.h>
 
-#include <glm/glm.hpp>
+#include <glm/detail/qualifier.hpp>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 #include <igl/CommandBuffer.h>
 #include <igl/Common.h>
 #include <igl/Device.h>
