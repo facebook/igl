@@ -13,6 +13,7 @@
 #include "util/Common.h"
 
 #include <array>
+#include <cstring>
 #include <memory>
 #include <vector>
 #include <igl/Buffer.h>
@@ -173,7 +174,7 @@ TEST_F(ComputeCommandEncoderTest, canEncodeBasicBufferOperation) {
   auto* data = bufferOut0_->map(range, &ret);
   ASSERT_TRUE(data != nullptr);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
-  memcpy(bytes.data(), data, sizeof(float) * kDataIn.size());
+  std::memcpy(bytes.data(), data, sizeof(float) * kDataIn.size());
   ASSERT_EQ(kDataIn.size() > 0, true);
   for (int i = 0; i < kDataIn.size(); i++) {
     ASSERT_EQ(kDataIn[i] * 2.0f, bytes[i]);
@@ -241,7 +242,7 @@ TEST_F(ComputeCommandEncoderTest, canUseOutputBufferFromOnePassAsInputToNext) {
   auto* data = bufferOut2_->map(range, &ret);
   ASSERT_TRUE(data != nullptr);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
-  memcpy(bytes.data(), data, sizeof(float) * kDataIn.size());
+  std::memcpy(bytes.data(), data, sizeof(float) * kDataIn.size());
   ASSERT_EQ(kDataIn.size() > 0, true);
   for (int i = 0; i < kDataIn.size(); i++) {
     // Compute pass ran 3 times
