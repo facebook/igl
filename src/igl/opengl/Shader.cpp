@@ -268,7 +268,7 @@ Result ShaderModule::create(const ShaderModuleDesc& desc) {
   if (!std::filesystem::exists(filename)) {
     std::ofstream glslFile;
     glslFile.open(filename, std::ios::out);
-    glslFile.write(src, (strlen(src)));
+    glslFile.write(src, (std::strlen(src)));
     glslFile.close();
     IGL_LOG_INFO("Shader dumped to file %s", filename.c_str());
   }

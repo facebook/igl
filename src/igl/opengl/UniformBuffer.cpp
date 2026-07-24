@@ -68,7 +68,7 @@ void UniformBuffer::initialize(const BufferDesc& desc, Result* outResult) {
   }
 
   uniformData_.resize(desc.length);
-  memcpy(uniformData_.data(), desc.data, desc.length);
+  std::memcpy(uniformData_.data(), desc.data, desc.length);
 
   Result::setOk(outResult);
 }
@@ -302,10 +302,10 @@ void UniformBuffer::bindUniformArray(IContext& context,
       for (size_t i = 0; i < numElements; i++) {
         for (size_t j = 0; j < primitivesPerElement; j++) {
           const size_t bytesToCopy = primitivesPerElement * sizeof(GLfloat);
-          memcpy(&packedFloatArray[i * primitivesPerElement * primitivesPerElement +
-                                   j * primitivesPerElement],
-                 start,
-                 bytesToCopy);
+          std::memcpy(&packedFloatArray[i * primitivesPerElement * primitivesPerElement +
+                                        j * primitivesPerElement],
+                      start,
+                      bytesToCopy);
           start += (stride / primitivesPerElement);
         }
       }
