@@ -816,6 +816,10 @@ void RenderCommandEncoder::setBlendColor(const Color& color) {
   ctx_.vf_.vkCmdSetBlendConstants(cmdBuffer_, color.toFloatPtr());
 }
 
+void RenderCommandEncoder::setCullMode(CullMode /*cullMode*/) {
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+}
+
 void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float clamp) {
   IGL_PROFILER_FUNCTION();
 

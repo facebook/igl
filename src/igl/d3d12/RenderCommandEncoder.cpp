@@ -1303,6 +1303,10 @@ void RenderCommandEncoder::setBlendColor(const Color& color) {
                         color.a);
 }
 
+void RenderCommandEncoder::setCullMode(CullMode /*cullMode*/) {
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+}
+
 void RenderCommandEncoder::setDepthBias(float /*depthBias*/,
                                         float /*slopeScale*/,
                                         float /*clamp*/) {

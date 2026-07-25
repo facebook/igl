@@ -604,6 +604,10 @@ void RenderCommandEncoder::setBlendColor(const Color& color) {
   }
 }
 
+void RenderCommandEncoder::setCullMode(CullMode /*cullMode*/) {
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+}
+
 void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float clamp) {
   if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->setDepthBias(depthBias, slopeScale, clamp);
