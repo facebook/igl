@@ -519,11 +519,11 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
   // rotate cubes around random axes
   for (uint32_t i = 0; i != kNumCubes; i++) {
     const float direction = std::pow(-1, static_cast<float>(i + 1));
-    const uint32_t cubesInLine = static_cast<uint32_t>(sqrt(kNumCubes));
-    const glm::vec3 offset =
-        glm::vec3(-1.5f * sqrt(kNumCubes) + 4.0f * static_cast<float>(i % cubesInLine),
-                  -1.5f * sqrt(kNumCubes) + 4.0f * std::floor(static_cast<float>(i) / cubesInLine),
-                  0);
+    const uint32_t cubesInLine = static_cast<uint32_t>(std::sqrt(kNumCubes));
+    const glm::vec3 offset = glm::vec3(
+        -1.5f * std::sqrt(kNumCubes) + 4.0f * static_cast<float>(i % cubesInLine),
+        -1.5f * std::sqrt(kNumCubes) + 4.0f * std::floor(static_cast<float>(i) / cubesInLine),
+        0);
     perObject[i].model = glm::rotate(glm::translate(glm::mat4(1.0f), offset),
                                      static_cast<float>(direction * currentTime_),
                                      axis[i]);
