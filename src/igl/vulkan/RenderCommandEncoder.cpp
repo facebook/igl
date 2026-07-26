@@ -827,6 +827,10 @@ void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float
   ctx_.vf_.vkCmdSetDepthBias(cmdBuffer_, depthBias, clamp, slopeScale);
 }
 
+void RenderCommandEncoder::setFrontFacingWinding(WindingMode /*frontFaceWinding*/) {
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+}
+
 bool RenderCommandEncoder::setDrawCallCountEnabled(bool value) {
   IGL_PROFILER_FUNCTION();
 

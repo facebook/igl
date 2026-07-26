@@ -1315,6 +1315,10 @@ void RenderCommandEncoder::setDepthBias(float /*depthBias*/,
   // This would require rebuilding the PSO with different depth bias values
 }
 
+void RenderCommandEncoder::setFrontFacingWinding(WindingMode /*frontFaceWinding*/) {
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+}
+
 void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const Color& /*color*/) const {
   if (!commandBuffer_.isRecording() || !commandList_ || !label) {
     return;

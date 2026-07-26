@@ -111,6 +111,7 @@ class IRenderCommandEncoder : public ICommandEncoder {
   virtual void setBlendColor(const Color& color) = 0;
   virtual void setCullMode(CullMode cullMode) = 0;
   virtual void setDepthBias(float depthBias, float slopeScale, float clamp) = 0;
+  virtual void setFrontFacingWinding(WindingMode frontFaceWinding) = 0;
 };
 
 } // namespace igl

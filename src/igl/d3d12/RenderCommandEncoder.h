@@ -95,6 +95,7 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   void setBlendColor(const Color& color) override;
   void setCullMode(CullMode cullMode) override;
   void setDepthBias(float depthBias, float slopeScale, float clamp) override;
+  void setFrontFacingWinding(WindingMode frontFaceWinding) override;
 
   // ICommandEncoder interface
   void pushDebugGroupLabel(const char* label, const Color& color) const override;
