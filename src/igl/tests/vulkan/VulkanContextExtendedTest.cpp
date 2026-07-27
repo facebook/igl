@@ -9,6 +9,7 @@
 
 #include "../util/TestDevice.h"
 
+#include <cstdint>
 #include <future>
 #include <igl/CommandBuffer.h>
 #include <igl/vulkan/Device.h>
@@ -145,6 +146,103 @@ TEST_F(VulkanContextExtendedTest, FindRenderPassCached) {
 TEST_F(VulkanContextExtendedTest, ConfigDefaults) {
   const auto& ctx = getVulkanContext();
   EXPECT_GT(ctx.config_.maxResourceCount, 0u);
+}
+
+// Invariant: syncAcquireNext() advances the ring-buffer index by exactly one step modulo
+// maxResourceCount, so the index never leaves [0, maxResourceCount) and returns to its starting
+// value after exactly maxResourceCount acquisitions. A wrong modulus or a missing wrap would
+// desynchronize per-frame resource reuse.
+TEST_F(VulkanContextExtendedTest, SyncAcquireNextWrapsAroundModuloMaxResourceCount) {
+  auto& ctx = getVulkanContext();
+
+  const uint32_t maxResourceCount = ctx.config_.maxResourceCount;
+  ASSERT_GT(maxResourceCount, 0u);
+
+  const uint32_t startIndex = ctx.currentSyncIndex();
+  ASSERT_LT(startIndex, maxResourceCount);
+
+  for (uint32_t step = 1; step <= maxResourceCount; ++step) {
+    ctx.syncAcquireNext();
+    EXPECT_EQ(ctx.currentSyncIndex(), (startIndex + step) % maxResourceCount);
+  }
+
+  // A full lap of maxResourceCount acquisitions returns the index to where it started.
+  EXPECT_EQ(ctx.currentSyncIndex(), startIndex);
+}
+
+// Invariant: two getOrCreateVkDescriptorSetLayout() calls with byte-identical bindings resolve to
+// the SAME cached VkDescriptorSetLayout handle (cache hit via DescriptorSetLayoutCacheKey equality)
+// instead of allocating a redundant second layout.
+TEST_F(VulkanContextExtendedTest, GetOrCreateVkDescriptorSetLayoutDedupesIdenticalBindings) {
+  auto& ctx = getVulkanContext();
+
+  const VkDescriptorSetLayoutBinding binding{
+      .binding = 0,
+      .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+      .descriptorCount = 1,
+      .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+  };
+
+  const VkDescriptorSetLayout first = ctx.getOrCreateVkDescriptorSetLayout(
+      /*flags=*/0, /*numBindings=*/1, &binding, /*bindingFlags=*/nullptr);
+  const VkDescriptorSetLayout second = ctx.getOrCreateVkDescriptorSetLayout(
+      /*flags=*/0, /*numBindings=*/1, &binding, /*bindingFlags=*/nullptr);
+
+  EXPECT_NE(first, VK_NULL_HANDLE);
+  EXPECT_EQ(first, second);
+}
+
+// Invariant: getOrCreateVkDescriptorSetLayout() must treat layouts that differ in ANY single
+// binding field (binding index, descriptor type, descriptor count, or stage flags) as distinct,
+// returning a different handle for each. If the cache-key equality dropped a field from its
+// comparison, a mismatching layout would wrongly alias the baseline handle.
+TEST_F(VulkanContextExtendedTest, GetOrCreateVkDescriptorSetLayoutDistinguishesDifferingBindings) {
+  auto& ctx = getVulkanContext();
+
+  const VkDescriptorSetLayoutBinding base{
+      .binding = 0,
+      .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+      .descriptorCount = 1,
+      .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+  };
+  const VkDescriptorSetLayout baseHandle = ctx.getOrCreateVkDescriptorSetLayout(
+      /*flags=*/0, /*numBindings=*/1, &base, /*bindingFlags=*/nullptr);
+  ASSERT_NE(baseHandle, VK_NULL_HANDLE);
+
+  // Each variant differs from `base` in exactly one field.
+  VkDescriptorSetLayoutBinding differentBindingIndex = base;
+  differentBindingIndex.binding = 1;
+  VkDescriptorSetLayoutBinding differentType = base;
+  differentType.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+  VkDescriptorSetLayoutBinding differentCount = base;
+  differentCount.descriptorCount = 2;
+  VkDescriptorSetLayoutBinding differentStage = base;
+  differentStage.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+  EXPECT_NE(ctx.getOrCreateVkDescriptorSetLayout(
+                /*flags=*/0, /*numBindings=*/1, &differentBindingIndex, /*bindingFlags=*/nullptr),
+            baseHandle);
+  EXPECT_NE(ctx.getOrCreateVkDescriptorSetLayout(
+                /*flags=*/0, /*numBindings=*/1, &differentType, /*bindingFlags=*/nullptr),
+            baseHandle);
+  EXPECT_NE(ctx.getOrCreateVkDescriptorSetLayout(
+                /*flags=*/0, /*numBindings=*/1, &differentCount, /*bindingFlags=*/nullptr),
+            baseHandle);
+  EXPECT_NE(ctx.getOrCreateVkDescriptorSetLayout(
+                /*flags=*/0, /*numBindings=*/1, &differentStage, /*bindingFlags=*/nullptr),
+            baseHandle);
+}
+
+// Invariant: getClosestDepthStencilFormat() walks the per-format compatibility list from closest to
+// least-close and returns the FIRST device-supported entry. VK_FORMAT_D16_UNORM and
+// VK_FORMAT_D32_SFLOAT are guaranteed by the Vulkan spec to support depth/stencil attachment, so
+// they are always the highest-priority supported candidate for their requested formats.
+TEST_F(VulkanContextExtendedTest,
+       GetClosestDepthStencilFormatPrefersHighestPrioritySupportedFormat) {
+  auto& ctx = getVulkanContext();
+
+  EXPECT_EQ(ctx.getClosestDepthStencilFormat(TextureFormat::Z_UNorm16), VK_FORMAT_D16_UNORM);
+  EXPECT_EQ(ctx.getClosestDepthStencilFormat(TextureFormat::Z_UNorm32), VK_FORMAT_D32_SFLOAT);
 }
 
 } // namespace igl::tests
