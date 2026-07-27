@@ -811,7 +811,7 @@ void XrApp::handleXrEvents() {
       IGL_LOG_INFO("xrPollEvent: received XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED event\n");
       break;
     case XR_TYPE_EVENT_DATA_PERF_SETTINGS_EXT: {
-      const XrEventDataPerfSettingsEXT* perfSettingsEvent =
+      const auto* perfSettingsEvent =
           reinterpret_cast<const XrEventDataPerfSettingsEXT*>(baseEventHeader);
       (void)perfSettingsEvent; // suppress unused warning
       IGL_LOG_INFO(
@@ -827,7 +827,7 @@ void XrApp::handleXrEvents() {
           "xrPollEvent: received XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING event\n");
       break;
     case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
-      const XrEventDataSessionStateChanged* sessionStateChangedEvent =
+      const auto* sessionStateChangedEvent =
           reinterpret_cast<const XrEventDataSessionStateChanged*>(baseEventHeader);
       IGL_LOG_INFO(
           "xrPollEvent: received XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: %d for session %p at "
