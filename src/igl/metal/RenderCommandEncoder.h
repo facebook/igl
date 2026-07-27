@@ -98,7 +98,6 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
                   const std::shared_ptr<IFramebuffer>& framebuffer,
                   Result* outResult);
 
-  void bindCullMode(const CullMode& cullMode);
   void bindFrontFacingWinding(const WindingMode& frontFaceWinding);
   void bindPolygonFillMode(const PolygonFillMode& polygonFillMode);
 
