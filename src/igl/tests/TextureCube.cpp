@@ -15,7 +15,7 @@
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 #include <array>
 #include <cstring>
-#include <glm/glm.hpp>
+#include <glm/ext/vector_float4.hpp>
 #include <string>
 #include <igl/NameHandle.h>
 
