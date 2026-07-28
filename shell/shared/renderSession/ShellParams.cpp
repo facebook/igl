@@ -126,7 +126,7 @@ void parseShellParams(const std::vector<std::string>& args, ShellParams& shellPa
     } else if (arg == "--viewport-size" && tryConsumeNext(args, i)) {
       unsigned int w = 0;
       unsigned int h = 0;
-      if (sscanf(args[i].c_str(), "%ux%u", &w, &h) == 2 && w && h) {
+      if (std::sscanf(args[i].c_str(), "%ux%u", &w, &h) == 2 && w && h) {
         shellParams.viewportSize = glm::vec2(w, h);
       }
     } else if (arg == "--fps-throttle" && tryConsumeNext(args, i)) {
