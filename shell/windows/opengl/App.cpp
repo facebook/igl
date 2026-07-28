@@ -106,8 +106,8 @@ void OpenGlShell::didCreateWindow() noexcept {
 
   glfwSwapInterval(1);
 
-  IGL_LOG_INFO("Renderer: %s\n", (const char*)glGetString(GL_RENDERER));
-  IGL_LOG_INFO("Version: %s\n", (const char*)glGetString(GL_VERSION));
+  IGL_LOG_INFO("Renderer: %s\n", reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
+  IGL_LOG_INFO("Version: %s\n", reinterpret_cast<const char*>(glGetString(GL_VERSION)));
   IGL_LOG_INFO("WindowAttrib: 0x%x\n", result);
 }
 
@@ -122,8 +122,8 @@ std::shared_ptr<Platform> OpenGlShell::createPlatform() noexcept {
   auto context = std::make_unique<igl::opengl::glx::Context>(
       nullptr,
       glfwGetX11Display(),
-      (igl::opengl::glx::GLXDrawable)glfwGetX11Window(window()),
-      (igl::opengl::glx::GLXContext)glfwGetGLXContext(window()));
+      static_cast<igl::opengl::glx::GLXDrawable>(glfwGetX11Window(window())),
+      reinterpret_cast<igl::opengl::glx::GLXContext>(glfwGetGLXContext(window())));
 
   auto glDevice = std::make_unique<igl::opengl::glx::Device>(std::move(context));
 

@@ -66,8 +66,8 @@ void OpenGlEsShell::didCreateWindow() noexcept {
   glfwMakeContextCurrent(window());
   glfwSwapInterval(1);
 
-  IGL_LOG_INFO("Renderer: %s\n", (const char*)glGetString(GL_RENDERER));
-  IGL_LOG_INFO("Version: %s\n", (const char*)glGetString(GL_VERSION));
+  IGL_LOG_INFO("Renderer: %s\n", reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
+  IGL_LOG_INFO("Version: %s\n", reinterpret_cast<const char*>(glGetString(GL_VERSION)));
   IGL_LOG_INFO("WindowAttrib: 0x%x\n", result);
 }
 
