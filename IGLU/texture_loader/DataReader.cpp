@@ -7,6 +7,10 @@
 
 #include <IGLU/texture_loader/DataReader.h>
 
+#include <type_traits>
+
+static_assert(std::is_trivially_copyable_v<iglu::textureloader::DataReader>);
+
 namespace iglu::textureloader {
 
 std::optional<DataReader> DataReader::tryCreate(const uint8_t* FOLLY_NONNULL data,
