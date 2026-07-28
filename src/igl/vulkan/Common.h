@@ -172,6 +172,8 @@ struct VulkanSampler final {
   uint32_t samplerId = 0;
 };
 
+static_assert(std::is_trivially_copyable_v<VulkanSampler>);
+
 // The functions below are convenience functions used to convert to and from Vulkan values to IGL
 // values
 

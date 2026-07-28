@@ -88,6 +88,7 @@ class VulkanImmediateCommands final {
 
   /// Ensures that the `SubmitHandle` structure size is not larger than a `uint64_t`
   static_assert(sizeof(SubmitHandle) == sizeof(uint64_t));
+  static_assert(std::is_trivially_copyable_v<SubmitHandle>);
 
   /// @brief The CommandBufferWrapper structure encapsulates all the information needed to manage
   /// the synchronization of a command buffer along with a command buffer
