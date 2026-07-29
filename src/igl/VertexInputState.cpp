@@ -7,7 +7,11 @@
 
 #include <igl/VertexInputState.h>
 
+#include <type_traits>
+
 using namespace igl;
+
+static_assert(std::is_trivially_copyable_v<VertexInputBinding>);
 
 size_t VertexInputStateDesc::sizeForVertexAttributeFormat(VertexAttributeFormat format) {
   switch (format) {

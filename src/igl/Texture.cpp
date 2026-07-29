@@ -9,6 +9,7 @@
 
 #include <cstddef>
 #include <limits>
+#include <type_traits>
 #include <igl/IGLSafeC.h>
 
 size_t std::hash<igl::TextureFormat>::operator()(const igl::TextureFormat& key) const {
@@ -16,6 +17,10 @@ size_t std::hash<igl::TextureFormat>::operator()(const igl::TextureFormat& key) 
 }
 
 namespace igl {
+
+static_assert(std::is_trivially_copyable_v<TextureRangeDesc>);
+static_assert(std::is_trivially_copyable_v<TextureFormatProperties>);
+static_assert(std::is_trivially_copyable_v<ComponentMapping>);
 
 TextureRangeDesc TextureRangeDesc::new1D(uint32_t x,
                                          uint32_t width,
