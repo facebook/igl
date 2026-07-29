@@ -103,6 +103,11 @@ void RenderCommandAdapter::setBlendColor(const Color& color) {
   getContext().blendColor(color.r, color.g, color.b, color.a);
 }
 
+void RenderCommandAdapter::setCullMode(CullMode cullMode) {
+  cullMode_ = cullMode;
+  setDirty(StateMask::CullMode);
+}
+
 void RenderCommandAdapter::setDepthBias(float depthBias, float slopeScale, float clamp) {
   getContext().setEnabled(true, GL_POLYGON_OFFSET_FILL);
   getContext().polygonOffsetClamp(slopeScale, depthBias, clamp);
@@ -267,6 +272,12 @@ void RenderCommandAdapter::setPipelineState(const std::shared_ptr<IRenderPipelin
     clearDependentResources(newValue, outResult); // Only clear if pipeline state was previously set
   }
   pipelineState_ = newValue;
+  // Reset the effective cull mode to what the new pipeline bakes in, matching
+  // Metal's bindRenderPipelineState() semantics. willDraw() will apply it once.
+  if (auto* newStateOpenGL = static_cast<RenderPipelineState*>(pipelineState_.get())) {
+    cullMode_ = newStateOpenGL->getCullMode();
+    setDirty(StateMask::CullMode);
+  }
   setDirty(StateMask::PIPELINE);
 }
 
@@ -424,6 +435,15 @@ void RenderCommandAdapter::willDraw() {
     if (isDirty(StateMask::PIPELINE)) {
       pipelineState->bind();
       clearDirty(StateMask::PIPELINE);
+    }
+    if (isDirty(StateMask::CullMode)) {
+      if (cullMode_ == CullMode::Disabled) {
+        getContext().disable(GL_CULL_FACE);
+      } else {
+        getContext().enable(GL_CULL_FACE);
+        getContext().cullFace(cullMode_ == CullMode::Front ? GL_FRONT : GL_BACK);
+      }
+      clearDirty(StateMask::CullMode);
     }
   }
 
