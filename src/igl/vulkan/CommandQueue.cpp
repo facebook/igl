@@ -86,30 +86,42 @@ SubmitHandle CommandQueue::endCommandBuffer(VulkanContext& ctx,
 
   // Submit to the graphics queue.
   const bool shouldPresent = ctx.hasSwapchain() && cmdBuffer->isFromSwapchain() && present;
+  const auto finishCommandBuffer = [&](VulkanImmediateCommands::SubmitHandle submitHandle) {
+    cmdBuffer->lastSubmitHandle_ = submitHandle;
+    ctx.syncMarkSubmitted(submitHandle);
+    ctx.processDeferredTasks();
+    ctx.stagingDevice_->mergeRegionsAndFreeBuffers();
+    return submitHandle.handle();
+  };
   if (shouldPresent) {
+    // Injected-semaphore overflow below discards the command buffer and skips present(), leaving
+    // the swapchain image acquired this frame unpresented; sustained failures can perturb swapchain
+    // state and starve acquireNextImage(). Callers must stay within kMaxInjectedSemaphores.
     if (ctx.timelineSemaphore_) {
       // if we are presenting a swapchain image, signal our timeline semaphore
       const uint64_t signalValue =
           ctx.swapchain_->getFrameNumber() + ctx.swapchain_->getNumSwapchainImages();
       // we wait for this value next time we want to acquire this swapchain image
+      if (!ctx.immediate_->signalSemaphore(ctx.timelineSemaphore_->getVkSemaphore(), signalValue)) {
+        ctx.immediate_->discard(cmdBuffer->wrapper_);
+        return finishCommandBuffer({});
+      }
       ctx.swapchain_->timelineWaitValues[ctx.swapchain_->getCurrentImageIndex()] = signalValue;
-      ctx.immediate_->signalSemaphore(ctx.timelineSemaphore_->getVkSemaphore(), signalValue);
     } else {
       // this can be removed once we switch to timeline semaphores
-      ctx.immediate_->waitSemaphore(ctx.swapchain_->getSemaphore());
+      if (!ctx.immediate_->waitSemaphore(ctx.swapchain_->getSemaphore())) {
+        ctx.immediate_->discard(cmdBuffer->wrapper_);
+        return finishCommandBuffer({});
+      }
     }
   }
 
-  cmdBuffer->lastSubmitHandle_ = ctx.immediate_->submit(cmdBuffer->wrapper_);
+  const auto submitHandle = ctx.immediate_->submit(cmdBuffer->wrapper_);
 
   if (shouldPresent) {
     ctx.present();
   }
-  ctx.syncMarkSubmitted(cmdBuffer->lastSubmitHandle_);
-  ctx.processDeferredTasks();
-  ctx.stagingDevice_->mergeRegionsAndFreeBuffers();
-
-  return cmdBuffer->lastSubmitHandle_.handle();
+  return finishCommandBuffer(submitHandle);
 }
 
 } // namespace igl::vulkan

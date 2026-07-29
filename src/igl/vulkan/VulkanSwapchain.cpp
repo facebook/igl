@@ -297,6 +297,15 @@ Result VulkanSwapchain::acquireNextImage() {
     VK_ASSERT(ctx_.vf_.vkWaitSemaphoresKHR(ctx_.getVkDevice(), &waitInfo, UINT64_MAX));
 
     const VkSemaphore acquireSemaphore = acquireSemaphores[currentImageIndex_].getVkSemaphore();
+    // Reserve the acquire wait before acquiring the image. waitSemaphore() only records the handle
+    // (the GPU wait is applied at submit), so on injected-queue overflow we fail here without
+    // having acquired an image or left `acquireSemaphore` signalled-but-unconsumed -- which would
+    // otherwise trip VUID-vkAcquireNextImageKHR-semaphore-01779 on the next acquire.
+    if (!ctx_.immediate_->waitSemaphore(acquireSemaphore)) {
+      return Result(Result::Code::RuntimeError,
+                    "Too many semaphores pending for the next Vulkan submission");
+    }
+
     // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
     acquireResult = ctx_.vf_.vkAcquireNextImageKHR(ctx_.getVkDevice(),
                                                    swapchain_,
@@ -310,8 +319,6 @@ Result VulkanSwapchain::acquireNextImage() {
                             // (use `currentImageIndex_` instead)
 
     getNextImage_ = false;
-
-    ctx_.immediate_->waitSemaphore(acquireSemaphore);
   } else {
     // this entire branch can be removed once we switch to timeline semaphores
 
@@ -339,6 +346,12 @@ Result VulkanSwapchain::acquireNextImage() {
         "vkAcquireNextImageKHR returned VK_SUBOPTIMAL_KHR. The Vulkan swapchain is no longer "
         "compatible with the surface");
   } else {
+    if (acquireResult != VK_SUCCESS && ctx_.timelineSemaphore_) {
+      // A failed acquire (e.g. VK_ERROR_OUT_OF_DATE_KHR) does not signal the acquire semaphore, but
+      // the timeline path already reserved a wait on it above. Drop that wait so the next
+      // submission does not block forever on a semaphore that will never be signaled.
+      ctx_.immediate_->cancelLastWaitSemaphore();
+    }
     VK_ASSERT_RETURN(acquireResult);
   }
 

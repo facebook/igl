@@ -231,6 +231,47 @@ TEST_F(VulkanImmediateCommandsTest, AcquireLastSubmitSemaphore) {
   EXPECT_EQ(secondCall, VK_NULL_HANDLE);
 }
 
+TEST_F(VulkanImmediateCommandsTest, InjectedSemaphoreCapacityFailureIsReported) {
+  auto& ctx = getVulkanContext();
+  ASSERT_NE(ctx.immediate_, nullptr);
+  const auto& wrapper = ctx.immediate_->acquire();
+
+  for (uint32_t i = 0; i < vulkan::VulkanImmediateCommands::kMaxInjectedSemaphores; ++i) {
+    EXPECT_TRUE(ctx.immediate_->waitSemaphore(VK_NULL_HANDLE));
+    EXPECT_TRUE(ctx.immediate_->signalSemaphore(VK_NULL_HANDLE, i));
+  }
+
+  EXPECT_FALSE(ctx.immediate_->waitSemaphore(VK_NULL_HANDLE));
+  EXPECT_FALSE(ctx.immediate_->signalSemaphore(VK_NULL_HANDLE, 0));
+
+  ctx.immediate_->discard(wrapper);
+  EXPECT_FALSE(ctx.immediate_->hasPendingInjectedSemaphores());
+
+  const auto& recoveredWrapper = ctx.immediate_->acquire();
+  EXPECT_TRUE(ctx.immediate_->waitSemaphore(VK_NULL_HANDLE));
+  ctx.immediate_->discard(recoveredWrapper);
+}
+
+TEST_F(VulkanImmediateCommandsTest, InjectedWaitSemaphoreReachesSubmit) {
+  auto& ctx = getVulkanContext();
+  ASSERT_NE(ctx.immediate_, nullptr);
+
+  // Submit once to obtain a real, GPU-signaled semaphore to wait on. Waiting on a semaphore that
+  // nothing signals would deadlock, so we reuse the previous submission's signal semaphore.
+  const auto& first = ctx.immediate_->acquire();
+  ctx.immediate_->submit(first);
+  const VkSemaphore signaled = ctx.immediate_->acquireLastSubmitSemaphore();
+  ASSERT_NE(signaled, VK_NULL_HANDLE);
+
+  // Inject the real semaphore so the array-building path is exercised end-to-end through
+  // vkQueueSubmit(2KHR) with a non-null handle, not just the counting/discard path.
+  const auto& second = ctx.immediate_->acquire();
+  EXPECT_TRUE(ctx.immediate_->waitSemaphore(signaled));
+  const auto handle = ctx.immediate_->submit(second);
+  EXPECT_FALSE(handle.empty());
+  EXPECT_EQ(ctx.immediate_->wait(handle), VK_SUCCESS);
+}
+
 TEST_F(VulkanImmediateCommandsTest, CachedFDDefaultIsNegativeOne) {
   auto& ctx = getVulkanContext();
   ASSERT_NE(ctx.immediate_, nullptr);
