@@ -156,7 +156,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(
 std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const TextureDesc& desc,
                                                                         Result* IGL_NULLABLE
                                                                             outResult) const {
-  auto context = static_cast<Context*>(getSharedContext().get());
+  auto* context = static_cast<Context*>(getSharedContext().get());
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "No EGL context found!");
     IGL_LOG_ERROR("No EGL context found!");
@@ -184,7 +184,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const Te
 std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(
     AHardwareBuffer* IGL_NONNULL buffer,
     Result* IGL_NULLABLE outResult) const {
-  auto context = static_cast<Context*>(getSharedContext().get());
+  auto* context = static_cast<Context*>(getSharedContext().get());
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "No EGL context found!");
     return nullptr;
