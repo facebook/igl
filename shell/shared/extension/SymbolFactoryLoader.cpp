@@ -38,12 +38,13 @@ namespace igl::shell {
 
 IGLShellSymbol_NewCFunction SymbolFactoryLoader::find(const char* name) noexcept {
 #if IGL_DL_UNIX
-  auto factoryFunc = (IGLShellSymbol_NewCFunction)dlsym(RTLD_DEFAULT, name);
+  auto factoryFunc = reinterpret_cast<IGLShellSymbol_NewCFunction>(dlsym(RTLD_DEFAULT, name));
 #elif IGL_DL_DLL
-  auto factoryFunc = (IGLShellSymbol_NewCFunction)GetProcAddress(GetModuleHandle(nullptr), name);
+  auto factoryFunc =
+      reinterpret_cast<IGLShellSymbol_NewCFunction>(GetProcAddress(GetModuleHandle(nullptr), name));
 #else
   IGL_LOG_ERROR("IGL WARNING: Runtime symbol lookup *not* supported on this platform\n");
-  auto factoryFunc = (IGLShellSymbol_NewCFunction) nullptr;
+  auto factoryFunc = static_cast<IGLShellSymbol_NewCFunction>(nullptr);
 #endif
 
   if (!factoryFunc) {
