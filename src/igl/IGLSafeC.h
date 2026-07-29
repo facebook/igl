@@ -67,7 +67,7 @@ inline void* checked_memcpy_offset(void* destination,
     exit(EXIT_FAILURE);
   }
 
-  memcpy((char*)destination + offset, source, count);
+  memcpy(static_cast<char*>(destination) + offset, source, count);
   return destination;
 }
 

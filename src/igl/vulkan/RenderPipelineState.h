@@ -141,12 +141,12 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
 
   // comparison operator and hash function for std::unordered_map<>
   [[nodiscard]] bool operator==(const RenderPipelineDynamicState& other) const {
-    return *(uint64_t*)this == *(uint64_t*)&other;
+    return *reinterpret_cast<const uint64_t*>(this) == *reinterpret_cast<const uint64_t*>(&other);
   }
 
   struct HashFunction {
     uint64_t operator()(const RenderPipelineDynamicState& s) const {
-      return *(const uint64_t*)&s;
+      return *reinterpret_cast<const uint64_t*>(&s);
     }
   };
 };
