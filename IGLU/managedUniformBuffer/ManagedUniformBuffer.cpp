@@ -67,8 +67,10 @@ ManagedUniformBuffer::ManagedUniformBuffer(igl::IDevice& device,
       // per what documentation says here
       // https://developer.apple.com/documentation/metal/gpu_selection_in_macos/selecting_device_objects_for_compute_processing?language=objc#3544751
       vmAllocLength_ = desc.length;
-      kern_return_t err = vm_allocate(
-          (vm_map_t)mach_task_self(), (vm_address_t*)&data_, vmAllocLength_, VM_FLAGS_ANYWHERE);
+      kern_return_t err = vm_allocate(static_cast<vm_map_t>(mach_task_self()),
+                                      reinterpret_cast<vm_address_t*>(&data_),
+                                      vmAllocLength_,
+                                      VM_FLAGS_ANYWHERE);
       if (err != KERN_SUCCESS) {
         data_ = nullptr;
       }
@@ -121,7 +123,9 @@ ManagedUniformBuffer::~ManagedUniformBuffer() {
 #if IGL_PLATFORM_IOS_SIMULATOR
   if (vmAllocLength_) {
     // if vmAllocLength_ is nonzero it implies we used vm_alloc to allocate the memory
-    vm_deallocate((vm_map_t)mach_task_self(), (vm_address_t)data_, vmAllocLength_);
+    vm_deallocate(static_cast<vm_map_t>(mach_task_self()),
+                  reinterpret_cast<vm_address_t>(data_),
+                  vmAllocLength_);
   } else {
 #endif
     free(data_);
