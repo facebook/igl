@@ -33,6 +33,10 @@ struct AHardwareBuffer;
 
 #define IGL_VULKAN_VALIDATION_LAYER_ERROR_SUMMARY 0
 
+namespace igl {
+class IRenderPipelineState;
+}
+
 namespace igl::vulkan {
 namespace util {
 struct SpvModuleInfo;

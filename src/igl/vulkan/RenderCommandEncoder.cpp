@@ -1115,7 +1115,8 @@ void RenderCommandEncoder::processDependencies(const Dependencies& dependencies)
     const Dependencies* deps = &dependencies;
 
     while (deps) {
-      for (IBuffer* IGL_NULLABLE buf : deps->buffers) {
+      for (uint32_t index = 0; index < Dependencies::kIglMaxBufferDependencies; ++index) {
+        IBuffer* IGL_NULLABLE const buf = deps->buffers[index];
         if (!buf) {
           break;
         }
@@ -1130,12 +1131,15 @@ void RenderCommandEncoder::processDependencies(const Dependencies& dependencies)
         if (flags & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
           dstStageFlags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         }
-        // compute-to-graphics barrier
+        const VkPipelineStageFlags srcStageFlags =
+            (deps->hostWriteBufferMask & (uint32_t{1} << index)) != 0
+                ? VK_PIPELINE_STAGE_HOST_BIT
+                : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
         ivkBufferBarrier(&ctx_.vf_,
                          cmdBuffer_,
                          vkBuf->getVkBuffer(),
                          vkBuf->getBufferUsageFlags(),
-                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                         srcStageFlags,
                          dstStageFlags);
       }
       deps = deps->next;

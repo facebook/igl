@@ -623,6 +623,9 @@ void ivkBufferBarrier(const struct VulkanFunctionTable* vt,
   if (srcStageMask & VK_PIPELINE_STAGE_TRANSFER_BIT) {
     barrier.srcAccessMask |= VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
   }
+  if (srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) {
+    barrier.srcAccessMask |= VK_ACCESS_HOST_WRITE_BIT;
+  }
   if (srcStageMask & kShaderStages) {
     barrier.srcAccessMask |= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
   }

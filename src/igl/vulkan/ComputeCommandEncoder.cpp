@@ -115,7 +115,8 @@ void ComputeCommandEncoder::processDependencies(const Dependencies& dependencies
     const Dependencies* deps = &dependencies;
 
     while (deps) {
-      for (IBuffer* buf : deps->buffers) {
+      for (uint32_t index = 0; index < Dependencies::kIglMaxBufferDependencies; ++index) {
+        IBuffer* const buf = deps->buffers[index];
         if (!buf) {
           break;
         }
@@ -131,14 +132,13 @@ void ComputeCommandEncoder::processDependencies(const Dependencies& dependencies
         if (flags & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
           dstStageFlags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         }
-        ivkBufferBarrier(&ctx_.vf_,
-                         cmdBuffer_,
-                         vkBuf->getVkBuffer(),
-                         flags,
-                         VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
-                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                         dstStageFlags);
+        const VkPipelineStageFlags srcStageFlags =
+            (deps->hostWriteBufferMask & (uint32_t{1} << index)) != 0
+                ? VK_PIPELINE_STAGE_HOST_BIT
+                : VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                      VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        ivkBufferBarrier(
+            &ctx_.vf_, cmdBuffer_, vkBuf->getVkBuffer(), flags, srcStageFlags, dstStageFlags);
       }
       deps = deps->next;
     }

@@ -17,7 +17,6 @@ class ICommandBuffer;
 class IDevice;
 
 class IBuffer;
-class IRenderPipelineState;
 class ISamplerState;
 class ITexture;
 
@@ -32,6 +31,10 @@ struct Dependencies {
   // if any NULL texture or buffer is encountered.
   ITexture* IGL_NULLABLE textures[kIglMaxTextureDependencies] = {};
   IBuffer* IGL_NULLABLE buffers[kIglMaxBufferDependencies] = {};
+  // Bit i corresponds to buffers[i] in this Dependencies node. A set bit marks a host write,
+  // allowing explicit backends to use HOST_WRITE as the barrier source. Bits at or above
+  // kIglMaxBufferDependencies and entries after the first null buffer are ignored.
+  uint32_t hostWriteBufferMask = 0;
   const Dependencies* IGL_NULLABLE next = nullptr; // optional extra dependencies
 };
 
