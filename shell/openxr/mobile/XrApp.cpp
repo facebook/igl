@@ -13,7 +13,6 @@
 #include <array>
 #include <cassert>
 #include <cstdio>
-#include <cstring>
 
 #if IGL_PLATFORM_ANDROID
 // Ignore unused-include-check
@@ -127,7 +126,7 @@ bool XrApp::checkExtensions() {
     return std::any_of(std::begin(extensions_),
                        std::end(extensions_),
                        [&](const XrExtensionProperties& extension) {
-                         return std::strcmp(extension.extensionName, name) == 0;
+                         return strcmp(extension.extensionName, name) == 0;
                        });
   };
 
@@ -144,7 +143,7 @@ bool XrApp::checkExtensions() {
     return std::find_if(std::begin(enabledExtensions_),
                         std::end(enabledExtensions_),
                         [&](const char* extensionName) {
-                          return std::strcmp(extensionName, name) == 0;
+                          return strcmp(extensionName, name) == 0;
                         }) == std::end(enabledExtensions_);
   };
 
@@ -201,9 +200,9 @@ bool XrApp::checkExtensions() {
 
 bool XrApp::createInstance() {
   XrApplicationInfo appInfo = {};
-  std::snprintf(appInfo.applicationName, sizeof(appInfo.applicationName), "%s", kAppName);
+  snprintf(appInfo.applicationName, sizeof(appInfo.applicationName), "%s", kAppName);
   appInfo.applicationVersion = 0;
-  std::snprintf(appInfo.engineName, sizeof(appInfo.engineName), "%s", kEngineName);
+  snprintf(appInfo.engineName, sizeof(appInfo.engineName), "%s", kEngineName);
   appInfo.engineVersion = 0;
   appInfo.apiVersion = XR_MAKE_VERSION(1, 0, 34);
 
@@ -619,11 +618,11 @@ void XrApp::createSpaces() {
 void XrApp::createActions() {
   // Create action set
   XrActionSetCreateInfo actionSetInfo = {XR_TYPE_ACTION_SET_CREATE_INFO};
-  std::snprintf(actionSetInfo.actionSetName, sizeof(actionSetInfo.actionSetName), "%s", "gameplay");
-  std::snprintf(actionSetInfo.localizedActionSetName,
-                sizeof(actionSetInfo.localizedActionSetName),
-                "%s",
-                "Gameplay");
+  snprintf(actionSetInfo.actionSetName, sizeof(actionSetInfo.actionSetName), "%s", "gameplay");
+  snprintf(actionSetInfo.localizedActionSetName,
+           sizeof(actionSetInfo.localizedActionSetName),
+           "%s",
+           "Gameplay");
   XrResult res = xrCreateActionSet(instance_, &actionSetInfo, &actionSet_);
   if (res != XR_SUCCESS) {
     IGL_LOG_ERROR("Failed to create action set: %d\n", res);
@@ -694,11 +693,11 @@ void XrApp::createActions() {
   for (const auto& def : buttonDefs) {
     XrActionCreateInfo actionInfo = {XR_TYPE_ACTION_CREATE_INFO};
     actionInfo.actionType = def.type;
-    std::snprintf(actionInfo.actionName, sizeof(actionInfo.actionName), "%s", def.name);
-    std::snprintf(actionInfo.localizedActionName,
-                  sizeof(actionInfo.localizedActionName),
-                  "%s",
-                  def.localizedName);
+    snprintf(actionInfo.actionName, sizeof(actionInfo.actionName), "%s", def.name);
+    snprintf(actionInfo.localizedActionName,
+             sizeof(actionInfo.localizedActionName),
+             "%s",
+             def.localizedName);
     actionInfo.countSubactionPaths = def.subactionCount;
     actionInfo.subactionPaths = def.subactionPaths;
     res = xrCreateAction(actionSet_, &actionInfo, &buttonActions_[static_cast<int>(def.id)]);
@@ -712,11 +711,11 @@ void XrApp::createActions() {
   {
     XrActionCreateInfo actionInfo = {XR_TYPE_ACTION_CREATE_INFO};
     actionInfo.actionType = XR_ACTION_TYPE_VECTOR2F_INPUT;
-    std::snprintf(actionInfo.actionName, sizeof(actionInfo.actionName), "%s", "right_thumbstick");
-    std::snprintf(actionInfo.localizedActionName,
-                  sizeof(actionInfo.localizedActionName),
-                  "%s",
-                  "Right Thumbstick");
+    snprintf(actionInfo.actionName, sizeof(actionInfo.actionName), "%s", "right_thumbstick");
+    snprintf(actionInfo.localizedActionName,
+             sizeof(actionInfo.localizedActionName),
+             "%s",
+             "Right Thumbstick");
     actionInfo.countSubactionPaths = 1;
     actionInfo.subactionPaths = &rightHandPath;
     res = xrCreateAction(actionSet_, &actionInfo, &rightThumbstickAction_);
@@ -811,8 +810,8 @@ void XrApp::handleXrEvents() {
       IGL_LOG_INFO("xrPollEvent: received XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED event\n");
       break;
     case XR_TYPE_EVENT_DATA_PERF_SETTINGS_EXT: {
-      const auto* perfSettingsEvent =
-          reinterpret_cast<const XrEventDataPerfSettingsEXT*>(baseEventHeader);
+      const XrEventDataPerfSettingsEXT* perfSettingsEvent =
+          reinterpret_cast<XrEventDataPerfSettingsEXT*>(baseEventHeader);
       (void)perfSettingsEvent; // suppress unused warning
       IGL_LOG_INFO(
           "xrPollEvent: received XR_TYPE_EVENT_DATA_PERF_SETTINGS_EXT event: type %d subdomain %d "
@@ -827,13 +826,13 @@ void XrApp::handleXrEvents() {
           "xrPollEvent: received XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING event\n");
       break;
     case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
-      const auto* sessionStateChangedEvent =
-          reinterpret_cast<const XrEventDataSessionStateChanged*>(baseEventHeader);
+      const XrEventDataSessionStateChanged* sessionStateChangedEvent =
+          reinterpret_cast<XrEventDataSessionStateChanged*>(baseEventHeader);
       IGL_LOG_INFO(
           "xrPollEvent: received XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: %d for session %p at "
           "time %lld\n",
           sessionStateChangedEvent->state,
-          static_cast<const void*>(sessionStateChangedEvent->session),
+          reinterpret_cast<const void*>(sessionStateChangedEvent->session),
           sessionStateChangedEvent->time);
 
       switch (sessionStateChangedEvent->state) {
