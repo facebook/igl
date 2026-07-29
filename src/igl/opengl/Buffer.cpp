@@ -177,7 +177,7 @@ void ArrayBuffer::bindBase(IGL_MAYBE_UNUSED size_t index, Result* IGL_NULLABLE o
     return;
   }
   getContext().bindBuffer(target_, iD_);
-  getContext().bindBufferBase(target_, (GLuint)index, iD_);
+  getContext().bindBufferBase(target_, static_cast<GLuint>(index), iD_);
   Result::setOk(outResult);
 }
 
@@ -197,7 +197,7 @@ void UniformBlockBuffer::bindBase(size_t index, Result* IGL_NULLABLE outResult) 
       Result::setResult(outResult, Result::Code::InvalidOperation, kErrorMsg);
       return;
     }
-    getContext().bindBufferBase(target_, (GLuint)index, iD_);
+    getContext().bindBufferBase(target_, static_cast<GLuint>(index), iD_);
     Result::setOk(outResult);
   } else {
     static constexpr const char* kErrorMsg = "Uniform Blocks are not supported";
@@ -223,8 +223,11 @@ void UniformBlockBuffer::bindRange(size_t index,
                      offset,
                      size,
                      getSizeInBytes());
-    getContext().bindBufferRange(
-        target_, (GLuint)index, iD_, (GLintptr)offset, size ? size : getSizeInBytes() - offset);
+    getContext().bindBufferRange(target_,
+                                 static_cast<GLuint>(index),
+                                 iD_,
+                                 static_cast<GLintptr>(offset),
+                                 size ? size : getSizeInBytes() - offset);
     Result::setOk(outResult);
   } else {
     static constexpr const char* kErrorMsg = "Uniform Blocks are not supported";
