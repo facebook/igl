@@ -7,6 +7,7 @@
 
 #include <igl/opengl/UniformBuffer.h>
 
+#include <cstdlib>
 #include <cstring> // for memcpy()
 #include <memory>
 #include <igl/Common.h>
@@ -22,10 +23,10 @@ enum class UniformBaseType { Invalid = 0, Boolean, Int, Float, FloatMatrix };
 template<typename T>
 using ArrayHolder = std::unique_ptr<T[], void (*)(void*)>;
 // This can't be a function because alloc result goes away on function return
-#define IGL_MAYBE_STACK_ALLOC(Type, count)                                         \
-  (sizeof(Type) * count) > kAllocSizeLimit                                         \
-      ? ArrayHolder<Type>(reinterpret_cast<Type*>(malloc(sizeof(Type) * count)),   \
-                          [](auto* addr) { free(reinterpret_cast<Type*>(addr)); }) \
+#define IGL_MAYBE_STACK_ALLOC(Type, count)                                              \
+  (sizeof(Type) * count) > kAllocSizeLimit                                              \
+      ? ArrayHolder<Type>(reinterpret_cast<Type*>(std::malloc(sizeof(Type) * count)),   \
+                          [](auto* addr) { std::free(reinterpret_cast<Type*>(addr)); }) \
       : ArrayHolder<Type>(reinterpret_cast<Type*>(alloca(sizeof(Type) * count)), [](auto*) {})
 
 // ********************************
