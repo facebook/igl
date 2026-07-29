@@ -211,9 +211,11 @@ TEST_F(TextureVulkanTest, VolumeTextureExtentCasts) {
 
 // Exercises the Exportable branch of Texture::create() where the width/height/depth
 // and numMipLevels casts feed the VkExtent3D passed to createWithExportMemory().
-// On this Linux/Vulkan target exportable textures are supported, so the created
-// texture's dimensions pin the extent casts on that path.
+// Exportable textures are only supported on Windows/Linux/Android (see the platform
+// gate in vulkan/Texture.cpp); elsewhere (e.g. Mac) create() returns Unimplemented,
+// so the extent-cast assertions only apply on the supported platforms.
 TEST_F(TextureVulkanTest, ExportableTextureExtentCasts) {
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
   constexpr uint32_t kWidth = 8u;
   constexpr uint32_t kHeight = 4u;
 
@@ -231,6 +233,9 @@ TEST_F(TextureVulkanTest, ExportableTextureExtentCasts) {
   EXPECT_EQ(dims.height, kHeight) << "exportable height extent cast";
   EXPECT_EQ(dims.depth, 1u) << "exportable depth extent cast";
   EXPECT_EQ(texture->getNumMipLevels(), 1u) << "exportable numMipLevels cast";
+#else
+  GTEST_SKIP() << "Exportable textures are not supported on this platform.";
+#endif
 }
 
 } // namespace igl::tests
