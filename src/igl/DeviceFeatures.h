@@ -31,6 +31,8 @@ namespace igl {
  * DrawFirstIndexFirstVertex  Supports firstIndex/firstVertex parameters in IRenderCommandEncoder::drawIndexed()
  * DrawIndexedIndirect        Supports IRenderCommandEncoder::drawIndexedIndirect
  * DrawInstanced              Supports IRenderCommandEncoder::draw:instanceCount
+ * DynamicCullMode            Supports setting cull mode dynamically at draw time
+ * DynamicFrontFacingWinding  Supports setting front face winding dynamically at draw time
  * ExplicitBinding,           Supports uniforms block explicit binding in shaders
  * ExplicitBindingExt,        Supports uniforms block explicit binding in shaders via an extension
  * ExternalMemoryObjects,     Supports accessing external memory objects, including by POSIX file descriptor
@@ -85,6 +87,8 @@ enum class DeviceFeatures {
   DrawFirstIndexFirstVertex,
   DrawIndexedIndirect,
   DrawInstanced,
+  DynamicCullMode,
+  DynamicFrontFacingWinding,
   ExplicitBinding,
   ExplicitBindingExt,
   ExternalMemoryObjects,
