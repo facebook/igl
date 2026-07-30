@@ -12,6 +12,9 @@
 #include <type_traits>
 #include <igl/IGLSafeC.h>
 
+static_assert(std::is_trivially_copyable_v<igl::TextureRangeDesc>);
+static_assert(sizeof(igl::TextureRangeDesc) == 12 * sizeof(uint32_t));
+
 size_t std::hash<igl::TextureFormat>::operator()(const igl::TextureFormat& key) const {
   return std::hash<size_t>()(static_cast<size_t>(key));
 }

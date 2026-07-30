@@ -12,6 +12,7 @@
 
 static_assert(sizeof(igl::StencilStateDesc) == 12);
 static_assert(std::is_trivially_copyable_v<igl::StencilStateDesc>);
+static_assert(std::is_standard_layout_v<igl::StencilStateDesc>);
 
 using namespace igl;
 
