@@ -172,6 +172,7 @@ Result allocateNativeHWBuffer(const TextureDesc& desc,
   return Result();
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 INativeHWTextureBuffer::LockGuard::~LockGuard() {
   if (hwBufferOwner_ != nullptr) {
     hwBufferOwner_->unlockHWBuffer();
