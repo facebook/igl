@@ -154,6 +154,94 @@ TEST(SamplerStateDescTest, HashDifferentObjectsHaveDifferentHash) {
   EXPECT_NE(hasher(def), hasher(linear));
 }
 
+TEST(SamplerStateDescTest, HashPerFieldDiscrimination) {
+  const SamplerStateDesc def;
+  const std::hash<SamplerStateDesc> hasher;
+  const size_t defaultHash = hasher(def);
+
+  // minFilter
+  {
+    SamplerStateDesc d;
+    d.minFilter = SamplerMinMagFilter::Linear;
+    EXPECT_NE(hasher(d), defaultHash) << "minFilter change not reflected in hash";
+  }
+  // magFilter
+  {
+    SamplerStateDesc d;
+    d.magFilter = SamplerMinMagFilter::Linear;
+    EXPECT_NE(hasher(d), defaultHash) << "magFilter change not reflected in hash";
+  }
+  // mipFilter
+  {
+    SamplerStateDesc d;
+    d.mipFilter = SamplerMipFilter::Nearest;
+    EXPECT_NE(hasher(d), defaultHash) << "mipFilter change not reflected in hash";
+  }
+  // addressModeU
+  {
+    SamplerStateDesc d;
+    d.addressModeU = SamplerAddressMode::Clamp;
+    EXPECT_NE(hasher(d), defaultHash) << "addressModeU change not reflected in hash";
+  }
+  // addressModeV
+  {
+    SamplerStateDesc d;
+    d.addressModeV = SamplerAddressMode::Clamp;
+    EXPECT_NE(hasher(d), defaultHash) << "addressModeV change not reflected in hash";
+  }
+  // addressModeW
+  {
+    SamplerStateDesc d;
+    d.addressModeW = SamplerAddressMode::Clamp;
+    EXPECT_NE(hasher(d), defaultHash) << "addressModeW change not reflected in hash";
+  }
+  // maxAnisotropic
+  {
+    SamplerStateDesc d;
+    d.maxAnisotropic = 4;
+    EXPECT_NE(hasher(d), defaultHash) << "maxAnisotropic change not reflected in hash";
+  }
+  // mipLodMin
+  {
+    SamplerStateDesc d;
+    d.mipLodMin = 2;
+    EXPECT_NE(hasher(d), defaultHash) << "mipLodMin change not reflected in hash";
+  }
+  // mipLodMax
+  {
+    SamplerStateDesc d;
+    d.mipLodMax = 8;
+    EXPECT_NE(hasher(d), defaultHash) << "mipLodMax change not reflected in hash";
+  }
+  // depthCompareFunction
+  {
+    SamplerStateDesc d;
+    d.depthCompareFunction = CompareFunction::Greater;
+    EXPECT_NE(hasher(d), defaultHash) << "depthCompareFunction change not reflected in hash";
+  }
+  // depthCompareEnabled
+  {
+    SamplerStateDesc d;
+    d.depthCompareEnabled = true;
+    EXPECT_NE(hasher(d), defaultHash) << "depthCompareEnabled change not reflected in hash";
+  }
+  // yuvFormat
+  {
+    SamplerStateDesc d;
+    d.yuvFormat = TextureFormat::YUV_NV12;
+    EXPECT_NE(hasher(d), defaultHash) << "yuvFormat change not reflected in hash";
+  }
+}
+
+TEST(SamplerStateDescTest, HashDebugNameIgnoredInHash) {
+  SamplerStateDesc a;
+  SamplerStateDesc b;
+  a.debugName = "alpha";
+  b.debugName = "beta";
+  const std::hash<SamplerStateDesc> hasher;
+  EXPECT_EQ(hasher(a), hasher(b));
+}
+
 TEST(SamplerStateDescTest, FactoryNewLinear) {
   const SamplerStateDesc desc = SamplerStateDesc::newLinear();
   EXPECT_EQ(desc.minFilter, SamplerMinMagFilter::Linear);
