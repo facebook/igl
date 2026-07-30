@@ -23,7 +23,7 @@ const PlatformDevice& Device::getPlatformDevice() const noexcept {
 
 void Device::updateSurface(void* nativeWindowType) {
   std::static_pointer_cast<Context>(getSharedContext())
-      ->updateSurface((NativeWindowType)nativeWindowType);
+      ->updateSurface(reinterpret_cast<NativeWindowType>(nativeWindowType));
 }
 
 } // namespace igl::opengl::egl
