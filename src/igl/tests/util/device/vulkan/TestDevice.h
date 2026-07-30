@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <igl/vulkan/Device.h>
 
@@ -22,6 +23,9 @@ igl::vulkan::VulkanContextConfig getContextConfig(bool enableValidation = true);
  */
 std::unique_ptr<igl::vulkan::Device> createTestDevice(
     const igl::vulkan::VulkanContextConfig& config);
+std::unique_ptr<igl::vulkan::Device> createTestDevice(
+    const igl::vulkan::VulkanContextConfig& config,
+    const std::function<void(igl::vulkan::VulkanFeatures&)>& configureFeatures);
 
 /**
  Helper to create a Vulkan device with default configuration and optional validation.
