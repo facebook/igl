@@ -175,7 +175,7 @@ void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
 
 bool VulkanFeatures::hasExtension(const char* ext) const {
   for (const VkExtensionProperties& props : extensionProps_) {
-    if (strcmp(ext, props.extensionName) == 0) {
+    if (std::strcmp(ext, props.extensionName) == 0) {
       return true;
     }
   }

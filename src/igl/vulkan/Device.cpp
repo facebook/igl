@@ -464,7 +464,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
     return nullptr;
   }
 
-  if (strstr(source, "#version ") == nullptr) {
+  if (std::strstr(source, "#version ") == nullptr) {
     std::string extraExtensions = ctx_->config_.enableDescriptorIndexing
                                       ? "#extension GL_EXT_nonuniform_qualifier : require\n"
                                       : "";
@@ -508,7 +508,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       )" + extraExtensions +
                        bindlessTexturesSource;
     }
-    sourcePatched.append(source, strlen(source));
+    sourcePatched.append(source, std::strlen(source));
     source = sourcePatched.c_str();
   }
 

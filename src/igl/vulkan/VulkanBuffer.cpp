@@ -247,7 +247,7 @@ void VulkanBuffer::bufferSubData(size_t offset, size_t size, const void* data) {
   if (data) {
     checked_memcpy(static_cast<uint8_t*>(mappedPtr_) + offset, bufferSize_ - offset, data, size);
   } else {
-    memset(static_cast<uint8_t*>(mappedPtr_) + offset, 0, size);
+    std::memset(static_cast<uint8_t*>(mappedPtr_) + offset, 0, size);
   }
   if (!isCoherentMemory_) {
     flushMappedMemory(offset, size);
