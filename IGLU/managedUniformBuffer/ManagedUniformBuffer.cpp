@@ -8,6 +8,7 @@
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 
 #include <cstdlib>
+#include <cstring>
 #include <igl/Macros.h>
 
 #if defined(IGL_CMAKE_BUILD)
@@ -249,7 +250,7 @@ void ManagedUniformBuffer::buildUniformLUT() {
 namespace {
 int findUniformByName(const std::vector<igl::UniformDesc>& uniforms, const char* name) {
   for (size_t i = 0; i < uniforms.size(); ++i) {
-    if (strcmp(name, uniforms[i].name.c_str()) == 0) {
+    if (std::strcmp(name, uniforms[i].name.c_str()) == 0) {
       return i;
     }
   }
@@ -273,7 +274,7 @@ bool ManagedUniformBuffer::updateData(const char* name, const void* data, size_t
 
   if (index >= 0) {
     auto& uniform = uniformInfo.uniforms[index];
-    if (strcmp(name, uniform.name.c_str()) == 0) {
+    if (std::strcmp(name, uniform.name.c_str()) == 0) {
       // If dataSize is smaller than the expected size, we will just update as client requested.
       // This could mean the user knows only a portion of the uniform data needs updating
       // However, if dataSize is larger than or equal to what we expect for this uniform, we will
@@ -300,7 +301,7 @@ bool ManagedUniformBuffer::updateData(const char* name, const void* data, size_t
 
 size_t ManagedUniformBuffer::getUniformDataSize(const char* name) {
   for (auto& uniform : uniformInfo.uniforms) {
-    if (strcmp(name, uniform.name.c_str()) == 0) {
+    if (std::strcmp(name, uniform.name.c_str()) == 0) {
       return getUniformDataSizeInternal(uniform);
     }
   }
