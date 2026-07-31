@@ -9,6 +9,7 @@
 #include <cstring>
 #include <memory>
 #include <thread>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -203,6 +204,8 @@ bool validateImageLimits(VkImageType imageType,
 } // namespace
 
 namespace igl::vulkan {
+
+static_assert(std::is_trivially_copyable_v<DeviceQueues>);
 
 // @fb-only
 class DescriptorPoolsArena final {
