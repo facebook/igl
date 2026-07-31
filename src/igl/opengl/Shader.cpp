@@ -309,8 +309,8 @@ Result ShaderModule::create(const ShaderModuleDesc& desc) {
   }
   shaderID_ = shaderID;
 
-  hash_ =
-      std::hash<std::string_view>()(std::string_view(desc.input.source, strlen(desc.input.source)));
+  hash_ = std::hash<std::string_view>()(
+      std::string_view(desc.input.source, std::strlen(desc.input.source)));
 
   return Result();
 }

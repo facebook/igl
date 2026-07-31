@@ -1269,7 +1269,7 @@ void IContext::addProgramUniform(GLuint program,
                                  GLsizei* length,
                                  GLenum* type,
                                  GLchar* name) const {
-  std::string nameStr(std::string_view(name, length == nullptr ? strlen(name) : *length));
+  std::string nameStr(std::string_view(name, length == nullptr ? std::strlen(name) : *length));
   auto& programUniforms = programUniforms_[program];
   auto uniformIt = programUniforms.find(nameStr);
   if (uniformIt == programUniforms.end()) {

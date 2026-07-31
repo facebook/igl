@@ -1155,12 +1155,12 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
           if (FAILED(infoQueue->GetMessage(i, nullptr, &length)) || length == 0) {
             continue;
           }
-          auto* message = static_cast<D3D12_MESSAGE*>(malloc(length));
+          auto* message = static_cast<D3D12_MESSAGE*>(std::malloc(length));
           if (message && SUCCEEDED(infoQueue->GetMessage(i, message, &length))) {
             IGL_LOG_ERROR("[D3D12 Debug] %s\n",
                           message->pDescription ? message->pDescription : "<no description>");
           }
-          free(message);
+          std::free(message);
         }
         infoQueue->ClearStoredMessages();
       }
