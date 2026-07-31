@@ -9,7 +9,10 @@
 
 #include "VertexData.h"
 
+#include <type_traits>
 #include <utility>
+
+static_assert(std::is_trivially_copyable_v<iglu::vertexdata::PrimitiveDesc>);
 
 namespace iglu::vertexdata {
 
