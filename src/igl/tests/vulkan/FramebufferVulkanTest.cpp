@@ -263,6 +263,42 @@ TEST_F(FramebufferVulkanTest, UpdateDrawableWithSurfaceTextures) {
   EXPECT_EQ(fb->getDepthAttachment(), nullptr);
 }
 
+TEST_F(FramebufferVulkanTest, UpdateDrawableClearsStaleResolve) {
+  Result ret;
+
+  TextureDesc msaaDesc = TextureDesc::new2D(
+      TextureFormat::RGBA_UNorm8, 4, 4, TextureDesc::TextureUsageBits::Attachment);
+  msaaDesc.numSamples = 4;
+  const auto msaaColor = iglDev_->createTexture(msaaDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  const TextureDesc resolveDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                     4,
+                                                     4,
+                                                     TextureDesc::TextureUsageBits::Attachment |
+                                                         TextureDesc::TextureUsageBits::Sampled);
+  const auto resolveTex = iglDev_->createTexture(resolveDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  FramebufferDesc fbDesc;
+  fbDesc.colorAttachments[0].texture = msaaColor;
+  fbDesc.colorAttachments[0].resolveTexture = resolveTex;
+  const auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(fb, nullptr);
+  ASSERT_EQ(fb->getResolveColorAttachment(0), resolveTex);
+
+  // The single-texture overload swaps only the color attachment and carries no
+  // resolve target. The stale resolve must be cleared so it does not linger
+  // against the new color attachment.
+  const auto newColor = iglDev_->createTexture(resolveDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  fb->updateDrawable(newColor);
+  EXPECT_EQ(fb->getColorAttachment(0), newColor);
+  EXPECT_EQ(fb->getResolveColorAttachment(0), nullptr);
+}
+
 TEST_F(FramebufferVulkanTest, StorageTextureAttachment) {
   Result ret;
 

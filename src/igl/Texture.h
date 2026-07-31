@@ -1051,6 +1051,9 @@ struct SurfaceTextures {
   std::shared_ptr<ITexture> color;
   /** @brief The surface's depth texture. */
   std::shared_ptr<ITexture> depth;
+  /** @brief Optional single-sample resolve target for an MSAA color texture. When set, the
+   * render pass resolves the multisampled color into this texture. Null when MSAA is disabled. */
+  std::shared_ptr<ITexture> colorResolve;
 };
 
 } // namespace igl
