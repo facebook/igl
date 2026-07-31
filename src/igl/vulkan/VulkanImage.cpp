@@ -10,6 +10,7 @@
 #include <array>
 // NOLINTNEXTLINE(facebook-unused-include-check)
 #include <cinttypes>
+#include <type_traits>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImageView.h>
@@ -62,6 +63,8 @@ constexpr auto kHandleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 } // namespace
 
 namespace igl::vulkan {
+
+static_assert(std::is_trivially_copyable_v<VulkanImageCreateInfo>);
 
 namespace {
 

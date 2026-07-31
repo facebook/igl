@@ -7,10 +7,13 @@
 
 #include "VulkanImageView.h"
 
+#include <type_traits>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
 
 namespace igl::vulkan {
+
+static_assert(std::is_trivially_copyable_v<VulkanImageViewCreateInfo>);
 
 VulkanImageView::VulkanImageView(const VulkanContext& ctx,
                                  const VulkanImageViewCreateInfo& ci,
