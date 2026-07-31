@@ -7,7 +7,17 @@
 
 #include <IGLU/simple_renderer/ShaderUniforms.h>
 
+#include "../data/ShaderData.h"
 #include "../util/Common.h"
+
+#include <igl/CommandBuffer.h>
+#include <igl/Framebuffer.h>
+#include <igl/NameHandle.h>
+#include <igl/RenderCommandEncoder.h>
+#include <igl/RenderPass.h>
+#include <igl/RenderPipelineState.h>
+#include <igl/Texture.h>
+#include <igl/VertexInputState.h>
 
 namespace igl::tests {
 
@@ -268,6 +278,132 @@ TEST_F(ShaderUniformsTest, ConstructWithMultiMemberBuffer) {
   const iglu::simdtypes::float4x4 identity(col, col, col, col);
   shaderUniforms.setFloat4x4(igl::genNameHandle("modelMatrix"), identity);
   shaderUniforms.setFloat4x4(igl::genNameHandle("viewMatrix"), identity);
+}
+
+// Drives a real uniform-buffer upload on Vulkan through bind(). setFloat4() copies the
+// uniform bytes into the malloc'd allocation (the setUniformBytes() memcpy path) and
+// bind() uploads them into the IGL uniform buffer via the
+// static_cast<uint8_t*>(allocation->ptr) + suballocation-offset source pointer in
+// bindBuffer(). Suballocation slot 1 is selected so a non-zero offset is exercised.
+TEST_F(ShaderUniformsTest, BindUploadsSuballocatedUniformBuffer) {
+  if (iglDev_->getBackendType() != igl::BackendType::Vulkan) {
+    GTEST_SKIP() << "Suballocated uniform-buffer upload path is Vulkan-only";
+  }
+
+  const NameHandle blockName = igl::genNameHandle("FragmentUniforms");
+  const NameHandle memberName = igl::genNameHandle("color");
+  const BufferArgDesc fragmentBuffer{
+      .name = blockName,
+      .bufferDataSize = 16,
+      .bufferIndex = 0,
+      .shaderStage = ShaderStage::Fragment,
+      .isUniformBlock = true,
+      .members = {{.name = memberName, .type = UniformType::Float4, .offset = 0, .arrayLength = 1}},
+  };
+  TestRenderPipelineReflection reflection{
+      std::vector<BufferArgDesc>{fragmentBuffer},
+      std::vector<SamplerArgDesc>{},
+      std::vector<TextureArgDesc>{},
+  };
+  iglu::material::ShaderUniforms shaderUniforms(*iglDev_, reflection);
+  ASSERT_TRUE(shaderUniforms.containsUniform(memberName))
+      << "reflection member should be registered as a uniform";
+
+  // Selecting suballocation slot 1 forces a non-zero suballocation offset in both the
+  // memcpy destination and the upload source pointer.
+  const igl::Result subResult = shaderUniforms.setSuballocationIndex(memberName, 1);
+  ASSERT_TRUE(subResult.isOk()) << subResult.message;
+
+  const iglu::simdtypes::float4 color = {0.25f, 0.5f, 0.75f, 1.0f};
+  shaderUniforms.setFloat4(memberName, color);
+
+  // Minimal offscreen render target so a real render command encoder can be opened.
+  constexpr size_t kWidth = 4;
+  constexpr size_t kHeight = 4;
+  constexpr float kClear = 0.501f;
+  constexpr uint32_t kClearHex = 0x80808080;
+
+  Result ret;
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 kWidth,
+                                                 kHeight,
+                                                 TextureDesc::TextureUsageBits::Sampled |
+                                                     TextureDesc::TextureUsageBits::Attachment);
+  std::shared_ptr<ITexture> offscreen = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_TRUE(offscreen != nullptr);
+
+  FramebufferDesc framebufferDesc;
+  framebufferDesc.colorAttachments[0].texture = offscreen;
+  std::shared_ptr<IFramebuffer> framebuffer = iglDev_->createFramebuffer(framebufferDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_TRUE(framebuffer != nullptr);
+
+  RenderPassDesc renderPass;
+  renderPass.colorAttachments.resize(1);
+  renderPass.colorAttachments[0].loadAction = LoadAction::Clear;
+  renderPass.colorAttachments[0].storeAction = StoreAction::Store;
+  renderPass.colorAttachments[0].clearColor = {kClear, kClear, kClear, kClear};
+
+  std::unique_ptr<IShaderStages> stages;
+  util::createSimpleShaderStages(iglDev_, stages);
+  std::shared_ptr<IShaderStages> shaderStages = std::move(stages);
+
+  VertexInputStateDesc inputDesc;
+  inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
+  inputDesc.attributes[0].offset = 0;
+  inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
+  inputDesc.attributes[0].name = data::shader::kSimplePos;
+  inputDesc.attributes[0].location = 0;
+  inputDesc.inputBindings[0].stride = sizeof(float) * 4;
+  inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
+  inputDesc.attributes[1].offset = 0;
+  inputDesc.attributes[1].bufferIndex = data::shader::kSimpleUvIndex;
+  inputDesc.attributes[1].name = data::shader::kSimpleUv;
+  inputDesc.attributes[1].location = 1;
+  inputDesc.inputBindings[1].stride = sizeof(float) * 2;
+  inputDesc.numAttributes = inputDesc.numInputBindings = 2;
+  std::shared_ptr<IVertexInputState> vertexInputState =
+      iglDev_->createVertexInputState(inputDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_TRUE(vertexInputState != nullptr);
+
+  const size_t textureUnit = 0;
+  const RenderPipelineDesc pipelineDesc = {
+      .vertexInputState = vertexInputState,
+      .shaderStages = shaderStages,
+      .targetDesc = {.colorAttachments = {{.textureFormat = offscreen->getFormat()}}},
+      .cullMode = igl::CullMode::Disabled,
+      .fragmentUnitSamplerMap = {{textureUnit, IGL_NAMEHANDLE(data::shader::kSimpleSampler)}},
+  };
+  std::shared_ptr<IRenderPipelineState> pipelineState =
+      iglDev_->createRenderPipeline(pipelineDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_TRUE(pipelineState != nullptr);
+
+  auto cmdBuffer = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_TRUE(cmdBuffer != nullptr);
+
+  auto encoder = cmdBuffer->createRenderCommandEncoder(renderPass, framebuffer);
+  ASSERT_TRUE(encoder != nullptr);
+
+  // Exercises ShaderUniforms::bindBuffer() -> iglBuffer->upload() with the
+  // static_cast<uint8_t*>(allocation->ptr) + subAllocatedOffset source pointer.
+  shaderUniforms.bind(*iglDev_, *pipelineState, *encoder);
+  encoder->endEncoding();
+
+  cmdQueue_->submit(*cmdBuffer);
+  cmdBuffer->waitUntilCompleted();
+
+  // The render pass that contained the uniform-buffer upload completed on the GPU, so the
+  // offscreen target holds the clear color.
+  std::vector<uint32_t> pixels(kWidth * kHeight);
+  framebuffer->copyBytesColorAttachment(
+      *cmdQueue_, 0, pixels.data(), TextureRangeDesc::new2D(0, 0, kWidth, kHeight));
+  for (const uint32_t pixel : pixels) {
+    EXPECT_EQ(pixel, kClearHex) << "offscreen target should hold the clear color after bind()";
+  }
 }
 
 } // namespace igl::tests
