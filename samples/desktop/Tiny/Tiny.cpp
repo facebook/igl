@@ -137,7 +137,7 @@ static std::shared_ptr<IRenderPipelineState> renderPipelineStateTriangle;
 
 static GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
   if (!glfwInit()) {
-    printf("glfwInit() failed");
+    std::printf("glfwInit() failed");
     return nullptr;
   }
 
@@ -165,7 +165,7 @@ static GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanVali
 
   if (window) {
     glfwSetErrorCallback([](int error, const char* description) {
-      printf("GLFW Error (%i): %s\n", error, description);
+      std::printf("GLFW Error (%i): %s\n", error, description);
     });
 
     glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int) {
@@ -178,7 +178,7 @@ static GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanVali
     glfwSetWindowSizeCallback(window, [](GLFWwindow* /*window*/, int w, int h) {
       width = w;
       height = h;
-      printf("Window resized! width=%d, height=%d\n", width, height);
+      std::printf("Window resized! width=%d, height=%d\n", width, height);
 #if !USE_OPENGL_BACKEND
       auto* vulkanDevice = static_cast<vulkan::Device*>(device.get());
       auto& ctx = vulkanDevice->getVulkanContext();
@@ -407,7 +407,7 @@ int main(int argc, char* argv[]) {
     if (window) {
       glfwPollEvents();
     } else {
-      printf("We are running headless - breaking after 1 frame\n");
+      std::printf("We are running headless - breaking after 1 frame\n");
       std::shared_ptr<ITexture> texture = framebuffer->getColorAttachment(0);
       const Dimensions dim = texture->getDimensions();
       std::vector<uint8_t> pixelsRGBA(dim.width * dim.height * 4);

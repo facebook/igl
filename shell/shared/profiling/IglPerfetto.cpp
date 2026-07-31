@@ -46,7 +46,7 @@ void drainSessionToFile(perfetto::TracingSession& session, const std::string& pa
 
   std::ofstream out(path, std::ios::out | std::ios::binary | std::ios::trunc);
   if (!out) {
-    fprintf(stderr, "[perfetto] failed to open output file: %s\n", path.c_str());
+    std::fprintf(stderr, "[perfetto] failed to open output file: %s\n", path.c_str());
     return;
   }
   out.write(buffer.data(), static_cast<std::streamsize>(buffer.size()));
@@ -55,10 +55,10 @@ void drainSessionToFile(perfetto::TracingSession& session, const std::string& pa
   // destructor below the success log.
   out.close();
   if (!out.good()) {
-    fprintf(stderr, "[perfetto] failed to write trace to %s\n", path.c_str());
+    std::fprintf(stderr, "[perfetto] failed to write trace to %s\n", path.c_str());
     return;
   }
-  fprintf(
+  std::fprintf(
       stderr, "[perfetto] tracing stopped — wrote %zu bytes to %s\n", buffer.size(), path.c_str());
 }
 #endif
@@ -95,8 +95,9 @@ bool startTraceToFile(std::string outputPath) noexcept {
   auto& state = sessionState();
   std::lock_guard<std::mutex> lock(state.mutex);
   if (state.session) {
-    fprintf(stderr,
-            "[perfetto] startTraceToFile called while a session is already active — ignoring\n");
+    std::fprintf(
+        stderr,
+        "[perfetto] startTraceToFile called while a session is already active — ignoring\n");
     return false;
   }
 
@@ -112,9 +113,9 @@ bool startTraceToFile(std::string outputPath) noexcept {
 
   state.session = perfetto::Tracing::NewTrace();
   if (!state.session) {
-    fprintf(stderr,
-            "[perfetto] Tracing::NewTrace() returned null — "
-            "was initPerfetto() called?\n");
+    std::fprintf(stderr,
+                 "[perfetto] Tracing::NewTrace() returned null — "
+                 "was initPerfetto() called?\n");
     return false;
   }
   state.session->Setup(cfg);
@@ -123,7 +124,7 @@ bool startTraceToFile(std::string outputPath) noexcept {
   // Intentionally do not log the output path here. The path may not be
   // writable (TCC, disk full, …) and we don't want to mislead the caller —
   // drainSessionToFile() prints the authoritative success/failure line.
-  fprintf(stderr, "[perfetto] tracing started\n");
+  std::fprintf(stderr, "[perfetto] tracing started\n");
   return true;
 }
 

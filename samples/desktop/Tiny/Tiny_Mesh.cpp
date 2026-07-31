@@ -205,7 +205,7 @@ UniformsPerObject perObject[kNumCubes];
 
 GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
   if (!glfwInit()) {
-    printf("glfwInit() failed");
+    std::printf("glfwInit() failed");
     return nullptr;
   }
 
@@ -221,7 +221,7 @@ GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationL
 
   if (newWindow) {
     glfwSetErrorCallback([](int error, const char* description) {
-      printf("GLFW Error (%i): %s\n", error, description);
+      std::printf("GLFW Error (%i): %s\n", error, description);
     });
 
     glfwSetKeyCallback(newWindow, [](GLFWwindow* window, int key, int, int action, int) {
@@ -238,7 +238,7 @@ GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationL
 
     // @lint-ignore CLANGTIDY
     glfwSetWindowSizeCallback(newWindow, [](GLFWwindow* /*window*/, int width, int height) {
-      printf("Window resized! width=%d, height=%d\n", width, height);
+      std::printf("Window resized! width=%d, height=%d\n", width, height);
       width_ = width;
       height_ = height;
 #if !USE_OPENGL_BACKEND
@@ -690,7 +690,7 @@ int main(int argc, char* argv[]) {
     if (window) {
       glfwPollEvents();
     } else {
-      printf("We are running headless - breaking after 1 frame\n");
+      std::printf("We are running headless - breaking after 1 frame\n");
       std::shared_ptr<ITexture> texture = framebuffer->getColorAttachment(0);
       const Dimensions dim = texture->getDimensions();
       std::vector<uint8_t> pixelsRGBA(dim.width * dim.height * 4);
