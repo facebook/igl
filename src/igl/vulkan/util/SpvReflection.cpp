@@ -9,11 +9,20 @@
 
 #include <algorithm>
 #include <spirv/unified1/spirv.h>
+#include <type_traits>
 
 #define IGL_COMMON_SKIP_CHECK
 #include <igl/Macros.h>
 
 namespace igl::vulkan::util {
+
+static_assert(sizeof(TextureDescription) == 12);
+static_assert(std::is_trivially_copyable_v<TextureDescription>);
+static_assert(sizeof(ImageDescription) == 16);
+static_assert(std::is_trivially_copyable_v<ImageDescription>);
+static_assert(sizeof(BufferDescription) == 12);
+static_assert(std::is_trivially_copyable_v<BufferDescription>);
+
 namespace {
 
 struct SpirvId {
