@@ -19,7 +19,7 @@ IGL_API int IGLAppleLogDefaultHandler(IGLLogLevel logLevel,
                                       va_list ap) {
   // Format the message into a buffer for os_log
   char buf[4096];
-  int result = vsnprintf(buf, sizeof(buf), format, ap);
+  int result = std::vsnprintf(buf, sizeof(buf), format, ap);
 
   switch (logLevel) {
   case IGLLogError:
