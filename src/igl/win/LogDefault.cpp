@@ -11,8 +11,8 @@
 #error This file should only be compiled on Windows targets
 #endif // !IGL_PLATFORM_WINDOWS
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -25,7 +25,7 @@ IGL_API int IGLWinLogDefaultHandler(IGLLogLevel logLevel,
   if (IsDebuggerPresent()) {
     char str[10240];
     const size_t kStrSize = sizeof(str) / sizeof(str[0]);
-    int result = vsnprintf(str, kStrSize, format, ap);
+    int result = std::vsnprintf(str, kStrSize, format, ap);
 
     OutputDebugStringA(str);
 
