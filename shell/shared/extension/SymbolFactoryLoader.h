@@ -8,6 +8,7 @@
 #pragma once
 
 #include <string>
+#include <igl/IGLFolly.h>
 
 /**
  * @brief C-function signature for factory that instantiates instance of symbol
@@ -22,8 +23,8 @@ struct SymbolFactoryLoader {
    *
    * @return C function if symbol exists; nullptr otherwise.
    */
-  static IGLShellSymbol_NewCFunction find(const char* name) noexcept;
-  static IGLShellSymbol_NewCFunction find(const std::string& name) noexcept;
+  static IGLShellSymbol_NewCFunction IGL_NULLABLE find(const char* name) noexcept;
+  static IGLShellSymbol_NewCFunction IGL_NULLABLE find(const std::string& name) noexcept;
 };
 
 } // namespace igl::shell

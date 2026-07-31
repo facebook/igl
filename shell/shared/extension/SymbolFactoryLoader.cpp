@@ -36,7 +36,7 @@
 
 namespace igl::shell {
 
-IGLShellSymbol_NewCFunction SymbolFactoryLoader::find(const char* name) noexcept {
+IGLShellSymbol_NewCFunction IGL_NULLABLE SymbolFactoryLoader::find(const char* name) noexcept {
 #if IGL_DL_UNIX
   auto factoryFunc = reinterpret_cast<IGLShellSymbol_NewCFunction>(dlsym(RTLD_DEFAULT, name));
 #elif IGL_DL_DLL
@@ -44,7 +44,7 @@ IGLShellSymbol_NewCFunction SymbolFactoryLoader::find(const char* name) noexcept
       reinterpret_cast<IGLShellSymbol_NewCFunction>(GetProcAddress(GetModuleHandle(nullptr), name));
 #else
   IGL_LOG_ERROR("IGL WARNING: Runtime symbol lookup *not* supported on this platform\n");
-  auto factoryFunc = static_cast<IGLShellSymbol_NewCFunction>(nullptr);
+  IGLShellSymbol_NewCFunction factoryFunc = nullptr;
 #endif
 
   if (!factoryFunc) {
@@ -54,7 +54,8 @@ IGLShellSymbol_NewCFunction SymbolFactoryLoader::find(const char* name) noexcept
   return factoryFunc;
 }
 
-IGLShellSymbol_NewCFunction SymbolFactoryLoader::find(const std::string& name) noexcept {
+IGLShellSymbol_NewCFunction IGL_NULLABLE
+SymbolFactoryLoader::find(const std::string& name) noexcept {
   return find(name.c_str());
 }
 
