@@ -10,8 +10,11 @@
 #include "ParametricVertexData.h"
 
 #include <array>
+#include <type_traits>
 
 namespace iglu::vertexdata {
+
+static_assert(std::is_trivially_copyable_v<VertexPosUv>);
 
 // Assumption: <name, location> for OpenGL and Metal, respectively
 static const std::pair<const char*, int> kSAttrPosition("a_position", 0);
