@@ -317,6 +317,10 @@ void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float
   [encoder_ setDepthBias:depthBias slopeScale:slopeScale clamp:clamp];
 }
 
+void RenderCommandEncoder::setFrontFacingWinding(WindingMode /*frontFaceWinding*/) {
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+}
+
 void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
   IGL_DEBUG_ASSERT(encoder_);
   [encoder_ setStencilReferenceValue:value];
