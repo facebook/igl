@@ -9,6 +9,10 @@
 
 #include <IGLU/uniform/Collection.h>
 #include <IGLU/uniform/Encoder.h>
+#include <type_traits>
+
+static_assert(sizeof(iglu::uniform::CollectionEncoder) == 4);
+static_assert(std::is_trivially_copyable_v<iglu::uniform::CollectionEncoder>);
 
 namespace iglu::uniform {
 

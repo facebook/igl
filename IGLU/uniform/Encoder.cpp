@@ -8,7 +8,11 @@
 #include <IGLU/uniform/Encoder.h>
 
 #include <IGLU/uniform/Descriptor.h>
+#include <type_traits>
 #include <igl/IGL.h> // IWYU pragma: keep
+
+static_assert(sizeof(iglu::uniform::Encoder) == 4);
+static_assert(std::is_trivially_copyable_v<iglu::uniform::Encoder>);
 
 namespace iglu::uniform {
 
