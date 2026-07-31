@@ -176,6 +176,29 @@ bool TextureLoaderFactory::validate(DataReader reader,
                              "Supercompressed level expansion ratio is implausible.");
       return false;
     }
+
+    // Each ZLIB-supercompressed level is a zlib stream (RFC 1950); miniz tolerates non-conformant
+    // headers (e.g. CINFO > 7) on which tinfl_decompress can spin, so reject them before decoding.
+    if (header->supercompressionScheme == static_cast<uint32_t>(KTX_SS_ZLIB)) {
+      if (levelByteLength < 2u) {
+        igl::Result::setResult(outResult,
+                               igl::Result::Code::InvalidOperation,
+                               "ZLIB supercompressed level is too short for a zlib header.");
+        return false;
+      }
+      const uint8_t cmf = reader.readAt<uint8_t>(static_cast<uint32_t>(levelByteOffset));
+      const uint8_t flg = reader.readAt<uint8_t>(static_cast<uint32_t>(levelByteOffset) + 1u);
+      const uint32_t compressionMethod = cmf & 0x0Fu;
+      const uint32_t cinfo = cmf >> 4u;
+      const bool hasPresetDictionary = (flg & 0x20u) != 0u;
+      const bool checkBitsValid = (((static_cast<uint32_t>(cmf) << 8u) | flg) % 31u) == 0u;
+      if (compressionMethod != 8u || cinfo > 7u || hasPresetDictionary || !checkBitsValid) {
+        igl::Result::setResult(outResult,
+                               igl::Result::Code::InvalidOperation,
+                               "ZLIB supercompressed level has a non-conformant zlib header.");
+        return false;
+      }
+    }
   }
 
   if (header->vkFormat != 0u) {

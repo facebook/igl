@@ -43,6 +43,7 @@ constexpr uint32_t kOffsetWidth = 20u;
 constexpr uint32_t kOffsetHeight = 24u;
 constexpr uint32_t kOffsetFaceCount = 36u;
 constexpr uint32_t kOffsetLevelCount = 40u;
+constexpr uint32_t kOffsetSupercompressionScheme = 44u;
 constexpr uint32_t kOffsetDfdByteOffset = 48u;
 constexpr uint32_t kOffsetDfdByteLength = 52u;
 constexpr uint32_t kOffsetKvdByteOffset = 56u;
@@ -290,6 +291,47 @@ void populateMinimalValidFile(std::vector<uint8_t>& buffer,
   putMipLevel(buffer, vkFormat, 0u, imageSize);
 
   putDfd(buffer, vkFormat, forceDfdAfterMipLevel1 ? 1u : numMipLevels);
+}
+
+constexpr uint32_t kSupercompressionSchemeZlib = 3u; // KTX_SS_ZLIB
+
+// Builds a minimal KTX2 buffer with a single ZLIB-supercompressed level whose compressed data
+// begins with the given two-byte zlib header (cmf, flg). Every check preceding the zlib-header
+// conformance guard in validate() is satisfied, so tests can exercise that guard in isolation.
+// A byteLength < 2 lets the "too short for a zlib header" branch be exercised.
+std::vector<uint8_t> makeZlibHeaderTestFile(uint8_t cmf,
+                                            uint8_t flg,
+                                            uint32_t levelByteLength = 16u) {
+  constexpr uint32_t width = 4u;
+  constexpr uint32_t height = 4u;
+  constexpr uint32_t levelDataOffset = kHeaderSize + kMipmapMetadataSize;
+  std::vector<uint8_t> buffer(static_cast<size_t>(levelDataOffset) + levelByteLength, 0u);
+
+  const char fixedTag[] = {'\xAB', 'K', 'T', 'X', ' ', '2', '0', '\xBB', '\r', '\n', '\x1A', '\n'};
+  std::memcpy(buffer.data(), &fixedTag, sizeof(fixedTag));
+  put(buffer, kOffsetVkFormat, VK_FORMAT_R8G8B8A8_UNORM);
+  put(buffer, kOffsetTypeSize, 1u);
+  put(buffer, kOffsetWidth, width);
+  put(buffer, kOffsetHeight, height);
+  put(buffer, kOffsetFaceCount, 1u);
+  put(buffer, kOffsetLevelCount, 1u);
+  put(buffer, kOffsetSupercompressionScheme, kSupercompressionSchemeZlib);
+
+  // Single level index entry: byteOffset, (compressed) byteLength, uncompressedByteLength. A 1:1
+  // ratio keeps the expansion-ratio guard satisfied so the zlib-header guard is what's exercised.
+  put(buffer, kHeaderSize, static_cast<uint64_t>(levelDataOffset));
+  put(buffer, kHeaderSize + 8u, static_cast<uint64_t>(levelByteLength));
+  put(buffer, kHeaderSize + 16u, static_cast<uint64_t>(levelByteLength));
+
+  // Compressed level data: the two-byte zlib header under test, remainder zero-filled.
+  if (levelByteLength >= 1u) {
+    put(buffer, levelDataOffset, cmf);
+  }
+  if (levelByteLength >= 2u) {
+    put(buffer, levelDataOffset + 1u, flg);
+  }
+
+  return buffer;
 }
 
 } // namespace
@@ -562,6 +604,88 @@ TEST_F(Ktx2TextureLoaderTest, MinimumValidHeader1x1Rgba8Succeeds) {
   auto loader = factory_.tryCreate(reader, &ret);
   EXPECT_NE(loader, nullptr);
   EXPECT_TRUE(ret.isOk()) << ret.message;
+}
+
+TEST_F(Ktx2TextureLoaderTest, ZlibConformantHeaderNotRejectedByHeaderGuard) {
+  // A conformant zlib header (CM=8, CINFO=7, no preset dictionary, valid check bits) must pass the
+  // zlib-header conformance guard. The hand-built file is not otherwise complete, so tryCreate
+  // still fails downstream -- but the failure must not come from the zlib-header guard.
+  auto buffer = makeZlibHeaderTestFile(0x78u, 0x01u);
+
+  Result ret;
+  auto reader = *iglu::textureloader::DataReader::tryCreate(
+      buffer.data(), static_cast<uint32_t>(buffer.size()), nullptr);
+  auto loader = factory_.tryCreate(reader, &ret);
+  // The file is intentionally incomplete, so tryCreate() must still fail downstream...
+  EXPECT_EQ(loader, nullptr);
+  EXPECT_FALSE(ret.isOk());
+  // ...but the failure must not come from the zlib-header conformance guard.
+  EXPECT_EQ(std::string(ret.message).find("zlib header"), std::string::npos) << ret.message;
+}
+
+TEST_F(Ktx2TextureLoaderTest, ZlibHeaderInvalidWindowSizeFails) {
+  // CMF 0xF8 -> CINFO=15, a 32MB window RFC 1950 forbids (CINFO must be <= 7). Check bits are valid
+  // and CM=8, so this isolates the window-size rejection. This is the crash input's header.
+  auto buffer = makeZlibHeaderTestFile(0xF8u, 0x00u);
+
+  Result ret;
+  auto reader = *iglu::textureloader::DataReader::tryCreate(
+      buffer.data(), static_cast<uint32_t>(buffer.size()), nullptr);
+  auto loader = factory_.tryCreate(reader, &ret);
+  EXPECT_EQ(loader, nullptr);
+  EXPECT_EQ(std::string(ret.message),
+            "ZLIB supercompressed level has a non-conformant zlib header.");
+}
+
+TEST_F(Ktx2TextureLoaderTest, ZlibHeaderInvalidCheckBitsFails) {
+  // CMF/FLG 0x7800 % 31 != 0, so FCHECK fails while CM=8, CINFO=7, no preset dictionary.
+  auto buffer = makeZlibHeaderTestFile(0x78u, 0x00u);
+
+  Result ret;
+  auto reader = *iglu::textureloader::DataReader::tryCreate(
+      buffer.data(), static_cast<uint32_t>(buffer.size()), nullptr);
+  auto loader = factory_.tryCreate(reader, &ret);
+  EXPECT_EQ(loader, nullptr);
+  EXPECT_EQ(std::string(ret.message),
+            "ZLIB supercompressed level has a non-conformant zlib header.");
+}
+
+TEST_F(Ktx2TextureLoaderTest, ZlibHeaderPresetDictionaryFails) {
+  // FLG 0x20 sets FDICT (preset dictionary) while keeping CM=8, CINFO=7 and valid check bits.
+  auto buffer = makeZlibHeaderTestFile(0x78u, 0x20u);
+
+  Result ret;
+  auto reader = *iglu::textureloader::DataReader::tryCreate(
+      buffer.data(), static_cast<uint32_t>(buffer.size()), nullptr);
+  auto loader = factory_.tryCreate(reader, &ret);
+  EXPECT_EQ(loader, nullptr);
+  EXPECT_EQ(std::string(ret.message),
+            "ZLIB supercompressed level has a non-conformant zlib header.");
+}
+
+TEST_F(Ktx2TextureLoaderTest, ZlibHeaderInvalidCompressionMethodFails) {
+  // CMF 0x77 -> CM=7 (not DEFLATE); CINFO=7, no preset dictionary and valid check bits.
+  auto buffer = makeZlibHeaderTestFile(0x77u, 0x09u);
+
+  Result ret;
+  auto reader = *iglu::textureloader::DataReader::tryCreate(
+      buffer.data(), static_cast<uint32_t>(buffer.size()), nullptr);
+  auto loader = factory_.tryCreate(reader, &ret);
+  EXPECT_EQ(loader, nullptr);
+  EXPECT_EQ(std::string(ret.message),
+            "ZLIB supercompressed level has a non-conformant zlib header.");
+}
+
+TEST_F(Ktx2TextureLoaderTest, ZlibLevelTooShortForHeaderFails) {
+  // A single-byte level cannot hold the two-byte zlib header.
+  auto buffer = makeZlibHeaderTestFile(0x78u, 0x01u, /*levelByteLength=*/1u);
+
+  Result ret;
+  auto reader = *iglu::textureloader::DataReader::tryCreate(
+      buffer.data(), static_cast<uint32_t>(buffer.size()), nullptr);
+  auto loader = factory_.tryCreate(reader, &ret);
+  EXPECT_EQ(loader, nullptr);
+  EXPECT_EQ(std::string(ret.message), "ZLIB supercompressed level is too short for a zlib header.");
 }
 
 } // namespace igl::tests::ktx2
