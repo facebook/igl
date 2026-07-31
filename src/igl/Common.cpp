@@ -64,24 +64,32 @@ void optimizedMemcpy(void* IGL_NULLABLE dst, const void* IGL_NULLABLE src, size_
   // example, an IGL boolean array. In this case, dst or src only need to be
   // byte aligned. The logic here checks to see if dst and src are
   // multiples of 4. If not, then we will use the memcpy default case below
-  if ((ptrdiff_t)dst & 0x3 || (ptrdiff_t)src & 0x3) {
+  constexpr ptrdiff_t kAlign4Mask = 0x3;
+  const bool unaligned = (reinterpret_cast<ptrdiff_t>(dst) & kAlign4Mask) != 0 ||
+                         (reinterpret_cast<ptrdiff_t>(src) & kAlign4Mask) != 0;
+  if (unaligned) {
     optimizationCase = 1;
   }
 
+  auto* dst32 = static_cast<uint32_t*>(dst);
+  auto* dst64 = static_cast<uint64_t*>(dst);
+  const auto* src32 = static_cast<const uint32_t*>(src);
+  const auto* src64 = static_cast<const uint64_t*>(src);
+
   switch (optimizationCase) {
   case 4:
-    *((uint32_t*)dst) = *((const uint32_t*)src);
+    dst32[0] = src32[0];
     break;
   case 8:
-    *((uint64_t*)dst) = *((const uint64_t*)src);
+    dst64[0] = src64[0];
     break;
   case 12:
-    *((uint64_t*)dst) = *((const uint64_t*)src);
-    *((uint32_t*)(dst) + 2) = *((const uint32_t*)(src) + 2);
+    dst64[0] = src64[0];
+    dst32[2] = src32[2];
     break;
   case 16:
-    *((uint64_t*)dst) = *((const uint64_t*)src);
-    *((uint64_t*)(dst) + 1) = *((const uint64_t*)(src) + 1);
+    dst64[0] = src64[0];
+    dst64[1] = src64[1];
     break;
   default:
     // NOLINTNEXTLINE(facebook-security-vulnerable-memcpy)
