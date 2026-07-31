@@ -8,6 +8,7 @@
 #include <igl/metal/Device.h>
 
 #import <Foundation/Foundation.h>
+#include <cstring>
 #include <sstream>
 #include <unordered_set>
 #include <igl/FramebufferWrapper.h>
@@ -826,7 +827,7 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
 
     metalLibrary = [device_ newLibraryWithData:data error:&error];
   } else {
-    if (!desc.input.source || !strlen(desc.input.source)) {
+    if (!desc.input.source || !std::strlen(desc.input.source)) {
       Result::setResult(outResult, Result::Code::ArgumentNull);
       return nullptr;
     }
