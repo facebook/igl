@@ -8,8 +8,13 @@
 #include "VulkanQueuePool.h"
 
 #include <map>
+#include <type_traits>
 
 namespace igl::vulkan {
+
+static_assert(sizeof(VulkanQueueDescriptor) == 12);
+static_assert(std::is_trivially_copyable_v<VulkanQueueDescriptor>);
+
 namespace {
 
 std::set<VulkanQueueDescriptor> enumerateQueues(const VulkanFunctionTable& vf,
