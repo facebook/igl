@@ -62,7 +62,7 @@ IGL_API int IGLLogOnce(IGLLogLevel logLevel, const char* IGL_RESTRICT format, ..
   char buffer[bufferLength]; // uninitialized
   FOLLY_PUSH_WARNING
   FOLLY_GNU_DISABLE_WARNING("-Wformat-nonliteral")
-  int result = vsnprintf(buffer, bufferLength, format, ap);
+  int result = std::vsnprintf(buffer, bufferLength, format, ap);
   FOLLY_POP_WARNING
   va_end(ap);
 
@@ -88,7 +88,7 @@ IGL_API int IGLLogDefaultHandler(IGLLogLevel /*logLevel*/,
                                  va_list ap) {
   FOLLY_PUSH_WARNING
   FOLLY_GNU_DISABLE_WARNING("-Wformat-nonliteral")
-  return vfprintf(stderr, format, ap);
+  return std::vfprintf(stderr, format, ap);
   FOLLY_POP_WARNING
 }
 
