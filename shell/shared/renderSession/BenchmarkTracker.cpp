@@ -223,20 +223,20 @@ double BenchmarkTracker::getRunningAverageMs() const {
 
 std::string formatBenchmarkStats(const RenderTimeStats& stats, const char* prefix) {
   char buffer[512];
-  snprintf(buffer,
-           sizeof(buffer),
-           "%sFPS: avg=%.1f, min=%.1f, max=%.1f | "
-           "Frame time (ms): avg=%.2f, min=%.2f, max=%.2f | "
-           "Samples: %zu%s",
-           prefix,
-           stats.avgFps,
-           stats.minFps,
-           stats.maxFps,
-           stats.avgRenderTimeMs,
-           stats.minRenderTimeMs,
-           stats.maxRenderTimeMs,
-           stats.totalSamples,
-           stats.hasHiccup ? " [HICCUP DETECTED]" : "");
+  std::snprintf(buffer,
+                sizeof(buffer),
+                "%sFPS: avg=%.1f, min=%.1f, max=%.1f | "
+                "Frame time (ms): avg=%.2f, min=%.2f, max=%.2f | "
+                "Samples: %zu%s",
+                prefix,
+                stats.avgFps,
+                stats.minFps,
+                stats.maxFps,
+                stats.avgRenderTimeMs,
+                stats.minRenderTimeMs,
+                stats.maxRenderTimeMs,
+                stats.totalSamples,
+                stats.hasHiccup ? " [HICCUP DETECTED]" : "");
   return {buffer};
 }
 
@@ -258,17 +258,17 @@ std::string generateFinalBenchmarkReport(const BenchmarkTracker& tracker, bool w
   }
 
   char line[128];
-  snprintf(line,
-           sizeof(line),
-           "║  Duration: %.1f minutes (%.1f seconds)                                    ",
-           elapsedMin,
-           elapsedSec);
+  std::snprintf(line,
+                sizeof(line),
+                "║  Duration: %.1f minutes (%.1f seconds)                                    ",
+                elapsedMin,
+                elapsedSec);
   oss << line << "║\n";
 
-  snprintf(line, sizeof(line), "║  Total Frames: %zu", stats.totalSamples);
+  std::snprintf(line, sizeof(line), "║  Total Frames: %zu", stats.totalSamples);
   oss << line;
   // Pad to fit the box
-  size_t len = strlen(line);
+  size_t len = std::strlen(line);
   for (size_t i = len; i < 80; ++i) {
     oss << " ";
   }
@@ -277,52 +277,52 @@ std::string generateFinalBenchmarkReport(const BenchmarkTracker& tracker, bool w
   oss << "╠══════════════════════════════════════════════════════════════════════════════╣\n";
   oss << "║  FPS Statistics:                                                             ║\n";
 
-  snprintf(line,
-           sizeof(line),
-           "║    Average: %.1f FPS                                                    ",
-           stats.avgFps);
+  std::snprintf(line,
+                sizeof(line),
+                "║    Average: %.1f FPS                                                    ",
+                stats.avgFps);
   oss << line << "║\n";
 
-  snprintf(line,
-           sizeof(line),
-           "║    Minimum: %.1f FPS                                                    ",
-           stats.minFps);
+  std::snprintf(line,
+                sizeof(line),
+                "║    Minimum: %.1f FPS                                                    ",
+                stats.minFps);
   oss << line << "║\n";
 
-  snprintf(line,
-           sizeof(line),
-           "║    Maximum: %.1f FPS                                                    ",
-           stats.maxFps);
+  std::snprintf(line,
+                sizeof(line),
+                "║    Maximum: %.1f FPS                                                    ",
+                stats.maxFps);
   oss << line << "║\n";
 
   oss << "╠══════════════════════════════════════════════════════════════════════════════╣\n";
   oss << "║  Frame Time Statistics:                                                      ║\n";
 
-  snprintf(line,
-           sizeof(line),
-           "║    Average: %.2f ms                                                     ",
-           stats.avgRenderTimeMs);
+  std::snprintf(line,
+                sizeof(line),
+                "║    Average: %.2f ms                                                     ",
+                stats.avgRenderTimeMs);
   oss << line << "║\n";
 
-  snprintf(line,
-           sizeof(line),
-           "║    Minimum: %.2f ms                                                     ",
-           stats.minRenderTimeMs);
+  std::snprintf(line,
+                sizeof(line),
+                "║    Minimum: %.2f ms                                                     ",
+                stats.minRenderTimeMs);
   oss << line << "║\n";
 
-  snprintf(line,
-           sizeof(line),
-           "║    Maximum: %.2f ms                                                     ",
-           stats.maxRenderTimeMs);
+  std::snprintf(line,
+                sizeof(line),
+                "║    Maximum: %.2f ms                                                     ",
+                stats.maxRenderTimeMs);
   oss << line << "║\n";
 
   oss << "╠══════════════════════════════════════════════════════════════════════════════╣\n";
 
-  snprintf(line,
-           sizeof(line),
-           "║  Overflow Records: %zu (each contains min/max from %zu samples)        ",
-           tracker.getOverflowRecordCount(),
-           BenchmarkTracker::kDefaultBufferSize);
+  std::snprintf(line,
+                sizeof(line),
+                "║  Overflow Records: %zu (each contains min/max from %zu samples)        ",
+                tracker.getOverflowRecordCount(),
+                BenchmarkTracker::kDefaultBufferSize);
   oss << line << "║\n";
 
   oss << "╚══════════════════════════════════════════════════════════════════════════════╝\n";
