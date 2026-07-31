@@ -9,6 +9,8 @@
 
 #include <type_traits>
 
+static_assert(std::is_trivially_copyable_v<igl::VertexInputBinding>);
+
 using namespace igl;
 
 static_assert(std::is_trivially_copyable_v<VertexInputBinding>);
