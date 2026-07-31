@@ -12,6 +12,8 @@
 #include <array>
 #include <type_traits>
 
+static_assert(std::is_trivially_copyable_v<iglu::vertexdata::VertexPosUv>);
+
 namespace iglu::vertexdata {
 
 static_assert(std::is_trivially_copyable_v<VertexPosUv>);
