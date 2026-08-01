@@ -139,6 +139,18 @@ TEST_F(RenderCommandEncoderVulkanTest, SetDepthBias) {
   cmdQueue_->submit(*cmdBuf);
 }
 
+TEST_F(RenderCommandEncoderVulkanTest, SetFrontFacingWinding) {
+  std::shared_ptr<ICommandBuffer> cmdBuf;
+  auto encoder = createEncoder(cmdBuf);
+  ASSERT_NE(encoder, nullptr);
+
+  encoder->setFrontFacingWinding(WindingMode::Clockwise);
+  encoder->setFrontFacingWinding(WindingMode::CounterClockwise);
+
+  encoder->endEncoding();
+  cmdQueue_->submit(*cmdBuf);
+}
+
 TEST_F(RenderCommandEncoderVulkanTest, DebugGroupLabels) {
   std::shared_ptr<ICommandBuffer> cmdBuf;
   auto encoder = createEncoder(cmdBuf);

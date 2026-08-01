@@ -836,9 +836,17 @@ void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float
   ctx_.vf_.vkCmdSetDepthBias(cmdBuffer_, depthBias, clamp, slopeScale);
 }
 
-void RenderCommandEncoder::setFrontFacingWinding(WindingMode /*frontFaceWinding*/) {
+void RenderCommandEncoder::setFrontFacingWinding(WindingMode frontFaceWinding) {
   IGL_PROFILER_FUNCTION();
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+
+  if (!ctx_.vf_.vkCmdSetFrontFace) {
+    IGL_LOG_ERROR_ONCE(
+        "RenderCommandEncoder::setFrontFacingWinding: vkCmdSetFrontFace(EXT) not available; "
+        "front face change ignored. Enable VK_EXT_extended_dynamic_state or Vulkan 1.3.");
+    return;
+  }
+
+  ctx_.vf_.vkCmdSetFrontFace(cmdBuffer_, windingModeToVkFrontFace(frontFaceWinding));
 }
 
 bool RenderCommandEncoder::setDrawCallCountEnabled(bool value) {
