@@ -7,6 +7,7 @@
 
 #include <igl/vulkan/VulkanFeatures.h>
 
+#include <cstring>
 #include <igl/vulkan/VulkanContext.h>
 
 namespace igl::vulkan {

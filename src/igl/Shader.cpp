@@ -52,14 +52,14 @@ bool safeCStrCompare(const char* IGL_NULLABLE a, const char* IGL_NULLABLE b) {
   if (a == nullptr || b == nullptr) {
     return false;
   }
-  return (strcmp(a, b) == 0);
+  return (std::strcmp(a, b) == 0);
 }
 
 size_t safeCStrHash(const char* IGL_NULLABLE s) {
   if (s == nullptr) {
     return 0;
   }
-  return std::hash<std::string_view>()(std::string_view(s, strlen(s)));
+  return std::hash<std::string_view>()(std::string_view(s, std::strlen(s)));
 }
 
 } // namespace
