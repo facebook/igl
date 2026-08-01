@@ -29,6 +29,7 @@
 // NOLINTNEXTLINE(facebook-unused-include-check)
 #include <GLFW/glfw3native.h>
 #include <cstdio>
+#include <cstring>
 #include <stb/stb_image_write.h>
 #include <igl/IGL.h>
 
@@ -389,9 +390,9 @@ int main(int argc, char* argv[]) {
   bool enableVulkanValidationLayers = true;
 
   for (int i = 1; i < argc; i++) {
-    if (!strcmp(argv[i], "--headless")) {
+    if (!std::strcmp(argv[i], "--headless")) {
       isHeadless = true;
-    } else if (!strcmp(argv[i], "--disable-vulkan-validation-layers")) {
+    } else if (!std::strcmp(argv[i], "--disable-vulkan-validation-layers")) {
       enableVulkanValidationLayers = false;
     }
   }

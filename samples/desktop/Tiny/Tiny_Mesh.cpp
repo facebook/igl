@@ -18,6 +18,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdio>
+#include <cstring>
 #include <filesystem>
 
 #if defined(_XLESS_GLFW_)
@@ -563,12 +564,12 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
   perFrame.proj = glm::perspectiveLH(fov, aspectRatio, 0.1f, 500.0f);
   // place a "camera" behind the cubes, the distance depends on the total number of cubes
   perFrame.view =
-      glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, sqrtf(kNumCubes / 16) * 20.0f * kHalf));
+      glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, std::sqrt(kNumCubes / 16) * 20.0f * kHalf));
   ubPerFrame_[frameIndex]->upload(&perFrame, igl::BufferRange(sizeof(perFrame)));
 
   // rotate cubes around random axes
   for (uint32_t i = 0; i != kNumCubes; i++) {
-    const float direction = powf(-1, static_cast<float>(i + 1));
+    const float direction = std::pow(-1, static_cast<float>(i + 1));
     const uint32_t cubesInLine = static_cast<uint32_t>(std::sqrt(kNumCubes));
     const vec3 offset = vec3(-1.5f * std::sqrt(kNumCubes) + 4.0f * (i % cubesInLine),
                              -1.5f * std::sqrt(kNumCubes) + 4.0f * (i / cubesInLine),
@@ -660,9 +661,9 @@ int main(int argc, char* argv[]) {
   bool enableVulkanValidationLayers = true;
 
   for (int i = 1; i < argc; i++) {
-    if (!strcmp(argv[i], "--headless")) {
+    if (!std::strcmp(argv[i], "--headless")) {
       isHeadless = true;
-    } else if (!strcmp(argv[i], "--disable-vulkan-validation-layers")) {
+    } else if (!std::strcmp(argv[i], "--disable-vulkan-validation-layers")) {
       enableVulkanValidationLayers = false;
     }
   }
