@@ -31,7 +31,7 @@ bool safeDataCompare(const void* IGL_NULLABLE a,
     // If both are null, consider them equal. If only ond is null, they are not equal
     return a == b;
   }
-  return (memcmp(a, b, lengthA) == 0);
+  return (std::memcmp(a, b, lengthA) == 0);
 }
 
 size_t safeDataHash(const void* IGL_NULLABLE ptr, size_t length) {
@@ -153,7 +153,7 @@ bool FunctionConstantValues::operator==(const FunctionConstantValues& other) con
       continue;
     }
     const auto size = getConstantValueSize(a.type);
-    if (memcmp(data_.data() + a.offset, other.data_.data() + b.offset, size) != 0) {
+    if (std::memcmp(data_.data() + a.offset, other.data_.data() + b.offset, size) != 0) {
       return false;
     }
   }
