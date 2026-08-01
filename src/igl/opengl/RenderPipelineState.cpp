@@ -243,9 +243,6 @@ void RenderPipelineState::bind() {
     getContext().disable(GL_BLEND);
   }
 
-  // face winding mode
-  getContext().frontFace((desc_.frontFaceWinding == WindingMode::Clockwise) ? GL_CW : GL_CCW);
-
   // polygon rasterization mode
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::PolygonFillMode)) {
     getContext().polygonFillMode((desc_.polygonFillMode == igl::PolygonFillMode::Fill) ? GL_FILL
