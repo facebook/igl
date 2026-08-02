@@ -879,7 +879,7 @@ Result D3D12Context::enumerateAndSelectAdapter() {
       }
     } else {
       // Parse adapter index
-      int requestedIndex = atoi(adapterEnv);
+      int requestedIndex = std::atoi(adapterEnv);
       if (requestedIndex >= 0 && requestedIndex < static_cast<int>(enumeratedAdapters_.size())) {
         selectedAdapterIndex_ = static_cast<uint32_t>(requestedIndex);
         IGL_D3D12_LOG_VERBOSE("D3D12Context: Environment override - using adapter %d\n",
