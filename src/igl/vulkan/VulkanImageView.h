@@ -8,7 +8,7 @@
 #pragma once
 
 #include <utility>
-#include <igl/vulkan/VulkanFunctionTable.h>
+#include <igl/vulkan/VulkanFunctionTable.h> // IWYU pragma: keep
 
 namespace igl::vulkan {
 
