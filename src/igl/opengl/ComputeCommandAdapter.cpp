@@ -8,6 +8,7 @@
 #include <igl/opengl/ComputeCommandAdapter.h>
 
 #include <algorithm>
+#include <igl/Macros.h>
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/ComputePipelineState.h>
 #include <igl/opengl/IContext.h>
@@ -25,6 +26,7 @@ ComputeCommandAdapter::ComputeCommandAdapter(IContext& context) :
 void ComputeCommandAdapter::clearTextures() {}
 
 void ComputeCommandAdapter::setTexture(ITexture* texture, uint32_t index) {
+  IGL_PROFILER_FUNCTION();
   if (!IGL_DEBUG_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
     return;
   }
@@ -37,6 +39,7 @@ void ComputeCommandAdapter::clearBuffers() {
 }
 
 void ComputeCommandAdapter::setBuffer(Buffer* buffer, size_t offset, uint32_t index) {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX,
                    "Buffer index is beyond max, may want to increase limit");
   if (index < uniformAdapter_.getMaxUniforms() && buffer) {
@@ -65,6 +68,7 @@ void ComputeCommandAdapter::setBlockUniform(Buffer* buffer,
 
 void ComputeCommandAdapter::dispatchThreadGroups(const Dimensions& threadgroupCount,
                                                  const Dimensions& /*threadgroupSize*/) {
+  IGL_PROFILER_FUNCTION();
   willDispatch();
   getContext().dispatchCompute(static_cast<GLuint>(threadgroupCount.width),
                                static_cast<GLuint>(threadgroupCount.height),
@@ -74,6 +78,7 @@ void ComputeCommandAdapter::dispatchThreadGroups(const Dimensions& threadgroupCo
 
 void ComputeCommandAdapter::dispatchThreadGroupsIndirect(Buffer& indirectBuffer,
                                                          size_t indirectBufferOffset) {
+  IGL_PROFILER_FUNCTION();
   willDispatch();
   // glDispatchComputeIndirect reads the (x,y,z) group counts from whatever buffer
   // is currently bound to GL_DISPATCH_INDIRECT_BUFFER, so rebind the given buffer
@@ -96,6 +101,7 @@ void ComputeCommandAdapter::dispatchThreadGroupsIndirect(Buffer& indirectBuffer,
 
 void ComputeCommandAdapter::setPipelineState(
     const std::shared_ptr<IComputePipelineState>& newValue) {
+  IGL_PROFILER_FUNCTION();
   if (pipelineState_) {
     clearDependentResources(newValue);
   }
@@ -107,6 +113,7 @@ void ComputeCommandAdapter::clearDependentResources(
     const std::shared_ptr<IComputePipelineState>& newValue) {}
 
 void ComputeCommandAdapter::willDispatch() {
+  IGL_PROFILER_FUNCTION();
   Result ret;
   auto* pipelineState = static_cast<ComputePipelineState*>(pipelineState_.get());
 
@@ -153,6 +160,7 @@ void ComputeCommandAdapter::willDispatch() {
 }
 
 void ComputeCommandAdapter::didDispatch() {
+  IGL_PROFILER_FUNCTION();
   getContext().memoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
   if (pipelineState_ == nullptr) {
@@ -174,6 +182,7 @@ void ComputeCommandAdapter::didDispatch() {
 }
 
 void ComputeCommandAdapter::endEncoding() {
+  IGL_PROFILER_FUNCTION();
   pipelineState_ = nullptr;
   textureStates_ = TextureStates();
 
