@@ -7,18 +7,21 @@
 
 #include <igl/opengl/DestructionGuard.h>
 
+#include <igl/Macros.h>
 #include <igl/opengl/IContext.h>
 
 namespace igl::opengl {
 
 DestructionGuard::DestructionGuard(std::shared_ptr<IContext> context) :
   context_(std::move(context)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (IGL_DEBUG_VERIFY(context_)) {
     ++context_->lockCount_;
   }
 }
 
 DestructionGuard::~DestructionGuard() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   if (context_) {
     --context_->lockCount_;
   }
