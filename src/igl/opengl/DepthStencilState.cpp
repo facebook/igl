@@ -7,11 +7,14 @@
 
 #include <igl/opengl/DepthStencilState.h>
 
+#include <igl/Macros.h>
+
 namespace igl::opengl {
 
 DepthStencilState::DepthStencilState(IContext& context) : WithContext(context) {}
 
 Result DepthStencilState::create(const DepthStencilStateDesc& desc) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   desc_ = desc;
 
   return Result();
@@ -69,6 +72,7 @@ GLenum DepthStencilState::convertStencilOperation(StencilOperation value) {
 
 void DepthStencilState::bind(uint32_t frontStencilReferenceValue,
                              uint32_t backStencilReferenceValue) {
+  IGL_PROFILER_FUNCTION();
   getContext().depthMask(static_cast<GLboolean>(desc_.isDepthWriteEnabled));
 
   // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDepthFunc.xhtml
