@@ -2134,7 +2134,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
       // Case-insensitive helpers
       auto toLower = [](std::string s) {
         for (auto& c : s)
-          c = static_cast<char>(tolower(c));
+          c = static_cast<char>(std::tolower(c));
         return s;
       };
       const std::string nlow = toLower(attr.name);
@@ -2777,7 +2777,7 @@ igl::d3d12::ComPtr<ID3D12PipelineState> Device::createPipelineStateVariant(
       std::string semanticName;
       auto toLower = [](std::string s) {
         for (auto& c : s)
-          c = static_cast<char>(tolower(c));
+          c = static_cast<char>(std::tolower(c));
         return s;
       };
       const std::string nlow = toLower(attr.name);
