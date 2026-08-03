@@ -7,6 +7,7 @@
 
 #include <igl/opengl/CommandBuffer.h>
 
+#include <igl/Macros.h>
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/ComputeCommandEncoder.h>
 #include <igl/opengl/IContext.h>
@@ -24,27 +25,33 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
     const std::shared_ptr<IFramebuffer>& framebuffer,
     const Dependencies& dependencies,
     Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return RenderCommandEncoder::create(
       shared_from_this(), renderPass, framebuffer, dependencies, outResult);
 }
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return std::make_unique<ComputeCommandEncoder>(shared_from_this()->getContext());
 }
 
 void CommandBuffer::present(const std::shared_ptr<ITexture>& surface) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_PRESENT);
   context_->present(surface);
 }
 
 void CommandBuffer::waitUntilScheduled() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
   context_->flush();
 }
 
 void CommandBuffer::waitUntilCompleted() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
   context_->finish();
 }
 
 void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& /*color*/) const {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
     getContext().pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, label);
@@ -54,6 +61,7 @@ void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& /*c
 }
 
 void CommandBuffer::popDebugGroupLabel() const {
+  IGL_PROFILER_FUNCTION();
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
     getContext().popDebugGroup();
   } else {
@@ -66,6 +74,7 @@ void CommandBuffer::copyBuffer(IBuffer& src,
                                uint64_t srcOffset,
                                uint64_t dstOffset,
                                uint64_t size) {
+  IGL_PROFILER_FUNCTION();
   IContext& ctx = getContext();
 
   if (!ctx.deviceFeatures().hasFeature(igl::DeviceFeatures::CopyBuffer)) {
@@ -88,6 +97,7 @@ void CommandBuffer::copyTextureToBuffer(ITexture& src,
                                         uint64_t dstOffset,
                                         uint32_t level,
                                         uint32_t layer) {
+  IGL_PROFILER_FUNCTION();
   (void)src;
   (void)dst;
   (void)dstOffset;
