@@ -7,6 +7,7 @@
 
 #include <igl/opengl/ComputePipelineState.h>
 
+#include <igl/Macros.h>
 #include <igl/NameHandle.h>
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/Texture.h>
@@ -16,6 +17,7 @@ ComputePipelineState::ComputePipelineState(IContext& context) : WithContext(cont
 ComputePipelineState::~ComputePipelineState() = default;
 
 Result ComputePipelineState::create(const ComputePipelineDesc& desc) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result result;
   if (IGL_DEBUG_VERIFY_NOT(desc.shaderStages == nullptr)) {
     Result::setResult(&result, Result::Code::ArgumentInvalid, "Missing shader stages");
@@ -80,6 +82,7 @@ Result ComputePipelineState::create(const ComputePipelineDesc& desc) {
 }
 
 void ComputePipelineState::bind() {
+  IGL_PROFILER_FUNCTION();
   if (shaderStages_) {
     shaderStages_->bind();
   }
@@ -91,12 +94,14 @@ ComputePipelineState::computePipelineReflection() {
 }
 
 void ComputePipelineState::unbind() {
+  IGL_PROFILER_FUNCTION();
   if (shaderStages_) {
     shaderStages_->unbind();
   }
 }
 
 Result ComputePipelineState::bindTextureUnit(const size_t unit, Texture* texture) {
+  IGL_PROFILER_FUNCTION();
   if (!shaderStages_) {
     return Result{Result::Code::InvalidOperation, "No shader set\n"};
   }
@@ -117,6 +122,7 @@ Result ComputePipelineState::bindTextureUnit(const size_t unit, Texture* texture
 }
 
 Result ComputePipelineState::bindBuffer(const size_t unit, Buffer* buffer) {
+  IGL_PROFILER_FUNCTION();
   if (!shaderStages_) {
     return Result{Result::Code::InvalidOperation, "No shader set\n"};
   }
