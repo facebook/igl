@@ -804,10 +804,10 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
                       NULL,
                       dw,
                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                      (LPTSTR)&lpMsgBuf,
+                      reinterpret_cast<LPTSTR>(&lpMsgBuf),
                       0,
                       NULL) != 0) {
-      IGL_LOG_ERROR("Failed to open vulkan-1.dll: %s\n", (LPCTSTR)lpMsgBuf);
+      IGL_LOG_ERROR("Failed to open vulkan-1.dll: %s\n", reinterpret_cast<LPCTSTR>(lpMsgBuf));
       LocalFree(lpMsgBuf);
     } else {
       IGL_LOG_ERROR("Failed to open vulkan-1.dll");
@@ -815,7 +815,7 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
 
     return nullptr;
   }
-  return (PFN_vkGetInstanceProcAddr)GetProcAddress(lib, "vkGetInstanceProcAddr");
+  return reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress(lib, "vkGetInstanceProcAddr"));
 #elif defined(__APPLE__)
   void* lib = dlopen("libvulkan.dylib", RTLD_NOW | RTLD_LOCAL);
   IGL_LOG_INFO("Loading libvulkan.dylib\n");
@@ -833,7 +833,7 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
     IGL_LOG_ERROR("Failed to open libMoltenVK.dylib: %s\n", dlerror());
     return nullptr;
   }
-  return (PFN_vkGetInstanceProcAddr)dlsym(lib, "vkGetInstanceProcAddr");
+  return reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(lib, "vkGetInstanceProcAddr"));
 #else
   // Preload libraries that Vulkan ICD drivers commonly depend on.
   // This ensures they're available when the Vulkan loader dlopens() ICD drivers.
@@ -915,7 +915,7 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
     IGL_LOG_ERROR("IGL/Vulkan: no Vulkan library was found.\n");
     return nullptr;
   }
-  return (PFN_vkGetInstanceProcAddr)dlsym(lib, "vkGetInstanceProcAddr");
+  return reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(lib, "vkGetInstanceProcAddr"));
 #endif
 }
 } // namespace
