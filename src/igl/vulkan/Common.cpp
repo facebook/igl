@@ -801,12 +801,12 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
 
     if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
                           FORMAT_MESSAGE_IGNORE_INSERTS,
-                      NULL,
+                      nullptr,
                       dw,
                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                       reinterpret_cast<LPTSTR>(&lpMsgBuf),
                       0,
-                      NULL) != 0) {
+                      nullptr) != 0) {
       IGL_LOG_ERROR("Failed to open vulkan-1.dll: %s\n", reinterpret_cast<LPCTSTR>(lpMsgBuf));
       LocalFree(lpMsgBuf);
     } else {
