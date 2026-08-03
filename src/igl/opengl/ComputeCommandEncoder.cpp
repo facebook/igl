@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <array>
+#include <igl/Macros.h>
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/ComputeCommandAdapter.h>
 #include <igl/opengl/DeviceFeatureSet.h>
@@ -21,6 +22,7 @@ namespace igl::opengl {
 /// MARK: - ComputeCommandEncoder
 
 ComputeCommandEncoder::ComputeCommandEncoder(IContext& context) : WithContext(context) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto& oglContext = getContext();
 
   auto& pool = oglContext.getComputeAdapterPool();
@@ -35,6 +37,7 @@ ComputeCommandEncoder::ComputeCommandEncoder(IContext& context) : WithContext(co
 ComputeCommandEncoder::~ComputeCommandEncoder() = default;
 
 void ComputeCommandEncoder::endEncoding() {
+  IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->endEncoding();
     getContext().getComputeAdapterPool().push_back(std::move(adapter_));
@@ -43,6 +46,7 @@ void ComputeCommandEncoder::endEncoding() {
 
 void ComputeCommandEncoder::bindComputePipelineState(
     const std::shared_ptr<IComputePipelineState>& pipelineState) {
+  IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->setPipelineState(pipelineState);
   }
@@ -51,6 +55,7 @@ void ComputeCommandEncoder::bindComputePipelineState(
 void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCount,
                                                  const Dimensions& threadgroupSize,
                                                  const Dependencies& /*dependencies*/) {
+  IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->dispatchThreadGroups(threadgroupCount, threadgroupSize);
   }
@@ -60,6 +65,7 @@ void ComputeCommandEncoder::dispatchThreadGroupsIndirect(IBuffer& indirectBuffer
                                                          size_t indirectBufferOffset,
                                                          const Dimensions& /*threadgroupSize*/,
                                                          const Dependencies& /*dependencies*/) {
+  IGL_PROFILER_FUNCTION();
   // glDispatchComputeIndirect() is GL 4.3 / GLES 3.1+.
   //
   // The Dependencies argument is intentionally ignored on the OpenGL backend
@@ -75,6 +81,7 @@ void ComputeCommandEncoder::dispatchThreadGroupsIndirect(IBuffer& indirectBuffer
 
 void ComputeCommandEncoder::pushDebugGroupLabel(const char* label,
                                                 const igl::Color& /*color*/) const {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
     getContext().pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, label);
@@ -86,6 +93,7 @@ void ComputeCommandEncoder::pushDebugGroupLabel(const char* label,
 
 void ComputeCommandEncoder::insertDebugEventLabel(const char* label,
                                                   const igl::Color& /*color*/) const {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
     getContext().debugMessageInsert(
@@ -97,6 +105,7 @@ void ComputeCommandEncoder::insertDebugEventLabel(const char* label,
 }
 
 void ComputeCommandEncoder::popDebugGroupLabel() const {
+  IGL_PROFILER_FUNCTION();
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
     getContext().popDebugGroup();
   } else {
@@ -106,6 +115,7 @@ void ComputeCommandEncoder::popDebugGroupLabel() const {
 }
 
 void ComputeCommandEncoder::bindUniform(const UniformDesc& uniformDesc, const void* data) {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(uniformDesc.location >= 0,
                    "Invalid location passed to bindUniformBuffer: %d",
                    uniformDesc.location);
@@ -116,6 +126,7 @@ void ComputeCommandEncoder::bindUniform(const UniformDesc& uniformDesc, const vo
 }
 
 void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
+  IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->setTexture(texture, index);
   }
@@ -145,6 +156,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index,
                                        size_t bufferSize) {
   // NOLINTEND(bugprone-easily-swappable-parameters)
 
+  IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY(adapter_) && buffer) {
     auto* glBuffer = static_cast<Buffer*>(buffer);
     auto bufferType = glBuffer->getType();
