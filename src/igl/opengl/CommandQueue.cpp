@@ -7,6 +7,7 @@
 
 #include <igl/opengl/CommandQueue.h>
 
+#include <igl/Macros.h>
 #include <igl/opengl/CommandBuffer.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/Timer.h>
@@ -19,6 +20,7 @@ void CommandQueue::setInitialContext(const std::shared_ptr<IContext>& context) {
 
 std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandBufferDesc& desc,
                                                                   Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   //  IGL_DEBUG_ASSERT(
   //      activeCommandBuffers_ == 0,
   //      "OpenGL does not currently support creating multiple commandBuffers at the same time");
@@ -35,6 +37,7 @@ std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandB
 }
 
 SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /* endOfFrame */) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
   const auto& cb = static_cast<const CommandBuffer&>(commandBuffer);
   incrementDrawCount(cb.getCurrentDrawCount());
   if (commandBuffer.desc.timer) {
