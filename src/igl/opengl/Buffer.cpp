@@ -9,6 +9,7 @@
 
 #include <igl/Buffer.h>
 #include <igl/DeviceFeatures.h>
+#include <igl/Macros.h>
 
 namespace igl::opengl {
 
@@ -20,12 +21,14 @@ ArrayBuffer::ArrayBuffer(IContext& context,
                          BufferDesc::BufferAPIHint requestedApiHints,
                          BufferDesc::BufferType bufferType) :
   Buffer(context, requestedApiHints, bufferType) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   iD_ = 0;
   size_ = 0;
   isDynamic_ = false;
 }
 
 ArrayBuffer::~ArrayBuffer() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   if (iD_ != 0) {
     getContext().deleteBuffers(1, &iD_);
     getContext().unbindBuffer(target_);
@@ -39,6 +42,7 @@ ArrayBuffer::~ArrayBuffer() {
 // if data is not null, copy the data into the buffer
 // if the buffer is to be updated frequently, isDynamic should be set to true
 void ArrayBuffer::initialize(const BufferDesc& desc, Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // static buffers must provide their data during creation, as they can't upload data later on
   GLenum usage = GL_DYNAMIC_DRAW;
   switch (desc.storage) {
@@ -120,6 +124,7 @@ void ArrayBuffer::initialize(const BufferDesc& desc, Result* IGL_NULLABLE outRes
 
 // upload data to the buffer at the given offset with the given size
 Result ArrayBuffer::upload(const void* data, const BufferRange& range) {
+  IGL_PROFILER_FUNCTION();
   // static buffers can only upload data once during creation
   if (!isDynamic_) {
     return Result(Result::Code::InvalidOperation, "Can't upload to static buffers");
@@ -135,6 +140,7 @@ Result ArrayBuffer::upload(const void* data, const BufferRange& range) {
 }
 
 void* FOLLY_NULLABLE ArrayBuffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION();
   if ((range.size + range.offset) > getSizeInBytes()) {
     Result::setResult(
         outResult, Result::Code::ArgumentOutOfRange, "map() size + offset must be <= buffer size");
@@ -156,20 +162,24 @@ void* FOLLY_NULLABLE ArrayBuffer::map(const BufferRange& range, Result* IGL_NULL
 }
 
 void ArrayBuffer::unmap() {
+  IGL_PROFILER_FUNCTION();
   bind();
   getContext().unmapBuffer(target_);
 }
 
 // bind the buffer for access by the GPU
 void ArrayBuffer::bind() {
+  IGL_PROFILER_FUNCTION();
   getContext().bindBuffer(target_, iD_);
 }
 
 void ArrayBuffer::unbind() {
+  IGL_PROFILER_FUNCTION();
   getContext().bindBuffer(target_, 0);
 }
 
 void ArrayBuffer::bindBase(IGL_MAYBE_UNUSED size_t index, Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION();
   if (target_ != GL_SHADER_STORAGE_BUFFER) {
     static constexpr const char* kErrorMsg = "Buffer should be GL_SHADER_STORAGE_BUFFER";
     IGL_SOFT_ERROR(kErrorMsg);
@@ -182,14 +192,17 @@ void ArrayBuffer::bindBase(IGL_MAYBE_UNUSED size_t index, Result* IGL_NULLABLE o
 }
 
 void ArrayBuffer::bindForTarget(GLenum target) {
+  IGL_PROFILER_FUNCTION();
   getContext().bindBuffer(target, iD_);
 }
 
 void UniformBlockBuffer::setBlockBinding(GLuint pid, GLuint blockIndex, GLuint bindingPoint) {
+  IGL_PROFILER_FUNCTION();
   getContext().uniformBlockBinding(pid, blockIndex, bindingPoint);
 }
 
 void UniformBlockBuffer::bindBase(size_t index, Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION();
   if (getContext().deviceFeatures().hasFeature(DeviceFeatures::UniformBlocks)) {
     if (target_ != GL_UNIFORM_BUFFER) {
       static constexpr const char* kErrorMsg = "Buffer should be GL_UNIFORM_BUFFER";
@@ -210,6 +223,7 @@ void UniformBlockBuffer::bindRange(size_t index,
                                    size_t offset,
                                    size_t size,
                                    Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION();
   if (getContext().deviceFeatures().hasFeature(DeviceFeatures::UniformBlocks)) {
     if (target_ != GL_UNIFORM_BUFFER) {
       static constexpr const char* kErrorMsg = "Buffer should be GL_UNIFORM_BUFFER";
