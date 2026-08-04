@@ -8,6 +8,7 @@
 #include <igl/opengl/SamplerState.h>
 
 #include <igl/Common.h>
+#include <igl/Macros.h>
 #include <igl/Texture.h>
 #include <igl/opengl/DepthStencilState.h>
 #include <igl/opengl/Texture.h>
@@ -32,11 +33,13 @@ SamplerState::SamplerState(IContext& context, const SamplerStateDesc& desc) :
   depthCompareFunction_(DepthStencilState::convertCompareFunction(desc.depthCompareFunction)),
   depthCompareEnabled_(desc.depthCompareEnabled),
   isYUV_(desc.yuvFormat != igl::TextureFormat::Invalid) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   const std::hash<SamplerStateDesc> h;
   hash_ = h(desc);
 }
 
 void SamplerState::bind(ITexture* t) {
+  IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY_NOT(t == nullptr)) {
     return;
   }
@@ -111,6 +114,7 @@ void SamplerState::bind(ITexture* t) {
 }
 
 void SamplerState::applyMinFilter(GLint target, bool isDepthOrDepthStencil) const {
+  IGL_PROFILER_FUNCTION();
   if (!depthCompareEnabled_ && isDepthOrDepthStencil && minMipFilter_ != GL_NEAREST &&
       minMipFilter_ != GL_NEAREST_MIPMAP_NEAREST) {
     IGL_LOG_INFO_ONCE(
@@ -129,6 +133,7 @@ void SamplerState::applyMinFilter(GLint target, bool isDepthOrDepthStencil) cons
 }
 
 void SamplerState::applyMagFilter(GLint target, bool isDepthOrDepthStencil) const {
+  IGL_PROFILER_FUNCTION();
   if (!depthCompareEnabled_ && isDepthOrDepthStencil && magFilter_ != GL_NEAREST) {
     IGL_LOG_INFO_ONCE(
         "OpenGL requires a GL_NEAREST mag filter for depth/stencil samplers when "
@@ -140,6 +145,7 @@ void SamplerState::applyMagFilter(GLint target, bool isDepthOrDepthStencil) cons
 }
 
 GLint SamplerState::resolveWrapMode(GLint wrap) const {
+  IGL_PROFILER_FUNCTION();
   if (!getContext().deviceFeatures().hasInternalFeature(InternalFeatures::TextureClampToBorder) &&
       wrap == GL_CLAMP_TO_BORDER) {
     return GL_CLAMP_TO_EDGE;
