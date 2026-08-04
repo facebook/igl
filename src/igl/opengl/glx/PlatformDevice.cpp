@@ -10,6 +10,7 @@
 
 #include <igl/opengl/glx/PlatformDevice.h>
 
+#include <igl/Macros.h>
 #include <igl/opengl/ViewTextureTarget.h>
 #include <igl/opengl/glx/Context.h>
 #include <igl/opengl/glx/Device.h>
@@ -22,6 +23,7 @@ PlatformDevice::PlatformDevice(Device& owner) : opengl::PlatformDevice(owner) {}
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(uint32_t width,
                                                                           uint32_t height,
                                                                           Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto* context = static_cast<Context*>(getSharedContext().get());
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "No GLX context found!");
@@ -60,6 +62,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(uint32
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t width,
                                                                        uint32_t height,
                                                                        Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // generate depth with new width and height
   auto* context = static_cast<Context*>(getSharedContext().get());
   if (!context) {
