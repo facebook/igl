@@ -9,6 +9,7 @@
 
 #include <igl/opengl/wgl/Context.h>
 
+#include <igl/Macros.h>
 #include <igl/opengl/Texture.h>
 
 #if !defined(WIN32_LEAN_AND_MEAN)
@@ -29,6 +30,7 @@
 namespace igl::opengl::wgl {
 
 Context::Context() : contextOwned_(true) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // This ctor path will own the wgl render context. Therefore creation to the window, DC & render
   // context must be done and in sequence. Creating a dummy window is necessary to get the device
   // context. We let wgl choose the appropriate pixel format for us to retrieve the valid render
@@ -113,6 +115,7 @@ Context::Context() : contextOwned_(true) {
 
 Context::Context(HDC deviceContext, HGLRC renderContext) :
   contextOwned_(false), deviceContext_(deviceContext), renderContext_(renderContext) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IContext::registerContext(renderContext_, this);
 
   // Set current, since creation doesn't really mean it's current yet.
@@ -132,6 +135,7 @@ Context::Context(HDC deviceContext, HGLRC renderContext, std::vector<HGLRC> shar
   deviceContext_(deviceContext),
   renderContext_(renderContext),
   sharegroup_(shareContexts) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IContext::registerContext(renderContext_, this);
 
   // Set current, since creation doesn't really mean it's current yet.
@@ -147,6 +151,7 @@ Context::Context(HDC deviceContext, HGLRC renderContext, std::vector<HGLRC> shar
 }
 
 Context::~Context() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   // Clear pool explicitly, since it might have reference back to IContext.
   getAdapterPool().clear();
   getComputeAdapterPool().clear();
@@ -163,6 +168,7 @@ Context::~Context() {
 }
 
 void Context::setCurrent() {
+  IGL_PROFILER_FUNCTION();
   if (!wglMakeCurrent(deviceContext_, renderContext_)) {
     IGL_DEBUG_ABORT("[IGL] Failed to activate OpenGL render context. WGL error 0x%08X:\n",
                     GetLastError());
@@ -179,6 +185,7 @@ void Context::setCurrent() {
 }
 
 void Context::clearCurrentContext() const {
+  IGL_PROFILER_FUNCTION();
   if (!wglMakeCurrent(nullptr, nullptr)) {
     IGL_DEBUG_ABORT("[IGL] Failed to clear OpenGL render context. WGL error 0x%08X:\n",
                     GetLastError());
@@ -190,11 +197,13 @@ bool Context::isCurrentContext() const {
 }
 
 bool Context::isCurrentSharegroup() const {
+  IGL_PROFILER_FUNCTION();
   auto it = std::find(sharegroup_.begin(), sharegroup_.end(), wglGetCurrentContext());
   return it != sharegroup_.end();
 }
 
 void Context::present(std::shared_ptr<ITexture> surface) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_PRESENT);
   SwapBuffers(deviceContext_);
   wglMakeCurrent(deviceContext_, renderContext_);
 
@@ -204,6 +213,7 @@ void Context::present(std::shared_ptr<ITexture> surface) const {
 }
 
 std::unique_ptr<IContext> Context::createShareContext(Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   Result::setResult(outResult, Result::Code::Unimplemented, "Implement as needed");
   return nullptr;
