@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <string>
 #include <vector>
+#include <igl/Macros.h>
 
 namespace igl::opengl {
 
@@ -328,6 +329,7 @@ void toOGLAttribute(const VertexAttribute& attrib,
 } // namespace
 
 Result VertexInputState::create(const VertexInputStateDesc& desc) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (desc.numAttributes == 0) {
     return Result();
   }
