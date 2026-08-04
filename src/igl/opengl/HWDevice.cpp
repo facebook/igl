@@ -7,11 +7,13 @@
 
 #include <igl/opengl/HWDevice.h>
 
+#include <igl/Macros.h>
 #include <igl/opengl/IContext.h>
 
 namespace igl::opengl {
 
 std::unique_ptr<Device> HWDevice::create(Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto context = createContext(outResult);
   if (context == nullptr) {
     return nullptr;
@@ -20,6 +22,7 @@ std::unique_ptr<Device> HWDevice::create(Result* outResult) const {
 }
 
 std::unique_ptr<Device> HWDevice::create(BackendVersion backendVersion, Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto context = createContext(backendVersion, IGL_EGL_NULL_WINDOW, outResult);
   if (!context) {
     Result::setResult(outResult, Result::Code::RuntimeError, "context is null");
