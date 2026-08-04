@@ -7,6 +7,7 @@
 
 #include <igl/opengl/PlatformDevice.h>
 
+#include <igl/Macros.h>
 #include <igl/opengl/DestructionGuard.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/Framebuffer.h>
@@ -17,6 +18,7 @@ namespace igl::opengl {
 
 std::shared_ptr<Framebuffer> PlatformDevice::createFramebuffer(const FramebufferDesc& desc,
                                                                Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto resource = std::make_shared<CustomFramebuffer>(getContext());
   resource->initialize(desc, outResult);
   if (auto resourceTracker = owner_.getResourceTracker()) {
@@ -26,6 +28,7 @@ std::shared_ptr<Framebuffer> PlatformDevice::createFramebuffer(const Framebuffer
 }
 
 std::shared_ptr<Framebuffer> PlatformDevice::createCurrentFramebuffer() const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto resource = std::make_shared<CurrentFramebuffer>(getContext());
   if (auto resourceTracker = owner_.getResourceTracker()) {
     resource->initResourceTracker(std::move(resourceTracker));
@@ -43,6 +46,7 @@ std::unique_ptr<TextureBufferExternal> PlatformDevice::createTextureBufferExtern
     TextureFormat format,
     GLsizei numLayers) const {
   // NOLINTEND(bugprone-easily-swappable-parameters)
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto textureBuffer = std::make_unique<TextureBufferExternal>(getContext(), format, usage);
   textureBuffer->setTextureBufferProperties(textureID, target);
   textureBuffer->setTextureProperties(width, height, numLayers);
@@ -77,6 +81,7 @@ void PlatformDevice::blitFramebuffer(const std::shared_ptr<IFramebuffer>& src,
                                      GLbitfield mask,
                                      IContext& ctx,
                                      Result* outResult) {
+  IGL_PROFILER_FUNCTION();
   auto& from = static_cast<Framebuffer&>(*src);
   auto& to = static_cast<Framebuffer&>(*dst);
 
@@ -164,6 +169,7 @@ void PlatformDevice::blitFramebuffer(const std::shared_ptr<IFramebuffer>& src,
                                      int dstBottom,
                                      GLbitfield mask,
                                      Result* outResult) const {
+  IGL_PROFILER_FUNCTION();
   auto ctx = getSharedContext();
   igl::opengl::PlatformDevice::blitFramebuffer(src,
                                                srcLeft,
