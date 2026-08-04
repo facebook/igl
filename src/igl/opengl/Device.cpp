@@ -8,6 +8,7 @@
 #include <igl/opengl/Device.h>
 
 #include <cstring>
+#include <igl/Macros.h>
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/CommandQueue.h>
 #include <igl/opengl/ComputePipelineState.h>
@@ -103,6 +104,7 @@ Device::~Device() = default;
 
 // debug markers useful in GPU captures
 void Device::pushMarker(int len, const char* name) {
+  IGL_PROFILER_FUNCTION();
   if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessage)) {
     context_->pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, len, name);
   } else {
@@ -111,6 +113,7 @@ void Device::pushMarker(int len, const char* name) {
 }
 
 void Device::popMarker() {
+  IGL_PROFILER_FUNCTION();
   if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessage)) {
     context_->popDebugGroup();
   } else {
@@ -121,6 +124,7 @@ void Device::popMarker() {
 // Command Queue
 std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc& /*desc*/,
                                                           Result* outResult) noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // we only use a single command queue on OpenGL
   if (!commandQueue_) {
     commandQueue_ = std::make_shared<CommandQueue>();
@@ -134,6 +138,7 @@ std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc
 std::unique_ptr<IBuffer> Device::createBuffer( // NOLINT(bugprone-exception-escape)
     const BufferDesc& desc,
     Result* outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   std::unique_ptr<Buffer> resource = allocateBuffer(desc.type, desc.hint, getContext());
 
   if (resource) {
@@ -151,6 +156,7 @@ std::unique_ptr<IBuffer> Device::createBuffer( // NOLINT(bugprone-exception-esca
 std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
     const DepthStencilStateDesc& desc,
     Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // `outResult` is a null-safe Result* out-param: it is only ever touched via
   // Result::setResult()/setOk(), which null-check it. clang-tidy cannot see through the
   // resource-creation helper templates, so the nullable-dereference findings below are
@@ -161,6 +167,7 @@ std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
 
 std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& desc,
                                                           Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto resource = std::make_shared<SamplerState>(getContext(), desc);
   if (hasResourceTracker()) {
     resource->initResourceTracker(getResourceTracker(), desc.debugName);
@@ -172,6 +179,7 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
 std::shared_ptr<ITexture> Device::createTexture( // NOLINT(bugprone-exception-escape)
     const TextureDesc& desc,
     Result* outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   const auto sanitized = sanitize(desc);
 
   std::unique_ptr<Texture> texture;
@@ -226,6 +234,7 @@ std::shared_ptr<ITexture> Device::createTextureView( // NOLINT(bugprone-exceptio
     std::shared_ptr<ITexture> texture,
     const TextureViewDesc& desc,
     Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 
   Result::setResult(
@@ -236,6 +245,7 @@ std::shared_ptr<ITexture> Device::createTextureView( // NOLINT(bugprone-exceptio
 
 std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexInputStateDesc& desc,
                                                                   Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   return createSharedResource<VertexInputState>(desc, outResult);
 }
@@ -243,6 +253,7 @@ std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexIn
 // Pipelines
 std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderPipelineDesc& desc,
                                                                    Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result res;
   auto resource = std::make_shared<RenderPipelineState>(getContext(), desc, &res);
   // NOLINTNEXTLINE(facebook-hte-NullableDereference)
@@ -252,6 +263,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
 std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     const ComputePipelineDesc& desc,
     Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   return createSharedResource<ComputePipelineState>(desc, outResult, getContext());
 }
@@ -260,6 +272,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 
 std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& /*desc*/,
                                                             Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setResult(outResult, Result::Code::Unsupported);
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   return nullptr;
@@ -267,6 +280,7 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
 
 std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,
                                                           Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   auto sm = createSharedResource<ShaderModule>(desc, outResult, getContext(), desc.info);
   if (auto resourceTracker = getResourceTracker(); sm && resourceTracker) {
@@ -277,6 +291,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
 
 std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc& desc,
                                                           Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Need to pass desc twice.
   // The first instance is for the createUniqueResource pattern.
   // The second instance is so it also gets passed to the ShaderStages constructor.
@@ -290,6 +305,7 @@ std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc
 
 std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& desc,
                                                         Result* outResult) noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_DEBUG_ASSERT(deviceFeatureSet_.hasInternalFeature(InternalFeatures::FramebufferObject));
   // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   return getPlatformDevice().createFramebuffer(desc, outResult);
@@ -297,6 +313,7 @@ std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& d
 
 base::IFramebufferInterop* IGL_NULLABLE
 Device::createFramebufferInterop(const base::FramebufferInteropDesc& desc) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto framebuffer = createFramebufferFromBaseDesc(desc);
   if (!framebuffer) {
     return nullptr;
@@ -332,6 +349,7 @@ BackendVersion Device::getBackendVersion() const {
 }
 
 void Device::beginScope() {
+  IGL_PROFILER_FUNCTION();
   IDevice::beginScope();
 
   IGL_DEBUG_ASSERT(context_);
@@ -342,6 +360,7 @@ void Device::beginScope() {
 }
 
 void Device::endScope() {
+  IGL_PROFILER_FUNCTION();
   if (cachedUnbindPolicy_ == UnbindPolicy::EndScope) {
     // Ensure state on exit is consistent, for any external rendering that happens later.
     context_->colorMask(1u, 1u, 1u, 1u);
@@ -379,6 +398,7 @@ Holder<BindGroupTextureHandle> Device::createBindGroup(
     const BindGroupTextureDesc& desc,
     const IRenderPipelineState* IGL_NULLABLE /*compatiblePipeline*/,
     Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_DEBUG_ASSERT(context_);
   IGL_DEBUG_ASSERT(!desc.debugName.empty(), "Each bind group should have a debug name");
 
@@ -395,6 +415,7 @@ Holder<BindGroupTextureHandle> Device::createBindGroup(
 
 Holder<BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc& desc,
                                                       Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_DEBUG_ASSERT(context_);
   IGL_DEBUG_ASSERT(!desc.debugName.empty(), "Each bind group should have a debug name");
 
@@ -411,6 +432,7 @@ Holder<BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc&
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (deviceFeatureSet_.hasFeature(DeviceFeatures::Timers)) {
     Result::setOk(outResult);
     return std::make_shared<Timer>(*context_);
@@ -424,6 +446,7 @@ std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) cons
 std::shared_ptr<ITimestampQueries> Device::createTimestampQueries(uint32_t maxTimestamps,
                                                                   Result* IGL_NULLABLE
                                                                       outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Tier-based limit from GL_RENDERER / GL_VENDOR classification.
   const GpuTimerTier tier = deviceFeatureSet_.getGpuTimerTier();
   if (tier == GpuTimerTier::Disabled) {
@@ -450,6 +473,7 @@ std::shared_ptr<ITimestampQueries> Device::createTimestampQueries(uint32_t maxTi
 }
 
 void Device::destroy(BindGroupTextureHandle handle) {
+  IGL_PROFILER_FUNCTION();
   if (handle.empty()) {
     return;
   }
@@ -460,6 +484,7 @@ void Device::destroy(BindGroupTextureHandle handle) {
 }
 
 void Device::destroy(BindGroupBufferHandle handle) {
+  IGL_PROFILER_FUNCTION();
   if (handle.empty()) {
     return;
   }
