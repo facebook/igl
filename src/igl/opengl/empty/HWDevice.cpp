@@ -7,12 +7,14 @@
 
 #include "HWDevice.h"
 
+#include <igl/Macros.h>
 #include <igl/opengl/empty/Context.h>
 #include <igl/opengl/empty/Device.h>
 
 namespace igl::opengl::empty {
 
 std::unique_ptr<IContext> HWDevice::createContext(Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   return std::make_unique<Context>();
 }
@@ -20,6 +22,7 @@ std::unique_ptr<IContext> HWDevice::createContext(Result* outResult) const {
 std::unique_ptr<IContext> HWDevice::createContext(BackendVersion /*backendVersion*/,
                                                   EGLNativeWindowType /*nativeWindow*/,
                                                   Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   return std::make_unique<Context>();
 }
@@ -27,6 +30,7 @@ std::unique_ptr<IContext> HWDevice::createContext(BackendVersion /*backendVersio
 // @fb-only
 std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<IContext> context,
                                                             Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "context is null");
