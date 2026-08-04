@@ -9,10 +9,12 @@
 
 #include <cstdlib>
 #include <string>
+#include <igl/Macros.h>
 
 namespace igl::opengl {
 
 Result VertexArrayObject::create() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   getContext().genVertexArrays(1, &vertexAttriuteObject_);
   if (vertexAttriuteObject_ == 0) {
     return Result(Result::Code::RuntimeError, "Failed to create vertex array object ID");
@@ -33,6 +35,7 @@ bool VertexArrayObject::isValid() const {
 }
 
 VertexArrayObject::~VertexArrayObject() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   getContext().deleteVertexArrays(1, &vertexAttriuteObject_);
 }
 } // namespace igl::opengl
