@@ -32,7 +32,7 @@
 namespace {
 uint32_t customArc4random() {
   // NOLINTNEXTLINE(cert-msc50-cpp)
-  return static_cast<uint32_t>(rand()) * (0xffffffff / RAND_MAX);
+  return static_cast<uint32_t>(std::rand()) * (0xffffffff / RAND_MAX);
 }
 } // namespace
 
