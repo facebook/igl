@@ -7,11 +7,13 @@
 
 #include <igl/opengl/empty/Context.h>
 
+#include <igl/Macros.h>
 #include <igl/Texture.h>
 
 namespace igl::opengl::empty {
 
 Context::Context() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result result;
   // Initialize through base class.
   initialize(&result);
@@ -39,6 +41,7 @@ void Context::present(std::shared_ptr<ITexture> surface) const {
 }
 
 std::unique_ptr<IContext> Context::createShareContext(Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   Result::setResult(outResult, Result::Code::Unimplemented, "Implement as needed");
   return nullptr;
