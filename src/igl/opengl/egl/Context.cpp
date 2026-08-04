@@ -180,6 +180,7 @@ EGLConfig chooseConfig(uint8_t contextMajorVersion, EGLDisplay display) {
                                                                 EGLSurface readSurface,
                                                                 EGLSurface drawSurface,
                                                                 Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (newContext == EGL_NO_CONTEXT || readSurface == EGL_NO_SURFACE ||
       drawSurface == EGL_NO_SURFACE) {
     Result::setResult(outResult, Result(Result::Code::ArgumentInvalid));
@@ -233,6 +234,7 @@ Context::Context(BackendVersion backendVersion,
                  EGLNativeWindowType window,
                  std::pair<EGLint, EGLint> dimensions) :
   backendVersion_(backendVersion) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_DEBUG_ASSERT(backendVersion.flavor == BackendFlavor::OpenGL_ES);
   IGL_DEBUG_ASSERT(
       (shareContext == EGL_NO_CONTEXT && sharegroup == nullptr) ||
@@ -286,6 +288,7 @@ Context::Context(BackendVersion backendVersion,
 }
 
 std::unique_ptr<IContext> Context::createShareContext(Result* /*outResult*/) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return std::make_unique<Context>(*this);
 }
 
@@ -306,6 +309,7 @@ Context::Context(EGLDisplay display,
   drawSurface_(drawSurface),
   config_(config),
   backendVersion_(kDefaultEGLBackendVersion) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IContext::registerContext(context_, this);
   initialize();
   sharegroup_ = std::make_shared<std::vector<EGLContext>>();
@@ -313,6 +317,7 @@ Context::Context(EGLDisplay display,
 }
 
 void Context::updateSurface(NativeWindowType window) {
+  IGL_PROFILER_FUNCTION();
   surface_ = eglCreateWindowSurface(
       display_, chooseConfig(backendVersion_.majorVersion, display_), window, nullptr);
   CHECK_EGL_ERRORS();
@@ -322,6 +327,7 @@ void Context::updateSurface(NativeWindowType window) {
 }
 
 Context::~Context() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   willDestroy(context_);
   IContext::unregisterContext(context_);
   if (surfacesOwned_) {
@@ -345,23 +351,27 @@ Context::~Context() {
 }
 
 void Context::setCurrent() {
+  IGL_PROFILER_FUNCTION();
   eglMakeCurrent(display_, drawSurface_, readSurface_, context_);
   CHECK_EGL_ERRORS();
   flushDeletionQueue();
 }
 
 void Context::clearCurrentContext() const {
+  IGL_PROFILER_FUNCTION();
   eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
   CHECK_EGL_ERRORS();
 }
 
 bool Context::isCurrentContext() const {
+  IGL_PROFILER_FUNCTION();
   auto* curContext = eglGetCurrentContext();
   return curContext == context_;
   CHECK_EGL_ERRORS();
 }
 
 bool Context::isCurrentSharegroup() const {
+  IGL_PROFILER_FUNCTION();
   // EGL doesn't seem to provide a way to check if two contexts are in the same group.
   // For now we can at least check some trivial cases before hitting the assertion below.
   EGLContext currentContext = eglGetCurrentContext();
@@ -381,6 +391,7 @@ bool Context::isCurrentSharegroup() const {
 }
 
 void Context::present(std::shared_ptr<ITexture> /*surface*/) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_PRESENT);
 #if defined(FORCE_USE_ANGLE)
   // Enforce swapbuffers for Angle to be able to use GPU tracing in RenderDoc
 #if IGL_DEBUG
@@ -398,6 +409,7 @@ void Context::present(std::shared_ptr<ITexture> /*surface*/) const {
 }
 
 void Context::setPresentationTime(long long presentationTimeNs) {
+  IGL_PROFILER_FUNCTION();
   // This is a workaround that we cannot call the eglPresentationTimeANDROID directly from
   // <EGL/eglext.h> due to some EGL api bugs.
   // @fb-only
@@ -413,6 +425,7 @@ void Context::setPresentationTime(long long presentationTimeNs) {
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void Context::updateSurfaces(EGLSurface readSurface, EGLSurface drawSurface) {
+  IGL_PROFILER_FUNCTION();
   readSurface_ = readSurface;
   drawSurface_ = drawSurface;
   surfacesOwned_ = false;
@@ -423,6 +436,7 @@ void Context::updateSurfaces(EGLSurface readSurface, EGLSurface drawSurface) {
 }
 
 EGLSurface Context::createSurface(NativeWindowType window) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto* surface = eglCreateWindowSurface(
       display_, chooseConfig(backendVersion_.majorVersion, display_), window, nullptr);
   CHECK_EGL_ERRORS();
@@ -446,6 +460,7 @@ EGLSurface Context::getDrawSurface() const {
 }
 
 std::pair<EGLint, EGLint> Context::getDrawSurfaceDimensions(Result* outResult) const {
+  IGL_PROFILER_FUNCTION();
   EGLint height = -1;
   eglQuerySurface(getDisplay(), getDrawSurface(), EGL_HEIGHT, &height);
   if (CHECK_EGL_ERRORS() != EGL_SUCCESS) {
@@ -466,6 +481,7 @@ EGLConfig Context::getConfig() const {
 }
 
 bool Context::markSharegroup(EGLContext sharedContextHandle) {
+  IGL_PROFILER_FUNCTION();
   if (sharedContextHandle == EGL_NO_CONTEXT) {
     return false;
   }
@@ -482,6 +498,7 @@ bool Context::markSharegroup(EGLContext sharedContextHandle) {
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 EGLImageKHR Context::createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(hwb);
   EGLint hwBufferAttribs[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE, EGL_NONE, EGL_NONE};
 
@@ -508,6 +525,7 @@ EGLImageKHR Context::createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) 
 }
 
 void Context::imageTargetTexture(EGLImageKHR eglImage, GLenum target) const {
+  IGL_PROFILER_FUNCTION();
   glEGLImageTargetTexture2DOES(target, static_cast<GLeglImageOES>(eglImage));
   IGL_LOG_DEBUG("glEGLImageTargetTexture2DOES(%u, %#x)\n",
                 GL_TEXTURE_2D,
