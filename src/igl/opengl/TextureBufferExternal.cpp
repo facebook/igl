@@ -7,11 +7,14 @@
 
 #include <igl/opengl/TextureBufferExternal.h>
 
+#include <igl/Macros.h>
+
 namespace igl::opengl {
 TextureBufferExternal::TextureBufferExternal(IContext& context,
                                              TextureFormat format,
                                              TextureDesc::TextureUsage usage) :
   Super(context, format) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   FormatDescGL formatDescGL;
   toFormatDescGL(format, usage, formatDescGL);
   glInternalFormat_ = formatDescGL.internalFormat;
