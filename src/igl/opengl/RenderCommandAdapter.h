@@ -43,6 +43,7 @@ class RenderCommandAdapter final : public WithContext {
   struct BufferState {
     Buffer* IGL_NULLABLE resource = nullptr;
     size_t offset = 0;
+    size_t stride = 0;
   };
 
   using TextureState = std::pair<ITexture * IGL_NULLABLE, ISamplerState * IGL_NULLABLE>;
@@ -70,6 +71,7 @@ class RenderCommandAdapter final : public WithContext {
   void setVertexBuffer(Buffer& buffer,
                        size_t offset,
                        size_t index,
+                       size_t stride = 0,
                        Result* IGL_NULLABLE outResult = nullptr);
   void setIndexBuffer(Buffer& buffer);
 

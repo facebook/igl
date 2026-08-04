@@ -42,7 +42,7 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
   void unbind();
   Result bindTextureUnit(size_t unit, uint8_t bindTarget, Texture& texture);
 
-  void bindVertexAttributes(size_t bufferIndex, size_t offset);
+  void bindVertexAttributes(size_t bufferIndex, size_t offset, size_t stride = 0);
   void unbindVertexAttributes();
 
   [[nodiscard]] bool matchesShaderProgram(const RenderPipelineState& rhs) const;

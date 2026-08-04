@@ -271,8 +271,13 @@ void RenderPipelineState::unbind() {
 // A buffer can be shared by multiple attributes. So bind all the attributes
 // associated with the associated buffer.
 // bufferOffset is an offset in bytes to the start of the vertex attributes in the buffer.
+// When `stride` is non-zero, it overrides the stride declared in the pipeline's vertex
+// input state (dynamic vertex buffer stride). When `stride` is zero, the pipeline-declared
+// stride is used (legacy behavior).
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t bufferOffset) {
+void RenderPipelineState::bindVertexAttributes(size_t bufferIndex,
+                                               size_t bufferOffset,
+                                               size_t stride) {
   IGL_PROFILER_FUNCTION();
 #if IGL_DEBUG_ABORT_ENABLED
   static GLint sMaxNumVertexAttribs = 0;
@@ -305,12 +310,13 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
 
     getContext().enableVertexAttribArray(location);
     const auto& attribute = attribList[i];
+    const GLsizei effectiveStride = stride != 0 ? static_cast<GLsizei>(stride) : attribute.stride;
     getContext().vertexAttribPointer(
         location,
         attribute.numComponents,
         attribute.componentType,
         attribute.normalized,
-        attribute.stride,
+        effectiveStride,
         reinterpret_cast<const char*>(attribute.bufferOffset) + // NOLINT(performance-no-int-to-ptr)
             bufferOffset);
 

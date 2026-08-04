@@ -137,12 +137,13 @@ void RenderCommandAdapter::clearVertexBuffers() {
 void RenderCommandAdapter::setVertexBuffer(Buffer& buffer,
                                            size_t offset,
                                            size_t index,
+                                           size_t stride,
                                            Result* IGL_NULLABLE outResult) {
   IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX,
                    "Buffer index is beyond max, may want to increase limit");
   if (index < IGL_BUFFER_BINDINGS_MAX) {
-    vertexBuffers_[index] = {.resource = &buffer, .offset = offset};
+    vertexBuffers_[index] = {.resource = &buffer, .offset = offset, .stride = stride};
     SET_DIRTY(vertexBuffersDirty_, index);
     Result::setOk(outResult);
   } else {
@@ -467,7 +468,7 @@ void RenderCommandAdapter::willDraw() {
         auto& bufferState = vertexBuffers_[bufferIndex];
         bindBufferWithShaderStorageBufferOverride((*bufferState.resource), GL_ARRAY_BUFFER);
         // now bind the vertex attributes corresponding to this vertex buffer
-        pipelineState->bindVertexAttributes(bufferIndex, bufferState.offset);
+        pipelineState->bindVertexAttributes(bufferIndex, bufferState.offset, bufferState.stride);
         CLEAR_DIRTY(vertexBuffersDirty_, bufferIndex);
       }
     }
