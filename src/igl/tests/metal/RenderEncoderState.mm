@@ -83,8 +83,8 @@ TEST_F(MetalRenderEncoderStateTest, BindViewport) {
 
   const Viewport viewport = {.x = 0.0f,
                              .y = 0.0f,
-                             .width = (float)ENCODER_TEX_WIDTH,
-                             .height = (float)ENCODER_TEX_HEIGHT,
+                             .width = static_cast<float>(ENCODER_TEX_WIDTH),
+                             .height = static_cast<float>(ENCODER_TEX_HEIGHT),
                              .minDepth = 0.0f,
                              .maxDepth = 1.0f};
   encoder->bindViewport(viewport);
