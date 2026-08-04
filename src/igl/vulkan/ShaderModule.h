@@ -8,8 +8,11 @@
 #pragma once
 
 #include <vector>
+#if !defined(VK_NO_PROTOTYPES)
+#define VK_NO_PROTOTYPES
+#endif // !defined(VK_NO_PROTOTYPES)
+#include <vulkan/vulkan_core.h>
 #include <igl/Shader.h>
-#include <igl/vulkan/VulkanFunctionTable.h>
 
 namespace igl::vulkan {
 
