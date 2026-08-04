@@ -12,6 +12,7 @@
 #include <memory>
 #include <igl/Common.h>
 #include <igl/IGLSafeC.h>
+#include <igl/Macros.h>
 
 namespace igl::opengl {
 namespace {
@@ -37,14 +38,17 @@ UniformBuffer::UniformBuffer(IContext& context,
                              BufferDesc::BufferAPIHint requestedApiHints,
                              BufferDesc::BufferType bufferType) :
   Buffer(context, requestedApiHints, bufferType) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   isDynamic_ = false;
 }
 
 UniformBuffer::~UniformBuffer() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   isDynamic_ = false;
 }
 
 bool UniformBuffer::initializeCommon(const BufferDesc& desc, Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   bool success = true;
   isDynamic_ = false;
 
@@ -64,6 +68,7 @@ bool UniformBuffer::initializeCommon(const BufferDesc& desc, Result* outResult) 
 // if data is not null, copy the data into the buffer
 // if the buffer is to be updated frequently, isDynamic should be set to true
 void UniformBuffer::initialize(const BufferDesc& desc, Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!initializeCommon(desc, outResult)) {
     return;
   }
@@ -76,6 +81,7 @@ void UniformBuffer::initialize(const BufferDesc& desc, Result* outResult) {
 
 // upload data to the buffer at the given offset with the given size
 Result UniformBuffer::upload(const void* data, const BufferRange& range) {
+  IGL_PROFILER_FUNCTION();
   if (!IGL_DEBUG_VERIFY(range.offset + range.size <= getSizeInBytes())) {
     return Result{Result::Code::ArgumentOutOfRange, "Range size is larger than data size"};
   }
@@ -86,6 +92,7 @@ Result UniformBuffer::upload(const void* data, const BufferRange& range) {
 }
 
 void* FOLLY_NULLABLE UniformBuffer::map(const BufferRange& range, Result* outResult) {
+  IGL_PROFILER_FUNCTION();
   if (getSizeInBytes() < (range.size + range.offset)) {
     Result::setResult(outResult,
                       Result::Code::ArgumentOutOfRange,
@@ -100,6 +107,7 @@ void* FOLLY_NULLABLE UniformBuffer::map(const BufferRange& range, Result* outRes
 void UniformBuffer::unmap() {}
 
 void UniformBuffer::printUniforms(GLint program) {
+  IGL_PROFILER_FUNCTION();
   GLint i = 0;
   GLint count = 0;
 
@@ -127,6 +135,7 @@ void UniformBuffer::bindUniform(IContext& context,
                                 UniformType uniformType,
                                 const uint8_t* start,
                                 size_t stCount) {
+  IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY(shaderLocation >= 0)) {
     // If a glerror is hit within and of the getContext().uniform*** methods,
     // renderCommandEncoder->bindBuffer()'s index parameter likely does not map to the correct
@@ -196,6 +205,7 @@ void UniformBuffer::bindUniformArray(IContext& context,
                                      size_t numElements,
                                      size_t stride) {
   // NOLINTEND(bugprone-easily-swappable-parameters)
+  IGL_PROFILER_FUNCTION();
   const size_t packedSize = igl::sizeForUniformType(uniformType);
   size_t primitivesPerElement = 0;
   UniformBaseType baseType = UniformBaseType::Invalid;
