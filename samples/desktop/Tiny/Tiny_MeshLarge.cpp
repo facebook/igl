@@ -2144,11 +2144,11 @@ void generateCompressedTexture(const LoadedImage& img) {
     std::vector<uint8_t> destPixels(w * h * img.channels);
 
     // resize
-    stbir_resize_uint8((const unsigned char*)img.pixels,
+    stbir_resize_uint8(img.pixels,
                        static_cast<int>(img.w),
                        static_cast<int>(img.h),
                        0,
-                       (unsigned char*)destPixels.data(),
+                       destPixels.data(),
                        w,
                        h,
                        0,
