@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <igl/Macros.h>
 #include <igl/opengl/Config.h>
 #include <igl/opengl/GLIncludes.h>
 
@@ -165,6 +166,7 @@ GLVersion getGLVersionEnum(uint32_t majorVersion, uint32_t minorVersion) {
 } // namespace
 
 std::pair<uint32_t, uint32_t> parseVersionString(const char* version) {
+  IGL_PROFILER_FUNCTION();
   // If GL_MAJOR_VERSION and/or GL_MINOR_VERSION fail,
   // get the gl version from GL_VERSION string
   if (!version) {
@@ -191,6 +193,7 @@ std::pair<uint32_t, uint32_t> parseVersionString(const char* version) {
 }
 
 GLVersion getGLVersion(const char* version, bool constrain) {
+  IGL_PROFILER_FUNCTION();
   auto [majorVersion, minorVersion] = parseVersionString(version);
   if (constrain) {
     auto [constrainedMajorVersion, constrainedMinorVersion] =
