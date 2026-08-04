@@ -830,7 +830,7 @@ void RenderCommandEncoder::bindDepthStencilState(
 void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
                                             IBuffer& buffer,
                                             size_t bufferOffset,
-                                            size_t attributeStride) {
+                                            size_t /*attributeStride*/) {
   IGL_D3D12_LOG_VERBOSE("bindVertexBuffer called: index=%u\n", index);
   if (index >= IGL_BUFFER_BINDINGS_MAX) {
     IGL_LOG_ERROR("bindVertexBuffer: index %u exceeds max %u\n", index, IGL_BUFFER_BINDINGS_MAX);
