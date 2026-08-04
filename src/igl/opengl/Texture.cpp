@@ -8,6 +8,7 @@
 #include <igl/opengl/Texture.h>
 
 #include <algorithm>
+#include <igl/Macros.h>
 #include <igl/opengl/util/TextureFormat.h>
 
 namespace igl::opengl {
@@ -68,6 +69,7 @@ bool Texture::canPresent() const noexcept {
 }
 
 Result Texture::create(const TextureDesc& desc, bool hasStorageAlready) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result result;
   if (desc.numLayers > 1 && desc.type != TextureType::TwoDArray) {
     return Result{Result::Code::Unsupported,
@@ -118,6 +120,7 @@ Result Texture::create(const TextureDesc& desc, bool hasStorageAlready) {
 // padding that is not 8, 4, 2, or 1 byte aligned to the actual pixel data
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 GLint Texture::getAlignment(uint32_t stride, uint32_t mipLevel, uint32_t widthAtMipLevel) const {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(mipLevel < numMipLevels_);
 
   if (getProperties().isCompressed()) {
@@ -997,6 +1000,7 @@ void* FOLLY_NULLABLE Texture::getNativeImageView() const {
 }
 
 const base::AttachmentInteropDesc& Texture::getDesc() const {
+  IGL_PROFILER_FUNCTION();
   // Update cached attachment descriptor
   const auto dims = getDimensions();
   attachmentDesc_.width = dims.width;
