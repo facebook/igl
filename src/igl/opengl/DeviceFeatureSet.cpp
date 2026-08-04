@@ -11,6 +11,7 @@
 #include <cstring>
 #include <optional>
 #include <igl/Common.h>
+#include <igl/Macros.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
 
@@ -239,6 +240,7 @@ void DeviceFeatureSet::initializeVersion(GLVersion version) {
 
 void DeviceFeatureSet::initializeExtensions(std::string extensions,
                                             std::unordered_set<std::string> supportedExtensions) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   extensions_ = std::move(extensions);
   supportedExtensions_ = std::move(supportedExtensions);
 }
@@ -396,6 +398,7 @@ bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
 }
 
 GpuTimerTier DeviceFeatureSet::getGpuTimerTier() const {
+  IGL_PROFILER_FUNCTION();
   if (!hasExtension(Extensions::TimerQuery)) {
     return GpuTimerTier::Disabled;
   }
@@ -1514,6 +1517,7 @@ bool DeviceFeatureSet::hasInternalRequirement(InternalRequirement requirement) c
 }
 
 bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const {
+  IGL_PROFILER_FUNCTION();
   GLint tsize = 0;
   switch (featureLimits) {
   case DeviceFeatureLimits::MaxTextureDimension1D2D:
@@ -2250,6 +2254,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getCompressedTextureF
 /// @return a combination of TextureFormatCapabilities flags
 ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapabilities(
     TextureFormat format) const {
+  IGL_PROFILER_FUNCTION();
   // TODO: Remove this fallback once devices can properly provide a supported format
   if (format == TextureFormat::S8_UInt_Z32_UNorm &&
       !hasTextureFeature(TextureFeatures::Depth32FStencil8)) {
@@ -2400,6 +2405,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
 }
 
 uint32_t DeviceFeatureSet::getMaxVertexUniforms() const {
+  IGL_PROFILER_FUNCTION();
   GLint tsize = 0;
   // MaxVertexUniformVectors is the maximum number of 4-element vectors that can be passed as
   // uniform to a vertex shader. All uniforms are 4-element aligned, a single uniform counts at
@@ -2417,6 +2423,7 @@ uint32_t DeviceFeatureSet::getMaxVertexUniforms() const {
 }
 
 uint32_t DeviceFeatureSet::getMaxFragmentUniforms() const {
+  IGL_PROFILER_FUNCTION();
   GLint tsize = 0;
   // PLease see comments above in getMaxVertexUniforms
   if (hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES)) {
@@ -2429,6 +2436,7 @@ uint32_t DeviceFeatureSet::getMaxFragmentUniforms() const {
 }
 
 uint32_t DeviceFeatureSet::getMaxComputeUniforms() const {
+  IGL_PROFILER_FUNCTION();
   if (hasFeature(DeviceFeatures::Compute)) {
     GLint tsize = 0;
     glContext_.getIntegerv(GL_MAX_COMPUTE_UNIFORM_COMPONENTS, &tsize);
