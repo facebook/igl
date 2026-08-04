@@ -12,6 +12,7 @@
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
+#include <igl/Macros.h>
 #include <igl/opengl/Config.h>
 #include <igl/opengl/egl/Context.h>
 
@@ -37,6 +38,7 @@ struct AHardwareBufferContext {
 };
 
 NativeHWTextureBuffer::~NativeHWTextureBuffer() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   GLuint textureId = getId();
   if (textureId != 0) {
     if (getContext().isLikelyValidObject()) {
@@ -63,10 +65,12 @@ bool NativeHWTextureBuffer::supportsUpload() const {
 }
 
 Result NativeHWTextureBuffer::create(const TextureDesc& desc, bool hasStorageAlready) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return createHWBuffer(desc, hasStorageAlready, false);
 }
 
 Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* buffer) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   AHardwareBuffer_Desc hwbDesc;
   AHardwareBuffer_describe(buffer, &hwbDesc);
 
@@ -140,6 +144,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* buffer) {
 }
 
 void NativeHWTextureBuffer::bind() {
+  IGL_PROFILER_FUNCTION();
   getContext().bindTexture(getTarget(), getId());
   auto* context = static_cast<AHardwareBufferContext*>(hwBufferHelper_.get());
 
@@ -164,6 +169,7 @@ Result NativeHWTextureBuffer::uploadInternal(TextureType /*type*/,
                                              const void* IGL_NULLABLE data,
                                              size_t bytesPerRow,
                                              const uint32_t* IGL_NULLABLE /*mipLevelBytes*/) const {
+  IGL_PROFILER_FUNCTION();
   auto result = uploadToHWBuffer(getProperties(), range, data, bytesPerRow);
   if (!result.isOk()) {
     IGL_DEBUG_ABORT("Cannot upload buffer for HW texture for Native Hardware Buffer Textures.");
