@@ -7,12 +7,14 @@
 
 #include "HWDevice.h"
 
+#include <igl/Macros.h>
 #include <igl/opengl/glx/Context.h>
 #include <igl/opengl/glx/Device.h>
 
 namespace igl::opengl::glx {
 
 std::unique_ptr<IContext> HWDevice::createContext(Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   return std::make_unique<Context>(nullptr /* module */);
 }
@@ -20,6 +22,7 @@ std::unique_ptr<IContext> HWDevice::createContext(Result* outResult) const {
 std::unique_ptr<IContext> HWDevice::createContext([[maybe_unused]] BackendVersion backendVersion,
                                                   EGLNativeWindowType /* nativeWindow */,
                                                   Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_DEBUG_ASSERT(backendVersion.flavor == BackendFlavor::OpenGL);
   return createContext(outResult);
 }
@@ -27,6 +30,7 @@ std::unique_ptr<IContext> HWDevice::createContext([[maybe_unused]] BackendVersio
 std::unique_ptr<IContext> HWDevice::createOffscreenContext(size_t width,
                                                            size_t height,
                                                            Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   return std::make_unique<Context>(nullptr /* module */,
                                    true /* offscreen */,
@@ -38,6 +42,7 @@ std::unique_ptr<IContext> HWDevice::createOffscreenContext(size_t width,
 // @fb-only
 std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<IContext> context,
                                                             Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (context) {
     Result::setOk(outResult);
     return std::make_unique<Device>(std::move(context));
