@@ -7,6 +7,8 @@
 
 #include <igl/opengl/TextureBufferBase.h>
 
+#include <igl/Macros.h>
+
 namespace igl::opengl {
 
 TextureType TextureBufferBase::getType() const {
@@ -46,16 +48,19 @@ TextureDesc::TextureUsage TextureBufferBase::getUsage() const {
 
 // bind this as a source texture for rendering from
 void TextureBufferBase::bind() {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(getUsage() & TextureDesc::TextureUsageBits::Sampled);
   getContext().bindTexture(target_, textureID_);
 }
 
 void TextureBufferBase::unbind() {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(getUsage() & TextureDesc::TextureUsageBits::Sampled);
   getContext().bindTexture(target_, 0);
 }
 
 void TextureBufferBase::attachAsColor(uint32_t index, const AttachmentParams& params) {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(getUsage() & TextureDesc::TextureUsageBits::Attachment);
   if (IGL_DEBUG_VERIFY(textureID_)) {
     attach(GL_COLOR_ATTACHMENT0 + index, params, textureID_);
@@ -65,6 +70,7 @@ void TextureBufferBase::attachAsColor(uint32_t index, const AttachmentParams& pa
 void TextureBufferBase::attach(GLenum attachment,
                                const AttachmentParams& params,
                                GLuint textureID) {
+  IGL_PROFILER_FUNCTION();
   const GLenum target =
       target_ == GL_TEXTURE_CUBE_MAP ? GL_TEXTURE_CUBE_MAP_POSITIVE_X + params.face : target_;
   GLenum framebufferTarget = GL_FRAMEBUFFER;
@@ -117,36 +123,42 @@ void TextureBufferBase::attach(GLenum attachment,
 }
 
 void TextureBufferBase::detachAsColor(uint32_t index, bool read) {
+  IGL_PROFILER_FUNCTION();
   AttachmentParams params{};
   params.read = read;
   attach(GL_COLOR_ATTACHMENT0 + index, params, 0);
 }
 
 void TextureBufferBase::attachAsDepth(const AttachmentParams& params) {
+  IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY(textureID_)) {
     attach(GL_DEPTH_ATTACHMENT, params, textureID_);
   }
 }
 
 void TextureBufferBase::detachAsDepth(bool read) {
+  IGL_PROFILER_FUNCTION();
   AttachmentParams params{};
   params.read = read;
   attach(GL_DEPTH_ATTACHMENT, params, 0);
 }
 
 void TextureBufferBase::attachAsStencil(const AttachmentParams& params) {
+  IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY(textureID_)) {
     attach(GL_STENCIL_ATTACHMENT, params, textureID_);
   }
 }
 
 void TextureBufferBase::detachAsStencil(bool read) {
+  IGL_PROFILER_FUNCTION();
   AttachmentParams params{};
   params.read = read;
   attach(GL_STENCIL_ATTACHMENT, params, 0);
 }
 
 void TextureBufferBase::setMaxMipLevel() const {
+  IGL_PROFILER_FUNCTION();
   if (getContext().deviceFeatures().hasFeature(DeviceFeatures::TexturePartialMipChain)) {
     getContext().texParameteri(
         getTarget(), GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(numMipLevels_ - 1));
@@ -164,6 +176,7 @@ void TextureBufferBase::generateMipmap(ICommandBuffer& /* unused */,
 }
 
 void TextureBufferBase::generateMipmap() const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   getContext().bindTexture(getTarget(), getId());
   setMaxMipLevel();
   getContext().generateMipmap(getTarget());
