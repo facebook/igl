@@ -9,6 +9,7 @@
 
 #include <array>
 #include <utility>
+#include <igl/Macros.h>
 
 namespace igl::opengl {
 
@@ -38,6 +39,7 @@ void swapTextureChannelsForFormat(IContext& context, GLuint target, TextureForma
 } // namespace
 
 TextureBuffer::~TextureBuffer() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   const GLuint textureId = getId();
   if (textureId != 0) {
     if (textureHandle_ != 0) {
@@ -48,6 +50,7 @@ TextureBuffer::~TextureBuffer() {
 }
 
 uint64_t TextureBuffer::getTextureId() const {
+  IGL_PROFILER_FUNCTION();
   if (textureHandle_ == 0) {
     textureHandle_ = getContext().getTextureHandle(getId());
     IGL_DEBUG_ASSERT(textureHandle_);
@@ -58,6 +61,7 @@ uint64_t TextureBuffer::getTextureId() const {
 
 // create a 2D texture given the specified dimensions and format
 Result TextureBuffer::create(const TextureDesc& desc, bool hasStorageAlready) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result result = Super::create(desc, hasStorageAlready);
   if (result.isOk()) {
     const auto isSampledOrStorage = (desc.usage & (TextureDesc::TextureUsageBits::Sampled |
@@ -72,6 +76,7 @@ Result TextureBuffer::create(const TextureDesc& desc, bool hasStorageAlready) {
 }
 
 void TextureBuffer::bindImage(size_t unit) {
+  IGL_PROFILER_FUNCTION();
   // The entire codebase used only combined kShaderRead|kShaderWrite access (except tests)
   // @fb-only
   // Here we used to have this condition:
@@ -90,6 +95,7 @@ void TextureBuffer::bindImage(size_t unit) {
 
 // create a texture for shader read/write usages
 Result TextureBuffer::createTexture(const TextureDesc& desc) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   const auto target = toGLTarget(desc.type);
   if (target == 0) {
     return Result(Result::Code::Unsupported, "Unsupported texture target");
@@ -136,6 +142,7 @@ Result TextureBuffer::createTexture(const TextureDesc& desc) {
 }
 
 Result TextureBuffer::initialize(const std::string& debugName) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   const auto target = getTarget();
   if (target == 0) {
     return Result{Result::Code::InvalidOperation, "Unknown texture type"};
@@ -167,12 +174,14 @@ Result TextureBuffer::initialize(const std::string& debugName) const {
 }
 
 Result TextureBuffer::initializeWithUpload() const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   const auto target = getTarget();
   const auto range = getFullMipRange();
   return uploadInternal(target, range, nullptr);
 }
 
 Result TextureBuffer::initializeWithTexStorage() const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   const auto range = getFullMipRange();
   const auto target = getTarget();
   switch (getType()) {
@@ -219,6 +228,7 @@ Result TextureBuffer::upload2D(GLenum target,
                                const TextureRangeDesc& range,
                                bool texImage,
                                const void* IGL_NULLABLE data) const {
+  IGL_PROFILER_FUNCTION();
   if (data == nullptr || !getProperties().isCompressed()) {
     if (texImage) {
       getContext().texImage2D(target,
@@ -277,6 +287,7 @@ Result TextureBuffer::upload2DArray(GLenum target,
                                     const TextureRangeDesc& range,
                                     bool texImage,
                                     const void* IGL_NULLABLE data) const {
+  IGL_PROFILER_FUNCTION();
   if (data == nullptr || !getProperties().isCompressed()) {
     if (texImage) {
       getContext().texImage3D(target,
@@ -339,6 +350,7 @@ Result TextureBuffer::upload3D(GLenum target,
                                const TextureRangeDesc& range,
                                bool texImage,
                                const void* IGL_NULLABLE data) const {
+  IGL_PROFILER_FUNCTION();
   if (data == nullptr || !getProperties().isCompressed()) {
     if (texImage) {
       getContext().texImage3D(target,
@@ -398,6 +410,7 @@ Result TextureBuffer::upload3D(GLenum target,
 }
 
 bool TextureBuffer::needsRepacking(const TextureRangeDesc& range, size_t bytesPerRow) const {
+  IGL_PROFILER_FUNCTION();
   if (bytesPerRow == 0) {
     return false;
   }
@@ -435,6 +448,7 @@ Result TextureBuffer::uploadInternal(TextureType /*type*/,
                                      const void* IGL_NULLABLE data,
                                      size_t bytesPerRow,
                                      const uint32_t* IGL_NULLABLE /*mipLevelBytes*/) const {
+  IGL_PROFILER_FUNCTION();
   if (data == nullptr) {
     return Result{};
   }
@@ -454,6 +468,7 @@ Result TextureBuffer::uploadInternal(GLenum target,
                                      const TextureRangeDesc& range,
                                      const void* IGL_NULLABLE data,
                                      size_t bytesPerRow) const {
+  IGL_PROFILER_FUNCTION();
   // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
   const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
 
