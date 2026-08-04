@@ -9,6 +9,7 @@
 
 #include <igl/opengl/webgl/PlatformDevice.h>
 
+#include <igl/Macros.h>
 #include <igl/opengl/TextureBuffer.h>
 #include <igl/opengl/ViewTextureTarget.h>
 #include <igl/opengl/webgl/Context.h>
@@ -21,6 +22,7 @@ PlatformDevice::PlatformDevice(Device& owner) : opengl::PlatformDevice(owner) {}
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(int width,
                                                                           int height,
                                                                           Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (drawableTexture_ && drawableTexture_->getWidth() == width &&
       drawableTexture_->getHeight() == height) {
     return drawableTexture_;
