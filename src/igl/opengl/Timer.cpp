@@ -7,6 +7,7 @@
 
 #include <igl/opengl/Timer.h>
 
+#include <igl/Macros.h>
 #include <igl/opengl/DeviceFeatureSet.h>
 
 namespace igl::opengl {
@@ -28,19 +29,23 @@ namespace igl::opengl {
 #endif
 
 Timer::Timer(IContext& context) : WithContext(context) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   iglGenQueries(1, &id_);
   iglBeginQuery(GL_TIME_ELAPSED, id_);
 }
 
 Timer::~Timer() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   iglDeleteQueries(1, &id_);
 }
 
 void Timer::end() {
+  IGL_PROFILER_FUNCTION();
   iglEndQuery(GL_TIME_ELAPSED);
 }
 
 uint64_t Timer::getElapsedTimeNanos() const {
+  IGL_PROFILER_FUNCTION();
   // Check for GPU disjoint event (power management, context switch, etc.)
   // If a disjoint occurred, the timing results are invalid
   if (DeviceFeatureSet::usesOpenGLES()) {
@@ -57,6 +62,7 @@ uint64_t Timer::getElapsedTimeNanos() const {
 }
 
 bool Timer::resultsAvailable() const {
+  IGL_PROFILER_FUNCTION();
   GLint available = 0;
   iglGetQueryObjectiv(id_, GL_QUERY_RESULT_AVAILABLE, &available);
   // NOLINTNEXTLINE(readability-implicit-bool-conversion)
