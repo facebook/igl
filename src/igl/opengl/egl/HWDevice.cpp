@@ -8,30 +8,35 @@
 #include "HWDevice.h"
 
 #include <EGL/eglplatform.h>
+#include <igl/Macros.h>
 #include <igl/opengl/egl/Context.h>
 #include <igl/opengl/egl/Device.h>
 
 namespace igl::opengl::egl {
 
 std::unique_ptr<IContext> HWDevice::createContext(Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   return std::make_unique<Context>(IGL_EGL_NULL_WINDOW);
 }
 
 std::unique_ptr<IContext> HWDevice::createContext(EGLNativeWindowType nativeWindow,
                                                   Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return std::make_unique<Context>(nativeWindow);
 }
 
 std::unique_ptr<IContext> HWDevice::createContext(BackendVersion backendVersion,
                                                   EGLNativeWindowType nativeWindow,
                                                   Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return std::make_unique<Context>(backendVersion, nativeWindow);
 }
 
 std::unique_ptr<IContext> HWDevice::createOffscreenContext(size_t width,
                                                            size_t height,
                                                            Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   return std::make_unique<Context>(width, height);
 }
@@ -39,6 +44,7 @@ std::unique_ptr<IContext> HWDevice::createOffscreenContext(size_t width,
 // @fb-only
 std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<IContext> context,
                                                             Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "context is null");
@@ -50,6 +56,7 @@ std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<ICon
 // @fb-only
 std::unique_ptr<opengl::Device> HWDevice::create(EGLNativeWindowType nativeWindow,
                                                  Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto context = createContext(nativeWindow, outResult);
   if (context == nullptr) {
     return nullptr;
