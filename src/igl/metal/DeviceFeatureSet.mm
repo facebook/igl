@@ -142,6 +142,9 @@ DeviceFeatureSet::DeviceFeatureSet(id<MTLDevice> device) {
       }
     }
   }
+  if (@available(macOS 14.0, iOS 17.0, *)) {
+    supportsDynamicVertexBufferStride_ = (gpuFamily_ >= 4);
+  }
 }
 
 /**
@@ -264,6 +267,8 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::DynamicCullMode:
   case DeviceFeatures::DynamicFrontFacingWinding:
     return true;
+  case DeviceFeatures::DynamicVertexBufferStride:
+    return supportsDynamicVertexBufferStride_;
   default:
     IGL_DEBUG_ABORT("unhandled DeviceFeatures value");
     break;

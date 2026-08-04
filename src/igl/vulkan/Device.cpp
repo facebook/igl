@@ -798,6 +798,9 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
     return ctx_->vf_.vkCmdSetCullMode != nullptr;
   case DeviceFeatures::DynamicFrontFacingWinding:
     return ctx_->vf_.vkCmdSetFrontFace != nullptr;
+  case DeviceFeatures::DynamicVertexBufferStride:
+    return ctx_->vf_.vkCmdBindVertexBuffers2 != nullptr &&
+           ctx_->config_.enableDynamicVertexBufferStride;
   case DeviceFeatures::Indices8Bit:
     return ctx_->features_.has_VK_EXT_index_type_uint8;
   case DeviceFeatures::ValidationLayersEnabled:
