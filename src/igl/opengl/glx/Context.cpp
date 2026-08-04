@@ -13,6 +13,7 @@
 #include <dlfcn.h>
 #include <string>
 #include <vector>
+#include <igl/Macros.h>
 #include <igl/Texture.h>
 
 namespace {
@@ -56,6 +57,7 @@ using PFNGLXGETCURRENTCONTEXTPROC = GLXContext (*)();
 
 struct GLXSharedModule {
   GLXSharedModule() {
+    IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
     std::vector<std::string> libs = {
         "libGLX.so.0",
         "libGL.so.1",
@@ -92,6 +94,7 @@ struct GLXSharedModule {
   }
 
   ~GLXSharedModule() {
+    IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
     if (module_) {
       dlclose(module_);
     }
@@ -144,6 +147,7 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
                  uint32_t width /* = 0 */,
                  uint32_t height /* = 0 */) :
   contextOwned_(true), offscreen_(offscreen), module_(std::move(module)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!module_) {
     module_ = std::make_shared<GLXSharedModule>();
   }
@@ -200,6 +204,7 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
   display_(display),
   windowHandle_(windowHandle),
   contextHandle_(contextHandle) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!module_) {
     module_ = std::make_shared<GLXSharedModule>();
   }
@@ -216,6 +221,7 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
 }
 
 Context::~Context() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   // Clear pool explicitly, since it might have reference back to IContext.
   getAdapterPool().clear();
 
@@ -240,6 +246,7 @@ Context::~Context() {
 }
 
 void Context::setCurrent() {
+  IGL_PROFILER_FUNCTION();
   if (!module_->glXMakeCurrent(display_, windowHandle_, contextHandle_)) {
     IGL_DEBUG_ABORT("[IGL] Failed to activate OpenGL render context. GLX error 0x%08X:\n",
                     GetLastError());
@@ -248,6 +255,7 @@ void Context::setCurrent() {
 }
 
 void Context::clearCurrentContext() const {
+  IGL_PROFILER_FUNCTION();
   if (!module_->glXMakeCurrent(display_, None, nullptr)) {
     IGL_DEBUG_ASSERT(
         false, "[IGL] Failed to clear OpenGL render context. GLX error 0x%08X:\n", GetLastError());
@@ -263,6 +271,7 @@ bool Context::isCurrentSharegroup() const {
 }
 
 void Context::present(std::shared_ptr<ITexture> surface) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_PRESENT);
   module_->glXSwapBuffers(display_, windowHandle_);
   module_->glXMakeCurrent(display_, windowHandle_, contextHandle_);
 }
