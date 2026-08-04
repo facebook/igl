@@ -9,12 +9,14 @@
 
 #include <igl/opengl/webgl/HWDevice.h>
 
+#include <igl/Macros.h>
 #include <igl/opengl/webgl/Context.h>
 #include <igl/opengl/webgl/Device.h>
 
 namespace igl::opengl::webgl {
 
 std::unique_ptr<IContext> HWDevice::createContext(Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   return std::make_unique<Context>();
 }
@@ -22,12 +24,14 @@ std::unique_ptr<IContext> HWDevice::createContext(Result* outResult) const {
 std::unique_ptr<IContext> HWDevice::createContext(BackendVersion backendVersion,
                                                   EGLNativeWindowType /*nativeWindow*/,
                                                   Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   return std::make_unique<Context>(backendVersion);
 }
 
 std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<IContext> context,
                                                             Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   return std::make_unique<opengl::webgl::Device>(std::move(context));
 }
