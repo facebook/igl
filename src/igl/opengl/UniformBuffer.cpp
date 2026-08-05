@@ -310,13 +310,16 @@ void UniformBuffer::bindUniformArray(IContext& context,
     case UniformBaseType::FloatMatrix: {
       auto packedFloatArray =
           IGL_MAYBE_STACK_ALLOC(GLfloat, primitivesPerElement * primitivesPerElement * numElements);
+      const size_t packedFloatArrayBytes =
+          primitivesPerElement * primitivesPerElement * numElements * sizeof(GLfloat);
       for (size_t i = 0; i < numElements; i++) {
         for (size_t j = 0; j < primitivesPerElement; j++) {
           const size_t bytesToCopy = primitivesPerElement * sizeof(GLfloat);
-          std::memcpy(&packedFloatArray[i * primitivesPerElement * primitivesPerElement +
-                                        j * primitivesPerElement],
-                      start,
-                      bytesToCopy);
+          const size_t offsetBytes =
+              (i * primitivesPerElement * primitivesPerElement + j * primitivesPerElement) *
+              sizeof(GLfloat);
+          checked_memcpy_offset(
+              packedFloatArray.get(), packedFloatArrayBytes, offsetBytes, start, bytesToCopy);
           start += (stride / primitivesPerElement);
         }
       }
