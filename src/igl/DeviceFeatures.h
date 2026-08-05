@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstdint>
+#include <type_traits>
 #include <igl/ColorSpace.h> // IWYU pragma: export
 #include <igl/Macros.h>
 #include <igl/Texture.h>
@@ -244,6 +245,8 @@ struct ShaderVersion {
   }
 };
 
+static_assert(std::is_trivially_copyable_v<ShaderVersion>);
+
 /**
  * @brief BackendVersion provides information on the backend flavor and version
  */
@@ -261,6 +264,8 @@ struct BackendVersion {
     return !(*this == other);
   }
 };
+
+static_assert(std::is_trivially_copyable_v<BackendVersion>);
 
 /**
  * @brief ICapabilities defines the capabilities interface. Currently, it is IDevice
