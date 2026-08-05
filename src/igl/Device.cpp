@@ -8,9 +8,15 @@
 #include <igl/Device.h>
 
 #include <algorithm>
+#include <type_traits>
+#include <igl/CommandBuffer.h>
+#include <igl/CommandQueue.h>
 #include <igl/Framebuffer.h>
 
 namespace igl {
+
+static_assert(std::is_trivially_copyable_v<CommandQueueStatistics>);
+static_assert(std::is_trivially_copyable_v<CommandBufferStatistics>);
 
 bool IDevice::defaultVerifyScope() {
   return scopeDepth_ > 0;
