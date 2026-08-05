@@ -200,9 +200,9 @@ bool XrApp::checkExtensions() {
 
 bool XrApp::createInstance() {
   XrApplicationInfo appInfo = {};
-  snprintf(appInfo.applicationName, sizeof(appInfo.applicationName), "%s", kAppName);
+  std::snprintf(appInfo.applicationName, sizeof(appInfo.applicationName), "%s", kAppName);
   appInfo.applicationVersion = 0;
-  snprintf(appInfo.engineName, sizeof(appInfo.engineName), "%s", kEngineName);
+  std::snprintf(appInfo.engineName, sizeof(appInfo.engineName), "%s", kEngineName);
   appInfo.engineVersion = 0;
   appInfo.apiVersion = XR_MAKE_VERSION(1, 0, 34);
 
@@ -618,11 +618,11 @@ void XrApp::createSpaces() {
 void XrApp::createActions() {
   // Create action set
   XrActionSetCreateInfo actionSetInfo = {XR_TYPE_ACTION_SET_CREATE_INFO};
-  snprintf(actionSetInfo.actionSetName, sizeof(actionSetInfo.actionSetName), "%s", "gameplay");
-  snprintf(actionSetInfo.localizedActionSetName,
-           sizeof(actionSetInfo.localizedActionSetName),
-           "%s",
-           "Gameplay");
+  std::snprintf(actionSetInfo.actionSetName, sizeof(actionSetInfo.actionSetName), "%s", "gameplay");
+  std::snprintf(actionSetInfo.localizedActionSetName,
+                sizeof(actionSetInfo.localizedActionSetName),
+                "%s",
+                "Gameplay");
   XrResult res = xrCreateActionSet(instance_, &actionSetInfo, &actionSet_);
   if (res != XR_SUCCESS) {
     IGL_LOG_ERROR("Failed to create action set: %d\n", res);
@@ -693,11 +693,11 @@ void XrApp::createActions() {
   for (const auto& def : buttonDefs) {
     XrActionCreateInfo actionInfo = {XR_TYPE_ACTION_CREATE_INFO};
     actionInfo.actionType = def.type;
-    snprintf(actionInfo.actionName, sizeof(actionInfo.actionName), "%s", def.name);
-    snprintf(actionInfo.localizedActionName,
-             sizeof(actionInfo.localizedActionName),
-             "%s",
-             def.localizedName);
+    std::snprintf(actionInfo.actionName, sizeof(actionInfo.actionName), "%s", def.name);
+    std::snprintf(actionInfo.localizedActionName,
+                  sizeof(actionInfo.localizedActionName),
+                  "%s",
+                  def.localizedName);
     actionInfo.countSubactionPaths = def.subactionCount;
     actionInfo.subactionPaths = def.subactionPaths;
     res = xrCreateAction(actionSet_, &actionInfo, &buttonActions_[static_cast<int>(def.id)]);
@@ -711,11 +711,11 @@ void XrApp::createActions() {
   {
     XrActionCreateInfo actionInfo = {XR_TYPE_ACTION_CREATE_INFO};
     actionInfo.actionType = XR_ACTION_TYPE_VECTOR2F_INPUT;
-    snprintf(actionInfo.actionName, sizeof(actionInfo.actionName), "%s", "right_thumbstick");
-    snprintf(actionInfo.localizedActionName,
-             sizeof(actionInfo.localizedActionName),
-             "%s",
-             "Right Thumbstick");
+    std::snprintf(actionInfo.actionName, sizeof(actionInfo.actionName), "%s", "right_thumbstick");
+    std::snprintf(actionInfo.localizedActionName,
+                  sizeof(actionInfo.localizedActionName),
+                  "%s",
+                  "Right Thumbstick");
     actionInfo.countSubactionPaths = 1;
     actionInfo.subactionPaths = &rightHandPath;
     res = xrCreateAction(actionSet_, &actionInfo, &rightThumbstickAction_);
