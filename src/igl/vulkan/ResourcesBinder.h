@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <type_traits>
 #include <igl/Common.h>
 #include <igl/Texture.h>
 #include <igl/vulkan/CommandBuffer.h>
@@ -36,6 +37,10 @@ struct BindingsTextures {
 struct BindingsStorageImages {
   VkImageView images[IGL_TEXTURE_SAMPLERS_MAX] = {};
 };
+
+static_assert(std::is_trivially_copyable_v<BindingsBuffers>);
+static_assert(std::is_trivially_copyable_v<BindingsTextures>);
+static_assert(std::is_trivially_copyable_v<BindingsStorageImages>);
 
 /** @brief Stores uniform and storage buffer bindings, as well as bindings for textures and sampler
  * states for Vulkan. This class maintains vectors for each type of shader resource available in IGL
