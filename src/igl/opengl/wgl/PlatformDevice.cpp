@@ -10,6 +10,7 @@
 
 #include <igl/opengl/wgl/PlatformDevice.h>
 
+#include <igl/Macros.h>
 #include <igl/opengl/TextureBuffer.h>
 #include <igl/opengl/ViewTextureTarget.h>
 #include <igl/opengl/wgl/Context.h>
@@ -22,6 +23,7 @@ namespace wgl {
 PlatformDevice::PlatformDevice(Device& owner) : opengl::PlatformDevice(owner) {}
 
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   RECT curDimension;
 
   auto context = static_cast<Context*>(getSharedContext().get());
@@ -61,6 +63,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(int width,
                                                                        int height,
                                                                        Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (drawableTexture_ && drawableTexture_->getWidth() == width &&
       drawableTexture_->getHeight() == height) {
     Result::setResult(outResult, Result::Code::Ok);
