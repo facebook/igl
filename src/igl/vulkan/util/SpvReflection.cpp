@@ -70,6 +70,7 @@ TextureType getIGLTextureType(uint32_t dim, bool isArrayed) {
 } // namespace
 
 SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
+  IGL_PROFILER_FUNCTION();
   if (!IGL_DEBUG_VERIFY(spirv)) {
     return {};
   }
@@ -310,6 +311,7 @@ void combineDescriptions(std::vector<T>& out, const std::vector<T>& c1, const st
 } // namespace
 
 SpvModuleInfo mergeReflectionData(const SpvModuleInfo& info1, const SpvModuleInfo& info2) {
+  IGL_PROFILER_FUNCTION();
   SpvModuleInfo result;
 
   combineDescriptions(result.buffers, info1.buffers, info2.buffers);
