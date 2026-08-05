@@ -49,7 +49,7 @@ inline float1 clamp(float1 x, float1 min, float1 max) {
 }
 
 inline float1 fract(float1 x) {
-  return x - floor(x);
+  return x - std::floor(x);
 }
 
 inline float4x4 inverse(const float4x4& m) {
