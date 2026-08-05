@@ -66,6 +66,12 @@ size_t safeCStrHash(const char* IGL_NULLABLE s) {
 
 namespace igl {
 
+static_assert(sizeof(ShaderCompilerOptions) == 2);
+static_assert(std::is_trivially_copyable_v<ShaderCompilerOptions>);
+
+static_assert(sizeof(FunctionConstantValues::Entry) == 8);
+static_assert(std::is_trivially_copyable_v<FunctionConstantValues::Entry>);
+
 size_t getConstantValueSize(ConstantValueType type) noexcept {
   switch (type) {
   case ConstantValueType::Invalid:
