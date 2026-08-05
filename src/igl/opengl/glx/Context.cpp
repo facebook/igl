@@ -33,7 +33,6 @@ namespace igl::opengl::glx {
 
 using GLXPbuffer = XID;
 // NOLINTBEGIN(bugprone-reserved-identifier)
-// NOLINTNEXTLINE(facebook-unused-forward-decls)
 using GLXFBConfig = struct __GLXFBConfig*;
 using __GLXextproc = void (*)();
 
