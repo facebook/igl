@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <vector>
 #include <igl/Assert.h>
+#include <igl/Macros.h>
 
 namespace igl::vulkan::util {
 namespace {
@@ -23,6 +24,7 @@ uint32_t makeOpCode(uint32_t opCode, uint32_t wordCount) {
 } // namespace
 
 void specializeConstants(uint32_t* spirv, size_t numBytes, const std::vector<uint32_t>& values) {
+  IGL_PROFILER_FUNCTION();
   const uint32_t bound = spirv[3];
   const size_t size = numBytes / sizeof(uint32_t);
 
