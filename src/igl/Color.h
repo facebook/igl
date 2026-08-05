@@ -44,4 +44,7 @@ struct Color {
     return &r;
   }
 };
+
+static_assert(sizeof(Color) == 4 * sizeof(float));
+
 } // namespace igl

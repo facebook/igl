@@ -168,6 +168,9 @@ struct ScissorRect {
   }
 };
 
+static_assert(sizeof(ScissorRect) == 4 * sizeof(uint32_t));
+static_assert(std::is_trivially_copyable_v<ScissorRect>);
+
 ///--------------------------------------
 /// MARK: - Size
 
@@ -215,6 +218,9 @@ struct Viewport {
   float minDepth = 0.0f;
   float maxDepth = 1.0f;
 };
+
+static_assert(sizeof(Viewport) == 6 * sizeof(float));
+static_assert(std::is_trivially_copyable_v<Viewport>);
 
 inline bool operator==(const Viewport& lhs, const Viewport& rhs) {
   return lhs.x == rhs.x && lhs.y == rhs.y && lhs.width == rhs.width && lhs.height == rhs.height &&
