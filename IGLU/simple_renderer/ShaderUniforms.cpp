@@ -120,7 +120,7 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
 
     // All uniform updates will be made to this malloc'ed data block,
     // which will later be uploaded to the buffer (if using buffer)
-    void* data = malloc(bufferAllocationLength);
+    void* data = std::malloc(bufferAllocationLength);
     if (data == nullptr) {
       continue;
     }
@@ -161,7 +161,7 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
 
 ShaderUniforms::~ShaderUniforms() {
   for (auto& allocation : allocations_) {
-    free(allocation->ptr);
+    std::free(allocation->ptr);
   }
 }
 

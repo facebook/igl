@@ -54,7 +54,7 @@ ManagedUniformBuffer::ManagedUniformBuffer(igl::IDevice& device,
     length_ = ((length_ + roundVal - 1) / roundVal) * roundVal;
     useBindBytes_ = (length_ < pageSize);
     if (useBindBytes_) {
-      data_ = malloc(length_);
+      data_ = std::malloc(length_);
       createBuffer = false;
     } else {
       auto pagesRequired = desc.length / pageSize;
@@ -85,7 +85,7 @@ ManagedUniformBuffer::ManagedUniformBuffer(igl::IDevice& device,
 
 #endif
   } else {
-    data_ = malloc(desc.length);
+    data_ = std::malloc(desc.length);
   }
   if (data_ == nullptr) {
     result.code = igl::Result::Code::RuntimeError;
@@ -129,7 +129,7 @@ ManagedUniformBuffer::~ManagedUniformBuffer() {
                   vmAllocLength_);
   } else {
 #endif
-    free(data_);
+    std::free(data_);
 #if IGL_PLATFORM_IOS_SIMULATOR
   }
 #endif
