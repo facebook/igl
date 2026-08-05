@@ -8,7 +8,7 @@
 #include <igl/opengl/UniformBuffer.h>
 
 #include <cstdlib>
-#include <cstring> // for memcpy()
+#include <cstring> // for std::memcpy()
 #include <memory>
 #include <igl/Common.h>
 #include <igl/IGLSafeC.h>
