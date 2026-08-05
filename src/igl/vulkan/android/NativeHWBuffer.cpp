@@ -14,6 +14,7 @@
 
 #include <android/hardware_buffer.h>
 #include <vulkan/vulkan_android.h>
+#include <igl/Macros.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanEnumToString.h>
@@ -117,10 +118,12 @@ VkSamplerYcbcrConversion NativeHWTextureBuffer::getVkSamplerYcbcrConversion() co
 }
 
 Result NativeHWTextureBuffer::create(const TextureDesc& desc) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return createHWBuffer(desc, false, false);
 }
 
 Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (hwBuffer == nullptr) {
     return Result(Result::Code::RuntimeError, "null buffer passed to create texture");
   }
@@ -365,6 +368,7 @@ Result NativeHWTextureBuffer::uploadInternal(TextureType /*type*/,
                                              const void* IGL_NULLABLE data,
                                              size_t bytesPerRow,
                                              const uint32_t* IGL_NULLABLE /*mipLevelBytes*/) const {
+  IGL_PROFILER_FUNCTION();
   auto result = uploadToHWBuffer(getProperties(), range, data, bytesPerRow);
   if (!result.isOk()) {
     IGL_DEBUG_ABORT("Cannot upload buffer for HW texture (vulkan NativeHWTextureBuffer).");
