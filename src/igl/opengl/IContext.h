@@ -104,6 +104,7 @@ class IContext {
   void clearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
   void clearDepthf(GLfloat depth);
   void clearStencil(GLint s);
+  GLenum clientWaitSync(GLsync IGL_NULLABLE sync, GLbitfield flags, GLuint64 timeoutNs);
   void colorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
   void compileShader(GLuint shader);
   void compressedTexImage2D(GLenum target,
@@ -484,6 +485,7 @@ class IContext {
                            const GLvoid* IGL_NULLABLE ptr);
   void vertexAttribDivisor(GLuint index, GLuint divisor);
   void viewport(GLint x, GLint y, GLsizei width, GLsizei height);
+  void waitSync(GLsync IGL_NULLABLE sync, GLbitfield flags, GLuint64 timeoutNs);
 
   void dispatchCompute(GLuint numGroupsX, GLuint numGroupsY, GLuint numGroupsZ);
   void dispatchComputeIndirect(GLintptr indirect);
@@ -715,6 +717,7 @@ class IContext {
   PFNIGLBINDVERTEXARRAYPROC IGL_NULLABLE bindVertexArrayProc_ = nullptr;
   PFNIGLBLITFRAMEBUFFERPROC IGL_NULLABLE blitFramebufferProc_ = nullptr;
   PFNIGLCLEARDEPTHFPROC IGL_NULLABLE clearDepthfProc_ = nullptr;
+  PFNIGLCLIENTWAITSYNCPROC IGL_NULLABLE clientWaitSyncProc_ = nullptr;
   PFNIGLCOMPRESSEDTEXIMAGE3DPROC IGL_NULLABLE compressedTexImage3DProc_ = nullptr;
   PFNIGLCOMPRESSEDTEXSUBIMAGE3DPROC IGL_NULLABLE compressedTexSubImage3DProc_ = nullptr;
   PFNIGLDEBUGMESSAGECALLBACKPROC IGL_NULLABLE debugMessageCallbackProc_ = nullptr;
@@ -747,6 +750,7 @@ class IContext {
   PFNIGLTEXSUBIMAGE3DPROC IGL_NULLABLE texSubImage3DProc_ = nullptr;
   PFNIGLUNMAPBUFFERPROC IGL_NULLABLE unmapBufferProc_ = nullptr;
   PFNIGLVERTEXATTRIBDIVISORPROC IGL_NULLABLE vertexAttribDivisorProc_ = nullptr;
+  PFNIGLWAITSYNCPROC IGL_NULLABLE waitSyncProc_ = nullptr;
 
   /// Responsible for holding onto operations queued for deletion when not in
   /// context. All operations to non-scratch queues are suyncronized by one

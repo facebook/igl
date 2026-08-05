@@ -1841,6 +1841,26 @@ void IContext::clearStencil(GLint s) {
   GLCHECK_ERRORS();
 }
 
+GLenum IContext::clientWaitSync(GLsync sync, GLbitfield flags, GLuint64 timeoutNs) {
+  if (clientWaitSyncProc_ == nullptr) {
+    if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::Sync)) {
+      clientWaitSyncProc_ = iglClientWaitSync;
+    }
+    IGL_DEBUG_ASSERT(clientWaitSyncProc_, "No supported function for glClientWaitSync\n");
+  }
+
+  GLenum ret = GL_WAIT_FAILED;
+  GLCALL_PROC_WITH_RETURN(ret, clientWaitSyncProc_, GL_WAIT_FAILED, sync, flags, timeoutNs);
+  APILOG("glClientWaitSync(%p, %u, %llu) = %s (sync: %p)\n",
+         sync,
+         flags,
+         timeoutNs,
+         GL_ENUM_TO_STRING(ret),
+         sync);
+  GLCHECK_ERRORS();
+  return ret;
+}
+
 void IContext::colorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) {
   APILOG("glColorMask(%s, %s, %s, %s) (framebuffer: %u)\n",
          GL_BOOL_TO_STRING(red),
@@ -4335,6 +4355,19 @@ void IContext::validateProgram(GLuint program) {
 void IContext::viewport(GLint x, GLint y, GLsizei width, GLsizei height) {
   APILOG("glViewport(%d, %d, %u, %u)\n", x, y, width, height);
   GLCALL(Viewport)(x, y, width, height);
+  GLCHECK_ERRORS();
+}
+
+void IContext::waitSync(GLsync sync, GLbitfield flags, GLuint64 timeoutNs) {
+  if (waitSyncProc_ == nullptr) {
+    if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::Sync)) {
+      waitSyncProc_ = iglWaitSync;
+    }
+    IGL_DEBUG_ASSERT(waitSyncProc_, "No supported function for glWaitSync\n");
+  }
+
+  APILOG("glWaitSync(%p, %u, %llu) (sync: %p)\n", sync, flags, timeoutNs, sync);
+  GLCALL_PROC(waitSyncProc_, sync, flags, timeoutNs);
   GLCHECK_ERRORS();
 }
 

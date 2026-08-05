@@ -1035,14 +1035,28 @@ void iglMemoryBarrier(GLbitfield barriers) {
 /// MARK: - GL_ARB_sync
 
 #if defined(GL_VERSION_3_2) || defined(GL_ES_VERSION_3_0) || defined(GL_ARB_sync)
+#define CAN_CALL_glClientWaitSync CAN_CALL
 #define CAN_CALL_glDeleteSync CAN_CALL
 #define CAN_CALL_glFenceSync CAN_CALL
 #define CAN_CALL_glGetSynciv CAN_CALL
+#define CAN_CALL_glWaitSync CAN_CALL
 #else
+#define CAN_CALL_glClientWaitSync 0
 #define CAN_CALL_glDeleteSync 0
 #define CAN_CALL_glFenceSync 0
 #define CAN_CALL_glGetSynciv 0
+#define CAN_CALL_glWaitSync 0
 #endif
+
+GLenum iglClientWaitSync(GLsync sync, GLbitfield flags, GLuint64 timeoutNs) {
+  GLEXTENSION_METHOD_BODY_WITH_RETURN(CAN_CALL_glClientWaitSync,
+                                      glClientWaitSync,
+                                      PFNIGLCLIENTWAITSYNCPROC,
+                                      GL_WAIT_FAILED,
+                                      sync,
+                                      flags,
+                                      timeoutNs);
+}
 
 void iglDeleteSync(GLsync sync) {
   GLEXTENSION_METHOD_BODY(CAN_CALL_glDeleteSync, glDeleteSync, PFNIGLDELETESYNCPROC, sync);
@@ -1056,6 +1070,11 @@ GLsync iglFenceSync(GLenum condition, GLbitfield flags) {
 void iglGetSynciv(GLsync sync, GLenum pname, GLsizei bufSize, GLsizei* length, GLint* values) {
   GLEXTENSION_METHOD_BODY(
       CAN_CALL_glGetSynciv, glGetSynciv, PFNIGLGETSYNCIVPROC, sync, pname, bufSize, length, values);
+}
+
+void iglWaitSync(GLsync sync, GLbitfield flags, GLuint64 timeoutNs) {
+  GLEXTENSION_METHOD_BODY(
+      CAN_CALL_glWaitSync, glWaitSync, PFNIGLWAITSYNCPROC, sync, flags, timeoutNs);
 }
 
 ///--------------------------------------

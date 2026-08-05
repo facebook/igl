@@ -59,6 +59,7 @@ using PFNIGLCHECKFRAMEBUFFERSTATUSPROC = GLenum (*)(GLenum target);
 using PFNIGLCLEARBUFFERFVPROC = void (*)(GLenum buffer, GLint drawBuffer, const GLfloat* value);
 using PFNIGLCLEARDEPTHPROC = void (*)(GLdouble depth);
 using PFNIGLCLEARDEPTHFPROC = void (*)(GLfloat depth);
+using PFNIGLCLIENTWAITSYNCPROC = GLenum (*)(GLsync sync, GLbitfield flags, GLuint64 timeoutNs);
 using PFNIGLCOMPRESSEDTEXIMAGE3DPROC = void (*)(GLenum target,
                                                 GLint level,
                                                 GLenum internalformat,
@@ -290,6 +291,7 @@ using PFNIGLUNIFORMBLOCKBINDINGPROC = void (*)(GLuint pid,
 using PFNIGLUNMAPBUFFERPROC = void (*)(GLenum target);
 
 using PFNIGLVERTEXATTRIBDIVISORPROC = void (*)(GLuint index, GLuint divisor);
+using PFNIGLWAITSYNCPROC = void (*)(GLsync sync, GLbitfield flags, GLuint64 timeoutNs);
 
 using PFNIGLDRAWELEMENTSINSTANCEDPROC =
     void (*)(GLenum mode, GLsizei count, GLenum type, const void* indices, GLsizei primcount);
@@ -527,9 +529,11 @@ void iglMemoryBarrier(GLbitfield barriers);
 ///--------------------------------------
 /// MARK: - GL_ARB_sync
 
+GLenum iglClientWaitSync(GLsync sync, GLbitfield flags, GLuint64 timeoutNs);
 void iglDeleteSync(GLsync sync);
 GLsync iglFenceSync(GLenum condition, GLbitfield flags);
 void iglGetSynciv(GLsync sync, GLenum pname, GLsizei bufSize, GLsizei* length, GLint* values);
+void iglWaitSync(GLsync sync, GLbitfield flags, GLuint64 timeoutNs);
 
 ///--------------------------------------
 /// MARK: - GL_ARB_texture_storage
