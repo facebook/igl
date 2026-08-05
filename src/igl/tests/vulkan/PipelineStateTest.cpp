@@ -51,14 +51,15 @@ TEST_F(PipelineStateTest, PipelineLayoutCreation) {
 TEST_F(PipelineStateTest, CreateSamplerState) {
   Result ret;
 
-  SamplerStateDesc desc;
-  desc.minFilter = SamplerMinMagFilter::Linear;
-  desc.magFilter = SamplerMinMagFilter::Linear;
-  desc.mipFilter = SamplerMipFilter::Linear;
-  desc.addressModeU = SamplerAddressMode::Repeat;
-  desc.addressModeV = SamplerAddressMode::Repeat;
+  const SamplerStateDesc desc{
+      .minFilter = SamplerMinMagFilter::Linear,
+      .magFilter = SamplerMinMagFilter::Linear,
+      .mipFilter = SamplerMipFilter::Linear,
+      .addressModeU = SamplerAddressMode::Repeat,
+      .addressModeV = SamplerAddressMode::Repeat,
+  };
 
-  auto sampler = iglDev_->createSamplerState(desc, &ret);
+  const auto sampler = iglDev_->createSamplerState(desc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(sampler, nullptr);
 }
@@ -66,18 +67,24 @@ TEST_F(PipelineStateTest, CreateSamplerState) {
 TEST_F(PipelineStateTest, CreateVertexInputState) {
   Result ret;
 
-  VertexInputStateDesc desc;
-  desc.numAttributes = 1;
-  desc.attributes[0].format = VertexAttributeFormat::Float4;
-  desc.attributes[0].offset = 0;
-  desc.attributes[0].bufferIndex = 0;
-  desc.attributes[0].name = "position";
-  desc.attributes[0].location = 0;
-  desc.numInputBindings = 1;
-  desc.inputBindings[0].stride = 16;
-  desc.inputBindings[0].sampleFunction = VertexSampleFunction::PerVertex;
+  const VertexInputStateDesc desc{
+      .numAttributes = 1,
+      .attributes =
+          {
+              {.bufferIndex = 0,
+               .format = VertexAttributeFormat::Float4,
+               .offset = 0,
+               .name = "position",
+               .location = 0},
+          },
+      .numInputBindings = 1,
+      .inputBindings =
+          {
+              {.stride = 16, .sampleFunction = VertexSampleFunction::PerVertex},
+          },
+  };
 
-  auto vis = iglDev_->createVertexInputState(desc, &ret);
+  const auto vis = iglDev_->createVertexInputState(desc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(vis, nullptr);
 }
