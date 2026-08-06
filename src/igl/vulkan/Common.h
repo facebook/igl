@@ -123,6 +123,7 @@ struct VulkanContextConfig {
   bool enableDualSrcBlend = true;
   bool enableGfxReconstruct = false;
   bool enableMultiviewPerViewViewports = false;
+  bool enableDynamicVertexBufferStride = false;
 
   ColorSpace swapChainColorSpace = igl::ColorSpace::SRGBNonlinear;
   TextureFormat requestedSwapChainTextureFormat = igl::TextureFormat::RGBA_UNorm8;

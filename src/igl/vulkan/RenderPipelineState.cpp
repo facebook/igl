@@ -569,6 +569,9 @@ VkPipeline RenderPipelineState::getVkPipeline(
     dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
     dynamicStates.push_back(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE);
     dynamicStates.push_back(VK_DYNAMIC_STATE_STENCIL_OP);
+    if (ctx.config_.enableDynamicVertexBufferStride) {
+      dynamicStates.push_back(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
+    }
   }
   if (useEDS2) {
     // VK_EXT_extended_dynamic_state2 (promoted to Vulkan 1.3)

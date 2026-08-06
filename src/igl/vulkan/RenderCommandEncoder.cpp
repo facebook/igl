@@ -538,7 +538,25 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
   }
   const VkBuffer vkBuf = static_cast<Buffer&>(buffer).getVkBuffer();
   const VkDeviceSize offset = bufferOffset;
-  ctx_.vf_.vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
+
+  if (attributeStride == 0) {
+    ctx_.vf_.vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
+  } else {
+    if (!ctx_.vf_.vkCmdBindVertexBuffers2) {
+      IGL_LOG_ERROR_ONCE(
+          "RenderCommandEncoder::bindVertexBuffer(attributeStride): vkCmdBindVertexBuffers2(EXT) "
+          "not available; "
+          "attributeStride ignored. Enable VK_EXT_extended_dynamic_state or Vulkan 1.3.");
+      return;
+    }
+
+    IGL_DEBUG_ASSERT(ctx_.config_.enableDynamicVertexBufferStride,
+                     "Must enable DynamicVertexBufferStride first!");
+
+    const VkDeviceSize size = buffer.getSizeInBytes() - bufferOffset;
+    const VkDeviceSize stride = attributeStride;
+    ctx_.vf_.vkCmdBindVertexBuffers2(cmdBuffer_, index, 1, &vkBuf, &offset, &size, &stride);
+  }
 }
 
 void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
