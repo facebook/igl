@@ -590,6 +590,7 @@ bool DeviceFeatureSet::isFeatureSupportedMiscGroup(DeviceFeatures feature) const
 
   case DeviceFeatures::DynamicCullMode:
   case DeviceFeatures::DynamicFrontFacingWinding:
+  case DeviceFeatures::DynamicVertexBufferStride:
     return true;
 
   default:
