@@ -8,6 +8,7 @@
 #include <igl/d3d12/CommandQueue.h>
 
 #include <d3d12sdklayers.h>
+#include <igl/Macros.h>
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/CommandBuffer.h>
 #include <igl/d3d12/Common.h>
@@ -93,6 +94,7 @@ CommandQueue::CommandQueue(Device& device) : device_(device) {}
 
 std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandBufferDesc& desc,
                                                                   Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto cmdBuffer = std::make_shared<CommandBuffer>(device_, desc);
 
   // Check if CommandBuffer was successfully initialized
@@ -128,6 +130,7 @@ std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandB
 // - FrameManager: Frame advancement and resource management
 // - PresentManager: Swapchain presentation with device removal detection
 SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*endOfFrame*/) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
   auto& cmdBuffer = const_cast<CommandBuffer&>(static_cast<const CommandBuffer&>(commandBuffer));
   auto& ctx = device_.getD3D12Context();
   auto* commandList = cmdBuffer.getCommandList();
