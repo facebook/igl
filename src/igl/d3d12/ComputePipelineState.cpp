@@ -8,6 +8,7 @@
 #include <igl/d3d12/ComputePipelineState.h>
 
 #include <d3dcompiler.h>
+#include <igl/Macros.h>
 #include <igl/NameHandle.h>
 #include <igl/RenderPipelineReflection.h>
 #include <igl/d3d12/D3D12ReflectionUtils.h>
@@ -19,6 +20,7 @@ ComputePipelineState::ComputePipelineState(const ComputePipelineDesc& desc,
                                            igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState,
                                            igl::d3d12::ComPtr<ID3D12RootSignature> rootSignature) :
   desc_(desc), pipelineState_(std::move(pipelineState)), rootSignature_(std::move(rootSignature)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Set D3D12 object names for PIX debugging
   const std::string& debugName = desc_.debugName;
   if (pipelineState_.Get() && !debugName.empty()) {
@@ -37,6 +39,7 @@ ComputePipelineState::ComputePipelineState(const ComputePipelineDesc& desc,
 
 std::shared_ptr<IComputePipelineState::IComputePipelineReflection>
 ComputePipelineState::computePipelineReflection() {
+  IGL_PROFILER_FUNCTION();
   // Return cached reflection if already created
   if (reflection_) {
     return reflection_;
