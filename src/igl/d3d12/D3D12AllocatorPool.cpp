@@ -7,6 +7,7 @@
 
 #include <igl/d3d12/D3D12AllocatorPool.h>
 
+#include <igl/Macros.h>
 #include <igl/d3d12/D3D12Context.h>
 #include <igl/d3d12/D3D12FenceWaiter.h>
 #include <igl/d3d12/D3D12ImmediateCommands.h>
@@ -17,6 +18,7 @@
 namespace igl::d3d12 {
 
 void D3D12AllocatorPool::initialize(D3D12Context& ctx, IFenceProvider* fenceProvider) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto* device = ctx.getDevice();
   if (!device) {
     IGL_LOG_ERROR("D3D12AllocatorPool::initialize: D3D12 device is null\n");
@@ -46,6 +48,7 @@ void D3D12AllocatorPool::initialize(D3D12Context& ctx, IFenceProvider* fenceProv
 }
 
 void D3D12AllocatorPool::processCompletedUploads() {
+  IGL_PROFILER_FUNCTION();
   if (!uploadFence_.Get()) {
     return;
   }
@@ -70,6 +73,7 @@ void D3D12AllocatorPool::processCompletedUploads() {
 }
 
 void D3D12AllocatorPool::trackUploadBuffer(ComPtr<ID3D12Resource> buffer, UINT64 fenceValue) {
+  IGL_PROFILER_FUNCTION();
   if (!buffer.Get()) {
     return;
   }
@@ -79,6 +83,7 @@ void D3D12AllocatorPool::trackUploadBuffer(ComPtr<ID3D12Resource> buffer, UINT64
 }
 
 ComPtr<ID3D12CommandAllocator> D3D12AllocatorPool::getUploadCommandAllocator(D3D12Context& ctx) {
+  IGL_PROFILER_FUNCTION();
   if (!uploadFence_.Get()) {
     IGL_LOG_ERROR(
         "D3D12AllocatorPool::getUploadCommandAllocator: Upload fence not "
@@ -145,6 +150,7 @@ ComPtr<ID3D12CommandAllocator> D3D12AllocatorPool::getUploadCommandAllocator(D3D
 
 void D3D12AllocatorPool::returnUploadCommandAllocator(ComPtr<ID3D12CommandAllocator> allocator,
                                                       UINT64 fenceValue) {
+  IGL_PROFILER_FUNCTION();
   if (!allocator.Get()) {
     return;
   }
@@ -163,6 +169,7 @@ void D3D12AllocatorPool::returnUploadCommandAllocator(ComPtr<ID3D12CommandAlloca
 
 ::igl::Result D3D12AllocatorPool::waitForUploadFence(const Device& device,
                                                      UINT64 fenceValue) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
   if (!uploadFence_.Get()) {
     return ::igl::Result(::igl::Result::Code::InvalidOperation, "Upload fence not initialized");
   }
@@ -185,6 +192,7 @@ void D3D12AllocatorPool::returnUploadCommandAllocator(ComPtr<ID3D12CommandAlloca
 }
 
 void D3D12AllocatorPool::clearOnDeviceDestruction() {
+  IGL_PROFILER_FUNCTION();
   {
     std::lock_guard<std::mutex> lock(commandAllocatorPoolMutex_);
     commandAllocatorPool_.clear();
