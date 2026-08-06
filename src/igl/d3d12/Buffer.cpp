@@ -8,6 +8,7 @@
 #include <igl/d3d12/Buffer.h>
 
 #include <cstring>
+#include <igl/Macros.h>
 #include <igl/d3d12/D3D12Context.h>
 #include <igl/d3d12/D3D12StateTransition.h>
 #include <igl/d3d12/Device.h>
@@ -44,6 +45,7 @@ Buffer::Buffer(Device& device,
   desc_(desc),
   defaultState_(computeDefaultState(desc)),
   currentState_(initialState) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Determine storage type based on heap properties
   if (resource_.Get()) {
     D3D12_HEAP_PROPERTIES heapProps;
@@ -68,6 +70,7 @@ Buffer::Buffer(Device& device,
 }
 
 Buffer::~Buffer() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   if (resource_.Get()) {
     // Track resource destruction
     D3D12Context::trackResourceDestruction("Buffer", desc_.length);
@@ -78,6 +81,7 @@ Buffer::~Buffer() {
 }
 
 Result Buffer::upload(const void* data, const BufferRange& range) {
+  IGL_PROFILER_FUNCTION();
   if (resource_.Get() == nullptr) {
     return Result(Result::Code::ArgumentInvalid, "Buffer resource is null");
   }
@@ -320,6 +324,7 @@ Result Buffer::upload(const void* data, const BufferRange& range) {
 }
 
 void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION();
   if (resource_.Get() == nullptr) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Buffer resource is null");
     return nullptr;
@@ -540,6 +545,7 @@ void* Buffer::map(const BufferRange& range, Result* IGL_NULLABLE outResult) {
 }
 
 void Buffer::unmap() {
+  IGL_PROFILER_FUNCTION();
   if (!mappedPtr_) {
     return;
   }
