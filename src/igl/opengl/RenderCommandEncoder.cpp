@@ -413,7 +413,10 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
   }
 }
 
-void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, size_t bufferOffset) {
+void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
+                                            IBuffer& buffer,
+                                            size_t bufferOffset,
+                                            size_t attributeStride) {
   IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY(adapter_)) {
     Buffer& glBuffer = static_cast<Buffer&>(buffer);

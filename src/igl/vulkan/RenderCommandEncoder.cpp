@@ -512,7 +512,10 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
   binder_.bindBuffer(index, buf, bufferOffset, bufferSize);
 }
 
-void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, size_t bufferOffset) {
+void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
+                                            IBuffer& buffer,
+                                            size_t bufferOffset,
+                                            size_t attributeStride) {
   IGL_PROFILER_FUNCTION();
   IGL_PROFILER_ZONE_GPU_VK("bindVertexBuffer()", ctx_.tracyCtx_, cmdBuffer_);
 
