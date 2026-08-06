@@ -9,6 +9,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <igl/Macros.h>
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/ComputeCommandEncoder.h>
@@ -22,6 +23,7 @@ namespace igl::d3d12 {
 
 CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc) :
   ICommandBuffer(desc), device_(device) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto* d3dDevice = device_.getD3D12Context().getDevice();
 
   if (!d3dDevice) {
@@ -99,6 +101,7 @@ CommandBuffer::~CommandBuffer() {
 // Allocates from pre-allocated pages, switching pages as needed.
 // Fails immediately if all pages are exhausted (Vulkan fail-fast pattern).
 Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
+  IGL_PROFILER_FUNCTION();
   auto& ctx = device_.getD3D12Context();
   const uint32_t frameIdx = ctx.getCurrentFrameIndex();
   auto& frameCtx = ctx.getFrameContexts()[frameIdx];
@@ -202,6 +205,7 @@ Result CommandBuffer::getNextCbvSrvUavDescriptor(uint32_t* outDescriptorIndex) {
 // Ensures the range can be bound as a single descriptor table.
 // Fails immediately if all pages are exhausted (Vulkan fail-fast pattern).
 Result CommandBuffer::allocateCbvSrvUavRange(uint32_t count, uint32_t* outBaseDescriptorIndex) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (count == 0) {
     return Result{Result::Code::ArgumentInvalid, "Cannot allocate zero descriptors"};
   }
@@ -305,6 +309,7 @@ Result CommandBuffer::allocateCbvSrvUavRange(uint32_t count, uint32_t* outBaseDe
 }
 
 uint32_t& CommandBuffer::getNextSamplerDescriptor() {
+  IGL_PROFILER_FUNCTION();
   auto& ctx = device_.getD3D12Context();
   const uint32_t frameIdx = ctx.getCurrentFrameIndex();
   auto& frameCtx = ctx.getFrameContexts()[frameIdx];
@@ -361,6 +366,7 @@ uint32_t& CommandBuffer::getNextSamplerDescriptor() {
 }
 
 void CommandBuffer::trackTransientBuffer(std::shared_ptr<IBuffer> buffer) {
+  IGL_PROFILER_FUNCTION();
   // Add to the CURRENT frame's transient buffer list
   // These will be kept alive until the frame completes GPU execution
   auto& ctx = device_.getD3D12Context();
@@ -386,6 +392,7 @@ void CommandBuffer::trackTransientBuffer(std::shared_ptr<IBuffer> buffer) {
 }
 
 void CommandBuffer::trackTransientResource(ID3D12Resource* resource) {
+  IGL_PROFILER_FUNCTION();
   if (!resource) {
     return;
   }
@@ -415,6 +422,7 @@ void CommandBuffer::trackTransientResource(ID3D12Resource* resource) {
 }
 
 Result CommandBuffer::begin() {
+  IGL_PROFILER_FUNCTION();
   if (recording_) {
     return Result();
   }
@@ -491,6 +499,7 @@ Result CommandBuffer::begin() {
 }
 
 void CommandBuffer::end() {
+  IGL_PROFILER_FUNCTION();
   if (!recording_) {
     return;
   }
@@ -518,6 +527,7 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
     const std::shared_ptr<IFramebuffer>& framebuffer,
     const Dependencies& /*dependencies*/,
     Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Begin command buffer if not already begun
   Result beginResult = begin();
   if (!beginResult.isOk()) {
@@ -533,6 +543,7 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
 }
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Begin command buffer if not already begun
   Result beginResult = begin();
   if (!beginResult.isOk()) {
@@ -545,6 +556,7 @@ std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncod
 }
 
 void CommandBuffer::present(const std::shared_ptr<ITexture>& /*surface*/) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_PRESENT);
   // Note: Actual present happens in CommandQueue::submit(). This call serves
   // as a marker indicating that this command buffer should trigger a swapchain
   // Present when submitted.
@@ -552,6 +564,7 @@ void CommandBuffer::present(const std::shared_ptr<ITexture>& /*surface*/) const 
 }
 
 void CommandBuffer::waitUntilScheduled() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
   // If scheduleValue_ is 0, the command buffer hasn't been submitted yet
   if (scheduleValue_ == 0) {
 #ifdef IGL_DEBUG
@@ -604,6 +617,7 @@ void CommandBuffer::waitUntilScheduled() {
 }
 
 void CommandBuffer::waitUntilCompleted() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
   // Wait for all submitted GPU work to complete
   // The CommandQueue tracks frame completion via fences, so we need to wait for the current frame
   auto& ctx = getContext();
@@ -637,6 +651,7 @@ void CommandBuffer::waitUntilCompleted() {
 }
 
 void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& /*color*/) const {
+  IGL_PROFILER_FUNCTION();
   // Only emit GPU debug markers while the command list is in recording state.
   if (!recording_ || !commandList_.Get() || !label) {
     return;
@@ -650,6 +665,7 @@ void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& /*c
 }
 
 void CommandBuffer::popDebugGroupLabel() const {
+  IGL_PROFILER_FUNCTION();
   // Only pop GPU debug markers while the command list is in recording state.
   if (!recording_ || !commandList_.Get()) {
     return;
@@ -663,6 +679,7 @@ void CommandBuffer::copyBuffer(IBuffer& source,
                                uint64_t sourceOffset,
                                uint64_t destinationOffset,
                                uint64_t size) {
+  IGL_PROFILER_FUNCTION();
   auto* src = static_cast<Buffer*>(&source);
   auto* dst = static_cast<Buffer*>(&destination);
   ID3D12Resource* srcRes = src->getResource();
@@ -806,6 +823,7 @@ void CommandBuffer::copyTextureToBuffer(ITexture& source,
                                         uint64_t destinationOffset,
                                         uint32_t mipLevel,
                                         uint32_t layer) {
+  IGL_PROFILER_FUNCTION();
   // Like Vulkan, defer the copy operation until command buffer submission
   // D3D12 requires this to execute AFTER render commands complete, not during recording
   // (Unlike Vulkan which can record into the command buffer, D3D12 has closed command list and
