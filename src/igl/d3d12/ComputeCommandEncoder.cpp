@@ -8,6 +8,7 @@
 #include <igl/d3d12/ComputeCommandEncoder.h>
 
 #include <cstring>
+#include <igl/Macros.h>
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/CommandBuffer.h>
 #include <igl/d3d12/ComputePipelineState.h>
@@ -22,6 +23,7 @@ ComputeCommandEncoder::ComputeCommandEncoder(CommandBuffer& commandBuffer) :
   commandBuffer_(commandBuffer),
   resourcesBinder_(commandBuffer, true /* isCompute */),
   isEncoding_(true) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder created\n");
 
   // Set descriptor heaps for this command list.
@@ -55,6 +57,7 @@ ComputeCommandEncoder::ComputeCommandEncoder(CommandBuffer& commandBuffer) :
 }
 
 void ComputeCommandEncoder::endEncoding() {
+  IGL_PROFILER_FUNCTION();
   if (!isEncoding_) {
     return;
   }
@@ -65,6 +68,7 @@ void ComputeCommandEncoder::endEncoding() {
 
 void ComputeCommandEncoder::bindComputePipelineState(
     const std::shared_ptr<IComputePipelineState>& pipelineState) {
+  IGL_PROFILER_FUNCTION();
   if (!pipelineState) {
     IGL_LOG_ERROR("ComputeCommandEncoder::bindComputePipelineState - null pipeline state\n");
     return;
@@ -90,6 +94,7 @@ void ComputeCommandEncoder::bindComputePipelineState(
 void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCount,
                                                  const Dimensions& /*threadgroupSize*/,
                                                  const Dependencies& dependencies) {
+  IGL_PROFILER_FUNCTION();
   if (!currentPipeline_) {
     IGL_LOG_ERROR("ComputeCommandEncoder::dispatchThreadGroups - no pipeline state bound\n");
     return;
@@ -354,6 +359,7 @@ void ComputeCommandEncoder::dispatchThreadGroupsIndirect(IBuffer& /*indirectBuff
 }
 
 void ComputeCommandEncoder::bindPushConstants(const void* data, size_t length, size_t offset) {
+  IGL_PROFILER_FUNCTION();
   auto* commandList = commandBuffer_.getCommandList();
   if (!commandBuffer_.isRecording() || !commandList || !data || length == 0) {
     IGL_LOG_ERROR(
@@ -408,6 +414,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index,
                                        IBuffer* buffer,
                                        size_t offset,
                                        size_t /*bufferSize*/) {
+  IGL_PROFILER_FUNCTION();
   if (!buffer) {
     IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindBuffer: null buffer\n");
     return;
@@ -633,6 +640,7 @@ void ComputeCommandEncoder::bindBytes(uint32_t /*index*/, const void* /*data*/, 
 void ComputeCommandEncoder::bindImageTexture(uint32_t index,
                                              ITexture* texture,
                                              TextureFormat /*format*/) {
+  IGL_PROFILER_FUNCTION();
   if (!texture) {
     IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::bindImageTexture: null texture\n");
     return;
@@ -733,6 +741,7 @@ void ComputeCommandEncoder::bindSamplerState(uint32_t index, ISamplerState* samp
 }
 
 void ComputeCommandEncoder::pushDebugGroupLabel(const char* label, const Color& /*color*/) const {
+  IGL_PROFILER_FUNCTION();
   auto* commandList = commandBuffer_.getCommandList();
   if (!commandBuffer_.isRecording() || !commandList || !label) {
     return;
@@ -746,6 +755,7 @@ void ComputeCommandEncoder::pushDebugGroupLabel(const char* label, const Color& 
 }
 
 void ComputeCommandEncoder::insertDebugEventLabel(const char* label, const Color& /*color*/) const {
+  IGL_PROFILER_FUNCTION();
   auto* commandList = commandBuffer_.getCommandList();
   if (!commandBuffer_.isRecording() || !commandList || !label) {
     return;
@@ -758,6 +768,7 @@ void ComputeCommandEncoder::insertDebugEventLabel(const char* label, const Color
 }
 
 void ComputeCommandEncoder::popDebugGroupLabel() const {
+  IGL_PROFILER_FUNCTION();
   auto* commandList = commandBuffer_.getCommandList();
   if (!commandBuffer_.isRecording() || !commandList) {
     return;
