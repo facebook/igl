@@ -7,6 +7,7 @@
 
 #include <igl/metal/macos/Framebuffer.h>
 
+#include <igl/Macros.h>
 #include <igl/Texture.h>
 #include <igl/metal/CommandQueue.h>
 
@@ -22,6 +23,7 @@ Framebuffer::Framebuffer(const FramebufferDesc& value) : metal::Framebuffer(valu
 bool Framebuffer::canCopy(ICommandQueue& cmdQueue,
                           id<MTLTexture> texture,
                           const TextureRangeDesc& range) const {
+  IGL_PROFILER_FUNCTION();
   const bool result = texture.storageMode == MTLStorageModeManaged;
   auto iglMtlCmdQueue = static_cast<CommandQueue&>(cmdQueue);
 
