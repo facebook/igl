@@ -7,6 +7,7 @@
 
 #include <igl/d3d12/D3D12ResourcesBinder.h>
 
+#include <igl/Macros.h>
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/CommandBuffer.h>
 #include <igl/d3d12/Common.h>
@@ -38,6 +39,7 @@ D3D12ResourcesBinder::D3D12ResourcesBinder(CommandBuffer& commandBuffer, bool is
   commandBuffer_(commandBuffer), isCompute_(isCompute) {}
 
 void D3D12ResourcesBinder::bindTexture(uint32_t index, ITexture* texture) {
+  IGL_PROFILER_FUNCTION();
   if (index >= IGL_TEXTURE_SAMPLERS_MAX) {
     IGL_LOG_ERROR("D3D12ResourcesBinder::bindTexture: index %u exceeds maximum %u\n",
                   index,
@@ -91,6 +93,7 @@ void D3D12ResourcesBinder::bindTexture(uint32_t index, ITexture* texture) {
 }
 
 void D3D12ResourcesBinder::bindSamplerState(uint32_t index, ISamplerState* samplerState) {
+  IGL_PROFILER_FUNCTION();
   if (index >= IGL_TEXTURE_SAMPLERS_MAX) {
     IGL_LOG_ERROR("D3D12ResourcesBinder::bindSamplerState: index %u exceeds maximum %u\n",
                   index,
@@ -131,6 +134,7 @@ void D3D12ResourcesBinder::bindBuffer(uint32_t index,
                                       size_t size,
                                       bool isUAV,
                                       size_t elementStride) {
+  IGL_PROFILER_FUNCTION();
   if (index >= IGL_BUFFER_BINDINGS_MAX) {
     IGL_LOG_ERROR("D3D12ResourcesBinder::bindBuffer: index %u exceeds maximum %u\n",
                   index,
@@ -211,6 +215,7 @@ void D3D12ResourcesBinder::bindBuffer(uint32_t index,
 
 bool D3D12ResourcesBinder::updateBindings(const RenderPipelineState* renderPipeline,
                                           Result* outResult) {
+  IGL_PROFILER_FUNCTION();
   auto* commandList = commandBuffer_.getCommandList();
   auto& context = commandBuffer_.getContext();
   auto* device = context.getDevice();
@@ -259,6 +264,7 @@ bool D3D12ResourcesBinder::updateBindings(const RenderPipelineState* renderPipel
 }
 
 void D3D12ResourcesBinder::reset() {
+  IGL_PROFILER_FUNCTION();
   bindingsTextures_ = {};
   bindingsSamplers_ = {};
   bindingsBuffers_ = {};
@@ -271,6 +277,7 @@ bool D3D12ResourcesBinder::updateTextureBindings(ID3D12GraphicsCommandList* cmdL
                                                  ID3D12Device* device,
                                                  const RenderPipelineState* renderPipeline,
                                                  Result* outResult) {
+  IGL_PROFILER_FUNCTION();
   if (bindingsTextures_.count == 0) {
     return true; // Nothing to bind
   }
@@ -445,6 +452,7 @@ bool D3D12ResourcesBinder::updateSamplerBindings(ID3D12GraphicsCommandList* cmdL
                                                  ID3D12Device* device,
                                                  const RenderPipelineState* renderPipeline,
                                                  Result* outResult) {
+  IGL_PROFILER_FUNCTION();
   if (bindingsSamplers_.count == 0) {
     return true; // Nothing to bind
   }
@@ -551,6 +559,7 @@ bool D3D12ResourcesBinder::updateBufferBindings(ID3D12GraphicsCommandList* cmdLi
                                                 ID3D12Device* device,
                                                 const RenderPipelineState* renderPipeline,
                                                 Result* outResult) {
+  IGL_PROFILER_FUNCTION();
   if (bindingsBuffers_.count == 0) {
     return true; // Nothing to bind
   }
@@ -823,6 +832,7 @@ bool D3D12ResourcesBinder::updateBufferBindings(ID3D12GraphicsCommandList* cmdLi
 bool D3D12ResourcesBinder::updateUAVBindings(ID3D12GraphicsCommandList* cmdList,
                                              ID3D12Device* device,
                                              Result* outResult) {
+  IGL_PROFILER_FUNCTION();
   if (bindingsUAVs_.count == 0) {
     return true; // Nothing to bind
   }
