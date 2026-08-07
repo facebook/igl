@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <igl/Macros.h>
 
 namespace igl::d3d12 {
 
@@ -20,6 +21,7 @@ void ShaderModule::setReflection(igl::d3d12::ComPtr<ID3D12ShaderReflection> refl
 }
 
 void ShaderModule::extractShaderMetadata() {
+  IGL_PROFILER_FUNCTION();
   if (!reflection_.Get()) {
     IGL_LOG_ERROR("ShaderModule::extractShaderMetadata: reflection_ is NULL!\n");
     return;
@@ -246,6 +248,7 @@ size_t ShaderModule::getConstantBufferSize(const std::string& name) const {
 }
 
 bool ShaderModule::validateBytecode() const {
+  IGL_PROFILER_FUNCTION();
   // Check minimum size for signature
   if (bytecode_.size() < 4) {
     IGL_LOG_ERROR("Shader bytecode too small (< 4 bytes): %zu bytes\n", bytecode_.size());
