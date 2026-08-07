@@ -9,6 +9,7 @@
 
 #include <utility>
 #include <vector>
+#include <igl/Macros.h>
 #include <igl/metal/CommandQueue.h>
 #include <igl/metal/Device.h>
 #include <igl/metal/Texture.h>
@@ -18,6 +19,7 @@ namespace igl::metal {
 Framebuffer::Framebuffer(FramebufferDesc value) : value_(std::move(value)) {}
 
 std::vector<size_t> Framebuffer::getColorAttachmentIndices() const {
+  IGL_PROFILER_FUNCTION();
   std::vector<size_t> indices;
 
   for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
@@ -63,6 +65,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
                                            void* pixelBytes,
                                            const TextureRangeDesc& range,
                                            size_t bytesPerRow) const {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
   IGL_DEBUG_ASSERT(range.numFaces == 1, "range.numFaces MUST be 1");
   IGL_DEBUG_ASSERT(range.numLayers == 1, "range.numLayers MUST be 1");
@@ -79,6 +82,7 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
                                            void* pixelBytes,
                                            const TextureRangeDesc& range,
                                            size_t bytesPerRow) const {
+  IGL_PROFILER_FUNCTION();
   auto texture = value_.depthAttachment.texture;
   copyBytes(cmdQueue, texture, pixelBytes, range, bytesPerRow);
 }
@@ -87,6 +91,7 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
                                              void* pixelBytes,
                                              const TextureRangeDesc& range,
                                              size_t bytesPerRow) const {
+  IGL_PROFILER_FUNCTION();
   auto texture = value_.stencilAttachment.texture;
   copyBytes(cmdQueue, texture, pixelBytes, range, bytesPerRow);
 }
@@ -99,6 +104,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
                                              size_t index,
                                              std::shared_ptr<ITexture> destTexture,
                                              const TextureRangeDesc& range) const {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
   const auto& colorAttachment = value_.colorAttachments[index];
 
@@ -133,6 +139,7 @@ void Framebuffer::copyBytes(ICommandQueue& cmdQueue,
                             void* pixelBytes,
                             const TextureRangeDesc& range,
                             size_t bytesPerRow) const {
+  IGL_PROFILER_FUNCTION();
   auto mtlTexture = std::static_pointer_cast<Texture>(iglTexture);
   if (bytesPerRow == 0) {
     bytesPerRow = iglTexture->getProperties().getBytesPerRow(range);
@@ -200,6 +207,7 @@ void Framebuffer::copyBytes(ICommandQueue& cmdQueue,
 }
 
 void Framebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
+  IGL_PROFILER_FUNCTION();
   if (getColorAttachment(0) != texture) {
     if (!texture) {
       value_.colorAttachments[0] = {};
@@ -210,6 +218,7 @@ void Framebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
 }
 
 void Framebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
+  IGL_PROFILER_FUNCTION();
   updateDrawable(std::move(surfaceTextures.color));
   if (surfaceTextures.depth && surfaceTextures.depth->getProperties().hasStencil()) {
     if (getStencilAttachment() != surfaceTextures.depth) {
