@@ -387,7 +387,21 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
   IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX);
 
   auto& metalBuffer = static_cast<Buffer&>(buffer);
-  [encoder_ setVertexBuffer:metalBuffer.get() offset:bufferOffset atIndex:index];
+
+  if (attributeStride == 0) {
+    [encoder_ setVertexBuffer:metalBuffer.get() offset:bufferOffset atIndex:index];
+  } else {
+    if (device_.hasFeature(DeviceFeatures::DynamicVertexBufferStride)) {
+      if (@available(macos 14, ios 17, *)) {
+        [encoder_ setVertexBuffer:metalBuffer.get()
+                           offset:bufferOffset
+                  attributeStride:attributeStride
+                          atIndex:index];
+      }
+    }else {
+      IGL_DEBUG_ASSERT_NOT_REACHED();
+    }
+  }
 }
 
 void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
