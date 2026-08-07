@@ -8,6 +8,7 @@
 #include <IGLU/command_buffer_allocator/ICommandBufferAllocator.h>
 
 #include <igl/CommandBuffer.h>
+#include <igl/Macros.h>
 
 namespace iglu::command_buffer_allocator {
 ICommandBufferAllocator::CommandBufferScope::CommandBufferScope(
@@ -19,6 +20,7 @@ ICommandBufferAllocator::CommandBufferScope::CommandBufferScope(
   shouldFinalizeCommandBuffer_(shouldFinalizeCommandBuffer) {}
 
 ICommandBufferAllocator::CommandBufferScope::~CommandBufferScope() noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   if (shouldFinalizeCommandBuffer_) {
     allocator_.finalizeCommandBuffer();
   }
