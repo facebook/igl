@@ -9,6 +9,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <igl/Macros.h>
 #include <igl/d3d12/D3D12Context.h>
 
 namespace igl::d3d12 {
@@ -111,6 +112,7 @@ D3D12_BLEND_OP toD3D12BlendOp(BlendOp op) {
 //=============================================================================
 
 D3D12GraphicsPipelineBuilder::D3D12GraphicsPipelineBuilder() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Zero-initialize the descriptor
   psoDesc_ = {};
 
@@ -368,6 +370,7 @@ Result D3D12GraphicsPipelineBuilder::build(ID3D12Device* device,
                                            ID3D12RootSignature* rootSignature,
                                            ID3D12PipelineState** outPipelineState,
                                            const char* debugName) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!device) {
     return Result(Result::Code::ArgumentNull, "Device is null");
   }
@@ -421,6 +424,7 @@ Result D3D12GraphicsPipelineBuilder::build(ID3D12Device* device,
 //=============================================================================
 
 D3D12ComputePipelineBuilder::D3D12ComputePipelineBuilder() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Zero-initialize the descriptor
   psoDesc_ = {};
   psoDesc_.NodeMask = 0;
@@ -441,6 +445,7 @@ Result D3D12ComputePipelineBuilder::build(ID3D12Device* device,
                                           ID3D12RootSignature* rootSignature,
                                           ID3D12PipelineState** outPipelineState,
                                           const char* debugName) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!device) {
     return Result(Result::Code::ArgumentNull, "Device is null");
   }
@@ -491,6 +496,7 @@ Result D3D12ComputePipelineBuilder::build(ID3D12Device* device,
 //=============================================================================
 
 D3D12RootSignatureBuilder::D3D12RootSignatureBuilder() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   flags_ = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 }
 
@@ -570,6 +576,7 @@ D3D12RootSignatureBuilder& D3D12RootSignatureBuilder::flags(D3D12_ROOT_SIGNATURE
 Result D3D12RootSignatureBuilder::build(ID3D12Device* device,
                                         const D3D12Context* context,
                                         ID3D12RootSignature** outRootSignature) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!device) {
     return Result(Result::Code::ArgumentNull, "Device is null");
   }
@@ -698,6 +705,7 @@ UINT D3D12RootSignatureBuilder::getMaxDescriptorCount(const D3D12Context* contex
 }
 
 uint32_t D3D12RootSignatureBuilder::getDwordSize() const {
+  IGL_PROFILER_FUNCTION();
   // Build temporary descriptor for cost calculation
   std::vector<D3D12_ROOT_PARAMETER> d3d12Params;
   std::vector<std::vector<D3D12_DESCRIPTOR_RANGE>> allRanges;
