@@ -11,6 +11,7 @@
 
 #include <IGLU/simple_renderer/Drawable.h>
 #include <IGLU/simple_renderer/Material.h>
+#include <igl/Macros.h>
 #include <igl/ShaderCreator.h>
 
 // D3D12 FXC precompiled shaders
@@ -242,6 +243,7 @@ struct DrawableData {
   DrawableData(igl::IDevice& device,
                const std::shared_ptr<igl::IVertexInputState>& inputState,
                const std::shared_ptr<iglu::material::Material>& material) {
+    IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
     IGL_DEBUG_ASSERT(sizeof(ImDrawIdx) == 2,
                      "The constants below may not work with the ImGui data.");
     const size_t kMaxVertices = (1l << 16);
@@ -314,6 +316,7 @@ class Session::Renderer {
 };
 
 Session::Renderer::Renderer(igl::IDevice& device) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   ImGuiIO& io = ImGui::GetIO();
   io.BackendRendererName = "imgui_impl_igl";
 
@@ -396,12 +399,14 @@ Session::Renderer::Renderer(igl::IDevice& device) {
 }
 
 Session::Renderer::~Renderer() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   const ImGuiIO& io = ImGui::GetIO();
   fontTexture_ = nullptr;
   io.Fonts->TexID = static_cast<ImTextureID>(0);
 }
 
 void Session::Renderer::newFrame(const igl::FramebufferDesc& desc) {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(desc.colorAttachments[0].texture);
   renderPipelineDesc_.targetDesc.colorAttachments.resize(1);
   renderPipelineDesc_.targetDesc.colorAttachments[0].textureFormat =
@@ -418,6 +423,7 @@ void Session::Renderer::newFrame(const igl::FramebufferDesc& desc) {
 void Session::Renderer::renderDrawData(igl::IDevice& device,
                                        igl::IRenderCommandEncoder& cmdEncoder,
                                        ImDrawData* drawData) {
+  IGL_PROFILER_FUNCTION();
   // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates !=
   // framebuffer coordinates)
   const int fbWidth = static_cast<int>(drawData->DisplaySize.x * drawData->FramebufferScale.x);
@@ -567,6 +573,7 @@ Session::Session(igl::IDevice& device,
                  igl::shell::InputDispatcher& inputDispatcher,
                  bool needInitializeSession /* = true */) :
   inputDispatcher_(inputDispatcher) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   context_ = ImGui::CreateContext();
   makeCurrentContext();
 
@@ -579,6 +586,7 @@ Session::Session(igl::IDevice& device,
 }
 
 void Session::initialize(igl::IDevice& device) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!isInitialized_) {
     inputListener_ = std::make_shared<InputListener>(context_);
     renderer_ = std::make_unique<Renderer>(device);
@@ -590,6 +598,7 @@ void Session::initialize(igl::IDevice& device) {
 }
 
 Session::~Session() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   makeCurrentContext();
 
   inputDispatcher_.removeTouchListener(inputListener_);
@@ -601,6 +610,7 @@ Session::~Session() {
 }
 
 void Session::beginFrame(const igl::FramebufferDesc& desc, float displayScale) {
+  IGL_PROFILER_FUNCTION();
   makeCurrentContext();
 
   IGL_DEBUG_ASSERT(desc.colorAttachments[0].texture);
@@ -617,6 +627,7 @@ void Session::beginFrame(const igl::FramebufferDesc& desc, float displayScale) {
 }
 
 void Session::endFrame(igl::IDevice& device, igl::IRenderCommandEncoder& cmdEncoder) {
+  IGL_PROFILER_FUNCTION();
   makeCurrentContext();
 
   ImGui::EndFrame();
@@ -629,6 +640,7 @@ void Session::makeCurrentContext() const {
 }
 
 void Session::drawFPS(float fps) const {
+  IGL_PROFILER_FUNCTION();
   // a nice FPS counter
   const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
                                  ImGuiWindowFlags_NoSavedSettings |
