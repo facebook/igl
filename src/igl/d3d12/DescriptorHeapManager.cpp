@@ -8,10 +8,12 @@
 #include <igl/d3d12/DescriptorHeapManager.h>
 
 #include <algorithm>
+#include <igl/Macros.h>
 
 namespace igl::d3d12 {
 
 Result DescriptorHeapManager::initialize(ID3D12Device* device, const Sizes& sizes) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!device) {
     return Result(Result::Code::ArgumentInvalid, "Null device for DescriptorHeapManager");
   }
@@ -114,6 +116,7 @@ Result DescriptorHeapManager::initialize(ID3D12Device* device, const Sizes& size
 }
 
 uint32_t DescriptorHeapManager::allocateRTV() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   std::lock_guard<std::mutex> lock(mutex_);
   if (freeRtvs_.empty()) {
     IGL_LOG_ERROR(
@@ -129,6 +132,7 @@ uint32_t DescriptorHeapManager::allocateRTV() {
 }
 
 uint32_t DescriptorHeapManager::allocateDSV() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   std::lock_guard<std::mutex> lock(mutex_);
   if (freeDsvs_.empty()) {
     IGL_LOG_ERROR(
@@ -144,6 +148,7 @@ uint32_t DescriptorHeapManager::allocateDSV() {
 }
 
 void DescriptorHeapManager::freeRTV(uint32_t index) {
+  IGL_PROFILER_FUNCTION();
   std::lock_guard<std::mutex> lock(mutex_);
 
   // Validate bounds
@@ -165,6 +170,7 @@ void DescriptorHeapManager::freeRTV(uint32_t index) {
 }
 
 void DescriptorHeapManager::freeDSV(uint32_t index) {
+  IGL_PROFILER_FUNCTION();
   std::lock_guard<std::mutex> lock(mutex_);
 
   // Validate bounds
@@ -186,6 +192,7 @@ void DescriptorHeapManager::freeDSV(uint32_t index) {
 }
 
 uint32_t DescriptorHeapManager::allocateCbvSrvUav() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   std::lock_guard<std::mutex> lock(mutex_);
   if (freeCbvSrvUav_.empty()) {
     IGL_LOG_ERROR(
@@ -201,6 +208,7 @@ uint32_t DescriptorHeapManager::allocateCbvSrvUav() {
 }
 
 uint32_t DescriptorHeapManager::allocateSampler() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   std::lock_guard<std::mutex> lock(mutex_);
   if (freeSamplers_.empty()) {
     IGL_LOG_ERROR(
@@ -216,6 +224,7 @@ uint32_t DescriptorHeapManager::allocateSampler() {
 }
 
 void DescriptorHeapManager::freeCbvSrvUav(uint32_t index) {
+  IGL_PROFILER_FUNCTION();
   std::lock_guard<std::mutex> lock(mutex_);
 
   // Validate bounds
@@ -241,6 +250,7 @@ void DescriptorHeapManager::freeCbvSrvUav(uint32_t index) {
 }
 
 void DescriptorHeapManager::freeSampler(uint32_t index) {
+  IGL_PROFILER_FUNCTION();
   std::lock_guard<std::mutex> lock(mutex_);
 
   // Validate bounds
@@ -267,6 +277,7 @@ void DescriptorHeapManager::freeSampler(uint32_t index) {
 // Explicit error checking with bool return, building on the basic index validation helpers.
 bool DescriptorHeapManager::getRTVHandle(uint32_t index,
                                          D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const {
+  IGL_PROFILER_FUNCTION();
   if (!outHandle) {
     IGL_LOG_ERROR("DescriptorHeapManager::getRTVHandle: outHandle is null\n");
     return false;
@@ -321,6 +332,7 @@ bool DescriptorHeapManager::getRTVHandle(uint32_t index,
 // Explicit error checking with bool return, building on descriptor validation helpers.
 bool DescriptorHeapManager::getDSVHandle(uint32_t index,
                                          D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const {
+  IGL_PROFILER_FUNCTION();
   if (!outHandle) {
     IGL_LOG_ERROR("DescriptorHeapManager::getDSVHandle: outHandle is null\n");
     return false;
@@ -375,6 +387,7 @@ bool DescriptorHeapManager::getDSVHandle(uint32_t index,
 // Bool-returning CBV/SRV/UAV handle getters
 bool DescriptorHeapManager::getCbvSrvUavCpuHandle(uint32_t index,
                                                   D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const {
+  IGL_PROFILER_FUNCTION();
   if (!outHandle) {
     IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavCpuHandle: outHandle is null\n");
     return false;
@@ -429,6 +442,7 @@ bool DescriptorHeapManager::getCbvSrvUavCpuHandle(uint32_t index,
 
 bool DescriptorHeapManager::getCbvSrvUavGpuHandle(uint32_t index,
                                                   D3D12_GPU_DESCRIPTOR_HANDLE* outHandle) const {
+  IGL_PROFILER_FUNCTION();
   if (!outHandle) {
     IGL_LOG_ERROR("DescriptorHeapManager::getCbvSrvUavGpuHandle: outHandle is null\n");
     return false;
@@ -484,6 +498,7 @@ bool DescriptorHeapManager::getCbvSrvUavGpuHandle(uint32_t index,
 
 bool DescriptorHeapManager::getSamplerCpuHandle(uint32_t index,
                                                 D3D12_CPU_DESCRIPTOR_HANDLE* outHandle) const {
+  IGL_PROFILER_FUNCTION();
   if (!outHandle) {
     IGL_LOG_ERROR("DescriptorHeapManager::getSamplerCpuHandle: outHandle is null\n");
     return false;
@@ -537,6 +552,7 @@ bool DescriptorHeapManager::getSamplerCpuHandle(uint32_t index,
 
 bool DescriptorHeapManager::getSamplerGpuHandle(uint32_t index,
                                                 D3D12_GPU_DESCRIPTOR_HANDLE* outHandle) const {
+  IGL_PROFILER_FUNCTION();
   if (!outHandle) {
     IGL_LOG_ERROR("DescriptorHeapManager::getSamplerGpuHandle: outHandle is null\n");
     return false;
@@ -590,6 +606,7 @@ bool DescriptorHeapManager::getSamplerGpuHandle(uint32_t index,
 
 // Descriptor handle validation helpers.
 bool DescriptorHeapManager::isValidRTVIndex(uint32_t index) const {
+  IGL_PROFILER_FUNCTION();
   if (index == UINT32_MAX) {
     return false; // Sentinel value for allocation failure
   }
@@ -608,6 +625,7 @@ bool DescriptorHeapManager::isValidRTVIndex(uint32_t index) const {
 }
 
 bool DescriptorHeapManager::isValidDSVIndex(uint32_t index) const {
+  IGL_PROFILER_FUNCTION();
   if (index == UINT32_MAX) {
     return false; // Sentinel value for allocation failure
   }
@@ -625,6 +643,7 @@ bool DescriptorHeapManager::isValidDSVIndex(uint32_t index) const {
 }
 
 bool DescriptorHeapManager::isValidCbvSrvUavIndex(uint32_t index) const {
+  IGL_PROFILER_FUNCTION();
   if (index == UINT32_MAX) {
     return false; // Sentinel value for allocation failure
   }
@@ -642,6 +661,7 @@ bool DescriptorHeapManager::isValidCbvSrvUavIndex(uint32_t index) const {
 }
 
 bool DescriptorHeapManager::isValidSamplerIndex(uint32_t index) const {
+  IGL_PROFILER_FUNCTION();
   if (index == UINT32_MAX) {
     return false; // Sentinel value for allocation failure
   }
@@ -659,6 +679,7 @@ bool DescriptorHeapManager::isValidSamplerIndex(uint32_t index) const {
 }
 
 void DescriptorHeapManager::logUsageStats() const {
+  IGL_PROFILER_FUNCTION();
   std::lock_guard<std::mutex> lock(mutex_);
   IGL_D3D12_LOG_VERBOSE("=== Descriptor Heap Usage Statistics ===\n");
 
@@ -691,6 +712,7 @@ void DescriptorHeapManager::logUsageStats() const {
 
 // Explicit cleanup to release descriptor heaps before device destruction
 void DescriptorHeapManager::cleanup() {
+  IGL_PROFILER_FUNCTION();
   std::lock_guard<std::mutex> lock(mutex_);
 
   // Release all descriptor heaps explicitly to prevent leaks
@@ -707,6 +729,7 @@ void DescriptorHeapManager::cleanup() {
 }
 
 void DescriptorHeapManager::validateAndClampSizes(ID3D12Device* device) {
+  IGL_PROFILER_FUNCTION();
   // A-006: Validate descriptor heap sizes against D3D12 device limits
   IGL_D3D12_LOG_VERBOSE("=== Descriptor Heap Size Validation ===\n");
 
