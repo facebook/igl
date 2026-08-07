@@ -9,6 +9,7 @@
 
 #include <Foundation/Foundation.h>
 #include <igl/Common.h>
+#include <igl/Macros.h>
 #include <igl/metal/Texture.h>
 
 #if !defined(IGL_CMAKE_BUILD)
@@ -58,6 +59,7 @@ igl::UniformType metalDataTypeToIGLUniformType(MTLDataType type) {
 
 namespace igl::metal {
 RenderPipelineReflection::RenderPipelineReflection(MTLRenderPipelineReflection* refl) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (refl != nullptr) {
     // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
     for (MTLArgument* arg = nullptr in refl.vertexArguments) {
@@ -77,6 +79,7 @@ RenderPipelineReflection::RenderPipelineReflection(MTLRenderPipelineReflection* 
 RenderPipelineReflection::~RenderPipelineReflection() = default;
 
 bool RenderPipelineReflection::createArgDesc(MTLArgument* arg, ShaderStage sh) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   size_t loc = 0;
 
   // MTLArgument.name is declared nullable; guard once so nil never reaches the
