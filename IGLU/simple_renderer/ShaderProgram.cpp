@@ -10,6 +10,7 @@
 #include "ShaderProgram.h"
 
 #include <utility>
+#include <igl/Macros.h>
 #include <igl/NameHandle.h>
 
 namespace iglu::material {
@@ -29,6 +30,7 @@ ShaderProgram::ShaderProgram(igl::IDevice& device,
                              std::shared_ptr<igl::IShaderModule> fragmentShader,
                              std::shared_ptr<igl::IVertexInputState> vis,
                              igl::Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   igl::Result result;
   shaderStages_ = igl::ShaderStagesCreator::fromRenderModules(
       device, std::move(vertexShader), std::move(fragmentShader), &result);
@@ -41,12 +43,14 @@ ShaderProgram::ShaderProgram(igl::IDevice& device,
                              std::shared_ptr<igl::IVertexInputState> vis,
                              igl::Result* outResult) :
   shaderStages_(std::move(shaderStages)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   init(device, std::move(vis), outResult);
 }
 
 void ShaderProgram::init(igl::IDevice& device,
                          std::shared_ptr<igl::IVertexInputState> vis,
                          igl::Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   igl::Result result;
 
   igl::RenderPipelineDesc pipelineDesc;
@@ -65,6 +69,7 @@ const igl::IRenderPipelineReflection& ShaderProgram::renderPipelineReflection() 
 }
 
 void ShaderProgram::populatePipelineDescriptor(igl::RenderPipelineDesc& pipelineDesc) const {
+  IGL_PROFILER_FUNCTION();
   pipelineDesc.shaderStages = shaderStages_;
   for (const auto& entry : reflection_->allTextures()) {
     pipelineDesc.fragmentUnitSamplerMap[entry.textureIndex] = igl::genNameHandle(entry.name);
