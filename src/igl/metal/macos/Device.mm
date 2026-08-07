@@ -7,6 +7,7 @@
 
 #include <igl/metal/macos/Device.h>
 
+#include <igl/Macros.h>
 #include <igl/metal/macos/Framebuffer.h>
 
 namespace igl::metal::macos {
@@ -16,6 +17,7 @@ Device::Device(id<MTLDevice> device) : metal::Device(device) {}
 
 std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& desc,
                                                         Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto resource = std::make_shared<Framebuffer>(desc);
   if (hasResourceTracker()) {
     resource->initResourceTracker(getResourceTracker());
