@@ -8,11 +8,13 @@
 #include <igl/d3d12/D3D12FenceWaiter.h>
 
 #include <cstdio>
+#include <igl/Macros.h>
 
 namespace igl::d3d12 {
 
 FenceWaiter::FenceWaiter(ID3D12Fence* fence, UINT64 targetValue) :
   fence_(fence), targetValue_(targetValue) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!fence_) {
     IGL_LOG_ERROR("FenceWaiter: null fence provided\n");
     setupErrorCode_ = Result::Code::ArgumentNull;
@@ -50,6 +52,7 @@ FenceWaiter::FenceWaiter(ID3D12Fence* fence, UINT64 targetValue) :
 }
 
 FenceWaiter::~FenceWaiter() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   if (event_) {
     CloseHandle(event_);
   }
@@ -60,6 +63,7 @@ bool FenceWaiter::isComplete() const {
 }
 
 Result FenceWaiter::wait(DWORD timeoutMs) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
   // Check if setup succeeded (constructor completed event creation and SetEventOnCompletion)
   if (!setupSucceeded_ || !event_) {
     return Result(setupErrorCode_, setupErrorMessage_);
