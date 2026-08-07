@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstring>
+#include <igl/Macros.h>
 #include <igl/d3d12/CommandBuffer.h>
 #include <igl/d3d12/CommandQueue.h>
 #include <igl/d3d12/D3D12FenceWaiter.h>
@@ -33,6 +34,7 @@ Framebuffer::~Framebuffer() {
 }
 
 std::vector<size_t> Framebuffer::getColorAttachmentIndices() const {
+  IGL_PROFILER_FUNCTION();
   std::vector<size_t> indices;
   indices.reserve(IGL_COLOR_ATTACHMENTS_MAX);
   for (size_t i = 0; i < IGL_COLOR_ATTACHMENTS_MAX; ++i) {
@@ -82,6 +84,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
                                            void* pixelBytes,
                                            const TextureRangeDesc& range,
                                            size_t bytesPerRow) const {
+  IGL_PROFILER_FUNCTION();
   if (!pixelBytes || index >= IGL_COLOR_ATTACHMENTS_MAX) {
     return;
   }
@@ -289,6 +292,7 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
                                            void* pixelBytes,
                                            const TextureRangeDesc& range,
                                            size_t bytesPerRow) const {
+  IGL_PROFILER_FUNCTION();
   // Depth attachment readback.
   if (!pixelBytes) {
     return;
@@ -492,6 +496,7 @@ void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
                                              void* pixelBytes,
                                              const TextureRangeDesc& range,
                                              size_t bytesPerRow) const {
+  IGL_PROFILER_FUNCTION();
   // Stencil attachment readback.
   if (!pixelBytes) {
     return;
@@ -694,6 +699,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
                                              size_t index,
                                              std::shared_ptr<ITexture> destTexture,
                                              const TextureRangeDesc& range) const {
+  IGL_PROFILER_FUNCTION();
   // Bounds check for index parameter
   if (index >= IGL_COLOR_ATTACHMENTS_MAX) {
     IGL_LOG_ERROR("Framebuffer::copyTextureColorAttachment: index %zu out of bounds (max %u)\n",
