@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <igl/Macros.h>
 #include <igl/d3d12/D3D12FenceWaiter.h>
 #include <igl/d3d12/DescriptorHeapManager.h>
 
@@ -68,6 +69,7 @@ bool D3D12Context::MemoryBudget::isMemoryLow() const {
 
 // A-011: Helper function to probe highest supported feature level for an adapter
 D3D_FEATURE_LEVEL D3D12Context::getHighestFeatureLevel(IDXGIAdapter1* adapter) {
+  IGL_PROFILER_FUNCTION();
   const D3D_FEATURE_LEVEL featureLevels[] = {
       D3D_FEATURE_LEVEL_12_2,
       D3D_FEATURE_LEVEL_12_1,
@@ -86,6 +88,7 @@ D3D_FEATURE_LEVEL D3D12Context::getHighestFeatureLevel(IDXGIAdapter1* adapter) {
 }
 
 D3D12Context::~D3D12Context() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   // Wait for GPU to finish before cleanup
   waitForGPU();
 
@@ -146,6 +149,7 @@ Result D3D12Context::initialize(HWND hwnd,
                                 uint32_t width,
                                 uint32_t height,
                                 const D3D12ContextConfig& config) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   width_ = width;
   height_ = height;
 
@@ -241,6 +245,7 @@ Result D3D12Context::initialize(HWND hwnd,
 }
 
 Result D3D12Context::resize(uint32_t width, uint32_t height) {
+  IGL_PROFILER_FUNCTION();
   // Validate dimensions
   if (width == 0 || height == 0) {
     return Result{Result::Code::ArgumentInvalid,
@@ -320,6 +325,7 @@ Result D3D12Context::resize(uint32_t width, uint32_t height) {
 }
 
 Result D3D12Context::recreateSwapChain(uint32_t width, uint32_t height) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_D3D12_LOG_VERBOSE(
       "D3D12Context: Recreating swapchain with dimensions %ux%u\n", width, height);
 
@@ -394,6 +400,7 @@ Result D3D12Context::recreateSwapChain(uint32_t width, uint32_t height) {
 }
 
 Result D3D12Context::createDevice() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // DO NOT enable experimental features in windowed mode - it breaks swapchain creation!
   // Experimental features are ONLY enabled in HeadlessD3D12Context for unit tests
   // Windowed render sessions use signed DXIL (via IDxcValidator) which doesn't need experimental
@@ -744,6 +751,7 @@ Result D3D12Context::createDevice() {
 
 // A-011: Enumerate and select best adapter
 Result D3D12Context::enumerateAndSelectAdapter() {
+  IGL_PROFILER_FUNCTION();
   enumeratedAdapters_.clear();
 
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Enumerating DXGI adapters...\n");
@@ -933,6 +941,7 @@ Result D3D12Context::enumerateAndSelectAdapter() {
 
 // A-012: Detect memory budget from selected adapter
 void D3D12Context::detectMemoryBudget() {
+  IGL_PROFILER_FUNCTION();
   if (selectedAdapterIndex_ >= enumeratedAdapters_.size()) {
     IGL_LOG_ERROR("D3D12Context: No adapter selected for memory budget detection\n");
     return;
@@ -959,6 +968,7 @@ void D3D12Context::detectMemoryBudget() {
 
 // A-010: Detect HDR output capabilities
 void D3D12Context::detectHDRCapabilities() {
+  IGL_PROFILER_FUNCTION();
   IGL_D3D12_LOG_VERBOSE("D3D12Context: Detecting HDR output capabilities...\n");
 
   // Reset to defaults
@@ -1042,6 +1052,7 @@ void D3D12Context::detectHDRCapabilities() {
 }
 
 Result D3D12Context::createCommandQueue() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   D3D12_COMMAND_QUEUE_DESC queueDesc = {};
   queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
   queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
@@ -1058,6 +1069,7 @@ Result D3D12Context::createCommandQueue() {
 }
 
 Result D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
   swapChainDesc.Width = width;
   swapChainDesc.Height = height;
@@ -1196,6 +1208,7 @@ Result D3D12Context::createSwapChain(HWND hwnd, uint32_t width, uint32_t height)
 }
 
 Result D3D12Context::createRTVHeap() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
   heapDesc.NumDescriptors = swapchainBufferCount_; // Use queried buffer count
   heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
@@ -1215,6 +1228,7 @@ Result D3D12Context::createRTVHeap() {
 }
 
 Result D3D12Context::createBackBuffers() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap_->GetCPUDescriptorHandleForHeapStart();
 
   for (UINT i = 0; i < swapchainBufferCount_; i++) { // Use queried buffer count
@@ -1240,6 +1254,7 @@ Result D3D12Context::createBackBuffers() {
 }
 
 Result D3D12Context::createDescriptorHeaps() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Cache descriptor sizes
   cbvSrvUavDescriptorSize_ =
       device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -1370,6 +1385,7 @@ Result D3D12Context::createDescriptorHeaps() {
 }
 
 Result D3D12Context::createCommandSignatures() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Create command signature for DrawInstanced (multiDrawIndirect)
   // D3D12_DRAW_ARGUMENTS: { VertexCountPerInstance, InstanceCount, StartVertexLocation,
   // StartInstanceLocation }
@@ -1466,6 +1482,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE D3D12Context::getCurrentRTV() const {
 }
 
 void D3D12Context::waitForGPU() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
   if (!fence_.Get() || !commandQueue_.Get()) {
     return;
   }
@@ -1485,6 +1502,7 @@ void D3D12Context::waitForGPU() {
 }
 
 void D3D12Context::trackResourceCreation(const char* type, size_t sizeBytes) {
+  IGL_PROFILER_FUNCTION();
   std::lock_guard<std::mutex> lock(resourceStatsMutex_);
   if (std::strcmp(type, "Buffer") == 0) {
     resourceStats_.totalBuffersCreated++;
@@ -1500,6 +1518,7 @@ void D3D12Context::trackResourceCreation(const char* type, size_t sizeBytes) {
 }
 
 void D3D12Context::trackResourceDestruction(const char* type, size_t sizeBytes) {
+  IGL_PROFILER_FUNCTION();
   std::lock_guard<std::mutex> lock(resourceStatsMutex_);
   if (std::strcmp(type, "Buffer") == 0) {
     resourceStats_.totalBuffersDestroyed++;
@@ -1511,6 +1530,7 @@ void D3D12Context::trackResourceDestruction(const char* type, size_t sizeBytes) 
 }
 
 void D3D12Context::logResourceStats() {
+  IGL_PROFILER_FUNCTION();
   std::lock_guard<std::mutex> lock(resourceStatsMutex_);
   IGL_D3D12_LOG_VERBOSE("=== D3D12 Resource Statistics ===\n");
   IGL_D3D12_LOG_VERBOSE("  Buffers: %zu created, %zu destroyed (leaked: %zd)\n",
@@ -1536,6 +1556,7 @@ void D3D12Context::logResourceStats() {
 Result D3D12Context::allocateDescriptorHeapPage(D3D12_DESCRIPTOR_HEAP_TYPE type,
                                                 uint32_t numDescriptors,
                                                 igl::d3d12::ComPtr<ID3D12DescriptorHeap>* outHeap) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!device_.Get()) {
     return Result{Result::Code::RuntimeError, "Device is null"};
   }
