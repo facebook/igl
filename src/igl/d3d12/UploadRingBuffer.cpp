@@ -7,12 +7,14 @@
 
 #include <igl/d3d12/UploadRingBuffer.h>
 
+#include <igl/Macros.h>
 #include <igl/d3d12/D3D12Context.h>
 
 namespace igl::d3d12 {
 
 UploadRingBuffer::UploadRingBuffer(ID3D12Device* device, uint64_t size) :
   device_(device), size_(size) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!device_) {
     IGL_LOG_ERROR("UploadRingBuffer: Device is null\n");
     return;
@@ -71,6 +73,7 @@ UploadRingBuffer::UploadRingBuffer(ID3D12Device* device, uint64_t size) :
 }
 
 UploadRingBuffer::~UploadRingBuffer() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   if (uploadHeap_.Get() && cpuBase_) {
     uploadHeap_->Unmap(0, nullptr);
     cpuBase_ = nullptr;
@@ -89,6 +92,7 @@ UploadRingBuffer::~UploadRingBuffer() {
 UploadRingBuffer::Allocation UploadRingBuffer::allocate(uint64_t size,
                                                         uint64_t alignment,
                                                         uint64_t fenceValue) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   std::lock_guard<std::mutex> lock(mutex_);
 
   if (!uploadHeap_.Get() || !cpuBase_) {
@@ -252,6 +256,7 @@ UploadRingBuffer::Allocation UploadRingBuffer::allocate(uint64_t size,
 }
 
 void UploadRingBuffer::retire(uint64_t completedFenceValue) {
+  IGL_PROFILER_FUNCTION();
   std::lock_guard<std::mutex> lock(mutex_);
 
   // Process all pending allocations that have completed
