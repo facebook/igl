@@ -8,6 +8,7 @@
 #include <igl/d3d12/RenderPipelineState.h>
 
 #include <d3dcompiler.h>
+#include <igl/Macros.h>
 #include <igl/NameHandle.h>
 #include <igl/RenderPipelineReflection.h>
 #include <igl/d3d12/Common.h>
@@ -24,6 +25,7 @@ RenderPipelineState::RenderPipelineState(const RenderPipelineDesc& desc,
   IRenderPipelineState(desc),
   pipelineState_(std::move(pipelineState)),
   rootSignature_(std::move(rootSignature)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Set D3D12 object names for PIX debugging
   const std::string& debugName = desc.debugName.toString();
   if (pipelineState_.Get() && !debugName.empty()) {
@@ -186,6 +188,7 @@ RenderPipelineState::RenderPipelineState(const RenderPipelineDesc& desc,
 }
 
 std::shared_ptr<IRenderPipelineReflection> RenderPipelineState::renderPipelineReflection() {
+  IGL_PROFILER_FUNCTION();
   if (reflection_) {
     return reflection_;
   }
@@ -314,6 +317,7 @@ int RenderPipelineState::getIndexByName(const std::string& /*name*/, ShaderStage
 ID3D12PipelineState* RenderPipelineState::getPipelineState(
     const D3D12RenderPipelineDynamicState& dynamicState,
     Device& device) const {
+  IGL_PROFILER_FUNCTION();
   // Fast path: Check if dynamic state matches base PSO
   // This happens when pipeline was created with same formats as framebuffer
   const auto& desc = getRenderPipelineDesc();
