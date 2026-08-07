@@ -8,12 +8,14 @@
 #include <igl/metal/BufferSynchronizationManager.h>
 
 #import <Metal/Metal.h>
+#include <igl/Macros.h>
 #include <igl/metal/CommandBuffer.h>
 
 namespace igl::metal {
 
 BufferSynchronizationManager::BufferSynchronizationManager(size_t maxInFlightBuffers) :
   maxInFlightBuffers_(maxInFlightBuffers) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // To manage the pool of buffers, we would normally initialize the semaphore with the pool size
   // (i.e. 'maxInFlightBuffers'). However, semaphore crashes at destruction time, if its current
   // value is less than its initial value. This seems to Apple's libdispatch's idiosyncrasy.
@@ -29,6 +31,7 @@ BufferSynchronizationManager::BufferSynchronizationManager(size_t maxInFlightBuf
 
 void BufferSynchronizationManager::markCommandBufferAsEndOfFrame(
     const igl::ICommandBuffer& commandBuffer) {
+  IGL_PROFILER_FUNCTION();
   // Set a completion handler for this cmd buffer
   __weak dispatch_semaphore_t semaphore = frameBoundarySemaphore_;
   [static_cast<const CommandBuffer&>(commandBuffer).get()
@@ -43,6 +46,7 @@ void BufferSynchronizationManager::markCommandBufferAsEndOfFrame(
 }
 
 void BufferSynchronizationManager::manageEndOfFrameSync() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
   // Decrement the counting semaphore and
   // if the resulting value is less than zero, block the current thread from executing further
   // until the semaphore's value is >= 0
