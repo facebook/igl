@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 #import <Metal/MTLComputePass.h>
 #import <Metal/MTLTypes.h>
+#include <igl/Macros.h>
 #include <igl/metal/Buffer.h>
 #include <igl/metal/ComputePipelineState.h>
 #include <igl/metal/SamplerState.h>
@@ -19,12 +20,14 @@
 namespace igl::metal {
 
 ComputeCommandEncoder::ComputeCommandEncoder(id<MTLCommandBuffer> buffer) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   id<MTLComputeCommandEncoder> computeEncoder = [buffer computeCommandEncoder];
   encoder_ = computeEncoder;
 }
 
 ComputeCommandEncoder::ComputeCommandEncoder(id<MTLCommandBuffer> buffer,
                                              const ComputePassDesc& computePass) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Wire MTLComputePassDescriptor::sampleBufferAttachments to the supplied TimestampQueries so the
   // resolved start/end samples land in the same slot pair (slot*2, slot*2+1) that the render-pass
   // path writes to. Consumers iterate slots uniformly across pass types via getElapsedNanos().
@@ -68,6 +71,7 @@ ComputeCommandEncoder::ComputeCommandEncoder(id<MTLCommandBuffer> buffer,
 }
 
 void ComputeCommandEncoder::endEncoding() {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(encoder_);
   [encoder_ endEncoding];
   encoder_ = nil;
@@ -103,6 +107,7 @@ void ComputeCommandEncoder::bindComputePipelineState(
 void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCount,
                                                  const Dimensions& threadgroupSize,
                                                  const Dependencies& /*dependencies*/) {
+  IGL_PROFILER_FUNCTION();
   MTLSize tgc;
   tgc.width = threadgroupCount.width;
   tgc.height = threadgroupCount.height;
@@ -119,6 +124,7 @@ void ComputeCommandEncoder::dispatchThreadGroupsIndirect(IBuffer& indirectBuffer
                                                          size_t indirectBufferOffset,
                                                          const Dimensions& threadgroupSize,
                                                          const Dependencies& /*dependencies*/) {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(encoder_);
   IGL_DEBUG_ASSERT((indirectBuffer.getBufferType() & BufferDesc::BufferTypeBits::Indirect) != 0,
                    "indirectBuffer must be created with BufferTypeBits::Indirect");
