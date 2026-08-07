@@ -10,10 +10,12 @@
 #include "ForwardRenderPass.h"
 
 #include <utility>
+#include <igl/Macros.h>
 
 namespace iglu::renderpass {
 
 ForwardRenderPass::ForwardRenderPass(igl::IDevice& device) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Per IGL Error Handling rule #24, every resource creation call must pass a
   // Result* and check it; passing nullptr silently swallows errors.
   igl::Result result;
@@ -25,6 +27,7 @@ ForwardRenderPass::ForwardRenderPass(igl::IDevice& device) {
 
 void ForwardRenderPass::begin(std::shared_ptr<igl::IFramebuffer> target,
                               const igl::RenderPassDesc* renderPassDescOverride) {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(!isActive(), "Drawing already in progress");
 
   framebuffer_ = std::move(target);
@@ -56,11 +59,13 @@ void ForwardRenderPass::begin(std::shared_ptr<igl::IFramebuffer> target,
 }
 
 void ForwardRenderPass::draw(drawable::Drawable& drawable, igl::IDevice& device) const {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(isActive(), "Drawing not in progress");
   drawable.draw(device, *commandEncoder_, renderPipelineDesc_);
 }
 
 void ForwardRenderPass::end(bool shouldPresent) {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(isActive(), "Drawing not in progress");
 
   commandEncoder_->endEncoding();
@@ -77,6 +82,7 @@ void ForwardRenderPass::end(bool shouldPresent) {
 }
 
 void ForwardRenderPass::bindViewport(const igl::Viewport& viewport, const igl::Size& surfaceSize) {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(isActive(), "Drawing not in progress");
   if (backendType_ == igl::BackendType::Metal) {
     // In Metal, framebuffer origin is top left but the argument assumes bottom left
