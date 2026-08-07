@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <igl/Macros.h>
 #include <igl/d3d12/D3D12FenceWaiter.h>
 #include <igl/d3d12/DXCCompiler.h>
 #include <igl/d3d12/Device.h>
@@ -32,6 +33,7 @@ std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
                                                      ID3D12CommandQueue* queue,
                                                      D3D12_RESOURCE_STATES initialState,
                                                      Device* iglDevice) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!resource) {
     IGL_LOG_ERROR("Texture::createFromResource - resource is NULL!\n");
     return nullptr;
@@ -66,6 +68,7 @@ std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
 
 std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> parent,
                                                     const TextureViewDesc& desc) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!parent) {
     IGL_LOG_ERROR("Texture::createTextureView - parent is NULL!\n");
     return nullptr;
@@ -156,6 +159,7 @@ std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> par
 }
 
 Texture::~Texture() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   // Texture views share the parent's resource, so they don't own descriptors.
   // Only free descriptors for non-view textures.
   if (isView_) {
@@ -176,6 +180,7 @@ Texture::~Texture() {
 }
 
 Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t bytesPerRow) const {
+  IGL_PROFILER_FUNCTION();
   IGL_D3D12_LOG_VERBOSE("Texture::upload() - START: %dx%d\n", range.width, range.height);
 
   if (!device_ || !queue_ || !resource_.Get()) {
@@ -566,6 +571,7 @@ Result Texture::uploadCube(const TextureRangeDesc& range,
                            TextureCubeFace face,
                            const void* data,
                            size_t bytesPerRow) const {
+  IGL_PROFILER_FUNCTION();
   // Cube textures are stored as texture arrays with 6 slices (one per face).
   // The upload() method already handles cube textures correctly when face/numFaces are set.
 
@@ -588,6 +594,7 @@ Result Texture::uploadInternal(TextureType type,
                                const void* data,
                                size_t bytesPerRow,
                                const uint32_t* mipLevelBytes) const {
+  IGL_PROFILER_FUNCTION();
   if (!(type == TextureType::TwoD || type == TextureType::TwoDArray ||
         type == TextureType::ThreeD || type == TextureType::Cube)) {
     return Result(Result::Code::Unimplemented, "Upload not implemented for this texture type");
@@ -634,6 +641,7 @@ bool Texture::isRequiredGenerateMipmap() const {
 }
 
 void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc* /*range*/) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap(cmdQueue) - START: numMips=%u\n", numMipLevels_);
 
   if (!device_ || !queue_ || !resource_.Get() || numMipLevels_ < 2) {
@@ -885,6 +893,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
 
 void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/,
                              const TextureRangeDesc* /*range*/) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_D3D12_LOG_VERBOSE("Texture::generateMipmap(cmdBuffer) - START: numMips=%u\n", numMipLevels_);
 
   if (!device_ || !queue_ || !resource_.Get() || numMipLevels_ < 2) {
@@ -1110,6 +1119,7 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/,
 }
 
 void Texture::initializeStateTracking(D3D12_RESOURCE_STATES initialState) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Simplified per-subresource state tracking: always use a vector (no dual-mode).
   if (!resource_.Get()) {
     subresourceStates_.clear();
@@ -1174,6 +1184,7 @@ void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
                            D3D12_RESOURCE_STATES newState,
                            uint32_t mipLevel,
                            uint32_t layer) {
+  IGL_PROFILER_FUNCTION();
   // Simplified per-subresource state tracking.
   Texture* owner = getStateOwner();
   if (!commandList || !owner || !owner->resource_.Get() || owner->subresourceStates_.empty()) {
@@ -1251,6 +1262,7 @@ void Texture::transitionTo(ID3D12GraphicsCommandList* commandList,
 
 void Texture::transitionAll(ID3D12GraphicsCommandList* commandList,
                             D3D12_RESOURCE_STATES newState) {
+  IGL_PROFILER_FUNCTION();
   // Simplified per-subresource state tracking.
   Texture* owner = getStateOwner();
   if (!commandList || !owner || !owner->resource_.Get() || owner->subresourceStates_.empty()) {
