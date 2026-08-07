@@ -10,6 +10,7 @@
 #include <IGLU/texture_accessor/TextureAccessorFactory.h>
 #include <ostream>
 #include <igl/Common.h>
+#include <igl/Macros.h>
 
 namespace igl::iglu {
 namespace {
@@ -93,6 +94,7 @@ void writeBitmap(std::ostream& stream,
                  std::shared_ptr<ITexture> texture,
                  IDevice& device,
                  bool flipY) {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(texture);
   IGL_DEBUG_ASSERT(texture->getType() == igl::TextureType::TwoD);
   IGL_DEBUG_ASSERT(isSupportedBitmapTextureFormat(texture->getFormat()));
@@ -142,6 +144,7 @@ void writeBitmap(std::ostream& stream,
 }
 
 void writeBitmap(std::ostream& stream, const uint8_t* imageData, uint32_t width, uint32_t height) {
+  IGL_PROFILER_FUNCTION();
   const uint32_t imageSize = width * height * 3;
 
   BMPHeader header{
