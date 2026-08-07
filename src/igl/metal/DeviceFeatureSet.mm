@@ -9,6 +9,7 @@
 
 #import <TargetConditionals.h>
 #include <vector>
+#include <igl/Macros.h>
 
 namespace {
 
@@ -113,6 +114,7 @@ size_t getGPUFamily(id<MTLDevice> device) {
 namespace igl::metal {
 
 DeviceFeatureSet::DeviceFeatureSet(id<MTLDevice> device) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   gpuFamily_ = getGPUFamily(device);
 
   // Get the supported MSAA
