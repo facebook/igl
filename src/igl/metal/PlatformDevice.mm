@@ -11,6 +11,7 @@
 #import <Foundation/Foundation.h>
 #import <QuartzCore/CAMetalLayer.h>
 #import <QuartzCore/QuartzCore.h>
+#include <igl/Macros.h>
 #include <igl/metal/DepthStencilState.h>
 #include <igl/metal/Device.h>
 #include <igl/metal/Framebuffer.h>
@@ -70,6 +71,7 @@ TextureFormat convertToTextureFormat(OSType pixelFormat, size_t planeIndex) {
 PlatformDevice::PlatformDevice(Device& device) : device_(device) {}
 
 PlatformDevice::~PlatformDevice() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   if (textureCache_) {
     CFRelease(textureCache_);
     textureCache_ = nullptr;
@@ -78,6 +80,7 @@ PlatformDevice::~PlatformDevice() {
 
 std::shared_ptr<SamplerState> PlatformDevice::createSamplerState(const SamplerStateDesc& desc,
                                                                  Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   MTLSamplerDescriptor* metalDesc = [MTLSamplerDescriptor new];
   metalDesc.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
   metalDesc.minFilter = SamplerState::convertMinMagFilter(desc.minFilter);
@@ -105,12 +108,14 @@ std::shared_ptr<SamplerState> PlatformDevice::createSamplerState(const SamplerSt
 
 std::shared_ptr<Framebuffer> PlatformDevice::createFramebuffer(const FramebufferDesc& desc,
                                                                Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return std::static_pointer_cast<Framebuffer>(device_.createFramebuffer(desc, outResult));
 }
 
 std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
     id<CAMetalDrawable> nativeDrawable,
     Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto iglObject = std::make_unique<Texture>(nativeDrawable, device_);
   if (auto resourceTracker = device_.getResourceTracker()) {
     iglObject->initResourceTracker(resourceTracker);
@@ -122,6 +127,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
 std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
     id<MTLTexture> nativeDrawable,
     Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto iglObject = std::make_unique<Texture>(nativeDrawable, device_);
   if (auto resourceTracker = device_.getResourceTracker()) {
     iglObject->initResourceTracker(resourceTracker);
@@ -132,6 +138,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
 
 std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(CALayer* nativeDrawable,
                                                                           Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!nativeDrawable) {
     Result::setResult(outResult, Result::Code::ArgumentNull, "Invalid native drawable");
     return nullptr;
@@ -161,6 +168,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(CALaye
 std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(
     id<MTLTexture> depthStencilTexture,
     Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto iglObject = std::make_unique<Texture>(depthStencilTexture, device_);
   if (auto resourceTracker = device_.getResourceTracker()) {
     iglObject->initResourceTracker(resourceTracker);
@@ -174,6 +182,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBuffer(
     TextureFormat format,
     size_t planeIndex,
     Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   const bool isPlanar = CVPixelBufferIsPlanar(sourceImage) != 0u;
   const size_t width = (isPlanar ? CVPixelBufferGetWidthOfPlane(sourceImage, planeIndex)
                                  : CVPixelBufferGetWidth(sourceImage));
@@ -187,6 +196,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBuffer(
     CVImageBufferRef sourceImage,
     size_t planeIndex,
     Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   const TextureFormat format =
       convertToTextureFormat(CVPixelBufferGetPixelFormatType(sourceImage), planeIndex);
   return PlatformDevice::createTextureFromNativePixelBuffer(
@@ -200,6 +210,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
     size_t height,
     size_t planeIndex,
     Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   std::unique_ptr<Texture> resultTexture = nullptr;
 
 #if (!TARGET_OS_SIMULATOR || __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000)
@@ -250,6 +261,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
 }
 
 Size PlatformDevice::getNativeDrawableSize(CALayer* nativeDrawable, Result* outResult) {
+  IGL_PROFILER_FUNCTION();
 #if (!TARGET_OS_SIMULATOR || __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000)
   Result::setOk(outResult);
   return {static_cast<float>(CGRectGetWidth(nativeDrawable.bounds)),
@@ -262,6 +274,7 @@ Size PlatformDevice::getNativeDrawableSize(CALayer* nativeDrawable, Result* outR
 
 TextureFormat PlatformDevice::getNativeDrawableTextureFormat(CALayer* nativeDrawable,
                                                              Result* outResult) {
+  IGL_PROFILER_FUNCTION();
   TextureFormat formatResult = TextureFormat::Invalid;
 
 #if (!TARGET_OS_SIMULATOR || __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000)
@@ -283,6 +296,7 @@ TextureFormat PlatformDevice::getNativeDrawableTextureFormat(CALayer* nativeDraw
 }
 
 CVMetalTextureCacheRef PlatformDevice::getTextureCache() {
+  IGL_PROFILER_FUNCTION();
 #if (!TARGET_OS_SIMULATOR || __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000)
   if (textureCache_ == nullptr && device_.get() != nullptr) {
     const CVReturn result =
@@ -300,6 +314,7 @@ CVMetalTextureCacheRef PlatformDevice::getTextureCache() {
 }
 
 void PlatformDevice::flushNativeTextureCache() const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
 #if (!TARGET_OS_SIMULATOR || __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000)
   if (textureCache_) {
     CVMetalTextureCacheFlush(textureCache_, 0);
