@@ -7,12 +7,15 @@
 
 #include <igl/metal/RenderPipelineState.h>
 
+#include <igl/Macros.h>
+
 namespace igl::metal {
 
 RenderPipelineState::RenderPipelineState(id<MTLRenderPipelineState> value,
                                          MTLRenderPipelineReflection* reflection,
                                          const RenderPipelineDesc& desc) :
   IRenderPipelineState(desc), value_(value) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   reflection_ = reflection ? std::make_shared<RenderPipelineReflection>(reflection) : nullptr;
 }
 
@@ -27,6 +30,7 @@ void RenderPipelineState::setRenderPipelineReflection(
 }
 
 int RenderPipelineState::getIndexByName(const igl::NameHandle& name, ShaderStage stage) const {
+  IGL_PROFILER_FUNCTION();
   if (reflection_ == nullptr) {
     return -1;
   }
@@ -34,6 +38,7 @@ int RenderPipelineState::getIndexByName(const igl::NameHandle& name, ShaderStage
 }
 
 int RenderPipelineState::getIndexByName(const std::string& name, ShaderStage stage) const {
+  IGL_PROFILER_FUNCTION();
   if (reflection_ == nullptr) {
     return -1;
   }
