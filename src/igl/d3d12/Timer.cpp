@@ -7,12 +7,14 @@
 
 #include <igl/d3d12/Timer.h>
 
+#include <igl/Macros.h>
 #include <igl/d3d12/D3D12Context.h>
 #include <igl/d3d12/Device.h>
 
 namespace igl::d3d12 {
 
 Timer::Timer(const Device& device) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto& ctx = device.getD3D12Context();
   auto* d3dDevice = ctx.getDevice();
   auto* commandQueue = ctx.getCommandQueue();
@@ -90,6 +92,7 @@ Timer::~Timer() {
 }
 
 void Timer::begin(ID3D12GraphicsCommandList* commandList) {
+  IGL_PROFILER_FUNCTION();
   if (resourceCreationFailed_ || timestampFrequency_ == 0) {
     // Timer disabled due to resource creation or frequency query failure - silently no-op
     return;
@@ -106,6 +109,7 @@ void Timer::begin(ID3D12GraphicsCommandList* commandList) {
 }
 
 void Timer::end(ID3D12GraphicsCommandList* commandList, ID3D12Fence* fence, uint64_t fenceValue) {
+  IGL_PROFILER_FUNCTION();
   if (resourceCreationFailed_ || timestampFrequency_ == 0) {
     // Timer disabled - silently no-op
     return;
@@ -149,6 +153,7 @@ void Timer::end(ID3D12GraphicsCommandList* commandList, ID3D12Fence* fence, uint
 }
 
 uint64_t Timer::getElapsedTimeNanos() const {
+  IGL_PROFILER_FUNCTION();
   if (!readbackBuffer_.Get() || !ended_.load(std::memory_order_acquire)) {
     return 0;
   }
