@@ -7,12 +7,14 @@
 
 #include <igl/d3d12/D3D12FrameManager.h>
 
+#include <igl/Macros.h>
 #include <igl/d3d12/D3D12Context.h>
 #include <igl/d3d12/D3D12FenceWaiter.h>
 
 namespace igl::d3d12 {
 
 void FrameManager::advanceFrame(UINT64 currentFenceValue) {
+  IGL_PROFILER_FUNCTION();
   // Calculate next frame index
   const uint32_t bufferCount = context_.getSwapchainBufferCount();
   const uint32_t nextFrameIndex = (context_.getCurrentFrameIndex() + 1) % bufferCount;
@@ -43,6 +45,7 @@ void FrameManager::advanceFrame(UINT64 currentFenceValue) {
 }
 
 void FrameManager::waitForPipelineSync(UINT64 currentFenceValue) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
   auto* fence = context_.getFence();
 
   // Ensure we don't have more frames in flight than swapchain buffers
@@ -79,6 +82,7 @@ void FrameManager::waitForPipelineSync(UINT64 currentFenceValue) {
 }
 
 bool FrameManager::waitForFrame(uint32_t frameIndex) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
   auto* fence = context_.getFence();
   const UINT64 frameFence = context_.getFrameContexts()[frameIndex].fenceValue;
 
@@ -139,6 +143,7 @@ bool FrameManager::waitForFrame(uint32_t frameIndex) {
 }
 
 void FrameManager::resetAllocator(uint32_t frameIndex) {
+  IGL_PROFILER_FUNCTION();
   auto* fence = context_.getFence();
   auto& frame = context_.getFrameContexts()[frameIndex];
   auto* allocator = frame.allocator.Get();
@@ -217,6 +222,7 @@ void FrameManager::resetAllocator(uint32_t frameIndex) {
 }
 
 void FrameManager::clearTransientResources(uint32_t frameIndex) {
+  IGL_PROFILER_FUNCTION();
   auto& frame = context_.getFrameContexts()[frameIndex];
 
   if (!frame.transientBuffers.empty()) {
@@ -243,6 +249,7 @@ void FrameManager::clearTransientResources(uint32_t frameIndex) {
 }
 
 void FrameManager::resetDescriptorCounters(uint32_t frameIndex) {
+  IGL_PROFILER_FUNCTION();
   auto& frame = context_.getFrameContexts()[frameIndex];
 
   const uint32_t cbvSrvUavUsage = frame.nextCbvSrvUavDescriptor;
