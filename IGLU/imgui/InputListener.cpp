@@ -10,6 +10,8 @@
 #include "InputListener.h"
 
 #include "KeyCodeTranslator.h"
+
+#include <igl/Macros.h>
 // ImGui has a very awkward expectation when it comes to processing inputs and making decisions
 // based on them. This is what it expects clients to do, in order, every frame:
 // 1. Send ImGui all events via the input parameters in ImGuiIO.
@@ -25,10 +27,12 @@
 namespace iglu::imgui {
 
 InputListener::InputListener(ImGuiContext* context) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   context_ = context;
 }
 
 bool InputListener::process(const igl::shell::MouseButtonEvent& event) {
+  IGL_PROFILER_FUNCTION();
   makeCurrentContext();
 
   ImGuiIO& io = ImGui::GetIO();
@@ -38,6 +42,7 @@ bool InputListener::process(const igl::shell::MouseButtonEvent& event) {
 }
 
 bool InputListener::process(const igl::shell::MouseMotionEvent& event) {
+  IGL_PROFILER_FUNCTION();
   makeCurrentContext();
 
   ImGuiIO& io = ImGui::GetIO();
@@ -46,6 +51,7 @@ bool InputListener::process(const igl::shell::MouseMotionEvent& event) {
 }
 
 bool InputListener::process(const igl::shell::MouseWheelEvent& event) {
+  IGL_PROFILER_FUNCTION();
   makeCurrentContext();
 
   ImGuiIO& io = ImGui::GetIO();
@@ -55,6 +61,7 @@ bool InputListener::process(const igl::shell::MouseWheelEvent& event) {
 }
 
 bool InputListener::process(const igl::shell::TouchEvent& event) {
+  IGL_PROFILER_FUNCTION();
   makeCurrentContext();
 
   ImGuiIO& io = ImGui::GetIO();
@@ -68,6 +75,7 @@ void InputListener::makeCurrentContext() const {
 }
 
 bool InputListener::process(const igl::shell::KeyEvent& event) {
+  IGL_PROFILER_FUNCTION();
   makeCurrentContext();
 
   ImGuiIO& io = ImGui::GetIO();
@@ -79,6 +87,7 @@ bool InputListener::process(const igl::shell::KeyEvent& event) {
 }
 
 bool InputListener::process(const igl::shell::CharEvent& event) {
+  IGL_PROFILER_FUNCTION();
   makeCurrentContext();
 
   ImGuiIO& io = ImGui::GetIO();
