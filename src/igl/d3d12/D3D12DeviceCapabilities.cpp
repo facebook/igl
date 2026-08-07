@@ -7,15 +7,18 @@
 
 #include <igl/d3d12/D3D12DeviceCapabilities.h>
 
+#include <igl/Macros.h>
 #include <igl/d3d12/D3D12Context.h>
 
 namespace igl::d3d12 {
 
 void D3D12DeviceCapabilities::initialize(D3D12Context& ctx) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   validateDeviceLimits(ctx);
 }
 
 void D3D12DeviceCapabilities::validateDeviceLimits(D3D12Context& ctx) {
+  IGL_PROFILER_FUNCTION();
   auto* device = ctx.getDevice();
   if (!device) {
     IGL_LOG_ERROR("D3D12DeviceCapabilities::validateDeviceLimits: D3D12 device is null\n");
