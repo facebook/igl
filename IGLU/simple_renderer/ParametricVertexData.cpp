@@ -11,6 +11,7 @@
 
 #include <array>
 #include <type_traits>
+#include <igl/Macros.h>
 
 static_assert(std::is_trivially_copyable_v<iglu::vertexdata::VertexPosUv>);
 
@@ -25,6 +26,7 @@ static const std::pair<const char*, int> kSAttrUv("a_uv", 1);
 namespace Quad {
 
 igl::VertexInputStateDesc inputStateDesc() {
+  IGL_PROFILER_FUNCTION();
   const igl::VertexInputStateDesc inputDesc = {
       .numAttributes = 2,
       .attributes = {{.bufferIndex = 0,
@@ -48,6 +50,7 @@ std::shared_ptr<VertexData> create(igl::IDevice& device,
                                    iglu::simdtypes::float2 posMax,
                                    iglu::simdtypes::float2 uvMin,
                                    iglu::simdtypes::float2 uvMax) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // - UV origin: bottom left
   // - Vertex layout:
   // 0 -- 2
@@ -111,6 +114,7 @@ std::shared_ptr<VertexData> create(igl::IDevice& device,
                                    iglu::simdtypes::float2 posMax,
                                    iglu::simdtypes::float2 uvMin,
                                    iglu::simdtypes::float2 uvMax) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   iglu::simdtypes::float2 uvMinAdjusted = uvMin;
   iglu::simdtypes::float2 uvMaxAdjusted = uvMax;
 
