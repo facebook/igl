@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <igl/Macros.h>
 #include <igl/d3d12/D3D12Context.h>
 #include <igl/d3d12/D3D12RootSignatureKey.h>
 
@@ -19,6 +20,7 @@ ComPtr<ID3D12RootSignature> D3D12PipelineCache::createRootSignatureFromKey(
     const D3D12RootSignatureKey& key,
     D3D12_RESOURCE_BINDING_TIER bindingTier,
     Result* IGL_NULLABLE outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!d3dDevice) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "D3D12 device is null");
     return nullptr;
