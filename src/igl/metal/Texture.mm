@@ -8,6 +8,7 @@
 #include <igl/metal/Texture.h>
 
 #include <utility>
+#include <igl/Macros.h>
 #include <igl/metal/CommandBuffer.h>
 #include <igl/metal/CommandQueue.h>
 
@@ -44,10 +45,12 @@ Texture::Texture(id<CAMetalDrawable> drawable,
   mipmapGeneration_(mipmapGeneration) {}
 
 Texture::~Texture() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   value_ = nil;
 }
 
 bool Texture::needsRepacking(const TextureRangeDesc& range, size_t bytesPerRow) const {
+  IGL_PROFILER_FUNCTION();
   if (bytesPerRow == 0) {
     return false;
   }
@@ -72,6 +75,7 @@ Result Texture::uploadInternal(TextureType type,
                                const void* IGL_NULLABLE data,
                                size_t bytesPerRow,
                                const uint32_t* IGL_NULLABLE /*mipLevelBytes*/) const {
+  IGL_PROFILER_FUNCTION();
   if (data == nullptr) {
     return Result(Result::Code::Ok);
   }
@@ -148,6 +152,7 @@ Result Texture::uploadInternal(TextureType type,
 }
 
 Result Texture::getBytes(const TextureRangeDesc& range, void* outData, size_t bytesPerRow) const {
+  IGL_PROFILER_FUNCTION();
   if (!outData) {
     return Result(Result::Code::ArgumentNull, "Need a valid output buffer");
   }
@@ -233,6 +238,7 @@ uint32_t Texture::getNumMipLevels() const {
 }
 
 void Texture::generateMipmap(ICommandQueue& cmdQueue, const TextureRangeDesc* range) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (range) {
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   }
@@ -249,6 +255,7 @@ void Texture::generateMipmap(ICommandQueue& cmdQueue, const TextureRangeDesc* ra
 }
 
 void Texture::generateMipmap(ICommandBuffer& cmdBuffer, const TextureRangeDesc* range) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (range) {
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   }
@@ -260,6 +267,7 @@ void Texture::generateMipmap(ICommandBuffer& cmdBuffer, const TextureRangeDesc* 
 }
 
 void Texture::generateMipmap(id<MTLCommandBuffer> cmdBuffer) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // we can only generate mipmaps for filterable texture formats via the blit encoder
   const bool isFilterable = (capabilities_.getTextureFormatCapabilities(getFormat()) &
                              ICapabilities::TextureFormatCapabilityBits::SampledFiltered) != 0;
@@ -997,6 +1005,7 @@ void* Texture::getNativeImageView() const {
 }
 
 const base::AttachmentInteropDesc& Texture::getDesc() const {
+  IGL_PROFILER_FUNCTION();
   id<MTLTexture> tex = get();
   // Update cached attachment descriptor
   attachmentDesc_.width = static_cast<uint32_t>(tex.width);
