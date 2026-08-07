@@ -8,6 +8,7 @@
 #include <igl/metal/Buffer.h>
 
 #include <igl/IGLSafeC.h>
+#include <igl/Macros.h>
 #include <igl/metal/BufferSynchronizationManager.h>
 
 namespace {
@@ -102,14 +103,17 @@ Buffer::Buffer(id<MTLBuffer> value,
   requestedApiHints_(requestedApiHints),
   acceptedApiHints_(acceptedApiHints),
   bufferType_(bufferType) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   mtlBuffers_.push_back(value);
 }
 
 Result Buffer::upload(const void* data, const BufferRange& range) {
+  IGL_PROFILER_FUNCTION();
   return ::upload(mtlBuffers_, 0, data, range, resourceOptions_, acceptedApiHints_);
 }
 
 void* Buffer::map(const BufferRange& range, Result* outResult) {
+  IGL_PROFILER_FUNCTION();
   return ::map(mtlBuffers_, 0, range, outResult, resourceOptions_);
 }
 
@@ -158,6 +162,7 @@ RingBuffer::RingBuffer(std::vector<id<MTLBuffer>> ringBuffers,
                        BufferDesc::BufferType bufferType) :
   Buffer(nil, options, requestedApiHints, BufferDesc::BufferAPIHintBits::Ring, bufferType),
   syncManager_(std::move(syncManager)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   mtlBuffers_ = std::move(ringBuffers);
 }
 
@@ -165,6 +170,7 @@ RingBuffer::RingBuffer(std::vector<id<MTLBuffer>> ringBuffers,
  * To handle this case, we copy the previous instance of the buffer to this one
  */
 Result RingBuffer::upload(const void* data, const BufferRange& range) {
+  IGL_PROFILER_FUNCTION();
   auto bufferIdx = syncManager_->getCurrentInFlightBufferIndex();
 
   if (lastUpdatedBufferIdx_ != bufferIdx) {
@@ -196,6 +202,7 @@ void RingBuffer::unmap() {
 }
 
 id<MTLBuffer> RingBuffer::get() {
+  IGL_PROFILER_FUNCTION();
   auto bufferIdx = syncManager_->getCurrentInFlightBufferIndex();
   IGL_DEBUG_ASSERT(bufferIdx < mtlBuffers_.size());
   if (bufferIdx != lastUpdatedBufferIdx_) {
