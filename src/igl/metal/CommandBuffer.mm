@@ -9,6 +9,7 @@
 
 #import <Foundation/NSString.h>
 #import <Metal/Metal.h>
+#include <igl/Macros.h>
 #include <igl/metal/Buffer.h>
 #include <igl/metal/ComputeCommandEncoder.h>
 #include <igl/metal/RenderCommandEncoder.h>
@@ -19,11 +20,13 @@ CommandBuffer::CommandBuffer(Device& device, id<MTLCommandBuffer> value, Command
   ICommandBuffer(std::move(desc)), device_(device), value_(value) {}
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return std::make_unique<ComputeCommandEncoder>(value_);
 }
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder(
     const ComputePassDesc& computePass) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return std::make_unique<ComputeCommandEncoder>(value_, computePass);
 }
 
@@ -32,10 +35,12 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
     const std::shared_ptr<IFramebuffer>& framebuffer,
     const Dependencies& /*dependencies*/,
     Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return RenderCommandEncoder::create(shared_from_this(), renderPass, framebuffer, outResult);
 }
 
 void CommandBuffer::present(const std::shared_ptr<ITexture>& surface) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_PRESENT);
   IGL_DEBUG_ASSERT(surface);
   if (!surface) {
     return;
@@ -47,6 +52,7 @@ void CommandBuffer::present(const std::shared_ptr<ITexture>& surface) const {
 }
 
 void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& /*color*/) const {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(label != nullptr && *label);
   [value_ pushDebugGroup:[NSString stringWithUTF8String:label] ?: @""];
 }
@@ -60,6 +66,7 @@ void CommandBuffer::copyBuffer(IBuffer& src,
                                uint64_t srcOffset,
                                uint64_t dstOffset,
                                uint64_t size) {
+  IGL_PROFILER_FUNCTION();
   auto srcBuffer = static_cast<Buffer&>(src).get();
   auto dstBuffer = static_cast<Buffer&>(dst).get();
 
@@ -89,10 +96,12 @@ void CommandBuffer::copyTextureToBuffer(ITexture& src,
 }
 
 void CommandBuffer::waitUntilScheduled() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
   [value_ waitUntilScheduled];
 }
 
 void CommandBuffer::waitUntilCompleted() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
   [value_ waitUntilCompleted];
 }
 
