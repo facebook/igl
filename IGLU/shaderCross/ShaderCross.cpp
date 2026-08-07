@@ -11,16 +11,19 @@
 #include <spirv_glsl.hpp>
 #include <spirv_msl.hpp>
 #include <vector>
+#include <igl/Macros.h>
 #include <igl/glslang/GlslCompiler.h>
 #include <igl/glslang/GlslangHelpers.h>
 
 namespace iglu {
 
 ShaderCross::ShaderCross(igl::IDevice& device) noexcept : device_(device) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   igl::glslang::initializeCompiler();
 }
 
 ShaderCross::~ShaderCross() noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   igl::glslang::finalizeCompiler();
 }
 
@@ -40,6 +43,7 @@ std::string ShaderCross::crossCompileFromVulkanSource(const char* source,
                                                       igl::ShaderStage stage,
                                                       igl::Result* IGL_NULLABLE
                                                           outResult) const noexcept {
+  IGL_PROFILER_FUNCTION();
   if (device_.getBackendType() == igl::BackendType::Vulkan) {
     return source;
   }
