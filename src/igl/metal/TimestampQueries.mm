@@ -14,17 +14,20 @@
 #import <Metal/MTLCounters.h>
 #include <algorithm>
 #include <limits>
+#include <igl/Macros.h>
 
 namespace igl::metal {
 
 TimestampQueries::TimestampQueries(id<MTLCounterSampleBuffer> sampleBuffer,
                                    uint32_t maxTimestamps) :
   sampleBuffer_(sampleBuffer), maxTimestamps_(maxTimestamps) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Each timing slot uses two internal counter samples (vertex-start + fragment-end).
   resolvedTimestamps_.reserve(maxTimestamps * kSamplesPerTimingSlot);
 }
 
 TimestampQueries::~TimestampQueries() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   sampleBuffer_ = nil;
 }
 
@@ -38,6 +41,7 @@ uint32_t TimestampQueries::count() const {
 }
 
 void TimestampQueries::reset() {
+  IGL_PROFILER_FUNCTION();
   generation_.fetch_add(1, std::memory_order_release);
   currentIndex_.store(0, std::memory_order_release);
   resolved_.store(false, std::memory_order_release);
@@ -59,6 +63,7 @@ bool TimestampQueries::supportsComputePassTimestamps() const {
 }
 
 uint64_t TimestampQueries::getElapsedNanos(uint32_t slotIndex) const {
+  IGL_PROFILER_FUNCTION();
   if (!resolved_.load(std::memory_order_acquire)) {
     return 0;
   }
@@ -77,6 +82,7 @@ uint64_t TimestampQueries::getElapsedNanos(uint32_t slotIndex) const {
 }
 
 uint64_t TimestampQueries::getStartNanos(uint32_t slotIndex) const {
+  IGL_PROFILER_FUNCTION();
   if (!resolved_.load(std::memory_order_acquire)) {
     return 0;
   }
@@ -89,6 +95,7 @@ uint64_t TimestampQueries::getStartNanos(uint32_t slotIndex) const {
 }
 
 uint64_t TimestampQueries::getEndNanos(uint32_t slotIndex) const {
+  IGL_PROFILER_FUNCTION();
   if (!resolved_.load(std::memory_order_acquire)) {
     return 0;
   }
@@ -101,6 +108,7 @@ uint64_t TimestampQueries::getEndNanos(uint32_t slotIndex) const {
 }
 
 uint64_t TimestampQueries::getFrameElapsedNanos() const {
+  IGL_PROFILER_FUNCTION();
   if (!resolved_.load(std::memory_order_acquire)) {
     return 0;
   }
@@ -136,6 +144,7 @@ uint64_t TimestampQueries::getFrameElapsedNanos() const {
 }
 
 void TimestampQueries::resolveTimestamps(id<MTLCounterSampleBuffer> csb) {
+  IGL_PROFILER_FUNCTION();
   // Clamp to maxTimestamps_ * 2 because each timing slot uses two counter samples
   // (vertex-start and fragment-end), so the buffer has maxTimestamps_ * 2 entries.
   const uint32_t n = std::min(currentIndex_.load(std::memory_order_acquire),
@@ -166,6 +175,7 @@ void TimestampQueries::resolveTimestamps(id<MTLCounterSampleBuffer> csb) {
 
 void TimestampQueries::attachResolveHandler(id<MTLCommandBuffer> cmdBuffer,
                                             std::shared_ptr<TimestampQueries> queries) {
+  IGL_PROFILER_FUNCTION();
   if (!queries || !cmdBuffer) {
     return;
   }
