@@ -8,6 +8,7 @@
 #include <igl/d3d12/D3D12ImmediateCommands.h>
 
 #include <igl/Assert.h>
+#include <igl/Macros.h>
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/D3D12FenceWaiter.h>
 
@@ -18,6 +19,7 @@ D3D12ImmediateCommands::D3D12ImmediateCommands(ID3D12Device* device,
                                                ID3D12Fence* fence,
                                                IFenceProvider* fenceProvider) :
   device_(device), queue_(queue), fence_(fence), fenceProvider_(fenceProvider) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_DEBUG_ASSERT(device_);
   IGL_DEBUG_ASSERT(queue_);
   IGL_DEBUG_ASSERT(fence_);
@@ -27,6 +29,7 @@ D3D12ImmediateCommands::D3D12ImmediateCommands(ID3D12Device* device,
 }
 
 D3D12ImmediateCommands::~D3D12ImmediateCommands() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   // Wait for all in-flight operations to complete
   if (fence_) {
     for (const auto& entry : inFlightAllocators_) {
@@ -47,6 +50,7 @@ D3D12ImmediateCommands::~D3D12ImmediateCommands() {
 }
 
 ID3D12GraphicsCommandList* D3D12ImmediateCommands::begin(Result* outResult) {
+  IGL_PROFILER_FUNCTION();
   std::lock_guard<std::mutex> lock(poolMutex_);
 
   // Reclaim completed allocators first
@@ -93,6 +97,7 @@ ID3D12GraphicsCommandList* D3D12ImmediateCommands::begin(Result* outResult) {
 }
 
 uint64_t D3D12ImmediateCommands::submit(bool wait, Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
   if (!cmdList_.Get()) {
     Result::setResult(outResult, Result{Result::Code::RuntimeError, "No active command list"});
     return 0;
@@ -148,6 +153,7 @@ bool D3D12ImmediateCommands::isComplete(uint64_t fenceValue) const {
 }
 
 Result D3D12ImmediateCommands::waitForFence(uint64_t fenceValue) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
   if (!fence_) {
     return Result{Result::Code::RuntimeError, "Fence is null"};
   }
@@ -161,6 +167,7 @@ Result D3D12ImmediateCommands::waitForFence(uint64_t fenceValue) {
 }
 
 void D3D12ImmediateCommands::reclaimCompletedAllocators() {
+  IGL_PROFILER_FUNCTION();
   // Note: Internal helper called by begin() with poolMutex_ already held
   if (!fence_) {
     return;
@@ -182,6 +189,7 @@ void D3D12ImmediateCommands::reclaimCompletedAllocators() {
 
 Result D3D12ImmediateCommands::getOrCreateAllocator(
     igl::d3d12::ComPtr<ID3D12CommandAllocator>* outAllocator) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Try to reuse an available allocator
   if (!availableAllocators_.empty()) {
     *outAllocator = availableAllocators_.back().allocator;
