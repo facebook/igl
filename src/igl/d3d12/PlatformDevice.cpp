@@ -7,6 +7,7 @@
 
 #include <igl/d3d12/PlatformDevice.h>
 
+#include <igl/Macros.h>
 #include <igl/d3d12/D3D12Context.h>
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/Texture.h>
@@ -18,6 +19,7 @@ PlatformDevice::PlatformDevice(Device& device) : device_(device) {}
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t width,
                                                                        uint32_t height,
                                                                        Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto& ctx = device_.getD3D12Context();
 
   // Create depth texture with D3D12
@@ -38,6 +40,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t 
 }
 
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_D3D12_LOG_VERBOSE("PlatformDevice::createTextureFromNativeDrawable() called\n");
   auto& ctx = device_.getD3D12Context();
 
