@@ -20,6 +20,7 @@
 #include <vector>
 #include <igl/Assert.h> // For IGL_DEBUG_ASSERT in waitForUploadFence.
 #include <igl/FramebufferWrapper.h>
+#include <igl/Macros.h>
 #include <igl/Texture.h>
 #include <igl/VertexInputState.h>
 #include <igl/d3d12/Buffer.h>
@@ -382,6 +383,7 @@ static void validateShaderBindingsAndLayout(
     const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputElements,
     ID3D12ShaderReflection* IGL_NULLABLE vsRefl,
     ID3D12ShaderReflection* IGL_NULLABLE psRefl) {
+  IGL_PROFILER_FUNCTION();
   // Environment toggle: IGL_D3D12_VALIDATE_SHADER_BINDINGS=0 disables validation.
   if (const char* env = std::getenv("IGL_D3D12_VALIDATE_SHADER_BINDINGS")) {
     if (env[0] == '0') {
@@ -514,6 +516,7 @@ static void validateShaderBindingsAndLayout(
 }
 
 Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   platformDevice_ = std::make_unique<PlatformDevice>(*this);
 
   // Validate device limits against actual device capabilities.
@@ -532,6 +535,7 @@ static bool compileFXC(const char* src,
                        const char* entry,
                        const char* target,
                        std::vector<uint8_t>& outBytecode) {
+  IGL_PROFILER_FUNCTION();
   igl::d3d12::ComPtr<ID3DBlob> blob;
   igl::d3d12::ComPtr<ID3DBlob> errors;
   const HRESULT hr = D3DCompile(src,
@@ -563,6 +567,7 @@ static bool compileDXC(DXCCompiler& compiler,
                        const char* target,
                        const char* debugName,
                        std::vector<uint8_t>& outBytecode) {
+  IGL_PROFILER_FUNCTION();
   std::string errors;
   const Result result =
       compiler.compile(src, std::strlen(src), entry, target, debugName, 0, outBytecode, errors);
@@ -577,6 +582,7 @@ static bool compileDXC(DXCCompiler& compiler,
 }
 
 void Device::precompileMipmapShaders(ID3D12Device* IGL_NONNULL device) {
+  IGL_PROFILER_FUNCTION();
   static const char* kVS = R"(
 struct VSOut { float4 pos: SV_POSITION; float2 uv: TEXCOORD0; };
 VSOut main(uint id: SV_VertexID) {
@@ -695,6 +701,7 @@ float4 main(float4 pos:SV_POSITION, float2 uv:TEXCOORD0) : SV_TARGET { return te
 }
 
 Device::~Device() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   // Capture D3D12 validation messages for this device if enabled via environment.
   if (ctx_) {
     captureInfoQueueForDevice(ctx_->getDevice());
@@ -715,6 +722,7 @@ Device::~Device() {
 
 // Check for device removal and report detailed error.
 Result Device::checkDeviceRemoval() const {
+  IGL_PROFILER_FUNCTION();
   auto* device = ctx_->getDevice();
   if (!device) {
     // Device not initialized is an invalid operation, not success.
@@ -771,6 +779,7 @@ Result Device::checkDeviceRemoval() const {
 // Alignment validation methods.
 
 bool Device::validateMSAAAlignment(const TextureDesc& desc, Result* IGL_NULLABLE outResult) const {
+  IGL_PROFILER_FUNCTION();
   if (desc.numSamples <= 1) {
     return true; // Not MSAA, no special alignment requirements
   }
@@ -804,6 +813,7 @@ bool Device::validateMSAAAlignment(const TextureDesc& desc, Result* IGL_NULLABLE
 bool Device::validateTextureAlignment(const D3D12_RESOURCE_DESC& resourceDesc,
                                       uint32_t sampleCount,
                                       Result* IGL_NULLABLE outResult) const {
+  IGL_PROFILER_FUNCTION();
   // D3D12 texture alignment requirements:
   // - MSAA textures (SampleDesc.Count > 1): 64KB alignment (automatic via CreateCommittedResource)
   // - Regular textures: 64KB alignment (automatic via CreateCommittedResource)
@@ -842,6 +852,7 @@ bool Device::validateTextureAlignment(const D3D12_RESOURCE_DESC& resourceDesc,
 }
 
 bool Device::validateBufferAlignment(size_t bufferSize, bool isUniform) const {
+  IGL_PROFILER_FUNCTION();
   // D3D12 buffer alignment requirements:
   // - Constant buffers: 256 bytes (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
   // - Other buffers: No strict alignment requirement
@@ -865,6 +876,7 @@ Holder<BindGroupTextureHandle> Device::createBindGroup(
     const BindGroupTextureDesc& desc,
     const IRenderPipelineState* IGL_NULLABLE /*compatiblePipeline*/,
     Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Store bind group descriptor in pool for later use by encoder
   BindGroupTextureDesc description(desc);
   const auto handle = bindGroupTexturesPool_.create(std::move(description));
@@ -876,6 +888,7 @@ Holder<BindGroupTextureHandle> Device::createBindGroup(
 
 Holder<BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc& desc,
                                                       Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Store bind group descriptor in pool for later use by encoder
   BindGroupBufferDesc description(desc);
   const auto handle = bindGroupBuffersPool_.create(std::move(description));
@@ -886,6 +899,7 @@ Holder<BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc&
 }
 
 void Device::destroy(BindGroupTextureHandle handle) {
+  IGL_PROFILER_FUNCTION();
   if (handle.empty()) {
     return;
   }
@@ -893,6 +907,7 @@ void Device::destroy(BindGroupTextureHandle handle) {
 }
 
 void Device::destroy(BindGroupBufferHandle handle) {
+  IGL_PROFILER_FUNCTION();
   if (handle.empty()) {
     return;
   }
@@ -909,6 +924,7 @@ void Device::destroy(SamplerHandle /*handle*/) {
 // Command Queue
 std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc& /*desc*/,
                                                           Result* IGL_NULLABLE outResult) noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   return std::make_shared<CommandQueue>(*this);
 }
@@ -916,6 +932,7 @@ std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc
 // Resources
 std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
                                               Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Single const_cast at the API boundary; all mutation happens in the non-const helper.
   auto& self = const_cast<Device&>(*this);
   return self.createBufferImpl(desc, outResult);
@@ -923,6 +940,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
 
 std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
                                                   Result* IGL_NULLABLE outResult) noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto* device = ctx_->getDevice();
   if (!device) {
     Result::setResult(outResult, Result::Code::RuntimeError, "D3D12 device is null");
@@ -1155,23 +1173,27 @@ std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
 std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
     const DepthStencilStateDesc& desc,
     Result* IGL_NULLABLE outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   return std::make_shared<DepthStencilState>(desc);
 }
 
 std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   return std::make_unique<ShaderStages>(desc);
 }
 
 std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return samplerCache_.createSamplerState(desc, outResult);
 }
 
 std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
                                                 Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto* device = ctx_->getDevice();
 
   // Check for exportability - D3D12 doesn't support exportable textures
@@ -1414,6 +1436,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> texture,
                                                     const TextureViewDesc& desc,
                                                     Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!texture) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Parent texture is null");
     return nullptr;
@@ -1438,6 +1461,7 @@ std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> te
 }
 
 std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto timer = std::make_shared<Timer>(*this);
   Result::setOk(outResult);
   return timer;
@@ -1446,6 +1470,7 @@ std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) cons
 std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexInputStateDesc& desc,
                                                                   Result* IGL_NULLABLE
                                                                       outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   return std::make_shared<VertexInputState>(desc);
 }
@@ -1453,6 +1478,7 @@ std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexIn
 std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     const ComputePipelineDesc& desc,
     Result* IGL_NULLABLE outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_D3D12_LOG_VERBOSE("Device::createComputePipeline() START - debugName='%s'\n",
                         desc.debugName.c_str());
 
@@ -1737,6 +1763,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderPipelineDesc& desc,
                                                                    Result* IGL_NULLABLE
                                                                        outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_D3D12_LOG_VERBOSE("Device::createRenderPipeline() START - debugName='%s'\n",
                         desc.debugName.c_str());
 
@@ -2514,6 +2541,7 @@ igl::d3d12::ComPtr<ID3D12PipelineState> Device::createPipelineStateVariant(
     const RenderPipelineDesc& desc,
     ID3D12RootSignature* rootSignature,
     Result* IGL_NULLABLE outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_D3D12_LOG_VERBOSE(
       "Device::createPipelineStateVariant() - Creating PSO variant for framebuffer formats\n");
 
@@ -2875,6 +2903,7 @@ igl::d3d12::ComPtr<ID3D12PipelineState> Device::createPipelineStateVariant(
 // Shader library and modules.
 std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& desc,
                                                             Result* IGL_NULLABLE outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_D3D12_LOG_VERBOSE("Device::createShaderLibrary() - moduleInfo count=%zu, debugName='%s'\n",
                         desc.moduleInfo.size(),
                         desc.debugName.c_str());
@@ -3020,6 +3049,7 @@ Result compileShaderFXC(const char* source,
 
 std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_D3D12_LOG_VERBOSE(
       "Device::createShaderModule() - stage=%d, entryPoint='%s', debugName='%s'\n",
       static_cast<int>(desc.info.stage),
@@ -3471,12 +3501,14 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
 // Framebuffer
 std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& desc,
                                                         Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
   return std::make_shared<Framebuffer>(desc);
 }
 
 base::IFramebufferInterop* IGL_NULLABLE
 Device::createFramebufferInterop(const base::FramebufferInteropDesc& desc) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto framebuffer = createFramebufferFromBaseDesc(desc);
   if (!framebuffer) {
     return nullptr;
@@ -3742,6 +3774,7 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
 
 ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(
     TextureFormat format) const {
+  IGL_PROFILER_FUNCTION();
   using CapBits = ICapabilities::TextureFormatCapabilityBits;
   uint8_t caps = 0;
 
@@ -3902,6 +3935,7 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(
 }
 
 ShaderVersion Device::getShaderVersion() const {
+  IGL_PROFILER_FUNCTION();
   // Report HLSL SM 6.0 if DXC is available; otherwise SM 5.0 (D3DCompile fallback)
   bool dxcAvailable = false;
 #if IGL_PLATFORM_WINDOWS
@@ -3923,6 +3957,7 @@ ShaderVersion Device::getShaderVersion() const {
 }
 
 BackendVersion Device::getBackendVersion() const {
+  IGL_PROFILER_FUNCTION();
   // Query highest supported feature level to report backend version
   auto* dev = ctx_->getDevice();
   if (!dev) {
@@ -3972,6 +4007,7 @@ SamplerCacheStats Device::getSamplerCacheStats() const {
 
 // Query maximum MSAA sample count for a specific format.
 uint32_t Device::getMaxMSAASamplesForFormat(TextureFormat format) const {
+  IGL_PROFILER_FUNCTION();
   auto* device = ctx_->getDevice();
   if (!device) {
     return 1;
@@ -4010,6 +4046,7 @@ void Device::processCompletedUploads() {
 }
 
 Result Device::waitForUploadFence(UINT64 fenceValue) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
   return allocatorPool_.waitForUploadFence(*this, fenceValue);
 }
 
