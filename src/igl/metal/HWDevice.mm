@@ -52,6 +52,7 @@ HWDeviceType getDeviceType(id<MTLDevice> device) {
 
 std::vector<HWDeviceDesc> HWDevice::queryDevices(IGL_MAYBE_UNUSED const HWDeviceQueryDesc& desc,
                                                  Result* outResult) {
+  IGL_PROFILER_FUNCTION();
   std::vector<HWDeviceDesc> devices;
 
 #if IGL_PLATFORM_IOS
@@ -130,6 +131,7 @@ std::vector<HWDeviceDesc> HWDevice::queryDevices(IGL_MAYBE_UNUSED const HWDevice
 }
 
 std::unique_ptr<IDevice> HWDevice::create(const HWDeviceDesc& desc, Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_DEBUG_ASSERT(desc.guid != 0L, "Invalid hardwareGuid(%lu)", desc.guid);
   if (desc.guid == 0L) {
     Result::setResult(outResult, Result::Code::Unsupported, "Metal is not supported!");
@@ -143,10 +145,12 @@ std::unique_ptr<IDevice> HWDevice::create(const HWDeviceDesc& desc, Result* outR
 }
 
 std::unique_ptr<IDevice> HWDevice::createWithSystemDefaultDevice(Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return createWithMTLDevice(MTLCreateSystemDefaultDevice(), outResult);
 }
 
 std::unique_ptr<Device> HWDevice::createWithMTLDevice(id<MTLDevice> device, Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!device) {
     Result::setResult(outResult, Result::Code::Unsupported, "Metal is not supported!");
     return nullptr;
