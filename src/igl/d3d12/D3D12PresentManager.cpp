@@ -9,11 +9,13 @@
 
 #include <d3d12sdklayers.h>
 #include <vector>
+#include <igl/Macros.h>
 #include <igl/d3d12/D3D12Context.h>
 
 namespace igl::d3d12 {
 
 bool PresentManager::present() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_PRESENT);
   auto* swapChain = context_.getSwapChain();
   if (!swapChain) {
     return true; // No swapchain, nothing to present
@@ -77,6 +79,7 @@ bool PresentManager::present() {
 }
 
 bool PresentManager::checkDeviceStatus(const char* contextStr) {
+  IGL_PROFILER_FUNCTION();
   auto* device = context_.getDevice();
   HRESULT deviceStatus = device->GetDeviceRemovedReason();
 
@@ -97,6 +100,7 @@ bool PresentManager::checkDeviceStatus(const char* contextStr) {
 
 #ifdef IGL_DEBUG
 void PresentManager::logInfoQueueMessages(ID3D12Device* device) {
+  IGL_PROFILER_FUNCTION();
   igl::d3d12::ComPtr<ID3D12InfoQueue> infoQueue;
   if (FAILED(device->QueryInterface(IID_PPV_ARGS(infoQueue.GetAddressOf())))) {
     return;
@@ -139,6 +143,7 @@ void PresentManager::logInfoQueueMessages(ID3D12Device* device) {
 }
 
 void PresentManager::logDredInfo(ID3D12Device* device) {
+  IGL_PROFILER_FUNCTION();
 #if defined(__ID3D12DeviceRemovedExtendedData1_INTERFACE_DEFINED__)
   igl::d3d12::ComPtr<ID3D12DeviceRemovedExtendedData1> dred;
   if (FAILED(device->QueryInterface(IID_PPV_ARGS(dred.GetAddressOf())))) {
