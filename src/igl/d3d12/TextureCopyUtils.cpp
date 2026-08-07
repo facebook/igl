@@ -8,6 +8,7 @@
 #include <igl/d3d12/TextureCopyUtils.h>
 
 #include <cstring>
+#include <igl/Macros.h>
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/D3D12Context.h>
@@ -26,6 +27,7 @@ Result executeCopyTextureToBuffer(D3D12Context& ctx,
                                   uint64_t destinationOffset,
                                   uint32_t mipLevel,
                                   uint32_t layer) {
+  IGL_PROFILER_FUNCTION();
   ID3D12Resource* srcRes = srcTex.getResource();
   ID3D12Resource* dstRes = dstBuf.getResource();
 
