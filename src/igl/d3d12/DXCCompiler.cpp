@@ -9,6 +9,7 @@
 
 #include <codecvt>
 #include <locale>
+#include <igl/Macros.h>
 #include <igl/d3d12/D3D12Headers.h>
 
 // Windows headers for dynamic loading
@@ -72,6 +73,7 @@ DXCCompiler::DXCCompiler() = default;
 DXCCompiler::~DXCCompiler() = default;
 
 Result DXCCompiler::initialize() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (initialized_) {
     return Result();
   }
@@ -124,6 +126,7 @@ Result DXCCompiler::compile(const char* source,
                             uint32_t flags,
                             std::vector<uint8_t>& outBytecode,
                             std::string& outErrors) {
+  IGL_PROFILER_FUNCTION();
   if (!initialized_) {
     return Result(Result::Code::InvalidOperation, "DXC compiler not initialized");
   }
