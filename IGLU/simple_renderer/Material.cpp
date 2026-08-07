@@ -11,12 +11,14 @@
 
 #include <type_traits>
 #include <utility>
+#include <igl/Macros.h>
 
 static_assert(std::is_trivially_copyable_v<iglu::material::BlendMode>);
 
 namespace iglu::material {
 
 Material::Material(igl::IDevice& device, std::string name) : name(std::move(name)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   setDepthTestConfig(device, depthTestConfig_);
 }
 
@@ -26,6 +28,7 @@ std::shared_ptr<ShaderProgram> Material::shaderProgram() const {
 
 void Material::setShaderProgram(igl::IDevice& device,
                                 const std::shared_ptr<ShaderProgram>& program) {
+  IGL_PROFILER_FUNCTION();
   shaderProgram_ = program;
   shaderUniforms_ =
       std::make_unique<ShaderUniforms>(device, shaderProgram_->renderPipelineReflection());
@@ -40,6 +43,7 @@ DepthTestConfig Material::depthTestConfig() const {
 }
 
 void Material::setDepthTestConfig(igl::IDevice& device, const DepthTestConfig& config) {
+  IGL_PROFILER_FUNCTION();
   depthTestConfig_ = config;
 
   igl::DepthStencilStateDesc depthDesc{
@@ -52,6 +56,7 @@ void Material::setDepthTestConfig(igl::IDevice& device, const DepthTestConfig& c
 }
 
 void Material::populatePipelineDescriptor(igl::RenderPipelineDesc& pipelineDesc) const {
+  IGL_PROFILER_FUNCTION();
   // Assumption: 'blendMode' only applies to the first color attachment
   if (!pipelineDesc.targetDesc.colorAttachments.empty()) {
     auto& colorAttachment = pipelineDesc.targetDesc.colorAttachments[0];
@@ -76,6 +81,7 @@ void Material::populatePipelineDescriptor(igl::RenderPipelineDesc& pipelineDesc)
 void Material::bind(igl::IDevice& device,
                     igl::IRenderPipelineState& pipelineState,
                     igl::IRenderCommandEncoder& commandEncoder) {
+  IGL_PROFILER_FUNCTION();
   shaderUniforms_->bind(device, pipelineState, commandEncoder);
   commandEncoder.bindDepthStencilState(depthState_);
 }
