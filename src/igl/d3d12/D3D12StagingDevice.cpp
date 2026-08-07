@@ -8,6 +8,7 @@
 #include <igl/d3d12/D3D12StagingDevice.h>
 
 #include <igl/Assert.h>
+#include <igl/Macros.h>
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/D3D12FenceWaiter.h>
 #include <igl/d3d12/UploadRingBuffer.h>
@@ -18,6 +19,7 @@ D3D12StagingDevice::D3D12StagingDevice(ID3D12Device* device,
                                        ID3D12Fence* fence,
                                        UploadRingBuffer* uploadRingBuffer) :
   device_(device), fence_(fence), uploadRingBuffer_(uploadRingBuffer) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_DEBUG_ASSERT(device_);
   IGL_DEBUG_ASSERT(fence_);
 
@@ -26,6 +28,7 @@ D3D12StagingDevice::D3D12StagingDevice(ID3D12Device* device,
 }
 
 D3D12StagingDevice::~D3D12StagingDevice() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   // Wait for all in-flight buffers to complete
   if (fence_) {
     for (const auto& entry : inFlightBuffers_) {
@@ -47,6 +50,7 @@ D3D12StagingDevice::~D3D12StagingDevice() {
 D3D12StagingDevice::StagingBuffer D3D12StagingDevice::allocateUpload(size_t size,
                                                                      size_t alignment,
                                                                      uint64_t fenceValue) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Try ring buffer first for small allocations
   if (uploadRingBuffer_ && size <= kMaxRingBufferAllocation) {
     auto ringAlloc = uploadRingBuffer_->allocate(size, alignment, fenceValue);
@@ -100,6 +104,7 @@ D3D12StagingDevice::StagingBuffer D3D12StagingDevice::allocateUpload(size_t size
 }
 
 D3D12StagingDevice::StagingBuffer D3D12StagingDevice::allocateReadback(size_t size) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   std::lock_guard<std::mutex> lock(poolMutex_);
 
   // Reclaim completed buffers
@@ -129,6 +134,7 @@ D3D12StagingDevice::StagingBuffer D3D12StagingDevice::allocateReadback(size_t si
 }
 
 void D3D12StagingDevice::free(StagingBuffer buffer, uint64_t fenceValue) {
+  IGL_PROFILER_FUNCTION();
   if (!buffer.valid) {
     return;
   }
@@ -160,6 +166,7 @@ void D3D12StagingDevice::free(StagingBuffer buffer, uint64_t fenceValue) {
 }
 
 void D3D12StagingDevice::reclaimCompletedBuffers() {
+  IGL_PROFILER_FUNCTION();
   // Note: Internal helper called by allocate* methods with poolMutex_ already held
   if (!fence_) {
     return;
@@ -183,6 +190,7 @@ void D3D12StagingDevice::reclaimCompletedBuffers() {
 Result D3D12StagingDevice::createStagingBuffer(size_t size,
                                                bool forReadback,
                                                igl::d3d12::ComPtr<ID3D12Resource>* outBuffer) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   D3D12_HEAP_PROPERTIES heapProps{};
   heapProps.Type = forReadback ? D3D12_HEAP_TYPE_READBACK : D3D12_HEAP_TYPE_UPLOAD;
 
@@ -220,6 +228,7 @@ Result D3D12StagingDevice::createStagingBuffer(size_t size,
 bool D3D12StagingDevice::findReusableBuffer(size_t size,
                                             bool forReadback,
                                             igl::d3d12::ComPtr<ID3D12Resource>* outBuffer) {
+  IGL_PROFILER_FUNCTION();
   // Find a buffer that matches type and is large enough
   for (auto it = availableBuffers_.begin(); it != availableBuffers_.end(); ++it) {
     if (it->isReadback == forReadback && it->size >= size) {
