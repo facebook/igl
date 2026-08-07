@@ -10,6 +10,7 @@
 #include "Drawable.h"
 
 #include <utility>
+#include <igl/Macros.h>
 
 namespace iglu::drawable {
 
@@ -22,6 +23,7 @@ void Drawable::draw(igl::IDevice& device,
                     const igl::RenderPipelineDesc& pipelineDesc,
                     size_t pushConstantsDataSize,
                     const void* pushConstantsData) {
+  IGL_PROFILER_FUNCTION();
   // Assumption: _vertexData and _material are immutable
   const size_t pipelineDescHash = std::hash<igl::RenderPipelineDesc>()(pipelineDesc);
   if (!pipelineState_ || pipelineDescHash != lastPipelineDescHash_) {
