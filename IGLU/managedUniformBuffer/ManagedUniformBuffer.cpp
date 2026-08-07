@@ -30,6 +30,7 @@ namespace iglu {
 ManagedUniformBuffer::ManagedUniformBuffer(igl::IDevice& device,
                                            const ManagedUniformBufferInfo& info) :
   uniformInfo(info) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   igl::BufferDesc desc;
   desc.length = info.length;
 
@@ -121,6 +122,7 @@ ManagedUniformBuffer::ManagedUniformBuffer(igl::IDevice& device,
 }
 
 ManagedUniformBuffer::~ManagedUniformBuffer() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 #if IGL_PLATFORM_IOS_SIMULATOR
   if (vmAllocLength_) {
     // if vmAllocLength_ is nonzero it implies we used vm_alloc to allocate the memory
@@ -136,6 +138,7 @@ ManagedUniformBuffer::~ManagedUniformBuffer() {
 }
 
 bool ManagedUniformBuffer::bindOpenGLUniformBlock(int blockBindingPoint) {
+  IGL_PROFILER_FUNCTION();
   if (blockBindingPoint < 0 || buffer_ == nullptr) {
     return false;
   }
@@ -146,6 +149,7 @@ bool ManagedUniformBuffer::bindOpenGLUniformBlock(int blockBindingPoint) {
 void ManagedUniformBuffer::bind(const igl::IDevice& device,
                                 const igl::IRenderPipelineState& pipelineState,
                                 igl::IRenderCommandEncoder& encoder) {
+  IGL_PROFILER_FUNCTION();
   if (data_ == nullptr) {
     IGL_LOG_ERROR_ONCE("ManagedUniformBuffer::bind called with null data\n");
     return;
@@ -200,6 +204,7 @@ void ManagedUniformBuffer::bind(const igl::IDevice& device,
 void ManagedUniformBuffer::bind(const igl::IDevice& device,
                                 const igl::IComputePipelineState& pipelineState,
                                 igl::IComputeCommandEncoder& encoder) {
+  IGL_PROFILER_FUNCTION();
   if (device.getBackendType() == igl::BackendType::OpenGL) {
     // Bind a native uniform block (GLSL ES 3.x) as a UBO; otherwise bind per-uniform (see the
     // render-stage bind() above for details).
@@ -240,6 +245,7 @@ void* ManagedUniformBuffer::getData() {
 }
 
 void ManagedUniformBuffer::buildUniformLUT() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   uniformLUT_ = std::make_unique<std::unordered_map<std::string, size_t>>();
   for (size_t i = 0; i < uniformInfo.uniforms.size(); ++i) {
     auto& uniform = uniformInfo.uniforms[i];
@@ -259,6 +265,7 @@ int findUniformByName(const std::vector<igl::UniformDesc>& uniforms, const char*
 } // namespace
 
 int ManagedUniformBuffer::getIndex(const char* name) const {
+  IGL_PROFILER_FUNCTION();
   if (uniformLUT_) {
     auto search = uniformLUT_->find(name);
     return search != uniformLUT_->end() ? static_cast<int>(search->second) : -1;
@@ -268,6 +275,7 @@ int ManagedUniformBuffer::getIndex(const char* name) const {
 }
 
 bool ManagedUniformBuffer::updateData(const char* name, const void* data, size_t dataSize) {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(name);
 
   const int index = getIndex(name);
@@ -300,6 +308,7 @@ bool ManagedUniformBuffer::updateData(const char* name, const void* data, size_t
 }
 
 size_t ManagedUniformBuffer::getUniformDataSize(const char* name) {
+  IGL_PROFILER_FUNCTION();
   for (auto& uniform : uniformInfo.uniforms) {
     if (std::strcmp(name, uniform.name.c_str()) == 0) {
       return getUniformDataSizeInternal(uniform);
@@ -311,6 +320,7 @@ size_t ManagedUniformBuffer::getUniformDataSize(const char* name) {
 // return the type of the uniform
 // return igl::UniformType::Invalid if name invalid
 igl::UniformType ManagedUniformBuffer::getUniformType(const char* name) const {
+  IGL_PROFILER_FUNCTION();
   auto index = findUniformByName(uniformInfo.uniforms, name);
   if (index != -1) {
     const auto& u = uniformInfo.uniforms.at(index);
@@ -320,6 +330,7 @@ igl::UniformType ManagedUniformBuffer::getUniformType(const char* name) const {
 }
 
 size_t ManagedUniformBuffer::getUniformDataSizeInternal(igl::UniformDesc& uniform) {
+  IGL_PROFILER_FUNCTION();
   const size_t uniformDataSize = uniform.elementStride != 0
                                      ? uniform.numElements * uniform.elementStride
                                      : uniform.numElements * igl::sizeForUniformType(uniform.type);
