@@ -9,6 +9,7 @@
 
 #include <igl/Buffer.h>
 #include <igl/Device.h>
+#include <igl/Macros.h>
 #include <igl/Uniform.h>
 #if IGL_BACKEND_OPENGL
 // RenderPipelineState.h is included below for OpenGL-specific functionality
@@ -55,6 +56,7 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
                                const igl::IRenderPipelineReflection& reflection,
                                bool enableSuballocationforVulkan) :
   device_(device) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   bool hasBindBytesFeature = device.hasFeature(igl::DeviceFeatures::BindBytes);
   size_t bindBytesLimit = 0;
   if (!device.getFeatureLimits(igl::DeviceFeatureLimits::MaxBindBytesBytes, bindBytesLimit)) {
@@ -160,6 +162,7 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
 }
 
 ShaderUniforms::~ShaderUniforms() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   for (auto& allocation : allocations_) {
     std::free(allocation->ptr);
   }
@@ -169,6 +172,7 @@ igl::NameHandle ShaderUniforms::MemoizedQualifiedMemberNameCalculator::getQualif
     const igl::NameHandle& /*blockTypeName*/,
     const igl::NameHandle& blockInstanceName,
     const igl::NameHandle& memberName) const {
+  IGL_PROFILER_FUNCTION();
   const std::pair<igl::NameHandle, igl::NameHandle> key = {blockInstanceName, memberName};
   auto it = qualifiedMemberNameCache_.find(key);
   if (it != qualifiedMemberNameCache_.end()) {
@@ -191,6 +195,7 @@ std::vector<std::pair<igl::NameHandle, igl::NameHandle>>
 ShaderUniforms::getPossibleBufferAndMemberNames(const igl::NameHandle& blockTypeName,
                                                 const igl::NameHandle& blockInstanceName,
                                                 const igl::NameHandle& memberName) {
+  IGL_PROFILER_FUNCTION();
   /**
     Given an SparkSL/GLSL3 interface block:
     ```
@@ -241,6 +246,7 @@ void ShaderUniforms::setUniformBytes(const UniformDesc& uniformDesc,
                                      size_t elementSize,
                                      size_t count,
                                      size_t arrayIndex) {
+  IGL_PROFILER_FUNCTION();
   if (arrayIndex + count > uniformDesc.iglMemberDesc.arrayLength) {
     IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid range for uniform %s:  %zu,%zu,%zu\n",
                        uniformDesc.iglMemberDesc.name.c_str(),
@@ -281,6 +287,7 @@ void ShaderUniforms::setUniformBytes(const igl::NameHandle& blockTypeName,
                                      size_t elementSize,
                                      size_t count,
                                      size_t arrayIndex) {
+  IGL_PROFILER_FUNCTION();
   auto possibleBufferNames =
       getPossibleBufferAndMemberNames(blockTypeName, blockInstanceName, memberName);
 
@@ -311,6 +318,7 @@ void ShaderUniforms::setUniformBytes(const igl::NameHandle& name,
                                      size_t elementSize,
                                      size_t count,
                                      size_t arrayIndex) {
+  IGL_PROFILER_FUNCTION();
   auto range = allUniformsByName_.equal_range(name);
   if (range.first == range.second) {
     IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid uniform name: %s\n", name.c_str());
@@ -448,6 +456,7 @@ void ShaderUniforms::setFloat3Array(const igl::NameHandle& uniformName,
                                     const iglu::simdtypes::float3* value,
                                     size_t count,
                                     size_t arrayIndex) {
+  IGL_PROFILER_FUNCTION();
   if (device_.getBackendType() == igl::BackendType::Metal) {
     setUniformBytes(uniformName, value, sizeof(iglu::simdtypes::float3), count, arrayIndex);
   } else {
@@ -556,6 +565,7 @@ void ShaderUniforms::setFloat2x2Array(const igl::NameHandle& blockTypeName,
 void ShaderUniforms::setFloat3x3(const igl::NameHandle& uniformName,
                                  const iglu::simdtypes::float3x3& value,
                                  size_t arrayIndex) {
+  IGL_PROFILER_FUNCTION();
   if (device_.getBackendType() == igl::BackendType::Metal ||
       device_.getBackendType() == igl::BackendType::Vulkan) {
     setUniformBytes(uniformName, &value, sizeof(iglu::simdtypes::float3x3), 1, arrayIndex);
@@ -580,6 +590,7 @@ void ShaderUniforms::setFloat3x3(const igl::NameHandle& blockTypeName,
                                  const igl::NameHandle& uniformName,
                                  const iglu::simdtypes::float3x3& value,
                                  size_t arrayIndex) {
+  IGL_PROFILER_FUNCTION();
   const bool isOglBlock = device_.getBackendType() == igl::BackendType::OpenGL &&
                           bufferDescs_.find(blockTypeName) != bufferDescs_.end();
   if (device_.getBackendType() == igl::BackendType::Metal ||
@@ -617,6 +628,7 @@ void ShaderUniforms::setFloat3x3Array(const igl::NameHandle& uniformName,
                                       const iglu::simdtypes::float3x3* value,
                                       size_t count,
                                       size_t arrayIndex) {
+  IGL_PROFILER_FUNCTION();
   if (device_.getBackendType() == igl::BackendType::Metal ||
       device_.getBackendType() == igl::BackendType::Vulkan) {
     setUniformBytes(uniformName, value, sizeof(iglu::simdtypes::float3x3), count, arrayIndex);
@@ -645,6 +657,7 @@ void ShaderUniforms::setFloat3x3Array(const igl::NameHandle& blockTypeName,
                                       const iglu::simdtypes::float3x3* value,
                                       size_t count,
                                       size_t arrayIndex) {
+  IGL_PROFILER_FUNCTION();
   auto isOglBlock = device_.getBackendType() == igl::BackendType::OpenGL &&
                     bufferDescs_.find(blockTypeName) != bufferDescs_.end();
 
@@ -793,6 +806,7 @@ void ShaderUniforms::setTexture(const std::string& name,
                                 const std::shared_ptr<igl::ITexture>& value,
                                 const std::shared_ptr<igl::ISamplerState>& sampler,
                                 IGL_MAYBE_UNUSED size_t arrayIndex) {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(arrayIndex == 0, "texture arrays not supported");
   auto it = allTexturesByName_.find(name);
   if (it == allTexturesByName_.end()) {
@@ -806,6 +820,7 @@ void ShaderUniforms::setTexture(const std::string& name,
 void ShaderUniforms::setTexture(const std::string& name,
                                 igl::ITexture* value,
                                 const std::shared_ptr<igl::ISamplerState>& sampler) {
+  IGL_PROFILER_FUNCTION();
   auto it = allTexturesByName_.find(name);
   if (it == allTexturesByName_.end()) {
     IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid texture name: %s\n", name.c_str());
@@ -818,6 +833,7 @@ void ShaderUniforms::setTexture(const std::string& name,
 void ShaderUniforms::setTexture(const std::string& name,
                                 igl::ITexture* value,
                                 igl::ISamplerState* sampler) {
+  IGL_PROFILER_FUNCTION();
   auto it = allTexturesByName_.find(name);
   if (it == allTexturesByName_.end()) {
     IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid texture name: %s\n", name.c_str());
@@ -832,6 +848,7 @@ void ShaderUniforms::bindUniformOpenGL(const igl::NameHandle& uniformName,
                                        const UniformDesc& uniformDesc,
                                        const igl::IRenderPipelineState& pipelineState,
                                        igl::IRenderCommandEncoder& encoder) {
+  IGL_PROFILER_FUNCTION();
   const igl::BufferArgDesc::BufferMemberDesc& iglMemberDesc = uniformDesc.iglMemberDesc;
   igl::UniformDesc desc{
       .location = pipelineState.getIndexByName(uniformName, igl::ShaderStage::Fragment),
@@ -858,6 +875,7 @@ void ShaderUniforms::bindBuffer(igl::IDevice& device,
                                 const igl::IRenderPipelineState& pipelineState,
                                 igl::IRenderCommandEncoder& encoder,
                                 BufferDesc* buffer) {
+  IGL_PROFILER_FUNCTION();
   if (!buffer) {
     return;
   }
@@ -911,6 +929,7 @@ void ShaderUniforms::bind(igl::IDevice& device,
                           const igl::IRenderPipelineState& pipelineState,
                           igl::IRenderCommandEncoder& encoder,
                           const igl::NameHandle& uniformName) {
+  IGL_PROFILER_FUNCTION();
   auto range = allUniformsByName_.equal_range(uniformName);
   if (range.first == range.second) {
     IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid uniform name: %s\n", uniformName.c_str());
@@ -929,6 +948,7 @@ void ShaderUniforms::bind(igl::IDevice& device,
                           const igl::NameHandle& blockName,
                           const igl::NameHandle& blockInstanceName,
                           const igl::NameHandle& memberName) {
+  IGL_PROFILER_FUNCTION();
   auto possibleBufferNames =
       getPossibleBufferAndMemberNames(blockName, blockInstanceName, memberName);
   for (auto& [bufferName, bufferMemberName] : possibleBufferNames) {
@@ -942,6 +962,7 @@ void ShaderUniforms::bind(igl::IDevice& device,
 void ShaderUniforms::bind(igl::IDevice& device,
                           const igl::IRenderPipelineState& pipelineState,
                           igl::IRenderCommandEncoder& encoder) {
+  IGL_PROFILER_FUNCTION();
   for (auto& [name, bufferDesc] : bufferDescs_) {
     bindBuffer(device, pipelineState, encoder, bufferDesc.get());
   }
@@ -968,6 +989,7 @@ void ShaderUniforms::bind(igl::IDevice& device,
 }
 
 igl::Result ShaderUniforms::setSuballocationIndex(const igl::NameHandle& name, int index) {
+  IGL_PROFILER_FUNCTION();
   if (device_.getBackendType() != igl::BackendType::Vulkan) {
     return igl::Result(igl::Result::Code::Unsupported,
                        "Suballocation is only available for Vulkan for now");
@@ -1029,6 +1051,7 @@ igl::Result ShaderUniforms::setSuballocationIndex(const igl::NameHandle& name, i
 bool ShaderUniforms::containsUniform(const igl::NameHandle& blockTypeName,
                                      const igl::NameHandle& blockInstanceName,
                                      const igl::NameHandle& memberName) {
+  IGL_PROFILER_FUNCTION();
   auto possibleBufferNames =
       getPossibleBufferAndMemberNames(blockTypeName, blockInstanceName, memberName);
 
