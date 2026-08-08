@@ -11,6 +11,7 @@
 
 #include <type_traits>
 #include <utility>
+#include <igl/Macros.h>
 
 static_assert(std::is_trivially_copyable_v<iglu::vertexdata::PrimitiveDesc>);
 
@@ -43,16 +44,19 @@ VertexData::VertexData(igl::IDevice& device,
              igl::IndexFormat::UInt16,
              {},
              igl::PrimitiveType::Point) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   usedBytes_ = 0;
 }
 
 void VertexData::populatePipelineDescriptor(igl::RenderPipelineDesc& pipelineDesc) const {
+  IGL_PROFILER_FUNCTION();
   pipelineDesc.vertexInputState = vis_;
   pipelineDesc.topology = topology_;
   pipelineDesc.frontFaceWinding = primitiveDesc_.frontFaceWinding;
 }
 
 bool VertexData::appendData(const void* data, size_t size, size_t numPrimitives) {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(vb_);
 
   if (!vb_) {
@@ -72,6 +76,7 @@ bool VertexData::appendData(const void* data, size_t size, size_t numPrimitives)
 }
 
 void VertexData::draw(igl::IRenderCommandEncoder& commandEncoder) {
+  IGL_PROFILER_FUNCTION();
   if (primitiveDesc_.numEntries == 0) {
     return;
   }
