@@ -10,6 +10,7 @@
 #include "ITextureAccessor.h"
 
 #include <igl/Buffer.h>
+#include <igl/Macros.h>
 #include <igl/Texture.h>
 #include <igl/metal/Buffer.h>
 #include <igl/metal/CommandBuffer.h>
@@ -26,6 +27,7 @@ namespace iglu::textureaccessor {
 MetalTextureAccessor::MetalTextureAccessor(std::shared_ptr<igl::ITexture> texture,
                                            igl::IDevice& device) :
   ITextureAccessor(std::move(texture)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto& iglMetalTexture = static_cast<igl::metal::Texture&>(*texture_);
   IGL_DEBUG_ASSERT(iglMetalTexture.get() != nullptr);
 
@@ -50,6 +52,7 @@ MetalTextureAccessor::MetalTextureAccessor(std::shared_ptr<igl::ITexture> textur
 
 void MetalTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
                                         std::shared_ptr<igl::ITexture> texture) {
+  IGL_PROFILER_FUNCTION();
   if (texture) {
     IGL_DEBUG_ASSERT(textureWidth_ == texture->getDimensions().width &&
                      textureHeight_ == texture->getDimensions().height);
@@ -95,6 +98,7 @@ void MetalTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
 }
 
 size_t MetalTextureAccessor::copyBytes(unsigned char* ptr, size_t length) {
+  IGL_PROFILER_FUNCTION();
   if (length < latestBytesRead_.size()) {
     return 0;
   }
@@ -108,6 +112,7 @@ RequestStatus MetalTextureAccessor::getRequestStatus() {
 }
 
 std::vector<unsigned char>& MetalTextureAccessor::getBytes() {
+  IGL_PROFILER_FUNCTION();
   if (status_ == RequestStatus::InProgress) {
     lastRequestCommandBuffer_->waitUntilCompleted();
   }
