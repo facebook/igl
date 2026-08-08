@@ -8,6 +8,7 @@
 #include <IGLU/state_pool/RenderPipelineStatePool.h>
 
 #include <igl/Device.h>
+#include <igl/Macros.h>
 
 using namespace igl;
 
@@ -20,6 +21,7 @@ std::shared_ptr<igl::IRenderPipelineState> RenderPipelineStatePool::createStateO
     igl::IDevice& dev,
     const igl::RenderPipelineDesc& desc,
     igl::Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return dev.createRenderPipeline(desc, outResult);
 }
 
@@ -33,6 +35,7 @@ std::shared_ptr<igl::IRenderPipelineState> CountedRenderPipelineStatePool::getOr
     igl::IDevice& dev,
     const igl::RenderPipelineDesc& desc,
     igl::Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto stateIt = cache_.find(desc);
   if (stateIt != cache_.end()) {
     Result::setOk(outResult);
@@ -51,6 +54,7 @@ std::shared_ptr<igl::IRenderPipelineState> CountedRenderPipelineStatePool::getOr
 }
 
 void CountedRenderPipelineStatePool::compact() {
+  IGL_PROFILER_FUNCTION();
   auto it = cache_.begin();
   while (it != cache_.end()) {
     // Only care about compacting the ones that own uniquely
