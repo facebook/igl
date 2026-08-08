@@ -8,6 +8,7 @@
 #include <IGLU/texture_loader/DataReader.h>
 
 #include <type_traits>
+#include <igl/Macros.h>
 
 static_assert(std::is_trivially_copyable_v<iglu::textureloader::DataReader>);
 
@@ -16,6 +17,7 @@ namespace iglu::textureloader {
 std::optional<DataReader> DataReader::tryCreate(const uint8_t* FOLLY_NONNULL data,
                                                 uint32_t size,
                                                 igl::Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (data == nullptr) {
     igl::Result::setResult(outResult, igl::Result::Code::ArgumentInvalid, "data is nullptr.");
     return {};
@@ -37,6 +39,7 @@ uint32_t DataReader::size() const noexcept {
 
 const uint8_t* IGL_NULLABLE DataReader::tryAt(uint32_t offset,
                                               igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION();
   if (!ensureLength(0, offset, outResult)) {
     return nullptr;
   }
@@ -49,6 +52,7 @@ const uint8_t* IGL_NONNULL DataReader::at(uint32_t offset) const noexcept {
 }
 
 bool DataReader::tryAdvance(uint32_t bytesToAdvance, igl::Result* IGL_NULLABLE outResult) noexcept {
+  IGL_PROFILER_FUNCTION();
   if (!ensureLength(bytesToAdvance, 0, outResult)) {
     return false;
   }
@@ -60,6 +64,7 @@ bool DataReader::tryAdvance(uint32_t bytesToAdvance, igl::Result* IGL_NULLABLE o
 bool DataReader::ensureLength(uint32_t requestedLength,
                               uint32_t offset,
                               igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION();
   if (offset > size_ || requestedLength > size_ - offset) {
     igl::Result::setResult(
         outResult, igl::Result::Code::InvalidOperation, "data size is too small.");
