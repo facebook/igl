@@ -8,6 +8,8 @@
 #include "VulkanTextureAccessor.h"
 
 #include "ITextureAccessor.h"
+
+#include <igl/Macros.h>
 #if IGL_BACKEND_VULKAN
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
@@ -26,10 +28,12 @@ namespace iglu::textureaccessor {
 
 VulkanTextureAccessor::VulkanTextureAccessor(std::shared_ptr<igl::ITexture> texture) :
   ITextureAccessor(std::move(texture)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   assignTexture(texture_);
 }
 
 void VulkanTextureAccessor::assignTexture(std::shared_ptr<igl::ITexture> texture) {
+  IGL_PROFILER_FUNCTION();
   if (!texture) {
     return;
   }
@@ -56,6 +60,7 @@ void VulkanTextureAccessor::assignTexture(std::shared_ptr<igl::ITexture> texture
 
 void VulkanTextureAccessor::requestBytes(igl::ICommandQueue& /*commandQueue*/,
                                          std::shared_ptr<igl::ITexture> texture) {
+  IGL_PROFILER_FUNCTION();
   status_ = RequestStatus::InProgress;
 
   if (texture != nullptr) {
@@ -72,6 +77,7 @@ void VulkanTextureAccessor::requestBytes(igl::ICommandQueue& /*commandQueue*/,
 }
 
 size_t VulkanTextureAccessor::copyBytes(unsigned char* ptr, size_t length) {
+  IGL_PROFILER_FUNCTION();
   if (length < numBytesRequired_) {
     return 0;
   }
@@ -98,6 +104,7 @@ RequestStatus VulkanTextureAccessor::getRequestStatus() {
 }
 
 std::vector<unsigned char>& VulkanTextureAccessor::getBytes() {
+  IGL_PROFILER_FUNCTION();
   copyBytes(latestBytesRead_.data(), latestBytesRead_.size());
   return latestBytesRead_;
 }
