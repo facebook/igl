@@ -15,6 +15,7 @@
 #include "VulkanTextureAccessor.h"
 #endif
 #include <memory>
+#include <igl/Macros.h>
 #if IGL_PLATFORM_APPLE
 #include "MetalTextureAccessor.h"
 #endif
@@ -25,6 +26,7 @@ std::unique_ptr<ITextureAccessor> TextureAccessorFactory::createTextureAccessor(
     igl::BackendType backendType,
     const std::shared_ptr<igl::ITexture>& texture,
     igl::IDevice& device) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (backendType) {
 #if IGL_BACKEND_OPENGL
