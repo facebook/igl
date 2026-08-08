@@ -8,6 +8,7 @@
 #include <IGLU/state_pool/ComputePipelineStatePool.h>
 
 #include <igl/Device.h>
+#include <igl/Macros.h>
 
 namespace iglu::state_pool {
 
@@ -15,6 +16,7 @@ std::shared_ptr<igl::IComputePipelineState> ComputePipelineStatePool::createStat
     igl::IDevice& dev,
     const igl::ComputePipelineDesc& desc,
     igl::Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return dev.createComputePipeline(desc, outResult);
 }
 
