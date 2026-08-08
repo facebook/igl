@@ -84,7 +84,7 @@ block16_vec Compress::getCompressedImage(uint8_t* pixels,
   const uint32_t blocks_y = source_image.height() / 4;
 
   // output compressed image
-  block16_vec packed_image16((int32_t)(blocks_x * blocks_y));
+  block16_vec packed_image16(static_cast<int32_t>(blocks_x * blocks_y));
 
   // initialize compression parameters
   bc7enc_compress_block_params pack_params;
