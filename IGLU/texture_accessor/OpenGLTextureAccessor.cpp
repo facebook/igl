@@ -12,6 +12,7 @@
 #if IGL_BACKEND_OPENGL
 
 #include <igl/Device.h>
+#include <igl/Macros.h>
 #include <igl/Texture.h>
 #include <igl/opengl/DeviceFeatureSet.h>
 #include <igl/opengl/Framebuffer.h>
@@ -29,6 +30,7 @@ namespace iglu::textureaccessor {
 OpenGLTextureAccessor::OpenGLTextureAccessor(std::shared_ptr<igl::ITexture> texture,
                                              igl::IDevice& device) :
   ITextureAccessor(std::move(texture)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // glReadPixels requires a that the texture be attached to a framebuffer
   // Per IGL Error Handling rule #24, every resource creation call must pass a
   // Result* and check it; passing nullptr silently swallows errors.
@@ -66,6 +68,7 @@ OpenGLTextureAccessor::OpenGLTextureAccessor(std::shared_ptr<igl::ITexture> text
 
 void OpenGLTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
                                          std::shared_ptr<igl::ITexture> texture) {
+  IGL_PROFILER_FUNCTION();
   dataCopied_ = false;
   if (texture) {
     IGL_DEBUG_ASSERT(textureWidth_ == texture->getDimensions().width &&
@@ -121,6 +124,7 @@ void OpenGLTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
 }
 
 RequestStatus OpenGLTextureAccessor::getRequestStatus() {
+  IGL_PROFILER_FUNCTION();
   if (asyncReadbackSupported_ && status_ == RequestStatus::InProgress) {
     auto& texture = static_cast<igl::opengl::Texture&>(*texture_);
     auto& context = texture.getContext();
@@ -139,11 +143,13 @@ RequestStatus OpenGLTextureAccessor::getRequestStatus() {
 }
 
 std::vector<unsigned char>& OpenGLTextureAccessor::getBytes() {
+  IGL_PROFILER_FUNCTION();
   copyBytes(latestBytesRead_.data(), latestBytesRead_.size());
   return latestBytesRead_;
 }
 
 size_t OpenGLTextureAccessor::copyBytes(unsigned char* ptr, size_t length) {
+  IGL_PROFILER_FUNCTION();
   if (length < textureBytesPerImage_) {
     dataCopied_ = false;
     return 0;
