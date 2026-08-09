@@ -10,12 +10,14 @@
 #include <IGLU/texture_loader/IData.h>
 #include <igl/Device.h>
 #include <igl/IGLSafeC.h>
+#include <igl/Macros.h>
 
 namespace iglu::textureloader {
 
 /// Interface for getting CPU access to GPU texture data
 ITextureLoader::ITextureLoader(DataReader reader, igl::TextureDesc::TextureUsage usage) noexcept :
   reader_(reader) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_DEBUG_ASSERT(reader.data() != nullptr && reader.size() > 0);
   desc_.usage = usage;
 }
@@ -29,6 +31,7 @@ const igl::TextureDesc& ITextureLoader::descriptor() const noexcept {
 }
 
 [[nodiscard]] uint32_t ITextureLoader::memorySizeInBytes() const noexcept {
+  IGL_PROFILER_FUNCTION();
   const auto properties = igl::TextureFormatProperties::fromTextureFormat(desc_.format);
   const igl::TextureRangeDesc range = {
       .width = desc_.width,
@@ -59,6 +62,7 @@ bool ITextureLoader::isSupported(const igl::ICapabilities& capabilities) const n
 
 bool ITextureLoader::isSupported(const igl::ICapabilities& capabilities,
                                  igl::TextureDesc::TextureUsage usage) const noexcept {
+  IGL_PROFILER_FUNCTION();
   const auto caps = capabilities.getTextureFormatCapabilities(desc_.format);
 
   const bool isSampled = (usage & igl::TextureDesc::TextureUsageBits::Sampled) != 0;
@@ -108,6 +112,7 @@ std::shared_ptr<igl::ITexture> ITextureLoader::create(const igl::IDevice& device
                                                       igl::TextureDesc::TextureUsage usage,
                                                       igl::Result* IGL_NULLABLE
                                                           outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   igl::TextureDesc desc = desc_;
   desc.format = preferredFormat == igl::TextureFormat::Invalid ? desc_.format : preferredFormat;
   desc.usage = usage;
@@ -118,6 +123,7 @@ std::shared_ptr<igl::ITexture> ITextureLoader::create(const igl::IDevice& device
 // NOLINTNEXTLINE(bugprone-exception-escape)
 void ITextureLoader::upload(igl::ITexture& texture,
                             igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION();
   const auto dimensions = texture.getDimensions();
   if (texture.getType() != desc_.type ||
       (desc_.numMipLevels > 1 && texture.getNumMipLevels() != desc_.numMipLevels) ||
@@ -133,6 +139,7 @@ void ITextureLoader::upload(igl::ITexture& texture,
 }
 
 std::unique_ptr<IData> ITextureLoader::load(igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   return loadInternal(outResult);
 }
 
@@ -140,6 +147,7 @@ std::unique_ptr<IData> ITextureLoader::load(igl::Result* IGL_NULLABLE outResult)
 void ITextureLoader::loadToExternalMemory(uint8_t* IGL_NONNULL data,
                                           uint32_t length,
                                           igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (data == nullptr) {
     igl::Result::setResult(outResult, igl::Result::Code::ArgumentNull, "data is nullptr.");
     return;
@@ -162,6 +170,7 @@ const DataReader& ITextureLoader::reader() const noexcept {
 
 void ITextureLoader::defaultUpload(igl::ITexture& texture,
                                    igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION();
   std::unique_ptr<IData> data;
 
   if (!canUploadSourceData()) {
@@ -179,6 +188,7 @@ void ITextureLoader::defaultUpload(igl::ITexture& texture,
 // NOLINTNEXTLINE(bugprone-exception-escape)
 std::unique_ptr<IData> ITextureLoader::defaultLoad(
     igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   const uint32_t length = memorySizeInBytes();
   auto data = std::make_unique<uint8_t[]>(length);
   if (!data) {
@@ -196,6 +206,7 @@ void ITextureLoader::defaultLoadToExternalMemory(uint8_t* IGL_NONNULL data,
                                                  uint32_t length,
                                                  igl::Result* IGL_NULLABLE
                                                      outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (reader_.size() != length) {
     igl::Result::setResult(
         outResult, igl::Result::Code::ArgumentInvalid, "length doesn't match reader length.");
