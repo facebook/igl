@@ -7,11 +7,14 @@
 
 #include <IGLU/texture_loader/ITextureLoaderFactory.h>
 
+#include <igl/Macros.h>
+
 namespace iglu::textureloader {
 
 bool ITextureLoaderFactory::canCreate(const uint8_t* IGL_NONNULL headerData,
                                       uint32_t headerLength,
                                       igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION();
   auto maybeReader = DataReader::tryCreate(headerData, headerLength, outResult);
   if (!maybeReader.has_value()) {
     return false;
@@ -23,6 +26,7 @@ bool ITextureLoaderFactory::canCreate(const uint8_t* IGL_NONNULL headerData,
 // NOLINTNEXTLINE(bugprone-exception-escape)
 bool ITextureLoaderFactory::canCreate(DataReader headerReader,
                                       igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION();
   if (headerReader.data() == nullptr) {
     igl::Result::setResult(
         outResult, igl::Result::Code::ArgumentInvalid, "Reader's data is nullptr.");
@@ -49,6 +53,7 @@ std::unique_ptr<ITextureLoader> ITextureLoaderFactory::tryCreate(const uint8_t* 
                                                                  igl::TextureFormat preferredFormat,
                                                                  igl::Result* IGL_NULLABLE
                                                                      outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto maybeReader = DataReader::tryCreate(data, length, outResult);
   if (!maybeReader.has_value()) {
     return nullptr;
@@ -67,6 +72,7 @@ std::unique_ptr<ITextureLoader> ITextureLoaderFactory::tryCreate(DataReader read
                                                                  igl::TextureFormat preferredFormat,
                                                                  igl::Result* IGL_NULLABLE
                                                                      outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!canCreate(reader, outResult)) {
     return nullptr;
   }
