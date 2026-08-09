@@ -7,6 +7,8 @@
 
 #include <IGLU/texture_loader/IData.h>
 
+#include <igl/Macros.h>
+
 namespace iglu::textureloader {
 namespace {
 class ByteData final : public IData {
@@ -49,6 +51,7 @@ IData::ExtractedData ByteData::extractData() noexcept {
 std::unique_ptr<IData> IData::tryCreate(std::unique_ptr<uint8_t[]> data,
                                         uint64_t size,
                                         igl::Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (data == nullptr) {
     igl::Result::setResult(outResult, igl::Result::Code::ArgumentNull, "data is nullptr");
     return nullptr;
