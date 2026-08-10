@@ -12,6 +12,7 @@
 #include <igl/CommandBuffer.h>
 #include <igl/CommandQueue.h>
 #include <igl/Framebuffer.h>
+#include <igl/Macros.h>
 
 namespace igl {
 
@@ -23,6 +24,7 @@ bool IDevice::defaultVerifyScope() {
 }
 
 TextureDesc IDevice::sanitize(const TextureDesc& desc) const {
+  IGL_PROFILER_FUNCTION();
   TextureDesc sanitized = desc;
   if (desc.width == 0 || desc.height == 0 || desc.depth == 0 || desc.numLayers == 0 ||
       desc.numSamples == 0 || desc.numMipLevels == 0) {
@@ -67,15 +69,18 @@ Color IDevice::backendDebugColor() const noexcept {
 }
 
 DeviceScope::DeviceScope(IDevice& device) : device_(device) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   device_.beginScope();
 }
 
 DeviceScope::~DeviceScope() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   device_.endScope();
 }
 
 std::shared_ptr<IFramebuffer> IDevice::createFramebufferFromBaseDesc(
     const base::FramebufferInteropDesc& desc) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto makeTextureDesc = [](const base::AttachmentInteropDesc& attachment) -> TextureDesc {
     return TextureDesc{
         .width = attachment.width,
