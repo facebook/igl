@@ -9,10 +9,12 @@
 
 #include <IGLU/uniform/Descriptor.h>
 #include <algorithm>
+#include <igl/Macros.h>
 
 namespace iglu::uniform {
 
 void Collection::update(const Collection& changes) {
+  IGL_PROFILER_FUNCTION();
   for (const auto& [key, value] : changes.descriptors_) {
     // Update should only modify values already in receiver; catch caller error otherwise
     IGL_DEBUG_ASSERT(descriptors_.find(key) != descriptors_.cend());
@@ -24,6 +26,7 @@ void Collection::update(const Collection& changes) {
 }
 
 void Collection::set(const igl::NameHandle& name, std::unique_ptr<Descriptor> value) {
+  IGL_PROFILER_FUNCTION();
   if (descriptors_.find(name) == descriptors_.cend()) {
     names_.push_back(name);
   }
@@ -31,12 +34,14 @@ void Collection::set(const igl::NameHandle& name, std::unique_ptr<Descriptor> va
 }
 
 void Collection::clear(const igl::NameHandle& name) {
+  IGL_PROFILER_FUNCTION();
   names_.erase(std::remove(names_.begin(), names_.end(), name), names_.end());
   descriptors_.erase(name);
 }
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 std::vector<igl::NameHandle> Collection::getNames() const noexcept {
+  IGL_PROFILER_FUNCTION();
   IGL_LOG_INFO_ONCE("Collection::getNames() is deprecated. Use Collection::names() instead\n");
   std::vector<igl::NameHandle> ret;
   ret.reserve(descriptors_.size());
