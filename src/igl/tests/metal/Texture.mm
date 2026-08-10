@@ -381,6 +381,31 @@ TEST_F(TextureMTLTest, createTextureFromNativePixelBufferWithInvalidFormat) {
   ASSERT_EQ(result.isOk(), false) << result.message.c_str();
 }
 
+TEST_F(TextureMTLTest, createTextureFromNativePixelBufferWithInvalidPlaneSetsError) {
+  CVPixelBufferRef pixelBuffer = nullptr;
+  NSDictionary* bufferAttributes = @{
+    (NSString*)kCVPixelBufferIOSurfacePropertiesKey : @{},
+    (NSString*)kCVPixelBufferMetalCompatibilityKey : @YES,
+  };
+  const CVReturn pixelBufferResult =
+      CVPixelBufferCreate(kCFAllocatorDefault,
+                          100,
+                          100,
+                          kCVPixelFormatType_32BGRA,
+                          (__bridge CFDictionaryRef)(bufferAttributes),
+                          &pixelBuffer);
+  ASSERT_EQ(pixelBufferResult, kCVReturnSuccess);
+
+  auto* platformDevice = device_->getPlatformDevice<igl::metal::PlatformDevice>();
+  Result result;
+  auto texture = platformDevice->createTextureFromNativePixelBuffer(
+      pixelBuffer, TextureFormat::BGRA_UNorm8, 1, &result);
+  CVPixelBufferRelease(pixelBuffer);
+
+  EXPECT_EQ(texture, nullptr);
+  EXPECT_FALSE(result.isOk());
+}
+
 TEST_F(TextureMTLTest, ConvertTextureFormats) {
   const std::vector<TextureFormat> inputFormats = {
       TextureFormat::A_UNorm8,

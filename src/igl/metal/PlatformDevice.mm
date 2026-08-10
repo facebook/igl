@@ -238,10 +238,13 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
                                                                       planeIndex,
                                                                       &cvMetalTexture);
     IGL_DEBUG_ASSERT(result == kCVReturnSuccess,
-                     "Failed to created Metal texture from PixelBuffer");
+                     "Failed to create Metal texture from pixel buffer");
 
     if (result != kCVReturnSuccess) {
-      NSLog(@"Failed to created Metal texture from PixelBuffer");
+      Result::setResult(
+          outResult,
+          Result::Code::RuntimeError,
+          "Failed to create Metal texture from pixel buffer: " + std::to_string(result));
       return nullptr;
     }
 
@@ -249,11 +252,26 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
     CVBufferRelease(cvMetalTexture);
     cvMetalTexture = nullptr;
 
+    if (metalTexture == nil) {
+      Result::setResult(
+          outResult, Result::Code::RuntimeError, "CoreVideo returned an empty Metal texture");
+      return nullptr;
+    }
+
     resultTexture = std::make_unique<Texture>(metalTexture, device_);
     if (auto resourceTracker = device_.getResourceTracker()) {
       resultTexture->initResourceTracker(resourceTracker);
     }
+  } else {
+    Result::setResult(
+        outResult, Result::Code::RuntimeError, "Failed to get the Metal texture cache");
+    return nullptr;
   }
+#else
+  Result::setResult(outResult,
+                    Result::Code::Unsupported,
+                    "Metal pixel-buffer textures are not supported on this target");
+  return nullptr;
 #endif
 
   Result::setOk(outResult);
