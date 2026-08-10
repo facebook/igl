@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cstring>
 #include <memory>
+#include <igl/Macros.h>
 #if defined(IGL_CMAKE_BUILD)
 #include <igl/IGLSafeC.h>
 #else
@@ -49,6 +50,7 @@ class TextureLoader final : public ITextureLoader {
  public:
   // NOLINTNEXTLINE(bugprone-exception-escape)
   explicit TextureLoader(DataReader reader) noexcept : ITextureLoader(reader) {
+    IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
     const Header* header = this->reader().as<Header>();
 
     // Determine the appropriate XTC1 compressed format based on number of channels
@@ -70,6 +72,7 @@ class TextureLoader final : public ITextureLoader {
 
   // NOLINTNEXTLINE(bugprone-exception-escape)
   [[nodiscard]] std::vector<uint32_t> mipLevelBytes() const noexcept override {
+    IGL_PROFILER_FUNCTION();
     const Header* header = this->reader().as<Header>();
     const uint32_t numMips = clampedNumMips(header->numMips);
     // Legacy headers without a pre-baked chain match the base class behavior
@@ -94,6 +97,7 @@ class TextureLoader final : public ITextureLoader {
  protected:
   [[nodiscard]] std::unique_ptr<IData> loadInternal(
       igl::Result* IGL_NULLABLE outResult) const noexcept override {
+    IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
     const uint8_t* compressedData = reader().data() + sizeof(Header);
 
     // Calculate the size of compressed data
@@ -122,6 +126,7 @@ uint32_t TextureLoaderFactory::minHeaderLength() const noexcept {
 // NOLINTNEXTLINE(bugprone-exception-escape)
 bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
                                              igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (headerReader.size() < kHeaderLength) {
     igl::Result::setResult(
         outResult, igl::Result::Code::ArgumentInvalid, "Header too small for XTC1 texture");
@@ -149,6 +154,7 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     DataReader reader,
     igl::TextureFormat preferredFormat,
     igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (reader.size() < kHeaderLength) {
     igl::Result::setResult(
         outResult, igl::Result::Code::ArgumentInvalid, "Data too small for XTC1 texture");
