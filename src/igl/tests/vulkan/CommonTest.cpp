@@ -11,6 +11,8 @@
 
 #include <cstdint>
 #include <cstring>
+#include <utility>
+#include <igl/TextureFormat.h>
 #include <igl/tests/util/device/TestDevice.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/Device.h>
@@ -196,6 +198,134 @@ TEST(CommonTest, IsTextureFormatBGRTest) {
   EXPECT_FALSE(igl::vulkan::isTextureFormatBGR(VK_FORMAT_R8G8B8A8_UNORM));
   EXPECT_FALSE(igl::vulkan::isTextureFormatBGR(VK_FORMAT_R8G8B8A8_SRGB));
   EXPECT_FALSE(igl::vulkan::isTextureFormatBGR(VK_FORMAT_R16G16B16A16_SFLOAT));
+}
+
+// isSrgbFormat / srgbToUnorm / unormToSrgb ****************************************************
+
+namespace {
+// Independent restatement of the IGL_FOR_EACH_SRGB_UNORM_FORMAT_PAIR list in Common.cpp, so a
+// typo in one of the macro's pairs shows up here rather than as wrong-gamma pixels.
+constexpr std::pair<VkFormat, VkFormat> kSrgbUnormPairs[] = {
+    {VK_FORMAT_R8G8B8A8_SRGB, VK_FORMAT_R8G8B8A8_UNORM},
+    {VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM},
+    {VK_FORMAT_ASTC_4x4_SRGB_BLOCK, VK_FORMAT_ASTC_4x4_UNORM_BLOCK},
+    {VK_FORMAT_ASTC_5x4_SRGB_BLOCK, VK_FORMAT_ASTC_5x4_UNORM_BLOCK},
+    {VK_FORMAT_ASTC_5x5_SRGB_BLOCK, VK_FORMAT_ASTC_5x5_UNORM_BLOCK},
+    {VK_FORMAT_ASTC_6x5_SRGB_BLOCK, VK_FORMAT_ASTC_6x5_UNORM_BLOCK},
+    {VK_FORMAT_ASTC_6x6_SRGB_BLOCK, VK_FORMAT_ASTC_6x6_UNORM_BLOCK},
+    {VK_FORMAT_ASTC_8x5_SRGB_BLOCK, VK_FORMAT_ASTC_8x5_UNORM_BLOCK},
+    {VK_FORMAT_ASTC_8x6_SRGB_BLOCK, VK_FORMAT_ASTC_8x6_UNORM_BLOCK},
+    {VK_FORMAT_ASTC_8x8_SRGB_BLOCK, VK_FORMAT_ASTC_8x8_UNORM_BLOCK},
+    {VK_FORMAT_ASTC_10x5_SRGB_BLOCK, VK_FORMAT_ASTC_10x5_UNORM_BLOCK},
+    {VK_FORMAT_ASTC_10x6_SRGB_BLOCK, VK_FORMAT_ASTC_10x6_UNORM_BLOCK},
+    {VK_FORMAT_ASTC_10x8_SRGB_BLOCK, VK_FORMAT_ASTC_10x8_UNORM_BLOCK},
+    {VK_FORMAT_ASTC_10x10_SRGB_BLOCK, VK_FORMAT_ASTC_10x10_UNORM_BLOCK},
+    {VK_FORMAT_ASTC_12x10_SRGB_BLOCK, VK_FORMAT_ASTC_12x10_UNORM_BLOCK},
+    {VK_FORMAT_ASTC_12x12_SRGB_BLOCK, VK_FORMAT_ASTC_12x12_UNORM_BLOCK},
+    {VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK, VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK},
+    {VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK, VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK},
+    {VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK, VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK},
+    {VK_FORMAT_BC7_SRGB_BLOCK, VK_FORMAT_BC7_UNORM_BLOCK},
+};
+} // namespace
+
+TEST(CommonTest, SrgbUnormFormatPairsTest) {
+  for (const auto& [srgb, unorm] : kSrgbUnormPairs) {
+    EXPECT_TRUE(igl::vulkan::isSrgbFormat(srgb)) << "sRGB format " << srgb << " not recognized";
+    EXPECT_FALSE(igl::vulkan::isSrgbFormat(unorm)) << "UNORM format " << unorm << " reported sRGB";
+
+    EXPECT_EQ(igl::vulkan::srgbToUnorm(srgb), unorm);
+    EXPECT_EQ(igl::vulkan::unormToSrgb(unorm), srgb);
+
+    // The three helpers share one macro list, so a mismatch means the list is internally
+    // inconsistent rather than merely incomplete.
+    EXPECT_EQ(igl::vulkan::unormToSrgb(igl::vulkan::srgbToUnorm(srgb)), srgb);
+    EXPECT_EQ(igl::vulkan::srgbToUnorm(igl::vulkan::unormToSrgb(unorm)), unorm);
+  }
+}
+
+// Formats outside the pair list must pass through untouched: callers use a returned-unchanged
+// format as the signal that there is no counterpart to swap to.
+TEST(CommonTest, SrgbHelpersPassThroughUnpairedFormats) {
+  const VkFormat unpaired[] = {
+      VK_FORMAT_UNDEFINED,
+      VK_FORMAT_R16G16B16A16_SFLOAT,
+      VK_FORMAT_R32G32B32A32_SFLOAT,
+      VK_FORMAT_D32_SFLOAT,
+      VK_FORMAT_S8_UINT,
+      VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
+      // Deliberately omitted from the list: real Vulkan sRGB formats that no IGL TextureFormat
+      // maps to, so they never reach Texture::create(). Pinned here so the scope decision is
+      // explicit rather than an accident.
+      VK_FORMAT_R8_SRGB,
+      VK_FORMAT_R8G8_SRGB,
+      VK_FORMAT_B8G8R8_SRGB,
+      VK_FORMAT_A8B8G8R8_SRGB_PACK32,
+      VK_FORMAT_BC1_RGB_SRGB_BLOCK,
+      VK_FORMAT_BC2_SRGB_BLOCK,
+      VK_FORMAT_BC3_SRGB_BLOCK,
+  };
+  for (const VkFormat format : unpaired) {
+    EXPECT_FALSE(igl::vulkan::isSrgbFormat(format)) << "format " << format;
+    EXPECT_EQ(igl::vulkan::srgbToUnorm(format), format);
+    EXPECT_EQ(igl::vulkan::unormToSrgb(format), format);
+  }
+}
+
+// The pair list claims to cover exactly the sRGB formats textureFormatToVkFormat() can produce.
+// Walk every IGL TextureFormat and hold it to that: adding a new sRGB TextureFormat without
+// extending the list fails here instead of silently skipping the UNORM-base sRGB handling.
+TEST(CommonTest, EveryIglSrgbTextureFormatIsPaired) {
+  // textureFormatToVkFormat() and fromTextureFormat() are exhaustive switches, so casting past
+  // the last enumerator is undefined. Extend this bound when TextureFormat grows.
+  constexpr auto kLastTextureFormat = TextureFormat::R5G6B5_UNorm;
+
+  size_t numChecked = 0;
+  for (uint8_t i = 0; i <= static_cast<uint8_t>(kLastTextureFormat); ++i) {
+    const auto format = static_cast<TextureFormat>(i);
+    if (!TextureFormatProperties::fromTextureFormat(format).isSRGB()) {
+      continue;
+    }
+    const VkFormat vkFormat = igl::vulkan::textureFormatToVkFormat(format);
+    if (vkFormat == VK_FORMAT_UNDEFINED) {
+      continue; // Not representable on Vulkan (e.g. some compressed formats)
+    }
+
+    ++numChecked;
+    EXPECT_TRUE(igl::vulkan::isSrgbFormat(vkFormat))
+        << "TextureFormat " << static_cast<int>(i) << " is sRGB but VkFormat " << vkFormat
+        << " is missing from IGL_FOR_EACH_SRGB_UNORM_FORMAT_PAIR";
+    EXPECT_NE(igl::vulkan::srgbToUnorm(vkFormat), vkFormat)
+        << "TextureFormat " << static_cast<int>(i) << " has no UNORM counterpart";
+  }
+
+  // One pair in the list is unreachable today: IGL's SRGB8_A8_EAC_ETC2 and its UNORM sibling both
+  // map to VK_FORMAT_UNDEFINED in textureFormatToVkFormat(), so no TextureFormat produces
+  // VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK. The pair is kept so sRGB handling is already correct if
+  // that mapping is ever filled in. Asserting the exact difference keeps both sides honest: this
+  // fails if the mapping is added (drop the entry below) or if a pair is added without a format.
+  constexpr VkFormat kPairsUnreachableFromTextureFormat[] = {VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK};
+  EXPECT_EQ(numChecked,
+            IGL_ARRAY_NUM_ELEMENTS(kSrgbUnormPairs) -
+                IGL_ARRAY_NUM_ELEMENTS(kPairsUnreachableFromTextureFormat));
+}
+
+// igl::sRGBToLinear()/linearTosRGB() in TextureFormat.h answer the same question one level up, on
+// TextureFormat. They cannot back these helpers -- they cover only the uncompressed pairs and
+// assert rather than pass through on non-sRGB input, while Texture::create() calls these on every
+// format -- but where the two overlap they must agree, or the VkImage and the IGL-level format
+// would disagree about what the linear counterpart is.
+TEST(CommonTest, SrgbHelpersAgreeWithTextureFormatHelpers) {
+  const TextureFormat srgbFormats[] = {TextureFormat::RGBA_SRGB, TextureFormat::BGRA_SRGB};
+  for (const TextureFormat srgbFormat : srgbFormats) {
+    const TextureFormat linearFormat = igl::sRGBToLinear(srgbFormat);
+    EXPECT_EQ(igl::linearTosRGB(linearFormat), srgbFormat);
+
+    const VkFormat vkSrgb = igl::vulkan::textureFormatToVkFormat(srgbFormat);
+    const VkFormat vkLinear = igl::vulkan::textureFormatToVkFormat(linearFormat);
+    EXPECT_EQ(igl::vulkan::srgbToUnorm(vkSrgb), vkLinear);
+    EXPECT_EQ(igl::vulkan::unormToSrgb(vkLinear), vkSrgb);
+  }
 }
 
 // hasDepth / hasStencil *********************************************************************

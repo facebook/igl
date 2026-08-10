@@ -329,6 +329,89 @@ bool isTextureFormatBGR(VkFormat format) {
          format == VK_FORMAT_A2B10G10R10_UNORM_PACK32;
 }
 
+// Single source of truth for sRGB <-> UNORM VkFormat pairs. isSrgbFormat(), srgbToUnorm() and
+// unormToSrgb() are all generated from this X-macro list, so a new format pair only needs to be
+// added in one place to keep the three helpers provably in sync. Each is emitted as a switch over
+// the enum, letting the compiler generate a jump table instead of a linear scan on the
+// Texture-creation hot path.
+//
+// This lists the sRGB formats textureFormatToVkFormat() can produce (RGBA/BGRA 8-bit, ASTC, ETC2,
+// BC7), plus VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK: TextureFormat::SRGB8_A8_EAC_ETC2 and its UNORM
+// sibling currently map to VK_FORMAT_UNDEFINED, so that pair is unreachable today and is kept only
+// so the handling is already right if that mapping is filled in. Other Vulkan sRGB formats
+// (BC1/BC2/BC3, R8/R8G8, 24-bit RGB, A8B8G8R8_*_PACK32) are
+// omitted because no IGL TextureFormat maps to them, so they never reach Texture::create(). A
+// format not listed here is treated as non-sRGB: its VkImage is created directly with the sRGB
+// VkFormat, without the UNORM-image + sRGB-view / linear-storage-view handling. Add the pair here
+// when introducing a new sRGB TextureFormat.
+//
+// igl::sRGBToLinear()/linearTosRGB() (TextureFormat.h) express the same pairing one level up, on
+// TextureFormat. They are not reusable here: they cover only the uncompressed pairs, and they
+// assert on a non-sRGB argument, whereas Texture::create() queries every format and needs an
+// identity result for the ones with no counterpart. CommonTest pins the two against each other
+// wherever they overlap.
+#define IGL_FOR_EACH_SRGB_UNORM_FORMAT_PAIR(FN)                               \
+  FN(VK_FORMAT_R8G8B8A8_SRGB, VK_FORMAT_R8G8B8A8_UNORM)                       \
+  FN(VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM)                       \
+  FN(VK_FORMAT_ASTC_4x4_SRGB_BLOCK, VK_FORMAT_ASTC_4x4_UNORM_BLOCK)           \
+  FN(VK_FORMAT_ASTC_5x4_SRGB_BLOCK, VK_FORMAT_ASTC_5x4_UNORM_BLOCK)           \
+  FN(VK_FORMAT_ASTC_5x5_SRGB_BLOCK, VK_FORMAT_ASTC_5x5_UNORM_BLOCK)           \
+  FN(VK_FORMAT_ASTC_6x5_SRGB_BLOCK, VK_FORMAT_ASTC_6x5_UNORM_BLOCK)           \
+  FN(VK_FORMAT_ASTC_6x6_SRGB_BLOCK, VK_FORMAT_ASTC_6x6_UNORM_BLOCK)           \
+  FN(VK_FORMAT_ASTC_8x5_SRGB_BLOCK, VK_FORMAT_ASTC_8x5_UNORM_BLOCK)           \
+  FN(VK_FORMAT_ASTC_8x6_SRGB_BLOCK, VK_FORMAT_ASTC_8x6_UNORM_BLOCK)           \
+  FN(VK_FORMAT_ASTC_8x8_SRGB_BLOCK, VK_FORMAT_ASTC_8x8_UNORM_BLOCK)           \
+  FN(VK_FORMAT_ASTC_10x5_SRGB_BLOCK, VK_FORMAT_ASTC_10x5_UNORM_BLOCK)         \
+  FN(VK_FORMAT_ASTC_10x6_SRGB_BLOCK, VK_FORMAT_ASTC_10x6_UNORM_BLOCK)         \
+  FN(VK_FORMAT_ASTC_10x8_SRGB_BLOCK, VK_FORMAT_ASTC_10x8_UNORM_BLOCK)         \
+  FN(VK_FORMAT_ASTC_10x10_SRGB_BLOCK, VK_FORMAT_ASTC_10x10_UNORM_BLOCK)       \
+  FN(VK_FORMAT_ASTC_12x10_SRGB_BLOCK, VK_FORMAT_ASTC_12x10_UNORM_BLOCK)       \
+  FN(VK_FORMAT_ASTC_12x12_SRGB_BLOCK, VK_FORMAT_ASTC_12x12_UNORM_BLOCK)       \
+  FN(VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK, VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK)     \
+  FN(VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK, VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK) \
+  FN(VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK, VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK) \
+  FN(VK_FORMAT_BC7_SRGB_BLOCK, VK_FORMAT_BC7_UNORM_BLOCK)
+
+bool isSrgbFormat(VkFormat format) {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
+  switch (format) {
+#define IGL_SRGB_CASE(srgb, unorm) case srgb:
+    IGL_FOR_EACH_SRGB_UNORM_FORMAT_PAIR(IGL_SRGB_CASE)
+#undef IGL_SRGB_CASE
+    return true;
+  default:
+    return false;
+  }
+}
+
+VkFormat srgbToUnorm(VkFormat format) {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
+  switch (format) {
+#define IGL_SRGB_CASE(srgb, unorm) \
+  case srgb:                       \
+    return unorm;
+    IGL_FOR_EACH_SRGB_UNORM_FORMAT_PAIR(IGL_SRGB_CASE)
+#undef IGL_SRGB_CASE
+  default:
+    return format;
+  }
+}
+
+VkFormat unormToSrgb(VkFormat format) {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
+  switch (format) {
+#define IGL_SRGB_CASE(srgb, unorm) \
+  case unorm:                      \
+    return srgb;
+    IGL_FOR_EACH_SRGB_UNORM_FORMAT_PAIR(IGL_SRGB_CASE)
+#undef IGL_SRGB_CASE
+  default:
+    return format;
+  }
+}
+
+#undef IGL_FOR_EACH_SRGB_UNORM_FORMAT_PAIR
+
 TextureFormat vkFormatToTextureFormat(VkFormat format) {
   return util::vkTextureFormatToTextureFormat(static_cast<int32_t>(format));
 }
