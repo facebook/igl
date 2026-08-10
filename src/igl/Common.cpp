@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstring>
 #include <igl/Device.h>
+#include <igl/Macros.h>
 
 namespace igl {
 
@@ -52,6 +53,7 @@ std::string BackendTypeToString(BackendType backendType) {
 }
 
 void optimizedMemcpy(void* IGL_NULLABLE dst, const void* IGL_NULLABLE src, size_t size) {
+  IGL_PROFILER_FUNCTION();
   // Add null check for both dst and src
   IGL_DEBUG_ASSERT(dst != nullptr && src != nullptr, "dst and src must not be null");
   if (!dst || !src) {
@@ -98,12 +100,14 @@ void optimizedMemcpy(void* IGL_NULLABLE dst, const void* IGL_NULLABLE src, size_
 }
 
 void destroy(IDevice* IGL_NULLABLE device, BindGroupTextureHandle handle) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   if (device) {
     device->destroy(handle);
   }
 }
 
 void destroy(IDevice* IGL_NULLABLE device, BindGroupBufferHandle handle) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   if (device) {
     device->destroy(handle);
   }
@@ -117,6 +121,7 @@ void destroy(IDevice* IGL_NULLABLE device, TextureHandle handle) {
 }
 
 void destroy(IDevice* IGL_NULLABLE device, SamplerHandle handle) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   if (device) {
     device->destroy(handle);
   }
