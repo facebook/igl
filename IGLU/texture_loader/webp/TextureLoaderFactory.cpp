@@ -11,6 +11,7 @@
 
 #include <IGLU/texture_loader/webp/Header.h>
 #include <webp/decode.h>
+#include <igl/Macros.h>
 
 namespace iglu::textureloader::webp {
 namespace {
@@ -19,6 +20,7 @@ class WebPData final : public IData {
  public:
   WebPData(uint8_t* data, uint64_t size) noexcept : data_(data), size_(size) {}
   ~WebPData() override {
+    IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
     WebPFree(data_);
   }
   WebPData(const WebPData&) = delete;
@@ -47,6 +49,7 @@ class TextureLoader final : public ITextureLoader {
                 int height,
                 igl::TextureFormat preferredFormat) noexcept :
     Super(reader) {
+    IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
     auto& desc = mutableDescriptor();
     desc.format = preferredFormat != igl::TextureFormat::Invalid ? preferredFormat
                                                                  : igl::TextureFormat::RGBA_UNorm8;
@@ -70,6 +73,7 @@ class TextureLoader final : public ITextureLoader {
   // NOLINTNEXTLINE(bugprone-exception-escape)
   [[nodiscard]] std::unique_ptr<IData> loadInternal(
       igl::Result* IGL_NULLABLE outResult) const noexcept final {
+    IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
     const auto r = reader();
     int width = 0;
     int height = 0;
@@ -96,6 +100,7 @@ uint32_t TextureLoaderFactory::minHeaderLength() const noexcept {
 // NOLINTNEXTLINE(bugprone-exception-escape)
 bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
                                              igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   const auto* header = headerReader.as<Header>();
   if (!header->tagIsValid()) {
     igl::Result::setResult(outResult, igl::Result::Code::InvalidOperation, "Not a WebP file.");
@@ -109,6 +114,7 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     DataReader reader,
     igl::TextureFormat preferredFormat,
     igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   int width = 0;
   int height = 0;
   if (WebPGetInfo(reader.data(), reader.size(), &width, &height) == 0) {
