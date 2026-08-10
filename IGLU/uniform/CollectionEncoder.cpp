@@ -10,6 +10,7 @@
 #include <IGLU/uniform/Collection.h>
 #include <IGLU/uniform/Encoder.h>
 #include <type_traits>
+#include <igl/Macros.h>
 
 static_assert(sizeof(iglu::uniform::CollectionEncoder) == 4);
 static_assert(std::is_trivially_copyable_v<iglu::uniform::CollectionEncoder>);
@@ -23,6 +24,7 @@ void CollectionEncoder::operator()(
     igl::IRenderCommandEncoder& commandEncoder,
     uint8_t bindTarget,
     const std::vector<igl::NameHandle>& uniformNames) const noexcept {
+  IGL_PROFILER_FUNCTION();
   const Encoder uniformEncoder(backendType_);
   for (const auto& name : uniformNames) {
     uniformEncoder(commandEncoder, bindTarget, collection.get(name));
