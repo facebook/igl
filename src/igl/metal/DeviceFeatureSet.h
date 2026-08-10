@@ -47,6 +47,7 @@ class DeviceFeatureSet final {
   size_t maxBufferLength_;
   bool supports32BitFloatFiltering_ = false;
   bool supportsTimestampQueries_ = false;
+  bool supportsDynamicVertexBufferStride_ = false;
 };
 
 } // namespace igl::metal

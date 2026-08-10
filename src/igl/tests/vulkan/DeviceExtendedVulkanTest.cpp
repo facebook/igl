@@ -141,6 +141,15 @@ TEST_F(DeviceExtendedVulkanTest, HasFeatureExplicitBinding) {
   EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ExplicitBinding));
 }
 
+TEST_F(DeviceExtendedVulkanTest, HasFeatureDynamicVertexBufferStride) {
+  // DynamicVertexBufferStride is gated on both vkCmdBindVertexBuffers2 availability and the
+  // enableDynamicVertexBufferStride config flag (disabled by default), so the device may report
+  // either value. Verify only that the query executes without crashing.
+  const bool hasDynamicVertexBufferStride =
+      iglDev_->hasFeature(DeviceFeatures::DynamicVertexBufferStride);
+  (void)hasDynamicVertexBufferStride;
+}
+
 TEST_F(DeviceExtendedVulkanTest, TextureFormatCapabilitiesRGBA) {
   const ICapabilities::TextureFormatCapabilities caps =
       iglDev_->getTextureFormatCapabilities(TextureFormat::RGBA_UNorm8);

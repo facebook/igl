@@ -61,6 +61,7 @@ TEST_F(DeviceFeatureSetFullOGLTest, HasFeature) {
   bool drawInstanced = features.hasFeature(DeviceFeatures::DrawInstanced);
   bool bindUniform = features.hasFeature(DeviceFeatures::BindUniform);
   bool mrt = features.hasFeature(DeviceFeatures::MultipleRenderTargets);
+  bool dynamicVertexBufferStride = features.hasFeature(DeviceFeatures::DynamicVertexBufferStride);
 
   // Suppress unused variable warnings
   (void)compute;
@@ -73,6 +74,7 @@ TEST_F(DeviceFeatureSetFullOGLTest, HasFeature) {
   (void)drawInstanced;
   (void)bindUniform;
   (void)mrt;
+  (void)dynamicVertexBufferStride;
 
   // The test passes if no crash occurred
   SUCCEED();
