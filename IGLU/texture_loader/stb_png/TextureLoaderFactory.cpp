@@ -8,6 +8,7 @@
 #include <IGLU/texture_loader/stb_png/TextureLoaderFactory.h>
 
 #include <IGLU/texture_loader/stb_png/Header.h>
+#include <igl/Macros.h>
 
 namespace iglu::textureloader::stb::png {
 
@@ -24,6 +25,7 @@ uint32_t TextureLoaderFactory::minHeaderLength() const noexcept {
 }
 
 bool TextureLoaderFactory::isIdentifierValid(DataReader headerReader) const noexcept {
+  IGL_PROFILER_FUNCTION();
   const Header* header = headerReader.as<Header>();
   return header->tagIsValid();
 }
