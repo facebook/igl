@@ -44,6 +44,20 @@ void ComputeCommandEncoder::endEncoding() {
 
   isEncoding_ = false;
 
+  // Ensure compute shader writes (to buffers/images) are visible to subsequent
+  // graphics passes. Without this barrier, Mali/Immortalis may read stale data
+  // because it does not provide implicit synchronization like Adreno does.
+  VkMemoryBarrier computeToGraphicsBarrier = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+      .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
+      .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+                           VK_ACCESS_INDEX_READ_BIT | VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
+  };
+  ctx_.vf_.vkCmdPipelineBarrier(cmdBuffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                    VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+                                0, 1, &computeToGraphicsBarrier, 0, nullptr, 0, nullptr);
+
   for (size_t i = 0; i < numRestoreLayouts_; ++i) {
     const VulkanImage* const img = restoreLayout_[i];
     if (img->isSampledImage()) {
