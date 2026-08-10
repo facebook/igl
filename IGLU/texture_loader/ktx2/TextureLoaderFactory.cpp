@@ -10,6 +10,7 @@
 #include <IGLU/texture_loader/ktx2/Header.h>
 #include <ktx.h>
 #include <numeric>
+#include <igl/Macros.h>
 #include <igl/vulkan/util/TextureFormat.h>
 
 #if IGL_BACKEND_D3D12 && !IGL_BACKEND_VULKAN
@@ -40,6 +41,7 @@ uint32_t TextureLoaderFactory::minHeaderLength() const noexcept {
 // NOLINTNEXTLINE(bugprone-exception-escape)
 bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
                                              igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION();
   if (headerReader.data() == nullptr) {
     igl::Result::setResult(
         outResult, igl::Result::Code::ArgumentInvalid, "Reader's data is nullptr.");
@@ -72,6 +74,7 @@ bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
 }
 
 igl::TextureRangeDesc TextureLoaderFactory::textureRange(DataReader reader) const noexcept {
+  IGL_PROFILER_FUNCTION();
   const Header* header = reader.as<Header>();
 
   const igl::TextureRangeDesc range{
@@ -90,6 +93,7 @@ igl::TextureRangeDesc TextureLoaderFactory::textureRange(DataReader reader) cons
 bool TextureLoaderFactory::validate(DataReader reader,
                                     const igl::TextureRangeDesc& range,
                                     igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION();
   const Header* header = reader.as<Header>();
   const uint32_t length = reader.size();
 
