@@ -9,6 +9,7 @@
 
 #include <ktx.h>
 #include <igl/IGLSafeC.h>
+#include <igl/Macros.h>
 
 // @fb-only
 // @fb-only
@@ -94,6 +95,7 @@ TextureLoader::TextureLoader(DataReader reader,
                              igl::TextureFormat format,
                              std::unique_ptr<ktxTexture, KtxDeleter> texture) noexcept :
   Super(reader), texture_(std::move(texture)) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto& desc = mutableDescriptor();
   desc.format = format;
   desc.numLayers = range.numLayers;
@@ -126,6 +128,7 @@ bool TextureLoader::shouldGenerateMipmaps() const noexcept {
 // NOLINTNEXTLINE(bugprone-exception-escape)
 void TextureLoader::uploadInternal(igl::ITexture& texture,
                                    igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION();
   const auto& desc = descriptor();
 
   size_t offset = 0;
@@ -150,6 +153,7 @@ void TextureLoader::loadToExternalMemoryInternal(uint8_t* IGL_NONNULL data,
                                                  uint32_t length,
                                                  igl::Result* IGL_NULLABLE
                                                      outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   const auto& desc = descriptor();
 
   size_t offsetDestination = 0;
@@ -211,6 +215,7 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     DataReader reader,
     igl::TextureFormat /*preferredFormat*/,
     igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   const auto range = textureRange(reader);
   auto result = range.validate();
   if (!result.isOk()) {
