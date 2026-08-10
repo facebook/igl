@@ -10,6 +10,7 @@
 #include <IGLU/uniform/Descriptor.h>
 #include <type_traits>
 #include <igl/IGL.h> // IWYU pragma: keep
+#include <igl/Macros.h>
 
 static_assert(sizeof(iglu::uniform::Encoder) == 4);
 static_assert(std::is_trivially_copyable_v<iglu::uniform::Encoder>);
@@ -75,6 +76,7 @@ Encoder::Encoder(igl::BackendType backendType) : backendType_(backendType) {}
 void Encoder::operator()(igl::IRenderCommandEncoder& encoder,
                          uint8_t bindTarget,
                          const Descriptor& uniform) const noexcept {
+  IGL_PROFILER_FUNCTION();
   const int bufferIndex =
       uniform.getIndex(bindTarget == igl::BindTarget::kVertex ? igl::ShaderStage::Vertex
                                                               : igl::ShaderStage::Fragment);
@@ -101,6 +103,7 @@ void Encoder::operator()(igl::IRenderCommandEncoder& encoder,
 
 void Encoder::operator()(igl::IComputeCommandEncoder& encoder,
                          const Descriptor& uniform) const noexcept {
+  IGL_PROFILER_FUNCTION();
   const int bufferIndex = uniform.getIndex(igl::ShaderStage::Compute);
   if (!IGL_DEBUG_VERIFY(bufferIndex >= 0)) {
     return;
