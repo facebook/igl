@@ -397,6 +397,15 @@ VkPipeline RenderPipelineState::getVkPipeline(
     cacheKey.depthBiasEnable = 0;
   }
 
+  // Normalize renderPassIndex so that format-compatible render passes
+  // (same formats/samples, different load/store/layout) share one PSO.
+  // Per Vulkan spec:https://docs.vulkan.org/spec/latest/chapters/renderpass.html#renderpass-compatibility
+  // render pass compatibility only depends on format, samples,
+  // and flags -- NOT on loadOp/storeOp/initialLayout/finalLayout.
+  // This is safe because desc_.targetDesc already pins the format expectations
+  // for this RenderPipelineState, so all render passes it encounters are compatible.
+  cacheKey.renderPassIndex = 0;
+
   const auto it = pipelines_.find(cacheKey);
 
   if (it != pipelines_.end()) {
