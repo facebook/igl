@@ -7,6 +7,8 @@
 
 #include <IGLU/texture_loader/stb_image/TextureLoaderFactory.h>
 
+#include <igl/Macros.h>
+
 #ifdef WIN32
 #define STBI_MSC_SECURE_CRT
 #endif
@@ -82,6 +84,7 @@ TextureLoader::TextureLoader(DataReader reader,
                              bool isFloatFormat,
                              igl::TextureFormat preferredFormat) noexcept :
   Super(reader), isFloatFormat_(isFloatFormat) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   auto& desc = mutableDescriptor();
   desc.format =
       preferredFormat != igl::TextureFormat::Invalid
@@ -109,6 +112,7 @@ bool TextureLoader::shouldGenerateMipmaps() const noexcept {
 // NOLINTNEXTLINE(bugprone-exception-escape)
 std::unique_ptr<IData> TextureLoader::loadInternal(
     igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   const auto r = reader();
   const int length = r.size() > std::numeric_limits<int>::max() ? std::numeric_limits<int>::max()
                                                                 : static_cast<int>(r.size());
@@ -136,6 +140,7 @@ TextureLoaderFactory::TextureLoaderFactory(bool isFloatFormat) noexcept :
 // NOLINTNEXTLINE(bugprone-exception-escape)
 bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
                                              igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION();
   if (!isIdentifierValid(headerReader)) {
     igl::Result::setResult(outResult, igl::Result::Code::InvalidOperation, "Incorrect identifier.");
     return false;
@@ -149,6 +154,7 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     DataReader reader,
     igl::TextureFormat preferredFormat,
     igl::Result* IGL_NULLABLE outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   const int length = reader.size() > std::numeric_limits<int>::max()
                          ? std::numeric_limits<int>::max()
                          : static_cast<int>(reader.size());
