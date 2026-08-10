@@ -605,7 +605,7 @@ void iglDrawArraysIndirect(GLenum mode, const GLvoid* indirect) {
 ///--------------------------------------
 /// MARK: - GL_ARB_multi_draw_indirect
 
-#if defined(GL_VERSION_4_3) || defined(GL_ARB_multi_draw_indirect)
+#if defined(GL_VERSION_4_3) || defined(GL_ARB_multi_draw_indirect) || defined(GL_EXT_multi_draw_indirect)
 #define CAN_CALL_glMultiDrawArraysIndirect CAN_CALL
 #define CAN_CALL_glMultiDrawElementsIndirect CAN_CALL
 #else
@@ -617,6 +617,15 @@ void iglMultiDrawArraysIndirect(GLenum mode,
                                 const void* indirect,
                                 GLsizei drawcount,
                                 GLsizei stride) {
+#if IGL_OPENGL_ES
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glMultiDrawArraysIndirect,
+                          glMultiDrawArraysIndirectEXT,
+                          PFNIGLMULTIDRAWARRAYSINDIRECTPROC,
+                          mode,
+                          indirect,
+                          drawcount,
+                          stride);
+#else
   GLEXTENSION_METHOD_BODY(CAN_CALL_glMultiDrawArraysIndirect,
                           glMultiDrawArraysIndirect,
                           PFNIGLMULTIDRAWARRAYSINDIRECTPROC,
@@ -624,6 +633,7 @@ void iglMultiDrawArraysIndirect(GLenum mode,
                           indirect,
                           drawcount,
                           stride);
+#endif
 }
 
 void iglMultiDrawElementsIndirect(GLenum mode,
@@ -631,6 +641,16 @@ void iglMultiDrawElementsIndirect(GLenum mode,
                                   const void* indirect,
                                   GLsizei drawcount,
                                   GLsizei stride) {
+#if IGL_OPENGL_ES
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glMultiDrawElementsIndirect,
+                          glMultiDrawElementsIndirectEXT,
+                          PFNIGLMULTIDRAWELEMENTSINDIRECTPROC,
+                          mode,
+                          type,
+                          indirect,
+                          drawcount,
+                          stride);
+#else
   GLEXTENSION_METHOD_BODY(CAN_CALL_glMultiDrawElementsIndirect,
                           glMultiDrawElementsIndirect,
                           PFNIGLMULTIDRAWELEMENTSINDIRECTPROC,
@@ -639,6 +659,7 @@ void iglMultiDrawElementsIndirect(GLenum mode,
                           indirect,
                           drawcount,
                           stride);
+#endif
 }
 
 ///--------------------------------------
