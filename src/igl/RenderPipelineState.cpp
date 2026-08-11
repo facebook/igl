@@ -13,8 +13,6 @@ static_assert(std::is_trivially_copyable_v<igl::RenderPipelineDesc::TargetDesc::
 
 using namespace igl;
 
-static_assert(std::is_trivially_copyable_v<RenderPipelineDesc::TargetDesc::ColorAttachment>);
-
 ///
 /// RenderPipelineDesc
 ///
