@@ -13,6 +13,7 @@
 #include <string>
 #include <unordered_set>
 #include <igl/Core.h>
+#include <igl/Macros.h>
 
 #if IGL_PLATFORM_ANDROID
 #include <igl/android/LogDefault.h>
@@ -47,6 +48,7 @@ IGL_API int IGLLog(IGLLogLevel logLevel, const char* IGL_RESTRICT format, ...) {
 }
 
 IGL_API int IGLLogOnce(IGLLogLevel logLevel, const char* IGL_RESTRICT format, ...) {
+  IGL_PROFILER_FUNCTION();
   // NOLINTNEXTLINE(facebook-static-object-destructor-check)
   static std::mutex sLoggedMessagesMutex;
   // NOLINTNEXTLINE(facebook-static-object-destructor-check)
