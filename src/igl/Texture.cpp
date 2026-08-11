@@ -11,6 +11,7 @@
 #include <limits>
 #include <type_traits>
 #include <igl/IGLSafeC.h>
+#include <igl/Macros.h>
 
 static_assert(std::is_trivially_copyable_v<igl::TextureRangeDesc>);
 static_assert(sizeof(igl::TextureRangeDesc) == 12 * sizeof(uint32_t));
@@ -122,6 +123,7 @@ TextureRangeDesc TextureRangeDesc::newCubeFace(uint32_t x,
 }
 
 TextureRangeDesc TextureRangeDesc::atMipLevel(uint32_t newMipLevel) const noexcept {
+  IGL_PROFILER_FUNCTION();
   TextureRangeDesc newRange = *this;
   newRange.numMipLevels = 1;
   newRange.mipLevel = newMipLevel;
@@ -185,6 +187,7 @@ TextureRangeDesc TextureRangeDesc::withNumFaces(uint32_t newNumFaces) const noex
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 Result TextureRangeDesc::validate() const noexcept {
+  IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY_NOT(width == 0 || height == 0 || depth == 0 || numLayers == 0 ||
                            numMipLevels == 0 || numFaces == 0)) {
     return Result{
@@ -397,6 +400,7 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
 
 // NOLINTNEXTLINE(misc-no-recursion)
 uint32_t TextureFormatProperties::getRows(TextureRangeDesc range) const noexcept {
+  IGL_PROFILER_FUNCTION();
   if (range.numMipLevels == 1) {
     const uint32_t texHeight = std::max(range.height, 1u);
     uint32_t rows = texHeight;
@@ -420,6 +424,7 @@ uint32_t TextureFormatProperties::getBytesPerRow(uint32_t texWidth) const noexce
 }
 
 uint32_t TextureFormatProperties::getBytesPerRow(TextureRangeDesc range) const noexcept {
+  IGL_PROFILER_FUNCTION();
   const uint32_t texWidth = std::max(range.width, 1u);
   // For variable length formats, bytesPerRow is always 0 and the caller will handle it as needed.
   if (isVariableLength()) {
@@ -444,6 +449,7 @@ size_t TextureFormatProperties::getBytesPerLayer(uint32_t texWidth,
 
 size_t TextureFormatProperties::getBytesPerLayer(TextureRangeDesc range,
                                                  uint32_t bytesPerRow) const noexcept {
+  IGL_PROFILER_FUNCTION();
   const uint32_t texWidth = std::max(range.width, 1u);
   const uint32_t texHeight = std::max(range.height, 1u);
   const uint32_t texDepth = std::max(range.depth, 1u);
@@ -469,6 +475,7 @@ size_t TextureFormatProperties::getBytesPerLayer(TextureRangeDesc range,
 
 size_t TextureFormatProperties::getBytesPerRange(TextureRangeDesc range,
                                                  uint32_t bytesPerRow) const noexcept {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(range.x % blockWidth == 0);
   IGL_DEBUG_ASSERT(range.y % blockHeight == 0);
   IGL_DEBUG_ASSERT(range.z % blockDepth == 0);
@@ -488,6 +495,7 @@ size_t TextureFormatProperties::getBytesPerRange(TextureRangeDesc range,
 uint32_t TextureFormatProperties::getNumMipLevels(uint32_t width,
                                                   uint32_t height,
                                                   size_t totalBytes) const noexcept {
+  IGL_PROFILER_FUNCTION();
   const auto range = TextureRangeDesc::new2D(0, 0, width, height);
 
   size_t numMipLevels = 0;
@@ -506,6 +514,7 @@ uint32_t TextureFormatProperties::getNumMipLevels(uint32_t width,
 size_t TextureFormatProperties::getSubRangeByteOffset(const TextureRangeDesc& range,
                                                       const TextureRangeDesc& subRange,
                                                       uint32_t bytesPerRow) const noexcept {
+  IGL_PROFILER_FUNCTION();
   // Ensure subRange's layer, face and mipLevel range is a subset of range's.
   IGL_DEBUG_ASSERT(subRange.layer >= range.layer &&
                    (subRange.layer + subRange.numLayers) <= (range.layer + range.numLayers));
@@ -598,6 +607,7 @@ size_t ITexture::getEstimatedSizeInBytes() const {
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 Result ITexture::validateRange(const igl::TextureRangeDesc& range) const noexcept {
+  IGL_PROFILER_FUNCTION();
   auto result = range.validate();
   if (!result.isOk()) {
     return result;
@@ -627,6 +637,7 @@ Result ITexture::validateRange(const igl::TextureRangeDesc& range) const noexcep
 }
 
 TextureRangeDesc ITexture::getFullRange(size_t mipLevel, size_t numMipLevels) const noexcept {
+  IGL_PROFILER_FUNCTION();
   const auto dimensions = getDimensions();
 
   const auto texWidth = std::max(dimensions.width >> mipLevel, 1u);
@@ -675,6 +686,7 @@ void ITexture::repackData(const TextureFormatProperties& properties,
                           uint8_t* IGL_NONNULL repackedData,
                           size_t repackedBytesPerRow,
                           bool flipVertical) {
+  IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY_NOT(originalData == nullptr || repackedData == nullptr)) {
     return;
   }
@@ -737,6 +749,7 @@ Result ITexture::upload(const TextureRangeDesc& range,
                         const void* IGL_NULLABLE data,
                         size_t bytesPerRow,
                         const uint32_t* IGL_NULLABLE mipLevelBytes) const {
+  IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY_NOT(!supportsUpload())) {
     return Result{Result::Code::InvalidOperation, "Texture doesn't support upload"};
   }
