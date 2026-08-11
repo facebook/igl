@@ -29,7 +29,7 @@ bool safeDataCompare(const void* IGL_NULLABLE a,
   }
   // Handle null pointers;
   if (a == nullptr || b == nullptr) {
-    // If both are null, consider them equal. If only ond is null, they are not equal
+    // If both are null, consider them equal. If only one is null, they are not equal
     return a == b;
   }
   return (std::memcmp(a, b, lengthA) == 0);
