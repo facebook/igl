@@ -60,9 +60,6 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
  public:
   // Ignore modernize-use-default-member-init
   // @lint-ignore CLANGTIDY
-  uint32_t renderPassIndex : 8;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
   uint32_t depthBiasEnable : 1;
   // Ignore modernize-use-default-member-init
   // @lint-ignore CLANGTIDY
@@ -85,7 +82,6 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
     stencilBackPassOp_ = VK_STENCIL_OP_KEEP;
     stencilBackDepthFailOp_ = VK_STENCIL_OP_KEEP;
     stencilBackCompareOp_ = VK_COMPARE_OP_ALWAYS;
-    renderPassIndex = 0;
     depthBiasEnable = false;
     depthWriteEnable = false;
     stencilTestEnable = false;
@@ -177,7 +173,8 @@ class RenderPipelineState final : public IRenderPipelineState, public PipelineSt
    * mutable ones provided in the `dynamicState` parameter. If a pipeline layout change is detected,
    * all cached pipelines are discarded.
    */
-  [[nodiscard]] VkPipeline getVkPipeline(const RenderPipelineDynamicState& dynamicState) const;
+  [[nodiscard]] VkPipeline getVkPipeline(const RenderPipelineDynamicState& dynamicState,
+                                         VkRenderPass renderPass) const;
 
  private:
   friend class Device;

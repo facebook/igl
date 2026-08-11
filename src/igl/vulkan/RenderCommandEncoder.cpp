@@ -227,7 +227,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
 
   const auto renderPassHandle = ctx_.findRenderPass(builder);
 
-  dynamicState_.renderPassIndex = renderPassHandle.index;
+  renderPass_ = renderPassHandle.pass;
   dynamicState_.depthBiasEnable = false;
 
   const VkRenderPassBeginInfo bi = fb.getRenderPassBeginInfo(
@@ -608,7 +608,7 @@ void RenderCommandEncoder::bindPushConstants(const void* data, size_t length, si
 
   if (!rps_->pipelineLayout) {
     // bring a pipeline layout into existence - we don't really care about the dynamic state here
-    (void)rps_->getVkPipeline(dynamicState_);
+    (void)rps_->getVkPipeline(dynamicState_, renderPass_);
   }
 
 #if IGL_VULKAN_PRINT_COMMANDS
@@ -917,7 +917,7 @@ void RenderCommandEncoder::flushDynamicDepthStencilState() {
 void RenderCommandEncoder::flushDynamicState() {
   IGL_PROFILER_FUNCTION();
 
-  binder_.bindPipeline(rps_->getVkPipeline(dynamicState_), &rps_->getSpvModuleInfo());
+  binder_.bindPipeline(rps_->getVkPipeline(dynamicState_, renderPass_), &rps_->getSpvModuleInfo());
 
   flushDynamicDepthStencilState();
 

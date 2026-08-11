@@ -155,6 +155,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
  private:
   VulkanContext& ctx_;
   VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;
+  VkRenderPass renderPass_ = VK_NULL_HANDLE;
   bool isEncoding_ = false;
   bool hasDepthAttachment_ = false;
   std::shared_ptr<IFramebuffer> framebuffer_;
