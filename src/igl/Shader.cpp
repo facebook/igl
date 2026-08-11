@@ -10,6 +10,7 @@
 #include <cstring>
 #include <type_traits>
 #include <igl/IGLSafeC.h>
+#include <igl/Macros.h>
 
 static_assert(sizeof(igl::ShaderCompilerOptions) == 2);
 static_assert(std::is_trivially_copyable_v<igl::ShaderCompilerOptions>);
@@ -121,6 +122,7 @@ bool ShaderCompilerOptions::operator!=(const ShaderCompilerOptions& other) const
 FunctionConstantValues& FunctionConstantValues::setConstantValue(uint8_t index,
                                                                  ConstantValueType type,
                                                                  const void* IGL_NONNULL value) {
+  IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(type != ConstantValueType::Invalid);
   IGL_DEBUG_ASSERT(value);
   const size_t dataSize = getConstantValueSize(type);
@@ -228,6 +230,7 @@ bool ShaderModuleDesc::operator!=(const ShaderModuleDesc& other) const {
 ShaderLibraryDesc ShaderLibraryDesc::fromStringInput(const char* IGL_NONNULL librarySource,
                                                      std::vector<ShaderModuleInfo> moduleInfo,
                                                      std::string libraryDebugName) {
+  IGL_PROFILER_FUNCTION();
   ShaderLibraryDesc libraryDesc;
   libraryDesc.input.type = ShaderInputType::String;
   libraryDesc.input.source = librarySource;
@@ -244,6 +247,7 @@ ShaderLibraryDesc ShaderLibraryDesc::fromBinaryInput(const void* IGL_NONNULL lib
                                                      size_t libraryDataLength,
                                                      std::vector<ShaderModuleInfo> moduleInfo,
                                                      std::string libraryDebugName) {
+  IGL_PROFILER_FUNCTION();
   ShaderLibraryDesc libraryDesc;
   libraryDesc.input.type = ShaderInputType::Binary;
   libraryDesc.input.data = libraryData;
@@ -275,6 +279,7 @@ IShaderLibrary::IShaderLibrary(std::vector<std::shared_ptr<IShaderModule>> modul
   modules_(std::move(modules)) {}
 
 std::shared_ptr<IShaderModule> IShaderLibrary::getShaderModule(const std::string& entryPoint) {
+  IGL_PROFILER_FUNCTION();
   for (const auto& sm : modules_) {
     if (sm && sm->info().entryPoint == entryPoint) {
       return sm;
@@ -285,6 +290,7 @@ std::shared_ptr<IShaderModule> IShaderLibrary::getShaderModule(const std::string
 
 std::shared_ptr<IShaderModule> IShaderLibrary::getShaderModule(ShaderStage stage,
                                                                const std::string& entryPoint) {
+  IGL_PROFILER_FUNCTION();
   for (const auto& sm : modules_) {
     if (sm) {
       const auto& info = sm->info();
@@ -299,6 +305,7 @@ std::shared_ptr<IShaderModule> IShaderLibrary::getShaderModule(ShaderStage stage
 ShaderStagesDesc ShaderStagesDesc::fromRenderModules(
     std::shared_ptr<IShaderModule> vertexModule,
     std::shared_ptr<IShaderModule> fragmentModule) {
+  IGL_PROFILER_FUNCTION();
   std::string debugName = (vertexModule ? vertexModule->info().debugName : std::string()) + ", " +
                           (fragmentModule ? fragmentModule->info().debugName : std::string());
   return ShaderStagesDesc{
@@ -313,6 +320,7 @@ ShaderStagesDesc ShaderStagesDesc::fromMeshRenderModules(
     std::shared_ptr<IShaderModule> taskModule,
     std::shared_ptr<IShaderModule> meshModule,
     std::shared_ptr<IShaderModule> fragmentModule) {
+  IGL_PROFILER_FUNCTION();
   std::string debugName = (taskModule ? taskModule->info().debugName : std::string()) + ", " +
                           (meshModule ? meshModule->info().debugName : std::string()) + ", " +
                           (fragmentModule ? fragmentModule->info().debugName : std::string());
@@ -326,6 +334,7 @@ ShaderStagesDesc ShaderStagesDesc::fromMeshRenderModules(
 }
 
 ShaderStagesDesc ShaderStagesDesc::fromComputeModule(std::shared_ptr<IShaderModule> computeModule) {
+  IGL_PROFILER_FUNCTION();
   std::string debugName = computeModule ? computeModule->info().debugName : "igl/Shader.cpp";
   return ShaderStagesDesc{
       .computeModule = std::move(computeModule),
