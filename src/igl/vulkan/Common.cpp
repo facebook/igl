@@ -10,6 +10,7 @@
 // NOLINTNEXTLINE(facebook-unused-include-check) used on Linux (kPreloadLibs, libs arrays)
 #include <array>
 #include <cstdlib>
+#include <string>
 #include <type_traits>
 
 // clang-format off
@@ -925,40 +926,52 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
   // standard system library paths (/lib64, /usr/lib64). We cannot use LD_LIBRARY_PATH
   // or RPATH because they would interfere with Buck2's hermetic build environment.
 #if IGL_PLATFORM_LINUX && !defined(IGL_CMAKE_BUILD)
-  const std::array<const char*, 25> kPreloadLibs = {
-      // Base system libraries (leaf dependencies)
-      "/lib64/libtinfo.so.6", // Required by libedit
-      "/lib64/liblzma.so.5", // Required by libxml2
-      "/lib64/libz.so.1", // Required by libLLVM, libxml2, Intel drivers
-      "/usr/lib64/libzstd.so.1", // Required by libLLVM, Intel drivers
-      "/usr/lib64/libffi.so.8", // Required by libLLVM
-      "/lib64/libelf.so.1", // Required by Radeon driver
-      // Mid-level dependencies
-      "/lib64/libedit.so.0", // Required by libLLVM (depends on libtinfo)
-      "/lib64/libxml2.so.2", // Required by libLLVM (depends on liblzma, libz)
-      "/lib64/libexpat.so.1", // Required by Mesa drivers
-      "/lib64/libXau.so.6", // Required by libxcb
-      // X11/XCB libraries (for Intel and other hardware drivers)
-      "/lib64/libxcb.so.1", // Required by Mesa drivers (depends on libXau)
-      "/lib64/libxcb-randr.so.0", // Required by Lavapipe and all drivers
-      "/lib64/libxcb-present.so.0", // Required by all Mesa Vulkan drivers
-      "/lib64/libxcb-sync.so.1", // Required by Mesa drivers
-      "/lib64/libxcb-xfixes.so.0", // Required by Mesa drivers
-      "/lib64/libxcb-shm.so.0", // Required by Mesa drivers
-      "/lib64/libX11-xcb.so.1", // Required by Intel drivers
-      "/lib64/libxshmfence.so.1", // Required by Intel drivers
-      "/lib64/libwayland-client.so.0", // Required by Intel drivers
-      // DRM libraries
-      "/lib64/libdrm.so.2", // Required by all hardware drivers
-      "/usr/lib64/libdrm_amdgpu.so.1", // Required by Radeon driver
-      // High-level dependencies
-      "/lib64/libLLVM.so.20.1", // Required by Lavapipe and Radeon drivers
-      "/lib64/libSPIRV-Tools.so", // Required by Lavapipe
-      "/lib64/libSPIRV-Tools-opt.so", // Required by libVkLayer_khronos_validation
-      // Additional X11 libraries for Intel drivers
-      "/lib64/libxcb-dri3.so.0", // Required by Intel drivers
+  // Whether the software (Lavapipe) fallback needs this library. A symbol-version
+  // mismatch in a vendor-specific entry (Radeon, Intel, validation layer) only rules out
+  // that ICD -- the loader can still reach a working software driver -- so only a
+  // required entry is fatal below.
+  struct PreloadLib {
+    const char* path;
+    bool requiredForSoftwareFallback;
   };
-  for (const char* preload : kPreloadLibs) {
+  const std::array<PreloadLib, 25> kPreloadLibs = {{
+      // Base system libraries (leaf dependencies)
+      {"/lib64/libtinfo.so.6", true}, // Required by libedit
+      {"/lib64/liblzma.so.5", true}, // Required by libxml2
+      {"/lib64/libz.so.1", true}, // Required by libLLVM, libxml2, Intel drivers
+      {"/usr/lib64/libzstd.so.1", true}, // Required by libLLVM, Intel drivers
+      {"/usr/lib64/libffi.so.8", true}, // Required by libLLVM
+      {"/lib64/libelf.so.1", false}, // Required by Radeon driver
+      // Mid-level dependencies
+      {"/lib64/libedit.so.0", true}, // Required by libLLVM (depends on libtinfo)
+      {"/lib64/libxml2.so.2", true}, // Required by libLLVM (depends on liblzma, libz)
+      {"/lib64/libexpat.so.1", true}, // Required by Mesa drivers
+      {"/lib64/libXau.so.6", true}, // Required by libxcb
+      // X11/XCB libraries (for Intel and other hardware drivers)
+      {"/lib64/libxcb.so.1", true}, // Required by Mesa drivers (depends on libXau)
+      {"/lib64/libxcb-randr.so.0", true}, // Required by Lavapipe and all drivers
+      {"/lib64/libxcb-present.so.0", true}, // Required by all Mesa Vulkan drivers
+      {"/lib64/libxcb-sync.so.1", true}, // Required by Mesa drivers
+      {"/lib64/libxcb-xfixes.so.0", true}, // Required by Mesa drivers
+      {"/lib64/libxcb-shm.so.0", true}, // Required by Mesa drivers
+      {"/lib64/libX11-xcb.so.1", false}, // Required by Intel drivers
+      {"/lib64/libxshmfence.so.1", false}, // Required by Intel drivers
+      {"/lib64/libwayland-client.so.0", false}, // Required by Intel drivers
+      // DRM libraries
+      {"/lib64/libdrm.so.2", false}, // Required by all hardware drivers
+      {"/usr/lib64/libdrm_amdgpu.so.1", false}, // Required by Radeon driver
+      // High-level dependencies
+      {"/lib64/libLLVM.so.20.1", true}, // Required by Lavapipe and Radeon drivers
+      {"/lib64/libSPIRV-Tools.so", true}, // Required by Lavapipe
+      {"/lib64/libSPIRV-Tools-opt.so", false}, // Required by libVkLayer_khronos_validation
+      // Additional X11 libraries for Intel drivers
+      {"/lib64/libxcb-dri3.so.0", false}, // Required by Intel drivers
+  }};
+  size_t abiMismatchCount = 0;
+  std::string firstAbiMismatchError;
+
+  for (const auto& entry : kPreloadLibs) {
+    const char* preload = entry.path;
     // First try loading just the library name (allows LD_LIBRARY_PATH to work)
     const char* libName = strrchr(preload, '/');
     libName = libName ? libName + 1 : preload;
@@ -972,11 +985,43 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
       if (handle) {
         IGL_LOG_DEBUG("IGL/Vulkan: preloaded `%s` (via full path).\n", preload);
       } else {
+        // Read dlerror() eagerly. It is stateful and clears on read, so consuming it only
+        // inside a log macro means it is never consumed in builds where that macro
+        // compiles away, leaking a stale error into the next caller's report.
+        const char* dlErr = dlerror();
+        const std::string error = dlErr != nullptr ? dlErr : "<unknown>";
+
+        // A missing file is benign -- plenty of hosts legitimately lack some of these
+        // drivers. A missing symbol *version* is an ABI mismatch, and continuing on to
+        // dlopen() the Vulkan loader in that state dies with SIGSEGV inside _dl_init().
+        if (entry.requiredForSoftwareFallback && error.find("GLIBC_") != std::string::npos &&
+            error.find("not found") != std::string::npos) {
+          if (abiMismatchCount == 0) {
+            firstAbiMismatchError = error;
+          }
+          ++abiMismatchCount;
+        }
+
         // Log but continue - not all systems will have all drivers
         IGL_LOG_DEBUG(
-            "IGL/Vulkan: failed to preload `%s`: %s (not critical).\n", preload, dlerror());
+            "IGL/Vulkan: failed to preload `%s`: %s (not critical).\n", preload, error.c_str());
       }
     }
+  }
+
+  if (abiMismatchCount > 0) {
+    IGL_LOG_ERROR(
+        "IGL/Vulkan: refusing to load the Vulkan loader — %zu system library preload(s) "
+        "failed with a glibc ABI mismatch.\n"
+        "  First error: %s\n"
+        "  This host's system libraries require glibc symbol versions that the "
+        "toolchain-bundled libc does not export. Proceeding to dlopen() the Vulkan loader "
+        "in this state crashes with SIGSEGV inside _dl_init().\n"
+        "  This is a host/image problem, not a problem with the calling code. If you hit "
+        "this in CI, capture the hostname and report it to the fleet owners.\n",
+        abiMismatchCount,
+        firstAbiMismatchError.c_str());
+    return nullptr;
   }
 #endif // IGL_PLATFORM_LINUX && !defined(IGL_CMAKE_BUILD)
   const std::array<const char*, 4> libs = {
