@@ -53,12 +53,16 @@ IGL_API IGLLogHandlerFunc IGLLogGetHandler(void);
   IGLLog(IGLLogError, (format), ##__VA_ARGS__)
 #define IGL_LOG_ERROR_ONCE(format, ...) IGLLogOnce(IGLLogError, (format), ##__VA_ARGS__)
 
+#define IGL_LOG_WARNING(format, ...) IGLLog(IGLLogWarning, (format), ##__VA_ARGS__)
+#define IGL_LOG_WARNING_ONCE(format, ...) IGLLogOnce(IGLLogWarning, (format), ##__VA_ARGS__)
 #define IGL_LOG_INFO(format, ...) IGLLog(IGLLogInfo, (format), ##__VA_ARGS__)
 #define IGL_LOG_INFO_ONCE(format, ...) IGLLogOnce(IGLLogInfo, (format), ##__VA_ARGS__)
 #define IGL_LOG_DEBUG(format, ...) IGLLog(IGLLogInfo, (format), ##__VA_ARGS__)
 #else
 #define IGL_LOG_ERROR(format, ...) static_cast<void>(0)
 #define IGL_LOG_ERROR_ONCE(format, ...) static_cast<void>(0)
+#define IGL_LOG_WARNING(format, ...) static_cast<void>(0)
+#define IGL_LOG_WARNING_ONCE(format, ...) static_cast<void>(0)
 #define IGL_LOG_INFO(format, ...) static_cast<void>(0)
 #define IGL_LOG_INFO_ONCE(format, ...) static_cast<void>(0)
 #define IGL_LOG_DEBUG(format, ...) static_cast<void>(0)
