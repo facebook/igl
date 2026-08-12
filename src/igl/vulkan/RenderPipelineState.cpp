@@ -360,8 +360,7 @@ RenderPipelineState::~RenderPipelineState() {
 
 // NOLINTNEXTLINE(facebook-hte-NullableReturn)
 VkPipeline RenderPipelineState::getVkPipeline(
-    const RenderPipelineDynamicState& dynamicState,
-    VkRenderPass renderPass) const {
+    const RenderPipelineDynamicState& dynamicState) const {
   const VulkanContext& ctx = device_.getVulkanContext();
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx);
 
@@ -397,6 +396,15 @@ VkPipeline RenderPipelineState::getVkPipeline(
   if (useEDS2) {
     cacheKey.depthBiasEnable = 0;
   }
+
+  // Normalize renderPassIndex so that format-compatible render passes
+  // (same formats/samples, different load/store/layout) share one PSO.
+  // Per Vulkan spec:https://docs.vulkan.org/spec/latest/chapters/renderpass.html#renderpass-compatibility
+  // render pass compatibility only depends on format, samples,
+  // and flags -- NOT on loadOp/storeOp/initialLayout/finalLayout.
+  // This is safe because desc_.targetDesc already pins the format expectations
+  // for this RenderPipelineState, so all render passes it encounters are compatible.
+  cacheKey.renderPassIndex = 0;
 
   const auto it = pipelines_.find(cacheKey);
 
@@ -440,6 +448,8 @@ VkPipeline RenderPipelineState::getVkPipeline(
       deviceFeatures.vkPhysicalDeviceFeatures2.features.dualSrcBlend;
 
   // build a new Vulkan pipeline
+  const VkRenderPass renderPass = ctx.getRenderPass(dynamicState.renderPassIndex).pass;
+
   VkPipeline pipeline = VK_NULL_HANDLE;
 
   const VkPipelineCreateFlags flags = ctx.features().has_VK_EXT_descriptor_buffer
