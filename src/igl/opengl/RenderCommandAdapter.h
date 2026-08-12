@@ -11,7 +11,7 @@
 #include <bitset>
 #include <functional>
 #include <igl/Common.h>
-#include <igl/opengl/GLIncludes.h>
+#include <igl/opengl/GLIncludes.h> // IWYU pragma: keep
 #include <igl/opengl/UnbindPolicy.h>
 #include <igl/opengl/UniformAdapter.h>
 #include <igl/opengl/WithContext.h>
