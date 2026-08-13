@@ -534,13 +534,13 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
       adapter_->drawElementsInstanced(mode,
                                       static_cast<GLsizei>(indexCount),
                                       indexType_,
-                                      static_cast<uint8_t*>(indexBufferOffset_) + indexOffsetBytes,
+                                      (uint8_t*)indexBufferOffset_ + indexOffsetBytes,
                                       instanceCount);
     } else {
       adapter_->drawElements(mode,
                              static_cast<GLsizei>(indexCount),
                              indexType_,
-                             static_cast<uint8_t*>(indexBufferOffset_) + indexOffsetBytes);
+                             (uint8_t*)indexBufferOffset_ + indexOffsetBytes);
     }
   }
 }
