@@ -22,23 +22,26 @@
 #endif
 
 namespace igl::shell {
+
+namespace {
+
 struct VertexPosUv {
   iglu::simdtypes::float3 position; // SIMD 128b aligned
   iglu::simdtypes::float2 uv; // SIMD 128b aligned
 };
-static const VertexPosUv kVertexData0[] = {
+const VertexPosUv kVertexData0[] = {
     {.position = {-0.9f, 0.9f, 0.0}, .uv = {0.0, 1.0}},
     {.position = {-0.05f, 0.9f, 0.0}, .uv = {1.0, 1.0}},
     {.position = {-0.9f, -0.9f, 0.0}, .uv = {0.0, 0.0}},
     {.position = {-0.05f, -0.9f, 0.0}, .uv = {1.0, 0.0}},
 };
-static const VertexPosUv kVertexData1[] = {
+const VertexPosUv kVertexData1[] = {
     {.position = {0.05f, 0.9f, 0.0}, .uv = {0.0, 1.0}},
     {.position = {0.90f, 0.9f, 0.0}, .uv = {1.0, 1.0}},
     {.position = {0.05f, -0.9f, 0.0}, .uv = {0.0, 0.0}},
     {.position = {0.90f, -0.9f, 0.0}, .uv = {1.0, 0.0}},
 };
-static const uint16_t kIndexData[] = {
+const uint16_t kIndexData[] = {
     0,
     1,
     2,
@@ -46,8 +49,6 @@ static const uint16_t kIndexData[] = {
     3,
     2,
 };
-
-namespace {
 
 enum class ShaderPrecision { Low, Medium, High };
 
