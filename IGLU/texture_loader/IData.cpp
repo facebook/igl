@@ -7,7 +7,10 @@
 
 #include <IGLU/texture_loader/IData.h>
 
+#include <type_traits>
 #include <igl/Macros.h>
+
+static_assert(std::is_trivially_copyable_v<iglu::textureloader::IData::ExtractedData>);
 
 namespace iglu::textureloader {
 namespace {
