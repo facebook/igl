@@ -286,13 +286,6 @@ constexpr std::array<const uint32_t*, 6> kMip1TextureFaceData{
     kTextureData.data() + 29,
 };
 
-static const std::array<glm::vec4, 6> kViewDirection = {glm::vec4{1.0f, 0.0f, 0.0f, 0.0f},
-                                                        glm::vec4{-1.0f, 0.0f, 0.0f, 0.0f},
-                                                        glm::vec4{0.0f, 1.0f, 0.0f, 0.0f},
-                                                        glm::vec4{0.0f, -1.0f, 0.0f, 0.0f},
-                                                        glm::vec4{0.0f, 0.0f, 1.0f, 0.0f},
-                                                        glm::vec4{0.0f, 0.0f, -1.0f, 0.0f}};
-
 //
 // Test uploading cube maps
 //
@@ -300,6 +293,13 @@ static const std::array<glm::vec4, 6> kViewDirection = {glm::vec4{1.0f, 0.0f, 0.
 // of each face.
 //
 namespace {
+
+const std::array<glm::vec4, 6> kViewDirection = {glm::vec4{1.0f, 0.0f, 0.0f, 0.0f},
+                                                 glm::vec4{-1.0f, 0.0f, 0.0f, 0.0f},
+                                                 glm::vec4{0.0f, 1.0f, 0.0f, 0.0f},
+                                                 glm::vec4{0.0f, -1.0f, 0.0f, 0.0f},
+                                                 glm::vec4{0.0f, 0.0f, 1.0f, 0.0f},
+                                                 glm::vec4{0.0f, 0.0f, -1.0f, 0.0f}};
 void runUploadTest(IDevice& device, ICommandQueue& cmdQueue, bool singleUpload) {
   Result ret;
 

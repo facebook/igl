@@ -22,16 +22,17 @@
 
 namespace igl::tests {
 
+namespace {
 // Minimal shader with various uniform types to exercise bindUniform/bindUniformArray
 // clang-format off
-static const char kVertShader[] =
+const char kVertShader[] =
     IGL_TO_STRING(LEGACY_VERSION
                attribute vec4 position_in;
                void main() {
                  gl_Position = position_in;
                });
 
-static const char kFragShaderWithUniforms[] =
+const char kFragShaderWithUniforms[] =
     IGL_TO_STRING(LEGACY_VERSION PROLOG
                uniform float uFloat;
                uniform vec2 uVec2;
@@ -54,7 +55,7 @@ static const char kFragShaderWithUniforms[] =
                  gl_FragColor = vec4(f, 0.0, 0.0, 1.0);
                });
 
-static const char kFragShaderWithUniformArrays[] =
+const char kFragShaderWithUniformArrays[] =
     IGL_TO_STRING(LEGACY_VERSION PROLOG
                uniform float uFloatArr[2];
                uniform int uIntArr[2];
@@ -71,6 +72,7 @@ static const char kFragShaderWithUniformArrays[] =
                  gl_FragColor = vec4(f, 0.0, 0.0, 1.0);
                });
 // clang-format on
+} // namespace
 
 ///
 /// UniformBufferBindTest
