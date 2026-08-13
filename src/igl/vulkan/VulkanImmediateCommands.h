@@ -76,7 +76,7 @@ class VulkanImmediateCommands final {
     /// @brief Returns a unique identifiable handle, which is made of the `submitId_` and the
     /// `bufferIndex_` member variables
     [[nodiscard]] uint64_t handle() const {
-      return (uint64_t(submitId) << 32) + bufferIndex;
+      return (static_cast<uint64_t>(submitId) << 32) + bufferIndex;
     }
 
     [[nodiscard]] bool operator==(const SubmitHandle& rhs) const {
