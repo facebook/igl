@@ -332,7 +332,7 @@ GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationL
                                                 .debugName = "Buffer: screen copy"},
                                      nullptr);
 
-  // create an Uniform buffers to store uniforms for 2 objects
+  // create Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
     ubPerFrame_.push_back(
         device->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,

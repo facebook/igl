@@ -229,7 +229,7 @@ bool initialize() {
                                           "Buffer: index"},
                                nullptr);
 
-  // create an Uniform buffers to store uniforms for 2 objects
+  // create Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
     ubPerFrame_.push_back(
         device_->createBuffer(BufferDesc{BufferDesc::BufferTypeBits::Uniform,

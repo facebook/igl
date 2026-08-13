@@ -106,7 +106,7 @@ namespace igl::vulkan {
 #define K_COLOR_UPLOAD_IMAGE igl::Color(1.f, 0.2f, 0.78f)
 #define K_COLOR_COMMAND_BUFFER_SUBMISSION_WITH_FENCE igl::Color(0.878f, 0.69f, 1.0f) // Mauve
 
-// The VulkanContextConfig provides a way to override some of the the default behaviors of the
+// The VulkanContextConfig provides a way to override some of the default behaviors of the
 // VulkanContext
 struct VulkanContextConfig {
   bool terminateOnValidationError = false; // invoke std::terminate() on any validation error
