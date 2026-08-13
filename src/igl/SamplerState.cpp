@@ -28,12 +28,12 @@ bool SamplerStateDesc::operator!=(const SamplerStateDesc& rhs) const {
 
 size_t std::hash<igl::SamplerStateDesc>::operator()(const igl::SamplerStateDesc& key) const {
   IGL_DEBUG_ASSERT(key.maxAnisotropic >= 1 && key.maxAnisotropic <= 16,
-                   "[IGL] SamplerStateDesc::maxAnisotropic is out of range: %su",
+                   "[IGL] SamplerStateDesc::maxAnisotropic is out of range: %u",
                    key.maxAnisotropic);
   IGL_DEBUG_ASSERT(
-      key.mipLodMin < 16, "[IGL] SamplerStateDesc::mipLodMin is out of range: %su", key.mipLodMin);
+      key.mipLodMin < 16, "[IGL] SamplerStateDesc::mipLodMin is out of range: %u", key.mipLodMin);
   IGL_DEBUG_ASSERT(key.mipLodMax < 16 && key.mipLodMin <= key.mipLodMax,
-                   "[IGL] SamplerStateDesc::mipLodMax is out of range: %su",
+                   "[IGL] SamplerStateDesc::mipLodMax is out of range: %u",
                    key.mipLodMax);
 
   // clang-format off
