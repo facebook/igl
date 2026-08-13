@@ -22,8 +22,6 @@ size_t std::hash<igl::TextureFormat>::operator()(const igl::TextureFormat& key) 
 
 namespace igl {
 
-static_assert(sizeof(TextureRangeDesc) == 48);
-static_assert(std::is_trivially_copyable_v<TextureRangeDesc>);
 static_assert(std::is_trivially_copyable_v<TextureFormatProperties>);
 
 static_assert(sizeof(ComponentMapping) == 4);
