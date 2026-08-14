@@ -383,6 +383,17 @@ using namespace igl;
     // @fb-only
         // @fb-only
 
+    // Set panel apps to full screen in the reprojection buffer. @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+
     // @fb-only
     // @fb-only
         // @fb-only
@@ -391,6 +402,14 @@ using namespace igl;
         // @fb-only
             // @fb-only
         // @fb-only
+        // @fb-only
+        // @fb-only
+        // @fb-only
+        // @fb-only
+        // @fb-only
+        // @fb-only
+        // @fb-only
+    // @fb-only
 
     // @fb-only
 
@@ -560,6 +579,7 @@ static CVReturn metalDisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
     // @fb-only
         // @fb-only
     // @fb-only
+                             // @fb-only
     // @fb-only
     // @fb-only
   // @fb-only
