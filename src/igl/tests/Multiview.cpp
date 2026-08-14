@@ -307,6 +307,10 @@ TEST_F(MultiviewTest, SinglePassStereo) {
   //----------------------
   // Read back framebuffer
   //----------------------
+  const auto dimensions = framebuffer_->getColorAttachment(0)->getDimensions();
+  EXPECT_EQ(dimensions.width, static_cast<uint32_t>(kOffScreenWidth));
+  EXPECT_EQ(dimensions.height, static_cast<uint32_t>(kOffScreenHeight));
+
   auto pixels = std::vector<uint32_t>(kOffScreenWidth * kOffScreenHeight);
   auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffScreenWidth, kOffScreenHeight);
 

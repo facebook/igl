@@ -766,6 +766,10 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
   //----------------------
   // Read back framebuffer
   //----------------------
+  const auto dimensions = framebuffer_->getColorAttachment(0)->getDimensions();
+  ASSERT_EQ(dimensions.width, static_cast<uint32_t>(kOffscreenTexWidth));
+  ASSERT_EQ(dimensions.height, static_cast<uint32_t>(kOffscreenTexHeight));
+
   auto pixels = std::vector<uint32_t>(kOffscreenTexWidth * kOffscreenTexHeight);
 
   framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
@@ -1168,6 +1172,10 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   //----------------------
   // Read back framebuffer
   //----------------------
+  const auto dimensions = framebuffer_->getColorAttachment(0)->getDimensions();
+  ASSERT_EQ(dimensions.width, static_cast<uint32_t>(kOffscreenTexWidth));
+  ASSERT_EQ(dimensions.height, static_cast<uint32_t>(kOffscreenTexHeight));
+
   auto pixels = std::vector<uint32_t>(kOffscreenTexWidth * kOffscreenTexHeight);
 
   framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);

@@ -175,6 +175,10 @@ TEST_F(MetalRenderPassTest, ClearColorApplied) {
   commandBuffer_->waitUntilCompleted();
 
   // Read back and verify the clear color
+  const auto dimensions = framebuffer->getColorAttachment(0)->getDimensions();
+  ASSERT_EQ(dimensions.width, static_cast<uint32_t>(RP_TEX_WIDTH));
+  ASSERT_EQ(dimensions.height, static_cast<uint32_t>(RP_TEX_HEIGHT));
+
   const size_t bytesPerPixel = 4; // RGBA_UNorm8
   const size_t rowBytes = RP_TEX_WIDTH * bytesPerPixel;
   std::vector<uint8_t> pixels(RP_TEX_WIDTH * RP_TEX_HEIGHT * bytesPerPixel);

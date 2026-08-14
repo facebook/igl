@@ -260,6 +260,10 @@ class RenderCommandEncoderTest : public ::testing::Test {
   }
 
   void verifyFrameBuffer(const std::vector<uint32_t>& expectedPixels) {
+    const auto dimensions = framebuffer_->getColorAttachment(0)->getDimensions();
+    ASSERT_EQ(dimensions.width, static_cast<uint32_t>(OFFSCREEN_RT_WIDTH));
+    ASSERT_EQ(dimensions.height, static_cast<uint32_t>(OFFSCREEN_RT_HEIGHT));
+
     auto pixels =
         std::vector<uint32_t>(static_cast<size_t>(OFFSCREEN_RT_WIDTH * OFFSCREEN_RT_WIDTH));
     framebuffer_->copyBytesColorAttachment(

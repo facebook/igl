@@ -369,6 +369,8 @@ constexpr std::array<std::pair<const void*, uint32_t>, 4> kPixelAlignments = {
 TEST_F(TextureTest, RepackData) {
   const auto properties = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
   const auto range = TextureRangeDesc::new2D(0, 0, kAlignedPixelsWidth, kAlignedPixelsHeight);
+  EXPECT_EQ(range.width, kAlignedPixelsWidth);
+  EXPECT_EQ(range.height, kAlignedPixelsHeight);
 
   for (const auto& [data, bytesPerRow] : kPixelAlignments) {
     const size_t alignedSize =

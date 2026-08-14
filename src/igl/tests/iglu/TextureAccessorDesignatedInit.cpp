@@ -132,6 +132,10 @@ TEST_F(TextureAccessorDesignatedInitTest, DesignatedInitMatchesFieldByField) {
 // verify pixel data matches what was uploaded.
 //
 TEST_F(TextureAccessorDesignatedInitTest, TextureAccessorReadbackWithDesignatedInit) {
+  const auto dimensions = texture_->getDimensions();
+  ASSERT_EQ(dimensions.width, static_cast<uint32_t>(OFFSCREEN_TEX_WIDTH));
+  ASSERT_EQ(dimensions.height, static_cast<uint32_t>(OFFSCREEN_TEX_HEIGHT));
+
   auto textureAccessor = iglu::textureaccessor::TextureAccessorFactory::createTextureAccessor(
       iglDev_->getBackendType(), texture_, *iglDev_);
   ASSERT_TRUE(textureAccessor != nullptr);

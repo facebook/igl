@@ -262,6 +262,10 @@ TEST_F(BlendingTest, RGBASrcAndDstAddTest) {
   //----------------------
   // Read back framebuffer
   //----------------------
+  const auto dimensions = framebuffer_->getColorAttachment(0)->getDimensions();
+  ASSERT_EQ(dimensions.width, static_cast<uint32_t>(OFFSCREEN_TEX_WIDTH));
+  ASSERT_EQ(dimensions.height, static_cast<uint32_t>(OFFSCREEN_TEX_HEIGHT));
+
   auto pixels = std::vector<uint32_t>(OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT);
 
   framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc_);

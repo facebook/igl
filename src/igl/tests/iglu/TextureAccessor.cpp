@@ -75,6 +75,10 @@ class TextureAccessorTest : public ::testing::Test {
 // Tests synchronous texture readback
 //
 TEST_F(TextureAccessorTest, testRequestAndGetBytesSync) {
+  const auto dimensions = texture_->getDimensions();
+  ASSERT_EQ(dimensions.width, static_cast<uint32_t>(OFFSCREEN_TEX_WIDTH));
+  ASSERT_EQ(dimensions.height, static_cast<uint32_t>(OFFSCREEN_TEX_HEIGHT));
+
   ASSERT_NO_THROW(textureAccessor_ =
                       iglu::textureaccessor::TextureAccessorFactory::createTextureAccessor(
                           iglDev_->getBackendType(), texture_, *iglDev_));
@@ -102,6 +106,10 @@ TEST_F(TextureAccessorTest, testRequestAndGetBytesSync) {
 }
 
 TEST_F(TextureAccessorTest, reuseTextureAccessor) {
+  const auto dimensions = texture_->getDimensions();
+  ASSERT_EQ(dimensions.width, static_cast<uint32_t>(OFFSCREEN_TEX_WIDTH));
+  ASSERT_EQ(dimensions.height, static_cast<uint32_t>(OFFSCREEN_TEX_HEIGHT));
+
   ASSERT_NO_THROW(textureAccessor_ =
                       iglu::textureaccessor::TextureAccessorFactory::createTextureAccessor(
                           iglDev_->getBackendType(), texture_, *iglDev_));

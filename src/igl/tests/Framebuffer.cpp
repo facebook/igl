@@ -265,6 +265,10 @@ TEST_F(FramebufferTest, Clear) {
   //----------------------
   // Read back framebuffer
   //----------------------
+  const auto dimensions = framebuffer_->getColorAttachment(0)->getDimensions();
+  ASSERT_EQ(dimensions.width, static_cast<uint32_t>(kOffscreenRtWidth));
+  ASSERT_EQ(dimensions.height, static_cast<uint32_t>(kOffscreenRtHeight));
+
   auto pixels = std::vector<uint32_t>(kOffscreenRtWidth * kOffscreenRtWidth);
   auto pixelsDepth = std::vector<float>(kOffscreenRtWidth * kOffscreenRtWidth);
   auto pixelsStencil = std::vector<uint8_t>(kOffscreenRtWidth * kOffscreenRtWidth);
@@ -444,6 +448,14 @@ TEST_F(FramebufferTest, blitFramebufferColor) {
     //----------------------
     // Read back framebuffer
     //----------------------
+    const auto dimensions = framebuffer_->getColorAttachment(0)->getDimensions();
+    ASSERT_EQ(dimensions.width, static_cast<uint32_t>(kOffscreenRtWidth));
+    ASSERT_EQ(dimensions.height, static_cast<uint32_t>(kOffscreenRtHeight));
+
+    const auto dimensions2 = framebuffer2->getColorAttachment(0)->getDimensions();
+    ASSERT_EQ(dimensions2.width, static_cast<uint32_t>(kOffscreenRtWidth));
+    ASSERT_EQ(dimensions2.height, static_cast<uint32_t>(kOffscreenRtHeight));
+
     auto pixels = std::vector<uint32_t>(kOffscreenRtWidth * kOffscreenRtWidth);
 
     framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
@@ -696,6 +708,10 @@ TEST_F(FramebufferTest, GetColorAttachmentTest) {
   //----------------------
   // Read back framebuffer
   //----------------------
+  const auto dimensions = framebuffer_->getColorAttachment(0)->getDimensions();
+  ASSERT_EQ(dimensions.width, static_cast<uint32_t>(textureWidth));
+  ASSERT_EQ(dimensions.height, static_cast<uint32_t>(textureHeight));
+
   const int outputImageWidth = textureWidth + 2;
   const int outputImageHeight = textureHeight;
   const int outputElementPerRow = outputImageWidth * channelCount;
