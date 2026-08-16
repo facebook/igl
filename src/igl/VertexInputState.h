@@ -8,7 +8,6 @@
 #pragma once
 
 #include <string>
-#include <utility>
 #include <igl/Common.h>
 
 namespace igl {
