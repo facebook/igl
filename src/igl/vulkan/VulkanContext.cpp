@@ -1079,13 +1079,24 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
     features_.enable(extraDeviceExtensions[i], VulkanFeatures::ExtensionType::Device);
   }
 
+  if (features_.enabled(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME)) {
+    VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT availableAstcHdr = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES_EXT};
+    VkPhysicalDeviceFeatures2 availableFeatures2 = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &availableAstcHdr};
+    vf_.vkGetPhysicalDeviceFeatures2(vkPhysicalDevice_, &availableFeatures2);
+    if (availableAstcHdr.textureCompressionASTC_HDR == VK_TRUE) {
+      features_.featuresTextureCompressionAstcHdr.textureCompressionASTC_HDR = VK_TRUE;
+      ivkAddNext(&features_.vkPhysicalDeviceFeatures2,
+                 &features_.featuresTextureCompressionAstcHdr);
+    }
+  }
+
   if (features_.enabled(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)) {
-    // descriptorBuffer is the only enabled()-gated feature in the chain, and the extra opt-in
-    // device extensions are enabled after the chain was last assembled in
-    // populateWithAvailablePhysicalDeviceFeatures() -- so append just that struct rather than
-    // re-running assembleFeatureChain() (which would re-log unrelated warnings). It is not yet in
-    // the chain (gated on enabled(), false at the prior assemble) and its pNext is null. Does not
-    // touch has_VK_EXT_descriptor_buffer.
+    // Extra opt-in device extensions are enabled after the chain was last assembled in
+    // populateWithAvailablePhysicalDeviceFeatures(), so descriptorBuffer was gated out then.
+    // Append just that struct rather than re-running assembleFeatureChain(), which would re-log
+    // unrelated warnings. Its pNext is null. Does not touch has_VK_EXT_descriptor_buffer.
     ivkAddNext(&features_.vkPhysicalDeviceFeatures2, &features_.featuresDescriptorBuffer);
     vkPhysicalDeviceDescriptorBufferProperties_.pNext = vkPhysicalDeviceProperties2_.pNext;
     vkPhysicalDeviceProperties2_.pNext = &vkPhysicalDeviceDescriptorBufferProperties_;

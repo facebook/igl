@@ -140,6 +140,9 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT,
       .descriptorBuffer = VK_TRUE,
   }),
+  featuresTextureCompressionAstcHdr({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES_EXT,
+  }),
   featuresExtendedDynamicState({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT,
       .extendedDynamicState = VK_TRUE,
@@ -304,6 +307,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& contextConf
   featuresMeshShader.pNext = nullptr;
   featuresFragmentShadingRate.pNext = nullptr;
   featuresDescriptorBuffer.pNext = nullptr;
+  featuresTextureCompressionAstcHdr.pNext = nullptr;
   featuresExtendedDynamicState.pNext = nullptr;
   featuresExtendedDynamicState2.pNext = nullptr;
 
@@ -407,6 +411,7 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   featuresMeshShader = other.featuresMeshShader;
   featuresFragmentShadingRate = other.featuresFragmentShadingRate;
   featuresDescriptorBuffer = other.featuresDescriptorBuffer;
+  featuresTextureCompressionAstcHdr = other.featuresTextureCompressionAstcHdr;
   featuresExtendedDynamicState = other.featuresExtendedDynamicState;
   featuresExtendedDynamicState2 = other.featuresExtendedDynamicState2;
 

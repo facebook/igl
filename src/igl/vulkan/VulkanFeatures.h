@@ -72,6 +72,7 @@ class VulkanFeatures final {
   VkPhysicalDeviceFragmentShadingRateFeaturesKHR featuresFragmentShadingRate{};
 
   VkPhysicalDeviceDescriptorBufferFeaturesEXT featuresDescriptorBuffer{};
+  VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT featuresTextureCompressionAstcHdr{};
 
   // VK_EXT_extended_dynamic_state (promoted to Vulkan 1.3)
   VkPhysicalDeviceExtendedDynamicStateFeaturesEXT featuresExtendedDynamicState{};
