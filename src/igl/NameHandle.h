@@ -8,12 +8,15 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
-#include <igl/Common.h>
+#include <igl/Config.h>
 
 namespace igl {
 // Constexpr as constexpr. In most cases all hashes from string would be generated in compile-time

@@ -7,6 +7,8 @@
 
 #include <igl/NameHandle.h>
 
+#include <igl/Core.h>
+
 namespace igl {
 namespace {
 
