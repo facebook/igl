@@ -21,13 +21,19 @@ class ITimer;
 class ITimestampQueries;
 struct RenderPassDesc;
 
-/**
- * Currently a no-op structure.
- */
 struct CommandBufferDesc {
   std::string debugName;
   std::shared_ptr<ITimer> timer;
   std::shared_ptr<ITimestampQueries> timestampQueries;
+
+  /**
+   * Optional correlation tag forwarded to the GPU submission for tracing. A value of 0 means
+   * "untagged" and is ignored. Backends that support submission-level tracing attach this value to
+   * their submit so driver-side trace events can be correlated back to the app-level workload/frame
+   * that produced the work. All other backends ignore it.
+   // @fb-only
+   */
+  uint64_t submitTag = 0;
 };
 
 /**
