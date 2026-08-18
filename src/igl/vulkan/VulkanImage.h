@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <memory>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImageView.h>
@@ -30,6 +29,7 @@ struct VulkanImageCreateInfo {
   uint32_t arrayLayers = 1;
   VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
   bool isImported = false;
+  bool isSrgbMutableFormat = false;
 };
 
 /**
@@ -53,7 +53,8 @@ class VulkanImage final {
               uint32_t mipLevels = 1,
               uint32_t arrayLayers = 1,
               VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT,
-              bool isImported = false);
+              bool isImported = false,
+              bool isSrgbMutableFormat = false);
 
   /**
    * @brief Constructs a `VulkanImage` object from a `VkImage` object. If a debug name is provided,
@@ -86,7 +87,8 @@ class VulkanImage final {
               VkMemoryPropertyFlags memFlags,
               VkImageCreateFlags createFlags,
               VkSampleCountFlagBits samples,
-              const char* debugName = nullptr);
+              const char* debugName = nullptr,
+              bool isSrgbMutableFormat = false);
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
   /**
@@ -306,12 +308,18 @@ class VulkanImage final {
   VkSampleCountFlagBits samples_ = VK_SAMPLE_COUNT_1_BIT;
   bool isDepthFormat_ = false;
   bool isStencilFormat_ = false;
+  // NOLINTNEXTLINE(readability-identifier-naming)
   bool isDepthOrStencilFormat_ = false;
   VkDeviceSize allocatedSize = 0;
   mutable VkImageLayout imageLayout_ = VK_IMAGE_LAYOUT_UNDEFINED; // current image layout
   bool isImported_ = false;
   bool isExported_ = false;
   bool isCubemap_ = false;
+  // True when the VkImage was created UNORM with VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT and a
+  // requested VkImageFormatListCreateInfo constraining views to exactly {UNORM, sRGB}, or when a
+  // wrapped VkImage was explicitly marked as having the same externally-enforced shape.
+  // NOLINTNEXTLINE(readability-identifier-naming)
+  bool isSrgbMutableFormat_ = false;
   void* exportedMemoryHandle_ = nullptr; // windows handle
   int exportedFd_ = -1; // linux fd
   uint32_t extendedFormat_ = 0; // defined by VkAndroidHardwareBufferFormatPropertiesANDROID

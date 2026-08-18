@@ -136,7 +136,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                          uint32_t mipLevels,
                          uint32_t arrayLayers,
                          VkSampleCountFlagBits samples,
-                         bool isImported) :
+                         bool isImported,
+                         bool isSrgbMutableFormat) :
   ctx_(&ctx),
   physicalDevice_(ctx.getVkPhysicalDevice()),
   device_(ctx.getVkDevice()),
@@ -152,7 +153,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   isDepthFormat_(hasDepth(imageFormat)), // NOLINT(readability-identifier-naming)
   isStencilFormat_(hasStencil(imageFormat)), // NOLINT(readability-identifier-naming)
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
-  isImported_(isImported) {
+  isImported_(isImported),
+  isSrgbMutableFormat_(isSrgbMutableFormat) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   setName(debugName);
@@ -175,7 +177,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
               createInfo.mipLevels,
               createInfo.arrayLayers,
               createInfo.samples,
-              createInfo.isImported) {}
+              createInfo.isImported,
+              createInfo.isSrgbMutableFormat) {}
 
 VulkanImage::VulkanImage(const VulkanContext& ctx,
                          VkExtent3D extent,
@@ -188,7 +191,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                          VkMemoryPropertyFlags memFlags,
                          VkImageCreateFlags createFlags,
                          VkSampleCountFlagBits samples,
-                         const char* debugName) :
+                         const char* debugName,
+                         bool isSrgbMutableFormat) :
   ctx_(&ctx),
   physicalDevice_(ctx.getVkPhysicalDevice()),
   device_(ctx.getVkDevice()),
@@ -215,8 +219,36 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
   const bool isDisjoint = (createFlags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0;
 
+  // When the caller marks a mutable UNORM image as sRGB-backed, chain a VkImageFormatListCreateInfo
+  // so the driver knows only two view formats will be used. This avoids the performance
+  // pessimization some drivers apply for unconstrained mutable images.
+  //
+  // VkImageFormatListCreateInfo is core only in Vulkan 1.2+ (below that it needs
+  // VK_KHR_image_format_list, which IGL never enables), so also gate on the device API version.
+  // On an older device the struct would be an unrecognized pNext entry that validation layers flag
+  // and that silently drops the view-format constraint, so we neither chain it nor set the flag.
+  const bool isMutableFormat = (createFlags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) != 0;
+  const bool supportsFormatList =
+      ctx.getVkPhysicalDeviceProperties().apiVersion >= VK_API_VERSION_1_2;
+  const VkFormat srgbCounterpart = isSrgbMutableFormat ? unormToSrgb(format) : format;
+  if (isSrgbMutableFormat && isMutableFormat && srgbCounterpart != format && !supportsFormatList) {
+    IGL_LOG_ERROR_ONCE(
+        "VulkanImage requested sRGB mutable format list, but VkImageFormatListCreateInfo "
+        "requires Vulkan 1.2 or VK_KHR_image_format_list.\n");
+  }
+  const bool needsFormatList = isSrgbMutableFormat && isMutableFormat && supportsFormatList &&
+                               srgbCounterpart != format;
+  isSrgbMutableFormat_ = needsFormatList;
+  const VkFormat viewFormats[2] = {format, srgbCounterpart};
+  const VkImageFormatListCreateInfo formatListCI = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO,
+      .viewFormatCount = needsFormatList ? 2u : 0u,
+      .pViewFormats = needsFormatList ? viewFormats : nullptr,
+  };
+
   const VkImageCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+      .pNext = needsFormatList ? &formatListCI : nullptr,
       .flags = createFlags,
       .imageType = type,
       .format = imageFormat_,
@@ -1424,6 +1456,7 @@ VulkanImage& VulkanImage::operator=(VulkanImage&& other) noexcept {
   extent_ = other.extent_;
   type_ = other.type_;
   imageFormat_ = other.imageFormat_;
+  isSrgbMutableFormat_ = other.isSrgbMutableFormat_;
   mipLevels_ = other.mipLevels_;
   arrayLayers_ = other.arrayLayers_;
   samples_ = other.samples_;
