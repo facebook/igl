@@ -10,7 +10,6 @@
 #include "ITextureAccessor.h"
 
 #include <igl/CommandQueue.h>
-#include <igl/Device.h>
 #include <igl/Framebuffer.h>
 #include <igl/Texture.h>
 
