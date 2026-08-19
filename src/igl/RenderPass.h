@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <type_traits>
 #include <vector>
 #include <igl/Common.h> // IWYU pragma: keep
 
@@ -65,6 +66,8 @@ struct RenderPassDesc {
     float clearDepth = 1.0f;
     uint32_t clearStencil = 0;
   };
+
+  static_assert(std::is_trivially_copyable_v<AttachmentDesc>);
 
   /**
    * @brief colorAttachments properties which is empty by default.
