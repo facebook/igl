@@ -17,7 +17,6 @@
 #if IGL_BACKEND_VULKAN
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanSwapchain.h>
 #endif
 
 @interface VulkanView () {
