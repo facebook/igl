@@ -329,4 +329,21 @@ TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesDescriptorIndexingEnabledMissing
 #endif
 }
 
+TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_MissingSynchronization2) {
+  igl::setDebugBreakEnabled(false);
+
+  const igl::vulkan::VulkanContextConfig config;
+
+  const igl::vulkan::VulkanFeatures requested(config);
+  igl::vulkan::VulkanFeatures available(config);
+  available.featuresSynchronization2.synchronization2 = VK_FALSE;
+
+  const igl::Result result = requested.checkSelectedFeatures(available);
+#if IGL_PLATFORM_APPLE
+  EXPECT_TRUE(result.isOk());
+#else
+  EXPECT_FALSE(result.isOk());
+#endif
+}
+
 } // namespace igl::tests

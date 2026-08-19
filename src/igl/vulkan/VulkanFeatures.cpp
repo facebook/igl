@@ -256,6 +256,8 @@ Result VulkanFeatures::checkSelectedFeatures(
   ENABLE_FEATURE_1_1_EXT(featuresShaderDrawParameters,
                          availableFeatures.featuresShaderDrawParameters,
                          shaderDrawParameters)
+  ENABLE_FEATURE_1_1_EXT(
+      featuresSynchronization2, availableFeatures.featuresSynchronization2, synchronization2)
 #undef ENABLE_FEATURE_1_1_EXT
 
 #define ENABLE_FEATURE_1_2_EXT(requestedFeatureStruct, availableFeatureStruct, feature) \
