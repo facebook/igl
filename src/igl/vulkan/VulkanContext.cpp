@@ -1852,7 +1852,14 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
 #if IGL_VULKAN_PRINT_COMMANDS
     IGL_LOG_INFO("Updating descriptor set dsBindless_\n");
 #endif // IGL_VULKAN_PRINT_COMMANDS
-    VK_ASSERT(immediate_->wait(immediate_->getLastSubmitHandle()));
+    // A finite fenceTimeoutNanoseconds can legitimately return VK_TIMEOUT (e.g.
+    // a stuck software Vulkan fence). Bail out instead of updating a descriptor
+    // set whose previous submission may still be in flight on the GPU.
+    const VkResult waitResult =
+        immediate_->wait(immediate_->getLastSubmitHandle(), config_.fenceTimeoutNanoseconds);
+    if (waitResult != VK_SUCCESS) {
+      return waitResult;
+    }
     vf_.vkUpdateDescriptorSets(
         vkDevice_, static_cast<uint32_t>(write.size()), write.data(), 0, nullptr);
   }
