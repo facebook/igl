@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <type_traits>
 #include <utility>
 #include <vector>
 #include <igl/Common.h> // IWYU pragma: keep
@@ -89,6 +90,8 @@ struct ShaderCompilerOptions {
   bool operator!=(const ShaderCompilerOptions& other) const;
 };
 
+static_assert(std::is_trivially_copyable_v<ShaderCompilerOptions>);
+
 struct FunctionConstantValues {
   /// @brief One stored constant. The slot's position in `values_` is the binding index;
   /// `type == ConstantValueType::Invalid` marks the slot as unused. Each entry's bytes live
@@ -131,6 +134,8 @@ struct FunctionConstantValues {
   std::vector<Entry> values_;
   std::vector<uint8_t> data_;
 };
+
+static_assert(std::is_trivially_copyable_v<FunctionConstantValues::Entry>);
 
 /**
  * @brief Metadata about a shader module.
@@ -204,6 +209,8 @@ struct ShaderInput {
   bool operator==(const ShaderInput& other) const;
   bool operator!=(const ShaderInput& other) const;
 };
+
+static_assert(std::is_trivially_copyable_v<ShaderInput>);
 
 /**
  * @brief Descriptor used to construct a shader module.
