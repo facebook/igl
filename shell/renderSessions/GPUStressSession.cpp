@@ -11,6 +11,7 @@
 
 #include <IGLU/imgui/Session.h>
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
