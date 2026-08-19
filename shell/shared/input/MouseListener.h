@@ -9,7 +9,7 @@
 
 namespace igl::shell {
 
-enum MouseButton {
+enum class MouseButton {
   Left = 0,
   Right = 1,
   Middle = 2,

@@ -37,7 +37,7 @@ bool InputListener::process(const igl::shell::MouseButtonEvent& event) {
 
   ImGuiIO& io = ImGui::GetIO();
   io.MousePos = ImVec2(event.x, event.y);
-  io.MouseDown[event.button] = event.isDown;
+  io.MouseDown[static_cast<int>(event.button)] = event.isDown;
   return io.WantCaptureMouse;
 }
 
