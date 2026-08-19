@@ -424,7 +424,7 @@ TEST_F(DepthStencilStateTest, SetStencilReferenceValueAndCheck) {
 
     // GLES stencil mask is limited to 8 bits (0xFF) on Adreno GPUs
     const GLubyte* renderer = ctx->getString(GL_RENDERER);
-    if (std::strncmp((char*)renderer, "Adreno", 6) == 0) {
+    if (std::strncmp(reinterpret_cast<const char*>(renderer), "Adreno", 6) == 0) {
       origExpectedStencilValue = 0xff;
     }
 
