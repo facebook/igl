@@ -7,7 +7,6 @@
 
 #include "Common.h"
 
-#include <algorithm>
 // NOLINTNEXTLINE(facebook-unused-include-check) used on Linux (kPreloadLibs, libs arrays)
 #include <array>
 #include <cstdlib>

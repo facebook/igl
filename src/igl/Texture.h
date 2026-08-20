@@ -7,8 +7,7 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
+#include <algorithm>
 #include <igl/CommandQueue.h>
 #include <igl/Common.h>
 #include <igl/ITrackedResource.h>

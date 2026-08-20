@@ -7,7 +7,6 @@
 
 #include <igl/vulkan/RenderPipelineState.h>
 
-#include <algorithm>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/ShaderModule.h>
