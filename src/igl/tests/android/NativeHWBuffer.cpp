@@ -314,6 +314,7 @@ class NativeHWBufferTextureTest : public ::testing::Test {
     ASSERT_NE(hwBuffer_, nullptr);
 
     for (int i = 0; i < kOffscreenTexWidth * kOffscreenTexHeight; ++i) {
+      // NOLINTNEXTLINE(cert-msc50-cpp, facebook-hte-BadCall-rand)
       pixels_[i] = rand() % 0xFFFFFFFF;
     }
 

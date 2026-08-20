@@ -479,6 +479,7 @@ TEST_F(DeviceVulkanTest, UniformBlockRingBufferTest) {
   // Upload and verify data
   std::vector<uint32_t> testData(bufferSize / sizeof(uint32_t));
   for (unsigned int& i : testData) {
+    // NOLINTNEXTLINE(cert-msc50-cpp, facebook-hte-BadCall-rand)
     i = rand();
   }
 
