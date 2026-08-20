@@ -118,6 +118,13 @@ class RenderSession {
 
   [[nodiscard]] const std::shared_ptr<Platform>& platform() const noexcept;
 
+  /// @brief Structured submission tracing tag for the current frame, for backends that support
+  /// submission-level tracing. Encodes a shell workflow id in the high 16 bits and the frame
+  /// number (>= 1) in the low 48 bits. Pass into CommandBufferDesc::submitTag when creating a
+  /// command buffer so driver-side trace events can be correlated back to the shell frame. A
+  /// backend that does not support submission tracing ignores the tag.
+  [[nodiscard]] uint64_t currentFrameSubmitTag() const noexcept;
+
   std::shared_ptr<IFramebuffer> framebuffer_;
   std::shared_ptr<ICommandQueue> commandQueue_;
   size_t currentQuadLayer_ = 0;
