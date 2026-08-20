@@ -277,6 +277,7 @@ void RenderSession::runUpdate(SurfaceTextures surfaceTextures) noexcept {
     const double targetMs =
         shellParams_->fpsThrottleRandom
             // NOLINTNEXTLINE(cert-msc50-cpp, clang-analyzer-security.insecureAPI.rand)
+            // NOLINTNEXTLINE(facebook-hte-BadCall-rand)
             ? static_cast<double>(1 + (std::rand() % shellParams_->fpsThrottleMs))
             : static_cast<double>(shellParams_->fpsThrottleMs);
     if (frameTimeMs < targetMs) {

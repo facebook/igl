@@ -275,6 +275,7 @@ void GlfwShell::run() noexcept {
       const double endTime = RenderSession::getSeconds();
       const double frameTimeMs = (endTime - startTime) * 1000.0;
       const double targetMs = params.fpsThrottleRandom
+                                  // NOLINTNEXTLINE(cert-msc50-cpp, facebook-hte-BadCall-rand)
                                   ? static_cast<double>(1 + (std::rand() % params.fpsThrottleMs))
                                   : static_cast<double>(params.fpsThrottleMs);
       if (frameTimeMs < targetMs) {
