@@ -189,7 +189,7 @@ VkFormat textureFormatToVkFormat(TextureFormat format) {
   case TextureFormat::BGR10_A2_Unorm:
     return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
   case TextureFormat::B10G11R11_UFloat:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_B10G11R11_UFLOAT_PACK32;
   case TextureFormat::R_F32:
     return VK_FORMAT_R32_SFLOAT;
   case TextureFormat::R_UInt32:
