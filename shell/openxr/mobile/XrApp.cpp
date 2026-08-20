@@ -865,7 +865,7 @@ void XrApp::handleSessionStateChanges(XrSessionState state) {
 #if !defined(IGL_CMAKE_BUILD)
     assert(resumed_);
 #endif // IGL_CMAKE_BUILD
-    assert(sessionActive_ == false);
+    assert(!sessionActive_);
 
     const XrSessionBeginInfo sessionBeginInfo{
         XR_TYPE_SESSION_BEGIN_INFO,
