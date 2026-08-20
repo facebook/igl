@@ -234,6 +234,7 @@ enum class TextureFormat : uint8_t {
   // @fb-only
 
   R5G6B5_UNorm,
+  B10G11R11_UFloat, // packed 11/11/10 unsigned float, 3 components, 4 bytes/px, no alpha
 };
 // NOLINTEND(readability-identifier-naming)
 

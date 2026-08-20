@@ -219,6 +219,17 @@ TEST(TextureFormatProperties, Construction) {
   }
 }
 
+TEST(TextureFormatProperties, PackedUnsignedFloatFormat) {
+  const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::B10G11R11_UFloat);
+  EXPECT_EQ(props.componentsPerPixel, 3);
+  EXPECT_EQ(props.bytesPerBlock, 4);
+  EXPECT_TRUE(props.isHDR());
+  EXPECT_FALSE(props.isCompressed());
+  EXPECT_FALSE(props.hasDepth());
+  EXPECT_FALSE(props.hasStencil());
+  EXPECT_TRUE(props.hasColor());
+}
+
 TEST(TextureFormatProperties, GetRows) {
   {
     const auto range = TextureRangeDesc::new2D(0, 0, 2, 2);

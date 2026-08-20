@@ -278,7 +278,7 @@ TEST(CommonTest, SrgbHelpersPassThroughUnpairedFormats) {
 TEST(CommonTest, EveryIglSrgbTextureFormatIsPaired) {
   // textureFormatToVkFormat() and fromTextureFormat() are exhaustive switches, so casting past
   // the last enumerator is undefined. Extend this bound when TextureFormat grows.
-  constexpr auto kLastTextureFormat = TextureFormat::R5G6B5_UNorm;
+  constexpr auto kLastTextureFormat = TextureFormat::B10G11R11_UFloat;
 
   size_t numChecked = 0;
   for (uint8_t i = 0; i <= static_cast<uint8_t>(kLastTextureFormat); ++i) {

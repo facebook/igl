@@ -302,6 +302,7 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     COLOR(RGB10_A2_UNorm_Rev, 4, 4, Flags::HDR)
     COLOR(RGB10_A2_Uint_Rev, 4, 4, Flags::Integer | Flags::HDR)
     COLOR(BGR10_A2_Unorm, 4, 4, Flags::HDR)
+    COLOR(B10G11R11_UFloat, 3, 4, Flags::HDR)
     COLOR(R_F32, 1, 4, Flags::HDR)
     COLOR(R_UInt32, 1, 4, Flags::Integer | Flags::HDR)
     COLOR(RGB_F16, 3, 6, Flags::HDR)

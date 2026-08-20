@@ -975,6 +975,7 @@ bool Texture::toFormatDescGL(const IContext& ctx,
     return true;
   case TextureFormat::YUV_NV12:
   case TextureFormat::YUV_420p:
+  case TextureFormat::B10G11R11_UFloat:
   // @fb-only
   // @fb-only
   // @fb-only
