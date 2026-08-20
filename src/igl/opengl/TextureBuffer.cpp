@@ -157,7 +157,8 @@ Result TextureBuffer::initialize(const std::string& debugName) const {
   }
   if (!debugName.empty() &&
       getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
-    getContext().objectLabel(GL_TEXTURE, getId(), debugName.size(), debugName.c_str());
+    getContext().objectLabel(
+        GL_TEXTURE, getId(), static_cast<GLsizei>(debugName.size()), debugName.c_str());
   }
 
   Result result;
@@ -486,8 +487,9 @@ Result TextureBuffer::uploadInternal(GLenum target,
     if (unpackRowLengthSupported) {
       getContext().pixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     }
-    getContext().pixelStorei(GL_UNPACK_ALIGNMENT,
-                             this->getAlignment(bytesPerRow, range.mipLevel, range.width));
+    getContext().pixelStorei(
+        GL_UNPACK_ALIGNMENT,
+        this->getAlignment(static_cast<uint32_t>(bytesPerRow), range.mipLevel, range.width));
   }
 
   Result result;
