@@ -31,7 +31,7 @@
 
 namespace {
 uint32_t customArc4random() {
-  // NOLINTNEXTLINE(cert-msc50-cpp)
+  // NOLINTNEXTLINE(cert-msc50-cpp, facebook-hte-BadCall-rand)
   return static_cast<uint32_t>(std::rand()) * (0xffffffff / RAND_MAX);
 }
 } // namespace
@@ -370,6 +370,7 @@ float GPUStressSession::doReadWrite(std::vector<std::vector<std::vector<float>>>
     const int block = randBlocks(gen);
     const int row = randRows(gen);
     const int col = randCols(gen);
+    // NOLINTNEXTLINE(facebook-hte-ParameterUncheckedArrayBounds)
     memBlock[block].at(row)[col] = customArc4random();
   }
 
