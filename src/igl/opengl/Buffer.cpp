@@ -107,7 +107,8 @@ void ArrayBuffer::initialize(const BufferDesc& desc, Result* IGL_NULLABLE outRes
                                   InternalRequirement::DebugLabelExtEnumsReq)
                                   ? GL_BUFFER_OBJECT_EXT
                                   : GL_BUFFER;
-    getContext().objectLabel(identifier, iD_, desc.debugName.size(), desc.debugName.c_str());
+    getContext().objectLabel(
+        identifier, iD_, static_cast<GLsizei>(desc.debugName.size()), desc.debugName.c_str());
   }
 
   getContext().bindBuffer(target_, 0);

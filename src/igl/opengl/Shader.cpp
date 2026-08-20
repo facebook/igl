@@ -250,7 +250,8 @@ Result ShaderModule::create(const ShaderModuleDesc& desc) {
                                   InternalRequirement::DebugLabelExtEnumsReq)
                                   ? GL_SHADER_OBJECT_EXT
                                   : GL_SHADER;
-    getContext().objectLabel(identifier, shaderID, desc.debugName.size(), desc.debugName.c_str());
+    getContext().objectLabel(
+        identifier, shaderID, static_cast<GLsizei>(desc.debugName.size()), desc.debugName.c_str());
   }
 
   // compile the shader
