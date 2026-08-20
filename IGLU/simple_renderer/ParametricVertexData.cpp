@@ -17,9 +17,11 @@ static_assert(std::is_trivially_copyable_v<iglu::vertexdata::VertexPosUv>);
 
 namespace iglu::vertexdata {
 
+namespace {
 // Assumption: <name, location> for OpenGL and Metal, respectively
-static const std::pair<const char*, int> kSAttrPosition("a_position", 0);
-static const std::pair<const char*, int> kSAttrUv("a_uv", 1);
+const std::pair<const char*, int> kSAttrPosition("a_position", 0);
+const std::pair<const char*, int> kSAttrUv("a_uv", 1);
+} // namespace
 
 namespace Quad {
 
