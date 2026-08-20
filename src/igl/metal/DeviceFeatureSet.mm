@@ -449,6 +449,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
   case TextureFormat::BGRA_UNorm8:
   case TextureFormat::RGB10_A2_UNorm_Rev:
   case TextureFormat::BGR10_A2_Unorm:
+  case TextureFormat::B10G11R11_UFloat:
   case TextureFormat::RGBA_SRGB:
   case TextureFormat::BGRA_SRGB:
     return all;

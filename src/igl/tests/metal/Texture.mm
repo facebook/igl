@@ -406,6 +406,17 @@ TEST_F(TextureMTLTest, createTextureFromNativePixelBufferWithInvalidPlaneSetsErr
   EXPECT_FALSE(result.isOk());
 }
 
+TEST_F(TextureMTLTest, B10G11R11UFloatRoundTrip) {
+  constexpr auto kIglFormat = TextureFormat::B10G11R11_UFloat;
+  constexpr auto kMtlFormat = MTLPixelFormatRG11B10Float;
+
+  EXPECT_EQ(metal::Texture::textureFormatToMTLPixelFormat(kIglFormat), kMtlFormat);
+  EXPECT_EQ(metal::Texture::mtlPixelFormatToTextureFormat(kMtlFormat), kIglFormat);
+  EXPECT_EQ(metal::Texture::mtlPixelFormatToTextureFormat(
+                metal::Texture::textureFormatToMTLPixelFormat(kIglFormat)),
+            kIglFormat);
+}
+
 TEST_F(TextureMTLTest, ConvertTextureFormats) {
   const std::vector<TextureFormat> inputFormats = {
       TextureFormat::A_UNorm8,

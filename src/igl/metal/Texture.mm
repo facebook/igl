@@ -450,6 +450,8 @@ MTLPixelFormat Texture::textureFormatToMTLPixelFormat(TextureFormat value) {
     return MTLPixelFormatRGB10A2Uint;
   case TextureFormat::BGR10_A2_Unorm:
     return MTLPixelFormatBGR10A2Unorm;
+  case TextureFormat::B10G11R11_UFloat:
+    return MTLPixelFormatRG11B10Float;
 
   case TextureFormat::R_F32:
     return MTLPixelFormatR32Float;
@@ -865,6 +867,8 @@ TextureFormat Texture::mtlPixelFormatToTextureFormat(MTLPixelFormat value) {
     return TextureFormat::RGB10_A2_Uint_Rev;
   case MTLPixelFormatBGR10A2Unorm:
     return TextureFormat::BGR10_A2_Unorm;
+  case MTLPixelFormatRG11B10Float:
+    return TextureFormat::B10G11R11_UFloat;
 
   case MTLPixelFormatRGBA16Float:
     return TextureFormat::RGBA_F16;
