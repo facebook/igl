@@ -291,13 +291,14 @@ void RenderSession::runUpdate(SurfaceTextures surfaceTextures) noexcept {
 
 uint64_t RenderSession::currentFrameSubmitTag() const noexcept {
   // Encoded inline (rather than via a backend-private helper) to keep the public shell free of
-  // backend headers. Layout must match the shared codec: workflow id 2 = IGL shell, high 16 bits =
-  // workflow id, low 48 bits = frame number. frameCount_ is 0-based during update(), so + 1 keeps
-  // the encoded tag >= 1 (submission tracing rejects a tag < 1).
-  constexpr uint64_t kIglShellWorkflowId = 2;
-  constexpr uint32_t kFrameBits = 48;
-  constexpr uint64_t kFrameMask = (uint64_t{1} << kFrameBits) - 1;
-  return (kIglShellWorkflowId << kFrameBits) |
+  // backend headers. Layout must match the shared codec: workflow id 2 = IGL at bits 63..48, the
+  // render-target field at bits 47..32 (left 0 here), and the frame number in the low 32 bits.
+  // frameCount_ is 0-based during update(), so + 1 keeps the encoded tag >= 1 (submission tracing
+  // rejects a tag < 1).
+  constexpr uint64_t kIglWorkflowId = 2;
+  constexpr uint32_t kWorkflowShift = 48;
+  constexpr uint64_t kFrameMask = (uint64_t{1} << 32) - 1;
+  return (kIglWorkflowId << kWorkflowShift) |
          ((static_cast<uint64_t>(frameCount_) + 1) & kFrameMask);
 }
 
