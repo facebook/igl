@@ -139,6 +139,7 @@ target_include_directories(IGLTests PRIVATE "${IGL_ROOT_DIR}/third-party/deps/sr
 # This allows D3D12 headless tests to use unsigned DXIL shaders
 if(IGL_WITH_D3D12)
   target_compile_definitions(IGLTests PRIVATE IGL_ENABLE_EXPERIMENTAL_FEATURES_FOR_TESTS=1)
+  target_compile_definitions(IGLTests PRIVATE IGL_D3D12_TEST)
 endif()
 if(TARGET glfw)
   target_link_libraries(IGLTests PRIVATE glfw)

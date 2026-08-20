@@ -48,6 +48,8 @@ DXGI_FORMAT textureFormatToDXGIFormat(TextureFormat format) {
     return DXGI_FORMAT_R10G10B10A2_UNORM;
   case TextureFormat::RGB10_A2_Uint_Rev:
     return DXGI_FORMAT_R10G10B10A2_UINT;
+  case TextureFormat::B10G11R11_UFloat:
+    return DXGI_FORMAT_R11G11B10_FLOAT;
   case TextureFormat::R_F32:
     return DXGI_FORMAT_R32_FLOAT;
   case TextureFormat::R_UInt32:
@@ -171,6 +173,8 @@ TextureFormat dxgiFormatToTextureFormat(DXGI_FORMAT format) {
     return TextureFormat::BGRA_UNorm8;
   case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
     return TextureFormat::BGRA_SRGB;
+  case DXGI_FORMAT_R11G11B10_FLOAT:
+    return TextureFormat::B10G11R11_UFloat;
   case DXGI_FORMAT_R16G16B16A16_FLOAT:
     return TextureFormat::RGBA_F16;
   case DXGI_FORMAT_R32G32B32A32_FLOAT:

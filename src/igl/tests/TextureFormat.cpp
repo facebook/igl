@@ -7,6 +7,10 @@
 
 #include "util/TextureFormatTestBase.h"
 
+#if defined(IGL_D3D12_TEST)
+#include <igl/d3d12/Common.h>
+#endif
+
 namespace igl::tests {
 
 class TextureFormatTest : public util::TextureFormatTestBase {
@@ -60,5 +64,17 @@ TEST(TextureFormatUtilsTest, RgbaToBgraPassthrough) {
   EXPECT_EQ(RgbaToBgra(igl::TextureFormat::R_UNorm8), igl::TextureFormat::R_UNorm8);
   EXPECT_EQ(RgbaToBgra(igl::TextureFormat::BGRA_SRGB), igl::TextureFormat::BGRA_SRGB);
 }
+
+#if defined(IGL_D3D12_TEST)
+TEST(TextureFormatD3D12Test, B10G11R11UFloatRoundTrip) {
+  constexpr auto kIglFormat = TextureFormat::B10G11R11_UFloat;
+  constexpr auto kDxgiFormat = DXGI_FORMAT_R11G11B10_FLOAT;
+
+  EXPECT_EQ(d3d12::textureFormatToDXGIFormat(kIglFormat), kDxgiFormat);
+  EXPECT_EQ(d3d12::dxgiFormatToTextureFormat(kDxgiFormat), kIglFormat);
+  EXPECT_EQ(d3d12::dxgiFormatToTextureFormat(d3d12::textureFormatToDXGIFormat(kIglFormat)),
+            kIglFormat);
+}
+#endif
 
 } // namespace igl::tests
