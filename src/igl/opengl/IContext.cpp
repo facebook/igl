@@ -1198,14 +1198,15 @@ std::string IContext::identifierLabel(GLuint identifier, GLuint name) const {
   return ss.str();
 }
 
-// Helper: append `text` to `ss`, prefixed by a space separator after the first entry.
-static void appendWithSep(std::stringstream& ss, bool& first, const std::string& text) {
+namespace {
+void appendWithSep(std::stringstream& ss, bool& first, const std::string& text) {
   if (!first) {
     ss << " ";
   }
   ss << text;
   first = false;
 }
+} // namespace
 
 std::string IContext::boundPixelBufferObjects() const {
   std::stringstream ss;
