@@ -483,6 +483,12 @@ bool Texture::toFormatDescGL(const IContext& ctx,
     internalFormat = GL_RGB10_A2;
     return true;
 
+  case TextureFormat::B10G11R11_UFloat:
+    format = GL_RGB;
+    type = GL_UNSIGNED_INT_10F_11F_11F_REV;
+    internalFormat = GL_R11F_G11F_B10F;
+    return true;
+
   case TextureFormat::ABGR_UNorm4: // TODO Test this
     format = GL_RGBA;
     type = GL_UNSIGNED_SHORT_4_4_4_4;
@@ -975,7 +981,6 @@ bool Texture::toFormatDescGL(const IContext& ctx,
     return true;
   case TextureFormat::YUV_NV12:
   case TextureFormat::YUV_420p:
-  case TextureFormat::B10G11R11_UFloat:
   // @fb-only
   // @fb-only
   // @fb-only

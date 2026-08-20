@@ -8,8 +8,11 @@
 #include <gtest/gtest.h>
 
 #include "../util/TestDevice.h"
+#include "../util/TextureFormatTestBase.h"
 
+#include <array>
 #include <string>
+#include <igl/Framebuffer.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/TextureBuffer.h>
 #include <igl/opengl/TextureTarget.h>
@@ -57,6 +60,8 @@ class TextureOGLTest : public ::testing::Test {
   opengl::IContext* context_{};
   std::shared_ptr<IDevice> device_;
 };
+
+class B10G11R11UFloatOGLTest : public util::TextureFormatTestBase {};
 
 //
 // Texture Creation Paths Test
@@ -118,6 +123,119 @@ TEST_F(TextureOGLTest, TextureCreation) {
   // Cannot create the texture again after it has already been created
   ret = textureTarget->create(texDesc, false);
   ASSERT_EQ(ret.code, Result::Code::InvalidOperation);
+}
+
+TEST_F(TextureOGLTest, B10G11R11UFloatSupport) {
+  const auto& deviceFeatures = context_->deviceFeatures();
+  const auto version = deviceFeatures.getGLVersion();
+  const bool sampledSupported = opengl::DeviceFeatureSet::usesOpenGLES()
+                                    ? version >= opengl::GLVersion::v3_0_ES
+                                    : version >= opengl::GLVersion::v3_0;
+  const bool attachmentSupported =
+      sampledSupported &&
+      (!opengl::DeviceFeatureSet::usesOpenGLES() || version >= opengl::GLVersion::v3_2_ES ||
+       deviceFeatures.isSupported("GL_EXT_color_buffer_float"));
+  const bool storageSupported =
+      sampledSupported && deviceFeatures.hasInternalFeature(opengl::InternalFeatures::TexStorage);
+  const auto capabilities =
+      deviceFeatures.getTextureFormatCapabilities(TextureFormat::B10G11R11_UFloat);
+  const auto hasCapability = [capabilities](auto capability) {
+    return (capabilities & capability) != 0;
+  };
+
+  EXPECT_EQ(hasCapability(ICapabilities::TextureFormatCapabilityBits::Sampled), sampledSupported);
+  EXPECT_EQ(hasCapability(ICapabilities::TextureFormatCapabilityBits::SampledFiltered),
+            sampledSupported);
+  EXPECT_EQ(hasCapability(ICapabilities::TextureFormatCapabilityBits::Storage), storageSupported);
+  EXPECT_EQ(hasCapability(ICapabilities::TextureFormatCapabilityBits::Attachment),
+            attachmentSupported);
+  EXPECT_EQ(hasCapability(ICapabilities::TextureFormatCapabilityBits::SampledAttachment),
+            attachmentSupported);
+
+  opengl::Texture::FormatDescGL formatDesc;
+  EXPECT_EQ(opengl::Texture::toFormatDescGL(*context_,
+                                            TextureFormat::B10G11R11_UFloat,
+                                            TextureDesc::TextureUsageBits::Sampled,
+                                            formatDesc),
+            sampledSupported);
+
+  if (!sampledSupported) {
+    EXPECT_EQ(capabilities, ICapabilities::TextureFormatCapabilityBits::Unsupported);
+    return;
+  }
+
+  EXPECT_EQ(formatDesc.internalFormat, GL_R11F_G11F_B10F);
+  EXPECT_EQ(formatDesc.format, GL_RGB);
+  EXPECT_EQ(formatDesc.type, GL_UNSIGNED_INT_10F_11F_11F_REV);
+  EXPECT_EQ(opengl::Texture::glInternalFormatToTextureFormat(
+                formatDesc.internalFormat, formatDesc.format, formatDesc.type),
+            TextureFormat::B10G11R11_UFloat);
+}
+
+TEST_F(B10G11R11UFloatOGLTest, SamplesDistinctChannels) {
+  const auto capabilities = iglDev_->getTextureFormatCapabilities(TextureFormat::B10G11R11_UFloat);
+  if ((capabilities & ICapabilities::TextureFormatCapabilityBits::Sampled) == 0) {
+    GTEST_SKIP() << "B10G11R11_UFloat sampling is unsupported";
+  }
+
+  constexpr uint32_t kQuarterFloat11 = 13u << 6u;
+  constexpr uint32_t kHalfFloat11 = 14u << 6u;
+  constexpr uint32_t kOneFloat10 = 15u << 5u;
+  constexpr uint32_t kPackedQuarterHalfOne =
+      kQuarterFloat11 | (kHalfFloat11 << 11u) | (kOneFloat10 << 22u);
+  constexpr std::array<uint32_t, 4> kInput = {
+      kPackedQuarterHalfOne,
+      kPackedQuarterHalfOne,
+      kPackedQuarterHalfOne,
+      kPackedQuarterHalfOne,
+  };
+
+  Result ret;
+  const auto inputDesc = TextureDesc::new2D(TextureFormat::B10G11R11_UFloat,
+                                            OFFSCREEN_TEX_WIDTH,
+                                            OFFSCREEN_TEX_HEIGHT,
+                                            TextureDesc::TextureUsageBits::Sampled);
+  auto input = iglDev_->createTexture(inputDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+  ASSERT_NE(input, nullptr);
+  ASSERT_TRUE(input->upload(input->getFullRange(), kInput.data()).isOk());
+
+  const auto outputDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                             OFFSCREEN_TEX_WIDTH,
+                                             OFFSCREEN_TEX_HEIGHT,
+                                             TextureDesc::TextureUsageBits::Attachment);
+  auto output = iglDev_->createTexture(outputDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+  ASSERT_NE(output, nullptr);
+
+  render(input, output, false, input->getProperties());
+
+  FramebufferDesc framebufferDesc;
+  framebufferDesc.colorAttachments[0].texture = output;
+  auto framebuffer = iglDev_->createFramebuffer(framebufferDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+  ASSERT_NE(framebuffer, nullptr);
+
+  std::array<uint8_t, OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT * 4> actual{};
+  framebuffer->copyBytesColorAttachment(*cmdQueue_, 0, actual.data(), output->getFullRange());
+
+  const auto matchesReference = [&actual](const std::array<uint8_t, 4>& reference) {
+    for (size_t pixel = 0; pixel < OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT; ++pixel) {
+      for (size_t channel = 0; channel < reference.size(); ++channel) {
+        const auto value = static_cast<int>(actual[pixel * reference.size() + channel]);
+        const auto expected = static_cast<int>(reference[channel]);
+        if (value < expected - 1 || value > expected + 1) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  constexpr std::array<uint8_t, 4> kExpected = {64, 128, 255, 255};
+  constexpr std::array<uint8_t, 4> kSwizzled = {255, 128, 64, 255};
+  EXPECT_TRUE(matchesReference(kExpected));
+  EXPECT_FALSE(matchesReference(kSwizzled));
 }
 
 //

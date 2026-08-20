@@ -619,6 +619,9 @@
 #ifndef GL_RG_INTEGER
 #define GL_RG_INTEGER 0x8228
 #endif
+#ifndef GL_R11F_G11F_B10F
+#define GL_R11F_G11F_B10F 0x8c3a
+#endif
 #ifndef GL_RG16
 #define GL_RG16 0x822C
 #endif

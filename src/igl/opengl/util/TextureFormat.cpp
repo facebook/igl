@@ -87,6 +87,7 @@ namespace igl::opengl::util {
 #define GL_RG16UI 0x823a
 #define GL_RG32F 0x8230
 #define GL_RGB 0x1907
+#define GL_R11F_G11F_B10F 0x8C3A
 #define GL_RGBA16 0x805B
 #define GL_RGB_RAW_422_APPLE 0x8A51
 #define GL_RGB10_A2 0x8059
@@ -328,6 +329,9 @@ TextureFormat glTextureFormatToTextureFormat(int32_t glInternalFormat,
     } else {
       return TextureFormat::RGB10_A2_UNorm_Rev;
     }
+
+  case GL_R11F_G11F_B10F:
+    return TextureFormat::B10G11R11_UFloat;
 
   case GL_LUMINANCE_ALPHA:
   case GL_LUMINANCE8_ALPHA8:

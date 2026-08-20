@@ -2001,6 +2001,18 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getSpecialColorTextur
       capabilities |= sampled | sampledFiltered;
     }
     break;
+  case TextureFormat::B10G11R11_UFloat:
+    if (hasDesktopOrESVersion(*this, GLVersion::v3_0, GLVersion::v3_0_ES)) {
+      capabilities |= sampled | sampledFiltered;
+      if (hasInternalFeature(InternalFeatures::TexStorage)) {
+        capabilities |= ICapabilities::TextureFormatCapabilityBits::Storage;
+      }
+      if (hasDesktopOrESVersionOrExtension(
+              *this, GLVersion::v3_0, GLVersion::v3_2_ES, "GL_EXT_color_buffer_float")) {
+        capabilities |= attachment | sampledAttachment;
+      }
+    }
+    break;
   case TextureFormat::RGB10_A2_UNorm_Rev:
     if (hasTextureFeature(TextureFeatures::ColorTexImageRgb10A2)) {
       capabilities |= sampled | sampledFiltered;
@@ -2317,6 +2329,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
   case TextureFormat::R4G2B2_UNorm_Rev_Apple:
   case TextureFormat::R5G5B5A1_UNorm:
   case TextureFormat::BGR10_A2_Unorm:
+  case TextureFormat::B10G11R11_UFloat:
   case TextureFormat::RGB10_A2_UNorm_Rev:
   case TextureFormat::RGB10_A2_Uint_Rev:
   case TextureFormat::BGRA_UNorm8_Rev:
