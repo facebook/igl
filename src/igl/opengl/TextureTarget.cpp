@@ -114,7 +114,7 @@ void TextureTarget::attach(GLenum attachment,
                            const AttachmentParams& params,
                            GLuint renderBufferId) {
   IGL_PROFILER_FUNCTION();
-  IGL_DEBUG_ASSERT(params.stereo == false);
+  IGL_DEBUG_ASSERT(!params.stereo);
   IGL_DEBUG_ASSERT(params.face == 0);
   IGL_DEBUG_ASSERT(params.layer == 0);
   IGL_DEBUG_ASSERT(params.mipLevel == 0);
