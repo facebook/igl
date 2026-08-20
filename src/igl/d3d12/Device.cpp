@@ -300,6 +300,7 @@ void logInfoQueuesForDevice(ID3D12Device* device, const char* context) {
 // Use std::hash<SamplerStateDesc> for deduplication (implemented in igl/SamplerState.cpp).
 } // namespace
 
+namespace {
 // Helper: Calculate root signature size in DWORDs
 // Root signature limit: 64 DWORDs
 // Size formula (per Microsoft documentation):
@@ -308,7 +309,7 @@ void logInfoQueuesForDevice(ID3D12Device* device, const char* context) {
 //   - Descriptor tables: 1 DWORD each (regardless of table size)
 //   - Static samplers: 0 DWORDs (free)
 // Reference: https://learn.microsoft.com/en-us/windows/win32/direct3d12/root-signature-limits
-static uint32_t getRootSignatureDwordSize(const D3D12_ROOT_SIGNATURE_DESC& desc) {
+uint32_t getRootSignatureDwordSize(const D3D12_ROOT_SIGNATURE_DESC& desc) {
   uint32_t totalSize = 0;
 
   for (uint32_t i = 0; i < desc.NumParameters; ++i) {
@@ -377,12 +378,11 @@ static uint32_t getRootSignatureDwordSize(const D3D12_ROOT_SIGNATURE_DESC& desc)
 // consistent with the input layout and render target configuration we build
 // for a graphics PSO. This is intended purely for diagnostics and has no
 // effect on runtime behavior.
-static void validateShaderBindingsAndLayout(
-    const RenderPipelineDesc& desc,
-    const D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc,
-    const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputElements,
-    ID3D12ShaderReflection* IGL_NULLABLE vsRefl,
-    ID3D12ShaderReflection* IGL_NULLABLE psRefl) {
+void validateShaderBindingsAndLayout(const RenderPipelineDesc& desc,
+                                     const D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc,
+                                     const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputElements,
+                                     ID3D12ShaderReflection* IGL_NULLABLE vsRefl,
+                                     ID3D12ShaderReflection* IGL_NULLABLE psRefl) {
   IGL_PROFILER_FUNCTION();
   // Environment toggle: IGL_D3D12_VALIDATE_SHADER_BINDINGS=0 disables validation.
   if (const char* env = std::getenv("IGL_D3D12_VALIDATE_SHADER_BINDINGS")) {
@@ -514,6 +514,7 @@ static void validateShaderBindingsAndLayout(
 
   IGL_LOG_INFO("=== END D3D12 VALIDATE_SHADER_BINDINGS ===\n");
 }
+} // namespace
 
 Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
@@ -531,10 +532,11 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
   }
 }
 
-static bool compileFXC(const char* src,
-                       const char* entry,
-                       const char* target,
-                       std::vector<uint8_t>& outBytecode) {
+namespace {
+bool compileFXC(const char* src,
+                const char* entry,
+                const char* target,
+                std::vector<uint8_t>& outBytecode) {
   IGL_PROFILER_FUNCTION();
   igl::d3d12::ComPtr<ID3DBlob> blob;
   igl::d3d12::ComPtr<ID3DBlob> errors;
@@ -561,12 +563,12 @@ static bool compileFXC(const char* src,
   return true;
 }
 
-static bool compileDXC(DXCCompiler& compiler,
-                       const char* src,
-                       const char* entry,
-                       const char* target,
-                       const char* debugName,
-                       std::vector<uint8_t>& outBytecode) {
+bool compileDXC(DXCCompiler& compiler,
+                const char* src,
+                const char* entry,
+                const char* target,
+                const char* debugName,
+                std::vector<uint8_t>& outBytecode) {
   IGL_PROFILER_FUNCTION();
   std::string errors;
   const Result result =
@@ -580,6 +582,7 @@ static bool compileDXC(DXCCompiler& compiler,
   }
   return true;
 }
+} // namespace
 
 void Device::precompileMipmapShaders(ID3D12Device* IGL_NONNULL device) {
   IGL_PROFILER_FUNCTION();

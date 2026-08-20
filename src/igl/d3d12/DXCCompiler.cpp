@@ -29,8 +29,8 @@ using ComPtr = igl::d3d12::ComPtr<T>;
 using DxcCreateInstanceProc = HRESULT(WINAPI*)(REFCLSID rclsid, REFIID riid, LPVOID* ppv);
 
 // Module handle for dxcompiler.dll
-static HMODULE g_dxcompilerModule = nullptr;
-static DxcCreateInstanceProc g_DxcCreateInstance = nullptr;
+HMODULE g_dxcompilerModule = nullptr;
+DxcCreateInstanceProc g_DxcCreateInstance = nullptr;
 
 // Load dxcompiler.dll dynamically
 bool loadDxcLibrary() {
