@@ -927,7 +927,7 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
   // standard system library paths (/lib64, /usr/lib64). We cannot use LD_LIBRARY_PATH
   // or RPATH because they would interfere with Buck2's hermetic build environment.
 #if IGL_PLATFORM_LINUX && !defined(IGL_CMAKE_BUILD)
-  const std::array<const char*, 25> kPreloadLibs = {
+  const std::array<const char*, 24> kPreloadLibs = {
       // Base system libraries (leaf dependencies)
       "/lib64/libtinfo.so.6", // Required by libedit
       "/lib64/liblzma.so.5", // Required by libxml2
@@ -954,7 +954,6 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
       "/lib64/libdrm.so.2", // Required by all hardware drivers
       "/usr/lib64/libdrm_amdgpu.so.1", // Required by Radeon driver
       // High-level dependencies
-      "/lib64/libLLVM.so.20.1", // Required by Lavapipe and Radeon drivers
       "/lib64/libSPIRV-Tools.so", // Required by Lavapipe
       "/lib64/libSPIRV-Tools-opt.so", // Required by libVkLayer_khronos_validation
       // Additional X11 libraries for Intel drivers
@@ -978,6 +977,27 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
         IGL_LOG_DEBUG(
             "IGL/Vulkan: failed to preload `%s`: %s (not critical).\n", preload, dlerror());
       }
+    }
+  }
+
+  // Lavapipe and Radeon link whichever LLVM major their Mesa build was compiled against, and
+  // several majors can be installed side by side. Stop at the first one that loads: pulling two
+  // LLVM copies into the global namespace collides on `llvm::cl` symbols and crashes on the
+  // second registration. Newest first, since that is what a current Mesa links.
+  const std::array<const char*, 3> kLlvmPreloadCandidates = {
+      "/lib64/libLLVM.so.22.1",
+      "/lib64/libLLVM.so.21.1",
+      "/lib64/libLLVM.so.20.1",
+  };
+  for (const char* candidate : kLlvmPreloadCandidates) {
+    const char* libName = strrchr(candidate, '/') + 1;
+    if (dlopen(libName, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE) != nullptr) {
+      IGL_LOG_DEBUG("IGL/Vulkan: preloaded `%s` (via library name).\n", libName);
+      break;
+    }
+    if (dlopen(candidate, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE) != nullptr) {
+      IGL_LOG_DEBUG("IGL/Vulkan: preloaded `%s` (via full path).\n", candidate);
+      break;
     }
   }
 #endif // IGL_PLATFORM_LINUX && !defined(IGL_CMAKE_BUILD)
