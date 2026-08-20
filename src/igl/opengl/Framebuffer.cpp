@@ -323,8 +323,8 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
     getContext().pixelStorei(GL_PACK_ROW_LENGTH, packRowLength);
     getContext().pixelStorei(GL_PACK_ALIGNMENT, 1);
   } else {
-    const int finalBytesPerRow = bytesPerRow == 0 ? itexture->getProperties().getBytesPerRow(range)
-                                                  : bytesPerRow;
+    const int finalBytesPerRow = static_cast<int>(
+        bytesPerRow == 0 ? itexture->getProperties().getBytesPerRow(range) : bytesPerRow);
     if (packRowLengthSupported) {
       getContext().pixelStorei(GL_PACK_ROW_LENGTH, 0);
     }
@@ -603,7 +603,8 @@ void CustomFramebuffer::prepareResource(const std::string& debugName, Result* ou
 
   if (!debugName.empty() &&
       getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
-    getContext().objectLabel(GL_FRAMEBUFFER, frameBufferID_, debugName.size(), debugName.c_str());
+    getContext().objectLabel(
+        GL_FRAMEBUFFER, frameBufferID_, static_cast<GLsizei>(debugName.size()), debugName.c_str());
   }
 
   std::vector<GLenum> drawBuffers;
@@ -797,6 +798,7 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
 #endif
     const size_t index = i;
     IGL_DEBUG_ASSERT(index >= 0 && index < renderPass.colorAttachments.size());
+    // NOLINTNEXTLINE(facebook-hte-ParameterUncheckedArrayBounds)
     const auto& renderPassAttachment = renderPass.colorAttachments[index];
     // When setting up a framebuffer, we attach textures as though they were a non-array
     // texture with and set layer, mip-level and face equal to 0.
@@ -950,6 +952,7 @@ void CurrentFramebuffer::bind(const RenderPassDesc& renderPass) const {
 
   // clear the buffers if we're not loading previous contents
   GLbitfield clearMask = 0;
+  // NOLINTNEXTLINE(facebook-hte-ParameterUncheckedArrayBounds)
   if (renderPass.colorAttachments[0].loadAction == LoadAction::Clear) {
     clearMask |= GL_COLOR_BUFFER_BIT;
     auto clearColor = renderPass.colorAttachments[0].clearColor;
