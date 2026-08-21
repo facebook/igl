@@ -229,16 +229,16 @@ D3D12GraphicsPipelineBuilder& D3D12GraphicsPipelineBuilder::blendStateForAttachm
 
   // Convert IGL color write mask to D3D12
   UINT8 writeMask = 0;
-  if (attachment.colorWriteMask & igl::kColorWriteBitsRed) {
+  if ((attachment.colorWriteMask & igl::kColorWriteBitsRed) != 0) {
     writeMask |= D3D12_COLOR_WRITE_ENABLE_RED;
   }
-  if (attachment.colorWriteMask & igl::kColorWriteBitsGreen) {
+  if ((attachment.colorWriteMask & igl::kColorWriteBitsGreen) != 0) {
     writeMask |= D3D12_COLOR_WRITE_ENABLE_GREEN;
   }
-  if (attachment.colorWriteMask & igl::kColorWriteBitsBlue) {
+  if ((attachment.colorWriteMask & igl::kColorWriteBitsBlue) != 0) {
     writeMask |= D3D12_COLOR_WRITE_ENABLE_BLUE;
   }
-  if (attachment.colorWriteMask & igl::kColorWriteBitsAlpha) {
+  if ((attachment.colorWriteMask & igl::kColorWriteBitsAlpha) != 0) {
     writeMask |= D3D12_COLOR_WRITE_ENABLE_ALPHA;
   }
   rt.RenderTargetWriteMask = writeMask;

@@ -667,7 +667,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
   // Skip depth/stencil textures entirely. The current D3D12 mipmap path only
   // supports color render-target textures; attempting to add ALLOW_RENDER_TARGET
   // to a depth/stencil resource would violate D3D12's flag rules.
-  if (resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) {
+  if ((resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) != 0) {
     IGL_D3D12_LOG_VERBOSE(
         "Texture::generateMipmap() - Skipping: depth/stencil textures are not "
         "handled by this mipmap path (Flags=0x%08X)\n",
@@ -682,7 +682,7 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
   // Note: Device::createTexture() automatically sets ALLOW_RENDER_TARGET for
   // mipmapped color textures, so this should only trigger for externally
   // created resources missing the flag.
-  if (!(resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)) {
+  if ((resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) == 0) {
     IGL_D3D12_LOG_VERBOSE(
         "Texture::generateMipmap() - Skipping: texture does not have "
         "ALLOW_RENDER_TARGET flag (Flags=0x%08X)\n",
@@ -917,7 +917,7 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/,
   }
 
   // Check if texture was created with RENDER_TARGET flag (required for mipmap generation)
-  if (!(resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)) {
+  if ((resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) == 0) {
     IGL_D3D12_LOG_VERBOSE(
         "Texture::generateMipmap(cmdBuffer) - Skipping: texture not created with RENDER_TARGET "
         "usage\n");

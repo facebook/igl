@@ -230,28 +230,28 @@ bool D3D12ResourcesBinder::updateBindings(const RenderPipelineState* renderPipel
   bool success = true;
 
   // Update textures (SRV table)
-  if (dirtyFlags_ & DirtyFlagBits_Textures) {
+  if ((dirtyFlags_ & DirtyFlagBits_Textures) != 0) {
     if (!updateTextureBindings(commandList, device, renderPipeline, outResult)) {
       success = false;
     }
   }
 
   // Update samplers (sampler table)
-  if (dirtyFlags_ & DirtyFlagBits_Samplers) {
+  if ((dirtyFlags_ & DirtyFlagBits_Samplers) != 0) {
     if (!updateSamplerBindings(commandList, device, renderPipeline, outResult)) {
       success = false;
     }
   }
 
   // Update buffers (CBV table)
-  if (dirtyFlags_ & DirtyFlagBits_Buffers) {
+  if ((dirtyFlags_ & DirtyFlagBits_Buffers) != 0) {
     if (!updateBufferBindings(commandList, device, renderPipeline, outResult)) {
       success = false;
     }
   }
 
   // Update UAVs (UAV table for compute)
-  if ((dirtyFlags_ & DirtyFlagBits_UAVs) && isCompute_) {
+  if (((dirtyFlags_ & DirtyFlagBits_UAVs) != 0) && isCompute_) {
     if (!updateUAVBindings(commandList, device, outResult)) {
       success = false;
     }
