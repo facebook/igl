@@ -50,9 +50,9 @@ __attribute__((packed))
 #endif
 
 struct BufferOffsets {
-  size_t r;
-  size_t g;
-  size_t b;
+  size_t r = 0;
+  size_t g = 0;
+  size_t b = 0;
 };
 
 BufferOffsets getBufferOffsets(TextureFormat format) {

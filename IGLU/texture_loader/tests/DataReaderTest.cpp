@@ -173,8 +173,8 @@ TEST(DataReaderTest, AdvanceTemplatedAdvancesBySizeofType) {
 TEST(DataReaderTest, SequentialAdvanceAndReadSimulatesHeaderParsing) {
   // Simulate reading a simple binary format: 4-byte magic + 4-byte payload size
   struct Header {
-    uint32_t magic;
-    uint32_t payloadSize;
+    uint32_t magic = 0;
+    uint32_t payloadSize = 0;
   };
   const Header expectedHeader = {.magic = 0xDEADBEEF, .payloadSize = 42};
   const auto* rawBytes = reinterpret_cast<const uint8_t*>(&expectedHeader);
