@@ -136,7 +136,7 @@ Result executeCopyTextureToBuffer(D3D12Context& ctx,
     // Check if destination buffer is in DEFAULT heap (Storage buffers)
     // We cannot call map() on DEFAULT heap buffers because Buffer::map() would
     // create its own staging buffer and copy FROM (empty) DEFAULT buffer first
-    D3D12_HEAP_PROPERTIES heapProps;
+    D3D12_HEAP_PROPERTIES heapProps = {};
     dstRes->GetHeapProperties(&heapProps, nullptr);
     const bool isDefaultHeap = (heapProps.Type == D3D12_HEAP_TYPE_DEFAULT);
 

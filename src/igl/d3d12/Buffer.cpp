@@ -48,8 +48,8 @@ Buffer::Buffer(Device& device,
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   // Determine storage type based on heap properties
   if (resource_.Get()) {
-    D3D12_HEAP_PROPERTIES heapProps;
-    D3D12_HEAP_FLAGS heapFlags;
+    D3D12_HEAP_PROPERTIES heapProps = {};
+    D3D12_HEAP_FLAGS heapFlags = {};
     resource_->GetHeapProperties(&heapProps, &heapFlags);
 
     if (heapProps.Type == D3D12_HEAP_TYPE_UPLOAD) {

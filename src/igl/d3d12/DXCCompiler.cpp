@@ -203,7 +203,7 @@ Result DXCCompiler::compile(const char* source,
   }
 
   // Check compilation status
-  HRESULT compileStatus;
+  HRESULT compileStatus = S_OK;
   result->GetStatus(&compileStatus);
 
   // Get errors/warnings
@@ -246,7 +246,7 @@ Result DXCCompiler::compile(const char* source,
         bytecode.Get(), DxcValidatorFlags_InPlaceEdit, validationResult.GetAddressOf());
 
     if (SUCCEEDED(hr)) {
-      HRESULT validationStatus;
+      HRESULT validationStatus = S_OK;
       validationResult->GetStatus(&validationStatus);
       IGL_D3D12_LOG_VERBOSE("DXCCompiler: Validation status: 0x%08X\n",
                             static_cast<unsigned>(validationStatus));

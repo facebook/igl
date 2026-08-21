@@ -118,7 +118,7 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
           continue;
         }
         // Check return value from getHandle.
-        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
+        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = {};
         if (!heapMgr->getRTVHandle(rtvIdx, &rtvHandle)) {
           IGL_LOG_ERROR("RenderCommandEncoder: Failed to get RTV handle for index %u\n", rtvIdx);
           heapMgr->freeRTV(rtvIdx);

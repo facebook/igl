@@ -158,7 +158,7 @@ void D3D12StagingDevice::free(StagingBuffer buffer, uint64_t fenceValue) {
   entry.fenceValue = fenceValue;
 
   // Determine if it's a readback buffer
-  D3D12_HEAP_PROPERTIES heapProps;
+  D3D12_HEAP_PROPERTIES heapProps = {};
   buffer.buffer->GetHeapProperties(&heapProps, nullptr);
   entry.isReadback = (heapProps.Type == D3D12_HEAP_TYPE_READBACK);
 
