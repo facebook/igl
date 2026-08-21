@@ -74,11 +74,11 @@ TEST(BindGroupBufferDescTest, DesignatedInitializerDebugName) {
 TEST(BindGroupBufferDescTest, DynamicBufferMaskBits) {
   BindGroupBufferDesc desc;
   desc.isDynamicBufferMask = (1u << 0) | (1u << 3) | (1u << 7);
-  EXPECT_TRUE(desc.isDynamicBufferMask & (1u << 0));
-  EXPECT_FALSE(desc.isDynamicBufferMask & (1u << 1));
-  EXPECT_FALSE(desc.isDynamicBufferMask & (1u << 2));
-  EXPECT_TRUE(desc.isDynamicBufferMask & (1u << 3));
-  EXPECT_TRUE(desc.isDynamicBufferMask & (1u << 7));
+  EXPECT_TRUE((desc.isDynamicBufferMask & (1u << 0)) != 0);
+  EXPECT_FALSE((desc.isDynamicBufferMask & (1u << 1)) != 0);
+  EXPECT_FALSE((desc.isDynamicBufferMask & (1u << 2)) != 0);
+  EXPECT_TRUE((desc.isDynamicBufferMask & (1u << 3)) != 0);
+  EXPECT_TRUE((desc.isDynamicBufferMask & (1u << 7)) != 0);
 }
 
 // ---------------------------------------------------------------------------

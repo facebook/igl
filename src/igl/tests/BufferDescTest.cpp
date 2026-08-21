@@ -74,10 +74,10 @@ TEST(BufferDescTest, TypeBitsAreDistinct) {
 TEST(BufferDescTest, TypeBitsCanBeCombined) {
   const BufferDesc::BufferType combined =
       BufferDesc::BufferTypeBits::Vertex | BufferDesc::BufferTypeBits::Storage;
-  EXPECT_TRUE(combined & BufferDesc::BufferTypeBits::Vertex);
-  EXPECT_TRUE(combined & BufferDesc::BufferTypeBits::Storage);
-  EXPECT_FALSE(combined & BufferDesc::BufferTypeBits::Index);
-  EXPECT_FALSE(combined & BufferDesc::BufferTypeBits::Uniform);
+  EXPECT_TRUE((combined & BufferDesc::BufferTypeBits::Vertex) != 0);
+  EXPECT_TRUE((combined & BufferDesc::BufferTypeBits::Storage) != 0);
+  EXPECT_FALSE((combined & BufferDesc::BufferTypeBits::Index) != 0);
+  EXPECT_FALSE((combined & BufferDesc::BufferTypeBits::Uniform) != 0);
 }
 
 TEST(BufferDescTest, HintBitsAreDistinct) {
@@ -91,9 +91,9 @@ TEST(BufferDescTest, HintBitsAreDistinct) {
 TEST(BufferDescTest, HintBitsCanBeCombined) {
   const BufferDesc::BufferAPIHint combined =
       BufferDesc::BufferAPIHintBits::Ring | BufferDesc::BufferAPIHintBits::NoCopy;
-  EXPECT_TRUE(combined & BufferDesc::BufferAPIHintBits::Ring);
-  EXPECT_TRUE(combined & BufferDesc::BufferAPIHintBits::NoCopy);
-  EXPECT_FALSE(combined & BufferDesc::BufferAPIHintBits::Atomic);
+  EXPECT_TRUE((combined & BufferDesc::BufferAPIHintBits::Ring) != 0);
+  EXPECT_TRUE((combined & BufferDesc::BufferAPIHintBits::NoCopy) != 0);
+  EXPECT_FALSE((combined & BufferDesc::BufferAPIHintBits::Atomic) != 0);
 }
 
 TEST(BufferDescTest, DesignatedInitializerVertexBuffer) {
@@ -103,7 +103,7 @@ TEST(BufferDescTest, DesignatedInitializerVertexBuffer) {
       .data = verts,
       .length = sizeof(verts),
   };
-  EXPECT_TRUE(desc.type & BufferDesc::BufferTypeBits::Vertex);
+  EXPECT_TRUE((desc.type & BufferDesc::BufferTypeBits::Vertex) != 0);
   EXPECT_EQ(desc.data, verts);
   EXPECT_EQ(desc.length, sizeof(verts));
 }
@@ -115,9 +115,9 @@ TEST(BufferDescTest, DesignatedInitializerUniformBuffer) {
       .hint = BufferDesc::BufferAPIHintBits::Ring,
       .debugName = "perFrame",
   };
-  EXPECT_TRUE(desc.type & BufferDesc::BufferTypeBits::Uniform);
+  EXPECT_TRUE((desc.type & BufferDesc::BufferTypeBits::Uniform) != 0);
   EXPECT_EQ(desc.length, 256u);
-  EXPECT_TRUE(desc.hint & BufferDesc::BufferAPIHintBits::Ring);
+  EXPECT_TRUE((desc.hint & BufferDesc::BufferAPIHintBits::Ring) != 0);
   EXPECT_EQ(desc.debugName, "perFrame");
 }
 

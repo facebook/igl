@@ -51,13 +51,13 @@ TEST_F(CompressedTextureOGLTest, CreateCompressed) {
   TextureFormat format = TextureFormat::RGBA8_EAC_ETC2;
   auto caps = iglDev_->getTextureFormatCapabilities(format);
 
-  if (!(caps & ICapabilities::TextureFormatCapabilityBits::Sampled)) {
+  if ((caps & ICapabilities::TextureFormatCapabilityBits::Sampled) == 0) {
     // Try ASTC
     format = TextureFormat::RGBA_ASTC_4x4;
     caps = iglDev_->getTextureFormatCapabilities(format);
   }
 
-  if (!(caps & ICapabilities::TextureFormatCapabilityBits::Sampled)) {
+  if ((caps & ICapabilities::TextureFormatCapabilityBits::Sampled) == 0) {
     GTEST_SKIP() << "No supported compressed texture format found";
   }
 

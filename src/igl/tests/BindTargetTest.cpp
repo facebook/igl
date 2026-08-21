@@ -37,9 +37,9 @@ TEST(BindTargetTest, BitwiseCombinations) {
   const uint8_t vertexTask = static_cast<uint8_t>(BindTarget::kVertex | BindTarget::kTask);
   EXPECT_NE(vertexTask, BindTarget::kVertex);
   EXPECT_NE(vertexTask, BindTarget::kTask);
-  EXPECT_TRUE(vertexTask & BindTarget::kVertex);
-  EXPECT_TRUE(vertexTask & BindTarget::kTask);
-  EXPECT_FALSE(vertexTask & BindTarget::kMesh);
+  EXPECT_TRUE((vertexTask & BindTarget::kVertex) != 0);
+  EXPECT_TRUE((vertexTask & BindTarget::kTask) != 0);
+  EXPECT_FALSE((vertexTask & BindTarget::kMesh) != 0);
 }
 
 } // namespace igl::tests
