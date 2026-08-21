@@ -257,7 +257,7 @@ namespace {
 int findUniformByName(const std::vector<igl::UniformDesc>& uniforms, const char* name) {
   for (size_t i = 0; i < uniforms.size(); ++i) {
     if (std::strcmp(name, uniforms[i].name.c_str()) == 0) {
-      return i;
+      return static_cast<int>(i);
     }
   }
   return -1;
