@@ -301,8 +301,8 @@ TEST_F(UniformBufferBindTest, BindUniformArrayStridedPacking) {
     const GLint loc = getLocation(pipeline, "uFloatArr");
     ASSERT_GE(loc, 0);
     struct PaddedFloat {
-      float val;
-      float padding;
+      float val = 0.0f;
+      float padding = 0.0f;
     };
     const std::array<PaddedFloat, 2> data = {
         PaddedFloat{.val = 1.0f, .padding = 0.0f},
@@ -321,8 +321,8 @@ TEST_F(UniformBufferBindTest, BindUniformArrayStridedPacking) {
     const GLint loc = getLocation(pipeline, "uIntArr");
     ASSERT_GE(loc, 0);
     struct PaddedInt {
-      int val;
-      int padding;
+      int val = 0;
+      int padding = 0;
     };
     const std::array<PaddedInt, 2> data = {
         PaddedInt{.val = 10, .padding = 0},
@@ -346,8 +346,8 @@ TEST_F(UniformBufferBindTest, BindUniformArrayStridedPacking) {
     const GLint loc = getLocation(pipeline, "uBoolArr");
     ASSERT_GE(loc, 0);
     struct PaddedBool {
-      uint8_t val;
-      uint8_t padding[7];
+      uint8_t val = 0;
+      uint8_t padding[7] = {};
     };
     const std::array<PaddedBool, 2> data = {
         PaddedBool{.val = 1, .padding = {}},

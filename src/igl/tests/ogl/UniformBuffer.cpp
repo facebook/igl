@@ -882,8 +882,8 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   };
 
   struct BooleanUnpackedData {
-    bool data;
-    bool padding[3];
+    bool data = false;
+    bool padding[3] = {};
     simd::float3 morePadding;
   };
 

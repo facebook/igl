@@ -273,9 +273,9 @@ TEST_F(ComputeCommandEncoderVulkanTest, DispatchThreadGroupsIndirect) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
   struct DispatchIndirectArgs {
-    uint32_t groupCountX;
-    uint32_t groupCountY;
-    uint32_t groupCountZ;
+    uint32_t groupCountX = 0;
+    uint32_t groupCountY = 0;
+    uint32_t groupCountZ = 0;
   };
   const DispatchIndirectArgs indirectArgs{.groupCountX = 1, .groupCountY = 1, .groupCountZ = 1};
   const BufferDesc indirectBufferDesc{
