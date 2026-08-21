@@ -103,6 +103,10 @@ void writeBitmap(std::ostream& stream,
       ::iglu::textureaccessor::TextureAccessorFactory::createTextureAccessor(
           device.getBackendType(), texture, device);
 
+  if (!IGL_DEBUG_VERIFY(textureAccessor)) {
+    return;
+  }
+
   const igl::CommandQueueDesc desc{};
   Result result;
   const auto commandQueue = device.createCommandQueue(desc, &result);
