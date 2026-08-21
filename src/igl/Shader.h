@@ -8,7 +8,6 @@
 #pragma once
 
 #include <type_traits>
-#include <utility>
 #include <vector>
 #include <igl/Common.h> // IWYU pragma: keep
 #include <igl/ITrackedResource.h>
