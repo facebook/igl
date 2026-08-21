@@ -951,8 +951,8 @@ std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
   }
 
   // Determine heap type and initial state based on storage
-  D3D12_HEAP_TYPE heapType;
-  D3D12_RESOURCE_STATES initialState;
+  D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_DEFAULT;
+  D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
 
   // CRITICAL: Storage buffers with UAV flags MUST use DEFAULT heap
   // D3D12 does not allow UAV resources on UPLOAD heaps
