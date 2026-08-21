@@ -1117,11 +1117,11 @@ std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
 
               // Transition to a likely-read state based on buffer type
               D3D12_RESOURCE_STATES targetState = D3D12_RESOURCE_STATE_GENERIC_READ;
-              if (desc.type & BufferDesc::BufferTypeBits::Vertex) {
+              if ((desc.type & BufferDesc::BufferTypeBits::Vertex) != 0) {
                 targetState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-              } else if (desc.type & BufferDesc::BufferTypeBits::Uniform) {
+              } else if ((desc.type & BufferDesc::BufferTypeBits::Uniform) != 0) {
                 targetState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-              } else if (desc.type & BufferDesc::BufferTypeBits::Index) {
+              } else if ((desc.type & BufferDesc::BufferTypeBits::Index) != 0) {
                 targetState = D3D12_RESOURCE_STATE_INDEX_BUFFER;
               }
               D3D12_RESOURCE_BARRIER toTarget = {};
@@ -1327,13 +1327,13 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   const bool isDepthStencilFormat =
       (desc.format >= TextureFormat::Z_UNorm16 && desc.format <= TextureFormat::S_UInt8);
 
-  if (desc.usage & TextureDesc::TextureUsageBits::Sampled) {
+  if ((desc.usage & TextureDesc::TextureUsageBits::Sampled) != 0) {
     // Shader resource - no special flags needed
   }
 
   // Attachment usage becomes either a color render target or a depth/stencil
   // target depending on the texture format.
-  if (desc.usage & TextureDesc::TextureUsageBits::Attachment) {
+  if ((desc.usage & TextureDesc::TextureUsageBits::Attachment) != 0) {
     if (isDepthStencilFormat) {
       resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     } else {
@@ -1349,7 +1349,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 
   // Storage (unordered access) is only supported for non-depth/stencil
   // formats. If requested on a depth/stencil texture, log and ignore it.
-  if (desc.usage & TextureDesc::TextureUsageBits::Storage) {
+  if ((desc.usage & TextureDesc::TextureUsageBits::Storage) != 0) {
     if (isDepthStencilFormat) {
       IGL_LOG_ERROR(
           "Device::createTexture: Storage usage (UAV) requested for depth/stencil "
@@ -1381,7 +1381,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   D3D12_CLEAR_VALUE clearValue = {};
   D3D12_CLEAR_VALUE* pClearValue = nullptr;
 
-  if (resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) {
+  if ((resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) != 0) {
     clearValue.Format = dxgiFormat;
     clearValue.DepthStencil.Depth = 1.0f; // Default far plane
     clearValue.DepthStencil.Stencil = 0;
@@ -1952,16 +1952,16 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
 
       // Convert IGL color write mask to D3D12
       UINT8 writeMask = 0;
-      if (att.colorWriteMask & igl::kColorWriteBitsRed) {
+      if ((att.colorWriteMask & igl::kColorWriteBitsRed) != 0) {
         writeMask |= D3D12_COLOR_WRITE_ENABLE_RED;
       }
-      if (att.colorWriteMask & igl::kColorWriteBitsGreen) {
+      if ((att.colorWriteMask & igl::kColorWriteBitsGreen) != 0) {
         writeMask |= D3D12_COLOR_WRITE_ENABLE_GREEN;
       }
-      if (att.colorWriteMask & igl::kColorWriteBitsBlue) {
+      if ((att.colorWriteMask & igl::kColorWriteBitsBlue) != 0) {
         writeMask |= D3D12_COLOR_WRITE_ENABLE_BLUE;
       }
-      if (att.colorWriteMask & igl::kColorWriteBitsAlpha) {
+      if ((att.colorWriteMask & igl::kColorWriteBitsAlpha) != 0) {
         writeMask |= D3D12_COLOR_WRITE_ENABLE_ALPHA;
       }
       psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = writeMask;
@@ -2693,16 +2693,16 @@ igl::d3d12::ComPtr<ID3D12PipelineState> Device::createPipelineStateVariant(
       psoDesc.BlendState.RenderTarget[i].BlendOpAlpha = toD3D12BlendOp(att.alphaBlendOp);
 
       UINT8 writeMask = 0;
-      if (att.colorWriteMask & igl::kColorWriteBitsRed) {
+      if ((att.colorWriteMask & igl::kColorWriteBitsRed) != 0) {
         writeMask |= D3D12_COLOR_WRITE_ENABLE_RED;
       }
-      if (att.colorWriteMask & igl::kColorWriteBitsGreen) {
+      if ((att.colorWriteMask & igl::kColorWriteBitsGreen) != 0) {
         writeMask |= D3D12_COLOR_WRITE_ENABLE_GREEN;
       }
-      if (att.colorWriteMask & igl::kColorWriteBitsBlue) {
+      if ((att.colorWriteMask & igl::kColorWriteBitsBlue) != 0) {
         writeMask |= D3D12_COLOR_WRITE_ENABLE_BLUE;
       }
-      if (att.colorWriteMask & igl::kColorWriteBitsAlpha) {
+      if ((att.colorWriteMask & igl::kColorWriteBitsAlpha) != 0) {
         writeMask |= D3D12_COLOR_WRITE_ENABLE_ALPHA;
       }
       psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = writeMask;
@@ -3829,19 +3829,19 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(
   // Map D3D12_FORMAT_SUPPORT1 flags to IGL capabilities
 
   // Sampled: Can be used with texture sampling instructions
-  if (s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) {
+  if ((s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) != 0) {
     caps |= CapBits::Sampled;
   }
 
   // SampledFiltered: Supports linear filtering (only for non-integer color formats)
   // Also check D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE_COMPARISON for depth formats
   if (props.hasColor() && !props.isInteger()) {
-    if (s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) {
+    if ((s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) != 0) {
       caps |= CapBits::SampledFiltered;
     }
   } else if (props.hasDepth() || props.hasStencil()) {
     // Depth formats: check for comparison filtering support
-    if (s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE_COMPARISON) {
+    if ((s1 & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE_COMPARISON) != 0) {
       caps |= CapBits::SampledFiltered;
     }
   }
@@ -3852,7 +3852,8 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(
   // RGB formats even if D3D12 reports the underlying RGBA format as renderable - using them as
   // render targets causes device removal
   if (!isThreeChannelRgbFormat) {
-    if ((s1 & D3D12_FORMAT_SUPPORT1_RENDER_TARGET) || (s1 & D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL)) {
+    if (((s1 & D3D12_FORMAT_SUPPORT1_RENDER_TARGET) != 0) ||
+        ((s1 & D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL) != 0)) {
       caps |= CapBits::Attachment;
     }
   }
@@ -3860,22 +3861,22 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(
   // Storage: Can be used with unordered access (UAV)
   // Check for typed UAV load/store, or atomic operations
   // Enhanced UAV capability detection.
-  const bool hasUAVTypedOps = (s2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) &&
-                              (s2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE);
+  const bool hasUAVTypedOps = ((s2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) != 0) &&
+                              ((s2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE) != 0);
   const bool hasUAVAtomicOps =
-      (s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_ADD) ||
-      (s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_BITWISE_OPS) ||
-      (s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_COMPARE_STORE_OR_COMPARE_EXCHANGE) ||
-      (s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_EXCHANGE) ||
-      (s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_SIGNED_MIN_OR_MAX) ||
-      (s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_UNSIGNED_MIN_OR_MAX);
+      ((s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_ADD) != 0) ||
+      ((s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_BITWISE_OPS) != 0) ||
+      ((s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_COMPARE_STORE_OR_COMPARE_EXCHANGE) != 0) ||
+      ((s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_EXCHANGE) != 0) ||
+      ((s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_SIGNED_MIN_OR_MAX) != 0) ||
+      ((s2 & D3D12_FORMAT_SUPPORT2_UAV_ATOMIC_UNSIGNED_MIN_OR_MAX) != 0);
 
   if (hasFeature(DeviceFeatures::Compute) && (hasUAVTypedOps || hasUAVAtomicOps)) {
     caps |= CapBits::Storage;
   }
 
   // SampledAttachment: Can be both sampled and used as attachment
-  if ((caps & CapBits::Sampled) && (caps & CapBits::Attachment)) {
+  if (((caps & CapBits::Sampled) != 0) && ((caps & CapBits::Attachment) != 0)) {
     caps |= CapBits::SampledAttachment;
   }
 
@@ -3914,20 +3915,20 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(
       const uint32_t MULTISAMPLE_RESOLVE = 0x40; // D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RESOLVE
       const uint32_t MULTISAMPLE_LOAD = 0x100000; // D3D12_FORMAT_SUPPORT1_MULTISAMPLE_LOAD
 
-      if (unmappedS1 & MIP_AUTOGEN) {
+      if ((unmappedS1 & MIP_AUTOGEN) != 0) {
         IGL_D3D12_LOG_VERBOSE("    - MIP_AUTOGEN (0x800)\n");
       }
-      if (unmappedS1 & MULTISAMPLE_RESOLVE) {
+      if ((unmappedS1 & MULTISAMPLE_RESOLVE) != 0) {
         IGL_D3D12_LOG_VERBOSE("    - MULTISAMPLE_RESOLVE (0x40)\n");
       }
-      if (unmappedS1 & MULTISAMPLE_LOAD) {
+      if ((unmappedS1 & MULTISAMPLE_LOAD) != 0) {
         IGL_D3D12_LOG_VERBOSE("    - MULTISAMPLE_LOAD (0x100000)\n");
       }
     }
     if (unmappedS2 != 0) {
       IGL_D3D12_LOG_VERBOSE("  Support2 unmapped flags: 0x%08X\n", unmappedS2);
       const uint32_t OUTPUT_MERGER_LOGIC_OP = 0x2; // D3D12_FORMAT_SUPPORT2_OUTPUT_MERGER_LOGIC_OP
-      if (unmappedS2 & OUTPUT_MERGER_LOGIC_OP) {
+      if ((unmappedS2 & OUTPUT_MERGER_LOGIC_OP) != 0) {
         IGL_D3D12_LOG_VERBOSE("    - OUTPUT_MERGER_LOGIC_OP (0x2)\n");
       }
     }
