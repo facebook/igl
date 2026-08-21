@@ -1127,7 +1127,7 @@ void Texture::initializeStateTracking(D3D12_RESOURCE_STATES initialState) {
   }
 
   const uint32_t mipLevels = static_cast<uint32_t>(std::max<size_t>(numMipLevels_, 1));
-  uint32_t arraySize;
+  uint32_t arraySize = 0;
   if (type_ == TextureType::ThreeD) {
     arraySize = 1u;
   } else if (type_ == TextureType::Cube) {
@@ -1150,7 +1150,7 @@ uint32_t Texture::calcSubresourceIndex(uint32_t mipLevel, uint32_t layer) const 
   const Texture* owner = getStateOwner();
   IGL_DEBUG_ASSERT(owner != nullptr, "State owner must not be null");
   const uint32_t mipLevels = static_cast<uint32_t>(std::max<size_t>(owner->numMipLevels_, 1));
-  uint32_t arraySize;
+  uint32_t arraySize = 0;
   if (owner->type_ == TextureType::ThreeD) {
     arraySize = 1u;
   } else if (owner->type_ == TextureType::Cube) {
