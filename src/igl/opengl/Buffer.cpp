@@ -74,19 +74,19 @@ void ArrayBuffer::initialize(const BufferDesc& desc, Result* IGL_NULLABLE outRes
     Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create buffer");
   }
 
-  if (desc.type & BufferDesc::BufferTypeBits::Storage) {
+  if ((desc.type & BufferDesc::BufferTypeBits::Storage) != 0) {
     if (getContext().deviceFeatures().hasFeature(DeviceFeatures::Compute)) {
       target_ = GL_SHADER_STORAGE_BUFFER;
     } else {
       IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     }
-  } else if (desc.type & BufferDesc::BufferTypeBits::Uniform) {
+  } else if ((desc.type & BufferDesc::BufferTypeBits::Uniform) != 0) {
     target_ = GL_UNIFORM_BUFFER;
-  } else if (desc.type & BufferDesc::BufferTypeBits::Vertex) {
+  } else if ((desc.type & BufferDesc::BufferTypeBits::Vertex) != 0) {
     target_ = GL_ARRAY_BUFFER;
-  } else if (desc.type & BufferDesc::BufferTypeBits::Index) {
+  } else if ((desc.type & BufferDesc::BufferTypeBits::Index) != 0) {
     target_ = GL_ELEMENT_ARRAY_BUFFER;
-  } else if (desc.type & BufferDesc::BufferTypeBits::Indirect) {
+  } else if ((desc.type & BufferDesc::BufferTypeBits::Indirect) != 0) {
     target_ = GL_DRAW_INDIRECT_BUFFER;
   } else {
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();

@@ -35,13 +35,13 @@ std::unique_ptr<Buffer> allocateBuffer(BufferDesc::BufferType bufferType,
                                        IContext& context) {
   std::unique_ptr<Buffer> resource;
 
-  if ((bufferType & BufferDesc::BufferTypeBits::Index) ||
-      (bufferType & BufferDesc::BufferTypeBits::Vertex) ||
-      (bufferType & BufferDesc::BufferTypeBits::Indirect) ||
-      (bufferType & BufferDesc::BufferTypeBits::Storage)) {
+  if ((bufferType & BufferDesc::BufferTypeBits::Index) != 0 ||
+      (bufferType & BufferDesc::BufferTypeBits::Vertex) != 0 ||
+      (bufferType & BufferDesc::BufferTypeBits::Indirect) != 0 ||
+      (bufferType & BufferDesc::BufferTypeBits::Storage) != 0) {
     resource = std::make_unique<ArrayBuffer>(context, requestedApiHints, bufferType);
-  } else if (bufferType & BufferDesc::BufferTypeBits::Uniform) {
-    if (requestedApiHints & BufferDesc::BufferAPIHintBits::UniformBlock) {
+  } else if ((bufferType & BufferDesc::BufferTypeBits::Uniform) != 0) {
+    if ((requestedApiHints & BufferDesc::BufferAPIHintBits::UniformBlock) != 0) {
       resource = std::make_unique<UniformBlockBuffer>(context, requestedApiHints, bufferType);
     } else {
       resource = std::make_unique<UniformBuffer>(context, requestedApiHints, bufferType);
