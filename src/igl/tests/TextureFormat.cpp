@@ -17,7 +17,6 @@ class TextureFormatTest : public util::TextureFormatTestBase {
  private:
  public:
   TextureFormatTest() = default;
-  ~TextureFormatTest() override = default;
 };
 
 TEST_F(TextureFormatTest, Sampled) {

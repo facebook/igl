@@ -19,7 +19,6 @@ class ShaderModuleTest : public ::testing::Test {
  private:
  public:
   ShaderModuleTest() = default;
-  ~ShaderModuleTest() override = default;
 
   //
   // SetUp()

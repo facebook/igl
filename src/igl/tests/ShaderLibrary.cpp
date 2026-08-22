@@ -18,7 +18,6 @@ class ShaderLibraryTest : public ::testing::Test {
  private:
  public:
   ShaderLibraryTest() = default;
-  ~ShaderLibraryTest() override = default;
 
   //
   // SetUp()

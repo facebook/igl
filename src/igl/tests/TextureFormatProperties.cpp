@@ -40,7 +40,6 @@ class TextureTest : public ::testing::Test {
  private:
  public:
   TextureTest() = default;
-  ~TextureTest() override = default;
 
   //
   // SetUp()

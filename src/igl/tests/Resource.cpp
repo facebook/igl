@@ -24,7 +24,6 @@ namespace igl::tests {
 class ResourceTest : public ::testing::Test {
  public:
   ResourceTest() = default;
-  ~ResourceTest() override = default;
 
   // Set up common resources. This will create a device and a command queue
   void SetUp() override {
