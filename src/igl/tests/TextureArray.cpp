@@ -42,7 +42,6 @@ class TextureArrayTest : public ::testing::Test {
  private:
  public:
   TextureArrayTest() = default;
-  ~TextureArrayTest() override = default;
 
   std::shared_ptr<iglu::ManagedUniformBuffer> createVertexUniformBuffer(IDevice& device,
                                                                         Result* /*result*/) {

@@ -47,7 +47,6 @@ class RenderCommandEncoderTest : public ::testing::Test {
  private:
  public:
   RenderCommandEncoderTest() = default;
-  ~RenderCommandEncoderTest() override = default;
 
   /**
    * @brief This function sets up a render pass and a render pipeline descriptor
