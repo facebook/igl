@@ -25,7 +25,6 @@ namespace igl::tests {
 class MetalErrorPathsTest : public ::testing::Test {
  public:
   MetalErrorPathsTest() = default;
-  ~MetalErrorPathsTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

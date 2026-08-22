@@ -28,7 +28,6 @@ namespace igl::tests {
 class MetalIndirectDrawTest : public ::testing::Test {
  public:
   MetalIndirectDrawTest() = default;
-  ~MetalIndirectDrawTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

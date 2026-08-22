@@ -30,7 +30,6 @@ namespace igl::tests {
 class MetalFramebufferTest : public ::testing::Test {
  public:
   MetalFramebufferTest() = default;
-  ~MetalFramebufferTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

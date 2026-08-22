@@ -20,7 +20,6 @@ namespace igl::tests {
 class HWDeviceTest : public ::testing::Test {
  public:
   HWDeviceTest() = default;
-  ~HWDeviceTest() override = default;
 
   // Set up common resources. This will create a device
   void SetUp() override {

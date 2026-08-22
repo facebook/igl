@@ -29,7 +29,6 @@ namespace igl::tests {
 class MetalDrawCallTest : public ::testing::Test {
  public:
   MetalDrawCallTest() = default;
-  ~MetalDrawCallTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);
