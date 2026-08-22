@@ -36,7 +36,6 @@ class BlendingTest : public ::testing::Test {
  private:
  public:
   BlendingTest() = default;
-  ~BlendingTest() override = default;
 
   //
   // SetUp()

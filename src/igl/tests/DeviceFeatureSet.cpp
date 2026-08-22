@@ -21,7 +21,6 @@ namespace igl::tests {
 class DeviceFeatureSetTest : public ::testing::Test {
  public:
   DeviceFeatureSetTest() = default;
-  ~DeviceFeatureSetTest() override = default;
 
   // Set up common resources. This will create a device and a command queue
   void SetUp() override {

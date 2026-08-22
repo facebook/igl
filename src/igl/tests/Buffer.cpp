@@ -25,7 +25,6 @@ namespace igl::tests {
 class BufferTest : public ::testing::Test {
  public:
   BufferTest() = default;
-  ~BufferTest() override = default;
 
   // Set up common resources. This will create a device and a command queue
   void SetUp() override {

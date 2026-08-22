@@ -36,7 +36,6 @@ class ComputeCommandEncoderTest : public ::testing::Test {
  private:
  public:
   ComputeCommandEncoderTest() = default;
-  ~ComputeCommandEncoderTest() override = default;
 
   /**
    * @brief This function sets up compute buffers and compiles the compute shader.
