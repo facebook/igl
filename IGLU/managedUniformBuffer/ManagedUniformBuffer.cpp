@@ -97,9 +97,10 @@ ManagedUniformBuffer::ManagedUniformBuffer(igl::IDevice& device,
     desc.type = igl::BufferDesc::BufferTypeBits::Uniform;
     desc.storage = igl::ResourceStorage::Shared;
 
-    if (device.hasFeature(igl::DeviceFeatures::BufferNoCopy)) {
-      desc.type |= igl::BufferDesc::BufferAPIHintBits::NoCopy;
-    }
+    // NoCopy is a BufferAPIHintBits value; it must never be ORed into desc.type, where its bit
+    // aliases an unrelated BufferTypeBits entry. Routing it to desc.hint is not safe here either:
+    // createBufferNoCopy() aliases desc.data with a nil deallocator, while ~ManagedUniformBuffer()
+    // frees data_ with no queue to wait on, so a buffer still in flight would read freed memory.
     buffer_ = device.createBuffer(desc, &result);
   } else if (device.getBackendType() == igl::BackendType::OpenGL && !info.blockName.empty() &&
              device.hasFeature(igl::DeviceFeatures::UniformBlocks)) {

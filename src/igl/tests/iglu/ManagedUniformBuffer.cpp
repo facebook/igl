@@ -11,6 +11,161 @@
 
 namespace igl::tests {
 
+namespace {
+
+// ManagedUniformBuffer exposes neither the descriptor it builds nor the buffer it creates, so the
+// only way to pin what it asks createBuffer() for is to hand it a device that records the request.
+// iglu::sentinel::Device is final, so it cannot be decorated for this.
+class RecordingDevice final : public IDevice {
+ public:
+  // Recorded as scalars rather than as a BufferDesc copy: createBuffer() is noexcept, and copying
+  // the descriptor's std::string debugName could throw.
+  mutable size_t createBufferCount = 0;
+  mutable BufferDesc::BufferType recordedType = 0;
+  mutable BufferDesc::BufferAPIHint recordedHint = 0;
+
+  std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
+                                        Result* IGL_NULLABLE outResult) const noexcept final {
+    ++createBufferCount;
+    recordedType = desc.type;
+    recordedHint = desc.hint;
+    Result::setOk(outResult);
+    return nullptr;
+  }
+
+  // Claims the no-copy capability on every host: the descriptor must come out plain even for the
+  // most permissive device, and the assertion keeps holding if the capability is ever gated on
+  // again.
+  [[nodiscard]] bool hasFeature(DeviceFeatures feature) const final {
+    return feature == DeviceFeatures::BufferNoCopy;
+  }
+
+  // Any backend other than OpenGL reaches createBuffer(), and only Metal takes the Apple-only
+  // page-aligned allocation branch, so this keeps the test host-independent.
+  [[nodiscard]] BackendType getBackendType() const final {
+    return BackendType::Vulkan;
+  }
+
+  [[nodiscard]] const IPlatformDevice& getPlatformDevice() const noexcept final {
+    return platformDevice_;
+  }
+
+  // Remainder of IDevice: unreachable from ManagedUniformBuffer.
+  Holder<BindGroupTextureHandle> createBindGroup(
+      const BindGroupTextureDesc& /*desc*/,
+      const IRenderPipelineState* IGL_NULLABLE /*compatiblePipeline*/,
+      Result* IGL_NULLABLE /*outResult*/) final {
+    return {};
+  }
+  Holder<BindGroupBufferHandle> createBindGroup(const BindGroupBufferDesc& /*desc*/,
+                                                Result* IGL_NULLABLE /*outResult*/) final {
+    return {};
+  }
+  void destroy(BindGroupTextureHandle /*handle*/) final {}
+  void destroy(BindGroupBufferHandle /*handle*/) final {}
+  void destroy(SamplerHandle /*handle*/) final {}
+  [[nodiscard]] bool hasRequirement(DeviceRequirement /*requirement*/) const final {
+    return false;
+  }
+  [[nodiscard]] TextureFormatCapabilities getTextureFormatCapabilities(
+      TextureFormat /*format*/) const final {
+    return TextureFormatCapabilityBits::Unsupported;
+  }
+  [[nodiscard]] bool getFeatureLimits(DeviceFeatureLimits /*featureLimits*/,
+                                      size_t& /*result*/) const final {
+    return false;
+  }
+  [[nodiscard]] ShaderVersion getShaderVersion() const final {
+    return {};
+  }
+  [[nodiscard]] BackendVersion getBackendVersion() const final {
+    return {};
+  }
+  std::shared_ptr<ICommandQueue> createCommandQueue(const CommandQueueDesc& /*desc*/,
+                                                    Result* IGL_NULLABLE
+                                                    /*outResult*/) noexcept final {
+    return nullptr;
+  }
+  std::shared_ptr<IDepthStencilState> createDepthStencilState(
+      const DepthStencilStateDesc& /*desc*/,
+      Result* IGL_NULLABLE /*outResult*/) const final {
+    return nullptr;
+  }
+  std::shared_ptr<ISamplerState> createSamplerState(
+      const SamplerStateDesc& /*desc*/,
+      Result* IGL_NULLABLE /*outResult*/) const final {
+    return nullptr;
+  }
+  std::shared_ptr<ITexture> createTexture(const TextureDesc& /*desc*/,
+                                          Result* IGL_NULLABLE /*outResult*/) const noexcept final {
+    return nullptr;
+  }
+  std::shared_ptr<ITexture> createTextureView(std::shared_ptr<ITexture> /*texture*/,
+                                              const TextureViewDesc& /*desc*/,
+                                              Result* IGL_NULLABLE
+                                              /*outResult*/) const noexcept final {
+    return nullptr;
+  }
+  std::shared_ptr<IVertexInputState> createVertexInputState(
+      const VertexInputStateDesc& /*desc*/,
+      Result* IGL_NULLABLE /*outResult*/) const final {
+    return nullptr;
+  }
+  std::shared_ptr<IComputePipelineState> createComputePipeline(
+      const ComputePipelineDesc& /*desc*/,
+      Result* IGL_NULLABLE /*outResult*/) const final {
+    return nullptr;
+  }
+  std::shared_ptr<IRenderPipelineState> createRenderPipeline(
+      const RenderPipelineDesc& /*desc*/,
+      Result* IGL_NULLABLE /*outResult*/) const final {
+    return nullptr;
+  }
+  std::shared_ptr<IShaderModule> createShaderModule(
+      const ShaderModuleDesc& /*desc*/,
+      Result* IGL_NULLABLE /*outResult*/) const final {
+    return nullptr;
+  }
+  std::shared_ptr<IFramebuffer> createFramebuffer(const FramebufferDesc& /*desc*/,
+                                                  Result* IGL_NULLABLE /*outResult*/) final {
+    return nullptr;
+  }
+  std::shared_ptr<ITimer> createTimer(Result* IGL_NULLABLE /*outResult*/) const noexcept final {
+    return nullptr;
+  }
+  std::unique_ptr<IShaderLibrary> createShaderLibrary(
+      const ShaderLibraryDesc& /*desc*/,
+      Result* IGL_NULLABLE /*outResult*/) const final {
+    return nullptr;
+  }
+  std::unique_ptr<IShaderStages> createShaderStages(
+      const ShaderStagesDesc& /*desc*/,
+      Result* IGL_NULLABLE /*outResult*/) const final {
+    return nullptr;
+  }
+  [[nodiscard]] size_t getCurrentDrawCount() const final {
+    return 0;
+  }
+  [[nodiscard]] size_t getShaderCompilationCount() const final {
+    return 0;
+  }
+  [[nodiscard]] void* IGL_NULLABLE getNativeDevice() const final {
+    return nullptr;
+  }
+
+ private:
+  class NullPlatformDevice final : public IPlatformDevice {
+   protected:
+    [[nodiscard]] bool isType(PlatformDeviceType /*t*/) const noexcept final {
+      return false;
+    }
+  };
+
+  NullPlatformDevice platformDevice_;
+};
+
+} // namespace
+
 //
 // ManagedUniformBufferTest
 //
@@ -60,6 +215,20 @@ TEST_F(ManagedUniformBufferTest, ConstructionWithBlockName) {
   EXPECT_TRUE(buffer.result.isOk());
   EXPECT_TRUE(buffer.getData() != nullptr);
   EXPECT_EQ(buffer.uniformInfo.blockName, "params");
+}
+
+TEST_F(ManagedUniformBufferTest, RequestsAPlainUniformBuffer) {
+  RecordingDevice device;
+  const iglu::ManagedUniformBuffer buffer(device, {.index = 0, .length = 256});
+
+  ASSERT_EQ(device.createBufferCount, 1u);
+  // BufferAPIHintBits::NoCopy and BufferTypeBits::Command are both bit 5, so an API hint ORed into
+  // desc.type lands in the type mask: it is dropped as a hint and misreports the uniforms as a
+  // command buffer (Uniform|Command == 0x24).
+  EXPECT_EQ(device.recordedType, BufferDesc::BufferTypeBits::Uniform);
+  // NoCopy would alias the allocation this object frees in its destructor; see the comment in
+  // ManagedUniformBuffer's constructor.
+  EXPECT_EQ(device.recordedHint & BufferDesc::BufferAPIHintBits::NoCopy, 0);
 }
 
 TEST_F(ManagedUniformBufferTest, UpdateData) {
