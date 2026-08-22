@@ -313,7 +313,7 @@ float4 main(PSInput input) : SV_Target {
 struct InterleavedVertex {
   glm::vec3 pos;
   glm::vec3 color;
-  float flare;
+  float flare = 0.0f;
   glm::vec2 corner;
 };
 

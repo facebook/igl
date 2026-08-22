@@ -27,13 +27,13 @@ std::chrono::system_clock::time_point gStartTime;
 namespace igl::shell {
 
 struct DrawElementsIndirectCommand {
-  uint32_t count; // Specifies the number of elements to be rendered.
-  uint32_t instanceCount; // Specifies the number of instances of the indexed geometry that
-                          // should be drawn.
-  uint32_t firstIndex; // Offset to first index (in sizeof(primitive type) units)
-  int32_t baseVertex; // Specifies a constant that should be added to each element of indices
-                      // when chosing elements from the enabled vertex arrays.
-  uint32_t reservedMustBeZero;
+  uint32_t count = 0; // Specifies the number of elements to be rendered.
+  uint32_t instanceCount = 0; // Specifies the number of instances of the indexed geometry that
+                              // should be drawn.
+  uint32_t firstIndex = 0; // Offset to first index (in sizeof(primitive type) units)
+  int32_t baseVertex = 0; // Specifies a constant that should be added to each element of indices
+                          // when chosing elements from the enabled vertex arrays.
+  uint32_t reservedMustBeZero = 0;
 };
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
