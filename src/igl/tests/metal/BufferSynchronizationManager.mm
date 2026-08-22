@@ -27,7 +27,6 @@ namespace igl::tests {
 class BufferSynchronizationManagerMTLTest : public ::testing::Test {
  public:
   BufferSynchronizationManagerMTLTest() = default;
-  ~BufferSynchronizationManagerMTLTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

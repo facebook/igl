@@ -27,7 +27,6 @@ namespace igl::tests {
 class MetalBufferTest : public ::testing::Test {
  public:
   MetalBufferTest() = default;
-  ~MetalBufferTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

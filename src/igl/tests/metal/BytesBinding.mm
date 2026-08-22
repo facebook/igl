@@ -29,7 +29,6 @@ namespace igl::tests {
 class MetalBytesBindingTest : public ::testing::Test {
  public:
   MetalBytesBindingTest() = default;
-  ~MetalBytesBindingTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

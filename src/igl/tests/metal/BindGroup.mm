@@ -22,7 +22,6 @@ namespace igl::tests {
 class MetalBindGroupTest : public ::testing::Test {
  public:
   MetalBindGroupTest() = default;
-  ~MetalBindGroupTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);
