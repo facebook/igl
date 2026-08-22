@@ -23,7 +23,6 @@ namespace igl::tests {
 class ImageLayoutTransitionTest : public ::testing::Test {
  public:
   ImageLayoutTransitionTest() = default;
-  ~ImageLayoutTransitionTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

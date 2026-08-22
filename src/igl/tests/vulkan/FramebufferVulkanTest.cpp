@@ -22,7 +22,6 @@ namespace igl::tests {
 class FramebufferVulkanTest : public ::testing::Test {
  public:
   FramebufferVulkanTest() = default;
-  ~FramebufferVulkanTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

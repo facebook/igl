@@ -22,7 +22,6 @@ namespace igl::tests {
 class DeviceExtendedVulkanTest : public ::testing::Test {
  public:
   DeviceExtendedVulkanTest() = default;
-  ~DeviceExtendedVulkanTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

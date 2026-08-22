@@ -24,7 +24,6 @@ namespace igl::tests {
 class RenderCommandEncoderVulkanTest : public ::testing::Test {
  public:
   RenderCommandEncoderVulkanTest() = default;
-  ~RenderCommandEncoderVulkanTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
