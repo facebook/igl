@@ -21,7 +21,6 @@ class TextureFormatTestBase : public ::testing::Test {
  private:
  public:
   TextureFormatTestBase() = default;
-  ~TextureFormatTestBase() override = default;
 
   void SetUp() override;
   void TearDown() override {}

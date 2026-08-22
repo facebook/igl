@@ -23,7 +23,6 @@ namespace igl::tests {
 class VertexInputStateTest : public ::testing::Test {
  public:
   VertexInputStateTest() = default;
-  ~VertexInputStateTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

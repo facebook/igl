@@ -34,7 +34,6 @@ constexpr uint32_t kOffscreenTexHeight = 10u;
 class NativeHWBufferTest : public ::testing::Test {
  public:
   NativeHWBufferTest() = default;
-  ~NativeHWBufferTest() override = default;
 };
 
 class NativeHWTextureBufferTest : public igl::android::INativeHWTextureBuffer {
@@ -171,7 +170,6 @@ template<igl::BackendType TBackendType>
 class NativeHWBufferTextureTest : public ::testing::Test {
  public:
   NativeHWBufferTextureTest() = default;
-  ~NativeHWBufferTextureTest() override = default;
 
   //
   // This function sets up a render pass and a graphics pipeline descriptor
