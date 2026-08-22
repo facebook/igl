@@ -21,7 +21,6 @@ namespace igl::tests {
 class TextureBufferMacTest : public util::TextureFormatTestBase {
  public:
   TextureBufferMacTest() = default;
-  ~TextureBufferMacTest() override = default;
 
   std::shared_ptr<ITexture> createCVPixelBufferTextureWithSize(OSType pixelFormat,
                                                                size_t width,
