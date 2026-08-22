@@ -22,7 +22,6 @@ namespace igl::tests {
 class MemoryObjectImportOGLTest : public ::testing::Test {
  public:
   MemoryObjectImportOGLTest() = default;
-  ~MemoryObjectImportOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

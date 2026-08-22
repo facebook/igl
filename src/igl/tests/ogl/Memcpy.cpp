@@ -21,7 +21,6 @@ namespace igl::tests {
 class MemcpyOGLTest : public ::testing::Test {
  public:
   MemcpyOGLTest() = default;
-  ~MemcpyOGLTest() override = default;
 
   // Set up common resources. This will create a device and a command queue
   void SetUp() override {

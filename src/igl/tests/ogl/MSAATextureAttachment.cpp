@@ -24,7 +24,6 @@ namespace igl::tests {
 class MSAATextureAttachmentOGLTest : public ::testing::Test {
  public:
   MSAATextureAttachmentOGLTest() = default;
-  ~MSAATextureAttachmentOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

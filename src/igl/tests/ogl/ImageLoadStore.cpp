@@ -23,7 +23,6 @@ namespace igl::tests {
 class ImageLoadStoreOGLTest : public ::testing::Test {
  public:
   ImageLoadStoreOGLTest() = default;
-  ~ImageLoadStoreOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

@@ -25,7 +25,6 @@ namespace igl::tests {
 class InvalidateFramebufferOGLTest : public ::testing::Test {
  public:
   InvalidateFramebufferOGLTest() = default;
-  ~InvalidateFramebufferOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
