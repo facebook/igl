@@ -43,7 +43,6 @@ class TextureOGLTest : public ::testing::Test {
  private:
  public:
   TextureOGLTest() = default;
-  ~TextureOGLTest() override = default;
 
   void SetUp() override {
     // Turn off debug break so unit tests can run
