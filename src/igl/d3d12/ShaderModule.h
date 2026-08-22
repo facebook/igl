@@ -21,17 +21,17 @@ class ShaderModule final : public IShaderModule {
   // Resource binding information extracted from shader reflection
   struct ResourceBinding {
     std::string name;
-    D3D_SHADER_INPUT_TYPE type; // CBV, SRV, UAV, Sampler
-    UINT bindPoint;
-    UINT bindCount;
-    UINT space;
+    D3D_SHADER_INPUT_TYPE type{}; // CBV, SRV, UAV, Sampler
+    UINT bindPoint = 0;
+    UINT bindCount = 0;
+    UINT space = 0;
   };
 
   // Constant buffer information from reflection
   struct ConstantBufferInfo {
     std::string name;
-    UINT size;
-    UINT numVariables;
+    UINT size = 0;
+    UINT numVariables = 0;
   };
 
   // Shader resource usage summary for root signature selection
