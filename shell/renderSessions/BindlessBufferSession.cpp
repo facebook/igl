@@ -37,9 +37,9 @@ uint16_t indexData[] = {
 
 // Push constant data: holds a GPU buffer address (uint64_t) plus padding.
 struct PushConstantData {
-  uint64_t vertexBufferAddress;
-  uint32_t pad0;
-  uint32_t pad1;
+  uint64_t vertexBufferAddress = 0;
+  uint32_t pad0 = 0;
+  uint32_t pad1 = 0;
 };
 
 std::string getVersion() {
