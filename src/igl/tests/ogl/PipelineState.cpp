@@ -32,7 +32,6 @@ class PipelineStateOGLTest : public ::testing::Test {
  private:
  public:
   PipelineStateOGLTest() = default;
-  ~PipelineStateOGLTest() override = default;
 
   //
   // SetUp()

@@ -35,7 +35,6 @@ namespace igl::tests {
 class RenderCommandAdapterOGLTest : public ::testing::Test {
  public:
   RenderCommandAdapterOGLTest() = default;
-  ~RenderCommandAdapterOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

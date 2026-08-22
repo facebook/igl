@@ -55,7 +55,6 @@ namespace igl::tests {
 class PlatformDeviceTest : public ::testing::Test {
  public:
   PlatformDeviceTest() = default;
-  ~PlatformDeviceTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);
