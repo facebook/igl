@@ -104,7 +104,7 @@ void logFirstAhbImportDiagnostics(const VkAndroidHardwareBufferFormatPropertiesA
 #endif // IGL_LOGGING_ENABLED
 } // namespace
 
-NativeHWTextureBuffer::NativeHWTextureBuffer(igl::vulkan::Device& device, TextureFormat format) :
+NativeHWTextureBuffer::NativeHWTextureBuffer(Device& device, TextureFormat format) :
   Super(device, format) {}
 
 NativeHWTextureBuffer::~NativeHWTextureBuffer() = default;
@@ -131,7 +131,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
   AHardwareBuffer_describe(hwBuffer, &hwbDesc);
 
   auto& ctx = device_.getVulkanContext();
-  auto device = device_.getVulkanContext().getVkDevice();
+  auto* device = device_.getVulkanContext().getVkDevice();
   VkImageCreateFlags createFlags = 0;
   if (hwbDesc.usage & AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT) {
     createFlags |= VK_IMAGE_CREATE_PROTECTED_BIT;
@@ -151,28 +151,28 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
       .sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID,
       .pNext = nullptr,
   };
-  VkAndroidHardwareBufferPropertiesANDROID ahb_props = {
+  VkAndroidHardwareBufferPropertiesANDROID ahbProps = {
       .sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID,
       .pNext = &ahbFormatProps,
   };
 
-  VK_ASSERT(ctx.vf_.vkGetAndroidHardwareBufferPropertiesANDROID(device, hwBuffer, &ahb_props));
+  VK_ASSERT(ctx.vf_.vkGetAndroidHardwareBufferPropertiesANDROID(device, hwBuffer, &ahbProps));
 
 #if IGL_LOGGING_ENABLED
   logFirstAhbImportDiagnostics(ahbFormatProps, ctx.getVkPhysicalDeviceDriverProperties());
 #endif
 
-  VkExternalFormatANDROID external_format = {
+  VkExternalFormatANDROID externalFormat = {
       .sType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
   };
 
   if (ahbFormatProps.format == VK_FORMAT_UNDEFINED) {
-    external_format.externalFormat = ahbFormatProps.externalFormat;
+    externalFormat.externalFormat = ahbFormatProps.externalFormat;
   }
 
   VkExternalMemoryImageCreateInfo externalMemoryImageInfo = {
       .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
-      .pNext = &external_format,
+      .pNext = &externalFormat,
       .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
   };
 
@@ -182,45 +182,45 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
       hwbDesc.width,
       hwbDesc.height);
 
-  VkImage vk_image = VK_NULL_HANDLE;
+  VkImage vkImage = VK_NULL_HANDLE;
 
-  VkImageCreateInfo vk_image_info = {.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                     .pNext = &externalMemoryImageInfo,
-                                     .flags = createFlags,
-                                     .imageType = VK_IMAGE_TYPE_2D,
-                                     .format = ahbFormatProps.format,
-                                     .extent = {.width = static_cast<uint32_t>(desc.width),
-                                                .height = static_cast<uint32_t>(desc.height),
-                                                .depth = 1},
-                                     .mipLevels = 1,
-                                     .arrayLayers = 1,
-                                     .samples = VK_SAMPLE_COUNT_1_BIT,
-                                     .tiling = VK_IMAGE_TILING_OPTIMAL,
-                                     .usage = usageFlags,
-                                     .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-                                     .queueFamilyIndexCount = 0,
-                                     .pQueueFamilyIndices = nullptr,
-                                     .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED};
+  VkImageCreateInfo vkImageInfo = {.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                                   .pNext = &externalMemoryImageInfo,
+                                   .flags = createFlags,
+                                   .imageType = VK_IMAGE_TYPE_2D,
+                                   .format = ahbFormatProps.format,
+                                   .extent = {.width = static_cast<uint32_t>(desc.width),
+                                              .height = static_cast<uint32_t>(desc.height),
+                                              .depth = 1},
+                                   .mipLevels = 1,
+                                   .arrayLayers = 1,
+                                   .samples = VK_SAMPLE_COUNT_1_BIT,
+                                   .tiling = VK_IMAGE_TILING_OPTIMAL,
+                                   .usage = usageFlags,
+                                   .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+                                   .queueFamilyIndexCount = 0,
+                                   .pQueueFamilyIndices = nullptr,
+                                   .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED};
   // Create Vk Image.
-  VK_ASSERT(ctx.vf_.vkCreateImage(device, &vk_image_info, nullptr, &vk_image));
+  VK_ASSERT(ctx.vf_.vkCreateImage(device, &vkImageInfo, nullptr, &vkImage));
 
-  if (vk_image == VK_NULL_HANDLE) {
+  if (vkImage == VK_NULL_HANDLE) {
     IGL_LOG_ERROR("failed to create image view format is %d and external format is %d",
-                  vk_image_info.format,
-                  external_format.externalFormat);
+                  vkImageInfo.format,
+                  externalFormat.externalFormat);
     return Result(Result::Code::RuntimeError, "Failed to create vulkan image");
   }
 
   VK_ASSERT(ivkSetDebugObjectName(&ctx.vf_,
                                   device,
                                   VK_OBJECT_TYPE_IMAGE,
-                                  (uint64_t)vk_image,
+                                  (uint64_t)vkImage,
                                   "Image: AHB NativeHWTextureBuffer"));
 
   // To import memory created outside of the current Vulkan instance from an
   // Android hardware buffer, add a VkImportAndroidHardwareBufferInfoANDROID
   // structure to the pNext chain of the VkMemoryAllocateInfo structure.
-  VkImportAndroidHardwareBufferInfoANDROID ahb_import_info = {
+  VkImportAndroidHardwareBufferInfoANDROID ahbImportInfo = {
       .sType = VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID,
       .pNext = nullptr,
       .buffer = hwBuffer};
@@ -229,60 +229,60 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
   // VkMemoryDedicatedAllocateInfo structure, then that structure includes a
   // handle of the sole buffer or image resource that the memory can be bound
   // to.
-  VkMemoryDedicatedAllocateInfo dedicated_alloc_info = {
+  VkMemoryDedicatedAllocateInfo dedicatedAllocInfo = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
-      .pNext = &ahb_import_info,
-      .image = vk_image,
+      .pNext = &ahbImportInfo,
+      .image = vkImage,
       .buffer = VK_NULL_HANDLE};
 
   // Find the memory type that supports the required properties.
-  uint32_t memory_type_bits = ahb_props.memoryTypeBits;
+  uint32_t memoryTypeBits = ahbProps.memoryTypeBits;
 
-  uint32_t type_index = ivkGetMemoryTypeIndex(
-      ctx.memoryProperties, memory_type_bits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+  uint32_t typeIndex = ivkGetMemoryTypeIndex(
+      ctx.memoryProperties, memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
   // An instance of the VkMemoryAllocateInfo structure defines a memory import
   // operation.
-  VkMemoryAllocateInfo mem_alloc_info = {
+  VkMemoryAllocateInfo memAllocInfo = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-      .pNext = &dedicated_alloc_info,
+      .pNext = &dedicatedAllocInfo,
       // If the parameters define an import operation and the external handle type
       // is VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
       // allocationSize must be the size returned by
       // vkGetAndroidHardwareBufferPropertiesANDROID for the Android hardware
       // buffer.
-      .allocationSize = ahb_props.allocationSize,
-      .memoryTypeIndex = type_index};
+      .allocationSize = ahbProps.allocationSize,
+      .memoryTypeIndex = typeIndex};
 
   // A Vulkan device operates on data in device memory via memory objects that
   // are represented in the API by a VkDeviceMemory handle.
   // Allocate memory.
-  VkDeviceMemory vk_device_memory = VK_NULL_HANDLE;
-  VK_ASSERT(ctx.vf_.vkAllocateMemory(device, &mem_alloc_info, nullptr, &vk_device_memory));
+  VkDeviceMemory vkDeviceMemory = VK_NULL_HANDLE;
+  VK_ASSERT(ctx.vf_.vkAllocateMemory(device, &memAllocInfo, nullptr, &vkDeviceMemory));
 
   // Attach memory to the image object.
-  VK_ASSERT(ctx.vf_.vkBindImageMemory(device, vk_image, vk_device_memory, 0));
+  VK_ASSERT(ctx.vf_.vkBindImageMemory(device, vkImage, vkDeviceMemory, 0));
 
   auto vulkanImage = VulkanImage(ctx,
-                                 vk_image,
+                                 vkImage,
                                  "Image: videoTexture",
                                  usageFlags,
                                  false,
-                                 vk_image_info.extent,
-                                 vk_image_info.imageType,
-                                 vk_image_info.format,
-                                 vk_image_info.mipLevels,
-                                 vk_image_info.arrayLayers,
+                                 vkImageInfo.extent,
+                                 vkImageInfo.imageType,
+                                 vkImageInfo.format,
+                                 vkImageInfo.mipLevels,
+                                 vkImageInfo.arrayLayers,
                                  VK_SAMPLE_COUNT_1_BIT,
                                  true);
-  vulkanImage.vkMemory_[0] = vk_device_memory;
-  vulkanImage.extendedFormat_ = external_format.externalFormat;
+  vulkanImage.vkMemory_[0] = vkDeviceMemory;
+  vulkanImage.extendedFormat_ = externalFormat.externalFormat;
 
   VkImageViewCreateInfo viewInfo = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-      .image = vk_image,
+      .image = vkImage,
       .viewType = VK_IMAGE_VIEW_TYPE_2D,
-      .format = vk_image_info.format,
+      .format = vkImageInfo.format,
       .components =
           {
               .r = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -292,7 +292,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
           },
       .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                            .baseMipLevel = 0,
-                           .levelCount = vk_image_info.mipLevels,
+                           .levelCount = vkImageInfo.mipLevels,
                            .baseArrayLayer = 0,
                            .layerCount = 1},
   };
@@ -304,7 +304,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
       .conversion = VK_NULL_HANDLE,
   };
 
-  if (ahbFormatProps.format == VK_FORMAT_UNDEFINED && external_format.externalFormat) {
+  if (ahbFormatProps.format == VK_FORMAT_UNDEFINED && externalFormat.externalFormat) {
     viewInfo.pNext = &conversionInfo;
     // Use the driver-reported raw-plane swizzle, with a legacy Qualcomm-Adreno correction for
     // Camera2 YUV_420_888 streams whose reported IDENTITY mapping still swaps Cb/Cr.
@@ -322,7 +322,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
     }
     vulkanImage.samplerYcbcrConversionCreateInfo_ = {
         .sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
-        .pNext = &external_format,
+        .pNext = &externalFormat,
         .format = ahbFormatProps.format,
         .ycbcrModel = ahbFormatProps.suggestedYcbcrModel,
         .ycbcrRange = ahbFormatProps.suggestedYcbcrRange,
