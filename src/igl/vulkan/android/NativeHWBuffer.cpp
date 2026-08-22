@@ -182,7 +182,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
       hwbDesc.width,
       hwbDesc.height);
 
-  VkImage vk_image;
+  VkImage vk_image = VK_NULL_HANDLE;
 
   VkImageCreateInfo vk_image_info = {.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                                      .pNext = &externalMemoryImageInfo,
@@ -257,7 +257,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
   // A Vulkan device operates on data in device memory via memory objects that
   // are represented in the API by a VkDeviceMemory handle.
   // Allocate memory.
-  VkDeviceMemory vk_device_memory;
+  VkDeviceMemory vk_device_memory = VK_NULL_HANDLE;
   VK_ASSERT(ctx.vf_.vkAllocateMemory(device, &mem_alloc_info, nullptr, &vk_device_memory));
 
   // Attach memory to the image object.

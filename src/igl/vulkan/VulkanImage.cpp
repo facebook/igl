@@ -280,7 +280,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
     tryAllocateImageVma(*ctx_, ci, ciAlloc, &vkImage_, &vmaAllocation_, imageFormat_, memFlags);
 
     if (vmaAllocation_) {
-      VkMemoryRequirements memRequirements;
+      VkMemoryRequirements memRequirements{};
       ctx_->vf_.vkGetImageMemoryRequirements(device_, vkImage_, &memRequirements);
 
       // handle memory-mapped buffers
@@ -1200,7 +1200,7 @@ void VulkanImage::clearColorImage(VkCommandBuffer commandBuffer,
 
   const VkImageLayout oldLayout = imageLayout_;
 
-  VkClearColorValue value;
+  VkClearColorValue value{};
   value.float32[0] = rgba.r;
   value.float32[1] = rgba.g;
   value.float32[2] = rgba.b;

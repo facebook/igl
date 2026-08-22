@@ -977,7 +977,7 @@ Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
 
   for (uint32_t i = 0; i < deviceCount; ++i) {
     VkPhysicalDevice physicalDevice = vkDevices[i];
-    VkPhysicalDeviceProperties deviceProperties;
+    VkPhysicalDeviceProperties deviceProperties{};
     vf_.vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
 
     const HWDeviceType deviceType = convertVulkanDeviceTypeToIGL(deviceProperties.deviceType);
@@ -1953,7 +1953,7 @@ void VulkanContext::querySurfaceCapabilities() {
                                    VK_FORMAT_S8_UINT};
   deviceDepthFormats_.reserve(IGL_ARRAY_NUM_ELEMENTS(depthFormats));
   for (const auto& depthFormat : depthFormats) {
-    VkFormatProperties formatProps;
+    VkFormatProperties formatProps{};
     vf_.vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice_, depthFormat, &formatProps);
 
     if (formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT ||
@@ -2564,7 +2564,7 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
     return {};
   }
 
-  VkFormatProperties props;
+  VkFormatProperties props{};
   vf_.vkGetPhysicalDeviceFormatProperties(getVkPhysicalDevice(), format, &props);
 
   const bool cosited =
