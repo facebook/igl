@@ -41,7 +41,6 @@ class TextureCubeTest : public ::testing::Test {
  private:
  public:
   TextureCubeTest() = default;
-  ~TextureCubeTest() override = default;
 
   std::shared_ptr<iglu::ManagedUniformBuffer> createVertexUniformBuffer(IDevice& device,
                                                                         Result* /*result*/) {

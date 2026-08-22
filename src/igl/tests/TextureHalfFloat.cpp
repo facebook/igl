@@ -103,7 +103,6 @@ class TextureHalfFloatTest : public ::testing::Test {
  private:
  public:
   TextureHalfFloatTest() = default;
-  ~TextureHalfFloatTest() override = default;
 
   std::shared_ptr<iglu::ManagedUniformBuffer> createVertexUniformBuffer(IDevice& device,
                                                                         Result* /*result*/) {

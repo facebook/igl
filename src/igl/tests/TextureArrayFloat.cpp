@@ -57,7 +57,6 @@ class TextureArrayFloatTest : public ::testing::Test {
  private:
  public:
   TextureArrayFloatTest() = default;
-  ~TextureArrayFloatTest() override = default;
 
   std::shared_ptr<iglu::ManagedUniformBuffer> createVertexUniformBuffer(IDevice& device,
                                                                         Result* /*result*/) {
