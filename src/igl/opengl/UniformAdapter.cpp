@@ -69,7 +69,7 @@ void UniformAdapter::setUniform(const UniformDesc& uniformDesc,
   IGL_DEBUG_ASSERT(location >= 0, "Invalid uniformDesc->location passed to setUniform");
 
   // Early out if any of the parameters are invalid.
-  if (location < 0 || location >= maxUniforms_ || !data) {
+  if (location < 0 || static_cast<uint32_t>(location) >= maxUniforms_ || !data) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
     IGL_LOG_INFO_ONCE("IGL WARNING: Invalid parameters found for setUniform. Location (%d) \n",
                       location);
