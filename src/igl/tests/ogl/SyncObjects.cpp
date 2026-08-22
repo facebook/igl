@@ -23,7 +23,6 @@ namespace igl::tests {
 class SyncObjectsOGLTest : public ::testing::Test {
  public:
   SyncObjectsOGLTest() = default;
-  ~SyncObjectsOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

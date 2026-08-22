@@ -31,7 +31,6 @@ namespace igl::tests {
 class RenderStateApplicationOGLTest : public ::testing::Test {
  public:
   RenderStateApplicationOGLTest() = default;
-  ~RenderStateApplicationOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

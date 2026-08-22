@@ -22,7 +22,6 @@ namespace igl::tests {
 class SRGBWriteControlOGLTest : public ::testing::Test {
  public:
   SRGBWriteControlOGLTest() = default;
-  ~SRGBWriteControlOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
