@@ -22,7 +22,6 @@ namespace igl::tests {
 class DepthRangeOGLTest : public ::testing::Test {
  public:
   DepthRangeOGLTest() = default;
-  ~DepthRangeOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

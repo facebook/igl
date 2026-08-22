@@ -36,7 +36,6 @@ std::shared_ptr<IShaderModule> createShaderModule(const std::shared_ptr<IDevice>
 class DeviceOGLTest : public ::testing::Test {
  public:
   DeviceOGLTest() = default;
-  ~DeviceOGLTest() override = default;
 
   // Set up common resources. This will create a device
   void SetUp() override {

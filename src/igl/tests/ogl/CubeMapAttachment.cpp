@@ -23,7 +23,6 @@ namespace igl::tests {
 class CubeMapAttachmentOGLTest : public ::testing::Test {
  public:
   CubeMapAttachmentOGLTest() = default;
-  ~CubeMapAttachmentOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

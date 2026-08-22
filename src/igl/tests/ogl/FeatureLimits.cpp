@@ -22,7 +22,6 @@ namespace igl::tests {
 class FeatureLimitsOGLTest : public ::testing::Test {
  public:
   FeatureLimitsOGLTest() = default;
-  ~FeatureLimitsOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

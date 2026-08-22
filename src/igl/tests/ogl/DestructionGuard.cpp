@@ -25,7 +25,6 @@ namespace igl::tests {
 class DestructionGuardOGLTest : public ::testing::Test {
  public:
   DestructionGuardOGLTest() = default;
-  ~DestructionGuardOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
