@@ -18,7 +18,6 @@ namespace igl::tests {
 class PlatformDeviceMetalTest : public ::testing::Test {
  public:
   PlatformDeviceMetalTest() = default;
-  ~PlatformDeviceMetalTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

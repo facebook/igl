@@ -30,7 +30,6 @@ namespace igl::tests {
 class MetalRenderPassTest : public ::testing::Test {
  public:
   MetalRenderPassTest() = default;
-  ~MetalRenderPassTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

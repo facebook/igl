@@ -29,7 +29,6 @@ namespace igl::tests {
 class RenderCommandEncoderMTLTest : public ::testing::Test {
  public:
   RenderCommandEncoderMTLTest() = default;
-  ~RenderCommandEncoderMTLTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

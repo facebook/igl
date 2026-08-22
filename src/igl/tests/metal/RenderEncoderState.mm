@@ -29,7 +29,6 @@ namespace igl::tests {
 class MetalRenderEncoderStateTest : public ::testing::Test {
  public:
   MetalRenderEncoderStateTest() = default;
-  ~MetalRenderEncoderStateTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

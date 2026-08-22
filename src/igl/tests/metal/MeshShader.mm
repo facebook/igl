@@ -24,7 +24,6 @@ namespace igl::tests {
 class MetalMeshShaderTest : public ::testing::Test {
  public:
   MetalMeshShaderTest() = default;
-  ~MetalMeshShaderTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);
