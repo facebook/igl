@@ -10,9 +10,7 @@
 #include <igl/Common.h>
 #include <igl/opengl/wgl/Context.h>
 
-namespace igl {
-namespace opengl {
-namespace wgl {
+namespace igl::opengl::wgl {
 
 Device::Device(std::unique_ptr<IContext> context) :
   opengl::Device(std::move(context)), platformDevice_(*this) {}
@@ -23,6 +21,4 @@ const PlatformDevice& Device::getPlatformDevice() const noexcept {
 
 Device::~Device() = default;
 
-} // namespace wgl
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::wgl

@@ -32,7 +32,6 @@
 
 // Manually include only the d3dx12 headers we need (excluding incompatible ones)
 // These headers are vendored from Microsoft's DirectX-Headers repository
-#include <d3d12.h>
 #if defined(IGL_CMAKE_BUILD)
 #include <d3dx12_barriers.h>
 #include <d3dx12_core.h>
@@ -70,8 +69,7 @@
     "D3D12Headers.h must be included before <wrl/client.h>. The D3D12 backend uses igl::d3d12::ComPtr exclusively."
 #endif
 
-namespace igl {
-namespace d3d12 {
+namespace igl::d3d12 {
 template<typename T>
 class ComPtr {
  public:
@@ -244,19 +242,16 @@ class ComPtr {
  private:
   T* ptr_;
 };
-} // namespace d3d12
-} // namespace igl
+} // namespace igl::d3d12
 
 // For convenience in D3D12 implementation files, you may add a local using declaration:
 //   namespace { template<typename T> using ComPtr = igl::d3d12::ComPtr<T>; }
 // This reduces verbosity without polluting the global or igl::d3d12 namespace.
 
-namespace Microsoft {
-namespace WRL {
+namespace Microsoft::WRL {
 // DO NOT define ComPtr here - it conflicts with <wrl/client.h>
 // All D3D12 code should use igl::d3d12::ComPtr directly
-} // namespace WRL
-} // namespace Microsoft
+} // namespace Microsoft::WRL
 
 // Note: Library linking is handled by CMake (see src/igl/d3d12/CMakeLists.txt)
 // Required libraries: d3d12.lib, dxgi.lib, dxguid.lib, dxcompiler.lib, d3dcompiler.lib

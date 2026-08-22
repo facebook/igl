@@ -10,9 +10,7 @@
 #include <igl/opengl/Device.h>
 #include <igl/opengl/wgl/PlatformDevice.h>
 
-namespace igl {
-namespace opengl {
-namespace wgl {
+namespace igl::opengl::wgl {
 
 class Device final : public igl::opengl::Device {
  public:
@@ -25,6 +23,4 @@ class Device final : public igl::opengl::Device {
   PlatformDevice platformDevice_;
 };
 
-} // namespace wgl
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::wgl
