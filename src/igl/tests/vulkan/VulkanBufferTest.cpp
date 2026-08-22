@@ -23,7 +23,6 @@ namespace igl::tests {
 class VulkanBufferTest : public ::testing::Test {
  public:
   VulkanBufferTest() = default;
-  ~VulkanBufferTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

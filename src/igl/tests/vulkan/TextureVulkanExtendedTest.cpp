@@ -22,7 +22,6 @@ namespace igl::tests {
 class TextureVulkanExtendedTest : public ::testing::Test {
  public:
   TextureVulkanExtendedTest() = default;
-  ~TextureVulkanExtendedTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

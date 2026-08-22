@@ -25,7 +25,6 @@ namespace igl::tests {
 class ResourcesBinderTest : public ::testing::Test {
  public:
   ResourcesBinderTest() = default;
-  ~ResourcesBinderTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

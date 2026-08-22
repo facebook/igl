@@ -19,7 +19,6 @@ namespace igl::tests {
 class TextureVulkanTest : public ::testing::Test {
  public:
   TextureVulkanTest() = default;
-  ~TextureVulkanTest() override = default;
 
   // Set up common resources. This will create a device
   void SetUp() override {

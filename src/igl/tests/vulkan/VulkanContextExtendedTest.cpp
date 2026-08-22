@@ -23,7 +23,6 @@ namespace igl::tests {
 class VulkanContextExtendedTest : public ::testing::Test {
  public:
   VulkanContextExtendedTest() = default;
-  ~VulkanContextExtendedTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
