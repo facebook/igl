@@ -22,7 +22,6 @@ namespace igl::tests {
 class VulkanDescriptorSetLayoutTest : public ::testing::Test {
  public:
   VulkanDescriptorSetLayoutTest() = default;
-  ~VulkanDescriptorSetLayoutTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
