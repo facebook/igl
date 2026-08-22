@@ -198,7 +198,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(
 
   Result subResult;
 
-  AHardwareBuffer_Desc hwbDesc;
+  AHardwareBuffer_Desc hwbDesc{};
   AHardwareBuffer_describe(buffer, &hwbDesc);
 
   auto texture = std::make_shared<android::NativeHWTextureBuffer>(

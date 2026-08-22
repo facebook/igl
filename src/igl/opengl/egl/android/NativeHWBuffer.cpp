@@ -71,7 +71,7 @@ Result NativeHWTextureBuffer::create(const TextureDesc& desc, bool hasStorageAlr
 
 Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* buffer) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
-  AHardwareBuffer_Desc hwbDesc;
+  AHardwareBuffer_Desc hwbDesc{};
   AHardwareBuffer_describe(buffer, &hwbDesc);
 
   auto desc = TextureDesc::newNativeHWBufferImage(igl::android::getIglFormat(hwbDesc.format),

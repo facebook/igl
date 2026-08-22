@@ -268,7 +268,7 @@ INativeHWTextureBuffer::LockGuard INativeHWTextureBuffer::lockHWBuffer(std::byte
 
 Result INativeHWTextureBuffer::lockHWBuffer(std::byte * IGL_NULLABLE * IGL_NONNULL dst,
                                             RangeDesc& outRange) const {
-  AHardwareBuffer_Desc hwbDesc;
+  AHardwareBuffer_Desc hwbDesc{};
   AHardwareBuffer_describe(hwBuffer_, &hwbDesc);
 
   if (AHardwareBuffer_lock(hwBuffer_,

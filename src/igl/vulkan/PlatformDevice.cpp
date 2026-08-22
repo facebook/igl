@@ -176,7 +176,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(
 
   Result subResult;
 
-  AHardwareBuffer_Desc hwbDesc;
+  AHardwareBuffer_Desc hwbDesc{};
   AHardwareBuffer_describe(buffer, &hwbDesc);
 
   // Vendor-specific YCbCr AHB formats are valid Vulkan imports but may not map to IGL formats.

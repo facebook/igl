@@ -127,7 +127,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
   if (hwBuffer == nullptr) {
     return Result(Result::Code::RuntimeError, "null buffer passed to create texture");
   }
-  AHardwareBuffer_Desc hwbDesc;
+  AHardwareBuffer_Desc hwbDesc{};
   AHardwareBuffer_describe(hwBuffer, &hwbDesc);
 
   auto& ctx = device_.getVulkanContext();
