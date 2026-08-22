@@ -17,7 +17,6 @@ namespace igl::tests {
 class DeviceFeatureSetMTLTest : public ::testing::Test {
  public:
   DeviceFeatureSetMTLTest() = default;
-  ~DeviceFeatureSetMTLTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

@@ -17,7 +17,6 @@ namespace igl::tests {
 class DepthStencilStateMTLTest : public ::testing::Test {
  public:
   DepthStencilStateMTLTest() = default;
-  ~DepthStencilStateMTLTest() override = default;
   void SetUp() override {
     setDebugBreakEnabled(false);
   }

@@ -27,7 +27,6 @@ namespace igl::tests {
 class MetalDeviceStatisticsTest : public ::testing::Test {
  public:
   MetalDeviceStatisticsTest() = default;
-  ~MetalDeviceStatisticsTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

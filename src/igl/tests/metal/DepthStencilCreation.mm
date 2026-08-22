@@ -24,7 +24,6 @@ namespace igl::tests {
 class MetalDepthStencilCreationTest : public ::testing::Test {
  public:
   MetalDepthStencilCreationTest() = default;
-  ~MetalDepthStencilCreationTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);
