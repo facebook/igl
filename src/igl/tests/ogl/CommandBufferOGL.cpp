@@ -27,7 +27,6 @@ namespace igl::tests {
 class CommandBufferOGLTest : public ::testing::Test {
  public:
   CommandBufferOGLTest() = default;
-  ~CommandBufferOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
