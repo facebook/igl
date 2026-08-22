@@ -37,7 +37,6 @@ class FramebufferTest : public ::testing::Test {
  private:
  public:
   FramebufferTest() = default;
-  ~FramebufferTest() override = default;
 
   //
   // SetUp()

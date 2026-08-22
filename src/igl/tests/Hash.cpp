@@ -33,7 +33,6 @@ class TestShaderStages : public IShaderStages {
 class HashTest : public ::testing::Test {
  public:
   HashTest() = default;
-  ~HashTest() override = default;
 
   // Set up common resources. This will create a device, a command queue,
   // and a command buffer

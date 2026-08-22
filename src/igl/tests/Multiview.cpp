@@ -33,7 +33,6 @@ class MultiviewTest : public ::testing::Test {
  private:
  public:
   MultiviewTest() = default;
-  ~MultiviewTest() override = default;
 
   std::shared_ptr<iglu::ManagedUniformBuffer> createVertexUniformBuffer(IDevice& device,
                                                                         Result* /*result*/) {

@@ -24,7 +24,6 @@ namespace igl::tests {
 class FramebufferInteropTest : public ::testing::Test {
  public:
   FramebufferInteropTest() = default;
-  ~FramebufferInteropTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
