@@ -23,7 +23,6 @@ namespace igl::tests {
 class UniformBlockBufferOGLTest : public ::testing::Test {
  public:
   UniformBlockBufferOGLTest() = default;
-  ~UniformBlockBufferOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

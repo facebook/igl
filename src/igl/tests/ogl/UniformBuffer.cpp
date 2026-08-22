@@ -377,7 +377,6 @@ class UniformBufferTest : public ::testing::Test {
  private:
  public:
   UniformBufferTest() = default;
-  ~UniformBufferTest() override = default;
 
   //
   // SetUp()

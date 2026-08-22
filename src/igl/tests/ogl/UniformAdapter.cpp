@@ -28,7 +28,6 @@ namespace igl::tests {
 class UniformAdapterOGLTest : public ::testing::Test {
  public:
   UniformAdapterOGLTest() = default;
-  ~UniformAdapterOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

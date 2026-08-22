@@ -24,7 +24,6 @@ namespace igl::tests {
 class VertexArrayObjectOGLTest : public ::testing::Test {
  public:
   VertexArrayObjectOGLTest() = default;
-  ~VertexArrayObjectOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

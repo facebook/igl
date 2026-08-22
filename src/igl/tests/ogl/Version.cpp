@@ -16,7 +16,6 @@ namespace igl::tests {
 class VersionOGLTest : public ::testing::Test {
  public:
   VersionOGLTest() = default;
-  ~VersionOGLTest() override = default;
 
   // Set up VertexInputStateDesc for the different test cases
   void SetUp() override {
