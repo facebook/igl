@@ -29,7 +29,6 @@ namespace igl::tests {
 class MetalComputeCommandEncoderTest : public ::testing::Test {
  public:
   MetalComputeCommandEncoderTest() = default;
-  ~MetalComputeCommandEncoderTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

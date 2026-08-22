@@ -25,7 +25,6 @@ namespace igl::tests {
 class CommandBufferMTLTest : public ::testing::Test {
  public:
   CommandBufferMTLTest() = default;
-  ~CommandBufferMTLTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

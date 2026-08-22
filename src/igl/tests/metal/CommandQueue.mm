@@ -18,7 +18,6 @@ namespace igl::tests {
 class CommandQueueTest : public ::testing::Test {
  public:
   CommandQueueTest() = default;
-  ~CommandQueueTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

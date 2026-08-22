@@ -27,7 +27,6 @@ namespace igl::tests {
 class MetalComputePipelineStateTest : public ::testing::Test {
  public:
   MetalComputePipelineStateTest() = default;
-  ~MetalComputePipelineStateTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);
