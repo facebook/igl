@@ -70,7 +70,6 @@ namespace {
 class ShaderCrossTest : public ::testing::Test {
  public:
   ShaderCrossTest() = default;
-  ~ShaderCrossTest() override = default;
 
   // Set up common resources. This will create a device and a command queue
   void SetUp() override {

@@ -24,7 +24,6 @@ class UniformDescriptorTest : public ::testing::Test {
  private:
  public:
   UniformDescriptorTest() = default;
-  ~UniformDescriptorTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

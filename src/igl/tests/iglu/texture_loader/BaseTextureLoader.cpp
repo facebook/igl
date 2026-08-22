@@ -30,7 +30,6 @@ class BaseTextureLoaderTest : public ::testing::Test {
  private:
  public:
   BaseTextureLoaderTest() = default;
-  ~BaseTextureLoaderTest() override = default;
 
   //
   // SetUp()

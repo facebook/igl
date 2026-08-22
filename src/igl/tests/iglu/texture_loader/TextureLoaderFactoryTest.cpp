@@ -27,7 +27,6 @@ class TextureLoaderFactoryTest : public ::testing::Test {
  private:
  public:
   TextureLoaderFactoryTest() = default;
-  ~TextureLoaderFactoryTest() override = default;
 
   void SetUp() override {
     util::createDeviceAndQueue(iglDev_, cmdQueue_);

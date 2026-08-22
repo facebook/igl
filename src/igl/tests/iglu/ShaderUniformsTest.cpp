@@ -40,7 +40,6 @@ class TestRenderPipelineReflection final : public IRenderPipelineReflection {
     bufferArguments_(std::move(bufferArguments)),
     samplerArguments_(std::move(samplerArguments)),
     textureArguments_(std::move(textureArguments)) {}
-  ~TestRenderPipelineReflection() override = default;
 
  private:
   std::vector<BufferArgDesc> bufferArguments_;
@@ -52,7 +51,6 @@ class TestRenderPipelineReflection final : public IRenderPipelineReflection {
 class ShaderUniformsTest : public ::testing::Test {
  public:
   ShaderUniformsTest() = default;
-  ~ShaderUniformsTest() override = default;
 
   // Set up common resources. This will create a device and a command queue
   void SetUp() override {
