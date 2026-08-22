@@ -97,6 +97,14 @@ ManagedUniformBuffer::ManagedUniformBuffer(igl::IDevice& device,
     desc.type = igl::BufferDesc::BufferTypeBits::Uniform;
     desc.storage = igl::ResourceStorage::Shared;
 
+    // bind() uploads the whole block into this buffer on every bind, so without a ring the CPU
+    // overwrites bytes the GPU may still be reading for a frame that is in flight. A device that
+    // implements the hint hands out one sub-allocation per in-flight frame instead; one that does
+    // not keeps the single-slot behavior, so the hint is gated on the capability.
+    if (device.hasFeature(igl::DeviceFeatures::BufferRing)) {
+      desc.hint = igl::BufferDesc::BufferAPIHintBits::Ring;
+    }
+
     // NoCopy is a BufferAPIHintBits value; it must never be ORed into desc.type, where its bit
     // aliases an unrelated BufferTypeBits entry. Routing it to desc.hint is not safe here either:
     // createBufferNoCopy() aliases desc.data with a nil deallocator, while ~ManagedUniformBuffer()

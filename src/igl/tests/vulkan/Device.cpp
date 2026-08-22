@@ -7,8 +7,10 @@
 
 #include <gtest/gtest.h>
 
+#include "../iglu/RecordingDevice.h"
 #include "../util/TestDevice.h"
 
+#include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 #include <array>
 #include <cstdint>
 #include <vector>
@@ -554,6 +556,51 @@ TEST_F(DeviceVulkanTest, UniformBlockWithoutRingHintKeepsOneBuffer) {
 
     cmdQueue->submit(*cmdBuf);
   }
+}
+
+// End-to-end version of UniformBlockRingBufferTest: the descriptor is the one ManagedUniformBuffer
+// builds rather than one the test writes, so it also covers the uniform buffer carrying initial
+// data, which is how every IGPrism FilterNode allocates its params block.
+TEST_F(DeviceVulkanTest, ManagedUniformBufferRotatesItsRingBuffer) {
+  // Same gate as UniformBlockRingBufferTest: the rotation below is only meaningful on a device
+  // that implements the hint, and the Vulkan answer itself is pinned by DeviceFeatureSetTest.
+  if (!iglDev_->hasFeature(DeviceFeatures::BufferRing)) {
+    GTEST_SKIP() << "Device does not report DeviceFeatures::BufferRing";
+  }
+
+  // ManagedUniformBuffer keeps its buffer private, so the creation request is routed through a
+  // recording device that forwards to the real one and keeps a handle on what came back.
+  RecordingDevice device(*iglDev_);
+  device.reportsBufferRing = true;
+  const iglu::ManagedUniformBuffer uniforms(device, {.index = 0, .length = 256});
+  ASSERT_TRUE(uniforms.result.isOk());
+  ASSERT_EQ(device.createBufferCount, 1u);
+  ASSERT_NE(device.recordedHint & BufferDesc::BufferAPIHintBits::Ring, 0);
+  ASSERT_NE(device.createdBuffer, nullptr);
+
+  Result ret;
+  CommandQueueDesc queueDesc{};
+  auto cmdQueue = iglDev_->createCommandQueue(queueDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  auto* vulkanBuffer = static_cast<vulkan::Buffer*>(device.createdBuffer);
+  std::vector<VkBuffer> bufferHandles;
+  for (int i = 0; i < 4; i++) {
+    auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+    ASSERT_TRUE(ret.isOk());
+
+    bufferHandles.push_back(vulkanBuffer->currentVulkanBuffer()->getVkBuffer());
+
+    cmdQueue->submit(*cmdBuf);
+  }
+
+  // maxResourceCount defaults to 3: the three slots are mutually distinct, then the ring wraps.
+  // Compared pairwise rather than only consecutively, so a ring that got shallower fails on the
+  // distinctness itself instead of only on the wrap check below.
+  EXPECT_NE(bufferHandles[0], bufferHandles[1]);
+  EXPECT_NE(bufferHandles[0], bufferHandles[2]);
+  EXPECT_NE(bufferHandles[1], bufferHandles[2]);
+  EXPECT_EQ(bufferHandles[3], bufferHandles[0]);
 }
 #endif
 
