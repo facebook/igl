@@ -28,7 +28,6 @@ namespace igl::tests {
 class VulkanStagingDeviceTest : public ::testing::Test {
  public:
   VulkanStagingDeviceTest() = default;
-  ~VulkanStagingDeviceTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
