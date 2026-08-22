@@ -24,7 +24,6 @@ namespace igl::tests {
 class MetalSamplerCreationTest : public ::testing::Test {
  public:
   MetalSamplerCreationTest() = default;
-  ~MetalSamplerCreationTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

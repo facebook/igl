@@ -14,7 +14,6 @@ namespace igl::tests {
 class SamplerStateMTLTest : public ::testing::Test {
  public:
   SamplerStateMTLTest() = default;
-  ~SamplerStateMTLTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

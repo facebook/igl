@@ -31,7 +31,6 @@ namespace igl::tests {
 class MetalTextureDataRoundtripTest : public ::testing::Test {
  public:
   MetalTextureDataRoundtripTest() = default;
-  ~MetalTextureDataRoundtripTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

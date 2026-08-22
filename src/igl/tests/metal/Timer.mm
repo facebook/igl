@@ -25,7 +25,6 @@ namespace igl::tests {
 class MetalTimerTest : public ::testing::Test {
  public:
   MetalTimerTest() = default;
-  ~MetalTimerTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);
