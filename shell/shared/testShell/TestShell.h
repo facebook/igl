@@ -14,8 +14,8 @@
 namespace igl::shell {
 
 struct ScreenSize {
-  size_t width;
-  size_t height;
+  size_t width = 0;
+  size_t height = 0;
 };
 
 class TestShellBase {
