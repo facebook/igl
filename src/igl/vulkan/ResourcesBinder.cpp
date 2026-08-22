@@ -222,7 +222,7 @@ void ResourcesBinder::updateBindingsByDescriptorBuffer(VkPipelineLayout layout,
 
   IGL_DEBUG_ASSERT(layout != VK_NULL_HANDLE);
 
-  if (isDirtyFlags_ & DirtyFlagBits_Textures) {
+  if ((isDirtyFlags_ & DirtyFlagBits_Textures) != 0) {
     ctx_.updateBindingsTexturesByDescriptorBuffer(cmdBuffer_,
                                                   layout,
                                                   bindPoint_,
@@ -231,7 +231,7 @@ void ResourcesBinder::updateBindingsByDescriptorBuffer(VkPipelineLayout layout,
                                                   *state.dslCombinedImageSamplers,
                                                   state.info);
   }
-  if (isDirtyFlags_ & DirtyFlagBits_Buffers) {
+  if ((isDirtyFlags_ & DirtyFlagBits_Buffers) != 0) {
     ctx_.updateBindingsBuffersByDescriptorBuffer(cmdBuffer_,
                                                  layout,
                                                  bindPoint_,
@@ -240,7 +240,7 @@ void ResourcesBinder::updateBindingsByDescriptorBuffer(VkPipelineLayout layout,
                                                  *state.dslBuffers,
                                                  state.info);
   }
-  if (isDirtyFlags_ & DirtyFlagBits_StorageImages) {
+  if ((isDirtyFlags_ & DirtyFlagBits_StorageImages) != 0) {
     ctx_.updateBindingsStorageImagesByDescriptorBuffer(cmdBuffer_,
                                                        layout,
                                                        bindPoint_,
@@ -259,7 +259,7 @@ void ResourcesBinder::updateBindingsByDescriptorSet(VkPipelineLayout layout,
 
   IGL_DEBUG_ASSERT(layout != VK_NULL_HANDLE);
 
-  if (isDirtyFlags_ & DirtyFlagBits_Textures) {
+  if ((isDirtyFlags_ & DirtyFlagBits_Textures) != 0) {
     ctx_.updateBindingsTextures(cmdBuffer_,
                                 layout,
                                 bindPoint_,
@@ -268,7 +268,7 @@ void ResourcesBinder::updateBindingsByDescriptorSet(VkPipelineLayout layout,
                                 *state.dslCombinedImageSamplers,
                                 state.info);
   }
-  if (isDirtyFlags_ & DirtyFlagBits_Buffers) {
+  if ((isDirtyFlags_ & DirtyFlagBits_Buffers) != 0) {
     ctx_.updateBindingsBuffers(cmdBuffer_,
                                layout,
                                bindPoint_,
@@ -277,7 +277,7 @@ void ResourcesBinder::updateBindingsByDescriptorSet(VkPipelineLayout layout,
                                *state.dslBuffers,
                                state.info);
   }
-  if (isDirtyFlags_ & DirtyFlagBits_StorageImages) {
+  if ((isDirtyFlags_ & DirtyFlagBits_StorageImages) != 0) {
     ctx_.updateBindingsStorageImages(cmdBuffer_,
                                      layout,
                                      bindPoint_,
