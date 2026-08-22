@@ -10,11 +10,11 @@
 namespace igl::shell {
 
 struct TouchEvent {
-  bool isDown;
-  float x;
-  float y;
-  float dx;
-  float dy;
+  bool isDown = false;
+  float x = 0.0f;
+  float y = 0.0f;
+  float dx = 0.0f;
+  float dy = 0.0f;
 
   TouchEvent() = default;
   TouchEvent(bool isDown, float x, float y, float dx, float dy) :

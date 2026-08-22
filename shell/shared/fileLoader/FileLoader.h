@@ -17,7 +17,7 @@ class FileLoader {
  public:
   struct FileData {
     std::unique_ptr<uint8_t[]> data = nullptr;
-    uint64_t length;
+    uint64_t length = 0;
   };
 
   FileLoader() = default;

@@ -23,9 +23,9 @@ enum {
 };
 
 struct KeyEvent {
-  int key;
-  bool isDown;
-  uint32_t modifiers;
+  int key = 0;
+  bool isDown = false;
+  uint32_t modifiers = 0;
 
   KeyEvent() = default;
   KeyEvent(bool isDown, int key, uint32_t modifiers = kKeyEventModifierNone) :
@@ -33,7 +33,7 @@ struct KeyEvent {
 };
 
 struct CharEvent {
-  int character;
+  int character = 0;
 };
 
 class IKeyListener {

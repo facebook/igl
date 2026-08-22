@@ -16,10 +16,10 @@ enum class MouseButton {
 };
 
 struct MouseButtonEvent {
-  MouseButton button;
-  bool isDown;
-  float x;
-  float y;
+  MouseButton button = MouseButton::Left;
+  bool isDown = false;
+  float x = 0.0f;
+  float y = 0.0f;
 
   MouseButtonEvent() = default;
   MouseButtonEvent(MouseButton button, bool isDown, float x, float y) :
@@ -27,18 +27,18 @@ struct MouseButtonEvent {
 };
 
 struct MouseMotionEvent {
-  float x;
-  float y;
-  float dx;
-  float dy;
+  float x = 0.0f;
+  float y = 0.0f;
+  float dx = 0.0f;
+  float dy = 0.0f;
 
   MouseMotionEvent() = default;
   MouseMotionEvent(float x, float y, float dx, float dy) : x(x), y(y), dx(dx), dy(dy) {}
 };
 
 struct MouseWheelEvent {
-  float dx;
-  float dy;
+  float dx = 0.0f;
+  float dy = 0.0f;
   MouseWheelEvent() = default;
   MouseWheelEvent(float dx, float dy) : dx(dx), dy(dy) {}
 };
