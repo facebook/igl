@@ -462,6 +462,13 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
 }
 
 TEST_F(DeviceVulkanTest, UniformBlockRingBufferTest) {
+  // The rotation below is what the Ring hint buys, so it is only meaningful on a device that
+  // implements it. DeviceFeatureSetTest is where the Vulkan answer itself is pinned; skipping here
+  // keeps this a behavior test rather than a second capability assertion.
+  if (!iglDev_->hasFeature(DeviceFeatures::BufferRing)) {
+    GTEST_SKIP() << "Device does not report DeviceFeatures::BufferRing";
+  }
+
   Result ret;
 
   // Create uniform buffer with ring buffer hint
@@ -506,12 +513,47 @@ TEST_F(DeviceVulkanTest, UniformBlockRingBufferTest) {
     cmdQueue->submit(*cmdBuf);
   }
 
-  // Verify different buffer handles were used for the first 3
-  for (size_t i = 1; i < 3; i++) {
-    ASSERT_NE(bufferHandles[i], bufferHandles[i - 1]);
-  }
+  // Verify the first 3 buffer handles are mutually distinct. Compared pairwise rather than only
+  // consecutively, so a ring that got shallower fails on the distinctness itself instead of only
+  // on the wrap check below.
+  ASSERT_NE(bufferHandles[0], bufferHandles[1]);
+  ASSERT_NE(bufferHandles[0], bufferHandles[2]);
+  ASSERT_NE(bufferHandles[1], bufferHandles[2]);
   // First and last handles should be the same
   ASSERT_EQ(bufferHandles[3], bufferHandles[0]);
+}
+
+// Control for UniformBlockRingBufferTest: the rotation there is what the Ring hint buys, not
+// something every uniform buffer already gets. Without the hint the same VkBuffer is handed out on
+// every frame, which is the single-slot exposure a caller avoids by gating on BufferRing.
+TEST_F(DeviceVulkanTest, UniformBlockWithoutRingHintKeepsOneBuffer) {
+  Result ret;
+
+  const size_t bufferSize = 256;
+  const BufferDesc bufferDesc{
+      .type = BufferDesc::BufferTypeBits::Uniform,
+      .length = bufferSize,
+      .storage = ResourceStorage::Shared,
+      .hint = BufferDesc::BufferAPIHintBits::UniformBlock,
+  };
+  auto buffer = iglDev_->createBuffer(bufferDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(buffer, nullptr);
+
+  CommandQueueDesc queueDesc{};
+  auto cmdQueue = iglDev_->createCommandQueue(queueDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  auto* vulkanBuffer = static_cast<vulkan::Buffer*>(buffer.get());
+  const VkBuffer firstHandle = vulkanBuffer->currentVulkanBuffer()->getVkBuffer();
+  for (int i = 0; i < 4; i++) {
+    auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+    ASSERT_TRUE(ret.isOk());
+
+    EXPECT_EQ(vulkanBuffer->currentVulkanBuffer()->getVkBuffer(), firstHandle);
+
+    cmdQueue->submit(*cmdBuf);
+  }
 }
 #endif
 

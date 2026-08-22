@@ -191,7 +191,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::Multiview));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::BindUniform));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::TexturePartialMipChain));
-      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::BufferRing));
+      EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::BufferRing));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::BufferNoCopy));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ShaderLibrary));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::BindBytes));

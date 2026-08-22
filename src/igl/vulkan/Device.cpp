@@ -770,7 +770,7 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
   case DeviceFeatures::TexturePartialMipChain:
     return true;
   case DeviceFeatures::BufferRing:
-    return false;
+    return true;
   case DeviceFeatures::BufferNoCopy:
     return false;
   case DeviceFeatures::ShaderLibrary:
