@@ -30,7 +30,6 @@ namespace igl::tests {
 class ComputeCommandAdapterOGLTest : public ::testing::Test {
  public:
   ComputeCommandAdapterOGLTest() = default;
-  ~ComputeCommandAdapterOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

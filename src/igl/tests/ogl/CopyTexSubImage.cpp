@@ -24,7 +24,6 @@ namespace igl::tests {
 class CopyTexSubImageOGLTest : public ::testing::Test {
  public:
   CopyTexSubImageOGLTest() = default;
-  ~CopyTexSubImageOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
