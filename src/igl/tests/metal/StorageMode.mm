@@ -23,7 +23,6 @@ namespace igl::tests {
 class MetalStorageModeTest : public ::testing::Test {
  public:
   MetalStorageModeTest() = default;
-  ~MetalStorageModeTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

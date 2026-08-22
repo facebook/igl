@@ -22,7 +22,6 @@ namespace igl::tests {
 class RenderPipelineReflectionMTLTest : public ::testing::Test {
  public:
   RenderPipelineReflectionMTLTest() = default;
-  ~RenderPipelineReflectionMTLTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);

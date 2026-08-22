@@ -25,7 +25,6 @@ namespace igl::tests {
 class MetalRenderPipelineCreationTest : public ::testing::Test {
  public:
   MetalRenderPipelineCreationTest() = default;
-  ~MetalRenderPipelineCreationTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);
