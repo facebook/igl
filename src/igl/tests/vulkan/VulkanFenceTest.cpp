@@ -25,7 +25,6 @@ constexpr uint64_t kFenceWaitTimeoutNs = 5'000'000'000; // 5 seconds
 class VulkanFenceTest : public ::testing::Test {
  public:
   VulkanFenceTest() = default;
-  ~VulkanFenceTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

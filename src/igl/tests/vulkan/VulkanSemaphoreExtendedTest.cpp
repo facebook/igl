@@ -20,7 +20,6 @@ namespace igl::tests {
 class VulkanSemaphoreExtendedTest : public ::testing::Test {
  public:
   VulkanSemaphoreExtendedTest() = default;
-  ~VulkanSemaphoreExtendedTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

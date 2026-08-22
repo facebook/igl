@@ -21,7 +21,6 @@ namespace igl::tests {
 class VulkanRenderPassBuilderTest : public ::testing::Test {
  public:
   VulkanRenderPassBuilderTest() = default;
-  ~VulkanRenderPassBuilderTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

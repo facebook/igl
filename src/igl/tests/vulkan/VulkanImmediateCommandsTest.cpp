@@ -22,7 +22,6 @@ namespace igl::tests {
 class VulkanImmediateCommandsTest : public ::testing::Test {
  public:
   VulkanImmediateCommandsTest() = default;
-  ~VulkanImmediateCommandsTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

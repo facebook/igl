@@ -23,7 +23,6 @@ namespace igl::tests {
 class VulkanPipelineBuilderTest : public ::testing::Test {
  public:
   VulkanPipelineBuilderTest() = default;
-  ~VulkanPipelineBuilderTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
