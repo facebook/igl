@@ -30,7 +30,6 @@ namespace igl::tests {
 class TextureMTLTest : public ::testing::Test {
  public:
   TextureMTLTest() = default;
-  ~TextureMTLTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);
@@ -58,7 +57,6 @@ class TextureMTLTest : public ::testing::Test {
 class TextureFormatMTLTest : public util::TextureFormatTestBase {
  public:
   TextureFormatMTLTest() = default;
-  ~TextureFormatMTLTest() override = default;
 };
 
 // Test basic getter methods for successful construction

@@ -23,7 +23,6 @@ namespace igl::tests {
 class MultiviewFramebufferOGLTest : public ::testing::Test {
  public:
   MultiviewFramebufferOGLTest() = default;
-  ~MultiviewFramebufferOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

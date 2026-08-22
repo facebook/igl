@@ -23,7 +23,6 @@ namespace igl::tests {
 class DeviceFeatureSetFullOGLTest : public ::testing::Test {
  public:
   DeviceFeatureSetFullOGLTest() = default;
-  ~DeviceFeatureSetFullOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
