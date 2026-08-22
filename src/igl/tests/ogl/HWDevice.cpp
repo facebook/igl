@@ -34,7 +34,6 @@ namespace igl::tests {
 class HWDeviceOGLTest : public ::testing::Test {
  public:
   HWDeviceOGLTest() = default;
-  ~HWDeviceOGLTest() override = default;
 
   // Set up common resources. This will create a device
   void SetUp() override {

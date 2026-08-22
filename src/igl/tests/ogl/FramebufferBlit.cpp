@@ -32,7 +32,6 @@ namespace igl::tests {
 class FramebufferBlitOGLTest : public ::testing::Test {
  public:
   FramebufferBlitOGLTest() = default;
-  ~FramebufferBlitOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

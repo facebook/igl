@@ -23,7 +23,6 @@ namespace igl::tests {
 class ExtensionDetectionOGLTest : public ::testing::Test {
  public:
   ExtensionDetectionOGLTest() = default;
-  ~ExtensionDetectionOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
