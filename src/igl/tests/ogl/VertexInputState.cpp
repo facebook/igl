@@ -19,7 +19,6 @@ namespace igl::tests {
 class VertexInputStateOGLTest : public ::testing::Test {
  public:
   VertexInputStateOGLTest() = default;
-  ~VertexInputStateOGLTest() override = default;
 
   // Set up VertexInputStateDesc for the different test cases
   void SetUp() override {

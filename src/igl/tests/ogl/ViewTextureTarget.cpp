@@ -24,7 +24,6 @@ namespace igl::tests {
 class ViewTextureTargetOGLTest : public ::testing::Test {
  public:
   ViewTextureTargetOGLTest() = default;
-  ~ViewTextureTargetOGLTest() override = default;
 
   void SetUp() override {
     // Turn off debug breaks, only use in debug mode
