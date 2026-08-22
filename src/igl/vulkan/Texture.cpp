@@ -92,14 +92,14 @@ Result Texture::create(const TextureDesc& desc) {
     desc_.storage = ResourceStorage::Shared;
   }
 
-  if (desc_.usage & TextureDesc::TextureUsageBits::Sampled) {
+  if ((desc_.usage & TextureDesc::TextureUsageBits::Sampled) != 0) {
     usageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
   }
-  if (desc_.usage & TextureDesc::TextureUsageBits::Storage) {
+  if ((desc_.usage & TextureDesc::TextureUsageBits::Storage) != 0) {
     IGL_DEBUG_ASSERT(desc_.numSamples <= 1, "Storage images cannot be multisampled");
     usageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
   }
-  if (desc_.usage & TextureDesc::TextureUsageBits::Attachment) {
+  if ((desc_.usage & TextureDesc::TextureUsageBits::Attachment) != 0) {
     usageFlags |= getProperties().isDepthOrStencil() ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
                                                      : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -302,22 +302,22 @@ Result Texture::createView(const Texture& baseTexture, const TextureViewDesc& de
       return VK_IMAGE_ASPECT_NONE;
     }
     VkImageAspectFlags aspect = 0;
-    if (flags & ImageAspectBits_Color) {
+    if ((flags & ImageAspectBits_Color) != 0) {
       aspect |= VK_IMAGE_ASPECT_COLOR_BIT;
     }
-    if (flags & ImageAspectBits_Depth) {
+    if ((flags & ImageAspectBits_Depth) != 0) {
       aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
     }
-    if (flags & ImageAspectBits_Stencil) {
+    if ((flags & ImageAspectBits_Stencil) != 0) {
       aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
     }
-    if (flags & ImageAspectBits_Plane_0) {
+    if ((flags & ImageAspectBits_Plane_0) != 0) {
       aspect |= VK_IMAGE_ASPECT_PLANE_0_BIT;
     }
-    if (flags & ImageAspectBits_Plane_1) {
+    if ((flags & ImageAspectBits_Plane_1) != 0) {
       aspect |= VK_IMAGE_ASPECT_PLANE_1_BIT;
     }
-    if (flags & ImageAspectBits_Plane_2) {
+    if ((flags & ImageAspectBits_Plane_2) != 0) {
       aspect |= VK_IMAGE_ASPECT_PLANE_2_BIT;
     }
     return aspect;

@@ -52,22 +52,22 @@ Result Buffer::create(const BufferDesc& desc) {
     return Result(Result::Code::InvalidOperation, "Invalid buffer type");
   }
 
-  if (desc_.type & BufferDesc::BufferTypeBits::Index) {
+  if ((desc_.type & BufferDesc::BufferTypeBits::Index) != 0) {
     usageFlags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
   }
-  if (desc_.type & BufferDesc::BufferTypeBits::Vertex) {
+  if ((desc_.type & BufferDesc::BufferTypeBits::Vertex) != 0) {
     usageFlags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
   }
-  if (desc_.type & BufferDesc::BufferTypeBits::Uniform) {
+  if ((desc_.type & BufferDesc::BufferTypeBits::Uniform) != 0) {
     usageFlags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | optionalBDA;
   }
 
-  if (desc_.type & BufferDesc::BufferTypeBits::Storage) {
+  if ((desc_.type & BufferDesc::BufferTypeBits::Storage) != 0) {
     usageFlags |=
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | optionalBDA;
   }
 
-  if (desc_.type & BufferDesc::BufferTypeBits::Indirect) {
+  if ((desc_.type & BufferDesc::BufferTypeBits::Indirect) != 0) {
     usageFlags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | optionalBDA;
   }
 
@@ -317,7 +317,7 @@ BufferDesc::BufferAPIHint Buffer::requestedApiHints() const noexcept {
 }
 
 BufferDesc::BufferAPIHint Buffer::acceptedApiHints() const noexcept {
-  if (desc_.type & BufferDesc::BufferTypeBits::Uniform) {
+  if ((desc_.type & BufferDesc::BufferTypeBits::Uniform) != 0) {
     return BufferDesc::BufferAPIHintBits::UniformBlock;
   }
 
