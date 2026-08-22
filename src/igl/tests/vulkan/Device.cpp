@@ -36,7 +36,6 @@ namespace igl::tests {
 class DeviceVulkanTest : public ::testing::Test {
  public:
   DeviceVulkanTest() = default;
-  ~DeviceVulkanTest() override = default;
 
   // Set up common resources. This will create a device
   void SetUp() override {

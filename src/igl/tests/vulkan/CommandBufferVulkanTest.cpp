@@ -25,7 +25,6 @@ namespace igl::tests {
 class CommandBufferVulkanTest : public ::testing::Test {
  public:
   CommandBufferVulkanTest() = default;
-  ~CommandBufferVulkanTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

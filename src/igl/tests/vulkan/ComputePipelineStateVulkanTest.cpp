@@ -31,7 +31,6 @@ namespace igl::tests {
 class ComputePipelineStateVulkanTest : public ::testing::Test {
  public:
   ComputePipelineStateVulkanTest() = default;
-  ~ComputePipelineStateVulkanTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

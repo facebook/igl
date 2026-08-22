@@ -47,7 +47,6 @@ namespace igl::tests {
 class DescriptorPoolArenaTest : public ::testing::Test {
  public:
   DescriptorPoolArenaTest() = default;
-  ~DescriptorPoolArenaTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
