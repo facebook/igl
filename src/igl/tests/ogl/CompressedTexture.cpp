@@ -22,7 +22,6 @@ namespace igl::tests {
 class CompressedTextureOGLTest : public ::testing::Test {
  public:
   CompressedTextureOGLTest() = default;
-  ~CompressedTextureOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

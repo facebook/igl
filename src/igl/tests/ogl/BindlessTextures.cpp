@@ -21,7 +21,6 @@ namespace igl::tests {
 class BindlessTexturesOGLTest : public ::testing::Test {
  public:
   BindlessTexturesOGLTest() = default;
-  ~BindlessTexturesOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
