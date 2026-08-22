@@ -117,11 +117,11 @@ class CommandBuffer final : public ICommandBuffer {
   // These are recorded during command buffer recording and executed in CommandQueue::submit()
   // AFTER all render/compute commands have been executed by the GPU
   struct DeferredTextureCopy {
-    ITexture* source;
-    IBuffer* destination;
-    uint64_t destinationOffset;
-    uint32_t mipLevel;
-    uint32_t layer;
+    ITexture* source = nullptr;
+    IBuffer* destination = nullptr;
+    uint64_t destinationOffset = 0;
+    uint32_t mipLevel = 0;
+    uint32_t layer = 0;
   };
   const std::vector<DeferredTextureCopy>& getDeferredTextureCopies() const {
     return deferredTextureCopies_;

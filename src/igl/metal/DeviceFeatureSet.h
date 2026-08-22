@@ -41,10 +41,10 @@ class DeviceFeatureSet final {
   // MTLGPUFamily enum isn't available until macos(10.15), ios(13.0)
   // also MTLGPUFamily includes enum values that don't directly correspond to a GPU
   // so we use an integer representation that maps to Apple GPU family 2+
-  size_t gpuFamily_;
+  size_t gpuFamily_ = 0;
 
-  size_t maxMultisampleCount_;
-  size_t maxBufferLength_;
+  size_t maxMultisampleCount_ = 0;
+  size_t maxBufferLength_ = 0;
   bool supports32BitFloatFiltering_ = false;
   bool supportsTimestampQueries_ = false;
   bool supportsDynamicVertexBufferStride_ = false;
