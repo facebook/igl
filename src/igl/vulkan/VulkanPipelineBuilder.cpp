@@ -145,14 +145,14 @@ VulkanPipelineBuilder& VulkanPipelineBuilder::stencilStateOps(VkStencilFaceFlags
                             failOp != VK_STENCIL_OP_KEEP || passOp != VK_STENCIL_OP_KEEP ||
                             depthFailOp != VK_STENCIL_OP_KEEP || compareOp != VK_COMPARE_OP_ALWAYS);
 
-  if (faceMask & VK_STENCIL_FACE_FRONT_BIT) {
+  if ((faceMask & VK_STENCIL_FACE_FRONT_BIT) != 0) {
     VkStencilOpState& front = depthStencilState_.front;
     front.failOp = failOp;
     front.passOp = passOp;
     front.depthFailOp = depthFailOp;
     front.compareOp = compareOp;
   }
-  if (faceMask & VK_STENCIL_FACE_BACK_BIT) {
+  if ((faceMask & VK_STENCIL_FACE_BACK_BIT) != 0) {
     VkStencilOpState& back = depthStencilState_.back;
     back.failOp = failOp;
     back.passOp = passOp;

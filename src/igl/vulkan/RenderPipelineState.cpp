@@ -262,16 +262,16 @@ VkBlendFactor blendFactorToVkBlendFactor(BlendFactor value) {
 
 VkColorComponentFlags colorWriteMaskToVkColorComponentFlags(ColorWriteMask value) {
   VkColorComponentFlags result = 0;
-  if (value & igl::kColorWriteBitsRed) {
+  if ((value & igl::kColorWriteBitsRed) != 0) {
     result |= VK_COLOR_COMPONENT_R_BIT;
   }
-  if (value & igl::kColorWriteBitsGreen) {
+  if ((value & igl::kColorWriteBitsGreen) != 0) {
     result |= VK_COLOR_COMPONENT_G_BIT;
   }
-  if (value & igl::kColorWriteBitsBlue) {
+  if ((value & igl::kColorWriteBitsBlue) != 0) {
     result |= VK_COLOR_COMPONENT_B_BIT;
   }
-  if (value & igl::kColorWriteBitsAlpha) {
+  if ((value & igl::kColorWriteBitsAlpha) != 0) {
     result |= VK_COLOR_COMPONENT_A_BIT;
   }
   return result;

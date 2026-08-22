@@ -129,7 +129,7 @@ void ComputeCommandEncoder::processDependencies(const Dependencies& dependencies
         // barrier must cover that stage too, otherwise the dispatch races
         // against the producing write and reads stale (typically zero)
         // group counts. Mirrors RenderCommandEncoder::processDependencies().
-        if (flags & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
+        if ((flags & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) != 0) {
           dstStageFlags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         }
         const VkPipelineStageFlags srcStageFlags =
