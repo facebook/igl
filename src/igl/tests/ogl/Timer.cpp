@@ -24,7 +24,6 @@ namespace igl::tests {
 class TimerOGLTest : public ::testing::Test {
  public:
   TimerOGLTest() = default;
-  ~TimerOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

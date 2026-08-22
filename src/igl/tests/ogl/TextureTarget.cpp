@@ -39,7 +39,6 @@ class TextureTargetOGLTest : public ::testing::Test {
  private:
  public:
   TextureTargetOGLTest() = default;
-  ~TextureTargetOGLTest() override = default;
 
   void SetUp() override {
     // Turn off debug breaks, only use in debug mode

@@ -39,7 +39,6 @@ class TextureBufferBaseOGLTest : public ::testing::Test {
  private:
  public:
   TextureBufferBaseOGLTest() = default;
-  ~TextureBufferBaseOGLTest() override = default;
 
   void SetUp() override {
     // Turn off debug breaks, only use in debug mode

@@ -22,7 +22,6 @@ namespace igl::tests {
 class Texture3DOGLTest : public ::testing::Test {
  public:
   Texture3DOGLTest() = default;
-  ~Texture3DOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
