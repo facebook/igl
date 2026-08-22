@@ -51,11 +51,11 @@ class Texture : public WithContext, public ITexture {
   virtual void unbind() = 0;
 
   struct AttachmentParams {
-    uint32_t face; // Cube map texture face
-    uint32_t mipLevel; // Mipmap level
-    uint32_t layer; // Array texture layer
-    bool read;
-    bool stereo;
+    uint32_t face = 0; // Cube map texture face
+    uint32_t mipLevel = 0; // Mipmap level
+    uint32_t layer = 0; // Array texture layer
+    bool read = false;
+    bool stereo = false;
   };
 
   // frame buffer attachments

@@ -96,16 +96,16 @@ class ArrayBuffer : public Buffer {
 
  protected:
   // the GL ID for this texture
-  GLuint iD_;
+  GLuint iD_ = 0;
 
   // the buffer target used by the GL glBufferXXX APIs
   // this must be set by each derived object during construction
   GLenum target_{};
 
  private:
-  size_t size_;
+  size_t size_ = 0;
 
-  bool isDynamic_;
+  bool isDynamic_ = false;
 };
 
 class UniformBlockBuffer : public ArrayBuffer {
