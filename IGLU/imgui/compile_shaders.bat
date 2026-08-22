@@ -23,8 +23,8 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo Converting to C header files...
-python -c "import sys; data = open('imgui_vs_d3d12_fxc.cso', 'rb').read(); print('unsigned char _tmp_imgui_vs_fxc_cso[] = {'); print(', '.join(f'0x{b:02x}' for b in data)); print('};'); print(f'unsigned int _tmp_imgui_vs_fxc_cso_len = {len(data)};')" > imgui_vs_d3d12_fxc.h
+python -c "import sys; data = open('imgui_vs_d3d12_fxc.cso', 'rb').read(); print('unsigned char tmpImguiVsFxcCso[] = {'); print(', '.join(f'0x{b:02x}' for b in data)); print('};'); print(f'unsigned int tmpImguiVsFxcCsoLen = {len(data)};')" > imgui_vs_d3d12_fxc.h
 
-python -c "import sys; data = open('imgui_ps_d3d12_fxc.cso', 'rb').read(); print('unsigned char _tmp_imgui_ps_fxc_cso[] = {'); print(', '.join(f'0x{b:02x}' for b in data)); print('};'); print(f'unsigned int _tmp_imgui_ps_fxc_cso_len = {len(data)};')" > imgui_ps_d3d12_fxc.h
+python -c "import sys; data = open('imgui_ps_d3d12_fxc.cso', 'rb').read(); print('unsigned char tmpImguiPsFxcCso[] = {'); print(', '.join(f'0x{b:02x}' for b in data)); print('};'); print(f'unsigned int tmpImguiPsFxcCsoLen = {len(data)};')" > imgui_ps_d3d12_fxc.h
 
 echo Done!

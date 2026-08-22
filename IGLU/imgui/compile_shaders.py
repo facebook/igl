@@ -57,12 +57,8 @@ def main() -> int:
         return 1
 
     # Convert to headers
-    cso_to_header(
-        "imgui_vs_d3d12_fxc.cso", "imgui_vs_d3d12_fxc.h", "_tmp_imgui_vs_fxc_cso"
-    )
-    cso_to_header(
-        "imgui_ps_d3d12_fxc.cso", "imgui_ps_d3d12_fxc.h", "_tmp_imgui_ps_fxc_cso"
-    )
+    cso_to_header("imgui_vs_d3d12_fxc.cso", "imgui_vs_d3d12_fxc.h", "tmpImguiVsFxcCso")
+    cso_to_header("imgui_ps_d3d12_fxc.cso", "imgui_ps_d3d12_fxc.h", "tmpImguiPsFxcCso")
 
     print("\nAll shaders compiled successfully!")
     return 0

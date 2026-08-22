@@ -219,12 +219,12 @@ std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& devi
   }
   case igl::BackendType::D3D12: {
     return igl::ShaderStagesCreator::fromModuleBinaryInput(device,
-                                                           _tmp_imgui_vs_fxc_cso,
-                                                           _tmp_imgui_vs_fxc_cso_len,
+                                                           tmpImguiVsFxcCso,
+                                                           tmpImguiVsFxcCsoLen,
                                                            "main",
                                                            "Shader Module: imgui::vertex (D3D12)",
-                                                           _tmp_imgui_ps_fxc_cso,
-                                                           _tmp_imgui_ps_fxc_cso_len,
+                                                           tmpImguiPsFxcCso,
+                                                           tmpImguiPsFxcCsoLen,
                                                            "main",
                                                            "Shader Module: imgui::fragment (D3D12)",
                                                            &result);
