@@ -34,7 +34,6 @@ class TexturesRGBBaseTest : public ::testing::Test {
  private:
  public:
   TexturesRGBBaseTest() = default;
-  ~TexturesRGBBaseTest() override = default;
 
   //
   // SetUp()

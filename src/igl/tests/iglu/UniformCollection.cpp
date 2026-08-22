@@ -28,7 +28,6 @@ class UniformCollectionTest : public ::testing::Test {
  private:
  public:
   UniformCollectionTest() = default;
-  ~UniformCollectionTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

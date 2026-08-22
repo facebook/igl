@@ -29,7 +29,6 @@ class TextureAccessorTest : public ::testing::Test {
  private:
  public:
   TextureAccessorTest() = default;
-  ~TextureAccessorTest() override = default;
 
   //
   // SetUp()

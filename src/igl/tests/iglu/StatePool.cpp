@@ -29,7 +29,6 @@ class StatePoolTest : public ::testing::Test {
  private:
  public:
   StatePoolTest() = default;
-  ~StatePoolTest() override = default;
 
   //
   // SetUp()

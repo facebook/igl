@@ -32,7 +32,6 @@ namespace igl::tests {
 class TextureAccessorDesignatedInitTest : public ::testing::Test {
  public:
   TextureAccessorDesignatedInitTest() = default;
-  ~TextureAccessorDesignatedInitTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);
