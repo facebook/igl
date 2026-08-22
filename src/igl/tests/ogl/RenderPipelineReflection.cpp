@@ -26,7 +26,6 @@ class RenderPipelineReflectionTest : public ::testing::Test {
  private:
  public:
   RenderPipelineReflectionTest() = default;
-  ~RenderPipelineReflectionTest() override = default;
 
   //
   // SetUp()
