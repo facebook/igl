@@ -37,7 +37,6 @@ namespace igl::tests {
 class DepthStencilStateTest : public ::testing::Test {
  public:
   DepthStencilStateTest() = default;
-  ~DepthStencilStateTest() override = default;
 
   // Set up common resources.
   // This function sets up a render pass and a graphics pipeline descriptor
