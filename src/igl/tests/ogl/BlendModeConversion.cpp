@@ -21,7 +21,6 @@ namespace igl::tests {
 class BlendModeConversionOGLTest : public ::testing::Test {
  public:
   BlendModeConversionOGLTest() = default;
-  ~BlendModeConversionOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

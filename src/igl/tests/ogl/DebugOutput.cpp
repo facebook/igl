@@ -23,7 +23,6 @@ namespace igl::tests {
 class DebugOutputOGLTest : public ::testing::Test {
  public:
   DebugOutputOGLTest() = default;
-  ~DebugOutputOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

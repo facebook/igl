@@ -26,7 +26,6 @@ namespace igl::tests {
 class ComputePipelineStateOGLTest : public ::testing::Test {
  public:
   ComputePipelineStateOGLTest() = default;
-  ~ComputePipelineStateOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);

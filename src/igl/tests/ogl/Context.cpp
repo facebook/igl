@@ -26,7 +26,6 @@ namespace igl::tests {
 class ContextOGLTest : public ::testing::Test {
  public:
   ContextOGLTest() = default;
-  ~ContextOGLTest() override = default;
 
   void SetUp() override {
     // We will be purposely tripping a few ASSERT conditions

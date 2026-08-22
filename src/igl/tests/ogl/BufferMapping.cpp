@@ -24,7 +24,6 @@ namespace igl::tests {
 class BufferMappingOGLTest : public ::testing::Test {
  public:
   BufferMappingOGLTest() = default;
-  ~BufferMappingOGLTest() override = default;
 
   void SetUp() override {
     igl::setDebugBreakEnabled(false);
