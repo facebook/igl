@@ -143,6 +143,10 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
   featuresTextureCompressionAstcHdr({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES_EXT,
   }),
+  featuresShaderIntegerDotProduct({
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES,
+      .shaderIntegerDotProduct = VK_FALSE,
+  }),
   featuresExtendedDynamicState({
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT,
       .extendedDynamicState = VK_TRUE,
@@ -312,6 +316,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& contextConf
   featuresTextureCompressionAstcHdr.pNext = nullptr;
   featuresExtendedDynamicState.pNext = nullptr;
   featuresExtendedDynamicState2.pNext = nullptr;
+  featuresShaderIntegerDotProduct.pNext = nullptr;
 
   // Add the required and optional features to the VkPhysicalDeviceFetaures2_
   ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresSamplerYcbcrConversion);
@@ -376,6 +381,15 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& contextConf
   if (hasExtension(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME)) {
     ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresExtendedDynamicState2);
   }
+  // Gated on the caller's request rather than on the extension being present, unlike the
+  // structs above. The feature is core from Vulkan 1.3, where a device may support it without
+  // still advertising VK_KHR_shader_integer_dot_product, so an extension gate would silently
+  // drop the request on exactly the newest devices. Defaulting to VK_FALSE is what keeps that
+  // safe: the struct stays out of the chain for every caller that does not opt in, so this
+  // adds nothing to the default device.
+  if (featuresShaderIntegerDotProduct.shaderIntegerDotProduct == VK_TRUE) {
+    ivkAddNext(&vkPhysicalDeviceFeatures2, &featuresShaderIntegerDotProduct);
+  }
 }
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
@@ -416,6 +430,7 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   featuresTextureCompressionAstcHdr = other.featuresTextureCompressionAstcHdr;
   featuresExtendedDynamicState = other.featuresExtendedDynamicState;
   featuresExtendedDynamicState2 = other.featuresExtendedDynamicState2;
+  featuresShaderIntegerDotProduct = other.featuresShaderIntegerDotProduct;
 
   extensions_ = other.extensions_;
   enabledExtensions_ = other.enabledExtensions_;

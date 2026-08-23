@@ -257,6 +257,60 @@ TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_MissingShaderDrawParameters) {
 #endif
 }
 
+// shaderIntegerDotProduct opt-in **************************************************
+
+namespace {
+// Whether `wanted` is reachable from the feature chain's head. The chain is what reaches
+// vkCreateDevice(), so membership -- not the member's value alone -- is what decides whether
+// a feature is actually requested.
+bool chainContains(const VkPhysicalDeviceFeatures2& features2, const void* wanted) {
+  for (const auto* node = static_cast<const VkBaseOutStructure*>(features2.pNext); node != nullptr;
+       node = node->pNext) {
+    if (static_cast<const void*>(node) == wanted) {
+      return true;
+    }
+  }
+  return false;
+}
+} // namespace
+
+// The default must be inert: off, and absent from the chain. Every other feature struct here
+// is chained on the device advertising an extension, so a caller that never heard of integer
+// dot product would silently start requesting it if this one followed that pattern.
+TEST_F(VulkanFeaturesTest, IntegerDotProductDefaultsToDisabledAndUnchained) {
+  const igl::vulkan::VulkanContextConfig config;
+  const igl::vulkan::VulkanFeatures features(config);
+
+  EXPECT_EQ(features.featuresShaderIntegerDotProduct.sType,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES);
+  EXPECT_FALSE(features.featuresShaderIntegerDotProduct.shaderIntegerDotProduct);
+  EXPECT_FALSE(
+      chainContains(features.vkPhysicalDeviceFeatures2, &features.featuresShaderIntegerDotProduct));
+}
+
+// Requesting it puts it in the chain, and the request survives the copy that VulkanContext
+// makes of a caller's VulkanFeatures -- operator= reassembles the chain from scratch, so a
+// member it forgot to copy, or a pNext it forgot to reset, would drop the request on the floor
+// while leaving the member reading VK_TRUE.
+TEST_F(VulkanFeaturesTest, IntegerDotProductChainedOnceRequestedAndSurvivesCopy) {
+  const igl::vulkan::VulkanContextConfig config;
+
+  igl::vulkan::VulkanFeatures featuresSrc(config);
+  featuresSrc.featuresShaderIntegerDotProduct.shaderIntegerDotProduct = VK_TRUE;
+
+  igl::vulkan::VulkanFeatures featuresDst(config);
+  ASSERT_FALSE(featuresDst.featuresShaderIntegerDotProduct.shaderIntegerDotProduct);
+  featuresDst = featuresSrc;
+
+  EXPECT_TRUE(featuresDst.featuresShaderIntegerDotProduct.shaderIntegerDotProduct);
+  // The copy must chain ITS OWN struct, never the source's -- a chain pointing into another
+  // object dangles the moment that object goes away.
+  EXPECT_TRUE(chainContains(featuresDst.vkPhysicalDeviceFeatures2,
+                            &featuresDst.featuresShaderIntegerDotProduct));
+  EXPECT_FALSE(chainContains(featuresDst.vkPhysicalDeviceFeatures2,
+                             &featuresSrc.featuresShaderIntegerDotProduct));
+}
+
 // allAvailableExtensions initial state ********************************************
 TEST_F(VulkanFeaturesTest, AllAvailableExtensionsInitiallyEmpty) {
   const igl::vulkan::VulkanContextConfig config;
