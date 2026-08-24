@@ -42,20 +42,26 @@
 namespace {
 
 // Helper functions to read Android system properties.
-// Uses __system_property_find + __system_property_read_callback to support
-// property names longer than 31 characters (the __system_property_get limit).
 std::optional<std::string> getAndroidSystemProperty(const char* keyName) noexcept {
   const prop_info* pi = __system_property_find(keyName);
   if (!pi) {
     return std::nullopt;
   }
   std::string result;
+#if __ANDROID_API__ >= 26
+  // Reads values longer than PROP_VALUE_MAX, which __system_property_read() truncates.
   __system_property_read_callback(
       pi,
       [](void* cookie, const char* /*name*/, const char* value, uint32_t /*serial*/) {
         *static_cast<std::string*>(cookie) = value;
       },
       &result);
+#else
+  std::array<char, PROP_VALUE_MAX> value{};
+  if (__system_property_read(pi, nullptr, value.data()) > 0) {
+    result = value.data();
+  }
+#endif
   return result.empty() ? std::nullopt : std::make_optional(std::move(result));
 }
 
