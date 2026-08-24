@@ -174,7 +174,7 @@ TEST_F(ComputeCommandEncoderTest, canEncodeBasicBufferOperation) {
   ASSERT_TRUE(data != nullptr);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   std::memcpy(bytes.data(), data, sizeof(float) * kDataIn.size());
-  ASSERT_EQ(kDataIn.size() > 0, true);
+  ASSERT_FALSE(kDataIn.empty());
   for (size_t i = 0; i < kDataIn.size(); i++) {
     ASSERT_EQ(kDataIn[i] * 2.0f, bytes[i]);
   }
@@ -242,7 +242,7 @@ TEST_F(ComputeCommandEncoderTest, canUseOutputBufferFromOnePassAsInputToNext) {
   ASSERT_TRUE(data != nullptr);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   std::memcpy(bytes.data(), data, sizeof(float) * kDataIn.size());
-  ASSERT_EQ(kDataIn.size() > 0, true);
+  ASSERT_FALSE(kDataIn.empty());
   for (size_t i = 0; i < kDataIn.size(); i++) {
     // Compute pass ran 3 times
     ASSERT_EQ(kDataIn[i] * 2.0f * 2.0f * 2.0f, bytes[i]);
