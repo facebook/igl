@@ -101,7 +101,7 @@ std::shared_ptr<ITexture> getSurfaceTexture(IDevice& device,
 }
 } // namespace
 
-XrSwapchainProviderImplGLES::XrSwapchainProviderImplGLES(const igl::IDevice& device,
+XrSwapchainProviderImplGLES::XrSwapchainProviderImplGLES(const IDevice& device,
                                                          TextureFormat preferredColorFormat) {
   const auto& openglDevice = static_cast<const igl::opengl::Device&>(device);
   igl::opengl::Texture::FormatDescGL formatDescGL;

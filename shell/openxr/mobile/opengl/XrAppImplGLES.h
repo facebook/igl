@@ -19,11 +19,10 @@ class XrAppImplGLES final : public impl::XrAppImpl {
   [[nodiscard]] std::vector<const char*> getXrRequiredExtensions() const override;
   [[nodiscard]] std::vector<const char*> getXrOptionalExtensions() const override;
 
-  [[nodiscard]] std::unique_ptr<igl::IDevice> initIGL(XrInstance instance,
-                                                      XrSystemId systemId) override;
+  [[nodiscard]] std::unique_ptr<IDevice> initIGL(XrInstance instance, XrSystemId systemId) override;
   [[nodiscard]] XrSession initXrSession(XrInstance instance,
                                         XrSystemId systemId,
-                                        igl::IDevice& device,
+                                        IDevice& device,
                                         const RenderSessionConfig& sessionConfig) override;
   [[nodiscard]] std::unique_ptr<impl::XrSwapchainProviderImpl> createSwapchainProviderImpl()
       const override;
@@ -38,7 +37,7 @@ class XrAppImplGLES final : public impl::XrAppImpl {
       .type = XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_ES_KHR,
   };
 #endif // IGL_WGL
-  igl::IDevice* device_ = nullptr;
+  IDevice* device_ = nullptr;
   RenderSessionConfig sessionConfig_;
 };
 } // namespace igl::shell::openxr::mobile
