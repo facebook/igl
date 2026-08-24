@@ -83,7 +83,7 @@ TEST_F(VulkanFeaturesTest, SelfAssignment) {
 }
 
 // Check Selected Features ****************************************************
-TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_AllPresent) {
+TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesAllPresent) {
   const igl::vulkan::VulkanContextConfig config;
 
   const igl::vulkan::VulkanFeatures requested(config);
@@ -159,7 +159,7 @@ TEST_F(VulkanFeaturesTest, EnableDefaultFeatures) {
   }
 }
 
-TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_MissingCoreFeature) {
+TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesMissingCoreFeature) {
   igl::setDebugBreakEnabled(false);
 
   const igl::vulkan::VulkanContextConfig config;
@@ -176,7 +176,7 @@ TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_MissingCoreFeature) {
 #endif
 }
 
-TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_MissingMultiview) {
+TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesMissingMultiview) {
   igl::setDebugBreakEnabled(false);
 
   const igl::vulkan::VulkanContextConfig config;
@@ -211,7 +211,7 @@ TEST_F(VulkanFeaturesTest, ConfigDisablesShaderInt16) {
   EXPECT_FALSE(features.vkPhysicalDeviceFeatures2.features.shaderInt16);
 }
 
-TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_DescriptorIndexingEnabled_AllPresent) {
+TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesDescriptorIndexingEnabledAllPresent) {
   igl::vulkan::VulkanContextConfig config;
   config.enableDescriptorIndexing = true;
 
@@ -240,7 +240,7 @@ TEST_F(VulkanFeaturesTest, ConfigDisables16BitStorageAccess) {
   EXPECT_FALSE(features.features16BitStorage.storageBuffer16BitAccess);
 }
 
-TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_MissingShaderDrawParameters) {
+TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesMissingShaderDrawParameters) {
   igl::setDebugBreakEnabled(false);
 
   const igl::vulkan::VulkanContextConfig config;
