@@ -26,6 +26,7 @@ std::chrono::system_clock::time_point gStartTime;
 
 namespace igl::shell {
 
+namespace {
 struct DrawElementsIndirectCommand {
   uint32_t count = 0; // Specifies the number of elements to be rendered.
   uint32_t instanceCount = 0; // Specifies the number of instances of the indexed geometry that
@@ -35,6 +36,7 @@ struct DrawElementsIndirectCommand {
                           // when chosing elements from the enabled vertex arrays.
   uint32_t reservedMustBeZero = 0;
 };
+} // namespace
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 void DrawIndirectSession::initialize() noexcept {
