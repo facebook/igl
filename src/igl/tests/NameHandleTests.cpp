@@ -73,26 +73,26 @@ TEST(NameHandleTests, set) {
 }
 
 // NOLINTBEGIN(google-readability-avoid-underscore-in-googletest-name)
-TEST(NameHandleTests, default_constructor) {
+TEST(NameHandleTests, DefaultConstructor) {
   NameHandle empty;
   EXPECT_EQ(empty.getCrc32(), 0u);
   EXPECT_TRUE(empty.toString().empty());
   EXPECT_STREQ(empty.c_str(), "");
 }
 
-TEST(NameHandleTests, c_str) {
+TEST(NameHandleTests, CStr) {
   EXPECT_STREQ(a.c_str(), "a");
   EXPECT_STREQ(someLongerString.c_str(), "someLongerString");
 }
 
-TEST(NameHandleTests, implicit_const_char_ptr) {
+TEST(NameHandleTests, ImplicitConstCharPtr) {
   const char* sa = a;
   EXPECT_STREQ(sa, "a");
   const char* sl = someLongerString;
   EXPECT_STREQ(sl, "someLongerString");
 }
 
-TEST(NameHandleTests, copy_assignment) {
+TEST(NameHandleTests, CopyAssignment) {
   NameHandle h;
   h = a;
   EXPECT_EQ(h.getCrc32(), a.getCrc32());
@@ -103,7 +103,7 @@ TEST(NameHandleTests, copy_assignment) {
   EXPECT_EQ(h.getCrc32(), a.getCrc32());
 }
 
-TEST(NameHandleTests, move_constructor) {
+TEST(NameHandleTests, MoveConstructor) {
   NameHandle src = IGL_NAMEHANDLE("moveSource");
   const uint32_t crc = src.getCrc32();
   const NameHandle dst(std::move(src));
@@ -111,7 +111,7 @@ TEST(NameHandleTests, move_constructor) {
   EXPECT_EQ(dst.toString(), "moveSource");
 }
 
-TEST(NameHandleTests, move_assignment) {
+TEST(NameHandleTests, MoveAssignment) {
   NameHandle src = IGL_NAMEHANDLE("moveAssign");
   const uint32_t crc = src.getCrc32();
   NameHandle dst;
@@ -120,14 +120,14 @@ TEST(NameHandleTests, move_assignment) {
   EXPECT_EQ(dst.toString(), "moveAssign");
 }
 
-TEST(NameHandleTests, genNameHandle_runtimeConsistency) {
+TEST(NameHandleTests, GenNameHandleRuntimeConsistency) {
   const NameHandle compileTime = IGL_NAMEHANDLE("hello");
   const NameHandle runtime = igl::genNameHandle("hello");
   EXPECT_EQ(compileTime.getCrc32(), runtime.getCrc32());
   EXPECT_EQ(compileTime.toString(), runtime.toString());
 }
 
-TEST(NameHandleTests, crc32_stringViewConsistency) {
+TEST(NameHandleTests, Crc32StringViewConsistency) {
   constexpr std::string_view sv = "testString";
   constexpr uint32_t crcSv = igl::iglCrc32ConstExpr(sv);
   constexpr uint32_t crcCstr = igl::iglCrc32ConstExpr("testString");
@@ -135,7 +135,7 @@ TEST(NameHandleTests, crc32_stringViewConsistency) {
   EXPECT_EQ(crcSv, crcCstr);
 }
 
-TEST(NameHandleTests, unordered_map) {
+TEST(NameHandleTests, UnorderedMap) {
   std::unordered_map<NameHandle, int> m;
   m[a] = 1;
   m[b] = 2;
@@ -145,14 +145,14 @@ TEST(NameHandleTests, unordered_map) {
   EXPECT_EQ(m.size(), 2u);
 }
 
-TEST(NameHandleTests, pair_hash) {
+TEST(NameHandleTests, PairHash) {
   std::unordered_map<std::pair<NameHandle, NameHandle>, int> m;
   m[{a, b}] = 42;
   EXPECT_EQ(m.at({a, b}), 42);
   EXPECT_EQ(m.find({a, c}), m.end());
 }
 
-TEST(NameHandleTests, accessor_macros) {
+TEST(NameHandleTests, AccessorMacros) {
   const NameHandle& h1 = myTestAccessorHandle();
   const NameHandle& h2 = myTestAccessorHandle();
   EXPECT_EQ(&h1, &h2);
@@ -160,14 +160,14 @@ TEST(NameHandleTests, accessor_macros) {
   EXPECT_EQ(h1.getCrc32(), IGL_NAMEHANDLE("myTestStr").getCrc32());
 }
 
-TEST(NameHandleTests, string_view_constructor) {
+TEST(NameHandleTests, StringViewConstructor) {
   constexpr std::string_view sv = "viewTest";
   const NameHandle h(sv, iglCrc32ConstExpr(sv));
   EXPECT_EQ(h.toString(), "viewTest");
   EXPECT_EQ(h.getCrc32(), iglCrc32ConstExpr("viewTest"));
 }
 
-TEST(NameHandleTests, vector_hash) {
+TEST(NameHandleTests, VectorHash) {
   const std::hash<std::vector<NameHandle>> hasher;
   const std::vector<NameHandle> key1 = {a, b};
   const std::vector<NameHandle> key1Copy = {a, b};
