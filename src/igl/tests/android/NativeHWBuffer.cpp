@@ -43,7 +43,7 @@ class NativeHWTextureBufferTest : public igl::android::INativeHWTextureBuffer {
   }
 };
 
-TEST_F(NativeHWBufferTest, Basic_getNativeHWFormat) {
+TEST_F(NativeHWBufferTest, BasicGetNativeHWFormat) {
   EXPECT_EQ(getNativeHWFormat(TextureFormat::RGBX_UNorm8), AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM);
   EXPECT_EQ(getNativeHWFormat(TextureFormat::RGBA_UNorm8), AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM);
   EXPECT_EQ(getNativeHWFormat(TextureFormat::B5G6R5_UNorm), AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM);
@@ -64,7 +64,7 @@ TEST_F(NativeHWBufferTest, Basic_getNativeHWFormat) {
 #endif
 }
 
-TEST_F(NativeHWBufferTest, Basic_getIglFormat) {
+TEST_F(NativeHWBufferTest, BasicGetIglFormat) {
   EXPECT_EQ(igl::android::getIglFormat(AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM),
             TextureFormat::RGBX_UNorm8);
   EXPECT_EQ(igl::android::getIglFormat(AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM),

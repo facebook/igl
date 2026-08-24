@@ -383,7 +383,7 @@ TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesDescriptorIndexingEnabledMissing
 #endif
 }
 
-TEST_F(VulkanFeaturesTest, CheckSelectedFeatures_MissingSynchronization2) {
+TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesMissingSynchronization2) {
   igl::setDebugBreakEnabled(false);
 
   const igl::vulkan::VulkanContextConfig config;
