@@ -759,7 +759,7 @@ std::string convertFileName(std::string fileName) {
   // generate compressed filename
   const std::string compressedPathPrefix = contentRootFolder;
 
-  if (fileName.find(compressedPathPrefix) == 0) {
+  if (fileName.starts_with(compressedPathPrefix)) {
     // remove leading path
     fileName = fileName.substr(compressedPathPrefix.length());
   }
