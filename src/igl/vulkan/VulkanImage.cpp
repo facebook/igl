@@ -1256,8 +1256,21 @@ VkImageAspectFlags VulkanImage::getImageAspectFlags() const {
   return flags;
 }
 
-void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
-                                 const TextureRangeDesc& range) const {
+Result VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
+                                   const TextureRangeDesc& range) const {
+  IGL_PROFILER_FUNCTION();
+
+  if (isSrgbMutableFormat_) {
+    // The VkImage is UNORM (see Texture::create()); route mip generation through a native-sRGB
+    // scratch so downsampling filters in sRGB space instead of averaging encoded texels as linear.
+    return generateMipmapSrgb(commandBuffer, range);
+  }
+
+  return generateMipmapBlit(commandBuffer, range);
+}
+
+Result VulkanImage::generateMipmapBlit(VkCommandBuffer commandBuffer,
+                                       const TextureRangeDesc& range) const {
   IGL_PROFILER_FUNCTION();
 
   // Check if device supports downscaling for color or depth/stencil buffer based on image format
@@ -1273,12 +1286,11 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
       // Metal driver) cannot blit into depth images, so depth formats such as VK_FORMAT_D16_UNORM
       // report BLIT_SRC but not BLIT_DST. Mipmap generation is implemented via vkCmdBlitImage, so
       // there is nothing we can do here other than skip it; aborting would take down any otherwise
-      // healthy application (e.g. one rendering a mipmapped depth shadow map). Warn once and no-op.
-      IGL_LOG_ERROR_ONCE(
-          "VulkanImage::generateMipmap: skipping; image format %u does not support hardware blit "
-          "downscaling (optimalTilingFeatures missing BLIT_SRC/BLIT_DST)\n",
-          static_cast<uint32_t>(imageFormat_));
-      return;
+      // healthy application (e.g. one rendering a mipmapped depth shadow map). Report and no-op.
+      return Result(Result::Code::Unsupported,
+                    IGL_FORMAT("generateMipmap(): image format {} does not support hardware blit "
+                               "downscaling (optimalTilingFeatures missing BLIT_SRC/BLIT_DST)",
+                               static_cast<uint32_t>(imageFormat_)));
     }
   }
 
@@ -1428,6 +1440,251 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
                                                 .layerCount = VK_REMAINING_ARRAY_LAYERS});
 
   imageLayout_ = originalImageLayout;
+  return Result();
+}
+
+Result VulkanImage::generateMipmapSrgb(VkCommandBuffer commandBuffer,
+                                       const TextureRangeDesc& range) const {
+  IGL_PROFILER_FUNCTION();
+
+  // vkCmdBlitImage() filters in the VkImage's creation-format numeric space and cannot be pointed
+  // at a VkImageView, so on this UNORM base image it would average sRGB-encoded texels as if they
+  // were linear (wrong gamma). Round-trip through a transient *native sRGB* scratch: copy the
+  // source mip across (raw bytes; UNORM and sRGB share a format-compatibility class, so
+  // vkCmdCopyImage() is exact), let the normal blit path downsample there (gamma-correct because
+  // the scratch is sRGB), then copy the generated mips back.
+  IGL_DEBUG_ASSERT(!isDepthOrStencilFormat_, "sRGB scratch mipmap path is color-only");
+  const uint32_t expectedNumLayers = isCubemap_ ? arrayLayers_ / 6u : arrayLayers_;
+  const uint32_t expectedNumFaces = isCubemap_ ? 6u : 1u;
+  const bool isFullLayerFaceRange = range.layer == 0 && range.face == 0 &&
+                                    range.numLayers == expectedNumLayers &&
+                                    range.numFaces == expectedNumFaces;
+  if (!IGL_DEBUG_VERIFY(isFullLayerFaceRange,
+                        "sRGB scratch mipmap path only supports the full layer/face range")) {
+    // Only full layer/face range is supported here; the copy-back in step 5 uses
+    // arrayLayers_ unconditionally while generateMipmapBlit() iterates only over
+    // range.numLayers/numFaces, so a partial range would copy uninitialized
+    // scratch mips back into this image.
+    return Result(Result::Code::Unsupported,
+                  "generateMipmap(): the sRGB scratch path only supports the full layer/face "
+                  "range");
+  }
+
+  const uint32_t baseMip = range.mipLevel;
+  const uint32_t numMips = range.numMipLevels;
+  if (numMips <= 1) {
+    return Result();
+  }
+
+  const VkFormat srgbFormat = unormToSrgb(imageFormat_);
+  if (!IGL_DEBUG_VERIFY(srgbFormat != imageFormat_)) {
+    // isSrgbMutableFormat_ implies an sRGB counterpart; nothing sensible to do otherwise
+    return Result(
+        Result::Code::InvalidOperation,
+        IGL_FORMAT("generateMipmap(): no sRGB counterpart for the backing UNORM format {}",
+                   static_cast<uint32_t>(imageFormat_)));
+  }
+
+  const VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+  const VkImageLayout originalImageLayout = imageLayout_;
+  IGL_DEBUG_ASSERT(originalImageLayout != VK_IMAGE_LAYOUT_UNDEFINED);
+
+  // A plain local: ~VulkanImage() already routes vmaDestroyImage() through a deferredTask() bound
+  // to the submission being recorded here, so the scratch outlives the GPU work. Keeping it alive
+  // with a second deferred task instead would defer its destruction twice, and the inner task
+  // would be enqueued while ~VulkanContext() is clearing the queue -- too late to ever run.
+  VulkanImage scratch(
+      *ctx_,
+      extent_,
+      type_,
+      srgbFormat,
+      mipLevels_,
+      arrayLayers_,
+      tiling_,
+      VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+      isCubemap_ ? static_cast<VkImageCreateFlags>(VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) : 0u,
+      samples_,
+      "Image: sRGB mipmap scratch");
+  if (!IGL_DEBUG_VERIFY(scratch.valid())) {
+    return Result(Result::Code::RuntimeError,
+                  "generateMipmap(): failed to create the sRGB scratch image");
+  }
+
+  ivkCmdBeginDebugUtilsLabel(&ctx_->vf_,
+                             commandBuffer,
+                             "Generate mipmaps (sRGB scratch)",
+                             K_COLOR_GENERATE_MIPMAPS.toFloatPtr());
+  IGL_SCOPE_EXIT {
+    ivkCmdEndDebugUtilsLabel(&ctx_->vf_, commandBuffer);
+  };
+
+  const auto mipExtent = [this](uint32_t level) -> VkExtent3D {
+    const uint32_t w = extent_.width >> level;
+    const uint32_t h = extent_.height >> level;
+    const uint32_t d = extent_.depth >> level;
+    return VkExtent3D{
+        .width = w ? w : 1u,
+        .height = h ? h : 1u,
+        .depth = (type_ == VK_IMAGE_TYPE_3D) ? (d ? d : 1u) : 1u,
+    };
+  };
+
+  // 1) This image's source mip -> TRANSFER_SRC; whole scratch -> TRANSFER_DST.
+  transitionLayout(commandBuffer,
+                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                   VK_PIPELINE_STAGE_TRANSFER_BIT,
+                   VkImageSubresourceRange{.aspectMask = aspect,
+                                           .baseMipLevel = baseMip,
+                                           .levelCount = 1,
+                                           .baseArrayLayer = 0,
+                                           .layerCount = VK_REMAINING_ARRAY_LAYERS});
+  scratch.transitionLayout(commandBuffer,
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VkImageSubresourceRange{.aspectMask = aspect,
+                                                   .baseMipLevel = 0,
+                                                   .levelCount = VK_REMAINING_MIP_LEVELS,
+                                                   .baseArrayLayer = 0,
+                                                   .layerCount = VK_REMAINING_ARRAY_LAYERS});
+
+  // 2) Copy the source mip (all layers/faces) into the scratch as raw bytes.
+  const VkImageCopy copyIn = {
+      .srcSubresource = {.aspectMask = aspect,
+                         .mipLevel = baseMip,
+                         .baseArrayLayer = 0,
+                         .layerCount = arrayLayers_},
+      .srcOffset = {0, 0, 0},
+      .dstSubresource = {.aspectMask = aspect,
+                         .mipLevel = baseMip,
+                         .baseArrayLayer = 0,
+                         .layerCount = arrayLayers_},
+      .dstOffset = {0, 0, 0},
+      .extent = mipExtent(baseMip),
+  };
+  ctx_->vf_.vkCmdCopyImage(commandBuffer,
+                           vkImage_,
+                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                           scratch.vkImage_,
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           1,
+                           &copyIn);
+
+  // 3) Downsample on the scratch via the plain blit path. The scratch is native sRGB, so
+  //    vkCmdBlitImage() filters in sRGB space. Its tracked imageLayout_ is TRANSFER_DST (step 1),
+  //    matching the layout the source mip holds after the copy, so generateMipmapBlit()'s initial
+  //    transition preserves it.
+  if (const Result result = scratch.generateMipmapBlit(commandBuffer, range); !result.isOk()) {
+    if (originalImageLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+      ivkImageMemoryBarrier(&ctx_->vf_,
+                            commandBuffer,
+                            vkImage_,
+                            VK_ACCESS_TRANSFER_READ_BIT,
+                            0,
+                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                            originalImageLayout,
+                            VK_PIPELINE_STAGE_TRANSFER_BIT,
+                            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                            VkImageSubresourceRange{.aspectMask = aspect,
+                                                    .baseMipLevel = baseMip,
+                                                    .levelCount = 1,
+                                                    .baseArrayLayer = 0,
+                                                    .layerCount = VK_REMAINING_ARRAY_LAYERS});
+    }
+    imageLayout_ = originalImageLayout;
+    return result;
+  }
+
+  const VkImageSubresourceRange generatedRange{.aspectMask = aspect,
+                                               .baseMipLevel = baseMip + 1,
+                                               .levelCount = numMips - 1,
+                                               .baseArrayLayer = 0,
+                                               .layerCount = VK_REMAINING_ARRAY_LAYERS};
+
+  // 4) Generated scratch mips -> TRANSFER_SRC; matching mips on this image -> TRANSFER_DST.
+  // The scratch image is uniformly in TRANSFER_DST after generateMipmapBlit(), so its
+  // transition from DST -> SRC with generatedRange is valid.
+  scratch.transitionLayout(commandBuffer,
+                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           generatedRange);
+  // This image, however, is in mixed real layouts after step 1: baseMip is TRANSFER_SRC,
+  // while generatedRange is still in originalImageLayout. Using transitionLayout() here
+  // would emit oldLayout = imageLayout_ = TRANSFER_SRC for a subresource whose real
+  // layout is originalImageLayout, violating VUID-VkImageMemoryBarrier-oldLayout-01197.
+  // Issue the barrier with the true per-level oldLayout.
+  ivkImageMemoryBarrier(&ctx_->vf_,
+                        commandBuffer,
+                        vkImage_,
+                        0,
+                        VK_ACCESS_TRANSFER_WRITE_BIT,
+                        originalImageLayout,
+                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        generatedRange);
+
+  // 5) Copy the generated mips back into this image, raw bytes, one region per level.
+  for (uint32_t i = baseMip + 1; i < baseMip + numMips; ++i) {
+    const VkImageCopy copyBack = {
+        .srcSubresource = {.aspectMask = aspect,
+                           .mipLevel = i,
+                           .baseArrayLayer = 0,
+                           .layerCount = arrayLayers_},
+        .srcOffset = {0, 0, 0},
+        .dstSubresource = {.aspectMask = aspect,
+                           .mipLevel = i,
+                           .baseArrayLayer = 0,
+                           .layerCount = arrayLayers_},
+        .dstOffset = {0, 0, 0},
+        .extent = mipExtent(i),
+    };
+    ctx_->vf_.vkCmdCopyImage(commandBuffer,
+                             scratch.vkImage_,
+                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                             vkImage_,
+                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                             1,
+                             &copyBack);
+  }
+
+  // 6) Restore this image's touched levels to their original layout. After step 4 the
+  // image is in mixed layouts: baseMip = TRANSFER_SRC, generatedRange = TRANSFER_DST.
+  // A single barrier with oldLayout = TRANSFER_DST (or TRANSFER_SRC) would mismatch the
+  // other subrange and could let drivers discard base-mip metadata (contents must be
+  // preserved). Restore with two barriers using correct per-subrange oldLayouts, then
+  // sync the single-value tracker.
+  ivkImageMemoryBarrier(&ctx_->vf_,
+                        commandBuffer,
+                        vkImage_,
+                        VK_ACCESS_TRANSFER_READ_BIT,
+                        0,
+                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                        originalImageLayout,
+                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        VkImageSubresourceRange{.aspectMask = aspect,
+                                                .baseMipLevel = baseMip,
+                                                .levelCount = 1,
+                                                .baseArrayLayer = 0,
+                                                .layerCount = VK_REMAINING_ARRAY_LAYERS});
+  ivkImageMemoryBarrier(&ctx_->vf_,
+                        commandBuffer,
+                        vkImage_,
+                        VK_ACCESS_TRANSFER_WRITE_BIT,
+                        0,
+                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                        originalImageLayout,
+                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        generatedRange);
+
+  imageLayout_ = originalImageLayout;
+
+  return Result();
 }
 
 void VulkanImage::setName(std::string name) noexcept { // NOLINT(bugprone-exception-escape)

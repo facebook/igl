@@ -253,7 +253,8 @@ class VulkanImage final {
                                   const char* debugName = nullptr) const;
   VulkanImageView createImageView(VulkanImageViewCreateInfo createInfo,
                                   const char* debugName = nullptr) const;
-  void generateMipmap(VkCommandBuffer commandBuffer, const TextureRangeDesc& range) const;
+  [[nodiscard]] Result generateMipmap(VkCommandBuffer commandBuffer,
+                                      const TextureRangeDesc& range) const;
 
   /**
    * @brief Transitions the `VkImage`'s layout from the current layout (stored in the object) to the
@@ -370,6 +371,20 @@ class VulkanImage final {
               VkExternalMemoryHandleTypeFlags compatibleHandleTypes,
               const char* debugName);
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
+
+  // Records the vkCmdBlitImage() mip-generation chain directly on this image. Correct only when the
+  // VkImage's format matches the texture's color space (native UNORM or native sRGB); see
+  // generateMipmapSrgb() for the UNORM-base sRGB case.
+  [[nodiscard]] Result generateMipmapBlit(VkCommandBuffer commandBuffer,
+                                          const TextureRangeDesc& range) const;
+
+  // Gamma-correct mipmap generation for sRGB textures whose backing VkImage is UNORM
+  // (isSrgbMutableFormat_). vkCmdBlitImage() filters in the image's creation-format space and
+  // cannot take a view, so it would average sRGB-encoded texels as if linear. Round-trips the
+  // source mip through a transient native-sRGB scratch image where the normal blit path downsamples
+  // correctly. Color and full layer/face range only.
+  [[nodiscard]] Result generateMipmapSrgb(VkCommandBuffer commandBuffer,
+                                          const TextureRangeDesc& range) const;
 
   // No-op in all builds except DEBUG
   void setName(std::string name) noexcept;

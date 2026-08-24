@@ -19,6 +19,16 @@
 
 namespace igl::vulkan {
 
+namespace {
+// ITexture::generateMipmap() has no Result out-parameter, so this is the only place a caller can
+// learn that mip generation was skipped. Log-once: both overloads can run every frame.
+void logMipmapFailure(const Result& result) {
+  if (!result.isOk()) {
+    IGL_LOG_ERROR_ONCE("Texture::generateMipmap(): %s\n", result.message.c_str());
+  }
+}
+} // namespace
+
 Texture::Texture(Device& device, TextureFormat format) : ITexture(format), device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
@@ -472,7 +482,10 @@ void Texture::generateMipmap(ICommandQueue& /* unused */,
       return;
     }
     const auto& wrapper = ctx.immediate_->acquire();
-    texture_->image.generateMipmap(wrapper.cmdBuf, range ? *range : desc_.asRange());
+    logMipmapFailure(
+        texture_->image.generateMipmap(wrapper.cmdBuf, range ? *range : desc_.asRange()));
+    // The wrapper owns a command buffer that was handed out by acquire(); submit it even when mip
+    // generation bailed out, otherwise the immediate commands pool never reclaims it.
     ctx.immediate_->submit(wrapper);
   }
 }
@@ -483,8 +496,8 @@ void Texture::generateMipmap(ICommandBuffer& cmdBuffer, const TextureRangeDesc* 
   }
 
   auto& vkCmdBuffer = static_cast<CommandBuffer&>(cmdBuffer);
-  texture_->image.generateMipmap(vkCmdBuffer.getVkCommandBuffer(),
-                                 range ? *range : desc_.asRange());
+  logMipmapFailure(texture_->image.generateMipmap(vkCmdBuffer.getVkCommandBuffer(),
+                                                  range ? *range : desc_.asRange()));
 }
 // NOLINTEND(facebook-hte-NullableDereference)
 
