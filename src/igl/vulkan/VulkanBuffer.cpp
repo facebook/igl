@@ -43,7 +43,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
     };
 
     // Initialize VmaAllocation Info
-    if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+    if ((memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
       ciAlloc.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
       ciAlloc.preferredFlags =
           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
@@ -57,7 +57,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
       ctx_.vf_.vkDestroyBuffer(device, vkBuffer_, nullptr);
       vkBuffer_ = VK_NULL_HANDLE;
 
-      if (requirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+      if ((requirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0) {
         ciAlloc.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         isCoherentMemory_ = true;
       }
@@ -90,7 +90,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
                            IGL_FORMAT("VMA Allocation: {}", debugName).c_str());
 
       // handle memory-mapped buffers
-      if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+      if ((memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
         vmaMapMemory(
             static_cast<VmaAllocator>(ctx_.getVmaAllocator()), vmaAllocation_, &mappedPtr_);
       }
@@ -103,7 +103,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
     {
       VkMemoryRequirements requirements = {};
       ctx_.vf_.vkGetBufferMemoryRequirements(device_, vkBuffer_, &requirements);
-      if (requirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+      if ((requirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0) {
         isCoherentMemory_ = true;
       }
 
@@ -124,7 +124,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
     }
 
     // handle memory-mapped buffers
-    if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+    if ((memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
       VK_ASSERT(ctx_.vf_.vkMapMemory(device_, vkMemory_, 0, bufferSize_, 0, &mappedPtr_));
     }
   }
@@ -136,7 +136,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
       &ctx_.vf_, device_, VK_OBJECT_TYPE_BUFFER, (uint64_t)vkBuffer_, debugName));
 
   // handle shader access
-  if (usageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR) {
+  if ((usageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR) != 0) {
     const VkBufferDeviceAddressInfo ai = {
         .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR,
         .buffer = vkBuffer_,

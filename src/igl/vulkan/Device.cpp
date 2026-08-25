@@ -971,19 +971,19 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilitiesInt
 
   TextureFormatCapabilities caps = TextureFormatCapabilityBits::Unsupported;
 
-  if (features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) {
+  if ((features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0) {
     caps |= TextureFormatCapabilityBits::Sampled;
   }
-  if (features & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) {
+  if ((features & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0) {
     caps |= TextureFormatCapabilityBits::Storage;
   }
-  if (features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) {
+  if ((features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) != 0) {
     caps |= TextureFormatCapabilityBits::SampledFiltered;
   }
-  if (features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) {
+  if ((features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0) {
     caps |= TextureFormatCapabilityBits::Attachment;
   }
-  if (features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+  if ((features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0) {
     caps |= TextureFormatCapabilityBits::Attachment;
   }
 
