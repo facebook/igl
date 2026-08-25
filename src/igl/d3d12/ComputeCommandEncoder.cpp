@@ -749,7 +749,7 @@ void ComputeCommandEncoder::pushDebugGroupLabel(const char* label, const Color& 
   // PIX debug markers
   const size_t len = std::strlen(label);
   std::wstring wlabel(len, L' ');
-  std::mbstowcs(&wlabel[0], label, len);
+  std::mbstowcs(wlabel.data(), label, len);
   commandList->BeginEvent(
       0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
 }
@@ -762,7 +762,7 @@ void ComputeCommandEncoder::insertDebugEventLabel(const char* label, const Color
   }
   const size_t len = std::strlen(label);
   std::wstring wlabel(len, L' ');
-  std::mbstowcs(&wlabel[0], label, len);
+  std::mbstowcs(wlabel.data(), label, len);
   commandList->SetMarker(
       0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
 }

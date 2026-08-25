@@ -659,7 +659,7 @@ void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& /*c
 
   const size_t len = std::strlen(label);
   std::wstring wlabel(len, L' ');
-  std::mbstowcs(&wlabel[0], label, len);
+  std::mbstowcs(wlabel.data(), label, len);
   commandList_->BeginEvent(
       0, wlabel.c_str(), static_cast<UINT>((wlabel.length() + 1) * sizeof(wchar_t)));
 }
