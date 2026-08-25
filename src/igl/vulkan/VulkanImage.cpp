@@ -36,7 +36,7 @@ uint32_t ivkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memProps,
       }
     }
   }
-  if (requiredProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+  if ((requiredProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0) {
     // there's no DEVICE_LOCAL memory heap here - look again
     requiredProperties &= ~VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     for (uint32_t type = 0; type < memProps.memoryTypeCount; type++) {
@@ -284,10 +284,10 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       ctx_->vf_.vkGetImageMemoryRequirements(device_, vkImage_, &memRequirements);
 
       // handle memory-mapped buffers
-      if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+      if ((memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
         vmaMapMemory(
             static_cast<VmaAllocator>(ctx_->getVmaAllocator()), vmaAllocation_, &mappedPtr_);
-        if (memRequirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+        if ((memRequirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0) {
           isCoherentMemory_ = true;
         }
       }
@@ -384,11 +384,11 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
     }
 
     // handle memory-mapped images
-    if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+    if ((memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
       // map only the first image plane
       VK_ASSERT(ctx_->vf_.vkMapMemory(device_, vkMemory_[0], 0, VK_WHOLE_SIZE, 0, &mappedPtr_));
       const uint32_t memoryTypeBits = memRequirements[0].memoryRequirements.memoryTypeBits;
-      if (memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+      if ((memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0) {
         isCoherentMemory_ = true;
       }
     }
@@ -791,8 +791,8 @@ VulkanImage VulkanImage::createWithExportMemory(const VulkanContext& ctx,
     return VulkanImage();
   }
   const auto& externalFormatProperties = externalImageFormatProperties.externalMemoryProperties;
-  if (!(externalFormatProperties.externalMemoryFeatures &
-        VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT)) {
+  if ((externalFormatProperties.externalMemoryFeatures &
+       VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) == 0) {
     IGL_LOG_ERROR(
         "External memory cannot be exported. format: %d image_tiling: %d usage: %d flags: %d",
         format,
@@ -802,7 +802,7 @@ VulkanImage VulkanImage::createWithExportMemory(const VulkanContext& ctx,
     return VulkanImage();
   }
 
-  IGL_DEBUG_ASSERT(externalFormatProperties.compatibleHandleTypes & kHandleType);
+  IGL_DEBUG_ASSERT((externalFormatProperties.compatibleHandleTypes & kHandleType) != 0);
   const VkExternalMemoryHandleTypeFlags compatibleHandleTypes = kHandleType;
 
   return {ctx,
@@ -1087,29 +1087,29 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
   VkPipelineStageFlags srcRemainingMask = srcStageMask & ~doNotRequireAccessMask;
   VkPipelineStageFlags dstRemainingMask = dstStageMask & ~doNotRequireAccessMask;
 
-  if (srcStageMask & VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT) {
+  if ((srcStageMask & VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT) != 0) {
     srcAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     srcRemainingMask &= ~VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
   }
-  if (srcStageMask & VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT) {
+  if ((srcStageMask & VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT) != 0) {
     srcAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     srcRemainingMask &= ~VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
   }
-  if (srcStageMask & VK_PIPELINE_STAGE_TRANSFER_BIT) {
+  if ((srcStageMask & VK_PIPELINE_STAGE_TRANSFER_BIT) != 0) {
     srcAccessMask |= VK_ACCESS_TRANSFER_WRITE_BIT;
     srcRemainingMask &= ~VK_PIPELINE_STAGE_TRANSFER_BIT;
   }
-  if (srcStageMask & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) {
+  if ((srcStageMask & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) != 0) {
     srcAccessMask |= VK_ACCESS_SHADER_READ_BIT;
     srcAccessMask |= VK_ACCESS_SHADER_WRITE_BIT;
     srcRemainingMask &= ~VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
   }
-  if (srcStageMask & VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT) {
+  if ((srcStageMask & VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT) != 0) {
     srcAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
     srcAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     srcRemainingMask &= ~VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
   }
-  if (srcStageMask & VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
+  if ((srcStageMask & VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) != 0) {
     srcAccessMask |= VK_ACCESS_SHADER_READ_BIT;
     srcRemainingMask &= ~VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
   }
@@ -1120,43 +1120,43 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
       "Automatic access mask deduction is not implemented (yet) for this srcStageMask = %u",
       srcRemainingMask);
 
-  if (dstStageMask & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) {
+  if ((dstStageMask & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) != 0) {
     dstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
     dstAccessMask |= VK_ACCESS_SHADER_WRITE_BIT;
     dstRemainingMask &= ~VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
   }
-  if (dstStageMask & VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT) {
+  if ((dstStageMask & VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT) != 0) {
     dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     dstRemainingMask &= ~VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
   }
-  if (dstStageMask & VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT) {
+  if ((dstStageMask & VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT) != 0) {
     dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
     dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     dstRemainingMask &= ~VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
   }
-  if (dstStageMask & VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
+  if ((dstStageMask & VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) != 0) {
     dstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
     dstRemainingMask &= ~VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
   }
-  if (dstStageMask & VK_PIPELINE_STAGE_VERTEX_SHADER_BIT) {
+  if ((dstStageMask & VK_PIPELINE_STAGE_VERTEX_SHADER_BIT) != 0) {
     dstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
     dstRemainingMask &= ~VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
   }
-  if (dstStageMask & VK_PIPELINE_STAGE_VERTEX_INPUT_BIT) {
+  if ((dstStageMask & VK_PIPELINE_STAGE_VERTEX_INPUT_BIT) != 0) {
     dstAccessMask |= VK_ACCESS_INDEX_READ_BIT;
     dstAccessMask |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
     dstRemainingMask &= ~VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
   }
-  if (dstStageMask & VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT) {
+  if ((dstStageMask & VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT) != 0) {
     dstAccessMask |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
     dstRemainingMask &= ~VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
   }
-  if (dstStageMask & VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT) {
+  if ((dstStageMask & VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT) != 0) {
     dstAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
     dstAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     dstRemainingMask &= ~VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
   }
-  if (dstStageMask & VK_PIPELINE_STAGE_TRANSFER_BIT) {
+  if ((dstStageMask & VK_PIPELINE_STAGE_TRANSFER_BIT) != 0) {
     dstAccessMask |= VK_ACCESS_TRANSFER_READ_BIT;
     dstAccessMask |= VK_ACCESS_TRANSFER_WRITE_BIT;
     dstRemainingMask &= ~VK_PIPELINE_STAGE_TRANSFER_BIT;
@@ -1194,7 +1194,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
 void VulkanImage::clearColorImage(VkCommandBuffer commandBuffer,
                                   const igl::Color& rgba,
                                   const VkImageSubresourceRange* subresourceRange) const {
-  IGL_DEBUG_ASSERT(usageFlags_ & VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+  IGL_DEBUG_ASSERT((usageFlags_ & VK_IMAGE_USAGE_TRANSFER_DST_BIT) != 0);
   IGL_DEBUG_ASSERT(samples_ == VK_SAMPLE_COUNT_1_BIT);
   IGL_DEBUG_ASSERT(!isDepthOrStencilFormat_);
 
@@ -1227,11 +1227,11 @@ void VulkanImage::clearColorImage(VkCommandBuffer commandBuffer,
                                  1,
                                  subresourceRange ? subresourceRange : &defaultRange);
 
-  const VkImageLayout newLayout =
-      oldLayout == VK_IMAGE_LAYOUT_UNDEFINED
-          ? (usageFlags_ & VK_IMAGE_USAGE_SAMPLED_BIT ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-                                                      : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-          : oldLayout;
+  const VkImageLayout newLayout = oldLayout == VK_IMAGE_LAYOUT_UNDEFINED
+                                      ? ((usageFlags_ & VK_IMAGE_USAGE_SAMPLED_BIT) != 0
+                                             ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                                             : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+                                      : oldLayout;
 
   transitionLayout(commandBuffer,
                    newLayout,
