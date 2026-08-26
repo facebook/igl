@@ -8,6 +8,7 @@
 #include <igl/opengl/macos/Context.h>
 
 #include <AppKit/NSOpenGL.h>
+#include <algorithm>
 #include <memory>
 #include <utility>
 

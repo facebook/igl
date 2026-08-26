@@ -9,6 +9,7 @@
 
 #include <igl/opengl/wgl/Context.h>
 
+#include <algorithm>
 #include <igl/Macros.h>
 #include <igl/opengl/Texture.h>
 

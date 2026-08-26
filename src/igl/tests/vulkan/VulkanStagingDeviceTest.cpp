@@ -11,6 +11,7 @@
 
 #include "../util/TestDevice.h"
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <vector>

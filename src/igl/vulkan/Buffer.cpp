@@ -7,6 +7,7 @@
 
 #include <igl/vulkan/Buffer.h>
 
+#include <algorithm>
 #include <cstring>
 #include <memory>
 #include <igl/IGLSafeC.h>

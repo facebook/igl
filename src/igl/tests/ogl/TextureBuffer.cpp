@@ -9,6 +9,7 @@
 
 #include <igl/opengl/TextureBuffer.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <string>

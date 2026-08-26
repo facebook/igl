@@ -21,6 +21,7 @@
 #include <secure_lib/secure_string.h>
 #endif
 
+#include <algorithm>
 #include <cstdlib>
 #include <limits>
 #include <memory>
