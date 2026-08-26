@@ -295,6 +295,21 @@ class VulkanContext final {
   // @fb-only
   [[nodiscard]] int getFenceFdFromSubmitHandle(igl::SubmitHandle handle) const noexcept;
 
+  /// @brief Timeout to use for the descriptor-set fence wait in
+  /// checkAndUpdateDescriptorSets().
+  ///
+  /// The wait is attempted once per pass, so re-arming the configured timeout every time
+  /// would turn a bounded wait into an unbounded stall. The first attempt uses the configured
+  /// value; once one has failed to succeed, later attempts poll instead of blocking, and still
+  /// apply the pending update as soon as the fence signals.
+  /// @param configuredTimeoutNs config_.fenceTimeoutNanoseconds
+  /// @param previouslyDegraded whether an earlier attempt returned anything other than
+  /// VK_SUCCESS
+  [[nodiscard]] static uint64_t descriptorSetWaitTimeout(uint64_t configuredTimeoutNs,
+                                                         bool previouslyDegraded) noexcept {
+    return previouslyDegraded ? 0u : configuredTimeoutNs;
+  }
+
  private:
   void createInstance();
   VkResult checkAndUpdateDescriptorSets();
@@ -393,6 +408,9 @@ class VulkanContext final {
   mutable ldr::Pool<SamplerTag, VulkanSampler> samplers_;
   // a texture/sampler was created since the last descriptor set update
   mutable bool awaitingCreation_ = false;
+  // an earlier descriptor-set fence wait returned something other than VK_SUCCESS, so
+  // subsequent attempts poll rather than blocking for the full fenceTimeoutNanoseconds
+  bool descriptorSetWaitDegraded_ = false;
 
   mutable std::atomic<size_t> drawCallCount_{0};
   mutable std::atomic<size_t> shaderCompilationCount_{0};

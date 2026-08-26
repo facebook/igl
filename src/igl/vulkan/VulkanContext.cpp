@@ -1741,6 +1741,29 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
   // newly created resources can be used immediately - make sure they are put into descriptor sets
   IGL_PROFILER_FUNCTION();
 
+  // The bindless descriptor set is not double buffered, so wait for the previous submission
+  // before rewriting it. Waiting up here rather than just before vkUpdateDescriptorSets() means
+  // a wait that does not succeed mutates nothing: awaitingCreation_ stays set and a later pass
+  // retries. Callers treat any non-success return as fatal, so that deferral must not be
+  // reported as an error. After a wait that does not succeed, later attempts poll instead of
+  // re-arming the full fenceTimeoutNanoseconds on every pass.
+  //
+  // Without descriptor indexing there is no such set to protect, and pruneTextures() below is
+  // safe on its own because it destroys image views through deferred tasks that already wait on
+  // the submit handle. Waiting on that path would only let a timeout stop reclaiming textures.
+  if (config_.enableDescriptorIndexing) {
+    const VkResult waitResult = immediate_->wait(
+        immediate_->getLastSubmitHandle(),
+        descriptorSetWaitTimeout(config_.fenceTimeoutNanoseconds, descriptorSetWaitDegraded_));
+    if (waitResult != VK_SUCCESS) {
+      descriptorSetWaitDegraded_ = true;
+      IGL_LOG_ERROR_ONCE("Deferring the bindless descriptor set update: fence wait returned %d\n",
+                         static_cast<int>(waitResult));
+      return VK_SUCCESS;
+    }
+    descriptorSetWaitDegraded_ = false;
+  }
+
   pruneTextures();
 
   // update Vulkan bindless descriptor sets here
@@ -1853,14 +1876,6 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
 #if IGL_VULKAN_PRINT_COMMANDS
     IGL_LOG_INFO("Updating descriptor set dsBindless_\n");
 #endif // IGL_VULKAN_PRINT_COMMANDS
-    // A finite fenceTimeoutNanoseconds can legitimately return VK_TIMEOUT (e.g.
-    // a stuck software Vulkan fence). Bail out instead of updating a descriptor
-    // set whose previous submission may still be in flight on the GPU.
-    const VkResult waitResult =
-        immediate_->wait(immediate_->getLastSubmitHandle(), config_.fenceTimeoutNanoseconds);
-    if (waitResult != VK_SUCCESS) {
-      return waitResult;
-    }
     vf_.vkUpdateDescriptorSets(
         vkDevice_, static_cast<uint32_t>(write.size()), write.data(), 0, nullptr);
   }

@@ -244,6 +244,38 @@ TEST_F(VulkanContextExtendedTest,
   EXPECT_EQ(ctx.getClosestDepthStencilFormat(TextureFormat::Z_UNorm32), VK_FORMAT_D32_SFLOAT);
 }
 
+// checkAndUpdateDescriptorSets() runs once per pass, so a wait that re-arms the configured
+// timeout after every failure turns a bounded wait into an unbounded stall. The first attempt
+// must use the configured value and later ones must poll. No device needed -- the policy is
+// pure, and the timeout branch it feeds cannot otherwise be reached deterministically (it
+// needs a fence that never signals).
+TEST(VulkanContextDescriptorSetWaitTimeoutTest, FirstAttemptUsesConfiguredTimeout) {
+  constexpr uint64_t kConfigured = 30ULL * 1000000000ULL;
+
+  EXPECT_EQ(igl::vulkan::VulkanContext::descriptorSetWaitTimeout(kConfigured,
+                                                                 /*previouslyDegraded=*/false),
+            kConfigured);
+}
+
+TEST(VulkanContextDescriptorSetWaitTimeoutTest, PollsAfterAPreviousTimeout) {
+  constexpr uint64_t kConfigured = 30ULL * 1000000000ULL;
+
+  EXPECT_EQ(igl::vulkan::VulkanContext::descriptorSetWaitTimeout(kConfigured,
+                                                                 /*previouslyDegraded=*/true),
+            0ULL);
+}
+
+// The IGL default is UINT64_MAX. Escalation must still apply, otherwise a stuck fence blocks
+// forever on the very configuration that most needs bounding.
+TEST(VulkanContextDescriptorSetWaitTimeoutTest, EscalatesEvenFromTheInfiniteDefault) {
+  EXPECT_EQ(igl::vulkan::VulkanContext::descriptorSetWaitTimeout(UINT64_MAX,
+                                                                 /*previouslyDegraded=*/false),
+            UINT64_MAX);
+  EXPECT_EQ(igl::vulkan::VulkanContext::descriptorSetWaitTimeout(UINT64_MAX,
+                                                                 /*previouslyDegraded=*/true),
+            0ULL);
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
