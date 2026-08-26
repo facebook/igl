@@ -7,7 +7,6 @@
 
 #include <igl/vulkan/VulkanStagingDevice.h>
 
-#include <algorithm>
 #include <igl/IGLSafeC.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanBuffer.h>

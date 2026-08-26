@@ -10,7 +10,6 @@
 #include <igl/opengl/egl/Context.h>
 
 #include <EGL/egl.h>
-#include <algorithm>
 #include <array>
 #include <tuple>
 #include <igl/Macros.h>

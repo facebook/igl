@@ -7,7 +7,6 @@
 
 #include "Framebuffer.h"
 
-#include <algorithm>
 #include <igl/CommandBuffer.h>
 #include <igl/CommandQueue.h>
 #include <igl/vulkan/CommandBuffer.h>

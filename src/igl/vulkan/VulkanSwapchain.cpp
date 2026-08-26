@@ -7,7 +7,6 @@
 
 #include "VulkanSwapchain.h"
 
-#include <algorithm>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanSemaphore.h>

@@ -7,7 +7,6 @@
 
 #include <igl/vulkan/SamplerState.h>
 
-#include <algorithm>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
 

@@ -9,7 +9,6 @@
 
 #include <IGLU/texture_loader/ktx2/Header.h>
 #include <IGLU/texture_loader/ktx2/TextureLoaderFactory.h>
-#include <algorithm>
 #include <cstring>
 #include <numeric>
 #include <vector>

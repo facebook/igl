@@ -11,7 +11,6 @@
 
 #include <igl/d3d12/HeadlessContext.h>
 
-#include <algorithm>
 #include <string>
 #include <igl/Macros.h>
 #include <igl/d3d12/DescriptorHeapManager.h>

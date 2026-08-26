@@ -9,7 +9,6 @@
 
 #include <IGLU/texture_loader/ktx1/Header.h>
 #include <IGLU/texture_loader/ktx1/TextureLoaderFactory.h>
-#include <algorithm>
 #include <cstring>
 #include <vector>
 #include <igl/opengl/util/TextureFormat.h>

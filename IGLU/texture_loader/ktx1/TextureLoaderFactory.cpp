@@ -8,7 +8,6 @@
 #include <IGLU/texture_loader/ktx1/TextureLoaderFactory.h>
 
 #include <IGLU/texture_loader/ktx1/Header.h>
-#include <algorithm>
 #include <ktx.h>
 #include <igl/Macros.h>
 #include <igl/opengl/util/TextureFormat.h>

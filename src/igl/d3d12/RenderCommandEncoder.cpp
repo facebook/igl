@@ -7,7 +7,6 @@
 
 #include <igl/d3d12/RenderCommandEncoder.h>
 
-#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <igl/Macros.h>

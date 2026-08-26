@@ -14,7 +14,6 @@
 #include "../util/TestDevice.h"
 #include "../util/TestErrorGuard.h"
 
-#include <algorithm>
 #include <igl/CommandBuffer.h>
 #include <igl/RenderCommandEncoder.h>
 #include <igl/RenderPass.h>

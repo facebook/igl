@@ -7,7 +7,6 @@
 
 #include <igl/opengl/TextureBufferBase.h>
 
-#include <algorithm>
 #include <igl/Macros.h>
 
 namespace igl::opengl {

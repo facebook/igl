@@ -7,7 +7,6 @@
 
 #include <igl/vulkan/VulkanFeatures.h>
 
-#include <algorithm>
 #include <cstring>
 #include <igl/vulkan/VulkanContext.h>
 

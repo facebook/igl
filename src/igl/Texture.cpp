@@ -7,7 +7,6 @@
 
 #include <igl/Texture.h>
 
-#include <algorithm>
 #include <cstddef>
 #include <limits>
 #include <type_traits>
