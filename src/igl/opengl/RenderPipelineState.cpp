@@ -7,6 +7,7 @@
 
 #include <igl/opengl/RenderPipelineState.h>
 
+#include <algorithm>
 #include <igl/Macros.h>
 #include <igl/RenderCommandEncoder.h> // for igl::BindTarget
 #include <igl/opengl/VertexInputState.h>

@@ -7,6 +7,7 @@
 
 #include <igl/d3d12/RenderPipelineState.h>
 
+#include <algorithm>
 #include <d3dcompiler.h>
 #include <igl/Macros.h>
 #include <igl/NameHandle.h>

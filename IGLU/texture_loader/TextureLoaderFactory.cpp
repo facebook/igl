@@ -7,6 +7,7 @@
 
 #include <IGLU/texture_loader/TextureLoaderFactory.h>
 
+#include <algorithm>
 #include <igl/Macros.h>
 
 namespace iglu::textureloader {

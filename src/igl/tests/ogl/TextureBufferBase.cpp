@@ -11,6 +11,7 @@
 
 #include "../util/TestDevice.h"
 
+#include <algorithm>
 #include <cmath>
 #include <string>
 #include <igl/opengl/CommandQueue.h>

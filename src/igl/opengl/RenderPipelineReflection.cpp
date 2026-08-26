@@ -7,6 +7,7 @@
 
 #include "RenderPipelineReflection.h"
 
+#include <algorithm>
 #include <cstring>
 #include <igl/Macros.h>
 #include <igl/opengl/GLIncludes.h>

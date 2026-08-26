@@ -7,6 +7,7 @@
 
 #include <igl/d3d12/D3D12PipelineBuilder.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 #include <igl/Macros.h>

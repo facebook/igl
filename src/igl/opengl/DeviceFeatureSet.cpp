@@ -7,6 +7,7 @@
 
 #include <igl/opengl/DeviceFeatureSet.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 #include <optional>

@@ -11,6 +11,7 @@
 #include "../util/TestDevice.h"
 
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <vector>

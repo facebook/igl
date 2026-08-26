@@ -7,6 +7,7 @@
 
 #include <igl/opengl/Device.h>
 
+#include <algorithm>
 #include <cstring>
 #include <igl/Macros.h>
 #include <igl/opengl/Buffer.h>

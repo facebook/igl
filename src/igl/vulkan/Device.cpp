@@ -7,6 +7,7 @@
 
 #include <igl/vulkan/Device.h>
 
+#include <algorithm>
 #include <cstring>
 #include <igl/FramebufferWrapper.h>
 #include <igl/glslang/GlslCompiler.h>

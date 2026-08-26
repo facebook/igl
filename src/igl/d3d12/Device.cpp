@@ -7,6 +7,7 @@
 
 #include <igl/d3d12/Device.h>
 
+#include <algorithm>
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>

@@ -7,6 +7,7 @@
 
 #include <igl/opengl/UniformAdapter.h>
 
+#include <algorithm>
 #include <igl/Macros.h>
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/UniformBuffer.h>
