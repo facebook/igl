@@ -229,8 +229,8 @@ void applyBenchmarkParamsToShellParams(
   if (hiccupMultiplier.has_value()) {
     try {
       shellParams.benchmarkParams->hiccupMultiplier = std::stod(hiccupMultiplier.value());
+      // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (...) {
-      // Ignore parse errors, keep default
     }
   }
   if (renderBufferSize.has_value()) {
