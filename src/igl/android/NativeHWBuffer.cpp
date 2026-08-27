@@ -151,14 +151,15 @@ TextureDesc::TextureUsage getIglBufferUsage(uint32_t nativeUsage) {
 Result allocateNativeHWBuffer(const TextureDesc& desc,
                               bool surfaceComposite,
                               AHardwareBuffer** buffer) {
-  AHardwareBuffer_Desc bufferDesc = {};
-  bufferDesc.format = getNativeHWFormat(desc.format);
-  bufferDesc.width = desc.width;
-  bufferDesc.height = desc.height;
-  bufferDesc.layers = 1;
-  bufferDesc.usage = getNativeHWBufferUsage(desc.usage);
-  bufferDesc.rfu0 = 0;
-  bufferDesc.rfu1 = 0;
+  AHardwareBuffer_Desc bufferDesc = {
+      .width = desc.width,
+      .height = desc.height,
+      .layers = 1,
+      .format = getNativeHWFormat(desc.format),
+      .usage = getNativeHWBufferUsage(desc.usage),
+      .rfu0 = 0,
+      .rfu1 = 0,
+  };
 
 #if __ANDROID_MIN_SDK_VERSION__ >= 33
   bufferDesc.usage |= surfaceComposite ? AHARDWAREBUFFER_USAGE_COMPOSER_OVERLAY : 0;
