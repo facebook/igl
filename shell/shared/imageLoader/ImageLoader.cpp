@@ -107,7 +107,7 @@ ImageData ImageLoader::defaultLoadImageData(const std::string& imageName,
   return loadImageDataFromFile(fullName, preferredFormat);
 }
 
-ImageData ImageLoader::loadImageDataFromFile(
+ImageData ImageLoader::loadImageDataFromFileImpl(
     const std::string& fileName,
     std::optional<TextureFormat> preferredFormat) noexcept {
   auto [data, length] = fileLoader_.loadBinaryData(fileName);

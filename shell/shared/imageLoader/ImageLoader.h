@@ -36,9 +36,16 @@ class ImageLoader {
   static ImageData checkerboard() noexcept;
   static ImageData white() noexcept;
 
+  /// Defined inline so this class has no key function: every TU emits its own weak
+  /// vtable/typeinfo, which lets RTTI-enabled consumers link against a -fno-rtti build.
   [[nodiscard]] virtual ImageData loadImageDataFromFile(
       const std::string& fileName,
-      std::optional<TextureFormat> preferredFormat = {}) noexcept;
+      std::optional<TextureFormat> preferredFormat = {}) noexcept {
+    return loadImageDataFromFileImpl(fileName, preferredFormat);
+  }
+  [[nodiscard]] ImageData loadImageDataFromFileImpl(
+      const std::string& fileName,
+      std::optional<TextureFormat> preferredFormat) noexcept;
   [[nodiscard]] ImageData loadImageDataFromMemory(
       const uint8_t* data,
       uint32_t length,
