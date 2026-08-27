@@ -76,10 +76,10 @@ std::optional<BenchmarkRenderSessionParams> parseBenchmarkRenderSessionParams(
       found = true;
     } else if (arg == "--force-multiview") {
       // handled in parseShellParams; skip here
-    } else if (arg.rfind("--", 0) == 0) {
+    } else if (arg.starts_with("--")) {
       std::string key = arg.substr(2);
       std::string value;
-      if (i + 1 < args.size() && args[i + 1].rfind("--", 0) != 0) {
+      if (i + 1 < args.size() && !args[i + 1].starts_with("--")) {
         value = args[++i];
       }
       p.customParams.emplace_back(key, value);

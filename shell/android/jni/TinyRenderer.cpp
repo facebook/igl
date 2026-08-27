@@ -343,7 +343,7 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
             &readResult);
 
         // Check if property starts with our prefix
-        if (readResult.name.rfind(data->prefix, 0) == 0) {
+        if (readResult.name.starts_with(data->prefix)) {
           const std::string key = readResult.name.substr(data->prefix.length());
           if (key == "perfetto") {
             *data->perfettoEnabled = (readResult.value == "true" || readResult.value == "1");

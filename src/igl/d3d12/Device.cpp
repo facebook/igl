@@ -2169,7 +2169,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
         return s;
       };
       const std::string nlow = toLower(attr.name);
-      auto startsWith = [&](const char* p) { return nlow.rfind(p, 0) == 0; };
+      auto startsWith = [&](const char* p) { return nlow.starts_with(p); };
       auto contains = [&](const char* p) { return nlow.find(p) != std::string::npos; };
 
       if (startsWith("pos") || startsWith("position") || contains("position")) {
@@ -2813,7 +2813,7 @@ igl::d3d12::ComPtr<ID3D12PipelineState> Device::createPipelineStateVariant(
         return s;
       };
       const std::string nlow = toLower(attr.name);
-      auto startsWith = [&](const char* p) { return nlow.rfind(p, 0) == 0; };
+      auto startsWith = [&](const char* p) { return nlow.starts_with(p); };
       auto contains = [&](const char* p) { return nlow.find(p) != std::string::npos; };
 
       if (startsWith("pos") || startsWith("position") || contains("position")) {
