@@ -381,7 +381,7 @@ namespace std {
 // @fb-only
 
 size_t hash<igl::ShaderCompilerOptions>::operator()(const igl::ShaderCompilerOptions& key) const {
-  static_assert(std::is_same_v<uint8_t, std::underlying_type<igl::ShaderOptimization>::type>);
+  static_assert(std::is_same_v<uint8_t, std::underlying_type_t<igl::ShaderOptimization>>);
   size_t result = std::hash<bool>()(key.fastMathEnabled);
   result ^= std::hash<uint8_t>()(static_cast<uint8_t>(key.optimization));
   return result;
@@ -410,7 +410,7 @@ size_t hash<igl::FunctionConstantValues>::operator()(const igl::FunctionConstant
 }
 
 size_t hash<igl::ShaderModuleInfo>::operator()(const igl::ShaderModuleInfo& key) const {
-  static_assert(std::is_same_v<uint8_t, std::underlying_type<igl::ShaderStage>::type>);
+  static_assert(std::is_same_v<uint8_t, std::underlying_type_t<igl::ShaderStage>>);
   size_t result = std::hash<uint8_t>()(static_cast<uint8_t>(key.stage));
   result ^= std::hash<string>()(key.entryPoint);
   result ^= std::hash<igl::FunctionConstantValues>()(key.functionConstantValues);
@@ -418,7 +418,7 @@ size_t hash<igl::ShaderModuleInfo>::operator()(const igl::ShaderModuleInfo& key)
 }
 
 size_t hash<igl::ShaderInput>::operator()(const igl::ShaderInput& key) const {
-  static_assert(std::is_same_v<uint8_t, std::underlying_type<igl::ShaderInputType>::type>);
+  static_assert(std::is_same_v<uint8_t, std::underlying_type_t<igl::ShaderInputType>>);
   size_t result = safeCStrHash(key.source);
   result ^= safeDataHash(key.data, key.length);
   result ^= std::hash<uint8_t>()(EnumToValue(key.type));
@@ -430,7 +430,7 @@ size_t hash<igl::ShaderInput>::operator()(const igl::ShaderInput& key) const {
 }
 
 size_t hash<igl::ShaderModuleDesc>::operator()(const igl::ShaderModuleDesc& key) const {
-  static_assert(std::is_same_v<uint8_t, std::underlying_type<igl::ShaderInputType>::type>);
+  static_assert(std::is_same_v<uint8_t, std::underlying_type_t<igl::ShaderInputType>>);
   size_t result = std::hash<igl::ShaderModuleInfo>()(key.info);
   result ^= std::hash<igl::ShaderInput>()(key.input);
   result ^= std::hash<string>()(key.debugName);
@@ -438,7 +438,7 @@ size_t hash<igl::ShaderModuleDesc>::operator()(const igl::ShaderModuleDesc& key)
 }
 
 size_t hash<igl::ShaderLibraryDesc>::operator()(const igl::ShaderLibraryDesc& key) const {
-  static_assert(std::is_same_v<uint8_t, std::underlying_type<igl::ShaderInputType>::type>);
+  static_assert(std::is_same_v<uint8_t, std::underlying_type_t<igl::ShaderInputType>>);
   size_t result = std::hash<size_t>()(key.moduleInfo.size());
   for (const auto& info : key.moduleInfo) {
     result ^= std::hash<igl::ShaderModuleInfo>()(info);

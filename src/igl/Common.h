@@ -239,8 +239,8 @@ constexpr Viewport kInvalidViewport =
 
 // Get value of enum by stripping enum class type
 template<typename E>
-constexpr typename std::underlying_type<E>::type EnumToValue(E enumerator) noexcept {
-  return static_cast<typename std::underlying_type<E>::type>(enumerator);
+constexpr std::underlying_type_t<E> EnumToValue(E enumerator) noexcept {
+  return static_cast<std::underlying_type_t<E>>(enumerator);
 }
 
 ///--------------------------------------
