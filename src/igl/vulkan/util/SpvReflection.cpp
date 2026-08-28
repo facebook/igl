@@ -278,12 +278,12 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
 
   for (const auto& desc : info.buffers) {
     if (desc.bindingLocation != kNoBindingLocation) {
-      info.usageMaskBuffers |= 1ul << desc.bindingLocation;
+      info.usageMaskBuffers |= 1UL << desc.bindingLocation;
     }
   }
   for (const auto& desc : info.textures) {
     if (desc.bindingLocation != kNoBindingLocation) {
-      info.usageMaskTextures |= 1ul << desc.bindingLocation;
+      info.usageMaskTextures |= 1UL << desc.bindingLocation;
     }
   }
 

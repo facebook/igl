@@ -2776,7 +2776,7 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
 
   const VkShaderStageFlags stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
-  // The `*compatiblePipeline` dereference is inside the `compatiblePipeline ? ... : 0ul` ternary,
+  // The `*compatiblePipeline` dereference is inside the `compatiblePipeline ? ... : 0UL` ternary,
   // so it only runs when the pointer is non-null; clang-tidy does not credit the multi-line
   // ternary guard, so these are false positives.
   // NOLINTBEGIN(facebook-hte-NullableDereference)
@@ -2784,11 +2784,11 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
       compatiblePipeline ? static_cast<const igl::vulkan::RenderPipelineState&>(*compatiblePipeline)
                                .getSpvModuleInfo()
                                .usageMaskTextures
-                         : 0ul;
+                         : 0UL;
   // NOLINTEND(facebook-hte-NullableDereference)
 
   for (uint32_t loc = 0; loc != IGL_ARRAY_NUM_ELEMENTS(desc.textures); loc++) {
-    const bool isInPipeline = (usageMaskPipeline & (1ul << loc)) != 0;
+    const bool isInPipeline = (usageMaskPipeline & (1UL << loc)) != 0;
     if (compatiblePipeline ? isInPipeline : desc.samplers[loc] != nullptr) {
       IGL_DEBUG_ASSERT(compatiblePipeline || desc.samplers[loc]);
       bindings[numBindings++] = VkDescriptorSetLayoutBinding{
@@ -2797,7 +2797,7 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
           .descriptorCount = 1,
           .stageFlags = stageFlags,
       };
-      metadata.usageMask |= 1ul << loc;
+      metadata.usageMask |= 1UL << loc;
     }
   }
 
@@ -2851,7 +2851,7 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
   uint32_t numWrites = 0;
 
   for (uint32_t loc = 0; loc != IGL_ARRAY_NUM_ELEMENTS(desc.textures); loc++) {
-    if (compatiblePipeline ? (usageMaskPipeline & (1ul << loc)) == 0
+    if (compatiblePipeline ? (usageMaskPipeline & (1UL << loc)) == 0
                            : desc.textures[loc] == nullptr) {
       continue;
     }
@@ -2928,7 +2928,7 @@ BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferDesc& 
       continue;
     }
     auto* buf = static_cast<Buffer*>(desc.buffers[loc].get());
-    const bool isDynamic = (desc.isDynamicBufferMask & (1ul << loc)) != 0;
+    const bool isDynamic = (desc.isDynamicBufferMask & (1UL << loc)) != 0;
     const bool isUniform = ((buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0);
     const VkDescriptorType type =
         isUniform
@@ -2963,7 +2963,7 @@ BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferDesc& 
         .descriptorCount = 1,
         .stageFlags = stageFlags,
     };
-    metadata.usageMask |= 1ul << loc;
+    metadata.usageMask |= 1UL << loc;
   }
 
   // construct a dense array of non-zero VkDescriptorPoolSize elements
@@ -3026,7 +3026,7 @@ BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferDesc& 
       continue;
     }
     auto* buf = static_cast<Buffer*>(desc.buffers[loc].get());
-    const bool isDynamic = (desc.isDynamicBufferMask & (1ul << loc)) != 0;
+    const bool isDynamic = (desc.isDynamicBufferMask & (1UL << loc)) != 0;
     const bool isUniform = ((buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0);
     const VkDescriptorType type = isUniform ? (isDynamic ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
                                                          : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)

@@ -168,7 +168,7 @@ PipelineState::PipelineState(
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     bindings.reserve(info.buffers.size());
     for (const auto& b : info.buffers) {
-      const bool isDynamic = (isDynamicBufferMask & (1ul << b.bindingLocation)) != 0;
+      const bool isDynamic = (isDynamicBufferMask & (1UL << b.bindingLocation)) != 0;
       const VkDescriptorType type = b.isStorage
                                         ? (isDynamic ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC
                                                      : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
