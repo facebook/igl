@@ -65,6 +65,7 @@ std::optional<std::string> getAndroidSystemProperty(const char* keyName) noexcep
   return result.empty() ? std::nullopt : std::make_optional(std::move(result));
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 std::optional<bool> getAndroidSystemPropertyBool(const char* keyName) noexcept {
   auto prop = getAndroidSystemProperty(keyName);
   if (!prop.has_value()) {
@@ -106,6 +107,7 @@ std::optional<size_t> getAndroidSystemPropertySizeT(const char* keyName) noexcep
 
 // Read basic shell parameters (headless, screenshot, viewport, fps, multiview) from Android
 // system properties.
+// NOLINTNEXTLINE(bugprone-exception-escape)
 void readBasicShellParams(igl::shell::ShellParams& shellParams,
                           const std::string& prefixStr) noexcept {
   auto headless = getAndroidSystemPropertyBool((prefixStr + "headless").c_str());
@@ -174,6 +176,7 @@ void readBasicShellParams(igl::shell::ShellParams& shellParams,
 
 // Apply benchmark parameters to shellParams. Uses an early return if no benchmark
 // parameter is present, avoiding a long compound condition.
+// NOLINTNEXTLINE(bugprone-exception-escape)
 void applyBenchmarkParamsToShellParams(
     igl::shell::ShellParams& shellParams,
     std::optional<size_t> timeout,
@@ -246,6 +249,7 @@ void applyBenchmarkParamsToShellParams(
 // Read shell parameters from Android system properties.
 // perfettoEnabled is set via the __system_property_foreach iteration which handles
 // property names longer than 31 characters (the __system_property_get limit).
+// NOLINTNEXTLINE(bugprone-exception-escape)
 void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
                                      const char* prefix,
                                      bool& perfettoEnabled) noexcept {
