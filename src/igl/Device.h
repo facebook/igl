@@ -461,7 +461,7 @@ class IDevice : public ICapabilities, public base::IDeviceBase {
     const uint8_t pos = static_cast<uint8_t>(featureEnum);
     IGL_DEBUG_ASSERT(pos < 64);
 
-    return (inDevelopmentFlags_ & (1ull << pos)) != 0u;
+    return (inDevelopmentFlags_ & (1ULL << pos)) != 0u;
   }
 
   /**
@@ -475,9 +475,9 @@ class IDevice : public ICapabilities, public base::IDeviceBase {
     IGL_DEBUG_ASSERT(pos < 64);
 
     if (val) {
-      inDevelopmentFlags_ |= 1ull << pos;
+      inDevelopmentFlags_ |= 1ULL << pos;
     } else {
-      inDevelopmentFlags_ &= ~(1ull << pos);
+      inDevelopmentFlags_ &= ~(1ULL << pos);
     }
   }
 
