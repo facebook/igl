@@ -149,7 +149,7 @@ struct BenchResult {
 };
 
 [[nodiscard]] bool startsWith(std::string_view text, std::string_view prefix) {
-  return text.substr(0, prefix.size()) == prefix;
+  return text.starts_with(prefix);
 }
 
 [[nodiscard]] std::string statusToString(Status status) {

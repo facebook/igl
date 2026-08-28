@@ -81,7 +81,7 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
                  uniformBufferLimit != 0 ? uniformBufferLimit : std::numeric_limits<size_t>::max());
     const std::string vertexBufferPrefix = "vertexBuffer.";
     if (device.getBackendType() == igl::BackendType::Metal &&
-        iglDesc.name.toString().substr(0, vertexBufferPrefix.length()) == vertexBufferPrefix) {
+        iglDesc.name.toString().starts_with(vertexBufferPrefix)) {
       continue;
     }
 
