@@ -1594,7 +1594,7 @@ std::unique_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSiz
   IGL_PROFILER_FUNCTION();
 
 #define ENSURE_BUFFER_SIZE(flag, maxSize)                                                      \
-  if (usageFlags & flag) {                                                                     \
+  if ((usageFlags & flag) != 0) {                                                              \
     if (!IGL_DEBUG_VERIFY(bufferSize <= maxSize)) {                                            \
       IGL_LOG_INFO("Max size of buffer exceeded " #flag ": %llu > %llu", bufferSize, maxSize); \
       Result::setResult(outResult,                                                             \
@@ -1972,9 +1972,9 @@ void VulkanContext::querySurfaceCapabilities() {
     VkFormatProperties formatProps{};
     vf_.vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice_, depthFormat, &formatProps);
 
-    if (formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT ||
-        formatProps.bufferFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT ||
-        formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+    if ((formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0 ||
+        (formatProps.bufferFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0 ||
+        (formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0) {
       deviceDepthFormats_.push_back(depthFormat);
     }
   }

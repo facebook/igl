@@ -307,13 +307,13 @@ void RenderCommandEncoder::endEncoding() {
       // If the texture has not been marked as a depth/stencil attachment
       // (TextureDesc::TextureUsageBits::Attachment), don't transition it to a depth/stencil
       // attchment
-      if (img.usageFlags_ & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+      if ((img.usageFlags_ & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0) {
         transitionToDepthStencilAttachment(cmdBuffer_, tex);
       }
     } else {
       // If the texture has not been marked as a color attachment
       // (TextureDesc::TextureUsageBits::Attachment), don't transition it to a color attchment
-      if (img.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+      if ((img.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0) {
         transitionToColorAttachment(cmdBuffer_, tex);
       }
     }
@@ -1158,11 +1158,11 @@ void RenderCommandEncoder::processDependencies(const Dependencies& dependencies)
             VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         const auto* vkBuf = static_cast<const igl::vulkan::Buffer*>(buf);
         const VkBufferUsageFlags flags = vkBuf->getBufferUsageFlags();
-        if ((flags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) ||
-            (flags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) {
+        if ((flags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) != 0 ||
+            (flags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) != 0) {
           dstStageFlags |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
         }
-        if (flags & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
+        if ((flags & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) != 0) {
           dstStageFlags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         }
         const VkPipelineStageFlags srcStageFlags =

@@ -56,7 +56,7 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
   // This avoids staging buffer allocation and an extra memcpy for small uploads.
   constexpr size_t kMaxUpdateBufferSize = 65536;
   if (data && size <= kMaxUpdateBufferSize && (dstOffset % 4 == 0) && (size % 4 == 0)) {
-    IGL_DEBUG_ASSERT(buffer.getBufferUsageFlags() & VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    IGL_DEBUG_ASSERT((buffer.getBufferUsageFlags() & VK_BUFFER_USAGE_TRANSFER_DST_BIT) != 0);
     const auto& wrapper = immediate->acquire();
     ctx_.vf_.vkCmdUpdateBuffer(wrapper.cmdBuf,
                                buffer.getVkBuffer(),
