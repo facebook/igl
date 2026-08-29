@@ -13,7 +13,7 @@ static_assert(std::is_trivially_copyable_v<igl::VertexInputBinding>);
 
 using namespace igl;
 
-static_assert(std::is_trivially_copyable_v<igl::VertexInputBinding>);
+static_assert(std::is_standard_layout_v<VertexInputBinding>);
 
 size_t VertexInputStateDesc::sizeForVertexAttributeFormat(VertexAttributeFormat format) {
   switch (format) {
