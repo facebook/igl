@@ -2436,6 +2436,7 @@ void processCubemap(const std::string& inFilename,
     Bitmap bmp = convertEquirectangularMapToCubeMapFaces(
         Bitmap(sourceWidth, sourceHeight, 3, eBitmapFormat_Float, pxs));
     ktxTexture2* cube = bitmapToCube(bmp);
+    // NOLINTNEXTLINE(facebook-hte-NullableDereference)
     generateMipmaps(outFilenameEnv, cube);
   }
 
@@ -2450,6 +2451,7 @@ void processCubemap(const std::string& inFilename,
     Bitmap bmp = convertEquirectangularMapToCubeMapFaces(
         Bitmap(dstW, dstH, 3, eBitmapFormat_Float, out.data()));
     ktxTexture2* cube = bitmapToCube(bmp);
+    // NOLINTNEXTLINE(facebook-hte-NullableDereference)
     generateMipmaps(outFilenameIrr, cube);
 
     IGL_SCOPE_EXIT {
@@ -2786,6 +2788,7 @@ int main(int argc, char* argv[]) {
   fbOffscreen_ = nullptr;
   device_.reset(nullptr);
 
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   glfwDestroyWindow(window);
   glfwTerminate();
 

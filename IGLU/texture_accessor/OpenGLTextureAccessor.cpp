@@ -162,6 +162,7 @@ size_t OpenGLTextureAccessor::copyBytes(unsigned char* ptr, size_t length) {
     auto* bytes =
         context.mapBufferRange(GL_PIXEL_PACK_BUFFER, 0, textureBytesPerImage_, GL_MAP_READ_BIT);
     if (IGL_DEBUG_VERIFY(bytes)) {
+      // NOLINTNEXTLINE(facebook-hte-NullableDereference)
       checked_memcpy_robust(ptr, length, bytes, textureBytesPerImage_, textureBytesPerImage_);
       length = textureBytesPerImage_;
       dataCopied_ = true;
