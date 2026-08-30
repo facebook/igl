@@ -76,6 +76,7 @@ Result TextureBuffer::create() {
     return Result(Result::Code::ArgumentInvalid, "Invalid texture format");
   }
 
+  // NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
   const auto error = CVOpenGLTextureCacheCreateTextureFromImage(
       kCFAllocatorDefault, textureCache_, pixelBuffer_, nullptr, &cvTexture_);
   if (error != noErr) {
