@@ -63,6 +63,7 @@ std::vector<HWDeviceDesc> HWDevice::queryDevices(IGL_MAYBE_UNUSED const HWDevice
     HWDeviceDesc deviceDesc((uintptr_t)(__bridge void*)metalDevice,
                             HWDeviceType::DiscreteGpu,
                             0,
+                            // NOLINTNEXTLINE(clang-analyzer-nullability.NullablePassedToNonnull)
                             std::string([metalDevice.name UTF8String]));
     devices.push_back(deviceDesc);
   }
