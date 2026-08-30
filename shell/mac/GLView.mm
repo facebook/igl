@@ -87,6 +87,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef /*displayLink*/,
 - (void)initTimer {
   // Synchronize buffer swaps with vertical refresh rate
   GLint swapInt = 1;
+  // NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
   [[self openGLContext] setValues:&swapInt forParameter:NSOpenGLContextParameterSwapInterval];
 
   // Create a display link capable of being used with all active displays
