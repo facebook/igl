@@ -244,6 +244,7 @@ class DescriptorPoolsArena final {
   DescriptorPoolsArena& operator=(const DescriptorPoolsArena&) = delete;
   DescriptorPoolsArena(DescriptorPoolsArena&&) = delete;
   DescriptorPoolsArena& operator=(DescriptorPoolsArena&&) = delete;
+  // NOLINTNEXTLINE(bugprone-exception-escape)
   ~DescriptorPoolsArena() {
     extinct_.push_back({.pool = pool_, .handle = {}});
     ctx_.deferredTask(std::packaged_task<void()>(
@@ -640,6 +641,7 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
   }
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 VulkanContext::~VulkanContext() {
   IGL_PROFILER_FUNCTION();
 
