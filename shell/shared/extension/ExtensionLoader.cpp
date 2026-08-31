@@ -26,6 +26,7 @@ Extension* ExtensionLoader::create(const std::string& name) noexcept {
   const std::string symbolName = prefix_ + name;
   auto factoryFunc = SymbolFactoryLoader::find(symbolName);
 
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   return factoryFunc ? static_cast<Extension*>((*factoryFunc)()) : nullptr;
 }
 
