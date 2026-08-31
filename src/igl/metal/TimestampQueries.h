@@ -32,6 +32,7 @@ class TimestampQueries : public ITimestampQueries {
   void reset() override;
   bool resultsAvailable() const override;
   uint64_t getElapsedNanos(uint32_t slotIndex) const override;
+  TimestampQueryResult getElapsedNanosResult(uint32_t slotIndex) const override;
   uint64_t getStartNanos(uint32_t slotIndex) const override;
   uint64_t getEndNanos(uint32_t slotIndex) const override;
   uint64_t getFrameElapsedNanos() const override;
@@ -61,6 +62,7 @@ class TimestampQueries : public ITimestampQueries {
   friend class CommandQueue;
   friend class ComputeCommandEncoder;
   friend class RenderCommandEncoder;
+  friend class TimestampQueriesTest;
 };
 
 } // namespace igl::metal

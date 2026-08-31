@@ -63,6 +63,33 @@ bool TimestampQueries::supportsComputePassTimestamps() const {
 }
 
 uint64_t TimestampQueries::getElapsedNanos(uint32_t slotIndex) const {
+  const auto result = getElapsedNanosResult(slotIndex);
+  return result.valid ? result.elapsedNanos : 0;
+}
+
+TimestampQueryResult TimestampQueries::getElapsedNanosResult(uint32_t slotIndex) const {
+  IGL_PROFILER_FUNCTION();
+  if (!resolved_.load(std::memory_order_acquire)) {
+    return {};
+  }
+  std::lock_guard<std::mutex> lock(resolveMutex_);
+  const uint32_t startIdx = slotIndex * kSamplesPerTimingSlot;
+  const uint32_t endIdx = startIdx + 1;
+  if (endIdx >= resolvedTimestamps_.size()) {
+    return {};
+  }
+  const uint64_t start = resolvedTimestamps_[startIdx];
+  const uint64_t end = resolvedTimestamps_[endIdx];
+  if (start == MTLCounterErrorValue || end == MTLCounterErrorValue) {
+    return {};
+  }
+  if (end > start) {
+    return {.elapsedNanos = end - start, .valid = true};
+  }
+  return {.elapsedNanos = 0, .valid = true};
+}
+
+uint64_t TimestampQueries::getStartNanos(uint32_t slotIndex) const {
   IGL_PROFILER_FUNCTION();
   if (!resolved_.load(std::memory_order_acquire)) {
     return 0;
@@ -73,25 +100,9 @@ uint64_t TimestampQueries::getElapsedNanos(uint32_t slotIndex) const {
   if (endIdx >= resolvedTimestamps_.size()) {
     return 0;
   }
-  uint64_t start = resolvedTimestamps_[startIdx];
-  uint64_t end = resolvedTimestamps_[endIdx];
-  if (end > start) {
-    return end - start;
-  }
-  return 0;
-}
-
-uint64_t TimestampQueries::getStartNanos(uint32_t slotIndex) const {
-  IGL_PROFILER_FUNCTION();
-  if (!resolved_.load(std::memory_order_acquire)) {
-    return 0;
-  }
-  std::lock_guard<std::mutex> lock(resolveMutex_);
-  const uint32_t startIdx = slotIndex * kSamplesPerTimingSlot;
-  if (startIdx >= resolvedTimestamps_.size()) {
-    return 0;
-  }
-  return resolvedTimestamps_[startIdx];
+  const uint64_t start = resolvedTimestamps_[startIdx];
+  const uint64_t end = resolvedTimestamps_[endIdx];
+  return start == MTLCounterErrorValue || end == MTLCounterErrorValue ? 0 : start;
 }
 
 uint64_t TimestampQueries::getEndNanos(uint32_t slotIndex) const {
@@ -100,11 +111,14 @@ uint64_t TimestampQueries::getEndNanos(uint32_t slotIndex) const {
     return 0;
   }
   std::lock_guard<std::mutex> lock(resolveMutex_);
-  const uint32_t endIdx = slotIndex * kSamplesPerTimingSlot + 1;
+  const uint32_t startIdx = slotIndex * kSamplesPerTimingSlot;
+  const uint32_t endIdx = startIdx + 1;
   if (endIdx >= resolvedTimestamps_.size()) {
     return 0;
   }
-  return resolvedTimestamps_[endIdx];
+  const uint64_t start = resolvedTimestamps_[startIdx];
+  const uint64_t end = resolvedTimestamps_[endIdx];
+  return start == MTLCounterErrorValue || end == MTLCounterErrorValue ? 0 : end;
 }
 
 uint64_t TimestampQueries::getFrameElapsedNanos() const {
@@ -124,6 +138,9 @@ uint64_t TimestampQueries::getFrameElapsedNanos() const {
   for (size_t slot = 0; slot < slots; ++slot) {
     const uint64_t start = resolvedTimestamps_[slot * kSamplesPerTimingSlot];
     const uint64_t end = resolvedTimestamps_[slot * kSamplesPerTimingSlot + 1U];
+    if (start == MTLCounterErrorValue || end == MTLCounterErrorValue) {
+      return 0;
+    }
     // Slots written but never paired with a valid end (e.g. abort()'d compute
     // paths on backends that still allocate a slot) leave end <= start —
     // skip them so the wall span isn't anchored to a stale zero.
