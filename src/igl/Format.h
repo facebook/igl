@@ -17,10 +17,13 @@
 
 // libc++'s implementation of std::format has a large binary size impact
 // (https://github.com/llvm/llvm-project/issues/64180), so avoid it on Android.
+//
+// The formatting headers below are referenced only through the IGL_FORMAT macro, which
+// expands in consumer translation units, so include-cleaner cannot see the use here.
 #if defined(__cpp_lib_format) && (!defined(__ANDROID__) && IGL_INCLUDE_FORMAT)
-#include <format>
+#include <format> // IWYU pragma: keep
 #define IGL_FORMAT std::format
 #else
-#include <fmt/format.h>
+#include <fmt/format.h> // IWYU pragma: keep
 #define IGL_FORMAT fmt::format
 #endif // __cpp_lib_format
