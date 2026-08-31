@@ -85,10 +85,15 @@ bool TimestampQueries::resultsAvailable() const {
 }
 
 uint64_t TimestampQueries::getElapsedNanos(uint32_t slotIndex) const {
+  const auto result = getElapsedNanosResult(slotIndex);
+  return result.valid ? result.elapsedNanos : 0;
+}
+
+TimestampQueryResult TimestampQueries::getElapsedNanosResult(uint32_t slotIndex) const {
   if (slotIndex >= currentSlot_ || !updateResults()) {
-    return 0;
+    return {};
   }
-  return elapsedNanos_[slotIndex];
+  return {.elapsedNanos = elapsedNanos_[slotIndex], .valid = true};
 }
 
 bool TimestampQueries::isValid() const {

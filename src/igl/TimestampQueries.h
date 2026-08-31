@@ -11,6 +11,11 @@
 
 namespace igl {
 
+struct TimestampQueryResult {
+  uint64_t elapsedNanos = 0;
+  bool valid = false;
+};
+
 class ITimestampQueries : public ITrackedResource<ITimestampQueries> {
  public:
   ~ITimestampQueries() override = default;
@@ -34,6 +39,15 @@ class ITimestampQueries : public ITrackedResource<ITimestampQueries> {
   /// Default returns 0; override in backends that support per-slot elapsed queries.
   [[nodiscard]] virtual uint64_t getElapsedNanos(uint32_t /*slotIndex*/) const {
     return 0;
+  }
+
+  /// Get a timing slot's value together with its semantic validity.
+  /// A valid zero preserves the legacy unsupported/unavailable behavior; `valid == false` means
+  /// the backend identified a timer-query failure and consumers must not aggregate the value.
+  /// The default treats the legacy `getElapsedNanos()` value as valid for compatibility. Backends
+  /// with explicit driver error states override this method.
+  [[nodiscard]] virtual TimestampQueryResult getElapsedNanosResult(uint32_t slotIndex) const {
+    return {.elapsedNanos = getElapsedNanos(slotIndex), .valid = true};
   }
 
   /// Absolute GPU start timestamp for a timing slot, in nanoseconds.

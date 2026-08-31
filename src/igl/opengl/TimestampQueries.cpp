@@ -91,23 +91,28 @@ bool TimestampQueries::resultsAvailable() const {
 }
 
 uint64_t TimestampQueries::getElapsedNanos(uint32_t slotIndex) const {
+  const auto result = getElapsedNanosResult(slotIndex);
+  return result.valid ? result.elapsedNanos : 0;
+}
+
+TimestampQueryResult TimestampQueries::getElapsedNanosResult(uint32_t slotIndex) const {
   IGL_PROFILER_FUNCTION();
   if (!valid_ || slotIndex >= currentIndex_) {
-    return 0;
+    return {};
   }
   if (queryIds_[slotIndex] == 0) {
-    return 0;
+    return {};
   }
 
   GLint available = 0;
   iglGetQueryObjectiv(queryIds_[slotIndex], GL_QUERY_RESULT_AVAILABLE, &available);
   if (!available) {
-    return 0;
+    return {};
   }
 
   GLuint64 result = 0;
   iglGetQueryObjectui64v(queryIds_[slotIndex], GL_QUERY_RESULT, &result);
-  return result;
+  return {.elapsedNanos = result, .valid = true};
 }
 
 bool TimestampQueries::readAndClearDisjoint() {
