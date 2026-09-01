@@ -16,6 +16,7 @@
 }
 
 - (instancetype)initWithTouchDelegate:(id<TouchDelegate>)delegate {
+  // NOLINTNEXTLINE(bugprone-assignment-in-if-condition)
   if (self = [super init]) {
     self->_delegate = delegate;
   }

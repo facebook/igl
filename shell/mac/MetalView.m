@@ -15,6 +15,7 @@
 }
 
 - (id)initWithFrame:(NSRect)frame device:(nullable id<MTLDevice>)device {
+  // NOLINTNEXTLINE(bugprone-assignment-in-if-condition)
   if (self = [super initWithFrame:frame device:device]) {
     [self addFullScreenTrackingArea];
   }

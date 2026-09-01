@@ -18,6 +18,7 @@
 - (instancetype)init:(BackendFlavor)flavor
         majorVersion:(UInt8)majorVersion
         minorVersion:(UInt8)minorVersion {
+  // NOLINTNEXTLINE(bugprone-assignment-in-if-condition)
   if (self = [super init]) {
     self->_flavor = flavor;
     self->_majorVersion = majorVersion;

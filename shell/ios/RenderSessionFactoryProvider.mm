@@ -23,6 +23,7 @@
 @implementation RenderSessionFactoryProvider
 
 - (instancetype)init {
+  // NOLINTNEXTLINE(bugprone-assignment-in-if-condition)
   if (self = [super init]) {
     _factory = igl::shell::createDefaultRenderSessionFactory();
     _adapter.factory = _factory.get();

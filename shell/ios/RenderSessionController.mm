@@ -53,6 +53,7 @@
 - (instancetype)initWithBackendVersion:(BackendVersion*)backendVersion
                        factoryProvider:(RenderSessionFactoryProvider*)factoryProvider
                        surfaceProvider:(id<IglSurfaceTexturesProvider>)provider {
+  // NOLINTNEXTLINE(bugprone-assignment-in-if-condition)
   if (self = [super init]) {
     self->_backendVersion = [self toBackendVersion:backendVersion];
     _factory = [factoryProvider adapter]->factory;
