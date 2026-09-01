@@ -11,11 +11,21 @@
 #include <igl/IGL.h>
 
 namespace iglu {
+
+struct ShaderCrossOptions {
+  /// Emit SIMD-group intrinsics instead of quadgroup ones for subgroup operations on iOS.
+  /// Subgroup arithmetic (prefix sums, reductions) has no quadgroup equivalent and fails to
+  /// cross-compile without this. Enabling it also widens broadcast/ballot/shuffle from 4 lanes
+  /// to 32, so shaders must be authored for the wider group. Not every iOS GPU implements the
+  /// SIMD-group functions.
+  bool iosUseSimdgroupFunctions = false;
+};
+
 /// Wrapper for SPIR-V cross compiler to generate IGL-compatible shader sources for different
 /// backends.
 class ShaderCross final {
  public:
-  explicit ShaderCross(igl::IDevice& device) noexcept;
+  explicit ShaderCross(igl::IDevice& device, ShaderCrossOptions options = {}) noexcept;
   ~ShaderCross() noexcept;
   ShaderCross(const ShaderCross&) = delete;
   ShaderCross& operator=(const ShaderCross&) = delete;
@@ -31,5 +41,6 @@ class ShaderCross final {
 
  private:
   igl::IDevice& device_;
+  ShaderCrossOptions options_;
 };
 } // namespace iglu

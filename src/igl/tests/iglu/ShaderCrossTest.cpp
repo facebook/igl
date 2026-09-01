@@ -65,6 +65,22 @@ namespace {
                 color = vec3(1.0, 1.0, 0.0);
               })";
 }
+
+[[nodiscard]] const char* getVulkanSubgroupArithmeticComputeShaderSource() {
+  return R"(#version 450
+              #extension GL_KHR_shader_subgroup_arithmetic : require
+
+              layout(local_size_x = 64) in;
+
+              layout(set = 0, binding = 0, std430) buffer Values {
+                uint values[];
+              } data;
+
+              void main() {
+                const uint index = gl_GlobalInvocationID.x;
+                data.values[index] = subgroupExclusiveAdd(data.values[index]);
+              })";
+}
 } // namespace
 
 class ShaderCrossTest : public ::testing::Test {
@@ -127,6 +143,23 @@ TEST_F(ShaderCrossTest, CrossCompile) {
     EXPECT_TRUE(res.isOk());
     EXPECT_TRUE(!fs.empty());
   }
+}
+
+TEST_F(ShaderCrossTest, CrossCompileSubgroupArithmetic) {
+  if (iglDev_->getBackendType() != igl::BackendType::Metal) {
+    GTEST_SKIP() << "Subgroup arithmetic cross-compilation is only gated on the Metal path";
+  }
+
+  // subgroupExclusiveAdd() has no quadgroup equivalent, so SPIRV-Cross rejects it on iOS unless
+  // the target is MSL 2.3+ *and* SIMD-group functions are enabled. Both halves are required; the
+  // error text only mentions the version.
+  const iglu::ShaderCross shaderCross(*iglDev_, {.iosUseSimdgroupFunctions = true});
+
+  Result res;
+  const auto cs = shaderCross.crossCompileFromVulkanSource(
+      getVulkanSubgroupArithmeticComputeShaderSource(), igl::ShaderStage::Compute, &res);
+  EXPECT_TRUE(res.isOk()) << res.message;
+  EXPECT_TRUE(!cs.empty());
 }
 
 TEST_F(ShaderCrossTest, ShaderCrossUniformBuffer) {
