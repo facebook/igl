@@ -247,6 +247,7 @@ using namespace igl;
 #endif
 
 #if IGL_BACKEND_OPENGL
+  // NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
   case igl::BackendFlavor::OpenGL: {
     const bool enableStencilBuffer =
         _config.depthTextureFormat == igl::TextureFormat::S8_UInt_Z24_UNorm ||
@@ -338,6 +339,7 @@ using namespace igl;
     self.view = openGLView;
     break;
   }
+  // NOLINTEND(clang-diagnostic-deprecated-declarations)
 #endif
 
 #if IGL_BACKEND_VULKAN
