@@ -248,6 +248,7 @@ void GlfwShell::run() noexcept {
       if (window_) {
         glfwPollEvents();
       }
+      // NOLINTNEXTLINE(facebook-hte-BadCall-sleep_for)
       std::this_thread::sleep_for(std::chrono::milliseconds(16));
       continue;
     }
@@ -279,6 +280,7 @@ void GlfwShell::run() noexcept {
                                   ? static_cast<double>(1 + (std::rand() % params.fpsThrottleMs))
                                   : static_cast<double>(params.fpsThrottleMs);
       if (frameTimeMs < targetMs) {
+        // NOLINTNEXTLINE(facebook-hte-BadCall-sleep_for)
         std::this_thread::sleep_for(
             std::chrono::milliseconds(static_cast<int>(targetMs - frameTimeMs)));
       }

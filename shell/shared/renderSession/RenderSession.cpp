@@ -283,6 +283,7 @@ void RenderSession::runUpdate(SurfaceTextures surfaceTextures) noexcept {
             // facebook-hte-BadCall-rand)
             : static_cast<double>(shellParams_->fpsThrottleMs);
     if (frameTimeMs < targetMs) {
+      // NOLINTNEXTLINE(facebook-hte-BadCall-sleep_for)
       std::this_thread::sleep_for(
           std::chrono::milliseconds(static_cast<int>(targetMs - frameTimeMs)));
     }
