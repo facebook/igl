@@ -69,6 +69,7 @@ std::shared_ptr<ITexture> TextureBufferMacTest::createCVPixelBufferTextureWithSi
     return nullptr;
   }
   CVPixelBufferRelease(pixelBuffer);
+  // NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
   CVOpenGLTextureCacheRelease(textureCache);
   Result::setOk(&outResult);
   return texture;

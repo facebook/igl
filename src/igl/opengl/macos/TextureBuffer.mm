@@ -32,6 +32,7 @@ TextureFormat convertToTextureFormat(OSType pixelFormat) {
 } // namespace
 TextureBuffer::TextureBuffer(IContext& context,
                              CVPixelBufferRef pixelBuffer,
+                             // NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
                              CVOpenGLTextureCacheRef textureCache,
                              TextureDesc::TextureUsage usage) :
   Super(context, convertToTextureFormat(CVPixelBufferGetPixelFormatType(pixelBuffer))),
@@ -88,8 +89,10 @@ Result TextureBuffer::create() {
 
   // Note that CVOpenGLTextureGetTarget(cvTexture_) returns GL_TEXTURE_RECTANGLE
   // which is not something IGL explicitly supports.
+  // NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
   setTextureBufferProperties(CVOpenGLTextureGetName(cvTexture_),
                              CVOpenGLTextureGetTarget(cvTexture_));
+  // NOLINTEND(clang-diagnostic-deprecated-declarations)
 
   return Result();
 }
