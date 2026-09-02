@@ -10,6 +10,7 @@
 #include <igl/metal/ColorSpace.h>
 
 namespace igl::metal::tests {
+// NOLINTBEGIN(clang-analyzer-osx.cocoa.RetainCount)
 TEST(ColorSpaceTest, colorSpaceToCGColorSpace) {
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceLinearSRGB),
             colorSpaceToCGColorSpace(ColorSpace::SRGBLinear));
@@ -76,5 +77,6 @@ TEST(ColorSpaceTest, colorSpaceToCGColorSpace) {
   ASSERT_EQ(CGColorSpaceCreateWithName(kCGColorSpaceSRGB),
             colorSpaceToCGColorSpace(ColorSpace::BT2100PQNonlinear));*/
 }
+// NOLINTEND(clang-analyzer-osx.cocoa.RetainCount)
 
 } // namespace igl::metal::tests
