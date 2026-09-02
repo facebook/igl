@@ -14,6 +14,7 @@
 // @fb-only
 #include <filesystem>
 #include <limits>
+#include <system_error>
 #include <igl/Core.h>
 
 namespace igl::shell {
@@ -142,18 +143,23 @@ std::string FileLoaderAndroid::fullPath(const std::string& fileName) const {
       return fileName;
     }
   }
-  if (std::filesystem::exists(fileName)) {
+  // error_code overloads: the throwing form raises when a parent dir denies traverse.
+  std::error_code ec;
+  if (std::filesystem::exists(fileName, ec)) {
     return fileName;
   }
 
   auto fullPath = std::filesystem::path("/data/local/tmp") / fileName;
-  if (std::filesystem::exists(fullPath)) {
+  if (std::filesystem::exists(fullPath, ec)) {
     return fullPath.string();
   }
 
-  fullPath = std::filesystem::temp_directory_path() / fileName;
-  if (std::filesystem::exists(fullPath)) {
-    return fullPath.string();
+  const auto tempDir = std::filesystem::temp_directory_path(ec);
+  if (!ec) {
+    fullPath = tempDir / fileName;
+    if (std::filesystem::exists(fullPath, ec)) {
+      return fullPath.string();
+    }
   }
   return "";
 }
