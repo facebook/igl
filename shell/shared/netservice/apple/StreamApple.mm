@@ -33,7 +33,7 @@
 }
 
 - (void)stream:(NSStream*)stream handleEvent:(NSStreamEvent)eventCode {
-  using namespace igl::shell::netservice;
+  using namespace igl::shell::netservice; // NOLINT(google-build-using-namespace)
 
   IGL_DEBUG_ASSERT(stream == _owner->nsStream());
   Stream::Event event = Stream::Event::None;
