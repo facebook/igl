@@ -32,40 +32,29 @@ VkColorComponentFlags colorWriteMaskToVkColorComponentFlags(ColorWriteMask value
 class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
   uint32_t depthCompareOp_ : 3;
 
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
+  // NOLINTNEXTLINE(modernize-use-default-member-init)
   uint32_t stencilFrontFailOp_ : 3;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
+  // NOLINTNEXTLINE(modernize-use-default-member-init)
   uint32_t stencilFrontPassOp_ : 3;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
+  // NOLINTNEXTLINE(modernize-use-default-member-init)
   uint32_t stencilFrontDepthFailOp_ : 3;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
+  // NOLINTNEXTLINE(modernize-use-default-member-init)
   uint32_t stencilFrontCompareOp_ : 3;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
+  // NOLINTNEXTLINE(modernize-use-default-member-init)
   uint32_t stencilBackFailOp_ : 3;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
+  // NOLINTNEXTLINE(modernize-use-default-member-init)
   uint32_t stencilBackPassOp_ : 3;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
+  // NOLINTNEXTLINE(modernize-use-default-member-init)
   uint32_t stencilBackDepthFailOp_ : 3;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
+  // NOLINTNEXTLINE(modernize-use-default-member-init)
   uint32_t stencilBackCompareOp_ : 3;
 
  public:
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
+  // NOLINTNEXTLINE(modernize-use-default-member-init)
   uint32_t renderPassIndex : 8;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
+  // NOLINTNEXTLINE(modernize-use-default-member-init)
   uint32_t depthBiasEnable : 1;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
+  // NOLINTNEXTLINE(modernize-use-default-member-init)
   uint32_t depthWriteEnable : 1;
   // Ignore modernize-use-default-member-init
   // @lint-ignore CLANGTIDY
