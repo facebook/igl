@@ -177,6 +177,7 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
         windowHandle_ = module_->glXCreatePbuffer(display_, fbc[0], pbufferAttribs);
       }
 
+      // NOLINTNEXTLINE(bugprone-multi-level-implicit-pointer-conversion)
       module_->XFree(fbc);
 
       // Set current, since creation doesn't really mean it's current yet.
