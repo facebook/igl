@@ -56,6 +56,8 @@
   case NSStreamEventEndEncountered:
     event = Stream::Event::EndEncountered;
     break;
+  default:
+    break;
   }
 
   if (_owner) {
