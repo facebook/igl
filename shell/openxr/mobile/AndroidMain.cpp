@@ -113,6 +113,7 @@ static void handleDestroy(const struct android_app* app) {
 }
 
 static void handleAppCmd(struct android_app* app, int32_t appCmd) {
+  // NOLINTNEXTLINE(bugprone-switch-missing-default-case)
   switch (appCmd) {
   case APP_CMD_INIT_WINDOW:
     IGL_LOG_INFO("APP_CMD_INIT_WINDOW");

@@ -202,6 +202,7 @@ void initialize(android_app* app) {
 extern "C" {
 void handleCmd(struct android_app* app, int32_t cmd) {}
 static void handleAppCmd(struct android_app* app, int32_t appCmd) {
+  // NOLINTNEXTLINE(bugprone-switch-missing-default-case)
   switch (appCmd) {
   case APP_CMD_SAVE_STATE:
     break;
