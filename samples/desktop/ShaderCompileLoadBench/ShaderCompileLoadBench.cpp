@@ -385,8 +385,13 @@ template<typename SampleFunc>
       .fastMathEnabled = true,
       .optimization = igl::ShaderOptimization::Performance,
   };
-  const igl::Result result = igl::glslang::compileShader(
-      igl::ShaderStage::Compute, kVulkanComputeShader.data(), spirv, &resource, options);
+  const igl::Result result =
+      igl::glslang::compileShader(igl::ShaderStage::Compute,
+                                  // NOLINTNEXTLINE(bugprone-suspicious-stringview-data-usage)
+                                  kVulkanComputeShader.data(),
+                                  spirv,
+                                  &resource,
+                                  options);
   igl::glslang::finalizeCompiler();
 
   if (!result.isOk()) {
@@ -540,9 +545,11 @@ template<typename SampleFunc>
                             std::unique_ptr<igl::IShaderStages> stages =
                                 igl::ShaderStagesCreator::fromModuleStringInput(
                                     *device,
+                                    // NOLINTNEXTLINE(bugprone-suspicious-stringview-data-usage)
                                     vertexShader.data(),
                                     "main",
                                     "ShaderCompileLoadBenchVertex",
+                                    // NOLINTNEXTLINE(bugprone-suspicious-stringview-data-usage)
                                     fragmentShader.data(),
                                     "main",
                                     "ShaderCompileLoadBenchFragment",
@@ -589,6 +596,7 @@ template<typename SampleFunc>
         igl::Result result;
         std::unique_ptr<igl::IShaderLibrary> library = igl::ShaderLibraryCreator::fromStringInput(
             *device,
+            // NOLINTNEXTLINE(bugprone-suspicious-stringview-data-usage)
             kMetalLibrarySource.data(),
             "vertexMain",
             "fragmentMain",
