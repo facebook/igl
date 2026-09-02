@@ -18,6 +18,7 @@
 
 #define GLFW_INCLUDE_NONE
 
+// NOLINTNEXTLINE(bugprone-reserved-identifier)
 #if !defined(_USE_MATH_DEFINES)
 #define _USE_MATH_DEFINES
 #endif // _USE_MATH_DEFINES
