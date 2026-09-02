@@ -33,9 +33,41 @@ class TextureLoaderFactory : public ITextureLoaderFactory {
       igl::Result* IGL_NULLABLE outResult) const noexcept final;
 
  private:
+  /// Every virtual is inline (trivial reads here, forwarders to non-virtual Impls in the .cpp
+  /// for the rest), so this class has no key function and its vtable and typeinfo stay weak and
+  /// are emitted per translation unit. The Impl bodies stay out of line because they use the
+  /// profiler macros and igl::Result, which this header does not include.
+  [[nodiscard]] bool canCreateInternalImpl(DataReader headerReader,
+                                           igl::Result* IGL_NULLABLE outResult) const noexcept;
+  [[nodiscard]] std::unique_ptr<ITextureLoader> tryCreateInternalImpl(
+      DataReader reader,
+      igl::TextureFormat preferredFormat,
+      igl::Result* IGL_NULLABLE outResult) const noexcept;
+
   std::vector<std::unique_ptr<ITextureLoaderFactory>> factories_;
   uint32_t minHeaderLength_;
   uint32_t maxHeaderLength_;
 };
+
+inline uint32_t TextureLoaderFactory::minHeaderLength() const noexcept {
+  return minHeaderLength_;
+}
+
+inline uint32_t TextureLoaderFactory::maxHeaderLength() const noexcept {
+  return maxHeaderLength_;
+}
+
+inline bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
+                                                    igl::Result* IGL_NULLABLE
+                                                        outResult) const noexcept {
+  return canCreateInternalImpl(headerReader, outResult);
+}
+
+inline std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
+    DataReader reader,
+    igl::TextureFormat preferredFormat,
+    igl::Result* IGL_NULLABLE outResult) const noexcept {
+  return tryCreateInternalImpl(reader, preferredFormat, outResult);
+}
 
 } // namespace iglu::textureloader
