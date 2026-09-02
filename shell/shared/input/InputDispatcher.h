@@ -68,7 +68,7 @@ class InputDispatcher {
   };
 
   struct Event {
-    EventType type;
+    EventType type{};
     using Data = std::variant<MouseButtonEvent,
                               MouseMotionEvent,
                               MouseWheelEvent,
