@@ -12,10 +12,10 @@
 #include <memory>
 #include <utility>
 
+// NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
 namespace igl::opengl::macos {
 
 namespace {
-// NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
 NSOpenGLContext* createOpenGLContext(BackendVersion backendVersion) {
   IGL_DEBUG_ASSERT(backendVersion.flavor == BackendFlavor::OpenGL);
   IGL_DEBUG_ASSERT((backendVersion.majorVersion == 3 && backendVersion.minorVersion == 2) ||
@@ -73,7 +73,6 @@ NSOpenGLContext* createOpenGLContext(BackendVersion backendVersion) {
   }
   return [[NSOpenGLContext alloc] initWithFormat:format shareContext:nil];
 }
-// NOLINTEND(clang-diagnostic-deprecated-declarations)
 } // namespace
 
 ///--------------------------------------
@@ -163,12 +162,10 @@ void Context::setCurrent() {
 }
 
 void Context::clearCurrentContext() const {
-  // NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
   [NSOpenGLContext clearCurrentContext];
 }
 
 bool Context::isCurrentContext() const {
-  // NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
   return [NSOpenGLContext currentContext] == context_;
 }
 
@@ -219,3 +216,4 @@ CVOpenGLTextureCacheRef Context::createTextureCache() {
 }
 
 } // namespace igl::opengl::macos
+// NOLINTEND(clang-diagnostic-deprecated-declarations)

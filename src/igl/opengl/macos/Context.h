@@ -12,6 +12,7 @@
 #include <CoreVideo/CoreVideo.h>
 #include <igl/opengl/IContext.h>
 
+// NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
 @class NSOpenGLContext;
 
 namespace igl::opengl::macos {
@@ -64,3 +65,4 @@ class Context final : public IContext {
 };
 
 } // namespace igl::opengl::macos
+// NOLINTEND(clang-diagnostic-deprecated-declarations)
