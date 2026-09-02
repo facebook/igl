@@ -88,7 +88,7 @@ inline void iglDebugAbortV([[maybe_unused]] const char* IGL_NONNULL category,
                            [[maybe_unused]] const char* IGL_NONNULL format,
                            [[maybe_unused]] va_list ap) {
 #if IGL_DEBUG_ABORT_ENABLED
-  va_list apCopy;
+  va_list apCopy; // NOLINT(cppcoreguidelines-init-variables)
   va_copy(apCopy, ap);
   auto listener = iglGetDebugAbortListener();
   if (listener) {
@@ -110,7 +110,7 @@ inline void iglDebugAbortV([[maybe_unused]] const char* IGL_NONNULL category,
                                         int line,
                                         const char* IGL_NONNULL format,
                                         ...) {
-  va_list ap;
+  va_list ap; // NOLINT(cppcoreguidelines-init-variables)
   va_start(ap, format);
   iglDebugAbortV(category, reason, func, file, line, format, ap);
   va_end(ap);
@@ -202,7 +202,7 @@ namespace igl {
                                        int line,
                                        const char* IGL_NONNULL format,
                                        ...) {
-  va_list ap, apCopy;
+  va_list ap, apCopy; // NOLINT(cppcoreguidelines-init-variables)
   va_start(ap, format);
   va_copy(apCopy, ap);
 
