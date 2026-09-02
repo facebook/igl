@@ -96,10 +96,12 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef /*displayLink*/,
   // Set the renderer output callback function
   CVDisplayLinkSetOutputCallback(_displayLink, &displayLinkCallback, (__bridge void*)self);
 
+  // NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
   // Set the display link for the current renderer
   NSOpenGLContext* glContext = [self openGLContext];
   CGLContextObj cglContext = [glContext CGLContextObj];
   CGLPixelFormatObj cglPixelFormat = [[glContext pixelFormat] CGLPixelFormatObj];
+  // NOLINTEND(clang-diagnostic-deprecated-declarations)
   // NOLINTNEXTLINE(clang-analyzer-nullability.NullablePassedToNonnull)
   CVDisplayLinkSetCurrentCGDisplayFromOpenGLContext(_displayLink, cglContext, cglPixelFormat);
 }

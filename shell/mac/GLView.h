@@ -7,6 +7,7 @@
 
 #import <AppKit/AppKit.h>
 
+// NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
 @interface GLView : NSOpenGLView {
 }
 - (void)startTimer;
