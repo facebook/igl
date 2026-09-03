@@ -299,6 +299,10 @@ void VulkanStagingDevice::getBufferSubData(const VulkanBuffer& buffer,
     // Wait for command to finish
     immediate->wait(immediate->submit(wrapper), ctx_.config_.fenceTimeoutNanoseconds);
 
+    if (!stagingBuffer->isCoherentMemory()) {
+      stagingBuffer->invalidateMappedMemory(memoryChunk.offset, memoryChunk.size);
+    }
+
     // Copy data into data. `size` is the number of bytes still to be written into `data`, which is
     // exactly the remaining capacity of `dstData` (it starts at the full requested size and is
     // decremented by `copySize` each iteration). `copySize` is always <= `size`, so this bound is
@@ -735,6 +739,10 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   // 3. Copy data from staging buffer into data
   if (!IGL_DEBUG_VERIFY(stagingBuffer->getMappedPtr())) {
     return;
+  }
+
+  if (!stagingBuffer->isCoherentMemory()) {
+    stagingBuffer->invalidateMappedMemory(memoryChunk.offset, memoryChunk.size);
   }
 
   const uint8_t* src = stagingBuffer->getMappedPtr() + memoryChunk.offset;
