@@ -880,8 +880,20 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
     }
 
     const auto& constantValues = info.functionConstantValues.getConstantValues();
-    MTLFunctionConstantValues* metalConstantValues = [MTLFunctionConstantValues new];
-    if (!constantValues.empty()) {
+    id<MTLFunction> metalFunction = nil;
+    if (constantValues.empty()) {
+      metalFunction = [metalLibrary newFunctionWithName:shaderEntrypoint];
+    }
+    // A function that declares function constants can only build a pipeline state through its
+    // specialized variant, so fall through to newFunctionWithName:constantValues:error: both when
+    // the plain lookup returned nil (a declared constant has no default) and when it returned a
+    // function that still reports constants (every declared constant has a default).
+    // A function that declares no constants must not go through that call at all: on iOS 16 it
+    // does not return a usable function for a constant-free entry point, and the resulting nil
+    // trips the IGL_DEBUG_ABORT below.
+    // @fb-only
+    if (metalFunction == nil || metalFunction.functionConstantsDictionary.count > 0) {
+      MTLFunctionConstantValues* metalConstantValues = [MTLFunctionConstantValues new];
       const uint8_t* constantsBase = info.functionConstantValues.getData().data();
       for (size_t i = 0; i < constantValues.size(); ++i) {
         const auto& entry = constantValues[i];
@@ -892,10 +904,10 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
                                          type:convertConstantValueType(entry.type)
                                       atIndex:i];
       }
+      metalFunction = [metalLibrary newFunctionWithName:shaderEntrypoint
+                                         constantValues:metalConstantValues
+                                                  error:&error];
     }
-    id<MTLFunction> metalFunction = [metalLibrary newFunctionWithName:shaderEntrypoint
-                                                       constantValues:metalConstantValues
-                                                                error:&error];
     if (!metalFunction) {
       IGL_DEBUG_ABORT("Could not find function '%s' in library\n", info.entryPoint.c_str());
       Result::setResult(

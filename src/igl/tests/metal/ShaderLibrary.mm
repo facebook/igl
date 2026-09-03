@@ -167,4 +167,76 @@ TEST_F(MetalShaderLibraryTest, CompilesForEachOptimization) {
   }
 }
 
+//
+// FunctionConstantSpecialization
+//
+// Regression coverage for the two ways createShaderLibrary() can hand back an MTLFunction that
+// is unusable for pipeline creation. Both entry points live in one library, so a single test
+// pins the whole discrimination in Device.mm::createShaderLibrary():
+//
+//  * A constant-free entry point must be looked up with plain newFunctionWithName:. Routing it
+//    through newFunctionWithName:constantValues:error: regressed the Edits camera tab on iOS 16
+// @fb-only
+//  * An entry point that declares a function constant must be specialized even when the caller
+//    supplies no values, because Metal refuses to build a pipeline from the unspecialized
+//    function. Note this half fails hard: Metal raises `validateWithDevice ... failed assertion`
+//    and aborts the test binary rather than returning an error.
+//
+TEST_F(MetalShaderLibraryTest, FunctionConstantSpecialization) {
+  const char* source = R"(
+    #include <metal_stdlib>
+    using namespace metal;
+
+    struct VertexOut { float4 position [[position]]; };
+
+    vertex VertexOut vertexMain(uint vid [[vertex_id]]) {
+      VertexOut out;
+      out.position = float4(0.0, 0.0, 0.0, 1.0);
+      return out;
+    }
+
+    fragment float4 fragmentNoConstants(VertexOut in [[stage_in]]) {
+      return float4(1.0);
+    }
+
+    // Declares a function constant that has a default, so the plain lookup succeeds but still
+    // reports the constant.
+    constant bool kUseTint [[function_constant(0)]];
+    fragment float4 fragmentDefaultedConstant(VertexOut in [[stage_in]]) {
+      return kUseTint ? float4(1.0, 0.0, 0.0, 1.0) : float4(0.0, 1.0, 0.0, 1.0);
+    }
+  )";
+
+  const std::vector<ShaderModuleInfo> moduleInfo = {
+      {.stage = ShaderStage::Vertex, .entryPoint = "vertexMain"},
+      {.stage = ShaderStage::Fragment, .entryPoint = "fragmentNoConstants"},
+      {.stage = ShaderStage::Fragment, .entryPoint = "fragmentDefaultedConstant"},
+  };
+
+  Result res;
+  auto library = device_->createShaderLibrary(
+      ShaderLibraryDesc::fromStringInput(source, moduleInfo, "functionConstantLibrary"), &res);
+  ASSERT_TRUE(res.isOk()) << res.message;
+  ASSERT_NE(library, nullptr);
+
+  auto vertexModule = library->getShaderModule("vertexMain");
+  ASSERT_NE(vertexModule, nullptr);
+
+  for (const char* fragmentEntryPoint : {"fragmentNoConstants", "fragmentDefaultedConstant"}) {
+    auto fragmentModule = library->getShaderModule(fragmentEntryPoint);
+    ASSERT_NE(fragmentModule, nullptr) << fragmentEntryPoint;
+
+    RenderPipelineDesc pipelineDesc;
+    pipelineDesc.shaderStages = device_->createShaderStages(
+        ShaderStagesDesc::fromRenderModules(vertexModule, fragmentModule), &res);
+    ASSERT_TRUE(res.isOk()) << fragmentEntryPoint << ": " << res.message;
+    pipelineDesc.targetDesc.colorAttachments.resize(1);
+    pipelineDesc.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
+
+    auto pipeline = device_->createRenderPipeline(pipelineDesc, &res);
+    EXPECT_TRUE(res.isOk()) << fragmentEntryPoint << ": " << res.message;
+    EXPECT_NE(pipeline, nullptr) << fragmentEntryPoint;
+  }
+}
+
 } // namespace igl::tests
