@@ -8,6 +8,7 @@
 #pragma once
 
 #include <igl/Timer.h>
+// NOLINTNEXTLINE(facebook-unused-include-check)
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/WithContext.h>

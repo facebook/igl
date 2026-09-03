@@ -7,6 +7,7 @@
 
 #pragma once
 
+// NOLINTNEXTLINE(facebook-unused-include-check)
 #include <gtest/gtest.h>
 
 #include <string_view>

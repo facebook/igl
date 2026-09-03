@@ -8,6 +8,7 @@
 #pragma once
 
 #include <utility>
+// NOLINTNEXTLINE(facebook-unused-include-check)
 #include <igl/Common.h>
 
 namespace igl {

@@ -11,6 +11,7 @@
 #include <vector>
 #include <igl/NameHandle.h>
 #include <igl/Shader.h>
+// NOLINTNEXTLINE(facebook-unused-include-check)
 #include <igl/Texture.h>
 #include <igl/Uniform.h>
 
