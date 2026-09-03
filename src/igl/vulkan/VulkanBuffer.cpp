@@ -49,18 +49,6 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
       ciAlloc.flags =
           VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
-
-      // Check if coherent buffer is available.
-      VK_ASSERT(ctx_.vf_.vkCreateBuffer(device_, &ci, nullptr, &vkBuffer_));
-      VkMemoryRequirements requirements = {};
-      ctx_.vf_.vkGetBufferMemoryRequirements(device_, vkBuffer_, &requirements);
-      ctx_.vf_.vkDestroyBuffer(device, vkBuffer_, nullptr);
-      vkBuffer_ = VK_NULL_HANDLE;
-
-      if ((requirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0) {
-        ciAlloc.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        isCoherentMemory_ = true;
-      }
     }
 
     const VkResult result = vmaCreateBuffer(static_cast<VmaAllocator>(ctx_.getVmaAllocator()),
@@ -89,6 +77,11 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
                            vmaAllocation_,
                            IGL_FORMAT("VMA Allocation: {}", debugName).c_str());
 
+      VkMemoryPropertyFlags allocMemFlags = 0;
+      vmaGetAllocationMemoryProperties(
+          static_cast<VmaAllocator>(ctx_.getVmaAllocator()), vmaAllocation_, &allocMemFlags);
+      isCoherentMemory_ = (allocMemFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
+
       // handle memory-mapped buffers
       if ((memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
         vmaMapMemory(
@@ -103,8 +96,14 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
     {
       VkMemoryRequirements requirements = {};
       ctx_.vf_.vkGetBufferMemoryRequirements(device_, vkBuffer_, &requirements);
-      if ((requirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0) {
-        isCoherentMemory_ = true;
+
+      VkPhysicalDeviceMemoryProperties memProperties = {};
+      ctx_.vf_.vkGetPhysicalDeviceMemoryProperties(ctx_.getVkPhysicalDevice(), &memProperties);
+      const uint32_t memTypeIndex =
+          ivkFindMemoryType(&memProperties, requirements.memoryTypeBits, memFlags);
+      if (memTypeIndex < memProperties.memoryTypeCount) {
+        isCoherentMemory_ = (memProperties.memoryTypes[memTypeIndex].propertyFlags &
+                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
       }
 
       VK_ASSERT(ivkAllocateMemory(&ctx_.vf_,
