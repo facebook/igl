@@ -14,6 +14,7 @@
 #import "IglSurfaceTexturesAdapter.h"
 #import "RenderSessionFactoryProvider.h"
 
+// NOLINTNEXTLINE(facebook-unused-include-check)
 #import <CoreGraphics/CGGeometry.h>
 #import <Foundation/NSObject.h>
 

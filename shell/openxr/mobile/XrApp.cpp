@@ -15,8 +15,7 @@
 #include <cstdio>
 
 #if IGL_PLATFORM_ANDROID
-// Ignore unused-include-check
-// @lint-ignore CLANGTIDY
+// NOLINTNEXTLINE(facebook-unused-include-check)
 #include <android_native_app_glue.h>
 #endif
 

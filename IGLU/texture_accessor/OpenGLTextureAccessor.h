@@ -15,6 +15,7 @@
 
 #if IGL_BACKEND_OPENGL
 
+// NOLINTNEXTLINE(facebook-unused-include-check)
 #include <igl/opengl/GLIncludes.h>
 
 namespace iglu::textureaccessor {

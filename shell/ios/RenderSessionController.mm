@@ -14,6 +14,7 @@
 #import "RenderSessionFactoryAdapterInternal.hpp"
 
 #import <QuartzCore/CADisplayLink.h>
+// NOLINTNEXTLINE(facebook-unused-include-check)
 #import <UIKit/UIKit.h>
 #import <shell/shared/input/InputDispatcher.h>
 #import <igl/IGL.h>
