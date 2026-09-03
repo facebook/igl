@@ -385,6 +385,10 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
                                             size_t attributeStride) {
   IGL_DEBUG_ASSERT(encoder_);
   IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX);
+  if (index >= IGL_BUFFER_BINDINGS_MAX) {
+    IGL_LOG_ERROR("bindVertexBuffer: index %u exceeds max %u\n", index, IGL_BUFFER_BINDINGS_MAX);
+    return;
+  }
 
   auto& metalBuffer = static_cast<Buffer&>(buffer);
 

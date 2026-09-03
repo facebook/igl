@@ -2211,6 +2211,15 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
 
   for (const util::BufferDescription& b : info.buffers) {
     IGL_DEBUG_ASSERT(b.descriptorSet == kBindPoint_Buffers);
+    if (numWrites >= IGL_ARRAY_NUM_ELEMENTS(writes)) {
+      IGL_LOG_ERROR("updateBindingsBuffers: number of writes exceeds max %u\n",
+                    (uint32_t)IGL_ARRAY_NUM_ELEMENTS(writes));
+      break;
+    }
+    if (b.bindingLocation >= IGL_ARRAY_NUM_ELEMENTS(data.buffers)) {
+      IGL_LOG_ERROR("updateBindingsBuffers: binding location %u out of range\n", b.bindingLocation);
+      continue;
+    }
     IGL_DEBUG_ASSERT(
         data.buffers[b.bindingLocation].buffer != VK_NULL_HANDLE,
         IGL_FORMAT("Did you forget to call bindBuffer() for a buffer at the binding location {}?",

@@ -147,6 +147,12 @@ Result RenderPipelineState::create() {
 
   // Note this work is only done once. Beyond this point, there is no more query by name
   for (const auto& [textureUnit, samplerName] : desc_.fragmentUnitSamplerMap) {
+    if (textureUnit >= unitSamplerLocationMap_.size()) {
+      IGL_LOG_ERROR("Fragment sampler unit %zu exceeds max %zu\n",
+                    static_cast<size_t>(textureUnit),
+                    unitSamplerLocationMap_.size());
+      continue;
+    }
     const int loc = reflection_->getIndexByName(samplerName);
     if (loc >= 0) {
       unitSamplerLocationMap_[textureUnit] = loc;
