@@ -179,6 +179,12 @@ NSOpenGLPixelFormat* Context::preferredPixelFormat() {
   static NSOpenGLPixelFormatAttribute attributes[] = {
       NSOpenGLPFAWindow,
       NSOpenGLPFAAccelerated,
+      // Allow the system to fall back to an offline (e.g. headless / not
+      // display-attached) renderer. Without this, an accelerated+window pixel
+      // format can intermittently fail to allocate on headless or GPU-contended
+      // hosts (CI Macs), returning nil here and tripping the assert below. The
+      // sibling 3.2/4.1 attribute lists in createOpenGLContext already set this.
+      NSOpenGLPFAAllowOfflineRenderers,
       NSOpenGLPFADoubleBuffer,
       NSOpenGLPFAColorSize,
       24,
