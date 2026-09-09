@@ -24,6 +24,7 @@ class ColorSession : public RenderSession {
 
  public:
   explicit ColorSession(std::shared_ptr<Platform> platform) : RenderSession(std::move(platform)) {}
+
   void initialize() noexcept override;
   void update(SurfaceTextures surfaceTextures) noexcept override;
 
@@ -48,6 +49,9 @@ class ColorSession : public RenderSession {
   }
 
  private:
+  void initializeImpl() noexcept;
+  void updateImpl(const SurfaceTextures& surfaceTextures) noexcept;
+
   std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device);
   ColorTestModes colorTestModes_ = ColorTestModes::MacbethTexture;
 
@@ -67,5 +71,17 @@ class ColorSession : public RenderSession {
   std::vector<UniformDesc> vertexUniformDescriptors_;
   TextureFormat swapchainColorTextureformat_ = TextureFormat::RGBA_SRGB;
 };
+
+/// Both virtuals are defined inline here so the class has no key function. Otherwise the single
+/// TU defining them is also the only emitter of the vtable and typeinfo, which a consumer built
+/// with different RTTI settings cannot resolve. The real bodies stay in the .cpp, behind
+/// initializeImpl() and updateImpl().
+inline void ColorSession::initialize() noexcept {
+  initializeImpl();
+}
+
+inline void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
+  updateImpl(surfaceTextures);
+}
 
 } // namespace igl::shell

@@ -473,7 +473,7 @@ std::unique_ptr<IShaderStages> ColorSession::getShaderStagesForBackend(IDevice& 
 }
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
-void ColorSession::initialize() noexcept {
+void ColorSession::initializeImpl() noexcept {
   IDevice& device = getPlatform().getDevice();
   const glm::vec3 fLinearOrangeColor =
       (swapchainColorTextureformat_ == igl::TextureFormat::RGBA_SRGB &&
@@ -584,7 +584,7 @@ void ColorSession::initialize() noexcept {
 }
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
-void ColorSession::update(SurfaceTextures surfaceTextures) noexcept {
+void ColorSession::updateImpl(const SurfaceTextures& surfaceTextures) noexcept {
   // Per IGL guidelines, surfaceTextures.color may be null on some platforms
   // before the surface is ready (e.g., during window resize on Android/iOS).
   if (!surfaceTextures.color) {
