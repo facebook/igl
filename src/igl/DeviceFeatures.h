@@ -10,7 +10,6 @@
 #include <cstdint>
 #include <type_traits>
 #include <igl/ColorSpace.h> // IWYU pragma: export
-#include <igl/Macros.h>
 #include <igl/Texture.h>
 
 namespace igl {
