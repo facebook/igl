@@ -20,8 +20,7 @@ NSOpenGLContext* createOpenGLContext(BackendVersion backendVersion) {
   IGL_DEBUG_ASSERT(backendVersion.flavor == BackendFlavor::OpenGL);
   IGL_DEBUG_ASSERT((backendVersion.majorVersion == 3 && backendVersion.minorVersion == 2) ||
                    (backendVersion.majorVersion == 4 && backendVersion.minorVersion == 1));
-  auto format = Context::preferredPixelFormat();
-  IGL_DEBUG_ASSERT(backendVersion.flavor == BackendFlavor::OpenGL);
+  NSOpenGLPixelFormat* format = nil;
 
   if (backendVersion.majorVersion == 3 && backendVersion.minorVersion == 2) {
     static NSOpenGLPixelFormatAttribute attributes[] = {
@@ -41,13 +40,9 @@ NSOpenGLContext* createOpenGLContext(BackendVersion backendVersion) {
         NSOpenGLProfileVersion3_2Core,
         0,
     };
-    auto pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
-    IGL_DEBUG_ASSERT(pixelFormat, "Requested attributes not supported");
-    if (pixelFormat) {
-      format = pixelFormat;
-    }
+    format = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
   } else if (backendVersion.majorVersion == 4 && backendVersion.minorVersion == 1) {
-    // Copied from preferredPixelFormat, with NSOpenGLProfileVersion4_1Core added
+    // Copied from preferredPixelFormat(), with NSOpenGLProfileVersion4_1Core added
     static NSOpenGLPixelFormatAttribute attributes[] = {
         NSOpenGLPFADoubleBuffer,
         NSOpenGLPFAAllowOfflineRenderers,
@@ -65,12 +60,23 @@ NSOpenGLContext* createOpenGLContext(BackendVersion backendVersion) {
         NSOpenGLProfileVersion4_1Core,
         0,
     };
-    auto pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
-    IGL_DEBUG_ASSERT(pixelFormat, "Requested attributes not supported");
-    if (pixelFormat) {
-      format = pixelFormat;
-    }
+    format = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
   }
+
+  if (format == nil) {
+    // Last resort only: preferredPixelFormat() demands an accelerated, window-capable
+    // renderer, which a host with no window server session (headless CI Mac) does not
+    // have. Requesting it up-front makes context creation fail on such hosts even when
+    // the requested core-profile attributes above are satisfiable. The context handed
+    // back here is not a core profile one, so callers can see behavior that does not
+    // match the version they asked for.
+    IGL_LOG_ERROR("Requested attributes not supported for OpenGL %d.%d; falling back\n",
+                  static_cast<int>(backendVersion.majorVersion),
+                  static_cast<int>(backendVersion.minorVersion));
+    format = Context::preferredPixelFormat();
+  }
+  IGL_DEBUG_ASSERT(format, "Requested attributes not supported");
+
   return [[NSOpenGLContext alloc] initWithFormat:format shareContext:nil];
 }
 } // namespace
@@ -182,8 +188,8 @@ NSOpenGLPixelFormat* Context::preferredPixelFormat() {
       // Allow the system to fall back to an offline (e.g. headless / not
       // display-attached) renderer. Without this, an accelerated+window pixel
       // format can intermittently fail to allocate on headless or GPU-contended
-      // hosts (CI Macs), returning nil here and tripping the assert below. The
-      // sibling 3.2/4.1 attribute lists in createOpenGLContext already set this.
+      // hosts (CI Macs). The sibling 3.2/4.1 attribute lists in
+      // createOpenGLContext() already set this.
       NSOpenGLPFAAllowOfflineRenderers,
       NSOpenGLPFADoubleBuffer,
       NSOpenGLPFAColorSize,
@@ -197,6 +203,26 @@ NSOpenGLPixelFormat* Context::preferredPixelFormat() {
       0,
   };
   NSOpenGLPixelFormat* format = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
+  if (format == nil) {
+    // A host with no window server session has no window-capable accelerated renderer
+    // at all, so drop both requirements and let the system pick a software renderer
+    // rather than handing the caller a nil pixel format. No profile attribute is
+    // requested here, so this is a legacy context, same as the list above.
+    static NSOpenGLPixelFormatAttribute headlessAttributes[] = {
+        NSOpenGLPFAAllowOfflineRenderers,
+        NSOpenGLPFADoubleBuffer,
+        NSOpenGLPFAColorSize,
+        24,
+        NSOpenGLPFAAlphaSize,
+        8,
+        NSOpenGLPFADepthSize,
+        24,
+        NSOpenGLPFAStencilSize,
+        8,
+        0,
+    };
+    format = [[NSOpenGLPixelFormat alloc] initWithAttributes:headlessAttributes];
+  }
   IGL_DEBUG_ASSERT(format, "Requested attributes not supported");
   return format;
 }
