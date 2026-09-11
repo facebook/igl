@@ -141,7 +141,8 @@ VkResult ivkAllocateMemory(const struct VulkanFunctionTable* vt,
                            const VkMemoryRequirements* memRequirements,
                            VkMemoryPropertyFlags props,
                            bool enableBufferDeviceAddress,
-                           VkDeviceMemory* outMemory) {
+                           VkDeviceMemory* outMemory,
+                           VkMemoryPropertyFlags* outMemoryPropertyFlags) {
   assert(memRequirements);
 
   const VkMemoryAllocateFlagsInfo memoryAllocateFlagsInfo = {
@@ -152,11 +153,17 @@ VkResult ivkAllocateMemory(const struct VulkanFunctionTable* vt,
   VkPhysicalDeviceMemoryProperties memProperties;
   vt->vkGetPhysicalDeviceMemoryProperties(physDev, &memProperties);
 
+  const uint32_t memoryTypeIndex =
+      ivkFindMemoryType(&memProperties, memRequirements->memoryTypeBits, props);
+  if (outMemoryPropertyFlags) {
+    *outMemoryPropertyFlags = memProperties.memoryTypes[memoryTypeIndex].propertyFlags;
+  }
+
   const VkMemoryAllocateInfo ai = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
       .pNext = &memoryAllocateFlagsInfo,
       .allocationSize = memRequirements->size,
-      .memoryTypeIndex = ivkFindMemoryType(&memProperties, memRequirements->memoryTypeBits, props),
+      .memoryTypeIndex = memoryTypeIndex,
   };
 
   return vt->vkAllocateMemory(device, &ai, NULL, outMemory);

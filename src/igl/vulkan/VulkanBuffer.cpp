@@ -49,18 +49,6 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
       ciAlloc.flags =
           VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
-
-      // Check if coherent buffer is available.
-      VK_ASSERT(ctx_.vf_.vkCreateBuffer(device_, &ci, nullptr, &vkBuffer_));
-      VkMemoryRequirements requirements = {};
-      ctx_.vf_.vkGetBufferMemoryRequirements(device_, vkBuffer_, &requirements);
-      ctx_.vf_.vkDestroyBuffer(device, vkBuffer_, nullptr);
-      vkBuffer_ = VK_NULL_HANDLE;
-
-      if ((requirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0) {
-        ciAlloc.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        isCoherentMemory_ = true;
-      }
     }
 
     const VkResult result = vmaCreateBuffer(static_cast<VmaAllocator>(ctx_.getVmaAllocator()),
@@ -91,6 +79,11 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
 
       // handle memory-mapped buffers
       if ((memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
+        VkMemoryPropertyFlags allocMemFlags = 0;
+        vmaGetAllocationMemoryProperties(
+            static_cast<VmaAllocator>(ctx_.getVmaAllocator()), vmaAllocation_, &allocMemFlags);
+        isCoherentMemory_ = (allocMemFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
+
         vmaMapMemory(
             static_cast<VmaAllocator>(ctx_.getVmaAllocator()), vmaAllocation_, &mappedPtr_);
       }
@@ -103,18 +96,24 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
     {
       VkMemoryRequirements requirements = {};
       ctx_.vf_.vkGetBufferMemoryRequirements(device_, vkBuffer_, &requirements);
-      if ((requirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0) {
-        isCoherentMemory_ = true;
-      }
 
+      VkMemoryPropertyFlags allocMemFlags = 0;
       VK_ASSERT(ivkAllocateMemory(&ctx_.vf_,
                                   ctx_.getVkPhysicalDevice(),
                                   device_,
                                   &requirements,
                                   memFlags,
                                   ctx.features().has_VK_KHR_buffer_device_address,
-                                  &vkMemory_));
+                                  &vkMemory_,
+                                  &allocMemFlags));
       VK_ASSERT(ctx_.vf_.vkBindBufferMemory(device_, vkBuffer_, vkMemory_, 0));
+
+      // Derive coherence from the memory type actually used for the allocation above. Only
+      // meaningful for host-visible buffers; DEVICE_LOCAL-only buffers stay non-coherent even when
+      // the chosen memory type happens to also be host-coherent (e.g. on UMA GPUs).
+      if ((memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
+        isCoherentMemory_ = (allocMemFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
+      }
 
       VK_ASSERT(ivkSetDebugObjectName(&ctx_.vf_,
                                       device_,

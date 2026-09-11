@@ -106,13 +106,17 @@ VkResult ivkAllocateCommandBuffer(const struct VulkanFunctionTable* vt,
                                   VkCommandPool commandPool,
                                   VkCommandBuffer* outCommandBuffer);
 
+// `outMemoryPropertyFlags` may be NULL; when non-NULL it receives the property flags of the memory
+// type used for the allocation, allowing callers to inspect the properties of the memory that was
+// actually allocated without re-querying the physical device.
 VkResult ivkAllocateMemory(const struct VulkanFunctionTable* vt,
                            VkPhysicalDevice physDev,
                            VkDevice device,
                            const VkMemoryRequirements* memRequirements,
                            VkMemoryPropertyFlags props,
                            bool enableBufferDeviceAddress,
-                           VkDeviceMemory* outMemory);
+                           VkDeviceMemory* outMemory,
+                           VkMemoryPropertyFlags* outMemoryPropertyFlags);
 
 VkResult ivkAllocateMemory2(const struct VulkanFunctionTable* vt,
                             VkPhysicalDevice physDev,
