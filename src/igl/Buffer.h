@@ -14,6 +14,7 @@
 namespace igl {
 
 // class forward declaration
+// NOLINTNEXTLINE(facebook-unused-forward-decls)
 class ICommandBuffer;
 
 enum class IndexFormat : uint8_t {

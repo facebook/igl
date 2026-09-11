@@ -9,6 +9,7 @@
 
 // NOTE: This is a pure Obj-C compatible header (no C++) to simplify bridging with Swift
 
+// NOLINTNEXTLINE(facebook-unused-include-check)
 #import <Foundation/NSObject.h>
 
 // MUST match igl/Common.h

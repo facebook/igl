@@ -22,6 +22,7 @@ class ViewTextureTarget;
 namespace egl {
 
 class Device;
+// NOLINTNEXTLINE(facebook-unused-forward-decls)
 class Context;
 
 // @fb-only
