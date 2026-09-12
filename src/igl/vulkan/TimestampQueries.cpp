@@ -13,6 +13,15 @@
 
 namespace igl::vulkan {
 
+namespace {
+
+VkPipelineStageFlagBits startTimestampStageForFidelity(TimestampQueryFidelity fidelity) {
+  return fidelity == TimestampQueryFidelity::LowOverhead ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+                                                         : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+}
+
+} // namespace
+
 TimestampQueries::TimestampQueries(VulkanContext& ctx, uint32_t maxSlots) :
   ctx_(ctx), maxSlots_(maxSlots) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
@@ -100,6 +109,14 @@ bool TimestampQueries::isValid() const {
   return queryPool_ != VK_NULL_HANDLE;
 }
 
+void TimestampQueries::setTimingFidelity(TimestampQueryFidelity fidelity) noexcept {
+  timingFidelity_ = fidelity;
+}
+
+TimestampQueryFidelity TimestampQueries::getTimingFidelity() const {
+  return timingFidelity_;
+}
+
 uint32_t TimestampQueries::beginElapsedQuery(VkCommandBuffer commandBuffer, const char* label) {
   IGL_PROFILER_FUNCTION();
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
@@ -126,7 +143,7 @@ uint32_t TimestampQueries::beginElapsedQuery(VkCommandBuffer commandBuffer, cons
   resultsReady_ = false;
 
   ctx_.vf_.vkCmdWriteTimestamp(commandBuffer,
-                               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                               startTimestampStageForFidelity(timingFidelity_),
                                queryPool_,
                                slot * kTimestampsPerTimingSlot);
   return slot;

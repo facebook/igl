@@ -44,6 +44,8 @@ class TimestampQueries final : public ITimestampQueries {
   [[nodiscard]] uint64_t getElapsedNanos(uint32_t slotIndex) const override;
   [[nodiscard]] TimestampQueryResult getElapsedNanosResult(uint32_t slotIndex) const override;
   [[nodiscard]] bool isValid() const override;
+  void setTimingFidelity(TimestampQueryFidelity fidelity) noexcept override;
+  [[nodiscard]] TimestampQueryFidelity getTimingFidelity() const override;
 
   [[nodiscard]] uint32_t beginElapsedQuery(VkCommandBuffer commandBuffer, const char* label);
   void endElapsedQuery(VkCommandBuffer commandBuffer, uint32_t slotIndex);
@@ -67,6 +69,7 @@ class TimestampQueries final : public ITimestampQueries {
   uint32_t currentSlot_ = 0;
   bool resetRecorded_ = false;
   float timestampPeriod_ = 0.0f;
+  TimestampQueryFidelity timingFidelity_ = TimestampQueryFidelity::LowOverhead;
   std::vector<std::string> labels_;
 
   mutable bool resultsReady_ = false;

@@ -7,9 +7,21 @@
 
 #pragma once
 
+#include <cstdint>
 #include <igl/ITrackedResource.h>
 
 namespace igl {
+
+enum class TimestampQueryFidelity : uint8_t {
+  // Minimize timestamp-side synchronization. Intended for one bracket that
+  // spans the whole frame; multiple adjacent brackets may report cumulative
+  // durations on backends whose earliest start stage does not wait for prior
+  // work.
+  LowOverhead,
+  // Preserve independent per-bracket durations, even when that requires the
+  // backend to wait for prior work before recording each start timestamp.
+  Accurate,
+};
 
 struct TimestampQueryResult {
   uint64_t elapsedNanos = 0;
@@ -28,6 +40,24 @@ class ITimestampQueries : public ITrackedResource<ITimestampQueries> {
 
   /// Reset the counter to 0 for reuse (does not deallocate)
   virtual void reset() = 0;
+
+  /// Select the synchronization/accuracy trade-off for subsequent timestamp
+  /// writes. Each backend starts in the mode that preserves its historical
+  /// behavior; callers that require a particular fidelity must set it
+  /// explicitly rather than rely on a common default. Backends without an
+  /// equivalent lever accept and ignore this. Non-throwing by contract:
+  /// fidelity switches happen inside noexcept frame paths, and every
+  /// in-tree override stores an enum.
+  virtual void setTimingFidelity(TimestampQueryFidelity /*fidelity*/) noexcept {}
+
+  /// The fidelity governing subsequent timestamp writes: the value last set
+  /// through setTimingFidelity() on backends that implement the lever.
+  /// Backends without an equivalent lever report Accurate, matching their
+  /// independent per-slot query semantics. Lets a caller holding the base
+  /// reference observe which semantics it has instead of assuming a default.
+  [[nodiscard]] virtual TimestampQueryFidelity getTimingFidelity() const {
+    return TimestampQueryFidelity::Accurate;
+  }
 
   /// True if GPU has completed and all recorded results are readable
   [[nodiscard]] virtual bool resultsAvailable() const = 0;
