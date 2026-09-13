@@ -154,7 +154,9 @@ constexpr bool kPreferIntegratedGPU = false;
 std::string contentRootFolder;
 
 #if IGL_WITH_IGLU
+// NOLINTNEXTLINE(facebook-static-object-destructor-check)
 std::unique_ptr<iglu::imgui::Session> imguiSession;
+// NOLINTNEXTLINE(facebook-static-object-destructor-check)
 igl::shell::InputDispatcher inputDispatcher;
 #endif // IGL_WITH_IGLU
 
@@ -665,6 +667,7 @@ std::shared_ptr<ITexture> skyboxTextureIrradiance_;
 
 // scene navigation
 CameraPositioner_FirstPerson positioner_(vec3(-100, 40, -47), vec3(0, 35, 0), vec3(0, 1, 0));
+// NOLINTEND(facebook-static-object-destructor-check)
 Camera camera(positioner_);
 // NOLINTEND(facebook-static-object-destructor-check)
 glm::vec2 mousePos_ = glm::vec2(0.0f);
@@ -681,9 +684,11 @@ struct VertexData {
   uint32_t mtlIndex{};
 };
 
+// NOLINTBEGIN(facebook-static-object-destructor-check)
 std::vector<VertexData> vertexData_;
 std::vector<uint32_t> indexData_;
 std::vector<uint32_t> shapeVertexCnt_;
+// NOLINTEND(facebook-static-object-destructor-check)
 
 struct UniformsPerFrame {
   mat4 proj;
@@ -720,8 +725,10 @@ struct GPUMaterial {
 
 static_assert(sizeof(GPUMaterial) % 16 == 0);
 
+// NOLINTBEGIN(facebook-static-object-destructor-check)
 std::vector<CachedMaterial> cachedMaterials_;
 std::vector<GPUMaterial> materials_;
+// NOLINTEND(facebook-static-object-destructor-check)
 
 struct MaterialTextures {
   std::shared_ptr<ITexture> ambient;
@@ -729,6 +736,7 @@ struct MaterialTextures {
   std::shared_ptr<ITexture> alpha;
 };
 
+// NOLINTNEXTLINE(facebook-static-object-destructor-check)
 std::vector<MaterialTextures> textures_; // same indexing as in materials_
 
 struct LoadedImage {
@@ -2218,6 +2226,7 @@ LoadedImage loadImage(const char* fileName, int channels) {
 }
 
 void loadMaterial(size_t i) {
+  // NOLINTNEXTLINE(facebook-static-object-destructor-check)
   static const std::string pathPrefix = contentRootFolder + "src/bistro/Exterior/";
 
   IGL_SCOPE_EXIT {
@@ -2484,6 +2493,7 @@ void loadSkyboxTexture() {
     // NOLINTNEXTLINE(facebook-static-object-destructor-check)
     static const std::string inFilename =
         contentRootFolder + skyboxSubdir + skyboxFileName + ".hdr";
+    // NOLINTEND(facebook-static-object-destructor-check)
 
     processCubemap(inFilename, fileNameRefKTX, fileNameIrrKTX);
   }
