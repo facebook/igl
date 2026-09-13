@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <type_traits>
 #include <igl/ColorSpace.h> // IWYU pragma: export
+// NOLINTNEXTLINE(facebook-unused-include-check)
 #include <igl/Texture.h>
 
 namespace igl {

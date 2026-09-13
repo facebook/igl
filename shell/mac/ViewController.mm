@@ -54,6 +54,7 @@
 #import <simd/simd.h>
 #include <thread>
 
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace igl;
 
 @interface ViewController () {
