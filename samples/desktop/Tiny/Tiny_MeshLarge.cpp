@@ -2472,6 +2472,7 @@ void loadSkyboxTexture() {
   static const std::string skyboxFileName{"immenstadter_horn_2k"};
   static const std::string skyboxSubdir{"src/skybox_hdr/"};
 
+  // NOLINTNEXTLINE(facebook-static-object-destructor-check)
   static const std::string fileNameRefKTX =
       contentRootFolder + skyboxFileName + "_ReferenceMap.ktx2";
   static const std::string fileNameIrrKTX =
