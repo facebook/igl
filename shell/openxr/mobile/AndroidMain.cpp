@@ -34,6 +34,7 @@
 #include "ShellScalingApi.h"
 #endif // IGL_PLATFORM_WINDOWS
 
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static XrInstance gInstance;
 
 // This function cannot be declared as `static` due to our Android GitHub builds
@@ -78,12 +79,14 @@ Java_com_facebook_igl_shell_openxr_gles_MainActivity_onActionView(JNIEnv* env,
 
 using namespace igl::shell::openxr;
 
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static void handleInitWindow(const struct android_app* app) {
   auto* xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setNativeWindow(app->window);
   }
 }
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static void handleTermWindow(const struct android_app* app) {
   auto* xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
@@ -91,6 +94,7 @@ static void handleTermWindow(const struct android_app* app) {
   }
 }
 
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static void handleResume(const struct android_app* app) {
   auto* xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
@@ -98,6 +102,7 @@ static void handleResume(const struct android_app* app) {
   }
 }
 
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static void handlePause(const struct android_app* app) {
   auto* xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
@@ -105,6 +110,7 @@ static void handlePause(const struct android_app* app) {
   }
 }
 
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static void handleDestroy(const struct android_app* app) {
   auto* xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
@@ -112,6 +118,7 @@ static void handleDestroy(const struct android_app* app) {
   }
 }
 
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static void handleAppCmd(struct android_app* app, int32_t appCmd) {
   // NOLINTNEXTLINE(bugprone-switch-missing-default-case)
   switch (appCmd) {
