@@ -294,6 +294,7 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
 
 #if __ANDROID_API__ >= 26
   // Known standard parameter names to exclude from custom params
+  // NOLINTNEXTLINE(facebook-static-object-destructor-check)
   static const std::unordered_set<std::string> standardParams = {"headless",
                                                                  "disable-vulkan-validation-layers",
                                                                  "screenshot-file",
