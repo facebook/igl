@@ -136,6 +136,7 @@ static std::unique_ptr<IDevice> device;
 static std::shared_ptr<ICommandQueue> commandQueue;
 static RenderPassDesc renderPass;
 static std::shared_ptr<IFramebuffer> framebuffer;
+// NOLINTNEXTLINE(facebook-static-object-destructor-check)
 static std::shared_ptr<IRenderPipelineState> renderPipelineStateTriangle;
 // NOLINTEND(facebook-static-object-destructor-check,misc-use-anonymous-namespace)
 

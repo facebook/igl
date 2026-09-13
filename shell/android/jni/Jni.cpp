@@ -74,6 +74,7 @@ std::optional<BackendVersion> activeBackendVersion;
 // argv-style `args` Intent extra (see extractArgsExtra() below) and stash the
 // strings here so the char* pointers handed to initializeCommandLineArgs()
 // stay valid for the lifetime of the process.
+// NOLINTNEXTLINE(facebook-static-object-destructor-check)
 std::vector<std::string> gPlatformArgvStorage;
 std::vector<char*> gPlatformArgv;
 constexpr const char* kPlatformArgv0 = "igl_android_shell";
