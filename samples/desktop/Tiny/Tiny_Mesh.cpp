@@ -135,7 +135,9 @@ bool saveScreenshot_ = false;
 
 constexpr uint32_t kNumBufferedFrames = 3;
 
+// NOLINTNEXTLINE(facebook-static-object-destructor-check)
 std::unique_ptr<IDevice> device;
+// NOLINTNEXTLINE(facebook-static-object-destructor-check)
 std::shared_ptr<ICommandQueue> commandQueue_;
 RenderPassDesc renderPass_;
 FramebufferDesc framebufferDesc_;
