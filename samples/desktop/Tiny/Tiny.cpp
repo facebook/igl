@@ -83,6 +83,7 @@ static const uint32_t kNumColorAttachments = 1;
 #endif // __cpp_lib_format
 // NOLINTEND(facebook-unused-include-check)
 
+// NOLINTNEXTLINE(facebook-static-object-destructor-check)
 static std::string codeVS = R"(
 #version 460
 layout (location=0) out vec3 color;
@@ -127,6 +128,7 @@ void main() {
 
 using namespace igl;
 
+// NOLINTBEGIN(facebook-static-object-destructor-check,misc-use-anonymous-namespace)
 static int width = 1024;
 static int height = 768;
 
@@ -135,6 +137,7 @@ static std::shared_ptr<ICommandQueue> commandQueue;
 static RenderPassDesc renderPass;
 static std::shared_ptr<IFramebuffer> framebuffer;
 static std::shared_ptr<IRenderPipelineState> renderPipelineStateTriangle;
+// NOLINTEND(facebook-static-object-destructor-check,misc-use-anonymous-namespace)
 
 static GLFWwindow* FOLLY_NULLABLE initIGL(bool isHeadless, bool enableVulkanValidationLayers) {
   if (!glfwInit()) {

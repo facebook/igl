@@ -66,8 +66,10 @@ constexpr uint32_t kNumCubes = 16;
 
 namespace {
 
+// NOLINTNEXTLINE(facebook-static-object-destructor-check)
 std::unique_ptr<iglu::imgui::Session> imguiSession_;
 
+// NOLINTNEXTLINE(facebook-static-object-destructor-check)
 igl::shell::InputDispatcher inputDispatcher_;
 
 } // namespace

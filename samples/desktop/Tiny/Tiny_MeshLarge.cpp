@@ -630,6 +630,7 @@ igl::FPSCounter fps_;
 
 constexpr uint32_t kNumBufferedFrames = 3;
 
+// NOLINTBEGIN(facebook-static-object-destructor-check)
 std::unique_ptr<IDevice> device_;
 std::shared_ptr<ICommandQueue> commandQueue_;
 RenderPassDesc renderPassOffscreen_;
@@ -663,6 +664,7 @@ std::shared_ptr<ITexture> skyboxTextureIrradiance_;
 // scene navigation
 CameraPositioner_FirstPerson positioner_(vec3(-100, 40, -47), vec3(0, 35, 0), vec3(0, 1, 0));
 Camera camera(positioner_);
+// NOLINTEND(facebook-static-object-destructor-check)
 glm::vec2 mousePos_ = glm::vec2(0.0f);
 bool mousePressed_ = false;
 bool enableComputePass_ = false;
