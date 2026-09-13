@@ -282,6 +282,7 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
 // This is the narrow argv-style bridge for igl::shell::Platform::argv() (per
 // @fb-only
 // every Bundle key/value for downstream ShellParams customParams consumption.
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 [[maybe_unused]] static std::vector<std::string> extractArgsExtra(JNIEnv* env, jobject intent) {
   std::vector<std::string> tokens;
   if (!intent) {
@@ -342,6 +343,7 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
 }
 
 // Helper function to extract all Intent extras as command-line style arguments
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 [[maybe_unused]] static std::vector<std::string> extractIntentExtras(JNIEnv* env, jobject intent) {
   std::vector<std::string> extras;
   if (!intent) {
