@@ -449,6 +449,7 @@ using namespace igl;
   _session->initialize();
 }
 
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static CVReturn metalDisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
                                          const CVTimeStamp* /*now*/,
                                          const CVTimeStamp* /*outputTime*/,
@@ -656,6 +657,7 @@ static CVReturn metalDisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
   return NSMakePoint(pos.x, contentRect.size.height - pos.y);
 }
 
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static uint32_t getModifiers(NSEvent* event) {
   uint32_t modifiers = igl::shell::kKeyEventModifierNone;
   const NSUInteger flags = [event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask;

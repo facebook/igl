@@ -55,6 +55,7 @@
   [self startTimer];
 }
 
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static CVReturn displayLinkCallback(CVDisplayLinkRef /*displayLink*/,
                                     const CVTimeStamp* /*now*/,
                                     const CVTimeStamp* /*outputTime*/,
