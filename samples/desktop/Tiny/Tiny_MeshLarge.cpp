@@ -660,6 +660,7 @@ std::shared_ptr<ITexture> textureDummyBlack_;
 #endif // USE_OPENGL_BACKEND
 std::shared_ptr<ITexture> skyboxTextureReference_;
 std::shared_ptr<ITexture> skyboxTextureIrradiance_;
+// NOLINTEND(facebook-static-object-destructor-check)
 
 // scene navigation
 CameraPositioner_FirstPerson positioner_(vec3(-100, 40, -47), vec3(0, 35, 0), vec3(0, 1, 0));
@@ -746,6 +747,7 @@ struct LoadedMaterial {
 };
 
 // file name -> LoadedImage
+// NOLINTBEGIN(facebook-static-object-destructor-check)
 std::mutex imagesCacheMutex_;
 std::unordered_map<std::string, LoadedImage> imagesCache_; // accessible only from the loader thread
                                                            // pool (multiple threads)
@@ -757,6 +759,7 @@ std::atomic<bool> loaderShouldExit_ = false;
 std::atomic<uint32_t> remainingMaterialsToLoad_ = 0;
 std::unique_ptr<tf::Executor> loaderPool_ =
     std::make_unique<tf::Executor>(std::max(2u, std::thread::hardware_concurrency() / 2));
+// NOLINTEND(facebook-static-object-destructor-check)
 
 std::string convertFileName(std::string fileName) {
   // generate compressed filename
