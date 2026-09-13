@@ -65,6 +65,7 @@ namespace {
   return std::to_string(*rendererIndex);
 }
 
+// NOLINTNEXTLINE(facebook-static-object-destructor-check)
 std::unique_ptr<shell::IRenderSessionFactory> factory;
 std::vector<std::unique_ptr<TinyRenderer>> renderers;
 std::optional<BackendVersion> activeBackendVersion;
