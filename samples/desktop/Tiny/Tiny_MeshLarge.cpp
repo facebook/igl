@@ -150,6 +150,7 @@ constexpr bool kEnableCompression = true;
 constexpr bool kPreferIntegratedGPU = false;
 #endif // USE_OPENGL_BACKEND
 
+// NOLINTNEXTLINE(facebook-static-object-destructor-check)
 std::string contentRootFolder;
 
 #if IGL_WITH_IGLU
@@ -2467,6 +2468,7 @@ void processCubemap(const std::string& inFilename,
 }
 
 void loadSkyboxTexture() {
+  // NOLINTBEGIN(facebook-static-object-destructor-check)
   static const std::string skyboxFileName{"immenstadter_horn_2k"};
   static const std::string skyboxSubdir{"src/skybox_hdr/"};
 
@@ -2474,9 +2476,11 @@ void loadSkyboxTexture() {
       contentRootFolder + skyboxFileName + "_ReferenceMap.ktx2";
   static const std::string fileNameIrrKTX =
       contentRootFolder + skyboxFileName + "_IrradianceMap.ktx2";
+  // NOLINTEND(facebook-static-object-destructor-check)
 
   if (!std::filesystem::exists(fileNameRefKTX) || !std::filesystem::exists(fileNameIrrKTX)) {
     IGL_LOG_INFO("Cubemap in KTX format not found. Extracting from HDR file...\n");
+    // NOLINTNEXTLINE(facebook-static-object-destructor-check)
     static const std::string inFilename =
         contentRootFolder + skyboxSubdir + skyboxFileName + ".hdr";
 
