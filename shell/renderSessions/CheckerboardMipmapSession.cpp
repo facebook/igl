@@ -202,6 +202,7 @@ void main() {
 // @fb-only
 
 std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Custom:
