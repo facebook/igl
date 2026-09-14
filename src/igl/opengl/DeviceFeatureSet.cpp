@@ -1816,6 +1816,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getColorF16TextureFor
   const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
 
   ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (format) {
   case TextureFormat::RGBA_F16:
     if (hasFeature(DeviceFeatures::TextureHalfFloat)) {
@@ -2062,6 +2063,7 @@ DeviceFeatureSet::getDepthUNorm16UNorm32TextureFormatCapabilities(TextureFormat 
   const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
 
   ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (format) {
   case TextureFormat::Z_UNorm16:
     if (hasTextureFeature(TextureFeatures::DepthTexImage)) {
