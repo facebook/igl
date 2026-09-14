@@ -52,6 +52,24 @@ class TickSourceRateBackend final : public PresentationRateController::Backend {
   /// so far below `maxRateHz` that no cadence reaches it.
   [[nodiscard]] static float snapToTickCadence(float requestedHz, float maxRateHz) noexcept;
 
+  /// The whole number of display refreshes one presented frame occupies when a cadence of
+  /// `hz` is held on a display running at `maxRateHz`. This is the divisor a tick source
+  /// with no rate API is driven by — an eglSwapInterval(), or a pacer that skips callbacks.
+  ///
+  /// The ratio is rounded to a whole number of refreshes first and the cap is applied to
+  /// that whole number, not to the ratio. Checking the raw ratio instead rejects legal
+  /// boundary divisors whenever float division overshoots by an ulp, which it routinely
+  /// does at fractional refresh rates.
+  ///
+  /// Returns zero when no usable divisor exists: either argument is not a finite rate above
+  /// zero, the ratio between them is not finite, or the rounded divisor is above
+  /// `maxRefreshesPerFrame`. Callers refuse on a zero rather than clamping, because a
+  /// clamped divisor is a cadence that silently disagrees with the rate the caller was told
+  /// it was granted.
+  [[nodiscard]] static int refreshesPerFrame(float hz,
+                                             float maxRateHz,
+                                             int maxRefreshesPerFrame) noexcept;
+
  private:
   /// The provider's answer, with anything that is not a finite rate above zero folded to
   /// zero so a single check covers "cannot say" and "said something unusable".

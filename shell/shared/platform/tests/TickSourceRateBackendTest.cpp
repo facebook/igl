@@ -100,6 +100,99 @@ TEST(TickSourceRateBackendTest, RefusesToSnapARateNoNumberOfSkippedRefreshesReac
 }
 
 // ---------------------------------------------------------------------------
+// refreshesPerFrame: the divisor a tick source with no rate API is driven by
+// ---------------------------------------------------------------------------
+
+TEST(TickSourceRateBackendTest, CountsTheRefreshesAWholeDivisorOccupies) {
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(120.0f, 120.0f, 10), 1);
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(60.0f, 120.0f, 10), 2);
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(30.0f, 120.0f, 10), 4);
+}
+
+TEST(TickSourceRateBackendTest, RoundsACadenceThatIsNotAWholeDivisorToTheNearestOne) {
+  // 120 / 50 is 2.4 refreshes per frame, and only whole numbers of refreshes exist.
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(50.0f, 120.0f, 10), 2);
+}
+
+TEST(TickSourceRateBackendTest, CountsOneRefreshForACadenceAtOrAboveTheDisplayRate) {
+  // No tick source presents twice within one refresh, so a cadence above the display's rate
+  // is one frame per refresh rather than a fractional divisor.
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(240.0f, 120.0f, 10), 1);
+}
+
+TEST(TickSourceRateBackendTest, AcceptsTheLargestDivisorAllowedAndRefusesTheNextOneUp) {
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(12.0f, 120.0f, 10), 10);
+  // 120 / 10.5 rounds to 11 refreshes per frame, past the cap, so there is no divisor to use.
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(10.5f, 120.0f, 10), 0);
+}
+
+TEST(TickSourceRateBackendTest, AcceptsABoundaryDivisorTheDivisionOvershootsByAnUlp) {
+  // The cap is a bound on the whole number of refreshes, so it has to be applied after the
+  // rounding. 23.976 / (23.976 / 11) is 11.00000095 rather than 11, and comparing that raw
+  // ratio to a cap of 11 refuses a divisor that is exactly on the limit — a rate the caller
+  // asked for, computed the only way it could be, rejected for a rounding artifact.
+  constexpr float kFilmRateHz = 23.976f;
+  const float eleventhOfFilmRate = kFilmRateHz / 11.0f;
+  EXPECT_GT(kFilmRateHz / eleventhOfFilmRate, 11.0f);
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(eleventhOfFilmRate, kFilmRateHz, 11), 11);
+}
+
+TEST(TickSourceRateBackendTest, RoundsToTheCapRatherThanRefusingJustPastIt) {
+  // A ratio of 10.4 refreshes per frame rounds to the cap of 10 rather than refusing it.
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(120.0f / 10.4f, 120.0f, 10), 10);
+}
+
+TEST(TickSourceRateBackendTest, RefusesADivisorPastACapNoFloatCanHold) {
+  // Above 2^24 the floats are two apart, so a cap in that range has no exact float and
+  // `static_cast<float>(cap)` silently becomes a different, larger number: 16777219 becomes
+  // 16777220. Comparing the rounded divisor against that form lets 16777220 through, which
+  // is one refresh past what the caller allowed. The first expectation pins the premise, so
+  // this stops discriminating loudly rather than quietly if the rounding ever changes.
+  constexpr int kCapPastFloatPrecision = 16777219;
+  constexpr float kDivisorOnePastTheCap = 16777220.0f;
+  EXPECT_EQ(static_cast<float>(kCapPastFloatPrecision), kDivisorOnePastTheCap);
+  EXPECT_EQ(
+      TickSourceRateBackend::refreshesPerFrame(1.0f, kDivisorOnePastTheCap, kCapPastFloatPrecision),
+      0);
+  // The neighbouring divisor is genuinely within the cap and still has to be accepted, so
+  // the widened comparison is not simply refusing everything up here.
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(1.0f, 16777218.0f, kCapPastFloatPrecision),
+            16777218);
+}
+
+TEST(TickSourceRateBackendTest, RefusesADivisorAtTheIntCeilingRatherThanConvertingOutOfRange) {
+  // `static_cast<float>(INT_MAX)` is 2147483648, one past INT_MAX. A rounded divisor of
+  // 2147483648 compares equal to that, so it passes a float cap check and is then converted
+  // to an int that cannot hold it, which is undefined rather than merely wrong.
+  constexpr float kOnePastIntMax = 2147483648.0f;
+  constexpr int kIntMax = std::numeric_limits<int>::max();
+  EXPECT_EQ(static_cast<float>(kIntMax), kOnePastIntMax);
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(1.0f, kOnePastIntMax, kIntMax), 0);
+}
+
+TEST(TickSourceRateBackendTest, RefusesADivisorWhoseRatioIsTooLargeToConvertAtAll) {
+  // 120 / 1e-40 overflows a float, so the ratio never becomes a number to cap-check.
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(1e-40f, 120.0f, 10000), 0);
+}
+
+TEST(TickSourceRateBackendTest, RefusesToCountRefreshesForANonFiniteOrNonPositiveRate) {
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(kQuietNan, 120.0f, 10), 0);
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(kInfinity, 120.0f, 10), 0);
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(0.0f, 120.0f, 10), 0);
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(-60.0f, 120.0f, 10), 0);
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(60.0f, kQuietNan, 10), 0);
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(60.0f, kInfinity, 10), 0);
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(60.0f, 0.0f, 10), 0);
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(60.0f, -120.0f, 10), 0);
+}
+
+TEST(TickSourceRateBackendTest, RefusesEveryDivisorWhenTheCallerAllowsNone) {
+  // A cap below one leaves no legal divisor, not even the every-refresh one.
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(120.0f, 120.0f, 0), 0);
+  EXPECT_EQ(TickSourceRateBackend::refreshesPerFrame(120.0f, 120.0f, -1), 0);
+}
+
+// ---------------------------------------------------------------------------
 // Capabilities
 // ---------------------------------------------------------------------------
 

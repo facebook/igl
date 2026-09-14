@@ -8,7 +8,6 @@
 #include <shell/shared/platform/mac/DisplayLinkRatePacer.h>
 
 #include <algorithm>
-#include <cmath>
 #include <utility>
 
 namespace igl::shell {
@@ -48,20 +47,14 @@ std::unique_ptr<PresentationRateController::Backend> createDisplayLinkPacerBacke
     }
     // `maxRateHz` is the snapshot the cadence was snapped against, not a fresh reading, so
     // the divisor recovered here is the same whole number the granted rate came from.
-    const float refreshesPerFrame = maxRateHz / hz;
-    // Range-checked while it is still a float. std::lround() on a value beyond `long` is
-    // undefined and returns something unspecified, and a perfectly finite float ratio sits
-    // far beyond `long` for any rate small enough — so converting first and checking after
-    // can accept a cadence nobody asked for.
-    constexpr auto kMaxRatio = static_cast<float>(DisplayLinkRatePacer::kMaxRefreshesPerFrame);
-    if (!std::isfinite(refreshesPerFrame) || refreshesPerFrame > kMaxRatio) {
+    const int refreshesPerFrame = TickSourceRateBackend::refreshesPerFrame(
+        hz, maxRateHz, DisplayLinkRatePacer::kMaxRefreshesPerFrame);
+    if (refreshesPerFrame == 0) {
       return Result{Result::Code::ArgumentOutOfRange,
                     "That rate would need more skipped refreshes than this display link "
                     "paces, so it cannot be held to it."};
     }
-    // At least one refresh per frame. The cadence is never above the link's own rate, so
-    // this only absorbs float noise at exactly that rate, where every refresh is right.
-    owned->setRefreshesPerFrame(static_cast<int>(std::max(1L, std::lround(refreshesPerFrame))));
+    owned->setRefreshesPerFrame(refreshesPerFrame);
     return Result{};
   };
   return std::make_unique<TickSourceRateBackend>(std::move(maxRateProvider), std::move(applier));
