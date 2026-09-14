@@ -23,6 +23,8 @@
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #include <shell/shared/input/InputDispatcher.h>
 #include <shell/shared/platform/DisplayContext.h>
+#include <shell/shared/platform/PresentationRateController.h>
+#include <shell/shared/platform/android/PresentationRateAndroid.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
@@ -295,26 +297,27 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
 #if __ANDROID_API__ >= 26
   // Known standard parameter names to exclude from custom params
   // NOLINTNEXTLINE(facebook-static-object-destructor-check)
-  static const std::unordered_set<std::string> standardParams = {"headless",
-                                                                 "disable-vulkan-validation-layers",
-                                                                 "screenshot-file",
-                                                                 "screenshot-number",
-                                                                 "viewport-size",
-                                                                 "fps-throttle",
-                                                                 "fps-throttle-random",
-                                                                 "freeze-at-frame",
-                                                                 "timeout",
-                                                                 "sessions",
-                                                                 "log-reporter",
-                                                                 "offscreen-only",
-                                                                 "benchmark",
-                                                                 "benchmark-duration",
-                                                                 "run-time",
-                                                                 "report-interval",
-                                                                 "hiccup-multiplier",
-                                                                 "render-buffer-size",
-                                                                 "force-multiview",
-                                                                 "perfetto"};
+  static const std::unordered_set<std::string> kStandardParams = {
+      "headless",
+      "disable-vulkan-validation-layers",
+      "screenshot-file",
+      "screenshot-number",
+      "viewport-size",
+      "fps-throttle",
+      "fps-throttle-random",
+      "freeze-at-frame",
+      "timeout",
+      "sessions",
+      "log-reporter",
+      "offscreen-only",
+      "benchmark",
+      "benchmark-duration",
+      "run-time",
+      "report-interval",
+      "hiccup-multiplier",
+      "render-buffer-size",
+      "force-multiview",
+      "perfetto"};
 
   struct CallbackData {
     const std::string& prefix;
@@ -324,7 +327,7 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
   };
 
   CallbackData callbackData{.prefix = prefixStr,
-                            .standardParams = standardParams,
+                            .standardParams = kStandardParams,
                             .customParams = &customParams,
                             .perfettoEnabled = &perfettoEnabled};
 
@@ -374,6 +377,54 @@ void readShellParamsFromAndroidProps(igl::shell::ShellParams& shellParams,
                                     customParams);
 }
 
+#if IGL_BACKEND_OPENGL
+// EGL_MAX_SWAP_INTERVAL for the config the current context was created with, or 1 when EGL
+// will not say. One is the safe floor: every EGL implementation waits at least one refresh,
+// so a driver we cannot interrogate is treated as one that only does the uncapped rung.
+EGLint currentMaxSwapInterval(EGLDisplay display) {
+  EGLContext context = eglGetCurrentContext();
+  if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT) {
+    return 1;
+  }
+  EGLint configId = 0;
+  if (eglQueryContext(display, context, EGL_CONFIG_ID, &configId) == EGL_FALSE) {
+    return 1;
+  }
+  const std::array<EGLint, 3> attribs = {EGL_CONFIG_ID, configId, EGL_NONE};
+  EGLConfig config = nullptr;
+  EGLint configCount = 0;
+  if (eglChooseConfig(display, attribs.data(), &config, 1, &configCount) == EGL_FALSE ||
+      configCount == 0) {
+    return 1;
+  }
+  EGLint maxInterval = 1;
+  if (eglGetConfigAttrib(display, config, EGL_MAX_SWAP_INTERVAL, &maxInterval) == EGL_FALSE) {
+    return 1;
+  }
+  return maxInterval < 1 ? 1 : maxInterval;
+}
+
+// The GLES frame divider, or an empty one when no context is current. Built on the thread
+// that owns the context, and eglSwapInterval() acts on that thread's current draw surface,
+// so it must also be applied there — which is the render thread, where rate requests land.
+igl::shell::FrameDivider eglSwapIntervalDivider() {
+  EGLDisplay display = eglGetCurrentDisplay();
+  if (display == EGL_NO_DISPLAY) {
+    return {};
+  }
+  return igl::shell::FrameDivider{
+      .setDivisor = [display](int refreshesPerFrame) -> igl::Result {
+        if (eglSwapInterval(display, refreshesPerFrame) == EGL_FALSE) {
+          return igl::Result{igl::Result::Code::RuntimeError,
+                             "EGL would not take the swap interval this rate needs."};
+        }
+        return igl::Result{};
+      },
+      .maxDivisor = static_cast<int>(currentMaxSwapInterval(display)),
+  };
+}
+#endif // IGL_BACKEND_OPENGL
+
 // Stores the current EGL context when created, and restores it when destroyed.
 struct ContextGuard {
   ContextGuard(const igl::IDevice& device) {
@@ -416,16 +467,48 @@ namespace igl::samples {
 
 using namespace igl;
 
+TinyRenderer::~TinyRenderer() {
+  adoptNativeWindow(nullptr);
+}
+
+void TinyRenderer::adoptNativeWindow(ANativeWindow* nativeWindow) {
+  if (nativeWindow_ == nativeWindow) {
+    // Same window, second reference. ANativeWindow_fromSurface() acquires on every call and
+    // returns the same pointer for the same Surface, which is exactly what a resize does, so
+    // the caller's reference is redundant rather than new. Releasing it here is what keeps a
+    // resize from leaking one reference per call; simply returning would.
+    if (nativeWindow != nullptr) {
+      ANativeWindow_release(nativeWindow);
+    }
+    return;
+  }
+  if (nativeWindow_ != nullptr) {
+    ANativeWindow_release(nativeWindow_);
+  }
+  // Ownership of the reference the caller acquired now sits here.
+  nativeWindow_ = nativeWindow;
+}
+
+void TinyRenderer::releaseNativeWindowIfHeld(ANativeWindow* nativeWindow) {
+  if (nativeWindow_ != nullptr && nativeWindow_ == nativeWindow) {
+    adoptNativeWindow(nullptr);
+  }
+}
+
 void TinyRenderer::init(AAssetManager* mgr,
                         ANativeWindow* nativeWindow,
                         shell::IRenderSessionFactory& factory,
                         BackendVersion backendVersion,
                         TextureFormat swapchainColorTextureFormat,
-                        const std::vector<std::string>& args) {
+                        const std::vector<std::string>& args,
+                        float displayCurrentRefreshRateHz,
+                        float displayMaxRefreshRateHz) {
   backendVersion_ = backendVersion;
-  nativeWindow_ = nativeWindow;
+  adoptNativeWindow(nativeWindow);
+  displayRates_->currentHz = displayCurrentRefreshRateHz;
+  displayRates_->maxHz = displayMaxRefreshRateHz;
   Result result;
-  const igl::HWDeviceQueryDesc queryDesc(HWDeviceType::IntegratedGpu);
+  const HWDeviceQueryDesc queryDesc(HWDeviceType::IntegratedGpu);
   std::unique_ptr<IDevice> d;
 
   // Read shell params from Android system properties.
@@ -595,14 +678,72 @@ void TinyRenderer::init(AAssetManager* mgr,
     IGL_DEBUG_ASSERT(session_ != nullptr);
     session_->initialize();
   }
+
+  // Outside the ContextGuard above, so the EGL lever is read against the context the shell
+  // presents on rather than whichever one IGL left current while building the device.
+  installPresentationRateBackend();
+}
+
+void TinyRenderer::setDisplayRates(float currentHz, float maxHz, bool reinstallBackend) {
+  displayRates_->currentHz = currentHz;
+  displayRates_->maxHz = maxHz;
+  if (reinstallBackend) {
+    installPresentationRateBackend();
+  }
+}
+
+void TinyRenderer::installPresentationRateBackend() {
+  if (!platform_) {
+    return;
+  }
+
+  // Ask the compositor for the panel's best mode once, here, rather than once per request.
+  // ANativeWindow_setFrameRate() is a preference with no confirmation, so it can never be
+  // what a grant rests on; asking for the maximum up front instead means the rungs below
+  // are whole divisions of a panel that is already running as fast as it will. Advisory, so
+  // a refusal is not fatal — the rungs are then divisions of whatever mode it stayed in.
+  if (nativeWindow_ != nullptr && displayRates_->maxHz > 0.0f) {
+    (void)igl::shell::setNativeWindowFrameRate(nativeWindow_, displayRates_->maxHz);
+  }
+
+  igl::shell::FrameDivider divider;
+#if IGL_BACKEND_OPENGL
+  if (backendVersion_.flavor == igl::BackendFlavor::OpenGL_ES) {
+    divider = eglSwapIntervalDivider();
+  }
+#endif
+  // Vulkan gets no divider: Android's loader enumerates no present mode that paces below
+  // the refresh rate, and this diff adds no frame-skipping pacer. The backend still grants
+  // DisplayMaximum, which needs no division, and reports every capped rung as unsupported
+  // rather than pretending to hold it.
+
+  // The rates are shared rather than copied, so setDisplayRates() reaches a backend that is
+  // already installed and every request reads the display as it is now.
+  platform_->getPresentationRateController().setBackend(igl::shell::createFrameDividerRateBackend(
+      [rates = displayRates_]() { return *rates; }, std::move(divider)));
 }
 
 void TinyRenderer::recreateSwapchain(ANativeWindow* nativeWindow, bool createSurface) {
+  // Outside the backend guard on purpose: the caller handed over a reference whether or not
+  // Vulkan is compiled in, so dropping it here would leak on a GLES-only build.
+  adoptNativeWindow(nativeWindow);
+  rebuildSwapchain(createSurface);
+}
+
+void TinyRenderer::rebuildSwapchain(bool createSurface) {
 #if IGL_BACKEND_VULKAN
-  nativeWindow_ = nativeWindow;
+  if (nativeWindow_ == nullptr && !shellParams_.isHeadless) {
+    // No window to build against: it was released and no replacement arrived (a null
+    // Surface reaches onSurfacesChanged() as "nothing new", not as "window gone"). There is
+    // no surface to size from or create, so there is nothing to rebuild.
+    __android_log_print(ANDROID_LOG_WARN,
+                        "igl",
+                        "[IGL Shell] rebuildSwapchain: no native window held; skipping rebuild\n");
+    return;
+  }
   if (!shellParams_.isHeadless) {
-    width_ = static_cast<uint32_t>(ANativeWindow_getWidth(nativeWindow));
-    height_ = static_cast<uint32_t>(ANativeWindow_getHeight(nativeWindow));
+    width_ = static_cast<uint32_t>(ANativeWindow_getWidth(nativeWindow_));
+    height_ = static_cast<uint32_t>(ANativeWindow_getHeight(nativeWindow_));
   }
 
   auto* platformDevice = platform_->getDevice().getPlatformDevice<igl::vulkan::PlatformDevice>();
@@ -613,12 +754,16 @@ void TinyRenderer::recreateSwapchain(ANativeWindow* nativeWindow, bool createSur
   auto& vkContext = vulkanDevice.getVulkanContext();
 
   if (createSurface) {
-    vkContext.createSurface(nativeWindow, nullptr);
+    vkContext.createSurface(nativeWindow_, nullptr);
   }
   vkContext.initSwapchain(width_, height_);
 
   // need release frame buffer when recreate swap chain
   session_->releaseFramebuffer();
+
+  // The rate the old backend was holding belonged to the window it was built around, which
+  // may not be this one. Reinstalling re-applies the last request against the new window.
+  installPresentationRateBackend();
 #endif
 }
 
@@ -883,7 +1028,13 @@ bool TinyRenderer::render(float displayScale) {
   return session_->appParams().exitRequested;
 }
 
-void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int height) {
+void TinyRenderer::onSurfacesChanged(ANativeWindow* nativeWindow, int width, int height) {
+  // A null window means the caller had no Surface to hand over on this call, not that the
+  // window went away — that arrives as releaseNativeWindowIfHeld(). Keeping the one already held is
+  // what lets the Vulkan branch below rebuild its swapchain against a window it still owns.
+  if (nativeWindow != nullptr) {
+    adoptNativeWindow(nativeWindow);
+  }
   if (shellParams_.isHeadless) {
     return;
   }
@@ -900,12 +1051,21 @@ void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int 
         readSurface, drawSurface, &result);
     IGL_DEBUG_ASSERT(result.isOk());
     IGL_SOFT_ASSERT(result.isOk());
+
+    // A swap interval belongs to the EGLSurface it was set on, so the replacement surface
+    // starts back at one while the controller still holds the old rung's grant. Reinstall
+    // here, with the replacement context and surface current, so the divider is rebuilt
+    // against them and setBackend() re-applies the last request through it.
+    installPresentationRateBackend();
   }
 #endif
 
 #if IGL_BACKEND_VULKAN
   if (backendVersion_.flavor == igl::BackendFlavor::Vulkan) {
-    recreateSwapchain(nativeWindow_, false);
+    // rebuildSwapchain() rather than recreateSwapchain(): the window was already adopted at
+    // the top of this function, so going back through the adopt would release a reference
+    // this path never acquired.
+    rebuildSwapchain(false);
     platform_->updatePreRotationMatrix();
   }
 #endif

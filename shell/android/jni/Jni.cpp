@@ -194,28 +194,39 @@ std::optional<size_t> findRendererIndex(std::optional<BackendVersion> backendVer
 extern "C" {
 JNIEXPORT jobjectArray JNICALL
 Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobject obj);
-JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
-                                                                  jobject obj,
-                                                                  jobject jbackendVersion,
-                                                                  jint jswapchainColorTextureFormat,
-                                                                  jobject javaAssetManager,
-                                                                  jobject surface,
-                                                                  jobject intent);
+JNIEXPORT void JNICALL
+Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
+                                           jobject obj,
+                                           jobject jbackendVersion,
+                                           jint jswapchainColorTextureFormat,
+                                           jobject javaAssetManager,
+                                           jobject surface,
+                                           jobject intent,
+                                           jfloat jdisplayCurrentRefreshRateHz,
+                                           jfloat jdisplayMaxRefreshRateHz);
 JNIEXPORT void JNICALL
 Java_com_facebook_igl_shell_SampleLib_setActiveBackendVersion(JNIEnv* env,
                                                               jobject obj,
                                                               jobject jbackendVersion);
-JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_surfaceChanged(JNIEnv* env,
-                                                                            jobject obj,
-                                                                            jobject surface,
-                                                                            jint width,
-                                                                            jint height);
+JNIEXPORT void JNICALL
+Java_com_facebook_igl_shell_SampleLib_surfaceChanged(JNIEnv* env,
+                                                     jobject obj,
+                                                     jobject surface,
+                                                     jint width,
+                                                     jint height,
+                                                     jfloat jdisplayCurrentRefreshRateHz,
+                                                     jfloat jdisplayMaxRefreshRateHz);
 JNIEXPORT jboolean JNICALL Java_com_facebook_igl_shell_SampleLib_render(JNIEnv* env,
                                                                         jobject obj,
                                                                         jfloat displayScale);
 JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_surfaceDestroyed(JNIEnv* env,
                                                                               jobject obj,
                                                                               jobject surface);
+JNIEXPORT void JNICALL
+Java_com_facebook_igl_shell_SampleLib_setDisplayRates(JNIEnv* env,
+                                                      jobject obj,
+                                                      jfloat jdisplayCurrentRefreshRateHz,
+                                                      jfloat jdisplayMaxRefreshRateHz);
 JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_touchEvent(JNIEnv* env,
                                                                         jobject obj,
                                                                         jboolean isDown,
@@ -243,7 +254,7 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
     factory = shell::createDefaultRenderSessionFactory();
   }
 
-  constexpr igl::TextureFormat kSwapchainColorTextureFormat = igl::TextureFormat::BGRA_SRGB;
+  constexpr TextureFormat kSwapchainColorTextureFormat = igl::TextureFormat::BGRA_SRGB;
   std::vector<igl::shell::RenderSessionConfig> suggestedConfigs = {
 #if IGL_BACKEND_OPENGL
       {
@@ -485,13 +496,16 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
   return extras;
 }
 
-JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
-                                                                  jobject /*obj*/,
-                                                                  jobject jbackendVersion,
-                                                                  jint jtextureFormat,
-                                                                  jobject javaAssetManager,
-                                                                  jobject surface,
-                                                                  jobject intent) {
+JNIEXPORT void JNICALL
+Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
+                                           jobject /*obj*/,
+                                           jobject jbackendVersion,
+                                           jint jtextureFormat,
+                                           jobject javaAssetManager,
+                                           jobject surface,
+                                           jobject intent,
+                                           jfloat jdisplayCurrentRefreshRateHz,
+                                           jfloat jdisplayMaxRefreshRateHz) {
   const auto backendVersion = toBackendVersion(env, jbackendVersion);
   const auto swapchainColorTextureFormat = static_cast<TextureFormat>(jtextureFormat);
   const auto rendererIndex = findRendererIndex(backendVersion);
@@ -542,12 +556,34 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
                    *factory,
                    *backendVersion,
                    swapchainColorTextureFormat,
-                   cmdLine);
+                   cmdLine,
+                   static_cast<float>(jdisplayCurrentRefreshRateHz),
+                   static_cast<float>(jdisplayMaxRefreshRateHz));
     renderers.emplace_back(std::move(renderer));
     IGL_LOG_INFO("init: creating backend renderer: %s\n", toString(backendVersion).c_str());
-  } else if (rendererIndex && backendVersion && backendVersion->flavor == BackendFlavor::Vulkan) {
-    IGL_LOG_INFO("init: Updating backend renderer: %s\n", toString(backendVersion).c_str());
-    renderers[*rendererIndex]->recreateSwapchain(ANativeWindow_fromSurface(env, surface), true);
+  } else if (rendererIndex) {
+    // The replacement Surface is adopted BEFORE anything reinstalls the presentation-rate
+    // backend, and setDisplayRates() below is one of the things that does. These renderers
+    // live for the process, so a reused init() arrives holding the window of the Surface that
+    // was destroyed on the way here; installing against that one asks a dead window for the
+    // panel's best mode and leaves every later request pointed at it.
+    renderers[*rendererIndex]->adoptNativeWindow(
+        surface != nullptr ? ANativeWindow_fromSurface(env, surface) : nullptr);
+
+    // A reused renderer gets this call's reading too. Dropping it would pin the renderer to
+    // whatever the display reported the first time — including a zero, which disables the
+    // presentation-rate seam for the rest of the process — and would leave the divisor
+    // being derived from the old mode after a display change or a move to another screen.
+    // setDisplayRates() reinstalls the backend, which re-applies the last request.
+    renderers[*rendererIndex]->setDisplayRates(static_cast<float>(jdisplayCurrentRefreshRateHz),
+                                               static_cast<float>(jdisplayMaxRefreshRateHz));
+    if (backendVersion && backendVersion->flavor == BackendFlavor::Vulkan) {
+      IGL_LOG_INFO("init: Updating backend renderer: %s\n", toString(backendVersion).c_str());
+      renderers[*rendererIndex]->recreateSwapchain(
+          surface != nullptr ? ANativeWindow_fromSurface(env, surface) : nullptr, true);
+    } else {
+      IGL_LOG_INFO("init: no changes: %s\n", toString(backendVersion).c_str());
+    }
   } else {
     IGL_LOG_INFO("init: no changes: %s\n", toString(backendVersion).c_str());
   }
@@ -586,11 +622,14 @@ Java_com_facebook_igl_shell_SampleLib_setActiveBackendVersion(JNIEnv* env,
                toString(findRendererIndex(activeBackendVersion)).c_str());
 }
 
-JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_surfaceChanged(JNIEnv* env,
-                                                                            jobject /*obj*/,
-                                                                            jobject surface,
-                                                                            jint width,
-                                                                            jint height) {
+JNIEXPORT void JNICALL
+Java_com_facebook_igl_shell_SampleLib_surfaceChanged(JNIEnv* env,
+                                                     jobject /*obj*/,
+                                                     jobject surface,
+                                                     jint width,
+                                                     jint height,
+                                                     jfloat jdisplayCurrentRefreshRateHz,
+                                                     jfloat jdisplayMaxRefreshRateHz) {
   const auto activeRendererIndex = findRendererIndex(activeBackendVersion);
   IGL_LOG_INFO("surfaceChanged: %s rendererIndex: %s\n",
                toString(activeBackendVersion).c_str(),
@@ -599,6 +638,14 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_surfaceChanged(JNIE
     return;
   }
 
+  // Before the surface change rather than after: a display mode switch is one of the things
+  // that brings us here, and onSurfacesChanged() rebuilds the divider, so it needs the new
+  // rate already in place. Without the reinstall here: onSurfacesChanged() adopts the new
+  // window first and reinstalls against it, which is what the adopt-before-reinstall
+  // contract requires; reinstalling here would install against the outgoing window.
+  renderers[*activeRendererIndex]->setDisplayRates(static_cast<float>(jdisplayCurrentRefreshRateHz),
+                                                   static_cast<float>(jdisplayMaxRefreshRateHz),
+                                                   /*reinstallBackend=*/false);
   renderers[*activeRendererIndex]->onSurfacesChanged(
       surface ? ANativeWindow_fromSurface(env, surface) : nullptr, width, height);
 }
@@ -617,7 +664,39 @@ JNIEXPORT jboolean JNICALL Java_com_facebook_igl_shell_SampleLib_render(JNIEnv* 
 
 JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_surfaceDestroyed(JNIEnv* env,
                                                                               jobject /*obj*/,
-                                                                              jobject surface) {}
+                                                                              jobject surface) {
+  if (surface == nullptr) {
+    return;
+  }
+  // Matched on the window rather than on activeBackendVersion. That global is retargeted by a
+  // backend switch, which is exactly when an outgoing view's Surface is torn down, so keying
+  // off it can release the INCOMING renderer's window — a use-after-free traded for a leak.
+  // The window identifies its own owner, so ask for it directly.
+  ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
+  if (window == nullptr) {
+    return;
+  }
+  for (const auto& renderer : renderers) {
+    renderer->releaseNativeWindowIfHeld(window);
+  }
+  // Balances the acquire above; the owning renderer released its own reference separately.
+  ANativeWindow_release(window);
+}
+
+JNIEXPORT void JNICALL
+Java_com_facebook_igl_shell_SampleLib_setDisplayRates(JNIEnv* /*env*/,
+                                                      jobject /*obj*/,
+                                                      jfloat jdisplayCurrentRefreshRateHz,
+                                                      jfloat jdisplayMaxRefreshRateHz) {
+  const auto activeRendererIndex = findRendererIndex(activeBackendVersion);
+  if (!activeRendererIndex) {
+    return;
+  }
+  // Called from the display-change watcher, already marshalled onto the render thread, so
+  // this lands on the same thread as every other entry point that touches the rates.
+  renderers[*activeRendererIndex]->setDisplayRates(static_cast<float>(jdisplayCurrentRefreshRateHz),
+                                                   static_cast<float>(jdisplayMaxRefreshRateHz));
+}
 
 JNIEXPORT jboolean JNICALL Java_com_facebook_igl_shell_SampleLib_isHeadless(JNIEnv* /*env*/,
                                                                             jobject /*obj*/) {
