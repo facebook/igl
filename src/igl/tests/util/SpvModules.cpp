@@ -77,6 +77,7 @@ const std::vector<uint32_t>& getUniformBufferSpvWords() {
                  OpFunctionEnd
   */
 
+  // NOLINTNEXTLINE(facebook-static-object-destructor-check)
   static const std::vector<uint32_t> kUniformBufferSpvWords = {
       0x07230203, 0x00010000, 0xdeadbeef, 0x0000003e, 0x00000000, 0x00020011, 0x00000001,
       0x0003000e, 0x00000000, 0x00000000, 0x0006000f, 0x00000000, 0x00000025, 0x6e69616d,
@@ -191,6 +192,7 @@ const std::vector<uint32_t>& getTextureSpvWords() {
                  OpFunctionEnd
   */
 
+  // NOLINTNEXTLINE(facebook-static-object-destructor-check)
   static const std::vector<uint32_t> kTextureSpvWords = {
       0x07230203, 0x00010000, 0xdeadbeef, 0x00000036, 0x00000000, 0x00020011, 0x00000001,
       0x0003000e, 0x00000000, 0x00000000, 0x0006000f, 0x00000000, 0x00000029, 0x6e69616d,
@@ -275,6 +277,7 @@ const std::vector<uint32_t>& getTextureWithDescriptorSetSpvWords() {
           OpFunctionEnd
 */
 
+  // NOLINTNEXTLINE(facebook-static-object-destructor-check)
   static const std::vector<uint32_t> kTextureWithDescriptorSetSpvWords = {
       0x07230203, 0x00010000, 0xdeadbeef, 0x00000025, 0x00000000, 0x00020011, 0x00000001,
       0x0003000e, 0x00000000, 0x00000000, 0x0007000f, 0x00000000, 0x00000018, 0x6e69616d,
@@ -732,6 +735,7 @@ const std::vector<uint32_t>& getTinyMeshFragmentShaderSpvWords() {
                  OpFunctionEnd
   */
 
+  // NOLINTNEXTLINE(facebook-static-object-destructor-check)
   static const std::vector<uint32_t> kTinyMeshFragmentShader = {
       0x07230203, 0x00010000, 0xdeadbeef, 0x00000106, 0x00000000, 0x00020011, 0x00000001,
       0x00020011, 0x00000032, 0x0006000b, 0x00000001, 0x4c534c47, 0x6474732e, 0x3035342e,
