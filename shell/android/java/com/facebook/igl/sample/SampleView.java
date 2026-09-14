@@ -16,6 +16,8 @@ import android.opengl.EGL15;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.Surface;
+import android.view.SurfaceHolder;
 import java.util.concurrent.CountDownLatch;
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -31,6 +33,7 @@ public class SampleView extends GLSurfaceView {
   private float lastTouchY = 0.0f;
   private CountDownLatch renderSessionInitLatch = new CountDownLatch(1);
   private Intent mIntent;
+  private SampleLib.DisplayRateWatcher mDisplayRateWatcher;
 
   public SampleView(
       Context context,
@@ -74,7 +77,46 @@ public class SampleView extends GLSurfaceView {
 
     setRenderer(
         new Renderer(
-            context, backendVersion, swapchainColorTextureFormat, renderSessionInitLatch, mIntent));
+            context,
+            backendVersion,
+            swapchainColorTextureFormat,
+            renderSessionInitLatch,
+            mIntent,
+            this.getHolder()));
+
+    // queueEvent() is the only hop onto the GL thread this view has, and the rates must land
+    // there because reinstalling the backend re-applies the EGL swap interval on the surface
+    // that thread owns.
+    mDisplayRateWatcher =
+        new SampleLib.DisplayRateWatcher(
+            context,
+            (currentHz, maxHz) -> queueEvent(() -> SampleLib.setDisplayRates(currentHz, maxHz)));
+  }
+
+  @Override
+  protected void onAttachedToWindow() {
+    super.onAttachedToWindow();
+    mDisplayRateWatcher.start();
+  }
+
+  @Override
+  protected void onDetachedFromWindow() {
+    mDisplayRateWatcher.stop();
+    super.onDetachedFromWindow();
+  }
+
+  @Override
+  public void surfaceDestroyed(SurfaceHolder holder) {
+    // The native renderers are process-lifetime, so nothing else ever drops the ANativeWindow
+    // reference taken from this Surface: without this the destroyed window stays retained for
+    // the life of the process and the next init() reinstalls the presentation-rate backend
+    // against it. GLSurfaceView delivers this callback on the main thread while the reference
+    // is owned by the GL thread, so the release is queued onto that thread. super's
+    // implementation then blocks until the GL thread acknowledges the destruction, and the GL
+    // thread drains its event queue while waiting, so the release runs before it idles.
+    final Surface surface = holder.getSurface();
+    queueEvent(() -> SampleLib.surfaceDestroyed(surface));
+    super.surfaceDestroyed(holder);
   }
 
   public boolean isRenderSessionInitialized() {
@@ -238,30 +280,47 @@ public class SampleView extends GLSurfaceView {
     private final SampleLib.BackendVersion mBackendVersion;
     private final int mSwapchainColorTextureFormat;
     private CountDownLatch mRenderSessionInitLatch;
+    /// GLSurfaceView drives GL through its own EGL surface and hands the Renderer nothing that
+    /// identifies the window, but the native side needs the Surface to hold an ANativeWindow
+    /// and ask the compositor for the panel's best mode. This is the only route to it.
+    private final SurfaceHolder mSurfaceHolder;
 
     Renderer(
         Context context,
         SampleLib.BackendVersion backendVersion,
         int swapchainColorTextureFormat,
         CountDownLatch renderSessionInitLatch,
-        Intent intent) {
+        Intent intent,
+        SurfaceHolder surfaceHolder) {
       mContext = context;
       mIntent = intent;
       mBackendVersion = backendVersion;
       mSwapchainColorTextureFormat = swapchainColorTextureFormat;
       mRenderSessionInitLatch = renderSessionInitLatch;
+      mSurfaceHolder = surfaceHolder;
     }
 
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
       SampleLib.init(
-          mBackendVersion, mSwapchainColorTextureFormat, mContext.getAssets(), null, mIntent);
+          mBackendVersion,
+          mSwapchainColorTextureFormat,
+          mContext.getAssets(),
+          mSurfaceHolder.getSurface(),
+          mIntent,
+          SampleLib.displayCurrentRefreshRateHz(mContext),
+          SampleLib.displayMaxRefreshRateHz(mContext));
 
       // Signal that application has being started.
       mRenderSessionInitLatch.countDown();
     }
 
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-      SampleLib.surfaceChanged(null, width, height);
+      SampleLib.surfaceChanged(
+          mSurfaceHolder.getSurface(),
+          width,
+          height,
+          SampleLib.displayCurrentRefreshRateHz(mContext),
+          SampleLib.displayMaxRefreshRateHz(mContext));
     }
 
     public void onDrawFrame(GL10 gl) {

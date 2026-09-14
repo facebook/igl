@@ -33,6 +33,7 @@ public class VulkanView extends SurfaceView
   private final SampleLib.BackendVersion mBackendVersion;
   private final int mSwapchainColorTextureFormat;
   private Intent mIntent;
+  private final SampleLib.DisplayRateWatcher mDisplayRateWatcher;
 
   public VulkanView(
       Context context,
@@ -50,6 +51,31 @@ public class VulkanView extends SurfaceView
     mBackendVersion = backendVersion;
     mSwapchainColorTextureFormat = swapchainColorTextureFormat;
     mIntent = intent;
+
+    // The render thread's Handler is the hop onto it. A null thread or handler means there is
+    // no backend installed to update, and the next surfaceCreated() samples the rates anyway.
+    mDisplayRateWatcher =
+        new SampleLib.DisplayRateWatcher(
+            context,
+            (currentHz, maxHz) -> {
+              RenderThread renderThread = mRenderThread;
+              RenderHandler rh = renderThread == null ? null : renderThread.getHandler();
+              if (rh != null) {
+                rh.sendDisplayRatesChanged(currentHz, maxHz);
+              }
+            });
+  }
+
+  @Override
+  protected void onAttachedToWindow() {
+    super.onAttachedToWindow();
+    mDisplayRateWatcher.start();
+  }
+
+  @Override
+  protected void onDetachedFromWindow() {
+    mDisplayRateWatcher.stop();
+    super.onDetachedFromWindow();
   }
 
   @Override
@@ -204,7 +230,13 @@ public class VulkanView extends SurfaceView
       Log.d(TAG, "SurfaceCreated");
       Surface surface = mSurfaceHolder.getSurface();
       SampleLib.init(
-          mBackendVersion, mSwapchainColorTextureFormat, mContext.getAssets(), surface, mIntent);
+          mBackendVersion,
+          mSwapchainColorTextureFormat,
+          mContext.getAssets(),
+          surface,
+          mIntent,
+          SampleLib.displayCurrentRefreshRateHz(mContext),
+          SampleLib.displayMaxRefreshRateHz(mContext));
 
       // Now that init() has completed and shell params are read, decide render mode.
       if (SampleLib.isHeadless()) {
@@ -224,7 +256,20 @@ public class VulkanView extends SurfaceView
 
     public void surfaceChanged(int width, int height) {
       Surface surface = mSurfaceHolder.getSurface();
-      SampleLib.surfaceChanged(surface, width, height);
+      SampleLib.surfaceChanged(
+          surface,
+          width,
+          height,
+          SampleLib.displayCurrentRefreshRateHz(mContext),
+          SampleLib.displayMaxRefreshRateHz(mContext));
+    }
+
+    /**
+     * Applies a display mode change that arrived without a surface callback. Runs on the render
+     * thread, which is where reinstalling the backend has to happen.
+     */
+    public void displayRatesChanged(float currentHz, float maxHz) {
+      SampleLib.setDisplayRates(currentHz, maxHz);
     }
 
     /** draw frame in response to a vsync event. */
@@ -295,6 +340,7 @@ public class VulkanView extends SurfaceView
     private static final int MSG_SURFACE_CHANGED = 1;
     private static final int MSG_DO_FRAME = 2;
     private static final int MSG_SHUTDOWN = 3;
+    private static final int MSG_DISPLAY_RATES_CHANGED = 4;
 
     private RenderThread mRenderThread;
 
@@ -321,6 +367,16 @@ public class VulkanView extends SurfaceView
       sendMessage(obtainMessage(RenderHandler.MSG_SHUTDOWN));
     }
 
+    public void sendDisplayRatesChanged(float currentHz, float maxHz) {
+      // A Message carries two ints and these are floats, so they travel as their bit patterns
+      // — the same trick sendDoFrame() uses to get a long across.
+      sendMessage(
+          obtainMessage(
+              RenderHandler.MSG_DISPLAY_RATES_CHANGED,
+              Float.floatToRawIntBits(currentHz),
+              Float.floatToRawIntBits(maxHz)));
+    }
+
     @Override // runs on RenderThread
     public void handleMessage(Message msg) {
       int what = msg.what;
@@ -344,6 +400,10 @@ public class VulkanView extends SurfaceView
           break;
         case MSG_SHUTDOWN:
           mRenderThread.shutdown();
+          break;
+        case MSG_DISPLAY_RATES_CHANGED:
+          mRenderThread.displayRatesChanged(
+              Float.intBitsToFloat(msg.arg1), Float.intBitsToFloat(msg.arg2));
           break;
         default:
           throw new RuntimeException("unknown message " + what);
