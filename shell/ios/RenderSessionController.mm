@@ -73,6 +73,7 @@
   igl::HWDeviceQueryDesc queryDesc(igl::HWDeviceType::DiscreteGpu);
   std::unique_ptr<igl::IDevice> device;
 
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (_backendVersion.flavor) {
   case igl::BackendFlavor::Metal: {
 #if IGL_BACKEND_METAL

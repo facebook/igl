@@ -166,6 +166,7 @@
 }
 
 - (void)loadView {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (_config.backendVersion.flavor) {
   case igl::BackendFlavor::Invalid:
     IGL_DEBUG_ASSERT_NOT_REACHED();
@@ -199,6 +200,7 @@
 
     NSString* drawablePropertyColorFormat = kEAGLColorFormatRGBA8;
 
+    // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
     switch (_config.swapchainColorTextureFormat) {
     case igl::TextureFormat::BGRA_UNorm8:
       drawablePropertyColorFormat = kEAGLColorFormatRGBA8;
