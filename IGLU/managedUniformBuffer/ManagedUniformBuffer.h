@@ -24,6 +24,16 @@ struct ManagedUniformBufferInfo {
   std::string blockName;
 };
 
+/// Rewrites `info` into the flattened form SPIRV-Cross produces for the OpenGL
+/// backend: every member is renamed to `<uboBlockName>.<member>` and the block
+/// name is recorded for the native-UBO bind fallback. Single owner of this
+/// naming contract -- both ShaderCrossUniformBuffer and FilterNode's param
+/// buffer route through here so the host names always agree byte-for-byte
+/// with what glGetUniformLocation() resolves on the flattened GL path.
+[[nodiscard]] ManagedUniformBufferInfo getSpirvCrossCompatibleManagedUniformBufferInfo(
+    const std::string& uboBlockName,
+    ManagedUniformBufferInfo info) noexcept;
+
 class ManagedUniformBuffer {
  public:
   igl::Result result;

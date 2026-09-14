@@ -8,22 +8,6 @@
 #include <IGLU/shaderCross/ShaderCrossUniformBuffer.h>
 
 namespace iglu {
-namespace {
-// NOLINTNEXTLINE(bugprone-exception-escape)
-[[nodiscard]] ManagedUniformBufferInfo getSpirvCrossCompatibleManagedUniformBufferInfo(
-    const std::string& uboBlockName,
-    ManagedUniformBufferInfo info) noexcept {
-  for (auto& uniform : info.uniforms) {
-    uniform.name = uboBlockName + "." + uniform.name;
-  }
-  // Record the block name so the OpenGL bind path can fall back to a real UBO buffer binding when
-  // the program keeps the block native (GLSL ES 3.x) instead of flattening it to the plain
-  // `<block>.<member>` uniforms named above.
-  info.blockName = uboBlockName;
-  return info;
-}
-} // namespace
-
 ShaderCrossUniformBuffer::ShaderCrossUniformBuffer(igl::IDevice& device,
                                                    const std::string& uboBlockName,
                                                    ManagedUniformBufferInfo info) :

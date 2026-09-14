@@ -27,6 +27,21 @@
 #endif
 
 namespace iglu {
+// NOLINTNEXTLINE(bugprone-exception-escape)
+ManagedUniformBufferInfo getSpirvCrossCompatibleManagedUniformBufferInfo(
+    const std::string& uboBlockName,
+    ManagedUniformBufferInfo info) noexcept {
+  const std::string prefix = uboBlockName + ".";
+  for (auto& uniform : info.uniforms) {
+    uniform.name = prefix + uniform.name;
+  }
+  // Record the block name so the OpenGL bind path can fall back to a real UBO buffer binding when
+  // the program keeps the block native (GLSL ES 3.x) instead of flattening it to the plain
+  // `<block>.<member>` uniforms named above.
+  info.blockName = uboBlockName;
+  return info;
+}
+
 ManagedUniformBuffer::ManagedUniformBuffer(igl::IDevice& device,
                                            const ManagedUniformBufferInfo& info) :
   uniformInfo(info) {
