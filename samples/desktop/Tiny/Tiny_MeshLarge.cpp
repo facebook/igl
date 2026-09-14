@@ -2679,6 +2679,7 @@ int main(int argc, char* argv[]) {
     printf("Waiting for all textures to load...\n");
     while (remainingMaterialsToLoad_.load(std::memory_order_acquire) > 0) {
       processLoadedMaterials();
+      // NOLINTNEXTLINE(facebook-hte-BadCall-sleep_for)
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     printf("All textures loaded.\n");
