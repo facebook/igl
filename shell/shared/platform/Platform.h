@@ -19,6 +19,7 @@ struct ImageData;
 class ImageWriter;
 class InputDispatcher;
 class DisplayContext;
+class PresentationRateController;
 
 class Platform {
  public:
@@ -32,6 +33,11 @@ class Platform {
 
   virtual InputDispatcher& getInputDispatcher() noexcept;
   [[nodiscard]] virtual DisplayContext& getDisplayContext() noexcept;
+
+  // Not virtual: the controller carries the requested/granted bookkeeping for this
+  // platform, so handing out a second one would lose it. Platforms customize the seam
+  // by installing a backend, not by overriding the accessor.
+  [[nodiscard]] PresentationRateController& getPresentationRateController() noexcept;
 
   std::shared_ptr<ITexture> loadTexture(
       const char* filename,

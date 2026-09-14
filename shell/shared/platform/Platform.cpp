@@ -12,6 +12,7 @@
 #include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/input/InputDispatcher.h>
 #include <shell/shared/platform/DisplayContext.h>
+#include <shell/shared/platform/PresentationRateController.h>
 
 namespace {
 
@@ -37,6 +38,7 @@ struct Platform::State {
   ExtensionLoader extensionLoader;
   InputDispatcher inputDispatcher;
   DisplayContext displayContext;
+  PresentationRateController presentationRateController;
 };
 
 Platform::Platform() noexcept : state_(std::make_unique<State>()) {}
@@ -53,6 +55,10 @@ InputDispatcher& Platform::getInputDispatcher() noexcept {
 
 [[nodiscard]] DisplayContext& Platform::getDisplayContext() noexcept {
   return state_->displayContext;
+}
+
+[[nodiscard]] PresentationRateController& Platform::getPresentationRateController() noexcept {
+  return state_->presentationRateController;
 }
 
 std::shared_ptr<ITexture> Platform::loadTexture(const char* filename,
