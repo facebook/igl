@@ -32,6 +32,8 @@
 // @fb-only
 // @fb-only
 #include <memory>
+#include <shell/shared/platform/PresentationRateController.h>
+#include <shell/shared/platform/apple/PresentationRateApple.h>
 #include <shell/shared/platform/ios/PlatformIos.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
@@ -119,15 +121,25 @@
 
 - (void)start {
   if (_backendVersion.flavor != igl::BackendFlavor::Metal) {
-    // Render at 60hz
+    // Left at its default cadence: one tick per display refresh, which iOS holds to 60 Hz
+    // unless the app's Info.plist opts out of the minimum frame duration. The rung the
+    // demo picks arrives through the presentation-rate seam below, not from here.
     _renderTimer = [CADisplayLink displayLinkWithTarget:self selector:@selector(tick)];
     [_renderTimer addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+    if (_platform) {
+      _platform->getPresentationRateController().setBackend(
+          igl::shell::createDisplayLinkPresentationRateBackend(_renderTimer));
+    }
   }
 }
 
 - (void)stop {
   [_renderTimer removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
   _renderTimer = nullptr;
+  if (_platform) {
+    // Whatever rate was in effect belonged to the link that just went away.
+    _platform->getPresentationRateController().setBackend(nullptr);
+  }
 }
 
 - (void)tick {

@@ -42,6 +42,8 @@
 
 #include <memory>
 #include <shell/shared/input/TouchListener.h>
+#include <shell/shared/platform/PresentationRateController.h>
+#include <shell/shared/platform/apple/PresentationRateApple.h>
 #include <shell/shared/platform/ios/PlatformIos.h>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
 #include <igl/DeviceFeatures.h>
@@ -181,6 +183,11 @@
     [metalView setTouchDelegate:self];
     self.view = metalView;
     _layer = metalView.layer;
+
+    // The Metal path has no CADisplayLink of its own — drawInMTKView: is called from the
+    // one MTKView owns — so the view itself is the tick source the seam has to reach.
+    [self platform]->getPresentationRateController().setBackend(
+        igl::shell::createMTKViewPresentationRateBackend(metalView));
 #endif
     break;
   }
