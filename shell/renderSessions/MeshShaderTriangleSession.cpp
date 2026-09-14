@@ -139,6 +139,7 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   std::string taskShader, meshShader, fragmentShader;
   std::string taskShaderEntryPoint, meshShaderEntryPoint, fragmentShaderEntryPoint;
 
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (device.getBackendType()) {
   case igl::BackendType::Metal:
     taskShader = getMetalTaskShaderSource();

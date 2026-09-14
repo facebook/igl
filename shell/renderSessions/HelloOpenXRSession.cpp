@@ -100,6 +100,7 @@ constexpr uint16_t kIndexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 
     IDevice& device,
     const iglu::ShaderCross& shaderCross,
     bool stereoRendering) noexcept {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (device.getBackendType()) {
   case igl::BackendType::Metal:
     IGL_DEBUG_ABORT("Metal is not supported");
