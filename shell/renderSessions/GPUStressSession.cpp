@@ -209,6 +209,7 @@ layout(push_constant) uniform PushConstants {
 std::unique_ptr<IShaderStages> GPUStressSession::getShaderStagesForBackend(
     IDevice& device) const noexcept {
   const bool multiView = device.hasFeature(DeviceFeatures::Multiview);
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (device.getBackendType()) {
   // @fb-only
     // @fb-only
