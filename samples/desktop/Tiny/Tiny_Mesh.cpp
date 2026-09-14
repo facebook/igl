@@ -139,6 +139,7 @@ constexpr uint32_t kNumBufferedFrames = 3;
 std::unique_ptr<IDevice> device;
 // NOLINTNEXTLINE(facebook-static-object-destructor-check)
 std::shared_ptr<ICommandQueue> commandQueue_;
+// NOLINTBEGIN(facebook-static-object-destructor-check)
 RenderPassDesc renderPass_;
 FramebufferDesc framebufferDesc_;
 std::shared_ptr<IFramebuffer> framebuffer;
@@ -146,6 +147,7 @@ std::shared_ptr<IRenderPipelineState> renderPipelineState_Mesh_;
 std::shared_ptr<IBuffer> vb0_, ib0_; // buffers for vertices and indices
 std::shared_ptr<IBuffer> screenCopy_;
 std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerObject;
+// NOLINTEND(facebook-static-object-destructor-check)
 std::shared_ptr<IVertexInputState> vertexInput0_;
 std::shared_ptr<IDepthStencilState> depthStencilState_;
 std::shared_ptr<ITexture> texture0_, texture1_;

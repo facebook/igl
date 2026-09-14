@@ -83,7 +83,7 @@ static const uint32_t kNumColorAttachments = 1;
 #endif // __cpp_lib_format
 // NOLINTEND(facebook-unused-include-check)
 
-// NOLINTNEXTLINE(facebook-static-object-destructor-check)
+// NOLINTNEXTLINE(facebook-static-object-destructor-check,misc-use-anonymous-namespace)
 static std::string codeVS = R"(
 #version 460
 layout (location=0) out vec3 color;
@@ -116,6 +116,7 @@ void main() {
 };
 )";
 #else
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 const static char* codeFS = R"(
 #version 460
 layout (location=0) in vec3 color;
