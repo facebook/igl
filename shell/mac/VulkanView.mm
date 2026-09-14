@@ -10,6 +10,7 @@
 #import "VulkanView.h"
 
 #import "AppDelegate.h"
+#import "DisplayLinkRatePacing.h"
 #import "ViewController.h" // IWYU pragma: keep
 
 #import <Foundation/Foundation.h>
@@ -19,8 +20,11 @@
 #include <igl/vulkan/VulkanContext.h>
 #endif
 
+#include <memory>
+
 @interface VulkanView () {
   CVDisplayLinkRef _displayLink; // display link for managing rendering thread
+  std::unique_ptr<igl::shell::DisplayLinkRatePacing> _ratePacing;
   igl::shell::Platform* _shellPlatform;
   IBOutlet NSViewController* _viewController;
 }
@@ -29,6 +33,15 @@
 @implementation VulkanView
 
 - (void)dealloc {
+  if (_ratePacing) {
+    // Detach before the reset, not through it. reset() stores null before it runs the
+    // destructor, so the callback below would be reading _ratePacing while this thread
+    // writes it, with the link still firing. detach() leaves the handle alone and stops
+    // the link, and CVDisplayLinkStop() does not return while a callback is running — so
+    // once it has, nothing else reads the handle or the link.
+    _ratePacing->detach();
+  }
+  _ratePacing.reset();
   CVDisplayLinkRelease(_displayLink);
   _shellPlatform = nullptr;
 }
@@ -52,6 +65,10 @@
   [controller initModule];
 
   [self initTimer];
+  if (_shellPlatform != nullptr && _displayLink != nullptr) {
+    _ratePacing =
+        std::make_unique<igl::shell::DisplayLinkRatePacing>(*_shellPlatform, _displayLink);
+  }
   [self startTimer];
 }
 
@@ -64,6 +81,11 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef /*displayLink*/,
 
                                     void* userdata) {
   auto view = (__bridge VulkanView*)userdata;
+  // The link cannot be slowed down, so a capped rate is reached by returning early from
+  // the callbacks in between. Called exactly once per callback: it advances the counter.
+  if (view->_ratePacing && !view->_ratePacing->shouldRender()) {
+    return kCVReturnSuccess;
+  }
   [view->_viewController performSelectorOnMainThread:@selector(render)
                                           withObject:nil
                                        waitUntilDone:NO];
