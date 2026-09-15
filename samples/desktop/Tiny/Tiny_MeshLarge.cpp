@@ -1125,12 +1125,16 @@ bool loadAndCache(const char* cacheFileName) {
     IGL_DEBUG_ASSERT(m.ambient_texname.length() < MAX_MATERIAL_NAME);
     IGL_DEBUG_ASSERT(m.diffuse_texname.length() < MAX_MATERIAL_NAME);
     IGL_DEBUG_ASSERT(m.alpha_texname.length() < MAX_MATERIAL_NAME);
+    // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
     strcat(mtl.name, m.name.c_str());
     normalizeName(m.ambient_texname);
     normalizeName(m.diffuse_texname);
     normalizeName(m.alpha_texname);
+    // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
     strcat(mtl.ambient_texname, m.ambient_texname.c_str());
+    // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
     strcat(mtl.diffuse_texname, m.diffuse_texname.c_str());
+    // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
     strcat(mtl.alpha_texname, m.alpha_texname.c_str());
     cachedMaterials_.push_back(mtl);
   }
