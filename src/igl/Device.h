@@ -177,6 +177,7 @@ class IDevice : public ICapabilities, public base::IDeviceBase {
    * @brief Create a timestamp queries object that can hold up to maxTimestamps entries.
    * Returns nullptr if not supported on this backend/device.
    */
+  // NOLINTNEXTLINE(bugprone-exception-escape)
   virtual std::shared_ptr<ITimestampQueries> createTimestampQueries(uint32_t maxTimestamps,
                                                                     Result* IGL_NULLABLE
                                                                         outResult) const noexcept {
