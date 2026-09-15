@@ -24,7 +24,7 @@ VkShaderModule ShaderModule::getVkShaderModule(const std::shared_ptr<IShaderModu
   const ShaderModule* sm = static_cast<ShaderModule*>(shaderModule.get());
 
   // @fb-only
-  // @lint-ignore CLANGTIDY
+  // NOLINTNEXTLINE(facebook-hte-NullableReturn)
   return sm ? sm->module_->getVkShaderModule() : VK_NULL_HANDLE;
 }
 

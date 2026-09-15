@@ -38,7 +38,7 @@
 static XrInstance gInstance;
 
 // This function cannot be declared as `static` due to our Android GitHub builds
-// @lint-ignore CLANGTIDY
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 XrInstance getXrInstance() {
   return gInstance;
 }

@@ -16,7 +16,7 @@ std::unique_ptr<VulkanContext> HWDevice::createContext(const VulkanContextConfig
                                                        void* IGL_NULLABLE window,
                                                        void* IGL_NULLABLE display) {
   // @fb-only
-  // @lint-ignore CLANGTIDY
+  // NOLINTNEXTLINE(facebook-hte-NullableDereference)
   return std::make_unique<VulkanContext>(config, window, display);
 }
 

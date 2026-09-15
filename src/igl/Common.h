@@ -264,8 +264,7 @@ class ScopeGuard {
 };
 
 template<typename T>
-// Ignore readability-named-parameter
-// @lint-ignore CLANGTIDY
+// NOLINTNEXTLINE(readability-named-parameter)
 ScopeGuard<T> operator+(ScopeGuardOnExit /*guard*/, T&& fn) {
   return ScopeGuard<T>(std::forward<T>(fn));
 }
