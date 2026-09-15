@@ -9,7 +9,7 @@
 
 #import "ViewController.h"
 
-#import "GLView.h"
+#import "GLView.h" // IWYU pragma: keep
 #import "HeadlessView.h"
 #import "MetalView.h"
 // @fb-only
