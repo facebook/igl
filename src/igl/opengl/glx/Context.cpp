@@ -181,10 +181,12 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
       module_->XFree(fbc);
 
       // Set current, since creation doesn't really mean it's current yet.
+      // NOLINTNEXTLINE(clang-analyzer-optin.cplusplus.VirtualCall)
       setCurrent();
 
       // Initialize through base class.
       Result result;
+      // NOLINTNEXTLINE(clang-analyzer-optin.cplusplus.VirtualCall)
       initialize(&result);
       IGL_DEBUG_ASSERT(result.isOk(), result.message.c_str());
     } else {
@@ -212,10 +214,12 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
   IContext::registerContext(contextHandle_, this);
 
   // Set current, since creation doesn't really mean it's current yet.
+  // NOLINTNEXTLINE(clang-analyzer-optin.cplusplus.VirtualCall)
   setCurrent();
 
   // Initialize through base class.
   Result result;
+  // NOLINTNEXTLINE(clang-analyzer-optin.cplusplus.VirtualCall)
   initialize(&result);
   IGL_DEBUG_ASSERT(result.isOk(), result.message.c_str());
 }
