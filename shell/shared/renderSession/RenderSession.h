@@ -81,7 +81,7 @@ class RenderSession {
     framebuffer_ = nullptr;
   }
 
-  void setPreferredClearColor(const igl::Color& color) noexcept;
+  void setPreferredClearColor(const Color& color) noexcept;
   Color getPreferredClearColor() noexcept;
 
   /// @brief Initializes the benchmark tracker based on shell params

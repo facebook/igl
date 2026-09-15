@@ -128,7 +128,7 @@ void TestShell::run(RenderSession& session, size_t numFrames) {
   session.setShellParams(shellParams);
   session.initialize();
   for (size_t i = 0; i < numFrames; ++i) {
-    const igl::DeviceScope scope(platform_->getDevice());
+    const DeviceScope scope(platform_->getDevice());
     session.update({.color = offscreenTexture_, .depth = offscreenDepthTexture_});
   }
   session.teardown();

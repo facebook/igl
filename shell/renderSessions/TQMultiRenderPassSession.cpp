@@ -325,7 +325,7 @@ void TQMultiRenderPassSession::update(SurfaceTextures surfaceTextures) noexcept 
   Result ret;
   if (framebuffer0_ == nullptr) {
     const auto dimensions = surfaceTextures.color->getDimensions();
-    const igl::TextureDesc desc1 =
+    const TextureDesc desc1 =
         igl::TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
                                 dimensions.width,
                                 dimensions.height,

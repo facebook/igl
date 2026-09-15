@@ -217,7 +217,7 @@ bool isDeviceCompatible(IDevice& device) noexcept {
 
 } // namespace
 
-void Textured3DCubeSession::createSamplerAndTextures(const igl::IDevice& device) {
+void Textured3DCubeSession::createSamplerAndTextures(const IDevice& device) {
   // Sampler & Texture
   samp0_ = device.createSamplerState(
       SamplerStateDesc{

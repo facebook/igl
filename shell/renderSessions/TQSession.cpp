@@ -239,7 +239,7 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
 // @fb-only
 // @fb-only
 
-BufferDesc getVertexBufferDesc(const igl::IDevice& device, const VertexPosUv* vertexData) {
+BufferDesc getVertexBufferDesc(const IDevice& device, const VertexPosUv* vertexData) {
 // @fb-only
   // @fb-only
     // @fb-only
@@ -257,7 +257,7 @@ BufferDesc getVertexBufferDesc(const igl::IDevice& device, const VertexPosUv* ve
           .length = sizeof(VertexPosUv) * 4};
 }
 
-uint32_t getVertexBufferIndex(const igl::IDevice& device) {
+uint32_t getVertexBufferIndex(const IDevice& device) {
 // @fb-only
   // @fb-only
     return 0;
@@ -266,7 +266,7 @@ uint32_t getVertexBufferIndex(const igl::IDevice& device) {
   return 1;
 }
 
-ResourceStorage getIndexBufferResourceStorage(const igl::IDevice& device) {
+ResourceStorage getIndexBufferResourceStorage(const IDevice& device) {
 // @fb-only
   // @fb-only
     // @fb-only

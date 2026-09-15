@@ -39,7 +39,7 @@ class BufferSynchronizationManager {
   void manageEndOfFrameSync();
 
   // Upon completion of this command buffer's execution, trigger buffer synchronization.
-  void markCommandBufferAsEndOfFrame(const igl::ICommandBuffer& commandBuffer);
+  void markCommandBufferAsEndOfFrame(const ICommandBuffer& commandBuffer);
 
  private:
   size_t maxInFlightBuffers_ = 1;

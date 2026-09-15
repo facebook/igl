@@ -923,7 +923,7 @@ class ITexture : public ITrackedResource<ITexture>, public base::IAttachmentInte
    *
    * @return The returned Result indicates whether the range is valid or not.
    */
-  [[nodiscard]] Result validateRange(const igl::TextureRangeDesc& range) const noexcept;
+  [[nodiscard]] Result validateRange(const TextureRangeDesc& range) const noexcept;
   /**
    * @brief Returns a TextureRangeDesc for the texture's full range at the specified mip level.
    *

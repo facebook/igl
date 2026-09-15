@@ -154,7 +154,7 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   // ShaderStagesCreator::fromLibraryStringInput() does not expose FunctionConstantValues,
   // so we go through ShaderLibraryCreator and feed the resulting modules into
   // fromRenderModules() below.
-  const igl::BackendType backend = device.getBackendType();
+  const BackendType backend = device.getBackendType();
   std::shared_ptr<IShaderModule> metalVertexModule;
   std::shared_ptr<IShaderModule> metalFragmentModule;
   if (backend == igl::BackendType::Metal) {

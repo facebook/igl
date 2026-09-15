@@ -606,7 +606,7 @@ size_t ITexture::getEstimatedSizeInBytes() const {
 }
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
-Result ITexture::validateRange(const igl::TextureRangeDesc& range) const noexcept {
+Result ITexture::validateRange(const TextureRangeDesc& range) const noexcept {
   IGL_PROFILER_FUNCTION();
   auto result = range.validate();
   if (!result.isOk()) {

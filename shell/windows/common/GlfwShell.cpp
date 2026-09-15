@@ -159,19 +159,19 @@ bool GlfwShell::createWindow() noexcept {
     }
     uint32_t modifiers = 0;
     if (mods & GLFW_MOD_SHIFT) {
-      modifiers |= igl::shell::kKeyEventModifierShift;
+      modifiers |= kKeyEventModifierShift;
     }
     if (mods & GLFW_MOD_CONTROL) {
-      modifiers |= igl::shell::kKeyEventModifierControl;
+      modifiers |= kKeyEventModifierControl;
     }
     if (mods & GLFW_MOD_ALT) {
-      modifiers |= igl::shell::kKeyEventModifierOption;
+      modifiers |= kKeyEventModifierOption;
     }
     if (mods & GLFW_MOD_CAPS_LOCK) {
-      modifiers |= igl::shell::kKeyEventModifierCapsLock;
+      modifiers |= kKeyEventModifierCapsLock;
     }
     if (mods & GLFW_MOD_NUM_LOCK) {
-      modifiers |= igl::shell::kKeyEventModifierNumLock;
+      modifiers |= kKeyEventModifierNumLock;
     }
     shell->platform_->getInputDispatcher().queueEvent(
         KeyEvent(action == GLFW_PRESS, key, modifiers));

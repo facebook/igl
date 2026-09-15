@@ -38,7 +38,7 @@ ShaderModuleInfo getShaderModuleInfo(ShaderStage stage, BackendType backendType)
 } // namespace
 
 std::unique_ptr<IShaderStages> createRenderPipelineStages(
-    const igl::IDevice& device,
+    const IDevice& device,
     const IShaderProvider& vertShaderProvider,
     const IShaderProvider& fragShaderProvider) {
   Result result;
@@ -81,7 +81,7 @@ std::unique_ptr<IShaderStages> createRenderPipelineStages(
 }
 
 std::unique_ptr<IShaderStages> createComputePipelineStages(
-    const igl::IDevice& device,
+    const IDevice& device,
     const IShaderProvider& compShaderProvider) {
   Result result;
   auto backend = device.getBackendType();

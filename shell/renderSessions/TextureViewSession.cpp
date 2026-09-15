@@ -282,7 +282,7 @@ void TextureViewSession::initialize() noexcept {
       Color{0, 0, 0},
   };
   for (uint32_t i = 0; i != desc.numMipLevels; i++) {
-    const igl::RenderPassDesc pass = {
+    const RenderPassDesc pass = {
         .colorAttachments = {{
             .loadAction = LoadAction::Clear,
             .storeAction = StoreAction::Store,
@@ -357,7 +357,7 @@ void TextureViewSession::update(SurfaceTextures surfaceTextures) noexcept {
 
   const auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
-  const igl::RenderPassDesc renderPass{
+  const RenderPassDesc renderPass{
       .colorAttachments = {{
           .loadAction = LoadAction::Clear,
           .storeAction = StoreAction::Store,

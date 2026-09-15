@@ -30,7 +30,7 @@ BufferSynchronizationManager::BufferSynchronizationManager(size_t maxInFlightBuf
 }
 
 void BufferSynchronizationManager::markCommandBufferAsEndOfFrame(
-    const igl::ICommandBuffer& commandBuffer) {
+    const ICommandBuffer& commandBuffer) {
   IGL_PROFILER_FUNCTION();
   // Set a completion handler for this cmd buffer
   __weak dispatch_semaphore_t semaphore = frameBoundarySemaphore_;

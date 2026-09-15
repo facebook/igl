@@ -78,7 +78,7 @@ double RenderSession::getSeconds() noexcept {
       .count();
 }
 
-void RenderSession::setPreferredClearColor(const igl::Color& color) noexcept {
+void RenderSession::setPreferredClearColor(const Color& color) noexcept {
   preferredClearColor_ = color;
 }
 
