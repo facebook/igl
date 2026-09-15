@@ -958,6 +958,7 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   fragmentUniformDescriptors.back().offset = offsetof(FragmentParameters, testFloat);
   fragmentUniformDescriptors.back().numElements = 3;
   fragmentUniformDescriptors.back().elementStride = sizeof(Float1UnpackedData);
+  // NOLINTBEGIN(modernize-use-designated-initializers)
   fragmentParameters.testFloat[0] = {0.0f, {true, false, true}};
   fragmentParameters.testFloat[1] = {0.1f, {true, true, true}};
   fragmentParameters.testFloat[2] = {0.0f, {false, false, false}};
@@ -1058,6 +1059,7 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   fragmentParameters.testiVec4[0] = {{0, 0, 0, 0}, {true, false, true}};
   fragmentParameters.testiVec4[1] = {{4, 4, 4, 4}, {true, true, true}};
   fragmentParameters.testiVec4[2] = {{0, 0, 0, 0}, {false, false, false}};
+  // NOLINTEND(modernize-use-designated-initializers)
 
   // "testMat2"
   fragmentUniformDescriptors.emplace_back();
