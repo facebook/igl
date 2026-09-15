@@ -235,6 +235,7 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
 
       const uint32_t opCode = ids[ids[id.typeId].typeId].opCode;
 
+      // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
       switch (SpvOp(opCode)) {
       case SpvOpTypeStruct:
         info.buffers.push_back(

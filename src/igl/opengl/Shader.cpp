@@ -216,6 +216,7 @@ Result ShaderModule::create(const ShaderModuleDesc& desc) {
     return result;
   }
 
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (desc.info.stage) {
   case ShaderStage::Vertex:
     shaderType_ = GL_VERTEX_SHADER;

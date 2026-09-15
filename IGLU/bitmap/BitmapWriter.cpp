@@ -56,6 +56,7 @@ struct BufferOffsets {
 };
 
 BufferOffsets getBufferOffsets(TextureFormat format) {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (format) {
   case igl::TextureFormat::RGBA_UNorm8:
   case igl::TextureFormat::RGBX_UNorm8:
@@ -77,6 +78,7 @@ BufferOffsets getBufferOffsets(TextureFormat format) {
 } // namespace
 
 bool isSupportedBitmapTextureFormat(TextureFormat format) {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (format) {
   case igl::TextureFormat::RGBA_UNorm8:
   case igl::TextureFormat::RGBX_UNorm8:
