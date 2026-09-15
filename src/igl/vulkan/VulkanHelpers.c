@@ -24,6 +24,7 @@ const char* ivkGetVulkanResultString(VkResult result) {
 #define RESULT_CASE(res) \
   case res:              \
     return #res
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (result) {
     RESULT_CASE(VK_SUCCESS);
     RESULT_CASE(VK_NOT_READY);
