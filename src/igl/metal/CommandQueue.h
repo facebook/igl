@@ -23,7 +23,7 @@ class CommandQueue final : public ICommandQueue {
                DeviceStatistics& deviceStatistics) noexcept;
   std::shared_ptr<ICommandBuffer> createCommandBuffer(const CommandBufferDesc& desc,
                                                       Result* outResult) override;
-  SubmitHandle submit(const igl::ICommandBuffer& commandBuffer, bool endOfFrame = false) override;
+  SubmitHandle submit(const ICommandBuffer& commandBuffer, bool endOfFrame = false) override;
 
   IGL_INLINE id<MTLCommandQueue> get() const {
     return value_;

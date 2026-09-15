@@ -237,16 +237,16 @@ class RenderCommandEncoderTest : public ::testing::Test {
       encoder->bindIndexBuffer(*ib_, IndexFormat::UInt32);
     }
 
-    const igl::Viewport viewport = {.x = 0.0f,
-                                    .y = 0.0f,
-                                    .width = static_cast<float>(OFFSCREEN_RT_WIDTH),
-                                    .height = static_cast<float>(OFFSCREEN_RT_HEIGHT),
-                                    .minDepth = 0.0f,
-                                    .maxDepth = +1.0f};
-    const igl::ScissorRect scissor = {.x = 0,
-                                      .y = 0,
-                                      .width = static_cast<uint32_t>(OFFSCREEN_RT_WIDTH),
-                                      .height = static_cast<uint32_t>(OFFSCREEN_RT_HEIGHT)};
+    const Viewport viewport = {.x = 0.0f,
+                               .y = 0.0f,
+                               .width = static_cast<float>(OFFSCREEN_RT_WIDTH),
+                               .height = static_cast<float>(OFFSCREEN_RT_HEIGHT),
+                               .minDepth = 0.0f,
+                               .maxDepth = +1.0f};
+    const ScissorRect scissor = {.x = 0,
+                                 .y = 0,
+                                 .width = static_cast<uint32_t>(OFFSCREEN_RT_WIDTH),
+                                 .height = static_cast<uint32_t>(OFFSCREEN_RT_HEIGHT)};
     encoder->bindViewport(viewport);
     encoder->bindScissorRect(scissor);
 

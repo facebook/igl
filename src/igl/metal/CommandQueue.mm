@@ -63,7 +63,7 @@ std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandB
   return resource;
 }
 
-SubmitHandle CommandQueue::submit(const igl::ICommandBuffer& commandBuffer, bool endOfFrame) {
+SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool endOfFrame) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
   incrementDrawCount(commandBuffer.getCurrentDrawCount());
   deviceStatistics_.incrementDrawCount(commandBuffer.getCurrentDrawCount());

@@ -25,7 +25,7 @@ class RenderPipelineState final : public IRenderPipelineState {
   IGL_INLINE id<MTLRenderPipelineState> get() {
     return value_;
   }
-  [[nodiscard]] int getIndexByName(const igl::NameHandle& name, ShaderStage stage) const override;
+  [[nodiscard]] int getIndexByName(const NameHandle& name, ShaderStage stage) const override;
   [[nodiscard]] int getIndexByName(const std::string& name, ShaderStage stage) const override;
 
   std::shared_ptr<IRenderPipelineReflection> renderPipelineReflection() override;

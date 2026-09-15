@@ -39,8 +39,8 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder, public WithCo
                                     const Dependencies& dependencies) override;
   void endEncoding() override;
 
-  void pushDebugGroupLabel(const char* label, const igl::Color& color) const override;
-  void insertDebugEventLabel(const char* label, const igl::Color& color) const override;
+  void pushDebugGroupLabel(const char* label, const Color& color) const override;
+  void insertDebugEventLabel(const char* label, const Color& color) const override;
   void popDebugGroupLabel() const override;
   void bindUniform(const UniformDesc& uniformDesc, const void* data) override;
   void bindTexture(uint32_t index, ITexture* texture) override;

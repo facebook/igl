@@ -33,7 +33,7 @@ class CommandBuffer final : public ICommandBuffer,
 
   void present(const std::shared_ptr<ITexture>& surface) const override;
 
-  void pushDebugGroupLabel(const char* label, const igl::Color& color) const override;
+  void pushDebugGroupLabel(const char* label, const Color& color) const override;
 
   void popDebugGroupLabel() const override;
 

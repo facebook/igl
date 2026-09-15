@@ -29,7 +29,7 @@ void RenderPipelineState::setRenderPipelineReflection(
   (void)renderPipelineReflection;
 }
 
-int RenderPipelineState::getIndexByName(const igl::NameHandle& name, ShaderStage stage) const {
+int RenderPipelineState::getIndexByName(const NameHandle& name, ShaderStage stage) const {
   IGL_PROFILER_FUNCTION();
   if (reflection_ == nullptr) {
     return -1;

@@ -308,8 +308,7 @@ void RenderCommandEncoder::endEncoding() {
   }
 }
 
-void RenderCommandEncoder::pushDebugGroupLabel(const char* label,
-                                               const igl::Color& /*color*/) const {
+void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const Color& /*color*/) const {
   IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(adapter_);
   IGL_DEBUG_ASSERT(label != nullptr && *label);
@@ -321,8 +320,7 @@ void RenderCommandEncoder::pushDebugGroupLabel(const char* label,
   }
 }
 
-void RenderCommandEncoder::insertDebugEventLabel(const char* label,
-                                                 const igl::Color& /*color*/) const {
+void RenderCommandEncoder::insertDebugEventLabel(const char* label, const Color& /*color*/) const {
   IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(adapter_);
   IGL_DEBUG_ASSERT(label != nullptr && *label);

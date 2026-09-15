@@ -130,7 +130,7 @@ Result Texture::uploadInternal(TextureType type,
       return Result{Result::Code::InvalidOperation,
                     "AutoGenerateOnUpload requires mipLevel to be uploaded to be 0"};
     }
-    const auto* device = static_cast<const igl::metal::Device*>(&capabilities_);
+    const auto* device = static_cast<const Device*>(&capabilities_);
     if (device) {
       auto cmdQueue = const_cast<Device*>(device)->getMostRecentCommandQueue();
       if (!cmdQueue) {
@@ -186,7 +186,7 @@ Result Texture::getBytes(const TextureRangeDesc& range, void* outData, size_t by
   repackData(
       properties, range, tmpBuffer.get(), 0, static_cast<uint8_t*>(outData), bytesPerRow, true);
 
-  const igl::TextureFormat f = getFormat();
+  const TextureFormat f = getFormat();
   const TextureFormatProperties props = TextureFormatProperties::fromTextureFormat(f);
   auto bytesPerPixel = props.bytesPerBlock;
   if (f == TextureFormat::BGRA_SRGB || f == TextureFormat::BGRA_UNorm8) {

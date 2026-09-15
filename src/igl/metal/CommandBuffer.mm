@@ -51,7 +51,7 @@ void CommandBuffer::present(const std::shared_ptr<ITexture>& surface) const {
   }
 }
 
-void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& /*color*/) const {
+void CommandBuffer::pushDebugGroupLabel(const char* label, const Color& /*color*/) const {
   IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(label != nullptr && *label);
   [value_ pushDebugGroup:[NSString stringWithUTF8String:label] ?: @""];

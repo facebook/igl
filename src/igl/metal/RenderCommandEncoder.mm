@@ -211,15 +211,13 @@ void RenderCommandEncoder::endEncoding() {
   encoder_ = nil;
 }
 
-void RenderCommandEncoder::pushDebugGroupLabel(const char* label,
-                                               const igl::Color& /*color*/) const {
+void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const Color& /*color*/) const {
   IGL_DEBUG_ASSERT(encoder_);
   IGL_DEBUG_ASSERT(label != nullptr && *label);
   [encoder_ pushDebugGroup:[NSString stringWithUTF8String:label] ?: @""];
 }
 
-void RenderCommandEncoder::insertDebugEventLabel(const char* label,
-                                                 const igl::Color& /*color*/) const {
+void RenderCommandEncoder::insertDebugEventLabel(const char* label, const Color& /*color*/) const {
   IGL_DEBUG_ASSERT(encoder_);
   IGL_DEBUG_ASSERT(label != nullptr && *label);
   [encoder_ insertDebugSignpost:[NSString stringWithUTF8String:label] ?: @""];

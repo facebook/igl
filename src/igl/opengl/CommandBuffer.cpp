@@ -50,7 +50,7 @@ void CommandBuffer::waitUntilCompleted() {
   context_->finish();
 }
 
-void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& /*color*/) const {
+void CommandBuffer::pushDebugGroupLabel(const char* label, const Color& /*color*/) const {
   IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {

@@ -28,7 +28,7 @@ class Context;
 // @fb-only
 class PlatformDevice : public opengl::PlatformDevice {
  public:
-  static constexpr igl::PlatformDeviceType kType = igl::PlatformDeviceType::OpenGLEgl;
+  static constexpr PlatformDeviceType kType = igl::PlatformDeviceType::OpenGLEgl;
 
   explicit PlatformDevice(Device& owner);
   ~PlatformDevice() override = default;

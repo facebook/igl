@@ -345,11 +345,11 @@ void RenderPipelineReflection::cacheDescriptors() {
 
   for (const auto& entry : uniformDictionary_) {
     const UniformDesc& glDesc = entry.second;
-    const igl::TextureType textureType = toIGLTextureType(glDesc.type);
+    const TextureType textureType = toIGLTextureType(glDesc.type);
 
     // buffers
     if (textureType == igl::TextureType::Invalid) {
-      const igl::UniformType uniformType = toIGLUniformType(glDesc.type);
+      const UniformType uniformType = toIGLUniformType(glDesc.type);
 
       BufferArgDesc bufferDesc;
       bufferDesc.name = entry.first;
@@ -400,7 +400,7 @@ void RenderPipelineReflection::cacheDescriptors() {
 
     for (const auto& uniformEntry : blockDesc.members) {
       const auto& uniformDesc = uniformEntry.second;
-      const igl::UniformType uniformType = toIGLUniformType(uniformDesc.type);
+      const UniformType uniformType = toIGLUniformType(uniformDesc.type);
 
       igl::BufferArgDesc::BufferMemberDesc iglMemberDesc{
           .name = uniformEntry.first,

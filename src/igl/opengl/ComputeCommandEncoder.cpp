@@ -79,8 +79,7 @@ void ComputeCommandEncoder::dispatchThreadGroupsIndirect(IBuffer& indirectBuffer
   }
 }
 
-void ComputeCommandEncoder::pushDebugGroupLabel(const char* label,
-                                                const igl::Color& /*color*/) const {
+void ComputeCommandEncoder::pushDebugGroupLabel(const char* label, const Color& /*color*/) const {
   IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
@@ -91,8 +90,7 @@ void ComputeCommandEncoder::pushDebugGroupLabel(const char* label,
   }
 }
 
-void ComputeCommandEncoder::insertDebugEventLabel(const char* label,
-                                                  const igl::Color& /*color*/) const {
+void ComputeCommandEncoder::insertDebugEventLabel(const char* label, const Color& /*color*/) const {
   IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {

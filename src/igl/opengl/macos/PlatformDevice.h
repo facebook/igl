@@ -23,7 +23,7 @@ class Device;
 // @fb-only
 class PlatformDevice : public opengl::PlatformDevice {
  public:
-  static constexpr igl::PlatformDeviceType kType = igl::PlatformDeviceType::OpenGLMacOS;
+  static constexpr PlatformDeviceType kType = igl::PlatformDeviceType::OpenGLMacOS;
 
   PlatformDevice(Device& owner);
   ~PlatformDevice() override = default;
