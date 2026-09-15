@@ -10,7 +10,7 @@
 // @lint-ignore-every CLANGTIDY NonLocalizedStringChecker
 #import "AppDelegate.h"
 
-#import "ViewController.h"
+#import "ViewController.h" // NOLINT(facebook-unused-include-check)
 
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #import <igl/Common.h> // IWYU pragma: keep

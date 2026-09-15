@@ -16,7 +16,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
-#include <vector>
+#include <vector> // NOLINT(facebook-unused-include-check)
 #include <igl/Color.h> // IWYU pragma: export
 #include <igl/Core.h>
 #include <igl/base/Common.h>
