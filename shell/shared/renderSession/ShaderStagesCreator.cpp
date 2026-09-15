@@ -11,6 +11,7 @@ namespace igl::shell {
 
 namespace {
 const char* getEntryPointName(ShaderStage stage, BackendType backendType) {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (backendType) {
   case igl::BackendType::Metal:
     switch (stage) {
