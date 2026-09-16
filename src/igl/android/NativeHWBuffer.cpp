@@ -70,17 +70,20 @@ uint32_t getNativeHWFormat(TextureFormat iglFormat) {
   }
 }
 
-uint32_t getNativeHWBufferUsage(TextureDesc::TextureUsage iglUsage) {
+uint32_t getNativeHWBufferUsage(const TextureDesc& desc) {
   uint64_t bufferUsage = 0;
 
-  if (iglUsage & TextureDesc::TextureUsageBits::Sampled) {
+  if (desc.usage & TextureDesc::TextureUsageBits::Sampled) {
     bufferUsage |= AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
   }
-  if (iglUsage & TextureDesc::TextureUsageBits::Storage) {
-    bufferUsage |= AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN;
+  if (desc.usage & TextureDesc::TextureUsageBits::Storage) {
+    bufferUsage |= AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER;
   }
-  if (iglUsage & TextureDesc::TextureUsageBits::Attachment) {
+  if (desc.usage & TextureDesc::TextureUsageBits::Attachment) {
     bufferUsage |= AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT;
+  }
+  if (desc.storage == ResourceStorage::Shared) {
+    bufferUsage |= AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN;
   }
 
   return bufferUsage;
@@ -137,8 +140,7 @@ TextureDesc::TextureUsage getIglBufferUsage(uint32_t nativeUsage) {
   if (nativeUsage & AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE) {
     bufferUsage |= TextureDesc::TextureUsageBits::Sampled;
   }
-  if (nativeUsage &
-      (AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN)) {
+  if (nativeUsage & AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER) {
     bufferUsage |= TextureDesc::TextureUsageBits::Storage;
   }
   if (nativeUsage & AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT) {
@@ -156,7 +158,7 @@ Result allocateNativeHWBuffer(const TextureDesc& desc,
       .height = desc.height,
       .layers = 1,
       .format = getNativeHWFormat(desc.format),
-      .usage = getNativeHWBufferUsage(desc.usage),
+      .usage = getNativeHWBufferUsage(desc),
       .rfu0 = 0,
       .rfu1 = 0,
   };
@@ -217,8 +219,7 @@ Result INativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
   const bool isValid = desc.numLayers == 1 && desc.numSamples == 1 && desc.numMipLevels == 1 &&
                        desc.usage != 0 && desc.type == TextureType::TwoD &&
                        desc.tiling == igl::TextureDesc::TextureTiling::Optimal &&
-                       igl::android::getNativeHWFormat(desc.format) > 0 && !hasStorageAlready &&
-                       desc.storage == ResourceStorage::Shared;
+                       igl::android::getNativeHWFormat(desc.format) > 0 && !hasStorageAlready;
   if (!isValid) {
     IGL_LOG_ERROR("invalid desc for HW");
     // failed on (1 1 1) (5 1 0) (1 0 0)
