@@ -117,11 +117,13 @@ TimestampQueryFidelity TimestampQueries::getTimingFidelity() const {
   return timingFidelity_;
 }
 
-uint32_t TimestampQueries::beginElapsedQuery(VkCommandBuffer commandBuffer, const char* label) {
+uint32_t TimestampQueries::beginElapsedQuery(VkCommandBuffer commandBuffer,
+                                             uint32_t slotIndex,
+                                             const char* label) {
   IGL_PROFILER_FUNCTION();
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
 
-  if (!isValid() || commandBuffer == VK_NULL_HANDLE || currentSlot_ >= maxSlots_ ||
+  if (!isValid() || commandBuffer == VK_NULL_HANDLE || slotIndex >= maxSlots_ ||
       (commandBuffer_ != VK_NULL_HANDLE && commandBuffer_ != commandBuffer)) {
     return kInvalidSlot;
   }
@@ -138,7 +140,11 @@ uint32_t TimestampQueries::beginElapsedQuery(VkCommandBuffer commandBuffer, cons
     resetRecorded_ = true;
   }
 
-  const uint32_t slot = currentSlot_++;
+  if (slotIndex >= currentSlot_) {
+    currentSlot_ = slotIndex + 1;
+  }
+
+  const uint32_t slot = slotIndex;
   labels_[slot] = label != nullptr ? label : "";
   resultsReady_ = false;
 
@@ -198,17 +204,23 @@ bool TimestampQueries::updateResults() const {
     return false;
   }
 
-  for (uint32_t i = 0; i < queryCount; ++i) {
-    if (queryResults_[i].available == 0) {
-      return false;
-    }
-  }
-
+  bool anyAvailable = false;
   for (uint32_t slot = 0; slot < currentSlot_; ++slot) {
-    const uint64_t begin = queryResults_[slot * kTimestampsPerTimingSlot].timestamp;
-    const uint64_t end = queryResults_[slot * kTimestampsPerTimingSlot + 1].timestamp;
+    const QueryResult& beginQuery = queryResults_[slot * kTimestampsPerTimingSlot];
+    const QueryResult& endQuery = queryResults_[slot * kTimestampsPerTimingSlot + 1];
+    if (beginQuery.available == 0 || endQuery.available == 0) {
+      elapsedNanos_[slot] = 0;
+      continue;
+    }
+    const uint64_t begin = beginQuery.timestamp;
+    const uint64_t end = endQuery.timestamp;
     const uint64_t delta = end > begin ? end - begin : 0;
     elapsedNanos_[slot] = static_cast<uint64_t>(static_cast<double>(delta) * timestampPeriod_);
+    anyAvailable = true;
+  }
+
+  if (!anyAvailable) {
+    return false;
   }
 
   resultsReady_ = true;
