@@ -42,6 +42,15 @@ bool isNativeSwapChainBGR(const std::vector<VkSurfaceFormatKHR>& formats) {
   return false;
 }
 
+// invertRedAndBlue() asserts on anything outside the RGB/BGR pairs it knows about. Formats without
+// a counterpart report VK_FORMAT_UNDEFINED, which never matches an exposed surface format.
+VkFormat invertRedAndBlueOrUndefined(VkFormat format) {
+  if (igl::vulkan::isTextureFormatRGB(format) || igl::vulkan::isTextureFormatBGR(format)) {
+    return igl::vulkan::invertRedAndBlue(format);
+  }
+  return VK_FORMAT_UNDEFINED;
+}
+
 VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats,
                                            igl::TextureFormat textureFormat,
                                            igl::ColorSpace colorSpace) {
@@ -63,9 +72,18 @@ VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>
     }
   }
 
+  // a packed 10-bit format can have the opposite channel order from the swapchain's dominant 8-bit
+  // format, so try the other order before giving up on the requested color space
+  const VkFormat swapped = invertRedAndBlueOrUndefined(preferred.format);
+  for (const auto& curFormat : formats) {
+    if (curFormat.format == swapped && curFormat.colorSpace == preferred.colorSpace) {
+      return curFormat;
+    }
+  }
+
   // if we can't find a matching format and color space, fallback on matching only format
   for (const auto& curFormat : formats) {
-    if (curFormat.format == preferred.format) {
+    if (curFormat.format == preferred.format || curFormat.format == swapped) {
       return curFormat;
     }
   }
