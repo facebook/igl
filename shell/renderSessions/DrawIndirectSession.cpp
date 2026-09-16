@@ -308,8 +308,8 @@ void DrawIndirectSession::update(SurfaceTextures surfaceTextures) noexcept {
     computeEncoder->bindComputePipelineState(computePipelineState_);
     computeEncoder->bindBuffer(0, indirectBufferForCompute_.get());
     // dispatchThreadGroups arguments should be const&, not & ...
-    const igl::Dimensions threadgroupCount(1, 1, 1);
-    const igl::Dimensions threadgroupSize(1, 1, 1);
+    const Dimensions threadgroupCount(1, 1, 1);
+    const Dimensions threadgroupSize(1, 1, 1);
     computeEncoder->dispatchThreadGroups(threadgroupCount, threadgroupSize);
     computeEncoder->endEncoding();
     computeEncoder.reset();

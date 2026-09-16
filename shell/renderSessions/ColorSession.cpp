@@ -48,7 +48,7 @@ const uint16_t kIndexData[] = {0, 1, 2, 1, 3, 2};
 // @fb-only
 // @fb-only
 
-BufferDesc getVertexBufferDesc(const igl::IDevice& device) {
+BufferDesc getVertexBufferDesc(const IDevice& device) {
 // @fb-only
   // @fb-only
     // @fb-only
@@ -67,7 +67,7 @@ BufferDesc getVertexBufferDesc(const igl::IDevice& device) {
           .debugName = "vertex"};
 }
 
-uint32_t getVertexBufferIndex(const igl::IDevice& device) {
+uint32_t getVertexBufferIndex(const IDevice& device) {
 // @fb-only
   // @fb-only
     return 0;
@@ -76,7 +76,7 @@ uint32_t getVertexBufferIndex(const igl::IDevice& device) {
   return 1;
 }
 
-ResourceStorage getIndexBufferResourceStorage(const igl::IDevice& device) {
+ResourceStorage getIndexBufferResourceStorage(const IDevice& device) {
 // @fb-only
   // @fb-only
     // @fb-only

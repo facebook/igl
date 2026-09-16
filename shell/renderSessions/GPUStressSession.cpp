@@ -522,7 +522,7 @@ glm::vec3 GPUStressSession::animateCube(int counter,
   return pos;
 }
 
-void GPUStressSession::createSamplerAndTextures(const igl::IDevice& device) {
+void GPUStressSession::createSamplerAndTextures(const IDevice& device) {
   // Sampler & Texture
   const SamplerStateDesc samplerDesc{
       .minFilter = SamplerMinMagFilter::Linear,
@@ -800,7 +800,7 @@ void GPUStressSession::setModelViewMatrix(float angle,
   vertexParameters_.scaleZ = scaleZ;
 }
 
-void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
+void GPUStressSession::initState(const SurfaceTextures& surfaceTextures) {
   Result ret;
 
   // TODO: fix framebuffers so you can update the resolve texture
@@ -836,18 +836,18 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
       // without a depth buffer (e.g., 2D overlay sessions). Only build the MSAA
       // depth attachment if the platform actually provided a depth surface.
       if (surfaceTextures.depth) {
-        const igl::TextureDesc depthDesc = {.width = dimensions.width,
-                                            .height = dimensions.height,
-                                            .depth = 1,
-                                            .numLayers = surfaceTextures.depth->getNumLayers(),
-                                            .numSamples = kMsaaSamples,
-                                            .usage = TextureDesc::TextureUsageBits::Attachment,
-                                            .numMipLevels = 1,
-                                            .type = surfaceTextures.depth->getNumLayers() > 1
-                                                        ? TextureType::TwoDArray
-                                                        : TextureType::TwoD,
-                                            .format = surfaceTextures.depth->getFormat(),
-                                            .storage = igl::ResourceStorage::Private};
+        const TextureDesc depthDesc = {.width = dimensions.width,
+                                       .height = dimensions.height,
+                                       .depth = 1,
+                                       .numLayers = surfaceTextures.depth->getNumLayers(),
+                                       .numSamples = kMsaaSamples,
+                                       .usage = TextureDesc::TextureUsageBits::Attachment,
+                                       .numMipLevels = 1,
+                                       .type = surfaceTextures.depth->getNumLayers() > 1
+                                                   ? TextureType::TwoDArray
+                                                   : TextureType::TwoD,
+                                       .format = surfaceTextures.depth->getFormat(),
+                                       .storage = igl::ResourceStorage::Private};
 
         framebufferDesc.depthAttachment.texture =
             getPlatform().getDevice().createTexture(depthDesc, nullptr);
@@ -895,7 +895,7 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
   }
 }
 
-void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
+void GPUStressSession::drawCubes(const SurfaceTextures& surfaceTextures,
                                  std::shared_ptr<IRenderCommandEncoder> commands) {
   static float angle = 0.0f;
   static int frameCount = 0;

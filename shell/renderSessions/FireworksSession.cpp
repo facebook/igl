@@ -40,9 +40,7 @@ struct Uniforms {
   glm::mat4 mvp[2];
 };
 
-[[maybe_unused]] glm::mat4 perspectiveAsymmetricFovRH(const igl::shell::Fov& fov,
-                                                      float nearZ,
-                                                      float farZ) {
+[[maybe_unused]] glm::mat4 perspectiveAsymmetricFovRH(const Fov& fov, float nearZ, float farZ) {
   const float tanLeft = std::tan(fov.angleLeft);
   const float tanRight = std::tan(fov.angleRight);
   const float tanDown = std::tan(fov.angleDown);
@@ -1055,16 +1053,16 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
   const auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
   IGL_DEBUG_ASSERT(buffer != nullptr);
 
-  const igl::Viewport viewport = {.x = 0.0f,
-                                  .y = 0.0f,
-                                  .width = static_cast<float>(dimensions.width),
-                                  .height = static_cast<float>(dimensions.height),
-                                  .minDepth = 0.0f,
-                                  .maxDepth = +1.0f};
-  const igl::ScissorRect scissor = {.x = 0,
-                                    .y = 0,
-                                    .width = static_cast<uint32_t>(dimensions.width),
-                                    .height = static_cast<uint32_t>(dimensions.height)};
+  const Viewport viewport = {.x = 0.0f,
+                             .y = 0.0f,
+                             .width = static_cast<float>(dimensions.width),
+                             .height = static_cast<float>(dimensions.height),
+                             .minDepth = 0.0f,
+                             .maxDepth = +1.0f};
+  const ScissorRect scissor = {.x = 0,
+                               .y = 0,
+                               .width = static_cast<uint32_t>(dimensions.width),
+                               .height = static_cast<uint32_t>(dimensions.height)};
 
   const auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_DEBUG_ASSERT(commands != nullptr);

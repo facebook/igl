@@ -282,7 +282,7 @@ void ClothSimulationSession::initialize() noexcept {
 }
 
 void ClothSimulationSession::createOrUpdateDefaultFramebuffer(
-    const igl::SurfaceTextures& surfaceTextures) {
+    const SurfaceTextures& surfaceTextures) {
   if (framebuffer_) {
     framebuffer_->updateDrawable(surfaceTextures.color);
     return;

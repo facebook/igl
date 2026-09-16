@@ -109,7 +109,7 @@ void writeBitmap(std::ostream& stream,
     return;
   }
 
-  const igl::CommandQueueDesc desc{};
+  const CommandQueueDesc desc{};
   Result result;
   const auto commandQueue = device.createCommandQueue(desc, &result);
   if (!IGL_DEBUG_VERIFY(result.isOk()) || !IGL_DEBUG_VERIFY(commandQueue)) {

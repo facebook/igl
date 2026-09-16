@@ -103,9 +103,9 @@ class GPUStressSession : public RenderSession {
   void setModelViewMatrix(float angle, float scaleZ, float offsetX, float offsetY, float offsetZ);
   void setProjectionMatrix(float aspectRatio);
 
-  void drawCubes(const igl::SurfaceTextures& surfaceTextures,
+  void drawCubes(const SurfaceTextures& surfaceTextures,
                  std::shared_ptr<IRenderCommandEncoder> commands);
-  void initState(const igl::SurfaceTextures& surfaceTextures);
+  void initState(const SurfaceTextures& surfaceTextures);
   void createCubes();
   void initSystemSettings();
 

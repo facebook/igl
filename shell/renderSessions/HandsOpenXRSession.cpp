@@ -140,7 +140,7 @@ struct Vertex {
   return device.hasFeature(DeviceFeatures::Multiview);
 }
 
-[[nodiscard]] glm::mat4 perspectiveAsymmetricFovRH(const igl::shell::Fov& fov,
+[[nodiscard]] glm::mat4 perspectiveAsymmetricFovRH(const Fov& fov,
                                                    float nearZ,
                                                    float farZ) noexcept {
   glm::mat4 mat;

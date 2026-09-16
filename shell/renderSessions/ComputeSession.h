@@ -23,7 +23,7 @@ class ComputeSession : public ShellRenderSession {
   void update(SurfaceTextures surfaceTextures) noexcept override;
 
  private:
-  void createOrUpdateDefaultFramebuffer(const igl::SurfaceTextures& surfaceTextures);
+  void createOrUpdateDefaultFramebuffer(const SurfaceTextures& surfaceTextures);
   std::string shaderForStage(ShaderStage stage, int computePipelineIndex = 0);
 
  private:

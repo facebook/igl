@@ -23,8 +23,8 @@ class MRTSession : public RenderSession {
 
  private:
   std::shared_ptr<ITexture> createTexture2D(const std::shared_ptr<ITexture>& tex);
-  void createOrUpdateFramebufferDisplayLast(const igl::SurfaceTextures& surfaceTextures);
-  void createOrUpdateFramebufferMRT(const igl::SurfaceTextures& surfaceTextures);
+  void createOrUpdateFramebufferDisplayLast(const SurfaceTextures& surfaceTextures);
+  void createOrUpdateFramebufferMRT(const SurfaceTextures& surfaceTextures);
 
  private:
   // for the MRT pass

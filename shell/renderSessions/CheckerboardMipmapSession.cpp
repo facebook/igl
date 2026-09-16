@@ -63,7 +63,7 @@ glm::mat4 getMVP(float aspectRatio) noexcept {
   return projection * view;
 }
 
-BufferDesc getVertexBufferDesc(const igl::IDevice& device) {
+BufferDesc getVertexBufferDesc(const IDevice& device) {
 // @fb-only
   // @fb-only
     // @fb-only
@@ -81,7 +81,7 @@ BufferDesc getVertexBufferDesc(const igl::IDevice& device) {
           .length = sizeof(kVertexData)};
 }
 
-uint32_t getVertexBufferIndex(const igl::IDevice& device) {
+uint32_t getVertexBufferIndex(const IDevice& device) {
 // @fb-only
   // @fb-only
     // @fb-only
@@ -90,7 +90,7 @@ uint32_t getVertexBufferIndex(const igl::IDevice& device) {
   return 1;
 }
 
-ResourceStorage getIndexBufferResourceStorage(const igl::IDevice& device) {
+ResourceStorage getIndexBufferResourceStorage(const IDevice& device) {
 // @fb-only
   // @fb-only
     // @fb-only

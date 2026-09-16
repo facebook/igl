@@ -31,7 +31,7 @@ void ImguiSession::update(SurfaceTextures surfaceTextures) noexcept {
   if (!surfaceTextures.color) {
     return;
   }
-  const igl::DeviceScope deviceScope(getPlatform().getDevice());
+  const DeviceScope deviceScope(getPlatform().getDevice());
 
   auto cmdBuffer = commandQueue_->createCommandBuffer({}, nullptr);
 

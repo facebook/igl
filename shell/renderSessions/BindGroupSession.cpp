@@ -285,7 +285,7 @@ std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& devi
 
 namespace igl::shell {
 
-void BindGroupSession::createSamplerAndTextures(const igl::IDevice& device) {
+void BindGroupSession::createSamplerAndTextures(const IDevice& device) {
   // Sampler & Texture
   const auto sampler = device.createSamplerState(SamplerStateDesc::newLinearMipmapped(), nullptr);
 

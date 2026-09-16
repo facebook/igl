@@ -148,7 +148,7 @@ constexpr uint16_t kIndexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 
   return device.hasFeature(DeviceFeatures::Multiview);
 }
 
-[[nodiscard]] glm::mat4 perspectiveAsymmetricFovRH(const igl::shell::Fov& fov,
+[[nodiscard]] glm::mat4 perspectiveAsymmetricFovRH(const Fov& fov,
                                                    float nearZ,
                                                    float farZ) noexcept {
   glm::mat4 mat;
@@ -185,7 +185,7 @@ constexpr uint16_t kIndexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 
 }
 } // namespace
 
-void HelloOpenXRSession::createSamplerAndTextures(const igl::IDevice& device) {
+void HelloOpenXRSession::createSamplerAndTextures(const IDevice& device) {
   // Sampler & Texture
   samp0_ = device.createSamplerState(
       SamplerStateDesc{

@@ -144,7 +144,7 @@ void ComputeSession::initialize() noexcept {
   outTex_ = device.createTexture(desc, nullptr);
   IGL_DEBUG_ASSERT(outTex_ != nullptr);
 
-  const igl::Result result;
+  const Result result;
 
   {
     const auto vertProvider = ComputeSessionVertShaderProvider();
@@ -182,7 +182,7 @@ void ComputeSession::initialize() noexcept {
   };
 }
 
-void ComputeSession::createOrUpdateDefaultFramebuffer(const igl::SurfaceTextures& surfaceTextures) {
+void ComputeSession::createOrUpdateDefaultFramebuffer(const SurfaceTextures& surfaceTextures) {
   if (framebuffer_) {
     framebuffer_->updateDrawable(surfaceTextures.color);
     return;
