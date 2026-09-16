@@ -7,7 +7,7 @@
 
 #include <shell/shared/platform/apple/PresentationRateApple.h>
 
-#import <MetalKit/MTKView.h>
+#import <MetalKit/MTKView.h> // IWYU pragma: keep
 #include <cmath>
 #include <memory>
 #include <shell/shared/platform/TickSourceRateBackend.h>
