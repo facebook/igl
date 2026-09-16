@@ -177,6 +177,9 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   BindGroupBufferHandle pendingBindGroupBuffer_ = {};
   uint32_t numDynamicOffsets_ = 0;
   uint32_t dynamicOffsets_[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
+
+  std::shared_ptr<ITimestampQueries> timestampQueries_;
+  uint32_t timestampQuerySlotIndex_ = 0;
 };
 
 } // namespace igl::vulkan
