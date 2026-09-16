@@ -28,6 +28,13 @@ struct TimestampQueryResult {
   bool valid = false;
 };
 
+enum class TimestampIntervalSemantics : uint8_t {
+  /// Each slot is an independently measured duration and aggregates are the sum of valid slots.
+  IndependentElapsed,
+  /// Slot starts can share a frame origin, so aggregates use globally serialized end slices.
+  CommonStartSerializedEnds,
+};
+
 class ITimestampQueries : public ITrackedResource<ITimestampQueries> {
  public:
   ~ITimestampQueries() override = default;
@@ -78,6 +85,13 @@ class ITimestampQueries : public ITrackedResource<ITimestampQueries> {
   /// with explicit driver error states override this method.
   [[nodiscard]] virtual TimestampQueryResult getElapsedNanosResult(uint32_t slotIndex) const {
     return {.elapsedNanos = getElapsedNanos(slotIndex), .valid = true};
+  }
+
+  /// Describes how per-slot timestamp intervals can be aggregated. Independent intervals can be
+  /// summed directly. Common-start intervals overlap and require global end-ordered serialization
+  /// before attributing an aggregate total. Defaults to independent elapsed intervals.
+  [[nodiscard]] virtual TimestampIntervalSemantics intervalSemantics() const {
+    return TimestampIntervalSemantics::IndependentElapsed;
   }
 
   /// Absolute GPU start timestamp for a timing slot, in nanoseconds.

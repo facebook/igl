@@ -89,6 +89,10 @@ TimestampQueryResult TimestampQueries::getElapsedNanosResult(uint32_t slotIndex)
   return {.elapsedNanos = 0, .valid = true};
 }
 
+TimestampIntervalSemantics TimestampQueries::intervalSemantics() const {
+  return TimestampIntervalSemantics::CommonStartSerializedEnds;
+}
+
 uint64_t TimestampQueries::getStartNanos(uint32_t slotIndex) const {
   IGL_PROFILER_FUNCTION();
   if (!resolved_.load(std::memory_order_acquire)) {

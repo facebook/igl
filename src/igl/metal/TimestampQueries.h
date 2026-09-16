@@ -33,6 +33,7 @@ class TimestampQueries : public ITimestampQueries {
   bool resultsAvailable() const override;
   uint64_t getElapsedNanos(uint32_t slotIndex) const override;
   TimestampQueryResult getElapsedNanosResult(uint32_t slotIndex) const override;
+  TimestampIntervalSemantics intervalSemantics() const override;
   uint64_t getStartNanos(uint32_t slotIndex) const override;
   uint64_t getEndNanos(uint32_t slotIndex) const override;
   uint64_t getFrameElapsedNanos() const override;

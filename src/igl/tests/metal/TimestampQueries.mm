@@ -99,4 +99,10 @@ TEST_F(TimestampQueriesTest, FrameElapsedUsesWallClockSpanAcrossSlots) {
   EXPECT_EQ(queries->getFrameElapsedNanos(), 400u);
 }
 
+TEST_F(TimestampQueriesTest, UsesCommonStartSerializedEndIntervalSemantics) {
+  auto queries = makeResolved({100, 300});
+
+  EXPECT_EQ(queries->intervalSemantics(), TimestampIntervalSemantics::CommonStartSerializedEnds);
+}
+
 } // namespace igl::metal
