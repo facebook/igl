@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cstring>
 #include <unordered_map>
 #include <igl/RenderPipelineState.h>
 #include <igl/vulkan/Common.h>
