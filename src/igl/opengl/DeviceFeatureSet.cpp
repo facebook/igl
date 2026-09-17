@@ -1521,6 +1521,7 @@ bool DeviceFeatureSet::hasInternalRequirement(InternalRequirement requirement) c
 bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const {
   IGL_PROFILER_FUNCTION();
   GLint tsize = 0;
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (featureLimits) {
   case DeviceFeatureLimits::MaxTextureDimension1D2D:
     glContext_.getIntegerv(GL_MAX_TEXTURE_SIZE, &tsize);
@@ -1785,6 +1786,7 @@ DeviceFeatureSet::getColorUNormWideTextureFormatCapabilities(TextureFormat forma
   const auto all = sampled | sampledFiltered | storage | attachment | sampledAttachment;
 
   ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (format) {
   case TextureFormat::R_UNorm16:
   case TextureFormat::RG_UNorm16:
@@ -1886,6 +1888,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getColorF32TextureFor
   const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
 
   ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (format) {
   case TextureFormat::RGBA_F32:
     if (hasFeature(DeviceFeatures::TextureFloat)) {
@@ -1950,6 +1953,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getSpecialColorTextur
   const auto all = sampled | sampledFiltered | storage | attachment | sampledAttachment;
 
   ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (format) {
   case TextureFormat::R_UInt16:
   case TextureFormat::RG_UInt16:
@@ -2154,6 +2158,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getStencilTextureForm
   const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
 
   ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (format) {
   case TextureFormat::S8_UInt_Z24_UNorm:
     if (hasTextureFeature(TextureFeatures::Depth24Stencil8)) {
@@ -2192,6 +2197,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getCompressedTextureF
   const auto unsupported = ICapabilities::TextureFormatCapabilityBits::Unsupported;
 
   ICapabilities::TextureFormatCapabilities capabilities = unsupported;
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (format) {
   case TextureFormat::RGBA_ASTC_4x4:
   case TextureFormat::SRGB8_A8_ASTC_4x4:
@@ -2285,6 +2291,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
   ICapabilities::TextureFormatCapabilities capabilities = unsupported;
 
   // First check common formats
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (format) {
   case TextureFormat::LA_UNorm8:
   case TextureFormat::L_UNorm8:
