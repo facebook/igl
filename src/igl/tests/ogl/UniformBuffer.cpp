@@ -959,9 +959,12 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   fragmentUniformDescriptors.back().numElements = 3;
   fragmentUniformDescriptors.back().elementStride = sizeof(Float1UnpackedData);
   // NOLINTBEGIN(modernize-use-designated-initializers)
-  fragmentParameters.testFloat[0] = {.float1 = {0.0f}, .padding = {true, false, true}};
-  fragmentParameters.testFloat[1] = {.float1 = {0.1f}, .padding = {true, true, true}};
-  fragmentParameters.testFloat[2] = {.float1 = {0.0f}, .padding = {false, false, false}};
+  // simd::float1 is a scalar on Apple but an aggregate in simdstub.h, so the value has to be
+  // written as an explicit cast rather than a braced initializer.
+  fragmentParameters.testFloat[0] = {.float1 = simd::float1{0.0f}, .padding = {true, false, true}};
+  fragmentParameters.testFloat[1] = {.float1 = simd::float1{0.1f}, .padding = {true, true, true}};
+  fragmentParameters.testFloat[2] = {.float1 = simd::float1{0.0f},
+                                     .padding = {false, false, false}};
 
   // "testVec2"
   fragmentUniformDescriptors.emplace_back();
@@ -1026,9 +1029,9 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   fragmentUniformDescriptors.back().offset = offsetof(FragmentParameters, testInt);
   fragmentUniformDescriptors.back().numElements = 3;
   fragmentUniformDescriptors.back().elementStride = sizeof(Int1UnpackedData);
-  fragmentParameters.testInt[0] = {.int1 = {0}, .padding = {true, false, true}};
-  fragmentParameters.testInt[1] = {.int1 = {42}, .padding = {true, true, true}};
-  fragmentParameters.testInt[2] = {.int1 = {0}, .padding = {false, false, false}};
+  fragmentParameters.testInt[0] = {.int1 = simd::int1{0}, .padding = {true, false, true}};
+  fragmentParameters.testInt[1] = {.int1 = simd::int1{42}, .padding = {true, true, true}};
+  fragmentParameters.testInt[2] = {.int1 = simd::int1{0}, .padding = {false, false, false}};
 
   // "testiVec2"
   fragmentUniformDescriptors.emplace_back();
