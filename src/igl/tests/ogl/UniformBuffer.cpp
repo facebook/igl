@@ -959,9 +959,9 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   fragmentUniformDescriptors.back().numElements = 3;
   fragmentUniformDescriptors.back().elementStride = sizeof(Float1UnpackedData);
   // NOLINTBEGIN(modernize-use-designated-initializers)
-  fragmentParameters.testFloat[0] = {0.0f, {true, false, true}};
-  fragmentParameters.testFloat[1] = {0.1f, {true, true, true}};
-  fragmentParameters.testFloat[2] = {0.0f, {false, false, false}};
+  fragmentParameters.testFloat[0] = {.float1 = {0.0f}, .padding = {true, false, true}};
+  fragmentParameters.testFloat[1] = {.float1 = {0.1f}, .padding = {true, true, true}};
+  fragmentParameters.testFloat[2] = {.float1 = {0.0f}, .padding = {false, false, false}};
 
   // "testVec2"
   fragmentUniformDescriptors.emplace_back();
@@ -971,9 +971,9 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   fragmentUniformDescriptors.back().offset = offsetof(FragmentParameters, testVec2);
   fragmentUniformDescriptors.back().numElements = 3;
   fragmentUniformDescriptors.back().elementStride = sizeof(Float2UnpackedData);
-  fragmentParameters.testVec2[0] = {{0.0f, 0.0f}, {true, false, true}};
-  fragmentParameters.testVec2[1] = {{0.2f, 0.2f}, {true, true, true}};
-  fragmentParameters.testVec2[2] = {{0.0f, 0.0f}, {false, false, false}};
+  fragmentParameters.testVec2[0] = {.float2 = {0.0f, 0.0f}, .padding = {true, false, true}};
+  fragmentParameters.testVec2[1] = {.float2 = {0.2f, 0.2f}, .padding = {true, true, true}};
+  fragmentParameters.testVec2[2] = {.float2 = {0.0f, 0.0f}, .padding = {false, false, false}};
 
   // "testVec3"
   fragmentUniformDescriptors.emplace_back();
@@ -996,9 +996,12 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   fragmentUniformDescriptors.back().offset = offsetof(FragmentParameters, testVec4);
   fragmentUniformDescriptors.back().numElements = 3;
   fragmentUniformDescriptors.back().elementStride = sizeof(Float4UnpackedData);
-  fragmentParameters.testVec4[0] = {{0.0f, 0.0f, 0.0f, 0.0f}, {true, false, true}};
-  fragmentParameters.testVec4[1] = {{0.4f, 0.4f, 0.4f, 0.4f}, {true, true, true}};
-  fragmentParameters.testVec4[2] = {{0.0f, 0.0f, 0.0f, 0.0f}, {false, false, false}};
+  fragmentParameters.testVec4[0] = {.float4 = {0.0f, 0.0f, 0.0f, 0.0f},
+                                    .padding = {true, false, true}};
+  fragmentParameters.testVec4[1] = {.float4 = {0.4f, 0.4f, 0.4f, 0.4f},
+                                    .padding = {true, true, true}};
+  fragmentParameters.testVec4[2] = {.float4 = {0.0f, 0.0f, 0.0f, 0.0f},
+                                    .padding = {false, false, false}};
 
   // "testBool"
   fragmentUniformDescriptors.emplace_back();
@@ -1008,9 +1011,12 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   fragmentUniformDescriptors.back().offset = offsetof(FragmentParameters, testBool);
   fragmentUniformDescriptors.back().numElements = 3;
   fragmentUniformDescriptors.back().elementStride = sizeof(BooleanUnpackedData);
-  fragmentParameters.testBool[0] = {false, {false, false, true}, {0.0f, 0.1f, 0.2f}};
-  fragmentParameters.testBool[1] = {true, {false, false, true}, {0.3f, 0.4f, 0.5f}};
-  fragmentParameters.testBool[2] = {false, {true, true, true}, {0.6f, 0.7f, 0.8f}};
+  fragmentParameters.testBool[0] = {
+      .data = false, .padding = {false, false, true}, .morePadding = {0.0f, 0.1f, 0.2f}};
+  fragmentParameters.testBool[1] = {
+      .data = true, .padding = {false, false, true}, .morePadding = {0.3f, 0.4f, 0.5f}};
+  fragmentParameters.testBool[2] = {
+      .data = false, .padding = {true, true, true}, .morePadding = {0.6f, 0.7f, 0.8f}};
 
   // "testInt"
   fragmentUniformDescriptors.emplace_back();
@@ -1020,9 +1026,9 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   fragmentUniformDescriptors.back().offset = offsetof(FragmentParameters, testInt);
   fragmentUniformDescriptors.back().numElements = 3;
   fragmentUniformDescriptors.back().elementStride = sizeof(Int1UnpackedData);
-  fragmentParameters.testInt[0] = {0, {true, false, true}};
-  fragmentParameters.testInt[1] = {42, {true, true, true}};
-  fragmentParameters.testInt[2] = {0, {false, false, false}};
+  fragmentParameters.testInt[0] = {.int1 = {0}, .padding = {true, false, true}};
+  fragmentParameters.testInt[1] = {.int1 = {42}, .padding = {true, true, true}};
+  fragmentParameters.testInt[2] = {.int1 = {0}, .padding = {false, false, false}};
 
   // "testiVec2"
   fragmentUniformDescriptors.emplace_back();
@@ -1032,9 +1038,9 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   fragmentUniformDescriptors.back().offset = offsetof(FragmentParameters, testiVec2);
   fragmentUniformDescriptors.back().numElements = 3;
   fragmentUniformDescriptors.back().elementStride = sizeof(Int2UnpackedData);
-  fragmentParameters.testiVec2[0] = {{0, 0}, {true, false, true}};
-  fragmentParameters.testiVec2[1] = {{2, 2}, {true, true, true}};
-  fragmentParameters.testiVec2[2] = {{0, 0}, {false, false, false}};
+  fragmentParameters.testiVec2[0] = {.int2 = {0, 0}, .padding = {true, false, true}};
+  fragmentParameters.testiVec2[1] = {.int2 = {2, 2}, .padding = {true, true, true}};
+  fragmentParameters.testiVec2[2] = {.int2 = {0, 0}, .padding = {false, false, false}};
 
   // "testiVec3"
   fragmentUniformDescriptors.emplace_back();
@@ -1056,9 +1062,9 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   fragmentUniformDescriptors.back().offset = offsetof(FragmentParameters, testiVec4);
   fragmentUniformDescriptors.back().numElements = 3;
   fragmentUniformDescriptors.back().elementStride = sizeof(Int4UnpackedData);
-  fragmentParameters.testiVec4[0] = {{0, 0, 0, 0}, {true, false, true}};
-  fragmentParameters.testiVec4[1] = {{4, 4, 4, 4}, {true, true, true}};
-  fragmentParameters.testiVec4[2] = {{0, 0, 0, 0}, {false, false, false}};
+  fragmentParameters.testiVec4[0] = {.int4 = {0, 0, 0, 0}, .padding = {true, false, true}};
+  fragmentParameters.testiVec4[1] = {.int4 = {4, 4, 4, 4}, .padding = {true, true, true}};
+  fragmentParameters.testiVec4[2] = {.int4 = {0, 0, 0, 0}, .padding = {false, false, false}};
   // NOLINTEND(modernize-use-designated-initializers)
 
   // "testMat2"

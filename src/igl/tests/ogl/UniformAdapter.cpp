@@ -55,10 +55,11 @@ TEST_F(UniformAdapterOGLTest, SetUniform) {
   opengl::UniformAdapter adapter(*context_, opengl::UniformAdapter::PipelineType::Render);
 
   // Create a uniform descriptor for a float uniform
-  UniformDesc desc;
-  desc.location = 0;
-  desc.type = UniformType::Float;
-  desc.numElements = 1;
+  const UniformDesc desc = {
+      .location = 0,
+      .type = UniformType::Float,
+      .numElements = 1,
+  };
 
   float value = 42.0f;
   Result ret;
@@ -76,10 +77,11 @@ TEST_F(UniformAdapterOGLTest, ClearUniformBuffers) {
   opengl::UniformAdapter adapter(*context_, opengl::UniformAdapter::PipelineType::Render);
 
   // Set a uniform
-  UniformDesc desc;
-  desc.location = 0;
-  desc.type = UniformType::Float;
-  desc.numElements = 1;
+  const UniformDesc desc = {
+      .location = 0,
+      .type = UniformType::Float,
+      .numElements = 1,
+  };
 
   float value = 1.0f;
   Result ret;
