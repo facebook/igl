@@ -77,9 +77,8 @@ TEST_F(ComputePipelineStateVulkanTest, CreateComputePipeline) {
   auto stages = ShaderStagesCreator::fromComputeModule(*device_, computeModule, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  ComputePipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = std::move(stages);
-  pipelineDesc.debugName = "TestComputePipeline";
+  const ComputePipelineDesc pipelineDesc{.shaderStages = std::move(stages),
+                                         .debugName = "TestComputePipeline"};
 
   auto pipeline = device_->createComputePipeline(pipelineDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -94,9 +93,7 @@ TEST_F(ComputePipelineStateVulkanTest, CreateComputePipeline) {
 TEST_F(ComputePipelineStateVulkanTest, CreateComputePipelineNullStages) {
   Result ret;
 
-  ComputePipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = nullptr;
-  pipelineDesc.debugName = "TestNullStages";
+  const ComputePipelineDesc pipelineDesc{.shaderStages = nullptr, .debugName = "TestNullStages"};
 
   auto pipeline = device_->createComputePipeline(pipelineDesc, &ret);
   EXPECT_FALSE(ret.isOk());
@@ -123,9 +120,8 @@ TEST_F(ComputePipelineStateVulkanTest, GetComputePipelineDesc) {
   auto stages = ShaderStagesCreator::fromComputeModule(*device_, computeModule, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  ComputePipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = std::move(stages);
-  pipelineDesc.debugName = "TestGetDesc";
+  const ComputePipelineDesc pipelineDesc{.shaderStages = std::move(stages),
+                                         .debugName = "TestGetDesc"};
 
   auto pipeline = device_->createComputePipeline(pipelineDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -159,9 +155,8 @@ TEST_F(ComputePipelineStateVulkanTest, GetVkPipeline) {
   auto stages = ShaderStagesCreator::fromComputeModule(*device_, computeModule, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  ComputePipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = std::move(stages);
-  pipelineDesc.debugName = "TestGetVkPipeline";
+  const ComputePipelineDesc pipelineDesc{.shaderStages = std::move(stages),
+                                         .debugName = "TestGetVkPipeline"};
 
   auto pipeline = device_->createComputePipeline(pipelineDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -199,13 +194,13 @@ TEST_F(ComputePipelineStateVulkanTest, BindAndDispatch) {
   auto stages = ShaderStagesCreator::fromComputeModule(*device_, computeModule, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  ComputePipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = std::move(stages);
-  pipelineDesc.debugName = "TestBindAndDispatch";
-  pipelineDesc.buffersMap[data::shader::kSimpleComputeInputIndex] =
-      IGL_NAMEHANDLE(data::shader::kSimpleComputeInput);
-  pipelineDesc.buffersMap[data::shader::kSimpleComputeOutputIndex] =
-      IGL_NAMEHANDLE(data::shader::kSimpleComputeOutput);
+  const ComputePipelineDesc pipelineDesc{
+      .buffersMap = {{data::shader::kSimpleComputeInputIndex,
+                      IGL_NAMEHANDLE(data::shader::kSimpleComputeInput)},
+                     {data::shader::kSimpleComputeOutputIndex,
+                      IGL_NAMEHANDLE(data::shader::kSimpleComputeOutput)}},
+      .shaderStages = std::move(stages),
+      .debugName = "TestBindAndDispatch"};
 
   auto pipeline = device_->createComputePipeline(pipelineDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -213,18 +208,16 @@ TEST_F(ComputePipelineStateVulkanTest, BindAndDispatch) {
 
   // Create input/output buffers
   const std::vector<float> inputData = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
-  BufferDesc inputBufferDesc;
-  inputBufferDesc.type = BufferDesc::BufferTypeBits::Storage;
-  inputBufferDesc.data = inputData.data();
-  inputBufferDesc.length = inputData.size() * sizeof(float);
-  inputBufferDesc.storage = ResourceStorage::Shared;
+  const BufferDesc inputBufferDesc{.type = BufferDesc::BufferTypeBits::Storage,
+                                   .data = inputData.data(),
+                                   .length = inputData.size() * sizeof(float),
+                                   .storage = ResourceStorage::Shared};
   auto inputBuffer = device_->createBuffer(inputBufferDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  BufferDesc outputBufferDesc;
-  outputBufferDesc.type = BufferDesc::BufferTypeBits::Storage;
-  outputBufferDesc.length = inputData.size() * sizeof(float);
-  outputBufferDesc.storage = ResourceStorage::Shared;
+  const BufferDesc outputBufferDesc{.type = BufferDesc::BufferTypeBits::Storage,
+                                    .length = inputData.size() * sizeof(float),
+                                    .storage = ResourceStorage::Shared};
   auto outputBuffer = device_->createBuffer(outputBufferDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
@@ -279,9 +272,8 @@ TEST_F(ComputePipelineStateVulkanTest, ComputePipelineReflection) {
   auto stages = ShaderStagesCreator::fromComputeModule(*device_, computeModule, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  ComputePipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = std::move(stages);
-  pipelineDesc.debugName = "TestReflection";
+  const ComputePipelineDesc pipelineDesc{.shaderStages = std::move(stages),
+                                         .debugName = "TestReflection"};
 
   auto pipeline = device_->createComputePipeline(pipelineDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
