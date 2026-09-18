@@ -47,8 +47,7 @@ TEST_F(FramebufferVulkanTest, CreateWithColorAttachment) {
   auto colorTex = iglDev_->createTexture(texDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = colorTex;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTex}}};
 
   auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -82,9 +81,8 @@ TEST_F(FramebufferVulkanTest, CreateWithColorAndDepth) {
   }
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = colorTex;
-  fbDesc.depthAttachment.texture = depthTex;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTex}},
+                               .depthAttachment = {.texture = depthTex}};
 
   auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -108,8 +106,7 @@ TEST_F(FramebufferVulkanTest, CopyBytesColorAttachment) {
   ret = colorTex->upload(colorTex->getFullRange(0), pixels.data());
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = colorTex;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTex}}};
   auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
@@ -139,8 +136,7 @@ TEST_F(FramebufferVulkanTest, UpdateDrawable) {
   auto colorTex1 = iglDev_->createTexture(texDesc1, &ret);
   ASSERT_TRUE(ret.isOk());
 
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = colorTex1;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTex1}}};
   auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk());
   ASSERT_NE(fb, nullptr);
@@ -171,9 +167,8 @@ TEST_F(FramebufferVulkanTest, MultipleColorAttachments) {
   auto colorTex1 = iglDev_->createTexture(texDesc, &ret);
   ASSERT_TRUE(ret.isOk());
 
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = colorTex0;
-  fbDesc.colorAttachments[1].texture = colorTex1;
+  const FramebufferDesc fbDesc{
+      .colorAttachments = {{.texture = colorTex0}, {.texture = colorTex1}}};
 
   auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -196,8 +191,7 @@ TEST_F(FramebufferVulkanTest, DefaultModeIsMono) {
   const auto colorTex = iglDev_->createTexture(texDesc, &ret);
   ASSERT_TRUE(ret.isOk());
 
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = colorTex;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTex}}};
   const auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk());
 
@@ -216,8 +210,7 @@ TEST_F(FramebufferVulkanTest, UpdateDrawableWithNull) {
   const auto colorTex = iglDev_->createTexture(texDesc, &ret);
   ASSERT_TRUE(ret.isOk());
 
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = colorTex;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTex}}};
   const auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk());
   ASSERT_NE(fb->getColorAttachment(0), nullptr);
@@ -248,8 +241,7 @@ TEST_F(FramebufferVulkanTest, UpdateDrawableWithSurfaceTextures) {
   }
   ASSERT_TRUE(ret.isOk());
 
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = colorTex;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTex}}};
   const auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk());
 
@@ -279,9 +271,8 @@ TEST_F(FramebufferVulkanTest, UpdateDrawableClearsStaleResolve) {
   const auto resolveTex = iglDev_->createTexture(resolveDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = msaaColor;
-  fbDesc.colorAttachments[0].resolveTexture = resolveTex;
+  const FramebufferDesc fbDesc{
+      .colorAttachments = {{.texture = msaaColor, .resolveTexture = resolveTex}}};
   const auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(fb, nullptr);
@@ -309,8 +300,7 @@ TEST_F(FramebufferVulkanTest, StorageTextureAttachment) {
   const auto storageTex = iglDev_->createTexture(texDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = storageTex;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = storageTex}}};
   const auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(fb, nullptr);
