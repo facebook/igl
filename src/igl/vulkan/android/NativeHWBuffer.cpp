@@ -111,7 +111,7 @@ NativeHWTextureBuffer::~NativeHWTextureBuffer() = default;
 
 VkSamplerYcbcrConversion NativeHWTextureBuffer::getVkSamplerYcbcrConversion() const noexcept {
   // Null texture_ and null ycbcrConversion_ are both valid "not available" states.
-  if (texture_ == nullptr) {
+  if (!texture_) {
     return VK_NULL_HANDLE;
   }
   return texture_->image.ycbcrConversion_;
@@ -124,7 +124,7 @@ Result NativeHWTextureBuffer::create(const TextureDesc& desc) {
 
 Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
-  if (hwBuffer == nullptr) {
+  if (!hwBuffer) {
     return Result(Result::Code::RuntimeError, "null buffer passed to create texture");
   }
   AHardwareBuffer_Desc hwbDesc{};
