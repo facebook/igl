@@ -15,10 +15,15 @@ namespace igl {
  * @brief struct to represent a linear color value.
  */
 struct Color {
-  float r;
-  float g;
-  float b;
-  float a;
+  float r = 0.0f;
+  float g = 0.0f;
+  float b = 0.0f;
+  float a = 0.0f;
+
+  /**
+   * @brief Default constructor producing transparent black.
+   */
+  constexpr Color() = default;
 
   /**
    * @brief Constructor ingesting red, green, blue. Alpha is assumed to be 1.0f.
