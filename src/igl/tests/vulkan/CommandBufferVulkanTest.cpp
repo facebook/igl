@@ -72,17 +72,15 @@ TEST_F(CommandBufferVulkanTest, DebugGroupLabels) {
 TEST_F(CommandBufferVulkanTest, CopyBuffer) {
   Result ret;
 
-  BufferDesc srcDesc;
-  srcDesc.type = BufferDesc::BufferTypeBits::Storage;
-  srcDesc.storage = ResourceStorage::Shared;
-  srcDesc.length = 128;
+  const BufferDesc srcDesc{.type = BufferDesc::BufferTypeBits::Storage,
+                           .length = 128,
+                           .storage = ResourceStorage::Shared};
   auto srcBuffer = iglDev_->createBuffer(srcDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  BufferDesc dstDesc;
-  dstDesc.type = BufferDesc::BufferTypeBits::Storage;
-  dstDesc.storage = ResourceStorage::Shared;
-  dstDesc.length = 128;
+  const BufferDesc dstDesc{.type = BufferDesc::BufferTypeBits::Storage,
+                           .length = 128,
+                           .storage = ResourceStorage::Shared};
   auto dstBuffer = iglDev_->createBuffer(dstDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
