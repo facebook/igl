@@ -47,7 +47,14 @@ class TimestampQueries final : public ITimestampQueries {
   void setTimingFidelity(TimestampQueryFidelity fidelity) noexcept override;
   [[nodiscard]] TimestampQueryFidelity getTimingFidelity() const override;
 
-  [[nodiscard]] uint32_t beginElapsedQuery(VkCommandBuffer commandBuffer, const char* label);
+  // slotIndex may be any value in [0, maxSlots_); it need not be contiguous with
+  // previously used slots. Slots skipped by a larger slotIndex are left unwritten
+  // and report as invalid from getElapsedNanosResult(). Each slotIndex may be
+  // used at most once per reset cycle; reusing a slot before reset() returns
+  // kInvalidSlot to avoid recording a duplicate timestamp into an unreset query.
+  [[nodiscard]] uint32_t beginElapsedQuery(VkCommandBuffer commandBuffer,
+                                           uint32_t slotIndex,
+                                           const char* label);
   void endElapsedQuery(VkCommandBuffer commandBuffer, uint32_t slotIndex);
 
   [[nodiscard]] const char* getLabel(uint32_t slotIndex) const override;
@@ -71,6 +78,9 @@ class TimestampQueries final : public ITimestampQueries {
   float timestampPeriod_ = 0.0f;
   TimestampQueryFidelity timingFidelity_ = TimestampQueryFidelity::LowOverhead;
   std::vector<std::string> labels_;
+  // Tracks which slots have been written since the last reset() so a duplicate
+  // beginElapsedQuery() on the same slot can be rejected.
+  std::vector<bool> slotWritten_;
 
   mutable bool resultsReady_ = false;
   mutable std::vector<uint64_t> elapsedNanos_;

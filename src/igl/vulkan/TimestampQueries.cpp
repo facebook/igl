@@ -54,6 +54,7 @@ TimestampQueries::TimestampQueries(VulkanContext& ctx, uint32_t maxSlots) :
 
   labels_.resize(maxSlots_);
   elapsedNanos_.resize(maxSlots_, 0);
+  slotWritten_.resize(maxSlots_, false);
   queryResults_.resize(static_cast<size_t>(maxSlots_) * kTimestampsPerTimingSlot);
 }
 
@@ -84,6 +85,7 @@ void TimestampQueries::reset() {
   resultsReady_ = false;
   std::fill(elapsedNanos_.begin(), elapsedNanos_.end(), 0);
   std::fill(labels_.begin(), labels_.end(), std::string());
+  std::fill(slotWritten_.begin(), slotWritten_.end(), false);
 }
 
 bool TimestampQueries::resultsAvailable() const {
@@ -102,6 +104,15 @@ TimestampQueryResult TimestampQueries::getElapsedNanosResult(uint32_t slotIndex)
   if (slotIndex >= currentSlot_ || !updateResults()) {
     return {};
   }
+  // Callers may pass arbitrary slot indices to beginElapsedQuery(), so a higher
+  // index can advance currentSlot_ past slots that were never written. Such
+  // slots have unavailable queries; report them as invalid rather than a
+  // spurious elapsed time of 0.
+  const QueryResult& beginQuery = queryResults_[slotIndex * kTimestampsPerTimingSlot];
+  const QueryResult& endQuery = queryResults_[slotIndex * kTimestampsPerTimingSlot + 1];
+  if (beginQuery.available == 0 || endQuery.available == 0) {
+    return {};
+  }
   return {.elapsedNanos = elapsedNanos_[slotIndex], .valid = true};
 }
 
@@ -117,12 +128,21 @@ TimestampQueryFidelity TimestampQueries::getTimingFidelity() const {
   return timingFidelity_;
 }
 
-uint32_t TimestampQueries::beginElapsedQuery(VkCommandBuffer commandBuffer, const char* label) {
+uint32_t TimestampQueries::beginElapsedQuery(VkCommandBuffer commandBuffer,
+                                             uint32_t slotIndex,
+                                             const char* label) {
   IGL_PROFILER_FUNCTION();
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
 
-  if (!isValid() || commandBuffer == VK_NULL_HANDLE || currentSlot_ >= maxSlots_ ||
+  if (!isValid() || commandBuffer == VK_NULL_HANDLE || slotIndex >= maxSlots_ ||
       (commandBuffer_ != VK_NULL_HANDLE && commandBuffer_ != commandBuffer)) {
+    return kInvalidSlot;
+  }
+  // Each slot may be written at most once per reset cycle. vkCmdResetQueryPool is
+  // recorded lazily just once (when resetRecorded_ becomes true), so a second
+  // vkCmdWriteTimestamp() to the same query without an intervening reset() is a
+  // Vulkan validation error / undefined behavior.
+  if (slotWritten_[slotIndex]) {
     return kInvalidSlot;
   }
   commandBuffer_ = commandBuffer;
@@ -138,7 +158,12 @@ uint32_t TimestampQueries::beginElapsedQuery(VkCommandBuffer commandBuffer, cons
     resetRecorded_ = true;
   }
 
-  const uint32_t slot = currentSlot_++;
+  if (slotIndex >= currentSlot_) {
+    currentSlot_ = slotIndex + 1;
+  }
+
+  const uint32_t slot = slotIndex;
+  slotWritten_[slot] = true;
   labels_[slot] = label != nullptr ? label : "";
   resultsReady_ = false;
 
@@ -198,17 +223,23 @@ bool TimestampQueries::updateResults() const {
     return false;
   }
 
-  for (uint32_t i = 0; i < queryCount; ++i) {
-    if (queryResults_[i].available == 0) {
-      return false;
-    }
-  }
-
+  bool anyAvailable = false;
   for (uint32_t slot = 0; slot < currentSlot_; ++slot) {
-    const uint64_t begin = queryResults_[slot * kTimestampsPerTimingSlot].timestamp;
-    const uint64_t end = queryResults_[slot * kTimestampsPerTimingSlot + 1].timestamp;
+    const QueryResult& beginQuery = queryResults_[slot * kTimestampsPerTimingSlot];
+    const QueryResult& endQuery = queryResults_[slot * kTimestampsPerTimingSlot + 1];
+    if (beginQuery.available == 0 || endQuery.available == 0) {
+      elapsedNanos_[slot] = 0;
+      continue;
+    }
+    const uint64_t begin = beginQuery.timestamp;
+    const uint64_t end = endQuery.timestamp;
     const uint64_t delta = end > begin ? end - begin : 0;
     elapsedNanos_[slot] = static_cast<uint64_t>(static_cast<double>(delta) * timestampPeriod_);
+    anyAvailable = true;
+  }
+
+  if (!anyAvailable) {
+    return false;
   }
 
   resultsReady_ = true;
