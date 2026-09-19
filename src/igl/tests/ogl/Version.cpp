@@ -228,42 +228,59 @@ TEST_F(VersionOGLTest, GetShaderVersion) {
 }
 
 TEST_F(VersionOGLTest, GetStringFromShaderVersion) {
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::GlslEs, 1, 0}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{
+                .family = ShaderFamily::GlslEs, .majorVersion = 1, .minorVersion = 0}),
             "#version 100");
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::GlslEs, 3, 0}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{
+                .family = ShaderFamily::GlslEs, .majorVersion = 3, .minorVersion = 0}),
             "#version 300 es");
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::GlslEs, 3, 10}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{
+                .family = ShaderFamily::GlslEs, .majorVersion = 3, .minorVersion = 10}),
             "#version 310 es");
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::GlslEs, 3, 20}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{
+                .family = ShaderFamily::GlslEs, .majorVersion = 3, .minorVersion = 20}),
             "#version 320 es");
 
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::Glsl, 1, 10}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(
+                ShaderVersion{.family = ShaderFamily::Glsl, .majorVersion = 1, .minorVersion = 10}),
             "#version 110");
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::Glsl, 1, 20}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(
+                ShaderVersion{.family = ShaderFamily::Glsl, .majorVersion = 1, .minorVersion = 20}),
             "#version 120");
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::Glsl, 1, 30}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(
+                ShaderVersion{.family = ShaderFamily::Glsl, .majorVersion = 1, .minorVersion = 30}),
             "#version 130");
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::Glsl, 1, 40}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(
+                ShaderVersion{.family = ShaderFamily::Glsl, .majorVersion = 1, .minorVersion = 40}),
             "#version 140");
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::Glsl, 1, 50}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(
+                ShaderVersion{.family = ShaderFamily::Glsl, .majorVersion = 1, .minorVersion = 50}),
             "#version 150");
 
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::Glsl, 3, 30}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(
+                ShaderVersion{.family = ShaderFamily::Glsl, .majorVersion = 3, .minorVersion = 30}),
             "#version 330");
 
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::Glsl, 4, 0}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(
+                ShaderVersion{.family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 0}),
             "#version 400");
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::Glsl, 4, 10}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(
+                ShaderVersion{.family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 10}),
             "#version 410");
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::Glsl, 4, 20}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(
+                ShaderVersion{.family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 20}),
             "#version 420");
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::Glsl, 4, 30}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(
+                ShaderVersion{.family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 30}),
             "#version 430");
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::Glsl, 4, 40}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(
+                ShaderVersion{.family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 40}),
             "#version 440");
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::Glsl, 4, 50}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(
+                ShaderVersion{.family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 50}),
             "#version 450");
-  EXPECT_EQ(opengl::getStringFromShaderVersion(ShaderVersion{ShaderFamily::Glsl, 4, 60}),
+  EXPECT_EQ(opengl::getStringFromShaderVersion(
+                ShaderVersion{.family = ShaderFamily::Glsl, .majorVersion = 4, .minorVersion = 60}),
             "#version 460");
 }
 } // namespace igl::tests
