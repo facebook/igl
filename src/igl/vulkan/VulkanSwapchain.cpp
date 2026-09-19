@@ -57,7 +57,7 @@ VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>
   IGL_DEBUG_ASSERT(!formats.empty());
 
   const bool isNativeSwapchainBGR = isNativeSwapChainBGR(formats);
-  auto vulkanTextureFormat = igl::vulkan::textureFormatToVkFormat(textureFormat);
+  VkFormat vulkanTextureFormat = igl::vulkan::textureFormatToVkFormat(textureFormat);
   const bool isRequestedFormatBGR = igl::vulkan::isTextureFormatBGR(vulkanTextureFormat);
   if (isNativeSwapchainBGR != isRequestedFormatBGR) {
     vulkanTextureFormat = igl::vulkan::invertRedAndBlue(vulkanTextureFormat);
