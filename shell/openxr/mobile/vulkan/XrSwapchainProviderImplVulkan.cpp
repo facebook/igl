@@ -92,7 +92,7 @@ std::shared_ptr<ITexture> getSurfaceTexture(
   waitInfo.timeout = XR_INFINITE_DURATION;
   XR_CHECK(xrWaitSwapchainImage(swapchain, &waitInfo));
 
-  auto vulkanTexture = vulkanTextures[imageIndex];
+  const auto& vulkanTexture = vulkanTextures[imageIndex];
 
   if (imageIndex >= inOutTextures.size()) {
     inOutTextures.resize(static_cast<size_t>(imageIndex) + 1, nullptr);
@@ -105,21 +105,18 @@ std::shared_ptr<ITexture> getSurfaceTexture(
   if (!texture || swapchainImageInfo.imageWidth != texture->getSize().width ||
       swapchainImageInfo.imageHeight != texture->getSize().height ||
       iglFormat != texture->getProperties().format) {
-    TextureDesc textureDesc;
-    if (numViews > 1) {
-      textureDesc = TextureDesc::new2DArray(iglFormat,
-                                            swapchainImageInfo.imageWidth,
-                                            swapchainImageInfo.imageHeight,
-                                            numViews,
-                                            TextureDesc::TextureUsageBits::Attachment,
-                                            "SwapChain Texture");
-    } else {
-      textureDesc = TextureDesc::new2D(iglFormat,
-                                       swapchainImageInfo.imageWidth,
-                                       swapchainImageInfo.imageHeight,
-                                       TextureDesc::TextureUsageBits::Attachment,
-                                       "SwapChain Texture");
-    }
+    const TextureDesc textureDesc =
+        numViews > 1 ? TextureDesc::new2DArray(iglFormat,
+                                               swapchainImageInfo.imageWidth,
+                                               swapchainImageInfo.imageHeight,
+                                               numViews,
+                                               TextureDesc::TextureUsageBits::Attachment,
+                                               "SwapChain Texture")
+                     : TextureDesc::new2D(iglFormat,
+                                          swapchainImageInfo.imageWidth,
+                                          swapchainImageInfo.imageHeight,
+                                          TextureDesc::TextureUsageBits::Attachment,
+                                          "SwapChain Texture");
 
     inOutTextures[imageIndex] =
         std::make_shared<igl::vulkan::Texture>(actualDevice, vulkanTexture, textureDesc);
@@ -148,7 +145,7 @@ void XrSwapchainProviderImplVulkan::enumerateImages(
                            VK_IMAGE_ASPECT_COLOR_BIT,
                            vulkanColorTextures_);
 
-  auto vkDepthFormat = static_cast<VkFormat>(swapchainImageInfo.depthFormat);
+  const VkFormat vkDepthFormat = static_cast<VkFormat>(swapchainImageInfo.depthFormat);
   VkImageAspectFlags depthAspectFlags = 0;
   if (igl::vulkan::hasDepth(vkDepthFormat)) {
     depthAspectFlags |= VK_IMAGE_ASPECT_DEPTH_BIT;
