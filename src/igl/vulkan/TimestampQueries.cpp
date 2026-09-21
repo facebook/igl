@@ -164,7 +164,7 @@ uint32_t TimestampQueries::beginElapsedQuery(VkCommandBuffer commandBuffer,
 
   const uint32_t slot = slotIndex;
   slotWritten_[slot] = true;
-  labels_[slot] = label != nullptr ? label : "";
+  labels_[slot] = label ? label : "";
   resultsReady_ = false;
 
   ctx_.vf_.vkCmdWriteTimestamp(commandBuffer,
