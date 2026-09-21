@@ -263,27 +263,23 @@ TEST_F(ComputeCommandAdapterOGLTest, DispatchThreadGroupsIndirect) {
   ASSERT_NE(computePipeline, nullptr);
 
   const float inputData[] = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
-  BufferDesc inputBufDesc;
-  inputBufDesc.type = BufferDesc::BufferTypeBits::Storage;
-  inputBufDesc.data = inputData;
-  inputBufDesc.length = sizeof(inputData);
+  const BufferDesc inputBufDesc{
+      .type = BufferDesc::BufferTypeBits::Storage, .data = inputData, .length = sizeof(inputData)};
   auto inputBuffer = iglDev_->createBuffer(inputBufDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
   float outputData[6] = {0.0f};
-  BufferDesc outputBufDesc;
-  outputBufDesc.type = BufferDesc::BufferTypeBits::Storage;
-  outputBufDesc.data = outputData;
-  outputBufDesc.length = sizeof(outputData);
+  const BufferDesc outputBufDesc{.type = BufferDesc::BufferTypeBits::Storage,
+                                 .data = outputData,
+                                 .length = sizeof(outputData)};
   auto outputBuffer = iglDev_->createBuffer(outputBufDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
   // (groupCountX, groupCountY, groupCountZ) read by glDispatchComputeIndirect.
   const uint32_t indirectArgs[3] = {1u, 1u, 1u};
-  BufferDesc indirectBufDesc;
-  indirectBufDesc.type = BufferDesc::BufferTypeBits::Indirect;
-  indirectBufDesc.data = indirectArgs;
-  indirectBufDesc.length = sizeof(indirectArgs);
+  const BufferDesc indirectBufDesc{.type = BufferDesc::BufferTypeBits::Indirect,
+                                   .data = indirectArgs,
+                                   .length = sizeof(indirectArgs)};
   auto indirectBuffer = iglDev_->createBuffer(indirectBufDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
