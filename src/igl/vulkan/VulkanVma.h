@@ -8,7 +8,8 @@
 #pragma once
 
 /* The following defines tell VMA to load Vulkan functions dynamically
- * For this to work, we need to provide pointers to vkGetInstanceProcAddr and vkGetDeviceProcAddr to
+ * For this to work, we need to provide pointers to vkGetInstanceProcAddr() and
+ * vkGetDeviceProcAddr() to
  * VMA using the functions VmaVulkanFunctions::vkGetInstanceProcAddr and
  * VmaVulkanFunctions::vkGetDeviceProcAddr
  */
