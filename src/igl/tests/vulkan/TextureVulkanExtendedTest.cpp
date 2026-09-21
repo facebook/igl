@@ -42,7 +42,7 @@ TEST_F(TextureVulkanExtendedTest, Create3D) {
   }
 
   Result ret;
-  TextureDesc desc = TextureDesc::new3D(
+  const TextureDesc desc = TextureDesc::new3D(
       TextureFormat::RGBA_UNorm8, 4, 4, 4, TextureDesc::TextureUsageBits::Sampled);
   auto texture = iglDev_->createTexture(desc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -52,7 +52,7 @@ TEST_F(TextureVulkanExtendedTest, Create3D) {
 
 TEST_F(TextureVulkanExtendedTest, CreateCube) {
   Result ret;
-  TextureDesc desc = TextureDesc::newCube(
+  const TextureDesc desc = TextureDesc::newCube(
       TextureFormat::RGBA_UNorm8, 4, 4, TextureDesc::TextureUsageBits::Sampled);
   auto texture = iglDev_->createTexture(desc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -66,7 +66,7 @@ TEST_F(TextureVulkanExtendedTest, CreateArray) {
   }
 
   Result ret;
-  TextureDesc desc = TextureDesc::new2DArray(
+  const TextureDesc desc = TextureDesc::new2DArray(
       TextureFormat::RGBA_UNorm8, 4, 4, 3, TextureDesc::TextureUsageBits::Sampled);
   auto texture = iglDev_->createTexture(desc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -89,21 +89,21 @@ TEST_F(TextureVulkanExtendedTest, CreateMSAA) {
 TEST_F(TextureVulkanExtendedTest, DepthStencilFormats) {
   Result ret;
 
-  TextureDesc desc = TextureDesc::new2D(TextureFormat::Z_UNorm24,
-                                        4,
-                                        4,
-                                        TextureDesc::TextureUsageBits::Attachment |
-                                            TextureDesc::TextureUsageBits::Sampled);
+  const TextureDesc desc = TextureDesc::new2D(TextureFormat::Z_UNorm24,
+                                              4,
+                                              4,
+                                              TextureDesc::TextureUsageBits::Attachment |
+                                                  TextureDesc::TextureUsageBits::Sampled);
   auto depthTexture = iglDev_->createTexture(desc, &ret);
   if (ret.isOk()) {
     ASSERT_NE(depthTexture, nullptr);
   }
 
-  TextureDesc descDS = TextureDesc::new2D(TextureFormat::S8_UInt_Z24_UNorm,
-                                          4,
-                                          4,
-                                          TextureDesc::TextureUsageBits::Attachment |
-                                              TextureDesc::TextureUsageBits::Sampled);
+  const TextureDesc descDS = TextureDesc::new2D(TextureFormat::S8_UInt_Z24_UNorm,
+                                                4,
+                                                4,
+                                                TextureDesc::TextureUsageBits::Attachment |
+                                                    TextureDesc::TextureUsageBits::Sampled);
   auto dsTexture = iglDev_->createTexture(descDS, &ret);
   if (ret.isOk()) {
     ASSERT_NE(dsTexture, nullptr);
@@ -112,7 +112,7 @@ TEST_F(TextureVulkanExtendedTest, DepthStencilFormats) {
 
 TEST_F(TextureVulkanExtendedTest, TextureId) {
   Result ret;
-  TextureDesc desc =
+  const TextureDesc desc =
       TextureDesc::new2D(TextureFormat::RGBA_UNorm8, 2, 2, TextureDesc::TextureUsageBits::Sampled);
   auto texture = iglDev_->createTexture(desc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
