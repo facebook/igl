@@ -47,8 +47,7 @@ class MetalDrawCallTest : public ::testing::Test {
     ASSERT_TRUE(res.isOk()) << res.message;
 
     // Create framebuffer
-    FramebufferDesc fbDesc;
-    fbDesc.colorAttachments[0].texture = colorTexture_;
+    const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTexture_}}};
     framebuffer_ = device_->createFramebuffer(fbDesc, &res);
     ASSERT_TRUE(res.isOk()) << res.message;
 
@@ -57,11 +56,10 @@ class MetalDrawCallTest : public ::testing::Test {
     ASSERT_NE(shaderStages_, nullptr);
 
     // Create render pipeline
-    RenderPipelineDesc pipelineDesc;
-    pipelineDesc.shaderStages = std::move(shaderStages_);
-    pipelineDesc.targetDesc.colorAttachments.resize(1);
-    pipelineDesc.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
-    pipelineDesc.debugName = genNameHandle("drawTestPipeline");
+    const RenderPipelineDesc pipelineDesc{
+        .shaderStages = std::move(shaderStages_),
+        .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}}},
+        .debugName = genNameHandle("drawTestPipeline")};
 
     renderPipeline_ = device_->createRenderPipeline(pipelineDesc, &res);
     ASSERT_TRUE(res.isOk()) << res.message;
@@ -123,10 +121,8 @@ TEST_F(MetalDrawCallTest, DrawTriangle) {
   auto cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
 
-  RenderPassDesc rpDesc;
-  rpDesc.colorAttachments.resize(1);
-  rpDesc.colorAttachments[0].loadAction = LoadAction::Clear;
-  rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
+  const RenderPassDesc rpDesc{
+      .colorAttachments = {{.loadAction = LoadAction::Clear, .storeAction = StoreAction::Store}}};
 
   auto encoder = cmdBuf->createRenderCommandEncoder(rpDesc, framebuffer_);
   ASSERT_NE(encoder, nullptr);
@@ -160,10 +156,8 @@ TEST_F(MetalDrawCallTest, DrawIndexed) {
   auto cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
 
-  RenderPassDesc rpDesc;
-  rpDesc.colorAttachments.resize(1);
-  rpDesc.colorAttachments[0].loadAction = LoadAction::Clear;
-  rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
+  const RenderPassDesc rpDesc{
+      .colorAttachments = {{.loadAction = LoadAction::Clear, .storeAction = StoreAction::Store}}};
 
   auto encoder = cmdBuf->createRenderCommandEncoder(rpDesc, framebuffer_);
   ASSERT_NE(encoder, nullptr);
@@ -192,10 +186,8 @@ TEST_F(MetalDrawCallTest, DrawCountIncrements) {
 
   ASSERT_EQ(cmdBuf->getCurrentDrawCount(), 0u);
 
-  RenderPassDesc rpDesc;
-  rpDesc.colorAttachments.resize(1);
-  rpDesc.colorAttachments[0].loadAction = LoadAction::Clear;
-  rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
+  const RenderPassDesc rpDesc{
+      .colorAttachments = {{.loadAction = LoadAction::Clear, .storeAction = StoreAction::Store}}};
 
   auto encoder = cmdBuf->createRenderCommandEncoder(rpDesc, framebuffer_);
   ASSERT_NE(encoder, nullptr);
