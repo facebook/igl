@@ -57,8 +57,7 @@ class RenderCommandAdapterOGLTest : public ::testing::Test {
     ASSERT_NE(offscreenTexture_, nullptr);
 
     // Create framebuffer
-    FramebufferDesc framebufferDesc;
-    framebufferDesc.colorAttachments[0].texture = offscreenTexture_;
+    const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = offscreenTexture_}}};
     framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_NE(framebuffer_, nullptr);
@@ -97,26 +96,23 @@ class RenderCommandAdapterOGLTest : public ::testing::Test {
     ASSERT_NE(vertexInputState_, nullptr);
 
     // Create vertex buffer
-    BufferDesc vbDesc;
-    vbDesc.type = BufferDesc::BufferTypeBits::Vertex;
-    vbDesc.data = data::vertex_index::kQuadVert.data();
-    vbDesc.length = sizeof(data::vertex_index::kQuadVert);
+    const BufferDesc vbDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                            .data = data::vertex_index::kQuadVert.data(),
+                            .length = sizeof(data::vertex_index::kQuadVert)};
     vb_ = iglDev_->createBuffer(vbDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
     // Create UV buffer
-    BufferDesc uvDesc;
-    uvDesc.type = BufferDesc::BufferTypeBits::Vertex;
-    uvDesc.data = data::vertex_index::kQuadUv.data();
-    uvDesc.length = sizeof(data::vertex_index::kQuadUv);
+    const BufferDesc uvDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                            .data = data::vertex_index::kQuadUv.data(),
+                            .length = sizeof(data::vertex_index::kQuadUv)};
     uvb_ = iglDev_->createBuffer(uvDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
     // Create index buffer
-    BufferDesc ibDesc;
-    ibDesc.type = BufferDesc::BufferTypeBits::Index;
-    ibDesc.data = data::vertex_index::kQuadInd.data();
-    ibDesc.length = sizeof(data::vertex_index::kQuadInd);
+    const BufferDesc ibDesc{.type = BufferDesc::BufferTypeBits::Index,
+                            .data = data::vertex_index::kQuadInd.data(),
+                            .length = sizeof(data::vertex_index::kQuadInd)};
     ib_ = iglDev_->createBuffer(ibDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
@@ -147,9 +143,8 @@ class RenderCommandAdapterOGLTest : public ::testing::Test {
                           whitePixels);
 
     // Create sampler
-    SamplerStateDesc samplerDesc;
-    samplerDesc.minFilter = SamplerMinMagFilter::Nearest;
-    samplerDesc.magFilter = SamplerMinMagFilter::Nearest;
+    const SamplerStateDesc samplerDesc{.minFilter = SamplerMinMagFilter::Nearest,
+                                       .magFilter = SamplerMinMagFilter::Nearest};
     sampler_ = iglDev_->createSamplerState(samplerDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
   }
