@@ -59,9 +59,7 @@ class DeviceVulkanTest : public ::testing::Test {
 /// this is just here as a proof of concept.
 TEST_F(DeviceVulkanTest, CreateCommandQueue) {
   Result ret;
-  CommandQueueDesc desc{};
-
-  auto cmdQueue = iglDev_->createCommandQueue(desc, &ret);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(cmdQueue, nullptr);
 }
@@ -77,12 +75,10 @@ TEST_F(DeviceVulkanTest, PlatformDevice) {
   ASSERT_TRUE(ret.isOk());
   // ASSERT_TRUE(texture != nullptr); // no swapchain so null
 
-  CommandQueueDesc desc{};
-
-  auto cmdQueue = iglDev_->createCommandQueue(desc, &ret);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(cmdQueue, nullptr);
-  auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
   auto submitHandle = cmdQueue->submit(*cmdBuf);
 
   // NOLINTNEXTLINE(readability-qualified-auto)
@@ -134,12 +130,10 @@ TEST_F(DeviceVulkanTest, PlatformDeviceSampler) {
   ASSERT_EQ(samplerId, 1);
   ASSERT_FALSE(vulkanSamplerState->isYUV());
 
-  CommandQueueDesc cmdQueueDesc{};
-
-  auto cmdQueue = iglDev_->createCommandQueue(cmdQueueDesc, &ret);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(cmdQueue, nullptr);
-  auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
   cmdQueue->submit(*cmdBuf);
 }
 
@@ -495,15 +489,14 @@ TEST_F(DeviceVulkanTest, UniformBlockRingBufferTest) {
   ASSERT_TRUE(ret.isOk());
 
   // Create and submit multiple command buffers
-  CommandQueueDesc queueDesc{};
-  auto cmdQueue = iglDev_->createCommandQueue(queueDesc, &ret);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
   std::vector<VkBuffer> bufferHandles;
   // By default the VulkanContextConfig.maxResourceCount is 3, so we should create at most 3 unique
   // VkBuffers
   for (int i = 0; i < 4; i++) {
-    auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+    auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
     ASSERT_TRUE(ret.isOk());
 
     auto* vulkanBufferCast = static_cast<vulkan::Buffer*>(buffer.get());
@@ -541,14 +534,13 @@ TEST_F(DeviceVulkanTest, UniformBlockWithoutRingHintKeepsOneBuffer) {
   ASSERT_TRUE(ret.isOk());
   ASSERT_NE(buffer, nullptr);
 
-  CommandQueueDesc queueDesc{};
-  auto cmdQueue = iglDev_->createCommandQueue(queueDesc, &ret);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
   auto* vulkanBuffer = static_cast<vulkan::Buffer*>(buffer.get());
   const VkBuffer firstHandle = vulkanBuffer->currentVulkanBuffer()->getVkBuffer();
   for (int i = 0; i < 4; i++) {
-    auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+    auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
     ASSERT_TRUE(ret.isOk());
 
     EXPECT_EQ(vulkanBuffer->currentVulkanBuffer()->getVkBuffer(), firstHandle);
@@ -578,14 +570,13 @@ TEST_F(DeviceVulkanTest, ManagedUniformBufferRotatesItsRingBuffer) {
   ASSERT_NE(device.createdBuffer, nullptr);
 
   Result ret;
-  CommandQueueDesc queueDesc{};
-  auto cmdQueue = iglDev_->createCommandQueue(queueDesc, &ret);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
   auto* vulkanBuffer = static_cast<vulkan::Buffer*>(device.createdBuffer);
   std::vector<VkBuffer> bufferHandles;
   for (int i = 0; i < 4; i++) {
-    auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+    auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
     ASSERT_TRUE(ret.isOk());
 
     bufferHandles.push_back(vulkanBuffer->currentVulkanBuffer()->getVkBuffer());
