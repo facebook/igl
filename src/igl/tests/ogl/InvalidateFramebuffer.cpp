@@ -65,8 +65,7 @@ TEST_F(InvalidateFramebufferOGLTest, InvalidateNoError) {
   auto texture = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
 
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = texture;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = texture}}};
   auto framebuffer = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
 
