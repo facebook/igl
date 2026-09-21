@@ -757,11 +757,11 @@ VulkanContext::~VulkanContext() {
     vf_.vkDestroyDevice(vkDevice_, nullptr); // Device has to be destroyed prior to Instance
   }
 #if !IGL_PLATFORM_APPLE
-  if (vf_.vkDestroyDebugUtilsMessengerEXT != nullptr) {
+  if (vf_.vkDestroyDebugUtilsMessengerEXT) {
     vf_.vkDestroyDebugUtilsMessengerEXT(vkInstance_, vkDebugUtilsMessenger_, nullptr);
   }
 #endif // !IGL_PLATFORM_APPLE
-  if (vf_.vkDestroyInstance != nullptr) {
+  if (vf_.vkDestroyInstance) {
     vf_.vkDestroyInstance(vkInstance_, nullptr);
   }
 
@@ -952,7 +952,7 @@ Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
   // Physical devices
   uint32_t deviceCount = 0;
 
-  if (vf_.vkEnumeratePhysicalDevices == nullptr) {
+  if (!vf_.vkEnumeratePhysicalDevices) {
     return Result(Result::Code::Unsupported, "Vulkan functions are not loaded");
   }
 
@@ -1164,7 +1164,7 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
   vulkan::functions::loadDeviceFunctions(
       *tableImpl_, device, getVkPhysicalDeviceProperties().apiVersion);
 
-  if (features_.has_VK_KHR_buffer_device_address && vf_.vkGetBufferDeviceAddressKHR == nullptr) {
+  if (features_.has_VK_KHR_buffer_device_address && !vf_.vkGetBufferDeviceAddressKHR) {
     return Result(Result::Code::InvalidOperation, "Cannot initialize VK_KHR_buffer_device_address");
   }
 
@@ -2545,7 +2545,7 @@ int VulkanContext::getFenceFdFromSubmitHandle(igl::SubmitHandle handle) const no
   // ICDs (e.g. SwiftShader) may not implement VK_KHR_external_fence_fd at
   // runtime, leaving vkGetFenceFdKHR() null. Return the no-fence sentinel (-1)
   // rather than dereferencing a null function pointer.
-  if (vf_.vkGetFenceFdKHR == nullptr) {
+  if (!vf_.vkGetFenceFdKHR) {
     IGL_LOG_ERROR_ONCE("VK_KHR_external_fence_fd not loaded; vkGetFenceFdKHR is null\n");
     return -1;
   }
@@ -2675,7 +2675,7 @@ VkSamplerYcbcrConversion VulkanContext::getOrCreateExternalYcbcrConversion(
 
   // `info.pNext` must carry a non-zero VkExternalFormatANDROID.
   uint64_t externalFormat = 0;
-  for (const auto* p = static_cast<const VkBaseInStructure*>(info.pNext); p != nullptr;
+  for (const auto* p = static_cast<const VkBaseInStructure*>(info.pNext); p;
        p = static_cast<const VkBaseInStructure*>(p->pNext)) {
     if (p->sType == VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID) {
       externalFormat = reinterpret_cast<const VkExternalFormatANDROID*>(p)->externalFormat;
@@ -2747,7 +2747,7 @@ VkDescriptorSetLayout VulkanContext::getOrCreateVkDescriptorSetLayout(
     const char* debugName) const {
   DescriptorSetLayoutCacheKey key;
   key.flags = flags;
-  IGL_DEBUG_ASSERT(bindings != nullptr || numBindings == 0);
+  IGL_DEBUG_ASSERT(bindings || numBindings == 0);
   // @fb-only
   key.bindings.assign(bindings, bindings + numBindings);
   if (bindingFlags) {
@@ -2862,8 +2862,7 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
   uint32_t numWrites = 0;
 
   for (uint32_t loc = 0; loc != IGL_ARRAY_NUM_ELEMENTS(desc.textures); loc++) {
-    if (compatiblePipeline ? (usageMaskPipeline & (1UL << loc)) == 0
-                           : desc.textures[loc] == nullptr) {
+    if (compatiblePipeline ? (usageMaskPipeline & (1UL << loc)) == 0 : !desc.textures[loc]) {
       continue;
     }
     const igl::vulkan::VulkanTexture& texture =
