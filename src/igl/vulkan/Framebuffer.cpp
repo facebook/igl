@@ -263,7 +263,7 @@ void Framebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures, bool u
   // updateDepthStencil) so the single-texture updateDrawable() overload, which
   // passes a null colorResolve, clears a stale resolve instead of retaining it
   // against the new color attachment. Guard on a non-null color attachment
-  // (mirroring updateResolveAttachment) so a resolve is never installed on a
+  // (mirroring updateResolveAttachment()) so a resolve is never installed on a
   // color-less slot; when color is null the slot was already fully cleared above.
   if (getColorAttachment(0) && getResolveColorAttachment(0) != surfaceTextures.colorResolve) {
     desc_.colorAttachments[0].resolveTexture = std::move(surfaceTextures.colorResolve);
