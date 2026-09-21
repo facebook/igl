@@ -110,7 +110,7 @@ TEST_F(VulkanSwapchainExtendedTest, CurrentVulkanTexture) {
   auto swapchain = std::make_unique<igl::vulkan::VulkanSwapchain>(*context_, kWidth, kHeight);
   ASSERT_NE(swapchain, nullptr);
 
-  auto texture = swapchain->getCurrentVulkanTexture();
+  const auto texture = swapchain->getCurrentVulkanTexture();
   ASSERT_NE(texture, nullptr);
 
   EXPECT_EQ(texture->image.getVkImage(), swapchain->getCurrentVkImage());
@@ -125,13 +125,13 @@ TEST_F(VulkanSwapchainExtendedTest, DepthBufferLazyAllocation) {
   auto swapchain = std::make_unique<igl::vulkan::VulkanSwapchain>(*context_, kWidth, kHeight);
   ASSERT_NE(swapchain, nullptr);
 
-  auto depthTexture = swapchain->getCurrentDepthTexture();
+  const auto depthTexture = swapchain->getCurrentDepthTexture();
   ASSERT_NE(depthTexture, nullptr);
 
   EXPECT_EQ(depthTexture->image.getVkImage(), swapchain->getDepthVkImage());
   EXPECT_EQ(depthTexture->imageView_.getVkImageView(), swapchain->getDepthVkImageView());
 
-  auto depthTextureAgain = swapchain->getCurrentDepthTexture();
+  const auto depthTextureAgain = swapchain->getCurrentDepthTexture();
   EXPECT_EQ(depthTexture, depthTextureAgain);
 #endif
 }
