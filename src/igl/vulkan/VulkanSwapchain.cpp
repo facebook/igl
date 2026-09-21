@@ -186,6 +186,11 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
                                  height,
                                  &swapchain_));
   }
+  VK_ASSERT(ivkSetDebugObjectName(&ctx_.vf_,
+                                  ctx.getVkDevice(),
+                                  VK_OBJECT_TYPE_SWAPCHAIN_KHR,
+                                  (uint64_t)swapchain_,
+                                  "Swapchain: VulkanSwapchain"));
   VK_ASSERT(ctx.vf_.vkGetSwapchainImagesKHR(
       ctx.getVkDevice(), swapchain_, &numSwapchainImages_, nullptr));
   std::vector<VkImage> swapchainImages(numSwapchainImages_);
