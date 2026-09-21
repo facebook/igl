@@ -33,7 +33,7 @@ class ResourcesBinderTest : public ::testing::Test {
     ASSERT_EQ(iglDev_->getBackendType(), BackendType::Vulkan) << "Test requires Vulkan backend";
 
     Result ret;
-    cmdQueue_ = iglDev_->createCommandQueue(CommandQueueDesc{}, &ret);
+    cmdQueue_ = iglDev_->createCommandQueue({}, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_NE(cmdQueue_, nullptr);
   }
@@ -46,7 +46,7 @@ class ResourcesBinderTest : public ::testing::Test {
 
   void waitForGpu() {
     Result ret;
-    auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+    auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
     if (cmdBuf) {
       cmdQueue_->submit(*cmdBuf);
       cmdBuf->waitUntilCompleted();
@@ -80,9 +80,9 @@ TEST_F(ResourcesBinderTest, BindBufferAndDraw) {
   auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk());
 
-  auto cmdQueue = iglDev_->createCommandQueue(CommandQueueDesc{}, &ret);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
   ASSERT_TRUE(ret.isOk());
-  auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
   const RenderPassDesc rpDesc{
@@ -129,9 +129,9 @@ TEST_F(ResourcesBinderTest, BindTextureAndSamplerAndDraw) {
   auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk());
 
-  auto cmdQueue = iglDev_->createCommandQueue(CommandQueueDesc{}, &ret);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
   ASSERT_TRUE(ret.isOk());
-  auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
   const RenderPassDesc rpDesc{
@@ -178,7 +178,7 @@ TEST_F(ResourcesBinderTest, BindMultipleBuffers) {
   auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk());
 
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
   const RenderPassDesc rpDesc{
@@ -211,7 +211,7 @@ TEST_F(ResourcesBinderTest, CreateEncoderWithClearColor) {
   auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk());
 
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
   const RenderPassDesc rpDesc{.colorAttachments = {{.loadAction = LoadAction::Clear,
