@@ -439,10 +439,10 @@ TEST(CommonTest, ResourceStorageMemorylessWithoutPropertiesReturnsDeviceLocal) {
 }
 
 TEST(CommonTest, ResourceStorageMemorylessWithLazilyAllocated) {
-  VkPhysicalDeviceMemoryProperties memProps = {};
-  memProps.memoryTypeCount = 1;
-  memProps.memoryTypes[0].propertyFlags =
-      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+  const VkPhysicalDeviceMemoryProperties memProps{
+      .memoryTypeCount = 1,
+      .memoryTypes = {{.propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+                                        VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT}}};
 
   const VkMemoryPropertyFlags flags =
       igl::vulkan::resourceStorageToVkMemoryPropertyFlags(ResourceStorage::Memoryless, &memProps);
@@ -450,9 +450,9 @@ TEST(CommonTest, ResourceStorageMemorylessWithLazilyAllocated) {
 }
 
 TEST(CommonTest, ResourceStorageMemorylessWithoutLazilyAllocated) {
-  VkPhysicalDeviceMemoryProperties memProps = {};
-  memProps.memoryTypeCount = 1;
-  memProps.memoryTypes[0].propertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+  const VkPhysicalDeviceMemoryProperties memProps{
+      .memoryTypeCount = 1,
+      .memoryTypes = {{.propertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT}}};
 
   const VkMemoryPropertyFlags flags =
       igl::vulkan::resourceStorageToVkMemoryPropertyFlags(ResourceStorage::Memoryless, &memProps);
