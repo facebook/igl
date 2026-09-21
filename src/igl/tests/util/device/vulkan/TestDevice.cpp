@@ -17,7 +17,7 @@
 #endif
 
 #if IGL_PLATFORM_MACOSX
-#include <igl/vulkan/moltenvk/MoltenVKHelpers.h>
+#include <igl/vulkan/moltenvk/MoltenVkHelpers.h>
 #endif
 
 namespace igl::tests::util::device::vulkan {
