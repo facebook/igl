@@ -45,8 +45,7 @@ class MetalSamplerCreationTest : public ::testing::Test {
 //
 TEST_F(MetalSamplerCreationTest, DefaultSampler) {
   Result res;
-  SamplerStateDesc desc;
-  desc.debugName = "defaultSampler";
+  const SamplerStateDesc desc{.debugName = "defaultSampler"};
 
   auto sampler = device_->createSamplerState(desc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
@@ -60,11 +59,10 @@ TEST_F(MetalSamplerCreationTest, DefaultSampler) {
 //
 TEST_F(MetalSamplerCreationTest, SamplerWithFilters) {
   Result res;
-  SamplerStateDesc desc;
-  desc.minFilter = SamplerMinMagFilter::Linear;
-  desc.magFilter = SamplerMinMagFilter::Linear;
-  desc.mipFilter = SamplerMipFilter::Linear;
-  desc.debugName = "linearSampler";
+  const SamplerStateDesc desc{.minFilter = SamplerMinMagFilter::Linear,
+                              .magFilter = SamplerMinMagFilter::Linear,
+                              .mipFilter = SamplerMipFilter::Linear,
+                              .debugName = "linearSampler"};
 
   auto sampler = device_->createSamplerState(desc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
@@ -78,11 +76,10 @@ TEST_F(MetalSamplerCreationTest, SamplerWithFilters) {
 //
 TEST_F(MetalSamplerCreationTest, SamplerWithAddressModes) {
   Result res;
-  SamplerStateDesc desc;
-  desc.addressModeU = SamplerAddressMode::Clamp;
-  desc.addressModeV = SamplerAddressMode::MirrorRepeat;
-  desc.addressModeW = SamplerAddressMode::Repeat;
-  desc.debugName = "addressModeSampler";
+  const SamplerStateDesc desc{.addressModeU = SamplerAddressMode::Clamp,
+                              .addressModeV = SamplerAddressMode::MirrorRepeat,
+                              .addressModeW = SamplerAddressMode::Repeat,
+                              .debugName = "addressModeSampler"};
 
   auto sampler = device_->createSamplerState(desc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
