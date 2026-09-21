@@ -45,7 +45,7 @@ class ComputeCommandEncoderVulkanTest : public ::testing::Test {
     ASSERT_EQ(iglDev_->getBackendType(), BackendType::Vulkan) << "Test requires Vulkan backend";
 
     Result ret;
-    cmdQueue_ = iglDev_->createCommandQueue(CommandQueueDesc{}, &ret);
+    cmdQueue_ = iglDev_->createCommandQueue({}, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_NE(cmdQueue_, nullptr);
   }
@@ -59,7 +59,7 @@ class ComputeCommandEncoderVulkanTest : public ::testing::Test {
 
 TEST_F(ComputeCommandEncoderVulkanTest, CreateAndEndEncoding) {
   Result ret;
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
   auto encoder = cmdBuf->createComputeCommandEncoder();
@@ -147,7 +147,7 @@ TEST_F(ComputeCommandEncoderVulkanTest, BindTextureSampledStorageTransitionsToSh
   ASSERT_NE(outBuffer, nullptr);
 
   // Sampler for the combined image sampler binding.
-  auto sampler = iglDev_->createSamplerState(SamplerStateDesc{}, &ret);
+  auto sampler = iglDev_->createSamplerState({}, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(sampler, nullptr);
 
@@ -179,7 +179,7 @@ TEST_F(ComputeCommandEncoderVulkanTest, BindTextureSampledStorageTransitionsToSh
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(pipeline, nullptr);
 
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(cmdBuf, nullptr);
 
@@ -208,7 +208,7 @@ TEST_F(ComputeCommandEncoderVulkanTest, BindTextureSampledStorageTransitionsToSh
 
 TEST_F(ComputeCommandEncoderVulkanTest, DebugGroupLabels) {
   Result ret;
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
   auto encoder = cmdBuf->createComputeCommandEncoder();
@@ -285,7 +285,7 @@ TEST_F(ComputeCommandEncoderVulkanTest, DispatchThreadGroupsIndirect) {
   auto indirectBuffer = iglDev_->createBuffer(indirectBufferDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  auto cmdBuffer = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuffer = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
   auto computeEncoder = cmdBuffer->createComputeCommandEncoder();
@@ -366,7 +366,7 @@ TEST_F(ComputeCommandEncoderVulkanTest, DirectDispatch) {
   auto outputBuffer = iglDev_->createBuffer(outputBufferDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  auto cmdBuffer = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuffer = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
   auto computeEncoder = cmdBuffer->createComputeCommandEncoder();
@@ -398,7 +398,7 @@ TEST_F(ComputeCommandEncoderVulkanTest, DirectDispatch) {
 
 TEST_F(ComputeCommandEncoderVulkanTest, NestedDebugGroupLabels) {
   Result ret;
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
   auto encoder = cmdBuf->createComputeCommandEncoder();
