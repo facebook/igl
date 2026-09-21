@@ -70,7 +70,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
                                 nullptr));
     }
 
-    IGL_DEBUG_ASSERT(vmaAllocation_ != nullptr);
+    IGL_DEBUG_ASSERT(vmaAllocation_);
 
     if (vmaAllocation_) {
       vmaSetAllocationName(static_cast<VmaAllocator>(ctx_.getVmaAllocator()),
