@@ -159,7 +159,7 @@ void VulkanStagingDevice::mergeRegionsAndFreeBuffers() {
       regions_.erase(regions_.begin() + regionIndex);
 
       // remove trailing empty staging buffers
-      while (!stagingBuffers_.empty() && stagingBuffers_.back() == nullptr) {
+      while (!stagingBuffers_.empty() && !stagingBuffers_.back()) {
         stagingBuffers_.pop_back();
       }
       continue;
