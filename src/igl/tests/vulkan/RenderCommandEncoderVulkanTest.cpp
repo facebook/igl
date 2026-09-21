@@ -32,7 +32,7 @@ class RenderCommandEncoderVulkanTest : public ::testing::Test {
     ASSERT_EQ(iglDev_->getBackendType(), BackendType::Vulkan) << "Test requires Vulkan backend";
 
     Result ret;
-    cmdQueue_ = iglDev_->createCommandQueue(CommandQueueDesc{}, &ret);
+    cmdQueue_ = iglDev_->createCommandQueue({}, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_NE(cmdQueue_, nullptr);
 
@@ -62,7 +62,7 @@ class RenderCommandEncoderVulkanTest : public ::testing::Test {
 
   std::unique_ptr<IRenderCommandEncoder> createEncoder(std::shared_ptr<ICommandBuffer>& cmdBuf) {
     Result ret;
-    cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+    cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
     if (!ret.isOk() || !cmdBuf) {
       return nullptr;
     }
@@ -178,7 +178,7 @@ TEST_F(RenderCommandEncoderVulkanTest, MultipleEncodersSequentially) {
 
 TEST_F(RenderCommandEncoderVulkanTest, ClearColorRenderPass) {
   Result ret;
-  const auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  const auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
   const RenderPassDesc rpDesc{.colorAttachments = {{.loadAction = LoadAction::Clear,
