@@ -71,8 +71,7 @@ TEST_F(MetalTextureDataRoundtripTest, UploadAndReadbackRGBA) {
   ASSERT_TRUE(res.isOk()) << res.message;
 
   // Create framebuffer to read back
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = texture;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = texture}}};
   auto framebuffer = device_->createFramebuffer(fbDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
 
