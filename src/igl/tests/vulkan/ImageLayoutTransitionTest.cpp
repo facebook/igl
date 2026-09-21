@@ -31,7 +31,7 @@ class ImageLayoutTransitionTest : public ::testing::Test {
     ASSERT_EQ(iglDev_->getBackendType(), BackendType::Vulkan) << "Test requires Vulkan backend";
 
     Result ret;
-    cmdQueue_ = iglDev_->createCommandQueue(CommandQueueDesc{}, &ret);
+    cmdQueue_ = iglDev_->createCommandQueue({}, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_NE(cmdQueue_, nullptr);
   }
@@ -44,7 +44,7 @@ class ImageLayoutTransitionTest : public ::testing::Test {
 
   void waitForGpu() {
     Result ret;
-    auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+    auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
     if (cmdBuf) {
       cmdQueue_->submit(*cmdBuf);
       cmdBuf->waitUntilCompleted();
@@ -69,7 +69,7 @@ TEST_F(ImageLayoutTransitionTest, TransitionToColorAttachment) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(fb, nullptr);
 
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(cmdBuf, nullptr);
 
@@ -117,7 +117,7 @@ TEST_F(ImageLayoutTransitionTest, TransitionToDepthStencilAttachment) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(fb, nullptr);
 
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(cmdBuf, nullptr);
 
@@ -187,7 +187,7 @@ TEST_F(ImageLayoutTransitionTest, UploadThenRenderPass) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(fb, nullptr);
 
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(cmdBuf, nullptr);
 
@@ -221,7 +221,7 @@ TEST_F(ImageLayoutTransitionTest, MultipleRenderPassesOnSameTexture) {
   ASSERT_NE(fb, nullptr);
 
   for (int i = 0; i < 3; ++i) {
-    auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+    auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_NE(cmdBuf, nullptr);
 
