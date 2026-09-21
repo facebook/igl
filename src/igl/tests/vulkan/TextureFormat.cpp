@@ -42,8 +42,8 @@ TEST(TextureFormatUtilTest, isTextureFormatBGR) {
 }
 
 TEST(TextureFormatUtilTest, B10G11R11UFloatRoundTrip) {
-  constexpr auto kIglFormat = igl::TextureFormat::B10G11R11_UFloat;
-  constexpr auto kVkFormat = VK_FORMAT_B10G11R11_UFLOAT_PACK32;
+  constexpr TextureFormat kIglFormat = igl::TextureFormat::B10G11R11_UFloat;
+  constexpr VkFormat kVkFormat = VK_FORMAT_B10G11R11_UFLOAT_PACK32;
 
   EXPECT_EQ(textureFormatToVkFormat(kIglFormat), kVkFormat);
   EXPECT_EQ(vkFormatToTextureFormat(kVkFormat), kIglFormat);
