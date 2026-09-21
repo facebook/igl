@@ -182,7 +182,7 @@ std::unique_ptr<impl::XrSwapchainProviderImpl> XrAppImplVulkan::createSwapchainP
 
 std::vector<const char*> XrAppImplVulkan::processExtensionsBuffer(std::vector<char>& buffer) {
   std::vector<const char*> extensions;
-  auto skip = false;
+  bool skip = false;
   for (auto& ch : buffer) {
     if (skip) {
       if (ch == ' ') {
