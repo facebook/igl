@@ -51,10 +51,9 @@ TEST_F(MetalRenderPipelineCreationTest, CreateBasicPipeline) {
   util::createSimpleShaderStages(device_, stages);
   ASSERT_NE(stages, nullptr);
 
-  RenderPipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = std::move(stages);
-  pipelineDesc.targetDesc.colorAttachments.resize(1);
-  pipelineDesc.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
+  const RenderPipelineDesc pipelineDesc{
+      .shaderStages = std::move(stages),
+      .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}}}};
 
   auto pipeline = device_->createRenderPipeline(pipelineDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
@@ -73,15 +72,14 @@ TEST_F(MetalRenderPipelineCreationTest, CreatePipelineWithBlending) {
   util::createSimpleShaderStages(device_, stages);
   ASSERT_NE(stages, nullptr);
 
-  RenderPipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = std::move(stages);
-  pipelineDesc.targetDesc.colorAttachments.resize(1);
-  pipelineDesc.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
-  pipelineDesc.targetDesc.colorAttachments[0].blendEnabled = true;
-  pipelineDesc.targetDesc.colorAttachments[0].srcRGBBlendFactor = BlendFactor::SrcAlpha;
-  pipelineDesc.targetDesc.colorAttachments[0].dstRGBBlendFactor = BlendFactor::OneMinusSrcAlpha;
-  pipelineDesc.targetDesc.colorAttachments[0].srcAlphaBlendFactor = BlendFactor::One;
-  pipelineDesc.targetDesc.colorAttachments[0].dstAlphaBlendFactor = BlendFactor::Zero;
+  const RenderPipelineDesc pipelineDesc{
+      .shaderStages = std::move(stages),
+      .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8,
+                                           .blendEnabled = true,
+                                           .srcRGBBlendFactor = BlendFactor::SrcAlpha,
+                                           .srcAlphaBlendFactor = BlendFactor::One,
+                                           .dstRGBBlendFactor = BlendFactor::OneMinusSrcAlpha,
+                                           .dstAlphaBlendFactor = BlendFactor::Zero}}}};
 
   auto pipeline = device_->createRenderPipeline(pipelineDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
@@ -96,10 +94,9 @@ TEST_F(MetalRenderPipelineCreationTest, CreatePipelineWithBlending) {
 TEST_F(MetalRenderPipelineCreationTest, CreatePipelineNullStages) {
   Result res;
 
-  RenderPipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = nullptr;
-  pipelineDesc.targetDesc.colorAttachments.resize(1);
-  pipelineDesc.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
+  const RenderPipelineDesc pipelineDesc{
+      .shaderStages = nullptr,
+      .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}}}};
 
   auto pipeline = device_->createRenderPipeline(pipelineDesc, &res);
   ASSERT_FALSE(res.isOk());
@@ -117,11 +114,10 @@ TEST_F(MetalRenderPipelineCreationTest, CreatePipelineWithDepthFormat) {
   util::createSimpleShaderStages(device_, stages);
   ASSERT_NE(stages, nullptr);
 
-  RenderPipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = std::move(stages);
-  pipelineDesc.targetDesc.colorAttachments.resize(1);
-  pipelineDesc.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
-  pipelineDesc.targetDesc.depthAttachmentFormat = TextureFormat::Z_UNorm32;
+  const RenderPipelineDesc pipelineDesc{
+      .shaderStages = std::move(stages),
+      .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}},
+                     .depthAttachmentFormat = TextureFormat::Z_UNorm32}};
 
   auto pipeline = device_->createRenderPipeline(pipelineDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
