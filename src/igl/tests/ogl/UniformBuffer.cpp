@@ -418,9 +418,7 @@ class UniformBufferTest : public ::testing::Test {
     ASSERT_TRUE(inputTexture_ != nullptr);
 
     // Create framebuffer using the offscreen texture
-    FramebufferDesc framebufferDesc;
-
-    framebufferDesc.colorAttachments[0].texture = offscreenTexture_;
+    const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = offscreenTexture_}}};
     framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(framebuffer_ != nullptr);
@@ -942,11 +940,10 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   // Make sure there are more texture pixels than our test cases
   ASSERT_TRUE(uniformTypesCount_ + failureCasesCount_ <= kOffscreenTexWidth * kOffscreenTexHeight);
 
-  BufferDesc fpDesc;
-  fpDesc.type = BufferDesc::BufferTypeBits::Uniform;
-  fpDesc.data = &fragmentParameters;
-  fpDesc.length = sizeof(fragmentParameters);
-  fpDesc.storage = ResourceStorage::Shared;
+  const BufferDesc fpDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                          .data = &fragmentParameters,
+                          .length = sizeof(fragmentParameters),
+                          .storage = ResourceStorage::Shared};
 
   std::vector<UniformDesc> fragmentUniformDescriptors;
 
