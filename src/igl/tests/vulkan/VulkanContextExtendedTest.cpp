@@ -46,10 +46,10 @@ TEST_F(VulkanContextExtendedTest, WaitIdle) {
   auto& ctx = getVulkanContext();
 
   Result ret;
-  auto cmdQueue = iglDev_->createCommandQueue(CommandQueueDesc{}, &ret);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
-  auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
   cmdQueue->submit(*cmdBuf);
 
@@ -66,9 +66,9 @@ TEST_F(VulkanContextExtendedTest, DeferredTaskExecution) {
   ctx.deferredTask(std::move(task));
 
   Result ret;
-  auto cmdQueue = iglDev_->createCommandQueue(CommandQueueDesc{}, &ret);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
   ASSERT_TRUE(ret.isOk());
-  auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
   cmdQueue->submit(*cmdBuf);
 
