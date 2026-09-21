@@ -59,8 +59,7 @@ TEST_F(CopyTexSubImageOGLTest, CopyTexSubImage2D) {
   auto srcTexture = iglDev_->createTexture(srcTexDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  FramebufferDesc srcFbDesc;
-  srcFbDesc.colorAttachments[0].texture = srcTexture;
+  const FramebufferDesc srcFbDesc{.colorAttachments = {{.texture = srcTexture}}};
   auto srcFramebuffer = iglDev_->createFramebuffer(srcFbDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
