@@ -148,7 +148,7 @@ uint32_t TimestampQueries::beginElapsedQuery(VkCommandBuffer commandBuffer,
   commandBuffer_ = commandBuffer;
 
   // The pool reset is recorded lazily on the first query of a command buffer.
-  // vkCmdResetQueryPool must NOT be recorded inside an active render pass, so a
+  // vkCmdResetQueryPool() must NOT be recorded inside an active render pass, so a
   // caller timing a render pass must issue the first beginElapsedQuery() before
   // vkCmdBeginRenderPass(). Compute callers (the current consumers) record this
   // outside any encoder, so the reset is always emitted at a legal point.
