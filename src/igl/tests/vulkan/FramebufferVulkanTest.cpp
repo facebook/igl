@@ -110,10 +110,10 @@ TEST_F(FramebufferVulkanTest, CopyBytesColorAttachment) {
   auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  auto cmdQueue = iglDev_->createCommandQueue(CommandQueueDesc{}, &ret);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
-  auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
   cmdQueue->submit(*cmdBuf);
 
