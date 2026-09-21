@@ -364,12 +364,12 @@ void RenderCommandEncoder::endEncoding() {
 }
 
 void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const igl::Color& color) const {
-  IGL_DEBUG_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(label && *label);
   ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 
 void RenderCommandEncoder::insertDebugEventLabel(const char* label, const igl::Color& color) const {
-  IGL_DEBUG_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(label && *label);
   ivkCmdInsertDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 
@@ -412,7 +412,7 @@ void RenderCommandEncoder::bindRenderPipelineState(
     const std::shared_ptr<IRenderPipelineState>& pipelineState) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_DEBUG_VERIFY(pipelineState != nullptr)) {
+  if (!IGL_DEBUG_VERIFY(pipelineState)) {
     return;
   }
 
@@ -462,7 +462,7 @@ void RenderCommandEncoder::bindDepthStencilState(
     const std::shared_ptr<IDepthStencilState>& depthStencilState) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_DEBUG_VERIFY(depthStencilState != nullptr)) {
+  if (!IGL_DEBUG_VERIFY(depthStencilState)) {
     return;
   }
   const igl::vulkan::DepthStencilState* state =
@@ -513,7 +513,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
   IGL_LOG_INFO("%p  bindBuffer(%u, %u)\n", cmdBuffer_, index, static_cast<uint32_t>(bufferOffset));
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
-  if (!IGL_DEBUG_VERIFY(buffer != nullptr)) {
+  if (!IGL_DEBUG_VERIFY(buffer)) {
     return;
   }
 
