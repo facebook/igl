@@ -78,7 +78,8 @@ std::unique_ptr<igl::vulkan::Device> createTestDevice(
 
     igl::vulkan::VulkanFeatures features(config);
     features.populateWithAvailablePhysicalDeviceFeatures(
-        *ctx, (VkPhysicalDevice)devices[0].guid); // NOLINT(performance-no-int-to-ptr)
+        *ctx,
+        reinterpret_cast<VkPhysicalDevice>(devices[0].guid)); // NOLINT(performance-no-int-to-ptr)
     if (configureFeatures) {
       configureFeatures(features);
     }
