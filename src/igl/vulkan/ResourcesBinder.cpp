@@ -97,7 +97,8 @@ void ResourcesBinder::bindSamplerState(uint32_t index, SamplerState* samplerStat
     return;
   }
 
-  VulkanSampler* newSampler = samplerState ? ctx_.samplers_.get(samplerState->sampler_) : nullptr;
+  const VulkanSampler* newSampler = samplerState ? ctx_.samplers_.get(samplerState->sampler_)
+                                                 : nullptr;
 
   const VkSampler sampler = newSampler ? newSampler->vkSampler : VK_NULL_HANDLE;
 
@@ -129,7 +130,7 @@ void ResourcesBinder::bindTexture(uint32_t index, Texture* tex) {
     }
   }
 
-  VulkanTexture* newTexture = tex ? &tex->getVulkanTexture() : nullptr;
+  const VulkanTexture* newTexture = tex ? &tex->getVulkanTexture() : nullptr;
 
 #if IGL_DEBUG_ABORT_ENABLED
   if (newTexture) {
@@ -181,7 +182,7 @@ void ResourcesBinder::bindStorageImage(uint32_t index, Texture* tex) {
     }
   }
 
-  VulkanTexture* newTexture = tex ? &tex->getVulkanTexture() : nullptr;
+  const VulkanTexture* newTexture = tex ? &tex->getVulkanTexture() : nullptr;
 
 #if IGL_DEBUG_ABORT_ENABLED
   if (newTexture) {
