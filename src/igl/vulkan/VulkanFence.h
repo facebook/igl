@@ -38,7 +38,7 @@ class VulkanFence final {
   /** @brief Signals the fence on the provided queue.
    *
    * This does not wait for completion of the signal, it merely
-   * executes the vkQueueSubmit with the fence and no actual workload
+   * executes the vkQueueSubmit() with the fence and no actual workload
    * so that the fence is signaled as soon as the queue workload executes
    * on the GPU.
    */
