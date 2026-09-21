@@ -249,7 +249,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
       // If the parameters define an import operation and the external handle type
       // is VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
       // allocationSize must be the size returned by
-      // vkGetAndroidHardwareBufferPropertiesANDROID for the Android hardware
+      // vkGetAndroidHardwareBufferPropertiesANDROID() for the Android hardware
       // buffer.
       .allocationSize = ahbProps.allocationSize,
       .memoryTypeIndex = typeIndex};
