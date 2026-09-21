@@ -43,7 +43,7 @@ class ComputePipelineStateVulkanTest : public ::testing::Test {
     ASSERT_NE(context_, nullptr);
 
     Result ret;
-    cmdQueue_ = device_->createCommandQueue(CommandQueueDesc{}, &ret);
+    cmdQueue_ = device_->createCommandQueue({}, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_NE(cmdQueue_, nullptr);
   }
@@ -222,7 +222,7 @@ TEST_F(ComputePipelineStateVulkanTest, BindAndDispatch) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
   // Create command buffer and encoder
-  auto cmdBuffer = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuffer = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
   auto computeEncoder = cmdBuffer->createComputeCommandEncoder();
