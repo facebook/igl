@@ -77,8 +77,7 @@ TEST_F(CubeMapAttachmentOGLTest, AttachFace) {
   // Create a framebuffer with one face of the cube map
   // Note: In IGL, cube map attachment uses the whole texture;
   // face selection is implementation-specific
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = cubeTexture;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = cubeTexture}}};
 
   auto framebuffer = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
