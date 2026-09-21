@@ -55,10 +55,8 @@ TEST_F(MetalBindGroupTest, CreateTextureBindGroup) {
   auto sampler = device_->createSamplerState(samplerDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
 
-  BindGroupTextureDesc bgDesc;
-  bgDesc.textures[0] = texture;
-  bgDesc.samplers[0] = sampler;
-  bgDesc.debugName = "testTextureBindGroup";
+  const BindGroupTextureDesc bgDesc{
+      .textures = {texture}, .samplers = {sampler}, .debugName = "testTextureBindGroup"};
 
   auto handle = device_->createBindGroup(bgDesc, nullptr, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
@@ -82,9 +80,8 @@ TEST_F(MetalBindGroupTest, CreateBufferBindGroup) {
   auto buffer = device_->createBuffer(bufDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
 
-  BindGroupBufferDesc bgDesc;
-  bgDesc.buffers[0] = std::shared_ptr<IBuffer>(std::move(buffer));
-  bgDesc.debugName = "testBufferBindGroup";
+  const BindGroupBufferDesc bgDesc{.buffers = {std::shared_ptr<IBuffer>(std::move(buffer))},
+                                   .debugName = "testBufferBindGroup"};
 
   auto handle = device_->createBindGroup(bgDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
@@ -104,9 +101,7 @@ TEST_F(MetalBindGroupTest, DestroyBindGroup) {
   auto texture = device_->createTexture(texDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
 
-  BindGroupTextureDesc bgDesc;
-  bgDesc.textures[0] = texture;
-  bgDesc.debugName = "testDestroyBindGroup";
+  const BindGroupTextureDesc bgDesc{.textures = {texture}, .debugName = "testDestroyBindGroup"};
 
   auto handle = device_->createBindGroup(bgDesc, nullptr, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
