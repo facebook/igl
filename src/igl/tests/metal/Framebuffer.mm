@@ -63,9 +63,8 @@ class MetalFramebufferTest : public ::testing::Test {
 //
 TEST_F(MetalFramebufferTest, CreateWithColorAttachment) {
   Result res;
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = colorTexture_;
-  fbDesc.debugName = "testFB";
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTexture_}},
+                               .debugName = "testFB"};
 
   auto framebuffer = device_->createFramebuffer(fbDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
@@ -79,8 +78,7 @@ TEST_F(MetalFramebufferTest, CreateWithColorAttachment) {
 //
 TEST_F(MetalFramebufferTest, GetColorAttachment) {
   Result res;
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = colorTexture_;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTexture_}}};
 
   auto framebuffer = device_->createFramebuffer(fbDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
@@ -131,9 +129,8 @@ TEST_F(MetalFramebufferTest, GetDepthAttachment) {
   auto depthTexture = device_->createTexture(depthDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
 
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = colorTexture_;
-  fbDesc.depthAttachment.texture = depthTexture;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTexture_}},
+                               .depthAttachment = {.texture = depthTexture}};
 
   auto framebuffer = device_->createFramebuffer(fbDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
@@ -151,8 +148,7 @@ TEST_F(MetalFramebufferTest, GetDepthAttachment) {
 //
 TEST_F(MetalFramebufferTest, UpdateDrawable) {
   Result res;
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = colorTexture_;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTexture_}}};
 
   auto framebuffer = device_->createFramebuffer(fbDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
@@ -182,8 +178,7 @@ TEST_F(MetalFramebufferTest, UpdateDrawable) {
 //
 TEST_F(MetalFramebufferTest, GetDimensions) {
   Result res;
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = colorTexture_;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTexture_}}};
 
   auto framebuffer = device_->createFramebuffer(fbDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
