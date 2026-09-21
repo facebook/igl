@@ -68,9 +68,8 @@ TEST_F(MetalComputePipelineStateTest, CreateComputePipeline) {
   ASSERT_NE(stages, nullptr);
 
   // Create compute pipeline
-  ComputePipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = std::move(stages);
-  pipelineDesc.debugName = "testComputePipeline";
+  const ComputePipelineDesc pipelineDesc{.shaderStages = std::move(stages),
+                                         .debugName = "testComputePipeline"};
 
   auto pipeline = device_->createComputePipeline(pipelineDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
@@ -85,9 +84,7 @@ TEST_F(MetalComputePipelineStateTest, CreateComputePipeline) {
 TEST_F(MetalComputePipelineStateTest, CreateComputePipelineNullStages) {
   Result res;
 
-  ComputePipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = nullptr;
-  pipelineDesc.debugName = "testNullStages";
+  const ComputePipelineDesc pipelineDesc{.shaderStages = nullptr, .debugName = "testNullStages"};
 
   auto pipeline = device_->createComputePipeline(pipelineDesc, &res);
   ASSERT_FALSE(res.isOk());
