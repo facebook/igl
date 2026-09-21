@@ -187,7 +187,7 @@ TEST_F(VulkanImageViewTest, CreateImageViewWithVkCreateInfo) {
                             "Test Image");
   ASSERT_TRUE(image.valid());
 
-  VkImageViewCreateInfo ci = {
+  const VkImageViewCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
       .pNext = nullptr,
       .flags = 0,
