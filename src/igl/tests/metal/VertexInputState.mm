@@ -51,8 +51,7 @@ TEST_F(VertexInputStateMTLTest, testDefaultVertexInputDesc) {
 TEST_F(VertexInputStateMTLTest, testWithNumAttributesTooLarge) {
   ASSERT_TRUE(iglDev_ != nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = IGL_VERTEX_ATTRIBUTES_MAX + 1;
+  const VertexInputStateDesc inputDesc{.numAttributes = IGL_VERTEX_ATTRIBUTES_MAX + 1};
   Result ret;
 
   const std::shared_ptr<IVertexInputState> vertexInputState =
@@ -66,8 +65,7 @@ TEST_F(VertexInputStateMTLTest, testWithNumAttributesTooLarge) {
 TEST_F(VertexInputStateMTLTest, testWithNumBindingsTooLarge) {
   ASSERT_TRUE(iglDev_ != nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numInputBindings = IGL_BUFFER_BINDINGS_MAX + 1;
+  const VertexInputStateDesc inputDesc{.numInputBindings = IGL_BUFFER_BINDINGS_MAX + 1};
   Result ret;
 
   const std::shared_ptr<IVertexInputState> vertexInputState =
@@ -82,15 +80,13 @@ TEST_F(VertexInputStateMTLTest, testWithNumBindingsTooLarge) {
 TEST_F(VertexInputStateMTLTest, testOneAttribute) {
   ASSERT_TRUE(iglDev_ != nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 1;
-  inputDesc.attributes[0].bufferIndex = 0;
-  inputDesc.attributes[0].format = VertexAttributeFormat::Float1;
-  inputDesc.attributes[0].offset = 0;
-  inputDesc.attributes[0].name = "unused";
-  inputDesc.attributes[0].location = 0;
-
-  inputDesc.numInputBindings = 0;
+  const VertexInputStateDesc inputDesc{.numAttributes = 1,
+                                       .attributes = {{.bufferIndex = 0,
+                                                       .format = VertexAttributeFormat::Float1,
+                                                       .offset = 0,
+                                                       .name = "unused",
+                                                       .location = 0}},
+                                       .numInputBindings = 0};
   Result ret;
 
   const std::shared_ptr<IVertexInputState> vertexInputState =
@@ -102,6 +98,9 @@ TEST_F(VertexInputStateMTLTest, testOneAttribute) {
 TEST_F(VertexInputStateMTLTest, testNegativeBufferIndex) {
   ASSERT_TRUE(iglDev_ != nullptr);
 
+  // Left as field assignment on purpose: `bufferIndex` is a `size_t`, so the deliberately
+  // out-of-range -1 this test feeds in is a narrowing conversion that a braced initializer
+  // rejects outright.
   VertexInputStateDesc inputDesc;
   inputDesc.numAttributes = 1;
   inputDesc.attributes[0].bufferIndex = -1;
@@ -122,15 +121,13 @@ TEST_F(VertexInputStateMTLTest, testNegativeBufferIndex) {
 TEST_F(VertexInputStateMTLTest, testNegativeLocation) {
   ASSERT_TRUE(iglDev_ != nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 1;
-  inputDesc.attributes[0].bufferIndex = 0;
-  inputDesc.attributes[0].format = VertexAttributeFormat::Float1;
-  inputDesc.attributes[0].offset = 0;
-  inputDesc.attributes[0].name = "unused";
-  inputDesc.attributes[0].location = -1;
-
-  inputDesc.numInputBindings = 1;
+  const VertexInputStateDesc inputDesc{.numAttributes = 1,
+                                       .attributes = {{.bufferIndex = 0,
+                                                       .format = VertexAttributeFormat::Float1,
+                                                       .offset = 0,
+                                                       .name = "unused",
+                                                       .location = -1}},
+                                       .numInputBindings = 1};
   Result ret;
 
   const std::shared_ptr<IVertexInputState> vertexInputState =
@@ -145,20 +142,18 @@ TEST_F(VertexInputStateMTLTest, testNegativeLocation) {
 TEST_F(VertexInputStateMTLTest, testLocationUnique) {
   ASSERT_TRUE(iglDev_ != nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 2;
-  inputDesc.attributes[0].bufferIndex = 0;
-  inputDesc.attributes[0].format = VertexAttributeFormat::Float1;
-  inputDesc.attributes[0].offset = 0;
-  inputDesc.attributes[0].name = "unused";
-  inputDesc.attributes[0].location = 1;
-  inputDesc.attributes[1].bufferIndex = 0;
-  inputDesc.attributes[1].format = VertexAttributeFormat::Float1;
-  inputDesc.attributes[1].offset = 0;
-  inputDesc.attributes[1].name = "unused";
-  inputDesc.attributes[1].location = 1;
-
-  inputDesc.numInputBindings = 1;
+  const VertexInputStateDesc inputDesc{.numAttributes = 2,
+                                       .attributes = {{.bufferIndex = 0,
+                                                       .format = VertexAttributeFormat::Float1,
+                                                       .offset = 0,
+                                                       .name = "unused",
+                                                       .location = 1},
+                                                      {.bufferIndex = 0,
+                                                       .format = VertexAttributeFormat::Float1,
+                                                       .offset = 0,
+                                                       .name = "unused",
+                                                       .location = 1}},
+                                       .numInputBindings = 1};
   Result ret;
 
   const std::shared_ptr<IVertexInputState> vertexInputState =
@@ -173,20 +168,18 @@ TEST_F(VertexInputStateMTLTest, testLocationUnique) {
 TEST_F(VertexInputStateMTLTest, testLocationNonSequential) {
   ASSERT_TRUE(iglDev_ != nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 2;
-  inputDesc.attributes[0].bufferIndex = 0;
-  inputDesc.attributes[0].format = VertexAttributeFormat::Float1;
-  inputDesc.attributes[0].offset = 0;
-  inputDesc.attributes[0].name = "unused";
-  inputDesc.attributes[0].location = 10;
-  inputDesc.attributes[1].bufferIndex = 0;
-  inputDesc.attributes[1].format = VertexAttributeFormat::Float1;
-  inputDesc.attributes[1].offset = 0;
-  inputDesc.attributes[1].name = "unused";
-  inputDesc.attributes[1].location = 15;
-
-  inputDesc.numInputBindings = 1;
+  const VertexInputStateDesc inputDesc{.numAttributes = 2,
+                                       .attributes = {{.bufferIndex = 0,
+                                                       .format = VertexAttributeFormat::Float1,
+                                                       .offset = 0,
+                                                       .name = "unused",
+                                                       .location = 10},
+                                                      {.bufferIndex = 0,
+                                                       .format = VertexAttributeFormat::Float1,
+                                                       .offset = 0,
+                                                       .name = "unused",
+                                                       .location = 15}},
+                                       .numInputBindings = 1};
   Result ret;
 
   const std::shared_ptr<IVertexInputState> vertexInputState =
@@ -198,22 +191,18 @@ TEST_F(VertexInputStateMTLTest, testLocationNonSequential) {
 TEST_F(VertexInputStateMTLTest, testTwoAttributesZeroBinding) {
   ASSERT_TRUE(iglDev_ != nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 2;
-
-  inputDesc.attributes[0].bufferIndex = 0;
-  inputDesc.attributes[0].format = VertexAttributeFormat::Float1;
-  inputDesc.attributes[0].offset = 0;
-  inputDesc.attributes[0].name = "unused1";
-  inputDesc.attributes[0].location = 0;
-
-  inputDesc.attributes[1].bufferIndex = 0;
-  inputDesc.attributes[1].format = VertexAttributeFormat::Float1;
-  inputDesc.attributes[1].offset = 0;
-  inputDesc.attributes[1].name = "unused2";
-  inputDesc.attributes[1].location = 1;
-
-  inputDesc.numInputBindings = 0;
+  const VertexInputStateDesc inputDesc{.numAttributes = 2,
+                                       .attributes = {{.bufferIndex = 0,
+                                                       .format = VertexAttributeFormat::Float1,
+                                                       .offset = 0,
+                                                       .name = "unused1",
+                                                       .location = 0},
+                                                      {.bufferIndex = 0,
+                                                       .format = VertexAttributeFormat::Float1,
+                                                       .offset = 0,
+                                                       .name = "unused2",
+                                                       .location = 1}},
+                                       .numInputBindings = 0};
   Result ret;
 
   const std::shared_ptr<IVertexInputState> vertexInputState =
@@ -226,22 +215,18 @@ TEST_F(VertexInputStateMTLTest, testTwoAttributesZeroBinding) {
 TEST_F(VertexInputStateMTLTest, testTwoAttributesNotCovering) {
   ASSERT_TRUE(iglDev_ != nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 2;
-
-  inputDesc.attributes[0].bufferIndex = 0;
-  inputDesc.attributes[0].format = VertexAttributeFormat::Float1;
-  inputDesc.attributes[0].offset = 0;
-  inputDesc.attributes[0].name = "unused1";
-  inputDesc.attributes[0].location = 0;
-
-  inputDesc.attributes[1].bufferIndex = 0;
-  inputDesc.attributes[1].format = VertexAttributeFormat::Float1;
-  inputDesc.attributes[1].offset = 0;
-  inputDesc.attributes[1].name = "unused2";
-  inputDesc.attributes[1].location = 0;
-
-  inputDesc.numInputBindings = 1;
+  const VertexInputStateDesc inputDesc{.numAttributes = 2,
+                                       .attributes = {{.bufferIndex = 0,
+                                                       .format = VertexAttributeFormat::Float1,
+                                                       .offset = 0,
+                                                       .name = "unused1",
+                                                       .location = 0},
+                                                      {.bufferIndex = 0,
+                                                       .format = VertexAttributeFormat::Float1,
+                                                       .offset = 0,
+                                                       .name = "unused2",
+                                                       .location = 0}},
+                                       .numInputBindings = 1};
   Result ret;
 
   const std::shared_ptr<IVertexInputState> vertexInputState =
@@ -254,25 +239,21 @@ TEST_F(VertexInputStateMTLTest, testTwoAttributesNotCovering) {
 TEST_F(VertexInputStateMTLTest, testTwoAttributesOneBuffer) {
   ASSERT_TRUE(iglDev_ != nullptr);
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 2;
-
-  inputDesc.attributes[0].bufferIndex = 0;
-  inputDesc.attributes[0].format = VertexAttributeFormat::Float1;
-  inputDesc.attributes[0].offset = 0;
-  inputDesc.attributes[0].name = "unused1";
-  inputDesc.attributes[0].location = 1;
-
-  inputDesc.attributes[1].bufferIndex = 0;
-  inputDesc.attributes[1].format = VertexAttributeFormat::Float1;
-  inputDesc.attributes[1].offset = 8;
-  inputDesc.attributes[1].name = "unused2";
-  inputDesc.attributes[1].location = 0;
-
-  inputDesc.numInputBindings = 1;
-  inputDesc.inputBindings[0].stride = 16;
-  inputDesc.inputBindings[0].sampleFunction = VertexSampleFunction::PerVertex;
-  inputDesc.inputBindings[0].sampleRate = 2;
+  const VertexInputStateDesc inputDesc{
+      .numAttributes = 2,
+      .attributes = {{.bufferIndex = 0,
+                      .format = VertexAttributeFormat::Float1,
+                      .offset = 0,
+                      .name = "unused1",
+                      .location = 1},
+                     {.bufferIndex = 0,
+                      .format = VertexAttributeFormat::Float1,
+                      .offset = 8,
+                      .name = "unused2",
+                      .location = 0}},
+      .numInputBindings = 1,
+      .inputBindings = {
+          {.stride = 16, .sampleFunction = VertexSampleFunction::PerVertex, .sampleRate = 2}}};
   Result ret;
 
   const std::shared_ptr<IVertexInputState> vertexInputState =
