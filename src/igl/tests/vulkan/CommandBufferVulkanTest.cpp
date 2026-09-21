@@ -33,7 +33,7 @@ class CommandBufferVulkanTest : public ::testing::Test {
     ASSERT_EQ(iglDev_->getBackendType(), BackendType::Vulkan) << "Test requires Vulkan backend";
 
     Result ret;
-    cmdQueue_ = iglDev_->createCommandQueue(CommandQueueDesc{}, &ret);
+    cmdQueue_ = iglDev_->createCommandQueue({}, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_NE(cmdQueue_, nullptr);
   }
@@ -47,7 +47,7 @@ class CommandBufferVulkanTest : public ::testing::Test {
 
 TEST_F(CommandBufferVulkanTest, GetVkCommandBuffer) {
   Result ret;
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(cmdBuf, nullptr);
 
@@ -59,7 +59,7 @@ TEST_F(CommandBufferVulkanTest, GetVkCommandBuffer) {
 
 TEST_F(CommandBufferVulkanTest, DebugGroupLabels) {
   Result ret;
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
   ASSERT_NE(cmdBuf, nullptr);
 
@@ -88,7 +88,7 @@ TEST_F(CommandBufferVulkanTest, CopyBuffer) {
   ret = srcBuffer->upload(srcData.data(), BufferRange(128, 0));
   ASSERT_TRUE(ret.isOk());
 
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
   cmdBuf->copyBuffer(*srcBuffer, *dstBuffer, 0, 0, 128);
@@ -107,7 +107,7 @@ TEST_F(CommandBufferVulkanTest, CopyBuffer) {
 
 TEST_F(CommandBufferVulkanTest, WaitUntilCompleted) {
   Result ret;
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
   ASSERT_NE(cmdBuf, nullptr);
 
@@ -117,7 +117,7 @@ TEST_F(CommandBufferVulkanTest, WaitUntilCompleted) {
 
 TEST_F(CommandBufferVulkanTest, CreateComputeCommandEncoder) {
   Result ret;
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
   ASSERT_NE(cmdBuf, nullptr);
 
@@ -130,7 +130,7 @@ TEST_F(CommandBufferVulkanTest, CreateComputeCommandEncoder) {
 
 TEST_F(CommandBufferVulkanTest, GetNextSubmitHandle) {
   Result ret;
-  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
 
   auto* vulkanCmdBuf = static_cast<igl::vulkan::CommandBuffer*>(cmdBuf.get());
@@ -157,7 +157,7 @@ TEST_F(CommandBufferVulkanTest, CreateRenderCommandEncoder) {
   ASSERT_TRUE(ret.isOk());
   ASSERT_NE(fb, nullptr);
 
-  const auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  const auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
   ASSERT_NE(cmdBuf, nullptr);
 
@@ -176,7 +176,7 @@ TEST_F(CommandBufferVulkanTest, CreateRenderCommandEncoder) {
 TEST_F(CommandBufferVulkanTest, MultipleSequentialSubmits) {
   for (int i = 0; i < 3; ++i) {
     Result ret;
-    const auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+    const auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
     ASSERT_TRUE(ret.isOk()) << "Failed on iteration " << i;
     ASSERT_NE(cmdBuf, nullptr);
 
@@ -187,7 +187,7 @@ TEST_F(CommandBufferVulkanTest, MultipleSequentialSubmits) {
 
 TEST_F(CommandBufferVulkanTest, NestedDebugGroupLabels) {
   Result ret;
-  const auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
+  const auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
   ASSERT_NE(cmdBuf, nullptr);
 
