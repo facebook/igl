@@ -59,6 +59,7 @@ class CommandBuffer final : public ICommandBuffer,
                   uint64_t srcOffset,
                   uint64_t dstOffset,
                   uint64_t size) override;
+  void fillBuffer(IBuffer& buffer, const BufferRange& range, uint8_t value) override;
   void copyTextureToBuffer(ITexture& src,
                            IBuffer& dst,
                            uint64_t dstOffset,

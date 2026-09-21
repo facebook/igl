@@ -105,6 +105,34 @@ TEST_F(CommandBufferVulkanTest, CopyBuffer) {
   dstBuffer->unmap();
 }
 
+TEST_F(CommandBufferVulkanTest, FillBuffer) {
+  Result ret;
+  const uint32_t initialData[] = {0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu};
+  const BufferDesc desc{
+      .type = BufferDesc::BufferTypeBits::Storage,
+      .data = initialData,
+      .length = sizeof(initialData),
+      .storage = ResourceStorage::Shared,
+  };
+  auto buffer = iglDev_->createBuffer(desc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  cmdBuf->fillBuffer(*buffer, BufferRange(2 * sizeof(uint32_t), sizeof(uint32_t)), 0x7Fu);
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
+
+  auto* mapped = static_cast<uint32_t*>(buffer->map(BufferRange(sizeof(initialData), 0), &ret));
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(mapped, nullptr);
+  EXPECT_EQ(mapped[0], 0xFFFFFFFFu);
+  EXPECT_EQ(mapped[1], 0x7F7F7F7Fu);
+  EXPECT_EQ(mapped[2], 0x7F7F7F7Fu);
+  EXPECT_EQ(mapped[3], 0xFFFFFFFFu);
+  buffer->unmap();
+}
+
 TEST_F(CommandBufferVulkanTest, WaitUntilCompleted) {
   Result ret;
   auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);

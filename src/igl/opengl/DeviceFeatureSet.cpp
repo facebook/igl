@@ -604,6 +604,7 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
   // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (feature) {
   case DeviceFeatures::CopyBuffer:
+  case DeviceFeatures::FillBuffer:
   case DeviceFeatures::MultiSampleResolve:
   case DeviceFeatures::MeshShaders:
   case DeviceFeatures::TextureViews:

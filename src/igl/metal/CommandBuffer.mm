@@ -79,6 +79,19 @@ void CommandBuffer::copyBuffer(IBuffer& src,
   [blitCommandEncoder endEncoding];
 }
 
+void CommandBuffer::fillBuffer(IBuffer& buffer, const BufferRange& range, uint8_t value) {
+  IGL_PROFILER_FUNCTION();
+  auto metalBuffer = static_cast<Buffer&>(buffer).get();
+  IGL_DEBUG_ASSERT(range.offset % 4u == 0u && range.size % 4u == 0u);
+  IGL_DEBUG_ASSERT(range.offset + range.size <= metalBuffer.length);
+
+  auto blitCommandEncoder = [value_ blitCommandEncoder];
+  [blitCommandEncoder fillBuffer:metalBuffer
+                           range:NSMakeRange(range.offset, range.size)
+                           value:value];
+  [blitCommandEncoder endEncoding];
+}
+
 void CommandBuffer::copyTextureToBuffer(ITexture& src,
                                         IBuffer& dst,
                                         uint64_t dstOffset,

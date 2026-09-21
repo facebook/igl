@@ -179,6 +179,33 @@ void CommandBuffer::copyBuffer(IBuffer& src,
                    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 }
 
+void CommandBuffer::fillBuffer(IBuffer& buffer, const BufferRange& range, uint8_t value) {
+  IGL_PROFILER_FUNCTION();
+  IGL_DEBUG_ASSERT(range.offset % 4u == 0u && range.size % 4u == 0u);
+  IGL_DEBUG_ASSERT(range.offset + range.size <= buffer.getSizeInBytes());
+
+  const auto& vulkanBuffer = static_cast<Buffer&>(buffer);
+  IGL_DEBUG_ASSERT((vulkanBuffer.getBufferUsageFlags() & VK_BUFFER_USAGE_TRANSFER_DST_BIT) != 0u);
+
+  ivkBufferBarrier(&ctx_.vf_,
+                   wrapper_.cmdBuf,
+                   vulkanBuffer.getVkBuffer(),
+                   vulkanBuffer.getBufferUsageFlags(),
+                   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                   VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+  const uint32_t fillValue = static_cast<uint32_t>(value) * 0x01010101u;
+  ctx_.vf_.vkCmdFillBuffer(
+      wrapper_.cmdBuf, vulkanBuffer.getVkBuffer(), range.offset, range.size, fillValue);
+
+  ivkBufferBarrier(&ctx_.vf_,
+                   wrapper_.cmdBuf,
+                   vulkanBuffer.getVkBuffer(),
+                   vulkanBuffer.getBufferUsageFlags(),
+                   VK_PIPELINE_STAGE_TRANSFER_BIT,
+                   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+}
+
 void CommandBuffer::copyTextureToBuffer(ITexture& src,
                                         IBuffer& dst,
                                         uint64_t dstOffset,

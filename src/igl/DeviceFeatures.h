@@ -27,6 +27,7 @@ namespace igl {
  * BufferRing                 Supports creating ring buffers with memory for each swapchain image
  * Compute                    Supports compute
  * CopyBuffer                 Supports ICommandBuffer::copyBuffer()
+ * FillBuffer                 Supports ICommandBuffer::fillBuffer()
  * DepthCompare               Supports setting depth compare function
  * DepthShaderRead            Supports reading depth texture from a shader
  * DrawFirstIndexFirstVertex  Supports firstIndex/firstVertex parameters in IRenderCommandEncoder::drawIndexed()
@@ -133,6 +134,7 @@ enum class DeviceFeatures {
   Timers,
   UniformBlocks,
   ValidationLayersEnabled,
+  FillBuffer,
 };
 // clang-format on
 

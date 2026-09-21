@@ -99,6 +99,32 @@ TEST_F(MetalCommandBufferOpsTest, CopyBuffer) {
   dstBuffer->unmap();
 }
 
+TEST_F(MetalCommandBufferOpsTest, FillBuffer) {
+  Result res;
+  const uint32_t initialData[] = {0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu};
+  BufferDesc desc(BufferDesc::BufferTypeBits::Storage,
+                  initialData,
+                  sizeof(initialData),
+                  ResourceStorage::Shared);
+  auto buffer = device_->createBuffer(desc, &res);
+  ASSERT_TRUE(res.isOk()) << res.message;
+
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &res);
+  ASSERT_TRUE(res.isOk()) << res.message;
+  cmdBuf->fillBuffer(*buffer, BufferRange(2 * sizeof(uint32_t), sizeof(uint32_t)), 0x7Fu);
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
+
+  auto* mapped = static_cast<uint32_t*>(buffer->map(BufferRange(sizeof(initialData), 0), &res));
+  ASSERT_TRUE(res.isOk()) << res.message;
+  ASSERT_NE(mapped, nullptr);
+  EXPECT_EQ(mapped[0], 0xFFFFFFFFu);
+  EXPECT_EQ(mapped[1], 0x7F7F7F7Fu);
+  EXPECT_EQ(mapped[2], 0x7F7F7F7Fu);
+  EXPECT_EQ(mapped[3], 0xFFFFFFFFu);
+  buffer->unmap();
+}
+
 //
 // WaitUntilCompleted
 //

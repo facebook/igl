@@ -747,6 +747,7 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
   case DeviceFeatures::Compute:
     return true;
   case DeviceFeatures::CopyBuffer:
+  case DeviceFeatures::FillBuffer:
     return true;
   case DeviceFeatures::ExplicitBinding:
     return true;

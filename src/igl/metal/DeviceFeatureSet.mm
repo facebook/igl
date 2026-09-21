@@ -189,6 +189,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::SRGBSwapchain:
   case DeviceFeatures::DrawFirstIndexFirstVertex:
   case DeviceFeatures::DrawIndexedIndirect:
+  case DeviceFeatures::FillBuffer:
     return true;
   case DeviceFeatures::MeshShaders:
     if (@available(iOS 16, macOS 13, *)) {

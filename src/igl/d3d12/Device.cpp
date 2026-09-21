@@ -3575,6 +3575,7 @@ bool Device::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::TextureFormatRG:
   case DeviceFeatures::ValidationLayersEnabled:
   case DeviceFeatures::ExternalMemoryObjects:
+  case DeviceFeatures::FillBuffer:
     return false;
   default:
     return false;

@@ -60,6 +60,7 @@ TEST_F(DeviceFeatureSetMTLTest, HasFeatureTest) {
   ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::SRGBSwapchain), true);
   ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::DrawIndexedIndirect), true);
   ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::ExplicitBinding), true);
+  ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::FillBuffer), true);
 
   // We currently expect all these to be "false", i.e. NOT available on Metal
   ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::Multiview), false);

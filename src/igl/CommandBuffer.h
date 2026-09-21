@@ -150,6 +150,16 @@ class ICommandBuffer {
                           uint64_t srcOffset,
                           uint64_t dstOffset,
                           uint64_t size) = 0;
+
+  /**
+   * @brief Fill a buffer range with a repeated byte value.
+   *
+   * The offset and size must be multiples of four for portability across backends.
+   */
+  virtual void fillBuffer(IBuffer& /*buffer*/, const BufferRange& /*range*/, uint8_t /*value*/) {
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  }
+
   /**
    * @brief Copy texture data into a buffer.
    */
