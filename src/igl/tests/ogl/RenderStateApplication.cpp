@@ -52,8 +52,7 @@ class RenderStateApplicationOGLTest : public ::testing::Test {
     ASSERT_EQ(ret.code, Result::Code::Ok);
 
     // Create framebuffer
-    FramebufferDesc framebufferDesc;
-    framebufferDesc.colorAttachments[0].texture = offscreenTexture_;
+    const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = offscreenTexture_}}};
     framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
 
@@ -90,10 +89,9 @@ class RenderStateApplicationOGLTest : public ::testing::Test {
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
     // Create index buffer
-    BufferDesc ibDesc;
-    ibDesc.type = BufferDesc::BufferTypeBits::Index;
-    ibDesc.data = data::vertex_index::kQuadInd.data();
-    ibDesc.length = sizeof(data::vertex_index::kQuadInd);
+    const BufferDesc ibDesc{.type = BufferDesc::BufferTypeBits::Index,
+                            .data = data::vertex_index::kQuadInd.data(),
+                            .length = sizeof(data::vertex_index::kQuadInd)};
     ib_ = iglDev_->createBuffer(ibDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   }
