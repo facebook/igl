@@ -432,7 +432,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  IGL_DEBUG_ASSERT(hwBuffer != nullptr);
+  IGL_DEBUG_ASSERT(hwBuffer);
   IGL_DEBUG_ASSERT(mipLevels_ > 0, "The image must contain at least one mip level");
   IGL_DEBUG_ASSERT(arrayLayers_ > 0, "The image must contain at least one layer");
   IGL_DEBUG_ASSERT(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
