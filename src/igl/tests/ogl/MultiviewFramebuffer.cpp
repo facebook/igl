@@ -69,9 +69,8 @@ TEST_F(MultiviewFramebufferOGLTest, CreateMultiviewFramebuffer) {
   ASSERT_NE(texture, nullptr);
 
   // Create framebuffer with multiview mode
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = texture;
-  fbDesc.mode = FramebufferMode::Stereo;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = texture}},
+                               .mode = FramebufferMode::Stereo};
 
   auto framebuffer = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
