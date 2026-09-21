@@ -60,9 +60,8 @@ TEST_P(RenderPipelineStateTest, PolygonFillModeToVkPolygonModeTest) {
 
   Result result;
 
-  VertexInputStateDesc inputDesc;
-  inputDesc.numAttributes = 1;
-  inputDesc.attributes[0].format = vertexFormat;
+  const VertexInputStateDesc inputDesc{.numAttributes = 1,
+                                       .attributes = {{.format = vertexFormat}}};
   const auto inputState = device_->createVertexInputState(inputDesc, &result);
   EXPECT_TRUE(result.isOk());
 
@@ -82,18 +81,17 @@ TEST_P(RenderPipelineStateTest, PolygonFillModeToVkPolygonModeTest) {
                 }
             )";
 
-  RenderPipelineDesc pipelineDesc;
-  pipelineDesc.polygonFillMode = polygonFillMode;
-  pipelineDesc.cullMode = cullMode;
-  pipelineDesc.frontFaceWinding = windingMode;
-  pipelineDesc.vertexInputState = inputState;
-  pipelineDesc.targetDesc.colorAttachments.resize(1);
-  pipelineDesc.targetDesc.colorAttachments[0].blendEnabled = true;
-  pipelineDesc.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
-  pipelineDesc.targetDesc.colorAttachments[0].rgbBlendOp = blendOp;
-  pipelineDesc.targetDesc.colorAttachments[0].srcRGBBlendFactor = blendFactor;
-  pipelineDesc.shaderStages = ShaderStagesCreator::fromModuleStringInput(
-      *device_, codeVS, "main", "", codeFS, "main", "", nullptr);
+  const RenderPipelineDesc pipelineDesc{
+      .vertexInputState = inputState,
+      .shaderStages = ShaderStagesCreator::fromModuleStringInput(
+          *device_, codeVS, "main", "", codeFS, "main", "", nullptr),
+      .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8,
+                                           .blendEnabled = true,
+                                           .rgbBlendOp = blendOp,
+                                           .srcRGBBlendFactor = blendFactor}}},
+      .cullMode = cullMode,
+      .frontFaceWinding = windingMode,
+      .polygonFillMode = polygonFillMode};
   const auto renderPipeline = device_->createRenderPipeline(pipelineDesc, &result);
 }
 
