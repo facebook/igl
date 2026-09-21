@@ -100,23 +100,19 @@ TEST_F(MSAATextureAttachmentOGLTest, ResolveMSAA) {
   ASSERT_NE(resolveTexture, nullptr);
 
   // Create framebuffer with MSAA and resolve attachments
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = msaaTexture;
-  fbDesc.colorAttachments[0].resolveTexture = resolveTexture;
+  const FramebufferDesc fbDesc{
+      .colorAttachments = {{.texture = msaaTexture, .resolveTexture = resolveTexture}}};
 
   auto framebuffer = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(framebuffer, nullptr);
 
   // Clear the framebuffer
-  RenderPassDesc renderPass;
-  renderPass.colorAttachments.resize(1);
-  renderPass.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass.colorAttachments[0].storeAction = StoreAction::MsaaResolve;
-  renderPass.colorAttachments[0].clearColor = {1.0, 0.0, 0.0, 1.0};
+  const RenderPassDesc renderPass{.colorAttachments = {{.loadAction = LoadAction::Clear,
+                                                        .storeAction = StoreAction::MsaaResolve,
+                                                        .clearColor = {1.0, 0.0, 0.0, 1.0}}}};
 
-  CommandBufferDesc cbDesc;
-  auto cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
 
   auto cmdEncoder = cmdBuf->createRenderCommandEncoder(renderPass, framebuffer);
