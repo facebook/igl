@@ -64,9 +64,7 @@ class PipelineStateOGLTest : public ::testing::Test {
     ASSERT_TRUE(offscreenTexture_ != nullptr);
 
     // Create framebuffer using the offscreen texture
-    FramebufferDesc framebufferDesc;
-
-    framebufferDesc.colorAttachments[0].texture = offscreenTexture_;
+    const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = offscreenTexture_}}};
     framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(framebuffer_ != nullptr);
