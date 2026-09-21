@@ -37,7 +37,8 @@
 
 #if defined(IGL_USE_STATIC_KOSMICKRISP)
 // KosmicKrisp (Mesa Vulkan-to-Metal driver) is statically linked on macOS and exposes its
-// loader through kk_GetInstanceProcAddr instead of the standard vkGetInstanceProcAddr symbol.
+// loader through kk_GetInstanceProcAddr() instead of the standard vkGetInstanceProcAddr()
+// symbol.
 extern "C" VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL kk_GetInstanceProcAddr(VkInstance instance,
                                                                            const char* pName);
 #endif
