@@ -73,10 +73,9 @@ TEST_F(MetalErrorPathsTest, ExportableTextureNotSupported) {
 TEST_F(MetalErrorPathsTest, NullShaderStagesRenderPipeline) {
   Result res;
 
-  RenderPipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = nullptr;
-  pipelineDesc.targetDesc.colorAttachments.resize(1);
-  pipelineDesc.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
+  const RenderPipelineDesc pipelineDesc{
+      .shaderStages = nullptr,
+      .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}}}};
 
   auto pipeline = device_->createRenderPipeline(pipelineDesc, &res);
   ASSERT_FALSE(res.isOk());
@@ -90,8 +89,7 @@ TEST_F(MetalErrorPathsTest, NullShaderStagesRenderPipeline) {
 TEST_F(MetalErrorPathsTest, NullShaderStagesComputePipeline) {
   Result res;
 
-  ComputePipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = nullptr;
+  const ComputePipelineDesc pipelineDesc{.shaderStages = nullptr};
 
   auto pipeline = device_->createComputePipeline(pipelineDesc, &res);
   ASSERT_FALSE(res.isOk());
@@ -110,8 +108,7 @@ TEST_F(MetalErrorPathsTest, TextureViewNotSupported) {
   auto texture = device_->createTexture(texDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
 
-  TextureViewDesc viewDesc;
-  auto textureView = device_->createTextureView(texture, viewDesc, &res);
+  auto textureView = device_->createTextureView(texture, {}, &res);
   // Metal may return Unimplemented for texture views
   if (!res.isOk()) {
     ASSERT_EQ(res.code, Result::Code::Unimplemented);
