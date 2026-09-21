@@ -234,8 +234,7 @@ TEST_F(DeviceOGLTest, DeletionTest) {
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(texture != nullptr);
 
-    FramebufferDesc framebufferDesc;
-    framebufferDesc.colorAttachments[0].texture = texture;
+    const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = texture}}};
     framebuffer = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(framebuffer != nullptr);
