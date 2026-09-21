@@ -139,7 +139,7 @@ std::unique_ptr<IShaderStages> Device::createShaderStagesInternal(const ShaderSt
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   auto shaderStages = std::make_unique<ShaderStages>(desc);
-  if (shaderStages == nullptr) {
+  if (!shaderStages) {
     Result::setResult(
         outResult, Result::Code::RuntimeError, "Could not instantiate shader stages.");
   } else if (!shaderStages->isValid()) {
@@ -248,7 +248,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipelineInternal(
 
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
-  if (IGL_DEBUG_VERIFY_NOT(desc.shaderStages == nullptr)) {
+  if (!IGL_DEBUG_VERIFY(desc.shaderStages)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
     return nullptr;
   }
@@ -272,7 +272,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipelineInternal(
 
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
-  if (IGL_DEBUG_VERIFY_NOT(desc.shaderStages == nullptr)) {
+  if (!IGL_DEBUG_VERIFY(desc.shaderStages)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
     return nullptr;
   }
@@ -465,7 +465,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
     return nullptr;
   }
 
-  if (std::strstr(source, "#version ") == nullptr) {
+  if (!std::strstr(source, "#version ")) {
     std::string extraExtensions = ctx_->config_.enableDescriptorIndexing
                                       ? "#extension GL_EXT_nonuniform_qualifier : require\n"
                                       : "";
