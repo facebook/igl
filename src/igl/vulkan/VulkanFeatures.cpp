@@ -610,7 +610,7 @@ void VulkanFeatures::enableCommonDeviceExtensions(const VulkanContextConfig& con
   // Only meaningful when device apiVersion < 1.2; on >= 1.2 the core vkCreateRenderPass2() is used
   // directly. Enabling here as an extension also loads the *KHR-suffixed function pointers, which
   // VulkanFunctionTable aliases onto the core slots when those are null. VulkanRenderPassBuilder
-  // needs a non-null vkCreateRenderPass2 on every device it supports.
+  // needs a non-null vkCreateRenderPass2() on every device it supports.
   has_VK_KHR_create_renderpass2 =
       enable(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME, ExtensionType::Device);
 
