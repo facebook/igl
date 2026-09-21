@@ -59,8 +59,7 @@ TEST_F(MetalIndirectDrawTest, MultiDrawIndirect) {
   auto colorTexture = device_->createTexture(texDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
 
-  FramebufferDesc fbDesc;
-  fbDesc.colorAttachments[0].texture = colorTexture;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTexture}}};
   auto framebuffer = device_->createFramebuffer(fbDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
 
@@ -69,10 +68,9 @@ TEST_F(MetalIndirectDrawTest, MultiDrawIndirect) {
   util::createSimpleShaderStages(device_, shaderStages);
   ASSERT_NE(shaderStages, nullptr);
 
-  RenderPipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = std::move(shaderStages);
-  pipelineDesc.targetDesc.colorAttachments.resize(1);
-  pipelineDesc.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
+  const RenderPipelineDesc pipelineDesc{
+      .shaderStages = std::move(shaderStages),
+      .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}}}};
   auto pipeline = device_->createRenderPipeline(pipelineDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
 
@@ -129,10 +127,8 @@ TEST_F(MetalIndirectDrawTest, MultiDrawIndirect) {
   auto cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
 
-  RenderPassDesc rpDesc;
-  rpDesc.colorAttachments.resize(1);
-  rpDesc.colorAttachments[0].loadAction = LoadAction::Clear;
-  rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
+  const RenderPassDesc rpDesc{
+      .colorAttachments = {{.loadAction = LoadAction::Clear, .storeAction = StoreAction::Store}}};
 
   auto encoder = cmdBuf->createRenderCommandEncoder(rpDesc, framebuffer);
   ASSERT_NE(encoder, nullptr);
