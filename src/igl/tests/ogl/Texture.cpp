@@ -209,8 +209,7 @@ TEST_F(B10G11R11UFloatOGLTest, SamplesDistinctChannels) {
 
   render(input, output, false, input->getProperties());
 
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = output;
+  const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = output}}};
   auto framebuffer = iglDev_->createFramebuffer(framebufferDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
   ASSERT_NE(framebuffer, nullptr);
