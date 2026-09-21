@@ -194,13 +194,13 @@ void ComputeCommandEncoder::dispatchThreadGroupsIndirect(IBuffer& indirectBuffer
 }
 
 void ComputeCommandEncoder::pushDebugGroupLabel(const char* label, const igl::Color& color) const {
-  IGL_DEBUG_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(label && *label);
   ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 
 void ComputeCommandEncoder::insertDebugEventLabel(const char* label,
                                                   const igl::Color& color) const {
-  IGL_DEBUG_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(label && *label);
   ivkCmdInsertDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 
@@ -313,7 +313,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index,
                                        size_t bufferSize) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_DEBUG_VERIFY(buffer != nullptr)) {
+  if (!IGL_DEBUG_VERIFY(buffer)) {
     return;
   }
 
