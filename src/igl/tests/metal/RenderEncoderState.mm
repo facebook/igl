@@ -46,8 +46,7 @@ class MetalRenderEncoderStateTest : public ::testing::Test {
     colorTexture_ = device_->createTexture(texDesc, &res);
     ASSERT_TRUE(res.isOk()) << res.message;
 
-    FramebufferDesc fbDesc;
-    fbDesc.colorAttachments[0].texture = colorTexture_;
+    const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTexture_}}};
     framebuffer_ = device_->createFramebuffer(fbDesc, &res);
     ASSERT_TRUE(res.isOk()) << res.message;
 
@@ -72,10 +71,8 @@ class MetalRenderEncoderStateTest : public ::testing::Test {
 // Test setting a viewport on the render encoder without crash.
 //
 TEST_F(MetalRenderEncoderStateTest, BindViewport) {
-  RenderPassDesc rpDesc;
-  rpDesc.colorAttachments.resize(1);
-  rpDesc.colorAttachments[0].loadAction = LoadAction::Clear;
-  rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
+  const RenderPassDesc rpDesc{
+      .colorAttachments = {{.loadAction = LoadAction::Clear, .storeAction = StoreAction::Store}}};
 
   auto encoder = commandBuffer_->createRenderCommandEncoder(rpDesc, framebuffer_);
   ASSERT_NE(encoder, nullptr);
@@ -96,10 +93,8 @@ TEST_F(MetalRenderEncoderStateTest, BindViewport) {
 // Test setting a scissor rect on the render encoder without crash.
 //
 TEST_F(MetalRenderEncoderStateTest, BindScissorRect) {
-  RenderPassDesc rpDesc;
-  rpDesc.colorAttachments.resize(1);
-  rpDesc.colorAttachments[0].loadAction = LoadAction::Clear;
-  rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
+  const RenderPassDesc rpDesc{
+      .colorAttachments = {{.loadAction = LoadAction::Clear, .storeAction = StoreAction::Store}}};
 
   auto encoder = commandBuffer_->createRenderCommandEncoder(rpDesc, framebuffer_);
   ASSERT_NE(encoder, nullptr);
@@ -116,10 +111,8 @@ TEST_F(MetalRenderEncoderStateTest, BindScissorRect) {
 // Test setting a stencil reference value without crash.
 //
 TEST_F(MetalRenderEncoderStateTest, SetStencilReferenceValue) {
-  RenderPassDesc rpDesc;
-  rpDesc.colorAttachments.resize(1);
-  rpDesc.colorAttachments[0].loadAction = LoadAction::Clear;
-  rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
+  const RenderPassDesc rpDesc{
+      .colorAttachments = {{.loadAction = LoadAction::Clear, .storeAction = StoreAction::Store}}};
 
   auto encoder = commandBuffer_->createRenderCommandEncoder(rpDesc, framebuffer_);
   ASSERT_NE(encoder, nullptr);
@@ -134,10 +127,8 @@ TEST_F(MetalRenderEncoderStateTest, SetStencilReferenceValue) {
 // Test setting a blend color without crash.
 //
 TEST_F(MetalRenderEncoderStateTest, SetBlendColor) {
-  RenderPassDesc rpDesc;
-  rpDesc.colorAttachments.resize(1);
-  rpDesc.colorAttachments[0].loadAction = LoadAction::Clear;
-  rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
+  const RenderPassDesc rpDesc{
+      .colorAttachments = {{.loadAction = LoadAction::Clear, .storeAction = StoreAction::Store}}};
 
   auto encoder = commandBuffer_->createRenderCommandEncoder(rpDesc, framebuffer_);
   ASSERT_NE(encoder, nullptr);
@@ -152,10 +143,8 @@ TEST_F(MetalRenderEncoderStateTest, SetBlendColor) {
 // Test setting depth bias without crash.
 //
 TEST_F(MetalRenderEncoderStateTest, SetDepthBias) {
-  RenderPassDesc rpDesc;
-  rpDesc.colorAttachments.resize(1);
-  rpDesc.colorAttachments[0].loadAction = LoadAction::Clear;
-  rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
+  const RenderPassDesc rpDesc{
+      .colorAttachments = {{.loadAction = LoadAction::Clear, .storeAction = StoreAction::Store}}};
 
   auto encoder = commandBuffer_->createRenderCommandEncoder(rpDesc, framebuffer_);
   ASSERT_NE(encoder, nullptr);
