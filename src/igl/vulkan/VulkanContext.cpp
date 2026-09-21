@@ -1368,6 +1368,12 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
   VK_ASSERT(
       ivkAllocateCommandBuffer(&vf_, vkDevice_, profilingCommandPool_, &profilingCommandBuffer_));
 
+  ivkSetDebugObjectName(&vf_,
+                        vkDevice_,
+                        VK_OBJECT_TYPE_COMMAND_BUFFER,
+                        (uint64_t)profilingCommandBuffer_,
+                        "VulkanContext::profilingCommandBuffer_ (Tracy)");
+
 #if defined(VK_EXT_calibrated_timestamps)
   if (features_.enabled(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)) {
     tracyCtx_ = TracyVkContextCalibrated(vkInstance_,
