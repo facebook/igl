@@ -260,6 +260,12 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
   VkDeviceMemory vkDeviceMemory = VK_NULL_HANDLE;
   VK_ASSERT(ctx.vf_.vkAllocateMemory(device, &memAllocInfo, nullptr, &vkDeviceMemory));
 
+  VK_ASSERT(ivkSetDebugObjectName(&ctx.vf_,
+                                  device,
+                                  VK_OBJECT_TYPE_DEVICE_MEMORY,
+                                  (uint64_t)vkDeviceMemory,
+                                  "Memory: AHB NativeHWTextureBuffer"));
+
   // Attach memory to the image object.
   VK_ASSERT(ctx.vf_.vkBindImageMemory(device, vkImage, vkDeviceMemory, 0));
 
