@@ -180,8 +180,8 @@ SurfaceTextures VulkanShell::createSurfaceTextures() noexcept {
   swapchainColor_ = std::move(color);
 
   const auto dimensions = swapchainColor_->getDimensions();
-  const auto colorFormat = swapchainColor_->getFormat();
-  const auto depthFormat = depth->getFormat();
+  const TextureFormat colorFormat = swapchainColor_->getFormat();
+  const TextureFormat depthFormat = depth->getFormat();
 
   // Create offscreen 2-layer textures once (reuse across frames)
   if (!offscreenColor_ || offscreenColor_->getDimensions() != dimensions) {
