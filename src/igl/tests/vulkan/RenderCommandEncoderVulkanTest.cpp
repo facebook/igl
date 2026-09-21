@@ -181,11 +181,9 @@ TEST_F(RenderCommandEncoderVulkanTest, ClearColorRenderPass) {
   const auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc(), &ret);
   ASSERT_TRUE(ret.isOk());
 
-  RenderPassDesc rpDesc;
-  rpDesc.colorAttachments.resize(1);
-  rpDesc.colorAttachments[0].loadAction = LoadAction::Clear;
-  rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
-  rpDesc.colorAttachments[0].clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
+  const RenderPassDesc rpDesc{.colorAttachments = {{.loadAction = LoadAction::Clear,
+                                                    .storeAction = StoreAction::Store,
+                                                    .clearColor = {1.0f, 0.0f, 0.0f, 1.0f}}}};
 
   auto encoder = cmdBuf->createRenderCommandEncoder(rpDesc, fb_, {}, &ret);
   ASSERT_TRUE(ret.isOk());
