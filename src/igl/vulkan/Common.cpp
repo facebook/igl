@@ -992,11 +992,11 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
   };
   for (const char* candidate : kLlvmPreloadCandidates) {
     const char* libName = strrchr(candidate, '/') + 1;
-    if (dlopen(libName, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE) != nullptr) {
+    if (dlopen(libName, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE)) {
       IGL_LOG_DEBUG("IGL/Vulkan: preloaded `%s` (via library name).\n", libName);
       break;
     }
-    if (dlopen(candidate, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE) != nullptr) {
+    if (dlopen(candidate, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE)) {
       IGL_LOG_DEBUG("IGL/Vulkan: preloaded `%s` (via full path).\n", candidate);
       break;
     }
@@ -1038,13 +1038,13 @@ void initialize(VulkanFunctionTable& table) {
 void loadInstanceFunctions(VulkanFunctionTable& table,
                            VkInstance instance,
                            bool enableExtDebugUtils) {
-  IGL_DEBUG_ASSERT(table.vkGetInstanceProcAddr != nullptr);
+  IGL_DEBUG_ASSERT(table.vkGetInstanceProcAddr);
   loadVulkanInstanceFunctions(
       &table, instance, table.vkGetInstanceProcAddr, enableExtDebugUtils ? VK_TRUE : VK_FALSE);
 }
 
 void loadDeviceFunctions(VulkanFunctionTable& table, VkDevice device, uint32_t vulkanAPIVersion) {
-  IGL_DEBUG_ASSERT(table.vkGetDeviceProcAddr != nullptr);
+  IGL_DEBUG_ASSERT(table.vkGetDeviceProcAddr);
   loadVulkanDeviceFunctions(&table, device, table.vkGetDeviceProcAddr, vulkanAPIVersion);
 }
 
