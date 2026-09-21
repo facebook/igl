@@ -45,8 +45,7 @@ class MetalDepthStencilCreationTest : public ::testing::Test {
 //
 TEST_F(MetalDepthStencilCreationTest, DefaultDepthStencil) {
   Result res;
-  DepthStencilStateDesc desc;
-  desc.debugName = "defaultDepthStencil";
+  const DepthStencilStateDesc desc{.debugName = "defaultDepthStencil"};
 
   auto depthStencilState = device_->createDepthStencilState(desc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
@@ -60,10 +59,9 @@ TEST_F(MetalDepthStencilCreationTest, DefaultDepthStencil) {
 //
 TEST_F(MetalDepthStencilCreationTest, DepthWriteEnabled) {
   Result res;
-  DepthStencilStateDesc desc;
-  desc.isDepthWriteEnabled = true;
-  desc.compareFunction = CompareFunction::Less;
-  desc.debugName = "depthWriteEnabled";
+  const DepthStencilStateDesc desc{.debugName = "depthWriteEnabled",
+                                   .compareFunction = CompareFunction::Less,
+                                   .isDepthWriteEnabled = true};
 
   auto depthStencilState = device_->createDepthStencilState(desc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
@@ -89,9 +87,7 @@ TEST_F(MetalDepthStencilCreationTest, AllCompareFunctions) {
 
   for (auto func : functions) {
     Result res;
-    DepthStencilStateDesc desc;
-    desc.compareFunction = func;
-    desc.isDepthWriteEnabled = true;
+    const DepthStencilStateDesc desc{.compareFunction = func, .isDepthWriteEnabled = true};
 
     auto depthStencilState = device_->createDepthStencilState(desc, &res);
     ASSERT_TRUE(res.isOk()) << res.message;
@@ -107,27 +103,22 @@ TEST_F(MetalDepthStencilCreationTest, AllCompareFunctions) {
 //
 TEST_F(MetalDepthStencilCreationTest, FrontBackStencil) {
   Result res;
-  DepthStencilStateDesc desc;
-  desc.isDepthWriteEnabled = true;
-  desc.compareFunction = CompareFunction::LessEqual;
-
-  // Front face stencil
-  desc.frontFaceStencil.stencilFailureOperation = StencilOperation::Keep;
-  desc.frontFaceStencil.depthFailureOperation = StencilOperation::IncrementClamp;
-  desc.frontFaceStencil.depthStencilPassOperation = StencilOperation::Replace;
-  desc.frontFaceStencil.stencilCompareFunction = CompareFunction::AlwaysPass;
-  desc.frontFaceStencil.readMask = 0xFF;
-  desc.frontFaceStencil.writeMask = 0xFF;
-
-  // Back face stencil
-  desc.backFaceStencil.stencilFailureOperation = StencilOperation::Zero;
-  desc.backFaceStencil.depthFailureOperation = StencilOperation::DecrementClamp;
-  desc.backFaceStencil.depthStencilPassOperation = StencilOperation::Invert;
-  desc.backFaceStencil.stencilCompareFunction = CompareFunction::NotEqual;
-  desc.backFaceStencil.readMask = 0x0F;
-  desc.backFaceStencil.writeMask = 0xF0;
-
-  desc.debugName = "frontBackStencil";
+  const DepthStencilStateDesc desc{
+      .debugName = "frontBackStencil",
+      .compareFunction = CompareFunction::LessEqual,
+      .isDepthWriteEnabled = true,
+      .backFaceStencil = {.stencilFailureOperation = StencilOperation::Zero,
+                          .depthFailureOperation = StencilOperation::DecrementClamp,
+                          .depthStencilPassOperation = StencilOperation::Invert,
+                          .stencilCompareFunction = CompareFunction::NotEqual,
+                          .readMask = 0x0F,
+                          .writeMask = 0xF0},
+      .frontFaceStencil = {.stencilFailureOperation = StencilOperation::Keep,
+                           .depthFailureOperation = StencilOperation::IncrementClamp,
+                           .depthStencilPassOperation = StencilOperation::Replace,
+                           .stencilCompareFunction = CompareFunction::AlwaysPass,
+                           .readMask = 0xFF,
+                           .writeMask = 0xFF}};
 
   auto depthStencilState = device_->createDepthStencilState(desc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
