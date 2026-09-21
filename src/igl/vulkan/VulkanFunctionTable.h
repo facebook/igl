@@ -1143,12 +1143,12 @@ static_assert(sizeof(VulkanFunctionTable) == 555 * sizeof(PFN_vkVoidFunction));
 #endif
 
 /// @brief Populates the `VulkanFunctionTable` structure. Requires a pointer to the
-/// vkGetInstanceProcAddr function, which is used to retrieve pointers to all non-instance and
+/// vkGetInstanceProcAddr() function, which is used to retrieve pointers to all non-instance and
 /// no-device functions defined in the `VulkanFunctionTable` structure.
 int loadVulkanLoaderFunctions(struct VulkanFunctionTable* table, PFN_vkGetInstanceProcAddr load);
 
 /// @brief Populates the instance function pointers in the `VulkanFunctionTable` structure. Requires
-/// a pointer to the vkGetInstanceProcAddr function, which is used to retrieve pointers to all
+/// a pointer to the vkGetInstanceProcAddr() function, which is used to retrieve pointers to all
 /// instance functions defined in the `VulkanFunctionTable` structure.
 void loadVulkanInstanceFunctions(struct VulkanFunctionTable* table,
                                  VkInstance context,
@@ -1156,7 +1156,7 @@ void loadVulkanInstanceFunctions(struct VulkanFunctionTable* table,
                                  VkBool32 enableExtDebugUtils);
 
 /// @brief Populates the device function pointers in the `VulkanFunctionTable` structure. Requires a
-/// pointer to the vkGetInstanceProcAddr function, which is used to retrieve pointers to all device
+/// pointer to the vkGetDeviceProcAddr() function, which is used to retrieve pointers to all device
 /// functions defined in the `VulkanFunctionTable` structure.
 void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
                                VkDevice context,
