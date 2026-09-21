@@ -117,11 +117,10 @@ TEST_F(BufferMappingOGLTest, WriteAndUnmap) {
   }
 
   Result ret;
-  BufferDesc bufDesc;
-  bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
-  bufDesc.data = nullptr;
-  bufDesc.length = sizeof(float) * 4;
-  bufDesc.storage = ResourceStorage::Shared;
+  const BufferDesc bufDesc{.type = BufferDesc::BufferTypeBits::Vertex,
+                           .data = nullptr,
+                           .length = sizeof(float) * 4,
+                           .storage = ResourceStorage::Shared};
 
   auto buffer = iglDev_->createBuffer(bufDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
