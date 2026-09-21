@@ -127,7 +127,7 @@ TEST_F(VulkanStagingDeviceTest, BufferSubDataLargerThanStaging) {
 TEST_F(VulkanStagingDeviceTest, ImageDataUpload) {
   Result ret;
 
-  TextureDesc texDesc =
+  const TextureDesc texDesc =
       TextureDesc::new2D(TextureFormat::RGBA_UNorm8, 4, 4, TextureDesc::TextureUsageBits::Sampled);
   auto texture = iglDev_->createTexture(texDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -146,11 +146,11 @@ TEST_F(VulkanStagingDeviceTest, ImageDataUpload) {
 TEST_F(VulkanStagingDeviceTest, GetImageData2D) {
   Result ret;
 
-  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           2,
-                                           2,
-                                           TextureDesc::TextureUsageBits::Sampled |
-                                               TextureDesc::TextureUsageBits::Attachment);
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 2,
+                                                 2,
+                                                 TextureDesc::TextureUsageBits::Sampled |
+                                                     TextureDesc::TextureUsageBits::Attachment);
   auto texture = iglDev_->createTexture(texDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(texture, nullptr);
@@ -161,17 +161,15 @@ TEST_F(VulkanStagingDeviceTest, GetImageData2D) {
   ret = texture->upload(texture->getFullRange(0), srcData.data());
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  CommandQueueDesc queueDesc{};
-  auto cmdQueue = iglDev_->createCommandQueue(queueDesc, &ret);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
   ASSERT_TRUE(ret.isOk());
   cmdQueue->submit(*cmdBuf);
 
   std::array<uint32_t, 4> downloadedData = {};
-  auto fbDesc = FramebufferDesc();
-  fbDesc.colorAttachments[0].texture = texture;
+  const FramebufferDesc fbDesc{.colorAttachments = {{.texture = texture}}};
   auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
