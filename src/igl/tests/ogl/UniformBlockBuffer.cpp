@@ -122,10 +122,9 @@ TEST_F(UniformBlockBufferOGLTest, BindRange) {
                                  14.0f,
                                  15.0f,
                                  16.0f};
-  BufferDesc bufDesc;
-  bufDesc.type = BufferDesc::BufferTypeBits::Uniform;
-  bufDesc.data = uniformData;
-  bufDesc.length = sizeof(uniformData);
+  const BufferDesc bufDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                           .data = uniformData,
+                           .length = sizeof(uniformData)};
 
   auto uniformBuffer = iglDev_->createBuffer(bufDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
