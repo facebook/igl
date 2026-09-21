@@ -72,8 +72,7 @@ TEST_F(FramebufferBlitOGLTest, ColorBlit) {
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_NE(srcTexture, nullptr);
 
-  FramebufferDesc srcFbDesc;
-  srcFbDesc.colorAttachments[0].texture = srcTexture;
+  const FramebufferDesc srcFbDesc{.colorAttachments = {{.texture = srcTexture}}};
   auto srcFramebuffer = iglDev_->createFramebuffer(srcFbDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_NE(srcFramebuffer, nullptr);
@@ -88,8 +87,7 @@ TEST_F(FramebufferBlitOGLTest, ColorBlit) {
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_NE(dstTexture, nullptr);
 
-  FramebufferDesc dstFbDesc;
-  dstFbDesc.colorAttachments[0].texture = dstTexture;
+  const FramebufferDesc dstFbDesc{.colorAttachments = {{.texture = dstTexture}}};
   auto dstFramebuffer = iglDev_->createFramebuffer(dstFbDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_NE(dstFramebuffer, nullptr);
