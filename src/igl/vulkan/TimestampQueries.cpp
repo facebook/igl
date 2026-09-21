@@ -138,7 +138,7 @@ uint32_t TimestampQueries::beginElapsedQuery(VkCommandBuffer commandBuffer,
       (commandBuffer_ != VK_NULL_HANDLE && commandBuffer_ != commandBuffer)) {
     return kInvalidSlot;
   }
-  // Each slot may be written at most once per reset cycle. vkCmdResetQueryPool is
+  // Each slot may be written at most once per reset cycle. vkCmdResetQueryPool() is
   // recorded lazily just once (when resetRecorded_ becomes true), so a second
   // vkCmdWriteTimestamp() to the same query without an intervening reset() is a
   // Vulkan validation error / undefined behavior.
