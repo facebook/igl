@@ -62,9 +62,7 @@ class DepthStencilStateTest : public ::testing::Test {
     ASSERT_TRUE(offscreenTexture_ != nullptr);
 
     // Create framebuffer using the offscreen texture
-    FramebufferDesc framebufferDesc;
-
-    framebufferDesc.colorAttachments[0].texture = offscreenTexture_;
+    const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = offscreenTexture_}}};
     framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(framebuffer_ != nullptr);
@@ -105,11 +103,9 @@ class DepthStencilStateTest : public ::testing::Test {
     ASSERT_TRUE(vertexInputState_ != nullptr);
 
     // Initialize index buffer
-    BufferDesc bufDesc;
-
-    bufDesc.type = BufferDesc::BufferTypeBits::Index;
-    bufDesc.data = data::vertex_index::kQuadInd.data();
-    bufDesc.length = sizeof(data::vertex_index::kQuadInd);
+    const BufferDesc bufDesc{.type = BufferDesc::BufferTypeBits::Index,
+                             .data = data::vertex_index::kQuadInd.data(),
+                             .length = sizeof(data::vertex_index::kQuadInd)};
 
     ib_ = iglDev_->createBuffer(bufDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -236,8 +232,7 @@ TEST_F(DepthStencilStateTest, SetStencilReferenceValueAndCheck) {
   Result ret;
   std::shared_ptr<IDepthStencilState> idss;
 
-  DepthStencilStateDesc dsDesc;
-  dsDesc.isDepthWriteEnabled = true;
+  const DepthStencilStateDesc dsDesc{.isDepthWriteEnabled = true};
 
   idss = iglDev_->createDepthStencilState(dsDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -313,8 +308,8 @@ TEST_F(DepthStencilStateTest, SetStencilReferenceValueAndCheck) {
   //-------------------------------------------------------
   // Create a new DepthStencilDesc
   DepthStencilStateDesc newDsDesc;
-  newDsDesc.isDepthWriteEnabled = true;
   newDsDesc.compareFunction = CompareFunction::Greater;
+  newDsDesc.isDepthWriteEnabled = true;
   newDsDesc.frontFaceStencil.stencilCompareFunction = CompareFunction::Greater;
   newDsDesc.backFaceStencil.stencilCompareFunction = CompareFunction::Greater;
 
