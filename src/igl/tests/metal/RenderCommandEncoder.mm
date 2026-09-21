@@ -69,10 +69,8 @@ TEST_F(RenderCommandEncoderMTLTest, CreateRenderCommandEncoderAll) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(offscreenTexture != nullptr);
   // Create framebuffer using the offscreen texture
-  FramebufferDesc framebufferDesc;
-
-  framebufferDesc.depthAttachment.texture = offscreenTexture;
-  framebufferDesc.stencilAttachment.texture = offscreenTexture;
+  const FramebufferDesc framebufferDesc{.depthAttachment = {.texture = offscreenTexture},
+                                        .stencilAttachment = {.texture = offscreenTexture}};
   auto framebuffer = device_->createFramebuffer(framebufferDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(framebuffer != nullptr);
