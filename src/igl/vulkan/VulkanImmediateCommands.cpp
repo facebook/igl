@@ -61,6 +61,11 @@ VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
         VulkanSemaphore(
             vf_, device_, false, IGL_FORMAT("Semaphore: {} ({})", debugName, i).c_str()));
     VK_ASSERT(ivkAllocateCommandBuffer(&vf_, device_, commandPool_, &buffers_[i].cmdBufAllocated));
+    ivkSetDebugObjectName(&vf_,
+                          device_,
+                          VK_OBJECT_TYPE_COMMAND_BUFFER,
+                          (uint64_t)buffers_[i].cmdBufAllocated,
+                          IGL_FORMAT("Command Buffer: {} ({})", debugName, i).c_str());
     buffers_[i].handle.bufferIndex = i;
   }
 }
