@@ -80,10 +80,8 @@ class RenderPipelineReflectionTest : public ::testing::Test {
 
     // Initialize Render Pipeline Descriptor, but leave the creation
     // to the individual tests in case further customization is required
-    RenderPipelineDesc renderPipelineDesc;
-    renderPipelineDesc.vertexInputState = vertexInputState_;
-
-    renderPipelineDesc.shaderStages = shaderStages;
+    const RenderPipelineDesc renderPipelineDesc{.vertexInputState = vertexInputState_,
+                                                .shaderStages = shaderStages};
 
     //----------------
     // Create Pipeline
@@ -179,10 +177,8 @@ TEST_F(RenderPipelineReflectionTest, UniformBlocks) {
 
   // Initialize Render Pipeline Descriptor, but leave the creation
   // to the individual tests in case further customization is required
-  RenderPipelineDesc renderPipelineDesc;
-  renderPipelineDesc.vertexInputState = vertexInputState_;
-
-  renderPipelineDesc.shaderStages = shaderStages;
+  const RenderPipelineDesc renderPipelineDesc{.vertexInputState = vertexInputState_,
+                                              .shaderStages = shaderStages};
   //----------------
   // Create Pipeline
   //----------------
