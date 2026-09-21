@@ -48,8 +48,7 @@ class CommandBufferOGLTest : public ::testing::Test {
     ASSERT_EQ(ret.code, Result::Code::Ok);
 
     // Create framebuffer
-    FramebufferDesc framebufferDesc;
-    framebufferDesc.colorAttachments[0].texture = offscreenTexture_;
+    const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = offscreenTexture_}}};
     framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
 
