@@ -1284,7 +1284,8 @@ Result VulkanImage::generateMipmapBlit(VkCommandBuffer commandBuffer,
     if (!hardwareDownscalingSupported) {
       // Not all drivers can blit-downscale every format. In particular, KosmicKrisp (the Vulkan-to-
       // Metal driver) cannot blit into depth images, so depth formats such as VK_FORMAT_D16_UNORM
-      // report BLIT_SRC but not BLIT_DST. Mipmap generation is implemented via vkCmdBlitImage, so
+      // report BLIT_SRC but not BLIT_DST. Mipmap generation is implemented via vkCmdBlitImage(),
+      // so
       // there is nothing we can do here other than skip it; aborting would take down any otherwise
       // healthy application (e.g. one rendering a mipmapped depth shadow map). Report and no-op.
       return Result(Result::Code::Unsupported,
