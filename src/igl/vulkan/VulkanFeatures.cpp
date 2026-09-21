@@ -170,7 +170,7 @@ VulkanFeatures::VulkanFeatures(VulkanContextConfig config) noexcept :
 void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
     const VulkanContext& context,
     VkPhysicalDevice physicalDevice) noexcept {
-  IGL_DEBUG_ASSERT(context.vf_.vkGetPhysicalDeviceFeatures2 != nullptr,
+  IGL_DEBUG_ASSERT(context.vf_.vkGetPhysicalDeviceFeatures2,
                    "Pointer to function vkGetPhysicalDeviceFeatures2() is nullptr");
   uint32_t numExtensions = 0;
   context.vf_.vkEnumerateDeviceExtensionProperties(
