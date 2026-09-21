@@ -173,9 +173,8 @@ TEST_F(ComputeCommandEncoderVulkanTest, BindTextureSampledStorageTransitionsToSh
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(computeStages, nullptr);
 
-  ComputePipelineDesc computeDesc;
-  computeDesc.shaderStages = std::move(computeStages);
-  computeDesc.buffersMap[kOutBufIndex] = IGL_NAMEHANDLE(kOutBufName);
+  const ComputePipelineDesc computeDesc{.buffersMap = {{kOutBufIndex, IGL_NAMEHANDLE(kOutBufName)}},
+                                        .shaderStages = std::move(computeStages)};
   auto pipeline = iglDev_->createComputePipeline(computeDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(pipeline, nullptr);
