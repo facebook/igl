@@ -44,12 +44,12 @@ class VulkanDescriptorSetLayoutTest : public ::testing::Test {
 TEST_F(VulkanDescriptorSetLayoutTest, SingleBinding) {
   auto& ctx = getVulkanContext();
 
-  VkDescriptorSetLayoutBinding binding = {};
-  binding.binding = 0;
-  binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  binding.descriptorCount = 1;
-  binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-  binding.pImmutableSamplers = nullptr;
+  const VkDescriptorSetLayoutBinding binding{.binding = 0,
+                                             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                             .descriptorCount = 1,
+                                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
+                                                           VK_SHADER_STAGE_FRAGMENT_BIT,
+                                             .pImmutableSamplers = nullptr};
 
   VkDescriptorBindingFlags bindingFlags = 0;
   auto layout = std::make_unique<igl::vulkan::VulkanDescriptorSetLayout>(
@@ -63,24 +63,21 @@ TEST_F(VulkanDescriptorSetLayoutTest, SingleBinding) {
 TEST_F(VulkanDescriptorSetLayoutTest, MultipleBindings) {
   auto& ctx = getVulkanContext();
 
-  std::array<VkDescriptorSetLayoutBinding, 3> bindings = {};
+  const std::array<VkDescriptorSetLayoutBinding, 3> bindings = {
+      VkDescriptorSetLayoutBinding{.binding = 0,
+                                   .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                   .descriptorCount = 1,
+                                   .stageFlags = VK_SHADER_STAGE_VERTEX_BIT},
+      VkDescriptorSetLayoutBinding{.binding = 1,
+                                   .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                   .descriptorCount = 1,
+                                   .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT},
+      VkDescriptorSetLayoutBinding{.binding = 2,
+                                   .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                   .descriptorCount = 1,
+                                   .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT}};
 
-  bindings[0].binding = 0;
-  bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  bindings[0].descriptorCount = 1;
-  bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-  bindings[1].binding = 1;
-  bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-  bindings[1].descriptorCount = 1;
-  bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-  bindings[2].binding = 2;
-  bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-  bindings[2].descriptorCount = 1;
-  bindings[2].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-
-  std::array<VkDescriptorBindingFlags, 3> bindingFlags = {};
+  const std::array<VkDescriptorBindingFlags, 3> bindingFlags = {};
   auto layout = std::make_unique<igl::vulkan::VulkanDescriptorSetLayout>(
       ctx, 0, 3, bindings.data(), bindingFlags.data(), "testMultipleBindings");
 
@@ -92,11 +89,11 @@ TEST_F(VulkanDescriptorSetLayoutTest, MultipleBindings) {
 TEST_F(VulkanDescriptorSetLayoutTest, WithBindingFlags) {
   auto& ctx = getVulkanContext();
 
-  VkDescriptorSetLayoutBinding binding = {};
-  binding.binding = 0;
-  binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  binding.descriptorCount = 1;
-  binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+  const VkDescriptorSetLayoutBinding binding{.binding = 0,
+                                             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                             .descriptorCount = 1,
+                                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
+                                                           VK_SHADER_STAGE_FRAGMENT_BIT};
 
   VkDescriptorBindingFlags flags = 0;
 
@@ -122,11 +119,10 @@ TEST_F(VulkanDescriptorSetLayoutTest, ZeroBindings) {
 TEST_F(VulkanDescriptorSetLayoutTest, NullDebugName) {
   auto& ctx = getVulkanContext();
 
-  VkDescriptorSetLayoutBinding binding = {};
-  binding.binding = 0;
-  binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  binding.descriptorCount = 1;
-  binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+  const VkDescriptorSetLayoutBinding binding{.binding = 0,
+                                             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                             .descriptorCount = 1,
+                                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT};
 
   VkDescriptorBindingFlags bindingFlags = 0;
   auto layout =
@@ -140,11 +136,10 @@ TEST_F(VulkanDescriptorSetLayoutTest, NullDebugName) {
 TEST_F(VulkanDescriptorSetLayoutTest, DestructorCleanup) {
   auto& ctx = getVulkanContext();
 
-  VkDescriptorSetLayoutBinding binding = {};
-  binding.binding = 0;
-  binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  binding.descriptorCount = 1;
-  binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+  const VkDescriptorSetLayoutBinding binding{.binding = 0,
+                                             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                             .descriptorCount = 1,
+                                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT};
 
   {
     VkDescriptorBindingFlags bindingFlags = 0;
@@ -161,11 +156,11 @@ TEST_F(VulkanDescriptorSetLayoutTest, DestructorCleanup) {
 TEST_F(VulkanDescriptorSetLayoutTest, UpdateAfterBindFlag) {
   auto& ctx = getVulkanContext();
 
-  VkDescriptorSetLayoutBinding binding = {};
-  binding.binding = 0;
-  binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  binding.descriptorCount = 1;
-  binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+  const VkDescriptorSetLayoutBinding binding{.binding = 0,
+                                             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                             .descriptorCount = 1,
+                                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
+                                                           VK_SHADER_STAGE_FRAGMENT_BIT};
 
   const VkDescriptorBindingFlags bindingFlags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
   auto layout = std::make_unique<igl::vulkan::VulkanDescriptorSetLayout>(
@@ -218,11 +213,10 @@ TEST_F(VulkanDescriptorSetLayoutTest, MixedDescriptorTypes) {
 TEST_F(VulkanDescriptorSetLayoutTest, LayoutSizeNonNegative) {
   auto& ctx = getVulkanContext();
 
-  VkDescriptorSetLayoutBinding binding = {};
-  binding.binding = 0;
-  binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  binding.descriptorCount = 1;
-  binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+  const VkDescriptorSetLayoutBinding binding{.binding = 0,
+                                             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                             .descriptorCount = 1,
+                                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT};
 
   VkDescriptorBindingFlags bindingFlags = 0;
   auto layout = std::make_unique<igl::vulkan::VulkanDescriptorSetLayout>(
