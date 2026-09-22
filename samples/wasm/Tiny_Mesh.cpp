@@ -170,8 +170,7 @@ static std::shared_ptr<ITexture> getNativeDrawable() {
 }
 
 static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = nativeDrawable;
+  const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = nativeDrawable}}};
   framebuffer_ = device_->createFramebuffer(framebufferDesc, nullptr);
 
   IGL_DEBUG_ASSERT(framebuffer_);
