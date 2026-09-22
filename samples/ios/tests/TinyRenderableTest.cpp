@@ -88,10 +88,9 @@ TEST_F(TinyRenderableTest, InitializeAndSubmitRenderPipeline) {
   ASSERT_TRUE(result.isOk()) << result.message;
 
   igl::RenderPassDesc renderPass;
-  renderPass.colorAttachments.resize(1);
-  renderPass.colorAttachments[0].loadAction = igl::LoadAction::Clear;
-  renderPass.colorAttachments[0].storeAction = igl::StoreAction::Store;
-  renderPass.colorAttachments[0].clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+  renderPass.colorAttachments = {{.loadAction = igl::LoadAction::Clear,
+                                  .storeAction = igl::StoreAction::Store,
+                                  .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}};
 
   auto cmds = commandBuffer->createRenderCommandEncoder(renderPass, framebuffer_);
   ASSERT_TRUE(cmds != nullptr);
