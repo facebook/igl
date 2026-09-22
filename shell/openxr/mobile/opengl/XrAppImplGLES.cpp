@@ -48,8 +48,9 @@ std::vector<const char*> XrAppImplGLES::getXrOptionalExtensions() const {
 
 std::unique_ptr<IDevice> XrAppImplGLES::initIGL(XrInstance instance, XrSystemId systemId) {
   // Get the graphics requirements.
-  // XR_ERROR_GRAPHICS_REQUIREMENTS_CALL_MISSING is returned on calls to xrCreateSession
-  // if this function has not been called for the instance and systemId before xrCreateSession.
+  // XR_ERROR_GRAPHICS_REQUIREMENTS_CALL_MISSING is returned on calls to xrCreateSession()
+  // if this function has not been called for the instance and systemId before
+  // xrCreateSession().
 #if IGL_WGL
   PFN_xrGetOpenGLGraphicsRequirementsKHR pfnGetOpenGLGraphicsRequirementsKHR = nullptr;
   XR_CHECK(xrGetInstanceProcAddr(
