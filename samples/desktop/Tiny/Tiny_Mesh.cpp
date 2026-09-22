@@ -589,8 +589,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
   ubPerObject[frameIndex]->upload(&perObject, igl::BufferRange(sizeof(perObject)));
 
   // Command buffers (1-N per thread): create, submit and forget
-  CommandBufferDesc cbDesc;
-  std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
   const igl::Viewport viewport = {.x = 0.0f,
                                   .y = 0.0f,
