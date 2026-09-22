@@ -45,7 +45,7 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
    *   - INVALID: bindBuffer(1, ...), bindBuffer(2, ...) // index 0 not bound
    *
    * This constraint is enforced by D3D12ResourcesBinder and will return InvalidOperation if
-   * violated. See D3D12ResourcesBinder::updateBufferBindings for implementation details.
+   * violated. See D3D12ResourcesBinder::updateBufferBindings() for implementation details.
    *
    * @param index Buffer slot index (maps to HLSL register b0, b1, etc. for CBVs)
    * @param buffer Buffer to bind
@@ -102,7 +102,8 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
   bool cbvBindingsDirty_ = true; // Track if CBV bindings have changed
 
   // Track UAV resources for precise synchronization barriers.
-  // Tracks UAV resources bound via bindBuffer (storage buffers) and bindImageTexture (RW textures).
+  // Tracks UAV resources bound via bindBuffer() (storage buffers) and bindImageTexture()
+  // (RW textures).
   ID3D12Resource* boundUavResources_[kMaxComputeBuffers] = {};
 };
 
