@@ -195,8 +195,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
   }
 
   // Command buffers (1-N per thread): create, submit and forget
-  CommandBufferDesc cbDesc;
-  std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
   const igl::Viewport viewport = {
       0.0f, 0.0f, static_cast<float>(width_), static_cast<float>(height_), 0.0f, +1.0f};
