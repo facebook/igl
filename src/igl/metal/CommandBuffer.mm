@@ -7,6 +7,7 @@
 
 #include <igl/metal/CommandBuffer.h>
 
+#import <Foundation/NSRange.h>
 #import <Foundation/NSString.h>
 #import <Metal/Metal.h>
 #include <igl/Macros.h>
