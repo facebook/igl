@@ -152,8 +152,7 @@ void render() {
   framebuffer->updateDrawable(nativeDrawable);
 
   // Command buffers (1-N per thread): create, submit and forget
-  CommandBufferDesc cbDesc;
-  std::shared_ptr<ICommandBuffer> buffer = commandQueue->createCommandBuffer(cbDesc, nullptr);
+  std::shared_ptr<ICommandBuffer> buffer = commandQueue->createCommandBuffer({}, nullptr);
 
   const igl::Viewport viewport = {.x = 0.0f,
                                   .y = 0.0f,
