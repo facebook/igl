@@ -150,8 +150,7 @@ void TinyRenderer::render() {
   throwOnBadResult(result);
 
   if (framebuffer_ == nullptr) {
-    FramebufferDesc framebufferDesc;
-    framebufferDesc.colorAttachments[0].texture = viewTexture;
+    const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = viewTexture}}};
     framebuffer_ = device_->createFramebuffer(framebufferDesc, &result);
     throwOnBadResult(result);
   } else {
