@@ -1788,9 +1788,8 @@ std::shared_ptr<ITexture> getNativeDepthDrawable() {
 }
 
 void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = nativeDrawable;
-  framebufferDesc.depthAttachment.texture = getNativeDepthDrawable();
+  const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = nativeDrawable}},
+                                        .depthAttachment = {.texture = getNativeDepthDrawable()}};
   fbMain_ = device_->createFramebuffer(framebufferDesc, nullptr);
   IGL_DEBUG_ASSERT(fbMain_);
 }
@@ -2494,7 +2493,6 @@ void loadSkyboxTexture() {
     // NOLINTNEXTLINE(facebook-static-object-destructor-check)
     static const std::string inFilename =
         contentRootFolder + skyboxSubdir + skyboxFileName + ".hdr";
-    // NOLINTEND(facebook-static-object-destructor-check)
 
     processCubemap(inFilename, fileNameRefKTX, fileNameIrrKTX);
   }
@@ -2693,9 +2691,9 @@ int main(int argc, char* argv[]) {
   // Main loop
   while (!window || !glfwWindowShouldClose(window)) {
     {
-      FramebufferDesc framebufferDesc;
-      framebufferDesc.colorAttachments[0].texture = getNativeDrawable();
-      framebufferDesc.depthAttachment.texture = getNativeDepthDrawable();
+      const FramebufferDesc framebufferDesc{
+          .colorAttachments = {{.texture = getNativeDrawable()}},
+          .depthAttachment = {.texture = getNativeDepthDrawable()}};
 #if IGL_WITH_IGLU
       imguiSession->beginFrame(framebufferDesc, 1.0f);
       ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
