@@ -85,10 +85,9 @@
   IGL_DEBUG_ASSERT(result.isOk(), "Could not create cmd buffer %s\n", result.message.c_str());
 
   igl::RenderPassDesc renderPass;
-  renderPass.colorAttachments.resize(1);
-  renderPass.colorAttachments[0].loadAction = igl::LoadAction::Clear;
-  renderPass.colorAttachments[0].storeAction = igl::StoreAction::Store;
-  renderPass.colorAttachments[0].clearColor = {1.0, 1.0, 1.0, 1.0};
+  renderPass.colorAttachments = {{.loadAction = igl::LoadAction::Clear,
+                                  .storeAction = igl::StoreAction::Store,
+                                  .clearColor = {1.0, 1.0, 1.0, 1.0}}};
 
   auto cmds = commandBuffer->createRenderCommandEncoder(renderPass, _framebuffer);
   IGL_DEBUG_BUFFER_LABEL_START(commandBuffer, "draw renderable");
