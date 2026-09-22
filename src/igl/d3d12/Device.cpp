@@ -19,7 +19,7 @@
 #include <fstream>
 #include <mutex> // For std::call_once.
 #include <vector>
-#include <igl/Assert.h> // For IGL_DEBUG_ASSERT in waitForUploadFence.
+#include <igl/Assert.h> // For IGL_DEBUG_ASSERT in waitForUploadFence().
 #include <igl/FramebufferWrapper.h>
 #include <igl/Macros.h>
 #include <igl/Texture.h>
@@ -711,7 +711,7 @@ Device::~Device() {
     captureInfoQueueForDevice(ctx_->getDevice());
   }
 
-  // No shared event to clean up; events are per-call in waitForUploadFence.
+  // No shared event to clean up; events are per-call in waitForUploadFence().
 
   // Ensure upload-related resources are released before destroying the device.
   // D3D12Context destructor handles main queue fence waits via waitForGPU().
