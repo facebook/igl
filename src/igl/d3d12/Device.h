@@ -62,7 +62,7 @@ class Device final : public IDevice, public IFenceProvider {
                                                       Result* IGL_NULLABLE
                                                           outResult) const noexcept override;
 
-  // Non-const helper for createBuffer; handles upload operations that mutate internal state.
+  // Non-const helper for createBuffer(); handles upload operations that mutate internal state.
   [[nodiscard]] std::unique_ptr<IBuffer> createBufferImpl(const BufferDesc& desc,
                                                           Result* IGL_NULLABLE outResult) noexcept;
 
@@ -246,7 +246,8 @@ class Device final : public IDevice, public IFenceProvider {
   ldr::Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
 
   // Upload tracking state (non-mutable, mutated only from non-const paths).
-  // Modified by createBufferImpl, Buffer::upload, Texture::upload via non-const Device references
+  // Modified by createBufferImpl(), Buffer::upload(), Texture::upload() via non-const Device
+  // references
   // and synchronized via pendingUploadsMutex_ for thread-safe access.
   D3D12AllocatorPool allocatorPool_;
   D3D12PipelineCache pipelineCache_;
