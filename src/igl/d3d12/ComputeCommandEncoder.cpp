@@ -166,7 +166,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   }
 
   // Bind all cached resources to root parameters
-  // Root signature layout (from Device::createComputePipeline):
+  // Root signature layout (from Device::createComputePipeline()):
   // - Parameter 0: Root Constants (b0) - 16 DWORDs
   // - Parameter 1: UAV table (u0-uN)
   // - Parameter 2: SRV table (t0-tN)
@@ -628,8 +628,8 @@ void ComputeCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, cons
 }
 
 void ComputeCommandEncoder::bindBytes(uint32_t /*index*/, const void* /*data*/, size_t /*length*/) {
-  // D3D12 backend does not support bindBytes
-  // Applications should use uniform buffers (bindBuffer) instead
+  // D3D12 backend does not support bindBytes()
+  // Applications should use uniform buffers (bindBuffer()) instead
   // This is a no-op to maintain compatibility with cross-platform code
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   IGL_LOG_INFO_ONCE(
