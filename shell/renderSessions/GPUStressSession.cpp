@@ -805,11 +805,11 @@ void GPUStressSession::initState(const SurfaceTextures& surfaceTextures) {
 
   // TODO: fix framebuffers so you can update the resolve texture
   if (framebuffer_ == nullptr) {
-    FramebufferDesc framebufferDesc;
-    framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
-    framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
-    framebufferDesc.mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
-                                                                     : FramebufferMode::Mono;
+    FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = surfaceTextures.color}},
+                                    .depthAttachment = {.texture = surfaceTextures.depth},
+                                    .mode = surfaceTextures.color->getNumLayers() > 1
+                                                ? FramebufferMode::Stereo
+                                                : FramebufferMode::Mono};
 
     if (useMSAA_) {
       const auto dimensions = surfaceTextures.color->getDimensions();
