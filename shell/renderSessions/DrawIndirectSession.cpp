@@ -292,7 +292,7 @@ void DrawIndirectSession::update(SurfaceTextures surfaceTextures) noexcept {
   } else {
     // Create compute command, reset indirect buffer, bind indirect buffer, schedule compute,
     // then maybe barrier (because atomics!), then draw.
-    commands->endEncoding(); // call endEncoding before creating another encoder
+    commands->endEncoding(); // call endEncoding() before creating another encoder
     commands.reset();
     std::unique_ptr<IComputeCommandEncoder> computeEncoder = buffer->createComputeCommandEncoder();
 
