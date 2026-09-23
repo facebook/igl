@@ -63,10 +63,11 @@ class RenderCommandAdapterOGLTest : public ::testing::Test {
     ASSERT_NE(framebuffer_, nullptr);
 
     // Initialize render pass descriptor
-    renderPass_.colorAttachments.resize(1);
-    renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
-    renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
-    renderPass_.colorAttachments[0].clearColor = {0.0, 0.0, 0.0, 1.0};
+    renderPass_ = {
+        .colorAttachments = {{.loadAction = LoadAction::Clear,
+                              .storeAction = StoreAction::Store,
+                              .clearColor = {0.0, 0.0, 0.0, 1.0}}},
+    };
 
     // Initialize shader stages
     std::unique_ptr<IShaderStages> stages;
@@ -117,12 +118,12 @@ class RenderCommandAdapterOGLTest : public ::testing::Test {
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
     // Initialize Render Pipeline Descriptor
-    renderPipelineDesc_.vertexInputState = vertexInputState_;
-    renderPipelineDesc_.shaderStages = shaderStages_;
-    renderPipelineDesc_.targetDesc.colorAttachments.resize(1);
-    renderPipelineDesc_.targetDesc.colorAttachments[0].textureFormat =
-        offscreenTexture_->getFormat();
-    renderPipelineDesc_.cullMode = igl::CullMode::Disabled;
+    renderPipelineDesc_ = {
+        .vertexInputState = vertexInputState_,
+        .shaderStages = shaderStages_,
+        .targetDesc = {.colorAttachments = {{.textureFormat = offscreenTexture_->getFormat()}}},
+        .cullMode = igl::CullMode::Disabled,
+    };
 
     pipelineState_ = iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
