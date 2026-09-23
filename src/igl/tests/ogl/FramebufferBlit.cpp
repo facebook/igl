@@ -94,10 +94,11 @@ TEST_F(FramebufferBlitOGLTest, ColorBlit) {
 
   // Clear source framebuffer to red
   RenderPassDesc renderPass;
-  renderPass.colorAttachments.resize(1);
-  renderPass.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass.colorAttachments[0].clearColor = {1.0, 0.0, 0.0, 1.0}; // Red
+  renderPass = {
+      .colorAttachments = {{.loadAction = LoadAction::Clear,
+                            .storeAction = StoreAction::Store,
+                            .clearColor = {1.0, 0.0, 0.0, 1.0}}}, // Red
+  };
 
   CommandBufferDesc cbDesc;
   auto cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &ret);
@@ -110,10 +111,11 @@ TEST_F(FramebufferBlitOGLTest, ColorBlit) {
 
   // Clear destination framebuffer to black
   RenderPassDesc dstRenderPass;
-  dstRenderPass.colorAttachments.resize(1);
-  dstRenderPass.colorAttachments[0].loadAction = LoadAction::Clear;
-  dstRenderPass.colorAttachments[0].storeAction = StoreAction::Store;
-  dstRenderPass.colorAttachments[0].clearColor = {0.0, 0.0, 0.0, 1.0}; // Black
+  dstRenderPass = {
+      .colorAttachments = {{.loadAction = LoadAction::Clear,
+                            .storeAction = StoreAction::Store,
+                            .clearColor = {0.0, 0.0, 0.0, 1.0}}}, // Black
+  };
 
   auto cmdBuf2 = cmdQueue_->createCommandBuffer(cbDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
