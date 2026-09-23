@@ -338,10 +338,11 @@ TEST_F(ShaderUniformsTest, BindUploadsSuballocatedUniformBuffer) {
   ASSERT_TRUE(framebuffer != nullptr);
 
   RenderPassDesc renderPass;
-  renderPass.colorAttachments.resize(1);
-  renderPass.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass.colorAttachments[0].clearColor = {kClear, kClear, kClear, kClear};
+  renderPass = {
+      .colorAttachments = {{.loadAction = LoadAction::Clear,
+                            .storeAction = StoreAction::Store,
+                            .clearColor = {kClear, kClear, kClear, kClear}}},
+  };
 
   std::unique_ptr<IShaderStages> stages;
   util::createSimpleShaderStages(iglDev_, stages);
