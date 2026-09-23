@@ -57,10 +57,11 @@ class RenderStateApplicationOGLTest : public ::testing::Test {
     ASSERT_EQ(ret.code, Result::Code::Ok);
 
     // Initialize render pass
-    renderPass_.colorAttachments.resize(1);
-    renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
-    renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
-    renderPass_.colorAttachments[0].clearColor = {0.0, 0.0, 0.0, 1.0};
+    renderPass_ = {
+        .colorAttachments = {{.loadAction = LoadAction::Clear,
+                              .storeAction = StoreAction::Store,
+                              .clearColor = {0.0, 0.0, 0.0, 1.0}}},
+    };
 
     // Initialize shader stages
     std::unique_ptr<IShaderStages> stages;
@@ -101,13 +102,14 @@ class RenderStateApplicationOGLTest : public ::testing::Test {
   // Helper to create a pipeline with specific settings, bind it, and do a dummy draw
   void bindPipelineWithSettings(CullMode cullMode, WindingMode winding, PolygonFillMode fillMode) {
     RenderPipelineDesc desc;
-    desc.vertexInputState = vertexInputState_;
-    desc.shaderStages = shaderStages_;
-    desc.targetDesc.colorAttachments.resize(1);
-    desc.targetDesc.colorAttachments[0].textureFormat = offscreenTexture_->getFormat();
-    desc.cullMode = cullMode;
-    desc.frontFaceWinding = winding;
-    desc.polygonFillMode = fillMode;
+    desc = {
+        .vertexInputState = vertexInputState_,
+        .shaderStages = shaderStages_,
+        .targetDesc = {.colorAttachments = {{.textureFormat = offscreenTexture_->getFormat()}}},
+        .cullMode = cullMode,
+        .frontFaceWinding = winding,
+        .polygonFillMode = fillMode,
+    };
 
     Result ret;
     auto pipelineState = iglDev_->createRenderPipeline(desc, &ret);
