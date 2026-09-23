@@ -52,10 +52,11 @@ void TextureFormatTestBase::SetUp() {
   ASSERT_TRUE(attachmentTexture_ != nullptr);
 
   // Initialize render pass descriptor
-  renderPass_.colorAttachments.resize(1);
-  renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass_.colorAttachments[0].clearColor = {0.0, 0.0, 0.0, 1.0};
+  renderPass_ = {
+      .colorAttachments = {{.loadAction = LoadAction::Clear,
+                            .storeAction = StoreAction::Store,
+                            .clearColor = {0.0, 0.0, 0.0, 1.0}}},
+  };
 
   // Initialize input to vertex shader
   VertexInputStateDesc inputDesc;
