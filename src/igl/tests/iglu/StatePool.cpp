@@ -77,26 +77,29 @@ class StatePoolTest : public ::testing::Test {
 
     // Initialize Graphics Pipeline Descriptor, but leave the creation
     // to the individual tests in case further customization is required
-    renderPipelineDesc1_.vertexInputState = vertexInputState_;
-    renderPipelineDesc1_.shaderStages = shaderStages_;
-    renderPipelineDesc1_.targetDesc.colorAttachments.resize(1);
-    renderPipelineDesc1_.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
-    renderPipelineDesc1_.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE(data::shader::kSimpleSampler);
-    renderPipelineDesc1_.cullMode = igl::CullMode::Disabled;
+    renderPipelineDesc1_ = {
+        .vertexInputState = vertexInputState_,
+        .shaderStages = shaderStages_,
+        .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}}},
+        .cullMode = igl::CullMode::Disabled,
+        .fragmentUnitSamplerMap = {{0, IGL_NAMEHANDLE(data::shader::kSimpleSampler)}},
+    };
 
-    renderPipelineDesc2_.vertexInputState = vertexInputState_;
-    renderPipelineDesc2_.shaderStages = shaderStages_;
-    renderPipelineDesc2_.targetDesc.colorAttachments.resize(1);
-    renderPipelineDesc2_.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
-    renderPipelineDesc2_.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE(data::shader::kSimpleSampler);
-    renderPipelineDesc2_.cullMode = igl::CullMode::Disabled;
+    renderPipelineDesc2_ = {
+        .vertexInputState = vertexInputState_,
+        .shaderStages = shaderStages_,
+        .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}}},
+        .cullMode = igl::CullMode::Disabled,
+        .fragmentUnitSamplerMap = {{0, IGL_NAMEHANDLE(data::shader::kSimpleSampler)}},
+    };
 
-    renderPipelineDesc3_.vertexInputState = vertexInputState_;
-    renderPipelineDesc3_.shaderStages = shaderStages_;
-    renderPipelineDesc3_.targetDesc.colorAttachments.resize(1);
-    renderPipelineDesc3_.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
-    renderPipelineDesc3_.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE(data::shader::kSimpleSampler);
-    renderPipelineDesc3_.cullMode = igl::CullMode::Disabled;
+    renderPipelineDesc3_ = {
+        .vertexInputState = vertexInputState_,
+        .shaderStages = shaderStages_,
+        .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}}},
+        .cullMode = igl::CullMode::Disabled,
+        .fragmentUnitSamplerMap = {{0, IGL_NAMEHANDLE(data::shader::kSimpleSampler)}},
+    };
   }
 
   void TearDown() override {}
