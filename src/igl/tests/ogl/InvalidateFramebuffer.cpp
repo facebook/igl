@@ -70,11 +70,12 @@ TEST_F(InvalidateFramebufferOGLTest, InvalidateNoError) {
   ASSERT_EQ(ret.code, Result::Code::Ok);
 
   // Clear the framebuffer first
-  RenderPassDesc renderPass;
-  renderPass.colorAttachments.resize(1);
-  renderPass.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass.colorAttachments[0].storeAction = StoreAction::DontCare; // Indicates invalidation
-  renderPass.colorAttachments[0].clearColor = {0.0, 0.0, 0.0, 1.0};
+  const RenderPassDesc renderPass{
+      .colorAttachments = {{.loadAction = LoadAction::Clear,
+                            // DontCare indicates invalidation
+                            .storeAction = StoreAction::DontCare,
+                            .clearColor = {0.0, 0.0, 0.0, 1.0}}},
+  };
 
   CommandBufferDesc cbDesc;
   auto cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &ret);
