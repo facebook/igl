@@ -54,10 +54,11 @@ void ShaderProgram::init(igl::IDevice& device,
   igl::Result result;
 
   igl::RenderPipelineDesc pipelineDesc;
-  pipelineDesc.shaderStages = shaderStages_;
-  pipelineDesc.vertexInputState = std::move(vis);
-  pipelineDesc.targetDesc.colorAttachments.resize(1);
-  pipelineDesc.targetDesc.colorAttachments[0].textureFormat = igl::TextureFormat::RGBA_UNorm8;
+  pipelineDesc = {
+      .vertexInputState = std::move(vis),
+      .shaderStages = shaderStages_,
+      .targetDesc = {.colorAttachments = {{.textureFormat = igl::TextureFormat::RGBA_UNorm8}}},
+  };
   auto pipelineState = device.createRenderPipeline(pipelineDesc, &result);
   CHECK_RESULT(result, outResult);
   // Note that the check above might early return!
