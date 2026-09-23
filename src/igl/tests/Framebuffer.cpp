@@ -176,14 +176,14 @@ class FramebufferTest : public ::testing::Test {
 
     // Initialize Render Pipeline Descriptor, but leave the creation
     // to the individual tests in case further customization is required
-    renderPipelineDesc_.vertexInputState = vertexInputState_;
-    renderPipelineDesc_.shaderStages = shaderStages_;
-    renderPipelineDesc_.targetDesc.colorAttachments.resize(1);
-    renderPipelineDesc_.targetDesc.colorAttachments[0].textureFormat =
-        offscreenTexture_->getFormat();
-    renderPipelineDesc_.targetDesc.depthAttachmentFormat = depthStencilTexture_->getFormat();
-    renderPipelineDesc_.targetDesc.stencilAttachmentFormat = depthStencilTexture_->getFormat();
-    renderPipelineDesc_.cullMode = igl::CullMode::Disabled;
+    renderPipelineDesc_ = {
+        .vertexInputState = vertexInputState_,
+        .shaderStages = shaderStages_,
+        .targetDesc = {.colorAttachments = {{.textureFormat = offscreenTexture_->getFormat()}},
+                       .depthAttachmentFormat = depthStencilTexture_->getFormat(),
+                       .stencilAttachmentFormat = depthStencilTexture_->getFormat()},
+        .cullMode = igl::CullMode::Disabled,
+    };
 
     //
   }
