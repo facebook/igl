@@ -65,10 +65,11 @@ TEST_F(CopyTexSubImageOGLTest, CopyTexSubImage2D) {
 
   // Clear to red
   RenderPassDesc renderPass;
-  renderPass.colorAttachments.resize(1);
-  renderPass.colorAttachments[0].loadAction = LoadAction::Clear;
-  renderPass.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass.colorAttachments[0].clearColor = {1.0, 0.0, 0.0, 1.0};
+  renderPass = {
+      .colorAttachments = {{.loadAction = LoadAction::Clear,
+                            .storeAction = StoreAction::Store,
+                            .clearColor = {1.0, 0.0, 0.0, 1.0}}},
+  };
 
   CommandBufferDesc cbDesc;
   auto cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &ret);
