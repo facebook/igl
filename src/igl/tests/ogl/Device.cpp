@@ -252,10 +252,11 @@ TEST_F(DeviceOGLTest, DeletionTest) {
     auto cmd = cq->createCommandBuffer({}, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     RenderPassDesc renderPassDesc;
-    renderPassDesc.colorAttachments.resize(1);
-    renderPassDesc.colorAttachments[0].loadAction = LoadAction::Clear;
-    renderPassDesc.colorAttachments[0].storeAction = StoreAction::Store;
-    renderPassDesc.colorAttachments[0].clearColor = {0.0, 0.0, 0.0, 1.0};
+    renderPassDesc = {
+        .colorAttachments = {{.loadAction = LoadAction::Clear,
+                              .storeAction = StoreAction::Store,
+                              .clearColor = {0.0, 0.0, 0.0, 1.0}}},
+    };
 
     renderCommandEncoder = cmd->createRenderCommandEncoder(renderPassDesc, framebuffer);
     ASSERT_TRUE(renderCommandEncoder != nullptr);
