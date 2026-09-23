@@ -70,10 +70,11 @@ TEST(TimestampQueryDescTest, DefaultConstruction) {
 
 TEST(RenderPassDescTest, ColorAttachmentWithClearColor) {
   RenderPassDesc desc;
-  desc.colorAttachments.resize(1);
-  desc.colorAttachments[0].loadAction = LoadAction::Clear;
-  desc.colorAttachments[0].storeAction = StoreAction::Store;
-  desc.colorAttachments[0].clearColor = {1.0f, 0.5f, 0.25f, 1.0f};
+  desc = {
+      .colorAttachments = {{.loadAction = LoadAction::Clear,
+                            .storeAction = StoreAction::Store,
+                            .clearColor = {1.0f, 0.5f, 0.25f, 1.0f}}},
+  };
 
   EXPECT_EQ(desc.colorAttachments.size(), 1u);
   EXPECT_EQ(desc.colorAttachments[0].loadAction, LoadAction::Clear);
