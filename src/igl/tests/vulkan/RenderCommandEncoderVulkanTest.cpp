@@ -68,9 +68,9 @@ class RenderCommandEncoderVulkanTest : public ::testing::Test {
     }
 
     RenderPassDesc rpDesc;
-    rpDesc.colorAttachments.resize(1);
-    rpDesc.colorAttachments[0].loadAction = LoadAction::Clear;
-    rpDesc.colorAttachments[0].storeAction = StoreAction::Store;
+    rpDesc = {
+        .colorAttachments = {{.loadAction = LoadAction::Clear, .storeAction = StoreAction::Store}},
+    };
 
     auto encoder = cmdBuf->createRenderCommandEncoder(rpDesc, fb_, {}, &ret);
     if (!ret.isOk()) {
