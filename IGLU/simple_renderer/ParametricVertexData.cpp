@@ -81,8 +81,7 @@ std::shared_ptr<VertexData> create(igl::IDevice& device,
   IGL_DEBUG_ASSERT(result.isOk(), "createVertexInputState() failed: %s", result.message.c_str());
   IGL_DEBUG_ASSERT(vertexInput != nullptr);
 
-  PrimitiveDesc primitiveDesc;
-  primitiveDesc.numEntries = sizeof(indexData) / sizeof(indexData[0]);
+  const PrimitiveDesc primitiveDesc{.numEntries = sizeof(indexData) / sizeof(indexData[0])};
 
   auto vb = device.createBuffer(vbDesc, &result);
   IGL_DEBUG_ASSERT(result.isOk(), "createBuffer(vertex) failed: %s", result.message.c_str());
