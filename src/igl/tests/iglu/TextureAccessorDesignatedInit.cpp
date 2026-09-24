@@ -100,8 +100,7 @@ TEST_F(TextureAccessorDesignatedInitTest, DesignatedInitMatchesFieldByField) {
   Result result2;
 
   // Old style: field-by-field
-  FramebufferDesc descOld;
-  descOld.colorAttachments[0].texture = texture_;
+  const FramebufferDesc descOld{.colorAttachments = {{.texture = texture_}}};
   auto fbOld = iglDev_->createFramebuffer(descOld, &result1);
   ASSERT_TRUE(result1.isOk()) << result1.message.c_str();
   ASSERT_TRUE(fbOld != nullptr);
