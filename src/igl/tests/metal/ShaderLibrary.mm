@@ -226,12 +226,13 @@ TEST_F(MetalShaderLibraryTest, FunctionConstantSpecialization) {
     auto fragmentModule = library->getShaderModule(fragmentEntryPoint);
     ASSERT_NE(fragmentModule, nullptr) << fragmentEntryPoint;
 
-    RenderPipelineDesc pipelineDesc;
-    pipelineDesc.shaderStages = device_->createShaderStages(
+    auto shaderStages = device_->createShaderStages(
         ShaderStagesDesc::fromRenderModules(vertexModule, fragmentModule), &res);
     ASSERT_TRUE(res.isOk()) << fragmentEntryPoint << ": " << res.message;
-    pipelineDesc.targetDesc.colorAttachments.resize(1);
-    pipelineDesc.targetDesc.colorAttachments[0].textureFormat = TextureFormat::RGBA_UNorm8;
+    const RenderPipelineDesc pipelineDesc{
+        .shaderStages = std::move(shaderStages),
+        .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}}},
+    };
 
     auto pipeline = device_->createRenderPipeline(pipelineDesc, &res);
     EXPECT_TRUE(res.isOk()) << fragmentEntryPoint << ": " << res.message;
