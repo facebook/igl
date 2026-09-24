@@ -35,43 +35,37 @@ TEST(StencilStateDescTest, EqualityOpSameValues) {
 
 TEST(StencilStateDescTest, InequalityOpDifferentStencilFailureOperation) {
   StencilStateDesc a;
-  StencilStateDesc b;
-  b.stencilFailureOperation = StencilOperation::Replace;
+  const StencilStateDesc b{.stencilFailureOperation = StencilOperation::Replace};
   EXPECT_NE(a, b);
 }
 
 TEST(StencilStateDescTest, InequalityOpDifferentDepthFailureOperation) {
   StencilStateDesc a;
-  StencilStateDesc b;
-  b.depthFailureOperation = StencilOperation::Zero;
+  const StencilStateDesc b{.depthFailureOperation = StencilOperation::Zero};
   EXPECT_NE(a, b);
 }
 
 TEST(StencilStateDescTest, InequalityOpDifferentDepthStencilPassOperation) {
   StencilStateDesc a;
-  StencilStateDesc b;
-  b.depthStencilPassOperation = StencilOperation::IncrementClamp;
+  const StencilStateDesc b{.depthStencilPassOperation = StencilOperation::IncrementClamp};
   EXPECT_NE(a, b);
 }
 
 TEST(StencilStateDescTest, InequalityOpDifferentStencilCompareFunction) {
   StencilStateDesc a;
-  StencilStateDesc b;
-  b.stencilCompareFunction = CompareFunction::Less;
+  const StencilStateDesc b{.stencilCompareFunction = CompareFunction::Less};
   EXPECT_NE(a, b);
 }
 
 TEST(StencilStateDescTest, InequalityOpDifferentReadMask) {
   StencilStateDesc a;
-  StencilStateDesc b;
-  b.readMask = 0x0Fu;
+  const StencilStateDesc b{.readMask = 0x0Fu};
   EXPECT_NE(a, b);
 }
 
 TEST(StencilStateDescTest, InequalityOpDifferentWriteMask) {
   StencilStateDesc a;
-  StencilStateDesc b;
-  b.writeMask = 0xF0u;
+  const StencilStateDesc b{.writeMask = 0xF0u};
   EXPECT_NE(a, b);
 }
 
@@ -91,8 +85,7 @@ TEST(StencilStateDescTest, HashEqualObjectsHaveSameHash) {
 
 TEST(StencilStateDescTest, HashDifferentObjectsHaveDifferentHash) {
   StencilStateDesc a;
-  StencilStateDesc b;
-  b.stencilFailureOperation = StencilOperation::Replace;
+  const StencilStateDesc b{.stencilFailureOperation = StencilOperation::Replace};
   const std::hash<StencilStateDesc> hasher;
   EXPECT_NE(a, b);
   EXPECT_NE(hasher(a), hasher(b));
@@ -120,15 +113,13 @@ TEST(DepthStencilStateDescTest, EqualityOpSameValues) {
 
 TEST(DepthStencilStateDescTest, InequalityOpDifferentCompareFunction) {
   DepthStencilStateDesc a;
-  DepthStencilStateDesc b;
-  b.compareFunction = CompareFunction::Less;
+  const DepthStencilStateDesc b{.compareFunction = CompareFunction::Less};
   EXPECT_NE(a, b);
 }
 
 TEST(DepthStencilStateDescTest, InequalityOpDifferentIsDepthWriteEnabled) {
   DepthStencilStateDesc a;
-  DepthStencilStateDesc b;
-  b.isDepthWriteEnabled = true;
+  const DepthStencilStateDesc b{.isDepthWriteEnabled = true};
   EXPECT_NE(a, b);
 }
 
@@ -170,8 +161,7 @@ TEST(DepthStencilStateDescTest, HashEqualObjectsHaveSameHash) {
 
 TEST(DepthStencilStateDescTest, HashDifferentObjectsHaveDifferentHash) {
   DepthStencilStateDesc a;
-  DepthStencilStateDesc b;
-  b.compareFunction = CompareFunction::Less;
+  const DepthStencilStateDesc b{.compareFunction = CompareFunction::Less};
   const std::hash<DepthStencilStateDesc> hasher;
   EXPECT_NE(a, b);
   EXPECT_NE(hasher(a), hasher(b));
@@ -179,8 +169,7 @@ TEST(DepthStencilStateDescTest, HashDifferentObjectsHaveDifferentHash) {
 
 TEST(DepthStencilStateDescTest, HashDiffersOnIsDepthWriteEnabled) {
   DepthStencilStateDesc a;
-  DepthStencilStateDesc b;
-  b.isDepthWriteEnabled = true;
+  const DepthStencilStateDesc b{.isDepthWriteEnabled = true};
   const std::hash<DepthStencilStateDesc> hasher;
   EXPECT_NE(a, b);
   EXPECT_NE(hasher(a), hasher(b));
