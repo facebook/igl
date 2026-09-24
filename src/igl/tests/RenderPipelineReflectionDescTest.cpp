@@ -63,38 +63,32 @@ TEST(BufferArgDescTest, DefaultConstruction) {
 }
 
 TEST(BufferArgDescTest, FieldMutationName) {
-  BufferArgDesc desc;
-  desc.name = IGL_NAMEHANDLE("myBuffer");
+  const BufferArgDesc desc{.name = IGL_NAMEHANDLE("myBuffer")};
   EXPECT_STREQ(desc.name.c_str(), "myBuffer");
 }
 
 TEST(BufferArgDescTest, FieldMutationBufferAlignment) {
-  BufferArgDesc desc;
-  desc.bufferAlignment = 256u;
+  const BufferArgDesc desc{.bufferAlignment = 256u};
   EXPECT_EQ(desc.bufferAlignment, 256u);
 }
 
 TEST(BufferArgDescTest, FieldMutationBufferDataSize) {
-  BufferArgDesc desc;
-  desc.bufferDataSize = 1024u;
+  const BufferArgDesc desc{.bufferDataSize = 1024u};
   EXPECT_EQ(desc.bufferDataSize, 1024u);
 }
 
 TEST(BufferArgDescTest, FieldMutationBufferIndex) {
-  BufferArgDesc desc;
-  desc.bufferIndex = 3;
+  const BufferArgDesc desc{.bufferIndex = 3};
   EXPECT_EQ(desc.bufferIndex, 3);
 }
 
 TEST(BufferArgDescTest, FieldMutationShaderStage) {
-  BufferArgDesc desc;
-  desc.shaderStage = ShaderStage::Vertex;
+  const BufferArgDesc desc{.shaderStage = ShaderStage::Vertex};
   EXPECT_EQ(desc.shaderStage, ShaderStage::Vertex);
 }
 
 TEST(BufferArgDescTest, FieldMutationIsUniformBlock) {
-  BufferArgDesc desc;
-  desc.isUniformBlock = true;
+  const BufferArgDesc desc{.isUniformBlock = true};
   EXPECT_TRUE(desc.isUniformBlock);
 }
 
@@ -161,26 +155,22 @@ TEST(TextureArgDescTest, DefaultConstruction) {
 }
 
 TEST(TextureArgDescTest, FieldMutationName) {
-  TextureArgDesc desc;
-  desc.name = "u_albedo";
+  const TextureArgDesc desc{.name = "u_albedo"};
   EXPECT_EQ(desc.name, "u_albedo");
 }
 
 TEST(TextureArgDescTest, FieldMutationType) {
-  TextureArgDesc desc;
-  desc.type = TextureType::TwoD;
+  const TextureArgDesc desc{.type = TextureType::TwoD};
   EXPECT_EQ(desc.type, TextureType::TwoD);
 }
 
 TEST(TextureArgDescTest, FieldMutationTextureIndex) {
-  TextureArgDesc desc;
-  desc.textureIndex = 5;
+  const TextureArgDesc desc{.textureIndex = 5};
   EXPECT_EQ(desc.textureIndex, 5);
 }
 
 TEST(TextureArgDescTest, FieldMutationShaderStage) {
-  TextureArgDesc desc;
-  desc.shaderStage = ShaderStage::Vertex;
+  const TextureArgDesc desc{.shaderStage = ShaderStage::Vertex};
   EXPECT_EQ(desc.shaderStage, ShaderStage::Vertex);
 }
 
@@ -196,20 +186,17 @@ TEST(SamplerArgDescTest, DefaultConstruction) {
 }
 
 TEST(SamplerArgDescTest, FieldMutationName) {
-  SamplerArgDesc desc;
-  desc.name = "u_sampler";
+  const SamplerArgDesc desc{.name = "u_sampler"};
   EXPECT_EQ(desc.name, "u_sampler");
 }
 
 TEST(SamplerArgDescTest, FieldMutationSamplerIndex) {
-  SamplerArgDesc desc;
-  desc.samplerIndex = 2;
+  const SamplerArgDesc desc{.samplerIndex = 2};
   EXPECT_EQ(desc.samplerIndex, 2);
 }
 
 TEST(SamplerArgDescTest, FieldMutationShaderStage) {
-  SamplerArgDesc desc;
-  desc.shaderStage = ShaderStage::Vertex;
+  const SamplerArgDesc desc{.shaderStage = ShaderStage::Vertex};
   EXPECT_EQ(desc.shaderStage, ShaderStage::Vertex);
 }
 
