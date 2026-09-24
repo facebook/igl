@@ -128,14 +128,13 @@ TEST_F(MetalTextureDataRoundtripTest, Upload3DTexture) {
   constexpr uint32_t kHeight = 4;
   constexpr uint32_t kDepth = 4;
 
-  TextureDesc texDesc;
-  texDesc.type = TextureType::ThreeD;
-  texDesc.format = TextureFormat::RGBA_UNorm8;
-  texDesc.width = kWidth;
-  texDesc.height = kHeight;
-  texDesc.depth = kDepth;
-  texDesc.numMipLevels = 1;
-  texDesc.usage = TextureDesc::TextureUsageBits::Sampled;
+  const TextureDesc texDesc{.type = TextureType::ThreeD,
+                            .format = TextureFormat::RGBA_UNorm8,
+                            .width = kWidth,
+                            .height = kHeight,
+                            .depth = kDepth,
+                            .numMipLevels = 1,
+                            .usage = TextureDesc::TextureUsageBits::Sampled};
 
   auto texture = device_->createTexture(texDesc, &res);
   ASSERT_TRUE(res.isOk()) << res.message;
