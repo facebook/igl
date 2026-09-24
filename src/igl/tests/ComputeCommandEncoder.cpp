@@ -107,12 +107,13 @@ class ComputeCommandEncoderTest : public ::testing::Test {
                      const std::shared_ptr<IBuffer>& bufferOut,
                      std::shared_ptr<IComputePipelineState>& ret) {
     ASSERT_TRUE(computeStages_ != nullptr);
-    ComputePipelineDesc computeDesc;
-    computeDesc.shaderStages = computeStages_;
-    computeDesc.buffersMap[igl::tests::data::shader::kSimpleComputeInputIndex] =
-        IGL_NAMEHANDLE(igl::tests::data::shader::kSimpleComputeInput);
-    computeDesc.buffersMap[igl::tests::data::shader::kSimpleComputeOutputIndex] =
-        IGL_NAMEHANDLE(igl::tests::data::shader::kSimpleComputeOutput);
+    const ComputePipelineDesc computeDesc{
+        .buffersMap = {{igl::tests::data::shader::kSimpleComputeInputIndex,
+                        IGL_NAMEHANDLE(igl::tests::data::shader::kSimpleComputeInput)},
+                       {igl::tests::data::shader::kSimpleComputeOutputIndex,
+                        IGL_NAMEHANDLE(igl::tests::data::shader::kSimpleComputeOutput)}},
+        .shaderStages = computeStages_,
+    };
     auto computePipelineState = iglDev_->createComputePipeline(computeDesc, nullptr);
     ASSERT_TRUE(computePipelineState != nullptr);
 
