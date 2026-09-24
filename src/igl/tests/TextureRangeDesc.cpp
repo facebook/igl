@@ -392,19 +392,18 @@ TEST(TextureRangeDesc, Validate) {
 
 namespace {
 TextureRangeDesc createTestRange() {
-  TextureRangeDesc range;
-  range.x = 1;
-  range.y = 2;
-  range.z = 3;
-  range.width = 4;
-  range.height = 5;
-  range.depth = 6;
-  range.layer = 7;
-  range.numLayers = 8;
-  range.mipLevel = 9;
-  range.numMipLevels = 10;
-  range.face = 11;
-  range.numFaces = 12;
+  const TextureRangeDesc range{.x = 1,
+                               .y = 2,
+                               .z = 3,
+                               .width = 4,
+                               .height = 5,
+                               .depth = 6,
+                               .layer = 7,
+                               .numLayers = 8,
+                               .mipLevel = 9,
+                               .numMipLevels = 10,
+                               .face = 11,
+                               .numFaces = 12};
 
   return range;
 }
