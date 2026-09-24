@@ -54,10 +54,8 @@ TEST_F(BufferMappingOGLTest, MapBuffer) {
 
   Result ret;
   const float data[] = {1.0f, 2.0f, 3.0f, 4.0f};
-  BufferDesc bufDesc;
-  bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
-  bufDesc.data = data;
-  bufDesc.length = sizeof(data);
+  const BufferDesc bufDesc{
+      .type = BufferDesc::BufferTypeBits::Vertex, .data = data, .length = sizeof(data)};
 
   auto buffer = iglDev_->createBuffer(bufDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -86,10 +84,8 @@ TEST_F(BufferMappingOGLTest, MapBufferRange) {
 
   Result ret;
   const float data[] = {1.0f, 2.0f, 3.0f, 4.0f};
-  BufferDesc bufDesc;
-  bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
-  bufDesc.data = data;
-  bufDesc.length = sizeof(data);
+  const BufferDesc bufDesc{
+      .type = BufferDesc::BufferTypeBits::Vertex, .data = data, .length = sizeof(data)};
 
   auto buffer = iglDev_->createBuffer(bufDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
