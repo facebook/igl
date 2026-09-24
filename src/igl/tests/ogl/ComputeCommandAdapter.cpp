@@ -75,26 +75,22 @@ TEST_F(ComputeCommandAdapterOGLTest, BufferBindingAndDispatch) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
   // Create compute pipeline
-  ComputePipelineDesc computeDesc;
-  computeDesc.shaderStages = std::move(stages);
+  const ComputePipelineDesc computeDesc{.shaderStages = std::move(stages)};
   auto computePipeline = iglDev_->createComputePipeline(computeDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(computePipeline, nullptr);
 
   // Create input and output buffers
   const float inputData[] = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
-  BufferDesc inputBufDesc;
-  inputBufDesc.type = BufferDesc::BufferTypeBits::Storage;
-  inputBufDesc.data = inputData;
-  inputBufDesc.length = sizeof(inputData);
+  const BufferDesc inputBufDesc{
+      .type = BufferDesc::BufferTypeBits::Storage, .data = inputData, .length = sizeof(inputData)};
   auto inputBuffer = iglDev_->createBuffer(inputBufDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
   float outputData[6] = {0.0f};
-  BufferDesc outputBufDesc;
-  outputBufDesc.type = BufferDesc::BufferTypeBits::Storage;
-  outputBufDesc.data = outputData;
-  outputBufDesc.length = sizeof(outputData);
+  const BufferDesc outputBufDesc{.type = BufferDesc::BufferTypeBits::Storage,
+                                 .data = outputData,
+                                 .length = sizeof(outputData)};
   auto outputBuffer = iglDev_->createBuffer(outputBufDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
@@ -177,26 +173,22 @@ TEST_F(ComputeCommandAdapterOGLTest, DirtyStateTracking) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
   // Create compute pipeline
-  ComputePipelineDesc computeDesc;
-  computeDesc.shaderStages = std::move(stages);
+  const ComputePipelineDesc computeDesc{.shaderStages = std::move(stages)};
   auto computePipeline = iglDev_->createComputePipeline(computeDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(computePipeline, nullptr);
 
   // Create buffers
   const float inputData[] = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
-  BufferDesc inputBufDesc;
-  inputBufDesc.type = BufferDesc::BufferTypeBits::Storage;
-  inputBufDesc.data = inputData;
-  inputBufDesc.length = sizeof(inputData);
+  const BufferDesc inputBufDesc{
+      .type = BufferDesc::BufferTypeBits::Storage, .data = inputData, .length = sizeof(inputData)};
   auto inputBuffer = iglDev_->createBuffer(inputBufDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
   float outputData[6] = {0.0f};
-  BufferDesc outputBufDesc;
-  outputBufDesc.type = BufferDesc::BufferTypeBits::Storage;
-  outputBufDesc.data = outputData;
-  outputBufDesc.length = sizeof(outputData);
+  const BufferDesc outputBufDesc{.type = BufferDesc::BufferTypeBits::Storage,
+                                 .data = outputData,
+                                 .length = sizeof(outputData)};
   auto outputBuffer = iglDev_->createBuffer(outputBufDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
@@ -256,8 +248,7 @@ TEST_F(ComputeCommandAdapterOGLTest, DispatchThreadGroupsIndirect) {
       ShaderStagesDesc::fromComputeModule(std::move(shaderModule)), &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
 
-  ComputePipelineDesc computeDesc;
-  computeDesc.shaderStages = std::move(stages);
+  const ComputePipelineDesc computeDesc{.shaderStages = std::move(stages)};
   auto computePipeline = iglDev_->createComputePipeline(computeDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(computePipeline, nullptr);
