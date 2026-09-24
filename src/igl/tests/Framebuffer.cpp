@@ -86,12 +86,10 @@ class FramebufferTest : public ::testing::Test {
     ASSERT_TRUE(depthStencilTexture_ != nullptr);
 
     // Create framebuffer using the offscreen texture
-    FramebufferDesc framebufferDesc;
-
-    framebufferDesc.debugName = "test";
-    framebufferDesc.colorAttachments[0].texture = offscreenTexture_;
-    framebufferDesc.depthAttachment.texture = depthStencilTexture_;
-    framebufferDesc.stencilAttachment.texture = depthStencilTexture_;
+    const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = offscreenTexture_}},
+                                          .depthAttachment = {.texture = depthStencilTexture_},
+                                          .stencilAttachment = {.texture = depthStencilTexture_},
+                                          .debugName = "test"};
 
     framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -117,24 +115,22 @@ class FramebufferTest : public ::testing::Test {
     shaderStages_ = std::move(stages);
 
     // Initialize input to vertex shader
-    VertexInputStateDesc inputDesc;
-
-    inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
-    inputDesc.attributes[0].offset = 0;
-    inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
-    inputDesc.attributes[0].name = data::shader::kSimplePos;
-    inputDesc.attributes[0].location = 0;
-    inputDesc.inputBindings[0].stride = sizeof(float) * 4;
-
-    inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
-    inputDesc.attributes[1].offset = 0;
-    inputDesc.attributes[1].bufferIndex = data::shader::kSimpleUvIndex;
-    inputDesc.attributes[1].name = data::shader::kSimpleUv;
-    inputDesc.attributes[1].location = 1;
-    inputDesc.inputBindings[1].stride = sizeof(float) * 2;
-
-    // numAttributes has to equal to bindings when using more than 1 buffer
-    inputDesc.numAttributes = inputDesc.numInputBindings = 2;
+    // numAttributes has to equal numInputBindings when using more than one buffer
+    const VertexInputStateDesc inputDesc{
+        .numAttributes = 2,
+        .attributes = {{.bufferIndex = data::shader::kSimplePosIndex,
+                        .format = VertexAttributeFormat::Float4,
+                        .offset = 0,
+                        .name = std::string(data::shader::kSimplePos),
+                        .location = 0},
+                       {.bufferIndex = data::shader::kSimpleUvIndex,
+                        .format = VertexAttributeFormat::Float2,
+                        .offset = 0,
+                        .name = std::string(data::shader::kSimpleUv),
+                        .location = 1}},
+        .numInputBindings = 2,
+        .inputBindings = {{.stride = sizeof(float) * 4}, {.stride = sizeof(float) * 2}},
+    };
 
     vertexInputState_ = iglDev_->createVertexInputState(inputDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -226,8 +222,7 @@ TEST_F(FramebufferTest, Clear) {
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
   std::shared_ptr<IDepthStencilState> depthStencilState;
-  DepthStencilStateDesc desc;
-  desc.isDepthWriteEnabled = true;
+  const DepthStencilStateDesc desc{.isDepthWriteEnabled = true};
 
   const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenRtWidth, kOffscreenRtHeight);
 
@@ -418,9 +413,7 @@ TEST_F(FramebufferTest, blitFramebufferColor) {
     //-------------------------------------------------------------
     // Create second IFramebuffer framebuffer2 by offscreenTexture2
     //-------------------------------------------------------------
-    FramebufferDesc framebufferDesc;
-
-    framebufferDesc.colorAttachments[0].texture = offscreenTexture2;
+    const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = offscreenTexture2}}};
     const std::shared_ptr<IFramebuffer> framebuffer2 =
         iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -682,8 +675,7 @@ TEST_F(FramebufferTest, GetColorAttachmentTest) {
   ASSERT_TRUE(outputTexture != nullptr);
 
   // Create framebuffer using the texture
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = outputTexture;
+  const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = outputTexture}}};
   framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(framebuffer_ != nullptr);
