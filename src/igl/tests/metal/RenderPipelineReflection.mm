@@ -55,24 +55,22 @@ class RenderPipelineReflectionMTLTest : public ::testing::Test {
     ASSERT_TRUE(fragShader_ != nullptr);
 
     // Initialize input to vertex shader
-    VertexInputStateDesc inputDesc;
-
-    inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
-    inputDesc.attributes[0].offset = 0;
-    inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
-    inputDesc.attributes[0].name = data::shader::kSimplePos;
-    inputDesc.attributes[0].location = 0;
-    inputDesc.inputBindings[0].stride = sizeof(float) * 4;
-
-    inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
-    inputDesc.attributes[1].offset = 0;
-    inputDesc.attributes[1].bufferIndex = data::shader::kSimpleUvIndex;
-    inputDesc.attributes[1].name = data::shader::kSimpleUv;
-    inputDesc.attributes[1].location = 1;
-    inputDesc.inputBindings[1].stride = sizeof(float) * 2;
-
-    // numAttributes has to equal to bindings when using more than 1 buffer
-    inputDesc.numAttributes = inputDesc.numInputBindings = 2;
+    // numAttributes has to equal numInputBindings when using more than one buffer
+    const VertexInputStateDesc inputDesc{
+        .numAttributes = 2,
+        .attributes = {{.bufferIndex = data::shader::kSimplePosIndex,
+                        .format = VertexAttributeFormat::Float4,
+                        .offset = 0,
+                        .name = std::string(data::shader::kSimplePos),
+                        .location = 0},
+                       {.bufferIndex = data::shader::kSimpleUvIndex,
+                        .format = VertexAttributeFormat::Float2,
+                        .offset = 0,
+                        .name = std::string(data::shader::kSimpleUv),
+                        .location = 1}},
+        .numInputBindings = 2,
+        .inputBindings = {{.stride = sizeof(float) * 4}, {.stride = sizeof(float) * 2}},
+    };
 
     vertexInputState_ = iglDev_->createVertexInputState(inputDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -219,20 +217,22 @@ class RenderPipelineReflectionMTLArrayTest : public ::testing::Test {
                                                  std::string(data::shader::kSimpleFragFunc));
     ASSERT_TRUE(fragShader_ != nullptr);
 
-    VertexInputStateDesc inputDesc;
-    inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
-    inputDesc.attributes[0].offset = 0;
-    inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
-    inputDesc.attributes[0].name = data::shader::kSimplePos;
-    inputDesc.attributes[0].location = 0;
-    inputDesc.inputBindings[0].stride = sizeof(float) * 4;
-    inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
-    inputDesc.attributes[1].offset = 0;
-    inputDesc.attributes[1].bufferIndex = data::shader::kSimpleUvIndex;
-    inputDesc.attributes[1].name = data::shader::kSimpleUv;
-    inputDesc.attributes[1].location = 1;
-    inputDesc.inputBindings[1].stride = sizeof(float) * 2;
-    inputDesc.numAttributes = inputDesc.numInputBindings = 2;
+    // numAttributes has to equal numInputBindings when using more than one buffer
+    const VertexInputStateDesc inputDesc{
+        .numAttributes = 2,
+        .attributes = {{.bufferIndex = data::shader::kSimplePosIndex,
+                        .format = VertexAttributeFormat::Float4,
+                        .offset = 0,
+                        .name = std::string(data::shader::kSimplePos),
+                        .location = 0},
+                       {.bufferIndex = data::shader::kSimpleUvIndex,
+                        .format = VertexAttributeFormat::Float2,
+                        .offset = 0,
+                        .name = std::string(data::shader::kSimpleUv),
+                        .location = 1}},
+        .numInputBindings = 2,
+        .inputBindings = {{.stride = sizeof(float) * 4}, {.stride = sizeof(float) * 2}},
+    };
 
     vertexInputState_ = iglDev_->createVertexInputState(inputDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
