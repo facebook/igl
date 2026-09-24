@@ -201,43 +201,37 @@ TEST(RenderPipelineDescTest, EqualityOpSameValues) {
 
 TEST(RenderPipelineDescTest, InequalityOpDifferentTopology) {
   RenderPipelineDesc a;
-  RenderPipelineDesc b;
-  b.topology = PrimitiveType::Line;
+  const RenderPipelineDesc b{.topology = PrimitiveType::Line};
   EXPECT_NE(a, b);
 }
 
 TEST(RenderPipelineDescTest, InequalityOpDifferentCullMode) {
   RenderPipelineDesc a;
-  RenderPipelineDesc b;
-  b.cullMode = CullMode::Back;
+  const RenderPipelineDesc b{.cullMode = CullMode::Back};
   EXPECT_NE(a, b);
 }
 
 TEST(RenderPipelineDescTest, InequalityOpDifferentFrontFaceWinding) {
   RenderPipelineDesc a;
-  RenderPipelineDesc b;
-  b.frontFaceWinding = WindingMode::Clockwise;
+  const RenderPipelineDesc b{.frontFaceWinding = WindingMode::Clockwise};
   EXPECT_NE(a, b);
 }
 
 TEST(RenderPipelineDescTest, InequalityOpDifferentPolygonFillMode) {
   RenderPipelineDesc a;
-  RenderPipelineDesc b;
-  b.polygonFillMode = PolygonFillMode::Line;
+  const RenderPipelineDesc b{.polygonFillMode = PolygonFillMode::Line};
   EXPECT_NE(a, b);
 }
 
 TEST(RenderPipelineDescTest, InequalityOpDifferentSampleCount) {
   RenderPipelineDesc a;
-  RenderPipelineDesc b;
-  b.sampleCount = 4u;
+  const RenderPipelineDesc b{.sampleCount = 4u};
   EXPECT_NE(a, b);
 }
 
 TEST(RenderPipelineDescTest, InequalityOpDifferentIsDynamicBufferMask) {
   RenderPipelineDesc a;
-  RenderPipelineDesc b;
-  b.isDynamicBufferMask = 1u;
+  const RenderPipelineDesc b{.isDynamicBufferMask = 1u};
   EXPECT_NE(a, b);
 }
 
@@ -250,8 +244,7 @@ TEST(RenderPipelineDescTest, InequalityOpDifferentTargetDesc) {
 
 TEST(RenderPipelineDescTest, InequalityOpDifferentAlphaToCoverageEnabled) {
   RenderPipelineDesc a;
-  RenderPipelineDesc b;
-  b.alphaToCoverageEnabled = true;
+  const RenderPipelineDesc b{.alphaToCoverageEnabled = true};
   EXPECT_NE(a, b);
 }
 
@@ -291,8 +284,7 @@ TEST(RenderPipelineDescTest, AlphaToCoverageDefaultFalse) {
 
 TEST(RenderPipelineDescTest, InequalityOpDifferentAlphaToCoverage) {
   RenderPipelineDesc a;
-  RenderPipelineDesc b;
-  b.alphaToCoverageEnabled = true;
+  const RenderPipelineDesc b{.alphaToCoverageEnabled = true};
   EXPECT_NE(a, b);
 }
 
@@ -359,8 +351,7 @@ TEST(ComputePipelineDescTest, InequalityOpDifferentShaderStages) {
 
 TEST(ComputePipelineDescTest, InequalityOpDifferentDebugName) {
   ComputePipelineDesc a;
-  ComputePipelineDesc b;
-  b.debugName = "compute_pass";
+  const ComputePipelineDesc b{.debugName = "compute_pass"};
   EXPECT_NE(a, b);
 }
 
