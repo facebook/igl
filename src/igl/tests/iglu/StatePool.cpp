@@ -58,14 +58,14 @@ class StatePoolTest : public ::testing::Test {
     inputDesc.attributes[0].offset = 0;
     inputDesc.attributes[0].location = 0;
     inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
-    inputDesc.attributes[0].name = data::shader::kSimplePos;
+    inputDesc.attributes[0].name = std::string(data::shader::kSimplePos);
     inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
     inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
     inputDesc.attributes[1].offset = 0;
     inputDesc.attributes[1].location = 1;
     inputDesc.attributes[1].bufferIndex = data::shader::kSimpleUvIndex;
-    inputDesc.attributes[1].name = data::shader::kSimpleUv;
+    inputDesc.attributes[1].name = std::string(data::shader::kSimpleUv);
     inputDesc.inputBindings[1].stride = sizeof(float) * 2;
 
     // numAttributes has to equal to bindings when using more than 1 buffer
@@ -217,16 +217,14 @@ TEST_F(StatePoolTest, depthStencilStateCaching) {
   Result ret;
   iglu::state_pool::DepthStencilStatePool pool;
 
-  DepthStencilStateDesc descA;
-  descA.compareFunction = CompareFunction::Less;
-  descA.isDepthWriteEnabled = true;
+  const DepthStencilStateDesc descA{.compareFunction = CompareFunction::Less,
+                                    .isDepthWriteEnabled = true};
 
   // Identical to descA - should map to the same cached state object
   const DepthStencilStateDesc descB = descA;
 
-  DepthStencilStateDesc descC;
-  descC.compareFunction = CompareFunction::Greater;
-  descC.isDepthWriteEnabled = false;
+  const DepthStencilStateDesc descC{.compareFunction = CompareFunction::Greater,
+                                    .isDepthWriteEnabled = false};
 
   //------------------------------------------------------------
   // Identical descriptors should return the same cached object
@@ -262,12 +260,9 @@ TEST_F(StatePoolTest, depthStencilStateCachingLRU) {
   iglu::state_pool::DepthStencilStatePool pool;
   pool.setCacheSize(2);
 
-  DepthStencilStateDesc descA;
-  descA.compareFunction = CompareFunction::Less;
-  DepthStencilStateDesc descB;
-  descB.compareFunction = CompareFunction::Greater;
-  DepthStencilStateDesc descC;
-  descC.compareFunction = CompareFunction::Equal;
+  const DepthStencilStateDesc descA{.compareFunction = CompareFunction::Less};
+  const DepthStencilStateDesc descB{.compareFunction = CompareFunction::Greater};
+  const DepthStencilStateDesc descC{.compareFunction = CompareFunction::Equal};
 
   // Insert A, then confirm a second lookup hits the cache (same object)
   std::shared_ptr<IDepthStencilState> a1 = pool.getOrCreate(*iglDev_, descA, &ret);
