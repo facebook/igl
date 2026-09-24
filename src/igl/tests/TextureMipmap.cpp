@@ -57,8 +57,7 @@ TEST_F(TextureTest, RenderToMip) {
   ASSERT_TRUE(outputTex != nullptr);
 
   // Create framebuffer using the output texture
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = outputTex;
+  const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = outputTex}}};
   auto fb = iglDev_->createFramebuffer(framebufferDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(fb != nullptr);
