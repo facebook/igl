@@ -77,8 +77,7 @@ TEST_F(InvalidateFramebufferOGLTest, InvalidateNoError) {
                             .clearColor = {0.0, 0.0, 0.0, 1.0}}},
   };
 
-  CommandBufferDesc cbDesc;
-  auto cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
 
   auto cmdEncoder = cmdBuf->createRenderCommandEncoder(renderPass, framebuffer);
