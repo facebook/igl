@@ -119,8 +119,7 @@ inline void validateTextureRange(IDevice& device,
   std::vector<ColorType> actualData;
   actualData.resize(expectedDataSize);
 
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = texture;
+  const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = texture}}};
   auto fb = device.createFramebuffer(framebufferDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(fb != nullptr);
