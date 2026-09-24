@@ -515,8 +515,7 @@ TEST_F(TextureTest, UploadAlignment) {
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(customOffscreenTexture != nullptr);
 
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = customOffscreenTexture;
+  const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = customOffscreenTexture}}};
   auto customFramebuffer = iglDev_->createFramebuffer(framebufferDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(customFramebuffer != nullptr);
@@ -626,9 +625,7 @@ TEST_F(TextureTest, Resize) {
   ASSERT_TRUE(outputTex != nullptr);
 
   // Create framebuffer using the output texture
-  FramebufferDesc framebufferDesc;
-
-  framebufferDesc.colorAttachments[0].texture = outputTex;
+  const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = outputTex}}};
   auto fb = iglDev_->createFramebuffer(framebufferDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(fb != nullptr);
@@ -733,9 +730,7 @@ TEST_F(TextureTest, ResizeTextureView) {
   ASSERT_TRUE(outputTex != nullptr);
 
   // Create framebuffer using the output texture
-  FramebufferDesc framebufferDesc;
-
-  framebufferDesc.colorAttachments[0].texture = outputTex;
+  const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = outputTex}}};
   auto fb = iglDev_->createFramebuffer(framebufferDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(fb != nullptr);
