@@ -140,7 +140,7 @@ class MultiviewTest : public ::testing::Test {
     inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
     inputDesc.attributes[0].offset = 0;
     inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
-    inputDesc.attributes[0].name = data::shader::kSimplePos;
+    inputDesc.attributes[0].name = std::string(data::shader::kSimplePos);
     inputDesc.attributes[0].location = 0;
     inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
@@ -278,8 +278,7 @@ TEST_F(MultiviewTest, SinglePassStereo) {
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(pipelineState, nullptr);
 
-  DepthStencilStateDesc desc;
-  desc.isDepthWriteEnabled = true;
+  const DepthStencilStateDesc desc{.isDepthWriteEnabled = true};
   const auto depthStencilState = iglDev_->createDepthStencilState(desc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(depthStencilState, nullptr);
