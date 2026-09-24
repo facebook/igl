@@ -26,8 +26,7 @@ TEST(CommandBufferDescTest, DefaultConstruction) {
 }
 
 TEST(CommandBufferDescTest, DebugName) {
-  CommandBufferDesc desc;
-  desc.debugName = "mainPass";
+  const CommandBufferDesc desc{.debugName = "mainPass"};
   EXPECT_EQ(desc.debugName, "mainPass");
 }
 
@@ -107,9 +106,7 @@ TEST(FramebufferDescTest, ColorAttachmentsDefaultNull) {
 }
 
 TEST(FramebufferDescTest, DebugNameAndMode) {
-  FramebufferDesc desc;
-  desc.debugName = "offscreen";
-  desc.mode = FramebufferMode::Stereo;
+  const FramebufferDesc desc{.debugName = "offscreen", .mode = FramebufferMode::Stereo};
   EXPECT_EQ(desc.debugName, "offscreen");
   EXPECT_EQ(desc.mode, FramebufferMode::Stereo);
 }
