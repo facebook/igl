@@ -45,8 +45,7 @@ class RenderCommandEncoderVulkanTest : public ::testing::Test {
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_NE(colorTex_, nullptr);
 
-    FramebufferDesc fbDesc;
-    fbDesc.colorAttachments[0].texture = colorTex_;
+    const FramebufferDesc fbDesc{.colorAttachments = {{.texture = colorTex_}}};
     fb_ = iglDev_->createFramebuffer(fbDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_NE(fb_, nullptr);
