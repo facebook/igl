@@ -42,85 +42,73 @@ TEST(SamplerStateDescTest, EqualityOpSameValues) {
 
 TEST(SamplerStateDescTest, InequalityOpDifferentMinFilter) {
   SamplerStateDesc a;
-  SamplerStateDesc b;
-  b.minFilter = SamplerMinMagFilter::Linear;
+  const SamplerStateDesc b{.minFilter = SamplerMinMagFilter::Linear};
   EXPECT_NE(a, b);
 }
 
 TEST(SamplerStateDescTest, InequalityOpDifferentMipLodMax) {
   SamplerStateDesc a;
-  SamplerStateDesc b;
-  b.mipLodMax = 7;
+  const SamplerStateDesc b{.mipLodMax = 7};
   EXPECT_NE(a, b);
 }
 
 TEST(SamplerStateDescTest, InequalityOpDifferentAddressMode) {
   SamplerStateDesc a;
-  SamplerStateDesc b;
-  b.addressModeU = SamplerAddressMode::Clamp;
+  const SamplerStateDesc b{.addressModeU = SamplerAddressMode::Clamp};
   EXPECT_NE(a, b);
 }
 
 TEST(SamplerStateDescTest, InequalityOpDifferentDepthCompareEnabled) {
   SamplerStateDesc a;
-  SamplerStateDesc b;
-  b.depthCompareEnabled = true;
+  const SamplerStateDesc b{.depthCompareEnabled = true};
   EXPECT_NE(a, b);
 }
 
 TEST(SamplerStateDescTest, InequalityOpDifferentMagFilter) {
   SamplerStateDesc a;
-  SamplerStateDesc b;
-  b.magFilter = SamplerMinMagFilter::Linear;
+  const SamplerStateDesc b{.magFilter = SamplerMinMagFilter::Linear};
   EXPECT_NE(a, b);
 }
 
 TEST(SamplerStateDescTest, InequalityOpDifferentMaxAnisotropic) {
   SamplerStateDesc a;
-  SamplerStateDesc b;
-  b.maxAnisotropic = 8;
+  const SamplerStateDesc b{.maxAnisotropic = 8};
   EXPECT_NE(a, b);
 }
 
 TEST(SamplerStateDescTest, InequalityOpDifferentYuvFormat) {
   SamplerStateDesc a;
-  SamplerStateDesc b;
-  b.yuvFormat = TextureFormat::YUV_NV12;
+  const SamplerStateDesc b{.yuvFormat = TextureFormat::YUV_NV12};
   EXPECT_NE(a, b);
 }
 
 TEST(SamplerStateDescTest, InequalityOpDifferentMipFilter) {
   SamplerStateDesc a;
-  SamplerStateDesc b;
-  b.mipFilter = SamplerMipFilter::Linear;
+  const SamplerStateDesc b{.mipFilter = SamplerMipFilter::Linear};
   EXPECT_NE(a, b);
 }
 
 TEST(SamplerStateDescTest, InequalityOpDifferentAddressModeV) {
   SamplerStateDesc a;
-  SamplerStateDesc b;
-  b.addressModeV = SamplerAddressMode::Clamp;
+  const SamplerStateDesc b{.addressModeV = SamplerAddressMode::Clamp};
   EXPECT_NE(a, b);
 }
 
 TEST(SamplerStateDescTest, InequalityOpDifferentAddressModeW) {
   SamplerStateDesc a;
-  SamplerStateDesc b;
-  b.addressModeW = SamplerAddressMode::MirrorRepeat;
+  const SamplerStateDesc b{.addressModeW = SamplerAddressMode::MirrorRepeat};
   EXPECT_NE(a, b);
 }
 
 TEST(SamplerStateDescTest, InequalityOpDifferentDepthCompareFunction) {
   SamplerStateDesc a;
-  SamplerStateDesc b;
-  b.depthCompareFunction = CompareFunction::Never;
+  const SamplerStateDesc b{.depthCompareFunction = CompareFunction::Never};
   EXPECT_NE(a, b);
 }
 
 TEST(SamplerStateDescTest, InequalityOpDifferentMipLodMin) {
   SamplerStateDesc a;
-  SamplerStateDesc b;
-  b.mipLodMin = 5;
+  const SamplerStateDesc b{.mipLodMin = 5};
   EXPECT_NE(a, b);
 }
 
@@ -161,74 +149,62 @@ TEST(SamplerStateDescTest, HashPerFieldDiscrimination) {
 
   // minFilter
   {
-    SamplerStateDesc d;
-    d.minFilter = SamplerMinMagFilter::Linear;
+    const SamplerStateDesc d{.minFilter = SamplerMinMagFilter::Linear};
     EXPECT_NE(hasher(d), defaultHash) << "minFilter change not reflected in hash";
   }
   // magFilter
   {
-    SamplerStateDesc d;
-    d.magFilter = SamplerMinMagFilter::Linear;
+    const SamplerStateDesc d{.magFilter = SamplerMinMagFilter::Linear};
     EXPECT_NE(hasher(d), defaultHash) << "magFilter change not reflected in hash";
   }
   // mipFilter
   {
-    SamplerStateDesc d;
-    d.mipFilter = SamplerMipFilter::Nearest;
+    const SamplerStateDesc d{.mipFilter = SamplerMipFilter::Nearest};
     EXPECT_NE(hasher(d), defaultHash) << "mipFilter change not reflected in hash";
   }
   // addressModeU
   {
-    SamplerStateDesc d;
-    d.addressModeU = SamplerAddressMode::Clamp;
+    const SamplerStateDesc d{.addressModeU = SamplerAddressMode::Clamp};
     EXPECT_NE(hasher(d), defaultHash) << "addressModeU change not reflected in hash";
   }
   // addressModeV
   {
-    SamplerStateDesc d;
-    d.addressModeV = SamplerAddressMode::Clamp;
+    const SamplerStateDesc d{.addressModeV = SamplerAddressMode::Clamp};
     EXPECT_NE(hasher(d), defaultHash) << "addressModeV change not reflected in hash";
   }
   // addressModeW
   {
-    SamplerStateDesc d;
-    d.addressModeW = SamplerAddressMode::Clamp;
+    const SamplerStateDesc d{.addressModeW = SamplerAddressMode::Clamp};
     EXPECT_NE(hasher(d), defaultHash) << "addressModeW change not reflected in hash";
   }
   // maxAnisotropic
   {
-    SamplerStateDesc d;
-    d.maxAnisotropic = 4;
+    const SamplerStateDesc d{.maxAnisotropic = 4};
     EXPECT_NE(hasher(d), defaultHash) << "maxAnisotropic change not reflected in hash";
   }
   // mipLodMin
   {
-    SamplerStateDesc d;
-    d.mipLodMin = 2;
+    const SamplerStateDesc d{.mipLodMin = 2};
     EXPECT_NE(hasher(d), defaultHash) << "mipLodMin change not reflected in hash";
   }
   // mipLodMax
   {
-    SamplerStateDesc d;
-    d.mipLodMax = 8;
+    const SamplerStateDesc d{.mipLodMax = 8};
     EXPECT_NE(hasher(d), defaultHash) << "mipLodMax change not reflected in hash";
   }
   // depthCompareFunction
   {
-    SamplerStateDesc d;
-    d.depthCompareFunction = CompareFunction::Greater;
+    const SamplerStateDesc d{.depthCompareFunction = CompareFunction::Greater};
     EXPECT_NE(hasher(d), defaultHash) << "depthCompareFunction change not reflected in hash";
   }
   // depthCompareEnabled
   {
-    SamplerStateDesc d;
-    d.depthCompareEnabled = true;
+    const SamplerStateDesc d{.depthCompareEnabled = true};
     EXPECT_NE(hasher(d), defaultHash) << "depthCompareEnabled change not reflected in hash";
   }
   // yuvFormat
   {
-    SamplerStateDesc d;
-    d.yuvFormat = TextureFormat::YUV_NV12;
+    const SamplerStateDesc d{.yuvFormat = TextureFormat::YUV_NV12};
     EXPECT_NE(hasher(d), defaultHash) << "yuvFormat change not reflected in hash";
   }
 }
