@@ -51,17 +51,17 @@ class RenderPipelineReflectionTest : public ::testing::Test {
     ASSERT_TRUE(offscreenTexture_ != nullptr);
 
     // Initialize input to vertex shader
-    VertexInputStateDesc inputDesc;
-
-    inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
-    inputDesc.attributes[0].offset = 0;
-    inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
-    inputDesc.attributes[0].name = data::shader::kSimplePos;
-    inputDesc.attributes[0].location = 0;
-    inputDesc.inputBindings[0].stride = sizeof(float) * 4;
-
-    // numAttributes has to equal to bindings when using more than 1 buffer
-    inputDesc.numAttributes = inputDesc.numInputBindings = 1;
+    // numAttributes has to equal numInputBindings when using more than one buffer
+    const VertexInputStateDesc inputDesc{
+        .numAttributes = 1,
+        .attributes = {{.bufferIndex = data::shader::kSimplePosIndex,
+                        .format = VertexAttributeFormat::Float4,
+                        .offset = 0,
+                        .name = std::string(data::shader::kSimplePos),
+                        .location = 0}},
+        .numInputBindings = 1,
+        .inputBindings = {{.stride = sizeof(float) * 4}},
+    };
 
     vertexInputState_ = iglDev_->createVertexInputState(inputDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
