@@ -79,8 +79,7 @@ class CommandBufferOGLTest : public ::testing::Test {
 //
 TEST_F(CommandBufferOGLTest, CreateFromQueue) {
   Result ret;
-  CommandBufferDesc cbDesc;
-  auto cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_NE(cmdBuf, nullptr);
 }
@@ -92,8 +91,7 @@ TEST_F(CommandBufferOGLTest, CreateFromQueue) {
 //
 TEST_F(CommandBufferOGLTest, CreateRenderEncoder) {
   Result ret;
-  CommandBufferDesc cbDesc;
-  auto cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_NE(cmdBuf, nullptr);
 
@@ -110,8 +108,7 @@ TEST_F(CommandBufferOGLTest, CreateRenderEncoder) {
 //
 TEST_F(CommandBufferOGLTest, SubmitToQueue) {
   Result ret;
-  CommandBufferDesc cbDesc;
-  auto cmdBuf = cmdQueue_->createCommandBuffer(cbDesc, &ret);
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_NE(cmdBuf, nullptr);
 
