@@ -192,9 +192,10 @@ void ComputeImageStoreTest::runImageStoreTest(TextureFormat format) {
   ASSERT_TRUE(computeStages != nullptr);
 
   // Create compute pipeline
-  ComputePipelineDesc computeDesc;
-  computeDesc.shaderStages = std::move(computeStages);
-  computeDesc.buffersMap[kColorBufIndex] = IGL_NAMEHANDLE(kColorBufName);
+  const ComputePipelineDesc computeDesc{
+      .buffersMap = {{kColorBufIndex, IGL_NAMEHANDLE(kColorBufName)}},
+      .shaderStages = std::move(computeStages),
+  };
   auto computePipeline = iglDev_->createComputePipeline(computeDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(computePipeline != nullptr);
