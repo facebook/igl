@@ -118,9 +118,7 @@ class TextureArrayFloatTest : public ::testing::Test {
     ASSERT_TRUE(offscreenTexture_ != nullptr);
 
     // Create framebuffer using the offscreen texture
-    FramebufferDesc framebufferDesc;
-
-    framebufferDesc.colorAttachments[0].texture = offscreenTexture_;
+    const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = offscreenTexture_}}};
     framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(framebuffer_ != nullptr);
@@ -192,24 +190,22 @@ class TextureArrayFloatTest : public ::testing::Test {
     shaderStages_ = std::move(stages);
 
     // Initialize input to vertex shader
-    VertexInputStateDesc inputDesc;
-
-    inputDesc.attributes[0].format = VertexAttributeFormat::Float4;
-    inputDesc.attributes[0].offset = 0;
-    inputDesc.attributes[0].bufferIndex = data::shader::kSimplePosIndex;
-    inputDesc.attributes[0].name = data::shader::kSimplePos;
-    inputDesc.attributes[0].location = 0;
-    inputDesc.inputBindings[0].stride = sizeof(float) * 4;
-
-    inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
-    inputDesc.attributes[1].offset = 0;
-    inputDesc.attributes[1].bufferIndex = data::shader::kSimpleUvIndex;
-    inputDesc.attributes[1].name = data::shader::kSimpleUv;
-    inputDesc.attributes[1].location = 1;
-    inputDesc.inputBindings[1].stride = sizeof(float) * 2;
-
-    // numAttributes has to equal to bindings when using more than 1 buffer
-    inputDesc.numAttributes = inputDesc.numInputBindings = 2;
+    // numAttributes has to equal numInputBindings when using more than one buffer
+    const VertexInputStateDesc inputDesc{
+        .numAttributes = 2,
+        .attributes = {{.bufferIndex = data::shader::kSimplePosIndex,
+                        .format = VertexAttributeFormat::Float4,
+                        .offset = 0,
+                        .name = std::string(data::shader::kSimplePos),
+                        .location = 0},
+                       {.bufferIndex = data::shader::kSimpleUvIndex,
+                        .format = VertexAttributeFormat::Float2,
+                        .offset = 0,
+                        .name = std::string(data::shader::kSimpleUv),
+                        .location = 1}},
+        .numInputBindings = 2,
+        .inputBindings = {{.stride = sizeof(float) * 4}, {.stride = sizeof(float) * 2}},
+    };
 
     vertexInputState_ = iglDev_->createVertexInputState(inputDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -621,8 +617,7 @@ TEST_F(TextureArrayFloatTest, PassthroughRenderToArray) {
   //--------------------------
   // Create custom framebuffer
   //--------------------------
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = customOffscreenTexture;
+  const FramebufferDesc framebufferDesc{.colorAttachments = {{.texture = customOffscreenTexture}}};
   auto customFramebuffer = iglDev_->createFramebuffer(framebufferDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(customFramebuffer != nullptr);
