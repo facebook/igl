@@ -186,11 +186,14 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
                                  height,
                                  &swapchain_));
   }
-  VK_ASSERT(ivkSetDebugObjectName(&ctx_.vf_,
-                                  ctx.getVkDevice(),
-                                  VK_OBJECT_TYPE_SWAPCHAIN_KHR,
-                                  (uint64_t)swapchain_,
-                                  "Swapchain: VulkanSwapchain"));
+  // The result is deliberately unchecked: on Android the swapchain belongs to the platform's WSI
+  // loader rather than to the ICD, so the driver rejects the handle with `VK_ERROR_UNKNOWN`. An
+  // unnamed swapchain only costs a label in RenderDoc, so it must not be fatal.
+  ivkSetDebugObjectName(&ctx_.vf_,
+                        ctx.getVkDevice(),
+                        VK_OBJECT_TYPE_SWAPCHAIN_KHR,
+                        (uint64_t)swapchain_,
+                        "Swapchain: VulkanSwapchain");
   VK_ASSERT(ctx.vf_.vkGetSwapchainImagesKHR(
       ctx.getVkDevice(), swapchain_, &numSwapchainImages_, nullptr));
   std::vector<VkImage> swapchainImages(numSwapchainImages_);
