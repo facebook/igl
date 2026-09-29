@@ -221,7 +221,7 @@ TEST_F(StatePoolTest, depthStencilStateCaching) {
                                     .isDepthWriteEnabled = true};
 
   // Identical to descA - should map to the same cached state object
-  const DepthStencilStateDesc descB = descA;
+  const DepthStencilStateDesc& descB = descA;
 
   const DepthStencilStateDesc descC{.compareFunction = CompareFunction::Greater,
                                     .isDepthWriteEnabled = false};
