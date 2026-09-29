@@ -27,6 +27,8 @@ import android.widget.TextView;
 
 public class SampleActivity extends Activity implements View.OnClickListener {
   private static final String TAG = "SampleActivity";
+  private static final String FILL_VIEWPORT_METADATA = "com.facebook.igl.shell.FILL_VIEWPORT";
+  private static final String VULKAN_ONLY_METADATA = "com.facebook.igl.shell.VULKAN_ONLY";
   private static final int REQUEST_CAMERA_PERMISSION = 1;
 
   // UI
@@ -79,16 +81,24 @@ public class SampleActivity extends Activity implements View.OnClickListener {
     // set up tab and cached sample view for different backend types
     mBackendViewFrame = new FrameLayout(this);
     mConfigs = SampleLib.getRenderSessionConfigs();
-    curConfig = 0;
+    final int vulkanConfig = shouldUseVulkanOnly() ? findVulkanConfig() : -1;
+    final boolean vulkanOnly = vulkanConfig >= 0;
+    curConfig = vulkanOnly ? vulkanConfig : 0;
     mTabViews = new SurfaceView[mConfigs.length];
     for (int i = 0; i < mConfigs.length; i++) {
-      // configure and insert tab
-      TextView item = new TextView(this);
-      item.setId(i);
-      item.setText(mConfigs[i].displayName);
-      item.setPadding(20, 0, 20, 0);
-      item.setOnClickListener(this);
-      mTabBar.addView(item);
+      if (vulkanOnly && i != curConfig) {
+        continue;
+      }
+
+      TextView item = null;
+      if (!vulkanOnly) {
+        item = new TextView(this);
+        item.setId(i);
+        item.setText(mConfigs[i].displayName);
+        item.setPadding(20, 0, 20, 0);
+        item.setOnClickListener(this);
+        mTabBar.addView(item);
+      }
 
       // initialize sampleView for each backend type
       SurfaceView backendView = null;
@@ -112,7 +122,9 @@ public class SampleActivity extends Activity implements View.OnClickListener {
 
       // set current backend tab as selected
       if (curConfig == i) {
-        item.setTextColor(selectedTabColor);
+        if (item != null) {
+          item.setTextColor(selectedTabColor);
+        }
         mBackendViewFrame.addView(backendView);
       } else {
         item.setTextColor(unSelectedTabColor);
@@ -123,9 +135,54 @@ public class SampleActivity extends Activity implements View.OnClickListener {
     }
 
     // setup and display the mainview
-    mMainView.addView(mTabBar);
-    mMainView.addView(mBackendViewFrame);
+    if (shouldFillViewport()) {
+      if (!vulkanOnly) {
+        mMainView.addView(
+            mTabBar,
+            new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+      }
+      mMainView.addView(
+          mBackendViewFrame,
+          new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
+    } else {
+      if (!vulkanOnly) {
+        mMainView.addView(mTabBar);
+      }
+      mMainView.addView(mBackendViewFrame);
+    }
     setContentView(mMainView);
+  }
+
+  private int findVulkanConfig() {
+    for (int i = 0; i < mConfigs.length; i++) {
+      if (mConfigs[i].version.flavor == SampleLib.BackendFlavor.Vulkan) {
+        return i;
+      }
+    }
+    Log.e(TAG, "No Vulkan configuration available; showing all configurations");
+    return -1;
+  }
+
+  private boolean shouldFillViewport() {
+    return isMetadataEnabled(FILL_VIEWPORT_METADATA);
+  }
+
+  private boolean shouldUseVulkanOnly() {
+    return isMetadataEnabled(VULKAN_ONLY_METADATA);
+  }
+
+  private boolean isMetadataEnabled(String name) {
+    try {
+      Bundle metadata =
+          getPackageManager()
+              .getActivityInfo(getComponentName(), PackageManager.GET_META_DATA)
+              .metaData;
+      return metadata != null && metadata.getBoolean(name, false);
+    } catch (PackageManager.NameNotFoundException e) {
+      Log.w(TAG, "Could not inspect activity metadata for " + getPackageName(), e);
+      return false;
+    }
   }
 
   private boolean shouldRequestCameraPermission() {
