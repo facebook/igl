@@ -27,6 +27,7 @@ public class SampleLib {
     OpenGL_ES,
     Metal,
     Vulkan,
+    D3D12,
     // @fb-only
   }
 

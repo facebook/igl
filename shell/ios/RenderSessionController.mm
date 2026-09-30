@@ -51,6 +51,14 @@
 - (igl::BackendVersion)toBackendVersion:(BackendVersion*)version;
 @end
 
+static_assert(static_cast<uint8_t>(igl::BackendFlavor::Invalid) == kBackendFlavorInvalid);
+static_assert(static_cast<uint8_t>(igl::BackendFlavor::OpenGL) == kBackendFlavorOpenGL);
+static_assert(static_cast<uint8_t>(igl::BackendFlavor::OpenGL_ES) == kBackendFlavorOpenGLES);
+static_assert(static_cast<uint8_t>(igl::BackendFlavor::Metal) == kBackendFlavorMetal);
+static_assert(static_cast<uint8_t>(igl::BackendFlavor::Vulkan) == kBackendFlavorVulkan);
+static_assert(static_cast<uint8_t>(igl::BackendFlavor::D3D12) == kBackendFlavorD3D12);
+// @fb-only
+
 @implementation RenderSessionController
 
 - (instancetype)initWithBackendVersion:(BackendVersion*)backendVersion
