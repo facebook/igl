@@ -9,7 +9,7 @@
 
 #pragma once
 
-#import <Foundation/NSStream.h>
+#import <Foundation/NSStream.h> // IWYU pragma: keep
 #include <shell/shared/netservice/Stream.h>
 
 namespace igl::shell::netservice {
