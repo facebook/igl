@@ -840,6 +840,11 @@ void VulkanContext::createInstance() {
       config_.enableValidation = false;
     }
   }
+#else
+  // No layer is ever requested here, so areValidationLayersEnabled() must report false rather than
+  // what the caller asked for. Must stay below enableCommonInstanceExtensions(), which reads the
+  // requested value to decide on VK_EXT_validation_features.
+  config_.enableValidation = false;
 #endif
   if (config_.enableGfxReconstruct) {
     layers.emplace_back(kGfxReconstructLayerName);
