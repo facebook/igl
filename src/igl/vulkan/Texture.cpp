@@ -97,8 +97,15 @@ Result Texture::create(const TextureDesc& desc) {
 
   // On M1 Macs, depth texture has to be ResourceStorage::Private.
   // On Intel Macs, multisample does not work with shared or managed storage modes
+  //
+  // Only optimally tiled images are excluded: a host mapping of an optimally tiled image is
+  // unusable because the layout is opaque, so `VulkanImage::isMappedPtrAccessible()` rejects it and
+  // uploads go through the staging device anyway. Asking for host-visible memory in that case buys
+  // nothing and MoltenVK eagerly flushes the never-written host memory into the MTLTexture from
+  // vkBindImageMemory(), which crashes the Metal driver.
   if (!ctx.useStagingForBuffers_ && desc_.storage == ResourceStorage::Private &&
-      !getProperties().isDepthOrStencil() && desc.numSamples == 1) {
+      desc_.tiling == TextureDesc::TextureTiling::Linear && !getProperties().isDepthOrStencil() &&
+      desc.numSamples == 1) {
     desc_.storage = ResourceStorage::Shared;
   }
 
