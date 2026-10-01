@@ -257,7 +257,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   if (renderPass.timestampQuery.queries) {
     const uint32_t slot =
         static_cast<TimestampQueries&>(*renderPass.timestampQuery.queries)
-            .beginElapsedQuery(cmdBuffer_, renderPass.timestampQuery.slotIndex, NULL);
+            .beginElapsedQuery(cmdBuffer_, renderPass.timestampQuery.slotIndex, nullptr);
     if (slot != TimestampQueries::kInvalidSlot) {
       timestampQueries_ = renderPass.timestampQuery.queries;
       timestampQuerySlotIndex_ = slot;
