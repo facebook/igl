@@ -7,8 +7,12 @@
 
 #include <gtest/gtest.h>
 
+#include <igl/vulkan/ResourcesBinder.h>
+
 #include "../util/TestDevice.h"
 
+#include <cstdarg>
+#include <iterator>
 #include <igl/Buffer.h>
 #include <igl/CommandBuffer.h>
 #include <igl/Device.h>
@@ -17,6 +21,8 @@
 #include <igl/RenderPass.h>
 #include <igl/SamplerState.h>
 #include <igl/Texture.h>
+#include <igl/vulkan/Device.h>
+#include <igl/vulkan/VulkanContext.h>
 
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
 
@@ -225,6 +231,56 @@ TEST_F(ResourcesBinderTest, CreateEncoderWithClearColor) {
   encoder->endEncoding();
   cmdQueue_->submit(*cmdBuf);
   cmdBuf->waitUntilCompleted();
+}
+
+namespace {
+bool sDebugAbortFired = false;
+} // namespace
+
+class ResourcesBinderStorageImageTest : public ResourcesBinderTest {
+ public:
+  void SetUp() override {
+    ResourcesBinderTest::SetUp();
+    sDebugAbortFired = false;
+    iglSetDebugAbortListener([](const char* /*category*/,
+                                const char* /*reason*/,
+                                const char* /*file*/,
+                                const char* /*func*/,
+                                int /*line*/,
+                                const char* /*format*/,
+                                va_list /*ap*/) { sDebugAbortFired = true; });
+  }
+
+  void TearDown() override {
+    iglSetDebugAbortListener(nullptr);
+    ResourcesBinderTest::TearDown();
+  }
+
+ protected:
+  vulkan::VulkanContext& getVulkanContext() {
+    return static_cast<vulkan::Device&>(*iglDev_).getVulkanContext();
+  }
+};
+
+TEST_F(ResourcesBinderStorageImageTest, BindingsAreSizedByStorageImagesMax) {
+  EXPECT_EQ(std::size(vulkan::BindingsStorageImages{}.images), IGL_STORAGE_IMAGES_MAX);
+}
+
+TEST_F(ResourcesBinderStorageImageTest, StorageImageIndexIsBoundedByStorageImagesMax) {
+#if !IGL_DEBUG_ABORT_ENABLED
+  GTEST_SKIP() << "An out-of-range index is observable only through the debug abort listener";
+#else
+  vulkan::ResourcesBinder binder(nullptr, getVulkanContext(), VK_PIPELINE_BIND_POINT_COMPUTE);
+  ASSERT_FALSE(sDebugAbortFired) << "Constructing the binder must not abort";
+
+  // A null texture keeps both cases on the index bound alone: the usage and layout checks in
+  // bindStorageImage() run only for a non-null texture.
+  binder.bindStorageImage(IGL_STORAGE_IMAGES_MAX - 1, nullptr);
+  EXPECT_FALSE(sDebugAbortFired) << "The highest storage image index must be accepted";
+
+  binder.bindStorageImage(IGL_STORAGE_IMAGES_MAX, nullptr);
+  EXPECT_TRUE(sDebugAbortFired) << "One past the highest storage image index must be rejected";
+#endif // !IGL_DEBUG_ABORT_ENABLED
 }
 
 } // namespace igl::tests

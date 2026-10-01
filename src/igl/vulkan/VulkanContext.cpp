@@ -2157,11 +2157,11 @@ void VulkanContext::updateBindingsStorageImages(
   VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, nextSubmitHandle);
 
   // NOLINTNEXTLINE(modernize-avoid-c-arrays)
-  VkDescriptorImageInfo infoStorageImages[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
+  VkDescriptorImageInfo infoStorageImages[IGL_STORAGE_IMAGES_MAX]; // uninitialized
   uint32_t numStorageImages = 0;
 
   // NOLINTNEXTLINE(modernize-avoid-c-arrays)
-  VkWriteDescriptorSet writes[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
+  VkWriteDescriptorSet writes[IGL_STORAGE_IMAGES_MAX]; // uninitialized
   uint32_t numWrites = 0;
 
   // make sure the guard value is always there
@@ -2173,7 +2173,7 @@ void VulkanContext::updateBindingsStorageImages(
   for (const util::ImageDescription& d : info.images) {
     IGL_DEBUG_ASSERT(d.descriptorSet == kBindPoint_StorageImages);
     const uint32_t loc = d.bindingLocation;
-    IGL_DEBUG_ASSERT(loc < IGL_TEXTURE_SAMPLERS_MAX);
+    IGL_DEBUG_ASSERT(loc < IGL_STORAGE_IMAGES_MAX);
     VkImageView imageView = data.images[loc];
     writes[numWrites++] = ivkGetWriteDescriptorSetImageInfo(
         dset, loc, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, &infoStorageImages[numStorageImages]);
@@ -2368,7 +2368,7 @@ void VulkanContext::updateBindingsStorageImagesByDescriptorBuffer(
   for (const util::ImageDescription& d : info.images) {
     IGL_DEBUG_ASSERT(d.descriptorSet == kBindPoint_StorageImages);
     const uint32_t loc = d.bindingLocation;
-    IGL_DEBUG_ASSERT(loc < IGL_TEXTURE_SAMPLERS_MAX);
+    IGL_DEBUG_ASSERT(loc < IGL_STORAGE_IMAGES_MAX);
     VkImageView imageView = data.images[loc];
 
     VkDescriptorImageInfo imageInfo{

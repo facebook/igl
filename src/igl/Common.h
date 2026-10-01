@@ -36,6 +36,16 @@ using Deleter = void (*)(void* IGL_NULLABLE);
 /// Device Capabilities or Metal Features
 constexpr uint32_t IGL_TEXTURE_SAMPLERS_MAX = 16;
 
+// Maximum number of storage images that can be bound to a shader stage. Sampled images and storage
+// images are distinct descriptor types with distinct limits, so this is deliberately not derived
+// from IGL_TEXTURE_SAMPLERS_MAX. See maxPerStageDescriptorSampledImages (floor of 16) and
+// maxPerStageDescriptorStorageImages (floor of 4) in
+// https://registry.khronos.org/vulkan/specs/latest/man/html/VkPhysicalDeviceLimits.html
+// Spelled like its IGL_*_MAX neighbours, not the kIglStorageImagesMax that clang-tidy asks for:
+// every site reads this constant beside IGL_TEXTURE_SAMPLERS_MAX.
+// NOLINTNEXTLINE(readability-identifier-naming)
+constexpr uint32_t IGL_STORAGE_IMAGES_MAX = 16;
+
 constexpr uint32_t IGL_VERTEX_ATTRIBUTES_MAX = 24;
 
 // maximum number of buffers that can be bound to a shader stage

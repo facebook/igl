@@ -93,6 +93,8 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
 
   ResourcesBinder binder_;
 
+  // Holds sampled textures and storage images alike, so neither IGL_TEXTURE_SAMPLERS_MAX nor
+  // IGL_STORAGE_IMAGES_MAX bounds it on its own: a pass binding every slot of both needs their sum.
   std::array<const igl::vulkan::VulkanImage*, IGL_TEXTURE_SAMPLERS_MAX> restoreLayout_{};
   std::array<VkImageAspectFlags, IGL_TEXTURE_SAMPLERS_MAX> restoreLayoutAspectFlags_{};
   uint32_t numRestoreLayouts_ = 0;

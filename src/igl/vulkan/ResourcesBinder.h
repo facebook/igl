@@ -35,7 +35,7 @@ struct BindingsTextures {
 };
 
 struct BindingsStorageImages {
-  VkImageView images[IGL_TEXTURE_SAMPLERS_MAX] = {};
+  VkImageView images[IGL_STORAGE_IMAGES_MAX] = {};
 };
 
 static_assert(std::is_trivially_copyable_v<BindingsBuffers>);

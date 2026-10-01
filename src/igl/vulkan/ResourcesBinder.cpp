@@ -168,8 +168,8 @@ void ResourcesBinder::bindTexture(uint32_t index, Texture* tex) {
 void ResourcesBinder::bindStorageImage(uint32_t index, Texture* tex) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_DEBUG_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
-    IGL_DEBUG_ABORT("Invalid texture index");
+  if (!IGL_DEBUG_VERIFY(index < IGL_STORAGE_IMAGES_MAX)) {
+    IGL_DEBUG_ABORT("Invalid storage image index");
     return;
   }
 
