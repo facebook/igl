@@ -135,6 +135,11 @@ class VulkanImmediateCommands final {
 
   /// @brief Adds a semaphore to the waits for the next submission.
   [[nodiscard]] bool waitSemaphore(VkSemaphore semaphore, uint64_t waitValue = 0);
+  /// @brief Adds a semaphore to the waits for the next submission at the specified destination
+  /// pipeline stages.
+  [[nodiscard]] bool waitSemaphore(VkSemaphore semaphore,
+                                   uint64_t waitValue,
+                                   VkPipelineStageFlags waitStageMask);
   /// @brief Adds a semaphore to the signals for the next submission.
   [[nodiscard]] bool signalSemaphore(VkSemaphore semaphore, uint64_t signalValue);
 

@@ -291,7 +291,7 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
     VkSemaphore waitSemaphores[kSubmitSemaphoreCapacity] = {};
     uint32_t numWaitSemaphores = numWaitSemaphores_;
     for (uint32_t i = 0; i < numWaitSemaphores_; ++i) {
-      waitStageMasks[i] = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+      waitStageMasks[i] = static_cast<VkPipelineStageFlags>(waitSemaphores_[i].stageMask);
       waitSemaphores[i] = waitSemaphores_[i].semaphore;
     }
     if (lastSubmitSemaphore_.semaphore) {
@@ -363,15 +363,25 @@ void VulkanImmediateCommands::discard(const CommandBufferWrapper& wrapper) {
 }
 
 bool VulkanImmediateCommands::waitSemaphore(VkSemaphore semaphore, uint64_t waitValue) {
+  return waitSemaphore(semaphore, waitValue, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+}
+
+bool VulkanImmediateCommands::waitSemaphore(VkSemaphore semaphore,
+                                            uint64_t waitValue,
+                                            VkPipelineStageFlags waitStageMask) {
   if (numWaitSemaphores_ >= kMaxInjectedSemaphores) {
     IGL_LOG_ERROR("VulkanImmediateCommands::waitSemaphore(): too many injected semaphores\n");
+    return false;
+  }
+  if (waitStageMask == 0) {
+    IGL_LOG_ERROR("VulkanImmediateCommands::waitSemaphore(): destination stage mask is empty\n");
     return false;
   }
   waitSemaphores_[numWaitSemaphores_++] = VkSemaphoreSubmitInfo{
       .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
       .semaphore = semaphore,
       .value = waitValue,
-      .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+      .stageMask = waitStageMask,
   };
   return true;
 }
