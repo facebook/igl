@@ -519,11 +519,10 @@ void VulkanFeatures::enableCommonInstanceExtensions(const VulkanContextConfig& c
   has_VK_KHR_portability_enumeration =
       enable(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, ExtensionType::Instance);
 
-#if !IGL_PLATFORM_ANDROID
-  if (contextConfig.enableValidation) {
+  if (contextConfig.enableValidation &&
+      (!IGL_PLATFORM_ANDROID || contextConfig.enableValidationOnAndroid)) {
     enable(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, ExtensionType::Instance);
   }
-#endif // !IGL_PLATFORM_ANDROID
 
   has_VK_KHR_get_surface_capabilities2 =
       enable(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME, ExtensionType::Instance);

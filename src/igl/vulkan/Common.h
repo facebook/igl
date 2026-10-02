@@ -115,6 +115,8 @@ struct VulkanContextConfig {
 
   bool enableValidation = true;
   bool enableGPUAssistedValidation = true;
+  // Android validation remains disabled unless the caller explicitly opts in.
+  bool enableValidationOnAndroid = false;
   bool enableExtraLogs = true;
   bool enableDescriptorIndexing = false;
   bool enableShaderInt16 = true;

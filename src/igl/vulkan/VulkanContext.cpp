@@ -825,7 +825,12 @@ void VulkanContext::createInstance() {
 
   std::vector<const char*> layers;
   // @fb-only
-#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
+#if !IGL_PLATFORM_MACOSX
+#if IGL_PLATFORM_ANDROID
+  if (!config_.enableValidationOnAndroid) {
+    config_.enableValidation = false;
+  }
+#endif
   if (config_.enableValidation) {
     const auto hasLayer = [&availableLayers](const char* name) {
       return std::any_of(availableLayers.begin(), availableLayers.end(), [name](const auto& layer) {
@@ -850,8 +855,7 @@ void VulkanContext::createInstance() {
     layers.emplace_back(kGfxReconstructLayerName);
   }
 
-  // Validation Features not available on most Android devices
-#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
+#if !IGL_PLATFORM_MACOSX
   std::vector<VkValidationFeatureEnableEXT> valFeatures;
   if (config_.enableGPUAssistedValidation) {
     valFeatures.push_back(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT);
@@ -861,7 +865,7 @@ void VulkanContext::createInstance() {
       .enabledValidationFeatureCount = static_cast<uint32_t>(valFeatures.size()),
       .pEnabledValidationFeatures = valFeatures.empty() ? nullptr : valFeatures.data(),
   };
-#endif // !IGL_PLATFORM_ANDROID
+#endif // !IGL_PLATFORM_MACOSX
 
   // Request the highest API version the loader supports (>= 1.3 on modern loaders). We use core
   // entry points that were promoted in Vulkan 1.3 (the dynamic-state setters vkCmdSetCullMode(),
@@ -882,7 +886,7 @@ void VulkanContext::createInstance() {
 
   const VkInstanceCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOSX
+#if !IGL_PLATFORM_MACOSX
       .pNext = config_.enableValidation ? &features : nullptr,
 #endif
       .flags = features_.has_VK_KHR_portability_enumeration

@@ -18,6 +18,7 @@ TEST(VulkanContextConfigTest, DefaultBooleanFields) {
   EXPECT_FALSE(config.enableConcurrentVkDevicesSupport);
   EXPECT_TRUE(config.enableValidation);
   EXPECT_TRUE(config.enableGPUAssistedValidation);
+  EXPECT_FALSE(config.enableValidationOnAndroid);
   EXPECT_TRUE(config.enableExtraLogs);
   EXPECT_FALSE(config.enableDescriptorIndexing);
   EXPECT_TRUE(config.enableShaderInt16);
