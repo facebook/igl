@@ -14,10 +14,15 @@
 #include <shell/shared/renderSession/RenderSessionWindowConfig.h>
 #include <shell/shared/renderSession/ShellType.h>
 
+namespace igl::vulkan {
+struct VulkanContextConfig;
+}
+
 namespace igl::shell {
 
 class Platform;
 class RenderSession;
+struct ShellParams;
 
 class IRenderSessionFactory {
  public:
@@ -59,6 +64,11 @@ class IRenderSessionFactory {
   [[nodiscard]] virtual std::vector<std::string> requestedVulkanDeviceExtensions() const noexcept {
     return {};
   }
+
+  /// @brief Gives a session factory a chance to customize Android Vulkan context creation.
+  /// The default implementation intentionally leaves the IGL configuration unchanged.
+  virtual void configureVulkanContext(const ShellParams& /* shellParams */,
+                                      vulkan::VulkanContextConfig& /* config */) const noexcept {}
 };
 
 } // namespace igl::shell

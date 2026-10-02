@@ -585,6 +585,7 @@ void TinyRenderer::init(AAssetManager* mgr,
     config.requestedSwapChainTextureFormat = swapchainColorTextureFormat;
     // Don't use headless mode on Android - instead we'll render to offscreen surface
     config.headless = false;
+    factory.configureVulkanContext(shellParams_, config);
 
     auto ctx = vulkan::HWDevice::createContext(config, nativeWindow);
 
