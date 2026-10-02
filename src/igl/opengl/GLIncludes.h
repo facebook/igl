@@ -331,6 +331,9 @@
 #ifndef GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR
 #define GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR 0x824E
 #endif
+#ifndef GL_COLOR
+#define GL_COLOR 0x1800
+#endif
 #ifndef GL_DEPTH
 #define GL_DEPTH 0x1801
 #endif

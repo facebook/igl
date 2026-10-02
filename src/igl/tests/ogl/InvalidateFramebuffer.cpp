@@ -14,6 +14,7 @@
 #include <igl/opengl/Device.h>
 #include <igl/opengl/DeviceFeatureSet.h>
 #include <igl/opengl/IContext.h>
+#include <igl/opengl/ViewTextureTarget.h>
 
 namespace igl::tests {
 
@@ -80,6 +81,46 @@ TEST_F(InvalidateFramebufferOGLTest, InvalidateNoError) {
   auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
 
+  auto cmdEncoder = cmdBuf->createRenderCommandEncoder(renderPass, framebuffer);
+  ASSERT_NE(cmdEncoder, nullptr);
+  cmdEncoder->endEncoding();
+  cmdQueue_->submit(*cmdBuf);
+
+  ASSERT_EQ(context_->checkForErrors(__FILE__, __LINE__), GL_NO_ERROR);
+}
+
+//
+// InvalidateDefaultFramebufferNoError
+//
+// A framebuffer backed by a view's implicit storage is the default framebuffer,
+// whose buffers must be invalidated as GL_COLOR / GL_DEPTH rather than the
+// GL_*_ATTACHMENT names that only framebuffer objects accept.
+//
+TEST_F(InvalidateFramebufferOGLTest, InvalidateDefaultFramebufferNoError) {
+  if (!context_->deviceFeatures().hasInternalFeature(
+          opengl::InternalFeatures::InvalidateFramebuffer)) {
+    GTEST_SKIP() << "InvalidateFramebuffer not supported";
+  }
+
+  Result ret;
+  auto color = std::make_shared<opengl::ViewTextureTarget>(*context_, TextureFormat::RGBA_UNorm8);
+  auto depth = std::make_shared<opengl::ViewTextureTarget>(*context_, TextureFormat::Z_UNorm24);
+  const FramebufferDesc fbDesc{
+      .colorAttachments = {{.texture = color}},
+      .depthAttachment = {.texture = depth},
+  };
+  auto framebuffer = iglDev_->createFramebuffer(fbDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_EQ(context_->checkForErrors(__FILE__, __LINE__), GL_NO_ERROR);
+
+  const RenderPassDesc renderPass{
+      .colorAttachments = {{.loadAction = LoadAction::Clear,
+                            .storeAction = StoreAction::DontCare,
+                            .clearColor = {0.0, 0.0, 0.0, 1.0}}},
+      .depthAttachment = {.loadAction = LoadAction::Clear, .storeAction = StoreAction::DontCare},
+  };
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
   auto cmdEncoder = cmdBuf->createRenderCommandEncoder(renderPass, framebuffer);
   ASSERT_NE(cmdEncoder, nullptr);
   cmdEncoder->endEncoding();

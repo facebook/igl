@@ -845,22 +845,33 @@ void CustomFramebuffer::unbind() const {
   GLenum attachments[IGL_COLOR_ATTACHMENTS_MAX + 2];
   GLsizei numAttachments = 0;
 
+  // The default framebuffer names its buffers GL_COLOR, GL_DEPTH and GL_STENCIL;
+  // the *_ATTACHMENT names are only valid for framebuffer objects, and passing
+  // them for the default framebuffer is GL_INVALID_ENUM -- raised on every frame
+  // that renders to a view.
+  const bool isDefaultFramebuffer = hasImplicitColorAttachment();
+
   for (size_t i = 0; i < IGL_COLOR_ATTACHMENTS_MAX; ++i) {
     const auto& colorAttachment = renderTarget_.colorAttachments[i];
     if (colorAttachment.texture != nullptr &&
         renderPass_.colorAttachments[i].storeAction != StoreAction::Store) {
-      attachments[numAttachments++] = static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + i);
+      attachments[numAttachments++] =
+          isDefaultFramebuffer ? GL_COLOR : static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + i);
+    }
+    if (isDefaultFramebuffer) {
+      // The default framebuffer has a single color buffer.
+      break;
     }
   }
   if (renderTarget_.depthAttachment.texture != nullptr) {
     if (renderPass_.depthAttachment.storeAction != StoreAction::Store) {
-      attachments[numAttachments++] = GL_DEPTH_ATTACHMENT;
+      attachments[numAttachments++] = isDefaultFramebuffer ? GL_DEPTH : GL_DEPTH_ATTACHMENT;
     }
   }
   if (renderTarget_.stencilAttachment.texture != nullptr) {
     getContext().disable(GL_STENCIL_TEST);
     if (renderPass_.stencilAttachment.storeAction != StoreAction::Store) {
-      attachments[numAttachments++] = GL_STENCIL_ATTACHMENT;
+      attachments[numAttachments++] = isDefaultFramebuffer ? GL_STENCIL : GL_STENCIL_ATTACHMENT;
     }
   }
 
