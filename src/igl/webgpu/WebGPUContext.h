@@ -239,6 +239,11 @@ class WebGPUContext final {
   WebGPUContextDesc desc_;
   ResourceTracker resourceTracker_;
   std::shared_ptr<CallbackState> callbackState_ = std::make_shared<CallbackState>();
+#if IGL_PLATFORM_EMSCRIPTEN
+  // The std::shared_ptr<CallbackState>* registered with an imported JS device; see
+  // igl_webgpu_release_js_device().
+  void* IGL_NULLABLE jsImportState_ = nullptr;
+#endif
 
   Handle<WGPUInstance> instance_;
   Handle<WGPUAdapter> adapter_;

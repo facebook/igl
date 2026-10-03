@@ -71,7 +71,7 @@ Result compileWgsl(const WebGPUContext& ctx,
   // Without waiting, compilation errors arrive through the latched error scope.
   const bool waits = ctx.waitsForErrors(ErrorScopeKind::Pipeline);
   const auto state = std::make_shared<CompilationInfoState>();
-  bool completed = true;
+  WGPUFuture infoFuture = {};
   if (waits) {
     const WGPUCompilationInfoCallbackInfo callbackInfo = {
         .nextInChain = nullptr,
@@ -80,9 +80,13 @@ Result compileWgsl(const WebGPUContext& ctx,
         .userdata1 = new std::shared_ptr<CompilationInfoState>(state),
         .userdata2 = nullptr,
     };
-    completed = ctx.waitFuture(wgpuShaderModuleGetCompilationInfo(module.get(), callbackInfo));
+    infoFuture = wgpuShaderModuleGetCompilationInfo(module.get(), callbackInfo);
   }
+  // Error scopes are one stack per device, and under JSPI a wait suspends to the event loop. The
+  // scope is popped before waiting, so errors of other work on the device meanwhile cannot land in
+  // it.
   Result validation = ctx.popErrorScope(ErrorScopeKind::Pipeline);
+  const bool completed = !waits || ctx.waitFuture(infoFuture);
 
   if (state->hasErrors) {
     return Result(Result::Code::ArgumentInvalid,

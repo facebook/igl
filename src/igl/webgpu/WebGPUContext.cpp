@@ -147,7 +147,8 @@ constexpr size_t kMaxLatchedErrors = 64;
 
 #if IGL_PLATFORM_EMSCRIPTEN
 // Called by emscripten/library_iglwebgpu.js for imported devices; `state` is the
-// std::shared_ptr<CallbackState>* passed to igl_webgpu_import_js_device(), freed on loss.
+// std::shared_ptr<CallbackState>* passed to igl_webgpu_import_js_device(), freed on loss unless
+// ~WebGPUContext() released the import first.
 void onJsDeviceLost(void* IGL_NONNULL state, int destroyed, const char* IGL_NULLABLE message) {
   const std::unique_ptr<std::shared_ptr<WebGPUContext::CallbackState>> s(
       static_cast<std::shared_ptr<WebGPUContext::CallbackState>*>(state));
@@ -156,6 +157,9 @@ void onJsDeviceLost(void* IGL_NONNULL state, int destroyed, const char* IGL_NULL
     IGL_LOG_ERROR("WebGPU device lost: %s\n", message != nullptr ? message : "");
   }
 }
+
+// emscripten/library_iglwebgpu.js
+extern "C" int igl_webgpu_release_js_device(void* state);
 
 void onJsUncapturedError(void* IGL_NONNULL state, const char* IGL_NULLABLE message) {
   auto& s = *static_cast<std::shared_ptr<WebGPUContext::CallbackState>*>(state);
@@ -178,6 +182,16 @@ void WebGPUContext::CallbackState::latch(Result error) {
 WebGPUContext::WebGPUContext(WebGPUContextDesc desc) : desc_(std::move(desc)) {}
 
 WebGPUContext::~WebGPUContext() {
+#if IGL_PLATFORM_EMSCRIPTEN
+  // The page keeps an imported device (emdawnwebgpu does not destroy it), so its listener must
+  // not keep reporting into this context.
+  // After a loss, onJsDeviceLost() has freed the state, and its address may already belong to
+  // another import, so only an import that is still live is released.
+  if (jsImportState_ != nullptr && !callbackState_->deviceLost &&
+      igl_webgpu_release_js_device(jsImportState_) != 0) {
+    delete static_cast<std::shared_ptr<CallbackState>*>(jsImportState_);
+  }
+#endif
   rowPackPipeline_ = nullptr;
   mipmapGenerator_.reset();
   depthUploader_.reset();
@@ -298,7 +312,8 @@ std::unique_ptr<WebGPUContext> WebGPUContext::createWithJsDevice(const WebGPUCon
     Result::setResult(outResult, Result::Code::RuntimeError, "wgpuCreateInstance() failed");
     return nullptr;
   }
-  // The callbacks own a reference to the state until the device is lost.
+  // The callbacks own a reference to the state until the device is lost or the import is released
+  // by ~WebGPUContext().
   auto* state = new std::shared_ptr<CallbackState>(ctx->callbackState_);
   ctx->device_.reset(igl_webgpu_import_js_device(ctx->instance_.get(), state));
   if (!ctx->device_) {
@@ -308,6 +323,7 @@ std::unique_ptr<WebGPUContext> WebGPUContext::createWithJsDevice(const WebGPUCon
                       "Module.iglWebGPUDevice and Module.preinitializedWebGPUDevice are unset");
     return nullptr;
   }
+  ctx->jsImportState_ = state;
   ctx->queue_.reset(wgpuDeviceGetQueue(ctx->device_.get()));
   WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
   if (wgpuDeviceGetAdapterInfo(ctx->device_.get(), &info) == WGPUStatus_Success) {
