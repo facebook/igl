@@ -19,6 +19,7 @@
 #include <igl/ComputePipelineState.h>
 #include <igl/Framebuffer.h>
 #include <igl/RenderCommandEncoder.h>
+#include <igl/ShaderCreator.h>
 #include <igl/TimestampQueries.h>
 #include <igl/tests/util/device/webgpu/TestDevice.h>
 
@@ -27,6 +28,21 @@ namespace igl::tests {
 namespace {
 
 constexpr uint32_t kQuantum = 65536;
+
+constexpr const char* kTriangleVertex = R"(
+@vertex
+fn main(@builtin(vertex_index) i : u32) -> @builtin(position) vec4f {
+  let uv = vec2f(f32((i << 1u) & 2u), f32(i & 2u));
+  return vec4f(uv * 2.0 - 1.0, 0.0, 1.0);
+}
+)";
+
+constexpr const char* kWhiteFragment = R"(
+@fragment
+fn main() -> @location(0) vec4f {
+  return vec4f(1.0);
+}
+)";
 
 // Polls until `ready()` or about a second has passed.
 template<typename F>
@@ -59,6 +75,7 @@ class WebGPUTimerTest : public ::testing::Test {
   void createDevice(const webgpu::WebGPUContextDesc& desc) {
     // Resources must not outlive their device.
     computePipeline_ = nullptr;
+    renderPipeline_ = nullptr;
     framebuffer_ = nullptr;
     queue_ = nullptr;
     device_ = util::device::webgpu::createTestDevice(desc);
@@ -73,15 +90,27 @@ class WebGPUTimerTest : public ::testing::Test {
     ASSERT_TRUE(ret.isOk()) << ret.message;
     framebuffer_ = device_->createFramebuffer({.colorAttachments = {{.texture = texture}}}, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message;
+    auto stages = ShaderStagesCreator::fromModuleStringInput(
+        *device_, kTriangleVertex, "main", "", kWhiteFragment, "main", "", &ret);
+    ASSERT_TRUE(ret.isOk()) << ret.message;
+    renderPipeline_ = device_->createRenderPipeline(
+        {.shaderStages = std::move(stages),
+         .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}}}},
+        &ret);
+    ASSERT_TRUE(ret.isOk()) << ret.message;
   }
 
-  void clearPass(ICommandBuffer& cmdBuffer, const RenderPassDesc::TimestampQueryDesc& query = {}) {
+  // Metal writes render pass timestamps at vertex and fragment stage boundaries, so the pass
+  // draws.
+  void renderPass(ICommandBuffer& cmdBuffer, const RenderPassDesc::TimestampQueryDesc& query = {}) {
     const RenderPassDesc renderPass = {
         .colorAttachments = {{.loadAction = LoadAction::Clear, .storeAction = StoreAction::Store}},
         .timestampQuery = query,
     };
     auto encoder = cmdBuffer.createRenderCommandEncoder(renderPass, framebuffer_);
     ASSERT_NE(encoder, nullptr);
+    encoder->bindRenderPipelineState(renderPipeline_);
+    encoder->draw(3);
     encoder->endEncoding();
   }
 
@@ -111,6 +140,7 @@ class WebGPUTimerTest : public ::testing::Test {
   std::shared_ptr<ICommandQueue> queue_;
   std::shared_ptr<IFramebuffer> framebuffer_;
   std::shared_ptr<IComputePipelineState> computePipeline_;
+  std::shared_ptr<IRenderPipelineState> renderPipeline_;
 };
 
 TEST_F(WebGPUTimerTest, TimerMeasuresPasses) {
@@ -125,13 +155,13 @@ TEST_F(WebGPUTimerTest, TimerMeasuresPasses) {
 
   auto cmdBuffer = queue_->createCommandBuffer({.timer = timer}, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message;
-  clearPass(*cmdBuffer);
+  renderPass(*cmdBuffer);
   computePass(*cmdBuffer);
   // Metal skips empty compute passes, which then write no timestamps.
   auto empty = cmdBuffer->createComputeCommandEncoder();
   ASSERT_NE(empty, nullptr);
   empty->endEncoding();
-  clearPass(*cmdBuffer);
+  renderPass(*cmdBuffer);
   queue_->submit(*cmdBuffer);
   cmdBuffer->waitUntilCompleted();
   ASSERT_TRUE(waitFor([&] { return timer->resultsAvailable(); }));
@@ -157,7 +187,7 @@ TEST_F(WebGPUTimerTest, FailedReadbackStillCompletes) {
   ASSERT_TRUE(ret.isOk()) << ret.message;
   auto cmdBuffer = queue_->createCommandBuffer({.timer = timer}, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message;
-  clearPass(*cmdBuffer);
+  renderPass(*cmdBuffer);
   queue_->submit(*cmdBuffer);
   // Destroying the device aborts the readback mapping unless it already finished.
   wgpuDeviceDestroy(device_->getContext().getDevice());
@@ -181,9 +211,9 @@ TEST_F(WebGPUTimerTest, TimestampQueriesPerPass) {
     EXPECT_FALSE(queries->resultsAvailable());
     auto cmdBuffer = queue_->createCommandBuffer({.timestampQueries = queries}, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message;
-    clearPass(*cmdBuffer, {.queries = queries, .slotIndex = 0});
+    renderPass(*cmdBuffer, {.queries = queries, .slotIndex = 0});
     computePass(*cmdBuffer, {.timestampQuery = {.queries = queries, .slotIndex = 1}});
-    clearPass(*cmdBuffer, {.queries = queries, .slotIndex = 7});
+    renderPass(*cmdBuffer, {.queries = queries, .slotIndex = 7});
     EXPECT_EQ(queries->count(), 2u);
     queue_->submit(*cmdBuffer);
     cmdBuffer->waitUntilCompleted();
@@ -212,7 +242,7 @@ TEST_F(WebGPUTimerTest, HighResolutionTimestampsCanBeDisabled) {
     auto cmdBuffer = queue_->createCommandBuffer({.timestampQueries = queries}, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message;
     for (uint32_t slot = 0; slot < kSlots; ++slot) {
-      clearPass(*cmdBuffer, {.queries = queries, .slotIndex = slot});
+      renderPass(*cmdBuffer, {.queries = queries, .slotIndex = slot});
     }
     queue_->submit(*cmdBuffer);
     cmdBuffer->waitUntilCompleted();

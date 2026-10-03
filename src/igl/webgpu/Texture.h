@@ -50,6 +50,7 @@ class Texture final : public ITexture {
   void generateMipmap(ICommandBuffer& cmdBuffer,
                       const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
   [[nodiscard]] bool isRequiredGenerateMipmap() const override;
+  [[nodiscard]] bool supportsUpload() const override;
   [[nodiscard]] uint64_t getTextureId() const override;
 
   [[nodiscard]] void* IGL_NULLABLE getNativeImage() const override;
@@ -112,6 +113,9 @@ class Texture final : public ITexture {
           uint32_t baseLayer);
 
   [[nodiscard]] Result createSampledView();
+  [[nodiscard]] Result uploadDepth(const TextureRangeDesc& range,
+                                   const void* IGL_NONNULL data,
+                                   size_t bytesPerRow) const;
 
   std::shared_ptr<Storage> storage_;
   const TextureDesc desc_;

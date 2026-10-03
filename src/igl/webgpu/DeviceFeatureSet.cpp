@@ -111,6 +111,8 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::FillBuffer:
   case DeviceFeatures::MapBufferRange:
   case DeviceFeatures::MinMaxBlend:
+  case DeviceFeatures::MultiSample:
+  case DeviceFeatures::MultiSampleResolve:
   case DeviceFeatures::MultipleRenderTargets:
   case DeviceFeatures::SamplerMinMaxLod:
   case DeviceFeatures::ShaderLibrary:
@@ -122,7 +124,11 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::TextureFloat:
   case DeviceFeatures::TextureFormatRG:
   case DeviceFeatures::TextureHalfFloat:
+  case DeviceFeatures::Texture2DArray:
+  case DeviceFeatures::Texture3D:
   case DeviceFeatures::TextureNotPot:
+  case DeviceFeatures::TexturePartialMipChain:
+  case DeviceFeatures::TextureViews:
   case DeviceFeatures::UniformBlocks:
   case DeviceFeatures::ValidationLayersEnabled:
     return true;
@@ -138,8 +144,6 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::ExternalMemoryObjects:
   case DeviceFeatures::Indices8Bit:
   case DeviceFeatures::MeshShaders:
-  case DeviceFeatures::MultiSample:
-  case DeviceFeatures::MultiSampleResolve:
   case DeviceFeatures::Multiview:
   case DeviceFeatures::MultiViewMultisample:
   case DeviceFeatures::PushConstants:
@@ -148,14 +152,10 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::SRGBSwapchain:
   case DeviceFeatures::SRGBWriteControl:
   case DeviceFeatures::StandardDerivativeExt:
-  case DeviceFeatures::Texture2DArray:
-  case DeviceFeatures::Texture3D:
   case DeviceFeatures::TextureArrayExt:
   case DeviceFeatures::TextureBindless:
   case DeviceFeatures::TextureExternalImage:
   case DeviceFeatures::TextureFormatRGB:
-  case DeviceFeatures::TexturePartialMipChain:
-  case DeviceFeatures::TextureViews:
     return false;
   case DeviceFeatures::TimestampQueries:
   case DeviceFeatures::Timers:

@@ -15,6 +15,7 @@
 #include <mutex>
 #include <thread>
 #include <utility>
+#include <igl/webgpu/DepthUploader.h>
 #include <igl/webgpu/ResourcesBinder.h>
 #include <igl/webgpu/UniformArena.h>
 
@@ -144,6 +145,7 @@ WebGPUContext::WebGPUContext(WebGPUContextDesc desc) : desc_(std::move(desc)) {}
 
 WebGPUContext::~WebGPUContext() {
   rowPackPipeline_ = nullptr;
+  depthUploader_.reset();
   uniformArenaPool_.reset();
   bindGroupCache_.reset();
   dummyResources_.reset();
@@ -497,6 +499,13 @@ DummyResources& WebGPUContext::getDummyResources() const {
     dummyResources_ = std::make_unique<DummyResources>(*this);
   }
   return *dummyResources_;
+}
+
+DepthUploader& WebGPUContext::getDepthUploader() const {
+  if (!depthUploader_) {
+    depthUploader_ = std::make_unique<DepthUploader>(*this);
+  }
+  return *depthUploader_;
 }
 
 UniformArenaPool& WebGPUContext::getUniformArenaPool() {

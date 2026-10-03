@@ -22,6 +22,7 @@
 namespace igl::webgpu {
 
 class BindGroupCache;
+class DepthUploader;
 class DummyResources;
 class UniformArenaPool;
 
@@ -121,6 +122,8 @@ class WebGPUContext final {
   void evictBindGroups(uint64_t resourceId) const;
   /// Placeholders for declared bindings nothing is bound to.
   [[nodiscard]] DummyResources& getDummyResources() const;
+  /// Renders depth uploads that wgpuQueueWriteTexture() cannot do.
+  [[nodiscard]] DepthUploader& getDepthUploader() const;
   /// Chunks for the bindBytes() arenas of command buffers.
   [[nodiscard]] UniformArenaPool& getUniformArenaPool();
 
@@ -161,6 +164,7 @@ class WebGPUContext final {
   mutable std::unique_ptr<BindGroupCache> bindGroupCache_;
   mutable std::unique_ptr<DummyResources> dummyResources_;
   std::unique_ptr<UniformArenaPool> uniformArenaPool_;
+  mutable std::unique_ptr<DepthUploader> depthUploader_;
 
   bool hasTimedWaitAny_ = false;
   WGPUBackendType adapterBackendType_ = WGPUBackendType_Undefined;

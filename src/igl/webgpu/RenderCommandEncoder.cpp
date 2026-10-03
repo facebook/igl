@@ -92,7 +92,9 @@ Result RenderCommandEncoder::begin(const RenderPassDesc& renderPass,
                         .a = desc.clearColor.a};
     if (const std::shared_ptr<ITexture> resolve = framebuffer.getResolveColorAttachment(index)) {
       const auto& resolveTexture = static_cast<const Texture&>(*resolve);
-      color.resolveTarget = resolveTexture.getAttachmentView(desc.mipLevel, layer);
+      // Multisampled textures are 2D, so the face of a cube resolve target comes from its own type.
+      color.resolveTarget =
+          resolveTexture.getAttachmentView(desc.mipLevel, getAttachmentLayer(*resolve, desc));
       resolveTexture.recordUse(serial);
     } else if (desc.storeAction == StoreAction::MsaaResolve) {
       return Result(Result::Code::ArgumentInvalid, "MsaaResolve needs a resolve attachment");
