@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -27,6 +28,8 @@ struct WebGPUContextDesc {
   WGPUBackendType backendType = WGPUBackendType_Undefined;
   /// Device creation fails when the adapter lacks any of these.
   std::vector<WGPUFeatureName> requiredFeatures;
+  /// Also enable each of getOptionalFeatures() that the adapter offers.
+  bool requestOptionalFeatures = true;
   /// Request the adapter's limits instead of the spec defaults. Off by default so every lane runs
   /// against portable limits.
   bool requestAdapterLimits = false;
@@ -97,6 +100,10 @@ class WebGPUContext final {
   [[nodiscard]] bool isDeviceLost() const noexcept;
   /// Number of errors raised outside any error scope since device creation.
   [[nodiscard]] uint32_t getUncapturedErrorCount() const noexcept;
+
+  /// Features enabled when the adapter offers them and WebGPUContextDesc::requestOptionalFeatures
+  /// is set.
+  [[nodiscard]] static std::span<const WGPUFeatureName> getOptionalFeatures() noexcept;
 
   /// Parses a case-sensitive backend name ("metal", "vulkan", "null", "d3d12", "d3d11", "opengl",
   /// "opengles").

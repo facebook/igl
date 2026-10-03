@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <igl/Device.h>
+#include <igl/webgpu/DeviceFeatureSet.h>
 #include <igl/webgpu/PlatformDevice.h>
 #include <igl/webgpu/WebGPUContext.h>
 
@@ -110,10 +111,14 @@ class Device final : public IDevice {
   [[nodiscard]] WebGPUContext& getContext() const noexcept {
     return *ctx_;
   }
+  [[nodiscard]] const DeviceFeatureSet& getDeviceFeatureSet() const noexcept {
+    return deviceFeatureSet_;
+  }
 
  private:
   std::unique_ptr<WebGPUContext> ctx_;
   PlatformDevice platformDevice_;
+  DeviceFeatureSet deviceFeatureSet_;
 };
 
 } // namespace igl::webgpu

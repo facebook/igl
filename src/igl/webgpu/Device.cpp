@@ -31,7 +31,10 @@ void setUnimplemented(Result* IGL_NULLABLE outResult, const char* what) {
 
 } // namespace
 
-Device::Device(std::unique_ptr<WebGPUContext> ctx) : ctx_(std::move(ctx)), platformDevice_(*this) {
+Device::Device(std::unique_ptr<WebGPUContext> ctx) :
+  ctx_(std::move(ctx)),
+  platformDevice_(*this),
+  deviceFeatureSet_(ctx_ ? ctx_->getDevice() : nullptr) {
   IGL_DEBUG_ASSERT(ctx_ && ctx_->getDevice() != nullptr);
 }
 
@@ -157,22 +160,21 @@ bool Device::isDeviceLost() const noexcept {
   return ctx_->isDeviceLost();
 }
 
-bool Device::hasFeature(DeviceFeatures /*feature*/) const {
-  return false;
+bool Device::hasFeature(DeviceFeatures feature) const {
+  return deviceFeatureSet_.hasFeature(feature);
 }
 
-bool Device::hasRequirement(DeviceRequirement /*requirement*/) const {
-  return false;
+bool Device::hasRequirement(DeviceRequirement requirement) const {
+  return deviceFeatureSet_.hasRequirement(requirement);
 }
 
-bool Device::getFeatureLimits(DeviceFeatureLimits /*featureLimits*/, size_t& result) const {
-  result = 0;
-  return false;
+bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const {
+  return deviceFeatureSet_.getFeatureLimits(featureLimits, result);
 }
 
 ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(
-    TextureFormat /*format*/) const {
-  return TextureFormatCapabilityBits::Unsupported;
+    TextureFormat format) const {
+  return deviceFeatureSet_.getTextureFormatCapabilities(format);
 }
 
 ShaderVersion Device::getShaderVersion() const {

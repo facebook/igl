@@ -7,6 +7,7 @@
 
 #include <igl/webgpu/WebGPUContext.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cstdlib>
 #include <memory>
@@ -54,6 +55,19 @@ std::unique_ptr<std::shared_ptr<State>> adoptFromCallback(void* IGL_NULLABLE use
   return std::unique_ptr<std::shared_ptr<State>>(static_cast<std::shared_ptr<State>*>(userdata));
 }
 
+constexpr WGPUFeatureName kOptionalFeatures[] = {
+    WGPUFeatureName_Float32Filterable,
+    WGPUFeatureName_Float32Blendable,
+    WGPUFeatureName_TimestampQuery,
+    WGPUFeatureName_Depth32FloatStencil8,
+    WGPUFeatureName_BGRA8UnormStorage,
+    WGPUFeatureName_RG11B10UfloatRenderable,
+    WGPUFeatureName_TextureCompressionBC,
+    WGPUFeatureName_TextureCompressionETC2,
+    WGPUFeatureName_TextureCompressionASTC,
+    compat::kUnorm16TextureFormatsFeature,
+};
+
 struct RequestAdapterState {
   WGPURequestAdapterStatus status = WGPURequestAdapterStatus_Error;
   Handle<WGPUAdapter> adapter;
@@ -81,6 +95,10 @@ WebGPUContext::~WebGPUContext() {
   device_ = nullptr;
   adapter_ = nullptr;
   instance_ = nullptr;
+}
+
+std::span<const WGPUFeatureName> WebGPUContext::getOptionalFeatures() noexcept {
+  return kOptionalFeatures;
 }
 
 std::optional<WGPUBackendType> WebGPUContext::parseBackendType(std::string_view name) {
@@ -213,10 +231,20 @@ Result WebGPUContext::initDevice() {
     return Result(Result::Code::RuntimeError, "wgpuAdapterGetLimits() failed");
   }
 
+  std::vector<WGPUFeatureName> features = desc_.requiredFeatures;
+  if (desc_.requestOptionalFeatures) {
+    for (const WGPUFeatureName feature : kOptionalFeatures) {
+      if (wgpuAdapterHasFeature(adapter_.get(), feature) != 0 &&
+          std::find(features.begin(), features.end(), feature) == features.end()) {
+        features.push_back(feature);
+      }
+    }
+  }
+
   WGPUDeviceDescriptor deviceDesc = WGPU_DEVICE_DESCRIPTOR_INIT;
   deviceDesc.label = toWGPUStringView(desc_.debugName);
-  deviceDesc.requiredFeatureCount = desc_.requiredFeatures.size();
-  deviceDesc.requiredFeatures = desc_.requiredFeatures.data();
+  deviceDesc.requiredFeatureCount = features.size();
+  deviceDesc.requiredFeatures = features.data();
   deviceDesc.requiredLimits = desc_.requestAdapterLimits ? &limits : nullptr;
   // The device can outlive the context (resources hold device references), so the callbacks share a
   // reference to the state. The lost callback, which Dawn invokes exactly once, frees it; Dawn
