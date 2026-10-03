@@ -328,6 +328,44 @@ fn main() {
   });
 }
 
+TEST_F(WebGPUComputeTest, UnboundWritableStorageBuffersDoNotAlias) {
+  auto pipeline = createPipeline(R"(
+struct Data { values : array<u32, 4>, };
+@group(1) @binding(0) var<storage, read_write> a : Data;
+@group(1) @binding(1) var<storage, read_write> b : Data;
+
+@compute @workgroup_size(1)
+fn main() {
+  a.values[0] = 1u;
+  b.values[0] = 2u;
+}
+)");
+  ASSERT_NE(pipeline, nullptr);
+  run([&](IComputeCommandEncoder& encoder) {
+    encoder.bindComputePipelineState(pipeline);
+    encoder.dispatchThreadGroups({1, 1, 1}, {1, 1, 1});
+  });
+}
+
+TEST_F(WebGPUComputeTest, UnboundWritableStorageBufferDoesNotAliasAUniform) {
+  auto pipeline = createPipeline(R"(
+struct Data { values : array<u32, 4>, };
+struct Params { scale : vec4u, };
+@group(1) @binding(0) var<uniform> params : Params;
+@group(1) @binding(1) var<storage, read_write> out : Data;
+
+@compute @workgroup_size(1)
+fn main() {
+  out.values[0] = params.scale.x;
+}
+)");
+  ASSERT_NE(pipeline, nullptr);
+  run([&](IComputeCommandEncoder& encoder) {
+    encoder.bindComputePipelineState(pipeline);
+    encoder.dispatchThreadGroups({1, 1, 1}, {1, 1, 1});
+  });
+}
+
 TEST_F(WebGPUComputeTest, RejectedBindingsSkipTheDispatch) {
   auto pipeline = createPipeline(kSwizzleShader);
   ASSERT_NE(pipeline, nullptr);

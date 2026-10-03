@@ -100,6 +100,9 @@ class DummyResources final {
   [[nodiscard]] WGPUSampler IGL_NULLABLE getSampler(WGPUSamplerBindingType type);
   /// A buffer with Uniform and Storage usage of at least `size` bytes.
   [[nodiscard]] WGPUBuffer IGL_NULLABLE getBuffer(uint64_t size);
+  /// One placeholder per `binding` for writable storage buffers: Dawn rejects writable bindings
+  /// that alias each other or a read-only binding of the same buffer.
+  [[nodiscard]] WGPUBuffer IGL_NULLABLE getWritableStorageBuffer(uint32_t binding, uint64_t size);
   /// Resource id of every dummy resource.
   [[nodiscard]] uint64_t getResourceId() const noexcept {
     return resourceId_;
@@ -118,6 +121,7 @@ class DummyResources final {
   std::map<WGPUSamplerBindingType, Handle<WGPUSampler>> samplers_;
   Handle<WGPUBuffer> buffer_;
   uint64_t bufferSize_ = 0;
+  std::map<uint32_t, std::pair<Handle<WGPUBuffer>, uint64_t>> writableStorageBuffers_;
 };
 
 /// @brief Tracks the textures, samplers, buffers and storage textures bound on a render or compute

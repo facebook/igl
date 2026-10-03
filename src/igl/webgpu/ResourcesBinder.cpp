@@ -231,6 +231,22 @@ WGPUBuffer IGL_NULLABLE DummyResources::getBuffer(uint64_t size) {
   return buffer_.get();
 }
 
+WGPUBuffer IGL_NULLABLE DummyResources::getWritableStorageBuffer(uint32_t binding, uint64_t size) {
+  auto& [buffer, bufferSize] = writableStorageBuffers_[binding];
+  if (!buffer || bufferSize < size) {
+    bufferSize = std::max<uint64_t>((size + 255) / 256 * 256, 256);
+    const WGPUBufferDescriptor desc = {
+        .nextInChain = nullptr,
+        .label = toWGPUStringView("igl.webgpu.dummy.storage"),
+        .usage = WGPUBufferUsage_Storage,
+        .size = bufferSize,
+        .mappedAtCreation = 0,
+    };
+    buffer.reset(wgpuDeviceCreateBuffer(ctx_.getDevice(), &desc));
+  }
+  return buffer.get();
+}
+
 ResourcesBinder::ResourcesBinder(WebGPUContext& ctx, const DeviceFeatureSet& features) :
   ctx_(ctx), features_(features) {}
 
@@ -356,7 +372,10 @@ Result ResourcesBinder::makeBufferGroup(const PipelineLayoutSource& pipeline,
                                                                    : BufferSlot{};
     if (slot.buffer == nullptr) {
       const uint64_t size = std::max<uint64_t>((declaration.bufferSize + 15) / 16 * 16, 16);
-      entry.entry.buffer = ctx_.getDummyResources().getBuffer(size);
+      entry.entry.buffer =
+          declaration.kind == WgslBindingKind::StorageBuffer
+              ? ctx_.getDummyResources().getWritableStorageBuffer(declaration.binding, size)
+              : ctx_.getDummyResources().getBuffer(size);
       entry.entry.size = size;
       entry.resourceId = ctx_.getDummyResources().getResourceId();
       if (binding.hasDynamicOffset) {
