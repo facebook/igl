@@ -105,7 +105,11 @@ std::optional<WGPUPassTimestampWrites> CommandBuffer::getPassTimestampWrites(
   return std::nullopt;
 }
 
-void CommandBuffer::present(const std::shared_ptr<ITexture>& /*surface*/) const {}
+void CommandBuffer::present(const std::shared_ptr<ITexture>& surface) const {
+  if (surface && static_cast<const Texture&>(*surface).isDeferred()) {
+    presented_.push_back(surface);
+  }
+}
 
 void CommandBuffer::waitUntilScheduled() {}
 
@@ -207,6 +211,10 @@ void CommandBuffer::copyTextureToBuffer(ITexture& src,
   }
   const auto& texture = static_cast<const Texture&>(src);
   auto& buffer = static_cast<Buffer&>(dst);
+  if (texture.getWGPUTexture() == nullptr) {
+    IGL_LOG_ERROR("copyTextureToBuffer(): the surface texture could not be acquired\n");
+    return;
+  }
   const TextureFormatProperties& props = src.getProperties();
   const WGPUTextureAspect aspect =
       props.hasDepth() && props.hasStencil() ? WGPUTextureAspect_DepthOnly : WGPUTextureAspect_All;
@@ -400,6 +408,10 @@ Result CommandBuffer::submit() {
   if (desc.timer) {
     static_cast<Timer&>(*desc.timer).onSubmitted();
   }
+  for (const auto& texture : presented_) {
+    static_cast<const Texture&>(*texture).present();
+  }
+  presented_.clear();
   return Result();
 }
 

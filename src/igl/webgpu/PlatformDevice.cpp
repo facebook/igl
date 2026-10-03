@@ -7,7 +7,10 @@
 
 #include <igl/webgpu/PlatformDevice.h>
 
+#include <igl/webgpu/Buffer.h>
 #include <igl/webgpu/Device.h>
+#include <igl/webgpu/Readback.h>
+#include <igl/webgpu/Texture.h>
 #include <igl/webgpu/WebGPUContext.h>
 
 namespace igl::webgpu {
@@ -46,6 +49,48 @@ bool PlatformDevice::isSuspensionAllowed() const noexcept {
 
 std::vector<Result> PlatformDevice::takeErrors() {
   return getContext().takeErrors();
+}
+
+Result PlatformDevice::readPixelsAsync(const ITexture& texture,
+                                       const TextureRangeDesc& range,
+                                       AsyncTextureReadback& readback,
+                                       bool flipVertically) const {
+  const auto& webgpuTexture = static_cast<const Texture&>(texture);
+  const TextureFormatProperties& props = texture.getProperties();
+  const WGPUTextureAspect aspect = !props.isDepthOrStencil() ? WGPUTextureAspect_All
+                                   : props.hasDepth()        ? WGPUTextureAspect_DepthOnly
+                                                             : WGPUTextureAspect_StencilOnly;
+  const uint32_t bytesPerTexel = getCopyBytesPerTexel(webgpuTexture.getWGPUFormat(), aspect);
+  if (bytesPerTexel == 0) {
+    return Result(Result::Code::Unsupported, "This texture format cannot be read back");
+  }
+  if (range.numMipLevels != 1 || range.numLayers != 1 || range.numFaces != 1 || range.depth != 1) {
+    return Result(Result::Code::Unsupported, "Readbacks cover one mip level and layer");
+  }
+  return readback.begin(getContext(),
+                        {
+                            .texture = webgpuTexture.getWGPUTexture(),
+                            .aspect = aspect,
+                            .mipLevel = webgpuTexture.getBaseMipLevel() + range.mipLevel,
+                            .layer = webgpuTexture.getWGPULayer(range.layer, range.face),
+                            .x = range.x,
+                            .y = range.y,
+                            .width = range.width,
+                            .height = range.height,
+                            .bytesPerTexel = bytesPerTexel,
+                            .flipVertically = flipVertically,
+                        });
+}
+
+Result PlatformDevice::mapBufferAsync(const IBuffer& buffer,
+                                      size_t offset,
+                                      size_t size,
+                                      AsyncBufferReadback& readback) const {
+  if (offset > buffer.getSizeInBytes() || size > buffer.getSizeInBytes() - offset) {
+    return Result(Result::Code::ArgumentOutOfRange, "The range exceeds the buffer");
+  }
+  return readback.begin(
+      getContext(), static_cast<const Buffer&>(buffer).getWGPUBuffer(), offset, size);
 }
 
 } // namespace igl::webgpu

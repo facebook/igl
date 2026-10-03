@@ -83,6 +83,9 @@ Result RenderCommandEncoder::begin(const RenderPassDesc& renderPass,
     colors.resize(std::max(colors.size(), index + 1), WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT);
     WGPURenderPassColorAttachment& color = colors[index];
     color.view = wgpuTexture.getAttachmentView(desc.mipLevel, is3D ? 0 : layer);
+    if (color.view == nullptr) {
+      return Result(Result::Code::RuntimeError, "A color attachment has no texture to render to");
+    }
     color.depthSlice = is3D ? layer : WGPU_DEPTH_SLICE_UNDEFINED;
     color.loadOp = loadActionToWGPULoadOp(desc.loadAction);
     color.storeOp = storeActionToWGPUStoreOp(desc.storeAction);

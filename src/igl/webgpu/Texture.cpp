@@ -29,17 +29,31 @@ struct Texture::Storage {
           ICapabilities::TextureFormatCapabilities caps) :
     ctx(ctx), texture(std::move(texture)), format(format), caps(caps) {}
   ~Storage() {
-    ctx.getResourceTracker().retire(std::move(texture), lastUseSerial);
+    // Deferred textures belong to their source (a surface), which must not see them destroyed.
+    if (deferred.acquire == nullptr) {
+      ctx.getResourceTracker().retire(std::move(texture), lastUseSerial);
+    }
   }
   Storage(const Storage&) = delete;
   Storage& operator=(const Storage&) = delete;
   Storage(Storage&&) = delete;
   Storage& operator=(Storage&&) = delete;
 
+  [[nodiscard]] WGPUTexture get() {
+    if (!texture && deferred.acquire != nullptr && !acquireAttempted) {
+      acquireAttempted = true;
+      texture = deferred.acquire();
+    }
+    return texture.get();
+  }
+
   WebGPUContext& ctx;
   Handle<WGPUTexture> texture;
   const WGPUTextureFormat format;
   const ICapabilities::TextureFormatCapabilities caps;
+  DeferredTextureSource deferred;
+  bool acquireAttempted = false;
+  bool presented = false;
   uint64_t lastUseSerial = 0;
   // Whether levels above the base level hold data (generated or uploaded).
   bool mipsValid = false;
@@ -318,6 +332,31 @@ std::shared_ptr<Texture> Texture::createView(std::shared_ptr<Texture> parent,
   return result;
 }
 
+std::shared_ptr<Texture> Texture::createDeferred(WebGPUContext& ctx,
+                                                 const DeviceFeatureSet& features,
+                                                 const TextureDesc& desc,
+                                                 DeferredTextureSource source,
+                                                 Result* IGL_NULLABLE outResult) {
+  const std::optional<WGPUTextureFormat> format = textureFormatToWGPUTextureFormat(desc.format);
+  if (!format || source.acquire == nullptr) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Invalid deferred texture");
+    return nullptr;
+  }
+  if (desc.type != TextureType::TwoD || desc.numMipLevels != 1 || desc.numLayers != 1 ||
+      (desc.usage &
+       (TextureDesc::TextureUsageBits::Sampled | TextureDesc::TextureUsageBits::Storage)) != 0) {
+    Result::setResult(outResult,
+                      Result::Code::Unsupported,
+                      "Deferred textures are single-level 2D attachments that cannot be sampled");
+    return nullptr;
+  }
+  auto storage = std::make_shared<Storage>(
+      ctx, Handle<WGPUTexture>(), *format, features.getTextureFormatCapabilities(desc.format));
+  storage->deferred = std::move(source);
+  Result::setOk(outResult);
+  return std::shared_ptr<Texture>(new Texture(std::move(storage), desc, *format, 0, 0));
+}
+
 Texture::Texture(std::shared_ptr<Storage> storage,
                  const TextureDesc& desc,
                  WGPUTextureFormat wgpuFormat,
@@ -348,7 +387,7 @@ Result Texture::createSampledView() {
   viewDesc.aspect = getSampledAspect(wgpuFormat_);
   WebGPUContext& ctx = storage_->ctx;
   ctx.pushErrorScope(WGPUErrorFilter_Validation);
-  sampledView_.reset(wgpuTextureCreateView(storage_->texture.get(), &viewDesc));
+  sampledView_.reset(wgpuTextureCreateView(storage_->get(), &viewDesc));
   return ctx.popErrorScope();
 }
 
@@ -356,6 +395,9 @@ WGPUTextureView IGL_NULLABLE Texture::getAttachmentView(uint32_t mipLevel, uint3
   const auto key = std::make_tuple(mipLevel, layer);
   if (const auto it = attachmentViews_.find(key); it != attachmentViews_.end()) {
     return it->second.get();
+  }
+  if (storage_->get() == nullptr) {
+    return nullptr;
   }
   const bool is3D = desc_.type == TextureType::ThreeD;
   WGPUTextureViewDescriptor viewDesc = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
@@ -366,7 +408,7 @@ WGPUTextureView IGL_NULLABLE Texture::getAttachmentView(uint32_t mipLevel, uint3
   viewDesc.baseArrayLayer = is3D ? 0 : baseLayer_ + layer;
   viewDesc.arrayLayerCount = 1;
   viewDesc.aspect = WGPUTextureAspect_All;
-  Handle<WGPUTextureView> view(wgpuTextureCreateView(storage_->texture.get(), &viewDesc));
+  Handle<WGPUTextureView> view(wgpuTextureCreateView(storage_->get(), &viewDesc));
   const WGPUTextureView result = view.get();
   attachmentViews_.emplace(key, std::move(view));
   return result;
@@ -381,7 +423,7 @@ WGPUTextureView IGL_NULLABLE Texture::getStorageView(WGPUTextureViewDimension di
   const bool compatible = is3D ? dimension == WGPUTextureViewDimension_3D
                                : dimension == WGPUTextureViewDimension_2DArray ||
                                      (dimension == WGPUTextureViewDimension_2D && layers == 1);
-  if (!compatible) {
+  if (!compatible || storage_->get() == nullptr) {
     return nullptr;
   }
   WGPUTextureViewDescriptor viewDesc = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
@@ -392,7 +434,7 @@ WGPUTextureView IGL_NULLABLE Texture::getStorageView(WGPUTextureViewDimension di
   viewDesc.baseArrayLayer = is3D ? 0 : baseLayer_;
   viewDesc.arrayLayerCount = is3D ? 1 : layers;
   viewDesc.aspect = WGPUTextureAspect_All;
-  Handle<WGPUTextureView> view(wgpuTextureCreateView(storage_->texture.get(), &viewDesc));
+  Handle<WGPUTextureView> view(wgpuTextureCreateView(storage_->get(), &viewDesc));
   const WGPUTextureView result = view.get();
   storageViews_.emplace(dimension, std::move(view));
   return result;
@@ -405,12 +447,27 @@ uint32_t Texture::getWGPULayer(uint32_t layer, uint32_t face) const noexcept {
   return baseLayer_ + (desc_.type == TextureType::Cube ? layer * 6 + face : layer);
 }
 
+bool Texture::isDeferred() const noexcept {
+  return storage_->deferred.acquire != nullptr;
+}
+
+bool Texture::isAcquired() const noexcept {
+  return storage_->texture.get() != nullptr;
+}
+
+void Texture::present() const {
+  if (storage_->deferred.present != nullptr && storage_->texture && !storage_->presented) {
+    storage_->presented = true;
+    storage_->deferred.present();
+  }
+}
+
 void Texture::recordUse(uint64_t serial) const noexcept {
   storage_->lastUseSerial = std::max(storage_->lastUseSerial, serial);
 }
 
 WGPUTexture IGL_NULLABLE Texture::getWGPUTexture() const noexcept {
-  return storage_->texture.get();
+  return storage_->get();
 }
 
 Dimensions Texture::getDimensions() const {
@@ -446,6 +503,9 @@ Result Texture::encodeMipmaps(WGPUCommandEncoder IGL_NONNULL encoder,
     return Result(Result::Code::Unsupported,
                   "WebGPU generates mipmaps only for renderable float 2D, array and cube textures");
   }
+  if (storage_->get() == nullptr) {
+    return Result(Result::Code::InvalidOperation, "The surface texture could not be acquired");
+  }
   const uint32_t baseMipLevel = range != nullptr ? range->mipLevel : 0;
   const uint32_t numMipLevels = range != nullptr ? range->numMipLevels : desc_.numMipLevels;
   const uint32_t totalLayers = getWGPULayerCount(desc_);
@@ -471,7 +531,7 @@ Result Texture::encodeMipmaps(WGPUCommandEncoder IGL_NONNULL encoder,
   for (uint32_t run = 0; run < numRuns && result.isOk(); ++run) {
     result = storage_->ctx.getMipmapGenerator().encode(
         encoder,
-        {.texture = storage_->texture.get(),
+        {.texture = storage_->get(),
          .format = wgpuFormat_,
          .filterable = (storage_->caps & CapabilityBits::SampledFiltered) != 0,
          .baseLayer = baseLayer_ + baseLayer + run * 6,
@@ -481,8 +541,8 @@ Result Texture::encodeMipmaps(WGPUCommandEncoder IGL_NONNULL encoder,
   }
   // mipsValid belongs to the storage shared with views, so a view must cover all of it.
   const bool wholeTexture = baseMipLevel_ + baseMipLevel == 0 && baseLayer_ + baseLayer == 0 &&
-                            numMipLevels == wgpuTextureGetMipLevelCount(storage_->texture.get()) &&
-                            numLayers == wgpuTextureGetDepthOrArrayLayers(storage_->texture.get());
+                            numMipLevels == wgpuTextureGetMipLevelCount(storage_->get()) &&
+                            numLayers == wgpuTextureGetDepthOrArrayLayers(storage_->get());
   if (result.isOk() && numMipLevels > 1 && wholeTexture) {
     storage_->mipsValid = true;
   }
@@ -548,7 +608,7 @@ uint64_t Texture::getTextureId() const {
 }
 
 void* IGL_NULLABLE Texture::getNativeImage() const {
-  return storage_->texture.get();
+  return storage_->get();
 }
 
 void* IGL_NULLABLE Texture::getNativeImageView() const {
@@ -578,6 +638,9 @@ Result Texture::uploadInternal(TextureType type,
   if (data == nullptr) {
     return Result();
   }
+  if (storage_->get() == nullptr) {
+    return Result(Result::Code::InvalidOperation, "The surface texture could not be acquired");
+  }
   const void* IGL_NONNULL nonNullData = static_cast<const void* IGL_NONNULL>(data);
   const TextureFormatProperties& props = getProperties();
   WebGPUContext& ctx = storage_->ctx;
@@ -599,7 +662,7 @@ Result Texture::uploadInternal(TextureType type,
         // getRows() counts the rows of every 3D slice.
         const uint32_t rows = props.getRows(subRange) / depth;
         const WGPUTexelCopyTextureInfo destination = {
-            .texture = storage_->texture.get(),
+            .texture = storage_->get(),
             .mipLevel = baseMipLevel_ + mip,
             .origin = {.x = subRange.x,
                        .y = subRange.y,
@@ -679,7 +742,7 @@ Result Texture::uploadDepth(const TextureRangeDesc& range,
             depths[size_t{y} * subRange.width + x] = depth;
           }
         }
-        Result result = storage_->ctx.getDepthUploader().upload(storage_->texture.get(),
+        Result result = storage_->ctx.getDepthUploader().upload(storage_->get(),
                                                                 wgpuFormat_,
                                                                 {.mipLevel = baseMipLevel_ + mip,
                                                                  .layer = getWGPULayer(layer, face),
@@ -712,7 +775,7 @@ Result Texture::getBytes(const TextureRangeDesc& range,
   const bool is3D = desc_.type == TextureType::ThreeD;
   return readTexture(storage_->ctx,
                      {
-                         .texture = storage_->texture.get(),
+                         .texture = storage_->get(),
                          .aspect = aspect,
                          .mipLevel = baseMipLevel_ + range.mipLevel,
                          .layer = is3D ? range.z : getWGPULayer(range.layer, range.face),

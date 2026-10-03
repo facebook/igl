@@ -139,6 +139,10 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& /*cmdQueue*/,
   }
   const auto& src = static_cast<const Texture&>(*srcTexture);
   const auto& dst = static_cast<const Texture&>(*destTexture);
+  if (src.getWGPUTexture() == nullptr || dst.getWGPUTexture() == nullptr) {
+    IGL_LOG_ERROR("copyTextureColorAttachment(): the surface texture could not be acquired\n");
+    return;
+  }
   const WGPUTexelCopyTextureInfo source = {
       .texture = src.getWGPUTexture(),
       .mipLevel = src.getBaseMipLevel() + range.mipLevel,

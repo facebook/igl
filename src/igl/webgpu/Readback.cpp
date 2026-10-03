@@ -222,29 +222,18 @@ Result readBuffer(const WebGPUContext& ctx,
   return copyAndMap(ctx, size, encode, consume);
 }
 
-AsyncTextureReadback::~AsyncTextureReadback() = default;
+AsyncMap::~AsyncMap() = default;
 
-Result AsyncTextureReadback::begin(const WebGPUContext& ctx, const TextureReadbackDesc& desc) {
+Result AsyncMap::begin(const WebGPUContext& ctx,
+                       uint64_t stagingSize,
+                       const std::function<void(WGPUCommandEncoder, WGPUBuffer)>& encode) {
   reset();
-  Result result = validate(desc);
-  if (!result.isOk()) {
-    return result;
-  }
-  if (desc.width == 0 || desc.height == 0) {
-    return Result(Result::Code::ArgumentInvalid, "Empty texture readback");
-  }
-  const uint64_t stagingSize = getPaddedBytesPerRow(desc) * desc.height;
-  const auto encode = [&desc](WGPUCommandEncoder encoder, WGPUBuffer staging) {
-    encodeTextureCopy(desc, encoder, staging);
-  };
   Handle<WGPUBuffer> staging;
-  result = submitCopy(ctx, stagingSize, encode, staging);
+  Result result = submitCopy(ctx, stagingSize, encode, staging);
   if (!result.isOk()) {
     return result;
   }
   ctx_ = &ctx;
-  desc_ = desc;
-  desc_.texture = nullptr;
   stagingSize_ = stagingSize;
   staging_ = std::move(staging);
   state_ = std::make_shared<ReadbackMapState>();
@@ -252,7 +241,7 @@ Result AsyncTextureReadback::begin(const WebGPUContext& ctx, const TextureReadba
   return Result();
 }
 
-bool AsyncTextureReadback::poll() {
+bool AsyncMap::poll() {
   if (!state_) {
     return false;
   }
@@ -262,9 +251,9 @@ bool AsyncTextureReadback::poll() {
   return state_->completed;
 }
 
-Result AsyncTextureReadback::wait() {
+Result AsyncMap::wait() {
   if (!state_) {
-    return Result(Result::Code::InvalidOperation, "No texture readback in progress");
+    return Result(Result::Code::InvalidOperation, "No readback in progress");
   }
   if (!state_->completed) {
     Result result = ctx_->checkCanWait();
@@ -278,29 +267,74 @@ Result AsyncTextureReadback::wait() {
   return getMapResult(*state_);
 }
 
-Result AsyncTextureReadback::copyTo(void* IGL_NONNULL dst) {
+Result AsyncMap::consume(const std::function<void(const uint8_t*)>& consume) {
   if (!state_) {
-    return Result(Result::Code::InvalidOperation, "No texture readback in progress");
+    return Result(Result::Code::InvalidOperation, "No readback in progress");
   }
   if (!state_->completed) {
-    return Result(Result::Code::InvalidOperation, "The texture readback has not completed");
+    return Result(Result::Code::InvalidOperation, "The readback has not completed");
   }
   Result result = getMapResult(*state_);
   if (result.isOk()) {
-    result = consumeMapped(staging_.get(), stagingSize_, [this, dst](const uint8_t* mapped) {
-      copyRows(desc_, mapped, dst);
-    });
+    result = consumeMapped(staging_.get(), stagingSize_, consume);
   }
   reset();
   return result;
 }
 
-void AsyncTextureReadback::reset() {
+void AsyncMap::reset() {
   staging_ = nullptr;
   state_.reset();
   future_ = {};
   stagingSize_ = 0;
   ctx_ = nullptr;
+}
+
+Result AsyncTextureReadback::begin(const WebGPUContext& ctx, const TextureReadbackDesc& desc) {
+  Result result = validate(desc);
+  if (!result.isOk()) {
+    return result;
+  }
+  if (desc.width == 0 || desc.height == 0) {
+    return Result(Result::Code::ArgumentInvalid, "Empty texture readback");
+  }
+  result = map_.begin(ctx,
+                      getPaddedBytesPerRow(desc) * desc.height,
+                      [&desc](WGPUCommandEncoder encoder, WGPUBuffer staging) {
+                        encodeTextureCopy(desc, encoder, staging);
+                      });
+  desc_ = desc;
+  desc_.texture = nullptr;
+  return result;
+}
+
+Result AsyncTextureReadback::copyTo(void* IGL_NONNULL dst) {
+  return map_.consume([this, dst](const uint8_t* mapped) { copyRows(desc_, mapped, dst); });
+}
+
+Result AsyncBufferReadback::begin(const WebGPUContext& ctx,
+                                  WGPUBuffer IGL_NULLABLE buffer,
+                                  uint64_t offset,
+                                  uint64_t size) {
+  if (buffer == nullptr) {
+    return Result(Result::Code::ArgumentNull, "Buffer readback of a null buffer");
+  }
+  if (offset % 4 != 0 || size % 4 != 0 || size == 0) {
+    return Result(Result::Code::ArgumentInvalid,
+                  "Buffer readbacks must be non-empty and 4-byte aligned");
+  }
+  size_ = size;
+  return map_.begin(
+      ctx, size, [buffer, offset, size](WGPUCommandEncoder encoder, WGPUBuffer staging) {
+        wgpuCommandEncoderCopyBufferToBuffer(encoder, buffer, offset, staging, 0, size);
+      });
+}
+
+Result AsyncBufferReadback::copyTo(void* IGL_NONNULL dst) {
+  const auto size = static_cast<size_t>(size_);
+  return map_.consume([dst, size](const uint8_t* mapped) {
+    std::copy_n(mapped, size, static_cast<uint8_t*>(dst));
+  });
 }
 
 } // namespace igl::webgpu

@@ -40,6 +40,8 @@ Object.defineProperty(globalThis, 'navigator', {
 const kSize = 256;
 const kBytes = kSize * kSize * 4;
 const kSampleExports = [
+  '_igl_canvas_frame',
+  '_igl_canvas_init',
   '_igl_import_device',
   '_igl_make_latched_error',
   '_igl_poll_async',

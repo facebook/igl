@@ -9,10 +9,14 @@
 
 #include <vector>
 #include <webgpu/webgpu.h>
+#include <igl/Buffer.h>
 #include <igl/PlatformDevice.h>
+#include <igl/Texture.h>
 
 namespace igl::webgpu {
 
+class AsyncBufferReadback;
+class AsyncTextureReadback;
 class Device;
 class WebGPUContext;
 
@@ -39,6 +43,19 @@ class PlatformDevice final : public IPlatformDevice {
   [[nodiscard]] bool isSuspensionAllowed() const noexcept;
   /// Returns and clears the WebGPU errors latched by create calls that did not wait for them.
   [[nodiscard]] std::vector<Result> takeErrors();
+
+  /// Starts reading back `range` (one mip level and layer) of `texture` without waiting; poll or
+  /// wait on `readback`, then copy the rows out. Rows are stored bottom row first, like
+  /// IFramebuffer::copyBytesColorAttachment(), unless `flipVertically` is false.
+  [[nodiscard]] Result readPixelsAsync(const ITexture& texture,
+                                       const TextureRangeDesc& range,
+                                       AsyncTextureReadback& readback,
+                                       bool flipVertically = true) const;
+  /// Starts reading back `size` bytes at `offset` of `buffer` (multiples of 4) without waiting.
+  [[nodiscard]] Result mapBufferAsync(const IBuffer& buffer,
+                                      size_t offset,
+                                      size_t size,
+                                      AsyncBufferReadback& readback) const;
 
  protected:
   [[nodiscard]] bool isType(PlatformDeviceType t) const noexcept override {

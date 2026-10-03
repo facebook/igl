@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <tuple>
@@ -18,6 +19,14 @@ namespace igl::webgpu {
 
 class DeviceFeatureSet;
 class WebGPUContext;
+
+/// @brief Where a deferred texture's WGPUTexture comes from (see Texture::createDeferred()).
+struct DeferredTextureSource {
+  /// Called at most once, on first use; may return null (the texture then fails its uses).
+  std::function<Handle<WGPUTexture>()> acquire;
+  /// Called once when a command buffer that presents the acquired texture is submitted.
+  std::function<void()> present;
+};
 
 /// @brief Implements the igl::ITexture interface for WebGPU.
 ///
@@ -32,6 +41,14 @@ class Texture final : public ITexture {
   [[nodiscard]] static std::shared_ptr<Texture> createView(std::shared_ptr<Texture> parent,
                                                            const TextureViewDesc& desc,
                                                            Result* IGL_NULLABLE outResult);
+  /// A texture whose WGPUTexture comes from `source` on first use (as an attachment or copy
+  /// source), not at creation. Surfaces use it to acquire their texture after the frame's last
+  /// suspension point. The WGPUTexture is released, never destroyed, and cannot be sampled.
+  [[nodiscard]] static std::shared_ptr<Texture> createDeferred(WebGPUContext& ctx,
+                                                               const DeviceFeatureSet& features,
+                                                               const TextureDesc& desc,
+                                                               DeferredTextureSource source,
+                                                               Result* IGL_NULLABLE outResult);
   ~Texture() override;
 
   Texture(const Texture&) = delete;
@@ -84,6 +101,12 @@ class Texture final : public ITexture {
   getStorageView(WGPUTextureViewDimension dimension) const;
   /// Index of `face` of `layer` among the WGPU array layers (cube faces are layers in WebGPU).
   [[nodiscard]] uint32_t getWGPULayer(uint32_t layer, uint32_t face) const noexcept;
+
+  [[nodiscard]] bool isDeferred() const noexcept;
+  /// Whether the WGPUTexture exists; deferred textures acquire it on first use.
+  [[nodiscard]] bool isAcquired() const noexcept;
+  /// Presents a deferred texture that was acquired; a no-op otherwise.
+  void present() const;
 
   /// Records that the command buffer with `serial` uses this texture.
   void recordUse(uint64_t serial) const noexcept;

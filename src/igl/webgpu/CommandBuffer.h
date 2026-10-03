@@ -100,6 +100,8 @@ class CommandBuffer final : public ICommandBuffer,
   const uint64_t serial_;
   bool submitted_ = false;
   std::vector<std::shared_ptr<TimestampQueries>> timestampQueries_;
+  // Surface textures to present once submitted.
+  mutable std::vector<std::shared_ptr<ITexture>> presented_;
   UniformArena uniformArena_;
 };
 

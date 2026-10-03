@@ -12,7 +12,9 @@
 #include <vector>
 #include <igl/tests/webgpu/TriangleRender.h>
 #include <igl/webgpu/HWDevice.h>
+#include <igl/webgpu/PlatformDevice.h>
 #include <igl/webgpu/Readback.h>
+#include <igl/webgpu/Surface.h>
 #include <igl/webgpu/Texture.h>
 
 // Exports of the TriangleWebGPU sample. Only igl_triangle() is a JSPI export (it may suspend);
@@ -26,6 +28,8 @@ struct ImportedDevice {
   igl::tests::webgpu::TriangleRenderer renderer;
   std::shared_ptr<igl::ITexture> target;
   igl::webgpu::AsyncTextureReadback readback;
+  std::unique_ptr<igl::webgpu::Surface> surface;
+  igl::tests::webgpu::TriangleRenderer surfaceRenderer;
 };
 
 std::unique_ptr<ImportedDevice>& getImported() {
@@ -105,13 +109,12 @@ extern "C" EMSCRIPTEN_KEEPALIVE int igl_render_async(uint32_t size) {
   if (!ret.isOk()) {
     return 3;
   }
-  const auto& texture = static_cast<const igl::webgpu::Texture&>(*imported->target);
-  ret = imported->readback.begin(imported->device->getContext(),
-                                 {.texture = texture.getWGPUTexture(),
-                                  .width = size,
-                                  .height = size,
-                                  .bytesPerTexel = 4,
-                                  .flipVertically = false});
+  ret = static_cast<igl::IDevice&>(*imported->device)
+            .getPlatformDevice<igl::webgpu::PlatformDevice>()
+            ->readPixelsAsync(*imported->target,
+                              igl::TextureRangeDesc::new2D(0, 0, size, size),
+                              imported->readback,
+                              /*flipVertically=*/false);
   return ret.isOk() ? 0 : 4;
 }
 
@@ -185,4 +188,41 @@ extern "C" EMSCRIPTEN_KEEPALIVE int igl_take_errors() {
     return -1;
   }
   return static_cast<int>(imported->device->getContext().takeErrors().size());
+}
+
+// Renders to the canvas matching `selector` from now on, at width x height in its preferred format.
+extern "C" EMSCRIPTEN_KEEPALIVE int igl_canvas_init(const char* selector,
+                                                    uint32_t width,
+                                                    uint32_t height) {
+  auto& imported = getImported();
+  if (!imported) {
+    return -1;
+  }
+  igl::Result ret;
+  imported->surface = igl::webgpu::Surface::createFromCanvas(*imported->device, selector, &ret);
+  if (!imported->surface) {
+    IGL_LOG_ERROR("Surface::createFromCanvas(): %s\n", ret.message.c_str());
+    return 1;
+  }
+  ret = imported->surface->configure(width, height);
+  if (!ret.isOk()) {
+    IGL_LOG_ERROR("Surface::configure(): %s\n", ret.message.c_str());
+    return 2;
+  }
+  ret = imported->surfaceRenderer.initialize(*imported->device, imported->surface->getFormat());
+  return ret.isOk() ? 0 : 3;
+}
+
+// Draws one frame into the canvas; the browser shows it when the calling task ends.
+extern "C" EMSCRIPTEN_KEEPALIVE int igl_canvas_frame() {
+  auto& imported = getImported();
+  if (!imported || !imported->surface) {
+    return -1;
+  }
+  igl::Result ret;
+  const auto texture = imported->surface->getCurrentTexture(&ret);
+  if (!texture) {
+    return 1;
+  }
+  return imported->surfaceRenderer.render(texture).isOk() ? 0 : 2;
 }

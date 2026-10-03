@@ -5,48 +5,49 @@
  This source code is licensed under the MIT license found in the
  LICENSE file in the root directory of this source tree.
 -->
-<!-- Runs the iglWebGPUTriangleWasm sample on the browser's WebGPU (see run_triangle_chrome.sh). -->
+<!--
+ Runs the iglWebGPUTriangleWasm sample on the browser's WebGPU (see run_triangle_chrome.sh):
+ igl_triangle() through JSPI on IGL's own device, then the page's GPUDevice imported into IGL for an
+ async readback and for rendering into the WebGPU canvas. Each frame is compared with
+ reference.rgba (the native frame) when it is served; the page title shows the summary.
+-->
 <html>
   <head>
     <meta charset="utf-8" />
     <title>iglWebGPUTriangleWasm</title>
   </head>
   <body>
-    <canvas id="frame" width="256" height="256"></canvas>
+    <canvas id="jspi" width="256" height="256"></canvas>
+    <canvas id="async" width="256" height="256"></canvas>
+    <canvas id="canvas" width="256" height="256"></canvas>
     <pre id="log"></pre>
     <script src="iglWebGPUTriangleWasm.js"></script>
     <script>
+      const kSize = 256;
+      const kBytes = kSize * kSize * 4;
+      let failures = 0;
+      let reference = null;
       const log = (text) => {
         document.getElementById('log').textContent += text + '\n';
         console.log(text);
       };
-      (async () => {
-        const size = 256;
-        const bytes = size * size * 4;
-        const module = await createIglTriangle();
-        const ptr = module._malloc(bytes);
-        const status = await module._igl_triangle(size, ptr);
-        if (status !== 0) {
-          log(`igl_triangle() failed: ${status}`);
-          document.title = 'FAILED';
-          return;
-        }
-        const frame = module.HEAPU8.slice(ptr, ptr + bytes);
-        module._free(ptr);
+      const check = (ok, what) => {
+        log(`${ok ? 'PASS' : 'FAIL'} ${what}`);
+        failures += ok ? 0 : 1;
+      };
+      const show = (id, frame) =>
         document
-          .getElementById('frame')
+          .getElementById(id)
           .getContext('2d')
-          .putImageData(new ImageData(new Uint8ClampedArray(frame.buffer), size, size), 0, 0);
-        const response = await fetch('reference.rgba');
-        if (!response.ok) {
-          log('rendered; no reference.rgba to compare with');
-          document.title = 'RENDERED';
+          .putImageData(new ImageData(new Uint8ClampedArray(frame), kSize, kSize), 0, 0);
+      const compare = (frame, name) => {
+        if (!reference) {
+          log(`${name}: rendered; no reference.rgba to compare with`);
           return;
         }
-        const reference = new Uint8Array(await response.arrayBuffer());
         let maxAbs = 0;
         let differing = 0;
-        for (let i = 0; i < bytes; i += 4) {
+        for (let i = 0; i < kBytes; i += 4) {
           let d = 0;
           for (let c = 0; c < 4; ++c) {
             d = Math.max(d, Math.abs(frame[i + c] - reference[i + c]));
@@ -54,9 +55,67 @@
           maxAbs = Math.max(maxAbs, d);
           differing += d > 0 ? 1 : 0;
         }
-        const result = `maxAbs=${maxAbs} differing=${((100 * differing) / (size * size)).toFixed(4)}%`;
-        log(result);
-        document.title = result;
+        const percent = ((100 * differing) / (kSize * kSize)).toFixed(4);
+        check(maxAbs <= 1, `${name}: maxAbs=${maxAbs} differing=${percent}%`);
+      };
+      const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+
+      (async () => {
+        const response = await fetch('reference.rgba');
+        if (response.ok) {
+          reference = new Uint8Array(await response.arrayBuffer());
+        }
+        const module = await createIglTriangle();
+        const ptr = module._malloc(kBytes);
+
+        // JSPI: IGL creates its own adapter and device and waits for them.
+        const pending = module._igl_triangle(kSize, ptr);
+        check(pending instanceof Promise, 'igl_triangle() is a JSPI export');
+        const status = await pending;
+        check(status === 0, `igl_triangle() returns ${status}`);
+        const jspiFrame = module.HEAPU8.slice(ptr, ptr + kBytes);
+        show('jspi', jspiFrame);
+        compare(jspiFrame, 'JSPI frame');
+
+        // The page's device, imported into IGL; nothing below waits.
+        const adapter = await navigator.gpu.requestAdapter();
+        module.iglWebGPUDevice = await adapter.requestDevice();
+        check(module._igl_import_device() === 0, 'igl_import_device()');
+        check(module._igl_render_async(kSize) === 0, 'igl_render_async()');
+        let polled = 0;
+        while (polled === 0) {
+          await nextFrame();
+          polled = module._igl_poll_async(ptr);
+        }
+        check(polled === 1, `igl_poll_async() completes (${polled})`);
+        const asyncFrame = module.HEAPU8.slice(ptr, ptr + kBytes);
+        show('async', asyncFrame);
+        compare(asyncFrame, 'imported device, async readback');
+        module._free(ptr);
+
+        // The canvas surface: the texture is acquired inside igl_canvas_frame(), after which the
+        // task ends and the browser presents it.
+        const initialized = module._igl_canvas_init(module.stringToNewUTF8('#canvas'), kSize, kSize);
+        check(initialized === 0, `igl_canvas_init() returns ${initialized}`);
+        for (let i = 0; i < 60; ++i) {
+          await nextFrame();
+          if (module._igl_canvas_frame() !== 0) {
+            check(false, `igl_canvas_frame() failed at frame ${i}`);
+            break;
+          }
+          if (i === 59) {
+            // Once presented, a WebGPU canvas reads back as transparent black, so the last frame is
+            // snapshotted in the task that rendered it, before anything awaits.
+            const scratch = new OffscreenCanvas(kSize, kSize).getContext('2d');
+            scratch.drawImage(document.getElementById('canvas'), 0, 0);
+            compare(scratch.getImageData(0, 0, kSize, kSize).data, 'canvas after 60 frames');
+          }
+        }
+        check(module._igl_take_errors() === 0, 'no latched WebGPU errors');
+
+        const summary = failures === 0 ? 'ALL PASSED' : `${failures} FAILED`;
+        log(summary);
+        document.title = summary;
       })().catch((error) => {
         log(String(error));
         document.title = 'FAILED';

@@ -14,10 +14,12 @@
 #include <chrono>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <memory>
 #include <thread>
 #include <vector>
 #include <igl/tests/util/device/webgpu/TestDevice.h>
+#include <igl/webgpu/PlatformDevice.h>
 
 namespace igl::tests {
 
@@ -175,6 +177,49 @@ TEST_F(WebGPUReadbackTest, AsyncReadbackCanWaitOrBeDropped) {
   EXPECT_EQ(std::vector<uint8_t>(result.begin() + kTightBytesPerRow, result.end()),
             std::vector<uint8_t>(pixels.begin(), pixels.begin() + kTightBytesPerRow));
   device_->getContext().processEvents();
+}
+
+TEST_F(WebGPUReadbackTest, PlatformDeviceReadsPixelsAndBuffersAsync) {
+  Result ret;
+  const std::vector<uint8_t> pixels = makePixels();
+  const auto texture = device_->createTexture(
+      TextureDesc::new2D(
+          TextureFormat::RGBA_UNorm8, kWidth, kHeight, TextureDesc::TextureUsageBits::Sampled),
+      &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  const auto range = TextureRangeDesc::new2D(0, 0, kWidth, kHeight);
+  ASSERT_TRUE(texture->upload(range, pixels.data()).isOk());
+  const auto buffer = device_->createBuffer(
+      BufferDesc(BufferDesc::BufferTypeBits::Storage, pixels.data(), pixels.size()), &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  auto* platformDevice =
+      static_cast<IDevice&>(*device_).getPlatformDevice<webgpu::PlatformDevice>();
+  ASSERT_NE(platformDevice, nullptr);
+
+  webgpu::AsyncTextureReadback pixelReadback;
+  ret = platformDevice->readPixelsAsync(*texture, range, pixelReadback, /*flipVertically=*/false);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  webgpu::AsyncBufferReadback bufferReadback;
+  ret = platformDevice->mapBufferAsync(*buffer, 4, pixels.size() - 4, bufferReadback);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_TRUE(pixelReadback.wait().isOk());
+  ASSERT_TRUE(bufferReadback.wait().isOk());
+
+  std::vector<uint8_t> result(pixels.size());
+  ASSERT_TRUE(pixelReadback.copyTo(result.data()).isOk());
+  EXPECT_EQ(result, pixels);
+  std::vector<uint8_t> bytes(bufferReadback.getSize());
+  ASSERT_TRUE(bufferReadback.copyTo(bytes.data()).isOk());
+  EXPECT_EQ(bytes, std::vector<uint8_t>(pixels.begin() + 4, pixels.end()));
+
+  EXPECT_EQ(platformDevice->mapBufferAsync(*buffer, 4, pixels.size(), bufferReadback).code,
+            Result::Code::ArgumentOutOfRange);
+  EXPECT_EQ(platformDevice
+                ->mapBufferAsync(*buffer, std::numeric_limits<size_t>::max() - 3, 8, bufferReadback)
+                .code,
+            Result::Code::ArgumentOutOfRange);
+  EXPECT_EQ(platformDevice->mapBufferAsync(*buffer, 2, 4, bufferReadback).code,
+            Result::Code::ArgumentInvalid);
 }
 
 TEST_F(WebGPUReadbackTest, HonorsDestinationRowPitch) {
