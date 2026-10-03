@@ -177,7 +177,7 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
   case igl::BackendType::Vulkan:
-    IGL_DEBUG_ABORT("IGLSamples not set up for Vulkan");
+    IGL_LOG_INFO("TQMultiRenderPassSession: no Vulkan shaders; skipping\n");
     return nullptr;
   case igl::BackendType::Custom:
     IGL_DEBUG_ABORT("IGLSamples not set up for Custom");
@@ -351,7 +351,7 @@ void TQMultiRenderPassSession::initialize() noexcept {
 void TQMultiRenderPassSession::update(SurfaceTextures surfaceTextures) noexcept {
   // Per IGL guidelines, surfaceTextures.color may be null on some platforms
   // before the surface is ready (e.g., during window resize on Android/iOS).
-  if (!surfaceTextures.color) {
+  if (!surfaceTextures.color || !shaderStages_) {
     return;
   }
   Result ret;

@@ -195,10 +195,6 @@ TEST_F(RenderSnapshotTests, DrawIndirectSession) {
 }
 
 TEST_F(RenderSnapshotTests, FireworksSession) {
-  if (platform_->getDevice().getBackendVersion().flavor == BackendFlavor::OpenGL_ES) {
-    GTEST_SKIP() << "FireworksSession's OpenGL ES shaders don't compile (varying locations, no "
-                    "default float precision) and the session aborts";
-  }
   FireworksSession session(platform_);
   render(session, "FireworksSession", 30);
 }

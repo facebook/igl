@@ -17,6 +17,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
 #include <vector>
+#include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/platform/DisplayContext.h>
 #include <igl/CommandBuffer.h>
 #include <igl/FPSCounter.h>
@@ -27,14 +28,11 @@
 #include <igl/vulkan/PlatformDevice.h>
 #endif // IGL_BACKEND_VULKAN
 
-#include <filesystem>
-
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough"
 #pragma clang diagnostic ignored "-Wunused-variable"
 #pragma clang diagnostic ignored "-Wunused-function"
 #endif // __clang__
-#include <stb/stb_image.h>
 #define TINY_TEST_USE_DEPTH_BUFFER 1
 
 // On iOS for Xcode 16.3, std::to_chars is not available. To avoid an error, we should not include
@@ -352,7 +350,8 @@ fn fragmentShader(in : VertexOut) -> @location(0) vec4f {
     auto glVersion =
         static_cast<igl::opengl::Device&>(device).getContext().deviceFeatures().getGLVersion();
 
-    if (glVersion > igl::opengl::GLVersion::v2_1) {
+    // The shaders are the Vulkan GLSL under `#version 460`.
+    if (glVersion >= igl::opengl::GLVersion::v4_6) {
       const std::string codeVS1 =
           stringReplaceAll(getVulkanVertexShaderSource(), "gl_VertexIndex", "gl_VertexID");
       const std::string codeVS2 = std::string("#version 460\n") + codeVS1;
@@ -361,7 +360,7 @@ fn fragmentShader(in : VertexOut) -> @location(0) vec4f {
       return igl::ShaderStagesCreator::fromModuleStringInput(
           device, codeVS2.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
     } else {
-      IGL_DEBUG_ABORT("This sample is incompatible with OpenGL 2.1");
+      IGL_LOG_INFO("TinyMeshBindGroupSession: needs OpenGL 4.6; only clearing\n");
       return nullptr;
     }
   }
@@ -421,23 +420,27 @@ void TinyMeshBindGroupSession::initialize() noexcept {
                                nullptr);
   const size_t perObjectStride = getPerObjectStride(*device_);
   // create Uniform buffers to store uniforms for 2 objects
-  for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
-    ubPerFrame_.push_back(
-        device_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
-                                         .data = &perFrame,
-                                         .length = sizeof(UniformsPerFrame),
-                                         .storage = ResourceStorage::Shared,
-                                         .hint = BufferDesc::BufferAPIHintBits::UniformBlock,
-                                         .debugName = "Buffer: uniforms (per frame)"},
-                              nullptr));
-    ubPerObject_.push_back(device_->createBuffer(
-        BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
-                   .data = perObjectStride == sizeof(UniformsPerObject) ? perObject : nullptr,
-                   .length = kNumCubes * perObjectStride,
-                   .storage = ResourceStorage::Shared,
-                   .hint = BufferDesc::BufferAPIHintBits::UniformBlock,
-                   .debugName = "Buffer: uniforms (per object)"},
-        nullptr));
+  // Uniform blocks are missing on OpenGL ES 2.0; the mesh is not drawn there anyway.
+  if (device_->getBackendType() != BackendType::OpenGL ||
+      device_->hasFeature(DeviceFeatures::UniformBlocks)) {
+    for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
+      ubPerFrame_.push_back(
+          device_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                                           .data = &perFrame,
+                                           .length = sizeof(UniformsPerFrame),
+                                           .storage = ResourceStorage::Shared,
+                                           .hint = BufferDesc::BufferAPIHintBits::UniformBlock,
+                                           .debugName = "Buffer: uniforms (per frame)"},
+                                nullptr));
+      ubPerObject_.push_back(device_->createBuffer(
+          BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                     .data = perObjectStride == sizeof(UniformsPerObject) ? perObject : nullptr,
+                     .length = kNumCubes * perObjectStride,
+                     .storage = ResourceStorage::Shared,
+                     .hint = BufferDesc::BufferAPIHintBits::UniformBlock,
+                     .debugName = "Buffer: uniforms (per object)"},
+          nullptr));
+    }
   }
 
   {
@@ -499,13 +502,13 @@ void TinyMeshBindGroupSession::createRenderPipeline() {
 
   IGL_DEBUG_ASSERT(framebuffer_);
 
-  const igl::TextureFormat depthFormat =
-      framebuffer_->getDepthAttachment()
-          ? framebuffer_->getDepthAttachment()->getProperties().format
-          : igl::TextureFormat::Invalid;
+  const TextureFormat depthFormat = framebuffer_->getDepthAttachment()
+                                        ? framebuffer_->getDepthAttachment()->getProperties().format
+                                        : igl::TextureFormat::Invalid;
+  std::shared_ptr<IShaderStages> shaderStages = getShaderStagesForBackend(*device_);
   const RenderPipelineDesc desc{
       .vertexInputState = vertexInput0_,
-      .shaderStages = getShaderStagesForBackend(*device_),
+      .shaderStages = shaderStages,
       .targetDesc =
           {
               .colorAttachments = {{
@@ -521,16 +524,22 @@ void TinyMeshBindGroupSession::createRenderPipeline() {
       .isDynamicBufferMask = kDynamicBufferMask,
       .debugName = igl::genNameHandle("Pipeline: mesh"),
   };
-  renderPipelineStateMesh_ = device_->createRenderPipeline(desc, nullptr);
+  if (desc.shaderStages) {
+    renderPipelineStateMesh_ = device_->createRenderPipeline(desc, nullptr);
+  }
 
   {
     const uint32_t texWidth = 256;
     const uint32_t texHeight = 256;
-    const TextureDesc desc2D = TextureDesc::new2D(igl::TextureFormat::BGRA_SRGB,
-                                                  texWidth,
-                                                  texHeight,
-                                                  TextureDesc::TextureUsageBits::Sampled,
-                                                  "XOR pattern");
+    // OpenGL ES 2.0 cannot sample BGRA sRGB; the gray XOR pattern still reads as gray from linear
+    // RGBA, only lighter (no sRGB decode).
+    const TextureFormat xorFormat =
+        (device_->getTextureFormatCapabilities(TextureFormat::BGRA_SRGB) &
+         ICapabilities::TextureFormatCapabilityBits::Sampled) != 0
+            ? TextureFormat::BGRA_SRGB
+            : TextureFormat::RGBA_UNorm8;
+    const TextureDesc desc2D = TextureDesc::new2D(
+        xorFormat, texWidth, texHeight, TextureDesc::TextureUsageBits::Sampled, "XOR pattern");
     texture0_ = device_->createTexture(desc2D, nullptr);
     std::vector<uint32_t> pixels(texWidth * texHeight);
     for (uint32_t y = 0; y != texHeight; y++) {
@@ -542,33 +551,17 @@ void TinyMeshBindGroupSession::createRenderPipeline() {
     texture0_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels.data());
   }
   {
-    using namespace std::filesystem;
-    path dir = current_path();
-    // find IGLU somewhere above our current directory
-    // @fb-only
-    const char* contentFolder = "shell/resources/";
-    // @fb-only
-    while (dir != current_path().root_path() && !exists(dir / path(contentFolder))) {
-      dir = dir.parent_path();
-    }
-    int32_t texWidth = 0;
-    int32_t texHeight = 0;
-    int32_t channels = 0;
-    uint8_t* pixels =
-        stbi_load((dir / path(contentFolder) / path("images/marble.png")).string().c_str(),
-                  &texWidth,
-                  &texHeight,
-                  &channels,
-                  4);
-    IGL_DEBUG_ASSERT(pixels, "Cannot load texture.");
+    const auto imageData = getPlatform().getImageLoader().loadImageData("marble.png");
+    IGL_DEBUG_ASSERT(imageData.data, "Cannot load marble.png");
     const TextureDesc desc2D = TextureDesc::new2D(igl::TextureFormat::RGBA_SRGB,
-                                                  texWidth,
-                                                  texHeight,
+                                                  imageData.desc.width,
+                                                  imageData.desc.height,
                                                   TextureDesc::TextureUsageBits::Sampled,
                                                   "marble.png");
     texture1_ = device_->createTexture(desc2D, nullptr);
-    texture1_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels);
-    stbi_image_free(pixels);
+    if (texture1_ && imageData.data) {
+      texture1_->upload(texture1_->getFullRange(), imageData.data->data());
+    }
   }
   {
     const SamplerStateDesc samplerDesc = {
@@ -582,13 +575,15 @@ void TinyMeshBindGroupSession::createRenderPipeline() {
     sampler_ = device_->createSamplerState(samplerDesc, nullptr);
   }
 
-  for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
-    bindGroupBuffers_.push_back(device_->createBindGroup({
-        .buffers{ubPerFrame_[i], ubPerObject_[i]},
-        .size{sizeof(UniformsPerFrame), sizeof(UniformsPerObject)},
-        .isDynamicBufferMask = kDynamicBufferMask,
-        .debugName = IGL_FORMAT("bindGroupBuffers_[{}]", i),
-    }));
+  if (!ubPerFrame_.empty()) {
+    for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
+      bindGroupBuffers_.push_back(device_->createBindGroup({
+          .buffers{ubPerFrame_[i], ubPerObject_[i]},
+          .size{sizeof(UniformsPerFrame), sizeof(UniformsPerObject)},
+          .isDynamicBufferMask = kDynamicBufferMask,
+          .debugName = IGL_FORMAT("bindGroupBuffers_[{}]", i),
+      }));
+    }
   }
 
   bindGroupTextures_ = device_->createBindGroup({
@@ -665,7 +660,11 @@ void TinyMeshBindGroupSession::update(SurfaceTextures surfaceTextures) noexcept 
   // place a "camera" behind the cubes, the distance depends on the total number of cubes
   perFrame.view =
       glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, std::sqrt(kNumCubes / 16.0f) * 20.0f * kHalf));
-  ubPerFrame_[frameIndex_]->upload(&perFrame, BufferRange(sizeof(perFrame)));
+  // The uniform buffers exist only where the mesh can be drawn (not on OpenGL ES 2.0).
+  const bool drawMesh = renderPipelineStateMesh_ && !ubPerFrame_.empty();
+  if (drawMesh) {
+    ubPerFrame_[frameIndex_]->upload(&perFrame, BufferRange(sizeof(perFrame)));
+  }
 
   // rotate cubes around random axes
   for (uint32_t i = 0; i != kNumCubes; i++) {
@@ -680,7 +679,9 @@ void TinyMeshBindGroupSession::update(SurfaceTextures surfaceTextures) noexcept 
   }
 
   const size_t perObjectStride = getPerObjectStride(*device_);
-  uploadPerObject(*ubPerObject_[frameIndex_], perObjectStride);
+  if (drawMesh) {
+    uploadPerObject(*ubPerObject_[frameIndex_], perObjectStride);
+  }
 
   // Command buffers (1-N per thread): create, submit and forget
   const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
@@ -699,21 +700,23 @@ void TinyMeshBindGroupSession::update(SurfaceTextures surfaceTextures) noexcept 
   // This will clear the framebuffer
   const auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
-  commands->bindRenderPipelineState(renderPipelineStateMesh_);
-  commands->bindViewport(viewport);
-  commands->bindScissorRect(scissor);
-  commands->pushDebugGroupLabel("Render Mesh", Color(1, 0, 0));
-  commands->bindVertexBuffer(0, *vb0_);
-  commands->bindDepthStencilState(depthStencilState_);
-  commands->bindBindGroup(bindGroupTextures_);
-  // Draw 2 cubes: we use uniform buffer to update matrices
-  commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
-  for (uint32_t i = 0; i != kNumCubes; i++) {
-    const auto dynamicOffset = static_cast<uint32_t>(i * perObjectStride);
-    commands->bindBindGroup(bindGroupBuffers_[frameIndex_], 1, &dynamicOffset);
-    commands->drawIndexed(3u * 6u * 2u);
+  if (drawMesh) {
+    commands->bindRenderPipelineState(renderPipelineStateMesh_);
+    commands->bindViewport(viewport);
+    commands->bindScissorRect(scissor);
+    commands->pushDebugGroupLabel("Render Mesh", Color(1, 0, 0));
+    commands->bindVertexBuffer(0, *vb0_);
+    commands->bindDepthStencilState(depthStencilState_);
+    commands->bindBindGroup(bindGroupTextures_);
+    // Draw 2 cubes: we use uniform buffer to update matrices
+    commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
+    for (uint32_t i = 0; i != kNumCubes; i++) {
+      const auto dynamicOffset = static_cast<uint32_t>(i * perObjectStride);
+      commands->bindBindGroup(bindGroupBuffers_[frameIndex_], 1, &dynamicOffset);
+      commands->drawIndexed(3u * 6u * 2u);
+    }
+    commands->popDebugGroupLabel();
   }
-  commands->popDebugGroupLabel();
   {
     imguiSession_->beginFrame(framebufferDesc_, getPlatform().getDisplayContext().pixelsPerPoint);
     ImGui::Begin("Texture Viewer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);

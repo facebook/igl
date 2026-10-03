@@ -187,7 +187,7 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
       return igl::ShaderStagesCreator::fromModuleStringInput(
           device, codeVS.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
     } else {
-      IGL_DEBUG_ABORT("This sample is incompatible with OpenGL 2.1");
+      IGL_LOG_INFO("DrawInstancedSession: needs OpenGL 3.0 / OpenGL ES 3.0; skipping\n");
       return nullptr;
     }
 #else
@@ -248,6 +248,8 @@ void DrawInstancedSession::initialize() noexcept {
           .type = BufferDesc::BufferTypeBits::Index, .data = &indexes, .length = sizeof(indexes)},
       nullptr);
   IGL_DEBUG_ASSERT(indexBuffer_);
+
+  shaderStages_ = getShaderStagesForBackend(getPlatform().getDevice());
 }
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
@@ -262,7 +264,7 @@ void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
       FramebufferDesc{.colorAttachments = {{.texture = surfaceTextures.color}}}, nullptr);
   IGL_DEBUG_ASSERT(framebuffer_);
 
-  if (!renderPipelineStateTriangle_) {
+  if (!renderPipelineStateTriangle_ && shaderStages_) {
     const VertexInputStateDesc inputDesc = {
         .numAttributes = 1,
         .attributes =
@@ -290,7 +292,7 @@ void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
 
     const RenderPipelineDesc desc = {
         .vertexInputState = vertexInput0,
-        .shaderStages = getShaderStagesForBackend(getPlatform().getDevice()),
+        .shaderStages = shaderStages_,
         .targetDesc =
             {
                 .colorAttachments =
@@ -352,14 +354,16 @@ void DrawInstancedSession::update(SurfaceTextures surfaceTextures) noexcept {
   // This will clear the framebuffer
   const auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
-  commands->bindRenderPipelineState(renderPipelineStateTriangle_);
-  commands->bindViewport(viewport);
-  commands->bindScissorRect(scissor);
-  commands->pushDebugGroupLabel("Render Triangle", Color(1, 0, 0));
-  commands->bindVertexBuffer(1, *vertexBuffer_);
-  commands->bindIndexBuffer(*indexBuffer_, IndexFormat::UInt16);
-  commands->drawIndexed(6, 100);
-  commands->popDebugGroupLabel();
+  if (renderPipelineStateTriangle_) {
+    commands->bindRenderPipelineState(renderPipelineStateTriangle_);
+    commands->bindViewport(viewport);
+    commands->bindScissorRect(scissor);
+    commands->pushDebugGroupLabel("Render Triangle", Color(1, 0, 0));
+    commands->bindVertexBuffer(1, *vertexBuffer_);
+    commands->bindIndexBuffer(*indexBuffer_, IndexFormat::UInt16);
+    commands->drawIndexed(6, 100);
+    commands->popDebugGroupLabel();
+  }
   commands->endEncoding();
 
   if (shellParams().shouldPresent) {

@@ -304,6 +304,10 @@ std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& devi
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
   case igl::BackendType::OpenGL:
+    if (getProlog(device).empty()) {
+      IGL_LOG_INFO("BindGroupSession: needs GLSL ES 3.00 / GLSL 1.30; skipping\n");
+      return nullptr;
+    }
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,
         getOpenGLVertexShaderSource(device).c_str(),
@@ -437,7 +441,7 @@ void BindGroupSession::initialize() noexcept {
 void BindGroupSession::update(SurfaceTextures surfaceTextures) noexcept {
   // Per IGL guidelines, surfaceTextures.color may be null on some platforms
   // before the surface is ready (e.g., during window resize on Android/iOS).
-  if (!surfaceTextures.color) {
+  if (!surfaceTextures.color || !shaderStages_) {
     return;
   }
   auto& device = getPlatform().getDevice();

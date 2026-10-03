@@ -25,6 +25,7 @@ class DrawInstancedSession : public RenderSession {
  private:
   RenderPassDesc renderPass_;
   std::shared_ptr<IRenderPipelineState> renderPipelineStateTriangle_;
+  std::shared_ptr<IShaderStages> shaderStages_;
   std::shared_ptr<IBuffer> vertexBuffer_;
   std::shared_ptr<IBuffer> indexBuffer_;
 };

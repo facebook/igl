@@ -229,6 +229,11 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
 
 void MultiDrawIndexedIndirectSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
+  if (!device.hasFeature(DeviceFeatures::DrawIndexedIndirect) ||
+      !device.hasFeature(DeviceFeatures::StorageBuffers)) {
+    IGL_LOG_INFO("MultiDrawIndexedIndirectSession: indirect draws are not supported; skipping\n");
+    return;
+  }
 
   // Vertex buffer (all shapes share one buffer)
   vertexBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
@@ -330,7 +335,7 @@ void MultiDrawIndexedIndirectSession::initialize() noexcept {
 void MultiDrawIndexedIndirectSession::update(SurfaceTextures textures) noexcept {
   // Per IGL guidelines, textures.color may be null on some platforms
   // before the surface is ready (e.g., during window resize on Android/iOS).
-  if (!textures.color) {
+  if (!textures.color || !indirectBuffer_) {
     return;
   }
   Result ret;

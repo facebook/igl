@@ -238,10 +238,8 @@ void MeshShaderTriangleSession::initialize() noexcept {
     shaderStages_ = ShaderStagesCreator::fromLibraryStringInput(
         device, getWgslVertexFallbackShaderSource(), "vertexMain", "fragmentMain", "", nullptr);
   } else {
-    IGL_DEBUG_ABORT("Mesh shaders are not supported.\n");
-    return;
+    IGL_LOG_INFO("MeshShaderTriangleSession: mesh shaders are not supported; only clearing\n");
   }
-  IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
 
   const BufferDesc uboDesc{
       .type = igl::BufferDesc::BufferTypeBits::Uniform,
@@ -291,7 +289,7 @@ void MeshShaderTriangleSession::update(SurfaceTextures surfaceTextures) noexcept
   }
 
   // Graphics pipeline
-  if (!pipelineState_) {
+  if (!pipelineState_ && shaderStages_) {
     const RenderPipelineDesc graphicsDesc = {
         .shaderStages = shaderStages_,
         .targetDesc =
@@ -320,19 +318,23 @@ void MeshShaderTriangleSession::update(SurfaceTextures surfaceTextures) noexcept
   frameNum_ = (++frameNum_) % 360;
   const float angle = static_cast<float>(frameNum_) * M_PI / 180.0f;
   const glm::mat4 matrix = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 0.0f, 1.0f));
-  ubo_->upload(&matrix, {sizeof(matrix)});
+  if (pipelineState_ && ubo_) {
+    ubo_->upload(&matrix, {sizeof(matrix)});
+  }
 
   // Submit commands
   const std::shared_ptr<IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_DEBUG_ASSERT(commands != nullptr);
-  commands->bindRenderPipelineState(pipelineState_);
-  if (useMeshShaders_) {
-    commands->bindBuffer(1, BindTarget::kMesh, ubo_.get());
-    commands->drawMeshTasks({1, 1, 1}, {1, 1, 1}, {1, 1, 1});
-  } else {
-    commands->bindBuffer(1, BindTarget::kVertex, ubo_.get());
-    commands->draw(3);
+  if (pipelineState_) {
+    commands->bindRenderPipelineState(pipelineState_);
+    if (useMeshShaders_) {
+      commands->bindBuffer(1, BindTarget::kMesh, ubo_.get());
+      commands->drawMeshTasks({1, 1, 1}, {1, 1, 1}, {1, 1, 1});
+    } else {
+      commands->bindBuffer(1, BindTarget::kVertex, ubo_.get());
+      commands->draw(3);
+    }
   }
   commands->endEncoding();
 

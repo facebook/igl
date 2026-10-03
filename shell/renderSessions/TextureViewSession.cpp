@@ -209,7 +209,7 @@ std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& devi
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
   case igl::BackendType::OpenGL:
-    IGL_DEBUG_ABORT("OpenGL not supported");
+    IGL_LOG_INFO("TextureViewSession: OpenGL is not supported; skipping\n");
     return nullptr;
   }
   IGL_UNREACHABLE_RETURN(nullptr)
@@ -229,9 +229,9 @@ TextureViewSession::TextureViewSession(std::shared_ptr<Platform> platform) :
 void TextureViewSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
-  if (!device.hasFeature(DeviceFeatures::TextureViews)) {
-    IGL_SOFT_ERROR("Texture views are not supported");
-    std::terminate();
+  const bool hasTextureViews = device.hasFeature(DeviceFeatures::TextureViews);
+  if (!hasTextureViews) {
+    IGL_LOG_INFO("TextureViewSession: texture views are not supported; drawing without them\n");
   }
 
   vb_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex,
@@ -268,6 +268,9 @@ void TextureViewSession::initialize() noexcept {
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
 
   shaderStages_ = getShaderStagesForBackend(device);
+  if (!shaderStages_) {
+    return;
+  }
 
   commandQueue_ = device.createCommandQueue({}, nullptr);
 
@@ -284,9 +287,11 @@ void TextureViewSession::initialize() noexcept {
   desc.numMipLevels = igl::TextureDesc::calcNumMipLevels(texWidth, texHeight);
   texture_ = device.createTexture(desc, nullptr);
 
-  textureViews_.reserve(desc.numMipLevels);
-  for (uint32_t mip = 0; mip != desc.numMipLevels; mip++) {
-    textureViews_.push_back(device.createTextureView(texture_, {.mipLevel = mip}, nullptr));
+  if (hasTextureViews) {
+    textureViews_.reserve(desc.numMipLevels);
+    for (uint32_t mip = 0; mip != desc.numMipLevels; mip++) {
+      textureViews_.push_back(device.createTextureView(texture_, {.mipLevel = mip}, nullptr));
+    }
   }
 
   // render into the texture to generate custom colored mipmap pyramid
@@ -330,7 +335,7 @@ void TextureViewSession::initialize() noexcept {
 void TextureViewSession::update(SurfaceTextures surfaceTextures) noexcept {
   // Per IGL guidelines, surfaceTextures.color may be null on some platforms
   // before the surface is ready (e.g., during window resize on Android/iOS).
-  if (!surfaceTextures.color) {
+  if (!surfaceTextures.color || !shaderStages_) {
     return;
   }
   auto& device = getPlatform().getDevice();

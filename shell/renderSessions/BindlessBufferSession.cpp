@@ -255,10 +255,13 @@ void BindlessBufferSession::initialize() noexcept {
   }
 
   // Create vertex and index buffers.
+  // Storage buffers are only needed (and only available everywhere) for the bindless path.
+  const BufferDesc::BufferType vertexBufferType =
+      isBindlessSupported_
+          ? BufferDesc::BufferTypeBits::Vertex | BufferDesc::BufferTypeBits::Storage
+          : BufferDesc::BufferTypeBits::Vertex;
   vertexBuffer_ = device.createBuffer(
-      BufferDesc{.type = BufferDesc::BufferTypeBits::Vertex | BufferDesc::BufferTypeBits::Storage,
-                 .data = vertexData,
-                 .length = sizeof(vertexData)},
+      BufferDesc{.type = vertexBufferType, .data = vertexData, .length = sizeof(vertexData)},
       nullptr);
   IGL_DEBUG_ASSERT(vertexBuffer_ != nullptr);
 

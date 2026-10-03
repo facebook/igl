@@ -609,6 +609,15 @@ void main() {
   gl_FragColor = vec4(vColor * alpha, alpha);
 }
 )";
+      if (igl::opengl::DeviceFeatureSet::usesOpenGLES()) {
+        // OpenGL ES 2.0 takes the same shaders as GLSL ES 1.00.
+        std::string codeVS(vs120);
+        std::string codeFS(fs120);
+        stringReplaceAll(codeVS, "#version 120", "#version 100");
+        stringReplaceAll(codeFS, "#version 120", "#version 100\nprecision mediump float;");
+        return igl::ShaderStagesCreator::fromModuleStringInput(
+            device, codeVS.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
+      }
       return igl::ShaderStagesCreator::fromModuleStringInput(
           device, vs120, "main", "", fs120, "main", "", nullptr);
     }
@@ -624,7 +633,15 @@ void main() {
 
     std::string codeFS(getVulkanFragmentShaderSource());
     stringReplaceAll(codeFS, "#version 460", usesOpenGLES ? "#version 300 es" : "#version 410");
-    stringReplaceAll(codeFS, "precision mediump float;\n", "");
+    if (usesOpenGLES) {
+      // GLSL ES 3.00 has no locations on vertex outputs and fragment inputs.
+      stringReplaceAll(codeVS, "layout (location=0) out", "out");
+      stringReplaceAll(codeVS, "layout (location=1) out", "out");
+      stringReplaceAll(codeFS, "layout (location=0) in", "in");
+      stringReplaceAll(codeFS, "layout (location=1) in", "in");
+    } else {
+      stringReplaceAll(codeFS, "precision mediump float;\n", "");
+    }
     stringReplaceAll(codeFS, "layout(set = 0, binding = 0) uniform", "uniform");
 
     return igl::ShaderStagesCreator::fromModuleStringInput(
@@ -688,19 +705,21 @@ void FireworksSession::initialize() noexcept {
       nullptr);
   IGL_DEBUG_ASSERT(sampler_ != nullptr);
 
-  // Uniform buffer
+  // Uniform buffer; without uniform blocks the matrices go through bindUniform().
   const Uniforms uniforms{.mvp = {glm::mat4(1.0f), glm::mat4(1.0f)}};
-  uniformBuffer_ = device.createBuffer(
-      {
-          .type = BufferDesc::BufferTypeBits::Uniform,
-          .data = &uniforms,
-          .length = sizeof(Uniforms),
-          .storage = ResourceStorage::Shared,
-          .hint = BufferDesc::BufferAPIHintBits::UniformBlock,
-          .debugName = "fireworks_uniforms",
-      },
-      nullptr);
-  IGL_DEBUG_ASSERT(uniformBuffer_ != nullptr);
+  uniformBuffer_ = !device.hasFeature(DeviceFeatures::UniformBlocks)
+                       ? nullptr
+                       : device.createBuffer(
+                             {
+                                 .type = BufferDesc::BufferTypeBits::Uniform,
+                                 .data = &uniforms,
+                                 .length = sizeof(Uniforms),
+                                 .storage = ResourceStorage::Shared,
+                                 .hint = BufferDesc::BufferAPIHintBits::UniformBlock,
+                                 .debugName = "fireworks_uniforms",
+                             },
+                             nullptr);
+  IGL_DEBUG_ASSERT(uniformBuffer_ != nullptr || !device.hasFeature(DeviceFeatures::UniformBlocks));
 
   // Pre-allocate vertex buffer for max particles * 4 vertices
   const size_t maxVerts = static_cast<size_t>(kMaxParticles) * 4;
@@ -1078,7 +1097,9 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
   // @fb-only
 // @fb-only
   {
-    uniformBuffer_->upload(&uniforms, BufferRange(sizeof(Uniforms), 0));
+    if (uniformBuffer_) {
+      uniformBuffer_->upload(&uniforms, BufferRange(sizeof(Uniforms), 0));
+    }
   }
 
   // Use shell-provided clear color (transparent for passthrough, black otherwise)
@@ -1133,6 +1154,7 @@ void FireworksSession::update(SurfaceTextures surfaceTextures) noexcept {
             .type = UniformType::Mat4x4,
             .numElements = 2,
             .offset = offsetof(Uniforms, mvp),
+            .elementStride = sizeof(glm::mat4),
         };
         commands->bindUniform(mvpDesc, &uniforms);
       }

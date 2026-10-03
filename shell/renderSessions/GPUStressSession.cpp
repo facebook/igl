@@ -342,18 +342,9 @@ void GPUStressSession::addNormalsToCube() {
 
 namespace {
 bool isDeviceCompatible(IDevice& device) noexcept {
+  // Only Vulkan and WebGPU shaders exist.
   const auto backendtype = device.getBackendType();
-  if (backendtype == BackendType::OpenGL) {
-    const auto shaderVersion = device.getShaderVersion();
-    if (shaderVersion.majorVersion >= 3 || shaderVersion.minorVersion >= 30) {
-      return true;
-    }
-  }
-
-  if (backendtype == BackendType::Vulkan || backendtype == BackendType::WebGPU) {
-    return true;
-  }
-  return false;
+  return backendtype == BackendType::Vulkan || backendtype == BackendType::WebGPU;
 }
 
 int setCurrentThreadAffinityMask(int mask) {

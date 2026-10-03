@@ -587,14 +587,17 @@ void ColorSession::initializeImpl() noexcept {
       nullptr);
   IGL_DEBUG_ASSERT(samp0_ != nullptr);
 
+  // OpenGL ES 2.0 without GL_OES_texture_npot cannot mipmap the non-power-of-two images; the
+  // sampler does not use mipmaps anyway.
+  const bool withMipmaps = device.hasFeature(DeviceFeatures::TextureNotPot);
   if (colorTestModes_ == ColorTestModes::MacbethTexture) {
-    tex0_ = getPlatform().loadTexture("macbeth.png", true, swapchainColorTextureformat_);
+    tex0_ = getPlatform().loadTexture("macbeth.png", withMipmaps, swapchainColorTextureformat_);
   } else if (colorTestModes_ == ColorTestModes::MacbethTexture720) {
-    tex0_ = getPlatform().loadTexture("macbeth720.png", true, swapchainColorTextureformat_);
+    tex0_ = getPlatform().loadTexture("macbeth720.png", withMipmaps, swapchainColorTextureformat_);
   } else if (colorTestModes_ == ColorTestModes::MacbethTextureKtx) {
-    tex0_ = getPlatform().loadTexture("macbeth.ktx", true, swapchainColorTextureformat_);
+    tex0_ = getPlatform().loadTexture("macbeth.ktx", withMipmaps, swapchainColorTextureformat_);
   } else if (colorTestModes_ == ColorTestModes::MacbethTextureKtx2) {
-    tex0_ = getPlatform().loadTexture("macbeth.ktx2", true, swapchainColorTextureformat_);
+    tex0_ = getPlatform().loadTexture("macbeth.ktx2", withMipmaps, swapchainColorTextureformat_);
   // @fb-only
     // @fb-only
         // @fb-only
@@ -602,9 +605,9 @@ void ColorSession::initializeImpl() noexcept {
     // @fb-only
         // @fb-only
   } else if (colorTestModes_ == ColorTestModes::EyeChartTexture720) {
-    tex0_ = getPlatform().loadTexture("eyechart720.png", true, swapchainColorTextureformat_);
+    tex0_ = getPlatform().loadTexture("eyechart720.png", withMipmaps, swapchainColorTextureformat_);
   } else if (colorTestModes_ == ColorTestModes::OrangeTexture) {
-    tex0_ = getPlatform().loadTexture("orange.png", true, swapchainColorTextureformat_);
+    tex0_ = getPlatform().loadTexture("orange.png", withMipmaps, swapchainColorTextureformat_);
   } else if (colorTestModes_ == ColorTestModes::OrangeClear) {
     tex0_ = getPlatform().loadTexture(igl::shell::ImageLoader::white());
     setPreferredClearColor(
@@ -706,6 +709,7 @@ void ColorSession::updateImpl(const SurfaceTextures& surfaceTextures) noexcept {
 
   framebuffer_->updateDrawable(drawableSurface);
 
+  fragmentUniformDescriptors_.clear();
   // Uniform: "color"
   fragmentUniformDescriptors_.emplace_back();
   // @fb-only
@@ -747,7 +751,10 @@ void ColorSession::updateImpl(const SurfaceTextures& surfaceTextures) noexcept {
     if (getPlatform().getDevice().hasFeature(DeviceFeatures::BindUniform)) {
       // Bind non block uniforms
       for (const auto& uniformDesc : fragmentUniformDescriptors_) {
-        commands->bindUniform(uniformDesc, &fragmentParameters_);
+        // Uniforms the shader compiler optimized out have no location.
+        if (uniformDesc.location >= 0) {
+          commands->bindUniform(uniformDesc, &fragmentParameters_);
+        }
       }
     } else if (getPlatform().getDevice().hasFeature(DeviceFeatures::UniformBlocks)) {
       // @fb-only

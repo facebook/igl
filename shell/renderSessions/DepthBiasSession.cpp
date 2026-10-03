@@ -590,6 +590,7 @@ void DepthBiasSession::initialize() noexcept {
   };
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 void DepthBiasSession::update(SurfaceTextures textures) noexcept {
   // Per IGL guidelines, textures.color may be null on some platforms
   // before the surface is ready (e.g., during window resize on Android/iOS).
@@ -601,13 +602,15 @@ void DepthBiasSession::update(SurfaceTextures textures) noexcept {
 
   // Create the shadow map texture (depth-only, also sampled for shadow testing)
   if (shadowMap_ == nullptr) {
-    shadowMap_ = device.createTexture(TextureDesc::new2D(TextureFormat::Z_UNorm24,
-                                                         kShadowMapSize,
-                                                         kShadowMapSize,
-                                                         TextureDesc::TextureUsageBits::Attachment |
-                                                             TextureDesc::TextureUsageBits::Sampled,
-                                                         "Shadow Map"),
-                                      &ret);
+    TextureDesc shadowMapDesc = TextureDesc::new2D(TextureFormat::Z_UNorm24,
+                                                   kShadowMapSize,
+                                                   kShadowMapSize,
+                                                   TextureDesc::TextureUsageBits::Attachment |
+                                                       TextureDesc::TextureUsageBits::Sampled,
+                                                   "Shadow Map");
+    // Metal on the iOS simulator rejects depth textures in shared storage.
+    shadowMapDesc.storage = ResourceStorage::Private;
+    shadowMap_ = device.createTexture(shadowMapDesc, &ret);
     IGL_DEBUG_ASSERT(ret.isOk());
     IGL_DEBUG_ASSERT(shadowMap_ != nullptr);
   }

@@ -336,7 +336,12 @@ void CheckerboardMipmapSession::initialize() noexcept {
   IGL_DEBUG_ASSERT(samp0_ != nullptr);
 
   // Load checkerboard texture
-  tex0_ = getPlatform().loadTexture("checker.png", true);
+  // OpenGL ES 2.0 (GL_EXT_sRGB) cannot generate mipmaps for sRGB textures.
+  const auto shaderVersion = device.getShaderVersion();
+  const bool isGLES2 = shaderVersion.family == ShaderFamily::GlslEs &&
+                       shaderVersion.majorVersion < 3;
+  tex0_ = getPlatform().loadTexture(
+      "checker.png", true, isGLES2 ? TextureFormat::RGBA_UNorm8 : TextureFormat::RGBA_SRGB);
   IGL_DEBUG_ASSERT(tex0_ != nullptr);
   {
     Result result;

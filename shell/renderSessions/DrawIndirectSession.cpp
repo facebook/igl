@@ -74,6 +74,12 @@ fn main() {
 void DrawIndirectSession::initialize() noexcept {
   // Create commandQueue
   auto& device = getPlatform().getDevice();
+  if (!device.hasFeature(DeviceFeatures::DrawIndexedIndirect) ||
+      !device.hasFeature(DeviceFeatures::StorageBuffers) ||
+      !device.hasFeature(DeviceFeatures::Compute)) {
+    IGL_LOG_INFO("DrawIndirectSession: indirect draws or compute are not supported; skipping\n");
+    return;
+  }
   commandQueue_ = device.createCommandQueue({}, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 
@@ -223,7 +229,7 @@ void DrawIndirectSession::initialize() noexcept {
 void DrawIndirectSession::update(SurfaceTextures surfaceTextures) noexcept {
   // Per IGL guidelines, surfaceTextures.color may be null on some platforms
   // before the surface is ready (e.g., during window resize on Android/iOS).
-  if (!surfaceTextures.color) {
+  if (!surfaceTextures.color || !indirectBuffer_) {
     return;
   }
   auto& device = getPlatform().getDevice();
