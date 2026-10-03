@@ -21,6 +21,7 @@ typedef NS_ENUM(NSUInteger, BackendFlavor) {
   kBackendFlavorVulkan,
   kBackendFlavorD3D12,
   // @fb-only
+  kBackendFlavorWebGPU,
 };
 
 @interface BackendVersion : NSObject

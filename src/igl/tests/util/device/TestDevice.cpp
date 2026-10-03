@@ -52,6 +52,8 @@ bool isBackendTypeSupported(BackendType backendType) {
     return IGL_D3D12_SUPPORTED;
   // @fb-only
     // @fb-only
+  case ::igl::BackendType::WebGPU:
+    return false;
   }
   IGL_UNREACHABLE_RETURN(false)
 }

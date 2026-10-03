@@ -139,6 +139,7 @@ std::unique_ptr<IShaderStages> getShadowShaderStagesForBackend(IDevice& device) 
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Custom:
+  case igl::BackendType::WebGPU:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
   case igl::BackendType::Vulkan:
@@ -351,6 +352,7 @@ std::unique_ptr<IShaderStages> getMainShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Custom:
+  case igl::BackendType::WebGPU:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
   case igl::BackendType::Vulkan:

@@ -34,6 +34,7 @@ TEST(PlatformDeviceTypeTest, ValuesAreDistinct) {
       PlatformDeviceType::Vulkan,
       PlatformDeviceType::D3D12,
       // @fb-only
+      PlatformDeviceType::WebGPU,
   };
   for (size_t outer = 0; outer < values.size(); ++outer) {
     for (size_t inner = outer + 1; inner < values.size(); ++inner) {

@@ -50,6 +50,9 @@ namespace {
   // @fb-only
     // @fb-only
     // @fb-only
+  case BackendFlavor::WebGPU:
+    str = "WebGPU";
+    break;
   }
 
   str += " " + std::to_string(static_cast<int>(backendVersion->majorVersion)) + " " +

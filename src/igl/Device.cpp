@@ -59,6 +59,7 @@ Color IDevice::backendDebugColor() const noexcept {
   case BackendType::Vulkan:
     return {0.f, 1.f, 1.f, 1.f}; // Cyan
   case BackendType::D3D12:
+  case BackendType::WebGPU:
     return {0.f, 1.f, 1.f, 1.f}; // Match Vulkan for parity testing
   // @fb-only
     return {0.f, 1.f, 0.f, 1.f}; // Green @fb-only

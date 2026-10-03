@@ -176,6 +176,7 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (backend) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Custom:
+  case igl::BackendType::WebGPU:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
   case igl::BackendType::Vulkan:

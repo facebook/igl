@@ -69,6 +69,7 @@ TEST(PlatformDeviceTypeTest, AllValuesUnique) {
       PlatformDeviceType::OpenGLWebGL,
       PlatformDeviceType::Vulkan,
       PlatformDeviceType::D3D12,
+      PlatformDeviceType::WebGPU,
   };
   for (size_t i = 0; i < allTypes.size(); ++i) {
     for (size_t j = i + 1; j < allTypes.size(); ++j) {
@@ -110,6 +111,8 @@ TEST(PlatformDeviceTypeTest, SwitchCoverage) {
       return "D3D12";
     // @fb-only
       // @fb-only
+    case PlatformDeviceType::WebGPU:
+      return "WebGPU";
     }
     return "InvalidPlatformDeviceType";
   };
@@ -118,6 +121,7 @@ TEST(PlatformDeviceTypeTest, SwitchCoverage) {
   EXPECT_STREQ(toString(PlatformDeviceType::Vulkan), "Vulkan");
   EXPECT_STREQ(toString(PlatformDeviceType::Metal), "Metal");
   EXPECT_STREQ(toString(PlatformDeviceType::D3D12), "D3D12");
+  EXPECT_STREQ(toString(PlatformDeviceType::WebGPU), "WebGPU");
 }
 
 TEST(CommandQueueStatisticsTest, DefaultFieldsAreZero) {

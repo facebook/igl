@@ -64,9 +64,11 @@ class RecordingDevice final : public IDevice {
   }
 
   // Any backend other than OpenGL reaches createBuffer(), and only Metal takes the Apple-only
-  // page-aligned allocation branch, so this keeps the test host-independent.
+  // page-aligned allocation branch, so the Vulkan default keeps the test host-independent.
+  BackendType backendType = BackendType::Vulkan;
+
   [[nodiscard]] BackendType getBackendType() const final {
-    return BackendType::Vulkan;
+    return backendType;
   }
 
   [[nodiscard]] const IPlatformDevice& getPlatformDevice() const noexcept final {

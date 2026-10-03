@@ -44,6 +44,7 @@ TEST(PlatformDeviceTypeTest, AllValuesDistinct) {
       PlatformDeviceType::OpenGLWebGL,
       PlatformDeviceType::Vulkan,
       PlatformDeviceType::D3D12,
+      PlatformDeviceType::WebGPU,
   };
   for (size_t i = 0; i < std::size(values); ++i) {
     for (size_t j = i + 1; j < std::size(values); ++j) {

@@ -9,6 +9,8 @@
 
 #include <igl/Common.h>
 
+#include "iglu/RecordingDevice.h"
+
 #include <ldrutils/lutils/Pool.h>
 #include <igl/CommandEncoder.h>
 
@@ -22,6 +24,29 @@ TEST(CommonTest, BackendTypeToStringTest) {
   // @fb-only
   ASSERT_EQ(BackendTypeToString(BackendType::D3D12), "D3D12");
   ASSERT_EQ(BackendTypeToString(BackendType::Custom), "Custom");
+  ASSERT_EQ(BackendTypeToString(BackendType::WebGPU), "WebGPU");
+}
+
+TEST(CommonTest, BackendDebugColorTest) {
+  RecordingDevice device;
+  const auto colorFor = [&device](BackendType backendType) {
+    device.backendType = backendType;
+    return device.backendDebugColor();
+  };
+  const auto expectColor = [](const Color& color, float r, float g, float b, float a) {
+    EXPECT_EQ(color.r, r);
+    EXPECT_EQ(color.g, g);
+    EXPECT_EQ(color.b, b);
+    EXPECT_EQ(color.a, a);
+  };
+  expectColor(colorFor(BackendType::Invalid), 0.f, 0.f, 0.f, 0.f);
+  expectColor(colorFor(BackendType::OpenGL), 1.f, 1.f, 0.f, 1.f);
+  expectColor(colorFor(BackendType::Metal), 1.f, 0.f, 1.f, 1.f);
+  expectColor(colorFor(BackendType::Vulkan), 0.f, 1.f, 1.f, 1.f);
+  expectColor(colorFor(BackendType::D3D12), 0.f, 1.f, 1.f, 1.f);
+  expectColor(colorFor(BackendType::WebGPU), 0.f, 1.f, 1.f, 1.f);
+  // @fb-only
+  expectColor(colorFor(BackendType::Custom), 0.f, 0.f, 1.f, 1.f);
 }
 
 TEST(CommonTest, ResultTest) {

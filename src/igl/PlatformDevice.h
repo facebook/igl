@@ -29,6 +29,7 @@ enum class PlatformDeviceType {
   Vulkan,
   D3D12,
   // @fb-only
+  WebGPU,
 };
 
 /**

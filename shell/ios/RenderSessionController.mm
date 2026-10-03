@@ -58,6 +58,7 @@ static_assert(static_cast<uint8_t>(igl::BackendFlavor::Metal) == kBackendFlavorM
 static_assert(static_cast<uint8_t>(igl::BackendFlavor::Vulkan) == kBackendFlavorVulkan);
 static_assert(static_cast<uint8_t>(igl::BackendFlavor::D3D12) == kBackendFlavorD3D12);
 // @fb-only
+static_assert(static_cast<uint8_t>(igl::BackendFlavor::WebGPU) == kBackendFlavorWebGPU);
 
 @implementation RenderSessionController
 

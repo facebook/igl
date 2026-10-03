@@ -48,6 +48,8 @@ std::string BackendTypeToString(BackendType backendType) {
     // @fb-only
   case BackendType::Custom:
     return "Custom";
+  case BackendType::WebGPU:
+    return "WebGPU";
   }
   IGL_UNREACHABLE_RETURN(std::string())
 }

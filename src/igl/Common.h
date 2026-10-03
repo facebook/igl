@@ -161,6 +161,7 @@ enum class BackendFlavor : uint8_t {
   Vulkan,
   D3D12,
   // @fb-only
+  WebGPU,
 };
 
 std::string BackendTypeToString(BackendType backendType);

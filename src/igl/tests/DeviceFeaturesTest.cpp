@@ -22,6 +22,7 @@ TEST(ShaderFamilyTest, EnumValues) {
   EXPECT_EQ(static_cast<uint8_t>(ShaderFamily::Metal), 3u);
   EXPECT_EQ(static_cast<uint8_t>(ShaderFamily::SpirV), 4u);
   EXPECT_EQ(static_cast<uint8_t>(ShaderFamily::Hlsl), 5u);
+  EXPECT_EQ(static_cast<uint8_t>(ShaderFamily::Wgsl), 6u);
 }
 
 // ---------------------------------------------------------------------------

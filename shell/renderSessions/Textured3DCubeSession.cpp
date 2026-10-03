@@ -194,6 +194,9 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   // @fb-only
     // @fb-only
     // @fb-only
+  case igl::BackendType::WebGPU:
+    IGL_DEBUG_ABORT("IGLSamples not set up for WebGPU");
+    return nullptr;
   case igl::BackendType::Metal:
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);

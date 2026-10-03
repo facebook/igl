@@ -265,6 +265,9 @@ std::unique_ptr<IShaderStages> createShaderStagesForBackend(const IDevice& devic
   // @fb-only
     // @fb-only
     // @fb-only
+  case igl::BackendType::WebGPU:
+    IGL_DEBUG_ABORT("No WebGPU shader available");
+    return nullptr;
   case igl::BackendType::D3D12: {
     if (programIndex == 0) {
       // First pass: write to SV_Target0 and SV_Target1

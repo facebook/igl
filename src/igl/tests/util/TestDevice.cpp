@@ -39,6 +39,8 @@ std::shared_ptr<IDevice> createTestDevice() {
     return device::createTestDevice(::igl::BackendType::Vulkan);
   } else if (backend == "d3d12") {
     return device::createTestDevice(::igl::BackendType::D3D12);
+  } else if (backend == "webgpu") {
+    return device::createTestDevice(::igl::BackendType::WebGPU);
   // @fb-only
     // @fb-only
   } else {

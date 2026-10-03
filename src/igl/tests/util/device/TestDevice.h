@@ -38,6 +38,12 @@
 #define IGL_D3D12_SUPPORTED 0
 #endif
 
+#if IGL_BACKEND_WEBGPU && !defined(IGL_UNIT_TESTS_NO_WEBGPU)
+#define IGL_WEBGPU_SUPPORTED 1
+#else
+#define IGL_WEBGPU_SUPPORTED 0
+#endif
+
 namespace igl::tests::util::device {
 
 struct TestDeviceConfig {

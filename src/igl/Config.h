@@ -206,6 +206,12 @@
 // @fb-only
 // @fb-only
 
+#if defined(IGL_BACKEND_ENABLE_WEBGPU)
+#define IGL_BACKEND_WEBGPU 1
+#else
+#define IGL_BACKEND_WEBGPU 0
+#endif
+
 ///--------------------------------------
 /// MARK: - Angle support
 #if defined(FORCE_USE_ANGLE)

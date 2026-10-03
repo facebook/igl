@@ -21,6 +21,7 @@ enum class BackendType {
   D3D12,
   // @fb-only
   Custom,
+  WebGPU,
 };
 
 /**

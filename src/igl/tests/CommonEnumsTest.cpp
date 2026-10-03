@@ -23,6 +23,8 @@ TEST(BackendTypeTest, EnumValues) {
   EXPECT_EQ(static_cast<uint8_t>(BackendType::D3D12), 4u);
   // @fb-only
   // @fb-only
+  EXPECT_EQ(static_cast<uint8_t>(BackendType::WebGPU),
+            static_cast<uint8_t>(BackendType::Custom) + 1u);
 }
 
 // ---------------------------------------------------------------------------
