@@ -52,7 +52,13 @@ std::shared_ptr<SamplerState> SamplerState::create(const WebGPUContext& ctx,
                             : WGPUCompareFunction_Undefined;
   samplerDesc.maxAnisotropy = getMaxAnisotropy(desc);
 
+  ctx.pushErrorScope(WGPUErrorFilter_Validation);
   auto sampler = std::shared_ptr<SamplerState>(new SamplerState(ctx, samplerDesc));
+  Result validation = ctx.popErrorScope();
+  if (!validation.isOk()) {
+    Result::setResult(outResult, std::move(validation));
+    return nullptr;
+  }
   if (!sampler->sampler_) {
     Result::setResult(outResult, Result::Code::RuntimeError, "wgpuDeviceCreateSampler() failed");
     return nullptr;

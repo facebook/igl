@@ -88,6 +88,9 @@ void Device::destroy(SamplerHandle /*handle*/) {}
 std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc& /*desc*/,
                                                           Result* IGL_NULLABLE outResult) noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (failIfLost(outResult)) {
+    return nullptr;
+  }
   Result::setOk(outResult);
   return std::make_shared<CommandQueue>(*this);
 }
@@ -95,6 +98,9 @@ std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc
 std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
                                               Result* IGL_NULLABLE outResult) const noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (failIfLost(outResult)) {
+    return nullptr;
+  }
   auto buffer = Buffer::create(*ctx_, desc, outResult);
   if (buffer && getResourceTracker()) {
     buffer->initResourceTracker(getResourceTracker(), desc.debugName);
@@ -113,6 +119,9 @@ std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
 std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (failIfLost(outResult)) {
+    return nullptr;
+  }
   auto sampler = SamplerState::create(*ctx_, desc, outResult);
   if (sampler && getResourceTracker()) {
     sampler->initResourceTracker(getResourceTracker(), desc.debugName);
@@ -123,6 +132,9 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
 std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
                                                 Result* IGL_NULLABLE outResult) const noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (failIfLost(outResult)) {
+    return nullptr;
+  }
   const TextureDesc sanitized = sanitize(desc);
   auto texture = Texture::create(*ctx_, deviceFeatureSet_, sanitized, outResult);
   if (texture && getResourceTracker()) {
@@ -135,6 +147,9 @@ std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> te
                                                     const TextureViewDesc& desc,
                                                     Result* IGL_NULLABLE outResult) const noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (failIfLost(outResult)) {
+    return nullptr;
+  }
   auto view =
       Texture::createView(std::static_pointer_cast<Texture>(std::move(texture)), desc, outResult);
   if (view && getResourceTracker()) {
@@ -145,6 +160,9 @@ std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> te
 
 std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) const noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (failIfLost(outResult)) {
+    return nullptr;
+  }
   auto timer = Timer::create(*ctx_, outResult);
   if (timer && getResourceTracker()) {
     timer->initResourceTracker(getResourceTracker());
@@ -156,6 +174,9 @@ std::shared_ptr<ITimestampQueries> Device::createTimestampQueries(uint32_t maxTi
                                                                   Result* IGL_NULLABLE
                                                                       outResult) const noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (failIfLost(outResult)) {
+    return nullptr;
+  }
   auto queries = TimestampQueries::create(*ctx_, maxTimestamps, outResult);
   if (queries && getResourceTracker()) {
     queries->initResourceTracker(getResourceTracker());
@@ -179,6 +200,9 @@ std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexIn
 std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& desc,
                                                         Result* IGL_NULLABLE outResult) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (failIfLost(outResult)) {
+    return nullptr;
+  }
   auto framebuffer = std::make_shared<Framebuffer>(*ctx_, desc);
   if (getResourceTracker()) {
     framebuffer->initResourceTracker(getResourceTracker(), desc.debugName);
@@ -201,6 +225,9 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     const ComputePipelineDesc& desc,
     Result* IGL_NULLABLE outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (failIfLost(outResult)) {
+    return nullptr;
+  }
   return ComputePipelineState::create(*ctx_, deviceFeatureSet_, bindLayoutCache_, desc, outResult);
 }
 
@@ -208,12 +235,18 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
                                                                    Result* IGL_NULLABLE
                                                                        outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (failIfLost(outResult)) {
+    return nullptr;
+  }
   return RenderPipelineState::create(*ctx_, deviceFeatureSet_, bindLayoutCache_, desc, outResult);
 }
 
 std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& desc,
                                                             Result* IGL_NULLABLE outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (failIfLost(outResult)) {
+    return nullptr;
+  }
   if (desc.moduleInfo.empty() || !desc.input.isValid()) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Invalid shader library");
     return nullptr;
@@ -252,6 +285,9 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
 std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (failIfLost(outResult)) {
+    return nullptr;
+  }
   auto module = ShaderModule::create(*ctx_, desc, outResult);
   if (module) {
     ++shaderCompilationCount_;
@@ -287,6 +323,14 @@ void* IGL_NULLABLE Device::getNativeDevice() const {
 
 bool Device::isDeviceLost() const noexcept {
   return ctx_->isDeviceLost();
+}
+
+bool Device::failIfLost(Result* IGL_NULLABLE outResult) const noexcept {
+  if (!ctx_->isDeviceLost()) {
+    return false;
+  }
+  Result::setResult(outResult, Result::Code::DeviceLost, "The WebGPU device was lost");
+  return true;
 }
 
 bool Device::hasFeature(DeviceFeatures feature) const {

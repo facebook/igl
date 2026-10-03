@@ -141,6 +141,9 @@ class Device final : public IDevice {
   }
 
  private:
+  /// True (with Result::Code::DeviceLost) once the device is lost; create calls then return null.
+  [[nodiscard]] bool failIfLost(Result* IGL_NULLABLE outResult) const noexcept;
+
   std::unique_ptr<WebGPUContext> ctx_;
   PlatformDevice platformDevice_;
   DeviceFeatureSet deviceFeatureSet_;
