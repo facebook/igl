@@ -12,6 +12,7 @@
 #import "GLView.h" // IWYU pragma: keep
 #import "HeadlessView.h"
 #import "MetalView.h"
+#import "WebGPUView.h"
 // @fb-only
 
 #import <AppKit/NSApplication.h>
@@ -47,6 +48,10 @@
 // @fb-only
 // @fb-only
 // @fb-only
+#if IGL_BACKEND_WEBGPU
+#include <igl/webgpu/HWDevice.h>
+#include <igl/webgpu/Surface.h>
+#endif
 #if IGL_BACKEND_VULKAN
 #import "VulkanView.h"
 
@@ -79,6 +84,10 @@ using namespace igl;
   // Headless render thread
   std::thread _headlessThread;
   BOOL _headlessRunning;
+#if IGL_BACKEND_WEBGPU
+  std::unique_ptr<igl::webgpu::Surface> _webgpuSurface;
+  std::shared_ptr<igl::ITexture> _webgpuDepth;
+#endif
 }
 @end
 
@@ -119,6 +128,14 @@ using namespace igl;
     _session->teardown();
   }
   _session = nullptr;
+#if IGL_BACKEND_WEBGPU
+  _webgpuDepth = nullptr;
+  _webgpuSurface = nullptr;
+  if ([self.view isKindOfClass:[WebGPUView class]]) {
+    // The view's rate pacing points at the platform released below.
+    [static_cast<WebGPUView*>(self.view) detachRatePacing];
+  }
+#endif
   _shellPlatform = nullptr;
 }
 
@@ -384,6 +401,28 @@ using namespace igl;
   }
 #endif
 
+#if IGL_BACKEND_WEBGPU
+  case igl::BackendFlavor::WebGPU: {
+    igl::Result result;
+    auto context = igl::webgpu::HWDevice::createContext({}, &result);
+    IGL_DEBUG_ASSERT(result.isOk(), "%s", result.message.c_str());
+    auto devices = igl::webgpu::HWDevice::queryDevices(*context, queryDesc, &result);
+    IGL_DEBUG_ASSERT(!devices.empty(), "%s", result.message.c_str());
+    auto device = igl::webgpu::HWDevice::create(std::move(context), devices[0], &result);
+    IGL_DEBUG_ASSERT(result.isOk(), "%s", result.message.c_str());
+
+    auto webgpuView = [[WebGPUView alloc] initWithFrame:_frame];
+    self.view = webgpuView;
+    webgpuView.wantsLayer = YES;
+    _webgpuSurface = igl::webgpu::Surface::createFromMetalLayer(
+        *device, (__bridge void*)webgpuView.layer, &result);
+    IGL_DEBUG_ASSERT(result.isOk(), "%s", result.message.c_str());
+    _shellPlatform = std::make_shared<igl::shell::PlatformMac>(std::move(device));
+    [webgpuView prepareWebGPU:_shellPlatform.get() controller:self];
+    break;
+  }
+#endif
+
 // @fb-only
   // @fb-only
     // @fb-only
@@ -521,6 +560,8 @@ static CVReturn metalDisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
   } else if ([self.view isKindOfClass:[GLView class]]) {
     GLView* v = (GLView*)self.view;
     [v startTimer];
+  } else if ([self.view isKindOfClass:[WebGPUView class]]) {
+    [static_cast<WebGPUView*>(self.view) startTimer];
   }
   [self.view.window makeFirstResponder:self];
 }
@@ -558,6 +599,8 @@ static CVReturn metalDisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
   } else if ([self.view isKindOfClass:[GLView class]]) {
     GLView* v = (GLView*)self.view;
     [v stopTimer];
+  } else if ([self.view isKindOfClass:[WebGPUView class]]) {
+    [static_cast<WebGPUView*>(self.view) stopTimer];
   }
 }
 
@@ -607,6 +650,26 @@ static CVReturn metalDisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
     IGL_DEBUG_ASSERT(platformDevice);
     auto texture = platformDevice->createTextureFromNativeDrawable(nullptr);
     return texture;
+  }
+#endif
+
+#if IGL_BACKEND_WEBGPU
+  case igl::BackendFlavor::WebGPU: {
+    const CGSize size = [static_cast<WebGPUView*>(self.view) drawableSize];
+    const auto width = static_cast<uint32_t>(size.width);
+    const auto height = static_cast<uint32_t>(size.height);
+    if (width == 0 || height == 0) {
+      return nullptr;
+    }
+    if (_webgpuSurface->getWidth() != width || _webgpuSurface->getHeight() != height) {
+      const igl::Result result =
+          _webgpuSurface->configure(width, height, _config.swapchainColorTextureFormat);
+      if (!result.isOk()) {
+        IGL_LOG_ERROR("WebGPU surface configuration failed: %s\n", result.message.c_str());
+        return nullptr;
+      }
+    }
+    return _webgpuSurface->getCurrentTexture(nullptr);
   }
 #endif
 
@@ -664,6 +727,26 @@ static CVReturn metalDisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
     auto texture =
         platformDevice->createTextureFromNativeDepth(extents.width, extents.height, nullptr);
     return texture;
+  }
+#endif
+
+#if IGL_BACKEND_WEBGPU
+  case igl::BackendFlavor::WebGPU: {
+    const uint32_t width = _webgpuSurface->getWidth();
+    const uint32_t height = _webgpuSurface->getHeight();
+    if (!_webgpuDepth || _webgpuDepth->getDimensions().width != width ||
+        _webgpuDepth->getDimensions().height != height) {
+      auto& device = _shellPlatform->getDevice();
+      const igl::TextureFormat format =
+          device.getTextureFormatCapabilities(igl::TextureFormat::S8_UInt_Z32_UNorm) != 0
+              ? igl::TextureFormat::S8_UInt_Z32_UNorm
+              : igl::TextureFormat::S8_UInt_Z24_UNorm;
+      _webgpuDepth = device.createTexture(
+          igl::TextureDesc::new2D(
+              format, width, height, igl::TextureDesc::TextureUsageBits::Attachment),
+          nullptr);
+    }
+    return _webgpuDepth;
   }
 #endif
 

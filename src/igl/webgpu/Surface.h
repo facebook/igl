@@ -30,6 +30,13 @@ class Surface final {
   [[nodiscard]] static std::unique_ptr<Surface> create(Device& device,
                                                        Handle<WGPUSurface> surface,
                                                        Result* IGL_NULLABLE outResult = nullptr);
+#if IGL_PLATFORM_APPLE && !IGL_PLATFORM_EMSCRIPTEN
+  /// `layer` is a CAMetalLayer, which must outlive the surface.
+  [[nodiscard]] static std::unique_ptr<Surface> createFromMetalLayer(
+      Device& device,
+      void* IGL_NONNULL layer,
+      Result* IGL_NULLABLE outResult = nullptr);
+#endif
 #if IGL_PLATFORM_EMSCRIPTEN
   /// `selector` is the CSS selector of an HTML canvas, e.g. "#canvas".
   [[nodiscard]] static std::unique_ptr<Surface> createFromCanvas(
@@ -55,6 +62,12 @@ class Surface final {
 
   [[nodiscard]] TextureFormat getFormat() const noexcept {
     return format_;
+  }
+  [[nodiscard]] uint32_t getWidth() const noexcept {
+    return width_;
+  }
+  [[nodiscard]] uint32_t getHeight() const noexcept {
+    return height_;
   }
   [[nodiscard]] WGPUSurface IGL_NULLABLE getWGPUSurface() const noexcept {
     return surface_.get();

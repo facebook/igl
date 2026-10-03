@@ -154,6 +154,15 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
           .swapchainColorTextureFormat = kColorFramebufferFormat,
       },
 #endif
+#if IGL_BACKEND_WEBGPU
+      {
+          .displayName = "WebGPU",
+          .backendVersion = {.flavor = igl::BackendFlavor::WebGPU,
+                             .majorVersion = 1,
+                             .minorVersion = 0},
+          .swapchainColorTextureFormat = kColorFramebufferFormat,
+      },
+#endif
   };
 
   const auto requestedWindowConfig =
@@ -175,7 +184,15 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
     [self addTab:requestedWindowConfig sessionConfig:sessionConfig frame:frame];
   }
 
-#if IGL_USE_STATIC_LAVAPIPE || IGL_USE_STATIC_KOSMICKRISP
+#if IGL_BACKEND_WEBGPU
+  // WebGPU apps (<Session>WebGPUAppleMac) open on the WebGPU tab.
+  for (NSInteger i = 0; i < self.tabViewController.tabViewItems.count; ++i) {
+    if ([self.tabViewController.tabViewItems[i].label isEqualToString:@"WebGPU"]) {
+      self.tabViewController.selectedTabViewItemIndex = i;
+      break;
+    }
+  }
+#elif IGL_USE_STATIC_LAVAPIPE || IGL_USE_STATIC_KOSMICKRISP
   // A static Vulkan driver (Lavapipe or KosmicKrisp) is explicitly enabled, so default to the
   // Vulkan tab. (When neither is enabled, the first tab — typically Metal — stays selected.)
   for (NSInteger i = 0; i < self.tabViewController.tabViewItems.count; ++i) {
@@ -216,6 +233,11 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
 // @fb-only
 #if IGL_BACKEND_VULKAN
   if (sessionConfig.backendVersion.flavor == igl::BackendFlavor::Vulkan) {
+    supported = true;
+  }
+#endif
+#if IGL_BACKEND_WEBGPU
+  if (sessionConfig.backendVersion.flavor == igl::BackendFlavor::WebGPU) {
     supported = true;
   }
 #endif

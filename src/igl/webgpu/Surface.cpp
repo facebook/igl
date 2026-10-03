@@ -55,6 +55,24 @@ std::unique_ptr<Surface> Surface::create(Device& device,
   return std::unique_ptr<Surface>(new Surface(device, std::move(surface)));
 }
 
+#if IGL_PLATFORM_APPLE && !IGL_PLATFORM_EMSCRIPTEN
+std::unique_ptr<Surface> Surface::createFromMetalLayer(Device& device,
+                                                       void* IGL_NONNULL layer,
+                                                       Result* IGL_NULLABLE outResult) {
+  WGPUSurfaceSourceMetalLayer metalLayer = WGPU_SURFACE_SOURCE_METAL_LAYER_INIT;
+  metalLayer.layer = layer;
+  WGPUSurfaceDescriptor desc = WGPU_SURFACE_DESCRIPTOR_INIT;
+  desc.nextInChain = &metalLayer.chain;
+  Handle<WGPUSurface> surface(wgpuInstanceCreateSurface(device.getContext().getInstance(), &desc));
+  if (!surface) {
+    Result::setResult(
+        outResult, Result::Code::RuntimeError, "Cannot create a WebGPU surface for the layer");
+    return nullptr;
+  }
+  return create(device, std::move(surface), outResult);
+}
+#endif
+
 #if IGL_PLATFORM_EMSCRIPTEN
 std::unique_ptr<Surface> Surface::createFromCanvas(Device& device,
                                                    const char* IGL_NONNULL selector,
