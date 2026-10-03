@@ -77,7 +77,9 @@ class RenderSession {
     return framebuffer_;
   }
 
-  void releaseFramebuffer() {
+  /// @brief Called by the platform when the surface is resized or recreated. Sessions that keep
+  /// surface-sized framebuffers in their own members override this to release them too.
+  virtual void releaseFramebuffer() {
     framebuffer_ = nullptr;
   }
 

@@ -22,6 +22,9 @@ class TextureViewSession : public RenderSession {
   explicit TextureViewSession(std::shared_ptr<Platform> platform);
   void initialize() noexcept override;
   void update(SurfaceTextures surfaceTextures) noexcept override;
+  void releaseFramebuffer() override {
+    framebuffer_ = nullptr;
+  }
 
  private:
   FramebufferDesc framebufferDesc_;

@@ -26,6 +26,9 @@ class CheckerboardMipmapSession : public RenderSession {
     RenderSession(std::move(platform)) {}
   void initialize() noexcept override;
   void update(SurfaceTextures surfaceTextures) noexcept override;
+  void releaseFramebuffer() override {
+    framebuffer_ = nullptr;
+  }
 
  private:
   RenderPassDesc renderPass_;

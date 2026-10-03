@@ -22,6 +22,9 @@ class TinyMeshBindGroupSession : public RenderSession {
   explicit TinyMeshBindGroupSession(std::shared_ptr<Platform> platform);
   void initialize() noexcept override;
   void update(SurfaceTextures surfaceTextures) noexcept override;
+  void releaseFramebuffer() override {
+    framebuffer_ = nullptr;
+  }
   std::shared_ptr<ITexture> getVulkanNativeDepth();
   void createRenderPipeline();
 

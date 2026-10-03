@@ -21,6 +21,9 @@ class ClothSimulationSession : public ShellRenderSession {
     ShellRenderSession(std::move(platform)) {}
   void initialize() noexcept override;
   void update(SurfaceTextures surfaceTextures) noexcept override;
+  void releaseFramebuffer() override {
+    framebuffer_ = nullptr;
+  }
 
  private:
   void createOrUpdateDefaultFramebuffer(const SurfaceTextures& surfaceTextures);

@@ -77,6 +77,7 @@ using namespace igl;
   id<MTLTexture> _depthStencilTexture;
   std::shared_ptr<igl::shell::Platform> _shellPlatform;
   std::unique_ptr<igl::shell::RenderSession> _session;
+  glm::ivec2 _lastSurfaceDimensions;
   float _kMouseSpeed;
   // Offscreen textures for headless rendering (bypass drawable/vsync)
   std::shared_ptr<igl::ITexture> _offscreenColor;
@@ -201,6 +202,14 @@ using namespace igl;
     IGL_DEBUG_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
     const auto& dims = surfaceTextures.color->getDimensions();
     _shellParams.nativeSurfaceDimensions = glm::ivec2{dims.width, dims.height};
+    // After a resize, sessions that built their framebuffer once would keep attachments of the old
+    // size, so the framebuffer is released as on iOS (drawableSizeWillChange).
+    if (_lastSurfaceDimensions != _shellParams.nativeSurfaceDimensions) {
+      if (_lastSurfaceDimensions != glm::ivec2(0)) {
+        _session->releaseFramebuffer();
+      }
+      _lastSurfaceDimensions = _shellParams.nativeSurfaceDimensions;
+    }
 
     // update retina scale
     float pixelsPerPoint = _shellParams.nativeSurfaceDimensions.x / _shellParams.viewportSize.x;

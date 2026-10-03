@@ -32,6 +32,9 @@ class GPUStressSession : public RenderSession {
   explicit GPUStressSession(std::shared_ptr<Platform> platform);
   void initialize() noexcept override;
   void update(SurfaceTextures surfaceTextures) noexcept override;
+  void releaseFramebuffer() override {
+    framebuffer_ = nullptr;
+  }
   void setNumLayers(size_t numLayers);
 
   void setNumThreads(int numThreads);
