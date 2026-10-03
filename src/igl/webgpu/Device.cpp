@@ -20,6 +20,9 @@
 #include <igl/Texture.h>
 #include <igl/Timer.h>
 #include <igl/VertexInputState.h>
+#include <igl/webgpu/Buffer.h>
+#include <igl/webgpu/CommandQueue.h>
+#include <igl/webgpu/ShaderModule.h>
 
 namespace igl::webgpu {
 
@@ -62,14 +65,19 @@ void Device::destroy(SamplerHandle /*handle*/) {}
 
 std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc& /*desc*/,
                                                           Result* IGL_NULLABLE outResult) noexcept {
-  setUnimplemented(outResult, "createCommandQueue()");
-  return nullptr;
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  Result::setOk(outResult);
+  return std::make_shared<CommandQueue>(*ctx_);
 }
 
-std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& /*desc*/,
+std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
                                               Result* IGL_NULLABLE outResult) const noexcept {
-  setUnimplemented(outResult, "createBuffer()");
-  return nullptr;
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  auto buffer = Buffer::create(*ctx_, desc, outResult);
+  if (buffer && getResourceTracker()) {
+    buffer->initResourceTracker(getResourceTracker(), desc.debugName);
+  }
+  return buffer;
 }
 
 std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
@@ -136,16 +144,32 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
   return nullptr;
 }
 
-std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& /*desc*/,
+std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
-  setUnimplemented(outResult, "createShaderModule()");
-  return nullptr;
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  auto module = ShaderModule::create(*ctx_, desc, outResult);
+  if (module) {
+    ++shaderCompilationCount_;
+    if (getResourceTracker()) {
+      module->initResourceTracker(getResourceTracker(), desc.debugName);
+    }
+  }
+  return module;
 }
 
-std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc& /*desc*/,
+std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
-  setUnimplemented(outResult, "createShaderStages()");
-  return nullptr;
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  auto stages = std::make_unique<ShaderStages>(desc);
+  if (!stages->isValid()) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Invalid shader stages");
+    return nullptr;
+  }
+  if (getResourceTracker()) {
+    stages->initResourceTracker(getResourceTracker(), desc.debugName);
+  }
+  Result::setOk(outResult);
+  return stages;
 }
 
 const PlatformDevice& Device::getPlatformDevice() const noexcept {
@@ -190,7 +214,7 @@ size_t Device::getCurrentDrawCount() const {
 }
 
 size_t Device::getShaderCompilationCount() const {
-  return 0;
+  return shaderCompilationCount_;
 }
 
 } // namespace igl::webgpu

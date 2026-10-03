@@ -495,6 +495,29 @@ constexpr std::string_view kVulkanSimpleFragShaderUint = VULKAN_SIMPLE_FRAG_SHAD
 constexpr std::string_view kVulkanSimpleFragShaderUint2 = VULKAN_SIMPLE_FRAG_SHADER_DEF(uvec2, rg);
 constexpr std::string_view kVulkanSimpleFragShaderUint4 = VULKAN_SIMPLE_FRAG_SHADER_DEF(uvec4, rgba);
 
+// Simple WGSL shaders. Texture unit 0 is @group(0) @binding(0) and its sampler @binding(1).
+constexpr std::string_view kWgslSimpleVertShader = R"(
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) uv : vec2f,
+};
+
+@vertex
+fn main(@location(0) position_in : vec4f, @location(1) uv_in : vec2f) -> VertexOut {
+  return VertexOut(position_in, uv_in);
+}
+)";
+
+constexpr std::string_view kWgslSimpleFragShader = R"(
+@group(0) @binding(0) var uTex : texture_2d<f32>;
+@group(0) @binding(1) var uSampler : sampler;
+
+@fragment
+fn main(@location(0) uv : vec2f) -> @location(0) vec4f {
+  return textureSample(uTex, uSampler, uv);
+}
+)";
+
 constexpr std::string_view kVulkanPushConstantVertShader =
     IGL_TO_STRING(
       layout (location=0) in vec4 position_in;

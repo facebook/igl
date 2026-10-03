@@ -68,6 +68,14 @@ constexpr WGPUFeatureName kOptionalFeatures[] = {
     compat::kUnorm16TextureFormatsFeature,
 };
 
+void onQueueWorkDone(WGPUQueueWorkDoneStatus status,
+                     void* IGL_NULLABLE userdata1,
+                     void* IGL_NULLABLE /*userdata2*/) {
+  if (const auto s = adoptFromCallback<WGPUQueueWorkDoneStatus>(userdata1)) {
+    **s = status;
+  }
+}
+
 struct RequestAdapterState {
   WGPURequestAdapterStatus status = WGPURequestAdapterStatus_Error;
   Handle<WGPUAdapter> adapter;
@@ -341,6 +349,23 @@ bool WebGPUContext::waitFuture(WGPUFuture future, uint64_t timeoutNs) const {
     }
     std::this_thread::yield();
   }
+}
+
+Result WebGPUContext::waitForSubmittedWork(uint64_t timeoutNs) const {
+  const auto status = std::make_shared<WGPUQueueWorkDoneStatus>(WGPUQueueWorkDoneStatus_Error);
+  // onQueueWorkDone() frees the reference retained for it.
+  // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
+  const WGPUFuture future =
+      wgpuQueueOnSubmittedWorkDone(queue_.get(),
+                                   compat::queueWorkDoneCallbackInfo<onQueueWorkDone>(
+                                       WGPUCallbackMode_WaitAnyOnly, retainForCallback(status)));
+  if (!waitFuture(future, timeoutNs)) {
+    return Result(Result::Code::RuntimeError, "Timed out waiting for the WebGPU queue");
+  }
+  if (*status != WGPUQueueWorkDoneStatus_Success) {
+    return Result(Result::Code::DeviceLost, "The WebGPU queue did not complete its work");
+  }
+  return Result();
 }
 
 void WebGPUContext::processEvents() const {

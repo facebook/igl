@@ -79,6 +79,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::DrawFirstIndexFirstVertex:
   case DeviceFeatures::DrawInstanced:
   case DeviceFeatures::ExplicitBinding:
+  case DeviceFeatures::MapBufferRange:
   case DeviceFeatures::MinMaxBlend:
   case DeviceFeatures::MultipleRenderTargets:
   case DeviceFeatures::SamplerMinMaxLod:
@@ -108,7 +109,6 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::ExternalMemoryObjects:
   case DeviceFeatures::FillBuffer:
   case DeviceFeatures::Indices8Bit:
-  case DeviceFeatures::MapBufferRange:
   case DeviceFeatures::MeshShaders:
   case DeviceFeatures::MultiSample:
   case DeviceFeatures::MultiSampleResolve:

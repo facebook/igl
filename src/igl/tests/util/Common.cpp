@@ -167,6 +167,13 @@ void createSimpleShaderStages(const std::shared_ptr<IDevice>& dev,
                        fragShader,
                        std::string(igl::tests::data::shader::kShaderFunc),
                        stages);
+  } else if (backendVersion.flavor == igl::BackendFlavor::WebGPU) {
+    createShaderStages(dev,
+                       igl::tests::data::shader::kWgslSimpleVertShader,
+                       igl::tests::data::shader::kShaderFunc,
+                       igl::tests::data::shader::kWgslSimpleFragShader,
+                       igl::tests::data::shader::kShaderFunc,
+                       stages);
   } else if (backendVersion.flavor == igl::BackendFlavor::D3D12) {
     // Minimal HLSL equivalent used for D3D12 tests
     const char* vsHlsl = R"(

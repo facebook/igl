@@ -119,6 +119,7 @@ class Device final : public IDevice {
   std::unique_ptr<WebGPUContext> ctx_;
   PlatformDevice platformDevice_;
   DeviceFeatureSet deviceFeatureSet_;
+  mutable size_t shaderCompilationCount_ = 0;
 };
 
 } // namespace igl::webgpu

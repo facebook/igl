@@ -17,6 +17,7 @@
 #include <vector>
 #include <igl/Common.h>
 #include <igl/webgpu/Common.h>
+#include <igl/webgpu/ResourceTracker.h>
 
 namespace igl::webgpu {
 
@@ -59,6 +60,9 @@ class WebGPUContext final {
   [[nodiscard]] bool waitFuture(WGPUFuture future, uint64_t timeoutNs = kDefaultTimeoutNs) const;
   void processEvents() const;
 
+  /// Blocks until all work submitted to the queue so far has completed.
+  [[nodiscard]] Result waitForSubmittedWork(uint64_t timeoutNs = kDefaultTimeoutNs) const;
+
   void pushErrorScope(WGPUErrorFilter filter) const;
   /// Pops the innermost error scope and returns the error it captured, if any.
   [[nodiscard]] Result popErrorScope() const;
@@ -96,6 +100,9 @@ class WebGPUContext final {
   [[nodiscard]] bool hasTimedWaitAny() const noexcept {
     return hasTimedWaitAny_;
   }
+  [[nodiscard]] ResourceTracker& getResourceTracker() noexcept {
+    return resourceTracker_;
+  }
 
   [[nodiscard]] bool isDeviceLost() const noexcept;
   /// Number of errors raised outside any error scope since device creation.
@@ -123,6 +130,7 @@ class WebGPUContext final {
   [[nodiscard]] Result initInstanceAndAdapter();
 
   WebGPUContextDesc desc_;
+  ResourceTracker resourceTracker_;
   std::shared_ptr<CallbackState> callbackState_ = std::make_shared<CallbackState>();
 
   Handle<WGPUInstance> instance_;
