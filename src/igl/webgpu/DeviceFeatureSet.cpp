@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <optional>
 #include <igl/webgpu/Common.h>
+#include <igl/webgpu/UniformArena.h>
 
 namespace igl::webgpu {
 
@@ -99,6 +100,7 @@ bool DeviceFeatureSet::hasWGPUFeature(WGPUFeatureName feature) const {
 
 bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   switch (feature) {
+  case DeviceFeatures::BindBytes:
   case DeviceFeatures::Compute:
   case DeviceFeatures::CopyBuffer:
   case DeviceFeatures::DepthCompare:
@@ -106,6 +108,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::DrawFirstIndexFirstVertex:
   case DeviceFeatures::DrawInstanced:
   case DeviceFeatures::ExplicitBinding:
+  case DeviceFeatures::FillBuffer:
   case DeviceFeatures::MapBufferRange:
   case DeviceFeatures::MinMaxBlend:
   case DeviceFeatures::MultipleRenderTargets:
@@ -123,7 +126,6 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::UniformBlocks:
   case DeviceFeatures::ValidationLayersEnabled:
     return true;
-  case DeviceFeatures::BindBytes:
   case DeviceFeatures::BindUniform:
   case DeviceFeatures::BufferDeviceAddress:
   case DeviceFeatures::BufferNoCopy:
@@ -134,7 +136,6 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::DynamicVertexBufferStride:
   case DeviceFeatures::ExplicitBindingExt:
   case DeviceFeatures::ExternalMemoryObjects:
-  case DeviceFeatures::FillBuffer:
   case DeviceFeatures::Indices8Bit:
   case DeviceFeatures::MeshShaders:
   case DeviceFeatures::MultiSample:
@@ -218,9 +219,11 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
   case DeviceFeatureLimits::MaxColorAttachments:
     result = limits_.maxColorAttachments;
     return true;
+  case DeviceFeatureLimits::MaxBindBytesBytes:
+    result = UniformArena::kMaxAllocationSize;
+    return true;
   case DeviceFeatureLimits::MaxPushConstantBytes:
   case DeviceFeatureLimits::PushConstantsAlignment:
-  case DeviceFeatureLimits::MaxBindBytesBytes:
   case DeviceFeatureLimits::BufferNoCopyAlignment:
     result = 0;
     return true;

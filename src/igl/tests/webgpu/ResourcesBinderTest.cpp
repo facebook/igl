@@ -277,6 +277,62 @@ TEST_F(WebGPUResourcesBinderTest, RejectsWhatWebGPUCannotBind) {
             Result::Code::ArgumentInvalid);
 }
 
+TEST_F(WebGPUResourcesBinderTest, RejectsBuffersSmallerThanTheStruct) {
+  constexpr const char* kLargeUniformsFragment = R"(
+struct Uniforms { tint : vec4f, extra : array<vec4f, 3>, };
+@group(0) @binding(0) var tex : texture_2d<f32>;
+@group(0) @binding(1) var samp : sampler;
+@group(1) @binding(0) var<uniform> uniforms : Uniforms;
+@fragment
+fn main(@location(0) uv : vec2f) -> @location(0) vec4f {
+  return textureSample(tex, samp, uv) * uniforms.tint + uniforms.extra[0];
+}
+)";
+  Result ret;
+  auto vertexInput = device_->createVertexInputState(
+      {
+          .numAttributes = 2,
+          .attributes = {{.bufferIndex = 0, .format = VertexAttributeFormat::Float4, .location = 0},
+                         {.bufferIndex = 1,
+                          .format = VertexAttributeFormat::Float2,
+                          .location = 1}},
+          .numInputBindings = 2,
+          .inputBindings = {{.stride = 16}, {.stride = 8}},
+      },
+      &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  std::shared_ptr<IShaderStages> stages = ShaderStagesCreator::fromModuleStringInput(
+      *device_,
+      std::string(data::shader::kWgslSimpleVertShader).c_str(),
+      "main",
+      "",
+      kLargeUniformsFragment,
+      "main",
+      "",
+      &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  pipeline_ = std::static_pointer_cast<webgpu::RenderPipelineState>(device_->createRenderPipeline(
+      {
+          .vertexInputState = vertexInput,
+          .shaderStages = stages,
+          .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}}},
+      },
+      &ret));
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+
+  // 64-byte struct: a 32-byte buffer cannot be widened enough.
+  auto small = createBuffer(BufferDesc::BufferTypeBits::Uniform, 32);
+  EXPECT_EQ(draw([&](auto& binder) {
+              bindAll(binder, texture_.get());
+              binder.bindBuffer(0, small.get(), 0, 32);
+            }).code,
+            Result::Code::ArgumentOutOfRange);
+  EXPECT_TRUE(draw([&](auto& binder) {
+                bindAll(binder, texture_.get());
+                binder.bindBuffer(0, uniforms_.get(), 0, 16);
+              }).isOk());
+}
+
 TEST_F(WebGPUResourcesBinderTest, BindGroupApiRecords) {
   Result ret;
   auto textureGroup = device_->createBindGroup(

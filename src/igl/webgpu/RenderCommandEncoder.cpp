@@ -276,11 +276,25 @@ void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
   indexFormat_ = format;
 }
 
-void RenderCommandEncoder::bindBytes(size_t /*index*/,
+void RenderCommandEncoder::bindBytes(size_t index,
                                      uint8_t /*bindTarget*/,
-                                     const void* /*data*/,
-                                     size_t /*length*/) {
-  IGL_LOG_ERROR_ONCE("bindBytes() is not supported by the WebGPU backend yet\n");
+                                     const void* data,
+                                     size_t length) {
+  if (data == nullptr || length == 0 || index >= IGL_BUFFER_BINDINGS_MAX) {
+    return;
+  }
+  const UniformArena::Slice slice = commandBuffer_.getUniformArena().allocate(data, length);
+  if (slice.buffer == nullptr) {
+    if (length > UniformArena::kMaxAllocationSize) {
+      IGL_LOG_ERROR("bindBytes(): %zu bytes is more than WebGPU's %zu\n",
+                    length,
+                    UniformArena::kMaxAllocationSize);
+    } else {
+      IGL_LOG_ERROR("bindBytes(): cannot allocate uniform memory for %zu bytes\n", length);
+    }
+    return;
+  }
+  binder_.bindBuffer(static_cast<uint32_t>(index), slice.buffer, slice.offset, slice.size);
 }
 
 void RenderCommandEncoder::bindPushConstants(const void* /*data*/,

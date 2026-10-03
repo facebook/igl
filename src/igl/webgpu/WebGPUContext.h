@@ -23,6 +23,7 @@ namespace igl::webgpu {
 
 class BindGroupCache;
 class DummyResources;
+class UniformArenaPool;
 
 /// @brief Fixed at device creation.
 struct WebGPUContextDesc {
@@ -120,6 +121,8 @@ class WebGPUContext final {
   void evictBindGroups(uint64_t resourceId) const;
   /// Placeholders for declared bindings nothing is bound to.
   [[nodiscard]] DummyResources& getDummyResources() const;
+  /// Chunks for the bindBytes() arenas of command buffers.
+  [[nodiscard]] UniformArenaPool& getUniformArenaPool();
 
   [[nodiscard]] bool isDeviceLost() const noexcept;
   /// Number of errors raised outside any error scope since device creation.
@@ -157,6 +160,7 @@ class WebGPUContext final {
   mutable Handle<WGPUComputePipeline> rowPackPipeline_;
   mutable std::unique_ptr<BindGroupCache> bindGroupCache_;
   mutable std::unique_ptr<DummyResources> dummyResources_;
+  std::unique_ptr<UniformArenaPool> uniformArenaPool_;
 
   bool hasTimedWaitAny_ = false;
   WGPUBackendType adapterBackendType_ = WGPUBackendType_Undefined;

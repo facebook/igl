@@ -16,6 +16,7 @@
 #include <thread>
 #include <utility>
 #include <igl/webgpu/ResourcesBinder.h>
+#include <igl/webgpu/UniformArena.h>
 
 // @fb-only
 // @fb-only
@@ -143,6 +144,7 @@ WebGPUContext::WebGPUContext(WebGPUContextDesc desc) : desc_(std::move(desc)) {}
 
 WebGPUContext::~WebGPUContext() {
   rowPackPipeline_ = nullptr;
+  uniformArenaPool_.reset();
   bindGroupCache_.reset();
   dummyResources_.reset();
   queue_ = nullptr;
@@ -495,6 +497,13 @@ DummyResources& WebGPUContext::getDummyResources() const {
     dummyResources_ = std::make_unique<DummyResources>(*this);
   }
   return *dummyResources_;
+}
+
+UniformArenaPool& WebGPUContext::getUniformArenaPool() {
+  if (!uniformArenaPool_) {
+    uniformArenaPool_ = std::make_unique<UniformArenaPool>(*this);
+  }
+  return *uniformArenaPool_;
 }
 
 bool WebGPUContext::isDeviceLost() const noexcept {

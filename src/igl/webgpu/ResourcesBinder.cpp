@@ -380,8 +380,15 @@ Result ResourcesBinder::makeBufferGroup(const PipelineLayoutSource& pipeline,
                     describe(declaration) + ": the buffer offset is out of range");
     }
     const uint64_t remaining = buffer.getAllocatedSize() - slot.offset;
-    const uint64_t size = std::min<uint64_t>(slot.size != 0 ? slot.size : remaining,
-                                             std::min(remaining, maxBindingSize));
+    // A binding smaller than the declared struct is widened when the buffer has room (bindBytes()
+    // slices are 16-byte multiples of the payload); WebGPU rejects bindings below the struct size.
+    const uint64_t requested =
+        slot.size != 0 ? std::max<uint64_t>(slot.size, declaration.bufferSize) : remaining;
+    const uint64_t size = std::min<uint64_t>(requested, std::min(remaining, maxBindingSize));
+    if (size < declaration.bufferSize) {
+      return Result(Result::Code::ArgumentOutOfRange,
+                    describe(declaration) + ": the buffer is smaller than the declared struct");
+    }
     entry.entry.buffer = buffer.getWGPUBuffer();
     entry.entry.size = size;
     entry.resourceId = buffer.getResourceId();

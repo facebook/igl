@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstring>
 #include <utility>
 #include <vector>
 #include <igl/ComputeCommandEncoder.h>
@@ -29,7 +30,8 @@ CommandBuffer::CommandBuffer(Device& device, CommandBufferDesc desc) :
   ICommandBuffer(std::move(desc)),
   device_(device),
   ctx_(device.getContext()),
-  serial_(ctx_.getResourceTracker().openCommandBuffer()) {
+  serial_(ctx_.getResourceTracker().openCommandBuffer()),
+  uniformArena_(ctx_) {
   const WGPUCommandEncoderDescriptor encoderDesc = {
       .nextInChain = nullptr,
       .label = toWGPUStringView(this->desc.debugName),
@@ -156,6 +158,42 @@ void CommandBuffer::copyBuffer(IBuffer& src,
                                        size);
   srcBuffer.recordUse(serial_, /*gpuWrite=*/false);
   dstBuffer.recordUse(serial_, /*gpuWrite=*/true);
+}
+
+void CommandBuffer::fillBuffer(IBuffer& buffer, const BufferRange& range, uint8_t value) {
+  auto& dst = static_cast<Buffer&>(buffer);
+  if (range.offset % 4 != 0 || range.size % 4 != 0 || range.offset > dst.getAllocatedSize() ||
+      range.size > dst.getAllocatedSize() - range.offset) {
+    IGL_LOG_ERROR("fillBuffer(): the range must be in bounds and 4-byte aligned\n");
+    return;
+  }
+  if (submitted_ || range.size == 0) {
+    return;
+  }
+  if (value == 0) {
+    wgpuCommandEncoderClearBuffer(encoder_.get(), dst.getWGPUBuffer(), range.offset, range.size);
+  } else {
+    // WebGPU only clears to zero; other values come from a staging buffer copied in order with
+    // the rest of the command buffer.
+    const WGPUBufferDescriptor stagingDesc = {
+        .nextInChain = nullptr,
+        .label = toWGPUStringView("igl.webgpu.fillBuffer"),
+        .usage = WGPUBufferUsage_CopySrc,
+        .size = range.size,
+        .mappedAtCreation = 1,
+    };
+    const Handle<WGPUBuffer> staging(wgpuDeviceCreateBuffer(ctx_.getDevice(), &stagingDesc));
+    void* mapped = wgpuBufferGetMappedRange(staging.get(), 0, range.size);
+    if (mapped == nullptr) {
+      IGL_LOG_ERROR("fillBuffer(): cannot map the staging buffer\n");
+      return;
+    }
+    std::memset(mapped, value, range.size);
+    wgpuBufferUnmap(staging.get());
+    wgpuCommandEncoderCopyBufferToBuffer(
+        encoder_.get(), staging.get(), 0, dst.getWGPUBuffer(), range.offset, range.size);
+  }
+  dst.recordUse(serial_, /*gpuWrite=*/true);
 }
 
 void CommandBuffer::copyTextureToBuffer(ITexture& src,
@@ -351,7 +389,9 @@ Result CommandBuffer::submit() {
   const Handle<WGPUCommandBuffer> commands(wgpuCommandEncoderFinish(encoder_.get(), nullptr));
   encoder_ = nullptr;
   const WGPUCommandBuffer rawCommands = commands.get();
+  uniformArena_.flush();
   wgpuQueueSubmit(ctx_.getQueue(), 1, &rawCommands);
+  uniformArena_.releaseChunks();
   ctx_.getResourceTracker().closeCommandBuffer(serial_);
   for (const auto& queries : timestampQueries_) {
     queries->onSubmitted();

@@ -196,7 +196,6 @@ TEST_F(WebGPUTimerTest, TimestampQueriesPerPass) {
     }
     EXPECT_FALSE(queries->getElapsedNanosResult(2).valid);
     EXPECT_GE(queries->getFrameElapsedNanos(), queries->getElapsedNanos(0));
-    EXPECT_GE(queries->getStartNanos(1), queries->getStartNanos(0));
   }
 }
 

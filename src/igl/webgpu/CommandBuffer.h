@@ -13,10 +13,10 @@
 #include <vector>
 #include <igl/CommandBuffer.h>
 #include <igl/webgpu/Common.h>
+#include <igl/webgpu/UniformArena.h>
 
 namespace igl::webgpu {
 
-class Buffer;
 class Device;
 class TimestampQueries;
 class WebGPUContext;
@@ -54,6 +54,7 @@ class CommandBuffer final : public ICommandBuffer,
                   uint64_t srcOffset,
                   uint64_t dstOffset,
                   uint64_t size) override;
+  void fillBuffer(IBuffer& buffer, const BufferRange& range, uint8_t value) override;
   void copyTextureToBuffer(ITexture& src,
                            IBuffer& dst,
                            uint64_t dstOffset,
@@ -65,6 +66,10 @@ class CommandBuffer final : public ICommandBuffer,
   }
   [[nodiscard]] WGPUCommandEncoder IGL_NULLABLE getWGPUCommandEncoder() const noexcept {
     return encoder_.get();
+  }
+  /// Storage for bindBytes() data, written to the GPU when the command buffer is submitted.
+  [[nodiscard]] UniformArena& getUniformArena() noexcept {
+    return uniformArena_;
   }
   /// Serial of this command buffer in the context's ResourceTracker.
   [[nodiscard]] uint64_t getSerial() const noexcept {
@@ -95,6 +100,7 @@ class CommandBuffer final : public ICommandBuffer,
   const uint64_t serial_;
   bool submitted_ = false;
   std::vector<std::shared_ptr<TimestampQueries>> timestampQueries_;
+  UniformArena uniformArena_;
 };
 
 } // namespace igl::webgpu
