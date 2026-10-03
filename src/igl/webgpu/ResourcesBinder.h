@@ -185,6 +185,7 @@ class ResourcesBinder final {
                                        std::vector<uint32_t>& outDynamicOffsets);
   [[nodiscard]] Result makeStorageTextureGroup(const PipelineLayoutSource& pipeline,
                                                std::vector<BindGroupCache::Entry>& outEntries);
+  [[nodiscard]] Texture* IGL_NULLABLE getStorageTexture(uint32_t index) const;
   void makePushConstantGroup(const PipelineLayoutSource& pipeline,
                              std::vector<BindGroupCache::Entry>& outEntries,
                              std::vector<uint32_t>& outDynamicOffsets);

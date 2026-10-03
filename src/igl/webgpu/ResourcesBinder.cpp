@@ -448,13 +448,24 @@ void ResourcesBinder::makePushConstantGroup(const PipelineLayoutSource& pipeline
   }
 }
 
+Texture* IGL_NULLABLE ResourcesBinder::getStorageTexture(uint32_t index) const {
+  if (index < storageTextures_.size() && storageTextures_[index] != nullptr) {
+    return storageTextures_[index];
+  }
+  // Like Metal, bindTexture() also binds storage textures (unit i serves storage texture i).
+  Texture* texture = index < textures_.size() ? textures_[index] : nullptr;
+  return texture != nullptr && (texture->getUsage() & TextureDesc::TextureUsageBits::Storage) != 0
+             ? texture
+             : nullptr;
+}
+
 Result ResourcesBinder::makeStorageTextureGroup(const PipelineLayoutSource& pipeline,
                                                 std::vector<BindGroupCache::Entry>& outEntries) {
   for (const PipelineBinding& binding : pipeline.getBindings().groups[kStorageTextureGroup]) {
     const WgslBinding& declaration = binding.declaration;
     BindGroupCache::Entry entry;
     entry.entry.binding = declaration.binding;
-    Texture* texture = storageTextures_[declaration.binding];
+    Texture* texture = getStorageTexture(declaration.binding);
     if (texture == nullptr) {
       entry.entry.textureView = ctx_.getDummyResources().getStorageTextureView(
           declaration.binding, declaration.viewDimension, declaration.storageFormat);
@@ -582,7 +593,7 @@ Result ResourcesBinder::flush(void* IGL_NONNULL pass,
     }
   }
   for (const PipelineBinding& binding : bindings.groups[kStorageTextureGroup]) {
-    if (Texture* texture = storageTextures_[binding.declaration.binding]) {
+    if (Texture* texture = getStorageTexture(binding.declaration.binding)) {
       texture->recordUse(serial);
     }
   }

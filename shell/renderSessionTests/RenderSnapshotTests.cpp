@@ -9,13 +9,20 @@
 #include <string>
 #include <shell/renderSessions/CheckerboardMipmapSession.h>
 #include <shell/renderSessions/ColorSession.h>
+#include <shell/renderSessions/ComputeSession.h>
 #include <shell/renderSessions/DrawInstancedSession.h>
+#include <shell/renderSessions/GraphSampleSession.h>
 #include <shell/renderSessions/HelloWorldSession.h>
 #include <shell/renderSessions/MRTSession.h>
+#include <shell/renderSessions/MSAASession.h>
 #include <shell/renderSessions/TQMultiRenderPassSession.h>
 #include <shell/renderSessions/TQSession.h>
 #include <shell/renderSessions/Texture3DSession.h>
+#include <shell/renderSessions/TextureRotationSession.h>
 #include <shell/renderSessions/Textured3DCubeSession.h>
+#include <shell/renderSessions/UniformArrayTestSession.h>
+#include <shell/renderSessions/UniformPackedTestSession.h>
+#include <shell/renderSessions/UniformTestSession.h>
 #include <shell/shared/renderSession/ScreenshotTestRenderSessionHelper.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <shell/shared/testShell/TestShell.h>
@@ -115,6 +122,44 @@ TEST_F(RenderSnapshotTests, Texture3DSession) {
 TEST_F(RenderSnapshotTests, Textured3DCubeSession) {
   Textured3DCubeSession session(platform_);
   render(session, "Textured3DCubeSession");
+}
+
+TEST_F(RenderSnapshotTests, MSAASession) {
+  MSAASession session(platform_);
+  render(session, "MSAASession");
+}
+
+TEST_F(RenderSnapshotTests, ComputeSession) {
+  if (!platform_->getDevice().hasFeature(DeviceFeatures::Compute)) {
+    GTEST_SKIP() << "Compute is not supported";
+  }
+  ComputeSession session(platform_);
+  render(session, "ComputeSession");
+}
+
+TEST_F(RenderSnapshotTests, GraphSampleSession) {
+  GraphSampleSession session(platform_);
+  render(session, "GraphSampleSession");
+}
+
+TEST_F(RenderSnapshotTests, TextureRotationSession) {
+  TextureRotationSession session(platform_);
+  render(session, "TextureRotationSession");
+}
+
+TEST_F(RenderSnapshotTests, UniformTestSession) {
+  UniformTestSession session(platform_);
+  render(session, "UniformTestSession");
+}
+
+TEST_F(RenderSnapshotTests, UniformPackedTestSession) {
+  UniformPackedTestSession session(platform_);
+  render(session, "UniformPackedTestSession");
+}
+
+TEST_F(RenderSnapshotTests, UniformArrayTestSession) {
+  UniformArrayTestSession session(platform_);
+  render(session, "UniformArrayTestSession");
 }
 
 } // namespace igl::shell

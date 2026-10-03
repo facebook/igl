@@ -90,7 +90,7 @@ void Encoder::operator()(igl::IRenderCommandEncoder& encoder,
 #else
     IGL_DEBUG_ASSERT_NOT_REACHED();
 #endif
-  } else if (backendType_ == igl::BackendType::Metal) {
+  } else if (backendType_ == igl::BackendType::Metal || backendType_ == igl::BackendType::WebGPU) {
     encodeRenderUniform(encoder, bufferIndex, bindTarget, uniform, Alignment::Aligned);
   } else if (backendType_ == igl::BackendType::Vulkan) {
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
@@ -115,7 +115,7 @@ void Encoder::operator()(igl::IComputeCommandEncoder& encoder,
 #else
     IGL_DEBUG_ASSERT_NOT_REACHED();
 #endif
-  } else if (backendType_ == igl::BackendType::Metal) {
+  } else if (backendType_ == igl::BackendType::Metal || backendType_ == igl::BackendType::WebGPU) {
     encodeAlignedCompute(encoder, bufferIndex, uniform);
   } else if (backendType_ == igl::BackendType::Vulkan) {
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();

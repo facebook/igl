@@ -16,6 +16,7 @@
 #include <shell/renderSessions/shaderCode/generated/ComputeSessionGrayscaleCompShaderProvider.h>
 #include <shell/renderSessions/shaderCode/generated/ComputeSessionVertShaderProvider.h>
 #include <shell/renderSessions/shaderCode/generated/ComputeSessionVertexTransformCompShaderProvider.h>
+#include <shell/renderSessions/wgsl/ComputeSessionWgsl.h>
 #include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/renderSession/ShaderStagesCreator.h>
 #include <igl/Buffer.h>
@@ -24,6 +25,26 @@
 namespace igl::shell {
 
 namespace {
+
+// ComputeSessionGrayscale.comp.sparksl. Its loose `grayscale` uniform is the bindBytes() block at
+// buffer 0, which SPIR-V from SparkSL leaves out, so this one is written by hand.
+constexpr const char* kGrayscaleCompWgsl = R"(
+struct Uniforms {
+  grayscale : vec3f,
+}
+
+@group(1) @binding(0) var<uniform> uniforms : Uniforms;
+@group(2) @binding(0) var inTexture : texture_storage_2d<rgba8unorm, read>;
+@group(2) @binding(1) var outTexture : texture_storage_2d<rgba8unorm, write>;
+
+@compute @workgroup_size(16, 16, 1)
+fn main(@builtin(global_invocation_id) id : vec3u) {
+  let gid = vec2i(id.xy);
+  let inColor = textureLoad(inTexture, gid);
+  let gray = dot(inColor.rgb, uniforms.grayscale);
+  textureStore(outTexture, gid, vec4f(gray, gray, gray, 1.0));
+}
+)";
 
 struct VertexPosUv {
   iglu::simdtypes::float3 position; // SIMD 128b aligned
@@ -64,8 +85,10 @@ void ComputeSession::initialize() noexcept {
                                          .length = sizeof(kVertexData)},
                               nullptr);
   IGL_DEBUG_ASSERT(vbIn_ != nullptr);
+  // Written by the compute pass, then drawn from.
   vbOut_ = device.createBuffer(
-      BufferDesc{.type = BufferDesc::BufferTypeBits::Storage, .length = sizeof(kVertexData)},
+      BufferDesc{.type = BufferDesc::BufferTypeBits::Storage | BufferDesc::BufferTypeBits::Vertex,
+                 .length = sizeof(kVertexData)},
       nullptr);
   IGL_DEBUG_ASSERT(vbOut_ != nullptr);
 
@@ -146,25 +169,34 @@ void ComputeSession::initialize() noexcept {
 
   const Result result;
 
-  {
+  if (device.getBackendType() == BackendType::WebGPU) {
+    shaderStages_ = ShaderStagesCreator::fromModuleStringInput(device,
+                                                               wgsl::kComputeSessionVert,
+                                                               "main",
+                                                               "",
+                                                               wgsl::kComputeSessionFrag,
+                                                               "main",
+                                                               "",
+                                                               nullptr);
+    computeStages0_ =
+        ShaderStagesCreator::fromModuleStringInput(device, kGrayscaleCompWgsl, "main", "", nullptr);
+    computeStages1_ = ShaderStagesCreator::fromModuleStringInput(
+        device, wgsl::kComputeSessionVertexTransformComp, "main", "", nullptr);
+  } else {
     const auto vertProvider = ComputeSessionVertShaderProvider();
     const auto fragProvider = ComputeSessionFragShaderProvider();
     shaderStages_ =
         createRenderPipelineStages(getPlatform().getDevice(), vertProvider, fragProvider);
-    IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
-  }
-
-  { // Compile CS0
+    // CS0
     computeStages0_ = createComputePipelineStages(getPlatform().getDevice(),
                                                   ComputeSessionGrayscaleCompShaderProvider());
-    IGL_DEBUG_ASSERT(computeStages0_ != nullptr);
-  }
-
-  { // Compile CS1
+    // CS1
     computeStages1_ = createComputePipelineStages(
         getPlatform().getDevice(), ComputeSessionVertexTransformCompShaderProvider());
-    IGL_DEBUG_ASSERT(computeStages1_ != nullptr);
   }
+  IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
+  IGL_DEBUG_ASSERT(computeStages0_ != nullptr);
+  IGL_DEBUG_ASSERT(computeStages1_ != nullptr);
 
   // Command queue: backed by different types of GPU HW queues
   commandQueue_ = device.createCommandQueue({}, nullptr);
