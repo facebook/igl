@@ -14,10 +14,17 @@ namespace igl::webgpu {
 
 namespace {
 
-void destroyBuffer(Handle<WGPUBuffer>& buffer) {
+void destroy(Handle<WGPUBuffer>& buffer) {
   if (buffer) {
     wgpuBufferDestroy(buffer.get());
     buffer = nullptr;
+  }
+}
+
+void destroy(Handle<WGPUTexture>& texture) {
+  if (texture) {
+    wgpuTextureDestroy(texture.get());
+    texture = nullptr;
   }
 }
 
@@ -50,19 +57,33 @@ void ResourceTracker::retire(Handle<WGPUBuffer> buffer, uint64_t lastUseSerial) 
     return;
   }
   if (isInUse(lastUseSerial)) {
-    retired_.push_back({.buffer = std::move(buffer), .lastUseSerial = lastUseSerial});
+    retired_.push_back(
+        {.buffer = std::move(buffer), .texture = {}, .lastUseSerial = lastUseSerial});
     return;
   }
-  destroyBuffer(buffer);
+  destroy(buffer);
+}
+
+void ResourceTracker::retire(Handle<WGPUTexture> texture, uint64_t lastUseSerial) {
+  if (!texture) {
+    return;
+  }
+  if (isInUse(lastUseSerial)) {
+    retired_.push_back(
+        {.buffer = {}, .texture = std::move(texture), .lastUseSerial = lastUseSerial});
+    return;
+  }
+  destroy(texture);
 }
 
 void ResourceTracker::collect() {
   const auto firstInUse =
-      std::partition(retired_.begin(), retired_.end(), [this](const RetiredBuffer& r) {
+      std::partition(retired_.begin(), retired_.end(), [this](const RetiredResource& r) {
         return !isInUse(r.lastUseSerial);
       });
   for (auto it = retired_.begin(); it != firstInUse; ++it) {
-    destroyBuffer(it->buffer);
+    destroy(it->buffer);
+    destroy(it->texture);
   }
   retired_.erase(retired_.begin(), firstInUse);
 }

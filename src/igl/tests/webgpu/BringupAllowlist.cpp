@@ -7,6 +7,8 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdio>
+#include <cstdlib>
 #include <string_view>
 
 // Some runners (the XCTest bridge for Apple tests) enumerate every registered test and ignore
@@ -28,7 +30,21 @@ bool matches(std::string_view pattern, std::string_view suite, std::string_view 
   return test == "*" || test == name;
 }
 
+// IGL_WEBGPU_BRINGUP_ALL=1 runs every shared test and prints one "[bringup] <status> Suite.Test"
+// line per test, to find out which ones pass.
+bool runsAll() {
+  // NOLINTNEXTLINE(concurrency-mt-unsafe)
+  static const bool kAll = [] {
+    const char* all = std::getenv("IGL_WEBGPU_BRINGUP_ALL");
+    return all != nullptr && *all == '1';
+  }();
+  return kAll;
+}
+
 bool isAllowed(const ::testing::TestInfo& info) {
+  if (runsAll()) {
+    return true;
+  }
   const std::string_view file = info.file() != nullptr ? info.file() : "";
   if (file.find("tests/webgpu/") != std::string_view::npos) {
     return true;
@@ -53,6 +69,15 @@ class BringupAllowlist final : public ::testing::EmptyTestEventListener {
     if (!isAllowed(info)) {
       GTEST_SKIP() << "Not in the WebGPU bring-up allowlist (tests/webgpu/bringup.bzl)";
     }
+  }
+  void OnTestEnd(const ::testing::TestInfo& info) override {
+    if (!runsAll() || info.result() == nullptr) {
+      return;
+    }
+    const char* status = info.result()->Skipped()  ? "SKIPPED"
+                         : info.result()->Passed() ? "PASSED"
+                                                   : "FAILED";
+    std::printf("[bringup] %s %s.%s\n", status, info.test_suite_name(), info.name());
   }
 };
 

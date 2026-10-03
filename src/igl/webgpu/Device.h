@@ -62,6 +62,8 @@ class Device final : public IDevice {
   [[nodiscard]] std::shared_ptr<IFramebuffer> createFramebuffer(const FramebufferDesc& desc,
                                                                 Result* IGL_NULLABLE
                                                                     outResult) override;
+  [[nodiscard]] base::IFramebufferInterop* IGL_NULLABLE
+  createFramebufferInterop(const base::FramebufferInteropDesc& desc) override;
 
   // Pipelines
   [[nodiscard]] std::shared_ptr<IComputePipelineState> createComputePipeline(

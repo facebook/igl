@@ -7,6 +7,7 @@
 
 #include <igl/webgpu/Device.h>
 
+#include <new>
 #include <string>
 #include <utility>
 #include <igl/Buffer.h>
@@ -14,6 +15,7 @@
 #include <igl/ComputePipelineState.h>
 #include <igl/DepthStencilState.h>
 #include <igl/Framebuffer.h>
+#include <igl/FramebufferWrapper.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/SamplerState.h>
 #include <igl/Shader.h>
@@ -22,7 +24,10 @@
 #include <igl/VertexInputState.h>
 #include <igl/webgpu/Buffer.h>
 #include <igl/webgpu/CommandQueue.h>
+#include <igl/webgpu/Framebuffer.h>
+#include <igl/webgpu/SamplerState.h>
 #include <igl/webgpu/ShaderModule.h>
+#include <igl/webgpu/Texture.h>
 
 namespace igl::webgpu {
 
@@ -87,23 +92,37 @@ std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
   return nullptr;
 }
 
-std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& /*desc*/,
+std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
-  setUnimplemented(outResult, "createSamplerState()");
-  return nullptr;
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  auto sampler = SamplerState::create(*ctx_, desc, outResult);
+  if (sampler && getResourceTracker()) {
+    sampler->initResourceTracker(getResourceTracker(), desc.debugName);
+  }
+  return sampler;
 }
 
-std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& /*desc*/,
+std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
                                                 Result* IGL_NULLABLE outResult) const noexcept {
-  setUnimplemented(outResult, "createTexture()");
-  return nullptr;
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  const TextureDesc sanitized = sanitize(desc);
+  auto texture = Texture::create(*ctx_, deviceFeatureSet_, sanitized, outResult);
+  if (texture && getResourceTracker()) {
+    texture->initResourceTracker(getResourceTracker(), desc.debugName);
+  }
+  return texture;
 }
 
-std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> /*texture*/,
-                                                    const TextureViewDesc& /*desc*/,
+std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> texture,
+                                                    const TextureViewDesc& desc,
                                                     Result* IGL_NULLABLE outResult) const noexcept {
-  setUnimplemented(outResult, "createTextureView()");
-  return nullptr;
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  auto view =
+      Texture::createView(std::static_pointer_cast<Texture>(std::move(texture)), desc, outResult);
+  if (view && getResourceTracker()) {
+    view->initResourceTracker(getResourceTracker(), desc.debugName);
+  }
+  return view;
 }
 
 std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) const noexcept {
@@ -118,10 +137,25 @@ std::shared_ptr<IVertexInputState> Device::createVertexInputState(
   return nullptr;
 }
 
-std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& /*desc*/,
+std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& desc,
                                                         Result* IGL_NULLABLE outResult) {
-  setUnimplemented(outResult, "createFramebuffer()");
-  return nullptr;
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  auto framebuffer = std::make_shared<Framebuffer>(*ctx_, desc);
+  if (getResourceTracker()) {
+    framebuffer->initResourceTracker(getResourceTracker(), desc.debugName);
+  }
+  Result::setOk(outResult);
+  return framebuffer;
+}
+
+base::IFramebufferInterop* IGL_NULLABLE
+Device::createFramebufferInterop(const base::FramebufferInteropDesc& desc) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  auto framebuffer = createFramebufferFromBaseDesc(desc);
+  if (!framebuffer) {
+    return nullptr;
+  }
+  return new (std::nothrow) FramebufferWrapper(std::move(framebuffer));
 }
 
 std::shared_ptr<IComputePipelineState> Device::createComputePipeline(

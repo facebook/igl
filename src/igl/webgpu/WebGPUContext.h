@@ -103,6 +103,10 @@ class WebGPUContext final {
   [[nodiscard]] ResourceTracker& getResourceTracker() noexcept {
     return resourceTracker_;
   }
+  /// Compute pipeline that packs texture rows copied with a 256-byte row pitch into tight rows that
+  /// need not be multiples of 4 bytes (see CommandBuffer::copyTextureToBuffer()). Created on first
+  /// use.
+  [[nodiscard]] WGPUComputePipeline IGL_NULLABLE getRowPackPipeline() const;
 
   [[nodiscard]] bool isDeviceLost() const noexcept;
   /// Number of errors raised outside any error scope since device creation.
@@ -137,6 +141,7 @@ class WebGPUContext final {
   Handle<WGPUAdapter> adapter_;
   Handle<WGPUDevice> device_;
   Handle<WGPUQueue> queue_;
+  mutable Handle<WGPUComputePipeline> rowPackPipeline_;
 
   bool hasTimedWaitAny_ = false;
   WGPUBackendType adapterBackendType_ = WGPUBackendType_Undefined;

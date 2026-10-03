@@ -8,9 +8,9 @@
 #include <gtest/gtest.h>
 
 #include <memory>
+#include <igl/ComputePipelineState.h>
 #include <igl/RenderPipelineState.h>
-#include <igl/SamplerState.h>
-#include <igl/Texture.h>
+#include <igl/Timer.h>
 #include <igl/tests/util/device/TestDevice.h>
 #include <igl/webgpu/PlatformDevice.h>
 
@@ -47,15 +47,11 @@ TEST_F(WebGPUDeviceTest, TestDeviceIsSupported) {
 
 TEST_F(WebGPUDeviceTest, UnimplementedFactoriesReportResult) {
   Result ret;
-  EXPECT_EQ(device_->createTexture(
-                TextureDesc::new2D(
-                    TextureFormat::RGBA_UNorm8, 1, 1, TextureDesc::TextureUsageBits::Sampled),
-                &ret),
-            nullptr);
+  EXPECT_EQ(device_->createTimer(&ret), nullptr);
   EXPECT_EQ(ret.code, Result::Code::Unimplemented);
 
   ret = Result();
-  EXPECT_EQ(device_->createSamplerState({}, &ret), nullptr);
+  EXPECT_EQ(device_->createComputePipeline({}, &ret), nullptr);
   EXPECT_EQ(ret.code, Result::Code::Unimplemented);
 
   ret = Result();

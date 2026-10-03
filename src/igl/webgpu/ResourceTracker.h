@@ -40,6 +40,7 @@ class ResourceTracker final {
   /// Takes the last reference of a resource whose most recent use is `lastUseSerial` (0 if never
   /// used by a command buffer).
   void retire(Handle<WGPUBuffer> buffer, uint64_t lastUseSerial);
+  void retire(Handle<WGPUTexture> texture, uint64_t lastUseSerial);
 
   /// Whether the command buffer with `serial` is still recording.
   [[nodiscard]] bool isOpen(uint64_t serial) const noexcept {
@@ -53,8 +54,9 @@ class ResourceTracker final {
   }
 
  private:
-  struct RetiredBuffer {
+  struct RetiredResource {
     Handle<WGPUBuffer> buffer;
+    Handle<WGPUTexture> texture;
     uint64_t lastUseSerial = 0;
   };
 
@@ -63,7 +65,7 @@ class ResourceTracker final {
 
   uint64_t nextSerial_ = 1;
   std::set<uint64_t> openSerials_;
-  std::vector<RetiredBuffer> retired_;
+  std::vector<RetiredResource> retired_;
 };
 
 } // namespace igl::webgpu

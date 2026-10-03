@@ -9,11 +9,13 @@
 
 #include <cstdint>
 #include <memory>
+#include <vector>
 #include <igl/CommandBuffer.h>
 #include <igl/webgpu/Common.h>
 
 namespace igl::webgpu {
 
+class Buffer;
 class WebGPUContext;
 
 /// @brief Implements the igl::ICommandBuffer interface for WebGPU with one WGPUCommandEncoder.
@@ -63,6 +65,13 @@ class CommandBuffer final : public ICommandBuffer {
   [[nodiscard]] Result submit();
 
  private:
+  // Copies `sources` (one per slice) with rows that are not multiples of 256 bytes.
+  [[nodiscard]] bool copyUnalignedRowsToBuffer(const std::vector<WGPUTexelCopyTextureInfo>& sources,
+                                               const WGPUExtent3D& extent,
+                                               uint64_t tightBytesPerRow,
+                                               Buffer& buffer,
+                                               uint64_t dstOffset);
+
   WebGPUContext& ctx_;
   Handle<WGPUCommandEncoder> encoder_;
   const uint64_t serial_;

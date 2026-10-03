@@ -68,6 +68,47 @@ constexpr WGPUFeatureName kOptionalFeatures[] = {
     compat::kUnorm16TextureFormatsFeature,
 };
 
+// Packs rows `paddedBytesPerRow` apart into tight rows. Bytes of the last word past `totalBytes`
+// keep their value.
+constexpr const char* kRowPackShader = R"(
+struct Params {
+  tightBytesPerRow : u32,
+  paddedBytesPerRow : u32,
+  tightBytesPerImage : u32,
+  paddedBytesPerImage : u32,
+  totalBytes : u32,
+}
+@group(0) @binding(0) var<uniform> params : Params;
+@group(0) @binding(1) var<storage, read> src : array<u32>;
+@group(0) @binding(2) var<storage, read_write> dst : array<u32>;
+
+fn srcByte(i : u32) -> u32 {
+  let image = i / params.tightBytesPerImage;
+  let inImage = i - image * params.tightBytesPerImage;
+  let row = inImage / params.tightBytesPerRow;
+  let s = image * params.paddedBytesPerImage + row * params.paddedBytesPerRow + inImage -
+          row * params.tightBytesPerRow;
+  return (src[s / 4u] >> ((s % 4u) * 8u)) & 0xffu;
+}
+
+@compute @workgroup_size(64)
+fn main(@builtin(global_invocation_id) id : vec3u, @builtin(num_workgroups) groups : vec3u) {
+  let word = id.y * groups.x * 64u + id.x;
+  let first = word * 4u;
+  if (first >= params.totalBytes) {
+    return;
+  }
+  var value = dst[word];
+  for (var k = 0u; k < 4u; k++) {
+    if (first + k < params.totalBytes) {
+      let shift = k * 8u;
+      value = (value & ~(0xffu << shift)) | (srcByte(first + k) << shift);
+    }
+  }
+  dst[word] = value;
+}
+)";
+
 void onQueueWorkDone(WGPUQueueWorkDoneStatus status,
                      void* IGL_NULLABLE userdata1,
                      void* IGL_NULLABLE /*userdata2*/) {
@@ -99,6 +140,7 @@ struct PopErrorScopeState {
 WebGPUContext::WebGPUContext(WebGPUContextDesc desc) : desc_(std::move(desc)) {}
 
 WebGPUContext::~WebGPUContext() {
+  rowPackPipeline_ = nullptr;
   queue_ = nullptr;
   device_ = nullptr;
   adapter_ = nullptr;
@@ -402,6 +444,23 @@ Result WebGPUContext::popErrorScope() const {
     return Result(Result::Code::RuntimeError, "wgpuDevicePopErrorScope() failed");
   }
   return getResultFromWGPUError(state->type, toWGPUStringView(state->message));
+}
+
+WGPUComputePipeline IGL_NULLABLE WebGPUContext::getRowPackPipeline() const {
+  if (!rowPackPipeline_) {
+    WGPUShaderSourceWGSL wgsl = WGPU_SHADER_SOURCE_WGSL_INIT;
+    wgsl.code = toWGPUStringView(kRowPackShader);
+    WGPUShaderModuleDescriptor moduleDesc = WGPU_SHADER_MODULE_DESCRIPTOR_INIT;
+    moduleDesc.nextInChain = &wgsl.chain;
+    moduleDesc.label = toWGPUStringView("igl.webgpu.rowPack");
+    const Handle<WGPUShaderModule> module(wgpuDeviceCreateShaderModule(device_.get(), &moduleDesc));
+    WGPUComputePipelineDescriptor pipelineDesc = WGPU_COMPUTE_PIPELINE_DESCRIPTOR_INIT;
+    pipelineDesc.label = toWGPUStringView("igl.webgpu.rowPack");
+    pipelineDesc.compute.module = module.get();
+    pipelineDesc.compute.entryPoint = toWGPUStringView("main");
+    rowPackPipeline_.reset(wgpuDeviceCreateComputePipeline(device_.get(), &pipelineDesc));
+  }
+  return rowPackPipeline_.get();
 }
 
 bool WebGPUContext::isDeviceLost() const noexcept {
