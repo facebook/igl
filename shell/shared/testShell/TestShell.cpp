@@ -6,6 +6,8 @@
  */
 
 #include <memory>
+#include <string_view>
+#include <utility>
 #include <shell/shared/platform/Platform.h>
 #if IGL_PLATFORM_ANDROID
 #include <shell/shared/platform/android/PlatformAndroid.h>
@@ -31,26 +33,30 @@ namespace igl::shell {
 namespace {
 
 std::shared_ptr<IDevice> createTestDevice() {
-  const std::string backend(IGL_BACKEND_TYPE);
+  static constexpr std::pair<std::string_view, BackendType> kBackends[] = {
+      {"ogl", BackendType::OpenGL},
+      {"metal", BackendType::Metal},
+      {"vulkan", BackendType::Vulkan},
+      {"webgpu", BackendType::WebGPU},
+      // @fb-only
+  };
+  const std::string_view backend(IGL_BACKEND_TYPE);
 
-  if (backend == "ogl") {
+  for (const auto& [name, type] : kBackends) {
+    if (backend != name) {
+      continue;
+    }
 #ifdef IGL_UNIT_TESTS_GLES_VERSION
-    return tests::util::device::createTestDevice(::igl::BackendType::OpenGL,
-                                                 {.flavor = BackendFlavor::OpenGL_ES,
-                                                  .majorVersion = IGL_UNIT_TESTS_GLES_VERSION,
-                                                  .minorVersion = 0});
-#else
-    return tests::util::device::createTestDevice(::igl::BackendType::OpenGL);
+    if (type == BackendType::OpenGL) {
+      return tests::util::device::createTestDevice(type,
+                                                   {.flavor = BackendFlavor::OpenGL_ES,
+                                                    .majorVersion = IGL_UNIT_TESTS_GLES_VERSION,
+                                                    .minorVersion = 0});
+    }
 #endif
-  } else if (backend == "metal") {
-    return tests::util::device::createTestDevice(::igl::BackendType::Metal);
-  } else if (backend == "vulkan") {
-    return tests::util::device::createTestDevice(::igl::BackendType::Vulkan);
-  // @fb-only
-    // @fb-only
-  // @fb-only
-    return nullptr;
+    return tests::util::device::createTestDevice(type);
   }
+  return nullptr;
 }
 
 void ensureCommandLineArgsInitialized() {

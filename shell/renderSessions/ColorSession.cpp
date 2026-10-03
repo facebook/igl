@@ -296,6 +296,57 @@ std::string getVulkanFragmentShaderSourceGradient() {
                 )";
 }
 
+// Bind convention: texture unit 0 at @group(0) @binding(0), its sampler at @binding(1), buffer 0
+// at @group(1) @binding(0).
+const char* getWgslShaderSource() {
+  return R"(
+struct UniformBlock {
+  color : vec3f,
+  mvp : mat4x4f,
+};
+
+@group(1) @binding(0) var<uniform> ub : UniformBlock;
+@group(0) @binding(0) var diffuseTex : texture_2d<f32>;
+@group(0) @binding(1) var linearSampler : sampler;
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) uv : vec2f,
+};
+
+@vertex
+fn vertexShader(@location(0) position : vec3f, @location(1) uv : vec2f) -> VertexOut {
+  return VertexOut(ub.mvp * vec4f(position, 1.0), uv);
+}
+
+@fragment
+fn fragmentShader(v : VertexOut) -> @location(0) vec4f {
+  return vec4f(ub.color, 1.0) * textureSample(diffuseTex, linearSampler, v.uv);
+}
+
+@vertex
+fn vertexShaderGradient(@location(0) position : vec3f, @location(1) uv : vec2f) -> VertexOut {
+  return VertexOut(vec4f(position, 1.0), uv);
+}
+
+@fragment
+fn fragmentShaderGradient(v : VertexOut) -> @location(0) vec4f {
+  let numSteps = 20.0;
+  var uvX : f32;
+  if (v.uv.y < 0.25) {
+    uvX = v.uv.x;
+  } else if (v.uv.y < 0.5) {
+    uvX = floor(v.uv.x * numSteps + 0.5) / numSteps;
+  } else if (v.uv.y < 0.75) {
+    uvX = 1.0 - v.uv.x;
+  } else {
+    uvX = floor((1.0 - v.uv.x) * numSteps + 0.5) / numSteps;
+  }
+  return vec4f(vec3f(uvX), 1.0);
+}
+)";
+}
+
 // @fb-only
 
 } // namespace
@@ -304,9 +355,18 @@ std::unique_ptr<IShaderStages> ColorSession::getShaderStagesForBackend(IDevice& 
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Custom:
-  case igl::BackendType::WebGPU:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
+  case igl::BackendType::WebGPU: {
+    const bool gradient = colorTestModes_ == ColorTestModes::Gradient;
+    return igl::ShaderStagesCreator::fromLibraryStringInput(
+        device,
+        getWgslShaderSource(),
+        gradient ? "vertexShaderGradient" : "vertexShader",
+        gradient ? "fragmentShaderGradient" : "fragmentShader",
+        "",
+        nullptr);
+  }
   case igl::BackendType::Vulkan: {
     auto vertexSource = getVulkanVertexShaderSource();
     if (device.hasFeature(DeviceFeatures::Multiview)) {
