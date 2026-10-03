@@ -17,8 +17,8 @@ Linux, the Null adapter in tests) and in the browser through Emscripten's `emdaw
 | Error modes (Sync / SyncPipelines / Latched), error scopes on every `IDevice` create call, device loss | Done | After loss every GPU create call returns `Result::Code::DeviceLost` |
 | IGLU texture accessor, texture scaler (WGSL path) | Done | |
 | Shell sessions (offscreen) | Done | Every session renders (see "Shell sessions" below); static ones match Metal exactly apart from the known differences |
-| macOS windowed shell (`CAMetalLayer` surface) | Done | Every `shell/apps` app (`shell_app(enable_webgpu = True)`) has a WebGPU tab; `--tab WebGPU` opens on it |
-| iOS shell (`CAMetalLayer` surface, Dawn on Metal) | Done | Same apps, `<Session>Apple`; verified in the iOS simulator |
+| macOS windowed shell (`CAMetalLayer` surface) | Done | Every `shell/apps` app (`shell_app(enable_webgpu = True)`) has a WebGPU tab; `--tab WebGPU` opens on it. Dawn and Tint add about 8 MB to a stripped opt app binary (HelloWorldSession: 16.2 MB without, 24.3 MB with) |
+| iOS shell (`CAMetalLayer` surface, Dawn on Metal) | Done | Same apps, `<Session>Apple`; verified in the iOS simulator. The `iphoneos-arm64` binary builds (`:<Session>AppleBinary`); the signed app and device runs are unverified |
 | Browser: JSPI and async wasm, canvas surface, imported page device | Done | Canvas checked in WebKit (`check_webkit.sh`); Chrome is checked manually |
 | Dawn Null adapter test lane | Done (macOS) | Tests that read GPU results are denylisted |
 | Linux (Dawn on lavapipe) unit, screenshot and Null lanes | Added, fixes unverified | Diff CI (asan-ubsan) crashed every WebGPU-specific test that calls `wgpu*()` directly: fbcode ignored `link_style`, so the shared-library link gave the test binary its own, never-filled `dawn_proc` table. The tests now link statically on fbcode, the screenshot lane uses the default fbcode platform (the sessions include OpenGL headers), and six Null tests that read GPU results are denylisted. Repro: `tests/webgpu/tools/linux_repro.sh` |
@@ -45,14 +45,14 @@ with `xcrun xctest` because `buck2 test` on them does not finish locally.
 
 | Feature | Status | Command | Expected |
 |---|---|---|---|
-| Backend unit tests (Dawn on Metal) | Verified | `src/igl`: `buck2 build :iglWebGPUTestsAppleMac --show-full-output`, then `xcrun xctest -XCTest All <bundle>` | 1455 tests, 0 failures |
+| Backend unit tests (Dawn on Metal) | Verified | `src/igl`: `buck2 build :iglWebGPUTestsAppleMac --show-full-output`, then `xcrun xctest -XCTest All <bundle>` | 1490 tests, 0 failures |
 | Device-free tables | Verified | `src/igl`: `buck2 test :iglWebGPUCommonTestsAppleMac` | Pass 37 |
-| Host tests (no GPU; what the fbcode coverage lane runs) | Verified | `src/igl`: `buck2 test :iglHostTestsAppleMac` | Pass 42 |
-| Null adapter lane | Verified | `src/igl`: `buck2 build :iglWebGPUTestsNullAppleMac --show-full-output`, then `xcrun xctest -XCTest All <bundle>` | 1456 tests, 0 failures (readback tests skipped) |
+| Host tests (no GPU; what the fbcode coverage lane runs) | Verified | `src/igl`: `buck2 test :iglHostTestsAppleMac` | Pass 45 |
+| Null adapter lane | Verified | `src/igl`: `buck2 build :iglWebGPUTestsNullAppleMac --show-full-output`, then `xcrun xctest -XCTest All <bundle>` | 1491 tests, 0 failures (readback tests skipped) |
 | Indirect and multi-draw indirect | Verified | the unit tests above, `WebGPURenderCommandEncoderTest.MultiDraw*` | pass |
 | Device loss | Verified | the unit tests above, `WebGPUDeviceTest.CreateCallsFailAfterDeviceLoss` | pass |
 | Shell sessions offscreen | Verified | `shell/renderSessionTests`: `buck2 build :offscreenWebGPUTestAppleMac --show-full-output`, then `xcrun xctest -XCTest All <bundle>` | 61 tests, 0 failures (also `offscreenMetalTestAppleMac`, `offscreenOpenGLTestAppleMac`: 61 each, sessions without a path on those backends skipped) |
-| Rendering vs Metal/OpenGL | Verified | `src/igl/tests/webgpu/tools/render_compare.sh [out dir]` | maxAbs 0 vs Metal (including Textured3DCube, which also matches OpenGL exactly) except CheckerboardMipmap (Metal's mips are white; within 4 of OpenGL), Imgui (1), Uniform{Array,Packed} (Metal renders nothing; 0 vs OpenGL). Against OpenGL, GraphSample, MRT, MSAA, TQMultiRenderPass, TextureAccessor and TextureRotation differ by the same amounts as Metal vs OpenGL: the differences are OpenGL's |
+| Rendering vs Metal/OpenGL | Verified | `src/igl/tests/webgpu/tools/render_compare.sh [out dir]` | maxAbs 0 vs Metal (including Textured3DCube, which also matches OpenGL exactly) except CheckerboardMipmap (Metal's mips are white; within 4 of OpenGL), Imgui (1), Uniform{Array,Packed} (Metal renders nothing; 0 vs OpenGL). Against OpenGL, GraphSample, MRT, MSAA, TQMultiRenderPass, TextureAccessor and TextureRotation differ by the same amounts as Metal vs OpenGL: the differences are OpenGL's. Animated and random sessions (BindGroup, Fluid) and SrgbMipmapGamma differ for the reasons in the Shell sessions table below |
 | TextureAccessorSession | Verified | render_compare.sh | maxAbs 0 vs Metal |
 | Screenshot tests (macOS) | Verified | `screenshot_tests`: `buck2 test :screenshot_testsWebGPUAppleMac` | Pass 20 |
 | macOS window | Frames verified (FPS log), pixels unverified | `shell/apps`: `buck2 run :<Session>AppleMac -- --tab WebGPU` (add `--benchmark` for an FPS log) | Window opens on the WebGPU tab; all 46 apps run at display rate with no uncaptured WebGPU errors |

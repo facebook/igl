@@ -254,8 +254,8 @@ Result validateVertexInputState(const VertexInputStateDesc& desc, const WGPULimi
 void makeVertexBufferLayouts(const VertexInputStateDesc& desc,
                              std::vector<WGPUVertexBufferLayout>& outLayouts,
                              std::vector<WGPUVertexAttribute>& outAttributes) {
-  // Indices validateVertexInputState() rejects are skipped, so inputBindings is never read past
-  // its end.
+  // Attributes with a buffer index of IGL_BUFFER_BINDINGS_MAX or more are skipped, so inputBindings
+  // is never read past its end.
   const size_t numAttributes = std::min<size_t>(desc.numAttributes, IGL_VERTEX_ATTRIBUTES_MAX);
   std::array<uint32_t, IGL_BUFFER_BINDINGS_MAX> counts = {};
   size_t numBuffers = 0;

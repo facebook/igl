@@ -713,7 +713,7 @@ constexpr std::string_view kWgslSimpleFragShaderUint2 =
 constexpr std::string_view kWgslSimpleFragShaderUint4 =
     WGSL_SIMPLE_FRAG_SHADER_DEF("vec4u", "vec4u(tex)");
 
-// kVulkanPushConstantFragShader: push constants are the uniform buffer at @group(3) @binding(0).
+// kWgslPushConstantFragShader: push constants are the uniform buffer at @group(3) @binding(0).
 constexpr std::string_view kWgslPushConstantFragShader = R"(
 struct PushConstants {
   colorMultiplier : vec4f,
