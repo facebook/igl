@@ -199,7 +199,11 @@ using namespace igl;
       surfaceTextures = igl::SurfaceTextures{.color = [self createTextureFromNativeDrawable],
                                              .depth = [self createTextureFromNativeDepth]};
     }
-    IGL_DEBUG_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
+    if (surfaceTextures.color == nullptr) {
+      // No drawable this frame (e.g. a zero-sized or unconfigured surface); skip it.
+      return;
+    }
+    IGL_DEBUG_ASSERT(surfaceTextures.depth != nullptr);
     const auto& dims = surfaceTextures.color->getDimensions();
     _shellParams.nativeSurfaceDimensions = glm::ivec2{dims.width, dims.height};
     // After a resize, sessions that built their framebuffer once would keep attachments of the old

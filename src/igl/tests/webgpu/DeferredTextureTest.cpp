@@ -141,6 +141,30 @@ TEST_F(WebGPUDeferredTextureTest, FailedAcquireFailsTheRenderPass) {
   EXPECT_EQ(presentCount_, 0);
 }
 
+TEST_F(WebGPUDeferredTextureTest, FailedAcquireAsResolveTargetFailsTheRenderPass) {
+  const auto resolve = createDeferred(/*succeeds=*/false);
+  ASSERT_NE(resolve, nullptr);
+  Result ret;
+  TextureDesc msaaDesc = TextureDesc::new2D(
+      TextureFormat::RGBA_UNorm8, kSize, kSize, TextureDesc::TextureUsageBits::Attachment);
+  msaaDesc.numSamples = 4;
+  const auto msaa = device_->createTexture(msaaDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  const auto framebuffer = device_->createFramebuffer(
+      {.colorAttachments = {{.texture = msaa, .resolveTexture = resolve}}}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  const auto queue = device_->createCommandQueue({}, &ret);
+  const auto cmdBuffer = queue->createCommandBuffer({}, &ret);
+  const auto encoder = cmdBuffer->createRenderCommandEncoder(
+      {.colorAttachments = {{.loadAction = LoadAction::Clear,
+                             .storeAction = StoreAction::MsaaResolve}}},
+      framebuffer,
+      {},
+      &ret);
+  EXPECT_EQ(encoder, nullptr);
+  EXPECT_EQ(ret.code, Result::Code::RuntimeError);
+}
+
 TEST_F(WebGPUDeferredTextureTest, FailedAcquireFailsCopiesAndUploads) {
   const auto texture = createDeferred(/*succeeds=*/false);
   ASSERT_NE(texture, nullptr);

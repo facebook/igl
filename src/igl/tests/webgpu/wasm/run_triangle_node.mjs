@@ -64,13 +64,17 @@ function check(ok, what) {
 // TriangleRender's clear color, (0.2, 0.3, 0.4, 1) in 8-bit unorm.
 const kClearColor = [51, 77, 102, 255];
 
+// 0.3 * 255 is exactly 76.5, so adapters round green to 76 or 77.
+function isClearColor(pixel) {
+  return pixel.every((value, i) => Math.abs(value - kClearColor[i]) <= 1);
+}
+
 function adoptAsReference(frame, name) {
   const corner = Array.from(frame.subarray(0, 4));
   const centerOffset = ((kSize / 2) * kSize + kSize / 2) * 4;
   const center = Array.from(frame.subarray(centerOffset, centerOffset + 4));
   check(
-    JSON.stringify(corner) === JSON.stringify(kClearColor) &&
-      JSON.stringify(center) !== JSON.stringify(kClearColor),
+    isClearColor(corner) && !isClearColor(center),
     `${name}: corner ${corner} is the clear color, center ${center} is covered (reference frame)`,
   );
   reference = Buffer.from(frame);

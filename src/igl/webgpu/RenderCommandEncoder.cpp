@@ -102,6 +102,10 @@ Result RenderCommandEncoder::begin(const RenderPassDesc& renderPass,
       // Multisampled textures are 2D, so the face of a cube resolve target comes from its own type.
       color.resolveTarget =
           resolveTexture.getAttachmentView(desc.mipLevel, getAttachmentLayer(*resolve, desc));
+      if (color.resolveTarget == nullptr) {
+        return Result(Result::Code::RuntimeError,
+                      "A resolve attachment has no texture to resolve to");
+      }
       resolveTexture.recordUse(serial);
     } else if (desc.storeAction == StoreAction::MsaaResolve) {
       return Result(Result::Code::ArgumentInvalid, "MsaaResolve needs a resolve attachment");
@@ -129,6 +133,9 @@ Result RenderCommandEncoder::begin(const RenderPassDesc& renderPass,
     const RenderPassDesc::AttachmentDesc& depthDesc = renderPass.depthAttachment;
     depthStencil.view = wgpuTexture.getAttachmentView(
         depthDesc.mipLevel, getAttachmentLayer(*depthStencilTexture, depthDesc));
+    if (depthStencil.view == nullptr) {
+      return Result(Result::Code::RuntimeError, "The depth attachment has no texture to render to");
+    }
     if (props.hasDepth()) {
       depthStencil.depthLoadOp = loadActionToWGPULoadOp(depthDesc.loadAction);
       depthStencil.depthStoreOp = storeActionToWGPUStoreOp(depthDesc.storeAction);
