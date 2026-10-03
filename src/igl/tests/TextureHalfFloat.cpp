@@ -412,8 +412,9 @@ TEST_F(TextureHalfFloatTest, UploadRGBA16) {
 TEST_F(TextureHalfFloatTest, UploadRGB16) {
   if (iglDev_->getBackendType() == BackendType::Vulkan ||
       iglDev_->getBackendType() == BackendType::Metal ||
-      iglDev_->getBackendType() == BackendType::WebGPU ||
-      iglDev_->getBackendVersion().flavor == BackendFlavor::OpenGL_ES) {
+      iglDev_->getBackendVersion().flavor == BackendFlavor::OpenGL_ES ||
+      iglDev_->getTextureFormatCapabilities(igl::TextureFormat::RGB_F16) ==
+          ICapabilities::TextureFormatCapabilityBits::Unsupported) {
     GTEST_SKIP() << "Skip due to lack of support for RGB";
   }
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RGB_F16, kTextureDataRGBHalf.data());
@@ -445,11 +446,12 @@ TEST_F(TextureHalfFloatTest, PassthroughSampleRGB16) {
 
   if (iglDev_->getBackendType() == BackendType::Vulkan ||
       iglDev_->getBackendType() == BackendType::Metal ||
-      iglDev_->getBackendType() == BackendType::WebGPU ||
 #if IGL_PLATFORM_MACOSX
       iglDev_->getBackendType() == BackendType::OpenGL ||
 #endif
-      iglDev_->getBackendVersion().flavor == BackendFlavor::OpenGL_ES) {
+      iglDev_->getBackendVersion().flavor == BackendFlavor::OpenGL_ES ||
+      iglDev_->getTextureFormatCapabilities(igl::TextureFormat::RGB_F16) ==
+          ICapabilities::TextureFormatCapabilityBits::Unsupported) {
     GTEST_SKIP() << "Skip due to lack of support for RGB";
   }
   runPassthroughFormat(igl::TextureFormat::RGB_F16, kTextureDataRGBHalf.data());

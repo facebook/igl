@@ -415,9 +415,9 @@ void TextureFormatTestBase::testUsage(std::shared_ptr<ITexture> texture,
   // Vulkan (need `usampler2D` etc)
   const bool isIntegerFormat = (properties.flags & TextureFormatProperties::Flags::Integer) != 0;
   const bool isVulkan = iglDev_->getBackendType() == igl::BackendType::Vulkan;
-  // WebGPU cannot bind integer formats to `texture_2d<f32>` declarations either.
-  const bool isWebGPU = iglDev_->getBackendType() == igl::BackendType::WebGPU;
-  const bool shouldSkip = (isVulkan || isWebGPU) && isIntegerFormat;
+  // WGSL cannot bind integer formats to `texture_2d<f32>` declarations either.
+  const bool isWgsl = iglDev_->getShaderVersion().family == igl::ShaderFamily::Wgsl;
+  const bool shouldSkip = (isVulkan || isWgsl) && isIntegerFormat;
   if (!shouldSkip && (usage & TextureDesc::TextureUsageBits::Sampled) != 0) {
     const bool linearSampling =
         (iglDev_->getTextureFormatCapabilities(properties.format) &
