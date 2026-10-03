@@ -50,17 +50,19 @@ void WebGPUTextureAccessor::requestBytes(igl::ICommandQueue& /*commandQueue*/,
   // Submitted to the device's only queue, so the copy runs after all work submitted before.
   const auto& webgpuTexture = static_cast<const igl::webgpu::Texture&>(*texture_);
   const auto dimensions = texture_->getDimensions();
-  const auto properties = texture_->getProperties();
-  const igl::Result result = readback_.begin(*ctx_,
-                                             {
-                                                 .texture = webgpuTexture.getWGPUTexture(),
-                                                 .mipLevel = webgpuTexture.getBaseMipLevel(),
-                                                 .layer = webgpuTexture.getBaseLayer(),
-                                                 .width = dimensions.width,
-                                                 .height = dimensions.height,
-                                                 .bytesPerTexel = properties.bytesPerBlock,
-                                                 .flipVertically = false,
-                                             });
+  const igl::Result result =
+      readback_.begin(*ctx_,
+                      {
+                          .texture = webgpuTexture.getWGPUTexture(),
+                          .mipLevel = webgpuTexture.getBaseMipLevel(),
+                          .layer = webgpuTexture.getBaseLayer(),
+                          .width = dimensions.width,
+                          .height = dimensions.height,
+                          // 0 for compressed formats, which then fail.
+                          .bytesPerTexel = igl::webgpu::getCopyBytesPerTexel(
+                              webgpuTexture.getWGPUFormat(), WGPUTextureAspect_All),
+                          .flipVertically = false,
+                      });
   if (!result.isOk()) {
     IGL_LOG_ERROR("WebGPUTextureAccessor: %s\n", result.message.c_str());
     status_ = RequestStatus::NotInitialized;
@@ -83,7 +85,7 @@ void WebGPUTextureAccessor::finishRequest(bool wait) {
   } else if (!readback_.poll()) {
     return;
   }
-  const igl::Result result = readback_.copyTo(latestBytesRead_.data());
+  const igl::Result result = readback_.copyTo(latestBytesRead_.data(), latestBytesRead_.size());
   if (!result.isOk()) {
     // Same status as a request that could not start: the bytes are not from this request.
     IGL_LOG_ERROR("WebGPUTextureAccessor: %s\n", result.message.c_str());

@@ -106,6 +106,8 @@ class AsyncTextureReadback final {
   /// Writes the rows to `dst` like readTexture() and ends the readback. The mapping must have
   /// completed (poll() or wait()).
   [[nodiscard]] Result copyTo(void* IGL_NONNULL dst);
+  /// copyTo() that fails with ArgumentOutOfRange instead of writing past `dstSize` bytes.
+  [[nodiscard]] Result copyTo(void* IGL_NONNULL dst, size_t dstSize);
 
   [[nodiscard]] bool isPending() const noexcept {
     return map_.isPending();

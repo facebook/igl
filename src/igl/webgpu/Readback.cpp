@@ -312,6 +312,18 @@ Result AsyncTextureReadback::copyTo(void* IGL_NONNULL dst) {
   return map_.consume([this, dst](const uint8_t* mapped) { copyRows(desc_, mapped, dst); });
 }
 
+Result AsyncTextureReadback::copyTo(void* IGL_NONNULL dst, size_t dstSize) {
+  const size_t tightBytesPerRow = size_t{desc_.width} * desc_.bytesPerTexel;
+  const size_t dstBytesPerRow = desc_.dstBytesPerRow != 0 ? desc_.dstBytesPerRow : tightBytesPerRow;
+  const size_t required =
+      desc_.height == 0 ? 0 : dstBytesPerRow * (desc_.height - 1) + tightBytesPerRow;
+  if (dstSize < required) {
+    (void)map_.consume([](const uint8_t* /*mapped*/) {});
+    return Result(Result::Code::ArgumentOutOfRange, "The readback destination is too small");
+  }
+  return copyTo(dst);
+}
+
 Result AsyncBufferReadback::begin(const WebGPUContext& ctx,
                                   WGPUBuffer IGL_NULLABLE buffer,
                                   uint64_t offset,

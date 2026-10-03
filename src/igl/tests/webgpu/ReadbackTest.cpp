@@ -354,4 +354,46 @@ TEST_F(WebGPUReadbackTest, TextureAccessorFailedReadbackIsNotReady) {
   EXPECT_EQ(accessor.getRequestStatus(), iglu::textureaccessor::RequestStatus::NotInitialized);
 }
 
+TEST_F(WebGPUReadbackTest, TextureAccessorRejectsCompressedTextures) {
+  Result ret;
+  auto queue = device_->createCommandQueue({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  TextureFormat format = TextureFormat::Invalid;
+  for (const TextureFormat candidate : {TextureFormat::RGBA_BC7_UNORM_4x4,
+                                        TextureFormat::RGBA_ASTC_4x4,
+                                        TextureFormat::RGB8_ETC2}) {
+    if (device_->getTextureFormatCapabilities(candidate) != 0) {
+      format = candidate;
+      break;
+    }
+  }
+  if (format == TextureFormat::Invalid) {
+    GTEST_SKIP() << "No compressed texture format";
+  }
+  auto texture = device_->createTexture(
+      TextureDesc::new2D(format, 8, 8, TextureDesc::TextureUsageBits::Sampled), &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  // Reading compressed blocks as texels would write past the block-sized buffer.
+  iglu::textureaccessor::WebGPUTextureAccessor accessor(texture, *device_);
+  accessor.requestBytes(*queue, nullptr);
+  EXPECT_EQ(accessor.getRequestStatus(), iglu::textureaccessor::RequestStatus::NotInitialized);
+}
+
+TEST_F(WebGPUReadbackTest, AsyncReadbackRejectsSmallDestinations) {
+  const std::vector<uint8_t> pixels = makePixels();
+  const auto texture = createTexture(WGPUTextureFormat_RGBA8Unorm, pixels);
+  webgpu::AsyncTextureReadback readback;
+  ASSERT_TRUE(readback
+                  .begin(device_->getContext(),
+                         {.texture = texture.get(),
+                          .width = kWidth,
+                          .height = kHeight,
+                          .bytesPerTexel = kBytesPerTexel})
+                  .isOk());
+  ASSERT_TRUE(readback.wait().isOk());
+  std::vector<uint8_t> result(pixels.size() - 1);
+  EXPECT_EQ(readback.copyTo(result.data(), result.size()).code, Result::Code::ArgumentOutOfRange);
+  EXPECT_FALSE(readback.isPending());
+}
+
 } // namespace igl::tests
