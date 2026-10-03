@@ -396,4 +396,51 @@ TEST_F(WebGPUReadbackTest, AsyncReadbackRejectsSmallDestinations) {
   EXPECT_FALSE(readback.isPending());
 }
 
+TEST_F(WebGPUReadbackTest, PlatformDeviceReadsA3DSliceAndRejectsBadRanges) {
+  Result ret;
+  auto volume = device_->createTexture(
+      TextureDesc::new3D(
+          TextureFormat::RGBA_UNorm8, 2, 2, 2, TextureDesc::TextureUsageBits::Sampled),
+      &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  const std::array<uint32_t, 8> texels = {1, 1, 1, 1, 2, 2, 2, 2};
+  ASSERT_TRUE(volume->upload(volume->getFullRange(0), texels.data()).isOk());
+  const auto* platformDevice =
+      static_cast<IDevice&>(*device_).getPlatformDevice<webgpu::PlatformDevice>();
+  ASSERT_NE(platformDevice, nullptr);
+
+  webgpu::AsyncTextureReadback readback;
+  TextureRangeDesc slice = TextureRangeDesc::new2D(0, 0, 2, 2);
+  slice.z = 1;
+  ASSERT_TRUE(platformDevice->readPixelsAsync(*volume, slice, readback).isOk());
+  ASSERT_TRUE(readback.wait().isOk());
+  std::array<uint32_t, 4> result = {};
+  ASSERT_TRUE(readback.copyTo(result.data(), sizeof(result)).isOk());
+  EXPECT_EQ(result, (std::array<uint32_t, 4>{2, 2, 2, 2}));
+
+  EXPECT_EQ(
+      platformDevice->readPixelsAsync(*volume, TextureRangeDesc::new2D(1, 0, 2, 2), readback).code,
+      Result::Code::ArgumentOutOfRange);
+  TextureRangeDesc pastLastSlice = slice;
+  pastLastSlice.z = 2;
+  EXPECT_EQ(platformDevice->readPixelsAsync(*volume, pastLastSlice, readback).code,
+            Result::Code::ArgumentOutOfRange);
+  auto flat = device_->createTexture(
+      TextureDesc::new2D(TextureFormat::RGBA_UNorm8, 2, 2, TextureDesc::TextureUsageBits::Sampled),
+      &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  TextureRangeDesc secondLayer = TextureRangeDesc::new2D(0, 0, 2, 2);
+  secondLayer.layer = 1;
+  EXPECT_EQ(platformDevice->readPixelsAsync(*flat, secondLayer, readback).code,
+            Result::Code::ArgumentOutOfRange);
+  TextureDesc msaaDesc = TextureDesc::new2D(
+      TextureFormat::RGBA_UNorm8, 2, 2, TextureDesc::TextureUsageBits::Attachment);
+  msaaDesc.numSamples = 4;
+  auto msaa = device_->createTexture(msaaDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  EXPECT_EQ(
+      platformDevice->readPixelsAsync(*msaa, TextureRangeDesc::new2D(0, 0, 2, 2), readback).code,
+      Result::Code::Unsupported);
+}
+
 } // namespace igl::tests

@@ -67,19 +67,38 @@ Result PlatformDevice::readPixelsAsync(const ITexture& texture,
   if (range.numMipLevels != 1 || range.numLayers != 1 || range.numFaces != 1 || range.depth != 1) {
     return Result(Result::Code::Unsupported, "Readbacks cover one mip level and layer");
   }
-  return readback.begin(getContext(),
-                        {
-                            .texture = webgpuTexture.getWGPUTexture(),
-                            .aspect = aspect,
-                            .mipLevel = webgpuTexture.getBaseMipLevel() + range.mipLevel,
-                            .layer = webgpuTexture.getWGPULayer(range.layer, range.face),
-                            .x = range.x,
-                            .y = range.y,
-                            .width = range.width,
-                            .height = range.height,
-                            .bytesPerTexel = bytesPerTexel,
-                            .flipVertically = flipVertically,
-                        });
+  // Same rules as Texture::getBytes(); the copy would otherwise fail validation, which latched
+  // error modes only report later.
+  if (texture.getSamples() != 1) {
+    return Result(Result::Code::Unsupported, "Multisampled textures cannot be read back");
+  }
+  if (range.mipLevel >= texture.getNumMipLevels()) {
+    return Result(Result::Code::ArgumentOutOfRange, "The readback is outside the mip levels");
+  }
+  const TextureRangeDesc level = texture.getFullRange(range.mipLevel);
+  const bool is3D = texture.getType() == TextureType::ThreeD;
+  const bool isCube = texture.getType() == TextureType::Cube;
+  const bool sliceOutside = is3D ? range.z >= level.depth
+                                 : range.z != 0 || range.layer >= texture.getNumLayers() ||
+                                       range.face >= (isCube ? 6u : 1u);
+  if (range.x > level.width || range.width > level.width - range.x || range.y > level.height ||
+      range.height > level.height - range.y || sliceOutside) {
+    return Result(Result::Code::ArgumentOutOfRange, "The readback is outside the mip level");
+  }
+  return readback.begin(
+      getContext(),
+      {
+          .texture = webgpuTexture.getWGPUTexture(),
+          .aspect = aspect,
+          .mipLevel = webgpuTexture.getBaseMipLevel() + range.mipLevel,
+          .layer = is3D ? range.z : webgpuTexture.getWGPULayer(range.layer, range.face),
+          .x = range.x,
+          .y = range.y,
+          .width = range.width,
+          .height = range.height,
+          .bytesPerTexel = bytesPerTexel,
+          .flipVertically = flipVertically,
+      });
 }
 
 Result PlatformDevice::mapBufferAsync(const IBuffer& buffer,
