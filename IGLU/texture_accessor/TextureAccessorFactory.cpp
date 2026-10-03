@@ -14,6 +14,9 @@
 #if IGL_BACKEND_VULKAN
 #include "VulkanTextureAccessor.h"
 #endif
+#if IGL_BACKEND_WEBGPU
+#include "WebGPUTextureAccessor.h"
+#endif
 #include <memory>
 #include <igl/Macros.h>
 #if IGL_PLATFORM_APPLE
@@ -40,6 +43,10 @@ std::unique_ptr<ITextureAccessor> TextureAccessorFactory::createTextureAccessor(
 #if IGL_BACKEND_VULKAN
   case igl::BackendType::Vulkan:
     return std::make_unique<VulkanTextureAccessor>(texture);
+#endif
+#if IGL_BACKEND_WEBGPU
+  case igl::BackendType::WebGPU:
+    return std::make_unique<WebGPUTextureAccessor>(texture, device);
 #endif
   default:
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();

@@ -9,12 +9,15 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <webgpu/webgpu.h>
 #include <igl/Common.h>
+#include <igl/webgpu/Common.h>
 
 namespace igl::webgpu {
 
 class WebGPUContext;
+struct ReadbackMapState;
 
 /// @brief A region of one mip level and array layer to read back.
 struct TextureReadbackDesc {
@@ -46,5 +49,42 @@ struct TextureReadbackDesc {
                                 uint64_t offset,
                                 uint64_t size,
                                 void* IGL_NONNULL dst);
+
+/// @brief A texture readback that is submitted now and mapped later, so callers can poll for it
+/// instead of waiting (browser builds without JSPI cannot wait).
+class AsyncTextureReadback final {
+ public:
+  AsyncTextureReadback() = default;
+  ~AsyncTextureReadback();
+  AsyncTextureReadback(const AsyncTextureReadback&) = delete;
+  AsyncTextureReadback& operator=(const AsyncTextureReadback&) = delete;
+  AsyncTextureReadback(AsyncTextureReadback&&) = delete;
+  AsyncTextureReadback& operator=(AsyncTextureReadback&&) = delete;
+
+  /// Submits the copy described by `desc` and requests the staging buffer's mapping, dropping any
+  /// readback in progress. `ctx` must outlive the readback.
+  [[nodiscard]] Result begin(const WebGPUContext& ctx, const TextureReadbackDesc& desc);
+  /// Processes pending WebGPU events without waiting; returns whether the mapping has completed.
+  [[nodiscard]] bool poll();
+  /// Waits for the mapping to complete.
+  [[nodiscard]] Result wait();
+  /// Writes the rows to `dst` like readTexture() and ends the readback. The mapping must have
+  /// completed (poll() or wait()).
+  [[nodiscard]] Result copyTo(void* IGL_NONNULL dst);
+
+  [[nodiscard]] bool isPending() const noexcept {
+    return state_ != nullptr;
+  }
+
+ private:
+  void reset();
+
+  const WebGPUContext* IGL_NULLABLE ctx_ = nullptr;
+  TextureReadbackDesc desc_;
+  uint64_t stagingSize_ = 0;
+  Handle<WGPUBuffer> staging_;
+  WGPUFuture future_ = {};
+  std::shared_ptr<ReadbackMapState> state_;
+};
 
 } // namespace igl::webgpu

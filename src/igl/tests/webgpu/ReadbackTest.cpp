@@ -9,9 +9,13 @@
 
 #include <igl/webgpu/Readback.h>
 
+#include <IGLU/texture_accessor/WebGPUTextureAccessor.h>
 #include <array>
+#include <chrono>
 #include <cstdint>
+#include <cstring>
 #include <memory>
+#include <thread>
 #include <vector>
 #include <igl/tests/util/device/webgpu/TestDevice.h>
 
@@ -115,6 +119,64 @@ TEST_F(WebGPUReadbackTest, KeepsRowOrderWithoutFlip) {
   EXPECT_EQ(result, pixels);
 }
 
+TEST_F(WebGPUReadbackTest, AsyncReadbackCompletesByPolling) {
+  const std::vector<uint8_t> pixels = makePixels();
+  const auto texture = createTexture(WGPUTextureFormat_RGBA8Unorm, pixels);
+
+  webgpu::AsyncTextureReadback readback;
+  std::vector<uint8_t> result(pixels.size());
+  EXPECT_EQ(readback.copyTo(result.data()).code, Result::Code::InvalidOperation);
+
+  Result ret = readback.begin(device_->getContext(),
+                              {.texture = texture.get(),
+                               .width = kWidth,
+                               .height = kHeight,
+                               .bytesPerTexel = kBytesPerTexel,
+                               .flipVertically = false});
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  EXPECT_TRUE(readback.isPending());
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+  while (!readback.poll() && std::chrono::steady_clock::now() < deadline) {
+    std::this_thread::yield();
+  }
+  ASSERT_TRUE(readback.poll()) << "The readback did not complete within 10 seconds";
+  ret = readback.copyTo(result.data());
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  EXPECT_FALSE(readback.isPending());
+  EXPECT_EQ(result, pixels);
+}
+
+TEST_F(WebGPUReadbackTest, AsyncReadbackCanWaitOrBeDropped) {
+  const std::vector<uint8_t> pixels = makePixels();
+  const auto texture = createTexture(WGPUTextureFormat_RGBA8Unorm, pixels);
+  const webgpu::TextureReadbackDesc desc = {
+      .texture = texture.get(),
+      .width = kWidth,
+      .height = kHeight,
+      .bytesPerTexel = kBytesPerTexel,
+  };
+
+  {
+    webgpu::AsyncTextureReadback dropped;
+    ASSERT_TRUE(dropped.begin(device_->getContext(), desc).isOk());
+  }
+
+  webgpu::AsyncTextureReadback readback;
+  ASSERT_TRUE(readback.begin(device_->getContext(), desc).isOk());
+  // Restarting drops the first readback.
+  ASSERT_TRUE(readback.begin(device_->getContext(), desc).isOk());
+  Result ret = readback.wait();
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  std::vector<uint8_t> result(pixels.size());
+  ret = readback.copyTo(result.data());
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  EXPECT_EQ(std::vector<uint8_t>(result.begin(), result.begin() + kTightBytesPerRow),
+            std::vector<uint8_t>(pixels.begin() + kTightBytesPerRow, pixels.end()));
+  EXPECT_EQ(std::vector<uint8_t>(result.begin() + kTightBytesPerRow, result.end()),
+            std::vector<uint8_t>(pixels.begin(), pixels.begin() + kTightBytesPerRow));
+  device_->getContext().processEvents();
+}
+
 TEST_F(WebGPUReadbackTest, HonorsDestinationRowPitch) {
   const std::vector<uint8_t> pixels = makePixels();
   const auto texture = createTexture(WGPUTextureFormat_RGBA8Unorm, pixels);
@@ -201,6 +263,50 @@ TEST_F(WebGPUReadbackTest, OutOfBoundsCopyReturnsValidationError) {
                                           .bytesPerTexel = kBytesPerTexel},
                                          result.data());
   EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST_F(WebGPUReadbackTest, TextureAccessorResizesForTheRequestedTexture) {
+  Result ret;
+  auto queue = device_->createCommandQueue({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  auto rgba8 = device_->createTexture(
+      TextureDesc::new2D(TextureFormat::RGBA_UNorm8, 2, 2, TextureDesc::TextureUsageBits::Sampled),
+      &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  auto rgba32 = device_->createTexture(
+      TextureDesc::new2D(TextureFormat::RGBA_F32, 2, 2, TextureDesc::TextureUsageBits::Sampled),
+      &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  std::array<float, 16> pixels = {};
+  for (size_t i = 0; i < pixels.size(); ++i) {
+    pixels[i] = static_cast<float>(i);
+  }
+  ASSERT_TRUE(rgba32->upload(rgba32->getFullRange(0), pixels.data()).isOk());
+
+  iglu::textureaccessor::WebGPUTextureAccessor accessor(rgba8, *device_);
+  accessor.requestBytes(*queue, rgba32);
+  const std::vector<unsigned char>& bytes = accessor.getBytes();
+  ASSERT_EQ(bytes.size(), sizeof(pixels));
+  std::array<float, 16> readBack = {};
+  std::memcpy(readBack.data(), bytes.data(), sizeof(readBack));
+  EXPECT_EQ(readBack, pixels);
+}
+
+TEST_F(WebGPUReadbackTest, TextureAccessorFailedReadbackIsNotReady) {
+  Result ret;
+  auto queue = device_->createCommandQueue({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  auto texture = device_->createTexture(
+      TextureDesc::new2D(TextureFormat::RGBA_UNorm8, 2, 2, TextureDesc::TextureUsageBits::Sampled),
+      &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  iglu::textureaccessor::WebGPUTextureAccessor accessor(texture, *device_);
+  accessor.requestBytes(*queue, nullptr);
+  // Destroying the device before any event processing aborts the mapping.
+  wgpuDeviceDestroy(device_->getContext().getDevice());
+  std::vector<unsigned char> bytes(16);
+  EXPECT_EQ(accessor.copyBytes(bytes.data(), bytes.size()), 0u);
+  EXPECT_EQ(accessor.getRequestStatus(), iglu::textureaccessor::RequestStatus::NotInitialized);
 }
 
 } // namespace igl::tests
