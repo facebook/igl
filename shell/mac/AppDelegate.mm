@@ -132,18 +132,9 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
                              .minorVersion = 1},
           .swapchainColorTextureFormat = kColorFramebufferFormat,
       },
-      // clang-format off
-      // @fb-only
-          // clang-format on
-          // @fb-only
-          // @fb-only
-                             // @fb-only
-                             // @fb-only
-          // @fb-only
-      // @fb-only
 #endif
 // @fb-only
-         // clang-format off
+      // clang-format off
       // @fb-only
           // clang-format on
           // @fb-only
