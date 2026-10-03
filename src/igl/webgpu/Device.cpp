@@ -27,6 +27,7 @@
 #include <igl/webgpu/CommandQueue.h>
 #include <igl/webgpu/DepthStencilState.h>
 #include <igl/webgpu/Framebuffer.h>
+#include <igl/webgpu/RenderPipelineState.h>
 #include <igl/webgpu/SamplerState.h>
 #include <igl/webgpu/ShaderModule.h>
 #include <igl/webgpu/StateSanitizer.h>
@@ -46,7 +47,8 @@ void setUnimplemented(Result* IGL_NULLABLE outResult, const char* what) {
 Device::Device(std::unique_ptr<WebGPUContext> ctx) :
   ctx_(std::move(ctx)),
   platformDevice_(*this),
-  deviceFeatureSet_(ctx_ ? ctx_->getDevice() : nullptr) {
+  deviceFeatureSet_(ctx_ ? ctx_->getDevice() : nullptr),
+  bindLayoutCache_(*ctx_) {
   IGL_DEBUG_ASSERT(ctx_ && ctx_->getDevice() != nullptr);
 }
 
@@ -176,11 +178,11 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   return nullptr;
 }
 
-std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
-    const RenderPipelineDesc& /*desc*/,
-    Result* IGL_NULLABLE outResult) const {
-  setUnimplemented(outResult, "createRenderPipeline()");
-  return nullptr;
+std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderPipelineDesc& desc,
+                                                                   Result* IGL_NULLABLE
+                                                                       outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  return RenderPipelineState::create(*ctx_, deviceFeatureSet_, bindLayoutCache_, desc, outResult);
 }
 
 std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& desc,

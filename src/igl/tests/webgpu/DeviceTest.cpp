@@ -9,7 +9,6 @@
 
 #include <memory>
 #include <igl/ComputePipelineState.h>
-#include <igl/RenderPipelineState.h>
 #include <igl/Timer.h>
 #include <igl/tests/util/device/TestDevice.h>
 #include <igl/webgpu/PlatformDevice.h>
@@ -52,10 +51,6 @@ TEST_F(WebGPUDeviceTest, UnimplementedFactoriesReportResult) {
 
   ret = Result();
   EXPECT_EQ(device_->createComputePipeline({}, &ret), nullptr);
-  EXPECT_EQ(ret.code, Result::Code::Unimplemented);
-
-  ret = Result();
-  EXPECT_EQ(device_->createRenderPipeline({}, &ret), nullptr);
   EXPECT_EQ(ret.code, Result::Code::Unimplemented);
 }
 

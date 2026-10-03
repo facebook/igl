@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <igl/Device.h>
+#include <igl/webgpu/BindLayouts.h>
 #include <igl/webgpu/DeviceFeatureSet.h>
 #include <igl/webgpu/PlatformDevice.h>
 #include <igl/webgpu/WebGPUContext.h>
@@ -116,11 +117,15 @@ class Device final : public IDevice {
   [[nodiscard]] const DeviceFeatureSet& getDeviceFeatureSet() const noexcept {
     return deviceFeatureSet_;
   }
+  [[nodiscard]] BindLayoutCache& getBindLayoutCache() const noexcept {
+    return bindLayoutCache_;
+  }
 
  private:
   std::unique_ptr<WebGPUContext> ctx_;
   PlatformDevice platformDevice_;
   DeviceFeatureSet deviceFeatureSet_;
+  mutable BindLayoutCache bindLayoutCache_;
   mutable size_t shaderCompilationCount_ = 0;
 };
 
