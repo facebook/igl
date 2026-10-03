@@ -24,6 +24,7 @@ namespace igl::webgpu {
 class BindGroupCache;
 class DepthUploader;
 class DummyResources;
+class MipmapGenerator;
 class UniformArenaPool;
 
 /// @brief Fixed at device creation.
@@ -124,6 +125,8 @@ class WebGPUContext final {
   [[nodiscard]] DummyResources& getDummyResources() const;
   /// Renders depth uploads that wgpuQueueWriteTexture() cannot do.
   [[nodiscard]] DepthUploader& getDepthUploader() const;
+  /// Renders mip chains for Texture::generateMipmap().
+  [[nodiscard]] MipmapGenerator& getMipmapGenerator() const;
   /// Chunks for the bindBytes() arenas of command buffers.
   [[nodiscard]] UniformArenaPool& getUniformArenaPool();
 
@@ -165,6 +168,7 @@ class WebGPUContext final {
   mutable std::unique_ptr<DummyResources> dummyResources_;
   std::unique_ptr<UniformArenaPool> uniformArenaPool_;
   mutable std::unique_ptr<DepthUploader> depthUploader_;
+  mutable std::unique_ptr<MipmapGenerator> mipmapGenerator_;
 
   bool hasTimedWaitAny_ = false;
   WGPUBackendType adapterBackendType_ = WGPUBackendType_Undefined;

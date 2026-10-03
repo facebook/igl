@@ -16,6 +16,7 @@
 #include <thread>
 #include <utility>
 #include <igl/webgpu/DepthUploader.h>
+#include <igl/webgpu/MipmapGenerator.h>
 #include <igl/webgpu/ResourcesBinder.h>
 #include <igl/webgpu/UniformArena.h>
 
@@ -145,6 +146,7 @@ WebGPUContext::WebGPUContext(WebGPUContextDesc desc) : desc_(std::move(desc)) {}
 
 WebGPUContext::~WebGPUContext() {
   rowPackPipeline_ = nullptr;
+  mipmapGenerator_.reset();
   depthUploader_.reset();
   uniformArenaPool_.reset();
   bindGroupCache_.reset();
@@ -506,6 +508,13 @@ DepthUploader& WebGPUContext::getDepthUploader() const {
     depthUploader_ = std::make_unique<DepthUploader>(*this);
   }
   return *depthUploader_;
+}
+
+MipmapGenerator& WebGPUContext::getMipmapGenerator() const {
+  if (!mipmapGenerator_) {
+    mipmapGenerator_ = std::make_unique<MipmapGenerator>(*this);
+  }
+  return *mipmapGenerator_;
 }
 
 UniformArenaPool& WebGPUContext::getUniformArenaPool() {

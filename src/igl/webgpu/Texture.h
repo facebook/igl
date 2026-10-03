@@ -113,6 +113,10 @@ class Texture final : public ITexture {
           uint32_t baseLayer);
 
   [[nodiscard]] Result createSampledView();
+  [[nodiscard]] Result encodeMipmaps(WGPUCommandEncoder IGL_NONNULL encoder,
+                                     const TextureRangeDesc* IGL_NULLABLE range) const;
+  // Encodes the mipmaps in a new command buffer and submits it.
+  [[nodiscard]] Result submitMipmaps(const TextureRangeDesc* IGL_NULLABLE range) const;
   [[nodiscard]] Result uploadDepth(const TextureRangeDesc& range,
                                    const void* IGL_NONNULL data,
                                    size_t bytesPerRow) const;

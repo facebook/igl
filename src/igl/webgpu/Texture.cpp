@@ -12,8 +12,10 @@
 #include <optional>
 #include <utility>
 #include <vector>
+#include <igl/webgpu/CommandBuffer.h>
 #include <igl/webgpu/DepthUploader.h>
 #include <igl/webgpu/DeviceFeatureSet.h>
+#include <igl/webgpu/MipmapGenerator.h>
 #include <igl/webgpu/Readback.h>
 #include <igl/webgpu/ResourcesBinder.h>
 #include <igl/webgpu/WebGPUContext.h>
@@ -21,8 +23,11 @@
 namespace igl::webgpu {
 
 struct Texture::Storage {
-  Storage(WebGPUContext& ctx, Handle<WGPUTexture> texture, WGPUTextureFormat format) :
-    ctx(ctx), texture(std::move(texture)), format(format) {}
+  Storage(WebGPUContext& ctx,
+          Handle<WGPUTexture> texture,
+          WGPUTextureFormat format,
+          ICapabilities::TextureFormatCapabilities caps) :
+    ctx(ctx), texture(std::move(texture)), format(format), caps(caps) {}
   ~Storage() {
     ctx.getResourceTracker().retire(std::move(texture), lastUseSerial);
   }
@@ -34,7 +39,10 @@ struct Texture::Storage {
   WebGPUContext& ctx;
   Handle<WGPUTexture> texture;
   const WGPUTextureFormat format;
+  const ICapabilities::TextureFormatCapabilities caps;
   uint64_t lastUseSerial = 0;
+  // Whether levels above the base level hold data (generated or uploaded).
+  bool mipsValid = false;
 };
 
 namespace {
@@ -186,6 +194,10 @@ std::shared_ptr<Texture> Texture::create(WebGPUContext& ctx,
   if (renderable && (desc.numMipLevels > 1 || formatProps.hasDepth())) {
     usage |= WGPUTextureUsage_RenderAttachment;
   }
+  // Each generated level samples the previous one.
+  if (renderable && desc.numMipLevels > 1) {
+    usage |= WGPUTextureUsage_TextureBinding;
+  }
 
   WGPUTextureDescriptor textureDesc = WGPU_TEXTURE_DESCRIPTOR_INIT;
   textureDesc.label = toWGPUStringView(desc.debugName);
@@ -218,13 +230,9 @@ std::shared_ptr<Texture> Texture::create(WebGPUContext& ctx,
                       !validation.isOk() ? std::move(validation) : std::move(outOfMemory));
     return nullptr;
   }
-  if (desc.mipmapGeneration == TextureDesc::TextureMipmapGeneration::AutoGenerateOnUpload &&
-      desc.numMipLevels > 1) {
-    IGL_LOG_INFO_ONCE("WebGPU does not generate mipmaps on upload yet\n");
-  }
 
   auto result = std::shared_ptr<Texture>(new Texture(
-      std::make_shared<Storage>(ctx, std::move(texture), *format), desc, *format, 0, 0));
+      std::make_shared<Storage>(ctx, std::move(texture), *format, caps), desc, *format, 0, 0));
   Result ret = result->createSampledView();
   if (!ret.isOk()) {
     Result::setResult(outResult, std::move(ret));
@@ -429,14 +437,97 @@ uint32_t Texture::getNumMipLevels() const {
   return desc_.numMipLevels;
 }
 
-void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/,
-                             const TextureRangeDesc* IGL_NULLABLE /*range*/) const {
-  IGL_LOG_ERROR_ONCE("generateMipmap() is not supported by the WebGPU backend yet\n");
+Result Texture::encodeMipmaps(WGPUCommandEncoder IGL_NONNULL encoder,
+                              const TextureRangeDesc* IGL_NULLABLE range) const {
+  using CapabilityBits = ICapabilities::TextureFormatCapabilityBits;
+  const TextureFormatProperties& props = getProperties();
+  if ((storage_->caps & CapabilityBits::Attachment) == 0 || props.isInteger() ||
+      props.isDepthOrStencil() || desc_.type == TextureType::ThreeD || desc_.numSamples != 1) {
+    return Result(Result::Code::Unsupported,
+                  "WebGPU generates mipmaps only for renderable float 2D, array and cube textures");
+  }
+  const uint32_t baseMipLevel = range != nullptr ? range->mipLevel : 0;
+  const uint32_t numMipLevels = range != nullptr ? range->numMipLevels : desc_.numMipLevels;
+  const uint32_t totalLayers = getWGPULayerCount(desc_);
+  uint32_t baseLayer = 0;
+  uint32_t numLayers = totalLayers;
+  // A subset of cube faces is one run of `numFaces` WebGPU layers per selected cube.
+  uint32_t numRuns = 1;
+  if (range != nullptr) {
+    const bool isCube = desc_.type == TextureType::Cube;
+    const bool someFaces = isCube && range->numFaces != 6;
+    if (isCube && range->face + range->numFaces > 6) {
+      return Result(Result::Code::ArgumentOutOfRange, "Invalid mipmap range");
+    }
+    baseLayer = isCube ? range->layer * 6 + range->face : range->layer;
+    numLayers = someFaces ? range->numFaces : isCube ? range->numLayers * 6 : range->numLayers;
+    numRuns = someFaces ? range->numLayers : 1;
+  }
+  if (baseMipLevel + numMipLevels > desc_.numMipLevels || numLayers == 0 || numRuns == 0 ||
+      baseLayer + (numRuns - 1) * 6 + numLayers > totalLayers) {
+    return Result(Result::Code::ArgumentOutOfRange, "Invalid mipmap range");
+  }
+  Result result;
+  for (uint32_t run = 0; run < numRuns && result.isOk(); ++run) {
+    result = storage_->ctx.getMipmapGenerator().encode(
+        encoder,
+        {.texture = storage_->texture.get(),
+         .format = wgpuFormat_,
+         .filterable = (storage_->caps & CapabilityBits::SampledFiltered) != 0,
+         .baseLayer = baseLayer_ + baseLayer + run * 6,
+         .numLayers = numLayers,
+         .baseMipLevel = baseMipLevel_ + baseMipLevel,
+         .numMipLevels = numMipLevels});
+  }
+  // mipsValid belongs to the storage shared with views, so a view must cover all of it.
+  const bool wholeTexture = baseMipLevel_ + baseMipLevel == 0 && baseLayer_ + baseLayer == 0 &&
+                            numMipLevels == wgpuTextureGetMipLevelCount(storage_->texture.get()) &&
+                            numLayers == wgpuTextureGetDepthOrArrayLayers(storage_->texture.get());
+  if (result.isOk() && numMipLevels > 1 && wholeTexture) {
+    storage_->mipsValid = true;
+  }
+  return result;
 }
 
-void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/,
-                             const TextureRangeDesc* IGL_NULLABLE /*range*/) const {
-  IGL_LOG_ERROR_ONCE("generateMipmap() is not supported by the WebGPU backend yet\n");
+Result Texture::submitMipmaps(const TextureRangeDesc* IGL_NULLABLE range) const {
+  WebGPUContext& ctx = storage_->ctx;
+  ctx.pushErrorScope(WGPUErrorFilter_Validation);
+  const Handle<WGPUCommandEncoder> encoder(
+      wgpuDeviceCreateCommandEncoder(ctx.getDevice(), nullptr));
+  const Result result = encodeMipmaps(encoder.get(), range);
+  if (result.isOk()) {
+    const Handle<WGPUCommandBuffer> commands(wgpuCommandEncoderFinish(encoder.get(), nullptr));
+    const WGPUCommandBuffer rawCommands = commands.get();
+    wgpuQueueSubmit(ctx.getQueue(), 1, &rawCommands);
+  }
+  Result validation = ctx.popErrorScope();
+  return result.isOk() ? validation : result;
+}
+
+void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/,
+                             const TextureRangeDesc* IGL_NULLABLE range) const {
+  IGL_PROFILER_FUNCTION();
+  const Result result = submitMipmaps(range);
+  if (!result.isOk()) {
+    IGL_LOG_ERROR("generateMipmap(): %s\n", result.message.c_str());
+  }
+}
+
+void Texture::generateMipmap(ICommandBuffer& cmdBuffer,
+                             const TextureRangeDesc* IGL_NULLABLE range) const {
+  IGL_PROFILER_FUNCTION();
+  auto& commandBuffer = static_cast<CommandBuffer&>(cmdBuffer);
+  WGPUCommandEncoder encoder = commandBuffer.getWGPUCommandEncoder();
+  if (encoder == nullptr) {
+    IGL_LOG_ERROR("generateMipmap(): the command buffer was already submitted\n");
+    return;
+  }
+  const Result result = encodeMipmaps(encoder, range);
+  if (!result.isOk()) {
+    IGL_LOG_ERROR("generateMipmap(): %s\n", result.message.c_str());
+    return;
+  }
+  recordUse(commandBuffer.getSerial());
 }
 
 bool Texture::supportsUpload() const {
@@ -449,7 +540,7 @@ bool Texture::supportsUpload() const {
 }
 
 bool Texture::isRequiredGenerateMipmap() const {
-  return false;
+  return desc_.numMipLevels > 1 && !storage_->mipsValid;
 }
 
 uint64_t Texture::getTextureId() const {
@@ -536,7 +627,25 @@ Result Texture::uploadInternal(TextureType type,
       }
     }
   }
-  return ctx.popErrorScope();
+  Result result = ctx.popErrorScope();
+  // Mip levels count from the storage's base level, which a view's range is offset from.
+  if (result.isOk() && baseMipLevel_ + range.mipLevel + range.numMipLevels > 1) {
+    storage_->mipsValid = true;
+  }
+  if (result.isOk() &&
+      desc_.mipmapGeneration == TextureDesc::TextureMipmapGeneration::AutoGenerateOnUpload &&
+      desc_.numMipLevels > 1) {
+    // Same contract as the other backends: the data is uploaded, then the call fails.
+    // Through a view, level 0 is the view's base level, not the texture's.
+    if (baseMipLevel_ + range.mipLevel != 0) {
+      return Result(Result::Code::InvalidOperation,
+                    "AutoGenerateOnUpload requires mipLevel to be uploaded to be 0");
+    }
+    if (range.numMipLevels == 1) {
+      result = submitMipmaps(nullptr);
+    }
+  }
+  return result;
 }
 
 Result Texture::uploadDepth(const TextureRangeDesc& range,
