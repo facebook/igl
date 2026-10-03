@@ -168,14 +168,38 @@ TEST_F(WebGPUTimerTest, TimerMeasuresPasses) {
   EXPECT_GT(timer->getElapsedTimeNanos(), 0u);
   EXPECT_LT(timer->getElapsedTimeNanos(), 1'000'000'000u);
 
-  // A timer restarts with the next command buffer it is attached to.
+  // Attached to the next command buffer, the timer keeps the completed result until a newer one
+  // completes; a command buffer without passes produces none.
+  const uint64_t elapsed = timer->getElapsedTimeNanos();
   auto copyOnly = queue_->createCommandBuffer({.timer = timer}, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message;
-  EXPECT_FALSE(timer->resultsAvailable());
+  EXPECT_TRUE(timer->resultsAvailable());
   queue_->submit(*copyOnly);
   copyOnly->waitUntilCompleted();
-  EXPECT_FALSE(waitFor([&] { return timer->resultsAvailable(); }));
-  EXPECT_EQ(timer->getElapsedTimeNanos(), 0u);
+  EXPECT_TRUE(timer->resultsAvailable());
+  EXPECT_EQ(timer->getElapsedTimeNanos(), elapsed);
+}
+
+TEST_F(WebGPUTimerTest, TimerKeepsReadbacksSubmittedBeforePolling) {
+  if (!device_->hasFeature(DeviceFeatures::Timers)) {
+    GTEST_SKIP() << "No timestamp-query feature";
+  }
+  Result ret;
+  auto timer = device_->createTimer(&ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  // The first readback is still mapping when the second command buffer is submitted.
+  auto first = queue_->createCommandBuffer({.timer = timer}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  renderPass(*first);
+  queue_->submit(*first);
+  first->waitUntilCompleted();
+  auto second = queue_->createCommandBuffer({.timer = timer}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  renderPass(*second);
+  queue_->submit(*second);
+  // The first result is readable while the second readback is in flight.
+  EXPECT_TRUE(timer->resultsAvailable());
+  EXPECT_GT(timer->getElapsedTimeNanos(), 0u);
 }
 
 TEST_F(WebGPUTimerTest, FailedReadbackStillCompletes) {
@@ -227,6 +251,20 @@ TEST_F(WebGPUTimerTest, TimestampQueriesPerPass) {
     EXPECT_FALSE(queries->getElapsedNanosResult(2).valid);
     EXPECT_GE(queries->getFrameElapsedNanos(), queries->getElapsedNanos(0));
   }
+
+  // A slot written in an earlier frame but not in this one is not reported again.
+  queries->reset();
+  auto cmdBuffer = queue_->createCommandBuffer({.timestampQueries = queries}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  renderPass(*cmdBuffer, {.queries = queries, .slotIndex = 0});
+  renderPass(*cmdBuffer, {.queries = queries, .slotIndex = 2});
+  EXPECT_EQ(queries->count(), 3u);
+  queue_->submit(*cmdBuffer);
+  cmdBuffer->waitUntilCompleted();
+  ASSERT_TRUE(waitFor([&] { return queries->resultsAvailable(); }));
+  EXPECT_TRUE(queries->getElapsedNanosResult(0).valid);
+  EXPECT_FALSE(queries->getElapsedNanosResult(1).valid);
+  EXPECT_TRUE(queries->getElapsedNanosResult(2).valid);
 }
 
 TEST_F(WebGPUTimerTest, HighResolutionTimestampsCanBeDisabled) {

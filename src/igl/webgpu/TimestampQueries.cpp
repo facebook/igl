@@ -46,13 +46,16 @@ void TimestampQueries::reset() {
 }
 
 bool TimestampQueries::resultsAvailable() const {
-  return queries_->poll();
+  return queries_->pollAll();
 }
 
 std::optional<WGPUPassTimestampWrites> TimestampQueries::getPassTimestampWrites(
     uint32_t slotIndex) {
   if (slotIndex >= maxTimestamps_) {
     IGL_LOG_ERROR_ONCE("Timestamp query slot %u is out of range\n", slotIndex);
+    return std::nullopt;
+  }
+  if (!queries_->getQuerySet()) {
     return std::nullopt;
   }
   count_ = std::max(count_, slotIndex + 1);
@@ -72,7 +75,7 @@ void TimestampQueries::onSubmitted() {
 }
 
 TimestampQueryResult TimestampQueries::getElapsedNanosResult(uint32_t slotIndex) const {
-  if (!queries_->poll()) {
+  if (!queries_->pollAll()) {
     return {};
   }
   const std::span<const uint64_t> timestamps = queries_->getTimestamps();
@@ -94,7 +97,7 @@ uint64_t TimestampQueries::getElapsedNanos(uint32_t slotIndex) const {
 }
 
 uint64_t TimestampQueries::getStartNanos(uint32_t slotIndex) const {
-  if (!queries_->poll()) {
+  if (!queries_->pollAll()) {
     return 0;
   }
   const std::span<const uint64_t> timestamps = queries_->getTimestamps();
@@ -103,7 +106,7 @@ uint64_t TimestampQueries::getStartNanos(uint32_t slotIndex) const {
 }
 
 uint64_t TimestampQueries::getEndNanos(uint32_t slotIndex) const {
-  if (!queries_->poll()) {
+  if (!queries_->pollAll()) {
     return 0;
   }
   const std::span<const uint64_t> timestamps = queries_->getTimestamps();
@@ -112,7 +115,7 @@ uint64_t TimestampQueries::getEndNanos(uint32_t slotIndex) const {
 }
 
 uint64_t TimestampQueries::getFrameElapsedNanos() const {
-  if (!queries_->poll()) {
+  if (!queries_->pollAll()) {
     return 0;
   }
   const std::span<const uint64_t> timestamps = queries_->getTimestamps();

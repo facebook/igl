@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <memory>
 #include <span>
+#include <vector>
 #include <igl/webgpu/Common.h>
 
 namespace igl::webgpu {
@@ -21,9 +22,12 @@ class WebGPUContext;
 ///
 /// A command buffer that writes queries resolves them before it is finished (encodeResolve()) and
 /// maps the readback buffer once it is submitted (mapAfterSubmit()). Results arrive through
-/// WebGPU's event processing; poll() processes events and reports whether the last submitted
-/// resolve has completed. Every resolve uses its own readback buffer, so a query set can be
-/// resolved again while an earlier readback is still pending.
+/// WebGPU's event processing; poll() processes events and reports whether a resolve has completed,
+/// whose timestamps stay readable until a newer one completes. Every resolve uses its own readback
+/// buffer, so a query set can be resolved again while an earlier readback is still pending.
+///
+/// Not thread-safe: like the rest of the device, it is used from one thread at a time, and the
+/// getters process WebGPU events on the calling thread.
 class TimestampQuerySet final {
  public:
   [[nodiscard]] static std::unique_ptr<TimestampQuerySet> create(WebGPUContext& ctx,
@@ -48,25 +52,38 @@ class TimestampQuerySet final {
   /// Maps the readback buffer of the last encodeResolve(); call after its command buffer was
   /// submitted.
   void mapAfterSubmit();
-  /// Discards pending and completed results.
+  /// Starts a new cycle of queries; the newest completed result stays available until a newer one
+  /// completes. If a new query set cannot be created, getQuerySet() is null for the cycle and all
+  /// results are discarded.
+  void restart();
+  /// Starts a new cycle and discards pending and completed results.
   void reset();
-  /// Processes WebGPU events; true once the last mapped resolve has completed. A resolve whose
-  /// mapping failed completes with no timestamps.
+  /// Processes WebGPU events; true once a mapped resolve has completed. A resolve whose mapping
+  /// failed completes with no timestamps.
   [[nodiscard]] bool poll() const;
-  /// Timestamps in nanoseconds of the last completed resolve.
+  /// Like poll(), but true only once every mapped resolve has completed, so the timestamps are
+  /// those of the last mapped one.
+  [[nodiscard]] bool pollAll() const;
+  /// Timestamps in nanoseconds of the newest completed resolve; queries not written in its cycle
+  /// are 0.
   [[nodiscard]] std::span<const uint64_t> getTimestamps() const;
 
  private:
   struct Readback;
 
   TimestampQuerySet(WebGPUContext& ctx, uint32_t count, Handle<WGPUQuerySet> querySet);
+  void renewQuerySet();
+  /// Makes the newest completed readback in mapped_ the result and drops it and older readbacks.
+  void promoteCompleted() const;
 
   WebGPUContext& ctx_;
   const uint32_t count_;
   Handle<WGPUQuerySet> querySet_;
   Handle<WGPUBuffer> resolveBuffer_;
   std::shared_ptr<Readback> encoded_;
-  std::shared_ptr<Readback> mapped_;
+  /// Readbacks in flight, oldest first.
+  mutable std::vector<std::shared_ptr<Readback>> mapped_;
+  mutable std::shared_ptr<Readback> completed_;
 };
 
 } // namespace igl::webgpu

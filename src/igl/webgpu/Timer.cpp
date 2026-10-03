@@ -29,10 +29,14 @@ Timer::~Timer() = default;
 
 void Timer::begin() {
   numPasses_ = 0;
-  queries_->reset();
+  // The previous command buffer's result stays readable until this one's completes, as on Metal.
+  queries_->restart();
 }
 
 std::optional<WGPUPassTimestampWrites> Timer::nextPass() {
+  if (!queries_->getQuerySet()) {
+    return std::nullopt;
+  }
   if (numPasses_ == kMaxPasses) {
     IGL_LOG_INFO_ONCE("WebGPU timers measure the first %u passes of a command buffer\n",
                       kMaxPasses);

@@ -21,6 +21,21 @@ struct TimestampQuerySet::Readback {
   std::vector<uint64_t> timestamps;
 };
 
+namespace {
+
+Handle<WGPUQuerySet> createQuerySet(WebGPUContext& ctx, uint32_t count, Result& outResult) {
+  WGPUQuerySetDescriptor desc = WGPU_QUERY_SET_DESCRIPTOR_INIT;
+  desc.label = toWGPUStringView("igl.webgpu.timestamps");
+  desc.type = WGPUQueryType_Timestamp;
+  desc.count = count;
+  ctx.pushErrorScope(WGPUErrorFilter_Validation);
+  Handle<WGPUQuerySet> querySet(wgpuDeviceCreateQuerySet(ctx.getDevice(), &desc));
+  outResult = ctx.popErrorScope();
+  return querySet;
+}
+
+} // namespace
+
 std::unique_ptr<TimestampQuerySet> TimestampQuerySet::create(WebGPUContext& ctx,
                                                              uint32_t count,
                                                              Result* IGL_NULLABLE outResult) {
@@ -32,13 +47,8 @@ std::unique_ptr<TimestampQuerySet> TimestampQuerySet::create(WebGPUContext& ctx,
     Result::setResult(outResult, Result::Code::Unsupported, "The device has no timestamp queries");
     return nullptr;
   }
-  WGPUQuerySetDescriptor desc = WGPU_QUERY_SET_DESCRIPTOR_INIT;
-  desc.label = toWGPUStringView("igl.webgpu.timestamps");
-  desc.type = WGPUQueryType_Timestamp;
-  desc.count = count;
-  ctx.pushErrorScope(WGPUErrorFilter_Validation);
-  Handle<WGPUQuerySet> querySet(wgpuDeviceCreateQuerySet(ctx.getDevice(), &desc));
-  Result result = ctx.popErrorScope();
+  Result result;
+  Handle<WGPUQuerySet> querySet = createQuerySet(ctx, count, result);
   if (!result.isOk() || !querySet) {
     Result::setResult(outResult, std::move(result));
     return nullptr;
@@ -64,7 +74,7 @@ TimestampQuerySet::TimestampQuerySet(WebGPUContext& ctx,
 TimestampQuerySet::~TimestampQuerySet() = default;
 
 void TimestampQuerySet::encodeResolve(WGPUCommandEncoder IGL_NONNULL encoder, uint32_t count) {
-  if (count == 0 || count > count_) {
+  if (!querySet_ || count == 0 || count > count_) {
     return;
   }
   auto readback = std::make_shared<Readback>();
@@ -88,9 +98,11 @@ void TimestampQuerySet::mapAfterSubmit() {
   if (!encoded_) {
     return;
   }
-  mapped_ = std::move(encoded_);
+  // Drops readbacks that have completed already, so the queue only holds those still in flight.
+  promoteCompleted();
+  const std::shared_ptr<Readback>& mapped = mapped_.emplace_back(std::move(encoded_));
   // The callback owns a reference, so it can complete after this object is gone.
-  auto* owner = new std::shared_ptr<Readback>(mapped_);
+  auto* owner = new std::shared_ptr<Readback>(mapped);
   const WGPUBufferMapCallbackInfo callbackInfo = {
       .nextInChain = nullptr,
       .mode = WGPUCallbackMode_AllowProcessEvents,
@@ -125,30 +137,68 @@ void TimestampQuerySet::mapAfterSubmit() {
       .userdata1 = owner,
       .userdata2 = nullptr,
   };
-  const size_t size = size_t{mapped_->count} * sizeof(uint64_t);
-  (void)wgpuBufferMapAsync(mapped_->buffer.get(), WGPUMapMode_Read, 0, size, callbackInfo);
+  const size_t size = size_t{mapped->count} * sizeof(uint64_t);
+  (void)wgpuBufferMapAsync(mapped->buffer.get(), WGPUMapMode_Read, 0, size, callbackInfo);
+}
+
+void TimestampQuerySet::renewQuerySet() {
+  // WebGPU cannot reset queries, and a query keeps its last value once written, so a slot that is
+  // not written this cycle would resolve to an earlier one. A new set resolves such slots to 0,
+  // which readers treat as not written.
+  Result result;
+  Handle<WGPUQuerySet> querySet = createQuerySet(ctx_, count_, result);
+  if (!result.isOk() || !querySet) {
+    IGL_LOG_ERROR_ONCE("Timestamp queries: cannot create a query set: %s\n",
+                       result.message.c_str());
+    // Keeping the previous set would resolve its stale values as this cycle's. Without a set no
+    // queries are written or resolved until a later cycle creates one, so there are no results.
+    querySet_ = nullptr;
+    mapped_.clear();
+    completed_ = nullptr;
+    return;
+  }
+  querySet_ = std::move(querySet);
+}
+
+void TimestampQuerySet::restart() {
+  renewQuerySet();
+  encoded_ = nullptr;
 }
 
 void TimestampQuerySet::reset() {
-  encoded_ = nullptr;
-  mapped_ = nullptr;
+  restart();
+  mapped_.clear();
+  completed_ = nullptr;
+}
+
+void TimestampQuerySet::promoteCompleted() const {
+  // Older readbacks still in flight are dropped too; their results would be superseded anyway.
+  for (auto it = mapped_.rbegin(); it != mapped_.rend(); ++it) {
+    if ((*it)->completed) {
+      completed_ = *it;
+      mapped_.erase(mapped_.begin(), it.base());
+      return;
+    }
+  }
 }
 
 bool TimestampQuerySet::poll() const {
-  if (!mapped_) {
-    return false;
-  }
-  if (!mapped_->completed) {
+  if (!mapped_.empty()) {
     ctx_.processEvents();
+    promoteCompleted();
   }
-  return mapped_->completed;
+  return completed_ != nullptr;
+}
+
+bool TimestampQuerySet::pollAll() const {
+  return poll() && mapped_.empty();
 }
 
 std::span<const uint64_t> TimestampQuerySet::getTimestamps() const {
-  if (!mapped_ || !mapped_->completed) {
+  if (!completed_) {
     return {};
   }
-  return mapped_->timestamps;
+  return completed_->timestamps;
 }
 
 } // namespace igl::webgpu
