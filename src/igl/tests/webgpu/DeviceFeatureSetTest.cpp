@@ -79,7 +79,7 @@ TEST_F(WebGPUDeviceFeatureSetTest, Features) {
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::DynamicCullMode));
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::Indices8Bit));
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::Multiview));
-  EXPECT_FALSE(device_->hasFeature(DeviceFeatures::PushConstants));
+  EXPECT_TRUE(device_->hasFeature(DeviceFeatures::PushConstants));
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::ReadWriteFramebuffer));
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::TextureFormatRGB));
 
@@ -102,7 +102,7 @@ TEST_F(WebGPUDeviceFeatureSetTest, LimitsDefaultToSpec) {
   EXPECT_TRUE(device_->getFeatureLimits(DeviceFeatureLimits::MaxColorAttachments, value));
   EXPECT_EQ(value, 8u);
   EXPECT_TRUE(device_->getFeatureLimits(DeviceFeatureLimits::MaxPushConstantBytes, value));
-  EXPECT_EQ(value, 0u);
+  EXPECT_EQ(value, 128u);
   EXPECT_FALSE(device_->getFeatureLimits(DeviceFeatureLimits::MaxDescriptorHeapSamplers, value));
 }
 

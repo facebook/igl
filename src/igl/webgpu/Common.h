@@ -33,6 +33,9 @@ inline constexpr uint32_t kBufferGroup = 1;
 inline constexpr uint32_t kStorageTextureGroup = 2;
 inline constexpr uint32_t kPushConstantGroup = 3;
 inline constexpr uint32_t kNumBindGroups = 4;
+/// Size of the uniform buffer that emulates push constants
+/// (DeviceFeatureLimits::MaxPushConstantBytes).
+inline constexpr uint32_t kMaxPushConstantBytes = 128;
 
 /// @brief AddRef/Release entry points for a WebGPU object type, used by Handle<T>
 template<typename T>

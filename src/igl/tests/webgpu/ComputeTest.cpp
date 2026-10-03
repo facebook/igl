@@ -51,6 +51,21 @@ fn main(@builtin(global_invocation_id) id : vec3u) {
 }
 )";
 
+// Push constants live in the group 3 uniform buffer.
+constexpr const char* kPushConstantShader = R"(
+struct PushConstants {
+  scale : f32,
+  offsets : array<vec4f, 2>,
+};
+@group(1) @binding(0) var<storage, read_write> results : array<f32>;
+@group(3) @binding(0) var<uniform> pc : PushConstants;
+
+@compute @workgroup_size(4)
+fn main(@builtin(global_invocation_id) id : vec3u) {
+  results[id.x] = pc.scale * f32(id.x) + pc.offsets[1][id.x];
+}
+)";
+
 constexpr uint32_t kTextureSize = 2;
 
 } // namespace
@@ -154,6 +169,45 @@ TEST_F(WebGPUComputeTest, StorageBuffersInSteadyState) {
   EXPECT_EQ(webgpuPipeline.getPipelineCreationCount(), 1u);
   EXPECT_EQ(cache.getCreationCount(), bindGroups);
   EXPECT_EQ(pipeline->getIndexByName(IGL_NAMEHANDLE("results")), 1);
+}
+
+TEST_F(WebGPUComputeTest, PushConstantsKeepPartialUpdatesAcrossDispatches) {
+  auto pipeline = createPipeline(kPushConstantShader);
+  ASSERT_NE(pipeline, nullptr);
+  auto first = createStorage({0, 0, 0, 0});
+  auto second = createStorage({0, 0, 0, 0});
+  const float scale = 2.0f;
+  const std::array<float, 4> offsets = {10, 20, 30, 40};
+  const float newScale = 3.0f;
+  run([&](IComputeCommandEncoder& encoder) {
+    encoder.bindComputePipelineState(pipeline);
+    encoder.bindPushConstants(&scale, sizeof(scale), 0);
+    // offsets[1] starts at byte 32.
+    encoder.bindPushConstants(offsets.data(), sizeof(offsets), 32);
+    encoder.bindBuffer(0, first.get());
+    encoder.dispatchThreadGroups({1, 1, 1}, {4, 1, 1});
+    // Only the scale changes; the offsets stay.
+    encoder.bindPushConstants(&newScale, sizeof(newScale), 0);
+    encoder.bindBuffer(0, second.get());
+    encoder.dispatchThreadGroups({1, 1, 1}, {4, 1, 1});
+  });
+  EXPECT_EQ(read(*first, 4), (std::vector<float>{10, 22, 34, 46}));
+  EXPECT_EQ(read(*second, 4), (std::vector<float>{10, 23, 36, 49}));
+}
+
+TEST_F(WebGPUComputeTest, PushConstantsOutOfRangeAreIgnored) {
+  auto pipeline = createPipeline(kPushConstantShader);
+  ASSERT_NE(pipeline, nullptr);
+  auto results = createStorage({1, 1, 1, 1});
+  const std::array<float, 33> tooMany = {};
+  run([&](IComputeCommandEncoder& encoder) {
+    encoder.bindComputePipelineState(pipeline);
+    encoder.bindPushConstants(tooMany.data(), sizeof(tooMany), 0);
+    encoder.bindBuffer(0, results.get());
+    encoder.dispatchThreadGroups({1, 1, 1}, {4, 1, 1});
+  });
+  // Never-set push constants read zeros.
+  EXPECT_EQ(read(*results, 4), (std::vector<float>{0, 0, 0, 0}));
 }
 
 TEST_F(WebGPUComputeTest, OverrideConstants) {

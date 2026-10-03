@@ -302,10 +302,11 @@ void RenderCommandEncoder::bindBytes(size_t index,
   binder_.bindBuffer(static_cast<uint32_t>(index), slice.buffer, slice.offset, slice.size);
 }
 
-void RenderCommandEncoder::bindPushConstants(const void* /*data*/,
-                                             size_t /*length*/,
-                                             size_t /*offset*/) {
-  IGL_LOG_ERROR_ONCE("bindPushConstants() is not supported by the WebGPU backend yet\n");
+void RenderCommandEncoder::bindPushConstants(const void* data, size_t length, size_t offset) {
+  const Result result = binder_.updatePushConstants(data, length, offset);
+  if (!result.isOk()) {
+    IGL_LOG_ERROR("bindPushConstants(): %s\n", result.message.c_str());
+  }
 }
 
 void RenderCommandEncoder::bindSamplerState(size_t index,
@@ -447,6 +448,7 @@ bool RenderCommandEncoder::prepareDraw(bool indexed) {
     wgpuRenderPassEncoderSetPipeline(pass_.get(), pipeline);
     boundPipeline_ = pipeline;
   }
+  binder_.stagePushConstants(commandBuffer_.getUniformArena());
   result = binder_.flush(pass_.get(), *pipeline_, classes, commandBuffer_.getSerial());
   if (!result.isOk()) {
     IGL_LOG_ERROR("Draw skipped: %s\n", result.message.c_str());

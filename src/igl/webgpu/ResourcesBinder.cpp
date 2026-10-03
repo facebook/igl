@@ -8,6 +8,7 @@
 #include <igl/webgpu/ResourcesBinder.h>
 
 #include <algorithm>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <igl/webgpu/Buffer.h>
@@ -15,6 +16,7 @@
 #include <igl/webgpu/SamplerState.h>
 #include <igl/webgpu/StateSanitizer.h>
 #include <igl/webgpu/Texture.h>
+#include <igl/webgpu/UniformArena.h>
 #include <igl/webgpu/WebGPUContext.h>
 
 namespace igl::webgpu {
@@ -402,6 +404,50 @@ Result ResourcesBinder::makeBufferGroup(const PipelineLayoutSource& pipeline,
   return Result();
 }
 
+Result ResourcesBinder::updatePushConstants(const void* IGL_NULLABLE data,
+                                            size_t length,
+                                            size_t offset) {
+  if (data == nullptr || length == 0 || offset > pushConstants_.size() ||
+      length > pushConstants_.size() - offset) {
+    return Result(Result::Code::ArgumentOutOfRange,
+                  "Push constants are at most " + std::to_string(kMaxPushConstantBytes) + " bytes");
+  }
+  std::copy_n(static_cast<const uint8_t*>(data), length, pushConstants_.data() + offset);
+  pushConstantsUpdated_ = true;
+  return Result();
+}
+
+void ResourcesBinder::stagePushConstants(UniformArena& arena) {
+  if (!pushConstantsUpdated_) {
+    return;
+  }
+  pushConstantsUpdated_ = false;
+  const UniformArena::Slice slice = arena.allocate(pushConstants_.data(), pushConstants_.size());
+  pushConstantSlot_ = {.buffer = slice.buffer, .offset = slice.offset, .size = slice.size};
+}
+
+void ResourcesBinder::makePushConstantGroup(const PipelineLayoutSource& pipeline,
+                                            std::vector<BindGroupCache::Entry>& outEntries,
+                                            std::vector<uint32_t>& outDynamicOffsets) {
+  for (const PipelineBinding& binding : pipeline.getBindings().groups[kPushConstantGroup]) {
+    const uint64_t size = std::max<uint64_t>((binding.declaration.bufferSize + 15) / 16 * 16, 16);
+    BindGroupCache::Entry entry;
+    entry.entry.binding = binding.declaration.binding;
+    entry.entry.size = size;
+    // Push constants that were never set read zeros from the dummy buffer.
+    if (pushConstantSlot_.buffer != nullptr) {
+      entry.entry.buffer = pushConstantSlot_.buffer->getWGPUBuffer();
+      entry.resourceId = pushConstantSlot_.buffer->getResourceId();
+      outDynamicOffsets.push_back(static_cast<uint32_t>(pushConstantSlot_.offset));
+    } else {
+      entry.entry.buffer = ctx_.getDummyResources().getBuffer(size);
+      entry.resourceId = ctx_.getDummyResources().getResourceId();
+      outDynamicOffsets.push_back(0);
+    }
+    outEntries.push_back(entry);
+  }
+}
+
 Result ResourcesBinder::makeStorageTextureGroup(const PipelineLayoutSource& pipeline,
                                                 std::vector<BindGroupCache::Entry>& outEntries) {
   for (const PipelineBinding& binding : pipeline.getBindings().groups[kStorageTextureGroup]) {
@@ -491,9 +537,21 @@ Result ResourcesBinder::flush(void* IGL_NONNULL pass,
     }
     std::vector<BindGroupCache::Entry> entries;
     std::vector<uint32_t> dynamicOffsets;
-    Result result = group == kTextureGroup  ? makeTextureGroup(pipeline, classes, entries)
-                    : group == kBufferGroup ? makeBufferGroup(pipeline, entries, dynamicOffsets)
-                                            : makeStorageTextureGroup(pipeline, entries);
+    Result result;
+    switch (group) {
+    case kTextureGroup:
+      result = makeTextureGroup(pipeline, classes, entries);
+      break;
+    case kBufferGroup:
+      result = makeBufferGroup(pipeline, entries, dynamicOffsets);
+      break;
+    case kStorageTextureGroup:
+      result = makeStorageTextureGroup(pipeline, entries);
+      break;
+    default:
+      makePushConstantGroup(pipeline, entries, dynamicOffsets);
+      break;
+    }
     if (!result.isOk()) {
       return result;
     }

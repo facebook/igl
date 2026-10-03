@@ -114,6 +114,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::MultiSample:
   case DeviceFeatures::MultiSampleResolve:
   case DeviceFeatures::MultipleRenderTargets:
+  case DeviceFeatures::PushConstants:
   case DeviceFeatures::SamplerMinMaxLod:
   case DeviceFeatures::ShaderLibrary:
   case DeviceFeatures::ShaderTextureLod:
@@ -146,7 +147,6 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::MeshShaders:
   case DeviceFeatures::Multiview:
   case DeviceFeatures::MultiViewMultisample:
-  case DeviceFeatures::PushConstants:
   case DeviceFeatures::ReadWriteFramebuffer:
   case DeviceFeatures::ShaderTextureLodExt:
   case DeviceFeatures::SRGBSwapchain:
@@ -223,7 +223,11 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     result = UniformArena::kMaxAllocationSize;
     return true;
   case DeviceFeatureLimits::MaxPushConstantBytes:
+    result = kMaxPushConstantBytes;
+    return true;
   case DeviceFeatureLimits::PushConstantsAlignment:
+    result = 4;
+    return true;
   case DeviceFeatureLimits::BufferNoCopyAlignment:
     result = 0;
     return true;

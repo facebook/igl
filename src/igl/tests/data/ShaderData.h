@@ -713,6 +713,22 @@ constexpr std::string_view kWgslSimpleFragShaderUint2 =
 constexpr std::string_view kWgslSimpleFragShaderUint4 =
     WGSL_SIMPLE_FRAG_SHADER_DEF("vec4u", "vec4u(tex)");
 
+// kVulkanPushConstantFragShader: push constants are the uniform buffer at @group(3) @binding(0).
+constexpr std::string_view kWgslPushConstantFragShader = R"(
+struct PushConstants {
+  colorMultiplier : vec4f,
+};
+
+@group(0) @binding(0) var uTex : texture_2d<f32>;
+@group(0) @binding(1) var uSampler : sampler;
+@group(3) @binding(0) var<uniform> pushConstants : PushConstants;
+
+@fragment
+fn main(@location(0) uv : vec2f) -> @location(0) vec4f {
+  return textureSample(uTex, uSampler, uv) * pushConstants.colorMultiplier;
+}
+)";
+
 // Both stages in one module, with the entry point names of kMtlSimpleShader.
 constexpr std::string_view kWgslSimpleShader = R"(
 struct VertexOut {

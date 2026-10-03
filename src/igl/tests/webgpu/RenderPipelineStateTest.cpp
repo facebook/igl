@@ -165,6 +165,23 @@ TEST(WebGPUBindLayoutsTest, ConventionViolations) {
   EXPECT_EQ(webgpu::PipelineBindings().add(reflection, WGPUShaderStage_Compute).code,
             Result::Code::ArgumentInvalid);
 
+  // Group 3 holds only the push-constant uniform buffer at binding 0, of at most 128 bytes.
+  ASSERT_TRUE(
+      webgpu::parseWgslReflection("@group(3) @binding(1) var<uniform> pc : vec4f;", reflection)
+          .isOk());
+  EXPECT_EQ(webgpu::PipelineBindings().add(reflection, WGPUShaderStage_Fragment).code,
+            Result::Code::ArgumentInvalid);
+  ASSERT_TRUE(webgpu::parseWgslReflection(
+                  "@group(3) @binding(0) var<storage, read> pc : array<f32>;", reflection)
+                  .isOk());
+  EXPECT_EQ(webgpu::PipelineBindings().add(reflection, WGPUShaderStage_Fragment).code,
+            Result::Code::ArgumentInvalid);
+  ASSERT_TRUE(webgpu::parseWgslReflection(
+                  "@group(3) @binding(0) var<uniform> pc : array<vec4f, 9>;", reflection)
+                  .isOk());
+  EXPECT_EQ(webgpu::PipelineBindings().add(reflection, WGPUShaderStage_Fragment).code,
+            Result::Code::ArgumentInvalid);
+
   // Two stages that disagree about a binding.
   webgpu::WgslReflection a;
   webgpu::WgslReflection b;
@@ -186,6 +203,18 @@ TEST(WebGPUBindLayoutsTest, DynamicUniformBudget) {
   ASSERT_EQ(bindings.groups[webgpu::kBufferGroup].size(), 9u);
   for (size_t i = 0; i < 9; ++i) {
     EXPECT_EQ(bindings.groups[webgpu::kBufferGroup][i].hasDynamicOffset, i < 8) << i;
+  }
+
+  // The push-constant buffer takes one dynamic slot first.
+  webgpu::WgslReflection pushConstants;
+  ASSERT_TRUE(
+      webgpu::parseWgslReflection("@group(3) @binding(0) var<uniform> pc : vec4f;", pushConstants)
+          .isOk());
+  ASSERT_TRUE(bindings.add(pushConstants, WGPUShaderStage_Fragment).isOk());
+  bindings.assignDynamicOffsets(8);
+  EXPECT_TRUE(bindings.groups[webgpu::kPushConstantGroup][0].hasDynamicOffset);
+  for (size_t i = 0; i < 9; ++i) {
+    EXPECT_EQ(bindings.groups[webgpu::kBufferGroup][i].hasDynamicOffset, i < 7) << i;
   }
 }
 

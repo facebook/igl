@@ -20,7 +20,6 @@
 
 namespace igl::webgpu {
 
-class DeviceFeatureSet;
 class WebGPUContext;
 
 /// Maximum number of texture units: bindings 2i and 2i+1 of group 0 for i < kMaxTextureUnits.
@@ -74,7 +73,8 @@ struct PipelineBindings {
   /// Merges the declarations of `stage`. Returns ArgumentInvalid when two stages declare the same
   /// binding differently, and Unsupported for bindings outside the bind convention.
   [[nodiscard]] Result add(const WgslReflection& reflection, WGPUShaderStage stage);
-  /// Marks group 1 uniform buffers dynamic in binding order, up to `maxDynamicUniformBuffers`.
+  /// Marks the push-constant buffer and then group 1 uniform buffers (in binding order) dynamic, up
+  /// to `maxDynamicUniformBuffers` in total.
   void assignDynamicOffsets(uint32_t maxDynamicUniformBuffers);
   /// Declared texture units (group 0 even bindings), as a bit mask.
   [[nodiscard]] uint32_t getTextureUnitMask() const;

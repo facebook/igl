@@ -9,7 +9,9 @@
 
 #include <igl/webgpu/ResourcesBinder.h>
 
+#include <array>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <string>
 #include <igl/CommandQueue.h>
@@ -331,6 +333,18 @@ fn main(@location(0) uv : vec2f) -> @location(0) vec4f {
                 bindAll(binder, texture_.get());
                 binder.bindBuffer(0, uniforms_.get(), 0, 16);
               }).isOk());
+}
+
+TEST_F(WebGPUResourcesBinderTest, PushConstantRangeChecksDoNotWrap) {
+  webgpu::ResourcesBinder binder(context(), device_->getDeviceFeatureSet());
+  const std::array<uint8_t, 8> data = {};
+  EXPECT_TRUE(binder.updatePushConstants(data.data(), data.size(), 120).isOk());
+  EXPECT_EQ(binder.updatePushConstants(data.data(), data.size(), 121).code,
+            Result::Code::ArgumentOutOfRange);
+  EXPECT_EQ(binder.updatePushConstants(data.data(), 4, std::numeric_limits<size_t>::max() - 1).code,
+            Result::Code::ArgumentOutOfRange);
+  EXPECT_EQ(binder.updatePushConstants(data.data(), std::numeric_limits<size_t>::max(), 8).code,
+            Result::Code::ArgumentOutOfRange);
 }
 
 TEST_F(WebGPUResourcesBinderTest, BindGroupApiRecords) {

@@ -24,6 +24,7 @@ class Buffer;
 class DeviceFeatureSet;
 class SamplerState;
 class Texture;
+class UniformArena;
 class WebGPUContext;
 
 /// @brief LRU cache of bind groups keyed by layout and the ids, offsets and sizes of their
@@ -130,6 +131,13 @@ class ResourcesBinder final {
   /// `size` 0 binds the rest of the buffer from `offset`.
   void bindBuffer(uint32_t index, Buffer* IGL_NULLABLE buffer, size_t offset, size_t size);
   void bindStorageTexture(uint32_t index, Texture* IGL_NULLABLE texture);
+  /// Updates bytes [offset, offset + length) of the push constants; they reach the GPU through
+  /// stagePushConstants() and the group 3 uniform buffer.
+  [[nodiscard]] Result updatePushConstants(const void* IGL_NULLABLE data,
+                                           size_t length,
+                                           size_t offset);
+  /// Copies updated push constants into `arena` for the following flushes; a no-op otherwise.
+  void stagePushConstants(UniformArena& arena);
 
   /// Sample classes of the bound textures for the texture units `pipeline` declares; unbound
   /// units get the class of their declaration. ArgumentInvalid when a declaration cannot sample
@@ -177,6 +185,9 @@ class ResourcesBinder final {
                                        std::vector<uint32_t>& outDynamicOffsets);
   [[nodiscard]] Result makeStorageTextureGroup(const PipelineLayoutSource& pipeline,
                                                std::vector<BindGroupCache::Entry>& outEntries);
+  void makePushConstantGroup(const PipelineLayoutSource& pipeline,
+                             std::vector<BindGroupCache::Entry>& outEntries,
+                             std::vector<uint32_t>& outDynamicOffsets);
 
   WebGPUContext& ctx_;
   const DeviceFeatureSet& features_;
@@ -184,6 +195,9 @@ class ResourcesBinder final {
   std::array<SamplerState*, kMaxTextureUnits> samplers_ = {};
   std::array<BufferSlot, IGL_BUFFER_BINDINGS_MAX> buffers_ = {};
   std::array<Texture*, kMaxStorageTextures> storageTextures_ = {};
+  std::array<uint8_t, kMaxPushConstantBytes> pushConstants_ = {};
+  bool pushConstantsUpdated_ = false;
+  BufferSlot pushConstantSlot_;
   std::array<BoundGroup, kNumBindGroups> boundGroups_ = {};
 };
 

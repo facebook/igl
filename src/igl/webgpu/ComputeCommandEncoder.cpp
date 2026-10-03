@@ -117,10 +117,13 @@ void ComputeCommandEncoder::bindBytes(uint32_t index,
   binder_.bindBuffer(index, slice.buffer, slice.offset, slice.size);
 }
 
-void ComputeCommandEncoder::bindPushConstants(const void* IGL_NULLABLE /*data*/,
-                                              size_t /*length*/,
-                                              size_t /*offset*/) {
-  IGL_LOG_ERROR_ONCE("bindPushConstants() is not supported by the WebGPU backend yet\n");
+void ComputeCommandEncoder::bindPushConstants(const void* IGL_NULLABLE data,
+                                              size_t length,
+                                              size_t offset) {
+  const Result result = binder_.updatePushConstants(data, length, offset);
+  if (!result.isOk()) {
+    IGL_LOG_ERROR("bindPushConstants(): %s\n", result.message.c_str());
+  }
 }
 
 bool ComputeCommandEncoder::prepareDispatch() {
@@ -146,6 +149,7 @@ bool ComputeCommandEncoder::prepareDispatch() {
     wgpuComputePassEncoderSetPipeline(pass_.get(), pipeline);
     boundPipeline_ = pipeline;
   }
+  binder_.stagePushConstants(commandBuffer_->getUniformArena());
   result = binder_.flush(pass_.get(), *pipeline_, classes, commandBuffer_->getSerial());
   if (!result.isOk()) {
     IGL_LOG_ERROR("Dispatch skipped: %s\n", result.message.c_str());

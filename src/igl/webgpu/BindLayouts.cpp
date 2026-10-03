@@ -77,7 +77,12 @@ Result checkConvention(const WgslBinding& binding) {
                ? Result()
                : violation("group 2 holds storage textures");
   case kPushConstantGroup:
-    return Result(Result::Code::Unsupported, "Push constants are not supported yet");
+    if (binding.binding != 0 || binding.kind != WgslBindingKind::UniformBuffer) {
+      return violation("group 3 holds the push-constant uniform buffer at binding 0");
+    }
+    return binding.bufferSize <= kMaxPushConstantBytes
+               ? Result()
+               : violation("push constants are at most 128 bytes");
   default:
     return violation("the WebGPU backend uses bind groups 0-3");
   }
@@ -190,6 +195,10 @@ Result PipelineBindings::add(const WgslReflection& reflection, WGPUShaderStage s
 
 void PipelineBindings::assignDynamicOffsets(uint32_t maxDynamicUniformBuffers) {
   uint32_t count = 0;
+  for (PipelineBinding& binding : groups[kPushConstantGroup]) {
+    binding.hasDynamicOffset = true;
+    ++count;
+  }
   for (PipelineBinding& binding : groups[kBufferGroup]) {
     binding.hasDynamicOffset = binding.declaration.kind == WgslBindingKind::UniformBuffer &&
                                count < maxDynamicUniformBuffers;
