@@ -100,7 +100,7 @@ WGPURenderPipeline IGL_NULLABLE MipmapGenerator::getPipeline(WGPUTextureFormat f
 
   ctx_.pushErrorScope(WGPUErrorFilter_Validation);
   Handle<WGPURenderPipeline> pipeline(wgpuDeviceCreateRenderPipeline(device, &pipelineDesc));
-  Result result = ctx_.popErrorScope();
+  Result result = ctx_.popErrorScope(ErrorScopeKind::Pipeline);
   if (!result.isOk() || !pipeline) {
     Result::setResult(outResult,
                       !result.isOk() ? std::move(result)

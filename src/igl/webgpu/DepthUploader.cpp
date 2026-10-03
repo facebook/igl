@@ -91,7 +91,7 @@ WGPURenderPipeline IGL_NULLABLE DepthUploader::getPipeline(WGPUTextureFormat for
 
   ctx_.pushErrorScope(WGPUErrorFilter_Validation);
   Handle<WGPURenderPipeline> pipeline(wgpuDeviceCreateRenderPipeline(device, &pipelineDesc));
-  Result result = ctx_.popErrorScope();
+  Result result = ctx_.popErrorScope(ErrorScopeKind::Pipeline);
   if (!result.isOk() || !pipeline) {
     Result::setResult(outResult, std::move(result));
     return nullptr;

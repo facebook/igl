@@ -35,6 +35,20 @@ class HWDevice final {
   [[nodiscard]] static std::unique_ptr<Device> create(std::unique_ptr<WebGPUContext> ctx,
                                                       const HWDeviceDesc& desc,
                                                       Result* IGL_NULLABLE outResult = nullptr);
+
+  /// Wraps a device created outside IGL; see WebGPUContext::createWithDevice().
+  [[nodiscard]] static std::unique_ptr<Device> createWithWGPUDevice(
+      WGPUInstance IGL_NULLABLE instance,
+      WGPUDevice IGL_NULLABLE device,
+      const WebGPUContextDesc& desc = {},
+      Result* IGL_NULLABLE outResult = nullptr);
+#if IGL_PLATFORM_EMSCRIPTEN
+  /// Imports the page's GPUDevice; see WebGPUContext::createWithJsDevice(). Link with
+  /// `--js-library emscripten/library_iglwebgpu.js`.
+  [[nodiscard]] static std::unique_ptr<Device> createWithJsDevice(
+      const WebGPUContextDesc& desc = {},
+      Result* IGL_NULLABLE outResult = nullptr);
+#endif
 };
 
 } // namespace igl::webgpu

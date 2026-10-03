@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <vector>
 #include <webgpu/webgpu.h>
 #include <igl/PlatformDevice.h>
 
@@ -31,6 +32,13 @@ class PlatformDevice final : public IPlatformDevice {
   [[nodiscard]] WGPUQueue IGL_NULLABLE getWGPUQueue() const noexcept;
   /// Whether the device was created with `feature`.
   [[nodiscard]] bool hasWGPUFeature(WGPUFeatureName feature) const;
+
+  /// See WebGPUContext::setSuspensionAllowed(). Browser exports that are not JSPI exports call
+  /// setSuspensionAllowed(false) so that waits fail instead of trapping.
+  void setSuspensionAllowed(bool allowed) noexcept;
+  [[nodiscard]] bool isSuspensionAllowed() const noexcept;
+  /// Returns and clears the WebGPU errors latched by create calls that did not wait for them.
+  [[nodiscard]] std::vector<Result> takeErrors();
 
  protected:
   [[nodiscard]] bool isType(PlatformDeviceType t) const noexcept override {

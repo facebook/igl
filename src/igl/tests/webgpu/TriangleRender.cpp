@@ -52,24 +52,11 @@ Result checkCreated(const Result& ret, bool created) {
 
 } // namespace
 
-Result renderTriangle(IDevice& device, uint32_t size, std::vector<uint8_t>& outRgba) {
+Result TriangleRenderer::initialize(IDevice& device, TextureFormat format) {
   Result ret;
-  const std::shared_ptr<ICommandQueue> queue = device.createCommandQueue({}, &ret);
-  ret = checkCreated(ret, queue != nullptr);
-  if (!ret.isOk()) {
-    return ret;
-  }
-  const std::shared_ptr<ITexture> target = device.createTexture(
-      TextureDesc::new2D(
-          TextureFormat::RGBA_UNorm8, size, size, TextureDesc::TextureUsageBits::Attachment),
-      &ret);
-  ret = checkCreated(ret, target != nullptr);
-  if (!ret.isOk()) {
-    return ret;
-  }
-  const std::shared_ptr<IFramebuffer> framebuffer =
-      device.createFramebuffer({.colorAttachments = {{.texture = target}}}, &ret);
-  ret = checkCreated(ret, framebuffer != nullptr);
+  device_ = &device;
+  queue_ = device.createCommandQueue({}, &ret);
+  ret = checkCreated(ret, queue_ != nullptr);
   if (!ret.isOk()) {
     return ret;
   }
@@ -79,16 +66,22 @@ Result renderTriangle(IDevice& device, uint32_t size, std::vector<uint8_t>& outR
   if (!ret.isOk()) {
     return ret;
   }
-  const std::shared_ptr<IRenderPipelineState> pipeline = device.createRenderPipeline(
-      {.shaderStages = std::move(stages),
-       .targetDesc = {.colorAttachments = {{.textureFormat = target->getFormat()}}}},
-      &ret);
-  ret = checkCreated(ret, pipeline != nullptr);
+  pipeline_ =
+      device.createRenderPipeline({.shaderStages = std::move(stages),
+                                   .targetDesc = {.colorAttachments = {{.textureFormat = format}}}},
+                                  &ret);
+  return checkCreated(ret, pipeline_ != nullptr);
+}
+
+Result TriangleRenderer::render(const std::shared_ptr<ITexture>& target) {
+  Result ret;
+  const std::shared_ptr<IFramebuffer> framebuffer =
+      device_->createFramebuffer({.colorAttachments = {{.texture = target}}}, &ret);
+  ret = checkCreated(ret, framebuffer != nullptr);
   if (!ret.isOk()) {
     return ret;
   }
-
-  const std::shared_ptr<ICommandBuffer> cmdBuffer = queue->createCommandBuffer({}, &ret);
+  const std::shared_ptr<ICommandBuffer> cmdBuffer = queue_->createCommandBuffer({}, &ret);
   ret = checkCreated(ret, cmdBuffer != nullptr);
   if (!ret.isOk()) {
     return ret;
@@ -104,17 +97,44 @@ Result renderTriangle(IDevice& device, uint32_t size, std::vector<uint8_t>& outR
   if (!ret.isOk()) {
     return ret;
   }
-  encoder->bindRenderPipelineState(pipeline);
+  encoder->bindRenderPipelineState(pipeline_);
   encoder->draw(3);
   encoder->endEncoding();
-  queue->submit(*cmdBuffer);
-  cmdBuffer->waitUntilCompleted();
+  cmdBuffer->present(target);
+  queue_->submit(*cmdBuffer);
+  return Result();
+}
+
+Result renderTriangle(IDevice& device, uint32_t size, std::vector<uint8_t>& outRgba) {
+  TriangleRenderer renderer;
+  Result ret = renderer.initialize(device, TextureFormat::RGBA_UNorm8);
+  if (!ret.isOk()) {
+    return ret;
+  }
+  const std::shared_ptr<ITexture> target = device.createTexture(
+      TextureDesc::new2D(
+          TextureFormat::RGBA_UNorm8, size, size, TextureDesc::TextureUsageBits::Attachment),
+      &ret);
+  ret = checkCreated(ret, target != nullptr);
+  if (!ret.isOk()) {
+    return ret;
+  }
+  ret = renderer.render(target);
+  if (!ret.isOk()) {
+    return ret;
+  }
+  const std::shared_ptr<IFramebuffer> framebuffer =
+      device.createFramebuffer({.colorAttachments = {{.texture = target}}}, &ret);
+  ret = checkCreated(ret, framebuffer != nullptr);
+  if (!ret.isOk()) {
+    return ret;
+  }
 
   // IGL readbacks store rows bottom-up.
   const size_t rowBytes = size_t{size} * 4;
   std::vector<uint8_t> bottomUp(rowBytes * size);
   framebuffer->copyBytesColorAttachment(
-      *queue, 0, bottomUp.data(), TextureRangeDesc::new2D(0, 0, size, size));
+      renderer.getQueue(), 0, bottomUp.data(), TextureRangeDesc::new2D(0, 0, size, size));
   outRgba.resize(bottomUp.size());
   for (uint32_t row = 0; row < size; ++row) {
     std::memcpy(

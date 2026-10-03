@@ -8,6 +8,7 @@
 #include <igl/webgpu/PlatformDevice.h>
 
 #include <igl/webgpu/Device.h>
+#include <igl/webgpu/WebGPUContext.h>
 
 namespace igl::webgpu {
 
@@ -33,6 +34,18 @@ WGPUQueue IGL_NULLABLE PlatformDevice::getWGPUQueue() const noexcept {
 
 bool PlatformDevice::hasWGPUFeature(WGPUFeatureName feature) const {
   return device_.getDeviceFeatureSet().hasWGPUFeature(feature);
+}
+
+void PlatformDevice::setSuspensionAllowed(bool allowed) noexcept {
+  getContext().setSuspensionAllowed(allowed);
+}
+
+bool PlatformDevice::isSuspensionAllowed() const noexcept {
+  return getContext().isSuspensionAllowed();
+}
+
+std::vector<Result> PlatformDevice::takeErrors() {
+  return getContext().takeErrors();
 }
 
 } // namespace igl::webgpu

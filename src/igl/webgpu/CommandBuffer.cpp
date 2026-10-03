@@ -110,7 +110,8 @@ void CommandBuffer::present(const std::shared_ptr<ITexture>& /*surface*/) const 
 void CommandBuffer::waitUntilScheduled() {}
 
 void CommandBuffer::waitUntilCompleted() {
-  if (!submitted_) {
+  // Browser builds without JSPI cannot wait; submitted work completes on its own.
+  if (!submitted_ || (ctx_.isSuspensionAllowed() && !ctx_.canWait())) {
     return;
   }
   const Result result = ctx_.waitForSubmittedWork();

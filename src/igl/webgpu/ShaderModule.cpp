@@ -68,17 +68,21 @@ Result compileWgsl(const WebGPUContext& ctx,
   ctx.pushErrorScope(WGPUErrorFilter_Validation);
   Handle<WGPUShaderModule> module(wgpuDeviceCreateShaderModule(ctx.getDevice(), &moduleDesc));
 
+  // Without waiting, compilation errors arrive through the latched error scope.
+  const bool waits = ctx.waitsForErrors(ErrorScopeKind::Pipeline);
   const auto state = std::make_shared<CompilationInfoState>();
-  const WGPUCompilationInfoCallbackInfo callbackInfo = {
-      .nextInChain = nullptr,
-      .mode = WGPUCallbackMode_WaitAnyOnly,
-      .callback = onCompilationInfo,
-      .userdata1 = new std::shared_ptr<CompilationInfoState>(state),
-      .userdata2 = nullptr,
-  };
-  const bool completed =
-      ctx.waitFuture(wgpuShaderModuleGetCompilationInfo(module.get(), callbackInfo));
-  Result validation = ctx.popErrorScope();
+  bool completed = true;
+  if (waits) {
+    const WGPUCompilationInfoCallbackInfo callbackInfo = {
+        .nextInChain = nullptr,
+        .mode = WGPUCallbackMode_WaitAnyOnly,
+        .callback = onCompilationInfo,
+        .userdata1 = new std::shared_ptr<CompilationInfoState>(state),
+        .userdata2 = nullptr,
+    };
+    completed = ctx.waitFuture(wgpuShaderModuleGetCompilationInfo(module.get(), callbackInfo));
+  }
+  Result validation = ctx.popErrorScope(ErrorScopeKind::Pipeline);
 
   if (state->hasErrors) {
     return Result(Result::Code::ArgumentInvalid,
@@ -87,7 +91,7 @@ Result compileWgsl(const WebGPUContext& ctx,
   if (!validation.isOk()) {
     return validation;
   }
-  if (!completed || !state->completed) {
+  if (waits && (!completed || !state->completed)) {
     return Result(Result::Code::RuntimeError, "Shader compilation info unavailable");
   }
   auto reflection = std::make_shared<WgslReflection>();

@@ -75,4 +75,20 @@ std::unique_ptr<Device> HWDevice::create(std::unique_ptr<WebGPUContext> ctx,
   return std::make_unique<Device>(std::move(ctx));
 }
 
+std::unique_ptr<Device> HWDevice::createWithWGPUDevice(WGPUInstance IGL_NULLABLE instance,
+                                                       WGPUDevice IGL_NULLABLE device,
+                                                       const WebGPUContextDesc& desc,
+                                                       Result* IGL_NULLABLE outResult) {
+  auto ctx = WebGPUContext::createWithDevice(desc, instance, device, outResult);
+  return ctx ? std::make_unique<Device>(std::move(ctx)) : nullptr;
+}
+
+#if IGL_PLATFORM_EMSCRIPTEN
+std::unique_ptr<Device> HWDevice::createWithJsDevice(const WebGPUContextDesc& desc,
+                                                     Result* IGL_NULLABLE outResult) {
+  auto ctx = WebGPUContext::createWithJsDevice(desc, outResult);
+  return ctx ? std::make_unique<Device>(std::move(ctx)) : nullptr;
+}
+#endif
+
 } // namespace igl::webgpu

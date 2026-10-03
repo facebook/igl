@@ -116,8 +116,12 @@ Result copyAndMap(const WebGPUContext& ctx,
                   uint64_t stagingSize,
                   const std::function<void(WGPUCommandEncoder, WGPUBuffer)>& encode,
                   const std::function<void(const uint8_t*)>& consume) {
+  Result result = ctx.checkCanWait();
+  if (!result.isOk()) {
+    return result;
+  }
   Handle<WGPUBuffer> staging;
-  Result result = submitCopy(ctx, stagingSize, encode, staging);
+  result = submitCopy(ctx, stagingSize, encode, staging);
   if (!result.isOk()) {
     return result;
   }
@@ -261,6 +265,12 @@ bool AsyncTextureReadback::poll() {
 Result AsyncTextureReadback::wait() {
   if (!state_) {
     return Result(Result::Code::InvalidOperation, "No texture readback in progress");
+  }
+  if (!state_->completed) {
+    Result result = ctx_->checkCanWait();
+    if (!result.isOk()) {
+      return result;
+    }
   }
   if (!state_->completed && !ctx_->waitFuture(future_)) {
     return Result(Result::Code::RuntimeError, "Timed out waiting for a WebGPU readback");

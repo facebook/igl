@@ -35,6 +35,7 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   incrementDrawCount(commandBuffer.getCurrentDrawCount());
   device_.addDrawCount(commandBuffer.getCurrentDrawCount());
   device_.getContext().processEvents();
+  device_.getContext().logLatchedErrors();
   return cmdBuffer.getSerial();
 }
 

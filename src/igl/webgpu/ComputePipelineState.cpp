@@ -113,7 +113,7 @@ WGPUComputePipeline IGL_NULLABLE ComputePipelineState::getPipeline(SampleClasses
   ctx_.pushErrorScope(WGPUErrorFilter_Validation);
   Handle<WGPUComputePipeline> pipeline(
       wgpuDeviceCreateComputePipeline(ctx_.getDevice(), &pipelineDesc));
-  Result result = ctx_.popErrorScope();
+  Result result = ctx_.popErrorScope(ErrorScopeKind::Pipeline);
   if (!result.isOk() || !pipeline) {
     Result::setResult(outResult,
                       !result.isOk() ? std::move(result)

@@ -331,7 +331,7 @@ Result RenderPipelineState::createPipeline(const RenderPipelineDynamicState& sta
 
   ctx_.pushErrorScope(WGPUErrorFilter_Validation);
   outPipeline.reset(wgpuDeviceCreateRenderPipeline(ctx_.getDevice(), &pipelineDesc));
-  result = ctx_.popErrorScope();
+  result = ctx_.popErrorScope(ErrorScopeKind::Pipeline);
   if (!result.isOk()) {
     outPipeline = nullptr;
     return result;

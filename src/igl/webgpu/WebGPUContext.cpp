@@ -140,7 +140,39 @@ struct PopErrorScopeState {
   std::string message;
 };
 
+constexpr size_t kMaxLatchedErrors = 64;
+
 } // namespace
+
+#if IGL_PLATFORM_EMSCRIPTEN
+// Called by emscripten/library_iglwebgpu.js for imported devices; `state` is the
+// std::shared_ptr<CallbackState>* passed to igl_webgpu_import_js_device(), freed on loss.
+void onJsDeviceLost(void* IGL_NONNULL state, int destroyed, const char* IGL_NULLABLE message) {
+  const std::unique_ptr<std::shared_ptr<WebGPUContext::CallbackState>> s(
+      static_cast<std::shared_ptr<WebGPUContext::CallbackState>*>(state));
+  (*s)->deviceLost = true;
+  if (destroyed == 0) {
+    IGL_LOG_ERROR("WebGPU device lost: %s\n", message != nullptr ? message : "");
+  }
+}
+
+void onJsUncapturedError(void* IGL_NONNULL state, const char* IGL_NULLABLE message) {
+  auto& s = *static_cast<std::shared_ptr<WebGPUContext::CallbackState>*>(state);
+  s->uncapturedErrorCount++;
+  IGL_LOG_ERROR("Uncaptured WebGPU error: %s\n", message != nullptr ? message : "");
+  IGL_SOFT_ERROR("Uncaptured WebGPU error: %s", message != nullptr ? message : "");
+}
+#endif
+
+void WebGPUContext::CallbackState::latch(Result error) {
+  const std::lock_guard<std::mutex> lock(latchedErrorsMutex);
+  if (latchedErrors.size() < kMaxLatchedErrors) {
+    latchedErrors.push_back(std::move(error));
+  } else {
+    IGL_LOG_ERROR_ONCE("WebGPU: %zu latched errors are pending; dropping further errors\n",
+                       kMaxLatchedErrors);
+  }
+}
 
 WebGPUContext::WebGPUContext(WebGPUContextDesc desc) : desc_(std::move(desc)) {}
 
@@ -213,8 +245,97 @@ std::unique_ptr<WebGPUContext> WebGPUContext::create(const WebGPUContextDesc& de
     Result::setResult(outResult, std::move(result));
     return nullptr;
   }
+  ctx->resolveErrorMode();
   Result::setOk(outResult);
   return ctx;
+}
+
+std::unique_ptr<WebGPUContext> WebGPUContext::createWithDevice(const WebGPUContextDesc& desc,
+                                                               WGPUInstance IGL_NULLABLE instance,
+                                                               WGPUDevice IGL_NULLABLE device,
+                                                               Result* IGL_NULLABLE outResult) {
+  if (instance == nullptr || device == nullptr) {
+    Result::setResult(
+        outResult, Result::Code::ArgumentNull, "A WebGPU instance and device are required");
+    return nullptr;
+  }
+  auto ctx = std::unique_ptr<WebGPUContext>(new WebGPUContext(desc));
+  ctx->instance_ = Handle<WGPUInstance>::retain(instance);
+  ctx->device_ = Handle<WGPUDevice>::retain(device);
+  ctx->queue_.reset(wgpuDeviceGetQueue(device));
+  WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
+  if (wgpuDeviceGetAdapterInfo(device, &info) == WGPUStatus_Success) {
+    ctx->setAdapterInfo(info);
+  }
+  ctx->resolveErrorMode();
+  Result::setOk(outResult);
+  return ctx;
+}
+
+#if IGL_PLATFORM_EMSCRIPTEN
+extern "C" {
+// emscripten/library_iglwebgpu.js
+WGPUDevice igl_webgpu_import_js_device(WGPUInstance instance, void* state);
+
+EMSCRIPTEN_KEEPALIVE void igl_webgpu_on_device_lost(void* state,
+                                                    int destroyed,
+                                                    const char* message) {
+  onJsDeviceLost(state, destroyed, message);
+}
+
+EMSCRIPTEN_KEEPALIVE void igl_webgpu_on_uncaptured_error(void* state, const char* message) {
+  onJsUncapturedError(state, message);
+}
+}
+
+std::unique_ptr<WebGPUContext> WebGPUContext::createWithJsDevice(const WebGPUContextDesc& desc,
+                                                                 Result* IGL_NULLABLE outResult) {
+  auto ctx = std::unique_ptr<WebGPUContext>(new WebGPUContext(desc));
+  ctx->instance_.reset(
+      compat::createInstance(/*requestTimedWaitAny=*/true, &ctx->hasTimedWaitAny_));
+  if (!ctx->instance_) {
+    Result::setResult(outResult, Result::Code::RuntimeError, "wgpuCreateInstance() failed");
+    return nullptr;
+  }
+  // The callbacks own a reference to the state until the device is lost.
+  auto* state = new std::shared_ptr<CallbackState>(ctx->callbackState_);
+  ctx->device_.reset(igl_webgpu_import_js_device(ctx->instance_.get(), state));
+  if (!ctx->device_) {
+    delete state;
+    Result::setResult(outResult,
+                      Result::Code::ArgumentNull,
+                      "Module.iglWebGPUDevice and Module.preinitializedWebGPUDevice are unset");
+    return nullptr;
+  }
+  ctx->queue_.reset(wgpuDeviceGetQueue(ctx->device_.get()));
+  WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
+  if (wgpuDeviceGetAdapterInfo(ctx->device_.get(), &info) == WGPUStatus_Success) {
+    ctx->setAdapterInfo(info);
+  }
+  ctx->resolveErrorMode();
+  Result::setOk(outResult);
+  return ctx;
+}
+#endif
+
+void WebGPUContext::setAdapterInfo(WGPUAdapterInfo& info) {
+  adapterBackendType_ = info.backendType;
+  adapterType_ = info.adapterType;
+  vendorId_ = info.vendorID;
+  adapterName_ = toStdString(info.device);
+  adapterVendor_ = toStdString(info.vendor);
+  wgpuAdapterInfoFreeMembers(info);
+}
+
+void WebGPUContext::resolveErrorMode() {
+  errorMode_ = desc_.errorMode;
+  if (errorMode_ == ErrorMode::Default) {
+#if IGL_PLATFORM_EMSCRIPTEN
+    errorMode_ = hasTimedWaitAny_ ? ErrorMode::SyncPipelines : ErrorMode::Latched;
+#else
+    errorMode_ = ErrorMode::Sync;
+#endif
+  }
 }
 
 Result WebGPUContext::initInstanceAndAdapter() {
@@ -264,12 +385,7 @@ Result WebGPUContext::initInstanceAndAdapter() {
 
   WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
   if (wgpuAdapterGetInfo(adapter_.get(), &info) == WGPUStatus_Success) {
-    adapterBackendType_ = info.backendType;
-    adapterType_ = info.adapterType;
-    vendorId_ = info.vendorID;
-    adapterName_ = toStdString(info.device);
-    adapterVendor_ = toStdString(info.vendor);
-    wgpuAdapterInfoFreeMembers(info);
+    setAdapterInfo(info);
   }
   if (backendType != WGPUBackendType_Undefined && adapterBackendType_ != backendType) {
     return Result(Result::Code::Unsupported, "The WebGPU adapter uses a different backend");
@@ -392,8 +508,39 @@ Result WebGPUContext::initDevice() {
   return Result();
 }
 
+bool WebGPUContext::canWait() const noexcept {
+#if IGL_PLATFORM_EMSCRIPTEN
+  return suspensionAllowed_ && hasTimedWaitAny_;
+#else
+  return suspensionAllowed_;
+#endif
+}
+
+Result WebGPUContext::checkCanWait() const {
+  if (!suspensionAllowed_) {
+    IGL_DEBUG_ABORT("WebGPU wait while suspension is disallowed\n");
+    return Result(Result::Code::InvalidOperation,
+                  "WebGPU cannot wait while suspension is disallowed");
+  }
+  if (!canWait()) {
+    return Result(Result::Code::Unsupported, "WebGPU cannot wait in browser builds without JSPI");
+  }
+  return Result();
+}
+
 bool WebGPUContext::waitFuture(WGPUFuture future, uint64_t timeoutNs) const {
   WGPUFutureWaitInfo waitInfo = {.future = future, .completed = 0};
+  if (!suspensionAllowed_) {
+    IGL_DEBUG_ABORT("WebGPU wait while suspension is disallowed\n");
+    return false;
+  }
+#if IGL_PLATFORM_EMSCRIPTEN
+  if (!hasTimedWaitAny_) {
+    // Nothing completes while this call spins; futures resolve from the browser's event loop.
+    return wgpuInstanceWaitAny(instance_.get(), 1, &waitInfo, 0) == WGPUWaitStatus_Success &&
+           waitInfo.completed != 0;
+  }
+#endif
   if (hasTimedWaitAny_) {
     return wgpuInstanceWaitAny(instance_.get(), 1, &waitInfo, timeoutNs) ==
                WGPUWaitStatus_Success &&
@@ -414,6 +561,10 @@ bool WebGPUContext::waitFuture(WGPUFuture future, uint64_t timeoutNs) const {
 }
 
 Result WebGPUContext::waitForSubmittedWork(uint64_t timeoutNs) const {
+  Result result = checkCanWait();
+  if (!result.isOk()) {
+    return result;
+  }
   const auto status = std::make_shared<WGPUQueueWorkDoneStatus>(WGPUQueueWorkDoneStatus_Error);
   // onQueueWorkDone() frees the reference retained for it.
   // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
@@ -438,7 +589,46 @@ void WebGPUContext::pushErrorScope(WGPUErrorFilter filter) const {
   wgpuDevicePushErrorScope(device_.get(), filter);
 }
 
-Result WebGPUContext::popErrorScope() const {
+bool WebGPUContext::waitsForErrors(ErrorScopeKind kind) const noexcept {
+  if (!canWait()) {
+    return false;
+  }
+  switch (errorMode_) {
+  case ErrorMode::Default:
+  case ErrorMode::Sync:
+    return true;
+  case ErrorMode::SyncPipelines:
+    return kind == ErrorScopeKind::Pipeline;
+  case ErrorMode::Latched:
+    return false;
+  }
+  IGL_UNREACHABLE_RETURN(true)
+}
+
+Result WebGPUContext::popErrorScope(ErrorScopeKind kind) const {
+  if (!waitsForErrors(kind)) {
+    const WGPUPopErrorScopeCallbackInfo latchInfo = {
+        .nextInChain = nullptr,
+        .mode = WGPUCallbackMode_AllowSpontaneous,
+        .callback =
+            [](WGPUPopErrorScopeStatus status,
+               WGPUErrorType type,
+               WGPUStringView message,
+               void* IGL_NULLABLE userdata1,
+               void* IGL_NULLABLE /*userdata2*/) {
+              const std::unique_ptr<std::shared_ptr<CallbackState>> s(
+                  static_cast<std::shared_ptr<CallbackState>*>(userdata1));
+              if (s != nullptr && status == WGPUPopErrorScopeStatus_Success &&
+                  type != WGPUErrorType_NoError) {
+                (*s)->latch(getResultFromWGPUError(type, message));
+              }
+            },
+        .userdata1 = new std::shared_ptr<CallbackState>(callbackState_),
+        .userdata2 = nullptr,
+    };
+    wgpuDevicePopErrorScope(device_.get(), latchInfo);
+    return Result();
+  }
   const auto state = std::make_shared<PopErrorScopeState>();
   const WGPUPopErrorScopeCallbackInfo callbackInfo = {
       .nextInChain = nullptr,
@@ -522,6 +712,22 @@ UniformArenaPool& WebGPUContext::getUniformArenaPool() {
     uniformArenaPool_ = std::make_unique<UniformArenaPool>(*this);
   }
   return *uniformArenaPool_;
+}
+
+std::vector<Result> WebGPUContext::takeErrors() {
+  const std::lock_guard<std::mutex> lock(callbackState_->latchedErrorsMutex);
+  callbackState_->loggedLatchedErrorCount = 0;
+  return std::exchange(callbackState_->latchedErrors, {});
+}
+
+void WebGPUContext::logLatchedErrors() {
+  CallbackState& state = *callbackState_;
+  const std::lock_guard<std::mutex> lock(state.latchedErrorsMutex);
+  for (; state.loggedLatchedErrorCount < state.latchedErrors.size();
+       ++state.loggedLatchedErrorCount) {
+    IGL_LOG_ERROR("WebGPU error: %s\n",
+                  state.latchedErrors[state.loggedLatchedErrorCount].message.c_str());
+  }
 }
 
 bool WebGPUContext::isDeviceLost() const noexcept {
