@@ -7,6 +7,8 @@
 
 #include <gtest/gtest.h>
 
+#include <igl/webgpu/ShaderModule.h>
+
 #include <array>
 #include <memory>
 #include <string>
@@ -113,6 +115,62 @@ TEST_F(WebGPUShaderModuleTest, ShaderStages) {
   EXPECT_EQ(stages->getVertexModule(), vertex);
 
   EXPECT_EQ(device_->createShaderStages(ShaderStagesDesc::fromRenderModules(vertex, nullptr), &ret),
+            nullptr);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST_F(WebGPUShaderModuleTest, EntryPointMustExistForStage) {
+  const std::string source(data::shader::kWgslSimpleFragShader);
+  Result ret;
+  EXPECT_EQ(
+      device_->createShaderModule(wgslDesc(source.c_str(), ShaderStage::Fragment, "missing"), &ret),
+      nullptr);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+  EXPECT_NE(ret.message.find("missing"), std::string::npos) << ret.message;
+
+  EXPECT_EQ(
+      device_->createShaderModule(wgslDesc(source.c_str(), ShaderStage::Vertex, "main"), &ret),
+      nullptr);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST_F(WebGPUShaderModuleTest, ModuleReflection) {
+  const std::string source(data::shader::kWgslSimpleFragShader);
+  Result ret;
+  auto module = std::static_pointer_cast<webgpu::ShaderModule>(
+      device_->createShaderModule(wgslDesc(source.c_str(), ShaderStage::Fragment, "main"), &ret));
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_NE(module->getEntryPoint(), nullptr);
+  EXPECT_EQ(module->getEntryPoint()->stage, ShaderStage::Fragment);
+  EXPECT_EQ(module->getReflection().bindings.size(), 2u);
+}
+
+TEST_F(WebGPUShaderModuleTest, LibraryCompilesOnceForAllEntryPoints) {
+  const std::string source(data::shader::kWgslSimpleShader);
+  Result ret;
+  auto library = device_->createShaderLibrary(
+      ShaderLibraryDesc::fromStringInput(
+          source.c_str(),
+          {{.stage = ShaderStage::Vertex, .entryPoint = "vertexShader"},
+           {.stage = ShaderStage::Fragment, .entryPoint = "fragmentShader"}},
+          "library"),
+      &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_NE(library, nullptr);
+  EXPECT_EQ(device_->getShaderCompilationCount(), 1u);
+  auto vertex =
+      std::static_pointer_cast<webgpu::ShaderModule>(library->getShaderModule("vertexShader"));
+  auto fragment =
+      std::static_pointer_cast<webgpu::ShaderModule>(library->getShaderModule("fragmentShader"));
+  ASSERT_TRUE(vertex && fragment);
+  EXPECT_EQ(vertex->getWGPUShaderModule(), fragment->getWGPUShaderModule());
+
+  EXPECT_EQ(device_->createShaderLibrary(
+                ShaderLibraryDesc::fromStringInput(
+                    source.c_str(),
+                    {{.stage = ShaderStage::Fragment, .entryPoint = "vertexShader"}},
+                    "library"),
+                &ret),
             nullptr);
   EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
 }

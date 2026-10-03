@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <utility>
@@ -21,6 +22,17 @@
 #include <igl/webgpu/WebGPUCompat.h>
 
 namespace igl::webgpu {
+
+// Bind convention v1 (fixed; shaders are written against it):
+//   group 0: texture unit i at @binding(2i), its sampler at @binding(2i+1)
+//   group 1: the buffer at IGL index i at @binding(i)
+//   group 2: storage texture i at @binding(i)
+//   group 3: push-constant emulation, @binding(0)
+inline constexpr uint32_t kTextureGroup = 0;
+inline constexpr uint32_t kBufferGroup = 1;
+inline constexpr uint32_t kStorageTextureGroup = 2;
+inline constexpr uint32_t kPushConstantGroup = 3;
+inline constexpr uint32_t kNumBindGroups = 4;
 
 /// @brief AddRef/Release entry points for a WebGPU object type, used by Handle<T>
 template<typename T>

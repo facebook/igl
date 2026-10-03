@@ -8,13 +8,28 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <utility>
+#include <vector>
 #include <igl/Shader.h>
 #include <igl/webgpu/Common.h>
+#include <igl/webgpu/WgslReflection.h>
 
 namespace igl::webgpu {
 
 class WebGPUContext;
+
+/// @brief A compiled WGSL module and the reflection of its declarations.
+struct WgslModule {
+  Handle<WGPUShaderModule> module;
+  std::shared_ptr<const WgslReflection> reflection;
+};
+
+/// Compiles and reflects WGSL `source`. Compilation errors are returned with their line numbers.
+[[nodiscard]] Result compileWgsl(const WebGPUContext& ctx,
+                                 const char* IGL_NULLABLE source,
+                                 const std::string& debugName,
+                                 WgslModule& outModule);
 
 /// @brief A WGSL shader module and the entry point IGL selected from it.
 class ShaderModule final : public IShaderModule {
@@ -23,15 +38,32 @@ class ShaderModule final : public IShaderModule {
   [[nodiscard]] static std::shared_ptr<ShaderModule> create(const WebGPUContext& ctx,
                                                             const ShaderModuleDesc& desc,
                                                             Result* IGL_NULLABLE outResult);
+  /// Selects the entry point `info` from an already compiled module.
+  [[nodiscard]] static std::shared_ptr<ShaderModule> create(const WgslModule& module,
+                                                            const ShaderModuleInfo& info,
+                                                            Result* IGL_NULLABLE outResult);
 
-  ShaderModule(ShaderModuleInfo info, Handle<WGPUShaderModule> module);
+  ShaderModule(ShaderModuleInfo info, WgslModule module);
 
   [[nodiscard]] WGPUShaderModule IGL_NULLABLE getWGPUShaderModule() const noexcept {
-    return module_.get();
+    return module_.module.get();
+  }
+  [[nodiscard]] const WgslReflection& getReflection() const noexcept {
+    return *module_.reflection;
+  }
+  /// The selected entry point; never null for a successfully created module.
+  [[nodiscard]] const WgslEntryPoint* IGL_NULLABLE getEntryPoint() const noexcept {
+    return module_.reflection->findEntryPoint(info().entryPoint);
   }
 
  private:
-  Handle<WGPUShaderModule> module_;
+  WgslModule module_;
+};
+
+class ShaderLibrary final : public IShaderLibrary {
+ public:
+  explicit ShaderLibrary(std::vector<std::shared_ptr<IShaderModule>> modules) :
+    IShaderLibrary(std::move(modules)) {}
 };
 
 class ShaderStages final : public IShaderStages {

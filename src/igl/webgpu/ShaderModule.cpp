@@ -50,30 +50,18 @@ void onCompilationInfo(WGPUCompilationInfoRequestStatus status,
 
 } // namespace
 
-ShaderModule::ShaderModule(ShaderModuleInfo info, Handle<WGPUShaderModule> module) :
-  IShaderModule(std::move(info)), module_(std::move(module)) {}
-
-std::shared_ptr<ShaderModule> ShaderModule::create(const WebGPUContext& ctx,
-                                                   const ShaderModuleDesc& desc,
-                                                   Result* IGL_NULLABLE outResult) {
-  if (!desc.input.isValid()) {
-    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Invalid shader input");
-    return nullptr;
+Result compileWgsl(const WebGPUContext& ctx,
+                   const char* IGL_NULLABLE source,
+                   const std::string& debugName,
+                   WgslModule& outModule) {
+  if (source == nullptr || *source == '\0') {
+    return Result(Result::Code::ArgumentInvalid, "Empty WGSL source");
   }
-  if (desc.input.type != ShaderInputType::String) {
-    Result::setResult(outResult, Result::Code::Unsupported, "WebGPU shaders must be WGSL source");
-    return nullptr;
-  }
-  if (desc.info.entryPoint.empty()) {
-    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader entry point");
-    return nullptr;
-  }
-
   WGPUShaderSourceWGSL wgsl = WGPU_SHADER_SOURCE_WGSL_INIT;
-  wgsl.code = toWGPUStringView(desc.input.source);
+  wgsl.code = toWGPUStringView(source);
   WGPUShaderModuleDescriptor moduleDesc = WGPU_SHADER_MODULE_DESCRIPTOR_INIT;
   moduleDesc.nextInChain = &wgsl.chain;
-  moduleDesc.label = toWGPUStringView(desc.debugName);
+  moduleDesc.label = toWGPUStringView(debugName);
 
   ctx.pushErrorScope(WGPUErrorFilter_Validation);
   Handle<WGPUShaderModule> module(wgpuDeviceCreateShaderModule(ctx.getDevice(), &moduleDesc));
@@ -91,21 +79,68 @@ std::shared_ptr<ShaderModule> ShaderModule::create(const WebGPUContext& ctx,
   Result validation = ctx.popErrorScope();
 
   if (state->hasErrors) {
-    Result::setResult(outResult,
-                      Result::Code::ArgumentInvalid,
-                      "WGSL compilation failed (" + desc.debugName + "):\n" + state->messages);
-    return nullptr;
+    return Result(Result::Code::ArgumentInvalid,
+                  "WGSL compilation failed (" + debugName + "):\n" + state->messages);
   }
   if (!validation.isOk()) {
-    Result::setResult(outResult, std::move(validation));
-    return nullptr;
+    return validation;
   }
   if (!completed || !state->completed) {
-    Result::setResult(outResult, Result::Code::RuntimeError, "Shader compilation info unavailable");
+    return Result(Result::Code::RuntimeError, "Shader compilation info unavailable");
+  }
+  auto reflection = std::make_shared<WgslReflection>();
+  Result result = parseWgslReflection(
+      std::string_view(static_cast<const char* IGL_NONNULL>(source)), *reflection);
+  if (!result.isOk()) {
+    return result;
+  }
+  outModule = {.module = std::move(module), .reflection = std::move(reflection)};
+  return Result();
+}
+
+ShaderModule::ShaderModule(ShaderModuleInfo info, WgslModule module) :
+  IShaderModule(std::move(info)), module_(std::move(module)) {}
+
+std::shared_ptr<ShaderModule> ShaderModule::create(const WebGPUContext& ctx,
+                                                   const ShaderModuleDesc& desc,
+                                                   Result* IGL_NULLABLE outResult) {
+  if (!desc.input.isValid()) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Invalid shader input");
+    return nullptr;
+  }
+  if (desc.input.type != ShaderInputType::String) {
+    Result::setResult(outResult, Result::Code::Unsupported, "WebGPU shaders must be WGSL source");
+    return nullptr;
+  }
+  if (desc.info.entryPoint.empty()) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader entry point");
+    return nullptr;
+  }
+  WgslModule module;
+  Result result = compileWgsl(ctx, desc.input.source, desc.debugName, module);
+  if (!result.isOk()) {
+    Result::setResult(outResult, std::move(result));
+    return nullptr;
+  }
+  return create(module, desc.info, outResult);
+}
+
+std::shared_ptr<ShaderModule> ShaderModule::create(const WgslModule& module,
+                                                   const ShaderModuleInfo& info,
+                                                   Result* IGL_NULLABLE outResult) {
+  const WgslEntryPoint* entryPoint = module.reflection->findEntryPoint(info.entryPoint);
+  if (entryPoint == nullptr || entryPoint->stage != info.stage) {
+    Result::setResult(outResult,
+                      Result::Code::ArgumentInvalid,
+                      "No " +
+                          std::string(info.stage == ShaderStage::Vertex     ? "vertex"
+                                      : info.stage == ShaderStage::Fragment ? "fragment"
+                                                                            : "compute") +
+                          " entry point '" + info.entryPoint + "' in the WGSL module");
     return nullptr;
   }
   Result::setOk(outResult);
-  return std::make_shared<ShaderModule>(desc.info, std::move(module));
+  return std::make_shared<ShaderModule>(info, module);
 }
 
 } // namespace igl::webgpu

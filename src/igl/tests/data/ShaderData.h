@@ -495,29 +495,6 @@ constexpr std::string_view kVulkanSimpleFragShaderUint = VULKAN_SIMPLE_FRAG_SHAD
 constexpr std::string_view kVulkanSimpleFragShaderUint2 = VULKAN_SIMPLE_FRAG_SHADER_DEF(uvec2, rg);
 constexpr std::string_view kVulkanSimpleFragShaderUint4 = VULKAN_SIMPLE_FRAG_SHADER_DEF(uvec4, rgba);
 
-// Simple WGSL shaders. Texture unit 0 is @group(0) @binding(0) and its sampler @binding(1).
-constexpr std::string_view kWgslSimpleVertShader = R"(
-struct VertexOut {
-  @builtin(position) position : vec4f,
-  @location(0) uv : vec2f,
-};
-
-@vertex
-fn main(@location(0) position_in : vec4f, @location(1) uv_in : vec2f) -> VertexOut {
-  return VertexOut(position_in, uv_in);
-}
-)";
-
-constexpr std::string_view kWgslSimpleFragShader = R"(
-@group(0) @binding(0) var uTex : texture_2d<f32>;
-@group(0) @binding(1) var uSampler : sampler;
-
-@fragment
-fn main(@location(0) uv : vec2f) -> @location(0) vec4f {
-  return textureSample(uTex, uSampler, uv);
-}
-)";
-
 constexpr std::string_view kVulkanPushConstantVertShader =
     IGL_TO_STRING(
       layout (location=0) in vec4 position_in;
@@ -688,6 +665,150 @@ constexpr std::string_view kVulkanSimpleComputeShader =
             fOut[id] = fIn[id] * 2.0f;
         });
 // clang-format on
+//-----------------------------------------------------------------------------
+// WGSL Shaders
+//-----------------------------------------------------------------------------
+// Hand-maintained counterparts of the Vulkan shaders above, with the same interface under the
+// WebGPU bind convention: set 0 binding b (a combined image sampler) becomes a texture at
+// @group(0) @binding(2b) and its sampler at @binding(2b+1); set 1 binding b stays a buffer at
+// @group(1) @binding(b). tests/webgpu/ShaderDataTest.cpp checks the correspondence.
+
+constexpr std::string_view kWgslSimpleVertShader = R"(
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) uv : vec2f,
+};
+
+@vertex
+fn main(@location(0) position_in : vec4f, @location(1) uv_in : vec2f) -> VertexOut {
+  return VertexOut(position_in, uv_in);
+}
+)";
+
+#define WGSL_SIMPLE_FRAG_SHADER_DEF(outputType, value)           \
+  "@group(0) @binding(0) var uTex : texture_2d<f32>;\n"          \
+  "@group(0) @binding(1) var uSampler : sampler;\n"              \
+  "\n"                                                           \
+  "@fragment\n"                                                  \
+  "fn main(@location(0) uv : vec2f) -> @location(0) " outputType \
+  " {\n"                                                         \
+  "  let tex = textureSample(uTex, uSampler, uv);\n"             \
+  "  return " value                                              \
+  ";\n"                                                          \
+  "}\n"
+
+constexpr std::string_view kWgslSimpleFragShader = WGSL_SIMPLE_FRAG_SHADER_DEF("vec4f", "tex");
+
+constexpr std::string_view kWgslSimpleFragShaderFloat = WGSL_SIMPLE_FRAG_SHADER_DEF("f32", "tex.r");
+constexpr std::string_view kWgslSimpleFragShaderFloat2 =
+    WGSL_SIMPLE_FRAG_SHADER_DEF("vec2f", "tex.rg");
+constexpr std::string_view kWgslSimpleFragShaderFloat3 =
+    WGSL_SIMPLE_FRAG_SHADER_DEF("vec3f", "tex.rgb");
+constexpr std::string_view kWgslSimpleFragShaderFloat4 =
+    WGSL_SIMPLE_FRAG_SHADER_DEF("vec4f", "tex");
+constexpr std::string_view kWgslSimpleFragShaderUint =
+    WGSL_SIMPLE_FRAG_SHADER_DEF("u32", "u32(tex.r)");
+constexpr std::string_view kWgslSimpleFragShaderUint2 =
+    WGSL_SIMPLE_FRAG_SHADER_DEF("vec2u", "vec2u(tex.rg)");
+constexpr std::string_view kWgslSimpleFragShaderUint4 =
+    WGSL_SIMPLE_FRAG_SHADER_DEF("vec4u", "vec4u(tex)");
+
+// Both stages in one module, with the entry point names of kMtlSimpleShader.
+constexpr std::string_view kWgslSimpleShader = R"(
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) uv : vec2f,
+};
+
+@group(0) @binding(0) var inputImage : texture_2d<f32>;
+@group(0) @binding(1) var samp0 : sampler;
+
+@vertex
+fn vertexShader(@location(0) position_in : vec4f, @location(1) uv_in : vec2f) -> VertexOut {
+  return VertexOut(position_in, uv_in);
+}
+
+@fragment
+fn fragmentShader(v : VertexOut) -> @location(0) vec4f {
+  return textureSample(inputImage, samp0, v.uv);
+}
+)";
+
+constexpr std::string_view kWgslSimpleVertShaderTex2dArray = R"(
+struct VertexUniforms {
+  layer : i32,
+};
+
+struct PerFrame {
+  perFrame : VertexUniforms,
+};
+
+@group(1) @binding(2) var<uniform> perFrame : PerFrame;
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) uv : vec2f,
+  @location(1) @interpolate(flat) layer : u32,
+};
+
+@vertex
+fn main(@location(0) position_in : vec4f, @location(1) uv_in : vec2f) -> VertexOut {
+  return VertexOut(position_in, uv_in, bitcast<u32>(perFrame.perFrame.layer));
+}
+)";
+
+constexpr std::string_view kWgslSimpleFragShaderTex2dArray = R"(
+@group(0) @binding(0) var uTex : texture_2d_array<f32>;
+@group(0) @binding(1) var uSampler : sampler;
+
+@fragment
+fn main(@location(0) uv : vec2f, @location(1) @interpolate(flat) layer : u32) -> @location(0) vec4f {
+  return textureSample(uTex, uSampler, uv, layer);
+}
+)";
+
+constexpr std::string_view kWgslSimpleVertShaderCube = R"(
+struct VertexUniforms {
+  view : vec4f,
+};
+
+struct PerFrame {
+  perFrame : VertexUniforms,
+};
+
+@group(1) @binding(1) var<uniform> perFrame : PerFrame;
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) view : vec3f,
+};
+
+@vertex
+fn main(@location(0) position_in : vec4f) -> VertexOut {
+  return VertexOut(position_in, perFrame.perFrame.view.xyz);
+}
+)";
+
+constexpr std::string_view kWgslSimpleFragShaderCube = R"(
+@group(0) @binding(0) var uTex : texture_cube<f32>;
+@group(0) @binding(1) var uSampler : sampler;
+
+@fragment
+fn main(@location(0) view : vec3f) -> @location(0) vec4f {
+  return textureSample(uTex, uSampler, view);
+}
+)";
+
+constexpr std::string_view kWgslSimpleComputeShader = R"(
+@group(1) @binding(0) var<storage, read> fIn : array<f32>;
+@group(1) @binding(1) var<storage, read_write> fOut : array<f32>;
+
+@compute @workgroup_size(6, 1, 1)
+fn main(@builtin(local_invocation_index) id : u32) {
+  fOut[id] = fIn[id] * 2.0;
+}
+)";
+
 //-----------------------------------------------------------------------------
 // D3D12/HLSL Shaders
 //-----------------------------------------------------------------------------

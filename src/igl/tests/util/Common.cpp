@@ -168,10 +168,38 @@ void createSimpleShaderStages(const std::shared_ptr<IDevice>& dev,
                        std::string(igl::tests::data::shader::kShaderFunc),
                        stages);
   } else if (backendVersion.flavor == igl::BackendFlavor::WebGPU) {
+    // WebGPU requires the fragment output type to match the color target's sample type.
+    std::string_view fragShader = igl::tests::data::shader::kWgslSimpleFragShader;
+    if (outputFormat == TextureFormat::RG_UInt16 || outputFormat == TextureFormat::R_UInt16) {
+      fragShader = igl::tests::data::shader::kWgslSimpleFragShaderUint2;
+    } else if (outputFormat == TextureFormat::RGB10_A2_Uint_Rev ||
+               outputFormat == TextureFormat::RGBA_UInt32) {
+      fragShader = igl::tests::data::shader::kWgslSimpleFragShaderUint4;
+    } else if (outputFormat == TextureFormat::R_UInt32) {
+      fragShader = igl::tests::data::shader::kWgslSimpleFragShaderUint;
+    } else if (outputFormat != TextureFormat::Invalid) {
+      switch (TextureFormatProperties::fromTextureFormat(outputFormat).componentsPerPixel) {
+      case 1:
+        fragShader = igl::tests::data::shader::kWgslSimpleFragShaderFloat;
+        break;
+      case 2:
+        fragShader = igl::tests::data::shader::kWgslSimpleFragShaderFloat2;
+        break;
+      case 3:
+        fragShader = igl::tests::data::shader::kWgslSimpleFragShaderFloat3;
+        break;
+      case 4:
+        fragShader = igl::tests::data::shader::kWgslSimpleFragShaderFloat4;
+        break;
+      default:
+        ASSERT_TRUE(false);
+        break;
+      }
+    }
     createShaderStages(dev,
                        igl::tests::data::shader::kWgslSimpleVertShader,
                        igl::tests::data::shader::kShaderFunc,
-                       igl::tests::data::shader::kWgslSimpleFragShader,
+                       fragShader,
                        igl::tests::data::shader::kShaderFunc,
                        stages);
   } else if (backendVersion.flavor == igl::BackendFlavor::D3D12) {

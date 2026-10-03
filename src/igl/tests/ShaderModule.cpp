@@ -88,6 +88,8 @@ TEST_F(ShaderModuleTest, CompileShaderModule) {
     source = data::shader::kMtlSimpleShader.data();
   } else if (be == BackendType::Vulkan) {
     source = data::shader::kVulkanSimpleVertShader.data();
+  } else if (be == BackendType::WebGPU) {
+    source = data::shader::kWgslSimpleShader.data();
   } else if (be == BackendType::D3D12) {
     // Minimal HLSL vertex shader for D3D12 backend
     source = R"(
@@ -303,6 +305,8 @@ TEST_F(ShaderModuleTest, CompileShaderModuleNoResult) {
     source = data::shader::kMtlSimpleShader.data();
   } else if (be2 == BackendType::Vulkan) {
     source = data::shader::kVulkanSimpleVertShader.data();
+  } else if (be2 == BackendType::WebGPU) {
+    source = data::shader::kWgslSimpleShader.data();
   } else if (be2 == BackendType::D3D12) {
     // Minimal HLSL vertex shader for D3D12 backend
     source = R"(

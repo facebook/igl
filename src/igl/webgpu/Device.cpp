@@ -10,6 +10,7 @@
 #include <new>
 #include <string>
 #include <utility>
+#include <vector>
 #include <igl/Buffer.h>
 #include <igl/CommandQueue.h>
 #include <igl/ComputePipelineState.h>
@@ -172,10 +173,42 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(
   return nullptr;
 }
 
-std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& /*desc*/,
+std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& desc,
                                                             Result* IGL_NULLABLE outResult) const {
-  setUnimplemented(outResult, "createShaderLibrary()");
-  return nullptr;
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (desc.moduleInfo.empty() || !desc.input.isValid()) {
+    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Invalid shader library");
+    return nullptr;
+  }
+  if (desc.input.type != ShaderInputType::String) {
+    Result::setResult(outResult, Result::Code::Unsupported, "WebGPU shaders must be WGSL source");
+    return nullptr;
+  }
+  WgslModule module;
+  Result result = compileWgsl(*ctx_, desc.input.source, desc.debugName, module);
+  if (!result.isOk()) {
+    Result::setResult(outResult, std::move(result));
+    return nullptr;
+  }
+  ++shaderCompilationCount_;
+  std::vector<std::shared_ptr<IShaderModule>> modules;
+  modules.reserve(desc.moduleInfo.size());
+  for (const ShaderModuleInfo& info : desc.moduleInfo) {
+    auto shaderModule = ShaderModule::create(module, info, outResult);
+    if (!shaderModule) {
+      return nullptr;
+    }
+    if (getResourceTracker()) {
+      shaderModule->initResourceTracker(getResourceTracker(), desc.debugName);
+    }
+    modules.push_back(std::move(shaderModule));
+  }
+  auto library = std::make_unique<ShaderLibrary>(std::move(modules));
+  if (getResourceTracker()) {
+    library->initResourceTracker(getResourceTracker(), desc.debugName);
+  }
+  Result::setOk(outResult);
+  return library;
 }
 
 std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,

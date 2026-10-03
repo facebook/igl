@@ -10,6 +10,7 @@
 #include <igl/webgpu/WgslReflection.h>
 
 #include <string>
+#include <igl/webgpu/RenderPipelineReflection.h>
 
 namespace igl::tests {
 
@@ -278,6 +279,43 @@ TEST(WebGPUWgslReflectionTest, Errors) {
   EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
   EXPECT_NE(ret.message.find("line 3"), std::string::npos) << ret.message;
   EXPECT_TRUE(reflection.bindings.empty());
+}
+
+TEST(WebGPUWgslReflectionTest, PipelineReflectionFollowsBindConvention) {
+  webgpu::WgslReflection reflection;
+  ASSERT_TRUE(webgpu::parseWgslReflection(kModule, reflection).isOk());
+  const webgpu::RenderPipelineReflection pipeline({{ShaderStage::Fragment, &reflection}});
+
+  // Buffers: group 1 only.
+  ASSERT_EQ(pipeline.allUniformBuffers().size(), 3u);
+  const BufferArgDesc& uniforms = pipeline.allUniformBuffers()[0];
+  EXPECT_EQ(uniforms.name.toString(), "uniforms");
+  EXPECT_EQ(uniforms.bufferIndex, 0);
+  EXPECT_EQ(uniforms.bufferDataSize, 224u);
+  EXPECT_EQ(uniforms.bufferAlignment, 16u);
+  ASSERT_EQ(uniforms.members.size(), 9u);
+  EXPECT_EQ(uniforms.members[5].name.toString(), "weights");
+  EXPECT_EQ(uniforms.members[5].type, UniformType::Float);
+  EXPECT_EQ(uniforms.members[5].offset, 148u);
+  EXPECT_EQ(uniforms.members[5].arrayLength, 3u);
+  EXPECT_EQ(uniforms.members[5].arrayStride, 4u);
+
+  // Texture unit i at binding 2i, its sampler at 2i+1.
+  ASSERT_EQ(pipeline.allTextures().size(), 5u);
+  EXPECT_EQ(pipeline.allTextures()[0].name, "colorTex");
+  EXPECT_EQ(pipeline.allTextures()[0].textureIndex, 0);
+  EXPECT_EQ(pipeline.allTextures()[3].name, "cubeTex");
+  EXPECT_EQ(pipeline.allTextures()[3].type, TextureType::Cube);
+  EXPECT_EQ(pipeline.allTextures()[3].textureIndex, 3);
+  ASSERT_EQ(pipeline.allSamplers().size(), 2u);
+  EXPECT_EQ(pipeline.allSamplers()[1].name, "shadowSampler");
+  EXPECT_EQ(pipeline.allSamplers()[1].samplerIndex, 1);
+
+  EXPECT_EQ(pipeline.getIndexByName("counters", ShaderStage::Fragment), 3);
+  EXPECT_EQ(pipeline.getIndexByName("indexTex", ShaderStage::Fragment), 2);
+  EXPECT_EQ(pipeline.getIndexByName("colorSampler", ShaderStage::Fragment), 0);
+  EXPECT_EQ(pipeline.getIndexByName("colorTex", ShaderStage::Vertex), -1);
+  EXPECT_EQ(pipeline.getIndexByName("pushConstants", ShaderStage::Fragment), -1);
 }
 
 } // namespace igl::tests

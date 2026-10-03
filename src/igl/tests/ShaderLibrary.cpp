@@ -49,6 +49,8 @@ TEST_F(ShaderLibraryTest, CreateFromSource) {
     source = data::shader::kMtlSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
     source = data::shader::kVulkanSimpleVertShader.data();
+  } else if (iglDev_->getBackendType() == igl::BackendType::WebGPU) {
+    source = data::shader::kWgslSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
     source = data::shader::kD3D12SimpleShader.data();
   } else {
@@ -92,6 +94,8 @@ TEST_F(ShaderLibraryTest, CreateFromSourceMultipleModules) {
     source = data::shader::kMtlSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
     GTEST_SKIP() << "Vulkan does not support multiple modules from the same source code.";
+  } else if (iglDev_->getBackendType() == igl::BackendType::WebGPU) {
+    source = data::shader::kWgslSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
     source = data::shader::kD3D12SimpleShader.data();
   }
@@ -131,6 +135,8 @@ TEST_F(ShaderLibraryTest, CreateFromSourceNoResult) {
     source = data::shader::kMtlSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
     source = data::shader::kVulkanSimpleVertShader.data();
+  } else if (iglDev_->getBackendType() == igl::BackendType::WebGPU) {
+    source = data::shader::kWgslSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
     source = data::shader::kD3D12SimpleShader.data();
   } else {
@@ -164,6 +170,8 @@ TEST_F(ShaderLibraryTest, GetNonExistentModuleReturnsNull) {
     source = data::shader::kMtlSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
     source = data::shader::kVulkanSimpleVertShader.data();
+  } else if (iglDev_->getBackendType() == igl::BackendType::WebGPU) {
+    source = data::shader::kWgslSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
     source = data::shader::kD3D12SimpleShader.data();
   }
@@ -192,6 +200,8 @@ TEST_F(ShaderLibraryTest, CreateWithDebugName) {
     source = data::shader::kMtlSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
     source = data::shader::kVulkanSimpleVertShader.data();
+  } else if (iglDev_->getBackendType() == igl::BackendType::WebGPU) {
+    source = data::shader::kWgslSimpleShader.data();
   } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
     source = data::shader::kD3D12SimpleShader.data();
   }
