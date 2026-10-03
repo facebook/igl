@@ -44,6 +44,13 @@ if(IGL_WITH_D3D12)
   list(APPEND HEADER_FILES util/device/d3d12/TestDevice.h)
 endif()
 
+if(IGL_WITH_WEBGPU)
+  file(GLOB WEBGPU_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} webgpu/*.cpp)
+  list(APPEND SRC_FILES ${WEBGPU_SRC_FILES})
+  list(APPEND SRC_FILES util/device/webgpu/TestDevice.cpp)
+  list(APPEND HEADER_FILES util/device/webgpu/TestDevice.h)
+endif()
+
 if(IGL_WITH_IGLU)
   file(GLOB IGLU_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} iglu/*.cpp)
   file(GLOB IGLU_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} iglu/texture_loader/*.cpp)
@@ -131,6 +138,15 @@ target_link_libraries(IGLTests PUBLIC gtest)
 # Use our custom main.cpp instead of gtest_main
 # NOTE: gmock is NOT linked - no tests use gmock, only gtest
 target_link_libraries(IGLTests PUBLIC IGLUmanagedUniformBuffer)
+if(IGL_WITH_WEBGPU)
+  # webgpu/ShaderDataTest.cpp compiles GLSL to SPIR-V and reflects it.
+  target_link_libraries(IGLTests PUBLIC IGLGlslang)
+  target_include_directories(IGLTests PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/glslang")
+  if(NOT IGL_WITH_VULKAN)
+    target_sources(IGLTests PRIVATE "${IGL_ROOT_DIR}/src/igl/vulkan/util/SpvReflection.cpp")
+    target_include_directories(IGLTests PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/SPIRV-Headers/include")
+  endif()
+endif()
 target_link_libraries(IGLTests PUBLIC IGLUshaderCross)
 # Add STB include directory for image utilities used by test artifacts
 target_include_directories(IGLTests PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/stb")
@@ -160,6 +176,8 @@ elseif(IGL_WITH_VULKAN)
   target_compile_definitions(IGLTests PUBLIC -DIGL_BACKEND_TYPE="vulkan")
 elseif(IGL_WITH_OPENGL OR IGL_WITH_OPENGLES)
   target_compile_definitions(IGLTests PUBLIC -DIGL_BACKEND_TYPE="ogl")
+elseif(IGL_WITH_WEBGPU)
+  target_compile_definitions(IGLTests PUBLIC -DIGL_BACKEND_TYPE="webgpu")
 endif()
 
 # Ensure gtest is linked statically

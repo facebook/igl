@@ -298,3 +298,102 @@ jobs:
             if-no-files-found: error
             retention-days: 5
             overwrite: true
+
+  # WebGPU backend on Dawn (Vulkan backend on lavapipe). Dawn is built once per revision and cached.
+  cmake-webgpu-ubuntu:
+      name: "WebGPU - Dawn on lavapipe (Ubuntu)"
+      runs-on: ubuntu-latest
+      env:
+        DAWN_REVISION: d57bbdb7c907b4d276c6d7bd6fc50115afd9dc85
+        CC: clang
+        CXX: clang++
+      steps:
+        - uses: actions/checkout@v6
+          with:
+            submodules: recursive
+
+        - name: Install Ubuntu packages
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y clang ninja-build xorg-dev libxinerama-dev libxcursor-dev libx11-xcb-dev libgles2-mesa-dev libegl1-mesa-dev libglfw3-dev libglew-dev libstdc++-12-dev mesa-vulkan-drivers libvulkan-dev libvulkan1 vulkan-tools
+
+        - name: Cache Dawn
+          id: cache-dawn
+          uses: actions/cache@v4
+          with:
+            path: ~/dawn-install
+            key: dawn-${{ env.DAWN_REVISION }}-ubuntu-clang-vulkan
+
+        - name: Build Dawn
+          if: steps.cache-dawn.outputs.cache-hit != 'true'
+          run: |
+            mkdir dawn && cd dawn
+            git init -q
+            git fetch -q --depth 1 https://dawn.googlesource.com/dawn "$DAWN_REVISION"
+            git checkout -q FETCH_HEAD
+            cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release -DDAWN_FETCH_DEPENDENCIES=ON \
+              -DDAWN_ENABLE_INSTALL=ON -DDAWN_BUILD_SAMPLES=OFF -DDAWN_BUILD_TESTS=OFF \
+              -DTINT_BUILD_TESTS=OFF -DTINT_BUILD_CMD_TOOLS=OFF -DDAWN_USE_GLFW=OFF \
+              -DDAWN_ENABLE_DESKTOP_GL=OFF -DDAWN_ENABLE_OPENGLES=OFF -DDAWN_ENABLE_VULKAN=ON \
+              -DCMAKE_INSTALL_PREFIX="$HOME/dawn-install"
+            cmake --build build
+            cmake --install build
+
+        - name: Build IGL
+          run: |
+            cmake -G Ninja -S "${{ github.workspace }}" -B build -DCMAKE_BUILD_TYPE=Debug \
+              -DIGL_WITH_WEBGPU=ON -DIGL_WEBGPU_DAWN_DIR="$HOME/dawn-install" \
+              -DIGL_WITH_OPENGL=OFF -DIGL_WITH_VULKAN=OFF -DIGL_WITH_TESTS=ON
+            cmake --build build --target IGLTests ColorSession_webgpu HelloWorldSession_webgpu TQSession_webgpu
+
+        - name: Run tests
+          continue-on-error: true
+          env:
+            VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+          run: |
+            ./build/src/igl/tests/IGLTests
+
+        - name: Run shell sessions (headless)
+          env:
+            VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+          run: |
+            ./build/shell/ColorSession_webgpu      --headless --viewport-size 1600x900 --screenshot-file ColorSession_webgpu.png
+            ./build/shell/HelloWorldSession_webgpu --headless --viewport-size 1600x900 --screenshot-file HelloWorldSession_webgpu.png
+            ./build/shell/TQSession_webgpu         --headless --viewport-size 1600x900 --screenshot-file TQSession_webgpu.png
+
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v6
+          with:
+            name: Screenshots-WebGPU
+            path: |
+              ColorSession_webgpu.png
+              HelloWorldSession_webgpu.png
+              TQSession_webgpu.png
+            if-no-files-found: error
+            retention-days: 5
+            overwrite: true
+
+  # WebGPU backend for the browser: emdawnwebgpu needs Emscripten >= 4.0.10 (the apt package is
+  # older), so emsdk is pinned to the version fbsource builds with.
+  cmake-webgpu-emscripten:
+      name: "WebGPU - Emscripten 4.0.19"
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v6
+          with:
+            submodules: recursive
+
+        - name: Install Ubuntu packages
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y ninja-build
+
+        - name: Set up Emscripten
+          uses: mymindstorm/setup-emsdk@v14
+          with:
+            version: 4.0.19
+
+        - name: Build
+          run: |
+            emcmake cmake -G Ninja -S "${{ github.workspace }}" -B build -DCMAKE_BUILD_TYPE=Debug -DIGL_WITH_WEBGPU=ON
+            cmake --build build --target IGLWebGPU

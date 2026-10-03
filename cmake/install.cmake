@@ -176,6 +176,7 @@ if(NOT ALL_DISCOVERED_TARGETS)
       IGLOpenGL
       IGLMetal
       IGLVulkan
+      IGLWebGPU
       IGLGlslang
       IGLstb
       # IGLU targets
