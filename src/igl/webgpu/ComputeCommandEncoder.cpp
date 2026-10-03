@@ -7,6 +7,7 @@
 
 #include <igl/webgpu/ComputeCommandEncoder.h>
 
+#include <optional>
 #include <utility>
 #include <igl/webgpu/Buffer.h>
 #include <igl/webgpu/CommandBuffer.h>
@@ -17,11 +18,16 @@
 
 namespace igl::webgpu {
 
-ComputeCommandEncoder::ComputeCommandEncoder(std::shared_ptr<CommandBuffer> commandBuffer) :
+ComputeCommandEncoder::ComputeCommandEncoder(std::shared_ptr<CommandBuffer> commandBuffer,
+                                             const ComputePassDesc& computePass) :
   commandBuffer_(std::move(commandBuffer)),
   binder_(commandBuffer_->getDevice().getContext(),
           commandBuffer_->getDevice().getDeviceFeatureSet()) {
+  const std::optional<WGPUPassTimestampWrites> timestampWrites =
+      commandBuffer_->getPassTimestampWrites(computePass.timestampQuery.queries,
+                                             computePass.timestampQuery.slotIndex);
   WGPUComputePassDescriptor passDesc = WGPU_COMPUTE_PASS_DESCRIPTOR_INIT;
+  passDesc.timestampWrites = timestampWrites ? &*timestampWrites : nullptr;
   pass_.reset(
       wgpuCommandEncoderBeginComputePass(commandBuffer_->getWGPUCommandEncoder(), &passDesc));
 }

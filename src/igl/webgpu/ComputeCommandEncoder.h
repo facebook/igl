@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <memory>
 #include <igl/ComputeCommandEncoder.h>
+#include <igl/ComputePass.h>
 #include <igl/webgpu/Common.h>
 #include <igl/webgpu/ResourcesBinder.h>
 
@@ -26,7 +27,8 @@ class ComputePipelineState;
 /// ignored, as on Vulkan.
 class ComputeCommandEncoder final : public IComputeCommandEncoder {
  public:
-  explicit ComputeCommandEncoder(std::shared_ptr<CommandBuffer> commandBuffer);
+  ComputeCommandEncoder(std::shared_ptr<CommandBuffer> commandBuffer,
+                        const ComputePassDesc& computePass);
   ~ComputeCommandEncoder() override;
 
   ComputeCommandEncoder(const ComputeCommandEncoder&) = delete;

@@ -44,10 +44,17 @@ TEST_F(WebGPUDeviceTest, TestDeviceIsSupported) {
   EXPECT_TRUE(util::device::isBackendTypeSupported(BackendType::WebGPU));
 }
 
-TEST_F(WebGPUDeviceTest, UnimplementedFactoriesReportResult) {
+TEST_F(WebGPUDeviceTest, FactoriesReportResult) {
   Result ret;
-  EXPECT_EQ(device_->createTimer(&ret), nullptr);
-  EXPECT_EQ(ret.code, Result::Code::Unimplemented);
+  auto timer = device_->createTimer(&ret);
+  EXPECT_EQ(timer != nullptr, device_->hasFeature(DeviceFeatures::Timers));
+  EXPECT_EQ(ret.code,
+            device_->hasFeature(DeviceFeatures::Timers) ? Result::Code::Ok
+                                                        : Result::Code::Unsupported);
+
+  ret = Result();
+  EXPECT_EQ(device_->createTimestampQueries(0, &ret), nullptr);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
 
   ret = Result();
   EXPECT_EQ(device_->createComputePipeline({}, &ret), nullptr);

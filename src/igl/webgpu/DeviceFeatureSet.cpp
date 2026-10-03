@@ -155,9 +155,10 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::TextureFormatRGB:
   case DeviceFeatures::TexturePartialMipChain:
   case DeviceFeatures::TextureViews:
+    return false;
   case DeviceFeatures::TimestampQueries:
   case DeviceFeatures::Timers:
-    return false;
+    return hasWGPUFeature(WGPUFeatureName_TimestampQuery);
   }
   IGL_UNREACHABLE_RETURN(false)
 }

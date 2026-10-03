@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
+#include <iterator>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -299,6 +300,16 @@ Result WebGPUContext::initDevice() {
   deviceDesc.requiredFeatureCount = features.size();
   deviceDesc.requiredFeatures = features.data();
   deviceDesc.requiredLimits = desc_.requestAdapterLimits ? &limits : nullptr;
+#if !IGL_WEBGPU_HEADER_V2
+  // Dawn quantizes timestamps like browsers do unless this toggle is disabled.
+  static constexpr const char* kDisabledToggles[] = {"timestamp_quantization"};
+  WGPUDawnTogglesDescriptor toggles = WGPU_DAWN_TOGGLES_DESCRIPTOR_INIT;
+  toggles.disabledToggleCount = std::size(kDisabledToggles);
+  toggles.disabledToggles = kDisabledToggles;
+  if (desc_.highResolutionTimestamps) {
+    deviceDesc.nextInChain = &toggles.chain;
+  }
+#endif
   // The device can outlive the context (resources hold device references), so the callbacks share a
   // reference to the state. The lost callback, which Dawn invokes exactly once, frees it; Dawn
   // clears the uncaptured error callback before invoking the lost callback.

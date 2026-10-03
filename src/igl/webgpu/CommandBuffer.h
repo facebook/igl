@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <vector>
 #include <igl/CommandBuffer.h>
 #include <igl/webgpu/Common.h>
@@ -17,6 +18,7 @@ namespace igl::webgpu {
 
 class Buffer;
 class Device;
+class TimestampQueries;
 class WebGPUContext;
 
 /// @brief Implements the igl::ICommandBuffer interface for WebGPU with one WGPUCommandEncoder.
@@ -37,6 +39,8 @@ class CommandBuffer final : public ICommandBuffer,
       const Dependencies& dependencies,
       Result* IGL_NULLABLE outResult) override;
   std::unique_ptr<IComputeCommandEncoder> createComputeCommandEncoder() override;
+  std::unique_ptr<IComputeCommandEncoder> createComputeCommandEncoder(
+      const ComputePassDesc& computePass) override;
 
   void present(const std::shared_ptr<ITexture>& surface) const override;
   void waitUntilScheduled() override;
@@ -71,6 +75,11 @@ class CommandBuffer final : public ICommandBuffer,
   }
   /// Finishes the encoder and submits it to the queue; a command buffer is submitted at most once.
   [[nodiscard]] Result submit();
+  /// Timestamp writes for a new pass: the pass's own timing slot in `queries` if given, else the
+  /// next pass of the command buffer's timer, if any.
+  [[nodiscard]] std::optional<WGPUPassTimestampWrites> getPassTimestampWrites(
+      const std::shared_ptr<ITimestampQueries>& queries,
+      uint32_t slotIndex);
 
  private:
   // Copies `sources` (one per slice) with rows that are not multiples of 256 bytes.
@@ -85,6 +94,7 @@ class CommandBuffer final : public ICommandBuffer,
   Handle<WGPUCommandEncoder> encoder_;
   const uint64_t serial_;
   bool submitted_ = false;
+  std::vector<std::shared_ptr<TimestampQueries>> timestampQueries_;
 };
 
 } // namespace igl::webgpu

@@ -37,6 +37,9 @@ struct WebGPUContextDesc {
   /// Request the adapter's limits instead of the spec defaults. Off by default so every lane runs
   /// against portable limits.
   bool requestAdapterLimits = false;
+  /// Native builds: full-resolution timestamp queries (Dawn quantizes them otherwise, like
+  /// browsers do). Ignored in the browser.
+  bool highResolutionTimestamps = true;
   std::string debugName = "igl.webgpu";
 };
 

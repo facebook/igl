@@ -145,7 +145,11 @@ Result RenderCommandEncoder::begin(const RenderPassDesc& renderPass,
     return Result(Result::Code::ArgumentInvalid, "The framebuffer has no attachments");
   }
 
+  const std::optional<WGPUPassTimestampWrites> timestampWrites =
+      commandBuffer_.getPassTimestampWrites(renderPass.timestampQuery.queries,
+                                            renderPass.timestampQuery.slotIndex);
   WGPURenderPassDescriptor passDesc = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
+  passDesc.timestampWrites = timestampWrites ? &*timestampWrites : nullptr;
   passDesc.colorAttachmentCount = colors.size();
   passDesc.colorAttachments = colors.data();
   passDesc.depthStencilAttachment = depthStencilTexture ? &depthStencil : nullptr;

@@ -8,7 +8,6 @@
 #include <igl/webgpu/Device.h>
 
 #include <new>
-#include <string>
 #include <utility>
 #include <vector>
 #include <igl/Buffer.h>
@@ -22,6 +21,7 @@
 #include <igl/Shader.h>
 #include <igl/Texture.h>
 #include <igl/Timer.h>
+#include <igl/TimestampQueries.h>
 #include <igl/VertexInputState.h>
 #include <igl/webgpu/Buffer.h>
 #include <igl/webgpu/CommandQueue.h>
@@ -33,17 +33,11 @@
 #include <igl/webgpu/ShaderModule.h>
 #include <igl/webgpu/StateSanitizer.h>
 #include <igl/webgpu/Texture.h>
+#include <igl/webgpu/Timer.h>
+#include <igl/webgpu/TimestampQueries.h>
 #include <igl/webgpu/VertexInputState.h>
 
 namespace igl::webgpu {
-
-namespace {
-
-void setUnimplemented(Result* IGL_NULLABLE outResult, const char* what) {
-  Result::setResult(outResult, Result::Code::Unimplemented, std::string(what) + " (WebGPU)");
-}
-
-} // namespace
 
 Device::Device(std::unique_ptr<WebGPUContext> ctx) :
   ctx_(std::move(ctx)),
@@ -150,8 +144,23 @@ std::shared_ptr<ITexture> Device::createTextureView(std::shared_ptr<ITexture> te
 }
 
 std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) const noexcept {
-  setUnimplemented(outResult, "createTimer()");
-  return nullptr;
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  auto timer = Timer::create(*ctx_, outResult);
+  if (timer && getResourceTracker()) {
+    timer->initResourceTracker(getResourceTracker());
+  }
+  return timer;
+}
+
+std::shared_ptr<ITimestampQueries> Device::createTimestampQueries(uint32_t maxTimestamps,
+                                                                  Result* IGL_NULLABLE
+                                                                      outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  auto queries = TimestampQueries::create(*ctx_, maxTimestamps, outResult);
+  if (queries && getResourceTracker()) {
+    queries->initResourceTracker(getResourceTracker());
+  }
+  return queries;
 }
 
 std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexInputStateDesc& desc,

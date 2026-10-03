@@ -19,6 +19,8 @@
 #include <igl/webgpu/RenderCommandEncoder.h>
 #include <igl/webgpu/StateSanitizer.h>
 #include <igl/webgpu/Texture.h>
+#include <igl/webgpu/Timer.h>
+#include <igl/webgpu/TimestampQueries.h>
 #include <igl/webgpu/WebGPUContext.h>
 
 namespace igl::webgpu {
@@ -33,6 +35,13 @@ CommandBuffer::CommandBuffer(Device& device, CommandBufferDesc desc) :
       .label = toWGPUStringView(this->desc.debugName),
   };
   encoder_.reset(wgpuDeviceCreateCommandEncoder(ctx_.getDevice(), &encoderDesc));
+  if (this->desc.timer) {
+    static_cast<Timer&>(*this->desc.timer).begin();
+  }
+  if (this->desc.timestampQueries) {
+    timestampQueries_.push_back(
+        std::static_pointer_cast<TimestampQueries>(this->desc.timestampQueries));
+  }
 }
 
 CommandBuffer::~CommandBuffer() {
@@ -61,7 +70,37 @@ std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncod
     IGL_LOG_ERROR("createComputeCommandEncoder(): the command buffer was already submitted\n");
     return nullptr;
   }
-  return std::make_unique<ComputeCommandEncoder>(shared_from_this());
+  return std::make_unique<ComputeCommandEncoder>(shared_from_this(), ComputePassDesc{});
+}
+
+std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder(
+    const ComputePassDesc& computePass) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (submitted_) {
+    IGL_LOG_ERROR("createComputeCommandEncoder(): the command buffer was already submitted\n");
+    return nullptr;
+  }
+  return std::make_unique<ComputeCommandEncoder>(shared_from_this(), computePass);
+}
+
+std::optional<WGPUPassTimestampWrites> CommandBuffer::getPassTimestampWrites(
+    const std::shared_ptr<ITimestampQueries>& queries,
+    uint32_t slotIndex) {
+  if (queries) {
+    auto webgpuQueries = std::static_pointer_cast<TimestampQueries>(queries);
+    if (std::find(timestampQueries_.begin(), timestampQueries_.end(), webgpuQueries) ==
+        timestampQueries_.end()) {
+      timestampQueries_.push_back(webgpuQueries);
+    }
+    if (desc.timer) {
+      IGL_LOG_INFO_ONCE("A pass with its own timestamp queries is not measured by the timer\n");
+    }
+    return webgpuQueries->getPassTimestampWrites(slotIndex);
+  }
+  if (desc.timer) {
+    return static_cast<Timer&>(*desc.timer).nextPass();
+  }
+  return std::nullopt;
 }
 
 void CommandBuffer::present(const std::shared_ptr<ITexture>& /*surface*/) const {}
@@ -303,11 +342,23 @@ Result CommandBuffer::submit() {
     return Result(Result::Code::InvalidOperation, "The command buffer was already submitted");
   }
   submitted_ = true;
+  for (const auto& queries : timestampQueries_) {
+    queries->encodeResolve(encoder_.get());
+  }
+  if (desc.timer) {
+    static_cast<Timer&>(*desc.timer).encodeResolve(encoder_.get());
+  }
   const Handle<WGPUCommandBuffer> commands(wgpuCommandEncoderFinish(encoder_.get(), nullptr));
   encoder_ = nullptr;
   const WGPUCommandBuffer rawCommands = commands.get();
   wgpuQueueSubmit(ctx_.getQueue(), 1, &rawCommands);
   ctx_.getResourceTracker().closeCommandBuffer(serial_);
+  for (const auto& queries : timestampQueries_) {
+    queries->onSubmitted();
+  }
+  if (desc.timer) {
+    static_cast<Timer&>(*desc.timer).onSubmitted();
+  }
   return Result();
 }
 
