@@ -69,8 +69,9 @@ void applyDepthBias(PrimitiveType topology,
 [[nodiscard]] Result validateVertexInputState(const VertexInputStateDesc& desc,
                                               const WGPULimits& limits);
 
-/// Vertex buffer layouts indexed by IGL buffer index. `outAttributes` owns the attributes the
-/// layouts point to; attributes without an explicit location use their index.
+/// Vertex buffer layouts indexed by IGL buffer index, up to the highest index an attribute uses.
+/// `outAttributes` owns the attributes the layouts point to; attributes without an explicit
+/// location use their index.
 void makeVertexBufferLayouts(const VertexInputStateDesc& desc,
                              std::vector<WGPUVertexBufferLayout>& outLayouts,
                              std::vector<WGPUVertexAttribute>& outAttributes);

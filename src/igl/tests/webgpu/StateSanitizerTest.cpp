@@ -186,12 +186,31 @@ TEST(WebGPUStateSanitizerTest, VertexInputRules) {
           .code,
       Result::Code::ArgumentOutOfRange);
 
+  // Bindings are selected by buffer index, beyond numInputBindings too.
   VertexInputStateDesc desc = makeVertexInput(16, VertexAttributeFormat::Float4, 0);
   desc.attributes[0].bufferIndex = 1;
+  desc.inputBindings[1].stride = 16;
+  EXPECT_TRUE(webgpu::validateVertexInputState(desc, limits).isOk());
+  desc.attributes[0].bufferIndex = limits.maxVertexBuffers;
+  EXPECT_EQ(webgpu::validateVertexInputState(desc, limits).code, Result::Code::ArgumentOutOfRange);
+  desc = makeVertexInput(16, VertexAttributeFormat::Float4, 0);
+  desc.numInputBindings = IGL_BUFFER_BINDINGS_MAX + 1;
   EXPECT_EQ(webgpu::validateVertexInputState(desc, limits).code, Result::Code::ArgumentOutOfRange);
   desc = makeVertexInput(16, VertexAttributeFormat::Float4, 0);
   desc.inputBindings[0].sampleFunction = VertexSampleFunction::Constant;
   EXPECT_EQ(webgpu::validateVertexInputState(desc, limits).code, Result::Code::Unsupported);
+
+  // A negative location falls back to the attribute index, which may collide with an explicit one.
+  desc = makeVertexInput(16, VertexAttributeFormat::Float2, 0);
+  desc.numAttributes = 2;
+  desc.attributes[0].location = 1;
+  desc.attributes[1] = {
+      .bufferIndex = 0, .format = VertexAttributeFormat::Float2, .offset = 8, .location = -1};
+  EXPECT_EQ(webgpu::validateVertexInputState(desc, limits).code, Result::Code::ArgumentInvalid);
+  desc.attributes[0].location = 0;
+  EXPECT_TRUE(webgpu::validateVertexInputState(desc, limits).isOk());
+  desc.attributes[1].location = static_cast<int>(limits.maxVertexAttributes);
+  EXPECT_EQ(webgpu::validateVertexInputState(desc, limits).code, Result::Code::ArgumentOutOfRange);
 }
 
 TEST(WebGPUStateSanitizerTest, VertexBufferLayouts) {
@@ -221,6 +240,7 @@ TEST(WebGPUStateSanitizerTest, VertexBufferLayouts) {
 
   // An input binding without attributes is an unused slot.
   EXPECT_EQ(layouts[1].stepMode, WGPUVertexStepMode_Undefined);
+  EXPECT_EQ(layouts[1].arrayStride, 0u);
   EXPECT_EQ(layouts[1].attributeCount, 0u);
 
   EXPECT_EQ(layouts[2].stepMode, WGPUVertexStepMode_Instance);
@@ -228,6 +248,29 @@ TEST(WebGPUStateSanitizerTest, VertexBufferLayouts) {
   EXPECT_EQ(layouts[2].attributes[0].shaderLocation, 1u);
   EXPECT_EQ(layouts[2].attributes[1].offset, 8u);
   EXPECT_EQ(layouts[2].attributes[1].shaderLocation, 2u);
+}
+
+TEST(WebGPUStateSanitizerTest, VertexBufferLayoutsSkipOutOfRangeBuffers) {
+  const VertexInputStateDesc desc = {
+      .numAttributes = 2,
+      .attributes = {{.bufferIndex = 1, .format = VertexAttributeFormat::Float4, .location = 0},
+                     {.bufferIndex = IGL_BUFFER_BINDINGS_MAX,
+                      .format = VertexAttributeFormat::Float4,
+                      .location = 1}},
+      .numInputBindings = 1,
+      .inputBindings = {{.stride = 4}, {.stride = 16}},
+  };
+  std::vector<WGPUVertexBufferLayout> layouts;
+  std::vector<WGPUVertexAttribute> attributes;
+  webgpu::makeVertexBufferLayouts(desc, layouts, attributes);
+  ASSERT_EQ(layouts.size(), 2u);
+  ASSERT_EQ(attributes.size(), 1u);
+  EXPECT_EQ(layouts[0].stepMode, WGPUVertexStepMode_Undefined);
+  EXPECT_EQ(layouts[0].arrayStride, 0u);
+  EXPECT_EQ(layouts[1].stepMode, WGPUVertexStepMode_Vertex);
+  EXPECT_EQ(layouts[1].arrayStride, 16u);
+  ASSERT_EQ(layouts[1].attributeCount, 1u);
+  EXPECT_EQ(layouts[1].attributes[0].shaderLocation, 0u);
 }
 
 TEST(WebGPUStateSanitizerTest, AnisotropyNeedsLinearFilters) {

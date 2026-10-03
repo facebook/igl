@@ -8,6 +8,7 @@
 #include <igl/webgpu/StateSanitizer.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <optional>
 #include <igl/webgpu/DeviceFeatureSet.h>
@@ -202,15 +203,35 @@ Result makeMultisampleState(uint32_t sampleCount,
   return Result();
 }
 
+// Like the other backends, attributes select their input binding by buffer index;
+// numInputBindings does not bound the indices.
 Result validateVertexInputState(const VertexInputStateDesc& desc, const WGPULimits& limits) {
   if (desc.numAttributes > IGL_VERTEX_ATTRIBUTES_MAX ||
-      desc.numInputBindings > IGL_BUFFER_BINDINGS_MAX ||
       desc.numAttributes > limits.maxVertexAttributes ||
+      desc.numInputBindings > IGL_BUFFER_BINDINGS_MAX ||
       desc.numInputBindings > limits.maxVertexBuffers) {
     return Result(Result::Code::ArgumentOutOfRange, "Too many vertex attributes or buffers");
   }
-  for (size_t i = 0; i < desc.numInputBindings; ++i) {
-    const VertexInputBinding& binding = desc.inputBindings[i];
+  std::array<bool, IGL_VERTEX_ATTRIBUTES_MAX> usedLocations = {};
+  for (size_t i = 0; i < desc.numAttributes; ++i) {
+    const VertexAttribute& attribute = desc.attributes[i];
+    if (!vertexAttributeFormatToWGPUVertexFormat(attribute.format)) {
+      return Result(Result::Code::Unsupported, "Vertex format is not supported by WebGPU");
+    }
+    // Same fallback as makeVertexBufferLayouts(): a negative location means the attribute index.
+    const size_t location = attribute.location >= 0 ? static_cast<size_t>(attribute.location) : i;
+    if (location >= IGL_VERTEX_ATTRIBUTES_MAX || location >= limits.maxVertexAttributes) {
+      return Result(Result::Code::ArgumentOutOfRange, "Vertex attribute location is out of range");
+    }
+    if (usedLocations[location]) {
+      return Result(Result::Code::ArgumentInvalid, "Vertex attributes share a shader location");
+    }
+    usedLocations[location] = true;
+    if (attribute.bufferIndex >= IGL_BUFFER_BINDINGS_MAX ||
+        attribute.bufferIndex >= limits.maxVertexBuffers) {
+      return Result(Result::Code::ArgumentOutOfRange, "Vertex buffer index is out of range");
+    }
+    const VertexInputBinding& binding = desc.inputBindings[attribute.bufferIndex];
     if (binding.stride % 4 != 0 || binding.stride > limits.maxVertexBufferArrayStride) {
       return Result(Result::Code::Unsupported,
                     "WebGPU vertex strides are multiples of 4 bytes up to the stride limit");
@@ -219,21 +240,11 @@ Result validateVertexInputState(const VertexInputStateDesc& desc, const WGPULimi
       return Result(Result::Code::Unsupported,
                     "WebGPU vertex buffers step once per vertex or per instance");
     }
-  }
-  for (size_t i = 0; i < desc.numAttributes; ++i) {
-    const VertexAttribute& attribute = desc.attributes[i];
-    if (!vertexAttributeFormatToWGPUVertexFormat(attribute.format)) {
-      return Result(Result::Code::Unsupported, "Vertex format is not supported by WebGPU");
-    }
-    if (attribute.bufferIndex >= desc.numInputBindings) {
-      return Result(Result::Code::ArgumentOutOfRange, "Vertex attribute has no input binding");
-    }
     const size_t size = VertexInputStateDesc::sizeForVertexAttributeFormat(attribute.format);
     if (attribute.offset % std::min<size_t>(4, size) != 0) {
       return Result(Result::Code::Unsupported, "Vertex attribute offset is not aligned");
     }
-    const size_t stride = desc.inputBindings[attribute.bufferIndex].stride;
-    if (stride != 0 && attribute.offset + size > stride) {
+    if (binding.stride != 0 && attribute.offset + size > binding.stride) {
       return Result(Result::Code::ArgumentOutOfRange, "Vertex attribute exceeds its stride");
     }
   }
@@ -243,11 +254,29 @@ Result validateVertexInputState(const VertexInputStateDesc& desc, const WGPULimi
 void makeVertexBufferLayouts(const VertexInputStateDesc& desc,
                              std::vector<WGPUVertexBufferLayout>& outLayouts,
                              std::vector<WGPUVertexAttribute>& outAttributes) {
+  // Indices validateVertexInputState() rejects are skipped, so inputBindings is never read past
+  // its end.
+  const size_t numAttributes = std::min<size_t>(desc.numAttributes, IGL_VERTEX_ATTRIBUTES_MAX);
+  std::array<uint32_t, IGL_BUFFER_BINDINGS_MAX> counts = {};
+  size_t numBuffers = 0;
+  for (size_t i = 0; i < numAttributes; ++i) {
+    const size_t buffer = desc.attributes[i].bufferIndex;
+    if (buffer < IGL_BUFFER_BINDINGS_MAX) {
+      ++counts[buffer];
+      numBuffers = std::max(numBuffers, buffer + 1);
+    }
+  }
   outAttributes.clear();
-  outAttributes.reserve(desc.numAttributes);
-  // Sorted by buffer so each layout points at a contiguous run.
-  for (size_t buffer = 0; buffer < desc.numInputBindings; ++buffer) {
-    for (size_t i = 0; i < desc.numAttributes; ++i) {
+  outAttributes.reserve(numAttributes);
+  outLayouts.assign(numBuffers, WGPU_VERTEX_BUFFER_LAYOUT_INIT);
+  // Attributes are grouped by buffer so each layout points at a contiguous run.
+  for (size_t buffer = 0; buffer < numBuffers; ++buffer) {
+    if (counts[buffer] == 0) {
+      // A slot without attributes is unused: Undefined step mode, no attributes, zero stride.
+      continue;
+    }
+    const size_t first = outAttributes.size();
+    for (size_t i = 0; i < numAttributes; ++i) {
       const VertexAttribute& attribute = desc.attributes[i];
       if (attribute.bufferIndex != buffer) {
         continue;
@@ -261,25 +290,14 @@ void makeVertexBufferLayouts(const VertexInputStateDesc& desc,
                                          : static_cast<uint32_t>(i);
       outAttributes.push_back(wgpuAttribute);
     }
-  }
-  outLayouts.assign(desc.numInputBindings, WGPU_VERTEX_BUFFER_LAYOUT_INIT);
-  size_t first = 0;
-  for (size_t buffer = 0; buffer < desc.numInputBindings; ++buffer) {
-    size_t count = 0;
-    for (size_t i = 0; i < desc.numAttributes; ++i) {
-      count += desc.attributes[i].bufferIndex == buffer ? 1 : 0;
-    }
-    WGPUVertexBufferLayout& layout = outLayouts[buffer];
     const VertexInputBinding& binding = desc.inputBindings[buffer];
-    // A slot without attributes is unused: Undefined step mode and no attributes.
-    layout.stepMode = count == 0 ? WGPUVertexStepMode_Undefined
-                      : binding.sampleFunction == VertexSampleFunction::Instance
+    WGPUVertexBufferLayout& layout = outLayouts[buffer];
+    layout.stepMode = binding.sampleFunction == VertexSampleFunction::Instance
                           ? WGPUVertexStepMode_Instance
                           : WGPUVertexStepMode_Vertex;
     layout.arrayStride = binding.stride;
-    layout.attributeCount = count;
-    layout.attributes = count != 0 ? outAttributes.data() + first : nullptr;
-    first += count;
+    layout.attributeCount = counts[buffer];
+    layout.attributes = outAttributes.data() + first;
   }
 }
 
