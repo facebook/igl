@@ -19,6 +19,7 @@
 #include <shell/renderSessions/TQMultiRenderPassSession.h>
 #include <shell/renderSessions/TQSession.h>
 #include <shell/renderSessions/Texture3DSession.h>
+#include <shell/renderSessions/TextureAccessorSession.h>
 #include <shell/renderSessions/TextureRotationSession.h>
 #include <shell/renderSessions/Textured3DCubeSession.h>
 #include <shell/renderSessions/UniformArrayTestSession.h>
@@ -123,6 +124,12 @@ TEST_F(RenderSnapshotTests, Texture3DSession) {
 TEST_F(RenderSnapshotTests, Textured3DCubeSession) {
   Textured3DCubeSession session(platform_);
   render(session, "Textured3DCubeSession");
+}
+
+// The inset shows frame 5 as read back by the texture accessor at frame 10.
+TEST_F(RenderSnapshotTests, TextureAccessorSession) {
+  TextureAccessorSession session(platform_);
+  render(session, "TextureAccessorSession", 12);
 }
 
 TEST_F(RenderSnapshotTests, MSAASession) {
