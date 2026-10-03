@@ -27,6 +27,14 @@
 #endif
 
 namespace iglu {
+namespace {
+size_t getMaxBindBytesBytes(const igl::IDevice& device) {
+  size_t maxBytes = 0;
+  return device.getFeatureLimits(igl::DeviceFeatureLimits::MaxBindBytesBytes, maxBytes) ? maxBytes
+                                                                                        : 0;
+}
+} // namespace
+
 // NOLINTNEXTLINE(bugprone-exception-escape)
 ManagedUniformBufferInfo getSpirvCrossCompatibleManagedUniformBufferInfo(
     const std::string& uboBlockName,
@@ -100,6 +108,14 @@ ManagedUniformBuffer::ManagedUniformBuffer(igl::IDevice& device,
     }
 
 #endif
+  } else if (const size_t roundedLength = (desc.length + 15) / 16 * 16;
+             device.hasFeature(igl::DeviceFeatures::BindBytes) &&
+             roundedLength <= getMaxBindBytesBytes(device)) {
+    // Small enough for bindBytes(): no buffer to upload into and nothing in flight to stomp.
+    length_ = static_cast<int>(roundedLength);
+    useBindBytes_ = true;
+    data_ = std::calloc(1, length_);
+    createBuffer = false;
   } else {
     data_ = std::malloc(desc.length);
   }

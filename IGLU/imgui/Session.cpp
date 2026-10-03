@@ -135,6 +135,40 @@ void main() {
 })";
 }
 
+// The Vulkan shaders under the WebGPU bind convention; push constants are @group(3) @binding(0).
+const char* getWgslVertexShaderSource() {
+  return R"(
+struct PushConstants {
+  proj : mat4x4f,
+}
+
+@group(3) @binding(0) var<uniform> pc : PushConstants;
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) color : vec4f,
+  @location(1) uv : vec2f,
+}
+
+@vertex
+fn main(@location(0) position : vec2f,
+        @location(1) texCoords : vec2f,
+        @location(2) col : vec4f) -> VertexOut {
+  return VertexOut(pc.proj * vec4f(position, 0.0, 1.0), col, texCoords);
+})";
+}
+
+const char* getWgslFragmentShaderSource() {
+  return R"(
+@group(0) @binding(0) var uTex : texture_2d<f32>;
+@group(0) @binding(1) var uSampler : sampler;
+
+@fragment
+fn main(@location(0) color : vec4f, @location(1) uv : vec2f) -> @location(0) vec4f {
+  return color * textureSample(uTex, uSampler, uv);
+})";
+}
+
 // Note: D3D12 shader source functions are kept for reference but not used.
 // The D3D12 backend uses pre-compiled binary shaders.
 #if IGL_PLATFORM_WINDOWS
@@ -206,9 +240,16 @@ std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& devi
   case igl::BackendType::Custom:
     IGL_DEBUG_ABORT("IGLSamples not set up for Custom");
     return nullptr;
-  case igl::BackendType::WebGPU:
-    IGL_DEBUG_ABORT("IGLSamples not set up for WebGPU");
-    return nullptr;
+  case igl::BackendType::WebGPU: {
+    return igl::ShaderStagesCreator::fromModuleStringInput(device,
+                                                           getWgslVertexShaderSource(),
+                                                           "main",
+                                                           "Shader Module: imgui::vertex",
+                                                           getWgslFragmentShaderSource(),
+                                                           "main",
+                                                           "Shader Module: imgui::fragment",
+                                                           &result);
+  }
   case igl::BackendType::Metal: {
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, metalShaderStr(), "vertex_main", "fragment_main", "", &result);
@@ -392,9 +433,10 @@ Session::Renderer::Renderer(igl::IDevice& device) {
     material_->cullMode = igl::CullMode::Disabled;
     material_->blendMode = iglu::material::BlendMode::Translucent();
 
-    // D3D12 and Vulkan use direct slot binding, OpenGL/Metal use named binding
+    // D3D12, Vulkan and WebGPU use direct slot binding, OpenGL/Metal use named binding
     const bool usesDirectBinding = (device.getBackendType() == igl::BackendType::Vulkan ||
-                                    device.getBackendType() == igl::BackendType::D3D12);
+                                    device.getBackendType() == igl::BackendType::D3D12 ||
+                                    device.getBackendType() == igl::BackendType::WebGPU);
     if (!usesDirectBinding) {
       material_->shaderUniforms().setTexture("texture", fontTexture_.get(), linearSampler_);
     }
@@ -475,9 +517,10 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
     orthoProjection.columns[1] = float4{0.0f, 2.0f / (t - b), 0.0f, 0.0f};
     orthoProjection.columns[2] = float4{0.0f, 0.0f, -1.0f, 0.0f};
     orthoProjection.columns[3] = float4{(r + l) / (l - r), (t + b) / (b - t), 0.0f, 1.0f};
-    // D3D12 and Vulkan use direct slot binding, OpenGL/Metal use named binding
+    // D3D12, Vulkan and WebGPU use direct slot binding, OpenGL/Metal use named binding
     const bool usesDirectBinding = (device.getBackendType() == igl::BackendType::Vulkan ||
-                                    device.getBackendType() == igl::BackendType::D3D12);
+                                    device.getBackendType() == igl::BackendType::D3D12 ||
+                                    device.getBackendType() == igl::BackendType::WebGPU);
     if (!usesDirectBinding) {
       material_->shaderUniforms().setFloat4x4(igl::genNameHandle("projectionMatrix"),
                                               orthoProjection);
@@ -495,7 +538,8 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
   const bool isOpenGL = device.getBackendType() == igl::BackendType::OpenGL;
   const bool isVulkan = device.getBackendType() == igl::BackendType::Vulkan;
   const bool isD3D12 = device.getBackendType() == igl::BackendType::D3D12;
-  const bool usesDirectBinding = isVulkan || isD3D12;
+  const bool isWebGPU = device.getBackendType() == igl::BackendType::WebGPU;
+  const bool usesDirectBinding = isVulkan || isD3D12 || isWebGPU;
 
   auto lastBoundTextureId = static_cast<ImTextureID>(0);
 
@@ -540,7 +584,7 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
         // NOLINTNEXTLINE(performance-no-int-to-ptr)
         auto* tex = reinterpret_cast<igl::ITexture*>(static_cast<intptr_t>(cmd.GetTexID()));
         if (usesDirectBinding) {
-          // D3D12 and Vulkan use direct slot binding
+          // D3D12, Vulkan and WebGPU use direct slot binding
           // Add Vulkan support for texture reflection info in ShaderUniforms so we don't need to
           // bind the texture directly
           cmdEncoder.bindTexture(0, igl::BindTarget::kFragment, tex);

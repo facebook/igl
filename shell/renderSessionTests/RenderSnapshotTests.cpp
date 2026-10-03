@@ -13,6 +13,7 @@
 #include <shell/renderSessions/DrawInstancedSession.h>
 #include <shell/renderSessions/GraphSampleSession.h>
 #include <shell/renderSessions/HelloWorldSession.h>
+#include <shell/renderSessions/ImguiSession.h>
 #include <shell/renderSessions/MRTSession.h>
 #include <shell/renderSessions/MSAASession.h>
 #include <shell/renderSessions/TQMultiRenderPassSession.h>
@@ -43,7 +44,7 @@ class RenderSnapshotTests : public ::testing::Test, public TestShellBase {
  protected:
   static constexpr size_t kSize = 256;
 
-  void render(RenderSession& session, const char* name) {
+  void render(RenderSession& session, const char* name, int frames = 1) {
     ShellParams params;
     params.viewportSize = glm::vec2(static_cast<float>(kSize), static_cast<float>(kSize));
     session.setShellParams(params);
@@ -52,7 +53,7 @@ class RenderSnapshotTests : public ::testing::Test, public TestShellBase {
     session.initialize();
     const SurfaceTextures surfaceTextures = {.color = offscreenTexture_,
                                              .depth = offscreenDepthTexture_};
-    {
+    for (int frame = 0; frame < frames; ++frame) {
       const DeviceScope scope(platform_->getDevice());
       session.update(surfaceTextures);
     }
@@ -155,6 +156,12 @@ TEST_F(RenderSnapshotTests, UniformTestSession) {
 TEST_F(RenderSnapshotTests, UniformPackedTestSession) {
   UniformPackedTestSession session(platform_);
   render(session, "UniformPackedTestSession");
+}
+
+TEST_F(RenderSnapshotTests, ImguiSession) {
+  ImguiSession session(platform_);
+  // ImGui lays windows out in the first frame and draws them from the second.
+  render(session, "ImguiSession", 2);
 }
 
 TEST_F(RenderSnapshotTests, UniformArrayTestSession) {
