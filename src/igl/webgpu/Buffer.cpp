@@ -81,11 +81,9 @@ std::unique_ptr<Buffer> Buffer::create(WebGPUContext& ctx,
   ctx.pushErrorScope(WGPUErrorFilter_OutOfMemory);
   ctx.pushErrorScope(WGPUErrorFilter_Validation);
   Handle<WGPUBuffer> buffer(wgpuDeviceCreateBuffer(ctx.getDevice(), &bufferDesc));
-  Result validation = ctx.popErrorScope();
-  Result outOfMemory = ctx.popErrorScope();
-  if (!validation.isOk() || !outOfMemory.isOk() || !buffer) {
-    Result::setResult(outResult,
-                      !validation.isOk() ? std::move(validation) : std::move(outOfMemory));
+  Result scopes = ctx.popErrorScopes(2);
+  if (!scopes.isOk() || !buffer) {
+    Result::setResult(outResult, std::move(scopes));
     return nullptr;
   }
 

@@ -274,6 +274,13 @@ TEST_F(WebGPUMipmapGeneratorTest, AutoGenerateOnUpload) {
             Result::Code::InvalidOperation);
 }
 
+TEST_F(WebGPUMipmapGeneratorTest, PreparePipelineCachesThePipeline) {
+  auto& generator = device_->getContext().getMipmapGenerator();
+  EXPECT_TRUE(generator.preparePipeline(WGPUTextureFormat_RGBA8Unorm, true).isOk());
+  EXPECT_TRUE(generator.preparePipeline(WGPUTextureFormat_RGBA8Unorm, true).isOk());
+  EXPECT_EQ(generator.getPipelineCount(), 1u);
+}
+
 TEST_F(WebGPUMipmapGeneratorTest, UnsupportedTexturesAreLeftAlone) {
   auto integer = createTexture(
       TextureDesc::new2D(TextureFormat::RGBA_UInt32, 2, 2, TextureDesc::TextureUsageBits::Sampled),

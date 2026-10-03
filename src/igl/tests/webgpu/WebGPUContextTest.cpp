@@ -135,6 +135,46 @@ TEST_F(WebGPUContextTest, ErrorScopeWithoutErrorIsOk) {
   EXPECT_TRUE(ctx->popErrorScope().isOk());
 }
 
+TEST_F(WebGPUContextTest, PopErrorScopesReturnsTheInnermostError) {
+  auto ctx = createContextWithDevice({});
+  ASSERT_NE(ctx, nullptr);
+
+  ctx->pushErrorScope(WGPUErrorFilter_OutOfMemory);
+  ctx->pushErrorScope(WGPUErrorFilter_Validation);
+  const webgpu::Handle<WGPUBuffer> buffer(createInvalidBuffer(*ctx));
+  const Result result = ctx->popErrorScopes(2);
+
+  EXPECT_EQ(result.code, Result::Code::ArgumentInvalid);
+  EXPECT_EQ(ctx->getUncapturedErrorCount(), 0u);
+}
+
+TEST_F(WebGPUContextTest, PopErrorScopesReturnsAnOuterError) {
+  auto ctx = createContextWithDevice({});
+  ASSERT_NE(ctx, nullptr);
+
+  ctx->pushErrorScope(WGPUErrorFilter_Validation);
+  ctx->pushErrorScope(WGPUErrorFilter_OutOfMemory);
+  const webgpu::Handle<WGPUBuffer> buffer(createInvalidBuffer(*ctx));
+  const Result result = ctx->popErrorScopes(2);
+
+  EXPECT_EQ(result.code, Result::Code::ArgumentInvalid);
+  EXPECT_EQ(ctx->getUncapturedErrorCount(), 0u);
+}
+
+TEST_F(WebGPUContextTest, PopErrorScopesPopsEveryScope) {
+  auto ctx = createContextWithDevice({});
+  ASSERT_NE(ctx, nullptr);
+
+  ctx->pushErrorScope(WGPUErrorFilter_OutOfMemory);
+  ctx->pushErrorScope(WGPUErrorFilter_Validation);
+  EXPECT_TRUE(ctx->popErrorScopes(2).isOk());
+
+  // With no scope left, the next error is uncaptured.
+  const webgpu::Handle<WGPUBuffer> buffer(createInvalidBuffer(*ctx));
+  ctx->processEvents();
+  EXPECT_EQ(ctx->getUncapturedErrorCount(), 1u);
+}
+
 TEST_F(WebGPUContextTest, UncapturedErrorIsCounted) {
   auto ctx = createContextWithDevice({});
   ASSERT_NE(ctx, nullptr);

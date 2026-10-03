@@ -135,6 +135,11 @@ class WebGPUContext final {
   /// Pops the innermost error scope. Returns the error it captured when the error mode waits for
   /// `kind` and waiting is possible; otherwise returns Ok and latches the error when it arrives.
   [[nodiscard]] Result popErrorScope(ErrorScopeKind kind = ErrorScopeKind::Resource) const;
+  /// Pops the `count` innermost error scopes before waiting for any of them, so that no scope is
+  /// pushed during the wait; returns the first error, innermost scope first. Use it for nested
+  /// scopes instead of consecutive popErrorScope() calls.
+  [[nodiscard]] Result popErrorScopes(uint32_t count,
+                                      ErrorScopeKind kind = ErrorScopeKind::Resource) const;
   /// Whether popErrorScope(kind) waits for the error.
   [[nodiscard]] bool waitsForErrors(ErrorScopeKind kind) const noexcept;
   /// Returns and clears the errors latched so far (at most 64 are kept).

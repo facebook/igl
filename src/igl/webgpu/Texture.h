@@ -136,6 +136,7 @@ class Texture final : public ITexture {
           uint32_t baseLayer);
 
   [[nodiscard]] Result createSampledView();
+  [[nodiscard]] Result checkMipmapSupport() const;
   [[nodiscard]] Result encodeMipmaps(WGPUCommandEncoder IGL_NONNULL encoder,
                                      const TextureRangeDesc* IGL_NULLABLE range) const;
   // Encodes the mipmaps in a new command buffer and submits it.

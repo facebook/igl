@@ -15,6 +15,7 @@
 #include <mutex>
 #include <thread>
 #include <utility>
+#include <vector>
 #include <igl/webgpu/DepthUploader.h>
 #include <igl/webgpu/MipmapGenerator.h>
 #include <igl/webgpu/ResourcesBinder.h>
@@ -623,54 +624,75 @@ bool WebGPUContext::waitsForErrors(ErrorScopeKind kind) const noexcept {
 }
 
 Result WebGPUContext::popErrorScope(ErrorScopeKind kind) const {
+  return popErrorScopes(1, kind);
+}
+
+Result WebGPUContext::popErrorScopes(uint32_t count, ErrorScopeKind kind) const {
   if (!waitsForErrors(kind)) {
-    const WGPUPopErrorScopeCallbackInfo latchInfo = {
+    for (uint32_t i = 0; i < count; ++i) {
+      const WGPUPopErrorScopeCallbackInfo latchInfo = {
+          .nextInChain = nullptr,
+          .mode = WGPUCallbackMode_AllowSpontaneous,
+          .callback =
+              [](WGPUPopErrorScopeStatus status,
+                 WGPUErrorType type,
+                 WGPUStringView message,
+                 void* IGL_NULLABLE userdata1,
+                 void* IGL_NULLABLE /*userdata2*/) {
+                const std::unique_ptr<std::shared_ptr<CallbackState>> s(
+                    static_cast<std::shared_ptr<CallbackState>*>(userdata1));
+                if (s != nullptr && status == WGPUPopErrorScopeStatus_Success &&
+                    type != WGPUErrorType_NoError) {
+                  (*s)->latch(getResultFromWGPUError(type, message));
+                }
+              },
+          .userdata1 = new std::shared_ptr<CallbackState>(callbackState_),
+          .userdata2 = nullptr,
+      };
+      wgpuDevicePopErrorScope(device_.get(), latchInfo);
+    }
+    return Result();
+  }
+  // Error scopes are one stack per device, and under JSPI a wait suspends to the event loop. Every
+  // scope is popped before the first wait, so errors of other work on the device meanwhile cannot
+  // land in a scope that is still pushed.
+  std::vector<std::pair<WGPUFuture, std::shared_ptr<PopErrorScopeState>>> pops;
+  pops.reserve(count);
+  for (uint32_t i = 0; i < count; ++i) {
+    auto state = std::make_shared<PopErrorScopeState>();
+    const WGPUPopErrorScopeCallbackInfo callbackInfo = {
         .nextInChain = nullptr,
-        .mode = WGPUCallbackMode_AllowSpontaneous,
+        .mode = WGPUCallbackMode_WaitAnyOnly,
         .callback =
             [](WGPUPopErrorScopeStatus status,
                WGPUErrorType type,
                WGPUStringView message,
                void* IGL_NULLABLE userdata1,
                void* IGL_NULLABLE /*userdata2*/) {
-              const std::unique_ptr<std::shared_ptr<CallbackState>> s(
-                  static_cast<std::shared_ptr<CallbackState>*>(userdata1));
-              if (s != nullptr && status == WGPUPopErrorScopeStatus_Success &&
-                  type != WGPUErrorType_NoError) {
-                (*s)->latch(getResultFromWGPUError(type, message));
+              const auto s = adoptFromCallback<PopErrorScopeState>(userdata1);
+              if (!s) {
+                return;
               }
+              (*s)->completed = status == WGPUPopErrorScopeStatus_Success;
+              (*s)->type = type;
+              (*s)->message = toStdString(message);
             },
-        .userdata1 = new std::shared_ptr<CallbackState>(callbackState_),
+        .userdata1 = retainForCallback(state),
         .userdata2 = nullptr,
     };
-    wgpuDevicePopErrorScope(device_.get(), latchInfo);
-    return Result();
+    const WGPUFuture future = wgpuDevicePopErrorScope(device_.get(), callbackInfo);
+    pops.emplace_back(future, std::move(state));
   }
-  const auto state = std::make_shared<PopErrorScopeState>();
-  const WGPUPopErrorScopeCallbackInfo callbackInfo = {
-      .nextInChain = nullptr,
-      .mode = WGPUCallbackMode_WaitAnyOnly,
-      .callback =
-          [](WGPUPopErrorScopeStatus status,
-             WGPUErrorType type,
-             WGPUStringView message,
-             void* IGL_NULLABLE userdata1,
-             void* IGL_NULLABLE /*userdata2*/) {
-            const auto s = adoptFromCallback<PopErrorScopeState>(userdata1);
-            if (!s) {
-              return;
-            }
-            (*s)->completed = status == WGPUPopErrorScopeStatus_Success;
-            (*s)->type = type;
-            (*s)->message = toStdString(message);
-          },
-      .userdata1 = retainForCallback(state),
-      .userdata2 = nullptr,
-  };
-  if (!waitFuture(wgpuDevicePopErrorScope(device_.get(), callbackInfo)) || !state->completed) {
-    return Result(Result::Code::RuntimeError, "wgpuDevicePopErrorScope() failed");
+  Result result;
+  for (const auto& [future, state] : pops) {
+    Result popped = waitFuture(future) && state->completed
+                        ? getResultFromWGPUError(state->type, toWGPUStringView(state->message))
+                        : Result(Result::Code::RuntimeError, "wgpuDevicePopErrorScope() failed");
+    if (result.isOk() && !popped.isOk()) {
+      result = std::move(popped);
+    }
   }
-  return getResultFromWGPUError(state->type, toWGPUStringView(state->message));
+  return result;
 }
 
 WGPUComputePipeline IGL_NULLABLE WebGPUContext::getRowPackPipeline() const {

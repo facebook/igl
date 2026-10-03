@@ -38,6 +38,9 @@ class MipmapGenerator final {
 
   /// Encodes the passes into `encoder`, which must have no open pass.
   [[nodiscard]] Result encode(WGPUCommandEncoder IGL_NONNULL encoder, const Target& target);
+  /// Creates the pipeline encode() uses for `format`, if it is not cached yet. Its creation may
+  /// wait for its error scope, so call it before pushing an error scope around encode().
+  [[nodiscard]] Result preparePipeline(WGPUTextureFormat format, bool filterable);
 
   [[nodiscard]] size_t getPipelineCount() const noexcept {
     return pipelines_.size();

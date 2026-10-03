@@ -112,6 +112,12 @@ WGPURenderPipeline IGL_NULLABLE MipmapGenerator::getPipeline(WGPUTextureFormat f
   return pipelines_.emplace(key, std::move(pipeline)).first->second.get();
 }
 
+Result MipmapGenerator::preparePipeline(WGPUTextureFormat format, bool filterable) {
+  Result result;
+  (void)getPipeline(format, filterable, &result);
+  return result;
+}
+
 Result MipmapGenerator::encode(WGPUCommandEncoder IGL_NONNULL encoder, const Target& target) {
   if (target.texture == nullptr || target.numMipLevels < 2) {
     return Result();

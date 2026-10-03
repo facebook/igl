@@ -243,11 +243,9 @@ std::shared_ptr<Texture> Texture::create(WebGPUContext& ctx,
   ctx.pushErrorScope(WGPUErrorFilter_OutOfMemory);
   ctx.pushErrorScope(WGPUErrorFilter_Validation);
   Handle<WGPUTexture> texture(wgpuDeviceCreateTexture(ctx.getDevice(), &textureDesc));
-  Result validation = ctx.popErrorScope();
-  Result outOfMemory = ctx.popErrorScope();
-  if (!validation.isOk() || !outOfMemory.isOk() || !texture) {
-    Result::setResult(outResult,
-                      !validation.isOk() ? std::move(validation) : std::move(outOfMemory));
+  Result scopes = ctx.popErrorScopes(2);
+  if (!scopes.isOk() || !texture) {
+    Result::setResult(outResult, std::move(scopes));
     return nullptr;
   }
 
@@ -500,14 +498,22 @@ uint32_t Texture::getNumMipLevels() const {
   return desc_.numMipLevels;
 }
 
-Result Texture::encodeMipmaps(WGPUCommandEncoder IGL_NONNULL encoder,
-                              const TextureRangeDesc* IGL_NULLABLE range) const {
+Result Texture::checkMipmapSupport() const {
   using CapabilityBits = ICapabilities::TextureFormatCapabilityBits;
   const TextureFormatProperties& props = getProperties();
   if ((storage_->caps & CapabilityBits::Attachment) == 0 || props.isInteger() ||
       props.isDepthOrStencil() || desc_.type == TextureType::ThreeD || desc_.numSamples != 1) {
     return Result(Result::Code::Unsupported,
                   "WebGPU generates mipmaps only for renderable float 2D, array and cube textures");
+  }
+  return Result();
+}
+
+Result Texture::encodeMipmaps(WGPUCommandEncoder IGL_NONNULL encoder,
+                              const TextureRangeDesc* IGL_NULLABLE range) const {
+  using CapabilityBits = ICapabilities::TextureFormatCapabilityBits;
+  if (Result supported = checkMipmapSupport(); !supported.isOk()) {
+    return supported;
   }
   if (storage_->get() == nullptr) {
     return Result(Result::Code::InvalidOperation, "The surface texture could not be acquired");
@@ -556,7 +562,18 @@ Result Texture::encodeMipmaps(WGPUCommandEncoder IGL_NONNULL encoder,
 }
 
 Result Texture::submitMipmaps(const TextureRangeDesc* IGL_NULLABLE range) const {
+  using CapabilityBits = ICapabilities::TextureFormatCapabilityBits;
   WebGPUContext& ctx = storage_->ctx;
+  // The mip pipeline's creation may wait for its own error scope, and a scope must not be pushed
+  // during a wait (one stack per device; under JSPI a wait suspends to the event loop), so the
+  // pipeline is created before the scope below is pushed.
+  if (checkMipmapSupport().isOk()) {
+    Result prepared = ctx.getMipmapGenerator().preparePipeline(
+        wgpuFormat_, (storage_->caps & CapabilityBits::SampledFiltered) != 0);
+    if (!prepared.isOk()) {
+      return prepared;
+    }
+  }
   ctx.pushErrorScope(WGPUErrorFilter_Validation);
   const Handle<WGPUCommandEncoder> encoder(
       wgpuDeviceCreateCommandEncoder(ctx.getDevice(), nullptr));
