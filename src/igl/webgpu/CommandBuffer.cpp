@@ -14,16 +14,19 @@
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/RenderCommandEncoder.h>
 #include <igl/webgpu/Buffer.h>
+#include <igl/webgpu/Device.h>
+#include <igl/webgpu/RenderCommandEncoder.h>
 #include <igl/webgpu/StateSanitizer.h>
 #include <igl/webgpu/Texture.h>
 #include <igl/webgpu/WebGPUContext.h>
 
 namespace igl::webgpu {
 
-CommandBuffer::CommandBuffer(WebGPUContext& ctx, CommandBufferDesc desc) :
+CommandBuffer::CommandBuffer(Device& device, CommandBufferDesc desc) :
   ICommandBuffer(std::move(desc)),
-  ctx_(ctx),
-  serial_(ctx.getResourceTracker().openCommandBuffer()) {
+  device_(device),
+  ctx_(device.getContext()),
+  serial_(ctx_.getResourceTracker().openCommandBuffer()) {
   const WGPUCommandEncoderDescriptor encoderDesc = {
       .nextInChain = nullptr,
       .label = toWGPUStringView(this->desc.debugName),
@@ -38,12 +41,17 @@ CommandBuffer::~CommandBuffer() {
 }
 
 std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder(
-    const RenderPassDesc& /*renderPass*/,
-    const std::shared_ptr<IFramebuffer>& /*framebuffer*/,
+    const RenderPassDesc& renderPass,
+    const std::shared_ptr<IFramebuffer>& framebuffer,
     const Dependencies& /*dependencies*/,
     Result* IGL_NULLABLE outResult) {
-  Result::setResult(outResult, Result::Code::Unimplemented, "Render passes (WebGPU)");
-  return nullptr;
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (submitted_) {
+    Result::setResult(
+        outResult, Result::Code::InvalidOperation, "The command buffer was already submitted");
+    return nullptr;
+  }
+  return RenderCommandEncoder::create(shared_from_this(), renderPass, framebuffer, outResult);
 }
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {

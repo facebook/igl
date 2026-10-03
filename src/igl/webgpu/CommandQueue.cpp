@@ -8,19 +8,19 @@
 #include <igl/webgpu/CommandQueue.h>
 
 #include <igl/webgpu/CommandBuffer.h>
-#include <igl/webgpu/WebGPUContext.h>
+#include <igl/webgpu/Device.h>
 
 namespace igl::webgpu {
 
 std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandBufferDesc& desc,
                                                                   Result* IGL_NULLABLE outResult) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
-  if (ctx_.isDeviceLost()) {
+  if (device_.isDeviceLost()) {
     Result::setResult(outResult, Result::Code::DeviceLost, "The WebGPU device was lost");
     return nullptr;
   }
   Result::setOk(outResult);
-  return std::make_shared<CommandBuffer>(ctx_, desc);
+  return std::make_shared<CommandBuffer>(device_, desc);
 }
 
 SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*endOfFrame*/) {
@@ -33,7 +33,8 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
     return 0;
   }
   incrementDrawCount(commandBuffer.getCurrentDrawCount());
-  ctx_.processEvents();
+  device_.addDrawCount(commandBuffer.getCurrentDrawCount());
+  device_.getContext().processEvents();
   return cmdBuffer.getSerial();
 }
 

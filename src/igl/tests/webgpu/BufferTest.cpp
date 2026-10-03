@@ -341,11 +341,11 @@ TEST_F(WebGPUBufferTest, DebugGroupsAndEmptySubmit) {
   cmdBuffer->waitUntilCompleted();
 }
 
-TEST_F(WebGPUBufferTest, RenderPassesAreUnimplemented) {
+TEST_F(WebGPUBufferTest, RenderPassesNeedAFramebuffer) {
   auto cmdBuffer = createCommandBuffer();
   Result ret;
   EXPECT_EQ(cmdBuffer->createRenderCommandEncoder({}, nullptr, &ret), nullptr);
-  EXPECT_EQ(ret.code, Result::Code::Unimplemented);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentNull);
 }
 
 } // namespace igl::tests

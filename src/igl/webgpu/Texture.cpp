@@ -159,9 +159,12 @@ std::shared_ptr<Texture> Texture::create(WebGPUContext& ctx,
   textureDesc.label = toWGPUStringView(desc.debugName);
   textureDesc.usage = usage;
   textureDesc.dimension = *dimension;
+  // WebGPU requires block-compressed textures to be whole blocks; IGL sizes are in texels, and the
+  // padding texels are only reachable by sampling past the logical edge.
+  const TextureFormatProperties props = TextureFormatProperties::fromTextureFormat(desc.format);
   textureDesc.size = {
-      .width = desc.width,
-      .height = desc.height,
+      .width = roundUp(desc.width, props.blockWidth),
+      .height = roundUp(desc.height, props.blockHeight),
       .depthOrArrayLayers = getWGPULayerCount(desc),
   };
   textureDesc.format = *format;

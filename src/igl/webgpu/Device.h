@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <ldrutils/lutils/Pool.h>
 #include <memory>
 #include <igl/CommandEncoder.h>
@@ -119,6 +120,10 @@ class Device final : public IDevice {
   [[nodiscard]] const DeviceFeatureSet& getDeviceFeatureSet() const noexcept {
     return deviceFeatureSet_;
   }
+  /// Draws of submitted command buffers; getCurrentDrawCount() reports the total.
+  void addDrawCount(size_t count) noexcept {
+    drawCount_.fetch_add(count, std::memory_order_relaxed);
+  }
   [[nodiscard]] BindLayoutCache& getBindLayoutCache() const noexcept {
     return bindLayoutCache_;
   }
@@ -140,6 +145,7 @@ class Device final : public IDevice {
   ldr::Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
   ldr::Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
   mutable size_t shaderCompilationCount_ = 0;
+  std::atomic<size_t> drawCount_ = 0;
 };
 
 } // namespace igl::webgpu

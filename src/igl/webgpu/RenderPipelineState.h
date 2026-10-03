@@ -105,6 +105,10 @@ class RenderPipelineState final : public IRenderPipelineState {
   [[nodiscard]] const PipelineBindings& getBindings() const noexcept {
     return bindings_;
   }
+  /// Vertex buffer slots with attributes; draws need a buffer bound to each.
+  [[nodiscard]] uint32_t getRequiredVertexBufferMask() const noexcept {
+    return requiredVertexBufferMask_;
+  }
   [[nodiscard]] bool hasDepthStencilAttachment() const noexcept {
     return depthStencilFormat_ != WGPUTextureFormat_Undefined;
   }
@@ -133,6 +137,7 @@ class RenderPipelineState final : public IRenderPipelineState {
   std::shared_ptr<ShaderModule> fragmentModule_;
   PipelineBindings bindings_;
   uint32_t numBindGroups_ = 0;
+  uint32_t requiredVertexBufferMask_ = 0;
   WGPUTextureFormat depthStencilFormat_ = WGPUTextureFormat_Undefined;
   std::shared_ptr<RenderPipelineReflection> reflection_;
   std::unordered_map<RenderPipelineDynamicState,

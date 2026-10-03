@@ -16,12 +16,14 @@
 namespace igl::webgpu {
 
 class Buffer;
+class Device;
 class WebGPUContext;
 
 /// @brief Implements the igl::ICommandBuffer interface for WebGPU with one WGPUCommandEncoder.
-class CommandBuffer final : public ICommandBuffer {
+class CommandBuffer final : public ICommandBuffer,
+                            public std::enable_shared_from_this<CommandBuffer> {
  public:
-  CommandBuffer(WebGPUContext& ctx, CommandBufferDesc desc);
+  CommandBuffer(Device& device, CommandBufferDesc desc);
   ~CommandBuffer() override;
 
   CommandBuffer(const CommandBuffer&) = delete;
@@ -54,6 +56,9 @@ class CommandBuffer final : public ICommandBuffer {
                            uint32_t level,
                            uint32_t layer) override;
 
+  [[nodiscard]] Device& getDevice() const noexcept {
+    return device_;
+  }
   [[nodiscard]] WGPUCommandEncoder IGL_NULLABLE getWGPUCommandEncoder() const noexcept {
     return encoder_.get();
   }
@@ -75,6 +80,7 @@ class CommandBuffer final : public ICommandBuffer {
                                                Buffer& buffer,
                                                uint64_t dstOffset);
 
+  Device& device_;
   WebGPUContext& ctx_;
   Handle<WGPUCommandEncoder> encoder_;
   const uint64_t serial_;

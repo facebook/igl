@@ -94,7 +94,7 @@ std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc
                                                           Result* IGL_NULLABLE outResult) noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   Result::setOk(outResult);
-  return std::make_shared<CommandQueue>(*ctx_);
+  return std::make_shared<CommandQueue>(*this);
 }
 
 std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
@@ -305,7 +305,7 @@ BackendVersion Device::getBackendVersion() const {
 }
 
 size_t Device::getCurrentDrawCount() const {
-  return 0;
+  return drawCount_.load(std::memory_order_relaxed);
 }
 
 size_t Device::getShaderCompilationCount() const {

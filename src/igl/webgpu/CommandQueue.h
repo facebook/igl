@@ -12,12 +12,12 @@
 
 namespace igl::webgpu {
 
-class WebGPUContext;
+class Device;
 
 /// @brief Implements the igl::ICommandQueue interface on the device's WGPUQueue.
 class CommandQueue final : public ICommandQueue {
  public:
-  explicit CommandQueue(WebGPUContext& ctx) : ctx_(ctx) {}
+  explicit CommandQueue(Device& device) : device_(device) {}
 
   std::shared_ptr<ICommandBuffer> createCommandBuffer(const CommandBufferDesc& desc,
                                                       Result* IGL_NULLABLE outResult) override;
@@ -25,7 +25,7 @@ class CommandQueue final : public ICommandQueue {
   SubmitHandle submit(const ICommandBuffer& commandBuffer, bool endOfFrame = false) override;
 
  private:
-  WebGPUContext& ctx_;
+  Device& device_;
 };
 
 } // namespace igl::webgpu

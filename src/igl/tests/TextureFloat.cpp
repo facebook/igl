@@ -408,6 +408,7 @@ TEST_F(TextureFloatTest, UploadRGBA32) {
 TEST_F(TextureFloatTest, UploadRGB32) {
   if (iglDev_->getBackendType() == BackendType::Vulkan ||
       iglDev_->getBackendType() == BackendType::Metal ||
+      iglDev_->getBackendType() == BackendType::WebGPU ||
       iglDev_->getBackendVersion().flavor == BackendFlavor::OpenGL_ES) {
     GTEST_SKIP() << "Skip due to lack of support for RGB";
   }
@@ -438,6 +439,7 @@ TEST_F(TextureFloatTest, PassthroughSampleRGB32) {
 #endif
   if (iglDev_->getBackendType() == BackendType::Vulkan ||
       iglDev_->getBackendType() == BackendType::Metal ||
+      iglDev_->getBackendType() == BackendType::WebGPU ||
       iglDev_->getBackendVersion().flavor == BackendFlavor::OpenGL_ES) {
     GTEST_SKIP() << "Skip due to lack of support for RGB";
   }

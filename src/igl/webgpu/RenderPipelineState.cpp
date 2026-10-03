@@ -176,6 +176,14 @@ Result RenderPipelineState::init() {
     depthStencilFormat_ = *wgpuFormat;
   }
 
+  if (desc_.vertexInputState) {
+    const VertexInputStateDesc& vertexInput =
+        static_cast<const VertexInputState&>(*desc_.vertexInputState).getDesc();
+    for (size_t i = 0; i < vertexInput.numAttributes; ++i) {
+      requiredVertexBufferMask_ |= 1u << vertexInput.attributes[i].bufferIndex;
+    }
+  }
+
   reflection_ = std::make_shared<RenderPipelineReflection>(
       std::vector<std::pair<ShaderStage, const WgslReflection*>>{
           {ShaderStage::Vertex, &vertexModule_->getReflection()},
