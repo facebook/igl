@@ -396,6 +396,52 @@ fn main() -> @location(0) vec4f {
   EXPECT_EQ(readColor()[5], rgba(0, 255, 0, 255));
 }
 
+TEST_F(WebGPURenderCommandEncoderTest, PushConstantBlocksOfDifferentSizesPerStage) {
+  if (!device_->hasFeature(DeviceFeatures::PushConstants)) {
+    GTEST_SKIP() << "No push constants";
+  }
+  constexpr const char* kVertex = R"(
+struct VertexConstants { scale : vec4f, };
+@group(3) @binding(0) var<uniform> pc : VertexConstants;
+@vertex fn main(@location(0) p : vec4f) -> @builtin(position) vec4f {
+  return vec4f(p.xyz * pc.scale.x, 1.0);
+}
+)";
+  constexpr const char* kFragment = R"(
+struct FragmentConstants { scale : vec4f, color : vec4f, };
+@group(3) @binding(0) var<uniform> pc : FragmentConstants;
+@fragment fn main() -> @location(0) vec4f {
+  return pc.color;
+}
+)";
+  Result ret;
+  std::shared_ptr<IShaderStages> stages = ShaderStagesCreator::fromModuleStringInput(
+      *device_, kVertex, "main", "", kFragment, "main", "", &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  auto pipeline = device_->createRenderPipeline(
+      {
+          .topology = PrimitiveType::TriangleStrip,
+          .vertexInputState = vertexInput_,
+          .shaderStages = stages,
+          .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}},
+                         .depthAttachmentFormat = TextureFormat::S8_UInt_Z32_UNorm,
+                         .stencilAttachmentFormat = TextureFormat::S8_UInt_Z32_UNorm},
+      },
+      &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  auto vertices = createVertices(quad(0.5f));
+  const std::array<float, 8> constants = {1, 1, 1, 1, 0, 1, 0, 1};
+  encode(
+      [&](IRenderCommandEncoder& encoder) {
+        encoder.bindRenderPipelineState(pipeline);
+        encoder.bindPushConstants(constants.data(), sizeof(constants));
+        encoder.bindVertexBuffer(0, *vertices);
+        encoder.draw(4);
+      },
+      clearPass());
+  EXPECT_EQ(readColor()[5], rgba(0, 255, 0, 255));
+}
+
 TEST_F(WebGPURenderCommandEncoderTest, ScissorAndViewport) {
   auto pipeline = createPipeline(PrimitiveType::TriangleStrip);
   auto vertices = createVertices(quad(0.5f));

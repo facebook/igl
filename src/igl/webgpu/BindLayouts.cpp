@@ -184,6 +184,9 @@ Result PipelineBindings::add(const WgslReflection& reflection, WGPUShaderStage s
                         ") is declared differently by two shader stages");
     }
     it->visibility |= visibility;
+    // Stages may declare buffer structs of different sizes (e.g. per-stage push constant blocks);
+    // the binding must cover the largest.
+    it->declaration.bufferSize = std::max(it->declaration.bufferSize, binding.bufferSize);
   }
   for (auto& group : groups) {
     std::sort(group.begin(), group.end(), [](const auto& a, const auto& b) {
