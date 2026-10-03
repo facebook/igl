@@ -29,6 +29,9 @@ Linux, the Null adapter in tests) and in the browser through Emscripten's `emdaw
 - Not in WebGPU: multiview, 8-bit indices, 3-component and packed 16-bit formats, `BGR10_A2`,
   PVRTC, L8/LA8/A8, clamp-to-border, line widths, depth bias on lines and points.
 - `Z_UNorm24` (depth24plus) cannot be copied or read back; use `Z_UNorm32`.
+- Block-compressed textures whose size is not a whole number of blocks (e.g. 5x5 BC1, or 1024x1024
+  ASTC 6x6) are allocated rounded up, so normalized coordinates span the padded size and such
+  textures sample differently from Metal and Vulkan. Use whole-block sizes.
 - WGSL only: SparkSL and GLSL sources need a WGSL counterpart (generated headers for the shell).
 - No mesh shaders (MeshShaderTriangleSession draws its triangle from a vertex shader) and no
   line polygon fill (WireframeSession draws a line list of the triangle edges).

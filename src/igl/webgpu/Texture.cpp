@@ -217,9 +217,15 @@ std::shared_ptr<Texture> Texture::create(WebGPUContext& ctx,
   textureDesc.label = toWGPUStringView(desc.debugName);
   textureDesc.usage = usage;
   textureDesc.dimension = *dimension;
-  // WebGPU requires block-compressed textures to be whole blocks; IGL sizes are in texels, and the
-  // padding texels are only reachable by sampling past the logical edge.
+  // WebGPU requires block-compressed textures to be whole blocks, so other sizes are rounded up.
+  // Normalized coordinates then span the allocated size: a 5x5 BC1 texture allocated as 8x8 shows
+  // its texels in [0, 5/8] of UV space. Metal and Vulkan keep the exact size.
   const TextureFormatProperties props = TextureFormatProperties::fromTextureFormat(desc.format);
+  if (desc.width % props.blockWidth != 0 || desc.height % props.blockHeight != 0) {
+    IGL_LOG_INFO_ONCE(
+        "WebGPU rounds compressed textures up to whole blocks; normalized coordinates span the "
+        "padded size (see webgpu/ROADMAP.md)\n");
+  }
   textureDesc.size = {
       .width = roundUp(desc.width, props.blockWidth),
       .height = roundUp(desc.height, props.blockHeight),
