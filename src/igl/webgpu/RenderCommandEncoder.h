@@ -129,6 +129,11 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   [[nodiscard]] Result begin(const RenderPassDesc& renderPass, const IFramebuffer& framebuffer);
   // Applies the recorded state before a draw; false if the draw must be skipped.
   [[nodiscard]] bool prepareDraw(bool indexed);
+  void drawIndirect(IBuffer& indirectBuffer,
+                    size_t indirectBufferOffset,
+                    uint32_t drawCount,
+                    uint32_t stride,
+                    bool indexed);
   [[nodiscard]] Result checkSampledAttachments() const;
 
   CommandBuffer& commandBuffer_;

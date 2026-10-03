@@ -65,6 +65,7 @@ constexpr WGPUFeatureName kOptionalFeatures[] = {
     WGPUFeatureName_Float32Blendable,
     WGPUFeatureName_TimestampQuery,
     WGPUFeatureName_Depth32FloatStencil8,
+    WGPUFeatureName_IndirectFirstInstance,
     WGPUFeatureName_BGRA8UnormStorage,
     WGPUFeatureName_RG11B10UfloatRenderable,
     WGPUFeatureName_TextureCompressionBC,

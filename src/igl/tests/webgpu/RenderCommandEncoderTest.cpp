@@ -50,6 +50,26 @@ std::vector<float> lowerRightTriangle() {
   return {-1, -1, 0, 1, 1, -1, 0, 1, 1, 1, 0, 1};
 }
 
+// Upper-left triangle, counter-clockwise.
+std::vector<float> upperLeftTriangle() {
+  return {-1, -1, 0, 1, 1, 1, 0, 1, -1, 1, 0, 1};
+}
+
+struct DrawIndirectArgs {
+  uint32_t vertexCount = 0;
+  uint32_t instanceCount = 0;
+  uint32_t firstVertex = 0;
+  uint32_t firstInstance = 0;
+};
+
+struct DrawIndexedIndirectArgs {
+  uint32_t indexCount = 0;
+  uint32_t instanceCount = 0;
+  uint32_t firstIndex = 0;
+  int32_t baseVertex = 0;
+  uint32_t firstInstance = 0;
+};
+
 uint32_t rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
   return r | (g << 8) | (b << 16) | (static_cast<uint32_t>(a) << 24);
 }
@@ -143,6 +163,21 @@ class WebGPURenderCommandEncoderTest : public ::testing::Test {
                                         &ret);
     EXPECT_TRUE(ret.isOk()) << ret.message;
     return buffer;
+  }
+
+  [[nodiscard]] std::shared_ptr<IBuffer> createIndirect(const void* data, size_t length) {
+    Result ret;
+    auto buffer = device_->createBuffer(
+        {.type = BufferDesc::BufferTypeBits::Indirect, .data = data, .length = length}, &ret);
+    EXPECT_TRUE(ret.isOk()) << ret.message;
+    return buffer;
+  }
+
+  [[nodiscard]] std::shared_ptr<IBuffer> twoTriangles() {
+    std::vector<float> vertices = lowerRightTriangle();
+    const std::vector<float> upperLeft = upperLeftTriangle();
+    vertices.insert(vertices.end(), upperLeft.begin(), upperLeft.end());
+    return createVertices(vertices);
   }
 
   void setColor(const std::array<float, 4>& color, size_t offset = 0) {
@@ -449,6 +484,117 @@ TEST_F(WebGPURenderCommandEncoderTest, SteadyStateCreatesNothing) {
   EXPECT_EQ(webgpuPipeline.getPipelineCreationCount(), pipelines);
   EXPECT_EQ(webgpuDevice_->getContext().getBindGroupCache().getCreationCount(), bindGroups);
   EXPECT_EQ(readColor()[0], rgba(255, 0, 255, 255));
+}
+
+TEST_F(WebGPURenderCommandEncoderTest, MultiDrawIndirect) {
+  ASSERT_TRUE(device_->hasFeature(DeviceFeatures::DrawIndexedIndirect));
+  auto pipeline = createPipeline(PrimitiveType::Triangle);
+  auto vertices = twoTriangles();
+  // The middle record draws nothing; the other two cover the target.
+  const std::array<DrawIndirectArgs, 3> args = {{
+      {.vertexCount = 3, .instanceCount = 1},
+      {.vertexCount = 3, .instanceCount = 0},
+      {.vertexCount = 3, .instanceCount = 1, .firstVertex = 3},
+  }};
+  auto indirect = createIndirect(args.data(), sizeof(args));
+  setColor({1, 1, 0, 1});
+  const size_t drawCount = device_->getCurrentDrawCount();
+  encode(
+      [&](IRenderCommandEncoder& encoder) {
+        encoder.bindRenderPipelineState(pipeline);
+        encoder.bindBuffer(0, uniforms_.get(), 0, 16);
+        encoder.bindVertexBuffer(0, *vertices);
+        encoder.multiDrawIndirect(*indirect, 0, 3);
+      },
+      clearPass());
+  for (const uint32_t pixel : readColor()) {
+    EXPECT_EQ(pixel, rgba(255, 255, 0, 255));
+  }
+  EXPECT_EQ(device_->getCurrentDrawCount(), drawCount + 3);
+}
+
+TEST_F(WebGPURenderCommandEncoderTest, MultiDrawIndirectOffsetAndStride) {
+  auto pipeline = createPipeline(PrimitiveType::Triangle);
+  auto vertices = twoTriangles();
+  // Records 32 bytes apart after a 16-byte header; only the upper-left triangle is drawn.
+  std::array<uint32_t, 20> words = {};
+  const DrawIndirectArgs upperLeft = {.vertexCount = 3, .instanceCount = 1, .firstVertex = 3};
+  const DrawIndirectArgs lowerRight = {.vertexCount = 3, .instanceCount = 1};
+  std::memcpy(&words[4], &upperLeft, sizeof(upperLeft));
+  std::memcpy(&words[12], &lowerRight, sizeof(lowerRight));
+  auto indirect = createIndirect(words.data(), sizeof(words));
+  setColor({0, 1, 1, 1});
+  encode(
+      [&](IRenderCommandEncoder& encoder) {
+        encoder.bindRenderPipelineState(pipeline);
+        encoder.bindBuffer(0, uniforms_.get(), 0, 16);
+        encoder.bindVertexBuffer(0, *vertices);
+        encoder.multiDrawIndirect(*indirect, 16, 1, 32);
+      },
+      clearPass());
+  const std::vector<uint32_t> pixels = readColor();
+  EXPECT_EQ(pixels[0], rgba(0, 255, 255, 255));
+  EXPECT_EQ(pixels[kSize * kSize - 1], rgba(0, 0, 0, 255));
+}
+
+TEST_F(WebGPURenderCommandEncoderTest, MultiDrawIndexedIndirect) {
+  auto pipeline = createPipeline(PrimitiveType::Triangle);
+  auto vertices = twoTriangles();
+  const std::array<uint16_t, 6> indices = {0, 1, 2, 0, 1, 2};
+  Result ret;
+  auto indexBuffer = device_->createBuffer({.type = BufferDesc::BufferTypeBits::Index,
+                                            .data = indices.data(),
+                                            .length = sizeof(indices)},
+                                           &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  // The second record reaches the upper-left triangle through baseVertex.
+  const std::array<DrawIndexedIndirectArgs, 2> args = {{
+      {.indexCount = 3, .instanceCount = 1},
+      {.indexCount = 3, .instanceCount = 1, .firstIndex = 3, .baseVertex = 3},
+  }};
+  auto indirect = createIndirect(args.data(), sizeof(args));
+  setColor({1, 0, 1, 1});
+  encode(
+      [&](IRenderCommandEncoder& encoder) {
+        encoder.bindRenderPipelineState(pipeline);
+        encoder.bindBuffer(0, uniforms_.get(), 0, 16);
+        encoder.bindVertexBuffer(0, *vertices);
+        encoder.bindIndexBuffer(*indexBuffer, IndexFormat::UInt16);
+        encoder.multiDrawIndexedIndirect(*indirect, 0, 2);
+      },
+      clearPass());
+  for (const uint32_t pixel : readColor()) {
+    EXPECT_EQ(pixel, rgba(255, 0, 255, 255));
+  }
+}
+
+TEST_F(WebGPURenderCommandEncoderTest, SkipsInvalidIndirectDraws) {
+  auto pipeline = createPipeline(PrimitiveType::Triangle);
+  auto vertices = twoTriangles();
+  const DrawIndirectArgs args = {.vertexCount = 3, .instanceCount = 1};
+  auto indirect = createIndirect(&args, sizeof(args));
+  const DrawIndexedIndirectArgs indexedArgs = {.indexCount = 3, .instanceCount = 1};
+  auto indexedIndirect = createIndirect(&indexedArgs, sizeof(indexedArgs));
+  auto notIndirect = createVertices({3, 1, 0, 0});
+  setColor({1, 1, 1, 1});
+  const size_t drawCount = device_->getCurrentDrawCount();
+  encode(
+      [&](IRenderCommandEncoder& encoder) {
+        encoder.bindRenderPipelineState(pipeline);
+        encoder.bindBuffer(0, uniforms_.get(), 0, 16);
+        encoder.bindVertexBuffer(0, *vertices);
+        // Not an Indirect buffer; unaligned offset; past the end; no index buffer.
+        encoder.multiDrawIndirect(*notIndirect, 0, 1);
+        encoder.multiDrawIndirect(*indirect, 2, 1);
+        encoder.multiDrawIndirect(*indirect, 0, 2);
+        encoder.multiDrawIndexedIndirect(*indexedIndirect, 0, 1);
+      },
+      clearPass());
+  for (const uint32_t pixel : readColor()) {
+    EXPECT_EQ(pixel, rgba(0, 0, 0, 255));
+  }
+  // Skipped draws still count (shared DeviceTest.LastDrawStat).
+  EXPECT_EQ(device_->getCurrentDrawCount(), drawCount + 5);
 }
 
 } // namespace igl::tests

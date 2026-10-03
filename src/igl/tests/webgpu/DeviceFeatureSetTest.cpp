@@ -74,6 +74,7 @@ TEST_F(WebGPUDeviceFeatureSetTest, Features) {
   EXPECT_TRUE(device_->hasFeature(DeviceFeatures::ValidationLayersEnabled));
   EXPECT_TRUE(device_->hasFeature(DeviceFeatures::Compute));
   EXPECT_TRUE(device_->hasFeature(DeviceFeatures::StorageBuffers));
+  EXPECT_TRUE(device_->hasFeature(DeviceFeatures::DrawIndexedIndirect));
 
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::BufferRing));
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::DynamicCullMode));

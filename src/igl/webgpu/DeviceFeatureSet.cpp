@@ -106,6 +106,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::DepthCompare:
   case DeviceFeatures::DepthShaderRead:
   case DeviceFeatures::DrawFirstIndexFirstVertex:
+  case DeviceFeatures::DrawIndexedIndirect:
   case DeviceFeatures::DrawInstanced:
   case DeviceFeatures::ExplicitBinding:
   case DeviceFeatures::FillBuffer:
@@ -137,7 +138,6 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::BufferDeviceAddress:
   case DeviceFeatures::BufferNoCopy:
   case DeviceFeatures::BufferRing:
-  case DeviceFeatures::DrawIndexedIndirect:
   case DeviceFeatures::DynamicCullMode:
   case DeviceFeatures::DynamicFrontFacingWinding:
   case DeviceFeatures::DynamicVertexBufferStride:

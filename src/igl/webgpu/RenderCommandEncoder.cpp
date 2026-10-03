@@ -22,6 +22,10 @@ namespace igl::webgpu {
 
 namespace {
 
+// Sizes of the WebGPU (and Vulkan/Metal) indirect draw argument records.
+constexpr uint32_t kDrawIndirectSize = 4 * sizeof(uint32_t);
+constexpr uint32_t kDrawIndexedIndirectSize = 5 * sizeof(uint32_t);
+
 bool isStrip(PrimitiveType topology) {
   return topology == PrimitiveType::LineStrip || topology == PrimitiveType::TriangleStrip;
 }
@@ -494,18 +498,60 @@ void RenderCommandEncoder::drawMeshTasks(const Dimensions& /*threadgroupsPerGrid
   IGL_LOG_ERROR_ONCE("WebGPU has no mesh shaders\n");
 }
 
-void RenderCommandEncoder::multiDrawIndirect(IBuffer& /*indirectBuffer*/,
-                                             size_t /*indirectBufferOffset*/,
-                                             uint32_t /*drawCount*/,
-                                             uint32_t /*stride*/) {
-  IGL_LOG_ERROR_ONCE("multiDrawIndirect() is not supported by the WebGPU backend yet\n");
+void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
+                                             size_t indirectBufferOffset,
+                                             uint32_t drawCount,
+                                             uint32_t stride) {
+  IGL_PROFILER_FUNCTION();
+  drawIndirect(indirectBuffer, indirectBufferOffset, drawCount, stride, /*indexed=*/false);
 }
 
-void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& /*indirectBuffer*/,
-                                                    size_t /*indirectBufferOffset*/,
-                                                    uint32_t /*drawCount*/,
-                                                    uint32_t /*stride*/) {
-  IGL_LOG_ERROR_ONCE("multiDrawIndexedIndirect() is not supported by the WebGPU backend yet\n");
+void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
+                                                    size_t indirectBufferOffset,
+                                                    uint32_t drawCount,
+                                                    uint32_t stride) {
+  IGL_PROFILER_FUNCTION();
+  drawIndirect(indirectBuffer, indirectBufferOffset, drawCount, stride, /*indexed=*/true);
+}
+
+void RenderCommandEncoder::drawIndirect(IBuffer& indirectBuffer,
+                                        size_t indirectBufferOffset,
+                                        uint32_t drawCount,
+                                        uint32_t stride,
+                                        bool indexed) {
+  // WebGPU has no core multi-draw; each record becomes one draw{Indexed}Indirect call.
+  const uint32_t recordSize = indexed ? kDrawIndexedIndirectSize : kDrawIndirectSize;
+  stride = stride != 0 ? stride : recordSize;
+  // Every draw call counts, issued or not, as on the other backends.
+  for (uint32_t i = 0; i < drawCount; ++i) {
+    commandBuffer_.incrementCurrentDrawCount();
+  }
+  if (drawCount == 0) {
+    return;
+  }
+  auto& buffer = static_cast<Buffer&>(indirectBuffer);
+  if ((buffer.getBufferType() & BufferDesc::BufferTypeBits::Indirect) == 0 ||
+      indirectBufferOffset % 4 != 0 || stride % 4 != 0) {
+    IGL_LOG_ERROR("Indirect draws need an Indirect buffer, and 4-byte offset and stride\n");
+    return;
+  }
+  if (indirectBufferOffset + static_cast<size_t>(stride) * (drawCount - 1) + recordSize >
+      buffer.getSizeInBytes()) {
+    IGL_LOG_ERROR("Indirect draw records extend past the end of the buffer\n");
+    return;
+  }
+  if (!prepareDraw(indexed)) {
+    return;
+  }
+  for (uint32_t i = 0; i < drawCount; ++i) {
+    const uint64_t offset = indirectBufferOffset + static_cast<uint64_t>(stride) * i;
+    if (indexed) {
+      wgpuRenderPassEncoderDrawIndexedIndirect(pass_.get(), buffer.getWGPUBuffer(), offset);
+    } else {
+      wgpuRenderPassEncoderDrawIndirect(pass_.get(), buffer.getWGPUBuffer(), offset);
+    }
+  }
+  buffer.recordUse(commandBuffer_.getSerial(), /*gpuWrite=*/false);
 }
 
 void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {

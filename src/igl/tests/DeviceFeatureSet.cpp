@@ -181,6 +181,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ShaderLibrary));
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ShaderTextureLod));
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::SamplerMinMaxLod));
+    EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DrawIndexedIndirect));
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::MultipleRenderTargets));
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ExplicitBinding));
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::TextureFormatRG));
