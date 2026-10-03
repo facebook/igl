@@ -69,7 +69,7 @@ struct RenderPipelineDynamicStateHash {
 /// strip index format and the bind group layouts (which depend on the formats of the bound
 /// textures). Pipelines are therefore created lazily, one per RenderPipelineDynamicState variant,
 /// with explicit layouts built from the shaders' reflection.
-class RenderPipelineState final : public IRenderPipelineState {
+class RenderPipelineState final : public IRenderPipelineState, public PipelineLayoutSource {
  public:
   /// Soft limit on variants per pipeline; exceeding it logs a warning.
   static constexpr size_t kVariantWarningThreshold = 64;
@@ -97,12 +97,11 @@ class RenderPipelineState final : public IRenderPipelineState {
   /// The pipeline for `state`, created on first use.
   [[nodiscard]] WGPURenderPipeline IGL_NULLABLE getPipeline(const RenderPipelineDynamicState& state,
                                                             Result* IGL_NULLABLE outResult);
-  /// The bind group layout of `group` for texture units sampled as `classes`.
-  [[nodiscard]] WGPUBindGroupLayout IGL_NULLABLE getBindGroupLayout(uint32_t group,
-                                                                    SampleClasses classes,
-                                                                    Result* IGL_NULLABLE outResult);
-
-  [[nodiscard]] const PipelineBindings& getBindings() const noexcept {
+  [[nodiscard]] WGPUBindGroupLayout IGL_NULLABLE
+  getBindGroupLayout(uint32_t group,
+                     SampleClasses classes,
+                     Result* IGL_NULLABLE outResult) override;
+  [[nodiscard]] const PipelineBindings& getBindings() const noexcept override {
     return bindings_;
   }
   /// Vertex buffer slots with attributes; draws need a buffer bound to each.

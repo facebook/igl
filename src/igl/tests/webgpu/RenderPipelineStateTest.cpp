@@ -141,11 +141,29 @@ TEST(WebGPUBindLayoutsTest, ConventionViolations) {
             Result::Code::ArgumentInvalid);
 
   ASSERT_TRUE(
+      webgpu::parseWgslReflection("@group(2) @binding(0) var t : texture_2d<f32>;", reflection)
+          .isOk());
+  EXPECT_EQ(webgpu::PipelineBindings().add(reflection, WGPUShaderStage_Fragment).code,
+            Result::Code::ArgumentInvalid);
+
+  // Storage textures are group 2; writable ones are not visible to vertex shaders.
+  ASSERT_TRUE(
       webgpu::parseWgslReflection(
           "@group(2) @binding(0) var t : texture_storage_2d<rgba8unorm, write>;", reflection)
           .isOk());
-  EXPECT_EQ(webgpu::PipelineBindings().add(reflection, WGPUShaderStage_Fragment).code,
-            Result::Code::Unsupported);
+  webgpu::PipelineBindings storage;
+  ASSERT_TRUE(storage.add(reflection, WGPUShaderStage_Vertex | WGPUShaderStage_Fragment).isOk());
+  const auto storageEntries = webgpu::makeBindGroupLayoutEntries(storage, 2, 0);
+  ASSERT_EQ(storageEntries.size(), 1u);
+  EXPECT_EQ(storageEntries[0].visibility, WGPUShaderStage_Fragment);
+  EXPECT_EQ(storageEntries[0].storageTexture.format, WGPUTextureFormat_RGBA8Unorm);
+  EXPECT_EQ(storageEntries[0].storageTexture.access, WGPUStorageTextureAccess_WriteOnly);
+  ASSERT_TRUE(
+      webgpu::parseWgslReflection(
+          "@group(2) @binding(8) var t : texture_storage_2d<rgba8unorm, write>;", reflection)
+          .isOk());
+  EXPECT_EQ(webgpu::PipelineBindings().add(reflection, WGPUShaderStage_Compute).code,
+            Result::Code::ArgumentInvalid);
 
   // Two stages that disagree about a binding.
   webgpu::WgslReflection a;

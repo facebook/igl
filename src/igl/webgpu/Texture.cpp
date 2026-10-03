@@ -132,9 +132,10 @@ std::shared_ptr<Texture> Texture::create(WebGPUContext& ctx,
     Result::setResult(outResult, Result::Code::Unsupported, "WebGPU textures have 1 or 4 samples");
     return nullptr;
   }
-  if ((desc.usage & TextureDesc::TextureUsageBits::Storage) != 0) {
+  if ((desc.usage & TextureDesc::TextureUsageBits::Storage) != 0 &&
+      ((caps & ICapabilities::TextureFormatCapabilityBits::Storage) == 0 || desc.numSamples != 1)) {
     Result::setResult(
-        outResult, Result::Code::Unsupported, "Storage textures are not supported yet");
+        outResult, Result::Code::Unsupported, "Texture format cannot be used for storage");
     return nullptr;
   }
   if (desc.exportability == TextureDesc::TextureExportability::Exportable) {
@@ -145,6 +146,9 @@ std::shared_ptr<Texture> Texture::create(WebGPUContext& ctx,
   WGPUTextureUsage usage = WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
   if ((desc.usage & TextureDesc::TextureUsageBits::Sampled) != 0) {
     usage |= WGPUTextureUsage_TextureBinding;
+  }
+  if ((desc.usage & TextureDesc::TextureUsageBits::Storage) != 0) {
+    usage |= WGPUTextureUsage_StorageBinding;
   }
   if ((desc.usage & TextureDesc::TextureUsageBits::Attachment) != 0) {
     // Requesting RENDER_ATTACHMENT for a format that cannot be rendered to is a validation error.
@@ -313,6 +317,32 @@ WGPUTextureView IGL_NULLABLE Texture::getAttachmentView(uint32_t mipLevel, uint3
   Handle<WGPUTextureView> view(wgpuTextureCreateView(storage_->texture.get(), &viewDesc));
   const WGPUTextureView result = view.get();
   attachmentViews_.emplace(key, std::move(view));
+  return result;
+}
+
+WGPUTextureView IGL_NULLABLE Texture::getStorageView(WGPUTextureViewDimension dimension) const {
+  if (const auto it = storageViews_.find(dimension); it != storageViews_.end()) {
+    return it->second.get();
+  }
+  const bool is3D = desc_.type == TextureType::ThreeD;
+  const uint32_t layers = getWGPULayerCount(desc_);
+  const bool compatible = is3D ? dimension == WGPUTextureViewDimension_3D
+                               : dimension == WGPUTextureViewDimension_2DArray ||
+                                     (dimension == WGPUTextureViewDimension_2D && layers == 1);
+  if (!compatible) {
+    return nullptr;
+  }
+  WGPUTextureViewDescriptor viewDesc = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
+  viewDesc.format = wgpuFormat_;
+  viewDesc.dimension = dimension;
+  viewDesc.baseMipLevel = baseMipLevel_;
+  viewDesc.mipLevelCount = 1;
+  viewDesc.baseArrayLayer = is3D ? 0 : baseLayer_;
+  viewDesc.arrayLayerCount = is3D ? 1 : layers;
+  viewDesc.aspect = WGPUTextureAspect_All;
+  Handle<WGPUTextureView> view(wgpuTextureCreateView(storage_->texture.get(), &viewDesc));
+  const WGPUTextureView result = view.get();
+  storageViews_.emplace(dimension, std::move(view));
   return result;
 }
 

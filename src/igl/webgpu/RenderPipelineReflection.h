@@ -17,7 +17,7 @@ namespace igl::webgpu {
 
 /// @brief IRenderPipelineReflection built from WGSL reflection with bind convention v1: a buffer
 /// at IGL index i is @group(1) @binding(i); texture unit i is @group(0) @binding(2i) and its
-/// sampler @binding(2i+1).
+/// sampler @binding(2i+1); storage texture i is @group(2) @binding(i).
 class RenderPipelineReflection final : public IRenderPipelineReflection {
  public:
   explicit RenderPipelineReflection(

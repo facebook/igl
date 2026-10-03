@@ -72,9 +72,10 @@ TEST_F(WebGPUDeviceFeatureSetTest, Features) {
   EXPECT_TRUE(device_->hasFeature(DeviceFeatures::SRGB));
   EXPECT_TRUE(device_->hasFeature(DeviceFeatures::UniformBlocks));
   EXPECT_TRUE(device_->hasFeature(DeviceFeatures::ValidationLayersEnabled));
+  EXPECT_TRUE(device_->hasFeature(DeviceFeatures::Compute));
+  EXPECT_TRUE(device_->hasFeature(DeviceFeatures::StorageBuffers));
 
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::BufferRing));
-  EXPECT_FALSE(device_->hasFeature(DeviceFeatures::Compute));
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::DynamicCullMode));
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::Indices8Bit));
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::Multiview));
@@ -118,20 +119,29 @@ TEST_F(WebGPUDeviceFeatureSetTest, AdapterLimitsCanBeRequested) {
 
 TEST_F(WebGPUDeviceFeatureSetTest, ColorFormatCapabilities) {
   EXPECT_EQ(device_->getTextureFormatCapabilities(TextureFormat::RGBA_UNorm8),
-            kRenderable | CapabilityBits::SampledFiltered);
+            kRenderable | CapabilityBits::SampledFiltered | CapabilityBits::Storage);
   EXPECT_EQ(device_->getTextureFormatCapabilities(TextureFormat::BGRA_SRGB),
             kRenderable | CapabilityBits::SampledFiltered);
-  EXPECT_EQ(device_->getTextureFormatCapabilities(TextureFormat::RGBA_F16),
+  EXPECT_EQ(device_->getTextureFormatCapabilities(TextureFormat::RGBA_SRGB),
             kRenderable | CapabilityBits::SampledFiltered);
-  EXPECT_EQ(device_->getTextureFormatCapabilities(TextureFormat::RGBA_UInt32), kRenderable);
+  EXPECT_EQ(device_->getTextureFormatCapabilities(TextureFormat::RGBA_F16),
+            kRenderable | CapabilityBits::SampledFiltered | CapabilityBits::Storage);
+  EXPECT_EQ(device_->getTextureFormatCapabilities(TextureFormat::RGBA_UInt32),
+            kRenderable | CapabilityBits::Storage);
   EXPECT_EQ(device_->getTextureFormatCapabilities(TextureFormat::R_UInt16), kRenderable);
+  const ICapabilities::TextureFormatCapabilities bgraStorage =
+      adapterHas(WGPUFeatureName_BGRA8UnormStorage) ? CapabilityBits::Storage : 0;
+  EXPECT_EQ(device_->getTextureFormatCapabilities(TextureFormat::BGRA_UNorm8),
+            kRenderable | CapabilityBits::SampledFiltered | bgraStorage);
 }
 
 TEST_F(WebGPUDeviceFeatureSetTest, Float32Filterability) {
   const ICapabilities::TextureFormatCapabilities filtered =
       adapterHas(WGPUFeatureName_Float32Filterable) ? CapabilityBits::SampledFiltered : 0;
-  EXPECT_EQ(device_->getTextureFormatCapabilities(TextureFormat::R_F32), kRenderable | filtered);
-  EXPECT_EQ(device_->getTextureFormatCapabilities(TextureFormat::RGBA_F32), kRenderable | filtered);
+  EXPECT_EQ(device_->getTextureFormatCapabilities(TextureFormat::R_F32),
+            kRenderable | filtered | CapabilityBits::Storage);
+  EXPECT_EQ(device_->getTextureFormatCapabilities(TextureFormat::RGBA_F32),
+            kRenderable | filtered | CapabilityBits::Storage);
 }
 
 TEST_F(WebGPUDeviceFeatureSetTest, DepthStencilFormatCapabilities) {

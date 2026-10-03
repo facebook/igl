@@ -25,6 +25,8 @@ class WebGPUContext;
 
 /// Maximum number of texture units: bindings 2i and 2i+1 of group 0 for i < kMaxTextureUnits.
 inline constexpr uint32_t kMaxTextureUnits = 16;
+/// Maximum number of storage textures: bindings 0..kMaxStorageTextures-1 of group 2.
+inline constexpr uint32_t kMaxStorageTextures = 8;
 
 /// @brief How a texture binding is sampled, which fixes its bind group layout entry and the kind
 /// of sampler it pairs with. The same WGSL declaration can need different classes depending on
@@ -65,7 +67,7 @@ struct PipelineBinding {
   bool hasDynamicOffset = false;
 };
 
-/// @brief The bindings a render pipeline declares, per bind group, sorted by binding.
+/// @brief The bindings a render or compute pipeline declares, per bind group, sorted by binding.
 struct PipelineBindings {
   std::array<std::vector<PipelineBinding>, kNumBindGroups> groups;
 
@@ -79,6 +81,17 @@ struct PipelineBindings {
   [[nodiscard]] const PipelineBinding* IGL_NULLABLE find(uint32_t group, uint32_t binding) const;
   /// Classes of every declared texture unit when nothing is bound.
   [[nodiscard]] SampleClasses getDefaultSampleClasses() const;
+};
+
+/// @brief What ResourcesBinder needs from a render or compute pipeline: its declared bindings and
+/// the bind group layouts for a set of sample classes.
+class PipelineLayoutSource {
+ public:
+  virtual ~PipelineLayoutSource() = default;
+  [[nodiscard]] virtual const PipelineBindings& getBindings() const noexcept = 0;
+  /// The bind group layout of `group` for texture units sampled as `classes`.
+  [[nodiscard]] virtual WGPUBindGroupLayout IGL_NULLABLE
+  getBindGroupLayout(uint32_t group, SampleClasses classes, Result* IGL_NULLABLE outResult) = 0;
 };
 
 /// @brief Deduplicates bind group layouts and pipeline layouts structurally.

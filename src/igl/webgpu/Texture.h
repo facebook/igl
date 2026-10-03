@@ -77,6 +77,10 @@ class Texture final : public ITexture {
   /// pass attachments; a 3D texture uses the whole mip level. Views are created on first use.
   [[nodiscard]] WGPUTextureView IGL_NULLABLE getAttachmentView(uint32_t mipLevel,
                                                                uint32_t layer) const;
+  /// Single-mip view of the base mip level for storage bindings of `dimension`, or null when the
+  /// texture cannot be viewed that way. Views are created on first use.
+  [[nodiscard]] WGPUTextureView IGL_NULLABLE
+  getStorageView(WGPUTextureViewDimension dimension) const;
   /// Index of `face` of `layer` among the WGPU array layers (cube faces are layers in WebGPU).
   [[nodiscard]] uint32_t getWGPULayer(uint32_t layer, uint32_t face) const noexcept;
 
@@ -117,6 +121,7 @@ class Texture final : public ITexture {
   const uint64_t textureId_;
   Handle<WGPUTextureView> sampledView_;
   mutable std::map<std::tuple<uint32_t, uint32_t>, Handle<WGPUTextureView>> attachmentViews_;
+  mutable std::map<WGPUTextureViewDimension, Handle<WGPUTextureView>> storageViews_;
   mutable base::AttachmentInteropDesc attachmentDesc_;
 };
 

@@ -12,7 +12,6 @@
 #include <utility>
 #include <igl/webgpu/Buffer.h>
 #include <igl/webgpu/DeviceFeatureSet.h>
-#include <igl/webgpu/RenderPipelineState.h>
 #include <igl/webgpu/SamplerState.h>
 #include <igl/webgpu/StateSanitizer.h>
 #include <igl/webgpu/Texture.h>
@@ -175,6 +174,32 @@ WGPUTextureView IGL_NULLABLE DummyResources::getTextureView(WGPUTextureViewDimen
   return result;
 }
 
+WGPUTextureView IGL_NULLABLE
+DummyResources::getStorageTextureView(uint32_t binding,
+                                      WGPUTextureViewDimension dimension,
+                                      WGPUTextureFormat format) {
+  const auto key = std::make_tuple(binding, dimension, format);
+  if (const auto it = storageViews_.find(key); it != storageViews_.end()) {
+    return it->second.get();
+  }
+  WGPUTextureDescriptor textureDesc = WGPU_TEXTURE_DESCRIPTOR_INIT;
+  textureDesc.label = toWGPUStringView("igl.webgpu.dummy");
+  textureDesc.usage = WGPUTextureUsage_StorageBinding;
+  textureDesc.dimension = dimension == WGPUTextureViewDimension_3D   ? WGPUTextureDimension_3D
+                          : dimension == WGPUTextureViewDimension_1D ? WGPUTextureDimension_1D
+                                                                     : WGPUTextureDimension_2D;
+  textureDesc.size = {.width = 1, .height = 1, .depthOrArrayLayers = 1};
+  textureDesc.format = format;
+  Handle<WGPUTexture> texture(wgpuDeviceCreateTexture(ctx_.getDevice(), &textureDesc));
+  WGPUTextureViewDescriptor viewDesc = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
+  viewDesc.dimension = dimension;
+  Handle<WGPUTextureView> view(wgpuTextureCreateView(texture.get(), &viewDesc));
+  const WGPUTextureView result = view.get();
+  storageTextures_.emplace(key, std::move(texture));
+  storageViews_.emplace(key, std::move(view));
+  return result;
+}
+
 WGPUSampler IGL_NULLABLE DummyResources::getSampler(WGPUSamplerBindingType type) {
   if (const auto it = samplers_.find(type); it != samplers_.end()) {
     return it->second.get();
@@ -228,7 +253,13 @@ void ResourcesBinder::bindBuffer(uint32_t index,
   }
 }
 
-Result ResourcesBinder::getSampleClasses(const RenderPipelineState& pipeline,
+void ResourcesBinder::bindStorageTexture(uint32_t index, Texture* IGL_NULLABLE texture) {
+  if (index < kMaxStorageTextures) {
+    storageTextures_[index] = texture;
+  }
+}
+
+Result ResourcesBinder::getSampleClasses(const PipelineLayoutSource& pipeline,
                                          SampleClasses& outClasses) const {
   const bool float32Filterable = features_.hasWGPUFeature(WGPUFeatureName_Float32Filterable);
   outClasses = 0;
@@ -255,7 +286,7 @@ Result ResourcesBinder::getSampleClasses(const RenderPipelineState& pipeline,
   return Result();
 }
 
-Result ResourcesBinder::makeTextureGroup(const RenderPipelineState& pipeline,
+Result ResourcesBinder::makeTextureGroup(const PipelineLayoutSource& pipeline,
                                          SampleClasses classes,
                                          std::vector<BindGroupCache::Entry>& outEntries) {
   DummyResources& dummies = ctx_.getDummyResources();
@@ -308,7 +339,7 @@ Result ResourcesBinder::makeTextureGroup(const RenderPipelineState& pipeline,
   return Result();
 }
 
-Result ResourcesBinder::makeBufferGroup(const RenderPipelineState& pipeline,
+Result ResourcesBinder::makeBufferGroup(const PipelineLayoutSource& pipeline,
                                         std::vector<BindGroupCache::Entry>& outEntries,
                                         std::vector<uint32_t>& outDynamicOffsets) {
   const WGPULimits& limits = features_.getLimits();
@@ -364,8 +395,86 @@ Result ResourcesBinder::makeBufferGroup(const RenderPipelineState& pipeline,
   return Result();
 }
 
+Result ResourcesBinder::makeStorageTextureGroup(const PipelineLayoutSource& pipeline,
+                                                std::vector<BindGroupCache::Entry>& outEntries) {
+  for (const PipelineBinding& binding : pipeline.getBindings().groups[kStorageTextureGroup]) {
+    const WgslBinding& declaration = binding.declaration;
+    BindGroupCache::Entry entry;
+    entry.entry.binding = declaration.binding;
+    Texture* texture = storageTextures_[declaration.binding];
+    if (texture == nullptr) {
+      entry.entry.textureView = ctx_.getDummyResources().getStorageTextureView(
+          declaration.binding, declaration.viewDimension, declaration.storageFormat);
+      entry.resourceId = ctx_.getDummyResources().getResourceId();
+    } else {
+      if ((texture->getUsage() & TextureDesc::TextureUsageBits::Storage) == 0) {
+        return Result(Result::Code::ArgumentInvalid,
+                      describe(declaration) + " is bound to a texture without Storage usage");
+      }
+      if (texture->getWGPUFormat() != declaration.storageFormat) {
+        return Result(Result::Code::ArgumentInvalid,
+                      describe(declaration) + " is bound to a texture of another format");
+      }
+      WGPUTextureView view = texture->getStorageView(declaration.viewDimension);
+      if (view == nullptr) {
+        return Result(Result::Code::ArgumentInvalid,
+                      describe(declaration) + " is bound to a texture of another type");
+      }
+      entry.entry.textureView = view;
+      entry.resourceId = texture->getTextureId();
+    }
+    outEntries.push_back(entry);
+  }
+  return Result();
+}
+
 Result ResourcesBinder::flush(WGPURenderPassEncoder IGL_NONNULL pass,
-                              RenderPipelineState& pipeline,
+                              PipelineLayoutSource& pipeline,
+                              SampleClasses classes,
+                              uint64_t serial) {
+  return flush(
+      pass,
+      [](void* IGL_NONNULL p,
+         uint32_t group,
+         WGPUBindGroup IGL_NONNULL bindGroup,
+         size_t numDynamicOffsets,
+         const uint32_t* IGL_NULLABLE dynamicOffsets) {
+        wgpuRenderPassEncoderSetBindGroup(static_cast<WGPURenderPassEncoder>(p),
+                                          group,
+                                          bindGroup,
+                                          numDynamicOffsets,
+                                          dynamicOffsets);
+      },
+      pipeline,
+      classes,
+      serial);
+}
+
+Result ResourcesBinder::flush(WGPUComputePassEncoder IGL_NONNULL pass,
+                              PipelineLayoutSource& pipeline,
+                              SampleClasses classes,
+                              uint64_t serial) {
+  return flush(
+      pass,
+      [](void* IGL_NONNULL p,
+         uint32_t group,
+         WGPUBindGroup IGL_NONNULL bindGroup,
+         size_t numDynamicOffsets,
+         const uint32_t* IGL_NULLABLE dynamicOffsets) {
+        wgpuComputePassEncoderSetBindGroup(static_cast<WGPUComputePassEncoder>(p),
+                                           group,
+                                           bindGroup,
+                                           numDynamicOffsets,
+                                           dynamicOffsets);
+      },
+      pipeline,
+      classes,
+      serial);
+}
+
+Result ResourcesBinder::flush(void* IGL_NONNULL pass,
+                              SetBindGroup setBindGroup,
+                              PipelineLayoutSource& pipeline,
                               SampleClasses classes,
                               uint64_t serial) {
   const PipelineBindings& bindings = pipeline.getBindings();
@@ -375,8 +484,9 @@ Result ResourcesBinder::flush(WGPURenderPassEncoder IGL_NONNULL pass,
     }
     std::vector<BindGroupCache::Entry> entries;
     std::vector<uint32_t> dynamicOffsets;
-    Result result = group == kTextureGroup ? makeTextureGroup(pipeline, classes, entries)
-                                           : makeBufferGroup(pipeline, entries, dynamicOffsets);
+    Result result = group == kTextureGroup  ? makeTextureGroup(pipeline, classes, entries)
+                    : group == kBufferGroup ? makeBufferGroup(pipeline, entries, dynamicOffsets)
+                                            : makeStorageTextureGroup(pipeline, entries);
     if (!result.isOk()) {
       return result;
     }
@@ -390,8 +500,7 @@ Result ResourcesBinder::flush(WGPURenderPassEncoder IGL_NONNULL pass,
     }
     BoundGroup& bound = boundGroups_[group];
     if (bound.group != bindGroup || bound.dynamicOffsets != dynamicOffsets) {
-      wgpuRenderPassEncoderSetBindGroup(
-          pass, group, bindGroup, dynamicOffsets.size(), dynamicOffsets.data());
+      setBindGroup(pass, group, bindGroup, dynamicOffsets.size(), dynamicOffsets.data());
       bound = {.group = bindGroup, .dynamicOffsets = std::move(dynamicOffsets)};
     }
   }
@@ -405,6 +514,11 @@ Result ResourcesBinder::flush(WGPURenderPassEncoder IGL_NONNULL pass,
     if (index < buffers_.size() && buffers_[index].buffer != nullptr) {
       buffers_[index].buffer->recordUse(serial,
                                         binding.declaration.kind == WgslBindingKind::StorageBuffer);
+    }
+  }
+  for (const PipelineBinding& binding : bindings.groups[kStorageTextureGroup]) {
+    if (Texture* texture = storageTextures_[binding.declaration.binding]) {
+      texture->recordUse(serial);
     }
   }
   return Result();

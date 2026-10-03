@@ -7,6 +7,8 @@
 
 #include <igl/webgpu/ShaderModule.h>
 
+#include <algorithm>
+#include <cstring>
 #include <memory>
 #include <string>
 #include <utility>
@@ -141,6 +143,61 @@ std::shared_ptr<ShaderModule> ShaderModule::create(const WgslModule& module,
   }
   Result::setOk(outResult);
   return std::make_shared<ShaderModule>(info, module);
+}
+
+PipelineConstants ShaderModule::getPipelineConstants() const {
+  PipelineConstants constants;
+  const FunctionConstantValues& values = info().functionConstantValues;
+  const auto& entries = values.getConstantValues();
+  std::vector<double> numbers;
+  for (size_t id = 0; id < entries.size(); ++id) {
+    const FunctionConstantValues::Entry& entry = entries[id];
+    if (entry.type == ConstantValueType::Invalid) {
+      continue;
+    }
+    const bool declared = std::any_of(getReflection().overrides.begin(),
+                                      getReflection().overrides.end(),
+                                      [id](const WgslOverride& o) { return o.id && *o.id == id; });
+    if (!declared) {
+      continue;
+    }
+    const uint8_t* data = values.getData().data() + entry.offset;
+    double value = 0.0;
+    switch (entry.type) {
+    case ConstantValueType::Float1: {
+      float f = 0.0f;
+      std::memcpy(&f, data, sizeof(f));
+      value = f;
+      break;
+    }
+    case ConstantValueType::Int1: {
+      int32_t i = 0;
+      std::memcpy(&i, data, sizeof(i));
+      value = i;
+      break;
+    }
+    case ConstantValueType::Boolean1: {
+      uint32_t b = 0;
+      std::memcpy(&b, data, sizeof(b));
+      value = b != 0 ? 1.0 : 0.0;
+      break;
+    }
+    default:
+      IGL_LOG_ERROR_ONCE("WGSL override constants are scalars; constant %zu is ignored\n", id);
+      continue;
+    }
+    constants.keys.push_back(std::to_string(id));
+    numbers.push_back(value);
+  }
+  constants.entries.reserve(numbers.size());
+  for (size_t i = 0; i < numbers.size(); ++i) {
+    constants.entries.push_back({
+        .nextInChain = nullptr,
+        .key = toWGPUStringView(constants.keys[i]),
+        .value = numbers[i],
+    });
+  }
+  return constants;
 }
 
 } // namespace igl::webgpu

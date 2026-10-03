@@ -22,7 +22,6 @@ namespace igl::webgpu {
 
 class Buffer;
 class DeviceFeatureSet;
-class RenderPipelineState;
 class SamplerState;
 class Texture;
 class WebGPUContext;
@@ -92,6 +91,11 @@ class DummyResources final {
   [[nodiscard]] WGPUTextureView IGL_NULLABLE getTextureView(WGPUTextureViewDimension dimension,
                                                             SampleClass sampleClass,
                                                             bool multisampled);
+  /// One placeholder per `binding`: Dawn rejects writable storage bindings that alias.
+  [[nodiscard]] WGPUTextureView IGL_NULLABLE
+  getStorageTextureView(uint32_t binding,
+                        WGPUTextureViewDimension dimension,
+                        WGPUTextureFormat format);
   [[nodiscard]] WGPUSampler IGL_NULLABLE getSampler(WGPUSamplerBindingType type);
   /// A buffer with Uniform and Storage usage of at least `size` bytes.
   [[nodiscard]] WGPUBuffer IGL_NULLABLE getBuffer(uint64_t size);
@@ -105,13 +109,18 @@ class DummyResources final {
   const uint64_t resourceId_ = allocateResourceId();
   std::map<std::tuple<WGPUTextureViewDimension, SampleClass, bool>, Handle<WGPUTexture>> textures_;
   std::map<std::tuple<WGPUTextureViewDimension, SampleClass, bool>, Handle<WGPUTextureView>> views_;
+  std::map<std::tuple<uint32_t, WGPUTextureViewDimension, WGPUTextureFormat>, Handle<WGPUTexture>>
+      storageTextures_;
+  std::map<std::tuple<uint32_t, WGPUTextureViewDimension, WGPUTextureFormat>,
+           Handle<WGPUTextureView>>
+      storageViews_;
   std::map<WGPUSamplerBindingType, Handle<WGPUSampler>> samplers_;
   Handle<WGPUBuffer> buffer_;
   uint64_t bufferSize_ = 0;
 };
 
-/// @brief Tracks the textures, samplers and buffers bound on a render encoder and turns them
-/// into bind groups for the current pipeline at draw time.
+/// @brief Tracks the textures, samplers, buffers and storage textures bound on a render or compute
+/// encoder and turns them into bind groups for the current pipeline at draw or dispatch time.
 class ResourcesBinder final {
  public:
   ResourcesBinder(WebGPUContext& ctx, const DeviceFeatureSet& features);
@@ -120,16 +129,21 @@ class ResourcesBinder final {
   void bindSampler(uint32_t unit, SamplerState* IGL_NULLABLE sampler);
   /// `size` 0 binds the rest of the buffer from `offset`.
   void bindBuffer(uint32_t index, Buffer* IGL_NULLABLE buffer, size_t offset, size_t size);
+  void bindStorageTexture(uint32_t index, Texture* IGL_NULLABLE texture);
 
   /// Sample classes of the bound textures for the texture units `pipeline` declares; unbound
   /// units get the class of their declaration. ArgumentInvalid when a declaration cannot sample
   /// the bound texture's format (see getSampleClass()).
-  [[nodiscard]] Result getSampleClasses(const RenderPipelineState& pipeline,
+  [[nodiscard]] Result getSampleClasses(const PipelineLayoutSource& pipeline,
                                         SampleClasses& outClasses) const;
   /// Sets the bind groups `pipeline` (created for `classes`) needs on `pass`, and records the use
   /// of the bound resources by the command buffer with `serial`.
   [[nodiscard]] Result flush(WGPURenderPassEncoder IGL_NONNULL pass,
-                             RenderPipelineState& pipeline,
+                             PipelineLayoutSource& pipeline,
+                             SampleClasses classes,
+                             uint64_t serial);
+  [[nodiscard]] Result flush(WGPUComputePassEncoder IGL_NONNULL pass,
+                             PipelineLayoutSource& pipeline,
                              SampleClasses classes,
                              uint64_t serial);
 
@@ -144,18 +158,32 @@ class ResourcesBinder final {
     std::vector<uint32_t> dynamicOffsets;
   };
 
-  [[nodiscard]] Result makeTextureGroup(const RenderPipelineState& pipeline,
+  using SetBindGroup = void (*)(void* IGL_NONNULL pass,
+                                uint32_t group,
+                                WGPUBindGroup IGL_NONNULL bindGroup,
+                                size_t numDynamicOffsets,
+                                const uint32_t* IGL_NULLABLE dynamicOffsets);
+
+  [[nodiscard]] Result flush(void* IGL_NONNULL pass,
+                             SetBindGroup setBindGroup,
+                             PipelineLayoutSource& pipeline,
+                             SampleClasses classes,
+                             uint64_t serial);
+  [[nodiscard]] Result makeTextureGroup(const PipelineLayoutSource& pipeline,
                                         SampleClasses classes,
                                         std::vector<BindGroupCache::Entry>& outEntries);
-  [[nodiscard]] Result makeBufferGroup(const RenderPipelineState& pipeline,
+  [[nodiscard]] Result makeBufferGroup(const PipelineLayoutSource& pipeline,
                                        std::vector<BindGroupCache::Entry>& outEntries,
                                        std::vector<uint32_t>& outDynamicOffsets);
+  [[nodiscard]] Result makeStorageTextureGroup(const PipelineLayoutSource& pipeline,
+                                               std::vector<BindGroupCache::Entry>& outEntries);
 
   WebGPUContext& ctx_;
   const DeviceFeatureSet& features_;
   std::array<Texture*, kMaxTextureUnits> textures_ = {};
   std::array<SamplerState*, kMaxTextureUnits> samplers_ = {};
   std::array<BufferSlot, IGL_BUFFER_BINDINGS_MAX> buffers_ = {};
+  std::array<Texture*, kMaxStorageTextures> storageTextures_ = {};
   std::array<BoundGroup, kNumBindGroups> boundGroups_ = {};
 };
 

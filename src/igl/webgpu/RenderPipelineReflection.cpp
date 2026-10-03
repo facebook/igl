@@ -85,6 +85,14 @@ RenderPipelineReflection::RenderPipelineReflection(
             .samplerIndex = static_cast<int>(binding.binding / 2),
             .shaderStage = stage,
         });
+      } else if (binding.group == kStorageTextureGroup &&
+                 binding.kind == WgslBindingKind::StorageTexture) {
+        textures_.push_back({
+            .name = binding.name,
+            .type = toTextureType(binding.viewDimension),
+            .textureIndex = static_cast<int>(binding.binding),
+            .shaderStage = stage,
+        });
       }
     }
   }

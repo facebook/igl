@@ -31,6 +31,18 @@ struct WgslModule {
                                  const std::string& debugName,
                                  WgslModule& outModule);
 
+/// @brief WGSL override constants for a pipeline stage; `entries` point into `keys`.
+struct PipelineConstants {
+  std::vector<std::string> keys;
+  std::vector<WGPUConstantEntry> entries;
+
+  PipelineConstants() = default;
+  PipelineConstants(const PipelineConstants&) = delete;
+  PipelineConstants& operator=(const PipelineConstants&) = delete;
+  PipelineConstants(PipelineConstants&&) = default;
+  PipelineConstants& operator=(PipelineConstants&&) = default;
+};
+
 /// @brief A WGSL shader module and the entry point IGL selected from it.
 class ShaderModule final : public IShaderModule {
  public:
@@ -55,6 +67,9 @@ class ShaderModule final : public IShaderModule {
   [[nodiscard]] const WgslEntryPoint* IGL_NULLABLE getEntryPoint() const noexcept {
     return module_.reflection->findEntryPoint(info().entryPoint);
   }
+  /// The function constants of info() as override constants: constant i sets the `override` with
+  /// `@id(i)`. Only scalar constants map; constants the module does not declare are dropped.
+  [[nodiscard]] PipelineConstants getPipelineConstants() const;
 
  private:
   WgslModule module_;

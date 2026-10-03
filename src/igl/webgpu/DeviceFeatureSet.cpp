@@ -58,6 +58,32 @@ bool isRenderableFormat(WGPUTextureFormat format) {
   }
 }
 
+// Formats with the STORAGE_BINDING capability in core WebGPU.
+bool isStorageFormat(WGPUTextureFormat format) {
+  // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
+  switch (format) {
+  case WGPUTextureFormat_RGBA8Unorm:
+  case WGPUTextureFormat_RGBA8Snorm:
+  case WGPUTextureFormat_RGBA8Uint:
+  case WGPUTextureFormat_RGBA8Sint:
+  case WGPUTextureFormat_RGBA16Uint:
+  case WGPUTextureFormat_RGBA16Sint:
+  case WGPUTextureFormat_RGBA16Float:
+  case WGPUTextureFormat_R32Uint:
+  case WGPUTextureFormat_R32Sint:
+  case WGPUTextureFormat_R32Float:
+  case WGPUTextureFormat_RG32Uint:
+  case WGPUTextureFormat_RG32Sint:
+  case WGPUTextureFormat_RG32Float:
+  case WGPUTextureFormat_RGBA32Uint:
+  case WGPUTextureFormat_RGBA32Sint:
+  case WGPUTextureFormat_RGBA32Float:
+    return true;
+  default:
+    return false;
+  }
+}
+
 } // namespace
 
 DeviceFeatureSet::DeviceFeatureSet(WGPUDevice IGL_NULLABLE device) : device_(device) {
@@ -73,6 +99,7 @@ bool DeviceFeatureSet::hasWGPUFeature(WGPUFeatureName feature) const {
 
 bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   switch (feature) {
+  case DeviceFeatures::Compute:
   case DeviceFeatures::CopyBuffer:
   case DeviceFeatures::DepthCompare:
   case DeviceFeatures::DepthShaderRead:
@@ -87,6 +114,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::ShaderTextureLod:
   case DeviceFeatures::SRGB:
   case DeviceFeatures::StandardDerivative:
+  case DeviceFeatures::StorageBuffers:
   case DeviceFeatures::TextureFilterAnisotropic:
   case DeviceFeatures::TextureFloat:
   case DeviceFeatures::TextureFormatRG:
@@ -100,7 +128,6 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::BufferDeviceAddress:
   case DeviceFeatures::BufferNoCopy:
   case DeviceFeatures::BufferRing:
-  case DeviceFeatures::Compute:
   case DeviceFeatures::DrawIndexedIndirect:
   case DeviceFeatures::DynamicCullMode:
   case DeviceFeatures::DynamicFrontFacingWinding:
@@ -120,7 +147,6 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::SRGBSwapchain:
   case DeviceFeatures::SRGBWriteControl:
   case DeviceFeatures::StandardDerivativeExt:
-  case DeviceFeatures::StorageBuffers:
   case DeviceFeatures::Texture2DArray:
   case DeviceFeatures::Texture3D:
   case DeviceFeatures::TextureArrayExt:
@@ -232,7 +258,10 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
   if (renderable) {
     caps |= CapabilityBits::Attachment | CapabilityBits::SampledAttachment;
   }
-  // Storage stays unreported while DeviceFeatures::Compute is false.
+  if (isStorageFormat(*wgpuFormat) || (*wgpuFormat == WGPUTextureFormat_BGRA8Unorm &&
+                                       hasWGPUFeature(WGPUFeatureName_BGRA8UnormStorage))) {
+    caps |= CapabilityBits::Storage;
+  }
   return caps;
 }
 

@@ -95,6 +95,16 @@ constexpr std::string_view kD3D12ImageStoreShader =
   "  destImage[gid.xy] = colorBuf[0];\n"
   "}\n";
 
+constexpr std::string_view kWgslImageStoreShader = R"(
+@group(2) @binding(0) var destImage : texture_storage_2d<rgba8unorm, write>;
+@group(1) @binding(1) var<storage, read> colorBuf : array<vec4f>;
+
+@compute @workgroup_size(1, 1, 1)
+fn imageStoreOrange(@builtin(global_invocation_id) gid : vec3u) {
+  textureStore(destImage, vec2i(gid.xy), colorBuf[0]);
+}
+)";
+
 constexpr std::string_view kImageStoreFunc = "imageStoreOrange";
 
 // clang-format on
@@ -181,6 +191,9 @@ void ComputeImageStoreTest::runImageStoreTest(TextureFormat format) {
     entryName = kImageStoreFunc;
   } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
     source = kD3D12ImageStoreShader;
+    entryName = kImageStoreFunc;
+  } else if (iglDev_->getBackendType() == igl::BackendType::WebGPU) {
+    source = kWgslImageStoreShader;
     entryName = kImageStoreFunc;
   } else {
     GTEST_SKIP() << "Unsupported backend";

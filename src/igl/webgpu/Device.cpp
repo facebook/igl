@@ -25,6 +25,7 @@
 #include <igl/VertexInputState.h>
 #include <igl/webgpu/Buffer.h>
 #include <igl/webgpu/CommandQueue.h>
+#include <igl/webgpu/ComputePipelineState.h>
 #include <igl/webgpu/DepthStencilState.h>
 #include <igl/webgpu/Framebuffer.h>
 #include <igl/webgpu/RenderPipelineState.h>
@@ -188,10 +189,10 @@ Device::createFramebufferInterop(const base::FramebufferInteropDesc& desc) {
 }
 
 std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
-    const ComputePipelineDesc& /*desc*/,
+    const ComputePipelineDesc& desc,
     Result* IGL_NULLABLE outResult) const {
-  setUnimplemented(outResult, "createComputePipeline()");
-  return nullptr;
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  return ComputePipelineState::create(*ctx_, deviceFeatureSet_, bindLayoutCache_, desc, outResult);
 }
 
 std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderPipelineDesc& desc,

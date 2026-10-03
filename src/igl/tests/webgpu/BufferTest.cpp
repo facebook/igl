@@ -231,6 +231,24 @@ TEST_F(WebGPUBufferTest, CopyRequiresFourByteAlignment) {
   EXPECT_EQ(readGpu(*dst), Bytes16{});
 }
 
+TEST_F(WebGPUBufferTest, UnalignedCopyToTheEndCoversPadding) {
+  auto src = createBuffer(11, kPattern.data());
+  auto dst = createBuffer(11);
+  ASSERT_TRUE(src && dst);
+
+  auto cmdBuffer = createCommandBuffer();
+  cmdBuffer->copyBuffer(*src, *dst, 0, 0, 11);
+  EXPECT_TRUE(dst->isShadowStale());
+  queue_->submit(*cmdBuffer);
+  cmdBuffer->waitUntilCompleted();
+  Result ret;
+  const auto* data = static_cast<const uint8_t*>(dst->map({11, 0}, &ret));
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_NE(data, nullptr);
+  EXPECT_EQ(std::memcmp(data, kPattern.data(), 11), 0);
+  dst->unmap();
+}
+
 TEST_F(WebGPUBufferTest, DropBeforeSubmitDefersDestroy) {
   auto src = createBuffer(kPattern.size(), kPattern.data());
   auto dst = createBuffer(kPattern.size());

@@ -14,6 +14,7 @@
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/RenderCommandEncoder.h>
 #include <igl/webgpu/Buffer.h>
+#include <igl/webgpu/ComputeCommandEncoder.h>
 #include <igl/webgpu/Device.h>
 #include <igl/webgpu/RenderCommandEncoder.h>
 #include <igl/webgpu/StateSanitizer.h>
@@ -55,8 +56,12 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
 }
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {
-  IGL_LOG_ERROR_ONCE("Compute is not supported by the WebGPU backend yet\n");
-  return nullptr;
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (submitted_) {
+    IGL_LOG_ERROR("createComputeCommandEncoder(): the command buffer was already submitted\n");
+    return nullptr;
+  }
+  return std::make_unique<ComputeCommandEncoder>(shared_from_this());
 }
 
 void CommandBuffer::present(const std::shared_ptr<ITexture>& /*surface*/) const {}
@@ -87,6 +92,16 @@ void CommandBuffer::copyBuffer(IBuffer& src,
                                uint64_t srcOffset,
                                uint64_t dstOffset,
                                uint64_t size) {
+  auto& srcBuffer = static_cast<Buffer&>(src);
+  auto& dstBuffer = static_cast<Buffer&>(dst);
+  // Buffers are allocated in whole words, so a copy that ends mid-word at the end of the
+  // destination can also copy the padding.
+  const uint64_t paddedSize = (size + 3) & ~uint64_t{3};
+  if (dstOffset + size == dstBuffer.getSizeInBytes() &&
+      srcOffset + paddedSize <= srcBuffer.getAllocatedSize() &&
+      dstOffset + paddedSize <= dstBuffer.getAllocatedSize()) {
+    size = paddedSize;
+  }
   if (const Result result = validateBufferCopy(srcOffset, dstOffset, size); !result.isOk()) {
     IGL_LOG_ERROR("copyBuffer(): %s\n", result.message.c_str());
     return;
@@ -94,8 +109,6 @@ void CommandBuffer::copyBuffer(IBuffer& src,
   if (submitted_ || size == 0) {
     return;
   }
-  auto& srcBuffer = static_cast<Buffer&>(src);
-  auto& dstBuffer = static_cast<Buffer&>(dst);
   wgpuCommandEncoderCopyBufferToBuffer(encoder_.get(),
                                        srcBuffer.getWGPUBuffer(),
                                        srcOffset,

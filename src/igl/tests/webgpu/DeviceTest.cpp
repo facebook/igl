@@ -51,7 +51,7 @@ TEST_F(WebGPUDeviceTest, UnimplementedFactoriesReportResult) {
 
   ret = Result();
   EXPECT_EQ(device_->createComputePipeline({}, &ret), nullptr);
-  EXPECT_EQ(ret.code, Result::Code::Unimplemented);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
 }
 
 } // namespace igl::tests

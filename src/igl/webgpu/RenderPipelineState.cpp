@@ -269,6 +269,9 @@ Result RenderPipelineState::createPipeline(const RenderPipelineDynamicState& sta
   pipelineDesc.layout = pipelineLayout;
   pipelineDesc.vertex.module = vertexModule_->getWGPUShaderModule();
   pipelineDesc.vertex.entryPoint = toWGPUStringView(vertexModule_->info().entryPoint);
+  const PipelineConstants vertexConstants = vertexModule_->getPipelineConstants();
+  pipelineDesc.vertex.constantCount = vertexConstants.entries.size();
+  pipelineDesc.vertex.constants = vertexConstants.entries.data();
   pipelineDesc.vertex.bufferCount = vertexBuffers.size();
   pipelineDesc.vertex.buffers = vertexBuffers.data();
 
@@ -319,6 +322,9 @@ Result RenderPipelineState::createPipeline(const RenderPipelineDynamicState& sta
   WGPUFragmentState fragment = WGPU_FRAGMENT_STATE_INIT;
   fragment.module = fragmentModule_->getWGPUShaderModule();
   fragment.entryPoint = toWGPUStringView(fragmentModule_->info().entryPoint);
+  const PipelineConstants fragmentConstants = fragmentModule_->getPipelineConstants();
+  fragment.constantCount = fragmentConstants.entries.size();
+  fragment.constants = fragmentConstants.entries.data();
   fragment.targetCount = targets.size();
   fragment.targets = targets.data();
   pipelineDesc.fragment = &fragment;

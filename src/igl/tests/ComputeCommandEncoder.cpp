@@ -86,6 +86,9 @@ class ComputeCommandEncoderTest : public ::testing::Test {
       } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
         source = igl::tests::data::shader::kD3D12SimpleComputeShader;
         entryName = igl::tests::data::shader::kSimpleComputeFunc;
+      } else if (iglDev_->getBackendType() == igl::BackendType::WebGPU) {
+        source = igl::tests::data::shader::kWgslSimpleComputeShader;
+        entryName = "main";
       } else {
         IGL_DEBUG_ASSERT_NOT_REACHED();
       }

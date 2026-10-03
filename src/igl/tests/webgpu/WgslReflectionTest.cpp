@@ -300,13 +300,15 @@ TEST(WebGPUWgslReflectionTest, PipelineReflectionFollowsBindConvention) {
   EXPECT_EQ(uniforms.members[5].arrayLength, 3u);
   EXPECT_EQ(uniforms.members[5].arrayStride, 4u);
 
-  // Texture unit i at binding 2i, its sampler at 2i+1.
-  ASSERT_EQ(pipeline.allTextures().size(), 5u);
+  // Texture unit i at binding 2i, its sampler at 2i+1; storage texture i at group 2 binding i.
+  ASSERT_EQ(pipeline.allTextures().size(), 6u);
   EXPECT_EQ(pipeline.allTextures()[0].name, "colorTex");
   EXPECT_EQ(pipeline.allTextures()[0].textureIndex, 0);
   EXPECT_EQ(pipeline.allTextures()[3].name, "cubeTex");
   EXPECT_EQ(pipeline.allTextures()[3].type, TextureType::Cube);
   EXPECT_EQ(pipeline.allTextures()[3].textureIndex, 3);
+  EXPECT_EQ(pipeline.allTextures()[5].name, "outImage");
+  EXPECT_EQ(pipeline.allTextures()[5].textureIndex, 0);
   ASSERT_EQ(pipeline.allSamplers().size(), 2u);
   EXPECT_EQ(pipeline.allSamplers()[1].name, "shadowSampler");
   EXPECT_EQ(pipeline.allSamplers()[1].samplerIndex, 1);

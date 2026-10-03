@@ -70,7 +70,12 @@ Result checkConvention(const WgslBinding& binding) {
   case kBufferGroup:
     return isBuffer(binding.kind) ? Result() : violation("group 1 holds buffers");
   case kStorageTextureGroup:
-    return Result(Result::Code::Unsupported, "Storage textures are not supported yet");
+    if (binding.binding >= kMaxStorageTextures) {
+      return violation("storage textures are bindings 0-7");
+    }
+    return binding.kind == WgslBindingKind::StorageTexture
+               ? Result()
+               : violation("group 2 holds storage textures");
   case kPushConstantGroup:
     return Result(Result::Code::Unsupported, "Push constants are not supported yet");
   default:
@@ -150,7 +155,9 @@ Result PipelineBindings::add(const WgslReflection& reflection, WGPUShaderStage s
     }
     // Vertex shaders cannot write storage resources; a declaration shared with other stages
     // through a library module must not make the layout invalid.
-    const bool writable = binding.kind == WgslBindingKind::StorageBuffer;
+    const bool writable = binding.kind == WgslBindingKind::StorageBuffer ||
+                          (binding.kind == WgslBindingKind::StorageTexture &&
+                           binding.storageAccess != WGPUStorageTextureAccess_ReadOnly);
     const WGPUShaderStage visibility =
         writable ? (stage & ~static_cast<WGPUShaderStage>(WGPUShaderStage_Vertex)) : stage;
     auto& group = groups[binding.group];
@@ -163,7 +170,9 @@ Result PipelineBindings::add(const WgslReflection& reflection, WGPUShaderStage s
     }
     const WgslBinding& existing = it->declaration;
     if (existing.kind != binding.kind || existing.viewDimension != binding.viewDimension ||
-        existing.sampledType != binding.sampledType) {
+        existing.sampledType != binding.sampledType ||
+        existing.storageFormat != binding.storageFormat ||
+        existing.storageAccess != binding.storageAccess) {
       return Result(Result::Code::ArgumentInvalid,
                     "@group(" + std::to_string(binding.group) + ") @binding(" +
                         std::to_string(binding.binding) +

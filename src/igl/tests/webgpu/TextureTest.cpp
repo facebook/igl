@@ -137,7 +137,7 @@ TEST_F(WebGPUTextureTest, RejectsUnsupportedDescriptors) {
   EXPECT_EQ(ret.code, Result::Code::Unsupported);
 
   texture = createTexture(
-      TextureDesc::new2D(TextureFormat::RGBA_UNorm8, 4, 4, TextureDesc::TextureUsageBits::Storage),
+      TextureDesc::new2D(TextureFormat::RGBA_SRGB, 4, 4, TextureDesc::TextureUsageBits::Storage),
       &ret);
   EXPECT_EQ(texture, nullptr);
   EXPECT_EQ(ret.code, Result::Code::Unsupported);
