@@ -228,6 +228,10 @@ void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
 void RenderCommandEncoder::bindRenderPipelineState(
     const std::shared_ptr<IRenderPipelineState>& pipelineState) {
   pipeline_ = std::static_pointer_cast<RenderPipelineState>(pipelineState);
+  // As on Metal, Vulkan and OpenGL, a newly bound pipeline brings back its own cull mode and
+  // winding.
+  cullMode_.reset();
+  frontFaceWinding_.reset();
 }
 
 void RenderCommandEncoder::bindDepthStencilState(
@@ -535,7 +539,8 @@ void RenderCommandEncoder::drawIndirect(IBuffer& indirectBuffer,
     IGL_LOG_ERROR("Indirect draws need an Indirect buffer, and 4-byte offset and stride\n");
     return;
   }
-  if (indirectBufferOffset + static_cast<size_t>(stride) * (drawCount - 1) + recordSize >
+  // 64-bit, so the bounds check cannot wrap on wasm32.
+  if (uint64_t{indirectBufferOffset} + uint64_t{stride} * (drawCount - 1) + recordSize >
       buffer.getSizeInBytes()) {
     IGL_LOG_ERROR("Indirect draw records extend past the end of the buffer\n");
     return;

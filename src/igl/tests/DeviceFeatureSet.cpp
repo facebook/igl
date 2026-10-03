@@ -199,8 +199,8 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
     EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::StandardDerivativeExt));
     EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExplicitBindingExt));
     EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExternalMemoryObjects));
-    EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::DynamicCullMode));
-    EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::DynamicFrontFacingWinding));
+    EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DynamicCullMode));
+    EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DynamicFrontFacingWinding));
   } else {
     // non OpenGL backends
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ReadWriteFramebuffer));

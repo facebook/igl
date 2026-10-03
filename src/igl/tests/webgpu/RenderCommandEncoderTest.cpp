@@ -299,6 +299,19 @@ TEST_F(WebGPURenderCommandEncoderTest, CullModeAndWindingOverrides) {
   EXPECT_EQ(drawWith(CullMode::Back, WindingMode::CounterClockwise), rgba(255, 255, 255, 255));
   EXPECT_EQ(drawWith(CullMode::Back, WindingMode::Clockwise), rgba(0, 0, 0, 255));
   EXPECT_EQ(drawWith(CullMode::Front, WindingMode::Clockwise), rgba(255, 255, 255, 255));
+
+  // A pipeline bound after the override uses its own cull mode (none) again.
+  encode(
+      [&](IRenderCommandEncoder& encoder) {
+        encoder.bindRenderPipelineState(pipeline);
+        encoder.setCullMode(CullMode::Front);
+        encoder.bindRenderPipelineState(pipeline);
+        encoder.bindBuffer(0, uniforms_.get(), 0, 16);
+        encoder.bindVertexBuffer(0, *triangle);
+        encoder.draw(3);
+      },
+      clearPass());
+  EXPECT_EQ(readColor()[kSize * kSize - 1], rgba(255, 255, 255, 255));
 }
 
 TEST_F(WebGPURenderCommandEncoderTest, DynamicBindGroupBuffersNeedOffsets) {
@@ -535,6 +548,19 @@ TEST_F(WebGPURenderCommandEncoderTest, MultiDrawIndirectOffsetAndStride) {
   const std::vector<uint32_t> pixels = readColor();
   EXPECT_EQ(pixels[0], rgba(0, 255, 255, 255));
   EXPECT_EQ(pixels[kSize * kSize - 1], rgba(0, 0, 0, 255));
+
+  // Two records 32 bytes apart draw both triangles.
+  encode(
+      [&](IRenderCommandEncoder& encoder) {
+        encoder.bindRenderPipelineState(pipeline);
+        encoder.bindBuffer(0, uniforms_.get(), 0, 16);
+        encoder.bindVertexBuffer(0, *vertices);
+        encoder.multiDrawIndirect(*indirect, 16, 2, 32);
+      },
+      clearPass());
+  const std::vector<uint32_t> both = readColor();
+  EXPECT_EQ(both[0], rgba(0, 255, 255, 255));
+  EXPECT_EQ(both[kSize * kSize - 1], rgba(0, 255, 255, 255));
 }
 
 TEST_F(WebGPURenderCommandEncoderTest, MultiDrawIndexedIndirect) {

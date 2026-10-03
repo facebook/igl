@@ -75,9 +75,10 @@ TEST_F(WebGPUDeviceFeatureSetTest, Features) {
   EXPECT_TRUE(device_->hasFeature(DeviceFeatures::Compute));
   EXPECT_TRUE(device_->hasFeature(DeviceFeatures::StorageBuffers));
   EXPECT_TRUE(device_->hasFeature(DeviceFeatures::DrawIndexedIndirect));
+  EXPECT_TRUE(device_->hasFeature(DeviceFeatures::DynamicCullMode));
+  EXPECT_TRUE(device_->hasFeature(DeviceFeatures::DynamicFrontFacingWinding));
 
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::BufferRing));
-  EXPECT_FALSE(device_->hasFeature(DeviceFeatures::DynamicCullMode));
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::Indices8Bit));
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::Multiview));
   EXPECT_TRUE(device_->hasFeature(DeviceFeatures::PushConstants));

@@ -133,13 +133,14 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::TextureViews:
   case DeviceFeatures::UniformBlocks:
   case DeviceFeatures::ValidationLayersEnabled:
+  // Encoder overrides select a pipeline variant (RenderCommandEncoder::setCullMode()).
+  case DeviceFeatures::DynamicCullMode:
+  case DeviceFeatures::DynamicFrontFacingWinding:
     return true;
   case DeviceFeatures::BindUniform:
   case DeviceFeatures::BufferDeviceAddress:
   case DeviceFeatures::BufferNoCopy:
   case DeviceFeatures::BufferRing:
-  case DeviceFeatures::DynamicCullMode:
-  case DeviceFeatures::DynamicFrontFacingWinding:
   case DeviceFeatures::DynamicVertexBufferStride:
   case DeviceFeatures::ExplicitBindingExt:
   case DeviceFeatures::ExternalMemoryObjects:
