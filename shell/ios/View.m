@@ -93,3 +93,28 @@
 }
 
 @end
+
+@implementation WebGPUView
+@synthesize viewSizeChangeDelegate = _viewSizeChangeDelegate;
+
+// Views with a custom layer class keep contentScaleFactor at 1.0 unless it is set explicitly.
+- (void)didMoveToWindow {
+  [super didMoveToWindow];
+  const CGFloat scale = self.traitCollection.displayScale;
+  if (self.window && scale > 0) {
+    self.contentScaleFactor = scale;
+  }
+}
+
+- (void)layoutSubviews {
+  [super layoutSubviews];
+  if (self.viewSizeChangeDelegate) {
+    [self.viewSizeChangeDelegate onViewSizeChange];
+  }
+}
+
++ (Class)layerClass {
+  return [CAMetalLayer class];
+}
+
+@end

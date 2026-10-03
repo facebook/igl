@@ -26,6 +26,9 @@
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/ios/HWDevice.h>
 #endif
+#if IGL_BACKEND_WEBGPU
+#include <igl/webgpu/HWDevice.h>
+#endif
 // @fb-only
 // @fb-only
 // @fb-only
@@ -98,6 +101,24 @@ static_assert(static_cast<uint8_t>(igl::BackendFlavor::WebGPU) == kBackendFlavor
 #endif
     break;
   }
+  case igl::BackendFlavor::WebGPU: {
+#if IGL_BACKEND_WEBGPU
+    igl::Result result;
+    auto context = igl::webgpu::HWDevice::createContext({}, &result);
+    if (context) {
+      // Any adapter type: the simulator's adapter is not a discrete GPU.
+      auto devices = igl::webgpu::HWDevice::queryDevices(
+          *context, igl::HWDeviceQueryDesc(igl::HWDeviceType::Unknown), &result);
+      if (!devices.empty()) {
+        device = igl::webgpu::HWDevice::create(std::move(context), devices[0], &result);
+      }
+    }
+    if (!device) {
+      IGL_LOG_ERROR("WebGPU device creation failed: %s\n", result.message.c_str());
+    }
+#endif
+    break;
+  }
 // @fb-only
   // @fb-only
     // @fb-only
@@ -165,7 +186,8 @@ static_assert(static_cast<uint8_t>(igl::BackendFlavor::WebGPU) == kBackendFlavor
   _platform->getInputDispatcher().processEvents();
 
   // draw
-  if (_backendVersion.flavor == igl::BackendFlavor::Metal) {
+  if (_backendVersion.flavor == igl::BackendFlavor::Metal ||
+      _backendVersion.flavor == igl::BackendFlavor::WebGPU) {
     _session->setPixelsPerPoint(static_cast<float>([UIScreen mainScreen].scale));
   } else if (_backendVersion.flavor == igl::BackendFlavor::OpenGL) {
     _session->setPixelsPerPoint(1.0f);

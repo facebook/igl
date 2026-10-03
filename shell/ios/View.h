@@ -31,3 +31,8 @@
 @interface OpenGLView : BaseView
 @property (nonatomic, weak, nullable) id<ViewSizeChangeDelegate> viewSizeChangeDelegate;
 @end
+
+/// A CAMetalLayer-backed view for the WebGPU backend's surface.
+@interface WebGPUView : BaseView
+@property (nonatomic, weak, nullable) id<ViewSizeChangeDelegate> viewSizeChangeDelegate;
+@end

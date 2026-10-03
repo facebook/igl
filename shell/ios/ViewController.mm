@@ -34,6 +34,11 @@
 #include <igl/opengl/ios/PlatformDevice.h>
 #endif
 
+#if IGL_BACKEND_WEBGPU
+#include <igl/webgpu/Device.h>
+#include <igl/webgpu/Surface.h>
+#endif
+
 // @fb-only
 // @fb-only
 // @fb-only
@@ -57,6 +62,10 @@
 
   RenderSessionController* _renderSessionController;
   IglSurfaceTexturesAdapter _surfaceTexturesAdapter;
+#if IGL_BACKEND_WEBGPU
+  std::unique_ptr<igl::webgpu::Surface> _webgpuSurface;
+  std::shared_ptr<igl::ITexture> _webgpuDepth;
+#endif
 }
 - (BackendVersion*)toBackendVersion:(igl::BackendVersion)iglBackendVersion;
 @end
@@ -140,6 +149,11 @@
   }
 #endif
 
+#if IGL_BACKEND_WEBGPU
+  case igl::BackendFlavor::WebGPU:
+    return [self createWebGPUSurfaceTextures:static_cast<igl::webgpu::Device&>(device)];
+#endif
+
 // @fb-only
   // @fb-only
     // @fb-only
@@ -158,6 +172,57 @@
   }
 }
 // clang-format on
+
+#if IGL_BACKEND_WEBGPU
+- (igl::SurfaceTextures)createWebGPUSurfaceTextures:(igl::webgpu::Device&)device {
+  igl::Result result;
+  if (!_webgpuSurface) {
+    _webgpuSurface =
+        igl::webgpu::Surface::createFromMetalLayer(device, (__bridge void*)_layer, &result);
+    if (!_webgpuSurface) {
+      IGL_LOG_ERROR("WebGPU surface creation failed: %s\n", result.message.c_str());
+      return {};
+    }
+  }
+  const CGFloat scale = self.view.contentScaleFactor;
+  const auto width = static_cast<uint32_t>(self.view.bounds.size.width * scale);
+  const auto height = static_cast<uint32_t>(self.view.bounds.size.height * scale);
+  if (width == 0 || height == 0) {
+    return {};
+  }
+  if (_webgpuSurface->getWidth() != width || _webgpuSurface->getHeight() != height) {
+    result = _webgpuSurface->configure(width, height, _config.swapchainColorTextureFormat);
+    if (!result.isOk()) {
+      IGL_LOG_ERROR("WebGPU surface configuration failed: %s\n", result.message.c_str());
+      return {};
+    }
+  }
+  if (!_webgpuDepth || _webgpuDepth->getDimensions().width != width ||
+      _webgpuDepth->getDimensions().height != height) {
+    const igl::TextureFormat format =
+        device.getTextureFormatCapabilities(_config.depthTextureFormat) != 0
+            ? _config.depthTextureFormat
+            : igl::TextureFormat::S8_UInt_Z24_UNorm;
+    _webgpuDepth = device.createTexture(
+        igl::TextureDesc::new2D(
+            format, width, height, igl::TextureDesc::TextureUsageBits::Attachment),
+        &result);
+    if (!_webgpuDepth) {
+      IGL_LOG_ERROR("WebGPU depth texture creation failed: %s\n", result.message.c_str());
+      return {};
+    }
+  }
+  auto color = _webgpuSurface->getCurrentTexture(&result);
+  if (!color) {
+    IGL_LOG_ERROR("WebGPU surface texture acquisition failed: %s\n", result.message.c_str());
+    return {};
+  }
+  return igl::SurfaceTextures{
+      .color = std::move(color),
+      .depth = _webgpuDepth,
+  };
+}
+#endif
 
 // Protocol IglSurfaceTexturesProvider
 - (IglSurfacesTextureAdapterPtr)createSurfaceTextures {
@@ -231,9 +296,16 @@
   case igl::BackendFlavor::D3D12:
     IGL_DEBUG_ABORT("IGL Samples not set up for D3D12 backend");
     break;
-  case igl::BackendFlavor::WebGPU:
+  case igl::BackendFlavor::WebGPU: {
+#if IGL_BACKEND_WEBGPU
+    auto webgpuView = [[WebGPUView alloc] initWithTouchDelegate:self];
+    webgpuView.viewSizeChangeDelegate = self;
+    self.view = webgpuView;
+#else
     IGL_DEBUG_ABORT("IGL Samples not set up for WebGPU backend");
+#endif
     break;
+  }
   // @fb-only
     // @fb-only
     // @fb-only

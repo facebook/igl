@@ -12,10 +12,24 @@
 
 #import "ViewController.h" // NOLINT(facebook-unused-include-check)
 
+#include <algorithm>
+#include <cstring>
+#include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #import <igl/Common.h> // IWYU pragma: keep
 
 namespace {
+
+// `--tab <name>` on the command line selects the first tab whose label starts with <name>.
+NSString* requestedTab() {
+  char** argv = igl::shell::Platform::argv();
+  for (int i = 1; argv != nullptr && i + 1 < igl::shell::Platform::argc(); ++i) {
+    if (std::strcmp(argv[i], "--tab") == 0) {
+      return [NSString stringWithUTF8String:argv[i + 1]];
+    }
+  }
+  return nil;
+}
 
 #if IGL_BACKEND_OPENGL
 NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
@@ -178,30 +192,44 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
     frame.size = CGSizeMake(requestedWindowConfig.width, requestedWindowConfig.height);
   }
 
-  const auto requestedSessionConfigs = self.factory->requestedSessionConfigs(
+  auto requestedSessionConfigs = self.factory->requestedSessionConfigs(
       igl::shell::ShellType::Mac, std::move(suggestedSessionConfigs));
+  NSString* tab = requestedTab();
+  if (tab != nil) {
+    // The first tab's session is created even when another tab is selected, so the requested tab
+    // goes first.
+    const auto it =
+        std::find_if(requestedSessionConfigs.begin(),
+                     requestedSessionConfigs.end(),
+                     [tab](const igl::shell::RenderSessionConfig& config) {
+                       NSString* label = [NSString stringWithUTF8String:config.displayName.c_str()];
+                       return [label rangeOfString:tab
+                                           options:NSAnchoredSearch | NSCaseInsensitiveSearch]
+                                  .location != NSNotFound;
+                     });
+    if (it != requestedSessionConfigs.end()) {
+      std::rotate(requestedSessionConfigs.begin(), it, it + 1);
+    }
+  }
   for (const auto& sessionConfig : requestedSessionConfigs) {
     [self addTab:requestedWindowConfig sessionConfig:sessionConfig frame:frame];
   }
 
-#if IGL_BACKEND_WEBGPU
-  // WebGPU apps (<Session>WebGPUAppleMac) open on the WebGPU tab.
-  for (NSInteger i = 0; i < self.tabViewController.tabViewItems.count; ++i) {
-    if ([self.tabViewController.tabViewItems[i].label isEqualToString:@"WebGPU"]) {
-      self.tabViewController.selectedTabViewItemIndex = i;
-      break;
-    }
-  }
-#elif IGL_USE_STATIC_LAVAPIPE || IGL_USE_STATIC_KOSMICKRISP
+#if IGL_USE_STATIC_LAVAPIPE || IGL_USE_STATIC_KOSMICKRISP
   // A static Vulkan driver (Lavapipe or KosmicKrisp) is explicitly enabled, so default to the
   // Vulkan tab. (When neither is enabled, the first tab — typically Metal — stays selected.)
-  for (NSInteger i = 0; i < self.tabViewController.tabViewItems.count; ++i) {
-    if ([self.tabViewController.tabViewItems[i].label hasPrefix:@"Vulkan"]) {
+  if (tab == nil) {
+    tab = @"Vulkan";
+  }
+#endif
+  for (NSInteger i = 0; tab != nil && i < self.tabViewController.tabViewItems.count; ++i) {
+    NSString* label = self.tabViewController.tabViewItems[i].label;
+    if ([label rangeOfString:tab options:NSAnchoredSearch | NSCaseInsensitiveSearch].location !=
+        NSNotFound) {
       self.tabViewController.selectedTabViewItemIndex = i;
       break;
     }
   }
-#endif
 }
 
 - (void)addTab:(igl::shell::RenderSessionWindowConfig)windowConfig

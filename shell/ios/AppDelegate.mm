@@ -20,7 +20,9 @@
 #import <UIKit/UIScreen.h>
 #import <UIKit/UITabBarItem.h>
 #import <UIKit/UIViewController.h>
+#include <cstring>
 #include <vector>
+#include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
 #include <shell/shared/renderSession/ShellType.h>
 #include <igl/Macros.h>
@@ -76,6 +78,16 @@
           .depthTextureFormat = igl::TextureFormat::S8_UInt_Z24_UNorm,
       },
 #endif
+#if IGL_BACKEND_WEBGPU
+      {
+          .displayName = "WebGPU",
+          .backendVersion = {.flavor = igl::BackendFlavor::WebGPU,
+                             .majorVersion = 1,
+                             .minorVersion = 0},
+          .swapchainColorTextureFormat = igl::TextureFormat::BGRA_SRGB,
+          .depthTextureFormat = igl::TextureFormat::S8_UInt_Z32_UNorm,
+      },
+#endif
 // @fb-only
       // clang-format off
       // @fb-only
@@ -98,6 +110,27 @@
   UITabBarController* tabBarController = [[UITabBarController alloc] initWithNibName:nil
                                                                               bundle:nil];
   tabBarController.delegate = self;
+  // `--tab <name>` on the command line moves the first tab whose title starts with <name> to the
+  // front, so it is the one selected at launch and the default tab's session is never created.
+  char** argv = igl::shell::Platform::argv();
+  for (int i = 1; argv != nullptr && i + 1 < igl::shell::Platform::argc(); ++i) {
+    if (std::strcmp(argv[i], "--tab") != 0) {
+      continue;
+    }
+    NSString* tab = [NSString stringWithUTF8String:argv[i + 1]];
+    for (NSUInteger j = 0; tab != nil && j < viewControllers.count; ++j) {
+      if ([viewControllers[j].tabBarItem.title
+              rangeOfString:tab
+                    options:NSAnchoredSearch | NSCaseInsensitiveSearch]
+              .location != NSNotFound) {
+        UIViewController* selected = viewControllers[j];
+        [viewControllers removeObjectAtIndex:j];
+        [viewControllers insertObject:selected atIndex:0];
+        break;
+      }
+    }
+    break;
+  }
   tabBarController.viewControllers = viewControllers;
   tabBarController.tabBar.translucent = NO;
   if (@available(iOS 13.0, *)) {
@@ -120,6 +153,11 @@
 #endif
 #if IGL_BACKEND_OPENGL
   if (config.backendVersion.flavor == igl::BackendFlavor::OpenGL_ES) {
+    supported = true;
+  }
+#endif
+#if IGL_BACKEND_WEBGPU
+  if (config.backendVersion.flavor == igl::BackendFlavor::WebGPU) {
     supported = true;
   }
 #endif
