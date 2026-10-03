@@ -14,6 +14,7 @@
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/RenderCommandEncoder.h>
 #include <igl/webgpu/Buffer.h>
+#include <igl/webgpu/StateSanitizer.h>
 #include <igl/webgpu/Texture.h>
 #include <igl/webgpu/WebGPUContext.h>
 
@@ -78,8 +79,8 @@ void CommandBuffer::copyBuffer(IBuffer& src,
                                uint64_t srcOffset,
                                uint64_t dstOffset,
                                uint64_t size) {
-  if (srcOffset % 4 != 0 || dstOffset % 4 != 0 || size % 4 != 0) {
-    IGL_LOG_ERROR("copyBuffer(): offsets and size must be multiples of 4 on WebGPU\n");
+  if (const Result result = validateBufferCopy(srcOffset, dstOffset, size); !result.isOk()) {
+    IGL_LOG_ERROR("copyBuffer(): %s\n", result.message.c_str());
     return;
   }
   if (submitted_ || size == 0) {

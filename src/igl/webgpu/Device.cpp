@@ -25,10 +25,13 @@
 #include <igl/VertexInputState.h>
 #include <igl/webgpu/Buffer.h>
 #include <igl/webgpu/CommandQueue.h>
+#include <igl/webgpu/DepthStencilState.h>
 #include <igl/webgpu/Framebuffer.h>
 #include <igl/webgpu/SamplerState.h>
 #include <igl/webgpu/ShaderModule.h>
+#include <igl/webgpu/StateSanitizer.h>
 #include <igl/webgpu/Texture.h>
+#include <igl/webgpu/VertexInputState.h>
 
 namespace igl::webgpu {
 
@@ -87,10 +90,11 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
 }
 
 std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
-    const DepthStencilStateDesc& /*desc*/,
+    const DepthStencilStateDesc& desc,
     Result* IGL_NULLABLE outResult) const {
-  setUnimplemented(outResult, "createDepthStencilState()");
-  return nullptr;
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  Result::setOk(outResult);
+  return std::make_shared<DepthStencilState>(desc);
 }
 
 std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& desc,
@@ -131,11 +135,17 @@ std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) cons
   return nullptr;
 }
 
-std::shared_ptr<IVertexInputState> Device::createVertexInputState(
-    const VertexInputStateDesc& /*desc*/,
-    Result* IGL_NULLABLE outResult) const {
-  setUnimplemented(outResult, "createVertexInputState()");
-  return nullptr;
+std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexInputStateDesc& desc,
+                                                                  Result* IGL_NULLABLE
+                                                                      outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  Result result = validateVertexInputState(desc, deviceFeatureSet_.getLimits());
+  if (!result.isOk()) {
+    Result::setResult(outResult, std::move(result));
+    return nullptr;
+  }
+  Result::setOk(outResult);
+  return std::make_shared<VertexInputState>(desc);
 }
 
 std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& desc,

@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <atomic>
 #include <optional>
+#include <igl/webgpu/StateSanitizer.h>
 #include <igl/webgpu/WebGPUContext.h>
 
 namespace igl::webgpu {
@@ -58,15 +59,7 @@ std::shared_ptr<SamplerState> SamplerState::create(const WebGPUContext& ctx,
   samplerDesc.compare = desc.depthCompareEnabled
                             ? compareFunctionToWGPUCompareFunction(desc.depthCompareFunction)
                             : WGPUCompareFunction_Undefined;
-  samplerDesc.maxAnisotropy = std::clamp<uint16_t>(desc.maxAnisotropic, 1, 16);
-  const bool allLinear = desc.minFilter == SamplerMinMagFilter::Linear &&
-                         desc.magFilter == SamplerMinMagFilter::Linear &&
-                         desc.mipFilter == SamplerMipFilter::Linear;
-  if (samplerDesc.maxAnisotropy > 1 && !allLinear) {
-    // WebGPU requires linear min, mag and mip filters for anisotropic sampling.
-    IGL_LOG_INFO_ONCE("WebGPU ignores maxAnisotropic unless all sampler filters are linear\n");
-    samplerDesc.maxAnisotropy = 1;
-  }
+  samplerDesc.maxAnisotropy = getMaxAnisotropy(desc);
 
   auto sampler = std::shared_ptr<SamplerState>(new SamplerState(ctx, samplerDesc));
   if (!sampler->sampler_) {

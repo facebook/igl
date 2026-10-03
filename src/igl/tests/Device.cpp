@@ -222,6 +222,8 @@ TEST_F(DeviceTest, GetBackendType) {
     ASSERT_EQ(backend_, util::kBackendVul);
   } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
     ASSERT_EQ(backend_, util::kBackendD3D12);
+  } else if (iglDev_->getBackendType() == igl::BackendType::WebGPU) {
+    ASSERT_EQ(backend_, util::kBackendWebGPU);
   } else {
     ASSERT_TRUE(0);
   }

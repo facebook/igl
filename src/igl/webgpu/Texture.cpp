@@ -143,7 +143,7 @@ std::shared_ptr<Texture> Texture::create(WebGPUContext& ctx,
     return nullptr;
   }
   if (desc.exportability == TextureDesc::TextureExportability::Exportable) {
-    Result::setResult(outResult, Result::Code::Unsupported, "Exportable textures");
+    Result::setResult(outResult, Result::Code::Unimplemented, "Exportable textures (WebGPU)");
     return nullptr;
   }
 

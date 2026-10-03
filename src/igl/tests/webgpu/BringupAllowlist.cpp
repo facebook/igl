@@ -30,8 +30,23 @@ bool matches(std::string_view pattern, std::string_view suite, std::string_view 
   return test == "*" || test == name;
 }
 
+bool matchesList(std::string_view list, std::string_view suite, std::string_view name) {
+  while (!list.empty()) {
+    const size_t colon = list.find(':');
+    if (matches(list.substr(0, colon), suite, name)) {
+      return true;
+    }
+    if (colon == std::string_view::npos) {
+      break;
+    }
+    list.remove_prefix(colon + 1);
+  }
+  return false;
+}
+
 // IGL_WEBGPU_BRINGUP_ALL=1 runs every shared test and prints one "[bringup] <status> Suite.Test"
-// line per test, to find out which ones pass.
+// line per test, to find out which ones pass. IGL_WEBGPU_BRINGUP_EXCLUDE ("Suite.Test:Suite.*")
+// skips tests that would crash the run.
 bool runsAll() {
   // NOLINTNEXTLINE(concurrency-mt-unsafe)
   static const bool kAll = [] {
@@ -43,24 +58,15 @@ bool runsAll() {
 
 bool isAllowed(const ::testing::TestInfo& info) {
   if (runsAll()) {
-    return true;
+    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    const char* exclude = std::getenv("IGL_WEBGPU_BRINGUP_EXCLUDE");
+    return exclude == nullptr || !matchesList(exclude, info.test_suite_name(), info.name());
   }
   const std::string_view file = info.file() != nullptr ? info.file() : "";
   if (file.find("tests/webgpu/") != std::string_view::npos) {
     return true;
   }
-  std::string_view list = IGL_WEBGPU_BRINGUP_ALLOWLIST;
-  while (!list.empty()) {
-    const size_t colon = list.find(':');
-    if (matches(list.substr(0, colon), info.test_suite_name(), info.name())) {
-      return true;
-    }
-    if (colon == std::string_view::npos) {
-      break;
-    }
-    list.remove_prefix(colon + 1);
-  }
-  return false;
+  return matchesList(IGL_WEBGPU_BRINGUP_ALLOWLIST, info.test_suite_name(), info.name());
 }
 
 class BringupAllowlist final : public ::testing::EmptyTestEventListener {
