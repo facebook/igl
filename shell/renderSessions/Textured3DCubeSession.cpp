@@ -155,6 +155,37 @@ const char* getVulkanVertexShaderSource() {
                       })";
 }
 
+// Bind convention: texture unit 0 at @group(0) @binding(0), its sampler at @binding(1), buffer 1
+// at @group(1) @binding(1).
+const char* getWgslShaderSource() {
+  return R"(
+struct VertexUniformBlock {
+  mvpMatrix : mat4x4f,
+  scaleZ : f32,
+};
+
+@group(1) @binding(1) var<uniform> vUniform : VertexUniformBlock;
+@group(0) @binding(0) var diffuseTex : texture_3d<f32>;
+@group(0) @binding(1) var linearSampler : sampler;
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) uvw : vec3f,
+};
+
+@vertex
+fn vertexShader(@location(0) position : vec3f, @location(1) uvw : vec3f) -> VertexOut {
+  return VertexOut(vUniform.mvpMatrix * vec4f(position, 1.0),
+                   vec3f(uvw.xy, (uvw.z - 0.5) * vUniform.scaleZ + 0.5));
+}
+
+@fragment
+fn fragmentShader(v : VertexOut) -> @location(0) vec4f {
+  return textureSample(diffuseTex, linearSampler, v.uvw);
+}
+)";
+}
+
 std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
@@ -195,8 +226,8 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
     // @fb-only
     // @fb-only
   case igl::BackendType::WebGPU:
-    IGL_DEBUG_ABORT("IGLSamples not set up for WebGPU");
-    return nullptr;
+    return igl::ShaderStagesCreator::fromLibraryStringInput(
+        device, getWgslShaderSource(), "vertexShader", "fragmentShader", "", nullptr);
   case igl::BackendType::Metal:
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);

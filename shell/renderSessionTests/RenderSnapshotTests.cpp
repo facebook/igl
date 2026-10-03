@@ -7,9 +7,15 @@
 
 #include <cstdlib>
 #include <string>
+#include <shell/renderSessions/CheckerboardMipmapSession.h>
 #include <shell/renderSessions/ColorSession.h>
+#include <shell/renderSessions/DrawInstancedSession.h>
 #include <shell/renderSessions/HelloWorldSession.h>
+#include <shell/renderSessions/MRTSession.h>
+#include <shell/renderSessions/TQMultiRenderPassSession.h>
 #include <shell/renderSessions/TQSession.h>
+#include <shell/renderSessions/Texture3DSession.h>
+#include <shell/renderSessions/Textured3DCubeSession.h>
 #include <shell/shared/renderSession/ScreenshotTestRenderSessionHelper.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <shell/shared/testShell/TestShell.h>
@@ -79,6 +85,36 @@ TEST_F(RenderSnapshotTests, ColorSession) {
 TEST_F(RenderSnapshotTests, TQSession) {
   TQSession session(platform_);
   render(session, "TQSession");
+}
+
+TEST_F(RenderSnapshotTests, CheckerboardMipmapSession) {
+  CheckerboardMipmapSession session(platform_);
+  render(session, "CheckerboardMipmapSession");
+}
+
+TEST_F(RenderSnapshotTests, DrawInstancedSession) {
+  DrawInstancedSession session(platform_);
+  render(session, "DrawInstancedSession");
+}
+
+TEST_F(RenderSnapshotTests, MRTSession) {
+  MRTSession session(platform_);
+  render(session, "MRTSession");
+}
+
+TEST_F(RenderSnapshotTests, TQMultiRenderPassSession) {
+  TQMultiRenderPassSession session(platform_);
+  render(session, "TQMultiRenderPassSession");
+}
+
+TEST_F(RenderSnapshotTests, Texture3DSession) {
+  Texture3DSession session(platform_);
+  render(session, "Texture3DSession");
+}
+
+TEST_F(RenderSnapshotTests, Textured3DCubeSession) {
+  Textured3DCubeSession session(platform_);
+  render(session, "Textured3DCubeSession");
 }
 
 } // namespace igl::shell

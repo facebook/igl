@@ -231,6 +231,16 @@ TEST_F(WebGPUBufferTest, CopyRequiresFourByteAlignment) {
   EXPECT_EQ(readGpu(*dst), Bytes16{});
 }
 
+TEST_F(WebGPUBufferTest, UniformBuffersArePaddedToSixteenBytes) {
+  Result ret;
+  auto uniform =
+      device_->createBuffer({.type = BufferDesc::BufferTypeBits::Uniform, .length = 68}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  EXPECT_EQ(static_cast<webgpu::Buffer&>(*uniform).getAllocatedSize(), 80u);
+  EXPECT_EQ(uniform->getSizeInBytes(), 68u);
+  EXPECT_EQ(createBuffer(68)->getAllocatedSize(), 68u);
+}
+
 TEST_F(WebGPUBufferTest, UnalignedCopyToTheEndCoversPadding) {
   auto src = createBuffer(11, kPattern.data());
   auto dst = createBuffer(11);

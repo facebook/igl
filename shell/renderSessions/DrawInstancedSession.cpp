@@ -115,13 +115,41 @@ void main() {
 )";
 }
 
+const char* getWgslShaderSource() {
+  return R"(
+var<private> pos : array<vec2f, 6> = array<vec2f, 6>(
+  vec2f(-0.05, 0.05), vec2f(0.05, -0.05), vec2f(-0.05, -0.05),
+  vec2f(-0.05, 0.05), vec2f(0.05, -0.05), vec2f(0.05, 0.05));
+var<private> col : array<vec3f, 6> = array<vec3f, 6>(
+  vec3f(1.0, 0.0, 0.0), vec3f(0.0, 1.0, 0.0), vec3f(0.0, 0.0, 1.0),
+  vec3f(1.0, 0.0, 0.0), vec3f(0.0, 1.0, 0.0), vec3f(0.0, 0.0, 1.0));
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) color : vec3f,
+};
+
+@vertex
+fn vertexShader(@builtin(vertex_index) vid : u32, @location(0) offset : vec2f) -> VertexOut {
+  return VertexOut(vec4f(pos[vid] + offset, 0.0, 1.0), col[vid]);
+}
+
+@fragment
+fn fragmentShader(v : VertexOut) -> @location(0) vec4f {
+  return vec4f(v.color, 1.0);
+}
+)";
+}
+
 std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Custom:
-  case igl::BackendType::WebGPU:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
+  case igl::BackendType::WebGPU:
+    return igl::ShaderStagesCreator::fromLibraryStringInput(
+        device, getWgslShaderSource(), "vertexShader", "fragmentShader", "", nullptr);
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(device,
                                                            getVulkanVertexShaderSource(),

@@ -57,7 +57,13 @@ bool isInBounds(const BufferRange& range, size_t length) {
 std::unique_ptr<Buffer> Buffer::create(WebGPUContext& ctx,
                                        const BufferDesc& desc,
                                        Result* IGL_NULLABLE outResult) {
-  const size_t allocatedSize = std::max(alignUp(desc.length), kCopyAlignment);
+  // Uniform buffers are padded to 16 bytes: WGSL rounds uniform structs up to 16 bytes, and a
+  // binding must cover the whole struct (a C++ struct of a mat4 and a float is 68 bytes, its WGSL
+  // counterpart 80).
+  const size_t alignment = (desc.type & BufferDesc::BufferTypeBits::Uniform) != 0 ? size_t{16}
+                                                                                  : kCopyAlignment;
+  const size_t allocatedSize =
+      std::max((desc.length + alignment - 1) / alignment * alignment, kCopyAlignment);
   WGPULimits limits = WGPU_LIMITS_INIT;
   if (wgpuDeviceGetLimits(ctx.getDevice(), &limits) == WGPUStatus_Success &&
       allocatedSize > limits.maxBufferSize) {

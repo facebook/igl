@@ -243,6 +243,58 @@ std::string getVulkanFragmentShaderSource(int programIndex) {
   }
 }
 
+// Bind convention: texture unit i at @group(0) @binding(2i), its sampler at @binding(2i+1).
+const char* getWgslShaderSource(int programIndex) {
+  if (programIndex == 0) {
+    return R"(
+@group(0) @binding(0) var diffuseTex : texture_2d<f32>;
+@group(0) @binding(1) var linearSampler : sampler;
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) uv : vec2f,
+};
+
+struct FragmentOutput {
+  @location(0) colorOutGreen : vec4f,
+  @location(1) colorOutRed : vec4f,
+};
+
+@vertex
+fn vertexShader(@location(0) position : vec3f, @location(1) uv : vec2f) -> VertexOut {
+  return VertexOut(vec4f(position, 1.0), uv);
+}
+
+@fragment
+fn fragmentShader(v : VertexOut) -> FragmentOutput {
+  let c = textureSample(diffuseTex, linearSampler, v.uv);
+  return FragmentOutput(vec4f(0.0, c.g, 0.0, 1.0), vec4f(c.r, 0.0, 0.0, 1.0));
+}
+)";
+  }
+  return R"(
+@group(0) @binding(0) var greenTex : texture_2d<f32>;
+@group(0) @binding(1) var greenSampler : sampler;
+@group(0) @binding(2) var redTex : texture_2d<f32>;
+@group(0) @binding(3) var redSampler : sampler;
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) uv : vec2f,
+};
+
+@vertex
+fn vertexShader(@location(0) position : vec3f, @location(1) uv : vec2f) -> VertexOut {
+  return VertexOut(vec4f(position, 1.0), uv);
+}
+
+@fragment
+fn fragmentShader(v : VertexOut) -> @location(0) vec4f {
+  return textureSample(greenTex, greenSampler, v.uv) + textureSample(redTex, redSampler, v.uv);
+}
+)";
+}
+
 std::unique_ptr<IShaderStages> createShaderStagesForBackend(const IDevice& device,
                                                             int programIndex) {
   switch (device.getBackendType()) {
@@ -266,8 +318,8 @@ std::unique_ptr<IShaderStages> createShaderStagesForBackend(const IDevice& devic
     // @fb-only
     // @fb-only
   case igl::BackendType::WebGPU:
-    IGL_DEBUG_ABORT("No WebGPU shader available");
-    return nullptr;
+    return igl::ShaderStagesCreator::fromLibraryStringInput(
+        device, getWgslShaderSource(programIndex), "vertexShader", "fragmentShader", "", nullptr);
   case igl::BackendType::D3D12: {
     if (programIndex == 0) {
       // First pass: write to SV_Target0 and SV_Target1
