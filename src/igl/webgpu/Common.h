@@ -137,6 +137,9 @@ class Handle final {
   T handle_ = nullptr;
 };
 
+/// Returns a process-wide unique id for a texture, sampler or buffer; caches key on these ids.
+[[nodiscard]] uint64_t allocateResourceId();
+
 /// @brief `str` must be null-terminated; nullptr yields the null string view.
 inline WGPUStringView toWGPUStringView(const char* IGL_NULLABLE str) noexcept {
   return {.data = str, .length = WGPU_STRLEN};

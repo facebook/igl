@@ -21,6 +21,9 @@
 
 namespace igl::webgpu {
 
+class BindGroupCache;
+class DummyResources;
+
 /// @brief Fixed at device creation.
 struct WebGPUContextDesc {
   /// Adapter backend. Undefined resolves to the IGL_WEBGPU_BACKEND environment variable, then to
@@ -107,6 +110,13 @@ class WebGPUContext final {
   /// need not be multiples of 4 bytes (see CommandBuffer::copyTextureToBuffer()). Created on first
   /// use.
   [[nodiscard]] WGPUComputePipeline IGL_NULLABLE getRowPackPipeline() const;
+  /// Bind groups shared by all encoders; resources evict theirs when destroyed.
+  [[nodiscard]] BindGroupCache& getBindGroupCache() const;
+  /// Drops the cached bind groups that use `resourceId`. Does not create the cache, so resources
+  /// destroyed while the context is torn down cannot recreate it.
+  void evictBindGroups(uint64_t resourceId) const;
+  /// Placeholders for declared bindings nothing is bound to.
+  [[nodiscard]] DummyResources& getDummyResources() const;
 
   [[nodiscard]] bool isDeviceLost() const noexcept;
   /// Number of errors raised outside any error scope since device creation.
@@ -142,6 +152,8 @@ class WebGPUContext final {
   Handle<WGPUDevice> device_;
   Handle<WGPUQueue> queue_;
   mutable Handle<WGPUComputePipeline> rowPackPipeline_;
+  mutable std::unique_ptr<BindGroupCache> bindGroupCache_;
+  mutable std::unique_ptr<DummyResources> dummyResources_;
 
   bool hasTimedWaitAny_ = false;
   WGPUBackendType adapterBackendType_ = WGPUBackendType_Undefined;

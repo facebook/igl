@@ -7,6 +7,8 @@
 
 #include <igl/webgpu/Common.h>
 
+#include <atomic>
+
 namespace igl::webgpu {
 
 namespace {
@@ -29,14 +31,19 @@ const char* getDefaultErrorMessage(WGPUErrorType type) {
 
 } // namespace
 
+uint64_t allocateResourceId() {
+  static std::atomic<uint64_t> counter = 0;
+  return ++counter;
+}
+
 std::string toStdString(WGPUStringView view) {
   if (view.data == nullptr) {
     return {};
   }
   if (view.length == WGPU_STRLEN) {
-    return std::string(view.data);
+    return {view.data};
   }
-  return std::string(view.data, view.length);
+  return {view.data, view.length};
 }
 
 std::optional<WGPUTextureFormat> textureFormatToWGPUTextureFormat(TextureFormat format) {

@@ -11,6 +11,7 @@
 #include <cstring>
 #include <utility>
 #include <igl/webgpu/Readback.h>
+#include <igl/webgpu/ResourcesBinder.h>
 #include <igl/webgpu/WebGPUContext.h>
 
 namespace igl::webgpu {
@@ -107,6 +108,7 @@ Buffer::Buffer(WebGPUContext& ctx, const BufferDesc& desc, Handle<WGPUBuffer> bu
   shadow_(static_cast<size_t>(wgpuBufferGetSize(buffer_.get())), 0) {}
 
 Buffer::~Buffer() {
+  ctx_.evictBindGroups(resourceId_);
   ctx_.getResourceTracker().retire(std::move(buffer_), lastUseSerial_);
 }
 

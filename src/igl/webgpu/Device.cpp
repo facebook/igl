@@ -55,22 +55,38 @@ Device::Device(std::unique_ptr<WebGPUContext> ctx) :
 Device::~Device() = default;
 
 Holder<BindGroupTextureHandle> Device::createBindGroup(
-    const BindGroupTextureDesc& /*desc*/,
+    const BindGroupTextureDesc& desc,
     const IRenderPipelineState* IGL_NULLABLE /*compatiblePipeline*/,
     Result* IGL_NULLABLE outResult) {
-  setUnimplemented(outResult, "createBindGroup()");
-  return {};
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  const auto handle = bindGroupTexturesPool_.create(BindGroupTextureDesc(desc));
+  Result::setResult(outResult,
+                    handle.empty() ? Result(Result::Code::RuntimeError, "Cannot create bind group")
+                                   : Result());
+  return {this, handle};
 }
 
-Holder<BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc& /*desc*/,
+Holder<BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc& desc,
                                                       Result* IGL_NULLABLE outResult) {
-  setUnimplemented(outResult, "createBindGroup()");
-  return {};
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  const auto handle = bindGroupBuffersPool_.create(BindGroupBufferDesc(desc));
+  Result::setResult(outResult,
+                    handle.empty() ? Result(Result::Code::RuntimeError, "Cannot create bind group")
+                                   : Result());
+  return {this, handle};
 }
 
-void Device::destroy(BindGroupTextureHandle /*handle*/) {}
+void Device::destroy(BindGroupTextureHandle handle) {
+  if (!handle.empty()) {
+    bindGroupTexturesPool_.destroy(handle);
+  }
+}
 
-void Device::destroy(BindGroupBufferHandle /*handle*/) {}
+void Device::destroy(BindGroupBufferHandle handle) {
+  if (!handle.empty()) {
+    bindGroupBuffersPool_.destroy(handle);
+  }
+}
 
 void Device::destroy(SamplerHandle /*handle*/) {}
 

@@ -8,21 +8,12 @@
 #include <igl/webgpu/SamplerState.h>
 
 #include <algorithm>
-#include <atomic>
 #include <optional>
+#include <igl/webgpu/ResourcesBinder.h>
 #include <igl/webgpu/StateSanitizer.h>
 #include <igl/webgpu/WebGPUContext.h>
 
 namespace igl::webgpu {
-
-namespace {
-
-uint64_t nextSamplerId() {
-  static std::atomic<uint64_t> counter = 0;
-  return ++counter;
-}
-
-} // namespace
 
 std::shared_ptr<SamplerState> SamplerState::create(const WebGPUContext& ctx,
                                                    const SamplerStateDesc& desc,
@@ -77,9 +68,13 @@ SamplerState::SamplerState(const WebGPUContext& ctx, const WGPUSamplerDescriptor
   isFiltering_(desc.magFilter == WGPUFilterMode_Linear || desc.minFilter == WGPUFilterMode_Linear ||
                desc.mipmapFilter == WGPUMipmapFilterMode_Linear),
   isComparison_(desc.compare != WGPUCompareFunction_Undefined),
-  samplerId_(nextSamplerId()) {
+  samplerId_(allocateResourceId()) {
   // The label points into the caller's descriptor.
   desc_.label = toWGPUStringView(nullptr);
+}
+
+SamplerState::~SamplerState() {
+  ctx_.evictBindGroups(samplerId_);
 }
 
 WGPUSampler IGL_NULLABLE SamplerState::getNonFilteringSampler() const {

@@ -57,6 +57,9 @@ class Buffer final : public IBuffer {
 
   /// Records that the command buffer with `serial` uses this buffer, writing to it if `gpuWrite`.
   void recordUse(uint64_t serial, bool gpuWrite) noexcept;
+  [[nodiscard]] uint64_t getResourceId() const noexcept {
+    return resourceId_;
+  }
   [[nodiscard]] uint64_t getLastUseSerial() const noexcept {
     return lastUseSerial_;
   }
@@ -77,6 +80,7 @@ class Buffer final : public IBuffer {
   const ResourceStorage storage_;
   const size_t length_;
   Handle<WGPUBuffer> buffer_;
+  const uint64_t resourceId_ = allocateResourceId();
   std::vector<uint8_t> shadow_;
   uint64_t lastUseSerial_ = 0;
   // Serial of the last command buffer that wrote to the buffer and has not been read back yet.

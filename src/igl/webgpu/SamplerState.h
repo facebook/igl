@@ -23,6 +23,13 @@ class SamplerState final : public ISamplerState {
                                                             const SamplerStateDesc& desc,
                                                             Result* IGL_NULLABLE outResult);
 
+  ~SamplerState() override;
+
+  SamplerState(const SamplerState&) = delete;
+  SamplerState& operator=(const SamplerState&) = delete;
+  SamplerState(SamplerState&&) = delete;
+  SamplerState& operator=(SamplerState&&) = delete;
+
   [[nodiscard]] bool isYUV() const noexcept override {
     return false;
   }

@@ -14,6 +14,7 @@
 #include <mutex>
 #include <thread>
 #include <utility>
+#include <igl/webgpu/ResourcesBinder.h>
 
 // @fb-only
 // @fb-only
@@ -141,6 +142,8 @@ WebGPUContext::WebGPUContext(WebGPUContextDesc desc) : desc_(std::move(desc)) {}
 
 WebGPUContext::~WebGPUContext() {
   rowPackPipeline_ = nullptr;
+  bindGroupCache_.reset();
+  dummyResources_.reset();
   queue_ = nullptr;
   device_ = nullptr;
   adapter_ = nullptr;
@@ -461,6 +464,26 @@ WGPUComputePipeline IGL_NULLABLE WebGPUContext::getRowPackPipeline() const {
     rowPackPipeline_.reset(wgpuDeviceCreateComputePipeline(device_.get(), &pipelineDesc));
   }
   return rowPackPipeline_.get();
+}
+
+BindGroupCache& WebGPUContext::getBindGroupCache() const {
+  if (!bindGroupCache_) {
+    bindGroupCache_ = std::make_unique<BindGroupCache>(*this);
+  }
+  return *bindGroupCache_;
+}
+
+void WebGPUContext::evictBindGroups(uint64_t resourceId) const {
+  if (bindGroupCache_) {
+    bindGroupCache_->evict(resourceId);
+  }
+}
+
+DummyResources& WebGPUContext::getDummyResources() const {
+  if (!dummyResources_) {
+    dummyResources_ = std::make_unique<DummyResources>(*this);
+  }
+  return *dummyResources_;
 }
 
 bool WebGPUContext::isDeviceLost() const noexcept {

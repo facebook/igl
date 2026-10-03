@@ -54,6 +54,9 @@ class CommandBuffer final : public ICommandBuffer {
                            uint32_t level,
                            uint32_t layer) override;
 
+  [[nodiscard]] WGPUCommandEncoder IGL_NULLABLE getWGPUCommandEncoder() const noexcept {
+    return encoder_.get();
+  }
   /// Serial of this command buffer in the context's ResourceTracker.
   [[nodiscard]] uint64_t getSerial() const noexcept {
     return serial_;

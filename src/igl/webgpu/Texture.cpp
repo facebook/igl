@@ -8,11 +8,11 @@
 #include <igl/webgpu/Texture.h>
 
 #include <algorithm>
-#include <atomic>
 #include <optional>
 #include <utility>
 #include <igl/webgpu/DeviceFeatureSet.h>
 #include <igl/webgpu/Readback.h>
+#include <igl/webgpu/ResourcesBinder.h>
 #include <igl/webgpu/WebGPUContext.h>
 
 namespace igl::webgpu {
@@ -34,11 +34,6 @@ struct Texture::Storage {
 };
 
 namespace {
-
-uint64_t nextTextureId() {
-  static std::atomic<uint64_t> counter = 0;
-  return ++counter;
-}
 
 uint32_t getWGPULayerCount(const TextureDesc& desc) {
   switch (desc.type) {
@@ -275,9 +270,11 @@ Texture::Texture(std::shared_ptr<Storage> storage,
   wgpuFormat_(wgpuFormat),
   baseMipLevel_(baseMipLevel),
   baseLayer_(baseLayer),
-  textureId_(nextTextureId()) {}
+  textureId_(allocateResourceId()) {}
 
-Texture::~Texture() = default;
+Texture::~Texture() {
+  storage_->ctx.evictBindGroups(textureId_);
+}
 
 Result Texture::createSampledView() {
   WGPUTextureViewDescriptor viewDesc = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;

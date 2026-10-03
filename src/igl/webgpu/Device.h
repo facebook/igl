@@ -7,7 +7,9 @@
 
 #pragma once
 
+#include <ldrutils/lutils/Pool.h>
 #include <memory>
+#include <igl/CommandEncoder.h>
 #include <igl/Device.h>
 #include <igl/webgpu/BindLayouts.h>
 #include <igl/webgpu/DeviceFeatureSet.h>
@@ -120,12 +122,23 @@ class Device final : public IDevice {
   [[nodiscard]] BindLayoutCache& getBindLayoutCache() const noexcept {
     return bindLayoutCache_;
   }
+  /// BindGroup-API records; encoders bind their resources slot by slot.
+  [[nodiscard]] const BindGroupTextureDesc* IGL_NULLABLE
+  getBindGroupTextureDesc(BindGroupTextureHandle handle) const {
+    return bindGroupTexturesPool_.get(handle);
+  }
+  [[nodiscard]] const BindGroupBufferDesc* IGL_NULLABLE
+  getBindGroupBufferDesc(BindGroupBufferHandle handle) const {
+    return bindGroupBuffersPool_.get(handle);
+  }
 
  private:
   std::unique_ptr<WebGPUContext> ctx_;
   PlatformDevice platformDevice_;
   DeviceFeatureSet deviceFeatureSet_;
   mutable BindLayoutCache bindLayoutCache_;
+  ldr::Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
+  ldr::Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
   mutable size_t shaderCompilationCount_ = 0;
 };
 
