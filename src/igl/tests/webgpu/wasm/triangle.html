@@ -10,6 +10,8 @@
  igl_triangle() through JSPI on IGL's own device, then the page's GPUDevice imported into IGL for an
  async readback and for rendering into the WebGPU canvas. Each frame is compared with
  reference.rgba (the native frame) when it is served; the page title shows the summary.
+ With ?flavor=async (browsers without JSPI, e.g. WebKit; see check_webkit.sh) the page runs
+ iglWebGPUTriangleWasmAsync instead, where igl_triangle() must fail because nothing can wait.
 -->
 <html>
   <head>
@@ -21,7 +23,6 @@
     <canvas id="async" width="256" height="256"></canvas>
     <canvas id="canvas" width="256" height="256"></canvas>
     <pre id="log"></pre>
-    <script src="iglWebGPUTriangleWasm.js"></script>
     <script>
       const kSize = 256;
       const kBytes = kSize * kSize * 4;
@@ -65,17 +66,30 @@
         if (response.ok) {
           reference = new Uint8Array(await response.arrayBuffer());
         }
+        const jspi = new URLSearchParams(location.search).get('flavor') !== 'async';
+        const script = document.createElement('script');
+        script.src = jspi ? 'iglWebGPUTriangleWasm.js' : 'iglWebGPUTriangleWasmAsync.js';
+        await new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = () => reject(new Error(`cannot load ${script.src}`));
+          document.head.appendChild(script);
+        });
         const module = await createIglTriangle();
         const ptr = module._malloc(kBytes);
 
-        // JSPI: IGL creates its own adapter and device and waits for them.
-        const pending = module._igl_triangle(kSize, ptr);
-        check(pending instanceof Promise, 'igl_triangle() is a JSPI export');
-        const status = await pending;
-        check(status === 0, `igl_triangle() returns ${status}`);
-        const jspiFrame = module.HEAPU8.slice(ptr, ptr + kBytes);
-        show('jspi', jspiFrame);
-        compare(jspiFrame, 'JSPI frame');
+        if (jspi) {
+          // JSPI: IGL creates its own adapter and device and waits for them.
+          const pending = module._igl_triangle(kSize, ptr);
+          check(pending instanceof Promise, 'igl_triangle() is a JSPI export');
+          const status = await pending;
+          check(status === 0, `igl_triangle() returns ${status}`);
+          const jspiFrame = module.HEAPU8.slice(ptr, ptr + kBytes);
+          show('jspi', jspiFrame);
+          compare(jspiFrame, 'JSPI frame');
+        } else {
+          const status = module._igl_triangle(kSize, ptr);
+          check(typeof status === 'number' && status !== 0, `async: igl_triangle() cannot wait (${status})`);
+        }
 
         // The page's device, imported into IGL; nothing below waits.
         const adapter = await navigator.gpu.requestAdapter();

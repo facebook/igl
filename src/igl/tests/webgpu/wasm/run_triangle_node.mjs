@@ -16,7 +16,9 @@
 //   export traps with WebAssembly.SuspendError.
 //
 // usage: node run_triangle_node.mjs <iglWebGPUTriangleWasm dir> <iglWebGPUTriangleWasmAsync dir>
-//            <reference.rgba> [out dir]
+//            <reference.rgba | -> [out dir]
+// With `-` instead of the native frame, the first frame (JSPI igl_triangle()) is checked for the
+// clear color and a covered center, and every other frame is compared with it.
 // The `webgpu` package is resolved from WEBGPU_NODE_MODULE, else from the module path.
 
 import fs from 'node:fs';
@@ -26,7 +28,7 @@ import path from 'node:path';
 const [jspiDir, asyncDir, referencePath, outDir] = process.argv.slice(2);
 if (!jspiDir || !asyncDir || !referencePath) {
   console.error(
-    'usage: node run_triangle_node.mjs <jspi dir> <async dir> <reference.rgba> [out dir]',
+    'usage: node run_triangle_node.mjs <jspi dir> <async dir> <reference.rgba | -> [out dir]',
   );
   process.exit(2);
 }
@@ -51,7 +53,7 @@ const kSampleExports = [
   '_igl_wait_disallowed',
   '_igl_wait_unguarded',
 ];
-const reference = fs.readFileSync(referencePath);
+let reference = referencePath === '-' ? null : fs.readFileSync(referencePath);
 let failures = 0;
 
 function check(ok, what) {
@@ -59,7 +61,26 @@ function check(ok, what) {
   failures += ok ? 0 : 1;
 }
 
+// TriangleRender's clear color, (0.2, 0.3, 0.4, 1) in 8-bit unorm.
+const kClearColor = [51, 77, 102, 255];
+
+function adoptAsReference(frame, name) {
+  const corner = Array.from(frame.subarray(0, 4));
+  const centerOffset = ((kSize / 2) * kSize + kSize / 2) * 4;
+  const center = Array.from(frame.subarray(centerOffset, centerOffset + 4));
+  check(
+    JSON.stringify(corner) === JSON.stringify(kClearColor) &&
+      JSON.stringify(center) !== JSON.stringify(kClearColor),
+    `${name}: corner ${corner} is the clear color, center ${center} is covered (reference frame)`,
+  );
+  reference = Buffer.from(frame);
+}
+
 function compare(frame, name) {
+  if (reference === null) {
+    adoptAsReference(frame, name);
+    return;
+  }
   let maxAbs = 0;
   let differing = 0;
   for (let i = 0; i < kBytes; i += 4) {
@@ -74,7 +95,8 @@ function compare(frame, name) {
     fs.writeFileSync(path.join(outDir, `${name}.rgba`), frame);
   }
   const percent = ((100 * differing) / (kSize * kSize)).toFixed(4);
-  check(maxAbs <= 1, `${name}: maxAbs=${maxAbs} differing=${percent}% vs the native frame`);
+  const against = referencePath === '-' ? 'the first frame' : 'the native frame';
+  check(maxAbs <= 1, `${name}: maxAbs=${maxAbs} differing=${percent}% vs ${against}`);
 }
 
 const tick = () => new Promise(resolve => setTimeout(resolve, 1));
