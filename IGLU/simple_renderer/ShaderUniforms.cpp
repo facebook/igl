@@ -91,8 +91,9 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
       createBuffer = iglDesc.isUniformBlock;
     } else if (device_.getBackendType() == igl::BackendType::Vulkan) {
       createBuffer = true;
-    } else if (device_.getBackendType() == igl::BackendType::Metal) {
-      // On Metal, need to create buffers only when data > 4kb
+    } else if (device_.getBackendType() == igl::BackendType::Metal ||
+               device_.getBackendType() == igl::BackendType::WebGPU) {
+      // On Metal and WebGPU, need to create buffers only when data exceeds the bindBytes limit
       createBuffer = !hasBindBytesFeature || length > bindBytesLimit;
     } else if (device_.getBackendType() == igl::BackendType::D3D12) {
       // D3D12 does not support bindBytes, always create buffers
@@ -568,7 +569,8 @@ void ShaderUniforms::setFloat3x3(const igl::NameHandle& uniformName,
                                  size_t arrayIndex) {
   IGL_PROFILER_FUNCTION();
   if (device_.getBackendType() == igl::BackendType::Metal ||
-      device_.getBackendType() == igl::BackendType::Vulkan) {
+      device_.getBackendType() == igl::BackendType::Vulkan ||
+      device_.getBackendType() == igl::BackendType::WebGPU) {
     setUniformBytes(uniformName, &value, sizeof(iglu::simdtypes::float3x3), 1, arrayIndex);
   } else {
     // simdtypes::float3x3 has an extra float per float-vector.
@@ -595,7 +597,8 @@ void ShaderUniforms::setFloat3x3(const igl::NameHandle& blockTypeName,
   const bool isOglBlock = device_.getBackendType() == igl::BackendType::OpenGL &&
                           bufferDescs_.find(blockTypeName) != bufferDescs_.end();
   if (device_.getBackendType() == igl::BackendType::Metal ||
-      device_.getBackendType() == igl::BackendType::Vulkan || isOglBlock) {
+      device_.getBackendType() == igl::BackendType::Vulkan ||
+      device_.getBackendType() == igl::BackendType::WebGPU || isOglBlock) {
     setUniformBytes(blockTypeName,
                     blockInstanceName,
                     uniformName,
@@ -631,7 +634,8 @@ void ShaderUniforms::setFloat3x3Array(const igl::NameHandle& uniformName,
                                       size_t arrayIndex) {
   IGL_PROFILER_FUNCTION();
   if (device_.getBackendType() == igl::BackendType::Metal ||
-      device_.getBackendType() == igl::BackendType::Vulkan) {
+      device_.getBackendType() == igl::BackendType::Vulkan ||
+      device_.getBackendType() == igl::BackendType::WebGPU) {
     setUniformBytes(uniformName, value, sizeof(iglu::simdtypes::float3x3), count, arrayIndex);
   } else {
     // simdtypes::float3x3 has an extra float per float-vector.
@@ -663,7 +667,8 @@ void ShaderUniforms::setFloat3x3Array(const igl::NameHandle& blockTypeName,
                     bufferDescs_.find(blockTypeName) != bufferDescs_.end();
 
   if (device_.getBackendType() == igl::BackendType::Metal ||
-      device_.getBackendType() == igl::BackendType::Vulkan || isOglBlock) {
+      device_.getBackendType() == igl::BackendType::Vulkan ||
+      device_.getBackendType() == igl::BackendType::WebGPU || isOglBlock) {
     setUniformBytes(blockTypeName,
                     blockInstanceName,
                     memberName,

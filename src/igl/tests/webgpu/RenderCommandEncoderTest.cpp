@@ -9,6 +9,7 @@
 
 #include <igl/webgpu/RenderCommandEncoder.h>
 
+#include <IGLU/simple_renderer/ShaderUniforms.h>
 #include <array>
 #include <cstring>
 #include <functional>
@@ -339,6 +340,60 @@ TEST_F(WebGPURenderCommandEncoderTest, DynamicBindGroupBuffersNeedOffsets) {
   EXPECT_EQ(drawWith(&offset, 1), rgba(255, 0, 0, 255));
   // Without an offset the dynamic buffer is not bound, so the earlier binding stays.
   EXPECT_EQ(drawWith(nullptr, 0), rgba(0, 255, 0, 255));
+}
+
+// ShaderUniforms writes mat3x3f with 16-byte columns and puts blocks over the bindBytes() limit
+// (4 KiB) in a buffer.
+TEST_F(WebGPURenderCommandEncoderTest, ShaderUniformsLargeBlockAndMat3x3) {
+  constexpr const char* kFragment = R"(
+struct Uniforms { m : mat3x3f, pad : array<vec4f, 300>, color : vec4f, };
+@group(1) @binding(0) var<uniform> uniforms : Uniforms;
+
+@fragment
+fn main() -> @location(0) vec4f {
+  return vec4f(uniforms.m[2], 1.0) * uniforms.color;
+}
+)";
+  Result ret;
+  std::shared_ptr<IShaderStages> stages = ShaderStagesCreator::fromModuleStringInput(
+      *device_,
+      "@vertex fn main(@location(0) p : vec4f) -> @builtin(position) vec4f { return p; }",
+      "main",
+      "",
+      kFragment,
+      "main",
+      "",
+      &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  auto pipeline = device_->createRenderPipeline(
+      {
+          .topology = PrimitiveType::TriangleStrip,
+          .vertexInputState = vertexInput_,
+          .shaderStages = stages,
+          .targetDesc = {.colorAttachments = {{.textureFormat = TextureFormat::RGBA_UNorm8}},
+                         .depthAttachmentFormat = TextureFormat::S8_UInt_Z32_UNorm,
+                         .stencilAttachmentFormat = TextureFormat::S8_UInt_Z32_UNorm},
+      },
+      &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  auto reflection = pipeline->renderPipelineReflection();
+  ASSERT_NE(reflection, nullptr);
+  iglu::material::ShaderUniforms shaderUniforms(*device_, *reflection);
+  const iglu::simdtypes::float3 zero = {0.0f, 0.0f, 0.0f};
+  const iglu::simdtypes::float3 green = {0.0f, 1.0f, 0.0f};
+  shaderUniforms.setFloat3x3(igl::genNameHandle("m"), iglu::simdtypes::float3x3(zero, zero, green));
+  const iglu::simdtypes::float4 white = {1.0f, 1.0f, 1.0f, 1.0f};
+  shaderUniforms.setFloat4(igl::genNameHandle("color"), white);
+  auto vertices = createVertices(quad(0.5f));
+  encode(
+      [&](IRenderCommandEncoder& encoder) {
+        encoder.bindRenderPipelineState(pipeline);
+        shaderUniforms.bind(*device_, *pipeline, encoder);
+        encoder.bindVertexBuffer(0, *vertices);
+        encoder.draw(4);
+      },
+      clearPass());
+  EXPECT_EQ(readColor()[5], rgba(0, 255, 0, 255));
 }
 
 TEST_F(WebGPURenderCommandEncoderTest, ScissorAndViewport) {

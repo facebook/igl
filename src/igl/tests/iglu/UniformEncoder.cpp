@@ -7,6 +7,9 @@
 
 #include <gtest/gtest.h>
 
+#include "RecordingDevice.h"
+
+#include <IGLU/simple_renderer/ShaderUniforms.h>
 #include <IGLU/uniform/Descriptor.h>
 #include <IGLU/uniform/Encoder.h>
 #include <glm/glm.hpp>
@@ -160,6 +163,93 @@ TEST_F(UniformEncoderTest, UnassignedIndexBindsNothing) {
   RecordingRenderEncoder render;
   encoder(render, igl::BindTarget::kVertex, unassigned);
   EXPECT_EQ(render.bindBytesCall.count, 0u);
+}
+
+namespace {
+
+class FixedReflection final : public igl::IRenderPipelineReflection {
+ public:
+  explicit FixedReflection(std::vector<igl::BufferArgDesc> buffers) :
+    buffers_(std::move(buffers)) {}
+  [[nodiscard]] const std::vector<igl::BufferArgDesc>& allUniformBuffers() const override {
+    return buffers_;
+  }
+  [[nodiscard]] const std::vector<igl::SamplerArgDesc>& allSamplers() const override {
+    return samplers_;
+  }
+  [[nodiscard]] const std::vector<igl::TextureArgDesc>& allTextures() const override {
+    return textures_;
+  }
+
+ private:
+  std::vector<igl::BufferArgDesc> buffers_;
+  std::vector<igl::SamplerArgDesc> samplers_;
+  std::vector<igl::TextureArgDesc> textures_;
+};
+
+class NullPipelineState final : public igl::IRenderPipelineState {
+ public:
+  NullPipelineState() : IRenderPipelineState(igl::RenderPipelineDesc{}) {}
+  [[nodiscard]] std::shared_ptr<igl::IRenderPipelineReflection> renderPipelineReflection()
+      override {
+    return nullptr;
+  }
+  void setRenderPipelineReflection(const igl::IRenderPipelineReflection& /*reflection*/) override {}
+};
+
+igl::BufferArgDesc uniformBlock(size_t size) {
+  return {
+      .name = igl::genNameHandle("Uniforms"),
+      .bufferDataSize = size,
+      .bufferIndex = 0,
+      .shaderStage = igl::ShaderStage::Fragment,
+      .members = {{.name = igl::genNameHandle("m"),
+                   .type = igl::UniformType::Mat3x3,
+                   .offset = 0,
+                   .arrayLength = 1},
+                  {.name = igl::genNameHandle("color"),
+                   .type = igl::UniformType::Float4,
+                   .offset = 48,
+                   .arrayLength = 1}},
+  };
+}
+
+} // namespace
+
+// Device-free WebGPU paths of ShaderUniforms (the GPU test is
+// WebGPURenderCommandEncoderTest.ShaderUniformsLargeBlockAndMat3x3).
+TEST(ShaderUniformsWebGPUTest, BuffersOnlyAboveTheBindBytesLimit) {
+  // RecordingDevice returns no buffer, which ShaderUniforms asserts on.
+  igl::setDebugBreakEnabled(false);
+  igl::tests::RecordingDevice device;
+  device.backendType = igl::BackendType::WebGPU;
+  device.reportsBindBytes = true;
+  device.maxBindBytesBytes = 4096;
+  const material::ShaderUniforms small(device, FixedReflection({uniformBlock(64)}));
+  EXPECT_EQ(device.createBufferCount, 0u);
+  const material::ShaderUniforms large(device, FixedReflection({uniformBlock(5000)}));
+  EXPECT_EQ(device.createBufferCount, 1u);
+}
+
+TEST(ShaderUniformsWebGPUTest, Float3x3UsesPaddedColumns) {
+  igl::setDebugBreakEnabled(false);
+  igl::tests::RecordingDevice device;
+  device.backendType = igl::BackendType::WebGPU;
+  device.reportsBindBytes = true;
+  device.maxBindBytesBytes = 4096;
+  material::ShaderUniforms shaderUniforms(device, FixedReflection({uniformBlock(64)}));
+  const simdtypes::float3 zero = {0.0f, 0.0f, 0.0f};
+  const simdtypes::float3 column = {1.0f, 2.0f, 3.0f};
+  shaderUniforms.setFloat3x3(igl::genNameHandle("m"), simdtypes::float3x3(zero, zero, column));
+  RecordingRenderEncoder encoder;
+  shaderUniforms.bind(device, NullPipelineState(), encoder);
+  ASSERT_EQ(encoder.bindBytesCall.count, 1u);
+  ASSERT_EQ(encoder.bindBytesCall.length, 64u);
+  const auto* floats = static_cast<const float*>(encoder.bindBytesCall.data);
+  // Column 2 starts 32 bytes in (16-byte columns), not 24 (packed).
+  EXPECT_EQ(floats[8], 1.0f);
+  EXPECT_EQ(floats[9], 2.0f);
+  EXPECT_EQ(floats[10], 3.0f);
 }
 
 } // namespace iglu::tests
