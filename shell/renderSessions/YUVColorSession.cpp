@@ -10,6 +10,7 @@
 #include <shell/renderSessions/YUVColorSession.h>
 
 #include <IGLU/simdtypes/SimdTypes.h>
+#include <string>
 #include <shell/shared/fileLoader/FileLoader.h>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/RenderSession.h>
@@ -91,6 +92,52 @@ std::string getVulkanFragmentShaderSource() {
                 )";
 }
 
+// BT.709 full range, as the Vulkan YCbCr conversion. The source declares only the planes the
+// entry point samples: every declared binding is part of the pipeline layout.
+std::string getWgslShaderSource(bool isNV12) {
+  std::string source = R"(
+@group(0) @binding(0) var yTex : texture_2d<f32>;
+@group(0) @binding(1) var ySampler : sampler;
+@group(0) @binding(2) var uTex : texture_2d<f32>;
+@group(0) @binding(3) var uSampler : sampler;
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) uv : vec2f,
+};
+
+@vertex
+fn vertexShader(@location(0) position : vec3f, @location(1) uv : vec2f) -> VertexOut {
+  return VertexOut(vec4f(position, 1.0), uv);
+}
+
+fn yuvToRgb(y : f32, u : f32, v : f32) -> vec4f {
+  let cb = u - 0.5;
+  let cr = v - 0.5;
+  return vec4f(y + 1.5748 * cr, y - 0.1873 * cb - 0.4681 * cr, y + 1.8556 * cb, 1.0);
+}
+)";
+  source += isNV12 ? R"(
+@fragment
+fn fragmentShader(in : VertexOut) -> @location(0) vec4f {
+  let uv = textureSample(uTex, uSampler, in.uv).rg;
+  return yuvToRgb(textureSample(yTex, ySampler, in.uv).r, uv.x, uv.y);
+}
+)"
+                   : R"(
+@group(0) @binding(4) var vTex : texture_2d<f32>;
+@group(0) @binding(5) var vSampler : sampler;
+
+@fragment
+fn fragmentShader(in : VertexOut) -> @location(0) vec4f {
+  return yuvToRgb(textureSample(yTex, ySampler, in.uv).r,
+                  textureSample(uTex, uSampler, in.uv).r,
+                  textureSample(vTex, vSampler, in.uv).r);
+}
+)";
+  return source;
+}
+
 std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   // @fb-only
@@ -98,9 +145,11 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   case igl::BackendType::Metal:
   case igl::BackendType::Custom:
   case igl::BackendType::D3D12: // D3D12 YUV shaders not yet implemented
-  case igl::BackendType::WebGPU:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
+  case igl::BackendType::WebGPU:
+    return igl::ShaderStagesCreator::fromLibraryStringInput(
+        device, getWgslShaderSource(false).c_str(), "vertexShader", "fragmentShader", "", nullptr);
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(device,
                                                            getVulkanVertexShaderSource().c_str(),
@@ -183,22 +232,82 @@ void YUVColorSession::initialize() noexcept {
 
   // Samplers & Textures
 
+  // Y, then U and V (420p) or interleaved UV (NV12) at half resolution, in single-plane textures.
+  auto createPlanarYUVDemo = [this](IDevice& device,
+                                    const char* demoName,
+                                    TextureFormat yuvFormat,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    const uint8_t* data) {
+    auto createPlane = [&device](TextureFormat format,
+                                 uint32_t planeWidth,
+                                 uint32_t planeHeight,
+                                 const uint8_t* planeData) {
+      auto plane = device.createTexture(
+          TextureDesc::new2D(
+              format, planeWidth, planeHeight, TextureDesc::TextureUsageBits::Sampled, "YUV plane"),
+          nullptr);
+      IGL_DEBUG_ASSERT(plane);
+      if (plane) {
+        plane->upload(TextureRangeDesc::new2D(0, 0, planeWidth, planeHeight), planeData);
+      }
+      return plane;
+    };
+    const uint32_t chromaWidth = width / 2;
+    const uint32_t chromaHeight = height / 2;
+    const uint8_t* chroma = data + static_cast<size_t>(width) * height;
+    const bool isNV12 = yuvFormat == TextureFormat::YUV_NV12;
+    YUVFormatDemo demo{
+        .name = demoName,
+        .sampler = device.createSamplerState(
+            SamplerStateDesc{
+                .minFilter = SamplerMinMagFilter::Linear,
+                .magFilter = SamplerMinMagFilter::Linear,
+                .addressModeU = SamplerAddressMode::Clamp,
+                .addressModeV = SamplerAddressMode::Clamp,
+                .debugName = "YUVPlaneSampler",
+            },
+            nullptr),
+        .texture = createPlane(TextureFormat::R_UNorm8, width, height, data),
+    };
+    if (isNV12) {
+      demo.chromaPlanes = {
+          createPlane(TextureFormat::RG_UNorm8, chromaWidth, chromaHeight, chroma)};
+    } else {
+      const size_t chromaSize = static_cast<size_t>(chromaWidth) * chromaHeight;
+      demo.chromaPlanes = {
+          createPlane(TextureFormat::R_UNorm8, chromaWidth, chromaHeight, chroma),
+          createPlane(TextureFormat::R_UNorm8, chromaWidth, chromaHeight, chroma + chromaSize),
+      };
+    }
+    demo.shaderStages = igl::ShaderStagesCreator::fromLibraryStringInput(
+        device, getWgslShaderSource(isNV12).c_str(), "vertexShader", "fragmentShader", "", nullptr);
+    IGL_DEBUG_ASSERT(demo.shaderStages != nullptr);
+    this->yuvFormatDemos_.push_back(std::move(demo));
+  };
+
   auto createYUVDemo =
-      [this](IDevice& device, const char* demoName, TextureFormat yuvFormat, const char* fileName) {
+      [this, &createPlanarYUVDemo](
+          IDevice& device, const char* demoName, TextureFormat yuvFormat, const char* fileName) {
         constexpr uint32_t width = 1920;
         constexpr uint32_t height = 1080;
+
+        auto& fileLoader = getPlatform().getFileLoader();
+        const auto fileData = fileLoader.loadBinaryData(fileName);
+        IGL_DEBUG_ASSERT(fileData.data && fileData.length, "Cannot load texture file");
+        IGL_DEBUG_ASSERT(width * height + width * height / 2 == fileData.length);
+
+        if (device.getShaderVersion().family == ShaderFamily::Wgsl) {
+          createPlanarYUVDemo(device, demoName, yuvFormat, width, height, fileData.data.get());
+          return;
+        }
 
         auto sampler =
             device.createSamplerState(SamplerStateDesc::newYUV(yuvFormat, "YUVSampler"), nullptr);
         IGL_DEBUG_ASSERT(sampler != nullptr);
 
-        auto& fileLoader = getPlatform().getFileLoader();
-        const auto fileData = fileLoader.loadBinaryData(fileName);
-        IGL_DEBUG_ASSERT(fileData.data && fileData.length, "Cannot load texture file");
-
         const TextureDesc textureDesc = igl::TextureDesc::new2D(
             yuvFormat, width, height, TextureDesc::TextureUsageBits::Sampled, "YUV texture");
-        IGL_DEBUG_ASSERT(width * height + width * height / 2 == fileData.length);
         const auto texture = device.createTexture(textureDesc, nullptr);
         IGL_DEBUG_ASSERT(texture);
         texture->upload(TextureRangeDesc{.x = 0, .y = 0, .z = 0, .width = width, .height = height},
@@ -252,7 +361,7 @@ void YUVColorSession::update(SurfaceTextures surfaceTextures) noexcept {
   if (!demo.pipelineState) {
     const RenderPipelineDesc desc = {
         .vertexInputState = vertexInput0_,
-        .shaderStages = shaderStages_,
+        .shaderStages = demo.shaderStages ? demo.shaderStages : shaderStages_,
         .targetDesc =
             {
                 .colorAttachments =
@@ -267,7 +376,7 @@ void YUVColorSession::update(SurfaceTextures surfaceTextures) noexcept {
         .cullMode = igl::CullMode::Back,
         .frontFaceWinding = igl::WindingMode::Clockwise,
         .fragmentUnitSamplerMap = {std::pair<size_t, NameHandle>(0, IGL_NAMEHANDLE("inputImage"))},
-        .immutableSamplers = {demo.sampler}, // Ycbcr sampler
+        .immutableSamplers = {demo.chromaPlanes.empty() ? demo.sampler : nullptr}, // Ycbcr sampler
     };
     demo.pipelineState = getPlatform().getDevice().createRenderPipeline(desc, nullptr);
     IGL_DEBUG_ASSERT(demo.pipelineState != nullptr);
@@ -290,6 +399,10 @@ void YUVColorSession::update(SurfaceTextures surfaceTextures) noexcept {
     commands->bindRenderPipelineState(demo.pipelineState);
     commands->bindTexture(0, BindTarget::kFragment, demo.texture.get());
     commands->bindSamplerState(0, BindTarget::kFragment, demo.sampler.get());
+    for (size_t i = 0; i < demo.chromaPlanes.size(); ++i) {
+      commands->bindTexture(i + 1, BindTarget::kFragment, demo.chromaPlanes[i].get());
+      commands->bindSamplerState(i + 1, BindTarget::kFragment, demo.sampler.get());
+    }
     commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
     commands->drawIndexed(6);
 

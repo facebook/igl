@@ -134,6 +134,33 @@ const char* getVulkanVertexShaderSource() {
   )";
 }
 
+const char* getWgslShaderSource() {
+  return R"(
+struct PerFrame {
+  mvpMatrix : mat4x4f,
+};
+
+@group(3) @binding(0) var<uniform> perFrame : PerFrame;
+@group(0) @binding(0) var input2D : texture_2d<f32>;
+@group(0) @binding(1) var linearSampler : sampler;
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) uv : vec2f,
+};
+
+@vertex
+fn vertexShader(@location(0) position : vec3f, @location(1) uv : vec2f) -> VertexOut {
+  return VertexOut(perFrame.mvpMatrix * vec4f(position, 1.0), uv);
+}
+
+@fragment
+fn fragmentShader(v : VertexOut) -> @location(0) vec4f {
+  return textureSample(input2D, linearSampler, v.uv);
+}
+)";
+}
+
 std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
@@ -176,8 +203,8 @@ std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& devi
     // @fb-only
     // @fb-only
   case igl::BackendType::WebGPU:
-    IGL_DEBUG_ABORT("IGLSamples not set up for WebGPU");
-    return nullptr;
+    return igl::ShaderStagesCreator::fromLibraryStringInput(
+        device, getWgslShaderSource(), "vertexShader", "fragmentShader", "", nullptr);
   case igl::BackendType::Metal:
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
@@ -379,7 +406,8 @@ void TextureViewSession::update(SurfaceTextures surfaceTextures) noexcept {
   commands->bindTexture(0, texture_.get());
   commands->bindSamplerState(0, BindTarget::kFragment, sampler_.get());
   commands->bindRenderPipelineState(pipelineState_);
-  if (device.getBackendType() == BackendType::Vulkan) {
+  if (device.getBackendType() == BackendType::Vulkan ||
+      device.getBackendType() == BackendType::WebGPU) {
     commands->bindPushConstants(&mvpMatrix, sizeof(mvpMatrix));
   } else if (device.getBackendType() == BackendType::Metal) {
     commands->bindBytes(0, BindTarget::kVertex, &mvpMatrix, sizeof(mvpMatrix));

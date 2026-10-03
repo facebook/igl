@@ -33,7 +33,6 @@ class ScissorTestSession : public RenderSession {
   std::shared_ptr<IBuffer> indexBuffer_;
   std::shared_ptr<IVertexInputState> vertexInputState_;
   std::shared_ptr<IShaderStages> shaderStages_;
-  std::shared_ptr<ICommandQueue> commandQueue_;
   RenderPassDesc renderPass_;
   size_t frameCount_ = 0;
 };

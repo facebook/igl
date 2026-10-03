@@ -61,6 +61,9 @@ uint16_t indexData[] = {
 
 const uint32_t kNumIndices = sizeof(indexData) / sizeof(indexData[0]);
 
+// The edges of the triangles above, for devices that cannot rasterize PolygonFillMode::Line.
+uint16_t edgeIndexData[2 * kNumIndices] = {};
+
 std::string getVersion() {
   return {"#version 100"};
 }
@@ -223,13 +226,34 @@ std::string getWireframeVulkanFragmentShaderSource() {
 // Shader stage creation helpers
 // ---------------------------------------------------------------------------
 
+std::string getWgslShaderSource() {
+  return R"(
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) color : vec4f,
+};
+
+@vertex
+fn vertexShader(@location(0) position : vec3f, @location(1) color : vec4f) -> VertexOut {
+  return VertexOut(vec4f(position, 1.0), color);
+}
+
+@fragment
+fn fragmentShader(v : VertexOut) -> @location(0) vec4f {
+  return v.color;
+}
+)";
+}
+
 std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Custom:
-  case igl::BackendType::WebGPU:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
+  case igl::BackendType::WebGPU:
+    return igl::ShaderStagesCreator::fromLibraryStringInput(
+        device, getWgslShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(device,
                                                            getVulkanVertexShaderSource().c_str(),
@@ -272,13 +296,33 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   IGL_UNREACHABLE_RETURN(nullptr)
 }
 
+std::string getWireframeWgslShaderSource() {
+  return R"(
+@vertex
+fn vertexShaderWireframe(@location(0) position : vec3f) -> @builtin(position) vec4f {
+  return vec4f(position, 1.0);
+}
+
+@fragment
+fn fragmentShaderWireframe() -> @location(0) vec4f {
+  return vec4f(0.0, 1.0, 0.2, 1.0);
+}
+)";
+}
+
 std::unique_ptr<IShaderStages> getWireframeShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Custom:
-  case igl::BackendType::WebGPU:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
+  case igl::BackendType::WebGPU:
+    return igl::ShaderStagesCreator::fromLibraryStringInput(device,
+                                                            getWireframeWgslShaderSource().c_str(),
+                                                            "vertexShaderWireframe",
+                                                            "fragmentShaderWireframe",
+                                                            "",
+                                                            nullptr);
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,
@@ -342,6 +386,15 @@ void WireframeSession::initialize() noexcept {
                                                 .length = sizeof(indexData)},
                                      nullptr);
   IGL_DEBUG_ASSERT(indexBuffer_ != nullptr);
+  for (uint32_t i = 0; i < kNumIndices; ++i) {
+    edgeIndexData[2 * i] = indexData[i];
+    edgeIndexData[2 * i + 1] = indexData[i % 3 == 2 ? i - 2 : i + 1];
+  }
+  edgeIndexBuffer_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Index,
+                                                    .data = edgeIndexData,
+                                                    .length = sizeof(edgeIndexData)},
+                                         nullptr);
+  IGL_DEBUG_ASSERT(edgeIndexBuffer_ != nullptr);
 
   vertexInputState_ = device.createVertexInputState(
       VertexInputStateDesc{
@@ -449,27 +502,40 @@ void WireframeSession::update(SurfaceTextures textures) noexcept {
     IGL_DEBUG_ASSERT(solidPipelineState_ != nullptr);
   }
 
-  // Wireframe pipeline: PolygonFillMode::Line
+  // Wireframe pipeline: PolygonFillMode::Line, or a line list of the triangle edges where
+  // polygons can only be filled.
   if (wireframePipelineState_ == nullptr) {
-    wireframePipelineState_ = getPlatform().getDevice().createRenderPipeline(
-        RenderPipelineDesc{
-            .vertexInputState = vertexInputState_,
-            .shaderStages = wireframeShaderStages_,
-            .targetDesc =
-                {
-                    .colorAttachments = {{.textureFormat =
-                                              framebuffer_->getColorAttachment(0)->getFormat()}},
-                    .depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat(),
-                    .stencilAttachmentFormat =
-                        framebuffer_->getStencilAttachment()
-                            ? framebuffer_->getStencilAttachment()->getFormat()
-                            : igl::TextureFormat::Invalid,
-                },
-            .cullMode = igl::CullMode::Disabled,
-            .frontFaceWinding = igl::WindingMode::CounterClockwise,
-            .polygonFillMode = igl::PolygonFillMode::Line,
-        },
-        nullptr);
+    auto createWireframePipeline = [&](PrimitiveType topology, PolygonFillMode fillMode) {
+      Result result;
+      auto pipeline = getPlatform().getDevice().createRenderPipeline(
+          RenderPipelineDesc{
+              .topology = topology,
+              .vertexInputState = vertexInputState_,
+              .shaderStages = wireframeShaderStages_,
+              .targetDesc =
+                  {
+                      .colorAttachments = {{.textureFormat =
+                                                framebuffer_->getColorAttachment(0)->getFormat()}},
+                      .depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat(),
+                      .stencilAttachmentFormat =
+                          framebuffer_->getStencilAttachment()
+                              ? framebuffer_->getStencilAttachment()->getFormat()
+                              : igl::TextureFormat::Invalid,
+                  },
+              .cullMode = igl::CullMode::Disabled,
+              .frontFaceWinding = igl::WindingMode::CounterClockwise,
+              .polygonFillMode = fillMode,
+          },
+          &result);
+      return result.isOk() ? pipeline : nullptr;
+    };
+    wireframePipelineState_ =
+        createWireframePipeline(PrimitiveType::Triangle, igl::PolygonFillMode::Line);
+    if (wireframePipelineState_ == nullptr) {
+      wireframePipelineState_ =
+          createWireframePipeline(PrimitiveType::Line, igl::PolygonFillMode::Fill);
+      wireframeAsLines_ = wireframePipelineState_ != nullptr;
+    }
     IGL_DEBUG_ASSERT(wireframePipelineState_ != nullptr);
   }
 
@@ -492,8 +558,15 @@ void WireframeSession::update(SurfaceTextures textures) noexcept {
     commands->drawIndexed(kNumIndices);
 
     // Draw 2: Wireframe overlay -- renders bright green edges on top
-    commands->bindRenderPipelineState(wireframePipelineState_);
-    commands->drawIndexed(kNumIndices);
+    if (wireframePipelineState_) {
+      commands->bindRenderPipelineState(wireframePipelineState_);
+      if (wireframeAsLines_) {
+        commands->bindIndexBuffer(*edgeIndexBuffer_, IndexFormat::UInt16);
+        commands->drawIndexed(2 * kNumIndices);
+      } else {
+        commands->drawIndexed(kNumIndices);
+      }
+    }
 
     commands->endEncoding();
   }

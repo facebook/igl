@@ -142,13 +142,34 @@ std::string getVulkanFragmentShaderSource() {
                 )";
 }
 
+std::string getWgslShaderSource() {
+  return R"(
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) color : vec4f,
+};
+
+@vertex
+fn vertexShader(@location(0) position : vec3f, @location(1) color : vec4f) -> VertexOut {
+  return VertexOut(vec4f(position, 1.0), color);
+}
+
+@fragment
+fn fragmentShader(v : VertexOut) -> @location(0) vec4f {
+  return v.color;
+}
+)";
+}
+
 std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Custom:
-  case igl::BackendType::WebGPU:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
+  case igl::BackendType::WebGPU:
+    return igl::ShaderStagesCreator::fromLibraryStringInput(
+        device, getWgslShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(device,
                                                            getVulkanVertexShaderSource().c_str(),
@@ -263,13 +284,33 @@ std::string getOutlineVulkanFragmentShaderSource() {
                 )";
 }
 
+std::string getOutlineWgslShaderSource() {
+  return R"(
+@vertex
+fn outlineVertexShader(@location(0) position : vec3f) -> @builtin(position) vec4f {
+  return vec4f(position * 1.1, 1.0);
+}
+
+@fragment
+fn outlineFragmentShader() -> @location(0) vec4f {
+  return vec4f(1.0, 0.5, 0.0, 1.0);
+}
+)";
+}
+
 std::unique_ptr<IShaderStages> getOutlineShaderStagesForBackend(IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Custom:
-  case igl::BackendType::WebGPU:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
+  case igl::BackendType::WebGPU:
+    return igl::ShaderStagesCreator::fromLibraryStringInput(device,
+                                                            getOutlineWgslShaderSource().c_str(),
+                                                            "outlineVertexShader",
+                                                            "outlineFragmentShader",
+                                                            "",
+                                                            nullptr);
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,

@@ -78,6 +78,7 @@ class GPUStressSession : public RenderSession {
 
   [[nodiscard]] std::string getLightingCalc() const;
   [[nodiscard]] std::string getVulkanFragmentShaderSource() const;
+  [[nodiscard]] std::string getWgslShaderSource() const;
   std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) const noexcept;
   void addNormalsToCube();
   void processCustomParameter(const std::string& key, const std::string& value);

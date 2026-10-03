@@ -17,12 +17,14 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <future>
 #include <glm/detail/qualifier.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/fwd.hpp>
 #include <memory>
 #include <random>
+#include <utility>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/ShellParams.h>
@@ -206,6 +208,73 @@ layout(push_constant) uniform PushConstants {
 })";
 }
 
+std::string GPUStressSession::getWgslShaderSource() const {
+  // getLightingCalc() emits GLSL statements; they map to WGSL with calcLighting() returning a vec4
+  // whose w is 0.
+  std::string lighting = getLightingCalc();
+  const std::pair<const char*, const char*> kGlslToWgsl[] = {
+      {"vec4 lightFactor = ", "var lightFactor = "},
+      {"const vec3 ", "let "},
+      {"vec4(", "vec4f("},
+      {"vec3(", "vec3f("},
+      {"lightFactor.xyz += ", "lightFactor += "},
+  };
+  for (const auto& [from, to] : kGlslToWgsl) {
+    for (size_t pos = 0; (pos = lighting.find(from, pos)) != std::string::npos;
+         pos += std::strlen(to)) {
+      lighting.replace(pos, std::strlen(from), to);
+    }
+  }
+  return R"(
+struct PushConstants {
+  projectionMatrix : mat4x4f,
+  modelViewMatrix : mat4x4f,
+};
+
+@group(3) @binding(0) var<uniform> pc : PushConstants;
+@group(0) @binding(0) var uTex : texture_2d<f32>;
+@group(0) @binding(1) var uTexSampler : sampler;
+@group(0) @binding(2) var uTex2 : texture_2d<f32>;
+@group(0) @binding(3) var uTex2Sampler : sampler;
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) color : vec4f,
+  @location(1) uv : vec4f,
+  @location(2) screen_pos : vec3f,
+};
+
+@vertex
+fn vertexShader(@location(0) position : vec3f,
+                @location(1) uvw_in : vec4f,
+                @location(2) base_color : vec4f) -> VertexOut {
+  let pos = pc.projectionMatrix * pc.modelViewMatrix * vec4f(position, 1.0);
+  return VertexOut(pos, base_color, uvw_in, pos.xyz / pos.w);
+}
+
+var<private> screen_pos : vec3f;
+
+fn calcLighting(lightDir : vec3f, lightPosition : vec3f, normalIn : vec3f, attenuation : f32,
+                color : vec3f) -> vec4f {
+  let n = normalize((pc.projectionMatrix * pc.modelViewMatrix * vec4f(normalIn, 0.0)).xyz);
+  let angle = dot(normalize(lightDir), n);
+  let dist = length(lightPosition - screen_pos);
+  let intensity = clamp(smoothstep(attenuation, 0.0, dist), 0.0, 1.0);
+  return vec4f(intensity * color * angle, 0.0);
+}
+
+@fragment
+fn fragmentShader(v : VertexOut) -> @location(0) vec4f {
+  screen_pos = v.screen_pos;
+  let color = v.color;
+)" + lighting +
+         R"(
+  return lightFactor * textureSample(uTex2, uTex2Sampler, v.uv.xy) *
+         textureSample(uTex, uTexSampler, v.uv.zw);
+}
+)";
+}
+
 std::unique_ptr<IShaderStages> GPUStressSession::getShaderStagesForBackend(
     IDevice& device) const noexcept {
   const bool multiView = device.hasFeature(DeviceFeatures::Multiview);
@@ -214,6 +283,9 @@ std::unique_ptr<IShaderStages> GPUStressSession::getShaderStagesForBackend(
   // @fb-only
     // @fb-only
     // @fb-only
+  case igl::BackendType::WebGPU:
+    return igl::ShaderStagesCreator::fromLibraryStringInput(
+        device, getWgslShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,
@@ -278,7 +350,7 @@ bool isDeviceCompatible(IDevice& device) noexcept {
     }
   }
 
-  if (backendtype == BackendType::Vulkan) {
+  if (backendtype == BackendType::Vulkan || backendtype == BackendType::WebGPU) {
     return true;
   }
   return false;
@@ -953,7 +1025,8 @@ void GPUStressSession::drawCubes(const SurfaceTextures& surfaceTextures,
       commands->bindDepthStencilState(depthStencilState_);
 
       // Bind Vertex Uniform Data
-      if (device.getBackendType() == BackendType::Vulkan) {
+      if (device.getBackendType() == BackendType::Vulkan ||
+          device.getBackendType() == BackendType::WebGPU) {
         commands->bindPushConstants(&vertexParameters_,
                                     sizeof(vertexParameters_) - sizeof(float)); // z isn't used
       } else {

@@ -24,6 +24,7 @@
 #include <shell/renderSessions/shaderCode/generated/UpdateClothNormalCompShaderProvider.h>
 #include <shell/renderSessions/shaderCode/generated/UpdateClothPositionCompShaderProvider.h>
 #include <shell/renderSessions/shaderCode/generated/UpdateClothVelocityCompShaderProvider.h>
+#include <shell/renderSessions/wgsl/ClothSimulationSessionWgsl.h>
 #include <shell/shared/renderSession/ShaderStagesCreator.h>
 #include <igl/Buffer.h>
 #include <igl/NameHandle.h>
@@ -65,7 +66,7 @@ std::vector<ClothVertex> getClothVertexData() {
 }
 
 std::vector<uint32_t> getClothIndexData() {
-  std::vector<uint32_t> indices(kNumTriangles);
+  std::vector<uint32_t> indices(static_cast<size_t>(kNumTriangles) * 3);
   for (int i = 0; i < kN - 1; ++i) {
     for (int j = 0; j < kN - 1; ++j) {
       const int squareIndex = i * (kN - 1) + j;
@@ -148,6 +149,8 @@ bool isDeviceCompatible(IDevice& device) noexcept {
     return true;
   } else if (backendtype == BackendType::Metal) {
     return true;
+  } else if (backendtype == BackendType::WebGPU) {
+    return device.hasFeature(DeviceFeatures::Compute);
   }
 
   return false;
@@ -234,7 +237,25 @@ void ClothSimulationSession::initialize() noexcept {
   // which the SparkSL providers don't emit. Use inline GLSL for Vulkan only.
   const bool isVulkan = device.getBackendType() == BackendType::Vulkan;
 
-  if (isVulkan) {
+  if (device.getBackendType() == BackendType::WebGPU) {
+    clothShaderStages_ = igl::ShaderStagesCreator::fromModuleStringInput(
+        device, wgsl::kClothRenderVert, "main", "", wgsl::kClothRenderFrag, "main", "", nullptr);
+    obstacleShaderStages_ =
+        igl::ShaderStagesCreator::fromModuleStringInput(device,
+                                                        wgsl::kObstacleRenderVert,
+                                                        "main",
+                                                        "",
+                                                        wgsl::kObstacleRenderFrag,
+                                                        "main",
+                                                        "",
+                                                        nullptr);
+    updateVelocityStages_ = igl::ShaderStagesCreator::fromModuleStringInput(
+        device, wgsl::kUpdateClothVelocityComp, "main", "", nullptr);
+    updatePositionStages_ = igl::ShaderStagesCreator::fromModuleStringInput(
+        device, wgsl::kUpdateClothPositionComp, "main", "", nullptr);
+    updateNormalStages_ = igl::ShaderStagesCreator::fromModuleStringInput(
+        device, wgsl::kUpdateClothNormalComp, "main", "", nullptr);
+  } else if (isVulkan) {
     using namespace cloth_shaders;
     clothShaderStages_ = igl::ShaderStagesCreator::fromModuleStringInput(
         device, kVulkanClothVS, "main", "", kVulkanClothFS, "main", "", nullptr);
@@ -379,7 +400,7 @@ void ClothSimulationSession::update(SurfaceTextures surfaceTextures) noexcept {
 
   if (computeEncoder0) {
     // Vulkan inline GLSL bakes local_size = 1; SparkSL Metal kernels have no
-    // baked local size. Pick the matching dispatch shape per-backend.
+    // baked local size; the WebGPU WGSL bakes 16x16. Pick the matching dispatch shape per-backend.
     const bool isVulkan = device.getBackendType() == BackendType::Vulkan;
     const Dimensions threadgroupSize = isVulkan ? Dimensions(1, 1, 1) : Dimensions(16, 16, 1);
     const Dimensions threadgroupCount = isVulkan ? Dimensions(kN, kN, 1)

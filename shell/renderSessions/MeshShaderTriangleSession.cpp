@@ -195,18 +195,52 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
 
   return shaderStages;
 }
+
+// WebGPU has no mesh shaders: a vertex shader emits the same triangle from the vertex index.
+const char* getWgslVertexFallbackShaderSource() {
+  return R"(
+struct UniformBlock {
+  mvpMatrix : mat4x4f,
+};
+
+@group(1) @binding(1) var<uniform> vUniform : UniformBlock;
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) color : vec4f,
+};
+
+@vertex
+fn vertexMain(@builtin(vertex_index) i : u32) -> VertexOut {
+  var vertexData = array<vec4f, 3>(
+      vec4f(-0.6, -0.4, 0.0, 1.0), vec4f(0.6, -0.4, 0.0, 1.0), vec4f(0.0, 0.6, 0.0, 1.0));
+  var colorData = array<vec4f, 3>(
+      vec4f(1.0, 0.0, 0.0, 1.0), vec4f(0.0, 1.0, 0.0, 1.0), vec4f(0.0, 0.0, 1.0, 1.0));
+  return VertexOut(vUniform.mvpMatrix * vertexData[i], colorData[i]);
+}
+
+@fragment
+fn fragmentMain(v : VertexOut) -> @location(0) vec4f {
+  return v.color;
+}
+)";
+}
 } // namespace
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 void MeshShaderTriangleSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
-  if (!device.hasFeature(DeviceFeatures::MeshShaders)) {
+  useMeshShaders_ = device.hasFeature(DeviceFeatures::MeshShaders);
+  if (useMeshShaders_) {
+    shaderStages_ = getShaderStagesForBackend(device);
+  } else if (device.getShaderVersion().family == ShaderFamily::Wgsl) {
+    shaderStages_ = ShaderStagesCreator::fromLibraryStringInput(
+        device, getWgslVertexFallbackShaderSource(), "vertexMain", "fragmentMain", "", nullptr);
+  } else {
     IGL_DEBUG_ABORT("Mesh shaders are not supported.\n");
     return;
-  };
-
-  shaderStages_ = getShaderStagesForBackend(device);
+  }
   IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
 
   const BufferDesc uboDesc{
@@ -293,8 +327,13 @@ void MeshShaderTriangleSession::update(SurfaceTextures surfaceTextures) noexcept
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_DEBUG_ASSERT(commands != nullptr);
   commands->bindRenderPipelineState(pipelineState_);
-  commands->bindBuffer(1, BindTarget::kMesh, ubo_.get());
-  commands->drawMeshTasks({1, 1, 1}, {1, 1, 1}, {1, 1, 1});
+  if (useMeshShaders_) {
+    commands->bindBuffer(1, BindTarget::kMesh, ubo_.get());
+    commands->drawMeshTasks({1, 1, 1}, {1, 1, 1}, {1, 1, 1});
+  } else {
+    commands->bindBuffer(1, BindTarget::kVertex, ubo_.get());
+    commands->draw(3);
+  }
   commands->endEncoding();
 
   IGL_DEBUG_ASSERT(buffer != nullptr);

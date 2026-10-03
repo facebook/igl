@@ -17,6 +17,7 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
+#include <vector>
 #include <shell/shared/platform/DisplayContext.h>
 #include <igl/CommandBuffer.h>
 #include <igl/FPSCounter.h>
@@ -118,6 +119,28 @@ UniformsPerFrame perFrame;
 UniformsPerObject perObject[kNumCubes];
 glm::vec3 axis[kNumCubes];
 
+// Per-object uniforms are bound at offsets that must honor the device's uniform buffer offset
+// alignment (256 bytes on WebGPU), so each object's block is padded to that stride.
+[[nodiscard]] size_t getPerObjectStride(const IDevice& device) {
+  size_t alignment = 0;
+  if (!device.getFeatureLimits(DeviceFeatureLimits::BufferAlignment, alignment) || alignment == 0) {
+    return sizeof(UniformsPerObject);
+  }
+  return (sizeof(UniformsPerObject) + alignment - 1) / alignment * alignment;
+}
+
+void uploadPerObject(IBuffer& buffer, size_t stride) {
+  if (stride == sizeof(UniformsPerObject)) {
+    buffer.upload(perObject, BufferRange(sizeof(perObject)));
+    return;
+  }
+  std::vector<uint8_t> data(kNumCubes * stride);
+  for (uint32_t i = 0; i != kNumCubes; i++) {
+    std::memcpy(data.data() + i * stride, &perObject[i], sizeof(UniformsPerObject));
+  }
+  buffer.upload(data.data(), BufferRange(data.size()));
+}
+
 #if IGL_BACKEND_METAL
 [[nodiscard]] const char* getMetalShaderSource() {
   return R"(
@@ -218,12 +241,60 @@ void main() {
 )";
 }
 
+[[nodiscard]] const char* getWgslShaderSource() {
+  return R"(
+struct UniformsPerFrame {
+  proj : mat4x4f,
+  view : mat4x4f,
+};
+
+struct UniformsPerObject {
+  model : mat4x4f,
+};
+
+@group(1) @binding(0) var<uniform> perFrame : UniformsPerFrame;
+@group(1) @binding(1) var<uniform> perObject : UniformsPerObject;
+@group(0) @binding(0) var uTex0 : texture_2d<f32>;
+@group(0) @binding(1) var uSampler0 : sampler;
+@group(0) @binding(2) var uTex1 : texture_2d<f32>;
+@group(0) @binding(3) var uSampler1 : sampler;
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) color : vec3f,
+  @location(1) uv : vec2f,
+};
+
+@vertex
+fn vertexShader(@location(0) pos : vec3f,
+                @location(1) col : vec3f,
+                @location(2) st : vec2f) -> VertexOut {
+  var out : VertexOut;
+  out.position = perFrame.proj * perFrame.view * perObject.model * vec4f(pos, 1.0);
+  out.color = col;
+  out.uv = st;
+  return out;
+}
+
+@fragment
+fn fragmentShader(in : VertexOut) -> @location(0) vec4f {
+  let t0 = textureSample(uTex0, uSampler0, 2.0 * in.uv);
+  let t1 = textureSample(uTex1, uSampler1, in.uv);
+  return vec4f(2.0 * in.color * (t0.rgb * t1.rgb), 1.0);
+}
+)";
+}
+
 [[nodiscard]] std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
   // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
+
+  case igl::BackendType::WebGPU:
+    return igl::ShaderStagesCreator::fromLibraryStringInput(
+        device, getWgslShaderSource(), "vertexShader", "fragmentShader", "", nullptr);
 
 #if IGL_BACKEND_VULKAN
   case igl::BackendType::Vulkan:
@@ -302,6 +373,7 @@ void TinyMeshSession::initialize() noexcept {
                                           .storage = ResourceStorage::Private,
                                           .debugName = "Buffer: index"},
                                nullptr);
+  const size_t perObjectStride = getPerObjectStride(*device_);
   // create Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
     ubPerFrame_.push_back(
@@ -312,14 +384,14 @@ void TinyMeshSession::initialize() noexcept {
                                          .hint = BufferDesc::BufferAPIHintBits::UniformBlock,
                                          .debugName = "Buffer: uniforms (per frame)"},
                               nullptr));
-    ubPerObject_.push_back(
-        device_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
-                                         .data = perObject,
-                                         .length = kNumCubes * sizeof(UniformsPerObject),
-                                         .storage = ResourceStorage::Shared,
-                                         .hint = BufferDesc::BufferAPIHintBits::UniformBlock,
-                                         .debugName = "Buffer: uniforms (per object)"},
-                              nullptr));
+    ubPerObject_.push_back(device_->createBuffer(
+        BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                   .data = perObjectStride == sizeof(UniformsPerObject) ? perObject : nullptr,
+                   .length = kNumCubes * perObjectStride,
+                   .storage = ResourceStorage::Shared,
+                   .hint = BufferDesc::BufferAPIHintBits::UniformBlock,
+                   .debugName = "Buffer: uniforms (per object)"},
+        nullptr));
   }
 
   vertexInput0_ = device_->createVertexInputState(
@@ -456,6 +528,7 @@ std::shared_ptr<ITexture> TinyMeshSession::getVulkanNativeDepth() {
   return nullptr;
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
   // Per IGL guidelines, surfaceTextures.color may be null on some platforms
   // before the surface is ready (e.g., during window resize on Android/iOS).
@@ -475,7 +548,9 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
     framebufferDesc_.colorAttachments[0].texture = surfaceTextures.color;
 
 #if TINY_TEST_USE_DEPTH_BUFFER
-    framebufferDesc_.depthAttachment.texture = getVulkanNativeDepth();
+    framebufferDesc_.depthAttachment.texture = device_->getBackendType() == BackendType::WebGPU
+                                                   ? surfaceTextures.depth
+                                                   : getVulkanNativeDepth();
 #endif // TINY_TEST_USE_DEPTH_BUFFER
     framebuffer_ = device_->createFramebuffer(framebufferDesc_, nullptr);
     IGL_DEBUG_ASSERT(framebuffer_);
@@ -530,7 +605,8 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
                                      axis[i]);
   }
 
-  ubPerObject_[frameIndex_]->upload(&perObject, BufferRange(sizeof(perObject)));
+  const size_t perObjectStride = getPerObjectStride(*device_);
+  uploadPerObject(*ubPerObject_[frameIndex_], perObjectStride);
 
   // Command buffers (1-N per thread): create, submit and forget
   const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
@@ -563,7 +639,8 @@ void TinyMeshSession::update(SurfaceTextures surfaceTextures) noexcept {
   // Draw 2 cubes: we use uniform buffer to update matrices
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
   for (uint32_t i = 0; i != kNumCubes; i++) {
-    commands->bindBuffer(1, ubPerObject_[frameIndex_].get(), i * sizeof(UniformsPerObject));
+    commands->bindBuffer(
+        1, ubPerObject_[frameIndex_].get(), i * perObjectStride, sizeof(UniformsPerObject));
     commands->drawIndexed(3u * 6u * 2u);
   }
   commands->popDebugGroupLabel();

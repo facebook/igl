@@ -308,6 +308,42 @@ float4 main(PSInput input) : SV_Target {
 )";
 }
 
+const char* getWgslShaderSource() {
+  return R"(
+struct UniformBlock {
+  mvp : array<mat4x4f, 2>,
+};
+
+@group(1) @binding(0) var<uniform> ub : UniformBlock;
+@group(0) @binding(0) var particleTex : texture_2d<f32>;
+@group(0) @binding(1) var linearSampler : sampler;
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) color : vec3f,
+  @location(1) uv : vec2f,
+};
+
+@vertex
+fn vertexShader(@location(0) pos : vec3f,
+                @location(1) color : vec3f,
+                @location(2) flare : f32,
+                @location(3) corner : vec2f) -> VertexOut {
+  let center = ub.mvp[0] * vec4f(pos, 1.0);
+  let size = select(vec2f(0.15, 0.15), vec2f(0.05, 0.25), flare > 0.5);
+  let col = select(color, 0.5 * color, flare > 0.5);
+  let offset = corner * size;
+  return VertexOut(center + vec4f(offset, 0.0, 0.0), col, corner * 0.5 + 0.5);
+}
+
+@fragment
+fn fragmentShader(v : VertexOut) -> @location(0) vec4f {
+  let alpha = textureSample(particleTex, linearSampler, v.uv).r;
+  return vec4f(v.color * alpha, alpha);
+}
+)";
+}
+
 // Interleaved vertex: particle data + corner offset
 struct InterleavedVertex {
   glm::vec3 pos;
@@ -494,9 +530,11 @@ std::unique_ptr<IShaderStages> FireworksSession::getShaderStagesForBackend(IDevi
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Custom:
-  case igl::BackendType::WebGPU:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
+  case igl::BackendType::WebGPU:
+    return igl::ShaderStagesCreator::fromLibraryStringInput(
+        device, getWgslShaderSource(), "vertexShader", "fragmentShader", "", nullptr);
   case igl::BackendType::Vulkan: {
     const std::string vsSource = getVulkanVertexShaderSource(stereoRendering);
     return igl::ShaderStagesCreator::fromModuleStringInput(

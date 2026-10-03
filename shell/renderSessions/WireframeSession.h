@@ -29,6 +29,8 @@ class WireframeSession : public RenderSession {
   std::shared_ptr<IRenderPipelineState> wireframePipelineState_;
   std::shared_ptr<IBuffer> vertexBuffer_;
   std::shared_ptr<IBuffer> indexBuffer_;
+  std::shared_ptr<IBuffer> edgeIndexBuffer_;
+  bool wireframeAsLines_ = false;
   std::shared_ptr<IVertexInputState> vertexInputState_;
   std::shared_ptr<IShaderStages> shaderStages_;
   std::shared_ptr<IShaderStages> wireframeShaderStages_;

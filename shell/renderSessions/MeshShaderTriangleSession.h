@@ -30,6 +30,7 @@ class MeshShaderTriangleSession : public RenderSession {
   std::shared_ptr<IFramebuffer> framebuffer_;
   std::shared_ptr<IBuffer> ubo_;
   int frameNum_ = 0;
+  bool useMeshShaders_ = true;
 };
 
 } // namespace igl::shell

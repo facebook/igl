@@ -28,9 +28,9 @@ const VertexPosColor kVertexData[] = {
 };
 const uint16_t kIndexData[] = {2, 1, 0};
 
-// Demonstration of Metal's specialization-constants API: nine Float1 constants (function
-// constant indices 0..8) carry the RGB triplets for the three triangle vertices, baked
-// into the vertex shader at pipeline-build time via MTLFunctionConstantValues. The other
+// Demonstration of the specialization-constants API on Metal and WebGPU: nine Float1 constants
+// (Metal function constant indices 0..8, WGSL override ids 0..8) carry the RGB triplets for the
+// three triangle vertices, baked into the vertex shader at pipeline-build time. The other
 // backends source the same colors from the per-vertex `color_in` attribute instead.
 // NOLINTNEXTLINE(*-avoid-c-arrays)
 float kVertexColors[3][3] = {
@@ -148,35 +148,66 @@ std::string getVulkanFragmentShaderSource() {
                 )";
 }
 
+std::string getWgslShaderSource() {
+  return R"(
+@id(0) override kV0R : f32;
+@id(1) override kV0G : f32;
+@id(2) override kV0B : f32;
+@id(3) override kV1R : f32;
+@id(4) override kV1G : f32;
+@id(5) override kV1B : f32;
+@id(6) override kV2R : f32;
+@id(7) override kV2G : f32;
+@id(8) override kV2B : f32;
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) color : vec4f,
+};
+
+@vertex
+fn vertexShader(@builtin(vertex_index) vid : u32, @location(0) position : vec3f) -> VertexOut {
+  var colors = array<vec3f, 3>(
+      vec3f(kV0R, kV0G, kV0B), vec3f(kV1R, kV1G, kV1B), vec3f(kV2R, kV2G, kV2B));
+  return VertexOut(vec4f(position, 1.0), vec4f(colors[vid], 1.0));
+}
+
+@fragment
+fn fragmentShader(v : VertexOut) -> @location(0) vec4f {
+  return v.color;
+}
+)";
+}
+
 std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
-  // Build the Metal vertex/fragment modules with FunctionConstantValues up-front so the
-  // Metal case statement remains a simple single-statement return.
+  // Build the Metal/WebGPU vertex/fragment modules with FunctionConstantValues up-front so
+  // their case statements remain simple single-statement returns.
   // ShaderStagesCreator::fromLibraryStringInput() does not expose FunctionConstantValues,
   // so we go through ShaderLibraryCreator and feed the resulting modules into
   // fromRenderModules() below.
   const BackendType backend = device.getBackendType();
-  std::shared_ptr<IShaderModule> metalVertexModule;
-  std::shared_ptr<IShaderModule> metalFragmentModule;
-  if (backend == igl::BackendType::Metal) {
-    auto metalLibrary = igl::ShaderLibraryCreator::fromStringInput(
+  std::shared_ptr<IShaderModule> vertexModule;
+  std::shared_ptr<IShaderModule> fragmentModule;
+  if (backend == igl::BackendType::Metal || backend == igl::BackendType::WebGPU) {
+    auto library = igl::ShaderLibraryCreator::fromStringInput(
         device,
-        getMetalShaderSource().c_str(),
+        backend == igl::BackendType::Metal ? getMetalShaderSource().c_str()
+                                           : getWgslShaderSource().c_str(),
         {{.stage = igl::ShaderStage::Vertex,
           .entryPoint = "vertexShader",
           .functionConstantValues = getVertexSpecConstants()},
          {.stage = igl::ShaderStage::Fragment, .entryPoint = "fragmentShader"}},
         "",
         nullptr);
-    if (metalLibrary) {
-      metalVertexModule = metalLibrary->getShaderModule("vertexShader");
-      metalFragmentModule = metalLibrary->getShaderModule("fragmentShader");
+    if (library) {
+      vertexModule = library->getShaderModule("vertexShader");
+      fragmentModule = library->getShaderModule("fragmentShader");
     }
   }
 
   switch (backend) {
   case igl::BackendType::Invalid:
   case igl::BackendType::Custom:
-  case igl::BackendType::WebGPU:
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
   case igl::BackendType::Vulkan:
@@ -192,8 +223,9 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) {
     // @fb-only
     // @fb-only
   case igl::BackendType::Metal:
+  case igl::BackendType::WebGPU:
     return igl::ShaderStagesCreator::fromRenderModules(
-        device, std::move(metalVertexModule), std::move(metalFragmentModule), nullptr);
+        device, std::move(vertexModule), std::move(fragmentModule), nullptr);
   case igl::BackendType::OpenGL:
     return igl::ShaderStagesCreator::fromModuleStringInput(device,
                                                            getOpenGLVertexShaderSource().c_str(),

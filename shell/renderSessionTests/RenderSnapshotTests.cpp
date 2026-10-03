@@ -5,81 +5,50 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <cstdlib>
-#include <string>
+#include "RenderSnapshotTests.h"
+
+#include <shell/renderSessions/BasicFramebufferSession.h>
+#include <shell/renderSessions/BindlessBufferSession.h>
+#include <shell/renderSessions/BufferMappingSession.h>
 #include <shell/renderSessions/CheckerboardMipmapSession.h>
+#include <shell/renderSessions/ClothSimulationSession.h>
 #include <shell/renderSessions/ColorSession.h>
 #include <shell/renderSessions/ComputeSession.h>
+#include <shell/renderSessions/CopyOperationsSession.h>
+#include <shell/renderSessions/DepthBiasSession.h>
+#include <shell/renderSessions/DrawIndirectSession.h>
 #include <shell/renderSessions/DrawInstancedSession.h>
+#include <shell/renderSessions/FireworksSession.h>
+#include <shell/renderSessions/FluidSimulationSession.h>
+#include <shell/renderSessions/GPUTimerSession.h>
 #include <shell/renderSessions/GraphSampleSession.h>
+#include <shell/renderSessions/HelloSparkSLSession.h>
 #include <shell/renderSessions/HelloWorldSession.h>
 #include <shell/renderSessions/ImguiSession.h>
 #include <shell/renderSessions/MRTSession.h>
 #include <shell/renderSessions/MSAASession.h>
+#include <shell/renderSessions/MeshShaderTriangleSession.h>
+#include <shell/renderSessions/MultiDrawIndexedIndirectSession.h>
+#include <shell/renderSessions/ScissorTestSession.h>
+#include <shell/renderSessions/SpecConstantsSession.h>
+#include <shell/renderSessions/SrgbMipmapGammaSession.h>
+#include <shell/renderSessions/StencilOutlineSession.h>
 #include <shell/renderSessions/TQMultiRenderPassSession.h>
 #include <shell/renderSessions/TQSession.h>
 #include <shell/renderSessions/Texture3DSession.h>
 #include <shell/renderSessions/TextureAccessorSession.h>
 #include <shell/renderSessions/TextureRotationSession.h>
+#include <shell/renderSessions/TextureViewSession.h>
 #include <shell/renderSessions/Textured3DCubeSession.h>
+#include <shell/renderSessions/TinyMeshBindGroupSession.h>
+#include <shell/renderSessions/TinyMeshSession.h>
 #include <shell/renderSessions/UniformArrayTestSession.h>
 #include <shell/renderSessions/UniformPackedTestSession.h>
 #include <shell/renderSessions/UniformTestSession.h>
-#include <shell/shared/renderSession/ScreenshotTestRenderSessionHelper.h>
-#include <shell/shared/renderSession/ShellParams.h>
-#include <shell/shared/testShell/TestShell.h>
-#include <igl/CommandBuffer.h>
-#include <igl/CommandQueue.h>
-#include <igl/Framebuffer.h>
+#include <shell/renderSessions/WireframeSession.h>
+#include <shell/renderSessions/YUVColorSession.h>
 
 namespace igl::shell {
-
-// Renders sessions at a visible size. With IGL_RENDER_SNAPSHOT_DIR set, each frame is written to
-// <dir>/<Session>.png, so the output of different backends can be compared.
-class RenderSnapshotTests : public ::testing::Test, public TestShellBase {
- public:
-  void SetUp() override {
-    setUpInternal({.width = kSize, .height = kSize});
-  }
-
- protected:
-  static constexpr size_t kSize = 256;
-
-  void render(RenderSession& session, const char* name, int frames = 1) {
-    ShellParams params;
-    params.viewportSize = glm::vec2(static_cast<float>(kSize), static_cast<float>(kSize));
-    session.setShellParams(params);
-    // The default clear color identifies the backend; comparisons need the same one.
-    session.setPreferredClearColor({0.2f, 0.3f, 0.4f, 1.0f});
-    session.initialize();
-    const SurfaceTextures surfaceTextures = {.color = offscreenTexture_,
-                                             .depth = offscreenDepthTexture_};
-    for (int frame = 0; frame < frames; ++frame) {
-      const DeviceScope scope(platform_->getDevice());
-      session.update(surfaceTextures);
-    }
-    Result ret;
-    auto framebuffer = platform_->getDevice().createFramebuffer(
-        {.colorAttachments = {{.texture = offscreenTexture_}}}, &ret);
-    ASSERT_TRUE(ret.isOk()) << ret.message;
-    ASSERT_NE(framebuffer, nullptr);
-    // Waits for the session's work, on the session's queue, before the readback.
-    ICommandQueue* queue = session.getCommandQueue();
-    ASSERT_NE(queue, nullptr);
-    auto cmdBuffer = queue->createCommandBuffer({}, &ret);
-    ASSERT_TRUE(ret.isOk()) << ret.message;
-    ASSERT_NE(cmdBuffer, nullptr);
-    queue->submit(*cmdBuffer, true);
-    cmdBuffer->waitUntilCompleted();
-
-    // NOLINTNEXTLINE(concurrency-mt-unsafe)
-    if (const char* dir = std::getenv("IGL_RENDER_SNAPSHOT_DIR"); dir != nullptr && *dir != '\0') {
-      saveFrameBufferToPng(
-          (std::string(dir) + "/" + name + ".png").c_str(), framebuffer, *platform_);
-    }
-    session.teardown();
-  }
-};
 
 TEST_F(RenderSnapshotTests, HelloWorldSession) {
   HelloWorldSession session(platform_);
@@ -174,6 +143,160 @@ TEST_F(RenderSnapshotTests, ImguiSession) {
 TEST_F(RenderSnapshotTests, UniformArrayTestSession) {
   UniformArrayTestSession session(platform_);
   render(session, "UniformArrayTestSession");
+}
+
+TEST_F(RenderSnapshotTests, BasicFramebufferSession) {
+  BasicFramebufferSession session(platform_);
+  render(session, "BasicFramebufferSession");
+}
+
+TEST_F(RenderSnapshotTests, BindlessBufferSession) {
+  if (backendIs({BackendType::OpenGL})) {
+    GTEST_SKIP()
+        << "BindlessBufferSession needs indirect/storage buffers the macOS OpenGL backend lacks";
+  }
+  BindlessBufferSession session(platform_);
+  render(session, "BindlessBufferSession");
+}
+
+TEST_F(RenderSnapshotTests, BufferMappingSession) {
+  BufferMappingSession session(platform_);
+  render(session, "BufferMappingSession");
+}
+
+TEST_F(RenderSnapshotTests, ClothSimulationSession) {
+  if (backendIs({BackendType::OpenGL})) {
+    GTEST_SKIP() << "ClothSimulationSession needs compute, which macOS OpenGL lacks";
+  }
+  ClothSimulationSession session(platform_);
+  render(session, "ClothSimulationSession");
+}
+
+TEST_F(RenderSnapshotTests, CopyOperationsSession) {
+  if (backendIs({BackendType::OpenGL})) {
+    GTEST_SKIP() << "CopyOperationsSession fails on macOS OpenGL (GL_INVALID_ENUM in bindBuffer)";
+  }
+  CopyOperationsSession session(platform_);
+  render(session, "CopyOperationsSession");
+}
+
+TEST_F(RenderSnapshotTests, DepthBiasSession) {
+  DepthBiasSession session(platform_);
+  render(session, "DepthBiasSession");
+}
+
+TEST_F(RenderSnapshotTests, DrawIndirectSession) {
+  if (backendIs({BackendType::OpenGL})) {
+    GTEST_SKIP()
+        << "DrawIndirectSession needs indirect/storage buffers the macOS OpenGL backend lacks";
+  }
+  DrawIndirectSession session(platform_);
+  render(session, "DrawIndirectSession");
+}
+
+TEST_F(RenderSnapshotTests, FireworksSession) {
+  if (platform_->getDevice().getBackendVersion().flavor == BackendFlavor::OpenGL_ES) {
+    GTEST_SKIP() << "FireworksSession's OpenGL ES shaders don't compile (varying locations, no "
+                    "default float precision) and the session aborts";
+  }
+  FireworksSession session(platform_);
+  render(session, "FireworksSession", 30);
+}
+
+TEST_F(RenderSnapshotTests, FluidSimulationSession) {
+  if (backendIs({BackendType::OpenGL})) {
+    GTEST_SKIP() << "FluidSimulationSession needs compute, which macOS OpenGL lacks";
+  }
+  FluidSimulationSession session(platform_);
+  render(session, "FluidSimulationSession", 3);
+}
+
+TEST_F(RenderSnapshotTests, GPUTimerSession) {
+  if (backendIs({BackendType::OpenGL})) {
+    GTEST_SKIP() << "GPUTimerSession fails on macOS OpenGL (GL_INVALID_OPERATION querying timers)";
+  }
+  GPUTimerSession session(platform_);
+  render(session, "GPUTimerSession", 3);
+}
+
+TEST_F(RenderSnapshotTests, HelloSparkSLSession) {
+  HelloSparkSLSession session(platform_);
+  render(session, "HelloSparkSLSession");
+}
+
+TEST_F(RenderSnapshotTests, MeshShaderTriangleSession) {
+  if (backendIs({BackendType::OpenGL})) {
+    GTEST_SKIP() << "MeshShaderTriangleSession needs mesh shaders (WebGPU has a vertex fallback)";
+  }
+  MeshShaderTriangleSession session(platform_);
+  render(session, "MeshShaderTriangleSession");
+}
+
+TEST_F(RenderSnapshotTests, MultiDrawIndexedIndirectSession) {
+  if (backendIs({BackendType::OpenGL})) {
+    GTEST_SKIP()
+        << "MultiDrawIndexedIndirectSession needs indirect buffers the macOS OpenGL backend lacks";
+  }
+  MultiDrawIndexedIndirectSession session(platform_);
+  render(session, "MultiDrawIndexedIndirectSession");
+}
+
+TEST_F(RenderSnapshotTests, ScissorTestSession) {
+  ScissorTestSession session(platform_);
+  render(session, "ScissorTestSession");
+}
+
+TEST_F(RenderSnapshotTests, SpecConstantsSession) {
+  SpecConstantsSession session(platform_);
+  render(session, "SpecConstantsSession");
+}
+
+TEST_F(RenderSnapshotTests, SrgbMipmapGammaSession) {
+  SrgbMipmapGammaSession session(platform_);
+  render(session, "SrgbMipmapGammaSession");
+}
+
+TEST_F(RenderSnapshotTests, StencilOutlineSession) {
+  useDepthStencilTexture();
+  StencilOutlineSession session(platform_);
+  render(session, "StencilOutlineSession");
+}
+
+TEST_F(RenderSnapshotTests, TextureViewSession) {
+  if (backendIs({BackendType::Metal, BackendType::OpenGL})) {
+    GTEST_SKIP() << "TextureViewSession needs DeviceFeatures::TextureViews";
+  }
+  TextureViewSession session(platform_);
+  render(session, "TextureViewSession", 2);
+}
+
+TEST_F(RenderSnapshotTests, TinyMeshBindGroupSession) {
+  if (backendIs({BackendType::OpenGL})) {
+    GTEST_SKIP() << "TinyMeshBindGroupSession has GLSL that macOS OpenGL rejects";
+  }
+  TinyMeshBindGroupSession session(platform_);
+  render(session, "TinyMeshBindGroupSession", 2);
+}
+
+TEST_F(RenderSnapshotTests, TinyMeshSession) {
+  if (backendIs({BackendType::OpenGL})) {
+    GTEST_SKIP() << "TinyMeshSession has GLSL that macOS OpenGL rejects";
+  }
+  TinyMeshSession session(platform_);
+  render(session, "TinyMeshSession", 2);
+}
+
+TEST_F(RenderSnapshotTests, WireframeSession) {
+  WireframeSession session(platform_);
+  render(session, "WireframeSession");
+}
+
+TEST_F(RenderSnapshotTests, YUVColorSession) {
+  if (backendIs({BackendType::Metal, BackendType::OpenGL})) {
+    GTEST_SKIP() << "YUVColorSession has no Metal path; OpenGL cannot sample the planes on macOS";
+  }
+  YUVColorSession session(platform_);
+  render(session, "YUVColorSession");
 }
 
 } // namespace igl::shell

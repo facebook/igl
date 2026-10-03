@@ -194,6 +194,39 @@ const char* getVulkanVertexShaderSource() {
                       })";
 }
 
+const char* getWgslShaderSource() {
+  return R"(
+struct PerFrame {
+  mvpMatrix : mat4x4f,
+};
+
+@group(1) @binding(1) var<uniform> perFrame : PerFrame;
+@group(0) @binding(0) var texture0 : texture_2d<f32>;
+@group(0) @binding(1) var sampler0 : sampler;
+@group(0) @binding(2) var texture1 : texture_2d<f32>;
+@group(0) @binding(3) var sampler1 : sampler;
+
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) uv : vec2f,
+  @location(1) color : vec4f,
+};
+
+@vertex
+fn vertexShader(@location(0) position : vec3f,
+                @location(1) uv : vec2f,
+                @location(2) color : vec3f) -> VertexOut {
+  return VertexOut(perFrame.mvpMatrix * vec4f(position, 1.0), uv, vec4f(color, 1.0));
+}
+
+@fragment
+fn fragmentShader(v : VertexOut) -> @location(0) vec4f {
+  return textureSample(texture0, sampler0, v.uv) * textureSample(texture1, sampler1, v.uv) *
+         v.color;
+}
+)";
+}
+
 std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
@@ -265,8 +298,8 @@ std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& devi
     // @fb-only
     // @fb-only
   case igl::BackendType::WebGPU:
-    IGL_DEBUG_ABORT("IGLSamples not set up for WebGPU");
-    return nullptr;
+    return igl::ShaderStagesCreator::fromLibraryStringInput(
+        device, getWgslShaderSource(), "vertexShader", "fragmentShader", "", nullptr);
   case igl::BackendType::Metal:
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
@@ -379,11 +412,11 @@ void BindGroupSession::initialize() noexcept {
   };
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
 
+  // Command queue: backed by different types of GPU HW queues. The mipmaps need it.
+  commandQueue_ = device.createCommandQueue({}, nullptr);
+
   createSamplerAndTextures(device);
   shaderStages_ = getShaderStagesForBackend(device);
-
-  // Command queue: backed by different types of GPU HW queues
-  commandQueue_ = device.createCommandQueue({}, nullptr);
 
   renderPass_ = {
       .colorAttachments = {{

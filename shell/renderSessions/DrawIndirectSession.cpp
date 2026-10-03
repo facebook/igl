@@ -19,6 +19,7 @@
 #include <shell/shared/platform/Platform.h>
 #include <igl/Buffer.h>
 #include <igl/Common.h>
+#include <igl/ShaderCreator.h>
 
 namespace {
 std::chrono::system_clock::time_point gStartTime;
@@ -36,6 +37,37 @@ struct DrawElementsIndirectCommand {
                           // when chosing elements from the enabled vertex arrays.
   uint32_t reservedMustBeZero = 0;
 };
+
+// The shaders/DrawIndirectSession*.glsl shaders in WGSL.
+constexpr const char* kWgslRender = R"(
+@vertex
+fn vertexShader(@location(0) position : vec3f) -> @builtin(position) vec4f {
+  return vec4f(position, 1.0);
+}
+
+@fragment
+fn fragmentShader() -> @location(0) vec4f {
+  return vec4f(1.0, 0.0, 0.0, 1.0);
+}
+
+@fragment
+fn fragmentShaderAlt() -> @location(0) vec4f {
+  return vec4f(0.0, 0.0, 1.0, 1.0);
+}
+)";
+
+constexpr const char* kWgslCompute = R"(
+struct IndexCountBuffer {
+  indexCountBufferValue : atomic<u32>,
+};
+
+@group(1) @binding(0) var<storage, read_write> indexCountBuffer : IndexCountBuffer;
+
+@compute @workgroup_size(3, 1, 1)
+fn main() {
+  atomicAdd(&indexCountBuffer.indexCountBufferValue, 1u);
+}
+)";
 } // namespace
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
@@ -86,7 +118,7 @@ void DrawIndirectSession::initialize() noexcept {
     indirectCommands.push_back(command);
 
     const BufferDesc bufDesc{
-        .type = BufferDesc::BufferTypeBits::Storage,
+        .type = BufferDesc::BufferTypeBits::Storage | BufferDesc::BufferTypeBits::Indirect,
         .data = indirectCommands.data(),
         .length = indirectCommands.size() * sizeof(DrawElementsIndirectCommand),
     };
@@ -137,7 +169,17 @@ void DrawIndirectSession::initialize() noexcept {
   }
 
   // Initialize shaders.
-  {
+  if (device.getShaderVersion().family == ShaderFamily::Wgsl) {
+    shaderStages_ = igl::ShaderStagesCreator::fromLibraryStringInput(
+        device, kWgslRender, "vertexShader", "fragmentShader", "", &ret);
+    IGL_DEBUG_ASSERT(ret.isOk());
+    shaderStagesAlt_ = igl::ShaderStagesCreator::fromLibraryStringInput(
+        device, kWgslRender, "vertexShader", "fragmentShaderAlt", "", &ret);
+    IGL_DEBUG_ASSERT(ret.isOk());
+    buildIndirectBufferStages_ =
+        igl::ShaderStagesCreator::fromModuleStringInput(device, kWgslCompute, "main", "", &ret);
+    IGL_DEBUG_ASSERT(ret.isOk());
+  } else {
     shaderStages_ = iglu::spark_sl_compiler::compileShaderStages(
         device,
         getShaderSourceFactory()->makeFromModules(
@@ -161,13 +203,9 @@ void DrawIndirectSession::initialize() noexcept {
         "",
         ret);
     IGL_DEBUG_ASSERT(ret.isOk());
-  }
 
-  // Initialize buffers and shaders for a compute pipeline.
-  {
     // Our compute shader spawns three threads, each one will increment
     // an atomic counter (aliased to an indirect buffer).
-
     buildIndirectBufferStages_ = iglu::spark_sl_compiler::compileShaderStages(
         device,
         getShaderSourceFactory()->makeFromModules(

@@ -43,6 +43,10 @@ class YUVColorSession : public RenderSession {
     std::shared_ptr<ISamplerState> sampler;
     std::shared_ptr<ITexture> texture;
     std::shared_ptr<IRenderPipelineState> pipelineState;
+    // Without multi-planar YUV textures (WebGPU), the chroma planes are separate textures bound
+    // after `texture` (the luma plane) and converted in the shader.
+    std::vector<std::shared_ptr<ITexture>> chromaPlanes;
+    std::shared_ptr<IShaderStages> shaderStages;
   };
 
   std::vector<YUVFormatDemo> yuvFormatDemos_;
