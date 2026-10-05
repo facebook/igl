@@ -9,7 +9,7 @@
 
 #include <algorithm>
 #include <optional>
-#include <igl/webgpu/ResourcesBinder.h>
+#include <igl/webgpu/Common.h>
 #include <igl/webgpu/StateSanitizer.h>
 #include <igl/webgpu/WebGPUContext.h>
 

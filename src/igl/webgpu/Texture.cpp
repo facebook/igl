@@ -17,7 +17,6 @@
 #include <igl/webgpu/DeviceFeatureSet.h>
 #include <igl/webgpu/MipmapGenerator.h>
 #include <igl/webgpu/Readback.h>
-#include <igl/webgpu/ResourcesBinder.h>
 #include <igl/webgpu/WebGPUContext.h>
 
 namespace igl::webgpu {

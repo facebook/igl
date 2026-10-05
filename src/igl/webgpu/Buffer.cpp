@@ -10,8 +10,9 @@
 #include <algorithm>
 #include <cstring>
 #include <utility>
+#include <igl/Common.h>
+#include <igl/webgpu/Common.h>
 #include <igl/webgpu/Readback.h>
-#include <igl/webgpu/ResourcesBinder.h>
 #include <igl/webgpu/WebGPUContext.h>
 
 namespace igl::webgpu {
