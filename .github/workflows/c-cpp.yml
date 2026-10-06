@@ -317,6 +317,19 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y clang ninja-build xorg-dev libxinerama-dev libxcursor-dev libx11-xcb-dev libgles2-mesa-dev libegl1-mesa-dev libglfw3-dev libglew-dev libstdc++-12-dev mesa-vulkan-drivers libvulkan-dev libvulkan1 vulkan-tools
 
+        # The lavapipe ICD file name differs between Mesa packages (e.g. with or without an arch suffix), so look it up.
+        - name: Locate lavapipe ICD
+          run: |
+            LVP_ICD=$(dpkg -L mesa-vulkan-drivers | grep -E '/lvp_icd[^/]*\.json$' | head -n 1)
+            if [ -z "$LVP_ICD" ]; then
+              echo "lavapipe ICD not found in mesa-vulkan-drivers"
+              ls -l /usr/share/vulkan/icd.d/ || true
+              exit 1
+            fi
+            echo "Using lavapipe ICD: $LVP_ICD"
+            echo "VK_ICD_FILENAMES=$LVP_ICD" >> "$GITHUB_ENV"
+            VK_ICD_FILENAMES="$LVP_ICD" vulkaninfo --summary
+
         - name: Cache Dawn
           id: cache-dawn
           uses: actions/cache@v4
@@ -348,14 +361,10 @@ jobs:
 
         - name: Run tests
           continue-on-error: true
-          env:
-            VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
           run: |
             ./build/src/igl/tests/IGLTests
 
         - name: Run shell sessions (headless)
-          env:
-            VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
           run: |
             ./build/shell/ColorSession_webgpu      --headless --viewport-size 1600x900 --screenshot-file ColorSession_webgpu.png
             ./build/shell/HelloWorldSession_webgpu --headless --viewport-size 1600x900 --screenshot-file HelloWorldSession_webgpu.png
